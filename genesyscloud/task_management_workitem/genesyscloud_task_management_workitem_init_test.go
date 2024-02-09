@@ -2,6 +2,7 @@ package task_management_workitem
 
 import (
 	"sync"
+	authRole "terraform-provider-genesyscloud/genesyscloud/auth_role"
 	"terraform-provider-genesyscloud/genesyscloud/user_roles"
 	"testing"
 
@@ -44,7 +45,7 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_externalcontacts_contact"] = externalContacts.ResourceExternalContact()
 	providerResources["genesyscloud_routing_queue"] = gcloud.ResourceRoutingQueue()
 	providerResources["genesyscloud_routing_skill"] = gcloud.ResourceRoutingSkill()
-	providerResources["genesyscloud_auth_role"] = gcloud.ResourceAuthRole()
+	providerResources["genesyscloud_auth_role"] = authRole.ResourceAuthRole()
 	providerResources["genesyscloud_user_roles"] = user_roles.ResourceUserRoles()
 }
 

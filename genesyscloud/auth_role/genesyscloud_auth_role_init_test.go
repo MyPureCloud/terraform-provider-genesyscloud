@@ -2,6 +2,7 @@ package auth_role
 
 import (
 	"sync"
+	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -29,6 +30,7 @@ func (r *registerTestInstance) registerTestResources() {
 	defer r.resourceMapMutex.Unlock()
 
 	providerResources[resourceName] = ResourceAuthRole()
+	providerResources["genesyscloud_routing_queue"] = gcloud.ResourceRoutingQueue()
 }
 
 // registerTestDataSources registers all data sources used in the tests.

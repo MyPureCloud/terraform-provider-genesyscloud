@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	authRole "terraform-provider-genesyscloud/genesyscloud/auth_role"
 	"terraform-provider-genesyscloud/genesyscloud/user_roles"
 	"testing"
 	"time"
@@ -195,8 +196,8 @@ func TestAccResourceTaskManagementWorkitem(t *testing.T) {
 					gcloud.GenerateRoutingSkillResource(skillResId1, skillResName1) +
 					gcloud.GenerateBasicUserResource(userResId1, userEmail1, userName1) +
 					externalContact.GenerateBasicExternalContactResource(externalContactResId1, externalContactTitle1) +
-					gcloud.GenerateAuthRoleResource(roleResId1, roleName1, "test role description",
-						gcloud.GenerateRolePermPolicy("workitems", "*", strconv.Quote("*")),
+					authRole.GenerateAuthRoleResource(roleResId1, roleName1, "test role description",
+						authRole.GenerateRolePermPolicy("workitems", "*", strconv.Quote("*")),
 					) +
 					user_roles.GenerateUserRoles("user_role_1", userResId1,
 						generateResourceRoles(

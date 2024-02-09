@@ -6,7 +6,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/util/lists"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v121/platformclientv2"
 )
 
 func validatePermissionPolicy(proxy *authRoleProxy, policy platformclientv2.Domainpermissionpolicy) error {
@@ -14,20 +14,31 @@ func validatePermissionPolicy(proxy *authRoleProxy, policy platformclientv2.Doma
 	if err != nil {
 		return fmt.Errorf("error requesting org permissions: %s", err)
 	}
-	if allowedPermissions == nil {
+	if len(*allowedPermissions) == 0 {
 		return fmt.Errorf("domain %s not found", *policy.Domain)
+	}
+
+	if *policy.EntityName == "*" {
+		return nil
 	}
 
 	// Check entity type (e.g. callableTimeSet) exists in the map of allowed permissions
 	if entityPermissions, ok := (*allowedPermissions)[*policy.EntityName]; ok {
 		// Check if the policy actions exist for the given domain permission e.g. callableTimeSet: add
 		for _, action := range *policy.ActionSet {
+			if action == "*" && len(entityPermissions) >= 1 {
+				break
+			}
+
+			var found bool
 			for _, entityPermission := range entityPermissions {
 				if action == *entityPermission.Action {
-					// action found. Check next action
+					// action found, move to next action
+					found = true
 					break
 				}
-				// action not found
+			}
+			if !found {
 				return fmt.Errorf("action %s not found for domain %s, entity name %s", action, *policy.Domain, *policy.EntityName)
 			}
 		}
@@ -35,7 +46,7 @@ func validatePermissionPolicy(proxy *authRoleProxy, policy platformclientv2.Doma
 		return nil
 	}
 
-	return fmt.Errorf("entity name %s not found for domain %s", *policy.EntityName, *policy.Domain)
+	return fmt.Errorf("entity_name %s not found for domain %s", *policy.EntityName, *policy.Domain)
 }
 
 func buildSdkRolePermissions(d *schema.ResourceData) *[]string {
@@ -235,4 +246,13 @@ func GenerateRolePermPolicy(domain string, entityName string, actions ...string)
 		action_set = [%s]
 	}
 	`, domain, entityName, strings.Join(actions, ","))
+}
+
+func GenerateDefaultAuthRoleDataSource(
+	resourceID string,
+	name string) string {
+	return fmt.Sprintf(`data "genesyscloud_auth_role" "%s" {
+		name = %s
+	}
+	`, resourceID, name)
 }

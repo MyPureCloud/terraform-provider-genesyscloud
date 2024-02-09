@@ -7,6 +7,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	authRole "terraform-provider-genesyscloud/genesyscloud/auth_role"
 	userRoles "terraform-provider-genesyscloud/genesyscloud/user_roles"
 	"testing"
 	"time"
@@ -941,13 +942,13 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 					gcloud.FalseValue, // Subdomain
 					gcloud.NullValue,
 				) + gcloud.GenerateRoutingQueueResourceBasic(queueResource1, queueName, "") +
-					gcloud.GenerateAuthRoleResource(
+					authRole.GenerateAuthRoleResource(
 						roleResource1,
 						roleName1,
 						roleDesc1,
-						gcloud.GenerateRolePermissions(permissions...),
-						gcloud.GenerateRolePermPolicy(qualityDomain, evaluationEntityType, strconv.Quote(editAction)),
-						gcloud.GenerateRolePermPolicy(qualityDomain, calibrationEntityType, strconv.Quote(addAction)),
+						authRole.GenerateRolePermissions(permissions...),
+						authRole.GenerateRolePermPolicy(qualityDomain, evaluationEntityType, strconv.Quote(editAction)),
+						authRole.GenerateRolePermPolicy(qualityDomain, calibrationEntityType, strconv.Quote(addAction)),
 					) +
 					userRoles.GenerateUserRoles(
 						userRoleResource1,
@@ -1048,13 +1049,13 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 					gcloud.FalseValue, // Subdomain
 					gcloud.NullValue,
 				) + gcloud.GenerateRoutingQueueResourceBasic(queueResource1, queueName, "") +
-					gcloud.GenerateAuthRoleResource(
+					authRole.GenerateAuthRoleResource(
 						roleResource1,
 						roleName1,
 						roleDesc1,
-						gcloud.GenerateRolePermissions(permissions...),
-						gcloud.GenerateRolePermPolicy(qualityDomain, evaluationEntityType, strconv.Quote(editAction)),
-						gcloud.GenerateRolePermPolicy(qualityDomain, calibrationEntityType, strconv.Quote(addAction)),
+						authRole.GenerateRolePermissions(permissions...),
+						authRole.GenerateRolePermPolicy(qualityDomain, evaluationEntityType, strconv.Quote(editAction)),
+						authRole.GenerateRolePermPolicy(qualityDomain, calibrationEntityType, strconv.Quote(addAction)),
 					) +
 					userRoles.GenerateUserRoles(
 						userRoleResource1,
@@ -1155,13 +1156,13 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 					gcloud.FalseValue, // Subdomain
 					gcloud.NullValue,
 				) + gcloud.GenerateRoutingQueueResourceBasic(queueResource1, queueName, "") +
-					gcloud.GenerateAuthRoleResource(
+					authRole.GenerateAuthRoleResource(
 						roleResource1,
 						roleName1,
 						roleDesc1,
-						gcloud.GenerateRolePermissions(permissions...),
-						gcloud.GenerateRolePermPolicy(qualityDomain, evaluationEntityType, strconv.Quote(editAction)),
-						gcloud.GenerateRolePermPolicy(qualityDomain, calibrationEntityType, strconv.Quote(addAction)),
+						authRole.GenerateRolePermissions(permissions...),
+						authRole.GenerateRolePermPolicy(qualityDomain, evaluationEntityType, strconv.Quote(editAction)),
+						authRole.GenerateRolePermPolicy(qualityDomain, calibrationEntityType, strconv.Quote(addAction)),
 					) +
 					userRoles.GenerateUserRoles(
 						userRoleResource1,
@@ -1262,13 +1263,13 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 					gcloud.FalseValue, // Subdomain
 					gcloud.NullValue,
 				) + gcloud.GenerateRoutingQueueResourceBasic(queueResource1, queueName, "") +
-					gcloud.GenerateAuthRoleResource(
+					authRole.GenerateAuthRoleResource(
 						roleResource1,
 						roleName1,
 						roleDesc1,
-						gcloud.GenerateRolePermissions(permissions...),
-						gcloud.GenerateRolePermPolicy(qualityDomain, evaluationEntityType, strconv.Quote(editAction)),
-						gcloud.GenerateRolePermPolicy(qualityDomain, calibrationEntityType, strconv.Quote(addAction)),
+						authRole.GenerateRolePermissions(permissions...),
+						authRole.GenerateRolePermPolicy(qualityDomain, evaluationEntityType, strconv.Quote(editAction)),
+						authRole.GenerateRolePermPolicy(qualityDomain, calibrationEntityType, strconv.Quote(addAction)),
 					) +
 					userRoles.GenerateUserRoles(
 						userRoleResource1,

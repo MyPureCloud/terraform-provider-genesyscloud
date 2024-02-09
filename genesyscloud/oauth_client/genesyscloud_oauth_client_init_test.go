@@ -3,7 +3,7 @@ package oauth_client
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"sync"
-	"terraform-provider-genesyscloud/genesyscloud"
+	authRole "terraform-provider-genesyscloud/genesyscloud/auth_role"
 	"testing"
 )
 
@@ -32,7 +32,7 @@ func (r *registerTestInstance) registerTestDataSources() {
 	defer r.datasourceMapMutex.Unlock()
 
 	providerDataSources[resourceName] = DataSourceOAuthClient()
-	providerDataSources["genesyscloud_auth_role"] = genesyscloud.DataSourceAuthRole()
+	providerDataSources["genesyscloud_auth_role"] = authRole.DataSourceAuthRole()
 }
 
 // initTestResources initializes all test resources and data sources.

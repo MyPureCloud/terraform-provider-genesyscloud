@@ -3,7 +3,7 @@ package auth_role
 import (
 	"context"
 	"fmt"
-	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v121/platformclientv2"
 )
 
 /*
@@ -20,6 +20,7 @@ type createAuthRoleFunc func(ctx context.Context, p *authRoleProxy, domainOrgani
 type getAllAuthRoleFunc func(ctx context.Context, p *authRoleProxy) (*[]platformclientv2.Domainorganizationrole, error)
 type getAuthRoleIdByNameFunc func(ctx context.Context, p *authRoleProxy, name string) (id string, retryable bool, err error)
 type getAuthRoleByIdFunc func(ctx context.Context, p *authRoleProxy, id string) (domainOrganizationRole *platformclientv2.Domainorganizationrole, responseCode int, err error)
+type getDefaultRoleIdFunc func(ctx context.Context, p *authRoleProxy, defaultRoleID string) (roleId string, err error)
 type updateAuthRoleFunc func(ctx context.Context, p *authRoleProxy, id string, domainOrganizationRole *platformclientv2.Domainorganizationroleupdate) (*platformclientv2.Domainorganizationrole, error)
 type deleteAuthRoleFunc func(ctx context.Context, p *authRoleProxy, id string) (responseCode int, err error)
 type restoreDefaultRolesFunc func(ctx context.Context, p *authRoleProxy, roles *[]platformclientv2.Domainorganizationrole) error
@@ -33,6 +34,7 @@ type authRoleProxy struct {
 	getAllAuthRoleAttr        getAllAuthRoleFunc
 	getAuthRoleIdByNameAttr   getAuthRoleIdByNameFunc
 	getAuthRoleByIdAttr       getAuthRoleByIdFunc
+	getDefaultRoleIdAttr      getDefaultRoleIdFunc
 	updateAuthRoleAttr        updateAuthRoleFunc
 	deleteAuthRoleAttr        deleteAuthRoleFunc
 	restoreDefaultRolesAttr   restoreDefaultRolesFunc
@@ -49,6 +51,7 @@ func newAuthRoleProxy(clientConfig *platformclientv2.Configuration) *authRolePro
 		getAllAuthRoleAttr:        getAllAuthRoleFn,
 		getAuthRoleIdByNameAttr:   getAuthRoleIdByNameFn,
 		getAuthRoleByIdAttr:       getAuthRoleByIdFn,
+		getDefaultRoleIdAttr:      getDefaultRoleIdFn,
 		updateAuthRoleAttr:        updateAuthRoleFn,
 		deleteAuthRoleAttr:        deleteAuthRoleFn,
 		restoreDefaultRolesAttr:   restoreDefaultRolesFn,
@@ -84,6 +87,11 @@ func (p *authRoleProxy) getAuthRoleIdByName(ctx context.Context, name string) (i
 // getAuthRoleById returns a single Genesys Cloud auth role by Id
 func (p *authRoleProxy) getAuthRoleById(ctx context.Context, id string) (authRole *platformclientv2.Domainorganizationrole, statusCode int, err error) {
 	return p.getAuthRoleByIdAttr(ctx, p, id)
+}
+
+// getAuthRoleById returns a single Genesys Cloud auth role by Id
+func (p *authRoleProxy) getDefaultRoleById(ctx context.Context, defaultRoleId string) (roleId string, err error) {
+	return p.getDefaultRoleIdAttr(ctx, p, defaultRoleId)
 }
 
 // updateAuthRole updates a Genesys Cloud auth role
@@ -134,6 +142,20 @@ func getAuthRoleByIdFn(ctx context.Context, p *authRoleProxy, id string) (authRo
 	return role, resp.StatusCode, nil
 }
 
+func getDefaultRoleIdFn(ctx context.Context, p *authRoleProxy, defaultRoleID string) (roleId string, err error) {
+	const pageSize = 1
+	const pageNum = 1
+	roles, _, getErr := p.authorizationApi.GetAuthorizationRoles(pageSize, pageNum, "", nil, "", "", "", nil, []string{defaultRoleID}, false, nil)
+	if getErr != nil {
+		return "", fmt.Errorf("Error requesting default role %s: %s", defaultRoleID, getErr)
+	}
+	if roles.Entities == nil || len(*roles.Entities) == 0 {
+		return "", fmt.Errorf("Default role not found: %s", defaultRoleID)
+	}
+
+	return *(*roles.Entities)[0].Id, nil
+}
+
 // updateAuthRoleFn is an implementation of the function to update a Genesys Cloud auth role
 func updateAuthRoleFn(ctx context.Context, p *authRoleProxy, id string, authRole *platformclientv2.Domainorganizationroleupdate) (*platformclientv2.Domainorganizationrole, error) {
 	role, _, err := p.authorizationApi.PutAuthorizationRole(id, *authRole)
@@ -146,7 +168,12 @@ func updateAuthRoleFn(ctx context.Context, p *authRoleProxy, id string, authRole
 
 // deleteAuthRoleFn is an implementation function for deleting a Genesys Cloud auth role
 func deleteAuthRoleFn(ctx context.Context, p *authRoleProxy, id string) (statusCode int, err error) {
-	return 0, nil
+	resp, err := p.authorizationApi.DeleteAuthorizationRole(id)
+	if err != nil {
+		return resp.StatusCode, err
+	}
+
+	return resp.StatusCode, nil
 }
 
 func restoreDefaultRolesFn(ctx context.Context, p *authRoleProxy, roles *[]platformclientv2.Domainorganizationrole) error {
