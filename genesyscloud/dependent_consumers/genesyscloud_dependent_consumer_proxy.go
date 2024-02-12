@@ -69,15 +69,19 @@ func retrievePooledClientFn(method gcloud.GetCustomConfigFunc) (resourceExporter
 
 func retrieveDependentConsumersFn(ctx context.Context, p *DependentConsumerProxy, resourceKeys resourceExporter.ResourceInfo) (resourceExporter.ResourceIDMetaMap, map[string][]string, error) {
 	resourceKey := resourceKeys.State.ID
+	resourceName := resourceKeys.Name
 	dependsMap := make(map[string][]string)
-	dependentResources, dependsMap, err := fetchDepConsumers(ctx, p, resourceKeys.Type, resourceKey, make(resourceExporter.ResourceIDMetaMap), dependsMap)
+	log.Printf("dependencies from initial call for : %v, and key is %v, and the resourses are %v\n", resourceName, resourceKey, dependsMap)
+	dependentResources, dependsMap, err := fetchDepConsumers(ctx, p, resourceKeys.Type, resourceKey, resourceName, make(resourceExporter.ResourceIDMetaMap), dependsMap)
+	log.Printf("dependencies from initial call for : %v, and key is %v, and the resourses are %v\n", resourceName, resourceKey, dependsMap)
+
 	if err != nil {
 		return nil, nil, err
 	}
 	return dependentResources, buildDependsMap(dependentResources, dependsMap, resourceKey), nil
 }
 
-func fetchDepConsumers(ctx context.Context, p *DependentConsumerProxy, resType string, resourceKey string, resources resourceExporter.ResourceIDMetaMap, dependsMap map[string][]string) (resourceExporter.ResourceIDMetaMap, map[string][]string, error) {
+func fetchDepConsumers(ctx context.Context, p *DependentConsumerProxy, resType string, resourceKey string, resourceName string, resources resourceExporter.ResourceIDMetaMap, dependsMap map[string][]string) (resourceExporter.ResourceIDMetaMap, map[string][]string, error) {
 	if resType == "genesyscloud_flow" {
 		// Fetches MetaData for the Flow
 		data, _, err := p.ArchitectApi.GetFlow(resourceKey, false)
@@ -92,6 +96,7 @@ func fetchDepConsumers(ctx context.Context, p *DependentConsumerProxy, resType s
 				pageCount := 1
 				const pageSize = 100
 				dependencies, _, err := p.ArchitectApi.GetArchitectDependencytrackingConsumedresources(resourceKey, *data.PublishedVersion.Id, objectType, nil, pageCount, pageSize)
+				log.Printf("dependencies from platform api call for : %v, and key is %v, and the resourses are %v\n", resourceName, resourceKey, dependencies)
 
 				if err != nil {
 					return nil, nil, err
@@ -107,7 +112,7 @@ func fetchDepConsumers(ctx context.Context, p *DependentConsumerProxy, resType s
 				// iterate dependencies
 				if pageCount < 2 {
 					resources, dependsMap, err = iterateDependencies(dependencies, resources, dependsMap, ctx, p)
-					log.Printf("dependencies GetArchitectDependencytrackingConsumedresources: %v\n", resources)
+					log.Printf("dependencies GetArchitectDependencytrackingConsumedresources for : %v, and key is %v, and the resourses are %v\n", resourceName, resourceKey, resources)
 					if err != nil {
 						return nil, nil, err
 					}
@@ -116,6 +121,8 @@ func fetchDepConsumers(ctx context.Context, p *DependentConsumerProxy, resType s
 
 				for pageNum := 1; pageNum <= pageCount; pageNum++ {
 					dependencies, _, err := p.ArchitectApi.GetArchitectDependencytrackingConsumedresources(resourceKey, *data.PublishedVersion.Id, objectType, nil, pageNum, pageSize)
+					log.Printf("dependencies GetArchitectDependencytrackingConsumedresources for : %v, and key is %v, and the resourses are %v\n", resourceName, resourceKey, resources)
+
 					if err != nil {
 						return nil, nil, err
 					}
@@ -156,8 +163,11 @@ func iterateDependencies(dependencies *platformclientv2.Consumedresourcesentityl
 			if _, resourceExists := resources[*consumer.Id]; !resourceExists {
 				resources[*consumer.Id] = &resourceExporter.ResourceMeta{Name: resourceFilter}
 				if resourceType == "genesyscloud_flow" {
-					innerDependentResources, innerDependsMap, err := fetchDepConsumers(ctx, p, resourceType, *consumer.Id, resources, dependsMap)
+					log.Printf("dependencies iterateDependencies for : %v, and key is %v, and the resourses are %v\n", resourceFilter, *consumer.Id, dependsMap)
+					innerDependentResources, innerDependsMap, err := fetchDepConsumers(ctx, p, resourceType, *consumer.Id, *consumer.Name, resources, dependsMap)
 					dependsMap = stringmap.MergeMaps(dependsMap, buildDependsMap(innerDependentResources, innerDependsMap, *consumer.Id))
+					log.Printf("dependencies iterateDependenciesafter for : %v, and key is %v, and the resourses are %v\n", resourceFilter, *consumer.Id, dependsMap)
+
 					if err != nil {
 						return nil, nil, err
 					}
