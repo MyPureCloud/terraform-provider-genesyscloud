@@ -185,7 +185,7 @@ func AuthRoleExporter() *resourceExporter.ResourceExporter {
 // DataSourceAuthRole registers the genesyscloud_auth_role data source
 func DataSourceAuthRole() *schema.Resource {
 	return &schema.Resource{
-		Description: `Genesys Cloud auth role data source. Select an auth role by name`,
+		Description: `Data source for Genesys Cloud Roles. Select a role by name.`,
 		ReadContext: gcloud.ReadWithPooledClient(DataSourceAuthRoleRead),
 		Schema: map[string]*schema.Schema{
 			"name": {
