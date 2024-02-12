@@ -2,6 +2,7 @@ package employeeperformance_externalmetrics_definition
 
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
@@ -38,7 +39,43 @@ func ResourceEmployeeperformanceExternalmetricsDefinition() *schema.Resource {
 			StateContext: schema.ImportStatePassthroughContext,
 		},
 		SchemaVersion: 1,
-		Schema:        map[string]*schema.Schema{},
+		Schema: map[string]*schema.Schema{
+			`name`: {
+				Description: `The name of the External Metric Definition`,
+				Required:    true,
+				Type:        schema.TypeString,
+			},
+			`precision`: {
+				Description:  `The decimal precision of the External Metric Definition. Must be at least 0 and at most 5`,
+				Required:     true,
+				Type:         schema.TypeInt,
+				ValidateFunc: validation.IntBetween(0, 5),
+			},
+			`default_objective_type`: {
+				Description:  `The default objective type of the External Metric Definition`,
+				Required:     true,
+				Type:         schema.TypeString,
+				ValidateFunc: validation.StringInSlice([]string{`HigherIsBetter`, `LowerIsBetter`, `TargetArea`}, false),
+			},
+			`enabled`: {
+				Description: `True if the External Metric Definition is enabled`,
+				Required:    true,
+				Type:        schema.TypeBool,
+			},
+			`unit`: {
+				Description:  `The unit of the External Metric Definition. Note: Changing the unit property will cause the external metric object to be dropped and recreated with a new ID.`,
+				Required:     true,
+				ForceNew:     true,
+				Type:         schema.TypeString,
+				ValidateFunc: validation.StringInSlice([]string{`Seconds`, `Percent`, `Number`, `Currency`}, false),
+			},
+			`unit_definition`: {
+				Description: `The unit definition of the External Metric Definition. Note: Changing the unit definition property will cause the external metric object to be dropped and recreated with a new ID.`,
+				Optional:    true,
+				ForceNew:    true,
+				Type:        schema.TypeString,
+			},
+		},
 	}
 }
 
@@ -46,25 +83,23 @@ func ResourceEmployeeperformanceExternalmetricsDefinition() *schema.Resource {
 func EmployeeperformanceExternalmetricsDefinitionExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: gcloud.GetAllWithPooledClient(getAllAuthEmployeeperformanceExternalmetricsDefinitions),
-		RefAttrs:         map[string]*resourceExporter.RefAttrSettings{
-			// TODO: Add any reference attributes here
-		},
+		AllowZeroValues:  []string{"precision"},
 	}
 }
 
 // DataSourceEmployeeperformanceExternalmetricsDefinition registers the genesyscloud_employeeperformance_externalmetrics_definition data source
 func DataSourceEmployeeperformanceExternalmetricsDefinition() *schema.Resource {
 	return &schema.Resource{
-		Description: `Genesys Cloud employeeperformance externalmetrics definition data source. Select an employeeperformance externalmetrics definition by name`,
+		Description: `Data source for Genesys Cloud Employeeperformance Externalmetrics Definition. Select a Employeeperformance Externalmetrics Definition by name.`,
 		ReadContext: gcloud.ReadWithPooledClient(dataSourceEmployeeperformanceExternalmetricsDefinitionRead),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
 		Schema: map[string]*schema.Schema{
 			"name": {
-				Description: `employeeperformance externalmetrics definition name`,
+				Description: `Employeeperformance Externalmetrics Definition name.`,
 				Type:        schema.TypeString,
-				Required:    true,
+				Optional:    true,
 			},
 		},
 	}

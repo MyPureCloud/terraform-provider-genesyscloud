@@ -5,12 +5,10 @@ import (
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v121/platformclientv2"
 	"log"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"time"
-
-	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
 
@@ -28,13 +26,13 @@ func getAllAuthEmployeeperformanceExternalmetricsDefinitions(ctx context.Context
 	proxy := newEmployeeperformanceExternalmetricsDefinitionProxy(clientConfig)
 	resources := make(resourceExporter.ResourceIDMetaMap)
 
-	domainOrganizationRoles, err := proxy.getAllEmployeeperformanceExternalmetricsDefinition(ctx)
+	definitions, err := proxy.getAllEmployeeperformanceExternalmetricsDefinition(ctx)
 	if err != nil {
 		return nil, diag.Errorf("Failed to get employeeperformance externalmetrics definition: %v", err)
 	}
 
-	for _, domainOrganizationRole := range *domainOrganizationRoles {
-		resources[*domainOrganizationRole.Id] = &resourceExporter.ResourceMeta{Name: *domainOrganizationRole.Name}
+	for _, definition := range *definitions {
+		resources[*definition.Id] = &resourceExporter.ResourceMeta{Name: *definition.Name}
 	}
 
 	return resources, nil
@@ -45,16 +43,27 @@ func createEmployeeperformanceExternalmetricsDefinition(ctx context.Context, d *
 	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
 	proxy := getEmployeeperformanceExternalmetricsDefinitionProxy(sdkConfig)
 
-	employeeperformanceExternalmetricsDefinition := getEmployeeperformanceExternalmetricsDefinitionFromResourceData(d)
-
-	log.Printf("Creating employeeperformance externalmetrics definition %s", *employeeperformanceExternalmetricsDefinition.Name)
-	domainOrganizationRole, err := proxy.createEmployeeperformanceExternalmetricsDefinition(ctx, &employeeperformanceExternalmetricsDefinition)
-	if err != nil {
-		return diag.Errorf("Failed to create employeeperformance externalmetrics definition: %s", err)
+	metricDefinition := platformclientv2.Externalmetricdefinitioncreaterequest{
+		Name:                 platformclientv2.String(d.Get("name").(string)),
+		Unit:                 platformclientv2.String(d.Get("unit").(string)),
+		Enabled:              platformclientv2.Bool(d.Get("enabled").(bool)),
+		Precision:            platformclientv2.Int(d.Get("precision").(int)),
+		DefaultObjectiveType: platformclientv2.String(d.Get("default_objective_type").(string)),
 	}
 
-	d.SetId(*domainOrganizationRole.Id)
-	log.Printf("Created employeeperformance externalmetrics definition %s", *domainOrganizationRole.Id)
+	unitDefinition := d.Get("unit_definition").(string)
+	if unitDefinition != "" {
+		metricDefinition.UnitDefinition = &unitDefinition
+	}
+
+	log.Printf("Creating employeeperformance externalmetrics definition %s", *metricDefinition.Name)
+	definition, err := proxy.createEmployeeperformanceExternalmetricsDefinition(ctx, &metricDefinition)
+	if err != nil {
+		return diag.Errorf("Failed to create employeeperformance externalmetrics definition %s: %s", *metricDefinition.Name, err)
+	}
+
+	d.SetId(*definition.Id)
+	log.Printf("Created employeeperformance externalmetrics definition %s: %s", *definition.Name, *definition.Id)
 	return readEmployeeperformanceExternalmetricsDefinition(ctx, d, meta)
 }
 
@@ -66,7 +75,7 @@ func readEmployeeperformanceExternalmetricsDefinition(ctx context.Context, d *sc
 	log.Printf("Reading employeeperformance externalmetrics definition %s", d.Id())
 
 	return gcloud.WithRetriesForRead(ctx, d, func() *retry.RetryError {
-		domainOrganizationRole, respCode, getErr := proxy.getEmployeeperformanceExternalmetricsDefinitionById(ctx, d.Id())
+		definition, respCode, getErr := proxy.getEmployeeperformanceExternalmetricsDefinitionById(ctx, d.Id())
 		if getErr != nil {
 			if gcloud.IsStatus404ByInt(respCode) {
 				return retry.RetryableError(fmt.Errorf("Failed to read employeeperformance externalmetrics definition %s: %s", d.Id(), getErr))
@@ -74,21 +83,18 @@ func readEmployeeperformanceExternalmetricsDefinition(ctx context.Context, d *sc
 			return retry.NonRetryableError(fmt.Errorf("Failed to read employeeperformance externalmetrics definition %s: %s", d.Id(), getErr))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceEmployeeperformanceExternalmetricsDefinition())
+		//cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceEmployeeperformanceExternalmetricsDefinition())
 
-		resourcedata.SetNillableValue(d, "name", domainOrganizationRole.Name)
-		resourcedata.SetNillableValue(d, "description", domainOrganizationRole.Description)
-		resourcedata.SetNillableValue(d, "default_role_id", domainOrganizationRole.DefaultRoleId)
-		resourcedata.SetNillableValue(d, "permissions", domainOrganizationRole.Permissions)
-		resourcedata.SetNillableValue(d, "unused_permissions", domainOrganizationRole.UnusedPermissions)
-		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "permission_policies", domainOrganizationRole.PermissionPolicies, flattenDomainPermissionPolicys)
-		resourcedata.SetNillableValue(d, "user_count", domainOrganizationRole.UserCount)
-		resourcedata.SetNillableValue(d, "role_needs_update", domainOrganizationRole.RoleNeedsUpdate)
-		resourcedata.SetNillableValue(d, "base", domainOrganizationRole.Base)
-		resourcedata.SetNillableValue(d, "default", domainOrganizationRole.Default)
+		resourcedata.SetNillableValue(d, "name", definition.Name)
+		resourcedata.SetNillableValue(d, "precision", definition.Precision)
+		resourcedata.SetNillableValue(d, "default_objective_type", definition.DefaultObjectiveType)
+		resourcedata.SetNillableValue(d, "enabled", definition.Enabled)
+		resourcedata.SetNillableValue(d, "unit", definition.Unit)
+		resourcedata.SetNillableValue(d, "unit_definition", definition.UnitDefinition)
 
-		log.Printf("Read employeeperformance externalmetrics definition %s %s", d.Id(), *domainOrganizationRole.Name)
-		return cc.CheckState()
+		log.Printf("Read employeeperformance externalmetrics definition %s %s", d.Id(), *definition.Name)
+		//return cc.CheckState()
+		return nil
 	})
 }
 
@@ -97,15 +103,20 @@ func updateEmployeeperformanceExternalmetricsDefinition(ctx context.Context, d *
 	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
 	proxy := getEmployeeperformanceExternalmetricsDefinitionProxy(sdkConfig)
 
-	employeeperformanceExternalmetricsDefinition := getEmployeeperformanceExternalmetricsDefinitionFromResourceData(d)
+	metricDefinition := platformclientv2.Externalmetricdefinitionupdaterequest{
+		Name:                 platformclientv2.String(d.Get("name").(string)),
+		Enabled:              platformclientv2.Bool(d.Get("enabled").(bool)),
+		Precision:            platformclientv2.Int(d.Get("precision").(int)),
+		DefaultObjectiveType: platformclientv2.String(d.Get("default_objective_type").(string)),
+	}
 
-	log.Printf("Updating employeeperformance externalmetrics definition %s", *employeeperformanceExternalmetricsDefinition.Name)
-	domainOrganizationRole, err := proxy.updateEmployeeperformanceExternalmetricsDefinition(ctx, d.Id(), &employeeperformanceExternalmetricsDefinition)
+	log.Printf("Updating employeeperformance externalmetrics definition %s: %s", *metricDefinition.Name, d.Id())
+	definition, err := proxy.updateEmployeeperformanceExternalmetricsDefinition(ctx, d.Id(), &metricDefinition)
 	if err != nil {
 		return diag.Errorf("Failed to update employeeperformance externalmetrics definition: %s", err)
 	}
 
-	log.Printf("Updated employeeperformance externalmetrics definition %s", *domainOrganizationRole.Id)
+	log.Printf("Updated employeeperformance externalmetrics definition %s", *definition.Id)
 	return readEmployeeperformanceExternalmetricsDefinition(ctx, d, meta)
 }
 

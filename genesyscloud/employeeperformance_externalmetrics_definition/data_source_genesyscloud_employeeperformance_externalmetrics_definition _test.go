@@ -1,7 +1,8 @@
-package genesyscloud
+package employeeperformance_externalmetrics_definition
 
 import (
 	"fmt"
+	"terraform-provider-genesyscloud/genesyscloud"
 	"testing"
 
 	"github.com/google/uuid"
@@ -17,8 +18,8 @@ func TestAccDataSourceEmployeePerformanceExternalMetricsDefinitions(t *testing.T
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { genesyscloud.TestAccPreCheck(t) },
+		ProviderFactories: genesyscloud.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Search by name
@@ -26,19 +27,18 @@ func TestAccDataSourceEmployeePerformanceExternalMetricsDefinitions(t *testing.T
 					defintionRes,
 					name,
 					"Seconds",
-					"",
 					"1",
 					"TargetArea",
 					"true",
 				) + generateEmployeePerformanceExternalMetricsDefinitionsDataSource(
 					defintionData,
 					name,
-					"genesyscloud_employeeperformance_externalmetrics_definitions."+defintionRes,
+					"genesyscloud_employeeperformance_externalmetrics_definition."+defintionRes,
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrPair(
-						"data.genesyscloud_employeeperformance_externalmetrics_definitions."+defintionData, "id",
-						"genesyscloud_employeeperformance_externalmetrics_definitions."+defintionRes, "id",
+						"data.genesyscloud_employeeperformance_externalmetrics_definition."+defintionData, "id",
+						"genesyscloud_employeeperformance_externalmetrics_definition."+defintionRes, "id",
 					),
 				),
 			},
@@ -47,7 +47,7 @@ func TestAccDataSourceEmployeePerformanceExternalMetricsDefinitions(t *testing.T
 }
 
 func generateEmployeePerformanceExternalMetricsDefinitionsDataSource(resourceID string, name string, dependsOnResource string) string {
-	return fmt.Sprintf(`data "genesyscloud_employeeperformance_externalmetrics_definitions" "%s" {
+	return fmt.Sprintf(`data "genesyscloud_employeeperformance_externalmetrics_definition" "%s" {
 		name = "%s"
 		depends_on=[%s]
 	}

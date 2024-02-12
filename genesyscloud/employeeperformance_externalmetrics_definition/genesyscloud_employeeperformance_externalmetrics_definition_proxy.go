@@ -17,11 +17,11 @@ out during testing.
 var internalProxy *employeeperformanceExternalmetricsDefinitionProxy
 
 // Type definitions for each func on our proxy so we can easily mock them out later
-type createEmployeeperformanceExternalmetricsDefinitionFunc func(ctx context.Context, p *employeeperformanceExternalmetricsDefinitionProxy, domainOrganizationRole *platformclientv2.Domainorganizationrole) (*platformclientv2.Domainorganizationrole, error)
-type getAllEmployeeperformanceExternalmetricsDefinitionFunc func(ctx context.Context, p *employeeperformanceExternalmetricsDefinitionProxy) (*[]platformclientv2.Domainorganizationrole, error)
+type createEmployeeperformanceExternalmetricsDefinitionFunc func(ctx context.Context, p *employeeperformanceExternalmetricsDefinitionProxy, domainOrganizationRole *platformclientv2.Externalmetricdefinitioncreaterequest) (*platformclientv2.Externalmetricdefinition, error)
+type getAllEmployeeperformanceExternalmetricsDefinitionFunc func(ctx context.Context, p *employeeperformanceExternalmetricsDefinitionProxy) (*[]platformclientv2.Externalmetricdefinition, error)
 type getEmployeeperformanceExternalmetricsDefinitionIdByNameFunc func(ctx context.Context, p *employeeperformanceExternalmetricsDefinitionProxy, name string) (id string, retryable bool, err error)
-type getEmployeeperformanceExternalmetricsDefinitionByIdFunc func(ctx context.Context, p *employeeperformanceExternalmetricsDefinitionProxy, id string) (domainOrganizationRole *platformclientv2.Domainorganizationrole, responseCode int, err error)
-type updateEmployeeperformanceExternalmetricsDefinitionFunc func(ctx context.Context, p *employeeperformanceExternalmetricsDefinitionProxy, id string, domainOrganizationRole *platformclientv2.Domainorganizationrole) (*platformclientv2.Domainorganizationrole, error)
+type getEmployeeperformanceExternalmetricsDefinitionByIdFunc func(ctx context.Context, p *employeeperformanceExternalmetricsDefinitionProxy, id string) (domainOrganizationRole *platformclientv2.Externalmetricdefinition, responseCode int, err error)
+type updateEmployeeperformanceExternalmetricsDefinitionFunc func(ctx context.Context, p *employeeperformanceExternalmetricsDefinitionProxy, id string, domainOrganizationRole *platformclientv2.Externalmetricdefinitionupdaterequest) (*platformclientv2.Externalmetricdefinition, error)
 type deleteEmployeeperformanceExternalmetricsDefinitionFunc func(ctx context.Context, p *employeeperformanceExternalmetricsDefinitionProxy, id string) (responseCode int, err error)
 
 // employeeperformanceExternalmetricsDefinitionProxy contains all of the methods that call genesys cloud APIs.
@@ -62,12 +62,12 @@ func getEmployeeperformanceExternalmetricsDefinitionProxy(clientConfig *platform
 }
 
 // createEmployeeperformanceExternalmetricsDefinition creates a Genesys Cloud employeeperformance externalmetrics definition
-func (p *employeeperformanceExternalmetricsDefinitionProxy) createEmployeeperformanceExternalmetricsDefinition(ctx context.Context, employeeperformanceExternalmetricsDefinition *platformclientv2.Domainorganizationrole) (*platformclientv2.Domainorganizationrole, error) {
+func (p *employeeperformanceExternalmetricsDefinitionProxy) createEmployeeperformanceExternalmetricsDefinition(ctx context.Context, employeeperformanceExternalmetricsDefinition *platformclientv2.Externalmetricdefinitioncreaterequest) (*platformclientv2.Externalmetricdefinition, error) {
 	return p.createEmployeeperformanceExternalmetricsDefinitionAttr(ctx, p, employeeperformanceExternalmetricsDefinition)
 }
 
 // getEmployeeperformanceExternalmetricsDefinition retrieves all Genesys Cloud employeeperformance externalmetrics definition
-func (p *employeeperformanceExternalmetricsDefinitionProxy) getAllEmployeeperformanceExternalmetricsDefinition(ctx context.Context) (*[]platformclientv2.Domainorganizationrole, error) {
+func (p *employeeperformanceExternalmetricsDefinitionProxy) getAllEmployeeperformanceExternalmetricsDefinition(ctx context.Context) (*[]platformclientv2.Externalmetricdefinition, error) {
 	return p.getAllEmployeeperformanceExternalmetricsDefinitionAttr(ctx, p)
 }
 
@@ -77,12 +77,12 @@ func (p *employeeperformanceExternalmetricsDefinitionProxy) getEmployeeperforman
 }
 
 // getEmployeeperformanceExternalmetricsDefinitionById returns a single Genesys Cloud employeeperformance externalmetrics definition by Id
-func (p *employeeperformanceExternalmetricsDefinitionProxy) getEmployeeperformanceExternalmetricsDefinitionById(ctx context.Context, id string) (employeeperformanceExternalmetricsDefinition *platformclientv2.Domainorganizationrole, statusCode int, err error) {
+func (p *employeeperformanceExternalmetricsDefinitionProxy) getEmployeeperformanceExternalmetricsDefinitionById(ctx context.Context, id string) (employeeperformanceExternalmetricsDefinition *platformclientv2.Externalmetricdefinition, statusCode int, err error) {
 	return p.getEmployeeperformanceExternalmetricsDefinitionByIdAttr(ctx, p, id)
 }
 
 // updateEmployeeperformanceExternalmetricsDefinition updates a Genesys Cloud employeeperformance externalmetrics definition
-func (p *employeeperformanceExternalmetricsDefinitionProxy) updateEmployeeperformanceExternalmetricsDefinition(ctx context.Context, id string, employeeperformanceExternalmetricsDefinition *platformclientv2.Domainorganizationrole) (*platformclientv2.Domainorganizationrole, error) {
+func (p *employeeperformanceExternalmetricsDefinitionProxy) updateEmployeeperformanceExternalmetricsDefinition(ctx context.Context, id string, employeeperformanceExternalmetricsDefinition *platformclientv2.Externalmetricdefinitionupdaterequest) (*platformclientv2.Externalmetricdefinition, error) {
 	return p.updateEmployeeperformanceExternalmetricsDefinitionAttr(ctx, p, id, employeeperformanceExternalmetricsDefinition)
 }
 
@@ -92,64 +92,64 @@ func (p *employeeperformanceExternalmetricsDefinitionProxy) deleteEmployeeperfor
 }
 
 // createEmployeeperformanceExternalmetricsDefinitionFn is an implementation function for creating a Genesys Cloud employeeperformance externalmetrics definition
-func createEmployeeperformanceExternalmetricsDefinitionFn(ctx context.Context, p *employeeperformanceExternalmetricsDefinitionProxy, employeeperformanceExternalmetricsDefinition *platformclientv2.Domainorganizationrole) (*platformclientv2.Domainorganizationrole, error) {
-	domainOrganizationRole, _, err := p.gamificationApi.PostEmployeeperformanceExternalmetricsDefinitions(*employeeperformanceExternalmetricsDefinition)
+func createEmployeeperformanceExternalmetricsDefinitionFn(ctx context.Context, p *employeeperformanceExternalmetricsDefinitionProxy, employeeperformanceExternalmetricsDefinition *platformclientv2.Externalmetricdefinitioncreaterequest) (*platformclientv2.Externalmetricdefinition, error) {
+	definition, _, err := p.gamificationApi.PostEmployeeperformanceExternalmetricsDefinitions(*employeeperformanceExternalmetricsDefinition)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to create employeeperformance externalmetrics definition: %s", err)
 	}
 
-	return domainOrganizationRole, nil
+	return definition, nil
 }
 
 // getAllEmployeeperformanceExternalmetricsDefinitionFn is the implementation for retrieving all employeeperformance externalmetrics definition in Genesys Cloud
-func getAllEmployeeperformanceExternalmetricsDefinitionFn(ctx context.Context, p *employeeperformanceExternalmetricsDefinitionProxy) (*[]platformclientv2.Domainorganizationrole, error) {
-	var allDomainOrganizationRoles []platformclientv2.Domainorganizationrole
+func getAllEmployeeperformanceExternalmetricsDefinitionFn(ctx context.Context, p *employeeperformanceExternalmetricsDefinitionProxy) (*[]platformclientv2.Externalmetricdefinition, error) {
+	var allDefinitions []platformclientv2.Externalmetricdefinition
 	const pageSize = 100
 
-	domainOrganizationRoles, _, err := p.gamificationApi.GetEmployeeperformanceExternalmetricsDefinitions()
+	definitions, _, err := p.gamificationApi.GetEmployeeperformanceExternalmetricsDefinitions(pageSize, 1)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to get domain organization role: %v", err)
 	}
-	if domainOrganizationRoles.Entities == nil || len(*domainOrganizationRoles.Entities) == 0 {
-		return &allDomainOrganizationRoles, nil
+	if definitions.Entities == nil || len(*definitions.Entities) == 0 {
+		return &allDefinitions, nil
 	}
-	for _, domainOrganizationRole := range *domainOrganizationRoles.Entities {
-		allDomainOrganizationRoles = append(allDomainOrganizationRoles, domainOrganizationRole)
+	for _, definition := range *definitions.Entities {
+		allDefinitions = append(allDefinitions, definition)
 	}
 
-	for pageNum := 2; pageNum <= *domainOrganizationRoles.PageCount; pageNum++ {
-		domainOrganizationRoles, _, err := p.gamificationApi.GetEmployeeperformanceExternalmetricsDefinitions()
+	for pageNum := 2; pageNum <= *definitions.PageCount; pageNum++ {
+		definitions, _, err := p.gamificationApi.GetEmployeeperformanceExternalmetricsDefinitions(pageSize, pageNum)
 		if err != nil {
 			return nil, fmt.Errorf("Failed to get domain organization role: %v", err)
 		}
 
-		if domainOrganizationRoles.Entities == nil || len(*domainOrganizationRoles.Entities) == 0 {
+		if definitions.Entities == nil || len(*definitions.Entities) == 0 {
 			break
 		}
 
-		for _, domainOrganizationRole := range *domainOrganizationRoles.Entities {
-			allDomainOrganizationRoles = append(allDomainOrganizationRoles, domainOrganizationRole)
+		for _, definition := range *definitions.Entities {
+			allDefinitions = append(allDefinitions, definition)
 		}
 	}
 
-	return &allDomainOrganizationRoles, nil
+	return &allDefinitions, nil
 }
 
 // getEmployeeperformanceExternalmetricsDefinitionIdByNameFn is an implementation of the function to get a Genesys Cloud employeeperformance externalmetrics definition by name
 func getEmployeeperformanceExternalmetricsDefinitionIdByNameFn(ctx context.Context, p *employeeperformanceExternalmetricsDefinitionProxy, name string) (id string, retryable bool, err error) {
-	domainOrganizationRoles, _, err := p.gamificationApi.GetEmployeeperformanceExternalmetricsDefinitions()
+	definitions, err := getAllEmployeeperformanceExternalmetricsDefinitionFn(ctx, p)
 	if err != nil {
 		return "", false, err
 	}
 
-	if domainOrganizationRoles.Entities == nil || len(*domainOrganizationRoles.Entities) == 0 {
+	if definitions == nil || len(*definitions) == 0 {
 		return "", true, fmt.Errorf("No employeeperformance externalmetrics definition found with name %s", name)
 	}
 
-	for _, domainOrganizationRole := range *domainOrganizationRoles.Entities {
-		if *domainOrganizationRole.Name == name {
-			log.Printf("Retrieved the employeeperformance externalmetrics definition id %s by name %s", *domainOrganizationRole.Id, name)
-			return *domainOrganizationRole.Id, false, nil
+	for _, definition := range *definitions {
+		if *definition.Name == name {
+			log.Printf("Retrieved the employeeperformance externalmetrics definition id %s by name %s", *definition.Id, name)
+			return *definition.Id, false, nil
 		}
 	}
 
@@ -157,22 +157,22 @@ func getEmployeeperformanceExternalmetricsDefinitionIdByNameFn(ctx context.Conte
 }
 
 // getEmployeeperformanceExternalmetricsDefinitionByIdFn is an implementation of the function to get a Genesys Cloud employeeperformance externalmetrics definition by Id
-func getEmployeeperformanceExternalmetricsDefinitionByIdFn(ctx context.Context, p *employeeperformanceExternalmetricsDefinitionProxy, id string) (employeeperformanceExternalmetricsDefinition *platformclientv2.Domainorganizationrole, statusCode int, err error) {
-	domainOrganizationRole, resp, err := p.gamificationApi.GetEmployeeperformanceExternalmetricsDefinition(id)
+func getEmployeeperformanceExternalmetricsDefinitionByIdFn(ctx context.Context, p *employeeperformanceExternalmetricsDefinitionProxy, id string) (employeeperformanceExternalmetricsDefinition *platformclientv2.Externalmetricdefinition, statusCode int, err error) {
+	definition, resp, err := p.gamificationApi.GetEmployeeperformanceExternalmetricsDefinition(id)
 	if err != nil {
 		return nil, resp.StatusCode, fmt.Errorf("Failed to retrieve employeeperformance externalmetrics definition by id %s: %s", id, err)
 	}
 
-	return domainOrganizationRole, resp.StatusCode, nil
+	return definition, resp.StatusCode, nil
 }
 
 // updateEmployeeperformanceExternalmetricsDefinitionFn is an implementation of the function to update a Genesys Cloud employeeperformance externalmetrics definition
-func updateEmployeeperformanceExternalmetricsDefinitionFn(ctx context.Context, p *employeeperformanceExternalmetricsDefinitionProxy, id string, employeeperformanceExternalmetricsDefinition *platformclientv2.Domainorganizationrole) (*platformclientv2.Domainorganizationrole, error) {
-	domainOrganizationRole, _, err := p.gamificationApi.PatchEmployeeperformanceExternalmetricsDefinition(id, *domainOrganizationRole)
+func updateEmployeeperformanceExternalmetricsDefinitionFn(ctx context.Context, p *employeeperformanceExternalmetricsDefinitionProxy, id string, employeeperformanceExternalmetricsDefinition *platformclientv2.Externalmetricdefinitionupdaterequest) (*platformclientv2.Externalmetricdefinition, error) {
+	definition, _, err := p.gamificationApi.PatchEmployeeperformanceExternalmetricsDefinition(id, *employeeperformanceExternalmetricsDefinition)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to update employeeperformance externalmetrics definition: %s", err)
 	}
-	return domainOrganizationRole, nil
+	return definition, nil
 }
 
 // deleteEmployeeperformanceExternalmetricsDefinitionFn is an implementation function for deleting a Genesys Cloud employeeperformance externalmetrics definition

@@ -5,8 +5,6 @@ import (
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
 )
 
 /*
@@ -31,7 +29,6 @@ func (r *registerTestInstance) registerTestResources() {
 	defer r.resourceMapMutex.Unlock()
 
 	providerResources[resourceName] = ResourceEmployeeperformanceExternalmetricsDefinition()
-	// TODO: Add references
 }
 
 // registerTestDataSources registers all data sources used in the tests.
@@ -40,7 +37,6 @@ func (r *registerTestInstance) registerTestDataSources() {
 	defer r.datasourceMapMutex.Unlock()
 
 	providerDataSources[resourceName] = DataSourceEmployeeperformanceExternalmetricsDefinition()
-	// TODO: Add references
 }
 
 // initTestResources initializes all test resources and data sources.
