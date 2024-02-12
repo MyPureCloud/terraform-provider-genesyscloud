@@ -1,4 +1,4 @@
-package employeeperformance_externalmetrics_definition
+package employeeperformance_externalmetrics_definitions
 
 import (
 	"fmt"
@@ -33,12 +33,12 @@ func TestAccDataSourceEmployeePerformanceExternalMetricsDefinitions(t *testing.T
 				) + generateEmployeePerformanceExternalMetricsDefinitionsDataSource(
 					defintionData,
 					name,
-					"genesyscloud_employeeperformance_externalmetrics_definition."+defintionRes,
+					"genesyscloud_employeeperformance_externalmetrics_definitions."+defintionRes,
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrPair(
-						"data.genesyscloud_employeeperformance_externalmetrics_definition."+defintionData, "id",
-						"genesyscloud_employeeperformance_externalmetrics_definition."+defintionRes, "id",
+						"data.genesyscloud_employeeperformance_externalmetrics_definitions."+defintionData, "id",
+						"genesyscloud_employeeperformance_externalmetrics_definitions."+defintionRes, "id",
 					),
 				),
 			},
@@ -47,7 +47,7 @@ func TestAccDataSourceEmployeePerformanceExternalMetricsDefinitions(t *testing.T
 }
 
 func generateEmployeePerformanceExternalMetricsDefinitionsDataSource(resourceID string, name string, dependsOnResource string) string {
-	return fmt.Sprintf(`data "genesyscloud_employeeperformance_externalmetrics_definition" "%s" {
+	return fmt.Sprintf(`data "genesyscloud_employeeperformance_externalmetrics_definitions" "%s" {
 		name = "%s"
 		depends_on=[%s]
 	}

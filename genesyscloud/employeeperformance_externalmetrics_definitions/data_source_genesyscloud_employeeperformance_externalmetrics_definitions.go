@@ -1,4 +1,4 @@
-package employeeperformance_externalmetrics_definition
+package employeeperformance_externalmetrics_definitions
 
 import (
 	"context"

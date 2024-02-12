@@ -1,4 +1,4 @@
-package employeeperformance_externalmetrics_definition
+package employeeperformance_externalmetrics_definitions
 
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -17,7 +17,7 @@ resource_genesycloud_employeeperformance_externalmetrics_definition_schema.go ho
 3.  The datasource schema definitions for the employeeperformance_externalmetrics_definition datasource.
 4.  The resource exporter configuration for the employeeperformance_externalmetrics_definition exporter.
 */
-const resourceName = "genesyscloud_employeeperformance_externalmetrics_definition"
+const resourceName = "genesyscloud_employeeperformance_externalmetrics_definitions"
 
 // SetRegistrar registers all of the resources, datasources and exporters in the package
 func SetRegistrar(regInstance registrar.Registrar) {
@@ -26,7 +26,7 @@ func SetRegistrar(regInstance registrar.Registrar) {
 	regInstance.RegisterExporter(resourceName, EmployeeperformanceExternalmetricsDefinitionExporter())
 }
 
-// ResourceEmployeeperformanceExternalmetricsDefinition registers the genesyscloud_employeeperformance_externalmetrics_definition resource with Terraform
+// ResourceEmployeeperformanceExternalmetricsDefinition registers the genesyscloud_employeeperformance_externalmetrics_definitions resource with Terraform
 func ResourceEmployeeperformanceExternalmetricsDefinition() *schema.Resource {
 	return &schema.Resource{
 		Description: `Genesys Cloud employeeperformance externalmetrics definition`,

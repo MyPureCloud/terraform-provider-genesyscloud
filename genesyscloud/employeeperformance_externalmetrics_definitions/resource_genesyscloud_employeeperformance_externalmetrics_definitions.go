@@ -1,4 +1,4 @@
-package employeeperformance_externalmetrics_definition
+package employeeperformance_externalmetrics_definitions
 
 import (
 	"context"
@@ -7,6 +7,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v121/platformclientv2"
 	"log"
+	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"time"
 
@@ -83,7 +84,7 @@ func readEmployeeperformanceExternalmetricsDefinition(ctx context.Context, d *sc
 			return retry.NonRetryableError(fmt.Errorf("Failed to read employeeperformance externalmetrics definition %s: %s", d.Id(), getErr))
 		}
 
-		//cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceEmployeeperformanceExternalmetricsDefinition())
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceEmployeeperformanceExternalmetricsDefinition())
 
 		resourcedata.SetNillableValue(d, "name", definition.Name)
 		resourcedata.SetNillableValue(d, "precision", definition.Precision)
@@ -93,8 +94,7 @@ func readEmployeeperformanceExternalmetricsDefinition(ctx context.Context, d *sc
 		resourcedata.SetNillableValue(d, "unit_definition", definition.UnitDefinition)
 
 		log.Printf("Read employeeperformance externalmetrics definition %s %s", d.Id(), *definition.Name)
-		//return cc.CheckState()
-		return nil
+		return cc.CheckState()
 	})
 }
 
