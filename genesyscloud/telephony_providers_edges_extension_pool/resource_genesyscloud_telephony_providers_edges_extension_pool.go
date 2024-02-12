@@ -22,11 +22,9 @@ func getAllExtensionPools(ctx context.Context, clientConfig *platformclientv2.Co
 	resources := make(resourceExporter.ResourceIDMetaMap)
 	extensionPoolProxy := getExtensionPoolProxy(clientConfig)
 	extensionPools, err := extensionPoolProxy.getAllExtensionPools(ctx)
-
 	if err != nil {
 		return nil, diag.Errorf("failed to get all extension pools: %s", err)
 	}
-
 	if extensionPools != nil {
 		for _, extensionPool := range *extensionPools {
 			resources[*extensionPool.Id] = &resourceExporter.ResourceMeta{Name: *extensionPool.StartNumber}
