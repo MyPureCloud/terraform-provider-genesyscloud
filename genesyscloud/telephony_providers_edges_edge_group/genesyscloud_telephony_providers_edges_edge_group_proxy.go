@@ -44,7 +44,6 @@ func getEdgeGroupProxy(clientConfig *platformclientv2.Configuration) *edgeGroupP
 	if internalProxy == nil {
 		internalProxy = newEdgeGroupProxy(clientConfig)
 	}
-
 	return internalProxy
 }
 
@@ -73,7 +72,6 @@ func getEdgeGroupFn(ctx context.Context, p *edgeGroupProxy, edgeGroupId string) 
 	if err != nil {
 		return nil, resp, err
 	}
-
 	return edgeGroup, resp, nil
 }
 
@@ -87,7 +85,6 @@ func putEdgeGroupFn(ctx context.Context, p *edgeGroupProxy, edgeGroupId string, 
 	if err != nil {
 		return nil, resp, err
 	}
-
 	return edgeGroup, resp, nil
 }
 
@@ -96,14 +93,12 @@ func postEdgeGroupFn(ctx context.Context, p *edgeGroupProxy, body platformclient
 	if err != nil {
 		return nil, resp, err
 	}
-
 	return edgeGroup, resp, nil
 }
 
 func getAllEdgeGroupsFn(ctx context.Context, p *edgeGroupProxy) (*[]platformclientv2.Edgegroup, error) {
 	const pageSize = 100
 	var allEdgeGroups []platformclientv2.Edgegroup
-
 	for pageNum := 1; ; pageNum++ {
 
 		edgeGroups, _, err := p.edgesApi.GetTelephonyProvidersEdgesEdgegroups(pageSize, pageNum, "", "", false)

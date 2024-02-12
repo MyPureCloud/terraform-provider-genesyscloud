@@ -38,9 +38,7 @@ func createExtensionPool(ctx context.Context, d *schema.ResourceData, meta inter
 	startNumber := d.Get("start_number").(string)
 	endNumber := d.Get("end_number").(string)
 	description := d.Get("description").(string)
-
 	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
-	//telephonyApi := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
 	extensionPoolProxy := getExtensionPoolProxy(sdkConfig)
 
 	log.Printf("Creating Extension pool %s", startNumber)
@@ -54,7 +52,6 @@ func createExtensionPool(ctx context.Context, d *schema.ResourceData, meta inter
 	}
 
 	d.SetId(*extensionPool.Id)
-
 	log.Printf("Created Extension pool %s %s", startNumber, *extensionPool.Id)
 	return readExtensionPool(ctx, d, meta)
 }
@@ -99,9 +96,7 @@ func updateExtensionPool(ctx context.Context, d *schema.ResourceData, meta inter
 	description := d.Get("description").(string)
 
 	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
-	//telephonyApi := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
 	extensionPoolProxy := getExtensionPoolProxy(sdkConfig)
-
 	extensionPoolBody := platformclientv2.Extensionpool{
 		StartNumber: &startNumber,
 		EndNumber:   &endNumber,

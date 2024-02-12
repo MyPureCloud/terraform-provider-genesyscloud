@@ -36,7 +36,6 @@ func createEdgeGroup(ctx context.Context, d *schema.ResourceData, meta interface
 	}
 
 	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
-	//edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
 	edgeGroupProxy := getEdgeGroupProxy(sdkConfig)
 
 	diagErr := gcloud.RetryWhen(gcloud.IsStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
