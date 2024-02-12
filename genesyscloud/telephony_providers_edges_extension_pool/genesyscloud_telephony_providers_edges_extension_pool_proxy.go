@@ -100,3 +100,26 @@ func postExtensionPoolFn(ctx context.Context, p *extensionPoolProxy, body platfo
 
 	return extensionPool, resp, nil
 }
+
+func getAllExtensionPoolsFn(ctx context.Context, p *extensionPoolProxy) (*[]platformclientv2.Extensionpool, error) {
+
+	const pageSize = 100
+	var allExtensionPools []platformclientv2.Extensionpool
+
+	for pageNum := 1; ; pageNum++ {
+		extensionPools, _, err := p.edgesApi.GetTelephonyProvidersEdgesExtensionpools(pageSize, pageNum, "", "")
+		if err != nil {
+			return nil, err
+		}
+		if extensionPools.Entities == nil || len(*extensionPools.Entities) == 0 {
+			break
+		}
+		for _, extensionPool := range *extensionPools.Entities {
+			if extensionPool.State != nil && *extensionPool.State != "deleted" {
+				allExtensionPools = append(allExtensionPools, extensionPool)
+			}
+		}
+	}
+
+	return &allExtensionPools, nil
+}
