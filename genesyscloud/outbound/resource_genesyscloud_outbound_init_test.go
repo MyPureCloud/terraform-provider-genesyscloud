@@ -7,6 +7,7 @@ import (
 	obCallableTimeset "terraform-provider-genesyscloud/genesyscloud/outbound_callabletimeset"
 	outboundCampaignrule "terraform-provider-genesyscloud/genesyscloud/outbound_campaignrule"
 	obContactList "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
+	"terraform-provider-genesyscloud/genesyscloud/outbound_dnclist"
 	obRuleset "terraform-provider-genesyscloud/genesyscloud/outbound_ruleset"
 	outboundSequence "terraform-provider-genesyscloud/genesyscloud/outbound_sequence"
 	edgeSite "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site"
@@ -38,7 +39,7 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_outbound_sequence"] = outboundSequence.ResourceOutboundSequence()
 	providerResources["genesyscloud_outbound_settings"] = ResourceOutboundSettings()
 
-	providerResources["genesyscloud_outbound_dnclist"] = ResourceOutboundDncList()
+	providerResources["genesyscloud_outbound_dnclist"] = outbound_dnclist.ResourceOutboundDncList()
 
 	// external package dependencies for outbound
 	providerResources["genesyscloud_telephony_providers_edges_site"] = edgeSite.ResourceSite()
@@ -63,7 +64,7 @@ func (r *registerTestInstance) registerTestDataSources() {
 	providerDataSources["genesyscloud_outbound_messagingcampaign"] = dataSourceOutboundMessagingcampaign()
 	providerDataSources["genesyscloud_outbound_contactlistfilter"] = dataSourceOutboundContactListFilter()
 	providerDataSources["genesyscloud_outbound_sequence"] = outboundSequence.DataSourceOutboundSequence()
-	providerDataSources["genesyscloud_outbound_dnclist"] = dataSourceOutboundDncList()
+	providerDataSources["genesyscloud_outbound_dnclist"] = outbound_dnclist.dataSourceOutboundDncList()
 
 	// external package dependencies for outbound
 	providerDataSources["genesyscloud_telephony_providers_edges_site"] = edgeSite.DataSourceSite()

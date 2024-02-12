@@ -3,6 +3,7 @@ package outbound
 import (
 	"fmt"
 	"strconv"
+	"terraform-provider-genesyscloud/genesyscloud/outbound_dnclist"
 	"testing"
 
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
@@ -117,16 +118,16 @@ func TestAccResourceOutboundCallAnalysisResponseSet(t *testing.T) {
 				Config: `data "genesyscloud_auth_division_home" "home" {}` + obContactList.GenerateOutboundContactList(
 					contactListResourceId,
 					contactListName,
-					NullValue,
-					NullValue,
+					outbound_dnclist.NullValue,
+					outbound_dnclist.NullValue,
 					[]string{},
 					[]string{strconv.Quote("Cell")},
 					FalseValue,
-					NullValue,
-					NullValue,
+					outbound_dnclist.NullValue,
+					outbound_dnclist.NullValue,
 					obContactList.GeneratePhoneColumnsBlock("Cell",
 						"cell",
-						NullValue,
+						outbound_dnclist.NullValue,
 					),
 				) + gcloud.GenerateRoutingWrapupcodeResource(
 					wrapupCodeResourceId,

@@ -1,4 +1,4 @@
-package outbound
+package outbound_dnclist
 
 import (
 	"context"
@@ -13,20 +13,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v121/platformclientv2"
 )
-
-func dataSourceOutboundDncList() *schema.Resource {
-	return &schema.Resource{
-		Description: "Data source for Genesys Cloud Outbound DNC Lists. Select a DNC list by name.",
-		ReadContext: gcloud.ReadWithPooledClient(dataSourceOutboundDncListRead),
-		Schema: map[string]*schema.Schema{
-			"name": {
-				Description: "DNC List name.",
-				Type:        schema.TypeString,
-				Required:    true,
-			},
-		},
-	}
-}
 
 func dataSourceOutboundDncListRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	sdkConfig := m.(*gcloud.ProviderMeta).ClientConfig

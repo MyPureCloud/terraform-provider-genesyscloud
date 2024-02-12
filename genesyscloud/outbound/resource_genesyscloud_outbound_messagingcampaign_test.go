@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"terraform-provider-genesyscloud/genesyscloud/outbound_dnclist"
 	"testing"
 	"time"
 
@@ -35,13 +36,13 @@ func TestAccResourceOutboundMessagingCampaign(t *testing.T) {
 		contactListResource   = obContactList.GenerateOutboundContactList(
 			contactListResourceId,
 			contactListName,
-			NullValue,
-			NullValue,
+			outbound_dnclist.NullValue,
+			outbound_dnclist.NullValue,
 			[]string{},
 			[]string{strconv.Quote(column1), strconv.Quote(column2)},
-			NullValue,
-			NullValue,
-			NullValue,
+			outbound_dnclist.NullValue,
+			outbound_dnclist.NullValue,
+			outbound_dnclist.NullValue,
 			obContactList.GeneratePhoneColumnsBlock(
 				column1,
 				"cell",
@@ -66,7 +67,7 @@ func TestAccResourceOutboundMessagingCampaign(t *testing.T) {
 		// DNC List
 		dncListResourceId = "dnc_list"
 		dncListName       = "Test DNC List " + uuid.NewString()
-		dncListResource   = GenerateOutboundDncListBasic(
+		dncListResource   = outbound_dnclist.GenerateOutboundDncListBasic(
 			dncListResourceId,
 			dncListName,
 		)

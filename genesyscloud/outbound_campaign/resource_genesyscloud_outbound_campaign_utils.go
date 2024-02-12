@@ -8,6 +8,7 @@ import (
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	"terraform-provider-genesyscloud/genesyscloud/outbound"
 	obContactList "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
+	"terraform-provider-genesyscloud/genesyscloud/outbound_dnclist"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
 	"github.com/google/uuid"
@@ -275,7 +276,7 @@ func GenerateReferencedResourcesForOutboundCampaignTests(
 			obContactList.GeneratePhoneColumnsBlock("Home", "home", strconv.Quote("Home")))
 	}
 	if dncListResourceId != "" {
-		dncList = outbound.GenerateOutboundDncListBasic(dncListResourceId, "tf dnc list "+uuid.NewString())
+		dncList = outbound_dnclist.GenerateOutboundDncListBasic(dncListResourceId, "tf dnc list "+uuid.NewString())
 	}
 	if queueResourceId != "" {
 		queue = gcloud.GenerateRoutingQueueResourceBasic(queueResourceId, "tf test queue "+uuid.NewString())

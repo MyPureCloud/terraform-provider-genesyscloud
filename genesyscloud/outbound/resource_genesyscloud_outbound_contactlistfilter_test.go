@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"terraform-provider-genesyscloud/genesyscloud/outbound_dnclist"
 	"testing"
 
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
@@ -52,17 +53,17 @@ func TestAccResourceOutboundContactListFilter(t *testing.T) {
 	contactListResource := obContactList.GenerateOutboundContactList(
 		contactListResourceId,
 		contactListName,
-		NullValue,
-		NullValue,
+		outbound_dnclist.NullValue,
+		outbound_dnclist.NullValue,
 		[]string{},
 		[]string{strconv.Quote(column), strconv.Quote(columnUpdated)},
-		NullValue,
-		NullValue,
-		NullValue,
+		outbound_dnclist.NullValue,
+		outbound_dnclist.NullValue,
+		outbound_dnclist.NullValue,
 		obContactList.GeneratePhoneColumnsBlock(
 			column,
 			"cell",
-			NullValue,
+			outbound_dnclist.NullValue,
 		),
 	)
 
