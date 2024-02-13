@@ -17,31 +17,34 @@ type getOutboundDnclistByIdFunc func(ctx context.Context, p *outboundDnclistProx
 type getOutboundDnclistByNameFunc func(ctx context.Context, p *outboundDnclistProxy, name string) (dnclistId string, retryable bool, err error)
 type updateOutboundDnclistFunc func(ctx context.Context, p *outboundDnclistProxy, dnclistId string, dnclist *platformclientv2.Dnclist) (*platformclientv2.Dnclist, *platformclientv2.APIResponse, error)
 type deleteOutboundDnclistFunc func(ctx context.Context, p *outboundDnclistProxy, dnclistId string) (*platformclientv2.APIResponse, error)
+type uploadPhoneEntriesToDncListFunc func(p *outboundDnclistProxy, dncList *platformclientv2.Dnclist, entry interface{}) (*platformclientv2.APIResponse, diag.Diagnostics)
 
 // outboundDnclistProxy contains all the methods that call genesys cloud APIs
 type outboundDnclistProxy struct {
-	clientConfig                 *platformclientv2.Configuration
-	outboundApi                  *platformclientv2.OutboundApi
-	createOutboundDnclistAttr    createOutboundDnclistFunc
-	getAllOutboundDnclistAttr    getAllOutboundDnclistFunc
-	getOutboundDnclistByIdAttr   getOutboundDnclistByIdFunc
-	getOutboundDnclistByNameAttr getOutboundDnclistByNameFunc
-	updateOutboundDnclistAttr    updateOutboundDnclistFunc
-	deleteOutboundDnclistAttr    deleteOutboundDnclistFunc
+	clientConfig                    *platformclientv2.Configuration
+	outboundApi                     *platformclientv2.OutboundApi
+	createOutboundDnclistAttr       createOutboundDnclistFunc
+	getAllOutboundDnclistAttr       getAllOutboundDnclistFunc
+	getOutboundDnclistByIdAttr      getOutboundDnclistByIdFunc
+	getOutboundDnclistByNameAttr    getOutboundDnclistByNameFunc
+	updateOutboundDnclistAttr       updateOutboundDnclistFunc
+	deleteOutboundDnclistAttr       deleteOutboundDnclistFunc
+	uploadPhoneEntriesToDncListAttr uploadPhoneEntriesToDncListFunc
 }
 
 // newOutboundDnclistProxy initializes the dnclist proxy with the data needed for communication with the genesys cloud
 func newOutboundDnclistProxy(clientConfig *platformclientv2.Configuration) *outboundDnclistProxy {
 	api := platformclientv2.NewOutboundApiWithConfig(clientConfig)
 	return &outboundDnclistProxy{
-		clientConfig:                 clientConfig,
-		outboundApi:                  api,
-		createOutboundDnclistAttr:    createOutboundDnclistFn,
-		getAllOutboundDnclistAttr:    getAllOutboundDnclistFn,
-		getOutboundDnclistByIdAttr:   getOutboundDnclistByIdFn,
-		getOutboundDnclistByNameAttr: getOutboundDnclistByNameFn,
-		updateOutboundDnclistAttr:    updateOutboundDnclistFn,
-		deleteOutboundDnclistAttr:    deleteOutboundDnclistFn,
+		clientConfig:                    clientConfig,
+		outboundApi:                     api,
+		createOutboundDnclistAttr:       createOutboundDnclistFn,
+		getAllOutboundDnclistAttr:       getAllOutboundDnclistFn,
+		getOutboundDnclistByIdAttr:      getOutboundDnclistByIdFn,
+		getOutboundDnclistByNameAttr:    getOutboundDnclistByNameFn,
+		updateOutboundDnclistAttr:       updateOutboundDnclistFn,
+		deleteOutboundDnclistAttr:       deleteOutboundDnclistFn,
+		uploadPhoneEntriesToDncListAttr: uploadPhoneEntriesToDncListFn,
 	}
 }
 
@@ -82,6 +85,10 @@ func (p *outboundDnclistProxy) deleteOutboundDnclist(ctx context.Context, dnclis
 	return p.deleteOutboundDnclistAttr(ctx, p, dnclistId)
 }
 
+func (p *outboundDnclistProxy) uploadPhoneEntriesToDncList(dncList *platformclientv2.Dnclist, entry interface{}) (*platformclientv2.APIResponse, diag.Diagnostics) {
+	return p.uploadPhoneEntriesToDncListAttr(p, dncList, entry)
+}
+
 func createOutboundDnclistFn(ctx context.Context, p *outboundDnclistProxy, dnclist *platformclientv2.Dnclistcreate) (*platformclientv2.Dnclist, int, error) {
 	list, resp, err := p.outboundApi.PostOutboundDnclists(*dnclist)
 	if err != nil {
@@ -92,8 +99,9 @@ func createOutboundDnclistFn(ctx context.Context, p *outboundDnclistProxy, dncli
 
 func getAllOutboundDnclistFn(ctx context.Context, p *outboundDnclistProxy) (*[]platformclientv2.Dnclist, int, error) {
 	var allDnclists []platformclientv2.Dnclist
+	const pageSize = 100
 
-	dnclists, resp, err := p.outboundApi.GetOutboundDnclists(false, false, 100, 1, true, "", "", "", []string{}, "", "")
+	dnclists, resp, err := p.outboundApi.GetOutboundDnclists(false, false, pageSize, 1, true, "", "", "", []string{}, "", "")
 	if err != nil {
 		return nil, 0, fmt.Errorf("Failed to get dnclists: %v", err)
 	}
@@ -108,7 +116,6 @@ func getAllOutboundDnclistFn(ctx context.Context, p *outboundDnclistProxy) (*[]p
 
 	var statusCode int
 	for pageNum := 2; pageNum <= *dnclists.PageCount; pageNum++ {
-		const pageSize = 100
 		dnclists, resp, err := p.outboundApi.GetOutboundDnclists(false, false, pageSize, pageNum, true, "", "", "", []string{}, "", "")
 		if err != nil {
 			return nil, 0, fmt.Errorf("Failed to get dnclists: %v", err)
@@ -139,7 +146,7 @@ func updateOutboundDnclistFn(ctx context.Context, p *outboundDnclistProxy, dncli
 	return outboundDncList, resp, nil
 }
 
-func uploadPhoneEntriesToDncList(p *outboundDnclistProxy, dncList *platformclientv2.Dnclist, entry interface{}) (*platformclientv2.APIResponse, diag.Diagnostics) {
+func uploadPhoneEntriesToDncListFn(p *outboundDnclistProxy, dncList *platformclientv2.Dnclist, entry interface{}) (*platformclientv2.APIResponse, diag.Diagnostics) {
 	var phoneNumbers []string
 	if entryMap, ok := entry.(map[string]interface{}); ok && len(entryMap) > 0 {
 		if phoneNumbersList := entryMap["phone_numbers"].([]interface{}); phoneNumbersList != nil {

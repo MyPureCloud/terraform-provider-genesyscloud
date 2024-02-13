@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
-	"terraform-provider-genesyscloud/genesyscloud/outbound_dnclist"
+	obDnclist "terraform-provider-genesyscloud/genesyscloud/outbound_dnclist"
 	"testing"
 	"time"
 
@@ -67,7 +67,7 @@ func TestAccResourceOutboundMessagingCampaign(t *testing.T) {
 		// DNC List
 		dncListResourceId = "dnc_list"
 		dncListName       = "Test DNC List " + uuid.NewString()
-		dncListResource   = outbound_dnclist.GenerateOutboundDncListBasic(
+		dncListResource   = obDnclist.GenerateOutboundDncListBasic(
 			dncListResourceId,
 			dncListName,
 		)
@@ -139,7 +139,7 @@ func TestAccResourceOutboundMessagingCampaign(t *testing.T) {
 						messagesPerMin,
 						alwaysRunning,
 						"genesyscloud_outbound_callabletimeset."+callableTimeSetResourceId+".id",
-						[]string{"genesyscloud_outbound_dnclist." + dncListResourceId + ".id"},
+						[]string{"genesyscloud_obDnclist." + dncListResourceId + ".id"},
 						[]string{"genesyscloud_outbound_contactlistfilter." + clfResourceId + ".id"},
 						generateOutboundMessagingCampaignSmsConfig(
 							smsConfigMessageColumn,
@@ -174,7 +174,7 @@ func TestAccResourceOutboundMessagingCampaign(t *testing.T) {
 					resource.TestCheckResourceAttrPair("genesyscloud_outbound_messagingcampaign."+resourceId, "callable_time_set_id",
 						"genesyscloud_outbound_callabletimeset."+callableTimeSetResourceId, "id"),
 					resource.TestCheckResourceAttrPair("genesyscloud_outbound_messagingcampaign."+resourceId, "dnc_list_ids.0",
-						"genesyscloud_outbound_dnclist."+dncListResourceId, "id"),
+						"genesyscloud_obDnclist."+dncListResourceId, "id"),
 					resource.TestCheckResourceAttrPair("genesyscloud_outbound_messagingcampaign."+resourceId, "contact_list_filter_ids.0",
 						"genesyscloud_outbound_contactlistfilter."+clfResourceId, "id"),
 					resource.TestCheckResourceAttrPair("genesyscloud_outbound_messagingcampaign."+resourceId, "contact_list_id",
@@ -195,7 +195,7 @@ func TestAccResourceOutboundMessagingCampaign(t *testing.T) {
 						messagesPerMin,
 						alwaysRunning,
 						"genesyscloud_outbound_callabletimeset."+callableTimeSetResourceId+".id",
-						[]string{"genesyscloud_outbound_dnclist." + dncListResourceId + ".id"},
+						[]string{"genesyscloud_obDnclist." + dncListResourceId + ".id"},
 						[]string{"genesyscloud_outbound_contactlistfilter." + clfResourceId + ".id"},
 						generateOutboundMessagingCampaignSmsConfig(
 							smsConfigMessageColumn,
@@ -231,7 +231,7 @@ func TestAccResourceOutboundMessagingCampaign(t *testing.T) {
 					resource.TestCheckResourceAttrPair("genesyscloud_outbound_messagingcampaign."+resourceId, "callable_time_set_id",
 						"genesyscloud_outbound_callabletimeset."+callableTimeSetResourceId, "id"),
 					resource.TestCheckResourceAttrPair("genesyscloud_outbound_messagingcampaign."+resourceId, "dnc_list_ids.0",
-						"genesyscloud_outbound_dnclist."+dncListResourceId, "id"),
+						"genesyscloud_obDnclist."+dncListResourceId, "id"),
 					resource.TestCheckResourceAttrPair("genesyscloud_outbound_messagingcampaign."+resourceId, "contact_list_filter_ids.0",
 						"genesyscloud_outbound_contactlistfilter."+clfResourceId, "id"),
 					resource.TestCheckResourceAttrPair("genesyscloud_outbound_messagingcampaign."+resourceId, "contact_list_id",
@@ -253,7 +253,7 @@ func TestAccResourceOutboundMessagingCampaign(t *testing.T) {
 						messagesPerMinUpdate,
 						alwaysRunningUpdate,
 						"genesyscloud_outbound_callabletimeset."+callableTimeSetResourceId+".id",
-						[]string{"genesyscloud_outbound_dnclist." + dncListResourceId + ".id"},
+						[]string{"genesyscloud_obDnclist." + dncListResourceId + ".id"},
 						[]string{"genesyscloud_outbound_contactlistfilter." + clfResourceId + ".id"},
 						generateOutboundMessagingCampaignSmsConfig(
 							smsConfigMessageColumn,

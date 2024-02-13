@@ -81,7 +81,7 @@ func createOutboundDncList(ctx context.Context, d *schema.ResourceData, meta int
 	if len(entries) > 0 {
 		if *sdkDncListCreate.DncSourceType == "rds" {
 			for _, entry := range entries {
-				_, err := uploadPhoneEntriesToDncList(proxy, outboundDncList, entry)
+				_, err := proxy.uploadPhoneEntriesToDncList(outboundDncList, entry)
 				if err != nil {
 					return err
 				}
@@ -146,7 +146,7 @@ func updateOutboundDncList(ctx context.Context, d *schema.ResourceData, meta int
 		if len(entries) > 0 {
 			if *sdkDncList.DncSourceType == "rds" {
 				for _, entry := range entries {
-					response, err := uploadPhoneEntriesToDncList(proxy, outboundDncList, entry)
+					response, err := proxy.uploadPhoneEntriesToDncList(outboundDncList, entry)
 					if err != nil {
 						return response, err
 					}
