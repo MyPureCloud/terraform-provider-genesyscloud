@@ -1,13 +1,12 @@
-package genesyscloud
+package architect_schedulegroups
 
 import (
 	"fmt"
-	"log"
 	"strings"
+	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	"testing"
 
 	"github.com/google/uuid"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/mypurecloud/platform-client-sdk-go/v121/platformclientv2"
@@ -43,23 +42,23 @@ func TestAccResourceArchitectScheduleGroups(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
+		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Create
-				Config: generateArchitectSchedulesResource( // Create Open schedule
+				Config: gcloud.GenerateArchitectSchedulesResource( // Create Open schedule
 					schedResource1,
 					openSched,
-					NullValue,
+					gcloud.NullValue,
 					schedDesc,
 					start,
 					end,
 					rrule,
-				) + generateArchitectSchedulesResource( // Create Closed schedule
+				) + gcloud.GenerateArchitectSchedulesResource( // Create Closed schedule
 					schedResource2,
 					closedSched,
-					NullValue,
+					gcloud.NullValue,
 					schedDesc,
 					start,
 					end,
@@ -67,7 +66,7 @@ func TestAccResourceArchitectScheduleGroups(t *testing.T) {
 				) + generateArchitectScheduleGroupsResource(
 					schedGroupResource1,
 					name,
-					NullValue,
+					gcloud.NullValue,
 					description,
 					time_zone,
 					generateSchedules("open_schedules_id", "genesyscloud_architect_schedules."+schedResource1+".id"),
@@ -79,31 +78,31 @@ func TestAccResourceArchitectScheduleGroups(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_architect_schedulegroups."+schedGroupResource1, "time_zone", time_zone),
 					resource.TestCheckResourceAttrPair("genesyscloud_architect_schedulegroups."+schedGroupResource1, "open_schedules_id.0", "genesyscloud_architect_schedules."+schedResource1, "id"),
 					resource.TestCheckResourceAttrPair("genesyscloud_architect_schedulegroups."+schedGroupResource1, "closed_schedules_id.0", "genesyscloud_architect_schedules."+schedResource2, "id"),
-					TestDefaultHomeDivision("genesyscloud_architect_schedulegroups."+schedGroupResource1),
+					gcloud.TestDefaultHomeDivision("genesyscloud_architect_schedulegroups."+schedGroupResource1),
 				),
 			},
 			{
 				// Update to add Holiday Schedule
-				Config: generateArchitectSchedulesResource( // Create Open schedule
+				Config: gcloud.GenerateArchitectSchedulesResource( // Create Open schedule
 					schedResource1,
 					openSched,
-					NullValue,
+					gcloud.NullValue,
 					schedDesc,
 					start,
 					end,
 					rrule,
-				) + generateArchitectSchedulesResource( // Create Closed schedule
+				) + gcloud.GenerateArchitectSchedulesResource( // Create Closed schedule
 					schedResource2,
 					closedSched,
-					NullValue,
+					gcloud.NullValue,
 					schedDesc,
 					start,
 					end,
 					rrule,
-				) + generateArchitectSchedulesResource( // Create Holiday schedule
+				) + gcloud.GenerateArchitectSchedulesResource( // Create Holiday schedule
 					schedResource3,
 					holidaySched,
-					NullValue,
+					gcloud.NullValue,
 					schedDesc,
 					start,
 					end,
@@ -111,7 +110,7 @@ func TestAccResourceArchitectScheduleGroups(t *testing.T) {
 				) + generateArchitectScheduleGroupsResource(
 					schedGroupResource1,
 					name,
-					NullValue,
+					gcloud.NullValue,
 					description,
 					time_zone,
 					generateSchedules("open_schedules_id", "genesyscloud_architect_schedules."+schedResource1+".id"),
@@ -125,12 +124,12 @@ func TestAccResourceArchitectScheduleGroups(t *testing.T) {
 					resource.TestCheckResourceAttrPair("genesyscloud_architect_schedulegroups."+schedGroupResource1, "open_schedules_id.0", "genesyscloud_architect_schedules."+schedResource1, "id"),
 					resource.TestCheckResourceAttrPair("genesyscloud_architect_schedulegroups."+schedGroupResource1, "closed_schedules_id.0", "genesyscloud_architect_schedules."+schedResource2, "id"),
 					resource.TestCheckResourceAttrPair("genesyscloud_architect_schedulegroups."+schedGroupResource1, "holiday_schedules_id.0", "genesyscloud_architect_schedules."+schedResource3, "id"),
-					TestDefaultHomeDivision("genesyscloud_architect_schedulegroups."+schedGroupResource1),
+					gcloud.TestDefaultHomeDivision("genesyscloud_architect_schedulegroups."+schedGroupResource1),
 				),
 			},
 			{
 				// Create with new division
-				Config: GenerateAuthDivisionBasic(divResource, divName) + generateArchitectSchedulesResource( // Create Open schedule
+				Config: gcloud.GenerateAuthDivisionBasic(divResource, divName) + gcloud.GenerateArchitectSchedulesResource( // Create Open schedule
 					schedResource4,
 					openSched2,
 					"genesyscloud_auth_division."+divResource+".id",
@@ -138,7 +137,7 @@ func TestAccResourceArchitectScheduleGroups(t *testing.T) {
 					start,
 					end,
 					rrule,
-				) + generateArchitectSchedulesResource( // Create Closed schedule
+				) + gcloud.GenerateArchitectSchedulesResource( // Create Closed schedule
 					schedResource5,
 					closedSched2,
 					"genesyscloud_auth_division."+divResource+".id",
@@ -201,33 +200,6 @@ func generateSchedules(
 	`, propertyName, strings.Join(scheduleIds, ","))
 }
 
-func cleanupArchitectScheduleGroups(idPrefix string) {
-	architectApi := platformclientv2.NewArchitectApi()
-
-	for pageNum := 1; ; pageNum++ {
-		const pageSize = 100
-		architectScheduleGroups, _, getErr := architectApi.GetArchitectSchedulegroups(pageNum, pageSize, "", "", "", "", nil)
-		if getErr != nil {
-			return
-		}
-
-		if architectScheduleGroups.Entities == nil || len(*architectScheduleGroups.Entities) == 0 {
-			break
-		}
-
-		for _, scheduleGroup := range *architectScheduleGroups.Entities {
-			if scheduleGroup.Name != nil && strings.HasPrefix(*scheduleGroup.Name, idPrefix) {
-				_, delErr := architectApi.DeleteArchitectSchedulegroup(*scheduleGroup.Id)
-				if delErr != nil {
-					diag.Errorf("failed to delete architect schedule group %s (%s): %s", *scheduleGroup.Id, *scheduleGroup.Name, delErr)
-					return
-				}
-				log.Printf("Deleted architect schedule group %s (%s)", *scheduleGroup.Id, *scheduleGroup.Name)
-			}
-		}
-	}
-}
-
 func testVerifyScheduleGroupsDestroyed(state *terraform.State) error {
 	archAPI := platformclientv2.NewArchitectApi()
 	for _, rs := range state.RootModule().Resources {
@@ -238,7 +210,7 @@ func testVerifyScheduleGroupsDestroyed(state *terraform.State) error {
 		schedGroup, resp, err := archAPI.GetArchitectSchedulegroup(rs.Primary.ID)
 		if schedGroup != nil {
 			return fmt.Errorf("Schedule group (%s) still exists", rs.Primary.ID)
-		} else if IsStatus404(resp) {
+		} else if gcloud.IsStatus404(resp) {
 			// Schedule group not found as expected
 			continue
 		} else {
