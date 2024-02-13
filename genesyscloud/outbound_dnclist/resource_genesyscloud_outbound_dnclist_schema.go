@@ -12,7 +12,7 @@ const resourceName = "genesyscloud_outbound_dnclist"
 
 // SetRegistrar registers all the resources and exporters in the package
 func SetRegistrar(l registrar.Registrar) {
-	l.RegisterDataSource(resourceName, dataSourceOutboundDncList())
+	l.RegisterDataSource(resourceName, DataSourceOutboundDncList())
 	l.RegisterResource(resourceName, ResourceOutboundDncList())
 	l.RegisterExporter(resourceName, OutboundDncListExporter())
 }
@@ -107,7 +107,7 @@ func ResourceOutboundDncList() *schema.Resource {
 	}
 }
 
-func dataSourceOutboundDncList() *schema.Resource {
+func DataSourceOutboundDncList() *schema.Resource {
 	return &schema.Resource{
 		Description: "Data source for Genesys Cloud Outbound DNC Lists. Select a DNC list by name.",
 		ReadContext: gcloud.ReadWithPooledClient(dataSourceOutboundDncListRead),

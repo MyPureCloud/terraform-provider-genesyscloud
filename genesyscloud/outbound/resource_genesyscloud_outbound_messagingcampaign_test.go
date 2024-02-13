@@ -36,13 +36,13 @@ func TestAccResourceOutboundMessagingCampaign(t *testing.T) {
 		contactListResource   = obContactList.GenerateOutboundContactList(
 			contactListResourceId,
 			contactListName,
-			outbound_dnclist.NullValue,
-			outbound_dnclist.NullValue,
+			gcloud.NullValue,
+			gcloud.NullValue,
 			[]string{},
 			[]string{strconv.Quote(column1), strconv.Quote(column2)},
-			outbound_dnclist.NullValue,
-			outbound_dnclist.NullValue,
-			outbound_dnclist.NullValue,
+			gcloud.NullValue,
+			gcloud.NullValue,
+			gcloud.NullValue,
 			obContactList.GeneratePhoneColumnsBlock(
 				column1,
 				"cell",

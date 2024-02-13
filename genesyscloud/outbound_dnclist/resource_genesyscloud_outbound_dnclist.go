@@ -106,7 +106,7 @@ func updateOutboundDncList(ctx context.Context, d *schema.ResourceData, meta int
 	entries := d.Get("entries").([]interface{})
 
 	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
-	outboundApi := platformclientv2.NewOutboundApiWithConfig(sdkConfig)
+	proxy := getOutboundDnclistProxy(sdkConfig)
 
 	sdkDncList := platformclientv2.Dnclist{
 		DncCodes: &dncCodes,
@@ -134,19 +134,19 @@ func updateOutboundDncList(ctx context.Context, d *schema.ResourceData, meta int
 	log.Printf("Updating Outbound DNC list %s", name)
 	diagErr := gcloud.RetryWhen(gcloud.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		// Get current Outbound DNC list version
-		outboundDncList, resp, getErr := outboundApi.GetOutboundDnclist(d.Id(), false, false)
+		outboundDncList, resp, getErr := proxy.getOutboundDnclistById(ctx, d.Id())
 		if getErr != nil {
 			return resp, diag.Errorf("Failed to read Outbound DNC list %s: %s", d.Id(), getErr)
 		}
 		sdkDncList.Version = outboundDncList.Version
-		outboundDncList, _, updateErr := outboundApi.PutOutboundDnclist(d.Id(), sdkDncList)
+		outboundDncList, _, updateErr := proxy.updateOutboundDnclist(ctx, d.Id(), &sdkDncList)
 		if updateErr != nil {
 			return resp, diag.Errorf("Failed to update Outbound DNC list %s: %s", name, updateErr)
 		}
 		if len(entries) > 0 {
 			if *sdkDncList.DncSourceType == "rds" {
 				for _, entry := range entries {
-					response, err := uploadPhoneEntriesToDncList(outboundApi, outboundDncList, entry)
+					response, err := uploadPhoneEntriesToDncList(proxy, outboundDncList, entry)
 					if err != nil {
 						return response, err
 					}
@@ -167,12 +167,12 @@ func updateOutboundDncList(ctx context.Context, d *schema.ResourceData, meta int
 
 func readOutboundDncList(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
-	outboundApi := platformclientv2.NewOutboundApiWithConfig(sdkConfig)
+	proxy := getOutboundDnclistProxy(sdkConfig)
 
 	log.Printf("Reading Outbound DNC list %s", d.Id())
 
 	return gcloud.WithRetriesForRead(ctx, d, func() *retry.RetryError {
-		sdkDncList, resp, getErr := outboundApi.GetOutboundDnclist(d.Id(), false, false)
+		sdkDncList, resp, getErr := proxy.getOutboundDnclistById(ctx, d.Id())
 		if getErr != nil {
 			if gcloud.IsStatus404(resp) {
 				return retry.RetryableError(fmt.Errorf("failed to read Outbound DNC list %s: %s", d.Id(), getErr))
@@ -219,11 +219,11 @@ func readOutboundDncList(ctx context.Context, d *schema.ResourceData, meta inter
 
 func deleteOutboundDncList(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
-	outboundApi := platformclientv2.NewOutboundApiWithConfig(sdkConfig)
+	proxy := getOutboundDnclistProxy(sdkConfig)
 
 	diagErr := gcloud.RetryWhen(gcloud.IsStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		log.Printf("Deleting Outbound DNC list")
-		resp, err := outboundApi.DeleteOutboundDnclist(d.Id())
+		resp, err := proxy.deleteOutboundDnclist(ctx, d.Id())
 		if err != nil {
 			return resp, diag.Errorf("Failed to delete Outbound DNC list: %s", err)
 		}
@@ -234,7 +234,7 @@ func deleteOutboundDncList(ctx context.Context, d *schema.ResourceData, meta int
 	}
 
 	return gcloud.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
-		_, resp, err := outboundApi.GetOutboundDnclist(d.Id(), false, false)
+		_, resp, err := proxy.getOutboundDnclistById(ctx, d.Id())
 		if err != nil {
 			if gcloud.IsStatus404(resp) {
 				// Outbound DNC list deleted

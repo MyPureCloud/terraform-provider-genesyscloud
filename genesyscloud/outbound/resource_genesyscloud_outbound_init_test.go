@@ -64,7 +64,7 @@ func (r *registerTestInstance) registerTestDataSources() {
 	providerDataSources["genesyscloud_outbound_messagingcampaign"] = dataSourceOutboundMessagingcampaign()
 	providerDataSources["genesyscloud_outbound_contactlistfilter"] = dataSourceOutboundContactListFilter()
 	providerDataSources["genesyscloud_outbound_sequence"] = outboundSequence.DataSourceOutboundSequence()
-	providerDataSources["genesyscloud_outbound_dnclist"] = outbound_dnclist.dataSourceOutboundDncList()
+	providerDataSources["genesyscloud_outbound_dnclist"] = outbound_dnclist.DataSourceOutboundDncList()
 
 	// external package dependencies for outbound
 	providerDataSources["genesyscloud_telephony_providers_edges_site"] = edgeSite.DataSourceSite()

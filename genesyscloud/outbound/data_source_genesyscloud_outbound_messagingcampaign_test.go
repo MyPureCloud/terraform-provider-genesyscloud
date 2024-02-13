@@ -3,7 +3,6 @@ package outbound
 import (
 	"fmt"
 	"strconv"
-	"terraform-provider-genesyscloud/genesyscloud/outbound_dnclist"
 	"testing"
 
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
@@ -52,13 +51,13 @@ func TestAccDataSourceOutboundMessagingCampaign(t *testing.T) {
 		contactListResource = obContactList.GenerateOutboundContactList(
 			contactListResourceId,
 			contactListName,
-			outbound_dnclist.NullValue,
-			outbound_dnclist.NullValue,
+			gcloud.NullValue,
+			gcloud.NullValue,
 			[]string{},
 			[]string{strconv.Quote(column1), strconv.Quote(column2)},
 			FalseValue,
-			outbound_dnclist.NullValue,
-			outbound_dnclist.NullValue,
+			gcloud.NullValue,
+			gcloud.NullValue,
 			obContactList.GeneratePhoneColumnsBlock(
 				column1,
 				"cell",

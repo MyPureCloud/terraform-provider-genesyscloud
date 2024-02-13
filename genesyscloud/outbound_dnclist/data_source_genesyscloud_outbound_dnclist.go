@@ -11,26 +11,22 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v121/platformclientv2"
 )
 
 func dataSourceOutboundDncListRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	sdkConfig := m.(*gcloud.ProviderMeta).ClientConfig
-	outboundAPI := platformclientv2.NewOutboundApiWithConfig(sdkConfig)
+	proxy := getOutboundDnclistProxy(sdkConfig)
 	name := d.Get("name").(string)
 
 	return gcloud.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
-		const pageNum = 1
-		const pageSize = 100
-		dncLists, _, getErr := outboundAPI.GetOutboundDnclists(false, false, pageSize, pageNum, true, "", name, "", []string{}, "", "")
+		dnclistId, _, getErr := proxy.getOutboundDnclistByName(ctx, name)
 		if getErr != nil {
 			return retry.NonRetryableError(fmt.Errorf("error requesting dnc lists %s: %s", name, getErr))
 		}
-		if dncLists.Entities == nil || len(*dncLists.Entities) == 0 {
+		if &dnclistId == nil || len(dnclistId) == 0 {
 			return retry.RetryableError(fmt.Errorf("no dnc lists found with name %s", name))
 		}
-		dncList := (*dncLists.Entities)[0]
-		d.SetId(*dncList.Id)
+		d.SetId(dnclistId)
 		return nil
 	})
 }

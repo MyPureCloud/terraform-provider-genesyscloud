@@ -13,12 +13,12 @@ var internalProxy *outboundDnclistProxy
 // type definitions for each func on our proxy
 type createOutboundDnclistFunc func(ctx context.Context, p *outboundDnclistProxy, dnclist *platformclientv2.Dnclistcreate) (*platformclientv2.Dnclist, int, error)
 type getAllOutboundDnclistFunc func(ctx context.Context, p *outboundDnclistProxy) (*[]platformclientv2.Dnclist, int, error)
-type getOutboundDnclistByIdFunc func(ctx context.Context, p *outboundDnclistProxy, dnclistId string) (dnclist *platformclientv2.Dnclist, responseCode int, err error)
+type getOutboundDnclistByIdFunc func(ctx context.Context, p *outboundDnclistProxy, dnclistId string) (*platformclientv2.Dnclist, *platformclientv2.APIResponse, error)
 type getOutboundDnclistByNameFunc func(ctx context.Context, p *outboundDnclistProxy, name string) (dnclistId string, retryable bool, err error)
-type updateOutboundDnclistFunc func(ctx context.Context, p *outboundDnclistProxy, dnclistId string, dnclist *platformclientv2.Dnclist) (*platformclientv2.Dnclist, int, error)
-type deleteOutboundDnclistFunc func(ctx context.Context, p *outboundDnclistProxy, dnclistId string) (responseCode int, err error)
+type updateOutboundDnclistFunc func(ctx context.Context, p *outboundDnclistProxy, dnclistId string, dnclist *platformclientv2.Dnclist) (*platformclientv2.Dnclist, *platformclientv2.APIResponse, error)
+type deleteOutboundDnclistFunc func(ctx context.Context, p *outboundDnclistProxy, dnclistId string) (*platformclientv2.APIResponse, error)
 
-// outboundDnclistProxy contains all of the methods that call genesys cloud APIs
+// outboundDnclistProxy contains all the methods that call genesys cloud APIs
 type outboundDnclistProxy struct {
 	clientConfig                 *platformclientv2.Configuration
 	outboundApi                  *platformclientv2.OutboundApi
@@ -49,7 +49,6 @@ func getOutboundDnclistProxy(clientConfig *platformclientv2.Configuration) *outb
 	if internalProxy == nil {
 		internalProxy = newOutboundDnclistProxy(clientConfig)
 	}
-
 	return internalProxy
 }
 
@@ -64,7 +63,7 @@ func (p *outboundDnclistProxy) getAllOutboundDnclist(ctx context.Context) (*[]pl
 }
 
 // getOutboundDnclistById returns a single Genesys Cloud Outbound Dnclist by Id
-func (p *outboundDnclistProxy) getOutboundDnclistById(ctx context.Context, dnclistId string) (dnclist *platformclientv2.Dnclist, statusCode int, err error) {
+func (p *outboundDnclistProxy) getOutboundDnclistById(ctx context.Context, dnclistId string) (*platformclientv2.Dnclist, *platformclientv2.APIResponse, error) {
 	return p.getOutboundDnclistByIdAttr(ctx, p, dnclistId)
 }
 
@@ -74,12 +73,12 @@ func (p *outboundDnclistProxy) getOutboundDnclistByName(ctx context.Context, nam
 }
 
 // updateOutboundDnclist updates a Genesys Cloud Outbound Dnclist
-func (p *outboundDnclistProxy) updateOutboundDnclist(ctx context.Context, dnclistId string, dnclist *platformclientv2.Dnclist) (*platformclientv2.Dnclist, int, error) {
+func (p *outboundDnclistProxy) updateOutboundDnclist(ctx context.Context, dnclistId string, dnclist *platformclientv2.Dnclist) (*platformclientv2.Dnclist, *platformclientv2.APIResponse, error) {
 	return p.updateOutboundDnclistAttr(ctx, p, dnclistId, dnclist)
 }
 
 // deleteOutboundDnclist deletes a Genesys Cloud Outbound Dnclist by Id
-func (p *outboundDnclistProxy) deleteOutboundDnclist(ctx context.Context, dnclistId string) (statusCode int, err error) {
+func (p *outboundDnclistProxy) deleteOutboundDnclist(ctx context.Context, dnclistId string) (*platformclientv2.APIResponse, error) {
 	return p.deleteOutboundDnclistAttr(ctx, p, dnclistId)
 }
 
@@ -127,6 +126,19 @@ func getAllOutboundDnclistFn(ctx context.Context, p *outboundDnclistProxy) (*[]p
 	return &allDnclists, statusCode, nil
 }
 
+func updateOutboundDnclistFn(ctx context.Context, p *outboundDnclistProxy, dnclistId string, dnclist *platformclientv2.Dnclist) (*platformclientv2.Dnclist, *platformclientv2.APIResponse, error) {
+	dnclist, _, err := p.outboundApi.GetOutboundDnclist(dnclistId, false, false)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to get dnc list by id %s", err)
+	}
+
+	outboundDncList, resp, err := p.outboundApi.PutOutboundDnclist(dnclistId, *dnclist)
+	if err != nil {
+		return nil, nil, fmt.Errorf("error updating outbound dnc list %s", err)
+	}
+	return outboundDncList, resp, nil
+}
+
 func uploadPhoneEntriesToDncList(p *outboundDnclistProxy, dncList *platformclientv2.Dnclist, entry interface{}) (*platformclientv2.APIResponse, diag.Diagnostics) {
 	var phoneNumbers []string
 	if entryMap, ok := entry.(map[string]interface{}); ok && len(entryMap) > 0 {
@@ -144,4 +156,37 @@ func uploadPhoneEntriesToDncList(p *outboundDnclistProxy, dncList *platformclien
 		log.Printf("Uploaded phone numbers to DNC list %s", *dncList.Name)
 	}
 	return nil, nil
+}
+
+func deleteOutboundDnclistFn(ctx context.Context, p *outboundDnclistProxy, dnclistId string) (*platformclientv2.APIResponse, error) {
+	resp, err := p.outboundApi.DeleteOutboundDnclist(dnclistId)
+	if err != nil {
+		return nil, fmt.Errorf("failed to delete dnc list %s", err)
+	}
+	return resp, nil
+}
+
+func getOutboundDnclistByIdFn(ctx context.Context, p *outboundDnclistProxy, dnclistId string) (*platformclientv2.Dnclist, *platformclientv2.APIResponse, error) {
+	dnclist, resp, err := p.outboundApi.GetOutboundDnclist(dnclistId, false, false)
+	if err != nil {
+		return nil, resp, fmt.Errorf("failed to retrieve dnc list by id %s: %s", dnclistId, err)
+	}
+	return dnclist, resp, nil
+}
+
+func getOutboundDnclistByNameFn(ctx context.Context, p *outboundDnclistProxy, name string) (dnclistId string, retryable bool, err error) {
+	dnclists, _, err := getAllOutboundDnclistFn(ctx, p)
+	if err != nil {
+		return "", false, fmt.Errorf("Error searching outbound dnc list %s: %s", name, err)
+	}
+
+	var dnclist platformclientv2.Dnclist
+	for _, dnclistSdk := range *dnclists {
+		if *dnclistSdk.Name == name {
+			log.Printf("Retrieved the dnc list id %s by name %s", *dnclistSdk.Id, name)
+			dnclist = dnclistSdk
+			return *dnclist.Id, false, nil
+		}
+	}
+	return "", true, fmt.Errorf("Unable to find dnc list with name %s", name)
 }
