@@ -35,7 +35,6 @@ func dataSourceExtensionPoolRead(ctx context.Context, d *schema.ResourceData, m 
 				extensionPool.EndNumber != nil && *extensionPool.EndNumber == extensionPoolEndPhoneNumber &&
 				extensionPool.State != nil && *extensionPool.State != "deleted" {
 				d.SetId(*extensionPool.Id)
-				return nil
 			}
 		}
 		return nil

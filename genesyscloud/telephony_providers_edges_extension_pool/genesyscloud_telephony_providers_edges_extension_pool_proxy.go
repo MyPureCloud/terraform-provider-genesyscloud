@@ -10,7 +10,7 @@ var internalProxy *extensionPoolProxy
 
 type getExtensionPoolFunc func(ctxctx context.Context, p *extensionPoolProxy, extensionPoolId string) (*platformclientv2.Extensionpool, *platformclientv2.APIResponse, error)
 type deleteExtensionPoolFunc func(ctx context.Context, p *extensionPoolProxy, extensionPoolId string) (*platformclientv2.APIResponse, error)
-type UpdateExtensionPoolFunc func(ctx context.Context, p *extensionPoolProxy, extensionPoolId string, body platformclientv2.Extensionpool) (*platformclientv2.Extensionpool, *platformclientv2.APIResponse, error)
+type updateExtensionPoolFunc func(ctx context.Context, p *extensionPoolProxy, extensionPoolId string, body platformclientv2.Extensionpool) (*platformclientv2.Extensionpool, *platformclientv2.APIResponse, error)
 type createExtensionPoolFunc func(ctx context.Context, p *extensionPoolProxy, body platformclientv2.Extensionpool) (*platformclientv2.Extensionpool, *platformclientv2.APIResponse, error)
 type getAllExtensionPoolsFunc func(ctx context.Context, p *extensionPoolProxy) (*[]platformclientv2.Extensionpool, error)
 
@@ -21,7 +21,7 @@ type extensionPoolProxy struct {
 
 	getExtensionPoolAttr     getExtensionPoolFunc
 	deleteExtensionPoolAttr  deleteExtensionPoolFunc
-	UpdateExtensionPoolAttr  UpdateExtensionPoolFunc
+	updateExtensionPoolAttr  updateExtensionPoolFunc
 	createExtensionPoolAttr  createExtensionPoolFunc
 	getAllExtensionPoolsAttr getAllExtensionPoolsFunc
 }
@@ -35,7 +35,7 @@ func newExtensionPoolProxy(clientConfig *platformclientv2.Configuration) *extens
 
 		getExtensionPoolAttr:     getExtensionPoolFn,
 		deleteExtensionPoolAttr:  deleteExtensionPoolFn,
-		UpdateExtensionPoolAttr:  UpdateExtensionPoolFn,
+		updateExtensionPoolAttr:  updateExtensionPoolFn,
 		createExtensionPoolAttr:  createExtensionPoolFn,
 		getAllExtensionPoolsAttr: getAllExtensionPoolsFn,
 	}
@@ -57,8 +57,8 @@ func (p *extensionPoolProxy) deleteExtensionPool(ctx context.Context, extensionP
 	return p.deleteExtensionPoolAttr(ctx, p, extensionPoolId)
 }
 
-func (p *extensionPoolProxy) UpdateExtensionPool(ctx context.Context, extensionPoolId string, body platformclientv2.Extensionpool) (*platformclientv2.Extensionpool, *platformclientv2.APIResponse, error) {
-	return p.UpdateExtensionPoolAttr(ctx, p, extensionPoolId, body)
+func (p *extensionPoolProxy) updateExtensionPool(ctx context.Context, extensionPoolId string, body platformclientv2.Extensionpool) (*platformclientv2.Extensionpool, *platformclientv2.APIResponse, error) {
+	return p.updateExtensionPoolAttr(ctx, p, extensionPoolId, body)
 }
 
 func (p *extensionPoolProxy) createExtensionPool(ctx context.Context, body platformclientv2.Extensionpool) (*platformclientv2.Extensionpool, *platformclientv2.APIResponse, error) {
@@ -83,7 +83,7 @@ func deleteExtensionPoolFn(ctx context.Context, p *extensionPoolProxy, extension
 	return resp, err
 }
 
-func UpdateExtensionPoolFn(ctx context.Context, p *extensionPoolProxy, extensionPoolId string, body platformclientv2.Extensionpool) (*platformclientv2.Extensionpool, *platformclientv2.APIResponse, error) {
+func updateExtensionPoolFn(ctx context.Context, p *extensionPoolProxy, extensionPoolId string, body platformclientv2.Extensionpool) (*platformclientv2.Extensionpool, *platformclientv2.APIResponse, error) {
 	extensionPool, resp, err := p.edgesApi.PutTelephonyProvidersEdgesExtensionpool(extensionPoolId, body)
 	if err != nil {
 		return nil, resp, err

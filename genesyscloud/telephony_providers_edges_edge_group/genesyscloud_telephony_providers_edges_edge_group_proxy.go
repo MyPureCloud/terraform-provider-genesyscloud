@@ -8,21 +8,23 @@ import (
 
 var internalProxy *edgeGroupProxy
 
-type getEdgeGroupFunc func(ctx context.Context, p *edgeGroupProxy, edgeGroupId string) (*platformclientv2.Edgegroup, *platformclientv2.APIResponse, error)
+type getEdgeGroupByIdFunc func(ctx context.Context, p *edgeGroupProxy, edgeGroupId string) (*platformclientv2.Edgegroup, *platformclientv2.APIResponse, error)
 type deleteEdgeGroupFunc func(ctx context.Context, p *edgeGroupProxy, edgeGroupId string) (*platformclientv2.APIResponse, error)
-type putEdgeGroupFunc func(ctx context.Context, p *edgeGroupProxy, edgeGroupId string, body platformclientv2.Edgegroup) (*platformclientv2.Edgegroup, *platformclientv2.APIResponse, error)
-type postEdgeGroupFunc func(ctx context.Context, p *edgeGroupProxy, body platformclientv2.Edgegroup) (*platformclientv2.Edgegroup, *platformclientv2.APIResponse, error)
+type updateEdgeGroupFunc func(ctx context.Context, p *edgeGroupProxy, edgeGroupId string, body platformclientv2.Edgegroup) (*platformclientv2.Edgegroup, *platformclientv2.APIResponse, error)
+type createEdgeGroupFunc func(ctx context.Context, p *edgeGroupProxy, body platformclientv2.Edgegroup) (*platformclientv2.Edgegroup, *platformclientv2.APIResponse, error)
 type getAllEdgeGroupsFunc func(ctx context.Context, p *edgeGroupProxy) (*[]platformclientv2.Edgegroup, error)
+type getEdgeGroupByNameFunc func(ctx context.Context, p *edgeGroupProxy, edgeGroupName string, managed bool) (*[]platformclientv2.Edgegroup, error)
 
 type edgeGroupProxy struct {
 	clientConfig *platformclientv2.Configuration
 	edgesApi     *platformclientv2.TelephonyProvidersEdgeApi
 
-	getEdgeGroupAttr     getEdgeGroupFunc
-	deleteEdgeGroupAttr  deleteEdgeGroupFunc
-	putEdgeGroupAttr     putEdgeGroupFunc
-	postEdgeGroupAttr    postEdgeGroupFunc
-	getAllEdgeGroupsAttr getAllEdgeGroupsFunc
+	getEdgeGroupByIdAttr   getEdgeGroupByIdFunc
+	deleteEdgeGroupAttr    deleteEdgeGroupFunc
+	updateEdgeGroupAttr    updateEdgeGroupFunc
+	createEdgeGroupAttr    createEdgeGroupFunc
+	getAllEdgeGroupsAttr   getAllEdgeGroupsFunc
+	getEdgeGroupByNameAttr getEdgeGroupByNameFunc
 }
 
 func newEdgeGroupProxy(clientConfig *platformclientv2.Configuration) *edgeGroupProxy {
@@ -32,11 +34,12 @@ func newEdgeGroupProxy(clientConfig *platformclientv2.Configuration) *edgeGroupP
 		clientConfig: clientConfig,
 		edgesApi:     edgesApi,
 
-		getEdgeGroupAttr:     getEdgeGroupFn,
-		deleteEdgeGroupAttr:  deleteEdgeGroupFn,
-		putEdgeGroupAttr:     putEdgeGroupFn,
-		postEdgeGroupAttr:    postEdgeGroupFn,
-		getAllEdgeGroupsAttr: getAllEdgeGroupsFn,
+		getEdgeGroupByIdAttr:   getEdgeGroupByIdFn,
+		deleteEdgeGroupAttr:    deleteEdgeGroupFn,
+		updateEdgeGroupAttr:    updateEdgeGroupFn,
+		createEdgeGroupAttr:    createEdgeGroupFn,
+		getAllEdgeGroupsAttr:   getAllEdgeGroupsFn,
+		getEdgeGroupByNameAttr: getEdgeGroupByNameFn,
 	}
 }
 
@@ -47,27 +50,61 @@ func getEdgeGroupProxy(clientConfig *platformclientv2.Configuration) *edgeGroupP
 	return internalProxy
 }
 
-func (p *edgeGroupProxy) getEdgeGroup(ctx context.Context, edgeGroupId string) (*platformclientv2.Edgegroup, *platformclientv2.APIResponse, error) {
-	return p.getEdgeGroupAttr(ctx, p, edgeGroupId)
+func (p *edgeGroupProxy) getEdgeGroupById(ctx context.Context, edgeGroupId string) (*platformclientv2.Edgegroup, *platformclientv2.APIResponse, error) {
+	return p.getEdgeGroupByIdAttr(ctx, p, edgeGroupId)
 }
 
 func (p *edgeGroupProxy) deleteEdgeGroup(ctx context.Context, edgeGroupId string) (*platformclientv2.APIResponse, error) {
 	return p.deleteEdgeGroupAttr(ctx, p, edgeGroupId)
 }
 
-func (p *edgeGroupProxy) putEdgeGroup(ctx context.Context, edgeGroupId string, body platformclientv2.Edgegroup) (*platformclientv2.Edgegroup, *platformclientv2.APIResponse, error) {
-	return p.putEdgeGroupAttr(ctx, p, edgeGroupId, body)
+func (p *edgeGroupProxy) updateEdgeGroup(ctx context.Context, edgeGroupId string, body platformclientv2.Edgegroup) (*platformclientv2.Edgegroup, *platformclientv2.APIResponse, error) {
+	return p.updateEdgeGroupAttr(ctx, p, edgeGroupId, body)
 }
 
-func (p *edgeGroupProxy) postEdgeGroup(ctx context.Context, body platformclientv2.Edgegroup) (*platformclientv2.Edgegroup, *platformclientv2.APIResponse, error) {
-	return p.postEdgeGroupAttr(ctx, p, body)
+func (p *edgeGroupProxy) createEdgeGroup(ctx context.Context, body platformclientv2.Edgegroup) (*platformclientv2.Edgegroup, *platformclientv2.APIResponse, error) {
+	return p.createEdgeGroupAttr(ctx, p, body)
 }
 
 func (p *edgeGroupProxy) getAllEdgeGroups(ctx context.Context) (*[]platformclientv2.Edgegroup, error) {
 	return p.getAllEdgeGroupsAttr(ctx, p)
 }
 
-func getEdgeGroupFn(ctx context.Context, p *edgeGroupProxy, edgeGroupId string) (*platformclientv2.Edgegroup, *platformclientv2.APIResponse, error) {
+func (p *edgeGroupProxy) getEdgeGroupByName(ctx context.Context, edgeGroupName string, managed bool) (*[]platformclientv2.Edgegroup, error) {
+	return p.getEdgeGroupByNameAttr(ctx, p, edgeGroupName, managed)
+}
+
+func getEdgeGroupByNameFn(ctx context.Context, p *edgeGroupProxy, edgeGroupName string, managed bool) (*[]platformclientv2.Edgegroup, error) {
+	const pageSize = 100
+	var pageNum = 1
+	var allEdgeGroups []platformclientv2.Edgegroup
+
+	edgeGroups, _, err := p.edgesApi.GetTelephonyProvidersEdgesEdgegroups(pageSize, pageNum, edgeGroupName, "", managed)
+	if err != nil {
+		return nil, err
+	}
+	if edgeGroups.Entities != nil && len(*edgeGroups.Entities) > 0 {
+
+		allEdgeGroups = append(allEdgeGroups, (*edgeGroups.Entities)[0])
+
+	}
+
+	for pageNum := 2; pageNum <= *edgeGroups.PageCount; pageNum++ {
+		edgeGroups, _, err := p.edgesApi.GetTelephonyProvidersEdgesEdgegroups(pageSize, pageNum, edgeGroupName, "", managed)
+		if err != nil {
+			return nil, err
+		}
+		if edgeGroups.Entities == nil || len(*edgeGroups.Entities) == 0 {
+			break
+		}
+		allEdgeGroups = append(allEdgeGroups, (*edgeGroups.Entities)[0])
+
+	}
+
+	return &allEdgeGroups, nil
+}
+
+func getEdgeGroupByIdFn(ctx context.Context, p *edgeGroupProxy, edgeGroupId string) (*platformclientv2.Edgegroup, *platformclientv2.APIResponse, error) {
 	edgeGroup, resp, err := p.edgesApi.GetTelephonyProvidersEdgesEdgegroup(edgeGroupId, nil)
 	if err != nil {
 		return nil, resp, err
@@ -80,7 +117,7 @@ func deleteEdgeGroupFn(ctx context.Context, p *edgeGroupProxy, edgeGroupId strin
 	return resp, err
 }
 
-func putEdgeGroupFn(ctx context.Context, p *edgeGroupProxy, edgeGroupId string, body platformclientv2.Edgegroup) (*platformclientv2.Edgegroup, *platformclientv2.APIResponse, error) {
+func updateEdgeGroupFn(ctx context.Context, p *edgeGroupProxy, edgeGroupId string, body platformclientv2.Edgegroup) (*platformclientv2.Edgegroup, *platformclientv2.APIResponse, error) {
 	edgeGroup, resp, err := p.edgesApi.PutTelephonyProvidersEdgesEdgegroup(edgeGroupId, body)
 	if err != nil {
 		return nil, resp, err
@@ -88,7 +125,7 @@ func putEdgeGroupFn(ctx context.Context, p *edgeGroupProxy, edgeGroupId string, 
 	return edgeGroup, resp, nil
 }
 
-func postEdgeGroupFn(ctx context.Context, p *edgeGroupProxy, body platformclientv2.Edgegroup) (*platformclientv2.Edgegroup, *platformclientv2.APIResponse, error) {
+func createEdgeGroupFn(ctx context.Context, p *edgeGroupProxy, body platformclientv2.Edgegroup) (*platformclientv2.Edgegroup, *platformclientv2.APIResponse, error) {
 	edgeGroup, resp, err := p.edgesApi.PostTelephonyProvidersEdgesEdgegroups(body)
 	if err != nil {
 		return nil, resp, err
@@ -99,8 +136,25 @@ func postEdgeGroupFn(ctx context.Context, p *edgeGroupProxy, body platformclient
 func getAllEdgeGroupsFn(ctx context.Context, p *edgeGroupProxy) (*[]platformclientv2.Edgegroup, error) {
 	const pageSize = 100
 	var allEdgeGroups []platformclientv2.Edgegroup
-	for pageNum := 1; ; pageNum++ {
+	var pageNum = 1
 
+	edgeGroups, _, err := p.edgesApi.GetTelephonyProvidersEdgesEdgegroups(pageSize, pageNum, "", "", false)
+	if err != nil {
+		return nil, err
+	}
+	if edgeGroups.Entities != nil && len(*edgeGroups.Entities) > 0 {
+		for _, edgeGroup := range *edgeGroups.Entities {
+			if edgeGroup.State != nil && *edgeGroup.State != "deleted" {
+				allEdgeGroups = append(allEdgeGroups, edgeGroup)
+			}
+		}
+	}
+
+	if *edgeGroups.PageCount < 2 {
+		return &allEdgeGroups, nil
+	}
+
+	for pageNum := 2; pageNum <= *edgeGroups.PageCount; pageNum++ {
 		edgeGroups, _, err := p.edgesApi.GetTelephonyProvidersEdgesEdgegroups(pageSize, pageNum, "", "", false)
 		if err != nil {
 			return nil, err

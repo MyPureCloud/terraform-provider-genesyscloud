@@ -103,7 +103,7 @@ func updateExtensionPool(ctx context.Context, d *schema.ResourceData, meta inter
 		Description: &description,
 	}
 	log.Printf("Updating Extension pool %s", d.Id())
-	if _, _, err := extensionPoolProxy.UpdateExtensionPool(ctx, d.Id(), extensionPoolBody); err != nil {
+	if _, _, err := extensionPoolProxy.updateExtensionPool(ctx, d.Id(), extensionPoolBody); err != nil {
 		return diag.Errorf("Error updating Extension pool %s: %s", startNumber, err)
 	}
 	log.Printf("Updated Extension pool %s", d.Id())

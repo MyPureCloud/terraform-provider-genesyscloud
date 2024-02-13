@@ -40,7 +40,7 @@ func createEdgeGroup(ctx context.Context, d *schema.ResourceData, meta interface
 
 	diagErr := gcloud.RetryWhen(gcloud.IsStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		log.Printf("Creating edge group %s", name)
-		edgeGroup, resp, err := edgeGroupProxy.postEdgeGroup(ctx, *edgeGroup)
+		edgeGroup, resp, err := edgeGroupProxy.createEdgeGroup(ctx, *edgeGroup)
 		if err != nil {
 			return resp, diag.Errorf("Failed to create edge group %s: %s", name, err)
 		}
@@ -80,7 +80,7 @@ func updateEdgeGroup(ctx context.Context, d *schema.ResourceData, meta interface
 	edgeGroupProxy := getEdgeGroupProxy(sdkConfig)
 
 	diagErr := gcloud.RetryWhen(gcloud.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
-		edgeGroupFromApi, resp, getErr := edgeGroupProxy.getEdgeGroup(ctx, d.Id())
+		edgeGroupFromApi, resp, getErr := edgeGroupProxy.getEdgeGroupById(ctx, d.Id())
 		if getErr != nil {
 			if gcloud.IsStatus404(resp) {
 				return resp, diag.Errorf("The edge group does not exist %s: %s", d.Id(), getErr)
@@ -90,7 +90,7 @@ func updateEdgeGroup(ctx context.Context, d *schema.ResourceData, meta interface
 		edgeGroup.Version = edgeGroupFromApi.Version
 
 		log.Printf("Updating edge group %s", name)
-		_, resp, putErr := edgeGroupProxy.putEdgeGroup(ctx, d.Id(), *edgeGroup)
+		_, resp, putErr := edgeGroupProxy.updateEdgeGroup(ctx, d.Id(), *edgeGroup)
 		if putErr != nil {
 			return resp, diag.Errorf("Failed to update edge group %s: %s", name, putErr)
 		}
@@ -115,7 +115,7 @@ func deleteEdgeGroup(ctx context.Context, d *schema.ResourceData, meta interface
 	}
 
 	return gcloud.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
-		edgeGroup, resp, err := edgeGroupProxy.getEdgeGroup(ctx, d.Id())
+		edgeGroup, resp, err := edgeGroupProxy.getEdgeGroupById(ctx, d.Id())
 		if err != nil {
 			if gcloud.IsStatus404(resp) {
 				// Edge group deleted
@@ -141,7 +141,7 @@ func readEdgeGroup(ctx context.Context, d *schema.ResourceData, meta interface{}
 
 	log.Printf("Reading edge group %s", d.Id())
 	return gcloud.WithRetriesForRead(ctx, d, func() *retry.RetryError {
-		edgeGroup, resp, getErr := edgeGroupProxy.getEdgeGroup(ctx, d.Id())
+		edgeGroup, resp, getErr := edgeGroupProxy.getEdgeGroupById(ctx, d.Id())
 		if getErr != nil {
 			if gcloud.IsStatus404(resp) {
 				return retry.RetryableError(fmt.Errorf("Failed to read edge group %s: %s", d.Id(), getErr))
