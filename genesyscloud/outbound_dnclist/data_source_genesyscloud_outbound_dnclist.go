@@ -19,11 +19,11 @@ func dataSourceOutboundDncListRead(ctx context.Context, d *schema.ResourceData, 
 	name := d.Get("name").(string)
 
 	return gcloud.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
-		dnclistId, _, getErr := proxy.getOutboundDnclistByName(ctx, name)
-		if getErr != nil {
+		dnclistId, retryable, getErr := proxy.getOutboundDnclistByName(ctx, name)
+		if getErr != nil && !retryable {
 			return retry.NonRetryableError(fmt.Errorf("error requesting dnc lists %s: %s", name, getErr))
 		}
-		if &dnclistId == nil || len(dnclistId) == 0 {
+		if retryable {
 			return retry.RetryableError(fmt.Errorf("no dnc lists found with name %s", name))
 		}
 		d.SetId(dnclistId)
