@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/outbound"
-	"terraform-provider-genesyscloud/genesyscloud/outbound_dnclist"
+	obDnclist "terraform-provider-genesyscloud/genesyscloud/outbound_dnclist"
 	"testing"
 
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
@@ -95,7 +95,7 @@ func TestAccResourceOutboundCampaignBasic(t *testing.T) {
 			gcloud.NullValue,         // max
 			"10",                     // maxLength
 		),
-	) + outbound_dnclist.GenerateOutboundDncListBasic(
+	) + obDnclist.GenerateOutboundDncListBasic(
 		dncListResourceId,
 		"dnc list "+uuid.NewString(),
 	) + gcloud.GenerateRoutingWrapupcodeResource(
