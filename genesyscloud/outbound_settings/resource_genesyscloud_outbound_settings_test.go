@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
-	"terraform-provider-genesyscloud/genesyscloud/outbound"
 	"testing"
 
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
@@ -22,7 +21,7 @@ func TestAccResourceOutboundSettings(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
-		ProviderFactories: gcloud.GetProviderFactories(outbound.providerResources, outbound.providerDataSources),
+		ProviderFactories: gcloud.GetProviderFactories(providerResources, nil),
 		Steps: []resource.TestStep{
 			{
 				// Update all non nested values

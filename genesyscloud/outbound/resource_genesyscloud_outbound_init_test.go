@@ -36,7 +36,6 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_outbound_contact_list"] = obContactList.ResourceOutboundContactList()
 	providerResources["genesyscloud_outbound_messagingcampaign"] = ResourceOutboundMessagingCampaign()
 	providerResources["genesyscloud_outbound_sequence"] = outboundSequence.ResourceOutboundSequence()
-	providerResources["genesyscloud_outbound_settings"] = ResourceOutboundSettings()
 
 	providerResources["genesyscloud_outbound_dnclist"] = ResourceOutboundDncList()
 
