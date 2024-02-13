@@ -1,9 +1,10 @@
-package genesyscloud
+package auth_role
 
 import (
 	"fmt"
 	"strconv"
 	"strings"
+	"terraform-provider-genesyscloud/genesyscloud"
 	"testing"
 
 	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
@@ -32,8 +33,8 @@ func TestAccResourceAuthRoleDefault(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { genesyscloud.TestAccPreCheck(t) },
+		ProviderFactories: genesyscloud.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Modify default role
@@ -86,8 +87,8 @@ func TestAccResourceAuthRoleBasic(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { genesyscloud.TestAccPreCheck(t) },
+		ProviderFactories: genesyscloud.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Create
@@ -154,8 +155,8 @@ func TestAccResourceAuthRoleConditions(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { genesyscloud.TestAccPreCheck(t) },
+		ProviderFactories: genesyscloud.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Create with a scalar condition
@@ -190,7 +191,7 @@ func TestAccResourceAuthRoleConditions(t *testing.T) {
 			},
 			{
 				// Create a queue and update with a queue condition
-				Config: GenerateRoutingQueueResourceBasic(queueResource1, queueName1) +
+				Config: genesyscloud.GenerateRoutingQueueResourceBasic(queueResource1, queueName1) +
 					GenerateAuthRoleResource(
 						roleResource1,
 						roleName1,
@@ -379,7 +380,7 @@ func testVerifyRolesDestroyed(state *terraform.State) error {
 		role, resp, err := authAPI.GetAuthorizationRole(rs.Primary.ID, false, nil)
 		if role != nil {
 			return fmt.Errorf("Role (%s) still exists", rs.Primary.ID)
-		} else if IsStatus404(resp) {
+		} else if genesyscloud.IsStatus404(resp) {
 			// Role not found as expected
 			continue
 		} else {

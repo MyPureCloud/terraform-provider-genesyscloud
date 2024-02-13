@@ -1,15 +1,16 @@
-package user_roles
+package auth_role
 
 import (
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"sync"
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
-	authRole "terraform-provider-genesyscloud/genesyscloud/auth_role"
 	"testing"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 /*
-The genesyscloud_user_roles_init_test.go file is used to initialize the data sources and resources used in testing the user_roles resource
+   The genesyscloud_auth_role_init_test.go file is used to initialize the data sources and resources
+   used in testing the auth_role resource.
 */
 
 // providerDataSources holds a map of all registered datasources
@@ -28,10 +29,8 @@ func (r *registerTestInstance) registerTestResources() {
 	r.resourceMapMutex.Lock()
 	defer r.resourceMapMutex.Unlock()
 
-	providerResources["genesyscloud_user_roles"] = ResourceUserRoles()
-	providerResources["genesyscloud_user"] = gcloud.ResourceUser()
-	providerResources["genesyscloud_auth_role"] = authRole.ResourceAuthRole()
-	providerResources["genesyscloud_auth_division"] = gcloud.ResourceAuthDivision()
+	providerResources[resourceName] = ResourceAuthRole()
+	providerResources["genesyscloud_routing_queue"] = gcloud.ResourceRoutingQueue()
 }
 
 // registerTestDataSources registers all data sources used in the tests.
@@ -39,15 +38,13 @@ func (r *registerTestInstance) registerTestDataSources() {
 	r.datasourceMapMutex.Lock()
 	defer r.datasourceMapMutex.Unlock()
 
-	providerDataSources["genesyscloud_auth_role"] = authRole.DataSourceAuthRole()
-	providerDataSources["genesyscloud_auth_division_home"] = gcloud.DataSourceAuthDivisionHome()
-
+	providerDataSources[resourceName] = DataSourceAuthRole()
 }
 
-// initTestResources initializes all test resources.
+// initTestResources initializes all test resources and data sources.
 func initTestResources() {
-	providerResources = make(map[string]*schema.Resource)
 	providerDataSources = make(map[string]*schema.Resource)
+	providerResources = make(map[string]*schema.Resource)
 
 	regInstance := &registerTestInstance{}
 
@@ -57,9 +54,9 @@ func initTestResources() {
 
 // TestMain is a "setup" function called by the testing framework when run the test
 func TestMain(m *testing.M) {
-	// Run setup function before starting the test suite for outbound_callabletimeset package
+	// Run setup function before starting the test suite for the auth_role package
 	initTestResources()
 
-	// Run the test suite for the outbound_callabletimeset package
+	// Run the test suite for the auth_role package
 	m.Run()
 }

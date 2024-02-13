@@ -10,6 +10,7 @@ import (
 	grammar "terraform-provider-genesyscloud/genesyscloud/architect_grammar"
 	grammarLanguage "terraform-provider-genesyscloud/genesyscloud/architect_grammar_language"
 	archIvr "terraform-provider-genesyscloud/genesyscloud/architect_ivr"
+	authRole "terraform-provider-genesyscloud/genesyscloud/auth_role"
 	authorizatioProduct "terraform-provider-genesyscloud/genesyscloud/authorization_product"
 	externalContacts "terraform-provider-genesyscloud/genesyscloud/external_contacts"
 	flowMilestone "terraform-provider-genesyscloud/genesyscloud/flow_milestone"
@@ -115,6 +116,7 @@ type RegisterInstance struct {
 
 func registerResources() {
 	regInstance := &RegisterInstance{}
+	authRole.SetRegistrar(regInstance)                      //Registering auth_role
 	oauth.SetRegistrar(regInstance)                         //Registering oauth_client
 	dt.SetRegistrar(regInstance)                            //Registering architect data table
 	dtr.SetRegistrar(regInstance)                           //Registering architect data table row

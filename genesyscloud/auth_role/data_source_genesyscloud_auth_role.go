@@ -1,39 +1,30 @@
-package genesyscloud
+package auth_role
 
 import (
 	"context"
 	"fmt"
-	"time"
-
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
-
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v121/platformclientv2"
+	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	"time"
 )
 
-func DataSourceAuthRole() *schema.Resource {
-	return &schema.Resource{
-		Description: "Data source for Genesys Cloud Roles. Select a role by name.",
-		ReadContext: ReadWithPooledClient(DataSourceAuthRoleRead),
-		Schema: map[string]*schema.Schema{
-			"name": {
-				Description: "Role name.",
-				Type:        schema.TypeString,
-				Required:    true,
-			},
-		},
-	}
-}
+/*
+   The data_source_genesyscloud_auth_role.go contains the data source implementation
+   for the resource.
+*/
 
+// dataSourceAuthRoleRead retrieves by name the id in question
 func DataSourceAuthRoleRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	sdkConfig := m.(*ProviderMeta).ClientConfig
+	sdkConfig := m.(*gcloud.ProviderMeta).ClientConfig
 	authAPI := platformclientv2.NewAuthorizationApiWithConfig(sdkConfig)
 
 	name := d.Get("name").(string)
 
 	// Query role by name. Retry in case search has not yet indexed the role.
-	return WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
+	return gcloud.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
 		const pageSize = 100
 		const pageNum = 1
 		roles, _, getErr := authAPI.GetAuthorizationRoles(pageSize, pageNum, "", nil, "", "", name, nil, nil, false, nil)
@@ -49,13 +40,4 @@ func DataSourceAuthRoleRead(ctx context.Context, d *schema.ResourceData, m inter
 		d.SetId(*role.Id)
 		return nil
 	})
-}
-
-func GenerateDefaultAuthRoleDataSource(
-	resourceID string,
-	name string) string {
-	return fmt.Sprintf(`data "genesyscloud_auth_role" "%s" {
-		name = %s
-	}
-	`, resourceID, name)
 }
