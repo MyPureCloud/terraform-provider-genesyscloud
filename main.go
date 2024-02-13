@@ -28,6 +28,7 @@ import (
 	obContactList "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
 	obs "terraform-provider-genesyscloud/genesyscloud/outbound_ruleset"
 	obSequence "terraform-provider-genesyscloud/genesyscloud/outbound_sequence"
+	obSettings "terraform-provider-genesyscloud/genesyscloud/outbound_settings"
 	obwm "terraform-provider-genesyscloud/genesyscloud/outbound_wrapupcode_mappings"
 	pat "terraform-provider-genesyscloud/genesyscloud/process_automation_trigger"
 	recMediaRetPolicy "terraform-provider-genesyscloud/genesyscloud/recording_media_retention_policy"
@@ -130,6 +131,7 @@ func registerResources() {
 	pat.SetRegistrar(regInstance)                           //Registering process automation triggers
 	obs.SetRegistrar(regInstance)                           //Resistering outbound ruleset
 	ob.SetRegistrar(regInstance)                            //Registering outbound
+	obSettings.SetRegistrar(regInstance)                    //Registering outbound settings
 	obwm.SetRegistrar(regInstance)                          //Registering outbound wrapup code mappings
 	gcloud.SetRegistrar(regInstance)                        //Registering genesyscloud
 	obAttemptLimit.SetRegistrar(regInstance)                //Registering outbound attempt limit
