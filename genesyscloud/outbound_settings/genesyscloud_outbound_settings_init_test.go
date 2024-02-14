@@ -27,7 +27,6 @@ func (r *registerTestInstance) registerTestResources() {
 	defer r.resourceMapMutex.Unlock()
 
 	providerResources[resourceName] = ResourceOutboundSettings()
-	// TODO: Add references
 }
 
 // initTestResources initializes all test resources and data sources.
