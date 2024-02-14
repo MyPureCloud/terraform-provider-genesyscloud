@@ -121,7 +121,7 @@ func flattenCallableWindows(windows []platformclientv2.Callablewindow, windowsSc
 		unmappedSchema = callableWindowsSchema.(map[string]interface{})["unmapped"].(*schema.Set)
 	}
 
-	callableWindowsSet := schema.NewSet(schema.HashResource(outboundSettingsCallableWindowsResource), []interface{}{})
+	callableWindowsSet := schema.NewSet(schema.HashResource(callableWindowsResource), []interface{}{})
 	for _, callableWindow := range windows {
 		callableWindowMap := make(map[string]interface{})
 
@@ -138,7 +138,7 @@ func flattenCallableWindows(windows []platformclientv2.Callablewindow, windowsSc
 }
 
 func flattenOutboundSettingsMapped(mapped *platformclientv2.Atzmtimeslot, mappedSchema *schema.Set) *schema.Set {
-	requestSet := schema.NewSet(schema.HashResource(outboundSettingsMappedResource), []interface{}{})
+	requestSet := schema.NewSet(schema.HashResource(mappedResource), []interface{}{})
 	requestMap := make(map[string]interface{})
 
 	mappedSchemaMap := mappedSchema.List()[0].(map[string]interface{})
@@ -161,7 +161,7 @@ func flattenOutboundSettingsMapped(mapped *platformclientv2.Atzmtimeslot, mapped
 }
 
 func flattenOutboundSettingsUnmapped(unmapped *platformclientv2.Atzmtimeslotwithtimezone, unmappedSchema *schema.Set) *schema.Set {
-	requestSet := schema.NewSet(schema.HashResource(outboundSettingsMappedResource), []interface{}{})
+	requestSet := schema.NewSet(schema.HashResource(mappedResource), []interface{}{})
 	requestMap := make(map[string]interface{})
 
 	mappedSchemaMap := unmappedSchema.List()[0].(map[string]interface{})

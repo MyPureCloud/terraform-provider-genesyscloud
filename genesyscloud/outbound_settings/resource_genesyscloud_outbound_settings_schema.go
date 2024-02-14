@@ -26,14 +26,14 @@ func SetRegistrar(l registrar.Registrar) {
 }
 
 var (
-	outboundSettingsAutomaticTimeZoneMappingResource = &schema.Resource{
+	automaticTimeZoneMappingResource = &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			`callable_windows`: {
 				Description: "The time intervals to use for automatic time zone mapping.",
 				Optional:    true,
 				Type:        schema.TypeSet,
 				MaxItems:    1,
-				Elem:        outboundSettingsCallableWindowsResource,
+				Elem:        callableWindowsResource,
 			},
 			`supported_countries`: {
 				Description: "The countries that are supported for automatic time zone mapping.",
@@ -44,25 +44,25 @@ var (
 		},
 	}
 
-	outboundSettingsCallableWindowsResource = &schema.Resource{
+	callableWindowsResource = &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			`mapped`: {
 				Description: "The time interval to place outbound calls, for contacts that can be mapped to a time zone.",
 				Optional:    true,
 				Type:        schema.TypeSet,
 				MaxItems:    1,
-				Elem:        outboundSettingsMappedResource,
+				Elem:        mappedResource,
 			},
 			`unmapped`: {
 				Description: "The time interval and time zone to place outbound calls, for contacts that cannot be mapped to a time zone.",
 				Optional:    true,
 				Type:        schema.TypeSet,
 				MaxItems:    1,
-				Elem:        outboundSettingsUnmappedResource,
+				Elem:        UnmappedResource,
 			},
 		},
 	}
-	outboundSettingsMappedResource = &schema.Resource{
+	mappedResource = &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			`earliest_callable_time`: {
 				Description:      "The earliest time to dial a contact. Valid format is HH:mm",
@@ -78,7 +78,7 @@ var (
 			},
 		},
 	}
-	outboundSettingsUnmappedResource = &schema.Resource{
+	UnmappedResource = &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			`earliest_callable_time`: {
 				Description:      "The earliest time to dial a contact. Valid format is HH:mm.",
@@ -141,7 +141,7 @@ func ResourceOutboundSettings() *schema.Resource {
 				Description: "The settings for automatic time zone mapping. Note that changing these settings will change them for both voice and messaging campaigns.",
 				Optional:    true,
 				Type:        schema.TypeList,
-				Elem:        outboundSettingsAutomaticTimeZoneMappingResource,
+				Elem:        automaticTimeZoneMappingResource,
 			},
 		},
 	}
