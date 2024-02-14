@@ -22,17 +22,17 @@ func dataSourceEdgeGroupRead(ctx context.Context, d *schema.ResourceData, m inte
 
 	return gcloud.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
 
-		edgeGroups, getErr := edgeGroupProxy.getEdgeGroupByName(ctx, name, managed)
+		edgeGroup, retryable, getErr := edgeGroupProxy.getEdgeGroupByName(ctx, name, managed)
 
-		if getErr != nil {
+		if getErr != nil && !retryable {
 			return retry.NonRetryableError(fmt.Errorf("Error requesting edge group %s: %s", name, getErr))
 		}
 
-		if edgeGroups == nil || len(*edgeGroups) == 0 {
+		if retryable {
 			return retry.RetryableError(fmt.Errorf("No edge group found with name %s", name))
 		}
 
-		d.SetId(*(*edgeGroups)[0].Id)
+		d.SetId(edgeGroup)
 		return nil
 	})
 }

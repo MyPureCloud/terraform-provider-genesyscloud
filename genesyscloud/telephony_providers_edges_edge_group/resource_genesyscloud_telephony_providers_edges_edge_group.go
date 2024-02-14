@@ -175,7 +175,7 @@ func readEdgeGroup(ctx context.Context, d *schema.ResourceData, meta interface{}
 func getAllEdgeGroups(ctx context.Context, sdkConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
 	resources := make(resourceExporter.ResourceIDMetaMap)
 	edgeGroupProxy := getEdgeGroupProxy(sdkConfig)
-	edgeGroups, err := edgeGroupProxy.getAllEdgeGroups(ctx)
+	edgeGroups, err := edgeGroupProxy.getAllEdgeGroups(ctx, "", false)
 
 	if err != nil {
 		return nil, diag.Errorf("Failed to get Edge groups: %s", err)
