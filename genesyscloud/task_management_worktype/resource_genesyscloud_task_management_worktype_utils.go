@@ -197,28 +197,47 @@ func buildWorkitemStatusUpdates(workitemStatuses []interface{}, apiStatuses *[]p
 	}
 
 	for _, workitemStatus := range workitemStatuses {
-		var sdkWorkitemStatus platformclientv2.Workitemstatusupdate
+		sdkWorkitemStatus := platformclientv2.Workitemstatusupdate{}
 		workitemStatusMap, ok := workitemStatus.(map[string]interface{})
 		if !ok {
 			continue
 		}
 
-		// NOTE: The comment below is a reminder for the intended 'final' implementation
-		// once the swagger bug is fixed. Ref: *temp_api_utils.go file.
-		// We use SetFields because we want the "null" values to be
-		// sent to the API specifically for the default destination status and related properties.
-		resourcedata.BuildSDKStringValueIfNotNil(&sdkWorkitemStatus.Name, workitemStatusMap, "name")
-		resourcedata.BuildSDKStringValueIfNotNil(&sdkWorkitemStatus.Description, workitemStatusMap, "description")
-		resourcedata.BuildSDKStringValueIfNotNil(&sdkWorkitemStatus.StatusTransitionTime, workitemStatusMap, "status_transition_time")
+		// For the following if some attributes are not provided in terraform file we
+		// explicitly set the SDK attribute to nil to nullify its value in the API
+
+		if name, ok := workitemStatusMap["name"]; ok {
+			sdkWorkitemStatus.SetField("Name", platformclientv2.String(name.(string)))
+		}
+
+		if description, ok := workitemStatusMap["description"]; ok {
+			sdkWorkitemStatus.SetField("Description", platformclientv2.String(description.(string)))
+		}
+
+		if statusTransitionTime, ok := workitemStatusMap["status_transition_time"]; ok {
+			sdkWorkitemStatus.SetField("StatusTransitionTime", platformclientv2.String(statusTransitionTime.(string)))
+		} else {
+			sdkWorkitemStatus.SetField("StatusTransitionTime", nil)
+		}
+
 		if statusTransitionDelaySec, ok := workitemStatusMap["status_transition_delay_seconds"]; ok && statusTransitionDelaySec.(int) > 0 {
-			sdkWorkitemStatus.StatusTransitionDelaySeconds = platformclientv2.Int(statusTransitionDelaySec.(int))
+			sdkWorkitemStatus.SetField("StatusTransitionDelaySeconds", platformclientv2.Int(statusTransitionDelaySec.(int)))
+		} else {
+			sdkWorkitemStatus.SetField("StatusTransitionDelaySeconds", nil)
 		}
 
 		if destinationStatuses, ok := workitemStatusMap["destination_status_names"]; ok {
-			sdkWorkitemStatus.DestinationStatusIds = buildStatusIdFn(destinationStatuses.([]interface{}))
+			statusIds := buildStatusIdFn(destinationStatuses.([]interface{}))
+			sdkWorkitemStatus.SetField("DestinationStatusIds", statusIds)
+		} else {
+			sdkWorkitemStatus.SetField("DestinationStatusIds", nil)
 		}
+
 		if defaultDestination, ok := workitemStatusMap["default_destination_status_name"]; ok {
-			sdkWorkitemStatus.DefaultDestinationStatusId = getStatusIdFromNameFn(defaultDestination.(string))
+			defaultDestStatusId := getStatusIdFromNameFn(defaultDestination.(string))
+			sdkWorkitemStatus.SetField("DefaultDestinationStatusId", defaultDestStatusId)
+		} else {
+			sdkWorkitemStatus.SetField("DefaultDestinationStatusId", nil)
 		}
 
 		workitemStatussSlice = append(workitemStatussSlice, sdkWorkitemStatus)
