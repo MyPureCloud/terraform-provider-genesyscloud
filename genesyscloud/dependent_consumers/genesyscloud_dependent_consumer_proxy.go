@@ -111,7 +111,7 @@ func fetchDepConsumers(ctx context.Context, p *DependentConsumerProxy, resType s
 
 				// iterate dependencies
 				if pageCount < 2 {
-					resources, dependsMap, err = iterateDependencies(dependencies, resources, dependsMap, ctx, p)
+					resources, dependsMap, err = iterateDependencies(dependencies, resources, dependsMap, ctx, p, resourceKey)
 					log.Printf("dependencies GetArchitectDependencytrackingConsumedresources for : %v, and key is %v, and the resourses are %v\n", resourceName, resourceKey, resources)
 					if err != nil {
 						return nil, nil, err
@@ -129,7 +129,7 @@ func fetchDepConsumers(ctx context.Context, p *DependentConsumerProxy, resType s
 					if dependencies.Entities == nil || len(*dependencies.Entities) == 0 {
 						break
 					}
-					resources, dependsMap, err = iterateDependencies(dependencies, resources, dependsMap, ctx, p)
+					resources, dependsMap, err = iterateDependencies(dependencies, resources, dependsMap, ctx, p, resourceKey)
 					if err != nil {
 						return nil, nil, err
 					}
@@ -154,7 +154,7 @@ func buildDependsMap(resources resourceExporter.ResourceIDMetaMap, dependsMap ma
 
 // This private function includes iteration of the dependent Consumers and build DependsList for each Resource
 // This also checks for dependent flows and again export those dependencies
-func iterateDependencies(dependencies *platformclientv2.Consumedresourcesentitylisting, resources resourceExporter.ResourceIDMetaMap, dependsMap map[string][]string, ctx context.Context, p *DependentConsumerProxy) (resourceExporter.ResourceIDMetaMap, map[string][]string, error) {
+func iterateDependencies(dependencies *platformclientv2.Consumedresourcesentitylisting, resources resourceExporter.ResourceIDMetaMap, dependsMap map[string][]string, ctx context.Context, p *DependentConsumerProxy, key string) (resourceExporter.ResourceIDMetaMap, map[string][]string, error) {
 	dependentConsumerMap := SetDependentObjectMaps()
 	for _, consumer := range *dependencies.Entities {
 		resourceType, exists := dependentConsumerMap[*consumer.VarType]
@@ -162,9 +162,9 @@ func iterateDependencies(dependencies *platformclientv2.Consumedresourcesentityl
 			resourceFilter := resourceType + "::::" + *consumer.Name
 			if _, resourceExists := resources[*consumer.Id]; !resourceExists {
 				resources[*consumer.Id] = &resourceExporter.ResourceMeta{Name: resourceFilter}
-				if resourceType == "genesyscloud_flow" {
+				if resourceType == "genesyscloud_flow" && *consumer.Id != key {
 					log.Printf("dependencies iterateDependencies for : %v, and key is %v, and the resourses are %v\n", resourceFilter, *consumer.Id, dependsMap)
-					innerDependentResources, innerDependsMap, err := fetchDepConsumers(ctx, p, resourceType, *consumer.Id, *consumer.Name, resources, dependsMap)
+					innerDependentResources, innerDependsMap, err := fetchDepConsumers(ctx, p, resourceType, *consumer.Id, *consumer.Name, make(resourceExporter.ResourceIDMetaMap), make(map[string][]string))
 					dependsMap = stringmap.MergeMaps(dependsMap, buildDependsMap(innerDependentResources, innerDependsMap, *consumer.Id))
 					log.Printf("dependencies iterateDependenciesafter for : %v, and key is %v, and the resourses are %v\n", resourceFilter, *consumer.Id, dependsMap)
 
