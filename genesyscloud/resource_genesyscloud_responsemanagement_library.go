@@ -182,3 +182,13 @@ func deleteResponsemanagementLibrary(ctx context.Context, d *schema.ResourceData
 		return retry.RetryableError(fmt.Errorf("Responsemanagement Library %s still exists", d.Id()))
 	})
 }
+
+func GenerateResponseManagementLibraryResource(
+	resourceId string,
+	name string) string {
+	return fmt.Sprintf(`
+		resource "genesyscloud_responsemanagement_library" "%s" {
+			name = "%s"
+		}
+	`, resourceId, name)
+}

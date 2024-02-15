@@ -17,7 +17,7 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v121/platformclientv2"
 )
 
-func resourceResponseManagamentResponseAsset() *schema.Resource {
+func ResourceResponseManagamentResponseAsset() *schema.Resource {
 	return &schema.Resource{
 		Description: `Genesys Cloud responsemanagement response asset`,
 
@@ -182,4 +182,13 @@ func deleteResponsemanagementResponseAsset(ctx context.Context, d *schema.Resour
 		}
 		return retry.RetryableError(fmt.Errorf("Response asset %s still exists", d.Id()))
 	})
+}
+
+func GenerateResponseManagementResponseAssetResource(resourceId string, fileName string, divisionId string) string {
+	return fmt.Sprintf(`
+resource "genesyscloud_responsemanagement_responseasset" "%s" {
+    filename    = "%s"
+    division_id = %s
+}
+`, resourceId, fileName, divisionId)
 }

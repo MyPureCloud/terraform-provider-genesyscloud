@@ -1,9 +1,10 @@
-package genesyscloud
+package responsemanagement_response
 
 import (
 	"fmt"
 	"strconv"
 	"strings"
+	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	"testing"
 
 	"github.com/google/uuid"
@@ -46,21 +47,21 @@ func TestAccResourceResponseManagementResponseFooterField(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
+		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Create with required values
-				Config: generateResponseManagementLibraryResource(
+				Config: gcloud.GenerateResponseManagementLibraryResource(
 					libraryResource1,
 					libraryName1,
 				) + generateResponseManagementResponseResource(
 					responseResource,
 					name1,
 					[]string{"genesyscloud_responsemanagement_library." + libraryResource1 + ".id"},
-					NullValue,
-					NullValue,
-					NullValue,
+					gcloud.NullValue,
+					gcloud.NullValue,
+					gcloud.NullValue,
 					[]string{},
 					generateTextsBlock(
 						textsContent1,
@@ -78,19 +79,19 @@ func TestAccResourceResponseManagementResponseFooterField(t *testing.T) {
 			},
 			{
 				// Update with new name and texts and add remaining values
-				Config: generateResponseManagementLibraryResource(
+				Config: gcloud.GenerateResponseManagementLibraryResource(
 					libraryResource1,
 					libraryName1,
-				) + generateResponseManagementResponseAssetResource(
+				) + gcloud.GenerateResponseManagementResponseAssetResource(
 					assetResource,
 					fullPath,
-					NullValue,
+					gcloud.NullValue,
 				) + generateResponseManagementResponseResource(
 					responseResource,
 					name2,
 					[]string{"genesyscloud_responsemanagement_library." + libraryResource1 + ".id"},
 					strconv.Quote(interactionTypes[0]),
-					GenerateJsonSchemaDocStr(substitutionsSchema),
+					gcloud.GenerateJsonSchemaDocStr(substitutionsSchema),
 					strconv.Quote(responseTypes[3]),
 					[]string{"genesyscloud_responsemanagement_responseasset." + assetResource + ".id"},
 					generateFooterBlock(footerType, footerResource),
@@ -115,9 +116,9 @@ func TestAccResourceResponseManagementResponseFooterField(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResource, "substitutions.0.id", substitutionsId),
 					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResource, "substitutions.0.description", substitutionsDescription),
 					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResource, "substitutions.0.default_value", substitutionsDefaultValue),
-					ValidateValueInJsonAttr("genesyscloud_responsemanagement_response."+responseResource, "substitutions_schema_id", "type", "object"),
-					ValidateValueInJsonAttr("genesyscloud_responsemanagement_response."+responseResource, "substitutions_schema_id", "properties."+substitutionsSchema+".type", "string"),
-					ValidateValueInJsonAttr("genesyscloud_responsemanagement_response."+responseResource, "substitutions_schema_id", "required", substitutionsSchema),
+					gcloud.ValidateValueInJsonAttr("genesyscloud_responsemanagement_response."+responseResource, "substitutions_schema_id", "type", "object"),
+					gcloud.ValidateValueInJsonAttr("genesyscloud_responsemanagement_response."+responseResource, "substitutions_schema_id", "properties."+substitutionsSchema+".type", "string"),
+					gcloud.ValidateValueInJsonAttr("genesyscloud_responsemanagement_response."+responseResource, "substitutions_schema_id", "required", substitutionsSchema),
 					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResource, "response_type", responseTypes[3]),
 					resource.TestCheckResourceAttrPair(
 						"genesyscloud_responsemanagement_response."+responseResource, "asset_ids.0",
@@ -126,22 +127,22 @@ func TestAccResourceResponseManagementResponseFooterField(t *testing.T) {
 			},
 			{
 				// Add more texts and change libraries
-				Config: generateResponseManagementLibraryResource(
+				Config: gcloud.GenerateResponseManagementLibraryResource(
 					libraryResource1,
 					libraryName1,
-				) + generateResponseManagementLibraryResource(
+				) + gcloud.GenerateResponseManagementLibraryResource(
 					libraryResource2,
 					libraryName2,
-				) + generateResponseManagementResponseAssetResource(
+				) + gcloud.GenerateResponseManagementResponseAssetResource(
 					assetResource,
 					fullPath,
-					NullValue,
+					gcloud.NullValue,
 				) + generateResponseManagementResponseResource(
 					responseResource,
 					name2,
 					[]string{"genesyscloud_responsemanagement_library." + libraryResource2 + ".id", "genesyscloud_responsemanagement_library." + libraryResource1 + ".id"},
 					strconv.Quote(interactionTypes[0]),
-					GenerateJsonSchemaDocStr(substitutionsSchema),
+					gcloud.GenerateJsonSchemaDocStr(substitutionsSchema),
 					strconv.Quote(responseTypes[3]),
 					[]string{"genesyscloud_responsemanagement_responseasset." + assetResource + ".id"},
 					generateTextsBlock(
@@ -149,7 +150,6 @@ func TestAccResourceResponseManagementResponseFooterField(t *testing.T) {
 						textsContentTypes[0],
 					),
 					generateFooterBlock(footerType, footerResource),
-
 					generateTextsBlock(
 						textsContent2,
 						textsContentTypes[1],
@@ -176,9 +176,9 @@ func TestAccResourceResponseManagementResponseFooterField(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResource, "substitutions.0.id", substitutionsId),
 					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResource, "substitutions.0.description", substitutionsDescription),
 					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResource, "substitutions.0.default_value", substitutionsDefaultValue),
-					ValidateValueInJsonAttr("genesyscloud_responsemanagement_response."+responseResource, "substitutions_schema_id", "type", "object"),
-					ValidateValueInJsonAttr("genesyscloud_responsemanagement_response."+responseResource, "substitutions_schema_id", "properties."+substitutionsSchema+".type", "string"),
-					ValidateValueInJsonAttr("genesyscloud_responsemanagement_response."+responseResource, "substitutions_schema_id", "required", substitutionsSchema),
+					gcloud.ValidateValueInJsonAttr("genesyscloud_responsemanagement_response."+responseResource, "substitutions_schema_id", "type", "object"),
+					gcloud.ValidateValueInJsonAttr("genesyscloud_responsemanagement_response."+responseResource, "substitutions_schema_id", "properties."+substitutionsSchema+".type", "string"),
+					gcloud.ValidateValueInJsonAttr("genesyscloud_responsemanagement_response."+responseResource, "substitutions_schema_id", "required", substitutionsSchema),
 					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResource, "response_type", responseTypes[3]),
 					resource.TestCheckResourceAttrPair(
 						"genesyscloud_responsemanagement_response."+responseResource, "asset_ids.0",
@@ -232,21 +232,21 @@ func TestAccResourceResponseManagementResponseMessaging(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
+		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Create with required values
-				Config: generateResponseManagementLibraryResource(
+				Config: gcloud.GenerateResponseManagementLibraryResource(
 					libraryResource1,
 					libraryName1,
 				) + generateResponseManagementResponseResource(
 					responseResource,
 					name1,
 					[]string{"genesyscloud_responsemanagement_library." + libraryResource1 + ".id"},
-					NullValue,
-					NullValue,
-					NullValue,
+					gcloud.NullValue,
+					gcloud.NullValue,
+					gcloud.NullValue,
 					[]string{},
 					generateTextsBlock(
 						textsContent1,
@@ -264,19 +264,19 @@ func TestAccResourceResponseManagementResponseMessaging(t *testing.T) {
 			},
 			{
 				// Update with new name and texts and add remaining values
-				Config: generateResponseManagementLibraryResource(
+				Config: gcloud.GenerateResponseManagementLibraryResource(
 					libraryResource1,
 					libraryName1,
-				) + generateResponseManagementResponseAssetResource(
+				) + gcloud.GenerateResponseManagementResponseAssetResource(
 					assetResource,
 					fullPath,
-					NullValue,
+					gcloud.NullValue,
 				) + generateResponseManagementResponseResource(
 					responseResource,
 					name2,
 					[]string{"genesyscloud_responsemanagement_library." + libraryResource1 + ".id"},
 					strconv.Quote(interactionTypes[0]),
-					GenerateJsonSchemaDocStr(substitutionsSchema),
+					gcloud.GenerateJsonSchemaDocStr(substitutionsSchema),
 					strconv.Quote(responseTypes[0]),
 					[]string{"genesyscloud_responsemanagement_responseasset." + assetResource + ".id"},
 					generateTextsBlock(
@@ -307,9 +307,9 @@ func TestAccResourceResponseManagementResponseMessaging(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResource, "substitutions.0.id", substitutionsId),
 					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResource, "substitutions.0.description", substitutionsDescription),
 					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResource, "substitutions.0.default_value", substitutionsDefaultValue),
-					ValidateValueInJsonAttr("genesyscloud_responsemanagement_response."+responseResource, "substitutions_schema_id", "type", "object"),
-					ValidateValueInJsonAttr("genesyscloud_responsemanagement_response."+responseResource, "substitutions_schema_id", "properties."+substitutionsSchema+".type", "string"),
-					ValidateValueInJsonAttr("genesyscloud_responsemanagement_response."+responseResource, "substitutions_schema_id", "required", substitutionsSchema),
+					gcloud.ValidateValueInJsonAttr("genesyscloud_responsemanagement_response."+responseResource, "substitutions_schema_id", "type", "object"),
+					gcloud.ValidateValueInJsonAttr("genesyscloud_responsemanagement_response."+responseResource, "substitutions_schema_id", "properties."+substitutionsSchema+".type", "string"),
+					gcloud.ValidateValueInJsonAttr("genesyscloud_responsemanagement_response."+responseResource, "substitutions_schema_id", "required", substitutionsSchema),
 					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResource, "response_type", responseTypes[0]),
 					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResource, "messaging_template.0.whats_app.0.name", templateName),
 					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResource, "messaging_template.0.whats_app.0.namespace", templateNamespace),
@@ -321,22 +321,22 @@ func TestAccResourceResponseManagementResponseMessaging(t *testing.T) {
 			},
 			{
 				// Add more texts and change libraries
-				Config: generateResponseManagementLibraryResource(
+				Config: gcloud.GenerateResponseManagementLibraryResource(
 					libraryResource1,
 					libraryName1,
-				) + generateResponseManagementLibraryResource(
+				) + gcloud.GenerateResponseManagementLibraryResource(
 					libraryResource2,
 					libraryName2,
-				) + generateResponseManagementResponseAssetResource(
+				) + gcloud.GenerateResponseManagementResponseAssetResource(
 					assetResource,
 					fullPath,
-					NullValue,
+					gcloud.NullValue,
 				) + generateResponseManagementResponseResource(
 					responseResource,
 					name2,
 					[]string{"genesyscloud_responsemanagement_library." + libraryResource2 + ".id", "genesyscloud_responsemanagement_library." + libraryResource1 + ".id"},
 					strconv.Quote(interactionTypes[0]),
-					GenerateJsonSchemaDocStr(substitutionsSchema),
+					gcloud.GenerateJsonSchemaDocStr(substitutionsSchema),
 					strconv.Quote(responseTypes[0]),
 					[]string{"genesyscloud_responsemanagement_responseasset." + assetResource + ".id"},
 					generateTextsBlock(
@@ -376,9 +376,9 @@ func TestAccResourceResponseManagementResponseMessaging(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResource, "substitutions.0.id", substitutionsId),
 					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResource, "substitutions.0.description", substitutionsDescription),
 					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResource, "substitutions.0.default_value", substitutionsDefaultValue),
-					ValidateValueInJsonAttr("genesyscloud_responsemanagement_response."+responseResource, "substitutions_schema_id", "type", "object"),
-					ValidateValueInJsonAttr("genesyscloud_responsemanagement_response."+responseResource, "substitutions_schema_id", "properties."+substitutionsSchema+".type", "string"),
-					ValidateValueInJsonAttr("genesyscloud_responsemanagement_response."+responseResource, "substitutions_schema_id", "required", substitutionsSchema),
+					gcloud.ValidateValueInJsonAttr("genesyscloud_responsemanagement_response."+responseResource, "substitutions_schema_id", "type", "object"),
+					gcloud.ValidateValueInJsonAttr("genesyscloud_responsemanagement_response."+responseResource, "substitutions_schema_id", "properties."+substitutionsSchema+".type", "string"),
+					gcloud.ValidateValueInJsonAttr("genesyscloud_responsemanagement_response."+responseResource, "substitutions_schema_id", "required", substitutionsSchema),
 					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResource, "response_type", responseTypes[0]),
 					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResource, "messaging_template.0.whats_app.0.name", templateName),
 					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResource, "messaging_template.0.whats_app.0.namespace", templateNamespace),
@@ -490,7 +490,7 @@ func testVerifyResponseManagementResponseDestroyed(state *terraform.State) error
 		responses, resp, err := managementAPI.GetResponsemanagementResponse(rs.Primary.ID, "")
 		if responses != nil {
 			return fmt.Errorf("response (%s) still exists", rs.Primary.ID)
-		} else if IsStatus404(resp) {
+		} else if gcloud.IsStatus404(resp) {
 			// response not found as expected
 			continue
 		} else {
