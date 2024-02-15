@@ -198,11 +198,17 @@ func writeHCLToFile(bytes [][]byte, path string) diag.Diagnostics {
 	return nil
 }
 
-func instanceStateToHCLBlock(resType, resName string, json gcloud.JsonMap) []byte {
+func instanceStateToHCLBlock(resType, resName string, json gcloud.JsonMap, isDataSource bool) []byte {
 	f := hclwrite.NewEmptyFile()
 	rootBody := f.Body()
 
-	block := rootBody.AppendNewBlock("resource", []string{resType, resName})
+	var block *hclwrite.Block
+	if isDataSource {
+		block = rootBody.AppendNewBlock("data", []string{resType, resName})
+	} else {
+		block = rootBody.AppendNewBlock("resource", []string{resType, resName})
+	}
+
 	body := block.Body()
 
 	addBody(body, json)
