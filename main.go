@@ -117,7 +117,7 @@ type RegisterInstance struct {
 
 func registerResources() {
 	regInstance := &RegisterInstance{}
-	authRole.SetRegistrar(regInstance)                      			//Registering auth_role
+	authRole.SetRegistrar(regInstance)                                     //Registering auth_role
 	oauth.SetRegistrar(regInstance)                                        //Registering oauth_client
 	dt.SetRegistrar(regInstance)                                           //Registering architect data table
 	dtr.SetRegistrar(regInstance)                                          //Registering architect data table row
@@ -169,7 +169,6 @@ func registerResources() {
 	edgesTrunk.SetRegistrar(regInstance)                                   //Registering Edges Trunk Settings
 	resourceExporter.SetRegisterExporter(resourceExporters)                //Registering register exporters
 	userRoles.SetRegistrar(regInstance)                                    //Registering user roles
->>>>>>> e3d74183 (Refactored employee performance external metrics)
 	// setting resources for Use cases  like TF export where provider is used in resource classes.
 	tfexp.SetRegistrar(regInstance) //Registering tf exporter
 	registrar.SetResources(providerResources, providerDataSources)
