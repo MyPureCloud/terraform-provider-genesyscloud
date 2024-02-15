@@ -6,6 +6,8 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"path/filepath"
+	"regexp"
 	"strings"
 	"time"
 
@@ -92,6 +94,13 @@ func New(version string, providerResources map[string]*schema.Resource, provider
 					DefaultFunc:  schema.EnvDefaultFunc("GENESYSCLOUD_SDK_DEBUG_FORMAT", "Text"),
 					Description:  "Specifies the data format of the 'sdk_debug.log'. Only applicable if sdk_debug is true. Default value is Text.",
 					ValidateFunc: validation.StringInSlice([]string{"Text", "Json"}, false),
+				},
+				"sdk_debug_file_path": {
+					Type:         schema.TypeString,
+					Optional:     true,
+					DefaultFunc:  schema.EnvDefaultFunc("GENESYSCLOUD_SDK_DEBUG", "sdk_debug.log"),
+					Description:  "Specifies the file path for the log file. Default value is sdk_debug.log",
+					ValidateFunc: validation.StringDoesNotMatch(regexp.MustCompile("^(|\\s+)$"), "Invalid File path "),
 				},
 				"token_pool_size": {
 					Type:         schema.TypeInt,
@@ -235,6 +244,7 @@ func initClientConfig(data *schema.ResourceData, version string, config *platfor
 	oauthclientID := data.Get("oauthclient_id").(string)
 	oauthclientSecret := data.Get("oauthclient_secret").(string)
 	basePath := GetRegionBasePath(data.Get("aws_region").(string))
+	sdkDebugFilePath := data.Get("sdk_debug_file_path").(string)
 
 	config.BasePath = basePath
 	if data.Get("sdk_debug").(bool) {
@@ -244,7 +254,12 @@ func initClientConfig(data *schema.ResourceData, version string, config *platfor
 			LogResponseBody: true,
 		}
 		config.LoggingConfiguration.SetLogToConsole(false)
-		config.LoggingConfiguration.SetLogFilePath("sdk_debug.log")
+		config.LoggingConfiguration.SetLogFilePath(sdkDebugFilePath)
+
+		dir, _ := filepath.Split(sdkDebugFilePath)
+		if err := os.MkdirAll(dir, os.ModePerm); os.IsExist(err) {
+			return diag.Errorf("error while creating filepath for %s: %s", sdkDebugFilePath, err)
+		}
 
 		if format := data.Get("sdk_debug_format"); format == "Json" {
 			config.LoggingConfiguration.SetLogFormat(platformclientv2.JSON)
