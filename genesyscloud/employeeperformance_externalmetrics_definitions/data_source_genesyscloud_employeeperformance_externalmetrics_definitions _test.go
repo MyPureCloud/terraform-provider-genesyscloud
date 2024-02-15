@@ -1,7 +1,8 @@
-package genesyscloud
+package employeeperformance_externalmetrics_definitions
 
 import (
 	"fmt"
+	"terraform-provider-genesyscloud/genesyscloud"
 	"testing"
 
 	"github.com/google/uuid"
@@ -17,8 +18,8 @@ func TestAccDataSourceEmployeePerformanceExternalMetricsDefinitions(t *testing.T
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { genesyscloud.TestAccPreCheck(t) },
+		ProviderFactories: genesyscloud.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Search by name
@@ -26,7 +27,6 @@ func TestAccDataSourceEmployeePerformanceExternalMetricsDefinitions(t *testing.T
 					defintionRes,
 					name,
 					"Seconds",
-					"",
 					"1",
 					"TargetArea",
 					"true",
