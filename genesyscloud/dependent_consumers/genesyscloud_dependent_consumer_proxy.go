@@ -71,9 +71,8 @@ func retrieveDependentConsumersFn(ctx context.Context, p *DependentConsumerProxy
 	resourceKey := resourceKeys.State.ID
 	resourceName := resourceKeys.Name
 	dependsMap := make(map[string][]string)
-	log.Printf("dependencies from initial call for : %v, and key is %v, and the resourses are %v\n", resourceName, resourceKey, dependsMap)
+
 	dependentResources, dependsMap, err := fetchDepConsumers(ctx, p, resourceKeys.Type, resourceKey, resourceName, make(resourceExporter.ResourceIDMetaMap), dependsMap)
-	log.Printf("dependencies from initial call for : %v, and key is %v, and the resourses are %v\n", resourceName, resourceKey, dependsMap)
 
 	if err != nil {
 		return nil, nil, err
@@ -96,7 +95,6 @@ func fetchDepConsumers(ctx context.Context, p *DependentConsumerProxy, resType s
 				pageCount := 1
 				const pageSize = 100
 				dependencies, _, err := p.ArchitectApi.GetArchitectDependencytrackingConsumedresources(resourceKey, *data.PublishedVersion.Id, objectType, nil, pageCount, pageSize)
-				log.Printf("dependencies from platform api call for : %v, and key is %v, and the resourses are %v\n", resourceName, resourceKey, dependencies)
 
 				if err != nil {
 					return nil, nil, err
@@ -112,7 +110,6 @@ func fetchDepConsumers(ctx context.Context, p *DependentConsumerProxy, resType s
 				// iterate dependencies
 				if pageCount < 2 {
 					resources, dependsMap, err = iterateDependencies(dependencies, resources, dependsMap, ctx, p, resourceKey)
-					log.Printf("dependencies GetArchitectDependencytrackingConsumedresources for : %v, and key is %v, and the resourses are %v\n", resourceName, resourceKey, resources)
 					if err != nil {
 						return nil, nil, err
 					}
@@ -121,7 +118,6 @@ func fetchDepConsumers(ctx context.Context, p *DependentConsumerProxy, resType s
 
 				for pageNum := 1; pageNum <= pageCount; pageNum++ {
 					dependencies, _, err := p.ArchitectApi.GetArchitectDependencytrackingConsumedresources(resourceKey, *data.PublishedVersion.Id, objectType, nil, pageNum, pageSize)
-					log.Printf("dependencies GetArchitectDependencytrackingConsumedresources for : %v, and key is %v, and the resourses are %v\n", resourceName, resourceKey, resources)
 
 					if err != nil {
 						return nil, nil, err
@@ -163,10 +159,8 @@ func iterateDependencies(dependencies *platformclientv2.Consumedresourcesentityl
 			if _, resourceExists := resources[*consumer.Id]; !resourceExists {
 				resources[*consumer.Id] = &resourceExporter.ResourceMeta{Name: resourceFilter}
 				if resourceType == "genesyscloud_flow" && *consumer.Id != key {
-					log.Printf("dependencies iterateDependencies for : %v, and key is %v, and the resourses are %v\n", resourceFilter, *consumer.Id, dependsMap)
 					innerDependentResources, innerDependsMap, err := fetchDepConsumers(ctx, p, resourceType, *consumer.Id, *consumer.Name, make(resourceExporter.ResourceIDMetaMap), make(map[string][]string))
 					dependsMap = stringmap.MergeMaps(dependsMap, buildDependsMap(innerDependentResources, innerDependsMap, *consumer.Id))
-					log.Printf("dependencies iterateDependenciesafter for : %v, and key is %v, and the resourses are %v\n", resourceFilter, *consumer.Id, dependsMap)
 
 					if err != nil {
 						return nil, nil, err
