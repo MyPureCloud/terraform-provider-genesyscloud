@@ -275,6 +275,9 @@ func flattenDataactionconditionpredicates(predicates *[]platformclientv2.Dataact
 
 // look through rule actions to check if the referenced skills exist in our skill map or not
 func doesRuleActionsRefDeletedSkill(rule platformclientv2.Dialerrule, skillMap resourceExporter.ResourceIDMetaMap) bool {
+	if rule.Actions == nil {
+		return false
+	}
 	for _, action := range *rule.Actions {
 		if action.ActionTypeName != nil && strings.EqualFold(*action.ActionTypeName, "set_skills") && action.Properties != nil {
 			if value, found := (*action.Properties)["skills"]; found {

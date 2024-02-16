@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"strings"
 	"terraform-provider-genesyscloud/genesyscloud"
+	authRole "terraform-provider-genesyscloud/genesyscloud/auth_role"
 	"terraform-provider-genesyscloud/genesyscloud/util/lists"
 	"testing"
 
@@ -42,7 +43,7 @@ func TestAccResourceUserRolesMembership(t *testing.T) {
 					userResource1,
 					email1,
 					userName1,
-				) + genesyscloud.GenerateAuthRoleResource(
+				) + authRole.GenerateAuthRoleResource(
 					roleResource1,
 					roleName1,
 					roleDesc,
@@ -51,7 +52,7 @@ func TestAccResourceUserRolesMembership(t *testing.T) {
 					userResource1,
 					generateResourceRoles("genesyscloud_auth_role."+roleResource1+".id", "data.genesyscloud_auth_division_home.home.id"),
 					generateResourceRoles("data.genesyscloud_auth_role."+empRoleDataSrc+".id"),
-				) + genesyscloud.GenerateDefaultAuthRoleDataSource(
+				) + authRole.GenerateDefaultAuthRoleDataSource(
 					empRoleDataSrc,
 					strconv.Quote(empRoleName),
 				),
@@ -69,11 +70,11 @@ func TestAccResourceUserRolesMembership(t *testing.T) {
 					userResource1,
 					email1,
 					userName1,
-				) + genesyscloud.GenerateAuthRoleResource(
+				) + authRole.GenerateAuthRoleResource(
 					roleResource1,
 					roleName1,
 					roleDesc,
-				) + genesyscloud.GenerateAuthRoleResource(
+				) + authRole.GenerateAuthRoleResource(
 					roleResource2,
 					roleName2,
 					roleDesc,
@@ -98,7 +99,7 @@ func TestAccResourceUserRolesMembership(t *testing.T) {
 					userResource1,
 					email1,
 					userName1,
-				) + genesyscloud.GenerateAuthRoleResource(
+				) + authRole.GenerateAuthRoleResource(
 					roleResource1,
 					roleName1,
 					roleDesc,
@@ -117,7 +118,7 @@ func TestAccResourceUserRolesMembership(t *testing.T) {
 					userResource1,
 					email1,
 					userName1,
-				) + genesyscloud.GenerateAuthRoleResource(
+				) + authRole.GenerateAuthRoleResource(
 					roleResource1,
 					roleName1,
 					roleDesc,

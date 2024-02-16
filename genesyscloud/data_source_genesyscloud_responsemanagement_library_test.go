@@ -21,7 +21,7 @@ func TestAccDataSourceResponseManagementLibrary(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				// Search by name
-				Config: generateResponseManagementLibraryResource(
+				Config: GenerateResponseManagementLibraryResource(
 					resourceId,
 					name,
 				) + generateResponseManagementLibraryDataSource(

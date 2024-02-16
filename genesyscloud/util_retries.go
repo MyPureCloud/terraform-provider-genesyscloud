@@ -163,3 +163,13 @@ func IsStatus412(resp *platformclientv2.APIResponse, additionalCodes ...int) boo
 	}
 	return false
 }
+
+func IsStatus412ByInt(respCode int, additionalCodes ...int) bool {
+	if respCode == http.StatusPreconditionFailed ||
+		respCode == http.StatusRequestTimeout ||
+		IsAdditionalCode(respCode, additionalCodes...) {
+		return true
+	}
+
+	return false
+}

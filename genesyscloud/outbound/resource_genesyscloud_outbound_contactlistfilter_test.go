@@ -52,17 +52,17 @@ func TestAccResourceOutboundContactListFilter(t *testing.T) {
 	contactListResource := obContactList.GenerateOutboundContactList(
 		contactListResourceId,
 		contactListName,
-		NullValue,
-		NullValue,
+		gcloud.NullValue,
+		gcloud.NullValue,
 		[]string{},
 		[]string{strconv.Quote(column), strconv.Quote(columnUpdated)},
-		NullValue,
-		NullValue,
-		NullValue,
+		gcloud.NullValue,
+		gcloud.NullValue,
+		gcloud.NullValue,
 		obContactList.GeneratePhoneColumnsBlock(
 			column,
 			"cell",
-			NullValue,
+			gcloud.NullValue,
 		),
 	)
 

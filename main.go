@@ -10,7 +10,9 @@ import (
 	grammar "terraform-provider-genesyscloud/genesyscloud/architect_grammar"
 	grammarLanguage "terraform-provider-genesyscloud/genesyscloud/architect_grammar_language"
 	archIvr "terraform-provider-genesyscloud/genesyscloud/architect_ivr"
+	authRole "terraform-provider-genesyscloud/genesyscloud/auth_role"
 	authorizatioProduct "terraform-provider-genesyscloud/genesyscloud/authorization_product"
+	employeeperformanceExternalmetricsDefinition "terraform-provider-genesyscloud/genesyscloud/employeeperformance_externalmetrics_definitions"
 	externalContacts "terraform-provider-genesyscloud/genesyscloud/external_contacts"
 	flowMilestone "terraform-provider-genesyscloud/genesyscloud/flow_milestone"
 	flowOutcome "terraform-provider-genesyscloud/genesyscloud/flow_outcome"
@@ -26,6 +28,7 @@ import (
 	obCampaign "terraform-provider-genesyscloud/genesyscloud/outbound_campaign"
 	obCampaignRule "terraform-provider-genesyscloud/genesyscloud/outbound_campaignrule"
 	obContactList "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
+	obDncList "terraform-provider-genesyscloud/genesyscloud/outbound_dnclist"
 	obs "terraform-provider-genesyscloud/genesyscloud/outbound_ruleset"
 	obSequence "terraform-provider-genesyscloud/genesyscloud/outbound_sequence"
 	obSettings "terraform-provider-genesyscloud/genesyscloud/outbound_settings"
@@ -34,6 +37,7 @@ import (
 	recMediaRetPolicy "terraform-provider-genesyscloud/genesyscloud/recording_media_retention_policy"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
+	responsemanagementResponse "terraform-provider-genesyscloud/genesyscloud/responsemanagement_response"
 	smsAddresses "terraform-provider-genesyscloud/genesyscloud/routing_sms_addresses"
 	"terraform-provider-genesyscloud/genesyscloud/scripts"
 	"terraform-provider-genesyscloud/genesyscloud/station"
@@ -116,10 +120,12 @@ type RegisterInstance struct {
 
 func registerResources() {
 	regInstance := &RegisterInstance{}
+	authRole.SetRegistrar(regInstance)                      //Registering auth_role
 	oauth.SetRegistrar(regInstance)                         //Registering oauth_client
 	dt.SetRegistrar(regInstance)                            //Registering architect data table
 	dtr.SetRegistrar(regInstance)                           //Registering architect data table row
 	emergencyGroup.SetRegistrar(regInstance)                //Registering architect emergency group
+  employeeperformanceExternalmetricsDefinition.SetRegistrar(regInstance) //Registering employee performance external metrics definitions
 	grammar.SetRegistrar(regInstance)                       //Registering architect grammar
 	grammarLanguage.SetRegistrar(regInstance)               //Registering architect grammar language
 	groupRoles.SetRegistrar(regInstance)                    //Registering group roles
@@ -140,6 +146,7 @@ func registerResources() {
 	obContactList.SetRegistrar(regInstance)                 //Registering outbound contact list
 	obSequence.SetRegistrar(regInstance)                    //Registering outbound sequence
 	obCampaignRule.SetRegistrar(regInstance)                //Registering outbound campaignrule
+	obDncList.SetRegistrar(regInstance)                     //Registering outbound dnclist
 	scripts.SetRegistrar(regInstance)                       //Registering Scripts
 	smsAddresses.SetRegistrar(regInstance)                  //Registering routing sms addresses
 	integration.SetRegistrar(regInstance)                   //Registering integrations
@@ -167,6 +174,8 @@ func registerResources() {
 	edgesTrunk.SetRegistrar(regInstance)                    //Registering Edges Trunk Settings
 	resourceExporter.SetRegisterExporter(resourceExporters) //Registering register exporters
 	userRoles.SetRegistrar(regInstance)                     //Registering user roles
+	responsemanagementResponse.SetRegistrar(regInstance)    //Registering responsemanagement responses
+
 	// setting resources for Use cases  like TF export where provider is used in resource classes.
 	tfexp.SetRegistrar(regInstance) //Registering tf exporter
 	registrar.SetResources(providerResources, providerDataSources)

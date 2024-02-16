@@ -149,6 +149,15 @@ func SetNillableValueWithInterfaceArrayWithFunc[T any](d *schema.ResourceData, k
 	}
 }
 
+// SetNillableValueWithInterfaceArrayWithFunc will read the values in a nested resource using the provided function and set it on the schema
+func SetNillableValueWithSchemaSetWithFunc[T any](d *schema.ResourceData, key string, value *T, f func(*T) *schema.Set) {
+	if value != nil {
+		d.Set(key, f(value))
+	} else {
+		d.Set(key, nil)
+	}
+}
+
 func SetNillableTime(d *schema.ResourceData, key string, value *time.Time) {
 	var timeValue *string = nil
 	if value != nil {

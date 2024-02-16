@@ -37,8 +37,6 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_outbound_messagingcampaign"] = ResourceOutboundMessagingCampaign()
 	providerResources["genesyscloud_outbound_sequence"] = outboundSequence.ResourceOutboundSequence()
 
-	providerResources["genesyscloud_outbound_dnclist"] = ResourceOutboundDncList()
-
 	// external package dependencies for outbound
 	providerResources["genesyscloud_telephony_providers_edges_site"] = edgeSite.ResourceSite()
 	providerResources["genesyscloud_routing_wrapupcode"] = gcloud.ResourceRoutingWrapupCode()
@@ -62,7 +60,6 @@ func (r *registerTestInstance) registerTestDataSources() {
 	providerDataSources["genesyscloud_outbound_messagingcampaign"] = dataSourceOutboundMessagingcampaign()
 	providerDataSources["genesyscloud_outbound_contactlistfilter"] = dataSourceOutboundContactListFilter()
 	providerDataSources["genesyscloud_outbound_sequence"] = outboundSequence.DataSourceOutboundSequence()
-	providerDataSources["genesyscloud_outbound_dnclist"] = dataSourceOutboundDncList()
 
 	// external package dependencies for outbound
 	providerDataSources["genesyscloud_telephony_providers_edges_site"] = edgeSite.DataSourceSite()
