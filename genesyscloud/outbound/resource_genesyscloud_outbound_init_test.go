@@ -7,6 +7,7 @@ import (
 	obCallableTimeset "terraform-provider-genesyscloud/genesyscloud/outbound_callabletimeset"
 	outboundCampaignrule "terraform-provider-genesyscloud/genesyscloud/outbound_campaignrule"
 	obContactList "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
+	obDnclist "terraform-provider-genesyscloud/genesyscloud/outbound_dnclist"
 	obRuleset "terraform-provider-genesyscloud/genesyscloud/outbound_ruleset"
 	outboundSequence "terraform-provider-genesyscloud/genesyscloud/outbound_sequence"
 	edgeSite "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site"
@@ -44,7 +45,7 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_flow"] = gcloud.ResourceFlow()
 	providerResources["genesyscloud_location"] = gcloud.ResourceLocation()
 	providerResources["genesyscloud_outbound_ruleset"] = obRuleset.ResourceOutboundRuleset()
-
+	providerResources["genesyscloud_outbound_dnclist"] = obDnclist.ResourceOutboundDncList()
 }
 
 func (r *registerTestInstance) registerTestDataSources() {
