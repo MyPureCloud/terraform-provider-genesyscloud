@@ -66,6 +66,7 @@ type GenesysCloudResourceExporter struct {
 	splitFilesByResource   bool
 	logPermissionErrors    bool
 	addDependsOn           bool
+	replaceWithDatasource  []string
 	includeStateFile       bool
 	version                string
 	provider               *schema.Provider
@@ -74,6 +75,7 @@ type GenesysCloudResourceExporter struct {
 	resources              []resourceExporter.ResourceInfo
 	resourceTypesHCLBlocks map[string]resourceHCLBlock
 	resourceTypesMaps      map[string]resourceJSONMaps
+	dataSourceTypesMaps    map[string]resourceJSONMaps
 	unresolvedAttrs        []unresolvableAttributeInfo
 	d                      *schema.ResourceData
 	ctx                    context.Context
@@ -142,6 +144,8 @@ func NewGenesysCloudResourceExporter(ctx context.Context, d *schema.ResourceData
 		return nil, err
 	}
 
+	gre.setupDataSource()
+
 	//Setting up the filter
 	configureExporterType(ctx, d, gre, filterType)
 	return gre, nil
@@ -201,6 +205,13 @@ func (g *GenesysCloudResourceExporter) setUpExportDirPath() (diagErr diag.Diagno
 	}
 
 	return nil
+}
+
+func (g *GenesysCloudResourceExporter) setupDataSource() {
+	if replaceWithDatasource, ok := g.d.GetOk("replace_with_datasource"); ok {
+		dataSourceList := lists.InterfaceListToStrings(replaceWithDatasource.([]interface{}))
+		g.replaceWithDatasource = dataSourceList
+	}
 }
 
 // retrieveExporters will return a list of all the registered exporters. If the resource_type on the exporter contains any elements, only the defined
@@ -290,7 +301,7 @@ func (g *GenesysCloudResourceExporter) retrieveGenesysCloudObjectInstances() dia
 		go func(resType string, exporter *resourceExporter.ResourceExporter) {
 			defer wg.Done()
 			//
-			typeResources, err := getResourcesForType(resType, g.provider, exporter, g.meta)
+			typeResources, err := g.getResourcesForType(resType, g.provider, exporter, g.meta)
 
 			if err != nil {
 				select {
@@ -323,11 +334,13 @@ func (g *GenesysCloudResourceExporter) retrieveGenesysCloudObjectInstances() dia
 func (g *GenesysCloudResourceExporter) buildResourceConfigMap() diag.Diagnostics {
 	log.Printf("Build Genesys Cloud Resources Map")
 	g.resourceTypesMaps = make(map[string]resourceJSONMaps)
+	g.dataSourceTypesMaps = make(map[string]resourceJSONMaps)
 	g.resourceTypesHCLBlocks = make(map[string]resourceHCLBlock, 0)
 	g.unresolvedAttrs = make([]unresolvableAttributeInfo, 0)
 
 	for _, resource := range g.resources {
 		jsonResult, diagErr := g.instanceStateToMap(resource.State, resource.CtyType)
+		isDataSource := g.isDataSource(resource.Type, resource.Name)
 		if diagErr != nil {
 			return diagErr
 		}
@@ -336,18 +349,23 @@ func (g *GenesysCloudResourceExporter) buildResourceConfigMap() diag.Diagnostics
 			g.resourceTypesMaps[resource.Type] = make(resourceJSONMaps)
 		}
 
-		if len(g.resourceTypesMaps[resource.Type][resource.Name]) > 0 {
+		if len(g.resourceTypesMaps[resource.Type][resource.Name]) > 0 || len(g.dataSourceTypesMaps[resource.Type][resource.Name]) > 0 {
 			algorithm := fnv.New32()
 			algorithm.Write([]byte(uuid.NewString()))
 			resource.Name = resource.Name + "_" + strconv.FormatUint(uint64(algorithm.Sum32()), 10)
 			g.updateSanitiseMap(*g.exporters, resource)
 		}
-		// Removes zero values and sets proper reference expressions
-		unresolved, _ := g.sanitizeConfigMap(resource.Type, resource.Name, jsonResult, "", *g.exporters, g.includeStateFile, g.exportAsHCL, true)
-		if len(unresolved) > 0 {
-			g.unresolvedAttrs = append(g.unresolvedAttrs, unresolved...)
-		}
 
+		if !isDataSource {
+			// Removes zero values and sets proper reference expressions
+			unresolved, _ := g.sanitizeConfigMap(resource.Type, resource.Name, jsonResult, "", *g.exporters, g.includeStateFile, g.exportAsHCL, true)
+			if len(unresolved) > 0 {
+				g.unresolvedAttrs = append(g.unresolvedAttrs, unresolved...)
+			}
+		} else {
+			g.sanitizeDataConfigMap(jsonResult)
+		}
+		//todo put this in seperate call
 		exporters := *g.exporters
 		exporter := *exporters[resource.Type]
 		if resourceFilesWriterFunc := exporter.CustomFileWriter.RetrieveAndWriteFilesFunc; resourceFilesWriterFunc != nil {
@@ -362,10 +380,18 @@ func (g *GenesysCloudResourceExporter) buildResourceConfigMap() diag.Diagnostics
 			if _, ok := g.resourceTypesHCLBlocks[resource.Type]; !ok {
 				g.resourceTypesHCLBlocks[resource.Type] = make(resourceHCLBlock, 0)
 			}
-			g.resourceTypesHCLBlocks[resource.Type] = append(g.resourceTypesHCLBlocks[resource.Type], instanceStateToHCLBlock(resource.Type, resource.Name, jsonResult))
+			g.resourceTypesHCLBlocks[resource.Type] = append(g.resourceTypesHCLBlocks[resource.Type], instanceStateToHCLBlock(resource.Type, resource.Name, jsonResult, isDataSource))
 		}
 
-		g.resourceTypesMaps[resource.Type][resource.Name] = jsonResult
+		if isDataSource {
+			if g.dataSourceTypesMaps[resource.Type] == nil {
+				g.dataSourceTypesMaps[resource.Type] = make(resourceJSONMaps)
+			}
+			g.dataSourceTypesMaps[resource.Type][resource.Name] = jsonResult
+		} else {
+			g.resourceTypesMaps[resource.Type][resource.Name] = jsonResult
+		}
+
 	}
 
 	return nil
@@ -412,7 +438,7 @@ func (g *GenesysCloudResourceExporter) generateOutputFiles() diag.Diagnostics {
 		hclExporter := NewHClExporter(g.resourceTypesHCLBlocks, g.unresolvedAttrs, providerSource, g.version, g.exportDirPath, g.splitFilesByResource)
 		err = hclExporter.exportHCLConfig()
 	} else {
-		jsonExporter := NewJsonExporter(g.resourceTypesMaps, g.unresolvedAttrs, providerSource, g.version, g.exportDirPath, g.splitFilesByResource)
+		jsonExporter := NewJsonExporter(g.resourceTypesMaps, g.dataSourceTypesMaps, g.unresolvedAttrs, providerSource, g.version, g.exportDirPath, g.splitFilesByResource)
 		err = jsonExporter.exportJSONConfig()
 	}
 	if err != nil {
@@ -854,7 +880,7 @@ func addLogAttrInfoToErrorSummary(err diag.Diagnostics) diag.Diagnostics {
 	return err
 }
 
-func getResourcesForType(resType string, provider *schema.Provider, exporter *resourceExporter.ResourceExporter, meta interface{}) ([]resourceExporter.ResourceInfo, diag.Diagnostics) {
+func (g *GenesysCloudResourceExporter) getResourcesForType(resType string, provider *schema.Provider, exporter *resourceExporter.ResourceExporter, meta interface{}) ([]resourceExporter.ResourceInfo, diag.Diagnostics) {
 	lenResources := len(exporter.SanitizedResourceMap)
 	errorChan := make(chan diag.Diagnostics, lenResources)
 	resourceChan := make(chan resourceExporter.ResourceInfo, lenResources)
@@ -880,6 +906,25 @@ func getResourcesForType(resType string, provider *schema.Provider, exporter *re
 				// This calls into the resource's ReadContext method which
 				// will block until it can acquire a pooled client config object.
 				instanceState, err := getResourceState(ctx, res, id, resMeta, meta)
+
+				if g.isDataSource(resType, resMeta.Name) {
+					res = provider.DataSourcesMap[resType]
+
+					if res == nil {
+						return fmt.Errorf("DataSource type %v not defined", resType)
+					}
+
+					schemaMap := res.SchemaMap()
+					attributes := make(map[string]string)
+
+					for attr, _ := range schemaMap {
+						if value, ok := instanceState.Attributes[attr]; ok {
+							attributes[attr] = value
+						}
+					}
+					instanceState.Attributes = attributes
+				}
+
 				if err != nil {
 					errString := fmt.Sprintf("Failed to get state for %s instance %s: %v", resType, id, err)
 					return fmt.Errorf(errString)
@@ -1017,6 +1062,20 @@ func writeToFile(bytes []byte, path string) diag.Diagnostics {
 		return diag.Errorf("Error writing file %s: %v", path, err)
 	}
 	return nil
+}
+
+func (g *GenesysCloudResourceExporter) sanitizeDataConfigMap(
+	configMap map[string]interface{}) {
+
+	for key, val := range configMap {
+		if key == "id" {
+			// Strip off IDs from the root data source
+			delete(configMap, key)
+		}
+		if val == nil {
+			delete(configMap, key)
+		}
+	}
 }
 
 // Removes empty and zero-valued attributes from the JSON config.
@@ -1329,6 +1388,10 @@ func (g *GenesysCloudResourceExporter) resolveReference(refSettings *resourceExp
 		// Get the sanitized name from the ID returned as a reference expression
 		if idMetaMap := exporters[refSettings.RefType].SanitizedResourceMap; idMetaMap != nil {
 			if meta := idMetaMap[refID]; meta != nil && meta.Name != "" {
+
+				if g.isDataSource(refSettings.RefType, meta.Name) && g.resourceIdExists(refID) {
+					return fmt.Sprintf("${%s.%s.%s.id}", "data", refSettings.RefType, meta.Name)
+				}
 				if g.resourceIdExists(refID) {
 					return fmt.Sprintf("${%s.%s.id}", refSettings.RefType, meta.Name)
 				}
@@ -1372,6 +1435,14 @@ func (g *GenesysCloudResourceExporter) resourceIdExists(refID string) bool {
 		log.Printf("resource present in sanitizedconfigmap and not present in resources section %v", refID)
 		return false
 	}
-
 	return true
+}
+
+func (g *GenesysCloudResourceExporter) isDataSource(resType string, name string) bool {
+	for _, element := range g.replaceWithDatasource {
+		if element == resType+"."+name {
+			return true
+		}
+	}
+	return false
 }

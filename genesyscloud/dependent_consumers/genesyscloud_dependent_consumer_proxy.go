@@ -3,14 +3,13 @@ package dependent_consumers
 import (
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/mypurecloud/platform-client-sdk-go/v121/platformclientv2"
 	"log"
 	"strings"
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"terraform-provider-genesyscloud/genesyscloud/util/stringmap"
-
-	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/mypurecloud/platform-client-sdk-go/v121/platformclientv2"
 )
 
 type DependentConsumerProxy struct {
@@ -23,7 +22,6 @@ type DependentConsumerProxy struct {
 func (p *DependentConsumerProxy) GetDependentConsumers(ctx context.Context, resourceKeys resourceExporter.ResourceInfo) (resourceExporter.ResourceIDMetaMap, map[string][]string, error) {
 	return p.RetrieveDependentConsumersAttr(ctx, p, resourceKeys)
 }
-
 func (p *DependentConsumerProxy) GetAllWithPooledClient(method gcloud.GetCustomConfigFunc) (resourceExporter.ResourceIDMetaMap, map[string][]string, diag.Diagnostics) {
 	return p.GetPooledClientAttr(method)
 }
@@ -45,17 +43,14 @@ func newDependentConsumerProxy(ClientConfig *platformclientv2.Configuration) *De
 			GetPooledClientAttr: retrievePooledClientFn,
 		}
 	}
-
 	if ClientConfig != nil {
 		api := platformclientv2.NewArchitectApiWithConfig(ClientConfig)
 		InternalProxy.ClientConfig = ClientConfig
 		InternalProxy.ArchitectApi = api
 		InternalProxy.RetrieveDependentConsumersAttr = retrieveDependentConsumersFn
 	}
-
 	return InternalProxy
 }
-
 func retrievePooledClientFn(method gcloud.GetCustomConfigFunc) (resourceExporter.ResourceIDMetaMap, map[string][]string, diag.Diagnostics) {
 	resourceFunc := gcloud.GetAllWithPooledClientCustom(method)
 	ctx, cancel := context.WithCancel(context.Background())
@@ -96,9 +91,7 @@ func fetchDepConsumers(ctx context.Context, p *DependentConsumerProxy, resType s
 				if err != nil {
 					return nil, nil, err
 				}
-
 				pageCount = *dependencies.PageCount
-
 				// return empty dependsMap and  resources
 				if dependencies.Entities == nil || len(*dependencies.Entities) == 0 {
 					return resources, dependsMap, nil
@@ -132,7 +125,6 @@ func fetchDepConsumers(ctx context.Context, p *DependentConsumerProxy, resType s
 	}
 	return resources, dependsMap, nil
 }
-
 func buildDependsMap(resources resourceExporter.ResourceIDMetaMap, dependsMap map[string][]string, id string) map[string][]string {
 	dependsList := make([]string, 0)
 	for depId, meta := range resources {
