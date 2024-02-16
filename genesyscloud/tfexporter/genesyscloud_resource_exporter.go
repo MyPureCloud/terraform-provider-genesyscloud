@@ -740,7 +740,7 @@ func (g *GenesysCloudResourceExporter) appendResources(resourcesToAdd []resource
 		// Check if the resource with the same ID already exists
 		duplicate := false
 		for _, existingResource := range g.resources {
-			if existingResource.State.ID == resourceToAdd.State.ID {
+			if existingResource.State.ID == resourceToAdd.State.ID && existingResource.Type == resourceToAdd.Type {
 				duplicate = true
 				break
 			}

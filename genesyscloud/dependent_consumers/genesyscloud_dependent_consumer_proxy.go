@@ -64,15 +64,18 @@ func retrievePooledClientFn(method gcloud.GetCustomConfigFunc) (resourceExporter
 
 func retrieveDependentConsumersFn(ctx context.Context, p *DependentConsumerProxy, resourceKeys resourceExporter.ResourceInfo) (resourceExporter.ResourceIDMetaMap, map[string][]string, error) {
 	resourceKey := resourceKeys.State.ID
+	resourceName := resourceKeys.Name
 	dependsMap := make(map[string][]string)
-	dependentResources, dependsMap, err := fetchDepConsumers(ctx, p, resourceKeys.Type, resourceKey, make(resourceExporter.ResourceIDMetaMap), dependsMap)
+
+	dependentResources, dependsMap, err := fetchDepConsumers(ctx, p, resourceKeys.Type, resourceKey, resourceName, make(resourceExporter.ResourceIDMetaMap), dependsMap)
+
 	if err != nil {
 		return nil, nil, err
 	}
 	return dependentResources, buildDependsMap(dependentResources, dependsMap, resourceKey), nil
 }
 
-func fetchDepConsumers(ctx context.Context, p *DependentConsumerProxy, resType string, resourceKey string, resources resourceExporter.ResourceIDMetaMap, dependsMap map[string][]string) (resourceExporter.ResourceIDMetaMap, map[string][]string, error) {
+func fetchDepConsumers(ctx context.Context, p *DependentConsumerProxy, resType string, resourceKey string, resourceName string, resources resourceExporter.ResourceIDMetaMap, dependsMap map[string][]string) (resourceExporter.ResourceIDMetaMap, map[string][]string, error) {
 	if resType == "genesyscloud_flow" {
 		// Fetches MetaData for the Flow
 		data, _, err := p.ArchitectApi.GetFlow(resourceKey, false)
@@ -99,8 +102,7 @@ func fetchDepConsumers(ctx context.Context, p *DependentConsumerProxy, resType s
 
 				// iterate dependencies
 				if pageCount < 2 {
-					resources, dependsMap, err = iterateDependencies(dependencies, resources, dependsMap, ctx, p)
-					log.Printf("dependencies GetArchitectDependencytrackingConsumedresources: %v\n", resources)
+					resources, dependsMap, err = iterateDependencies(dependencies, resources, dependsMap, ctx, p, resourceKey)
 					if err != nil {
 						return nil, nil, err
 					}
@@ -109,13 +111,14 @@ func fetchDepConsumers(ctx context.Context, p *DependentConsumerProxy, resType s
 
 				for pageNum := 1; pageNum <= pageCount; pageNum++ {
 					dependencies, _, err := p.ArchitectApi.GetArchitectDependencytrackingConsumedresources(resourceKey, *data.PublishedVersion.Id, objectType, nil, pageNum, pageSize)
+
 					if err != nil {
 						return nil, nil, err
 					}
 					if dependencies.Entities == nil || len(*dependencies.Entities) == 0 {
 						break
 					}
-					resources, dependsMap, err = iterateDependencies(dependencies, resources, dependsMap, ctx, p)
+					resources, dependsMap, err = iterateDependencies(dependencies, resources, dependsMap, ctx, p, resourceKey)
 					if err != nil {
 						return nil, nil, err
 					}
@@ -139,7 +142,7 @@ func buildDependsMap(resources resourceExporter.ResourceIDMetaMap, dependsMap ma
 
 // This private function includes iteration of the dependent Consumers and build DependsList for each Resource
 // This also checks for dependent flows and again export those dependencies
-func iterateDependencies(dependencies *platformclientv2.Consumedresourcesentitylisting, resources resourceExporter.ResourceIDMetaMap, dependsMap map[string][]string, ctx context.Context, p *DependentConsumerProxy) (resourceExporter.ResourceIDMetaMap, map[string][]string, error) {
+func iterateDependencies(dependencies *platformclientv2.Consumedresourcesentitylisting, resources resourceExporter.ResourceIDMetaMap, dependsMap map[string][]string, ctx context.Context, p *DependentConsumerProxy, key string) (resourceExporter.ResourceIDMetaMap, map[string][]string, error) {
 	dependentConsumerMap := SetDependentObjectMaps()
 	for _, consumer := range *dependencies.Entities {
 		resourceType, exists := dependentConsumerMap[*consumer.VarType]
@@ -147,9 +150,10 @@ func iterateDependencies(dependencies *platformclientv2.Consumedresourcesentityl
 			resourceFilter := resourceType + "::::" + *consumer.Name
 			if _, resourceExists := resources[*consumer.Id]; !resourceExists {
 				resources[*consumer.Id] = &resourceExporter.ResourceMeta{Name: resourceFilter}
-				if resourceType == "genesyscloud_flow" {
-					innerDependentResources, innerDependsMap, err := fetchDepConsumers(ctx, p, resourceType, *consumer.Id, resources, dependsMap)
+				if resourceType == "genesyscloud_flow" && *consumer.Id != key {
+					innerDependentResources, innerDependsMap, err := fetchDepConsumers(ctx, p, resourceType, *consumer.Id, *consumer.Name, make(resourceExporter.ResourceIDMetaMap), make(map[string][]string))
 					dependsMap = stringmap.MergeMaps(dependsMap, buildDependsMap(innerDependentResources, innerDependsMap, *consumer.Id))
+
 					if err != nil {
 						return nil, nil, err
 					}
