@@ -1,4 +1,4 @@
-package outbound
+package outbound_dnclist
 
 import (
 	"fmt"
