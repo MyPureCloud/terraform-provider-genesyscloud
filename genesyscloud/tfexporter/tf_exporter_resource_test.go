@@ -26,6 +26,7 @@ import (
 	obDncList "terraform-provider-genesyscloud/genesyscloud/outbound_dnclist"
 	obRuleset "terraform-provider-genesyscloud/genesyscloud/outbound_ruleset"
 	obSequence "terraform-provider-genesyscloud/genesyscloud/outbound_sequence"
+	obSettings "terraform-provider-genesyscloud/genesyscloud/outbound_settings"
 	obw "terraform-provider-genesyscloud/genesyscloud/outbound_wrapupcode_mappings"
 	pat "terraform-provider-genesyscloud/genesyscloud/process_automation_trigger"
 	recMediaRetPolicy "terraform-provider-genesyscloud/genesyscloud/recording_media_retention_policy"
@@ -111,7 +112,7 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_location"] = gcloud.ResourceLocation()
 	providerResources["genesyscloud_recording_media_retention_policy"] = recMediaRetPolicy.ResourceMediaRetentionPolicy()
 	providerResources["genesyscloud_oauth_client"] = oauth_client.ResourceOAuthClient()
-	providerResources["genesyscloud_outbound_settings"] = ob.ResourceOutboundSettings()
+	providerResources["genesyscloud_outbound_settings"] = obSettings.ResourceOutboundSettings()
 	providerResources["genesyscloud_quality_forms_evaluation"] = gcloud.ResourceEvaluationForm()
 	providerResources["genesyscloud_user"] = gcloud.ResourceUser()
 	providerResources["genesyscloud_responsemanagement_library"] = gcloud.ResourceResponsemanagementLibrary()
@@ -209,7 +210,7 @@ func (r *registerTestInstance) registerTestExporters() {
 	RegisterExporter("genesyscloud_outbound_sequence", obSequence.OutboundSequenceExporter())
 	RegisterExporter("genesyscloud_outbound_dnclist", obDncList.OutboundDncListExporter())
 	RegisterExporter("genesyscloud_outbound_campaignrule", obCampaignRule.OutboundCampaignruleExporter())
-	RegisterExporter("genesyscloud_outbound_settings", ob.OutboundSettingsExporter())
+	RegisterExporter("genesyscloud_outbound_settings", obSettings.OutboundSettingsExporter())
 	RegisterExporter("genesyscloud_outbound_wrapupcodemappings", obw.OutboundWrapupCodeMappingsExporter())
 	RegisterExporter("genesyscloud_quality_forms_evaluation", gcloud.EvaluationFormExporter())
 	RegisterExporter("genesyscloud_quality_forms_survey", gcloud.SurveyFormExporter())

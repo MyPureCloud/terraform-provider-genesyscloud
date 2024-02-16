@@ -1,4 +1,4 @@
-package outbound
+package outbound_settings
 
 import (
 	"fmt"
@@ -21,7 +21,7 @@ func TestAccResourceOutboundSettings(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
-		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
+		ProviderFactories: gcloud.GetProviderFactories(providerResources, nil),
 		Steps: []resource.TestStep{
 			{
 				// Update all non nested values
