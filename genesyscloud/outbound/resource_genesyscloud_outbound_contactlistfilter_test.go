@@ -28,11 +28,11 @@ func TestAccResourceOutboundContactListFilter(t *testing.T) {
 		columnType            = "numeric"
 		operator              = "EQUALS"
 		predicateValue        = "+12345123456"
-		inverted              = FalseValue
+		inverted              = gcloud.FalseValue
 		rangeMin              = "1"
 		rangeMax              = "10"
 		minInclusive          = TrueValue
-		maxInclusive          = FalseValue
+		maxInclusive          = gcloud.FalseValue
 		rangeInSet            = []string{"a"}
 
 		nameUpdated           = "Test CLF " + uuid.NewString()
@@ -44,7 +44,7 @@ func TestAccResourceOutboundContactListFilter(t *testing.T) {
 		invertedUpdated       = TrueValue
 		rangeMinUpdated       = "2"
 		rangeMaxUpdated       = "12"
-		minInclusiveUpdated   = FalseValue
+		minInclusiveUpdated   = gcloud.FalseValue
 		maxInclusiveUpdated   = TrueValue
 		rangeInSetUpdated     = []string{"a", "b"}
 	)

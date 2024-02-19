@@ -1,4 +1,4 @@
-package outbound
+package outbound_callanalysisresponseset
 
 import (
 	"fmt"

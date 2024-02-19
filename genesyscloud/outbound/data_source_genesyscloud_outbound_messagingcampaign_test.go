@@ -55,7 +55,7 @@ func TestAccDataSourceOutboundMessagingCampaign(t *testing.T) {
 			gcloud.NullValue,
 			[]string{},
 			[]string{strconv.Quote(column1), strconv.Quote(column2)},
-			FalseValue,
+			gcloud.FalseValue,
 			gcloud.NullValue,
 			gcloud.NullValue,
 			obContactList.GeneratePhoneColumnsBlock(
@@ -114,7 +114,7 @@ func TestAccDataSourceOutboundMessagingCampaign(t *testing.T) {
 						"genesyscloud_outbound_contact_list."+contactListResourceId+".id",
 						"",
 						"10",
-						FalseValue,
+						gcloud.FalseValue,
 						"genesyscloud_outbound_callabletimeset."+callableTimeSetResourceId+".id",
 						[]string{},
 						[]string{"genesyscloud_outbound_contactlistfilter." + clfResourceId + ".id"},
