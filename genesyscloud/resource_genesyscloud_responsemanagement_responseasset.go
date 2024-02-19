@@ -103,7 +103,7 @@ func readResponsemanagementResponseAsset(ctx context.Context, d *schema.Resource
 			return retry.NonRetryableError(fmt.Errorf("Failed to read response asset %s: %s", d.Id(), getErr))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceResponsemanagementLibrary())
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceResponseManagamentResponseAsset())
 
 		_ = d.Set("filename", *sdkAsset.Name)
 
