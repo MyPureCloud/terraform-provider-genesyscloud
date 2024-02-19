@@ -9,6 +9,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/outbound"
 	obResponseSet "terraform-provider-genesyscloud/genesyscloud/outbound_callanalysisresponseset"
 	obContactList "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
+	obContactListFilter "terraform-provider-genesyscloud/genesyscloud/outbound_contactlistfilter"
 	obDnclist "terraform-provider-genesyscloud/genesyscloud/outbound_dnclist"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
@@ -327,14 +328,14 @@ func GenerateReferencedResourcesForOutboundCampaignTests(
 		}
 	}
 	if clfResourceId != "" {
-		contactListFilter = outbound.GenerateOutboundContactListFilter(
+		contactListFilter = obContactListFilter.GenerateOutboundContactListFilter(
 			clfResourceId,
 			"tf test clf "+uuid.NewString(),
 			"genesyscloud_outbound_contact_list."+contactListResourceId+".id",
 			"",
-			outbound.GenerateOutboundContactListFilterClause(
+			obContactListFilter.GenerateOutboundContactListFilterClause(
 				"",
-				outbound.GenerateOutboundContactListFilterPredicates(
+				obContactListFilter.GenerateOutboundContactListFilterPredicates(
 					"Cell",
 					"alphabetic",
 					"EQUALS",

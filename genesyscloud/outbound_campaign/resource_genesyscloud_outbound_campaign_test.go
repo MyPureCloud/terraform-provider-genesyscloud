@@ -13,6 +13,7 @@ import (
 	obCallableTimeset "terraform-provider-genesyscloud/genesyscloud/outbound_callabletimeset"
 	obResponseSet "terraform-provider-genesyscloud/genesyscloud/outbound_callanalysisresponseset"
 	obContactList "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
+	obContactListFilter "terraform-provider-genesyscloud/genesyscloud/outbound_contactlistfilter"
 	edgeSite "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site"
 
 	"github.com/google/uuid"
@@ -125,14 +126,14 @@ func TestAccResourceOutboundCampaignBasic(t *testing.T) {
 				"${genesyscloud_flow.flow.id}",
 			),
 		),
-	) + outbound.GenerateOutboundContactListFilter(
+	) + obContactListFilter.GenerateOutboundContactListFilter(
 		clfResourceId,
 		"tf clf "+uuid.NewString(),
 		"genesyscloud_outbound_contact_list."+contactListResourceId+".id",
 		"",
-		outbound.GenerateOutboundContactListFilterClause(
+		obContactListFilter.GenerateOutboundContactListFilterClause(
 			"",
-			outbound.GenerateOutboundContactListFilterPredicates(
+			obContactListFilter.GenerateOutboundContactListFilterPredicates(
 				"Cell",
 				"alphabetic",
 				"EQUALS",
