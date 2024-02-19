@@ -59,14 +59,14 @@ func ResponsemanagementLibraryExporter() *resourceExporter.ResourceExporter {
 // DataSourceResponsemanagementLibrary registers the genesyscloud_responsemanagement_library data source
 func DataSourceResponsemanagementLibrary() *schema.Resource {
 	return &schema.Resource{
-		Description: `Genesys Cloud responsemanagement library`,
+		Description: `Data source for Genesys Cloud Responsemanagement Library. Select a Responsemanagement Library by name.`,
 		ReadContext: gcloud.ReadWithPooledClient(dataSourceResponsemanagementLibraryRead),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
 		Schema: map[string]*schema.Schema{
 			"name": {
-				Description: `responsemanagement library name`,
+				Description: `Responsemanagement Library name.`,
 				Type:        schema.TypeString,
 				Required:    true,
 			},
