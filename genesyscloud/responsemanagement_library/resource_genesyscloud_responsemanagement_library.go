@@ -43,7 +43,9 @@ func getAllAuthResponsemanagementLibrarys(ctx context.Context, clientConfig *pla
 func createResponsemanagementLibrary(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
 	proxy := getResponsemanagementLibraryProxy(sdkConfig)
-	responsemanagementLibrary := getResponsemanagementLibraryFromResourceData(d)
+	responsemanagementLibrary := platformclientv2.Library{
+		Name: platformclientv2.String(d.Get("name").(string)),
+	}
 
 	log.Printf("Creating responsemanagement library %s", *responsemanagementLibrary.Name)
 	library, err := proxy.createResponsemanagementLibrary(ctx, &responsemanagementLibrary)
@@ -86,7 +88,9 @@ func updateResponsemanagementLibrary(ctx context.Context, d *schema.ResourceData
 	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
 	proxy := getResponsemanagementLibraryProxy(sdkConfig)
 
-	responsemanagementLibrary := getResponsemanagementLibraryFromResourceData(d)
+	responsemanagementLibrary := platformclientv2.Library{
+		Name: platformclientv2.String(d.Get("name").(string)),
+	}
 
 	log.Printf("Updating responsemanagement library %s", *responsemanagementLibrary.Name)
 	library, err := proxy.updateResponsemanagementLibrary(ctx, d.Id(), &responsemanagementLibrary)
@@ -119,11 +123,4 @@ func deleteResponsemanagementLibrary(ctx context.Context, d *schema.ResourceData
 		}
 		return retry.RetryableError(fmt.Errorf("responsemanagement library %s still exists", d.Id()))
 	})
-}
-
-// getResponsemanagementLibraryFromResourceData maps data from schema ResourceData object to a platformclientv2.Library
-func getResponsemanagementLibraryFromResourceData(d *schema.ResourceData) platformclientv2.Library {
-	return platformclientv2.Library{
-		Name: platformclientv2.String(d.Get("name").(string)),
-	}
 }

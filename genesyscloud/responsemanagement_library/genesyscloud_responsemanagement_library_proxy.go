@@ -134,16 +134,16 @@ func getAllResponsemanagementLibraryFn(ctx context.Context, p *responsemanagemen
 
 // getResponsemanagementLibraryIdByNameFn is an implementation of the function to get a Genesys Cloud responsemanagement library by name
 func getResponsemanagementLibraryIdByNameFn(ctx context.Context, p *responsemanagementLibraryProxy, name string) (id string, retryable bool, err error) {
-	librarys, _, err := p.responseManagementApi.GetResponsemanagementLibraries(1, 100, "", "")
+	librarys, err := getAllResponsemanagementLibraryFn(ctx, p)
 	if err != nil {
 		return "", false, err
 	}
 
-	if librarys.Entities == nil || len(*librarys.Entities) == 0 {
+	if librarys == nil || len(*librarys) == 0 {
 		return "", true, fmt.Errorf("No responsemanagement library found with name %s", name)
 	}
 
-	for _, library := range *librarys.Entities {
+	for _, library := range *librarys {
 		if *library.Name == name {
 			log.Printf("Retrieved the responsemanagement library id %s by name %s", *library.Id, name)
 			return *library.Id, false, nil
