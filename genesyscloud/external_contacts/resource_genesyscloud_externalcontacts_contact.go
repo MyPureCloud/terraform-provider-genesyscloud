@@ -100,7 +100,7 @@ func readExternalContact(ctx context.Context, d *schema.ResourceData, meta inter
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "home_phone", externalContact.HomePhone, flattenPhoneNumber)
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "other_phone", externalContact.OtherPhone, flattenPhoneNumber)
 		resourcedata.SetNillableValue(d, "work_email", externalContact.WorkEmail)
-		resourcedata.SetNillableValue(d, "personal_email", externalContact.WorkEmail)
+		resourcedata.SetNillableValue(d, "personal_email", externalContact.PersonalEmail)
 		resourcedata.SetNillableValue(d, "other_email", externalContact.OtherEmail)
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "address", externalContact.Address, flattenSdkAddress)
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "twitter_id", externalContact.TwitterId, flattenSdkTwitterId)
