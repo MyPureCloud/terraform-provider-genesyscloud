@@ -3,6 +3,8 @@ package architect_emergencygroup
 import (
 	"context"
 	"fmt"
+	"terraform-provider-genesyscloud/genesyscloud/resource_cache"
+	"terraform-provider-genesyscloud/genesyscloud/tfexporter_state"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v121/platformclientv2"
 )
@@ -19,6 +21,7 @@ type getArchitectEmergencyGroupIdByNameFunc func(ctx context.Context, p *archite
 type architectEmergencyGroupProxy struct {
 	clientConfig                           *platformclientv2.Configuration
 	architectApi                           *platformclientv2.ArchitectApi
+	cache                                  resource_cache.CacheInterface[platformclientv2.Emergencygroup]
 	createArchitectEmergencyGroupAttr      createArchitectEmergencyGroupFunc
 	getAllArchitectEmergencyGroupAttr      getAllArchitectEmergencyGroupFunc
 	getArchitectEmergencyGroupAttr         getArchitectEmergencyGroupFunc
@@ -29,9 +32,11 @@ type architectEmergencyGroupProxy struct {
 
 func newArchitectEmergencyGroupProxy(clientConfig *platformclientv2.Configuration) *architectEmergencyGroupProxy {
 	api := platformclientv2.NewArchitectApiWithConfig(clientConfig)
+	cache := resource_cache.NewResourceCache[platformclientv2.Emergencygroup]()
 	return &architectEmergencyGroupProxy{
 		clientConfig:                           clientConfig,
 		architectApi:                           api,
+		cache:                                  cache,
 		createArchitectEmergencyGroupAttr:      createArchitectEmergencyGroupFn,
 		getAllArchitectEmergencyGroupAttr:      getAllArchitectEmergencyGroupFn,
 		getArchitectEmergencyGroupAttr:         getArchitectEmergencyGroupFn,
@@ -90,6 +95,9 @@ func getAllArchitectEmergencyGroupFn(ctx context.Context, p *architectEmergencyG
 
 	for _, emergencyGroup := range *emergencyGroupConfigs.Entities {
 		totalRecords = append(totalRecords, emergencyGroup)
+		if tfexporter_state.IsExporterActive() {
+			p.cache.Set(*emergencyGroup.Id, emergencyGroup)
+		}
 	}
 
 	for pageNum := 2; pageNum <= *emergencyGroupConfigs.PageCount; pageNum++ {
@@ -105,6 +113,9 @@ func getAllArchitectEmergencyGroupFn(ctx context.Context, p *architectEmergencyG
 
 		for _, emergencyGroup := range *emergencyGroupConfigs.Entities {
 			totalRecords = append(totalRecords, emergencyGroup)
+			if tfexporter_state.IsExporterActive() {
+				p.cache.Set(*emergencyGroup.Id, emergencyGroup)
+			}
 		}
 	}
 
@@ -112,12 +123,17 @@ func getAllArchitectEmergencyGroupFn(ctx context.Context, p *architectEmergencyG
 }
 
 func getArchitectEmergencyGroupFn(ctx context.Context, p *architectEmergencyGroupProxy, emergencyGroupId string) (emergencyGroup *platformclientv2.Emergencygroup, apiResponse *platformclientv2.APIResponse, err error) {
+	if tfexporter_state.IsExporterActive() {
+		eg := p.cache.Get(emergencyGroupId)
+		return &eg, nil, nil
+	}
 	return p.architectApi.GetArchitectEmergencygroup(emergencyGroupId)
 }
 
 func getArchitectEmergencyGroupIdByNameFn(ctx context.Context, p *architectEmergencyGroupProxy, name string) (emergencyGroup *platformclientv2.Emergencygrouplisting, apiResponse *platformclientv2.APIResponse, err error) {
 	const pageNum = 1
 	const pageSize = 100
+
 	return p.architectApi.GetArchitectEmergencygroups(pageNum, pageSize, "", "", name)
 }
 
