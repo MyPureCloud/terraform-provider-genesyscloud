@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"strings"
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	respmanagementLibrary "terraform-provider-genesyscloud/genesyscloud/responsemanagement_library"
 	"testing"
 
 	"github.com/google/uuid"
@@ -52,7 +53,7 @@ func TestAccResourceResponseManagementResponseFooterField(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				// Create with required values
-				Config: gcloud.GenerateResponseManagementLibraryResource(
+				Config: respmanagementLibrary.GenerateResponseManagementLibraryResource(
 					libraryResource1,
 					libraryName1,
 				) + generateResponseManagementResponseResource(
@@ -79,7 +80,7 @@ func TestAccResourceResponseManagementResponseFooterField(t *testing.T) {
 			},
 			{
 				// Update with new name and texts and add remaining values
-				Config: gcloud.GenerateResponseManagementLibraryResource(
+				Config: respmanagementLibrary.GenerateResponseManagementLibraryResource(
 					libraryResource1,
 					libraryName1,
 				) + gcloud.GenerateResponseManagementResponseAssetResource(
@@ -127,10 +128,10 @@ func TestAccResourceResponseManagementResponseFooterField(t *testing.T) {
 			},
 			{
 				// Add more texts and change libraries
-				Config: gcloud.GenerateResponseManagementLibraryResource(
+				Config: respmanagementLibrary.GenerateResponseManagementLibraryResource(
 					libraryResource1,
 					libraryName1,
-				) + gcloud.GenerateResponseManagementLibraryResource(
+				) + respmanagementLibrary.GenerateResponseManagementLibraryResource(
 					libraryResource2,
 					libraryName2,
 				) + gcloud.GenerateResponseManagementResponseAssetResource(
@@ -237,7 +238,7 @@ func TestAccResourceResponseManagementResponseMessaging(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				// Create with required values
-				Config: gcloud.GenerateResponseManagementLibraryResource(
+				Config: respmanagementLibrary.GenerateResponseManagementLibraryResource(
 					libraryResource1,
 					libraryName1,
 				) + generateResponseManagementResponseResource(
@@ -264,7 +265,7 @@ func TestAccResourceResponseManagementResponseMessaging(t *testing.T) {
 			},
 			{
 				// Update with new name and texts and add remaining values
-				Config: gcloud.GenerateResponseManagementLibraryResource(
+				Config: respmanagementLibrary.GenerateResponseManagementLibraryResource(
 					libraryResource1,
 					libraryName1,
 				) + gcloud.GenerateResponseManagementResponseAssetResource(
@@ -321,10 +322,10 @@ func TestAccResourceResponseManagementResponseMessaging(t *testing.T) {
 			},
 			{
 				// Add more texts and change libraries
-				Config: gcloud.GenerateResponseManagementLibraryResource(
+				Config: respmanagementLibrary.GenerateResponseManagementLibraryResource(
 					libraryResource1,
 					libraryName1,
-				) + gcloud.GenerateResponseManagementLibraryResource(
+				) + respmanagementLibrary.GenerateResponseManagementLibraryResource(
 					libraryResource2,
 					libraryName2,
 				) + gcloud.GenerateResponseManagementResponseAssetResource(
