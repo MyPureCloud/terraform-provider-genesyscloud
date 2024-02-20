@@ -9,7 +9,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v121/platformclientv2"
 )
 
 func dataSourceUserPrompt() *schema.Resource {
@@ -37,7 +37,7 @@ func dataSourceUserPromptRead(ctx context.Context, d *schema.ResourceData, m int
 	return WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
 		const pageNum = 1
 		const pageSize = 100
-		prompts, _, getErr := architectApi.GetArchitectPrompts(pageNum, pageSize, nameArr, "", "", "", "")
+		prompts, _, getErr := architectApi.GetArchitectPrompts(pageNum, pageSize, nameArr, "", "", "", "", true, true, nil)
 		if getErr != nil {
 			return retry.NonRetryableError(fmt.Errorf("Error requesting user prompts %s: %s", name, getErr))
 		}

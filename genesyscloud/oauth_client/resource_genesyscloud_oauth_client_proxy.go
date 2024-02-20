@@ -2,7 +2,8 @@ package oauth_client
 
 import (
 	"context"
-	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
+
+	"github.com/mypurecloud/platform-client-sdk-go/v121/platformclientv2"
 )
 
 var internalProxy *oauthClientProxy

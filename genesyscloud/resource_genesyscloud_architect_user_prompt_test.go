@@ -15,7 +15,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v121/platformclientv2"
 )
 
 func TestAccResourceUserPromptBasic(t *testing.T) {
@@ -271,7 +271,7 @@ func testVerifyUserPromptsDestroyed(state *terraform.State) error {
 			continue
 		}
 
-		userPrompt, resp, err := architectAPI.GetArchitectPrompt(rs.Primary.ID)
+		userPrompt, resp, err := architectAPI.GetArchitectPrompt(rs.Primary.ID, false, false, nil)
 
 		if userPrompt != nil {
 			return fmt.Errorf("User Prompt (%s) still exists", rs.Primary.ID)

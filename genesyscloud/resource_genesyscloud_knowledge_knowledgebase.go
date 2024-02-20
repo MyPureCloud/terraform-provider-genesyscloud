@@ -16,7 +16,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v121/platformclientv2"
 )
 
 func getAllKnowledgeKnowledgebases(_ context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
@@ -239,4 +239,17 @@ func deleteKnowledgeKnowledgebase(ctx context.Context, d *schema.ResourceData, m
 
 		return retry.RetryableError(fmt.Errorf("Knowledge base %s still exists", d.Id()))
 	})
+}
+
+func GenerateKnowledgeKnowledgebaseResource(
+	resourceID string,
+	name string,
+	description string,
+	coreLanguage string) string {
+	return fmt.Sprintf(`resource "genesyscloud_knowledge_knowledgebase" "%s" {
+		name = "%s"
+        description = "%s"
+        core_language = "%s"
+	}
+	`, resourceID, name, description, coreLanguage)
 }

@@ -9,7 +9,7 @@ import (
 	utillists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 	"time"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v121/platformclientv2"
 )
 
 /*
@@ -45,9 +45,9 @@ type getArchitectIvrIdByNameFunc func(context.Context, *architectIvrProxy, strin
 
 // architectIvrProxy contains all methods that call genesys cloud APIs.
 type architectIvrProxy struct {
-	cache        resource_cache.CacheInterface[platformclientv2.Ivr]
 	clientConfig *platformclientv2.Configuration
 	api          *platformclientv2.ArchitectApi
+	cache        resource_cache.CacheInterface[platformclientv2.Ivr]
 
 	createArchitectIvrAttr      createArchitectIvrFunc
 	getArchitectIvrAttr         getArchitectIvrFunc

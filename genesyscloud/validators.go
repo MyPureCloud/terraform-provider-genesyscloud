@@ -3,6 +3,7 @@ package genesyscloud
 import (
 	"fmt"
 	"regexp"
+	"strconv"
 	"time"
 
 	"strings"
@@ -37,6 +38,7 @@ func ValidatePhoneNumber(number interface{}, _ cty.Path) diag.Diagnostics {
 // ValidateRrule validates rrule attribute
 func ValidateRrule(rrule interface{}, _ cty.Path) diag.Diagnostics {
 	if input, ok := rrule.(string); ok {
+		// FREQ Attribute validation
 		freqRegex := regexp.MustCompile(`FREQ=([A-Z]+)`)
 		if match := freqRegex.FindStringSubmatch(input); strings.Contains(input, "FREQ=") && match == nil {
 			return diag.Errorf("Invalid FREQ attribute. Should consist of uppercase letters.")
@@ -47,18 +49,30 @@ func ValidateRrule(rrule interface{}, _ cty.Path) diag.Diagnostics {
 			return diag.Errorf("Invalid INTERVAL attribute. Should be a positive integer greater than 0 without leading zeros.")
 		}
 
-		// BYMONTH Attribute validation
-		byMonthRegex := regexp.MustCompile(`BYMONTH=(1[0-2]|[1-9])`)
-		if match := byMonthRegex.FindStringSubmatch(input); strings.Contains(input, "BYMONTH=") && match == nil {
-			return diag.Errorf("Invalid BYMONTH attribute. Should be a valid month (1-12) without leading zeros for single-digit months.")
+		// rrule is split and stored in array using ';' as delimiter
+		// array is iterated over and variables are assigned if they exist
+		// This allows for the values for BYMONTH and BYMONTHDAY to be split, parsed and checked that they are within the valid range
+		rRuleAttributes := strings.Split(input, ";")
+		for _, value := range rRuleAttributes {
+			// BYMONTH Attribute validation
+			if strings.Contains(value, "BYMONTH=") {
+				byMonth := value
+				byMonthString := strings.Split(byMonth, "=")
+				byMonthValue, err := strconv.Atoi(byMonthString[1])
+				if err != nil || byMonthValue <= 0 || byMonthValue > 12 {
+					return diag.Errorf("Invalid BYMONTH attribute. Should be a valid month (1-12) without leading zeros for single-digit months.")
+				}
+			}
+			// BYMONTHDAY Attribute validation
+			if strings.Contains(value, "BYMONTHDAY=") {
+				byMonthDay := value
+				byMonthDayString := strings.Split(byMonthDay, "=")
+				byMonthDayValue, err := strconv.Atoi(byMonthDayString[1])
+				if err != nil || byMonthDayValue <= 0 || byMonthDayValue > 31 {
+					return diag.Errorf("Invalid BYMONTHDAY attribute. Should be a valid day of the month (1-31) without leading zeros for single-digit days.")
+				}
+			}
 		}
-
-		// BYMONTHDAY Attribute validation
-		byMonthDayRegex := regexp.MustCompile(`BYMONTHDAY=([1-9]|[12][0-9]|3[0-1])$`)
-		if match := byMonthDayRegex.FindStringSubmatch(input); strings.Contains(input, "BYMONTHDAY=") && match == nil {
-			return diag.Errorf("Invalid BYMONTHDAY attribute. Should be a valid day of the month (1-31) without leading zeros for single-digit days.")
-		}
-
 		return nil
 	}
 	return diag.Errorf("Provided rrule %v is not in string format", rrule)
@@ -218,4 +232,19 @@ func ValidateSubStringInSlice(valid []string) schema.SchemaValidateFunc {
 
 		return warnings, errors
 	}
+}
+
+// Validate if a string matches '#FFFFFF' RGB color representation.
+func ValidateHexColor(color interface{}, _ cty.Path) diag.Diagnostics {
+	if colorStr, ok := color.(string); ok {
+		matched, err := regexp.MatchString("^#([A-Fa-f0-9]{6})$", colorStr)
+		if err != nil {
+			return diag.Errorf("Error applying regular expression against color: %v", err)
+		}
+		if !matched {
+			return diag.Errorf("Invalid color. It must be in the format #FFFFFF")
+		}
+		return nil
+	}
+	return diag.Errorf("Color %v is not a string", color)
 }

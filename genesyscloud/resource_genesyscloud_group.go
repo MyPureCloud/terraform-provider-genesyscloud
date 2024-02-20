@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"log"
 	"strings"
+	"terraform-provider-genesyscloud/genesyscloud/resource_cache"
+	"terraform-provider-genesyscloud/genesyscloud/tfexporter_state"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -19,10 +21,11 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v121/platformclientv2"
 )
 
 var (
+	cache                = resource_cache.NewResourceCache[platformclientv2.Group]()
 	groupPhoneType       = "PHONE"
 	groupAddressResource = &schema.Resource{
 		Schema: map[string]*schema.Schema{
@@ -63,6 +66,9 @@ func GetAllGroups(_ context.Context, clientConfig *platformclientv2.Configuratio
 		}
 
 		for _, group := range *groups.Entities {
+			if tfexporter_state.IsExporterActive() {
+				cache.Set(*group.Id, group)
+			}
 			resources[*group.Id] = &resourceExporter.ResourceMeta{Name: *group.Name}
 		}
 	}
@@ -205,12 +211,19 @@ func readGroup(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 	log.Printf("Reading group %s", d.Id())
 
 	return WithRetriesForRead(ctx, d, func() *retry.RetryError {
-		group, resp, getErr := groupsAPI.GetGroup(d.Id())
-		if getErr != nil {
-			if IsStatus404(resp) {
-				return retry.RetryableError(fmt.Errorf("Failed to read group %s: %s", d.Id(), getErr))
+		var group platformclientv2.Group
+
+		if tfexporter_state.IsExporterActive() {
+			group = cache.Get(d.Id())
+		} else {
+			g, resp, getErr := groupsAPI.GetGroup(d.Id())
+			if getErr != nil {
+				if IsStatus404(resp) {
+					return retry.RetryableError(fmt.Errorf("Failed to read group %s: %s", d.Id(), getErr))
+				}
+				return retry.NonRetryableError(fmt.Errorf("Failed to read group %s: %s", d.Id(), getErr))
 			}
-			return retry.NonRetryableError(fmt.Errorf("Failed to read group %s: %s", d.Id(), getErr))
+			group = *g
 		}
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceGroup())
