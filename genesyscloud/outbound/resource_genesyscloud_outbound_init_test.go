@@ -1,6 +1,8 @@
 package outbound
 
 import (
+	"github.com/mypurecloud/platform-client-sdk-go/v121/platformclientv2"
+	"log"
 	"sync"
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	obAttemptLimit "terraform-provider-genesyscloud/genesyscloud/outbound_attempt_limit"
@@ -16,8 +18,13 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-var providerDataSources map[string]*schema.Resource
-var providerResources map[string]*schema.Resource
+var (
+	providerDataSources map[string]*schema.Resource
+	providerResources   map[string]*schema.Resource
+
+	sdkConfig *platformclientv2.Configuration
+	authErr   error
+)
 
 type registerTestInstance struct {
 	resourceMapMutex   sync.RWMutex
@@ -84,6 +91,10 @@ func initTestResources() {
 }
 
 func TestMain(m *testing.M) {
+	sdkConfig, authErr = gcloud.AuthorizeSdk()
+	if authErr != nil {
+		log.Fatalf("failed to authorize sdk for package outbound: %v", authErr)
+	}
 
 	// Run setup function before starting the test suite for Outbound Package
 	initTestResources()

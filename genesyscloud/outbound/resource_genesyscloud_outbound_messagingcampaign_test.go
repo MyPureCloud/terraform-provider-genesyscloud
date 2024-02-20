@@ -25,7 +25,6 @@ This test can only pass in a test org because it requires an active provisioned 
 Endpoint `POST /api/v2/routing/sms/phonenumbers` creates an active/valid phone number in test orgs only.
 */
 func TestAccResourceOutboundMessagingCampaign(t *testing.T) {
-
 	t.Parallel()
 	var (
 		// Contact list
@@ -106,18 +105,12 @@ func TestAccResourceOutboundMessagingCampaign(t *testing.T) {
 		)
 	)
 
-	config, err := gcloud.AuthorizeSdk()
-	if err != nil {
-		t.Errorf("failed to authorize client: %v", err)
-	}
-	api := platformclientv2.NewRoutingApiWithConfig(config)
-	err = createRoutingSmsPhoneNumber(smsConfigSenderSMSPhoneNumber, api)
-	if err != nil {
+	api := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
+	if err := createRoutingSmsPhoneNumber(smsConfigSenderSMSPhoneNumber, api); err != nil {
 		t.Errorf("error creating sms phone number %s: %v", smsConfigSenderSMSPhoneNumber, err)
 	}
 	defer func() {
-		_, err := api.DeleteRoutingSmsPhonenumber(smsConfigSenderSMSPhoneNumber)
-		if err != nil {
+		if _, err := api.DeleteRoutingSmsPhonenumber(smsConfigSenderSMSPhoneNumber); err != nil {
 			t.Logf("error deleting phone number %s: %v", smsConfigSenderSMSPhoneNumber, err)
 		}
 	}()
@@ -311,11 +304,15 @@ func createRoutingSmsPhoneNumber(inputSmsPhoneNumber string, api *platformclient
 		status          string
 		maxRetries      = 10
 	)
+
 	_, resp, err := api.GetRoutingSmsPhonenumber(inputSmsPhoneNumber, "compliance")
-	if resp.StatusCode == 200 {
+
+	if err == nil && resp.StatusCode == 200 {
 		// Number already exists
 		return nil
-	} else if resp.StatusCode == http.StatusNotFound {
+	}
+
+	if err != nil && resp.StatusCode == http.StatusNotFound {
 		body := platformclientv2.Smsphonenumberprovision{
 			PhoneNumber:     &inputSmsPhoneNumber,
 			PhoneNumberType: &phoneNumberType,
@@ -346,8 +343,6 @@ func createRoutingSmsPhoneNumber(inputSmsPhoneNumber string, api *platformclient
 		if status == "Failed" {
 			return fmt.Errorf(`sms phone number provisioning failed`)
 		}
-	} else if err != nil {
-		return fmt.Errorf("error checking for sms phone number %v: %v", inputSmsPhoneNumber, err)
 	}
 	return nil
 }
