@@ -18,7 +18,7 @@ var internalProxy *responsemanagementLibraryProxy
 
 // Type definitions for each func on our proxy so we can easily mock them out later
 type createResponsemanagementLibraryFunc func(ctx context.Context, p *responsemanagementLibraryProxy, library *platformclientv2.Library) (*platformclientv2.Library, error)
-type getAllResponsemanagementLibraryFunc func(ctx context.Context, p *responsemanagementLibraryProxy) (*[]platformclientv2.Library, error)
+type getAllResponsemanagementLibraryFunc func(ctx context.Context, p *responsemanagementLibraryProxy, name string) (*[]platformclientv2.Library, error)
 type getResponsemanagementLibraryIdByNameFunc func(ctx context.Context, p *responsemanagementLibraryProxy, name string) (id string, retryable bool, err error)
 type getResponsemanagementLibraryByIdFunc func(ctx context.Context, p *responsemanagementLibraryProxy, id string) (library *platformclientv2.Library, responseCode int, err error)
 type updateResponsemanagementLibraryFunc func(ctx context.Context, p *responsemanagementLibraryProxy, id string, library *platformclientv2.Library) (*platformclientv2.Library, error)
@@ -67,7 +67,7 @@ func (p *responsemanagementLibraryProxy) createResponsemanagementLibrary(ctx con
 
 // getResponsemanagementLibrary retrieves all Genesys Cloud responsemanagement library
 func (p *responsemanagementLibraryProxy) getAllResponsemanagementLibrary(ctx context.Context) (*[]platformclientv2.Library, error) {
-	return p.getAllResponsemanagementLibraryAttr(ctx, p)
+	return p.getAllResponsemanagementLibraryAttr(ctx, p, "")
 }
 
 // getResponsemanagementLibraryIdByName returns a single Genesys Cloud responsemanagement library by a name
@@ -100,11 +100,11 @@ func createResponsemanagementLibraryFn(ctx context.Context, p *responsemanagemen
 }
 
 // getAllResponsemanagementLibraryFn is the implementation for retrieving all responsemanagement library in Genesys Cloud
-func getAllResponsemanagementLibraryFn(ctx context.Context, p *responsemanagementLibraryProxy) (*[]platformclientv2.Library, error) {
+func getAllResponsemanagementLibraryFn(ctx context.Context, p *responsemanagementLibraryProxy, name string) (*[]platformclientv2.Library, error) {
 	var allLibrarys []platformclientv2.Library
 	const pageSize = 100
 
-	librarys, _, err := p.responseManagementApi.GetResponsemanagementLibraries(1, pageSize, "", "")
+	librarys, _, err := p.responseManagementApi.GetResponsemanagementLibraries(1, pageSize, "", name)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to get library: %v", err)
 	}
@@ -116,7 +116,7 @@ func getAllResponsemanagementLibraryFn(ctx context.Context, p *responsemanagemen
 	}
 
 	for pageNum := 2; pageNum <= *librarys.PageCount; pageNum++ {
-		librarys, _, err := p.responseManagementApi.GetResponsemanagementLibraries(1, pageSize, "", "")
+		librarys, _, err := p.responseManagementApi.GetResponsemanagementLibraries(pageNum, pageSize, "", name)
 		if err != nil {
 			return nil, fmt.Errorf("Failed to get library: %v", err)
 		}
@@ -134,7 +134,7 @@ func getAllResponsemanagementLibraryFn(ctx context.Context, p *responsemanagemen
 
 // getResponsemanagementLibraryIdByNameFn is an implementation of the function to get a Genesys Cloud responsemanagement library by name
 func getResponsemanagementLibraryIdByNameFn(ctx context.Context, p *responsemanagementLibraryProxy, name string) (id string, retryable bool, err error) {
-	librarys, err := getAllResponsemanagementLibraryFn(ctx, p)
+	librarys, err := getAllResponsemanagementLibraryFn(ctx, p, name)
 	if err != nil {
 		return "", false, err
 	}
