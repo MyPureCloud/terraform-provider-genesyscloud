@@ -1,6 +1,7 @@
 package responsemanagement_responseasset
 
 import (
+	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
 
@@ -28,10 +29,10 @@ func ResourceResponseManagementResponseAsset() *schema.Resource {
 	return &schema.Resource{
 		Description: `Genesys Cloud responsemanagement response asset`,
 
-		CreateContext: gcloud.CreateWithPooledClient(createResponsemanagementResponseAsset),
-		ReadContext:   gcloud.ReadWithPooledClient(readResponsemanagementResponseAsset),
-		UpdateContext: gcloud.UpdateWithPooledClient(updateResponsemanagementResponseAsset),
-		DeleteContext: gcloud.DeleteWithPooledClient(deleteResponsemanagementResponseAsset),
+		CreateContext: gcloud.CreateWithPooledClient(createRespManagementRespAsset),
+		ReadContext:   gcloud.ReadWithPooledClient(readRespManagementRespAsset),
+		UpdateContext: gcloud.UpdateWithPooledClient(updateRespManagementRespAsset),
+		DeleteContext: gcloud.DeleteWithPooledClient(deleteRespManagementRespAsset),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -42,7 +43,7 @@ func ResourceResponseManagementResponseAsset() *schema.Resource {
 				Required:         true,
 				ForceNew:         true,
 				Type:             schema.TypeString,
-				ValidateDiagFunc: validateResponseAssetName,
+				ValidateDiagFunc: gcloud.ValidateResponseAssetName,
 			},
 			`division_id`: {
 				Description: `Division to associate to this asset. Can only be used with this division.`,
@@ -66,4 +67,13 @@ func DataSourceResponseManagamentResponseAsset() *schema.Resource {
 			},
 		},
 	}
+}
+
+func GenerateResponseManagementResponseAssetResource(resourceId string, fileName string, divisionId string) string {
+	return fmt.Sprintf(`
+resource "genesyscloud_responsemanagement_responseasset" "%s" {
+    filename    = "%s"
+    division_id = %s
+}
+`, resourceId, fileName, divisionId)
 }

@@ -192,7 +192,7 @@ func ValidatePath(i interface{}, k string) (warnings []string, errors []error) {
 }
 
 // Validate a response asset filename matches the criteria outlined in the description
-func validateResponseAssetName(name interface{}, _ cty.Path) diag.Diagnostics {
+func ValidateResponseAssetName(name interface{}, _ cty.Path) diag.Diagnostics {
 	if nameStr, ok := name.(string); ok {
 		matched, err := regexp.MatchString("^[^\\.][^\\`\\\\{\\^\\}\\% \"\\>\\<\\[\\]\\#\\~|]+[^/]$", nameStr)
 		if err != nil {

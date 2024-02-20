@@ -1,8 +1,9 @@
-package genesyscloud
+package responsemanagement_responseasset
 
 import (
 	"fmt"
 	"log"
+	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	"testing"
 
 	"github.com/google/uuid"
@@ -32,19 +33,19 @@ func TestAccResourceResponseManagementResponseAsset(t *testing.T) {
 	}()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
+		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
-				Config: GenerateResponseManagementResponseAssetResource(resourceId, fullPath1, NullValue),
+				Config: GenerateResponseManagementResponseAssetResource(resourceId, fullPath1, gcloud.NullValue),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_responseasset."+resourceId, "filename", fullPath1),
-					TestDefaultHomeDivision("genesyscloud_responsemanagement_responseasset."+resourceId),
+					gcloud.TestDefaultHomeDivision("genesyscloud_responsemanagement_responseasset."+resourceId),
 				),
 			},
 			{
 				Config: GenerateResponseManagementResponseAssetResource(resourceId, fullPath2, "genesyscloud_auth_division."+divisionResourceId+".id") +
-					GenerateAuthDivisionBasic(divisionResourceId, divisionName),
+					gcloud.GenerateAuthDivisionBasic(divisionResourceId, divisionName),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_responseasset."+resourceId, "filename", fullPath2),
 					resource.TestCheckResourceAttrPair("genesyscloud_responsemanagement_responseasset."+resourceId, "division_id",
@@ -57,7 +58,7 @@ func TestAccResourceResponseManagementResponseAsset(t *testing.T) {
 					fmt.Sprint("\ndata \"genesyscloud_auth_division_home\" \"home\" {}\n"),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_responseasset."+resourceId, "filename", fullPath2),
-					TestDefaultHomeDivision("genesyscloud_responsemanagement_responseasset."+resourceId),
+					gcloud.TestDefaultHomeDivision("genesyscloud_responsemanagement_responseasset."+resourceId),
 				),
 			},
 			{
@@ -77,7 +78,7 @@ func cleanupResponseAssets(folderName string) error {
 		fields  = []string{name}
 		varType = "STARTS_WITH"
 	)
-	config, err := AuthorizeSdk()
+	config, err := gcloud.AuthorizeSdk()
 	if err != nil {
 		return err
 	}
@@ -119,7 +120,7 @@ func testVerifyResponseAssetDestroyed(state *terraform.State) error {
 		responseAsset, resp, err := responseManagementAPI.GetResponsemanagementResponseasset(rs.Primary.ID)
 		if responseAsset != nil {
 			return fmt.Errorf("response asset (%s) still exists", rs.Primary.ID)
-		} else if IsStatus404(resp) {
+		} else if gcloud.IsStatus404(resp) {
 			// response asset not found as expected
 			continue
 		} else {
