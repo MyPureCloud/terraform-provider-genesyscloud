@@ -103,6 +103,33 @@ func cleanupJourneyActionMaps(idPrefix string) {
 	}
 }
 
+func cleanupArchitectScheduleGroups(idPrefix string) {
+	architectApi := platformclientv2.NewArchitectApi()
+
+	for pageNum := 1; ; pageNum++ {
+		const pageSize = 100
+		architectScheduleGroups, _, getErr := architectApi.GetArchitectSchedulegroups(pageNum, pageSize, "", "", "", "", nil)
+		if getErr != nil {
+			return
+		}
+
+		if architectScheduleGroups.Entities == nil || len(*architectScheduleGroups.Entities) == 0 {
+			break
+		}
+
+		for _, scheduleGroup := range *architectScheduleGroups.Entities {
+			if scheduleGroup.Name != nil && strings.HasPrefix(*scheduleGroup.Name, idPrefix) {
+				_, delErr := architectApi.DeleteArchitectSchedulegroup(*scheduleGroup.Id)
+				if delErr != nil {
+					diag.Errorf("failed to delete architect schedule group %s (%s): %s", *scheduleGroup.Id, *scheduleGroup.Name, delErr)
+					return
+				}
+				log.Printf("Deleted architect schedule group %s (%s)", *scheduleGroup.Id, *scheduleGroup.Name)
+			}
+		}
+	}
+}
+
 func testVerifyJourneyActionMapsDestroyed(state *terraform.State) error {
 	journeyApi := platformclientv2.NewJourneyApiWithConfig(sdkConfig)
 	for _, rs := range state.RootModule().Resources {

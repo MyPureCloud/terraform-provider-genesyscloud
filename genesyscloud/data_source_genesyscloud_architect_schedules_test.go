@@ -24,7 +24,7 @@ func TestAccDataSourceSchedule(t *testing.T) {
 		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
-				Config: generateArchitectSchedulesResource(
+				Config: GenerateArchitectSchedulesResource(
 					schedRes,
 					name,
 					NullValue,

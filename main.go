@@ -10,6 +10,7 @@ import (
 	grammar "terraform-provider-genesyscloud/genesyscloud/architect_grammar"
 	grammarLanguage "terraform-provider-genesyscloud/genesyscloud/architect_grammar_language"
 	archIvr "terraform-provider-genesyscloud/genesyscloud/architect_ivr"
+	architectSchedulegroups "terraform-provider-genesyscloud/genesyscloud/architect_schedulegroups"
 	authRole "terraform-provider-genesyscloud/genesyscloud/auth_role"
 	authorizatioProduct "terraform-provider-genesyscloud/genesyscloud/authorization_product"
 	employeeperformanceExternalmetricsDefinition "terraform-provider-genesyscloud/genesyscloud/employeeperformance_externalmetrics_definitions"
@@ -127,6 +128,7 @@ func registerResources() {
 	dtr.SetRegistrar(regInstance)                                          //Registering architect data table row
 	emergencyGroup.SetRegistrar(regInstance)                               //Registering architect emergency group
 	employeeperformanceExternalmetricsDefinition.SetRegistrar(regInstance) //Registering employee performance external metrics definitions
+	architectSchedulegroups.SetRegistrar(regInstance)                      //Registering architect schedule groups
 	grammar.SetRegistrar(regInstance)                                      //Registering architect grammar
 	grammarLanguage.SetRegistrar(regInstance)                              //Registering architect grammar language
 	groupRoles.SetRegistrar(regInstance)                                   //Registering group roles

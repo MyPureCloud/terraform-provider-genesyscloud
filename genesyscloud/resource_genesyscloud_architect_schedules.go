@@ -301,3 +301,22 @@ func deleteArchitectSchedules(ctx context.Context, d *schema.ResourceData, meta 
 		return retry.RetryableError(fmt.Errorf("Schedule %s still exists", d.Id()))
 	})
 }
+
+func GenerateArchitectSchedulesResource(
+	schedResource1 string,
+	name string,
+	divisionId string,
+	description string,
+	start string,
+	end string,
+	rrule string) string {
+	return fmt.Sprintf(`resource "genesyscloud_architect_schedules" "%s" {
+		name = "%s"
+		division_id = %s
+		description = "%s"
+		start = "%s"
+		end = "%s"
+		rrule = "%s"
+	}
+	`, schedResource1, name, divisionId, description, start, end, rrule)
+}
