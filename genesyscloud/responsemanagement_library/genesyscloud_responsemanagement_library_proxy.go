@@ -116,7 +116,7 @@ func getAllResponsemanagementLibraryFn(ctx context.Context, p *responsemanagemen
 	}
 
 	for pageNum := 2; pageNum <= *librarys.PageCount; pageNum++ {
-		librarys, _, err := p.responseManagementApi.GetResponsemanagementLibraries(pageNum, pageSize, "", "")
+		librarys, _, err := p.responseManagementApi.GetResponsemanagementLibraries(pageNum, pageSize, "", name)
 		if err != nil {
 			return nil, fmt.Errorf("Failed to get library: %v", err)
 		}
