@@ -6,7 +6,12 @@ DIST_DIR=./dist
 BIN_NAME=terraform-provider-genesyscloud
 BIN_PATH=${DIST_DIR}/${BIN_NAME}
 
-PLUGINS_DIR=~/.terraform.d/plugins
+ifdef APPDATA
+	PLUGINS_DIR=${APPDATA}/terraform.d/plugins
+else
+	PLUGINS_DIR=~/.terraform.d/plugins
+endif
+
 PLUGIN_PATH=genesys.com/mypurecloud/genesyscloud
 DEV_VERSION=0.1.0
 
