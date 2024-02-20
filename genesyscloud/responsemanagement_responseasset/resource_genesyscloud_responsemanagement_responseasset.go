@@ -55,7 +55,6 @@ func createRespManagementRespAsset(ctx context.Context, d *schema.ResourceData, 
 	}
 
 	d.SetId(*postResponseData.Id)
-	log.Printf("ddd %s", *postResponseData.Id)
 
 	log.Printf("Created Responsemanagement response asset %s %s", fileName, *postResponseData.Id)
 	return readRespManagementRespAsset(ctx, d, meta)
@@ -67,10 +66,8 @@ func readRespManagementRespAsset(ctx context.Context, d *schema.ResourceData, me
 	proxy := getRespManagementRespAssetProxy(sdkConfig)
 
 	log.Printf("Reading Responsemanagement response asset %s", d.Id())
-	log.Printf("ddd2 %s", d.Id())
 
 	return gcloud.WithRetriesForRead(ctx, d, func() *retry.RetryError {
-
 		sdkAsset, resp, getErr := proxy.getRespManagementRespAssetById(ctx, d.Id())
 		if getErr != nil {
 			if gcloud.IsStatus404ByInt(resp) {
