@@ -26,6 +26,7 @@ import (
 	ob "terraform-provider-genesyscloud/genesyscloud/outbound"
 	obAttemptLimit "terraform-provider-genesyscloud/genesyscloud/outbound_attempt_limit"
 	obCallableTimeset "terraform-provider-genesyscloud/genesyscloud/outbound_callabletimeset"
+	obCallResponseSet "terraform-provider-genesyscloud/genesyscloud/outbound_callanalysisresponseset"
 	obCampaign "terraform-provider-genesyscloud/genesyscloud/outbound_campaign"
 	obCampaignRule "terraform-provider-genesyscloud/genesyscloud/outbound_campaignrule"
 	obContactList "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
@@ -145,6 +146,7 @@ func registerResources() {
 	gcloud.SetRegistrar(regInstance)                                       //Registering genesyscloud
 	obAttemptLimit.SetRegistrar(regInstance)                               //Registering outbound attempt limit
 	obCallableTimeset.SetRegistrar(regInstance)                            //Registering outbound callable timeset
+	obCallResponseSet.SetRegistrar(regInstance)                            //Registering outbound call analysis response set
 	obCampaign.SetRegistrar(regInstance)                                   //Registering outbound campaign
 	obContactList.SetRegistrar(regInstance)                                //Registering outbound contact list
 	obSequence.SetRegistrar(regInstance)                                   //Registering outbound sequence

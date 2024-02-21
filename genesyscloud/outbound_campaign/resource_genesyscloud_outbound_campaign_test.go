@@ -11,6 +11,7 @@ import (
 
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	obCallableTimeset "terraform-provider-genesyscloud/genesyscloud/outbound_callabletimeset"
+	obResponseSet "terraform-provider-genesyscloud/genesyscloud/outbound_callanalysisresponseset"
 	obContactList "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
 	edgeSite "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site"
 
@@ -112,12 +113,12 @@ func TestAccResourceOutboundCampaignBasic(t *testing.T) {
 			"contact_list_name":  "${genesyscloud_outbound_contact_list." + contactListResourceId + ".name}",
 			"wrapup_code_name":   "${genesyscloud_routing_wrapupcode." + wrapupCodeResourceId + ".name}",
 		}),
-	) + outbound.GenerateOutboundCallAnalysisResponseSetResource(
+	) + obResponseSet.GenerateOutboundCallAnalysisResponseSetResource(
 		carResourceId,
 		"tf car "+uuid.NewString(),
 		gcloud.FalseValue,
-		outbound.GenerateCarsResponsesBlock(
-			outbound.GenerateCarsResponse(
+		obResponseSet.GenerateCarsResponsesBlock(
+			obResponseSet.GenerateCarsResponse(
 				"callable_person",
 				"transfer_flow",
 				flowName,
@@ -453,12 +454,12 @@ func TestAccResourceOutboundCampaignCampaignStatus(t *testing.T) {
 			"contact_list_name":  "${genesyscloud_outbound_contact_list." + contactListResourceId + ".name}",
 			"wrapup_code_name":   "${genesyscloud_routing_wrapupcode." + wrapupCodeResourceId + ".name}",
 		}),
-	) + outbound.GenerateOutboundCallAnalysisResponseSetResource(
+	) + obResponseSet.GenerateOutboundCallAnalysisResponseSetResource(
 		carResourceId,
 		"tf car "+uuid.NewString(),
 		gcloud.FalseValue,
-		outbound.GenerateCarsResponsesBlock(
-			outbound.GenerateCarsResponse(
+		obResponseSet.GenerateCarsResponsesBlock(
+			obResponseSet.GenerateCarsResponse(
 				"callable_person",
 				"transfer_flow",
 				flowName,
