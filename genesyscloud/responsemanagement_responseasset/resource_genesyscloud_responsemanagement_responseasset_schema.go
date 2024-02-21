@@ -1,7 +1,6 @@
 package responsemanagement_responseasset
 
 import (
-	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
 
@@ -67,13 +66,4 @@ func DataSourceResponseManagamentResponseAsset() *schema.Resource {
 			},
 		},
 	}
-}
-
-func GenerateResponseManagementResponseAssetResource(resourceId string, fileName string, divisionId string) string {
-	return fmt.Sprintf(`
-resource "genesyscloud_responsemanagement_responseasset" "%s" {
-    filename    = "%s"
-    division_id = %s
-}
-`, resourceId, fileName, divisionId)
 }

@@ -18,7 +18,7 @@ var internalProxy *responsemanagementResponseassetProxy
 // Type definitions for each func on our proxy so we can easily mock them out later
 type createRespManagementRespAssetFunc func(ctx context.Context, p *responsemanagementResponseassetProxy, respAsset *platformclientv2.Createresponseassetrequest) (*platformclientv2.Createresponseassetresponse, int, error)
 type updateRespManagementRespAssetFunc func(ctx context.Context, p *responsemanagementResponseassetProxy, id string, respAsset *platformclientv2.Responseassetrequest) (*platformclientv2.Responseasset, int, error)
-type getRespManagementRespAssetByIdFunc func(ctx context.Context, p *responsemanagementResponseassetProxy, id string) (responsemanagementResponseasset *platformclientv2.Responseasset, responseCode int, err error)
+type getRespManagementRespAssetByIdFunc func(ctx context.Context, p *responsemanagementResponseassetProxy, id string) (*platformclientv2.Responseasset, *platformclientv2.APIResponse, error)
 type deleteRespManagementRespAssetFunc func(ctx context.Context, p *responsemanagementResponseassetProxy, id string) (response *platformclientv2.APIResponse, err error)
 
 // responsemanagementResponseassetProxy contains all of the methods that call genesys cloud APIs.
@@ -54,7 +54,7 @@ func getRespManagementRespAssetProxy(clientConfig *platformclientv2.Configuratio
 }
 
 // createRespManagementRespAsset creates a Genesys Cloud responsemanagement responseasset by Id
-func (p *responsemanagementResponseassetProxy) createRespManagementRespAsset(ctx context.Context, respAsset *platformclientv2.Createresponseassetrequest) (responsemanagementResponseasset *platformclientv2.Createresponseassetresponse, statusCode int, err error) {
+func (p *responsemanagementResponseassetProxy) createRespManagementRespAsset(ctx context.Context, respAsset *platformclientv2.Createresponseassetrequest) (*platformclientv2.Createresponseassetresponse, int, error) {
 	return p.createRespManagementRespAssetAttr(ctx, p, respAsset)
 }
 
@@ -64,7 +64,7 @@ func (p *responsemanagementResponseassetProxy) updateRespManagementRespAsset(ctx
 }
 
 // getRespManagementRespAssetById returns a single Genesys Cloud responsemanagement responseasset by Id
-func (p *responsemanagementResponseassetProxy) getRespManagementRespAssetById(ctx context.Context, id string) (responsemanagementResponseasset *platformclientv2.Responseasset, statusCode int, err error) {
+func (p *responsemanagementResponseassetProxy) getRespManagementRespAssetById(ctx context.Context, id string) (*platformclientv2.Responseasset, *platformclientv2.APIResponse, error) {
 	return p.getRespManagementRespAssetByIdAttr(ctx, p, id)
 }
 
@@ -92,12 +92,12 @@ func updateRespManagementRespAssetFn(ctx context.Context, p *responsemanagementR
 }
 
 // getRespManagementRespAssetByIdFn is an implementation of the function to get a Genesys Cloud responsemanagement responseasset by Id
-func getRespManagementRespAssetByIdFn(ctx context.Context, p *responsemanagementResponseassetProxy, id string) (*platformclientv2.Responseasset, int, error) {
-	respAsset, resp, err := p.responseManagementApi.GetResponsemanagementResponseasset(id)
-	if err != nil {
-		return nil, 0, fmt.Errorf("failed to retrieve response asset: %s", err)
+func getRespManagementRespAssetByIdFn(ctx context.Context, p *responsemanagementResponseassetProxy, id string) (*platformclientv2.Responseasset, *platformclientv2.APIResponse, error) {
+	sdkAsset, resp, getErr := p.responseManagementApi.GetResponsemanagementResponseasset(id)
+	if getErr != nil {
+		return nil, nil, fmt.Errorf("failed to retrieve response asset: %s", getErr)
 	}
-	return respAsset, resp.StatusCode, nil
+	return sdkAsset, resp, nil
 }
 
 // deleteRespManagementRespAssetFn is an implementation function for deleting a Genesys Cloud responsemanagement responseasset

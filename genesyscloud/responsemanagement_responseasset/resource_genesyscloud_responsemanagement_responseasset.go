@@ -48,8 +48,8 @@ func createRespManagementRespAsset(ctx context.Context, d *schema.ResourceData, 
 	}
 
 	s3Uploader := files.NewS3Uploader(reader, nil, nil, headers, "PUT", url)
-
 	_, err = s3Uploader.Upload()
+
 	if err != nil {
 		return diag.Errorf(err.Error())
 	}
@@ -70,7 +70,7 @@ func readRespManagementRespAsset(ctx context.Context, d *schema.ResourceData, me
 	return gcloud.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		sdkAsset, resp, getErr := proxy.getRespManagementRespAssetById(ctx, d.Id())
 		if getErr != nil {
-			if gcloud.IsStatus404ByInt(resp) {
+			if gcloud.IsStatus404(resp) {
 				return retry.RetryableError(fmt.Errorf("Failed to read response asset %s: %s", d.Id(), getErr))
 			}
 			return retry.NonRetryableError(fmt.Errorf("Failed to read response asset %s: %s", d.Id(), getErr))
@@ -148,7 +148,7 @@ func deleteRespManagementRespAsset(ctx context.Context, d *schema.ResourceData, 
 	return gcloud.WithRetries(ctx, 60*time.Second, func() *retry.RetryError {
 		_, resp, err := proxy.getRespManagementRespAssetById(ctx, d.Id())
 		if err != nil {
-			if gcloud.IsStatus404ByInt(resp) {
+			if gcloud.IsStatus404(resp) {
 				// Response asset deleted
 				log.Printf("Deleted Responsemanagement response asset %s", d.Id())
 				return nil

@@ -29,10 +29,10 @@ func dataSourceResponseManagamentResponseAssetRead(ctx context.Context, d *schem
 	)
 
 	sdkConfig := m.(*gcloud.ProviderMeta).ClientConfig
-	respManagementApi := platformclientv2.NewResponseManagementApiWithConfig(sdkConfig)
+	proxy := getRespManagementRespAssetProxy(sdkConfig)
 
 	return gcloud.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
-		responseData, _, getErr := respManagementApi.PostResponsemanagementResponseassetsSearch(body, nil)
+		responseData, _, getErr := proxy.responseManagementApi.PostResponsemanagementResponseassetsSearch(body, nil)
 		if getErr != nil {
 			return retry.NonRetryableError(fmt.Errorf("Error requesting response asset %s: %s", name, getErr))
 		}
