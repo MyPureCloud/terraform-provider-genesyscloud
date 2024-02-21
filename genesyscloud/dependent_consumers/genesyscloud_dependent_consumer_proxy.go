@@ -153,34 +153,57 @@ func buildDependsMap(resources resourceExporter.ResourceIDMetaMap, dependsMap ma
 // This also checks for dependent flows and again export those dependencies
 func iterateDependencies(dependencies *platformclientv2.Consumedresourcesentitylisting, resources resourceExporter.ResourceIDMetaMap, dependsMap map[string][]string, ctx context.Context, p *DependentConsumerProxy, key string,
 	architectDependencies map[string][]string) (resourceExporter.ResourceIDMetaMap, map[string][]string, error) {
+	var err error
 	dependentConsumerMap := SetDependentObjectMaps()
 	for _, consumer := range *dependencies.Entities {
-		resourceType, exists := dependentConsumerMap[*consumer.VarType]
+		resourceType, exists := getResourceType(consumer, dependentConsumerMap)
 		if exists {
-			resourceFilter := resourceType + "::::" + *consumer.Name
-			if _, resourceExists := resources[*consumer.Id]; !resourceExists {
-				resources[*consumer.Id] = &resourceExporter.ResourceMeta{Name: resourceFilter}
-				if architectDependencies[key] != nil {
-					architectDependencies[key] = append(architectDependencies[key], *consumer.Id)
-				} else {
-					architectDependencies[key] = []string{*consumer.Id}
-				}
-
-				if resourceType == "genesyscloud_flow" && *consumer.Id != key {
-					if !searchForKeyValue(architectDependencies, *consumer.Id, key) {
-						innerDependentResources, innerDependsMap, err := fetchDepConsumers(ctx, p, resourceType, *consumer.Id, *consumer.Name, make(resourceExporter.ResourceIDMetaMap), make(map[string][]string), architectDependencies)
-						dependsMap = stringmap.MergeMaps(dependsMap, buildDependsMap(innerDependentResources, innerDependsMap, *consumer.Id))
-						if err != nil {
-							return nil, nil, err
-						}
-					} else {
-						continue
+			resources, architectDependencies = processResource(consumer, resourceType, resources, architectDependencies, key)
+			if resourceType == "genesyscloud_flow" && *consumer.Id != key {
+				if !isDependencyPresent(architectDependencies, *consumer.Id, key) {
+					dependsMap, err = fetchAndProcessDependentConsumers(ctx, p, consumer, architectDependencies, dependsMap, resources)
+					if err != nil {
+						return nil, nil, err
 					}
+				} else {
+					continue
 				}
 			}
 		}
 	}
 	return resources, dependsMap, nil
+}
+
+func getResourceType(consumer platformclientv2.Dependency, dependentConsumerMap map[string]string) (string, bool) {
+	resourceType, exists := dependentConsumerMap[*consumer.VarType]
+	return resourceType, exists
+}
+
+func getResourceFilter(consumer platformclientv2.Dependency, resourceType string) string {
+	return resourceType + "::::" + *consumer.Name
+}
+
+func processResource(consumer platformclientv2.Dependency, resourceType string, resources resourceExporter.ResourceIDMetaMap, architectDependencies map[string][]string, key string) (resourceExporter.ResourceIDMetaMap, map[string][]string) {
+	resourceFilter := getResourceFilter(consumer, resourceType)
+	if _, resourceExists := resources[*consumer.Id]; !resourceExists {
+		resources[*consumer.Id] = &resourceExporter.ResourceMeta{Name: resourceFilter}
+		if architectDependencies[key] != nil {
+			architectDependencies[key] = append(architectDependencies[key], *consumer.Id)
+		} else {
+			architectDependencies[key] = []string{*consumer.Id}
+		}
+	}
+	return resources, architectDependencies
+}
+
+func isDependencyPresent(architectDependencies map[string][]string, consumerId, key string) bool {
+	return searchForKeyValue(architectDependencies, consumerId, key)
+}
+
+func fetchAndProcessDependentConsumers(ctx context.Context, p *DependentConsumerProxy, consumer platformclientv2.Dependency, architectDependencies map[string][]string, dependsMap map[string][]string, resources resourceExporter.ResourceIDMetaMap) (map[string][]string, error) {
+	innerDependentResources, innerDependsMap, err := fetchDepConsumers(ctx, p, *consumer.VarType, *consumer.Id, *consumer.Name, make(resourceExporter.ResourceIDMetaMap), make(map[string][]string), architectDependencies)
+	dependsMap = stringmap.MergeMaps(dependsMap, buildDependsMap(innerDependentResources, innerDependsMap, *consumer.Id))
+	return dependsMap, err
 }
 
 func searchForKeyValue(m map[string][]string, key, value string) bool {
