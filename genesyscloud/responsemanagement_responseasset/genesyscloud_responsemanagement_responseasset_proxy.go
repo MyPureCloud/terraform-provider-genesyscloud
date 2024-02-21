@@ -77,7 +77,7 @@ func (p *responsemanagementResponseassetProxy) deleteRespManagementRespAsset(ctx
 func createRespManagementRespAssetFn(ctx context.Context, p *responsemanagementResponseassetProxy, respAsset *platformclientv2.Createresponseassetrequest) (*platformclientv2.Createresponseassetresponse, int, error) {
 	postResponseData, resp, err := p.responseManagementApi.PostResponsemanagementResponseassetsUploads(*respAsset)
 	if err != nil {
-		return nil, 0, fmt.Errorf("Failed to upload response asset: %v", err)
+		return nil, resp.StatusCode, fmt.Errorf("Failed to upload response asset: %v", err)
 	}
 	return postResponseData, resp.StatusCode, nil
 }
@@ -86,7 +86,7 @@ func createRespManagementRespAssetFn(ctx context.Context, p *responsemanagementR
 func updateRespManagementRespAssetFn(ctx context.Context, p *responsemanagementResponseassetProxy, id string, respAsset *platformclientv2.Responseassetrequest) (*platformclientv2.Responseasset, int, error) {
 	putResponseData, resp, err := p.responseManagementApi.PutResponsemanagementResponseasset(id, *respAsset)
 	if err != nil {
-		return nil, 0, fmt.Errorf("Failed to update Responsemanagement response asset %s: %v", id, err)
+		return nil, resp.StatusCode, fmt.Errorf("Failed to update Responsemanagement response asset %s: %v", id, err)
 	}
 	return putResponseData, resp.StatusCode, nil
 }
@@ -95,7 +95,7 @@ func updateRespManagementRespAssetFn(ctx context.Context, p *responsemanagementR
 func getRespManagementRespAssetByIdFn(ctx context.Context, p *responsemanagementResponseassetProxy, id string) (*platformclientv2.Responseasset, *platformclientv2.APIResponse, error) {
 	sdkAsset, resp, getErr := p.responseManagementApi.GetResponsemanagementResponseasset(id)
 	if getErr != nil {
-		return nil, nil, fmt.Errorf("failed to retrieve response asset: %s", getErr)
+		return nil, resp, fmt.Errorf("failed to retrieve response asset: %s", getErr)
 	}
 	return sdkAsset, resp, nil
 }
@@ -104,7 +104,7 @@ func getRespManagementRespAssetByIdFn(ctx context.Context, p *responsemanagement
 func deleteRespManagementRespAssetFn(ctx context.Context, p *responsemanagementResponseassetProxy, id string) (response *platformclientv2.APIResponse, err error) {
 	resp, err := p.responseManagementApi.DeleteResponsemanagementResponseasset(id)
 	if err != nil {
-		return nil, fmt.Errorf("failed to delete response asset: %s", err)
+		return resp, fmt.Errorf("failed to delete response asset: %s", err)
 	}
 	return resp, nil
 }

@@ -1,6 +1,7 @@
 package responsemanagement_responseasset
 
 import (
+	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
 
@@ -20,7 +21,7 @@ const resourceName = "genesyscloud_responsemanagement_responseasset"
 // SetRegistrar registers all of the resources, datasources and exporters in the package
 func SetRegistrar(regInstance registrar.Registrar) {
 	regInstance.RegisterResource(resourceName, ResourceResponseManagementResponseAsset())
-	regInstance.RegisterDataSource(resourceName, DataSourceResponseManagamentResponseAsset())
+	regInstance.RegisterDataSource(resourceName, DataSourceResponseManagementResponseAsset())
 }
 
 // ResourceResponsemanagementResponseasset registers the genesyscloud_responsemanagement_responseasset resource with Terraform
@@ -54,10 +55,10 @@ func ResourceResponseManagementResponseAsset() *schema.Resource {
 	}
 }
 
-func DataSourceResponseManagamentResponseAsset() *schema.Resource {
+func DataSourceResponseManagementResponseAsset() *schema.Resource {
 	return &schema.Resource{
 		Description: "Data source for Genesys Cloud Response Management Response Assets. Select a response asset by name.",
-		ReadContext: gcloud.ReadWithPooledClient(dataSourceResponseManagamentResponseAssetRead),
+		ReadContext: gcloud.ReadWithPooledClient(dataSourceResponseManagementResponseAssetRead),
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Description: "Response asset name.",
@@ -66,4 +67,13 @@ func DataSourceResponseManagamentResponseAsset() *schema.Resource {
 			},
 		},
 	}
+}
+
+func GenerateResponseManagementResponseAssetResource(resourceId string, fileName string, divisionId string) string {
+	return fmt.Sprintf(`
+resource "genesyscloud_responsemanagement_responseasset" "%s" {
+    filename    = "%s"
+    division_id = %s
+}
+`, resourceId, fileName, divisionId)
 }

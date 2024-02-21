@@ -77,14 +77,14 @@ func readRespManagementRespAsset(ctx context.Context, d *schema.ResourceData, me
 		}
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceResponseManagementResponseAsset())
-
-		_ = d.Set("filename", *sdkAsset.Name)
+		d.Set("filename", *sdkAsset.Name)
 
 		if sdkAsset.Division != nil && sdkAsset.Division.Id != nil {
-			_ = d.Set("division_id", *sdkAsset.Division.Id)
+			d.Set("division_id", *sdkAsset.Division.Id)
 		}
 
 		log.Printf("Read Responsemanagement response asset %s %s", d.Id(), *sdkAsset.Name)
+
 		return cc.CheckState()
 	})
 }
@@ -93,7 +93,6 @@ func readRespManagementRespAsset(ctx context.Context, d *schema.ResourceData, me
 func updateRespManagementRespAsset(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
 	proxy := getRespManagementRespAssetProxy(sdkConfig)
-
 	fileName := d.Get("filename").(string)
 	divisionId := d.Get("division_id").(string)
 
@@ -131,7 +130,6 @@ func updateRespManagementRespAsset(ctx context.Context, d *schema.ResourceData, 
 func deleteRespManagementRespAsset(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
 	proxy := getRespManagementRespAssetProxy(sdkConfig)
-
 	diagErr := gcloud.RetryWhen(gcloud.IsStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		log.Printf("Deleting Responsemanagement response asset")
 		resp, err := proxy.deleteRespManagementRespAsset(ctx, d.Id())

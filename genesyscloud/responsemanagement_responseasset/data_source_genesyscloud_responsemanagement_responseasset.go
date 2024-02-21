@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-func dataSourceResponseManagamentResponseAssetRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func dataSourceResponseManagementResponseAssetRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var (
 		name    = d.Get("name").(string)
 		field   = "name"

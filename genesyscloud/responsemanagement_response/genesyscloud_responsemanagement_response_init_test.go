@@ -4,6 +4,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"sync"
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	respManagementRespAsset "terraform-provider-genesyscloud/genesyscloud/responsemanagement_responseasset"
 	"testing"
 )
 
@@ -30,7 +31,7 @@ func (r *registerTestInstance) registerTestResources() {
 
 	providerResources[resourceName] = ResourceResponsemanagementResponse()
 	providerResources["genesyscloud_responsemanagement_library"] = gcloud.ResourceResponsemanagementLibrary()
-	providerResources["genesyscloud_responsemanagement_responseasset"] = gcloud.ResourceResponseManagamentResponseAsset()
+	providerResources["genesyscloud_responsemanagement_responseasset"] = respManagementRespAsset.ResourceResponseManagementResponseAsset()
 }
 
 // registerTestDataSources registers all data sources used in the tests.

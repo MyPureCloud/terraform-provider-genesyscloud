@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"strings"
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	respManagementRespAsset "terraform-provider-genesyscloud/genesyscloud/responsemanagement_responseasset"
 	"testing"
 
 	"github.com/google/uuid"
@@ -82,7 +83,7 @@ func TestAccResourceResponseManagementResponseFooterField(t *testing.T) {
 				Config: gcloud.GenerateResponseManagementLibraryResource(
 					libraryResource1,
 					libraryName1,
-				) + gcloud.GenerateResponseManagementResponseAssetResource(
+				) + respManagementRespAsset.GenerateResponseManagementResponseAssetResource(
 					assetResource,
 					fullPath,
 					gcloud.NullValue,
@@ -133,7 +134,7 @@ func TestAccResourceResponseManagementResponseFooterField(t *testing.T) {
 				) + gcloud.GenerateResponseManagementLibraryResource(
 					libraryResource2,
 					libraryName2,
-				) + gcloud.GenerateResponseManagementResponseAssetResource(
+				) + respManagementRespAsset.GenerateResponseManagementResponseAssetResource(
 					assetResource,
 					fullPath,
 					gcloud.NullValue,
@@ -267,7 +268,7 @@ func TestAccResourceResponseManagementResponseMessaging(t *testing.T) {
 				Config: gcloud.GenerateResponseManagementLibraryResource(
 					libraryResource1,
 					libraryName1,
-				) + gcloud.GenerateResponseManagementResponseAssetResource(
+				) + respManagementRespAsset.GenerateResponseManagementResponseAssetResource(
 					assetResource,
 					fullPath,
 					gcloud.NullValue,
@@ -327,7 +328,7 @@ func TestAccResourceResponseManagementResponseMessaging(t *testing.T) {
 				) + gcloud.GenerateResponseManagementLibraryResource(
 					libraryResource2,
 					libraryName2,
-				) + gcloud.GenerateResponseManagementResponseAssetResource(
+				) + respManagementRespAsset.GenerateResponseManagementResponseAssetResource(
 					assetResource,
 					fullPath,
 					gcloud.NullValue,

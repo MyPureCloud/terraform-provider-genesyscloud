@@ -3,6 +3,7 @@ package responsemanagement_responseasset
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"sync"
+	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	"testing"
 )
 
@@ -27,13 +28,15 @@ func (r *registerTestInstance) registerTestResources() {
 	r.resourceMapMutex.Lock()
 	defer r.resourceMapMutex.Unlock()
 	providerResources["genesyscloud_responsemanagement_responseasset"] = ResourceResponseManagementResponseAsset()
+	providerResources["genesyscloud_auth_division"] = gcloud.ResourceAuthDivision()
 }
 
 // registerTestDataSources registers all data sources used in the tests.
 func (r *registerTestInstance) registerTestDataSources() {
 	r.datasourceMapMutex.Lock()
 	defer r.datasourceMapMutex.Unlock()
-	providerDataSources["genesyscloud_responsemanagement_responseasset"] = DataSourceResponseManagamentResponseAsset()
+	providerDataSources["genesyscloud_responsemanagement_responseasset"] = DataSourceResponseManagementResponseAsset()
+	providerDataSources["genesyscloud_auth_division_home"] = gcloud.DataSourceAuthDivisionHome()
 }
 
 // initTestResources initializes all test resources and data sources.

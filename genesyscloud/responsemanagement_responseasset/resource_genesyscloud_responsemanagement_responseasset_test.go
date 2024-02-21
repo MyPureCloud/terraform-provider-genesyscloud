@@ -131,12 +131,3 @@ func testVerifyResponseAssetDestroyed(state *terraform.State) error {
 	// Success. All response assets destroyed
 	return nil
 }
-
-func GenerateResponseManagementResponseAssetResource(resourceId string, fileName string, divisionId string) string {
-	return fmt.Sprintf(`
-resource "genesyscloud_responsemanagement_responseasset" "%s" {
-    filename    = "%s"
-    division_id = %s
-}
-`, resourceId, fileName, divisionId)
-}
