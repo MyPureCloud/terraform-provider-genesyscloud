@@ -18,6 +18,7 @@ import (
 
 	obCallableTimeset "terraform-provider-genesyscloud/genesyscloud/outbound_callabletimeset"
 	obContactList "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
+	obContactListFilter "terraform-provider-genesyscloud/genesyscloud/outbound_contactlistfilter"
 )
 
 /*
@@ -54,7 +55,7 @@ func TestAccResourceOutboundMessagingCampaign(t *testing.T) {
 		resourceId                    = "messaging_campaign"
 		name                          = "Test Messaging Campaign " + uuid.NewString()
 		messagesPerMin                = "10"
-		alwaysRunning                 = FalseValue
+		alwaysRunning                 = gcloud.FalseValue
 		smsConfigMessageColumn        = column1
 		smsConfigPhoneColumn          = column1
 		smsConfigSenderSMSPhoneNumber = "+19198793429"
@@ -75,14 +76,14 @@ func TestAccResourceOutboundMessagingCampaign(t *testing.T) {
 		// Contact List Filter
 		clfResourceId             = "contact_list_filter"
 		clfName                   = "Contact List Filter " + uuid.NewString()
-		contactListFilterResource = GenerateOutboundContactListFilter(
+		contactListFilterResource = obContactListFilter.GenerateOutboundContactListFilter(
 			clfResourceId,
 			clfName,
 			"genesyscloud_outbound_contact_list."+contactListResourceId+".id",
 			"",
-			GenerateOutboundContactListFilterClause(
+			obContactListFilter.GenerateOutboundContactListFilterClause(
 				"",
-				GenerateOutboundContactListFilterPredicates(
+				obContactListFilter.GenerateOutboundContactListFilterPredicates(
 					column1,
 					"alphabetic",
 					"EQUALS",
@@ -167,7 +168,7 @@ func TestAccResourceOutboundMessagingCampaign(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_outbound_messagingcampaign."+resourceId, "sms_config.0.sender_sms_phone_number", smsConfigSenderSMSPhoneNumber),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_messagingcampaign."+resourceId, "contact_sorts.0.field_name", column1),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_messagingcampaign."+resourceId, "contact_sorts.0.direction", "ASC"),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_messagingcampaign."+resourceId, "contact_sorts.0.numeric", FalseValue),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_messagingcampaign."+resourceId, "contact_sorts.0.numeric", gcloud.FalseValue),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_messagingcampaign."+resourceId, "contact_sorts.1.field_name", column2),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_messagingcampaign."+resourceId, "contact_sorts.1.direction", "DESC"),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_messagingcampaign."+resourceId, "contact_sorts.1.numeric", TrueValue),
@@ -223,7 +224,7 @@ func TestAccResourceOutboundMessagingCampaign(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_outbound_messagingcampaign."+resourceId, "sms_config.0.sender_sms_phone_number", smsConfigSenderSMSPhoneNumber),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_messagingcampaign."+resourceId, "contact_sorts.0.field_name", column1),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_messagingcampaign."+resourceId, "contact_sorts.0.direction", "ASC"),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_messagingcampaign."+resourceId, "contact_sorts.0.numeric", FalseValue),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_messagingcampaign."+resourceId, "contact_sorts.0.numeric", gcloud.FalseValue),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_messagingcampaign."+resourceId, "contact_sorts.1.field_name", column2),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_messagingcampaign."+resourceId, "contact_sorts.1.direction", "DESC"),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_messagingcampaign."+resourceId, "contact_sorts.1.numeric", TrueValue),
@@ -284,7 +285,7 @@ func TestAccResourceOutboundMessagingCampaign(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_outbound_messagingcampaign."+resourceId, "contact_sorts.0.numeric", TrueValue),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_messagingcampaign."+resourceId, "contact_sorts.1.field_name", column2),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_messagingcampaign."+resourceId, "contact_sorts.1.direction", "ASC"),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_messagingcampaign."+resourceId, "contact_sorts.1.numeric", FalseValue),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_messagingcampaign."+resourceId, "contact_sorts.1.numeric", gcloud.FalseValue),
 					resource.TestCheckResourceAttrPair("genesyscloud_outbound_messagingcampaign."+resourceId, "callable_time_set_id",
 						"genesyscloud_outbound_callabletimeset."+callableTimeSetResourceId, "id"),
 					resource.TestCheckResourceAttrPair("genesyscloud_outbound_messagingcampaign."+resourceId, "contact_list_filter_ids.0",

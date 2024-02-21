@@ -361,7 +361,7 @@ func readRoutingEmailRoute(ctx context.Context, d *schema.ResourceData, meta int
 		}
 
 		if route.Skills != nil {
-			d.Set("skill_ids", sdkDomainEntityRefArrToSet(*route.Skills))
+			d.Set("skill_ids", SdkDomainEntityRefArrToSet(*route.Skills))
 		} else {
 			d.Set("skill_ids", nil)
 		}

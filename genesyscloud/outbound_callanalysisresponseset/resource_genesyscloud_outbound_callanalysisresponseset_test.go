@@ -1,4 +1,4 @@
-package outbound
+package outbound_callanalysisresponseset
 
 import (
 	"fmt"
@@ -43,7 +43,7 @@ func TestAccResourceOutboundCallAnalysisResponseSet(t *testing.T) {
 				Config: GenerateOutboundCallAnalysisResponseSetResource(
 					resourceId,
 					name,
-					TrueValue,
+					gcloud.TrueValue,
 					GenerateCarsResponsesBlock(
 						GenerateCarsResponse(
 							identifier1,
@@ -67,7 +67,7 @@ func TestAccResourceOutboundCallAnalysisResponseSet(t *testing.T) {
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_outbound_callanalysisresponseset."+resourceId, "name", name),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_callanalysisresponseset."+resourceId, "beep_detection_enabled", TrueValue),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_callanalysisresponseset."+resourceId, "beep_detection_enabled", gcloud.TrueValue),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_callanalysisresponseset."+resourceId, "responses.0."+identifier1+".0.reaction_type", "transfer"),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_callanalysisresponseset."+resourceId, "responses.0."+identifier2+".0.reaction_type", "transfer"),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_callanalysisresponseset."+resourceId, "responses.0."+identifier3+".0.reaction_type", "transfer"),

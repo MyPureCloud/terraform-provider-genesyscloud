@@ -12,6 +12,7 @@ import (
 	grammar "terraform-provider-genesyscloud/genesyscloud/architect_grammar"
 	grammarLanguage "terraform-provider-genesyscloud/genesyscloud/architect_grammar_language"
 	archIvr "terraform-provider-genesyscloud/genesyscloud/architect_ivr"
+	architectSchedulegroups "terraform-provider-genesyscloud/genesyscloud/architect_schedulegroups"
 	authRole "terraform-provider-genesyscloud/genesyscloud/auth_role"
 	authorizatioProduct "terraform-provider-genesyscloud/genesyscloud/authorization_product"
 	employeeperformanceExternalmetricsDefinition "terraform-provider-genesyscloud/genesyscloud/employeeperformance_externalmetrics_definitions"
@@ -27,9 +28,11 @@ import (
 	ob "terraform-provider-genesyscloud/genesyscloud/outbound"
 	obAttemptLimit "terraform-provider-genesyscloud/genesyscloud/outbound_attempt_limit"
 	obCallableTimeset "terraform-provider-genesyscloud/genesyscloud/outbound_callabletimeset"
+	obCallResponseSet "terraform-provider-genesyscloud/genesyscloud/outbound_callanalysisresponseset"
 	obCampaign "terraform-provider-genesyscloud/genesyscloud/outbound_campaign"
 	obCampaignRule "terraform-provider-genesyscloud/genesyscloud/outbound_campaignrule"
 	obContactList "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
+	obContactListFilter "terraform-provider-genesyscloud/genesyscloud/outbound_contactlistfilter"
 	obDncList "terraform-provider-genesyscloud/genesyscloud/outbound_dnclist"
 	obs "terraform-provider-genesyscloud/genesyscloud/outbound_ruleset"
 	obSequence "terraform-provider-genesyscloud/genesyscloud/outbound_sequence"
@@ -39,6 +42,7 @@ import (
 	recMediaRetPolicy "terraform-provider-genesyscloud/genesyscloud/recording_media_retention_policy"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
+	respmanagementLibrary "terraform-provider-genesyscloud/genesyscloud/responsemanagement_library"
 	responsemanagementResponse "terraform-provider-genesyscloud/genesyscloud/responsemanagement_response"
 	responsemanagementResponseasset "terraform-provider-genesyscloud/genesyscloud/responsemanagement_responseasset"
 	smsAddresses "terraform-provider-genesyscloud/genesyscloud/routing_sms_addresses"
@@ -126,6 +130,7 @@ func registerResources() {
 	dtr.SetRegistrar(regInstance)                                          //Registering architect data table row
 	emergencyGroup.SetRegistrar(regInstance)                               //Registering architect emergency group
 	employeeperformanceExternalmetricsDefinition.SetRegistrar(regInstance) //Registering employee performance external metrics definitions
+	architectSchedulegroups.SetRegistrar(regInstance)                      //Registering architect schedule groups
 	grammar.SetRegistrar(regInstance)                                      //Registering architect grammar
 	grammarLanguage.SetRegistrar(regInstance)                              //Registering architect grammar language
 	groupRoles.SetRegistrar(regInstance)                                   //Registering group roles
@@ -142,8 +147,10 @@ func registerResources() {
 	gcloud.SetRegistrar(regInstance)                                       //Registering genesyscloud
 	obAttemptLimit.SetRegistrar(regInstance)                               //Registering outbound attempt limit
 	obCallableTimeset.SetRegistrar(regInstance)                            //Registering outbound callable timeset
+	obCallResponseSet.SetRegistrar(regInstance)                            //Registering outbound call analysis response set
 	obCampaign.SetRegistrar(regInstance)                                   //Registering outbound campaign
 	obContactList.SetRegistrar(regInstance)                                //Registering outbound contact list
+	obContactListFilter.SetRegistrar(regInstance)                          //Registering outbound contact list filter
 	obSequence.SetRegistrar(regInstance)                                   //Registering outbound sequence
 	obCampaignRule.SetRegistrar(regInstance)                               //Registering outbound campaignrule
 	obDncList.SetRegistrar(regInstance)                                    //Registering outbound dnclist
@@ -176,6 +183,8 @@ func registerResources() {
 	userRoles.SetRegistrar(regInstance)                                    //Registering user roles
 	responsemanagementResponse.SetRegistrar(regInstance)                   //Registering responsemanagement responses
 	responsemanagementResponseasset.SetRegistrar(regInstance)              //Registering responsemanagement response asset
+	respmanagementLibrary.SetRegistrar(regInstance)                        //Registering responsemanagement library
+
 	// setting resources for Use cases  like TF export where provider is used in resource classes.
 	tfexp.SetRegistrar(regInstance) //Registering tf exporter
 	registrar.SetResources(providerResources, providerDataSources)

@@ -52,7 +52,7 @@ func BuildSdkDomainEntityRefArrFromArr(ids []interface{}) *[]platformclientv2.Do
 	return &domainEntityRefs
 }
 
-func sdkDomainEntityRefArrToSet(entityRefs []platformclientv2.Domainentityref) *schema.Set {
+func SdkDomainEntityRefArrToSet(entityRefs []platformclientv2.Domainentityref) *schema.Set {
 	interfaceList := make([]interface{}, len(entityRefs))
 	for i, v := range entityRefs {
 		interfaceList[i] = *v.Id

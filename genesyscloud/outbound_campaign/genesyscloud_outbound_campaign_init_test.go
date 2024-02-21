@@ -4,9 +4,10 @@ import (
 	"log"
 	"sync"
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
-	"terraform-provider-genesyscloud/genesyscloud/outbound"
 	obCallableTimeset "terraform-provider-genesyscloud/genesyscloud/outbound_callabletimeset"
+	obResponseSet "terraform-provider-genesyscloud/genesyscloud/outbound_callanalysisresponseset"
 	outboundContactList "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
+	obContactListFilter "terraform-provider-genesyscloud/genesyscloud/outbound_contactlistfilter"
 	obDnclist "terraform-provider-genesyscloud/genesyscloud/outbound_dnclist"
 	outboundRuleset "terraform-provider-genesyscloud/genesyscloud/outbound_ruleset"
 	telephonyProvidersEdgesSite "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site"
@@ -44,12 +45,12 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_outbound_contact_list"] = outboundContactList.ResourceOutboundContactList()
 	providerResources["genesyscloud_routing_wrapupcode"] = gcloud.ResourceRoutingWrapupCode()
 	providerResources["genesyscloud_flow"] = gcloud.ResourceFlow()
-	providerResources["genesyscloud_outbound_callanalysisresponseset"] = outbound.ResourceOutboundCallAnalysisResponseSet()
+	providerResources["genesyscloud_outbound_callanalysisresponseset"] = obResponseSet.ResourceOutboundCallanalysisresponseset()
 	providerResources["genesyscloud_location"] = gcloud.ResourceLocation()
 	providerResources["genesyscloud_telephony_providers_edges_site"] = telephonyProvidersEdgesSite.ResourceSite()
 	providerResources["genesyscloud_outbound_dnclist"] = obDnclist.ResourceOutboundDncList()
 	providerResources["genesyscloud_routing_queue"] = gcloud.ResourceRoutingQueue()
-	providerResources["genesyscloud_outbound_contactlistfilter"] = outbound.ResourceOutboundContactListFilter()
+	providerResources["genesyscloud_outbound_contactlistfilter"] = obContactListFilter.ResourceOutboundContactlistfilter()
 	providerResources["genesyscloud_outbound_ruleset"] = outboundRuleset.ResourceOutboundRuleset()
 	providerResources["genesyscloud_outbound_callabletimeset"] = obCallableTimeset.ResourceOutboundCallabletimeset()
 }

@@ -1,8 +1,9 @@
-package genesyscloud
+package responsemanagement_library
 
 import (
 	"context"
 	"fmt"
+	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	"testing"
 	"time"
 
@@ -23,8 +24,8 @@ func TestAccResourceResponseManagementLibrary(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
+		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Create
@@ -54,14 +55,14 @@ func TestAccResourceResponseManagementLibrary(t *testing.T) {
 func testVerifyResponseManagementLibraryDestroyed(state *terraform.State) error {
 	responseAPI := platformclientv2.NewResponseManagementApi()
 
-	diagErr := WithRetries(context.Background(), 180*time.Second, func() *retry.RetryError {
+	diagErr := gcloud.WithRetries(context.Background(), 180*time.Second, func() *retry.RetryError {
 		for _, rs := range state.RootModule().Resources {
 			if rs.Type != "genesyscloud_responsemanagement_library" {
 				continue
 			}
 			_, resp, err := responseAPI.GetResponsemanagementLibrary(rs.Primary.ID)
 			if err != nil {
-				if IsStatus404(resp) {
+				if gcloud.IsStatus404(resp) {
 					continue
 				}
 				return retry.NonRetryableError(fmt.Errorf("Unexpected error: %s", err))

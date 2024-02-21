@@ -6,8 +6,9 @@ import (
 	"log"
 	"strconv"
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
-	"terraform-provider-genesyscloud/genesyscloud/outbound"
+	obResponseSet "terraform-provider-genesyscloud/genesyscloud/outbound_callanalysisresponseset"
 	obContactList "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
+	obContactListFilter "terraform-provider-genesyscloud/genesyscloud/outbound_contactlistfilter"
 	obDnclist "terraform-provider-genesyscloud/genesyscloud/outbound_dnclist"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
@@ -297,12 +298,12 @@ func GenerateReferencedResourcesForOutboundCampaignTests(
 					"contact_list_name":  "${genesyscloud_outbound_contact_list." + contactListResourceId + ".name}",
 					"wrapup_code_name":   "${genesyscloud_routing_wrapupcode." + wrapUpCodeResourceId + ".name}",
 				}),
-			) + outbound.GenerateOutboundCallAnalysisResponseSetResource(
+			) + obResponseSet.GenerateOutboundCallAnalysisResponseSetResource(
 				carResourceId,
 				"tf test car "+uuid.NewString(),
 				gcloud.FalseValue,
-				outbound.GenerateCarsResponsesBlock(
-					outbound.GenerateCarsResponse(
+				obResponseSet.GenerateCarsResponsesBlock(
+					obResponseSet.GenerateCarsResponse(
 						"callable_person",
 						"transfer_flow",
 						flowName,
@@ -310,12 +311,12 @@ func GenerateReferencedResourcesForOutboundCampaignTests(
 					),
 				))
 		} else {
-			callAnalysisResponseSet = outbound.GenerateOutboundCallAnalysisResponseSetResource(
+			callAnalysisResponseSet = obResponseSet.GenerateOutboundCallAnalysisResponseSetResource(
 				carResourceId,
 				"tf test car "+uuid.NewString(),
 				gcloud.TrueValue,
-				outbound.GenerateCarsResponsesBlock(
-					outbound.GenerateCarsResponse(
+				obResponseSet.GenerateCarsResponsesBlock(
+					obResponseSet.GenerateCarsResponse(
 						"callable_machine",
 						"transfer",
 						"",
@@ -326,14 +327,14 @@ func GenerateReferencedResourcesForOutboundCampaignTests(
 		}
 	}
 	if clfResourceId != "" {
-		contactListFilter = outbound.GenerateOutboundContactListFilter(
+		contactListFilter = obContactListFilter.GenerateOutboundContactListFilter(
 			clfResourceId,
 			"tf test clf "+uuid.NewString(),
 			"genesyscloud_outbound_contact_list."+contactListResourceId+".id",
 			"",
-			outbound.GenerateOutboundContactListFilterClause(
+			obContactListFilter.GenerateOutboundContactListFilterClause(
 				"",
-				outbound.GenerateOutboundContactListFilterPredicates(
+				obContactListFilter.GenerateOutboundContactListFilterPredicates(
 					"Cell",
 					"alphabetic",
 					"EQUALS",

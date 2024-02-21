@@ -11,7 +11,9 @@ import (
 
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	obCallableTimeset "terraform-provider-genesyscloud/genesyscloud/outbound_callabletimeset"
+	obResponseSet "terraform-provider-genesyscloud/genesyscloud/outbound_callanalysisresponseset"
 	obContactList "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
+	obContactListFilter "terraform-provider-genesyscloud/genesyscloud/outbound_contactlistfilter"
 	edgeSite "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site"
 
 	"github.com/google/uuid"
@@ -112,26 +114,26 @@ func TestAccResourceOutboundCampaignBasic(t *testing.T) {
 			"contact_list_name":  "${genesyscloud_outbound_contact_list." + contactListResourceId + ".name}",
 			"wrapup_code_name":   "${genesyscloud_routing_wrapupcode." + wrapupCodeResourceId + ".name}",
 		}),
-	) + outbound.GenerateOutboundCallAnalysisResponseSetResource(
+	) + obResponseSet.GenerateOutboundCallAnalysisResponseSetResource(
 		carResourceId,
 		"tf car "+uuid.NewString(),
 		gcloud.FalseValue,
-		outbound.GenerateCarsResponsesBlock(
-			outbound.GenerateCarsResponse(
+		obResponseSet.GenerateCarsResponsesBlock(
+			obResponseSet.GenerateCarsResponse(
 				"callable_person",
 				"transfer_flow",
 				flowName,
 				"${genesyscloud_flow.flow.id}",
 			),
 		),
-	) + outbound.GenerateOutboundContactListFilter(
+	) + obContactListFilter.GenerateOutboundContactListFilter(
 		clfResourceId,
 		"tf clf "+uuid.NewString(),
 		"genesyscloud_outbound_contact_list."+contactListResourceId+".id",
 		"",
-		outbound.GenerateOutboundContactListFilterClause(
+		obContactListFilter.GenerateOutboundContactListFilterClause(
 			"",
-			outbound.GenerateOutboundContactListFilterPredicates(
+			obContactListFilter.GenerateOutboundContactListFilterPredicates(
 				"Cell",
 				"alphabetic",
 				"EQUALS",
@@ -453,12 +455,12 @@ func TestAccResourceOutboundCampaignCampaignStatus(t *testing.T) {
 			"contact_list_name":  "${genesyscloud_outbound_contact_list." + contactListResourceId + ".name}",
 			"wrapup_code_name":   "${genesyscloud_routing_wrapupcode." + wrapupCodeResourceId + ".name}",
 		}),
-	) + outbound.GenerateOutboundCallAnalysisResponseSetResource(
+	) + obResponseSet.GenerateOutboundCallAnalysisResponseSetResource(
 		carResourceId,
 		"tf car "+uuid.NewString(),
 		gcloud.FalseValue,
-		outbound.GenerateCarsResponsesBlock(
-			outbound.GenerateCarsResponse(
+		obResponseSet.GenerateCarsResponsesBlock(
+			obResponseSet.GenerateCarsResponse(
 				"callable_person",
 				"transfer_flow",
 				flowName,
