@@ -18,7 +18,7 @@ var internalProxy *outboundCallanalysisresponsesetProxy
 
 // Type definitions for each func on our proxy so we can easily mock them out later
 type createOutboundCallanalysisresponsesetFunc func(ctx context.Context, p *outboundCallanalysisresponsesetProxy, responseSet *platformclientv2.Responseset) (*platformclientv2.Responseset, error)
-type getAllOutboundCallanalysisresponsesetFunc func(ctx context.Context, p *outboundCallanalysisresponsesetProxy) (*[]platformclientv2.Responseset, error)
+type getAllOutboundCallanalysisresponsesetFunc func(ctx context.Context, p *outboundCallanalysisresponsesetProxy, name string) (*[]platformclientv2.Responseset, error)
 type getOutboundCallanalysisresponsesetIdByNameFunc func(ctx context.Context, p *outboundCallanalysisresponsesetProxy, name string) (id string, retryable bool, err error)
 type getOutboundCallanalysisresponsesetByIdFunc func(ctx context.Context, p *outboundCallanalysisresponsesetProxy, id string) (responseSet *platformclientv2.Responseset, responseCode int, err error)
 type updateOutboundCallanalysisresponsesetFunc func(ctx context.Context, p *outboundCallanalysisresponsesetProxy, id string, responseSet *platformclientv2.Responseset) (*platformclientv2.Responseset, error)
@@ -68,7 +68,7 @@ func (p *outboundCallanalysisresponsesetProxy) createOutboundCallanalysisrespons
 
 // getOutboundCallanalysisresponseset retrieves all Genesys Cloud outbound callanalysisresponseset
 func (p *outboundCallanalysisresponsesetProxy) getAllOutboundCallanalysisresponseset(ctx context.Context) (*[]platformclientv2.Responseset, error) {
-	return p.getAllOutboundCallanalysisresponsesetAttr(ctx, p)
+	return p.getAllOutboundCallanalysisresponsesetAttr(ctx, p, "")
 }
 
 // getOutboundCallanalysisresponsesetIdByName returns a single Genesys Cloud outbound callanalysisresponseset by a name
@@ -102,11 +102,11 @@ func createOutboundCallanalysisresponsesetFn(ctx context.Context, p *outboundCal
 }
 
 // getAllOutboundCallanalysisresponsesetFn is the implementation for retrieving all outbound callanalysisresponseset in Genesys Cloud
-func getAllOutboundCallanalysisresponsesetFn(ctx context.Context, p *outboundCallanalysisresponsesetProxy) (*[]platformclientv2.Responseset, error) {
+func getAllOutboundCallanalysisresponsesetFn(ctx context.Context, p *outboundCallanalysisresponsesetProxy, name string) (*[]platformclientv2.Responseset, error) {
 	var allResponseSets []platformclientv2.Responseset
 	const pageSize = 100
 
-	responseSets, _, err := p.outboundApi.GetOutboundCallanalysisresponsesets(pageSize, 1, true, "", "", "", "")
+	responseSets, _, err := p.outboundApi.GetOutboundCallanalysisresponsesets(pageSize, 1, true, "", name, "", "")
 	if err != nil {
 		return nil, fmt.Errorf("Failed to get response set: %v", err)
 	}
@@ -118,7 +118,7 @@ func getAllOutboundCallanalysisresponsesetFn(ctx context.Context, p *outboundCal
 	}
 
 	for pageNum := 2; pageNum <= *responseSets.PageCount; pageNum++ {
-		responseSets, _, err := p.outboundApi.GetOutboundCallanalysisresponsesets(pageSize, pageNum, true, "", "", "", "")
+		responseSets, _, err := p.outboundApi.GetOutboundCallanalysisresponsesets(pageSize, pageNum, true, "", name, "", "")
 		if err != nil {
 			return nil, fmt.Errorf("Failed to get response set: %v", err)
 		}
@@ -137,7 +137,7 @@ func getAllOutboundCallanalysisresponsesetFn(ctx context.Context, p *outboundCal
 
 // getOutboundCallanalysisresponsesetIdByNameFn is an implementation of the function to get a Genesys Cloud outbound callanalysisresponseset by name
 func getOutboundCallanalysisresponsesetIdByNameFn(ctx context.Context, p *outboundCallanalysisresponsesetProxy, name string) (id string, retryable bool, err error) {
-	responseSets, err := getAllOutboundCallanalysisresponsesetFn(ctx, p)
+	responseSets, err := getAllOutboundCallanalysisresponsesetFn(ctx, p, name)
 	if err != nil {
 		return "", false, err
 	}
@@ -183,10 +183,5 @@ func updateOutboundCallanalysisresponsesetFn(ctx context.Context, p *outboundCal
 
 // deleteOutboundCallanalysisresponsesetFn is an implementation function for deleting a Genesys Cloud outbound callanalysisresponseset
 func deleteOutboundCallanalysisresponsesetFn(ctx context.Context, p *outboundCallanalysisresponsesetProxy, id string) (response *platformclientv2.APIResponse, err error) {
-	resp, err := p.outboundApi.DeleteOutboundCallanalysisresponseset(id)
-	if err != nil {
-		return resp, err
-	}
-
-	return resp, nil
+	return p.outboundApi.DeleteOutboundCallanalysisresponseset(id)
 }
