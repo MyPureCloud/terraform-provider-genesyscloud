@@ -1,4 +1,4 @@
-package outbound
+package outbound_contactlistfilter
 
 import (
 	"fmt"
@@ -31,7 +31,7 @@ func TestAccResourceOutboundContactListFilter(t *testing.T) {
 		inverted              = gcloud.FalseValue
 		rangeMin              = "1"
 		rangeMax              = "10"
-		minInclusive          = TrueValue
+		minInclusive          = gcloud.TrueValue
 		maxInclusive          = gcloud.FalseValue
 		rangeInSet            = []string{"a"}
 
@@ -41,11 +41,11 @@ func TestAccResourceOutboundContactListFilter(t *testing.T) {
 		columnTypeUpdated     = "alphabetic"
 		operatorUpdated       = "CONTAINS"
 		predicateValueUpdated = "XYZ"
-		invertedUpdated       = TrueValue
+		invertedUpdated       = gcloud.TrueValue
 		rangeMinUpdated       = "2"
 		rangeMaxUpdated       = "12"
 		minInclusiveUpdated   = gcloud.FalseValue
-		maxInclusiveUpdated   = TrueValue
+		maxInclusiveUpdated   = gcloud.TrueValue
 		rangeInSetUpdated     = []string{"a", "b"}
 	)
 

@@ -30,6 +30,7 @@ import (
 	obCampaign "terraform-provider-genesyscloud/genesyscloud/outbound_campaign"
 	obCampaignRule "terraform-provider-genesyscloud/genesyscloud/outbound_campaignrule"
 	obContactList "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
+	obContactListFilter "terraform-provider-genesyscloud/genesyscloud/outbound_contactlistfilter"
 	obDncList "terraform-provider-genesyscloud/genesyscloud/outbound_dnclist"
 	obs "terraform-provider-genesyscloud/genesyscloud/outbound_ruleset"
 	obSequence "terraform-provider-genesyscloud/genesyscloud/outbound_sequence"
@@ -149,6 +150,7 @@ func registerResources() {
 	obCallResponseSet.SetRegistrar(regInstance)                            //Registering outbound call analysis response set
 	obCampaign.SetRegistrar(regInstance)                                   //Registering outbound campaign
 	obContactList.SetRegistrar(regInstance)                                //Registering outbound contact list
+	obContactListFilter.SetRegistrar(regInstance)                          //Registering outbound contact list filter
 	obSequence.SetRegistrar(regInstance)                                   //Registering outbound sequence
 	obCampaignRule.SetRegistrar(regInstance)                               //Registering outbound campaignrule
 	obDncList.SetRegistrar(regInstance)                                    //Registering outbound dnclist

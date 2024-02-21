@@ -1,0 +1,38 @@
+package outbound_contactlistfilter
+
+import (
+	"context"
+	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	"time"
+)
+
+/*
+   The data_source_genesyscloud_outbound_contactlistfilter.go contains the data source implementation
+   for the resource.
+*/
+
+// dataSourceOutboundContactlistfilterRead retrieves by name the id in question
+func dataSourceOutboundContactlistfilterRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	proxy := getOutboundContactlistfilterProxy(sdkConfig)
+	name := d.Get("name").(string)
+
+	return gcloud.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
+		contactListFilterId, retryable, err := proxy.getOutboundContactlistfilterIdByName(ctx, name)
+
+		if err != nil && !retryable {
+			return retry.NonRetryableError(fmt.Errorf("error requesting contact list filter %s: %s", name, err))
+		}
+
+		if retryable {
+			return retry.RetryableError(fmt.Errorf("no contact list filters found with name %s", name))
+		}
+
+		d.SetId(contactListFilterId)
+		return nil
+	})
+}

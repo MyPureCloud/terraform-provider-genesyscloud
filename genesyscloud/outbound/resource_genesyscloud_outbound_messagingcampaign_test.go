@@ -18,6 +18,7 @@ import (
 
 	obCallableTimeset "terraform-provider-genesyscloud/genesyscloud/outbound_callabletimeset"
 	obContactList "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
+	obContactListFilter "terraform-provider-genesyscloud/genesyscloud/outbound_contactlistfilter"
 )
 
 /*
@@ -75,14 +76,14 @@ func TestAccResourceOutboundMessagingCampaign(t *testing.T) {
 		// Contact List Filter
 		clfResourceId             = "contact_list_filter"
 		clfName                   = "Contact List Filter " + uuid.NewString()
-		contactListFilterResource = GenerateOutboundContactListFilter(
+		contactListFilterResource = obContactListFilter.GenerateOutboundContactListFilter(
 			clfResourceId,
 			clfName,
 			"genesyscloud_outbound_contact_list."+contactListResourceId+".id",
 			"",
-			GenerateOutboundContactListFilterClause(
+			obContactListFilter.GenerateOutboundContactListFilterClause(
 				"",
-				GenerateOutboundContactListFilterPredicates(
+				obContactListFilter.GenerateOutboundContactListFilterPredicates(
 					column1,
 					"alphabetic",
 					"EQUALS",
