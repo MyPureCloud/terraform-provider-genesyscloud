@@ -5,8 +5,6 @@ import (
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
 )
 
 /*
@@ -31,7 +29,6 @@ func (r *registerTestInstance) registerTestResources() {
 	defer r.resourceMapMutex.Unlock()
 
 	providerResources[resourceName] = ResourceOrganizationAuthenticationSettings()
-	// TODO: Add references
 }
 
 // registerTestDataSources registers all data sources used in the tests.
@@ -39,8 +36,7 @@ func (r *registerTestInstance) registerTestDataSources() {
 	r.datasourceMapMutex.Lock()
 	defer r.datasourceMapMutex.Unlock()
 
-	providerDataSources[resourceName] = DataSourceOrganizationAuthenticationSettings()
-	// TODO: Add references
+	//providerDataSources[resourceName] = DataSourceOrganizationAuthenticationSettings()
 }
 
 // initTestResources initializes all test resources and data sources.

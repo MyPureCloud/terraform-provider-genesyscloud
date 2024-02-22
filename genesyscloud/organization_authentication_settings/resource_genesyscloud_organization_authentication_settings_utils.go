@@ -36,7 +36,7 @@ func getOrganizationAuthenticationSettingsFromResourceData(d *schema.ResourceDat
 
 	ipAddressAllowlist := lists.InterfaceListToStrings(d.Get("ip_address_allowlist").([]interface{}))
 	if ipAddressAllowlist != nil {
-		settings.DomainAllowlist = &ipAddressAllowlist
+		settings.IpAddressAllowlist = &ipAddressAllowlist
 	}
 	return settings
 }

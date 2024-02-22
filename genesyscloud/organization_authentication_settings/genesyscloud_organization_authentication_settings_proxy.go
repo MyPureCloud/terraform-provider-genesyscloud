@@ -70,9 +70,9 @@ func getOrgAuthSettingsByIdFn(ctx context.Context, p *orgAuthSettingsProxy, id s
 
 // updateOrgAuthSettingsFn is an implementation of the function to update a Genesys Cloud organization authentication settings
 func updateOrgAuthSettingsFn(ctx context.Context, p *orgAuthSettingsProxy, orgAuthSettings *platformclientv2.Orgauthsettings) (*platformclientv2.Orgauthsettings, int, error) {
-	orgAuthSettings, resp, err := p.organizationApi.PatchOrganizationsAuthenticationSettings(*orgAuthSettings)
+	authSettings, resp, err := p.organizationApi.PatchOrganizationsAuthenticationSettings(*orgAuthSettings)
 	if err != nil {
-		return nil, 0, fmt.Errorf("Failed to update organization authentication settings: %s", err)
+		return nil, 0, fmt.Errorf("failed to update organization authentication settings: %s", err)
 	}
-	return orgAuthSettings, resp.StatusCode, nil
+	return authSettings, resp.StatusCode, nil
 }

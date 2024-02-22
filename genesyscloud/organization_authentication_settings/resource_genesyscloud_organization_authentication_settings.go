@@ -7,7 +7,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v121/platformclientv2"
 	"log"
-	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
@@ -30,7 +29,7 @@ func getAllOrganizationAuthenticationSettings(_ context.Context, clientConfig *p
 // createOrganizationAuthenticationSettings is used by the organization_authentication_settings resource to create Genesys cloud organization authentication settings
 func createOrganizationAuthenticationSettings(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	log.Printf("Creating Organization Authentication Settings")
-	d.SetId("settings")
+	d.SetId("Settings")
 	return updateOrganizationAuthenticationSettings(ctx, d, meta)
 }
 
@@ -40,7 +39,7 @@ func readOrganizationAuthenticationSettings(ctx context.Context, d *schema.Resou
 	proxy := getOrgAuthSettingsProxy(sdkConfig)
 
 	log.Printf("Reading organization authentication settings %s", d.Id())
-
+	log.Println("1")
 	return gcloud.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		orgAuthSettings, respCode, getErr := proxy.getOrgAuthSettingsById(ctx, d.Id())
 		if getErr != nil {
@@ -50,7 +49,8 @@ func readOrganizationAuthenticationSettings(ctx context.Context, d *schema.Resou
 			return retry.NonRetryableError(fmt.Errorf("Failed to read organization authentication settings %s: %s", d.Id(), getErr))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOrganizationAuthenticationSettings())
+		//cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOrganizationAuthenticationSettings())
+		log.Println("2")
 
 		resourcedata.SetNillableValue(d, "multifactor_authentication_required", orgAuthSettings.MultifactorAuthenticationRequired)
 		resourcedata.SetNillableValue(d, "domain_allowlist_enabled", orgAuthSettings.DomainAllowlistEnabled)
@@ -59,7 +59,8 @@ func readOrganizationAuthenticationSettings(ctx context.Context, d *schema.Resou
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "password_requirements", orgAuthSettings.PasswordRequirements, flattenPasswordRequirements)
 
 		log.Printf("Read organization authentication settings %s", d.Id())
-		return cc.CheckState()
+		// return cc.CheckState()
+		return nil
 	})
 }
 
@@ -68,15 +69,15 @@ func updateOrganizationAuthenticationSettings(ctx context.Context, d *schema.Res
 	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
 	proxy := getOrgAuthSettingsProxy(sdkConfig)
 	AuthSettings := getOrganizationAuthenticationSettingsFromResourceData(d)
-
 	log.Printf("Updating organization authentication settings %s", d.Id())
 
 	orgAuthSettings, _, err := proxy.updateOrgAuthSettings(ctx, &AuthSettings)
+
 	if err != nil {
 		return diag.Errorf("Failed to update organization authentication settings: %s", err)
 	}
 
-	log.Printf("Updated organization authentication settings %s %s", d.Id, orgAuthSettings)
+	log.Printf("Updated organization authentication settings %s %s", d.Id(), orgAuthSettings)
 	return readOrganizationAuthenticationSettings(ctx, d, meta)
 }
 

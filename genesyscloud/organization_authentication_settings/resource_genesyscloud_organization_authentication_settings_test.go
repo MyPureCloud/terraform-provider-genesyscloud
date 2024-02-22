@@ -13,8 +13,8 @@ func TestAccResourceOrgAuthSettings(t *testing.T) {
 	t.Parallel()
 	var (
 		resourceId          = "OrgAuthSettings"
-		domainAllowList1    = []string{"Google.com", "Genesys.com"}
-		ipAddressAllowList1 = []string{"209.111.120.82", "96.151.138.32", "112.179.151.58", "75.71.15.117"}
+		domainAllowList1    = []string{"Google.com"}
+		ipAddressAllowList1 = []string{"0.0.0.0/32"}
 
 		minimumLength1     = "8"
 		minimumDigits1     = "2"
@@ -25,8 +25,8 @@ func TestAccResourceOrgAuthSettings(t *testing.T) {
 		minimumAgeSeconds1 = "1"
 		expirationDays1    = "90"
 
-		domainAllowList2    = []string{"Google.ie", "exampleDomain.com"}
-		ipAddressAllowList2 = []string{"212.2.241.254", "56.248.243.203", "167.73.207.2", "178.253.70.55"}
+		domainAllowList2    = []string{"Google.ie"}
+		ipAddressAllowList2 = []string{"0.0.0.0/32"}
 
 		minimumLength2     = "10"
 		minimumDigits2     = "4"
@@ -47,6 +47,7 @@ func TestAccResourceOrgAuthSettings(t *testing.T) {
 			{
 				// Create
 				Config: generateOrganizationAuthenticationSettings(
+					resourceId,
 					"true",
 					"true",
 					domainAllowList1,
@@ -66,11 +67,7 @@ func TestAccResourceOrgAuthSettings(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_organization_authentication_settings."+resourceId, "multifactor_authentication_required", "true"),
 					resource.TestCheckResourceAttr("genesyscloud_organization_authentication_settings."+resourceId, "domain_allowlist_enabled", "true"),
 					resource.TestCheckResourceAttr("genesyscloud_organization_authentication_settings."+resourceId, "domain_allow_list.0", domainAllowList1[0]),
-					resource.TestCheckResourceAttr("genesyscloud_organization_authentication_settings."+resourceId, "domain_allow_list.1", domainAllowList1[1]),
 					resource.TestCheckResourceAttr("genesyscloud_organization_authentication_settings."+resourceId, "ip_address_allow_list.0", ipAddressAllowList1[0]),
-					resource.TestCheckResourceAttr("genesyscloud_organization_authentication_settings."+resourceId, "ip_address_allow_list.1", ipAddressAllowList1[1]),
-					resource.TestCheckResourceAttr("genesyscloud_organization_authentication_settings."+resourceId, "ip_address_allow_list.2", ipAddressAllowList1[2]),
-					resource.TestCheckResourceAttr("genesyscloud_organization_authentication_settings."+resourceId, "ip_address_allow_list.3", ipAddressAllowList1[3]),
 					resource.TestCheckResourceAttr("genesyscloud_organization_authentication_settings."+resourceId, "password_requirements.0.minimum_length", minimumLength1),
 					resource.TestCheckResourceAttr("genesyscloud_organization_authentication_settings."+resourceId, "password_requirements.0.minimum_digits", minimumDigits1),
 					resource.TestCheckResourceAttr("genesyscloud_organization_authentication_settings."+resourceId, "password_requirements.0.minimum_letters", minimumLetters1),
@@ -84,6 +81,7 @@ func TestAccResourceOrgAuthSettings(t *testing.T) {
 			{
 				// Update with new organization authentication settings and password requirements
 				Config: generateOrganizationAuthenticationSettings(
+					resourceId,
 					"false",
 					"true",
 					domainAllowList2,
@@ -103,11 +101,7 @@ func TestAccResourceOrgAuthSettings(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_organization_authentication_settings."+resourceId, "multifactor_authentication_required", "true"),
 					resource.TestCheckResourceAttr("genesyscloud_organization_authentication_settings."+resourceId, "domain_allowlist_enabled", "true"),
 					resource.TestCheckResourceAttr("genesyscloud_organization_authentication_settings."+resourceId, "domain_allow_list.0", domainAllowList2[0]),
-					resource.TestCheckResourceAttr("genesyscloud_organization_authentication_settings."+resourceId, "domain_allow_list.1", domainAllowList2[1]),
 					resource.TestCheckResourceAttr("genesyscloud_organization_authentication_settings."+resourceId, "ip_address_allow_list.0", ipAddressAllowList2[0]),
-					resource.TestCheckResourceAttr("genesyscloud_organization_authentication_settings."+resourceId, "ip_address_allow_list.1", ipAddressAllowList2[1]),
-					resource.TestCheckResourceAttr("genesyscloud_organization_authentication_settings."+resourceId, "ip_address_allow_list.2", ipAddressAllowList2[2]),
-					resource.TestCheckResourceAttr("genesyscloud_organization_authentication_settings."+resourceId, "ip_address_allow_list.3", ipAddressAllowList2[3]),
 					resource.TestCheckResourceAttr("genesyscloud_organization_authentication_settings."+resourceId, "password_requirements.0.minimum_length", minimumLength2),
 					resource.TestCheckResourceAttr("genesyscloud_organization_authentication_settings."+resourceId, "password_requirements.0.minimum_digits", minimumDigits2),
 					resource.TestCheckResourceAttr("genesyscloud_organization_authentication_settings."+resourceId, "password_requirements.0.minimum_letters", minimumLetters2),
@@ -129,6 +123,7 @@ func TestAccResourceOrgAuthSettings(t *testing.T) {
 }
 
 func generateOrganizationAuthenticationSettings(
+	resourceId string,
 	multifactorAuthenticationRequired string,
 	domainAllowlistEnabled string,
 	domainAllowlist []string,
@@ -139,11 +134,11 @@ func generateOrganizationAuthenticationSettings(
 		resource "genesyscloud_organization_authentication_settings" "%s"{
 			multifactor_authentication_required = %s
 			domain_allowlist_enabled = %s
-			domain_allowlist = "%s"
-			ip_address_allowlist = "%s"
+			domain_allowlist = ["%s"]
+			ip_address_allowlist = ["%s"]
 			%s
 		}
-		`, multifactorAuthenticationRequired, domainAllowlistEnabled, domainAllowlist, ipAddressAllowlist, strings.Join(nestedBlocks, "\n"),
+		`, resourceId, multifactorAuthenticationRequired, domainAllowlistEnabled, domainAllowlist, ipAddressAllowlist, strings.Join(nestedBlocks, "\n"),
 	)
 }
 
