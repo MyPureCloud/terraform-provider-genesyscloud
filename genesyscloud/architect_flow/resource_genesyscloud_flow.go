@@ -41,6 +41,7 @@ func getAllFlows(ctx context.Context, clientConfig *platformclientv2.Configurati
 			continue
 		}
 
+		//This is our go forward naming standard for flows.
 		resources[*flow.Id] = &resourceExporter.ResourceMeta{Name: *flow.VarType + "_" + *flow.Name}
 	}
 
