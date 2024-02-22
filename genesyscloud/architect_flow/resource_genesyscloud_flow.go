@@ -31,6 +31,16 @@ func getAllFlows(ctx context.Context, clientConfig *platformclientv2.Configurati
 	}
 
 	for _, flow := range *flows {
+
+		//DEVTOOLING-393:  Putting this in here to deal with the situation where Cesar's BCP app is reliant on the naming structure
+		//This should be removed once the CX as Code architect export process is complete and will export files with the type in the name.
+		overrideBCPNaming := os.Getenv("OVERRIDE_BCP_NAMING")
+
+		if overrideBCPNaming != "" {
+			resources[*flow.Id] = &resourceExporter.ResourceMeta{Name: *flow.Name}
+			continue
+		}
+
 		resources[*flow.Id] = &resourceExporter.ResourceMeta{Name: *flow.VarType + "_" + *flow.Name}
 	}
 
