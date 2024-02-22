@@ -6,41 +6,26 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v121/platformclientv2"
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	"time"
 )
 
 func dataSourceResponseManagementResponseAssetRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	var (
-		name    = d.Get("name").(string)
-		field   = "name"
-		fields  = []string{field}
-		varType = "TERM"
-		filter  = platformclientv2.Responseassetfilter{
-			Fields:  &fields,
-			Value:   &name,
-			VarType: &varType,
-		}
-		body = platformclientv2.Responseassetsearchrequest{
-			Query:  &[]platformclientv2.Responseassetfilter{filter},
-			SortBy: &field,
-		}
-	)
-
 	sdkConfig := m.(*gcloud.ProviderMeta).ClientConfig
 	proxy := getRespManagementRespAssetProxy(sdkConfig)
 
+	name := d.Get("name").(string)
 	return gcloud.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
-		responseData, _, getErr := proxy.responseManagementApi.PostResponsemanagementResponseassetsSearch(body, nil)
-		if getErr != nil {
-			return retry.NonRetryableError(fmt.Errorf("Error requesting response asset %s: %s", name, getErr))
+		responseId, retryable, err := proxy.getRespManagementRespAssetByName(ctx, name)
+
+		if err != nil && !retryable {
+			return retry.NonRetryableError(fmt.Errorf("Error searching responsemanagement response asset %s: %s", name, err))
 		}
-		if responseData.Results == nil || len(*responseData.Results) == 0 {
-			return retry.RetryableError(fmt.Errorf("No response asset found with name %s", name))
+		if retryable {
+			return retry.RetryableError(fmt.Errorf("No responsemanagement response asset found with name %s", name))
 		}
-		asset := (*responseData.Results)[0]
-		d.SetId(*asset.Id)
+
+		d.SetId(responseId)
 		return nil
 	})
 }

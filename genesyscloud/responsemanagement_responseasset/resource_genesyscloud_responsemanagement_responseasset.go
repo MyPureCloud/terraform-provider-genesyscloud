@@ -44,14 +44,14 @@ func createRespManagementRespAsset(ctx context.Context, d *schema.ResourceData, 
 	url := *postResponseData.Url
 	reader, _, err := files.DownloadOrOpenFile(fileName)
 	if err != nil {
-		return diag.Errorf(err.Error())
+		return diag.FromErr(err)
 	}
 
 	s3Uploader := files.NewS3Uploader(reader, nil, nil, headers, "PUT", url)
 	_, err = s3Uploader.Upload()
 
 	if err != nil {
-		return diag.Errorf(err.Error())
+		return diag.FromErr(err)
 	}
 
 	d.SetId(*postResponseData.Id)

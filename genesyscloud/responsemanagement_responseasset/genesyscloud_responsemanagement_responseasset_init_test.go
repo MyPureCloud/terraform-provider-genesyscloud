@@ -27,7 +27,7 @@ type registerTestInstance struct {
 func (r *registerTestInstance) registerTestResources() {
 	r.resourceMapMutex.Lock()
 	defer r.resourceMapMutex.Unlock()
-	providerResources["genesyscloud_responsemanagement_responseasset"] = ResourceResponseManagementResponseAsset()
+	providerResources[resourceName] = ResourceResponseManagementResponseAsset()
 	providerResources["genesyscloud_auth_division"] = gcloud.ResourceAuthDivision()
 }
 
@@ -35,7 +35,7 @@ func (r *registerTestInstance) registerTestResources() {
 func (r *registerTestInstance) registerTestDataSources() {
 	r.datasourceMapMutex.Lock()
 	defer r.datasourceMapMutex.Unlock()
-	providerDataSources["genesyscloud_responsemanagement_responseasset"] = DataSourceResponseManagementResponseAsset()
+	providerDataSources[resourceName] = DataSourceResponseManagementResponseAsset()
 	providerDataSources["genesyscloud_auth_division_home"] = gcloud.DataSourceAuthDivisionHome()
 }
 

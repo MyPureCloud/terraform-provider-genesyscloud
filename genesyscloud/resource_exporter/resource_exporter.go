@@ -147,7 +147,6 @@ func (r *ResourceExporter) LoadSanitizedResourceMap(ctx context.Context, name st
 	if r.FilterResource != nil {
 		result = r.FilterResource(result, name, filter)
 	}
-
 	r.SanitizedResourceMap = result
 	sanitizer := NewSanitizerProvider()
 	sanitizer.S.Sanitize(r.SanitizedResourceMap)
