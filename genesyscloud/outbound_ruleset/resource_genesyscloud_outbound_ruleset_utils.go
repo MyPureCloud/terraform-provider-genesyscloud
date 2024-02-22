@@ -9,7 +9,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v121/platformclientv2"
 )
 
 /*
@@ -275,6 +275,9 @@ func flattenDataactionconditionpredicates(predicates *[]platformclientv2.Dataact
 
 // look through rule actions to check if the referenced skills exist in our skill map or not
 func doesRuleActionsRefDeletedSkill(rule platformclientv2.Dialerrule, skillMap resourceExporter.ResourceIDMetaMap) bool {
+	if rule.Actions == nil {
+		return false
+	}
 	for _, action := range *rule.Actions {
 		if action.ActionTypeName != nil && strings.EqualFold(*action.ActionTypeName, "set_skills") && action.Properties != nil {
 			if value, found := (*action.Properties)["skills"]; found {

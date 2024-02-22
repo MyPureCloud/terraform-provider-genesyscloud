@@ -14,7 +14,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v121/platformclientv2"
 )
 
 func WithRetries(ctx context.Context, timeout time.Duration, method func() *retry.RetryError) diag.Diagnostics {
@@ -161,5 +161,15 @@ func IsStatus412(resp *platformclientv2.APIResponse, additionalCodes ...int) boo
 			return true
 		}
 	}
+	return false
+}
+
+func IsStatus412ByInt(respCode int, additionalCodes ...int) bool {
+	if respCode == http.StatusPreconditionFailed ||
+		respCode == http.StatusRequestTimeout ||
+		IsAdditionalCode(respCode, additionalCodes...) {
+		return true
+	}
+
 	return false
 }

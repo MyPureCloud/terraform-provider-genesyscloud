@@ -10,7 +10,10 @@ import (
 	grammar "terraform-provider-genesyscloud/genesyscloud/architect_grammar"
 	grammarLanguage "terraform-provider-genesyscloud/genesyscloud/architect_grammar_language"
 	archIvr "terraform-provider-genesyscloud/genesyscloud/architect_ivr"
+	architectSchedulegroups "terraform-provider-genesyscloud/genesyscloud/architect_schedulegroups"
+	authRole "terraform-provider-genesyscloud/genesyscloud/auth_role"
 	authorizatioProduct "terraform-provider-genesyscloud/genesyscloud/authorization_product"
+	employeeperformanceExternalmetricsDefinition "terraform-provider-genesyscloud/genesyscloud/employeeperformance_externalmetrics_definitions"
 	externalContacts "terraform-provider-genesyscloud/genesyscloud/external_contacts"
 	flowMilestone "terraform-provider-genesyscloud/genesyscloud/flow_milestone"
 	flowOutcome "terraform-provider-genesyscloud/genesyscloud/flow_outcome"
@@ -23,16 +26,22 @@ import (
 	ob "terraform-provider-genesyscloud/genesyscloud/outbound"
 	obAttemptLimit "terraform-provider-genesyscloud/genesyscloud/outbound_attempt_limit"
 	obCallableTimeset "terraform-provider-genesyscloud/genesyscloud/outbound_callabletimeset"
+	obCallResponseSet "terraform-provider-genesyscloud/genesyscloud/outbound_callanalysisresponseset"
 	obCampaign "terraform-provider-genesyscloud/genesyscloud/outbound_campaign"
 	obCampaignRule "terraform-provider-genesyscloud/genesyscloud/outbound_campaignrule"
 	obContactList "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
+	obContactListFilter "terraform-provider-genesyscloud/genesyscloud/outbound_contactlistfilter"
+	obDncList "terraform-provider-genesyscloud/genesyscloud/outbound_dnclist"
 	obs "terraform-provider-genesyscloud/genesyscloud/outbound_ruleset"
 	obSequence "terraform-provider-genesyscloud/genesyscloud/outbound_sequence"
+	obSettings "terraform-provider-genesyscloud/genesyscloud/outbound_settings"
 	obwm "terraform-provider-genesyscloud/genesyscloud/outbound_wrapupcode_mappings"
 	pat "terraform-provider-genesyscloud/genesyscloud/process_automation_trigger"
 	recMediaRetPolicy "terraform-provider-genesyscloud/genesyscloud/recording_media_retention_policy"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
+	respmanagementLibrary "terraform-provider-genesyscloud/genesyscloud/responsemanagement_library"
+	responsemanagementResponse "terraform-provider-genesyscloud/genesyscloud/responsemanagement_response"
 	smsAddresses "terraform-provider-genesyscloud/genesyscloud/routing_sms_addresses"
 	"terraform-provider-genesyscloud/genesyscloud/scripts"
 	"terraform-provider-genesyscloud/genesyscloud/station"
@@ -52,6 +61,7 @@ import (
 	edgeSite "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site"
 	edgesTrunk "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_trunk"
 	tfexp "terraform-provider-genesyscloud/genesyscloud/tfexporter"
+	userRoles "terraform-provider-genesyscloud/genesyscloud/user_roles"
 	webDeployConfig "terraform-provider-genesyscloud/genesyscloud/webdeployments_configuration"
 	webDeployDeploy "terraform-provider-genesyscloud/genesyscloud/webdeployments_deployment"
 
@@ -114,55 +124,66 @@ type RegisterInstance struct {
 
 func registerResources() {
 	regInstance := &RegisterInstance{}
-	oauth.SetRegistrar(regInstance)                         //Registering oauth_client
-	dt.SetRegistrar(regInstance)                            //Registering architect data table
-	dtr.SetRegistrar(regInstance)                           //Registering architect data table row
-	emergencyGroup.SetRegistrar(regInstance)                //Registering architect emergency group
-	grammar.SetRegistrar(regInstance)                       //Registering architect grammar
-	grammarLanguage.SetRegistrar(regInstance)               //Registering architect grammar language
-	groupRoles.SetRegistrar(regInstance)                    //Registering group roles
-	edgePhone.SetRegistrar(regInstance)                     //Registering telephony providers edges phone
-	edgeSite.SetRegistrar(regInstance)                      //Registering telephony providers edges site
-	flowMilestone.SetRegistrar(regInstance)                 //Registering flow milestone
-	flowOutcome.SetRegistrar(regInstance)                   //Registering flow outcome
-	station.SetRegistrar(regInstance)                       //Registering station
-	pat.SetRegistrar(regInstance)                           //Registering process automation triggers
-	obs.SetRegistrar(regInstance)                           //Resistering outbound ruleset
-	ob.SetRegistrar(regInstance)                            //Registering outbound
-	obwm.SetRegistrar(regInstance)                          //Registering outbound wrapup code mappings
-	gcloud.SetRegistrar(regInstance)                        //Registering genesyscloud
-	obAttemptLimit.SetRegistrar(regInstance)                //Registering outbound attempt limit
-	obCallableTimeset.SetRegistrar(regInstance)             //Registering outbound callable timeset
-	obCampaign.SetRegistrar(regInstance)                    //Registering outbound campaign
-	obContactList.SetRegistrar(regInstance)                 //Registering outbound contact list
-	obSequence.SetRegistrar(regInstance)                    //Registering outbound sequence
-	obCampaignRule.SetRegistrar(regInstance)                //Registering outbound campaignrule
-	scripts.SetRegistrar(regInstance)                       //Registering Scripts
-	smsAddresses.SetRegistrar(regInstance)                  //Registering routing sms addresses
-	integration.SetRegistrar(regInstance)                   //Registering integrations
-	integrationCustomAuth.SetRegistrar(regInstance)         //Registering integrations custom auth actions
-	integrationAction.SetRegistrar(regInstance)             //Registering integrations actions
-	integrationCred.SetRegistrar(regInstance)               //Registering integrations credentials
-	recMediaRetPolicy.SetRegistrar(regInstance)             //Registering recording media retention policies
-	did.SetRegistrar(regInstance)                           //Registering telephony did
-	didPool.SetRegistrar(regInstance)                       //Registering telephony did pools
-	archIvr.SetRegistrar(regInstance)                       //Registering architect ivr
-	workbin.SetRegistrar(regInstance)                       //Registering task management workbin
-	workitemSchema.SetRegistrar(regInstance)                //Registering task management workitem schema
-	worktype.SetRegistrar(regInstance)                      //Registering task management worktype
-	workitem.SetRegistrar(regInstance)                      //Registering task management workitem
-	externalContacts.SetRegistrar(regInstance)              //Registering external contacts
-	team.SetRegistrar(regInstance)                          //Registering team
-	telephony.SetRegistrar(regInstance)                     //Registering telephony package
-	edgeGroup.SetRegistrar(regInstance)                     //Registering edges edge group
-	webDeployConfig.SetRegistrar(regInstance)               //Registering webdeployments_config
-	webDeployDeploy.SetRegistrar(regInstance)               //Registering webdeployments_deploy
-	authorizatioProduct.SetRegistrar(regInstance)           //Registering Authorization Product
-	extPool.SetRegistrar(regInstance)                       //Registering Extension Pool
-	phoneBaseSettings.SetRegistrar(regInstance)             //Registering Phone Base Settings
-	lineBaseSettings.SetRegistrar(regInstance)              //Registering Line Base Settings
-	edgesTrunk.SetRegistrar(regInstance)                    //Registering Edges Trunk Settings
-	resourceExporter.SetRegisterExporter(resourceExporters) //Registering register exporters
+	authRole.SetRegistrar(regInstance)                                     //Registering auth_role
+	oauth.SetRegistrar(regInstance)                                        //Registering oauth_client
+	dt.SetRegistrar(regInstance)                                           //Registering architect data table
+	dtr.SetRegistrar(regInstance)                                          //Registering architect data table row
+	emergencyGroup.SetRegistrar(regInstance)                               //Registering architect emergency group
+	employeeperformanceExternalmetricsDefinition.SetRegistrar(regInstance) //Registering employee performance external metrics definitions
+	architectSchedulegroups.SetRegistrar(regInstance)                      //Registering architect schedule groups
+	grammar.SetRegistrar(regInstance)                                      //Registering architect grammar
+	grammarLanguage.SetRegistrar(regInstance)                              //Registering architect grammar language
+	groupRoles.SetRegistrar(regInstance)                                   //Registering group roles
+	edgePhone.SetRegistrar(regInstance)                                    //Registering telephony providers edges phone
+	edgeSite.SetRegistrar(regInstance)                                     //Registering telephony providers edges site
+	flowMilestone.SetRegistrar(regInstance)                                //Registering flow milestone
+	flowOutcome.SetRegistrar(regInstance)                                  //Registering flow outcome
+	station.SetRegistrar(regInstance)                                      //Registering station
+	pat.SetRegistrar(regInstance)                                          //Registering process automation triggers
+	obs.SetRegistrar(regInstance)                                          //Resistering outbound ruleset
+	ob.SetRegistrar(regInstance)                                           //Registering outbound
+	obSettings.SetRegistrar(regInstance)                                   //Registering outbound settings
+	obwm.SetRegistrar(regInstance)                                         //Registering outbound wrapup code mappings
+	gcloud.SetRegistrar(regInstance)                                       //Registering genesyscloud
+	obAttemptLimit.SetRegistrar(regInstance)                               //Registering outbound attempt limit
+	obCallableTimeset.SetRegistrar(regInstance)                            //Registering outbound callable timeset
+	obCallResponseSet.SetRegistrar(regInstance)                            //Registering outbound call analysis response set
+	obCampaign.SetRegistrar(regInstance)                                   //Registering outbound campaign
+	obContactList.SetRegistrar(regInstance)                                //Registering outbound contact list
+	obContactListFilter.SetRegistrar(regInstance)                          //Registering outbound contact list filter
+	obSequence.SetRegistrar(regInstance)                                   //Registering outbound sequence
+	obCampaignRule.SetRegistrar(regInstance)                               //Registering outbound campaignrule
+	obDncList.SetRegistrar(regInstance)                                    //Registering outbound dnclist
+	scripts.SetRegistrar(regInstance)                                      //Registering Scripts
+	smsAddresses.SetRegistrar(regInstance)                                 //Registering routing sms addresses
+	integration.SetRegistrar(regInstance)                                  //Registering integrations
+	integrationCustomAuth.SetRegistrar(regInstance)                        //Registering integrations custom auth actions
+	integrationAction.SetRegistrar(regInstance)                            //Registering integrations actions
+	integrationCred.SetRegistrar(regInstance)                              //Registering integrations credentials
+	recMediaRetPolicy.SetRegistrar(regInstance)                            //Registering recording media retention policies
+	did.SetRegistrar(regInstance)                                          //Registering telephony did
+	didPool.SetRegistrar(regInstance)                                      //Registering telephony did pools
+	archIvr.SetRegistrar(regInstance)                                      //Registering architect ivr
+	workbin.SetRegistrar(regInstance)                                      //Registering task management workbin
+	workitemSchema.SetRegistrar(regInstance)                               //Registering task management workitem schema
+	worktype.SetRegistrar(regInstance)                                     //Registering task management worktype
+	workitem.SetRegistrar(regInstance)                                     //Registering task management workitem
+	externalContacts.SetRegistrar(regInstance)                             //Registering external contacts
+	team.SetRegistrar(regInstance)                                         //Registering team
+	telephony.SetRegistrar(regInstance)                                    //Registering telephony package
+	edgeGroup.SetRegistrar(regInstance)                                    //Registering edges edge group
+	webDeployConfig.SetRegistrar(regInstance)                              //Registering webdeployments_config
+	webDeployDeploy.SetRegistrar(regInstance)                              //Registering webdeployments_deploy
+	authorizatioProduct.SetRegistrar(regInstance)                          //Registering Authorization Product
+	extPool.SetRegistrar(regInstance)                                      //Registering Extension Pool
+	phoneBaseSettings.SetRegistrar(regInstance)                            //Registering Phone Base Settings
+	lineBaseSettings.SetRegistrar(regInstance)                             //Registering Line Base Settings
+	edgesTrunk.SetRegistrar(regInstance)                                   //Registering Edges Trunk Settings
+	resourceExporter.SetRegisterExporter(resourceExporters)                //Registering register exporters
+	userRoles.SetRegistrar(regInstance)                                    //Registering user roles
+	responsemanagementResponse.SetRegistrar(regInstance)                   //Registering responsemanagement responses
+	respmanagementLibrary.SetRegistrar(regInstance)                        //Registering responsemanagement library
+
 	// setting resources for Use cases  like TF export where provider is used in resource classes.
 	tfexp.SetRegistrar(regInstance) //Registering tf exporter
 	registrar.SetResources(providerResources, providerDataSources)

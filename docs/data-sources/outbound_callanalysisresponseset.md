@@ -3,12 +3,12 @@
 page_title: "genesyscloud_outbound_callanalysisresponseset Data Source - terraform-provider-genesyscloud"
 subcategory: ""
 description: |-
-  
+  Genesys Cloud outbound callanalysisresponseset data source. Select an outbound callanalysisresponseset by name
 ---
 
 # genesyscloud_outbound_callanalysisresponseset (Data Source)
 
-
+Genesys Cloud outbound callanalysisresponseset data source. Select an outbound callanalysisresponseset by name
 
 ## Example Usage
 

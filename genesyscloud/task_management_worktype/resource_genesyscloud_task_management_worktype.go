@@ -10,7 +10,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v121/platformclientv2"
 
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
@@ -223,27 +223,20 @@ func updateTaskManagementWorktype(ctx context.Context, d *schema.ResourceData, m
 	// Go through and clear the status references first to avoid dependency errors on deletion
 	log.Printf("Clearing references of statuses for deletion of worktype %s", d.Id())
 	for _, forDeletionId := range forDeletionIds {
-		updateForCleaning := Workitemstatusupdate{}
+		updateForCleaning := platformclientv2.Workitemstatusupdate{}
 
-		// NOTE: Keep this comments so we can remember to use SetField here for forcing null in refactor
-		// refer: temp_api_utils.go file
 		// // Force these properties as 'null' for the API request
-		// updateForCleaning.SetField("DestinationStatusIds", &[]string{})
-		// updateForCleaning.SetField("DefaultDestinationStatusId", nil)
-		// updateForCleaning.SetField("StatusTransitionDelaySeconds", nil)
-		// updateForCleaning.SetField("StatusTransitionTime", nil)
-
-		updateForCleaning.DestinationStatusIds = &[]string{}
-		updateForCleaning.DefaultDestinationStatusId = nil
-		updateForCleaning.StatusTransitionDelaySeconds = nil
-		updateForCleaning.StatusTransitionTime = nil
+		updateForCleaning.SetField("DestinationStatusIds", &[]string{})
+		updateForCleaning.SetField("DefaultDestinationStatusId", nil)
+		updateForCleaning.SetField("StatusTransitionDelaySeconds", nil)
+		updateForCleaning.SetField("StatusTransitionTime", nil)
 
 		// We put a random description so we can ensure there is a 'change' in the status.
 		// Else we'll get a 400 error if the status has no destination status /default status to begin with
 		// This is simpler than checking the status fields if there are any changes.
 		// Since this status is for deletion anyway we shouldn't care about this managed update.
 		description := "this status is set for deletion by CX as Code " + uuid.NewString()
-		updateForCleaning.Description = &description
+		updateForCleaning.SetField("Description", &description)
 
 		if _, err := proxy.updateTaskManagementWorktypeStatus(ctx, d.Id(), forDeletionId, &updateForCleaning); err != nil {
 			return diag.Errorf("failed to clean up references of task management worktype status %s: %v", forDeletionId, err)

@@ -12,7 +12,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v121/platformclientv2"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -121,8 +121,8 @@ func TestUnitResourceWorktypeCreate(t *testing.T) {
 		}, nil
 	}
 
-	taskProxy.createTaskManagementWorktypeStatusAttr = func(ctx context.Context, p *taskManagementWorktypeProxy, worktypeId string, status *Workitemstatuscreate) (*Workitemstatus, error) {
-		return &Workitemstatus{
+	taskProxy.createTaskManagementWorktypeStatusAttr = func(ctx context.Context, p *taskManagementWorktypeProxy, worktypeId string, status *platformclientv2.Workitemstatuscreate) (*platformclientv2.Workitemstatus, error) {
+		return &platformclientv2.Workitemstatus{
 			Id:                           &worktypeId,
 			Name:                         status.Name,
 			Category:                     status.Category,
@@ -132,8 +132,8 @@ func TestUnitResourceWorktypeCreate(t *testing.T) {
 		}, nil
 	}
 
-	taskProxy.updateTaskManagementWorktypeStatusAttr = func(ctx context.Context, p *taskManagementWorktypeProxy, worktypeId string, statusId string, statusUpdate *Workitemstatusupdate) (*Workitemstatus, error) {
-		return &Workitemstatus{
+	taskProxy.updateTaskManagementWorktypeStatusAttr = func(ctx context.Context, p *taskManagementWorktypeProxy, worktypeId string, statusId string, statusUpdate *platformclientv2.Workitemstatusupdate) (*platformclientv2.Workitemstatus, error) {
+		return &platformclientv2.Workitemstatus{
 			Id:                  &statusId,
 			Name:                statusUpdate.Name,
 			DestinationStatuses: buildDestinationStatuses(statusUpdate.DestinationStatusIds),
@@ -146,11 +146,11 @@ func TestUnitResourceWorktypeCreate(t *testing.T) {
 		}, nil
 	}
 
-	taskProxy.getTaskManagementWorktypeByIdAttr = func(ctx context.Context, p *taskManagementWorktypeProxy, id string) (*Worktype, int, error) {
+	taskProxy.getTaskManagementWorktypeByIdAttr = func(ctx context.Context, p *taskManagementWorktypeProxy, id string) (*platformclientv2.Worktype, int, error) {
 		assert.Equal(t, tId, id)
 
 		// The expected final form of the worktype
-		wt := &Worktype{
+		wt := &platformclientv2.Worktype{
 			Id:          &tId,
 			Name:        &wt.name,
 			Description: &wt.description,
@@ -167,7 +167,7 @@ func TestUnitResourceWorktypeCreate(t *testing.T) {
 			DefaultLanguage: &platformclientv2.Languagereference{
 				Id: &wt.defaultLanguageId,
 			},
-			DefaultQueue: &platformclientv2.Queuereference{
+			DefaultQueue: &platformclientv2.Workitemqueuereference{
 				Id: &wt.defaultQueueId,
 			},
 			DefaultSkills: &[]platformclientv2.Routingskillreference{
@@ -184,7 +184,7 @@ func TestUnitResourceWorktypeCreate(t *testing.T) {
 				Version: &wt.schemaVersion,
 			},
 
-			Statuses: &[]Workitemstatus{
+			Statuses: &[]platformclientv2.Workitemstatus{
 				{
 					Id:          &wt.statuses[0].id,
 					Name:        &wt.statuses[0].name,
@@ -314,11 +314,11 @@ func TestUnitResourceWorktypeRead(t *testing.T) {
 
 	taskProxy := &taskManagementWorktypeProxy{}
 
-	taskProxy.getTaskManagementWorktypeByIdAttr = func(ctx context.Context, p *taskManagementWorktypeProxy, id string) (*Worktype, int, error) {
+	taskProxy.getTaskManagementWorktypeByIdAttr = func(ctx context.Context, p *taskManagementWorktypeProxy, id string) (*platformclientv2.Worktype, int, error) {
 		assert.Equal(t, tId, id)
 
 		// The expected final form of the worktype
-		wt := &Worktype{
+		wt := &platformclientv2.Worktype{
 			Id:          &tId,
 			Name:        &wt.name,
 			Description: &wt.description,
@@ -335,7 +335,7 @@ func TestUnitResourceWorktypeRead(t *testing.T) {
 			DefaultLanguage: &platformclientv2.Languagereference{
 				Id: &wt.defaultLanguageId,
 			},
-			DefaultQueue: &platformclientv2.Queuereference{
+			DefaultQueue: &platformclientv2.Workitemqueuereference{
 				Id: &wt.defaultQueueId,
 			},
 			DefaultSkills: &[]platformclientv2.Routingskillreference{
@@ -352,7 +352,7 @@ func TestUnitResourceWorktypeRead(t *testing.T) {
 				Version: &wt.schemaVersion,
 			},
 
-			Statuses: &[]Workitemstatus{
+			Statuses: &[]platformclientv2.Workitemstatus{
 				{
 					Id:          &wt.statuses[0].id,
 					Name:        &wt.statuses[0].name,
@@ -543,8 +543,8 @@ func TestUnitResourceWorktypeUpdate(t *testing.T) {
 		}, nil
 	}
 
-	taskProxy.createTaskManagementWorktypeStatusAttr = func(ctx context.Context, p *taskManagementWorktypeProxy, worktypeId string, status *Workitemstatuscreate) (*Workitemstatus, error) {
-		return &Workitemstatus{
+	taskProxy.createTaskManagementWorktypeStatusAttr = func(ctx context.Context, p *taskManagementWorktypeProxy, worktypeId string, status *platformclientv2.Workitemstatuscreate) (*platformclientv2.Workitemstatus, error) {
+		return &platformclientv2.Workitemstatus{
 			Id:                           &worktypeId,
 			Name:                         status.Name,
 			Category:                     status.Category,
@@ -554,8 +554,8 @@ func TestUnitResourceWorktypeUpdate(t *testing.T) {
 		}, nil
 	}
 
-	taskProxy.updateTaskManagementWorktypeStatusAttr = func(ctx context.Context, p *taskManagementWorktypeProxy, worktypeId string, statusId string, statusUpdate *Workitemstatusupdate) (*Workitemstatus, error) {
-		return &Workitemstatus{
+	taskProxy.updateTaskManagementWorktypeStatusAttr = func(ctx context.Context, p *taskManagementWorktypeProxy, worktypeId string, statusId string, statusUpdate *platformclientv2.Workitemstatusupdate) (*platformclientv2.Workitemstatus, error) {
+		return &platformclientv2.Workitemstatus{
 			Id:                  &statusId,
 			Name:                statusUpdate.Name,
 			DestinationStatuses: buildDestinationStatuses(statusUpdate.DestinationStatusIds),
@@ -570,11 +570,11 @@ func TestUnitResourceWorktypeUpdate(t *testing.T) {
 
 	// The final complete worktype for read
 	// This is where we'll be asserting the statuses
-	taskProxy.getTaskManagementWorktypeByIdAttr = func(ctx context.Context, p *taskManagementWorktypeProxy, id string) (*Worktype, int, error) {
+	taskProxy.getTaskManagementWorktypeByIdAttr = func(ctx context.Context, p *taskManagementWorktypeProxy, id string) (*platformclientv2.Worktype, int, error) {
 		assert.Equal(t, tId, id)
 
 		// The expected final form of the worktype
-		wt := &Worktype{
+		wt := &platformclientv2.Worktype{
 			Id:          &tId,
 			Name:        &wt.name,
 			Description: &wt.description,
@@ -591,7 +591,7 @@ func TestUnitResourceWorktypeUpdate(t *testing.T) {
 			DefaultLanguage: &platformclientv2.Languagereference{
 				Id: &wt.defaultLanguageId,
 			},
-			DefaultQueue: &platformclientv2.Queuereference{
+			DefaultQueue: &platformclientv2.Workitemqueuereference{
 				Id: &wt.defaultQueueId,
 			},
 			DefaultSkills: &[]platformclientv2.Routingskillreference{
@@ -608,7 +608,7 @@ func TestUnitResourceWorktypeUpdate(t *testing.T) {
 				Version: &wt.schemaVersion,
 			},
 
-			Statuses: &[]Workitemstatus{
+			Statuses: &[]platformclientv2.Workitemstatus{
 				{
 					Id:          &wt.statuses[0].id,
 					Name:        &wt.statuses[0].name,
@@ -697,7 +697,7 @@ func TestUnitResourceWorktypeDelete(t *testing.T) {
 		return apiResponse.StatusCode, nil
 	}
 
-	taskProxy.getTaskManagementWorktypeByIdAttr = func(ctx context.Context, p *taskManagementWorktypeProxy, id string) (worktype *Worktype, responseCode int, err error) {
+	taskProxy.getTaskManagementWorktypeByIdAttr = func(ctx context.Context, p *taskManagementWorktypeProxy, id string) (worktype *platformclientv2.Worktype, responseCode int, err error) {
 		assert.Equal(t, tId, id)
 
 		apiResponse := &platformclientv2.APIResponse{

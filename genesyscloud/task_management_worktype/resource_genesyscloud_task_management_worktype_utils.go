@@ -7,7 +7,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v121/platformclientv2"
 )
 
 /*
@@ -78,7 +78,7 @@ func getWorktypecreateFromResourceData(d *schema.ResourceData) platformclientv2.
 }
 
 // getWorktypeupdateFromResourceData maps data from schema ResourceData object to a platformclientv2.Worktypeupdate
-func getWorktypeupdateFromResourceData(d *schema.ResourceData, statuses *[]Workitemstatus) platformclientv2.Worktypeupdate {
+func getWorktypeupdateFromResourceData(d *schema.ResourceData, statuses *[]platformclientv2.Workitemstatus) platformclientv2.Worktypeupdate {
 	worktype := platformclientv2.Worktypeupdate{
 		Name:             platformclientv2.String(d.Get("name").(string)),
 		Description:      platformclientv2.String(d.Get("description").(string)),
@@ -104,7 +104,7 @@ func getWorktypeupdateFromResourceData(d *schema.ResourceData, statuses *[]Worki
 }
 
 // getStatusFromName gets a platformclientv2.Workitemstatus from a  *[]platformclientv2.Workitemstatu by name
-func getStatusFromName(statusName string, statuses *[]Workitemstatus) *Workitemstatus {
+func getStatusFromName(statusName string, statuses *[]platformclientv2.Workitemstatus) *platformclientv2.Workitemstatus {
 	if statuses == nil {
 		return nil
 	}
@@ -119,7 +119,7 @@ func getStatusFromName(statusName string, statuses *[]Workitemstatus) *Workitems
 }
 
 // getStatusIdFromName gets a status id from a  *[]platformclientv2.Workitemstatu by status name
-func getStatusIdFromName(statusName string, statuses *[]Workitemstatus) *string {
+func getStatusIdFromName(statusName string, statuses *[]platformclientv2.Workitemstatus) *string {
 	if statuses == nil {
 		return nil
 	}
@@ -133,8 +133,8 @@ func getStatusIdFromName(statusName string, statuses *[]Workitemstatus) *string 
 	return nil
 }
 
-// getStatusIdFromName gets the status name from a  *[]platformclientv2.Workitemstatu by status id
-func getStatusNameFromId(statusId string, statuses *[]Workitemstatus) *string {
+// getStatusIdFromName gets the status name from a  *[]platformclientv2.Workitemstatus by status id
+func getStatusNameFromId(statusId string, statuses *[]platformclientv2.Workitemstatus) *string {
 	if statuses == nil {
 		return nil
 	}
@@ -149,11 +149,11 @@ func getStatusNameFromId(statusId string, statuses *[]Workitemstatus) *string {
 }
 
 // buildWorkitemStatusCreates maps an []interface{} into a Genesys Cloud *[]platformclientv2.Workitemstatuscreate
-func buildWorkitemStatusCreates(workitemStatuses []interface{}) *[]Workitemstatuscreate {
-	workitemStatusesSlice := make([]Workitemstatuscreate, 0)
+func buildWorkitemStatusCreates(workitemStatuses []interface{}) *[]platformclientv2.Workitemstatuscreate {
+	workitemStatusesSlice := make([]platformclientv2.Workitemstatuscreate, 0)
 
 	for _, workitemStatus := range workitemStatuses {
-		var sdkWorkitemStatus Workitemstatuscreate
+		var sdkWorkitemStatus platformclientv2.Workitemstatuscreate
 		workitemStatusMap, ok := workitemStatus.(map[string]interface{})
 		if !ok {
 			continue
@@ -176,8 +176,8 @@ func buildWorkitemStatusCreates(workitemStatuses []interface{}) *[]Workitemstatu
 // buildWorkitemStatusUpdates maps an []interface{} into a Genesys Cloud *[]platformclientv2.Workitemstatusupdate
 // workitemStatuses is the terraform resource object attribute while apiStatuses is the existing Genesys Cloud
 // statuses to be used as reference for the 'destination status ids'
-func buildWorkitemStatusUpdates(workitemStatuses []interface{}, apiStatuses *[]Workitemstatus) *[]Workitemstatusupdate {
-	workitemStatussSlice := make([]Workitemstatusupdate, 0)
+func buildWorkitemStatusUpdates(workitemStatuses []interface{}, apiStatuses *[]platformclientv2.Workitemstatus) *[]platformclientv2.Workitemstatusupdate {
+	workitemStatussSlice := make([]platformclientv2.Workitemstatusupdate, 0)
 
 	// Inner func get the status id from a status name.
 	getStatusIdFromNameFn := func(statusName string) *string {
@@ -197,30 +197,47 @@ func buildWorkitemStatusUpdates(workitemStatuses []interface{}, apiStatuses *[]W
 	}
 
 	for _, workitemStatus := range workitemStatuses {
-		var sdkWorkitemStatus Workitemstatusupdate
+		sdkWorkitemStatus := platformclientv2.Workitemstatusupdate{}
 		workitemStatusMap, ok := workitemStatus.(map[string]interface{})
 		if !ok {
 			continue
 		}
 
-		// NOTE: The comment below is a reminder for the intended 'final' implementation
-		// once the swagger bug is fixed. Ref: *temp_api_utils.go file.
-		// We use SetFields because we want the "null" values to be
-		// sent to the API specifically for the default destination status and related properties.
-		resourcedata.BuildSDKStringValueIfNotNil(&sdkWorkitemStatus.Name, workitemStatusMap, "name")
-		resourcedata.BuildSDKStringValueIfNotNil(&sdkWorkitemStatus.Description, workitemStatusMap, "description")
-		resourcedata.BuildSDKStringValueIfNotNil(&sdkWorkitemStatus.Description, workitemStatusMap, "description")
-		resourcedata.BuildSDKStringValueIfNotNil(&sdkWorkitemStatus.Description, workitemStatusMap, "description")
-		resourcedata.BuildSDKStringValueIfNotNil(&sdkWorkitemStatus.StatusTransitionTime, workitemStatusMap, "status_transition_time")
+		// For the following if some attributes are not provided in terraform file we
+		// explicitly set the SDK attribute to nil to nullify its value in the API
+
+		if name, ok := workitemStatusMap["name"]; ok {
+			sdkWorkitemStatus.SetField("Name", platformclientv2.String(name.(string)))
+		}
+
+		if description, ok := workitemStatusMap["description"]; ok {
+			sdkWorkitemStatus.SetField("Description", platformclientv2.String(description.(string)))
+		}
+
+		if statusTransitionTime, ok := workitemStatusMap["status_transition_time"]; ok {
+			sdkWorkitemStatus.SetField("StatusTransitionTime", platformclientv2.String(statusTransitionTime.(string)))
+		} else {
+			sdkWorkitemStatus.SetField("StatusTransitionTime", nil)
+		}
+
 		if statusTransitionDelaySec, ok := workitemStatusMap["status_transition_delay_seconds"]; ok && statusTransitionDelaySec.(int) > 0 {
-			sdkWorkitemStatus.StatusTransitionDelaySeconds = platformclientv2.Int(statusTransitionDelaySec.(int))
+			sdkWorkitemStatus.SetField("StatusTransitionDelaySeconds", platformclientv2.Int(statusTransitionDelaySec.(int)))
+		} else {
+			sdkWorkitemStatus.SetField("StatusTransitionDelaySeconds", nil)
 		}
 
 		if destinationStatuses, ok := workitemStatusMap["destination_status_names"]; ok {
-			sdkWorkitemStatus.DestinationStatusIds = buildStatusIdFn(destinationStatuses.([]interface{}))
+			statusIds := buildStatusIdFn(destinationStatuses.([]interface{}))
+			sdkWorkitemStatus.SetField("DestinationStatusIds", statusIds)
+		} else {
+			sdkWorkitemStatus.SetField("DestinationStatusIds", nil)
 		}
+
 		if defaultDestination, ok := workitemStatusMap["default_destination_status_name"]; ok {
-			sdkWorkitemStatus.DefaultDestinationStatusId = getStatusIdFromNameFn(defaultDestination.(string))
+			defaultDestStatusId := getStatusIdFromNameFn(defaultDestination.(string))
+			sdkWorkitemStatus.SetField("DefaultDestinationStatusId", defaultDestStatusId)
+		} else {
+			sdkWorkitemStatus.SetField("DefaultDestinationStatusId", nil)
 		}
 
 		workitemStatussSlice = append(workitemStatussSlice, sdkWorkitemStatus)
@@ -232,7 +249,7 @@ func buildWorkitemStatusUpdates(workitemStatuses []interface{}, apiStatuses *[]W
 // flattenWorkitemStatusReferences maps a Genesys Cloud *[]platformclientv2.Workitemstatusreference into a []interface{}
 // Sadly the API only returns the ID in the ref object (even if the name is defined in the API model), so we still need the
 // existingStatuses parameter to get the name for resolving back into resource data
-func flattenWorkitemStatusReferences(workitemStatusReferences *[]platformclientv2.Workitemstatusreference, existingStatuses *[]Workitemstatus) []interface{} {
+func flattenWorkitemStatusReferences(workitemStatusReferences *[]platformclientv2.Workitemstatusreference, existingStatuses *[]platformclientv2.Workitemstatus) []interface{} {
 	if len(*workitemStatusReferences) == 0 {
 		return nil
 	}
@@ -250,7 +267,7 @@ func flattenWorkitemStatusReferences(workitemStatusReferences *[]platformclientv
 }
 
 // flattenWorkitemStatuss maps a Genesys Cloud *[]platformclientv2.Workitemstatus into a []interface{}
-func flattenWorkitemStatuses(workitemStatuses *[]Workitemstatus) []interface{} {
+func flattenWorkitemStatuses(workitemStatuses *[]platformclientv2.Workitemstatus) []interface{} {
 	if len(*workitemStatuses) == 0 {
 		return nil
 	}
@@ -299,7 +316,7 @@ func flattenRoutingSkillReferences(routingSkillReferences *[]platformclientv2.Ro
 
 // getStatusesForUpdateAndCreation takes a resource data list []interface{} of statuses and determines if they
 // are to be created or just updated. Returns the two lists.
-func getStatusesForUpdateAndCreation(statuses []interface{}, existingStatuses *[]Workitemstatus) (forCreation []interface{}, forUpdate []interface{}) {
+func getStatusesForUpdateAndCreation(statuses []interface{}, existingStatuses *[]platformclientv2.Workitemstatus) (forCreation []interface{}, forUpdate []interface{}) {
 	forCreation = make([]interface{}, 0)
 	forUpdate = make([]interface{}, 0)
 
@@ -338,8 +355,8 @@ func getStatusesForUpdateAndCreation(statuses []interface{}, existingStatuses *[
 
 // createWorktypeStatuses creates new statuses as defined in the config. This is just the initial
 // creation as some statuses also need to be updated separately to build the destination status references.
-func createWorktypeStatuses(ctx context.Context, proxy *taskManagementWorktypeProxy, worktypeId string, statuses []interface{}) (*[]Workitemstatus, error) {
-	ret := []Workitemstatus{}
+func createWorktypeStatuses(ctx context.Context, proxy *taskManagementWorktypeProxy, worktypeId string, statuses []interface{}) (*[]platformclientv2.Workitemstatus, error) {
+	ret := []platformclientv2.Workitemstatus{}
 
 	sdkWorkitemStatusCreates := buildWorkitemStatusCreates(statuses)
 	for _, statusCreate := range *sdkWorkitemStatusCreates {
@@ -358,8 +375,8 @@ func createWorktypeStatuses(ctx context.Context, proxy *taskManagementWorktypePr
 // is newly created or not. For newly created, we just check if there's any need to resolve references since they still
 // have none. For existing statuses, they should be passed as already validated (has change - because API will return error
 // if there's no change to the status), the method will not check it.
-func updateWorktypeStatuses(ctx context.Context, proxy *taskManagementWorktypeProxy, worktypeId string, statuses []interface{}, isNewlyCreated bool) (*[]Workitemstatus, error) {
-	ret := []Workitemstatus{}
+func updateWorktypeStatuses(ctx context.Context, proxy *taskManagementWorktypeProxy, worktypeId string, statuses []interface{}, isNewlyCreated bool) (*[]platformclientv2.Workitemstatus, error) {
+	ret := []platformclientv2.Workitemstatus{}
 
 	// Get all the worktype statuses so we'll have the new statuses for referencing
 	worktype, _, err := proxy.getTaskManagementWorktypeById(ctx, worktypeId)

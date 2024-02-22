@@ -11,6 +11,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	authRole "terraform-provider-genesyscloud/genesyscloud/auth_role"
 )
 
 func TestAccResourceGroupRolesMembership(t *testing.T) {
@@ -41,7 +42,7 @@ func TestAccResourceGroupRolesMembership(t *testing.T) {
 					groupResource1,
 					groupName,
 					genesyscloud.GenerateGroupOwners("genesyscloud_user."+testUserResource+".id"),
-				) + genesyscloud.GenerateAuthRoleResource(
+				) + authRole.GenerateAuthRoleResource(
 					roleResource1,
 					roleName1,
 					roleDesc,
@@ -60,11 +61,11 @@ func TestAccResourceGroupRolesMembership(t *testing.T) {
 					groupResource1,
 					groupName,
 					genesyscloud.GenerateGroupOwners("genesyscloud_user."+testUserResource+".id"),
-				) + genesyscloud.GenerateAuthRoleResource(
+				) + authRole.GenerateAuthRoleResource(
 					roleResource1,
 					roleName1,
 					roleDesc,
-				) + genesyscloud.GenerateAuthRoleResource(
+				) + authRole.GenerateAuthRoleResource(
 					roleResource2,
 					roleName2,
 					roleDesc,
@@ -85,7 +86,7 @@ func TestAccResourceGroupRolesMembership(t *testing.T) {
 					groupResource1,
 					groupName,
 					genesyscloud.GenerateGroupOwners("genesyscloud_user."+testUserResource+".id"),
-				) + genesyscloud.GenerateAuthRoleResource(
+				) + authRole.GenerateAuthRoleResource(
 					roleResource1,
 					roleName1,
 					roleDesc,
@@ -104,7 +105,7 @@ func TestAccResourceGroupRolesMembership(t *testing.T) {
 					groupResource1,
 					groupName,
 					genesyscloud.GenerateGroupOwners("genesyscloud_user."+testUserResource+".id"),
-				) + genesyscloud.GenerateAuthRoleResource(
+				) + authRole.GenerateAuthRoleResource(
 					roleResource1,
 					roleName1,
 					roleDesc,

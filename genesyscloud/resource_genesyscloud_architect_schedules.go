@@ -16,7 +16,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/leekchan/timeutil"
-	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v121/platformclientv2"
 )
 
 func getAllArchitectSchedules(_ context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
@@ -300,4 +300,23 @@ func deleteArchitectSchedules(ctx context.Context, d *schema.ResourceData, meta 
 
 		return retry.RetryableError(fmt.Errorf("Schedule %s still exists", d.Id()))
 	})
+}
+
+func GenerateArchitectSchedulesResource(
+	schedResource1 string,
+	name string,
+	divisionId string,
+	description string,
+	start string,
+	end string,
+	rrule string) string {
+	return fmt.Sprintf(`resource "genesyscloud_architect_schedules" "%s" {
+		name = "%s"
+		division_id = %s
+		description = "%s"
+		start = "%s"
+		end = "%s"
+		rrule = "%s"
+	}
+	`, schedResource1, name, divisionId, description, start, end, rrule)
 }

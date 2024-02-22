@@ -21,6 +21,7 @@ type resourceJSONMaps map[string]gcloud.JsonMap
 
 type JsonExporter struct {
 	resourceTypesJSONMaps map[string]resourceJSONMaps
+	dataSourceTypesMaps   map[string]resourceJSONMaps
 	unresolvedAttrs       []unresolvableAttributeInfo
 	providerSource        string
 	version               string
@@ -28,9 +29,10 @@ type JsonExporter struct {
 	splitFilesByResource  bool
 }
 
-func NewJsonExporter(resourceTypesJSONMaps map[string]resourceJSONMaps, unresolvedAttrs []unresolvableAttributeInfo, providerSource string, version string, dirPath string, splitFilesByResource bool) *JsonExporter {
+func NewJsonExporter(resourceTypesJSONMaps map[string]resourceJSONMaps, dataSourceTypesMaps map[string]resourceJSONMaps, unresolvedAttrs []unresolvableAttributeInfo, providerSource string, version string, dirPath string, splitFilesByResource bool) *JsonExporter {
 	jsonExporter := &JsonExporter{
 		resourceTypesJSONMaps: resourceTypesJSONMaps,
+		dataSourceTypesMaps:   dataSourceTypesMaps,
 		unresolvedAttrs:       unresolvedAttrs,
 		providerSource:        providerSource,
 		version:               version,
@@ -88,11 +90,30 @@ func (j *JsonExporter) exportJSONConfig() diag.Diagnostics {
 				return diagErr
 			}
 		}
+
+		// DataSource files
+		for resType, resJsonMap := range j.dataSourceTypesMaps {
+			resourceRoot := map[string]interface{}{
+				"data": gcloud.JsonMap{
+					resType: resJsonMap,
+				},
+			}
+
+			resourceJSONFilePath := filepath.Join(j.dirPath, fmt.Sprintf("%s.%s", resType, resourceJSONFileExt))
+			if resourceJSONFilePath == "" {
+				return diag.Errorf("Failed to create file path %s", resourceJSONFilePath)
+			}
+			if diagErr := writeConfig(resourceRoot, resourceJSONFilePath); diagErr != nil {
+				return diagErr
+			}
+		}
+
 	} else {
 		// Single file export
 		rootJSONObject := gcloud.JsonMap{
 			"resource":  j.resourceTypesJSONMaps,
 			"terraform": providerJsonMap,
+			"data":      j.dataSourceTypesMaps,
 		}
 
 		if len(variablesJsonMap) > 0 {

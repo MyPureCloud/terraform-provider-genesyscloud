@@ -5,7 +5,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v121/platformclientv2"
 	"github.com/nyaruka/phonenumbers"
 )
 
@@ -86,21 +86,11 @@ func buildSdkPhoneNumber(d *schema.ResourceData, key string) *platformclientv2.P
 // flattenPhoneNumber converts a platformclientv2.Phonenumber into a map and then into array for consumption by Terraform
 func flattenPhoneNumber(phonenumber *platformclientv2.Phonenumber) []interface{} {
 	phonenumberInterface := make(map[string]interface{})
-	if phonenumber.Display != nil {
-		phonenumberInterface["display"] = *phonenumber.Display
-	}
-	if phonenumber.Extension != nil {
-		phonenumberInterface["extension"] = *phonenumber.Extension
-	}
-	if phonenumber.AcceptsSMS != nil {
-		phonenumberInterface["accepts_sms"] = *phonenumber.AcceptsSMS
-	}
-	if phonenumber.E164 != nil {
-		phonenumberInterface["e164"] = *phonenumber.E164
-	}
-	if phonenumber.CountryCode != nil {
-		phonenumberInterface["country_code"] = *phonenumber.CountryCode
-	}
+	resourcedata.SetMapValueIfNotNil(phonenumberInterface, "display", phonenumber.Display)
+	resourcedata.SetMapValueIfNotNil(phonenumberInterface, "extension", phonenumber.Extension)
+	resourcedata.SetMapValueIfNotNil(phonenumberInterface, "accepts_sms", phonenumber.AcceptsSMS)
+	resourcedata.SetMapValueIfNotNil(phonenumberInterface, "e164", phonenumber.E164)
+	resourcedata.SetMapValueIfNotNil(phonenumberInterface, "country_code", phonenumber.CountryCode)
 	return []interface{}{phonenumberInterface}
 }
 

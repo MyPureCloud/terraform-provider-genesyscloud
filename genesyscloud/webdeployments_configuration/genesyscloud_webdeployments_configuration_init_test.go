@@ -4,6 +4,8 @@ import (
 	"sync"
 	"testing"
 
+	gcloud "terraform-provider-genesyscloud/genesyscloud"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
@@ -24,6 +26,7 @@ func (r *registerTestInstance) registerTestResources() {
 	defer r.resourceMapMutex.Unlock()
 
 	providerResources[resourceName] = ResourceWebDeploymentConfiguration()
+	providerResources["genesyscloud_knowledge_knowledgebase"] = gcloud.ResourceKnowledgeKnowledgebase()
 }
 
 // registerTestDataSources registers all data sources used in the tests.
@@ -32,7 +35,6 @@ func (r *registerTestInstance) registerTestDataSources() {
 	defer r.datasourceMapMutex.Unlock()
 
 	providerDataSources[resourceName] = DataSourceWebDeploymentsConfiguration()
-
 }
 
 // initTestResources initializes all test resources and data sources.

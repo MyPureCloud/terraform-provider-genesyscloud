@@ -1,8 +1,25 @@
 resource "genesyscloud_webdeployments_configuration" "exampleConfiguration" {
-  name             = "Example Web Deployment Configuration"
-  description      = "This example configuration shows how to define a full web deployment configuration"
-  languages        = ["en-us", "ja"]
-  default_language = "en-us"
+  name                  = "Example Web Deployment Configuration"
+  description           = "This example configuration shows how to define a full web deployment configuration"
+  languages             = ["en-us", "ja"]
+  default_language      = "en-us"
+  headless_mode_enabled = true
+  custom_i18n_labels {
+    language = "en-us"
+    localized_labels {
+      key   = "MessengerHomeHeaderTitle"
+      value = "Custom Header Title"
+    }
+    localized_labels {
+      key   = "MessengerHomeHeaderSubTitle"
+      value = "Custom Header Subtitle"
+    }
+  }
+  position {
+    alignment    = "Auto"
+    side_space   = 10
+    bottom_space = 20
+  }
   messenger {
     enabled = true
     launcher_button {
@@ -16,6 +33,7 @@ resource "genesyscloud_webdeployments_configuration" "exampleConfiguration" {
       primary_color = "#B0B0B0"
     }
     file_upload {
+      use_supported_content_profile = true
       mode {
         file_types       = ["image/png"]
         max_file_size_kb = 256
@@ -23,6 +41,31 @@ resource "genesyscloud_webdeployments_configuration" "exampleConfiguration" {
       mode {
         file_types       = ["image/jpeg"]
         max_file_size_kb = 128
+      }
+    }
+    apps {
+      conversations {
+        enabled                     = true
+        show_agent_typing_indicator = true
+        show_user_typing_indicator  = true
+        auto_start_enabled          = true
+        markdown_enabled            = true
+        conversation_disconnect {
+          enabled = true
+          type    = "Send"
+        }
+        conversation_clear_enabled = true
+        humanize {
+          enabled = true
+          bot {
+            name       = "Marvin"
+            avatar_url = "https://my-domain-example.net/images/marvin.png"
+          }
+        }
+      }
+      knowledge {
+        enabled           = true
+        knowledge_base_id = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
       }
     }
   }
@@ -91,5 +134,9 @@ resource "genesyscloud_webdeployments_configuration" "exampleConfiguration" {
       event_name = "scroll:footer"
       percentage = 90
     }
+  }
+  authentication_settings {
+    enabled        = true
+    integration_id = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
   }
 }

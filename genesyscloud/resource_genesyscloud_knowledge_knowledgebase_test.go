@@ -7,7 +7,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v121/platformclientv2"
 )
 
 func TestAccResourceKnowledgeKnowledgebaseBasic(t *testing.T) {
@@ -25,7 +25,7 @@ func TestAccResourceKnowledgeKnowledgebaseBasic(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				// Create
-				Config: generateKnowledgeKnowledgebaseResource(
+				Config: GenerateKnowledgeKnowledgebaseResource(
 					knowledgeBaseResource1,
 					knowledgeBaseName1,
 					knowledgeBaseDescription1,
@@ -39,7 +39,7 @@ func TestAccResourceKnowledgeKnowledgebaseBasic(t *testing.T) {
 			},
 			{
 				// Update
-				Config: generateKnowledgeKnowledgebaseResource(
+				Config: GenerateKnowledgeKnowledgebaseResource(
 					knowledgeBaseResource1,
 					knowledgeBaseName1,
 					knowledgeBaseDescription2,
@@ -60,19 +60,6 @@ func TestAccResourceKnowledgeKnowledgebaseBasic(t *testing.T) {
 		},
 		CheckDestroy: testVerifyKnowledgebasesDestroyed,
 	})
-}
-
-func generateKnowledgeKnowledgebaseResource(
-	resourceID string,
-	name string,
-	description string,
-	coreLanguage string) string {
-	return fmt.Sprintf(`resource "genesyscloud_knowledge_knowledgebase" "%s" {
-		name = "%s"
-        description = "%s"
-        core_language = "%s"
-	}
-	`, resourceID, name, description, coreLanguage)
 }
 
 func testVerifyKnowledgebasesDestroyed(state *terraform.State) error {

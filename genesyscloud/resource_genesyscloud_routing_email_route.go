@@ -15,7 +15,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v121/platformclientv2"
 )
 
 var (
@@ -361,7 +361,7 @@ func readRoutingEmailRoute(ctx context.Context, d *schema.ResourceData, meta int
 		}
 
 		if route.Skills != nil {
-			d.Set("skill_ids", sdkDomainEntityRefArrToSet(*route.Skills))
+			d.Set("skill_ids", SdkDomainEntityRefArrToSet(*route.Skills))
 		} else {
 			d.Set("skill_ids", nil)
 		}

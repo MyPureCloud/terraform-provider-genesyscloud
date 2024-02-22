@@ -13,7 +13,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v121/platformclientv2"
 )
 
 const resourceName = "genesyscloud_journey_action_map"
@@ -100,6 +100,33 @@ func cleanupJourneyActionMaps(idPrefix string) {
 		}
 
 		pageCount = *actionMaps.PageCount
+	}
+}
+
+func cleanupArchitectScheduleGroups(idPrefix string) {
+	architectApi := platformclientv2.NewArchitectApi()
+
+	for pageNum := 1; ; pageNum++ {
+		const pageSize = 100
+		architectScheduleGroups, _, getErr := architectApi.GetArchitectSchedulegroups(pageNum, pageSize, "", "", "", "", nil)
+		if getErr != nil {
+			return
+		}
+
+		if architectScheduleGroups.Entities == nil || len(*architectScheduleGroups.Entities) == 0 {
+			break
+		}
+
+		for _, scheduleGroup := range *architectScheduleGroups.Entities {
+			if scheduleGroup.Name != nil && strings.HasPrefix(*scheduleGroup.Name, idPrefix) {
+				_, delErr := architectApi.DeleteArchitectSchedulegroup(*scheduleGroup.Id)
+				if delErr != nil {
+					diag.Errorf("failed to delete architect schedule group %s (%s): %s", *scheduleGroup.Id, *scheduleGroup.Name, delErr)
+					return
+				}
+				log.Printf("Deleted architect schedule group %s (%s)", *scheduleGroup.Id, *scheduleGroup.Name)
+			}
+		}
 	}
 }
 

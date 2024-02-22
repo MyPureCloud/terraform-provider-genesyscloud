@@ -8,7 +8,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v121/platformclientv2"
 )
 
 func TestAccResourceResponseManagementResponseAsset(t *testing.T) {
@@ -36,14 +36,14 @@ func TestAccResourceResponseManagementResponseAsset(t *testing.T) {
 		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
-				Config: generateResponseManagementResponseAssetResource(resourceId, fullPath1, NullValue),
+				Config: GenerateResponseManagementResponseAssetResource(resourceId, fullPath1, NullValue),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_responseasset."+resourceId, "filename", fullPath1),
 					TestDefaultHomeDivision("genesyscloud_responsemanagement_responseasset."+resourceId),
 				),
 			},
 			{
-				Config: generateResponseManagementResponseAssetResource(resourceId, fullPath2, "genesyscloud_auth_division."+divisionResourceId+".id") +
+				Config: GenerateResponseManagementResponseAssetResource(resourceId, fullPath2, "genesyscloud_auth_division."+divisionResourceId+".id") +
 					GenerateAuthDivisionBasic(divisionResourceId, divisionName),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_responseasset."+resourceId, "filename", fullPath2),
@@ -53,7 +53,7 @@ func TestAccResourceResponseManagementResponseAsset(t *testing.T) {
 			},
 			// Update
 			{
-				Config: generateResponseManagementResponseAssetResource(resourceId, fullPath2, "data.genesyscloud_auth_division_home.home.id") +
+				Config: GenerateResponseManagementResponseAssetResource(resourceId, fullPath2, "data.genesyscloud_auth_division_home.home.id") +
 					fmt.Sprint("\ndata \"genesyscloud_auth_division_home\" \"home\" {}\n"),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_responseasset."+resourceId, "filename", fullPath2),
@@ -69,15 +69,6 @@ func TestAccResourceResponseManagementResponseAsset(t *testing.T) {
 		},
 		CheckDestroy: testVerifyResponseAssetDestroyed,
 	})
-}
-
-func generateResponseManagementResponseAssetResource(resourceId string, fileName string, divisionId string) string {
-	return fmt.Sprintf(`
-resource "genesyscloud_responsemanagement_responseasset" "%s" {
-    filename    = "%s"
-    division_id = %s
-}
-`, resourceId, fileName, divisionId)
 }
 
 func cleanupResponseAssets(folderName string) error {

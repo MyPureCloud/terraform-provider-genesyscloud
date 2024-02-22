@@ -10,7 +10,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v121/platformclientv2"
 )
 
 func TestAccResourceArchitectSchedules(t *testing.T) {
@@ -36,7 +36,7 @@ func TestAccResourceArchitectSchedules(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				// Create
-				Config: generateArchitectSchedulesResource(
+				Config: GenerateArchitectSchedulesResource(
 					schedResource1,
 					name,
 					NullValue,
@@ -56,7 +56,7 @@ func TestAccResourceArchitectSchedules(t *testing.T) {
 			},
 			{
 				// Update start time
-				Config: generateArchitectSchedulesResource(
+				Config: GenerateArchitectSchedulesResource(
 					schedResource1,
 					name,
 					NullValue,
@@ -76,7 +76,7 @@ func TestAccResourceArchitectSchedules(t *testing.T) {
 			},
 			{
 				// Create with new division
-				Config: GenerateAuthDivisionBasic(divResource, divName) + generateArchitectSchedulesResource(
+				Config: GenerateAuthDivisionBasic(divResource, divName) + GenerateArchitectSchedulesResource(
 					schedResource2,
 					name2,
 					"genesyscloud_auth_division."+divResource+".id",
@@ -103,25 +103,6 @@ func TestAccResourceArchitectSchedules(t *testing.T) {
 		},
 		CheckDestroy: testVerifySchedulesDestroyed,
 	})
-}
-
-func generateArchitectSchedulesResource(
-	schedResource1 string,
-	name string,
-	divisionId string,
-	description string,
-	start string,
-	end string,
-	rrule string) string {
-	return fmt.Sprintf(`resource "genesyscloud_architect_schedules" "%s" {
-		name = "%s"
-		division_id = %s
-		description = "%s"
-		start = "%s"
-		end = "%s"
-		rrule = "%s"
-	}
-	`, schedResource1, name, divisionId, description, start, end, rrule)
 }
 
 func cleanupArchitectSchedules(idPrefix string) {

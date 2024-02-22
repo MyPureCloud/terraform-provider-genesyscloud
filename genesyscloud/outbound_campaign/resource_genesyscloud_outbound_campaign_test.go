@@ -6,17 +6,20 @@ import (
 	"strconv"
 	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/outbound"
+	obDnclist "terraform-provider-genesyscloud/genesyscloud/outbound_dnclist"
 	"testing"
 
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	obCallableTimeset "terraform-provider-genesyscloud/genesyscloud/outbound_callabletimeset"
+	obResponseSet "terraform-provider-genesyscloud/genesyscloud/outbound_callanalysisresponseset"
 	obContactList "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
+	obContactListFilter "terraform-provider-genesyscloud/genesyscloud/outbound_contactlistfilter"
 	edgeSite "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v121/platformclientv2"
 )
 
 // Add a special generator DEVENGAGE-1646.  Basically, the API makes it look like you need a full phone_columns field here.  However, the API ignores the type because the devs reused the phone_columns object.  However,
@@ -94,7 +97,7 @@ func TestAccResourceOutboundCampaignBasic(t *testing.T) {
 			gcloud.NullValue,         // max
 			"10",                     // maxLength
 		),
-	) + outbound.GenerateOutboundDncListBasic(
+	) + obDnclist.GenerateOutboundDncListBasic(
 		dncListResourceId,
 		"dnc list "+uuid.NewString(),
 	) + gcloud.GenerateRoutingWrapupcodeResource(
@@ -111,26 +114,26 @@ func TestAccResourceOutboundCampaignBasic(t *testing.T) {
 			"contact_list_name":  "${genesyscloud_outbound_contact_list." + contactListResourceId + ".name}",
 			"wrapup_code_name":   "${genesyscloud_routing_wrapupcode." + wrapupCodeResourceId + ".name}",
 		}),
-	) + outbound.GenerateOutboundCallAnalysisResponseSetResource(
+	) + obResponseSet.GenerateOutboundCallAnalysisResponseSetResource(
 		carResourceId,
 		"tf car "+uuid.NewString(),
 		gcloud.FalseValue,
-		outbound.GenerateCarsResponsesBlock(
-			outbound.GenerateCarsResponse(
+		obResponseSet.GenerateCarsResponsesBlock(
+			obResponseSet.GenerateCarsResponse(
 				"callable_person",
 				"transfer_flow",
 				flowName,
 				"${genesyscloud_flow.flow.id}",
 			),
 		),
-	) + outbound.GenerateOutboundContactListFilter(
+	) + obContactListFilter.GenerateOutboundContactListFilter(
 		clfResourceId,
 		"tf clf "+uuid.NewString(),
 		"genesyscloud_outbound_contact_list."+contactListResourceId+".id",
 		"",
-		outbound.GenerateOutboundContactListFilterClause(
+		obContactListFilter.GenerateOutboundContactListFilterClause(
 			"",
-			outbound.GenerateOutboundContactListFilterPredicates(
+			obContactListFilter.GenerateOutboundContactListFilterPredicates(
 				"Cell",
 				"alphabetic",
 				"EQUALS",
@@ -452,12 +455,12 @@ func TestAccResourceOutboundCampaignCampaignStatus(t *testing.T) {
 			"contact_list_name":  "${genesyscloud_outbound_contact_list." + contactListResourceId + ".name}",
 			"wrapup_code_name":   "${genesyscloud_routing_wrapupcode." + wrapupCodeResourceId + ".name}",
 		}),
-	) + outbound.GenerateOutboundCallAnalysisResponseSetResource(
+	) + obResponseSet.GenerateOutboundCallAnalysisResponseSetResource(
 		carResourceId,
 		"tf car "+uuid.NewString(),
 		gcloud.FalseValue,
-		outbound.GenerateCarsResponsesBlock(
-			outbound.GenerateCarsResponse(
+		obResponseSet.GenerateCarsResponsesBlock(
+			obResponseSet.GenerateCarsResponse(
 				"callable_person",
 				"transfer_flow",
 				flowName,

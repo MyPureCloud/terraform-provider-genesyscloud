@@ -4,6 +4,9 @@ import (
 	"fmt"
 	"math/rand"
 	"strconv"
+	"strings"
+	authRole "terraform-provider-genesyscloud/genesyscloud/auth_role"
+	userRoles "terraform-provider-genesyscloud/genesyscloud/user_roles"
 	"testing"
 
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
@@ -148,18 +151,18 @@ func TestAccDataSourceRecordingMediaRetentionPolicy(t *testing.T) {
 					gcloud.FalseValue, // Subdomain
 					gcloud.NullValue,
 				) + gcloud.GenerateRoutingQueueResourceBasic(queueResource1, queueName, "") +
-					gcloud.GenerateAuthRoleResource(
+					authRole.GenerateAuthRoleResource(
 						roleResource1,
 						roleName1,
 						roleDesc1,
-						gcloud.GenerateRolePermissions(permissions...),
-						gcloud.GenerateRolePermPolicy(qualityDomain, evaluationEntityType, strconv.Quote(editAction)),
-						gcloud.GenerateRolePermPolicy(qualityDomain, calibrationEntityType, strconv.Quote(addAction)),
+						authRole.GenerateRolePermissions(permissions...),
+						authRole.GenerateRolePermPolicy(qualityDomain, evaluationEntityType, strconv.Quote(editAction)),
+						authRole.GenerateRolePermPolicy(qualityDomain, calibrationEntityType, strconv.Quote(addAction)),
 					) +
-					gcloud.GenerateUserRoles(
+					userRoles.GenerateUserRoles(
 						userRoleResource1,
 						userResource1,
-						gcloud.GenerateResourceRoles("genesyscloud_auth_role."+roleResource1+".id"),
+						generateResourceRoles("genesyscloud_auth_role."+roleResource1+".id"),
 					) +
 					gcloud.GenerateUserWithCustomAttrs(userResource1, userEmail, userName) +
 					gcloud.GenerateEvaluationFormResource(evaluationFormResource1, &evaluationFormResourceBody) +
@@ -208,4 +211,16 @@ func generateRecordingMediaRetentionPolicyDataSource(
 		depends_on = [%s]
 	}
 	`, resourceID, name, dependsOn)
+}
+
+func generateResourceRoles(skillID string, divisionIds ...string) string {
+	var divAttr string
+	if len(divisionIds) > 0 {
+		divAttr = "division_ids = [" + strings.Join(divisionIds, ",") + "]"
+	}
+	return fmt.Sprintf(`roles {
+		role_id = %s
+		%s
+	}
+	`, skillID, divAttr)
 }

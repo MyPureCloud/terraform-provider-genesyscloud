@@ -65,6 +65,15 @@ func ResourceTfExport() *schema.Resource {
 				ForceNew:      true,
 				ConflictsWith: []string{"resource_types", "exclude_filter_resources"},
 			},
+			"replace_with_datasource": {
+				Description: "Include only resources that match either a resource type or a resource type::regular expression.  See export guide for additional information",
+				Type:        schema.TypeList,
+				Optional:    true,
+				Elem: &schema.Schema{
+					Type: schema.TypeString,
+				},
+				ForceNew: true,
+			},
 			"exclude_filter_resources": {
 				Description: "Exclude resources that match either a resource type or a resource type::regular expression.  See export guide for additional information",
 				Type:        schema.TypeList,
