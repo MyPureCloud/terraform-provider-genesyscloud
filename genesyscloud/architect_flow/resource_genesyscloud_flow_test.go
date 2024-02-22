@@ -61,7 +61,7 @@ func TestAccResourceArchFlowForceUnlock(t *testing.T) {
 		flowResource = "test_force_unlock_flow1"
 		flowName     = "Terraform Flow Test ForceUnlock-" + uuid.NewString()
 		flowType     = "INBOUNDCALL"
-		filePath     = "../examples/resources/genesyscloud_flow/inboundcall_flow_example.yaml"
+		filePath     = "../../examples/resources/genesyscloud_flow/inboundcall_flow_example.yaml"
 
 		inboundcallConfig1 = fmt.Sprintf("inboundCall:\n  name: %s\n  defaultLanguage: en-us\n  startUpRef: ./menus/menu[mainMenu]\n  initialGreeting:\n    tts: Archy says hi!!!\n  menus:\n    - menu:\n        name: Main Menu\n        audio:\n          tts: You are at the Main Menu, press 9 to disconnect.\n        refId: mainMenu\n        choices:\n          - menuDisconnect:\n              name: Disconnect\n              dtmf: digit_9", flowName)
 		inboundcallConfig2 = fmt.Sprintf("inboundCall:\n  name: %s\n  defaultLanguage: en-us\n  startUpRef: ./menus/menu[mainMenu]\n  initialGreeting:\n    tts: Archy says hi again!!!\n  menus:\n    - menu:\n        name: Main Menu\n        audio:\n          tts: You are at the Main Menu, press 9 to disconnect.\n        refId: mainMenu\n        choices:\n          - menuDisconnect:\n              name: Disconnect\n              dtmf: digit_9", flowName)
@@ -123,26 +123,16 @@ func TestAccResourceArchFlowStandard(t *testing.T) {
 		flowDescription2 = "test description 2"
 		flowType1        = "INBOUNDCALL"
 		flowType2        = "INBOUNDEMAIL"
-		filePath1        = "../examples/resources/genesyscloud_flow/inboundcall_flow_example.yaml" //Have to use an explicit path because the filesha function gets screwy on relative class names
-		filePath2        = "../examples/resources/genesyscloud_flow/inboundcall_flow_example2.yaml"
-		filePath3        = "../examples/resources/genesyscloud_flow/inboundcall_flow_example3.yaml"
+		filePath1        = "../../examples/resources/genesyscloud_flow/inboundcall_flow_example.yaml" //Have to use an explicit path because the filesha function gets screwy on relative class names
+		filePath2        = "../../examples/resources/genesyscloud_flow/inboundcall_flow_example2.yaml"
+		filePath3        = "../../examples/resources/genesyscloud_flow/inboundcall_flow_example3.yaml"
 
 		inboundcallConfig1 = fmt.Sprintf("inboundCall:\n  name: %s\n  description: %s\n  defaultLanguage: en-us\n  startUpRef: ./menus/menu[mainMenu]\n  initialGreeting:\n    tts: Archy says hi!!!\n  menus:\n    - menu:\n        name: Main Menu\n        audio:\n          tts: You are at the Main Menu, press 9 to disconnect.\n        refId: mainMenu\n        choices:\n          - menuDisconnect:\n              name: Disconnect\n              dtmf: digit_9", flowName, flowDescription1)
 		inboundcallConfig2 = fmt.Sprintf("inboundCall:\n  name: %s\n  description: %s\n  defaultLanguage: en-us\n  startUpRef: ./menus/menu[mainMenu]\n  initialGreeting:\n    tts: Archy says hi!!!!!\n  menus:\n    - menu:\n        name: Main Menu\n        audio:\n          tts: You are at the Main Menu, press 9 to disconnect.\n        refId: mainMenu\n        choices:\n          - menuDisconnect:\n              name: Disconnect\n              dtmf: digit_9", flowName, flowDescription2)
 	)
 
-	config, err := provider.AuthorizeSdk()
-	if err != nil {
-		t.Fatal(err)
-	}
-	homeDivisionName, err := getHomeDivisionName(config)
-	if err != nil {
-		t.Fatalf("error retrieving home division name: %v", err)
-	}
-
 	inboundemailConfig1 := fmt.Sprintf(`inboundEmail:
     name: %s
-    division: %s
     description: %s
     startUpRef: "/inboundEmail/states/state[Initial State_10]"
     defaultLanguage: en-us
@@ -165,7 +155,7 @@ func TestAccResourceArchFlowStandard(t *testing.T) {
             actions:
                 - disconnect:
                     name: Disconnect
-`, flowName, homeDivisionName, flowDescription1)
+`, flowName, flowDescription1)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
@@ -232,7 +222,7 @@ func TestAccResourceArchFlowSubstitutions(t *testing.T) {
 		flowName         = "Terraform Flow Test-" + uuid.NewString()
 		flowDescription1 = "description 1"
 		flowDescription2 = "description 2"
-		filePath1        = "../examples/resources/genesyscloud_flow/inboundcall_flow_example_substitutions.yaml"
+		filePath1        = "../../examples/resources/genesyscloud_flow/inboundcall_flow_example_substitutions.yaml"
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -337,8 +327,8 @@ func TestAccResourceArchFlowSubstitutionsWithMultipleTouch(t *testing.T) {
 		flowName         = "Terraform Flow Test-" + uuid.NewString()
 		flowDescription1 = "description 1"
 		flowDescription2 = "description 2"
-		srcFile          = "../examples/resources/genesyscloud_flow/inboundcall_flow_example_substitutions.yaml"
-		destFile         = "../examples/resources/genesyscloud_flow/inboundcall_flow_example_holder.yaml"
+		srcFile          = "../../examples/resources/genesyscloud_flow/inboundcall_flow_example_substitutions.yaml"
+		destFile         = "../../examples/resources/genesyscloud_flow/inboundcall_flow_example_holder.yaml"
 	)
 
 	//Copy the example substitution file over to a temp file that can be manipulated and modified
@@ -392,15 +382,6 @@ func TestAccResourceArchFlowSubstitutionsWithMultipleTouch(t *testing.T) {
 		},
 		CheckDestroy: testVerifyFlowDestroyed,
 	})
-}
-
-func getHomeDivisionName(sdkConfig *platformclientv2.Configuration) (string, error) {
-	apiInstance := platformclientv2.NewObjectsApiWithConfig(sdkConfig)
-	division, _, err := apiInstance.GetAuthorizationDivisionsHome()
-	if err != nil {
-		return "", err
-	}
-	return *division.Name, nil
 }
 
 // Check if flow is published, then check if flow name and type are correct

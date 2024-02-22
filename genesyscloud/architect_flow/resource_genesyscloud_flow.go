@@ -23,22 +23,15 @@ import (
 
 func getAllFlows(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
 	resources := make(resourceExporter.ResourceIDMetaMap)
-	architectAPI := platformclientv2.NewArchitectApiWithConfig(clientConfig)
+	p := getArchitectFlowProxy(clientConfig)
 
-	for pageNum := 1; ; pageNum++ {
-		const pageSize = 50
-		flows, _, err := architectAPI.GetFlows(nil, pageNum, pageSize, "", "", nil, "", "", "", "", "", "", "", "", false, true, "", "", nil)
-		if err != nil {
-			return nil, diag.Errorf("Failed to get page of flows: %v", err)
-		}
+	flows, err := p.GetAllFlows(ctx)
+	if err != nil {
+		return nil, diag.Errorf("failed to get architect flows %v", err)
+	}
 
-		if flows.Entities == nil || len(*flows.Entities) == 0 {
-			break
-		}
-
-		for _, flow := range *flows.Entities {
-			resources[*flow.Id] = &resourceExporter.ResourceMeta{Name: *flow.VarType + "_" + *flow.Name}
-		}
+	for _, flow := range *flows {
+		resources[*flow.Id] = &resourceExporter.ResourceMeta{Name: *flow.VarType + "_" + *flow.Name}
 	}
 
 	return resources, nil
@@ -46,10 +39,11 @@ func getAllFlows(ctx context.Context, clientConfig *platformclientv2.Configurati
 
 func readFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-	architectAPI := platformclientv2.NewArchitectApiWithConfig(sdkConfig)
+
+	proxy := getArchitectFlowProxy(sdkConfig)
 
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
-		flow, resp, err := architectAPI.GetFlow(d.Id(), false)
+		flow, resp, err := proxy.GetFlow(ctx, d.Id())
 		if err != nil {
 			if util.IsStatus404(resp) {
 				return retry.RetryableError(fmt.Errorf("Failed to read flow %s: %s", d.Id(), err))
@@ -69,20 +63,20 @@ func createFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 
 func updateFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-	architectAPI := platformclientv2.NewArchitectApiWithConfig(sdkConfig)
+	p := getArchitectFlowProxy(sdkConfig)
 
 	log.Printf("Updating flow")
 
 	//Check to see if we need to force and unlock on an architect flow
 	if isForceUnlockEnabled(d) {
-		err := forceUnlockFlow(d.Id(), sdkConfig)
+		err := p.ForceUnlockFlow(ctx, d.Id())
 		if err != nil {
 			setFileContentHashToNil(d)
 			return diag.Errorf("Failed to unlock targeted flow %s with error %s", d.Id(), err)
 		}
 	}
 
-	flowJob, response, err := architectAPI.PostFlowsJobs()
+	flowJob, response, err := p.CreateFlowsDeployJob(ctx)
 
 	if err != nil {
 		setFileContentHashToNil(d)
@@ -118,7 +112,7 @@ func updateFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	flowID := ""
 
 	retryErr := util.WithRetries(ctx, 16*time.Minute, func() *retry.RetryError {
-		flowJob, response, err := architectAPI.GetFlowsJob(jobId, []string{"messages"})
+		flowJob, response, err := p.GetFlowsDeployJob(ctx, jobId)
 		if err != nil {
 			return retry.NonRetryableError(fmt.Errorf("Error retrieving job status. JobID: %s, error: %s ", jobId, response.ErrorMessage))
 		}
@@ -159,20 +153,21 @@ func updateFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	return readFlow(ctx, d, meta)
 }
 
+// done
 func deleteFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-	architectAPI := platformclientv2.NewArchitectApiWithConfig(sdkConfig)
+	p := getArchitectFlowProxy(sdkConfig)
 
 	//Check to see if we need to force
 	if isForceUnlockEnabled(d) {
-		err := forceUnlockFlow(d.Id(), sdkConfig)
+		err := p.ForceUnlockFlow(ctx, d.Id())
 		if err != nil {
 			return diag.Errorf("Failed to unlock targeted flow %s with error %s", d.Id(), err)
 		}
 	}
 
 	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
-		resp, err := architectAPI.DeleteFlow(d.Id())
+		resp, err := p.DeleteFlow(ctx, d.Id())
 		if err != nil {
 			if util.IsStatus404(resp) {
 				// Flow deleted

@@ -3,23 +3,11 @@ package architect_flow
 import (
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v121/platformclientv2"
 	"log"
 	"path/filepath"
 	"strconv"
 	"strings"
 )
-
-func forceUnlockFlow(flowId string, sdkConfig *platformclientv2.Configuration) error {
-	log.Printf("Attempting to perform an unlock on flow: %s", flowId)
-	architectAPI := platformclientv2.NewArchitectApiWithConfig(sdkConfig)
-	_, _, err := architectAPI.PostFlowsActionsUnlock(flowId)
-
-	if err != nil {
-		return err
-	}
-	return nil
-}
 
 func isForceUnlockEnabled(d *schema.ResourceData) bool {
 	forceUnlock := d.Get("force_unlock").(bool)
