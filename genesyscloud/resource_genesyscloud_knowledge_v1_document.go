@@ -6,6 +6,8 @@ import (
 	"log"
 	"net/url"
 	"strings"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -184,7 +186,7 @@ func getAllKnowledgeV1DocumentEntities(knowledgeAPI platformclientv2.KnowledgeAp
 
 func KnowledgeDocumentExporterV1() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
-		GetResourcesFunc: GetAllWithPooledClient(getAllKnowledgeDocumentsV1),
+		GetResourcesFunc: provider.GetAllWithPooledClient(getAllKnowledgeDocumentsV1),
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			"knowledge_base_id": {RefType: "genesyscloud_knowledge_knowledgebase"},
 		},
@@ -195,10 +197,10 @@ func ResourceKnowledgeDocumentV1() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud Knowledge document",
 
-		CreateContext: CreateWithPooledClient(createKnowledgeDocumentV1),
-		ReadContext:   ReadWithPooledClient(readKnowledgeDocumentV1),
-		UpdateContext: UpdateWithPooledClient(updateKnowledgeDocumentV1),
-		DeleteContext: DeleteWithPooledClient(deleteKnowledgeDocumentV1),
+		CreateContext: provider.CreateWithPooledClient(createKnowledgeDocumentV1),
+		ReadContext:   provider.ReadWithPooledClient(readKnowledgeDocumentV1),
+		UpdateContext: provider.UpdateWithPooledClient(updateKnowledgeDocumentV1),
+		DeleteContext: provider.DeleteWithPooledClient(deleteKnowledgeDocumentV1),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -397,7 +399,7 @@ func flattenCategories(categories *[]platformclientv2.Knowledgecategory) *schema
 }
 
 func createKnowledgeDocumentV1(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	knowledgeAPI := platformclientv2.NewKnowledgeApiWithConfig(sdkConfig)
 
 	knowledgeBaseId := d.Get("knowledge_base_id").(string)
@@ -423,14 +425,14 @@ func readKnowledgeDocumentV1(ctx context.Context, d *schema.ResourceData, meta i
 	knowledgeBaseId := id[1]
 	languageCode := id[2]
 
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	knowledgeAPI := platformclientv2.NewKnowledgeApiWithConfig(sdkConfig)
 
 	log.Printf("Reading knowledge document %s", knowledgeDocumentId)
-	return WithRetriesForRead(ctx, d, func() *retry.RetryError {
+	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		knowledgeDocument, resp, getErr := knowledgeAPI.GetKnowledgeKnowledgebaseLanguageDocument(knowledgeDocumentId, knowledgeBaseId, languageCode)
 		if getErr != nil {
-			if IsStatus404(resp) {
+			if util.IsStatus404(resp) {
 				return retry.RetryableError(fmt.Errorf("Failed to read knowledge document %s: %s", knowledgeDocumentId, getErr))
 			}
 			return retry.NonRetryableError(fmt.Errorf("Failed to read knowledge document %s: %s", knowledgeDocumentId, getErr))
@@ -457,11 +459,11 @@ func updateKnowledgeDocumentV1(ctx context.Context, d *schema.ResourceData, meta
 	knowledgeBaseId := id[1]
 	languageCode := id[2]
 
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	knowledgeAPI := platformclientv2.NewKnowledgeApiWithConfig(sdkConfig)
 
 	log.Printf("Updating Knowledge document %s", d.Id())
-	diagErr := RetryWhen(IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+	diagErr := util.RetryWhen(util.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		// Get current Knowledge document version
 		_, resp, getErr := knowledgeAPI.GetKnowledgeKnowledgebaseLanguageDocument(knowledgeDocumentId, knowledgeBaseId, languageCode)
 		if getErr != nil {
@@ -506,7 +508,7 @@ func deleteKnowledgeDocumentV1(ctx context.Context, d *schema.ResourceData, meta
 	knowledgeBaseId := id[1]
 	languageCode := id[2]
 
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	knowledgeAPI := platformclientv2.NewKnowledgeApiWithConfig(sdkConfig)
 
 	log.Printf("Deleting Knowledge document %s", knowledgeDocumentId)
@@ -515,10 +517,10 @@ func deleteKnowledgeDocumentV1(ctx context.Context, d *schema.ResourceData, meta
 		return diag.Errorf("Failed to delete Knowledge document %s: %s", knowledgeDocumentId, err)
 	}
 
-	return WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
+	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		_, resp, err := knowledgeAPI.GetKnowledgeKnowledgebaseLanguageDocument(knowledgeDocumentId, knowledgeBaseId, languageCode)
 		if err != nil {
-			if IsStatus404(resp) {
+			if util.IsStatus404(resp) {
 				// Knowledge document deleted
 				log.Printf("Deleted Knowledge document %s", knowledgeDocumentId)
 				return nil

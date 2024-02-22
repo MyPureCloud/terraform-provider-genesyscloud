@@ -4,9 +4,9 @@ package task_management_worktype
 import (
 	"context"
 	"fmt"
+	gcloud "terraform-provider-genesyscloud/genesyscloud/provider"
 
 	"net/http"
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	"terraform-provider-genesyscloud/genesyscloud/util/lists"
 	"testing"
 

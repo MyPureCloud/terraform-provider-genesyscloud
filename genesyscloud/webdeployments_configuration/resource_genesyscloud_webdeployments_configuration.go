@@ -4,7 +4,8 @@ import (
 	"context"
 	"fmt"
 	"log"
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	gcloud "terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -37,7 +38,7 @@ func getAllWebDeploymentConfigurations(ctx context.Context, clientConfig *platfo
 }
 
 func waitForConfigurationDraftToBeActive(ctx context.Context, meta interface{}, id string) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	wp := getWebDeploymentConfigurationsProxy(sdkConfig)
 
 	return gcloud.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
@@ -58,7 +59,7 @@ func waitForConfigurationDraftToBeActive(ctx context.Context, meta interface{}, 
 }
 
 func createWebDeploymentConfiguration(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	wp := getWebDeploymentConfigurationsProxy(sdkConfig)
 
 	name, inputCfg := wdcUtils.BuildWebDeploymentConfigurationFromResourceData(d)
@@ -113,7 +114,7 @@ func createWebDeploymentConfiguration(ctx context.Context, d *schema.ResourceDat
 }
 
 func readWebDeploymentConfiguration(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	wp := getWebDeploymentConfigurationsProxy(sdkConfig)
 
 	version := d.Get("version").(string)
@@ -158,7 +159,7 @@ func readWebDeploymentConfiguration(ctx context.Context, d *schema.ResourceData,
 }
 
 func updateWebDeploymentConfiguration(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	wp := getWebDeploymentConfigurationsProxy(sdkConfig)
 	name, inputCfg := wdcUtils.BuildWebDeploymentConfigurationFromResourceData(d)
 
@@ -206,7 +207,7 @@ func updateWebDeploymentConfiguration(ctx context.Context, d *schema.ResourceDat
 func deleteWebDeploymentConfiguration(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	name := d.Get("name").(string)
 
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	wp := getWebDeploymentConfigurationsProxy(sdkConfig)
 
 	log.Printf("Deleting web deployment configuration %s", name)

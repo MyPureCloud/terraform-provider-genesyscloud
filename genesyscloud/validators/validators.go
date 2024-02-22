@@ -1,4 +1,4 @@
-package genesyscloud
+package validators
 
 import (
 	"fmt"
@@ -94,7 +94,7 @@ func ValidateExtensionPool(number interface{}, _ cty.Path) diag.Diagnostics {
 }
 
 // Validates a date string is in the format yyyy-MM-dd
-func validateDate(date interface{}, _ cty.Path) diag.Diagnostics {
+func ValidateDate(date interface{}, _ cty.Path) diag.Diagnostics {
 	if dateStr, ok := date.(string); ok {
 		_, err := time.Parse(resourcedata.DateParseFormat, dateStr)
 		if err != nil {
@@ -192,7 +192,7 @@ func ValidatePath(i interface{}, k string) (warnings []string, errors []error) {
 }
 
 // Validate a response asset filename matches the criteria outlined in the description
-func validateResponseAssetName(name interface{}, _ cty.Path) diag.Diagnostics {
+func ValidateResponseAssetName(name interface{}, _ cty.Path) diag.Diagnostics {
 	if nameStr, ok := name.(string); ok {
 		matched, err := regexp.MatchString("^[^\\.][^\\`\\\\{\\^\\}\\% \"\\>\\<\\[\\]\\#\\~|]+[^/]$", nameStr)
 		if err != nil {

@@ -4,9 +4,10 @@ import (
 	"context"
 	"fmt"
 	"log"
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	gcloud "terraform-provider-genesyscloud/genesyscloud/util"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 	"time"
 
@@ -39,7 +40,7 @@ func getAllAuthArchitectGrammar(ctx context.Context, clientConfig *platformclien
 
 // createArchitectGrammar is used by the architect_grammar_language resource to create a Genesys cloud architect grammar
 func createArchitectGrammar(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := newArchitectGrammarProxy(sdkConfig)
 
 	architectGrammar := platformclientv2.Grammar{
@@ -61,7 +62,7 @@ func createArchitectGrammar(ctx context.Context, d *schema.ResourceData, meta in
 
 // readArchitectGrammar is used by the architect_grammar_language resource to read an architect grammar from genesys cloud.
 func readArchitectGrammar(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := newArchitectGrammarProxy(sdkConfig)
 
 	log.Printf("Reading Architect Grammar %s", d.Id())
@@ -88,7 +89,7 @@ func readArchitectGrammar(ctx context.Context, d *schema.ResourceData, meta inte
 
 // updateArchitectGrammar is used by the architect_grammar_language resource to update an architect grammar in Genesys Cloud
 func updateArchitectGrammar(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := newArchitectGrammarProxy(sdkConfig)
 
 	architectGrammar := platformclientv2.Grammar{
@@ -109,7 +110,7 @@ func updateArchitectGrammar(ctx context.Context, d *schema.ResourceData, meta in
 
 // deleteArchitectGrammar is used by the architect_grammar_language resource to delete an architect grammar from Genesys cloud.
 func deleteArchitectGrammar(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := newArchitectGrammarProxy(sdkConfig)
 
 	_, err := proxy.deleteArchitectGrammar(ctx, d.Id())

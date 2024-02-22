@@ -8,9 +8,10 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v121/platformclientv2"
 	"log"
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	gcloud "terraform-provider-genesyscloud/genesyscloud/util"
 )
 
 /*
@@ -32,7 +33,7 @@ func createOutboundSettings(ctx context.Context, d *schema.ResourceData, meta in
 
 // readOutboundSettings is used by the outbound_settings resource to read an outbound settings from genesys cloud
 func readOutboundSettings(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getOutboundSettingsProxy(sdkConfig)
 
 	maxCallsPerAgent := d.Get("max_calls_per_agent").(int)
@@ -103,7 +104,7 @@ func updateOutboundSettings(ctx context.Context, d *schema.ResourceData, meta in
 	abandonSeconds := d.Get("abandon_seconds").(float64)
 	complianceAbandonRateDenominator := d.Get("compliance_abandon_rate_denominator").(string)
 
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getOutboundSettingsProxy(sdkConfig)
 
 	log.Printf("Updating Outbound Settings %s", d.Id())

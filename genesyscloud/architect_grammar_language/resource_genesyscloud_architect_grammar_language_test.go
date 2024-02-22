@@ -7,8 +7,9 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	architectGrammar "terraform-provider-genesyscloud/genesyscloud/architect_grammar"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	gcloud "terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 
 	"github.com/google/uuid"
@@ -42,7 +43,7 @@ func TestAccResourceArchitectGrammarLanguage(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
-		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Create Grammar language

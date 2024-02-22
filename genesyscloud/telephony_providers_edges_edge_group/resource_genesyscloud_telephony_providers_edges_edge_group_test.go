@@ -2,8 +2,9 @@ package telephony_providers_edges_edge_group
 
 import (
 	"fmt"
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
 	telephony "terraform-provider-genesyscloud/genesyscloud/telephony"
+	gcloud "terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 
 	"github.com/google/uuid"
@@ -54,7 +55,7 @@ func TestAccResourceEdgeGroup(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
-		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				Config: phoneTrunkBaseSetting1 + phoneTrunkBaseSetting2 + GenerateEdgeGroupResourceWithCustomAttrs(

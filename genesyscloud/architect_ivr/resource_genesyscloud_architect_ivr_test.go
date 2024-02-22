@@ -6,8 +6,9 @@ import (
 	"log"
 	"strconv"
 	"strings"
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
 	didPool "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_did_pool"
+	gcloud "terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 
 	"github.com/google/uuid"
@@ -27,7 +28,7 @@ func TestAccResourceIvrConfigBasic(t *testing.T) {
 
 	// did pool cleanup
 	defer func() {
-		if _, err := gcloud.AuthorizeSdk(); err != nil {
+		if _, err := provider.AuthorizeSdk(); err != nil {
 			return
 		}
 		ctx := context.TODO()
@@ -36,7 +37,7 @@ func TestAccResourceIvrConfigBasic(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
-		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Create
@@ -104,7 +105,7 @@ func TestAccResourceIvrConfigDivision(t *testing.T) {
 
 	// did pool cleanup
 	defer func() {
-		if _, err := gcloud.AuthorizeSdk(); err != nil {
+		if _, err := provider.AuthorizeSdk(); err != nil {
 			return
 		}
 		ctx := context.TODO()
@@ -113,7 +114,7 @@ func TestAccResourceIvrConfigDivision(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
-		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Create
@@ -235,7 +236,7 @@ func TestAccResourceIvrConfigDnisOverload(t *testing.T) {
 
 	// did pool cleanup
 	defer func() {
-		if _, err := gcloud.AuthorizeSdk(); err != nil {
+		if _, err := provider.AuthorizeSdk(); err != nil {
 			return
 		}
 		ctx := context.TODO()
@@ -246,7 +247,7 @@ func TestAccResourceIvrConfigDnisOverload(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
-		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				Config: didPoolResource + GenerateIvrConfigResource(&IvrConfigStruct{
@@ -381,7 +382,7 @@ func createStringArrayOfPhoneNumbers(from, to int) []string {
 }
 
 func getLastDidNumberAsInteger() (int, error) {
-	config, err := gcloud.AuthorizeSdk()
+	config, err := provider.AuthorizeSdk()
 	if err != nil {
 		return 0, fmt.Errorf("failed to authorize client: %v", err)
 	}

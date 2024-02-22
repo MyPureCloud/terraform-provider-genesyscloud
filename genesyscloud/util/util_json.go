@@ -1,4 +1,4 @@
-package genesyscloud
+package util
 
 import (
 	"bytes"

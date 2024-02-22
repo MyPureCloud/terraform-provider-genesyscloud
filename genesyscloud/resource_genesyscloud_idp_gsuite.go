@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -24,7 +26,7 @@ func getAllIdpGsuite(_ context.Context, clientConfig *platformclientv2.Configura
 
 	_, resp, getErr := idpAPI.GetIdentityprovidersGsuite()
 	if getErr != nil {
-		if IsStatus404(resp) {
+		if util.IsStatus404(resp) {
 			// Don't export if config doesn't exist
 			return resources, nil
 		}
@@ -37,7 +39,7 @@ func getAllIdpGsuite(_ context.Context, clientConfig *platformclientv2.Configura
 
 func IdpGsuiteExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
-		GetResourcesFunc: GetAllWithPooledClient(getAllIdpGsuite),
+		GetResourcesFunc: provider.GetAllWithPooledClient(getAllIdpGsuite),
 		RefAttrs:         map[string]*resourceExporter.RefAttrSettings{}, // No references
 	}
 }
@@ -46,10 +48,10 @@ func ResourceIdpGsuite() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud Single Sign-on GSuite Identity Provider. See this page for detailed configuration instructions: https://help.mypurecloud.com/articles/add-google-g-suite-single-sign-provider/",
 
-		CreateContext: CreateWithPooledClient(createIdpGsuite),
-		ReadContext:   ReadWithPooledClient(readIdpGsuite),
-		UpdateContext: UpdateWithPooledClient(updateIdpGsuite),
-		DeleteContext: DeleteWithPooledClient(deleteIdpGsuite),
+		CreateContext: provider.CreateWithPooledClient(createIdpGsuite),
+		ReadContext:   provider.ReadWithPooledClient(readIdpGsuite),
+		UpdateContext: provider.UpdateWithPooledClient(updateIdpGsuite),
+		DeleteContext: provider.DeleteWithPooledClient(deleteIdpGsuite),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -97,15 +99,15 @@ func createIdpGsuite(ctx context.Context, d *schema.ResourceData, meta interface
 }
 
 func readIdpGsuite(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	idpAPI := platformclientv2.NewIdentityProviderApiWithConfig(sdkConfig)
 
 	log.Printf("Reading IDP GSuite")
 
-	return WithRetriesForReadCustomTimeout(ctx, d.Timeout(schema.TimeoutRead), d, func() *retry.RetryError {
+	return util.WithRetriesForReadCustomTimeout(ctx, d.Timeout(schema.TimeoutRead), d, func() *retry.RetryError {
 		gsuite, resp, getErr := idpAPI.GetIdentityprovidersGsuite()
 		if getErr != nil {
-			if IsStatus404(resp) {
+			if util.IsStatus404(resp) {
 				createIdpGsuite(ctx, d, meta)
 				return retry.RetryableError(fmt.Errorf("Failed to read IDP GSuite: %s", getErr))
 			}
@@ -156,7 +158,7 @@ func updateIdpGsuite(ctx context.Context, d *schema.ResourceData, meta interface
 	relyingPartyID := d.Get("relying_party_identifier").(string)
 	disabled := d.Get("disabled").(bool)
 
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	idpAPI := platformclientv2.NewIdentityProviderApiWithConfig(sdkConfig)
 
 	log.Printf("Updating IDP GSuite")
@@ -185,7 +187,7 @@ func updateIdpGsuite(ctx context.Context, d *schema.ResourceData, meta interface
 }
 
 func deleteIdpGsuite(ctx context.Context, _ *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	idpAPI := platformclientv2.NewIdentityProviderApiWithConfig(sdkConfig)
 
 	log.Printf("Deleting IDP GSuite")
@@ -194,10 +196,10 @@ func deleteIdpGsuite(ctx context.Context, _ *schema.ResourceData, meta interface
 		return diag.Errorf("Failed to delete IDP GSuite: %s", err)
 	}
 
-	return WithRetries(ctx, 60*time.Second, func() *retry.RetryError {
+	return util.WithRetries(ctx, 60*time.Second, func() *retry.RetryError {
 		_, resp, err := idpAPI.GetIdentityprovidersGsuite()
 		if err != nil {
-			if IsStatus404(resp) {
+			if util.IsStatus404(resp) {
 				// IDP GSuite deleted
 				log.Printf("Deleted IDP GSuite")
 				return nil

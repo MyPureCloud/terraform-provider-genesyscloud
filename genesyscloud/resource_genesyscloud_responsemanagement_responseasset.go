@@ -4,6 +4,9 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/validators"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -21,10 +24,10 @@ func ResourceResponseManagamentResponseAsset() *schema.Resource {
 	return &schema.Resource{
 		Description: `Genesys Cloud responsemanagement response asset`,
 
-		CreateContext: CreateWithPooledClient(createResponsemanagementResponseAsset),
-		ReadContext:   ReadWithPooledClient(readResponsemanagementResponseAsset),
-		UpdateContext: UpdateWithPooledClient(updateResponsemanagementResponseAsset),
-		DeleteContext: DeleteWithPooledClient(deleteResponsemanagementResponseAsset),
+		CreateContext: provider.CreateWithPooledClient(createResponsemanagementResponseAsset),
+		ReadContext:   provider.ReadWithPooledClient(readResponsemanagementResponseAsset),
+		UpdateContext: provider.UpdateWithPooledClient(updateResponsemanagementResponseAsset),
+		DeleteContext: provider.DeleteWithPooledClient(deleteResponsemanagementResponseAsset),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -35,7 +38,7 @@ func ResourceResponseManagamentResponseAsset() *schema.Resource {
 				Required:         true,
 				ForceNew:         true,
 				Type:             schema.TypeString,
-				ValidateDiagFunc: validateResponseAssetName,
+				ValidateDiagFunc: validators.ValidateResponseAssetName,
 			},
 			`division_id`: {
 				Description: `Division to associate to this asset. Can only be used with this division.`,
@@ -50,7 +53,7 @@ func ResourceResponseManagamentResponseAsset() *schema.Resource {
 func createResponsemanagementResponseAsset(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	fileName := d.Get("filename").(string)
 	divisionId := d.Get("division_id").(string)
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	responseManagementApi := platformclientv2.NewResponseManagementApiWithConfig(sdkConfig)
 
 	sdkResponseAsset := platformclientv2.Createresponseassetrequest{}
@@ -89,15 +92,15 @@ func createResponsemanagementResponseAsset(ctx context.Context, d *schema.Resour
 }
 
 func readResponsemanagementResponseAsset(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	responseManagementApi := platformclientv2.NewResponseManagementApiWithConfig(sdkConfig)
 
 	log.Printf("Reading Responsemanagement response asset %s", d.Id())
 
-	return WithRetriesForRead(ctx, d, func() *retry.RetryError {
+	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		sdkAsset, resp, getErr := responseManagementApi.GetResponsemanagementResponseasset(d.Id())
 		if getErr != nil {
-			if IsStatus404(resp) {
+			if util.IsStatus404(resp) {
 				return retry.RetryableError(fmt.Errorf("Failed to read response asset %s: %s", d.Id(), getErr))
 			}
 			return retry.NonRetryableError(fmt.Errorf("Failed to read response asset %s: %s", d.Id(), getErr))
@@ -117,7 +120,7 @@ func readResponsemanagementResponseAsset(ctx context.Context, d *schema.Resource
 }
 
 func updateResponsemanagementResponseAsset(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	responseManagementApi := platformclientv2.NewResponseManagementApiWithConfig(sdkConfig)
 
 	fileName := d.Get("filename").(string)
@@ -155,10 +158,10 @@ func updateResponsemanagementResponseAsset(ctx context.Context, d *schema.Resour
 }
 
 func deleteResponsemanagementResponseAsset(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	responseManagementApi := platformclientv2.NewResponseManagementApiWithConfig(sdkConfig)
 
-	diagErr := RetryWhen(IsStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+	diagErr := util.RetryWhen(util.IsStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		log.Printf("Deleting Responsemanagement response asset")
 		resp, err := responseManagementApi.DeleteResponsemanagementResponseasset(d.Id())
 		if err != nil {
@@ -170,10 +173,10 @@ func deleteResponsemanagementResponseAsset(ctx context.Context, d *schema.Resour
 		return diagErr
 	}
 	time.Sleep(20 * time.Second)
-	return WithRetries(ctx, 60*time.Second, func() *retry.RetryError {
+	return util.WithRetries(ctx, 60*time.Second, func() *retry.RetryError {
 		_, resp, err := responseManagementApi.GetResponsemanagementResponseasset(d.Id())
 		if err != nil {
-			if IsStatus404(resp) {
+			if util.IsStatus404(resp) {
 				// Response asset deleted
 				log.Printf("Deleted Responsemanagement response asset %s", d.Id())
 				return nil

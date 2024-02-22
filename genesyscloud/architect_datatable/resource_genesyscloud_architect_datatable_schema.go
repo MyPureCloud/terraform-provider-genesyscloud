@@ -3,7 +3,7 @@ package architect_datatable
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"terraform-provider-genesyscloud/genesyscloud"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
 )
@@ -49,10 +49,10 @@ func ResourceArchitectDatatable() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud Architect Datatables",
 
-		CreateContext: genesyscloud.CreateWithPooledClient(createArchitectDatatable),
-		ReadContext:   genesyscloud.ReadWithPooledClient(readArchitectDatatable),
-		UpdateContext: genesyscloud.UpdateWithPooledClient(updateArchitectDatatable),
-		DeleteContext: genesyscloud.DeleteWithPooledClient(deleteArchitectDatatable),
+		CreateContext: provider.CreateWithPooledClient(createArchitectDatatable),
+		ReadContext:   provider.ReadWithPooledClient(readArchitectDatatable),
+		UpdateContext: provider.UpdateWithPooledClient(updateArchitectDatatable),
+		DeleteContext: provider.DeleteWithPooledClient(deleteArchitectDatatable),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -88,7 +88,7 @@ func ResourceArchitectDatatable() *schema.Resource {
 func DataSourceArchitectDatatable() *schema.Resource {
 	return &schema.Resource{
 		Description: "Data source for Genesys Cloud Architect Datatables. Select an architect architect_datatable by name.",
-		ReadContext: genesyscloud.ReadWithPooledClient(DataSourceArchitectDatatableRead),
+		ReadContext: provider.ReadWithPooledClient(DataSourceArchitectDatatableRead),
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Description: "Datatable name.",
@@ -101,7 +101,7 @@ func DataSourceArchitectDatatable() *schema.Resource {
 
 func ArchitectDatatableExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
-		GetResourcesFunc: genesyscloud.GetAllWithPooledClient(getAllArchitectDatatables),
+		GetResourcesFunc: provider.GetAllWithPooledClient(getAllArchitectDatatables),
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			"division_id": {RefType: "genesyscloud_auth_division"},
 		},

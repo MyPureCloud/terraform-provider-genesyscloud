@@ -6,10 +6,12 @@ import (
 	"log"
 	"strconv"
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	"terraform-provider-genesyscloud/genesyscloud/architect_flow"
 	obResponseSet "terraform-provider-genesyscloud/genesyscloud/outbound_callanalysisresponseset"
 	obContactList "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
 	obContactListFilter "terraform-provider-genesyscloud/genesyscloud/outbound_contactlistfilter"
 	obDnclist "terraform-provider-genesyscloud/genesyscloud/outbound_dnclist"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
 	"github.com/google/uuid"
@@ -39,21 +41,21 @@ func getOutboundCampaignFromResourceData(d *schema.ResourceData) platformclientv
 		CallerAddress:                  platformclientv2.String(d.Get("caller_address").(string)),
 		CallerName:                     platformclientv2.String(d.Get("caller_name").(string)),
 		CampaignStatus:                 platformclientv2.String("off"),
-		ContactList:                    gcloud.BuildSdkDomainEntityRef(d, "contact_list_id"),
-		Queue:                          gcloud.BuildSdkDomainEntityRef(d, "queue_id"),
-		Script:                         gcloud.BuildSdkDomainEntityRef(d, "script_id"),
-		EdgeGroup:                      gcloud.BuildSdkDomainEntityRef(d, "edge_group_id"),
-		Site:                           gcloud.BuildSdkDomainEntityRef(d, "site_id"),
+		ContactList:                    util.BuildSdkDomainEntityRef(d, "contact_list_id"),
+		Queue:                          util.BuildSdkDomainEntityRef(d, "queue_id"),
+		Script:                         util.BuildSdkDomainEntityRef(d, "script_id"),
+		EdgeGroup:                      util.BuildSdkDomainEntityRef(d, "edge_group_id"),
+		Site:                           util.BuildSdkDomainEntityRef(d, "site_id"),
 		PhoneColumns:                   buildPhoneColumns(d.Get("phone_columns").([]interface{})),
-		DncLists:                       gcloud.BuildSdkDomainEntityRefArr(d, "dnc_list_ids"),
-		CallableTimeSet:                gcloud.BuildSdkDomainEntityRef(d, "callable_time_set_id"),
-		CallAnalysisResponseSet:        gcloud.BuildSdkDomainEntityRef(d, "call_analysis_response_set_id"),
-		RuleSets:                       gcloud.BuildSdkDomainEntityRefArr(d, "rule_set_ids"),
+		DncLists:                       util.BuildSdkDomainEntityRefArr(d, "dnc_list_ids"),
+		CallableTimeSet:                util.BuildSdkDomainEntityRef(d, "callable_time_set_id"),
+		CallAnalysisResponseSet:        util.BuildSdkDomainEntityRef(d, "call_analysis_response_set_id"),
+		RuleSets:                       util.BuildSdkDomainEntityRefArr(d, "rule_set_ids"),
 		SkipPreviewDisabled:            &skipPreviewDisabled,
 		AlwaysRunning:                  &alwaysRunning,
 		ContactSorts:                   buildContactSorts(d.Get("contact_sorts").([]interface{})),
-		ContactListFilters:             gcloud.BuildSdkDomainEntityRefArr(d, "contact_list_filter_ids"),
-		Division:                       gcloud.BuildSdkDomainEntityRef(d, "division_id"),
+		ContactListFilters:             util.BuildSdkDomainEntityRefArr(d, "contact_list_filter_ids"),
+		Division:                       util.BuildSdkDomainEntityRef(d, "division_id"),
 		DynamicContactQueueingSettings: buildSettings(d.Get("dynamic_contact_queueing_settings").([]interface{})),
 	}
 
@@ -266,13 +268,13 @@ func GenerateReferencedResourcesForOutboundCampaignTests(
 		contactList = obContactList.GenerateOutboundContactList(
 			contactListResourceId,
 			"terraform contact list "+uuid.NewString(),
-			gcloud.NullValue,
+			util.NullValue,
 			strconv.Quote("Cell"),
 			[]string{strconv.Quote("Cell")},
 			[]string{strconv.Quote("Cell"), strconv.Quote("Home"), strconv.Quote("zipcode")},
-			gcloud.FalseValue,
-			gcloud.NullValue,
-			gcloud.NullValue,
+			util.FalseValue,
+			util.NullValue,
+			util.NullValue,
 			obContactList.GeneratePhoneColumnsBlock("Cell", "cell", strconv.Quote("Cell")),
 			obContactList.GeneratePhoneColumnsBlock("Home", "home", strconv.Quote("Home")))
 	}
@@ -287,12 +289,12 @@ func GenerateReferencedResourcesForOutboundCampaignTests(
 			callAnalysisResponseSet = gcloud.GenerateRoutingWrapupcodeResource(
 				wrapUpCodeResourceId,
 				"wrapupcode "+uuid.NewString(),
-			) + gcloud.GenerateFlowResource(
+			) + architect_flow.GenerateFlowResource(
 				flowResourceId,
 				outboundFlowFilePath,
 				"",
 				false,
-				gcloud.GenerateSubstitutionsMap(map[string]string{
+				util.GenerateSubstitutionsMap(map[string]string{
 					"flow_name":          flowName,
 					"home_division_name": divisionName,
 					"contact_list_name":  "${genesyscloud_outbound_contact_list." + contactListResourceId + ".name}",
@@ -301,7 +303,7 @@ func GenerateReferencedResourcesForOutboundCampaignTests(
 			) + obResponseSet.GenerateOutboundCallAnalysisResponseSetResource(
 				carResourceId,
 				"tf test car "+uuid.NewString(),
-				gcloud.FalseValue,
+				util.FalseValue,
 				obResponseSet.GenerateCarsResponsesBlock(
 					obResponseSet.GenerateCarsResponse(
 						"callable_person",
@@ -314,7 +316,7 @@ func GenerateReferencedResourcesForOutboundCampaignTests(
 			callAnalysisResponseSet = obResponseSet.GenerateOutboundCallAnalysisResponseSetResource(
 				carResourceId,
 				"tf test car "+uuid.NewString(),
-				gcloud.TrueValue,
+				util.TrueValue,
 				obResponseSet.GenerateCarsResponsesBlock(
 					obResponseSet.GenerateCarsResponse(
 						"callable_machine",

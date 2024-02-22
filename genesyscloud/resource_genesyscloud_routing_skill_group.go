@@ -7,6 +7,8 @@ import (
 	"log"
 	"net/http"
 	"strings"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -87,7 +89,7 @@ func getAllSkillGroups(ctx context.Context, clientConfig *platformclientv2.Confi
 
 func ResourceSkillGroupExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
-		GetResourcesFunc: GetAllWithPooledClient(getAllSkillGroups),
+		GetResourcesFunc: provider.GetAllWithPooledClient(getAllSkillGroups),
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			"division_id":         {RefType: "genesyscloud_auth_division"},
 			"member_division_ids": {RefType: "genesyscloud_auth_division"},
@@ -103,10 +105,10 @@ func ResourceRoutingSkillGroup() *schema.Resource {
 	return &schema.Resource{
 		Description: `Genesys Cloud Skill Group`,
 
-		CreateContext: CreateWithPooledClient(createSkillGroups),
-		ReadContext:   ReadWithPooledClient(readSkillGroups),
-		UpdateContext: UpdateWithPooledClient(updateSkillGroups),
-		DeleteContext: DeleteWithPooledClient(deleteSkillGroups),
+		CreateContext: provider.CreateWithPooledClient(createSkillGroups),
+		ReadContext:   provider.ReadWithPooledClient(readSkillGroups),
+		UpdateContext: provider.UpdateWithPooledClient(updateSkillGroups),
+		DeleteContext: provider.DeleteWithPooledClient(deleteSkillGroups),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -134,7 +136,7 @@ func ResourceRoutingSkillGroup() *schema.Resource {
 				Type:             schema.TypeString,
 				Optional:         true,
 				Computed:         true,
-				DiffSuppressFunc: SuppressEquivalentJsonDiffs,
+				DiffSuppressFunc: util.SuppressEquivalentJsonDiffs,
 			},
 			"member_division_ids": {
 				Description: "The IDs of member divisions to add or remove for this skill group. An empty array means all divisions will be removed, \"*\" means all divisions will be added.",
@@ -175,7 +177,7 @@ func createOrUpdateSkillGroups(ctx context.Context, d *schema.ResourceData, meta
 		return diag.Errorf("Failed to read the before skills groups request before: %s: %s", skillGroupsRequest.Name, err)
 	}
 
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
 	apiClient := &routingAPI.Configuration.APIClient
 	path := routingAPI.Configuration.BasePath + route
@@ -276,7 +278,7 @@ func postSkillGroupMemberDivisions(ctx context.Context, d *schema.ResourceData, 
 }
 
 func getAllAuthDivisionIds(meta interface{}) ([]string, diag.Diagnostics) {
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	allIds := make([]string, 0)
 
 	divisionResourcesMap, err := getAllAuthDivisions(nil, sdkConfig)
@@ -350,7 +352,7 @@ func mergeSkillConditionsIntoSkillGroups(d *schema.ResourceData, skillGroupsRequ
 }
 
 func readSkillGroups(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
 
 	// TODO: After public API endpoint is published and exposed to public, change to SDK method instead of direct invocation
@@ -362,7 +364,7 @@ func readSkillGroups(ctx context.Context, d *schema.ResourceData, meta interface
 
 	log.Printf("Reading skills group %s", d.Id())
 
-	return WithRetriesForRead(ctx, d, func() *retry.RetryError {
+	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 
 		skillGroupPayload := make(map[string]interface{})
 		response, err := apiClient.CallAPI(path, "GET", nil, headerParams, nil, nil, "", nil)
@@ -380,7 +382,7 @@ func readSkillGroups(ctx context.Context, d *schema.ResourceData, meta interface
 			return retry.NonRetryableError(fmt.Errorf("Failed to unmarshal skill groups. %s", err))
 		}
 
-		if err == nil && IsStatus404(response) {
+		if err == nil && util.IsStatus404(response) {
 			return retry.RetryableError(fmt.Errorf("Failed to read skill groups %s: %s", d.Id(), err))
 		}
 
@@ -461,7 +463,7 @@ func updateSkillGroups(ctx context.Context, d *schema.ResourceData, meta interfa
 func deleteSkillGroups(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	name := d.Get("name").(string)
 
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
 
 	// TODO: After public API endpoint is published and exposed to public, change to SDK method instead of direct invocation
@@ -475,7 +477,7 @@ func deleteSkillGroups(ctx context.Context, d *schema.ResourceData, meta interfa
 	response, err := apiClient.CallAPI(path, "DELETE", nil, headerParams, nil, nil, "", nil)
 
 	if err != nil {
-		if IsStatus404(response) {
+		if util.IsStatus404(response) {
 			//Skills Group already deleted
 			log.Printf("Skills Group was already deleted %s", d.Id())
 			return nil
@@ -483,12 +485,12 @@ func deleteSkillGroups(ctx context.Context, d *schema.ResourceData, meta interfa
 		return diag.Errorf("Failed to delete skills group %s: %s", d.Id(), err)
 	}
 
-	return WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
+	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		log.Printf("Deleting skills group %s", name)
 		response, err := apiClient.CallAPI(path, "DELETE", nil, headerParams, nil, nil, "", nil)
 
 		if err != nil {
-			if IsStatus404(response) {
+			if util.IsStatus404(response) {
 				// Skills Group Deleted
 				log.Printf("Deleted skills group %s", d.Id())
 				return nil
@@ -576,7 +578,7 @@ func removeSkillGroupDivisionID(d *schema.ResourceData, list []string) ([]string
 	}
 	divisionId := d.Get("division_id").(string)
 	if divisionId == "" {
-		id, diagErr := GetHomeDivisionID()
+		id, diagErr := util.GetHomeDivisionID()
 		if diagErr != nil {
 			return nil, diagErr
 		}

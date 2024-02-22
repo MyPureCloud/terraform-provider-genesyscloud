@@ -6,12 +6,12 @@ import (
 	"log"
 	"net/http"
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	gcloud "terraform-provider-genesyscloud/genesyscloud/util"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/mypurecloud/platform-client-sdk-go/v121/platformclientv2"
-
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -36,7 +36,7 @@ func getAllScripts(ctx context.Context, clientConfig *platformclientv2.Configura
 
 // createScript providers the Terraform resource logic for creating a Script object
 func createScript(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	scriptsProxy := getScriptsProxy(sdkConfig)
 
 	filePath := d.Get("filepath").(string)
@@ -56,7 +56,7 @@ func createScript(ctx context.Context, d *schema.ResourceData, meta interface{})
 }
 
 func updateScript(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	scriptsProxy := getScriptsProxy(sdkConfig)
 
 	filePath := d.Get("filepath").(string)
@@ -80,7 +80,7 @@ func updateScript(ctx context.Context, d *schema.ResourceData, meta interface{})
 
 // readScript contains all of the logic needed to read resource data from Genesys Cloud
 func readScript(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	scriptsProxy := getScriptsProxy(sdkConfig)
 
 	return gcloud.WithRetriesForRead(ctx, d, func() *retry.RetryError {
@@ -106,7 +106,7 @@ func readScript(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 
 // deleteScript contains all the logic needed to delete a resource from Genesys Cloud
 func deleteScript(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	scriptsProxy := getScriptsProxy(sdkConfig)
 
 	log.Printf("Deleting script %s", d.Id())

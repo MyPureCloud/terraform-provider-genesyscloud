@@ -7,12 +7,12 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v121/platformclientv2"
 	"log"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	gcloud "terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
 
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
-
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
 
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
@@ -41,7 +41,7 @@ func getAllAuthResponsemanagementLibrarys(ctx context.Context, clientConfig *pla
 
 // createResponsemanagementLibrary is used by the responsemanagement_library resource to create Genesys cloud responsemanagement library
 func createResponsemanagementLibrary(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getResponsemanagementLibraryProxy(sdkConfig)
 	responsemanagementLibrary := platformclientv2.Library{
 		Name: platformclientv2.String(d.Get("name").(string)),
@@ -60,7 +60,7 @@ func createResponsemanagementLibrary(ctx context.Context, d *schema.ResourceData
 
 // readResponsemanagementLibrary is used by the responsemanagement_library resource to read an responsemanagement library from genesys cloud
 func readResponsemanagementLibrary(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getResponsemanagementLibraryProxy(sdkConfig)
 
 	log.Printf("Reading responsemanagement library %s", d.Id())
@@ -85,7 +85,7 @@ func readResponsemanagementLibrary(ctx context.Context, d *schema.ResourceData, 
 
 // updateResponsemanagementLibrary is used by the responsemanagement_library resource to update an responsemanagement library in Genesys Cloud
 func updateResponsemanagementLibrary(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getResponsemanagementLibraryProxy(sdkConfig)
 
 	responsemanagementLibrary := platformclientv2.Library{
@@ -103,7 +103,7 @@ func updateResponsemanagementLibrary(ctx context.Context, d *schema.ResourceData
 
 // deleteResponsemanagementLibrary is used by the responsemanagement_library resource to delete an responsemanagement library from Genesys cloud
 func deleteResponsemanagementLibrary(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getResponsemanagementLibraryProxy(sdkConfig)
 
 	_, err := proxy.deleteResponsemanagementLibrary(ctx, d.Id())

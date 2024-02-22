@@ -3,7 +3,8 @@ package responsemanagement_library
 import (
 	"context"
 	"fmt"
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	gcloud "terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 	"time"
 
@@ -25,7 +26,7 @@ func TestAccResourceResponseManagementLibrary(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
-		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Create

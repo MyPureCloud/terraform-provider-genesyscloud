@@ -4,9 +4,9 @@ package architect_ivr
 import (
 	"context"
 	"fmt"
+	gcloud "terraform-provider-genesyscloud/genesyscloud/provider"
 
 	"net/http"
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	"testing"
 
 	"github.com/google/uuid"

@@ -5,12 +5,13 @@ import (
 	"fmt"
 	"log"
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	gcloud "terraform-provider-genesyscloud/genesyscloud/util"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -35,7 +36,7 @@ func getAllPhones(ctx context.Context, sdkConfig *platformclientv2.Configuration
 }
 
 func createPhone(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	pp := getPhoneProxy(sdkConfig)
 
 	phoneConfig, err := getPhoneFromResourceData(ctx, pp, d)
@@ -72,7 +73,7 @@ func createPhone(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 }
 
 func readPhone(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	pp := getPhoneProxy(sdkConfig)
 
 	log.Printf("Reading phone %s", d.Id())
@@ -112,7 +113,7 @@ func readPhone(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 }
 
 func updatePhone(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	pp := getPhoneProxy(sdkConfig)
 
 	phoneConfig, err := getPhoneFromResourceData(ctx, pp, d)
@@ -142,7 +143,7 @@ func updatePhone(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 }
 
 func deletePhone(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	pp := getPhoneProxy(sdkConfig)
 
 	log.Printf("Deleting Phone")

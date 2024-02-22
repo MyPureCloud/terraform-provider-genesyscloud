@@ -8,9 +8,10 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v121/platformclientv2"
 	"log"
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	gcloud "terraform-provider-genesyscloud/genesyscloud/util"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 	"time"
 )
@@ -37,7 +38,7 @@ func getAllAuthOutboundCallanalysisresponsesets(ctx context.Context, clientConfi
 
 // createOutboundCallanalysisresponseset is used by the outbound_callanalysisresponseset resource to create Genesys cloud outbound callanalysisresponseset
 func createOutboundCallanalysisresponseset(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getOutboundCallanalysisresponsesetProxy(sdkConfig)
 
 	responseSet := getResponseSetFromResourceData(d)
@@ -56,7 +57,7 @@ func createOutboundCallanalysisresponseset(ctx context.Context, d *schema.Resour
 
 // readOutboundCallanalysisresponseset is used by the outbound_callanalysisresponseset resource to read an outbound callanalysisresponseset from genesys cloud
 func readOutboundCallanalysisresponseset(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getOutboundCallanalysisresponsesetProxy(sdkConfig)
 
 	log.Printf("Reading Outbound Call Analysis Response Set %s", d.Id())
@@ -82,7 +83,7 @@ func readOutboundCallanalysisresponseset(ctx context.Context, d *schema.Resource
 
 // updateOutboundCallanalysisresponseset is used by the outbound_callanalysisresponseset resource to update an outbound callanalysisresponseset in Genesys Cloud
 func updateOutboundCallanalysisresponseset(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getOutboundCallanalysisresponsesetProxy(sdkConfig)
 
 	responseSet := getResponseSetFromResourceData(d)
@@ -99,7 +100,7 @@ func updateOutboundCallanalysisresponseset(ctx context.Context, d *schema.Resour
 
 // deleteOutboundCallanalysisresponseset is used by the outbound_callanalysisresponseset resource to delete an outbound callanalysisresponseset from Genesys cloud
 func deleteOutboundCallanalysisresponseset(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getOutboundCallanalysisresponsesetProxy(sdkConfig)
 
 	diagErr := gcloud.RetryWhen(gcloud.IsStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {

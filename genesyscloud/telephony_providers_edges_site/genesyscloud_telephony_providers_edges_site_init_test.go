@@ -3,6 +3,7 @@ package telephony_providers_edges_site
 import (
 	"log"
 	"sync"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"testing"
 
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
@@ -50,7 +51,7 @@ func (r *registerTestInstance) registerTestDataSources() {
 
 // initTestResources initializes all test resources and data sources.
 func initTestResources() {
-	sdkConfig, authErr = gcloud.AuthorizeSdk()
+	sdkConfig, authErr = provider.AuthorizeSdk()
 	if authErr != nil {
 		log.Fatalf("failed to authorize sdk: %v", authErr)
 	}

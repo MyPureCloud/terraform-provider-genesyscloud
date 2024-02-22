@@ -1,4 +1,4 @@
-package genesyscloud
+package architect_flow
 
 import (
 	"context"
@@ -8,13 +8,14 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 
 	"github.com/google/uuid"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/mypurecloud/platform-client-sdk-go/v121/platformclientv2"
@@ -25,7 +26,7 @@ import (
 func lockFlow(flowName string, flowType string) {
 	archAPI := platformclientv2.NewArchitectApi()
 	ctx := context.Background()
-	WithRetries(ctx, 5*time.Second, func() *retry.RetryError {
+	util.WithRetries(ctx, 5*time.Second, func() *retry.RetryError {
 		const pageSize = 100
 		for pageNum := 1; ; pageNum++ {
 			flows, _, getErr := archAPI.GetFlows(nil, pageNum, pageSize, "", "", nil, flowName, "", "", "", "", "", "", "", false, false, "", "", nil)
@@ -72,8 +73,8 @@ func TestAccResourceArchFlowForceUnlock(t *testing.T) {
 	}
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Create flow
@@ -130,7 +131,7 @@ func TestAccResourceArchFlowStandard(t *testing.T) {
 		inboundcallConfig2 = fmt.Sprintf("inboundCall:\n  name: %s\n  description: %s\n  defaultLanguage: en-us\n  startUpRef: ./menus/menu[mainMenu]\n  initialGreeting:\n    tts: Archy says hi!!!!!\n  menus:\n    - menu:\n        name: Main Menu\n        audio:\n          tts: You are at the Main Menu, press 9 to disconnect.\n        refId: mainMenu\n        choices:\n          - menuDisconnect:\n              name: Disconnect\n              dtmf: digit_9", flowName, flowDescription2)
 	)
 
-	config, err := AuthorizeSdk()
+	config, err := provider.AuthorizeSdk()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -167,8 +168,8 @@ func TestAccResourceArchFlowStandard(t *testing.T) {
 `, flowName, homeDivisionName, flowDescription1)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Create flow
@@ -235,8 +236,8 @@ func TestAccResourceArchFlowSubstitutions(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Create flow
@@ -245,7 +246,7 @@ func TestAccResourceArchFlowSubstitutions(t *testing.T) {
 					filePath1,
 					"",
 					false,
-					GenerateSubstitutionsMap(map[string]string{
+					util.GenerateSubstitutionsMap(map[string]string{
 						"flow_name":            flowName,
 						"description":          flowDescription1,
 						"default_language":     "en-us",
@@ -264,7 +265,7 @@ func TestAccResourceArchFlowSubstitutions(t *testing.T) {
 					filePath1,
 					"",
 					false,
-					GenerateSubstitutionsMap(map[string]string{
+					util.GenerateSubstitutionsMap(map[string]string{
 						"flow_name":            flowName,
 						"description":          flowDescription2,
 						"default_language":     "en-us",
@@ -347,8 +348,8 @@ func TestAccResourceArchFlowSubstitutionsWithMultipleTouch(t *testing.T) {
 	defer removeFile(destFile)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Create flow
@@ -357,7 +358,7 @@ func TestAccResourceArchFlowSubstitutionsWithMultipleTouch(t *testing.T) {
 					destFile,
 					"",
 					false,
-					GenerateSubstitutionsMap(map[string]string{
+					util.GenerateSubstitutionsMap(map[string]string{
 						"flow_name":            flowName,
 						"description":          flowDescription1,
 						"default_language":     "en-us",
@@ -376,7 +377,7 @@ func TestAccResourceArchFlowSubstitutionsWithMultipleTouch(t *testing.T) {
 					destFile,
 					"",
 					false,
-					GenerateSubstitutionsMap(map[string]string{
+					util.GenerateSubstitutionsMap(map[string]string{
 						"flow_name":            flowName,
 						"description":          flowDescription2,
 						"default_language":     "en-us",
@@ -470,33 +471,6 @@ func validateFlowUnlocked(flowResourceName string) resource.TestCheckFunc {
 		}
 
 		return nil
-	}
-}
-
-func cleanupFlows(idPrefix string) {
-	architectApi := platformclientv2.NewArchitectApiWithConfig(sdkConfig)
-
-	for pageNum := 1; ; pageNum++ {
-		const pageSize = 50
-		flows, _, getErr := architectApi.GetFlows(nil, pageNum, pageSize, "", "", nil, "", "", "", "", "", "", "", "", false, true, "", "", nil)
-		if getErr != nil {
-			return
-		}
-
-		if flows.Entities == nil || len(*flows.Entities) == 0 {
-			break
-		}
-
-		for _, flow := range *flows.Entities {
-			if flow.Name != nil && strings.HasPrefix(*flow.Name, idPrefix) {
-				_, delErr := architectApi.DeleteFlow(*flow.Id)
-				if delErr != nil {
-					diag.Errorf("failed to delete flow %s (%s): %s", *flow.Id, *flow.Name, delErr)
-					return
-				}
-				log.Printf("Deleted flow %s (%s)", *flow.Id, *flow.Name)
-			}
-		}
 	}
 }
 

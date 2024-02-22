@@ -3,9 +3,10 @@ package telephony_providers_edges_did_pool
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
+	gcloud "terraform-provider-genesyscloud/genesyscloud/validators"
 )
 
 const resourceName = "genesyscloud_telephony_providers_edges_did_pool"
@@ -20,7 +21,7 @@ func SetRegistrar(l registrar.Registrar) {
 // TelephonyDidPoolExporter returns the resourceExporter object used to hold the genesyscloud_telephony_providers_edges_did_pool exporter's config
 func TelephonyDidPoolExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
-		GetResourcesFunc: gcloud.GetAllWithPooledClient(getAllDidPools),
+		GetResourcesFunc: provider.GetAllWithPooledClient(getAllDidPools),
 		RefAttrs:         map[string]*resourceExporter.RefAttrSettings{}, // No references
 	}
 }
@@ -30,10 +31,10 @@ func ResourceTelephonyDidPool() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud DID Pool",
 
-		CreateContext: gcloud.CreateWithPooledClient(createDidPool),
-		ReadContext:   gcloud.ReadWithPooledClient(readDidPool),
-		UpdateContext: gcloud.UpdateWithPooledClient(updateDidPool),
-		DeleteContext: gcloud.DeleteWithPooledClient(deleteDidPool),
+		CreateContext: provider.CreateWithPooledClient(createDidPool),
+		ReadContext:   provider.ReadWithPooledClient(readDidPool),
+		UpdateContext: provider.UpdateWithPooledClient(updateDidPool),
+		DeleteContext: provider.DeleteWithPooledClient(deleteDidPool),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -78,7 +79,7 @@ func ResourceTelephonyDidPool() *schema.Resource {
 func DataSourceDidPool() *schema.Resource {
 	return &schema.Resource{
 		Description: "Data source for Genesys Cloud DID pool. Select a DID pool by starting phone number and ending phone number",
-		ReadContext: gcloud.ReadWithPooledClient(dataSourceDidPoolRead),
+		ReadContext: provider.ReadWithPooledClient(dataSourceDidPoolRead),
 		Schema: map[string]*schema.Schema{
 			"start_phone_number": {
 				Description:      "Starting phone number of the DID Pool range. Must be in an E.164 number format.",

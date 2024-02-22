@@ -3,9 +3,10 @@ package outbound_contact_list
 import (
 	"fmt"
 	"strconv"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	gcloud "terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	obAttemptLimit "terraform-provider-genesyscloud/genesyscloud/outbound_attempt_limit"
 
 	"github.com/google/uuid"
@@ -43,7 +44,7 @@ func TestAccResourceOutboundContactListBasic(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
-		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				Config: GenerateOutboundContactList(
@@ -98,7 +99,7 @@ func TestAccResourceOutboundContactListBasic(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "preview_mode_column_name", previewModeColumnName),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "preview_mode_accepted_values.0", previewModeColumnName),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "automatic_time_zone_mapping", automaticTimeZoneMapping),
-					gcloud.TestDefaultHomeDivision("genesyscloud_outbound_contact_list."+resourceId),
+					provider.TestDefaultHomeDivision("genesyscloud_outbound_contact_list."+resourceId),
 				),
 			},
 			// Update
@@ -156,7 +157,7 @@ func TestAccResourceOutboundContactListBasic(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "preview_mode_accepted_values.0", previewModeColumnName),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "preview_mode_accepted_values.1", previewModeColumnNameUpdated),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "automatic_time_zone_mapping", automaticTimeZoneMapping),
-					gcloud.TestDefaultHomeDivision("genesyscloud_outbound_contact_list."+resourceId),
+					provider.TestDefaultHomeDivision("genesyscloud_outbound_contact_list."+resourceId),
 				),
 			},
 			{
@@ -240,7 +241,7 @@ func TestAccResourceOutboundContactListBasic(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "preview_mode_accepted_values.0", previewModeColumnName),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "preview_mode_accepted_values.1", previewModeColumnNameUpdated),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "automatic_time_zone_mapping", automaticTimeZoneMapping),
-					gcloud.TestDefaultHomeDivision("genesyscloud_outbound_contact_list."+resourceId),
+					provider.TestDefaultHomeDivision("genesyscloud_outbound_contact_list."+resourceId),
 				),
 			},
 			{
@@ -328,7 +329,7 @@ func TestAccResourceOutboundContactListBasic(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "automatic_time_zone_mapping", automaticTimeZoneMappingUpdated),
 					resource.TestCheckResourceAttrPair("data.genesyscloud_outbound_attempt_limit."+attemptLimitDataSourceID, "id",
 						"genesyscloud_outbound_contact_list."+resourceId, "attempt_limit_id"),
-					gcloud.TestDefaultHomeDivision("genesyscloud_outbound_contact_list."+resourceId),
+					provider.TestDefaultHomeDivision("genesyscloud_outbound_contact_list."+resourceId),
 				),
 			},
 			{

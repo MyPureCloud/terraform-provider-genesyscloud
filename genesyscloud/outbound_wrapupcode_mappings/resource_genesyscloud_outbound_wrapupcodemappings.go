@@ -4,12 +4,13 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	gcloud "terraform-provider-genesyscloud/genesyscloud/util"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
@@ -37,7 +38,7 @@ func createOutboundWrapUpCodeMappings(ctx context.Context, d *schema.ResourceDat
 
 // readOutboundWrapUpCodeMappings reads the current state of the outboundwrapupcode mapping object
 func readOutboundWrapUpCodeMappings(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getOutboundWrapupCodeMappingsProxy(sdkConfig)
 
 	log.Printf("Reading Outbound Wrap-up Code Mappings")
@@ -76,7 +77,7 @@ func readOutboundWrapUpCodeMappings(ctx context.Context, d *schema.ResourceData,
 
 // updateOutboundWrapUpCodeMappings is sued to update the Terraform backing state associated with an outbound wrapup code mapping
 func updateOutboundWrapUpCodeMappings(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getOutboundWrapupCodeMappingsProxy(sdkConfig)
 
 	log.Printf("Updating Outbound Wrap-up Code Mappings")

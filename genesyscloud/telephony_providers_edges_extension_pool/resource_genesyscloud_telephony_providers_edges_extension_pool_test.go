@@ -4,7 +4,8 @@ import (
 	"fmt"
 	"log"
 	"strconv"
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	gcloud "terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 	"time"
 
@@ -25,7 +26,7 @@ func TestAccResourceExtensionPoolBasic(t *testing.T) {
 	extensionPoolResource1 := "test-extensionpool1"
 	extensionPoolStartNumber1 := "15000"
 	extensionPoolEndNumber1 := "15001"
-	_, err := gcloud.AuthorizeSdk()
+	_, err := provider.AuthorizeSdk()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -34,7 +35,7 @@ func TestAccResourceExtensionPoolBasic(t *testing.T) {
 	extensionPoolDescription1 := "Test description"
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
-		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Create
@@ -76,7 +77,7 @@ func TestAccResourceExtensionPoolBasic(t *testing.T) {
 }
 
 func deleteExtensionPoolWithNumber(startNumber string) error {
-	sdkConfig, err := gcloud.AuthorizeSdk()
+	sdkConfig, err := provider.AuthorizeSdk()
 	if err != nil {
 		log.Fatal(err)
 	}

@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"strings"
 	"sync"
-	"terraform-provider-genesyscloud/genesyscloud"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -60,7 +60,7 @@ func customizeDatatableRowDiff(ctx context.Context, diff *schema.ResourceDiff, m
 
 	propertiesJson := diff.Get("properties_json").(string)
 
-	sdkConfig := meta.(*genesyscloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 
 	// Retrieve defaults from the architect_datatable for this row
 	datatable, getErr := getArchitectDatatableCached(ctx, tableId, sdkConfig)

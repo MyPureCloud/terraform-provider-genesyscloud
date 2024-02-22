@@ -8,9 +8,10 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v121/platformclientv2"
 	"log"
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	gcloud "terraform-provider-genesyscloud/genesyscloud/util"
 	"terraform-provider-genesyscloud/genesyscloud/util/lists"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 	"time"
@@ -46,7 +47,7 @@ func getAllAuthAuthRoles(ctx context.Context, clientConfig *platformclientv2.Con
 
 // createAuthRole is used by the auth_role resource to create Genesys cloud auth role
 func createAuthRole(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getAuthRoleProxy(sdkConfig)
 
 	// Validate each permission policy exists before continuing
@@ -96,7 +97,7 @@ func createAuthRole(ctx context.Context, d *schema.ResourceData, meta interface{
 
 // readAuthRole is used by the auth_role resource to read an auth role from genesys cloud
 func readAuthRole(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getAuthRoleProxy(sdkConfig)
 
 	log.Printf("Reading role %s", d.Id())
@@ -135,7 +136,7 @@ func readAuthRole(ctx context.Context, d *schema.ResourceData, meta interface{})
 
 // updateAuthRole is used by the auth_role resource to update an auth role in Genesys Cloud
 func updateAuthRole(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getAuthRoleProxy(sdkConfig)
 
 	// Validate each permission policy exists before continuing
@@ -174,7 +175,7 @@ func updateAuthRole(ctx context.Context, d *schema.ResourceData, meta interface{
 
 // deleteAuthRole is used by the auth_role resource to delete an auth role from Genesys cloud
 func deleteAuthRole(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getAuthRoleProxy(sdkConfig)
 
 	name := d.Get("name").(string)

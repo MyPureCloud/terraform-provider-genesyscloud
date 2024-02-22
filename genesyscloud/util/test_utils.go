@@ -1,4 +1,4 @@
-package genesyscloud
+package util
 
 import (
 	"encoding/json"
@@ -7,13 +7,14 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	//"terraform-provider-genesyscloud/genesyscloud"
+
 	"testing"
 	"time"
 
 	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
@@ -21,22 +22,9 @@ const (
 	NullValue  = "null"
 	TrueValue  = "true"
 	FalseValue = "false"
-	testCert1  = "MIIDazCCAlKgAwIBAgIBADANBgkqhkiG9w0BAQsFADBOMQswCQYDVQQGEwJ1czEXMBUGA1UECAwOTm9ydGggQ2Fyb2xpbmExEDAOBgNVBAoMB0dlbmVzeXMxFDASBgNVBAMMC215cHVyZWNsb3VkMCAXDTIyMDUxNzEzNDUzM1oYDzIxMjIwNDIzMTM0NTMzWjBOMQswCQYDVQQGEwJ1czEXMBUGA1UECAwOTm9ydGggQ2Fyb2xpbmExEDAOBgNVBAoMB0dlbmVzeXMxFDASBgNVBAMMC215cHVyZWNsb3VkMIIBIzANBgkqhkiG9w0BAQEFAAOCARAAMIIBCwKCAQIAuicPlCgrmmzIuu/Hh0HBqmGOvO7lLeKq4ZryZxd11XmcVE4T4mhdI+u1rgv8GBnn9JmFkXGU793l1PuUmrZuUInkuvVhvOjcl/95WzGE5++bkvQ/AhROn4onAWQIrQvpUq+xKv3vZ4z7JncqbkBRsJ1BKsCxtL3nKLlUBD2z8/KrrbKjENEDCIlhdua5KPfl/d+IwW8iOmTsLQYNsSv8ZvovwK/WwvcFsjtQIdBSdJfPguAzKiQIaihzya6dzXLFlxYsBsbA39MEcNTeOpy+b1xNEo0WCvVW0qctVV+z3qHMHqcjkikT4PUzBkeceZe5dnqfm+P1TFTk1OO8b0xmkgECAwEAAaNQME4wHQYDVR0OBBYEFCuD7HIc4V8HNEAftG5w+nFFl5JVMB8GA1UdIwQYMBaAFCuD7HIc4V8HNEAftG5w+nFFl5JVMAwGA1UdEwQFMAMBAf8wDQYJKoZIhvcNAQELBQADggECAEUmWVt01Kh1Be4U+CrI8Vdz6Hls3RJmto/x0WQUARjUO3+0SiFUxFAgRGGkFJTdtH+J93OntLsK8Av+G3U+ZNCODbRBubXqcnljbXnaeXDp4saUWuRs4G6zYFPM0rCvSz46XK6G5dyANeEJFgdO7wKkHO/eyy4PkIgjBE59DAx97sbXW877DTdvSfbmsEKiuEB0an+kdPYZHbTLdM910Y8YyeEQBkzp1Kjz3u5fwpAKFULOhsBmXYtXTReMqtWHjG4czsRZr04wHIng45WD8weMdw1UsCpr8fJ4CYMJsKgwJkKOc8fw6Fmj7mqrXIlUMMpeyDNpqEMaNIryiG/UsZma"
-	testCert2  = "MIIDazCCAlKgAwIBAgIBADANBgkqhkiG9w0BAQsFADBOMQswCQYDVQQGEwJ1czEXMBUGA1UECAwOTm9ydGggQ2Fyb2xpbmExEDAOBgNVBAoMB0dlbmVzeXMxFDASBgNVBAMMC215cHVyZWNsb3VkMCAXDTIyMDUxNzEzNDY0N1oYDzIxMjIwNDIzMTM0NjQ3WjBOMQswCQYDVQQGEwJ1czEXMBUGA1UECAwOTm9ydGggQ2Fyb2xpbmExEDAOBgNVBAoMB0dlbmVzeXMxFDASBgNVBAMMC215cHVyZWNsb3VkMIIBIzANBgkqhkiG9w0BAQEFAAOCARAAMIIBCwKCAQIAzWc4XQthXrGexwsH2urKc1dFPhZMoWhUVjXrb1bc1IdCH63KklnhYiBAB2YakRJVSzoat5iY0X2kNjSIyCtHCxPycpplP4P6BfIEM9jm0s8NmYW3S/8JZW1MiNs/2XTibfyoXmQiHh76BzKCDgniulj2qOxpNHi5M1Az0QxV+GSgVE+mcPA6041idt7n1HpG3gQ7/MrZEd5OdBhyVUa6JPDyTAF7UE9P9v7mIbGoe6R7Y9qQEIbJ8ihoSM+w65fhyDafl9dWjfLmqkI65cYCJ82cGqyseeiHYOXgyfkcC1njrLr5g92DHnOVqVoHZCTzwV+kciyAntuQqyJtHGCGnskCAwEAAaNQME4wHQYDVR0OBBYEFDNbxsJcQMKJVSIHT/3BM1Osb+JOMB8GA1UdIwQYMBaAFDNbxsJcQMKJVSIHT/3BM1Osb+JOMAwGA1UdEwQFMAMBAf8wDQYJKoZIhvcNAQELBQADggECAGuzz8i3w3YrFGeGgxRzwEWUKiH53Sf4w7KIxGeK6oW2BOnhXMYJfuqIAiGaAVQ3uHbTcKwByHLK9/2oWmQAsYsbA3wZpcZXyXk84iCc3aqYkWjeUl0A5wECjNIKkFvS56DCtENLMlc2VI8NGzPoFMaC7Z3nMOlogqsf6KNNydUMgqyosLQqYoRdDbBMXShbn7fvibK4jzhYxuoXCyTwKDg/lr69i5zsVNBMjTu8W3DnmBPbTVBQ9Kd9/nAJoXCbHfx1QW4UEx3mLFDVNhRRdGqran7DIEjCo8BcGilXvHCVCAKwXF1MyqiyLEm8/W7FYzdBBkkVnxOBhMIVjlPGpwLS"
+	TestCert1  = "MIIDazCCAlKgAwIBAgIBADANBgkqhkiG9w0BAQsFADBOMQswCQYDVQQGEwJ1czEXMBUGA1UECAwOTm9ydGggQ2Fyb2xpbmExEDAOBgNVBAoMB0dlbmVzeXMxFDASBgNVBAMMC215cHVyZWNsb3VkMCAXDTIyMDUxNzEzNDUzM1oYDzIxMjIwNDIzMTM0NTMzWjBOMQswCQYDVQQGEwJ1czEXMBUGA1UECAwOTm9ydGggQ2Fyb2xpbmExEDAOBgNVBAoMB0dlbmVzeXMxFDASBgNVBAMMC215cHVyZWNsb3VkMIIBIzANBgkqhkiG9w0BAQEFAAOCARAAMIIBCwKCAQIAuicPlCgrmmzIuu/Hh0HBqmGOvO7lLeKq4ZryZxd11XmcVE4T4mhdI+u1rgv8GBnn9JmFkXGU793l1PuUmrZuUInkuvVhvOjcl/95WzGE5++bkvQ/AhROn4onAWQIrQvpUq+xKv3vZ4z7JncqbkBRsJ1BKsCxtL3nKLlUBD2z8/KrrbKjENEDCIlhdua5KPfl/d+IwW8iOmTsLQYNsSv8ZvovwK/WwvcFsjtQIdBSdJfPguAzKiQIaihzya6dzXLFlxYsBsbA39MEcNTeOpy+b1xNEo0WCvVW0qctVV+z3qHMHqcjkikT4PUzBkeceZe5dnqfm+P1TFTk1OO8b0xmkgECAwEAAaNQME4wHQYDVR0OBBYEFCuD7HIc4V8HNEAftG5w+nFFl5JVMB8GA1UdIwQYMBaAFCuD7HIc4V8HNEAftG5w+nFFl5JVMAwGA1UdEwQFMAMBAf8wDQYJKoZIhvcNAQELBQADggECAEUmWVt01Kh1Be4U+CrI8Vdz6Hls3RJmto/x0WQUARjUO3+0SiFUxFAgRGGkFJTdtH+J93OntLsK8Av+G3U+ZNCODbRBubXqcnljbXnaeXDp4saUWuRs4G6zYFPM0rCvSz46XK6G5dyANeEJFgdO7wKkHO/eyy4PkIgjBE59DAx97sbXW877DTdvSfbmsEKiuEB0an+kdPYZHbTLdM910Y8YyeEQBkzp1Kjz3u5fwpAKFULOhsBmXYtXTReMqtWHjG4czsRZr04wHIng45WD8weMdw1UsCpr8fJ4CYMJsKgwJkKOc8fw6Fmj7mqrXIlUMMpeyDNpqEMaNIryiG/UsZma"
+	TestCert2  = "MIIDazCCAlKgAwIBAgIBADANBgkqhkiG9w0BAQsFADBOMQswCQYDVQQGEwJ1czEXMBUGA1UECAwOTm9ydGggQ2Fyb2xpbmExEDAOBgNVBAoMB0dlbmVzeXMxFDASBgNVBAMMC215cHVyZWNsb3VkMCAXDTIyMDUxNzEzNDY0N1oYDzIxMjIwNDIzMTM0NjQ3WjBOMQswCQYDVQQGEwJ1czEXMBUGA1UECAwOTm9ydGggQ2Fyb2xpbmExEDAOBgNVBAoMB0dlbmVzeXMxFDASBgNVBAMMC215cHVyZWNsb3VkMIIBIzANBgkqhkiG9w0BAQEFAAOCARAAMIIBCwKCAQIAzWc4XQthXrGexwsH2urKc1dFPhZMoWhUVjXrb1bc1IdCH63KklnhYiBAB2YakRJVSzoat5iY0X2kNjSIyCtHCxPycpplP4P6BfIEM9jm0s8NmYW3S/8JZW1MiNs/2XTibfyoXmQiHh76BzKCDgniulj2qOxpNHi5M1Az0QxV+GSgVE+mcPA6041idt7n1HpG3gQ7/MrZEd5OdBhyVUa6JPDyTAF7UE9P9v7mIbGoe6R7Y9qQEIbJ8ihoSM+w65fhyDafl9dWjfLmqkI65cYCJ82cGqyseeiHYOXgyfkcC1njrLr5g92DHnOVqVoHZCTzwV+kciyAntuQqyJtHGCGnskCAwEAAaNQME4wHQYDVR0OBBYEFDNbxsJcQMKJVSIHT/3BM1Osb+JOMB8GA1UdIwQYMBaAFDNbxsJcQMKJVSIHT/3BM1Osb+JOMAwGA1UdEwQFMAMBAf8wDQYJKoZIhvcNAQELBQADggECAGuzz8i3w3YrFGeGgxRzwEWUKiH53Sf4w7KIxGeK6oW2BOnhXMYJfuqIAiGaAVQ3uHbTcKwByHLK9/2oWmQAsYsbA3wZpcZXyXk84iCc3aqYkWjeUl0A5wECjNIKkFvS56DCtENLMlc2VI8NGzPoFMaC7Z3nMOlogqsf6KNNydUMgqyosLQqYoRdDbBMXShbn7fvibK4jzhYxuoXCyTwKDg/lr69i5zsVNBMjTu8W3DnmBPbTVBQ9Kd9/nAJoXCbHfx1QW4UEx3mLFDVNhRRdGqran7DIEjCo8BcGilXvHCVCAKwXF1MyqiyLEm8/W7FYzdBBkkVnxOBhMIVjlPGpwLS"
 )
-
-// ProviderFactories are used to instantiate a provider during acceptance testing.
-// The factory function will be invoked for every Terraform CLI command executed
-// to create a provider server to which the CLI can reattach.
-
-func GetProviderFactories(providerResources map[string]*schema.Resource, providerDataSources map[string]*schema.Resource) map[string]func() (*schema.Provider, error) {
-	return map[string]func() (*schema.Provider, error){
-		"genesyscloud": func() (*schema.Provider, error) {
-			provider := New("0.1.0", providerResources, providerDataSources)()
-			return provider, nil
-		},
-	}
-}
 
 func TestAccPreCheck(t *testing.T) {
 	if v := os.Getenv("GENESYSCLOUD_OAUTHCLIENT_ID"); v == "" {
@@ -47,29 +35,6 @@ func TestAccPreCheck(t *testing.T) {
 	}
 	if v := os.Getenv("GENESYSCLOUD_REGION"); v == "" {
 		os.Setenv("GENESYSCLOUD_REGION", "dca") // Default to dev environment
-	}
-}
-
-// Verify default division is home division
-func TestDefaultHomeDivision(resource string) resource.TestCheckFunc {
-	return func(state *terraform.State) error {
-		homeDivID, err := GetHomeDivisionID()
-		if err != nil {
-			return fmt.Errorf("Failed to query home division: %v", err)
-		}
-
-		r := state.RootModule().Resources[resource]
-		if r == nil {
-			return fmt.Errorf("%s not found in state", resource)
-		}
-
-		a := r.Primary.Attributes
-
-		if a["division_id"] != homeDivID {
-			return fmt.Errorf("expected division to be home division %s", homeDivID)
-		}
-
-		return nil
 	}
 }
 
@@ -118,7 +83,7 @@ func ValidateStringInArray(resourceName string, attrName string, value string) r
 }
 
 // The 'TestCheckResourceAttrPair' version of ValidateStringInArray
-func validateResourceAttributeInArray(resource1Name string, arrayAttrName, resource2Name string, valueAttrName string) resource.TestCheckFunc {
+func ValidateResourceAttributeInArray(resource1Name string, arrayAttrName, resource2Name string, valueAttrName string) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
 		valueResourceState, ok := state.RootModule().Resources[resource2Name]
 		if !ok {
@@ -201,7 +166,7 @@ func ValidateValueInJsonAttr(resourceName string, attrName string, jsonProp stri
 				}
 				return fmt.Errorf("JSON array property for resourceState %s.%s does not contain expected %s", resourceName, jsonProp, jsonValue)
 			} else {
-				strVal := InterfaceToString(val)
+				strVal := interfaceToString(val)
 				if strVal != jsonValue {
 					return fmt.Errorf("JSON property for resource %s %s=%s does not match expected %s", resourceName, jsonProp, strVal, jsonValue)
 				}
@@ -405,4 +370,9 @@ func RandString(length int) string {
 	}
 
 	return string(s)
+}
+
+// Added locally to break a circular dependency
+func interfaceToString(val interface{}) string {
+	return fmt.Sprintf("%v", val)
 }

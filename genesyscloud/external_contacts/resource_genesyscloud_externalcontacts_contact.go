@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	gcloud "terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -11,7 +13,6 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -57,7 +58,7 @@ func getAllAuthExternalContacts(ctx context.Context, clientConfig *platformclien
 
 // createExternalContact is used by the externalcontacts_contacts resource to create Genesyscloud external_contacts
 func createExternalContact(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	ep := getExternalContactsContactsProxy(sdkConfig)
 
 	externalContact := getExternalContactFromResourceData(d)
@@ -74,7 +75,7 @@ func createExternalContact(ctx context.Context, d *schema.ResourceData, meta int
 
 // readExternalContacts is used by the externalcontacts_contact resource to read an external contact from genesys cloud.
 func readExternalContact(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	ep := getExternalContactsContactsProxy(sdkConfig)
 
 	log.Printf("Reading contact %s", d.Id())
@@ -117,7 +118,7 @@ func readExternalContact(ctx context.Context, d *schema.ResourceData, meta inter
 
 // updateExternalContacts is used by the externalcontacts_contacts resource to update an external contact in Genesys Cloud
 func updateExternalContact(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	ep := getExternalContactsContactsProxy(sdkConfig)
 
 	externalContact := getExternalContactFromResourceData(d)
@@ -133,7 +134,7 @@ func updateExternalContact(ctx context.Context, d *schema.ResourceData, meta int
 
 // deleteExternalContacts is used by the externalcontacts_contacts resource to delete an external contact from Genesys cloud.
 func deleteExternalContact(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	ep := getExternalContactsContactsProxy(sdkConfig)
 
 	_, err := ep.deleteExternalContactId(ctx, d.Id())

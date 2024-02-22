@@ -4,13 +4,14 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	gcloud "terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
 
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -61,7 +62,7 @@ func createIntegration(ctx context.Context, d *schema.ResourceData, meta interfa
 	intendedState := d.Get("intended_state").(string)
 	integrationType := d.Get("integration_type").(string)
 
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	ip := getIntegrationsProxy(sdkConfig)
 
 	createIntegrationReq := &platformclientv2.Createintegrationrequest{
@@ -100,7 +101,7 @@ func createIntegration(ctx context.Context, d *schema.ResourceData, meta interfa
 
 // readIntegration is used by the integration resource to read an integration from genesys cloud.
 func readIntegration(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	ip := getIntegrationsProxy(sdkConfig)
 
 	log.Printf("Reading integration %s", d.Id())
@@ -136,7 +137,7 @@ func readIntegration(ctx context.Context, d *schema.ResourceData, meta interface
 func updateIntegration(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	intendedState := d.Get("intended_state").(string)
 
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	ip := getIntegrationsProxy(sdkConfig)
 
 	diagErr, name := updateIntegrationConfigFromResourceData(ctx, d, ip)
@@ -160,7 +161,7 @@ func updateIntegration(ctx context.Context, d *schema.ResourceData, meta interfa
 
 // deleteIntegration is used by the integration resource to delete an integration from Genesys cloud.
 func deleteIntegration(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	ip := getIntegrationsProxy(sdkConfig)
 
 	_, err := ip.deleteIntegration(ctx, d.Id())

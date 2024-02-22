@@ -4,9 +4,10 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	gcloud "terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	integration "terraform-provider-genesyscloud/genesyscloud/integration"
 
 	"github.com/google/uuid"
@@ -53,7 +54,7 @@ func TestAccResourceIntegrationAction(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
-		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Create an integration and an associated action
@@ -66,8 +67,8 @@ func TestAccResourceIntegrationAction(t *testing.T) {
 					actionName1,
 					actionCateg1,
 					"genesyscloud_integration."+integResource1+".id",
-					gcloud.NullValue, // Secure default (false)
-					gcloud.NullValue, // Timeout default
+					gcloud.NullValue,                             // Secure default (false)
+					gcloud.NullValue,                             // Timeout default
 					gcloud.GenerateJsonSchemaDocStr(inputAttr1),  // contract_input
 					gcloud.GenerateJsonSchemaDocStr(outputAttr1), // contract_output
 					generateIntegrationActionConfigRequest(
@@ -156,8 +157,8 @@ func TestAccResourceIntegrationAction(t *testing.T) {
 					actionName2,
 					actionCateg2,
 					"genesyscloud_integration."+integResource1+".id",
-					gcloud.TrueValue, // Secure
-					gcloud.NullValue, // time default
+					gcloud.TrueValue,                             // Secure
+					gcloud.NullValue,                             // time default
 					gcloud.GenerateJsonSchemaDocStr(inputAttr1),  // contract_input
 					gcloud.GenerateJsonSchemaDocStr(outputAttr1), // contract_output
 					generateIntegrationActionConfigRequest(

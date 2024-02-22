@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -58,7 +60,7 @@ func getAllMediaRetentionPolicies(ctx context.Context, clientConfig *platformcli
 
 // createMediaRetentionPolicy is used by the recording media retention policy resource to create Genesyscloud a media retention policy
 func createMediaRetentionPolicy(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	pp := getPolicyProxy(sdkConfig)
 
 	name := d.Get("name").(string)
@@ -99,15 +101,15 @@ func createMediaRetentionPolicy(ctx context.Context, d *schema.ResourceData, met
 
 // readMediaRetentionPolicy is used by the recording media retention policy resource to read a media retention policy from genesys cloud.
 func readMediaRetentionPolicy(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	pp := getPolicyProxy(sdkConfig)
 
 	log.Printf("Reading media retention policy %s", d.Id())
 
-	return gcloud.WithRetriesForRead(ctx, d, func() *retry.RetryError {
+	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		retentionPolicy, resp, err := pp.getPolicyById(ctx, d.Id())
 		if err != nil {
-			if gcloud.IsStatus404(resp) {
+			if util.IsStatus404(resp) {
 				return retry.RetryableError(fmt.Errorf("failed to read media retention policy %s: %s", d.Id(), err))
 			}
 			return retry.NonRetryableError(fmt.Errorf("failed to read media retention policy %s: %s", d.Id(), err))
@@ -135,7 +137,7 @@ func readMediaRetentionPolicy(ctx context.Context, d *schema.ResourceData, meta 
 
 // updateMediaRetentionPolicy is used by the recording media retention policy resource to update a media retention policy in Genesys Cloud
 func updateMediaRetentionPolicy(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	pp := getPolicyProxy(sdkConfig)
 
 	name := d.Get("name").(string)
@@ -173,7 +175,7 @@ func updateMediaRetentionPolicy(ctx context.Context, d *schema.ResourceData, met
 func deleteMediaRetentionPolicy(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	name := d.Get("name").(string)
 
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	pp := getPolicyProxy(sdkConfig)
 
 	log.Printf("Deleting media retention policy %s", name)
@@ -182,10 +184,10 @@ func deleteMediaRetentionPolicy(ctx context.Context, d *schema.ResourceData, met
 		return diag.Errorf("Failed to delete media retention policy %s: %s", name, err)
 	}
 
-	return gcloud.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
+	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		_, resp, err := pp.getPolicyById(ctx, d.Id())
 		if err != nil {
-			if gcloud.IsStatus404(resp) {
+			if util.IsStatus404(resp) {
 				// media retention policy deleted
 				log.Printf("Deleted media retention policy %s", d.Id())
 				return nil

@@ -2,8 +2,7 @@ package station
 
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	gcloud "terraform-provider-genesyscloud/genesyscloud/provider"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
 )
 

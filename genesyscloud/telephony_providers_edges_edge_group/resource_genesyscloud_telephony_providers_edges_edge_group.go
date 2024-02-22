@@ -4,7 +4,8 @@ import (
 	"context"
 	"fmt"
 	"log"
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	gcloud "terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -35,7 +36,7 @@ func createEdgeGroup(ctx context.Context, d *schema.ResourceData, meta interface
 		edgeGroup.Description = &description
 	}
 
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	edgeGroupProxy := getEdgeGroupProxy(sdkConfig)
 
 	diagErr := gcloud.RetryWhen(gcloud.IsStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
@@ -76,7 +77,7 @@ func updateEdgeGroup(ctx context.Context, d *schema.ResourceData, meta interface
 		edgeGroup.Description = &description
 	}
 
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	edgeGroupProxy := getEdgeGroupProxy(sdkConfig)
 
 	diagErr := gcloud.RetryWhen(gcloud.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
@@ -105,7 +106,7 @@ func updateEdgeGroup(ctx context.Context, d *schema.ResourceData, meta interface
 }
 
 func deleteEdgeGroup(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	edgeGroupProxy := getEdgeGroupProxy(sdkConfig)
 
 	log.Printf("Deleting edge group")
@@ -136,7 +137,7 @@ func deleteEdgeGroup(ctx context.Context, d *schema.ResourceData, meta interface
 }
 
 func readEdgeGroup(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	edgeGroupProxy := getEdgeGroupProxy(sdkConfig)
 
 	log.Printf("Reading edge group %s", d.Id())

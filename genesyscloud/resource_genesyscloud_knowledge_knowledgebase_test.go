@@ -2,6 +2,8 @@ package genesyscloud
 
 import (
 	"fmt"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 
 	"github.com/google/uuid"
@@ -20,8 +22,8 @@ func TestAccResourceKnowledgeKnowledgebaseBasic(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Create
@@ -72,7 +74,7 @@ func testVerifyKnowledgebasesDestroyed(state *terraform.State) error {
 		knowledgeBase, resp, err := knowledgeAPI.GetKnowledgeKnowledgebase(rs.Primary.ID)
 		if knowledgeBase != nil {
 			return fmt.Errorf("Knowledge base (%s) still exists", rs.Primary.ID)
-		} else if IsStatus404(resp) {
+		} else if util.IsStatus404(resp) {
 			// Knowledge base not found as expected
 			continue
 		} else {

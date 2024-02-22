@@ -4,13 +4,14 @@ import (
 	"log"
 	"sync"
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
-	"terraform-provider-genesyscloud/genesyscloud/outbound"
+	flow "terraform-provider-genesyscloud/genesyscloud/architect_flow"
 	obCallableTimeset "terraform-provider-genesyscloud/genesyscloud/outbound_callabletimeset"
 	obResponseSet "terraform-provider-genesyscloud/genesyscloud/outbound_callanalysisresponseset"
 	outboundContactList "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
 	obContactListFilter "terraform-provider-genesyscloud/genesyscloud/outbound_contactlistfilter"
 	obDnclist "terraform-provider-genesyscloud/genesyscloud/outbound_dnclist"
 	outboundRuleset "terraform-provider-genesyscloud/genesyscloud/outbound_ruleset"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
 	telephonyProvidersEdgesSite "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site"
 	"testing"
 
@@ -45,7 +46,7 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources[resourceName] = ResourceOutboundCampaign()
 	providerResources["genesyscloud_outbound_contact_list"] = outboundContactList.ResourceOutboundContactList()
 	providerResources["genesyscloud_routing_wrapupcode"] = gcloud.ResourceRoutingWrapupCode()
-	providerResources["genesyscloud_flow"] = gcloud.ResourceFlow()
+	providerResources["genesyscloud_flow"] = flow.ResourceArchitectFlow()
 	providerResources["genesyscloud_outbound_callanalysisresponseset"] = obResponseSet.ResourceOutboundCallanalysisresponseset()
 	providerResources["genesyscloud_location"] = gcloud.ResourceLocation()
 	providerResources["genesyscloud_telephony_providers_edges_site"] = telephonyProvidersEdgesSite.ResourceSite()
@@ -64,7 +65,7 @@ func (r *registerTestInstance) registerTestDataSources() {
 
 // initTestResources initializes all test resources and data sources.
 func initTestResources() {
-	sdkConfig, authErr = gcloud.AuthorizeSdk()
+	sdkConfig, authErr = provider.AuthorizeSdk()
 	if authErr != nil {
 		log.Fatalf("failed to authorize sdk for package outbound_campaign: %v", authErr)
 	}

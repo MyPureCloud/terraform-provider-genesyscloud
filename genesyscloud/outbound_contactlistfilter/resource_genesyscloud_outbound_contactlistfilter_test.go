@@ -4,9 +4,10 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	gcloud "terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	obContactList "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
 
 	"github.com/google/uuid"
@@ -68,7 +69,7 @@ func TestAccResourceOutboundContactListFilter(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
-		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				Config: contactListResource + GenerateOutboundContactListFilter(

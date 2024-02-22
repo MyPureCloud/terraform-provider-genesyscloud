@@ -6,9 +6,9 @@ import (
 	"path/filepath"
 	"strings"
 	outboundSequence "terraform-provider-genesyscloud/genesyscloud/outbound_sequence"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	gcloud "terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
-
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -105,7 +105,7 @@ func TestAccResourceOutboundCampaignRuleBasic(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
-		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			// Create
 			{
@@ -366,7 +366,7 @@ func TestAccResourceOutboundCampaignRuleEnabledAtCreation(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
-		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			// Create
 			{

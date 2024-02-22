@@ -1,12 +1,11 @@
 package recording_media_retention_policy
 
 import (
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
-	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
-	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
-
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
+	gcloud "terraform-provider-genesyscloud/genesyscloud/provider"
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
 )
 
 /*

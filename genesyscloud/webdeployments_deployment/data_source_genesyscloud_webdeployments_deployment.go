@@ -4,7 +4,8 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"terraform-provider-genesyscloud/genesyscloud"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -14,12 +15,12 @@ import (
 )
 
 func dataSourceDeploymentRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	sdkConfig := m.(*genesyscloud.ProviderMeta).ClientConfig
+	sdkConfig := m.(*provider.ProviderMeta).ClientConfig
 	wd := getWebDeploymentsProxy(sdkConfig)
 
 	name := d.Get("name").(string)
 
-	return genesyscloud.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
+	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
 		deployments, resp, err := wd.getWebDeployments(ctx)
 
 		if err != nil && resp.StatusCode == http.StatusNotFound {

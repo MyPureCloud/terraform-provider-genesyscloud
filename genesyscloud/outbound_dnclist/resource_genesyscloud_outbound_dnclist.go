@@ -4,13 +4,14 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 
@@ -43,12 +44,12 @@ func createOutboundDncList(ctx context.Context, d *schema.ResourceData, meta int
 	dncCodes := lists.InterfaceListToStrings(d.Get("dnc_codes").([]interface{}))
 	entries := d.Get("entries").([]interface{})
 
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getOutboundDnclistProxy(sdkConfig)
 
 	sdkDncListCreate := platformclientv2.Dnclistcreate{
 		DncCodes: &dncCodes,
-		Division: gcloud.BuildSdkDomainEntityRef(d, "division_id"),
+		Division: util.BuildSdkDomainEntityRef(d, "division_id"),
 	}
 
 	if name != "" {
@@ -105,12 +106,12 @@ func updateOutboundDncList(ctx context.Context, d *schema.ResourceData, meta int
 	dncSourceType := d.Get("dnc_source_type").(string)
 	entries := d.Get("entries").([]interface{})
 
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getOutboundDnclistProxy(sdkConfig)
 
 	sdkDncList := platformclientv2.Dnclist{
 		DncCodes: &dncCodes,
-		Division: gcloud.BuildSdkDomainEntityRef(d, "division_id"),
+		Division: util.BuildSdkDomainEntityRef(d, "division_id"),
 	}
 
 	if name != "" {
@@ -132,7 +133,7 @@ func updateOutboundDncList(ctx context.Context, d *schema.ResourceData, meta int
 		sdkDncList.DncSourceType = &dncSourceType
 	}
 	log.Printf("Updating Outbound DNC list %s", name)
-	diagErr := gcloud.RetryWhen(gcloud.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+	diagErr := util.RetryWhen(util.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		// Get current Outbound DNC list version
 		outboundDncList, resp, getErr := proxy.getOutboundDnclistById(ctx, d.Id())
 		if getErr != nil {
@@ -166,15 +167,15 @@ func updateOutboundDncList(ctx context.Context, d *schema.ResourceData, meta int
 }
 
 func readOutboundDncList(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getOutboundDnclistProxy(sdkConfig)
 
 	log.Printf("Reading Outbound DNC list %s", d.Id())
 
-	return gcloud.WithRetriesForRead(ctx, d, func() *retry.RetryError {
+	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		sdkDncList, resp, getErr := proxy.getOutboundDnclistById(ctx, d.Id())
 		if getErr != nil {
-			if gcloud.IsStatus404(resp) {
+			if util.IsStatus404(resp) {
 				return retry.RetryableError(fmt.Errorf("failed to read Outbound DNC list %s: %s", d.Id(), getErr))
 			}
 			return retry.NonRetryableError(fmt.Errorf("failed to read Outbound DNC list %s: %s", d.Id(), getErr))
@@ -218,10 +219,10 @@ func readOutboundDncList(ctx context.Context, d *schema.ResourceData, meta inter
 }
 
 func deleteOutboundDncList(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getOutboundDnclistProxy(sdkConfig)
 
-	diagErr := gcloud.RetryWhen(gcloud.IsStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+	diagErr := util.RetryWhen(util.IsStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		log.Printf("Deleting Outbound DNC list")
 		resp, err := proxy.deleteOutboundDnclist(ctx, d.Id())
 		if err != nil {
@@ -233,10 +234,10 @@ func deleteOutboundDncList(ctx context.Context, d *schema.ResourceData, meta int
 		return diagErr
 	}
 
-	return gcloud.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
+	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		_, resp, err := proxy.getOutboundDnclistById(ctx, d.Id())
 		if err != nil {
-			if gcloud.IsStatus404(resp) {
+			if util.IsStatus404(resp) {
 				// Outbound DNC list deleted
 				log.Printf("Deleted Outbound DNC list %s", d.Id())
 				return nil

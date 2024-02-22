@@ -3,7 +3,8 @@ package architect_ivr
 import (
 	"context"
 	"fmt"
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	gcloud "terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -14,7 +15,7 @@ import (
 
 // dataSourceIvrRead retrieves the Genesys Cloud architect ivr id by name
 func dataSourceIvrRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	sdkConfig := m.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := m.(*provider.ProviderMeta).ClientConfig
 	ap := getArchitectIvrProxy(sdkConfig)
 	name := d.Get("name").(string)
 	// Query ivr by name. Retry in case search has not yet indexed the ivr.

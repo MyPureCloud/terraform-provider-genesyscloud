@@ -4,11 +4,12 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	gcloud "terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
@@ -21,7 +22,7 @@ import (
 func createTrunk(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	trunkBaseSettingsId := d.Get("trunk_base_settings_id").(string)
 
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	tp := getTrunkProxy(sdkConfig)
 
 	trunkBase, resp, getErr := tp.getTrunkBaseSettings(ctx, trunkBaseSettingsId)
@@ -90,7 +91,7 @@ func createTrunk(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 }
 
 func getTrunkByTrunkBaseId(ctx context.Context, trunkBaseId string, meta interface{}) (*platformclientv2.Trunk, error) {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	tp := getTrunkProxy(sdkConfig)
 
 	time.Sleep(2 * time.Second)
@@ -121,7 +122,7 @@ func updateTrunk(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 }
 
 func readTrunk(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	tp := getTrunkProxy(sdkConfig)
 
 	log.Printf("Reading trunk %s", d.Id())
@@ -159,7 +160,7 @@ func deleteTrunk(_ context.Context, _ *schema.ResourceData, _ interface{}) diag.
 
 func TrunkExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
-		GetResourcesFunc: gcloud.GetAllWithPooledClient(getAllTrunks),
+		GetResourcesFunc: provider.GetAllWithPooledClient(getAllTrunks),
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			"trunk_base_settings_id": {RefType: "genesyscloud_telephony_providers_edges_trunkbasesettings"},
 			"edge_group_id":          {RefType: "genesyscloud_telephony_providers_edges_edge_group"},

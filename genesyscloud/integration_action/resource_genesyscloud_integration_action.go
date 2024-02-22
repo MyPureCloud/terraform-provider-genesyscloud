@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"log"
 	"strings"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	gcloud "terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -12,7 +14,6 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -68,7 +69,7 @@ func createIntegrationAction(ctx context.Context, d *schema.ResourceData, meta i
 	integrationId := d.Get("integration_id").(string)
 	secure := d.Get("secure").(bool)
 
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	iap := getIntegrationActionsProxy(sdkConfig)
 
 	log.Printf("Creating integration action %s", name)
@@ -104,7 +105,7 @@ func createIntegrationAction(ctx context.Context, d *schema.ResourceData, meta i
 
 // readIntegrationAction is used by the integration action resource to read an action from genesys cloud.
 func readIntegrationAction(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	iap := getIntegrationActionsProxy(sdkConfig)
 
 	log.Printf("Reading integration action %s", d.Id())
@@ -186,7 +187,7 @@ func readIntegrationAction(ctx context.Context, d *schema.ResourceData, meta int
 
 // updateIntegrationAction is used by the integration action resource to update an action in Genesys Cloud
 func updateIntegrationAction(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	iap := getIntegrationActionsProxy(sdkConfig)
 
 	name := d.Get("name").(string)
@@ -224,7 +225,7 @@ func updateIntegrationAction(ctx context.Context, d *schema.ResourceData, meta i
 func deleteIntegrationAction(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	name := d.Get("name").(string)
 
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	iap := getIntegrationActionsProxy(sdkConfig)
 
 	log.Printf("Deleting integration action %s", name)

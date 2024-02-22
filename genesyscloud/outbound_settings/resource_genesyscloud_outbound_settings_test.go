@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	gcloud "terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
-
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
@@ -20,7 +20,7 @@ func TestAccResourceOutboundSettings(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
+		PreCheck:          func() { util.TestAccPreCheck(t) },
 		ProviderFactories: gcloud.GetProviderFactories(providerResources, nil),
 		Steps: []resource.TestStep{
 			{

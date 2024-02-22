@@ -1,9 +1,10 @@
 package telephony_providers_edges_trunk
 
 import (
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	gcloud "terraform-provider-genesyscloud/genesyscloud/provider"
 	telephony "terraform-provider-genesyscloud/genesyscloud/telephony"
 	edgeGroup "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_edge_group"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 
 	"github.com/google/uuid"
@@ -44,7 +45,7 @@ func TestAccResourceTrunk(t *testing.T) {
 		false)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
+		PreCheck:          func() { util.TestAccPreCheck(t) },
 		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			// Create the trunk by creating trunk base settings and an edge group and assigning the trunk base settings to the edge group

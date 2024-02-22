@@ -3,9 +3,9 @@ package task_management_workitem
 import (
 	"encoding/json"
 	"fmt"
+	gcloud "terraform-provider-genesyscloud/genesyscloud/util"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"

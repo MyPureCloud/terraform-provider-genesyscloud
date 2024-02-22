@@ -4,15 +4,15 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	gcloud "terraform-provider-genesyscloud/genesyscloud/util"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v121/platformclientv2"
 
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
-
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
 
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
@@ -42,7 +42,7 @@ func getAllAuthFlowOutcomes(ctx context.Context, clientConfig *platformclientv2.
 
 // createFlowOutcome is used by the flow_outcome resource to create Genesys cloud flow outcome
 func createFlowOutcome(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getFlowOutcomeProxy(sdkConfig)
 
 	flowOutcome := getFlowOutcomeFromResourceData(d)
@@ -60,7 +60,7 @@ func createFlowOutcome(ctx context.Context, d *schema.ResourceData, meta interfa
 
 // readFlowOutcome is used by the flow_outcome resource to read an flow outcome from genesys cloud
 func readFlowOutcome(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getFlowOutcomeProxy(sdkConfig)
 
 	log.Printf("Reading flow outcome %s", d.Id())
@@ -88,7 +88,7 @@ func readFlowOutcome(ctx context.Context, d *schema.ResourceData, meta interface
 
 // updateFlowOutcome is used by the flow_outcome resource to update an flow outcome in Genesys Cloud
 func updateFlowOutcome(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getFlowOutcomeProxy(sdkConfig)
 
 	flowOutcome := getFlowOutcomeFromResourceData(d)

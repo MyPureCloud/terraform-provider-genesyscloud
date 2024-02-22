@@ -3,6 +3,8 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -15,7 +17,7 @@ import (
 func DataSourceLocation() *schema.Resource {
 	return &schema.Resource{
 		Description: "Data source for Genesys Cloud Location. Select a location by name.",
-		ReadContext: ReadWithPooledClient(dataSourceLocationRead),
+		ReadContext: provider.ReadWithPooledClient(dataSourceLocationRead),
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Description: "Location name.",
@@ -27,7 +29,7 @@ func DataSourceLocation() *schema.Resource {
 }
 
 func dataSourceLocationRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	sdkConfig := m.(*ProviderMeta).ClientConfig
+	sdkConfig := m.(*provider.ProviderMeta).ClientConfig
 	locationsAPI := platformclientv2.NewLocationsApiWithConfig(sdkConfig)
 
 	exactSearchType := "EXACT"
@@ -40,7 +42,7 @@ func dataSourceLocationRead(ctx context.Context, d *schema.ResourceData, m inter
 		Fields:  &[]string{nameField},
 	}
 
-	return WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
+	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
 		locations, _, getErr := locationsAPI.PostLocationsSearch(platformclientv2.Locationsearchrequest{
 			Query: &[]platformclientv2.Locationsearchcriteria{searchCriteria},
 		})

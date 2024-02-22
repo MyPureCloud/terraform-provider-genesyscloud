@@ -6,8 +6,7 @@ import (
 	"log"
 	"path/filepath"
 	"strings"
-
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	gcloud "terraform-provider-genesyscloud/genesyscloud/util"
 
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 

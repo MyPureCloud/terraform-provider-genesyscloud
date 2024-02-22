@@ -3,9 +3,9 @@ package outbound_attempt_limit
 import (
 	"fmt"
 	"strings"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	gcloud "terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
-
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -53,7 +53,7 @@ func TestAccResourceOutboundAttemptLimit(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
-		ProviderFactories: gcloud.GetProviderFactories(providerResources, make(map[string]*schema.Resource)),
+		ProviderFactories: provider.GetProviderFactories(providerResources, make(map[string]*schema.Resource)),
 		Steps: []resource.TestStep{
 			{
 				Config: GenerateAttemptLimitResource(

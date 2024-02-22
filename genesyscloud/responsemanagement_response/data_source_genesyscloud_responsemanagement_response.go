@@ -3,7 +3,8 @@ package responsemanagement_response
 import (
 	"context"
 	"fmt"
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	gcloud "terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -19,7 +20,7 @@ import (
 
 // dataSourceResponsemanagementResponseRead retrieves by name the id in question
 func dataSourceResponsemanagementResponseRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := newResponsemanagementResponseProxy(sdkConfig)
 
 	name := d.Get("name").(string)

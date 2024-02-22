@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	gcloud "terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
-
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
 )
 
 /*
@@ -19,7 +19,7 @@ import (
 
 // dataSourceResponsemanagementLibraryRead retrieves by name the id in question
 func dataSourceResponsemanagementLibraryRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := newResponsemanagementLibraryProxy(sdkConfig)
 
 	name := d.Get("name").(string)

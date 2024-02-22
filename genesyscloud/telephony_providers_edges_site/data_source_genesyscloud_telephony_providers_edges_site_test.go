@@ -3,6 +3,8 @@ package telephony_providers_edges_site
 import (
 	"fmt"
 	"strconv"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v121/platformclientv2"
@@ -39,7 +41,7 @@ func TestAccDataSourceSite(t *testing.T) {
 		[]string{},
 		gcloud.GenerateLocationEmergencyNum(
 			emergencyNumber,
-			gcloud.NullValue, // Default number type
+			util.NullValue, // Default number type
 		), gcloud.GenerateLocationAddress(
 			"7601 Interactive Way",
 			"Indianapolis",
@@ -49,8 +51,8 @@ func TestAccDataSourceSite(t *testing.T) {
 		))
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
-		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				Config: GenerateSiteResourceWithCustomAttrs(
@@ -91,8 +93,8 @@ func TestAccDataSourceSiteManaged(t *testing.T) {
 	}
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
-		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				Config: generateSiteDataSource(

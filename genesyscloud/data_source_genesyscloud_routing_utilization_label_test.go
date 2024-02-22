@@ -2,6 +2,8 @@ package genesyscloud
 
 import (
 	"fmt"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 
 	"github.com/google/uuid"
@@ -17,12 +19,12 @@ func TestAccDataSourceRoutingUtilizationLabel(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck: func() {
-			TestAccPreCheck(t)
+			util.TestAccPreCheck(t)
 			if err := checkIfLabelsAreEnabled(); err != nil {
 				t.Skipf("%v", err) // be sure to skip the test and not fail it
 			}
 		},
-		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				Config: GenerateRoutingUtilizationLabelResource(

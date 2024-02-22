@@ -4,7 +4,9 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	gcloud "terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -12,8 +14,6 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v121/platformclientv2"
 
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
-
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
 
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
@@ -43,7 +43,7 @@ func getAllAuthTaskManagementWorkitems(ctx context.Context, clientConfig *platfo
 
 // createTaskManagementWorkitem is used by the task_management_workitem resource to create Genesys cloud task management workitem
 func createTaskManagementWorkitem(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getTaskManagementWorkitemProxy(sdkConfig)
 
 	taskManagementWorkitem, err := getWorkitemCreateFromResourceData(d)
@@ -64,7 +64,7 @@ func createTaskManagementWorkitem(ctx context.Context, d *schema.ResourceData, m
 
 // readTaskManagementWorkitem is used by the task_management_workitem resource to read an task management workitem from genesys cloud
 func readTaskManagementWorkitem(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getTaskManagementWorkitemProxy(sdkConfig)
 
 	log.Printf("Reading task management workitem %s", d.Id())
@@ -133,7 +133,7 @@ func readTaskManagementWorkitem(ctx context.Context, d *schema.ResourceData, met
 
 // updateTaskManagementWorkitem is used by the task_management_workitem resource to update an task management workitem in Genesys Cloud
 func updateTaskManagementWorkitem(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getTaskManagementWorkitemProxy(sdkConfig)
 
 	taskManagementWorkitem, err := getWorkitemUpdateFromResourceData(d)
@@ -153,7 +153,7 @@ func updateTaskManagementWorkitem(ctx context.Context, d *schema.ResourceData, m
 
 // deleteTaskManagementWorkitem is used by the task_management_workitem resource to delete an task management workitem from Genesys cloud
 func deleteTaskManagementWorkitem(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getTaskManagementWorkitemProxy(sdkConfig)
 
 	_, err := proxy.deleteTaskManagementWorkitem(ctx, d.Id())

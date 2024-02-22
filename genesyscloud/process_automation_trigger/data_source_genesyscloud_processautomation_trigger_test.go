@@ -2,9 +2,10 @@ package process_automation_trigger
 
 import (
 	"fmt"
+	"terraform-provider-genesyscloud/genesyscloud/architect_flow"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	gcloud "terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
-
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -30,7 +31,7 @@ func TestAccDataSourceProcessAutomationTrigger(t *testing.T) {
 	var homeDivisionName string
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
-		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				Config: "data \"genesyscloud_auth_division_home\" \"home\" {}",
@@ -94,11 +95,11 @@ func TestAccDataSourceProcessAutomationTrigger(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
-		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Create a trigger
-				Config: gcloud.GenerateFlowResource(
+				Config: architect_flow.GenerateFlowResource(
 					flowResource1,
 					filePath1,
 					workflowConfig1,

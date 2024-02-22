@@ -7,7 +7,7 @@ import (
 	"os"
 	"path"
 	"strings"
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	gcloud "terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util/files"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 	"time"

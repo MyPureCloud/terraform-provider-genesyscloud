@@ -4,7 +4,9 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	gcloud "terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -12,8 +14,6 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v121/platformclientv2"
 
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
-
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
 
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
@@ -40,7 +40,7 @@ func getAllAuthTeams(ctx context.Context, clientConfig *platformclientv2.Configu
 
 // createTeam is used by the team resource to create Genesys cloud team
 func createTeam(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getTeamProxy(sdkConfig)
 	team := getTeamFromResourceData(d)
 	log.Printf("Creating team %s", *team.Name)
@@ -65,7 +65,7 @@ func createTeam(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 
 // readTeam is used by the team resource to read an team from genesys cloud
 func readTeam(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getTeamProxy(sdkConfig)
 	log.Printf("Reading team %s", d.Id())
 	// reading members
@@ -95,7 +95,7 @@ func readTeam(ctx context.Context, d *schema.ResourceData, meta interface{}) dia
 
 // updateTeam is used by the team resource to update an team in Genesys Cloud
 func updateTeam(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getTeamProxy(sdkConfig)
 	team := getTeamFromResourceData(d)
 	log.Printf("updating team %s", *team.Name)
@@ -139,7 +139,7 @@ func updateTeam(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 
 // deleteTeam is used by the team resource to delete an team from Genesys cloud
 func deleteTeam(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getTeamProxy(sdkConfig)
 	_, err := proxy.deleteTeam(ctx, d.Id())
 	if err != nil {

@@ -2,7 +2,8 @@ package flow_outcome
 
 import (
 	"fmt"
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	gcloud "terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 
 	"github.com/google/uuid"
@@ -20,7 +21,7 @@ func TestAccResourceFlowOutcome(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
+		PreCheck:          func() { util.TestAccPreCheck(t) },
 		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
@@ -28,8 +29,8 @@ func TestAccResourceFlowOutcome(t *testing.T) {
 				Config: generateFlowOutcomeResource(
 					outcomeResource1,
 					name1,
-					gcloud.NullValue,
-					gcloud.NullValue,
+					util.NullValue,
+					util.NullValue,
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_flow_outcome."+outcomeResource1, "name", name1),
@@ -41,7 +42,7 @@ func TestAccResourceFlowOutcome(t *testing.T) {
 				Config: generateFlowOutcomeResource(
 					outcomeResource1,
 					name2,
-					gcloud.NullValue,
+					util.NullValue,
 					description,
 				),
 				Check: resource.ComposeTestCheckFunc(

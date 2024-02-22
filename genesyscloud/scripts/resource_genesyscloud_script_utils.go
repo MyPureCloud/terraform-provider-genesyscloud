@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path"
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	gcloud "terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util/files"
 )
 

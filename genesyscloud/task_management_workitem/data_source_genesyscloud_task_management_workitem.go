@@ -3,14 +3,14 @@ package task_management_workitem
 import (
 	"context"
 	"fmt"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	gcloud "terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
-
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
 )
 
 /*
@@ -20,7 +20,7 @@ import (
 
 // dataSourceTaskManagementWorkitemRead retrieves by name the id in question
 func dataSourceTaskManagementWorkitemRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := newTaskManagementWorkitemProxy(sdkConfig)
 
 	name := d.Get("name").(string)

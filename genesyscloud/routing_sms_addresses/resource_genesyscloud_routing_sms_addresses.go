@@ -4,7 +4,8 @@ import (
 	"context"
 	"fmt"
 	"log"
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	gcloud "terraform-provider-genesyscloud/genesyscloud/util"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 	"time"
 
@@ -52,7 +53,7 @@ func createRoutingSmsAddress(ctx context.Context, d *schema.ResourceData, meta i
 	countryCode := d.Get("country_code").(string)
 	autoCorrectAddress := d.Get("auto_correct_address").(bool)
 
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getRoutingSmsAddressProxy(sdkConfig)
 
 	sdkSmsAddressProvision := platformclientv2.Smsaddressprovision{
@@ -91,7 +92,7 @@ func createRoutingSmsAddress(ctx context.Context, d *schema.ResourceData, meta i
 }
 
 func readRoutingSmsAddress(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getRoutingSmsAddressProxy(sdkConfig)
 
 	log.Printf("Reading Routing Sms Address %s", d.Id())
@@ -119,7 +120,7 @@ func readRoutingSmsAddress(ctx context.Context, d *schema.ResourceData, meta int
 }
 
 func deleteRoutingSmsAddress(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getRoutingSmsAddressProxy(sdkConfig)
 
 	// AD-123 is the ID for a default address returned to all test orgs, it can't be deleted

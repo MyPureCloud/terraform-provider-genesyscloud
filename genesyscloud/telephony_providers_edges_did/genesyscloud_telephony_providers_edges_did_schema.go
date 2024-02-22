@@ -2,8 +2,9 @@ package telephony_providers_edges_did
 
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
+	gcloud "terraform-provider-genesyscloud/genesyscloud/validators"
 )
 
 const resourceName = "genesyscloud_telephony_providers_edges_did"
@@ -17,7 +18,7 @@ func SetRegistrar(l registrar.Registrar) {
 func DataSourceDid() *schema.Resource {
 	return &schema.Resource{
 		Description: "Data source for Genesys Cloud DID. The identifier is the E-164 phone number.",
-		ReadContext: gcloud.ReadWithPooledClient(dataSourceDidRead),
+		ReadContext: provider.ReadWithPooledClient(dataSourceDidRead),
 		Schema: map[string]*schema.Schema{
 			"phone_number": {
 				Description:      "Phone number for the DID.",

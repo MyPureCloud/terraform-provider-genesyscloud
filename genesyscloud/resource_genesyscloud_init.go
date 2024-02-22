@@ -15,14 +15,12 @@ func registerDataSources(l registrar.Registrar) {
 
 	l.RegisterDataSource("genesyscloud_routing_wrapupcode", DataSourceRoutingWrapupcode())
 	l.RegisterDataSource("genesyscloud_routing_queue", DataSourceRoutingQueue())
-	l.RegisterDataSource("genesyscloud_flow", DataSourceFlow())
 	l.RegisterDataSource("genesyscloud_location", DataSourceLocation())
 	l.RegisterDataSource("genesyscloud_auth_division_home", DataSourceAuthDivisionHome())
 	l.RegisterDataSource("genesyscloud_architect_schedules", DataSourceSchedule())
 	l.RegisterDataSource("genesyscloud_architect_user_prompt", dataSourceUserPrompt())
 	l.RegisterDataSource("genesyscloud_auth_division", dataSourceAuthDivision())
 	l.RegisterDataSource("genesyscloud_auth_division_home", DataSourceAuthDivisionHome())
-	l.RegisterDataSource("genesyscloud_flow", DataSourceFlow())
 	l.RegisterDataSource("genesyscloud_group", DataSourceGroup())
 	l.RegisterDataSource("genesyscloud_journey_action_map", dataSourceJourneyActionMap())
 	l.RegisterDataSource("genesyscloud_journey_action_template", dataSourceJourneyActionTemplate())
@@ -51,9 +49,7 @@ func registerDataSources(l registrar.Registrar) {
 func registerResources(l registrar.Registrar) {
 
 	l.RegisterResource("genesyscloud_routing_queue", ResourceRoutingQueue())
-	l.RegisterResource("genesyscloud_flow", ResourceFlow())
 	l.RegisterResource("genesyscloud_location", ResourceLocation())
-	l.RegisterResource("genesyscloud_flow", ResourceFlow())
 	l.RegisterResource("genesyscloud_architect_schedules", ResourceArchitectSchedules())
 	l.RegisterResource("genesyscloud_architect_user_prompt", ResourceArchitectUserPrompt())
 	l.RegisterResource("genesyscloud_auth_division", ResourceAuthDivision())
@@ -100,7 +96,6 @@ func registerExporters(l registrar.Registrar) {
 	l.RegisterExporter("genesyscloud_architect_schedules", ArchitectSchedulesExporter())
 	l.RegisterExporter("genesyscloud_architect_user_prompt", ArchitectUserPromptExporter())
 	l.RegisterExporter("genesyscloud_auth_division", AuthDivisionExporter())
-	l.RegisterExporter("genesyscloud_flow", FlowExporter())
 	l.RegisterExporter("genesyscloud_group", GroupExporter())
 	l.RegisterExporter("genesyscloud_idp_adfs", IdpAdfsExporter())
 	l.RegisterExporter("genesyscloud_idp_generic", IdpGenericExporter())

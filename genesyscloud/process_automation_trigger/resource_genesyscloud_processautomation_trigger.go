@@ -2,8 +2,9 @@ package process_automation_trigger
 
 import (
 	"context"
-
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	gcloud "terraform-provider-genesyscloud/genesyscloud/util"
 
 	"fmt"
 	"log"
@@ -13,8 +14,6 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v121/platformclientv2"
 
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
-
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
 
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 
@@ -77,10 +76,10 @@ func ResourceProcessAutomationTrigger() *schema.Resource {
 	return &schema.Resource{
 		Description: `Genesys Cloud Process Automation Trigger`,
 
-		CreateContext: gcloud.CreateWithPooledClient(createProcessAutomationTrigger),
-		ReadContext:   gcloud.ReadWithPooledClient(readProcessAutomationTrigger),
-		UpdateContext: gcloud.UpdateWithPooledClient(updateProcessAutomationTrigger),
-		DeleteContext: gcloud.DeleteWithPooledClient(removeProcessAutomationTrigger),
+		CreateContext: provider.CreateWithPooledClient(createProcessAutomationTrigger),
+		ReadContext:   provider.ReadWithPooledClient(readProcessAutomationTrigger),
+		UpdateContext: provider.UpdateWithPooledClient(updateProcessAutomationTrigger),
+		DeleteContext: provider.DeleteWithPooledClient(removeProcessAutomationTrigger),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -141,7 +140,7 @@ func ResourceProcessAutomationTrigger() *schema.Resource {
 
 func ProcessAutomationTriggerExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
-		GetResourcesFunc: gcloud.GetAllWithPooledClient(getAllProcessAutomationTriggersResourceMap),
+		GetResourcesFunc: provider.GetAllWithPooledClient(getAllProcessAutomationTriggersResourceMap),
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			"target.id": {RefType: "genesyscloud_flow"},
 		},
@@ -157,7 +156,7 @@ func createProcessAutomationTrigger(ctx context.Context, d *schema.ResourceData,
 	description := d.Get("description").(string)
 	matchingCriteria := d.Get("match_criteria").(string)
 
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	integAPI := platformclientv2.NewIntegrationsApiWithConfig(sdkConfig)
 
 	if eventTTLSeconds > 0 && delayBySeconds > 0 {
@@ -202,7 +201,7 @@ func createProcessAutomationTrigger(ctx context.Context, d *schema.ResourceData,
 }
 
 func readProcessAutomationTrigger(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	integAPI := platformclientv2.NewIntegrationsApiWithConfig(sdkConfig)
 
 	log.Printf("Reading process automation trigger %s", d.Id())
@@ -272,7 +271,7 @@ func updateProcessAutomationTrigger(ctx context.Context, d *schema.ResourceData,
 
 	topic_name := d.Get("topic_name").(string)
 
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	integAPI := platformclientv2.NewIntegrationsApiWithConfig(sdkConfig)
 
 	log.Printf("Updating process automation trigger %s", name)
@@ -324,7 +323,7 @@ func updateProcessAutomationTrigger(ctx context.Context, d *schema.ResourceData,
 func removeProcessAutomationTrigger(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	name := d.Get("name").(string)
 
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	integAPI := platformclientv2.NewIntegrationsApiWithConfig(sdkConfig)
 
 	log.Printf("Deleting process automation trigger %s", name)

@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	gcloud "terraform-provider-genesyscloud/genesyscloud/util"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 	"time"
 
@@ -11,7 +13,6 @@ import (
 
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -36,7 +37,7 @@ func getAllAuthCampaignRules(ctx context.Context, clientConfig *platformclientv2
 }
 
 func createOutboundCampaignRule(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getOutboundCampaignruleProxy(sdkConfig)
 
 	rule := getCampaignruleFromResourceData(d)
@@ -64,7 +65,7 @@ func createOutboundCampaignRule(ctx context.Context, d *schema.ResourceData, met
 }
 
 func updateOutboundCampaignRule(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getOutboundCampaignruleProxy(sdkConfig)
 	enabled := d.Get("enabled").(bool)
 
@@ -84,7 +85,7 @@ func updateOutboundCampaignRule(ctx context.Context, d *schema.ResourceData, met
 }
 
 func readOutboundCampaignRule(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getOutboundCampaignruleProxy(sdkConfig)
 
 	log.Printf("Reading Outbound Campaign Rule %s", d.Id())
@@ -119,7 +120,7 @@ func readOutboundCampaignRule(ctx context.Context, d *schema.ResourceData, meta 
 }
 
 func deleteOutboundCampaignRule(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getOutboundCampaignruleProxy(sdkConfig)
 
 	ruleEnabled := d.Get("enabled").(bool)

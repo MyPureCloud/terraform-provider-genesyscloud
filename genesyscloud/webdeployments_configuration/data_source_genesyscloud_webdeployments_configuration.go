@@ -3,17 +3,18 @@ package webdeployments_configuration
 import (
 	"context"
 	"fmt"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	gcloud "terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
 )
 
 func dataSourceConfigurationRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	sdkConfig := m.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := m.(*provider.ProviderMeta).ClientConfig
 	wp := getWebDeploymentConfigurationsProxy(sdkConfig)
 
 	name := d.Get("name").(string)

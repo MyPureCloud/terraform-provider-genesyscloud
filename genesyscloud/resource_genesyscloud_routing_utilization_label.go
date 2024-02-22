@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -42,7 +44,7 @@ func getAllRoutingUtilizationLabels(_ context.Context, clientConfig *platformcli
 
 func RoutingUtilizationLabelExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
-		GetResourcesFunc: GetAllWithPooledClient(getAllRoutingUtilizationLabels),
+		GetResourcesFunc: provider.GetAllWithPooledClient(getAllRoutingUtilizationLabels),
 		RefAttrs:         map[string]*resourceExporter.RefAttrSettings{}, // No references
 	}
 }
@@ -51,10 +53,10 @@ func ResourceRoutingUtilizationLabel() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud Routing Utilization Label. This resource is not yet widely available. Only use it if the feature is enabled.",
 
-		CreateContext: CreateWithPooledClient(createRoutingUtilizationLabel),
-		ReadContext:   ReadWithPooledClient(readRoutingUtilizationLabel),
-		UpdateContext: UpdateWithPooledClient(updateRoutingUtilizationLabel),
-		DeleteContext: DeleteWithPooledClient(deleteRoutingUtilizationLabel),
+		CreateContext: provider.CreateWithPooledClient(createRoutingUtilizationLabel),
+		ReadContext:   provider.ReadWithPooledClient(readRoutingUtilizationLabel),
+		UpdateContext: provider.UpdateWithPooledClient(updateRoutingUtilizationLabel),
+		DeleteContext: provider.DeleteWithPooledClient(deleteRoutingUtilizationLabel),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -72,7 +74,7 @@ func ResourceRoutingUtilizationLabel() *schema.Resource {
 func createRoutingUtilizationLabel(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	name := d.Get("name").(string)
 
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
 
 	log.Printf("Creating label %s", name)
@@ -90,7 +92,7 @@ func createRoutingUtilizationLabel(ctx context.Context, d *schema.ResourceData, 
 }
 
 func updateRoutingUtilizationLabel(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
 
 	id := d.Id()
@@ -110,14 +112,14 @@ func updateRoutingUtilizationLabel(ctx context.Context, d *schema.ResourceData, 
 }
 
 func readRoutingUtilizationLabel(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	routingApi := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
 
 	log.Printf("Reading label %s", d.Id())
-	return WithRetriesForRead(ctx, d, func() *retry.RetryError {
+	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		label, resp, getErr := routingApi.GetRoutingUtilizationLabel(d.Id())
 		if getErr != nil {
-			if IsStatus404(resp) {
+			if util.IsStatus404(resp) {
 				return retry.RetryableError(fmt.Errorf("Failed to read label %s: %s", d.Id(), getErr))
 			}
 			return retry.NonRetryableError(fmt.Errorf("Failed to read label %s: %s", d.Id(), getErr))
@@ -133,7 +135,7 @@ func readRoutingUtilizationLabel(ctx context.Context, d *schema.ResourceData, me
 func deleteRoutingUtilizationLabel(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	name := d.Get("name").(string)
 
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	routingApi := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
 
 	log.Printf("Deleting label %s", name)
@@ -143,10 +145,10 @@ func deleteRoutingUtilizationLabel(ctx context.Context, d *schema.ResourceData, 
 		return diag.Errorf("Failed to delete label %s: %s", name, err)
 	}
 
-	return WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
+	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		_, resp, err := routingApi.GetRoutingUtilizationLabel(d.Id())
 		if err != nil {
-			if IsStatus404(resp) {
+			if util.IsStatus404(resp) {
 				// Routing label deleted
 				log.Printf("Deleted Routing label %s", d.Id())
 				return nil

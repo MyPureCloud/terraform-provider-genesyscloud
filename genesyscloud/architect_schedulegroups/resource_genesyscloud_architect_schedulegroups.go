@@ -9,9 +9,10 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v121/platformclientv2"
 	"log"
 	"strings"
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
 )
 
@@ -26,7 +27,7 @@ func getAllAuthArchitectSchedulegroupss(ctx context.Context, clientConfig *platf
 
 // createArchitectSchedulegroups is used by the architect_schedulegroups resource to create Genesys cloud architect schedulegroups
 func createArchitectSchedulegroups(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getArchitectSchedulegroupsProxy(sdkConfig)
 
 	schedGroup := getArchitectScheduleGroupFromResourceData(d)
@@ -49,15 +50,15 @@ func createArchitectSchedulegroups(ctx context.Context, d *schema.ResourceData, 
 
 // readArchitectSchedulegroups is used by the architect_schedulegroups resource to read an architect schedulegroups from genesys cloud
 func readArchitectSchedulegroups(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getArchitectSchedulegroupsProxy(sdkConfig)
 
 	log.Printf("Reading schedule group %s", d.Id())
 
-	return gcloud.WithRetriesForRead(ctx, d, func() *retry.RetryError {
+	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		scheduleGroup, resp, getErr := proxy.getArchitectSchedulegroupsById(ctx, d.Id())
 		if getErr != nil {
-			if gcloud.IsStatus404ByInt(resp) {
+			if util.IsStatus404ByInt(resp) {
 				return retry.RetryableError(fmt.Errorf("Failed to read schedule group %s: %s", d.Id(), getErr))
 			}
 			return retry.NonRetryableError(fmt.Errorf("Failed to read schedule group %s: %s", d.Id(), getErr))
@@ -77,19 +78,19 @@ func readArchitectSchedulegroups(ctx context.Context, d *schema.ResourceData, me
 		}
 
 		if scheduleGroup.OpenSchedules != nil {
-			d.Set("open_schedules_id", gcloud.SdkDomainEntityRefArrToSet(*scheduleGroup.OpenSchedules))
+			d.Set("open_schedules_id", util.SdkDomainEntityRefArrToSet(*scheduleGroup.OpenSchedules))
 		} else {
 			d.Set("open_schedules_id", nil)
 		}
 
 		if scheduleGroup.ClosedSchedules != nil {
-			d.Set("closed_schedules_id", gcloud.SdkDomainEntityRefArrToSet(*scheduleGroup.ClosedSchedules))
+			d.Set("closed_schedules_id", util.SdkDomainEntityRefArrToSet(*scheduleGroup.ClosedSchedules))
 		} else {
 			d.Set("closed_schedules_id", nil)
 		}
 
 		if scheduleGroup.HolidaySchedules != nil {
-			d.Set("holiday_schedules_id", gcloud.SdkDomainEntityRefArrToSet(*scheduleGroup.HolidaySchedules))
+			d.Set("holiday_schedules_id", util.SdkDomainEntityRefArrToSet(*scheduleGroup.HolidaySchedules))
 		} else {
 			d.Set("holiday_schedules_id", nil)
 		}
@@ -101,7 +102,7 @@ func readArchitectSchedulegroups(ctx context.Context, d *schema.ResourceData, me
 
 // updateArchitectSchedulegroups is used by the architect_schedulegroups resource to update an architect schedulegroups in Genesys Cloud
 func updateArchitectSchedulegroups(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getArchitectSchedulegroupsProxy(sdkConfig)
 
 	scheduleGroup := getArchitectScheduleGroupFromResourceData(d)
@@ -123,12 +124,12 @@ func updateArchitectSchedulegroups(ctx context.Context, d *schema.ResourceData, 
 
 // deleteArchitectSchedulegroups is used by the architect_schedulegroups resource to delete an architect schedulegroups from Genesys cloud
 func deleteArchitectSchedulegroups(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getArchitectSchedulegroupsProxy(sdkConfig)
 
 	// DEVTOOLING-313: a schedule group linked to an IVR will not be able to be deleted until that IVR is deleted. Retrying here to make sure it is cleared properly.
 	log.Printf("Deleting schedule group %s", d.Id())
-	diagErr := gcloud.RetryWhen(gcloud.IsStatus409, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+	diagErr := util.RetryWhen(util.IsStatus409, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		log.Printf("Deleting schedule group %s", d.Id())
 		resp, err := proxy.deleteArchitectSchedulegroups(ctx, d.Id())
 		if err != nil {
@@ -140,10 +141,10 @@ func deleteArchitectSchedulegroups(ctx context.Context, d *schema.ResourceData, 
 		return diagErr
 	}
 
-	return gcloud.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
+	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		scheduleGroup, resp, err := proxy.getArchitectSchedulegroupsById(ctx, d.Id())
 		if err != nil {
-			if gcloud.IsStatus404ByInt(resp) {
+			if util.IsStatus404ByInt(resp) {
 				// schedule group deleted
 				log.Printf("Deleted schedule group %s", d.Id())
 				return nil
@@ -164,9 +165,9 @@ func deleteArchitectSchedulegroups(ctx context.Context, d *schema.ResourceData, 
 func getArchitectScheduleGroupFromResourceData(d *schema.ResourceData) platformclientv2.Schedulegroup {
 	scheduleGroup := platformclientv2.Schedulegroup{
 		Name:             platformclientv2.String(d.Get("name").(string)),
-		OpenSchedules:    gcloud.BuildSdkDomainEntityRefArr(d, "open_schedules_id"),
-		ClosedSchedules:  gcloud.BuildSdkDomainEntityRefArr(d, "closed_schedules_id"),
-		HolidaySchedules: gcloud.BuildSdkDomainEntityRefArr(d, "holiday_schedules_id"),
+		OpenSchedules:    util.BuildSdkDomainEntityRefArr(d, "open_schedules_id"),
+		ClosedSchedules:  util.BuildSdkDomainEntityRefArr(d, "closed_schedules_id"),
+		HolidaySchedules: util.BuildSdkDomainEntityRefArr(d, "holiday_schedules_id"),
 	}
 
 	divisionID := d.Get("division_id").(string)

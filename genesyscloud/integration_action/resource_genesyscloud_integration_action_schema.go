@@ -1,12 +1,12 @@
 package integration_action
 
 import (
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
-	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
-	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
-
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
+	gcloud "terraform-provider-genesyscloud/genesyscloud/util"
 )
 
 /*
@@ -82,10 +82,10 @@ func ResourceIntegrationAction() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud Integration Actions. See this page for detailed information on configuring Actions: https://help.mypurecloud.com/articles/add-configuration-custom-actions-integrations/",
 
-		CreateContext: gcloud.CreateWithPooledClient(createIntegrationAction),
-		ReadContext:   gcloud.ReadWithPooledClient(readIntegrationAction),
-		UpdateContext: gcloud.UpdateWithPooledClient(updateIntegrationAction),
-		DeleteContext: gcloud.DeleteWithPooledClient(deleteIntegrationAction),
+		CreateContext: provider.CreateWithPooledClient(createIntegrationAction),
+		ReadContext:   provider.ReadWithPooledClient(readIntegrationAction),
+		UpdateContext: provider.UpdateWithPooledClient(updateIntegrationAction),
+		DeleteContext: provider.DeleteWithPooledClient(deleteIntegrationAction),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -158,7 +158,7 @@ func ResourceIntegrationAction() *schema.Resource {
 // IntegrationActionExporter returns the resourceExporter object used to hold the genesyscloud_integration_action exporter's config
 func IntegrationActionExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
-		GetResourcesFunc: gcloud.GetAllWithPooledClient(getAllIntegrationActions),
+		GetResourcesFunc: provider.GetAllWithPooledClient(getAllIntegrationActions),
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			"integration_id": {RefType: "genesyscloud_integration"},
 		},
@@ -170,7 +170,7 @@ func IntegrationActionExporter() *resourceExporter.ResourceExporter {
 func DataSourceIntegrationAction() *schema.Resource {
 	return &schema.Resource{
 		Description: "Data source for Genesys Cloud integration action. Select an integration action by name",
-		ReadContext: gcloud.ReadWithPooledClient(dataSourceIntegrationActionRead),
+		ReadContext: provider.ReadWithPooledClient(dataSourceIntegrationActionRead),
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Description: "The name of the integration action",

@@ -1,10 +1,9 @@
 package telephony_providers_edges_trunk
 
 import (
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
-	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
-
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	gcloud "terraform-provider-genesyscloud/genesyscloud/provider"
+	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
 )
 
 const resourceName = "genesyscloud_telephony_providers_edges_trunk"

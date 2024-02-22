@@ -6,13 +6,14 @@ import (
 	"log"
 	"regexp"
 	"strings"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	gcloud "terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -83,7 +84,7 @@ func createCredential(ctx context.Context, d *schema.ResourceData, meta interfac
 	name := d.Get("name").(string)
 	cred_type := d.Get("credential_type_name").(string)
 
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	ip := getIntegrationCredsProxy(sdkConfig)
 
 	createCredential := platformclientv2.Credential{
@@ -107,7 +108,7 @@ func createCredential(ctx context.Context, d *schema.ResourceData, meta interfac
 
 // readCredential is used by the integration credential resource to read a  credential from genesys cloud.
 func readCredential(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	ip := getIntegrationCredsProxy(sdkConfig)
 
 	log.Printf("Reading credential %s", d.Id())
@@ -136,7 +137,7 @@ func updateCredential(ctx context.Context, d *schema.ResourceData, meta interfac
 	name := d.Get("name").(string)
 	cred_type := d.Get("credential_type_name").(string)
 
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	ip := getIntegrationCredsProxy(sdkConfig)
 
 	if d.HasChanges("name", "credential_type_name", "fields") {
@@ -160,7 +161,7 @@ func updateCredential(ctx context.Context, d *schema.ResourceData, meta interfac
 
 // deleteCredential is used by the integration credential resource to delete a credential from Genesys cloud.
 func deleteCredential(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	ip := getIntegrationCredsProxy(sdkConfig)
 
 	_, err := ip.deleteIntegrationCred(ctx, d.Id())

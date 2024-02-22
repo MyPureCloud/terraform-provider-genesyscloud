@@ -11,10 +11,11 @@ import (
 	"strconv"
 	"strings"
 	"sync"
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	dependentconsumers "terraform-provider-genesyscloud/genesyscloud/dependent_consumers"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	r_registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
+	gcloud "terraform-provider-genesyscloud/genesyscloud/util"
 	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 	stringmap "terraform-provider-genesyscloud/genesyscloud/util/stringmap"
 	"time"
@@ -132,8 +133,8 @@ func NewGenesysCloudResourceExporter(ctx context.Context, d *schema.ResourceData
 		addDependsOn:         d.Get("enable_flow_depends_on").(bool),
 		filterType:           filterType,
 		includeStateFile:     d.Get("include_state_file").(bool),
-		version:              meta.(*gcloud.ProviderMeta).Version,
-		provider:             gcloud.New(meta.(*gcloud.ProviderMeta).Version, providerResources, providerDataSources)(),
+		version:              meta.(*provider.ProviderMeta).Version,
+		provider:             provider.New(meta.(*provider.ProviderMeta).Version, providerResources, providerDataSources)(),
 		d:                    d,
 		ctx:                  ctx,
 		meta:                 meta,

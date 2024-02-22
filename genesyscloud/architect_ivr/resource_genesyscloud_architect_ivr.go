@@ -4,8 +4,9 @@ import (
 	"context"
 	"fmt"
 	"log"
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	gcloud "terraform-provider-genesyscloud/genesyscloud/util"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 	"time"
 
@@ -37,7 +38,7 @@ func getAllIvrConfigs(ctx context.Context, clientConfig *platformclientv2.Config
 
 // createIvrConfig is used by the resource to create a Genesys Cloud Architect IVR
 func createIvrConfig(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	ap := getArchitectIvrProxy(sdkConfig)
 
 	ivrBody := buildArchitectIvrFromResourceData(d)
@@ -60,7 +61,7 @@ func createIvrConfig(ctx context.Context, d *schema.ResourceData, meta interface
 
 // readIvrConfig is used by the resource to read a Genesys Cloud Architect IVR
 func readIvrConfig(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	ap := getArchitectIvrProxy(sdkConfig)
 
 	log.Printf("Reading IVR config %s", d.Id())
@@ -97,7 +98,7 @@ func readIvrConfig(ctx context.Context, d *schema.ResourceData, meta interface{}
 
 // updateIvrConfig is used by the resource to update a Genesys Cloud Architect IVR
 func updateIvrConfig(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	ap := getArchitectIvrProxy(sdkConfig)
 
 	diagErr := gcloud.RetryWhen(gcloud.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
@@ -136,7 +137,7 @@ func updateIvrConfig(ctx context.Context, d *schema.ResourceData, meta interface
 func deleteIvrConfig(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	name := d.Get("name").(string)
 
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	ap := getArchitectIvrProxy(sdkConfig)
 
 	log.Printf("Deleting IVR config %s", name)

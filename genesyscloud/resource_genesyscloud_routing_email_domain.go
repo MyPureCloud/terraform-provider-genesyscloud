@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"log"
 	"strings"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -42,7 +44,7 @@ func getAllRoutingEmailDomains(_ context.Context, clientConfig *platformclientv2
 
 func RoutingEmailDomainExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
-		GetResourcesFunc: GetAllWithPooledClient(getAllRoutingEmailDomains),
+		GetResourcesFunc: provider.GetAllWithPooledClient(getAllRoutingEmailDomains),
 		UnResolvableAttributes: map[string]*schema.Schema{
 			"custom_smtp_server_id": ResourceRoutingEmailDomain().Schema["custom_smtp_server_id"],
 		},
@@ -53,10 +55,10 @@ func ResourceRoutingEmailDomain() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud Routing Email Domain",
 
-		CreateContext: CreateWithPooledClient(createRoutingEmailDomain),
-		ReadContext:   ReadWithPooledClient(readRoutingEmailDomain),
-		UpdateContext: UpdateWithPooledClient(updateRoutingEmailDomain),
-		DeleteContext: DeleteWithPooledClient(deleteRoutingEmailDomain),
+		CreateContext: provider.CreateWithPooledClient(createRoutingEmailDomain),
+		ReadContext:   provider.ReadWithPooledClient(readRoutingEmailDomain),
+		UpdateContext: provider.UpdateWithPooledClient(updateRoutingEmailDomain),
+		DeleteContext: provider.DeleteWithPooledClient(deleteRoutingEmailDomain),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -97,7 +99,7 @@ func createRoutingEmailDomain(ctx context.Context, d *schema.ResourceData, meta 
 		mxRecordStatus = "NOT_AVAILABLE"
 	}
 
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
 
 	sdkDomain := platformclientv2.Inbounddomain{
@@ -124,15 +126,15 @@ func createRoutingEmailDomain(ctx context.Context, d *schema.ResourceData, meta 
 }
 
 func readRoutingEmailDomain(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
 
 	log.Printf("Reading routing email domain %s", d.Id())
 
-	return WithRetriesForRead(ctx, d, func() *retry.RetryError {
+	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		domain, resp, getErr := routingAPI.GetRoutingEmailDomain(d.Id())
 		if getErr != nil {
-			if IsStatus404(resp) {
+			if util.IsStatus404(resp) {
 				return retry.RetryableError(fmt.Errorf("Failed to read routing email domain %s: %s", d.Id(), getErr))
 			}
 			return retry.NonRetryableError(fmt.Errorf("Failed to read routing email domain %s: %s", d.Id(), getErr))
@@ -178,7 +180,7 @@ func updateRoutingEmailDomain(ctx context.Context, d *schema.ResourceData, meta 
 		return diag.Errorf("domain_id must be a subdomain of mail_from_domain")
 	}
 
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
 
 	log.Printf("Updating routing email domain %s", d.Id())
@@ -200,7 +202,7 @@ func updateRoutingEmailDomain(ctx context.Context, d *schema.ResourceData, meta 
 }
 
 func deleteRoutingEmailDomain(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
 
 	log.Printf("Deleting routing email domain %s", d.Id())
@@ -209,10 +211,10 @@ func deleteRoutingEmailDomain(ctx context.Context, d *schema.ResourceData, meta 
 		return diag.Errorf("Failed to delete routing email domain %s: %s", d.Id(), err)
 	}
 
-	return WithRetries(ctx, 90*time.Second, func() *retry.RetryError {
+	return util.WithRetries(ctx, 90*time.Second, func() *retry.RetryError {
 		_, resp, err := routingAPI.GetRoutingEmailDomain(d.Id())
 		if err != nil {
-			if IsStatus404(resp) {
+			if util.IsStatus404(resp) {
 				// Routing email domain deleted
 				log.Printf("Deleted Routing email domain %s", d.Id())
 				return nil

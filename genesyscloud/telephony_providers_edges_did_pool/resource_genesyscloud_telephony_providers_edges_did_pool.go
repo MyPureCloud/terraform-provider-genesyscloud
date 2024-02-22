@@ -4,7 +4,8 @@ import (
 	"context"
 	"fmt"
 	"log"
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	gcloud "terraform-provider-genesyscloud/genesyscloud/util"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 	"time"
 
@@ -46,7 +47,7 @@ func createDidPool(ctx context.Context, d *schema.ResourceData, meta interface{}
 	comments := d.Get("comments").(string)
 	poolProvider := d.Get("pool_provider").(string)
 
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getTelephonyDidPoolProxy(sdkConfig)
 
 	didPool := &platformclientv2.Didpool{
@@ -70,7 +71,7 @@ func createDidPool(ctx context.Context, d *schema.ResourceData, meta interface{}
 
 // readDidPool is used by the resource to read a Genesys Cloud DID pool
 func readDidPool(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getTelephonyDidPoolProxy(sdkConfig)
 
 	log.Printf("Reading DID pool %s", d.Id())
@@ -109,7 +110,7 @@ func updateDidPool(ctx context.Context, d *schema.ResourceData, meta interface{}
 	comments := d.Get("comments").(string)
 	poolProvider := d.Get("pool_provider").(string)
 
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getTelephonyDidPoolProxy(sdkConfig)
 
 	didPoolBody := &platformclientv2.Didpool{
@@ -133,7 +134,7 @@ func updateDidPool(ctx context.Context, d *schema.ResourceData, meta interface{}
 func deleteDidPool(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	startPhoneNumber := d.Get("start_phone_number").(string)
 
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getTelephonyDidPoolProxy(sdkConfig)
 
 	// DEVTOOLING-317: Unable to delete DID pool with a number assigned, retrying on HTTP 409

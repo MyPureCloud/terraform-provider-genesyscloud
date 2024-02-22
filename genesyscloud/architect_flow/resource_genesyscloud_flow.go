@@ -1,4 +1,4 @@
-package genesyscloud
+package architect_flow
 
 import (
 	"context"
@@ -6,9 +6,9 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"path/filepath"
-	"strconv"
 	"strings"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -44,66 +44,14 @@ func getAllFlows(ctx context.Context, clientConfig *platformclientv2.Configurati
 	return resources, nil
 }
 
-func FlowExporter() *resourceExporter.ResourceExporter {
-	return &resourceExporter.ResourceExporter{
-		GetResourcesFunc: GetAllWithPooledClient(getAllFlows),
-		RefAttrs:         map[string]*resourceExporter.RefAttrSettings{},
-		UnResolvableAttributes: map[string]*schema.Schema{
-			"filepath": ResourceFlow().Schema["filepath"],
-		},
-		CustomFlowResolver: map[string]*resourceExporter.CustomFlowResolver{
-			"file_content_hash": {ResolverFunc: resourceExporter.FileContentHashResolver},
-		},
-	}
-}
-
-func ResourceFlow() *schema.Resource {
-	return &schema.Resource{
-		Description: `Genesys Cloud Flow`,
-
-		CreateContext: CreateWithPooledClient(createFlow),
-		UpdateContext: UpdateWithPooledClient(updateFlow),
-		ReadContext:   ReadWithPooledClient(readFlow),
-		DeleteContext: DeleteWithPooledClient(deleteFlow),
-		Importer: &schema.ResourceImporter{
-			StateContext: schema.ImportStatePassthroughContext,
-		},
-		SchemaVersion: 1,
-		Schema: map[string]*schema.Schema{
-			"filepath": {
-				Description:  "YAML file path for flow configuration. Note: Changing the flow name will result in the creation of a new flow with a new GUID, while the original flow will persist in your org.",
-				Type:         schema.TypeString,
-				Required:     true,
-				ValidateFunc: ValidatePath,
-			},
-			"file_content_hash": {
-				Description: "Hash value of the YAML file content. Used to detect changes.",
-				Type:        schema.TypeString,
-				Required:    true,
-			},
-			"substitutions": {
-				Description: "A substitution is a key value pair where the key is the value you want to replace, and the value is the value to substitute in its place.",
-				Type:        schema.TypeMap,
-				Optional:    true,
-			},
-			"force_unlock": {
-				Description: `Will perform a force unlock on an architect flow before beginning the publication process.  NOTE: The force unlock publishes the 'draft'
-				              architect flow and then publishes the flow named in this resource. This mirrors the behavior found in the archy CLI tool.`,
-				Type:     schema.TypeBool,
-				Optional: true,
-			},
-		},
-	}
-}
-
 func readFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	architectAPI := platformclientv2.NewArchitectApiWithConfig(sdkConfig)
 
-	return WithRetriesForRead(ctx, d, func() *retry.RetryError {
+	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		flow, resp, err := architectAPI.GetFlow(d.Id(), false)
 		if err != nil {
-			if IsStatus404(resp) {
+			if util.IsStatus404(resp) {
 				return retry.RetryableError(fmt.Errorf("Failed to read flow %s: %s", d.Id(), err))
 			}
 			return retry.NonRetryableError(fmt.Errorf("Failed to read flow %s: %s", d.Id(), err))
@@ -114,34 +62,13 @@ func readFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) dia
 	})
 }
 
-func forceUnlockFlow(flowId string, sdkConfig *platformclientv2.Configuration) error {
-	log.Printf("Attempting to perform an unlock on flow: %s", flowId)
-	architectAPI := platformclientv2.NewArchitectApiWithConfig(sdkConfig)
-	_, _, err := architectAPI.PostFlowsActionsUnlock(flowId)
-
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func isForceUnlockEnabled(d *schema.ResourceData) bool {
-	forceUnlock := d.Get("force_unlock").(bool)
-	log.Printf("ForceUnlock: %v, id %v", forceUnlock, d.Id())
-
-	if forceUnlock && d.Id() != "" {
-		return true
-	}
-	return false
-}
-
 func createFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	log.Printf("Creating flow")
 	return updateFlow(ctx, d, meta)
 }
 
 func updateFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	architectAPI := platformclientv2.NewArchitectApiWithConfig(sdkConfig)
 
 	log.Printf("Updating flow")
@@ -190,7 +117,7 @@ func updateFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	// Pre-define here before entering retry function, otherwise it will be overwritten
 	flowID := ""
 
-	retryErr := WithRetries(ctx, 16*time.Minute, func() *retry.RetryError {
+	retryErr := util.WithRetries(ctx, 16*time.Minute, func() *retry.RetryError {
 		flowJob, response, err := architectAPI.GetFlowsJob(jobId, []string{"messages"})
 		if err != nil {
 			return retry.NonRetryableError(fmt.Errorf("Error retrieving job status. JobID: %s, error: %s ", jobId, response.ErrorMessage))
@@ -233,7 +160,7 @@ func updateFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 }
 
 func deleteFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	architectAPI := platformclientv2.NewArchitectApiWithConfig(sdkConfig)
 
 	//Check to see if we need to force
@@ -244,10 +171,10 @@ func deleteFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 		}
 	}
 
-	return WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
+	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		resp, err := architectAPI.DeleteFlow(d.Id())
 		if err != nil {
-			if IsStatus404(resp) {
+			if util.IsStatus404(resp) {
 				// Flow deleted
 				log.Printf("Deleted Flow %s", d.Id())
 				return nil
@@ -261,24 +188,6 @@ func deleteFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	})
 }
 
-func GenerateFlowResource(resourceID, srcFile, filecontent string, force_unlock bool, substitutions ...string) string {
-	fullyQualifiedPath, _ := filepath.Abs(srcFile)
-
-	if filecontent != "" {
-		updateFile(srcFile, filecontent)
-	}
-
-	flowResourceStr := fmt.Sprintf(`resource "genesyscloud_flow" "%s" {
-        filepath = %s
-		file_content_hash =  filesha256(%s)
-		force_unlock = %v
-		%s
-	}
-	`, resourceID, strconv.Quote(srcFile), strconv.Quote(fullyQualifiedPath), force_unlock, strings.Join(substitutions, "\n"))
-
-	return flowResourceStr
-}
-
 func updateFile(filepath, content string) {
 	file, err := os.OpenFile(filepath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0666)
 
@@ -289,10 +198,4 @@ func updateFile(filepath, content string) {
 	defer file.Close()
 
 	file.WriteString(content)
-}
-
-// setFileContentHashToNil This operation is required after a flow update fails because we want Terraform to detect changes
-// in the file content hash and re-attempt an update, should the user re-run terraform apply without making changes to the file contents
-func setFileContentHashToNil(d *schema.ResourceData) {
-	_ = d.Set("file_content_hash", nil)
 }

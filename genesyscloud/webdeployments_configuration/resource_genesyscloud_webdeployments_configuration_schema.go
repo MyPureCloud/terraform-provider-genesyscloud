@@ -1,9 +1,10 @@
 package webdeployments_configuration
 
 import (
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
+	gcloud "terraform-provider-genesyscloud/genesyscloud/validators"
 	wdcUtils "terraform-provider-genesyscloud/genesyscloud/webdeployments_configuration/utils"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -733,7 +734,7 @@ var (
 func DataSourceWebDeploymentsConfiguration() *schema.Resource {
 	return &schema.Resource{
 		Description: "Data source for Genesys Cloud Web Deployments Configurations. Select a configuration by name.",
-		ReadContext: gcloud.ReadWithPooledClient(dataSourceConfigurationRead),
+		ReadContext: provider.ReadWithPooledClient(dataSourceConfigurationRead),
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Description: "The name of the configuration",
@@ -753,10 +754,10 @@ func ResourceWebDeploymentConfiguration() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud Web Deployment Configuration",
 
-		CreateContext: gcloud.CreateWithPooledClient(createWebDeploymentConfiguration),
-		ReadContext:   gcloud.ReadWithPooledClient(readWebDeploymentConfiguration),
-		UpdateContext: gcloud.UpdateWithPooledClient(updateWebDeploymentConfiguration),
-		DeleteContext: gcloud.DeleteWithPooledClient(deleteWebDeploymentConfiguration),
+		CreateContext: provider.CreateWithPooledClient(createWebDeploymentConfiguration),
+		ReadContext:   provider.ReadWithPooledClient(readWebDeploymentConfiguration),
+		UpdateContext: provider.UpdateWithPooledClient(updateWebDeploymentConfiguration),
+		DeleteContext: provider.DeleteWithPooledClient(deleteWebDeploymentConfiguration),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -865,7 +866,7 @@ func ResourceWebDeploymentConfiguration() *schema.Resource {
 
 func WebDeploymentConfigurationExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
-		GetResourcesFunc:   gcloud.GetAllWithPooledClient(getAllWebDeploymentConfigurations),
+		GetResourcesFunc:   provider.GetAllWithPooledClient(getAllWebDeploymentConfigurations),
 		ExcludedAttributes: []string{"version"},
 	}
 }

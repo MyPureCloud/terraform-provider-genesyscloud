@@ -3,6 +3,7 @@ package user_roles
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"terraform-provider-genesyscloud/genesyscloud"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
 )
@@ -40,10 +41,10 @@ func ResourceUserRoles() *schema.Resource {
 
 Terraform expects to manage the resources that are defined in its stack. You can use this resource to assign roles to existing users that are not managed by Terraform. However, one thing you have to remember is that when you use this resource to assign roles to existing users, you must define all roles assigned to those users in this resource. Otherwise, you will inadvertently drop all of the existing roles assigned to the user and replace them with the one defined in this resource. Keep this in mind, as the author of this note inadvertently stripped his Genesys admin account of administrator privileges while using this resource to assign a role to his account. The best lessons in life are often free and self-inflicted.`,
 
-		CreateContext: genesyscloud.CreateWithPooledClient(createUserRoles),
-		ReadContext:   genesyscloud.ReadWithPooledClient(readUserRoles),
-		UpdateContext: genesyscloud.UpdateWithPooledClient(updateUserRoles),
-		DeleteContext: genesyscloud.DeleteWithPooledClient(deleteUserRoles),
+		CreateContext: provider.CreateWithPooledClient(createUserRoles),
+		ReadContext:   provider.ReadWithPooledClient(readUserRoles),
+		UpdateContext: provider.UpdateWithPooledClient(updateUserRoles),
+		DeleteContext: provider.DeleteWithPooledClient(deleteUserRoles),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -68,7 +69,7 @@ Terraform expects to manage the resources that are defined in its stack. You can
 // userRolesExporter returns the resourceExporter object used to hold the genesyscloud_user_roles exporter's config
 func UserRolesExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
-		GetResourcesFunc: genesyscloud.GetAllWithPooledClient(genesyscloud.GetAllUsers),
+		GetResourcesFunc: provider.GetAllWithPooledClient(genesyscloud.GetAllUsers),
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			"user_id":            {RefType: "genesyscloud_user"},
 			"roles.role_id":      {RefType: "genesyscloud_auth_role"},

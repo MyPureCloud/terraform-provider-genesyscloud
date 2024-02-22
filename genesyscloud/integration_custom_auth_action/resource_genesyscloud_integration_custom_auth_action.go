@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	gcloud "terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -11,7 +13,6 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	integrationAction "terraform-provider-genesyscloud/genesyscloud/integration_action"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 
@@ -64,7 +65,7 @@ func getAllModifiedCustomAuthActions(ctx context.Context, clientConfig *platform
 
 // createIntegrationCustomAuthAction is used by the custom auth actions resource to manage the Genesyscloud integration custom auth action
 func createIntegrationCustomAuthAction(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	cap := getCustomAuthActionsProxy(sdkConfig)
 
 	integrationId := d.Get("integration_id").(string)
@@ -134,7 +135,7 @@ func createIntegrationCustomAuthAction(ctx context.Context, d *schema.ResourceDa
 
 // readIntegrationCustomAuthAction is used by the integration action resource to read a custom auth action from genesys cloud
 func readIntegrationCustomAuthAction(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	cap := getCustomAuthActionsProxy(sdkConfig)
 
 	log.Printf("Reading integration action %s", d.Id())
@@ -193,7 +194,7 @@ func readIntegrationCustomAuthAction(ctx context.Context, d *schema.ResourceData
 
 // updateIntegrationCustomAuthAction is used by the integration action resource to update a custom auth in Genesys Cloud
 func updateIntegrationCustomAuthAction(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	cap := getCustomAuthActionsProxy(sdkConfig)
 
 	name := resourcedata.GetNillableValue[string](d, "name")

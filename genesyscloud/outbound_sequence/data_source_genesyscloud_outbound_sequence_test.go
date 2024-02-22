@@ -3,9 +3,10 @@ package outbound_sequence
 import (
 	"fmt"
 	outboundCampaign "terraform-provider-genesyscloud/genesyscloud/outbound_campaign"
+	gcloud "terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	edgeSite "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site"
 
 	"github.com/google/uuid"
@@ -36,7 +37,7 @@ func TestAccDataSourceOutboundSequence(t *testing.T) {
 	}
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
+		PreCheck:          func() { util.TestAccPreCheck(t) },
 		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
@@ -49,7 +50,7 @@ data "genesyscloud_auth_division_home" "home" {}
 					siteId,
 					emergencyNumber,
 					carResourceId,
-					gcloud.NullValue,
+					util.NullValue,
 					outboundFlowFilePath,
 					"data-sequence-test-flow",
 					flowName,
@@ -60,8 +61,8 @@ data "genesyscloud_auth_division_home" "home" {}
 					resourceId,
 					sequenceName,
 					[]string{"genesyscloud_outbound_campaign." + campaignResourceId + ".id"},
-					gcloud.NullValue,
-					gcloud.NullValue,
+					util.NullValue,
+					util.NullValue,
 				) + generateOutboundSequenceDataSource(
 					dataSourceId,
 					sequenceName,

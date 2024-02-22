@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	gcloud "terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 	"time"
 
@@ -11,7 +13,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/stretchr/testify/assert"
 
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
@@ -169,7 +170,7 @@ func TestUnitResourceWorkitemCreate(t *testing.T) {
 	defer func() { internalProxy = nil }()
 
 	ctx := context.Background()
-	gcloud := &gcloud.ProviderMeta{ClientConfig: &platformclientv2.Configuration{}}
+	gcloud := &provider.ProviderMeta{ClientConfig: &platformclientv2.Configuration{}}
 
 	//Grab our defined schema
 	resourceSchema := ResourceTaskManagementWorkitem().Schema
@@ -275,7 +276,7 @@ func TestUnitResourceWorkitemRead(t *testing.T) {
 	defer func() { internalProxy = nil }()
 
 	ctx := context.Background()
-	gcloud := &gcloud.ProviderMeta{ClientConfig: &platformclientv2.Configuration{}}
+	gcloud := &provider.ProviderMeta{ClientConfig: &platformclientv2.Configuration{}}
 
 	//Grab our defined schema
 	resourceSchema := ResourceTaskManagementWorkitem().Schema
@@ -439,7 +440,7 @@ func TestUnitResourceWorkitemUpdate(t *testing.T) {
 	defer func() { internalProxy = nil }()
 
 	ctx := context.Background()
-	gcloud := &gcloud.ProviderMeta{ClientConfig: &platformclientv2.Configuration{}}
+	gcloud := &provider.ProviderMeta{ClientConfig: &platformclientv2.Configuration{}}
 
 	//Grab our defined schema
 	resourceSchema := ResourceTaskManagementWorkitem().Schema
@@ -479,7 +480,7 @@ func TestUnitResourceWorkitemDelete(t *testing.T) {
 	defer func() { internalProxy = nil }()
 
 	ctx := context.Background()
-	gcloud := &gcloud.ProviderMeta{ClientConfig: &platformclientv2.Configuration{}}
+	gcloud := &provider.ProviderMeta{ClientConfig: &platformclientv2.Configuration{}}
 
 	//Grab our defined schema
 	resourceSchema := ResourceTaskManagementWorkitem().Schema

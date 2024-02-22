@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	gcloud "terraform-provider-genesyscloud/genesyscloud/provider"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"

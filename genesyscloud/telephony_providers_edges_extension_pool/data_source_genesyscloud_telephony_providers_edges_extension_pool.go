@@ -3,7 +3,8 @@ package telephony_providers_edges_extension_pool
 import (
 	"context"
 	"fmt"
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	gcloud "terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -12,7 +13,7 @@ import (
 )
 
 func dataSourceExtensionPoolRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	sdkConfig := m.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := m.(*provider.ProviderMeta).ClientConfig
 	extensionPoolProxy := getExtensionPoolProxy(sdkConfig)
 
 	extensionPoolStartPhoneNumber := d.Get("start_number").(string)

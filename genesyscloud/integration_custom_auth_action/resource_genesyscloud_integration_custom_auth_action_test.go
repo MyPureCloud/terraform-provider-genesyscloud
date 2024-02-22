@@ -4,9 +4,10 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	gcloud "terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	integration "terraform-provider-genesyscloud/genesyscloud/integration"
 	integrationCred "terraform-provider-genesyscloud/genesyscloud/integration_credential"
 
@@ -138,7 +139,7 @@ func TestAccResourceIntegrationCustomAuthAction(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
-		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Modify the custom auth action of the integration

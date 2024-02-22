@@ -4,7 +4,8 @@ import (
 	"context"
 	"fmt"
 	"strconv"
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	gcloud "terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -19,7 +20,7 @@ func TestAccResourceDidPoolBasic(t *testing.T) {
 
 	// did pool cleanup
 	defer func() {
-		if _, err := gcloud.AuthorizeSdk(); err != nil {
+		if _, err := provider.AuthorizeSdk(); err != nil {
 			return
 		}
 		ctx := context.TODO()
@@ -34,7 +35,7 @@ func TestAccResourceDidPoolBasic(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
-		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Create

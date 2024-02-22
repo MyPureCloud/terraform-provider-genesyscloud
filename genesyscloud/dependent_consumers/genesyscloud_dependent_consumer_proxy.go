@@ -7,7 +7,7 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v121/platformclientv2"
 	"log"
 	"strings"
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	gcloud "terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"terraform-provider-genesyscloud/genesyscloud/util/stringmap"
 )

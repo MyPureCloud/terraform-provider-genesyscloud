@@ -3,6 +3,8 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -15,7 +17,7 @@ import (
 func dataSourceQualityFormsSurvey() *schema.Resource {
 	return &schema.Resource{
 		Description: "Data source for Genesys Cloud survey form. Select a form by name",
-		ReadContext: ReadWithPooledClient(dataSourceQualityFormsSurveyRead),
+		ReadContext: provider.ReadWithPooledClient(dataSourceQualityFormsSurveyRead),
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Description: "Survey form name.",
@@ -27,12 +29,12 @@ func dataSourceQualityFormsSurvey() *schema.Resource {
 }
 
 func dataSourceQualityFormsSurveyRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	sdkConfig := m.(*ProviderMeta).ClientConfig
+	sdkConfig := m.(*provider.ProviderMeta).ClientConfig
 	qualityAPI := platformclientv2.NewQualityApiWithConfig(sdkConfig)
 
 	name := d.Get("name").(string)
 
-	return WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
+	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
 		for pageNum := 1; ; pageNum++ {
 			const pageSize = 100
 			forms, _, getErr := qualityAPI.GetQualityFormsSurveys(pageSize, pageNum, "", "", "", "", name, "desc")

@@ -6,10 +6,10 @@ import (
 	"strconv"
 	"strings"
 	obDnclist "terraform-provider-genesyscloud/genesyscloud/outbound_dnclist"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	gcloud "terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 	"time"
-
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -107,7 +107,7 @@ func TestAccResourceOutboundMessagingCampaign(t *testing.T) {
 		)
 	)
 
-	config, err := gcloud.AuthorizeSdk()
+	config, err := provider.AuthorizeSdk()
 	if err != nil {
 		t.Errorf("failed to authorize client: %v", err)
 	}
@@ -125,7 +125,7 @@ func TestAccResourceOutboundMessagingCampaign(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
-		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				Config: dncListResource +
@@ -180,7 +180,7 @@ func TestAccResourceOutboundMessagingCampaign(t *testing.T) {
 						"genesyscloud_outbound_contactlistfilter."+clfResourceId, "id"),
 					resource.TestCheckResourceAttrPair("genesyscloud_outbound_messagingcampaign."+resourceId, "contact_list_id",
 						"genesyscloud_outbound_contact_list."+contactListResourceId, "id"),
-					gcloud.TestDefaultHomeDivision("genesyscloud_outbound_messagingcampaign."+resourceId),
+					provider.TestDefaultHomeDivision("genesyscloud_outbound_messagingcampaign."+resourceId),
 				),
 			},
 			{
@@ -237,7 +237,7 @@ func TestAccResourceOutboundMessagingCampaign(t *testing.T) {
 						"genesyscloud_outbound_contactlistfilter."+clfResourceId, "id"),
 					resource.TestCheckResourceAttrPair("genesyscloud_outbound_messagingcampaign."+resourceId, "contact_list_id",
 						"genesyscloud_outbound_contact_list."+contactListResourceId, "id"),
-					gcloud.TestDefaultHomeDivision("genesyscloud_outbound_messagingcampaign."+resourceId),
+					provider.TestDefaultHomeDivision("genesyscloud_outbound_messagingcampaign."+resourceId),
 				),
 			},
 			{
@@ -292,7 +292,7 @@ func TestAccResourceOutboundMessagingCampaign(t *testing.T) {
 						"genesyscloud_outbound_contactlistfilter."+clfResourceId, "id"),
 					resource.TestCheckResourceAttrPair("genesyscloud_outbound_messagingcampaign."+resourceId, "contact_list_id",
 						"genesyscloud_outbound_contact_list."+contactListResourceId, "id"),
-					gcloud.TestDefaultHomeDivision("genesyscloud_outbound_messagingcampaign."+resourceId),
+					provider.TestDefaultHomeDivision("genesyscloud_outbound_messagingcampaign."+resourceId),
 				),
 			},
 			{

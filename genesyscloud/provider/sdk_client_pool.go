@@ -1,10 +1,9 @@
-package genesyscloud
+package provider
 
 import (
 	"context"
 	"log"
 	"sync"
-
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -12,37 +11,37 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v121/platformclientv2"
 )
 
-// SDKClientPool holds a pool of client configs for the Genesys Cloud SDK. One should be
+// SDKClientPool holds a Pool of client configs for the Genesys Cloud SDK. One should be
 // acquired at the beginning of any resource operation and released on completion.
 // This has the benefit of ensuring we don't issue too many concurrent requests and also
 // increases throughput as each token will have its own rate limit.
 type SDKClientPool struct {
-	pool chan *platformclientv2.Configuration
+	Pool chan *platformclientv2.Configuration
 }
 
-var sdkClientPool *SDKClientPool
-var sdkClientPoolErr diag.Diagnostics
-var once sync.Once
+var SdkClientPool *SDKClientPool
+var SdkClientPoolErr diag.Diagnostics
+var Once sync.Once
 
-// InitSDKClientPool creates a new pool of Clients with the given provider config
-// This must be called during provider initialization before the pool is used
+// InitSDKClientPool creates a new Pool of Clients with the given provider config
+// This must be called during provider initialization before the Pool is used
 func InitSDKClientPool(max int, version string, providerConfig *schema.ResourceData) diag.Diagnostics {
-	once.Do(func() {
+	Once.Do(func() {
 		log.Print("Initializing default SDK client.")
-		// Initialize the default config for tests and anything else that doesn't use the pool
-		err := initClientConfig(providerConfig, version, platformclientv2.GetDefaultConfiguration())
+		// Initialize the default config for tests and anything else that doesn't use the Pool
+		err := InitClientConfig(providerConfig, version, platformclientv2.GetDefaultConfiguration())
 		if err != nil {
-			sdkClientPoolErr = err
+			SdkClientPoolErr = err
 			return
 		}
 
-		log.Printf("Initializing %d SDK clients in the pool.", max)
-		sdkClientPool = &SDKClientPool{
-			pool: make(chan *platformclientv2.Configuration, max),
+		log.Printf("Initializing %d SDK clients in the Pool.", max)
+		SdkClientPool = &SDKClientPool{
+			Pool: make(chan *platformclientv2.Configuration, max),
 		}
-		sdkClientPoolErr = sdkClientPool.preFill(providerConfig, version)
+		SdkClientPoolErr = SdkClientPool.preFill(providerConfig, version)
 	})
-	return sdkClientPoolErr
+	return SdkClientPoolErr
 }
 
 func (p *SDKClientPool) preFill(providerConfig *schema.ResourceData, version string) diag.Diagnostics {
@@ -52,12 +51,12 @@ func (p *SDKClientPool) preFill(providerConfig *schema.ResourceData, version str
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	for i := 0; i < cap(p.pool); i++ {
+	for i := 0; i < cap(p.Pool); i++ {
 		sdkConfig := platformclientv2.NewConfiguration()
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			err := initClientConfig(providerConfig, version, sdkConfig)
+			err := InitClientConfig(providerConfig, version, sdkConfig)
 			if err != nil {
 				select {
 				case <-ctx.Done():
@@ -67,7 +66,7 @@ func (p *SDKClientPool) preFill(providerConfig *schema.ResourceData, version str
 				return
 			}
 		}()
-		p.pool <- sdkConfig
+		p.Pool <- sdkConfig
 	}
 	go func() {
 		wg.Wait()
@@ -84,14 +83,14 @@ func (p *SDKClientPool) preFill(providerConfig *schema.ResourceData, version str
 }
 
 func (p *SDKClientPool) acquire() *platformclientv2.Configuration {
-	return <-p.pool
+	return <-p.Pool
 }
 
 func (p *SDKClientPool) release(c *platformclientv2.Configuration) {
 	select {
-	case p.pool <- c:
+	case p.Pool <- c:
 	default:
-		// Pool is full. Don't put it back in the pool
+		// Pool is full. Don't put it back in the Pool
 	}
 }
 
@@ -116,11 +115,11 @@ func DeleteWithPooledClient(method resContextFunc) schema.DeleteContextFunc {
 }
 
 // Inject a pooled SDK client connection into a resource method's meta argument
-// and automatically return it to the pool on completion
+// and automatically return it to the Pool on completion
 func runWithPooledClient(method resContextFunc) resContextFunc {
 	return func(ctx context.Context, r *schema.ResourceData, meta interface{}) diag.Diagnostics {
-		clientConfig := sdkClientPool.acquire()
-		defer sdkClientPool.release(clientConfig)
+		clientConfig := SdkClientPool.acquire()
+		defer SdkClientPool.release(clientConfig)
 
 		// Check if the request has been cancelled
 		select {
@@ -139,8 +138,8 @@ func runWithPooledClient(method resContextFunc) resContextFunc {
 // Inject a pooled SDK client connection into an exporter's getAll* method
 func GetAllWithPooledClient(method GetAllConfigFunc) resourceExporter.GetAllResourcesFunc {
 	return func(ctx context.Context) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
-		clientConfig := sdkClientPool.acquire()
-		defer sdkClientPool.release(clientConfig)
+		clientConfig := SdkClientPool.acquire()
+		defer SdkClientPool.release(clientConfig)
 
 		// Check if the request has been cancelled
 		select {
@@ -155,8 +154,8 @@ func GetAllWithPooledClient(method GetAllConfigFunc) resourceExporter.GetAllReso
 
 func GetAllWithPooledClientCustom(method GetCustomConfigFunc) resourceExporter.GetAllCustomResourcesFunc {
 	return func(ctx context.Context) (resourceExporter.ResourceIDMetaMap, map[string][]string, diag.Diagnostics) {
-		clientConfig := sdkClientPool.acquire()
-		defer sdkClientPool.release(clientConfig)
+		clientConfig := SdkClientPool.acquire()
+		defer SdkClientPool.release(clientConfig)
 
 		// Check if the request has been cancelled
 		select {

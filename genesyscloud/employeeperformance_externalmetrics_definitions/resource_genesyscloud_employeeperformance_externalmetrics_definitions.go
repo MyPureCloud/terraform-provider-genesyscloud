@@ -8,10 +8,10 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v121/platformclientv2"
 	"log"
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	gcloud "terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
-
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
 
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
@@ -41,7 +41,7 @@ func getAllAuthEmployeeperformanceExternalmetricsDefinitions(ctx context.Context
 
 // createEmployeeperformanceExternalmetricsDefinition is used by the employeeperformance_externalmetrics_definition resource to create Genesys cloud employeeperformance externalmetrics definition
 func createEmployeeperformanceExternalmetricsDefinition(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getEmployeeperformanceExternalmetricsDefinitionProxy(sdkConfig)
 
 	metricDefinition := platformclientv2.Externalmetricdefinitioncreaterequest{
@@ -70,7 +70,7 @@ func createEmployeeperformanceExternalmetricsDefinition(ctx context.Context, d *
 
 // readEmployeeperformanceExternalmetricsDefinition is used by the employeeperformance_externalmetrics_definition resource to read an employeeperformance externalmetrics definition from genesys cloud
 func readEmployeeperformanceExternalmetricsDefinition(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getEmployeeperformanceExternalmetricsDefinitionProxy(sdkConfig)
 
 	log.Printf("Reading employeeperformance externalmetrics definition %s", d.Id())
@@ -100,7 +100,7 @@ func readEmployeeperformanceExternalmetricsDefinition(ctx context.Context, d *sc
 
 // updateEmployeeperformanceExternalmetricsDefinition is used by the employeeperformance_externalmetrics_definition resource to update an employeeperformance externalmetrics definition in Genesys Cloud
 func updateEmployeeperformanceExternalmetricsDefinition(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getEmployeeperformanceExternalmetricsDefinitionProxy(sdkConfig)
 
 	metricDefinition := platformclientv2.Externalmetricdefinitionupdaterequest{
@@ -122,7 +122,7 @@ func updateEmployeeperformanceExternalmetricsDefinition(ctx context.Context, d *
 
 // deleteEmployeeperformanceExternalmetricsDefinition is used by the employeeperformance_externalmetrics_definition resource to delete an employeeperformance externalmetrics definition from Genesys cloud
 func deleteEmployeeperformanceExternalmetricsDefinition(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getEmployeeperformanceExternalmetricsDefinitionProxy(sdkConfig)
 
 	_, err := proxy.deleteEmployeeperformanceExternalmetricsDefinition(ctx, d.Id())

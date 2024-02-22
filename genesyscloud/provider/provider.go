@@ -1,4 +1,4 @@
-package genesyscloud
+package provider
 
 import (
 	"context"
@@ -176,14 +176,14 @@ func configure(version string) schema.ConfigureContextFunc {
 		// Initialize a single client if we have an access token
 		accessToken := data.Get("access_token").(string)
 		if accessToken != "" {
-			once.Do(func() {
+			Once.Do(func() {
 				sdkConfig := platformclientv2.GetDefaultConfiguration()
-				_ = initClientConfig(data, version, sdkConfig)
+				_ = InitClientConfig(data, version, sdkConfig)
 
-				sdkClientPool = &SDKClientPool{
-					pool: make(chan *platformclientv2.Configuration, 1),
+				SdkClientPool = &SDKClientPool{
+					Pool: make(chan *platformclientv2.Configuration, 1),
 				}
-				sdkClientPool.pool <- sdkConfig
+				SdkClientPool.Pool <- sdkConfig
 			})
 		} else {
 			// Initialize the SDK Client pool
@@ -239,11 +239,12 @@ func GetRegionBasePath(region string) string {
 	return "https://api." + getRegionDomain(region)
 }
 
-func initClientConfig(data *schema.ResourceData, version string, config *platformclientv2.Configuration) diag.Diagnostics {
+func InitClientConfig(data *schema.ResourceData, version string, config *platformclientv2.Configuration) diag.Diagnostics {
 	accessToken := data.Get("access_token").(string)
 	oauthclientID := data.Get("oauthclient_id").(string)
 	oauthclientSecret := data.Get("oauthclient_secret").(string)
 	basePath := GetRegionBasePath(data.Get("aws_region").(string))
+
 	sdkDebugFilePath := data.Get("sdk_debug_file_path").(string)
 
 	config.BasePath = basePath

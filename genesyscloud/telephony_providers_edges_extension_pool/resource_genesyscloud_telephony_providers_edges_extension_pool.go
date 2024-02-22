@@ -4,13 +4,14 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	gcloud "terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -38,7 +39,7 @@ func createExtensionPool(ctx context.Context, d *schema.ResourceData, meta inter
 	startNumber := d.Get("start_number").(string)
 	endNumber := d.Get("end_number").(string)
 	description := d.Get("description").(string)
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	extensionPoolProxy := getExtensionPoolProxy(sdkConfig)
 
 	log.Printf("Creating Extension pool %s", startNumber)
@@ -57,7 +58,7 @@ func createExtensionPool(ctx context.Context, d *schema.ResourceData, meta inter
 }
 
 func readExtensionPool(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	extensionPoolProxy := getExtensionPoolProxy(sdkConfig)
 
 	log.Printf("Reading Extension pool %s", d.Id())
@@ -95,7 +96,7 @@ func updateExtensionPool(ctx context.Context, d *schema.ResourceData, meta inter
 	endNumber := d.Get("end_number").(string)
 	description := d.Get("description").(string)
 
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	extensionPoolProxy := getExtensionPoolProxy(sdkConfig)
 	extensionPoolBody := platformclientv2.Extensionpool{
 		StartNumber: &startNumber,
@@ -112,7 +113,7 @@ func updateExtensionPool(ctx context.Context, d *schema.ResourceData, meta inter
 
 func deleteExtensionPool(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	startNumber := d.Get("start_number").(string)
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	extensionPoolProxy := getExtensionPoolProxy(sdkConfig)
 	log.Printf("Deleting Extension pool with starting number %s", startNumber)
 	if _, err := extensionPoolProxy.deleteExtensionPool(ctx, d.Id()); err != nil {

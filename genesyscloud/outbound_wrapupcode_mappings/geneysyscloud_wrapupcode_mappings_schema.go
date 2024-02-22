@@ -1,10 +1,9 @@
 package outbound_wrapupcode_mappings
 
 import (
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
-	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
-
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
+	gcloud "terraform-provider-genesyscloud/genesyscloud/provider"
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
 

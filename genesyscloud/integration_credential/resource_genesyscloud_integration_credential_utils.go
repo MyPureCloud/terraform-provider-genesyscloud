@@ -2,10 +2,8 @@ package integration_credential
 
 import (
 	"fmt"
-
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
-
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	gcloud "terraform-provider-genesyscloud/genesyscloud/util"
 )
 
 /*
