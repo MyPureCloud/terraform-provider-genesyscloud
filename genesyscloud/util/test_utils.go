@@ -7,8 +7,6 @@ import (
 	"os"
 	"strconv"
 	"strings"
-	//"terraform-provider-genesyscloud/genesyscloud"
-
 	"testing"
 	"time"
 
