@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -35,7 +36,7 @@ func getAllFileSpecificationTemplates(ctx context.Context, clientConfig *platfor
 }
 
 func createOutboundFileSpecificationTemplate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkFileSpecificationTemplate := buildSdkOutboundFileSpecificationTemplate(d)
+	sdkFileSpecificationTemplate := getFilespecificationtemplateFromResourceData(d)
 
 	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
 	proxy := getOutboundFilespecificationtemplateProxy(sdkConfig)
@@ -53,7 +54,7 @@ func createOutboundFileSpecificationTemplate(ctx context.Context, d *schema.Reso
 }
 
 func updateOutboundFileSpecificationTemplate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkFileSpecificationTemplate := buildSdkOutboundFileSpecificationTemplate(d)
+	sdkFileSpecificationTemplate := getFilespecificationtemplateFromResourceData(d)
 
 	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
 	proxy := getOutboundFilespecificationtemplateProxy(sdkConfig)
@@ -84,36 +85,17 @@ func readOutboundFileSpecificationTemplate(ctx context.Context, d *schema.Resour
 		}
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundFileSpecificationTemplate())
-		if sdkFileSpecificationTemplate.Name != nil {
-			_ = d.Set("name", *sdkFileSpecificationTemplate.Name)
-		}
-		if sdkFileSpecificationTemplate.Description != nil {
-			_ = d.Set("description", *sdkFileSpecificationTemplate.Description)
-		}
-		if sdkFileSpecificationTemplate.Format != nil {
-			_ = d.Set("format", *sdkFileSpecificationTemplate.Format)
-		}
-		if sdkFileSpecificationTemplate.NumberOfHeadingLinesSkipped != nil {
-			_ = d.Set("number_of_header_lines_skipped", *sdkFileSpecificationTemplate.NumberOfHeadingLinesSkipped)
-		}
-		if sdkFileSpecificationTemplate.NumberOfTrailingLinesSkipped != nil {
-			_ = d.Set("number_of_trailer_lines_skipped", *sdkFileSpecificationTemplate.NumberOfTrailingLinesSkipped)
-		}
-		if sdkFileSpecificationTemplate.Header != nil {
-			_ = d.Set("header", *sdkFileSpecificationTemplate.Header)
-		}
-		if sdkFileSpecificationTemplate.Delimiter != nil {
-			_ = d.Set("delimiter", *sdkFileSpecificationTemplate.Delimiter)
-		}
-		if sdkFileSpecificationTemplate.DelimiterValue != nil {
-			_ = d.Set("delimiter_value", *sdkFileSpecificationTemplate.DelimiterValue)
-		}
-		if sdkFileSpecificationTemplate.ColumnInformation != nil {
-			_ = d.Set("column_information", flattenSdkOutboundFileSpecificationTemplateColumnInformationSlice(*sdkFileSpecificationTemplate.ColumnInformation))
-		}
-		if sdkFileSpecificationTemplate.PreprocessingRules != nil {
-			_ = d.Set("preprocessing_rule", flattenSdkOutboundFileSpecificationTemplatePreprocessingRulesSlice(*sdkFileSpecificationTemplate.PreprocessingRules))
-		}
+
+		resourcedata.SetNillableValue(d, "name", sdkFileSpecificationTemplate.Name)
+		resourcedata.SetNillableValue(d, "description", sdkFileSpecificationTemplate.Description)
+		resourcedata.SetNillableValue(d, "format", sdkFileSpecificationTemplate.Format)
+		resourcedata.SetNillableValue(d, "number_of_header_lines_skipped", sdkFileSpecificationTemplate.NumberOfHeadingLinesSkipped)
+		resourcedata.SetNillableValue(d, "number_of_trailer_lines_skipped", sdkFileSpecificationTemplate.NumberOfTrailingLinesSkipped)
+		resourcedata.SetNillableValue(d, "header", sdkFileSpecificationTemplate.Header)
+		resourcedata.SetNillableValue(d, "delimiter", sdkFileSpecificationTemplate.Delimiter)
+		resourcedata.SetNillableValue(d, "delimiter_value", sdkFileSpecificationTemplate.DelimiterValue)
+		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "column_information", sdkFileSpecificationTemplate.ColumnInformation, flattenSdkOutboundFileSpecificationTemplateColumnInformationSlice)
+		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "preprocessing_rule", sdkFileSpecificationTemplate.PreprocessingRules, flattenSdkOutboundFileSpecificationTemplatePreprocessingRulesSlice)
 
 		log.Printf("Read Outbound File Specification Template %s %s", d.Id(), *sdkFileSpecificationTemplate.Name)
 		return cc.CheckState()

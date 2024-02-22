@@ -2,6 +2,7 @@ package outbound_filespecificationtemplate
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -40,7 +41,7 @@ func TestAccResourceOutboundFileSpecificationTemplate(t *testing.T) {
 		preprocessingRule2Find        = "([0-9]{3})"
 		preprocessingRule2ReplaceWith = "($1)"
 
-		// Update
+		// Update 1
 		nameUpdated                        = "tf-fst-" + uuid.NewString()
 		descriptionUpdated                 = "TF Test file specification template Delimited Update"
 		numberOfHeaderLinesSkippedUpdated  = "3"
@@ -59,6 +60,7 @@ func TestAccResourceOutboundFileSpecificationTemplate(t *testing.T) {
 		preprocessingRule1GlobalUpdated      = gcloud.TrueValue
 		preprocessingRule1IgnoreCaseUpdated  = gcloud.FalseValue
 
+		// Update 2
 		formatUpdated               = "FixedLength"
 		column1StartPositionUpdated = "0"
 		column1LengthUpdated        = "20"
@@ -74,36 +76,36 @@ func TestAccResourceOutboundFileSpecificationTemplate(t *testing.T) {
 				Config: generateOutboundFileSpecificationTemplate(
 					resourceId,
 					name,
-					description,
+					strconv.Quote(description),
 					format,
-					numberOfHeaderLinesSkipped,
-					numberOfTrailerLinesSkipped,
-					header,
-					delimiter,
-					"",
+					strconv.Quote(numberOfHeaderLinesSkipped),
+					strconv.Quote(numberOfTrailerLinesSkipped),
+					strconv.Quote(header),
+					strconv.Quote(delimiter),
+					gcloud.NullValue,
 					generateOutboundFileSpecificationTemplateColumnInformation(
-						column1Name,
-						column1Number,
-						"",
-						"",
+						strconv.Quote(column1Name),
+						strconv.Quote(column1Number),
+						gcloud.NullValue,
+						gcloud.NullValue,
 					),
 					generateOutboundFileSpecificationTemplateColumnInformation(
-						column2Name,
-						column2Number,
-						"",
-						"",
+						strconv.Quote(column2Name),
+						strconv.Quote(column2Number),
+						gcloud.NullValue,
+						gcloud.NullValue,
 					),
 					generateOutboundFileSpecificationTemplatePreprocessingRule(
-						preprocessingRule1Find,
-						preprocessingRule1ReplaceWith,
-						preprocessingRule1Global,
-						preprocessingRule1IgnoreCase,
+						strconv.Quote(preprocessingRule1Find),
+						strconv.Quote(preprocessingRule1ReplaceWith),
+						strconv.Quote(preprocessingRule1Global),
+						strconv.Quote(preprocessingRule1IgnoreCase),
 					),
 					generateOutboundFileSpecificationTemplatePreprocessingRule(
-						preprocessingRule2Find,
-						preprocessingRule2ReplaceWith,
-						"",
-						"",
+						strconv.Quote(preprocessingRule2Find),
+						strconv.Quote(preprocessingRule2ReplaceWith),
+						gcloud.NullValue,
+						gcloud.NullValue,
 					),
 				),
 				Check: resource.ComposeTestCheckFunc(
@@ -135,30 +137,30 @@ func TestAccResourceOutboundFileSpecificationTemplate(t *testing.T) {
 				Config: generateOutboundFileSpecificationTemplate(
 					resourceId,
 					nameUpdated,
-					descriptionUpdated,
+					strconv.Quote(descriptionUpdated),
 					format,
-					numberOfHeaderLinesSkippedUpdated,
-					numberOfTrailerLinesSkippedUpdated,
-					headerUpdated,
-					delimiterUpdated,
-					delimiterValueUpdated,
+					strconv.Quote(numberOfHeaderLinesSkippedUpdated),
+					strconv.Quote(numberOfTrailerLinesSkippedUpdated),
+					strconv.Quote(headerUpdated),
+					strconv.Quote(delimiterUpdated),
+					strconv.Quote(delimiterValueUpdated),
 					generateOutboundFileSpecificationTemplateColumnInformation(
-						column1NameUpdated,
-						column1NumberUpdated,
-						"",
-						"",
+						strconv.Quote(column1NameUpdated),
+						strconv.Quote(column1NumberUpdated),
+						gcloud.NullValue,
+						gcloud.NullValue,
 					),
 					generateOutboundFileSpecificationTemplateColumnInformation(
-						column2NameUpdated,
-						column2NumberUpdated,
-						"",
-						"",
+						strconv.Quote(column2NameUpdated),
+						strconv.Quote(column2NumberUpdated),
+						gcloud.NullValue,
+						gcloud.NullValue,
 					),
 					generateOutboundFileSpecificationTemplatePreprocessingRule(
-						preprocessingRule1FindUpdated,
-						preprocessingRule1ReplaceWithUpdated,
-						preprocessingRule1GlobalUpdated,
-						preprocessingRule1IgnoreCaseUpdated,
+						strconv.Quote(preprocessingRule1FindUpdated),
+						strconv.Quote(preprocessingRule1ReplaceWithUpdated),
+						strconv.Quote(preprocessingRule1GlobalUpdated),
+						strconv.Quote(preprocessingRule1IgnoreCaseUpdated),
 					),
 				),
 				Check: resource.ComposeTestCheckFunc(
@@ -186,24 +188,24 @@ func TestAccResourceOutboundFileSpecificationTemplate(t *testing.T) {
 				Config: generateOutboundFileSpecificationTemplate(
 					resourceId,
 					nameUpdated,
-					descriptionUpdated,
+					strconv.Quote(descriptionUpdated),
 					formatUpdated,
-					"",
-					"",
-					"",
-					"",
-					"",
+					gcloud.NullValue,
+					gcloud.NullValue,
+					gcloud.NullValue,
+					gcloud.NullValue,
+					gcloud.NullValue,
 					generateOutboundFileSpecificationTemplateColumnInformation(
-						column1NameUpdated,
-						"",
-						column1StartPositionUpdated,
-						column1LengthUpdated,
+						strconv.Quote(column1NameUpdated),
+						gcloud.NullValue,
+						strconv.Quote(column1StartPositionUpdated),
+						strconv.Quote(column1LengthUpdated),
 					),
 					generateOutboundFileSpecificationTemplateColumnInformation(
-						column2NameUpdated,
-						"",
-						column2StartPositionUpdated,
-						column2LengthUpdated,
+						strconv.Quote(column2NameUpdated),
+						gcloud.NullValue,
+						strconv.Quote(column2StartPositionUpdated),
+						strconv.Quote(column2LengthUpdated),
 					),
 				),
 				Check: resource.ComposeTestCheckFunc(
@@ -240,37 +242,16 @@ func generateOutboundFileSpecificationTemplate(
 	delimiterValue string,
 	nestedBlocks ...string,
 ) string {
-	if description != "" {
-		description = fmt.Sprintf(`description = "%s"`, description)
-	}
-	if format != "" {
-		format = fmt.Sprintf(`format = "%s"`, format)
-	}
-	if numberOfHeaderLinesSkipped != "" {
-		numberOfHeaderLinesSkipped = fmt.Sprintf(`number_of_header_lines_skipped = "%s"`, numberOfHeaderLinesSkipped)
-	}
-	if numberOfTrailerLinesSkipped != "" {
-		numberOfTrailerLinesSkipped = fmt.Sprintf(`number_of_trailer_lines_skipped = "%s"`, numberOfTrailerLinesSkipped)
-	}
-	if header != "" {
-		header = fmt.Sprintf(`header = "%s"`, header)
-	}
-	if delimiter != "" {
-		delimiter = fmt.Sprintf(`delimiter = "%s"`, delimiter)
-	}
-	if delimiterValue != "" {
-		delimiterValue = fmt.Sprintf(`delimiter_value = "%s"`, delimiterValue)
-	}
 	return fmt.Sprintf(`
 	resource "genesyscloud_outbound_filespecificationtemplate" "%s" {
 		name = "%s"
-		%s
-		%s
-		%s
-		%s
-		%s
-		%s
-		%s
+		description = %s
+		format = "%s"
+		number_of_header_lines_skipped = %s
+		number_of_trailer_lines_skipped = %s
+		header = %s
+		delimiter = %s
+		delimiter_value = %s
 		%s
 	}
 	`,
@@ -292,24 +273,12 @@ func generateOutboundFileSpecificationTemplateColumnInformation(
 	startPosition string,
 	length string,
 ) string {
-	if columnName != "" {
-		columnName = fmt.Sprintf(`column_name = "%s"`, columnName)
-	}
-	if columnNumber != "" {
-		columnNumber = fmt.Sprintf(`column_number = "%s"`, columnNumber)
-	}
-	if startPosition != "" {
-		startPosition = fmt.Sprintf(`start_position = "%s"`, startPosition)
-	}
-	if length != "" {
-		length = fmt.Sprintf(`length = "%s"`, length)
-	}
 	return fmt.Sprintf(`
 	column_information {
-		%s
-		%s
-		%s
-		%s
+		column_name = %s
+		column_number = %s
+		start_position = %s
+		length = %s
 	}
 `, columnName, columnNumber, startPosition, length)
 }
@@ -320,24 +289,12 @@ func generateOutboundFileSpecificationTemplatePreprocessingRule(
 	global string,
 	ignoreCase string,
 ) string {
-	if find != "" {
-		find = fmt.Sprintf(`find = "%s"`, find)
-	}
-	if replaceWith != "" {
-		replaceWith = fmt.Sprintf(`replace_with = "%s"`, replaceWith)
-	}
-	if global != "" {
-		global = fmt.Sprintf(`global = "%s"`, global)
-	}
-	if ignoreCase != "" {
-		ignoreCase = fmt.Sprintf(`ignore_case = "%s"`, ignoreCase)
-	}
 	return fmt.Sprintf(`
 	preprocessing_rule {
-		%s
-		%s
-		%s
-		%s
+		find = %s
+		replace_with = %s
+		global = %s
+		ignore_case = %s
 	}
 `, find, replaceWith, global, ignoreCase)
 }

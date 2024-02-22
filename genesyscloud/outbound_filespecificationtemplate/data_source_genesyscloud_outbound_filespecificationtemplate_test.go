@@ -2,6 +2,7 @@ package outbound_filespecificationtemplate
 
 import (
 	"fmt"
+	"strconv"
 	"testing"
 
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
@@ -23,10 +24,6 @@ func TestAccDataSourceOutboundFileSpecificationTemplate(t *testing.T) {
 		header                      = gcloud.TrueValue
 		delimiter                   = "Custom"
 		delimiterValue              = "^"
-		column1Name                 = "Phone"
-		column1Number               = "0"
-		column2Name                 = "Address"
-		column2Number               = "1"
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -37,25 +34,13 @@ func TestAccDataSourceOutboundFileSpecificationTemplate(t *testing.T) {
 				Config: generateOutboundFileSpecificationTemplate(
 					resourceId,
 					name,
-					description,
+					strconv.Quote(description),
 					format,
-					numberOfHeaderLinesSkipped,
-					numberOfTrailerLinesSkipped,
-					header,
-					delimiter,
-					delimiterValue,
-					generateOutboundFileSpecificationTemplateColumnInformation(
-						column1Name,
-						column1Number,
-						"",
-						"",
-					),
-					generateOutboundFileSpecificationTemplateColumnInformation(
-						column2Name,
-						column2Number,
-						"",
-						"",
-					),
+					strconv.Quote(numberOfHeaderLinesSkipped),
+					strconv.Quote(numberOfTrailerLinesSkipped),
+					strconv.Quote(header),
+					strconv.Quote(delimiter),
+					strconv.Quote(delimiterValue),
 				) + generateOutboundFileSpecificationTemplateDataSource(
 					dataSourceId,
 					name,

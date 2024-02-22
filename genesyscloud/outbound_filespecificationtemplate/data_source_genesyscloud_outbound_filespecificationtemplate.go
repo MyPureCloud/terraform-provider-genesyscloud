@@ -11,26 +11,23 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v121/platformclientv2"
 )
 
 func dataSourceOutboundFileSpecificationTemplateRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	sdkConfig := m.(*gcloud.ProviderMeta).ClientConfig
-	outboundAPI := platformclientv2.NewOutboundApiWithConfig(sdkConfig)
+	proxy := getOutboundFilespecificationtemplateProxy(sdkConfig)
 	name := d.Get("name").(string)
 
 	return gcloud.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
-		const pageNum = 1
-		const pageSize = 100
-		fileSpecificationTemplates, _, getErr := outboundAPI.GetOutboundFilespecificationtemplates(pageSize, pageNum, true, "", name, "", "")
-		if getErr != nil {
-			return retry.NonRetryableError(fmt.Errorf("error requesting file specification template %s: %s", name, getErr))
+		fstId, retryable, err := proxy.getOutboundFilespecificationtemplateIdByName(ctx, name)
+
+		if err != nil && !retryable {
+			return retry.NonRetryableError(fmt.Errorf("Error requesting file specification template %s: %s", name, err))
 		}
-		if fileSpecificationTemplates.Entities == nil || len(*fileSpecificationTemplates.Entities) == 0 {
-			return retry.RetryableError(fmt.Errorf("no file specification templates found with name %s", name))
+		if retryable {
+			return retry.RetryableError(fmt.Errorf("No file specification template found with name %s", name))
 		}
-		fileSpecificationTemplate := (*fileSpecificationTemplates.Entities)[0]
-		d.SetId(*fileSpecificationTemplate.Id)
+		d.SetId(fstId)
 		return nil
 	})
 }
