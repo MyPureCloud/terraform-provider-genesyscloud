@@ -137,15 +137,12 @@ func CustomizePhonePropertiesDiff(ctx context.Context, diff *schema.ResourceDiff
 		// properties value not yet in final state. Nothing to do.
 		return nil
 	}
-
 	id := diff.Id()
 	if id == "" {
 		return nil
 	}
-
 	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
-
 	// Retrieve defaults from the settings
 	phone, resp, getErr := edgesAPI.GetTelephonyProvidersEdgesPhone(id)
 	if getErr != nil {
@@ -154,6 +151,5 @@ func CustomizePhonePropertiesDiff(ctx context.Context, diff *schema.ResourceDiff
 		}
 		return fmt.Errorf("failed to read phone %s: %s", id, getErr)
 	}
-
 	return applyPropertyDefaults(diff, phone.Properties)
 }

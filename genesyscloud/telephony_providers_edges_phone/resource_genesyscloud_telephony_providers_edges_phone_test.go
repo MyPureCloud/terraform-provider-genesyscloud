@@ -221,7 +221,7 @@ func TestAccResourcePhoneStandalone(t *testing.T) {
 			"Indianapolis",
 			"IN",
 			"US",
-			"46211",
+			"46279",
 		))
 
 	siteRes := "test-site"
