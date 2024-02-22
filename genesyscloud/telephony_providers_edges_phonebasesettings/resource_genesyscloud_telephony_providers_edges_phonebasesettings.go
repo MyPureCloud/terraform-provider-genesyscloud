@@ -24,7 +24,7 @@ func createPhoneBaseSettings(ctx context.Context, d *schema.ResourceData, meta i
 	name := d.Get("name").(string)
 	description := d.Get("description").(string)
 	phoneMetaBase := gcloud.BuildSdkDomainEntityRef(d, "phone_meta_base_id")
-	properties := gcloud.BuildBaseSettingsProperties(d)
+	properties := gcloud.BuildTelephonyProperties(d)
 
 	phoneBase := platformclientv2.Phonebase{
 		Name:          &name,
@@ -63,7 +63,7 @@ func updatePhoneBaseSettings(ctx context.Context, d *schema.ResourceData, meta i
 	name := d.Get("name").(string)
 	description := d.Get("description").(string)
 	phoneMetaBase := gcloud.BuildSdkDomainEntityRef(d, "phone_meta_base_id")
-	properties := gcloud.BuildBaseSettingsProperties(d)
+	properties := gcloud.BuildTelephonyProperties(d)
 	id := d.Id()
 
 	phoneBase := platformclientv2.Phonebase{
@@ -131,7 +131,7 @@ func readPhoneBaseSettings(ctx context.Context, d *schema.ResourceData, meta int
 
 		d.Set("properties", nil)
 		if phoneBaseSettings.Properties != nil {
-			properties, err := gcloud.FlattenBaseSettingsProperties(phoneBaseSettings.Properties)
+			properties, err := gcloud.FlattenTelephonyProperties(phoneBaseSettings.Properties)
 			if err != nil {
 				return retry.NonRetryableError(fmt.Errorf("%v", err))
 			}

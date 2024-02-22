@@ -92,7 +92,7 @@ func createTrunkBaseSettings(ctx context.Context, d *schema.ResourceData, meta i
 	trunkMetaBaseString := d.Get("trunk_meta_base_id").(string)
 	trunkMetaBase := gcloud.BuildSdkDomainEntityRef(d, "trunk_meta_base_id")
 	inboundSiteString := d.Get("inbound_site_id").(string)
-	properties := gcloud.BuildBaseSettingsProperties(d)
+	properties := gcloud.BuildTelephonyProperties(d)
 	trunkType := d.Get("trunk_type").(string)
 	managed := d.Get("managed").(bool)
 	trunkBase := platformclientv2.Trunkbase{
@@ -140,7 +140,7 @@ func updateTrunkBaseSettings(ctx context.Context, d *schema.ResourceData, meta i
 	trunkMetaBase := gcloud.BuildSdkDomainEntityRef(d, "trunk_meta_base_id")
 	inboundSiteString := d.Get("inbound_site_id").(string)
 
-	properties := gcloud.BuildBaseSettingsProperties(d)
+	properties := gcloud.BuildTelephonyProperties(d)
 	trunkType := d.Get("trunk_type").(string)
 	managed := d.Get("managed").(bool)
 	id := d.Id()
@@ -257,7 +257,7 @@ func readTrunkBaseSettings(ctx context.Context, d *schema.ResourceData, meta int
 
 		d.Set("properties", nil)
 		if trunkBaseSettings.Properties != nil {
-			properties, err := gcloud.FlattenBaseSettingsProperties(trunkBaseSettings.Properties)
+			properties, err := gcloud.FlattenTelephonyProperties(trunkBaseSettings.Properties)
 			if err != nil {
 				return retry.NonRetryableError(fmt.Errorf("%v", err))
 			}

@@ -10,7 +10,7 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
 )
 
-func BuildBaseSettingsProperties(d *schema.ResourceData) *map[string]interface{} {
+func BuildTelephonyProperties(d *schema.ResourceData) *map[string]interface{} {
 	returnValue := make(map[string]interface{})
 
 	if properties := d.Get("properties"); properties != nil {
@@ -24,7 +24,7 @@ func BuildBaseSettingsProperties(d *schema.ResourceData) *map[string]interface{}
 	return &returnValue
 }
 
-func FlattenBaseSettingsProperties(properties interface{}) (string, diag.Diagnostics) {
+func FlattenTelephonyProperties(properties interface{}) (string, diag.Diagnostics) {
 	if properties == nil {
 		return "", nil
 	}
@@ -147,7 +147,7 @@ func CustomizePhonePropertiesDiff(ctx context.Context, diff *schema.ResourceDiff
 	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
 
 	// Retrieve defaults from the settings
-	phoneBaseSetting, resp, getErr := edgesAPI.GetTelephonyProvidersEdgesPhone(id)
+	phone, resp, getErr := edgesAPI.GetTelephonyProvidersEdgesPhone(id)
 	if getErr != nil {
 		if IsStatus404(resp) {
 			return nil
@@ -155,5 +155,5 @@ func CustomizePhonePropertiesDiff(ctx context.Context, diff *schema.ResourceDiff
 		return fmt.Errorf("failed to read phone %s: %s", id, getErr)
 	}
 
-	return applyPropertyDefaults(diff, phoneBaseSetting.Properties)
+	return applyPropertyDefaults(diff, phone.Properties)
 }

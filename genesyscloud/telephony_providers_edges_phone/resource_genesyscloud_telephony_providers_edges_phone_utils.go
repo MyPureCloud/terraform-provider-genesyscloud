@@ -36,7 +36,7 @@ func getPhoneFromResourceData(ctx context.Context, pp *phoneProxy, d *schema.Res
 		Name:       platformclientv2.String(d.Get("name").(string)),
 		State:      platformclientv2.String(d.Get("state").(string)),
 		Site:       gcloud.BuildSdkDomainEntityRef(d, "site_id"),
-		Properties: gcloud.BuildBaseSettingsProperties(d),
+		Properties: gcloud.BuildTelephonyProperties(d),
 		PhoneBaseSettings: &platformclientv2.Phonebasesettings{
 			Id: buildSdkPhoneBaseSettings(d, "phone_base_settings_id").Id,
 		},
@@ -49,7 +49,7 @@ func getPhoneFromResourceData(ctx context.Context, pp *phoneProxy, d *schema.Res
 	if lineBaseSettingsID == "" {
 		lineBaseSettingsID, err = getLineBaseSettingsID(ctx, pp, *phoneConfig.PhoneBaseSettings.Id)
 		if err != nil {
-			return nil, fmt.Errorf("ailed to get line base settings for %s: %s", *phoneConfig.Name, err)
+			return nil, fmt.Errorf("failed to get line base settings for %s: %s", *phoneConfig.Name, err)
 		}
 	}
 	lineBaseSettings := &platformclientv2.Domainentityref{Id: &lineBaseSettingsID}
@@ -68,13 +68,15 @@ func getPhoneFromResourceData(ctx context.Context, pp *phoneProxy, d *schema.Res
 	phoneConfig.PhoneMetaBase = phoneMetaBase
 
 	if isStandalone {
-		phoneConfig.Properties = &map[string]interface{}{
-			"phone_standalone": &map[string]interface{}{
-				"value": &map[string]interface{}{
-					"instance": true,
-				},
+		if phoneConfig.Properties == nil {
+			phoneConfig.Properties = &map[string]interface{}{}
+		}
+		phone_standalone := map[string]interface{}{
+			"value": &map[string]interface{}{
+				"instance": true,
 			},
 		}
+		(*phoneConfig.Properties)["phone_standalone"] = phone_standalone
 	}
 
 	webRtcUserId := d.Get("web_rtc_user_id")
@@ -364,4 +366,16 @@ func TestVerifyWebRtcPhoneDestroyed(state *terraform.State) error {
 	}
 	//Success. Phone destroyed
 	return nil
+}
+
+func generatePhoneProperties(hardware_id string) string {
+	// A random selection of properties
+	return "properties = " + gcloud.GenerateJsonEncodedProperties(
+		gcloud.GenerateJsonProperty(
+			"phone_hardwareId", gcloud.GenerateJsonObject(
+				gcloud.GenerateJsonProperty(
+					"value", gcloud.GenerateJsonObject(
+						gcloud.GenerateJsonProperty("instance", strconv.Quote(hardware_id)),
+					)))),
+	)
 }
