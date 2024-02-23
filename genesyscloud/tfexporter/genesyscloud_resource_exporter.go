@@ -83,6 +83,7 @@ type GenesysCloudResourceExporter struct {
 	meta                   interface{}
 	dependsList            map[string][]string
 	buildSecondDeps        map[string][]string
+	exporterMutex          sync.RWMutex
 }
 
 func configureExporterType(ctx context.Context, d *schema.ResourceData, gre *GenesysCloudResourceExporter, filterType ExporterFilterType) {
@@ -297,6 +298,9 @@ func (g *GenesysCloudResourceExporter) retrieveGenesysCloudObjectInstances() dia
 	ctx, cancel := context.WithCancel(g.ctx)
 	defer cancel()
 	// We use concurrency here to spin off each exporter type and getting the data
+	g.exporterMutex.Lock()
+	defer g.exporterMutex.Unlock()
+
 	for resType, exporter := range *g.exporters {
 		wg.Add(1)
 		go func(resType string, exporter *resourceExporter.ResourceExporter) {
