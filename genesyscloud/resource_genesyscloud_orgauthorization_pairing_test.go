@@ -2,6 +2,8 @@ package genesyscloud
 
 import (
 	"fmt"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 
 	"github.com/google/uuid"
@@ -28,8 +30,8 @@ func TestAccResourceOrgAuthorizationPairing(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			// 1 user and 1 group
 			{
@@ -73,13 +75,13 @@ func TestAccResourceOrgAuthorizationPairing(t *testing.T) {
   group_ids = [genesyscloud_group.%s.id, genesyscloud_group.%s.id]
 }`, orgAuthorizationPairingResource, userResource1, userResource2, groupResource1, groupResource2),
 				Check: resource.ComposeTestCheckFunc(
-					validateResourceAttributeInArray("genesyscloud_orgauthorization_pairing."+orgAuthorizationPairingResource, "user_ids",
+					util.ValidateResourceAttributeInArray("genesyscloud_orgauthorization_pairing."+orgAuthorizationPairingResource, "user_ids",
 						"genesyscloud_user."+userResource1, "id"),
-					validateResourceAttributeInArray("genesyscloud_orgauthorization_pairing."+orgAuthorizationPairingResource, "user_ids",
+					util.ValidateResourceAttributeInArray("genesyscloud_orgauthorization_pairing."+orgAuthorizationPairingResource, "user_ids",
 						"genesyscloud_user."+userResource2, "id"),
-					validateResourceAttributeInArray("genesyscloud_orgauthorization_pairing."+orgAuthorizationPairingResource, "group_ids",
+					util.ValidateResourceAttributeInArray("genesyscloud_orgauthorization_pairing."+orgAuthorizationPairingResource, "group_ids",
 						"genesyscloud_group."+groupResource1, "id"),
-					validateResourceAttributeInArray("genesyscloud_orgauthorization_pairing."+orgAuthorizationPairingResource, "group_ids",
+					util.ValidateResourceAttributeInArray("genesyscloud_orgauthorization_pairing."+orgAuthorizationPairingResource, "group_ids",
 						"genesyscloud_group."+groupResource2, "id"),
 					resource.TestCheckResourceAttr("genesyscloud_orgauthorization_pairing."+orgAuthorizationPairingResource, "group_ids.#", "2"),
 					resource.TestCheckResourceAttr("genesyscloud_orgauthorization_pairing."+orgAuthorizationPairingResource, "user_ids.#", "2"),
@@ -112,9 +114,9 @@ func TestAccResourceOrgAuthorizationPairing(t *testing.T) {
   user_ids  = [genesyscloud_user.%s.id, genesyscloud_user.%s.id]
 }`, orgAuthorizationPairingResource, userResource1, userResource2),
 				Check: resource.ComposeTestCheckFunc(
-					validateResourceAttributeInArray("genesyscloud_orgauthorization_pairing."+orgAuthorizationPairingResource, "user_ids",
+					util.ValidateResourceAttributeInArray("genesyscloud_orgauthorization_pairing."+orgAuthorizationPairingResource, "user_ids",
 						"genesyscloud_user."+userResource1, "id"),
-					validateResourceAttributeInArray("genesyscloud_orgauthorization_pairing."+orgAuthorizationPairingResource, "user_ids",
+					util.ValidateResourceAttributeInArray("genesyscloud_orgauthorization_pairing."+orgAuthorizationPairingResource, "user_ids",
 						"genesyscloud_user."+userResource2, "id"),
 					resource.TestCheckResourceAttr("genesyscloud_orgauthorization_pairing."+orgAuthorizationPairingResource, "user_ids.#", "2"),
 				),
@@ -146,9 +148,9 @@ func TestAccResourceOrgAuthorizationPairing(t *testing.T) {
   group_ids = [genesyscloud_group.%s.id, genesyscloud_group.%s.id]
 }`, orgAuthorizationPairingResource, groupResource1, groupResource2),
 				Check: resource.ComposeTestCheckFunc(
-					validateResourceAttributeInArray("genesyscloud_orgauthorization_pairing."+orgAuthorizationPairingResource, "group_ids",
+					util.ValidateResourceAttributeInArray("genesyscloud_orgauthorization_pairing."+orgAuthorizationPairingResource, "group_ids",
 						"genesyscloud_group."+groupResource1, "id"),
-					validateResourceAttributeInArray("genesyscloud_orgauthorization_pairing."+orgAuthorizationPairingResource, "group_ids",
+					util.ValidateResourceAttributeInArray("genesyscloud_orgauthorization_pairing."+orgAuthorizationPairingResource, "group_ids",
 						"genesyscloud_group."+groupResource2, "id"),
 					resource.TestCheckResourceAttr("genesyscloud_orgauthorization_pairing."+orgAuthorizationPairingResource, "group_ids.#", "2"),
 				),

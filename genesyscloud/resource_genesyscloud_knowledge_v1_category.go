@@ -6,6 +6,8 @@ import (
 	"log"
 	"net/url"
 	"strings"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -120,7 +122,7 @@ func getAllKnowledgeV1CategoryEntities(knowledgeAPI platformclientv2.KnowledgeAp
 
 func KnowledgeCategoryExporterV1() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
-		GetResourcesFunc: GetAllWithPooledClient(getAllKnowledgeCategoriesV1),
+		GetResourcesFunc: provider.GetAllWithPooledClient(getAllKnowledgeCategoriesV1),
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			"knowledge_base_id": {RefType: "genesyscloud_knowledge_knowledgebase"},
 		},
@@ -131,10 +133,10 @@ func ResourceKnowledgeCategoryV1() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud Knowledge v1 Category",
 
-		CreateContext: CreateWithPooledClient(createKnowledgeCategoryV1),
-		ReadContext:   ReadWithPooledClient(readKnowledgeCategoryV1),
-		UpdateContext: UpdateWithPooledClient(updateKnowledgeCategoryV1),
-		DeleteContext: DeleteWithPooledClient(deleteKnowledgeCategoryV1),
+		CreateContext: provider.CreateWithPooledClient(createKnowledgeCategoryV1),
+		ReadContext:   provider.ReadWithPooledClient(readKnowledgeCategoryV1),
+		UpdateContext: provider.UpdateWithPooledClient(updateKnowledgeCategoryV1),
+		DeleteContext: provider.DeleteWithPooledClient(deleteKnowledgeCategoryV1),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -167,7 +169,7 @@ func createKnowledgeCategoryV1(ctx context.Context, d *schema.ResourceData, meta
 	knowledgeBaseId := d.Get("knowledge_base_id").(string)
 	knowledgeCategory := d.Get("knowledge_category").([]interface{})[0].(map[string]interface{})
 
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	knowledgeAPI := platformclientv2.NewKnowledgeApiWithConfig(sdkConfig)
 
 	knowledgeCategoryRequest := buildKnowledgeCategoryV1(knowledgeCategory)
@@ -191,14 +193,14 @@ func readKnowledgeCategoryV1(ctx context.Context, d *schema.ResourceData, meta i
 	knowledgeBaseId := id[1]
 	languageCode := id[2]
 
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	knowledgeAPI := platformclientv2.NewKnowledgeApiWithConfig(sdkConfig)
 
 	log.Printf("Reading knowledge category %s", knowledgeCategoryId)
-	return WithRetriesForRead(ctx, d, func() *retry.RetryError {
+	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		knowledgeCategory, resp, getErr := knowledgeAPI.GetKnowledgeKnowledgebaseLanguageCategory(knowledgeCategoryId, knowledgeBaseId, languageCode)
 		if getErr != nil {
-			if IsStatus404(resp) {
+			if util.IsStatus404(resp) {
 				return retry.RetryableError(fmt.Errorf("Failed to read knowledge category %s: %s", knowledgeCategoryId, getErr))
 			}
 			log.Printf("%s", getErr)
@@ -224,11 +226,11 @@ func updateKnowledgeCategoryV1(ctx context.Context, d *schema.ResourceData, meta
 	languageCode := id[2]
 	knowledgeCategory := d.Get("knowledge_category").([]interface{})[0].(map[string]interface{})
 
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	knowledgeAPI := platformclientv2.NewKnowledgeApiWithConfig(sdkConfig)
 
 	log.Printf("Updating knowledge category %s", knowledgeCategory["name"].(string))
-	diagErr := RetryWhen(IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+	diagErr := util.RetryWhen(util.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		// Get current knowledge category version
 		_, resp, getErr := knowledgeAPI.GetKnowledgeKnowledgebaseLanguageCategory(knowledgeCategoryId, knowledgeBaseId, languageCode)
 		if getErr != nil {
@@ -258,7 +260,7 @@ func deleteKnowledgeCategoryV1(ctx context.Context, d *schema.ResourceData, meta
 	knowledgeBaseId := id[1]
 	languageCode := id[2]
 
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	knowledgeAPI := platformclientv2.NewKnowledgeApiWithConfig(sdkConfig)
 
 	log.Printf("Deleting knowledge category %s", id)
@@ -267,10 +269,10 @@ func deleteKnowledgeCategoryV1(ctx context.Context, d *schema.ResourceData, meta
 		return diag.Errorf("Failed to delete knowledge category %s: %s", id, err)
 	}
 
-	return WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
+	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		_, resp, err := knowledgeAPI.GetKnowledgeKnowledgebaseLanguageCategory(knowledgeCategoryId, knowledgeBaseId, languageCode)
 		if err != nil {
-			if IsStatus404(resp) {
+			if util.IsStatus404(resp) {
 				// Knowledge category deleted
 				log.Printf("Deleted knowledge category %s", knowledgeCategoryId)
 				return nil

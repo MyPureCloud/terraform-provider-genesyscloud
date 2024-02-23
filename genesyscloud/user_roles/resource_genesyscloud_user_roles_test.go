@@ -7,6 +7,8 @@ import (
 	"strings"
 	"terraform-provider-genesyscloud/genesyscloud"
 	authRole "terraform-provider-genesyscloud/genesyscloud/auth_role"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"terraform-provider-genesyscloud/genesyscloud/util/lists"
 	"testing"
 
@@ -33,8 +35,8 @@ func TestAccResourceUserRolesMembership(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { genesyscloud.TestAccPreCheck(t) },
-		ProviderFactories: genesyscloud.GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Create user with 1 role in default division
@@ -148,7 +150,7 @@ func validateResourceRole(resourceName string, roleResourceName string, division
 		}
 		roleID := roleResource.Primary.ID
 
-		homeDivID, err := genesyscloud.GetHomeDivisionID()
+		homeDivID, err := util.GetHomeDivisionID()
 		if err != nil {
 			return fmt.Errorf("failed to retrieve home division ID: %v", err)
 		}

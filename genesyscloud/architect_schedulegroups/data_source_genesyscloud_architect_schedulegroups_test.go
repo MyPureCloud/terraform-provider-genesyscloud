@@ -3,6 +3,8 @@ package architect_schedulegroups
 import (
 	"fmt"
 	"terraform-provider-genesyscloud/genesyscloud"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 
 	"github.com/google/uuid"
@@ -28,15 +30,15 @@ func TestAccDataSourceArchitectScheduleGroups(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { genesyscloud.TestAccPreCheck(t) },
-		ProviderFactories: genesyscloud.GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Create
 				Config: genesyscloud.GenerateArchitectSchedulesResource( // Create Open schedule
 					schedResource,
 					openSched,
-					genesyscloud.NullValue,
+					util.NullValue,
 					schedDesc,
 					start,
 					end,
@@ -44,7 +46,7 @@ func TestAccDataSourceArchitectScheduleGroups(t *testing.T) {
 				) + generateArchitectScheduleGroupsResource(
 					schedGroupResource,
 					name,
-					genesyscloud.NullValue,
+					util.NullValue,
 					description,
 					time_zone,
 					generateSchedules("open_schedules_id", "genesyscloud_architect_schedules."+schedResource+".id"),

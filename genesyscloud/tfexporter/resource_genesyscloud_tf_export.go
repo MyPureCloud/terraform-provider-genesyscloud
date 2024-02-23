@@ -5,8 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	gcloud "terraform-provider-genesyscloud/genesyscloud/validators"
 
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 

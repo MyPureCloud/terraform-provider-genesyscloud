@@ -4,7 +4,8 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"terraform-provider-genesyscloud/genesyscloud"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 	"time"
 
@@ -42,7 +43,7 @@ func createEmergencyGroup(ctx context.Context, d *schema.ResourceData, meta inte
 	divisionId := d.Get("division_id").(string)
 	enabled := d.Get("enabled").(bool)
 
-	sdkConfig := meta.(*genesyscloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	ap := getArchitectEmergencyGroupProxy(sdkConfig)
 
 	emergencyGroup := platformclientv2.Emergencygroup{
@@ -74,14 +75,14 @@ func createEmergencyGroup(ctx context.Context, d *schema.ResourceData, meta inte
 }
 
 func readEmergencyGroup(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*genesyscloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	ap := getArchitectEmergencyGroupProxy(sdkConfig)
 
 	log.Printf("Reading emergency group %s", d.Id())
-	return genesyscloud.WithRetriesForRead(ctx, d, func() *retry.RetryError {
+	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		emergencyGroup, resp, getErr := ap.getArchitectEmergencyGroup(ctx, d.Id())
 		if getErr != nil {
-			if genesyscloud.IsStatus404(resp) {
+			if util.IsStatus404(resp) {
 				return retry.RetryableError(fmt.Errorf("Failed to read emergency group %s: %s", d.Id(), getErr))
 			}
 			return retry.NonRetryableError(fmt.Errorf("Failed to read emergency group %s: %s", d.Id(), getErr))
@@ -117,10 +118,10 @@ func updateEmergencyGroup(ctx context.Context, d *schema.ResourceData, meta inte
 	divisionId := d.Get("division_id").(string)
 	enabled := d.Get("enabled").(bool)
 
-	sdkConfig := meta.(*genesyscloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	ap := getArchitectEmergencyGroupProxy(sdkConfig)
 
-	diagErr := genesyscloud.RetryWhen(genesyscloud.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+	diagErr := util.RetryWhen(util.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		// Get current emergency group version
 		emergencyGroup, resp, getErr := ap.getArchitectEmergencyGroup(ctx, d.Id())
 		if getErr != nil {
@@ -155,7 +156,7 @@ func updateEmergencyGroup(ctx context.Context, d *schema.ResourceData, meta inte
 }
 
 func deleteEmergencyGroup(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*genesyscloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	ap := getArchitectEmergencyGroupProxy(sdkConfig)
 
 	log.Printf("Deleting emergency group %s", d.Id())
@@ -163,10 +164,10 @@ func deleteEmergencyGroup(ctx context.Context, d *schema.ResourceData, meta inte
 	if err != nil {
 		return diag.Errorf("Failed to delete emergency group %s: %s", d.Id(), err)
 	}
-	return genesyscloud.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
+	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		emergencyGroup, resp, err := ap.getArchitectEmergencyGroup(ctx, d.Id())
 		if err != nil {
-			if genesyscloud.IsStatus404(resp) {
+			if util.IsStatus404(resp) {
 				// group deleted
 				log.Printf("Deleted emergency group %s", d.Id())
 				return nil

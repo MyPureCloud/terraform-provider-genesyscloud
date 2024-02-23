@@ -3,6 +3,8 @@ package outbound_ruleset
 import (
 	"fmt"
 	"strconv"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 
 	"github.com/google/uuid"
@@ -31,7 +33,7 @@ func TestAccResourceOutboundRulesetNoRules(t *testing.T) {
 		previewModeColumnName     = "Cell"
 		previewModeAcceptedValues = []string{strconv.Quote(previewModeColumnName)}
 		columnNames               = []string{strconv.Quote("Cell"), strconv.Quote("Home")}
-		automaticTimeZoneMapping  = gcloud.FalseValue
+		automaticTimeZoneMapping  = util.FalseValue
 
 		queueResource1 = "test-queue-1"
 		queueResource2 = "test-queue-2"
@@ -44,20 +46,20 @@ func TestAccResourceOutboundRulesetNoRules(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
-		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				Config: obContactList.GenerateOutboundContactList(
 					contactListResourceId1,
 					contactListName1,
-					gcloud.NullValue,
+					util.NullValue,
 					strconv.Quote(previewModeColumnName),
 					previewModeAcceptedValues,
 					columnNames,
 					automaticTimeZoneMapping,
-					gcloud.NullValue,
-					gcloud.NullValue,
+					util.NullValue,
+					util.NullValue,
 					obContactList.GeneratePhoneColumnsBlock(
 						"Cell",
 						"cell",
@@ -79,13 +81,13 @@ func TestAccResourceOutboundRulesetNoRules(t *testing.T) {
 				Config: obContactList.GenerateOutboundContactList(
 					contactListResourceId2,
 					contactListName2,
-					gcloud.NullValue,
+					util.NullValue,
 					strconv.Quote(previewModeColumnName),
 					previewModeAcceptedValues,
 					columnNames,
 					automaticTimeZoneMapping,
-					gcloud.NullValue,
-					gcloud.NullValue,
+					util.NullValue,
+					util.NullValue,
 					obContactList.GeneratePhoneColumnsBlock(
 						"Cell",
 						"cell",
@@ -121,27 +123,27 @@ func TestAccResourceOutboundRuleset(t *testing.T) {
 		previewModeColumnName     = "Cell"
 		previewModeAcceptedValues = []string{strconv.Quote(previewModeColumnName)}
 		columnNames               = []string{strconv.Quote("Cell"), strconv.Quote("Home")}
-		automaticTimeZoneMapping  = gcloud.FalseValue
+		automaticTimeZoneMapping  = util.FalseValue
 
 		ruleSetResourceId = "rule-set"
 		ruleSetName1      = "Test Rule Set " + uuid.NewString()
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
-		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				Config: obContactList.GenerateOutboundContactList(
 					contactListResourceId1,
 					contactListName1,
-					gcloud.NullValue,
+					util.NullValue,
 					strconv.Quote(previewModeColumnName),
 					previewModeAcceptedValues,
 					columnNames,
 					automaticTimeZoneMapping,
-					gcloud.NullValue,
-					gcloud.NullValue,
+					util.NullValue,
+					util.NullValue,
 					obContactList.GeneratePhoneColumnsBlock(
 						"Cell",
 						"cell",
@@ -180,13 +182,13 @@ func TestAccResourceOutboundRuleset(t *testing.T) {
 				Config: obContactList.GenerateOutboundContactList(
 					contactListResourceId1,
 					contactListName1,
-					gcloud.NullValue,
+					util.NullValue,
 					strconv.Quote(previewModeColumnName),
 					previewModeAcceptedValues,
 					columnNames,
 					automaticTimeZoneMapping,
-					gcloud.NullValue,
-					gcloud.NullValue,
+					util.NullValue,
+					util.NullValue,
 					obContactList.GeneratePhoneColumnsBlock(
 						"Cell",
 						"cell",
@@ -251,13 +253,13 @@ func TestAccResourceOutboundRuleset(t *testing.T) {
 				Config: obContactList.GenerateOutboundContactList(
 					contactListResourceId1,
 					contactListName1,
-					gcloud.NullValue,
+					util.NullValue,
 					strconv.Quote(previewModeColumnName),
 					previewModeAcceptedValues,
 					columnNames,
 					automaticTimeZoneMapping,
-					gcloud.NullValue,
-					gcloud.NullValue,
+					util.NullValue,
+					util.NullValue,
 					obContactList.GeneratePhoneColumnsBlock(
 						"Cell",
 						"cell",
@@ -319,7 +321,7 @@ func testVerifyroutingRulesetDestroyed(state *terraform.State) error {
 		ruleset, resp, err := outboundAPI.GetOutboundRuleset(rs.Primary.ID)
 		if ruleset != nil {
 			return fmt.Errorf("ruleset (%s) still exists", rs.Primary.ID)
-		} else if gcloud.IsStatus404(resp) {
+		} else if util.IsStatus404(resp) {
 			// ruleset not found as expected
 			continue
 		} else {

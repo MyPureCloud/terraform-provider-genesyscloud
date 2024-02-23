@@ -3,8 +3,7 @@ package outbound_contactlistfilter
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
 )
@@ -120,10 +119,10 @@ func ResourceOutboundContactlistfilter() *schema.Resource {
 	return &schema.Resource{
 		Description: `Genesys Cloud Outbound Contact List Filter`,
 
-		CreateContext: gcloud.CreateWithPooledClient(createOutboundContactlistfilter),
-		ReadContext:   gcloud.ReadWithPooledClient(readOutboundContactlistfilter),
-		UpdateContext: gcloud.UpdateWithPooledClient(updateOutboundContactlistfilter),
-		DeleteContext: gcloud.DeleteWithPooledClient(deleteOutboundContactlistfilter),
+		CreateContext: provider.CreateWithPooledClient(createOutboundContactlistfilter),
+		ReadContext:   provider.ReadWithPooledClient(readOutboundContactlistfilter),
+		UpdateContext: provider.UpdateWithPooledClient(updateOutboundContactlistfilter),
+		DeleteContext: provider.DeleteWithPooledClient(deleteOutboundContactlistfilter),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -159,7 +158,7 @@ func ResourceOutboundContactlistfilter() *schema.Resource {
 // OutboundContactlistfilterExporter returns the resourceExporter object used to hold the genesyscloud_outbound_contactlistfilter exporter's config
 func OutboundContactlistfilterExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
-		GetResourcesFunc: gcloud.GetAllWithPooledClient(getAllAuthOutboundContactlistfilters),
+		GetResourcesFunc: provider.GetAllWithPooledClient(getAllAuthOutboundContactlistfilters),
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			"contact_list_id": {RefType: "genesyscloud_outbound_contact_list"},
 		},
@@ -170,7 +169,7 @@ func OutboundContactlistfilterExporter() *resourceExporter.ResourceExporter {
 func DataSourceOutboundContactlistfilter() *schema.Resource {
 	return &schema.Resource{
 		Description: "Data source for Genesys Cloud Outbound Contact List Filters. Select a contact list filter by name.",
-		ReadContext: gcloud.ReadWithPooledClient(dataSourceOutboundContactlistfilterRead),
+		ReadContext: provider.ReadWithPooledClient(dataSourceOutboundContactlistfilterRead),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},

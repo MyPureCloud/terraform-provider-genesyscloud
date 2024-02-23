@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"log"
 	"regexp"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -118,17 +120,17 @@ func getAllJourneyOutcomes(_ context.Context, clientConfig *platformclientv2.Con
 
 func JourneyOutcomeExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
-		GetResourcesFunc: GetAllWithPooledClient(getAllJourneyOutcomes),
+		GetResourcesFunc: provider.GetAllWithPooledClient(getAllJourneyOutcomes),
 		RefAttrs:         map[string]*resourceExporter.RefAttrSettings{}, // No references
 	}
 }
 func ResourceJourneyOutcome() *schema.Resource {
 	return &schema.Resource{
 		Description:   "Genesys Cloud Journey Outcome",
-		CreateContext: CreateWithPooledClient(createJourneyOutcome),
-		ReadContext:   ReadWithPooledClient(readJourneyOutcome),
-		UpdateContext: UpdateWithPooledClient(updateJourneyOutcome),
-		DeleteContext: DeleteWithPooledClient(deleteJourneyOutcome),
+		CreateContext: provider.CreateWithPooledClient(createJourneyOutcome),
+		ReadContext:   provider.ReadWithPooledClient(readJourneyOutcome),
+		UpdateContext: provider.UpdateWithPooledClient(updateJourneyOutcome),
+		DeleteContext: provider.DeleteWithPooledClient(deleteJourneyOutcome),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -138,7 +140,7 @@ func ResourceJourneyOutcome() *schema.Resource {
 }
 
 func createJourneyOutcome(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	journeyApi := platformclientv2.NewJourneyApiWithConfig(sdkConfig)
 	journeyOutcome := buildSdkJourneyOutcome(d)
 
@@ -155,14 +157,14 @@ func createJourneyOutcome(ctx context.Context, d *schema.ResourceData, meta inte
 }
 
 func readJourneyOutcome(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	journeyApi := platformclientv2.NewJourneyApiWithConfig(sdkConfig)
 
 	log.Printf("Reading journey outcome %s", d.Id())
-	return WithRetriesForRead(ctx, d, func() *retry.RetryError {
+	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		journeyOutcome, resp, getErr := journeyApi.GetJourneyOutcome(d.Id())
 		if getErr != nil {
-			if IsStatus404(resp) {
+			if util.IsStatus404(resp) {
 				return retry.RetryableError(fmt.Errorf("failed to read journey outcome %s: %s", d.Id(), getErr))
 			}
 			return retry.NonRetryableError(fmt.Errorf("failed to read journey outcome %s: %s", d.Id(), getErr))
@@ -177,12 +179,12 @@ func readJourneyOutcome(ctx context.Context, d *schema.ResourceData, meta interf
 }
 
 func updateJourneyOutcome(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	journeyApi := platformclientv2.NewJourneyApiWithConfig(sdkConfig)
 	patchOutcome := buildSdkPatchOutcome(d)
 
 	log.Printf("Updating journey outcome %s", d.Id())
-	diagErr := RetryWhen(IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+	diagErr := util.RetryWhen(util.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		// Get current journey outcome version
 		journeyOutcome, resp, getErr := journeyApi.GetJourneyOutcome(d.Id())
 		if getErr != nil {
@@ -207,7 +209,7 @@ func updateJourneyOutcome(ctx context.Context, d *schema.ResourceData, meta inte
 func deleteJourneyOutcome(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	displayName := d.Get("display_name").(string)
 
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	journeyApi := platformclientv2.NewJourneyApiWithConfig(sdkConfig)
 
 	log.Printf("Deleting journey outcome with display name %s", displayName)
@@ -215,10 +217,10 @@ func deleteJourneyOutcome(ctx context.Context, d *schema.ResourceData, meta inte
 		return diag.Errorf("Failed to delete journey outcome with display name %s: %s", displayName, err)
 	}
 
-	return WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
+	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		_, resp, err := journeyApi.GetJourneyOutcome(d.Id())
 		if err != nil {
-			if IsStatus404(resp) {
+			if util.IsStatus404(resp) {
 				// journey outcome deleted
 				log.Printf("Deleted journey outcome %s", d.Id())
 				return nil

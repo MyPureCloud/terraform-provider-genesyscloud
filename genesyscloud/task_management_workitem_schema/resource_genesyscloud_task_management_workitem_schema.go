@@ -5,7 +5,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -13,8 +15,6 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v121/platformclientv2"
 
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
-
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
 
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
@@ -45,7 +45,7 @@ func getAllTaskManagementWorkitemSchemas(ctx context.Context, clientConfig *plat
 
 // createTaskManagementWorkitemSchema is used by the task_management_workitem_schema resource to create Genesys cloud task management workitem schemas
 func createTaskManagementWorkitemSchema(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getTaskManagementProxy(sdkConfig)
 
 	dataSchema, err := BuildSdkWorkitemSchema(d, nil)
@@ -78,15 +78,15 @@ func createTaskManagementWorkitemSchema(ctx context.Context, d *schema.ResourceD
 
 // readTaskManagementWorkitemSchema is used by the task_management_workitem_schema resource to read a task management workitem schema from genesys cloud
 func readTaskManagementWorkitemSchema(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getTaskManagementProxy(sdkConfig)
 
 	log.Printf("Reading task management workitem schema %s", d.Id())
 
-	return gcloud.WithRetriesForRead(ctx, d, func() *retry.RetryError {
+	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		schema, respCode, getErr := proxy.getTaskManagementWorkitemSchemaById(ctx, d.Id())
 		if getErr != nil {
-			if gcloud.IsStatus404ByInt(respCode) {
+			if util.IsStatus404ByInt(respCode) {
 				return retry.RetryableError(fmt.Errorf("failed to read task management workitem schema %s: %s", d.Id(), getErr))
 			}
 			return retry.NonRetryableError(fmt.Errorf("failed to read task management workitem schema %s: %s", d.Id(), getErr))
@@ -99,7 +99,7 @@ func readTaskManagementWorkitemSchema(ctx context.Context, d *schema.ResourceDat
 			return retry.NonRetryableError(fmt.Errorf("error in reading json schema properties of %s: %v", *schema.Name, err))
 		}
 		var schemaPropsPtr *string
-		if string(schemaProps) != gcloud.NullValue {
+		if string(schemaProps) != util.NullValue {
 			schemaPropsStr := string(schemaProps)
 			schemaPropsPtr = &schemaPropsStr
 		}
@@ -116,7 +116,7 @@ func readTaskManagementWorkitemSchema(ctx context.Context, d *schema.ResourceDat
 
 // updateTaskManagementWorkitemSchema is used by the task_management_workitem_schema resource to update a task management workitem schema in Genesys Cloud
 func updateTaskManagementWorkitemSchema(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getTaskManagementProxy(sdkConfig)
 
 	log.Printf("Getting version of workitem schema")
@@ -142,7 +142,7 @@ func updateTaskManagementWorkitemSchema(ctx context.Context, d *schema.ResourceD
 
 // deleteTaskManagementWorkitemSchema is used by the task_management_workitem_schema resource to delete a task management workitem schema from Genesys cloud
 func deleteTaskManagementWorkitemSchema(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getTaskManagementProxy(sdkConfig)
 
 	_, err := proxy.deleteTaskManagementWorkitemSchema(ctx, d.Id())
@@ -150,10 +150,10 @@ func deleteTaskManagementWorkitemSchema(ctx context.Context, d *schema.ResourceD
 		return diag.Errorf("failed to delete task management workitem schema %s: %s", d.Id(), err)
 	}
 
-	return gcloud.WithRetries(ctx, 180*time.Second, func() *retry.RetryError {
+	return util.WithRetries(ctx, 180*time.Second, func() *retry.RetryError {
 		isDeleted, respCode, err := proxy.getTaskManagementWorkitemSchemaDeletedStatus(ctx, d.Id())
 		if err != nil {
-			if gcloud.IsStatus404ByInt(respCode) {
+			if util.IsStatus404ByInt(respCode) {
 				log.Printf("Deleted task management workitem schema %s", d.Id())
 				return nil
 			}

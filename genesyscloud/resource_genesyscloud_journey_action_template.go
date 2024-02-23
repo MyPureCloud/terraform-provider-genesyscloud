@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"log"
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 	"terraform-provider-genesyscloud/genesyscloud/util/stringmap"
 	"terraform-provider-genesyscloud/genesyscloud/util/typeconv"
@@ -310,7 +312,7 @@ func getAllJourneyActionTemplates(_ context.Context, clientConfig *platformclien
 
 func JourneyActionTemplateExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
-		GetResourcesFunc: GetAllWithPooledClient(getAllJourneyActionTemplates),
+		GetResourcesFunc: provider.GetAllWithPooledClient(getAllJourneyActionTemplates),
 		RefAttrs:         map[string]*resourceExporter.RefAttrSettings{}, // No Reference
 	}
 }
@@ -318,10 +320,10 @@ func JourneyActionTemplateExporter() *resourceExporter.ResourceExporter {
 func ResourceJourneyActionTemplate() *schema.Resource {
 	return &schema.Resource{
 		Description:   "Genesys Cloud Journey Action Template",
-		CreateContext: CreateWithPooledClient(createJourneyActionTemplate),
-		ReadContext:   ReadWithPooledClient(readJourneyActionTemplate),
-		UpdateContext: UpdateWithPooledClient(updateJourneyActionTemplate),
-		DeleteContext: DeleteWithPooledClient(deleteJourneyActionTemplate),
+		CreateContext: provider.CreateWithPooledClient(createJourneyActionTemplate),
+		ReadContext:   provider.ReadWithPooledClient(readJourneyActionTemplate),
+		UpdateContext: provider.UpdateWithPooledClient(updateJourneyActionTemplate),
+		DeleteContext: provider.DeleteWithPooledClient(deleteJourneyActionTemplate),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -336,8 +338,8 @@ func createJourneyActionTemplate(ctx context.Context, data *schema.ResourceData,
 	log.Printf("Creating Journey Action Template %s", *actionTemplate.Name)
 	result, resp, err := journeyApi.PostJourneyActiontemplates(*actionTemplate)
 	if err != nil {
-		input, _ := InterfaceToJson(*actionTemplate)
-		return diag.Errorf("failed to create journey action template %s: %s\n(input: %+v)\n(resp: %s)", *actionTemplate.Name, err, input, GetBody(resp))
+		input, _ := util.InterfaceToJson(*actionTemplate)
+		return diag.Errorf("failed to create journey action template %s: %s\n(input: %+v)\n(resp: %s)", *actionTemplate.Name, err, input, util.GetBody(resp))
 	}
 	data.SetId(*result.Id)
 	log.Printf("Created Journey Action Template %s %s", *result.Name, *result.Id)
@@ -347,10 +349,10 @@ func createJourneyActionTemplate(ctx context.Context, data *schema.ResourceData,
 func readJourneyActionTemplate(ctx context.Context, data *schema.ResourceData, i interface{}) diag.Diagnostics {
 	journeyApi := journeyApiConfig(i)
 	log.Printf("Reading Journey Action Template %s", data.Id())
-	return WithRetriesForRead(ctx, data, func() *retry.RetryError {
+	return util.WithRetriesForRead(ctx, data, func() *retry.RetryError {
 		actionTemplate, resp, getErr := journeyApi.GetJourneyActiontemplate(data.Id())
 		if getErr != nil {
-			if IsStatus404(resp) {
+			if util.IsStatus404(resp) {
 				return retry.RetryableError(fmt.Errorf("failed to read Journey Action Template %s: %s", data.Id(), getErr))
 			}
 			return retry.NonRetryableError(fmt.Errorf("failed to read Journey Action Template %s: %s", data.Id(), getErr))
@@ -366,7 +368,7 @@ func updateJourneyActionTemplate(ctx context.Context, data *schema.ResourceData,
 	journeyApi := journeyApiConfig(i)
 	patchActionTemplate := buildSdkPatchActionTemplate(data)
 	log.Printf("Updating Journey Action Template %s", data.Id())
-	diagErr := RetryWhen(IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+	diagErr := util.RetryWhen(util.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		actionTemplate, resp, getErr := journeyApi.GetJourneyActiontemplate(data.Id())
 		if getErr != nil {
 			return resp, diag.Errorf("failed to read current journey action template %s: %s", data.Id(), getErr)
@@ -374,8 +376,8 @@ func updateJourneyActionTemplate(ctx context.Context, data *schema.ResourceData,
 		patchActionTemplate.Version = actionTemplate.Version
 		_, resp, patchErr := journeyApi.PatchJourneyActiontemplate(data.Id(), *patchActionTemplate)
 		if patchErr != nil {
-			input, _ := InterfaceToJson(*patchActionTemplate)
-			return resp, diag.Errorf("error updating journey action template %s: %s\n(input: %+v)\n(resp: %s)", *patchActionTemplate.Name, patchErr, input, GetBody(resp))
+			input, _ := util.InterfaceToJson(*patchActionTemplate)
+			return resp, diag.Errorf("error updating journey action template %s: %s\n(input: %+v)\n(resp: %s)", *patchActionTemplate.Name, patchErr, input, util.GetBody(resp))
 		}
 		return resp, nil
 	})
@@ -393,10 +395,10 @@ func deleteJourneyActionTemplate(ctx context.Context, data *schema.ResourceData,
 	if _, err := journeyApi.DeleteJourneyActiontemplate(data.Id(), true); err != nil {
 		return diag.Errorf("Failed to delete journey action template with name %s: %s", name, err)
 	}
-	return WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
+	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		_, resp, err := journeyApi.GetJourneyActiontemplate(data.Id())
 		if err != nil {
-			if IsStatus404(resp) {
+			if util.IsStatus404(resp) {
 				log.Printf("Deleted Journey Action Template %s", data.Id())
 				return nil
 			}
@@ -407,7 +409,7 @@ func deleteJourneyActionTemplate(ctx context.Context, data *schema.ResourceData,
 }
 
 func journeyApiConfig(meta interface{}) *platformclientv2.JourneyApi {
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	journeyApi := platformclientv2.NewJourneyApiWithConfig(sdkConfig)
 	return journeyApi
 }

@@ -2,10 +2,10 @@ package external_contacts
 
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
+	gcloud "terraform-provider-genesyscloud/genesyscloud/validators"
 )
 
 /*
@@ -196,10 +196,10 @@ func ResourceExternalContact() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud External Contact",
 
-		CreateContext: gcloud.CreateWithPooledClient(createExternalContact),
-		ReadContext:   gcloud.ReadWithPooledClient(readExternalContact),
-		UpdateContext: gcloud.UpdateWithPooledClient(updateExternalContact),
-		DeleteContext: gcloud.DeleteWithPooledClient(deleteExternalContact),
+		CreateContext: provider.CreateWithPooledClient(createExternalContact),
+		ReadContext:   provider.ReadWithPooledClient(readExternalContact),
+		UpdateContext: provider.UpdateWithPooledClient(updateExternalContact),
+		DeleteContext: provider.DeleteWithPooledClient(deleteExternalContact),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -327,7 +327,7 @@ func ResourceExternalContact() *schema.Resource {
 // ExternalContactExporter returns the resourceExporter object used to hold the genesyscloud_externalcontacts_contact exporter's config
 func ExternalContactExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
-		GetResourcesFunc: gcloud.GetAllWithPooledClient(getAllAuthExternalContacts),
+		GetResourcesFunc: provider.GetAllWithPooledClient(getAllAuthExternalContacts),
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			"external_organization": {}, //Need to add this when we external orgs implemented
 		},
@@ -338,7 +338,7 @@ func ExternalContactExporter() *resourceExporter.ResourceExporter {
 func DataSourceExternalContactsContact() *schema.Resource {
 	return &schema.Resource{
 		Description: "Data source for Genesys Cloud external contacts. Select a contact by any string search.",
-		ReadContext: gcloud.ReadWithPooledClient(dataSourceExternalContactsContactRead),
+		ReadContext: provider.ReadWithPooledClient(dataSourceExternalContactsContactRead),
 		Schema: map[string]*schema.Schema{
 			"search": {
 				Description: "The search string for the contact.",

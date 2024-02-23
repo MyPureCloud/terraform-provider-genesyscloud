@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -11,7 +13,6 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 
@@ -44,7 +45,7 @@ func getSites(ctx context.Context, sdkConfig *platformclientv2.Configuration) (r
 }
 
 func createSite(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	sp := getSiteProxy(sdkConfig)
 
 	siteReq := &platformclientv2.Site{
@@ -106,7 +107,7 @@ func createSite(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 		return diagErr
 	}
 
-	diagErr = gcloud.WithRetries(ctx, 60*time.Second, func() *retry.RetryError {
+	diagErr = util.WithRetries(ctx, 60*time.Second, func() *retry.RetryError {
 		diagErr = updateSiteOutboundRoutes(ctx, sp, d)
 		if diagErr != nil {
 			return retry.RetryableError(fmt.Errorf(fmt.Sprintf("%v", diagErr), d.Id()))
@@ -132,14 +133,14 @@ func createSite(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 }
 
 func readSite(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	sp := getSiteProxy(sdkConfig)
 
 	log.Printf("Reading site %s", d.Id())
-	return gcloud.WithRetriesForRead(ctx, d, func() *retry.RetryError {
+	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		currentSite, resp, err := sp.getSiteById(ctx, d.Id())
 		if err != nil {
-			if gcloud.IsStatus404(resp) {
+			if util.IsStatus404(resp) {
 				return retry.RetryableError(fmt.Errorf("failed to read site %s: %s", d.Id(), err))
 			}
 			return retry.NonRetryableError(fmt.Errorf("failed to read site %s: %s", d.Id(), err))
@@ -162,11 +163,11 @@ func readSite(ctx context.Context, d *schema.ResourceData, meta interface{}) dia
 		d.Set("caller_name", currentSite.CallerName)
 
 		if currentSite.PrimarySites != nil {
-			d.Set("primary_sites", gcloud.SdkDomainEntityRefArrToList(*currentSite.PrimarySites))
+			d.Set("primary_sites", util.SdkDomainEntityRefArrToList(*currentSite.PrimarySites))
 		}
 
 		if currentSite.SecondarySites != nil {
-			d.Set("secondary_sites", gcloud.SdkDomainEntityRefArrToList(*currentSite.SecondarySites))
+			d.Set("secondary_sites", util.SdkDomainEntityRefArrToList(*currentSite.SecondarySites))
 		}
 
 		if retryErr := readSiteNumberPlans(ctx, sp, d); retryErr != nil {
@@ -189,7 +190,7 @@ func readSite(ctx context.Context, d *schema.ResourceData, meta interface{}) dia
 }
 
 func updateSite(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	sp := getSiteProxy(sdkConfig)
 
 	site := &platformclientv2.Site{
@@ -235,14 +236,14 @@ func updateSite(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	}
 
 	if len(primarySites) > 0 {
-		site.PrimarySites = gcloud.BuildSdkDomainEntityRefArr(d, "primary_sites")
+		site.PrimarySites = util.BuildSdkDomainEntityRefArr(d, "primary_sites")
 	}
 
 	if len(secondarySites) > 0 {
-		site.SecondarySites = gcloud.BuildSdkDomainEntityRefArr(d, "secondary_sites")
+		site.SecondarySites = util.BuildSdkDomainEntityRefArr(d, "secondary_sites")
 	}
 
-	diagErr := gcloud.RetryWhen(gcloud.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+	diagErr := util.RetryWhen(util.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		// Get current site version
 		currentSite, resp, err := sp.getSiteById(ctx, d.Id())
 		if err != nil {
@@ -286,23 +287,23 @@ func updateSite(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 }
 
 func deleteSite(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	sp := getSiteProxy(sdkConfig)
 
 	log.Printf("Deleting site")
 	resp, err := sp.deleteSite(ctx, d.Id())
 	if err != nil {
-		if gcloud.IsStatus404(resp) {
+		if util.IsStatus404(resp) {
 			log.Printf("Site already deleted %s", d.Id())
 			return nil
 		}
 		return diag.Errorf("failed to delete site: %s %s", d.Id(), err)
 	}
 
-	return gcloud.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
+	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		site, resp, err := sp.getSiteById(ctx, d.Id())
 		if err != nil {
-			if gcloud.IsStatus404(resp) {
+			if util.IsStatus404(resp) {
 				// Site deleted
 				log.Printf("Deleted site %s", d.Id())
 				// Need to sleep here because if terraform deletes the dependent location straight away

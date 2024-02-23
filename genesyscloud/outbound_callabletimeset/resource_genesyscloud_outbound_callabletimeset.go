@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 	"time"
 
@@ -11,7 +13,6 @@ import (
 
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -42,7 +43,7 @@ func getAllOutboundCallableTimesets(ctx context.Context, clientConfig *platformc
 func createOutboundCallabletimeset(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	name := d.Get("name").(string)
 
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getOutboundCallabletimesetProxy(sdkConfig)
 
 	callableTimeset := getOutboundCallableTimesetFromResourceData(d)
@@ -61,7 +62,7 @@ func createOutboundCallabletimeset(ctx context.Context, d *schema.ResourceData, 
 
 // updateOutboundCallabletimeset is used by the outbound_callabletimeset resource to update an Outbound Callable Timeset
 func updateOutboundCallabletimeset(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getOutboundCallabletimesetProxy(sdkConfig)
 
 	callableTimeset := getOutboundCallableTimesetFromResourceData(d)
@@ -78,15 +79,15 @@ func updateOutboundCallabletimeset(ctx context.Context, d *schema.ResourceData, 
 
 // readOutboundCallabletimeset is used by the outbound_callabletimeset resource to read an Outbound Callable Timeset from the genesys cloud
 func readOutboundCallabletimeset(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getOutboundCallabletimesetProxy(sdkConfig)
 
 	log.Printf("Reading Outbound Callabletimeset %s", d.Id())
 
-	return gcloud.WithRetriesForRead(ctx, d, func() *retry.RetryError {
+	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		callableTimeset, resp, getErr := proxy.getOutboundCallabletimesetById(ctx, d.Id())
 		if getErr != nil {
-			if gcloud.IsStatus404ByInt(resp) {
+			if util.IsStatus404ByInt(resp) {
 				return retry.RetryableError(fmt.Errorf("Failed to read Outbound Callabletimeset %s: %s", d.Id(), getErr))
 			}
 			return retry.NonRetryableError(fmt.Errorf("Failed to read Outbound Callabletimeset %s: %s", d.Id(), getErr))
@@ -108,7 +109,7 @@ func readOutboundCallabletimeset(ctx context.Context, d *schema.ResourceData, me
 
 // deleteOutboundCallabletimeset is used by the outbound_callabletimeset resource to delete an existing Outbound Callable Timeset from the genesys cloud
 func deleteOutboundCallabletimeset(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getOutboundCallabletimesetProxy(sdkConfig)
 
 	log.Printf("Deleting Outbound Callabletimeset")
@@ -117,10 +118,10 @@ func deleteOutboundCallabletimeset(ctx context.Context, d *schema.ResourceData, 
 		return diag.Errorf("Failed to delete Outbound Callabletimeset: %s", err)
 	}
 
-	return gcloud.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
+	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		resp, err := proxy.deleteOutboundCallabletimeset(ctx, d.Id())
 		if err != nil {
-			if gcloud.IsStatus404ByInt(resp) {
+			if util.IsStatus404ByInt(resp) {
 				// Outbound Callabletimeset deleted
 				log.Printf("Deleted Outbound Callabletimeset %s", d.Id())
 				return nil

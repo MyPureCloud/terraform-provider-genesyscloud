@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 	"time"
 
@@ -26,20 +28,20 @@ func TestAccResourceRoutingEmailDomainSub(t *testing.T) {
 	CleanupRoutingEmailDomains()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Create purecloud subdomain
 				Config: GenerateRoutingEmailDomainResource(
 					domainRes,
 					domainId,
-					TrueValue, // Subdomain clear
-					NullValue,
+					util.TrueValue, // Subdomain clear
+					util.NullValue,
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_routing_email_domain."+domainRes, "domain_id", domainId),
-					resource.TestCheckResourceAttr("genesyscloud_routing_email_domain."+domainRes, "subdomain", TrueValue),
+					resource.TestCheckResourceAttr("genesyscloud_routing_email_domain."+domainRes, "subdomain", util.TrueValue),
 				),
 			},
 			{
@@ -63,20 +65,20 @@ func TestAccResourceRoutingEmailDomainCustom(t *testing.T) {
 	CleanupRoutingEmailDomains()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Create custom domain
 				Config: GenerateRoutingEmailDomainResource(
 					domainRes,
 					domainId,
-					FalseValue, // Subdomain
-					NullValue,
+					util.FalseValue, // Subdomain
+					util.NullValue,
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_routing_email_domain."+domainRes, "domain_id", domainId),
-					resource.TestCheckResourceAttr("genesyscloud_routing_email_domain."+domainRes, "subdomain", FalseValue),
+					resource.TestCheckResourceAttr("genesyscloud_routing_email_domain."+domainRes, "subdomain", util.FalseValue),
 					resource.TestCheckResourceAttr("genesyscloud_routing_email_domain."+domainRes, "mail_from_domain", ""),
 				),
 			},
@@ -85,12 +87,12 @@ func TestAccResourceRoutingEmailDomainCustom(t *testing.T) {
 				Config: GenerateRoutingEmailDomainResource(
 					domainRes,
 					domainId,
-					FalseValue, // Subdomain
+					util.FalseValue, // Subdomain
 					strconv.Quote(mailFromDomain1),
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_routing_email_domain."+domainRes, "domain_id", domainId),
-					resource.TestCheckResourceAttr("genesyscloud_routing_email_domain."+domainRes, "subdomain", FalseValue),
+					resource.TestCheckResourceAttr("genesyscloud_routing_email_domain."+domainRes, "subdomain", util.FalseValue),
 					resource.TestCheckResourceAttr("genesyscloud_routing_email_domain."+domainRes, "mail_from_domain", mailFromDomain1),
 				),
 			},
@@ -102,14 +104,14 @@ func TestAccResourceRoutingEmailDomainCustom(t *testing.T) {
 func testVerifyRoutingEmailDomainDestroyed(state *terraform.State) error {
 	routingAPI := platformclientv2.NewRoutingApi()
 
-	diagErr := WithRetries(context.Background(), 180*time.Second, func() *retry.RetryError {
+	diagErr := util.WithRetries(context.Background(), 180*time.Second, func() *retry.RetryError {
 		for _, rs := range state.RootModule().Resources {
 			if rs.Type != "genesyscloud_routing_email_domain" {
 				continue
 			}
 			_, resp, err := routingAPI.GetRoutingEmailDomain(rs.Primary.ID)
 			if err != nil {
-				if IsStatus404(resp) {
+				if util.IsStatus404(resp) {
 					continue
 				}
 				return retry.NonRetryableError(fmt.Errorf("Unexpected error: %s", err))

@@ -3,6 +3,8 @@ package genesyscloud
 import (
 	"fmt"
 	"strconv"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 
 	"github.com/google/uuid"
@@ -19,8 +21,8 @@ func TestAccDataSourceRoutingQueueBasic(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Create
@@ -28,15 +30,15 @@ func TestAccDataSourceRoutingQueueBasic(t *testing.T) {
 					queueResource,
 					queueName,
 					queueDesc,
-					NullValue, // MANDATORY_TIMEOUT
-					"200000",  // acw_timeout
-					NullValue, // ALL
-					NullValue, // auto_answer_only true
-					NullValue, // No calling party name
-					NullValue, // No calling party number
-					NullValue, // enable_manual_assignment false
-					NullValue, //suppressCall_record_false
-					NullValue, // enable_transcription false
+					util.NullValue, // MANDATORY_TIMEOUT
+					"200000",       // acw_timeout
+					util.NullValue, // ALL
+					util.NullValue, // auto_answer_only true
+					util.NullValue, // No calling party name
+					util.NullValue, // No calling party number
+					util.NullValue, // enable_manual_assignment false
+					util.NullValue, //suppressCall_record_false
+					util.NullValue, // enable_transcription false
 				) + generateRoutingQueueDataSource(
 					queueDataSource,
 					"genesyscloud_routing_queue."+queueResource+".name",
@@ -67,8 +69,8 @@ func TestAccDataSourceRoutingQueueCaching(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				Config: generateRoutingQueueResourceBasic( // queue resource

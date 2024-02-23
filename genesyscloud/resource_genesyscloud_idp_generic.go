@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -25,7 +27,7 @@ func getAllIdpGeneric(_ context.Context, clientConfig *platformclientv2.Configur
 
 	_, resp, getErr := idpAPI.GetIdentityprovidersGeneric()
 	if getErr != nil {
-		if IsStatus404(resp) {
+		if util.IsStatus404(resp) {
 			// Don't export if config doesn't exist
 			return resources, nil
 		}
@@ -38,7 +40,7 @@ func getAllIdpGeneric(_ context.Context, clientConfig *platformclientv2.Configur
 
 func IdpGenericExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
-		GetResourcesFunc: GetAllWithPooledClient(getAllIdpGeneric),
+		GetResourcesFunc: provider.GetAllWithPooledClient(getAllIdpGeneric),
 		RefAttrs:         map[string]*resourceExporter.RefAttrSettings{}, // No references
 	}
 }
@@ -47,10 +49,10 @@ func ResourceIdpGeneric() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud Single Sign-on Generic Identity Provider. See this page for detailed configuration instructions: https://help.mypurecloud.com/articles/add-a-generic-single-sign-on-provider/",
 
-		CreateContext: CreateWithPooledClient(createIdpGeneric),
-		ReadContext:   ReadWithPooledClient(readIdpGeneric),
-		UpdateContext: UpdateWithPooledClient(updateIdpGeneric),
-		DeleteContext: DeleteWithPooledClient(deleteIdpGeneric),
+		CreateContext: provider.CreateWithPooledClient(createIdpGeneric),
+		ReadContext:   provider.ReadWithPooledClient(readIdpGeneric),
+		UpdateContext: provider.UpdateWithPooledClient(updateIdpGeneric),
+		DeleteContext: provider.DeleteWithPooledClient(deleteIdpGeneric),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -130,15 +132,15 @@ func createIdpGeneric(ctx context.Context, d *schema.ResourceData, meta interfac
 }
 
 func readIdpGeneric(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	idpAPI := platformclientv2.NewIdentityProviderApiWithConfig(sdkConfig)
 
 	log.Printf("Reading IDP Generic")
 
-	return WithRetriesForReadCustomTimeout(ctx, d.Timeout(schema.TimeoutRead), d, func() *retry.RetryError {
+	return util.WithRetriesForReadCustomTimeout(ctx, d.Timeout(schema.TimeoutRead), d, func() *retry.RetryError {
 		generic, resp, getErr := idpAPI.GetIdentityprovidersGeneric()
 		if getErr != nil {
-			if IsStatus404(resp) {
+			if util.IsStatus404(resp) {
 				createIdpGeneric(ctx, d, meta)
 				return retry.RetryableError(fmt.Errorf("Failed to read IDP Generic: %s", getErr))
 			}
@@ -217,7 +219,7 @@ func updateIdpGeneric(ctx context.Context, d *schema.ResourceData, meta interfac
 	endpointCompression := d.Get("endpoint_compression").(bool)
 	nameIdentifierFormat := d.Get("name_identifier_format").(string)
 
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	idpAPI := platformclientv2.NewIdentityProviderApiWithConfig(sdkConfig)
 
 	log.Printf("Updating IDP Generic")
@@ -250,7 +252,7 @@ func updateIdpGeneric(ctx context.Context, d *schema.ResourceData, meta interfac
 }
 
 func deleteIdpGeneric(ctx context.Context, _ *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	idpAPI := platformclientv2.NewIdentityProviderApiWithConfig(sdkConfig)
 
 	log.Printf("Deleting IDP Generic")
@@ -259,10 +261,10 @@ func deleteIdpGeneric(ctx context.Context, _ *schema.ResourceData, meta interfac
 		return diag.Errorf("Failed to delete IDP Generic: %s", err)
 	}
 
-	return WithRetries(ctx, 60*time.Second, func() *retry.RetryError {
+	return util.WithRetries(ctx, 60*time.Second, func() *retry.RetryError {
 		_, resp, err := idpAPI.GetIdentityprovidersGeneric()
 		if err != nil {
-			if IsStatus404(resp) {
+			if util.IsStatus404(resp) {
 				// IDP Generic deleted
 				log.Printf("Deleted IDP Generic")
 				return nil

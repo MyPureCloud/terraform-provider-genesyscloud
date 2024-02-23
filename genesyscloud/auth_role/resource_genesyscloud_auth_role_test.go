@@ -5,6 +5,8 @@ import (
 	"strconv"
 	"strings"
 	"terraform-provider-genesyscloud/genesyscloud"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 
 	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
@@ -33,8 +35,8 @@ func TestAccResourceAuthRoleDefault(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { genesyscloud.TestAccPreCheck(t) },
-		ProviderFactories: genesyscloud.GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Modify default role
@@ -87,8 +89,8 @@ func TestAccResourceAuthRoleBasic(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { genesyscloud.TestAccPreCheck(t) },
-		ProviderFactories: genesyscloud.GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Create
@@ -155,8 +157,8 @@ func TestAccResourceAuthRoleConditions(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { genesyscloud.TestAccPreCheck(t) },
-		ProviderFactories: genesyscloud.GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Create with a scalar condition
@@ -380,7 +382,7 @@ func testVerifyRolesDestroyed(state *terraform.State) error {
 		role, resp, err := authAPI.GetAuthorizationRole(rs.Primary.ID, false, nil)
 		if role != nil {
 			return fmt.Errorf("Role (%s) still exists", rs.Primary.ID)
-		} else if genesyscloud.IsStatus404(resp) {
+		} else if util.IsStatus404(resp) {
 			// Role not found as expected
 			continue
 		} else {

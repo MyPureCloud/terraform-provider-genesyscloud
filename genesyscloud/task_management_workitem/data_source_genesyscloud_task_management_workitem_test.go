@@ -2,9 +2,10 @@ package task_management_workitem
 
 import (
 	"fmt"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	workbin "terraform-provider-genesyscloud/genesyscloud/task_management_workbin"
 	workitemSchema "terraform-provider-genesyscloud/genesyscloud/task_management_workitem_schema"
 	worktype "terraform-provider-genesyscloud/genesyscloud/task_management_worktype"
@@ -54,8 +55,8 @@ func TestAccDataSourceTaskManagementWorkitem(t *testing.T) {
 
 		workitemDataSrc = "workitem_1_data"
 
-		taskMgmtConfig = workbin.GenerateWorkbinResource(wbResourceId, wbName, wbDescription, gcloud.NullValue) +
-			workbin.GenerateWorkbinResource(wb2ResourceId, wb2Name, wb2Description, gcloud.NullValue) +
+		taskMgmtConfig = workbin.GenerateWorkbinResource(wbResourceId, wbName, wbDescription, util.NullValue) +
+			workbin.GenerateWorkbinResource(wb2ResourceId, wb2Name, wb2Description, util.NullValue) +
 			workitemSchema.GenerateWorkitemSchemaResourceBasic(wsResourceId, wsName, wsDescription) +
 			worktype.GenerateWorktypeResourceBasic(
 				wtResName,
@@ -82,8 +83,8 @@ func TestAccDataSourceTaskManagementWorkitem(t *testing.T) {
 			)
 	)
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
-		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			// Test with using workbin id filter. API requires either or both workbin and worktype id filters.
 			{

@@ -3,9 +3,10 @@ package integration_custom_auth_action
 import (
 	"fmt"
 	"strconv"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	integration "terraform-provider-genesyscloud/genesyscloud/integration"
 	integrationCred "terraform-provider-genesyscloud/genesyscloud/integration_credential"
 
@@ -29,7 +30,7 @@ func TestAccDataSourceIntegrationCustomAuthAction(t *testing.T) {
 			strconv.Quote(credentialResourceName),
 			strconv.Quote(customAuthCredentialType),
 			integrationCred.GenerateCredentialFields(
-				gcloud.GenerateMapProperty(credKey1, strconv.Quote(credVal1)),
+				util.GenerateMapProperty(credKey1, strconv.Quote(credVal1)),
 			),
 		)
 
@@ -39,14 +40,14 @@ func TestAccDataSourceIntegrationCustomAuthAction(t *testing.T) {
 		integTypeID               = "custom-rest-actions"
 		integrationResourceConfig = integration.GenerateIntegrationResource(
 			integResource1,
-			gcloud.NullValue,
+			util.NullValue,
 			strconv.Quote(integTypeID),
 			integration.GenerateIntegrationConfig(
 				strconv.Quote(integResourceName1),
-				gcloud.NullValue, // no notes
+				util.NullValue, // no notes
 				fmt.Sprintf("basicAuth = genesyscloud_integration_credential.%s.id", credentialResource1),
-				gcloud.NullValue, // no properties
-				gcloud.NullValue, // no advanced properties
+				util.NullValue, // no properties
+				util.NullValue, // no advanced properties
 			),
 		)
 
@@ -58,8 +59,8 @@ func TestAccDataSourceIntegrationCustomAuthAction(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
-		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				Config: config,

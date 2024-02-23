@@ -3,7 +3,8 @@ package architect_datatable
 import (
 	"fmt"
 	"strconv"
-	"terraform-provider-genesyscloud/genesyscloud"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 
 	"github.com/google/uuid"
@@ -25,8 +26,8 @@ func TestAccDataSourceArchitectDatatable(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { genesyscloud.TestAccPreCheck(t) },
-		ProviderFactories: genesyscloud.GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Create architect_datatable with a key and one other property
@@ -34,8 +35,8 @@ func TestAccDataSourceArchitectDatatable(t *testing.T) {
 					tableResource,
 					tableName,
 					strconv.Quote(tableDesc),
-					generateArchitectDatatableProperty(propBool, typeBool, genesyscloud.NullValue, genesyscloud.NullValue),
-					generateArchitectDatatableProperty(propNameKey, typeString, genesyscloud.NullValue, genesyscloud.NullValue),
+					generateArchitectDatatableProperty(propBool, typeBool, util.NullValue, util.NullValue),
+					generateArchitectDatatableProperty(propNameKey, typeString, util.NullValue, util.NullValue),
 				) + generateArchitectDatatableDataSource(
 					tableDataSource,
 					"genesyscloud_architect_datatable."+tableResource+".name",

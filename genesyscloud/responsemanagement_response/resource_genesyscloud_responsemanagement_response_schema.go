@@ -3,8 +3,7 @@ package responsemanagement_response
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
 )
@@ -119,10 +118,10 @@ func ResourceResponsemanagementResponse() *schema.Resource {
 	return &schema.Resource{
 		Description: `Genesys Cloud responsemanagement response`,
 
-		CreateContext: gcloud.CreateWithPooledClient(createResponsemanagementResponse),
-		ReadContext:   gcloud.ReadWithPooledClient(readResponsemanagementResponse),
-		UpdateContext: gcloud.UpdateWithPooledClient(updateResponsemanagementResponse),
-		DeleteContext: gcloud.DeleteWithPooledClient(deleteResponsemanagementResponse),
+		CreateContext: provider.CreateWithPooledClient(createResponsemanagementResponse),
+		ReadContext:   provider.ReadWithPooledClient(readResponsemanagementResponse),
+		UpdateContext: provider.UpdateWithPooledClient(updateResponsemanagementResponse),
+		DeleteContext: provider.DeleteWithPooledClient(deleteResponsemanagementResponse),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -199,7 +198,7 @@ func ResourceResponsemanagementResponse() *schema.Resource {
 // ResponsemanagementResponseExporter returns the resourceExporter object used to hold the genesyscloud_responsemanagement_response exporter's config
 func ResponsemanagementResponseExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
-		GetResourcesFunc: gcloud.GetAllWithPooledClient(getAllAuthResponsemanagementResponses),
+		GetResourcesFunc: provider.GetAllWithPooledClient(getAllAuthResponsemanagementResponses),
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			`library_ids`: {
 				RefType: "genesyscloud_responsemanagement_library",
@@ -216,7 +215,7 @@ func ResponsemanagementResponseExporter() *resourceExporter.ResourceExporter {
 func DataSourceResponsemanagementResponse() *schema.Resource {
 	return &schema.Resource{
 		Description: `Data source for Genesys Cloud Responsemanagement Response. Select a Responsemanagement Response by name.`,
-		ReadContext: gcloud.ReadWithPooledClient(dataSourceResponsemanagementResponseRead),
+		ReadContext: provider.ReadWithPooledClient(dataSourceResponsemanagementResponseRead),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},

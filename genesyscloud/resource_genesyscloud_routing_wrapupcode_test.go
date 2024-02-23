@@ -2,6 +2,8 @@ package genesyscloud
 
 import (
 	"fmt"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 
 	"github.com/google/uuid"
@@ -18,8 +20,8 @@ func TestAccResourceRoutingWrapupcode(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Create
@@ -62,7 +64,7 @@ func testVerifyWrapupcodesDestroyed(state *terraform.State) error {
 		wrapupcode, resp, err := routingAPI.GetRoutingWrapupcode(rs.Primary.ID)
 		if wrapupcode != nil {
 			return fmt.Errorf("Wrapupcode (%s) still exists", rs.Primary.ID)
-		} else if IsStatus404(resp) {
+		} else if util.IsStatus404(resp) {
 			// Wrapupcode not found as expected
 			continue
 		} else {

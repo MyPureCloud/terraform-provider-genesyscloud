@@ -5,11 +5,12 @@ import (
 	"fmt"
 	"log"
 	"strings"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
@@ -33,7 +34,7 @@ func customizeSiteDiff(ctx context.Context, diff *schema.ResourceDiff, meta inte
 			return nil
 		}
 
-		sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+		sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 		edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
 
 		siteId := diff.Id()
@@ -123,11 +124,11 @@ func updatePrimarySecondarySites(ctx context.Context, sp *siteProxy, d *schema.R
 	}
 
 	if len(primarySites) > 0 {
-		site.PrimarySites = gcloud.BuildSdkDomainEntityRefArr(d, "primary_sites")
+		site.PrimarySites = util.BuildSdkDomainEntityRefArr(d, "primary_sites")
 	}
 
 	if len(secondarySites) > 0 {
-		site.SecondarySites = gcloud.BuildSdkDomainEntityRefArr(d, "secondary_sites")
+		site.SecondarySites = util.BuildSdkDomainEntityRefArr(d, "secondary_sites")
 	}
 
 	_, resp, err = sp.updateSite(ctx, siteId, site)
@@ -228,7 +229,7 @@ func updateSiteNumberPlans(ctx context.Context, sp *siteProxy, d *schema.Resourc
 		}
 	}
 
-	diagErr := gcloud.RetryWhen(gcloud.IsStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+	diagErr := util.RetryWhen(util.IsStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		log.Printf("Updating number plans for site %s", d.Id())
 
 		_, resp, err := sp.updateSiteNumberPlans(ctx, d.Id(), &updatedNumberPlans)
@@ -307,7 +308,7 @@ func updateSiteOutboundRoutes(ctx context.Context, sp *siteProxy, d *schema.Reso
 		if _, ok := nameInOutboundRoutes(*outboundRouteFromAPI.Name, outboundRoutesFromTf); !ok {
 			resp, err := sp.deleteSiteOutboundRoute(ctx, d.Id(), *outboundRouteFromAPI.Id)
 			if err != nil {
-				if gcloud.IsStatus404(resp) {
+				if util.IsStatus404(resp) {
 					return nil
 				}
 				return diag.Errorf("failed to delete outbound route from site %s: %s", d.Id(), err)
@@ -369,7 +370,7 @@ func isNumberPlanInConfig(planName string, list []interface{}) bool {
 func readSiteNumberPlans(ctx context.Context, sp *siteProxy, d *schema.ResourceData) *retry.RetryError {
 	numberPlans, resp, err := sp.getSiteNumberPlans(ctx, d.Id())
 	if err != nil {
-		if gcloud.IsStatus404(resp) {
+		if util.IsStatus404(resp) {
 			d.SetId("") // Site doesn't exist
 			return nil
 		}

@@ -3,6 +3,8 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -15,7 +17,7 @@ import (
 func DataSourceUser() *schema.Resource {
 	return &schema.Resource{
 		Description: "Data source for Genesys Cloud Users. Select a user by email or name.",
-		ReadContext: ReadWithPooledClient(DataSourceUserRead),
+		ReadContext: provider.ReadWithPooledClient(DataSourceUserRead),
 		Schema: map[string]*schema.Schema{
 			"email": {
 				Description: "User email.",
@@ -32,7 +34,7 @@ func DataSourceUser() *schema.Resource {
 }
 
 func DataSourceUserRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	sdkConfig := m.(*ProviderMeta).ClientConfig
+	sdkConfig := m.(*provider.ProviderMeta).ClientConfig
 	usersAPI := platformclientv2.NewUsersApiWithConfig(sdkConfig)
 
 	exactSearchType := "EXACT"
@@ -56,7 +58,7 @@ func DataSourceUserRead(ctx context.Context, d *schema.ResourceData, m interface
 	}
 
 	// Retry in case user is not yet indexed
-	return WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
+	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
 		users, _, getErr := usersAPI.PostUsersSearch(platformclientv2.Usersearchrequest{
 			SortBy:    &emailField,
 			SortOrder: &sortOrderAsc,

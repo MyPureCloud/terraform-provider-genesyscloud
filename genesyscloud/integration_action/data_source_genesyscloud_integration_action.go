@@ -3,9 +3,9 @@ package integration_action
 import (
 	"context"
 	"fmt"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
-
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -22,14 +22,14 @@ import (
 
 // dataSourceIntegrationActionRead retrieves by name the integration action id in question
 func dataSourceIntegrationActionRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	sdkConfig := m.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := m.(*provider.ProviderMeta).ClientConfig
 	iap := getIntegrationActionsProxy(sdkConfig)
 
 	actionName := d.Get("name").(string)
 
 	// Query for integration actions by name. Retry in case new action is not yet indexed by search.
 	// As action names are non-unique, fail in case of multiple results.
-	return gcloud.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
+	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
 		actions, err := iap.getIntegrationActionsByName(ctx, actionName)
 
 		if err != nil {

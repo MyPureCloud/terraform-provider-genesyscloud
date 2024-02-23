@@ -3,7 +3,8 @@ package employeeperformance_externalmetrics_definitions
 import (
 	"fmt"
 	"strings"
-	"terraform-provider-genesyscloud/genesyscloud"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 
 	"github.com/google/uuid"
@@ -24,8 +25,8 @@ func TestAccResourceEmployeePerformanceExternalMetricsDefintions(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { genesyscloud.TestAccPreCheck(t) },
-		ProviderFactories: genesyscloud.GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Create
@@ -45,7 +46,7 @@ func TestAccResourceEmployeePerformanceExternalMetricsDefintions(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_employeeperformance_externalmetrics_definitions."+defintionResource,
 						"default_objective_type", defaultTypes[0]),
 					resource.TestCheckResourceAttr("genesyscloud_employeeperformance_externalmetrics_definitions."+defintionResource,
-						"enabled", genesyscloud.TrueValue),
+						"enabled", util.TrueValue),
 					resource.TestCheckResourceAttr("genesyscloud_employeeperformance_externalmetrics_definitions."+defintionResource,
 						"unit", units[2]),
 				),
@@ -68,7 +69,7 @@ func TestAccResourceEmployeePerformanceExternalMetricsDefintions(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_employeeperformance_externalmetrics_definitions."+defintionResource,
 						"default_objective_type", defaultTypes[1]),
 					resource.TestCheckResourceAttr("genesyscloud_employeeperformance_externalmetrics_definitions."+defintionResource,
-						"enabled", genesyscloud.FalseValue),
+						"enabled", util.FalseValue),
 					resource.TestCheckResourceAttr("genesyscloud_employeeperformance_externalmetrics_definitions."+defintionResource,
 						"unit", units[2]),
 				),
@@ -91,7 +92,7 @@ func TestAccResourceEmployeePerformanceExternalMetricsDefintions(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_employeeperformance_externalmetrics_definitions."+defintionResource,
 						"default_objective_type", defaultTypes[1]),
 					resource.TestCheckResourceAttr("genesyscloud_employeeperformance_externalmetrics_definitions."+defintionResource,
-						"enabled", genesyscloud.FalseValue),
+						"enabled", util.FalseValue),
 					resource.TestCheckResourceAttr("genesyscloud_employeeperformance_externalmetrics_definitions."+defintionResource,
 						"unit", units[0]),
 				),
@@ -139,7 +140,7 @@ func testVerifyEmployeePerformanceExternalMetricsDefinitionsDestroyed(state *ter
 		definition, resp, err := gamificationAPI.GetEmployeeperformanceExternalmetricsDefinition(rs.Primary.ID)
 		if definition != nil {
 			return fmt.Errorf("Definition (%s) still exists", rs.Primary.ID)
-		} else if genesyscloud.IsStatus404(resp) {
+		} else if util.IsStatus404(resp) {
 			// Definition not found as expected
 			continue
 		} else {

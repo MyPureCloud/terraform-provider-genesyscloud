@@ -6,6 +6,8 @@ import (
 	"log"
 	"net/url"
 	"strings"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -112,7 +114,7 @@ func getAllKnowledgeLabelEntities(knowledgeAPI platformclientv2.KnowledgeApi, kn
 
 func KnowledgeLabelExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
-		GetResourcesFunc: GetAllWithPooledClient(getAllKnowledgeLabels),
+		GetResourcesFunc: provider.GetAllWithPooledClient(getAllKnowledgeLabels),
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			"knowledge_base_id": {RefType: "genesyscloud_knowledge_knowledgebase"},
 		},
@@ -123,10 +125,10 @@ func ResourceKnowledgeLabel() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud Knowledge Label",
 
-		CreateContext: CreateWithPooledClient(createKnowledgeLabel),
-		ReadContext:   ReadWithPooledClient(readKnowledgeLabel),
-		UpdateContext: UpdateWithPooledClient(updateKnowledgeLabel),
-		DeleteContext: DeleteWithPooledClient(deleteKnowledgeLabel),
+		CreateContext: provider.CreateWithPooledClient(createKnowledgeLabel),
+		ReadContext:   provider.ReadWithPooledClient(readKnowledgeLabel),
+		UpdateContext: provider.UpdateWithPooledClient(updateKnowledgeLabel),
+		DeleteContext: provider.DeleteWithPooledClient(deleteKnowledgeLabel),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -152,7 +154,7 @@ func createKnowledgeLabel(ctx context.Context, d *schema.ResourceData, meta inte
 	knowledgeBaseId := d.Get("knowledge_base_id").(string)
 	knowledgeLabel := d.Get("knowledge_label").([]interface{})[0].(map[string]interface{})
 
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	knowledgeAPI := platformclientv2.NewKnowledgeApiWithConfig(sdkConfig)
 
 	knowledgeLabelRequest := buildKnowledgeLabel(knowledgeLabel)
@@ -175,14 +177,14 @@ func readKnowledgeLabel(ctx context.Context, d *schema.ResourceData, meta interf
 	knowledgeLabelId := id[0]
 	knowledgeBaseId := id[1]
 
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	knowledgeAPI := platformclientv2.NewKnowledgeApiWithConfig(sdkConfig)
 
 	log.Printf("Reading knowledge label %s", knowledgeLabelId)
-	return WithRetriesForRead(ctx, d, func() *retry.RetryError {
+	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		knowledgeLabel, resp, getErr := knowledgeAPI.GetKnowledgeKnowledgebaseLabel(knowledgeBaseId, knowledgeLabelId)
 		if getErr != nil {
-			if IsStatus404(resp) {
+			if util.IsStatus404(resp) {
 				return retry.RetryableError(fmt.Errorf("Failed to read knowledge label %s: %s", knowledgeLabelId, getErr))
 			}
 			log.Printf("%s", getErr)
@@ -206,11 +208,11 @@ func updateKnowledgeLabel(ctx context.Context, d *schema.ResourceData, meta inte
 	knowledgeBaseId := id[1]
 	knowledgeLabel := d.Get("knowledge_label").([]interface{})[0].(map[string]interface{})
 
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	knowledgeAPI := platformclientv2.NewKnowledgeApiWithConfig(sdkConfig)
 
 	log.Printf("Updating knowledge label %s", knowledgeLabel["name"].(string))
-	diagErr := RetryWhen(IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+	diagErr := util.RetryWhen(util.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		// Get current knowledge label version
 		_, resp, getErr := knowledgeAPI.GetKnowledgeKnowledgebaseLabel(knowledgeBaseId, knowledgeLabelId)
 		if getErr != nil {
@@ -239,7 +241,7 @@ func deleteKnowledgeLabel(ctx context.Context, d *schema.ResourceData, meta inte
 	knowledgeLabelId := id[0]
 	knowledgeBaseId := id[1]
 
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	knowledgeAPI := platformclientv2.NewKnowledgeApiWithConfig(sdkConfig)
 
 	log.Printf("Deleting knowledge label %s", id)
@@ -248,10 +250,10 @@ func deleteKnowledgeLabel(ctx context.Context, d *schema.ResourceData, meta inte
 		return diag.Errorf("Failed to delete knowledge label %s: %s", id, err)
 	}
 
-	return WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
+	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		_, resp, err := knowledgeAPI.GetKnowledgeKnowledgebaseLabel(knowledgeBaseId, knowledgeLabelId)
 		if err != nil {
-			if IsStatus404(resp) {
+			if util.IsStatus404(resp) {
 				// Knowledge label deleted
 				log.Printf("Deleted knowledge label %s", knowledgeLabelId)
 				return nil

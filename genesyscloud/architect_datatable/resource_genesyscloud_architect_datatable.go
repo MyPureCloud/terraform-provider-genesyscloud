@@ -4,7 +4,8 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"terraform-provider-genesyscloud/genesyscloud"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -65,7 +66,7 @@ func createArchitectDatatable(ctx context.Context, d *schema.ResourceData, meta 
 	divisionID := d.Get("division_id").(string)
 	description := d.Get("description").(string)
 
-	sdkConfig := meta.(*genesyscloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	archProxy := getArchitectDatatableProxy(sdkConfig)
 
 	log.Printf("Creating architect_datatable %s", name)
@@ -100,15 +101,15 @@ func createArchitectDatatable(ctx context.Context, d *schema.ResourceData, meta 
 }
 
 func readArchitectDatatable(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*genesyscloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	archProxy := getArchitectDatatableProxy(sdkConfig)
 
 	log.Printf("Reading architect_datatable %s", d.Id())
 
-	return genesyscloud.WithRetriesForRead(ctx, d, func() *retry.RetryError {
+	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		datatable, resp, getErr := archProxy.getArchitectDatatable(ctx, d.Id(), "schema")
 		if getErr != nil {
-			if genesyscloud.IsStatus404(resp) {
+			if util.IsStatus404(resp) {
 				return retry.RetryableError(fmt.Errorf("Failed to read architect_datatable %s: %s", d.Id(), getErr))
 			}
 			return retry.NonRetryableError(fmt.Errorf("Failed to read architect_datatable %s: %s", d.Id(), getErr))
@@ -141,7 +142,7 @@ func updateArchitectDatatable(ctx context.Context, d *schema.ResourceData, meta 
 	divisionID := d.Get("division_id").(string)
 	description := d.Get("description").(string)
 
-	sdkConfig := meta.(*genesyscloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	archProxy := getArchitectDatatableProxy(sdkConfig)
 
 	log.Printf("Updating architect_datatable %s", name)
@@ -177,7 +178,7 @@ func updateArchitectDatatable(ctx context.Context, d *schema.ResourceData, meta 
 func deleteArchitectDatatable(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	name := d.Get("name").(string)
 
-	sdkConfig := meta.(*genesyscloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	archProxy := getArchitectDatatableProxy(sdkConfig)
 
 	log.Printf("Deleting architect_datatable %s", name)
@@ -186,11 +187,11 @@ func deleteArchitectDatatable(ctx context.Context, d *schema.ResourceData, meta 
 		return diag.Errorf("Failed to delete architect_datatable %s: %s", name, err)
 	}
 
-	return genesyscloud.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
+	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		//might neeed to add expand with the "" as the expand
 		_, resp, err := archProxy.getArchitectDatatable(ctx, d.Id(), "")
 		if err != nil {
-			if genesyscloud.IsStatus404(resp) {
+			if util.IsStatus404(resp) {
 				// Datatable row deleted
 				log.Printf("Deleted architect_datatable row %s", name)
 				return nil

@@ -2,10 +2,10 @@ package task_management_workitem_schema
 
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
@@ -32,10 +32,10 @@ func ResourceTaskManagementWorkitemSchema() *schema.Resource {
 	return &schema.Resource{
 		Description: `Genesys Cloud task management workitem schema`,
 
-		CreateContext: gcloud.CreateWithPooledClient(createTaskManagementWorkitemSchema),
-		ReadContext:   gcloud.ReadWithPooledClient(readTaskManagementWorkitemSchema),
-		UpdateContext: gcloud.UpdateWithPooledClient(updateTaskManagementWorkitemSchema),
-		DeleteContext: gcloud.DeleteWithPooledClient(deleteTaskManagementWorkitemSchema),
+		CreateContext: provider.CreateWithPooledClient(createTaskManagementWorkitemSchema),
+		ReadContext:   provider.ReadWithPooledClient(readTaskManagementWorkitemSchema),
+		UpdateContext: provider.UpdateWithPooledClient(updateTaskManagementWorkitemSchema),
+		DeleteContext: provider.DeleteWithPooledClient(deleteTaskManagementWorkitemSchema),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -56,7 +56,7 @@ func ResourceTaskManagementWorkitemSchema() *schema.Resource {
 				Description:      "The properties for the JSON Schema document.",
 				Optional:         true,
 				Type:             schema.TypeString,
-				DiffSuppressFunc: gcloud.SuppressEquivalentJsonDiffs,
+				DiffSuppressFunc: util.SuppressEquivalentJsonDiffs,
 			},
 			"enabled": {
 				Description: `The schema's enabled/disabled status. A disabled schema cannot be assigned to any other entities, but the data on those entities from the schema still exists.`,
@@ -71,7 +71,7 @@ func ResourceTaskManagementWorkitemSchema() *schema.Resource {
 // TaskManagementWorkitemSchemaExporter returns the resourceExporter object used to hold the genesyscloud_task_management_workitem_schema exporter's config
 func TaskManagementWorkitemSchemaExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
-		GetResourcesFunc:     gcloud.GetAllWithPooledClient(getAllTaskManagementWorkitemSchemas),
+		GetResourcesFunc:     provider.GetAllWithPooledClient(getAllTaskManagementWorkitemSchemas),
 		RefAttrs:             map[string]*resourceExporter.RefAttrSettings{},
 		JsonEncodeAttributes: []string{"properties"},
 	}
@@ -81,7 +81,7 @@ func TaskManagementWorkitemSchemaExporter() *resourceExporter.ResourceExporter {
 func DataSourceTaskManagementWorkitemSchema() *schema.Resource {
 	return &schema.Resource{
 		Description: `Genesys Cloud task management workitem schema data source. Select a workitem schema by its name.`,
-		ReadContext: gcloud.ReadWithPooledClient(dataSourceTaskManagementWorkitemSchemaRead),
+		ReadContext: provider.ReadWithPooledClient(dataSourceTaskManagementWorkitemSchemaRead),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},

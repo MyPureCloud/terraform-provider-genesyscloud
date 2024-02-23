@@ -3,6 +3,7 @@ package outbound
 import (
 	"sync"
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	flow "terraform-provider-genesyscloud/genesyscloud/architect_flow"
 	obAttemptLimit "terraform-provider-genesyscloud/genesyscloud/outbound_attempt_limit"
 	obCallableTimeset "terraform-provider-genesyscloud/genesyscloud/outbound_callabletimeset"
 	outboundCampaignrule "terraform-provider-genesyscloud/genesyscloud/outbound_campaignrule"
@@ -42,7 +43,7 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_telephony_providers_edges_site"] = edgeSite.ResourceSite()
 	providerResources["genesyscloud_routing_wrapupcode"] = gcloud.ResourceRoutingWrapupCode()
 	providerResources["genesyscloud_routing_queue"] = gcloud.ResourceRoutingQueue()
-	providerResources["genesyscloud_flow"] = gcloud.ResourceFlow()
+	providerResources["genesyscloud_flow"] = flow.ResourceArchitectFlow()
 	providerResources["genesyscloud_location"] = gcloud.ResourceLocation()
 	providerResources["genesyscloud_outbound_ruleset"] = obRuleset.ResourceOutboundRuleset()
 	providerResources["genesyscloud_outbound_dnclist"] = obDnclist.ResourceOutboundDncList()
@@ -65,7 +66,7 @@ func (r *registerTestInstance) registerTestDataSources() {
 	providerDataSources["genesyscloud_telephony_providers_edges_site"] = edgeSite.DataSourceSite()
 	providerDataSources["genesyscloud_routing_wrapupcode"] = gcloud.DataSourceRoutingWrapupcode()
 	providerDataSources["genesyscloud_routing_queue"] = gcloud.DataSourceRoutingQueue()
-	providerDataSources["genesyscloud_flow"] = gcloud.DataSourceFlow()
+	providerDataSources["genesyscloud_flow"] = flow.DataSourceArchitectFlow()
 	providerDataSources["genesyscloud_location"] = gcloud.DataSourceLocation()
 	providerDataSources["genesyscloud_auth_division_home"] = gcloud.DataSourceAuthDivisionHome()
 	providerDataSources["genesyscloud_outbound_ruleset"] = obRuleset.DataSourceOutboundRuleset()

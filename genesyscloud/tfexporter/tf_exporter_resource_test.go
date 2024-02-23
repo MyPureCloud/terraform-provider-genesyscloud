@@ -5,6 +5,8 @@ import (
 	dt "terraform-provider-genesyscloud/genesyscloud/architect_datatable"
 	"terraform-provider-genesyscloud/genesyscloud/architect_datatable_row"
 	emergencyGroup "terraform-provider-genesyscloud/genesyscloud/architect_emergencygroup"
+	flow "terraform-provider-genesyscloud/genesyscloud/architect_flow"
+
 	grammar "terraform-provider-genesyscloud/genesyscloud/architect_grammar"
 	grammarLanguage "terraform-provider-genesyscloud/genesyscloud/architect_grammar_language"
 	archIvr "terraform-provider-genesyscloud/genesyscloud/architect_ivr"
@@ -83,7 +85,7 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_architect_datatable"] = dt.ResourceArchitectDatatable()
 	providerResources["genesyscloud_architect_datatable_row"] = architect_datatable_row.ResourceArchitectDatatableRow()
 	providerResources["genesyscloud_architect_emergencygroup"] = emergencyGroup.ResourceArchitectEmergencyGroup()
-	providerResources["genesyscloud_flow"] = gcloud.ResourceFlow()
+	providerResources["genesyscloud_flow"] = flow.ResourceArchitectFlow()
 	providerResources["genesyscloud_flow_milestone"] = flowMilestone.ResourceFlowMilestone()
 	providerResources["genesyscloud_flow_outcome"] = flowOutcome.ResourceFlowOutcome()
 	providerResources["genesyscloud_architect_ivr"] = archIvr.ResourceArchitectIvrConfig()
@@ -182,7 +184,7 @@ func (r *registerTestInstance) registerTestExporters() {
 	RegisterExporter("genesyscloud_auth_division", gcloud.AuthDivisionExporter())
 	RegisterExporter("genesyscloud_auth_role", authRole.AuthRoleExporter())
 	RegisterExporter("genesyscloud_employeeperformance_externalmetrics_definitions", employeeperformanceExternalmetricsDefinition.EmployeeperformanceExternalmetricsDefinitionExporter())
-	RegisterExporter("genesyscloud_flow", gcloud.FlowExporter())
+	RegisterExporter("genesyscloud_flow", flow.ArchitectFlowExporter())
 	RegisterExporter("genesyscloud_flow_milestone", flowMilestone.FlowMilestoneExporter())
 	RegisterExporter("genesyscloud_flow_outcome", flowOutcome.FlowOutcomeExporter())
 	RegisterExporter("genesyscloud_group", gcloud.GroupExporter())

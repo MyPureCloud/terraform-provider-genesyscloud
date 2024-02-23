@@ -2,7 +2,8 @@ package responsemanagement_responseasset
 
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/validators"
 
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
 )
@@ -28,10 +29,10 @@ func ResourceResponseManagementResponseAsset() *schema.Resource {
 	return &schema.Resource{
 		Description: `Genesys Cloud responsemanagement response asset`,
 
-		CreateContext: gcloud.CreateWithPooledClient(createRespManagementRespAsset),
-		ReadContext:   gcloud.ReadWithPooledClient(readRespManagementRespAsset),
-		UpdateContext: gcloud.UpdateWithPooledClient(updateRespManagementRespAsset),
-		DeleteContext: gcloud.DeleteWithPooledClient(deleteRespManagementRespAsset),
+		CreateContext: provider.CreateWithPooledClient(createRespManagementRespAsset),
+		ReadContext:   provider.ReadWithPooledClient(readRespManagementRespAsset),
+		UpdateContext: provider.UpdateWithPooledClient(updateRespManagementRespAsset),
+		DeleteContext: provider.DeleteWithPooledClient(deleteRespManagementRespAsset),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -42,7 +43,7 @@ func ResourceResponseManagementResponseAsset() *schema.Resource {
 				Required:         true,
 				ForceNew:         true,
 				Type:             schema.TypeString,
-				ValidateDiagFunc: gcloud.ValidateResponseAssetName,
+				ValidateDiagFunc: validators.ValidateResponseAssetName,
 			},
 			`division_id`: {
 				Description: `Division to associate to this asset. Can only be used with this division.`,
@@ -57,7 +58,7 @@ func ResourceResponseManagementResponseAsset() *schema.Resource {
 func DataSourceResponseManagementResponseAsset() *schema.Resource {
 	return &schema.Resource{
 		Description: "Data source for Genesys Cloud Response Management Response Assets. Select a response asset by name.",
-		ReadContext: gcloud.ReadWithPooledClient(dataSourceResponseManagementResponseAssetRead),
+		ReadContext: provider.ReadWithPooledClient(dataSourceResponseManagementResponseAssetRead),
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Description: "Response asset name.",

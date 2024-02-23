@@ -3,6 +3,9 @@ package outbound_callanalysisresponseset
 import (
 	"fmt"
 	"strconv"
+	"terraform-provider-genesyscloud/genesyscloud/architect_flow"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
@@ -36,14 +39,14 @@ func TestAccResourceOutboundCallAnalysisResponseSet(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
-		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				Config: GenerateOutboundCallAnalysisResponseSetResource(
 					resourceId,
 					name,
-					gcloud.TrueValue,
+					util.TrueValue,
 					GenerateCarsResponsesBlock(
 						GenerateCarsResponse(
 							identifier1,
@@ -67,7 +70,7 @@ func TestAccResourceOutboundCallAnalysisResponseSet(t *testing.T) {
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_outbound_callanalysisresponseset."+resourceId, "name", name),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_callanalysisresponseset."+resourceId, "beep_detection_enabled", gcloud.TrueValue),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_callanalysisresponseset."+resourceId, "beep_detection_enabled", util.TrueValue),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_callanalysisresponseset."+resourceId, "responses.0."+identifier1+".0.reaction_type", "transfer"),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_callanalysisresponseset."+resourceId, "responses.0."+identifier2+".0.reaction_type", "transfer"),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_callanalysisresponseset."+resourceId, "responses.0."+identifier3+".0.reaction_type", "transfer"),
@@ -117,26 +120,26 @@ func TestAccResourceOutboundCallAnalysisResponseSet(t *testing.T) {
 				Config: `data "genesyscloud_auth_division_home" "home" {}` + obContactList.GenerateOutboundContactList(
 					contactListResourceId,
 					contactListName,
-					gcloud.NullValue,
-					gcloud.NullValue,
+					util.NullValue,
+					util.NullValue,
 					[]string{},
 					[]string{strconv.Quote("Cell")},
 					FalseValue,
-					gcloud.NullValue,
-					gcloud.NullValue,
+					util.NullValue,
+					util.NullValue,
 					obContactList.GeneratePhoneColumnsBlock("Cell",
 						"cell",
-						gcloud.NullValue,
+						util.NullValue,
 					),
 				) + gcloud.GenerateRoutingWrapupcodeResource(
 					wrapupCodeResourceId,
 					wrapupCodeName,
-				) + gcloud.GenerateFlowResource(
+				) + architect_flow.GenerateFlowResource(
 					flowResourceId,
 					outboundFlowFilePath,
 					"",
 					false,
-					gcloud.GenerateSubstitutionsMap(map[string]string{
+					util.GenerateSubstitutionsMap(map[string]string{
 						"flow_name":          outboundFlowName,
 						"home_division_name": "${data.genesyscloud_auth_division_home.home.name}",
 						"contact_list_name":  "${genesyscloud_outbound_contact_list." + contactListResourceId + ".name}",
@@ -179,7 +182,7 @@ func testVerifyCallAnalysisResponseSetDestroyed(state *terraform.State) error {
 		cars, resp, err := outboundAPI.GetOutboundCallanalysisresponseset(rs.Primary.ID)
 		if cars != nil {
 			return fmt.Errorf("call analysis response set (%s) still exists", rs.Primary.ID)
-		} else if gcloud.IsStatus404(resp) {
+		} else if util.IsStatus404(resp) {
 			// CARS not found as expected
 			continue
 		} else {

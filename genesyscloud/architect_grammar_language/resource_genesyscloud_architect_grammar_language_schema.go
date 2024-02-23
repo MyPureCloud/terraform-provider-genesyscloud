@@ -3,7 +3,7 @@ package architect_grammar_language
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
 	"terraform-provider-genesyscloud/genesyscloud/util/architectlanguages"
@@ -51,10 +51,10 @@ func ResourceArchitectGrammarLanguage() *schema.Resource {
 	return &schema.Resource{
 		Description: `Genesys Cloud architect grammar language`,
 
-		CreateContext: gcloud.CreateWithPooledClient(createArchitectGrammarLanguage),
-		ReadContext:   gcloud.ReadWithPooledClient(readArchitectGrammarLanguage),
-		UpdateContext: gcloud.UpdateWithPooledClient(updateArchitectGrammarLanguage),
-		DeleteContext: gcloud.DeleteWithPooledClient(deleteArchitectGrammarLanguage),
+		CreateContext: provider.CreateWithPooledClient(createArchitectGrammarLanguage),
+		ReadContext:   provider.ReadWithPooledClient(readArchitectGrammarLanguage),
+		UpdateContext: provider.UpdateWithPooledClient(updateArchitectGrammarLanguage),
+		DeleteContext: provider.DeleteWithPooledClient(deleteArchitectGrammarLanguage),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -94,7 +94,7 @@ func ResourceArchitectGrammarLanguage() *schema.Resource {
 // ArchitectGrammarLanguageExporter returns the resourceExporter object used to hold the genesyscloud_architect_grammar_language exporter's config
 func ArchitectGrammarLanguageExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
-		GetResourcesFunc: gcloud.GetAllWithPooledClient(getAllAuthArchitectGrammarLanguage),
+		GetResourcesFunc: provider.GetAllWithPooledClient(getAllAuthArchitectGrammarLanguage),
 		CustomFileWriter: resourceExporter.CustomFileWriterSettings{
 			RetrieveAndWriteFilesFunc: ArchitectGrammarLanguageResolver,
 			SubDirectory:              "language_files",

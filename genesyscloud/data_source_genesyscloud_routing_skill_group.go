@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -17,7 +19,7 @@ import (
 func dataSourceRoutingSkillGroup() *schema.Resource {
 	return &schema.Resource{
 		Description: "Data source for Genesys Cloud Routing Skills Groups. Select a skill group by name.",
-		ReadContext: ReadWithPooledClient(dataSourceRoutingSkillGroupRead),
+		ReadContext: provider.ReadWithPooledClient(dataSourceRoutingSkillGroupRead),
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Description: "Skill group name.",
@@ -30,13 +32,13 @@ func dataSourceRoutingSkillGroup() *schema.Resource {
 
 func dataSourceRoutingSkillGroupRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 
-	sdkConfig := m.(*ProviderMeta).ClientConfig
+	sdkConfig := m.(*provider.ProviderMeta).ClientConfig
 	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
 
 	name := d.Get("name").(string)
 
 	// Find first non-deleted skill by name. Retry in case new skill is not yet indexed by search
-	return WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
+	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
 		for pageNum := 1; ; pageNum++ {
 			const pageSize = 100
 

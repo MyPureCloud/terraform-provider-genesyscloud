@@ -3,9 +3,9 @@ package task_management_workitem
 import (
 	"encoding/json"
 	"fmt"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -89,7 +89,7 @@ func buildCustomFieldsNillable(fieldsJson string) (*map[string]interface{}, erro
 		return nil, nil
 	}
 
-	fieldsInterface, err := gcloud.JsonStringToInterface(fieldsJson)
+	fieldsInterface, err := util.JsonStringToInterface(fieldsJson)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse custom fields %s: %v", fieldsJson, err)
 	}

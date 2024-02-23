@@ -7,12 +7,12 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v121/platformclientv2"
 	"log"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
 
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
-
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
 
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
@@ -41,7 +41,7 @@ func getAllAuthResponsemanagementLibrarys(ctx context.Context, clientConfig *pla
 
 // createResponsemanagementLibrary is used by the responsemanagement_library resource to create Genesys cloud responsemanagement library
 func createResponsemanagementLibrary(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getResponsemanagementLibraryProxy(sdkConfig)
 	responsemanagementLibrary := platformclientv2.Library{
 		Name: platformclientv2.String(d.Get("name").(string)),
@@ -60,15 +60,15 @@ func createResponsemanagementLibrary(ctx context.Context, d *schema.ResourceData
 
 // readResponsemanagementLibrary is used by the responsemanagement_library resource to read an responsemanagement library from genesys cloud
 func readResponsemanagementLibrary(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getResponsemanagementLibraryProxy(sdkConfig)
 
 	log.Printf("Reading responsemanagement library %s", d.Id())
 
-	return gcloud.WithRetriesForRead(ctx, d, func() *retry.RetryError {
+	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		library, respCode, getErr := proxy.getResponsemanagementLibraryById(ctx, d.Id())
 		if getErr != nil {
-			if gcloud.IsStatus404ByInt(respCode) {
+			if util.IsStatus404ByInt(respCode) {
 				return retry.RetryableError(fmt.Errorf("Failed to read responsemanagement library %s: %s", d.Id(), getErr))
 			}
 			return retry.NonRetryableError(fmt.Errorf("Failed to read responsemanagement library %s: %s", d.Id(), getErr))
@@ -85,7 +85,7 @@ func readResponsemanagementLibrary(ctx context.Context, d *schema.ResourceData, 
 
 // updateResponsemanagementLibrary is used by the responsemanagement_library resource to update an responsemanagement library in Genesys Cloud
 func updateResponsemanagementLibrary(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getResponsemanagementLibraryProxy(sdkConfig)
 
 	responsemanagementLibrary := platformclientv2.Library{
@@ -103,7 +103,7 @@ func updateResponsemanagementLibrary(ctx context.Context, d *schema.ResourceData
 
 // deleteResponsemanagementLibrary is used by the responsemanagement_library resource to delete an responsemanagement library from Genesys cloud
 func deleteResponsemanagementLibrary(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getResponsemanagementLibraryProxy(sdkConfig)
 
 	_, err := proxy.deleteResponsemanagementLibrary(ctx, d.Id())
@@ -111,11 +111,11 @@ func deleteResponsemanagementLibrary(ctx context.Context, d *schema.ResourceData
 		return diag.Errorf("Failed to delete responsemanagement library %s: %s", d.Id(), err)
 	}
 
-	return gcloud.WithRetries(ctx, 180*time.Second, func() *retry.RetryError {
+	return util.WithRetries(ctx, 180*time.Second, func() *retry.RetryError {
 		_, respCode, err := proxy.getResponsemanagementLibraryById(ctx, d.Id())
 
 		if err != nil {
-			if gcloud.IsStatus404ByInt(respCode) {
+			if util.IsStatus404ByInt(respCode) {
 				log.Printf("Deleted responsemanagement library %s", d.Id())
 				return nil
 			}

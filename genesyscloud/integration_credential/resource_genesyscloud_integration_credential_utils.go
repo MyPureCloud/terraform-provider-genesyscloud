@@ -2,10 +2,8 @@ package integration_credential
 
 import (
 	"fmt"
-
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
-
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 )
 
 /*
@@ -40,5 +38,5 @@ func GenerateCredentialResource(resourceID string, name string, credentialType s
 
 // GenerateCredentialFields builds a terraform string for multiple credential fields
 func GenerateCredentialFields(fields ...string) string {
-	return gcloud.GenerateMapAttr("fields", fields...)
+	return util.GenerateMapAttr("fields", fields...)
 }

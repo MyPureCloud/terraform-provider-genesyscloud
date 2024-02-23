@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -42,7 +44,7 @@ func getAllRoutingWrapupCodes(_ context.Context, clientConfig *platformclientv2.
 
 func RoutingWrapupCodeExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
-		GetResourcesFunc: GetAllWithPooledClient(getAllRoutingWrapupCodes),
+		GetResourcesFunc: provider.GetAllWithPooledClient(getAllRoutingWrapupCodes),
 		RefAttrs:         map[string]*resourceExporter.RefAttrSettings{}, // No references
 	}
 }
@@ -51,10 +53,10 @@ func ResourceRoutingWrapupCode() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud Routing Wrapup Code",
 
-		CreateContext: CreateWithPooledClient(createRoutingWrapupCode),
-		ReadContext:   ReadWithPooledClient(readRoutingWrapupCode),
-		UpdateContext: UpdateWithPooledClient(updateRoutingWrapupCode),
-		DeleteContext: DeleteWithPooledClient(deleteRoutingWrapupCode),
+		CreateContext: provider.CreateWithPooledClient(createRoutingWrapupCode),
+		ReadContext:   provider.ReadWithPooledClient(readRoutingWrapupCode),
+		UpdateContext: provider.UpdateWithPooledClient(updateRoutingWrapupCode),
+		DeleteContext: provider.DeleteWithPooledClient(deleteRoutingWrapupCode),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -72,7 +74,7 @@ func ResourceRoutingWrapupCode() *schema.Resource {
 func createRoutingWrapupCode(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	name := d.Get("name").(string)
 
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
 
 	log.Printf("Creating wrapupcode %s", name)
@@ -89,14 +91,14 @@ func createRoutingWrapupCode(ctx context.Context, d *schema.ResourceData, meta i
 }
 
 func readRoutingWrapupCode(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
 
 	log.Printf("Reading wrapupcode %s", d.Id())
-	return WithRetriesForRead(ctx, d, func() *retry.RetryError {
+	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		wrapupcode, resp, getErr := routingAPI.GetRoutingWrapupcode(d.Id())
 		if getErr != nil {
-			if IsStatus404(resp) {
+			if util.IsStatus404(resp) {
 				return retry.RetryableError(fmt.Errorf("Failed to read wrapupcode %s: %s", d.Id(), getErr))
 			}
 			return retry.NonRetryableError(fmt.Errorf("Failed to read wrapupcode %s: %s", d.Id(), getErr))
@@ -113,7 +115,7 @@ func readRoutingWrapupCode(ctx context.Context, d *schema.ResourceData, meta int
 func updateRoutingWrapupCode(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	name := d.Get("name").(string)
 
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
 
 	log.Printf("Updating wrapupcode %s", name)
@@ -132,7 +134,7 @@ func updateRoutingWrapupCode(ctx context.Context, d *schema.ResourceData, meta i
 func deleteRoutingWrapupCode(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	name := d.Get("name").(string)
 
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
 
 	log.Printf("Deleting wrapupcode %s", name)
@@ -141,10 +143,10 @@ func deleteRoutingWrapupCode(ctx context.Context, d *schema.ResourceData, meta i
 		return diag.Errorf("Failed to delete wrapupcode %s: %s", name, err)
 	}
 
-	return WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
+	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		_, resp, err := routingAPI.GetRoutingWrapupcode(d.Id())
 		if err != nil {
-			if IsStatus404(resp) {
+			if util.IsStatus404(resp) {
 				// Routing wrapup code deleted
 				log.Printf("Deleted Routing wrapup code %s", d.Id())
 				return nil
