@@ -5,12 +5,13 @@ import (
 	"fmt"
 	"reflect"
 	"strconv"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
@@ -152,7 +153,7 @@ func TestAccResourceTaskManagementWorkitemSchema(t *testing.T) {
 			},
 		}
 
-		customProperties = gcloud.GenerateJsonEncodedProperties(
+		customProperties = util.GenerateJsonEncodedProperties(
 			generateJsonSchemaProperty(attr1.title, attr1.description, attr1.varType,
 				generateAdditionalProperties(attr1.additionalProps)),
 			generateJsonSchemaProperty(attr2.title, attr2.description, attr2.varType,
@@ -179,8 +180,8 @@ func TestAccResourceTaskManagementWorkitemSchema(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
-		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			// Barebones schema. No custom fields
 			{
@@ -192,7 +193,7 @@ func TestAccResourceTaskManagementWorkitemSchema(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName+"."+schemaResId, "name", schemaName),
 					resource.TestCheckResourceAttr(resourceName+"."+schemaResId, "description", schemaDescription),
-					resource.TestCheckResourceAttr(resourceName+"."+schemaResId, "enabled", gcloud.TrueValue),
+					resource.TestCheckResourceAttr(resourceName+"."+schemaResId, "enabled", util.TrueValue),
 				),
 			},
 			// Update with fields
@@ -202,12 +203,12 @@ func TestAccResourceTaskManagementWorkitemSchema(t *testing.T) {
 					schemaName,
 					schemaDescription,
 					customProperties,
-					gcloud.TrueValue,
+					util.TrueValue,
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName+"."+schemaResId, "name", schemaName),
 					resource.TestCheckResourceAttr(resourceName+"."+schemaResId, "description", schemaDescription),
-					resource.TestCheckResourceAttr(resourceName+"."+schemaResId, "enabled", gcloud.TrueValue),
+					resource.TestCheckResourceAttr(resourceName+"."+schemaResId, "enabled", util.TrueValue),
 					validateWorkitemSchemaField(resourceName+"."+schemaResId, attr1.title+"_"+attr1.varType, attr1),
 					validateWorkitemSchemaField(resourceName+"."+schemaResId, attr2.title+"_"+attr2.varType, attr2),
 					validateWorkitemSchemaField(resourceName+"."+schemaResId, attr3.title+"_"+attr3.varType, attr3),
@@ -228,12 +229,12 @@ func TestAccResourceTaskManagementWorkitemSchema(t *testing.T) {
 					schemaName,
 					schemaDescription,
 					customProperties,
-					gcloud.FalseValue,
+					util.FalseValue,
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName+"."+schemaResId, "name", schemaName),
 					resource.TestCheckResourceAttr(resourceName+"."+schemaResId, "description", schemaDescription),
-					resource.TestCheckResourceAttr(resourceName+"."+schemaResId, "enabled", gcloud.FalseValue),
+					resource.TestCheckResourceAttr(resourceName+"."+schemaResId, "enabled", util.FalseValue),
 					validateWorkitemSchemaField(resourceName+"."+schemaResId, attr1.title+"_"+attr1.varType, attr1),
 					validateWorkitemSchemaField(resourceName+"."+schemaResId, attr2.title+"_"+attr2.varType, attr2),
 					validateWorkitemSchemaField(resourceName+"."+schemaResId, attr3.title+"_"+attr3.varType, attr3),
@@ -261,7 +262,7 @@ func testVerifyTaskManagementWorkitemSchemaDestroyed(state *terraform.State) err
 
 		var successPayload map[string]interface{}
 		_, resp, err := taskMgmtApi.GetTaskmanagementWorkitemsSchema(rs.Primary.ID)
-		if gcloud.IsStatus404(resp) {
+		if util.IsStatus404(resp) {
 			continue // does not exist anymore so considered as deleted
 		} else if err != nil {
 			// Unexpected error
@@ -295,12 +296,12 @@ func validateWorkitemSchemaField(resourceName string, fieldName string, checkFie
 				// If slice, do a test for each element
 				for _, elem := range v.([]interface{}) {
 					additionalFieldsTest = append(additionalFieldsTest,
-						gcloud.ValidateValueInJsonAttr(resourceName, "properties", fieldName+"."+k, fmt.Sprint(elem)),
+						util.ValidateValueInJsonAttr(resourceName, "properties", fieldName+"."+k, fmt.Sprint(elem)),
 					)
 				}
 			default:
 				additionalFieldsTest = append(additionalFieldsTest,
-					gcloud.ValidateValueInJsonAttr(resourceName, "properties", fieldName+"."+k, fmt.Sprint(v)),
+					util.ValidateValueInJsonAttr(resourceName, "properties", fieldName+"."+k, fmt.Sprint(v)),
 				)
 			}
 		}
@@ -308,8 +309,8 @@ func validateWorkitemSchemaField(resourceName string, fieldName string, checkFie
 	additionalFieldsComposeTest := resource.ComposeTestCheckFunc(additionalFieldsTest...)
 
 	return resource.ComposeTestCheckFunc(
-		gcloud.ValidateValueInJsonAttr(resourceName, "properties", fieldName+".title", checkField.title),
-		gcloud.ValidateValueInJsonAttr(resourceName, "properties", fieldName+".description", checkField.description),
+		util.ValidateValueInJsonAttr(resourceName, "properties", fieldName+".title", checkField.title),
+		util.ValidateValueInJsonAttr(resourceName, "properties", fieldName+".description", checkField.description),
 		validateCustomFieldType(resourceName, fieldName, checkField.varType),
 		additionalFieldsComposeTest,
 	)
@@ -368,11 +369,11 @@ func generateAdditionalProperties(props map[string]interface{}) string {
 		vv := reflect.ValueOf(v)
 		switch vv.Kind() {
 		case reflect.String:
-			ret += gcloud.GenerateMapProperty(k, strconv.Quote(v.(string)))
+			ret += util.GenerateMapProperty(k, strconv.Quote(v.(string)))
 		case reflect.Map:
-			ret += gcloud.GenerateMapAttr(k, generateAdditionalProperties(v.(map[string]interface{})))
+			ret += util.GenerateMapAttr(k, generateAdditionalProperties(v.(map[string]interface{})))
 		case reflect.Slice:
-			ret += gcloud.GenerateJsonArrayPropertyEnquote(k, lists.InterfaceListToStrings(v.([]interface{}))...)
+			ret += util.GenerateJsonArrayPropertyEnquote(k, lists.InterfaceListToStrings(v.([]interface{}))...)
 		case reflect.Int:
 			fallthrough
 		case reflect.Float32:

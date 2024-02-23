@@ -2,7 +2,8 @@ package telephony_providers_edges_did_pool
 
 import (
 	"context"
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -13,13 +14,13 @@ import (
 
 // dataSourceDidPoolRead retrieves the did pool id using the start and end number
 func dataSourceDidPoolRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	sdkConfig := m.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := m.(*provider.ProviderMeta).ClientConfig
 	proxy := getTelephonyDidPoolProxy(sdkConfig)
 
 	didPoolStartPhoneNumber := d.Get("start_phone_number").(string)
 	didPoolEndPhoneNumber := d.Get("end_phone_number").(string)
 
-	return gcloud.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
+	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
 		id, retryable, err := proxy.getTelephonyDidPoolIdByStartAndEndNumber(ctx, didPoolStartPhoneNumber, didPoolEndPhoneNumber)
 		if err != nil && !retryable {
 			return retry.NonRetryableError(err)

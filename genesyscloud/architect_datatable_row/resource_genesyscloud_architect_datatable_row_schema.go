@@ -2,9 +2,10 @@ package architect_datatable_row
 
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"terraform-provider-genesyscloud/genesyscloud"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 )
 
 const resourceName = "genesyscloud_architect_datatable_row"
@@ -18,7 +19,7 @@ func SetRegistrar(regInstance registrar.Registrar) {
 
 func ArchitectDatatableRowExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
-		GetResourcesFunc: genesyscloud.GetAllWithPooledClient(getAllArchitectDatatableRows),
+		GetResourcesFunc: provider.GetAllWithPooledClient(getAllArchitectDatatableRows),
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			"datatable_id": {RefType: "genesyscloud_architect_datatable"},
 		},
@@ -30,10 +31,10 @@ func ResourceArchitectDatatableRow() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud Architect Datatable Row",
 
-		CreateContext: genesyscloud.CreateWithPooledClient(createArchitectDatatableRow),
-		ReadContext:   genesyscloud.ReadWithPooledClient(readArchitectDatatableRow),
-		UpdateContext: genesyscloud.UpdateWithPooledClient(updateArchitectDatatableRow),
-		DeleteContext: genesyscloud.DeleteWithPooledClient(deleteArchitectDatatableRow),
+		CreateContext: provider.CreateWithPooledClient(createArchitectDatatableRow),
+		ReadContext:   provider.ReadWithPooledClient(readArchitectDatatableRow),
+		UpdateContext: provider.UpdateWithPooledClient(updateArchitectDatatableRow),
+		DeleteContext: provider.DeleteWithPooledClient(deleteArchitectDatatableRow),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -56,7 +57,7 @@ func ResourceArchitectDatatableRow() *schema.Resource {
 				Type:             schema.TypeString,
 				Optional:         true,
 				Computed:         true,
-				DiffSuppressFunc: genesyscloud.SuppressEquivalentJsonDiffs,
+				DiffSuppressFunc: util.SuppressEquivalentJsonDiffs,
 			},
 		},
 		CustomizeDiff: customizeDatatableRowDiff,

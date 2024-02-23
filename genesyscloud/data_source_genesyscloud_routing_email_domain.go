@@ -3,6 +3,8 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -16,7 +18,7 @@ import (
 func DataSourceRoutingEmailDomain() *schema.Resource {
 	return &schema.Resource{
 		Description: "Data source for Genesys Cloud Email Domains. Select an email domain by name",
-		ReadContext: ReadWithPooledClient(DataSourceRoutingEmailDomainRead),
+		ReadContext: provider.ReadWithPooledClient(DataSourceRoutingEmailDomainRead),
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Description: "Email domain name.",
@@ -29,12 +31,12 @@ func DataSourceRoutingEmailDomain() *schema.Resource {
 
 // Looks up the data for the Email Domain
 func DataSourceRoutingEmailDomainRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	sdkConfig := m.(*ProviderMeta).ClientConfig
+	sdkConfig := m.(*provider.ProviderMeta).ClientConfig
 	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
 
 	name := d.Get("name").(string)
 
-	return WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
+	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
 		for pageNum := 1; ; pageNum++ {
 			const pageSize = 100
 

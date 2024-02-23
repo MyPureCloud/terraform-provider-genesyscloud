@@ -3,6 +3,7 @@ package group_roles
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"terraform-provider-genesyscloud/genesyscloud"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
 )
@@ -38,10 +39,10 @@ func ResourceGroupRoles() *schema.Resource {
 	return &schema.Resource{
 		Description: `Genesys Cloud Group Roles maintains group role assignments.`,
 
-		CreateContext: genesyscloud.CreateWithPooledClient(createGroupRoles),
-		ReadContext:   genesyscloud.ReadWithPooledClient(readGroupRoles),
-		UpdateContext: genesyscloud.UpdateWithPooledClient(updateGroupRoles),
-		DeleteContext: genesyscloud.DeleteWithPooledClient(deleteGroupRoles),
+		CreateContext: provider.CreateWithPooledClient(createGroupRoles),
+		ReadContext:   provider.ReadWithPooledClient(readGroupRoles),
+		UpdateContext: provider.UpdateWithPooledClient(updateGroupRoles),
+		DeleteContext: provider.DeleteWithPooledClient(deleteGroupRoles),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -66,7 +67,7 @@ func ResourceGroupRoles() *schema.Resource {
 // GroupRolesExporter returns the resourceExporter object used to hold the genesyscloud_group_roles exporter's config
 func GroupRolesExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
-		GetResourcesFunc: genesyscloud.GetAllWithPooledClient(genesyscloud.GetAllGroups),
+		GetResourcesFunc: provider.GetAllWithPooledClient(genesyscloud.GetAllGroups),
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			"group_id":           {RefType: "genesyscloud_group"},
 			"roles.role_id":      {RefType: "genesyscloud_auth_role"},

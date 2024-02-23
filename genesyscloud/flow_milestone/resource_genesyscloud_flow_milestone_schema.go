@@ -2,8 +2,7 @@ package flow_milestone
 
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
 )
@@ -30,10 +29,10 @@ func ResourceFlowMilestone() *schema.Resource {
 	return &schema.Resource{
 		Description: `Genesys Cloud flow milestone`,
 
-		CreateContext: gcloud.CreateWithPooledClient(createFlowMilestone),
-		ReadContext:   gcloud.ReadWithPooledClient(readFlowMilestone),
-		UpdateContext: gcloud.UpdateWithPooledClient(updateFlowMilestone),
-		DeleteContext: gcloud.DeleteWithPooledClient(deleteFlowMilestone),
+		CreateContext: provider.CreateWithPooledClient(createFlowMilestone),
+		ReadContext:   provider.ReadWithPooledClient(readFlowMilestone),
+		UpdateContext: provider.UpdateWithPooledClient(updateFlowMilestone),
+		DeleteContext: provider.DeleteWithPooledClient(deleteFlowMilestone),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -62,7 +61,7 @@ func ResourceFlowMilestone() *schema.Resource {
 // FlowMilestoneExporter returns the resourceExporter object used to hold the genesyscloud_flow_milestone exporter's config
 func FlowMilestoneExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
-		GetResourcesFunc: gcloud.GetAllWithPooledClient(getAllAuthFlowMilestones),
+		GetResourcesFunc: provider.GetAllWithPooledClient(getAllAuthFlowMilestones),
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			"division_id": {RefType: "genesyscloud_auth_division"},
 		},
@@ -73,7 +72,7 @@ func FlowMilestoneExporter() *resourceExporter.ResourceExporter {
 func DataSourceFlowMilestone() *schema.Resource {
 	return &schema.Resource{
 		Description: `Genesys Cloud flow milestone data source. Select a flow milestone by name`,
-		ReadContext: gcloud.ReadWithPooledClient(dataSourceFlowMilestoneRead),
+		ReadContext: provider.ReadWithPooledClient(dataSourceFlowMilestoneRead),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},

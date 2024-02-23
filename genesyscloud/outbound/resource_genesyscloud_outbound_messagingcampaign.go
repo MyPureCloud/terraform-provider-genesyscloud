@@ -4,13 +4,14 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -73,10 +74,10 @@ func ResourceOutboundMessagingCampaign() *schema.Resource {
 	return &schema.Resource{
 		Description: `Genesys Cloud Outbound Messaging Campaign`,
 
-		CreateContext: gcloud.CreateWithPooledClient(createOutboundMessagingcampaign),
-		ReadContext:   gcloud.ReadWithPooledClient(readOutboundMessagingcampaign),
-		UpdateContext: gcloud.UpdateWithPooledClient(updateOutboundMessagingcampaign),
-		DeleteContext: gcloud.DeleteWithPooledClient(deleteOutboundMessagingcampaign),
+		CreateContext: provider.CreateWithPooledClient(createOutboundMessagingcampaign),
+		ReadContext:   provider.ReadWithPooledClient(readOutboundMessagingcampaign),
+		UpdateContext: provider.UpdateWithPooledClient(updateOutboundMessagingcampaign),
+		DeleteContext: provider.DeleteWithPooledClient(deleteOutboundMessagingcampaign),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -187,7 +188,7 @@ func getAllOutboundMessagingcampaign(_ context.Context, clientConfig *platformcl
 
 func OutboundMessagingcampaignExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
-		GetResourcesFunc: gcloud.GetAllWithPooledClient(getAllOutboundMessagingcampaign),
+		GetResourcesFunc: provider.GetAllWithPooledClient(getAllOutboundMessagingcampaign),
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			`division_id`:             {RefType: "genesyscloud_auth_division"},
 			`contact_list_id`:         {RefType: "genesyscloud_outbound_contact_list"},
@@ -206,18 +207,18 @@ func createOutboundMessagingcampaign(ctx context.Context, d *schema.ResourceData
 	messagesPerMinute := d.Get("messages_per_minute").(int)
 	campaignStatus := d.Get("campaign_status").(string)
 
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	outboundApi := platformclientv2.NewOutboundApiWithConfig(sdkConfig)
 
 	sdkmessagingcampaign := platformclientv2.Messagingcampaign{
-		Division:           gcloud.BuildSdkDomainEntityRef(d, "division_id"),
-		CallableTimeSet:    gcloud.BuildSdkDomainEntityRef(d, "callable_time_set_id"),
-		ContactList:        gcloud.BuildSdkDomainEntityRef(d, "contact_list_id"),
-		DncLists:           gcloud.BuildSdkDomainEntityRefArr(d, "dnc_list_ids"),
+		Division:           util.BuildSdkDomainEntityRef(d, "division_id"),
+		CallableTimeSet:    util.BuildSdkDomainEntityRef(d, "callable_time_set_id"),
+		ContactList:        util.BuildSdkDomainEntityRef(d, "contact_list_id"),
+		DncLists:           util.BuildSdkDomainEntityRefArr(d, "dnc_list_ids"),
 		AlwaysRunning:      &alwaysRunning,
 		ContactSorts:       buildSdkoutboundmessagingcampaignContactsortSlice(d.Get("contact_sorts").([]interface{})),
 		MessagesPerMinute:  &messagesPerMinute,
-		ContactListFilters: gcloud.BuildSdkDomainEntityRefArr(d, "contact_list_filter_ids"),
+		ContactListFilters: util.BuildSdkDomainEntityRefArr(d, "contact_list_filter_ids"),
 		SmsConfig:          buildSdkoutboundmessagingcampaignSmsconfig(d.Get("sms_config").(*schema.Set)),
 	}
 
@@ -247,18 +248,18 @@ func updateOutboundMessagingcampaign(ctx context.Context, d *schema.ResourceData
 	messagesPerMinute := d.Get("messages_per_minute").(int)
 	campaignStatus := d.Get("campaign_status").(string)
 
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	outboundApi := platformclientv2.NewOutboundApiWithConfig(sdkConfig)
 
 	sdkmessagingcampaign := platformclientv2.Messagingcampaign{
-		Division:           gcloud.BuildSdkDomainEntityRef(d, "division_id"),
-		CallableTimeSet:    gcloud.BuildSdkDomainEntityRef(d, "callable_time_set_id"),
-		ContactList:        gcloud.BuildSdkDomainEntityRef(d, "contact_list_id"),
-		DncLists:           gcloud.BuildSdkDomainEntityRefArr(d, "dnc_list_ids"),
+		Division:           util.BuildSdkDomainEntityRef(d, "division_id"),
+		CallableTimeSet:    util.BuildSdkDomainEntityRef(d, "callable_time_set_id"),
+		ContactList:        util.BuildSdkDomainEntityRef(d, "contact_list_id"),
+		DncLists:           util.BuildSdkDomainEntityRefArr(d, "dnc_list_ids"),
 		AlwaysRunning:      &alwaysRunning,
 		ContactSorts:       buildSdkoutboundmessagingcampaignContactsortSlice(d.Get("contact_sorts").([]interface{})),
 		MessagesPerMinute:  &messagesPerMinute,
-		ContactListFilters: gcloud.BuildSdkDomainEntityRefArr(d, "contact_list_filter_ids"),
+		ContactListFilters: util.BuildSdkDomainEntityRefArr(d, "contact_list_filter_ids"),
 		SmsConfig:          buildSdkoutboundmessagingcampaignSmsconfig(d.Get("sms_config").(*schema.Set)),
 	}
 
@@ -271,7 +272,7 @@ func updateOutboundMessagingcampaign(ctx context.Context, d *schema.ResourceData
 	}
 
 	log.Printf("Updating Outbound Messagingcampaign %s", name)
-	diagErr := gcloud.RetryWhen(gcloud.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+	diagErr := util.RetryWhen(util.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		// Get current Outbound Messagingcampaign version
 		outboundMessagingcampaign, resp, getErr := outboundApi.GetOutboundMessagingcampaign(d.Id())
 		if getErr != nil {
@@ -293,15 +294,15 @@ func updateOutboundMessagingcampaign(ctx context.Context, d *schema.ResourceData
 }
 
 func readOutboundMessagingcampaign(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	outboundApi := platformclientv2.NewOutboundApiWithConfig(sdkConfig)
 
 	log.Printf("Reading Outbound Messagingcampaign %s", d.Id())
 
-	return gcloud.WithRetriesForRead(ctx, d, func() *retry.RetryError {
+	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		sdkmessagingcampaign, resp, getErr := outboundApi.GetOutboundMessagingcampaign(d.Id())
 		if getErr != nil {
-			if gcloud.IsStatus404(resp) {
+			if util.IsStatus404(resp) {
 				return retry.RetryableError(fmt.Errorf("Failed to read Outbound Messagingcampaign %s: %s", d.Id(), getErr))
 			}
 			return retry.NonRetryableError(fmt.Errorf("Failed to read Outbound Messagingcampaign %s: %s", d.Id(), getErr))
@@ -357,10 +358,10 @@ func readOutboundMessagingcampaign(ctx context.Context, d *schema.ResourceData, 
 }
 
 func deleteOutboundMessagingcampaign(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	outboundApi := platformclientv2.NewOutboundApiWithConfig(sdkConfig)
 
-	diagErr := gcloud.RetryWhen(gcloud.IsStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+	diagErr := util.RetryWhen(util.IsStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		log.Printf("Deleting Outbound Messagingcampaign")
 		_, resp, err := outboundApi.DeleteOutboundMessagingcampaign(d.Id())
 		if err != nil {
@@ -372,10 +373,10 @@ func deleteOutboundMessagingcampaign(ctx context.Context, d *schema.ResourceData
 		return diagErr
 	}
 
-	return gcloud.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
+	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		_, resp, err := outboundApi.GetOutboundMessagingcampaign(d.Id())
 		if err != nil {
-			if gcloud.IsStatus404(resp) {
+			if util.IsStatus404(resp) {
 				// Outbound Messagingcampaign deleted
 				log.Printf("Deleted Outbound Messagingcampaign %s", d.Id())
 				return nil

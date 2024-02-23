@@ -5,13 +5,14 @@ import (
 	"fmt"
 	"log"
 	"strings"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 
@@ -120,7 +121,7 @@ func getAllOutboundContactLists(_ context.Context, clientConfig *platformclientv
 
 func OutboundContactListExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
-		GetResourcesFunc: gcloud.GetAllWithPooledClient(getAllOutboundContactLists),
+		GetResourcesFunc: provider.GetAllWithPooledClient(getAllOutboundContactLists),
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			"attempt_limit_id": {RefType: "genesyscloud_outbound_attempt_limit"},
 			"division_id":      {RefType: "genesyscloud_auth_division"},
@@ -132,10 +133,10 @@ func ResourceOutboundContactList() *schema.Resource {
 	return &schema.Resource{
 		Description: `Genesys Cloud Outbound Contact List`,
 
-		CreateContext: gcloud.CreateWithPooledClient(createOutboundContactList),
-		ReadContext:   gcloud.ReadWithPooledClient(readOutboundContactList),
-		UpdateContext: gcloud.UpdateWithPooledClient(updateOutboundContactList),
-		DeleteContext: gcloud.DeleteWithPooledClient(deleteOutboundContactList),
+		CreateContext: provider.CreateWithPooledClient(createOutboundContactList),
+		ReadContext:   provider.ReadWithPooledClient(readOutboundContactList),
+		UpdateContext: provider.UpdateWithPooledClient(updateOutboundContactList),
+		DeleteContext: provider.DeleteWithPooledClient(deleteOutboundContactList),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -220,16 +221,16 @@ func createOutboundContactList(ctx context.Context, d *schema.ResourceData, meta
 	automaticTimeZoneMapping := d.Get("automatic_time_zone_mapping").(bool)
 	zipCodeColumnName := d.Get("zip_code_column_name").(string)
 
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	outboundApi := platformclientv2.NewOutboundApiWithConfig(sdkConfig)
 
 	sdkContactList := platformclientv2.Contactlist{
-		Division:                     gcloud.BuildSdkDomainEntityRef(d, "division_id"),
+		Division:                     util.BuildSdkDomainEntityRef(d, "division_id"),
 		ColumnNames:                  &columnNames,
 		PhoneColumns:                 buildSdkOutboundContactListContactPhoneNumberColumnSlice(d.Get("phone_columns").(*schema.Set)),
 		EmailColumns:                 buildSdkOutboundContactListContactEmailAddressColumnSlice(d.Get("email_columns").(*schema.Set)),
 		PreviewModeAcceptedValues:    &previewModeAcceptedValues,
-		AttemptLimits:                gcloud.BuildSdkDomainEntityRef(d, "attempt_limit_id"),
+		AttemptLimits:                util.BuildSdkDomainEntityRef(d, "attempt_limit_id"),
 		AutomaticTimeZoneMapping:     &automaticTimeZoneMapping,
 		ColumnDataTypeSpecifications: buildSdkOutboundContactListColumnDataTypeSpecifications(d.Get("column_data_type_specifications").([]interface{})),
 	}
@@ -264,16 +265,16 @@ func updateOutboundContactList(ctx context.Context, d *schema.ResourceData, meta
 	automaticTimeZoneMapping := d.Get("automatic_time_zone_mapping").(bool)
 	zipCodeColumnName := d.Get("zip_code_column_name").(string)
 
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	outboundApi := platformclientv2.NewOutboundApiWithConfig(sdkConfig)
 
 	sdkContactList := platformclientv2.Contactlist{
-		Division:                     gcloud.BuildSdkDomainEntityRef(d, "division_id"),
+		Division:                     util.BuildSdkDomainEntityRef(d, "division_id"),
 		ColumnNames:                  &columnNames,
 		PhoneColumns:                 buildSdkOutboundContactListContactPhoneNumberColumnSlice(d.Get("phone_columns").(*schema.Set)),
 		EmailColumns:                 buildSdkOutboundContactListContactEmailAddressColumnSlice(d.Get("email_columns").(*schema.Set)),
 		PreviewModeAcceptedValues:    &previewModeAcceptedValues,
-		AttemptLimits:                gcloud.BuildSdkDomainEntityRef(d, "attempt_limit_id"),
+		AttemptLimits:                util.BuildSdkDomainEntityRef(d, "attempt_limit_id"),
 		AutomaticTimeZoneMapping:     &automaticTimeZoneMapping,
 		ColumnDataTypeSpecifications: buildSdkOutboundContactListColumnDataTypeSpecifications(d.Get("column_data_type_specifications").([]interface{})),
 	}
@@ -289,7 +290,7 @@ func updateOutboundContactList(ctx context.Context, d *schema.ResourceData, meta
 	}
 
 	log.Printf("Updating Outbound Contact List %s", name)
-	diagErr := gcloud.RetryWhen(gcloud.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+	diagErr := util.RetryWhen(util.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		// Get current Outbound Contact list version
 		outboundContactList, resp, getErr := outboundApi.GetOutboundContactlist(d.Id(), false, false)
 		if getErr != nil {
@@ -311,15 +312,15 @@ func updateOutboundContactList(ctx context.Context, d *schema.ResourceData, meta
 }
 
 func readOutboundContactList(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	outboundApi := platformclientv2.NewOutboundApiWithConfig(sdkConfig)
 
 	log.Printf("Reading Outbound Contact List %s", d.Id())
 
-	return gcloud.WithRetriesForRead(ctx, d, func() *retry.RetryError {
+	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		sdkContactList, resp, getErr := outboundApi.GetOutboundContactlist(d.Id(), false, false)
 		if getErr != nil {
-			if gcloud.IsStatus404(resp) {
+			if util.IsStatus404(resp) {
 				return retry.RetryableError(fmt.Errorf("failed to read Outbound Contact List %s: %s", d.Id(), getErr))
 			}
 			return retry.NonRetryableError(fmt.Errorf("failed to read Outbound Contact List %s: %s", d.Id(), getErr))
@@ -375,10 +376,10 @@ func readOutboundContactList(ctx context.Context, d *schema.ResourceData, meta i
 }
 
 func deleteOutboundContactList(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	outboundApi := platformclientv2.NewOutboundApiWithConfig(sdkConfig)
 
-	diagErr := gcloud.RetryWhen(gcloud.IsStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+	diagErr := util.RetryWhen(util.IsStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		log.Printf("Deleting Outbound Contact List")
 		resp, err := outboundApi.DeleteOutboundContactlist(d.Id())
 		if err != nil {
@@ -390,10 +391,10 @@ func deleteOutboundContactList(ctx context.Context, d *schema.ResourceData, meta
 		return diagErr
 	}
 
-	return gcloud.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
+	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		_, resp, err := outboundApi.GetOutboundContactlist(d.Id(), false, false)
 		if err != nil {
-			if gcloud.IsStatus404(resp) {
+			if util.IsStatus404(resp) {
 				// Outbound Contact List deleted
 				log.Printf("Deleted Outbound Contact List %s", d.Id())
 				return nil

@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 	"time"
 
@@ -38,8 +40,8 @@ func TestAccResourceUserBasic(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Create
@@ -47,13 +49,13 @@ func TestAccResourceUserBasic(t *testing.T) {
 					userResource1,
 					email1,
 					userName1,
-					NullValue, // Defaults to active
+					util.NullValue, // Defaults to active
 					strconv.Quote(title1),
 					strconv.Quote(department1),
-					NullValue, // No manager
-					NullValue, // Default acdAutoAnswer
-					"",        // No profile skills
-					"",        // No certs
+					util.NullValue, // No manager
+					util.NullValue, // Default acdAutoAnswer
+					"",             // No profile skills
+					"",             // No certs
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "email", email1),
@@ -66,7 +68,7 @@ func TestAccResourceUserBasic(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "acd_auto_answer", "false"),
 					resource.TestCheckNoResourceAttr("genesyscloud_user."+userResource1, "profile_skills.%"),
 					resource.TestCheckNoResourceAttr("genesyscloud_user."+userResource1, "certifications.%"),
-					TestDefaultHomeDivision("genesyscloud_user."+userResource1),
+					provider.TestDefaultHomeDivision("genesyscloud_user."+userResource1),
 				),
 			},
 			{
@@ -78,8 +80,8 @@ func TestAccResourceUserBasic(t *testing.T) {
 					strconv.Quote(stateInactive),
 					strconv.Quote(title2),
 					strconv.Quote(department2),
-					NullValue, // No manager
-					TrueValue, // AcdAutoAnswer
+					util.NullValue, // No manager
+					util.TrueValue, // AcdAutoAnswer
 					strconv.Quote(profileSkill1),
 					strconv.Quote(cert1),
 				),
@@ -93,7 +95,7 @@ func TestAccResourceUserBasic(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "acd_auto_answer", "true"),
 					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "profile_skills.0", profileSkill1),
 					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "certifications.0", cert1),
-					TestDefaultHomeDivision("genesyscloud_user."+userResource1),
+					provider.TestDefaultHomeDivision("genesyscloud_user."+userResource1),
 				),
 			},
 			{
@@ -105,19 +107,19 @@ func TestAccResourceUserBasic(t *testing.T) {
 					strconv.Quote(stateInactive),
 					strconv.Quote(title2),
 					strconv.Quote(department2),
-					NullValue,  // No manager
-					FalseValue, // AcdAutoAnswer
+					util.NullValue,  // No manager
+					util.FalseValue, // AcdAutoAnswer
 					strconv.Quote(profileSkill2),
 					strconv.Quote(cert2),
 				) + GenerateUserResource(
 					userResource2,
 					email3,
 					userName1,
-					NullValue, // Active
+					util.NullValue, // Active
 					strconv.Quote(title1),
 					strconv.Quote(department1),
 					"genesyscloud_user."+userResource1+".id",
-					TrueValue, // AcdAutoAnswer
+					util.TrueValue, // AcdAutoAnswer
 					strconv.Quote(profileSkill1),
 					strconv.Quote(cert1),
 				),
@@ -136,13 +138,13 @@ func TestAccResourceUserBasic(t *testing.T) {
 					userResource2,
 					email3,
 					userName1,
-					NullValue, // Active
+					util.NullValue, // Active
 					strconv.Quote(title1),
 					strconv.Quote(department1),
-					NullValue,
-					FalseValue, // AcdAutoAnswer
-					"",         // No profile skills
-					"",         // No certs
+					util.NullValue,
+					util.FalseValue, // AcdAutoAnswer
+					"",              // No profile skills
+					"",              // No certs
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_user."+userResource2, "email", email3),
@@ -181,8 +183,8 @@ func TestAccResourceUserAddresses(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Create
@@ -193,9 +195,9 @@ func TestAccResourceUserAddresses(t *testing.T) {
 					generateUserAddresses(
 						generateUserPhoneAddress(
 							strconv.Quote(addrPhone1),
-							NullValue, // Default to type PHONE
-							NullValue, // Default to type WORK
-							NullValue, // No extension
+							util.NullValue, // Default to type PHONE
+							util.NullValue, // Default to type WORK
+							util.NullValue, // No extension
 						),
 						generateUserEmailAddress(
 							strconv.Quote(addrEmail2),
@@ -268,8 +270,8 @@ func TestAccResourceUserPhone(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Create
@@ -279,9 +281,9 @@ func TestAccResourceUserPhone(t *testing.T) {
 					addrUserName,
 					generateUserAddresses(
 						generateUserPhoneAddress(
-							NullValue,                 // number
-							NullValue,                 // Default to type PHONE
-							NullValue,                 // Default to type WORK
+							util.NullValue,            // number
+							util.NullValue,            // Default to type PHONE
+							util.NullValue,            // Default to type WORK
 							strconv.Quote(addrPhone1), // extension
 						),
 					),
@@ -301,9 +303,9 @@ func TestAccResourceUserPhone(t *testing.T) {
 					addrUserName,
 					generateUserAddresses(
 						generateUserPhoneAddress(
-							NullValue,                 // number
-							NullValue,                 // Default to type PHONE
-							NullValue,                 // Default to type WORK
+							util.NullValue,            // number
+							util.NullValue,            // Default to type PHONE
+							util.NullValue,            // Default to type WORK
 							strconv.Quote(addrPhone2), // extension
 						),
 					),
@@ -324,9 +326,9 @@ func TestAccResourceUserPhone(t *testing.T) {
 					generateUserAddresses(
 						generateUserPhoneAddress(
 							strconv.Quote(addrPhone2), // number
-							NullValue,                 // Default to type PHONE
-							NullValue,                 // Default to type WORK
-							NullValue,                 // extension
+							util.NullValue,            // Default to type PHONE
+							util.NullValue,            // Default to type WORK
+							util.NullValue,            // extension
 						),
 					),
 				),
@@ -346,8 +348,8 @@ func TestAccResourceUserPhone(t *testing.T) {
 					generateUserAddresses(
 						generateUserPhoneAddress(
 							strconv.Quote(addrPhone2), // number
-							NullValue,                 // Default to type PHONE
-							NullValue,                 // Default to type WORK
+							util.NullValue,            // Default to type PHONE
+							util.NullValue,            // Default to type WORK
 							strconv.Quote(addrExt1),   // extension
 						),
 					),
@@ -381,8 +383,8 @@ func TestAccResourceUserSkills(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Create user with 1 skill
@@ -463,8 +465,8 @@ func TestAccResourceUserLanguages(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Create user with 1 language
@@ -545,8 +547,8 @@ func TestAccResourceUserLocations(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Create user with a location
@@ -604,8 +606,8 @@ func TestAccResourceUserEmployerInfo(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Create
@@ -615,9 +617,9 @@ func TestAccResourceUserEmployerInfo(t *testing.T) {
 					userName,
 					generateUserEmployerInfo(
 						strconv.Quote(offName1), // Only set official name
-						NullValue,
-						NullValue,
-						NullValue,
+						util.NullValue,
+						util.NullValue,
+						util.NullValue,
 					),
 				),
 				Check: resource.ComposeTestCheckFunc(
@@ -636,7 +638,7 @@ func TestAccResourceUserEmployerInfo(t *testing.T) {
 					email1,
 					userName,
 					generateUserEmployerInfo(
-						NullValue,
+						util.NullValue,
 						strconv.Quote(empID1),
 						strconv.Quote(empTypeFull),
 						strconv.Quote(hireDate1),
@@ -706,8 +708,8 @@ func TestAccResourceUserRoutingUtil(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Create with utilization settings
@@ -716,29 +718,29 @@ func TestAccResourceUserRoutingUtil(t *testing.T) {
 					email1,
 					userName,
 					generateUserRoutingUtil(
-						generateRoutingUtilMediaType("call", maxCapacity1, FalseValue),
-						generateRoutingUtilMediaType("callback", maxCapacity1, FalseValue),
-						generateRoutingUtilMediaType("chat", maxCapacity1, FalseValue),
-						generateRoutingUtilMediaType("email", maxCapacity1, FalseValue),
-						generateRoutingUtilMediaType("message", maxCapacity1, FalseValue),
+						generateRoutingUtilMediaType("call", maxCapacity1, util.FalseValue),
+						generateRoutingUtilMediaType("callback", maxCapacity1, util.FalseValue),
+						generateRoutingUtilMediaType("chat", maxCapacity1, util.FalseValue),
+						generateRoutingUtilMediaType("email", maxCapacity1, util.FalseValue),
+						generateRoutingUtilMediaType("message", maxCapacity1, util.FalseValue),
 					),
 				),
 				Check: resource.ComposeTestCheckFunc(
 					validateUserUtilizationLevel("genesyscloud_user."+userResource1, "Agent"),
 					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.call.0.maximum_capacity", maxCapacity1),
-					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.call.0.include_non_acd", FalseValue),
+					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.call.0.include_non_acd", util.FalseValue),
 					resource.TestCheckNoResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.call.0.interruptible_media_types.%"),
 					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.callback.0.maximum_capacity", maxCapacity1),
-					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.callback.0.include_non_acd", FalseValue),
+					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.callback.0.include_non_acd", util.FalseValue),
 					resource.TestCheckNoResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.callback.0.interruptible_media_types.%"),
 					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.chat.0.maximum_capacity", maxCapacity1),
-					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.chat.0.include_non_acd", FalseValue),
+					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.chat.0.include_non_acd", util.FalseValue),
 					resource.TestCheckNoResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.chat.0.interruptible_media_types.%"),
 					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.email.0.maximum_capacity", maxCapacity1),
-					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.email.0.include_non_acd", FalseValue),
+					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.email.0.include_non_acd", util.FalseValue),
 					resource.TestCheckNoResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.email.0.interruptible_media_types.%"),
 					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.message.0.maximum_capacity", maxCapacity1),
-					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.message.0.include_non_acd", FalseValue),
+					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.message.0.include_non_acd", util.FalseValue),
 					resource.TestCheckNoResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.message.0.interruptible_media_types.%"),
 				),
 			},
@@ -749,30 +751,30 @@ func TestAccResourceUserRoutingUtil(t *testing.T) {
 					email1,
 					userName,
 					generateUserRoutingUtil(
-						generateRoutingUtilMediaType("call", maxCapacity2, TrueValue, strconv.Quote(utilTypeEmail)),
-						generateRoutingUtilMediaType("callback", maxCapacity2, TrueValue, strconv.Quote(utilTypeCall)),
-						generateRoutingUtilMediaType("chat", maxCapacity2, TrueValue, strconv.Quote(utilTypeCall)),
-						generateRoutingUtilMediaType("email", maxCapacity2, TrueValue, strconv.Quote(utilTypeCall)),
-						generateRoutingUtilMediaType("message", maxCapacity2, TrueValue, strconv.Quote(utilTypeCall)),
+						generateRoutingUtilMediaType("call", maxCapacity2, util.TrueValue, strconv.Quote(utilTypeEmail)),
+						generateRoutingUtilMediaType("callback", maxCapacity2, util.TrueValue, strconv.Quote(utilTypeCall)),
+						generateRoutingUtilMediaType("chat", maxCapacity2, util.TrueValue, strconv.Quote(utilTypeCall)),
+						generateRoutingUtilMediaType("email", maxCapacity2, util.TrueValue, strconv.Quote(utilTypeCall)),
+						generateRoutingUtilMediaType("message", maxCapacity2, util.TrueValue, strconv.Quote(utilTypeCall)),
 					),
 				),
 				Check: resource.ComposeTestCheckFunc(
 					validateUserUtilizationLevel("genesyscloud_user."+userResource1, "Agent"),
 					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.call.0.maximum_capacity", maxCapacity2),
-					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.call.0.include_non_acd", TrueValue),
-					ValidateStringInArray("genesyscloud_user."+userResource1, "routing_utilization.0.call.0.interruptible_media_types", utilTypeEmail),
+					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.call.0.include_non_acd", util.TrueValue),
+					util.ValidateStringInArray("genesyscloud_user."+userResource1, "routing_utilization.0.call.0.interruptible_media_types", utilTypeEmail),
 					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.callback.0.maximum_capacity", maxCapacity2),
-					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.callback.0.include_non_acd", TrueValue),
-					ValidateStringInArray("genesyscloud_user."+userResource1, "routing_utilization.0.callback.0.interruptible_media_types", utilTypeCall),
+					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.callback.0.include_non_acd", util.TrueValue),
+					util.ValidateStringInArray("genesyscloud_user."+userResource1, "routing_utilization.0.callback.0.interruptible_media_types", utilTypeCall),
 					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.chat.0.maximum_capacity", maxCapacity2),
-					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.chat.0.include_non_acd", TrueValue),
-					ValidateStringInArray("genesyscloud_user."+userResource1, "routing_utilization.0.chat.0.interruptible_media_types", utilTypeCall),
+					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.chat.0.include_non_acd", util.TrueValue),
+					util.ValidateStringInArray("genesyscloud_user."+userResource1, "routing_utilization.0.chat.0.interruptible_media_types", utilTypeCall),
 					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.email.0.maximum_capacity", maxCapacity2),
-					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.email.0.include_non_acd", TrueValue),
-					ValidateStringInArray("genesyscloud_user."+userResource1, "routing_utilization.0.email.0.interruptible_media_types", utilTypeCall),
+					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.email.0.include_non_acd", util.TrueValue),
+					util.ValidateStringInArray("genesyscloud_user."+userResource1, "routing_utilization.0.email.0.interruptible_media_types", utilTypeCall),
 					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.message.0.maximum_capacity", maxCapacity2),
-					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.message.0.include_non_acd", TrueValue),
-					ValidateStringInArray("genesyscloud_user."+userResource1, "routing_utilization.0.message.0.interruptible_media_types", utilTypeCall),
+					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.message.0.include_non_acd", util.TrueValue),
+					util.ValidateStringInArray("genesyscloud_user."+userResource1, "routing_utilization.0.message.0.interruptible_media_types", utilTypeCall),
 				),
 			},
 			{
@@ -782,30 +784,30 @@ func TestAccResourceUserRoutingUtil(t *testing.T) {
 					email1,
 					userName,
 					generateUserRoutingUtil(
-						generateRoutingUtilMediaType("call", maxCapacity0, TrueValue, strconv.Quote(utilTypeEmail)),
-						generateRoutingUtilMediaType("callback", maxCapacity0, TrueValue, strconv.Quote(utilTypeCall)),
-						generateRoutingUtilMediaType("chat", maxCapacity0, TrueValue, strconv.Quote(utilTypeCall)),
-						generateRoutingUtilMediaType("email", maxCapacity0, TrueValue, strconv.Quote(utilTypeCall)),
-						generateRoutingUtilMediaType("message", maxCapacity0, TrueValue, strconv.Quote(utilTypeCall)),
+						generateRoutingUtilMediaType("call", maxCapacity0, util.TrueValue, strconv.Quote(utilTypeEmail)),
+						generateRoutingUtilMediaType("callback", maxCapacity0, util.TrueValue, strconv.Quote(utilTypeCall)),
+						generateRoutingUtilMediaType("chat", maxCapacity0, util.TrueValue, strconv.Quote(utilTypeCall)),
+						generateRoutingUtilMediaType("email", maxCapacity0, util.TrueValue, strconv.Quote(utilTypeCall)),
+						generateRoutingUtilMediaType("message", maxCapacity0, util.TrueValue, strconv.Quote(utilTypeCall)),
 					),
 				),
 				Check: resource.ComposeTestCheckFunc(
 					validateUserUtilizationLevel("genesyscloud_user."+userResource1, "Agent"),
 					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.call.0.maximum_capacity", maxCapacity0),
-					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.call.0.include_non_acd", TrueValue),
-					ValidateStringInArray("genesyscloud_user."+userResource1, "routing_utilization.0.call.0.interruptible_media_types", utilTypeEmail),
+					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.call.0.include_non_acd", util.TrueValue),
+					util.ValidateStringInArray("genesyscloud_user."+userResource1, "routing_utilization.0.call.0.interruptible_media_types", utilTypeEmail),
 					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.callback.0.maximum_capacity", maxCapacity0),
-					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.callback.0.include_non_acd", TrueValue),
-					ValidateStringInArray("genesyscloud_user."+userResource1, "routing_utilization.0.callback.0.interruptible_media_types", utilTypeCall),
+					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.callback.0.include_non_acd", util.TrueValue),
+					util.ValidateStringInArray("genesyscloud_user."+userResource1, "routing_utilization.0.callback.0.interruptible_media_types", utilTypeCall),
 					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.chat.0.maximum_capacity", maxCapacity0),
-					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.chat.0.include_non_acd", TrueValue),
-					ValidateStringInArray("genesyscloud_user."+userResource1, "routing_utilization.0.chat.0.interruptible_media_types", utilTypeCall),
+					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.chat.0.include_non_acd", util.TrueValue),
+					util.ValidateStringInArray("genesyscloud_user."+userResource1, "routing_utilization.0.chat.0.interruptible_media_types", utilTypeCall),
 					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.email.0.maximum_capacity", maxCapacity0),
-					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.email.0.include_non_acd", TrueValue),
-					ValidateStringInArray("genesyscloud_user."+userResource1, "routing_utilization.0.email.0.interruptible_media_types", utilTypeCall),
+					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.email.0.include_non_acd", util.TrueValue),
+					util.ValidateStringInArray("genesyscloud_user."+userResource1, "routing_utilization.0.email.0.interruptible_media_types", utilTypeCall),
 					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.message.0.maximum_capacity", maxCapacity0),
-					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.message.0.include_non_acd", TrueValue),
-					ValidateStringInArray("genesyscloud_user."+userResource1, "routing_utilization.0.message.0.interruptible_media_types", utilTypeCall),
+					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.message.0.include_non_acd", util.TrueValue),
+					util.ValidateStringInArray("genesyscloud_user."+userResource1, "routing_utilization.0.message.0.interruptible_media_types", utilTypeCall),
 				),
 			},
 			{
@@ -848,12 +850,12 @@ func TestAccResourceUserRoutingUtilWithLabels(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck: func() {
-			TestAccPreCheck(t)
+			util.TestAccPreCheck(t)
 			if err := checkIfLabelsAreEnabled(); err != nil {
 				t.Skipf("%v", err) // be sure to skip the test and not fail it
 			}
 		},
-		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Create with utilization settings
@@ -865,11 +867,11 @@ func TestAccResourceUserRoutingUtilWithLabels(t *testing.T) {
 						email1,
 						userName,
 						generateUserRoutingUtil(
-							generateRoutingUtilMediaType("call", maxCapacity1, FalseValue),
-							generateRoutingUtilMediaType("callback", maxCapacity1, FalseValue),
-							generateRoutingUtilMediaType("chat", maxCapacity1, FalseValue),
-							generateRoutingUtilMediaType("email", maxCapacity1, FalseValue),
-							generateRoutingUtilMediaType("message", maxCapacity1, FalseValue),
+							generateRoutingUtilMediaType("call", maxCapacity1, util.FalseValue),
+							generateRoutingUtilMediaType("callback", maxCapacity1, util.FalseValue),
+							generateRoutingUtilMediaType("chat", maxCapacity1, util.FalseValue),
+							generateRoutingUtilMediaType("email", maxCapacity1, util.FalseValue),
+							generateRoutingUtilMediaType("message", maxCapacity1, util.FalseValue),
 							generateLabelUtilization(redLabelResource, maxCapacity1),
 							generateLabelUtilization(blueLabelResource, maxCapacity1, redLabelResource),
 						),
@@ -877,19 +879,19 @@ func TestAccResourceUserRoutingUtilWithLabels(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					validateUserUtilizationLevel("genesyscloud_user."+userResource1, "Agent"),
 					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.call.0.maximum_capacity", maxCapacity1),
-					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.call.0.include_non_acd", FalseValue),
+					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.call.0.include_non_acd", util.FalseValue),
 					resource.TestCheckNoResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.call.0.interruptible_media_types.%"),
 					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.callback.0.maximum_capacity", maxCapacity1),
-					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.callback.0.include_non_acd", FalseValue),
+					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.callback.0.include_non_acd", util.FalseValue),
 					resource.TestCheckNoResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.callback.0.interruptible_media_types.%"),
 					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.chat.0.maximum_capacity", maxCapacity1),
-					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.chat.0.include_non_acd", FalseValue),
+					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.chat.0.include_non_acd", util.FalseValue),
 					resource.TestCheckNoResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.chat.0.interruptible_media_types.%"),
 					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.email.0.maximum_capacity", maxCapacity1),
-					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.email.0.include_non_acd", FalseValue),
+					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.email.0.include_non_acd", util.FalseValue),
 					resource.TestCheckNoResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.email.0.interruptible_media_types.%"),
 					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.message.0.maximum_capacity", maxCapacity1),
-					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.message.0.include_non_acd", FalseValue),
+					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.message.0.include_non_acd", util.FalseValue),
 					resource.TestCheckNoResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.message.0.interruptible_media_types.%"),
 					resource.TestCheckResourceAttrSet("genesyscloud_user."+userResource1, "routing_utilization.0.label_utilizations.0.label_id"),
 					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.label_utilizations.0.maximum_capacity", maxCapacity1),
@@ -907,11 +909,11 @@ func TestAccResourceUserRoutingUtilWithLabels(t *testing.T) {
 						email1,
 						userName,
 						generateUserRoutingUtil(
-							generateRoutingUtilMediaType("call", maxCapacity2, TrueValue, strconv.Quote(utilTypeEmail)),
-							generateRoutingUtilMediaType("callback", maxCapacity2, TrueValue, strconv.Quote(utilTypeCall)),
-							generateRoutingUtilMediaType("chat", maxCapacity2, TrueValue, strconv.Quote(utilTypeCall)),
-							generateRoutingUtilMediaType("email", maxCapacity2, TrueValue, strconv.Quote(utilTypeCall)),
-							generateRoutingUtilMediaType("message", maxCapacity2, TrueValue, strconv.Quote(utilTypeCall)),
+							generateRoutingUtilMediaType("call", maxCapacity2, util.TrueValue, strconv.Quote(utilTypeEmail)),
+							generateRoutingUtilMediaType("callback", maxCapacity2, util.TrueValue, strconv.Quote(utilTypeCall)),
+							generateRoutingUtilMediaType("chat", maxCapacity2, util.TrueValue, strconv.Quote(utilTypeCall)),
+							generateRoutingUtilMediaType("email", maxCapacity2, util.TrueValue, strconv.Quote(utilTypeCall)),
+							generateRoutingUtilMediaType("message", maxCapacity2, util.TrueValue, strconv.Quote(utilTypeCall)),
 							generateLabelUtilization(redLabelResource, maxCapacity2),
 							generateLabelUtilization(blueLabelResource, maxCapacity2, redLabelResource),
 						),
@@ -919,20 +921,20 @@ func TestAccResourceUserRoutingUtilWithLabels(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					validateUserUtilizationLevel("genesyscloud_user."+userResource1, "Agent"),
 					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.call.0.maximum_capacity", maxCapacity2),
-					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.call.0.include_non_acd", TrueValue),
-					ValidateStringInArray("genesyscloud_user."+userResource1, "routing_utilization.0.call.0.interruptible_media_types", utilTypeEmail),
+					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.call.0.include_non_acd", util.TrueValue),
+					util.ValidateStringInArray("genesyscloud_user."+userResource1, "routing_utilization.0.call.0.interruptible_media_types", utilTypeEmail),
 					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.callback.0.maximum_capacity", maxCapacity2),
-					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.callback.0.include_non_acd", TrueValue),
-					ValidateStringInArray("genesyscloud_user."+userResource1, "routing_utilization.0.callback.0.interruptible_media_types", utilTypeCall),
+					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.callback.0.include_non_acd", util.TrueValue),
+					util.ValidateStringInArray("genesyscloud_user."+userResource1, "routing_utilization.0.callback.0.interruptible_media_types", utilTypeCall),
 					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.chat.0.maximum_capacity", maxCapacity2),
-					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.chat.0.include_non_acd", TrueValue),
-					ValidateStringInArray("genesyscloud_user."+userResource1, "routing_utilization.0.chat.0.interruptible_media_types", utilTypeCall),
+					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.chat.0.include_non_acd", util.TrueValue),
+					util.ValidateStringInArray("genesyscloud_user."+userResource1, "routing_utilization.0.chat.0.interruptible_media_types", utilTypeCall),
 					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.email.0.maximum_capacity", maxCapacity2),
-					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.email.0.include_non_acd", TrueValue),
-					ValidateStringInArray("genesyscloud_user."+userResource1, "routing_utilization.0.email.0.interruptible_media_types", utilTypeCall),
+					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.email.0.include_non_acd", util.TrueValue),
+					util.ValidateStringInArray("genesyscloud_user."+userResource1, "routing_utilization.0.email.0.interruptible_media_types", utilTypeCall),
 					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.message.0.maximum_capacity", maxCapacity2),
-					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.message.0.include_non_acd", TrueValue),
-					ValidateStringInArray("genesyscloud_user."+userResource1, "routing_utilization.0.message.0.interruptible_media_types", utilTypeCall),
+					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.message.0.include_non_acd", util.TrueValue),
+					util.ValidateStringInArray("genesyscloud_user."+userResource1, "routing_utilization.0.message.0.interruptible_media_types", utilTypeCall),
 					resource.TestCheckResourceAttrSet("genesyscloud_user."+userResource1, "routing_utilization.0.label_utilizations.0.label_id"),
 					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.label_utilizations.0.maximum_capacity", maxCapacity2),
 					resource.TestCheckResourceAttrSet("genesyscloud_user."+userResource1, "routing_utilization.0.label_utilizations.1.label_id"),
@@ -949,11 +951,11 @@ func TestAccResourceUserRoutingUtilWithLabels(t *testing.T) {
 						email1,
 						userName,
 						generateUserRoutingUtil(
-							generateRoutingUtilMediaType("call", maxCapacity0, TrueValue, strconv.Quote(utilTypeEmail)),
-							generateRoutingUtilMediaType("callback", maxCapacity0, TrueValue, strconv.Quote(utilTypeCall)),
-							generateRoutingUtilMediaType("chat", maxCapacity0, TrueValue, strconv.Quote(utilTypeCall)),
-							generateRoutingUtilMediaType("email", maxCapacity0, TrueValue, strconv.Quote(utilTypeCall)),
-							generateRoutingUtilMediaType("message", maxCapacity0, TrueValue, strconv.Quote(utilTypeCall)),
+							generateRoutingUtilMediaType("call", maxCapacity0, util.TrueValue, strconv.Quote(utilTypeEmail)),
+							generateRoutingUtilMediaType("callback", maxCapacity0, util.TrueValue, strconv.Quote(utilTypeCall)),
+							generateRoutingUtilMediaType("chat", maxCapacity0, util.TrueValue, strconv.Quote(utilTypeCall)),
+							generateRoutingUtilMediaType("email", maxCapacity0, util.TrueValue, strconv.Quote(utilTypeCall)),
+							generateRoutingUtilMediaType("message", maxCapacity0, util.TrueValue, strconv.Quote(utilTypeCall)),
 							generateLabelUtilization(redLabelResource, maxCapacity0),
 							generateLabelUtilization(blueLabelResource, maxCapacity0, redLabelResource),
 						),
@@ -961,20 +963,20 @@ func TestAccResourceUserRoutingUtilWithLabels(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					validateUserUtilizationLevel("genesyscloud_user."+userResource1, "Agent"),
 					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.call.0.maximum_capacity", maxCapacity0),
-					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.call.0.include_non_acd", TrueValue),
-					ValidateStringInArray("genesyscloud_user."+userResource1, "routing_utilization.0.call.0.interruptible_media_types", utilTypeEmail),
+					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.call.0.include_non_acd", util.TrueValue),
+					util.ValidateStringInArray("genesyscloud_user."+userResource1, "routing_utilization.0.call.0.interruptible_media_types", utilTypeEmail),
 					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.callback.0.maximum_capacity", maxCapacity0),
-					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.callback.0.include_non_acd", TrueValue),
-					ValidateStringInArray("genesyscloud_user."+userResource1, "routing_utilization.0.callback.0.interruptible_media_types", utilTypeCall),
+					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.callback.0.include_non_acd", util.TrueValue),
+					util.ValidateStringInArray("genesyscloud_user."+userResource1, "routing_utilization.0.callback.0.interruptible_media_types", utilTypeCall),
 					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.chat.0.maximum_capacity", maxCapacity0),
-					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.chat.0.include_non_acd", TrueValue),
-					ValidateStringInArray("genesyscloud_user."+userResource1, "routing_utilization.0.chat.0.interruptible_media_types", utilTypeCall),
+					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.chat.0.include_non_acd", util.TrueValue),
+					util.ValidateStringInArray("genesyscloud_user."+userResource1, "routing_utilization.0.chat.0.interruptible_media_types", utilTypeCall),
 					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.email.0.maximum_capacity", maxCapacity0),
-					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.email.0.include_non_acd", TrueValue),
-					ValidateStringInArray("genesyscloud_user."+userResource1, "routing_utilization.0.email.0.interruptible_media_types", utilTypeCall),
+					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.email.0.include_non_acd", util.TrueValue),
+					util.ValidateStringInArray("genesyscloud_user."+userResource1, "routing_utilization.0.email.0.interruptible_media_types", utilTypeCall),
 					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.message.0.maximum_capacity", maxCapacity0),
-					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.message.0.include_non_acd", TrueValue),
-					ValidateStringInArray("genesyscloud_user."+userResource1, "routing_utilization.0.message.0.interruptible_media_types", utilTypeCall),
+					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.message.0.include_non_acd", util.TrueValue),
+					util.ValidateStringInArray("genesyscloud_user."+userResource1, "routing_utilization.0.message.0.interruptible_media_types", utilTypeCall),
 					resource.TestCheckResourceAttrSet("genesyscloud_user."+userResource1, "routing_utilization.0.label_utilizations.0.label_id"),
 					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.label_utilizations.0.maximum_capacity", maxCapacity0),
 					resource.TestCheckResourceAttrSet("genesyscloud_user."+userResource1, "routing_utilization.0.label_utilizations.1.label_id"),
@@ -1009,8 +1011,8 @@ func TestAccResourceUserRestore(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Create a basic user
@@ -1061,8 +1063,8 @@ func TestAccResourceUserCreateWhenDestroyed(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Create a basic user
@@ -1106,7 +1108,7 @@ func TestAccResourceUserCreateWhenDestroyed(t *testing.T) {
 func testVerifyUsersDestroyed(state *terraform.State) error {
 	usersAPI := platformclientv2.NewUsersApi()
 
-	diagErr := WithRetries(context.Background(), 20*time.Second, func() *retry.RetryError {
+	diagErr := util.WithRetries(context.Background(), 20*time.Second, func() *retry.RetryError {
 		for _, rs := range state.RootModule().Resources {
 			if rs.Type != "genesyscloud_user" {
 				continue
@@ -1114,7 +1116,7 @@ func testVerifyUsersDestroyed(state *terraform.State) error {
 			_, resp, err := usersAPI.GetUser(rs.Primary.ID, nil, "", "")
 
 			if err != nil {
-				if IsStatus404(resp) {
+				if util.IsStatus404(resp) {
 					continue
 				}
 				return retry.NonRetryableError(fmt.Errorf("Unexpected error: %s", err))

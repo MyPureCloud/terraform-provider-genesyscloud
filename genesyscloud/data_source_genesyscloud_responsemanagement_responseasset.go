@@ -3,6 +3,8 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -15,7 +17,7 @@ import (
 func dataSourceResponseManagamentResponseAsset() *schema.Resource {
 	return &schema.Resource{
 		Description: "Data source for Genesys Cloud Response Management Response Assets. Select a response asset by name.",
-		ReadContext: ReadWithPooledClient(dataSourceResponseManagamentResponseAssetRead),
+		ReadContext: provider.ReadWithPooledClient(dataSourceResponseManagamentResponseAssetRead),
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Description: "Response asset name.",
@@ -43,10 +45,10 @@ func dataSourceResponseManagamentResponseAssetRead(ctx context.Context, d *schem
 		}
 	)
 
-	sdkConfig := m.(*ProviderMeta).ClientConfig
+	sdkConfig := m.(*provider.ProviderMeta).ClientConfig
 	respManagementApi := platformclientv2.NewResponseManagementApiWithConfig(sdkConfig)
 
-	return WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
+	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
 		responseData, _, getErr := respManagementApi.PostResponsemanagementResponseassetsSearch(body, nil)
 		if getErr != nil {
 			return retry.NonRetryableError(fmt.Errorf("Error requesting response asset %s: %s", name, getErr))

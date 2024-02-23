@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -24,7 +26,7 @@ func getAllIdpAdfs(_ context.Context, clientConfig *platformclientv2.Configurati
 
 	_, resp, getErr := idpAPI.GetIdentityprovidersAdfs()
 	if getErr != nil {
-		if IsStatus404(resp) {
+		if util.IsStatus404(resp) {
 			// Don't export if config doesn't exist
 			return resources, nil
 		}
@@ -37,7 +39,7 @@ func getAllIdpAdfs(_ context.Context, clientConfig *platformclientv2.Configurati
 
 func IdpAdfsExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
-		GetResourcesFunc: GetAllWithPooledClient(getAllIdpAdfs),
+		GetResourcesFunc: provider.GetAllWithPooledClient(getAllIdpAdfs),
 		RefAttrs:         map[string]*resourceExporter.RefAttrSettings{}, // No references
 	}
 }
@@ -46,10 +48,10 @@ func ResourceIdpAdfs() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud Single Sign-on ADFS Identity Provider. See this page for detailed configuration instructions: https://help.mypurecloud.com/articles/add-microsoft-adfs-single-sign-provider/",
 
-		CreateContext: CreateWithPooledClient(createIdpAdfs),
-		ReadContext:   ReadWithPooledClient(readIdpAdfs),
-		UpdateContext: UpdateWithPooledClient(updateIdpAdfs),
-		DeleteContext: DeleteWithPooledClient(deleteIdpAdfs),
+		CreateContext: provider.CreateWithPooledClient(createIdpAdfs),
+		ReadContext:   provider.ReadWithPooledClient(readIdpAdfs),
+		UpdateContext: provider.UpdateWithPooledClient(updateIdpAdfs),
+		DeleteContext: provider.DeleteWithPooledClient(deleteIdpAdfs),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -97,14 +99,14 @@ func createIdpAdfs(ctx context.Context, d *schema.ResourceData, meta interface{}
 }
 
 func readIdpAdfs(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	idpAPI := platformclientv2.NewIdentityProviderApiWithConfig(sdkConfig)
 
 	log.Printf("Reading IDP ADFS")
-	return WithRetriesForReadCustomTimeout(ctx, d.Timeout(schema.TimeoutRead), d, func() *retry.RetryError {
+	return util.WithRetriesForReadCustomTimeout(ctx, d.Timeout(schema.TimeoutRead), d, func() *retry.RetryError {
 		adfs, resp, getErr := idpAPI.GetIdentityprovidersAdfs()
 		if getErr != nil {
-			if IsStatus404(resp) {
+			if util.IsStatus404(resp) {
 				createIdpAdfs(ctx, d, meta)
 				return retry.RetryableError(fmt.Errorf("Failed to read IDP ADFS: %s", getErr))
 			}
@@ -155,7 +157,7 @@ func updateIdpAdfs(ctx context.Context, d *schema.ResourceData, meta interface{}
 	relyingPartyID := d.Get("relying_party_identifier").(string)
 	disabled := d.Get("disabled").(bool)
 
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	idpAPI := platformclientv2.NewIdentityProviderApiWithConfig(sdkConfig)
 
 	log.Printf("Updating IDP ADFS")
@@ -184,7 +186,7 @@ func updateIdpAdfs(ctx context.Context, d *schema.ResourceData, meta interface{}
 }
 
 func deleteIdpAdfs(ctx context.Context, _ *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	idpAPI := platformclientv2.NewIdentityProviderApiWithConfig(sdkConfig)
 
 	log.Printf("Deleting IDP ADFS")
@@ -193,10 +195,10 @@ func deleteIdpAdfs(ctx context.Context, _ *schema.ResourceData, meta interface{}
 		return diag.Errorf("Failed to delete IDP ADFS: %s", err)
 	}
 
-	return WithRetries(ctx, 180*time.Second, func() *retry.RetryError {
+	return util.WithRetries(ctx, 180*time.Second, func() *retry.RetryError {
 		_, resp, err := idpAPI.GetIdentityprovidersAdfs()
 		if err != nil {
-			if IsStatus404(resp) {
+			if util.IsStatus404(resp) {
 				// IDP ADFS deleted
 				log.Printf("Deleted IDP ADFS")
 				return nil

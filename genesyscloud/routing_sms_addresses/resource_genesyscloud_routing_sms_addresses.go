@@ -4,7 +4,8 @@ import (
 	"context"
 	"fmt"
 	"log"
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 	"time"
 
@@ -52,7 +53,7 @@ func createRoutingSmsAddress(ctx context.Context, d *schema.ResourceData, meta i
 	countryCode := d.Get("country_code").(string)
 	autoCorrectAddress := d.Get("auto_correct_address").(bool)
 
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getRoutingSmsAddressProxy(sdkConfig)
 
 	sdkSmsAddressProvision := platformclientv2.Smsaddressprovision{
@@ -91,14 +92,14 @@ func createRoutingSmsAddress(ctx context.Context, d *schema.ResourceData, meta i
 }
 
 func readRoutingSmsAddress(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getRoutingSmsAddressProxy(sdkConfig)
 
 	log.Printf("Reading Routing Sms Address %s", d.Id())
-	return gcloud.WithRetriesForRead(ctx, d, func() *retry.RetryError {
+	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		sdkSmsAddress, resp, getErr := proxy.getSmsAddressById(d.Id())
 		if getErr != nil {
-			if gcloud.IsStatus404(resp) {
+			if util.IsStatus404(resp) {
 				return retry.RetryableError(fmt.Errorf("Failed to read Routing Sms Address %s: %s", d.Id(), getErr))
 			}
 			return retry.NonRetryableError(fmt.Errorf("Failed to read Routing Sms Address %s: %s", d.Id(), getErr))
@@ -119,7 +120,7 @@ func readRoutingSmsAddress(ctx context.Context, d *schema.ResourceData, meta int
 }
 
 func deleteRoutingSmsAddress(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getRoutingSmsAddressProxy(sdkConfig)
 
 	// AD-123 is the ID for a default address returned to all test orgs, it can't be deleted
@@ -127,7 +128,7 @@ func deleteRoutingSmsAddress(ctx context.Context, d *schema.ResourceData, meta i
 		return nil
 	}
 
-	diagErr := gcloud.RetryWhen(gcloud.IsStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+	diagErr := util.RetryWhen(util.IsStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		log.Printf("Deleting Routing Sms Address")
 		resp, err := proxy.deleteSmsAddress(d.Id())
 		if err != nil {
@@ -139,10 +140,10 @@ func deleteRoutingSmsAddress(ctx context.Context, d *schema.ResourceData, meta i
 		return diagErr
 	}
 
-	return gcloud.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
+	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		_, resp, err := proxy.getSmsAddressById(d.Id())
 		if err != nil {
-			if gcloud.IsStatus404(resp) {
+			if util.IsStatus404(resp) {
 				// Routing Sms Address deleted
 				log.Printf("Deleted Routing Sms Address %s", d.Id())
 				return nil

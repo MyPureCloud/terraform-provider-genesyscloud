@@ -3,6 +3,8 @@ package genesyscloud
 import (
 	"fmt"
 	"strings"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 
 	"github.com/google/uuid"
@@ -24,8 +26,8 @@ func TestAccResourceKnowledgeLabelBasic(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Create
@@ -121,7 +123,7 @@ func testVerifyKnowledgeLabelDestroyed(state *terraform.State) error {
 		knowledgeLabel, resp, err := knowledgeAPI.GetKnowledgeKnowledgebaseLabel(knowledgeBaseId, knowledgeLabelId)
 		if knowledgeLabel != nil {
 			return fmt.Errorf("Knowledge label (%s) still exists", knowledgeLabelId)
-		} else if IsStatus404(resp) || IsStatus400(resp) {
+		} else if util.IsStatus404(resp) || util.IsStatus400(resp) {
 			// Knowledge base label not found as expected
 			continue
 		} else {

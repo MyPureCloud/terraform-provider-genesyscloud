@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"log"
 	"strings"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 
 	"terraform-provider-genesyscloud/genesyscloud/util/testrunner"
@@ -24,15 +26,15 @@ func runJourneyActionTemplateTestCase(t *testing.T, testCaseName string) {
 	setupJourneyActionTemplate(t, testCaseName)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps:             testrunner.GenerateResourceTestSteps(ActionTemplateResourceName, testCaseName, nil),
 		CheckDestroy:      testVerifyJourneyActionTemplatesDestroyed,
 	})
 }
 
 func setupJourneyActionTemplate(t *testing.T, testCaseName string) {
-	_, err := AuthorizeSdk()
+	_, err := provider.AuthorizeSdk()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -83,7 +85,7 @@ func testVerifyJourneyActionTemplatesDestroyed(state *terraform.State) error {
 			return fmt.Errorf("journey action template (%s) still exists", rs.Primary.ID)
 		}
 
-		if IsStatus404(resp) {
+		if util.IsStatus404(resp) {
 			// Journey action map not found as expected
 			continue
 		}

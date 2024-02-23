@@ -3,10 +3,11 @@ package task_management_workitem
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
+	"terraform-provider-genesyscloud/genesyscloud/util"
+	gcloud "terraform-provider-genesyscloud/genesyscloud/validators"
 )
 
 /*
@@ -47,10 +48,10 @@ func ResourceTaskManagementWorkitem() *schema.Resource {
 	return &schema.Resource{
 		Description: `Genesys Cloud task management workitem`,
 
-		CreateContext: gcloud.CreateWithPooledClient(createTaskManagementWorkitem),
-		ReadContext:   gcloud.ReadWithPooledClient(readTaskManagementWorkitem),
-		UpdateContext: gcloud.UpdateWithPooledClient(updateTaskManagementWorkitem),
-		DeleteContext: gcloud.DeleteWithPooledClient(deleteTaskManagementWorkitem),
+		CreateContext: provider.CreateWithPooledClient(createTaskManagementWorkitem),
+		ReadContext:   provider.ReadWithPooledClient(readTaskManagementWorkitem),
+		UpdateContext: provider.UpdateWithPooledClient(updateTaskManagementWorkitem),
+		DeleteContext: provider.DeleteWithPooledClient(deleteTaskManagementWorkitem),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -177,7 +178,7 @@ func ResourceTaskManagementWorkitem() *schema.Resource {
 				Optional:         true,
 				Computed:         true,
 				Type:             schema.TypeString,
-				DiffSuppressFunc: gcloud.SuppressEquivalentJsonDiffs,
+				DiffSuppressFunc: util.SuppressEquivalentJsonDiffs,
 			},
 		},
 	}
@@ -186,7 +187,7 @@ func ResourceTaskManagementWorkitem() *schema.Resource {
 // TaskManagementWorkitemExporter returns the resourceExporter object used to hold the genesyscloud_task_management_workitem exporter's config
 func TaskManagementWorkitemExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
-		GetResourcesFunc: gcloud.GetAllWithPooledClient(getAllAuthTaskManagementWorkitems),
+		GetResourcesFunc: provider.GetAllWithPooledClient(getAllAuthTaskManagementWorkitems),
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			"worktype_id":            {RefType: "genesyscloud_task_management_worktype"},
 			"language_id":            {RefType: "genesyscloud_routing_language"},
@@ -205,7 +206,7 @@ func TaskManagementWorkitemExporter() *resourceExporter.ResourceExporter {
 func DataSourceTaskManagementWorkitem() *schema.Resource {
 	return &schema.Resource{
 		Description: `Genesys Cloud task management workitem data source. Select an task management workitem by name`,
-		ReadContext: gcloud.ReadWithPooledClient(dataSourceTaskManagementWorkitemRead),
+		ReadContext: provider.ReadWithPooledClient(dataSourceTaskManagementWorkitemRead),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},

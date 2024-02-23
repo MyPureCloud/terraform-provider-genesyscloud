@@ -6,6 +6,9 @@ import (
 	"fmt"
 	"log"
 	"strings"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/validators"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -38,7 +41,7 @@ var (
 				Description:      "Phone number. Phone number must be in an E.164 number format.",
 				Type:             schema.TypeString,
 				Optional:         true,
-				ValidateDiagFunc: ValidatePhoneNumber,
+				ValidateDiagFunc: validators.ValidatePhoneNumber,
 			},
 			"media_type": {
 				Description:  "Media type of phone number (SMS | PHONE).",
@@ -178,7 +181,7 @@ func GetAllUsers(ctx context.Context, sdkConfig *platformclientv2.Configuration)
 
 func UserExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
-		GetResourcesFunc: GetAllWithPooledClient(GetAllUsers),
+		GetResourcesFunc: provider.GetAllWithPooledClient(GetAllUsers),
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			"manager":                       {RefType: "genesyscloud_user"},
 			"division_id":                   {RefType: "genesyscloud_auth_division"},
@@ -199,10 +202,10 @@ func ResourceUser() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud User",
 
-		CreateContext: CreateWithPooledClient(createUser),
-		ReadContext:   ReadWithPooledClient(readUser),
-		UpdateContext: UpdateWithPooledClient(updateUser),
-		DeleteContext: DeleteWithPooledClient(deleteUser),
+		CreateContext: provider.CreateWithPooledClient(createUser),
+		ReadContext:   provider.ReadWithPooledClient(readUser),
+		UpdateContext: provider.UpdateWithPooledClient(updateUser),
+		DeleteContext: provider.DeleteWithPooledClient(deleteUser),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -357,7 +360,7 @@ func ResourceUser() *schema.Resource {
 							Description:      "Hiring date. Dates must be an ISO-8601 string. For example: yyyy-MM-dd.",
 							Type:             schema.TypeString,
 							Optional:         true,
-							ValidateDiagFunc: validateDate,
+							ValidateDiagFunc: validators.ValidateDate,
 						},
 					},
 				},
@@ -442,7 +445,7 @@ func createUser(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	manager := d.Get("manager").(string)
 	acdAutoAnswer := d.Get("acd_auto_answer").(bool)
 
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	usersAPI := platformclientv2.NewUsersApiWithConfig(sdkConfig)
 
 	addresses, addrErr := buildSdkAddresses(d)
@@ -541,11 +544,11 @@ func createUser(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 }
 
 func readUser(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	usersAPI := platformclientv2.NewUsersApiWithConfig(sdkConfig)
 
 	log.Printf("Reading user %s", d.Id())
-	return WithRetriesForRead(ctx, d, func() *retry.RetryError {
+	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		currentUser, resp, getErr := usersAPI.GetUser(d.Id(), []string{
 			// Expands
 			"skills",
@@ -557,7 +560,7 @@ func readUser(ctx context.Context, d *schema.ResourceData, meta interface{}) dia
 		}, "", "")
 
 		if getErr != nil {
-			if IsStatus404(resp) {
+			if util.IsStatus404(resp) {
 				return retry.RetryableError(fmt.Errorf("Failed to read user %s: %s", d.Id(), getErr))
 			}
 			return retry.NonRetryableError(fmt.Errorf("Failed to read user %s: %s", d.Id(), getErr))
@@ -621,7 +624,7 @@ func updateUser(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	manager := d.Get("manager").(string)
 	acdAutoAnswer := d.Get("acd_auto_answer").(bool)
 
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	usersAPI := platformclientv2.NewUsersApiWithConfig(sdkConfig)
 
 	addresses, err := buildSdkAddresses(d)
@@ -658,7 +661,7 @@ func updateUser(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 		return patchErr
 	}
 
-	diagErr := updateObjectDivision(d, "USER", sdkConfig)
+	diagErr := util.UpdateObjectDivision(d, "USER", sdkConfig)
 	if diagErr != nil {
 		return diagErr
 	}
@@ -690,11 +693,11 @@ func updateUser(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 func deleteUser(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	email := d.Get("email").(string)
 
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	usersAPI := platformclientv2.NewUsersApiWithConfig(sdkConfig)
 
 	log.Printf("Deleting user %s", email)
-	err := RetryWhen(IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+	err := util.RetryWhen(util.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		// Directory occasionally returns version errors on deletes if an object was updated at the same time.
 		_, resp, err := usersAPI.DeleteUser(d.Id())
 		if err != nil {
@@ -709,7 +712,7 @@ func deleteUser(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	}
 
 	// Verify user in deleted state and search index has been updated
-	return WithRetries(ctx, 180*time.Second, func() *retry.RetryError {
+	return util.WithRetries(ctx, 180*time.Second, func() *retry.RetryError {
 		id, err := getDeletedUserId(email, usersAPI)
 		if err != nil {
 			return retry.NonRetryableError(fmt.Errorf("Error searching for deleted user %s: %v", email, err))
@@ -726,7 +729,7 @@ func patchUser(id string, update platformclientv2.Updateuser, usersAPI *platform
 }
 
 func patchUserWithState(id string, state string, update platformclientv2.Updateuser, usersAPI *platformclientv2.UsersApi) diag.Diagnostics {
-	return RetryWhen(IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+	return util.RetryWhen(util.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		currentUser, _, getErr := usersAPI.GetUser(id, nil, "", state)
 		if getErr != nil {
 			return nil, diag.Errorf("Failed to read user %s: %s", id, getErr)
@@ -1056,7 +1059,7 @@ func readUserRoutingUtilization(d *schema.ResourceData, sdkConfig *platformclien
 	response, err := apiClient.CallAPI(path, "GET", nil, headerParams, nil, nil, "", nil)
 
 	if err != nil {
-		if IsStatus404(response) {
+		if util.IsStatus404(response) {
 			d.SetId("") // User doesn't exist
 			return nil
 		}
@@ -1112,7 +1115,7 @@ func updateUserSkills(d *schema.ResourceData, usersAPI *platformclientv2.UsersAp
 	}
 
 	chunkProcessor := func(chunk []platformclientv2.Userroutingskillpost) diag.Diagnostics {
-		diagErr := RetryWhen(IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+		diagErr := util.RetryWhen(util.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 			_, resp, err := usersAPI.PatchUserRoutingskillsBulk(d.Id(), chunk)
 			if err != nil {
 				return resp, diag.Errorf("Failed to update skills for user %s: %s", d.Id(), err)
@@ -1163,7 +1166,7 @@ func updateUserLanguages(d *schema.ResourceData, usersAPI *platformclientv2.User
 			if len(oldLangIds) > 0 {
 				langsToRemove := lists.SliceDifference(oldLangIds, newLangIds)
 				for _, langID := range langsToRemove {
-					diagErr := RetryWhen(IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+					diagErr := util.RetryWhen(util.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 						resp, err := usersAPI.DeleteUserRoutinglanguage(d.Id(), langID)
 						if err != nil {
 							return resp, diag.Errorf("Failed to remove language from user %s: %s", d.Id(), err)
@@ -1238,7 +1241,7 @@ func updateUserRoutingLanguages(
 	// Closure to process the chunks
 
 	chunkProcessor := func(chunk []platformclientv2.Userroutinglanguagepost) diag.Diagnostics {
-		diagErr := RetryWhen(IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+		diagErr := util.RetryWhen(util.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 			_, resp, err := api.PatchUserRoutinglanguagesBulk(userID, chunk)
 			if err != nil {
 				return resp, diag.Errorf("Failed to update languages for user %s: %s", userID, err)
@@ -1259,7 +1262,7 @@ func updateUserProfileSkills(d *schema.ResourceData, usersAPI *platformclientv2.
 	if d.HasChange("profile_skills") {
 		if profileSkills := d.Get("profile_skills"); profileSkills != nil {
 			profileSkills := lists.SetToStringList(profileSkills.(*schema.Set))
-			diagErr := RetryWhen(IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+			diagErr := util.RetryWhen(util.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 				_, resp, err := usersAPI.PutUserProfileskills(d.Id(), *profileSkills)
 				if err != nil {
 					return resp, diag.Errorf("Failed to update profile skills for user %s: %s", d.Id(), err)
@@ -1401,7 +1404,7 @@ func buildMediaTypeUtilizations(allUtilizations map[string]interface{}) *map[str
 
 // Basic user with minimum required fields
 func GenerateBasicUserResource(resourceID string, email string, name string) string {
-	return GenerateUserResource(resourceID, email, name, NullValue, NullValue, NullValue, NullValue, NullValue, "", "")
+	return GenerateUserResource(resourceID, email, name, util.NullValue, util.NullValue, util.NullValue, util.NullValue, util.NullValue, "", "")
 }
 
 func GenerateUserResource(

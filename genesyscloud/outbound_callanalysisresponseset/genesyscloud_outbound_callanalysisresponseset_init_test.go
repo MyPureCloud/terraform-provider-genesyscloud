@@ -3,6 +3,7 @@ package outbound_callanalysisresponseset
 import (
 	"sync"
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	flow "terraform-provider-genesyscloud/genesyscloud/architect_flow"
 	obContactList "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
 	"testing"
 
@@ -32,7 +33,7 @@ func (r *registerTestInstance) registerTestResources() {
 
 	providerResources[resourceName] = ResourceOutboundCallanalysisresponseset()
 	providerResources["genesyscloud_outbound_contact_list"] = obContactList.ResourceOutboundContactList()
-	providerResources["genesyscloud_flow"] = gcloud.ResourceFlow()
+	providerResources["genesyscloud_flow"] = flow.ResourceArchitectFlow()
 	providerResources["genesyscloud_routing_wrapupcode"] = gcloud.ResourceRoutingWrapupCode()
 }
 

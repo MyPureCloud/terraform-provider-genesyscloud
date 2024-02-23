@@ -2,8 +2,7 @@ package integration_action
 
 import (
 	"encoding/json"
-
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -50,13 +49,13 @@ type IntegrationAction struct {
 // BuildSdkActionContract takes the resource data and builds the custom ActionContract from it
 func BuildSdkActionContract(d *schema.ResourceData) (*ActionContract, diag.Diagnostics) {
 	configInput := d.Get("contract_input").(string)
-	inputVal, err := gcloud.JsonStringToInterface(configInput)
+	inputVal, err := util.JsonStringToInterface(configInput)
 	if err != nil {
 		return nil, diag.Errorf("Failed to parse contract input %s: %v", configInput, err)
 	}
 
 	configOutput := d.Get("contract_output").(string)
-	outputVal, err := gcloud.JsonStringToInterface(configOutput)
+	outputVal, err := util.JsonStringToInterface(configOutput)
 	if err != nil {
 		return nil, diag.Errorf("Failed to parse contract output %s: %v", configInput, err)
 	}

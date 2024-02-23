@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -24,7 +26,7 @@ func getAllIdpSalesforce(_ context.Context, clientConfig *platformclientv2.Confi
 
 	_, resp, getErr := idpAPI.GetIdentityprovidersSalesforce()
 	if getErr != nil {
-		if IsStatus404(resp) {
+		if util.IsStatus404(resp) {
 			// Don't export if config doesn't exist
 			return resources, nil
 		}
@@ -37,7 +39,7 @@ func getAllIdpSalesforce(_ context.Context, clientConfig *platformclientv2.Confi
 
 func IdpSalesforceExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
-		GetResourcesFunc: GetAllWithPooledClient(getAllIdpSalesforce),
+		GetResourcesFunc: provider.GetAllWithPooledClient(getAllIdpSalesforce),
 		RefAttrs:         map[string]*resourceExporter.RefAttrSettings{}, // No references
 	}
 }
@@ -46,10 +48,10 @@ func ResourceIdpSalesforce() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud Single Sign-on Salesforce Identity Provider. See this page for detailed configuration instructions: https://help.mypurecloud.com/articles/add-salesforce-as-a-single-sign-on-provider/",
 
-		CreateContext: CreateWithPooledClient(createIdpSalesforce),
-		ReadContext:   ReadWithPooledClient(readIdpSalesforce),
-		UpdateContext: UpdateWithPooledClient(updateIdpSalesforce),
-		DeleteContext: DeleteWithPooledClient(deleteIdpSalesforce),
+		CreateContext: provider.CreateWithPooledClient(createIdpSalesforce),
+		ReadContext:   provider.ReadWithPooledClient(readIdpSalesforce),
+		UpdateContext: provider.UpdateWithPooledClient(updateIdpSalesforce),
+		DeleteContext: provider.DeleteWithPooledClient(deleteIdpSalesforce),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -92,15 +94,15 @@ func createIdpSalesforce(ctx context.Context, d *schema.ResourceData, meta inter
 }
 
 func readIdpSalesforce(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	idpAPI := platformclientv2.NewIdentityProviderApiWithConfig(sdkConfig)
 
 	log.Printf("Reading IDP Salesforce")
 
-	return WithRetriesForReadCustomTimeout(ctx, d.Timeout(schema.TimeoutRead), d, func() *retry.RetryError {
+	return util.WithRetriesForReadCustomTimeout(ctx, d.Timeout(schema.TimeoutRead), d, func() *retry.RetryError {
 		salesforce, resp, getErr := idpAPI.GetIdentityprovidersSalesforce()
 		if getErr != nil {
-			if IsStatus404(resp) {
+			if util.IsStatus404(resp) {
 				createIdpSalesforce(ctx, d, meta)
 				return retry.RetryableError(fmt.Errorf("Failed to read IDP Salesforce: %s", getErr))
 			}
@@ -144,7 +146,7 @@ func updateIdpSalesforce(ctx context.Context, d *schema.ResourceData, meta inter
 	targetUri := d.Get("target_uri").(string)
 	disabled := d.Get("disabled").(bool)
 
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	idpAPI := platformclientv2.NewIdentityProviderApiWithConfig(sdkConfig)
 
 	log.Printf("Updating IDP Salesforce")
@@ -172,7 +174,7 @@ func updateIdpSalesforce(ctx context.Context, d *schema.ResourceData, meta inter
 }
 
 func deleteIdpSalesforce(ctx context.Context, _ *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	idpAPI := platformclientv2.NewIdentityProviderApiWithConfig(sdkConfig)
 
 	log.Printf("Deleting IDP Salesforce")
@@ -181,10 +183,10 @@ func deleteIdpSalesforce(ctx context.Context, _ *schema.ResourceData, meta inter
 		return diag.Errorf("Failed to delete IDP Salesforce: %s", err)
 	}
 
-	return WithRetries(ctx, 180*time.Second, func() *retry.RetryError {
+	return util.WithRetries(ctx, 180*time.Second, func() *retry.RetryError {
 		_, resp, err := idpAPI.GetIdentityprovidersSalesforce()
 		if err != nil {
-			if IsStatus404(resp) {
+			if util.IsStatus404(resp) {
 				// IDP Salesforce deleted
 				log.Printf("Deleted Salesforce Ping")
 				return nil

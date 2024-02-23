@@ -3,10 +3,11 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"log"
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
-
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 
 	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 
@@ -19,9 +20,9 @@ func resourceOrgauthorizationPairing() *schema.Resource {
 	return &schema.Resource{
 		Description: `Genesys Cloud orgauthorization pairing`,
 
-		CreateContext: CreateWithPooledClient(createOrgauthorizationPairing),
-		ReadContext:   ReadWithPooledClient(readOrgauthorizationPairing),
-		DeleteContext: DeleteWithPooledClient(deleteOrgauthorizationPairing),
+		CreateContext: provider.CreateWithPooledClient(createOrgauthorizationPairing),
+		ReadContext:   provider.ReadWithPooledClient(readOrgauthorizationPairing),
+		DeleteContext: provider.DeleteWithPooledClient(deleteOrgauthorizationPairing),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -53,7 +54,7 @@ func createOrgauthorizationPairing(ctx context.Context, d *schema.ResourceData, 
 	userIds := lists.InterfaceListToStrings(d.Get("user_ids").([]interface{}))
 	groupIds := lists.InterfaceListToStrings(d.Get("group_ids").([]interface{}))
 
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	organizationAuthorizationApi := platformclientv2.NewOrganizationAuthorizationApiWithConfig(sdkConfig)
 
 	sdktrustrequestcreate := platformclientv2.Trustrequestcreate{
@@ -74,15 +75,15 @@ func createOrgauthorizationPairing(ctx context.Context, d *schema.ResourceData, 
 }
 
 func readOrgauthorizationPairing(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	organizationAuthorizationApi := platformclientv2.NewOrganizationAuthorizationApiWithConfig(sdkConfig)
 
 	log.Printf("Reading Orgauthorization Pairing %s", d.Id())
 
-	return WithRetriesForRead(ctx, d, func() *retry.RetryError {
+	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		sdktrustrequest, resp, getErr := organizationAuthorizationApi.GetOrgauthorizationPairing(d.Id())
 		if getErr != nil {
-			if IsStatus404(resp) {
+			if util.IsStatus404(resp) {
 				return retry.RetryableError(fmt.Errorf("Failed to read Orgauthorization Pairing %s: %s", d.Id(), getErr))
 			}
 			return retry.NonRetryableError(fmt.Errorf("Failed to read Orgauthorization Pairing %s: %s", d.Id(), getErr))

@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"log"
 	"regexp"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -280,7 +282,7 @@ func getAllJourneySegments(_ context.Context, clientConfig *platformclientv2.Con
 
 func JourneySegmentExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
-		GetResourcesFunc: GetAllWithPooledClient(getAllJourneySegments),
+		GetResourcesFunc: provider.GetAllWithPooledClient(getAllJourneySegments),
 		RefAttrs:         map[string]*resourceExporter.RefAttrSettings{}, // No references
 	}
 }
@@ -288,10 +290,10 @@ func JourneySegmentExporter() *resourceExporter.ResourceExporter {
 func ResourceJourneySegment() *schema.Resource {
 	return &schema.Resource{
 		Description:   "Genesys Cloud Journey Segment",
-		CreateContext: CreateWithPooledClient(createJourneySegment),
-		ReadContext:   ReadWithPooledClient(readJourneySegment),
-		UpdateContext: UpdateWithPooledClient(updateJourneySegment),
-		DeleteContext: DeleteWithPooledClient(deleteJourneySegment),
+		CreateContext: provider.CreateWithPooledClient(createJourneySegment),
+		ReadContext:   provider.ReadWithPooledClient(readJourneySegment),
+		UpdateContext: provider.UpdateWithPooledClient(updateJourneySegment),
+		DeleteContext: provider.DeleteWithPooledClient(deleteJourneySegment),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -301,15 +303,15 @@ func ResourceJourneySegment() *schema.Resource {
 }
 
 func createJourneySegment(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	journeyApi := platformclientv2.NewJourneyApiWithConfig(sdkConfig)
 	journeySegment := buildSdkJourneySegment(d)
 
 	log.Printf("Creating journey segment %s", *journeySegment.DisplayName)
 	result, resp, err := journeyApi.PostJourneySegments(*journeySegment)
 	if err != nil {
-		input, _ := InterfaceToJson(*journeySegment)
-		return diag.Errorf("failed to create journey segment %s: %s\n(input: %+v)\n(resp: %s)", *journeySegment.DisplayName, err, input, GetBody(resp))
+		input, _ := util.InterfaceToJson(*journeySegment)
+		return diag.Errorf("failed to create journey segment %s: %s\n(input: %+v)\n(resp: %s)", *journeySegment.DisplayName, err, input, util.GetBody(resp))
 	}
 
 	d.SetId(*result.Id)
@@ -319,14 +321,14 @@ func createJourneySegment(ctx context.Context, d *schema.ResourceData, meta inte
 }
 
 func readJourneySegment(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	journeyApi := platformclientv2.NewJourneyApiWithConfig(sdkConfig)
 
 	log.Printf("Reading journey segment %s", d.Id())
-	return WithRetriesForRead(ctx, d, func() *retry.RetryError {
+	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		journeySegment, resp, getErr := journeyApi.GetJourneySegment(d.Id())
 		if getErr != nil {
-			if IsStatus404(resp) {
+			if util.IsStatus404(resp) {
 				return retry.RetryableError(fmt.Errorf("failed to read journey segment %s: %s", d.Id(), getErr))
 			}
 			return retry.NonRetryableError(fmt.Errorf("failed to read journey segment %s: %s", d.Id(), getErr))
@@ -341,12 +343,12 @@ func readJourneySegment(ctx context.Context, d *schema.ResourceData, meta interf
 }
 
 func updateJourneySegment(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	journeyApi := platformclientv2.NewJourneyApiWithConfig(sdkConfig)
 	patchSegment := buildSdkPatchSegment(d)
 
 	log.Printf("Updating journey segment %s", d.Id())
-	diagErr := RetryWhen(IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+	diagErr := util.RetryWhen(util.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		// Get current journey segment version
 		journeySegment, resp, getErr := journeyApi.GetJourneySegment(d.Id())
 		if getErr != nil {
@@ -356,8 +358,8 @@ func updateJourneySegment(ctx context.Context, d *schema.ResourceData, meta inte
 		patchSegment.Version = journeySegment.Version
 		_, resp, patchErr := journeyApi.PatchJourneySegment(d.Id(), *patchSegment)
 		if patchErr != nil {
-			input, _ := InterfaceToJson(*patchSegment)
-			return resp, diag.Errorf("Error updating journey segment %s: %s\n(input: %+v)\n(resp: %s)", *patchSegment.DisplayName, patchErr, input, GetBody(resp))
+			input, _ := util.InterfaceToJson(*patchSegment)
+			return resp, diag.Errorf("Error updating journey segment %s: %s\n(input: %+v)\n(resp: %s)", *patchSegment.DisplayName, patchErr, input, util.GetBody(resp))
 		}
 		return resp, nil
 	})
@@ -372,7 +374,7 @@ func updateJourneySegment(ctx context.Context, d *schema.ResourceData, meta inte
 func deleteJourneySegment(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	displayName := d.Get("display_name").(string)
 
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	journeyApi := platformclientv2.NewJourneyApiWithConfig(sdkConfig)
 
 	log.Printf("Deleting journey segment with display name %s", displayName)
@@ -380,10 +382,10 @@ func deleteJourneySegment(ctx context.Context, d *schema.ResourceData, meta inte
 		return diag.Errorf("Failed to delete journey segment with display name %s: %s", displayName, err)
 	}
 
-	return WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
+	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		_, resp, err := journeyApi.GetJourneySegment(d.Id())
 		if err != nil {
-			if IsStatus404(resp) {
+			if util.IsStatus404(resp) {
 				// journey segment deleted
 				log.Printf("Deleted journey segment %s", d.Id())
 				return nil

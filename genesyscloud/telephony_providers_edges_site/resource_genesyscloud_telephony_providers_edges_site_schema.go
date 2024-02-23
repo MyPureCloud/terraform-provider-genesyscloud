@@ -4,10 +4,10 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/mypurecloud/platform-client-sdk-go/v121/platformclientv2"
-
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
+	gcloud "terraform-provider-genesyscloud/genesyscloud/validators"
 )
 
 /*
@@ -172,10 +172,10 @@ func ResourceSite() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud Site",
 
-		CreateContext: gcloud.CreateWithPooledClient(createSite),
-		ReadContext:   gcloud.ReadWithPooledClient(readSite),
-		UpdateContext: gcloud.UpdateWithPooledClient(updateSite),
-		DeleteContext: gcloud.DeleteWithPooledClient(deleteSite),
+		CreateContext: provider.CreateWithPooledClient(createSite),
+		ReadContext:   provider.ReadWithPooledClient(readSite),
+		UpdateContext: provider.UpdateWithPooledClient(updateSite),
+		DeleteContext: provider.DeleteWithPooledClient(deleteSite),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -277,7 +277,7 @@ func ResourceSite() *schema.Resource {
 // SiteExporter returns the resourceExporter object used to hold the genesyscloud_telephony_providers_edges_site exporter's config
 func SiteExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
-		GetResourcesFunc: gcloud.GetAllWithPooledClient(getSites),
+		GetResourcesFunc: provider.GetAllWithPooledClient(getSites),
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			"location_id": {RefType: "genesyscloud_location"},
 			"outbound_routes.external_trunk_base_ids": {RefType: "genesyscloud_telephony_providers_edges_trunkbasesettings"},
@@ -294,7 +294,7 @@ func SiteExporter() *resourceExporter.ResourceExporter {
 func DataSourceSite() *schema.Resource {
 	return &schema.Resource{
 		Description: "Data source for Genesys Cloud Sites. Select a site by name",
-		ReadContext: gcloud.ReadWithPooledClient(dataSourceSiteRead),
+		ReadContext: provider.ReadWithPooledClient(dataSourceSiteRead),
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Description: "Site name.",

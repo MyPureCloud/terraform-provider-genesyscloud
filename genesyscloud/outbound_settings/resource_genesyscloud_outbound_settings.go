@@ -8,9 +8,10 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v121/platformclientv2"
 	"log"
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 )
 
 /*
@@ -32,7 +33,7 @@ func createOutboundSettings(ctx context.Context, d *schema.ResourceData, meta in
 
 // readOutboundSettings is used by the outbound_settings resource to read an outbound settings from genesys cloud
 func readOutboundSettings(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getOutboundSettingsProxy(sdkConfig)
 
 	maxCallsPerAgent := d.Get("max_calls_per_agent").(int)
@@ -43,10 +44,10 @@ func readOutboundSettings(ctx context.Context, d *schema.ResourceData, meta inte
 
 	log.Printf("Reading Outbound setting %s", d.Id())
 
-	return gcloud.WithRetriesForRead(ctx, d, func() *retry.RetryError {
+	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		settings, resp, getErr := proxy.getOutboundSettingsById(ctx, d.Id())
 		if getErr != nil {
-			if gcloud.IsStatus404(resp) {
+			if util.IsStatus404(resp) {
 				return retry.RetryableError(fmt.Errorf("Failed to read Outbound Setting: %s", getErr))
 			}
 			return retry.NonRetryableError(fmt.Errorf("Failed to read Outbound Setting: %s", getErr))
@@ -103,12 +104,12 @@ func updateOutboundSettings(ctx context.Context, d *schema.ResourceData, meta in
 	abandonSeconds := d.Get("abandon_seconds").(float64)
 	complianceAbandonRateDenominator := d.Get("compliance_abandon_rate_denominator").(string)
 
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getOutboundSettingsProxy(sdkConfig)
 
 	log.Printf("Updating Outbound Settings %s", d.Id())
 
-	diagErr := gcloud.RetryWhen(gcloud.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+	diagErr := util.RetryWhen(util.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		// Get current Outbound settings version
 		setting, resp, getErr := proxy.getOutboundSettingsById(ctx, d.Id())
 		if getErr != nil {

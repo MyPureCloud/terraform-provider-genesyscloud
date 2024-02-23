@@ -3,10 +3,10 @@ package outbound_callabletimeset
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
+	gcloud "terraform-provider-genesyscloud/genesyscloud/validators"
 )
 
 const resourceName = "genesyscloud_outbound_callabletimeset"
@@ -62,10 +62,10 @@ func ResourceOutboundCallabletimeset() *schema.Resource {
 	return &schema.Resource{
 		Description: `Genesys Cloud outbound callabletimeset`,
 
-		CreateContext: gcloud.CreateWithPooledClient(createOutboundCallabletimeset),
-		ReadContext:   gcloud.ReadWithPooledClient(readOutboundCallabletimeset),
-		UpdateContext: gcloud.UpdateWithPooledClient(updateOutboundCallabletimeset),
-		DeleteContext: gcloud.DeleteWithPooledClient(deleteOutboundCallabletimeset),
+		CreateContext: provider.CreateWithPooledClient(createOutboundCallabletimeset),
+		ReadContext:   provider.ReadWithPooledClient(readOutboundCallabletimeset),
+		UpdateContext: provider.UpdateWithPooledClient(updateOutboundCallabletimeset),
+		DeleteContext: provider.DeleteWithPooledClient(deleteOutboundCallabletimeset),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -89,7 +89,7 @@ func ResourceOutboundCallabletimeset() *schema.Resource {
 // OutboundCallableTimesetExporter returns the resourceExporter object used to hold the genesyscloud_outbound_callabletimeset exporter's config
 func OutboundCallableTimesetExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
-		GetResourcesFunc: gcloud.GetAllWithPooledClient(getAllOutboundCallableTimesets),
+		GetResourcesFunc: provider.GetAllWithPooledClient(getAllOutboundCallableTimesets),
 	}
 }
 
@@ -97,7 +97,7 @@ func OutboundCallableTimesetExporter() *resourceExporter.ResourceExporter {
 func DataSourceOutboundCallabletimeset() *schema.Resource {
 	return &schema.Resource{
 		Description: "Data source for Genesys Clound Outbound Callable Timesets. Select a callable timeset by name.",
-		ReadContext: gcloud.ReadWithPooledClient(dataSourceOutboundCallabletimesetRead),
+		ReadContext: provider.ReadWithPooledClient(dataSourceOutboundCallabletimesetRead),
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Description: "Callable timeset name.",

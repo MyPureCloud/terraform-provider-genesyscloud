@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -13,8 +15,6 @@ import (
 
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
-
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v121/platformclientv2"
@@ -23,8 +23,8 @@ import (
 func createPhoneBaseSettings(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	name := d.Get("name").(string)
 	description := d.Get("description").(string)
-	phoneMetaBase := gcloud.BuildSdkDomainEntityRef(d, "phone_meta_base_id")
-	properties := gcloud.BuildBaseSettingsProperties(d)
+	phoneMetaBase := util.BuildSdkDomainEntityRef(d, "phone_meta_base_id")
+	properties := util.BuildBaseSettingsProperties(d)
 
 	phoneBase := platformclientv2.Phonebase{
 		Name:          &name,
@@ -43,7 +43,7 @@ func createPhoneBaseSettings(ctx context.Context, d *schema.ResourceData, meta i
 		phoneBase.Description = &description
 	}
 
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	phoneBaseProxy := getPhoneBaseProxy(sdkConfig)
 
 	log.Printf("Creating phone base settings %s", name)
@@ -62,8 +62,8 @@ func createPhoneBaseSettings(ctx context.Context, d *schema.ResourceData, meta i
 func updatePhoneBaseSettings(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	name := d.Get("name").(string)
 	description := d.Get("description").(string)
-	phoneMetaBase := gcloud.BuildSdkDomainEntityRef(d, "phone_meta_base_id")
-	properties := gcloud.BuildBaseSettingsProperties(d)
+	phoneMetaBase := util.BuildSdkDomainEntityRef(d, "phone_meta_base_id")
+	properties := util.BuildBaseSettingsProperties(d)
 	id := d.Id()
 
 	phoneBase := platformclientv2.Phonebase{
@@ -84,11 +84,11 @@ func updatePhoneBaseSettings(ctx context.Context, d *schema.ResourceData, meta i
 		phoneBase.Description = &description
 	}
 
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	phoneBaseProxy := getPhoneBaseProxy(sdkConfig)
 	phoneBaseSettings, resp, getErr := phoneBaseProxy.getPhoneBaseSetting(ctx, d.Id())
 	if getErr != nil {
-		if gcloud.IsStatus404(resp) {
+		if util.IsStatus404(resp) {
 			return nil
 		}
 		return diag.Errorf("Failed to read phone base settings %s: %s", d.Id(), getErr)
@@ -107,14 +107,14 @@ func updatePhoneBaseSettings(ctx context.Context, d *schema.ResourceData, meta i
 }
 
 func readPhoneBaseSettings(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	phoneBaseProxy := getPhoneBaseProxy(sdkConfig)
 	log.Printf("Reading phone base settings %s", d.Id())
 
-	return gcloud.WithRetriesForRead(ctx, d, func() *retry.RetryError {
+	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		phoneBaseSettings, resp, getErr := phoneBaseProxy.getPhoneBaseSetting(ctx, d.Id())
 		if getErr != nil {
-			if gcloud.IsStatus404(resp) {
+			if util.IsStatus404(resp) {
 				return retry.RetryableError(fmt.Errorf("failed to read phone base settings %s: %s", d.Id(), getErr))
 			}
 			return retry.NonRetryableError(fmt.Errorf("failed to read phone base settings %s: %s", d.Id(), getErr))
@@ -131,7 +131,7 @@ func readPhoneBaseSettings(ctx context.Context, d *schema.ResourceData, meta int
 
 		d.Set("properties", nil)
 		if phoneBaseSettings.Properties != nil {
-			properties, err := gcloud.FlattenBaseSettingsProperties(phoneBaseSettings.Properties)
+			properties, err := util.FlattenBaseSettingsProperties(phoneBaseSettings.Properties)
 			if err != nil {
 				return retry.NonRetryableError(fmt.Errorf("%v", err))
 			}
@@ -153,7 +153,7 @@ func readPhoneBaseSettings(ctx context.Context, d *schema.ResourceData, meta int
 }
 
 func deletePhoneBaseSettings(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	phoneBaseProxy := getPhoneBaseProxy(sdkConfig)
 
 	log.Printf("Deleting phone base settings")
@@ -162,10 +162,10 @@ func deletePhoneBaseSettings(ctx context.Context, d *schema.ResourceData, meta i
 		return diag.Errorf("failed to delete phone base settings: %s", err)
 	}
 
-	return gcloud.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
+	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		phoneBaseSettings, resp, err := phoneBaseProxy.getPhoneBaseSetting(ctx, d.Id())
 		if err != nil {
-			if gcloud.IsStatus404(resp) {
+			if util.IsStatus404(resp) {
 				// Phone base proxy settings deleted
 				log.Printf("Deleted Phone base settings %s", d.Id())
 				return nil

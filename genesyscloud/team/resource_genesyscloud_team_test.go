@@ -2,6 +2,8 @@ package team
 
 import (
 	"fmt"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 
 	"github.com/google/uuid"
@@ -37,8 +39,8 @@ func TestAccResourceMembers(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
-		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Create Team
@@ -103,8 +105,8 @@ func TestAccResourceTeam(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
-		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Create Team
@@ -157,7 +159,7 @@ func testVerifyTeamDestroyed(state *terraform.State) error {
 		if team != nil {
 			return fmt.Errorf("team (%s) still exists", rs.Primary.ID)
 		}
-		if gcloud.IsStatus404(resp) {
+		if util.IsStatus404(resp) {
 			continue
 		}
 		return fmt.Errorf("Unexpected error: %s", err)

@@ -1,4 +1,4 @@
-package genesyscloud
+package architect_flow
 
 import (
 	"context"
@@ -8,13 +8,14 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 
 	"github.com/google/uuid"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/mypurecloud/platform-client-sdk-go/v121/platformclientv2"
@@ -25,7 +26,7 @@ import (
 func lockFlow(flowName string, flowType string) {
 	archAPI := platformclientv2.NewArchitectApi()
 	ctx := context.Background()
-	WithRetries(ctx, 5*time.Second, func() *retry.RetryError {
+	util.WithRetries(ctx, 5*time.Second, func() *retry.RetryError {
 		const pageSize = 100
 		for pageNum := 1; ; pageNum++ {
 			flows, _, getErr := archAPI.GetFlows(nil, pageNum, pageSize, "", "", nil, flowName, "", "", "", "", "", "", "", false, false, "", "", nil)
@@ -60,7 +61,7 @@ func TestAccResourceArchFlowForceUnlock(t *testing.T) {
 		flowResource = "test_force_unlock_flow1"
 		flowName     = "Terraform Flow Test ForceUnlock-" + uuid.NewString()
 		flowType     = "INBOUNDCALL"
-		filePath     = "../examples/resources/genesyscloud_flow/inboundcall_flow_example.yaml"
+		filePath     = "../../examples/resources/genesyscloud_flow/inboundcall_flow_example.yaml"
 
 		inboundcallConfig1 = fmt.Sprintf("inboundCall:\n  name: %s\n  defaultLanguage: en-us\n  startUpRef: ./menus/menu[mainMenu]\n  initialGreeting:\n    tts: Archy says hi!!!\n  menus:\n    - menu:\n        name: Main Menu\n        audio:\n          tts: You are at the Main Menu, press 9 to disconnect.\n        refId: mainMenu\n        choices:\n          - menuDisconnect:\n              name: Disconnect\n              dtmf: digit_9", flowName)
 		inboundcallConfig2 = fmt.Sprintf("inboundCall:\n  name: %s\n  defaultLanguage: en-us\n  startUpRef: ./menus/menu[mainMenu]\n  initialGreeting:\n    tts: Archy says hi again!!!\n  menus:\n    - menu:\n        name: Main Menu\n        audio:\n          tts: You are at the Main Menu, press 9 to disconnect.\n        refId: mainMenu\n        choices:\n          - menuDisconnect:\n              name: Disconnect\n              dtmf: digit_9", flowName)
@@ -72,8 +73,8 @@ func TestAccResourceArchFlowForceUnlock(t *testing.T) {
 	}
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Create flow
@@ -122,26 +123,16 @@ func TestAccResourceArchFlowStandard(t *testing.T) {
 		flowDescription2 = "test description 2"
 		flowType1        = "INBOUNDCALL"
 		flowType2        = "INBOUNDEMAIL"
-		filePath1        = "../examples/resources/genesyscloud_flow/inboundcall_flow_example.yaml" //Have to use an explicit path because the filesha function gets screwy on relative class names
-		filePath2        = "../examples/resources/genesyscloud_flow/inboundcall_flow_example2.yaml"
-		filePath3        = "../examples/resources/genesyscloud_flow/inboundcall_flow_example3.yaml"
+		filePath1        = "../../examples/resources/genesyscloud_flow/inboundcall_flow_example.yaml" //Have to use an explicit path because the filesha function gets screwy on relative class names
+		filePath2        = "../../examples/resources/genesyscloud_flow/inboundcall_flow_example2.yaml"
+		filePath3        = "../../examples/resources/genesyscloud_flow/inboundcall_flow_example3.yaml"
 
 		inboundcallConfig1 = fmt.Sprintf("inboundCall:\n  name: %s\n  description: %s\n  defaultLanguage: en-us\n  startUpRef: ./menus/menu[mainMenu]\n  initialGreeting:\n    tts: Archy says hi!!!\n  menus:\n    - menu:\n        name: Main Menu\n        audio:\n          tts: You are at the Main Menu, press 9 to disconnect.\n        refId: mainMenu\n        choices:\n          - menuDisconnect:\n              name: Disconnect\n              dtmf: digit_9", flowName, flowDescription1)
 		inboundcallConfig2 = fmt.Sprintf("inboundCall:\n  name: %s\n  description: %s\n  defaultLanguage: en-us\n  startUpRef: ./menus/menu[mainMenu]\n  initialGreeting:\n    tts: Archy says hi!!!!!\n  menus:\n    - menu:\n        name: Main Menu\n        audio:\n          tts: You are at the Main Menu, press 9 to disconnect.\n        refId: mainMenu\n        choices:\n          - menuDisconnect:\n              name: Disconnect\n              dtmf: digit_9", flowName, flowDescription2)
 	)
 
-	config, err := AuthorizeSdk()
-	if err != nil {
-		t.Fatal(err)
-	}
-	homeDivisionName, err := getHomeDivisionName(config)
-	if err != nil {
-		t.Fatalf("error retrieving home division name: %v", err)
-	}
-
 	inboundemailConfig1 := fmt.Sprintf(`inboundEmail:
     name: %s
-    division: %s
     description: %s
     startUpRef: "/inboundEmail/states/state[Initial State_10]"
     defaultLanguage: en-us
@@ -164,11 +155,11 @@ func TestAccResourceArchFlowStandard(t *testing.T) {
             actions:
                 - disconnect:
                     name: Disconnect
-`, flowName, homeDivisionName, flowDescription1)
+`, flowName, flowDescription1)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Create flow
@@ -231,12 +222,12 @@ func TestAccResourceArchFlowSubstitutions(t *testing.T) {
 		flowName         = "Terraform Flow Test-" + uuid.NewString()
 		flowDescription1 = "description 1"
 		flowDescription2 = "description 2"
-		filePath1        = "../examples/resources/genesyscloud_flow/inboundcall_flow_example_substitutions.yaml"
+		filePath1        = "../../examples/resources/genesyscloud_flow/inboundcall_flow_example_substitutions.yaml"
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Create flow
@@ -245,7 +236,7 @@ func TestAccResourceArchFlowSubstitutions(t *testing.T) {
 					filePath1,
 					"",
 					false,
-					GenerateSubstitutionsMap(map[string]string{
+					util.GenerateSubstitutionsMap(map[string]string{
 						"flow_name":            flowName,
 						"description":          flowDescription1,
 						"default_language":     "en-us",
@@ -264,7 +255,7 @@ func TestAccResourceArchFlowSubstitutions(t *testing.T) {
 					filePath1,
 					"",
 					false,
-					GenerateSubstitutionsMap(map[string]string{
+					util.GenerateSubstitutionsMap(map[string]string{
 						"flow_name":            flowName,
 						"description":          flowDescription2,
 						"default_language":     "en-us",
@@ -336,8 +327,8 @@ func TestAccResourceArchFlowSubstitutionsWithMultipleTouch(t *testing.T) {
 		flowName         = "Terraform Flow Test-" + uuid.NewString()
 		flowDescription1 = "description 1"
 		flowDescription2 = "description 2"
-		srcFile          = "../examples/resources/genesyscloud_flow/inboundcall_flow_example_substitutions.yaml"
-		destFile         = "../examples/resources/genesyscloud_flow/inboundcall_flow_example_holder.yaml"
+		srcFile          = "../../examples/resources/genesyscloud_flow/inboundcall_flow_example_substitutions.yaml"
+		destFile         = "../../examples/resources/genesyscloud_flow/inboundcall_flow_example_holder.yaml"
 	)
 
 	//Copy the example substitution file over to a temp file that can be manipulated and modified
@@ -347,8 +338,8 @@ func TestAccResourceArchFlowSubstitutionsWithMultipleTouch(t *testing.T) {
 	defer removeFile(destFile)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Create flow
@@ -357,7 +348,7 @@ func TestAccResourceArchFlowSubstitutionsWithMultipleTouch(t *testing.T) {
 					destFile,
 					"",
 					false,
-					GenerateSubstitutionsMap(map[string]string{
+					util.GenerateSubstitutionsMap(map[string]string{
 						"flow_name":            flowName,
 						"description":          flowDescription1,
 						"default_language":     "en-us",
@@ -376,7 +367,7 @@ func TestAccResourceArchFlowSubstitutionsWithMultipleTouch(t *testing.T) {
 					destFile,
 					"",
 					false,
-					GenerateSubstitutionsMap(map[string]string{
+					util.GenerateSubstitutionsMap(map[string]string{
 						"flow_name":            flowName,
 						"description":          flowDescription2,
 						"default_language":     "en-us",
@@ -391,15 +382,6 @@ func TestAccResourceArchFlowSubstitutionsWithMultipleTouch(t *testing.T) {
 		},
 		CheckDestroy: testVerifyFlowDestroyed,
 	})
-}
-
-func getHomeDivisionName(sdkConfig *platformclientv2.Configuration) (string, error) {
-	apiInstance := platformclientv2.NewObjectsApiWithConfig(sdkConfig)
-	division, _, err := apiInstance.GetAuthorizationDivisionsHome()
-	if err != nil {
-		return "", err
-	}
-	return *division.Name, nil
 }
 
 // Check if flow is published, then check if flow name and type are correct
@@ -470,33 +452,6 @@ func validateFlowUnlocked(flowResourceName string) resource.TestCheckFunc {
 		}
 
 		return nil
-	}
-}
-
-func cleanupFlows(idPrefix string) {
-	architectApi := platformclientv2.NewArchitectApiWithConfig(sdkConfig)
-
-	for pageNum := 1; ; pageNum++ {
-		const pageSize = 50
-		flows, _, getErr := architectApi.GetFlows(nil, pageNum, pageSize, "", "", nil, "", "", "", "", "", "", "", "", false, true, "", "", nil)
-		if getErr != nil {
-			return
-		}
-
-		if flows.Entities == nil || len(*flows.Entities) == 0 {
-			break
-		}
-
-		for _, flow := range *flows.Entities {
-			if flow.Name != nil && strings.HasPrefix(*flow.Name, idPrefix) {
-				_, delErr := architectApi.DeleteFlow(*flow.Id)
-				if delErr != nil {
-					diag.Errorf("failed to delete flow %s (%s): %s", *flow.Id, *flow.Name, delErr)
-					return
-				}
-				log.Printf("Deleted flow %s (%s)", *flow.Id, *flow.Name)
-			}
-		}
 	}
 }
 

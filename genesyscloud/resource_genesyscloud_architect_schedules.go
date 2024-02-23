@@ -5,6 +5,9 @@ import (
 	"fmt"
 	"log"
 	"strings"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/validators"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -44,7 +47,7 @@ func getAllArchitectSchedules(_ context.Context, clientConfig *platformclientv2.
 
 func ArchitectSchedulesExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
-		GetResourcesFunc: GetAllWithPooledClient(getAllArchitectSchedules),
+		GetResourcesFunc: provider.GetAllWithPooledClient(getAllArchitectSchedules),
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			"division_id": {RefType: "genesyscloud_auth_division"},
 		},
@@ -58,10 +61,10 @@ func ResourceArchitectSchedules() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud Architect Schedules",
 
-		CreateContext: CreateWithPooledClient(createArchitectSchedules),
-		ReadContext:   ReadWithPooledClient(readArchitectSchedules),
-		UpdateContext: UpdateWithPooledClient(updateArchitectSchedules),
-		DeleteContext: DeleteWithPooledClient(deleteArchitectSchedules),
+		CreateContext: provider.CreateWithPooledClient(createArchitectSchedules),
+		ReadContext:   provider.ReadWithPooledClient(readArchitectSchedules),
+		UpdateContext: provider.UpdateWithPooledClient(updateArchitectSchedules),
+		DeleteContext: provider.DeleteWithPooledClient(deleteArchitectSchedules),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -87,19 +90,19 @@ func ResourceArchitectSchedules() *schema.Resource {
 				Description:      "Date time is represented as an ISO-8601 string without a timezone. For example: 2006-01-02T15:04:05.000000.",
 				Type:             schema.TypeString,
 				Required:         true,
-				ValidateDiagFunc: ValidateLocalDateTimes,
+				ValidateDiagFunc: validators.ValidateLocalDateTimes,
 			},
 			"end": {
 				Description:      "Date time is represented as an ISO-8601 string without a timezone. For example: 2006-01-02T15:04:05.000000.",
 				Type:             schema.TypeString,
 				Required:         true,
-				ValidateDiagFunc: ValidateLocalDateTimes,
+				ValidateDiagFunc: validators.ValidateLocalDateTimes,
 			},
 			"rrule": {
 				Description:      "An iCal Recurrence Rule (RRULE) string. It is required to be set for schedules determining when upgrades to the Edge software can be applied.",
 				Type:             schema.TypeString,
 				Optional:         true,
-				ValidateDiagFunc: ValidateRrule,
+				ValidateDiagFunc: validators.ValidateRrule,
 			},
 		},
 	}
@@ -113,7 +116,7 @@ func createArchitectSchedules(ctx context.Context, d *schema.ResourceData, meta 
 	end := d.Get("end").(string)
 	rrule := d.Get("rrule").(string)
 
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	archAPI := platformclientv2.NewArchitectApiWithConfig(sdkConfig)
 
 	schedStart, err := time.Parse("2006-01-02T15:04:05.000000", start)
@@ -159,15 +162,15 @@ func createArchitectSchedules(ctx context.Context, d *schema.ResourceData, meta 
 }
 
 func readArchitectSchedules(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	archAPI := platformclientv2.NewArchitectApiWithConfig(sdkConfig)
 
 	log.Printf("Reading schedule %s", d.Id())
 
-	return WithRetriesForRead(ctx, d, func() *retry.RetryError {
+	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		schedule, resp, getErr := archAPI.GetArchitectSchedule(d.Id())
 		if getErr != nil {
-			if IsStatus404(resp) {
+			if util.IsStatus404(resp) {
 				return retry.RetryableError(fmt.Errorf("Failed to read schedule %s: %s", d.Id(), getErr))
 			}
 			return retry.NonRetryableError(fmt.Errorf("Failed to read schedule %s: %s", d.Id(), getErr))
@@ -216,7 +219,7 @@ func updateArchitectSchedules(ctx context.Context, d *schema.ResourceData, meta 
 	end := d.Get("end").(string)
 	rrule := d.Get("rrule").(string)
 
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	archAPI := platformclientv2.NewArchitectApiWithConfig(sdkConfig)
 
 	schedStart, err := time.Parse("2006-01-02T15:04:05.000000", start)
@@ -229,7 +232,7 @@ func updateArchitectSchedules(ctx context.Context, d *schema.ResourceData, meta 
 		return diag.Errorf("Failed to parse date %s: %s", end, err)
 	}
 
-	diagErr := RetryWhen(IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+	diagErr := util.RetryWhen(util.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		// Get current schedule version
 		sched, resp, getErr := archAPI.GetArchitectSchedule(d.Id())
 		if getErr != nil {
@@ -264,12 +267,12 @@ func updateArchitectSchedules(ctx context.Context, d *schema.ResourceData, meta 
 }
 
 func deleteArchitectSchedules(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	archAPI := platformclientv2.NewArchitectApiWithConfig(sdkConfig)
 
 	// DEVTOOLING-311: a schedule linked to a schedule group will not be able to be deleted until that schedule group is deleted. Retryig here to make sure it is cleared properly.
 	log.Printf("Deleting schedule %s", d.Id())
-	diagErr := RetryWhen(IsStatus409, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+	diagErr := util.RetryWhen(util.IsStatus409, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		log.Printf("Deleting schedule %s", d.Id())
 		resp, err := archAPI.DeleteArchitectSchedule(d.Id())
 		if err != nil {
@@ -281,10 +284,10 @@ func deleteArchitectSchedules(ctx context.Context, d *schema.ResourceData, meta 
 		return diagErr
 	}
 
-	return WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
+	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		schedule, resp, err := archAPI.GetArchitectSchedule(d.Id())
 		if err != nil {
-			if IsStatus404(resp) {
+			if util.IsStatus404(resp) {
 				// schedule deleted
 				log.Printf("Deleted schedule %s", d.Id())
 				return nil
