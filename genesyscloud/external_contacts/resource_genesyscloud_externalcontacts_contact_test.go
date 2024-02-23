@@ -3,7 +3,7 @@ package external_contacts
 import (
 	"fmt"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
-	gcloud "terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -56,7 +56,7 @@ func TestAccResourceExternalContacts(t *testing.T) {
 		externalsystemurl   = "https://externalsystemurl.com"
 	)
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
+		PreCheck:          func() { util.TestAccPreCheck(t) },
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
@@ -264,7 +264,7 @@ func testVerifyContactDestroyed(state *terraform.State) error {
 		externalContact, resp, err := externalAPI.GetExternalcontactsContact(rs.Primary.ID, nil)
 		if externalContact != nil {
 			return fmt.Errorf("External contact (%s) still exists", rs.Primary.ID)
-		} else if gcloud.IsStatus404(resp) {
+		} else if util.IsStatus404(resp) {
 			// External Contact not found as expected
 			continue
 		} else {

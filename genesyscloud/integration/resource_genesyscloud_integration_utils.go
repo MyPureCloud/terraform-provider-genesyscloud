@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"log"
 	"strings"
-	gcloud "terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -125,7 +125,7 @@ func updateIntegrationConfigFromResourceData(ctx context.Context, d *schema.Reso
 				credential = buildConfigCredentials(configMap["credentials"].(map[string]interface{}))
 			}
 
-			diagErr := gcloud.RetryWhen(gcloud.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+			diagErr := util.RetryWhen(util.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 
 				// Get latest config version
 				integrationConfig, resp, err := p.getIntegrationConfig(ctx, d.Id())

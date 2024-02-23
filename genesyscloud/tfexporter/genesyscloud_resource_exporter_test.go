@@ -6,7 +6,7 @@ import (
 	"reflect"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
-	gcloud "terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
@@ -102,7 +102,7 @@ func TestUnitTfExportPostProcessHclBytesFunc(t *testing.T) {
 }
 
 func TestUnitTfExportRemoveZeroValuesFunc(t *testing.T) {
-	m := make(gcloud.JsonMap, 0)
+	m := make(util.JsonMap, 0)
 
 	nonZeroString := "foobar"
 	nonZeroInt := 1

@@ -2,7 +2,7 @@ package telephony_providers_edges_linebasesettings
 
 import (
 	"fmt"
-	gcloud "terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
 	phoneBaseSettings "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_phonebasesettings"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
@@ -20,7 +20,7 @@ func TestAccDataSourceLineBaseSettings(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
-		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Creating a phone base settings will result in a line base settings of the same name being created

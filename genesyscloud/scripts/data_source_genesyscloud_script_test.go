@@ -2,7 +2,7 @@ package scripts
 
 import (
 	"fmt"
-	gcloud "terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 
@@ -23,7 +23,7 @@ func TestAccDataSourceScript(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
-		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				Config: generateScriptResource(
@@ -61,7 +61,7 @@ func TestAccDataSourceScriptPublishedDefaults(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
-		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				Config: generateScriptDataSource(

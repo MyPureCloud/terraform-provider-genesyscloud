@@ -7,7 +7,7 @@ import (
 	"log"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
-	gcloud "terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -83,10 +83,10 @@ func readTaskManagementWorkitemSchema(ctx context.Context, d *schema.ResourceDat
 
 	log.Printf("Reading task management workitem schema %s", d.Id())
 
-	return gcloud.WithRetriesForRead(ctx, d, func() *retry.RetryError {
+	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		schema, respCode, getErr := proxy.getTaskManagementWorkitemSchemaById(ctx, d.Id())
 		if getErr != nil {
-			if gcloud.IsStatus404ByInt(respCode) {
+			if util.IsStatus404ByInt(respCode) {
 				return retry.RetryableError(fmt.Errorf("failed to read task management workitem schema %s: %s", d.Id(), getErr))
 			}
 			return retry.NonRetryableError(fmt.Errorf("failed to read task management workitem schema %s: %s", d.Id(), getErr))
@@ -99,7 +99,7 @@ func readTaskManagementWorkitemSchema(ctx context.Context, d *schema.ResourceDat
 			return retry.NonRetryableError(fmt.Errorf("error in reading json schema properties of %s: %v", *schema.Name, err))
 		}
 		var schemaPropsPtr *string
-		if string(schemaProps) != gcloud.NullValue {
+		if string(schemaProps) != util.NullValue {
 			schemaPropsStr := string(schemaProps)
 			schemaPropsPtr = &schemaPropsStr
 		}
@@ -150,10 +150,10 @@ func deleteTaskManagementWorkitemSchema(ctx context.Context, d *schema.ResourceD
 		return diag.Errorf("failed to delete task management workitem schema %s: %s", d.Id(), err)
 	}
 
-	return gcloud.WithRetries(ctx, 180*time.Second, func() *retry.RetryError {
+	return util.WithRetries(ctx, 180*time.Second, func() *retry.RetryError {
 		isDeleted, respCode, err := proxy.getTaskManagementWorkitemSchemaDeletedStatus(ctx, d.Id())
 		if err != nil {
-			if gcloud.IsStatus404ByInt(respCode) {
+			if util.IsStatus404ByInt(respCode) {
 				log.Printf("Deleted task management workitem schema %s", d.Id())
 				return nil
 			}

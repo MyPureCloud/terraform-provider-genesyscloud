@@ -5,10 +5,10 @@ import (
 	"strconv"
 	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
-	gcloud "terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 
-	integration "terraform-provider-genesyscloud/genesyscloud/integration"
+	"terraform-provider-genesyscloud/genesyscloud/integration"
 	integrationCred "terraform-provider-genesyscloud/genesyscloud/integration_credential"
 
 	"github.com/google/uuid"
@@ -53,7 +53,7 @@ func TestAccResourceIntegrationCustomAuthAction(t *testing.T) {
 			strconv.Quote(credentialResourceName),
 			strconv.Quote(customAuthCredentialType),
 			integrationCred.GenerateCredentialFields(
-				gcloud.GenerateMapProperty(credKey1, strconv.Quote(credVal1)),
+				util.GenerateMapProperty(credKey1, strconv.Quote(credVal1)),
 			),
 		)
 
@@ -63,14 +63,14 @@ func TestAccResourceIntegrationCustomAuthAction(t *testing.T) {
 		integTypeID               = "custom-rest-actions"
 		integrationResourceConfig = integration.GenerateIntegrationResource(
 			integResource1,
-			gcloud.NullValue,
+			util.NullValue,
 			strconv.Quote(integTypeID),
 			integration.GenerateIntegrationConfig(
 				strconv.Quote(integResourceName1),
-				gcloud.NullValue, // no notes
+				util.NullValue, // no notes
 				fmt.Sprintf("basicAuth = genesyscloud_integration_credential.%s.id", credentialResource1),
-				gcloud.NullValue, // no properties
-				gcloud.NullValue, // no advanced properties
+				util.NullValue, // no properties
+				util.NullValue, // no advanced properties
 			),
 		)
 
@@ -138,7 +138,7 @@ func TestAccResourceIntegrationCustomAuthAction(t *testing.T) {
 		generateIntegrationCustomAuthActionResource(actionResource1, &oauthActionResource2)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
+		PreCheck:          func() { util.TestAccPreCheck(t) },
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
@@ -206,7 +206,7 @@ func generateIntegrationCustomAuthActionResource(resourceID string, res *customA
 func generateIntegrationActionConfigRequest(req *customAuthActionResourceConfigRequest) string {
 	headers := ""
 	if req.headers != nil {
-		headers = gcloud.GenerateMapAttrWithMapProperties("headers", req.headers)
+		headers = util.GenerateMapAttrWithMapProperties("headers", req.headers)
 	}
 
 	return fmt.Sprintf(`config_request {
@@ -221,12 +221,12 @@ func generateIntegrationActionConfigRequest(req *customAuthActionResourceConfigR
 func generateIntegrationActionConfigResponse(res *customAuthActionResourceConfigResponse) string {
 	translationMap := ""
 	if res.translationMap != nil {
-		translationMap = gcloud.GenerateMapAttrWithMapProperties("translation_map", res.translationMap)
+		translationMap = util.GenerateMapAttrWithMapProperties("translation_map", res.translationMap)
 	}
 
 	translationMapDefaults := ""
 	if res.translationMapDefaults != nil {
-		translationMapDefaults = gcloud.GenerateMapAttrWithMapProperties("translation_map_defaults", res.translationMapDefaults)
+		translationMapDefaults = util.GenerateMapAttrWithMapProperties("translation_map_defaults", res.translationMapDefaults)
 	}
 
 	return fmt.Sprintf(`config_response {
@@ -247,7 +247,7 @@ func testVerifyIntegrationActionDestroyed(state *terraform.State) error {
 		action, resp, err := integrationAPI.GetIntegrationsAction(rs.Primary.ID, "", false)
 		if action != nil {
 			return fmt.Errorf("Integration action (%s) still exists", rs.Primary.ID)
-		} else if gcloud.IsStatus404(resp) {
+		} else if util.IsStatus404(resp) {
 			// Action not found as expected
 			continue
 		} else {

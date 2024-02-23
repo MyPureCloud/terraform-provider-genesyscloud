@@ -5,7 +5,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
-	gcloud "terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
@@ -56,7 +56,7 @@ func ResourceTaskManagementWorkitemSchema() *schema.Resource {
 				Description:      "The properties for the JSON Schema document.",
 				Optional:         true,
 				Type:             schema.TypeString,
-				DiffSuppressFunc: gcloud.SuppressEquivalentJsonDiffs,
+				DiffSuppressFunc: util.SuppressEquivalentJsonDiffs,
 			},
 			"enabled": {
 				Description: `The schema's enabled/disabled status. A disabled schema cannot be assigned to any other entities, but the data on those entities from the schema still exists.`,

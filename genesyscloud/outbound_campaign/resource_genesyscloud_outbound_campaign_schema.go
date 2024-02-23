@@ -4,7 +4,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"terraform-provider-genesyscloud/genesyscloud/outbound"
-	gcloud "terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
 )
@@ -41,10 +41,10 @@ func ResourceOutboundCampaign() *schema.Resource {
 	return &schema.Resource{
 		Description: `Genesys Cloud outbound campaign`,
 
-		CreateContext: gcloud.CreateWithPooledClient(createOutboundCampaign),
-		ReadContext:   gcloud.ReadWithPooledClient(readOutboundCampaign),
-		UpdateContext: gcloud.UpdateWithPooledClient(updateOutboundCampaign),
-		DeleteContext: gcloud.DeleteWithPooledClient(deleteOutboundCampaign),
+		CreateContext: provider.CreateWithPooledClient(createOutboundCampaign),
+		ReadContext:   provider.ReadWithPooledClient(readOutboundCampaign),
+		UpdateContext: provider.UpdateWithPooledClient(updateOutboundCampaign),
+		DeleteContext: provider.DeleteWithPooledClient(deleteOutboundCampaign),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -218,7 +218,7 @@ func ResourceOutboundCampaign() *schema.Resource {
 // OutboundCampaignExporter returns the resourceExporter object used to hold the genesyscloud_outbound_campaign exporter's config
 func OutboundCampaignExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
-		GetResourcesFunc: gcloud.GetAllWithPooledClient(getAllAuthOutboundCampaign),
+		GetResourcesFunc: provider.GetAllWithPooledClient(getAllAuthOutboundCampaign),
 		AllowZeroValues:  []string{`preview_time_out_seconds`},
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			`contact_list_id`: {
@@ -265,7 +265,7 @@ func OutboundCampaignExporter() *resourceExporter.ResourceExporter {
 func DataSourceOutboundCampaign() *schema.Resource {
 	return &schema.Resource{
 		Description: `Genesys Cloud outbound campaign data source. Select an outbound campaign by name`,
-		ReadContext: gcloud.ReadWithPooledClient(dataSourceOutboundCampaignRead),
+		ReadContext: provider.ReadWithPooledClient(dataSourceOutboundCampaignRead),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},

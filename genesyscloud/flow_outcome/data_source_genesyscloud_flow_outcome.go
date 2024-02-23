@@ -6,7 +6,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
-	gcloud "terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -24,7 +24,7 @@ func dataSourceFlowOutcomeRead(ctx context.Context, d *schema.ResourceData, meta
 
 	name := d.Get("name").(string)
 
-	return gcloud.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
+	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
 		flowOutcomeId, retryable, err := proxy.getFlowOutcomeIdByName(ctx, name)
 
 		if err != nil && !retryable {

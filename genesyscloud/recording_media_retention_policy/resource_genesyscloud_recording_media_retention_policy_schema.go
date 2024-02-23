@@ -3,7 +3,7 @@ package recording_media_retention_policy
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	gcloud "terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
 )
@@ -870,10 +870,10 @@ func ResourceMediaRetentionPolicy() *schema.Resource {
 
 	return &schema.Resource{
 		Description:   "Genesys Cloud Media Retention Policies",
-		CreateContext: gcloud.CreateWithPooledClient(createMediaRetentionPolicy),
-		ReadContext:   gcloud.ReadWithPooledClient(readMediaRetentionPolicy),
-		UpdateContext: gcloud.UpdateWithPooledClient(updateMediaRetentionPolicy),
-		DeleteContext: gcloud.DeleteWithPooledClient(deleteMediaRetentionPolicy),
+		CreateContext: provider.CreateWithPooledClient(createMediaRetentionPolicy),
+		ReadContext:   provider.ReadWithPooledClient(readMediaRetentionPolicy),
+		UpdateContext: provider.UpdateWithPooledClient(updateMediaRetentionPolicy),
+		DeleteContext: provider.DeleteWithPooledClient(deleteMediaRetentionPolicy),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -935,7 +935,7 @@ func ResourceMediaRetentionPolicy() *schema.Resource {
 // MediaRetentionPolicyExporter returns the resourceExporter object used to hold the genesyscloud_recording_media_retention_policy exporter's config
 func MediaRetentionPolicyExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
-		GetResourcesFunc: gcloud.GetAllWithPooledClient(getAllMediaRetentionPolicies),
+		GetResourcesFunc: provider.GetAllWithPooledClient(getAllMediaRetentionPolicies),
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			"media_policies.chat_policy.conditions.for_queue_ids":                                         {RefType: "genesyscloud_routing_queue", AltValues: []string{"*"}},
 			"media_policies.call_policy.conditions.for_queue_ids":                                         {RefType: "genesyscloud_routing_queue", AltValues: []string{"*"}},
@@ -1033,7 +1033,7 @@ func MediaRetentionPolicyExporter() *resourceExporter.ResourceExporter {
 func DataSourceRecordingMediaRetentionPolicy() *schema.Resource {
 	return &schema.Resource{
 		Description: "Data source for Genesys Cloud media retention policy. Select a policy by name",
-		ReadContext: gcloud.ReadWithPooledClient(dataSourceRecordingMediaRetentionPolicyRead),
+		ReadContext: provider.ReadWithPooledClient(dataSourceRecordingMediaRetentionPolicyRead),
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Description: "Media retention policy name.",

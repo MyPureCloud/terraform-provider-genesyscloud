@@ -2,7 +2,7 @@ package architect_grammar
 
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	gcloud "terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
 )
@@ -29,10 +29,10 @@ func ResourceArchitectGrammar() *schema.Resource {
 	return &schema.Resource{
 		Description: `Genesys Cloud architect grammar`,
 
-		CreateContext: gcloud.CreateWithPooledClient(createArchitectGrammar),
-		ReadContext:   gcloud.ReadWithPooledClient(readArchitectGrammar),
-		UpdateContext: gcloud.UpdateWithPooledClient(updateArchitectGrammar),
-		DeleteContext: gcloud.DeleteWithPooledClient(deleteArchitectGrammar),
+		CreateContext: provider.CreateWithPooledClient(createArchitectGrammar),
+		ReadContext:   provider.ReadWithPooledClient(readArchitectGrammar),
+		UpdateContext: provider.UpdateWithPooledClient(updateArchitectGrammar),
+		DeleteContext: provider.DeleteWithPooledClient(deleteArchitectGrammar),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -55,7 +55,7 @@ func ResourceArchitectGrammar() *schema.Resource {
 // ArchitectGrammarExporter returns the resourceExporter object used to hold the genesyscloud_architect_grammar exporter's config
 func ArchitectGrammarExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
-		GetResourcesFunc: gcloud.GetAllWithPooledClient(getAllAuthArchitectGrammar),
+		GetResourcesFunc: provider.GetAllWithPooledClient(getAllAuthArchitectGrammar),
 	}
 }
 
@@ -63,7 +63,7 @@ func ArchitectGrammarExporter() *resourceExporter.ResourceExporter {
 func DataSourceArchitectGrammar() *schema.Resource {
 	return &schema.Resource{
 		Description: `Data source for Genesys Cloud Architect Grammar. Select an Architect Grammar by name.`,
-		ReadContext: gcloud.ReadWithPooledClient(dataSourceArchitectGrammarRead),
+		ReadContext: provider.ReadWithPooledClient(dataSourceArchitectGrammarRead),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},

@@ -6,7 +6,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
-	gcloud "terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -24,7 +24,7 @@ func dataSourceEmployeeperformanceExternalmetricsDefinitionRead(ctx context.Cont
 
 	name := d.Get("name").(string)
 
-	return gcloud.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
+	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
 		domainOrganizationRoleId, retryable, err := proxy.getEmployeeperformanceExternalmetricsDefinitionIdByName(ctx, name)
 
 		if err != nil && !retryable {

@@ -7,7 +7,7 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v121/platformclientv2"
 	"log"
 	"strings"
-	gcloud "terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"terraform-provider-genesyscloud/genesyscloud/util/stringmap"
 )
@@ -22,12 +22,12 @@ type DependentConsumerProxy struct {
 func (p *DependentConsumerProxy) GetDependentConsumers(ctx context.Context, resourceKeys resourceExporter.ResourceInfo) (resourceExporter.ResourceIDMetaMap, map[string][]string, error) {
 	return p.RetrieveDependentConsumersAttr(ctx, p, resourceKeys)
 }
-func (p *DependentConsumerProxy) GetAllWithPooledClient(method gcloud.GetCustomConfigFunc) (resourceExporter.ResourceIDMetaMap, map[string][]string, diag.Diagnostics) {
+func (p *DependentConsumerProxy) GetAllWithPooledClient(method provider.GetCustomConfigFunc) (resourceExporter.ResourceIDMetaMap, map[string][]string, diag.Diagnostics) {
 	return p.GetPooledClientAttr(method)
 }
 
 type retrieveDependentConsumersFunc func(ctx context.Context, p *DependentConsumerProxy, resourceKeys resourceExporter.ResourceInfo) (resourceExporter.ResourceIDMetaMap, map[string][]string, error)
-type retrievePooledClientFunc func(method gcloud.GetCustomConfigFunc) (resourceExporter.ResourceIDMetaMap, map[string][]string, diag.Diagnostics)
+type retrievePooledClientFunc func(method provider.GetCustomConfigFunc) (resourceExporter.ResourceIDMetaMap, map[string][]string, diag.Diagnostics)
 
 var InternalProxy *DependentConsumerProxy
 
@@ -51,8 +51,8 @@ func newDependentConsumerProxy(ClientConfig *platformclientv2.Configuration) *De
 	}
 	return InternalProxy
 }
-func retrievePooledClientFn(method gcloud.GetCustomConfigFunc) (resourceExporter.ResourceIDMetaMap, map[string][]string, diag.Diagnostics) {
-	resourceFunc := gcloud.GetAllWithPooledClientCustom(method)
+func retrievePooledClientFn(method provider.GetCustomConfigFunc) (resourceExporter.ResourceIDMetaMap, map[string][]string, diag.Diagnostics) {
+	resourceFunc := provider.GetAllWithPooledClientCustom(method)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	resources, dependsMap, err := resourceFunc(ctx)

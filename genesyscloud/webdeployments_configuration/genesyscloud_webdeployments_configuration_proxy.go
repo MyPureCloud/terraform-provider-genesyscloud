@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"log"
 	"strconv"
-	gcloud "terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -110,10 +110,10 @@ func getWebdeploymentsConfigurationVersionFn(ctx context.Context, p *webDeployme
 func determineLatestVersionFn(ctx context.Context, p *webDeploymentsConfigurationProxy, configurationId string) string {
 	version := ""
 	draft := "DRAFT"
-	_ = gcloud.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
+	_ = util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		versions, resp, getErr := p.webDeploymentsApi.GetWebdeploymentsConfigurationVersions(configurationId)
 		if getErr != nil {
-			if gcloud.IsStatus404(resp) {
+			if util.IsStatus404(resp) {
 				return retry.RetryableError(fmt.Errorf("Failed to determine latest version %s", getErr))
 			}
 			log.Printf("Failed to determine latest version. Defaulting to DRAFT. Details: %s", getErr)

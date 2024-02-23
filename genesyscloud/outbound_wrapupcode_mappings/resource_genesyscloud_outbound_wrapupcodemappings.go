@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"log"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
-	gcloud "terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 
@@ -43,10 +43,10 @@ func readOutboundWrapUpCodeMappings(ctx context.Context, d *schema.ResourceData,
 
 	log.Printf("Reading Outbound Wrap-up Code Mappings")
 
-	return gcloud.WithRetriesForRead(ctx, d, func() *retry.RetryError {
+	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		sdkWrapupCodeMappings, resp, err := proxy.getAllOutboundWrapupCodeMappings(ctx)
 		if err != nil {
-			if gcloud.IsStatus404(resp) {
+			if util.IsStatus404(resp) {
 				return retry.RetryableError(fmt.Errorf("failed to read Outbound Wrap-up Code Mappings: %s", err))
 			}
 			return retry.NonRetryableError(fmt.Errorf("failed to read Outbound Wrap-up Code Mappings: %s", err))
@@ -81,7 +81,7 @@ func updateOutboundWrapUpCodeMappings(ctx context.Context, d *schema.ResourceDat
 	proxy := getOutboundWrapupCodeMappingsProxy(sdkConfig)
 
 	log.Printf("Updating Outbound Wrap-up Code Mappings")
-	diagErr := gcloud.RetryWhen(gcloud.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+	diagErr := util.RetryWhen(util.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		wrapupCodeMappings, resp, err := proxy.getAllOutboundWrapupCodeMappings(ctx)
 		if err != nil {
 			return resp, diag.Errorf("failed to read wrap-up code mappings: %s", err)

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"log"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
-	gcloud "terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -27,7 +27,7 @@ func createTrunk(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 
 	trunkBase, resp, getErr := tp.getTrunkBaseSettings(ctx, trunkBaseSettingsId)
 	if getErr != nil {
-		if gcloud.IsStatus404(resp) {
+		if util.IsStatus404(resp) {
 			return nil
 		}
 		return diag.Errorf("Failed to read trunk base settings %s: %s", d.Id(), getErr)
@@ -38,7 +38,7 @@ func createTrunk(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		edgeId := edgeIdI.(string)
 		edge, resp, getErr := tp.getEdge(ctx, edgeId)
 		if getErr != nil {
-			if gcloud.IsStatus404(resp) {
+			if util.IsStatus404(resp) {
 				return nil
 			}
 			return diag.Errorf("Failed to read edge %s: %s", edgeId, getErr)
@@ -60,7 +60,7 @@ func createTrunk(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		edgeGroupId := edgeGroupIdI.(string)
 		edgeGroup, resp, getErr := tp.getEdgeGroup(ctx, edgeGroupId)
 		if getErr != nil {
-			if gcloud.IsStatus404(resp) {
+			if util.IsStatus404(resp) {
 				return diag.Errorf("Failed to get edge group %s: %s", edgeGroupId, getErr)
 			}
 			return diag.Errorf("Failed to read edge group %s: %s", edgeGroupId, getErr)
@@ -126,10 +126,10 @@ func readTrunk(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 	tp := getTrunkProxy(sdkConfig)
 
 	log.Printf("Reading trunk %s", d.Id())
-	return gcloud.WithRetriesForRead(ctx, d, func() *retry.RetryError {
+	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		trunk, resp, getErr := tp.getTrunkById(ctx, d.Id())
 		if getErr != nil {
-			if gcloud.IsStatus404(resp) {
+			if util.IsStatus404(resp) {
 				return retry.RetryableError(fmt.Errorf("Failed to read trunk %s: %s", d.Id(), getErr))
 			}
 			return retry.NonRetryableError(fmt.Errorf("Failed to read trunk %s: %s", d.Id(), getErr))
@@ -176,12 +176,12 @@ func getAllTrunks(ctx context.Context, sdkConfig *platformclientv2.Configuration
 
 	tp := getTrunkProxy(sdkConfig)
 
-	err := gcloud.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
+	err := util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
 		for pageNum := 1; ; pageNum++ {
 			const pageSize = 100
 			trunks, resp, getErr := tp.getAllTrunks(ctx, pageNum, pageSize)
 			if getErr != nil {
-				if gcloud.IsStatus404(resp) {
+				if util.IsStatus404(resp) {
 					return retry.RetryableError(fmt.Errorf("Failed to get page of trunks: %v", getErr))
 				}
 				return retry.NonRetryableError(fmt.Errorf("Failed to get page of trunks: %v", getErr))

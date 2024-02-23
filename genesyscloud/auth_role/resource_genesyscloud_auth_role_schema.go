@@ -3,7 +3,7 @@ package auth_role
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	gcloud "terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
 )
@@ -124,10 +124,10 @@ func ResourceAuthRole() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud Authorization Role",
 
-		CreateContext: gcloud.CreateWithPooledClient(createAuthRole),
-		ReadContext:   gcloud.ReadWithPooledClient(readAuthRole),
-		UpdateContext: gcloud.UpdateWithPooledClient(updateAuthRole),
-		DeleteContext: gcloud.DeleteWithPooledClient(deleteAuthRole),
+		CreateContext: provider.CreateWithPooledClient(createAuthRole),
+		ReadContext:   provider.ReadWithPooledClient(readAuthRole),
+		UpdateContext: provider.UpdateWithPooledClient(updateAuthRole),
+		DeleteContext: provider.DeleteWithPooledClient(deleteAuthRole),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -168,7 +168,7 @@ func ResourceAuthRole() *schema.Resource {
 // AuthRoleExporter returns the resourceExporter object used to hold the genesyscloud_auth_role exporter's config
 func AuthRoleExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
-		GetResourcesFunc: gcloud.GetAllWithPooledClient(getAllAuthAuthRoles),
+		GetResourcesFunc: provider.GetAllWithPooledClient(getAllAuthAuthRoles),
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			"permission_policies.conditions.terms.operands.queue_id": {RefType: "genesyscloud_routing_queue"},
 			"permission_policies.conditions.terms.operands.user_id":  {RefType: "genesyscloud_user"},
@@ -185,7 +185,7 @@ func AuthRoleExporter() *resourceExporter.ResourceExporter {
 func DataSourceAuthRole() *schema.Resource {
 	return &schema.Resource{
 		Description: `Data source for Genesys Cloud Roles. Select a role by name.`,
-		ReadContext: gcloud.ReadWithPooledClient(DataSourceAuthRoleRead),
+		ReadContext: provider.ReadWithPooledClient(DataSourceAuthRoleRead),
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Description: `Role name.`,

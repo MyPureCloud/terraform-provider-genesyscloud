@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
-	gcloud "terraform-provider-genesyscloud/genesyscloud/util"
+	util "terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -24,7 +24,7 @@ func dataSourceArchitectGrammarRead(ctx context.Context, d *schema.ResourceData,
 
 	name := d.Get("name").(string)
 
-	return gcloud.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
+	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
 		grammarId, retryable, err := proxy.getArchitectGrammarIdByName(ctx, name)
 
 		if err != nil && !retryable {

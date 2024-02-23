@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
-	gcloud "terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 	"time"
 
@@ -153,7 +153,7 @@ func TestUnitResourceWorkitemCreate(t *testing.T) {
 		assert.Equal(t, wi.auto_status_transition, *workitem.AutoStatusTransition, "AutoStatusTransition check failed in create createTaskManagementWorkitemAttr")
 		assert.ElementsMatch(t, wi.scored_agents, apiScoredAgentReqToScoredAgentConfig(workitem.ScoredAgents), "ScoredAgents check failed in create createTaskManagementWorkitemAttr")
 
-		cfjson, err := gcloud.MapToJson(workitem.CustomFields)
+		cfjson, err := util.MapToJson(workitem.CustomFields)
 		if err != nil {
 			assert.Fail(t, "Failed to parse CustomFields: %v", err)
 		}
@@ -344,7 +344,7 @@ func TestUnitResourceWorkitemUpdate(t *testing.T) {
 		assert.Equal(t, wi.auto_status_transition, *workitem.AutoStatusTransition, "AutoStatusTransition check failed in create updateTaskManagementWorktypeAttr")
 		assert.ElementsMatch(t, wi.scored_agents, apiScoredAgentReqToScoredAgentConfig(workitem.ScoredAgents), "ScoredAgents check failed in create updateTaskManagementWorktypeAttr")
 
-		cfjson, err := gcloud.MapToJson(workitem.CustomFields)
+		cfjson, err := util.MapToJson(workitem.CustomFields)
 		if err != nil {
 			assert.Fail(t, "Failed to parse CustomFields: %v", err)
 		}
@@ -562,5 +562,5 @@ func timePtr(t time.Time) *time.Time {
 	return &t
 }
 func equivalentJsons(json1, json2 string) bool {
-	return gcloud.EquivalentJsons(json1, json2)
+	return util.EquivalentJsons(json1, json2)
 }

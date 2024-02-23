@@ -2,7 +2,7 @@ package responsemanagement_library
 
 import (
 	"fmt"
-	gcloud "terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 
@@ -19,7 +19,7 @@ func TestAccDataSourceResponseManagementLibrary(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
-		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Search by name

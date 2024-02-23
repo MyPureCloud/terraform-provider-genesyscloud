@@ -6,7 +6,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
-	gcloud "terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 )
 
 /*
@@ -127,14 +127,14 @@ func ResourceIntegrationAction() *schema.Resource {
 				Type:             schema.TypeString,
 				Required:         true,
 				ForceNew:         true,
-				DiffSuppressFunc: gcloud.SuppressEquivalentJsonDiffs,
+				DiffSuppressFunc: util.SuppressEquivalentJsonDiffs,
 			},
 			"contract_output": {
 				Description:      "JSON schema that defines the transformed, successful result that will be sent back to the caller. Changing the contract_output attribute will cause the existing integration_action to be dropped and recreated with a new ID.",
 				Type:             schema.TypeString,
 				Required:         true,
 				ForceNew:         true,
-				DiffSuppressFunc: gcloud.SuppressEquivalentJsonDiffs,
+				DiffSuppressFunc: util.SuppressEquivalentJsonDiffs,
 			},
 			"config_request": {
 				Description: "Configuration of outbound request.",

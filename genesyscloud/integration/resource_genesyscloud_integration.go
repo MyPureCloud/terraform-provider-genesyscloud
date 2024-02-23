@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"log"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
-	gcloud "terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
 
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
@@ -106,10 +106,10 @@ func readIntegration(ctx context.Context, d *schema.ResourceData, meta interface
 
 	log.Printf("Reading integration %s", d.Id())
 
-	return gcloud.WithRetriesForRead(ctx, d, func() *retry.RetryError {
+	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		currentIntegration, resp, getErr := ip.getIntegrationById(ctx, d.Id())
 		if getErr != nil {
-			if gcloud.IsStatus404(resp) {
+			if util.IsStatus404(resp) {
 				return retry.RetryableError(fmt.Errorf("failed to read integration %s: %s", d.Id(), getErr))
 			}
 			return retry.NonRetryableError(fmt.Errorf("failed to read integration %s: %s", d.Id(), getErr))
@@ -169,10 +169,10 @@ func deleteIntegration(ctx context.Context, d *schema.ResourceData, meta interfa
 		return diag.Errorf("Failed to delete the integration %s: %s", d.Id(), err)
 	}
 
-	return gcloud.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
+	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		_, resp, err := ip.getIntegrationById(ctx, d.Id())
 		if err != nil {
-			if gcloud.IsStatus404(resp) {
+			if util.IsStatus404(resp) {
 				// Integration deleted
 				log.Printf("Deleted Integration %s", d.Id())
 				return nil

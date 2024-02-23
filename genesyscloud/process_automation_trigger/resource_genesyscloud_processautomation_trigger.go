@@ -4,7 +4,7 @@ import (
 	"context"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
-	gcloud "terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 
 	"fmt"
 	"log"
@@ -182,7 +182,7 @@ func createProcessAutomationTrigger(ctx context.Context, d *schema.ResourceData,
 		triggerInput.DelayBySeconds = &delayBySeconds
 	}
 
-	diagErr := gcloud.RetryWhen(gcloud.IsStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+	diagErr := util.RetryWhen(util.IsStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		trigger, resp, err := postProcessAutomationTrigger(triggerInput, integAPI)
 
 		if err != nil {
@@ -206,10 +206,10 @@ func readProcessAutomationTrigger(ctx context.Context, d *schema.ResourceData, m
 
 	log.Printf("Reading process automation trigger %s", d.Id())
 
-	return gcloud.WithRetriesForRead(ctx, d, func() *retry.RetryError {
+	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		trigger, resp, getErr := getProcessAutomationTrigger(d.Id(), integAPI)
 		if getErr != nil {
-			if gcloud.IsStatus404(resp) {
+			if util.IsStatus404(resp) {
 				return retry.RetryableError(fmt.Errorf("Failed to read process automation trigger %s: %s", d.Id(), getErr))
 			}
 			return retry.NonRetryableError(fmt.Errorf("Failed to process read automation trigger %s: %s", d.Id(), getErr))
@@ -276,7 +276,7 @@ func updateProcessAutomationTrigger(ctx context.Context, d *schema.ResourceData,
 
 	log.Printf("Updating process automation trigger %s", name)
 
-	diagErr := gcloud.RetryWhen(gcloud.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+	diagErr := util.RetryWhen(util.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		// Get the latest trigger version to send with PATCH
 		trigger, resp, getErr := getProcessAutomationTrigger(d.Id(), integAPI)
 		if getErr != nil {
@@ -328,11 +328,11 @@ func removeProcessAutomationTrigger(ctx context.Context, d *schema.ResourceData,
 
 	log.Printf("Deleting process automation trigger %s", name)
 
-	return gcloud.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
+	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		resp, err := deleteProcessAutomationTrigger(d.Id(), integAPI)
 
 		if err != nil {
-			if gcloud.IsStatus404(resp) {
+			if util.IsStatus404(resp) {
 				log.Printf("process automation trigger already deleted %s", d.Id())
 				return nil
 			}

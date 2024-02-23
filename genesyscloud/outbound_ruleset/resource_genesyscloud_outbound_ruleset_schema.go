@@ -3,7 +3,7 @@ package outbound_ruleset
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	gcloud "terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
 )
@@ -260,10 +260,10 @@ func ResourceOutboundRuleset() *schema.Resource {
 	return &schema.Resource{
 		Description: `Genesys Cloud outbound ruleset`,
 
-		CreateContext: gcloud.CreateWithPooledClient(createOutboundRuleset),
-		ReadContext:   gcloud.ReadWithPooledClient(readOutboundRuleset),
-		UpdateContext: gcloud.UpdateWithPooledClient(updateOutboundRuleset),
-		DeleteContext: gcloud.DeleteWithPooledClient(deleteOutboundRuleset),
+		CreateContext: provider.CreateWithPooledClient(createOutboundRuleset),
+		ReadContext:   provider.ReadWithPooledClient(readOutboundRuleset),
+		UpdateContext: provider.UpdateWithPooledClient(updateOutboundRuleset),
+		DeleteContext: provider.DeleteWithPooledClient(deleteOutboundRuleset),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -297,7 +297,7 @@ func ResourceOutboundRuleset() *schema.Resource {
 // OutboundRulesetExporter returns the resourceExporter object used to hold the genesyscloud_outbound_ruleset exporter's config
 func OutboundRulesetExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
-		GetResourcesFunc: gcloud.GetAllWithPooledClient(getAllAuthOutboundRuleset),
+		GetResourcesFunc: provider.GetAllWithPooledClient(getAllAuthOutboundRuleset),
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			"contact_list_id": {
 				RefType: "genesyscloud_outbound_contact_list",
@@ -327,7 +327,7 @@ func OutboundRulesetExporter() *resourceExporter.ResourceExporter {
 func DataSourceOutboundRuleset() *schema.Resource {
 	return &schema.Resource{
 		Description: `Data source for Genesys Cloud Outbound Ruleset. Select an Outbound Ruleset by name.`,
-		ReadContext: gcloud.ReadWithPooledClient(dataSourceOutboundRulesetRead),
+		ReadContext: provider.ReadWithPooledClient(dataSourceOutboundRulesetRead),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},

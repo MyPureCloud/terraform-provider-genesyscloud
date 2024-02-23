@@ -5,7 +5,7 @@ import (
 	"log"
 	"strconv"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
-	gcloud "terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 	"time"
 
@@ -34,7 +34,7 @@ func TestAccResourceExtensionPoolBasic(t *testing.T) {
 	deleteExtensionPoolWithNumber(extensionPoolEndNumber1)
 	extensionPoolDescription1 := "Test description"
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
+		PreCheck:          func() { util.TestAccPreCheck(t) },
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
@@ -43,7 +43,7 @@ func TestAccResourceExtensionPoolBasic(t *testing.T) {
 					extensionPoolResource1,
 					extensionPoolStartNumber1,
 					extensionPoolEndNumber1,
-					gcloud.NullValue, // No description
+					util.NullValue, // No description
 				}),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_extension_pool."+extensionPoolResource1, "start_number", extensionPoolStartNumber1),
@@ -133,7 +133,7 @@ func testVerifyExtensionPoolsDestroyed(state *terraform.State) error {
 			return fmt.Errorf("Extension Pool (%s) still exists", rs.Primary.ID)
 		}
 
-		if gcloud.IsStatus404(resp) {
+		if util.IsStatus404(resp) {
 			// Extension pool not found as expected
 			continue
 		}

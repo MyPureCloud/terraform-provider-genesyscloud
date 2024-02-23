@@ -6,7 +6,7 @@ import (
 	"log"
 	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
-	gcloud "terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -79,7 +79,7 @@ func createIntegrationAction(ctx context.Context, d *schema.ResourceData, meta i
 		return diagErr
 	}
 
-	diagErr = gcloud.RetryWhen(gcloud.IsStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+	diagErr = util.RetryWhen(util.IsStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		action, resp, err := iap.createIntegrationAction(ctx, &IntegrationAction{
 			Name:          &name,
 			Category:      &category,
@@ -110,10 +110,10 @@ func readIntegrationAction(ctx context.Context, d *schema.ResourceData, meta int
 
 	log.Printf("Reading integration action %s", d.Id())
 
-	return gcloud.WithRetriesForRead(ctx, d, func() *retry.RetryError {
+	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		action, resp, err := iap.getIntegrationActionById(ctx, d.Id())
 		if err != nil {
-			if gcloud.IsStatus404(resp) {
+			if util.IsStatus404(resp) {
 				return retry.RetryableError(fmt.Errorf("failed to read integration action %s: %s", d.Id(), err))
 			}
 			return retry.NonRetryableError(fmt.Errorf("failed to read integration action %s: %s", d.Id(), err))
@@ -122,7 +122,7 @@ func readIntegrationAction(ctx context.Context, d *schema.ResourceData, meta int
 		// Retrieve config request/response templates
 		reqTemp, resp, err := iap.getIntegrationActionTemplate(ctx, d.Id(), reqTemplateFileName)
 		if err != nil {
-			if gcloud.IsStatus404(resp) {
+			if util.IsStatus404(resp) {
 				d.SetId("")
 				return nil
 			}
@@ -131,7 +131,7 @@ func readIntegrationAction(ctx context.Context, d *schema.ResourceData, meta int
 
 		successTemp, resp, err := iap.getIntegrationActionTemplate(ctx, d.Id(), successTemplateFileName)
 		if err != nil {
-			if gcloud.IsStatus404(resp) {
+			if util.IsStatus404(resp) {
 				d.SetId("")
 				return nil
 			}
@@ -195,7 +195,7 @@ func updateIntegrationAction(ctx context.Context, d *schema.ResourceData, meta i
 
 	log.Printf("Updating integration action %s", name)
 
-	diagErr := gcloud.RetryWhen(gcloud.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+	diagErr := util.RetryWhen(util.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		// Get the latest action version to send with PATCH
 		action, resp, err := iap.getIntegrationActionById(ctx, d.Id())
 		if err != nil {
@@ -231,7 +231,7 @@ func deleteIntegrationAction(ctx context.Context, d *schema.ResourceData, meta i
 	log.Printf("Deleting integration action %s", name)
 	resp, err := iap.deleteIntegrationAction(ctx, d.Id())
 	if err != nil {
-		if gcloud.IsStatus404(resp) {
+		if util.IsStatus404(resp) {
 			// Parent integration was probably deleted which caused the action to be deleted
 			log.Printf("Integration action already deleted %s", d.Id())
 			return nil
@@ -239,10 +239,10 @@ func deleteIntegrationAction(ctx context.Context, d *schema.ResourceData, meta i
 		return diag.Errorf("Failed to delete Integration action %s: %s", d.Id(), err)
 	}
 
-	return gcloud.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
+	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		_, resp, err := iap.getIntegrationActionById(ctx, d.Id())
 		if err != nil {
-			if gcloud.IsStatus404(resp) {
+			if util.IsStatus404(resp) {
 				// Integration action deleted
 				log.Printf("Deleted Integration action %s", d.Id())
 				return nil

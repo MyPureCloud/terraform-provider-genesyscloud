@@ -9,7 +9,7 @@ import (
 	"log"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
-	gcloud "terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
 
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
@@ -65,10 +65,10 @@ func readResponsemanagementLibrary(ctx context.Context, d *schema.ResourceData, 
 
 	log.Printf("Reading responsemanagement library %s", d.Id())
 
-	return gcloud.WithRetriesForRead(ctx, d, func() *retry.RetryError {
+	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		library, respCode, getErr := proxy.getResponsemanagementLibraryById(ctx, d.Id())
 		if getErr != nil {
-			if gcloud.IsStatus404ByInt(respCode) {
+			if util.IsStatus404ByInt(respCode) {
 				return retry.RetryableError(fmt.Errorf("Failed to read responsemanagement library %s: %s", d.Id(), getErr))
 			}
 			return retry.NonRetryableError(fmt.Errorf("Failed to read responsemanagement library %s: %s", d.Id(), getErr))
@@ -111,11 +111,11 @@ func deleteResponsemanagementLibrary(ctx context.Context, d *schema.ResourceData
 		return diag.Errorf("Failed to delete responsemanagement library %s: %s", d.Id(), err)
 	}
 
-	return gcloud.WithRetries(ctx, 180*time.Second, func() *retry.RetryError {
+	return util.WithRetries(ctx, 180*time.Second, func() *retry.RetryError {
 		_, respCode, err := proxy.getResponsemanagementLibraryById(ctx, d.Id())
 
 		if err != nil {
-			if gcloud.IsStatus404ByInt(respCode) {
+			if util.IsStatus404ByInt(respCode) {
 				log.Printf("Deleted responsemanagement library %s", d.Id())
 				return nil
 			}

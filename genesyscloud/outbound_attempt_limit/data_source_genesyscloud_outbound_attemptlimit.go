@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
-	gcloud "terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -33,7 +33,7 @@ func dataSourceOutboundAttemptLimitRead(ctx context.Context, d *schema.ResourceD
 	outboundAPI := platformclientv2.NewOutboundApiWithConfig(sdkConfig)
 	name := d.Get("name").(string)
 
-	return gcloud.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
+	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
 		const pageNum = 1
 		const pageSize = 100
 		attemptLimits, _, getErr := outboundAPI.GetOutboundAttemptlimits(pageSize, pageNum, true, "", name, "", "")

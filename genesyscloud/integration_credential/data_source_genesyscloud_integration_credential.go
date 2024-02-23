@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
-	gcloud "terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -28,7 +28,7 @@ func dataSourceIntegrationCredentialRead(ctx context.Context, d *schema.Resource
 
 	credName := d.Get("name").(string)
 
-	return gcloud.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
+	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
 		credential, retryable, err := ip.getIntegrationCredByName(ctx, credName)
 		if err != nil && !retryable {
 			return retry.NonRetryableError(fmt.Errorf("failed to get integration credential: %s. %s", credential, err))

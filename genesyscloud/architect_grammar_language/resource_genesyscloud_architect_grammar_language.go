@@ -8,7 +8,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
-	gcloud "terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 	"time"
 
@@ -66,12 +66,12 @@ func readArchitectGrammarLanguage(ctx context.Context, d *schema.ResourceData, m
 
 	log.Printf("Reading Architect Grammar Language %s", d.Id())
 
-	return gcloud.WithRetriesForRead(ctx, d, func() *retry.RetryError {
+	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		grammarId, languageCode := splitLanguageId(d.Id())
 		language, respCode, getErr := proxy.getArchitectGrammarLanguageById(ctx, grammarId, languageCode)
 
 		if getErr != nil {
-			if gcloud.IsStatus404ByInt(respCode) {
+			if util.IsStatus404ByInt(respCode) {
 				return retry.RetryableError(fmt.Errorf("Failed to read Architect Grammar Language %s: %s", d.Id(), getErr))
 			}
 			return retry.NonRetryableError(fmt.Errorf("Failed to read Architect Grammar Language %s: %s", d.Id(), getErr))
@@ -129,11 +129,11 @@ func deleteArchitectGrammarLanguage(ctx context.Context, d *schema.ResourceData,
 		return diag.Errorf("Failed to delete grammar language %s: %s", d.Id(), err)
 	}
 
-	return gcloud.WithRetries(ctx, 180*time.Second, func() *retry.RetryError {
+	return util.WithRetries(ctx, 180*time.Second, func() *retry.RetryError {
 		_, respCode, err := proxy.getArchitectGrammarLanguageById(ctx, grammarId, d.Id())
 
 		if err != nil {
-			if gcloud.IsStatus404ByInt(respCode) {
+			if util.IsStatus404ByInt(respCode) {
 				log.Printf("Deleted Grammar Language %s", d.Id())
 				return nil
 			}

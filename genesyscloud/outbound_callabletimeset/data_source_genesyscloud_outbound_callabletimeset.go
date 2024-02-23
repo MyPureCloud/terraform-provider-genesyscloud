@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
-	gcloud "terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -23,7 +23,7 @@ func dataSourceOutboundCallabletimesetRead(ctx context.Context, d *schema.Resour
 	proxy := getOutboundCallabletimesetProxy(sdkConfig)
 	timesetName := d.Get("name").(string)
 
-	return gcloud.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
+	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
 		timesetId, retryable, err := proxy.getOutboundCallabletimesetByName(ctx, timesetName)
 
 		if err != nil && !retryable {

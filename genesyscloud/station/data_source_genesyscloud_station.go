@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
-	gcloud "terraform-provider-genesyscloud/genesyscloud/util"
+	util "terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -19,7 +19,7 @@ func dataSourceStationRead(ctx context.Context, d *schema.ResourceData, m interf
 
 	stationName := d.Get("name").(string)
 
-	return gcloud.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
+	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
 		stationId, retryable, err := sp.getStationIdByName(ctx, stationName)
 		if err != nil && !retryable {
 			return retry.NonRetryableError(fmt.Errorf("error requesting station %s", err))

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
-	gcloud "terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"terraform-provider-genesyscloud/genesyscloud/util/lists"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -66,10 +66,10 @@ func GenerateIvrDataSource(
 func buildArchitectIvrFromResourceData(d *schema.ResourceData) *platformclientv2.Ivr {
 	ivrBody := platformclientv2.Ivr{
 		Name:             platformclientv2.String(d.Get("name").(string)),
-		OpenHoursFlow:    gcloud.BuildSdkDomainEntityRef(d, "open_hours_flow_id"),
-		ClosedHoursFlow:  gcloud.BuildSdkDomainEntityRef(d, "closed_hours_flow_id"),
-		HolidayHoursFlow: gcloud.BuildSdkDomainEntityRef(d, "holiday_hours_flow_id"),
-		ScheduleGroup:    gcloud.BuildSdkDomainEntityRef(d, "schedule_group_id"),
+		OpenHoursFlow:    util.BuildSdkDomainEntityRef(d, "open_hours_flow_id"),
+		ClosedHoursFlow:  util.BuildSdkDomainEntityRef(d, "closed_hours_flow_id"),
+		HolidayHoursFlow: util.BuildSdkDomainEntityRef(d, "holiday_hours_flow_id"),
+		ScheduleGroup:    util.BuildSdkDomainEntityRef(d, "schedule_group_id"),
 		Dnis:             lists.BuildSdkStringList(d, "dnis"),
 	}
 

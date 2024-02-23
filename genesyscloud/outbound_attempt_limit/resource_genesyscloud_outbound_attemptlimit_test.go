@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
-	gcloud "terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 
 	"github.com/google/uuid"
@@ -52,7 +52,7 @@ func TestAccResourceOutboundAttemptLimit(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
+		PreCheck:          func() { util.TestAccPreCheck(t) },
 		ProviderFactories: provider.GetProviderFactories(providerResources, make(map[string]*schema.Resource)),
 		Steps: []resource.TestStep{
 			{
@@ -145,7 +145,7 @@ func testVerifyAttemptLimitDestroyed(state *terraform.State) error {
 		attemptLimit, resp, err := outboundAPI.GetOutboundAttemptlimit(rs.Primary.ID)
 		if attemptLimit != nil {
 			return fmt.Errorf("attempt limit (%s) still exists", rs.Primary.ID)
-		} else if gcloud.IsStatus404(resp) {
+		} else if util.IsStatus404(resp) {
 			// Attempt limit not found as expected
 			continue
 		} else {

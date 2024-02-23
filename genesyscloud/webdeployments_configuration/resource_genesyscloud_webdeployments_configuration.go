@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"log"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
-	gcloud "terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -41,10 +41,10 @@ func waitForConfigurationDraftToBeActive(ctx context.Context, meta interface{}, 
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	wp := getWebDeploymentConfigurationsProxy(sdkConfig)
 
-	return gcloud.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
+	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		configuration, resp, err := wp.getWebdeploymentsConfigurationVersionsDraft(ctx, id)
 		if err != nil {
-			if gcloud.IsStatus404(resp) {
+			if util.IsStatus404(resp) {
 				return retry.RetryableError(fmt.Errorf("error verifying active status for new web deployment configuration %s: %s", id, err))
 			}
 			return retry.NonRetryableError(fmt.Errorf("error verifying active status for new web deployment configuration %s: %s", id, err))
@@ -65,7 +65,7 @@ func createWebDeploymentConfiguration(ctx context.Context, d *schema.ResourceDat
 	name, inputCfg := wdcUtils.BuildWebDeploymentConfigurationFromResourceData(d)
 	log.Printf("Creating web deployment configuration %s", name)
 
-	diagErr := gcloud.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
+	diagErr := util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		configuration, resp, err := wp.createWebdeploymentsConfiguration(ctx, *inputCfg)
 		if err != nil {
 			var extraErrorInfo string
@@ -73,7 +73,7 @@ func createWebDeploymentConfiguration(ctx context.Context, d *schema.ResourceDat
 			if featureIsNotImplemented {
 				extraErrorInfo = fmt.Sprintf("Feature '%s' is not yet implemented", fieldName)
 			}
-			if gcloud.IsStatus400(resp) {
+			if util.IsStatus400(resp) {
 				return retry.RetryableError(fmt.Errorf("failed to create web deployment configuration %s: %s. %s", name, err, extraErrorInfo))
 			}
 			return retry.NonRetryableError(fmt.Errorf("failed to create web deployment configuration %s: %s. %s", name, err, extraErrorInfo))
@@ -92,10 +92,10 @@ func createWebDeploymentConfiguration(ctx context.Context, d *schema.ResourceDat
 		return diag.Errorf("Web deployment configuration %s did not become active and could not be published", name)
 	}
 
-	diagErr = gcloud.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
+	diagErr = util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		configuration, resp, err := wp.createWebdeploymentsConfigurationVersionsDraftPublish(ctx, d.Id())
 		if err != nil {
-			if gcloud.IsStatus400(resp) {
+			if util.IsStatus400(resp) {
 				return retry.RetryableError(fmt.Errorf("error publishing web deployment configuration %s: %s", name, err))
 			}
 			return retry.NonRetryableError(fmt.Errorf("error publishing web deployment configuration %s: %s", name, err))
@@ -119,14 +119,14 @@ func readWebDeploymentConfiguration(ctx context.Context, d *schema.ResourceData,
 
 	version := d.Get("version").(string)
 	log.Printf("Reading web deployment configuration %s", d.Id())
-	return gcloud.WithRetriesForRead(ctx, d, func() *retry.RetryError {
+	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		if version == "" {
 			version = wp.determineLatestVersion(ctx, d.Id())
 		}
 		configuration, resp, getErr := wp.getWebdeploymentsConfigurationVersion(ctx, d.Id(), version)
 
 		if getErr != nil {
-			if gcloud.IsStatus404(resp) {
+			if util.IsStatus404(resp) {
 				return retry.RetryableError(fmt.Errorf("failed to read web deployment configuration %s: %s", d.Id(), getErr))
 			}
 			return retry.NonRetryableError(fmt.Errorf("failed to read web deployment configuration %s: %s", d.Id(), getErr))
@@ -165,10 +165,10 @@ func updateWebDeploymentConfiguration(ctx context.Context, d *schema.ResourceDat
 
 	log.Printf("Updating web deployment configuration %s", name)
 
-	diagErr := gcloud.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
+	diagErr := util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		_, resp, err := wp.updateWebdeploymentsConfigurationVersionsDraft(ctx, d.Id(), *inputCfg)
 		if err != nil {
-			if gcloud.IsStatus400(resp) {
+			if util.IsStatus400(resp) {
 				return retry.RetryableError(fmt.Errorf("error updating web deployment configuration %s: %s", name, err))
 			}
 			return retry.NonRetryableError(fmt.Errorf("error updating web deployment configuration %s: %s", name, err))
@@ -184,10 +184,10 @@ func updateWebDeploymentConfiguration(ctx context.Context, d *schema.ResourceDat
 		return diag.Errorf("Web deployment configuration %s did not become active and could not be published", name)
 	}
 
-	diagErr = gcloud.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
+	diagErr = util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		configuration, resp, err := wp.createWebdeploymentsConfigurationVersionsDraftPublish(ctx, d.Id())
 		if err != nil {
-			if gcloud.IsStatus400(resp) {
+			if util.IsStatus400(resp) {
 				return retry.RetryableError(fmt.Errorf("error publishing web deployment configuration %s: %s", name, err))
 			}
 			return retry.NonRetryableError(fmt.Errorf("error publishing web deployment configuration %s: %s", name, err))
@@ -217,11 +217,11 @@ func deleteWebDeploymentConfiguration(ctx context.Context, d *schema.ResourceDat
 		return diag.Errorf("Failed to delete web deployment configuration %s: %s", name, err)
 	}
 
-	return gcloud.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
+	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 
 		_, resp, err := wp.getWebdeploymentsConfigurationVersionsDraft(ctx, d.Id())
 		if err != nil {
-			if gcloud.IsStatus404(resp) {
+			if util.IsStatus404(resp) {
 				log.Printf("Deleted web deployment configuration %s", d.Id())
 				return nil
 			}

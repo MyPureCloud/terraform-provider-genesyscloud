@@ -8,7 +8,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v121/platformclientv2"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
-	gcloud "terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
 )
 
@@ -25,7 +25,7 @@ func DataSourceAuthRoleRead(ctx context.Context, d *schema.ResourceData, m inter
 	name := d.Get("name").(string)
 
 	// Query role by name. Retry in case search has not yet indexed the role.
-	return gcloud.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
+	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
 		const pageSize = 100
 		const pageNum = 1
 		roles, _, getErr := authAPI.GetAuthorizationRoles(pageSize, pageNum, "", nil, "", "", name, nil, nil, false, nil)

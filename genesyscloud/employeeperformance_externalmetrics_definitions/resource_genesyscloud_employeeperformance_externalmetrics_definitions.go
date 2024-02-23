@@ -10,7 +10,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
-	gcloud "terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
 
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
@@ -75,10 +75,10 @@ func readEmployeeperformanceExternalmetricsDefinition(ctx context.Context, d *sc
 
 	log.Printf("Reading employeeperformance externalmetrics definition %s", d.Id())
 
-	return gcloud.WithRetriesForRead(ctx, d, func() *retry.RetryError {
+	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		definition, respCode, getErr := proxy.getEmployeeperformanceExternalmetricsDefinitionById(ctx, d.Id())
 		if getErr != nil {
-			if gcloud.IsStatus404ByInt(respCode) {
+			if util.IsStatus404ByInt(respCode) {
 				return retry.RetryableError(fmt.Errorf("Failed to read employeeperformance externalmetrics definition %s: %s", d.Id(), getErr))
 			}
 			return retry.NonRetryableError(fmt.Errorf("Failed to read employeeperformance externalmetrics definition %s: %s", d.Id(), getErr))
@@ -130,11 +130,11 @@ func deleteEmployeeperformanceExternalmetricsDefinition(ctx context.Context, d *
 		return diag.Errorf("Failed to delete employeeperformance externalmetrics definition %s: %s", d.Id(), err)
 	}
 
-	return gcloud.WithRetries(ctx, 180*time.Second, func() *retry.RetryError {
+	return util.WithRetries(ctx, 180*time.Second, func() *retry.RetryError {
 		_, respCode, err := proxy.getEmployeeperformanceExternalmetricsDefinitionById(ctx, d.Id())
 
 		if err != nil {
-			if gcloud.IsStatus404ByInt(respCode) {
+			if util.IsStatus404ByInt(respCode) {
 				log.Printf("Deleted employeeperformance externalmetrics definition %s", d.Id())
 				return nil
 			}

@@ -6,7 +6,7 @@ import (
 	"log"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
-	gcloud "terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -69,10 +69,10 @@ func readTaskManagementWorkitem(ctx context.Context, d *schema.ResourceData, met
 
 	log.Printf("Reading task management workitem %s", d.Id())
 
-	return gcloud.WithRetriesForRead(ctx, d, func() *retry.RetryError {
+	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		workitem, respCode, getErr := proxy.getTaskManagementWorkitemById(ctx, d.Id())
 		if getErr != nil {
-			if gcloud.IsStatus404ByInt(respCode) {
+			if util.IsStatus404ByInt(respCode) {
 				return retry.RetryableError(fmt.Errorf("failed to read task management workitem %s: %s", d.Id(), getErr))
 			}
 			return retry.NonRetryableError(fmt.Errorf("failed to read task management workitem %s: %s", d.Id(), getErr))
@@ -161,11 +161,11 @@ func deleteTaskManagementWorkitem(ctx context.Context, d *schema.ResourceData, m
 		return diag.Errorf("Failed to delete task management workitem %s: %s", d.Id(), err)
 	}
 
-	return gcloud.WithRetries(ctx, 180*time.Second, func() *retry.RetryError {
+	return util.WithRetries(ctx, 180*time.Second, func() *retry.RetryError {
 		_, respCode, err := proxy.getTaskManagementWorkitemById(ctx, d.Id())
 
 		if err != nil {
-			if gcloud.IsStatus404ByInt(respCode) {
+			if util.IsStatus404ByInt(respCode) {
 				log.Printf("Deleted task management workitem %s", d.Id())
 				return nil
 			}

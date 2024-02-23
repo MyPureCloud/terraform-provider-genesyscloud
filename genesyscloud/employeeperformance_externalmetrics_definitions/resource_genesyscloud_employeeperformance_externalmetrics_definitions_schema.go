@@ -3,7 +3,7 @@ package employeeperformance_externalmetrics_definitions
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	gcloud "terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
 )
@@ -30,10 +30,10 @@ func ResourceEmployeeperformanceExternalmetricsDefinition() *schema.Resource {
 	return &schema.Resource{
 		Description: `Genesys Cloud employeeperformance externalmetrics definition`,
 
-		CreateContext: gcloud.CreateWithPooledClient(createEmployeeperformanceExternalmetricsDefinition),
-		ReadContext:   gcloud.ReadWithPooledClient(readEmployeeperformanceExternalmetricsDefinition),
-		UpdateContext: gcloud.UpdateWithPooledClient(updateEmployeeperformanceExternalmetricsDefinition),
-		DeleteContext: gcloud.DeleteWithPooledClient(deleteEmployeeperformanceExternalmetricsDefinition),
+		CreateContext: provider.CreateWithPooledClient(createEmployeeperformanceExternalmetricsDefinition),
+		ReadContext:   provider.ReadWithPooledClient(readEmployeeperformanceExternalmetricsDefinition),
+		UpdateContext: provider.UpdateWithPooledClient(updateEmployeeperformanceExternalmetricsDefinition),
+		DeleteContext: provider.DeleteWithPooledClient(deleteEmployeeperformanceExternalmetricsDefinition),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -81,7 +81,7 @@ func ResourceEmployeeperformanceExternalmetricsDefinition() *schema.Resource {
 // EmployeeperformanceExternalmetricsDefinitionExporter returns the resourceExporter object used to hold the genesyscloud_employeeperformance_externalmetrics_definition exporter's config
 func EmployeeperformanceExternalmetricsDefinitionExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
-		GetResourcesFunc: gcloud.GetAllWithPooledClient(getAllAuthEmployeeperformanceExternalmetricsDefinitions),
+		GetResourcesFunc: provider.GetAllWithPooledClient(getAllAuthEmployeeperformanceExternalmetricsDefinitions),
 		AllowZeroValues:  []string{"precision"},
 	}
 }
@@ -90,7 +90,7 @@ func EmployeeperformanceExternalmetricsDefinitionExporter() *resourceExporter.Re
 func DataSourceEmployeeperformanceExternalmetricsDefinition() *schema.Resource {
 	return &schema.Resource{
 		Description: `Data source for Genesys Cloud Employeeperformance Externalmetrics Definition. Select a Employeeperformance Externalmetrics Definition by name.`,
-		ReadContext: gcloud.ReadWithPooledClient(dataSourceEmployeeperformanceExternalmetricsDefinitionRead),
+		ReadContext: provider.ReadWithPooledClient(dataSourceEmployeeperformanceExternalmetricsDefinitionRead),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},

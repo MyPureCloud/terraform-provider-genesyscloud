@@ -164,7 +164,6 @@ func updateFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	return readFlow(ctx, d, meta)
 }
 
-// done
 func deleteFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	p := getArchitectFlowProxy(sdkConfig)

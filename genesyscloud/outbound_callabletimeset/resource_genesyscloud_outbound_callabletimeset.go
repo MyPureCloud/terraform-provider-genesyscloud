@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"log"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
-	gcloud "terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 	"time"
 
@@ -84,10 +84,10 @@ func readOutboundCallabletimeset(ctx context.Context, d *schema.ResourceData, me
 
 	log.Printf("Reading Outbound Callabletimeset %s", d.Id())
 
-	return gcloud.WithRetriesForRead(ctx, d, func() *retry.RetryError {
+	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		callableTimeset, resp, getErr := proxy.getOutboundCallabletimesetById(ctx, d.Id())
 		if getErr != nil {
-			if gcloud.IsStatus404ByInt(resp) {
+			if util.IsStatus404ByInt(resp) {
 				return retry.RetryableError(fmt.Errorf("Failed to read Outbound Callabletimeset %s: %s", d.Id(), getErr))
 			}
 			return retry.NonRetryableError(fmt.Errorf("Failed to read Outbound Callabletimeset %s: %s", d.Id(), getErr))
@@ -118,10 +118,10 @@ func deleteOutboundCallabletimeset(ctx context.Context, d *schema.ResourceData, 
 		return diag.Errorf("Failed to delete Outbound Callabletimeset: %s", err)
 	}
 
-	return gcloud.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
+	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		resp, err := proxy.deleteOutboundCallabletimeset(ctx, d.Id())
 		if err != nil {
-			if gcloud.IsStatus404ByInt(resp) {
+			if util.IsStatus404ByInt(resp) {
 				// Outbound Callabletimeset deleted
 				log.Printf("Deleted Outbound Callabletimeset %s", d.Id())
 				return nil

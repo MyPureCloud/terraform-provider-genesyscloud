@@ -3,7 +3,7 @@ package responsemanagement_library
 import (
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	gcloud "terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
 )
@@ -30,10 +30,10 @@ func ResourceResponsemanagementLibrary() *schema.Resource {
 	return &schema.Resource{
 		Description: `Genesys Cloud responsemanagement library`,
 
-		CreateContext: gcloud.CreateWithPooledClient(createResponsemanagementLibrary),
-		ReadContext:   gcloud.ReadWithPooledClient(readResponsemanagementLibrary),
-		UpdateContext: gcloud.UpdateWithPooledClient(updateResponsemanagementLibrary),
-		DeleteContext: gcloud.DeleteWithPooledClient(deleteResponsemanagementLibrary),
+		CreateContext: provider.CreateWithPooledClient(createResponsemanagementLibrary),
+		ReadContext:   provider.ReadWithPooledClient(readResponsemanagementLibrary),
+		UpdateContext: provider.UpdateWithPooledClient(updateResponsemanagementLibrary),
+		DeleteContext: provider.DeleteWithPooledClient(deleteResponsemanagementLibrary),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -51,7 +51,7 @@ func ResourceResponsemanagementLibrary() *schema.Resource {
 // ResponsemanagementLibraryExporter returns the resourceExporter object used to hold the genesyscloud_responsemanagement_library exporter's config
 func ResponsemanagementLibraryExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
-		GetResourcesFunc: gcloud.GetAllWithPooledClient(getAllAuthResponsemanagementLibrarys),
+		GetResourcesFunc: provider.GetAllWithPooledClient(getAllAuthResponsemanagementLibrarys),
 	}
 }
 
@@ -59,7 +59,7 @@ func ResponsemanagementLibraryExporter() *resourceExporter.ResourceExporter {
 func DataSourceResponsemanagementLibrary() *schema.Resource {
 	return &schema.Resource{
 		Description: `Data source for Genesys Cloud Responsemanagement Library. Select a Responsemanagement Library by name.`,
-		ReadContext: gcloud.ReadWithPooledClient(dataSourceResponsemanagementLibraryRead),
+		ReadContext: provider.ReadWithPooledClient(dataSourceResponsemanagementLibraryRead),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},

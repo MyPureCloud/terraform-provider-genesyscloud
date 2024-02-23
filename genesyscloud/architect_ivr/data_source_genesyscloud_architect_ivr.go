@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
-	gcloud "terraform-provider-genesyscloud/genesyscloud/util"
+	util "terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -19,7 +19,7 @@ func dataSourceIvrRead(ctx context.Context, d *schema.ResourceData, m interface{
 	ap := getArchitectIvrProxy(sdkConfig)
 	name := d.Get("name").(string)
 	// Query ivr by name. Retry in case search has not yet indexed the ivr.
-	return gcloud.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
+	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
 		id, retryable, err := ap.getArchitectIvrIdByName(ctx, name)
 		if err != nil && !retryable {
 			return retry.NonRetryableError(fmt.Errorf("error requesting IVR %s: %s", name, err))

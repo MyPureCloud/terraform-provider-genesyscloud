@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
-	gcloud "terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -29,7 +29,7 @@ func dataSourceIntegrationActionRead(ctx context.Context, d *schema.ResourceData
 
 	// Query for integration actions by name. Retry in case new action is not yet indexed by search.
 	// As action names are non-unique, fail in case of multiple results.
-	return gcloud.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
+	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
 		actions, err := iap.getIntegrationActionsByName(ctx, actionName)
 
 		if err != nil {

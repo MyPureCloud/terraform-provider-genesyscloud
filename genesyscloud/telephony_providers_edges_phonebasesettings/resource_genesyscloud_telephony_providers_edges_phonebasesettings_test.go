@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
-	gcloud "terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 
 	"github.com/google/uuid"
@@ -26,7 +26,7 @@ func TestAccResourcePhoneBaseSettings(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
+		PreCheck:          func() { util.TestAccPreCheck(t) },
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
@@ -38,21 +38,21 @@ func TestAccResourcePhoneBaseSettings(t *testing.T) {
 					generatePhoneBaseSettingsProperties(
 						"Generic SIP Phone",
 						"1",
-						gcloud.TrueValue,
-						gcloud.TrueValue,
-						gcloud.FalseValue,
+						util.TrueValue,
+						util.TrueValue,
+						util.FalseValue,
 						[]string{strconv.Quote("station 1")}),
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_phonebasesettings."+phoneBaseSettingsRes, "name", name1),
 					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_phonebasesettings."+phoneBaseSettingsRes, "description", description1),
 					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_phonebasesettings."+phoneBaseSettingsRes, "phone_meta_base_id", phoneMetaBaseId),
-					gcloud.ValidateValueInJsonPropertiesAttr("genesyscloud_telephony_providers_edges_phonebasesettings."+phoneBaseSettingsRes, "properties", "phone_label", "Generic SIP Phone"),
-					gcloud.ValidateValueInJsonPropertiesAttr("genesyscloud_telephony_providers_edges_phonebasesettings."+phoneBaseSettingsRes, "properties", "phone_maxLineKeys", "1"),
-					gcloud.ValidateValueInJsonPropertiesAttr("genesyscloud_telephony_providers_edges_phonebasesettings."+phoneBaseSettingsRes, "properties", "phone_mwi_enabled", gcloud.TrueValue),
-					gcloud.ValidateValueInJsonPropertiesAttr("genesyscloud_telephony_providers_edges_phonebasesettings."+phoneBaseSettingsRes, "properties", "phone_mwi_subscribe", gcloud.TrueValue),
-					gcloud.ValidateValueInJsonPropertiesAttr("genesyscloud_telephony_providers_edges_phonebasesettings."+phoneBaseSettingsRes, "properties", "phone_standalone", gcloud.FalseValue),
-					gcloud.ValidateValueInJsonPropertiesAttr("genesyscloud_telephony_providers_edges_phonebasesettings."+phoneBaseSettingsRes, "properties", "phone_stations", strings.Join([]string{"station 1"}, ",")),
+					util.ValidateValueInJsonPropertiesAttr("genesyscloud_telephony_providers_edges_phonebasesettings."+phoneBaseSettingsRes, "properties", "phone_label", "Generic SIP Phone"),
+					util.ValidateValueInJsonPropertiesAttr("genesyscloud_telephony_providers_edges_phonebasesettings."+phoneBaseSettingsRes, "properties", "phone_maxLineKeys", "1"),
+					util.ValidateValueInJsonPropertiesAttr("genesyscloud_telephony_providers_edges_phonebasesettings."+phoneBaseSettingsRes, "properties", "phone_mwi_enabled", util.TrueValue),
+					util.ValidateValueInJsonPropertiesAttr("genesyscloud_telephony_providers_edges_phonebasesettings."+phoneBaseSettingsRes, "properties", "phone_mwi_subscribe", util.TrueValue),
+					util.ValidateValueInJsonPropertiesAttr("genesyscloud_telephony_providers_edges_phonebasesettings."+phoneBaseSettingsRes, "properties", "phone_standalone", util.FalseValue),
+					util.ValidateValueInJsonPropertiesAttr("genesyscloud_telephony_providers_edges_phonebasesettings."+phoneBaseSettingsRes, "properties", "phone_stations", strings.Join([]string{"station 1"}, ",")),
 				),
 			},
 			// Update with new name, description and properties
@@ -65,21 +65,21 @@ func TestAccResourcePhoneBaseSettings(t *testing.T) {
 					generatePhoneBaseSettingsProperties(
 						"Generic SIP Phone 1",
 						"2",
-						gcloud.FalseValue,
-						gcloud.FalseValue,
-						gcloud.TrueValue,
+						util.FalseValue,
+						util.FalseValue,
+						util.TrueValue,
 						[]string{strconv.Quote("station 2"), strconv.Quote("station 1")}),
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_phonebasesettings."+phoneBaseSettingsRes, "name", name2),
 					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_phonebasesettings."+phoneBaseSettingsRes, "description", description2),
 					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_phonebasesettings."+phoneBaseSettingsRes, "phone_meta_base_id", phoneMetaBaseId),
-					gcloud.ValidateValueInJsonPropertiesAttr("genesyscloud_telephony_providers_edges_phonebasesettings."+phoneBaseSettingsRes, "properties", "phone_label", "Generic SIP Phone 1"),
-					gcloud.ValidateValueInJsonPropertiesAttr("genesyscloud_telephony_providers_edges_phonebasesettings."+phoneBaseSettingsRes, "properties", "phone_maxLineKeys", "2"),
-					gcloud.ValidateValueInJsonPropertiesAttr("genesyscloud_telephony_providers_edges_phonebasesettings."+phoneBaseSettingsRes, "properties", "phone_mwi_enabled", gcloud.FalseValue),
-					gcloud.ValidateValueInJsonPropertiesAttr("genesyscloud_telephony_providers_edges_phonebasesettings."+phoneBaseSettingsRes, "properties", "phone_mwi_subscribe", gcloud.FalseValue),
-					gcloud.ValidateValueInJsonPropertiesAttr("genesyscloud_telephony_providers_edges_phonebasesettings."+phoneBaseSettingsRes, "properties", "phone_standalone", gcloud.TrueValue),
-					gcloud.ValidateValueInJsonPropertiesAttr("genesyscloud_telephony_providers_edges_phonebasesettings."+phoneBaseSettingsRes, "properties", "phone_stations", strings.Join([]string{"station 2", "station 1"}, ",")),
+					util.ValidateValueInJsonPropertiesAttr("genesyscloud_telephony_providers_edges_phonebasesettings."+phoneBaseSettingsRes, "properties", "phone_label", "Generic SIP Phone 1"),
+					util.ValidateValueInJsonPropertiesAttr("genesyscloud_telephony_providers_edges_phonebasesettings."+phoneBaseSettingsRes, "properties", "phone_maxLineKeys", "2"),
+					util.ValidateValueInJsonPropertiesAttr("genesyscloud_telephony_providers_edges_phonebasesettings."+phoneBaseSettingsRes, "properties", "phone_mwi_enabled", util.FalseValue),
+					util.ValidateValueInJsonPropertiesAttr("genesyscloud_telephony_providers_edges_phonebasesettings."+phoneBaseSettingsRes, "properties", "phone_mwi_subscribe", util.FalseValue),
+					util.ValidateValueInJsonPropertiesAttr("genesyscloud_telephony_providers_edges_phonebasesettings."+phoneBaseSettingsRes, "properties", "phone_standalone", util.TrueValue),
+					util.ValidateValueInJsonPropertiesAttr("genesyscloud_telephony_providers_edges_phonebasesettings."+phoneBaseSettingsRes, "properties", "phone_stations", strings.Join([]string{"station 2", "station 1"}, ",")),
 				),
 			},
 			{
@@ -103,7 +103,7 @@ func testVerifyPhoneBaseSettingsDestroyed(state *terraform.State) error {
 		phoneBaseSettings, resp, err := edgesAPI.GetTelephonyProvidersEdgesPhonebasesetting(rs.Primary.ID)
 		if phoneBaseSettings != nil {
 			return fmt.Errorf("PhoneBaseSettings (%s) still exists", rs.Primary.ID)
-		} else if gcloud.IsStatus404(resp) {
+		} else if util.IsStatus404(resp) {
 			// PhoneBaseSettings not found as expected
 			continue
 		} else {
@@ -117,42 +117,42 @@ func testVerifyPhoneBaseSettingsDestroyed(state *terraform.State) error {
 
 func generatePhoneBaseSettingsProperties(phoneLabel, phoneMaxLineKeys, phoneMwiEnabled, phoneMwiSubscribe, phoneStandalone string, phoneStations []string) string {
 	// A random selection of properties
-	return "properties = " + gcloud.GenerateJsonEncodedProperties(
-		gcloud.GenerateJsonProperty(
-			"phone_label", gcloud.GenerateJsonObject(
-				gcloud.GenerateJsonProperty(
-					"value", gcloud.GenerateJsonObject(
-						gcloud.GenerateJsonProperty("instance", strconv.Quote(phoneLabel)),
+	return "properties = " + util.GenerateJsonEncodedProperties(
+		util.GenerateJsonProperty(
+			"phone_label", util.GenerateJsonObject(
+				util.GenerateJsonProperty(
+					"value", util.GenerateJsonObject(
+						util.GenerateJsonProperty("instance", strconv.Quote(phoneLabel)),
 					)))),
-		gcloud.GenerateJsonProperty(
-			"phone_maxLineKeys", gcloud.GenerateJsonObject(
-				gcloud.GenerateJsonProperty(
-					"value", gcloud.GenerateJsonObject(
-						gcloud.GenerateJsonProperty("instance", phoneMaxLineKeys),
+		util.GenerateJsonProperty(
+			"phone_maxLineKeys", util.GenerateJsonObject(
+				util.GenerateJsonProperty(
+					"value", util.GenerateJsonObject(
+						util.GenerateJsonProperty("instance", phoneMaxLineKeys),
 					)))),
-		gcloud.GenerateJsonProperty(
-			"phone_mwi_enabled", gcloud.GenerateJsonObject(
-				gcloud.GenerateJsonProperty(
-					"value", gcloud.GenerateJsonObject(
-						gcloud.GenerateJsonProperty("instance", phoneMwiEnabled),
+		util.GenerateJsonProperty(
+			"phone_mwi_enabled", util.GenerateJsonObject(
+				util.GenerateJsonProperty(
+					"value", util.GenerateJsonObject(
+						util.GenerateJsonProperty("instance", phoneMwiEnabled),
 					)))),
-		gcloud.GenerateJsonProperty(
-			"phone_mwi_subscribe", gcloud.GenerateJsonObject(
-				gcloud.GenerateJsonProperty(
-					"value", gcloud.GenerateJsonObject(
-						gcloud.GenerateJsonProperty("instance", phoneMwiSubscribe),
+		util.GenerateJsonProperty(
+			"phone_mwi_subscribe", util.GenerateJsonObject(
+				util.GenerateJsonProperty(
+					"value", util.GenerateJsonObject(
+						util.GenerateJsonProperty("instance", phoneMwiSubscribe),
 					)))),
-		gcloud.GenerateJsonProperty(
-			"phone_standalone", gcloud.GenerateJsonObject(
-				gcloud.GenerateJsonProperty(
-					"value", gcloud.GenerateJsonObject(
-						gcloud.GenerateJsonProperty("instance", phoneStandalone),
+		util.GenerateJsonProperty(
+			"phone_standalone", util.GenerateJsonObject(
+				util.GenerateJsonProperty(
+					"value", util.GenerateJsonObject(
+						util.GenerateJsonProperty("instance", phoneStandalone),
 					)))),
-		gcloud.GenerateJsonProperty(
-			"phone_stations", gcloud.GenerateJsonObject(
-				gcloud.GenerateJsonProperty(
-					"value", gcloud.GenerateJsonObject(
-						gcloud.GenerateJsonArrayProperty("instance", strings.Join(phoneStations, ",")),
+		util.GenerateJsonProperty(
+			"phone_stations", util.GenerateJsonObject(
+				util.GenerateJsonProperty(
+					"value", util.GenerateJsonObject(
+						util.GenerateJsonArrayProperty("instance", strings.Join(phoneStations, ",")),
 					)))),
 	)
 }

@@ -11,7 +11,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
-	gcloud "terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"terraform-provider-genesyscloud/genesyscloud/util/lists"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 	"time"
@@ -102,10 +102,10 @@ func readAuthRole(ctx context.Context, d *schema.ResourceData, meta interface{})
 
 	log.Printf("Reading role %s", d.Id())
 
-	return gcloud.WithRetriesForRead(ctx, d, func() *retry.RetryError {
+	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		role, respCode, getErr := proxy.getAuthRoleById(ctx, d.Id())
 		if getErr != nil {
-			if gcloud.IsStatus404ByInt(respCode) {
+			if util.IsStatus404ByInt(respCode) {
 				return retry.RetryableError(fmt.Errorf("Failed to read role %s: %s", d.Id(), getErr))
 			}
 			return retry.NonRetryableError(fmt.Errorf("Failed to read role %s: %s", d.Id(), getErr))
@@ -202,10 +202,10 @@ func deleteAuthRole(ctx context.Context, d *schema.ResourceData, meta interface{
 		return diag.Errorf("Failed to delete role %s: %s", name, err)
 	}
 
-	return gcloud.WithRetries(ctx, 60*time.Second, func() *retry.RetryError {
+	return util.WithRetries(ctx, 60*time.Second, func() *retry.RetryError {
 		_, resp, err := proxy.getAuthRoleById(ctx, d.Id())
 		if err != nil {
-			if gcloud.IsStatus404ByInt(resp) {
+			if util.IsStatus404ByInt(resp) {
 				// role deleted
 				log.Printf("Deleted role %s", d.Id())
 				return nil

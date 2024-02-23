@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
-	gcloud "terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -27,7 +27,7 @@ func dataSourceTaskManagementWorkitemRead(ctx context.Context, d *schema.Resourc
 	workbinId := d.Get("workbin_id").(string)
 	worktypeId := d.Get("worktype_id").(string)
 
-	return gcloud.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
+	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
 		workitemId, retryable, err := proxy.getTaskManagementWorkitemIdByName(ctx, name, workbinId, worktypeId)
 
 		if err != nil && !retryable {

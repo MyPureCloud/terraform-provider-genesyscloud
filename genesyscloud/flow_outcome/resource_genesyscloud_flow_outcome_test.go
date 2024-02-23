@@ -2,7 +2,7 @@ package flow_outcome
 
 import (
 	"fmt"
-	gcloud "terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 
@@ -22,7 +22,7 @@ func TestAccResourceFlowOutcome(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
-		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Create using only required fields i.e. name
@@ -34,7 +34,7 @@ func TestAccResourceFlowOutcome(t *testing.T) {
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_flow_outcome."+outcomeResource1, "name", name1),
-					gcloud.TestDefaultHomeDivision("genesyscloud_flow_outcome."+outcomeResource1),
+					provider.TestDefaultHomeDivision("genesyscloud_flow_outcome."+outcomeResource1),
 				),
 			},
 			{
@@ -48,7 +48,7 @@ func TestAccResourceFlowOutcome(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_flow_outcome."+outcomeResource1, "name", name2),
 					resource.TestCheckResourceAttr("genesyscloud_flow_outcome."+outcomeResource1, "description", description),
-					gcloud.TestDefaultHomeDivision("genesyscloud_flow_outcome."+outcomeResource1),
+					provider.TestDefaultHomeDivision("genesyscloud_flow_outcome."+outcomeResource1),
 				),
 			},
 			{

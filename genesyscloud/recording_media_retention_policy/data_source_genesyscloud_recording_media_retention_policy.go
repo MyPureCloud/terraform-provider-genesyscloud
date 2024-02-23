@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
-	gcloud "terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -27,7 +27,7 @@ func dataSourceRecordingMediaRetentionPolicyRead(ctx context.Context, d *schema.
 
 	name := d.Get("name").(string)
 
-	return gcloud.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
+	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
 		policy, retryable, err := pp.getPolicyByName(ctx, name)
 		if err != nil && !retryable {
 			return retry.NonRetryableError(fmt.Errorf("error requesting media retention policy %s: %s", name, err))

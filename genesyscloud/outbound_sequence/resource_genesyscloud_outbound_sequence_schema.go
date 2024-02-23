@@ -5,7 +5,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/customdiff"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	gcloud "terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
 )
@@ -32,10 +32,10 @@ func ResourceOutboundSequence() *schema.Resource {
 	return &schema.Resource{
 		Description: `Genesys Cloud outbound sequence`,
 
-		CreateContext: gcloud.CreateWithPooledClient(createOutboundSequence),
-		ReadContext:   gcloud.ReadWithPooledClient(readOutboundSequence),
-		UpdateContext: gcloud.UpdateWithPooledClient(updateOutboundSequence),
-		DeleteContext: gcloud.DeleteWithPooledClient(deleteOutboundSequence),
+		CreateContext: provider.CreateWithPooledClient(createOutboundSequence),
+		ReadContext:   provider.ReadWithPooledClient(readOutboundSequence),
+		UpdateContext: provider.UpdateWithPooledClient(updateOutboundSequence),
+		DeleteContext: provider.DeleteWithPooledClient(deleteOutboundSequence),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -77,7 +77,7 @@ func ResourceOutboundSequence() *schema.Resource {
 // OutboundSequenceExporter returns the resourceExporter object used to hold the genesyscloud_outbound_sequence exporter's config
 func OutboundSequenceExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
-		GetResourcesFunc: gcloud.GetAllWithPooledClient(getAllAuthOutboundSequences),
+		GetResourcesFunc: provider.GetAllWithPooledClient(getAllAuthOutboundSequences),
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			`campaign_ids`: {
 				RefType: "genesyscloud_outbound_campaign",
@@ -90,7 +90,7 @@ func OutboundSequenceExporter() *resourceExporter.ResourceExporter {
 func DataSourceOutboundSequence() *schema.Resource {
 	return &schema.Resource{
 		Description: `Genesys Cloud outbound sequence data source. Select an outbound sequence by name`,
-		ReadContext: gcloud.ReadWithPooledClient(dataSourceOutboundSequenceRead),
+		ReadContext: provider.ReadWithPooledClient(dataSourceOutboundSequenceRead),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},

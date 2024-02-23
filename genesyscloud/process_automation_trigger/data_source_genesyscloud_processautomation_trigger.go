@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
-	gcloud "terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -42,7 +42,7 @@ func dataSourceProcessAutomationTriggerRead(ctx context.Context, d *schema.Resou
 
 	triggerName := d.Get("name").(string)
 
-	return gcloud.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
+	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
 		// create path
 		path := integrationAPI.Configuration.BasePath + "/api/v2/processAutomation/triggers"
 

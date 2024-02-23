@@ -3,7 +3,7 @@ package user_roles
 import (
 	"context"
 	"fmt"
-	gcloud "terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -104,7 +104,7 @@ func updateUserRolesFn(_ context.Context, p *userRolesProxy, roleId string, role
 	}
 	if len(grantsToAdd) > 0 {
 		// In some cases new roles or divisions have not yet been added to the auth service cache causing 404s that should be retried.
-		diagErr := gcloud.RetryWhen(gcloud.IsStatus404, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+		diagErr := util.RetryWhen(util.IsStatus404, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 			resp, err := p.authorizationApi.PostAuthorizationSubjectBulkadd(roleId, roleDivPairsToGrants(grantsToAdd), subjectType)
 			if err != nil {
 				return resp, diag.Errorf("failed to add role grants for subject %s: %s", roleId, err)

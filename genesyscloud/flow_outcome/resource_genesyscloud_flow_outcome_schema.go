@@ -2,7 +2,8 @@ package flow_outcome
 
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	gcloud "terraform-provider-genesyscloud/genesyscloud/provider"
+
+	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
 )
@@ -29,10 +30,10 @@ func ResourceFlowOutcome() *schema.Resource {
 	return &schema.Resource{
 		Description: `Genesys Cloud flow outcome`,
 
-		CreateContext: gcloud.CreateWithPooledClient(createFlowOutcome),
-		ReadContext:   gcloud.ReadWithPooledClient(readFlowOutcome),
-		UpdateContext: gcloud.UpdateWithPooledClient(updateFlowOutcome),
-		DeleteContext: gcloud.DeleteWithPooledClient(deleteFlowOutcome),
+		CreateContext: provider.CreateWithPooledClient(createFlowOutcome),
+		ReadContext:   provider.ReadWithPooledClient(readFlowOutcome),
+		UpdateContext: provider.UpdateWithPooledClient(updateFlowOutcome),
+		DeleteContext: provider.DeleteWithPooledClient(deleteFlowOutcome),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -61,7 +62,7 @@ func ResourceFlowOutcome() *schema.Resource {
 // FlowOutcomeExporter returns the resourceExporter object used to hold the genesyscloud_flow_outcome exporter's config
 func FlowOutcomeExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
-		GetResourcesFunc: gcloud.GetAllWithPooledClient(getAllAuthFlowOutcomes),
+		GetResourcesFunc: provider.GetAllWithPooledClient(getAllAuthFlowOutcomes),
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			"division_id": {RefType: "genesyscloud_auth_division"},
 		},
@@ -72,7 +73,7 @@ func FlowOutcomeExporter() *resourceExporter.ResourceExporter {
 func DataSourceFlowOutcome() *schema.Resource {
 	return &schema.Resource{
 		Description: `Genesys Cloud flow outcome data source. Select a flow outcome by name`,
-		ReadContext: gcloud.ReadWithPooledClient(dataSourceFlowOutcomeRead),
+		ReadContext: provider.ReadWithPooledClient(dataSourceFlowOutcomeRead),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},

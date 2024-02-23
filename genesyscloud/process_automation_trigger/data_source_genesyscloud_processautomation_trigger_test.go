@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"terraform-provider-genesyscloud/genesyscloud/architect_flow"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
-	gcloud "terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 
 	"github.com/google/uuid"
@@ -30,13 +30,13 @@ func TestAccDataSourceProcessAutomationTrigger(t *testing.T) {
 	)
 	var homeDivisionName string
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
+		PreCheck:          func() { util.TestAccPreCheck(t) },
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				Config: "data \"genesyscloud_auth_division_home\" \"home\" {}",
 				Check: resource.ComposeTestCheckFunc(
-					gcloud.GetHomeDivisionName("data.genesyscloud_auth_division_home.home", &homeDivisionName),
+					util.GetHomeDivisionName("data.genesyscloud_auth_division_home.home", &homeDivisionName),
 				),
 			},
 		},
@@ -94,7 +94,7 @@ func TestAccDataSourceProcessAutomationTrigger(t *testing.T) {
      ])`
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
+		PreCheck:          func() { util.TestAccPreCheck(t) },
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{

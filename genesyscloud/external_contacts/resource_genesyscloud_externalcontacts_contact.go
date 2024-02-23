@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"log"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
-	gcloud "terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -80,10 +80,10 @@ func readExternalContact(ctx context.Context, d *schema.ResourceData, meta inter
 
 	log.Printf("Reading contact %s", d.Id())
 
-	return gcloud.WithRetriesForRead(ctx, d, func() *retry.RetryError {
+	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		externalContact, respCode, getErr := ep.getExternalContactById(ctx, d.Id())
 		if getErr != nil {
-			if gcloud.IsStatus404ByInt(respCode) {
+			if util.IsStatus404ByInt(respCode) {
 				return retry.RetryableError(fmt.Errorf("Failed to read external contact %s: %s", d.Id(), getErr))
 			}
 			return retry.NonRetryableError(fmt.Errorf("Failed to read external contact %s: %s", d.Id(), getErr))
@@ -142,13 +142,13 @@ func deleteExternalContact(ctx context.Context, d *schema.ResourceData, meta int
 		return diag.Errorf("Failed to delete external contact %s: %s", d.Id(), err)
 	}
 
-	return gcloud.WithRetries(ctx, 180*time.Second, func() *retry.RetryError {
+	return util.WithRetries(ctx, 180*time.Second, func() *retry.RetryError {
 		_, respCode, err := ep.getExternalContactById(ctx, d.Id())
 
 		if err == nil {
 			return retry.NonRetryableError(fmt.Errorf("Error deleting external contact %s: %s", d.Id(), err))
 		}
-		if gcloud.IsStatus404ByInt(respCode) {
+		if util.IsStatus404ByInt(respCode) {
 			// Success  : External contact deleted
 			log.Printf("Deleted external contact %s", d.Id())
 			return nil

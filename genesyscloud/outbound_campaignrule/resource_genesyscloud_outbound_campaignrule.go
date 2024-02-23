@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"log"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
-	gcloud "terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 	"time"
 
@@ -90,10 +90,10 @@ func readOutboundCampaignRule(ctx context.Context, d *schema.ResourceData, meta 
 
 	log.Printf("Reading Outbound Campaign Rule %s", d.Id())
 
-	return gcloud.WithRetriesForRead(ctx, d, func() *retry.RetryError {
+	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		campaignRule, resp, getErr := proxy.getOutboundCampaignruleById(ctx, d.Id())
 		if getErr != nil {
-			if gcloud.IsStatus404ByInt(resp) {
+			if util.IsStatus404ByInt(resp) {
 				return retry.RetryableError(fmt.Errorf("failed to read Outbound Campaign Rule %s: %s", d.Id(), getErr))
 			}
 			return retry.NonRetryableError(fmt.Errorf("failed to read Outbound Campaign Rule %s: %s", d.Id(), getErr))
@@ -139,7 +139,7 @@ func deleteOutboundCampaignRule(ctx context.Context, d *schema.ResourceData, met
 		}
 	}
 
-	diagErr := gcloud.RetryWhen(gcloud.IsStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+	diagErr := util.RetryWhen(util.IsStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		log.Printf("Deleting Outbound Campaign Rule")
 		resp, err := proxy.deleteOutboundCampaignrule(ctx, d.Id())
 		if err != nil {
@@ -151,10 +151,10 @@ func deleteOutboundCampaignRule(ctx context.Context, d *schema.ResourceData, met
 		return diagErr
 	}
 
-	return gcloud.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
+	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		_, resp, err := proxy.getOutboundCampaignruleById(ctx, d.Id())
 		if err != nil {
-			if gcloud.IsStatus404ByInt(resp) {
+			if util.IsStatus404ByInt(resp) {
 				// Outbound Campaign Rule deleted
 				log.Printf("Deleted Outbound Campaign Rule %s", d.Id())
 				return nil

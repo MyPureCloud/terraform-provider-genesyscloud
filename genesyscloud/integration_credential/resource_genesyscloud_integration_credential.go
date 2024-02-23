@@ -7,7 +7,7 @@ import (
 	"regexp"
 	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
-	gcloud "terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -65,7 +65,7 @@ func getAllCredentials(ctx context.Context, clientConfig *platformclientv2.Confi
 			integrationId := strings.Split(*cred.Name, "Integration-")[1]
 			_, resp, err := ip.getIntegrationById(ctx, integrationId)
 			if err != nil {
-				if gcloud.IsStatus404(resp) {
+				if util.IsStatus404(resp) {
 					log.Printf("Integration id %s no longer exist, we are therefore not exporting the associated integration credential id %s", integrationId, *cred.Id)
 					continue
 				} else {
@@ -113,10 +113,10 @@ func readCredential(ctx context.Context, d *schema.ResourceData, meta interface{
 
 	log.Printf("Reading credential %s", d.Id())
 
-	return gcloud.WithRetriesForRead(ctx, d, func() *retry.RetryError {
+	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		currentCredential, resp, err := ip.getIntegrationCredById(ctx, d.Id())
 		if err != nil {
-			if gcloud.IsStatus404(resp) {
+			if util.IsStatus404(resp) {
 				return retry.RetryableError(fmt.Errorf("failed to read credential %s: %s", d.Id(), err))
 			}
 			return retry.NonRetryableError(fmt.Errorf("failed to read credential %s: %s", d.Id(), err))
@@ -169,10 +169,10 @@ func deleteCredential(ctx context.Context, d *schema.ResourceData, meta interfac
 		return diag.Errorf("Failed to delete the credential %s: %s", d.Id(), err)
 	}
 
-	return gcloud.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
+	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		_, resp, err := ip.getIntegrationCredById(ctx, d.Id())
 		if err != nil {
-			if gcloud.IsStatus404(resp) {
+			if util.IsStatus404(resp) {
 				// Integration credential deleted
 				log.Printf("Deleted Integration credential %s", d.Id())
 				return nil

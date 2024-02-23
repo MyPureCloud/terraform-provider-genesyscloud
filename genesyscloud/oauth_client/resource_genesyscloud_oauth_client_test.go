@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
-	gcloud "terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 
 	"github.com/google/uuid"
@@ -36,7 +36,7 @@ func TestAccResourceOAuthClient(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
+		PreCheck:          func() { util.TestAccPreCheck(t) },
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
@@ -51,11 +51,11 @@ func TestAccResourceOAuthClient(t *testing.T) {
 					clientDesc1,
 					grantTypeClientCreds,
 					tokenSec1,
-					gcloud.NullValue, // Default state
-					gcloud.GenerateStringArray(strconv.Quote(redirectURI1)),
-					gcloud.NullValue, // No scopes for client creds
+					util.NullValue, // Default state
+					util.GenerateStringArray(strconv.Quote(redirectURI1)),
+					util.NullValue, // No scopes for client creds
 					credentialName1,
-					generateOauthClientRoles("data.genesyscloud_auth_role."+roleResource1+".id", gcloud.NullValue),
+					generateOauthClientRoles("data.genesyscloud_auth_role."+roleResource1+".id", util.NullValue),
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_oauth_client."+clientResource1, "name", clientName1),
@@ -65,7 +65,7 @@ func TestAccResourceOAuthClient(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_oauth_client."+clientResource1, "state", stateActive),
 					resource.TestCheckResourceAttr("genesyscloud_oauth_client."+clientResource1, "integration_credential_name", credentialName1),
 					resource.TestCheckNoResourceAttr("genesyscloud_oauth_client."+clientResource1, "scopes.%"),
-					gcloud.ValidateStringInArray("genesyscloud_oauth_client."+clientResource1, "registered_redirect_uris", redirectURI1),
+					util.ValidateStringInArray("genesyscloud_oauth_client."+clientResource1, "registered_redirect_uris", redirectURI1),
 					validateOauthRole("genesyscloud_oauth_client."+clientResource1, "data.genesyscloud_auth_role."+roleResource1, ""),
 				),
 			},
@@ -82,9 +82,9 @@ func TestAccResourceOAuthClient(t *testing.T) {
 					grantTypeClientCreds,
 					tokenSec2,
 					strconv.Quote(stateInactive),
-					gcloud.GenerateStringArray(strconv.Quote(redirectURI2)),
-					gcloud.NullValue, // No scopes for client creds
-					generateOauthClientRoles("data.genesyscloud_auth_role."+roleResource1+".id", gcloud.NullValue),
+					util.GenerateStringArray(strconv.Quote(redirectURI2)),
+					util.NullValue, // No scopes for client creds
+					generateOauthClientRoles("data.genesyscloud_auth_role."+roleResource1+".id", util.NullValue),
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_oauth_client."+clientResource1, "name", clientName2),
@@ -93,7 +93,7 @@ func TestAccResourceOAuthClient(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_oauth_client."+clientResource1, "access_token_validity_seconds", tokenSec2),
 					resource.TestCheckResourceAttr("genesyscloud_oauth_client."+clientResource1, "state", stateInactive),
 					resource.TestCheckNoResourceAttr("genesyscloud_oauth_client."+clientResource1, "scopes.%"),
-					gcloud.ValidateStringInArray("genesyscloud_oauth_client."+clientResource1, "registered_redirect_uris", redirectURI2),
+					util.ValidateStringInArray("genesyscloud_oauth_client."+clientResource1, "registered_redirect_uris", redirectURI2),
 				),
 			},
 			{
@@ -105,8 +105,8 @@ func TestAccResourceOAuthClient(t *testing.T) {
 					grantTypeCode,
 					tokenSec1,
 					strconv.Quote(stateActive),
-					gcloud.GenerateStringArray(strconv.Quote(redirectURI1)),
-					gcloud.GenerateStringArray(strconv.Quote(scope1)),
+					util.GenerateStringArray(strconv.Quote(redirectURI1)),
+					util.GenerateStringArray(strconv.Quote(scope1)),
 					// No roles for CODE type
 				),
 				Check: resource.ComposeTestCheckFunc(
@@ -116,8 +116,8 @@ func TestAccResourceOAuthClient(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_oauth_client."+clientResource1, "access_token_validity_seconds", tokenSec1),
 					resource.TestCheckResourceAttr("genesyscloud_oauth_client."+clientResource1, "state", stateActive),
 					resource.TestCheckNoResourceAttr("genesyscloud_oauth_client."+clientResource1, "roles.%"),
-					gcloud.ValidateStringInArray("genesyscloud_oauth_client."+clientResource1, "registered_redirect_uris", redirectURI1),
-					gcloud.ValidateStringInArray("genesyscloud_oauth_client."+clientResource1, "scopes", scope1),
+					util.ValidateStringInArray("genesyscloud_oauth_client."+clientResource1, "registered_redirect_uris", redirectURI1),
+					util.ValidateStringInArray("genesyscloud_oauth_client."+clientResource1, "scopes", scope1),
 				),
 			},
 			{
@@ -184,7 +184,7 @@ func validateOauthRole(resourceName string, roleResourceName string, division st
 
 		if division == "" {
 			// If no division specified, role should be in the home division
-			homeDiv, err := gcloud.GetHomeDivisionID()
+			homeDiv, err := util.GetHomeDivisionID()
 			if err != nil {
 				return fmt.Errorf("Failed to query home div: %v", err)
 			}

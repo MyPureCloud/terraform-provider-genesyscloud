@@ -3,7 +3,7 @@ package responsemanagement_response
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v121/platformclientv2"
-	gcloud "terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"terraform-provider-genesyscloud/genesyscloud/util/lists"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 )
@@ -16,7 +16,7 @@ func getResponseFromResourceData(d *schema.ResourceData) platformclientv2.Respon
 
 	response := platformclientv2.Response{
 		Name:          platformclientv2.String(d.Get("name").(string)),
-		Libraries:     gcloud.BuildSdkDomainEntityRefArr(d, "library_ids"),
+		Libraries:     util.BuildSdkDomainEntityRefArr(d, "library_ids"),
 		Texts:         buildResponseTexts(d.Get("texts").(*schema.Set)),
 		Substitutions: buildResponseSubstitutions(d.Get("substitutions").(*schema.Set)),
 		Assets:        buildAddressableEntityRefs(d.Get("asset_ids").(*schema.Set)),

@@ -2,7 +2,7 @@ package integration_credential
 
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	gcloud "terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
 )
@@ -29,10 +29,10 @@ func ResourceIntegrationCredential() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud Credential",
 
-		CreateContext: gcloud.CreateWithPooledClient(createCredential),
-		ReadContext:   gcloud.ReadWithPooledClient(readCredential),
-		UpdateContext: gcloud.UpdateWithPooledClient(updateCredential),
-		DeleteContext: gcloud.DeleteWithPooledClient(deleteCredential),
+		CreateContext: provider.CreateWithPooledClient(createCredential),
+		ReadContext:   provider.ReadWithPooledClient(readCredential),
+		UpdateContext: provider.UpdateWithPooledClient(updateCredential),
+		DeleteContext: provider.DeleteWithPooledClient(deleteCredential),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -63,7 +63,7 @@ func ResourceIntegrationCredential() *schema.Resource {
 // IntegrationCredentialExporter returns the resourceExporter object used to hold the genesyscloud_integration_credential exporter's config
 func IntegrationCredentialExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
-		GetResourcesFunc: gcloud.GetAllWithPooledClient(getAllCredentials),
+		GetResourcesFunc: provider.GetAllWithPooledClient(getAllCredentials),
 		RefAttrs:         map[string]*resourceExporter.RefAttrSettings{}, // No Reference
 		UnResolvableAttributes: map[string]*schema.Schema{
 			"fields": ResourceIntegrationCredential().Schema["fields"],
@@ -75,7 +75,7 @@ func IntegrationCredentialExporter() *resourceExporter.ResourceExporter {
 func DataSourceIntegrationCredential() *schema.Resource {
 	return &schema.Resource{
 		Description: "Data source for Genesys Cloud integration credential. Select an integration credential by name",
-		ReadContext: gcloud.ReadWithPooledClient(dataSourceIntegrationCredentialRead),
+		ReadContext: provider.ReadWithPooledClient(dataSourceIntegrationCredentialRead),
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Description: "The name of the integration credential",

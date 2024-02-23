@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
-	gcloud "terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -18,7 +18,7 @@ func dataSourceOutboundDncListRead(ctx context.Context, d *schema.ResourceData, 
 	proxy := getOutboundDnclistProxy(sdkConfig)
 	name := d.Get("name").(string)
 
-	return gcloud.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
+	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
 		dnclistId, retryable, getErr := proxy.getOutboundDnclistByName(ctx, name)
 		if getErr != nil && !retryable {
 			return retry.NonRetryableError(fmt.Errorf("error requesting dnc lists %s: %s", name, getErr))

@@ -8,7 +8,7 @@ import (
 	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	didPool "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_did_pool"
-	gcloud "terraform-provider-genesyscloud/genesyscloud/util"
+	util "terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 
 	"github.com/google/uuid"
@@ -36,7 +36,7 @@ func TestAccResourceIvrConfigBasic(t *testing.T) {
 	}()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
+		PreCheck:          func() { util.TestAccPreCheck(t) },
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
@@ -60,9 +60,9 @@ func TestAccResourceIvrConfigBasic(t *testing.T) {
 					ResourceID:       didPoolResource1,
 					StartPhoneNumber: ivrConfigDnis[0],
 					EndPhoneNumber:   ivrConfigDnis[1],
-					Description:      gcloud.NullValue, // No description
-					Comments:         gcloud.NullValue, // No comments
-					PoolProvider:     gcloud.NullValue, // No provider
+					Description:      util.NullValue, // No description
+					Comments:         util.NullValue, // No comments
+					PoolProvider:     util.NullValue, // No provider
 				}) + GenerateIvrConfigResource(&IvrConfigStruct{
 					ResourceID:  ivrConfigResource1,
 					Name:        ivrConfigName,
@@ -73,8 +73,8 @@ func TestAccResourceIvrConfigBasic(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_architect_ivr."+ivrConfigResource1, "name", ivrConfigName),
 					resource.TestCheckResourceAttr("genesyscloud_architect_ivr."+ivrConfigResource1, "description", ivrConfigDescription),
-					gcloud.ValidateStringInArray("genesyscloud_architect_ivr."+ivrConfigResource1, "dnis", ivrConfigDnis[0]),
-					gcloud.ValidateStringInArray("genesyscloud_architect_ivr."+ivrConfigResource1, "dnis", ivrConfigDnis[1]),
+					util.ValidateStringInArray("genesyscloud_architect_ivr."+ivrConfigResource1, "dnis", ivrConfigDnis[0]),
+					util.ValidateStringInArray("genesyscloud_architect_ivr."+ivrConfigResource1, "dnis", ivrConfigDnis[1]),
 				),
 			},
 			{
@@ -113,7 +113,7 @@ func TestAccResourceIvrConfigDivision(t *testing.T) {
 	}()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
+		PreCheck:          func() { util.TestAccPreCheck(t) },
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
@@ -121,8 +121,8 @@ func TestAccResourceIvrConfigDivision(t *testing.T) {
 				Config: generateAuthDivisionResourceForIvrTests(
 					divResource1,
 					divName1,
-					gcloud.NullValue, // No description
-					gcloud.NullValue, // Not home division
+					util.NullValue, // No description
+					util.NullValue, // Not home division
 				) + GenerateIvrConfigResource(&IvrConfigStruct{
 					ResourceID:  ivrConfigResource1,
 					Name:        ivrConfigName,
@@ -143,20 +143,20 @@ func TestAccResourceIvrConfigDivision(t *testing.T) {
 				Config: generateAuthDivisionResourceForIvrTests(
 					divResource1,
 					divName1,
-					gcloud.NullValue, // No description
-					gcloud.NullValue, // Not home division
+					util.NullValue, // No description
+					util.NullValue, // Not home division
 				) + generateAuthDivisionResourceForIvrTests(
 					divResource2,
 					divName2,
-					gcloud.NullValue, // No description
-					gcloud.NullValue, // Not home division
+					util.NullValue, // No description
+					util.NullValue, // Not home division
 				) + didPool.GenerateDidPoolResource(&didPool.DidPoolStruct{
 					ResourceID:       didPoolResource1,
 					StartPhoneNumber: ivrConfigDnis[0],
 					EndPhoneNumber:   ivrConfigDnis[1],
-					Description:      gcloud.NullValue, // No description
-					Comments:         gcloud.NullValue, // No comments
-					PoolProvider:     gcloud.NullValue, // No provider
+					Description:      util.NullValue, // No description
+					Comments:         util.NullValue, // No comments
+					PoolProvider:     util.NullValue, // No provider
 				}) + GenerateIvrConfigResource(&IvrConfigStruct{
 					ResourceID:  ivrConfigResource1,
 					Name:        ivrConfigName,
@@ -168,8 +168,8 @@ func TestAccResourceIvrConfigDivision(t *testing.T) {
 					resource.TestCheckResourceAttr(fullResourceId, "name", ivrConfigName),
 					resource.TestCheckResourceAttr(fullResourceId, "description", ivrConfigDescription),
 					resource.TestCheckResourceAttrPair(fullResourceId, "division_id", "genesyscloud_auth_division."+divResource1, "id"),
-					gcloud.ValidateStringInArray(fullResourceId, "dnis", ivrConfigDnis[0]),
-					gcloud.ValidateStringInArray(fullResourceId, "dnis", ivrConfigDnis[1]),
+					util.ValidateStringInArray(fullResourceId, "dnis", ivrConfigDnis[0]),
+					util.ValidateStringInArray(fullResourceId, "dnis", ivrConfigDnis[1]),
 				),
 			},
 			{
@@ -182,13 +182,13 @@ func TestAccResourceIvrConfigDivision(t *testing.T) {
 				Config: generateAuthDivisionResourceForIvrTests(
 					divResource1,
 					divName1,
-					gcloud.NullValue, // No description
-					gcloud.NullValue, // Not home division
+					util.NullValue, // No description
+					util.NullValue, // Not home division
 				) + generateAuthDivisionResourceForIvrTests(
 					divResource2,
 					divName2,
-					gcloud.NullValue, // No description
-					gcloud.NullValue, // Not home division
+					util.NullValue, // No description
+					util.NullValue, // Not home division
 				),
 			},
 		},
@@ -229,9 +229,9 @@ func TestAccResourceIvrConfigDnisOverload(t *testing.T) {
 		ResourceID:       didPoolResourceId,
 		StartPhoneNumber: startNumberStr,
 		EndPhoneNumber:   endNumberStr,
-		Description:      gcloud.NullValue, // No description
-		Comments:         gcloud.NullValue, // No comments
-		PoolProvider:     gcloud.NullValue, // No provider
+		Description:      util.NullValue, // No description
+		Comments:         util.NullValue, // No comments
+		PoolProvider:     util.NullValue, // No provider
 	})
 
 	// did pool cleanup
@@ -246,7 +246,7 @@ func TestAccResourceIvrConfigDnisOverload(t *testing.T) {
 	fullResourceId := resourceName + "." + resourceID
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
+		PreCheck:          func() { util.TestAccPreCheck(t) },
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
@@ -335,7 +335,7 @@ func testVerifyIvrConfigsDestroyed(state *terraform.State) error {
 			return fmt.Errorf("IVR config (%s) still exists", rs.Primary.ID)
 		}
 
-		if gcloud.IsStatus404(resp) {
+		if util.IsStatus404(resp) {
 			// IVR Config not found as expected
 			continue
 		}

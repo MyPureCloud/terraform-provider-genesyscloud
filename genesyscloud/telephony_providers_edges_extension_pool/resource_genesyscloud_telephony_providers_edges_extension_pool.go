@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"log"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
-	gcloud "terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -62,10 +62,10 @@ func readExtensionPool(ctx context.Context, d *schema.ResourceData, meta interfa
 	extensionPoolProxy := getExtensionPoolProxy(sdkConfig)
 
 	log.Printf("Reading Extension pool %s", d.Id())
-	return gcloud.WithRetriesForRead(ctx, d, func() *retry.RetryError {
+	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		extensionPool, resp, getErr := extensionPoolProxy.getExtensionPool(ctx, d.Id())
 		if getErr != nil {
-			if gcloud.IsStatus404(resp) {
+			if util.IsStatus404(resp) {
 				return retry.RetryableError(fmt.Errorf("Failed to read Extension pool %s: %s", d.Id(), getErr))
 			}
 			return retry.NonRetryableError(fmt.Errorf("Failed to read Extension pool %s: %s", d.Id(), getErr))
@@ -119,10 +119,10 @@ func deleteExtensionPool(ctx context.Context, d *schema.ResourceData, meta inter
 	if _, err := extensionPoolProxy.deleteExtensionPool(ctx, d.Id()); err != nil {
 		return diag.Errorf("failed to delete Extension pool with starting number %s: %s", startNumber, err)
 	}
-	return gcloud.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
+	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		extensionPool, resp, err := extensionPoolProxy.getExtensionPool(ctx, d.Id())
 		if err != nil {
-			if gcloud.IsStatus404(resp) {
+			if util.IsStatus404(resp) {
 				// Extension pool deleted
 				log.Printf("Deleted Extension pool %s", d.Id())
 				return nil

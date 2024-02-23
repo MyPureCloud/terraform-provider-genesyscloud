@@ -3,7 +3,7 @@ package outbound_callabletimeset
 import (
 	"fmt"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
-	gcloud "terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 
 	"github.com/google/uuid"
@@ -45,7 +45,7 @@ func TestAccResourceOutboundCallabletimeset(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
+		PreCheck:          func() { util.TestAccPreCheck(t) },
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
@@ -120,7 +120,7 @@ func testVerifyCallabletimesetDestroyed(state *terraform.State) error {
 		timeSet, resp, err := outboutAPI.GetOutboundCallabletimeset(rs.Primary.ID)
 		if timeSet != nil {
 			return fmt.Errorf("Callable time set (%s) still exists", rs.Primary.ID)
-		} else if gcloud.IsStatus404(resp) {
+		} else if util.IsStatus404(resp) {
 			// Callable time set not found as expected
 			continue
 		} else {

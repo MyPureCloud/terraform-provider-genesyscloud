@@ -11,7 +11,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
-	gcloud "terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 	"time"
 )
@@ -62,10 +62,10 @@ func readOutboundCallanalysisresponseset(ctx context.Context, d *schema.Resource
 
 	log.Printf("Reading Outbound Call Analysis Response Set %s", d.Id())
 
-	return gcloud.WithRetriesForRead(ctx, d, func() *retry.RetryError {
+	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		responseSet, resp, getErr := proxy.getOutboundCallanalysisresponsesetById(ctx, d.Id())
 		if getErr != nil {
-			if gcloud.IsStatus404ByInt(resp) {
+			if util.IsStatus404ByInt(resp) {
 				return retry.RetryableError(fmt.Errorf("failed to read Outbound Call Analysis Response Set %s: %s", d.Id(), getErr))
 			}
 			return retry.NonRetryableError(fmt.Errorf("failed to read Outbound Call Analysis Response Set %s: %s", d.Id(), getErr))
@@ -103,7 +103,7 @@ func deleteOutboundCallanalysisresponseset(ctx context.Context, d *schema.Resour
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getOutboundCallanalysisresponsesetProxy(sdkConfig)
 
-	diagErr := gcloud.RetryWhen(gcloud.IsStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+	diagErr := util.RetryWhen(util.IsStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		log.Printf("Deleting Outbound Call Analysis Response Set")
 		resp, err := proxy.deleteOutboundCallanalysisresponseset(ctx, d.Id())
 		if err != nil {
@@ -115,10 +115,10 @@ func deleteOutboundCallanalysisresponseset(ctx context.Context, d *schema.Resour
 		return diagErr
 	}
 
-	return gcloud.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
+	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		_, resp, err := proxy.getOutboundCallanalysisresponsesetById(ctx, d.Id())
 		if err != nil {
-			if gcloud.IsStatus404ByInt(resp) {
+			if util.IsStatus404ByInt(resp) {
 				// Outbound Call Analysis Response Set deleted
 				log.Printf("Deleted Outbound Call Analysis Response Set %s", d.Id())
 				return nil

@@ -2,7 +2,7 @@ package outbound_wrapupcode_mappings
 
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	gcloud "terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
@@ -44,7 +44,7 @@ func SetRegistrar(l registrar.Registrar) {
 // OutboundWrapupCodeMappingsExporter() returns the exporter used for exporting the outbound wrapping codes
 func OutboundWrapupCodeMappingsExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
-		GetResourcesFunc: gcloud.GetAllWithPooledClient(getOutboundWrapupCodeMappings),
+		GetResourcesFunc: provider.GetAllWithPooledClient(getOutboundWrapupCodeMappings),
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			`mappings.wrapup_code_id`: {
 				RefType: `genesyscloud_routing_wrapupcode`,
@@ -58,10 +58,10 @@ func OutboundWrapupCodeMappingsExporter() *resourceExporter.ResourceExporter {
 func ResourceOutboundWrapUpCodeMappings() *schema.Resource {
 	return &schema.Resource{
 		Description:   `Genesys Cloud Outbound Wrap-up Code Mappings`,
-		CreateContext: gcloud.CreateWithPooledClient(createOutboundWrapUpCodeMappings),
-		ReadContext:   gcloud.ReadWithPooledClient(readOutboundWrapUpCodeMappings),
-		UpdateContext: gcloud.UpdateWithPooledClient(updateOutboundWrapUpCodeMappings),
-		DeleteContext: gcloud.DeleteWithPooledClient(deleteOutboundWrapUpCodeMappings),
+		CreateContext: provider.CreateWithPooledClient(createOutboundWrapUpCodeMappings),
+		ReadContext:   provider.ReadWithPooledClient(readOutboundWrapUpCodeMappings),
+		UpdateContext: provider.UpdateWithPooledClient(updateOutboundWrapUpCodeMappings),
+		DeleteContext: provider.DeleteWithPooledClient(deleteOutboundWrapUpCodeMappings),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},

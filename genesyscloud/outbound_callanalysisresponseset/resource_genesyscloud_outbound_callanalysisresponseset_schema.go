@@ -3,7 +3,7 @@ package outbound_callanalysisresponseset
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	gcloud "terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
 )
@@ -128,10 +128,10 @@ func ResourceOutboundCallanalysisresponseset() *schema.Resource {
 	return &schema.Resource{
 		Description: `Genesys Cloud outbound Call Analysis Response Set`,
 
-		CreateContext: gcloud.CreateWithPooledClient(createOutboundCallanalysisresponseset),
-		ReadContext:   gcloud.ReadWithPooledClient(readOutboundCallanalysisresponseset),
-		UpdateContext: gcloud.UpdateWithPooledClient(updateOutboundCallanalysisresponseset),
-		DeleteContext: gcloud.DeleteWithPooledClient(deleteOutboundCallanalysisresponseset),
+		CreateContext: provider.CreateWithPooledClient(createOutboundCallanalysisresponseset),
+		ReadContext:   provider.ReadWithPooledClient(readOutboundCallanalysisresponseset),
+		UpdateContext: provider.UpdateWithPooledClient(updateOutboundCallanalysisresponseset),
+		DeleteContext: provider.DeleteWithPooledClient(deleteOutboundCallanalysisresponseset),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -162,7 +162,7 @@ func ResourceOutboundCallanalysisresponseset() *schema.Resource {
 // OutboundCallanalysisresponsesetExporter returns the resourceExporter object used to hold the genesyscloud_outbound_callanalysisresponseset exporter's config
 func OutboundCallanalysisresponsesetExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
-		GetResourcesFunc: gcloud.GetAllWithPooledClient(getAllAuthOutboundCallanalysisresponsesets),
+		GetResourcesFunc: provider.GetAllWithPooledClient(getAllAuthOutboundCallanalysisresponsesets),
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			"responses.callable_person.data":  {RefType: "genesyscloud_flow"},
 			"responses.callable_machine.data": {RefType: "genesyscloud_flow"},
@@ -174,7 +174,7 @@ func OutboundCallanalysisresponsesetExporter() *resourceExporter.ResourceExporte
 func DataSourceOutboundCallanalysisresponseset() *schema.Resource {
 	return &schema.Resource{
 		Description: `Genesys Cloud outbound callanalysisresponseset data source. Select an outbound callanalysisresponseset by name`,
-		ReadContext: gcloud.ReadWithPooledClient(dataSourceOutboundCallanalysisresponsesetRead),
+		ReadContext: provider.ReadWithPooledClient(dataSourceOutboundCallanalysisresponsesetRead),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},

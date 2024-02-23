@@ -5,14 +5,14 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v121/platformclientv2"
 	"strings"
-	gcloud "terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 )
 
 func getContactlistfilterFromResourceData(d *schema.ResourceData) platformclientv2.Contactlistfilter {
 	filter := platformclientv2.Contactlistfilter{
 		Name:        platformclientv2.String(d.Get("name").(string)),
-		ContactList: gcloud.BuildSdkDomainEntityRef(d, "contact_list_id"),
+		ContactList: util.BuildSdkDomainEntityRef(d, "contact_list_id"),
 		Clauses:     buildContactListFilterClauses(d.Get("clauses").([]interface{})),
 	}
 

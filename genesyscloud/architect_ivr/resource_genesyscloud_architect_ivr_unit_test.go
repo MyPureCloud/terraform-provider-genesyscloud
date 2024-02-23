@@ -4,7 +4,7 @@ package architect_ivr
 import (
 	"context"
 	"fmt"
-	gcloud "terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
 
 	"net/http"
 	"testing"
@@ -53,7 +53,7 @@ func TestUnitResourceArchitectRead(t *testing.T) {
 	defer func() { internalProxy = nil }()
 
 	ctx := context.Background()
-	gcloud := &gcloud.ProviderMeta{ClientConfig: &platformclientv2.Configuration{}}
+	gcloud := &provider.ProviderMeta{ClientConfig: &platformclientv2.Configuration{}}
 
 	//Grab our defined schema
 	resourceSchema := ResourceArchitectIvrConfig().Schema
@@ -114,7 +114,7 @@ func TestUnitResourceArchitectDeleteStandard(t *testing.T) {
 	defer func() { internalProxy = nil }()
 
 	ctx := context.Background()
-	gcloud := &gcloud.ProviderMeta{ClientConfig: &platformclientv2.Configuration{}}
+	gcloud := &provider.ProviderMeta{ClientConfig: &platformclientv2.Configuration{}}
 
 	//Grab our defined schema
 	resourceSchema := ResourceArchitectIvrConfig().Schema
@@ -177,7 +177,7 @@ func TestUnitResourceArchitectDeleteSoftDelete(t *testing.T) {
 	internalProxy = archProxy
 	defer func() { internalProxy = nil }()
 	ctx := context.Background()
-	gcloud := &gcloud.ProviderMeta{ClientConfig: &platformclientv2.Configuration{}}
+	gcloud := &provider.ProviderMeta{ClientConfig: &platformclientv2.Configuration{}}
 
 	//Grab our defined schema
 	resourceSchema := ResourceArchitectIvrConfig().Schema
@@ -249,7 +249,7 @@ func TestUnitResourceArchitectCreate(t *testing.T) {
 	defer func() { internalProxy = nil }()
 
 	ctx := context.Background()
-	gcloud := &gcloud.ProviderMeta{ClientConfig: &platformclientv2.Configuration{}}
+	gcloud := &provider.ProviderMeta{ClientConfig: &platformclientv2.Configuration{}}
 
 	//Grab our defined schema
 	resourceSchema := ResourceArchitectIvrConfig().Schema
@@ -320,7 +320,7 @@ func TestUnitResourceArchitectUpdate(t *testing.T) {
 	defer func() { internalProxy = nil }()
 
 	ctx := context.Background()
-	gcloud := &gcloud.ProviderMeta{ClientConfig: &platformclientv2.Configuration{}}
+	gcloud := &provider.ProviderMeta{ClientConfig: &platformclientv2.Configuration{}}
 
 	//Grab our defined schema
 	resourceSchema := ResourceArchitectIvrConfig().Schema

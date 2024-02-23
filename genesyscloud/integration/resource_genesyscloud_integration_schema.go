@@ -5,7 +5,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
-	gcloud "terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
@@ -47,14 +47,14 @@ func ResourceIntegration() *schema.Resource {
 				Type:             schema.TypeString,
 				Optional:         true,
 				Computed:         true,
-				DiffSuppressFunc: gcloud.SuppressEquivalentJsonDiffs,
+				DiffSuppressFunc: util.SuppressEquivalentJsonDiffs,
 			},
 			"advanced": {
 				Description:      "Integration advanced config (JSON string).",
 				Type:             schema.TypeString,
 				Optional:         true,
 				Computed:         true,
-				DiffSuppressFunc: gcloud.SuppressEquivalentJsonDiffs,
+				DiffSuppressFunc: util.SuppressEquivalentJsonDiffs,
 			},
 			"credentials": {
 				Description: "Credentials required for the integration. The required keys are indicated in the credentials property of the Integration Type.",

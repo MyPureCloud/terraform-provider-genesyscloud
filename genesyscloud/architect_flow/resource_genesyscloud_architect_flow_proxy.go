@@ -113,7 +113,7 @@ func getAllArchitectFlowsFn(ctx context.Context, p *architectFlowProxy) (*[]plat
 		totalFlows = append(totalFlows, flow)
 	}
 
-	for pageNum := 2; pageNum <= *flows.PageNumber; pageNum++ {
+	for pageNum := 2; pageNum <= *flows.PageCount; pageNum++ {
 		flows, _, err := p.api.GetFlows(nil, pageNum, pageSize, "", "", nil, "", "", "", "", "", "", "", "", false, true, "", "", nil)
 		if err != nil {
 			return nil, fmt.Errorf("Failed to get page %d of flows: %v", pageNum, err)

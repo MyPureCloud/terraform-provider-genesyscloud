@@ -5,7 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
-	gcloud "terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 
 	"net/http"
 	"testing"
@@ -316,5 +316,5 @@ func buildWorkitemSchemaResourceMap(tId string, tName string, tDescription strin
 }
 
 func equivalentJsons(json1, json2 string) bool {
-	return gcloud.EquivalentJsons(json1, json2)
+	return util.EquivalentJsons(json1, json2)
 }

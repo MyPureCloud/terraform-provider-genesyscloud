@@ -8,7 +8,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
-	gcloud "terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/mypurecloud/platform-client-sdk-go/v121/platformclientv2"
@@ -83,7 +83,7 @@ func readScript(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	scriptsProxy := getScriptsProxy(sdkConfig)
 
-	return gcloud.WithRetriesForRead(ctx, d, func() *retry.RetryError {
+	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		script, statusCode, err := scriptsProxy.getScriptById(ctx, d.Id())
 		if statusCode == http.StatusNotFound {
 			return retry.RetryableError(fmt.Errorf("Failed to read flow %s: %s", d.Id(), err))

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"log"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
-	gcloud "terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -39,7 +39,7 @@ func createEdgeGroup(ctx context.Context, d *schema.ResourceData, meta interface
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	edgeGroupProxy := getEdgeGroupProxy(sdkConfig)
 
-	diagErr := gcloud.RetryWhen(gcloud.IsStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+	diagErr := util.RetryWhen(util.IsStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		log.Printf("Creating edge group %s", name)
 		edgeGroup, resp, err := edgeGroupProxy.createEdgeGroup(ctx, *edgeGroup)
 		if err != nil {
@@ -80,10 +80,10 @@ func updateEdgeGroup(ctx context.Context, d *schema.ResourceData, meta interface
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	edgeGroupProxy := getEdgeGroupProxy(sdkConfig)
 
-	diagErr := gcloud.RetryWhen(gcloud.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+	diagErr := util.RetryWhen(util.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		edgeGroupFromApi, resp, getErr := edgeGroupProxy.getEdgeGroupById(ctx, d.Id())
 		if getErr != nil {
-			if gcloud.IsStatus404(resp) {
+			if util.IsStatus404(resp) {
 				return resp, diag.Errorf("The edge group does not exist %s: %s", d.Id(), getErr)
 			}
 			return resp, diag.Errorf("Failed to read edge group %s: %s", d.Id(), getErr)
@@ -115,10 +115,10 @@ func deleteEdgeGroup(ctx context.Context, d *schema.ResourceData, meta interface
 		return diag.Errorf("Failed to delete edge group: %s", err)
 	}
 
-	return gcloud.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
+	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		edgeGroup, resp, err := edgeGroupProxy.getEdgeGroupById(ctx, d.Id())
 		if err != nil {
-			if gcloud.IsStatus404(resp) {
+			if util.IsStatus404(resp) {
 				// Edge group deleted
 				log.Printf("Deleted Edge group %s", d.Id())
 				return nil
@@ -141,10 +141,10 @@ func readEdgeGroup(ctx context.Context, d *schema.ResourceData, meta interface{}
 	edgeGroupProxy := getEdgeGroupProxy(sdkConfig)
 
 	log.Printf("Reading edge group %s", d.Id())
-	return gcloud.WithRetriesForRead(ctx, d, func() *retry.RetryError {
+	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		edgeGroup, resp, getErr := edgeGroupProxy.getEdgeGroupById(ctx, d.Id())
 		if getErr != nil {
-			if gcloud.IsStatus404(resp) {
+			if util.IsStatus404(resp) {
 				return retry.RetryableError(fmt.Errorf("Failed to read edge group %s: %s", d.Id(), getErr))
 			}
 			return retry.NonRetryableError(fmt.Errorf("Failed to read edge group %s: %s", d.Id(), getErr))

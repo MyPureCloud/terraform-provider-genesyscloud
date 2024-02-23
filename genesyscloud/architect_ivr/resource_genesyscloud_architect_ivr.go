@@ -6,7 +6,7 @@ import (
 	"log"
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
-	gcloud "terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 	"time"
 
@@ -65,10 +65,10 @@ func readIvrConfig(ctx context.Context, d *schema.ResourceData, meta interface{}
 	ap := getArchitectIvrProxy(sdkConfig)
 
 	log.Printf("Reading IVR config %s", d.Id())
-	return gcloud.WithRetriesForRead(ctx, d, func() *retry.RetryError {
+	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		ivrConfig, resp, getErr := ap.getArchitectIvr(ctx, d.Id())
 		if getErr != nil {
-			if gcloud.IsStatus404(resp) {
+			if util.IsStatus404(resp) {
 				return retry.RetryableError(fmt.Errorf("Failed to read IVR config %s: %s", d.Id(), getErr))
 			}
 			return retry.NonRetryableError(fmt.Errorf("Failed to read IVR config %s: %s", d.Id(), getErr))
@@ -101,7 +101,7 @@ func updateIvrConfig(ctx context.Context, d *schema.ResourceData, meta interface
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	ap := getArchitectIvrProxy(sdkConfig)
 
-	diagErr := gcloud.RetryWhen(gcloud.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+	diagErr := util.RetryWhen(util.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		// Get current version
 		ivr, resp, getErr := ap.getArchitectIvr(ctx, d.Id())
 		if getErr != nil {
@@ -145,10 +145,10 @@ func deleteIvrConfig(ctx context.Context, d *schema.ResourceData, meta interface
 		return diag.Errorf("Failed to delete IVR config %s: %s", name, err)
 	}
 
-	return gcloud.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
+	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		ivr, resp, err := ap.getArchitectIvr(ctx, d.Id())
 		if err != nil {
-			if gcloud.IsStatus404(resp) {
+			if util.IsStatus404(resp) {
 				// IVR config deleted
 				log.Printf("Deleted IVR config %s", d.Id())
 				return nil

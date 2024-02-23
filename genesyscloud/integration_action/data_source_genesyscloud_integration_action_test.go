@@ -3,7 +3,7 @@ package integration_action
 import (
 	"fmt"
 	"strconv"
-	gcloud "terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 
@@ -32,7 +32,7 @@ func TestAccDataSourceIntegrationAction(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
-		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Create without config
@@ -46,8 +46,8 @@ func TestAccDataSourceIntegrationAction(t *testing.T) {
 					actionName1,
 					actionCateg1,
 					"genesyscloud_integration."+integResource1+".id",
-					util.NullValue,                             // Secure default (false)
-					util.NullValue,                             // Timeout default
+					util.NullValue, // Secure default (false)
+					util.NullValue, // Timeout default
 					util.GenerateJsonSchemaDocStr(inputAttr1),  // contract_input
 					util.GenerateJsonSchemaDocStr(outputAttr1), // contract_output
 					generateIntegrationActionConfigRequest(

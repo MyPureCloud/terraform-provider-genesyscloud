@@ -4,7 +4,7 @@ package task_management_worktype
 import (
 	"context"
 	"fmt"
-	gcloud "terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
 
 	"net/http"
 	"terraform-provider-genesyscloud/genesyscloud/util/lists"
@@ -238,7 +238,7 @@ func TestUnitResourceWorktypeCreate(t *testing.T) {
 	defer func() { internalProxy = nil }()
 
 	ctx := context.Background()
-	gcloud := &gcloud.ProviderMeta{ClientConfig: &platformclientv2.Configuration{}}
+	gcloud := &provider.ProviderMeta{ClientConfig: &platformclientv2.Configuration{}}
 
 	//Grab our defined schema
 	resourceSchema := ResourceTaskManagementWorktype().Schema
@@ -405,7 +405,7 @@ func TestUnitResourceWorktypeRead(t *testing.T) {
 	defer func() { internalProxy = nil }()
 
 	ctx := context.Background()
-	gcloud := &gcloud.ProviderMeta{ClientConfig: &platformclientv2.Configuration{}}
+	gcloud := &provider.ProviderMeta{ClientConfig: &platformclientv2.Configuration{}}
 
 	//Grab our defined schema
 	resourceSchema := ResourceTaskManagementWorktype().Schema
@@ -662,7 +662,7 @@ func TestUnitResourceWorktypeUpdate(t *testing.T) {
 	defer func() { internalProxy = nil }()
 
 	ctx := context.Background()
-	gcloud := &gcloud.ProviderMeta{ClientConfig: &platformclientv2.Configuration{}}
+	gcloud := &provider.ProviderMeta{ClientConfig: &platformclientv2.Configuration{}}
 
 	//Grab our defined schema
 	resourceSchema := ResourceTaskManagementWorktype().Schema
@@ -713,7 +713,7 @@ func TestUnitResourceWorktypeDelete(t *testing.T) {
 	defer func() { internalProxy = nil }()
 
 	ctx := context.Background()
-	gcloud := &gcloud.ProviderMeta{ClientConfig: &platformclientv2.Configuration{}}
+	gcloud := &provider.ProviderMeta{ClientConfig: &platformclientv2.Configuration{}}
 
 	//Grab our defined schema
 	resourceSchema := ResourceTaskManagementWorktype().Schema

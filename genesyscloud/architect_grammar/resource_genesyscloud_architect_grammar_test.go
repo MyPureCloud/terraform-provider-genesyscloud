@@ -3,7 +3,7 @@ package architect_grammar
 import (
 	"fmt"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
-	gcloud "terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 
 	"github.com/google/uuid"
@@ -22,7 +22,7 @@ func TestAccResourceArchitectGrammar(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
+		PreCheck:          func() { util.TestAccPreCheck(t) },
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
@@ -69,7 +69,7 @@ func testVerifyGrammarDestroyed(state *terraform.State) error {
 		grammar, resp, err := architectAPI.GetArchitectGrammar(rs.Primary.ID, false)
 		if grammar != nil {
 			return fmt.Errorf("Grammar (%s) still exists", rs.Primary.ID)
-		} else if gcloud.IsStatus404(resp) {
+		} else if util.IsStatus404(resp) {
 			// Grammar not found as expected
 			continue
 		} else {

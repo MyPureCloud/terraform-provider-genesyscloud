@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
-	gcloud "terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -27,7 +27,7 @@ func dataSourceIntegrationRead(ctx context.Context, d *schema.ResourceData, m in
 
 	integrationName := d.Get("name").(string)
 
-	return gcloud.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
+	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
 		integration, retryable, err := ip.getIntegrationByName(ctx, integrationName)
 		if err != nil && !retryable {
 			return retry.NonRetryableError(fmt.Errorf("failed to get page of integrations: %s. %s", integrationName, err))

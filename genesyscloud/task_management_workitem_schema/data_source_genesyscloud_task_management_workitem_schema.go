@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
-	gcloud "terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -27,7 +27,7 @@ func dataSourceTaskManagementWorkitemSchemaRead(ctx context.Context, d *schema.R
 
 	// Query for workitem schemas by name. Retry in case new schema is not yet indexed by search.
 	// As schema names are non-unique, fail in case of multiple results.
-	return gcloud.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
+	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
 		schemas, retryable, err := proxy.getTaskManagementWorkitemSchemasByName(ctx, name)
 		if err != nil && !retryable {
 			return retry.NonRetryableError(fmt.Errorf("error getting workitem schema %s: %v", name, err))

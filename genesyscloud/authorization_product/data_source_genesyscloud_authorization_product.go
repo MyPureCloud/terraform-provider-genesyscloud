@@ -4,7 +4,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
-	gcloud "terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 )
 
 import (
@@ -20,7 +20,7 @@ func dataSourceAuthorizationProductRead(ctx context.Context, d *schema.ResourceD
 	proxy := getauthProductProxy(sdkConfig)
 	name := d.Get("name").(string)
 
-	return gcloud.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
+	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
 		// Get the list of enabled products
 		authProductId, retryable, err := proxy.getAuthorizationProduct(ctx, name)
 

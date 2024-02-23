@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
-	gcloud "terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -21,7 +21,7 @@ func dataSourceOutboundCampaignruleRead(ctx context.Context, d *schema.ResourceD
 	name := d.Get("name").(string)
 
 	// Query campaign rule by name. Retry in case search has not yet indexed the campaign rule.
-	return gcloud.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
+	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
 		const pageNum = 1
 		const pageSize = 100
 		campaignRules, _, getErr := outboundAPI.GetOutboundCampaignrules(pageSize, pageNum, true, "", name, "", "")

@@ -3,6 +3,7 @@ package genesyscloud
 import (
 	"log"
 	"sync"
+	"terraform-provider-genesyscloud/genesyscloud/architect_flow"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"testing"
 
@@ -27,6 +28,7 @@ func (r *registerTestInstance) registerTestResources() {
 	r.resourceMapMutex.Lock()
 	defer r.resourceMapMutex.Unlock()
 
+	providerResources["genesyscloud_flow"] = architect_flow.ResourceArchitectFlow()
 	providerResources["genesyscloud_routing_queue"] = ResourceRoutingQueue()
 	providerResources["genesyscloud_location"] = ResourceLocation()
 	providerResources["genesyscloud_architect_schedules"] = ResourceArchitectSchedules()
@@ -72,6 +74,8 @@ func (r *registerTestInstance) registerTestDataSources() {
 
 	r.datasourceMapMutex.Lock()
 	defer r.datasourceMapMutex.Unlock()
+
+	providerDataSources["genesyscloud_flow"] = architect_flow.DataSourceArchitectFlow()
 	providerDataSources["genesyscloud_routing_wrapupcode"] = DataSourceRoutingWrapupcode()
 	providerDataSources["genesyscloud_routing_queue"] = DataSourceRoutingQueue()
 	providerDataSources["genesyscloud_location"] = DataSourceLocation()

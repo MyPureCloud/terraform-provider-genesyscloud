@@ -7,7 +7,7 @@ import (
 	"os"
 	"path"
 	"strings"
-	gcloud "terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util/files"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 	"time"
@@ -89,7 +89,7 @@ func flattenGrammarLanguageFileMetadata(d *schema.ResourceData, fileMetadata *pl
 }
 
 func ArchitectGrammarLanguageResolver(languageId, exportDirectory, subDirectory string, configMap map[string]interface{}, meta interface{}) error {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getArchitectGrammarLanguageProxy(sdkConfig)
 
 	fullPath := path.Join(exportDirectory, subDirectory)
