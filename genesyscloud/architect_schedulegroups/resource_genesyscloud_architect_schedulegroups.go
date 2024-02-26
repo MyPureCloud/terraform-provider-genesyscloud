@@ -3,10 +3,6 @@ package architect_schedulegroups
 import (
 	"context"
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v121/platformclientv2"
 	"log"
 	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
@@ -14,15 +10,39 @@ import (
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/mypurecloud/platform-client-sdk-go/v121/platformclientv2"
 )
 
 /*
 The resource_genesyscloud_architect_schedulegroups.go contains all of the methods that perform the core logic for a resource.
 */
 
-// getAllAuthArchitectSchedulegroups retrieves all of the architect schedulegroups via Terraform in the Genesys Cloud and is used for the exporter
-func getAllAuthArchitectSchedulegroupss(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
-	return nil, nil
+// getAllAuthArchitectScheduleGroups retrieves all of the architect schedulegroups via Terraform in the Genesys Cloud and is used for the exporter
+func getAllAuthArchitectScheduleGroups(_ context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+	resources := make(resourceExporter.ResourceIDMetaMap)
+	archAPI := platformclientv2.NewArchitectApiWithConfig(clientConfig)
+
+	for pageNum := 1; ; pageNum++ {
+		const pageSize = 100
+		scheduleGroups, _, getErr := archAPI.GetArchitectSchedulegroups(pageNum, pageSize, "", "", "", "", nil)
+		if getErr != nil {
+			return nil, diag.Errorf("Failed to get page of schedule groups: %v", getErr)
+		}
+
+		if scheduleGroups.Entities == nil || len(*scheduleGroups.Entities) == 0 {
+			break
+		}
+
+		for _, scheduleGroup := range *scheduleGroups.Entities {
+			resources[*scheduleGroup.Id] = &resourceExporter.ResourceMeta{Name: *scheduleGroup.Name}
+		}
+	}
+
+	return resources, nil
 }
 
 // createArchitectSchedulegroups is used by the architect_schedulegroups resource to create Genesys cloud architect schedulegroups
