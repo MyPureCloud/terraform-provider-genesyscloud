@@ -38,6 +38,7 @@ import (
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	respmanagementLibrary "terraform-provider-genesyscloud/genesyscloud/responsemanagement_library"
 	responsemanagementResponse "terraform-provider-genesyscloud/genesyscloud/responsemanagement_response"
+	respManagementRespAsset "terraform-provider-genesyscloud/genesyscloud/responsemanagement_responseasset"
 	routingSmsAddress "terraform-provider-genesyscloud/genesyscloud/routing_sms_addresses"
 	workbin "terraform-provider-genesyscloud/genesyscloud/task_management_workbin"
 	workitemSchema "terraform-provider-genesyscloud/genesyscloud/task_management_workitem_schema"
@@ -122,6 +123,7 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_quality_forms_evaluation"] = gcloud.ResourceEvaluationForm()
 	providerResources["genesyscloud_user"] = gcloud.ResourceUser()
 	providerResources["genesyscloud_responsemanagement_library"] = respmanagementLibrary.ResourceResponsemanagementLibrary()
+	providerResources["genesyscloud_responsemanagement_responseasset"] = respManagementRespAsset.ResourceResponseManagementResponseAsset()
 	providerResources["genesyscloud_routing_email_domain"] = gcloud.ResourceRoutingEmailDomain()
 	providerResources["genesyscloud_routing_email_route"] = gcloud.ResourceRoutingEmailRoute()
 	providerResources["genesyscloud_routing_language"] = gcloud.ResourceRoutingLanguage()

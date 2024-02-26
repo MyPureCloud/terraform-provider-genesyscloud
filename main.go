@@ -2,6 +2,8 @@ package main
 
 import (
 	"flag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/plugin"
 	"sync"
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	dt "terraform-provider-genesyscloud/genesyscloud/architect_datatable"
@@ -44,6 +46,7 @@ import (
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
 	respmanagementLibrary "terraform-provider-genesyscloud/genesyscloud/responsemanagement_library"
 	responsemanagementResponse "terraform-provider-genesyscloud/genesyscloud/responsemanagement_response"
+	responsemanagementResponseasset "terraform-provider-genesyscloud/genesyscloud/responsemanagement_responseasset"
 	smsAddresses "terraform-provider-genesyscloud/genesyscloud/routing_sms_addresses"
 	"terraform-provider-genesyscloud/genesyscloud/scripts"
 	"terraform-provider-genesyscloud/genesyscloud/station"
@@ -66,9 +69,6 @@ import (
 	userRoles "terraform-provider-genesyscloud/genesyscloud/user_roles"
 	webDeployConfig "terraform-provider-genesyscloud/genesyscloud/webdeployments_configuration"
 	webDeployDeploy "terraform-provider-genesyscloud/genesyscloud/webdeployments_deployment"
-
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/plugin"
 )
 
 // Run "go generate" to format example terraform files and generate the docs for the registry/website
@@ -185,6 +185,7 @@ func registerResources() {
 	resourceExporter.SetRegisterExporter(resourceExporters)                //Registering register exporters
 	userRoles.SetRegistrar(regInstance)                                    //Registering user roles
 	responsemanagementResponse.SetRegistrar(regInstance)                   //Registering responsemanagement responses
+	responsemanagementResponseasset.SetRegistrar(regInstance)              //Registering responsemanagement response asset
 	respmanagementLibrary.SetRegistrar(regInstance)                        //Registering responsemanagement library
 
 	// setting resources for Use cases  like TF export where provider is used in resource classes.

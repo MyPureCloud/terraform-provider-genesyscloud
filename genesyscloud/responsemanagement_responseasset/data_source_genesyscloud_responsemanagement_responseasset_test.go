@@ -1,4 +1,4 @@
-package genesyscloud
+package responsemanagement_responseasset
 
 import (
 	"fmt"

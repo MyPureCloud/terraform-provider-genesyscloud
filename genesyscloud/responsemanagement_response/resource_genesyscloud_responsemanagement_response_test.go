@@ -4,10 +4,11 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	respmanagementLibrary "terraform-provider-genesyscloud/genesyscloud/responsemanagement_library"
+	respManagementRespAsset "terraform-provider-genesyscloud/genesyscloud/responsemanagement_responseasset"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+
 	"testing"
 
 	"github.com/google/uuid"
@@ -85,7 +86,7 @@ func TestAccResourceResponseManagementResponseFooterField(t *testing.T) {
 				Config: respmanagementLibrary.GenerateResponseManagementLibraryResource(
 					libraryResource1,
 					libraryName1,
-				) + gcloud.GenerateResponseManagementResponseAssetResource(
+				) + respManagementRespAsset.GenerateResponseManagementResponseAssetResource(
 					assetResource,
 					fullPath,
 					util.NullValue,
@@ -136,7 +137,7 @@ func TestAccResourceResponseManagementResponseFooterField(t *testing.T) {
 				) + respmanagementLibrary.GenerateResponseManagementLibraryResource(
 					libraryResource2,
 					libraryName2,
-				) + gcloud.GenerateResponseManagementResponseAssetResource(
+				) + respManagementRespAsset.GenerateResponseManagementResponseAssetResource(
 					assetResource,
 					fullPath,
 					util.NullValue,
@@ -270,7 +271,7 @@ func TestAccResourceResponseManagementResponseMessaging(t *testing.T) {
 				Config: respmanagementLibrary.GenerateResponseManagementLibraryResource(
 					libraryResource1,
 					libraryName1,
-				) + gcloud.GenerateResponseManagementResponseAssetResource(
+				) + respManagementRespAsset.GenerateResponseManagementResponseAssetResource(
 					assetResource,
 					fullPath,
 					util.NullValue,
@@ -330,7 +331,7 @@ func TestAccResourceResponseManagementResponseMessaging(t *testing.T) {
 				) + respmanagementLibrary.GenerateResponseManagementLibraryResource(
 					libraryResource2,
 					libraryName2,
-				) + gcloud.GenerateResponseManagementResponseAssetResource(
+				) + respManagementRespAsset.GenerateResponseManagementResponseAssetResource(
 					assetResource,
 					fullPath,
 					util.NullValue,
