@@ -868,5 +868,8 @@ func WebDeploymentConfigurationExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc:   provider.GetAllWithPooledClient(getAllWebDeploymentConfigurations),
 		ExcludedAttributes: []string{"version"},
+		RemoveIfMissing: map[string][]string{
+			"authentication_settings": {"integration_id"},
+		},
 	}
 }
