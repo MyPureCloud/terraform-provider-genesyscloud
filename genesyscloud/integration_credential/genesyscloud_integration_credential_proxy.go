@@ -37,7 +37,6 @@ type getIntegrationCredByIdFunc func(ctx context.Context, p *integrationCredsPro
 type getIntegrationCredByNameFunc func(ctx context.Context, p *integrationCredsProxy, credentialName string) (credential *platformclientv2.Credentialinfo, retryable bool, err error)
 type updateIntegrationCredFunc func(ctx context.Context, p *integrationCredsProxy, credentialId string, credential *platformclientv2.Credential) (*platformclientv2.Credentialinfo, error)
 type deleteIntegrationCredFunc func(ctx context.Context, p *integrationCredsProxy, credentialId string) (responseCode int, err error)
-type getIntegrationByIdFunc func(ctx context.Context, p *integrationCredsProxy, integrationId string) (integration *platformclientv2.Integration, response *platformclientv2.APIResponse, err error)
 
 // integrationCredsProxy contains all of the methods that call genesys cloud APIs.
 type integrationCredsProxy struct {
@@ -49,7 +48,6 @@ type integrationCredsProxy struct {
 	getIntegrationCredByNameAttr getIntegrationCredByNameFunc
 	updateIntegrationCredAttr    updateIntegrationCredFunc
 	deleteIntegrationCredAttr    deleteIntegrationCredFunc
-	getIntegrationByIdAttr       getIntegrationByIdFunc
 }
 
 // newIntegrationCredsProxy initializes the Integration Credentials proxy with all of the data needed to communicate with Genesys Cloud
@@ -64,7 +62,6 @@ func newIntegrationCredsProxy(clientConfig *platformclientv2.Configuration) *int
 		getIntegrationCredByNameAttr: getIntegrationCredByNameFn,
 		updateIntegrationCredAttr:    updateIntegrationCredFn,
 		deleteIntegrationCredAttr:    deleteIntegrationCredFn,
-		getIntegrationByIdAttr:       getIntegrationByIdFn,
 	}
 }
 
@@ -106,11 +103,6 @@ func (p *integrationCredsProxy) updateIntegrationCred(ctx context.Context, crede
 // deleteIntegrationCred deletes a Genesys Cloud Integration Credential
 func (p *integrationCredsProxy) deleteIntegrationCred(ctx context.Context, credentialId string) (responseCode int, err error) {
 	return p.deleteIntegrationCredAttr(ctx, p, credentialId)
-}
-
-// getIntegrationById gets Genesys Cloud Integration by id
-func (p *integrationCredsProxy) getIntegrationById(ctx context.Context, integrationId string) (*platformclientv2.Integration, *platformclientv2.APIResponse, error) {
-	return p.getIntegrationByIdAttr(ctx, p, integrationId)
 }
 
 // getAllIntegrationCredsFn is the implementation for getting all integration credentials in Genesys Cloud
@@ -202,16 +194,4 @@ func deleteIntegrationCredFn(ctx context.Context, p *integrationCredsProxy, cred
 	}
 
 	return resp.StatusCode, nil
-}
-
-// getIntegrationByIdFn is the implementation for getting a Genesys Cloud Integration by id
-func getIntegrationByIdFn(ctx context.Context, p *integrationCredsProxy, integrationId string) (*platformclientv2.Integration, *platformclientv2.APIResponse, error) {
-	const pageSize = 100
-	const pageNum = 1
-	integration, resp, err := p.integrationsApi.GetIntegration(integrationId, pageSize, pageNum, "", nil, "", "")
-	if err != nil {
-		return nil, resp, err
-	}
-
-	return integration, resp, nil
 }
