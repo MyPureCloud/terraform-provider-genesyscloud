@@ -228,7 +228,9 @@ func (g *GenesysCloudResourceExporter) retrieveExporters() (diagErr diag.Diagnos
 		exports = g.resourceTypeFilter(exports, *g.filterList)
 	}
 
+	g.exporterMutex.Lock()
 	g.exporters = &exports
+	g.exporterMutex.Unlock()
 
 	// Assign excluded attributes to the config Map
 	if excludedAttrs, ok := g.d.GetOk("exclude_attributes"); ok {
@@ -298,14 +300,12 @@ func (g *GenesysCloudResourceExporter) retrieveGenesysCloudObjectInstances() dia
 	ctx, cancel := context.WithCancel(g.ctx)
 	defer cancel()
 	// We use concurrency here to spin off each exporter type and getting the data
-	g.exporterMutex.Lock()
-	defer g.exporterMutex.Unlock()
-
 	for resType, exporter := range *g.exporters {
 		wg.Add(1)
 		go func(resType string, exporter *resourceExporter.ResourceExporter) {
 			defer wg.Done()
-			//
+			g.exporterMutex.Lock()
+			defer g.exporterMutex.Unlock()
 			typeResources, err := g.getResourcesForType(resType, g.provider, exporter, g.meta)
 
 			if err != nil {
