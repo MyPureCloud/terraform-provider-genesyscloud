@@ -774,6 +774,8 @@ func (g *GenesysCloudResourceExporter) buildSanitizedResourceMaps(exporters map[
 			defer wg.Done()
 			log.Printf("Getting all resources for type %s", name)
 			exporter.FilterResource = g.resourceFilter
+			g.exporterMutex.Lock()
+			defer g.exporterMutex.Unlock()
 			err := exporter.LoadSanitizedResourceMap(ctx, name, filter)
 
 			// Used in tests
