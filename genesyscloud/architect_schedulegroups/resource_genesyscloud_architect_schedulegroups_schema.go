@@ -85,7 +85,7 @@ func ResourceArchitectSchedulegroups() *schema.Resource {
 // ArchitectSchedulegroupsExporter returns the resourceExporter object used to hold the genesyscloud_architect_schedulegroups exporter's config
 func ArchitectSchedulegroupsExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
-		GetResourcesFunc: provider.GetAllWithPooledClient(getAllAuthArchitectScheduleGroups),
+		GetResourcesFunc: provider.GetAllWithPooledClient(getAllAuthArchitectSchedulegroups),
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			"division_id":          {RefType: "genesyscloud_auth_division"},
 			"open_schedules_id":    {RefType: "genesyscloud_architect_schedules"},
