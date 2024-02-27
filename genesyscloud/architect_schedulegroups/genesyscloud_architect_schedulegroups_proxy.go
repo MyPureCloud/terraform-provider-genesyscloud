@@ -118,7 +118,7 @@ func getAllArchitectSchedulegroupsFn(ctx context.Context, p *architectSchedulegr
 	}
 
 	for pageNum := 2; pageNum <= *scheduleGroups.PageCount; pageNum++ {
-		scheduleGroups, _, err := p.architectApi.GetArchitectSchedulegroups(1, pageSize, "", "", "", "", nil)
+		scheduleGroups, _, err := p.architectApi.GetArchitectSchedulegroups(pageNum, pageSize, "", "", "", "", nil)
 		if err != nil {
 			return nil, fmt.Errorf("Failed to get schedule group: %v", err)
 		}
