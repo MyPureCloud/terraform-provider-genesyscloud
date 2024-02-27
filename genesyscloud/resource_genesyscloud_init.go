@@ -66,10 +66,8 @@ func registerResources(l registrar.Registrar) {
 	l.RegisterResource("genesyscloud_journey_segment", ResourceJourneySegment())
 	l.RegisterResource("genesyscloud_knowledge_knowledgebase", ResourceKnowledgeKnowledgebase())
 	l.RegisterResource("genesyscloud_knowledge_document", ResourceKnowledgeDocument())
-	l.RegisterResource("genesyscloud_knowledge_v1_document", ResourceKnowledgeDocumentV1())
 	l.RegisterResource("genesyscloud_knowledge_document_variation", ResourceKnowledgeDocumentVariation())
 	l.RegisterResource("genesyscloud_knowledge_category", ResourceKnowledgeCategory())
-	l.RegisterResource("genesyscloud_knowledge_v1_category", ResourceKnowledgeCategoryV1())
 	l.RegisterResource("genesyscloud_knowledge_label", ResourceKnowledgeLabel())
 	l.RegisterResource("genesyscloud_location", ResourceLocation())
 	l.RegisterResource("genesyscloud_orgauthorization_pairing", resourceOrgauthorizationPairing())
@@ -124,9 +122,7 @@ func registerExporters(l registrar.Registrar) {
 	l.RegisterExporter("genesyscloud_routing_wrapupcode", RoutingWrapupCodeExporter())
 	l.RegisterExporter("genesyscloud_user", UserExporter())
 	l.RegisterExporter("genesyscloud_widget_deployment", WidgetDeploymentExporter())
-	l.RegisterExporter("genesyscloud_knowledge_v1_document", KnowledgeDocumentExporterV1())
 	l.RegisterExporter("genesyscloud_knowledge_document_variation", KnowledgeDocumentVariationExporter())
 	l.RegisterExporter("genesyscloud_knowledge_label", KnowledgeLabelExporter())
-	l.RegisterExporter("genesyscloud_knowledge_v1_category", KnowledgeCategoryExporterV1())
 
 }
