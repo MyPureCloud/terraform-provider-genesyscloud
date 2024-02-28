@@ -7,18 +7,19 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 func dataSourceOutboundFileSpecificationTemplateRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	sdkConfig := m.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := m.(*provider.ProviderMeta).ClientConfig
 	proxy := getOutboundFilespecificationtemplateProxy(sdkConfig)
 	name := d.Get("name").(string)
 
-	return gcloud.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
+	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
 		fstId, retryable, err := proxy.getOutboundFilespecificationtemplateIdByName(ctx, name)
 
 		if err != nil && !retryable {

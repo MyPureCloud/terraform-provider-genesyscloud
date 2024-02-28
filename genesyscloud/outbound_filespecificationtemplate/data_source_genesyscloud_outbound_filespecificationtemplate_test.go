@@ -5,7 +5,8 @@ import (
 	"strconv"
 	"testing"
 
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -21,14 +22,14 @@ func TestAccDataSourceOutboundFileSpecificationTemplate(t *testing.T) {
 		format                      = "Delimited"
 		numberOfHeaderLinesSkipped  = "1"
 		numberOfTrailerLinesSkipped = "2"
-		header                      = gcloud.TrueValue
+		header                      = util.TrueValue
 		delimiter                   = "Custom"
 		delimiterValue              = "^"
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
-		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				Config: generateOutboundFileSpecificationTemplate(

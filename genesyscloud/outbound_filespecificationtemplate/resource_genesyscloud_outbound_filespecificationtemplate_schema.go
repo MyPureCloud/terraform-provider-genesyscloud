@@ -3,7 +3,7 @@ package outbound_filespecificationtemplate
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
 )
@@ -66,10 +66,10 @@ func ResourceOutboundFileSpecificationTemplate() *schema.Resource {
 	return &schema.Resource{
 		Description: `Genesys Cloud Outbound File Specification Template`,
 
-		CreateContext: gcloud.CreateWithPooledClient(createOutboundFileSpecificationTemplate),
-		ReadContext:   gcloud.ReadWithPooledClient(readOutboundFileSpecificationTemplate),
-		UpdateContext: gcloud.UpdateWithPooledClient(updateOutboundFileSpecificationTemplate),
-		DeleteContext: gcloud.DeleteWithPooledClient(deleteOutboundFileSpecificationTemplate),
+		CreateContext: provider.CreateWithPooledClient(createOutboundFileSpecificationTemplate),
+		ReadContext:   provider.ReadWithPooledClient(readOutboundFileSpecificationTemplate),
+		UpdateContext: provider.UpdateWithPooledClient(updateOutboundFileSpecificationTemplate),
+		DeleteContext: provider.DeleteWithPooledClient(deleteOutboundFileSpecificationTemplate),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -137,7 +137,7 @@ func ResourceOutboundFileSpecificationTemplate() *schema.Resource {
 func dataSourceOutboundFileSpecificationTemplate() *schema.Resource {
 	return &schema.Resource{
 		Description: "Data source for Genesys Cloud Outbound File Specification Template. Select a file specification template by name.",
-		ReadContext: gcloud.ReadWithPooledClient(dataSourceOutboundFileSpecificationTemplateRead),
+		ReadContext: provider.ReadWithPooledClient(dataSourceOutboundFileSpecificationTemplateRead),
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Description: "File Specification Template name.",
@@ -156,6 +156,6 @@ func SetRegistrar(l registrar.Registrar) {
 
 func OutboundFileSpecificationTemplateExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
-		GetResourcesFunc: gcloud.GetAllWithPooledClient(getAllFileSpecificationTemplates),
+		GetResourcesFunc: provider.GetAllWithPooledClient(getAllFileSpecificationTemplates),
 	}
 }

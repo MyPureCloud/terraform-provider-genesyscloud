@@ -6,7 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -25,7 +26,7 @@ func TestAccResourceOutboundFileSpecificationTemplate(t *testing.T) {
 		format                      = "Delimited"
 		numberOfHeaderLinesSkipped  = "1"
 		numberOfTrailerLinesSkipped = "2"
-		header                      = gcloud.TrueValue
+		header                      = util.TrueValue
 		delimiter                   = "Comma"
 
 		column1Name   = "Home"
@@ -35,8 +36,8 @@ func TestAccResourceOutboundFileSpecificationTemplate(t *testing.T) {
 
 		preprocessingRule1Find        = "Dr"
 		preprocessingRule1ReplaceWith = "Drive"
-		preprocessingRule1Global      = gcloud.FalseValue
-		preprocessingRule1IgnoreCase  = gcloud.TrueValue
+		preprocessingRule1Global      = util.FalseValue
+		preprocessingRule1IgnoreCase  = util.TrueValue
 
 		preprocessingRule2Find        = "([0-9]{3})"
 		preprocessingRule2ReplaceWith = "($1)"
@@ -46,7 +47,7 @@ func TestAccResourceOutboundFileSpecificationTemplate(t *testing.T) {
 		descriptionUpdated                 = "TF Test file specification template Delimited Update"
 		numberOfHeaderLinesSkippedUpdated  = "3"
 		numberOfTrailerLinesSkippedUpdated = "1"
-		headerUpdated                      = gcloud.FalseValue
+		headerUpdated                      = util.FalseValue
 		delimiterUpdated                   = "Custom"
 		delimiterValueUpdated              = "^"
 
@@ -57,8 +58,8 @@ func TestAccResourceOutboundFileSpecificationTemplate(t *testing.T) {
 
 		preprocessingRule1FindUpdated        = "St"
 		preprocessingRule1ReplaceWithUpdated = "Street"
-		preprocessingRule1GlobalUpdated      = gcloud.TrueValue
-		preprocessingRule1IgnoreCaseUpdated  = gcloud.FalseValue
+		preprocessingRule1GlobalUpdated      = util.TrueValue
+		preprocessingRule1IgnoreCaseUpdated  = util.FalseValue
 
 		// Update 2
 		formatUpdated               = "FixedLength"
@@ -69,8 +70,8 @@ func TestAccResourceOutboundFileSpecificationTemplate(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
-		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				Config: generateOutboundFileSpecificationTemplate(
@@ -82,18 +83,18 @@ func TestAccResourceOutboundFileSpecificationTemplate(t *testing.T) {
 					strconv.Quote(numberOfTrailerLinesSkipped),
 					strconv.Quote(header),
 					strconv.Quote(delimiter),
-					gcloud.NullValue,
+					util.NullValue,
 					generateOutboundFileSpecificationTemplateColumnInformation(
 						strconv.Quote(column1Name),
 						strconv.Quote(column1Number),
-						gcloud.NullValue,
-						gcloud.NullValue,
+						util.NullValue,
+						util.NullValue,
 					),
 					generateOutboundFileSpecificationTemplateColumnInformation(
 						strconv.Quote(column2Name),
 						strconv.Quote(column2Number),
-						gcloud.NullValue,
-						gcloud.NullValue,
+						util.NullValue,
+						util.NullValue,
 					),
 					generateOutboundFileSpecificationTemplatePreprocessingRule(
 						strconv.Quote(preprocessingRule1Find),
@@ -104,8 +105,8 @@ func TestAccResourceOutboundFileSpecificationTemplate(t *testing.T) {
 					generateOutboundFileSpecificationTemplatePreprocessingRule(
 						strconv.Quote(preprocessingRule2Find),
 						strconv.Quote(preprocessingRule2ReplaceWith),
-						gcloud.NullValue,
-						gcloud.NullValue,
+						util.NullValue,
+						util.NullValue,
 					),
 				),
 				Check: resource.ComposeTestCheckFunc(
@@ -129,8 +130,8 @@ func TestAccResourceOutboundFileSpecificationTemplate(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName+"."+resourceId, "preprocessing_rule.0.ignore_case", preprocessingRule1IgnoreCase),
 					resource.TestCheckResourceAttr(resourceName+"."+resourceId, "preprocessing_rule.1.find", preprocessingRule2Find),
 					resource.TestCheckResourceAttr(resourceName+"."+resourceId, "preprocessing_rule.1.replace_with", preprocessingRule2ReplaceWith),
-					resource.TestCheckResourceAttr(resourceName+"."+resourceId, "preprocessing_rule.1.global", gcloud.FalseValue),
-					resource.TestCheckResourceAttr(resourceName+"."+resourceId, "preprocessing_rule.1.ignore_case", gcloud.FalseValue),
+					resource.TestCheckResourceAttr(resourceName+"."+resourceId, "preprocessing_rule.1.global", util.FalseValue),
+					resource.TestCheckResourceAttr(resourceName+"."+resourceId, "preprocessing_rule.1.ignore_case", util.FalseValue),
 				),
 			},
 			{
@@ -147,14 +148,14 @@ func TestAccResourceOutboundFileSpecificationTemplate(t *testing.T) {
 					generateOutboundFileSpecificationTemplateColumnInformation(
 						strconv.Quote(column1NameUpdated),
 						strconv.Quote(column1NumberUpdated),
-						gcloud.NullValue,
-						gcloud.NullValue,
+						util.NullValue,
+						util.NullValue,
 					),
 					generateOutboundFileSpecificationTemplateColumnInformation(
 						strconv.Quote(column2NameUpdated),
 						strconv.Quote(column2NumberUpdated),
-						gcloud.NullValue,
-						gcloud.NullValue,
+						util.NullValue,
+						util.NullValue,
 					),
 					generateOutboundFileSpecificationTemplatePreprocessingRule(
 						strconv.Quote(preprocessingRule1FindUpdated),
@@ -190,20 +191,20 @@ func TestAccResourceOutboundFileSpecificationTemplate(t *testing.T) {
 					nameUpdated,
 					strconv.Quote(descriptionUpdated),
 					formatUpdated,
-					gcloud.NullValue,
-					gcloud.NullValue,
-					gcloud.NullValue,
-					gcloud.NullValue,
-					gcloud.NullValue,
+					util.NullValue,
+					util.NullValue,
+					util.NullValue,
+					util.NullValue,
+					util.NullValue,
 					generateOutboundFileSpecificationTemplateColumnInformation(
 						strconv.Quote(column1NameUpdated),
-						gcloud.NullValue,
+						util.NullValue,
 						strconv.Quote(column1StartPositionUpdated),
 						strconv.Quote(column1LengthUpdated),
 					),
 					generateOutboundFileSpecificationTemplateColumnInformation(
 						strconv.Quote(column2NameUpdated),
-						gcloud.NullValue,
+						util.NullValue,
 						strconv.Quote(column2StartPositionUpdated),
 						strconv.Quote(column2LengthUpdated),
 					),
@@ -309,7 +310,7 @@ func testVerifyOutboundFileSpecificationTemplateDestroyed(state *terraform.State
 		fileSpecificationTemplate, resp, err := outboundAPI.GetOutboundFilespecificationtemplate(rs.Primary.ID)
 		if fileSpecificationTemplate != nil {
 			return fmt.Errorf("file specification template (%s) still exists", rs.Primary.ID)
-		} else if gcloud.IsStatus404(resp) {
+		} else if util.IsStatus404(resp) {
 			// File specification template not found as expected
 			continue
 		} else {

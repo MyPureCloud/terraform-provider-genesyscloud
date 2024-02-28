@@ -11,8 +11,9 @@ import (
 
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -38,7 +39,7 @@ func getAllFileSpecificationTemplates(ctx context.Context, clientConfig *platfor
 func createOutboundFileSpecificationTemplate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkFileSpecificationTemplate := getFilespecificationtemplateFromResourceData(d)
 
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getOutboundFilespecificationtemplateProxy(sdkConfig)
 
 	log.Printf("Creating File Specification Template %s", *sdkFileSpecificationTemplate.Name)
@@ -56,7 +57,7 @@ func createOutboundFileSpecificationTemplate(ctx context.Context, d *schema.Reso
 func updateOutboundFileSpecificationTemplate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkFileSpecificationTemplate := getFilespecificationtemplateFromResourceData(d)
 
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getOutboundFilespecificationtemplateProxy(sdkConfig)
 
 	log.Printf("Updating File Specification Template %s", *sdkFileSpecificationTemplate.Name)
@@ -70,15 +71,15 @@ func updateOutboundFileSpecificationTemplate(ctx context.Context, d *schema.Reso
 }
 
 func readOutboundFileSpecificationTemplate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getOutboundFilespecificationtemplateProxy(sdkConfig)
 
 	log.Printf("Reading Outbound File Specification Template %s", d.Id())
 
-	return gcloud.WithRetriesForRead(ctx, d, func() *retry.RetryError {
+	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		sdkFileSpecificationTemplate, resp, getErr := proxy.getOutboundFilespecificationtemplateById(ctx, d.Id())
 		if getErr != nil {
-			if gcloud.IsStatus404ByInt(resp) {
+			if util.IsStatus404ByInt(resp) {
 				return retry.RetryableError(fmt.Errorf("failed to read Outbound File Specification Template %s: %s", d.Id(), getErr))
 			}
 			return retry.NonRetryableError(fmt.Errorf("failed to read Outbound File Specification Template %s: %s", d.Id(), getErr))
@@ -103,10 +104,10 @@ func readOutboundFileSpecificationTemplate(ctx context.Context, d *schema.Resour
 }
 
 func deleteOutboundFileSpecificationTemplate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getOutboundFilespecificationtemplateProxy(sdkConfig)
 
-	diagErr := gcloud.RetryWhen(gcloud.IsStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+	diagErr := util.RetryWhen(util.IsStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		log.Printf("Deleting Outbound File Specification Template")
 		resp, err := proxy.deleteOutboundFilespecificationtemplate(ctx, d.Id())
 		if err != nil {
@@ -118,10 +119,10 @@ func deleteOutboundFileSpecificationTemplate(ctx context.Context, d *schema.Reso
 		return diagErr
 	}
 
-	return gcloud.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
+	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		_, resp, err := proxy.getOutboundFilespecificationtemplateById(ctx, d.Id())
 		if err != nil {
-			if gcloud.IsStatus404ByInt(resp) {
+			if util.IsStatus404ByInt(resp) {
 				// File Specification Template List deleted
 				log.Printf("Deleted Outbound File Specification Template %s", d.Id())
 				return nil
