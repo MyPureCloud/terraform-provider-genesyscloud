@@ -11,7 +11,7 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v121/platformclientv2"
 )
 
-func BuildTelephonyProperties(d *schema.ResourceData) *map[string]interface{} {
+func BuildBaseSettingsProperties(d *schema.ResourceData) *map[string]interface{} {
 	returnValue := make(map[string]interface{})
 
 	if properties := d.Get("properties"); properties != nil {
@@ -25,7 +25,7 @@ func BuildTelephonyProperties(d *schema.ResourceData) *map[string]interface{} {
 	return &returnValue
 }
 
-func FlattenTelephonyProperties(properties interface{}) (string, diag.Diagnostics) {
+func FlattenBaseSettingsProperties(properties interface{}) (string, diag.Diagnostics) {
 	if properties == nil {
 		return "", nil
 	}
@@ -57,7 +57,7 @@ func CustomizePhoneBaseSettingsPropertiesDiff(ctx context.Context, diff *schema.
 		if IsStatus404(resp) {
 			return nil
 		}
-		return fmt.Errorf("failed to read phone base settings %s: %s", id, getErr)
+		return fmt.Errorf("Failed to read phone base settings %s: %s", id, getErr)
 	}
 
 	return applyPropertyDefaults(diff, phoneBaseSetting.Properties)
@@ -84,7 +84,7 @@ func CustomizeTrunkBaseSettingsPropertiesDiff(ctx context.Context, diff *schema.
 		if IsStatus404(resp) {
 			return nil
 		}
-		return fmt.Errorf("failed to read phone base settings %s: %s", id, getErr)
+		return fmt.Errorf("Failed to read phone base settings %s: %s", id, getErr)
 	}
 
 	return applyPropertyDefaults(diff, trunkBaseSetting.Properties)
@@ -98,7 +98,7 @@ func applyPropertyDefaults(diff *schema.ResourceDiff, properties *map[string]int
 		propertiesJson = "{}" // empty object by default
 	}
 	if err := json.Unmarshal([]byte(propertiesJson), &configMap); err != nil {
-		return fmt.Errorf("failure to parse properties for %s: %s", diff.Id(), err)
+		return fmt.Errorf("Failure to parse properties for %s: %s", diff.Id(), err)
 	}
 
 	// For each property in the schema, check if a value is set in the config
@@ -126,31 +126,8 @@ func applyPropertyDefaults(diff *schema.ResourceDiff, properties *map[string]int
 	// Marshal back to string and set as the diff value
 	result, err := json.Marshal(configMap)
 	if err != nil {
-		return fmt.Errorf("failure to marshal properties for %s: %s", diff.Id(), err)
+		return fmt.Errorf("Failure to marshal properties for %s: %s", diff.Id(), err)
 	}
 
 	return diff.SetNew("properties", string(result))
-}
-
-func CustomizePhonePropertiesDiff(ctx context.Context, diff *schema.ResourceDiff, meta interface{}) error {
-	// Defaults must be set on missing properties
-	if !diff.NewValueKnown("properties") {
-		// properties value not yet in final state. Nothing to do.
-		return nil
-	}
-	id := diff.Id()
-	if id == "" {
-		return nil
-	}
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
-	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
-	// Retrieve defaults from the settings
-	phone, resp, getErr := edgesAPI.GetTelephonyProvidersEdgesPhone(id)
-	if getErr != nil {
-		if IsStatus404(resp) {
-			return nil
-		}
-		return fmt.Errorf("failed to read phone %s: %s", id, getErr)
-	}
-	return applyPropertyDefaults(diff, phone.Properties)
 }
