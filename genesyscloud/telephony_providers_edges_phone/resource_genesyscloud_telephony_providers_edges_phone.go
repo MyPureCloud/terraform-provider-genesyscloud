@@ -43,7 +43,10 @@ func createPhone(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 	if err != nil {
 		return diag.Errorf("failed to create phone %v: %v", *phoneConfig.Name, err)
 	}
-
+	_, err = validatePhoneHardwareIdRequirements(phoneConfig)
+	if err != nil {
+		return diag.Errorf("failed to create phone %v: %v", *phoneConfig.Name, err)
+	}
 	log.Printf("Creating phone %s", *phoneConfig.Name)
 	diagErr := util.RetryWhen(util.IsStatus404, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		phone, resp, err := pp.createPhone(ctx, phoneConfig)
@@ -105,6 +108,15 @@ func readPhone(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 			d.Set("line_addresses", flattenPhoneLines(currentPhone.Lines))
 		}
 
+		d.Set("properties", nil)
+		if currentPhone.Properties != nil {
+			properties, err := util.FlattenTelephonyProperties(currentPhone.Properties)
+			if err != nil {
+				return retry.NonRetryableError(fmt.Errorf("%v", err))
+			}
+			d.Set("properties", properties)
+		}
+
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "capabilities", currentPhone.Capabilities, flattenPhoneCapabilities)
 
 		log.Printf("Read phone %s %s", d.Id(), *currentPhone.Name)
@@ -120,7 +132,10 @@ func updatePhone(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 	if err != nil {
 		return diag.Errorf("failed to updated phone %v: %v", *phoneConfig.Name, err)
 	}
-
+	_, err = validatePhoneHardwareIdRequirements(phoneConfig)
+	if err != nil {
+		return diag.Errorf("failed to updated phone %v: %v", *phoneConfig.Name, err)
+	}
 	log.Printf("Updating phone %s", *phoneConfig.Name)
 	phone, err := pp.updatePhone(ctx, d.Id(), phoneConfig)
 	if err != nil {
