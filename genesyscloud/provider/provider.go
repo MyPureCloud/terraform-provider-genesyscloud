@@ -245,15 +245,16 @@ func InitClientConfig(data *schema.ResourceData, version string, config *platfor
 	oauthclientSecret := data.Get("oauthclient_secret").(string)
 	basePath := GetRegionBasePath(data.Get("aws_region").(string))
 
-	sdkDebugFilePath := data.Get("sdk_debug_file_path").(string)
-
 	config.BasePath = basePath
+
+	// Config logging
 	if data.Get("sdk_debug").(bool) {
 		config.LoggingConfiguration = &platformclientv2.LoggingConfiguration{
 			LogLevel:        platformclientv2.LTrace,
 			LogRequestBody:  true,
 			LogResponseBody: true,
 		}
+		sdkDebugFilePath := data.Get("sdk_debug_file_path").(string)
 		config.LoggingConfiguration.SetLogToConsole(false)
 		config.LoggingConfiguration.SetLogFilePath(sdkDebugFilePath)
 
@@ -268,7 +269,9 @@ func InitClientConfig(data *schema.ResourceData, version string, config *platfor
 			config.LoggingConfiguration.SetLogFormat(platformclientv2.Text)
 		}
 	}
+	log.Printf("Initialized Go SDK Client. Debug=%t", data.Get("sdk_debug").(bool))
 
+	// Configure the proxy
 	proxySet := data.Get("proxy").(*schema.Set)
 	for _, proxyObj := range proxySet.List() {
 		proxy := proxyObj.(map[string]interface{})
@@ -299,6 +302,7 @@ func InitClientConfig(data *schema.ResourceData, version string, config *platfor
 
 	}
 
+	// Configure retrying
 	config.AddDefaultHeader("User-Agent", "GC Terraform Provider/"+version)
 	config.RetryConfiguration = &platformclientv2.RetryConfiguration{
 		RetryWaitMin: time.Second * 1,
@@ -316,22 +320,55 @@ func InitClientConfig(data *schema.ResourceData, version string, config *platfor
 		},
 	}
 
+	// Configure authorization
 	if accessToken != "" {
 		log.Print("Setting access token set on configuration instance.")
 		config.AccessToken = accessToken
 	} else {
-		err := config.AuthorizeClientCredentials(oauthclientID, oauthclientSecret)
+		err := requestToken(config, oauthclientID, oauthclientSecret)
 		if err != nil {
-			return diag.Errorf("Failed to authorize Genesys Cloud client credentials: %v", err)
+			return diag.Errorf("%s", err)
 		}
 	}
 
-	log.Printf("Initialized Go SDK Client. Debug=%t", data.Get("sdk_debug").(bool))
+	return nil
+}
+
+func requestToken(config *platformclientv2.Configuration, clientId, clientSecret string) error {
+	err := config.AuthorizeClientCredentials(clientId, clientSecret)
+	if err != nil {
+		return fmt.Errorf("failed to authorize Genesys Cloud client credentials: %v", err)
+	}
+
+	oauthApi := platformclientv2.NewOAuthApiWithConfig(config)
+	oauthData, _, err := oauthApi.GetOauthClient(clientId)
+	if err != nil {
+		return fmt.Errorf("failed to get oauth client timeout: %s", err)
+	} else {
+		go func() {
+			err := refreshToken(config, *oauthData.AccessTokenValiditySeconds, clientId, clientSecret)
+			if err != nil {
+				log.Println("failed to refresh access token")
+			}
+		}()
+	}
+
+	return nil
+}
+
+func refreshToken(config *platformclientv2.Configuration, timeout int, clientId, clientSecret string) error {
+	// wait for token to expire in 30 seconds
+	time.Sleep(time.Second * time.Duration(timeout-60))
+	log.Println("Refreshing token")
+	err := requestToken(config, clientId, clientSecret)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
 func AuthorizeSdk() (*platformclientv2.Configuration, error) {
-
 	// Create new config
 	sdkConfig := platformclientv2.GetDefaultConfiguration()
 
