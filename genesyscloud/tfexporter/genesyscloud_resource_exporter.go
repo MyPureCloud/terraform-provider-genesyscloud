@@ -216,6 +216,14 @@ func (g *GenesysCloudResourceExporter) setupDataSource() {
 	}
 }
 
+func (g *GenesysCloudResourceExporter) writeToMap(key interface{}, value interface{}) {
+	g.exporterMutex.Lock()
+	key = value
+	log.Println("Key: ", key)
+	log.Println("Value: ", value)
+	g.exporterMutex.Unlock()
+}
+
 // retrieveExporters will return a list of all the registered exporters. If the resource_type on the exporter contains any elements, only the defined
 // elements in the resource_type attribute will be returned.
 func (g *GenesysCloudResourceExporter) retrieveExporters() (diagErr diag.Diagnostics) {
@@ -228,9 +236,11 @@ func (g *GenesysCloudResourceExporter) retrieveExporters() (diagErr diag.Diagnos
 		exports = g.resourceTypeFilter(exports, *g.filterList)
 	}
 
-	g.exporterMutex.Lock()
 	g.exporters = &exports
-	g.exporterMutex.Unlock()
+	// TODO: Check if write to maps should be assigned to value [eg: g.exporters]
+	// TODO: [ g.exporters = ] needed or will key update g.exporters
+	g.writeToMap(&g.exporters, &exports)
+	// TODO: g.exporters now updated ??
 
 	// Assign excluded attributes to the config Map
 	if excludedAttrs, ok := g.d.GetOk("exclude_attributes"); ok {
@@ -304,8 +314,7 @@ func (g *GenesysCloudResourceExporter) retrieveGenesysCloudObjectInstances() dia
 		wg.Add(1)
 		go func(resType string, exporter *resourceExporter.ResourceExporter) {
 			defer wg.Done()
-			g.exporterMutex.Lock()
-			defer g.exporterMutex.Unlock()
+
 			typeResources, err := g.getResourcesForType(resType, g.provider, exporter, g.meta)
 
 			if err != nil {
@@ -503,7 +512,8 @@ func (g *GenesysCloudResourceExporter) processAndBuildDependencies() (filters []
 				resource := strings.Split(meta.Name, "::::")
 				filterList = append(filterList, fmt.Sprintf("%s::%s", resource[0], resource[1]))
 			}
-			g.dependsList = stringmap.MergeMaps(g.dependsList, dependsMap)
+			//g.dependsList = stringmap.MergeMaps(g.dependsList, dependsMap)
+			g.writeToMap(g.dependsList, stringmap.MergeMaps(g.dependsList, dependsMap))
 			totalResources = stringmap.MergeSingularMaps(totalResources, resources)
 		}
 	}
@@ -695,10 +705,12 @@ func (g *GenesysCloudResourceExporter) chainDependencies(
 		}
 	}
 	g.filterList = &filterListById
-	g.buildSecondDeps = nil
+	g.writeToMap(g.buildSecondDeps, nil)
 	if len(*g.filterList) > 0 {
 		g.resources = nil
-		g.exporters = nil
+
+		g.writeToMap(g.exporters, nil)
+
 		err := g.rebuildExports(*g.filterList)
 		if err != nil {
 			return err
