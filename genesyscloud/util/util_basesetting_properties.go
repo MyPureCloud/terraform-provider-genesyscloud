@@ -142,7 +142,7 @@ func CustomizePhonePropertiesDiff(ctx context.Context, diff *schema.ResourceDiff
 	if id == "" {
 		return nil
 	}
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
 	// Retrieve defaults from the settings
 	phone, resp, getErr := edgesAPI.GetTelephonyProvidersEdgesPhone(id)

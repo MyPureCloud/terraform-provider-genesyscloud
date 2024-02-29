@@ -110,7 +110,7 @@ func readPhone(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 
 		d.Set("properties", nil)
 		if currentPhone.Properties != nil {
-			properties, err := gcloud.FlattenTelephonyProperties(currentPhone.Properties)
+			properties, err := util.FlattenTelephonyProperties(currentPhone.Properties)
 			if err != nil {
 				return retry.NonRetryableError(fmt.Errorf("%v", err))
 			}
