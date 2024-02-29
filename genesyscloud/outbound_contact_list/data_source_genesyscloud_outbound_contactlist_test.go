@@ -3,9 +3,9 @@ package outbound_contact_list
 import (
 	"fmt"
 	"strconv"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
-
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -19,24 +19,24 @@ func TestAccDataSourceOutboundContactList(t *testing.T) {
 		contactListName = "Contact List " + uuid.NewString()
 	)
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
-		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				Config: GenerateOutboundContactList(
 					resourceId,
 					contactListName,
-					gcloud.NullValue, // divisionId
-					gcloud.NullValue, // previewModeColumnName
-					[]string{},       // previewModeAcceptedValues
+					util.NullValue, // divisionId
+					util.NullValue, // previewModeColumnName
+					[]string{},     // previewModeAcceptedValues
 					[]string{strconv.Quote("Cell")},
-					gcloud.FalseValue, // automaticTimeZoneMapping
-					gcloud.NullValue,  // zipCodeColumnName
-					gcloud.NullValue,  // attemptLimitId
+					util.FalseValue, // automaticTimeZoneMapping
+					util.NullValue,  // zipCodeColumnName
+					util.NullValue,  // attemptLimitId
 					GeneratePhoneColumnsBlock(
 						"Cell",
 						"cell",
-						gcloud.NullValue,
+						util.NullValue,
 					),
 				) + generateOutboundContactListDataSource(
 					dataSourceId,

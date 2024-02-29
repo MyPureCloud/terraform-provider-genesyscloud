@@ -3,9 +3,10 @@ package outbound_contact_list
 import (
 	"fmt"
 	"strconv"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	obAttemptLimit "terraform-provider-genesyscloud/genesyscloud/outbound_attempt_limit"
 
 	"github.com/google/uuid"
@@ -28,13 +29,13 @@ func TestAccResourceOutboundContactListBasic(t *testing.T) {
 			strconv.Quote("Work"),
 			strconv.Quote("Personal"),
 		}
-		automaticTimeZoneMapping = gcloud.FalseValue
+		automaticTimeZoneMapping = util.FalseValue
 		attemptLimitResourceID   = "attempt-limit"
 		attemptLimitDataSourceID = "attempt-limit-data"
 		attemptLimitName         = "Test Attempt Limit " + uuid.NewString()
 
 		nameUpdated                      = "Test Contact List " + uuid.NewString()
-		automaticTimeZoneMappingUpdated  = gcloud.TrueValue
+		automaticTimeZoneMappingUpdated  = util.TrueValue
 		zipCodeColumnName                = "Zipcode"
 		columnNamesUpdated               = append(columnNames, strconv.Quote(zipCodeColumnName))
 		previewModeColumnNameUpdated     = "Home"
@@ -42,20 +43,20 @@ func TestAccResourceOutboundContactListBasic(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
-		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				Config: GenerateOutboundContactList(
 					resourceId,
 					name,
-					gcloud.NullValue,
+					util.NullValue,
 					strconv.Quote(previewModeColumnName),
 					previewModeAcceptedValues,
 					columnNames,
 					automaticTimeZoneMapping,
-					gcloud.NullValue,
-					gcloud.NullValue,
+					util.NullValue,
+					util.NullValue,
 					GeneratePhoneColumnsBlock(
 						"Cell",
 						"cell",
@@ -69,22 +70,22 @@ func TestAccResourceOutboundContactListBasic(t *testing.T) {
 					generateEmailColumnsBlock(
 						"Work",
 						"work",
-						gcloud.NullValue,
+						util.NullValue,
 					),
 					generateEmailColumnsBlock(
 						"Personal",
 						"personal",
-						gcloud.NullValue,
+						util.NullValue,
 					),
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "name", name),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "column_data_type_specifications.#", "0"),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "column_names.#", "4"),
-					gcloud.ValidateStringInArray("genesyscloud_outbound_contact_list."+resourceId, "column_names", "Cell"),
-					gcloud.ValidateStringInArray("genesyscloud_outbound_contact_list."+resourceId, "column_names", "Home"),
-					gcloud.ValidateStringInArray("genesyscloud_outbound_contact_list."+resourceId, "column_names", "Work"),
-					gcloud.ValidateStringInArray("genesyscloud_outbound_contact_list."+resourceId, "column_names", "Personal"),
+					util.ValidateStringInArray("genesyscloud_outbound_contact_list."+resourceId, "column_names", "Cell"),
+					util.ValidateStringInArray("genesyscloud_outbound_contact_list."+resourceId, "column_names", "Home"),
+					util.ValidateStringInArray("genesyscloud_outbound_contact_list."+resourceId, "column_names", "Work"),
+					util.ValidateStringInArray("genesyscloud_outbound_contact_list."+resourceId, "column_names", "Personal"),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "phone_columns.0.column_name", "Cell"),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "phone_columns.0.type", "cell"),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "phone_columns.0.callable_time_column", "Cell"),
@@ -98,7 +99,7 @@ func TestAccResourceOutboundContactListBasic(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "preview_mode_column_name", previewModeColumnName),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "preview_mode_accepted_values.0", previewModeColumnName),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "automatic_time_zone_mapping", automaticTimeZoneMapping),
-					gcloud.TestDefaultHomeDivision("genesyscloud_outbound_contact_list."+resourceId),
+					provider.TestDefaultHomeDivision("genesyscloud_outbound_contact_list."+resourceId),
 				),
 			},
 			// Update
@@ -106,13 +107,13 @@ func TestAccResourceOutboundContactListBasic(t *testing.T) {
 				Config: GenerateOutboundContactList(
 					resourceId,
 					name,
-					gcloud.NullValue,
+					util.NullValue,
 					strconv.Quote(previewModeColumnName),
 					previewModeAcceptedValuesUpdated,
 					columnNames,
 					automaticTimeZoneMapping,
-					gcloud.NullValue,
-					gcloud.NullValue,
+					util.NullValue,
+					util.NullValue,
 					GeneratePhoneColumnsBlock(
 						"Cell",
 						"cell",
@@ -126,22 +127,22 @@ func TestAccResourceOutboundContactListBasic(t *testing.T) {
 					generateEmailColumnsBlock(
 						"Work",
 						"work",
-						gcloud.NullValue,
+						util.NullValue,
 					),
 					generateEmailColumnsBlock(
 						"Personal",
 						"personal",
-						gcloud.NullValue,
+						util.NullValue,
 					),
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "name", name),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "column_data_type_specifications.#", "0"),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "column_names.#", "4"),
-					gcloud.ValidateStringInArray("genesyscloud_outbound_contact_list."+resourceId, "column_names", "Cell"),
-					gcloud.ValidateStringInArray("genesyscloud_outbound_contact_list."+resourceId, "column_names", "Home"),
-					gcloud.ValidateStringInArray("genesyscloud_outbound_contact_list."+resourceId, "column_names", "Work"),
-					gcloud.ValidateStringInArray("genesyscloud_outbound_contact_list."+resourceId, "column_names", "Personal"),
+					util.ValidateStringInArray("genesyscloud_outbound_contact_list."+resourceId, "column_names", "Cell"),
+					util.ValidateStringInArray("genesyscloud_outbound_contact_list."+resourceId, "column_names", "Home"),
+					util.ValidateStringInArray("genesyscloud_outbound_contact_list."+resourceId, "column_names", "Work"),
+					util.ValidateStringInArray("genesyscloud_outbound_contact_list."+resourceId, "column_names", "Personal"),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "phone_columns.0.column_name", "Cell"),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "phone_columns.0.type", "cell"),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "phone_columns.0.callable_time_column", "Cell"),
@@ -156,7 +157,7 @@ func TestAccResourceOutboundContactListBasic(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "preview_mode_accepted_values.0", previewModeColumnName),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "preview_mode_accepted_values.1", previewModeColumnNameUpdated),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "automatic_time_zone_mapping", automaticTimeZoneMapping),
-					gcloud.TestDefaultHomeDivision("genesyscloud_outbound_contact_list."+resourceId),
+					provider.TestDefaultHomeDivision("genesyscloud_outbound_contact_list."+resourceId),
 				),
 			},
 			{
@@ -164,13 +165,13 @@ func TestAccResourceOutboundContactListBasic(t *testing.T) {
 				Config: GenerateOutboundContactList(
 					resourceId,
 					nameUpdated,
-					gcloud.NullValue,
+					util.NullValue,
 					strconv.Quote(previewModeColumnNameUpdated),
 					previewModeAcceptedValuesUpdated,
 					columnNames,
 					automaticTimeZoneMapping,
-					gcloud.NullValue,
-					gcloud.NullValue,
+					util.NullValue,
+					util.NullValue,
 					GeneratePhoneColumnsBlock(
 						"Cell",
 						"cell",
@@ -184,12 +185,12 @@ func TestAccResourceOutboundContactListBasic(t *testing.T) {
 					generateEmailColumnsBlock(
 						"Work",
 						"work",
-						gcloud.NullValue,
+						util.NullValue,
 					),
 					generateEmailColumnsBlock(
 						"Personal",
 						"personal",
-						gcloud.NullValue,
+						util.NullValue,
 					),
 					GeneratePhoneColumnsDataTypeSpecBlock(
 						strconv.Quote("Cell"), // columnName
@@ -201,18 +202,18 @@ func TestAccResourceOutboundContactListBasic(t *testing.T) {
 					GeneratePhoneColumnsDataTypeSpecBlock(
 						strconv.Quote("Home"), // columnName
 						strconv.Quote("TEXT"), // columnDataType
-						gcloud.NullValue,      // min
-						gcloud.NullValue,      // max
+						util.NullValue,        // min
+						util.NullValue,        // max
 						"5",                   // maxLength
 					),
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "name", nameUpdated),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "column_names.#", "4"),
-					gcloud.ValidateStringInArray("genesyscloud_outbound_contact_list."+resourceId, "column_names", "Cell"),
-					gcloud.ValidateStringInArray("genesyscloud_outbound_contact_list."+resourceId, "column_names", "Home"),
-					gcloud.ValidateStringInArray("genesyscloud_outbound_contact_list."+resourceId, "column_names", "Work"),
-					gcloud.ValidateStringInArray("genesyscloud_outbound_contact_list."+resourceId, "column_names", "Personal"),
+					util.ValidateStringInArray("genesyscloud_outbound_contact_list."+resourceId, "column_names", "Cell"),
+					util.ValidateStringInArray("genesyscloud_outbound_contact_list."+resourceId, "column_names", "Home"),
+					util.ValidateStringInArray("genesyscloud_outbound_contact_list."+resourceId, "column_names", "Work"),
+					util.ValidateStringInArray("genesyscloud_outbound_contact_list."+resourceId, "column_names", "Personal"),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "phone_columns.0.column_name", "Cell"),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "phone_columns.0.type", "cell"),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "phone_columns.0.callable_time_column", "Cell"),
@@ -240,7 +241,7 @@ func TestAccResourceOutboundContactListBasic(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "preview_mode_accepted_values.0", previewModeColumnName),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "preview_mode_accepted_values.1", previewModeColumnNameUpdated),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "automatic_time_zone_mapping", automaticTimeZoneMapping),
-					gcloud.TestDefaultHomeDivision("genesyscloud_outbound_contact_list."+resourceId),
+					provider.TestDefaultHomeDivision("genesyscloud_outbound_contact_list."+resourceId),
 				),
 			},
 			{
@@ -268,12 +269,12 @@ func TestAccResourceOutboundContactListBasic(t *testing.T) {
 					GeneratePhoneColumnsBlock(
 						"Cell",
 						"cell",
-						gcloud.NullValue,
+						util.NullValue,
 					),
 					GeneratePhoneColumnsBlock(
 						"Home",
 						"home",
-						gcloud.NullValue,
+						util.NullValue,
 					),
 					generateEmailColumnsBlock(
 						"Work",
@@ -296,11 +297,11 @@ func TestAccResourceOutboundContactListBasic(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "name", nameUpdated),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "column_names.#", "5"),
-					gcloud.ValidateStringInArray("genesyscloud_outbound_contact_list."+resourceId, "column_names", "Cell"),
-					gcloud.ValidateStringInArray("genesyscloud_outbound_contact_list."+resourceId, "column_names", "Home"),
-					gcloud.ValidateStringInArray("genesyscloud_outbound_contact_list."+resourceId, "column_names", "Work"),
-					gcloud.ValidateStringInArray("genesyscloud_outbound_contact_list."+resourceId, "column_names", "Personal"),
-					gcloud.ValidateStringInArray("genesyscloud_outbound_contact_list."+resourceId, "column_names", zipCodeColumnName),
+					util.ValidateStringInArray("genesyscloud_outbound_contact_list."+resourceId, "column_names", "Cell"),
+					util.ValidateStringInArray("genesyscloud_outbound_contact_list."+resourceId, "column_names", "Home"),
+					util.ValidateStringInArray("genesyscloud_outbound_contact_list."+resourceId, "column_names", "Work"),
+					util.ValidateStringInArray("genesyscloud_outbound_contact_list."+resourceId, "column_names", "Personal"),
+					util.ValidateStringInArray("genesyscloud_outbound_contact_list."+resourceId, "column_names", zipCodeColumnName),
 
 					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "zip_code_column_name", zipCodeColumnName),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "phone_columns.0.column_name", "Cell"),
@@ -328,7 +329,7 @@ func TestAccResourceOutboundContactListBasic(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "automatic_time_zone_mapping", automaticTimeZoneMappingUpdated),
 					resource.TestCheckResourceAttrPair("data.genesyscloud_outbound_attempt_limit."+attemptLimitDataSourceID, "id",
 						"genesyscloud_outbound_contact_list."+resourceId, "attempt_limit_id"),
-					gcloud.TestDefaultHomeDivision("genesyscloud_outbound_contact_list."+resourceId),
+					provider.TestDefaultHomeDivision("genesyscloud_outbound_contact_list."+resourceId),
 				),
 			},
 			{
@@ -360,7 +361,7 @@ func testVerifyContactListDestroyed(state *terraform.State) error {
 		contactList, resp, err := outboundAPI.GetOutboundContactlist(rs.Primary.ID, false, false)
 		if contactList != nil {
 			return fmt.Errorf("contact list (%s) still exists", rs.Primary.ID)
-		} else if gcloud.IsStatus404(resp) {
+		} else if util.IsStatus404(resp) {
 			// Contact list not found as expected
 			continue
 		} else {

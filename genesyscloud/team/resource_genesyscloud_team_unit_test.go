@@ -4,9 +4,9 @@ package team
 import (
 	"context"
 	"fmt"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
 
 	"net/http"
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	"testing"
 
 	"github.com/google/uuid"
@@ -43,7 +43,7 @@ func TestUnitResourceTeamRead(t *testing.T) {
 	defer func() { internalProxy = nil }()
 
 	ctx := context.Background()
-	gc := &gcloud.ProviderMeta{ClientConfig: &platformclientv2.Configuration{}}
+	gc := &provider.ProviderMeta{ClientConfig: &platformclientv2.Configuration{}}
 
 	resourceSchema := ResourceTeam().Schema
 
@@ -88,7 +88,7 @@ func TestUnitResourceTeamDelete(t *testing.T) {
 	defer func() { internalProxy = nil }()
 
 	ctx := context.Background()
-	gc := &gcloud.ProviderMeta{ClientConfig: &platformclientv2.Configuration{}}
+	gc := &provider.ProviderMeta{ClientConfig: &platformclientv2.Configuration{}}
 
 	resourceSchema := ResourceTeam().Schema
 
@@ -141,7 +141,7 @@ func TestUnitResourceTeamCreate(t *testing.T) {
 	defer func() { internalProxy = nil }()
 
 	ctx := context.Background()
-	gc := &gcloud.ProviderMeta{ClientConfig: &platformclientv2.Configuration{}}
+	gc := &provider.ProviderMeta{ClientConfig: &platformclientv2.Configuration{}}
 
 	resourceSchema := ResourceTeam().Schema
 
@@ -194,7 +194,7 @@ func TestUnitResourceTeamUpdate(t *testing.T) {
 	defer func() { internalProxy = nil }()
 
 	ctx := context.Background()
-	gc := &gcloud.ProviderMeta{ClientConfig: &platformclientv2.Configuration{}}
+	gc := &provider.ProviderMeta{ClientConfig: &platformclientv2.Configuration{}}
 
 	resourceSchema := ResourceTeam().Schema
 

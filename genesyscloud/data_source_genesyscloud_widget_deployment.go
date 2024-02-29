@@ -3,6 +3,8 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -15,7 +17,7 @@ import (
 func dataSourceWidgetDeployments() *schema.Resource {
 	return &schema.Resource{
 		Description: "Data source for Genesys Cloud Widget Deployment. Select a widget deployment.",
-		ReadContext: ReadWithPooledClient(dataSourceWidgetDeploymentRead),
+		ReadContext: provider.ReadWithPooledClient(dataSourceWidgetDeploymentRead),
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Description: "Widget Deployment Name.",
@@ -27,13 +29,13 @@ func dataSourceWidgetDeployments() *schema.Resource {
 }
 
 func dataSourceWidgetDeploymentRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	sdkConfig := m.(*ProviderMeta).ClientConfig
+	sdkConfig := m.(*provider.ProviderMeta).ClientConfig
 	widgetAPI := platformclientv2.NewWidgetsApiWithConfig(sdkConfig)
 
 	name := d.Get("name").(string)
 
 	// Query widget by name. Retry in case search has not yet indexed the widget.
-	return WithRetries(ctx, 5*time.Second, func() *retry.RetryError {
+	return util.WithRetries(ctx, 5*time.Second, func() *retry.RetryError {
 		widgetDeployments, _, getErr := widgetAPI.GetWidgetsDeployments()
 
 		if getErr != nil {

@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"log"
 	"strings"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 
 	"github.com/google/uuid"
@@ -31,15 +33,15 @@ func TestAccResourceArchitectSchedules(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Create
 				Config: GenerateArchitectSchedulesResource(
 					schedResource1,
 					name,
-					NullValue,
+					util.NullValue,
 					description,
 					start,
 					end,
@@ -51,7 +53,7 @@ func TestAccResourceArchitectSchedules(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_architect_schedules."+schedResource1, "start", start),
 					resource.TestCheckResourceAttr("genesyscloud_architect_schedules."+schedResource1, "end", end),
 					resource.TestCheckResourceAttr("genesyscloud_architect_schedules."+schedResource1, "rrule", rrule),
-					TestDefaultHomeDivision("genesyscloud_architect_schedules."+schedResource1),
+					provider.TestDefaultHomeDivision("genesyscloud_architect_schedules."+schedResource1),
 				),
 			},
 			{
@@ -59,7 +61,7 @@ func TestAccResourceArchitectSchedules(t *testing.T) {
 				Config: GenerateArchitectSchedulesResource(
 					schedResource1,
 					name,
-					NullValue,
+					util.NullValue,
 					description,
 					start2,
 					end,
@@ -71,7 +73,7 @@ func TestAccResourceArchitectSchedules(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_architect_schedules."+schedResource1, "start", start2),
 					resource.TestCheckResourceAttr("genesyscloud_architect_schedules."+schedResource1, "end", end),
 					resource.TestCheckResourceAttr("genesyscloud_architect_schedules."+schedResource1, "rrule", rrule),
-					TestDefaultHomeDivision("genesyscloud_architect_schedules."+schedResource1),
+					provider.TestDefaultHomeDivision("genesyscloud_architect_schedules."+schedResource1),
 				),
 			},
 			{
@@ -142,7 +144,7 @@ func testVerifySchedulesDestroyed(state *terraform.State) error {
 		sched, resp, err := archAPI.GetArchitectSchedule(rs.Primary.ID)
 		if sched != nil {
 			return fmt.Errorf("Schedule (%s) still exists", rs.Primary.ID)
-		} else if IsStatus404(resp) {
+		} else if util.IsStatus404(resp) {
 			// Schedule not found as expected
 			continue
 		} else {

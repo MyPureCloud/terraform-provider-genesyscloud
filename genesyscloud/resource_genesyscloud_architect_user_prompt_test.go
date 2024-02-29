@@ -2,10 +2,11 @@ package genesyscloud
 
 import (
 	"fmt"
-
 	"strconv"
 	"strings"
 	"sync"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 
 	"terraform-provider-genesyscloud/genesyscloud/util/fileserver"
@@ -31,33 +32,33 @@ func TestAccResourceUserPromptBasic(t *testing.T) {
 	userPromptAsset1 := UserPromptResourceStruct{
 		userPromptResourceLang1,
 		strconv.Quote(userPromptResourceTTS1),
-		NullValue,
-		NullValue,
-		NullValue,
+		util.NullValue,
+		util.NullValue,
+		util.NullValue,
 	}
 
 	userPromptAsset2 := UserPromptResourceStruct{
 		userPromptResourceLang1,
 		strconv.Quote(userPromptResourceTTS2),
-		NullValue,
-		NullValue,
-		NullValue,
+		util.NullValue,
+		util.NullValue,
+		util.NullValue,
 	}
 
 	userPromptAsset3 := UserPromptResourceStruct{
 		userPromptResourceLang2,
 		strconv.Quote(userPromptResourceTTS3),
-		NullValue,
-		NullValue,
-		NullValue,
+		util.NullValue,
+		util.NullValue,
+		util.NullValue,
 	}
 
 	userPromptResources1 := []*UserPromptResourceStruct{&userPromptAsset1}
 	userPromptResources2 := []*UserPromptResourceStruct{&userPromptAsset2, &userPromptAsset3}
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Create Empty user prompt
@@ -126,7 +127,7 @@ func TestAccResourceUserPromptWavFile(t *testing.T) {
 
 	userPromptAsset1 := UserPromptResourceStruct{
 		userPromptResourceLang1,
-		NullValue,
+		util.NullValue,
 		strconv.Quote(userPromptResourceText1),
 		strconv.Quote(userPromptResourceFileName1),
 		userPromptResourceFileName1,
@@ -134,7 +135,7 @@ func TestAccResourceUserPromptWavFile(t *testing.T) {
 
 	userPromptAsset2 := UserPromptResourceStruct{
 		userPromptResourceLang1,
-		NullValue,
+		util.NullValue,
 		strconv.Quote(userPromptResourceText1),
 		strconv.Quote(userPromptResourceFileName2),
 		userPromptResourceFileName2,
@@ -144,8 +145,8 @@ func TestAccResourceUserPromptWavFile(t *testing.T) {
 	userPromptResources2 := []*UserPromptResourceStruct{&userPromptAsset2}
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Create user prompt with an audio file
@@ -198,18 +199,18 @@ func TestAccResourceUserPromptWavFileURL(t *testing.T) {
 
 	userPromptAsset1 := UserPromptResourceStruct{
 		userPromptResourceLang1,
-		NullValue,
+		util.NullValue,
 		strconv.Quote(userPromptResourceText1),
 		strconv.Quote(userPromptResourceFileName1),
-		NullValue,
+		util.NullValue,
 	}
 
 	userPromptAsset2 := UserPromptResourceStruct{
 		userPromptResourceLang1,
-		NullValue,
+		util.NullValue,
 		strconv.Quote(userPromptResourceText1),
 		strconv.Quote(userPromptResourceFileName2),
-		NullValue,
+		util.NullValue,
 	}
 
 	userPromptResources1 := []*UserPromptResourceStruct{&userPromptAsset1}
@@ -220,8 +221,8 @@ func TestAccResourceUserPromptWavFileURL(t *testing.T) {
 	srv := fileserver.Start(httpServerExitDone, testrunner.GetTestDataPath(), 8100)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Create user prompt with an audio file

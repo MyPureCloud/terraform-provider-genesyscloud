@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"log"
 	"strconv"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -183,7 +185,7 @@ func getAllEvaluationForms(_ context.Context, clientConfig *platformclientv2.Con
 
 func EvaluationFormExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
-		GetResourcesFunc: GetAllWithPooledClient(getAllEvaluationForms),
+		GetResourcesFunc: provider.GetAllWithPooledClient(getAllEvaluationForms),
 		RefAttrs:         map[string]*resourceExporter.RefAttrSettings{}, // No references
 		AllowZeroValues:  []string{"question_groups.questions.answer_options.value", "question_groups.weight"},
 	}
@@ -192,10 +194,10 @@ func EvaluationFormExporter() *resourceExporter.ResourceExporter {
 func ResourceEvaluationForm() *schema.Resource {
 	return &schema.Resource{
 		Description:   "Genesys Cloud Evaluation Forms",
-		CreateContext: CreateWithPooledClient(createEvaluationForm),
-		ReadContext:   ReadWithPooledClient(readEvaluationForm),
-		UpdateContext: UpdateWithPooledClient(updateEvaluationForm),
-		DeleteContext: DeleteWithPooledClient(deleteEvaluationForm),
+		CreateContext: provider.CreateWithPooledClient(createEvaluationForm),
+		ReadContext:   provider.ReadWithPooledClient(readEvaluationForm),
+		UpdateContext: provider.UpdateWithPooledClient(updateEvaluationForm),
+		DeleteContext: provider.DeleteWithPooledClient(deleteEvaluationForm),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -232,7 +234,7 @@ func createEvaluationForm(ctx context.Context, d *schema.ResourceData, meta inte
 		return qgErr
 	}
 
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	qualityAPI := platformclientv2.NewQualityApiWithConfig(sdkConfig)
 
 	log.Printf("Creating Evaluation Form %s", name)
@@ -267,14 +269,14 @@ func createEvaluationForm(ctx context.Context, d *schema.ResourceData, meta inte
 }
 
 func readEvaluationForm(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	qualityAPI := platformclientv2.NewQualityApiWithConfig(sdkConfig)
 	log.Printf("Reading evaluation form %s", d.Id())
 
-	return WithRetriesForRead(ctx, d, func() *retry.RetryError {
+	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		evaluationForm, resp, getErr := qualityAPI.GetQualityFormsEvaluation(d.Id())
 		if getErr != nil {
-			if IsStatus404(resp) {
+			if util.IsStatus404(resp) {
 				return retry.RetryableError(fmt.Errorf("Failed to read evaluation form %s: %s", d.Id(), getErr))
 			}
 			return retry.NonRetryableError(fmt.Errorf("Failed to read evaluation form %s: %s", d.Id(), getErr))
@@ -304,7 +306,7 @@ func updateEvaluationForm(ctx context.Context, d *schema.ResourceData, meta inte
 		return qgErr
 	}
 
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	qualityAPI := platformclientv2.NewQualityApiWithConfig(sdkConfig)
 
 	// Get the latest unpublished version of the form
@@ -345,7 +347,7 @@ func updateEvaluationForm(ctx context.Context, d *schema.ResourceData, meta inte
 func deleteEvaluationForm(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	name := d.Get("name").(string)
 
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	qualityAPI := platformclientv2.NewQualityApiWithConfig(sdkConfig)
 
 	// Get the latest unpublished version of the form
@@ -362,10 +364,10 @@ func deleteEvaluationForm(ctx context.Context, d *schema.ResourceData, meta inte
 		return diag.Errorf("Failed to delete evaluation form %s: %v", name, err)
 	}
 
-	return WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
+	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		_, resp, err := qualityAPI.GetQualityFormsEvaluation(d.Id())
 		if err != nil {
-			if IsStatus404(resp) {
+			if util.IsStatus404(resp) {
 				// Evaluation form deleted
 				log.Printf("Deleted evaluation form %s", d.Id())
 				return nil

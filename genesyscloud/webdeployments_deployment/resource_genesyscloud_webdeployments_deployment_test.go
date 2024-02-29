@@ -4,7 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"regexp"
-	"terraform-provider-genesyscloud/genesyscloud"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 
 	"github.com/google/uuid"
@@ -16,14 +17,14 @@ import (
 func TestAccResourceWebDeploymentsDeployment(t *testing.T) {
 	t.Parallel()
 	var (
-		deploymentName        = "Test Deployment " + genesyscloud.RandString(8)
-		deploymentDescription = "Test Deployment description " + genesyscloud.RandString(32)
+		deploymentName        = "Test Deployment " + util.RandString(8)
+		deploymentDescription = "Test Deployment description " + util.RandString(32)
 		fullResourceName      = "genesyscloud_webdeployments_deployment.basic"
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { genesyscloud.TestAccPreCheck(t) },
-		ProviderFactories: genesyscloud.GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				Config: basicDeploymentResource(deploymentName, deploymentDescription),
@@ -49,15 +50,15 @@ func TestAccResourceWebDeploymentsDeployment(t *testing.T) {
 func TestAccResourceWebDeploymentsDeployment_AllowedDomains(t *testing.T) {
 	t.Parallel()
 	var (
-		deploymentName   = "Test Deployment " + genesyscloud.RandString(8)
+		deploymentName   = "Test Deployment " + util.RandString(8)
 		fullResourceName = "genesyscloud_webdeployments_deployment.basicWithAllowedDomains"
-		firstDomain      = "genesys-" + genesyscloud.RandString(8) + ".com"
-		secondDomain     = "genesys-" + genesyscloud.RandString(8) + ".com"
+		firstDomain      = "genesys-" + util.RandString(8) + ".com"
+		secondDomain     = "genesys-" + util.RandString(8) + ".com"
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { genesyscloud.TestAccPreCheck(t) },
-		ProviderFactories: genesyscloud.GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				Config: deploymentResourceWithAllowedDomains(t, deploymentName, firstDomain),
@@ -92,14 +93,14 @@ func TestAccResourceWebDeploymentsDeployment_AllowedDomains(t *testing.T) {
 func TestAccResourceWebDeploymentsDeployment_Versioning(t *testing.T) {
 	t.Parallel()
 	var (
-		deploymentName             = "Test Deployment " + genesyscloud.RandString(8)
+		deploymentName             = "Test Deployment " + util.RandString(8)
 		fullDeploymentResourceName = "genesyscloud_webdeployments_deployment.versioning"
 		fullConfigResourceName     = "genesyscloud_webdeployments_configuration.minimal"
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { genesyscloud.TestAccPreCheck(t) },
-		ProviderFactories: genesyscloud.GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				Config: versioningDeploymentResource(t, deploymentName, "description 1", "en-us", []string{"en-us"}),
@@ -212,7 +213,7 @@ func verifyDeploymentDestroyed(state *terraform.State) error {
 
 		_, response, err := api.GetWebdeploymentsDeployment(rs.Primary.ID, []string{})
 
-		if genesyscloud.IsStatus404(response) {
+		if util.IsStatus404(response) {
 			continue
 		}
 
@@ -240,7 +241,7 @@ func verifyLanguagesDestroyed(state *terraform.State) error {
 				continue
 			}
 			return fmt.Errorf("Language (%s) still exists", rs.Primary.ID)
-		} else if genesyscloud.IsStatus404(resp) {
+		} else if util.IsStatus404(resp) {
 			// Language not found as expected
 			continue
 		} else {

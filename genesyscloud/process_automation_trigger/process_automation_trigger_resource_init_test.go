@@ -2,6 +2,8 @@ package process_automation_trigger
 
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"terraform-provider-genesyscloud/genesyscloud/architect_flow"
+
 	//obRuleset "terraform-provider-genesyscloud/genesyscloud/outbound_ruleset"
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	"testing"
@@ -25,7 +27,7 @@ type registerTestInstance struct {
 
 func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_processautomation_trigger"] = ResourceProcessAutomationTrigger()
-	providerResources["genesyscloud_flow"] = gcloud.ResourceFlow()
+	providerResources["genesyscloud_flow"] = architect_flow.ResourceArchitectFlow()
 }
 
 func (r *registerTestInstance) registerTestDataSources() {

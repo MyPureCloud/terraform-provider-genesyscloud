@@ -3,9 +3,10 @@ package outbound
 import (
 	"fmt"
 	"strconv"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	obCallableTimeset "terraform-provider-genesyscloud/genesyscloud/outbound_callabletimeset"
 	obContactList "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
 	obContactListFilter "terraform-provider-genesyscloud/genesyscloud/outbound_contactlistfilter"
@@ -52,13 +53,13 @@ func TestAccDataSourceOutboundMessagingCampaign(t *testing.T) {
 		contactListResource = obContactList.GenerateOutboundContactList(
 			contactListResourceId,
 			contactListName,
-			gcloud.NullValue,
-			gcloud.NullValue,
+			util.NullValue,
+			util.NullValue,
 			[]string{},
 			[]string{strconv.Quote(column1), strconv.Quote(column2)},
-			gcloud.FalseValue,
-			gcloud.NullValue,
-			gcloud.NullValue,
+			util.FalseValue,
+			util.NullValue,
+			util.NullValue,
 			obContactList.GeneratePhoneColumnsBlock(
 				column1,
 				"cell",
@@ -85,7 +86,7 @@ func TestAccDataSourceOutboundMessagingCampaign(t *testing.T) {
 		)
 	)
 
-	config, err := gcloud.AuthorizeSdk()
+	config, err := provider.AuthorizeSdk()
 	if err != nil {
 		t.Errorf("failed to authorize client: %v", err)
 	}
@@ -102,8 +103,8 @@ func TestAccDataSourceOutboundMessagingCampaign(t *testing.T) {
 	}()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
-		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				Config: contactListResource +
@@ -115,7 +116,7 @@ func TestAccDataSourceOutboundMessagingCampaign(t *testing.T) {
 						"genesyscloud_outbound_contact_list."+contactListResourceId+".id",
 						"",
 						"10",
-						gcloud.FalseValue,
+						util.FalseValue,
 						"genesyscloud_outbound_callabletimeset."+callableTimeSetResourceId+".id",
 						[]string{},
 						[]string{"genesyscloud_outbound_contactlistfilter." + clfResourceId + ".id"},

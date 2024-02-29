@@ -6,8 +6,7 @@ import (
 	"log"
 	"path/filepath"
 	"strings"
-
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 
@@ -17,7 +16,7 @@ import (
 
 const resourceJSONFileExt = "tf.json"
 
-type resourceJSONMaps map[string]gcloud.JsonMap
+type resourceJSONMaps map[string]util.JsonMap
 
 type JsonExporter struct {
 	resourceTypesJSONMaps map[string]resourceJSONMaps
@@ -77,7 +76,7 @@ func (j *JsonExporter) exportJSONConfig() diag.Diagnostics {
 		// Resource files
 		for resType, resJsonMap := range j.resourceTypesJSONMaps {
 			resourceRoot := map[string]interface{}{
-				"resource": gcloud.JsonMap{
+				"resource": util.JsonMap{
 					resType: resJsonMap,
 				},
 			}
@@ -94,7 +93,7 @@ func (j *JsonExporter) exportJSONConfig() diag.Diagnostics {
 		// DataSource files
 		for resType, resJsonMap := range j.dataSourceTypesMaps {
 			resourceRoot := map[string]interface{}{
-				"data": gcloud.JsonMap{
+				"data": util.JsonMap{
 					resType: resJsonMap,
 				},
 			}
@@ -110,7 +109,7 @@ func (j *JsonExporter) exportJSONConfig() diag.Diagnostics {
 
 	} else {
 		// Single file export
-		rootJSONObject := gcloud.JsonMap{
+		rootJSONObject := util.JsonMap{
 			"resource":  j.resourceTypesJSONMaps,
 			"terraform": providerJsonMap,
 			"data":      j.dataSourceTypesMaps,
@@ -133,7 +132,7 @@ func (j *JsonExporter) exportJSONConfig() diag.Diagnostics {
 		tfVars := make(map[string]interface{})
 		for _, attr := range j.unresolvedAttrs {
 			key := createUnresolvedAttrKey(attr)
-			tfVars[key] = make(gcloud.JsonMap)
+			tfVars[key] = make(util.JsonMap)
 			tfVars[key] = determineVarValue(attr.Schema)
 		}
 
@@ -149,10 +148,10 @@ func (j *JsonExporter) exportJSONConfig() diag.Diagnostics {
 	return nil
 }
 
-func createProviderJsonMap(providerSource string, version string) gcloud.JsonMap {
-	return gcloud.JsonMap{
-		"required_providers": gcloud.JsonMap{
-			"genesyscloud": gcloud.JsonMap{
+func createProviderJsonMap(providerSource string, version string) util.JsonMap {
+	return util.JsonMap{
+		"required_providers": util.JsonMap{
+			"genesyscloud": util.JsonMap{
 				"source":  providerSource,
 				"version": version,
 			},
@@ -160,11 +159,11 @@ func createProviderJsonMap(providerSource string, version string) gcloud.JsonMap
 	}
 }
 
-func createVariablesJsonMap(unresolvedAttrs []unresolvableAttributeInfo) map[string]gcloud.JsonMap {
-	variable := make(map[string]gcloud.JsonMap)
+func createVariablesJsonMap(unresolvedAttrs []unresolvableAttributeInfo) map[string]util.JsonMap {
+	variable := make(map[string]util.JsonMap)
 	for _, attr := range unresolvedAttrs {
 		key := createUnresolvedAttrKey(attr)
-		variable[key] = make(gcloud.JsonMap)
+		variable[key] = make(util.JsonMap)
 		variable[key]["description"] = attr.Schema.Description
 		if variable[key]["description"] == "" {
 			variable[key]["description"] = fmt.Sprintf("%s value for resource %s of type %s", attr.Name, attr.ResourceName, attr.ResourceType)

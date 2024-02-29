@@ -2,6 +2,8 @@ package genesyscloud
 
 import (
 	"fmt"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 
 	"github.com/google/uuid"
@@ -17,8 +19,8 @@ func TestAccDataSourceUser(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Search by email
@@ -29,7 +31,7 @@ func TestAccDataSourceUser(t *testing.T) {
 				) + generateUserDataSource(
 					userDataSource,
 					"genesyscloud_user."+userResource+".email",
-					NullValue,
+					util.NullValue,
 					"genesyscloud_user."+userResource,
 				),
 				Check: resource.ComposeTestCheckFunc(
@@ -44,7 +46,7 @@ func TestAccDataSourceUser(t *testing.T) {
 					userName,
 				) + generateUserDataSource(
 					userDataSource,
-					NullValue,
+					util.NullValue,
 					"genesyscloud_user."+userResource+".name",
 					"genesyscloud_user."+userResource,
 				),

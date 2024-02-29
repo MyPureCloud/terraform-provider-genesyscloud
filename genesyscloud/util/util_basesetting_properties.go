@@ -1,9 +1,10 @@
-package genesyscloud
+package util
 
 import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -47,7 +48,7 @@ func CustomizePhoneBaseSettingsPropertiesDiff(ctx context.Context, diff *schema.
 		return nil
 	}
 
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
 
 	// Retrieve defaults from the settings
@@ -74,7 +75,7 @@ func CustomizeTrunkBaseSettingsPropertiesDiff(ctx context.Context, diff *schema.
 		return nil
 	}
 
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
 
 	// Retrieve defaults from the settings

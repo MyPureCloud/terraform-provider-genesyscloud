@@ -3,6 +3,8 @@ package genesyscloud
 import (
 	"fmt"
 	"strings"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 
 	"github.com/google/uuid"
@@ -39,16 +41,16 @@ func TestAccResourceRoutingEmailRoute(t *testing.T) {
 	CleanupRoutingEmailDomains()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Create email domain and basic route
 				Config: GenerateRoutingEmailDomainResource(
 					domainRes,
 					domainId,
-					FalseValue,
-					NullValue,
+					util.FalseValue,
+					util.NullValue,
 				) + generateRoutingEmailRouteResource(
 					routeRes,
 					"genesyscloud_routing_email_domain."+domainRes+".id",
@@ -71,8 +73,8 @@ func TestAccResourceRoutingEmailRoute(t *testing.T) {
 				Config: GenerateRoutingEmailDomainResource(
 					domainRes,
 					domainId,
-					FalseValue,
-					NullValue,
+					util.FalseValue,
+					util.NullValue,
 				) + GenerateRoutingQueueResourceBasic(
 					queueResource,
 					queueName,
@@ -126,8 +128,8 @@ func TestAccResourceRoutingEmailRoute(t *testing.T) {
 				Config: GenerateRoutingEmailDomainResource(
 					domainRes,
 					domainId,
-					FalseValue,
-					NullValue,
+					util.FalseValue,
+					util.NullValue,
 				) + GenerateRoutingQueueResourceBasic(
 					queueResource,
 					queueName,
@@ -182,8 +184,8 @@ func TestAccResourceRoutingEmailRoute(t *testing.T) {
 				Config: GenerateRoutingEmailDomainResource(
 					domainRes,
 					domainId,
-					FalseValue,
-					NullValue,
+					util.FalseValue,
+					util.NullValue,
 				) + GenerateRoutingQueueResourceBasic(
 					queueResource,
 					queueName,
@@ -320,7 +322,7 @@ func testVerifyRoutingEmailRouteDestroyed(state *terraform.State) error {
 		for pageNum := 1; ; pageNum++ {
 			routes, resp, getErr := routingAPI.GetRoutingEmailDomainRoutes(rs.Primary.Attributes["domain_id"], 100, pageNum, "")
 			if getErr != nil {
-				if IsStatus404(resp) {
+				if util.IsStatus404(resp) {
 					// Domain not found
 					continue
 				}

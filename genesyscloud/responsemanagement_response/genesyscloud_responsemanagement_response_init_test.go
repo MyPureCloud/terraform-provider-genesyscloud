@@ -3,8 +3,8 @@ package responsemanagement_response
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"sync"
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	respmanagementLibrary "terraform-provider-genesyscloud/genesyscloud/responsemanagement_library"
+	respManagementRespAsset "terraform-provider-genesyscloud/genesyscloud/responsemanagement_responseasset"
 	"testing"
 )
 
@@ -30,8 +30,8 @@ func (r *registerTestInstance) registerTestResources() {
 	defer r.resourceMapMutex.Unlock()
 
 	providerResources[resourceName] = ResourceResponsemanagementResponse()
+	providerResources["genesyscloud_responsemanagement_responseasset"] = respManagementRespAsset.ResourceResponseManagementResponseAsset()
 	providerResources["genesyscloud_responsemanagement_library"] = respmanagementLibrary.ResourceResponsemanagementLibrary()
-	providerResources["genesyscloud_responsemanagement_responseasset"] = gcloud.ResourceResponseManagamentResponseAsset()
 }
 
 // registerTestDataSources registers all data sources used in the tests.

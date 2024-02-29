@@ -3,9 +3,10 @@ package architect_ivr
 import (
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
+	gcloud "terraform-provider-genesyscloud/genesyscloud/validators"
 )
 
 const (
@@ -23,7 +24,7 @@ func SetRegistrar(l registrar.Registrar) {
 // ArchitectIvrExporter returns the resourceExporter object used to hold the genesyscloud_architect_ivr exporter's config
 func ArchitectIvrExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
-		GetResourcesFunc: gcloud.GetAllWithPooledClient(getAllIvrConfigs),
+		GetResourcesFunc: provider.GetAllWithPooledClient(getAllIvrConfigs),
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			"open_hours_flow_id":    {RefType: "genesyscloud_flow"},
 			"closed_hours_flow_id":  {RefType: "genesyscloud_flow"},
@@ -39,10 +40,10 @@ func ResourceArchitectIvrConfig() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud IVR config",
 
-		CreateContext: gcloud.CreateWithPooledClient(createIvrConfig),
-		ReadContext:   gcloud.ReadWithPooledClient(readIvrConfig),
-		UpdateContext: gcloud.UpdateWithPooledClient(updateIvrConfig),
-		DeleteContext: gcloud.DeleteWithPooledClient(deleteIvrConfig),
+		CreateContext: provider.CreateWithPooledClient(createIvrConfig),
+		ReadContext:   provider.ReadWithPooledClient(readIvrConfig),
+		UpdateContext: provider.UpdateWithPooledClient(updateIvrConfig),
+		DeleteContext: provider.DeleteWithPooledClient(deleteIvrConfig),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -100,7 +101,7 @@ func ResourceArchitectIvrConfig() *schema.Resource {
 func DataSourceArchitectIvr() *schema.Resource {
 	return &schema.Resource{
 		Description: "Data source for Genesys Cloud IVRs. Select an IVR by name.",
-		ReadContext: gcloud.ReadWithPooledClient(dataSourceIvrRead),
+		ReadContext: provider.ReadWithPooledClient(dataSourceIvrRead),
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Description: "IVR name.",

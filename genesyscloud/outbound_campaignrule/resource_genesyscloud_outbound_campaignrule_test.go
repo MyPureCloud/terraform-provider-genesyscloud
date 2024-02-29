@@ -6,9 +6,9 @@ import (
 	"path/filepath"
 	"strings"
 	outboundSequence "terraform-provider-genesyscloud/genesyscloud/outbound_sequence"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
-
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -78,8 +78,8 @@ func TestAccResourceOutboundCampaignRuleBasic(t *testing.T) {
 			sequenceResourceId,
 			sequenceName,
 			[]string{"genesyscloud_outbound_campaign." + campaign1ResourceId + ".id"},
-			gcloud.NullValue,
-			gcloud.NullValue,
+			util.NullValue,
+			util.NullValue,
 		)
 
 		campaignRuleEntityCampaignIds = []string{"genesyscloud_outbound_campaign." + campaign1ResourceId + ".id"}
@@ -88,7 +88,7 @@ func TestAccResourceOutboundCampaignRuleBasic(t *testing.T) {
 		campaignRuleActionType                = "turnOnCampaign"
 		campaignRuleActionCampaignIds         = []string{"genesyscloud_outbound_campaign." + campaign2ResourceId + ".id"}
 		campaignRuleActionSequenceIds         = []string{"genesyscloud_outbound_sequence." + sequenceResourceId + ".id"}
-		campaignRuleActionUseTriggeringEntity = gcloud.FalseValue
+		campaignRuleActionUseTriggeringEntity = util.FalseValue
 
 		campaignRuleCondition1Type = "campaignProgress"
 		paramRulesOperator         = "lessThan"
@@ -104,8 +104,8 @@ func TestAccResourceOutboundCampaignRuleBasic(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
-		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			// Create
 			{
@@ -118,8 +118,8 @@ data "genesyscloud_auth_division_home" "home" {}
 					generateOutboundCampaignRule(
 						resourceId,
 						ruleName,
-						gcloud.FalseValue, // enabled
-						gcloud.FalseValue, // matchAnyConditions
+						util.FalseValue, // enabled
+						util.FalseValue, // matchAnyConditions
 						generateCampaignRuleEntity(campaignRuleEntityCampaignIds, campaignRuleEntitySequenceIds),
 						generateCampaignRuleConditions(
 							"",
@@ -147,8 +147,8 @@ data "genesyscloud_auth_division_home" "home" {}
 					),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_outbound_campaignrule."+resourceId, "name", ruleName),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_campaignrule."+resourceId, "match_any_conditions", gcloud.FalseValue),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_campaignrule."+resourceId, "enabled", gcloud.FalseValue),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_campaignrule."+resourceId, "match_any_conditions", util.FalseValue),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_campaignrule."+resourceId, "enabled", util.FalseValue),
 
 					resource.TestCheckResourceAttrPair("genesyscloud_outbound_campaignrule."+resourceId, "campaign_rule_entities.0.sequence_ids.0",
 						"genesyscloud_outbound_sequence."+sequenceResourceId, "id"),
@@ -182,8 +182,8 @@ data "genesyscloud_auth_division_home" "home" {}
 					generateOutboundCampaignRule(
 						resourceId,
 						ruleNameUpdated,
-						gcloud.TrueValue, // enabled
-						gcloud.TrueValue, // matchAnyConditions
+						util.TrueValue, // enabled
+						util.TrueValue, // matchAnyConditions
 						generateCampaignRuleEntity(
 							campaignRuleEntityCampaignIds,
 							campaignRuleEntitySequenceIds,
@@ -214,8 +214,8 @@ data "genesyscloud_auth_division_home" "home" {}
 					),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_outbound_campaignrule."+resourceId, "name", ruleNameUpdated),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_campaignrule."+resourceId, "match_any_conditions", gcloud.TrueValue),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_campaignrule."+resourceId, "enabled", gcloud.TrueValue),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_campaignrule."+resourceId, "match_any_conditions", util.TrueValue),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_campaignrule."+resourceId, "enabled", util.TrueValue),
 
 					resource.TestCheckResourceAttr("genesyscloud_outbound_campaignrule."+resourceId, "campaign_rule_conditions.0.condition_type", campaignRuleCondition1TypeUpdate),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_campaignrule."+resourceId, "campaign_rule_conditions.0.parameters.0.operator", paramRulesOperatorUpdated),
@@ -238,8 +238,8 @@ data "genesyscloud_auth_division_home" "home" {}
 					generateOutboundCampaignRule(
 						resourceId,
 						ruleNameUpdated,
-						gcloud.FalseValue, // enabled
-						gcloud.TrueValue,  // matchAnyConditions
+						util.FalseValue, // enabled
+						util.TrueValue,  // matchAnyConditions
 						generateCampaignRuleEntity(
 							campaignRuleEntityCampaignIds,
 							campaignRuleEntitySequenceIds,
@@ -264,7 +264,7 @@ data "genesyscloud_auth_division_home" "home" {}
 						),
 					),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_outbound_campaignrule."+resourceId, "enabled", gcloud.FalseValue),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_campaignrule."+resourceId, "enabled", util.FalseValue),
 				),
 			},
 			{
@@ -339,8 +339,8 @@ func TestAccResourceOutboundCampaignRuleEnabledAtCreation(t *testing.T) {
 			sequenceResourceId,
 			sequenceName,
 			[]string{"genesyscloud_outbound_campaign." + campaign1ResourceId + ".id"},
-			gcloud.NullValue,
-			gcloud.NullValue,
+			util.NullValue,
+			util.NullValue,
 		)
 
 		campaignRuleEntityCampaignIds = []string{"genesyscloud_outbound_campaign." + campaign1ResourceId + ".id"}
@@ -349,7 +349,7 @@ func TestAccResourceOutboundCampaignRuleEnabledAtCreation(t *testing.T) {
 		campaignRuleActionType                = "turnOffCampaign"
 		campaignRuleActionCampaignIds         = []string{"genesyscloud_outbound_campaign." + campaign2ResourceId + ".id"}
 		campaignRuleActionSequenceIds         = []string{"genesyscloud_outbound_sequence." + sequenceResourceId + ".id"}
-		campaignRuleActionUseTriggeringEntity = gcloud.FalseValue
+		campaignRuleActionUseTriggeringEntity = util.FalseValue
 
 		campaignRuleCondition1Type = "campaignProgress"
 		paramRulesOperator         = "lessThan"
@@ -365,8 +365,8 @@ func TestAccResourceOutboundCampaignRuleEnabledAtCreation(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
-		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			// Create
 			{
@@ -379,8 +379,8 @@ data "genesyscloud_auth_division_home" "home" {}
 					generateOutboundCampaignRule(
 						resourceId,
 						ruleName,
-						gcloud.TrueValue,  // enabled
-						gcloud.FalseValue, // matchAnyConditions
+						util.TrueValue,  // enabled
+						util.FalseValue, // matchAnyConditions
 						generateCampaignRuleEntity(campaignRuleEntityCampaignIds, campaignRuleEntitySequenceIds),
 						generateCampaignRuleConditions(
 							"",
@@ -408,8 +408,8 @@ data "genesyscloud_auth_division_home" "home" {}
 					),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_outbound_campaignrule."+resourceId, "name", ruleName),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_campaignrule."+resourceId, "match_any_conditions", gcloud.FalseValue),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_campaignrule."+resourceId, "enabled", gcloud.TrueValue),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_campaignrule."+resourceId, "match_any_conditions", util.FalseValue),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_campaignrule."+resourceId, "enabled", util.TrueValue),
 
 					resource.TestCheckResourceAttrPair("genesyscloud_outbound_campaignrule."+resourceId, "campaign_rule_entities.0.sequence_ids.0",
 						"genesyscloud_outbound_sequence."+sequenceResourceId, "id"),
@@ -443,8 +443,8 @@ data "genesyscloud_auth_division_home" "home" {}
 					generateOutboundCampaignRule(
 						resourceId,
 						ruleNameUpdated,
-						gcloud.FalseValue, // enabled
-						gcloud.TrueValue,  // matchAnyConditions
+						util.FalseValue, // enabled
+						util.TrueValue,  // matchAnyConditions
 						generateCampaignRuleEntity(
 							campaignRuleEntityCampaignIds,
 							campaignRuleEntitySequenceIds,
@@ -469,7 +469,7 @@ data "genesyscloud_auth_division_home" "home" {}
 						),
 					),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_outbound_campaignrule."+resourceId, "enabled", gcloud.FalseValue),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_campaignrule."+resourceId, "enabled", util.FalseValue),
 				),
 			},
 			{
@@ -565,7 +565,7 @@ func testVerifyCampaignRuleDestroyed(state *terraform.State) error {
 		campaignRule, resp, err := outboundApi.GetOutboundCampaignrule(rs.Primary.ID)
 		if campaignRule != nil {
 			return fmt.Errorf("emergency group (%s) still exists", rs.Primary.ID)
-		} else if gcloud.IsStatus404(resp) {
+		} else if util.IsStatus404(resp) {
 			// Campaign rule not found as expected
 			continue
 		} else {

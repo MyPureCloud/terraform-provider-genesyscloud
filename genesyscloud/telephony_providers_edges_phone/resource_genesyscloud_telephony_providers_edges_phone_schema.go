@@ -3,10 +3,10 @@ package telephony_providers_edges_phone
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
+	gcloud "terraform-provider-genesyscloud/genesyscloud/validators"
 )
 
 /*
@@ -85,10 +85,10 @@ func ResourcePhone() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud Phone",
 
-		CreateContext: gcloud.CreateWithPooledClient(createPhone),
-		ReadContext:   gcloud.ReadWithPooledClient(readPhone),
-		UpdateContext: gcloud.UpdateWithPooledClient(updatePhone),
-		DeleteContext: gcloud.DeleteWithPooledClient(deletePhone),
+		CreateContext: provider.CreateWithPooledClient(createPhone),
+		ReadContext:   provider.ReadWithPooledClient(readPhone),
+		UpdateContext: provider.UpdateWithPooledClient(updatePhone),
+		DeleteContext: provider.DeleteWithPooledClient(deletePhone),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -163,7 +163,7 @@ func ResourcePhone() *schema.Resource {
 // PhoneExporter returns the resourceExporter object used to hold the genesyscloud_telephony_providers_edges_phone exporter's config
 func PhoneExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
-		GetResourcesFunc: gcloud.GetAllWithPooledClient(getAllPhones),
+		GetResourcesFunc: provider.GetAllWithPooledClient(getAllPhones),
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			"web_rtc_user_id":        {RefType: "genesyscloud_user"},
 			"site_id":                {RefType: "genesyscloud_telephony_providers_edges_site"},
@@ -176,7 +176,7 @@ func PhoneExporter() *resourceExporter.ResourceExporter {
 func DataSourcePhone() *schema.Resource {
 	return &schema.Resource{
 		Description: "Data source for Genesys Cloud Phone. Select a phone by name",
-		ReadContext: gcloud.ReadWithPooledClient(dataSourcePhoneRead),
+		ReadContext: provider.ReadWithPooledClient(dataSourcePhoneRead),
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Description: "Phone name.",

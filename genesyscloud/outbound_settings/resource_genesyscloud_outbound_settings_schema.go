@@ -3,10 +3,10 @@ package outbound_settings
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
-
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
+	gcloud "terraform-provider-genesyscloud/genesyscloud/validators"
 )
 
 /*
@@ -106,10 +106,10 @@ func ResourceOutboundSettings() *schema.Resource {
 	return &schema.Resource{
 		Description: "An organization's outbound settings",
 
-		CreateContext: gcloud.CreateWithPooledClient(createOutboundSettings),
-		ReadContext:   gcloud.ReadWithPooledClient(readOutboundSettings),
-		UpdateContext: gcloud.UpdateWithPooledClient(updateOutboundSettings),
-		DeleteContext: gcloud.DeleteWithPooledClient(deleteOutboundSettings),
+		CreateContext: provider.CreateWithPooledClient(createOutboundSettings),
+		ReadContext:   provider.ReadWithPooledClient(readOutboundSettings),
+		UpdateContext: provider.UpdateWithPooledClient(updateOutboundSettings),
+		DeleteContext: provider.DeleteWithPooledClient(deleteOutboundSettings),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -149,7 +149,7 @@ func ResourceOutboundSettings() *schema.Resource {
 
 func OutboundSettingsExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
-		GetResourcesFunc: gcloud.GetAllWithPooledClient(getAllOutboundSettings),
+		GetResourcesFunc: provider.GetAllWithPooledClient(getAllOutboundSettings),
 		RefAttrs:         map[string]*resourceExporter.RefAttrSettings{}, // No references
 	}
 }

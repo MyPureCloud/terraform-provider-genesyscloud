@@ -7,12 +7,12 @@ import (
 	"log"
 	"strconv"
 	"strings"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
@@ -36,8 +36,8 @@ func getPhoneFromResourceData(ctx context.Context, pp *phoneProxy, d *schema.Res
 	phoneConfig := &platformclientv2.Phone{
 		Name:       platformclientv2.String(d.Get("name").(string)),
 		State:      platformclientv2.String(d.Get("state").(string)),
-		Site:       gcloud.BuildSdkDomainEntityRef(d, "site_id"),
-		Properties: gcloud.BuildTelephonyProperties(d),
+		Site:       util.BuildSdkDomainEntityRef(d, "site_id"),
+		Properties: util.BuildTelephonyProperties(d),
 		PhoneBaseSettings: &platformclientv2.Phonebasesettings{
 			Id: buildSdkPhoneBaseSettings(d, "phone_base_settings_id").Id,
 		},
@@ -82,7 +82,7 @@ func getPhoneFromResourceData(ctx context.Context, pp *phoneProxy, d *schema.Res
 
 	webRtcUserId := d.Get("web_rtc_user_id")
 	if webRtcUserId != "" {
-		phoneConfig.WebRtcUser = gcloud.BuildSdkDomainEntityRef(d, "web_rtc_user_id")
+		phoneConfig.WebRtcUser = util.BuildSdkDomainEntityRef(d, "web_rtc_user_id")
 	}
 
 	return phoneConfig, nil
@@ -103,7 +103,7 @@ func assignUserToWebRtcPhone(ctx context.Context, pp *phoneProxy, userId string)
 	stationId := ""
 	stationIsAssociated := false
 
-	retryErr := gcloud.WithRetries(ctx, 60*time.Second, func() *retry.RetryError {
+	retryErr := util.WithRetries(ctx, 60*time.Second, func() *retry.RetryError {
 		station, retryable, err := pp.getStationOfUser(ctx, userId)
 		if err != nil && !retryable {
 			return retry.NonRetryableError(fmt.Errorf("error requesting stations: %s", err))
@@ -121,7 +121,7 @@ func assignUserToWebRtcPhone(ctx context.Context, pp *phoneProxy, userId string)
 		return retryErr
 	}
 
-	diagErr := gcloud.RetryWhen(gcloud.IsStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+	diagErr := util.RetryWhen(util.IsStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		if stationIsAssociated {
 			log.Printf("Disassociating user from phone station %s", stationId)
 			if resp, err := pp.unassignUserFromStation(ctx, stationId); err != nil {
@@ -359,7 +359,7 @@ func TestVerifyWebRtcPhoneDestroyed(state *terraform.State) error {
 		phone, resp, err := edgesAPI.GetTelephonyProvidersEdgesPhone(rs.Primary.ID)
 		if phone != nil {
 			return fmt.Errorf("phone (%s) still exists", rs.Primary.ID)
-		} else if gcloud.IsStatus404(resp) {
+		} else if util.IsStatus404(resp) {
 			// Phone not found as expected
 			continue
 		} else {
@@ -373,12 +373,12 @@ func TestVerifyWebRtcPhoneDestroyed(state *terraform.State) error {
 
 func generatePhoneProperties(hardware_id string) string {
 	// A random selection of properties
-	return "properties = " + gcloud.GenerateJsonEncodedProperties(
-		gcloud.GenerateJsonProperty(
-			"phone_hardwareId", gcloud.GenerateJsonObject(
-				gcloud.GenerateJsonProperty(
-					"value", gcloud.GenerateJsonObject(
-						gcloud.GenerateJsonProperty("instance", strconv.Quote(hardware_id)),
+	return "properties = " + util.GenerateJsonEncodedProperties(
+		util.GenerateJsonProperty(
+			"phone_hardwareId", util.GenerateJsonObject(
+				util.GenerateJsonProperty(
+					"value", util.GenerateJsonObject(
+						util.GenerateJsonProperty("instance", strconv.Quote(hardware_id)),
 					)))),
 	)
 }

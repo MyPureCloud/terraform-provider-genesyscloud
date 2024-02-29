@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -112,7 +112,7 @@ func (p *outboundCampaignProxy) turnOffCampaign(ctx context.Context, campaignId 
 	}
 	log.Printf("Updated campaign '%s'", *outboundCampaign.Name)
 
-	return gcloud.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
+	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		log.Printf("Reading Outbound Campaign %s to ensure campaign_status is 'off'", campaignId)
 		outboundCampaign, _, getErr := p.getOutboundCampaignById(ctx, campaignId)
 		if getErr != nil {

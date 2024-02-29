@@ -3,6 +3,8 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -16,7 +18,7 @@ import (
 func dataSourceRoutingUtilizationLabel() *schema.Resource {
 	return &schema.Resource{
 		Description: "Data source for Genesys Cloud Routing Utilization Labels. Select a label by name.",
-		ReadContext: ReadWithPooledClient(dataSourceRoutingUtilizationLabelRead),
+		ReadContext: provider.ReadWithPooledClient(dataSourceRoutingUtilizationLabelRead),
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Description:  "Label name.",
@@ -29,12 +31,12 @@ func dataSourceRoutingUtilizationLabel() *schema.Resource {
 }
 
 func dataSourceRoutingUtilizationLabelRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	sdkConfig := m.(*ProviderMeta).ClientConfig
+	sdkConfig := m.(*provider.ProviderMeta).ClientConfig
 	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
 
 	name := d.Get("name").(string)
 
-	return WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
+	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
 		labels, _, getErr := routingAPI.GetRoutingUtilizationLabels(1, 1, "", name)
 		if getErr != nil {
 			return retry.NonRetryableError(fmt.Errorf("Error requesting label %s: %s", name, getErr))

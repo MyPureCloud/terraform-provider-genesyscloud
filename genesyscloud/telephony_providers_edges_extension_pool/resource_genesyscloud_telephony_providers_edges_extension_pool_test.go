@@ -4,7 +4,8 @@ import (
 	"fmt"
 	"log"
 	"strconv"
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 	"time"
 
@@ -25,7 +26,7 @@ func TestAccResourceExtensionPoolBasic(t *testing.T) {
 	extensionPoolResource1 := "test-extensionpool1"
 	extensionPoolStartNumber1 := "15000"
 	extensionPoolEndNumber1 := "15001"
-	_, err := gcloud.AuthorizeSdk()
+	_, err := provider.AuthorizeSdk()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -33,8 +34,8 @@ func TestAccResourceExtensionPoolBasic(t *testing.T) {
 	deleteExtensionPoolWithNumber(extensionPoolEndNumber1)
 	extensionPoolDescription1 := "Test description"
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
-		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Create
@@ -42,7 +43,7 @@ func TestAccResourceExtensionPoolBasic(t *testing.T) {
 					extensionPoolResource1,
 					extensionPoolStartNumber1,
 					extensionPoolEndNumber1,
-					gcloud.NullValue, // No description
+					util.NullValue, // No description
 				}),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_extension_pool."+extensionPoolResource1, "start_number", extensionPoolStartNumber1),
@@ -76,7 +77,7 @@ func TestAccResourceExtensionPoolBasic(t *testing.T) {
 }
 
 func deleteExtensionPoolWithNumber(startNumber string) error {
-	sdkConfig, err := gcloud.AuthorizeSdk()
+	sdkConfig, err := provider.AuthorizeSdk()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -132,7 +133,7 @@ func testVerifyExtensionPoolsDestroyed(state *terraform.State) error {
 			return fmt.Errorf("Extension Pool (%s) still exists", rs.Primary.ID)
 		}
 
-		if gcloud.IsStatus404(resp) {
+		if util.IsStatus404(resp) {
 			// Extension pool not found as expected
 			continue
 		}

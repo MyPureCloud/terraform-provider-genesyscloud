@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -44,7 +46,7 @@ func getAllRoutingLanguages(_ context.Context, clientConfig *platformclientv2.Co
 
 func RoutingLanguageExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
-		GetResourcesFunc: GetAllWithPooledClient(getAllRoutingLanguages),
+		GetResourcesFunc: provider.GetAllWithPooledClient(getAllRoutingLanguages),
 		RefAttrs:         map[string]*resourceExporter.RefAttrSettings{}, // No references
 	}
 }
@@ -53,9 +55,9 @@ func ResourceRoutingLanguage() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud Routing Language",
 
-		CreateContext: CreateWithPooledClient(createRoutingLanguage),
-		ReadContext:   ReadWithPooledClient(readRoutingLanguage),
-		DeleteContext: DeleteWithPooledClient(deleteRoutingLanguage),
+		CreateContext: provider.CreateWithPooledClient(createRoutingLanguage),
+		ReadContext:   provider.ReadWithPooledClient(readRoutingLanguage),
+		DeleteContext: provider.DeleteWithPooledClient(deleteRoutingLanguage),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -74,7 +76,7 @@ func ResourceRoutingLanguage() *schema.Resource {
 func createRoutingLanguage(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	name := d.Get("name").(string)
 
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
 
 	log.Printf("Creating language %s", name)
@@ -92,14 +94,14 @@ func createRoutingLanguage(ctx context.Context, d *schema.ResourceData, meta int
 }
 
 func readRoutingLanguage(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	routingApi := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
 
 	log.Printf("Reading language %s", d.Id())
-	return WithRetriesForRead(ctx, d, func() *retry.RetryError {
+	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		language, resp, getErr := routingApi.GetRoutingLanguage(d.Id())
 		if getErr != nil {
-			if IsStatus404(resp) {
+			if util.IsStatus404(resp) {
 				return retry.RetryableError(fmt.Errorf("Failed to read language %s: %s", d.Id(), getErr))
 			}
 			return retry.NonRetryableError(fmt.Errorf("Failed to read language %s: %s", d.Id(), getErr))
@@ -120,7 +122,7 @@ func readRoutingLanguage(ctx context.Context, d *schema.ResourceData, meta inter
 func deleteRoutingLanguage(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	name := d.Get("name").(string)
 
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	routingApi := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
 
 	log.Printf("Deleting language %s", name)
@@ -130,10 +132,10 @@ func deleteRoutingLanguage(ctx context.Context, d *schema.ResourceData, meta int
 		return diag.Errorf("Failed to delete language %s: %s", name, err)
 	}
 
-	return WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
+	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		routingLanguage, resp, err := routingApi.GetRoutingLanguage(d.Id())
 		if err != nil {
-			if IsStatus404(resp) {
+			if util.IsStatus404(resp) {
 				// Routing language deleted
 				log.Printf("Deleted Routing language %s", d.Id())
 				return nil

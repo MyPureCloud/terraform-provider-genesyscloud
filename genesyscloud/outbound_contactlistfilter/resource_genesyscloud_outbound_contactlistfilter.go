@@ -8,9 +8,10 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v121/platformclientv2"
 	"log"
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 	"time"
 )
@@ -38,7 +39,7 @@ func getAllAuthOutboundContactlistfilters(ctx context.Context, clientConfig *pla
 
 // createOutboundContactlistfilter is used by the outbound_contactlistfilter resource to create Genesys cloud outbound contactlistfilter
 func createOutboundContactlistfilter(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getOutboundContactlistfilterProxy(sdkConfig)
 
 	contactListFilter := getContactlistfilterFromResourceData(d)
@@ -57,15 +58,15 @@ func createOutboundContactlistfilter(ctx context.Context, d *schema.ResourceData
 
 // readOutboundContactlistfilter is used by the outbound_contactlistfilter resource to read an outbound contactlistfilter from genesys cloud
 func readOutboundContactlistfilter(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getOutboundContactlistfilterProxy(sdkConfig)
 
 	log.Printf("Reading Outbound Contact List Filter %s", d.Id())
 
-	return gcloud.WithRetriesForRead(ctx, d, func() *retry.RetryError {
+	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		sdkContactListFilter, resp, getErr := proxy.getOutboundContactlistfilterById(ctx, d.Id())
 		if getErr != nil {
-			if gcloud.IsStatus404ByInt(resp) {
+			if util.IsStatus404ByInt(resp) {
 				return retry.RetryableError(fmt.Errorf("failed to read Outbound Contact List Filter %s: %s", d.Id(), getErr))
 			}
 			return retry.NonRetryableError(fmt.Errorf("failed to read Outbound Contact List Filter %s: %s", d.Id(), getErr))
@@ -85,7 +86,7 @@ func readOutboundContactlistfilter(ctx context.Context, d *schema.ResourceData, 
 
 // updateOutboundContactlistfilter is used by the outbound_contactlistfilter resource to update an outbound contactlistfilter in Genesys Cloud
 func updateOutboundContactlistfilter(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getOutboundContactlistfilterProxy(sdkConfig)
 
 	contactListFilter := getContactlistfilterFromResourceData(d)
@@ -102,10 +103,10 @@ func updateOutboundContactlistfilter(ctx context.Context, d *schema.ResourceData
 
 // deleteOutboundContactlistfilter is used by the outbound_contactlistfilter resource to delete an outbound contactlistfilter from Genesys cloud
 func deleteOutboundContactlistfilter(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getOutboundContactlistfilterProxy(sdkConfig)
 
-	diagErr := gcloud.RetryWhen(gcloud.IsStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+	diagErr := util.RetryWhen(util.IsStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		log.Printf("Deleting Outbound Contact List Filter")
 		resp, err := proxy.deleteOutboundContactlistfilter(ctx, d.Id())
 		if err != nil {
@@ -117,10 +118,10 @@ func deleteOutboundContactlistfilter(ctx context.Context, d *schema.ResourceData
 		return diagErr
 	}
 
-	return gcloud.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
+	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		_, resp, err := proxy.getOutboundContactlistfilterById(ctx, d.Id())
 		if err != nil {
-			if gcloud.IsStatus404ByInt(resp) {
+			if util.IsStatus404ByInt(resp) {
 				// Outbound Contact list filter deleted
 				log.Printf("Deleted Outbound Contact List Filter %s", d.Id())
 				return nil

@@ -1,11 +1,11 @@
 package scripts
 
 import (
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
-
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	gcloud "terraform-provider-genesyscloud/genesyscloud/validators"
 )
 
 /*
@@ -24,7 +24,7 @@ func SetRegistrar(l registrar.Registrar) {
 func DataSourceScript() *schema.Resource {
 	return &schema.Resource{
 		Description: "Data source for Genesys Cloud Scripts. Select a script by name.  This will only search on published scripts.  Unpublished scripts will not be returned",
-		ReadContext: gcloud.ReadWithPooledClient(dataSourceScriptRead),
+		ReadContext: provider.ReadWithPooledClient(dataSourceScriptRead),
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Description: "Script name.",
@@ -40,10 +40,10 @@ func ResourceScript() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud Script",
 
-		CreateContext: gcloud.CreateWithPooledClient(createScript),
-		ReadContext:   gcloud.ReadWithPooledClient(readScript),
-		UpdateContext: gcloud.UpdateWithPooledClient(updateScript),
-		DeleteContext: gcloud.DeleteWithPooledClient(deleteScript),
+		CreateContext: provider.CreateWithPooledClient(createScript),
+		ReadContext:   provider.ReadWithPooledClient(readScript),
+		UpdateContext: provider.UpdateWithPooledClient(updateScript),
+		DeleteContext: provider.DeleteWithPooledClient(deleteScript),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -78,7 +78,7 @@ func ResourceScript() *schema.Resource {
 // ExporterScript returns all the exporter configuration for this resource
 func ExporterScript() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
-		GetResourcesFunc: gcloud.GetAllWithPooledClient(getAllScripts),
+		GetResourcesFunc: provider.GetAllWithPooledClient(getAllScripts),
 		RefAttrs:         map[string]*resourceExporter.RefAttrSettings{},
 		CustomFileWriter: resourceExporter.CustomFileWriterSettings{
 			RetrieveAndWriteFilesFunc: ScriptResolver,

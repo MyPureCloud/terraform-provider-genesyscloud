@@ -3,6 +3,8 @@ package genesyscloud
 import (
 	"fmt"
 	"strconv"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 
 	"github.com/google/uuid"
@@ -27,8 +29,8 @@ func TestAccResourceGroupBasic(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Create a basic group
@@ -37,9 +39,9 @@ func TestAccResourceGroupBasic(t *testing.T) {
 						groupResource1,
 						groupName,
 						strconv.Quote(groupDesc1),
-						NullValue, // Default type
-						NullValue, // Default visibility
-						NullValue, // Default rules_visible
+						util.NullValue, // Default type
+						util.NullValue, // Default visibility
+						util.NullValue, // Default rules_visible
 						GenerateGroupOwners("genesyscloud_user."+testUserResource+".id"),
 					),
 				Check: resource.ComposeTestCheckFunc(
@@ -47,7 +49,7 @@ func TestAccResourceGroupBasic(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_group."+groupResource1, "type", typeOfficial),
 					resource.TestCheckResourceAttr("genesyscloud_group."+groupResource1, "description", groupDesc1),
 					resource.TestCheckResourceAttr("genesyscloud_group."+groupResource1, "visibility", visPublic),
-					resource.TestCheckResourceAttr("genesyscloud_group."+groupResource1, "rules_visible", TrueValue),
+					resource.TestCheckResourceAttr("genesyscloud_group."+groupResource1, "rules_visible", util.TrueValue),
 				),
 			},
 			{
@@ -58,7 +60,7 @@ func TestAccResourceGroupBasic(t *testing.T) {
 					strconv.Quote(groupDesc2),
 					strconv.Quote(typeOfficial), // Cannot change type
 					strconv.Quote(visMembers),
-					FalseValue,
+					util.FalseValue,
 					GenerateGroupOwners("genesyscloud_user."+testUserResource+".id"),
 				),
 				Check: resource.ComposeTestCheckFunc(
@@ -66,7 +68,7 @@ func TestAccResourceGroupBasic(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_group."+groupResource1, "type", typeOfficial),
 					resource.TestCheckResourceAttr("genesyscloud_group."+groupResource1, "description", groupDesc2),
 					resource.TestCheckResourceAttr("genesyscloud_group."+groupResource1, "visibility", visMembers),
-					resource.TestCheckResourceAttr("genesyscloud_group."+groupResource1, "rules_visible", FalseValue),
+					resource.TestCheckResourceAttr("genesyscloud_group."+groupResource1, "rules_visible", util.FalseValue),
 				),
 			},
 			{
@@ -97,8 +99,8 @@ func TestAccResourceGroupAddresses(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Create
@@ -108,7 +110,7 @@ func TestAccResourceGroupAddresses(t *testing.T) {
 					generateGroupAddress(
 						strconv.Quote(addrPhone1),
 						typeGroupRing,
-						NullValue, // No extension
+						util.NullValue, // No extension
 					),
 					GenerateGroupOwners("genesyscloud_user."+testUserResource+".id"),
 				),
@@ -126,7 +128,7 @@ func TestAccResourceGroupAddresses(t *testing.T) {
 					generateGroupAddress(
 						strconv.Quote(addrPhone2),
 						typeGroupPhone,
-						NullValue,
+						util.NullValue,
 					),
 					GenerateGroupOwners("genesyscloud_user."+testUserResource+".id"),
 				),
@@ -142,7 +144,7 @@ func TestAccResourceGroupAddresses(t *testing.T) {
 					groupResource1,
 					groupName,
 					generateGroupAddress(
-						NullValue,
+						util.NullValue,
 						typeGroupPhone,
 						strconv.Quote(addrPhoneExt),
 					),
@@ -160,7 +162,7 @@ func TestAccResourceGroupAddresses(t *testing.T) {
 					groupResource1,
 					groupName,
 					generateGroupAddress(
-						NullValue,
+						util.NullValue,
 						typeGroupPhone,
 						strconv.Quote(addrPhoneExt2),
 					),
@@ -200,8 +202,8 @@ func TestAccResourceGroupMembers(t *testing.T) {
 		testUserEmail    = uuid.NewString() + "@example.com"
 	)
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Create group with an owner and a member
@@ -309,7 +311,7 @@ func testVerifyGroupsDestroyed(state *terraform.State) error {
 		group, resp, err := groupsAPI.GetGroup(rs.Primary.ID)
 		if group != nil {
 			return fmt.Errorf("Group (%s) still exists", rs.Primary.ID)
-		} else if IsStatus404(resp) {
+		} else if util.IsStatus404(resp) {
 			// Group not found as expected
 			continue
 		} else {

@@ -2,11 +2,14 @@ package main
 
 import (
 	"flag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/plugin"
 	"sync"
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	dt "terraform-provider-genesyscloud/genesyscloud/architect_datatable"
 	dtr "terraform-provider-genesyscloud/genesyscloud/architect_datatable_row"
 	emergencyGroup "terraform-provider-genesyscloud/genesyscloud/architect_emergencygroup"
+	flow "terraform-provider-genesyscloud/genesyscloud/architect_flow"
 	grammar "terraform-provider-genesyscloud/genesyscloud/architect_grammar"
 	grammarLanguage "terraform-provider-genesyscloud/genesyscloud/architect_grammar_language"
 	archIvr "terraform-provider-genesyscloud/genesyscloud/architect_ivr"
@@ -37,11 +40,13 @@ import (
 	obSettings "terraform-provider-genesyscloud/genesyscloud/outbound_settings"
 	obwm "terraform-provider-genesyscloud/genesyscloud/outbound_wrapupcode_mappings"
 	pat "terraform-provider-genesyscloud/genesyscloud/process_automation_trigger"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
 	recMediaRetPolicy "terraform-provider-genesyscloud/genesyscloud/recording_media_retention_policy"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
 	respmanagementLibrary "terraform-provider-genesyscloud/genesyscloud/responsemanagement_library"
 	responsemanagementResponse "terraform-provider-genesyscloud/genesyscloud/responsemanagement_response"
+	responsemanagementResponseasset "terraform-provider-genesyscloud/genesyscloud/responsemanagement_responseasset"
 	smsAddresses "terraform-provider-genesyscloud/genesyscloud/routing_sms_addresses"
 	"terraform-provider-genesyscloud/genesyscloud/scripts"
 	"terraform-provider-genesyscloud/genesyscloud/station"
@@ -64,9 +69,6 @@ import (
 	userRoles "terraform-provider-genesyscloud/genesyscloud/user_roles"
 	webDeployConfig "terraform-provider-genesyscloud/genesyscloud/webdeployments_configuration"
 	webDeployDeploy "terraform-provider-genesyscloud/genesyscloud/webdeployments_deployment"
-
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/plugin"
 )
 
 // Run "go generate" to format example terraform files and generate the docs for the registry/website
@@ -107,7 +109,7 @@ func main() {
 
 	registerResources()
 
-	opts := &plugin.ServeOpts{ProviderFunc: gcloud.New(version, providerResources, providerDataSources)}
+	opts := &plugin.ServeOpts{ProviderFunc: provider.New(version, providerResources, providerDataSources)}
 
 	if debugMode {
 		opts.Debug = true
@@ -136,6 +138,7 @@ func registerResources() {
 	groupRoles.SetRegistrar(regInstance)                                   //Registering group roles
 	edgePhone.SetRegistrar(regInstance)                                    //Registering telephony providers edges phone
 	edgeSite.SetRegistrar(regInstance)                                     //Registering telephony providers edges site
+	flow.SetRegistrar(regInstance)                                         //Registering architect flow
 	flowMilestone.SetRegistrar(regInstance)                                //Registering flow milestone
 	flowOutcome.SetRegistrar(regInstance)                                  //Registering flow outcome
 	station.SetRegistrar(regInstance)                                      //Registering station
@@ -182,6 +185,7 @@ func registerResources() {
 	resourceExporter.SetRegisterExporter(resourceExporters)                //Registering register exporters
 	userRoles.SetRegistrar(regInstance)                                    //Registering user roles
 	responsemanagementResponse.SetRegistrar(regInstance)                   //Registering responsemanagement responses
+	responsemanagementResponseasset.SetRegistrar(regInstance)              //Registering responsemanagement response asset
 	respmanagementLibrary.SetRegistrar(regInstance)                        //Registering responsemanagement library
 
 	// setting resources for Use cases  like TF export where provider is used in resource classes.

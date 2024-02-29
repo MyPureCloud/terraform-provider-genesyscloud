@@ -3,9 +3,9 @@ package integration_credential
 import (
 	"context"
 	"fmt"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
-
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 
@@ -23,12 +23,12 @@ import (
 
 // dataSourceIntegrationCredentialRead retrieves by name the integration action id in question
 func dataSourceIntegrationCredentialRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	sdkConfig := m.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := m.(*provider.ProviderMeta).ClientConfig
 	ip := getIntegrationCredsProxy(sdkConfig)
 
 	credName := d.Get("name").(string)
 
-	return gcloud.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
+	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
 		credential, retryable, err := ip.getIntegrationCredByName(ctx, credName)
 		if err != nil && !retryable {
 			return retry.NonRetryableError(fmt.Errorf("failed to get integration credential: %s. %s", credential, err))

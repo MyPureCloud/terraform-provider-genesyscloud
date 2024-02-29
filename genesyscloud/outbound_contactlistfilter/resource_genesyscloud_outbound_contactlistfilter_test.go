@@ -4,9 +4,10 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	obContactList "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
 
 	"github.com/google/uuid"
@@ -28,11 +29,11 @@ func TestAccResourceOutboundContactListFilter(t *testing.T) {
 		columnType            = "numeric"
 		operator              = "EQUALS"
 		predicateValue        = "+12345123456"
-		inverted              = gcloud.FalseValue
+		inverted              = util.FalseValue
 		rangeMin              = "1"
 		rangeMax              = "10"
-		minInclusive          = gcloud.TrueValue
-		maxInclusive          = gcloud.FalseValue
+		minInclusive          = util.TrueValue
+		maxInclusive          = util.FalseValue
 		rangeInSet            = []string{"a"}
 
 		nameUpdated           = "Test CLF " + uuid.NewString()
@@ -41,34 +42,34 @@ func TestAccResourceOutboundContactListFilter(t *testing.T) {
 		columnTypeUpdated     = "alphabetic"
 		operatorUpdated       = "CONTAINS"
 		predicateValueUpdated = "XYZ"
-		invertedUpdated       = gcloud.TrueValue
+		invertedUpdated       = util.TrueValue
 		rangeMinUpdated       = "2"
 		rangeMaxUpdated       = "12"
-		minInclusiveUpdated   = gcloud.FalseValue
-		maxInclusiveUpdated   = gcloud.TrueValue
+		minInclusiveUpdated   = util.FalseValue
+		maxInclusiveUpdated   = util.TrueValue
 		rangeInSetUpdated     = []string{"a", "b"}
 	)
 
 	contactListResource := obContactList.GenerateOutboundContactList(
 		contactListResourceId,
 		contactListName,
-		gcloud.NullValue,
-		gcloud.NullValue,
+		util.NullValue,
+		util.NullValue,
 		[]string{},
 		[]string{strconv.Quote(column), strconv.Quote(columnUpdated)},
-		gcloud.NullValue,
-		gcloud.NullValue,
-		gcloud.NullValue,
+		util.NullValue,
+		util.NullValue,
+		util.NullValue,
 		obContactList.GeneratePhoneColumnsBlock(
 			column,
 			"cell",
-			gcloud.NullValue,
+			util.NullValue,
 		),
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
-		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				Config: contactListResource + GenerateOutboundContactListFilter(
@@ -301,7 +302,7 @@ func testVerifyOutboundContactListFilterDestroyed(state *terraform.State) error 
 		contactListFilter, resp, err := outboundAPI.GetOutboundContactlistfilter(rs.Primary.ID)
 		if contactListFilter != nil {
 			return fmt.Errorf("contact list filter (%s) still exists", rs.Primary.ID)
-		} else if gcloud.IsStatus404(resp) {
+		} else if util.IsStatus404(resp) {
 			// Contact list filter not found as expected
 			continue
 		} else {

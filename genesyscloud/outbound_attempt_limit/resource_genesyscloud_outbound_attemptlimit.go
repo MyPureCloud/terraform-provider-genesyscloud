@@ -5,13 +5,14 @@ import (
 	"fmt"
 	"log"
 	"strings"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -93,7 +94,7 @@ func getAllAttemptLimits(_ context.Context, clientConfig *platformclientv2.Confi
 
 func OutboundAttemptLimitExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
-		GetResourcesFunc: gcloud.GetAllWithPooledClient(getAllAttemptLimits),
+		GetResourcesFunc: provider.GetAllWithPooledClient(getAllAttemptLimits),
 	}
 }
 
@@ -101,10 +102,10 @@ func ResourceOutboundAttemptLimit() *schema.Resource {
 	return &schema.Resource{
 		Description: `Genesys Cloud Outbound Attempt Limit`,
 
-		CreateContext: gcloud.CreateWithPooledClient(createOutboundAttemptLimit),
-		ReadContext:   gcloud.ReadWithPooledClient(readOutboundAttemptLimit),
-		UpdateContext: gcloud.UpdateWithPooledClient(updateOutboundAttemptLimit),
-		DeleteContext: gcloud.DeleteWithPooledClient(deleteOutboundAttemptLimit),
+		CreateContext: provider.CreateWithPooledClient(createOutboundAttemptLimit),
+		ReadContext:   provider.ReadWithPooledClient(readOutboundAttemptLimit),
+		UpdateContext: provider.UpdateWithPooledClient(updateOutboundAttemptLimit),
+		DeleteContext: provider.DeleteWithPooledClient(deleteOutboundAttemptLimit),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -156,7 +157,7 @@ func createOutboundAttemptLimit(ctx context.Context, d *schema.ResourceData, met
 	resetPeriod := d.Get("reset_period").(string)
 	recallEntries := d.Get("recall_entries").([]interface{})
 
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	outboundApi := platformclientv2.NewOutboundApiWithConfig(sdkConfig)
 
 	sdkAttemptLimits := platformclientv2.Attemptlimits{}
@@ -200,7 +201,7 @@ func updateOutboundAttemptLimit(ctx context.Context, d *schema.ResourceData, met
 	resetPeriod := d.Get("reset_period").(string)
 	recallEntries := d.Get("recall_entries").([]interface{})
 
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	outboundApi := platformclientv2.NewOutboundApiWithConfig(sdkConfig)
 
 	sdkAttemptLimits := platformclientv2.Attemptlimits{}
@@ -225,7 +226,7 @@ func updateOutboundAttemptLimit(ctx context.Context, d *schema.ResourceData, met
 	}
 
 	log.Printf("Updating Outbound Attempt Limit %s", name)
-	diagErr := gcloud.RetryWhen(gcloud.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+	diagErr := util.RetryWhen(util.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		// Get current Outbound Attempt Limit version
 		outboundAttemptLimit, resp, getErr := outboundApi.GetOutboundAttemptlimit(d.Id())
 		if getErr != nil {
@@ -247,15 +248,15 @@ func updateOutboundAttemptLimit(ctx context.Context, d *schema.ResourceData, met
 }
 
 func readOutboundAttemptLimit(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	outboundApi := platformclientv2.NewOutboundApiWithConfig(sdkConfig)
 
 	log.Printf("Reading Outbound Attempt Limit %s", d.Id())
 
-	return gcloud.WithRetriesForRead(ctx, d, func() *retry.RetryError {
+	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		sdkAttemptLimits, resp, getErr := outboundApi.GetOutboundAttemptlimit(d.Id())
 		if getErr != nil {
-			if gcloud.IsStatus404(resp) {
+			if util.IsStatus404(resp) {
 				return retry.RetryableError(fmt.Errorf("failed to read Outbound Attempt Limit %s: %s", d.Id(), getErr))
 			}
 			return retry.NonRetryableError(fmt.Errorf("failed to read Outbound Attempt Limit %s: %s", d.Id(), getErr))
@@ -289,10 +290,10 @@ func readOutboundAttemptLimit(ctx context.Context, d *schema.ResourceData, meta 
 }
 
 func deleteOutboundAttemptLimit(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	outboundApi := platformclientv2.NewOutboundApiWithConfig(sdkConfig)
 
-	diagErr := gcloud.RetryWhen(gcloud.IsStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+	diagErr := util.RetryWhen(util.IsStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		log.Printf("Deleting Outbound Attempt Limit")
 		resp, err := outboundApi.DeleteOutboundAttemptlimit(d.Id())
 		if err != nil {
@@ -304,10 +305,10 @@ func deleteOutboundAttemptLimit(ctx context.Context, d *schema.ResourceData, met
 		return diagErr
 	}
 
-	return gcloud.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
+	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		_, resp, err := outboundApi.GetOutboundAttemptlimit(d.Id())
 		if err != nil {
-			if gcloud.IsStatus404(resp) {
+			if util.IsStatus404(resp) {
 				// Outbound Attempt Limit deleted
 				log.Printf("Deleted Outbound Attempt Limit %s", d.Id())
 				return nil
@@ -332,7 +333,7 @@ func buildSdkOutboundAttemptLimitRecallEntryMap(recallEntries []interface{}) *ma
 				continue
 			}
 			if entryMap, ok := entrySet[0].(map[string]interface{}); ok && len(entryMap) > 0 {
-				recallEntriesMap[gcloud.ToCamelCase(t)] = *buildSdkRecallEntry(entryMap)
+				recallEntriesMap[util.ToCamelCase(t)] = *buildSdkRecallEntry(entryMap)
 			}
 		}
 	}
@@ -353,7 +354,7 @@ func buildSdkRecallEntry(entry map[string]interface{}) *platformclientv2.Recalle
 func flattenSdkOutboundAttemptLimitRecallEntry(sdkRecallEntries *map[string]platformclientv2.Recallentry) []interface{} {
 	recallEntries := make(map[string]interface{})
 	for key, val := range *sdkRecallEntries {
-		recallEntries[gcloud.ToSnakeCase(key)] = flattenSdkRecallEntry(val)
+		recallEntries[util.ToSnakeCase(key)] = flattenSdkRecallEntry(val)
 	}
 	return []interface{}{recallEntries}
 }

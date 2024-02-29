@@ -1,11 +1,11 @@
 package architect_schedulegroups
 
 import (
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 /*
@@ -30,10 +30,10 @@ func ResourceArchitectSchedulegroups() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud Architect Schedule Groups",
 
-		CreateContext: gcloud.CreateWithPooledClient(createArchitectSchedulegroups),
-		ReadContext:   gcloud.ReadWithPooledClient(readArchitectSchedulegroups),
-		UpdateContext: gcloud.UpdateWithPooledClient(updateArchitectSchedulegroups),
-		DeleteContext: gcloud.DeleteWithPooledClient(deleteArchitectSchedulegroups),
+		CreateContext: provider.CreateWithPooledClient(createArchitectSchedulegroups),
+		ReadContext:   provider.ReadWithPooledClient(readArchitectSchedulegroups),
+		UpdateContext: provider.UpdateWithPooledClient(updateArchitectSchedulegroups),
+		DeleteContext: provider.DeleteWithPooledClient(deleteArchitectSchedulegroups),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -85,7 +85,7 @@ func ResourceArchitectSchedulegroups() *schema.Resource {
 // ArchitectSchedulegroupsExporter returns the resourceExporter object used to hold the genesyscloud_architect_schedulegroups exporter's config
 func ArchitectSchedulegroupsExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
-		GetResourcesFunc: gcloud.GetAllWithPooledClient(getAllAuthArchitectSchedulegroupss),
+		GetResourcesFunc: provider.GetAllWithPooledClient(getAllAuthArchitectScheduleGroups),
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			"division_id":          {RefType: "genesyscloud_auth_division"},
 			"open_schedules_id":    {RefType: "genesyscloud_architect_schedules"},
@@ -99,7 +99,7 @@ func ArchitectSchedulegroupsExporter() *resourceExporter.ResourceExporter {
 func DataSourceArchitectSchedulegroups() *schema.Resource {
 	return &schema.Resource{
 		Description: "Data source for Genesys Cloud Schedule Groups. Select a schedule group by name.",
-		ReadContext: gcloud.ReadWithPooledClient(dataSourceArchitectSchedulegroupsRead),
+		ReadContext: provider.ReadWithPooledClient(dataSourceArchitectSchedulegroupsRead),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},

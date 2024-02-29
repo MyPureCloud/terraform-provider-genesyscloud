@@ -2,6 +2,8 @@ package genesyscloud
 
 import (
 	"fmt"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 
 	"github.com/google/uuid"
@@ -20,18 +22,18 @@ func TestAccDataSourceGroup(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				Config: GenerateUserWithCustomAttrs(testUserResource, testUserEmail, testUserName) +
 					generateGroupResource(
 						groupResource,
 						groupName,
-						NullValue, // No description
-						NullValue, // Default type
-						NullValue, // Default visibility
-						NullValue, // Default rules_visible
+						util.NullValue, // No description
+						util.NullValue, // Default type
+						util.NullValue, // Default visibility
+						util.NullValue, // Default rules_visible
 						GenerateGroupOwners("genesyscloud_user."+testUserResource+".id"),
 					) + generateGroupDataSource(
 					groupDataSource,

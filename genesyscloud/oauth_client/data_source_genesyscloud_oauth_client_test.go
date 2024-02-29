@@ -3,7 +3,8 @@ package oauth_client
 import (
 	"fmt"
 	"strconv"
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 
 	"github.com/google/uuid"
@@ -26,8 +27,8 @@ func TestAccDataSourceOAuthClient(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
-		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				Config: generateAuthRoleDataSource(
@@ -40,10 +41,10 @@ func TestAccDataSourceOAuthClient(t *testing.T) {
 					clientDesc1,
 					grantTypeClientCreds,
 					tokenSec1,
-					gcloud.NullValue, // Default state
-					gcloud.GenerateStringArray(strconv.Quote(redirectURI1)),
-					gcloud.NullValue, // No scopes for client creds
-					generateOauthClientRoles("data.genesyscloud_auth_role."+roleResource1+".id", gcloud.NullValue),
+					util.NullValue, // Default state
+					util.GenerateStringArray(strconv.Quote(redirectURI1)),
+					util.NullValue, // No scopes for client creds
+					generateOauthClientRoles("data.genesyscloud_auth_role."+roleResource1+".id", util.NullValue),
 				) + generateOAuthClientDataSource(
 					oauthClientDataSource,
 					"genesyscloud_oauth_client."+clientResource1+".name",

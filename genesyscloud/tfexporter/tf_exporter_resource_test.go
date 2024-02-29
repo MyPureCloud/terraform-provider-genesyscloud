@@ -5,6 +5,8 @@ import (
 	dt "terraform-provider-genesyscloud/genesyscloud/architect_datatable"
 	"terraform-provider-genesyscloud/genesyscloud/architect_datatable_row"
 	emergencyGroup "terraform-provider-genesyscloud/genesyscloud/architect_emergencygroup"
+	flow "terraform-provider-genesyscloud/genesyscloud/architect_flow"
+
 	grammar "terraform-provider-genesyscloud/genesyscloud/architect_grammar"
 	grammarLanguage "terraform-provider-genesyscloud/genesyscloud/architect_grammar_language"
 	archIvr "terraform-provider-genesyscloud/genesyscloud/architect_ivr"
@@ -36,6 +38,7 @@ import (
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	respmanagementLibrary "terraform-provider-genesyscloud/genesyscloud/responsemanagement_library"
 	responsemanagementResponse "terraform-provider-genesyscloud/genesyscloud/responsemanagement_response"
+	respManagementRespAsset "terraform-provider-genesyscloud/genesyscloud/responsemanagement_responseasset"
 	routingSmsAddress "terraform-provider-genesyscloud/genesyscloud/routing_sms_addresses"
 	workbin "terraform-provider-genesyscloud/genesyscloud/task_management_workbin"
 	workitemSchema "terraform-provider-genesyscloud/genesyscloud/task_management_workitem_schema"
@@ -82,7 +85,7 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_architect_datatable"] = dt.ResourceArchitectDatatable()
 	providerResources["genesyscloud_architect_datatable_row"] = architect_datatable_row.ResourceArchitectDatatableRow()
 	providerResources["genesyscloud_architect_emergencygroup"] = emergencyGroup.ResourceArchitectEmergencyGroup()
-	providerResources["genesyscloud_flow"] = gcloud.ResourceFlow()
+	providerResources["genesyscloud_flow"] = flow.ResourceArchitectFlow()
 	providerResources["genesyscloud_flow_milestone"] = flowMilestone.ResourceFlowMilestone()
 	providerResources["genesyscloud_flow_outcome"] = flowOutcome.ResourceFlowOutcome()
 	providerResources["genesyscloud_architect_ivr"] = archIvr.ResourceArchitectIvrConfig()
@@ -120,6 +123,7 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_quality_forms_evaluation"] = gcloud.ResourceEvaluationForm()
 	providerResources["genesyscloud_user"] = gcloud.ResourceUser()
 	providerResources["genesyscloud_responsemanagement_library"] = respmanagementLibrary.ResourceResponsemanagementLibrary()
+	providerResources["genesyscloud_responsemanagement_responseasset"] = respManagementRespAsset.ResourceResponseManagementResponseAsset()
 	providerResources["genesyscloud_routing_email_domain"] = gcloud.ResourceRoutingEmailDomain()
 	providerResources["genesyscloud_routing_email_route"] = gcloud.ResourceRoutingEmailRoute()
 	providerResources["genesyscloud_routing_language"] = gcloud.ResourceRoutingLanguage()
@@ -180,7 +184,7 @@ func (r *registerTestInstance) registerTestExporters() {
 	RegisterExporter("genesyscloud_auth_division", gcloud.AuthDivisionExporter())
 	RegisterExporter("genesyscloud_auth_role", authRole.AuthRoleExporter())
 	RegisterExporter("genesyscloud_employeeperformance_externalmetrics_definitions", employeeperformanceExternalmetricsDefinition.EmployeeperformanceExternalmetricsDefinitionExporter())
-	RegisterExporter("genesyscloud_flow", gcloud.FlowExporter())
+	RegisterExporter("genesyscloud_flow", flow.ArchitectFlowExporter())
 	RegisterExporter("genesyscloud_flow_milestone", flowMilestone.FlowMilestoneExporter())
 	RegisterExporter("genesyscloud_flow_outcome", flowOutcome.FlowOutcomeExporter())
 	RegisterExporter("genesyscloud_group", gcloud.GroupExporter())
