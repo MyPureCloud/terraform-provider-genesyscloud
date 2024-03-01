@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"log"
 	"strings"
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"terraform-provider-genesyscloud/genesyscloud/util/stringmap"
 
@@ -26,12 +26,12 @@ func (p *DependentConsumerProxy) GetDependentConsumers(ctx context.Context, reso
 	return p.RetrieveDependentConsumersAttr(ctx, p, resourceKeys)
 }
 
-func (p *DependentConsumerProxy) GetAllWithPooledClient(method gcloud.GetCustomConfigFunc) (resourceExporter.ResourceIDMetaMap, *resourceExporter.DependencyResource, diag.Diagnostics) {
+func (p *DependentConsumerProxy) GetAllWithPooledClient(method provider.GetCustomConfigFunc) (resourceExporter.ResourceIDMetaMap, *resourceExporter.DependencyResource, diag.Diagnostics) {
 	return p.GetPooledClientAttr(method)
 }
 
 type retrieveDependentConsumersFunc func(ctx context.Context, p *DependentConsumerProxy, resourceKeys resourceExporter.ResourceInfo) (resourceExporter.ResourceIDMetaMap, *resourceExporter.DependencyResource, error)
-type retrievePooledClientFunc func(method gcloud.GetCustomConfigFunc) (resourceExporter.ResourceIDMetaMap, *resourceExporter.DependencyResource, diag.Diagnostics)
+type retrievePooledClientFunc func(method provider.GetCustomConfigFunc) (resourceExporter.ResourceIDMetaMap, *resourceExporter.DependencyResource, diag.Diagnostics)
 
 var InternalProxy *DependentConsumerProxy
 
@@ -57,8 +57,8 @@ func newDependentConsumerProxy(ClientConfig *platformclientv2.Configuration) *De
 	return InternalProxy
 }
 
-func retrievePooledClientFn(method gcloud.GetCustomConfigFunc) (resourceExporter.ResourceIDMetaMap, *resourceExporter.DependencyResource, diag.Diagnostics) {
-	resourceFunc := gcloud.GetAllWithPooledClientCustom(method)
+func retrievePooledClientFn(method provider.GetCustomConfigFunc) (resourceExporter.ResourceIDMetaMap, *resourceExporter.DependencyResource, diag.Diagnostics) {
+	resourceFunc := provider.GetAllWithPooledClientCustom(method)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	resources, dependsMap, err := resourceFunc(ctx)

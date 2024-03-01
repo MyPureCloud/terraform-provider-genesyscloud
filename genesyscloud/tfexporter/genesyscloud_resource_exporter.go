@@ -12,10 +12,11 @@ import (
 	"strconv"
 	"strings"
 	"sync"
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	dependentconsumers "terraform-provider-genesyscloud/genesyscloud/dependent_consumers"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	r_registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
+	util "terraform-provider-genesyscloud/genesyscloud/util"
 	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 	stringmap "terraform-provider-genesyscloud/genesyscloud/util/stringmap"
 	"time"
@@ -135,9 +136,8 @@ func NewGenesysCloudResourceExporter(ctx context.Context, d *schema.ResourceData
 		addDependsOn:         d.Get("enable_flow_depends_on").(bool),
 		filterType:           filterType,
 		includeStateFile:     d.Get("include_state_file").(bool),
-		ignoreCyclicDeps:     d.Get("ignore_cyclic_deps").(bool),
-		version:              meta.(*gcloud.ProviderMeta).Version,
-		provider:             gcloud.New(meta.(*gcloud.ProviderMeta).Version, providerResources, providerDataSources)(),
+		version:              meta.(*provider.ProviderMeta).Version,
+		provider:             provider.New(meta.(*provider.ProviderMeta).Version, providerResources, providerDataSources)(),
 		d:                    d,
 		ctx:                  ctx,
 		meta:                 meta,
@@ -415,7 +415,7 @@ func (g *GenesysCloudResourceExporter) updateSanitiseMap(exporters map[string]*r
 	}
 }
 
-func (g *GenesysCloudResourceExporter) instanceStateToMap(state *terraform.InstanceState, ctyType cty.Type) (gcloud.JsonMap, diag.Diagnostics) {
+func (g *GenesysCloudResourceExporter) instanceStateToMap(state *terraform.InstanceState, ctyType cty.Type) (util.JsonMap, diag.Diagnostics) {
 	stateVal, err := schema.StateValueFromInstanceState(state, ctyType)
 	if err != nil {
 		return nil, diag.FromErr(err)
@@ -1290,7 +1290,7 @@ func attrInUnResolvableAttrs(a string, myMap map[string]*schema.Schema) (*schema
 	return nil, false
 }
 
-func removeZeroValues(key string, val interface{}, configMap gcloud.JsonMap) {
+func removeZeroValues(key string, val interface{}, configMap util.JsonMap) {
 	if val == nil || reflect.TypeOf(val).String() == "bool" {
 		return
 	}
@@ -1300,7 +1300,7 @@ func removeZeroValues(key string, val interface{}, configMap gcloud.JsonMap) {
 }
 
 // Identify the parent config map and if the resources have further dependent resources add a new attribute depends_on
-func (g *GenesysCloudResourceExporter) addDependsOnValues(key string, configMap gcloud.JsonMap) {
+func (g *GenesysCloudResourceExporter) addDependsOnValues(key string, configMap util.JsonMap) {
 	list, exists := g.dependsList[key]
 	resourceDependsList := make([]string, 0)
 	if exists {

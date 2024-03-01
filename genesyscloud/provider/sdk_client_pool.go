@@ -96,7 +96,7 @@ func (p *SDKClientPool) release(c *platformclientv2.Configuration) {
 
 type resContextFunc func(context.Context, *schema.ResourceData, interface{}) diag.Diagnostics
 type GetAllConfigFunc func(context.Context, *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics)
-type GetCustomConfigFunc func(context.Context, *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, map[string][]string, diag.Diagnostics)
+type GetCustomConfigFunc func(context.Context, *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, *resourceExporter.DependencyResource, diag.Diagnostics)
 
 func CreateWithPooledClient(method resContextFunc) schema.CreateContextFunc {
 	return schema.CreateContextFunc(runWithPooledClient(method))
@@ -153,7 +153,7 @@ func GetAllWithPooledClient(method GetAllConfigFunc) resourceExporter.GetAllReso
 }
 
 func GetAllWithPooledClientCustom(method GetCustomConfigFunc) resourceExporter.GetAllCustomResourcesFunc {
-	return func(ctx context.Context) (resourceExporter.ResourceIDMetaMap, map[string][]string, diag.Diagnostics) {
+	return func(ctx context.Context) (resourceExporter.ResourceIDMetaMap, *resourceExporter.DependencyResource, diag.Diagnostics) {
 		clientConfig := SdkClientPool.acquire()
 		defer SdkClientPool.release(clientConfig)
 
