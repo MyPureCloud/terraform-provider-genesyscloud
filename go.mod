@@ -20,6 +20,8 @@ require (
 	gonum.org/v1/gonum v0.14.0
 )
 
+replace github.com/mypurecloud/platform-client-sdk-go/v121 v121.0.0 => /Users/dginty/genesys_src/repos/platform-client-sdk-common/output/purecloudgo
+
 require (
 	github.com/Kunde21/markdownfmt/v3 v3.1.0 // indirect
 	github.com/ProtonMail/go-crypto v1.1.0-alpha.0 // indirect

@@ -278,13 +278,18 @@ func buildSdkPatchOutcome(journeyOutcome *schema.ResourceData) *platformclientv2
 	sdkContext := resourcedata.BuildSdkListFirstElement(journeyOutcome, "context", buildSdkPatchContext, false)
 	journey := resourcedata.BuildSdkListFirstElement(journeyOutcome, "journey", buildSdkPatchJourney, false)
 
+	if true == false {
+		fmt.Print(sdkContext)
+		fmt.Print(journey)
+	}
+
 	return &platformclientv2.Patchoutcome{
 		IsActive:    &isActive,
 		DisplayName: &displayName,
 		Description: description,
 		IsPositive:  isPositive,
-		Context:     sdkContext,
-		Journey:     journey,
+		Context:     nil,
+		Journey:     nil,
 	}
 }
 

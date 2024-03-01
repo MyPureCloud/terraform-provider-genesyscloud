@@ -2,9 +2,11 @@ package provider
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"sync"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -22,6 +24,7 @@ type SDKClientPool struct {
 var SdkClientPool *SDKClientPool
 var SdkClientPoolErr diag.Diagnostics
 var Once sync.Once
+var accessTokenDuration int
 
 // InitSDKClientPool creates a new Pool of Clients with the given provider config
 // This must be called during provider initialization before the Pool is used
@@ -70,6 +73,9 @@ func (p *SDKClientPool) preFill(providerConfig *schema.ResourceData, version str
 	}
 	go func() {
 		wg.Wait()
+		//go func() {
+		//	p.startTimer(providerConfig)
+		//}()
 		close(wgDone)
 	}()
 
@@ -79,6 +85,54 @@ func (p *SDKClientPool) preFill(providerConfig *schema.ResourceData, version str
 		return nil
 	case err := <-errorChan:
 		return err
+	}
+}
+
+func (p *SDKClientPool) startTimer(providerConfig *schema.ResourceData) {
+	select {
+	case <-time.After(time.Duration(accessTokenDuration - 60)):
+		p.refreshTokens(providerConfig)
+	}
+}
+
+func (p *SDKClientPool) refreshTokens(providerConfig *schema.ResourceData) {
+	errorChan := make(chan diag.Diagnostics)
+	wgDone := make(chan bool)
+	var wg sync.WaitGroup
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	for sdkConfig := range p.Pool {
+		wg.Add(1)
+		sdkConfig := sdkConfig
+		go func() {
+			defer wg.Done()
+			err := requestToken(providerConfig, sdkConfig)
+			if err != nil {
+				select {
+				case <-ctx.Done():
+				case errorChan <- err:
+				}
+				cancel()
+				return
+			}
+		}()
+	}
+	go func() {
+		wg.Wait()
+		//go func() {
+		//	fmt.Println("Starting timer")
+		//	p.startTimer(providerConfig)
+		//}()
+		close(wgDone)
+	}()
+
+	// Wait until either WaitGroup is done or an error is received
+	select {
+	case <-wgDone:
+		return
+	case err := <-errorChan:
+		panic(fmt.Sprintf("failed to refresh access token: %v", err))
 	}
 }
 

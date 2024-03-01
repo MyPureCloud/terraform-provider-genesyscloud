@@ -171,35 +171,6 @@ type ProviderMeta struct {
 	Domain       string
 }
 
-func configure(version string) schema.ConfigureContextFunc {
-	return func(context context.Context, data *schema.ResourceData) (interface{}, diag.Diagnostics) {
-		// Initialize a single client if we have an access token
-		accessToken := data.Get("access_token").(string)
-		if accessToken != "" {
-			Once.Do(func() {
-				sdkConfig := platformclientv2.GetDefaultConfiguration()
-				_ = InitClientConfig(data, version, sdkConfig)
-
-				SdkClientPool = &SDKClientPool{
-					Pool: make(chan *platformclientv2.Configuration, 1),
-				}
-				SdkClientPool.Pool <- sdkConfig
-			})
-		} else {
-			// Initialize the SDK Client pool
-			err := InitSDKClientPool(data.Get("token_pool_size").(int), version, data)
-			if err != nil {
-				return nil, err
-			}
-		}
-		return &ProviderMeta{
-			Version:      version,
-			ClientConfig: platformclientv2.GetDefaultConfiguration(),
-			Domain:       getRegionDomain(data.Get("aws_region").(string)),
-		}, nil
-	}
-}
-
 func getRegionMap() map[string]string {
 	return map[string]string{
 		"dca":            "inindca.com",
@@ -239,40 +210,112 @@ func GetRegionBasePath(region string) string {
 	return "https://api." + getRegionDomain(region)
 }
 
+func configure(version string) schema.ConfigureContextFunc {
+	return func(context context.Context, data *schema.ResourceData) (interface{}, diag.Diagnostics) {
+		// Initialize a single client if we have an access token
+		accessToken := data.Get("access_token").(string)
+		if accessToken != "" {
+			Once.Do(func() {
+				sdkConfig := platformclientv2.GetDefaultConfiguration()
+				_ = InitClientConfig(data, version, sdkConfig)
+
+				SdkClientPool = &SDKClientPool{
+					Pool: make(chan *platformclientv2.Configuration, 1),
+				}
+				SdkClientPool.Pool <- sdkConfig
+			})
+		} else {
+			// Initialize the SDK Client pool
+			err := InitSDKClientPool(data.Get("token_pool_size").(int), version, data)
+			if err != nil {
+				return nil, err
+			}
+		}
+		return &ProviderMeta{
+			Version:      version,
+			ClientConfig: platformclientv2.GetDefaultConfiguration(),
+			Domain:       getRegionDomain(data.Get("aws_region").(string)),
+		}, nil
+	}
+}
+
 func InitClientConfig(data *schema.ResourceData, version string, config *platformclientv2.Configuration) diag.Diagnostics {
 	accessToken := data.Get("access_token").(string)
-	oauthclientID := data.Get("oauthclient_id").(string)
-	oauthclientSecret := data.Get("oauthclient_secret").(string)
 	basePath := GetRegionBasePath(data.Get("aws_region").(string))
 
 	config.BasePath = basePath
 
-	// Config logging
 	if data.Get("sdk_debug").(bool) {
-		config.LoggingConfiguration = &platformclientv2.LoggingConfiguration{
-			LogLevel:        platformclientv2.LTrace,
-			LogRequestBody:  true,
-			LogResponseBody: true,
-		}
-		sdkDebugFilePath := data.Get("sdk_debug_file_path").(string)
-		config.LoggingConfiguration.SetLogToConsole(false)
-		config.LoggingConfiguration.SetLogFilePath(sdkDebugFilePath)
-
-		dir, _ := filepath.Split(sdkDebugFilePath)
-		if err := os.MkdirAll(dir, os.ModePerm); os.IsExist(err) {
-			return diag.Errorf("error while creating filepath for %s: %s", sdkDebugFilePath, err)
-		}
-
-		if format := data.Get("sdk_debug_format"); format == "Json" {
-			config.LoggingConfiguration.SetLogFormat(platformclientv2.JSON)
-		} else {
-			config.LoggingConfiguration.SetLogFormat(platformclientv2.Text)
+		err := configureLogging(data, config)
+		if err != nil {
+			return diag.Errorf("%s", err)
 		}
 	}
-	log.Printf("Initialized Go SDK Client. Debug=%t", data.Get("sdk_debug").(bool))
 
-	// Configure the proxy
-	proxySet := data.Get("proxy").(*schema.Set)
+	if proxySet := data.Get("proxy").(*schema.Set); proxySet != nil {
+		configureProxy(config, proxySet)
+	}
+
+	config.AddDefaultHeader("User-Agent", "GC Terraform Provider/"+version)
+	configureRetrying(config)
+
+	// Configure authorization
+	if accessToken != "" {
+		log.Print("Setting access token set on configuration instance.")
+		config.AccessToken = accessToken
+	} else {
+		diagErr := requestToken(data, config)
+		if diagErr != nil {
+			return diagErr
+		}
+	}
+
+	log.Printf("Initialized Go SDK Client. Debug=%t", data.Get("sdk_debug").(bool))
+	return nil
+}
+
+func requestToken(data *schema.ResourceData, config *platformclientv2.Configuration) diag.Diagnostics {
+	oauthclientID := data.Get("oauthclient_id").(string)
+	oauthclientSecret := data.Get("oauthclient_secret").(string)
+
+	fmt.Println("Requesting token")
+	err := config.AuthorizeClientCredentials(oauthclientID, oauthclientSecret)
+	if err != nil {
+		return diag.Errorf("failed to authorize Genesys Cloud client credentials: %v", err)
+	}
+
+	if accessTokenDuration == 0 {
+		accessTokenDuration = config.AccessTokenExpiresIn
+	}
+
+	return nil
+}
+
+func configureLogging(data *schema.ResourceData, config *platformclientv2.Configuration) error {
+	config.LoggingConfiguration = &platformclientv2.LoggingConfiguration{
+		LogLevel:        platformclientv2.LTrace,
+		LogRequestBody:  true,
+		LogResponseBody: true,
+	}
+	sdkDebugFilePath := data.Get("sdk_debug_file_path").(string)
+	config.LoggingConfiguration.SetLogToConsole(false)
+	config.LoggingConfiguration.SetLogFilePath(sdkDebugFilePath)
+
+	dir, _ := filepath.Split(sdkDebugFilePath)
+	if err := os.MkdirAll(dir, os.ModePerm); os.IsExist(err) {
+		return fmt.Errorf("error while creating filepath for %s: %s", sdkDebugFilePath, err)
+	}
+
+	if format := data.Get("sdk_debug_format"); format == "Json" {
+		config.LoggingConfiguration.SetLogFormat(platformclientv2.JSON)
+	} else {
+		config.LoggingConfiguration.SetLogFormat(platformclientv2.Text)
+	}
+
+	return nil
+}
+
+func configureProxy(config *platformclientv2.Configuration, proxySet *schema.Set) {
 	for _, proxyObj := range proxySet.List() {
 		proxy := proxyObj.(map[string]interface{})
 
@@ -299,11 +342,10 @@ func InitClientConfig(data *schema.ResourceData, version string, config *platfor
 			config.ProxyConfiguration.Auth.UserName = username
 			config.ProxyConfiguration.Auth.Password = password
 		}
-
 	}
+}
 
-	// Configure retrying
-	config.AddDefaultHeader("User-Agent", "GC Terraform Provider/"+version)
+func configureRetrying(config *platformclientv2.Configuration) {
 	config.RetryConfiguration = &platformclientv2.RetryConfiguration{
 		RetryWaitMin: time.Second * 1,
 		RetryWaitMax: time.Second * 30,
@@ -319,53 +361,6 @@ func InitClientConfig(data *schema.ResourceData, version string, config *platfor
 			}
 		},
 	}
-
-	// Configure authorization
-	if accessToken != "" {
-		log.Print("Setting access token set on configuration instance.")
-		config.AccessToken = accessToken
-	} else {
-		err := requestToken(config, oauthclientID, oauthclientSecret)
-		if err != nil {
-			return diag.Errorf("%s", err)
-		}
-	}
-
-	return nil
-}
-
-func requestToken(config *platformclientv2.Configuration, clientId, clientSecret string) error {
-	err := config.AuthorizeClientCredentials(clientId, clientSecret)
-	if err != nil {
-		return fmt.Errorf("failed to authorize Genesys Cloud client credentials: %v", err)
-	}
-
-	oauthApi := platformclientv2.NewOAuthApiWithConfig(config)
-	oauthData, _, err := oauthApi.GetOauthClient(clientId)
-	if err != nil {
-		return fmt.Errorf("failed to get oauth client timeout: %s", err)
-	} else {
-		go func() {
-			err := refreshToken(config, *oauthData.AccessTokenValiditySeconds, clientId, clientSecret)
-			if err != nil {
-				log.Println("failed to refresh access token")
-			}
-		}()
-	}
-
-	return nil
-}
-
-func refreshToken(config *platformclientv2.Configuration, timeout int, clientId, clientSecret string) error {
-	// wait for token to expire in 30 seconds
-	time.Sleep(time.Second * time.Duration(timeout-60))
-	log.Println("Refreshing token")
-	err := requestToken(config, clientId, clientSecret)
-	if err != nil {
-		return err
-	}
-
-	return nil
 }
 
 func AuthorizeSdk() (*platformclientv2.Configuration, error) {
