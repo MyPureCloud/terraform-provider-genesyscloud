@@ -266,13 +266,18 @@ func TestUnitTfExportBuildDependsOnResources(t *testing.T) {
 		"queue resources": meta,
 	}
 
-	retrievePooledClientFn := func(ctx context.Context, a *dependentconsumers.DependentConsumerProxy, resourceKeys resourceExporter.ResourceInfo) (resourceExporter.ResourceIDMetaMap, map[string][]string, error) {
-		return resources, nil, nil
+	dependencyStruct := &resourceExporter.DependencyResource{
+		DependsMap:        nil,
+		CyclicDependsList: nil,
 	}
 
-	getAllPooledFn := func(method provider.GetCustomConfigFunc) (resourceExporter.ResourceIDMetaMap, map[string][]string, diag.Diagnostics) {
+	retrievePooledClientFn := func(ctx context.Context, a *dependentconsumers.DependentConsumerProxy, resourceKeys resourceExporter.ResourceInfo) (resourceExporter.ResourceIDMetaMap, *resourceExporter.DependencyResource, error) {
+		return resources, dependencyStruct, nil
+	}
+
+	getAllPooledFn := func(method provider.GetCustomConfigFunc) (resourceExporter.ResourceIDMetaMap, *resourceExporter.DependencyResource, diag.Diagnostics) {
 		//assert.Equal(t, targetName, name)
-		return resources, nil, nil
+		return resources, dependencyStruct, nil
 	}
 
 	dependencyProxy := &dependentconsumers.DependentConsumerProxy{
