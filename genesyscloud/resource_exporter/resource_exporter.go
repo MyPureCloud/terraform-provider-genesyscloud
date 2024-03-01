@@ -30,7 +30,7 @@ type ResourceMeta struct {
 type ResourceIDMetaMap map[string]*ResourceMeta
 
 // GetAllResourcesFunc is a method that returns all resource IDs
-type GetAllCustomResourcesFunc func(context.Context) (ResourceIDMetaMap, map[string][]string, diag.Diagnostics)
+type GetAllCustomResourcesFunc func(context.Context) (ResourceIDMetaMap, *DependencyResource, diag.Diagnostics)
 
 type GetAllResourcesFunc func(context.Context) (ResourceIDMetaMap, diag.Diagnostics)
 
@@ -79,6 +79,11 @@ type JsonEncodeRefAttr struct {
 
 	// The RefAttr nested inside the json data
 	NestedAttr string
+}
+
+type DependencyResource struct {
+	DependsMap        map[string][]string
+	CyclicDependsList []string
 }
 
 // ResourceExporter is an interface to implement for resources that can be exported

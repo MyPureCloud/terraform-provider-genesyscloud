@@ -127,6 +127,13 @@ func ResourceTfExport() *schema.Resource {
 				Default:     false,
 				ForceNew:    true,
 			},
+			"ignore_cyclic_deps": {
+				Description: "Ignore Cyclic Dependencies when building the flows and do not throw an error",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     true,
+				ForceNew:    true,
+			},
 		},
 	}
 }
