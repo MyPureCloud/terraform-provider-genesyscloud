@@ -136,6 +136,7 @@ func NewGenesysCloudResourceExporter(ctx context.Context, d *schema.ResourceData
 		addDependsOn:         d.Get("enable_flow_depends_on").(bool),
 		filterType:           filterType,
 		includeStateFile:     d.Get("include_state_file").(bool),
+		ignoreCyclicDeps:     d.Get("ignore_cyclic_deps").(bool),
 		version:              meta.(*provider.ProviderMeta).Version,
 		provider:             provider.New(meta.(*provider.ProviderMeta).Version, providerResources, providerDataSources)(),
 		d:                    d,

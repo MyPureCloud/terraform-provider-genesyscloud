@@ -183,8 +183,6 @@ func iterateDependencies(dependencies *platformclientv2.Consumedresourcesentityl
 					if err != nil {
 						return nil, nil, nil, err
 					}
-					cyclicDependsList = append(cyclicDependsList, gflow+"."+*consumer.Name+" , "+gflow+"."+resourceName)
-
 				} else {
 					cyclicDependsList = append(cyclicDependsList, gflow+"."+*consumer.Name+" , "+gflow+"."+resourceName)
 					continue
