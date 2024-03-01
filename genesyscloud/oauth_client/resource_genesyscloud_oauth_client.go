@@ -4,7 +4,8 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"terraform-provider-genesyscloud/genesyscloud"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -48,7 +49,7 @@ func createOAuthClient(ctx context.Context, d *schema.ResourceData, meta interfa
 	grantType := d.Get("authorized_grant_type").(string)
 	state := d.Get("state").(string)
 
-	sdkConfig := meta.(*genesyscloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	oauthClientProxy := getOAuthClientProxy(sdkConfig)
 
 	roles, diagErr := buildOAuthRoles(d)
@@ -103,15 +104,15 @@ func createOAuthClient(ctx context.Context, d *schema.ResourceData, meta interfa
 }
 
 func readOAuthClient(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*genesyscloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	oAuthProxy := getOAuthClientProxy(sdkConfig)
 
 	log.Printf("Reading oauth client %s", d.Id())
 
-	return genesyscloud.WithRetriesForRead(ctx, d, func() *retry.RetryError {
+	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		client, resp, getErr := oAuthProxy.getOAuthClient(ctx, d.Id())
 		if getErr != nil {
-			if genesyscloud.IsStatus404(resp) {
+			if util.IsStatus404(resp) {
 				return retry.RetryableError(fmt.Errorf("Failed to read oauth client %s: %s", d.Id(), getErr))
 			}
 			return retry.NonRetryableError(fmt.Errorf("Failed to read oauth client %s: %s", d.Id(), getErr))
@@ -155,7 +156,7 @@ func updateOAuthClient(ctx context.Context, d *schema.ResourceData, meta interfa
 	grantType := d.Get("authorized_grant_type").(string)
 	state := d.Get("state").(string)
 
-	sdkConfig := meta.(*genesyscloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	oauthClientProxy := getOAuthClientProxy(sdkConfig)
 
 	roles, diagErr := buildOAuthRoles(d)
@@ -184,7 +185,7 @@ func updateOAuthClient(ctx context.Context, d *schema.ResourceData, meta interfa
 }
 
 func deleteOAuthClient(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*genesyscloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	oauthClientProxy := getOAuthClientProxy(sdkConfig)
 
 	// check if there is a integration credential to delete
@@ -213,10 +214,10 @@ func deleteOAuthClient(ctx context.Context, d *schema.ResourceData, meta interfa
 		return diag.Errorf("Failed to delete oauth client %s: %s", name, err)
 	}
 
-	return genesyscloud.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
+	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		oauthClient, resp, err := oauthClientProxy.getOAuthClient(ctx, d.Id())
 		if err != nil {
-			if genesyscloud.IsStatus404(resp) {
+			if util.IsStatus404(resp) {
 				// OAuth client deleted
 				log.Printf("Deleted OAuth client %s", d.Id())
 				return nil

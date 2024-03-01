@@ -3,15 +3,16 @@ package telephony_providers_edges_phone
 import (
 	"context"
 	"fmt"
+	"hash/fnv"
 	"log"
 	"strconv"
 	"strings"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
@@ -33,9 +34,10 @@ type PhoneConfig struct {
 
 func getPhoneFromResourceData(ctx context.Context, pp *phoneProxy, d *schema.ResourceData) (*platformclientv2.Phone, error) {
 	phoneConfig := &platformclientv2.Phone{
-		Name:  platformclientv2.String(d.Get("name").(string)),
-		State: platformclientv2.String(d.Get("state").(string)),
-		Site:  gcloud.BuildSdkDomainEntityRef(d, "site_id"),
+		Name:       platformclientv2.String(d.Get("name").(string)),
+		State:      platformclientv2.String(d.Get("state").(string)),
+		Site:       util.BuildSdkDomainEntityRef(d, "site_id"),
+		Properties: util.BuildTelephonyProperties(d),
 		PhoneBaseSettings: &platformclientv2.Phonebasesettings{
 			Id: buildSdkPhoneBaseSettings(d, "phone_base_settings_id").Id,
 		},
@@ -48,7 +50,7 @@ func getPhoneFromResourceData(ctx context.Context, pp *phoneProxy, d *schema.Res
 	if lineBaseSettingsID == "" {
 		lineBaseSettingsID, err = getLineBaseSettingsID(ctx, pp, *phoneConfig.PhoneBaseSettings.Id)
 		if err != nil {
-			return nil, fmt.Errorf("ailed to get line base settings for %s: %s", *phoneConfig.Name, err)
+			return nil, fmt.Errorf("failed to get line base settings for %s: %s", *phoneConfig.Name, err)
 		}
 	}
 	lineBaseSettings := &platformclientv2.Domainentityref{Id: &lineBaseSettingsID}
@@ -67,18 +69,20 @@ func getPhoneFromResourceData(ctx context.Context, pp *phoneProxy, d *schema.Res
 	phoneConfig.PhoneMetaBase = phoneMetaBase
 
 	if isStandalone {
-		phoneConfig.Properties = &map[string]interface{}{
-			"phone_standalone": &map[string]interface{}{
-				"value": &map[string]interface{}{
-					"instance": true,
-				},
+		if phoneConfig.Properties == nil {
+			phoneConfig.Properties = &map[string]interface{}{}
+		}
+		phone_standalone := map[string]interface{}{
+			"value": &map[string]interface{}{
+				"instance": true,
 			},
 		}
+		(*phoneConfig.Properties)["phone_standalone"] = phone_standalone
 	}
 
 	webRtcUserId := d.Get("web_rtc_user_id")
 	if webRtcUserId != "" {
-		phoneConfig.WebRtcUser = gcloud.BuildSdkDomainEntityRef(d, "web_rtc_user_id")
+		phoneConfig.WebRtcUser = util.BuildSdkDomainEntityRef(d, "web_rtc_user_id")
 	}
 
 	return phoneConfig, nil
@@ -99,7 +103,7 @@ func assignUserToWebRtcPhone(ctx context.Context, pp *phoneProxy, userId string)
 	stationId := ""
 	stationIsAssociated := false
 
-	retryErr := gcloud.WithRetries(ctx, 60*time.Second, func() *retry.RetryError {
+	retryErr := util.WithRetries(ctx, 60*time.Second, func() *retry.RetryError {
 		station, retryable, err := pp.getStationOfUser(ctx, userId)
 		if err != nil && !retryable {
 			return retry.NonRetryableError(fmt.Errorf("error requesting stations: %s", err))
@@ -117,7 +121,7 @@ func assignUserToWebRtcPhone(ctx context.Context, pp *phoneProxy, userId string)
 		return retryErr
 	}
 
-	diagErr := gcloud.RetryWhen(gcloud.IsStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+	diagErr := util.RetryWhen(util.IsStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		if stationIsAssociated {
 			log.Printf("Disassociating user from phone station %s", stationId)
 			if resp, err := pp.unassignUserFromStation(ctx, stationId); err != nil {
@@ -214,7 +218,9 @@ func buildSdkLines(ctx context.Context, pp *phoneProxy, d *schema.ResourceData, 
 
 	// If line_addresses is not provided, phone is not standalone
 	if !ok || len(lineStringList) == 0 {
-		lineName := "line_" + *lineBaseSettings.Id + d.Get("name").(string)
+		hasher := fnv.New32()
+		hasher.Write([]byte(d.Get("name").(string)))
+		lineName := "line_" + *lineBaseSettings.Id + fmt.Sprintf("%x", hasher.Sum32())
 		line := platformclientv2.Line{
 			Name:             &lineName,
 			LineBaseSettings: lineBaseSettings,
@@ -353,7 +359,7 @@ func TestVerifyWebRtcPhoneDestroyed(state *terraform.State) error {
 		phone, resp, err := edgesAPI.GetTelephonyProvidersEdgesPhone(rs.Primary.ID)
 		if phone != nil {
 			return fmt.Errorf("phone (%s) still exists", rs.Primary.ID)
-		} else if gcloud.IsStatus404(resp) {
+		} else if util.IsStatus404(resp) {
 			// Phone not found as expected
 			continue
 		} else {
@@ -363,4 +369,48 @@ func TestVerifyWebRtcPhoneDestroyed(state *terraform.State) error {
 	}
 	//Success. Phone destroyed
 	return nil
+}
+
+func generatePhoneProperties(hardware_id string) string {
+	// A random selection of properties
+	return "properties = " + util.GenerateJsonEncodedProperties(
+		util.GenerateJsonProperty(
+			"phone_hardwareId", util.GenerateJsonObject(
+				util.GenerateJsonProperty(
+					"value", util.GenerateJsonObject(
+						util.GenerateJsonProperty("instance", strconv.Quote(hardware_id)),
+					)))),
+	)
+}
+
+func validatePhoneHardwareIdRequirements(phone *platformclientv2.Phone) (bool, error) {
+	var (
+		hardwareIdType  string
+		hardwareIdValue string
+	)
+	hardwareIdRequiredTypes := map[string]bool{
+		"mac":  true,
+		"fqdn": true,
+	}
+
+	if phone.Capabilities != nil && phone.Capabilities.HardwareIdType != nil {
+		hardwareIdType = *phone.Capabilities.HardwareIdType
+	}
+
+	if *phone.Properties != nil && (*phone.Properties)["phone_hardwareId"] != nil {
+		hardwareIdval, exists := (*phone.Properties)["phone_hardwareId"].(map[string]interface{})["value"].(map[string]interface{})["instance"]
+		if exists {
+			hardwareIdValue = hardwareIdval.(string)
+		}
+	}
+
+	_, exists := hardwareIdRequiredTypes[hardwareIdType]
+	if exists && len(hardwareIdValue) <= 0 {
+		return false, fmt.Errorf("hardwareId is required based on the phone capabilities hardwareIdType: %s", hardwareIdType)
+	}
+	if (!exists) && len(hardwareIdValue) > 0 {
+		return false, fmt.Errorf("hardwareId is not required based on the phone capabilities hardwareIdType:%s", hardwareIdType)
+	}
+	return true, nil
+
 }

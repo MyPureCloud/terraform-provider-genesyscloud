@@ -2,8 +2,7 @@ package task_management_workbin
 
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
 )
@@ -30,10 +29,10 @@ func ResourceTaskManagementWorkbin() *schema.Resource {
 	return &schema.Resource{
 		Description: `Genesys Cloud task management workbin`,
 
-		CreateContext: gcloud.CreateWithPooledClient(createTaskManagementWorkbin),
-		ReadContext:   gcloud.ReadWithPooledClient(readTaskManagementWorkbin),
-		UpdateContext: gcloud.UpdateWithPooledClient(updateTaskManagementWorkbin),
-		DeleteContext: gcloud.DeleteWithPooledClient(deleteTaskManagementWorkbin),
+		CreateContext: provider.CreateWithPooledClient(createTaskManagementWorkbin),
+		ReadContext:   provider.ReadWithPooledClient(readTaskManagementWorkbin),
+		UpdateContext: provider.UpdateWithPooledClient(updateTaskManagementWorkbin),
+		DeleteContext: provider.DeleteWithPooledClient(deleteTaskManagementWorkbin),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -63,7 +62,7 @@ func ResourceTaskManagementWorkbin() *schema.Resource {
 // TaskManagementWorkbinExporter returns the resourceExporter object used to hold the genesyscloud_task_management_workbin exporter's config
 func TaskManagementWorkbinExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
-		GetResourcesFunc: gcloud.GetAllWithPooledClient(getAllAuthTaskManagementWorkbins),
+		GetResourcesFunc: provider.GetAllWithPooledClient(getAllAuthTaskManagementWorkbins),
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			"division_id": {RefType: "genesyscloud_auth_division"},
 		},
@@ -74,7 +73,7 @@ func TaskManagementWorkbinExporter() *resourceExporter.ResourceExporter {
 func DataSourceTaskManagementWorkbin() *schema.Resource {
 	return &schema.Resource{
 		Description: `Genesys Cloud task management workbin data source. Select an task management workbin by name`,
-		ReadContext: gcloud.ReadWithPooledClient(dataSourceTaskManagementWorkbinRead),
+		ReadContext: provider.ReadWithPooledClient(dataSourceTaskManagementWorkbinRead),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},

@@ -2,11 +2,12 @@ package responsemanagement_response
 
 import (
 	"fmt"
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
-	"testing"
-
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	respmanagementLibrary "terraform-provider-genesyscloud/genesyscloud/responsemanagement_library"
+	"terraform-provider-genesyscloud/genesyscloud/util"
+	"testing"
 )
 
 func TestAccDataSourceResponsemanagementResponse(t *testing.T) {
@@ -23,21 +24,21 @@ func TestAccDataSourceResponsemanagementResponse(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
-		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Search by name
-				Config: gcloud.GenerateResponseManagementLibraryResource(
+				Config: respmanagementLibrary.GenerateResponseManagementLibraryResource(
 					libraryResource,
 					libraryName,
 				) + generateResponseManagementResponseResource(
 					responseResource,
 					name,
 					[]string{"genesyscloud_responsemanagement_library." + libraryResource + ".id"},
-					gcloud.NullValue,
-					gcloud.NullValue,
-					gcloud.NullValue,
+					util.NullValue,
+					util.NullValue,
+					util.NullValue,
 					[]string{},
 					generateTextsBlock(
 						textsContent,

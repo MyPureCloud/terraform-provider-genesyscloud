@@ -3,7 +3,7 @@ package webdeployments_deployment
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"terraform-provider-genesyscloud/genesyscloud"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
 )
@@ -20,10 +20,10 @@ func ResourceWebDeployment() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud Web Deployment",
 
-		CreateContext: genesyscloud.CreateWithPooledClient(createWebDeployment),
-		ReadContext:   genesyscloud.ReadWithPooledClient(readWebDeployment),
-		UpdateContext: genesyscloud.UpdateWithPooledClient(updateWebDeployment),
-		DeleteContext: genesyscloud.DeleteWithPooledClient(deleteWebDeployment),
+		CreateContext: provider.CreateWithPooledClient(createWebDeployment),
+		ReadContext:   provider.ReadWithPooledClient(readWebDeployment),
+		UpdateContext: provider.UpdateWithPooledClient(updateWebDeployment),
+		DeleteContext: provider.DeleteWithPooledClient(deleteWebDeployment),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -96,7 +96,7 @@ func ResourceWebDeployment() *schema.Resource {
 
 func WebDeploymentExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
-		GetResourcesFunc: genesyscloud.GetAllWithPooledClient(getAllWebDeployments),
+		GetResourcesFunc: provider.GetAllWithPooledClient(getAllWebDeployments),
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			"flow_id":          {RefType: "genesyscloud_flow"},
 			"configuration.id": {RefType: "genesyscloud_webdeployments_configuration"},
@@ -107,7 +107,7 @@ func WebDeploymentExporter() *resourceExporter.ResourceExporter {
 func DataSourceWebDeploymentsDeployment() *schema.Resource {
 	return &schema.Resource{
 		Description: "Data source for Genesys Cloud Web Deployments. Select a deployment by name.",
-		ReadContext: genesyscloud.ReadWithPooledClient(dataSourceDeploymentRead),
+		ReadContext: provider.ReadWithPooledClient(dataSourceDeploymentRead),
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Description: "The name of the deployment",

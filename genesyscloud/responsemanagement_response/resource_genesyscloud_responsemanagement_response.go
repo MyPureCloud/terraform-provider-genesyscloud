@@ -8,9 +8,10 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v121/platformclientv2"
 	"log"
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 	"time"
 )
@@ -38,16 +39,16 @@ func getAllAuthResponsemanagementResponses(ctx context.Context, clientConfig *pl
 
 // createResponsemanagementResponse is used by the responsemanagement_response resource to create Genesys cloud responsemanagement response
 func createResponsemanagementResponse(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getResponsemanagementResponseProxy(sdkConfig)
 
 	sdkResponse := getResponseFromResourceData(d)
 
-	diagErr := gcloud.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
+	diagErr := util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		log.Printf("Creating Responsemanagement Response %s", *sdkResponse.Name)
 		responsemanagementResponse, respCode, err := proxy.createResponsemanagementResponse(ctx, &sdkResponse)
 		if err != nil {
-			if gcloud.IsStatus412ByInt(respCode) {
+			if util.IsStatus412ByInt(respCode) {
 				return retry.RetryableError(fmt.Errorf("failed to create Responsemanagement Response %s: %s", *sdkResponse.Name, err))
 			}
 			return retry.NonRetryableError(fmt.Errorf("failed to create Responsemanagement Response %s: %s", *sdkResponse.Name, err))
@@ -66,15 +67,15 @@ func createResponsemanagementResponse(ctx context.Context, d *schema.ResourceDat
 
 // readResponsemanagementResponse is used by the responsemanagement_response resource to read a responsemanagement response from genesys cloud
 func readResponsemanagementResponse(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getResponsemanagementResponseProxy(sdkConfig)
 
 	log.Printf("Reading Responsemanagement Response %s", d.Id())
 
-	return gcloud.WithRetriesForRead(ctx, d, func() *retry.RetryError {
+	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		sdkResponse, respCode, getErr := proxy.getResponsemanagementResponseById(ctx, d.Id())
 		if getErr != nil {
-			if gcloud.IsStatus404ByInt(respCode) {
+			if util.IsStatus404ByInt(respCode) {
 				return retry.RetryableError(fmt.Errorf("Failed to read Responsemanagement Response %s: %s", d.Id(), getErr))
 			}
 			return retry.NonRetryableError(fmt.Errorf("Failed to read Responsemanagement Response %s: %s", d.Id(), getErr))
@@ -84,7 +85,7 @@ func readResponsemanagementResponse(ctx context.Context, d *schema.ResourceData,
 
 		resourcedata.SetNillableValue(d, "name", sdkResponse.Name)
 		if sdkResponse.Libraries != nil {
-			d.Set("library_ids", gcloud.SdkDomainEntityRefArrToList(*sdkResponse.Libraries))
+			d.Set("library_ids", util.SdkDomainEntityRefArrToList(*sdkResponse.Libraries))
 		}
 		resourcedata.SetNillableValueWithSchemaSetWithFunc(d, "texts", sdkResponse.Texts, flattenResponseTexts)
 		resourcedata.SetNillableValueWithSchemaSetWithFunc(d, "substitutions", sdkResponse.Substitutions, flattenResponseSubstitutions)
@@ -108,7 +109,7 @@ func readResponsemanagementResponse(ctx context.Context, d *schema.ResourceData,
 
 // updateResponsemanagementResponse is used by the responsemanagement_response resource to update an responsemanagement response in Genesys Cloud
 func updateResponsemanagementResponse(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getResponsemanagementResponseProxy(sdkConfig)
 
 	sdkResponse := getResponseFromResourceData(d)
@@ -125,7 +126,7 @@ func updateResponsemanagementResponse(ctx context.Context, d *schema.ResourceDat
 
 // deleteResponsemanagementResponse is used by the responsemanagement_response resource to delete an responsemanagement response from Genesys cloud
 func deleteResponsemanagementResponse(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getResponsemanagementResponseProxy(sdkConfig)
 
 	log.Printf("Deleting Responsemanagement Response")
@@ -135,10 +136,10 @@ func deleteResponsemanagementResponse(ctx context.Context, d *schema.ResourceDat
 	}
 
 	time.Sleep(30 * time.Second) //Give time for any libraries or assets to be deleted
-	return gcloud.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
+	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		_, resp, err := proxy.getResponsemanagementResponseById(ctx, d.Id())
 		if err != nil {
-			if gcloud.IsStatus404ByInt(resp) {
+			if util.IsStatus404ByInt(resp) {
 				// Responsemanagement Response deleted
 				log.Printf("Deleted Responsemanagement Response %s", d.Id())
 				return nil

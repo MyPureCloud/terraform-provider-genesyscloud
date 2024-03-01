@@ -3,7 +3,8 @@ package telephony_providers_edges_did_pool
 import (
 	"context"
 	"fmt"
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -19,7 +20,7 @@ func TestAccDataSourceDidPoolBasic(t *testing.T) {
 
 	// did pool cleanup
 	defer func() {
-		if _, err := gcloud.AuthorizeSdk(); err != nil {
+		if _, err := provider.AuthorizeSdk(); err != nil {
 			return
 		}
 		ctx := context.TODO()
@@ -27,8 +28,8 @@ func TestAccDataSourceDidPoolBasic(t *testing.T) {
 	}()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
-		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Create
@@ -36,9 +37,9 @@ func TestAccDataSourceDidPoolBasic(t *testing.T) {
 					didPoolRes,
 					didPoolStartPhoneNumber,
 					didPoolEndPhoneNumber,
-					gcloud.NullValue, // No description
-					gcloud.NullValue, // No comments
-					gcloud.NullValue, // No provider
+					util.NullValue, // No description
+					util.NullValue, // No comments
+					util.NullValue, // No provider
 				}) + generateDidPoolDataSource(didPoolDataRes,
 					didPoolStartPhoneNumber,
 					didPoolEndPhoneNumber,

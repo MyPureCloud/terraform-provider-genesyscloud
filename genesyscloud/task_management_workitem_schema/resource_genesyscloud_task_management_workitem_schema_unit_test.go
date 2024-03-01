@@ -4,9 +4,10 @@ package task_management_workitem_schema
 import (
 	"context"
 	"encoding/json"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 
 	"net/http"
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	"testing"
 
 	"github.com/google/uuid"
@@ -73,7 +74,7 @@ func TestUnitResourceWorkitemSchemaCreate(t *testing.T) {
 	defer func() { internalProxy = nil }()
 
 	ctx := context.Background()
-	gcloud := &gcloud.ProviderMeta{ClientConfig: &platformclientv2.Configuration{}}
+	gcloud := &provider.ProviderMeta{ClientConfig: &platformclientv2.Configuration{}}
 
 	//Grab our defined schema
 	resourceSchema := ResourceTaskManagementWorkitemSchema().Schema
@@ -134,7 +135,7 @@ func TestUnitResourceWorkitemSchemaRead(t *testing.T) {
 	defer func() { internalProxy = nil }()
 
 	ctx := context.Background()
-	gcloud := &gcloud.ProviderMeta{ClientConfig: &platformclientv2.Configuration{}}
+	gcloud := &provider.ProviderMeta{ClientConfig: &platformclientv2.Configuration{}}
 
 	//Grab our defined schema
 	resourceSchema := ResourceTaskManagementWorkitemSchema().Schema
@@ -202,7 +203,7 @@ func TestUnitResourceWorkitemSchemaDelete(t *testing.T) {
 	defer func() { internalProxy = nil }()
 
 	ctx := context.Background()
-	gcloud := &gcloud.ProviderMeta{ClientConfig: &platformclientv2.Configuration{}}
+	gcloud := &provider.ProviderMeta{ClientConfig: &platformclientv2.Configuration{}}
 
 	//Grab our defined schema
 	resourceSchema := ResourceTaskManagementWorkitemSchema().Schema
@@ -280,7 +281,7 @@ func TestUnitResourceWorkitemSchemaUpdate(t *testing.T) {
 	defer func() { internalProxy = nil }()
 
 	ctx := context.Background()
-	gcloud := &gcloud.ProviderMeta{ClientConfig: &platformclientv2.Configuration{}}
+	gcloud := &provider.ProviderMeta{ClientConfig: &platformclientv2.Configuration{}}
 
 	//Grab our defined schema
 	resourceSchema := ResourceTaskManagementWorkitemSchema().Schema
@@ -315,5 +316,5 @@ func buildWorkitemSchemaResourceMap(tId string, tName string, tDescription strin
 }
 
 func equivalentJsons(json1, json2 string) bool {
-	return gcloud.EquivalentJsons(json1, json2)
+	return util.EquivalentJsons(json1, json2)
 }

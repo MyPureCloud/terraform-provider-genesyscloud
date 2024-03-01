@@ -5,6 +5,8 @@ import (
 	"log"
 	"strings"
 	"sync"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 
 	"terraform-provider-genesyscloud/genesyscloud/util/fileserver"
@@ -52,15 +54,15 @@ func runJourneyActionMapTestCase(t *testing.T, testCaseName string) {
 	setupJourneyActionMap(t, testCaseName)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps:             testrunner.GenerateResourceTestSteps(resourceName, testCaseName, nil),
 		CheckDestroy:      testVerifyJourneyActionMapsDestroyed,
 	})
 }
 
 func setupJourneyActionMap(t *testing.T, testCaseName string) {
-	_, err := AuthorizeSdk()
+	_, err := provider.AuthorizeSdk()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -103,6 +105,33 @@ func cleanupJourneyActionMaps(idPrefix string) {
 	}
 }
 
+func cleanupArchitectScheduleGroups(idPrefix string) {
+	architectApi := platformclientv2.NewArchitectApi()
+
+	for pageNum := 1; ; pageNum++ {
+		const pageSize = 100
+		architectScheduleGroups, _, getErr := architectApi.GetArchitectSchedulegroups(pageNum, pageSize, "", "", "", "", nil)
+		if getErr != nil {
+			return
+		}
+
+		if architectScheduleGroups.Entities == nil || len(*architectScheduleGroups.Entities) == 0 {
+			break
+		}
+
+		for _, scheduleGroup := range *architectScheduleGroups.Entities {
+			if scheduleGroup.Name != nil && strings.HasPrefix(*scheduleGroup.Name, idPrefix) {
+				_, delErr := architectApi.DeleteArchitectSchedulegroup(*scheduleGroup.Id)
+				if delErr != nil {
+					diag.Errorf("failed to delete architect schedule group %s (%s): %s", *scheduleGroup.Id, *scheduleGroup.Name, delErr)
+					return
+				}
+				log.Printf("Deleted architect schedule group %s (%s)", *scheduleGroup.Id, *scheduleGroup.Name)
+			}
+		}
+	}
+}
+
 func testVerifyJourneyActionMapsDestroyed(state *terraform.State) error {
 	journeyApi := platformclientv2.NewJourneyApiWithConfig(sdkConfig)
 	for _, rs := range state.RootModule().Resources {
@@ -115,7 +144,7 @@ func testVerifyJourneyActionMapsDestroyed(state *terraform.State) error {
 			return fmt.Errorf("journey action map (%s) still exists", rs.Primary.ID)
 		}
 
-		if IsStatus404(resp) {
+		if util.IsStatus404(resp) {
 			// Journey action map not found as expected
 			continue
 		}
@@ -125,4 +154,31 @@ func testVerifyJourneyActionMapsDestroyed(state *terraform.State) error {
 	}
 	// Success. All Journey action map destroyed
 	return nil
+}
+
+func cleanupFlows(idPrefix string) {
+	architectApi := platformclientv2.NewArchitectApiWithConfig(sdkConfig)
+
+	for pageNum := 1; ; pageNum++ {
+		const pageSize = 50
+		flows, _, getErr := architectApi.GetFlows(nil, pageNum, pageSize, "", "", nil, "", "", "", "", "", "", "", "", false, true, "", "", nil)
+		if getErr != nil {
+			return
+		}
+
+		if flows.Entities == nil || len(*flows.Entities) == 0 {
+			break
+		}
+
+		for _, flow := range *flows.Entities {
+			if flow.Name != nil && strings.HasPrefix(*flow.Name, idPrefix) {
+				_, delErr := architectApi.DeleteFlow(*flow.Id)
+				if delErr != nil {
+					diag.Errorf("failed to delete flow %s (%s): %s", *flow.Id, *flow.Name, delErr)
+					return
+				}
+				log.Printf("Deleted flow %s (%s)", *flow.Id, *flow.Name)
+			}
+		}
+	}
 }

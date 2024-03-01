@@ -5,9 +5,9 @@ import (
 	"math/rand"
 	"strconv"
 	outboundCampaign "terraform-provider-genesyscloud/genesyscloud/outbound_campaign"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
-
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -63,8 +63,8 @@ func TestAccDataSourceOutboundCampaignRule(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
-		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				Config: fmt.Sprintf(`
@@ -75,8 +75,8 @@ data "genesyscloud_auth_division_home" "home" {}
 					generateOutboundCampaignRule(
 						campaignRuleResourceId,
 						campaignRuleName,
-						gcloud.FalseValue,
-						gcloud.FalseValue,
+						util.FalseValue,
+						util.FalseValue,
 						generateCampaignRuleEntity(
 							[]string{"genesyscloud_outbound_campaign." + campaign1ResourceId + ".id"},
 							[]string{},
@@ -96,7 +96,7 @@ data "genesyscloud_auth_division_home" "home" {}
 							"turnOnCampaign",
 							[]string{"genesyscloud_outbound_campaign." + campaign2ResourceId + ".id"},
 							[]string{},
-							gcloud.FalseValue,
+							util.FalseValue,
 							generateCampaignRuleParameters(
 								"lessThan",
 								"0.5",

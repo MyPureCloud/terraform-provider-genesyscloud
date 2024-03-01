@@ -2,7 +2,8 @@ package architect_emergencygroup
 
 import (
 	"fmt"
-	"terraform-provider-genesyscloud/genesyscloud"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 
 	"github.com/google/uuid"
@@ -17,15 +18,15 @@ func TestAccDataSourceEmergencyGroup(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { genesyscloud.TestAccPreCheck(t) },
-		ProviderFactories: genesyscloud.GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				Config: GenerateArchitectEmergencyGroupResource(emergencyGroupResourceID,
 					name,
-					genesyscloud.NullValue,
+					util.NullValue,
 					"",
-					genesyscloud.FalseValue,
+					util.FalseValue,
 					"",
 				) + generateEmergencyGroupDataSource(
 					emergencyGroupDataSourceID,

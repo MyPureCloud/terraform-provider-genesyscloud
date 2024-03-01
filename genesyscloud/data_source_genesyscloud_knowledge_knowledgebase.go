@@ -3,6 +3,8 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -16,7 +18,7 @@ import (
 func dataSourceKnowledgeKnowledgebase() *schema.Resource {
 	return &schema.Resource{
 		Description: "Data source for Genesys Cloud Knowledge Base. Select a knowledge base by name.",
-		ReadContext: ReadWithPooledClient(dataSourceKnowledgeKnowledgebaseRead),
+		ReadContext: provider.ReadWithPooledClient(dataSourceKnowledgeKnowledgebaseRead),
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Description: "Knowledge base name",
@@ -34,14 +36,14 @@ func dataSourceKnowledgeKnowledgebase() *schema.Resource {
 }
 
 func dataSourceKnowledgeKnowledgebaseRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	sdkConfig := m.(*ProviderMeta).ClientConfig
+	sdkConfig := m.(*provider.ProviderMeta).ClientConfig
 	knowledgeAPI := platformclientv2.NewKnowledgeApiWithConfig(sdkConfig)
 
 	name := d.Get("name").(string)
 	coreLanguage := d.Get("core_language").(string)
 
 	// Find first non-deleted knowledge base by name. Retry in case new knowledge base is not yet indexed by search
-	return WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
+	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
 		const pageSize = 100
 		publishedKnowledgeBases, _, getPublishedErr := knowledgeAPI.GetKnowledgeKnowledgebases("", "", "", fmt.Sprintf("%v", pageSize), name, coreLanguage, true, "", "")
 		unpublishedKnowledgeBases, _, getUnpublishedErr := knowledgeAPI.GetKnowledgeKnowledgebases("", "", "", fmt.Sprintf("%v", pageSize), name, coreLanguage, false, "", "")

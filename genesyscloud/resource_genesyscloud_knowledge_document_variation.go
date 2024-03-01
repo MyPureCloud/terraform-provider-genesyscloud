@@ -6,6 +6,8 @@ import (
 	"log"
 	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -272,7 +274,7 @@ func getAllKnowledgeDocumentVariations(_ context.Context, clientConfig *platform
 
 func KnowledgeDocumentVariationExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
-		GetResourcesFunc: GetAllWithPooledClient(getAllKnowledgeDocumentVariations),
+		GetResourcesFunc: provider.GetAllWithPooledClient(getAllKnowledgeDocumentVariations),
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			"knowledge_base_id":     {RefType: "genesyscloud_knowledge_knowledgebase"},
 			"knowledge_document_id": {RefType: "genesyscloud_knowledge_document"},
@@ -284,10 +286,10 @@ func ResourceKnowledgeDocumentVariation() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud Knowledge Document Variation",
 
-		CreateContext: CreateWithPooledClient(createKnowledgeDocumentVariation),
-		ReadContext:   ReadWithPooledClient(readKnowledgeDocumentVariation),
-		UpdateContext: UpdateWithPooledClient(updateKnowledgeDocumentVariation),
-		DeleteContext: DeleteWithPooledClient(deleteKnowledgeDocumentVariation),
+		CreateContext: provider.CreateWithPooledClient(createKnowledgeDocumentVariation),
+		ReadContext:   provider.ReadWithPooledClient(readKnowledgeDocumentVariation),
+		UpdateContext: provider.UpdateWithPooledClient(updateKnowledgeDocumentVariation),
+		DeleteContext: provider.DeleteWithPooledClient(deleteKnowledgeDocumentVariation),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -329,7 +331,7 @@ func createKnowledgeDocumentVariation(ctx context.Context, d *schema.ResourceDat
 		published = publishedIn.(bool)
 	}
 
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	knowledgeAPI := platformclientv2.NewKnowledgeApiWithConfig(sdkConfig)
 
 	knowledgeDocumentVariationRequest := buildKnowledgeDocumentVariation(knowledgeDocumentVariation)
@@ -364,7 +366,7 @@ func readKnowledgeDocumentVariation(ctx context.Context, d *schema.ResourceData,
 	documentResourceId := id[2]
 	knowledgeDocumentId := strings.Split(documentResourceId, ",")[0]
 
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	knowledgeAPI := platformclientv2.NewKnowledgeApiWithConfig(sdkConfig)
 
 	documentState := ""
@@ -379,7 +381,7 @@ func readKnowledgeDocumentVariation(ctx context.Context, d *schema.ResourceData,
 	}
 
 	log.Printf("Reading knowledge document variation %s", documentVariationId)
-	return WithRetriesForRead(ctx, d, func() *retry.RetryError {
+	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		var knowledgeDocumentVariation *platformclientv2.Documentvariation
 		/*
 		 * If the published flag is not set, get both published and draft variation and choose the most recent
@@ -392,12 +394,12 @@ func readKnowledgeDocumentVariation(ctx context.Context, d *schema.ResourceData,
 
 			if publishedErr != nil {
 				// Published version may or may not exist, so if status is 404, sleep and retry once and then move on to retrieve draft variation.
-				if IsStatus404(resp) {
+				if util.IsStatus404(resp) {
 					time.Sleep(2 * time.Second)
 					retryVariation, retryResp, retryErr := knowledgeAPI.GetKnowledgeKnowledgebaseDocumentVariation(documentVariationId, knowledgeDocumentId, knowledgeBaseId, "Published")
 
 					if retryErr != nil {
-						if !IsStatus404(retryResp) {
+						if !util.IsStatus404(retryResp) {
 							log.Printf("%s", retryErr)
 							return retry.NonRetryableError(fmt.Errorf("Failed to read knowledge document variation %s: %s", documentVariationId, retryErr))
 						}
@@ -413,7 +415,7 @@ func readKnowledgeDocumentVariation(ctx context.Context, d *schema.ResourceData,
 
 			draftVariation, resp, draftErr := knowledgeAPI.GetKnowledgeKnowledgebaseDocumentVariation(documentVariationId, knowledgeDocumentId, knowledgeBaseId, "Draft")
 			if draftErr != nil {
-				if IsStatus404(resp) {
+				if util.IsStatus404(resp) {
 					return retry.RetryableError(fmt.Errorf("Failed to read knowledge document variation %s: %s", documentVariationId, draftErr))
 				}
 				log.Printf("%s", draftErr)
@@ -428,7 +430,7 @@ func readKnowledgeDocumentVariation(ctx context.Context, d *schema.ResourceData,
 		} else {
 			variation, resp, getErr := knowledgeAPI.GetKnowledgeKnowledgebaseDocumentVariation(documentVariationId, knowledgeDocumentId, knowledgeBaseId, documentState)
 			if getErr != nil {
-				if IsStatus404(resp) {
+				if util.IsStatus404(resp) {
 					return retry.RetryableError(fmt.Errorf("Failed to read knowledge document variation %s: %s", documentVariationId, getErr))
 				}
 				log.Printf("%s", getErr)
@@ -470,11 +472,11 @@ func updateKnowledgeDocumentVariation(ctx context.Context, d *schema.ResourceDat
 		published = publishedIn.(bool)
 	}
 
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	knowledgeAPI := platformclientv2.NewKnowledgeApiWithConfig(sdkConfig)
 
 	log.Printf("Updating knowledge document variation %s", documentVariationId)
-	diagErr := RetryWhen(IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+	diagErr := util.RetryWhen(util.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		// Get current knowledge document variation version
 		_, resp, getErr := knowledgeAPI.GetKnowledgeKnowledgebaseDocumentVariation(documentVariationId, knowledgeDocumentId, knowledgeBaseId, "Draft")
 		if getErr != nil {
@@ -513,7 +515,7 @@ func deleteKnowledgeDocumentVariation(ctx context.Context, d *schema.ResourceDat
 	documentResourceId := id[2]
 	knowledgeDocumentId := strings.Split(documentResourceId, ",")[0]
 
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	knowledgeAPI := platformclientv2.NewKnowledgeApiWithConfig(sdkConfig)
 
 	published := false
@@ -549,11 +551,11 @@ func deleteKnowledgeDocumentVariation(ctx context.Context, d *schema.ResourceDat
 		}
 	}
 
-	return WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
+	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		// The DELETE resource for knowledge document variations only removes draft variations. So set the documentState param to "Draft" for the check
 		_, resp, err := knowledgeAPI.GetKnowledgeKnowledgebaseDocumentVariation(documentVariationId, knowledgeDocumentId, knowledgeBaseId, "Draft")
 		if err != nil {
-			if IsStatus404(resp) {
+			if util.IsStatus404(resp) {
 				// Knowledge base deleted
 				log.Printf("Deleted knowledge document variation %s", documentVariationId)
 				return nil

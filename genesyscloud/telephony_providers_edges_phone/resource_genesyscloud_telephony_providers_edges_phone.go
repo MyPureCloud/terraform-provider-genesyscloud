@@ -5,12 +5,13 @@ import (
 	"fmt"
 	"log"
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -35,16 +36,19 @@ func getAllPhones(ctx context.Context, sdkConfig *platformclientv2.Configuration
 }
 
 func createPhone(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	pp := getPhoneProxy(sdkConfig)
 
 	phoneConfig, err := getPhoneFromResourceData(ctx, pp, d)
 	if err != nil {
 		return diag.Errorf("failed to create phone %v: %v", *phoneConfig.Name, err)
 	}
-
+	_, err = validatePhoneHardwareIdRequirements(phoneConfig)
+	if err != nil {
+		return diag.Errorf("failed to create phone %v: %v", *phoneConfig.Name, err)
+	}
 	log.Printf("Creating phone %s", *phoneConfig.Name)
-	diagErr := gcloud.RetryWhen(gcloud.IsStatus404, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+	diagErr := util.RetryWhen(util.IsStatus404, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		phone, resp, err := pp.createPhone(ctx, phoneConfig)
 		log.Printf("Completed call to create phone name %s with status code %d, correlation id %s and err %s", *phoneConfig.Name, resp.StatusCode, resp.CorrelationID, err)
 		if err != nil {
@@ -72,14 +76,14 @@ func createPhone(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 }
 
 func readPhone(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	pp := getPhoneProxy(sdkConfig)
 
 	log.Printf("Reading phone %s", d.Id())
-	return gcloud.WithRetriesForRead(ctx, d, func() *retry.RetryError {
+	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		currentPhone, resp, getErr := pp.getPhoneById(ctx, d.Id())
 		if getErr != nil {
-			if gcloud.IsStatus404(resp) {
+			if util.IsStatus404(resp) {
 				return retry.RetryableError(fmt.Errorf("failed to read phone %s: %s", d.Id(), getErr))
 			}
 			return retry.NonRetryableError(fmt.Errorf("failed to read phone %s: %s", d.Id(), getErr))
@@ -104,6 +108,15 @@ func readPhone(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 			d.Set("line_addresses", flattenPhoneLines(currentPhone.Lines))
 		}
 
+		d.Set("properties", nil)
+		if currentPhone.Properties != nil {
+			properties, err := util.FlattenTelephonyProperties(currentPhone.Properties)
+			if err != nil {
+				return retry.NonRetryableError(fmt.Errorf("%v", err))
+			}
+			d.Set("properties", properties)
+		}
+
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "capabilities", currentPhone.Capabilities, flattenPhoneCapabilities)
 
 		log.Printf("Read phone %s %s", d.Id(), *currentPhone.Name)
@@ -112,14 +125,17 @@ func readPhone(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 }
 
 func updatePhone(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	pp := getPhoneProxy(sdkConfig)
 
 	phoneConfig, err := getPhoneFromResourceData(ctx, pp, d)
 	if err != nil {
 		return diag.Errorf("failed to updated phone %v: %v", *phoneConfig.Name, err)
 	}
-
+	_, err = validatePhoneHardwareIdRequirements(phoneConfig)
+	if err != nil {
+		return diag.Errorf("failed to updated phone %v: %v", *phoneConfig.Name, err)
+	}
 	log.Printf("Updating phone %s", *phoneConfig.Name)
 	phone, err := pp.updatePhone(ctx, d.Id(), phoneConfig)
 	if err != nil {
@@ -142,7 +158,7 @@ func updatePhone(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 }
 
 func deletePhone(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	pp := getPhoneProxy(sdkConfig)
 
 	log.Printf("Deleting Phone")
@@ -158,10 +174,10 @@ func deletePhone(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		return diag.Errorf("failed to delete phone: %s", err)
 	}
 
-	return gcloud.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
+	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		phone, resp, err := pp.getPhoneById(ctx, d.Id())
 		if err != nil {
-			if gcloud.IsStatus404(resp) {
+			if util.IsStatus404(resp) {
 				// Phone deleted
 				log.Printf("Deleted Phone %s", d.Id())
 				return nil

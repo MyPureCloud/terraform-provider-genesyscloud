@@ -3,8 +3,7 @@ package outbound_campaignrule
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
 )
@@ -150,10 +149,10 @@ func ResourceOutboundCampaignrule() *schema.Resource {
 	return &schema.Resource{
 		Description: `Genesys Cloud outbound campaign rule`,
 
-		CreateContext: gcloud.CreateWithPooledClient(createOutboundCampaignRule),
-		ReadContext:   gcloud.ReadWithPooledClient(readOutboundCampaignRule),
-		UpdateContext: gcloud.UpdateWithPooledClient(updateOutboundCampaignRule),
-		DeleteContext: gcloud.DeleteWithPooledClient(deleteOutboundCampaignRule),
+		CreateContext: provider.CreateWithPooledClient(createOutboundCampaignRule),
+		ReadContext:   provider.ReadWithPooledClient(readOutboundCampaignRule),
+		UpdateContext: provider.UpdateWithPooledClient(updateOutboundCampaignRule),
+		DeleteContext: provider.DeleteWithPooledClient(deleteOutboundCampaignRule),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -203,7 +202,7 @@ func ResourceOutboundCampaignrule() *schema.Resource {
 // OutboundCampaignruleExporter returns the resourceExporter object used to hold the genesyscloud_outbound_campaignrule exporter's config
 func OutboundCampaignruleExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
-		GetResourcesFunc: gcloud.GetAllWithPooledClient(getAllAuthCampaignRules),
+		GetResourcesFunc: provider.GetAllWithPooledClient(getAllAuthCampaignRules),
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			`campaign_rule_actions.campaign_rule_action_entities.campaign_ids`: {
 				RefType: "genesyscloud_outbound_campaign",
@@ -225,7 +224,7 @@ func OutboundCampaignruleExporter() *resourceExporter.ResourceExporter {
 func DataSourceOutboundCampaignrule() *schema.Resource {
 	return &schema.Resource{
 		Description: `Genesys Cloud outbound campaign rule data source. Select a campaign rule by name`,
-		ReadContext: gcloud.ReadWithPooledClient(dataSourceOutboundCampaignruleRead),
+		ReadContext: provider.ReadWithPooledClient(dataSourceOutboundCampaignruleRead),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},

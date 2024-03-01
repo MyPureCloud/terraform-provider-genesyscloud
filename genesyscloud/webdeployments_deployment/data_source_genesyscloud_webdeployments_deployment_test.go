@@ -2,7 +2,8 @@ package webdeployments_deployment
 
 import (
 	"fmt"
-	"terraform-provider-genesyscloud/genesyscloud"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 
 	"github.com/google/uuid"
@@ -11,14 +12,14 @@ import (
 
 func TestAccDataSourceWebDeploymentsDeployment(t *testing.T) {
 	var (
-		deploymentName        = "BasicDeployment" + genesyscloud.RandString(8)
+		deploymentName        = "BasicDeployment" + util.RandString(8)
 		deploymentDescription = "Basic Deployment description"
 		fullResourceName      = "genesyscloud_webdeployments_deployment.basic"
 		fullDataSourceName    = "data.genesyscloud_webdeployments_deployment.basic-data"
 	)
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { genesyscloud.TestAccPreCheck(t) },
-		ProviderFactories: genesyscloud.GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Search by name

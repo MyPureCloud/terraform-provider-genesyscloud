@@ -1,12 +1,11 @@
 package integration_custom_auth_action
 
 import (
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
-	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
-	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
-
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
 )
 
 /*
@@ -82,10 +81,10 @@ func ResourceIntegrationCustomAuthAction() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud Integration Actions. See this page for detailed information on configuring Actions: https://help.mypurecloud.com/articles/add-configuration-custom-actions-integrations/",
 
-		CreateContext: gcloud.CreateWithPooledClient(createIntegrationCustomAuthAction),
-		ReadContext:   gcloud.ReadWithPooledClient(readIntegrationCustomAuthAction),
-		UpdateContext: gcloud.UpdateWithPooledClient(updateIntegrationCustomAuthAction),
-		DeleteContext: gcloud.DeleteWithPooledClient(deleteIntegrationCustomAuthAction),
+		CreateContext: provider.CreateWithPooledClient(createIntegrationCustomAuthAction),
+		ReadContext:   provider.ReadWithPooledClient(readIntegrationCustomAuthAction),
+		UpdateContext: provider.UpdateWithPooledClient(updateIntegrationCustomAuthAction),
+		DeleteContext: provider.DeleteWithPooledClient(deleteIntegrationCustomAuthAction),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -126,7 +125,7 @@ func ResourceIntegrationCustomAuthAction() *schema.Resource {
 // IntegrationCustomAuthActionExporter returns the resourceExporter object used to hold the genesyscloud_integration_custom_auth_action exporter's config
 func IntegrationCustomAuthActionExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
-		GetResourcesFunc: gcloud.GetAllWithPooledClient(getAllModifiedCustomAuthActions),
+		GetResourcesFunc: provider.GetAllWithPooledClient(getAllModifiedCustomAuthActions),
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			"integration_id": {RefType: "genesyscloud_integration"},
 		},
@@ -137,7 +136,7 @@ func IntegrationCustomAuthActionExporter() *resourceExporter.ResourceExporter {
 func DataSourceIntegrationCustomAuthAction() *schema.Resource {
 	return &schema.Resource{
 		Description: "Data source for Genesys Cloud integration custom auth action. Select the custom auth action by its associated integration's id.",
-		ReadContext: gcloud.ReadWithPooledClient(dataSourceIntegrationCustomAuthActionRead),
+		ReadContext: provider.ReadWithPooledClient(dataSourceIntegrationCustomAuthActionRead),
 		Schema: map[string]*schema.Schema{
 			"parent_integration_id": {
 				Description: "The id of the integration associated with the custom auth action",

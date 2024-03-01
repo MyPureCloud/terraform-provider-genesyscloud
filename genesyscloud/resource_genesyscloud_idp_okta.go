@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -24,7 +26,7 @@ func getAllIdpOkta(_ context.Context, clientConfig *platformclientv2.Configurati
 
 	_, resp, getErr := idpAPI.GetIdentityprovidersOkta()
 	if getErr != nil {
-		if IsStatus404(resp) {
+		if util.IsStatus404(resp) {
 			// Don't export if config doesn't exist
 			return resources, nil
 		}
@@ -37,7 +39,7 @@ func getAllIdpOkta(_ context.Context, clientConfig *platformclientv2.Configurati
 
 func IdpOktaExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
-		GetResourcesFunc: GetAllWithPooledClient(getAllIdpOkta),
+		GetResourcesFunc: provider.GetAllWithPooledClient(getAllIdpOkta),
 		RefAttrs:         map[string]*resourceExporter.RefAttrSettings{}, // No references
 	}
 }
@@ -46,10 +48,10 @@ func ResourceIdpOkta() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud Single Sign-on Okta Identity Provider. See this page for detailed configuration instructions: https://help.mypurecloud.com/articles/add-okta-as-a-single-sign-on-provider/",
 
-		CreateContext: CreateWithPooledClient(createIdpOkta),
-		ReadContext:   ReadWithPooledClient(readIdpOkta),
-		UpdateContext: UpdateWithPooledClient(updateIdpOkta),
-		DeleteContext: DeleteWithPooledClient(deleteIdpOkta),
+		CreateContext: provider.CreateWithPooledClient(createIdpOkta),
+		ReadContext:   provider.ReadWithPooledClient(readIdpOkta),
+		UpdateContext: provider.UpdateWithPooledClient(updateIdpOkta),
+		DeleteContext: provider.DeleteWithPooledClient(deleteIdpOkta),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -92,15 +94,15 @@ func createIdpOkta(ctx context.Context, d *schema.ResourceData, meta interface{}
 }
 
 func readIdpOkta(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	idpAPI := platformclientv2.NewIdentityProviderApiWithConfig(sdkConfig)
 
 	log.Printf("Reading IDP Okta")
 
-	return WithRetriesForReadCustomTimeout(ctx, d.Timeout(schema.TimeoutRead), d, func() *retry.RetryError {
+	return util.WithRetriesForReadCustomTimeout(ctx, d.Timeout(schema.TimeoutRead), d, func() *retry.RetryError {
 		okta, resp, getErr := idpAPI.GetIdentityprovidersOkta()
 		if getErr != nil {
-			if IsStatus404(resp) {
+			if util.IsStatus404(resp) {
 				createIdpOkta(ctx, d, meta)
 				return retry.RetryableError(fmt.Errorf("Failed to read IDP Okta: %s", getErr))
 			}
@@ -144,7 +146,7 @@ func updateIdpOkta(ctx context.Context, d *schema.ResourceData, meta interface{}
 	targetUri := d.Get("target_uri").(string)
 	disabled := d.Get("disabled").(bool)
 
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	idpAPI := platformclientv2.NewIdentityProviderApiWithConfig(sdkConfig)
 
 	log.Printf("Updating IDP Okta")
@@ -172,7 +174,7 @@ func updateIdpOkta(ctx context.Context, d *schema.ResourceData, meta interface{}
 }
 
 func deleteIdpOkta(ctx context.Context, _ *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	idpAPI := platformclientv2.NewIdentityProviderApiWithConfig(sdkConfig)
 
 	log.Printf("Deleting IDP Okta")
@@ -181,10 +183,10 @@ func deleteIdpOkta(ctx context.Context, _ *schema.ResourceData, meta interface{}
 		return diag.Errorf("Failed to delete IDP Okta: %s", err)
 	}
 
-	return WithRetries(ctx, 60*time.Second, func() *retry.RetryError {
+	return util.WithRetries(ctx, 60*time.Second, func() *retry.RetryError {
 		_, resp, err := idpAPI.GetIdentityprovidersOkta()
 		if err != nil {
-			if IsStatus404(resp) {
+			if util.IsStatus404(resp) {
 				// IDP Okta deleted
 				log.Printf("Deleted IDP Okta")
 				return nil

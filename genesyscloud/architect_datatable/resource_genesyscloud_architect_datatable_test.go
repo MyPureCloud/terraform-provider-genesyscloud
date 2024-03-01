@@ -7,7 +7,8 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
-	"terraform-provider-genesyscloud/genesyscloud"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 
 	"github.com/google/uuid"
@@ -45,8 +46,8 @@ func TestAccResourceArchitectDatatable(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { genesyscloud.TestAccPreCheck(t) },
-		ProviderFactories: genesyscloud.GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Create architect_datatable with a key and one other property
@@ -54,8 +55,8 @@ func TestAccResourceArchitectDatatable(t *testing.T) {
 					tableResource1,
 					tableName1,
 					strconv.Quote(tableDesc1),
-					generateArchitectDatatableProperty(propBool, typeBool, genesyscloud.NullValue, genesyscloud.NullValue),
-					generateArchitectDatatableProperty(propNameKey, typeString, genesyscloud.NullValue, genesyscloud.NullValue),
+					generateArchitectDatatableProperty(propBool, typeBool, util.NullValue, util.NullValue),
+					generateArchitectDatatableProperty(propNameKey, typeString, util.NullValue, util.NullValue),
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_architect_datatable."+tableResource1, "name", tableName1),
@@ -72,7 +73,7 @@ func TestAccResourceArchitectDatatable(t *testing.T) {
 					tableResource1,
 					tableName2,
 					strconv.Quote(tableDesc2),
-					generateArchitectDatatableProperty(propNameKey, typeString, strconv.Quote(propTitleKey), genesyscloud.NullValue),
+					generateArchitectDatatableProperty(propNameKey, typeString, strconv.Quote(propTitleKey), util.NullValue),
 					generateArchitectDatatableProperty(propInt, typeInt, strconv.Quote(propTitleInt), strconv.Quote(defInt1)),
 					generateArchitectDatatableProperty(propBool, typeBool, strconv.Quote(propTitleBool), strconv.Quote(defBool1)),
 					generateArchitectDatatableProperty(propNum, typeNum, strconv.Quote(propTitleNum), strconv.Quote(defNum1)),
@@ -118,7 +119,7 @@ func testVerifyDatatablesDestroyed(state *terraform.State) error {
 		datatable, resp, err := sdkGetArchitectDatatable(rs.Primary.ID, "", archAPI)
 		if datatable != nil {
 			return fmt.Errorf("Datatable (%s) still exists", rs.Primary.ID)
-		} else if genesyscloud.IsStatus404(resp) {
+		} else if util.IsStatus404(resp) {
 			// Datatable not found as expected
 			continue
 		} else {

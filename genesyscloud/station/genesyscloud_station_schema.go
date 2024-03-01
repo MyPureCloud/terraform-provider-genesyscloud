@@ -2,8 +2,7 @@ package station
 
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
 )
 
@@ -18,7 +17,7 @@ func SetRegistrar(l registrar.Registrar) {
 func DataSourceStation() *schema.Resource {
 	return &schema.Resource{
 		Description: "Data source for Genesys Cloud Stations. Select a station by name.",
-		ReadContext: gcloud.ReadWithPooledClient(dataSourceStationRead),
+		ReadContext: provider.ReadWithPooledClient(dataSourceStationRead),
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Description: "Station name.",
