@@ -113,10 +113,31 @@ func updateFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	}
 
 	s3Uploader := files.NewS3Uploader(reader, nil, substitutions, headers, "PUT", presignedUrl)
-	_, err = s3Uploader.Upload()
+	fileInfo, err := os.Stat(filePath)
 	if err != nil {
+		log.Printf("failed to read file information. Path: '%s' Error: %v", filePath, err)
+	}
+
+	uploadErr := util.WithRetries(ctx, 20*time.Second, func() *retry.RetryError {
+		uploadStartTime := time.Now()
+		_, err = s3Uploader.Upload()
+		uploadDuration := time.Since(uploadStartTime)
+		if err == nil {
+			return nil
+		}
+		// Retrying when encountering the error from DEVTOOLING-425
+		if strings.Contains(fmt.Sprintf("%v", err), "An existing connection was forcibly closed by the remote host") {
+			log.Printf("failed to upload file %s after %d nanoseconds (%v seconds). Error: %v", filePath, uploadDuration.Nanoseconds(), uploadDuration.Seconds(), err)
+			if fileInfo != nil {
+				log.Printf("size of file '%s': %v bytes", filePath, fileInfo.Size())
+			}
+			return retry.RetryableError(err)
+		}
+		return retry.NonRetryableError(err)
+	})
+	if uploadErr != nil {
 		setFileContentHashToNil(d)
-		return diag.Errorf(err.Error())
+		return diag.FromErr(err)
 	}
 
 	// Pre-define here before entering retry function, otherwise it will be overwritten
