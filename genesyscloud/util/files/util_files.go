@@ -25,6 +25,8 @@ type S3Uploader struct {
 	httpMethod    string
 	presignedUrl  string
 	client        http.Client
+
+	UploadFunc func(s *S3Uploader) ([]byte, error)
 }
 
 func NewS3Uploader(reader io.Reader, formData map[string]io.Reader, substitutions map[string]interface{}, headers map[string]string, method, presignedUrl string) *S3Uploader {
@@ -41,6 +43,8 @@ func NewS3Uploader(reader io.Reader, formData map[string]io.Reader, substitution
 		httpMethod:    method,
 		presignedUrl:  presignedUrl,
 		client:        *c,
+
+		UploadFunc: UploadFn,
 	}
 	return s3Uploader
 }
@@ -59,6 +63,10 @@ func (s *S3Uploader) substituteValues() {
 }
 
 func (s *S3Uploader) Upload() ([]byte, error) {
+	return s.UploadFunc(s)
+}
+
+func UploadFn(s *S3Uploader) ([]byte, error) {
 	if s.formData != nil && len(s.formData) > 0 {
 		if err := s.createFormData(); err != nil {
 			return nil, err
