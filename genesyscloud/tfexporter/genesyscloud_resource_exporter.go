@@ -6,6 +6,7 @@ import (
 	"hash/fnv"
 	"log"
 	"os"
+	"path/filepath"
 	"reflect"
 	"regexp"
 	"strconv"
@@ -83,6 +84,8 @@ type GenesysCloudResourceExporter struct {
 	meta                   interface{}
 	dependsList            map[string][]string
 	buildSecondDeps        map[string][]string
+	cyclicDependsList      []string
+	ignoreCyclicDeps       bool
 }
 
 func configureExporterType(ctx context.Context, d *schema.ResourceData, gre *GenesysCloudResourceExporter, filterType ExporterFilterType) {
@@ -133,6 +136,7 @@ func NewGenesysCloudResourceExporter(ctx context.Context, d *schema.ResourceData
 		addDependsOn:         d.Get("enable_flow_depends_on").(bool),
 		filterType:           filterType,
 		includeStateFile:     d.Get("include_state_file").(bool),
+		ignoreCyclicDeps:     d.Get("ignore_cyclic_deps").(bool),
 		version:              meta.(*provider.ProviderMeta).Version,
 		provider:             provider.New(meta.(*provider.ProviderMeta).Version, providerResources, providerDataSources)(),
 		d:                    d,
@@ -213,6 +217,8 @@ func (g *GenesysCloudResourceExporter) setupDataSource() {
 		dataSourceList := lists.InterfaceListToStrings(replaceWithDatasource.([]interface{}))
 		g.replaceWithDatasource = dataSourceList
 	}
+	SetDataSourceExports()
+	g.replaceWithDatasource = append(g.replaceWithDatasource, DataSourceExports...)
 }
 
 // retrieveExporters will return a list of all the registered exporters. If the resource_type on the exporter contains any elements, only the defined
@@ -442,8 +448,17 @@ func (g *GenesysCloudResourceExporter) generateOutputFiles() diag.Diagnostics {
 		jsonExporter := NewJsonExporter(g.resourceTypesMaps, g.dataSourceTypesMaps, g.unresolvedAttrs, providerSource, g.version, g.exportDirPath, g.splitFilesByResource)
 		err = jsonExporter.exportJSONConfig()
 	}
+
 	if err != nil {
 		return err
+	}
+
+	if g.cyclicDependsList != nil && len(g.cyclicDependsList) > 0 {
+		err = writeToFile([]byte(strings.Join(g.cyclicDependsList, "\n")), filepath.Join(g.exportDirPath, "cyclicDepends.txt"))
+
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -472,8 +487,8 @@ func (g *GenesysCloudResourceExporter) processAndBuildDependencies() (filters []
 	totalResources := make(resourceExporter.ResourceIDMetaMap)
 	proxy := dependentconsumers.GetDependentConsumerProxy(nil)
 
-	retrieveDependentConsumers := func(resourceKeys resourceExporter.ResourceInfo) func(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, map[string][]string, diag.Diagnostics) {
-		return func(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, map[string][]string, diag.Diagnostics) {
+	retrieveDependentConsumers := func(resourceKeys resourceExporter.ResourceInfo) func(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, *resourceExporter.DependencyResource, diag.Diagnostics) {
+		return func(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, *resourceExporter.DependencyResource, diag.Diagnostics) {
 			proxy = dependentconsumers.GetDependentConsumerProxy(clientConfig)
 			resources := make(resourceExporter.ResourceIDMetaMap)
 			resources, dependsMap, err := proxy.GetDependentConsumers(ctx, resourceKeys)
@@ -487,7 +502,7 @@ func (g *GenesysCloudResourceExporter) processAndBuildDependencies() (filters []
 
 	for _, resourceKeys := range g.resources {
 
-		resources, dependsMap, err := proxy.GetAllWithPooledClient(retrieveDependentConsumers(resourceKeys))
+		resources, dependsStruct, err := proxy.GetAllWithPooledClient(retrieveDependentConsumers(resourceKeys))
 		if err != nil {
 			return nil, nil, err
 		}
@@ -499,11 +514,15 @@ func (g *GenesysCloudResourceExporter) processAndBuildDependencies() (filters []
 				resource := strings.Split(meta.Name, "::::")
 				filterList = append(filterList, fmt.Sprintf("%s::%s", resource[0], resource[1]))
 			}
-			g.dependsList = stringmap.MergeMaps(g.dependsList, dependsMap)
+			g.dependsList = stringmap.MergeMaps(g.dependsList, dependsStruct.DependsMap)
+			g.cyclicDependsList = append(g.cyclicDependsList, dependsStruct.CyclicDependsList...)
 			totalResources = stringmap.MergeSingularMaps(totalResources, resources)
 		}
 	}
 
+	if !g.ignoreCyclicDeps && len(g.cyclicDependsList) > 0 {
+		return nil, nil, diag.Errorf("Cyclic Dependencies Identified:  %v ", strings.Join(g.cyclicDependsList, "\n"))
+	}
 	return filterList, totalResources, nil
 }
 
@@ -1441,9 +1460,19 @@ func (g *GenesysCloudResourceExporter) resourceIdExists(refID string) bool {
 
 func (g *GenesysCloudResourceExporter) isDataSource(resType string, name string) bool {
 	for _, element := range g.replaceWithDatasource {
-		if element == resType+"."+name {
+		if element == resType+"::"+name || fetchByRegex(element, resType, name) {
 			return true
 		}
+	}
+	return false
+}
+
+func fetchByRegex(fullName string, resType string, name string) bool {
+	if strings.Contains(fullName, "::") && strings.Split(fullName, "::")[0] == resType {
+		i := strings.Index(fullName, "::")
+		regexStr := fullName[i+2:]
+		match, _ := regexp.MatchString(regexStr, name)
+		return match
 	}
 	return false
 }
