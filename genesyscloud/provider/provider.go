@@ -275,13 +275,13 @@ func InitClientConfig(data *schema.ResourceData, version string, config *platfor
 }
 
 func requestToken(data *schema.ResourceData, config *platformclientv2.Configuration) diag.Diagnostics {
+	proxy := getProviderProxy()
 	oauthclientID := data.Get("oauthclient_id").(string)
 	oauthclientSecret := data.Get("oauthclient_secret").(string)
 
-	fmt.Println("Requesting token")
-	err := config.AuthorizeClientCredentials(oauthclientID, oauthclientSecret)
+	err := proxy.authorizeConfig(config, oauthclientID, oauthclientSecret)
 	if err != nil {
-		return diag.Errorf("failed to authorize Genesys Cloud client credentials: %v", err)
+		return diag.Errorf("%v", err)
 	}
 
 	if accessTokenDuration == 0 {

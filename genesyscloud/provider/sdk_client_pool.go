@@ -3,14 +3,13 @@ package provider
 import (
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/mypurecloud/platform-client-sdk-go/v123/platformclientv2"
 	"log"
 	"sync"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"time"
-
-	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v123/platformclientv2"
 )
 
 // SDKClientPool holds a Pool of client configs for the Genesys Cloud SDK. One should be
@@ -73,9 +72,9 @@ func (p *SDKClientPool) preFill(providerConfig *schema.ResourceData, version str
 	}
 	go func() {
 		wg.Wait()
-		//go func() {
-		//	p.startTimer(providerConfig)
-		//}()
+		go func() {
+			p.startTimer(providerConfig)
+		}()
 		close(wgDone)
 	}()
 
@@ -88,11 +87,13 @@ func (p *SDKClientPool) preFill(providerConfig *schema.ResourceData, version str
 	}
 }
 
-func (p *SDKClientPool) startTimer(providerConfig *schema.ResourceData) {
+func (p *SDKClientPool) startTimer(providerConfig *schema.ResourceData) bool {
+	fmt.Println("Starting timer: ", accessTokenDuration)
 	select {
-	case <-time.After(time.Duration(accessTokenDuration - 60)):
+	case <-time.After(time.Duration(accessTokenDuration)):
 		p.refreshTokens(providerConfig)
 	}
+	return true
 }
 
 func (p *SDKClientPool) refreshTokens(providerConfig *schema.ResourceData) {
@@ -120,10 +121,9 @@ func (p *SDKClientPool) refreshTokens(providerConfig *schema.ResourceData) {
 	}
 	go func() {
 		wg.Wait()
-		//go func() {
-		//	fmt.Println("Starting timer")
-		//	p.startTimer(providerConfig)
-		//}()
+		go func() {
+			p.startTimer(providerConfig)
+		}()
 		close(wgDone)
 	}()
 
