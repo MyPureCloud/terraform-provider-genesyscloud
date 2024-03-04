@@ -21,7 +21,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v121/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v123/platformclientv2"
 )
 
 var (
@@ -250,16 +250,16 @@ func flattenAssociatedValueField(associatedValueField *platformclientv2.Associat
 	return associatedValueFieldMap
 }
 
-func buildSdkJourneyOutcome(journeyOutcome *schema.ResourceData) *platformclientv2.Outcome {
+func buildSdkJourneyOutcome(journeyOutcome *schema.ResourceData) *platformclientv2.Outcomerequest {
 	isActive := journeyOutcome.Get("is_active").(bool)
 	displayName := journeyOutcome.Get("display_name").(string)
 	description := resourcedata.GetNillableValue[string](journeyOutcome, "description")
 	isPositive := resourcedata.GetNillableBool(journeyOutcome, "is_positive")
-	sdkContext := resourcedata.BuildSdkListFirstElement(journeyOutcome, "context", buildSdkContext, false)
-	journey := resourcedata.BuildSdkListFirstElement(journeyOutcome, "journey", buildSdkJourney, false)
+	sdkContext := resourcedata.BuildSdkListFirstElement(journeyOutcome, "context", buildSdkRequestContext, false)
+	journey := resourcedata.BuildSdkListFirstElement(journeyOutcome, "journey", buildSdkRequestJourney, false)
 	associatedValueField := resourcedata.BuildSdkListFirstElement(journeyOutcome, "associated_value_field", buildSdkAssociatedValueField, true)
 
-	return &platformclientv2.Outcome{
+	return &platformclientv2.Outcomerequest{
 		IsActive:             &isActive,
 		DisplayName:          &displayName,
 		Description:          description,
@@ -275,8 +275,8 @@ func buildSdkPatchOutcome(journeyOutcome *schema.ResourceData) *platformclientv2
 	displayName := journeyOutcome.Get("display_name").(string)
 	description := resourcedata.GetNillableValue[string](journeyOutcome, "description")
 	isPositive := resourcedata.GetNillableBool(journeyOutcome, "is_positive")
-	sdkContext := resourcedata.BuildSdkListFirstElement(journeyOutcome, "context", buildSdkContext, false)
-	journey := resourcedata.BuildSdkListFirstElement(journeyOutcome, "journey", buildSdkJourney, false)
+	sdkContext := resourcedata.BuildSdkListFirstElement(journeyOutcome, "context", buildSdkPatchContext, false)
+	journey := resourcedata.BuildSdkListFirstElement(journeyOutcome, "journey", buildSdkPatchJourney, false)
 
 	return &platformclientv2.Patchoutcome{
 		IsActive:    &isActive,

@@ -13,7 +13,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v121/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v123/platformclientv2"
 )
 
 /*
@@ -297,7 +297,7 @@ func TestAccResourceIntegration(t *testing.T) {
 					strconv.Quote(typeID2),
 					GenerateIntegrationConfig(
 						strconv.Quote(inteName2),
-						util.NullValue,                                                                                      // Empty notes
+						util.NullValue, // Empty notes
 						util.GenerateMapProperty(credTypeName1, "genesyscloud_integration_credential."+credResource1+".id"), // Reference credential ID
 						util.GenerateJsonEncodedProperties(
 							util.GenerateJsonProperty("smtpHost", strconv.Quote("fakeHost")),
