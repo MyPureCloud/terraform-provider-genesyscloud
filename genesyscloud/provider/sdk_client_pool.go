@@ -87,13 +87,11 @@ func (p *SDKClientPool) preFill(providerConfig *schema.ResourceData, version str
 	}
 }
 
-func (p *SDKClientPool) startTimer(providerConfig *schema.ResourceData) bool {
-	fmt.Println("Starting timer: ", accessTokenDuration)
+func (p *SDKClientPool) startTimer(providerConfig *schema.ResourceData) {
 	select {
-	case <-time.After(time.Duration(accessTokenDuration)):
+	case <-time.After(time.Second * time.Duration(accessTokenDuration)):
 		p.refreshTokens(providerConfig)
 	}
-	return true
 }
 
 func (p *SDKClientPool) refreshTokens(providerConfig *schema.ResourceData) {
@@ -103,6 +101,11 @@ func (p *SDKClientPool) refreshTokens(providerConfig *schema.ResourceData) {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
+
+	if len(p.Pool) == 0 {
+		panic("client pool channel empty")
+	}
+
 	for sdkConfig := range p.Pool {
 		wg.Add(1)
 		sdkConfig := sdkConfig
