@@ -6,6 +6,8 @@ import (
 	"log"
 	"net/url"
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 	"time"
 
@@ -85,7 +87,7 @@ func getAllKnowledgebaseEntities(knowledgeApi platformclientv2.KnowledgeApi, pub
 
 func KnowledgeKnowledgebaseExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
-		GetResourcesFunc: GetAllWithPooledClient(getAllKnowledgeKnowledgebases),
+		GetResourcesFunc: provider.GetAllWithPooledClient(getAllKnowledgeKnowledgebases),
 		RefAttrs:         map[string]*resourceExporter.RefAttrSettings{}, // No references
 	}
 }
@@ -94,10 +96,10 @@ func ResourceKnowledgeKnowledgebase() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud Knowledge Base",
 
-		CreateContext: CreateWithPooledClient(createKnowledgeKnowledgebase),
-		ReadContext:   ReadWithPooledClient(readKnowledgeKnowledgebase),
-		UpdateContext: UpdateWithPooledClient(updateKnowledgeKnowledgebase),
-		DeleteContext: DeleteWithPooledClient(deleteKnowledgeKnowledgebase),
+		CreateContext: provider.CreateWithPooledClient(createKnowledgeKnowledgebase),
+		ReadContext:   provider.ReadWithPooledClient(readKnowledgeKnowledgebase),
+		UpdateContext: provider.UpdateWithPooledClient(updateKnowledgeKnowledgebase),
+		DeleteContext: provider.DeleteWithPooledClient(deleteKnowledgeKnowledgebase),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -134,7 +136,7 @@ func createKnowledgeKnowledgebase(ctx context.Context, d *schema.ResourceData, m
 	description := d.Get("description").(string)
 	coreLanguage := d.Get("core_language").(string)
 
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	knowledgeAPI := platformclientv2.NewKnowledgeApiWithConfig(sdkConfig)
 
 	log.Printf("Creating knowledge base %s", name)
@@ -155,14 +157,14 @@ func createKnowledgeKnowledgebase(ctx context.Context, d *schema.ResourceData, m
 }
 
 func readKnowledgeKnowledgebase(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	knowledgeAPI := platformclientv2.NewKnowledgeApiWithConfig(sdkConfig)
 
 	log.Printf("Reading knowledge base %s", d.Id())
-	return WithRetriesForRead(ctx, d, func() *retry.RetryError {
+	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		knowledgeBase, resp, getErr := knowledgeAPI.GetKnowledgeKnowledgebase(d.Id())
 		if getErr != nil {
-			if IsStatus404(resp) {
+			if util.IsStatus404(resp) {
 				return retry.RetryableError(fmt.Errorf("Failed to read knowledge base %s: %s", d.Id(), getErr))
 			}
 			return retry.NonRetryableError(fmt.Errorf("Failed to read knowledge base %s: %s", d.Id(), getErr))
@@ -183,11 +185,11 @@ func updateKnowledgeKnowledgebase(ctx context.Context, d *schema.ResourceData, m
 	name := d.Get("name").(string)
 	description := d.Get("description").(string)
 
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	knowledgeAPI := platformclientv2.NewKnowledgeApiWithConfig(sdkConfig)
 
 	log.Printf("Updating knowledge base %s", name)
-	diagErr := RetryWhen(IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+	diagErr := util.RetryWhen(util.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		// Get current knowledge base version
 		_, resp, getErr := knowledgeAPI.GetKnowledgeKnowledgebase(d.Id())
 		if getErr != nil {
@@ -217,7 +219,7 @@ func updateKnowledgeKnowledgebase(ctx context.Context, d *schema.ResourceData, m
 func deleteKnowledgeKnowledgebase(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	name := d.Get("name").(string)
 
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	knowledgeAPI := platformclientv2.NewKnowledgeApiWithConfig(sdkConfig)
 
 	log.Printf("Deleting knowledge base %s", name)
@@ -226,10 +228,10 @@ func deleteKnowledgeKnowledgebase(ctx context.Context, d *schema.ResourceData, m
 		return diag.Errorf("Failed to delete knowledge base %s: %s", name, err)
 	}
 
-	return WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
+	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		_, resp, err := knowledgeAPI.GetKnowledgeKnowledgebase(d.Id())
 		if err != nil {
-			if IsStatus404(resp) {
+			if util.IsStatus404(resp) {
 				// Knowledge base deleted
 				log.Printf("Deleted Knowledge base %s", d.Id())
 				return nil

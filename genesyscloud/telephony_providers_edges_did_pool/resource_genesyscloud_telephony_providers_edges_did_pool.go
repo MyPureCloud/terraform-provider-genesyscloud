@@ -4,7 +4,8 @@ import (
 	"context"
 	"fmt"
 	"log"
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 	"time"
 
@@ -46,7 +47,7 @@ func createDidPool(ctx context.Context, d *schema.ResourceData, meta interface{}
 	comments := d.Get("comments").(string)
 	poolProvider := d.Get("pool_provider").(string)
 
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getTelephonyDidPoolProxy(sdkConfig)
 
 	didPool := &platformclientv2.Didpool{
@@ -70,14 +71,14 @@ func createDidPool(ctx context.Context, d *schema.ResourceData, meta interface{}
 
 // readDidPool is used by the resource to read a Genesys Cloud DID pool
 func readDidPool(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getTelephonyDidPoolProxy(sdkConfig)
 
 	log.Printf("Reading DID pool %s", d.Id())
-	return gcloud.WithRetriesForRead(ctx, d, func() *retry.RetryError {
+	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		didPool, respCode, getErr := proxy.getTelephonyDidPoolById(ctx, d.Id())
 		if getErr != nil {
-			if gcloud.IsStatus404ByInt(respCode) {
+			if util.IsStatus404ByInt(respCode) {
 				return retry.RetryableError(fmt.Errorf("Failed to read DID pool %s: %s", d.Id(), getErr))
 			}
 			return retry.NonRetryableError(fmt.Errorf("Failed to read DID pool %s: %s", d.Id(), getErr))
@@ -109,7 +110,7 @@ func updateDidPool(ctx context.Context, d *schema.ResourceData, meta interface{}
 	comments := d.Get("comments").(string)
 	poolProvider := d.Get("pool_provider").(string)
 
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getTelephonyDidPoolProxy(sdkConfig)
 
 	didPoolBody := &platformclientv2.Didpool{
@@ -133,11 +134,11 @@ func updateDidPool(ctx context.Context, d *schema.ResourceData, meta interface{}
 func deleteDidPool(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	startPhoneNumber := d.Get("start_phone_number").(string)
 
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getTelephonyDidPoolProxy(sdkConfig)
 
 	// DEVTOOLING-317: Unable to delete DID pool with a number assigned, retrying on HTTP 409
-	diagErr := gcloud.RetryWhen(gcloud.IsStatus409, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+	diagErr := util.RetryWhen(util.IsStatus409, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		log.Printf("Deleting DID pool with starting number %s", startPhoneNumber)
 		resp, err := proxy.deleteTelephonyDidPool(ctx, d.Id())
 		if err != nil {
@@ -149,10 +150,10 @@ func deleteDidPool(ctx context.Context, d *schema.ResourceData, meta interface{}
 		return diagErr
 	}
 
-	return gcloud.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
+	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		didPool, respCode, err := proxy.getTelephonyDidPoolById(ctx, d.Id())
 		if err != nil {
-			if gcloud.IsStatus404ByInt(respCode) {
+			if util.IsStatus404ByInt(respCode) {
 				// DID pool deleted
 				log.Printf("Deleted DID pool %s", d.Id())
 				return nil

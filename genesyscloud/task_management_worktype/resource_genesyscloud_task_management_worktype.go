@@ -4,7 +4,9 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
 
 	"github.com/google/uuid"
@@ -13,8 +15,6 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v121/platformclientv2"
 
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
-
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
 
 	"terraform-provider-genesyscloud/genesyscloud/util/lists"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
@@ -45,7 +45,7 @@ func getAllAuthTaskManagementWorktypes(ctx context.Context, clientConfig *platfo
 
 // createTaskManagementWorktype is used by the task_management_worktype resource to create Genesys cloud task management worktype
 func createTaskManagementWorktype(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getTaskManagementWorktypeProxy(sdkConfig)
 
 	taskManagementWorktype := getWorktypecreateFromResourceData(d)
@@ -86,15 +86,15 @@ func createTaskManagementWorktype(ctx context.Context, d *schema.ResourceData, m
 
 // readTaskManagementWorktype is used by the task_management_worktype resource to read a task management worktype from genesys cloud
 func readTaskManagementWorktype(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getTaskManagementWorktypeProxy(sdkConfig)
 
 	log.Printf("Reading task management worktype %s", d.Id())
 
-	return gcloud.WithRetriesForRead(ctx, d, func() *retry.RetryError {
+	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		worktype, respCode, getErr := proxy.getTaskManagementWorktypeById(ctx, d.Id())
 		if getErr != nil {
-			if gcloud.IsStatus404ByInt(respCode) {
+			if util.IsStatus404ByInt(respCode) {
 				return retry.RetryableError(fmt.Errorf("failed to read task management worktype %s: %s", d.Id(), getErr))
 			}
 			return retry.NonRetryableError(fmt.Errorf("failed to read task management worktype %s: %s", d.Id(), getErr))
@@ -146,7 +146,7 @@ func readTaskManagementWorktype(ctx context.Context, d *schema.ResourceData, met
 
 // updateTaskManagementWorktype is used by the task_management_worktype resource to update a task management worktype in Genesys Cloud
 func updateTaskManagementWorktype(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getTaskManagementWorktypeProxy(sdkConfig)
 
 	// Update the base configuration of the Worktype
@@ -223,27 +223,20 @@ func updateTaskManagementWorktype(ctx context.Context, d *schema.ResourceData, m
 	// Go through and clear the status references first to avoid dependency errors on deletion
 	log.Printf("Clearing references of statuses for deletion of worktype %s", d.Id())
 	for _, forDeletionId := range forDeletionIds {
-		updateForCleaning := Workitemstatusupdate{}
+		updateForCleaning := platformclientv2.Workitemstatusupdate{}
 
-		// NOTE: Keep this comments so we can remember to use SetField here for forcing null in refactor
-		// refer: temp_api_utils.go file
 		// // Force these properties as 'null' for the API request
-		// updateForCleaning.SetField("DestinationStatusIds", &[]string{})
-		// updateForCleaning.SetField("DefaultDestinationStatusId", nil)
-		// updateForCleaning.SetField("StatusTransitionDelaySeconds", nil)
-		// updateForCleaning.SetField("StatusTransitionTime", nil)
-
-		updateForCleaning.DestinationStatusIds = &[]string{}
-		updateForCleaning.DefaultDestinationStatusId = nil
-		updateForCleaning.StatusTransitionDelaySeconds = nil
-		updateForCleaning.StatusTransitionTime = nil
+		updateForCleaning.SetField("DestinationStatusIds", &[]string{})
+		updateForCleaning.SetField("DefaultDestinationStatusId", nil)
+		updateForCleaning.SetField("StatusTransitionDelaySeconds", nil)
+		updateForCleaning.SetField("StatusTransitionTime", nil)
 
 		// We put a random description so we can ensure there is a 'change' in the status.
 		// Else we'll get a 400 error if the status has no destination status /default status to begin with
 		// This is simpler than checking the status fields if there are any changes.
 		// Since this status is for deletion anyway we shouldn't care about this managed update.
 		description := "this status is set for deletion by CX as Code " + uuid.NewString()
-		updateForCleaning.Description = &description
+		updateForCleaning.SetField("Description", &description)
 
 		if _, err := proxy.updateTaskManagementWorktypeStatus(ctx, d.Id(), forDeletionId, &updateForCleaning); err != nil {
 			return diag.Errorf("failed to clean up references of task management worktype status %s: %v", forDeletionId, err)
@@ -276,7 +269,7 @@ func updateTaskManagementWorktype(ctx context.Context, d *schema.ResourceData, m
 
 // deleteTaskManagementWorktype is used by the task_management_worktype resource to delete a task management worktype from Genesys cloud
 func deleteTaskManagementWorktype(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getTaskManagementWorktypeProxy(sdkConfig)
 
 	_, err := proxy.deleteTaskManagementWorktype(ctx, d.Id())
@@ -284,11 +277,11 @@ func deleteTaskManagementWorktype(ctx context.Context, d *schema.ResourceData, m
 		return diag.Errorf("failed to delete task management worktype %s: %s", d.Id(), err)
 	}
 
-	return gcloud.WithRetries(ctx, 180*time.Second, func() *retry.RetryError {
+	return util.WithRetries(ctx, 180*time.Second, func() *retry.RetryError {
 		_, respCode, err := proxy.getTaskManagementWorktypeById(ctx, d.Id())
 
 		if err != nil {
-			if gcloud.IsStatus404ByInt(respCode) {
+			if util.IsStatus404ByInt(respCode) {
 				log.Printf("Deleted task management worktype %s", d.Id())
 				return nil
 			}

@@ -4,7 +4,9 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -12,8 +14,6 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v121/platformclientv2"
 
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
-
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
 
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
@@ -40,7 +40,7 @@ func getAllAuthTeams(ctx context.Context, clientConfig *platformclientv2.Configu
 
 // createTeam is used by the team resource to create Genesys cloud team
 func createTeam(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getTeamProxy(sdkConfig)
 	team := getTeamFromResourceData(d)
 	log.Printf("Creating team %s", *team.Name)
@@ -53,14 +53,11 @@ func createTeam(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	//adding members to the team
 	members, ok := d.GetOk("member_ids")
 	if ok {
-		memberList := members.([]interface{})
-		//creating members along with teams
-		if len(memberList) > 0 {
-			_, err := proxy.createMembers(ctx, d.Id(), buildTeamMembers(memberList))
-			if err != nil {
-				return diag.Errorf("Failed to create members: %s", err)
+		if memberList := members.([]interface{}); len(memberList) > 0 {
+			diagErr := createMembers(ctx, *teamObj.Id, memberList, proxy)
+			if diagErr != nil {
+				return diagErr
 			}
-			log.Printf("Created members %s", d.Id())
 		}
 	}
 	return readTeam(ctx, d, meta)
@@ -68,7 +65,7 @@ func createTeam(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 
 // readTeam is used by the team resource to read an team from genesys cloud
 func readTeam(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getTeamProxy(sdkConfig)
 	log.Printf("Reading team %s", d.Id())
 	// reading members
@@ -79,10 +76,10 @@ func readTeam(ctx context.Context, d *schema.ResourceData, meta interface{}) dia
 	if members != nil {
 		d.Set("member_ids", members)
 	}
-	return gcloud.WithRetriesForRead(ctx, d, func() *retry.RetryError {
+	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		team, respCode, getErr := proxy.getTeamById(ctx, d.Id())
 		if getErr != nil {
-			if gcloud.IsStatus404ByInt(respCode) {
+			if util.IsStatus404ByInt(respCode) {
 				return retry.RetryableError(fmt.Errorf("failed to read team %s: %s", d.Id(), getErr))
 			}
 			return retry.NonRetryableError(fmt.Errorf("failed to read team %s: %s", d.Id(), getErr))
@@ -98,7 +95,7 @@ func readTeam(ctx context.Context, d *schema.ResourceData, meta interface{}) dia
 
 // updateTeam is used by the team resource to update an team in Genesys Cloud
 func updateTeam(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getTeamProxy(sdkConfig)
 	team := getTeamFromResourceData(d)
 	log.Printf("updating team %s", *team.Name)
@@ -121,10 +118,16 @@ func updateTeam(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 			if len(currentMembers) > 0 {
 				removeMembers, addMembers := SliceDifferenceMembers(currentMembers, memberList)
 				if len(removeMembers) > 0 {
-					deleteMembers(ctx, d.Id(), removeMembers, proxy)
+					diagErr := deleteMembers(ctx, d.Id(), removeMembers, proxy)
+					if diagErr != nil {
+						return diagErr
+					}
 				}
 				if len(addMembers) > 0 {
-					createMembers(ctx, d.Id(), addMembers, proxy)
+					diagErr := createMembers(ctx, d.Id(), addMembers, proxy)
+					if diagErr != nil {
+						return diagErr
+					}
 				}
 			}
 		}
@@ -136,16 +139,16 @@ func updateTeam(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 
 // deleteTeam is used by the team resource to delete an team from Genesys cloud
 func deleteTeam(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getTeamProxy(sdkConfig)
 	_, err := proxy.deleteTeam(ctx, d.Id())
 	if err != nil {
 		return diag.Errorf("failed to delete team %s: %s", d.Id(), err)
 	}
-	return gcloud.WithRetries(ctx, 180*time.Second, func() *retry.RetryError {
+	return util.WithRetries(ctx, 180*time.Second, func() *retry.RetryError {
 		_, respCode, err := proxy.getTeamById(ctx, d.Id())
 		if err != nil {
-			if gcloud.IsStatus404ByInt(respCode) {
+			if util.IsStatus404ByInt(respCode) {
 				log.Printf("deleted team %s", d.Id())
 				return nil
 			}
@@ -183,10 +186,26 @@ func deleteMembers(ctx context.Context, teamId string, memberList []interface{},
 // createMembers is used by the members resource to create Genesys cloud members
 func createMembers(ctx context.Context, teamId string, members []interface{}, proxy *teamProxy) diag.Diagnostics {
 	log.Printf("adding members to team %s", teamId)
-	_, err := proxy.createMembers(ctx, teamId, buildTeamMembers(members))
-	if err != nil {
-		return diag.Errorf("failed to add members to team %s : %s", teamId, err)
+
+	// API does not allow more than 25 members to be added at once, adding members in chunks of 25
+	const chunkSize = 25
+	var membersChunk []interface{}
+	for _, member := range members {
+		membersChunk = append(membersChunk, member)
+		if len(membersChunk)%chunkSize == 0 {
+			_, err := proxy.createMembers(ctx, teamId, buildTeamMembers(membersChunk))
+			if err != nil {
+				return diag.Errorf("failed to add members to team %s: %s", teamId, err)
+			}
+			membersChunk = nil
+		}
 	}
+
+	_, err := proxy.createMembers(ctx, teamId, buildTeamMembers(membersChunk))
+	if err != nil {
+		return diag.Errorf("failed to add members to team %s: %s", teamId, err)
+	}
+
 	log.Printf("success adding members to team %s", teamId)
 	return nil
 }

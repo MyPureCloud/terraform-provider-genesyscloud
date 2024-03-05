@@ -2,16 +2,16 @@ package genesyscloud
 
 import (
 	"context"
-
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v121/platformclientv2"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
 )
 
 func DataSourceOrganizationsMe() *schema.Resource {
 	return &schema.Resource{
 		Description: "Data source for Genesys Cloud current organization",
-		ReadContext: ReadWithPooledClient(dataSourceOrganizationsMeRead),
+		ReadContext: provider.ReadWithPooledClient(dataSourceOrganizationsMeRead),
 		Schema: map[string]*schema.Schema{
 			"id": {
 				Type:     schema.TypeString,
@@ -68,7 +68,7 @@ func DataSourceOrganizationsMe() *schema.Resource {
 }
 
 func dataSourceOrganizationsMeRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	sdkConfig := m.(*ProviderMeta).ClientConfig
+	sdkConfig := m.(*provider.ProviderMeta).ClientConfig
 	orgAPI := platformclientv2.NewOrganizationApiWithConfig(sdkConfig)
 
 	orgMe, _, getErr := orgAPI.GetOrganizationsMe()

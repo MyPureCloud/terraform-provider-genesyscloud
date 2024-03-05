@@ -3,7 +3,7 @@ package oauth_client
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"terraform-provider-genesyscloud/genesyscloud"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
 )
@@ -40,10 +40,10 @@ func ResourceOAuthClient() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud OAuth Clients. See this page for detailed configuration information: https://help.mypurecloud.com/articles/create-an-oauth-client/",
 
-		CreateContext: genesyscloud.CreateWithPooledClient(createOAuthClient),
-		ReadContext:   genesyscloud.ReadWithPooledClient(readOAuthClient),
-		UpdateContext: genesyscloud.UpdateWithPooledClient(updateOAuthClient),
-		DeleteContext: genesyscloud.DeleteWithPooledClient(deleteOAuthClient),
+		CreateContext: provider.CreateWithPooledClient(createOAuthClient),
+		ReadContext:   provider.ReadWithPooledClient(readOAuthClient),
+		UpdateContext: provider.UpdateWithPooledClient(updateOAuthClient),
+		DeleteContext: provider.DeleteWithPooledClient(deleteOAuthClient),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -117,7 +117,7 @@ func ResourceOAuthClient() *schema.Resource {
 
 func OauthClientExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
-		GetResourcesFunc: genesyscloud.GetAllWithPooledClient(getAllOAuthClients),
+		GetResourcesFunc: provider.GetAllWithPooledClient(getAllOAuthClients),
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			"roles.role_id":             {RefType: "genesyscloud_auth_role"},
 			"roles.division_id":         {RefType: "genesyscloud_auth_division", AltValues: []string{"*"}},
@@ -134,7 +134,7 @@ func OauthClientExporter() *resourceExporter.ResourceExporter {
 func DataSourceOAuthClient() *schema.Resource {
 	return &schema.Resource{
 		Description: "Data source for Genesys Cloud OAuth Clients. Select an OAuth Client by name.",
-		ReadContext: genesyscloud.ReadWithPooledClient(dataSourceOAuthClientRead),
+		ReadContext: provider.ReadWithPooledClient(dataSourceOAuthClientRead),
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Description: "OAuth Client name.",

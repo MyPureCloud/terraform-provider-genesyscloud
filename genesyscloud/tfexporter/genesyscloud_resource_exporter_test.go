@@ -2,11 +2,11 @@ package tfexporter
 
 import (
 	"context"
-	"reflect"
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
-	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
-
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"reflect"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
@@ -102,7 +102,7 @@ func TestUnitTfExportPostProcessHclBytesFunc(t *testing.T) {
 }
 
 func TestUnitTfExportRemoveZeroValuesFunc(t *testing.T) {
-	m := make(gcloud.JsonMap, 0)
+	m := make(util.JsonMap, 0)
 
 	nonZeroString := "foobar"
 	nonZeroInt := 1
@@ -266,13 +266,18 @@ func TestUnitTfExportBuildDependsOnResources(t *testing.T) {
 		"queue resources": meta,
 	}
 
-	retrievePooledClientFn := func(ctx context.Context, a *dependentconsumers.DependentConsumerProxy, resourceKeys resourceExporter.ResourceInfo) (resourceExporter.ResourceIDMetaMap, map[string][]string, error) {
-		return resources, nil, nil
+	dependencyStruct := &resourceExporter.DependencyResource{
+		DependsMap:        nil,
+		CyclicDependsList: nil,
 	}
 
-	getAllPooledFn := func(method gcloud.GetCustomConfigFunc) (resourceExporter.ResourceIDMetaMap, map[string][]string, diag.Diagnostics) {
+	retrievePooledClientFn := func(ctx context.Context, a *dependentconsumers.DependentConsumerProxy, resourceKeys resourceExporter.ResourceInfo) (resourceExporter.ResourceIDMetaMap, *resourceExporter.DependencyResource, error) {
+		return resources, dependencyStruct, nil
+	}
+
+	getAllPooledFn := func(method provider.GetCustomConfigFunc) (resourceExporter.ResourceIDMetaMap, *resourceExporter.DependencyResource, diag.Diagnostics) {
 		//assert.Equal(t, targetName, name)
-		return resources, nil, nil
+		return resources, dependencyStruct, nil
 	}
 
 	dependencyProxy := &dependentconsumers.DependentConsumerProxy{

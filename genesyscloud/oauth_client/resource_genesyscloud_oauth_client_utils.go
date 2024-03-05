@@ -1,7 +1,7 @@
 package oauth_client
 
 import (
-	"terraform-provider-genesyscloud/genesyscloud"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"terraform-provider-genesyscloud/genesyscloud/util/lists"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -39,7 +39,7 @@ func buildOAuthRoles(d *schema.ResourceData) (*[]platformclientv2.Roledivision, 
 			if divisionId == "" {
 				// Set to home division if not set
 				var diagErr diag.Diagnostics
-				divisionId, diagErr = genesyscloud.GetHomeDivisionID()
+				divisionId, diagErr = util.GetHomeDivisionID()
 				if diagErr != nil {
 					return nil, diagErr
 				}

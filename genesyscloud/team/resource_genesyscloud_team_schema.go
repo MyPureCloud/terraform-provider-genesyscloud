@@ -2,8 +2,7 @@ package team
 
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
 )
@@ -30,10 +29,10 @@ func ResourceTeam() *schema.Resource {
 	return &schema.Resource{
 		Description: `Genesys Cloud team`,
 
-		CreateContext: gcloud.CreateWithPooledClient(createTeam),
-		ReadContext:   gcloud.ReadWithPooledClient(readTeam),
-		UpdateContext: gcloud.UpdateWithPooledClient(updateTeam),
-		DeleteContext: gcloud.DeleteWithPooledClient(deleteTeam),
+		CreateContext: provider.CreateWithPooledClient(createTeam),
+		ReadContext:   provider.ReadWithPooledClient(readTeam),
+		UpdateContext: provider.UpdateWithPooledClient(updateTeam),
+		DeleteContext: provider.DeleteWithPooledClient(deleteTeam),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -67,9 +66,10 @@ func ResourceTeam() *schema.Resource {
 // TeamExporter returns the resourceExporter object used to hold the genesyscloud_team exporter's config
 func TeamExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
-		GetResourcesFunc: gcloud.GetAllWithPooledClient(getAllAuthTeams),
+		GetResourcesFunc: provider.GetAllWithPooledClient(getAllAuthTeams),
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			"division_id": {RefType: "genesyscloud_auth_division"},
+			"member_ids":  {RefType: "genesyscloud_user"},
 		},
 	}
 }
@@ -78,7 +78,7 @@ func TeamExporter() *resourceExporter.ResourceExporter {
 func DataSourceTeam() *schema.Resource {
 	return &schema.Resource{
 		Description: `Genesys Cloud team data source. Select an team by name`,
-		ReadContext: gcloud.ReadWithPooledClient(dataSourceTeamRead),
+		ReadContext: provider.ReadWithPooledClient(dataSourceTeamRead),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},

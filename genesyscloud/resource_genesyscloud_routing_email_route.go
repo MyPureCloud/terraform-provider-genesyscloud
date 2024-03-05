@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"log"
 	"strings"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -55,7 +57,7 @@ func getAllRoutingEmailRoutes(_ context.Context, clientConfig *platformclientv2.
 				const pageSize = 100
 				routes, resp, getErr := routingAPI.GetRoutingEmailDomainRoutes(*domain.Id, pageSize, pageNum, "")
 				if getErr != nil {
-					if IsStatus404(resp) {
+					if util.IsStatus404(resp) {
 						// Domain not found
 						break
 					}
@@ -79,7 +81,7 @@ func getAllRoutingEmailRoutes(_ context.Context, clientConfig *platformclientv2.
 
 func RoutingEmailRouteExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
-		GetResourcesFunc: GetAllWithPooledClient(getAllRoutingEmailRoutes),
+		GetResourcesFunc: provider.GetAllWithPooledClient(getAllRoutingEmailRoutes),
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			"domain_id":                     {RefType: "genesyscloud_routing_email_domain"},
 			"queue_id":                      {RefType: "genesyscloud_routing_queue"},
@@ -100,10 +102,10 @@ func ResourceRoutingEmailRoute() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud Routing Email Domain Route",
 
-		CreateContext: CreateWithPooledClient(createRoutingEmailRoute),
-		ReadContext:   ReadWithPooledClient(readRoutingEmailRoute),
-		UpdateContext: UpdateWithPooledClient(updateRoutingEmailRoute),
-		DeleteContext: DeleteWithPooledClient(deleteRoutingEmailRoute),
+		CreateContext: provider.CreateWithPooledClient(createRoutingEmailRoute),
+		ReadContext:   provider.ReadWithPooledClient(readRoutingEmailRoute),
+		UpdateContext: provider.UpdateWithPooledClient(updateRoutingEmailRoute),
+		DeleteContext: provider.DeleteWithPooledClient(deleteRoutingEmailRoute),
 		Importer: &schema.ResourceImporter{
 			StateContext: importRoutingEmailRoute,
 		},
@@ -219,7 +221,7 @@ func createRoutingEmailRoute(ctx context.Context, d *schema.ResourceData, meta i
 	priority := d.Get("priority").(int)
 
 	replyDomainID, replyRouteID, _ := extractReplyEmailAddressValue(d)
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
 
 	//Checking the self_reference_route flag and routeId rules
@@ -231,12 +233,12 @@ func createRoutingEmailRoute(ctx context.Context, d *schema.ResourceData, meta i
 		Pattern:   &pattern,
 		FromName:  &fromName,
 		FromEmail: &fromEmail,
-		Queue:     BuildSdkDomainEntityRef(d, "queue_id"),
+		Queue:     util.BuildSdkDomainEntityRef(d, "queue_id"),
 		Priority:  &priority,
-		Language:  BuildSdkDomainEntityRef(d, "language_id"),
-		Flow:      BuildSdkDomainEntityRef(d, "flow_id"),
-		SpamFlow:  BuildSdkDomainEntityRef(d, "spam_flow_id"),
-		Skills:    BuildSdkDomainEntityRefArr(d, "skill_ids"),
+		Language:  util.BuildSdkDomainEntityRef(d, "language_id"),
+		Flow:      util.BuildSdkDomainEntityRef(d, "flow_id"),
+		SpamFlow:  util.BuildSdkDomainEntityRef(d, "spam_flow_id"),
+		Skills:    util.BuildSdkDomainEntityRefArr(d, "skill_ids"),
 		AutoBcc:   buildSdkAutoBccEmailAddresses(d),
 	}
 
@@ -272,20 +274,20 @@ func createRoutingEmailRoute(ctx context.Context, d *schema.ResourceData, meta i
 func readRoutingEmailRoute(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	domainID := d.Get("domain_id").(string)
 
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
 
 	log.Printf("Reading routing email route %s", d.Id())
 
 	// The normal GET route API has a long cache TTL (5 minutes) which can result in stale data.
 	// This can be bypassed by issuing a domain query instead.
-	return WithRetriesForRead(ctx, d, func() *retry.RetryError {
+	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		var route *platformclientv2.Inboundroute
 		for pageNum := 1; ; pageNum++ {
 			const pageSize = 100
 			routes, resp, getErr := routingAPI.GetRoutingEmailDomainRoutes(domainID, pageSize, pageNum, "")
 			if getErr != nil {
-				if IsStatus404(resp) {
+				if util.IsStatus404(resp) {
 					// Domain not found, so route also does not exist
 					d.SetId("")
 					return retry.RetryableError(fmt.Errorf("Failed to read routing email route %s: %s", d.Id(), getErr))
@@ -361,7 +363,7 @@ func readRoutingEmailRoute(ctx context.Context, d *schema.ResourceData, meta int
 		}
 
 		if route.Skills != nil {
-			d.Set("skill_ids", sdkDomainEntityRefArrToSet(*route.Skills))
+			d.Set("skill_ids", util.SdkDomainEntityRefArrToSet(*route.Skills))
 		} else {
 			d.Set("skill_ids", nil)
 		}
@@ -407,7 +409,7 @@ func updateRoutingEmailRoute(ctx context.Context, d *schema.ResourceData, meta i
 		return diag.Errorf("Error occurred while validating the reply email address while trying to update the record: %s", err)
 	}
 
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
 
 	replyDomainID, replyRouteID, _ := extractReplyEmailAddressValue(d)
@@ -417,12 +419,12 @@ func updateRoutingEmailRoute(ctx context.Context, d *schema.ResourceData, meta i
 		Pattern:   &pattern,
 		FromName:  &fromName,
 		FromEmail: &fromEmail,
-		Queue:     BuildSdkDomainEntityRef(d, "queue_id"),
+		Queue:     util.BuildSdkDomainEntityRef(d, "queue_id"),
 		Priority:  &priority,
-		Language:  BuildSdkDomainEntityRef(d, "language_id"),
-		Flow:      BuildSdkDomainEntityRef(d, "flow_id"),
-		SpamFlow:  BuildSdkDomainEntityRef(d, "spam_flow_id"),
-		Skills:    BuildSdkDomainEntityRefArr(d, "skill_ids"),
+		Language:  util.BuildSdkDomainEntityRef(d, "language_id"),
+		Flow:      util.BuildSdkDomainEntityRef(d, "flow_id"),
+		SpamFlow:  util.BuildSdkDomainEntityRef(d, "spam_flow_id"),
+		Skills:    util.BuildSdkDomainEntityRefArr(d, "skill_ids"),
 		AutoBcc:   buildSdkAutoBccEmailAddresses(d),
 	}
 
@@ -449,7 +451,7 @@ func updateRoutingEmailRoute(ctx context.Context, d *schema.ResourceData, meta i
 func deleteRoutingEmailRoute(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	domainID := d.Get("domain_id").(string)
 
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
 
 	log.Printf("Deleting email route %s", d.Id())
@@ -458,10 +460,10 @@ func deleteRoutingEmailRoute(ctx context.Context, d *schema.ResourceData, meta i
 		return diag.Errorf("Failed to delete email route %s: %s", d.Id(), err)
 	}
 
-	return WithRetries(ctx, 60*time.Second, func() *retry.RetryError {
+	return util.WithRetries(ctx, 60*time.Second, func() *retry.RetryError {
 		_, resp, err := routingAPI.GetRoutingEmailDomainRoute(domainID, d.Id())
 		if err != nil {
-			if IsStatus404(resp) {
+			if util.IsStatus404(resp) {
 				// Routing email domain route deleted
 				log.Printf("Deleted Routing email domain route %s", d.Id())
 				return nil

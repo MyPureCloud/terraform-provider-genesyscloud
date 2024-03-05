@@ -4,7 +4,9 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -12,8 +14,6 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v121/platformclientv2"
 
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
-
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
 
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
@@ -44,7 +44,7 @@ func getAllAuthTaskManagementWorkbins(ctx context.Context, clientConfig *platfor
 
 // createTaskManagementWorkbin is used by the task_management_workbin resource to create Genesys cloud task management workbin
 func createTaskManagementWorkbin(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getTaskManagementWorkbinProxy(sdkConfig)
 
 	taskManagementWorkbin := platformclientv2.Workbincreate{
@@ -66,15 +66,15 @@ func createTaskManagementWorkbin(ctx context.Context, d *schema.ResourceData, me
 
 // readTaskManagementWorkbin is used by the task_management_workbin resource to read an task management workbin from genesys cloud
 func readTaskManagementWorkbin(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getTaskManagementWorkbinProxy(sdkConfig)
 
 	log.Printf("Reading task management workbin %s", d.Id())
 
-	return gcloud.WithRetriesForRead(ctx, d, func() *retry.RetryError {
+	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		workbin, respCode, getErr := proxy.getTaskManagementWorkbinById(ctx, d.Id())
 		if getErr != nil {
-			if gcloud.IsStatus404ByInt(respCode) {
+			if util.IsStatus404ByInt(respCode) {
 				return retry.RetryableError(fmt.Errorf("failed to read task management workbin %s: %s", d.Id(), getErr))
 			}
 			return retry.NonRetryableError(fmt.Errorf("failed to read task management workbin %s: %s", d.Id(), getErr))
@@ -93,7 +93,7 @@ func readTaskManagementWorkbin(ctx context.Context, d *schema.ResourceData, meta
 
 // updateTaskManagementWorkbin is used by the task_management_workbin resource to update an task management workbin in Genesys Cloud
 func updateTaskManagementWorkbin(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getTaskManagementWorkbinProxy(sdkConfig)
 
 	taskManagementWorkbin := platformclientv2.Workbinupdate{
@@ -113,7 +113,7 @@ func updateTaskManagementWorkbin(ctx context.Context, d *schema.ResourceData, me
 
 // deleteTaskManagementWorkbin is used by the task_management_workbin resource to delete an task management workbin from Genesys cloud
 func deleteTaskManagementWorkbin(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getTaskManagementWorkbinProxy(sdkConfig)
 
 	_, err := proxy.deleteTaskManagementWorkbin(ctx, d.Id())
@@ -121,11 +121,11 @@ func deleteTaskManagementWorkbin(ctx context.Context, d *schema.ResourceData, me
 		return diag.Errorf("failed to delete task management workbin %s: %s", d.Id(), err)
 	}
 
-	return gcloud.WithRetries(ctx, 180*time.Second, func() *retry.RetryError {
+	return util.WithRetries(ctx, 180*time.Second, func() *retry.RetryError {
 		_, respCode, err := proxy.getTaskManagementWorkbinById(ctx, d.Id())
 
 		if err != nil {
-			if gcloud.IsStatus404ByInt(respCode) {
+			if util.IsStatus404ByInt(respCode) {
 				log.Printf("Deleted task management workbin %s", d.Id())
 				return nil
 			}

@@ -5,9 +5,10 @@ import (
 	"fmt"
 	"log"
 	"strings"
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 	"time"
 
@@ -41,7 +42,7 @@ func getAllAuthArchitectGrammarLanguage(ctx context.Context, clientConfig *platf
 
 // createArchitectGrammarLanguage is used by the architect_grammar_language resource to create a Genesys cloud architect grammar language
 func createArchitectGrammarLanguage(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := newArchitectGrammarLanguageProxy(sdkConfig)
 
 	architectGrammarLanguage := getArchitectGrammarLanguageFromResourceData(d)
@@ -60,17 +61,17 @@ func createArchitectGrammarLanguage(ctx context.Context, d *schema.ResourceData,
 
 // readArchitectGrammarLanguage is used by the architect_grammar_language resource to read an architect grammar language from genesys cloud.
 func readArchitectGrammarLanguage(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := newArchitectGrammarLanguageProxy(sdkConfig)
 
 	log.Printf("Reading Architect Grammar Language %s", d.Id())
 
-	return gcloud.WithRetriesForRead(ctx, d, func() *retry.RetryError {
+	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		grammarId, languageCode := splitLanguageId(d.Id())
 		language, respCode, getErr := proxy.getArchitectGrammarLanguageById(ctx, grammarId, languageCode)
 
 		if getErr != nil {
-			if gcloud.IsStatus404ByInt(respCode) {
+			if util.IsStatus404ByInt(respCode) {
 				return retry.RetryableError(fmt.Errorf("Failed to read Architect Grammar Language %s: %s", d.Id(), getErr))
 			}
 			return retry.NonRetryableError(fmt.Errorf("Failed to read Architect Grammar Language %s: %s", d.Id(), getErr))
@@ -102,7 +103,7 @@ func splitLanguageId(languageId string) (string, string) {
 
 // updateArchitectGrammarLanguage is used by the architect_grammar_language resource to update an architect grammar language in Genesys Cloud
 func updateArchitectGrammarLanguage(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := newArchitectGrammarLanguageProxy(sdkConfig)
 
 	architectGrammarLanguage := getArchitectGrammarLanguageFromResourceData(d)
@@ -119,7 +120,7 @@ func updateArchitectGrammarLanguage(ctx context.Context, d *schema.ResourceData,
 
 // deleteArchitectGrammarLanguage is used by the architect_grammar_language resource to delete an architect grammar language from Genesys cloud.
 func deleteArchitectGrammarLanguage(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := newArchitectGrammarLanguageProxy(sdkConfig)
 
 	grammarId, languageCode := splitLanguageId(d.Id())
@@ -128,11 +129,11 @@ func deleteArchitectGrammarLanguage(ctx context.Context, d *schema.ResourceData,
 		return diag.Errorf("Failed to delete grammar language %s: %s", d.Id(), err)
 	}
 
-	return gcloud.WithRetries(ctx, 180*time.Second, func() *retry.RetryError {
+	return util.WithRetries(ctx, 180*time.Second, func() *retry.RetryError {
 		_, respCode, err := proxy.getArchitectGrammarLanguageById(ctx, grammarId, d.Id())
 
 		if err != nil {
-			if gcloud.IsStatus404ByInt(respCode) {
+			if util.IsStatus404ByInt(respCode) {
 				log.Printf("Deleted Grammar Language %s", d.Id())
 				return nil
 			}

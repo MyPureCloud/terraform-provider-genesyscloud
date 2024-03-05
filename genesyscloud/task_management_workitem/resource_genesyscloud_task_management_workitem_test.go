@@ -4,7 +4,10 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	authRole "terraform-provider-genesyscloud/genesyscloud/auth_role"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/user_roles"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 	"time"
 
@@ -127,7 +130,7 @@ func TestAccResourceTaskManagementWorkitem(t *testing.T) {
 			date_expires:           time.Now().Add(time.Hour * 20).Format(resourcedata.TimeParseFormat), // 2 days from now
 			duration_seconds:       99999,
 			ttl:                    int(time.Now().Add(time.Hour * 24 * 30 * 6).Unix()), // ~6 months from now
-			status_id:              gcloud.NullValue,
+			status_id:              util.NullValue,
 			workbin_id:             fmt.Sprintf("genesyscloud_task_management_workbin.%s.id", wbResourceId),
 			assignee_id:            fmt.Sprintf("genesyscloud_user.%s.id", userResId1),
 			external_contact_id:    fmt.Sprintf("genesyscloud_externalcontacts_contact.%s.id", externalContactResId1),
@@ -145,8 +148,8 @@ func TestAccResourceTaskManagementWorkitem(t *testing.T) {
 
 		// String configuration of task management objects needed for the workitem: schema, workbin, workitem.
 		// They don't really change so they are defined here instead of in each step.
-		taskMgmtConfig = workbin.GenerateWorkbinResource(wbResourceId, wbName, wbDescription, gcloud.NullValue) +
-			workbin.GenerateWorkbinResource(wb2ResourceId, wb2Name, wb2Description, gcloud.NullValue) +
+		taskMgmtConfig = workbin.GenerateWorkbinResource(wbResourceId, wbName, wbDescription, util.NullValue) +
+			workbin.GenerateWorkbinResource(wb2ResourceId, wb2Name, wb2Description, util.NullValue) +
 			workitemSchema.GenerateWorkitemSchemaResourceBasic(wsResourceId, wsName, wsDescription) +
 			worktype.GenerateWorktypeResourceBasic(
 				wtResName,
@@ -174,8 +177,8 @@ func TestAccResourceTaskManagementWorkitem(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
-		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			// Create basic workitem
 			{
@@ -195,8 +198,8 @@ func TestAccResourceTaskManagementWorkitem(t *testing.T) {
 					gcloud.GenerateRoutingSkillResource(skillResId1, skillResName1) +
 					gcloud.GenerateBasicUserResource(userResId1, userEmail1, userName1) +
 					externalContact.GenerateBasicExternalContactResource(externalContactResId1, externalContactTitle1) +
-					gcloud.GenerateAuthRoleResource(roleResId1, roleName1, "test role description",
-						gcloud.GenerateRolePermPolicy("workitems", "*", strconv.Quote("*")),
+					authRole.GenerateAuthRoleResource(roleResId1, roleName1, "test role description",
+						authRole.GenerateRolePermPolicy("workitems", "*", strconv.Quote("*")),
 					) +
 					user_roles.GenerateUserRoles("user_role_1", userResId1,
 						generateResourceRoles(
@@ -443,8 +446,8 @@ func TestAccResourceTaskManagementWorkitemCustomFields(t *testing.T) {
 
 		// String configuration of task management objects needed for the workitem: schema, workbin, workitem.
 		// They don't really change so they are defined here instead of in each step.
-		taskMgmtConfig = workbin.GenerateWorkbinResource(wbResourceId, wbName, wbDescription, gcloud.NullValue) +
-			workitemSchema.GenerateWorkitemSchemaResource(wsResourceId, wsName, wsDescription, wsProperties, gcloud.TrueValue) +
+		taskMgmtConfig = workbin.GenerateWorkbinResource(wbResourceId, wbName, wbDescription, util.NullValue) +
+			workitemSchema.GenerateWorkitemSchemaResource(wsResourceId, wsName, wsDescription, wsProperties, util.TrueValue) +
 			worktype.GenerateWorktypeResourceBasic(
 				wtResName,
 				wtName,
@@ -471,8 +474,8 @@ func TestAccResourceTaskManagementWorkitemCustomFields(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
-		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				Config: taskMgmtConfig +
@@ -520,7 +523,7 @@ func validateWorkitemCustomFields(resourceName string, jsonFields string) resour
 			return fmt.Errorf("No custom_fields found for %s in state", resourceID)
 		}
 
-		if !gcloud.EquivalentJsons(stateCustomFields, jsonFields) {
+		if !util.EquivalentJsons(stateCustomFields, jsonFields) {
 			return fmt.Errorf("%s custom_fields does not match %s", stateCustomFields, jsonFields)
 		}
 
@@ -576,8 +579,8 @@ func generateWorkitemResource(resName string, wt workitemConfig, attrs string) s
 		wt.external_contact_id,
 		wt.external_tag,
 		wt.queue_id,
-		gcloud.GenerateStringArray(wt.skills_ids...),
-		gcloud.GenerateStringArray(wt.preferred_agents_ids...),
+		util.GenerateStringArray(wt.skills_ids...),
+		util.GenerateStringArray(wt.preferred_agents_ids...),
 		wt.auto_status_transition,
 		wt.custom_fields,
 		generateScoredAgents(&wt.scored_agents),
@@ -612,7 +615,7 @@ func testVerifyTaskManagementWorkitemDestroyed(state *terraform.State) error {
 		worktype, resp, err := taskMgmtApi.GetTaskmanagementWorkitem(rs.Primary.ID, "")
 		if worktype != nil {
 			return fmt.Errorf("task management workitem (%s) still exists", rs.Primary.ID)
-		} else if gcloud.IsStatus404(resp) {
+		} else if util.IsStatus404(resp) {
 			// Workitem not found as expected
 			continue
 		} else {

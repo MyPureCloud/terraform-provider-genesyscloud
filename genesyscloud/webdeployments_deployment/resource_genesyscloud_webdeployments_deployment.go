@@ -4,7 +4,8 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"terraform-provider-genesyscloud/genesyscloud"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -46,7 +47,7 @@ func createWebDeployment(ctx context.Context, d *schema.ResourceData, meta inter
 		return diag.Errorf("Failed to create web deployment %s: %s", name, err)
 	}
 
-	sdkConfig := meta.(*genesyscloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	wd := getWebDeploymentsProxy(sdkConfig)
 
 	log.Printf("Creating web deployment %s", name)
@@ -54,7 +55,7 @@ func createWebDeployment(ctx context.Context, d *schema.ResourceData, meta inter
 	configId := d.Get("configuration.0.id").(string)
 	configVersion := d.Get("configuration.0.version").(string)
 
-	flow := genesyscloud.BuildSdkDomainEntityRef(d, "flow_id")
+	flow := util.BuildSdkDomainEntityRef(d, "flow_id")
 
 	inputDeployment := platformclientv2.Webdeployment{
 		Name: &name,
@@ -74,10 +75,10 @@ func createWebDeployment(ctx context.Context, d *schema.ResourceData, meta inter
 		inputDeployment.Flow = flow
 	}
 
-	diagErr := genesyscloud.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
+	diagErr := util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		deployment, resp, err := wd.createWebDeployment(ctx, inputDeployment)
 		if err != nil {
-			if genesyscloud.IsStatus400(resp) {
+			if util.IsStatus400(resp) {
 				return retry.RetryableError(fmt.Errorf("Failed to create web deployment %s: %s", name, err))
 			}
 			return retry.NonRetryableError(fmt.Errorf("Failed to create web deployment %s: %s", name, err))
@@ -104,10 +105,10 @@ func createWebDeployment(ctx context.Context, d *schema.ResourceData, meta inter
 
 func waitForDeploymentToBeActive(ctx context.Context, sdkConfig *platformclientv2.Configuration, id string) diag.Diagnostics {
 	wd := getWebDeploymentsProxy(sdkConfig)
-	return genesyscloud.WithRetries(ctx, 60*time.Second, func() *retry.RetryError {
+	return util.WithRetries(ctx, 60*time.Second, func() *retry.RetryError {
 		deployment, resp, err := wd.getWebDeployment(ctx, id)
 		if err != nil {
-			if genesyscloud.IsStatus404(resp) {
+			if util.IsStatus404(resp) {
 				return retry.RetryableError(fmt.Errorf("Error verifying active status for new web deployment %s: %s", id, err))
 			}
 			return retry.NonRetryableError(fmt.Errorf("Error verifying active status for new web deployment %s: %s", id, err))
@@ -122,14 +123,14 @@ func waitForDeploymentToBeActive(ctx context.Context, sdkConfig *platformclientv
 }
 
 func readWebDeployment(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*genesyscloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	wd := getWebDeploymentsProxy(sdkConfig)
 
 	log.Printf("Reading web deployment %s", d.Id())
-	return genesyscloud.WithRetriesForRead(ctx, d, func() *retry.RetryError {
+	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		deployment, resp, getErr := wd.getWebDeployment(ctx, d.Id())
 		if getErr != nil {
-			if genesyscloud.IsStatus404(resp) {
+			if util.IsStatus404(resp) {
 				return retry.RetryableError(fmt.Errorf("Failed to read web deployment %s: %s", d.Id(), getErr))
 			}
 			return retry.NonRetryableError(fmt.Errorf("Failed to read web deployment %s: %s", d.Id(), getErr))
@@ -172,7 +173,7 @@ func updateWebDeployment(ctx context.Context, d *schema.ResourceData, meta inter
 		return diag.Errorf("Failed to update web deployment %s: %s", name, err)
 	}
 
-	sdkConfig := meta.(*genesyscloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	wd := getWebDeploymentsProxy(sdkConfig)
 
 	log.Printf("Updating web deployment %s", name)
@@ -180,7 +181,7 @@ func updateWebDeployment(ctx context.Context, d *schema.ResourceData, meta inter
 	configId := d.Get("configuration.0.id").(string)
 	configVersion := d.Get("configuration.0.version").(string)
 
-	flow := genesyscloud.BuildSdkDomainEntityRef(d, "flow_id")
+	flow := util.BuildSdkDomainEntityRef(d, "flow_id")
 
 	inputDeployment := platformclientv2.Webdeployment{
 		Name: &name,
@@ -201,10 +202,10 @@ func updateWebDeployment(ctx context.Context, d *schema.ResourceData, meta inter
 		inputDeployment.Flow = flow
 	}
 
-	diagErr := genesyscloud.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
+	diagErr := util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		_, resp, err := wd.updateWebDeployment(ctx, d.Id(), inputDeployment)
 		if err != nil {
-			if genesyscloud.IsStatus400(resp) {
+			if util.IsStatus400(resp) {
 				return retry.RetryableError(fmt.Errorf("Error updating web deployment %s: %s", name, err))
 			}
 			return retry.NonRetryableError(fmt.Errorf("Error updating web deployment %s: %s", name, err))
@@ -228,7 +229,7 @@ func updateWebDeployment(ctx context.Context, d *schema.ResourceData, meta inter
 func deleteWebDeployment(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	name := d.Get("name").(string)
 
-	sdkConfig := meta.(*genesyscloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	wd := getWebDeploymentsProxy(sdkConfig)
 
 	log.Printf("Deleting web deployment %s", name)
@@ -238,10 +239,10 @@ func deleteWebDeployment(ctx context.Context, d *schema.ResourceData, meta inter
 		return diag.Errorf("Failed to delete web deployment %s: %s", name, err)
 	}
 
-	return genesyscloud.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
+	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		_, resp, err := wd.getWebDeployment(ctx, d.Id())
 		if err != nil {
-			if genesyscloud.IsStatus404(resp) {
+			if util.IsStatus404(resp) {
 				log.Printf("Deleted web deployment %s", d.Id())
 				return nil
 			}

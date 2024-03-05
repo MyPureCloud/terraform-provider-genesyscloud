@@ -6,6 +6,8 @@ import (
 	"log"
 	"strings"
 	"sync"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -31,7 +33,7 @@ var (
 func DataSourceRoutingQueue() *schema.Resource {
 	return &schema.Resource{
 		Description: "Data source for Genesys Cloud Routing Queues. Select a queue by name.",
-		ReadContext: ReadWithPooledClient(dataSourceRoutingQueueRead),
+		ReadContext: provider.ReadWithPooledClient(dataSourceRoutingQueueRead),
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Description: "Queue name.",
@@ -43,7 +45,7 @@ func DataSourceRoutingQueue() *schema.Resource {
 }
 
 func dataSourceRoutingQueueRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	sdkConfig := m.(*ProviderMeta).ClientConfig
+	sdkConfig := m.(*provider.ProviderMeta).ClientConfig
 	routingApi := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
 
 	// Create a cache for the queues
@@ -135,7 +137,7 @@ func hydrateRoutingQueueCacheFn(c *DataSourceCache) error {
 // Returns the queue id (blank if not found) and diag
 func getQueueByName(ctx context.Context, routingApi *platformclientv2.RoutingApi, name string) (string, diag.Diagnostics) {
 	queueId := ""
-	diag := WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
+	diag := util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
 		for pageNum := 1; ; pageNum++ {
 			const pageSize = 100
 			queues, _, getErr := routingApi.GetRoutingQueues(pageNum, pageSize, "", name, nil, nil, nil, false)

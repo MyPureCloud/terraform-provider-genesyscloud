@@ -3,6 +3,8 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -15,7 +17,7 @@ import (
 func dataSourceAuthDivision() *schema.Resource {
 	return &schema.Resource{
 		Description: "Data source for Genesys Cloud Divisions. Select a division by name.",
-		ReadContext: ReadWithPooledClient(dataSourceAuthDivisionRead),
+		ReadContext: provider.ReadWithPooledClient(dataSourceAuthDivisionRead),
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Description: "Division name.",
@@ -27,13 +29,13 @@ func dataSourceAuthDivision() *schema.Resource {
 }
 
 func dataSourceAuthDivisionRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	sdkConfig := m.(*ProviderMeta).ClientConfig
+	sdkConfig := m.(*provider.ProviderMeta).ClientConfig
 	authAPI := platformclientv2.NewAuthorizationApiWithConfig(sdkConfig)
 
 	name := d.Get("name").(string)
 
 	// Query division by name. Retry in case search has not yet indexed the division.
-	return WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
+	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
 		const pageSize = 100
 		const pageNum = 1
 		divisions, _, getErr := authAPI.GetAuthorizationDivisions(pageSize, pageNum, "", nil, "", "", false, name)

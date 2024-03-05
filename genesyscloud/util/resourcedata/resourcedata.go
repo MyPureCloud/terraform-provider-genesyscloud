@@ -102,6 +102,13 @@ func SetMapInterfaceArrayWithFuncIfNotNil[T any](targetMap map[string]interface{
 	}
 }
 
+// SetMapSchemaSetWithFuncIfNotNil will read the values in a nested resource using the provided function and set it in a map
+func SetMapSchemaSetWithFuncIfNotNil[T any](targetMap map[string]interface{}, key string, value *T, f func(*T) *schema.Set) {
+	if value != nil {
+		targetMap[key] = f(value)
+	}
+}
+
 // Use these functions to read values for an object and set them on the schema
 
 // SetNillableReference will read the value of a reference property and set it on the schema
@@ -142,6 +149,15 @@ func SetNillableValue[T any](d *schema.ResourceData, key string, value *T) {
 
 // SetNillableValueWithInterfaceArrayWithFunc will read the values in a nested resource using the provided function and set it on the schema
 func SetNillableValueWithInterfaceArrayWithFunc[T any](d *schema.ResourceData, key string, value *T, f func(*T) []interface{}) {
+	if value != nil {
+		d.Set(key, f(value))
+	} else {
+		d.Set(key, nil)
+	}
+}
+
+// SetNillableValueWithInterfaceArrayWithFunc will read the values in a nested resource using the provided function and set it on the schema
+func SetNillableValueWithSchemaSetWithFunc[T any](d *schema.ResourceData, key string, value *T, f func(*T) *schema.Set) {
 	if value != nil {
 		d.Set(key, f(value))
 	} else {

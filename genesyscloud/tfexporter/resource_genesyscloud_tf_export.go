@@ -5,8 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	gcloud "terraform-provider-genesyscloud/genesyscloud/validators"
 
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 
@@ -66,6 +65,15 @@ func ResourceTfExport() *schema.Resource {
 				ForceNew:      true,
 				ConflictsWith: []string{"resource_types", "exclude_filter_resources"},
 			},
+			"replace_with_datasource": {
+				Description: "Include only resources that match either a resource type or a resource type::regular expression.  See export guide for additional information",
+				Type:        schema.TypeList,
+				Optional:    true,
+				Elem: &schema.Schema{
+					Type: schema.TypeString,
+				},
+				ForceNew: true,
+			},
 			"exclude_filter_resources": {
 				Description: "Exclude resources that match either a resource type or a resource type::regular expression.  See export guide for additional information",
 				Type:        schema.TypeList,
@@ -117,6 +125,13 @@ func ResourceTfExport() *schema.Resource {
 				Type:        schema.TypeBool,
 				Optional:    true,
 				Default:     false,
+				ForceNew:    true,
+			},
+			"ignore_cyclic_deps": {
+				Description: "Ignore Cyclic Dependencies when building the flows and do not throw an error",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     true,
 				ForceNew:    true,
 			},
 		},

@@ -5,6 +5,9 @@ import (
 	"fmt"
 	"log"
 	"strings"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/validators"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -46,7 +49,7 @@ func getAllLocations(_ context.Context, clientConfig *platformclientv2.Configura
 
 func LocationExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
-		GetResourcesFunc: GetAllWithPooledClient(getAllLocations),
+		GetResourcesFunc: provider.GetAllWithPooledClient(getAllLocations),
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			"path": {RefType: "genesyscloud_location"},
 		},
@@ -60,10 +63,10 @@ func ResourceLocation() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud Location",
 
-		CreateContext: CreateWithPooledClient(createLocation),
-		ReadContext:   ReadWithPooledClient(readLocation),
-		UpdateContext: UpdateWithPooledClient(updateLocation),
-		DeleteContext: DeleteWithPooledClient(deleteLocation),
+		CreateContext: provider.CreateWithPooledClient(createLocation),
+		ReadContext:   provider.ReadWithPooledClient(readLocation),
+		UpdateContext: provider.UpdateWithPooledClient(updateLocation),
+		DeleteContext: provider.DeleteWithPooledClient(deleteLocation),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -96,7 +99,7 @@ func ResourceLocation() *schema.Resource {
 							Description:      "Emergency phone number.  Must be in an E.164 number format.",
 							Type:             schema.TypeString,
 							Required:         true,
-							ValidateDiagFunc: ValidatePhoneNumber,
+							ValidateDiagFunc: validators.ValidatePhoneNumber,
 							DiffSuppressFunc: comparePhoneNumbers,
 						},
 						"type": {
@@ -157,7 +160,7 @@ func createLocation(ctx context.Context, d *schema.ResourceData, meta interface{
 	name := d.Get("name").(string)
 	notes := d.Get("notes").(string)
 
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	locationsAPI := platformclientv2.NewLocationsApiWithConfig(sdkConfig)
 
 	create := platformclientv2.Locationcreatedefinition{
@@ -184,14 +187,14 @@ func createLocation(ctx context.Context, d *schema.ResourceData, meta interface{
 }
 
 func readLocation(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	locationsAPI := platformclientv2.NewLocationsApiWithConfig(sdkConfig)
 
 	log.Printf("Reading location %s", d.Id())
-	return WithRetriesForRead(ctx, d, func() *retry.RetryError {
+	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		location, resp, getErr := locationsAPI.GetLocation(d.Id(), nil)
 		if getErr != nil {
-			if IsStatus404(resp) {
+			if util.IsStatus404(resp) {
 				return retry.RetryableError(fmt.Errorf("Failed to read location %s: %s", d.Id(), getErr))
 			}
 			return retry.NonRetryableError(fmt.Errorf("Failed to read location %s: %s", d.Id(), getErr))
@@ -229,11 +232,11 @@ func updateLocation(ctx context.Context, d *schema.ResourceData, meta interface{
 	name := d.Get("name").(string)
 	notes := d.Get("notes").(string)
 
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	locationsAPI := platformclientv2.NewLocationsApiWithConfig(sdkConfig)
 
 	log.Printf("Updating location %s", name)
-	diagErr := RetryWhen(IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+	diagErr := util.RetryWhen(util.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		// Get current location version
 		location, resp, getErr := locationsAPI.GetLocation(d.Id(), nil)
 		if getErr != nil {
@@ -280,11 +283,11 @@ func updateLocation(ctx context.Context, d *schema.ResourceData, meta interface{
 func deleteLocation(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	name := d.Get("name").(string)
 
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	locationsAPI := platformclientv2.NewLocationsApiWithConfig(sdkConfig)
 
 	log.Printf("Deleting location %s", name)
-	diagErr := RetryWhen(IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+	diagErr := util.RetryWhen(util.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		// Directory occasionally returns version errors on deletes if an object was updated at the same time.
 		resp, err := locationsAPI.DeleteLocation(d.Id())
 		if err != nil {
@@ -296,10 +299,10 @@ func deleteLocation(ctx context.Context, d *schema.ResourceData, meta interface{
 		return diagErr
 	}
 
-	return WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
+	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		location, resp, err := locationsAPI.GetLocation(d.Id(), nil)
 		if err != nil {
-			if IsStatus404(resp) {
+			if util.IsStatus404(resp) {
 				// Location deleted
 				log.Printf("Deleted location %s", d.Id())
 				return nil

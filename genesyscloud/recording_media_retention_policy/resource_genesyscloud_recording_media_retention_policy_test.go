@@ -7,7 +7,11 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"terraform-provider-genesyscloud/genesyscloud/architect_flow"
+	authRole "terraform-provider-genesyscloud/genesyscloud/auth_role"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
 	userRoles "terraform-provider-genesyscloud/genesyscloud/user_roles"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 	"time"
 
@@ -924,30 +928,30 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 		domainId  = fmt.Sprintf("terraform%v.com", time.Now().Unix())
 	)
 
-	_, err := gcloud.AuthorizeSdk()
+	_, err := provider.AuthorizeSdk()
 	if err != nil {
 		t.Fatal(err)
 	}
 	CleanupRoutingEmailDomains()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
-		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				Config: gcloud.GenerateRoutingEmailDomainResource(
 					domainRes,
 					domainId,
-					gcloud.FalseValue, // Subdomain
-					gcloud.NullValue,
+					util.FalseValue, // Subdomain
+					util.NullValue,
 				) + gcloud.GenerateRoutingQueueResourceBasic(queueResource1, queueName, "") +
-					gcloud.GenerateAuthRoleResource(
+					authRole.GenerateAuthRoleResource(
 						roleResource1,
 						roleName1,
 						roleDesc1,
-						gcloud.GenerateRolePermissions(permissions...),
-						gcloud.GenerateRolePermPolicy(qualityDomain, evaluationEntityType, strconv.Quote(editAction)),
-						gcloud.GenerateRolePermPolicy(qualityDomain, calibrationEntityType, strconv.Quote(addAction)),
+						authRole.GenerateRolePermissions(permissions...),
+						authRole.GenerateRolePermPolicy(qualityDomain, evaluationEntityType, strconv.Quote(editAction)),
+						authRole.GenerateRolePermPolicy(qualityDomain, calibrationEntityType, strconv.Quote(addAction)),
 					) +
 					userRoles.GenerateUserRoles(
 						userRoleResource1,
@@ -960,12 +964,12 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 					integration.GenerateIntegrationResource(integrationResource1, strconv.Quote(integrationIntendedState), strconv.Quote(integrationType), "") +
 					gcloud.GenerateRoutingLanguageResource(languageResource1, languageName) +
 					gcloud.GenerateRoutingWrapupcodeResource(wrapupCodeResource1, wrapupCodeName) +
-					gcloud.GenerateFlowResource(
+					architect_flow.GenerateFlowResource(
 						flowResource1,
 						filePath1,
 						"",
 						false,
-						gcloud.GenerateSubstitutionsMap(map[string]string{
+						util.GenerateSubstitutionsMap(map[string]string{
 							"flow_name":            flowName,
 							"default_language":     "en-us",
 							"greeting":             "Archy says hi!!!",
@@ -976,7 +980,7 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_recording_media_retention_policy."+policyResource1, "name", mediaRetentionCallPolicy.Name),
 					resource.TestCheckResourceAttr("genesyscloud_recording_media_retention_policy."+policyResource1, "description", mediaRetentionCallPolicy.Description),
-					resource.TestCheckResourceAttr("genesyscloud_recording_media_retention_policy."+policyResource1, "enabled", gcloud.TrueValue),
+					resource.TestCheckResourceAttr("genesyscloud_recording_media_retention_policy."+policyResource1, "enabled", util.TrueValue),
 
 					resource.TestCheckResourceAttr("genesyscloud_recording_media_retention_policy."+policyResource1, "media_policies.0.call_policy.0.actions.0.retain_recording", strconv.FormatBool(mediaRetentionCallPolicy.MediaPolicies.CallPolicy.Actions.RetainRecording)),
 					resource.TestCheckResourceAttr("genesyscloud_recording_media_retention_policy."+policyResource1, "media_policies.0.call_policy.0.actions.0.delete_recording", strconv.FormatBool(mediaRetentionCallPolicy.MediaPolicies.CallPolicy.Actions.DeleteRecording)),
@@ -1045,16 +1049,16 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 				Config: gcloud.GenerateRoutingEmailDomainResource(
 					domainRes,
 					domainId,
-					gcloud.FalseValue, // Subdomain
-					gcloud.NullValue,
+					util.FalseValue, // Subdomain
+					util.NullValue,
 				) + gcloud.GenerateRoutingQueueResourceBasic(queueResource1, queueName, "") +
-					gcloud.GenerateAuthRoleResource(
+					authRole.GenerateAuthRoleResource(
 						roleResource1,
 						roleName1,
 						roleDesc1,
-						gcloud.GenerateRolePermissions(permissions...),
-						gcloud.GenerateRolePermPolicy(qualityDomain, evaluationEntityType, strconv.Quote(editAction)),
-						gcloud.GenerateRolePermPolicy(qualityDomain, calibrationEntityType, strconv.Quote(addAction)),
+						authRole.GenerateRolePermissions(permissions...),
+						authRole.GenerateRolePermPolicy(qualityDomain, evaluationEntityType, strconv.Quote(editAction)),
+						authRole.GenerateRolePermPolicy(qualityDomain, calibrationEntityType, strconv.Quote(addAction)),
 					) +
 					userRoles.GenerateUserRoles(
 						userRoleResource1,
@@ -1067,12 +1071,12 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 					integration.GenerateIntegrationResource(integrationResource1, strconv.Quote(integrationIntendedState), strconv.Quote(integrationType), "") +
 					gcloud.GenerateRoutingLanguageResource(languageResource1, languageName) +
 					gcloud.GenerateRoutingWrapupcodeResource(wrapupCodeResource1, wrapupCodeName) +
-					gcloud.GenerateFlowResource(
+					architect_flow.GenerateFlowResource(
 						flowResource1,
 						filePath1,
 						"",
 						false,
-						gcloud.GenerateSubstitutionsMap(map[string]string{
+						util.GenerateSubstitutionsMap(map[string]string{
 							"flow_name":            flowName,
 							"default_language":     "en-us",
 							"greeting":             "Archy says hi!!!",
@@ -1083,7 +1087,7 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_recording_media_retention_policy."+policyResource1, "name", mediaRetentionCallPolicy.Name),
 					resource.TestCheckResourceAttr("genesyscloud_recording_media_retention_policy."+policyResource1, "description", mediaRetentionCallPolicy.Description),
-					resource.TestCheckResourceAttr("genesyscloud_recording_media_retention_policy."+policyResource1, "enabled", gcloud.TrueValue),
+					resource.TestCheckResourceAttr("genesyscloud_recording_media_retention_policy."+policyResource1, "enabled", util.TrueValue),
 
 					resource.TestCheckResourceAttr("genesyscloud_recording_media_retention_policy."+policyResource1, "media_policies.0.chat_policy.0.actions.0.retain_recording", strconv.FormatBool(mediaRetentionChatPolicy.MediaPolicies.ChatPolicy.Actions.RetainRecording)),
 					resource.TestCheckResourceAttr("genesyscloud_recording_media_retention_policy."+policyResource1, "media_policies.0.chat_policy.0.actions.0.delete_recording", strconv.FormatBool(mediaRetentionChatPolicy.MediaPolicies.ChatPolicy.Actions.DeleteRecording)),
@@ -1152,16 +1156,16 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 				Config: gcloud.GenerateRoutingEmailDomainResource(
 					domainRes,
 					domainId,
-					gcloud.FalseValue, // Subdomain
-					gcloud.NullValue,
+					util.FalseValue, // Subdomain
+					util.NullValue,
 				) + gcloud.GenerateRoutingQueueResourceBasic(queueResource1, queueName, "") +
-					gcloud.GenerateAuthRoleResource(
+					authRole.GenerateAuthRoleResource(
 						roleResource1,
 						roleName1,
 						roleDesc1,
-						gcloud.GenerateRolePermissions(permissions...),
-						gcloud.GenerateRolePermPolicy(qualityDomain, evaluationEntityType, strconv.Quote(editAction)),
-						gcloud.GenerateRolePermPolicy(qualityDomain, calibrationEntityType, strconv.Quote(addAction)),
+						authRole.GenerateRolePermissions(permissions...),
+						authRole.GenerateRolePermPolicy(qualityDomain, evaluationEntityType, strconv.Quote(editAction)),
+						authRole.GenerateRolePermPolicy(qualityDomain, calibrationEntityType, strconv.Quote(addAction)),
 					) +
 					userRoles.GenerateUserRoles(
 						userRoleResource1,
@@ -1174,12 +1178,12 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 					integration.GenerateIntegrationResource(integrationResource1, strconv.Quote(integrationIntendedState), strconv.Quote(integrationType), "") +
 					gcloud.GenerateRoutingLanguageResource(languageResource1, languageName) +
 					gcloud.GenerateRoutingWrapupcodeResource(wrapupCodeResource1, wrapupCodeName) +
-					gcloud.GenerateFlowResource(
+					architect_flow.GenerateFlowResource(
 						flowResource1,
 						filePath1,
 						"",
 						false,
-						gcloud.GenerateSubstitutionsMap(map[string]string{
+						util.GenerateSubstitutionsMap(map[string]string{
 							"flow_name":            flowName,
 							"default_language":     "en-us",
 							"greeting":             "Archy says hi!!!",
@@ -1190,7 +1194,7 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_recording_media_retention_policy."+policyResource1, "name", mediaRetentionCallPolicy.Name),
 					resource.TestCheckResourceAttr("genesyscloud_recording_media_retention_policy."+policyResource1, "description", mediaRetentionCallPolicy.Description),
-					resource.TestCheckResourceAttr("genesyscloud_recording_media_retention_policy."+policyResource1, "enabled", gcloud.TrueValue),
+					resource.TestCheckResourceAttr("genesyscloud_recording_media_retention_policy."+policyResource1, "enabled", util.TrueValue),
 
 					resource.TestCheckResourceAttr("genesyscloud_recording_media_retention_policy."+policyResource1, "media_policies.0.message_policy.0.actions.0.retain_recording", strconv.FormatBool(mediaRetentionMessagePolicy.MediaPolicies.MessagePolicy.Actions.RetainRecording)),
 					resource.TestCheckResourceAttr("genesyscloud_recording_media_retention_policy."+policyResource1, "media_policies.0.message_policy.0.actions.0.delete_recording", strconv.FormatBool(mediaRetentionMessagePolicy.MediaPolicies.MessagePolicy.Actions.DeleteRecording)),
@@ -1259,16 +1263,16 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 				Config: gcloud.GenerateRoutingEmailDomainResource(
 					domainRes,
 					domainId,
-					gcloud.FalseValue, // Subdomain
-					gcloud.NullValue,
+					util.FalseValue, // Subdomain
+					util.NullValue,
 				) + gcloud.GenerateRoutingQueueResourceBasic(queueResource1, queueName, "") +
-					gcloud.GenerateAuthRoleResource(
+					authRole.GenerateAuthRoleResource(
 						roleResource1,
 						roleName1,
 						roleDesc1,
-						gcloud.GenerateRolePermissions(permissions...),
-						gcloud.GenerateRolePermPolicy(qualityDomain, evaluationEntityType, strconv.Quote(editAction)),
-						gcloud.GenerateRolePermPolicy(qualityDomain, calibrationEntityType, strconv.Quote(addAction)),
+						authRole.GenerateRolePermissions(permissions...),
+						authRole.GenerateRolePermPolicy(qualityDomain, evaluationEntityType, strconv.Quote(editAction)),
+						authRole.GenerateRolePermPolicy(qualityDomain, calibrationEntityType, strconv.Quote(addAction)),
 					) +
 					userRoles.GenerateUserRoles(
 						userRoleResource1,
@@ -1281,12 +1285,12 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 					integration.GenerateIntegrationResource(integrationResource1, strconv.Quote(integrationIntendedState), strconv.Quote(integrationType), "") +
 					gcloud.GenerateRoutingLanguageResource(languageResource1, languageName) +
 					gcloud.GenerateRoutingWrapupcodeResource(wrapupCodeResource1, wrapupCodeName) +
-					gcloud.GenerateFlowResource(
+					architect_flow.GenerateFlowResource(
 						flowResource1,
 						filePath1,
 						"",
 						false,
-						gcloud.GenerateSubstitutionsMap(map[string]string{
+						util.GenerateSubstitutionsMap(map[string]string{
 							"flow_name":            flowName,
 							"default_language":     "en-us",
 							"greeting":             "Archy says hi!!!",
@@ -1297,7 +1301,7 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_recording_media_retention_policy."+policyResource1, "name", mediaRetentionCallPolicy.Name),
 					resource.TestCheckResourceAttr("genesyscloud_recording_media_retention_policy."+policyResource1, "description", mediaRetentionCallPolicy.Description),
-					resource.TestCheckResourceAttr("genesyscloud_recording_media_retention_policy."+policyResource1, "enabled", gcloud.TrueValue),
+					resource.TestCheckResourceAttr("genesyscloud_recording_media_retention_policy."+policyResource1, "enabled", util.TrueValue),
 
 					resource.TestCheckResourceAttr("genesyscloud_recording_media_retention_policy."+policyResource1, "media_policies.0.email_policy.0.actions.0.retain_recording", strconv.FormatBool(mediaRetentionEmailPolicy.MediaPolicies.EmailPolicy.Actions.RetainRecording)),
 					resource.TestCheckResourceAttr("genesyscloud_recording_media_retention_policy."+policyResource1, "media_policies.0.email_policy.0.actions.0.delete_recording", strconv.FormatBool(mediaRetentionEmailPolicy.MediaPolicies.EmailPolicy.Actions.DeleteRecording)),
@@ -1389,7 +1393,7 @@ func testVerifyMediaRetentionPolicyDestroyed(state *terraform.State) error {
 			return fmt.Errorf("Policy (%s) still exists", rs.Primary.ID)
 		}
 
-		if gcloud.IsStatus404(resp) {
+		if util.IsStatus404(resp) {
 			// Policy not found as expected
 			continue
 		}

@@ -3,7 +3,7 @@ package user_roles
 import (
 	"fmt"
 	"strings"
-	"terraform-provider-genesyscloud/genesyscloud"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"terraform-provider-genesyscloud/genesyscloud/util/lists"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -16,7 +16,7 @@ func flattenSubjectRoles(d *schema.ResourceData, p *userRolesProxy) (*schema.Set
 		return nil, resp, fmt.Errorf("error getting assigned grants %s", diagErr)
 	}
 
-	homeDivId, err := genesyscloud.GetHomeDivisionID()
+	homeDivId, err := util.GetHomeDivisionID()
 	if err != nil {
 		return nil, nil, fmt.Errorf("error getting home division id %v", err)
 	}
@@ -91,7 +91,7 @@ func getExistingAndConfigGrants(grants []platformclientv2.Authzgrant, rolesConfi
 	}
 
 	var configGrants []string
-	homeDiv, err := genesyscloud.GetHomeDivisionID()
+	homeDiv, err := util.GetHomeDivisionID()
 
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to get home division ID %v", err)

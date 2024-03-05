@@ -3,6 +3,8 @@ package genesyscloud
 import (
 	"fmt"
 	"strings"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -17,22 +19,22 @@ func TestAccDataSourceRoutingSettings(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Search by contact center
 				Config: generateRoutingSettingsWithCustomAttrs(
 					settingsResource,
-					TrueValue,
-					generateSettingsContactCenter(FalseValue),
-					generateSettingsTranscription(transcription, confidence, TrueValue, FalseValue),
+					util.TrueValue,
+					generateSettingsContactCenter(util.FalseValue),
+					generateSettingsTranscription(transcription, confidence, util.TrueValue, util.FalseValue),
 				) + generateRoutingSettingsDataSource(
 					settingsDataSource,
-					TrueValue,
+					util.TrueValue,
 					"genesyscloud_routing_settings."+settingsResource,
-					generateSettingsContactCenter(FalseValue),
-					generateSettingsTranscription(transcription, confidence, TrueValue, FalseValue),
+					generateSettingsContactCenter(util.FalseValue),
+					generateSettingsTranscription(transcription, confidence, util.TrueValue, util.FalseValue),
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrPair("data.genesyscloud_routing_settings."+settingsDataSource, "reset_agent_on_presence", "genesyscloud_routing_settings."+settingsResource, "reset_agent_on_presence"),

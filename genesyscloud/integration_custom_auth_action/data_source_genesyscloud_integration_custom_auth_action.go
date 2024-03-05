@@ -3,9 +3,9 @@ package integration_custom_auth_action
 import (
 	"context"
 	"fmt"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
-
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -22,15 +22,15 @@ import (
 
 // dataSourceIntegrationCustomAuthActionRead retrieves the custom auth action id from the integration name
 func dataSourceIntegrationCustomAuthActionRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	sdkConfig := m.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := m.(*provider.ProviderMeta).ClientConfig
 	cap := getCustomAuthActionsProxy(sdkConfig)
 
 	integrationId := d.Get("parent_integration_id").(string)
 
-	return gcloud.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
+	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		integration, resp, getErr := cap.getIntegrationById(ctx, integrationId)
 		if getErr != nil {
-			if gcloud.IsStatus404(resp) {
+			if util.IsStatus404(resp) {
 				return retry.RetryableError(fmt.Errorf("failed to read integration %s: %s", d.Id(), getErr))
 			}
 			return retry.NonRetryableError(fmt.Errorf("failed to read integration %s: %s", d.Id(), getErr))
@@ -40,7 +40,7 @@ func dataSourceIntegrationCustomAuthActionRead(ctx context.Context, d *schema.Re
 		authActionId := getCustomAuthIdFromIntegration(*integration.Id)
 		authAction, resp, err := cap.getCustomAuthActionById(ctx, authActionId)
 		if err != nil {
-			if gcloud.IsStatus404(resp) {
+			if util.IsStatus404(resp) {
 				return retry.RetryableError(fmt.Errorf("cannot find custom auth action of integration %s: %v", *integration.Name, err))
 			}
 			return retry.NonRetryableError(fmt.Errorf("error deleting integration %s: %s", d.Id(), err))

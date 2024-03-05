@@ -3,15 +3,16 @@ package telephony_providers_edges_phone
 import (
 	"context"
 	"fmt"
+	"hash/fnv"
 	"log"
 	"strconv"
 	"strings"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
@@ -35,7 +36,7 @@ func getPhoneFromResourceData(ctx context.Context, pp *phoneProxy, d *schema.Res
 	phoneConfig := &platformclientv2.Phone{
 		Name:  platformclientv2.String(d.Get("name").(string)),
 		State: platformclientv2.String(d.Get("state").(string)),
-		Site:  gcloud.BuildSdkDomainEntityRef(d, "site_id"),
+		Site:  util.BuildSdkDomainEntityRef(d, "site_id"),
 		PhoneBaseSettings: &platformclientv2.Phonebasesettings{
 			Id: buildSdkPhoneBaseSettings(d, "phone_base_settings_id").Id,
 		},
@@ -78,7 +79,7 @@ func getPhoneFromResourceData(ctx context.Context, pp *phoneProxy, d *schema.Res
 
 	webRtcUserId := d.Get("web_rtc_user_id")
 	if webRtcUserId != "" {
-		phoneConfig.WebRtcUser = gcloud.BuildSdkDomainEntityRef(d, "web_rtc_user_id")
+		phoneConfig.WebRtcUser = util.BuildSdkDomainEntityRef(d, "web_rtc_user_id")
 	}
 
 	return phoneConfig, nil
@@ -99,7 +100,7 @@ func assignUserToWebRtcPhone(ctx context.Context, pp *phoneProxy, userId string)
 	stationId := ""
 	stationIsAssociated := false
 
-	retryErr := gcloud.WithRetries(ctx, 60*time.Second, func() *retry.RetryError {
+	retryErr := util.WithRetries(ctx, 60*time.Second, func() *retry.RetryError {
 		station, retryable, err := pp.getStationOfUser(ctx, userId)
 		if err != nil && !retryable {
 			return retry.NonRetryableError(fmt.Errorf("error requesting stations: %s", err))
@@ -117,7 +118,7 @@ func assignUserToWebRtcPhone(ctx context.Context, pp *phoneProxy, userId string)
 		return retryErr
 	}
 
-	diagErr := gcloud.RetryWhen(gcloud.IsStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+	diagErr := util.RetryWhen(util.IsStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		if stationIsAssociated {
 			log.Printf("Disassociating user from phone station %s", stationId)
 			if resp, err := pp.unassignUserFromStation(ctx, stationId); err != nil {
@@ -214,7 +215,9 @@ func buildSdkLines(ctx context.Context, pp *phoneProxy, d *schema.ResourceData, 
 
 	// If line_addresses is not provided, phone is not standalone
 	if !ok || len(lineStringList) == 0 {
-		lineName := "line_" + *lineBaseSettings.Id + d.Get("name").(string)
+		hasher := fnv.New32()
+		hasher.Write([]byte(d.Get("name").(string)))
+		lineName := "line_" + *lineBaseSettings.Id + fmt.Sprintf("%x", hasher.Sum32())
 		line := platformclientv2.Line{
 			Name:             &lineName,
 			LineBaseSettings: lineBaseSettings,
@@ -353,7 +356,7 @@ func TestVerifyWebRtcPhoneDestroyed(state *terraform.State) error {
 		phone, resp, err := edgesAPI.GetTelephonyProvidersEdgesPhone(rs.Primary.ID)
 		if phone != nil {
 			return fmt.Errorf("phone (%s) still exists", rs.Primary.ID)
-		} else if gcloud.IsStatus404(resp) {
+		} else if util.IsStatus404(resp) {
 			// Phone not found as expected
 			continue
 		} else {

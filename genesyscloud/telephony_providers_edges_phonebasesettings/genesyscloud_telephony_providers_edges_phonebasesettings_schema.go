@@ -1,12 +1,12 @@
 package telephony_providers_edges_phonebasesettings
 
 import (
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
-	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
-	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
-
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 )
 
 var (
@@ -69,10 +69,10 @@ func ResourcePhoneBaseSettings() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud Phone Base Settings",
 
-		CreateContext: gcloud.CreateWithPooledClient(createPhoneBaseSettings),
-		ReadContext:   gcloud.ReadWithPooledClient(readPhoneBaseSettings),
-		UpdateContext: gcloud.UpdateWithPooledClient(updatePhoneBaseSettings),
-		DeleteContext: gcloud.DeleteWithPooledClient(deletePhoneBaseSettings),
+		CreateContext: provider.CreateWithPooledClient(createPhoneBaseSettings),
+		ReadContext:   provider.ReadWithPooledClient(readPhoneBaseSettings),
+		UpdateContext: provider.UpdateWithPooledClient(updatePhoneBaseSettings),
+		DeleteContext: provider.DeleteWithPooledClient(deletePhoneBaseSettings),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -98,7 +98,7 @@ func ResourcePhoneBaseSettings() *schema.Resource {
 				Type:             schema.TypeString,
 				Optional:         true,
 				Computed:         true,
-				DiffSuppressFunc: gcloud.SuppressEquivalentJsonDiffs,
+				DiffSuppressFunc: util.SuppressEquivalentJsonDiffs,
 			},
 			"capabilities": {
 				Description: "Phone Capabilities.",
@@ -115,14 +115,14 @@ func ResourcePhoneBaseSettings() *schema.Resource {
 				Computed:    true,
 			},
 		},
-		CustomizeDiff: gcloud.CustomizePhoneBaseSettingsPropertiesDiff,
+		CustomizeDiff: util.CustomizePhoneBaseSettingsPropertiesDiff,
 	}
 }
 
 func DataSourcePhoneBaseSettings() *schema.Resource {
 	return &schema.Resource{
 		Description: "Data source for Genesys Cloud Phone Base Settings. Select a phone base settings by name",
-		ReadContext: gcloud.ReadWithPooledClient(dataSourcePhoneBaseSettingsRead),
+		ReadContext: provider.ReadWithPooledClient(dataSourcePhoneBaseSettingsRead),
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Description: "Phone Base Settings name.",
@@ -135,7 +135,7 @@ func DataSourcePhoneBaseSettings() *schema.Resource {
 
 func PhoneBaseSettingsExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
-		GetResourcesFunc:     gcloud.GetAllWithPooledClient(getAllPhoneBaseSettings),
+		GetResourcesFunc:     provider.GetAllWithPooledClient(getAllPhoneBaseSettings),
 		RefAttrs:             map[string]*resourceExporter.RefAttrSettings{},
 		JsonEncodeAttributes: []string{"properties"},
 	}

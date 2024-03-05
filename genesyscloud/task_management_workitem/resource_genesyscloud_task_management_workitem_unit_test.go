@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 	"time"
 
@@ -11,7 +13,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/stretchr/testify/assert"
 
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
@@ -152,7 +153,7 @@ func TestUnitResourceWorkitemCreate(t *testing.T) {
 		assert.Equal(t, wi.auto_status_transition, *workitem.AutoStatusTransition, "AutoStatusTransition check failed in create createTaskManagementWorkitemAttr")
 		assert.ElementsMatch(t, wi.scored_agents, apiScoredAgentReqToScoredAgentConfig(workitem.ScoredAgents), "ScoredAgents check failed in create createTaskManagementWorkitemAttr")
 
-		cfjson, err := gcloud.MapToJson(workitem.CustomFields)
+		cfjson, err := util.MapToJson(workitem.CustomFields)
 		if err != nil {
 			assert.Fail(t, "Failed to parse CustomFields: %v", err)
 		}
@@ -169,7 +170,7 @@ func TestUnitResourceWorkitemCreate(t *testing.T) {
 	defer func() { internalProxy = nil }()
 
 	ctx := context.Background()
-	gcloud := &gcloud.ProviderMeta{ClientConfig: &platformclientv2.Configuration{}}
+	gcloud := &provider.ProviderMeta{ClientConfig: &platformclientv2.Configuration{}}
 
 	//Grab our defined schema
 	resourceSchema := ResourceTaskManagementWorkitem().Schema
@@ -275,7 +276,7 @@ func TestUnitResourceWorkitemRead(t *testing.T) {
 	defer func() { internalProxy = nil }()
 
 	ctx := context.Background()
-	gcloud := &gcloud.ProviderMeta{ClientConfig: &platformclientv2.Configuration{}}
+	gcloud := &provider.ProviderMeta{ClientConfig: &platformclientv2.Configuration{}}
 
 	//Grab our defined schema
 	resourceSchema := ResourceTaskManagementWorkitem().Schema
@@ -343,7 +344,7 @@ func TestUnitResourceWorkitemUpdate(t *testing.T) {
 		assert.Equal(t, wi.auto_status_transition, *workitem.AutoStatusTransition, "AutoStatusTransition check failed in create updateTaskManagementWorktypeAttr")
 		assert.ElementsMatch(t, wi.scored_agents, apiScoredAgentReqToScoredAgentConfig(workitem.ScoredAgents), "ScoredAgents check failed in create updateTaskManagementWorktypeAttr")
 
-		cfjson, err := gcloud.MapToJson(workitem.CustomFields)
+		cfjson, err := util.MapToJson(workitem.CustomFields)
 		if err != nil {
 			assert.Fail(t, "Failed to parse CustomFields: %v", err)
 		}
@@ -439,7 +440,7 @@ func TestUnitResourceWorkitemUpdate(t *testing.T) {
 	defer func() { internalProxy = nil }()
 
 	ctx := context.Background()
-	gcloud := &gcloud.ProviderMeta{ClientConfig: &platformclientv2.Configuration{}}
+	gcloud := &provider.ProviderMeta{ClientConfig: &platformclientv2.Configuration{}}
 
 	//Grab our defined schema
 	resourceSchema := ResourceTaskManagementWorkitem().Schema
@@ -479,7 +480,7 @@ func TestUnitResourceWorkitemDelete(t *testing.T) {
 	defer func() { internalProxy = nil }()
 
 	ctx := context.Background()
-	gcloud := &gcloud.ProviderMeta{ClientConfig: &platformclientv2.Configuration{}}
+	gcloud := &provider.ProviderMeta{ClientConfig: &platformclientv2.Configuration{}}
 
 	//Grab our defined schema
 	resourceSchema := ResourceTaskManagementWorkitem().Schema
@@ -561,5 +562,5 @@ func timePtr(t time.Time) *time.Time {
 	return &t
 }
 func equivalentJsons(json1, json2 string) bool {
-	return gcloud.EquivalentJsons(json1, json2)
+	return util.EquivalentJsons(json1, json2)
 }

@@ -3,6 +3,8 @@ package genesyscloud
 import (
 	"fmt"
 	"strings"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 
 	"github.com/google/uuid"
@@ -93,15 +95,15 @@ func TestAccResourceWidgetDeploymentV2Widget(t *testing.T) {
 		disabled:               "true",
 	}
 
-	_, err := AuthorizeSdk()
+	_, err := provider.AuthorizeSdk()
 	if err != nil {
 		t.Fatal(err)
 	}
 	deleteWidgetDeploymentWithName(name)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 
 		Steps: []resource.TestStep{
 			{
@@ -162,15 +164,15 @@ func TestAccResourceWidgetDeploymentV1Widget(t *testing.T) {
 		authenticationUrl:      "https://localhost",
 	}
 
-	_, err := AuthorizeSdk()
+	_, err := provider.AuthorizeSdk()
 	if err != nil {
 		t.Fatal(err)
 	}
 	deleteWidgetDeploymentWithName(name)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 
 		Steps: []resource.TestStep{
 			{
@@ -234,7 +236,7 @@ func testVerifyWidgetDeploymentDestroyed(state *terraform.State) error {
 			return fmt.Errorf("Widget deployment (%s) still exists", rs.Primary.ID)
 		}
 
-		if IsStatus404(resp) {
+		if util.IsStatus404(resp) {
 			// Widget deployment does not exits keep going
 			continue
 		}

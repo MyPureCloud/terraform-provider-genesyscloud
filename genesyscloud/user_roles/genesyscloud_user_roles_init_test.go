@@ -4,6 +4,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"sync"
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	authRole "terraform-provider-genesyscloud/genesyscloud/auth_role"
 	"testing"
 )
 
@@ -29,7 +30,7 @@ func (r *registerTestInstance) registerTestResources() {
 
 	providerResources["genesyscloud_user_roles"] = ResourceUserRoles()
 	providerResources["genesyscloud_user"] = gcloud.ResourceUser()
-	providerResources["genesyscloud_auth_role"] = gcloud.ResourceAuthRole()
+	providerResources["genesyscloud_auth_role"] = authRole.ResourceAuthRole()
 	providerResources["genesyscloud_auth_division"] = gcloud.ResourceAuthDivision()
 }
 
@@ -38,7 +39,7 @@ func (r *registerTestInstance) registerTestDataSources() {
 	r.datasourceMapMutex.Lock()
 	defer r.datasourceMapMutex.Unlock()
 
-	providerDataSources["genesyscloud_auth_role"] = gcloud.DataSourceAuthRole()
+	providerDataSources["genesyscloud_auth_role"] = authRole.DataSourceAuthRole()
 	providerDataSources["genesyscloud_auth_division_home"] = gcloud.DataSourceAuthDivisionHome()
 
 }

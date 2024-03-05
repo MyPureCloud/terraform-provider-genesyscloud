@@ -6,11 +6,14 @@ import (
 	"strconv"
 	"strings"
 	"terraform-provider-genesyscloud/genesyscloud"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"terraform-provider-genesyscloud/genesyscloud/util/lists"
 	"testing"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	authRole "terraform-provider-genesyscloud/genesyscloud/auth_role"
 )
 
 func TestAccResourceGroupRolesMembership(t *testing.T) {
@@ -32,8 +35,8 @@ func TestAccResourceGroupRolesMembership(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { genesyscloud.TestAccPreCheck(t) },
-		ProviderFactories: genesyscloud.GetProviderFactories(providerResources, nil),
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, nil),
 		Steps: []resource.TestStep{
 			{
 				// Create group with 1 role in default division
@@ -41,7 +44,7 @@ func TestAccResourceGroupRolesMembership(t *testing.T) {
 					groupResource1,
 					groupName,
 					genesyscloud.GenerateGroupOwners("genesyscloud_user."+testUserResource+".id"),
-				) + genesyscloud.GenerateAuthRoleResource(
+				) + authRole.GenerateAuthRoleResource(
 					roleResource1,
 					roleName1,
 					roleDesc,
@@ -60,11 +63,11 @@ func TestAccResourceGroupRolesMembership(t *testing.T) {
 					groupResource1,
 					groupName,
 					genesyscloud.GenerateGroupOwners("genesyscloud_user."+testUserResource+".id"),
-				) + genesyscloud.GenerateAuthRoleResource(
+				) + authRole.GenerateAuthRoleResource(
 					roleResource1,
 					roleName1,
 					roleDesc,
-				) + genesyscloud.GenerateAuthRoleResource(
+				) + authRole.GenerateAuthRoleResource(
 					roleResource2,
 					roleName2,
 					roleDesc,
@@ -85,7 +88,7 @@ func TestAccResourceGroupRolesMembership(t *testing.T) {
 					groupResource1,
 					groupName,
 					genesyscloud.GenerateGroupOwners("genesyscloud_user."+testUserResource+".id"),
-				) + genesyscloud.GenerateAuthRoleResource(
+				) + authRole.GenerateAuthRoleResource(
 					roleResource1,
 					roleName1,
 					roleDesc,
@@ -104,7 +107,7 @@ func TestAccResourceGroupRolesMembership(t *testing.T) {
 					groupResource1,
 					groupName,
 					genesyscloud.GenerateGroupOwners("genesyscloud_user."+testUserResource+".id"),
-				) + genesyscloud.GenerateAuthRoleResource(
+				) + authRole.GenerateAuthRoleResource(
 					roleResource1,
 					roleName1,
 					roleDesc,
@@ -148,7 +151,7 @@ func validateResourceRole(resourceName string, roleResourceName string, division
 		}
 		roleID := roleResource.Primary.ID
 
-		homeDivID, err := genesyscloud.GetHomeDivisionID()
+		homeDivID, err := util.GetHomeDivisionID()
 		if err != nil {
 			return fmt.Errorf("failed to retrieve home division ID: %v", err)
 		}

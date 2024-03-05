@@ -5,8 +5,9 @@ import (
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"log"
-	"terraform-provider-genesyscloud/genesyscloud"
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -29,18 +30,18 @@ func deleteGroupRoles(_ context.Context, _ *schema.ResourceData, _ interface{}) 
 
 // readGroupRoles is used by the group_roles resource to read Group Roles from the genesys cloud
 func readGroupRoles(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*genesyscloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getGroupRolesProxy(sdkConfig)
 
 	log.Printf("Reading roles for group %s", d.Id())
 
-	return genesyscloud.WithRetriesForRead(ctx, d, func() *retry.RetryError {
+	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceGroupRoles())
 		d.Set("group_id", d.Id())
 
 		roles, resp, err := flattenSubjectRoles(d, proxy)
 		if err != nil {
-			if genesyscloud.IsStatus404ByInt(resp.StatusCode) {
+			if util.IsStatus404ByInt(resp.StatusCode) {
 				return retry.RetryableError(fmt.Errorf("Failed to read roles for group %s: %v", d.Id(), err))
 			}
 			return retry.NonRetryableError(fmt.Errorf("Failed to read roles for group %s: %v", d.Id(), err))
@@ -53,7 +54,7 @@ func readGroupRoles(ctx context.Context, d *schema.ResourceData, meta interface{
 }
 
 func updateGroupRoles(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*genesyscloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getGroupRolesProxy(sdkConfig)
 
 	if !d.HasChange("roles") {

@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
@@ -27,8 +29,8 @@ func TestAccResourceOutboundWrapupCodeMapping(t *testing.T) {
 		wrapupCode3Name       = "tf test wrapupcode" + uuid.NewString()
 	)
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
-		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				Config: gcloud.GenerateRoutingWrapupcodeResource(wrapupCode1ResourceId, wrapupCode1Name) +
@@ -42,8 +44,8 @@ resource "genesyscloud_outbound_wrapupcodemappings"	"%s" {
 }		
 `, resourceId, wrapupCode1ResourceId),
 				Check: resource.ComposeTestCheckFunc(
-					gcloud.ValidateStringInArray("genesyscloud_outbound_wrapupcodemappings."+resourceId, "default_set", "Contact_UnCallable"),
-					gcloud.ValidateStringInArray("genesyscloud_outbound_wrapupcodemappings."+resourceId, "default_set", "Number_UnCallable"),
+					util.ValidateStringInArray("genesyscloud_outbound_wrapupcodemappings."+resourceId, "default_set", "Contact_UnCallable"),
+					util.ValidateStringInArray("genesyscloud_outbound_wrapupcodemappings."+resourceId, "default_set", "Number_UnCallable"),
 					verifyWrapupCodeMappingsMappingValues("genesyscloud_outbound_wrapupcodemappings."+resourceId,
 						"genesyscloud_routing_wrapupcode."+wrapupCode1ResourceId, []string{"Contact_UnCallable"}),
 				),
@@ -66,8 +68,8 @@ resource "genesyscloud_outbound_wrapupcodemappings"	"%s" {
 }		
 `, resourceId, wrapupCode1ResourceId, wrapupCode2ResourceId),
 				Check: resource.ComposeTestCheckFunc(
-					gcloud.ValidateStringInArray("genesyscloud_outbound_wrapupcodemappings."+resourceId, "default_set", "Contact_UnCallable"),
-					gcloud.ValidateStringInArray("genesyscloud_outbound_wrapupcodemappings."+resourceId, "default_set", "Right_Party_Contact"),
+					util.ValidateStringInArray("genesyscloud_outbound_wrapupcodemappings."+resourceId, "default_set", "Contact_UnCallable"),
+					util.ValidateStringInArray("genesyscloud_outbound_wrapupcodemappings."+resourceId, "default_set", "Right_Party_Contact"),
 					verifyWrapupCodeMappingsMappingValues("genesyscloud_outbound_wrapupcodemappings."+resourceId,
 						"genesyscloud_routing_wrapupcode."+wrapupCode1ResourceId, []string{"Contact_UnCallable"}),
 					verifyWrapupCodeMappingsMappingValues("genesyscloud_outbound_wrapupcodemappings."+resourceId,
@@ -97,9 +99,9 @@ resource "genesyscloud_outbound_wrapupcodemappings"	"%s" {
 }		
 `, resourceId, wrapupCode1ResourceId, wrapupCode2ResourceId, wrapupCode3ResourceId),
 				Check: resource.ComposeTestCheckFunc(
-					gcloud.ValidateStringInArray("genesyscloud_outbound_wrapupcodemappings."+resourceId, "default_set", "Contact_UnCallable"),
-					gcloud.ValidateStringInArray("genesyscloud_outbound_wrapupcodemappings."+resourceId, "default_set", "Number_UnCallable"),
-					gcloud.ValidateStringInArray("genesyscloud_outbound_wrapupcodemappings."+resourceId, "default_set", "Right_Party_Contact"),
+					util.ValidateStringInArray("genesyscloud_outbound_wrapupcodemappings."+resourceId, "default_set", "Contact_UnCallable"),
+					util.ValidateStringInArray("genesyscloud_outbound_wrapupcodemappings."+resourceId, "default_set", "Number_UnCallable"),
+					util.ValidateStringInArray("genesyscloud_outbound_wrapupcodemappings."+resourceId, "default_set", "Right_Party_Contact"),
 					verifyWrapupCodeMappingsMappingValues("genesyscloud_outbound_wrapupcodemappings."+resourceId,
 						"genesyscloud_routing_wrapupcode."+wrapupCode1ResourceId, []string{"Contact_UnCallable"}),
 					verifyWrapupCodeMappingsMappingValues("genesyscloud_outbound_wrapupcodemappings."+resourceId,

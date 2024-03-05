@@ -6,6 +6,9 @@ import (
 	"strconv"
 	"strings"
 	"terraform-provider-genesyscloud/genesyscloud"
+	authRole "terraform-provider-genesyscloud/genesyscloud/auth_role"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"terraform-provider-genesyscloud/genesyscloud/util/lists"
 	"testing"
 
@@ -32,8 +35,8 @@ func TestAccResourceUserRolesMembership(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { genesyscloud.TestAccPreCheck(t) },
-		ProviderFactories: genesyscloud.GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Create user with 1 role in default division
@@ -42,7 +45,7 @@ func TestAccResourceUserRolesMembership(t *testing.T) {
 					userResource1,
 					email1,
 					userName1,
-				) + genesyscloud.GenerateAuthRoleResource(
+				) + authRole.GenerateAuthRoleResource(
 					roleResource1,
 					roleName1,
 					roleDesc,
@@ -51,7 +54,7 @@ func TestAccResourceUserRolesMembership(t *testing.T) {
 					userResource1,
 					generateResourceRoles("genesyscloud_auth_role."+roleResource1+".id", "data.genesyscloud_auth_division_home.home.id"),
 					generateResourceRoles("data.genesyscloud_auth_role."+empRoleDataSrc+".id"),
-				) + genesyscloud.GenerateDefaultAuthRoleDataSource(
+				) + authRole.GenerateDefaultAuthRoleDataSource(
 					empRoleDataSrc,
 					strconv.Quote(empRoleName),
 				),
@@ -69,11 +72,11 @@ func TestAccResourceUserRolesMembership(t *testing.T) {
 					userResource1,
 					email1,
 					userName1,
-				) + genesyscloud.GenerateAuthRoleResource(
+				) + authRole.GenerateAuthRoleResource(
 					roleResource1,
 					roleName1,
 					roleDesc,
-				) + genesyscloud.GenerateAuthRoleResource(
+				) + authRole.GenerateAuthRoleResource(
 					roleResource2,
 					roleName2,
 					roleDesc,
@@ -98,7 +101,7 @@ func TestAccResourceUserRolesMembership(t *testing.T) {
 					userResource1,
 					email1,
 					userName1,
-				) + genesyscloud.GenerateAuthRoleResource(
+				) + authRole.GenerateAuthRoleResource(
 					roleResource1,
 					roleName1,
 					roleDesc,
@@ -117,7 +120,7 @@ func TestAccResourceUserRolesMembership(t *testing.T) {
 					userResource1,
 					email1,
 					userName1,
-				) + genesyscloud.GenerateAuthRoleResource(
+				) + authRole.GenerateAuthRoleResource(
 					roleResource1,
 					roleName1,
 					roleDesc,
@@ -147,7 +150,7 @@ func validateResourceRole(resourceName string, roleResourceName string, division
 		}
 		roleID := roleResource.Primary.ID
 
-		homeDivID, err := genesyscloud.GetHomeDivisionID()
+		homeDivID, err := util.GetHomeDivisionID()
 		if err != nil {
 			return fmt.Errorf("failed to retrieve home division ID: %v", err)
 		}

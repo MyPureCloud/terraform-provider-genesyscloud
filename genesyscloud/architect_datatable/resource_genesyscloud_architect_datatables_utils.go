@@ -5,7 +5,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"sort"
 	"strconv"
-	"terraform-provider-genesyscloud/genesyscloud"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 )
 
 func buildSdkDatatableSchema(d *schema.ResourceData) (*Jsonschemadocument, diag.Diagnostics) {
@@ -123,7 +123,7 @@ func flattenDatatableProperties(properties map[string]Datatableproperty) []inter
 			propMap["title"] = *propKV.Value.Title
 		}
 		if propKV.Value.Default != nil {
-			propMap["default"] = genesyscloud.InterfaceToString(*propKV.Value.Default)
+			propMap["default"] = util.InterfaceToString(*propKV.Value.Default)
 		}
 		configProps = append(configProps, propMap)
 	}

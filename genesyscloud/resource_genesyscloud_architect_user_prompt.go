@@ -12,6 +12,8 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 	"time"
 
@@ -745,7 +747,7 @@ func getAllUserPrompts(_ context.Context, clientConfig *platformclientv2.Configu
 
 func ArchitectUserPromptExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
-		GetResourcesFunc: GetAllWithPooledClient(getAllUserPrompts),
+		GetResourcesFunc: provider.GetAllWithPooledClient(getAllUserPrompts),
 		RefAttrs:         map[string]*resourceExporter.RefAttrSettings{}, // No references
 		CustomFileWriter: resourceExporter.CustomFileWriterSettings{
 			RetrieveAndWriteFilesFunc: ArchitectPromptAudioResolver,
@@ -758,10 +760,10 @@ func ResourceArchitectUserPrompt() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud User Audio Prompt",
 
-		CreateContext: CreateWithPooledClient(createUserPrompt),
-		ReadContext:   ReadWithPooledClient(readUserPrompt),
-		UpdateContext: UpdateWithPooledClient(updateUserPrompt),
-		DeleteContext: DeleteWithPooledClient(deleteUserPrompt),
+		CreateContext: provider.CreateWithPooledClient(createUserPrompt),
+		ReadContext:   provider.ReadWithPooledClient(readUserPrompt),
+		UpdateContext: provider.UpdateWithPooledClient(updateUserPrompt),
+		DeleteContext: provider.DeleteWithPooledClient(deleteUserPrompt),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -794,7 +796,7 @@ func createUserPrompt(ctx context.Context, d *schema.ResourceData, meta interfac
 	name := d.Get("name").(string)
 	description := d.Get("description").(string)
 
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	architectApi := platformclientv2.NewArchitectApiWithConfig(sdkConfig)
 
 	prompt := platformclientv2.Prompt{
@@ -869,15 +871,15 @@ func createUserPrompt(ctx context.Context, d *schema.ResourceData, meta interfac
 }
 
 func readUserPrompt(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	architectAPI := platformclientv2.NewArchitectApiWithConfig(sdkConfig)
 
 	log.Printf("Reading User Prompt %s", d.Id())
 
-	return WithRetriesForRead(ctx, d, func() *retry.RetryError {
+	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		userPrompt, resp, getErr := architectAPI.GetArchitectPrompt(d.Id(), true, true, nil)
 		if getErr != nil {
-			if IsStatus404(resp) {
+			if util.IsStatus404(resp) {
 				return retry.RetryableError(fmt.Errorf("Failed to read User Prompt %s: %s", d.Id(), getErr))
 			}
 			return retry.NonRetryableError(fmt.Errorf("Failed to read User Prompt %s: %s", d.Id(), getErr))
@@ -931,7 +933,7 @@ func updateUserPrompt(ctx context.Context, d *schema.ResourceData, meta interfac
 	name := d.Get("name").(string)
 	description := d.Get("description").(string)
 
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	architectApi := platformclientv2.NewArchitectApiWithConfig(sdkConfig)
 
 	prompt := platformclientv2.Prompt{
@@ -960,7 +962,7 @@ func updateUserPrompt(ctx context.Context, d *schema.ResourceData, meta interfac
 func deleteUserPrompt(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	name := d.Get("name").(string)
 
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	architectApi := platformclientv2.NewArchitectApiWithConfig(sdkConfig)
 
 	log.Printf("Deleting user prompt %s", name)
@@ -969,7 +971,7 @@ func deleteUserPrompt(ctx context.Context, d *schema.ResourceData, meta interfac
 	}
 	log.Printf("Deleted user prompt %s", name)
 
-	return WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
+	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		_, resp, err := architectApi.GetArchitectPrompt(d.Id(), false, false, nil)
 		if err != nil {
 			if resp != nil && resp.StatusCode == 404 {
@@ -1177,7 +1179,7 @@ func updatePromptResource(d *schema.ResourceData, architectApi *platformclientv2
 }
 
 func getArchitectPromptAudioData(promptId string, meta interface{}) ([]PromptAudioData, error) {
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	apiInstance := platformclientv2.NewArchitectApiWithConfig(sdkConfig)
 
 	data, _, err := apiInstance.GetArchitectPrompt(promptId, true, true, nil)
@@ -1227,11 +1229,11 @@ func GenerateUserPromptResource(userPrompt *UserPromptStruct) string {
 	resourcesString := ``
 	for _, p := range userPrompt.Resources {
 		var fileContentHash string
-		if p.FileContentHash != NullValue {
+		if p.FileContentHash != util.NullValue {
 			fullyQualifiedPath, _ := filepath.Abs(p.FileContentHash)
 			fileContentHash = fmt.Sprintf(`filesha256("%s")`, fullyQualifiedPath)
 		} else {
-			fileContentHash = NullValue
+			fileContentHash = util.NullValue
 		}
 		resourcesString += fmt.Sprintf(`resources {
 			language          = "%s"

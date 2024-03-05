@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"log"
 	"strings"
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -23,8 +23,8 @@ func getOutboundRulesetFromResourceData(d *schema.ResourceData) platformclientv2
 
 	return platformclientv2.Ruleset{
 		Name:        &name,
-		ContactList: gcloud.BuildSdkDomainEntityRef(d, "contact_list_id"),
-		Queue:       gcloud.BuildSdkDomainEntityRef(d, "queue_id"),
+		ContactList: util.BuildSdkDomainEntityRef(d, "contact_list_id"),
+		Queue:       util.BuildSdkDomainEntityRef(d, "queue_id"),
 		Rules:       buildDialerules(d.Get("rules").([]interface{})),
 	}
 }
@@ -275,6 +275,9 @@ func flattenDataactionconditionpredicates(predicates *[]platformclientv2.Dataact
 
 // look through rule actions to check if the referenced skills exist in our skill map or not
 func doesRuleActionsRefDeletedSkill(rule platformclientv2.Dialerrule, skillMap resourceExporter.ResourceIDMetaMap) bool {
+	if rule.Actions == nil {
+		return false
+	}
 	for _, action := range *rule.Actions {
 		if action.ActionTypeName != nil && strings.EqualFold(*action.ActionTypeName, "set_skills") && action.Properties != nil {
 			if value, found := (*action.Properties)["skills"]; found {

@@ -4,7 +4,10 @@ import (
 	"log"
 	"sync"
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	flow "terraform-provider-genesyscloud/genesyscloud/architect_flow"
+	authRole "terraform-provider-genesyscloud/genesyscloud/auth_role"
 	integration "terraform-provider-genesyscloud/genesyscloud/integration"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
 	userRoles "terraform-provider-genesyscloud/genesyscloud/user_roles"
 
 	"testing"
@@ -42,7 +45,7 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources[resourceName] = ResourceMediaRetentionPolicy()
 	providerResources["genesyscloud_routing_email_domain"] = gcloud.ResourceRoutingEmailDomain()
 	providerResources["genesyscloud_routing_queue"] = gcloud.ResourceRoutingQueue()
-	providerResources["genesyscloud_auth_role"] = gcloud.ResourceAuthRole()
+	providerResources["genesyscloud_auth_role"] = authRole.ResourceAuthRole()
 	providerResources["genesyscloud_user_roles"] = userRoles.ResourceUserRoles()
 	providerResources["genesyscloud_user"] = gcloud.ResourceUser()
 	providerResources["genesyscloud_quality_forms_evaluation"] = gcloud.ResourceEvaluationForm()
@@ -50,7 +53,7 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_integration"] = integration.ResourceIntegration()
 	providerResources["genesyscloud_routing_language"] = gcloud.ResourceRoutingLanguage()
 	providerResources["genesyscloud_routing_wrapupcode"] = gcloud.ResourceRoutingWrapupCode()
-	providerResources["genesyscloud_flow"] = gcloud.ResourceFlow()
+	providerResources["genesyscloud_flow"] = flow.ResourceArchitectFlow()
 }
 
 // registerTestDataSources registers all data sources used in the tests.
@@ -63,7 +66,7 @@ func (r *registerTestInstance) registerTestDataSources() {
 
 // initTestResources initializes all test resources and data sources.
 func initTestResources() {
-	if sdkConfig, err = gcloud.AuthorizeSdk(); err != nil {
+	if sdkConfig, err = provider.AuthorizeSdk(); err != nil {
 		log.Fatal(err)
 	}
 

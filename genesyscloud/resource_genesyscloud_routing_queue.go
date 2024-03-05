@@ -9,6 +9,8 @@ import (
 	"net/url"
 	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 	"time"
 
@@ -171,7 +173,7 @@ func getAllRoutingQueues(_ context.Context, clientConfig *platformclientv2.Confi
 
 func RoutingQueueExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
-		GetResourcesFunc: GetAllWithPooledClient(getAllRoutingQueues),
+		GetResourcesFunc: provider.GetAllWithPooledClient(getAllRoutingQueues),
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			"division_id":                              {RefType: "genesyscloud_auth_division"},
 			"queue_flow_id":                            {RefType: "genesyscloud_flow"},
@@ -206,10 +208,10 @@ func ResourceRoutingQueue() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud Routing Queue",
 
-		CreateContext: CreateWithPooledClient(createQueue),
-		ReadContext:   ReadWithPooledClient(readQueue),
-		UpdateContext: UpdateWithPooledClient(updateQueue),
-		DeleteContext: DeleteWithPooledClient(deleteQueue),
+		CreateContext: provider.CreateWithPooledClient(createQueue),
+		ReadContext:   provider.ReadWithPooledClient(readQueue),
+		UpdateContext: provider.UpdateWithPooledClient(updateQueue),
+		DeleteContext: provider.DeleteWithPooledClient(deleteQueue),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -525,7 +527,7 @@ func ResourceRoutingQueue() *schema.Resource {
 }
 
 func createQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
 
 	divisionID := d.Get("division_id").(string)
@@ -549,10 +551,10 @@ func createQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		ConditionalGroupRouting:      conditionalGroupRouting,
 		AcwSettings:                  buildSdkAcwSettings(d),
 		SkillEvaluationMethod:        platformclientv2.String(d.Get("skill_evaluation_method").(string)),
-		QueueFlow:                    BuildSdkDomainEntityRef(d, "queue_flow_id"),
-		EmailInQueueFlow:             BuildSdkDomainEntityRef(d, "email_in_queue_flow_id"),
-		MessageInQueueFlow:           BuildSdkDomainEntityRef(d, "message_in_queue_flow_id"),
-		WhisperPrompt:                BuildSdkDomainEntityRef(d, "whisper_prompt_id"),
+		QueueFlow:                    util.BuildSdkDomainEntityRef(d, "queue_flow_id"),
+		EmailInQueueFlow:             util.BuildSdkDomainEntityRef(d, "email_in_queue_flow_id"),
+		MessageInQueueFlow:           util.BuildSdkDomainEntityRef(d, "message_in_queue_flow_id"),
+		WhisperPrompt:                util.BuildSdkDomainEntityRef(d, "whisper_prompt_id"),
 		AutoAnswerOnly:               platformclientv2.Bool(d.Get("auto_answer_only").(bool)),
 		CallingPartyName:             platformclientv2.String(d.Get("calling_party_name").(string)),
 		CallingPartyNumber:           platformclientv2.String(d.Get("calling_party_number").(string)),
@@ -597,14 +599,14 @@ func createQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 }
 
 func readQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
 
 	log.Printf("Reading queue %s", d.Id())
-	return WithRetriesForRead(ctx, d, func() *retry.RetryError {
+	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		currentQueue, resp, getErr := routingAPI.GetRoutingQueue(d.Id())
 		if getErr != nil {
-			if IsStatus404(resp) {
+			if util.IsStatus404(resp) {
 				return retry.RetryableError(fmt.Errorf("Failed to read queue %s: %s", d.Id(), getErr))
 			}
 			return retry.NonRetryableError(fmt.Errorf("Failed to read queue %s: %s", d.Id(), getErr))
@@ -706,7 +708,7 @@ func readQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 }
 
 func updateQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
 
 	skillGroups := buildMemberGroupList(d, "skill_groups", "SKILLGROUP")
@@ -729,10 +731,10 @@ func updateQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		ConditionalGroupRouting:      conditionalGroupRouting,
 		AcwSettings:                  buildSdkAcwSettings(d),
 		SkillEvaluationMethod:        platformclientv2.String(d.Get("skill_evaluation_method").(string)),
-		QueueFlow:                    BuildSdkDomainEntityRef(d, "queue_flow_id"),
-		EmailInQueueFlow:             BuildSdkDomainEntityRef(d, "email_in_queue_flow_id"),
-		MessageInQueueFlow:           BuildSdkDomainEntityRef(d, "message_in_queue_flow_id"),
-		WhisperPrompt:                BuildSdkDomainEntityRef(d, "whisper_prompt_id"),
+		QueueFlow:                    util.BuildSdkDomainEntityRef(d, "queue_flow_id"),
+		EmailInQueueFlow:             util.BuildSdkDomainEntityRef(d, "email_in_queue_flow_id"),
+		MessageInQueueFlow:           util.BuildSdkDomainEntityRef(d, "message_in_queue_flow_id"),
+		WhisperPrompt:                util.BuildSdkDomainEntityRef(d, "whisper_prompt_id"),
 		AutoAnswerOnly:               platformclientv2.Bool(d.Get("auto_answer_only").(bool)),
 		CallingPartyName:             platformclientv2.String(d.Get("calling_party_name").(string)),
 		CallingPartyNumber:           platformclientv2.String(d.Get("calling_party_number").(string)),
@@ -753,7 +755,7 @@ func updateQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		return diag.Errorf("Error updating queue %s: %s", *updateQueue.Name, err)
 	}
 
-	diagErr = updateObjectDivision(d, "QUEUE", sdkConfig)
+	diagErr = util.UpdateObjectDivision(d, "QUEUE", sdkConfig)
 	if diagErr != nil {
 		return diagErr
 	}
@@ -775,7 +777,7 @@ func updateQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 func deleteQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	name := d.Get("name").(string)
 
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
 
 	log.Printf("Deleting queue %s", name)
@@ -790,10 +792,10 @@ func deleteQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 	time.Sleep(5 * time.Second)
 
 	//DEVTOOLING-238- Increasing this to a 120 seconds to see if we can temporarily mitigate a problem for a customer
-	return WithRetries(ctx, 120*time.Second, func() *retry.RetryError {
+	return util.WithRetries(ctx, 120*time.Second, func() *retry.RetryError {
 		_, resp, err := routingAPI.GetRoutingQueue(d.Id())
 		if err != nil {
-			if IsStatus404(resp) {
+			if util.IsStatus404(resp) {
 				// Queue deleted
 				log.Printf("Queue %s deleted", name)
 				return nil
@@ -1218,7 +1220,7 @@ func validateMapCommTypes(val interface{}, _ cty.Path) diag.Diagnostics {
 func buildSdkQueueMessagingAddresses(d *schema.ResourceData) *platformclientv2.Queuemessagingaddresses {
 	if _, ok := d.GetOk("outbound_messaging_sms_address_id"); ok {
 		return &platformclientv2.Queuemessagingaddresses{
-			SmsAddress: BuildSdkDomainEntityRef(d, "outbound_messaging_sms_address_id"),
+			SmsAddress: util.BuildSdkDomainEntityRef(d, "outbound_messaging_sms_address_id"),
 		}
 	}
 	return nil
@@ -1343,7 +1345,7 @@ func updateQueueWrapupCodes(d *schema.ResourceData, routingAPI *platformclientv2
 				for _, codeId := range codesToRemove {
 					resp, err := routingAPI.DeleteRoutingQueueWrapupcode(d.Id(), codeId)
 					if err != nil {
-						if IsStatus404(resp) {
+						if util.IsStatus404(resp) {
 							// Ignore missing queue or wrapup code
 							continue
 						}

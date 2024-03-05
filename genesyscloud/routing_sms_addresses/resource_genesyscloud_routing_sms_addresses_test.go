@@ -2,7 +2,8 @@ package genesyscloud
 
 import (
 	"fmt"
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 
 	"github.com/google/uuid"
@@ -25,8 +26,8 @@ func TestAccResourceRoutingSmsAddressesProdOrg(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
-		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Create
@@ -38,7 +39,7 @@ func TestAccResourceRoutingSmsAddressesProdOrg(t *testing.T) {
 					region,
 					postalCode,
 					countryCode,
-					gcloud.FalseValue,
+					util.FalseValue,
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_routing_sms_address."+resourceName, "name", name),
@@ -47,7 +48,7 @@ func TestAccResourceRoutingSmsAddressesProdOrg(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_routing_sms_address."+resourceName, "region", region),
 					resource.TestCheckResourceAttr("genesyscloud_routing_sms_address."+resourceName, "postal_code", postalCode),
 					resource.TestCheckResourceAttr("genesyscloud_routing_sms_address."+resourceName, "country_code", countryCode),
-					resource.TestCheckResourceAttr("genesyscloud_routing_sms_address."+resourceName, "auto_correct_address", gcloud.FalseValue),
+					resource.TestCheckResourceAttr("genesyscloud_routing_sms_address."+resourceName, "auto_correct_address", util.FalseValue),
 				),
 			},
 			{
@@ -78,8 +79,8 @@ func TestAccResourceRoutingSmsAddressesTestOrg(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
-		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Create
@@ -91,7 +92,7 @@ func TestAccResourceRoutingSmsAddressesTestOrg(t *testing.T) {
 					region,
 					postalCode,
 					countryCode,
-					gcloud.TrueValue,
+					util.TrueValue,
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_routing_sms_address."+resourceName, "name", name),
@@ -100,7 +101,7 @@ func TestAccResourceRoutingSmsAddressesTestOrg(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_routing_sms_address."+resourceName, "region", region),
 					resource.TestCheckResourceAttr("genesyscloud_routing_sms_address."+resourceName, "postal_code", postalCode),
 					resource.TestCheckResourceAttr("genesyscloud_routing_sms_address."+resourceName, "country_code", countryCode),
-					resource.TestCheckResourceAttr("genesyscloud_routing_sms_address."+resourceName, "auto_correct_address", gcloud.TrueValue),
+					resource.TestCheckResourceAttr("genesyscloud_routing_sms_address."+resourceName, "auto_correct_address", util.TrueValue),
 				),
 			},
 			{
@@ -123,7 +124,7 @@ func testVerifySmsAddressDestroyed(state *terraform.State) error {
 		address, resp, err := routingAPI.GetRoutingSmsAddress(rs.Primary.ID)
 		if address != nil {
 			return fmt.Errorf("address (%s) still exists", rs.Primary.ID)
-		} else if gcloud.IsStatus404(resp) {
+		} else if util.IsStatus404(resp) {
 			// Address not found as expected
 			continue
 		} else {

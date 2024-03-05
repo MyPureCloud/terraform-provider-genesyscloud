@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -11,7 +13,6 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -57,7 +58,7 @@ func getAllAuthExternalContacts(ctx context.Context, clientConfig *platformclien
 
 // createExternalContact is used by the externalcontacts_contacts resource to create Genesyscloud external_contacts
 func createExternalContact(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	ep := getExternalContactsContactsProxy(sdkConfig)
 
 	externalContact := getExternalContactFromResourceData(d)
@@ -74,15 +75,15 @@ func createExternalContact(ctx context.Context, d *schema.ResourceData, meta int
 
 // readExternalContacts is used by the externalcontacts_contact resource to read an external contact from genesys cloud.
 func readExternalContact(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	ep := getExternalContactsContactsProxy(sdkConfig)
 
 	log.Printf("Reading contact %s", d.Id())
 
-	return gcloud.WithRetriesForRead(ctx, d, func() *retry.RetryError {
+	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		externalContact, respCode, getErr := ep.getExternalContactById(ctx, d.Id())
 		if getErr != nil {
-			if gcloud.IsStatus404ByInt(respCode) {
+			if util.IsStatus404ByInt(respCode) {
 				return retry.RetryableError(fmt.Errorf("Failed to read external contact %s: %s", d.Id(), getErr))
 			}
 			return retry.NonRetryableError(fmt.Errorf("Failed to read external contact %s: %s", d.Id(), getErr))
@@ -100,7 +101,7 @@ func readExternalContact(ctx context.Context, d *schema.ResourceData, meta inter
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "home_phone", externalContact.HomePhone, flattenPhoneNumber)
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "other_phone", externalContact.OtherPhone, flattenPhoneNumber)
 		resourcedata.SetNillableValue(d, "work_email", externalContact.WorkEmail)
-		resourcedata.SetNillableValue(d, "personal_email", externalContact.WorkEmail)
+		resourcedata.SetNillableValue(d, "personal_email", externalContact.PersonalEmail)
 		resourcedata.SetNillableValue(d, "other_email", externalContact.OtherEmail)
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "address", externalContact.Address, flattenSdkAddress)
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "twitter_id", externalContact.TwitterId, flattenSdkTwitterId)
@@ -117,7 +118,7 @@ func readExternalContact(ctx context.Context, d *schema.ResourceData, meta inter
 
 // updateExternalContacts is used by the externalcontacts_contacts resource to update an external contact in Genesys Cloud
 func updateExternalContact(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	ep := getExternalContactsContactsProxy(sdkConfig)
 
 	externalContact := getExternalContactFromResourceData(d)
@@ -133,7 +134,7 @@ func updateExternalContact(ctx context.Context, d *schema.ResourceData, meta int
 
 // deleteExternalContacts is used by the externalcontacts_contacts resource to delete an external contact from Genesys cloud.
 func deleteExternalContact(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	ep := getExternalContactsContactsProxy(sdkConfig)
 
 	_, err := ep.deleteExternalContactId(ctx, d.Id())
@@ -141,13 +142,13 @@ func deleteExternalContact(ctx context.Context, d *schema.ResourceData, meta int
 		return diag.Errorf("Failed to delete external contact %s: %s", d.Id(), err)
 	}
 
-	return gcloud.WithRetries(ctx, 180*time.Second, func() *retry.RetryError {
+	return util.WithRetries(ctx, 180*time.Second, func() *retry.RetryError {
 		_, respCode, err := ep.getExternalContactById(ctx, d.Id())
 
 		if err == nil {
 			return retry.NonRetryableError(fmt.Errorf("Error deleting external contact %s: %s", d.Id(), err))
 		}
-		if gcloud.IsStatus404ByInt(respCode) {
+		if util.IsStatus404ByInt(respCode) {
 			// Success  : External contact deleted
 			log.Printf("Deleted external contact %s", d.Id())
 			return nil

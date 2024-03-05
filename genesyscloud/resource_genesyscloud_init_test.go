@@ -3,6 +3,9 @@ package genesyscloud
 import (
 	"log"
 	"sync"
+	"terraform-provider-genesyscloud/genesyscloud/architect_flow"
+	archScheduleGroup "terraform-provider-genesyscloud/genesyscloud/architect_schedulegroups"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -26,16 +29,12 @@ func (r *registerTestInstance) registerTestResources() {
 	r.resourceMapMutex.Lock()
 	defer r.resourceMapMutex.Unlock()
 
+	providerResources["genesyscloud_flow"] = architect_flow.ResourceArchitectFlow()
 	providerResources["genesyscloud_routing_queue"] = ResourceRoutingQueue()
-	providerResources["genesyscloud_flow"] = ResourceFlow()
 	providerResources["genesyscloud_location"] = ResourceLocation()
-	providerResources["genesyscloud_flow"] = ResourceFlow()
 	providerResources["genesyscloud_architect_schedules"] = ResourceArchitectSchedules()
-	providerResources["genesyscloud_architect_schedulegroups"] = ResourceArchitectScheduleGroups()
 	providerResources["genesyscloud_architect_user_prompt"] = ResourceArchitectUserPrompt()
-	providerResources["genesyscloud_auth_role"] = ResourceAuthRole()
 	providerResources["genesyscloud_auth_division"] = ResourceAuthDivision()
-	providerResources["genesyscloud_employeeperformance_externalmetrics_definitions"] = ResourceEmployeeperformanceExternalmetricsDefinition()
 	providerResources["genesyscloud_group"] = ResourceGroup()
 	providerResources["genesyscloud_idp_adfs"] = ResourceIdpAdfs()
 	providerResources["genesyscloud_idp_generic"] = ResourceIdpGeneric()
@@ -57,9 +56,6 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_orgauthorization_pairing"] = resourceOrgauthorizationPairing()
 	providerResources["genesyscloud_quality_forms_evaluation"] = ResourceEvaluationForm()
 	providerResources["genesyscloud_quality_forms_survey"] = ResourceSurveyForm()
-	providerResources["genesyscloud_responsemanagement_library"] = ResourceResponsemanagementLibrary()
-	providerResources["genesyscloud_responsemanagement_response"] = ResourceResponsemanagementResponse()
-	providerResources["genesyscloud_responsemanagement_responseasset"] = resourceResponseManagamentResponseAsset()
 	providerResources["genesyscloud_routing_email_domain"] = ResourceRoutingEmailDomain()
 	providerResources["genesyscloud_routing_email_route"] = ResourceRoutingEmailRoute()
 	providerResources["genesyscloud_routing_language"] = ResourceRoutingLanguage()
@@ -72,25 +68,23 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_routing_wrapupcode"] = ResourceRoutingWrapupCode()
 	providerResources["genesyscloud_user"] = ResourceUser()
 	providerResources["genesyscloud_widget_deployment"] = ResourceWidgetDeployment()
+	providerResources["genesyscloud_architect_schedulegroups"] = archScheduleGroup.ResourceArchitectSchedulegroups()
 }
 
 func (r *registerTestInstance) registerTestDataSources() {
 
 	r.datasourceMapMutex.Lock()
 	defer r.datasourceMapMutex.Unlock()
+
+	providerDataSources["genesyscloud_flow"] = architect_flow.DataSourceArchitectFlow()
 	providerDataSources["genesyscloud_routing_wrapupcode"] = DataSourceRoutingWrapupcode()
 	providerDataSources["genesyscloud_routing_queue"] = DataSourceRoutingQueue()
-	providerDataSources["genesyscloud_flow"] = DataSourceFlow()
 	providerDataSources["genesyscloud_location"] = DataSourceLocation()
 	providerDataSources["genesyscloud_auth_division_home"] = DataSourceAuthDivisionHome()
 	providerDataSources["genesyscloud_architect_schedules"] = DataSourceSchedule()
-	providerDataSources["genesyscloud_architect_schedulegroups"] = DataSourceArchitectScheduleGroups()
 	providerDataSources["genesyscloud_architect_user_prompt"] = dataSourceUserPrompt()
-	providerDataSources["genesyscloud_auth_role"] = DataSourceAuthRole()
 	providerDataSources["genesyscloud_auth_division"] = dataSourceAuthDivision()
 	providerDataSources["genesyscloud_auth_division_home"] = DataSourceAuthDivisionHome()
-	providerDataSources["genesyscloud_employeeperformance_externalmetrics_definitions"] = dataSourceEmployeeperformanceExternalmetricsDefinition()
-	providerDataSources["genesyscloud_flow"] = DataSourceFlow()
 	providerDataSources["genesyscloud_group"] = DataSourceGroup()
 	providerDataSources["genesyscloud_journey_action_map"] = dataSourceJourneyActionMap()
 	providerDataSources["genesyscloud_journey_action_template"] = dataSourceJourneyActionTemplate()
@@ -103,9 +97,6 @@ func (r *registerTestInstance) registerTestDataSources() {
 	providerDataSources["genesyscloud_organizations_me"] = DataSourceOrganizationsMe()
 	providerDataSources["genesyscloud_quality_forms_evaluation"] = DataSourceQualityFormsEvaluations()
 	providerDataSources["genesyscloud_quality_forms_survey"] = dataSourceQualityFormsSurvey()
-	providerDataSources["genesyscloud_responsemanagement_library"] = dataSourceResponsemanagementLibrary()
-	providerDataSources["genesyscloud_responsemanagement_response"] = dataSourceResponsemanagementResponse()
-	providerDataSources["genesyscloud_responsemanagement_responseasset"] = dataSourceResponseManagamentResponseAsset()
 	providerDataSources["genesyscloud_routing_language"] = dataSourceRoutingLanguage()
 	providerDataSources["genesyscloud_routing_queue"] = DataSourceRoutingQueue()
 	providerDataSources["genesyscloud_routing_settings"] = dataSourceRoutingSettings()
@@ -120,7 +111,7 @@ func (r *registerTestInstance) registerTestDataSources() {
 }
 
 func initTestResources() {
-	if sdkConfig, err = AuthorizeSdk(); err != nil {
+	if sdkConfig, err = provider.AuthorizeSdk(); err != nil {
 		log.Fatal(err)
 	}
 	providerDataSources = make(map[string]*schema.Resource)
