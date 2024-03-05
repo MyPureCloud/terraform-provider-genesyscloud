@@ -227,7 +227,7 @@ func DataSourceTaskManagementWorktype() *schema.Resource {
 	}
 }
 
-// DataSourceTaskManagementWorktypeStus registers the genesyscloud_task_management_worktype_status data source
+// DataSourceTaskManagementWorktypeStatus registers the genesyscloud_task_management_worktype_status data source
 func DataSourceTaskManagementWorktypeStatus() *schema.Resource {
 	return &schema.Resource{
 		Description: `Genesys Cloud task management worktype_status data source. Select a status by worktype name and status name`,
