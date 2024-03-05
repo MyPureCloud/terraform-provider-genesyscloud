@@ -28,7 +28,7 @@ The resource_genesyscloud_task_management_worktype.go contains all of the method
 
 // getAllAuthTaskManagementWorktype retrieves all of the task management worktype via Terraform in the Genesys Cloud and is used for the exporter
 func getAllAuthTaskManagementWorktypes(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
-	proxy := newTaskManagementWorktypeProxy(clientConfig)
+	proxy := getTaskManagementWorktypeProxy(clientConfig)
 	resources := make(resourceExporter.ResourceIDMetaMap)
 
 	worktypes, err := proxy.getAllTaskManagementWorktype(ctx)

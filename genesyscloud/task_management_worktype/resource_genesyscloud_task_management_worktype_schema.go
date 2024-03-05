@@ -19,11 +19,13 @@ resource_genesycloud_task_management_worktype_schema.go holds four functions wit
 4.  The resource exporter configuration for the task_management_worktype exporter.
 */
 const resourceName = "genesyscloud_task_management_worktype"
+const worktypeStatusDataSourceName = "genesyscloud_task_management_worktype_status"
 
 // SetRegistrar registers all of the resources, datasources and exporters in the package
 func SetRegistrar(regInstance registrar.Registrar) {
 	regInstance.RegisterResource(resourceName, ResourceTaskManagementWorktype())
 	regInstance.RegisterDataSource(resourceName, DataSourceTaskManagementWorktype())
+	regInstance.RegisterDataSource(worktypeStatusDataSourceName, DataSourceTaskManagementWorktypeStatus())
 	regInstance.RegisterExporter(resourceName, TaskManagementWorktypeExporter())
 }
 
@@ -218,6 +220,29 @@ func DataSourceTaskManagementWorktype() *schema.Resource {
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Description: `Task management worktype name`,
+				Type:        schema.TypeString,
+				Required:    true,
+			},
+		},
+	}
+}
+
+// DataSourceTaskManagementWorktypeStus registers the genesyscloud_task_management_worktype_status data source
+func DataSourceTaskManagementWorktypeStatus() *schema.Resource {
+	return &schema.Resource{
+		Description: `Genesys Cloud task management worktype_status data source. Select a status by worktype name and status name`,
+		ReadContext: provider.ReadWithPooledClient(dataSourceTaskManagementWorktypeStatusRead),
+		Importer: &schema.ResourceImporter{
+			StateContext: schema.ImportStatePassthroughContext,
+		},
+		Schema: map[string]*schema.Schema{
+			"worktype_name": {
+				Description: `Task management worktype name`,
+				Type:        schema.TypeString,
+				Required:    true,
+			},
+			"worktype_status_name": {
+				Description: `Task management worktype status name`,
 				Type:        schema.TypeString,
 				Required:    true,
 			},
