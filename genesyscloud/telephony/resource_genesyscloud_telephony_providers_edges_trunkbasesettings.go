@@ -93,7 +93,7 @@ func createTrunkBaseSettings(ctx context.Context, d *schema.ResourceData, meta i
 	trunkMetaBaseString := d.Get("trunk_meta_base_id").(string)
 	trunkMetaBase := util.BuildSdkDomainEntityRef(d, "trunk_meta_base_id")
 	inboundSiteString := d.Get("inbound_site_id").(string)
-	properties := util.BuildTelephonyProperties(d)
+	properties := util.BuildBaseSettingsProperties(d)
 	trunkType := d.Get("trunk_type").(string)
 	managed := d.Get("managed").(bool)
 	trunkBase := platformclientv2.Trunkbase{
@@ -141,7 +141,7 @@ func updateTrunkBaseSettings(ctx context.Context, d *schema.ResourceData, meta i
 	trunkMetaBase := util.BuildSdkDomainEntityRef(d, "trunk_meta_base_id")
 	inboundSiteString := d.Get("inbound_site_id").(string)
 
-	properties := util.BuildTelephonyProperties(d)
+	properties := util.BuildBaseSettingsProperties(d)
 	trunkType := d.Get("trunk_type").(string)
 	managed := d.Get("managed").(bool)
 	id := d.Id()
@@ -258,7 +258,7 @@ func readTrunkBaseSettings(ctx context.Context, d *schema.ResourceData, meta int
 
 		d.Set("properties", nil)
 		if trunkBaseSettings.Properties != nil {
-			properties, err := util.FlattenTelephonyProperties(trunkBaseSettings.Properties)
+			properties, err := util.FlattenBaseSettingsProperties(trunkBaseSettings.Properties)
 			if err != nil {
 				return retry.NonRetryableError(fmt.Errorf("%v", err))
 			}

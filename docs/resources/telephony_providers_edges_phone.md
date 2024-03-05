@@ -59,7 +59,6 @@ resource "genesyscloud_telephony_providers_edges_phone" "example_phone" {
 - `line_addresses` (List of String) Ordered list of Line DIDs for standalone phones.  Each phone number must be in an E.164 phone number format.
 - `line_base_settings_id` (String) Line Base Settings ID.
 - `phone_meta_base_id` (String) Phone Meta Base ID.
-- `properties` (String) phone properties
 - `state` (String) Indicates if the resource is active, inactive, or deleted. Valid values: active, inactive, deleted. Defaults to `active`.
 - `web_rtc_user_id` (String) Web RTC User ID. This is necessary when creating a Web RTC phone. This user will be assigned to the phone after it is created.
 
