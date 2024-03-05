@@ -43,7 +43,7 @@ func getAllRoutingEmailRoutes(_ context.Context, clientConfig *platformclientv2.
 
 	for pageNum := 1; ; pageNum++ {
 		const pageSize = 100
-		domains, _, getErr := routingAPI.GetRoutingEmailDomains(pageNum, pageSize, false, "")
+		domains, _, getErr := routingAPI.GetRoutingEmailDomains(pageSize, pageNum, false, "")
 		if getErr != nil {
 			return nil, diag.Errorf("Failed to get routing email domains: %v", getErr)
 		}
