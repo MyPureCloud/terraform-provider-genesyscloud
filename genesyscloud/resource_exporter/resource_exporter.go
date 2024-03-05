@@ -2,17 +2,16 @@ package resource_exporter
 
 import (
 	"context"
+	"fmt"
+	"github.com/hashicorp/go-cty/cty"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"regexp"
 	"strings"
 	"sync"
 
-	"github.com/hashicorp/go-cty/cty"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-
-	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
-
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 )
 
 var resourceExporters map[string]*ResourceExporter
@@ -115,7 +114,6 @@ type ResourceExporter struct {
 
 	// Map of resource id->names. This is set after a call to loadSanitizedResourceMap
 	SanitizedResourceMap ResourceIDMetaMap
-
 	// List of attributes to exclude from config. This is set by the export configuration.
 	ExcludedAttributes []string
 
@@ -136,6 +134,7 @@ type ResourceExporter struct {
 	FilterResource func(ResourceIDMetaMap, string, []string) ResourceIDMetaMap
 	// Attributes that are mentioned with custom exports like e164 numbers,rrule  should be ensured to export in the correct format (remove hyphens, whitespace, etc.)
 	CustomValidateExports map[string][]string
+	mutex                 sync.RWMutex
 }
 
 func (r *ResourceExporter) LoadSanitizedResourceMap(ctx context.Context, name string, filter []string) diag.Diagnostics {
@@ -147,7 +146,16 @@ func (r *ResourceExporter) LoadSanitizedResourceMap(ctx context.Context, name st
 	if r.FilterResource != nil {
 		result = r.FilterResource(result, name, filter)
 	}
+
+	fmt.Println("SanitizedResourceMap before: ", r.SanitizedResourceMap)
+
+	// Lock the Resource Map as it is accessed by goroutines
+	r.mutex.Lock()
 	r.SanitizedResourceMap = result
+	r.mutex.Unlock()
+
+	fmt.Println("SanitizedResourceMap After: ", r.SanitizedResourceMap)
+
 	sanitizer := NewSanitizerProvider()
 	sanitizer.S.Sanitize(r.SanitizedResourceMap)
 

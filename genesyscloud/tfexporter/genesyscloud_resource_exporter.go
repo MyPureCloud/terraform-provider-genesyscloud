@@ -83,7 +83,6 @@ type GenesysCloudResourceExporter struct {
 	meta                   interface{}
 	dependsList            map[string][]string
 	buildSecondDeps        map[string][]string
-	exporterMutex          sync.RWMutex
 }
 
 func configureExporterType(ctx context.Context, d *schema.ResourceData, gre *GenesysCloudResourceExporter, filterType ExporterFilterType) {
@@ -216,12 +215,15 @@ func (g *GenesysCloudResourceExporter) setupDataSource() {
 	}
 }
 
-func (g *GenesysCloudResourceExporter) writeToMap(key interface{}, value interface{}) {
-	g.exporterMutex.Lock()
+var exMutex = sync.RWMutex{}
+
+func HandleSafeMapWrite(key interface{}, value interface{}) {
+	exMutex.Lock()
+	defer exMutex.Unlock()
+
 	key = value
 	log.Println("Key: ", key)
 	log.Println("Value: ", value)
-	g.exporterMutex.Unlock()
 }
 
 // retrieveExporters will return a list of all the registered exporters. If the resource_type on the exporter contains any elements, only the defined
@@ -237,10 +239,6 @@ func (g *GenesysCloudResourceExporter) retrieveExporters() (diagErr diag.Diagnos
 	}
 
 	g.exporters = &exports
-	// TODO: Check if write to maps should be assigned to value [eg: g.exporters]
-	// TODO: [ g.exporters = ] needed or will key update g.exporters
-	g.writeToMap(&g.exporters, &exports)
-	// TODO: g.exporters now updated ??
 
 	// Assign excluded attributes to the config Map
 	if excludedAttrs, ok := g.d.GetOk("exclude_attributes"); ok {
@@ -512,8 +510,7 @@ func (g *GenesysCloudResourceExporter) processAndBuildDependencies() (filters []
 				resource := strings.Split(meta.Name, "::::")
 				filterList = append(filterList, fmt.Sprintf("%s::%s", resource[0], resource[1]))
 			}
-			//g.dependsList = stringmap.MergeMaps(g.dependsList, dependsMap)
-			g.writeToMap(g.dependsList, stringmap.MergeMaps(g.dependsList, dependsMap))
+			g.dependsList = stringmap.MergeMaps(g.dependsList, dependsMap)
 			totalResources = stringmap.MergeSingularMaps(totalResources, resources)
 		}
 	}
@@ -705,11 +702,11 @@ func (g *GenesysCloudResourceExporter) chainDependencies(
 		}
 	}
 	g.filterList = &filterListById
-	g.writeToMap(g.buildSecondDeps, nil)
+	HandleSafeMapWrite(g.buildSecondDeps, nil)
 	if len(*g.filterList) > 0 {
 		g.resources = nil
 
-		g.writeToMap(g.exporters, nil)
+		HandleSafeMapWrite(g.exporters, nil)
 
 		err := g.rebuildExports(*g.filterList)
 		if err != nil {
@@ -786,8 +783,7 @@ func (g *GenesysCloudResourceExporter) buildSanitizedResourceMaps(exporters map[
 			defer wg.Done()
 			log.Printf("Getting all resources for type %s", name)
 			exporter.FilterResource = g.resourceFilter
-			g.exporterMutex.Lock()
-			defer g.exporterMutex.Unlock()
+
 			err := exporter.LoadSanitizedResourceMap(ctx, name, filter)
 
 			// Used in tests
@@ -934,6 +930,7 @@ func (g *GenesysCloudResourceExporter) getResourcesForType(resType string, provi
 					}
 
 					schemaMap := res.SchemaMap()
+
 					attributes := make(map[string]string)
 
 					for attr, _ := range schemaMap {
@@ -1302,6 +1299,7 @@ func removeZeroValues(key string, val interface{}, configMap util.JsonMap) {
 // Identify the parent config map and if the resources have further dependent resources add a new attribute depends_on
 func (g *GenesysCloudResourceExporter) addDependsOnValues(key string, configMap util.JsonMap) {
 	list, exists := g.dependsList[key]
+
 	resourceDependsList := make([]string, 0)
 	if exists {
 		for _, res := range list {
