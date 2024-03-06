@@ -11,11 +11,6 @@ pipeline {
   }
 
   stages {
-    stage ('Install goreleaser') {
-        steps {
-            sh 'go install github.com/goreleaser/goreleaser@latest'
-        }
-    }
     stage ('Release') {
       environment {
         GITHUB_TOKEN = credentials('MYPURECLOUD_GITHUB_TOKEN')
@@ -29,9 +24,7 @@ pipeline {
                     sh "rm -f secret.asc"
         }
 
-        sh 'goreleaser release --clean --timeout 45m --parallelism 3'
-
-        // sh './getgoreleaser.sh release --clean --timeout 45m --parallelism 3'
+        sh './getgoreleaser.sh release --clean --timeout 45m --parallelism 3'
       }
     }
   }
