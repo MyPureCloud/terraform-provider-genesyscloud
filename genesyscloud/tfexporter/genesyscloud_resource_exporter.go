@@ -83,6 +83,7 @@ type GenesysCloudResourceExporter struct {
 	meta                   interface{}
 	dependsList            map[string][]string
 	buildSecondDeps        map[string][]string
+	exMutex                sync.RWMutex
 }
 
 func configureExporterType(ctx context.Context, d *schema.ResourceData, gre *GenesysCloudResourceExporter, filterType ExporterFilterType) {
@@ -213,17 +214,6 @@ func (g *GenesysCloudResourceExporter) setupDataSource() {
 		dataSourceList := lists.InterfaceListToStrings(replaceWithDatasource.([]interface{}))
 		g.replaceWithDatasource = dataSourceList
 	}
-}
-
-var exMutex = sync.RWMutex{}
-
-func HandleSafeMapWrite(key interface{}, value interface{}) {
-	exMutex.Lock()
-	defer exMutex.Unlock()
-
-	key = value
-	log.Println("Key: ", key)
-	log.Println("Value: ", value)
 }
 
 // retrieveExporters will return a list of all the registered exporters. If the resource_type on the exporter contains any elements, only the defined
@@ -702,11 +692,10 @@ func (g *GenesysCloudResourceExporter) chainDependencies(
 		}
 	}
 	g.filterList = &filterListById
-	HandleSafeMapWrite(g.buildSecondDeps, nil)
+	g.buildSecondDeps = nil
 	if len(*g.filterList) > 0 {
 		g.resources = nil
-
-		HandleSafeMapWrite(g.exporters, nil)
+		g.exporters = nil
 
 		err := g.rebuildExports(*g.filterList)
 		if err != nil {
@@ -908,7 +897,6 @@ func (g *GenesysCloudResourceExporter) getResourcesForType(resType string, provi
 	}
 
 	ctyType := res.CoreConfigSchema().ImpliedType()
-	fmt.Println("running")
 	var wg sync.WaitGroup
 	wg.Add(lenResources)
 	for id, resMeta := range exporter.SanitizedResourceMap {
@@ -923,9 +911,9 @@ func (g *GenesysCloudResourceExporter) getResourcesForType(resType string, provi
 				instanceState, err := getResourceState(ctx, res, id, resMeta, meta)
 
 				if g.isDataSource(resType, resMeta.Name) {
-					exMutex.Lock()
+					g.exMutex.Lock()
 					res = provider.DataSourcesMap[resType]
-					exMutex.Unlock()
+					g.exMutex.Unlock()
 
 					if res == nil {
 						return fmt.Errorf("DataSource type %v not defined", resType)
