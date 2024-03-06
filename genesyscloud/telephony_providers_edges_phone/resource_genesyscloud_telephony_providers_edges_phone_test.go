@@ -102,6 +102,7 @@ func TestAccResourcePhoneBasic(t *testing.T) {
 			"mac",
 			[]string{strconv.Quote("audio/opus")},
 		),
+		generatePhoneProperties("AHWEWLFJ"),
 	)
 
 	// Update phone with new user and name
@@ -132,6 +133,7 @@ func TestAccResourcePhoneBasic(t *testing.T) {
 			"mac",
 			[]string{strconv.Quote("audio/opus")},
 		),
+		generatePhoneProperties("AHFDOIW12"),
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -267,7 +269,7 @@ func TestAccResourcePhoneStandalone(t *testing.T) {
 		lineAddresses,
 		"", // no web rtc user
 		"", // no Depends On
-	}, capabilities)
+	}, capabilities, generatePhoneProperties("AFEQ123D"))
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },

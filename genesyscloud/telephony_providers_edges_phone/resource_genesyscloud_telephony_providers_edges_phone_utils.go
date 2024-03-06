@@ -397,7 +397,7 @@ func validatePhoneHardwareIdRequirements(phone *platformclientv2.Phone) (bool, e
 		hardwareIdType = *phone.Capabilities.HardwareIdType
 	}
 
-	if *phone.Properties != nil && (*phone.Properties)["phone_hardwareId"] != nil {
+	if phone.Properties != nil && (*phone.Properties)["phone_hardwareId"] != nil {
 		hardwareIdval, exists := (*phone.Properties)["phone_hardwareId"].(map[string]interface{})["value"].(map[string]interface{})["instance"]
 		if exists {
 			hardwareIdValue = hardwareIdval.(string)
