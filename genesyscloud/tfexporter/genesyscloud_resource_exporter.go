@@ -133,7 +133,7 @@ func NewGenesysCloudResourceExporter(ctx context.Context, d *schema.ResourceData
 		exportAsHCL:          d.Get("export_as_hcl").(bool),
 		splitFilesByResource: d.Get("split_files_by_resource").(bool),
 		logPermissionErrors:  d.Get("log_permission_errors").(bool),
-		addDependsOn:         d.Get("enable_flow_depends_on").(bool),
+		addDependsOn:         d.Get("enable_dependency_resolution").(bool),
 		filterType:           filterType,
 		includeStateFile:     d.Get("include_state_file").(bool),
 		ignoreCyclicDeps:     d.Get("ignore_cyclic_deps").(bool),
@@ -1381,8 +1381,8 @@ func (g *GenesysCloudResourceExporter) populateConfigExcluded(exporters map[stri
 		resourceName := excluded[:resourceIdx]
 		exporter := exporters[resourceName]
 		if exporter == nil {
-			if depends_on, ok := g.d.GetOk("enable_flow_depends_on"); ok {
-				if depends_on == true {
+			if dependsOn, ok := g.d.GetOk("enable_dependency_resolution"); ok {
+				if dependsOn == true {
 					excludedAttr := excluded[resourceIdx+1:]
 					log.Printf("Ignoring exclude attribute %s on %s resources. Since exporter is not retrieved", excludedAttr, resourceName)
 					continue
