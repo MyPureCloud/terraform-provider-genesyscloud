@@ -95,6 +95,7 @@ func RoutingEmailRouteExporter() *resourceExporter.ResourceExporter {
 		RemoveIfMissing: map[string][]string{
 			"reply_email_address": {"route_id"},
 		},
+		AllowZeroValues: []string{"from_email"},
 	}
 }
 
