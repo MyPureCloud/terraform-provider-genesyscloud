@@ -1,14 +1,12 @@
 module terraform-provider-genesyscloud
 
-go 1.21
-
-toolchain go1.21.4
+go 1.22
 
 require (
 	github.com/google/go-cmp v0.6.0
 	github.com/google/uuid v1.6.0
 	github.com/hashicorp/go-cty v1.4.1-0.20200414143053-d3edf31b6320
-	github.com/hashicorp/hcl/v2 v2.19.1
+	github.com/hashicorp/hcl/v2 v2.20.0
 	github.com/hashicorp/terraform-plugin-docs v0.18.0
 	github.com/hashicorp/terraform-plugin-sdk/v2 v2.33.0
 	github.com/leekchan/timeutil v0.0.0-20150802142658-28917288c48d
@@ -16,7 +14,7 @@ require (
 	github.com/mypurecloud/platform-client-sdk-go/v121 v121.0.0
 	github.com/nyaruka/phonenumbers v1.3.2
 	github.com/rjNemo/underscore v0.6.1
-	github.com/zclconf/go-cty v1.14.2
+	github.com/zclconf/go-cty v1.14.3
 	gonum.org/v1/gonum v0.14.0
 )
 
@@ -34,6 +32,7 @@ require (
 	github.com/yuin/goldmark v1.6.0 // indirect
 	github.com/yuin/goldmark-meta v1.1.0 // indirect
 	golang.org/x/exp v0.0.0-20231214170342-aacd6d4b4611 // indirect
+	golang.org/x/tools v0.16.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20231106174013-bbf56f31fb17 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
@@ -88,7 +87,7 @@ require (
 	github.com/spf13/jwalterweatherman v1.0.0 // indirect
 	github.com/spf13/pflag v1.0.3 // indirect
 	github.com/spf13/viper v1.7.1 // indirect
-	github.com/stretchr/testify v1.8.4
+	github.com/stretchr/testify v1.9.0
 	github.com/subosito/gotenv v1.2.0 // indirect
 	github.com/tidwall/pretty v1.2.0 // indirect
 	github.com/vmihailenco/msgpack v4.0.4+incompatible // indirect

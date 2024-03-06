@@ -4,6 +4,7 @@ import (
 	"log"
 	"sync"
 	"terraform-provider-genesyscloud/genesyscloud/architect_flow"
+	archScheduleGroup "terraform-provider-genesyscloud/genesyscloud/architect_schedulegroups"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"testing"
 
@@ -67,6 +68,7 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_routing_wrapupcode"] = ResourceRoutingWrapupCode()
 	providerResources["genesyscloud_user"] = ResourceUser()
 	providerResources["genesyscloud_widget_deployment"] = ResourceWidgetDeployment()
+	providerResources["genesyscloud_architect_schedulegroups"] = archScheduleGroup.ResourceArchitectSchedulegroups()
 }
 
 func (r *registerTestInstance) registerTestDataSources() {

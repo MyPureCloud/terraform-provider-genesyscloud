@@ -113,10 +113,27 @@ func updateFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	}
 
 	s3Uploader := files.NewS3Uploader(reader, nil, substitutions, headers, "PUT", presignedUrl)
-	_, err = s3Uploader.Upload()
+	fileInfo, err := os.Stat(filePath)
 	if err != nil {
+		log.Printf("failed to read file information. Path: '%s' Error: %v", filePath, err)
+	}
+
+	uploadErr := util.WithRetries(ctx, 20*time.Second, func() *retry.RetryError {
+		uploadStartTime := time.Now()
+		_, err = s3Uploader.Upload()
+		if err != nil {
+			uploadDuration := time.Since(uploadStartTime)
+			log.Printf("failed to upload file %s after %d milliseconds (%v seconds). Error: %v", filePath, uploadDuration.Milliseconds(), uploadDuration.Seconds(), err)
+			if fileInfo != nil {
+				log.Printf("size of file '%s': %v bytes", filePath, fileInfo.Size())
+			}
+			return retry.RetryableError(err)
+		}
+		return nil
+	})
+	if uploadErr != nil {
 		setFileContentHashToNil(d)
-		return diag.Errorf(err.Error())
+		return uploadErr
 	}
 
 	// Pre-define here before entering retry function, otherwise it will be overwritten

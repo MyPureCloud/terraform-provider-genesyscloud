@@ -21,25 +21,18 @@ import (
 The resource_genesyscloud_architect_schedulegroups.go contains all of the methods that perform the core logic for a resource.
 */
 
-// getAllAuthArchitectScheduleGroups retrieves all of the architect schedulegroups via Terraform in the Genesys Cloud and is used for the exporter
-func getAllAuthArchitectScheduleGroups(_ context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+// getAllAuthArchitectSchedulegroups retrieves all of the architect schedulegroups via Terraform in the Genesys Cloud and is used for the exporter
+func getAllAuthArchitectSchedulegroups(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+	proxy := getArchitectSchedulegroupsProxy(clientConfig)
 	resources := make(resourceExporter.ResourceIDMetaMap)
-	archAPI := platformclientv2.NewArchitectApiWithConfig(clientConfig)
 
-	for pageNum := 1; ; pageNum++ {
-		const pageSize = 100
-		scheduleGroups, _, getErr := archAPI.GetArchitectSchedulegroups(pageNum, pageSize, "", "", "", "", nil)
-		if getErr != nil {
-			return nil, diag.Errorf("Failed to get page of schedule groups: %v", getErr)
-		}
+	scheduleGroups, err := proxy.getAllArchitectSchedulegroups(ctx)
+	if err != nil {
+		return nil, diag.Errorf("Failed to get page of schedule groups: %v", err)
+	}
 
-		if scheduleGroups.Entities == nil || len(*scheduleGroups.Entities) == 0 {
-			break
-		}
-
-		for _, scheduleGroup := range *scheduleGroups.Entities {
-			resources[*scheduleGroup.Id] = &resourceExporter.ResourceMeta{Name: *scheduleGroup.Name}
-		}
+	for _, scheduleGroup := range *scheduleGroups {
+		resources[*scheduleGroup.Id] = &resourceExporter.ResourceMeta{Name: *scheduleGroup.Name}
 	}
 
 	return resources, nil
