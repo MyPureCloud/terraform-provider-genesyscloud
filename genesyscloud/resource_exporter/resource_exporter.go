@@ -2,7 +2,6 @@ package resource_exporter
 
 import (
 	"context"
-	"fmt"
 	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
@@ -147,14 +146,10 @@ func (r *ResourceExporter) LoadSanitizedResourceMap(ctx context.Context, name st
 		result = r.FilterResource(result, name, filter)
 	}
 
-	fmt.Println("SanitizedResourceMap before: ", r.SanitizedResourceMap)
-
 	// Lock the Resource Map as it is accessed by goroutines
 	r.mutex.Lock()
 	r.SanitizedResourceMap = result
 	r.mutex.Unlock()
-
-	fmt.Println("SanitizedResourceMap After: ", r.SanitizedResourceMap)
 
 	sanitizer := NewSanitizerProvider()
 	sanitizer.S.Sanitize(r.SanitizedResourceMap)

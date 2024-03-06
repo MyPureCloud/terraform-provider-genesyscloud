@@ -908,7 +908,7 @@ func (g *GenesysCloudResourceExporter) getResourcesForType(resType string, provi
 	}
 
 	ctyType := res.CoreConfigSchema().ImpliedType()
-
+	fmt.Println("running")
 	var wg sync.WaitGroup
 	wg.Add(lenResources)
 	for id, resMeta := range exporter.SanitizedResourceMap {
@@ -923,7 +923,9 @@ func (g *GenesysCloudResourceExporter) getResourcesForType(resType string, provi
 				instanceState, err := getResourceState(ctx, res, id, resMeta, meta)
 
 				if g.isDataSource(resType, resMeta.Name) {
+					exMutex.Lock()
 					res = provider.DataSourcesMap[resType]
+					exMutex.Unlock()
 
 					if res == nil {
 						return fmt.Errorf("DataSource type %v not defined", resType)
