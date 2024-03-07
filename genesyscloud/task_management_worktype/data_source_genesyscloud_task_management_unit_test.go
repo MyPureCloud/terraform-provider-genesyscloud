@@ -10,9 +10,9 @@ import (
 	"testing"
 )
 
-// TestAccDataSourceTaskManagementWorktypeStatus tests the retrieve of a status id.
+// TestUnitataSourceTaskManagementWorktypeStatus tests the retrieve of a status id.
 // I am writing a unit test here as we already have the basic test coverage in another test.
-func TestAccDataSourceTaskManagementWorktypeStatus(t *testing.T) {
+func TestUnitDataSourceTaskManagementWorktypeStatus(t *testing.T) {
 	name := "Insurance Claim-Test"
 	defaultTtlSeconds := 2678400
 	defaultPriority := 2000
