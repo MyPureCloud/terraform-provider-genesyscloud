@@ -1041,12 +1041,12 @@ func TestAccResourceRoutingQueueDirectRoutingNoBackup(t *testing.T) {
 	})
 }
 
-// TestRoutingQueueMembersOutsideOfConfig
+// TestAccResourceRoutingQueueMembersOutsideOfConfig
 // Creates a queue and a user, and then adds the user to that queue outside Terraform.
 // On the next apply, we expect an empty plan and therefore no errors (achieved through 'members' being a computed field)
 // Although members should not be a computed field, it was always computed in the past. As a result, some CX as Code users got used
 // to the behaviour described above, so we don't want to break that behaviour.
-func TestRoutingQueueMembersOutsideOfConfig(t *testing.T) {
+func TestAccResourceRoutingQueueMembersOutsideOfConfig(t *testing.T) {
 	var (
 		userResourceId  = "user"
 		userEmail       = fmt.Sprintf("user%s@test.com", strings.Replace(uuid.NewString(), "-", "", -1))
@@ -1093,29 +1093,37 @@ resource "genesyscloud_user" "%s" {
 }
 
 func addMemberToQueue(queueResourceName, userResourceName string) resource.TestCheckFunc {
+	getResourceGuidFromState := func(state *terraform.State, resourceName string) (string, error) {
+		resourceState, ok := state.RootModule().Resources[resourceName]
+		if !ok {
+			return "", fmt.Errorf("failed to find resourceState %s in state", resourceName)
+		}
+		return resourceState.Primary.ID, nil
+	}
+
 	return func(state *terraform.State) error {
 		apiInstance := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
 
-		resourceState, ok := state.RootModule().Resources[queueResourceName]
-		if !ok {
-			return fmt.Errorf("failed to find resourceState %s in state", queueResourceName)
-		}
-		queueResourceID := resourceState.Primary.ID
-
-		resourceState, ok = state.RootModule().Resources[userResourceName]
-		if !ok {
-			return fmt.Errorf("failed to find resourceState %s in state", userResourceName)
-		}
-		userResourceID := resourceState.Primary.ID
-
-		log.Printf("adding member %s to queue %s", userResourceID, queueResourceID)
-		var body []platformclientv2.Writableentity
-		body = append(body, platformclientv2.Writableentity{Id: &userResourceID})
-		if _, err := apiInstance.PostRoutingQueueMembers(queueResourceID, body, false); err != nil {
-			return fmt.Errorf("failed to add member to queue %s: %v", queueResourceID, err)
+		queueID, err := getResourceGuidFromState(state, queueResourceName)
+		if err != nil {
+			return err
 		}
 
-		log.Printf("added member %s to queue %s", userResourceID, queueResourceID)
+		userID, err := getResourceGuidFromState(state, userResourceName)
+		if err != nil {
+			return err
+		}
+
+		log.Printf("adding member %s to queue %s", userID, queueID)
+
+		const deleteMembers = false
+		body := []platformclientv2.Writableentity{{Id: &userID}}
+		if _, err := apiInstance.PostRoutingQueueMembers(queueID, body, deleteMembers); err != nil {
+			return fmt.Errorf("failed to add member to queue %s: %v", queueID, err)
+		}
+
+		log.Printf("added member %s to queue %s", userID, queueID)
+
 		time.Sleep(3 * time.Second)
 		return nil
 	}
