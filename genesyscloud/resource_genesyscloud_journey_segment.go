@@ -21,7 +21,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v121/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v123/platformclientv2"
 )
 
 var (
@@ -410,19 +410,19 @@ func flattenJourneySegment(d *schema.ResourceData, journeySegment *platformclien
 	resourcedata.SetNillableValue(d, "assignment_expiration_days", journeySegment.AssignmentExpirationDays)
 }
 
-func buildSdkJourneySegment(journeySegment *schema.ResourceData) *platformclientv2.Journeysegment {
+func buildSdkJourneySegment(journeySegment *schema.ResourceData) *platformclientv2.Journeysegmentrequest {
 	isActive := journeySegment.Get("is_active").(bool)
 	displayName := journeySegment.Get("display_name").(string)
 	description := resourcedata.GetNillableValue[string](journeySegment, "description")
 	color := journeySegment.Get("color").(string)
 	scope := journeySegment.Get("scope").(string)
 	shouldDisplayToAgent := resourcedata.GetNillableBool(journeySegment, "should_display_to_agent")
-	sdkContext := resourcedata.BuildSdkListFirstElement(journeySegment, "context", buildSdkContext, false)
-	journey := resourcedata.BuildSdkListFirstElement(journeySegment, "journey", buildSdkJourney, false)
+	sdkContext := resourcedata.BuildSdkListFirstElement(journeySegment, "context", buildSdkRequestContext, false)
+	journey := resourcedata.BuildSdkListFirstElement(journeySegment, "journey", buildSdkRequestJourney, false)
 	externalSegment := resourcedata.BuildSdkListFirstElement(journeySegment, "external_segment", buildSdkExternalSegment, true)
 	assignmentExpirationDays := resourcedata.GetNillableValue[int](journeySegment, "assignment_expiration_days")
 
-	return &platformclientv2.Journeysegment{
+	return &platformclientv2.Journeysegmentrequest{
 		IsActive:                 &isActive,
 		DisplayName:              &displayName,
 		Description:              description,
@@ -442,8 +442,8 @@ func buildSdkPatchSegment(journeySegment *schema.ResourceData) *platformclientv2
 	description := resourcedata.GetNillableValue[string](journeySegment, "description")
 	color := journeySegment.Get("color").(string)
 	shouldDisplayToAgent := resourcedata.GetNillableBool(journeySegment, "should_display_to_agent")
-	sdkContext := resourcedata.BuildSdkListFirstElement(journeySegment, "context", buildSdkContext, false)
-	journey := resourcedata.BuildSdkListFirstElement(journeySegment, "journey", buildSdkJourney, false)
+	sdkContext := resourcedata.BuildSdkListFirstElement(journeySegment, "context", buildSdkRequestContext, false)
+	journey := resourcedata.BuildSdkListFirstElement(journeySegment, "journey", buildSdkRequestJourney, false)
 	externalSegment := resourcedata.BuildSdkListFirstElement(journeySegment, "external_segment", buildSdkPatchExternalSegment, true)
 	assignmentExpirationDays := resourcedata.GetNillableValue[int](journeySegment, "assignment_expiration_days")
 
@@ -469,12 +469,22 @@ func flattenContext(context *platformclientv2.Context) map[string]interface{} {
 	return contextMap
 }
 
-func buildSdkContext(context map[string]interface{}) *platformclientv2.Context {
-	patterns := &[]platformclientv2.Contextpattern{}
+func buildSdkRequestContext(context map[string]interface{}) *platformclientv2.Requestcontext {
+	patterns := &[]platformclientv2.Requestcontextpattern{}
 	if context != nil {
-		patterns = stringmap.BuildSdkList(context, "patterns", buildSdkContextPattern)
+		patterns = stringmap.BuildSdkList(context, "patterns", buildSdkRequestContextPattern)
 	}
-	return &platformclientv2.Context{
+	return &platformclientv2.Requestcontext{
+		Patterns: patterns,
+	}
+}
+
+func buildSdkPatchContext(context map[string]interface{}) *platformclientv2.Patchcontext {
+	patterns := &[]platformclientv2.Patchcontextpattern{}
+	if context != nil {
+		patterns = stringmap.BuildSdkList(context, "patterns", buildSdkPatchContextPattern)
+	}
+	return &platformclientv2.Patchcontext{
 		Patterns: patterns,
 	}
 }
@@ -485,9 +495,14 @@ func flattenContextPattern(contextPattern *platformclientv2.Contextpattern) map[
 	return contextPatternMap
 }
 
-func buildSdkContextPattern(contextPattern map[string]interface{}) *platformclientv2.Contextpattern {
-	return &platformclientv2.Contextpattern{
-		Criteria: stringmap.BuildSdkList(contextPattern, "criteria", buildSdkEntityTypeCriteria),
+func buildSdkRequestContextPattern(contextPattern map[string]interface{}) *platformclientv2.Requestcontextpattern {
+	return &platformclientv2.Requestcontextpattern{
+		Criteria: stringmap.BuildSdkList(contextPattern, "criteria", buildSdkRequestEntityTypeCriteria),
+	}
+}
+func buildSdkPatchContextPattern(contextPattern map[string]interface{}) *platformclientv2.Patchcontextpattern {
+	return &platformclientv2.Patchcontextpattern{
+		Criteria: stringmap.BuildSdkList(contextPattern, "criteria", buildSdkPatchEntityTypeCriteria),
 	}
 }
 
@@ -501,14 +516,30 @@ func flattenEntityTypeCriteria(entityTypeCriteria *platformclientv2.Entitytypecr
 	return entityTypeCriteriaMap
 }
 
-func buildSdkEntityTypeCriteria(entityTypeCriteria map[string]interface{}) *platformclientv2.Entitytypecriteria {
+func buildSdkRequestEntityTypeCriteria(entityTypeCriteria map[string]interface{}) *platformclientv2.Requestentitytypecriteria {
 	key := entityTypeCriteria["key"].(string)
 	values := stringmap.BuildSdkStringList(entityTypeCriteria, "values")
 	shouldIgnoreCase := entityTypeCriteria["should_ignore_case"].(bool)
 	operator := entityTypeCriteria["operator"].(string)
 	entityType := entityTypeCriteria["entity_type"].(string)
 
-	return &platformclientv2.Entitytypecriteria{
+	return &platformclientv2.Requestentitytypecriteria{
+		Key:              &key,
+		Values:           values,
+		ShouldIgnoreCase: &shouldIgnoreCase,
+		Operator:         &operator,
+		EntityType:       &entityType,
+	}
+}
+
+func buildSdkPatchEntityTypeCriteria(entityTypeCriteria map[string]interface{}) *platformclientv2.Patchentitytypecriteria {
+	key := entityTypeCriteria["key"].(string)
+	values := stringmap.BuildSdkStringList(entityTypeCriteria, "values")
+	shouldIgnoreCase := entityTypeCriteria["should_ignore_case"].(bool)
+	operator := entityTypeCriteria["operator"].(string)
+	entityType := entityTypeCriteria["entity_type"].(string)
+
+	return &platformclientv2.Patchentitytypecriteria{
 		Key:              &key,
 		Values:           values,
 		ShouldIgnoreCase: &shouldIgnoreCase,
@@ -526,12 +557,22 @@ func flattenJourney(journey *platformclientv2.Journey) map[string]interface{} {
 	return journeyMap
 }
 
-func buildSdkJourney(journey map[string]interface{}) *platformclientv2.Journey {
-	patterns := &[]platformclientv2.Journeypattern{}
+func buildSdkRequestJourney(journey map[string]interface{}) *platformclientv2.Requestjourney {
+	patterns := &[]platformclientv2.Requestjourneypattern{}
 	if journey != nil {
-		patterns = stringmap.BuildSdkList(journey, "patterns", buildSdkJourneyPattern)
+		patterns = stringmap.BuildSdkList(journey, "patterns", buildSdkRequestJourneyPattern)
 	}
-	return &platformclientv2.Journey{
+	return &platformclientv2.Requestjourney{
+		Patterns: patterns,
+	}
+}
+
+func buildSdkPatchJourney(journey map[string]interface{}) *platformclientv2.Patchjourney {
+	patterns := &[]platformclientv2.Patchjourneypattern{}
+	if journey != nil {
+		patterns = stringmap.BuildSdkList(journey, "patterns", buildSdkPatchJourneyPattern)
+	}
+	return &platformclientv2.Patchjourney{
 		Patterns: patterns,
 	}
 }
@@ -546,14 +587,30 @@ func flattenJourneyPattern(journeyPattern *platformclientv2.Journeypattern) map[
 	return journeyPatternMap
 }
 
-func buildSdkJourneyPattern(journeyPattern map[string]interface{}) *platformclientv2.Journeypattern {
-	criteria := stringmap.BuildSdkList(journeyPattern, "criteria", buildSdkCriteria)
+func buildSdkRequestJourneyPattern(journeyPattern map[string]interface{}) *platformclientv2.Requestjourneypattern {
+	criteria := stringmap.BuildSdkList(journeyPattern, "criteria", buildSdkRequestCriteria)
 	count := journeyPattern["count"].(int)
 	streamType := journeyPattern["stream_type"].(string)
 	sessionType := journeyPattern["session_type"].(string)
 	eventName := stringmap.GetNonDefaultValue[string](journeyPattern, "event_name")
 
-	return &platformclientv2.Journeypattern{
+	return &platformclientv2.Requestjourneypattern{
+		Criteria:    criteria,
+		Count:       &count,
+		StreamType:  &streamType,
+		SessionType: &sessionType,
+		EventName:   eventName,
+	}
+}
+
+func buildSdkPatchJourneyPattern(journeyPattern map[string]interface{}) *platformclientv2.Patchjourneypattern {
+	criteria := stringmap.BuildSdkList(journeyPattern, "criteria", buildSdkPatchCriteria)
+	count := journeyPattern["count"].(int)
+	streamType := journeyPattern["stream_type"].(string)
+	sessionType := journeyPattern["session_type"].(string)
+	eventName := stringmap.GetNonDefaultValue[string](journeyPattern, "event_name")
+
+	return &platformclientv2.Patchjourneypattern{
 		Criteria:    criteria,
 		Count:       &count,
 		StreamType:  &streamType,
@@ -571,13 +628,27 @@ func flattenCriteria(criteria *platformclientv2.Criteria) map[string]interface{}
 	return criteriaMap
 }
 
-func buildSdkCriteria(criteria map[string]interface{}) *platformclientv2.Criteria {
+func buildSdkRequestCriteria(criteria map[string]interface{}) *platformclientv2.Requestcriteria {
 	key := criteria["key"].(string)
 	values := stringmap.BuildSdkStringList(criteria, "values")
 	shouldIgnoreCase := criteria["should_ignore_case"].(bool)
 	operator := criteria["operator"].(string)
 
-	return &platformclientv2.Criteria{
+	return &platformclientv2.Requestcriteria{
+		Key:              &key,
+		Values:           values,
+		ShouldIgnoreCase: &shouldIgnoreCase,
+		Operator:         &operator,
+	}
+}
+
+func buildSdkPatchCriteria(criteria map[string]interface{}) *platformclientv2.Patchcriteria {
+	key := criteria["key"].(string)
+	values := stringmap.BuildSdkStringList(criteria, "values")
+	shouldIgnoreCase := criteria["should_ignore_case"].(bool)
+	operator := criteria["operator"].(string)
+
+	return &platformclientv2.Patchcriteria{
 		Key:              &key,
 		Values:           values,
 		ShouldIgnoreCase: &shouldIgnoreCase,
@@ -593,12 +664,12 @@ func flattenExternalSegment(externalSegment *platformclientv2.Externalsegment) m
 	return externalSegmentMap
 }
 
-func buildSdkExternalSegment(externalSegment map[string]interface{}) *platformclientv2.Externalsegment {
+func buildSdkExternalSegment(externalSegment map[string]interface{}) *platformclientv2.Requestexternalsegment {
 	id := externalSegment["id"].(string)
 	name := externalSegment["name"].(string)
 	source := externalSegment["source"].(string)
 
-	return &platformclientv2.Externalsegment{
+	return &platformclientv2.Requestexternalsegment{
 		Id:     &id,
 		Name:   &name,
 		Source: &source,

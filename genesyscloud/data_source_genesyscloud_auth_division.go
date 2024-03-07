@@ -11,7 +11,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v121/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v123/platformclientv2"
 )
 
 func dataSourceAuthDivision() *schema.Resource {
@@ -38,7 +38,7 @@ func dataSourceAuthDivisionRead(ctx context.Context, d *schema.ResourceData, m i
 	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
 		const pageSize = 100
 		const pageNum = 1
-		divisions, _, getErr := authAPI.GetAuthorizationDivisions(pageSize, pageNum, "", nil, "", "", false, name)
+		divisions, _, getErr := authAPI.GetAuthorizationDivisions(pageSize, pageNum, "", nil, "", "", false, nil, name)
 		if getErr != nil {
 			return retry.NonRetryableError(fmt.Errorf("Error requesting division %s: %s", name, getErr))
 		}
