@@ -1042,10 +1042,10 @@ func TestAccResourceRoutingQueueDirectRoutingNoBackup(t *testing.T) {
 }
 
 // TestRoutingQueueMembersOutsideOfConfig
-// Creates a queue and adds a member to that user outside terraform.
-// On the next apply, we expect an empty plan and therefore no errors (achieved through members being a computed field)
-// Although members should not be a computed field, some CX as Code users got used to the behaviour described above,
-// so we don't want to break that behaviour.
+// Creates a queue and a user, and then adds the user to that queue outside Terraform.
+// On the next apply, we expect an empty plan and therefore no errors (achieved through 'members' being a computed field)
+// Although members should not be a computed field, it was always computed in the past. As a result, some CX as Code users got used
+// to the behaviour described above, so we don't want to break that behaviour.
 func TestRoutingQueueMembersOutsideOfConfig(t *testing.T) {
 	var (
 		userResourceId  = "user"
