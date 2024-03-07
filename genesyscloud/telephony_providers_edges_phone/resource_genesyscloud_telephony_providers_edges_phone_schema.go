@@ -1,12 +1,14 @@
 package telephony_providers_edges_phone
 
 import (
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	gcloud "terraform-provider-genesyscloud/genesyscloud/validators"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
 /*
@@ -140,6 +142,13 @@ func ResourcePhone() *schema.Resource {
 				Computed:    true,
 				Elem:        &schema.Schema{Type: schema.TypeString, ValidateDiagFunc: gcloud.ValidatePhoneNumber},
 			},
+			"properties": {
+				Description:      "phone properties",
+				Type:             schema.TypeString,
+				Optional:         true,
+				Computed:         true,
+				DiffSuppressFunc: util.SuppressEquivalentJsonDiffs,
+			},
 			"capabilities": {
 				Description: "Phone Capabilities.",
 				Type:        schema.TypeList,
@@ -149,6 +158,7 @@ func ResourcePhone() *schema.Resource {
 				Elem:        phoneCapabilities,
 			},
 		},
+		CustomizeDiff: util.CustomizePhonePropertiesDiff,
 	}
 }
 
