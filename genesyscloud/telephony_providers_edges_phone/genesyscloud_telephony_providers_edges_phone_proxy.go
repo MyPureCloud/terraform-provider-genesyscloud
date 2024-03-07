@@ -3,7 +3,7 @@ package telephony_providers_edges_phone
 import (
 	"context"
 	"fmt"
-	"log
+	"log"
 	"net/http"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v123/platformclientv2"
