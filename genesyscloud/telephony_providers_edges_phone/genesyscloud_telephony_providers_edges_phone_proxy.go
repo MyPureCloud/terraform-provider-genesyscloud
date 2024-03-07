@@ -161,7 +161,7 @@ func (p *phoneProxy) assignStationAsDefault(ctx context.Context, userId string, 
 
 // getAllPhonesFn is an implementation function for retrieving all Genesys Cloud Phones
 func getAllPhonesFn(ctx context.Context, p *phoneProxy) (*[]platformclientv2.Phone, error) {
-	//log.Printf("Entering the getAllPhonesFn method to retrieve all of the phone ids for export")
+	log.Printf("Entering the getAllPhonesFn method to retrieve all of the phone ids for export")
 	var allPhones []platformclientv2.Phone
 	const pageSize = 100
 	const sortBy = "id"
@@ -228,7 +228,7 @@ func getPhoneByIdFn(ctx context.Context, p *phoneProxy, phoneId string) (*platfo
 		return nil, resp, err
 	}
 
-	//log.Printf("getPhoneByIdFn:: Successfully retrieved individual phone record id %s with phone name %s.\n", *phone.Id, *phone.Name)
+	log.Printf("getPhoneByIdFn:: Successfully retrieved individual phone record id %s with phone name %s.\n", *phone.Id, *phone.Name)
 	return phone, resp, nil
 }
 
