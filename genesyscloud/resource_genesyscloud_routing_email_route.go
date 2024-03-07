@@ -43,9 +43,9 @@ func getAllRoutingEmailRoutes(_ context.Context, clientConfig *platformclientv2.
 
 	for pageNum := 1; ; pageNum++ {
 		const pageSize = 100
-		domains, _, getErr := routingAPI.GetRoutingEmailDomains(pageSize, pageNum, false, "")
+		domains, resp, getErr := routingAPI.GetRoutingEmailDomains(pageSize, pageNum, false, "")
 		if getErr != nil {
-			return nil, diag.Errorf("Failed to get routing email domains: %v", getErr)
+			return nil, util.BuildAPIDiagnosticError("genesyscloud_routing_email_route", "Failed to get routing email domains", resp)
 		}
 
 		if domains.Entities == nil || len(*domains.Entities) == 0 {
@@ -61,7 +61,7 @@ func getAllRoutingEmailRoutes(_ context.Context, clientConfig *platformclientv2.
 						// Domain not found
 						break
 					}
-					return nil, diag.Errorf("Failed to get page of email routes: %v", getErr)
+					return nil, util.BuildAPIDiagnosticError("genesyscloud_routing_email_route", "Failed to get page of email routes", resp)
 				}
 
 				if routes.Entities == nil || len(*routes.Entities) == 0 {
