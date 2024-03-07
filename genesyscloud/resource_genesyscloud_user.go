@@ -1087,13 +1087,17 @@ func readUserRoutingUtilization(d *schema.ResourceData, sdkConfig *platformclien
 
 		if agentUtilization.LabelUtilizations != nil {
 			utilConfig := d.Get("routing_utilization").([]interface{})
-			originalSettings := utilConfig[0].(map[string]interface{})
-			originalLabelUtilizations := originalSettings["label_utilizations"].([]interface{})
+			if utilConfig != nil && len(utilConfig) > 0 {
+				originalSettings := utilConfig[0].(map[string]interface{})
+				originalLabelUtilizations := originalSettings["label_utilizations"].([]interface{})
 
-			// Only add to the state the configured labels, in the configured order, but not any extras, to help terraform with matching new and old state.
-			filteredLabelUtilizations := filterAndFlattenLabelUtilizations(agentUtilization.LabelUtilizations, originalLabelUtilizations)
+				// Only add to the state the configured labels, in the configured order, but not any extras, to help terraform with matching new and old state.
+				filteredLabelUtilizations := filterAndFlattenLabelUtilizations(agentUtilization.LabelUtilizations, originalLabelUtilizations)
 
-			allSettings["label_utilizations"] = filteredLabelUtilizations
+				allSettings["label_utilizations"] = filteredLabelUtilizations
+			} else {
+				allSettings["label_utilizations"] = make([]interface{}, 0)
+			}
 		}
 
 		d.Set("routing_utilization", []interface{}{allSettings})
