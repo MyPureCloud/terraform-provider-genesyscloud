@@ -66,6 +66,7 @@ func dataSourceTaskManagementWorktypeStatusRead(ctx context.Context, d *schema.R
 				return nil
 			}
 		}
-		return nil
+
+		return retry.NonRetryableError(fmt.Errorf("No records found for  management worktype %s with status name %s: %s", workTypeName, statusName, err))
 	})
 }
