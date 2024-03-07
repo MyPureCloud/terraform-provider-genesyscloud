@@ -88,8 +88,13 @@ func (p *SDKClientPool) preFill(providerConfig *schema.ResourceData, version str
 }
 
 func (p *SDKClientPool) startTimer(providerConfig *schema.ResourceData) {
+	var refreshAt int
+	if accessTokenDuration > 360 {
+		refreshAt = 60 // In production refresh when the token will expire in 60 seconds
+	}
+
 	select {
-	case <-time.After(time.Second * time.Duration(accessTokenDuration)):
+	case <-time.After(time.Second * time.Duration(accessTokenDuration-refreshAt)):
 		p.refreshTokens(providerConfig)
 	}
 }
@@ -102,14 +107,14 @@ func (p *SDKClientPool) refreshTokens(providerConfig *schema.ResourceData) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	if len(p.Pool) == 0 {
-		panic("client pool channel empty")
+	poolLength := len(p.Pool)
+	if poolLength == 0 {
+		panic("client pool empty")
 	}
-
-	for sdkConfig := range p.Pool {
+	for i := 0; i < poolLength; i++ {
 		wg.Add(1)
-		sdkConfig := sdkConfig
-		go func() {
+		sdkConfig := <-p.Pool
+		go func(sdkConfig *platformclientv2.Configuration) {
 			defer wg.Done()
 			err := requestToken(providerConfig, sdkConfig)
 			if err != nil {
@@ -120,7 +125,8 @@ func (p *SDKClientPool) refreshTokens(providerConfig *schema.ResourceData) {
 				cancel()
 				return
 			}
-		}()
+			p.Pool <- sdkConfig
+		}(sdkConfig)
 	}
 	go func() {
 		wg.Wait()

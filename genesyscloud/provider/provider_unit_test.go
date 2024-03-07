@@ -41,48 +41,49 @@ func TestUnitProviderTokenRefresh(t *testing.T) {
 	diag := clientPool.preFill(d, "0.1.0") // Initialize the config pool
 	assert.Equal(t, false, diag.HasError())
 
+	// Get original tokens
+	if len(clientPool.Pool) == 0 {
+		t.Error("no clients available")
+	}
 	var originalAccessTokens []string
-	for config := range clientPool.Pool {
+	for i := 0; i < tPoolSize; i++ {
+		config := <-clientPool.Pool
 		originalAccessTokens = append(originalAccessTokens, config.AccessToken)
+		clientPool.Pool <- config
 	}
+	sort.Strings(originalAccessTokens)
 
-	// After the configs has been created we sleep until the accessTokens expire and check that they have been refreshed
-	time.Sleep(time.Duration(tExpiresIn + 15)) // Add some time to give the tokens a chance to refresh
+	runs := 5
+	for j := 0; j < runs; j++ {
+		// sleep until the accessTokens expire and check that they have been refreshed
+		time.Sleep(time.Second * time.Duration(tExpiresIn+5)) // Add some time to give the tokens a chance to refresh
 
-	var refreshedAccessTokens []string
-	for config := range clientPool.Pool {
-		refreshedAccessTokens = append(refreshedAccessTokens, config.AccessToken)
-	}
-
-	assert.Equal(t, false, areEqual(originalAccessTokens, refreshedAccessTokens), "Original tokens not updated")
-}
-
-func areEqual(tokens1, tokens2 []string) bool {
-	// Check if lengths are equal
-	if len(tokens1) != len(tokens2) {
-		return false
-	}
-
-	// Sort both groups
-	sort.Strings(tokens1)
-	sort.Strings(tokens2)
-
-	// Compare each element
-	for i := range tokens1 {
-		if tokens1[i] != tokens2[i] {
-			return false
+		if len(clientPool.Pool) == 0 {
+			t.Error("no clients available")
 		}
-	}
+		var refreshedAccessTokens []string
+		for i := 0; i < tPoolSize; i++ {
+			config := <-clientPool.Pool
+			refreshedAccessTokens = append(refreshedAccessTokens, config.AccessToken)
+			clientPool.Pool <- config
+		}
+		sort.Strings(refreshedAccessTokens)
 
-	return true
+		// Check each token
+		for i := 0; i < tPoolSize; i++ {
+			assert.Equal(t, true, originalAccessTokens[i] != refreshedAccessTokens[i], "Original token not updated")
+		}
+
+		originalAccessTokens = refreshedAccessTokens
+	}
 }
 
 func randString(n int) string {
-	const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+	const characters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 
 	b := make([]byte, n)
 	for i := range b {
-		b[i] = letterBytes[rand.Intn(len(letterBytes))]
+		b[i] = characters[rand.Intn(len(characters))]
 	}
 	return string(b)
 }
