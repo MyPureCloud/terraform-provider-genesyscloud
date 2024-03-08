@@ -70,6 +70,7 @@ import (
 	userRoles "terraform-provider-genesyscloud/genesyscloud/user_roles"
 	webDeployConfig "terraform-provider-genesyscloud/genesyscloud/webdeployments_configuration"
 	webDeployDeploy "terraform-provider-genesyscloud/genesyscloud/webdeployments_deployment"
+	journeyOutcomePrecdictor "terraform-provider-genesyscloud/genesyscloud/journey_outcome_predictor"
 )
 
 // Run "go generate" to format example terraform files and generate the docs for the registry/website
@@ -189,6 +190,7 @@ func registerResources() {
 	responsemanagementResponse.SetRegistrar(regInstance)                   //Registering responsemanagement responses
 	responsemanagementResponseasset.SetRegistrar(regInstance)              //Registering responsemanagement response asset
 	respmanagementLibrary.SetRegistrar(regInstance)                        //Registering responsemanagement library
+	journeyOutcomePrecdictor.SetRegistrar(regInstance)					   //Registering journey outcome predictor
 
 	// setting resources for Use cases  like TF export where provider is used in resource classes.
 	tfexp.SetRegistrar(regInstance) //Registering tf exporter
