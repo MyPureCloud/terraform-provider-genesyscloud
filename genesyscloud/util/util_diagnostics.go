@@ -28,19 +28,22 @@ func convertResponseToWrapper(resourceName string, apiResponse *platformclientv2
 }
 
 func BuildAPIDiagnosticError(resourceName string, summary string, apiResponse *platformclientv2.APIResponse) diag.Diagnostics {
-	var msg string
 
+	//Checking to make sure we have properly formed response
+	if apiResponse == nil || apiResponse.Response == nil || apiResponse.Response.Request == nil || apiResponse.Response.Request.URL == nil {
+		error := fmt.Errorf("Unable to build a message from the response because the APIResponse does not contain the appropriate data.%s", "")
+		return BuildDiagnosticError(resourceName, summary, error)
+	}
 	diagInfo := convertResponseToWrapper(resourceName, apiResponse)
 	diagInfoByte, err := json.Marshal(diagInfo)
 
+	//Checking to see if we can Marshall the data
 	if err != nil {
-		msg = "Unable to unmarshal diagnostic info while building diagnostic error."
-	} else {
-		msg = string(diagInfoByte)
+		error := fmt.Errorf("Unable to unmarshal diagnostic info while building diagnostic error. Erro: %s", err)
+		return BuildDiagnosticError(resourceName, summary, error)
 	}
 
-	summaryMsg := fmt.Sprintf("%s: %s", resourceName, summary)
-	dg := diag.Diagnostic{Severity: diag.Error, Summary: summaryMsg, Detail: msg}
+	dg := diag.Diagnostic{Severity: diag.Error, Summary: summary, Detail: string(diagInfoByte)}
 	var dgs diag.Diagnostics
 	dgs = append(dgs, dg)
 	return dgs
@@ -51,18 +54,17 @@ func BuildDiagnosticError(resourceName string, summary string, err error) diag.D
 
 	diagInfo := &detailedDiagnosticInfo{
 		ResourceName: resourceName,
-		ErrorMessage: fmt.Sprint("%s", err),
+		ErrorMessage: fmt.Sprintf("%s", err),
 	}
 	diagInfoByte, err := json.Marshal(diagInfo)
 
 	if err != nil {
-		msg = "Unable to unmarshal diagnostic info while building diagnostic error"
+		msg = fmt.Sprintf("{'resourceName': '%s', 'details': 'Unable to unmarshal diagnostic info while building diagnostic error'}", resourceName)
 	} else {
 		msg = string(diagInfoByte)
 	}
 
-	summaryMsg := fmt.Sprintf("%s: %s", resourceName, summary)
-	dg := diag.Diagnostic{Severity: diag.Error, Summary: summaryMsg, Detail: msg}
+	dg := diag.Diagnostic{Severity: diag.Error, Summary: summary, Detail: msg}
 	var dgs diag.Diagnostics
 	dgs = append(dgs, dg)
 	return dgs
