@@ -13,7 +13,7 @@ import (
 
 // Unit Test
 
-func generateAuthSettingsData(dAllowList []string, ipAllowList []string) platformclientv2.Orgauthsettings {
+func generateAuthSettingsData(domainAllowList []string, ipAllowList []string) platformclientv2.Orgauthsettings {
 	passwordRequirements := &platformclientv2.Passwordrequirements{
 		MinimumLength:     platformclientv2.Int(8),
 		MinimumDigits:     platformclientv2.Int(2),
@@ -28,7 +28,7 @@ func generateAuthSettingsData(dAllowList []string, ipAllowList []string) platfor
 	return platformclientv2.Orgauthsettings{
 		MultifactorAuthenticationRequired: platformclientv2.Bool(true),
 		DomainAllowlistEnabled:            platformclientv2.Bool(false),
-		DomainAllowlist:                   &dAllowList,
+		DomainAllowlist:                   &domainAllowList,
 		IpAddressAllowlist:                &ipAllowList,
 		PasswordRequirements:              passwordRequirements,
 	}
@@ -38,15 +38,14 @@ func TestUnitResourceOrganizationAuthenticationSettingsRead(t *testing.T) {
 	domainAllowList := []string{"Genesys.com", "Google.com"}
 	allowList := make([]interface{}, len(domainAllowList))
 	for i, v := range domainAllowList {
-		domainAllowList[i] = v
+		allowList[i] = v
 	}
 	ipAllowList := []string{"0.0.0.0/32", "1.1.1.1/32"}
 	ipAddressAllowList := make([]interface{}, len(ipAllowList))
 	for i, v := range ipAllowList {
-		ipAllowList[i] = v
+		ipAddressAllowList[i] = v
 	}
 	testOrgAuthSettings := generateAuthSettingsData(domainAllowList, ipAllowList)
-
 	orgAuthProxy := &orgAuthSettingsProxy{}
 	orgAuthProxy.getOrgAuthSettingsByIdAttr = func(ctx context.Context, o *orgAuthSettingsProxy, id string) (*platformclientv2.Orgauthsettings, int, error) {
 		orgAuthSettings := &testOrgAuthSettings
@@ -77,12 +76,12 @@ func TestUnitResourceOrganizationAuthenticationSettingsUpdate(t *testing.T) {
 	domainAllowList := []string{"Genesys.ie", "Updated.com"}
 	allowList := make([]interface{}, len(domainAllowList))
 	for i, v := range domainAllowList {
-		domainAllowList[i] = v
+		allowList[i] = v
 	}
 	ipAllowList := []string{"2.2.2.2/32", "3.3.3.3/32"}
 	ipAddressAllowList := make([]interface{}, len(ipAllowList))
 	for i, v := range ipAllowList {
-		ipAllowList[i] = v
+		ipAddressAllowList[i] = v
 	}
 	testOrgAuthSettings := generateAuthSettingsData(domainAllowList, ipAllowList)
 
@@ -117,7 +116,7 @@ func TestUnitResourceOrganizationAuthenticationSettingsUpdate(t *testing.T) {
 
 	diag := updateOrganizationAuthenticationSettings(ctx, d, gcloud)
 	assert.Equal(t, false, diag.HasError())
-	assert.Equal(t, *testOrgAuthSettings.DomainAllowlist, d.Get("domain_allowlist").([]string))
+	assert.Equal(t, *testOrgAuthSettings.DomainAllowlist, domainAllowList)
 }
 
 func buildOrgAuthSettingsDataMap(tMultifactorAuthRequired bool, tDomainAllowListEnabled bool, tDomainAllowList []interface{}, tIpAddressAllowList []interface{}, tPasswordRequirements platformclientv2.Passwordrequirements) map[string]interface{} {
