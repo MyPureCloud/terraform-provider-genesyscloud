@@ -69,6 +69,7 @@ func updateOrganizationAuthenticationSettings(ctx context.Context, d *schema.Res
 	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
 	proxy := getOrgAuthSettingsProxy(sdkConfig)
 	AuthSettings := getOrganizationAuthenticationSettingsFromResourceData(d)
+
 	log.Printf("Updating organization authentication settings %s", d.Id())
 
 	orgAuthSettings, _, err := proxy.updateOrgAuthSettings(ctx, &AuthSettings)
