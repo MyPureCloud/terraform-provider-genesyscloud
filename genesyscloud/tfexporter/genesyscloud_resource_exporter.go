@@ -84,6 +84,7 @@ type GenesysCloudResourceExporter struct {
 	meta                   interface{}
 	dependsList            map[string][]string
 	buildSecondDeps        map[string][]string
+	exMutex                sync.RWMutex
 	cyclicDependsList      []string
 	ignoreCyclicDeps       bool
 }
@@ -307,7 +308,7 @@ func (g *GenesysCloudResourceExporter) retrieveGenesysCloudObjectInstances() dia
 		wg.Add(1)
 		go func(resType string, exporter *resourceExporter.ResourceExporter) {
 			defer wg.Done()
-			//
+
 			typeResources, err := g.getResourcesForType(resType, g.provider, exporter, g.meta)
 
 			if err != nil {
@@ -714,6 +715,7 @@ func (g *GenesysCloudResourceExporter) chainDependencies(
 	if len(*g.filterList) > 0 {
 		g.resources = nil
 		g.exporters = nil
+
 		err := g.rebuildExports(*g.filterList)
 		if err != nil {
 			return err
@@ -789,6 +791,7 @@ func (g *GenesysCloudResourceExporter) buildSanitizedResourceMaps(exporters map[
 			defer wg.Done()
 			log.Printf("Getting all resources for type %s", name)
 			exporter.FilterResource = g.resourceFilter
+
 			err := exporter.LoadSanitizedResourceMap(ctx, name, filter)
 
 			// Used in tests
@@ -913,7 +916,6 @@ func (g *GenesysCloudResourceExporter) getResourcesForType(resType string, provi
 	}
 
 	ctyType := res.CoreConfigSchema().ImpliedType()
-
 	var wg sync.WaitGroup
 	wg.Add(lenResources)
 	for id, resMeta := range exporter.SanitizedResourceMap {
@@ -928,13 +930,16 @@ func (g *GenesysCloudResourceExporter) getResourcesForType(resType string, provi
 				instanceState, err := getResourceState(ctx, res, id, resMeta, meta)
 
 				if g.isDataSource(resType, resMeta.Name) {
+					g.exMutex.Lock()
 					res = provider.DataSourcesMap[resType]
+					g.exMutex.Unlock()
 
 					if res == nil {
 						return fmt.Errorf("DataSource type %v not defined", resType)
 					}
 
 					schemaMap := res.SchemaMap()
+
 					attributes := make(map[string]string)
 
 					for attr, _ := range schemaMap {
@@ -1303,6 +1308,7 @@ func removeZeroValues(key string, val interface{}, configMap util.JsonMap) {
 // Identify the parent config map and if the resources have further dependent resources add a new attribute depends_on
 func (g *GenesysCloudResourceExporter) addDependsOnValues(key string, configMap util.JsonMap) {
 	list, exists := g.dependsList[key]
+
 	resourceDependsList := make([]string, 0)
 	if exists {
 		for _, res := range list {
