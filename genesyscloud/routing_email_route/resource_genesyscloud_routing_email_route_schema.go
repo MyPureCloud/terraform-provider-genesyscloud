@@ -41,7 +41,6 @@ func SetRegistrar(regInstance registrar.Registrar) {
 	regInstance.RegisterExporter(resourceName, RoutingEmailRouteExporter())
 }
 
-// ResourceRoutingEmailRoute registers the genesyscloud_routing_email_route resource with Terraform
 func ResourceRoutingEmailRoute() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud Routing Email Domain Route",
