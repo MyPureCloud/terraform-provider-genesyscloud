@@ -1,14 +1,11 @@
 package journey_outcome_predictor
 
 import (
-	"encoding/json"
 	"fmt"
-	"regexp"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 
-	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/mypurecloud/platform-client-sdk-go/v123/platformclientv2"
@@ -17,9 +14,7 @@ import (
 func TestAccResourceJourneyOutcomePredictor(t *testing.T) {
 	t.Parallel()
 	var (
-		deploymentName        = "Test Deployment " + util.RandString(8)
-		deploymentDescription = "Test Deployment description " + util.RandString(32)
-		fullResourceName      = "genesyscloud_journey_outcome_predictor.test_predictor"
+		fullResourceName = "genesyscloud_journey_outcome_predictor.test_predictor"
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -28,9 +23,6 @@ func TestAccResourceJourneyOutcomePredictor(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config: predictorResource(),
-				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(fullResourceName),
-				),
 			},
 			{
 				ResourceName:            fullResourceName,
@@ -42,11 +34,8 @@ func TestAccResourceJourneyOutcomePredictor(t *testing.T) {
 	})
 }
 
-func predictorResource(t *testing.T) string {
-	minimalConfigName := "Minimal Config " + uuid.NewString()
-
-	return fmt.Sprintf(`
-
+func predictorResource() string {
+	return fmt.Sprint(`
 	resource "genesyscloud_journey_outcome" "test_outcome" {
 		is_active    = true
 		display_name = "example journey outcome - delete"
@@ -72,7 +61,7 @@ func predictorResource(t *testing.T) string {
 			id = "${genesyscloud_journey_outcome.test_outcome.id}"
 		}
 	}
-	`, minimalConfigName)
+	`)
 }
 
 func testVerifyPredictorDestroyed(state *terraform.State) error {
@@ -82,7 +71,7 @@ func testVerifyPredictorDestroyed(state *terraform.State) error {
 			continue
 		}
 
-		predictor, resp, err := journeyAPI.GetJourneyOutcomesPredictor(rs.Primary.ID, nil)
+		predictor, resp, err := journeyAPI.GetJourneyOutcomesPredictor(rs.Primary.ID)
 		if predictor != nil {
 			return fmt.Errorf("Predictor (%s) still exists", rs.Primary.ID)
 		} else if util.IsStatus404(resp) {
