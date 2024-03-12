@@ -38,7 +38,6 @@ var (
 // SetRegistrar registers all of the resources, datasources and exporters in the package
 func SetRegistrar(regInstance registrar.Registrar) {
 	regInstance.RegisterResource(resourceName, ResourceRoutingEmailRoute())
-	regInstance.RegisterDataSource(resourceName, DataSourceRoutingEmailRoute())
 	regInstance.RegisterExporter(resourceName, RoutingEmailRouteExporter())
 }
 
@@ -150,7 +149,7 @@ func ResourceRoutingEmailRoute() *schema.Resource {
 // RoutingEmailRouteExporter returns the resourceExporter object used to hold the genesyscloud_routing_email_route exporter's config
 func RoutingEmailRouteExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
-		GetResourcesFunc: provider.GetAllWithPooledClient(getAllAuthRoutingEmailRoutes),
+		GetResourcesFunc: provider.GetAllWithPooledClient(getAllRoutingEmailRoutes),
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			"domain_id":                     {RefType: "genesyscloud_routing_email_domain"},
 			"queue_id":                      {RefType: "genesyscloud_routing_queue"},
@@ -167,21 +166,3 @@ func RoutingEmailRouteExporter() *resourceExporter.ResourceExporter {
 		AllowZeroValues: []string{"from_email"},
 	}
 }
-
-// DataSourceRoutingEmailRoute registers the genesyscloud_routing_email_route data source
-//func DataSourceRoutingEmailRoute() *schema.Resource {
-//	return &schema.Resource{
-//		Description: `Genesys Cloud routing email route data source. Select an routing email route by name`,
-//		ReadContext: provider.ReadWithPooledClient(dataSourceRoutingEmailRouteRead),
-//		Importer: &schema.ResourceImporter{
-//			StateContext: schema.ImportStatePassthroughContext,
-//		},
-//		Schema: map[string]*schema.Schema{
-//			"name": {
-//				Description: `routing email route name`,
-//				Type:        schema.TypeString,
-//				Required:    true,
-//			},
-//		},
-//	}
-//}
