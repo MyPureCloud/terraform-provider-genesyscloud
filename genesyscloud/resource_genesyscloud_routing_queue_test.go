@@ -2,19 +2,21 @@ package genesyscloud
 
 import (
 	"fmt"
+	"log"
 	"strconv"
 	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/architect_flow"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v121/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v123/platformclientv2"
 )
 
 func TestAccResourceRoutingQueueBasic(t *testing.T) {
@@ -1037,6 +1039,94 @@ func TestAccResourceRoutingQueueDirectRoutingNoBackup(t *testing.T) {
 		},
 		CheckDestroy: testVerifyQueuesDestroyed,
 	})
+}
+
+// TestAccResourceRoutingQueueMembersOutsideOfConfig
+// Creates a queue and a user, and then adds the user to that queue outside Terraform.
+// On the next apply, we expect an empty plan and therefore no errors (achieved through 'members' being a computed field)
+// Although members should not be a computed field, it was always computed in the past. As a result, some CX as Code users got used
+// to the behaviour described above, so we don't want to break that behaviour.
+func TestAccResourceRoutingQueueMembersOutsideOfConfig(t *testing.T) {
+	var (
+		userResourceId  = "user"
+		userEmail       = fmt.Sprintf("user%s@test.com", strings.Replace(uuid.NewString(), "-", "", -1))
+		queueResourceId = "queue"
+		queueName       = "tf test queue " + uuid.NewString()
+	)
+
+	queueResource := fmt.Sprintf(`
+resource "genesyscloud_routing_queue" "%s" {
+	name = "%s"
+}
+`, queueResourceId, queueName)
+
+	userResource := fmt.Sprintf(`
+resource "genesyscloud_user" "%s" {
+	name  = "tf test user"
+	email = "%s"
+}
+`, userResourceId, userEmail)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			{
+				Config: queueResource + userResource,
+				Check: resource.ComposeTestCheckFunc(
+					addMemberToQueue("genesyscloud_routing_queue."+queueResourceId, "genesyscloud_user."+userResourceId),
+				),
+			},
+			{
+				Config:             queueResource + userResource,
+				ExpectNonEmptyPlan: false,
+			},
+			{
+				// Import/Read
+				ResourceName:      "genesyscloud_routing_queue." + queueResourceId,
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+		},
+		CheckDestroy: testVerifyQueuesDestroyed,
+	})
+}
+
+func addMemberToQueue(queueResourceName, userResourceName string) resource.TestCheckFunc {
+	getResourceGuidFromState := func(state *terraform.State, resourceName string) (string, error) {
+		resourceState, ok := state.RootModule().Resources[resourceName]
+		if !ok {
+			return "", fmt.Errorf("failed to find resourceState %s in state", resourceName)
+		}
+		return resourceState.Primary.ID, nil
+	}
+
+	return func(state *terraform.State) error {
+		apiInstance := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
+
+		queueID, err := getResourceGuidFromState(state, queueResourceName)
+		if err != nil {
+			return err
+		}
+
+		userID, err := getResourceGuidFromState(state, userResourceName)
+		if err != nil {
+			return err
+		}
+
+		log.Printf("adding member %s to queue %s", userID, queueID)
+
+		const deleteMembers = false
+		body := []platformclientv2.Writableentity{{Id: &userID}}
+		if _, err := apiInstance.PostRoutingQueueMembers(queueID, body, deleteMembers); err != nil {
+			return fmt.Errorf("failed to add member to queue %s: %v", queueID, err)
+		}
+
+		log.Printf("added member %s to queue %s", userID, queueID)
+
+		time.Sleep(3 * time.Second)
+		return nil
+	}
 }
 
 /*

@@ -20,7 +20,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v121/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v123/platformclientv2"
 
 	"terraform-provider-genesyscloud/genesyscloud/util/testrunner"
 
@@ -1773,7 +1773,7 @@ func generateTfExportByFlowDependsOnResources(
 		include_filter_resources = [%s]
 		export_as_hcl = %s
 		split_files_by_resource = %s
-		enable_flow_depends_on = %s
+		enable_dependency_resolution = %s
 		depends_on = [time_sleep.wait_10_seconds]
 	}
 	`, resourceID, directory, includeState, strings.Join(items, ","), exportAsHCL, splitByResource, dependsOn)

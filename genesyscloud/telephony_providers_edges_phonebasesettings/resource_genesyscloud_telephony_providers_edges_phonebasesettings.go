@@ -17,14 +17,14 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v121/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v123/platformclientv2"
 )
 
 func createPhoneBaseSettings(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	name := d.Get("name").(string)
 	description := d.Get("description").(string)
 	phoneMetaBase := util.BuildSdkDomainEntityRef(d, "phone_meta_base_id")
-	properties := util.BuildBaseSettingsProperties(d)
+	properties := util.BuildTelephonyProperties(d)
 
 	phoneBase := platformclientv2.Phonebase{
 		Name:          &name,
@@ -63,7 +63,7 @@ func updatePhoneBaseSettings(ctx context.Context, d *schema.ResourceData, meta i
 	name := d.Get("name").(string)
 	description := d.Get("description").(string)
 	phoneMetaBase := util.BuildSdkDomainEntityRef(d, "phone_meta_base_id")
-	properties := util.BuildBaseSettingsProperties(d)
+	properties := util.BuildTelephonyProperties(d)
 	id := d.Id()
 
 	phoneBase := platformclientv2.Phonebase{
@@ -131,7 +131,7 @@ func readPhoneBaseSettings(ctx context.Context, d *schema.ResourceData, meta int
 
 		d.Set("properties", nil)
 		if phoneBaseSettings.Properties != nil {
-			properties, err := util.FlattenBaseSettingsProperties(phoneBaseSettings.Properties)
+			properties, err := util.FlattenTelephonyProperties(phoneBaseSettings.Properties)
 			if err != nil {
 				return retry.NonRetryableError(fmt.Errorf("%v", err))
 			}

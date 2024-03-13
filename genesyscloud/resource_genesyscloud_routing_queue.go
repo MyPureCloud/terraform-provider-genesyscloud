@@ -24,7 +24,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v121/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v123/platformclientv2"
 )
 
 var (
@@ -487,6 +487,7 @@ func ResourceRoutingQueue() *schema.Resource {
 				Description: "Users in the queue. If not set, this resource will not manage members. If a user is already assigned to this queue via a group, attempting to assign them using this field will cause an error to be thrown.",
 				Type:        schema.TypeSet,
 				Optional:    true,
+				Computed:    true,
 				ConfigMode:  schema.SchemaConfigModeAttr,
 				Elem:        queueMemberResource,
 			},

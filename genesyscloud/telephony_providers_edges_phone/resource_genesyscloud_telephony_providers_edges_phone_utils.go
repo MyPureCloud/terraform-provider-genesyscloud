@@ -18,7 +18,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v121/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v123/platformclientv2"
 )
 
 type PhoneConfig struct {
@@ -34,9 +34,10 @@ type PhoneConfig struct {
 
 func getPhoneFromResourceData(ctx context.Context, pp *phoneProxy, d *schema.ResourceData) (*platformclientv2.Phone, error) {
 	phoneConfig := &platformclientv2.Phone{
-		Name:  platformclientv2.String(d.Get("name").(string)),
-		State: platformclientv2.String(d.Get("state").(string)),
-		Site:  util.BuildSdkDomainEntityRef(d, "site_id"),
+		Name:       platformclientv2.String(d.Get("name").(string)),
+		State:      platformclientv2.String(d.Get("state").(string)),
+		Site:       util.BuildSdkDomainEntityRef(d, "site_id"),
+		Properties: util.BuildTelephonyProperties(d),
 		PhoneBaseSettings: &platformclientv2.Phonebasesettings{
 			Id: buildSdkPhoneBaseSettings(d, "phone_base_settings_id").Id,
 		},
@@ -49,7 +50,7 @@ func getPhoneFromResourceData(ctx context.Context, pp *phoneProxy, d *schema.Res
 	if lineBaseSettingsID == "" {
 		lineBaseSettingsID, err = getLineBaseSettingsID(ctx, pp, *phoneConfig.PhoneBaseSettings.Id)
 		if err != nil {
-			return nil, fmt.Errorf("ailed to get line base settings for %s: %s", *phoneConfig.Name, err)
+			return nil, fmt.Errorf("failed to get line base settings for %s: %s", *phoneConfig.Name, err)
 		}
 	}
 	lineBaseSettings := &platformclientv2.Domainentityref{Id: &lineBaseSettingsID}
@@ -68,13 +69,15 @@ func getPhoneFromResourceData(ctx context.Context, pp *phoneProxy, d *schema.Res
 	phoneConfig.PhoneMetaBase = phoneMetaBase
 
 	if isStandalone {
-		phoneConfig.Properties = &map[string]interface{}{
-			"phone_standalone": &map[string]interface{}{
-				"value": &map[string]interface{}{
-					"instance": true,
-				},
+		if phoneConfig.Properties == nil {
+			phoneConfig.Properties = &map[string]interface{}{}
+		}
+		phone_standalone := map[string]interface{}{
+			"value": &map[string]interface{}{
+				"instance": true,
 			},
 		}
+		(*phoneConfig.Properties)["phone_standalone"] = phone_standalone
 	}
 
 	webRtcUserId := d.Get("web_rtc_user_id")
@@ -366,4 +369,48 @@ func TestVerifyWebRtcPhoneDestroyed(state *terraform.State) error {
 	}
 	//Success. Phone destroyed
 	return nil
+}
+
+func generatePhoneProperties(hardware_id string) string {
+	// A random selection of properties
+	return "properties = " + util.GenerateJsonEncodedProperties(
+		util.GenerateJsonProperty(
+			"phone_hardwareId", util.GenerateJsonObject(
+				util.GenerateJsonProperty(
+					"value", util.GenerateJsonObject(
+						util.GenerateJsonProperty("instance", strconv.Quote(hardware_id)),
+					)))),
+	)
+}
+
+func validatePhoneHardwareIdRequirements(phone *platformclientv2.Phone) (bool, error) {
+	var (
+		hardwareIdType  string
+		hardwareIdValue string
+	)
+	hardwareIdRequiredTypes := map[string]bool{
+		"mac":  true,
+		"fqdn": true,
+	}
+
+	if phone.Capabilities != nil && phone.Capabilities.HardwareIdType != nil {
+		hardwareIdType = *phone.Capabilities.HardwareIdType
+	}
+
+	if phone.Properties != nil && (*phone.Properties)["phone_hardwareId"] != nil {
+		hardwareIdval, exists := (*phone.Properties)["phone_hardwareId"].(map[string]interface{})["value"].(map[string]interface{})["instance"]
+		if exists {
+			hardwareIdValue = hardwareIdval.(string)
+		}
+	}
+
+	_, exists := hardwareIdRequiredTypes[hardwareIdType]
+	if exists && len(hardwareIdValue) <= 0 {
+		return false, fmt.Errorf("hardwareId is required based on the phone capabilities hardwareIdType: %s", hardwareIdType)
+	}
+	if (!exists) && len(hardwareIdValue) > 0 {
+		return false, fmt.Errorf("hardwareId is not required based on the phone capabilities hardwareIdType:%s", hardwareIdType)
+	}
+	return true, nil
+
 }

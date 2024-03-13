@@ -8,7 +8,7 @@ import (
 	utillists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 	"time"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v121/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v123/platformclientv2"
 )
 
 /*

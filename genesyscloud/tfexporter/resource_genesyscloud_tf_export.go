@@ -120,8 +120,8 @@ func ResourceTfExport() *schema.Resource {
 				Elem:        &schema.Schema{Type: schema.TypeString},
 				ForceNew:    true,
 			},
-			"enable_flow_depends_on": {
-				Description: "Adds a \"depends_on\" attribute to genesyscloud_flow resources with a list of resources that are referenced inside the flow configuration. Currently this functionality is in beta.",
+			"enable_dependency_resolution": {
+				Description: "Adds a \"depends_on\" attribute to genesyscloud_flow resources with a list of resources that are referenced inside the flow configuration . This also resolves and exports all the dependent resources for any given resource.",
 				Type:        schema.TypeBool,
 				Optional:    true,
 				Default:     false,
