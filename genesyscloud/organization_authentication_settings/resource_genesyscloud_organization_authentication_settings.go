@@ -39,7 +39,7 @@ func readOrganizationAuthenticationSettings(ctx context.Context, d *schema.Resou
 	proxy := getOrgAuthSettingsProxy(sdkConfig)
 
 	log.Printf("Reading organization authentication settings %s", d.Id())
-	log.Println("1")
+
 	return gcloud.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		orgAuthSettings, respCode, getErr := proxy.getOrgAuthSettingsById(ctx, d.Id())
 		if getErr != nil {
@@ -49,8 +49,7 @@ func readOrganizationAuthenticationSettings(ctx context.Context, d *schema.Resou
 			return retry.NonRetryableError(fmt.Errorf("Failed to read organization authentication settings %s: %s", d.Id(), getErr))
 		}
 
-		//cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOrganizationAuthenticationSettings())
-		log.Println("2")
+		// cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOrganizationAuthenticationSettings())
 
 		resourcedata.SetNillableValue(d, "multifactor_authentication_required", orgAuthSettings.MultifactorAuthenticationRequired)
 		resourcedata.SetNillableValue(d, "domain_allowlist_enabled", orgAuthSettings.DomainAllowlistEnabled)
@@ -73,7 +72,6 @@ func updateOrganizationAuthenticationSettings(ctx context.Context, d *schema.Res
 	log.Printf("Updating organization authentication settings %s", d.Id())
 
 	orgAuthSettings, _, err := proxy.updateOrgAuthSettings(ctx, &AuthSettings)
-
 	if err != nil {
 		return diag.Errorf("Failed to update organization authentication settings: %s", err)
 	}

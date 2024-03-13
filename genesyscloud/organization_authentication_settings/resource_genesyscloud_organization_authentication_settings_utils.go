@@ -15,30 +15,13 @@ and unmarshal data into formats consumable by Terraform and/or Genesys Cloud.
 
 // getOrganizationAuthenticationSettingsFromResourceData maps data from schema ResourceData object to a platformclientv2.Orgauthsettings
 func getOrganizationAuthenticationSettingsFromResourceData(d *schema.ResourceData) platformclientv2.Orgauthsettings {
-	settings := platformclientv2.Orgauthsettings{
-		PasswordRequirements: buildPasswordRequirements(d, "password_requirements"),
+	return platformclientv2.Orgauthsettings{
+		PasswordRequirements:              buildPasswordRequirements(d, "password_requirements"),
+		MultifactorAuthenticationRequired: platformclientv2.Bool(d.Get("multifactor_authentication_required").(bool)),
+		DomainAllowlistEnabled:            platformclientv2.Bool(d.Get("domain_allowlist_enabled").(bool)),
+		DomainAllowlist:                   lists.BuildSdkStringListFromInterfaceArray(d, "domain_allowlist"),
+		IpAddressAllowlist:                lists.BuildSdkStringListFromInterfaceArray(d, "ip_address_allowlist"),
 	}
-
-	multifactorAuthenticationRequired := platformclientv2.Bool(d.Get("multifactor_authentication_required").(bool))
-	if multifactorAuthenticationRequired != nil {
-		settings.MultifactorAuthenticationRequired = multifactorAuthenticationRequired
-	}
-
-	domainAllowlistEnabled := platformclientv2.Bool(d.Get("domain_allowlist_enabled").(bool))
-	if domainAllowlistEnabled != nil {
-		settings.DomainAllowlistEnabled = domainAllowlistEnabled
-	}
-
-	domainAllowlist := lists.InterfaceListToStrings(d.Get("domain_allowlist").([]interface{}))
-	if domainAllowlist != nil {
-		settings.DomainAllowlist = &domainAllowlist
-	}
-
-	ipAddressAllowlist := lists.InterfaceListToStrings(d.Get("ip_address_allowlist").([]interface{}))
-	if ipAddressAllowlist != nil {
-		settings.IpAddressAllowlist = &ipAddressAllowlist
-	}
-	return settings
 }
 
 // buildPasswordRequirements maps an []interface{} into a Genesys Cloud *[]platformclientv2.Passwordrequirements

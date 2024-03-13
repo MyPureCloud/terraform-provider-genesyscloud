@@ -44,7 +44,6 @@ func getOrgAuthSettingsProxy(clientConfig *platformclientv2.Configuration) *orgA
 	if internalProxy == nil {
 		internalProxy = newOrgAuthSettingsProxy(clientConfig)
 	}
-
 	return internalProxy
 }
 
@@ -64,7 +63,6 @@ func getOrgAuthSettingsByIdFn(ctx context.Context, p *orgAuthSettingsProxy, id s
 	if err != nil {
 		return nil, resp.StatusCode, fmt.Errorf("Failed to retrieve organization authentication settings by id %s: %s", id, err)
 	}
-
 	return orgAuthSettings, resp.StatusCode, nil
 }
 
