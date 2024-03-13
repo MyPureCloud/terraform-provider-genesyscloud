@@ -209,11 +209,6 @@ func ResourceUser() *schema.Resource {
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
-		Timeouts: &schema.ResourceTimeout{
-			Create: schema.DefaultTimeout(5 * time.Second),
-			Update: schema.DefaultTimeout(5 * time.Second),
-			Read:   schema.DefaultTimeout(5 * time.Second),
-		},
 		SchemaVersion: 1,
 		Schema: map[string]*schema.Schema{
 			"email": {
