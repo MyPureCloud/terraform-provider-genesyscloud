@@ -16,7 +16,7 @@ var internalProxy *architectDatatableProxy
 type createOrUpdateArchitectDatatableFunc func(ctx context.Context, p *architectDatatableProxy, createAction bool, datatable *Datatable) (*Datatable, *platformclientv2.APIResponse, error)
 type deleteArchitectDatatableFunc func(ctx context.Context, p *architectDatatableProxy, datatableId string) (*platformclientv2.APIResponse, error)
 type getArchitectDatatableFunc func(ctx context.Context, p *architectDatatableProxy, datatableId string, expanded string) (*Datatable, *platformclientv2.APIResponse, error)
-type getAllArchitectDatatableFunc func(ctx context.Context, p *architectDatatableProxy) (*[]platformclientv2.Datatable, error)
+type getAllArchitectDatatableFunc func(ctx context.Context, p *architectDatatableProxy) (*[]platformclientv2.Datatable, *platformclientv2.APIResponse, error)
 
 type architectDatatableProxy struct {
 	clientConfig                         *platformclientv2.Configuration
@@ -59,7 +59,7 @@ func (p *architectDatatableProxy) getArchitectDatatable(ctx context.Context, id 
 	return p.getArchitectDatatableAttr(ctx, p, id, expanded)
 }
 
-func (p *architectDatatableProxy) getAllArchitectDatatable(ctx context.Context) (*[]platformclientv2.Datatable, error) {
+func (p *architectDatatableProxy) getAllArchitectDatatable(ctx context.Context) (*[]platformclientv2.Datatable, *platformclientv2.APIResponse, error) {
 	return p.getAllArchitectDatatableAttr(ctx, p)
 }
 
@@ -143,17 +143,17 @@ func deleteArchitectDatatableFn(ctx context.Context, p *architectDatatableProxy,
 	return p.architectApi.DeleteFlowsDatatable(datatableId, true)
 }
 
-func getAllArchitectDatatableFn(ctx context.Context, p *architectDatatableProxy) (*[]platformclientv2.Datatable, error) {
+func getAllArchitectDatatableFn(ctx context.Context, p *architectDatatableProxy) (*[]platformclientv2.Datatable, *platformclientv2.APIResponse, error) {
 	var totalRecords []platformclientv2.Datatable
 
 	const pageSize = 100
-	tables, _, getErr := p.architectApi.GetFlowsDatatables("", 1, pageSize, "", "", nil, "")
+	tables, resp, getErr := p.architectApi.GetFlowsDatatables("", 1, pageSize, "", "", nil, "")
 	if getErr != nil {
-		return &totalRecords, getErr
+		return &totalRecords, resp, getErr
 	}
 
 	if tables.Entities == nil || len(*tables.Entities) == 0 {
-		return &totalRecords, nil
+		return &totalRecords, resp, nil
 	}
 
 	for _, table := range *tables.Entities {
@@ -161,9 +161,9 @@ func getAllArchitectDatatableFn(ctx context.Context, p *architectDatatableProxy)
 	}
 
 	for pageNum := 2; pageNum <= *tables.PageCount; pageNum++ {
-		tables, _, getErr := p.architectApi.GetFlowsDatatables("", pageNum, pageSize, "", "", nil, "")
+		tables, resp, getErr := p.architectApi.GetFlowsDatatables("", pageNum, pageSize, "", "", nil, "")
 		if getErr != nil {
-			return &totalRecords, getErr
+			return &totalRecords, resp, getErr
 		}
 
 		if tables.Entities == nil || len(*tables.Entities) == 0 {
@@ -175,5 +175,5 @@ func getAllArchitectDatatableFn(ctx context.Context, p *architectDatatableProxy)
 		}
 	}
 
-	return &totalRecords, nil
+	return &totalRecords, resp, nil
 }

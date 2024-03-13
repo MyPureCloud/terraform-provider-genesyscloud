@@ -52,7 +52,6 @@ func getArchitectDatatableRowProxy(clientConfig *platformclientv2.Configuration)
 	if internalProxy == nil {
 		internalProxy = newArchitectDatatableRowProxy(clientConfig)
 	}
-
 	return internalProxy
 }
 
@@ -84,17 +83,17 @@ func (p *architectDatatableRowProxy) deleteArchitectDatatableRow(ctx context.Con
 	return p.deleteArchitectDatatableRowAttr(ctx, p, tableId, rowId)
 }
 
-func getAllArchitectDatatableFn(ctx context.Context, p *architectDatatableRowProxy) (*[]platformclientv2.Datatable, error) {
+func getAllArchitectDatatableFn(ctx context.Context, p *architectDatatableRowProxy) (*[]platformclientv2.Datatable, *platformclientv2.APIResponse, error) {
 	var totalRecords []platformclientv2.Datatable
 
 	const pageSize = 100
-	tables, _, getErr := p.architectApi.GetFlowsDatatables("", 1, pageSize, "", "", nil, "")
+	tables, apiResponse, getErr := p.architectApi.GetFlowsDatatables("", 1, pageSize, "", "", nil, "")
 	if getErr != nil {
-		return &totalRecords, getErr
+		return &totalRecords, apiResponse, getErr
 	}
 
 	if tables.Entities == nil || len(*tables.Entities) == 0 {
-		return &totalRecords, nil
+		return &totalRecords, apiResponse, nil
 	}
 
 	for _, table := range *tables.Entities {
@@ -102,9 +101,9 @@ func getAllArchitectDatatableFn(ctx context.Context, p *architectDatatableRowPro
 	}
 
 	for pageNum := 2; pageNum <= *tables.PageCount; pageNum++ {
-		tables, _, getErr := p.architectApi.GetFlowsDatatables("", pageNum, pageSize, "", "", nil, "")
+		tables, apiResponse, getErr := p.architectApi.GetFlowsDatatables("", pageNum, pageSize, "", "", nil, "")
 		if getErr != nil {
-			return &totalRecords, getErr
+			return &totalRecords, apiResponse, getErr
 		}
 
 		if tables.Entities == nil || len(*tables.Entities) == 0 {
@@ -115,8 +114,7 @@ func getAllArchitectDatatableFn(ctx context.Context, p *architectDatatableRowPro
 			totalRecords = append(totalRecords, table)
 		}
 	}
-
-	return &totalRecords, nil
+	return &totalRecords, apiResponse, nil
 }
 
 func getArchitectDatatableFn(ctx context.Context, p *architectDatatableRowProxy, datatableId string, expanded string) (*Datatable, *platformclientv2.APIResponse, error) {
@@ -154,17 +152,17 @@ func getArchitectDatatableFn(ctx context.Context, p *architectDatatableRowProxy,
 	return successPayload, response, err
 }
 
-func getAllArchitectDatatableRowsFn(ctx context.Context, p *architectDatatableRowProxy, tableId string) (*[]map[string]interface{}, error) {
+func getAllArchitectDatatableRowsFn(ctx context.Context, p *architectDatatableRowProxy, tableId string) (*[]map[string]interface{}, *platformclientv2.APIResponse, error) {
 	var resources []map[string]interface{}
 	const pageSize = 100
 
-	rows, _, getErr := p.architectApi.GetFlowsDatatableRows(tableId, 1, pageSize, false, "")
+	rows, apiResponse, getErr := p.architectApi.GetFlowsDatatableRows(tableId, 1, pageSize, false, "")
 	if getErr != nil {
-		return nil, getErr
+		return nil, apiResponse, getErr
 	}
 
 	if rows.Entities == nil || len(*rows.Entities) == 0 {
-		return &resources, nil
+		return &resources, apiResponse, nil
 	}
 
 	for _, row := range *rows.Entities {
@@ -173,9 +171,9 @@ func getAllArchitectDatatableRowsFn(ctx context.Context, p *architectDatatableRo
 
 	for pageNum := 2; pageNum <= *rows.PageCount; pageNum++ {
 
-		rows, _, getErr := p.architectApi.GetFlowsDatatableRows(tableId, pageNum, pageSize, false, "")
+		rows, apiResponse, getErr := p.architectApi.GetFlowsDatatableRows(tableId, pageNum, pageSize, false, "")
 		if getErr != nil {
-			return nil, getErr
+			return nil, apiResponse, getErr
 		}
 
 		if rows.Entities == nil || len(*rows.Entities) == 0 {
@@ -186,8 +184,7 @@ func getAllArchitectDatatableRowsFn(ctx context.Context, p *architectDatatableRo
 			resources = append(resources, row)
 		}
 	}
-
-	return &resources, nil
+	return &resources, apiResponse, nil
 }
 
 func getArchitectDataTableRowFn(ctx context.Context, p *architectDatatableRowProxy, tableId string, key string) (*map[string]interface{}, *platformclientv2.APIResponse, error) {
