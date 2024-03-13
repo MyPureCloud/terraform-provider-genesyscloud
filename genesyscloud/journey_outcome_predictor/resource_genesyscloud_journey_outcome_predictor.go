@@ -105,7 +105,7 @@ func deleteJourneyOutcomePredictor(ctx context.Context, d *schema.ResourceData, 
 	})
 }
 
-// getExternalContactFromResourceData maps data from schema ResourceData object to a platformclientv2.Externalcontact
+// getPredictorFromResourceData maps data from schema ResourceData object to a platformclientv2.Externalcontact
 func getPredictorFromResourceData(d *schema.ResourceData) platformclientv2.Outcomepredictorrequest {
 	return platformclientv2.Outcomepredictorrequest{
 		Outcome: buildOutcomeRef(d, "outcome"),
