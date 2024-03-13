@@ -3,12 +3,9 @@ package telephony_providers_edges_phone
 import (
 	"context"
 	"fmt"
+	"github.com/mypurecloud/platform-client-sdk-go/v121/platformclientv2"
 	"log"
 	"net/http"
-	"terraform-provider-genesyscloud/genesyscloud/resource_cache"
-	"terraform-provider-genesyscloud/genesyscloud/tfexporter_state"
-
-	"github.com/mypurecloud/platform-client-sdk-go/v121/platformclientv2"
 )
 
 /*
@@ -55,7 +52,6 @@ type phoneProxy struct {
 	edgesApi     *platformclientv2.TelephonyProvidersEdgeApi
 	stationsApi  *platformclientv2.StationsApi
 	usersApi     *platformclientv2.UsersApi
-	phoneCache   resource_cache.CacheInterface[platformclientv2.Phone]
 
 	getAllPhonesAttr   getAllPhonesFunc
 	createPhoneAttr    createPhoneFunc
@@ -76,13 +72,11 @@ func newPhoneProxy(clientConfig *platformclientv2.Configuration) *phoneProxy {
 	edgesApi := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(clientConfig)
 	stationsApi := platformclientv2.NewStationsApiWithConfig(clientConfig)
 	usersApi := platformclientv2.NewUsersApiWithConfig(clientConfig)
-	phoneCache := resource_cache.NewResourceCache[platformclientv2.Phone]()
 	return &phoneProxy{
 		clientConfig:       clientConfig,
 		edgesApi:           edgesApi,
 		stationsApi:        stationsApi,
 		usersApi:           usersApi,
-		phoneCache:         phoneCache,
 		getAllPhonesAttr:   getAllPhonesFn,
 		createPhoneAttr:    createPhoneFn,
 		getPhoneByIdAttr:   getPhoneByIdFn,
@@ -209,10 +203,6 @@ func getAllPhonesFn(ctx context.Context, p *phoneProxy) (*[]platformclientv2.Pho
 	log.Printf("getAllPhonesFn:: Listing all of the non-deleted phone ids and names that we actually retrieved")
 	for _, phone := range allPhones {
 		log.Printf("getAllPhonesFn::  Retrieved phone id %s with phone name: %s\n", *phone.Id, *phone.Name)
-		if tfexporter_state.IsExporterActive() {
-			log.Printf("I am in the SET PHONES: %v:", phone)
-			p.phoneCache.Set(*phone.Id, phone)
-		}
 	}
 
 	return &allPhones, nil
@@ -230,11 +220,6 @@ func createPhoneFn(ctx context.Context, p *phoneProxy, phoneConfig *platformclie
 
 // getPhoneByIdFn is an implementation function for retrieving a Genesys Cloud Phone by id
 func getPhoneByIdFn(ctx context.Context, p *phoneProxy, phoneId string) (*platformclientv2.Phone, *platformclientv2.APIResponse, error) {
-	if tfexporter_state.IsExporterActive() {
-		ph := p.phoneCache.Get(phoneId)
-		return &ph, nil, nil
-	}
-
 	phone, resp, err := p.edgesApi.GetTelephonyProvidersEdgesPhone(phoneId)
 	log.Printf("I am in the GetPhone API call %s: %#v:", phoneId, phone)
 

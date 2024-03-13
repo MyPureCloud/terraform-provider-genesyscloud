@@ -4,9 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"net/http"
-
 	"github.com/mypurecloud/platform-client-sdk-go/v121/platformclientv2"
+	"net/http"
+	"terraform-provider-genesyscloud/genesyscloud/resource_cache"
+	"terraform-provider-genesyscloud/genesyscloud/tfexporter_state"
 )
 
 // internalProxy holds a proxy instance that can be used throughout the package
@@ -31,13 +32,16 @@ type architectDatatableRowProxy struct {
 	getArchitectDatatableRowAttr     getArchitectDatatableRowFunc
 	updateArchitectDatatableRowAttr  updateArchitectDatatableRowFunc
 	deleteArchitectDatatableRowAttr  deleteArchitectDatatableRowFunc
+	dataTableRowCache                resource_cache.CacheInterface[map[string]interface{}]
 }
 
 func newArchitectDatatableRowProxy(clientConfig *platformclientv2.Configuration) *architectDatatableRowProxy {
 	api := platformclientv2.NewArchitectApiWithConfig(clientConfig)
+	dataTableRowCache := resource_cache.NewResourceCache[map[string]interface{}]()
 	return &architectDatatableRowProxy{
 		clientConfig:                     clientConfig,
 		architectApi:                     api,
+		dataTableRowCache:                dataTableRowCache,
 		getArchitectDatatableAttr:        getArchitectDatatableFn,
 		getAllArchitectDatatableAttr:     getAllArchitectDatatableFn,
 		getAllArchitectDatatableRowsAttr: getAllArchitectDatatableRowsFn,
@@ -120,6 +124,7 @@ func getAllArchitectDatatableFn(ctx context.Context, p *architectDatatableRowPro
 }
 
 func getArchitectDatatableFn(ctx context.Context, p *architectDatatableRowProxy, datatableId string, expanded string) (*Datatable, *platformclientv2.APIResponse, error) {
+
 	apiClient := &p.architectApi.Configuration.APIClient
 
 	// create path and map variables
@@ -169,6 +174,9 @@ func getAllArchitectDatatableRowsFn(ctx context.Context, p *architectDatatableRo
 
 	for _, row := range *rows.Entities {
 		resources = append(resources, row)
+		if tfexporter_state.IsExporterActive() {
+			p.dataTableRowCache.Set(tableId+"_"+row["key"].(string), row)
+		}
 	}
 
 	for pageNum := 2; pageNum <= *rows.PageCount; pageNum++ {
@@ -184,6 +192,9 @@ func getAllArchitectDatatableRowsFn(ctx context.Context, p *architectDatatableRo
 
 		for _, row := range *rows.Entities {
 			resources = append(resources, row)
+			if tfexporter_state.IsExporterActive() {
+				p.dataTableRowCache.Set(tableId+"_"+row["key"].(string), row)
+			}
 		}
 	}
 
@@ -191,6 +202,11 @@ func getAllArchitectDatatableRowsFn(ctx context.Context, p *architectDatatableRo
 }
 
 func getArchitectDataTableRowFn(ctx context.Context, p *architectDatatableRowProxy, tableId string, key string) (*map[string]interface{}, *platformclientv2.APIResponse, error) {
+	if tfexporter_state.IsExporterActive() {
+		eg := p.dataTableRowCache.Get(tableId + "_" + key)
+		return &eg, nil, nil
+	}
+
 	return p.architectApi.GetFlowsDatatableRow(tableId, key, false)
 }
 

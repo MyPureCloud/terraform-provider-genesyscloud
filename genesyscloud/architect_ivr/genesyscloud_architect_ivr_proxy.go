@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"terraform-provider-genesyscloud/genesyscloud/resource_cache"
-	"terraform-provider-genesyscloud/genesyscloud/tfexporter_state"
 	utillists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 	"time"
 
@@ -142,11 +141,6 @@ func createArchitectIvrFn(ctx context.Context, a *architectIvrProxy, ivr platfor
 
 // getArchitectIvrFn is an implementation function for retrieving a Genesys Cloud Architect IVR by ID
 func getArchitectIvrFn(ctx context.Context, a *architectIvrProxy, id string) (*platformclientv2.Ivr, *platformclientv2.APIResponse, error) {
-	if tfexporter_state.IsExporterActive() {
-		ivr := a.cache.Get(id)
-		return &ivr, nil, nil
-	}
-
 	return a.api.GetArchitectIvr(id)
 }
 
@@ -173,7 +167,7 @@ func deleteArchitectIvrFn(_ context.Context, a *architectIvrProxy, id string) (*
 }
 
 // getAllArchitectIvrsFn is an implementation function for retrieving all Genesys Cloud Architect IVRs
-func getAllArchitectIvrsFn(ctx context.Context, a *architectIvrProxy, name string) (*[]platformclientv2.Ivr, error) {
+func getAllArchitectIvrsFn(_ context.Context, a *architectIvrProxy, name string) (*[]platformclientv2.Ivr, error) {
 	var (
 		allIvrs   []platformclientv2.Ivr
 		pageCount int
@@ -200,13 +194,6 @@ func getAllArchitectIvrsFn(ctx context.Context, a *architectIvrProxy, name strin
 		}
 		allIvrs = append(allIvrs, *ivrs.Entities...)
 	}
-
-	if tfexporter_state.IsExporterActive() {
-		for _, ivr := range allIvrs {
-			a.cache.Set(*ivr.Id, ivr)
-		}
-	}
-
 	return &allIvrs, nil
 }
 
