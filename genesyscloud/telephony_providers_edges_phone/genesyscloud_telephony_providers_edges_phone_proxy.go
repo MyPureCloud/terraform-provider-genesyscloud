@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+
 	"github.com/mypurecloud/platform-client-sdk-go/v123/platformclientv2"
 )
 
@@ -72,11 +73,13 @@ func newPhoneProxy(clientConfig *platformclientv2.Configuration) *phoneProxy {
 	edgesApi := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(clientConfig)
 	stationsApi := platformclientv2.NewStationsApiWithConfig(clientConfig)
 	usersApi := platformclientv2.NewUsersApiWithConfig(clientConfig)
+
 	return &phoneProxy{
-		clientConfig:       clientConfig,
-		edgesApi:           edgesApi,
-		stationsApi:        stationsApi,
-		usersApi:           usersApi,
+		clientConfig: clientConfig,
+		edgesApi:     edgesApi,
+		stationsApi:  stationsApi,
+		usersApi:     usersApi,
+
 		getAllPhonesAttr:   getAllPhonesFn,
 		createPhoneAttr:    createPhoneFn,
 		getPhoneByIdAttr:   getPhoneByIdFn,
@@ -163,8 +166,8 @@ func getAllPhonesFn(ctx context.Context, p *phoneProxy) (*[]platformclientv2.Pho
 	var allPhones []platformclientv2.Phone
 	const pageSize = 100
 	const sortBy = "id"
-	expands := []string{"lines", "phoneBaseSettings"}
-	phones, response, err := p.edgesApi.GetTelephonyProvidersEdgesPhones(1, pageSize, sortBy, "", "", "", "", "", "", "", "", "", "", "", "", expands, nil)
+
+	phones, response, err := p.edgesApi.GetTelephonyProvidersEdgesPhones(1, pageSize, sortBy, "", "", "", "", "", "", "", "", "", "", "", "", nil, nil)
 	if err != nil || (response != nil && response.StatusCode != http.StatusOK) {
 		log.Printf("getAllPhonesFn:: error encountered while trying to get first page of phone data #%v statusCode: %d", err, response.StatusCode)
 		return nil, err
@@ -184,7 +187,7 @@ func getAllPhonesFn(ctx context.Context, p *phoneProxy) (*[]platformclientv2.Pho
 	}
 
 	for pageNum := 2; pageNum <= *phones.PageCount; pageNum++ {
-		phones, response, err := p.edgesApi.GetTelephonyProvidersEdgesPhones(pageNum, pageSize, sortBy, "", "", "", "", "", "", "", "", "", "", "", "", expands, nil)
+		phones, response, err := p.edgesApi.GetTelephonyProvidersEdgesPhones(pageNum, pageSize, sortBy, "", "", "", "", "", "", "", "", "", "", "", "", nil, nil)
 		if err != nil || (response != nil && response.StatusCode != http.StatusOK) {
 			return nil, err
 		}
@@ -221,7 +224,6 @@ func createPhoneFn(ctx context.Context, p *phoneProxy, phoneConfig *platformclie
 // getPhoneByIdFn is an implementation function for retrieving a Genesys Cloud Phone by id
 func getPhoneByIdFn(ctx context.Context, p *phoneProxy, phoneId string) (*platformclientv2.Phone, *platformclientv2.APIResponse, error) {
 	phone, resp, err := p.edgesApi.GetTelephonyProvidersEdgesPhone(phoneId)
-	log.Printf("I am in the GetPhone API call %s: %#v:", phoneId, phone)
 
 	if err != nil {
 		return nil, resp, err

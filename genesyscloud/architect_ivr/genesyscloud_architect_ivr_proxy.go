@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"terraform-provider-genesyscloud/genesyscloud/resource_cache"
 	utillists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 	"time"
 
@@ -46,7 +45,6 @@ type getArchitectIvrIdByNameFunc func(context.Context, *architectIvrProxy, strin
 type architectIvrProxy struct {
 	clientConfig *platformclientv2.Configuration
 	api          *platformclientv2.ArchitectApi
-	cache        resource_cache.CacheInterface[platformclientv2.Ivr]
 
 	createArchitectIvrAttr      createArchitectIvrFunc
 	getArchitectIvrAttr         getArchitectIvrFunc
@@ -65,11 +63,9 @@ type architectIvrProxy struct {
 // newArchitectIvrProxy initializes the proxy with all the data needed to communicate with Genesys Cloud
 func newArchitectIvrProxy(clientConfig *platformclientv2.Configuration) *architectIvrProxy {
 	api := platformclientv2.NewArchitectApiWithConfig(clientConfig)
-	cache := resource_cache.NewResourceCache[platformclientv2.Ivr]()
 	return &architectIvrProxy{
 		clientConfig: clientConfig,
 		api:          api,
-		cache:        cache,
 
 		createArchitectIvrAttr:      createArchitectIvrFn,
 		getArchitectIvrAttr:         getArchitectIvrFn,
@@ -140,7 +136,7 @@ func createArchitectIvrFn(ctx context.Context, a *architectIvrProxy, ivr platfor
 }
 
 // getArchitectIvrFn is an implementation function for retrieving a Genesys Cloud Architect IVR by ID
-func getArchitectIvrFn(ctx context.Context, a *architectIvrProxy, id string) (*platformclientv2.Ivr, *platformclientv2.APIResponse, error) {
+func getArchitectIvrFn(_ context.Context, a *architectIvrProxy, id string) (*platformclientv2.Ivr, *platformclientv2.APIResponse, error) {
 	return a.api.GetArchitectIvr(id)
 }
 
@@ -182,6 +178,10 @@ func getAllArchitectIvrsFn(_ context.Context, a *architectIvrProxy, name string)
 
 	if ivrs.Entities != nil && len(*ivrs.Entities) > 0 {
 		allIvrs = append(allIvrs, *ivrs.Entities...)
+	}
+
+	if pageCount < 2 {
+		return &allIvrs, nil
 	}
 
 	for pageNum := 2; pageNum <= pageCount; pageNum++ {
