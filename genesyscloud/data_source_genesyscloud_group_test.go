@@ -27,7 +27,7 @@ func TestAccDataSourceGroup(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config: GenerateUserWithCustomAttrs(testUserResource, testUserEmail, testUserName) +
-					generateGroupResource(
+					GenerateGroupResource(
 						groupResource,
 						groupName,
 						util.NullValue, // No description

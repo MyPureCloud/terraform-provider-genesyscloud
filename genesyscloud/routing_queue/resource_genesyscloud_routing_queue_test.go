@@ -1,10 +1,11 @@
-package genesyscloud
+package routing_queue
 
 import (
 	"fmt"
 	"log"
 	"strconv"
 	"strings"
+	"terraform-provider-genesyscloud/genesyscloud"
 	"terraform-provider-genesyscloud/genesyscloud/architect_flow"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
@@ -56,15 +57,15 @@ func TestAccResourceRoutingQueueBasic(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				// Create
-				Config: GenerateUserWithCustomAttrs(testUserResource, testUserEmail, testUserName) + GenerateRoutingSkillResource(queueSkillResource, queueSkillName) +
-					generateGroupResource(
+				Config: genesyscloud.GenerateUserWithCustomAttrs(testUserResource, testUserEmail, testUserName) + genesyscloud.GenerateRoutingSkillResource(queueSkillResource, queueSkillName) +
+					genesyscloud.GenerateGroupResource(
 						bullseyeMemberGroupName,
 						"MySeries6Group",
 						strconv.Quote("TestGroupForSeries6"),
 						util.NullValue, // Default type
 						util.NullValue, // Default visibility
 						util.NullValue, // Default rules_visible
-						GenerateGroupOwners("genesyscloud_user."+testUserResource+".id"),
+						genesyscloud.GenerateGroupOwners("genesyscloud_user."+testUserResource+".id"),
 					) + GenerateRoutingQueueResource(
 					queueResource1,
 					queueName1,
@@ -206,7 +207,7 @@ func TestAccResourceRoutingQueueConditionalRouting(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				// Create
-				Config: generateRoutingSkillGroupResourceBasic(
+				Config: genesyscloud.GenerateRoutingSkillGroupResourceBasic(
 					skillGroupResourceId,
 					skillGroupName,
 					"description",
@@ -269,16 +270,16 @@ func TestAccResourceRoutingQueueConditionalRouting(t *testing.T) {
 			},
 			{
 				// Update
-				Config: GenerateUserWithCustomAttrs(testUserResource, testUserEmail, testUserName) + GenerateBasicGroupResource(
+				Config: genesyscloud.GenerateUserWithCustomAttrs(testUserResource, testUserEmail, testUserName) + genesyscloud.GenerateBasicGroupResource(
 					groupResourceId,
 					groupName,
-					GenerateGroupOwners("genesyscloud_user."+testUserResource+".id"),
+					genesyscloud.GenerateGroupOwners("genesyscloud_user."+testUserResource+".id"),
 				) +
 					generateRoutingQueueResourceBasic(
 						queueResource2,
 						queueName2,
 					) +
-					generateRoutingSkillGroupResourceBasic(
+					genesyscloud.GenerateRoutingSkillGroupResourceBasic(
 						skillGroupResourceId,
 						skillGroupName,
 						"description",
@@ -397,7 +398,7 @@ func TestAccResourceRoutingQueueParToCGR(t *testing.T) {
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
-				Config: generateRoutingSkillGroupResourceBasic(
+				Config: genesyscloud.GenerateRoutingSkillGroupResourceBasic(
 					skillGroupResourceId,
 					skillGroupName,
 					"description",
@@ -631,11 +632,11 @@ func TestAccResourceRoutingQueueMembers(t *testing.T) {
 					queueResource,
 					queueName,
 					GenerateMemberBlock("genesyscloud_user."+queueMemberResource1+".id", util.NullValue),
-				) + GenerateBasicUserResource(
+				) + genesyscloud.GenerateBasicUserResource(
 					queueMemberResource1,
 					queueMemberEmail1,
 					queueMemberName1,
-				) + GenerateBasicUserResource(
+				) + genesyscloud.GenerateBasicUserResource(
 					queueMemberResource2,
 					queueMemberEmail2,
 					queueMemberName2,
@@ -654,11 +655,11 @@ func TestAccResourceRoutingQueueMembers(t *testing.T) {
 					GenerateBullseyeSettings("10"),
 					GenerateBullseyeSettings("10"),
 					GenerateBullseyeSettings("10"),
-				) + GenerateBasicUserResource(
+				) + genesyscloud.GenerateBasicUserResource(
 					queueMemberResource1,
 					queueMemberEmail1,
 					queueMemberName1,
-				) + GenerateBasicUserResource(
+				) + genesyscloud.GenerateBasicUserResource(
 					queueMemberResource2,
 					queueMemberEmail2,
 					queueMemberName2,
@@ -677,11 +678,11 @@ func TestAccResourceRoutingQueueMembers(t *testing.T) {
 					GenerateBullseyeSettings("10"),
 					GenerateBullseyeSettings("10"),
 					GenerateBullseyeSettings("10"),
-				) + GenerateBasicUserResource(
+				) + genesyscloud.GenerateBasicUserResource(
 					queueMemberResource1,
 					queueMemberEmail1,
 					queueMemberName1,
-				) + GenerateBasicUserResource(
+				) + genesyscloud.GenerateBasicUserResource(
 					queueMemberResource2,
 					queueMemberEmail2,
 					queueMemberName2,
@@ -783,11 +784,11 @@ func TestAccResourceRoutingQueueSkillgroupMembers(t *testing.T) {
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
-				Config: GenerateRoutingSkillResource(
+				Config: genesyscloud.GenerateRoutingSkillResource(
 					skillResourceId,
 					skillName,
 				) + skillGroupConfig + user2Config +
-					GenerateBasicUserResource(
+					genesyscloud.GenerateBasicUserResource(
 						user1ResourceId,
 						user1Email,
 						user1Name,
@@ -835,10 +836,10 @@ func TestAccResourceRoutingQueueWrapupCodes(t *testing.T) {
 					queueName,
 					GenerateQueueWrapupCodes("genesyscloud_routing_wrapupcode."+wrapupCodeResource1+".id",
 						"genesyscloud_routing_wrapupcode."+wrapupCodeResource2+".id"),
-				) + GenerateRoutingWrapupcodeResource(
+				) + genesyscloud.GenerateRoutingWrapupcodeResource(
 					wrapupCodeResource1,
 					wrapupCodeName1,
-				) + GenerateRoutingWrapupcodeResource(
+				) + genesyscloud.GenerateRoutingWrapupcodeResource(
 					wrapupCodeResource2,
 					wrapupCodeName2,
 				),
@@ -856,13 +857,13 @@ func TestAccResourceRoutingQueueWrapupCodes(t *testing.T) {
 						"genesyscloud_routing_wrapupcode."+wrapupCodeResource1+".id",
 						"genesyscloud_routing_wrapupcode."+wrapupCodeResource2+".id",
 						"genesyscloud_routing_wrapupcode."+wrapupCodeResource3+".id"),
-				) + GenerateRoutingWrapupcodeResource(
+				) + genesyscloud.GenerateRoutingWrapupcodeResource(
 					wrapupCodeResource1,
 					wrapupCodeName1,
-				) + GenerateRoutingWrapupcodeResource(
+				) + genesyscloud.GenerateRoutingWrapupcodeResource(
 					wrapupCodeResource2,
 					wrapupCodeName2,
-				) + GenerateRoutingWrapupcodeResource(
+				) + genesyscloud.GenerateRoutingWrapupcodeResource(
 					wrapupCodeResource3,
 					wrapupCodeName3,
 				),
@@ -877,7 +878,7 @@ func TestAccResourceRoutingQueueWrapupCodes(t *testing.T) {
 					queueResource,
 					queueName,
 					GenerateQueueWrapupCodes("genesyscloud_routing_wrapupcode."+wrapupCodeResource2+".id"),
-				) + GenerateRoutingWrapupcodeResource(
+				) + genesyscloud.GenerateRoutingWrapupcodeResource(
 					wrapupCodeResource2,
 					wrapupCodeName2,
 				),
@@ -1102,6 +1103,11 @@ func addMemberToQueue(queueResourceName, userResourceName string) resource.TestC
 	}
 
 	return func(state *terraform.State) error {
+		sdkConfig, err := provider.AuthorizeSdk()
+		if err != nil {
+			log.Fatal(err)
+		}
+
 		apiInstance := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
 
 		queueID, err := getResourceGuidFromState(state, queueResourceName)
@@ -1269,105 +1275,6 @@ func generateRoutingQueueResourceBasicWithDepends(resourceID string, dependsOn s
 		%s
 	}
 	`, resourceID, dependsOn, name, strings.Join(nestedBlocks, "\n"))
-}
-
-func generateRoutingQueueResource(
-	resourceID string,
-	name string,
-	desc string,
-	acwWrapupPrompt string,
-	acwTimeout string,
-	skillEvalMethod string,
-	autoAnswerOnly string,
-	callingPartyName string,
-	callingPartyNumber string,
-	enableTranscription string,
-	enableManualAssignment string,
-	nestedBlocks ...string) string {
-	return fmt.Sprintf(`resource "genesyscloud_routing_queue" "%s" {
-		name = "%s"
-		description = "%s"
-		acw_wrapup_prompt = %s
-		acw_timeout_ms = %s
-		skill_evaluation_method = %s
-		auto_answer_only = %s
-		calling_party_name = %s
-		calling_party_number = %s
-		enable_transcription = %s
-  		enable_manual_assignment = %s
-		%s
-	}
-	`, resourceID,
-		name,
-		desc,
-		acwWrapupPrompt,
-		acwTimeout,
-		skillEvalMethod,
-		autoAnswerOnly,
-		callingPartyName,
-		callingPartyNumber,
-		enableTranscription,
-		enableManualAssignment,
-		strings.Join(nestedBlocks, "\n"))
-}
-
-func generateMediaSettings(attrName string, alertingTimeout string, slPercent string, slDurationMs string) string {
-	return fmt.Sprintf(`%s {
-		alerting_timeout_sec = %s
-		service_level_percentage = %s
-		service_level_duration_ms = %s
-	}
-	`, attrName, alertingTimeout, slPercent, slDurationMs)
-}
-
-func generateRoutingRules(operator string, threshold string, waitSeconds string) string {
-	return fmt.Sprintf(`routing_rules {
-		operator = "%s"
-		threshold = %s
-		wait_seconds = %s
-	}
-	`, operator, threshold, waitSeconds)
-}
-
-func generateDefaultScriptIDs(chat string, email string) string {
-	return fmt.Sprintf(`default_script_ids = {
-		CHAT  = "%s"
-		EMAIL = "%s"
-	}`, chat, email)
-}
-
-func generateBullseyeSettings(expTimeout string, skillsToRemove ...string) string {
-	return fmt.Sprintf(`bullseye_rings {
-		expansion_timeout_seconds = %s
-		skills_to_remove = [%s]
-	}
-	`, expTimeout, strings.Join(skillsToRemove, ", "))
-}
-
-func generateBullseyeSettingsWithMemberGroup(expTimeout string, memberGroupId string, memberGroupType string, skillsToRemove ...string) string {
-	return fmt.Sprintf(`bullseye_rings {
-		expansion_timeout_seconds = %s
-		skills_to_remove = [%s]
-		member_groups {
-			member_group_id = %s
-			member_group_type = "%s"
-		}
-	}
-	`, expTimeout, strings.Join(skillsToRemove, ", "), memberGroupId, memberGroupType)
-}
-
-func generateMemberBlock(userID string, ringNum string) string {
-	return fmt.Sprintf(`members {
-		user_id = %s
-		ring_num = %s
-	}
-	`, userID, ringNum)
-}
-
-func generateQueueWrapupCodes(wrapupCodes ...string) string {
-	return fmt.Sprintf(`
-		wrapup_codes = [%s]
-	`, strings.Join(wrapupCodes, ", "))
 }
 
 func generateDirectRouting(
@@ -1575,9 +1482,9 @@ func TestAccResourceRoutingQueueSkillGroups(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				// Create
-				Config: GenerateUserWithCustomAttrs(testUserResource, testUserEmail, testUserName) + generateRoutingSkillGroupResourceBasic(skillGroupResource, skillGroupName, skillGroupDescription) +
-					GenerateBasicGroupResource(groupResource, groupName,
-						GenerateGroupOwners("genesyscloud_user."+testUserResource+".id"),
+				Config: genesyscloud.GenerateUserWithCustomAttrs(testUserResource, testUserEmail, testUserName) + genesyscloud.GenerateRoutingSkillGroupResourceBasic(skillGroupResource, skillGroupName, skillGroupDescription) +
+					genesyscloud.GenerateBasicGroupResource(groupResource, groupName,
+						genesyscloud.GenerateGroupOwners("genesyscloud_user."+testUserResource+".id"),
 					) +
 					GenerateRoutingQueueResourceBasicWithDepends(
 						queueResource,

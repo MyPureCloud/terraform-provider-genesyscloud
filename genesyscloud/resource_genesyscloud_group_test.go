@@ -35,7 +35,7 @@ func TestAccResourceGroupBasic(t *testing.T) {
 			{
 				// Create a basic group
 				Config: GenerateUserWithCustomAttrs(testUserResource, testUserEmail, testUserName) +
-					generateGroupResource(
+					GenerateGroupResource(
 						groupResource1,
 						groupName,
 						strconv.Quote(groupDesc1),
@@ -54,7 +54,7 @@ func TestAccResourceGroupBasic(t *testing.T) {
 			},
 			{
 				// Update group
-				Config: GenerateUserWithCustomAttrs(testUserResource, testUserEmail, testUserName) + generateGroupResource(
+				Config: GenerateUserWithCustomAttrs(testUserResource, testUserEmail, testUserName) + GenerateGroupResource(
 					groupResource1,
 					groupName,
 					strconv.Quote(groupDesc2),

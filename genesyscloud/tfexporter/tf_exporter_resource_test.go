@@ -6,6 +6,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/architect_datatable_row"
 	emergencyGroup "terraform-provider-genesyscloud/genesyscloud/architect_emergencygroup"
 	flow "terraform-provider-genesyscloud/genesyscloud/architect_flow"
+	routingQueue "terraform-provider-genesyscloud/genesyscloud/routing_queue"
 
 	grammar "terraform-provider-genesyscloud/genesyscloud/architect_grammar"
 	grammarLanguage "terraform-provider-genesyscloud/genesyscloud/architect_grammar_language"
@@ -129,7 +130,7 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_routing_email_domain"] = gcloud.ResourceRoutingEmailDomain()
 	providerResources["genesyscloud_routing_email_route"] = routingEmailRoute.ResourceRoutingEmailRoute()
 	providerResources["genesyscloud_routing_language"] = gcloud.ResourceRoutingLanguage()
-	providerResources["genesyscloud_routing_queue"] = gcloud.ResourceRoutingQueue()
+	providerResources["genesyscloud_routing_queue"] = routingQueue.ResourceRoutingQueue()
 	providerResources["genesyscloud_routing_skill"] = gcloud.ResourceRoutingSkill()
 	providerResources["genesyscloud_routing_settings"] = gcloud.ResourceRoutingSettings()
 	providerResources["genesyscloud_routing_utilization"] = gcloud.ResourceRoutingUtilization()
@@ -232,7 +233,7 @@ func (r *registerTestInstance) registerTestExporters() {
 	RegisterExporter("genesyscloud_routing_email_domain", gcloud.RoutingEmailDomainExporter())
 	RegisterExporter("genesyscloud_routing_email_route", routingEmailRoute.RoutingEmailRouteExporter())
 	RegisterExporter("genesyscloud_routing_language", gcloud.RoutingLanguageExporter())
-	RegisterExporter("genesyscloud_routing_queue", gcloud.RoutingQueueExporter())
+	RegisterExporter("genesyscloud_routing_queue", routingQueue.RoutingQueueExporter())
 	RegisterExporter("genesyscloud_routing_settings", gcloud.RoutingSettingsExporter())
 	RegisterExporter("genesyscloud_routing_skill", gcloud.RoutingSkillExporter())
 	RegisterExporter("genesyscloud_routing_skill_group", gcloud.ResourceSkillGroupExporter())

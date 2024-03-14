@@ -6,6 +6,7 @@ import (
 	"strings"
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
+	routingQueue "terraform-provider-genesyscloud/genesyscloud/routing_queue"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 	"time"
@@ -78,7 +79,8 @@ func TestAccResourceRoutingEmailRoute(t *testing.T) {
 					domainId,
 					util.FalseValue,
 					util.NullValue,
-				) + gcloud.GenerateRoutingQueueResourceBasic(
+				) + routingQueue.GenerateRoutingQueueResourceBasic(
+
 					queueResource,
 					queueName,
 				) + gcloud.GenerateRoutingLanguageResource(
@@ -133,7 +135,7 @@ func TestAccResourceRoutingEmailRoute(t *testing.T) {
 					domainId,
 					util.FalseValue,
 					util.NullValue,
-				) + gcloud.GenerateRoutingQueueResourceBasic(
+				) + routingQueue.GenerateRoutingQueueResourceBasic(
 					queueResource,
 					queueName,
 				) + gcloud.GenerateRoutingLanguageResource(
@@ -189,7 +191,7 @@ func TestAccResourceRoutingEmailRoute(t *testing.T) {
 					domainId,
 					util.FalseValue,
 					util.NullValue,
-				) + gcloud.GenerateRoutingQueueResourceBasic(
+				) + routingQueue.GenerateRoutingQueueResourceBasic(
 					queueResource,
 					queueName,
 				) + gcloud.GenerateRoutingLanguageResource(

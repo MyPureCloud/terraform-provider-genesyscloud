@@ -539,10 +539,10 @@ func addGroupMembers(d *schema.ResourceData, membersToAdd []string, groupsAPI *p
 }
 
 func GenerateBasicGroupResource(resourceID string, name string, nestedBlocks ...string) string {
-	return generateGroupResource(resourceID, name, util.NullValue, util.NullValue, util.NullValue, util.TrueValue, nestedBlocks...)
+	return GenerateGroupResource(resourceID, name, util.NullValue, util.NullValue, util.NullValue, util.TrueValue, nestedBlocks...)
 }
 
-func generateGroupResource(
+func GenerateGroupResource(
 	resourceID string,
 	name string,
 	desc string,

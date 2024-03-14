@@ -1,20 +1,17 @@
-package auth_role
+package routing_queue_conditional_group_routing
 
 import (
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"sync"
+	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	routingQueue "terraform-provider-genesyscloud/genesyscloud/routing_queue"
 	"testing"
-
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 /*
-   The genesyscloud_auth_role_init_test.go file is used to initialize the data sources and resources
-   used in testing the auth_role resource.
+The genesyscloud_routing_queue_conditional_group_routing_init_test.go file is used to initialize the data sources and resources
+used in testing the routing_queue_conditional_group_routing resource.
 */
-
-// providerDataSources holds a map of all registered datasources
-var providerDataSources map[string]*schema.Resource
 
 // providerResources holds a map of all registered resources
 var providerResources map[string]*schema.Resource
@@ -29,34 +26,26 @@ func (r *registerTestInstance) registerTestResources() {
 	r.resourceMapMutex.Lock()
 	defer r.resourceMapMutex.Unlock()
 
-	providerResources[resourceName] = ResourceAuthRole()
+	providerResources[resourceName] = ResourceRoutingQueueConditionalGroupRouting()
 	providerResources["genesyscloud_routing_queue"] = routingQueue.ResourceRoutingQueue()
-}
-
-// registerTestDataSources registers all data sources used in the tests.
-func (r *registerTestInstance) registerTestDataSources() {
-	r.datasourceMapMutex.Lock()
-	defer r.datasourceMapMutex.Unlock()
-
-	providerDataSources[resourceName] = DataSourceAuthRole()
+	providerResources["genesyscloud_routing_skill_group"] = gcloud.ResourceRoutingSkillGroup()
+	providerResources["genesyscloud_user"] = gcloud.ResourceUser()
+	providerResources["genesyscloud_group"] = gcloud.ResourceGroup()
 }
 
 // initTestResources initializes all test resources and data sources.
 func initTestResources() {
-	providerDataSources = make(map[string]*schema.Resource)
 	providerResources = make(map[string]*schema.Resource)
 
 	regInstance := &registerTestInstance{}
-
 	regInstance.registerTestResources()
-	regInstance.registerTestDataSources()
 }
 
 // TestMain is a "setup" function called by the testing framework when run the test
 func TestMain(m *testing.M) {
-	// Run setup function before starting the test suite for the auth_role package
+	// Run setup function before starting the test suite for routing_queue_conditional_group_routing package
 	initTestResources()
 
-	// Run the test suite for the auth_role package
+	// Run the test suite for the routing_queue_conditional_group_routing package
 	m.Run()
 }

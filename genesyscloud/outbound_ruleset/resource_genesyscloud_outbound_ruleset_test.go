@@ -4,13 +4,12 @@ import (
 	"fmt"
 	"strconv"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
+	routingQueue "terraform-provider-genesyscloud/genesyscloud/routing_queue"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
@@ -65,7 +64,7 @@ func TestAccResourceOutboundRulesetNoRules(t *testing.T) {
 						"cell",
 						strconv.Quote("Cell"),
 					),
-				) + gcloud.GenerateRoutingQueueResourceBasic(
+				) + routingQueue.GenerateRoutingQueueResourceBasic(
 					queueResource1,
 					queueName1) + fmt.Sprintf(`resource "genesyscloud_outbound_ruleset" "%s" {
   name            = "%s"
@@ -93,7 +92,7 @@ func TestAccResourceOutboundRulesetNoRules(t *testing.T) {
 						"cell",
 						strconv.Quote("Cell"),
 					),
-				) + gcloud.GenerateRoutingQueueResourceBasic(
+				) + routingQueue.GenerateRoutingQueueResourceBasic(
 					queueResource2,
 					queueName2) + fmt.Sprintf(`resource "genesyscloud_outbound_ruleset" "%s" {
   name            = "%s"

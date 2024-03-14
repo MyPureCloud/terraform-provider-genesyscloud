@@ -14,7 +14,6 @@ func SetRegistrar(l registrar.Registrar) {
 func registerDataSources(l registrar.Registrar) {
 
 	l.RegisterDataSource("genesyscloud_routing_wrapupcode", DataSourceRoutingWrapupcode())
-	l.RegisterDataSource("genesyscloud_routing_queue", DataSourceRoutingQueue())
 	l.RegisterDataSource("genesyscloud_location", DataSourceLocation())
 	l.RegisterDataSource("genesyscloud_auth_division_home", DataSourceAuthDivisionHome())
 	l.RegisterDataSource("genesyscloud_architect_schedules", DataSourceSchedule())
@@ -34,7 +33,6 @@ func registerDataSources(l registrar.Registrar) {
 	l.RegisterDataSource("genesyscloud_quality_forms_evaluation", DataSourceQualityFormsEvaluations())
 	l.RegisterDataSource("genesyscloud_quality_forms_survey", dataSourceQualityFormsSurvey())
 	l.RegisterDataSource("genesyscloud_routing_language", dataSourceRoutingLanguage())
-	l.RegisterDataSource("genesyscloud_routing_queue", DataSourceRoutingQueue())
 	l.RegisterDataSource("genesyscloud_routing_settings", dataSourceRoutingSettings())
 	l.RegisterDataSource("genesyscloud_routing_skill", dataSourceRoutingSkill())
 	l.RegisterDataSource("genesyscloud_routing_skill_group", dataSourceRoutingSkillGroup())
@@ -47,7 +45,6 @@ func registerDataSources(l registrar.Registrar) {
 
 func registerResources(l registrar.Registrar) {
 
-	l.RegisterResource("genesyscloud_routing_queue", ResourceRoutingQueue())
 	l.RegisterResource("genesyscloud_location", ResourceLocation())
 	l.RegisterResource("genesyscloud_architect_schedules", ResourceArchitectSchedules())
 	l.RegisterResource("genesyscloud_architect_user_prompt", ResourceArchitectUserPrompt())
@@ -77,7 +74,6 @@ func registerResources(l registrar.Registrar) {
 	l.RegisterResource("genesyscloud_quality_forms_survey", ResourceSurveyForm())
 	l.RegisterResource("genesyscloud_routing_email_domain", ResourceRoutingEmailDomain())
 	l.RegisterResource("genesyscloud_routing_language", ResourceRoutingLanguage())
-	l.RegisterResource("genesyscloud_routing_queue", ResourceRoutingQueue())
 	l.RegisterResource("genesyscloud_routing_skill", ResourceRoutingSkill())
 	l.RegisterResource("genesyscloud_routing_skill_group", ResourceRoutingSkillGroup())
 	l.RegisterResource("genesyscloud_routing_settings", ResourceRoutingSettings())
@@ -113,7 +109,6 @@ func registerExporters(l registrar.Registrar) {
 	l.RegisterExporter("genesyscloud_quality_forms_survey", SurveyFormExporter())
 	l.RegisterExporter("genesyscloud_routing_email_domain", RoutingEmailDomainExporter())
 	l.RegisterExporter("genesyscloud_routing_language", RoutingLanguageExporter())
-	l.RegisterExporter("genesyscloud_routing_queue", RoutingQueueExporter())
 	l.RegisterExporter("genesyscloud_routing_settings", RoutingSettingsExporter())
 	l.RegisterExporter("genesyscloud_routing_skill", RoutingSkillExporter())
 	l.RegisterExporter("genesyscloud_routing_skill_group", ResourceSkillGroupExporter())
