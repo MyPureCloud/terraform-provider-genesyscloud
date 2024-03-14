@@ -28,13 +28,19 @@ func getAllRoutingEmailRoutes(ctx context.Context, clientConfig *platformclientv
 	proxy := newRoutingEmailRouteProxy(clientConfig)
 	resources := make(resourceExporter.ResourceIDMetaMap)
 
-	inboundRoutes, respCode, err := proxy.getAllRoutingEmailRoute(ctx, "", "")
+	inboundRoutesMap, respCode, err := proxy.getAllRoutingEmailRoute(ctx, "", "")
 	if err != nil {
 		return nil, diag.Errorf("Failed to get routing email route: %v %v", respCode, err)
 	}
 
-	for _, inboundRoute := range *inboundRoutes {
-		resources[*inboundRoute.Id] = &resourceExporter.ResourceMeta{Name: *inboundRoute.Name}
+	for domainId, inboundRoutes := range *inboundRoutesMap {
+		for _, inboundRoute := range inboundRoutes {
+			fmt.Println("in", inboundRoute, domainId)
+			resources[*inboundRoute.Id] = &resourceExporter.ResourceMeta{
+				Name:     *inboundRoute.Pattern + domainId,
+				IdPrefix: domainId + "/",
+			}
+		}
 	}
 
 	return resources, nil
@@ -93,7 +99,7 @@ func readRoutingEmailRoute(ctx context.Context, d *schema.ResourceData, meta int
 	// The normal GET route API has a long cache TTL (5 minutes) which can result in stale data.
 	// This can be bypassed by issuing a domain query instead.
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
-		inboundRoute, respCode, getErr := proxy.getAllRoutingEmailRoute(ctx, domainId, "")
+		inboundRoutesMap, respCode, getErr := proxy.getAllRoutingEmailRoute(ctx, domainId, "")
 		if getErr != nil {
 			if util.IsStatus404ByInt(respCode) {
 				d.SetId("")
@@ -102,13 +108,14 @@ func readRoutingEmailRoute(ctx context.Context, d *schema.ResourceData, meta int
 			return retry.NonRetryableError(fmt.Errorf("Failed to read routing email route %s: %s", d.Id(), getErr))
 		}
 
-		for _, queryRoute := range *inboundRoute {
-			if queryRoute.Id != nil && *queryRoute.Id == d.Id() {
-				route = &queryRoute
-				break
+		for _, inboundRoutes := range *inboundRoutesMap {
+			for _, queryRoute := range inboundRoutes {
+				if queryRoute.Id != nil && *queryRoute.Id == d.Id() {
+					route = &queryRoute
+					break
+				}
 			}
 		}
-
 		if route == nil {
 			d.SetId("")
 			return nil
