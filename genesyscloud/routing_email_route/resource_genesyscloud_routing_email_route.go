@@ -35,7 +35,6 @@ func getAllRoutingEmailRoutes(ctx context.Context, clientConfig *platformclientv
 
 	for domainId, inboundRoutes := range *inboundRoutesMap {
 		for _, inboundRoute := range inboundRoutes {
-			fmt.Println("in", inboundRoute, domainId)
 			resources[*inboundRoute.Id] = &resourceExporter.ResourceMeta{
 				Name:     *inboundRoute.Pattern + domainId,
 				IdPrefix: domainId + "/",
@@ -101,7 +100,7 @@ func readRoutingEmailRoute(ctx context.Context, d *schema.ResourceData, meta int
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		inboundRoutesMap, respCode, getErr := proxy.getAllRoutingEmailRoute(ctx, domainId, "")
 		if getErr != nil {
-			if util.IsStatus404ByInt(respCode) {
+			if util.IsStatus404(respCode) {
 				d.SetId("")
 				return retry.RetryableError(fmt.Errorf("Failed to read routing email route %s: %s", d.Id(), getErr))
 			}
@@ -156,12 +155,6 @@ func readRoutingEmailRoute(ctx context.Context, d *schema.ResourceData, meta int
 			d.Set("reply_email_address", nil)
 		}
 
-		if route.AutoBcc != nil {
-			d.Set("auto_bcc", flattenAutoBccEmailAddress(route.AutoBcc))
-		} else {
-			d.Set("auto_bcc", nil)
-		}
-
 		log.Printf("Read routing email route %s %v", d.Id(), route.Name)
 		return cc.CheckState()
 	})
@@ -211,7 +204,7 @@ func deleteRoutingEmailRoute(ctx context.Context, d *schema.ResourceData, meta i
 	return util.WithRetries(ctx, 180*time.Second, func() *retry.RetryError {
 		_, respCode, err := proxy.getRoutingEmailRouteById(ctx, domainId, d.Id())
 		if err != nil {
-			if util.IsStatus404ByInt(respCode) {
+			if util.IsStatus404(respCode) {
 				log.Printf("Deleted routing email route %s", d.Id())
 				return nil
 			}
