@@ -16,7 +16,11 @@ import (
 	obContactList "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+<<<<<<< HEAD
 	routingQueue "terraform-provider-genesyscloud/genesyscloud/routing_queue"
+=======
+	"terraform-provider-genesyscloud/genesyscloud/routing_queue"
+>>>>>>> c2f2e4b9 (Added routing_queue_conditional_group_routing resource)
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 	"time"
@@ -184,7 +188,11 @@ func TestAccResourceTfExportByName(t *testing.T) {
 					userResource1,
 					userEmail1,
 					userName1,
+<<<<<<< HEAD
 				) + routingQueue.GenerateRoutingQueueResource(
+=======
+				) + routing_queue.GenerateRoutingQueueResource(
+>>>>>>> c2f2e4b9 (Added routing_queue_conditional_group_routing resource)
 					queueResource,
 					queueName,
 					queueDesc,
@@ -225,7 +233,11 @@ func TestAccResourceTfExportByName(t *testing.T) {
 					userResource1,
 					userEmail1,
 					userName1,
+<<<<<<< HEAD
 				) + routingQueue.GenerateRoutingQueueResource(
+=======
+				) + routing_queue.GenerateRoutingQueueResource(
+>>>>>>> c2f2e4b9 (Added routing_queue_conditional_group_routing resource)
 					queueResource,
 					queueName,
 					queueDesc,
@@ -279,7 +291,11 @@ func TestAccResourceTfExportByName(t *testing.T) {
 					userResource2,
 					userEmail2,
 					userName2,
+<<<<<<< HEAD
 				) + routingQueue.GenerateRoutingQueueResource(
+=======
+				) + routing_queue.GenerateRoutingQueueResource(
+>>>>>>> c2f2e4b9 (Added routing_queue_conditional_group_routing resource)
 					queueResource,
 					queueName,
 					queueDesc,
@@ -813,7 +829,11 @@ func TestAccResourceTfExportQueueAsHCL(t *testing.T) {
 		emailScriptID = uuid.NewString()
 	)
 
+<<<<<<< HEAD
 	routingQueue := routingQueue.GenerateRoutingQueueResource(
+=======
+	routingQueue := routing_queue.GenerateRoutingQueueResource(
+>>>>>>> c2f2e4b9 (Added routing_queue_conditional_group_routing resource)
 		queueID,
 		queueName,
 		description,
@@ -826,9 +846,15 @@ func TestAccResourceTfExportQueueAsHCL(t *testing.T) {
 		"true",
 		util.TrueValue,
 		util.FalseValue,
+<<<<<<< HEAD
 		routingQueue.GenerateMediaSettings("media_settings_call", alertTimeoutSec, util.FalseValue, slPercentage, slDurationMs),
 		routingQueue.GenerateRoutingRules(rrOperator, rrThreshold, rrWaitSeconds),
 		routingQueue.GenerateDefaultScriptIDs(chatScriptID, emailScriptID),
+=======
+		routing_queue.GenerateMediaSettings("media_settings_call", alertTimeoutSec, util.FalseValue, slPercentage, slDurationMs),
+		routing_queue.GenerateRoutingRules(rrOperator, rrThreshold, rrWaitSeconds),
+		routing_queue.GenerateDefaultScriptIDs(chatScriptID, emailScriptID),
+>>>>>>> c2f2e4b9 (Added routing_queue_conditional_group_routing resource)
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -1905,7 +1931,11 @@ func validateRoutingRules(resourceName string, ringNum int, operator string, thr
 func buildQueueResources(queueExports []QueueExport) string {
 	queueResourceDefinitions := ""
 	for _, queueExport := range queueExports {
+<<<<<<< HEAD
 		queueResourceDefinitions = queueResourceDefinitions + routingQueue.GenerateRoutingQueueResource(
+=======
+		queueResourceDefinitions = queueResourceDefinitions + routing_queue.GenerateRoutingQueueResource(
+>>>>>>> c2f2e4b9 (Added routing_queue_conditional_group_routing resource)
 			queueExport.ResourceName,
 			queueExport.Name,
 			queueExport.Description,
