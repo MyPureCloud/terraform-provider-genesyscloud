@@ -15,9 +15,9 @@ func (c *inMemoryCache[T]) Set(key string, value T) {
 }
 
 // Get retrieves a value from the in-memory cache
-func (c *inMemoryCache[T]) Get(key string) T {
+func (c *inMemoryCache[T]) Get(key string) (T, bool) {
 	c.lock.Lock()
 	defer c.lock.Unlock()
-
-	return c.data[key]
+	value, ok := c.data[key]
+	return value, ok
 }

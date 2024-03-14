@@ -4,10 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"github.com/mitchellh/mapstructure"
 	"github.com/mypurecloud/platform-client-sdk-go/v123/platformclientv2"
+	"log"
 	"net/http"
-	"terraform-provider-genesyscloud/genesyscloud/resource_cache"
-	"terraform-provider-genesyscloud/genesyscloud/tfexporter_state"
+	rc "terraform-provider-genesyscloud/genesyscloud/resource_cache"
 )
 
 // internalProxy holds a proxy instance that can be used throughout the package
@@ -32,16 +33,19 @@ type architectDatatableRowProxy struct {
 	getArchitectDatatableRowAttr     getArchitectDatatableRowFunc
 	updateArchitectDatatableRowAttr  updateArchitectDatatableRowFunc
 	deleteArchitectDatatableRowAttr  deleteArchitectDatatableRowFunc
-	dataTableRowCache                resource_cache.CacheInterface[map[string]interface{}]
+	dataTableRowCache                rc.CacheInterface[map[string]interface{}]
+	dataTableCache                   rc.CacheInterface[Datatable]
 }
 
 func newArchitectDatatableRowProxy(clientConfig *platformclientv2.Configuration) *architectDatatableRowProxy {
 	api := platformclientv2.NewArchitectApiWithConfig(clientConfig)
-	dataTableRowCache := resource_cache.NewResourceCache[map[string]interface{}]()
+	dataTableRowCache := rc.NewResourceCache[map[string]interface{}]()
+	dataTableCache := rc.NewResourceCache[Datatable]()
 	return &architectDatatableRowProxy{
 		clientConfig:                     clientConfig,
 		architectApi:                     api,
 		dataTableRowCache:                dataTableRowCache,
+		dataTableCache:                   dataTableCache,
 		getArchitectDatatableAttr:        getArchitectDatatableFn,
 		getAllArchitectDatatableAttr:     getAllArchitectDatatableFn,
 		getAllArchitectDatatableRowsAttr: getAllArchitectDatatableRowsFn,
@@ -103,6 +107,7 @@ func getAllArchitectDatatableFn(ctx context.Context, p *architectDatatableRowPro
 
 	for _, table := range *tables.Entities {
 		totalRecords = append(totalRecords, table)
+		rc.SetCache(p.dataTableCache, *table.Id, *ConvertDatatable(table))
 	}
 
 	for pageNum := 2; pageNum <= *tables.PageCount; pageNum++ {
@@ -117,13 +122,28 @@ func getAllArchitectDatatableFn(ctx context.Context, p *architectDatatableRowPro
 
 		for _, table := range *tables.Entities {
 			totalRecords = append(totalRecords, table)
+			rc.SetCache(p.dataTableCache, *table.Id, *ConvertDatatable(table))
 		}
 	}
 
 	return &totalRecords, nil
 }
 
+func ConvertDatatable(master platformclientv2.Datatable) *Datatable {
+	var datatable Datatable
+	err := mapstructure.Decode(master, &datatable)
+	if err != nil {
+		return nil
+	}
+	return &datatable
+}
+
 func getArchitectDatatableFn(ctx context.Context, p *architectDatatableRowProxy, datatableId string, expanded string) (*Datatable, *platformclientv2.APIResponse, error) {
+
+	eg := rc.GetCache(p.dataTableCache, datatableId)
+	if eg != nil {
+		return eg, nil, nil
+	}
 
 	apiClient := &p.architectApi.Configuration.APIClient
 
@@ -174,8 +194,8 @@ func getAllArchitectDatatableRowsFn(ctx context.Context, p *architectDatatableRo
 
 	for _, row := range *rows.Entities {
 		resources = append(resources, row)
-		if tfexporter_state.IsExporterActive() {
-			p.dataTableRowCache.Set(tableId+"_"+row["key"].(string), row)
+		if keyVal, ok := row["key"]; ok {
+			rc.SetCache(p.dataTableRowCache, tableId+"_"+keyVal.(string), row)
 		}
 	}
 
@@ -192,8 +212,8 @@ func getAllArchitectDatatableRowsFn(ctx context.Context, p *architectDatatableRo
 
 		for _, row := range *rows.Entities {
 			resources = append(resources, row)
-			if tfexporter_state.IsExporterActive() {
-				p.dataTableRowCache.Set(tableId+"_"+row["key"].(string), row)
+			if keyVal, ok := row["key"]; ok {
+				rc.SetCache(p.dataTableRowCache, tableId+"_"+keyVal.(string), row)
 			}
 		}
 	}
@@ -202,11 +222,11 @@ func getAllArchitectDatatableRowsFn(ctx context.Context, p *architectDatatableRo
 }
 
 func getArchitectDataTableRowFn(ctx context.Context, p *architectDatatableRowProxy, tableId string, key string) (*map[string]interface{}, *platformclientv2.APIResponse, error) {
-	if tfexporter_state.IsExporterActive() {
-		eg := p.dataTableRowCache.Get(tableId + "_" + key)
-		return &eg, nil, nil
+	eg := rc.GetCache(p.dataTableRowCache, tableId+"_"+key)
+	if eg != nil {
+		log.Printf("fetched from cache %v", eg)
+		return eg, nil, nil
 	}
-
 	return p.architectApi.GetFlowsDatatableRow(tableId, key, false)
 }
 
