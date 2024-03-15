@@ -3,7 +3,7 @@ package routing_queue_conditional_group_routing
 import (
 	"context"
 	"fmt"
-	"github.com/mypurecloud/platform-client-sdk-go/v123/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
 )
 
 // internalProxy holds a proxy instance that can be used throughout the package

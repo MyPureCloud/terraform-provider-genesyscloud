@@ -4,6 +4,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"sync"
 	"terraform-provider-genesyscloud/genesyscloud"
+	routingQueue "terraform-provider-genesyscloud/genesyscloud/routing_queue"
 	"testing"
 )
 
@@ -27,7 +28,7 @@ func (r *registerTestInstance) registerTestResources() {
 
 	providerResources["genesyscloud_routing_email_route"] = ResourceRoutingEmailRoute()
 	providerResources["genesyscloud_routing_email_domain"] = genesyscloud.ResourceRoutingEmailDomain()
-	providerResources["genesyscloud_routing_queue"] = genesyscloud.ResourceRoutingQueue()
+	providerResources["genesyscloud_routing_queue"] = routingQueue.ResourceRoutingQueue()
 	providerResources["genesyscloud_routing_language"] = genesyscloud.ResourceRoutingLanguage()
 	providerResources["genesyscloud_routing_skill"] = genesyscloud.ResourceRoutingSkill()
 }
