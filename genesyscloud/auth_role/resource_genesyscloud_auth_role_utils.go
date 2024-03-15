@@ -10,7 +10,7 @@ import (
 )
 
 func validatePermissionPolicy(proxy *authRoleProxy, policy platformclientv2.Domainpermissionpolicy) error {
-	allowedPermissions, err := proxy.getAllowedPermissions(*policy.Domain)
+	allowedPermissions, _, err := proxy.getAllowedPermissions(*policy.Domain)
 	if err != nil {
 		return fmt.Errorf("error requesting org permissions: %s", err)
 	}
