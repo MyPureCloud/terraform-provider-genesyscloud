@@ -92,9 +92,10 @@ func (p *routingEmailRouteProxy) deleteRoutingEmailRoute(ctx context.Context, do
 
 func getAllRoutingEmailRouteByDomainIdFn(ctx context.Context, p *routingEmailRouteProxy, domains *platformclientv2.Inbounddomainentitylisting, name string) (*map[string][]platformclientv2.Inboundroute, *platformclientv2.APIResponse, error) {
 	var allInboundRoutes = make(map[string][]platformclientv2.Inboundroute)
-	var allDomainRoutes []platformclientv2.Inboundroute
 	var apiResponse *platformclientv2.APIResponse
 	for _, domain := range *domains.Entities {
+		var allDomainRoutes []platformclientv2.Inboundroute
+
 		for pageNum := 1; pageNum <= *domains.PageCount; pageNum++ {
 			routes, resp, err := p.routingApi.GetRoutingEmailDomainRoutes(*domain.Id, 100, pageNum, name)
 			if err != nil {
@@ -154,7 +155,6 @@ func getAllRoutingEmailRouteFn(ctx context.Context, p *routingEmailRouteProxy, d
 			return nil, resp, fmt.Errorf("Failed to get routing email domains: %s", err)
 		}
 		allInboundRoutes = *routes
-
 	}
 	return &allInboundRoutes, apiResponse, nil
 }
