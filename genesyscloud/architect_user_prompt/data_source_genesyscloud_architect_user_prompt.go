@@ -1,4 +1,4 @@
-package genesyscloud
+package architect_user_prompt
 
 import (
 	"context"
@@ -13,20 +13,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
 )
-
-func dataSourceUserPrompt() *schema.Resource {
-	return &schema.Resource{
-		Description: "Data source for Genesys Cloud User Prompts. Select a user prompt by name.",
-		ReadContext: provider.ReadWithPooledClient(dataSourceUserPromptRead),
-		Schema: map[string]*schema.Schema{
-			"name": {
-				Description: "User Prompt name.",
-				Type:        schema.TypeString,
-				Required:    true,
-			},
-		},
-	}
-}
 
 func dataSourceUserPromptRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	sdkConfig := m.(*provider.ProviderMeta).ClientConfig
