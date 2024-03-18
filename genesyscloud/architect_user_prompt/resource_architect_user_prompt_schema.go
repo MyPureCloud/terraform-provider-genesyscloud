@@ -42,27 +42,6 @@ func DataSourceUserPrompt() *schema.Resource {
 	}
 }
 
-type PromptAudioData struct {
-	Language string
-	FileName string
-	MediaUri string
-}
-
-type UserPromptStruct struct {
-	ResourceID  string
-	Name        string
-	Description string
-	Resources   []*UserPromptResourceStruct
-}
-
-type UserPromptResourceStruct struct {
-	Language        string
-	Tts_string      string
-	Text            string
-	Filename        string
-	FileContentHash string
-}
-
 var userPromptResource = &schema.Resource{
 	Schema: map[string]*schema.Schema{
 		"language": {
