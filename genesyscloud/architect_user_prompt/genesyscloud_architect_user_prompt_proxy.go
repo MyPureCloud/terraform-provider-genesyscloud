@@ -12,7 +12,7 @@ var internalProxy *architectUserPromptProxy
 
 type createArchitectUserPromptFunc func(ctx context.Context, p *architectUserPromptProxy, body platformclientv2.Prompt) (*platformclientv2.Prompt, *platformclientv2.APIResponse, error)
 type getArchitectUserPromptFunc func(ctx context.Context, p *architectUserPromptProxy, id string, includeMediaUris bool, includeResources bool, language []string) (*platformclientv2.Prompt, *platformclientv2.APIResponse, error, bool)
-type getArchitectUserPromptsFunc func(ctx context.Context, p *architectUserPromptProxy, nameArr []string) (*[]platformclientv2.Prompt, *platformclientv2.APIResponse, error)
+type getArchitectUserPromptsFunc func(ctx context.Context, p *architectUserPromptProxy, includeMediaUris bool, includeResources bool, nameArr []string) (*[]platformclientv2.Prompt, *platformclientv2.APIResponse, error, bool)
 type updateArchitectUserPromptFunc func(ctx context.Context, p *architectUserPromptProxy, id string, body platformclientv2.Prompt) (*platformclientv2.Prompt, *platformclientv2.APIResponse, error)
 type deleteArchitectUserPromptFunc func(ctx context.Context, p *architectUserPromptProxy, id string, allResources bool) (*platformclientv2.APIResponse, error)
 type createArchitectUserPromptResourceFunc func(ctx context.Context, p *architectUserPromptProxy, id string, body platformclientv2.Promptassetcreate) (*platformclientv2.Promptasset, *platformclientv2.APIResponse, error)
@@ -65,8 +65,8 @@ func (p *architectUserPromptProxy) getArchitectUserPrompt(ctx context.Context, i
 }
 
 // getArchitectUserPrompts retrieves a list of user prompts
-func (p *architectUserPromptProxy) getArchitectUserPrompts(ctx context.Context, nameArr []string) (*[]platformclientv2.Prompt, *platformclientv2.APIResponse, error) {
-	return p.getArchitectUserPromptsAttr(ctx, p, nameArr)
+func (p *architectUserPromptProxy) getArchitectUserPrompts(ctx context.Context, includeMediaUris bool, includeResources bool, nameArr []string) (*[]platformclientv2.Prompt, *platformclientv2.APIResponse, error, bool) {
+	return p.getArchitectUserPromptsAttr(ctx, p, includeMediaUris, includeResources, nameArr)
 }
 
 // updateArchitectUserPrompt updates a user prompt
@@ -120,7 +120,7 @@ func deleteArchitectUserPromptFn(ctx context.Context, p *architectUserPromptProx
 	return response, nil
 }
 
-func getArchitectUserPromptsFn(ctx context.Context, p *architectUserPromptProxy, nameArr []string) (*[]platformclientv2.Prompt, *platformclientv2.APIResponse, error) {
+func getArchitectUserPromptsFn(ctx context.Context, p *architectUserPromptProxy, includeMediaUris bool, includeResources bool, nameArr []string) (*[]platformclientv2.Prompt, *platformclientv2.APIResponse, error, bool) {
 	var (
 		pageCount  int
 		pageNum    = 1
@@ -128,10 +128,10 @@ func getArchitectUserPromptsFn(ctx context.Context, p *architectUserPromptProxy,
 	)
 
 	const pageSize = 100
-	userPrompts, response, err := p.architectApi.GetArchitectPrompts(pageNum, pageSize, nameArr, "", "", "", "", false, false, nil)
+	userPrompts, response, err := p.architectApi.GetArchitectPrompts(pageNum, pageSize, nameArr, "", "", "", "", includeMediaUris, includeResources, nameArr)
 
 	if err != nil {
-		return nil, response, fmt.Errorf("failed to get list of prompts: %v", err)
+		return nil, response, fmt.Errorf("failed to get list of prompts: %v", err), true
 	}
 
 	if userPrompts != nil && userPrompts.Entities != nil && len(*userPrompts.Entities) > 0 {
@@ -141,9 +141,9 @@ func getArchitectUserPromptsFn(ctx context.Context, p *architectUserPromptProxy,
 	pageCount = *userPrompts.PageCount
 
 	for pageNum := 2; pageNum <= pageCount; pageNum++ {
-		userPrompts, response, getErr := p.architectApi.GetArchitectPrompts(pageNum, pageSize, nameArr, "", "", "", "", false, false, nil)
+		userPrompts, response, getErr := p.architectApi.GetArchitectPrompts(pageNum, pageSize, nameArr, "", "", "", "", includeMediaUris, includeResources, nameArr)
 		if getErr != nil {
-			return nil, response, fmt.Errorf("failed to get page of prompts: %v", getErr)
+			return nil, response, fmt.Errorf("failed to get page of prompts: %v", getErr), true
 		}
 
 		if userPrompts.Entities == nil || len(*userPrompts.Entities) == 0 {
@@ -151,7 +151,7 @@ func getArchitectUserPromptsFn(ctx context.Context, p *architectUserPromptProxy,
 		}
 	}
 
-	return &allPrompts, response, nil
+	return &allPrompts, response, nil, false
 }
 
 func createArchitectUserPromptResourceFn(ctx context.Context, p *architectUserPromptProxy, id string, body platformclientv2.Promptassetcreate) (*platformclientv2.Promptasset, *platformclientv2.APIResponse, error) {
