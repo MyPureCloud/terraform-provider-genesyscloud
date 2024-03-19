@@ -1,17 +1,20 @@
-package genesyscloud
+package routing_email_route
 
 import (
 	"fmt"
+	"log"
 	"strings"
+	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
+	"time"
 
 	"github.com/google/uuid"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v123/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
 )
 
 func TestAccResourceRoutingEmailRoute(t *testing.T) {
@@ -42,11 +45,11 @@ func TestAccResourceRoutingEmailRoute(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
-		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		ProviderFactories: provider.GetProviderFactories(providerResources, nil),
 		Steps: []resource.TestStep{
 			{
 				// Create email domain and basic route
-				Config: GenerateRoutingEmailDomainResource(
+				Config: gcloud.GenerateRoutingEmailDomainResource(
 					domainRes,
 					domainId,
 					util.FalseValue,
@@ -70,18 +73,18 @@ func TestAccResourceRoutingEmailRoute(t *testing.T) {
 			},
 			{
 				// Update email route and add a queue, language, and skill
-				Config: GenerateRoutingEmailDomainResource(
+				Config: gcloud.GenerateRoutingEmailDomainResource(
 					domainRes,
 					domainId,
 					util.FalseValue,
 					util.NullValue,
-				) + GenerateRoutingQueueResourceBasic(
+				) + gcloud.GenerateRoutingQueueResourceBasic(
 					queueResource,
 					queueName,
-				) + GenerateRoutingLanguageResource(
+				) + gcloud.GenerateRoutingLanguageResource(
 					langResource,
 					langName,
-				) + GenerateRoutingSkillResource(
+				) + gcloud.GenerateRoutingSkillResource(
 					skillResource,
 					skillName,
 				) + generateRoutingEmailRouteResource(
@@ -125,18 +128,18 @@ func TestAccResourceRoutingEmailRoute(t *testing.T) {
 			},
 			{
 				// Update email reply to true
-				Config: GenerateRoutingEmailDomainResource(
+				Config: gcloud.GenerateRoutingEmailDomainResource(
 					domainRes,
 					domainId,
 					util.FalseValue,
 					util.NullValue,
-				) + GenerateRoutingQueueResourceBasic(
+				) + gcloud.GenerateRoutingQueueResourceBasic(
 					queueResource,
 					queueName,
-				) + GenerateRoutingLanguageResource(
+				) + gcloud.GenerateRoutingLanguageResource(
 					langResource,
 					langName,
-				) + GenerateRoutingSkillResource(
+				) + gcloud.GenerateRoutingSkillResource(
 					skillResource,
 					skillName,
 				) + generateRoutingEmailRouteResource(
@@ -181,18 +184,18 @@ func TestAccResourceRoutingEmailRoute(t *testing.T) {
 			},
 			{
 				// Update email reply to false and set a route id
-				Config: GenerateRoutingEmailDomainResource(
+				Config: gcloud.GenerateRoutingEmailDomainResource(
 					domainRes,
 					domainId,
 					util.FalseValue,
 					util.NullValue,
-				) + GenerateRoutingQueueResourceBasic(
+				) + gcloud.GenerateRoutingQueueResourceBasic(
 					queueResource,
 					queueName,
-				) + GenerateRoutingLanguageResource(
+				) + gcloud.GenerateRoutingLanguageResource(
 					langResource,
 					langName,
-				) + GenerateRoutingSkillResource(
+				) + gcloud.GenerateRoutingSkillResource(
 					skillResource,
 					skillName,
 				) + generateRoutingEmailRouteResource(
@@ -350,4 +353,35 @@ func testVerifyRoutingEmailRouteDestroyed(state *terraform.State) error {
 	}
 	// Success. All routes destroyed
 	return nil
+}
+
+func CleanupRoutingEmailDomains() {
+	sdkConfig, err := provider.AuthorizeSdk()
+	if err != nil {
+		log.Fatal(err)
+	}
+	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
+
+	for pageNum := 1; ; pageNum++ {
+		const pageSize = 100
+		routingEmailDomains, _, getErr := routingAPI.GetRoutingEmailDomains(pageNum, pageSize, false, "")
+		if getErr != nil {
+			return
+		}
+
+		if routingEmailDomains.Entities == nil || len(*routingEmailDomains.Entities) == 0 {
+			return
+		}
+
+		for _, routingEmailDomain := range *routingEmailDomains.Entities {
+			if routingEmailDomain.Id != nil && strings.HasPrefix(*routingEmailDomain.Id, "terraform") {
+				_, err := routingAPI.DeleteRoutingEmailDomain(*routingEmailDomain.Id)
+				if err != nil {
+					log.Printf("Failed to delete routing email domain %s: %s", *routingEmailDomain.Id, err)
+					continue
+				}
+				time.Sleep(5 * time.Second)
+			}
+		}
+	}
 }

@@ -48,6 +48,7 @@ import (
 	respmanagementLibrary "terraform-provider-genesyscloud/genesyscloud/responsemanagement_library"
 	responsemanagementResponse "terraform-provider-genesyscloud/genesyscloud/responsemanagement_response"
 	responsemanagementResponseasset "terraform-provider-genesyscloud/genesyscloud/responsemanagement_responseasset"
+	routingEmailRoute "terraform-provider-genesyscloud/genesyscloud/routing_email_route"
 	smsAddresses "terraform-provider-genesyscloud/genesyscloud/routing_sms_addresses"
 	"terraform-provider-genesyscloud/genesyscloud/scripts"
 	"terraform-provider-genesyscloud/genesyscloud/station"
@@ -159,6 +160,7 @@ func registerResources() {
 	obCampaignRule.SetRegistrar(regInstance)                               //Registering outbound campaignrule
 	obfst.SetRegistrar(regInstance)                                        //Registering outbound file specification template
 	obDncList.SetRegistrar(regInstance)                                    //Registering outbound dnclist
+	routingEmailRoute.SetRegistrar(regInstance)                            //Registering routing email route
 	scripts.SetRegistrar(regInstance)                                      //Registering Scripts
 	smsAddresses.SetRegistrar(regInstance)                                 //Registering routing sms addresses
 	integration.SetRegistrar(regInstance)                                  //Registering integrations

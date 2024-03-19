@@ -17,16 +17,16 @@ import (
 )
 
 var (
-	mcc      map[string]*consistencyCheck
+	mcc      map[string]*ConsistencyCheck
 	mccMutex sync.RWMutex
 )
 
 func init() {
-	mcc = make(map[string]*consistencyCheck)
+	mcc = make(map[string]*ConsistencyCheck)
 	mccMutex = sync.RWMutex{}
 }
 
-type consistencyCheck struct {
+type ConsistencyCheck struct {
 	ctx           context.Context
 	d             *schema.ResourceData
 	r             *schema.Resource
@@ -47,12 +47,12 @@ expected value: %v
 actual value:   %v`, e.key, e.oldValue, e.newValue)
 }
 
-func NewConsistencyCheck(ctx context.Context, d *schema.ResourceData, meta interface{}, r *schema.Resource) *consistencyCheck {
+func NewConsistencyCheck(ctx context.Context, d *schema.ResourceData, meta interface{}, r *schema.Resource) *ConsistencyCheck {
 	emptyState := isEmptyState(d)
 	if *emptyState {
-		return &consistencyCheck{isEmptyState: emptyState}
+		return &ConsistencyCheck{isEmptyState: emptyState}
 	}
-	var cc *consistencyCheck
+	var cc *ConsistencyCheck
 
 	mccMutex.Lock()
 	cc = mcc[d.Id()]
@@ -70,7 +70,7 @@ func NewConsistencyCheck(ctx context.Context, d *schema.ResourceData, meta inter
 		originalState[k] = d.Get(k)
 	}
 
-	cc = &consistencyCheck{
+	cc = &ConsistencyCheck{
 		ctx:           ctx,
 		d:             d,
 		r:             r,
@@ -186,7 +186,7 @@ func compareValues(oldValue, newValue interface{}, slice1Index, slice2Index int,
 	}
 }
 
-func (c *consistencyCheck) isComputed(key string) bool {
+func (c *ConsistencyCheck) isComputed(key string) bool {
 	schemaInterface := getUnexportedField(reflect.ValueOf(c.d).Elem().FieldByName("schema"))
 	resourceSchema := schemaInterface.(map[string]*schema.Schema)
 
@@ -201,7 +201,7 @@ func (c *consistencyCheck) isComputed(key string) bool {
 	return resourceSchema[k].Computed
 }
 
-func (c *consistencyCheck) CheckState() *retry.RetryError {
+func (c *ConsistencyCheck) CheckState() *retry.RetryError {
 	if c.isEmptyState == nil {
 		panic("consistencyCheck must be initialized with NewConsistencyCheck")
 	}

@@ -14,7 +14,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v123/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
 )
 
 func init() {
@@ -320,6 +320,7 @@ func InitClientConfig(data *schema.ResourceData, version string, config *platfor
 		log.Print("Setting access token set on configuration instance.")
 		config.AccessToken = accessToken
 	} else {
+		config.AutomaticTokenRefresh = true // Enable automatic token refreshing
 		err := config.AuthorizeClientCredentials(oauthclientID, oauthclientSecret)
 		if err != nil {
 			return diag.Errorf("Failed to authorize Genesys Cloud client credentials: %v", err)
