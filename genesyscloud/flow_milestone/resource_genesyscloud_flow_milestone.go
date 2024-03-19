@@ -28,16 +28,14 @@ The resource_genesyscloud_flow_milestone.go contains all of the methods that per
 func getAllAuthFlowMilestones(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
 	proxy := newFlowMilestoneProxy(clientConfig)
 	resources := make(resourceExporter.ResourceIDMetaMap)
-
-	flowMilestones, err := proxy.getAllFlowMilestone(ctx)
+	flowMilestones, resp, err := proxy.getAllFlowMilestone(ctx)
 	if err != nil {
-		return nil, diag.Errorf("Failed to get flow milestone: %v", err)
+		return nil, diag.Errorf("Failed to get flow milestone: %v %v", err, resp)
 	}
 
 	for _, flowMilestone := range *flowMilestones {
 		resources[*flowMilestone.Id] = &resourceExporter.ResourceMeta{Name: *flowMilestone.Name}
 	}
-
 	return resources, nil
 }
 
@@ -49,9 +47,9 @@ func createFlowMilestone(ctx context.Context, d *schema.ResourceData, meta inter
 	flowMilestone := getFlowMilestoneFromResourceData(d)
 
 	log.Printf("Creating flow milestone %s", *flowMilestone.Name)
-	flowMilestoneSdk, err := proxy.createFlowMilestone(ctx, &flowMilestone)
+	flowMilestoneSdk, resp, err := proxy.createFlowMilestone(ctx, &flowMilestone)
 	if err != nil {
-		return diag.Errorf("Failed to create flow milestone: %s", err)
+		return diag.Errorf("Failed to create flow milestone: %s %v", err, resp)
 	}
 
 	d.SetId(*flowMilestoneSdk.Id)
@@ -67,9 +65,9 @@ func readFlowMilestone(ctx context.Context, d *schema.ResourceData, meta interfa
 	log.Printf("Reading flow milestone %s", d.Id())
 
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
-		flowMilestone, respCode, getErr := proxy.getFlowMilestoneById(ctx, d.Id())
+		flowMilestone, resp, getErr := proxy.getFlowMilestoneById(ctx, d.Id())
 		if getErr != nil {
-			if util.IsStatus404ByInt(respCode) {
+			if util.IsStatus404(resp) {
 				return retry.RetryableError(fmt.Errorf("Failed to read flow milestone %s: %s", d.Id(), getErr))
 			}
 			return retry.NonRetryableError(fmt.Errorf("Failed to read flow milestone %s: %s", d.Id(), getErr))
@@ -94,9 +92,9 @@ func updateFlowMilestone(ctx context.Context, d *schema.ResourceData, meta inter
 	flowMilestone := getFlowMilestoneFromResourceData(d)
 
 	log.Printf("Updating flow milestone %s", *flowMilestone.Name)
-	flowMilestoneSdk, err := proxy.updateFlowMilestone(ctx, d.Id(), &flowMilestone)
+	flowMilestoneSdk, resp, err := proxy.updateFlowMilestone(ctx, d.Id(), &flowMilestone)
 	if err != nil {
-		return diag.Errorf("Failed to update flow milestone: %s", err)
+		return diag.Errorf("Failed to update flow milestone: %s %v", err, resp)
 	}
 
 	log.Printf("Updated flow milestone %s", *flowMilestoneSdk.Id)
@@ -108,22 +106,21 @@ func deleteFlowMilestone(ctx context.Context, d *schema.ResourceData, meta inter
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getFlowMilestoneProxy(sdkConfig)
 
-	_, err := proxy.deleteFlowMilestone(ctx, d.Id())
+	resp, err := proxy.deleteFlowMilestone(ctx, d.Id())
 	if err != nil {
-		return diag.Errorf("Failed to delete flow milestone %s: %s", d.Id(), err)
+		return diag.Errorf("Failed to delete flow milestone %s: %s %v", d.Id(), err, resp)
 	}
 
 	return util.WithRetries(ctx, 180*time.Second, func() *retry.RetryError {
-		_, respCode, err := proxy.getFlowMilestoneById(ctx, d.Id())
+		_, resp, err := proxy.getFlowMilestoneById(ctx, d.Id())
 
 		if err != nil {
-			if util.IsStatus404ByInt(respCode) {
+			if util.IsStatus404(resp) {
 				log.Printf("Deleted flow milestone %s", d.Id())
 				return nil
 			}
 			return retry.NonRetryableError(fmt.Errorf("Error deleting flow milestone %s: %s", d.Id(), err))
 		}
-
 		return retry.RetryableError(fmt.Errorf("flow milestone %s still exists", d.Id()))
 	})
 }
