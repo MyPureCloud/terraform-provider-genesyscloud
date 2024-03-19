@@ -2,7 +2,6 @@ package tfexporter_state
 
 import (
 	"log"
-	"os"
 	"sync"
 )
 
@@ -17,14 +16,10 @@ var once sync.Once
 // We are setting this as an environment variable so we can experiment with it, without creating an attribute
 // on the resource
 func ActivateExporterState() {
-	cxCacheActive := os.Getenv("ENABLE_CX_CACHE")
-
-	if cxCacheActive != "" {
-		once.Do(func() {
-			log.Printf("Exporter State is active")
-			exportState = true
-		})
-	}
+	once.Do(func() {
+		log.Printf("Exporter State is active")
+		exportState = true
+	})
 }
 
 func IsExporterActive() bool {

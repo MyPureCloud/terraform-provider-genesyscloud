@@ -1,14 +1,11 @@
 package resource_cache
 
 import (
-	"os"
 	"terraform-provider-genesyscloud/genesyscloud/tfexporter_state"
 	"testing"
 )
 
 func TestUnitWithoutExporterState(t *testing.T) {
-	os.Setenv("ENABLE_CX_CACHE", "")
-	tfexporter_state.ActivateExporterState()
 	cache := NewResourceCache[int]()
 	// Test SetCache
 	SetCache(cache, "key1", 10)
@@ -27,7 +24,6 @@ func TestUnitWithoutExporterState(t *testing.T) {
 }
 
 func TestUnitSetCacheAndGetCache(t *testing.T) {
-	os.Setenv("ENABLE_CX_CACHE", "true")
 	tfexporter_state.ActivateExporterState()
 	cache := NewResourceCache[int]()
 	// Test SetCache
