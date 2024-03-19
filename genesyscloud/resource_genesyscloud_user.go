@@ -22,7 +22,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v123/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
 	"github.com/nyaruka/phonenumbers"
 )
 
@@ -208,11 +208,6 @@ func ResourceUser() *schema.Resource {
 		DeleteContext: provider.DeleteWithPooledClient(deleteUser),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
-		},
-		Timeouts: &schema.ResourceTimeout{
-			Create: schema.DefaultTimeout(5 * time.Second),
-			Update: schema.DefaultTimeout(5 * time.Second),
-			Read:   schema.DefaultTimeout(5 * time.Second),
 		},
 		SchemaVersion: 1,
 		Schema: map[string]*schema.Schema{

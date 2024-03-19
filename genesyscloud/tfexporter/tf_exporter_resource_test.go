@@ -40,6 +40,7 @@ import (
 	respmanagementLibrary "terraform-provider-genesyscloud/genesyscloud/responsemanagement_library"
 	responsemanagementResponse "terraform-provider-genesyscloud/genesyscloud/responsemanagement_response"
 	respManagementRespAsset "terraform-provider-genesyscloud/genesyscloud/responsemanagement_responseasset"
+	routingEmailRoute "terraform-provider-genesyscloud/genesyscloud/routing_email_route"
 	routingSmsAddress "terraform-provider-genesyscloud/genesyscloud/routing_sms_addresses"
 	workbin "terraform-provider-genesyscloud/genesyscloud/task_management_workbin"
 	workitemSchema "terraform-provider-genesyscloud/genesyscloud/task_management_workitem_schema"
@@ -126,7 +127,7 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_responsemanagement_library"] = respmanagementLibrary.ResourceResponsemanagementLibrary()
 	providerResources["genesyscloud_responsemanagement_responseasset"] = respManagementRespAsset.ResourceResponseManagementResponseAsset()
 	providerResources["genesyscloud_routing_email_domain"] = gcloud.ResourceRoutingEmailDomain()
-	providerResources["genesyscloud_routing_email_route"] = gcloud.ResourceRoutingEmailRoute()
+	providerResources["genesyscloud_routing_email_route"] = routingEmailRoute.ResourceRoutingEmailRoute()
 	providerResources["genesyscloud_routing_language"] = gcloud.ResourceRoutingLanguage()
 	providerResources["genesyscloud_routing_queue"] = gcloud.ResourceRoutingQueue()
 	providerResources["genesyscloud_routing_skill"] = gcloud.ResourceRoutingSkill()
@@ -229,7 +230,7 @@ func (r *registerTestInstance) registerTestExporters() {
 	RegisterExporter("genesyscloud_responsemanagement_library", respmanagementLibrary.ResponsemanagementLibraryExporter())
 	RegisterExporter("genesyscloud_responsemanagement_response", responsemanagementResponse.ResponsemanagementResponseExporter())
 	RegisterExporter("genesyscloud_routing_email_domain", gcloud.RoutingEmailDomainExporter())
-	RegisterExporter("genesyscloud_routing_email_route", gcloud.RoutingEmailRouteExporter())
+	RegisterExporter("genesyscloud_routing_email_route", routingEmailRoute.RoutingEmailRouteExporter())
 	RegisterExporter("genesyscloud_routing_language", gcloud.RoutingLanguageExporter())
 	RegisterExporter("genesyscloud_routing_queue", gcloud.RoutingQueueExporter())
 	RegisterExporter("genesyscloud_routing_settings", gcloud.RoutingSettingsExporter())
