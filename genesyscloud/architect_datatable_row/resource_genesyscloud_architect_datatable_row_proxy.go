@@ -14,8 +14,8 @@ var internalProxy *architectDatatableRowProxy
 
 // Type definitions for each func on our proxy so we can easily mock them out later
 type getArchitectDatatableFunc func(ctx context.Context, p *architectDatatableRowProxy, datatableId string, expanded string) (*Datatable, *platformclientv2.APIResponse, error)
-type getAllArchitectDatatableFunc func(ctx context.Context, p *architectDatatableRowProxy) (*[]platformclientv2.Datatable, error)
-type getAllArchitectDatatableRowsFunc func(ctx context.Context, p *architectDatatableRowProxy, tableId string) (*[]map[string]interface{}, error)
+type getAllArchitectDatatableFunc func(ctx context.Context, p *architectDatatableRowProxy) (*[]platformclientv2.Datatable, *platformclientv2.APIResponse, error)
+type getAllArchitectDatatableRowsFunc func(ctx context.Context, p *architectDatatableRowProxy, tableId string) (*[]map[string]interface{}, *platformclientv2.APIResponse, error)
 type getArchitectDatatableRowFunc func(ctx context.Context, p *architectDatatableRowProxy, tableId string, key string) (*map[string]interface{}, *platformclientv2.APIResponse, error)
 type createArchitectDatatableRowFunc func(ctx context.Context, p *architectDatatableRowProxy, tableId string, row *map[string]interface{}) (*map[string]interface{}, *platformclientv2.APIResponse, error)
 type updateArchitectDatatableRowFunc func(ctx context.Context, p *architectDatatableRowProxy, tableId string, key string, row *map[string]interface{}) (*map[string]interface{}, *platformclientv2.APIResponse, error)
@@ -59,11 +59,11 @@ func (p *architectDatatableRowProxy) getArchitectDatatable(ctx context.Context, 
 	return p.getArchitectDatatableAttr(ctx, p, id, expanded)
 }
 
-func (p *architectDatatableRowProxy) getAllArchitectDatatable(ctx context.Context) (*[]platformclientv2.Datatable, error) {
+func (p *architectDatatableRowProxy) getAllArchitectDatatable(ctx context.Context) (*[]platformclientv2.Datatable, *platformclientv2.APIResponse, error) {
 	return p.getAllArchitectDatatableAttr(ctx, p)
 }
 
-func (p *architectDatatableRowProxy) getAllArchitectDatatableRows(ctx context.Context, tableId string) (*[]map[string]interface{}, error) {
+func (p *architectDatatableRowProxy) getAllArchitectDatatableRows(ctx context.Context, tableId string) (*[]map[string]interface{}, *platformclientv2.APIResponse, error) {
 	return p.getAllArchitectDatatableRowsAttr(ctx, p, tableId)
 }
 

@@ -26,9 +26,9 @@ func getAllAuthArchitectGrammar(ctx context.Context, clientConfig *platformclien
 	proxy := getArchitectGrammarProxy(clientConfig)
 	resources := make(resourceExporter.ResourceIDMetaMap)
 
-	grammars, err := proxy.getAllArchitectGrammar(ctx)
+	grammars, resp, err := proxy.getAllArchitectGrammar(ctx)
 	if err != nil {
-		return nil, diag.Errorf("Failed to get grammars: %v", err)
+		return nil, diag.Errorf("Failed to get grammars: %v %v", err, resp)
 	}
 
 	for _, grammar := range *grammars {
@@ -50,9 +50,9 @@ func createArchitectGrammar(ctx context.Context, d *schema.ResourceData, meta in
 
 	// Create grammar
 	log.Printf("Creating Architect Grammar %s", *architectGrammar.Name)
-	grammar, err := proxy.createArchitectGrammar(ctx, &architectGrammar)
+	grammar, resp, err := proxy.createArchitectGrammar(ctx, &architectGrammar)
 	if err != nil {
-		return diag.Errorf("Failed to create grammar: %s", err)
+		return diag.Errorf("Failed to create grammar: %s %v", err, resp)
 	}
 
 	d.SetId(*grammar.Id)
@@ -68,10 +68,10 @@ func readArchitectGrammar(ctx context.Context, d *schema.ResourceData, meta inte
 	log.Printf("Reading Architect Grammar %s", d.Id())
 
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
-		grammar, respCode, getErr := proxy.getArchitectGrammarById(ctx, d.Id())
+		grammar, resp, getErr := proxy.getArchitectGrammarById(ctx, d.Id())
 
 		if getErr != nil {
-			if util.IsStatus404ByInt(respCode) {
+			if util.IsStatus404(resp) {
 				return retry.RetryableError(fmt.Errorf("Failed to read Architect Grammar %s: %s", d.Id(), getErr))
 			}
 			return retry.NonRetryableError(fmt.Errorf("Failed to read Architect Grammar %s: %s", d.Id(), getErr))
@@ -99,9 +99,9 @@ func updateArchitectGrammar(ctx context.Context, d *schema.ResourceData, meta in
 
 	// Update grammar
 	log.Printf("Updating Architect Grammar %s", *architectGrammar.Name)
-	grammar, err := proxy.updateArchitectGrammar(ctx, d.Id(), &architectGrammar)
+	grammar, resp, err := proxy.updateArchitectGrammar(ctx, d.Id(), &architectGrammar)
 	if err != nil {
-		return diag.Errorf("Failed to update grammar: %s", err)
+		return diag.Errorf("Failed to update grammar: %s %v", err, resp)
 	}
 
 	log.Printf("Updated Architect Grammar %s", *grammar.Id)
@@ -113,16 +113,16 @@ func deleteArchitectGrammar(ctx context.Context, d *schema.ResourceData, meta in
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := newArchitectGrammarProxy(sdkConfig)
 
-	_, err := proxy.deleteArchitectGrammar(ctx, d.Id())
+	resp, err := proxy.deleteArchitectGrammar(ctx, d.Id())
 	if err != nil {
-		return diag.Errorf("Failed to delete grammar %s: %s", d.Id(), err)
+		return diag.Errorf("Failed to delete grammar %s: %s %v", d.Id(), err, resp)
 	}
 
 	return util.WithRetries(ctx, 180*time.Second, func() *retry.RetryError {
-		_, respCode, err := proxy.getArchitectGrammarById(ctx, d.Id())
+		_, resp, err := proxy.getArchitectGrammarById(ctx, d.Id())
 
 		if err != nil {
-			if util.IsStatus404ByInt(respCode) {
+			if util.IsStatus404(resp) {
 				log.Printf("Deleted Grammar %s", d.Id())
 				return nil
 			}

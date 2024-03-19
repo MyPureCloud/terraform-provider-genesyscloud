@@ -17,8 +17,8 @@ var internalProxy *authRoleProxy
 
 // Type definitions for each func on our proxy so we can easily mock them out later
 type createAuthRoleFunc func(ctx context.Context, p *authRoleProxy, domainOrganizationRole *platformclientv2.Domainorganizationrolecreate) (*platformclientv2.Domainorganizationrole, *platformclientv2.APIResponse, error)
-type getAllAuthRoleFunc func(ctx context.Context, p *authRoleProxy) (*[]platformclientv2.Domainorganizationrole, error)
-type getAuthRoleIdByNameFunc func(ctx context.Context, p *authRoleProxy, name string) (id string, retryable bool, err error)
+type getAllAuthRoleFunc func(ctx context.Context, p *authRoleProxy) (*[]platformclientv2.Domainorganizationrole, *platformclientv2.APIResponse, error)
+type getAuthRoleIdByNameFunc func(ctx context.Context, p *authRoleProxy, name string) (id string, retryable bool, response *platformclientv2.APIResponse, err error)
 type getAuthRoleByIdFunc func(ctx context.Context, p *authRoleProxy, id string) (domainOrganizationRole *platformclientv2.Domainorganizationrole, response *platformclientv2.APIResponse, err error)
 type getDefaultRoleIdFunc func(ctx context.Context, p *authRoleProxy, defaultRoleID string) (roleId string, response *platformclientv2.APIResponse, err error)
 type updateAuthRoleFunc func(ctx context.Context, p *authRoleProxy, id string, domainOrganizationRole *platformclientv2.Domainorganizationroleupdate) (*platformclientv2.Domainorganizationrole, *platformclientv2.APIResponse, error)
@@ -74,12 +74,12 @@ func (p *authRoleProxy) createAuthRole(ctx context.Context, authRole *platformcl
 }
 
 // getAuthRole retrieves all Genesys Cloud auth role
-func (p *authRoleProxy) getAllAuthRole(ctx context.Context) (*[]platformclientv2.Domainorganizationrole, error) {
+func (p *authRoleProxy) getAllAuthRole(ctx context.Context) (*[]platformclientv2.Domainorganizationrole, *platformclientv2.APIResponse, error) {
 	return p.getAllAuthRoleAttr(ctx, p)
 }
 
 // getAuthRoleIdByName returns a single Genesys Cloud auth role by a name
-func (p *authRoleProxy) getAuthRoleIdByName(ctx context.Context, name string) (id string, retryable bool, err error) {
+func (p *authRoleProxy) getAuthRoleIdByName(ctx context.Context, name string) (id string, retryable bool, response *platformclientv2.APIResponse, err error) {
 	return p.getAuthRoleIdByNameAttr(ctx, p, name)
 }
 
@@ -122,13 +122,13 @@ func createAuthRoleFn(ctx context.Context, p *authRoleProxy, authRole *platformc
 }
 
 // getAllAuthRoleFn is the implementation for retrieving all auth role in Genesys Cloud
-func getAllAuthRoleFn(ctx context.Context, p *authRoleProxy) (*[]platformclientv2.Domainorganizationrole, error) {
-	return nil, nil
+func getAllAuthRoleFn(ctx context.Context, p *authRoleProxy) (*[]platformclientv2.Domainorganizationrole, *platformclientv2.APIResponse, error) {
+	return nil, nil, nil
 }
 
 // getAuthRoleIdByNameFn is an implementation of the function to get a Genesys Cloud auth role by name
-func getAuthRoleIdByNameFn(ctx context.Context, p *authRoleProxy, name string) (id string, retryable bool, err error) {
-	return "", false, nil
+func getAuthRoleIdByNameFn(ctx context.Context, p *authRoleProxy, name string) (id string, retryable bool, response *platformclientv2.APIResponse, err error) {
+	return "", false, nil, nil
 }
 
 // getAuthRoleByIdFn is an implementation of the function to get a Genesys Cloud auth role by Id
@@ -200,7 +200,7 @@ func getAllowedPermissionsFn(p *authRoleProxy, domain string) (*map[string][]pla
 	}
 
 	for pageNum := 2; pageNum <= *permissions.PageCount; pageNum++ {
-		permissions, _, err := p.authorizationApi.GetAuthorizationPermissions(pageSize, pageNum, "domain", domain)
+		permissions, apiResponse, err := p.authorizationApi.GetAuthorizationPermissions(pageSize, pageNum, "domain", domain)
 		if err != nil {
 			return nil, apiResponse, err
 		}

@@ -116,7 +116,7 @@ func getAllArchitectSchedulegroupsFn(ctx context.Context, p *architectSchedulegr
 	}
 
 	for pageNum := 2; pageNum <= *scheduleGroups.PageCount; pageNum++ {
-		scheduleGroups, _, err := p.architectApi.GetArchitectSchedulegroups(pageNum, pageSize, "", "", "", "", nil)
+		scheduleGroups, apiResponse, err := p.architectApi.GetArchitectSchedulegroups(pageNum, pageSize, "", "", "", "", nil)
 		if err != nil {
 			return nil, apiResponse, fmt.Errorf("Failed to get schedule group: %v", err)
 		}
@@ -129,7 +129,6 @@ func getAllArchitectSchedulegroupsFn(ctx context.Context, p *architectSchedulegr
 			allScheduleGroups = append(allScheduleGroups, scheduleGroup)
 		}
 	}
-
 	return &allScheduleGroups, apiResponse, nil
 }
 
@@ -169,7 +168,7 @@ func updateArchitectSchedulegroupsFn(ctx context.Context, p *architectSchedulegr
 		return nil, apiResponse, fmt.Errorf("failed to get schedule group %s by id: %s", id, err)
 	}
 	architectSchedulegroups.Version = group.Version
-	scheduleGroup, _, err := p.architectApi.PutArchitectSchedulegroup(id, *architectSchedulegroups)
+	scheduleGroup, apiResponse, err := p.architectApi.PutArchitectSchedulegroup(id, *architectSchedulegroups)
 	if err != nil {
 		return nil, apiResponse, fmt.Errorf("Failed to update architect schedulegroups: %s", err)
 	}
@@ -182,6 +181,5 @@ func deleteArchitectSchedulegroupsFn(ctx context.Context, p *architectSchedulegr
 	if err != nil {
 		return resp, fmt.Errorf("Failed to delete architect schedulegroups: %s", err)
 	}
-
 	return resp, nil
 }

@@ -80,10 +80,10 @@ func updateFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 
 	//Check to see if we need to force and unlock on an architect flow
 	if isForceUnlockEnabled(d) {
-		err := p.ForceUnlockFlow(ctx, d.Id())
+		resp, err := p.ForceUnlockFlow(ctx, d.Id())
 		if err != nil {
 			setFileContentHashToNil(d)
-			return diag.Errorf("Failed to unlock targeted flow %s with error %s", d.Id(), err)
+			return diag.Errorf("Failed to unlock targeted flow %s with error %s %v", d.Id(), err, resp)
 		}
 	}
 
@@ -187,9 +187,9 @@ func deleteFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 
 	//Check to see if we need to force
 	if isForceUnlockEnabled(d) {
-		err := p.ForceUnlockFlow(ctx, d.Id())
+		resp, err := p.ForceUnlockFlow(ctx, d.Id())
 		if err != nil {
-			return diag.Errorf("Failed to unlock targeted flow %s with error %s", d.Id(), err)
+			return diag.Errorf("Failed to unlock targeted flow %s with error %s %v", d.Id(), err, resp)
 		}
 	}
 
