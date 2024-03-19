@@ -133,6 +133,7 @@ func ConvertDatatable(master platformclientv2.Datatable) *Datatable {
 	var datatable Datatable
 	err := mapstructure.Decode(master, &datatable)
 	if err != nil {
+		log.Printf("Error converting the DataTable for id %v, error: %v", *master.Id, err)
 		return nil
 	}
 	return &datatable
@@ -224,7 +225,6 @@ func getAllArchitectDatatableRowsFn(ctx context.Context, p *architectDatatableRo
 func getArchitectDataTableRowFn(ctx context.Context, p *architectDatatableRowProxy, tableId string, key string) (*map[string]interface{}, *platformclientv2.APIResponse, error) {
 	eg := rc.GetCache(p.dataTableRowCache, tableId+"_"+key)
 	if eg != nil {
-		log.Printf("fetched from cache %v", eg)
 		return eg, nil, nil
 	}
 	return p.architectApi.GetFlowsDatatableRow(tableId, key, false)
