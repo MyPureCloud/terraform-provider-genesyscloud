@@ -2,6 +2,8 @@ package routing_queue
 
 import (
 	"sync"
+	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	architectFlow "terraform-provider-genesyscloud/genesyscloud/architect_flow"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -29,6 +31,12 @@ func (r *registerTestInstance) registerTestResources() {
 	defer r.resourceMapMutex.Unlock()
 
 	providerResources[resourceName] = ResourceRoutingQueue()
+	providerResources["genesyscloud_user"] = gcloud.ResourceUser()
+	providerResources["genesyscloud_routing_skill"] = gcloud.ResourceRoutingSkill()
+	providerResources["genesyscloud_group"] = gcloud.ResourceGroup()
+	providerResources["genesyscloud_routing_wrapupcode"] = gcloud.ResourceRoutingWrapupCode()
+	providerResources["genesyscloud_flow"] = architectFlow.ResourceArchitectFlow()
+	providerResources["genesyscloud_routing_skill_group"] = gcloud.ResourceRoutingSkillGroup()
 }
 
 // registerTestDataSources registers all data sources used in the tests.
@@ -37,6 +45,7 @@ func (r *registerTestInstance) registerTestDataSources() {
 	defer r.datasourceMapMutex.Unlock()
 
 	providerDataSources[resourceName] = DataSourceRoutingQueue()
+	providerDataSources["genesyscloud_auth_division_home"] = gcloud.DataSourceAuthDivisionHome()
 }
 
 // initTestResources initializes all test resources and data sources.

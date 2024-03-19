@@ -486,9 +486,9 @@ func TestAccResourceRoutingQueueFlows(t *testing.T) {
 		queueFlowName1              = "Terraform Flow Test-" + uuid.NewString()
 		queueFlowName2              = "Terraform Flow Test-" + uuid.NewString()
 		queueFlowName3              = "Terraform Flow Test-" + uuid.NewString()
-		queueFlowFilePath1          = "../examples/resources/genesyscloud_flow/inboundcall_flow_example.yaml"
-		queueFlowFilePath2          = "../examples/resources/genesyscloud_flow/inboundcall_flow_example2.yaml"
-		queueFlowFilePath3          = "../examples/resources/genesyscloud_flow/inboundcall_flow_example3.yaml"
+		queueFlowFilePath1          = "../../examples/resources/genesyscloud_flow/inboundcall_flow_example.yaml"
+		queueFlowFilePath2          = "../../examples/resources/genesyscloud_flow/inboundcall_flow_example2.yaml"
+		queueFlowFilePath3          = "../../examples/resources/genesyscloud_flow/inboundcall_flow_example3.yaml"
 
 		queueFlowInboundcallConfig1          = fmt.Sprintf("inboundCall:\n  name: %s\n  defaultLanguage: en-us\n  startUpRef: ./menus/menu[mainMenu]\n  initialGreeting:\n    tts: Archy says hi!!!\n  menus:\n    - menu:\n        name: Main Menu\n        audio:\n          tts: You are at the Main Menu, press 9 to disconnect.\n        refId: mainMenu\n        choices:\n          - menuDisconnect:\n              name: Disconnect\n              dtmf: digit_9", queueFlowName1)
 		messageInQueueFlowInboundcallConfig3 = fmt.Sprintf("inboundCall:\n  name: %s\n  defaultLanguage: en-us\n  startUpRef: ./menus/menu[mainMenu]\n  initialGreeting:\n    tts: Archy says hi!!!!!\n  menus:\n    - menu:\n        name: Main Menu\n        audio:\n          tts: You are at the Main Menu, press 9 to disconnect.\n        refId: mainMenu\n        choices:\n          - menuDisconnect:\n              name: Disconnect\n              dtmf: digit_9", queueFlowName3)

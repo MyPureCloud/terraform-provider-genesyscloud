@@ -31,6 +31,7 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_routing_queue"] = routingQueue.ResourceRoutingQueue()
 	providerResources["genesyscloud_routing_language"] = genesyscloud.ResourceRoutingLanguage()
 	providerResources["genesyscloud_routing_skill"] = genesyscloud.ResourceRoutingSkill()
+	providerResources["genesyscloud_routing_skill_group"] = genesyscloud.ResourceRoutingSkillGroup()
 }
 
 // initTestResources initializes all test resources and data sources.
