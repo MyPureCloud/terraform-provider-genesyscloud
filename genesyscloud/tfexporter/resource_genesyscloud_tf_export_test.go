@@ -16,7 +16,7 @@ import (
 	obContactList "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
-	"terraform-provider-genesyscloud/genesyscloud/routing_queue"
+	routingQueue "terraform-provider-genesyscloud/genesyscloud/routing_queue"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 	"time"
@@ -182,7 +182,7 @@ func TestAccResourceTfExportByName(t *testing.T) {
 					userResource1,
 					userEmail1,
 					userName1,
-				) + routing_queue.GenerateRoutingQueueResource(
+				) + routingQueue.GenerateRoutingQueueResource(
 					queueResource,
 					queueName,
 					queueDesc,
@@ -223,7 +223,7 @@ func TestAccResourceTfExportByName(t *testing.T) {
 					userResource1,
 					userEmail1,
 					userName1,
-				) + routing_queue.GenerateRoutingQueueResource(
+				) + routingQueue.GenerateRoutingQueueResource(
 					queueResource,
 					queueName,
 					queueDesc,
@@ -277,7 +277,7 @@ func TestAccResourceTfExportByName(t *testing.T) {
 					userResource2,
 					userEmail2,
 					userName2,
-				) + routing_queue.GenerateRoutingQueueResource(
+				) + routingQueue.GenerateRoutingQueueResource(
 					queueResource,
 					queueName,
 					queueDesc,
@@ -811,7 +811,7 @@ func TestAccResourceTfExportQueueAsHCL(t *testing.T) {
 		emailScriptID = uuid.NewString()
 	)
 
-	routingQueue := routing_queue.GenerateRoutingQueueResource(
+	routingQueue := routingQueue.GenerateRoutingQueueResource(
 		queueID,
 		queueName,
 		description,
@@ -824,9 +824,9 @@ func TestAccResourceTfExportQueueAsHCL(t *testing.T) {
 		"true",
 		util.TrueValue,
 		util.FalseValue,
-		routing_queue.GenerateMediaSettings("media_settings_call", alertTimeoutSec, util.FalseValue, slPercentage, slDurationMs),
-		routing_queue.GenerateRoutingRules(rrOperator, rrThreshold, rrWaitSeconds),
-		routing_queue.GenerateDefaultScriptIDs(chatScriptID, emailScriptID),
+		routingQueue.GenerateMediaSettings("media_settings_call", alertTimeoutSec, util.FalseValue, slPercentage, slDurationMs),
+		routingQueue.GenerateRoutingRules(rrOperator, rrThreshold, rrWaitSeconds),
+		routingQueue.GenerateDefaultScriptIDs(chatScriptID, emailScriptID),
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -1903,7 +1903,7 @@ func validateRoutingRules(resourceName string, ringNum int, operator string, thr
 func buildQueueResources(queueExports []QueueExport) string {
 	queueResourceDefinitions := ""
 	for _, queueExport := range queueExports {
-		queueResourceDefinitions = queueResourceDefinitions + routing_queue.GenerateRoutingQueueResource(
+		queueResourceDefinitions = queueResourceDefinitions + routingQueue.GenerateRoutingQueueResource(
 			queueExport.ResourceName,
 			queueExport.Name,
 			queueExport.Description,
