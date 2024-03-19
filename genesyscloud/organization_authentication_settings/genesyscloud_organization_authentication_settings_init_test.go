@@ -12,9 +12,6 @@ import (
    used in testing the organization_authentication_settings resource.
 */
 
-// providerDataSources holds a map of all registered datasources
-var providerDataSources map[string]*schema.Resource
-
 // providerResources holds a map of all registered resources
 var providerResources map[string]*schema.Resource
 
@@ -31,23 +28,13 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources[resourceName] = ResourceOrganizationAuthenticationSettings()
 }
 
-// registerTestDataSources registers all data sources used in the tests.
-func (r *registerTestInstance) registerTestDataSources() {
-	r.datasourceMapMutex.Lock()
-	defer r.datasourceMapMutex.Unlock()
-
-	//providerDataSources[resourceName] = DataSourceOrganizationAuthenticationSettings()
-}
-
 // initTestResources initializes all test resources and data sources.
 func initTestResources() {
-	providerDataSources = make(map[string]*schema.Resource)
 	providerResources = make(map[string]*schema.Resource)
 
 	regInstance := &registerTestInstance{}
 
 	regInstance.registerTestResources()
-	regInstance.registerTestDataSources()
 }
 
 // TestMain is a "setup" function called by the testing framework when run the test

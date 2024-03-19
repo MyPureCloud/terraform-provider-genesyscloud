@@ -47,11 +47,11 @@ func TestUnitResourceOrganizationAuthenticationSettingsRead(t *testing.T) {
 	}
 	testOrgAuthSettings := generateAuthSettingsData(domainAllowList, ipAllowList)
 	orgAuthProxy := &orgAuthSettingsProxy{}
-	orgAuthProxy.getOrgAuthSettingsByIdAttr = func(ctx context.Context, o *orgAuthSettingsProxy, id string) (*platformclientv2.Orgauthsettings, int, error) {
+	orgAuthProxy.getOrgAuthSettingsByIdAttr = func(ctx context.Context, o *orgAuthSettingsProxy, id string) (*platformclientv2.Orgauthsettings, *platformclientv2.APIResponse, error) {
 		orgAuthSettings := &testOrgAuthSettings
 
 		apiResponse := &platformclientv2.APIResponse{StatusCode: http.StatusOK}
-		return orgAuthSettings, apiResponse.StatusCode, nil
+		return orgAuthSettings, apiResponse, nil
 	}
 	internalProxy = orgAuthProxy
 	defer func() { internalProxy = nil }()
@@ -86,20 +86,20 @@ func TestUnitResourceOrganizationAuthenticationSettingsUpdate(t *testing.T) {
 	testOrgAuthSettings := generateAuthSettingsData(domainAllowList, ipAllowList)
 
 	orgAuthProxy := &orgAuthSettingsProxy{}
-	orgAuthProxy.getOrgAuthSettingsByIdAttr = func(ctx context.Context, p *orgAuthSettingsProxy, id string) (*platformclientv2.Orgauthsettings, int, error) {
+	orgAuthProxy.getOrgAuthSettingsByIdAttr = func(ctx context.Context, p *orgAuthSettingsProxy, id string) (*platformclientv2.Orgauthsettings, *platformclientv2.APIResponse, error) {
 		orgAuthSettings := &testOrgAuthSettings
 
 		apiResponse := &platformclientv2.APIResponse{StatusCode: http.StatusOK}
-		return orgAuthSettings, apiResponse.StatusCode, nil
+		return orgAuthSettings, apiResponse, nil
 	}
 
-	orgAuthProxy.updateOrgAuthSettingsAttr = func(ctx context.Context, p *orgAuthSettingsProxy, orgAuthSettings *platformclientv2.Orgauthsettings) (*platformclientv2.Orgauthsettings, int, error) {
+	orgAuthProxy.updateOrgAuthSettingsAttr = func(ctx context.Context, p *orgAuthSettingsProxy, orgAuthSettings *platformclientv2.Orgauthsettings) (*platformclientv2.Orgauthsettings, *platformclientv2.APIResponse, error) {
 
 		equal := cmp.Equal(testOrgAuthSettings, *orgAuthSettings)
 		assert.Equal(t, true, equal, "orgAuthSettings not equal to expected value in update: %s", cmp.Diff(testOrgAuthSettings, *orgAuthSettings))
 
 		apiResponse := &platformclientv2.APIResponse{StatusCode: http.StatusOK}
-		return orgAuthSettings, apiResponse.StatusCode, nil
+		return orgAuthSettings, apiResponse, nil
 	}
 
 	internalProxy = orgAuthProxy

@@ -7,6 +7,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v121/platformclientv2"
 	"log"
+	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
@@ -41,15 +42,15 @@ func readOrganizationAuthenticationSettings(ctx context.Context, d *schema.Resou
 	log.Printf("Reading organization authentication settings %s", d.Id())
 
 	return gcloud.WithRetriesForRead(ctx, d, func() *retry.RetryError {
-		orgAuthSettings, respCode, getErr := proxy.getOrgAuthSettingsById(ctx, d.Id())
+		orgAuthSettings, resp, getErr := proxy.getOrgAuthSettingsById(ctx, d.Id())
 		if getErr != nil {
-			if gcloud.IsStatus404ByInt(respCode) {
+			if gcloud.IsStatus404(resp) {
 				return retry.RetryableError(fmt.Errorf("Failed to read organization authentication settings %s: %s", d.Id(), getErr))
 			}
 			return retry.NonRetryableError(fmt.Errorf("Failed to read organization authentication settings %s: %s", d.Id(), getErr))
 		}
 
-		// cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOrganizationAuthenticationSettings())
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOrganizationAuthenticationSettings())
 
 		resourcedata.SetNillableValue(d, "multifactor_authentication_required", orgAuthSettings.MultifactorAuthenticationRequired)
 		resourcedata.SetNillableValue(d, "domain_allowlist_enabled", orgAuthSettings.DomainAllowlistEnabled)
@@ -58,8 +59,7 @@ func readOrganizationAuthenticationSettings(ctx context.Context, d *schema.Resou
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "password_requirements", orgAuthSettings.PasswordRequirements, flattenPasswordRequirements)
 
 		log.Printf("Read organization authentication settings %s", d.Id())
-		// return cc.CheckState()
-		return nil
+		return cc.CheckState()
 	})
 }
 
