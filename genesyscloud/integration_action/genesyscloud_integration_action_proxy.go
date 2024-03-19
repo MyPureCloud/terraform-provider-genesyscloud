@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
-
 	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
 )
 
