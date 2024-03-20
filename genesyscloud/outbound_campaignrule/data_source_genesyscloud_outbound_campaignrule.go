@@ -24,9 +24,9 @@ func dataSourceOutboundCampaignruleRead(ctx context.Context, d *schema.ResourceD
 	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
 		const pageNum = 1
 		const pageSize = 100
-		campaignRules, _, getErr := outboundAPI.GetOutboundCampaignrules(pageSize, pageNum, true, "", name, "", "")
+		campaignRules, resp, getErr := outboundAPI.GetOutboundCampaignrules(pageSize, pageNum, true, "", name, "", "")
 		if getErr != nil {
-			return retry.NonRetryableError(fmt.Errorf("error requesting campaign rule %s: %s", name, getErr))
+			return retry.NonRetryableError(fmt.Errorf("error requesting campaign rule %s: %s %v", name, getErr, resp))
 		}
 
 		if campaignRules.Entities == nil || len(*campaignRules.Entities) == 0 {

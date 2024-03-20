@@ -25,15 +25,14 @@ func getAllAuthResponsemanagementResponses(ctx context.Context, clientConfig *pl
 	resources := make(resourceExporter.ResourceIDMetaMap)
 	proxy := getResponsemanagementResponseProxy(clientConfig)
 
-	responseManagementResponses, err := proxy.getAllResponsemanagementResponse(ctx)
+	responseManagementResponses, resp, err := proxy.getAllResponsemanagementResponse(ctx)
 	if err != nil {
-		return nil, diag.Errorf("Failed to get list of response management responses: %v", err)
+		return nil, diag.Errorf("Failed to get list of response management responses: %v %v", err, resp)
 	}
 
 	for _, response := range *responseManagementResponses {
 		resources[*response.Id] = &resourceExporter.ResourceMeta{Name: *response.Name}
 	}
-
 	return resources, nil
 }
 
@@ -46,9 +45,9 @@ func createResponsemanagementResponse(ctx context.Context, d *schema.ResourceDat
 
 	diagErr := util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		log.Printf("Creating Responsemanagement Response %s", *sdkResponse.Name)
-		responsemanagementResponse, respCode, err := proxy.createResponsemanagementResponse(ctx, &sdkResponse)
+		responsemanagementResponse, resp, err := proxy.createResponsemanagementResponse(ctx, &sdkResponse)
 		if err != nil {
-			if util.IsStatus412ByInt(respCode) {
+			if util.IsStatus412(resp) {
 				return retry.RetryableError(fmt.Errorf("failed to create Responsemanagement Response %s: %s", *sdkResponse.Name, err))
 			}
 			return retry.NonRetryableError(fmt.Errorf("failed to create Responsemanagement Response %s: %s", *sdkResponse.Name, err))
@@ -61,7 +60,6 @@ func createResponsemanagementResponse(ctx context.Context, d *schema.ResourceDat
 	if diagErr != nil {
 		return diagErr
 	}
-
 	return readResponsemanagementResponse(ctx, d, meta)
 }
 
@@ -73,9 +71,9 @@ func readResponsemanagementResponse(ctx context.Context, d *schema.ResourceData,
 	log.Printf("Reading Responsemanagement Response %s", d.Id())
 
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
-		sdkResponse, respCode, getErr := proxy.getResponsemanagementResponseById(ctx, d.Id())
+		sdkResponse, resp, getErr := proxy.getResponsemanagementResponseById(ctx, d.Id())
 		if getErr != nil {
-			if util.IsStatus404ByInt(respCode) {
+			if util.IsStatus404(resp) {
 				return retry.RetryableError(fmt.Errorf("Failed to read Responsemanagement Response %s: %s", d.Id(), getErr))
 			}
 			return retry.NonRetryableError(fmt.Errorf("Failed to read Responsemanagement Response %s: %s", d.Id(), getErr))
@@ -115,9 +113,9 @@ func updateResponsemanagementResponse(ctx context.Context, d *schema.ResourceDat
 	sdkResponse := getResponseFromResourceData(d)
 
 	log.Printf("Updating Responsemanagement Response %s", *sdkResponse.Name)
-	managementResponse, err := proxy.updateResponsemanagementResponse(ctx, d.Id(), &sdkResponse)
+	managementResponse, resp, err := proxy.updateResponsemanagementResponse(ctx, d.Id(), &sdkResponse)
 	if err != nil {
-		return diag.Errorf("Failed to update response management response %s: %s", d.Id(), err)
+		return diag.Errorf("Failed to update response management response %s: %s %v", d.Id(), err, resp)
 	}
 
 	log.Printf("Updated Responsemanagement Response %s", *managementResponse.Id)
@@ -130,23 +128,22 @@ func deleteResponsemanagementResponse(ctx context.Context, d *schema.ResourceDat
 	proxy := getResponsemanagementResponseProxy(sdkConfig)
 
 	log.Printf("Deleting Responsemanagement Response")
-	_, err := proxy.deleteResponsemanagementResponse(ctx, d.Id())
+	resp, err := proxy.deleteResponsemanagementResponse(ctx, d.Id())
 	if err != nil {
-		return diag.Errorf("Failed to delete Responsemanagement Response: %s", err)
+		return diag.Errorf("Failed to delete Responsemanagement Response: %s %v", err, resp)
 	}
 
 	time.Sleep(30 * time.Second) //Give time for any libraries or assets to be deleted
 	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		_, resp, err := proxy.getResponsemanagementResponseById(ctx, d.Id())
 		if err != nil {
-			if util.IsStatus404ByInt(resp) {
+			if util.IsStatus404(resp) {
 				// Responsemanagement Response deleted
 				log.Printf("Deleted Responsemanagement Response %s", d.Id())
 				return nil
 			}
 			return retry.NonRetryableError(fmt.Errorf("Error deleting Responsemanagement Response %s: %s", d.Id(), err))
 		}
-
 		return retry.RetryableError(fmt.Errorf("Responsemanagement Response %s still exists", d.Id()))
 	})
 }

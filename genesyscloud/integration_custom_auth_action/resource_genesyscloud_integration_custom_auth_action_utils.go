@@ -33,7 +33,6 @@ func BuildSdkCustomAuthActionConfig(d *schema.ResourceData) *platformclientv2.Ac
 		Request:  integrationAction.BuildSdkActionConfigRequest(d),
 		Response: integrationAction.BuildSdkActionConfigResponse(d),
 	}
-
 	return ActionConfig
 }
 
@@ -42,23 +41,22 @@ func BuildSdkCustomAuthActionConfig(d *schema.ResourceData) *platformclientv2.Ac
 // for a Custom Auth Data Action(Genesys Cloud managed) to exist for the integration.
 func isIntegrationAndCredTypesCorrect(ctx context.Context, cap *customAuthActionsProxy, integrationId string) (bool, error) {
 	// Check that the integration is the correct type
-	integType, err := cap.getIntegrationType(ctx, integrationId)
+	integType, resp, err := cap.getIntegrationType(ctx, integrationId)
 	if err != nil {
-		return false, fmt.Errorf("cannot identify integration type of integration %s: %v", integrationId, err)
+		return false, fmt.Errorf("cannot identify integration type of integration %s: %v %v", integrationId, err, resp)
 	}
 	if integType != customRestIntegrationType {
 		return false, fmt.Errorf("integration should be of type %v to use custom auth action. Actual: %v", customRestIntegrationType, integType)
 	}
 
 	// Check credentials
-	credType, err := cap.getIntegrationCredentialsType(ctx, integrationId)
+	credType, resp, err := cap.getIntegrationCredentialsType(ctx, integrationId)
 	if err != nil {
 		return false, err
 	}
 	if credType != customAuthCredentialType {
-		return false, fmt.Errorf("credentials type of integration %s should be %s", integrationId, customAuthCredentialType)
+		return false, fmt.Errorf("credentials type of integration %s should be %s %v", integrationId, customAuthCredentialType, resp)
 	}
-
 	return true, nil
 }
 

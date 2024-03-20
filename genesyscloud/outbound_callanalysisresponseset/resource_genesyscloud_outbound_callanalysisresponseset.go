@@ -25,14 +25,13 @@ func getAllAuthOutboundCallanalysisresponsesets(ctx context.Context, clientConfi
 	resources := make(resourceExporter.ResourceIDMetaMap)
 	proxy := getOutboundCallanalysisresponsesetProxy(clientConfig)
 
-	responseSets, getErr := proxy.getAllOutboundCallanalysisresponseset(ctx)
+	responseSets, resp, getErr := proxy.getAllOutboundCallanalysisresponseset(ctx)
 	if getErr != nil {
-		return nil, diag.Errorf("Failed to get page of call analysis response set configs: %v", getErr)
+		return nil, diag.Errorf("Failed to get page of call analysis response set configs: %v %v", getErr, resp)
 	}
 	for _, responseSet := range *responseSets {
 		resources[*responseSet.Id] = &resourceExporter.ResourceMeta{Name: *responseSet.Name}
 	}
-
 	return resources, nil
 }
 
@@ -44,11 +43,10 @@ func createOutboundCallanalysisresponseset(ctx context.Context, d *schema.Resour
 	responseSet := getResponseSetFromResourceData(d)
 
 	log.Printf("Creating Outbound Call Analysis Response Set %s", *responseSet.Name)
-	outboundCallanalysisresponseset, err := proxy.createOutboundCallanalysisresponseset(ctx, &responseSet)
+	outboundCallanalysisresponseset, resp, err := proxy.createOutboundCallanalysisresponseset(ctx, &responseSet)
 	if err != nil {
-		return diag.Errorf("Failed to create Outbound Call Analysis Response Set %s: %s", *responseSet.Name, err)
+		return diag.Errorf("Failed to create Outbound Call Analysis Response Set %s: %s %v", *responseSet.Name, err, resp)
 	}
-
 	d.SetId(*outboundCallanalysisresponseset.Id)
 
 	log.Printf("Created Outbound Call Analysis Response Set %s %s", *responseSet.Name, *outboundCallanalysisresponseset.Id)
@@ -65,7 +63,7 @@ func readOutboundCallanalysisresponseset(ctx context.Context, d *schema.Resource
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		responseSet, resp, getErr := proxy.getOutboundCallanalysisresponsesetById(ctx, d.Id())
 		if getErr != nil {
-			if util.IsStatus404ByInt(resp) {
+			if util.IsStatus404(resp) {
 				return retry.RetryableError(fmt.Errorf("failed to read Outbound Call Analysis Response Set %s: %s", d.Id(), getErr))
 			}
 			return retry.NonRetryableError(fmt.Errorf("failed to read Outbound Call Analysis Response Set %s: %s", d.Id(), getErr))
@@ -89,11 +87,10 @@ func updateOutboundCallanalysisresponseset(ctx context.Context, d *schema.Resour
 	responseSet := getResponseSetFromResourceData(d)
 
 	log.Printf("Updating Outbound Call Analysis Response Set %s %s", *responseSet.Name, d.Id())
-	_, err := proxy.updateOutboundCallanalysisresponseset(ctx, d.Id(), &responseSet)
+	_, resp, err := proxy.updateOutboundCallanalysisresponseset(ctx, d.Id(), &responseSet)
 	if err != nil {
-		return diag.Errorf("Failed to update Outbound Call Analysis Response Set %s: %s", *responseSet.Name, err)
+		return diag.Errorf("Failed to update Outbound Call Analysis Response Set %s: %s %v", *responseSet.Name, err, resp)
 	}
-
 	log.Printf("Updated Outbound Call Analysis Response Set %s %s", *responseSet.Name, d.Id())
 	return readOutboundCallanalysisresponseset(ctx, d, meta)
 }
@@ -118,14 +115,13 @@ func deleteOutboundCallanalysisresponseset(ctx context.Context, d *schema.Resour
 	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		_, resp, err := proxy.getOutboundCallanalysisresponsesetById(ctx, d.Id())
 		if err != nil {
-			if util.IsStatus404ByInt(resp) {
+			if util.IsStatus404(resp) {
 				// Outbound Call Analysis Response Set deleted
 				log.Printf("Deleted Outbound Call Analysis Response Set %s", d.Id())
 				return nil
 			}
 			return retry.NonRetryableError(fmt.Errorf("error deleting Outbound Call Analysis Response Set %s: %s", d.Id(), err))
 		}
-
 		return retry.RetryableError(fmt.Errorf("Outbound Call Analysis Response Set %s still exists", d.Id()))
 	})
 }

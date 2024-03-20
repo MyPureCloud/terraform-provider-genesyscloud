@@ -17,10 +17,10 @@ func dataSourceResponseManagementResponseAssetRead(ctx context.Context, d *schem
 
 	name := d.Get("name").(string)
 	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
-		responseId, retryable, err := proxy.getRespManagementRespAssetByName(ctx, name)
+		responseId, retryable, resp, err := proxy.getRespManagementRespAssetByName(ctx, name)
 
 		if err != nil && !retryable {
-			return retry.NonRetryableError(fmt.Errorf("Error searching responsemanagement response asset %s: %s", name, err))
+			return retry.NonRetryableError(fmt.Errorf("Error searching responsemanagement response asset %s: %s %v", name, err, resp))
 		}
 		if retryable {
 			return retry.RetryableError(fmt.Errorf("No responsemanagement response asset found with name %s", name))

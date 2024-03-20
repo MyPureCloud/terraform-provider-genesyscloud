@@ -98,7 +98,6 @@ func flattenCampaignTimeslots(campaigntimeslots []platformclientv2.Campaigntimes
 
 		campaigntimeslotSet.Add(campaigntimeslotMap)
 	}
-
 	return campaigntimeslotSet
 }
 
@@ -120,7 +119,6 @@ func flattenCallableTimes(callabletimes []platformclientv2.Callabletime) *schema
 
 		callabletimeSet.Add(callabletimeMap)
 	}
-
 	return callabletimeSet
 }
 

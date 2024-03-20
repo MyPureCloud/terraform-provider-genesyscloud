@@ -36,9 +36,9 @@ func createRespManagementRespAsset(ctx context.Context, d *schema.ResourceData, 
 	}
 
 	log.Printf("Creating Responsemanagement response asset %s", fileName)
-	postResponseData, _, err := proxy.createRespManagementRespAsset(ctx, &sdkResponseAsset)
+	postResponseData, resp, err := proxy.createRespManagementRespAsset(ctx, &sdkResponseAsset)
 	if err != nil {
-		return diag.Errorf("Failed to upload response asset %s: %v", fileName, err)
+		return diag.Errorf("Failed to upload response asset %s: %v %v", fileName, err, resp)
 	}
 
 	headers := *postResponseData.Headers
@@ -105,9 +105,9 @@ func updateRespManagementRespAsset(ctx context.Context, d *schema.ResourceData, 
 	}
 
 	log.Printf("Updating Responsemanagement response asset %s", d.Id())
-	putResponseData, _, err := proxy.updateRespManagementRespAsset(ctx, d.Id(), &bodyRequest)
+	putResponseData, resp, err := proxy.updateRespManagementRespAsset(ctx, d.Id(), &bodyRequest)
 	if err != nil {
-		return diag.Errorf("Failed to update Responsemanagement response asset %s: %v", d.Id(), err)
+		return diag.Errorf("Failed to update Responsemanagement response asset %s: %v %v", d.Id(), err, resp)
 	}
 
 	// Adding a sleep with retry logic to determine when the division ID has actually been updated.
@@ -115,9 +115,9 @@ func updateRespManagementRespAsset(ctx context.Context, d *schema.ResourceData, 
 	for i := 0; i < maxRetries; i++ {
 		log.Printf("Reading response asset %s", d.Id())
 		time.Sleep(20 * time.Second)
-		getResponseData, _, err := proxy.getRespManagementRespAssetById(ctx, d.Id())
+		getResponseData, resp, err := proxy.getRespManagementRespAssetById(ctx, d.Id())
 		if err != nil {
-			return diag.Errorf("Failed to read response asset %s: %v", d.Id(), err)
+			return diag.Errorf("Failed to read response asset %s: %v %v", d.Id(), err, resp)
 		}
 		if *getResponseData.Division.Id == *putResponseData.Division.Id {
 			log.Printf("Updated Responsemanagement response asset %s", d.Id())

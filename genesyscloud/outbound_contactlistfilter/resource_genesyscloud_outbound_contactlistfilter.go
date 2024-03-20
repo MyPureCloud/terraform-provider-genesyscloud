@@ -25,9 +25,9 @@ func getAllAuthOutboundContactlistfilters(ctx context.Context, clientConfig *pla
 	resources := make(resourceExporter.ResourceIDMetaMap)
 	proxy := getOutboundContactlistfilterProxy(clientConfig)
 
-	contactListFilters, err := proxy.getAllOutboundContactlistfilter(ctx)
+	contactListFilters, resp, err := proxy.getAllOutboundContactlistfilter(ctx)
 	if err != nil {
-		return nil, diag.Errorf("Failed to get contact list filters: %v", err)
+		return nil, diag.Errorf("Failed to get contact list filters: %v %v", err, resp)
 	}
 
 	for _, contactListFilter := range *contactListFilters {
@@ -45,9 +45,9 @@ func createOutboundContactlistfilter(ctx context.Context, d *schema.ResourceData
 	contactListFilter := getContactlistfilterFromResourceData(d)
 
 	log.Printf("Creating Outbound Contact List Filter %s", *contactListFilter.Name)
-	outboundContactListFilter, err := proxy.createOutboundContactlistfilter(ctx, &contactListFilter)
+	outboundContactListFilter, resp, err := proxy.createOutboundContactlistfilter(ctx, &contactListFilter)
 	if err != nil {
-		return diag.Errorf("Failed to create Outbound Contact List Filter %s: %s", *contactListFilter.Name, err)
+		return diag.Errorf("Failed to create Outbound Contact List Filter %s: %s %v", *contactListFilter.Name, err, resp)
 	}
 
 	d.SetId(*outboundContactListFilter.Id)
@@ -66,7 +66,7 @@ func readOutboundContactlistfilter(ctx context.Context, d *schema.ResourceData, 
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		sdkContactListFilter, resp, getErr := proxy.getOutboundContactlistfilterById(ctx, d.Id())
 		if getErr != nil {
-			if util.IsStatus404ByInt(resp) {
+			if util.IsStatus404(resp) {
 				return retry.RetryableError(fmt.Errorf("failed to read Outbound Contact List Filter %s: %s", d.Id(), getErr))
 			}
 			return retry.NonRetryableError(fmt.Errorf("failed to read Outbound Contact List Filter %s: %s", d.Id(), getErr))
@@ -92,9 +92,9 @@ func updateOutboundContactlistfilter(ctx context.Context, d *schema.ResourceData
 	contactListFilter := getContactlistfilterFromResourceData(d)
 
 	log.Printf("Updating Outbound Contact List Filter %s", *contactListFilter.Name)
-	_, err := proxy.updateOutboundContactlistfilter(ctx, d.Id(), &contactListFilter)
+	_, resp, err := proxy.updateOutboundContactlistfilter(ctx, d.Id(), &contactListFilter)
 	if err != nil {
-		diag.Errorf("Failed to update Outbound Contact List Filter %s %s: %s", *contactListFilter.Name, d.Id(), err)
+		diag.Errorf("Failed to update Outbound Contact List Filter %s %s: %s %v", *contactListFilter.Name, d.Id(), err, resp)
 	}
 
 	log.Printf("Updated Outbound Contact List Filter %s", *contactListFilter.Name)
@@ -121,14 +121,13 @@ func deleteOutboundContactlistfilter(ctx context.Context, d *schema.ResourceData
 	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		_, resp, err := proxy.getOutboundContactlistfilterById(ctx, d.Id())
 		if err != nil {
-			if util.IsStatus404ByInt(resp) {
+			if util.IsStatus404(resp) {
 				// Outbound Contact list filter deleted
 				log.Printf("Deleted Outbound Contact List Filter %s", d.Id())
 				return nil
 			}
 			return retry.NonRetryableError(fmt.Errorf("error deleting Outbound Contact List Filter %s: %s", d.Id(), err))
 		}
-
 		return retry.RetryableError(fmt.Errorf("Outbound Contact List Filter %s still exists", d.Id()))
 	})
 }

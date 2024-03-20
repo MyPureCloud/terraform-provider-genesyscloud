@@ -228,7 +228,6 @@ func flattenConditions(conditions *[]platformclientv2.Condition) []interface{} {
 
 		conditionList = append(conditionList, conditionMap)
 	}
-
 	return conditionList
 }
 

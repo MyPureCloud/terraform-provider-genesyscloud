@@ -18,11 +18,11 @@ out during testing.
 var internalProxy *outboundFilespecificationtemplateProxy
 
 // Type definitions for each func on our proxy, so we can easily mock them out later
-type createOutboundFilespecificationtemplateFunc func(ctx context.Context, p *outboundFilespecificationtemplateProxy, fileSpecificationTemplate *platformclientv2.Filespecificationtemplate) (*platformclientv2.Filespecificationtemplate, error)
-type getAllOutboundFilespecificationtemplateFunc func(ctx context.Context, p *outboundFilespecificationtemplateProxy, name string) (*[]platformclientv2.Filespecificationtemplate, error)
-type getOutboundFilespecificationtemplateIdByNameFunc func(ctx context.Context, p *outboundFilespecificationtemplateProxy, name string) (id string, retryable bool, err error)
-type getOutboundFilespecificationtemplateByIdFunc func(ctx context.Context, p *outboundFilespecificationtemplateProxy, id string) (fileSpecificationTemplate *platformclientv2.Filespecificationtemplate, responseCode int, err error)
-type updateOutboundFilespecificationtemplateFunc func(ctx context.Context, p *outboundFilespecificationtemplateProxy, id string, fileSpecificationTemplate *platformclientv2.Filespecificationtemplate) (*platformclientv2.Filespecificationtemplate, error)
+type createOutboundFilespecificationtemplateFunc func(ctx context.Context, p *outboundFilespecificationtemplateProxy, fileSpecificationTemplate *platformclientv2.Filespecificationtemplate) (*platformclientv2.Filespecificationtemplate, *platformclientv2.APIResponse, error)
+type getAllOutboundFilespecificationtemplateFunc func(ctx context.Context, p *outboundFilespecificationtemplateProxy, name string) (*[]platformclientv2.Filespecificationtemplate, *platformclientv2.APIResponse, error)
+type getOutboundFilespecificationtemplateIdByNameFunc func(ctx context.Context, p *outboundFilespecificationtemplateProxy, name string) (id string, retryable bool, response *platformclientv2.APIResponse, err error)
+type getOutboundFilespecificationtemplateByIdFunc func(ctx context.Context, p *outboundFilespecificationtemplateProxy, id string) (fileSpecificationTemplate *platformclientv2.Filespecificationtemplate, response *platformclientv2.APIResponse, err error)
+type updateOutboundFilespecificationtemplateFunc func(ctx context.Context, p *outboundFilespecificationtemplateProxy, id string, fileSpecificationTemplate *platformclientv2.Filespecificationtemplate) (*platformclientv2.Filespecificationtemplate, *platformclientv2.APIResponse, error)
 type deleteOutboundFilespecificationtemplateFunc func(ctx context.Context, p *outboundFilespecificationtemplateProxy, id string) (response *platformclientv2.APIResponse, err error)
 
 // outboundFilespecificationtemplateProxy contains all the methods that call genesys cloud APIs.
@@ -64,27 +64,27 @@ func getOutboundFilespecificationtemplateProxy(clientConfig *platformclientv2.Co
 }
 
 // createOutboundFilespecificationtemplate creates a Genesys Cloud outbound filespecificationtemplate
-func (p *outboundFilespecificationtemplateProxy) createOutboundFilespecificationtemplate(ctx context.Context, outboundFilespecificationtemplate *platformclientv2.Filespecificationtemplate) (*platformclientv2.Filespecificationtemplate, error) {
+func (p *outboundFilespecificationtemplateProxy) createOutboundFilespecificationtemplate(ctx context.Context, outboundFilespecificationtemplate *platformclientv2.Filespecificationtemplate) (*platformclientv2.Filespecificationtemplate, *platformclientv2.APIResponse, error) {
 	return p.createOutboundFilespecificationtemplateAttr(ctx, p, outboundFilespecificationtemplate)
 }
 
 // getAllOutboundFilespecificationtemplate retrieves all Genesys Cloud outbound filespecificationtemplate
-func (p *outboundFilespecificationtemplateProxy) getAllOutboundFilespecificationtemplate(ctx context.Context) (*[]platformclientv2.Filespecificationtemplate, error) {
+func (p *outboundFilespecificationtemplateProxy) getAllOutboundFilespecificationtemplate(ctx context.Context) (*[]platformclientv2.Filespecificationtemplate, *platformclientv2.APIResponse, error) {
 	return p.getAllOutboundFilespecificationtemplateAttr(ctx, p, "")
 }
 
 // getOutboundFilespecificationtemplateIdByName returns a single Genesys Cloud outbound filespecificationtemplate by name
-func (p *outboundFilespecificationtemplateProxy) getOutboundFilespecificationtemplateIdByName(ctx context.Context, name string) (id string, retryable bool, err error) {
+func (p *outboundFilespecificationtemplateProxy) getOutboundFilespecificationtemplateIdByName(ctx context.Context, name string) (id string, retryable bool, response *platformclientv2.APIResponse, err error) {
 	return p.getOutboundFilespecificationtemplateIdByNameAttr(ctx, p, name)
 }
 
 // getOutboundFilespecificationtemplateById returns a single Genesys Cloud outbound filespecificationtemplate by id
-func (p *outboundFilespecificationtemplateProxy) getOutboundFilespecificationtemplateById(ctx context.Context, id string) (outboundFilespecificationtemplate *platformclientv2.Filespecificationtemplate, statusCode int, err error) {
+func (p *outboundFilespecificationtemplateProxy) getOutboundFilespecificationtemplateById(ctx context.Context, id string) (outboundFilespecificationtemplate *platformclientv2.Filespecificationtemplate, response *platformclientv2.APIResponse, err error) {
 	return p.getOutboundFilespecificationtemplateByIdAttr(ctx, p, id)
 }
 
 // updateOutboundFilespecificationtemplate updates a Genesys Cloud outbound filespecificationtemplate
-func (p *outboundFilespecificationtemplateProxy) updateOutboundFilespecificationtemplate(ctx context.Context, id string, outboundFilespecificationtemplate *platformclientv2.Filespecificationtemplate) (*platformclientv2.Filespecificationtemplate, error) {
+func (p *outboundFilespecificationtemplateProxy) updateOutboundFilespecificationtemplate(ctx context.Context, id string, outboundFilespecificationtemplate *platformclientv2.Filespecificationtemplate) (*platformclientv2.Filespecificationtemplate, *platformclientv2.APIResponse, error) {
 	return p.updateOutboundFilespecificationtemplateAttr(ctx, p, id, outboundFilespecificationtemplate)
 }
 
@@ -95,29 +95,28 @@ func (p *outboundFilespecificationtemplateProxy) deleteOutboundFilespecification
 
 // createOutboundFilespecificationtemplateFn is an implementation function
 // for creating a Genesys Cloud outbound filespecificationtemplate
-func createOutboundFilespecificationtemplateFn(ctx context.Context, p *outboundFilespecificationtemplateProxy, outboundFilespecificationtemplate *platformclientv2.Filespecificationtemplate) (*platformclientv2.Filespecificationtemplate, error) {
-	fst, _, err := p.outboundApi.PostOutboundFilespecificationtemplates(*outboundFilespecificationtemplate)
+func createOutboundFilespecificationtemplateFn(ctx context.Context, p *outboundFilespecificationtemplateProxy, outboundFilespecificationtemplate *platformclientv2.Filespecificationtemplate) (*platformclientv2.Filespecificationtemplate, *platformclientv2.APIResponse, error) {
+	fst, resp, err := p.outboundApi.PostOutboundFilespecificationtemplates(*outboundFilespecificationtemplate)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to create file specification template %s", err)
+		return nil, resp, fmt.Errorf("Failed to create file specification template %s", err)
 	}
-
-	return fst, nil
+	return fst, resp, nil
 }
 
 // getAllOutboundFilespecificationtemplateFn is the implementation for retrieving
 // all outbound filespecificationtemplate in Genesys Cloud
-func getAllOutboundFilespecificationtemplateFn(ctx context.Context, p *outboundFilespecificationtemplateProxy, name string) (*[]platformclientv2.Filespecificationtemplate, error) {
+func getAllOutboundFilespecificationtemplateFn(ctx context.Context, p *outboundFilespecificationtemplateProxy, name string) (*[]platformclientv2.Filespecificationtemplate, *platformclientv2.APIResponse, error) {
 	var allFileSpecificationTemplates []platformclientv2.Filespecificationtemplate
 	const pageSize = 100
 
-	fileSpecificationTemplates, _, err := p.outboundApi.GetOutboundFilespecificationtemplates(
+	fileSpecificationTemplates, resp, err := p.outboundApi.GetOutboundFilespecificationtemplates(
 		pageSize, 1, true, "", name, "", "")
 	if err != nil {
-		return nil, fmt.Errorf("Failed to get file specification templates: %v", err)
+		return nil, resp, fmt.Errorf("Failed to get file specification templates: %v", err)
 	}
 
 	if fileSpecificationTemplates.Entities == nil || len(*fileSpecificationTemplates.Entities) == 0 {
-		return &allFileSpecificationTemplates, nil
+		return &allFileSpecificationTemplates, resp, nil
 	}
 
 	for _, fileSpecificationTemplate := range *fileSpecificationTemplates.Entities {
@@ -125,10 +124,10 @@ func getAllOutboundFilespecificationtemplateFn(ctx context.Context, p *outboundF
 	}
 
 	for pageNum := 2; pageNum <= *fileSpecificationTemplates.PageCount; pageNum++ {
-		fileSpecificationTemplates, _, err := p.outboundApi.GetOutboundFilespecificationtemplates(
+		fileSpecificationTemplates, resp, err := p.outboundApi.GetOutboundFilespecificationtemplates(
 			pageSize, pageNum, true, "", "", "", "")
 		if err != nil {
-			return nil, fmt.Errorf("Failed to get file specification templates: %v", err)
+			return nil, resp, fmt.Errorf("Failed to get file specification templates: %v", err)
 		}
 
 		if fileSpecificationTemplates.Entities == nil || len(*fileSpecificationTemplates.Entities) == 0 {
@@ -139,58 +138,55 @@ func getAllOutboundFilespecificationtemplateFn(ctx context.Context, p *outboundF
 			allFileSpecificationTemplates = append(allFileSpecificationTemplates, fileSpecificationTemplate)
 		}
 	}
-
-	return &allFileSpecificationTemplates, nil
+	return &allFileSpecificationTemplates, resp, nil
 }
 
 // getOutboundFilespecificationtemplateIdByNameFn is an implementation of the function
 // to get a Genesys Cloud outbound filespecificationtemplate by name
-func getOutboundFilespecificationtemplateIdByNameFn(ctx context.Context, p *outboundFilespecificationtemplateProxy, name string) (id string, retryable bool, err error) {
-	fileSpecificationTemplates, err := getAllOutboundFilespecificationtemplateFn(ctx, p, name)
+func getOutboundFilespecificationtemplateIdByNameFn(ctx context.Context, p *outboundFilespecificationtemplateProxy, name string) (id string, retryable bool, response *platformclientv2.APIResponse, err error) {
+	fileSpecificationTemplates, resp, err := getAllOutboundFilespecificationtemplateFn(ctx, p, name)
 
 	if err != nil {
-		return "", false, err
+		return "", false, resp, err
 	}
 
 	if len(*fileSpecificationTemplates) == 0 {
-		return "", true, fmt.Errorf("No file specification template found with name %s", name)
+		return "", true, resp, fmt.Errorf("No file specification template found with name %s", name)
 	}
 
 	for _, fileSpecificationTemplate := range *fileSpecificationTemplates {
 		if *fileSpecificationTemplate.Name == name {
 			log.Printf("Retrieved the outbound file specification template id %s by name %s", *fileSpecificationTemplate.Id, name)
-			return *fileSpecificationTemplate.Id, false, nil
+			return *fileSpecificationTemplate.Id, false, resp, nil
 		}
 	}
-
-	return "", true, fmt.Errorf("Unable to find outbound file specification template with name %s", name)
+	return "", true, resp, fmt.Errorf("Unable to find outbound file specification template with name %s", name)
 }
 
 // getOutboundFilespecificationtemplateByIdFn is an implementation of the function
 // to get a Genesys Cloud outbound filespecificationtemplate by id
-func getOutboundFilespecificationtemplateByIdFn(ctx context.Context, p *outboundFilespecificationtemplateProxy, id string) (outboundFilespecificationtemplate *platformclientv2.Filespecificationtemplate, statusCode int, err error) {
+func getOutboundFilespecificationtemplateByIdFn(ctx context.Context, p *outboundFilespecificationtemplateProxy, id string) (outboundFilespecificationtemplate *platformclientv2.Filespecificationtemplate, response *platformclientv2.APIResponse, err error) {
 	fst, resp, err := p.outboundApi.GetOutboundFilespecificationtemplate(id)
 	if err != nil {
-		return nil, resp.StatusCode, fmt.Errorf("Failed to retrieve file specification template by id %s: %s", id, err)
+		return nil, resp, fmt.Errorf("Failed to retrieve file specification template by id %s: %s", id, err)
 	}
-
-	return fst, resp.StatusCode, nil
+	return fst, resp, nil
 }
 
 // updateOutboundFilespecificationtemplateFn is an implementation of the function
 // to update a Genesys Cloud outbound filespecificationtemplate
-func updateOutboundFilespecificationtemplateFn(ctx context.Context, p *outboundFilespecificationtemplateProxy, id string, outboundFilespecificationtemplate *platformclientv2.Filespecificationtemplate) (*platformclientv2.Filespecificationtemplate, error) {
-	fst, _, err := getOutboundFilespecificationtemplateByIdFn(ctx, p, id)
+func updateOutboundFilespecificationtemplateFn(ctx context.Context, p *outboundFilespecificationtemplateProxy, id string, outboundFilespecificationtemplate *platformclientv2.Filespecificationtemplate) (*platformclientv2.Filespecificationtemplate, *platformclientv2.APIResponse, error) {
+	fst, resp, err := getOutboundFilespecificationtemplateByIdFn(ctx, p, id)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to file specification template by id %s: %s", id, err)
+		return nil, resp, fmt.Errorf("Failed to file specification template by id %s: %s", id, err)
 	}
 
 	outboundFilespecificationtemplate.Version = fst.Version
-	fileSpecificationTemplate, _, err := p.outboundApi.PutOutboundFilespecificationtemplate(id, *outboundFilespecificationtemplate)
+	fileSpecificationTemplate, resp, err := p.outboundApi.PutOutboundFilespecificationtemplate(id, *outboundFilespecificationtemplate)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to update file specification template: %s", err)
+		return nil, resp, fmt.Errorf("Failed to update file specification template: %s", err)
 	}
-	return fileSpecificationTemplate, nil
+	return fileSpecificationTemplate, resp, nil
 }
 
 // deleteOutboundFilespecificationtemplateFn is an implementation function for

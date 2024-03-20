@@ -18,12 +18,12 @@ out during testing.
 var internalProxy *outboundSequenceProxy
 
 // Type definitions for each func on our proxy so we can easily mock them out later
-type createOutboundSequenceFunc func(ctx context.Context, p *outboundSequenceProxy, campaignSequence *platformclientv2.Campaignsequence) (*platformclientv2.Campaignsequence, error)
-type getAllOutboundSequenceFunc func(ctx context.Context, p *outboundSequenceProxy) (*[]platformclientv2.Campaignsequence, error)
-type getOutboundSequenceIdByNameFunc func(ctx context.Context, p *outboundSequenceProxy, name string) (id string, retryable bool, err error)
-type getOutboundSequenceByIdFunc func(ctx context.Context, p *outboundSequenceProxy, id string) (campaignSequence *platformclientv2.Campaignsequence, responseCode int, err error)
-type updateOutboundSequenceFunc func(ctx context.Context, p *outboundSequenceProxy, id string, campaignSequence *platformclientv2.Campaignsequence) (*platformclientv2.Campaignsequence, error)
-type deleteOutboundSequenceFunc func(ctx context.Context, p *outboundSequenceProxy, id string) (responseCode int, err error)
+type createOutboundSequenceFunc func(ctx context.Context, p *outboundSequenceProxy, campaignSequence *platformclientv2.Campaignsequence) (*platformclientv2.Campaignsequence, *platformclientv2.APIResponse, error)
+type getAllOutboundSequenceFunc func(ctx context.Context, p *outboundSequenceProxy) (*[]platformclientv2.Campaignsequence, *platformclientv2.APIResponse, error)
+type getOutboundSequenceIdByNameFunc func(ctx context.Context, p *outboundSequenceProxy, name string) (id string, retryable bool, response *platformclientv2.APIResponse, err error)
+type getOutboundSequenceByIdFunc func(ctx context.Context, p *outboundSequenceProxy, id string) (campaignSequence *platformclientv2.Campaignsequence, response *platformclientv2.APIResponse, err error)
+type updateOutboundSequenceFunc func(ctx context.Context, p *outboundSequenceProxy, id string, campaignSequence *platformclientv2.Campaignsequence) (*platformclientv2.Campaignsequence, *platformclientv2.APIResponse, error)
+type deleteOutboundSequenceFunc func(ctx context.Context, p *outboundSequenceProxy, id string) (response *platformclientv2.APIResponse, err error)
 
 // outboundSequenceProxy contains all of the methods that call genesys cloud APIs.
 type outboundSequenceProxy struct {
@@ -58,136 +58,129 @@ func getOutboundSequenceProxy(clientConfig *platformclientv2.Configuration) *out
 	if internalProxy == nil {
 		internalProxy = newOutboundSequenceProxy(clientConfig)
 	}
-
 	return internalProxy
 }
 
 // createOutboundSequence creates a Genesys Cloud outbound sequence
-func (p *outboundSequenceProxy) createOutboundSequence(ctx context.Context, outboundSequence *platformclientv2.Campaignsequence) (*platformclientv2.Campaignsequence, error) {
+func (p *outboundSequenceProxy) createOutboundSequence(ctx context.Context, outboundSequence *platformclientv2.Campaignsequence) (*platformclientv2.Campaignsequence, *platformclientv2.APIResponse, error) {
 	return p.createOutboundSequenceAttr(ctx, p, outboundSequence)
 }
 
 // getOutboundSequence retrieves all Genesys Cloud outbound sequence
-func (p *outboundSequenceProxy) getAllOutboundSequence(ctx context.Context) (*[]platformclientv2.Campaignsequence, error) {
+func (p *outboundSequenceProxy) getAllOutboundSequence(ctx context.Context) (*[]platformclientv2.Campaignsequence, *platformclientv2.APIResponse, error) {
 	return p.getAllOutboundSequenceAttr(ctx, p)
 }
 
 // getOutboundSequenceIdByName returns a single Genesys Cloud outbound sequence by a name
-func (p *outboundSequenceProxy) getOutboundSequenceIdByName(ctx context.Context, name string) (id string, retryable bool, err error) {
+func (p *outboundSequenceProxy) getOutboundSequenceIdByName(ctx context.Context, name string) (id string, retryable bool, response *platformclientv2.APIResponse, err error) {
 	return p.getOutboundSequenceIdByNameAttr(ctx, p, name)
 }
 
 // getOutboundSequenceById returns a single Genesys Cloud outbound sequence by Id
-func (p *outboundSequenceProxy) getOutboundSequenceById(ctx context.Context, id string) (outboundSequence *platformclientv2.Campaignsequence, statusCode int, err error) {
+func (p *outboundSequenceProxy) getOutboundSequenceById(ctx context.Context, id string) (outboundSequence *platformclientv2.Campaignsequence, response *platformclientv2.APIResponse, err error) {
 	return p.getOutboundSequenceByIdAttr(ctx, p, id)
 }
 
 // updateOutboundSequence updates a Genesys Cloud outbound sequence
-func (p *outboundSequenceProxy) updateOutboundSequence(ctx context.Context, id string, outboundSequence *platformclientv2.Campaignsequence) (*platformclientv2.Campaignsequence, error) {
+func (p *outboundSequenceProxy) updateOutboundSequence(ctx context.Context, id string, outboundSequence *platformclientv2.Campaignsequence) (*platformclientv2.Campaignsequence, *platformclientv2.APIResponse, error) {
 	return p.updateOutboundSequenceAttr(ctx, p, id, outboundSequence)
 }
 
 // deleteOutboundSequence deletes a Genesys Cloud outbound sequence by Id
-func (p *outboundSequenceProxy) deleteOutboundSequence(ctx context.Context, id string) (statusCode int, err error) {
+func (p *outboundSequenceProxy) deleteOutboundSequence(ctx context.Context, id string) (response *platformclientv2.APIResponse, err error) {
 	return p.deleteOutboundSequenceAttr(ctx, p, id)
 }
 
 // createOutboundSequenceFn is an implementation function for creating a Genesys Cloud outbound sequence
-func createOutboundSequenceFn(ctx context.Context, p *outboundSequenceProxy, outboundSequence *platformclientv2.Campaignsequence) (*platformclientv2.Campaignsequence, error) {
-	campaignSequence, _, err := p.outboundApi.PostOutboundSequences(*outboundSequence)
+func createOutboundSequenceFn(ctx context.Context, p *outboundSequenceProxy, outboundSequence *platformclientv2.Campaignsequence) (*platformclientv2.Campaignsequence, *platformclientv2.APIResponse, error) {
+	campaignSequence, resp, err := p.outboundApi.PostOutboundSequences(*outboundSequence)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to create outbound sequence: %s", err)
+		return nil, resp, fmt.Errorf("Failed to create outbound sequence: %s", err)
 	}
-
-	return campaignSequence, nil
+	return campaignSequence, resp, nil
 }
 
 // getAllOutboundSequenceFn is the implementation for retrieving all outbound sequence in Genesys Cloud
-func getAllOutboundSequenceFn(ctx context.Context, p *outboundSequenceProxy) (*[]platformclientv2.Campaignsequence, error) {
+func getAllOutboundSequenceFn(ctx context.Context, p *outboundSequenceProxy) (*[]platformclientv2.Campaignsequence, *platformclientv2.APIResponse, error) {
 	var allCampaignSequences []platformclientv2.Campaignsequence
 	const pageSize = 100
 
-	campaignSequences, _, err := p.outboundApi.GetOutboundSequences(pageSize, 1, true, "", "", "", "")
+	campaignSequences, resp, err := p.outboundApi.GetOutboundSequences(pageSize, 1, true, "", "", "", "")
 	if err != nil {
-		return nil, fmt.Errorf("Failed to get campaign sequence: %v", err)
+		return nil, resp, fmt.Errorf("Failed to get campaign sequence: %v", err)
 	}
 	if campaignSequences.Entities == nil || len(*campaignSequences.Entities) == 0 {
-		return &allCampaignSequences, nil
+		return &allCampaignSequences, resp, nil
 	}
 	for _, campaignSequence := range *campaignSequences.Entities {
 		allCampaignSequences = append(allCampaignSequences, campaignSequence)
 	}
 
 	for pageNum := 2; pageNum <= *campaignSequences.PageCount; pageNum++ {
-		campaignSequences, _, err := p.outboundApi.GetOutboundSequences(pageSize, pageNum, true, "", "", "", "")
+		campaignSequences, resp, err := p.outboundApi.GetOutboundSequences(pageSize, pageNum, true, "", "", "", "")
 		if err != nil {
-			return nil, fmt.Errorf("Failed to get campaign sequence: %v", err)
+			return nil, resp, fmt.Errorf("Failed to get campaign sequence: %v", err)
 		}
 
 		if campaignSequences.Entities == nil || len(*campaignSequences.Entities) == 0 {
 			break
 		}
-
 		for _, campaignSequence := range *campaignSequences.Entities {
 			allCampaignSequences = append(allCampaignSequences, campaignSequence)
 		}
 	}
-
-	return &allCampaignSequences, nil
+	return &allCampaignSequences, resp, nil
 }
 
 // getOutboundSequenceIdByNameFn is an implementation of the function to get a Genesys Cloud outbound sequence by name
-func getOutboundSequenceIdByNameFn(ctx context.Context, p *outboundSequenceProxy, name string) (id string, retryable bool, err error) {
-	campaignSequences, _, err := p.outboundApi.GetOutboundSequences(100, 1, true, "", name, "", "")
+func getOutboundSequenceIdByNameFn(ctx context.Context, p *outboundSequenceProxy, name string) (id string, retryable bool, response *platformclientv2.APIResponse, err error) {
+	campaignSequences, resp, err := p.outboundApi.GetOutboundSequences(100, 1, true, "", name, "", "")
 	if err != nil {
-		return "", false, err
+		return "", false, resp, err
 	}
 
 	if campaignSequences.Entities == nil || len(*campaignSequences.Entities) == 0 {
-		return "", true, fmt.Errorf("No outbound sequence found with name %s", name)
+		return "", true, resp, fmt.Errorf("No outbound sequence found with name %s", name)
 	}
 
 	for _, campaignSequence := range *campaignSequences.Entities {
 		if *campaignSequence.Name == name {
 			log.Printf("Retrieved the outbound sequence id %s by name %s", *campaignSequence.Id, name)
-			return *campaignSequence.Id, false, nil
+			return *campaignSequence.Id, false, resp, nil
 		}
 	}
-
-	return "", true, fmt.Errorf("Unable to find outbound sequence with name %s", name)
+	return "", true, resp, fmt.Errorf("Unable to find outbound sequence with name %s", name)
 }
 
 // getOutboundSequenceByIdFn is an implementation of the function to get a Genesys Cloud outbound sequence by Id
-func getOutboundSequenceByIdFn(ctx context.Context, p *outboundSequenceProxy, id string) (outboundSequence *platformclientv2.Campaignsequence, statusCode int, err error) {
+func getOutboundSequenceByIdFn(ctx context.Context, p *outboundSequenceProxy, id string) (outboundSequence *platformclientv2.Campaignsequence, response *platformclientv2.APIResponse, err error) {
 	campaignSequence, resp, err := p.outboundApi.GetOutboundSequence(id)
 	if err != nil {
-		return nil, resp.StatusCode, fmt.Errorf("Failed to retrieve outbound sequence by id %s: %s", id, err)
+		return nil, resp, fmt.Errorf("Failed to retrieve outbound sequence by id %s: %s", id, err)
 	}
-
-	return campaignSequence, resp.StatusCode, nil
+	return campaignSequence, resp, nil
 }
 
 // updateOutboundSequenceFn is an implementation of the function to update a Genesys Cloud outbound sequence
-func updateOutboundSequenceFn(ctx context.Context, p *outboundSequenceProxy, id string, outboundSequence *platformclientv2.Campaignsequence) (*platformclientv2.Campaignsequence, error) {
-	sequence, _, err := getOutboundSequenceByIdFn(ctx, p, id)
+func updateOutboundSequenceFn(ctx context.Context, p *outboundSequenceProxy, id string, outboundSequence *platformclientv2.Campaignsequence) (*platformclientv2.Campaignsequence, *platformclientv2.APIResponse, error) {
+	sequence, resp, err := getOutboundSequenceByIdFn(ctx, p, id)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to sequence by id %s: %s", id, err)
+		return nil, resp, fmt.Errorf("Failed to sequence by id %s: %s", id, err)
 	}
 
 	outboundSequence.Version = sequence.Version
-	campaignSequence, _, err := p.outboundApi.PutOutboundSequence(id, *outboundSequence)
+	campaignSequence, resp, err := p.outboundApi.PutOutboundSequence(id, *outboundSequence)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to update outbound sequence: %s", err)
+		return nil, resp, fmt.Errorf("Failed to update outbound sequence: %s", err)
 	}
-	return campaignSequence, nil
+	return campaignSequence, resp, nil
 }
 
 // deleteOutboundSequenceFn is an implementation function for deleting a Genesys Cloud outbound sequence
-func deleteOutboundSequenceFn(ctx context.Context, p *outboundSequenceProxy, id string) (statusCode int, err error) {
+func deleteOutboundSequenceFn(ctx context.Context, p *outboundSequenceProxy, id string) (response *platformclientv2.APIResponse, err error) {
 	resp, err := p.outboundApi.DeleteOutboundSequence(id)
 	if err != nil {
-		return resp.StatusCode, fmt.Errorf("Failed to delete outbound sequence: %s", err)
+		return resp, fmt.Errorf("Failed to delete outbound sequence: %s", err)
 	}
-
-	return resp.StatusCode, nil
+	return resp, nil
 }
