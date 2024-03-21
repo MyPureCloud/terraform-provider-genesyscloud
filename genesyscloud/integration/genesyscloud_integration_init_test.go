@@ -2,6 +2,7 @@ package integration
 
 import (
 	"sync"
+	"terraform-provider-genesyscloud/genesyscloud/group"
 	"testing"
 
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
@@ -34,7 +35,7 @@ func (r *registerTestInstance) registerTestResources() {
 	defer r.resourceMapMutex.Unlock()
 
 	providerResources["genesyscloud_integration"] = ResourceIntegration()
-	providerResources["genesyscloud_group"] = gcloud.ResourceGroup()
+	providerResources["genesyscloud_group"] = group.ResourceGroup()
 	providerResources["genesyscloud_integration_credential"] = integrationCred.ResourceIntegrationCredential()
 	providerResources["genesyscloud_user"] = gcloud.ResourceUser()
 }
