@@ -22,7 +22,7 @@ func DeleteDidPoolWithStartAndEndNumber(ctx context.Context, startNumber, endNum
 	config := platformclientv2.GetDefaultConfiguration()
 	proxy := getTelephonyDidPoolProxy(config)
 
-	didPoolId, _, err := proxy.getTelephonyDidPoolIdByStartAndEndNumber(ctx, startNumber, endNumber)
+	didPoolId, _, _, err := proxy.getTelephonyDidPoolIdByStartAndEndNumber(ctx, startNumber, endNumber)
 	if err != nil {
 		return nil, err
 	}

@@ -34,15 +34,15 @@ Each proxy implementation:
 var internalProxy *phoneProxy
 
 // Type definitions for each func on our proxy so we can easily mock them out later
-type getAllPhonesFunc func(ctx context.Context, p *phoneProxy) (*[]platformclientv2.Phone, error)
+type getAllPhonesFunc func(ctx context.Context, p *phoneProxy) (*[]platformclientv2.Phone, *platformclientv2.APIResponse, error)
 type createPhoneFunc func(ctx context.Context, p *phoneProxy, phoneConfig *platformclientv2.Phone) (*platformclientv2.Phone, *platformclientv2.APIResponse, error)
 type getPhoneByIdFunc func(ctx context.Context, p *phoneProxy, phoneId string) (*platformclientv2.Phone, *platformclientv2.APIResponse, error)
-type getPhoneByNameFunc func(ctx context.Context, p *phoneProxy, phoneName string) (phone *platformclientv2.Phone, retryable bool, err error)
-type updatePhoneFunc func(ctx context.Context, p *phoneProxy, phoneId string, phoneConfig *platformclientv2.Phone) (*platformclientv2.Phone, error)
-type deletePhoneFunc func(ctx context.Context, p *phoneProxy, phoneId string) (responseCode int, err error)
+type getPhoneByNameFunc func(ctx context.Context, p *phoneProxy, phoneName string) (phone *platformclientv2.Phone, retryable bool, resp *platformclientv2.APIResponse, err error)
+type updatePhoneFunc func(ctx context.Context, p *phoneProxy, phoneId string, phoneConfig *platformclientv2.Phone) (*platformclientv2.Phone, *platformclientv2.APIResponse, error)
+type deletePhoneFunc func(ctx context.Context, p *phoneProxy, phoneId string) (response *platformclientv2.APIResponse, err error)
 
-type getPhoneBaseSettingFunc func(ctx context.Context, p *phoneProxy, phoneBaseSettingsId string) (*platformclientv2.Phonebase, error)
-type getStationOfUserFunc func(ctx context.Context, p *phoneProxy, userId string) (station *platformclientv2.Station, retryable bool, err error)
+type getPhoneBaseSettingFunc func(ctx context.Context, p *phoneProxy, phoneBaseSettingsId string) (*platformclientv2.Phonebase, *platformclientv2.APIResponse, error)
+type getStationOfUserFunc func(ctx context.Context, p *phoneProxy, userId string) (station *platformclientv2.Station, retryable bool, resp *platformclientv2.APIResponse, err error)
 type unassignUserFromStationFunc func(ctx context.Context, p *phoneProxy, stationId string) (*platformclientv2.APIResponse, error)
 type assignUserToStationFunc func(ctx context.Context, p *phoneProxy, userId string, stationId string) (*platformclientv2.APIResponse, error)
 type assignStationAsDefaultFunc func(ctx context.Context, p *phoneProxy, userId string, stationId string) (*platformclientv2.APIResponse, error)
@@ -101,12 +101,11 @@ func getPhoneProxy(clientConfig *platformclientv2.Configuration) *phoneProxy {
 	if internalProxy == nil {
 		internalProxy = newPhoneProxy(clientConfig)
 	}
-
 	return internalProxy
 }
 
 // getAllPhones retrieves all Genesys Cloud Phones
-func (p *phoneProxy) getAllPhones(ctx context.Context) (*[]platformclientv2.Phone, error) {
+func (p *phoneProxy) getAllPhones(ctx context.Context) (*[]platformclientv2.Phone, *platformclientv2.APIResponse, error) {
 	return p.getAllPhonesAttr(ctx, p)
 }
 
@@ -121,27 +120,27 @@ func (p *phoneProxy) getPhoneById(ctx context.Context, phoneId string) (*platfor
 }
 
 // getPhoneByName retrieves a Genesys Cloud Phone by name
-func (p *phoneProxy) getPhoneByName(ctx context.Context, phoneName string) (phone *platformclientv2.Phone, retryable bool, err error) {
+func (p *phoneProxy) getPhoneByName(ctx context.Context, phoneName string) (phone *platformclientv2.Phone, retryable bool, resp *platformclientv2.APIResponse, err error) {
 	return p.getPhoneByNameAttr(ctx, p, phoneName)
 }
 
 // updatePhone updates a Genesys Cloud Phone
-func (p *phoneProxy) updatePhone(ctx context.Context, phoneId string, phoneConfig *platformclientv2.Phone) (*platformclientv2.Phone, error) {
+func (p *phoneProxy) updatePhone(ctx context.Context, phoneId string, phoneConfig *platformclientv2.Phone) (*platformclientv2.Phone, *platformclientv2.APIResponse, error) {
 	return p.updatePhoneAttr(ctx, p, phoneId, phoneConfig)
 }
 
 // deletePhone deletes a Genesys Cloud Phone
-func (p *phoneProxy) deletePhone(ctx context.Context, phoneId string) (responseCode int, err error) {
+func (p *phoneProxy) deletePhone(ctx context.Context, phoneId string) (response *platformclientv2.APIResponse, err error) {
 	return p.deletePhoneAttr(ctx, p, phoneId)
 }
 
 // getPhoneBaseSetting retrieves a Genesys Cloud Phone Base Setting
-func (p *phoneProxy) getPhoneBaseSetting(ctx context.Context, phoneBaseSettingsId string) (*platformclientv2.Phonebase, error) {
+func (p *phoneProxy) getPhoneBaseSetting(ctx context.Context, phoneBaseSettingsId string) (*platformclientv2.Phonebase, *platformclientv2.APIResponse, error) {
 	return p.getPhoneBaseSettingAttr(ctx, p, phoneBaseSettingsId)
 }
 
 // getStationOfUser retrieves the station of a user
-func (p *phoneProxy) getStationOfUser(ctx context.Context, userId string) (*platformclientv2.Station, bool, error) {
+func (p *phoneProxy) getStationOfUser(ctx context.Context, userId string) (*platformclientv2.Station, bool, *platformclientv2.APIResponse, error) {
 	return p.getStationOfUserAttr(ctx, p, userId)
 }
 
@@ -161,7 +160,7 @@ func (p *phoneProxy) assignStationAsDefault(ctx context.Context, userId string, 
 }
 
 // getAllPhonesFn is an implementation function for retrieving all Genesys Cloud Phones
-func getAllPhonesFn(ctx context.Context, p *phoneProxy) (*[]platformclientv2.Phone, error) {
+func getAllPhonesFn(ctx context.Context, p *phoneProxy) (*[]platformclientv2.Phone, *platformclientv2.APIResponse, error) {
 	log.Printf("Entering the getAllPhonesFn method to retrieve all of the phone ids for export")
 	var allPhones []platformclientv2.Phone
 	const pageSize = 100
@@ -170,7 +169,7 @@ func getAllPhonesFn(ctx context.Context, p *phoneProxy) (*[]platformclientv2.Pho
 	phones, response, err := p.edgesApi.GetTelephonyProvidersEdgesPhones(1, pageSize, sortBy, "", "", "", "", "", "", "", "", "", "", "", "", nil, nil)
 	if err != nil || (response != nil && response.StatusCode != http.StatusOK) {
 		log.Printf("getAllPhonesFn:: error encountered while trying to get first page of phone data #%v statusCode: %d", err, response.StatusCode)
-		return nil, err
+		return nil, response, err
 	}
 
 	if phones != nil && phones.Entities != nil {
@@ -183,13 +182,13 @@ func getAllPhonesFn(ctx context.Context, p *phoneProxy) (*[]platformclientv2.Pho
 	} else {
 		log.Printf("getAllPhonesFn:: No phone records were retrieved (phone or on the first call to p.edgesApi.GetTelephonyProvidersEdgesPhones.")
 		phones := make([]platformclientv2.Phone, 0)
-		return &phones, nil
+		return &phones, response, nil
 	}
 
 	for pageNum := 2; pageNum <= *phones.PageCount; pageNum++ {
 		phones, response, err := p.edgesApi.GetTelephonyProvidersEdgesPhones(pageNum, pageSize, sortBy, "", "", "", "", "", "", "", "", "", "", "", "", nil, nil)
 		if err != nil || (response != nil && response.StatusCode != http.StatusOK) {
-			return nil, err
+			return nil, response, err
 		}
 
 		if phones.Entities == nil || len(*phones.Entities) == 0 {
@@ -208,7 +207,7 @@ func getAllPhonesFn(ctx context.Context, p *phoneProxy) (*[]platformclientv2.Pho
 		log.Printf("getAllPhonesFn::  Retrieved phone id %s with phone name: %s\n", *phone.Id, *phone.Name)
 	}
 
-	return &allPhones, nil
+	return &allPhones, response, nil
 }
 
 // createPhoneFn is an implementation function for creating a Genesys Cloud Phone
@@ -217,7 +216,6 @@ func createPhoneFn(ctx context.Context, p *phoneProxy, phoneConfig *platformclie
 	if err != nil {
 		return nil, resp, err
 	}
-
 	return phone, resp, nil
 }
 
@@ -234,80 +232,76 @@ func getPhoneByIdFn(ctx context.Context, p *phoneProxy, phoneId string) (*platfo
 }
 
 // getPhoneByNameFn is an implementation function for retrieving a Genesys Cloud Phone by name
-func getPhoneByNameFn(ctx context.Context, p *phoneProxy, phoneName string) (phone *platformclientv2.Phone, retryable bool, err error) {
+func getPhoneByNameFn(ctx context.Context, p *phoneProxy, phoneName string) (phone *platformclientv2.Phone, retryable bool, resp *platformclientv2.APIResponse, err error) {
 	const pageSize = 100
-	phones, _, err := p.edgesApi.GetTelephonyProvidersEdgesPhones(1, pageSize, "", "", "", "", "", "", "", "", "", "", phoneName, "", "", nil, nil)
+	phones, resp, err := p.edgesApi.GetTelephonyProvidersEdgesPhones(1, pageSize, "", "", "", "", "", "", "", "", "", "", phoneName, "", "", nil, nil)
 	if err != nil {
-		return nil, false, err
+		return nil, false, resp, err
 	}
 	if phones.Entities == nil || len(*phones.Entities) == 0 {
-		return nil, true, fmt.Errorf("failed to find ID of phone '%s'", phoneName)
+		return nil, true, resp, fmt.Errorf("failed to find ID of phone '%s'", phoneName)
 	}
 
 	for _, phone := range *phones.Entities {
 		if *phone.Name == phoneName {
-			return &phone, false, nil
+			return &phone, false, resp, nil
 		}
 	}
 
 	for pageNum := 2; pageNum <= *phones.PageCount; pageNum++ {
-		phones, _, err := p.edgesApi.GetTelephonyProvidersEdgesPhones(pageNum, pageSize, "", "", "", "", "", "", "", "", "", "", phoneName, "", "", nil, nil)
+		phones, resp, err := p.edgesApi.GetTelephonyProvidersEdgesPhones(pageNum, pageSize, "", "", "", "", "", "", "", "", "", "", phoneName, "", "", nil, nil)
 		if err != nil {
-			return nil, false, err
+			return nil, false, resp, err
 		}
 		if phones.Entities == nil {
-			return nil, true, fmt.Errorf("failed to find ID of phone '%s'", phoneName)
+			return nil, true, resp, fmt.Errorf("failed to find ID of phone '%s'", phoneName)
 		}
 
 		for _, phone := range *phones.Entities {
 			if *phone.Name == phoneName {
-				return &phone, false, nil
+				return &phone, false, resp, nil
 			}
 		}
 	}
-
-	return nil, true, fmt.Errorf("failed to find ID of phone '%s'", phoneName)
+	return nil, true, resp, fmt.Errorf("failed to find ID of phone '%s'", phoneName)
 }
 
 // updatePhoneFn is an implementation function for updating a Genesys Cloud Phone
-func updatePhoneFn(ctx context.Context, p *phoneProxy, phoneId string, phoneConfig *platformclientv2.Phone) (*platformclientv2.Phone, error) {
-	phone, _, err := p.edgesApi.PutTelephonyProvidersEdgesPhone(phoneId, *phoneConfig)
+func updatePhoneFn(ctx context.Context, p *phoneProxy, phoneId string, phoneConfig *platformclientv2.Phone) (*platformclientv2.Phone, *platformclientv2.APIResponse, error) {
+	phone, resp, err := p.edgesApi.PutTelephonyProvidersEdgesPhone(phoneId, *phoneConfig)
 	if err != nil {
-		return nil, err
+		return nil, resp, err
 	}
-
-	return phone, err
+	return phone, resp, err
 }
 
 // deletePhoneFn is an implementation function for deleting a Genesys Cloud Phone
-func deletePhoneFn(ctx context.Context, p *phoneProxy, phoneId string) (responseCode int, err error) {
+func deletePhoneFn(ctx context.Context, p *phoneProxy, phoneId string) (response *platformclientv2.APIResponse, err error) {
 	resp, err := p.edgesApi.DeleteTelephonyProvidersEdgesPhone(phoneId)
-	return resp.StatusCode, err
+	return resp, err
 }
 
 // getPhoneBaseSettingFn is an implementation function for retrieving a Genesys Cloud Phone Base Setting
-func getPhoneBaseSettingFn(ctx context.Context, p *phoneProxy, phoneBaseSettingsId string) (*platformclientv2.Phonebase, error) {
-	phoneBase, _, err := p.edgesApi.GetTelephonyProvidersEdgesPhonebasesetting(phoneBaseSettingsId)
+func getPhoneBaseSettingFn(ctx context.Context, p *phoneProxy, phoneBaseSettingsId string) (*platformclientv2.Phonebase, *platformclientv2.APIResponse, error) {
+	phoneBase, resp, err := p.edgesApi.GetTelephonyProvidersEdgesPhonebasesetting(phoneBaseSettingsId)
 	if err != nil {
-		return nil, err
+		return nil, resp, err
 	}
-
-	return phoneBase, nil
+	return phoneBase, resp, nil
 }
 
 // getStationOfUserFn is an implementation function for retrieving a Genesys Cloud User Station
-func getStationOfUserFn(ctx context.Context, p *phoneProxy, userId string) (station *platformclientv2.Station, retryable bool, err error) {
+func getStationOfUserFn(ctx context.Context, p *phoneProxy, userId string) (station *platformclientv2.Station, retryable bool, resp *platformclientv2.APIResponse, err error) {
 	const pageSize = 100
 	const pageNum = 1
-	stations, _, err := p.stationsApi.GetStations(pageSize, pageNum, "", "", "", userId, "", "")
+	stations, resp, err := p.stationsApi.GetStations(pageSize, pageNum, "", "", "", userId, "", "")
 	if err != nil {
-		return nil, false, err
+		return nil, false, resp, err
 	}
 	if stations.Entities == nil || len(*stations.Entities) == 0 {
-		return nil, true, nil
+		return nil, true, resp, nil
 	}
-
-	return &(*stations.Entities)[0], false, err
+	return &(*stations.Entities)[0], false, resp, err
 }
 
 // unassignUserFromStationFn is an implementation function for unassigning a Genesys Cloud User from a Station
