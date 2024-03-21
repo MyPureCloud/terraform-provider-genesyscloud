@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
+	rc "terraform-provider-genesyscloud/genesyscloud/resource_cache"
 )
 
 var internalProxy *groupProxy
@@ -30,10 +31,12 @@ type groupProxy struct {
 	addGroupMembersAttr    addGroupMembersFunc
 	deleteGroupMembersAttr deleteGroupMembersFunc
 	getGroupMembersAttr    getGroupMembersFunc
+	groupCache             rc.CacheInterface[platformclientv2.Group]
 }
 
 func newGroupProxy(clientConfig *platformclientv2.Configuration) *groupProxy {
 	api := platformclientv2.NewGroupsApiWithConfig(clientConfig)
+	groupCache := rc.NewResourceCache[platformclientv2.Group]()
 	return &groupProxy{
 		clientConfig:           clientConfig,
 		groupsApi:              api,
@@ -46,6 +49,7 @@ func newGroupProxy(clientConfig *platformclientv2.Configuration) *groupProxy {
 		addGroupMembersAttr:    addGroupMembersFn,
 		deleteGroupMembersAttr: deleteGroupMembersFn,
 		getGroupMembersAttr:    getGroupMembersFn,
+		groupCache:             groupCache,
 	}
 }
 
@@ -106,6 +110,10 @@ func deleteGroupFn(ctx context.Context, p *groupProxy, id string) (*platformclie
 }
 
 func getGroupByIdFn(ctx context.Context, p *groupProxy, id string) (*platformclientv2.Group, *platformclientv2.APIResponse, error) {
+	group := rc.GetCache(p.groupCache, id)
+	if group != nil {
+		return group, nil, nil
+	}
 	return p.groupsApi.GetGroup(id)
 }
 func addGroupMembersFn(ctx context.Context, p *groupProxy, id string, members *platformclientv2.Groupmembersupdate) (*interface{}, *platformclientv2.APIResponse, error) {
@@ -167,6 +175,10 @@ func getAllGroupFn(ctx context.Context, p *groupProxy) (*[]platformclientv2.Grou
 			return nil, resp, fmt.Errorf("Failed to get page of groups: %v", getErr)
 		}
 		allGroups = append(allGroups, *groups.Entities...)
+	}
+
+	for _, group := range allGroups {
+		rc.SetCache(p.groupCache, *group.Id, group)
 	}
 
 	return &allGroups, nil, nil
