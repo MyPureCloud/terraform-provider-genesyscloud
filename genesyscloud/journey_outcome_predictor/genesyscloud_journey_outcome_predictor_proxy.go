@@ -2,7 +2,6 @@ package journey_outcome_predictor
 
 import (
 	"context"
-	"fmt"
 	"github.com/mypurecloud/platform-client-sdk-go/v123/platformclientv2"
 )
 
@@ -79,7 +78,7 @@ func createJourneyOutcomePredictorFn(ctx context.Context, p *journeyOutcomePredi
 
 	predictor, _, err :=  p.journeyApi.PostJourneyOutcomesPredictors(*outcomePredictor)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to predictor: %s", err)
+		return nil, err
 	}
 
 	return predictor, nil
@@ -91,7 +90,7 @@ func getAllJourneyOutcomePredictorFn(ctx context.Context, p *journeyOutcomePredi
 	predictors, _, err := p.journeyApi.GetJourneyOutcomesPredictors()
 
 	if err != nil {
-		return nil, fmt.Errorf("Failed to get predictors: %s", err)
+		return nil, err
 	}
 
 	for _, predictor := range *predictors.Entities {
@@ -115,7 +114,7 @@ func getJourneyOutcomePredictorByIdFn(ctx context.Context, p *journeyOutcomePred
 func deleteJourneyOutcomePredictorFn(ctx context.Context, p *journeyOutcomePredictorProxy, predictorId string) (statusCode int, err error) {
 	resp, err := p.journeyApi.DeleteJourneyOutcomesPredictor(predictorId)
 	if err != nil {
-		return resp.StatusCode, fmt.Errorf("Failed to delete predictor: %s", err)
+		return resp.StatusCode, err
 	}
 
 	return resp.StatusCode, nil
