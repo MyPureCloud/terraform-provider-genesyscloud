@@ -3,14 +3,15 @@ package routing_email_route
 import (
 	"context"
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
 	"log"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
 
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
@@ -53,14 +54,16 @@ func createRoutingEmailRoute(ctx context.Context, d *schema.ResourceData, meta i
 
 	routingEmailRoute := getRoutingEmailRouteFromResourceData(d)
 
+	replyEmail, err := validateSdkReplyEmailAddress(d)
 	// Checking the self_reference_route flag and routeId rules
-	if err := validateSdkReplyEmailAddress(d); err != nil {
+	if err != nil {
 		return diag.Errorf("Error occurred while validating the reply email address when creating the record: %s", err)
 	}
+
 	replyDomainID, replyRouteID, _ := extractReplyEmailAddressValue(d)
 
 	// If the isSelfReferenceRoute() is set to false, we use the route id provided by the terraform script
-	if !isSelfReferenceRouteSet(d) {
+	if replyEmail && !isSelfReferenceRouteSet(d) {
 		routingEmailRoute.ReplyEmailAddress = buildReplyEmailAddress(replyDomainID, replyRouteID)
 	}
 
@@ -74,7 +77,7 @@ func createRoutingEmailRoute(ctx context.Context, d *schema.ResourceData, meta i
 	log.Printf("Created routing email route %s", *inboundRoute.Id)
 
 	// If the isSelfReferenceRoute() is set to true we need grab the route id for the route and reapply the reply address,
-	if isSelfReferenceRouteSet(d) {
+	if replyEmail && isSelfReferenceRouteSet(d) {
 		inboundRoute.ReplyEmailAddress = buildReplyEmailAddress(replyDomainID, *inboundRoute.Id)
 		_, resp, err = proxy.updateRoutingEmailRoute(ctx, *inboundRoute.Id, domainId, inboundRoute)
 
@@ -102,9 +105,9 @@ func readRoutingEmailRoute(ctx context.Context, d *schema.ResourceData, meta int
 		if getErr != nil {
 			if util.IsStatus404(respCode) {
 				d.SetId("")
-				return retry.RetryableError(fmt.Errorf("Failed to read routing email route %s: %s", d.Id(), getErr))
+				return retry.RetryableError(fmt.Errorf("failed to read routing email route %s: %s", d.Id(), getErr))
 			}
-			return retry.NonRetryableError(fmt.Errorf("Failed to read routing email route %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(fmt.Errorf("failed to read routing email route %s: %s", d.Id(), getErr))
 		}
 
 		for _, inboundRoutes := range *inboundRoutesMap {
@@ -169,15 +172,19 @@ func updateRoutingEmailRoute(ctx context.Context, d *schema.ResourceData, meta i
 	routingEmailRoute := getRoutingEmailRouteFromResourceData(d)
 
 	//Checking the self_reference_route flag and routeId rules
-	if err := validateSdkReplyEmailAddress(d); err != nil {
+	replyEmail, err := validateSdkReplyEmailAddress(d)
+	if err != nil {
 		return diag.Errorf("Error occurred while validating the reply email address while trying to update the record: %s", err)
 	}
+
 	replyDomainID, replyRouteID, _ := extractReplyEmailAddressValue(d)
 
-	if isSelfReferenceRouteSet(d) {
-		routingEmailRoute.ReplyEmailAddress = buildReplyEmailAddress(replyDomainID, d.Id())
-	} else if !isSelfReferenceRouteSet(d) {
-		routingEmailRoute.ReplyEmailAddress = buildReplyEmailAddress(replyDomainID, replyRouteID)
+	if replyEmail {
+		if isSelfReferenceRouteSet(d) {
+			routingEmailRoute.ReplyEmailAddress = buildReplyEmailAddress(replyDomainID, d.Id())
+		} else if !isSelfReferenceRouteSet(d) {
+			routingEmailRoute.ReplyEmailAddress = buildReplyEmailAddress(replyDomainID, replyRouteID)
+		}
 	}
 
 	log.Printf("Updating routing email route %s", d.Id())
@@ -208,7 +215,7 @@ func deleteRoutingEmailRoute(ctx context.Context, d *schema.ResourceData, meta i
 				log.Printf("Deleted routing email route %s", d.Id())
 				return nil
 			}
-			return retry.NonRetryableError(fmt.Errorf("Error deleting routing email route %s: %s", d.Id(), err))
+			return retry.NonRetryableError(fmt.Errorf("error deleting routing email route %s: %s", d.Id(), err))
 		}
 		return retry.RetryableError(fmt.Errorf("routing email route %s still exists", d.Id()))
 	})

@@ -15,7 +15,7 @@ This causes problems with the exporter because our export process expects id to 
 This customer custom router will look at the member_group_type and resolve whether it is SKILLGROUP, GROUP type.  It will then
 find the appropriate resource out of the exporters and build a reference appropriately.
 */
-func MemberGroupsResolver(configMap map[string]interface{}, exporters map[string]*ResourceExporter) error {
+func MemberGroupsResolver(configMap map[string]interface{}, exporters map[string]*ResourceExporter, resourceName string) error {
 
 	memberGroupType := configMap["member_group_type"]
 	memberGroupID := configMap["member_group_id"].(string)
@@ -51,7 +51,7 @@ by the export process. Example: properties = {"contact.Attempts" = ""}.
 During the export process the value associated with the key is set to nil.
 This custom exporter checks if a key has a value of nil and if it does sets it to an empty string so it is exported.
 */
-func RuleSetPropertyResolver(configMap map[string]interface{}, exporters map[string]*ResourceExporter) error {
+func RuleSetPropertyResolver(configMap map[string]interface{}, exporters map[string]*ResourceExporter, resourceName string) error {
 	if properties, ok := configMap["properties"].(map[string]interface{}); ok {
 		for key, value := range properties {
 			if value == nil {
@@ -70,7 +70,7 @@ and we have an array of attributes wrapped in a string.
 
 This customer custom router will look at the skills array if present and resolve each string id find the appropriate resource out of the exporters and build a reference appropriately.
 */
-func RuleSetSkillPropertyResolver(configMap map[string]interface{}, exporters map[string]*ResourceExporter) error {
+func RuleSetSkillPropertyResolver(configMap map[string]interface{}, exporters map[string]*ResourceExporter, resourceName string) error {
 
 	if exporter, ok := exporters["genesyscloud_routing_skill"]; ok {
 		skillIDs := configMap["skills"].(string)
@@ -117,10 +117,20 @@ func FileContentHashResolver(configMap map[string]interface{}, filepath string) 
 	return nil
 }
 
-func CampaignStatusResolver(configMap map[string]interface{}, exporters map[string]*ResourceExporter) error {
+func CampaignStatusResolver(configMap map[string]interface{}, exporters map[string]*ResourceExporter, resourceName string) error {
 	if configMap["campaign_status"] != "off" && configMap["campaign_status"] != "on" {
 		configMap["campaign_status"] = "off"
 	}
 
+	return nil
+}
+
+func ReplyEmailAddressSelfReferenceRouteExporterResolver(configMap map[string]interface{}, exporters map[string]*ResourceExporter, resourceName string) error {
+	routeId := configMap["route_id"].(string)
+	currentRouteReference := fmt.Sprintf("${genesyscloud_routing_email_route.%s.id}", resourceName)
+	if routeId == currentRouteReference {
+		configMap["self_reference_route"] = true
+		configMap["route_id"] = nil
+	}
 	return nil
 }

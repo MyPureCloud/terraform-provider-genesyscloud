@@ -1,10 +1,12 @@
 package routing_email_route
 
 import (
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"sync"
 	"terraform-provider-genesyscloud/genesyscloud"
+	"terraform-provider-genesyscloud/genesyscloud/architect_flow"
 	"testing"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 /*
@@ -30,6 +32,7 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_routing_queue"] = genesyscloud.ResourceRoutingQueue()
 	providerResources["genesyscloud_routing_language"] = genesyscloud.ResourceRoutingLanguage()
 	providerResources["genesyscloud_routing_skill"] = genesyscloud.ResourceRoutingSkill()
+	providerResources["genesyscloud_flow"] = architect_flow.ResourceArchitectFlow()
 }
 
 // initTestResources initializes all test resources and data sources.
