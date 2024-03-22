@@ -43,7 +43,7 @@ func createPhone(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 	if err != nil {
 		return diag.Errorf("failed to create phone %v: %v", *phoneConfig.Name, err)
 	}
-	_, err = validatePhoneHardwareIdRequirements(phoneConfig)
+	//_, err = validatePhoneHardwareIdRequirements(phoneConfig)
 	if err != nil {
 		return diag.Errorf("failed to create phone %v: %v", *phoneConfig.Name, err)
 	}
@@ -132,7 +132,7 @@ func updatePhone(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 	if err != nil {
 		return diag.Errorf("failed to updated phone %v: %v", *phoneConfig.Name, err)
 	}
-	_, err = validatePhoneHardwareIdRequirements(phoneConfig)
+	//_, err = validatePhoneHardwareIdRequirements(phoneConfig)
 	if err != nil {
 		return diag.Errorf("failed to updated phone %v: %v", *phoneConfig.Name, err)
 	}
