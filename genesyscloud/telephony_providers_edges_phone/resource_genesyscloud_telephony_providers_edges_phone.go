@@ -43,10 +43,6 @@ func createPhone(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 	if err != nil {
 		return diag.Errorf("failed to create phone %v: %v", *phoneConfig.Name, err)
 	}
-	//_, err = validatePhoneHardwareIdRequirements(phoneConfig)
-	if err != nil {
-		return diag.Errorf("failed to create phone %v: %v", *phoneConfig.Name, err)
-	}
 	log.Printf("Creating phone %s", *phoneConfig.Name)
 	diagErr := util.RetryWhen(util.IsStatus404, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		phone, resp, err := pp.createPhone(ctx, phoneConfig)
@@ -129,10 +125,6 @@ func updatePhone(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 	pp := getPhoneProxy(sdkConfig)
 
 	phoneConfig, err := getPhoneFromResourceData(ctx, pp, d)
-	if err != nil {
-		return diag.Errorf("failed to updated phone %v: %v", *phoneConfig.Name, err)
-	}
-	//_, err = validatePhoneHardwareIdRequirements(phoneConfig)
 	if err != nil {
 		return diag.Errorf("failed to updated phone %v: %v", *phoneConfig.Name, err)
 	}
