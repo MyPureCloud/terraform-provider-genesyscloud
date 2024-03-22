@@ -45,7 +45,17 @@ func createJourneyOutcomePredictor(ctx context.Context, d *schema.ResourceData, 
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	op := getJourneyOutcomePredictorProxy(sdkConfig)
 
-	predictorRequest := getPredictorFromResourceData(d)
+	outcomeId := d.Get("outcome.0.id").(string)
+
+	outcome := &platformclientv2.Outcomerefrequest{
+		Id: &outcomeId,
+	}
+
+	predictorRequest := platformclientv2.Outcomepredictorrequest{
+		Outcome: outcome,
+	}
+
+	log.Printf("Creating predictor for outcome %s", outcomeId)
 
 	predictor, err := op.createJourneyOutcomePredictor(ctx, &predictorRequest)
 	if err != nil {
@@ -65,7 +75,7 @@ func readJourneyOutcomePredictor(ctx context.Context, d *schema.ResourceData, me
 	log.Printf("Reading predictor %s", d.Id())
 
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
-		_, respCode, getErr := op.getJourneyOutcomePredictorById(ctx, d.Id())
+		predictor, respCode, getErr := op.getJourneyOutcomePredictorById(ctx, d.Id())
 		if getErr != nil {
 			if util.IsStatus404ByInt(respCode) {
 				return retry.RetryableError(fmt.Errorf("Failed to read predictor %s: %s", d.Id(), getErr))
@@ -74,6 +84,7 @@ func readJourneyOutcomePredictor(ctx context.Context, d *schema.ResourceData, me
 		}
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceJourneyOutcomePredictor())
+		d.Set("outcome_id", *predictor.Outcome.Id)
 
 		return cc.CheckState()
 	})
@@ -103,19 +114,4 @@ func deleteJourneyOutcomePredictor(ctx context.Context, d *schema.ResourceData, 
 
 		return retry.RetryableError(fmt.Errorf("Predictor %s still exists", d.Id()))
 	})
-}
-
-// getPredictorFromResourceData maps data from schema ResourceData object to a platformclientv2.Externalcontact
-func getPredictorFromResourceData(d *schema.ResourceData) platformclientv2.Outcomepredictorrequest {
-	return platformclientv2.Outcomepredictorrequest{
-		Outcome: buildOutcomeRef(d, "outcome"),
-	}
-}
-
-func buildOutcomeRef(d *schema.ResourceData, key string) *platformclientv2.Outcomerefrequest {
-	outcomeId := d.Get("outcome.0.id").(string)
-
-	return &platformclientv2.Outcomerefrequest{
-		Id:      &outcomeId,
-	}
 }

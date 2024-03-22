@@ -88,7 +88,11 @@ func createJourneyOutcomePredictorFn(ctx context.Context, p *journeyOutcomePredi
 // getAllJourneyOutcomePredictorFn is the implementation for retrieving all journey outcome predictor in Genesys Cloud
 func getAllJourneyOutcomePredictorFn(ctx context.Context, p *journeyOutcomePredictorProxy) (*[]platformclientv2.Outcomepredictor, error) {
 	var allPredictors []platformclientv2.Outcomepredictor
-	predictors, _, _ := p.journeyApi.GetJourneyOutcomesPredictors()
+	predictors, _, err := p.journeyApi.GetJourneyOutcomesPredictors()
+
+	if err != nil {
+		return nil, fmt.Errorf("Failed to get predictors: %s", err)
+	}
 
 	for _, predictor := range *predictors.Entities {
 		allPredictors = append(allPredictors, predictor)
@@ -101,7 +105,7 @@ func getAllJourneyOutcomePredictorFn(ctx context.Context, p *journeyOutcomePredi
 func getJourneyOutcomePredictorByIdFn(ctx context.Context, p *journeyOutcomePredictorProxy, predictorId string) (journeyOutcomePredictor *platformclientv2.Outcomepredictor, statusCode int, err error) {
 	predictor, resp, err := p.journeyApi.GetJourneyOutcomesPredictor(predictorId)
 	if err != nil {
-		return nil, resp.StatusCode, fmt.Errorf("Failed to retrieve predictor by id %s: %s", predictorId, err)
+		return nil, resp.StatusCode, err
 	}
 
 	return predictor, 0, nil

@@ -43,7 +43,7 @@ func predictorResource() string {
 	return fmt.Sprint(`
 	resource "genesyscloud_journey_outcome" "test_outcome" {
 		is_active    = true
-		display_name = "example journey outcome - delete"
+		display_name = "tf test outcome " + uuid.NewString()"
 		description  = "description of journey outcome"
 		is_positive  = true
 		journey {

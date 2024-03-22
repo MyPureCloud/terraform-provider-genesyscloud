@@ -8,13 +8,13 @@ import (
 )
 
 var (
-	providerDataSources map[string]*schema.Resource
+providerDataSources map[string]*schema.Resource
 	providerResources   map[string]*schema.Resource
 )
 
 type registerTestInstance struct {
 	resourceMapMutex   sync.RWMutex
-	datasourceMapMutex sync.RWMutex
+datasourceMapMutex sync.RWMutex
 }
 
 
@@ -30,7 +30,7 @@ func (r *registerTestInstance) registerTestResources() {
 // initTestResources initializes all test resources and data sources.
 func initTestResources() {
 	providerResources = make(map[string]*schema.Resource)
-	providerDataSources = make(map[string]*schema.Resource)
+providerDataSources = make(map[string]*schema.Resource)
 
 	regInstance := &registerTestInstance{}
 
@@ -39,9 +39,9 @@ func initTestResources() {
 
 // TestMain is a "setup" function called by the testing framework when run the test
 func TestMain(m *testing.M) {
-	// Run setup function before starting the test suite for integration package
+	// Run setup function before starting the test suite for journey outcome predictor package
 	initTestResources()
 
-	// Run the test suite for the integration package
+	// Run the test suite for the journey outcome predictor package
 	m.Run()
 }

@@ -35,20 +35,12 @@ func ResourceJourneyOutcomePredictor() *schema.Resource {
 		},
 		SchemaVersion: 1,
 		Schema: map[string]*schema.Schema{
-			"outcome": {
+			"outcome_id": {
 				Description: "The outcome associated with this predictor",
-				Type: 		 schema.TypeList,
+				Type: 		 schema.TypeString,
 				Required: 	 true,
 				ForceNew:    true,
 				MaxItems:    1,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						"id": {
-							Type:     schema.TypeString,
-							Required: true,
-						},
-					},
-				},
 			},
 		},
 	}
