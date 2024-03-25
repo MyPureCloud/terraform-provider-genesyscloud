@@ -14,7 +14,7 @@ require (
 	github.com/mypurecloud/platform-client-sdk-go/v125 v125.0.0
 	github.com/nyaruka/phonenumbers v1.3.4
 	github.com/rjNemo/underscore v0.6.1
-	github.com/zclconf/go-cty v1.14.3
+	github.com/zclconf/go-cty v1.14.4
 	gonum.org/v1/gonum v0.15.0
 )
 
@@ -75,7 +75,7 @@ require (
 	github.com/mitchellh/copystructure v1.2.0 // indirect
 	github.com/mitchellh/go-testing-interface v1.14.1 // indirect
 	github.com/mitchellh/go-wordwrap v1.0.1 // indirect
-	github.com/mitchellh/mapstructure v1.5.0 // indirect
+	github.com/mitchellh/mapstructure v1.5.0
 	github.com/mitchellh/reflectwalk v1.0.2 // indirect
 	github.com/oklog/run v1.1.0 // indirect
 	github.com/pelletier/go-toml v1.2.0 // indirect

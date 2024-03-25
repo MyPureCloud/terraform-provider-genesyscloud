@@ -921,7 +921,6 @@ func (g *GenesysCloudResourceExporter) getResourcesForType(resType string, provi
 	for id, resMeta := range exporter.SanitizedResourceMap {
 		go func(id string, resMeta *resourceExporter.ResourceMeta) {
 			defer wg.Done()
-
 			fetchResourceState := func() error {
 				ctx, cancel := context.WithTimeout(context.Background(), time.Duration(30)*time.Minute)
 				defer cancel()

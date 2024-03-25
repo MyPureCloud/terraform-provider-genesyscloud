@@ -208,6 +208,7 @@ func readGroup(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 	log.Printf("Reading group %s", d.Id())
 
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
+
 		group, resp, getErr := groupsAPI.GetGroup(d.Id())
 		if getErr != nil {
 			if util.IsStatus404(resp) {

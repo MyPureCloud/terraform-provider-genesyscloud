@@ -320,6 +320,7 @@ func InitClientConfig(data *schema.ResourceData, version string, config *platfor
 		log.Print("Setting access token set on configuration instance.")
 		config.AccessToken = accessToken
 	} else {
+		config.AutomaticTokenRefresh = true // Enable automatic token refreshing
 		err := config.AuthorizeClientCredentials(oauthclientID, oauthclientSecret)
 		if err != nil {
 			return diag.Errorf("Failed to authorize Genesys Cloud client credentials: %v", err)
