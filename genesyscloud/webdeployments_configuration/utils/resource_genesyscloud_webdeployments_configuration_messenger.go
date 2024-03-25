@@ -248,13 +248,18 @@ func flattenAppConversations(conversations *platformclientv2.Conversationappsett
 	}
 
 	if conversations.Humanize != nil {
-		retMap["humanize"] = []interface{}{map[string]interface{}{
+		humanizeMap := map[string]interface{}{
 			"enabled": conversations.Humanize.Enabled,
-			"bot": []interface{}{map[string]interface{}{
+		}
+
+		if conversations.Humanize.Bot != nil {
+			humanizeMap["bot"] = []interface{}{map[string]interface{}{
 				"name":       conversations.Humanize.Bot.Name,
 				"avatar_url": conversations.Humanize.Bot.AvatarUrl,
-			}},
-		}}
+			}}
+		}
+
+		retMap["humanize"] = []interface{}{humanizeMap}
 	}
 
 	return []interface{}{retMap}
