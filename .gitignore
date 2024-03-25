@@ -28,7 +28,7 @@ website/node_modules
 terraform-provider-genesyscloud
 .env
 .vscode
-
+**/true
 website/vendor
 vendor/
 

@@ -194,6 +194,7 @@ func updateTrunkBaseSettings(ctx context.Context, d *schema.ResourceData, meta i
 		}
 		return resp, nil
 	})
+
 	if diagErr != nil {
 		return diagErr
 	}

@@ -167,7 +167,7 @@ func TestAccDataSourceRecordingMediaRetentionPolicy(t *testing.T) {
 						userResource1,
 						generateResourceRoles("genesyscloud_auth_role."+roleResource1+".id"),
 					) +
-					gcloud.GenerateUserWithCustomAttrs(userResource1, userEmail, userName) +
+					generateUserWithCustomAttrs(userResource1, userEmail, userName) +
 					gcloud.GenerateEvaluationFormResource(evaluationFormResource1, &evaluationFormResourceBody) +
 					gcloud.GenerateSurveyFormResource(surveyFormResource1, &surveyFormResourceBody) +
 					integration.GenerateIntegrationResource(integrationResource1, strconv.Quote(integrationIntendedState), strconv.Quote(integrationType), "") +

@@ -188,7 +188,7 @@ func TestAccResourceUserAddresses(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				// Create
-				Config: GenerateUserWithCustomAttrs(
+				Config: generateUserWithCustomAttrs(
 					addrUserResource1,
 					addrEmail1,
 					addrUserName,
@@ -223,7 +223,7 @@ func TestAccResourceUserAddresses(t *testing.T) {
 			},
 			{
 				// Update phone number and other email attributes
-				Config: GenerateUserWithCustomAttrs(
+				Config: generateUserWithCustomAttrs(
 					addrUserResource1,
 					addrEmail1,
 					addrUserName,
@@ -275,7 +275,7 @@ func TestAccResourceUserPhone(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				// Create
-				Config: GenerateUserWithCustomAttrs(
+				Config: generateUserWithCustomAttrs(
 					addrUserResource1,
 					addrEmail1,
 					addrUserName,
@@ -297,7 +297,7 @@ func TestAccResourceUserPhone(t *testing.T) {
 				),
 			},
 			{
-				Config: GenerateUserWithCustomAttrs(
+				Config: generateUserWithCustomAttrs(
 					addrUserResource1,
 					addrEmail1,
 					addrUserName,
@@ -319,7 +319,7 @@ func TestAccResourceUserPhone(t *testing.T) {
 				),
 			},
 			{
-				Config: GenerateUserWithCustomAttrs(
+				Config: generateUserWithCustomAttrs(
 					addrUserResource1,
 					addrEmail1,
 					addrUserName,
@@ -341,7 +341,7 @@ func TestAccResourceUserPhone(t *testing.T) {
 				),
 			},
 			{
-				Config: GenerateUserWithCustomAttrs(
+				Config: generateUserWithCustomAttrs(
 					addrUserResource1,
 					addrEmail1,
 					addrUserName,
@@ -388,7 +388,7 @@ func TestAccResourceUserSkills(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				// Create user with 1 skill
-				Config: GenerateUserWithCustomAttrs(
+				Config: generateUserWithCustomAttrs(
 					userResource1,
 					email1,
 					userName1,
@@ -400,7 +400,7 @@ func TestAccResourceUserSkills(t *testing.T) {
 			},
 			{
 				// Create another skill and add to the user
-				Config: GenerateUserWithCustomAttrs(
+				Config: generateUserWithCustomAttrs(
 					userResource1,
 					email1,
 					userName1,
@@ -420,7 +420,7 @@ func TestAccResourceUserSkills(t *testing.T) {
 			},
 			{
 				// Remove a skill from the user and modify proficiency
-				Config: GenerateUserWithCustomAttrs(
+				Config: generateUserWithCustomAttrs(
 					userResource1,
 					email1,
 					userName1,
@@ -435,7 +435,7 @@ func TestAccResourceUserSkills(t *testing.T) {
 			},
 			{
 				// Remove all skills from the user
-				Config: GenerateUserWithCustomAttrs(
+				Config: generateUserWithCustomAttrs(
 					userResource1,
 					email1,
 					userName1,
@@ -470,7 +470,7 @@ func TestAccResourceUserLanguages(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				// Create user with 1 language
-				Config: GenerateUserWithCustomAttrs(
+				Config: generateUserWithCustomAttrs(
 					userResource1,
 					email1,
 					userName1,
@@ -482,7 +482,7 @@ func TestAccResourceUserLanguages(t *testing.T) {
 			},
 			{
 				// Create another language and add to the user
-				Config: GenerateUserWithCustomAttrs(
+				Config: generateUserWithCustomAttrs(
 					userResource1,
 					email1,
 					userName1,
@@ -502,7 +502,7 @@ func TestAccResourceUserLanguages(t *testing.T) {
 			},
 			{
 				// Remove a language from the user and modify proficiency
-				Config: GenerateUserWithCustomAttrs(
+				Config: generateUserWithCustomAttrs(
 					userResource1,
 					email1,
 					userName1,
@@ -517,7 +517,7 @@ func TestAccResourceUserLanguages(t *testing.T) {
 			},
 			{
 				// Remove all languages from the user
-				Config: GenerateUserWithCustomAttrs(
+				Config: generateUserWithCustomAttrs(
 					userResource1,
 					email1,
 					userName1,
@@ -552,7 +552,7 @@ func TestAccResourceUserLocations(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				// Create user with a location
-				Config: GenerateUserWithCustomAttrs(
+				Config: generateUserWithCustomAttrs(
 					userResource1,
 					email,
 					userName,
@@ -569,7 +569,7 @@ func TestAccResourceUserLocations(t *testing.T) {
 			},
 			{
 				// Update with a new location
-				Config: GenerateUserWithCustomAttrs(
+				Config: generateUserWithCustomAttrs(
 					userResource1,
 					email,
 					userName,
@@ -611,7 +611,7 @@ func TestAccResourceUserEmployerInfo(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				// Create
-				Config: GenerateUserWithCustomAttrs(
+				Config: generateUserWithCustomAttrs(
 					userResource1,
 					email1,
 					userName,
@@ -633,7 +633,7 @@ func TestAccResourceUserEmployerInfo(t *testing.T) {
 			},
 			{
 				// Update with other attributes
-				Config: GenerateUserWithCustomAttrs(
+				Config: generateUserWithCustomAttrs(
 					userResource1,
 					email1,
 					userName,
@@ -655,7 +655,7 @@ func TestAccResourceUserEmployerInfo(t *testing.T) {
 			},
 			{
 				// Update all attributes
-				Config: GenerateUserWithCustomAttrs(
+				Config: generateUserWithCustomAttrs(
 					userResource1,
 					email1,
 					userName,
@@ -677,7 +677,7 @@ func TestAccResourceUserEmployerInfo(t *testing.T) {
 			},
 			{
 				// Remove all employer info attributes
-				Config: GenerateUserWithCustomAttrs(
+				Config: generateUserWithCustomAttrs(
 					userResource1,
 					email1,
 					userName,
@@ -713,7 +713,7 @@ func TestAccResourceUserRoutingUtil(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				// Create with utilization settings
-				Config: GenerateUserWithCustomAttrs(
+				Config: generateUserWithCustomAttrs(
 					userResource1,
 					email1,
 					userName,
@@ -746,7 +746,7 @@ func TestAccResourceUserRoutingUtil(t *testing.T) {
 			},
 			{
 				// Update utilization settings and set different org-level settings
-				Config: GenerateUserWithCustomAttrs(
+				Config: generateUserWithCustomAttrs(
 					userResource1,
 					email1,
 					userName,
@@ -779,7 +779,7 @@ func TestAccResourceUserRoutingUtil(t *testing.T) {
 			},
 			{
 				// Ensure max capacity can be set to 0
-				Config: GenerateUserWithCustomAttrs(
+				Config: generateUserWithCustomAttrs(
 					userResource1,
 					email1,
 					userName,
@@ -812,7 +812,7 @@ func TestAccResourceUserRoutingUtil(t *testing.T) {
 			},
 			{
 				// Reset to org-level settings by specifying empty routing utilization attribute
-				Config: GenerateUserWithCustomAttrs(
+				Config: generateUserWithCustomAttrs(
 					userResource1,
 					email1,
 					userName,
@@ -862,7 +862,7 @@ func TestAccResourceUserRoutingUtilWithLabels(t *testing.T) {
 				Config: GenerateRoutingUtilizationLabelResource(redLabelResource, redLabelName, "") +
 					GenerateRoutingUtilizationLabelResource(blueLabelResource, blueLabelName, redLabelResource) +
 					GenerateRoutingUtilizationLabelResource(greenLabelResource, greenLabelName, blueLabelResource) +
-					GenerateUserWithCustomAttrs(
+					generateUserWithCustomAttrs(
 						userResource1,
 						email1,
 						userName,
@@ -904,7 +904,7 @@ func TestAccResourceUserRoutingUtilWithLabels(t *testing.T) {
 				Config: GenerateRoutingUtilizationLabelResource(redLabelResource, redLabelName, "") +
 					GenerateRoutingUtilizationLabelResource(blueLabelResource, blueLabelName, redLabelResource) +
 					GenerateRoutingUtilizationLabelResource(greenLabelResource, greenLabelName, blueLabelResource) +
-					GenerateUserWithCustomAttrs(
+					generateUserWithCustomAttrs(
 						userResource1,
 						email1,
 						userName,
@@ -946,7 +946,7 @@ func TestAccResourceUserRoutingUtilWithLabels(t *testing.T) {
 				Config: GenerateRoutingUtilizationLabelResource(redLabelResource, redLabelName, "") +
 					GenerateRoutingUtilizationLabelResource(blueLabelResource, blueLabelName, redLabelResource) +
 					GenerateRoutingUtilizationLabelResource(greenLabelResource, greenLabelName, blueLabelResource) +
-					GenerateUserWithCustomAttrs(
+					generateUserWithCustomAttrs(
 						userResource1,
 						email1,
 						userName,
@@ -985,7 +985,7 @@ func TestAccResourceUserRoutingUtilWithLabels(t *testing.T) {
 			},
 			{
 				// Reset to org-level settings by specifying empty routing utilization attribute
-				Config: GenerateUserWithCustomAttrs(
+				Config: generateUserWithCustomAttrs(
 					userResource1,
 					email1,
 					userName,
