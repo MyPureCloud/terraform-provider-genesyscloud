@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/architect_flow"
+	"terraform-provider-genesyscloud/genesyscloud/group"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
@@ -56,15 +57,15 @@ func TestAccResourceRoutingQueueBasic(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				// Create
-				Config: GenerateUserWithCustomAttrs(testUserResource, testUserEmail, testUserName) + GenerateRoutingSkillResource(queueSkillResource, queueSkillName) +
+				Config: generateUserWithCustomAttrs(testUserResource, testUserEmail, testUserName) + GenerateRoutingSkillResource(queueSkillResource, queueSkillName) +
 					generateGroupResource(
 						bullseyeMemberGroupName,
-						"MySeries6Group",
+						"MySeries6Groupv2",
 						strconv.Quote("TestGroupForSeries6"),
 						util.NullValue, // Default type
 						util.NullValue, // Default visibility
 						util.NullValue, // Default rules_visible
-						GenerateGroupOwners("genesyscloud_user."+testUserResource+".id"),
+						group.GenerateGroupOwners("genesyscloud_user."+testUserResource+".id"),
 					) + GenerateRoutingQueueResource(
 					queueResource1,
 					queueName1,
@@ -269,10 +270,10 @@ func TestAccResourceRoutingQueueConditionalRouting(t *testing.T) {
 			},
 			{
 				// Update
-				Config: GenerateUserWithCustomAttrs(testUserResource, testUserEmail, testUserName) + GenerateBasicGroupResource(
+				Config: generateUserWithCustomAttrs(testUserResource, testUserEmail, testUserName) + group.GenerateBasicGroupResource(
 					groupResourceId,
 					groupName,
-					GenerateGroupOwners("genesyscloud_user."+testUserResource+".id"),
+					group.GenerateGroupOwners("genesyscloud_user."+testUserResource+".id"),
 				) +
 					generateRoutingQueueResourceBasic(
 						queueResource2,
@@ -1575,9 +1576,9 @@ func TestAccResourceRoutingQueueSkillGroups(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				// Create
-				Config: GenerateUserWithCustomAttrs(testUserResource, testUserEmail, testUserName) + generateRoutingSkillGroupResourceBasic(skillGroupResource, skillGroupName, skillGroupDescription) +
-					GenerateBasicGroupResource(groupResource, groupName,
-						GenerateGroupOwners("genesyscloud_user."+testUserResource+".id"),
+				Config: generateUserWithCustomAttrs(testUserResource, testUserEmail, testUserName) + generateRoutingSkillGroupResourceBasic(skillGroupResource, skillGroupName, skillGroupDescription) +
+					group.GenerateBasicGroupResource(groupResource, groupName,
+						group.GenerateGroupOwners("genesyscloud_user."+testUserResource+".id"),
 					) +
 					GenerateRoutingQueueResourceBasicWithDepends(
 						queueResource,

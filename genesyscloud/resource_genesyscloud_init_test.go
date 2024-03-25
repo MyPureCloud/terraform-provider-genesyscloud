@@ -5,6 +5,7 @@ import (
 	"sync"
 	"terraform-provider-genesyscloud/genesyscloud/architect_flow"
 	archScheduleGroup "terraform-provider-genesyscloud/genesyscloud/architect_schedulegroups"
+	"terraform-provider-genesyscloud/genesyscloud/group"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"testing"
 
@@ -31,11 +32,11 @@ func (r *registerTestInstance) registerTestResources() {
 
 	providerResources["genesyscloud_flow"] = architect_flow.ResourceArchitectFlow()
 	providerResources["genesyscloud_routing_queue"] = ResourceRoutingQueue()
+	providerResources["genesyscloud_group"] = group.ResourceGroup()
 	providerResources["genesyscloud_location"] = ResourceLocation()
 	providerResources["genesyscloud_architect_schedules"] = ResourceArchitectSchedules()
 	providerResources["genesyscloud_architect_user_prompt"] = ResourceArchitectUserPrompt()
 	providerResources["genesyscloud_auth_division"] = ResourceAuthDivision()
-	providerResources["genesyscloud_group"] = ResourceGroup()
 	providerResources["genesyscloud_idp_adfs"] = ResourceIdpAdfs()
 	providerResources["genesyscloud_idp_generic"] = ResourceIdpGeneric()
 	providerResources["genesyscloud_idp_gsuite"] = ResourceIdpGsuite()
@@ -76,6 +77,7 @@ func (r *registerTestInstance) registerTestDataSources() {
 	defer r.datasourceMapMutex.Unlock()
 
 	providerDataSources["genesyscloud_flow"] = architect_flow.DataSourceArchitectFlow()
+	providerDataSources["genesyscloud_group"] = group.DataSourceGroup()
 	providerDataSources["genesyscloud_routing_wrapupcode"] = DataSourceRoutingWrapupcode()
 	providerDataSources["genesyscloud_routing_queue"] = DataSourceRoutingQueue()
 	providerDataSources["genesyscloud_location"] = DataSourceLocation()
@@ -84,7 +86,6 @@ func (r *registerTestInstance) registerTestDataSources() {
 	providerDataSources["genesyscloud_architect_user_prompt"] = dataSourceUserPrompt()
 	providerDataSources["genesyscloud_auth_division"] = dataSourceAuthDivision()
 	providerDataSources["genesyscloud_auth_division_home"] = DataSourceAuthDivisionHome()
-	providerDataSources["genesyscloud_group"] = DataSourceGroup()
 	providerDataSources["genesyscloud_journey_action_map"] = dataSourceJourneyActionMap()
 	providerDataSources["genesyscloud_journey_action_template"] = dataSourceJourneyActionTemplate()
 	providerDataSources["genesyscloud_journey_outcome"] = dataSourceJourneyOutcome()
