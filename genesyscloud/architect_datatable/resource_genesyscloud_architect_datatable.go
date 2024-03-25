@@ -115,19 +115,19 @@ func readArchitectDatatable(ctx context.Context, d *schema.ResourceData, meta in
 			return retry.NonRetryableError(fmt.Errorf("Failed to read architect_datatable %s: %s", d.Id(), getErr))
 		}
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceArchitectDatatable())
-		d.Set("name", *datatable.Name)
-		d.Set("division_id", *datatable.Division.Id)
+		_ = d.Set("name", *datatable.Name)
+		_ = d.Set("division_id", *datatable.Division.Id)
 
 		if datatable.Description != nil {
-			d.Set("description", *datatable.Description)
+			_ = d.Set("description", *datatable.Description)
 		} else {
-			d.Set("description", nil)
+			_ = d.Set("description", nil)
 		}
 
 		if datatable.Schema != nil && datatable.Schema.Properties != nil {
-			d.Set("properties", flattenDatatableProperties(*datatable.Schema.Properties))
+			_ = d.Set("properties", flattenDatatableProperties(*datatable.Schema.Properties))
 		} else {
-			d.Set("properties", nil)
+			_ = d.Set("properties", nil)
 		}
 
 		log.Printf("Read architect_datatable %s %s", d.Id(), *datatable.Name)
