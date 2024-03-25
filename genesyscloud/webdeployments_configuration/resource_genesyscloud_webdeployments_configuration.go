@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"runtime/debug"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
@@ -59,6 +60,18 @@ func waitForConfigurationDraftToBeActive(ctx context.Context, meta interface{}, 
 }
 
 func createWebDeploymentConfiguration(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	defer func() {
+		log.Println("JCC - In Create")
+		name := d.Get("name").(string)
+
+		if r := recover(); r != nil {
+			log.Printf("*****************************************Panic thrown from resource %s with name %s*****************************************", resourceName, name)
+			log.Printf(string(debug.Stack()))
+			log.Printf("****************************************************************************************************************************", resourceName, name)
+			panic(r)
+		}
+	}()
+
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	wp := getWebDeploymentConfigurationsProxy(sdkConfig)
 

@@ -42,6 +42,7 @@ func buildAppConversations(conversations []interface{}) *platformclientv2.Conver
 		ret.Humanize = &platformclientv2.Humanize{
 			Enabled: platformclientv2.Bool(humanize["enabled"].(bool)),
 		}
+
 		if botArr, ok := humanize["bot"].([]interface{}); ok && len(botArr) > 0 {
 			bot := botArr[0].(map[string]interface{})
 			ret.Humanize.Bot = &platformclientv2.Botmessengerprofile{
