@@ -3,11 +3,12 @@ package routing_email_route
 import (
 	"context"
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
 	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
 )
 
 /*
@@ -26,7 +27,7 @@ func getRoutingEmailRouteFromResourceData(d *schema.ResourceData) platformclient
 		Skills:    util.BuildSdkDomainEntityRefArr(d, "skill_ids"),
 		Language:  util.BuildSdkDomainEntityRef(d, "language_id"),
 		FromName:  platformclientv2.String(d.Get("from_name").(string)),
-		FromEmail: platformclientv2.String(d.Get("from_email").(string)),
+		FromEmail: buildFromEmail(d),
 		Flow:      util.BuildSdkDomainEntityRef(d, "flow_id"),
 		AutoBcc:   buildAutoBccEmailAddresses(d),
 		SpamFlow:  util.BuildSdkDomainEntityRef(d, "spam_flow_id"),
@@ -34,6 +35,13 @@ func getRoutingEmailRouteFromResourceData(d *schema.ResourceData) platformclient
 }
 
 // Build Functions
+
+func buildFromEmail(d *schema.ResourceData) *string {
+	if d.Get("from_email") != "" {
+		return platformclientv2.String(d.Get("from_email").(string))
+	}
+	return nil
+}
 
 func buildAutoBccEmailAddresses(d *schema.ResourceData) *[]platformclientv2.Emailaddress {
 	if bccAddresses := d.Get("auto_bcc"); bccAddresses != nil {
@@ -100,7 +108,7 @@ func flattenReplyEmailAddress(settings platformclientv2.Queueemailaddress) map[s
 
 // Helper Functions
 
-func validateSdkReplyEmailAddress(d *schema.ResourceData) error {
+func validateSdkReplyEmailAddress(d *schema.ResourceData) (bool, error) {
 	replyEmailAddress := d.Get("reply_email_address").([]interface{})
 	if replyEmailAddress != nil && len(replyEmailAddress) > 0 {
 		settingsMap := replyEmailAddress[0].(map[string]interface{})
@@ -109,14 +117,15 @@ func validateSdkReplyEmailAddress(d *schema.ResourceData) error {
 		selfReferenceRoute := settingsMap["self_reference_route"].(bool)
 
 		if selfReferenceRoute && routeID != "" {
-			return fmt.Errorf("can not set a reply email address route id directly, if the self_reference_route value is set to true")
+			return true, fmt.Errorf("can not set a reply email address route id directly, if the self_reference_route value is set to true")
 		}
 
 		if !selfReferenceRoute && routeID == "" {
-			return fmt.Errorf("you must provide reply email address route id if the self_reference_route value is set to false")
+			return true, fmt.Errorf("you must provide reply email address route id if the self_reference_route value is set to false")
 		}
+		return true, nil
 	}
-	return nil
+	return false, nil
 }
 
 func extractReplyEmailAddressValue(d *schema.ResourceData) (string, string, bool) {

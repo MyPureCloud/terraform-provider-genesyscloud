@@ -2,15 +2,17 @@ package resource_exporter
 
 import (
 	"context"
-	"github.com/hashicorp/go-cty/cty"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"regexp"
 	"strings"
 	"sync"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/go-cty/cty"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+
 	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 )
 
 var resourceExporters map[string]*ResourceExporter
@@ -51,7 +53,7 @@ type ResourceInfo struct {
 
 // Allows the definition of a custom resolver for an exporter.
 type RefAttrCustomResolver struct {
-	ResolverFunc func(map[string]interface{}, map[string]*ResourceExporter) error
+	ResolverFunc func(map[string]interface{}, map[string]*ResourceExporter, string) error
 }
 
 // Allows the definition of a custom resolver for an exporter.

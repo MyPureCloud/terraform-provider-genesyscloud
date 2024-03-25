@@ -1,8 +1,9 @@
 package routing_email_route
 
 import (
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
@@ -71,14 +72,16 @@ func ResourceRoutingEmailRoute() *schema.Resource {
 				Required:    true,
 			},
 			"from_email": {
-				Description: "The sender email to use for outgoing replies.",
-				Type:        schema.TypeString,
-				Required:    true,
+				Description:   "The sender email to use for outgoing replies. This should not be set if reply_email_address is specified.",
+				Type:          schema.TypeString,
+				Optional:      true,
+				ConflictsWith: []string{"reply_email_address"},
 			},
 			"queue_id": {
-				Description: "The queue to route the emails to. This should not be set if a flow_id is specified.",
-				Type:        schema.TypeString,
-				Optional:    true,
+				Description:   "The queue to route the emails to. This should not be set if a flow_id is specified.",
+				Type:          schema.TypeString,
+				Optional:      true,
+				ConflictsWith: []string{"flow_id"},
 			},
 			"priority": {
 				Description: "The priority to use for routing.",
@@ -97,15 +100,17 @@ func ResourceRoutingEmailRoute() *schema.Resource {
 				Optional:    true,
 			},
 			"flow_id": {
-				Description: "The flow to use for processing the email. This should not be set if a queue_id is specified.",
-				Type:        schema.TypeString,
-				Optional:    true,
+				Description:   "The flow to use for processing the email. This should not be set if a queue_id is specified.",
+				Type:          schema.TypeString,
+				Optional:      true,
+				ConflictsWith: []string{"queue_id"},
 			},
 			"reply_email_address": {
-				Description: "The route to use for email replies.",
-				Type:        schema.TypeList,
-				MaxItems:    1,
-				Optional:    true,
+				Description:   "The route to use for email replies. This should not be set if from_email or auto_bcc are specified.",
+				Type:          schema.TypeList,
+				MaxItems:      1,
+				Optional:      true,
+				ConflictsWith: []string{"from_email"},
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"domain_id": {
@@ -120,7 +125,7 @@ func ResourceRoutingEmailRoute() *schema.Resource {
 							Optional:    true,
 						},
 						"self_reference_route": {
-							Description: `Use this route as the reply email address. If true you will use the route id for this resource as the reply and you 
+							Description: `Use this route as the reply email address. If true you will use the route id for this resource as the reply and you
 							              can not set a route. If you set this value to false (or leave the attribute off)you must set a route id.`,
 							Type:     schema.TypeBool,
 							Required: false,
@@ -131,10 +136,11 @@ func ResourceRoutingEmailRoute() *schema.Resource {
 				},
 			},
 			"auto_bcc": {
-				Description: "The recipients that should be automatically blind copied on outbound emails associated with this route.",
-				Type:        schema.TypeSet,
-				Optional:    true,
-				Elem:        bccEmailResource,
+				Description:   "The recipients that should be automatically blind copied on outbound emails associated with this route. This should not be set if reply_email_address is specified.",
+				Type:          schema.TypeSet,
+				Optional:      true,
+				Elem:          bccEmailResource,
+				ConflictsWith: []string{"reply_email_address"},
 			},
 			"spam_flow_id": {
 				Description: "The flow to use for processing inbound emails that have been marked as spam.",
@@ -160,8 +166,10 @@ func RoutingEmailRouteExporter() *resourceExporter.ResourceExporter {
 			"reply_email_address.route_id":  {RefType: "genesyscloud_routing_email_route"},
 		},
 		RemoveIfMissing: map[string][]string{
-			"reply_email_address": {"route_id"},
+			"reply_email_address": {"route_id", "self_reference_route"},
 		},
-		AllowZeroValues: []string{"from_email"},
+		CustomAttributeResolver: map[string]*resourceExporter.RefAttrCustomResolver{
+			"reply_email_address.self_reference_route": {ResolverFunc: resourceExporter.ReplyEmailAddressSelfReferenceRouteExporterResolver},
+		},
 	}
 }
