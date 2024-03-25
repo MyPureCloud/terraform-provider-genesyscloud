@@ -82,7 +82,7 @@ func GroupRolesExporter() *resourceExporter.ResourceExporter {
 	}
 }
 
-//Duplicated this from the group roles package to break a cyclical dependency.  We should be asking ourselves why we are doing this at some point
+// Duplicated this from the group package to break a cyclical dependency.  We should be asking ourselves why we are doing this at some point
 func getAllGroups(_ context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
 	resources := make(resourceExporter.ResourceIDMetaMap)
 	groupsAPI := platformclientv2.NewGroupsApiWithConfig(clientConfig)
