@@ -154,7 +154,7 @@ func updateArchitectDatatableRow(ctx context.Context, d *schema.ResourceData, me
 
 	_, resp, err := archProxy.updateArchitectDatatableRow(ctx, tableId, keyStr, &rowMap)
 	if err != nil {
-		return diag.Errorf("Failed to update Datatable Row %s: %s %V", d.Id(), err, resp)
+		return diag.Errorf("Failed to update Datatable Row %s: %s %v", d.Id(), err, resp)
 	}
 
 	log.Printf("Updated Datatable Row %s", d.Id())

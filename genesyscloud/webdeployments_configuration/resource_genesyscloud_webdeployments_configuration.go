@@ -211,10 +211,10 @@ func deleteWebDeploymentConfiguration(ctx context.Context, d *schema.ResourceDat
 	wp := getWebDeploymentConfigurationsProxy(sdkConfig)
 
 	log.Printf("Deleting web deployment configuration %s", name)
-	_, err := wp.deleteWebDeploymentConfiguration(ctx, d.Id())
+	resp, err := wp.deleteWebDeploymentConfiguration(ctx, d.Id())
 
 	if err != nil {
-		return diag.Errorf("Failed to delete web deployment configuration %s: %s", name, err)
+		return diag.Errorf("Failed to delete web deployment configuration %s: %s %v", name, err, resp)
 	}
 
 	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {

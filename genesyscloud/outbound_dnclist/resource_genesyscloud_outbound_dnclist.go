@@ -84,7 +84,7 @@ func createOutboundDncList(ctx context.Context, d *schema.ResourceData, meta int
 			for _, entry := range entries {
 				resp, err := proxy.uploadPhoneEntriesToDncList(outboundDncList, entry)
 				if err != nil {
-					return diag.Errorf("error creating dnc list %s %v", err, resp)
+					return diag.Errorf("error creating dnc list %v %v", err, resp)
 				}
 			}
 		} else {
@@ -141,7 +141,7 @@ func updateOutboundDncList(ctx context.Context, d *schema.ResourceData, meta int
 		sdkDncList.Version = outboundDncList.Version
 		outboundDncList, response, updateErr := proxy.updateOutboundDnclist(ctx, d.Id(), &sdkDncList)
 		if updateErr != nil {
-			return resp, diag.Errorf("Failed to update Outbound DNC list %s: %s", name, updateErr, response)
+			return resp, diag.Errorf("Failed to update Outbound DNC list %s: %s %v", name, updateErr, response)
 		}
 		if len(entries) > 0 {
 			if *sdkDncList.DncSourceType == "rds" {

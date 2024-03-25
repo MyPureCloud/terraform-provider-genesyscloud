@@ -96,7 +96,7 @@ func (p *architectGrammarProxy) deleteArchitectGrammar(ctx context.Context, gram
 func createArchitectGrammarFn(ctx context.Context, p *architectGrammarProxy, grammar *platformclientv2.Grammar) (*platformclientv2.Grammar, *platformclientv2.APIResponse, error) {
 	grammarSdk, resp, err := p.architectApi.PostArchitectGrammars(*grammar)
 	if err != nil {
-		return nil, resp, fmt.Errorf("Failed to create grammar: %s %v", err)
+		return nil, resp, fmt.Errorf("Failed to create grammar: %s %v", err, resp)
 	}
 	return grammarSdk, resp, nil
 }

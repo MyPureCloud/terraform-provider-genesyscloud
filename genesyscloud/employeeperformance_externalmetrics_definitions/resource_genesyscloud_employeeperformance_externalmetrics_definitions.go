@@ -29,7 +29,7 @@ func getAllAuthEmployeeperformanceExternalmetricsDefinitions(ctx context.Context
 
 	definitions, resp, err := proxy.getAllEmployeeperformanceExternalmetricsDefinition(ctx)
 	if err != nil {
-		return nil, diag.Errorf("Failed to get employeeperformance externalmetrics definition: %v %V", err, resp)
+		return nil, diag.Errorf("Failed to get employeeperformance externalmetrics definition: %v %v", err, resp)
 	}
 
 	for _, definition := range *definitions {

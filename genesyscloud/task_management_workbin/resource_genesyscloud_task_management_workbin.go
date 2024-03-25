@@ -31,7 +31,7 @@ func getAllAuthTaskManagementWorkbins(ctx context.Context, clientConfig *platfor
 
 	workbins, resp, err := proxy.getAllTaskManagementWorkbin(ctx)
 	if err != nil {
-		return nil, diag.Errorf("failed to get all workbins: %v %V", err, resp)
+		return nil, diag.Errorf("failed to get all workbins: %v %v", err, resp)
 	}
 
 	for _, workbin := range *workbins {

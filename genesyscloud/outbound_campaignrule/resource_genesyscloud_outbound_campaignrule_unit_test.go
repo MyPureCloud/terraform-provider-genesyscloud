@@ -20,21 +20,21 @@ func TestUnitResourceOutboundCampaignruleCreate(t *testing.T) {
 	testCampaignRule := generateCampaignRuleData(tId, tName)
 
 	campaignRuleProxy := &outboundCampaignruleProxy{}
-	campaignRuleProxy.getOutboundCampaignruleByIdAttr = func(ctx context.Context, proxy *outboundCampaignruleProxy, id string) (*platformclientv2.Campaignrule, int, error) {
+	campaignRuleProxy.getOutboundCampaignruleByIdAttr = func(ctx context.Context, proxy *outboundCampaignruleProxy, id string) (*platformclientv2.Campaignrule, *platformclientv2.APIResponse, error) {
 		assert.Equal(t, tId, id)
 		campaignRule := &testCampaignRule
 
 		apiResponse := &platformclientv2.APIResponse{StatusCode: http.StatusOK}
-		return campaignRule, apiResponse.StatusCode, nil
+		return campaignRule, apiResponse, nil
 	}
 
-	campaignRuleProxy.createOutboundCampaignruleAttr = func(ctx context.Context, proxy *outboundCampaignruleProxy, campaignRule *platformclientv2.Campaignrule) (*platformclientv2.Campaignrule, error) {
+	campaignRuleProxy.createOutboundCampaignruleAttr = func(ctx context.Context, proxy *outboundCampaignruleProxy, campaignRule *platformclientv2.Campaignrule) (*platformclientv2.Campaignrule, *platformclientv2.APIResponse, error) {
 		campaignRule.Id = &tId
 
 		equal := cmp.Equal(testCampaignRule, *campaignRule)
 		assert.Equal(t, true, equal, "campaignRule not equal to expected value in create: %s", cmp.Diff(testCampaignRule, *campaignRule))
 
-		return campaignRule, nil
+		return campaignRule, nil, nil
 	}
 
 	internalProxy = campaignRuleProxy
@@ -64,12 +64,12 @@ func TestUnitResourceOutboundCampaignruleRead(t *testing.T) {
 
 	campaignRuleProxy := &outboundCampaignruleProxy{}
 
-	campaignRuleProxy.getOutboundCampaignruleByIdAttr = func(ctx context.Context, proxy *outboundCampaignruleProxy, id string) (*platformclientv2.Campaignrule, int, error) {
+	campaignRuleProxy.getOutboundCampaignruleByIdAttr = func(ctx context.Context, proxy *outboundCampaignruleProxy, id string) (*platformclientv2.Campaignrule, *platformclientv2.APIResponse, error) {
 		assert.Equal(t, tId, id)
 		campaignRule := &testCampaignRule
 
 		apiResponse := &platformclientv2.APIResponse{StatusCode: http.StatusOK}
-		return campaignRule, apiResponse.StatusCode, nil
+		return campaignRule, apiResponse, nil
 	}
 
 	internalProxy = campaignRuleProxy
@@ -104,21 +104,21 @@ func TestUnitResourceOutboundCampaignruleUpdate(t *testing.T) {
 	testCampaignRule := generateCampaignRuleData(tId, tName)
 
 	campaignRulePoxy := &outboundCampaignruleProxy{}
-	campaignRulePoxy.getOutboundCampaignruleByIdAttr = func(ctx context.Context, proxy *outboundCampaignruleProxy, id string) (*platformclientv2.Campaignrule, int, error) {
+	campaignRulePoxy.getOutboundCampaignruleByIdAttr = func(ctx context.Context, proxy *outboundCampaignruleProxy, id string) (*platformclientv2.Campaignrule, *platformclientv2.APIResponse, error) {
 		assert.Equal(t, tId, id)
 		campaignRule := &testCampaignRule
 
 		apiResponse := &platformclientv2.APIResponse{StatusCode: http.StatusOK}
-		return campaignRule, apiResponse.StatusCode, nil
+		return campaignRule, apiResponse, nil
 	}
 
-	campaignRulePoxy.updateOutboundCampaignruleAttr = func(ctx context.Context, proxy *outboundCampaignruleProxy, id string, campaignRule *platformclientv2.Campaignrule) (*platformclientv2.Campaignrule, error) {
+	campaignRulePoxy.updateOutboundCampaignruleAttr = func(ctx context.Context, proxy *outboundCampaignruleProxy, id string, campaignRule *platformclientv2.Campaignrule) (*platformclientv2.Campaignrule, *platformclientv2.APIResponse, error) {
 		campaignRule.Id = &tId
 
 		equal := cmp.Equal(testCampaignRule, *campaignRule)
 		assert.Equal(t, true, equal, "campaignRule not equal to expected value in update: %s", cmp.Diff(testCampaignRule, *campaignRule))
 
-		return campaignRule, nil
+		return campaignRule, nil, nil
 	}
 
 	internalProxy = campaignRulePoxy
@@ -156,12 +156,12 @@ func TestUnitResourceOutboundCampaignruleDelete(t *testing.T) {
 		return apiResponse, nil
 	}
 
-	campaignRulePoxy.getOutboundCampaignruleByIdAttr = func(ctx context.Context, proxy *outboundCampaignruleProxy, id string) (*platformclientv2.Campaignrule, int, error) {
+	campaignRulePoxy.getOutboundCampaignruleByIdAttr = func(ctx context.Context, proxy *outboundCampaignruleProxy, id string) (*platformclientv2.Campaignrule, *platformclientv2.APIResponse, error) {
 		assert.Equal(t, tId, id)
 
 		apiResponse := &platformclientv2.APIResponse{StatusCode: http.StatusNotFound}
 		err := fmt.Errorf("Unable to find targeted IVR: %s", id)
-		return nil, apiResponse.StatusCode, err
+		return nil, apiResponse, err
 	}
 
 	internalProxy = campaignRulePoxy

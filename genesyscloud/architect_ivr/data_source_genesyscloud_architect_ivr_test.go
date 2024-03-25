@@ -57,9 +57,9 @@ func TestUnitDataSourceArchitectIvr(t *testing.T) {
 	targetId := uuid.NewString()
 	targetName := "MyTargetId"
 	archProxy := &architectIvrProxy{}
-	archProxy.getArchitectIvrIdByNameAttr = func(ctx context.Context, a *architectIvrProxy, name string) (string, bool, error) {
+	archProxy.getArchitectIvrIdByNameAttr = func(ctx context.Context, a *architectIvrProxy, name string) (string, bool, *platformclientv2.APIResponse, error) {
 		assert.Equal(t, targetName, name)
-		return targetId, false, nil
+		return targetId, false, nil, nil
 	}
 	internalProxy = archProxy
 	ctx := context.Background()
