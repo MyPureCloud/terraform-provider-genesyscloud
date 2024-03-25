@@ -24,7 +24,7 @@ func getAllUserPrompts(ctx context.Context, clientConfig *platformclientv2.Confi
 	resources := make(resourceExporter.ResourceIDMetaMap)
 	proxy := getArchitectUserPromptProxy(clientConfig)
 
-	userPrompts, _, err, _ := proxy.getArchitectUserPrompts(ctx, false, false, nil)
+	userPrompts, _, err, _ := proxy.getAllArchitectUserPrompts(ctx, false, false, nil)
 	if err != nil {
 		return nil, diag.Errorf("failed to get user prompts: %s", err)
 	}
@@ -331,11 +331,10 @@ func updatePromptResource(ctx context.Context, d *schema.ResourceData, proxy *ar
 	return nil
 }
 
-func getArchitectPromptAudioData(promptId string, meta interface{}) ([]PromptAudioData, error) {
+func getArchitectPromptAudioData(ctx context.Context, promptId string, meta interface{}) ([]PromptAudioData, error) {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-	apiInstance := platformclientv2.NewArchitectApiWithConfig(sdkConfig)
-
-	data, _, err := apiInstance.GetArchitectPrompt(promptId, true, true, nil)
+	proxy := getArchitectUserPromptProxy(sdkConfig)
+	data, _, err, _ := proxy.getArchitectUserPrompt(ctx, promptId, true, true, nil)
 	if err != nil {
 		return nil, err
 	}

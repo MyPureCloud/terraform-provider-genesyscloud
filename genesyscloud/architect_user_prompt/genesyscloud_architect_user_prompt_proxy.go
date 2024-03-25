@@ -3,6 +3,7 @@ package architect_user_prompt
 import (
 	"context"
 	"fmt"
+	"log"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
 )
@@ -12,11 +13,12 @@ var internalProxy *architectUserPromptProxy
 
 type createArchitectUserPromptFunc func(ctx context.Context, p *architectUserPromptProxy, body platformclientv2.Prompt) (*platformclientv2.Prompt, *platformclientv2.APIResponse, error)
 type getArchitectUserPromptFunc func(ctx context.Context, p *architectUserPromptProxy, id string, includeMediaUris bool, includeResources bool, language []string) (*platformclientv2.Prompt, *platformclientv2.APIResponse, error, bool)
-type getArchitectUserPromptsFunc func(ctx context.Context, p *architectUserPromptProxy, includeMediaUris bool, includeResources bool, nameArr []string) (*[]platformclientv2.Prompt, *platformclientv2.APIResponse, error, bool)
+type getAllArchitectUserPromptsFunc func(ctx context.Context, p *architectUserPromptProxy, includeMediaUris bool, includeResources bool, nameArr []string) (*[]platformclientv2.Prompt, *platformclientv2.APIResponse, error, bool)
 type updateArchitectUserPromptFunc func(ctx context.Context, p *architectUserPromptProxy, id string, body platformclientv2.Prompt) (*platformclientv2.Prompt, *platformclientv2.APIResponse, error)
 type deleteArchitectUserPromptFunc func(ctx context.Context, p *architectUserPromptProxy, id string, allResources bool) (*platformclientv2.APIResponse, error)
 type createArchitectUserPromptResourceFunc func(ctx context.Context, p *architectUserPromptProxy, id string, body platformclientv2.Promptassetcreate) (*platformclientv2.Promptasset, *platformclientv2.APIResponse, error)
 type updateArchitectUserPromptResourceFunc func(ctx context.Context, p *architectUserPromptProxy, id string, languageCode string, body platformclientv2.Promptasset) (*platformclientv2.Promptasset, *platformclientv2.APIResponse, error)
+type getArchitectUserPromptIdByNameFunc func(ctx context.Context, p *architectUserPromptProxy, nameArr []string) (string, *platformclientv2.APIResponse, error, bool)
 
 // ArchitectUserPromptProxy - proxy for Architect User Prompts
 type architectUserPromptProxy struct {
@@ -24,11 +26,12 @@ type architectUserPromptProxy struct {
 	architectApi                          *platformclientv2.ArchitectApi
 	createArchitectUserPromptAttr         createArchitectUserPromptFunc
 	getArchitectUserPromptAttr            getArchitectUserPromptFunc
-	getArchitectUserPromptsAttr           getArchitectUserPromptsFunc
+	getAllArchitectUserPromptsAttr        getAllArchitectUserPromptsFunc
 	updateArchitectUserPromptAttr         updateArchitectUserPromptFunc
 	deleteArchitectUserPromptAttr         deleteArchitectUserPromptFunc
 	createArchitectUserPromptResourceAttr createArchitectUserPromptResourceFunc
 	updateArchitectUserPromptResourceAttr updateArchitectUserPromptResourceFunc
+	getArchitectUserPromptIdByNameAttr    getArchitectUserPromptIdByNameFunc
 }
 
 func newArchitectUserPromptProxy(clientConfig *platformclientv2.Configuration) *architectUserPromptProxy {
@@ -38,11 +41,12 @@ func newArchitectUserPromptProxy(clientConfig *platformclientv2.Configuration) *
 		architectApi:                          api,
 		createArchitectUserPromptAttr:         createArchitectUserPromptFn,
 		getArchitectUserPromptAttr:            getArchitectUserPromptFn,
-		getArchitectUserPromptsAttr:           getArchitectUserPromptsFn,
+		getAllArchitectUserPromptsAttr:        getAllArchitectUserPromptsFn,
 		updateArchitectUserPromptAttr:         updateArchitectUserPromptFn,
 		deleteArchitectUserPromptAttr:         deleteArchitectUserPromptFn,
 		createArchitectUserPromptResourceAttr: createArchitectUserPromptResourceFn,
 		updateArchitectUserPromptResourceAttr: updateArchitectUserPromptResourceFn,
+		getArchitectUserPromptIdByNameAttr:    getArchitectUserPromptIdByNameFn,
 	}
 }
 
@@ -64,9 +68,9 @@ func (p *architectUserPromptProxy) getArchitectUserPrompt(ctx context.Context, i
 	return p.getArchitectUserPromptAttr(ctx, p, id, includeMediaUris, includeResources, language)
 }
 
-// getArchitectUserPrompts retrieves a list of user prompts
-func (p *architectUserPromptProxy) getArchitectUserPrompts(ctx context.Context, includeMediaUris bool, includeResources bool, nameArr []string) (*[]platformclientv2.Prompt, *platformclientv2.APIResponse, error, bool) {
-	return p.getArchitectUserPromptsAttr(ctx, p, includeMediaUris, includeResources, nameArr)
+// getAllArchitectUserPrompts retrieves a list of user prompts
+func (p *architectUserPromptProxy) getAllArchitectUserPrompts(ctx context.Context, includeMediaUris bool, includeResources bool, nameArr []string) (*[]platformclientv2.Prompt, *platformclientv2.APIResponse, error, bool) {
+	return p.getAllArchitectUserPromptsAttr(ctx, p, includeMediaUris, includeResources, nameArr)
 }
 
 // updateArchitectUserPrompt updates a user prompt
@@ -88,6 +92,12 @@ func (p *architectUserPromptProxy) createArchitectUserPromptResource(ctx context
 func (p *architectUserPromptProxy) updateArchitectUserPromptResource(ctx context.Context, id string, languageCode string, body platformclientv2.Promptasset) (*platformclientv2.Promptasset, *platformclientv2.APIResponse, error) {
 	return p.updateArchitectUserPromptResourceAttr(ctx, p, id, languageCode, body)
 }
+
+// getArchitectUserPromptIdByName retrieves a user prompt by name
+func (p *architectUserPromptProxy) getArchitectUserPromptIdByName(ctx context.Context, nameArr []string) (string, *platformclientv2.APIResponse, error, bool) {
+	return p.getArchitectUserPromptIdByNameAttr(ctx, p, nameArr)
+}
+
 func createArchitectUserPromptFn(ctx context.Context, p *architectUserPromptProxy, body platformclientv2.Prompt) (*platformclientv2.Prompt, *platformclientv2.APIResponse, error) {
 	prompt, response, err := p.architectApi.PostArchitectPrompts(body)
 	if err != nil {
@@ -120,7 +130,7 @@ func deleteArchitectUserPromptFn(ctx context.Context, p *architectUserPromptProx
 	return response, nil
 }
 
-func getArchitectUserPromptsFn(ctx context.Context, p *architectUserPromptProxy, includeMediaUris bool, includeResources bool, nameArr []string) (*[]platformclientv2.Prompt, *platformclientv2.APIResponse, error, bool) {
+func getAllArchitectUserPromptsFn(ctx context.Context, p *architectUserPromptProxy, includeMediaUris bool, includeResources bool, nameArr []string) (*[]platformclientv2.Prompt, *platformclientv2.APIResponse, error, bool) {
 	var (
 		pageCount  int
 		pageNum    = 1
@@ -168,4 +178,22 @@ func updateArchitectUserPromptResourceFn(ctx context.Context, p *architectUserPr
 		return nil, response, fmt.Errorf("failed to update architect user prompt resource: %s", err)
 	}
 	return promptAsset, response, nil
+}
+
+func getArchitectUserPromptIdByNameFn(ctx context.Context, p *architectUserPromptProxy, nameArr []string) (string, *platformclientv2.APIResponse, error, bool) {
+	// Query user prompt by name. Retry in case search has not yet indexed the user prompt.
+	prompts, response, err, retryable := p.getAllArchitectUserPrompts(ctx, true, true, nameArr)
+	if err != nil {
+		return "", response, fmt.Errorf("error requesting user prompt by name %s: %s", nameArr, err), retryable
+	}
+	if prompts == nil || len(*prompts) == 0 {
+		return "", response, fmt.Errorf("no user prompt was found by name %s: %s", nameArr, err), retryable
+	}
+	for _, prompt := range *prompts {
+		if *prompt.Name == nameArr[0] {
+			log.Printf("found user prompt id %s by name %s", *prompt.Id, *prompt.Name)
+			return *prompt.Id, response, nil, retryable
+		}
+	}
+	return "", response, fmt.Errorf("unable to find user prompt by name"), retryable
 }

@@ -2,6 +2,7 @@ package architect_user_prompt
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -149,7 +150,7 @@ func ArchitectPromptAudioResolver(promptId, exportDirectory, subDirectory string
 		return err
 	}
 
-	audioDataList, err := getArchitectPromptAudioData(promptId, meta)
+	audioDataList, err := getArchitectPromptAudioData(context.TODO(), promptId, meta)
 	if err != nil || len(audioDataList) == 0 {
 		return err
 	}
