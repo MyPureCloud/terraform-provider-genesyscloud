@@ -1,6 +1,8 @@
 package webdeployments_configuration_utils
 
 import (
+	"fmt"
+	"log"
 	"terraform-provider-genesyscloud/genesyscloud/util/lists"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
@@ -37,16 +39,27 @@ func buildAppConversations(conversations []interface{}) *platformclientv2.Conver
 		}
 	}
 
-	if humanizeArr, ok := conversation["humanize"].([]interface{}); ok && len(humanizeArr) > 0 {
-		humanize := humanizeArr[0].(map[string]interface{})
-		ret.Humanize = &platformclientv2.Humanize{
-			Enabled: platformclientv2.Bool(humanize["enabled"].(bool)),
-		}
-		if botArr, ok := humanize["bot"].([]interface{}); ok && len(botArr) > 0 {
-			bot := botArr[0].(map[string]interface{})
-			ret.Humanize.Bot = &platformclientv2.Botmessengerprofile{
-				Name:      platformclientv2.String(bot["name"].(string)),
-				AvatarUrl: platformclientv2.String(bot["avatar_url"].(string)),
+	if humanizeArr, ok := conversation["humanize"].([]interface{}); ok {
+		if len(humanizeArr) == 0 || (len(humanizeArr) == 1 && humanizeArr[0] == nil) {
+			log.Println("Humanize array is empty or contains nil: ", humanizeArr)
+			ret.Humanize = &platformclientv2.Humanize{Enabled: platformclientv2.Bool(false)}
+		} else if len(humanizeArr) > 0 {
+			humanize := humanizeArr[0].(map[string]interface{})
+			ret.Humanize = &platformclientv2.Humanize{
+				Enabled: platformclientv2.Bool(humanize["enabled"].(bool)),
+			}
+
+			if botArr, ok := humanize["bot"].([]interface{}); ok {
+				if len(botArr) == 0 || (len(botArr) == 1 && botArr[0] == nil) {
+					log.Println("Bot array is empty or contains nil: ", botArr)
+					ret.Humanize.Bot = nil
+				} else if len(botArr) > 0 && botArr[0] != nil {
+					bot := botArr[0].(map[string]interface{})
+					ret.Humanize.Bot = &platformclientv2.Botmessengerprofile{
+						Name:      platformclientv2.String(bot["name"].(string)),
+						AvatarUrl: platformclientv2.String(bot["avatar_url"].(string)),
+					}
+				}
 			}
 		}
 	}
@@ -55,7 +68,7 @@ func buildAppConversations(conversations []interface{}) *platformclientv2.Conver
 }
 
 func buildAppKnowledge(knowledge []interface{}) *platformclientv2.Knowledge {
-	if len(knowledge) < 1 {
+	if len(knowledge) < 1 || (len(knowledge) == 1 && knowledge[0] == nil) {
 		return nil
 	}
 
@@ -69,7 +82,6 @@ func buildAppKnowledge(knowledge []interface{}) *platformclientv2.Knowledge {
 			Id: &knowledgeBaseId,
 		}
 	}
-
 	return ret
 }
 
@@ -79,9 +91,17 @@ func buildMessengerApps(apps []interface{}) *platformclientv2.Messengerapps {
 	}
 
 	app := apps[0].(map[string]interface{})
+	conversations, conversationsOk := app["conversations"].([]interface{})
+	knowledge, knowledgeOk := app["knowledge"].([]interface{})
+
+	if !conversationsOk || !knowledgeOk {
+		fmt.Println("error in build Messenger Apps")
+		return nil
+	}
+
 	return &platformclientv2.Messengerapps{
-		Conversations: buildAppConversations(app["conversations"].([]interface{})),
-		Knowledge:     buildAppKnowledge(app["knowledge"].([]interface{})),
+		Conversations: buildAppConversations(conversations),
+		Knowledge:     buildAppKnowledge(knowledge),
 	}
 }
 
@@ -216,7 +236,6 @@ func flattenFileUpload(settings *platformclientv2.Fileuploadsettings) []interfac
 
 	return []interface{}{ret}
 }
-
 func flattenAppConversations(conversations *platformclientv2.Conversationappsettings) []interface{} {
 	if conversations == nil {
 		return nil
@@ -248,13 +267,18 @@ func flattenAppConversations(conversations *platformclientv2.Conversationappsett
 	}
 
 	if conversations.Humanize != nil {
-		retMap["humanize"] = []interface{}{map[string]interface{}{
+		humanizeMap := map[string]interface{}{
 			"enabled": conversations.Humanize.Enabled,
-			"bot": []interface{}{map[string]interface{}{
+		}
+
+		if conversations.Humanize.Bot != nil {
+			humanizeMap["bot"] = []interface{}{map[string]interface{}{
 				"name":       conversations.Humanize.Bot.Name,
 				"avatar_url": conversations.Humanize.Bot.AvatarUrl,
-			}},
-		}}
+			}}
+		}
+
+		retMap["humanize"] = []interface{}{humanizeMap}
 	}
 
 	return []interface{}{retMap}
