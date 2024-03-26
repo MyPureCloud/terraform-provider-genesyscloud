@@ -190,7 +190,7 @@ func getArchitectUserPromptIdByNameFn(ctx context.Context, p *architectUserPromp
 		return "", response, fmt.Errorf("no user prompt was found by name %s: %s", nameArr, err), retryable
 	}
 	for _, prompt := range *prompts {
-		if *prompt.Name == nameArr[0] {
+		if sliceContains(&nameArr, *prompt.Name) {
 			log.Printf("found user prompt id %s by name %s", *prompt.Id, *prompt.Name)
 			return *prompt.Id, response, nil, retryable
 		}
