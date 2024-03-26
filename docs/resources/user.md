@@ -130,7 +130,6 @@ resource "genesyscloud_user" "example_user" {
 - `routing_skills` (Set of Object) Skills and proficiencies for this user. If not set, this resource will not manage user skills. (see [below for nested schema](#nestedatt--routing_skills))
 - `routing_utilization` (List of Object) The routing utilization settings for this user. If empty list, the org default settings are used. If not set, this resource will not manage the users's utilization settings. (see [below for nested schema](#nestedatt--routing_utilization))
 - `state` (String) User's state (active | inactive). Default is 'active'. Defaults to `active`.
-- `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 - `title` (String) User's title.
 
 ### Read-Only
@@ -274,15 +273,4 @@ Optional:
 - `include_non_acd` (Boolean)
 - `interruptible_media_types` (Set of String)
 - `maximum_capacity` (Number)
-
-
-
-<a id="nestedblock--timeouts"></a>
-### Nested Schema for `timeouts`
-
-Optional:
-
-- `create` (String)
-- `read` (String)
-- `update` (String)
 

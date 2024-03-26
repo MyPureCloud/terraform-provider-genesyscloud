@@ -18,7 +18,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v123/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
 )
 
 type PhoneConfig struct {
@@ -381,36 +381,4 @@ func generatePhoneProperties(hardware_id string) string {
 						util.GenerateJsonProperty("instance", strconv.Quote(hardware_id)),
 					)))),
 	)
-}
-
-func validatePhoneHardwareIdRequirements(phone *platformclientv2.Phone) (bool, error) {
-	var (
-		hardwareIdType  string
-		hardwareIdValue string
-	)
-	hardwareIdRequiredTypes := map[string]bool{
-		"mac":  true,
-		"fqdn": true,
-	}
-
-	if phone.Capabilities != nil && phone.Capabilities.HardwareIdType != nil {
-		hardwareIdType = *phone.Capabilities.HardwareIdType
-	}
-
-	if phone.Properties != nil && (*phone.Properties)["phone_hardwareId"] != nil {
-		hardwareIdval, exists := (*phone.Properties)["phone_hardwareId"].(map[string]interface{})["value"].(map[string]interface{})["instance"]
-		if exists {
-			hardwareIdValue = hardwareIdval.(string)
-		}
-	}
-
-	_, exists := hardwareIdRequiredTypes[hardwareIdType]
-	if exists && len(hardwareIdValue) <= 0 {
-		return false, fmt.Errorf("hardwareId is required based on the phone capabilities hardwareIdType: %s", hardwareIdType)
-	}
-	if (!exists) && len(hardwareIdValue) > 0 {
-		return false, fmt.Errorf("hardwareId is not required based on the phone capabilities hardwareIdType:%s", hardwareIdType)
-	}
-	return true, nil
-
 }

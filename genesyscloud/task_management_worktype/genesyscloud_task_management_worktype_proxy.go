@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v123/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
 )
 
 /*
@@ -18,13 +18,14 @@ out during testing.
 var internalProxy *taskManagementWorktypeProxy
 
 // Type definitions for each func on our proxy so we can easily mock them out later
+
 type createTaskManagementWorktypeFunc func(ctx context.Context, p *taskManagementWorktypeProxy, worktype *platformclientv2.Worktypecreate) (*platformclientv2.Worktype, *platformclientv2.APIResponse, error)
 type getAllTaskManagementWorktypeFunc func(ctx context.Context, p *taskManagementWorktypeProxy) (*[]platformclientv2.Worktype, *platformclientv2.APIResponse, error)
 type getTaskManagementWorktypeIdByNameFunc func(ctx context.Context, p *taskManagementWorktypeProxy, name string) (id string, retryable bool, resp *platformclientv2.APIResponse, err error)
+type getTaskManagementWorktypeByNameFunc func(ctx context.Context, p *taskManagementWorktypeProxy, name string) (workItemType *platformclientv2.Worktype, retryable bool, err error)
 type getTaskManagementWorktypeByIdFunc func(ctx context.Context, p *taskManagementWorktypeProxy, id string) (worktype *platformclientv2.Worktype, response *platformclientv2.APIResponse, err error)
 type updateTaskManagementWorktypeFunc func(ctx context.Context, p *taskManagementWorktypeProxy, id string, worktype *platformclientv2.Worktypeupdate) (*platformclientv2.Worktype, *platformclientv2.APIResponse, error)
 type deleteTaskManagementWorktypeFunc func(ctx context.Context, p *taskManagementWorktypeProxy, id string) (response *platformclientv2.APIResponse, err error)
-
 type createTaskManagementWorktypeStatusFunc func(ctx context.Context, p *taskManagementWorktypeProxy, worktypeId string, status *platformclientv2.Workitemstatuscreate) (*platformclientv2.Workitemstatus, *platformclientv2.APIResponse, error)
 type updateTaskManagementWorktypeStatusFunc func(ctx context.Context, p *taskManagementWorktypeProxy, worktypeId string, statusId string, statusUpdate *platformclientv2.Workitemstatusupdate) (*platformclientv2.Workitemstatus, *platformclientv2.APIResponse, error)
 type deleteTaskManagementWorktypeStatusFunc func(ctx context.Context, p *taskManagementWorktypeProxy, worktypeId string, statusId string) (response *platformclientv2.APIResponse, err error)
@@ -37,6 +38,7 @@ type taskManagementWorktypeProxy struct {
 	getAllTaskManagementWorktypeAttr      getAllTaskManagementWorktypeFunc
 	getTaskManagementWorktypeIdByNameAttr getTaskManagementWorktypeIdByNameFunc
 	getTaskManagementWorktypeByIdAttr     getTaskManagementWorktypeByIdFunc
+	getTaskManagementWorktypeByNameAttr   getTaskManagementWorktypeByNameFunc
 	updateTaskManagementWorktypeAttr      updateTaskManagementWorktypeFunc
 	deleteTaskManagementWorktypeAttr      deleteTaskManagementWorktypeFunc
 
@@ -54,6 +56,7 @@ func newTaskManagementWorktypeProxy(clientConfig *platformclientv2.Configuration
 		createTaskManagementWorktypeAttr:      createTaskManagementWorktypeFn,
 		getAllTaskManagementWorktypeAttr:      getAllTaskManagementWorktypeFn,
 		getTaskManagementWorktypeIdByNameAttr: getTaskManagementWorktypeIdByNameFn,
+		getTaskManagementWorktypeByNameAttr:   getTaskManagementWorktypeByNameFn,
 		getTaskManagementWorktypeByIdAttr:     getTaskManagementWorktypeByIdFn,
 		updateTaskManagementWorktypeAttr:      updateTaskManagementWorktypeFn,
 		deleteTaskManagementWorktypeAttr:      deleteTaskManagementWorktypeFn,
@@ -83,9 +86,15 @@ func (p *taskManagementWorktypeProxy) getAllTaskManagementWorktype(ctx context.C
 	return p.getAllTaskManagementWorktypeAttr(ctx, p)
 }
 
+
 // getTaskManagementWorktypeIdByName returns a single Genesys Cloud task management worktype by a name
 func (p *taskManagementWorktypeProxy) getTaskManagementWorktypeIdByName(ctx context.Context, name string) (id string, retryable bool, resp *platformclientv2.APIResponse, err error) {
 	return p.getTaskManagementWorktypeIdByNameAttr(ctx, p, name)
+}
+
+// getTaskManagementWorktypeByName returns a single Genesys Cloud task management worktype by a name
+func (p *taskManagementWorktypeProxy) getTaskManagementWorktypeByName(ctx context.Context, name string) (workItemType *platformclientv2.Worktype, retryable bool, err error) {
+	return p.getTaskManagementWorktypeByNameAttr(ctx, p, name)
 }
 
 // getTaskManagementWorktypeById returns a single Genesys Cloud task management worktype by Id
@@ -156,8 +165,9 @@ func getAllTaskManagementWorktypeFn(ctx context.Context, p *taskManagementWorkty
 	return &allWorktypes, response, nil
 }
 
-// getTaskManagementWorktypeIdByNameFn is an implementation of the function to get a Genesys Cloud task management worktype by name
-func getTaskManagementWorktypeIdByNameFn(ctx context.Context, p *taskManagementWorktypeProxy, name string) (id string, retryable bool, resp *platformclientv2.APIResponse, err error) {
+
+// Looksup a worktype by name
+func getWorkType(name string, p *taskManagementWorktypeProxy) (*platformclientv2.Worktype, bool, error) {
 	pageSize := 100
 
 	filterType := "String"
@@ -180,17 +190,42 @@ func getTaskManagementWorktypeIdByNameFn(ctx context.Context, p *taskManagementW
 
 	worktypes, resp, err := p.taskManagementApi.PostTaskmanagementWorktypesQuery(*queryReq)
 	if err != nil {
-		return "", false, resp, fmt.Errorf("failed to get worktype %s: %v", name, err)
+		return nil, false, fmt.Errorf("failed to get worktype %s: %v", name, err)
 	}
 
 	if worktypes.Entities == nil || len(*worktypes.Entities) == 0 {
-		return "", true, resp, fmt.Errorf("no task management worktype found with name %s", name)
+		return nil, true, fmt.Errorf("no task management worktype found with name %s", name)
 	}
 
-	worktype := (*worktypes.Entities)[0]
+	if len(*worktypes.Entities) > 1 {
+		return nil, true, fmt.Errorf("%d workitem types have been found with the same name: %s .  Unable to resolve to a single id", len(*worktypes.Entities), name)
+	}
+
+	workType := (*worktypes.Entities)[0]
+
+	return &workType, false, nil
+}
+
+// getTaskManagementWorktypeIdByNameFn is an implementation of the function to get a Genesys Cloud task management worktype by name
+func getTaskManagementWorktypeIdByNameFn(ctx context.Context, p *taskManagementWorktypeProxy, name string) (id string, retryable bool, err error) {
+	worktype, retry, err := getWorkType(name, p)
+	if err != nil {
+		return "", retry, err
+	}
 
 	log.Printf("Retrieved the task management worktype id %s by name %s", *worktype.Id, name)
 	return *worktype.Id, false, resp, nil
+}
+
+// getTaskManagementWorktypeByNameFn Retrieves the full worktype item rather than just the id
+func getTaskManagementWorktypeByNameFn(ctx context.Context, p *taskManagementWorktypeProxy, name string) (workItemType *platformclientv2.Worktype, retryable bool, err error) {
+	worktype, retry, err := getWorkType(name, p)
+	if err != nil {
+		return nil, retry, err
+	}
+
+	log.Printf("Retrieved the task management worktype %s by name %s", *worktype.Id, name)
+	return worktype, false, nil
 }
 
 // getTaskManagementWorktypeByIdFn is an implementation of the function to get a Genesys Cloud task management worktype by Id

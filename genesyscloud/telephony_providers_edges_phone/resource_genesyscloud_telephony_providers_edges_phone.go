@@ -16,7 +16,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v123/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
 )
 
 func getAllPhones(ctx context.Context, sdkConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
@@ -39,10 +39,6 @@ func createPhone(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 	pp := getPhoneProxy(sdkConfig)
 
 	phoneConfig, err := getPhoneFromResourceData(ctx, pp, d)
-	if err != nil {
-		return diag.Errorf("failed to create phone %v: %v", *phoneConfig.Name, err)
-	}
-	_, err = validatePhoneHardwareIdRequirements(phoneConfig)
 	if err != nil {
 		return diag.Errorf("failed to create phone %v: %v", *phoneConfig.Name, err)
 	}
@@ -128,10 +124,6 @@ func updatePhone(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 	pp := getPhoneProxy(sdkConfig)
 
 	phoneConfig, err := getPhoneFromResourceData(ctx, pp, d)
-	if err != nil {
-		return diag.Errorf("failed to updated phone %v: %v", *phoneConfig.Name, err)
-	}
-	_, err = validatePhoneHardwareIdRequirements(phoneConfig)
 	if err != nil {
 		return diag.Errorf("failed to updated phone %v: %v", *phoneConfig.Name, err)
 	}

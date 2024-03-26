@@ -21,7 +21,7 @@ import (
 // dataSourceTaskManagementWorkbinRead retrieves by name the id in question
 func dataSourceTaskManagementWorkbinRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-	proxy := newTaskManagementWorkbinProxy(sdkConfig)
+	proxy := getTaskManagementWorkbinProxy(sdkConfig)
 
 	name := d.Get("name").(string)
 

@@ -1,8 +1,9 @@
-package genesyscloud
+package group
 
 import (
 	"fmt"
 	"strconv"
+	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
@@ -10,7 +11,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v123/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
 )
 
 func TestAccResourceGroupBasic(t *testing.T) {
@@ -34,8 +35,8 @@ func TestAccResourceGroupBasic(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				// Create a basic group
-				Config: GenerateUserWithCustomAttrs(testUserResource, testUserEmail, testUserName) +
-					generateGroupResource(
+				Config: generateUserWithCustomAttrs(testUserResource, testUserEmail, testUserName) +
+					GenerateGroupResource(
 						groupResource1,
 						groupName,
 						strconv.Quote(groupDesc1),
@@ -54,7 +55,7 @@ func TestAccResourceGroupBasic(t *testing.T) {
 			},
 			{
 				// Update group
-				Config: GenerateUserWithCustomAttrs(testUserResource, testUserEmail, testUserName) + generateGroupResource(
+				Config: generateUserWithCustomAttrs(testUserResource, testUserEmail, testUserName) + GenerateGroupResource(
 					groupResource1,
 					groupName,
 					strconv.Quote(groupDesc2),
@@ -104,7 +105,7 @@ func TestAccResourceGroupAddresses(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				// Create
-				Config: GenerateUserWithCustomAttrs(testUserResource, testUserEmail, testUserName) + GenerateBasicGroupResource(
+				Config: generateUserWithCustomAttrs(testUserResource, testUserEmail, testUserName) + GenerateBasicGroupResource(
 					groupResource1,
 					groupName,
 					generateGroupAddress(
@@ -122,7 +123,7 @@ func TestAccResourceGroupAddresses(t *testing.T) {
 			},
 			{
 				// Update phone number & type
-				Config: GenerateUserWithCustomAttrs(testUserResource, testUserEmail, testUserName) + GenerateBasicGroupResource(
+				Config: generateUserWithCustomAttrs(testUserResource, testUserEmail, testUserName) + GenerateBasicGroupResource(
 					groupResource1,
 					groupName,
 					generateGroupAddress(
@@ -140,7 +141,7 @@ func TestAccResourceGroupAddresses(t *testing.T) {
 			},
 			{
 				// Remove number and set extension
-				Config: GenerateUserWithCustomAttrs(testUserResource, testUserEmail, testUserName) + GenerateBasicGroupResource(
+				Config: generateUserWithCustomAttrs(testUserResource, testUserEmail, testUserName) + GenerateBasicGroupResource(
 					groupResource1,
 					groupName,
 					generateGroupAddress(
@@ -158,7 +159,7 @@ func TestAccResourceGroupAddresses(t *testing.T) {
 			},
 			{
 				// Update the extension
-				Config: GenerateUserWithCustomAttrs(testUserResource, testUserEmail, testUserName) + GenerateBasicGroupResource(
+				Config: generateUserWithCustomAttrs(testUserResource, testUserEmail, testUserName) + GenerateBasicGroupResource(
 					groupResource1,
 					groupName,
 					generateGroupAddress(
@@ -212,11 +213,11 @@ func TestAccResourceGroupMembers(t *testing.T) {
 					groupName,
 					GenerateGroupOwners("genesyscloud_user."+userResource1+".id"),
 					generateGroupMembers("genesyscloud_user."+userResource2+".id"),
-				) + GenerateBasicUserResource(
+				) + generateBasicUserResource(
 					userResource1,
 					userEmail1,
 					userName1,
-				) + GenerateBasicUserResource(
+				) + generateBasicUserResource(
 					userResource2,
 					userEmail2,
 					userName2,
@@ -228,7 +229,7 @@ func TestAccResourceGroupMembers(t *testing.T) {
 			},
 			{
 				// Make the owner a member
-				Config: GenerateUserWithCustomAttrs(testUserResource, testUserEmail, testUserName) + GenerateBasicGroupResource(
+				Config: generateUserWithCustomAttrs(testUserResource, testUserEmail, testUserName) + GenerateBasicGroupResource(
 					groupResource,
 					groupName,
 					GenerateGroupOwners("genesyscloud_user."+userResource1+".id"),
@@ -236,11 +237,11 @@ func TestAccResourceGroupMembers(t *testing.T) {
 						"genesyscloud_user."+userResource1+".id",
 						"genesyscloud_user."+userResource2+".id",
 					),
-				) + GenerateBasicUserResource(
+				) + generateBasicUserResource(
 					userResource1,
 					userEmail1,
 					userName1,
-				) + GenerateBasicUserResource(
+				) + generateBasicUserResource(
 					userResource2,
 					userEmail2,
 					userName2,
@@ -253,18 +254,18 @@ func TestAccResourceGroupMembers(t *testing.T) {
 			},
 			{
 				// Remove a member and change the owner
-				Config: GenerateUserWithCustomAttrs(testUserResource, testUserEmail, testUserName) + GenerateBasicGroupResource(
+				Config: generateUserWithCustomAttrs(testUserResource, testUserEmail, testUserName) + GenerateBasicGroupResource(
 					groupResource,
 					groupName,
 					GenerateGroupOwners("genesyscloud_user."+userResource2+".id"),
 					generateGroupMembers(
 						"genesyscloud_user."+userResource1+".id",
 					),
-				) + GenerateBasicUserResource(
+				) + generateBasicUserResource(
 					userResource1,
 					userEmail1,
 					userName1,
-				) + GenerateBasicUserResource(
+				) + generateBasicUserResource(
 					userResource2,
 					userEmail2,
 					userName2,
@@ -276,12 +277,12 @@ func TestAccResourceGroupMembers(t *testing.T) {
 			},
 			{
 				// Remove all members while deleting the user
-				Config: GenerateUserWithCustomAttrs(testUserResource, testUserEmail, testUserName) + GenerateBasicGroupResource(
+				Config: generateUserWithCustomAttrs(testUserResource, testUserEmail, testUserName) + GenerateBasicGroupResource(
 					groupResource,
 					groupName,
 					GenerateGroupOwners("genesyscloud_user."+userResource2+".id"),
 					"member_ids = []",
-				) + GenerateBasicUserResource(
+				) + generateBasicUserResource(
 					userResource2,
 					userEmail2,
 					userName2,
@@ -352,4 +353,44 @@ func validateGroupMember(groupResourceName string, userResourceName string, attr
 
 		return fmt.Errorf("%s %s not found for group %s in state", attrName, userID, groupID)
 	}
+}
+
+// Duplicating this code within the function to not break a cyclid dependency
+func generateUserWithCustomAttrs(resourceID string, email string, name string, attrs ...string) string {
+	return fmt.Sprintf(`resource "genesyscloud_user" "%s" {
+		email = "%s"
+		name = "%s"
+		%s
+	}
+	`, resourceID, email, name, strings.Join(attrs, "\n"))
+}
+
+// Basic user with minimum required fields
+func generateBasicUserResource(resourceID string, email string, name string) string {
+	return generateUserResource(resourceID, email, name, util.NullValue, util.NullValue, util.NullValue, util.NullValue, util.NullValue, "", "")
+}
+
+func generateUserResource(
+	resourceID string,
+	email string,
+	name string,
+	state string,
+	title string,
+	department string,
+	manager string,
+	acdAutoAnswer string,
+	profileSkills string,
+	certifications string) string {
+	return fmt.Sprintf(`resource "genesyscloud_user" "%s" {
+		email = "%s"
+		name = "%s"
+		state = %s
+		title = %s
+		department = %s
+		manager = %s
+		acd_auto_answer = %s
+		profile_skills = [%s]
+		certifications = [%s]
+	}
+	`, resourceID, email, name, state, title, department, manager, acdAutoAnswer, profileSkills, certifications)
 }

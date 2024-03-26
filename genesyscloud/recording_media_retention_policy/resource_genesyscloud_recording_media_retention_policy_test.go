@@ -21,7 +21,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v123/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
 )
 
 /*
@@ -958,7 +958,7 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 						userResource1,
 						GenerateResourceRoles("genesyscloud_auth_role."+roleResource1+".id"),
 					) +
-					gcloud.GenerateUserWithCustomAttrs(userResource1, userEmail, userName) +
+					generateUserWithCustomAttrs(userResource1, userEmail, userName) +
 					gcloud.GenerateEvaluationFormResource(evaluationFormResource1, &evaluationFormResourceBody) +
 					gcloud.GenerateSurveyFormResource(surveyFormResource1, &surveyFormResourceBody) +
 					integration.GenerateIntegrationResource(integrationResource1, strconv.Quote(integrationIntendedState), strconv.Quote(integrationType), "") +
@@ -1065,7 +1065,7 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 						userResource1,
 						GenerateResourceRoles("genesyscloud_auth_role."+roleResource1+".id"),
 					) +
-					gcloud.GenerateUserWithCustomAttrs(userResource1, userEmail, userName) +
+					generateUserWithCustomAttrs(userResource1, userEmail, userName) +
 					gcloud.GenerateEvaluationFormResource(evaluationFormResource1, &evaluationFormResourceBody) +
 					gcloud.GenerateSurveyFormResource(surveyFormResource1, &surveyFormResourceBody) +
 					integration.GenerateIntegrationResource(integrationResource1, strconv.Quote(integrationIntendedState), strconv.Quote(integrationType), "") +
@@ -1172,7 +1172,7 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 						userResource1,
 						GenerateResourceRoles("genesyscloud_auth_role."+roleResource1+".id"),
 					) +
-					gcloud.GenerateUserWithCustomAttrs(userResource1, userEmail, userName) +
+					generateUserWithCustomAttrs(userResource1, userEmail, userName) +
 					gcloud.GenerateEvaluationFormResource(evaluationFormResource1, &evaluationFormResourceBody) +
 					gcloud.GenerateSurveyFormResource(surveyFormResource1, &surveyFormResourceBody) +
 					integration.GenerateIntegrationResource(integrationResource1, strconv.Quote(integrationIntendedState), strconv.Quote(integrationType), "") +
@@ -1279,7 +1279,7 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 						userResource1,
 						GenerateResourceRoles("genesyscloud_auth_role."+roleResource1+".id"),
 					) +
-					gcloud.GenerateUserWithCustomAttrs(userResource1, userEmail, userName) +
+					generateUserWithCustomAttrs(userResource1, userEmail, userName) +
 					gcloud.GenerateEvaluationFormResource(evaluationFormResource1, &evaluationFormResourceBody) +
 					gcloud.GenerateSurveyFormResource(surveyFormResource1, &surveyFormResourceBody) +
 					integration.GenerateIntegrationResource(integrationResource1, strconv.Quote(integrationIntendedState), strconv.Quote(integrationType), "") +
@@ -2393,4 +2393,14 @@ func GenerateResourceRoles(skillID string, divisionIds ...string) string {
 		%s
 	}
 	`, skillID, divAttr)
+}
+
+// TODO Duplicating this code within the function to not break a cyclid dependency
+func generateUserWithCustomAttrs(resourceID string, email string, name string, attrs ...string) string {
+	return fmt.Sprintf(`resource "genesyscloud_user" "%s" {
+		email = "%s"
+		name = "%s"
+		%s
+	}
+	`, resourceID, email, name, strings.Join(attrs, "\n"))
 }

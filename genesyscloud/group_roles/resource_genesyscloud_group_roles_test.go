@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"strings"
 	"terraform-provider-genesyscloud/genesyscloud"
+	"terraform-provider-genesyscloud/genesyscloud/group"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"terraform-provider-genesyscloud/genesyscloud/util/lists"
@@ -40,10 +41,10 @@ func TestAccResourceGroupRolesMembership(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				// Create group with 1 role in default division
-				Config: genesyscloud.GenerateUserWithCustomAttrs(testUserResource, testUserEmail, testUserName) + genesyscloud.GenerateBasicGroupResource(
+				Config: generateUserWithCustomAttrs(testUserResource, testUserEmail, testUserName) + group.GenerateBasicGroupResource(
 					groupResource1,
 					groupName,
-					genesyscloud.GenerateGroupOwners("genesyscloud_user."+testUserResource+".id"),
+					group.GenerateGroupOwners("genesyscloud_user."+testUserResource+".id"),
 				) + authRole.GenerateAuthRoleResource(
 					roleResource1,
 					roleName1,
@@ -59,10 +60,10 @@ func TestAccResourceGroupRolesMembership(t *testing.T) {
 			},
 			{
 				// Create another role and division and add to the group
-				Config: genesyscloud.GenerateUserWithCustomAttrs(testUserResource, testUserEmail, testUserName) + genesyscloud.GenerateBasicGroupResource(
+				Config: generateUserWithCustomAttrs(testUserResource, testUserEmail, testUserName) + group.GenerateBasicGroupResource(
 					groupResource1,
 					groupName,
-					genesyscloud.GenerateGroupOwners("genesyscloud_user."+testUserResource+".id"),
+					group.GenerateGroupOwners("genesyscloud_user."+testUserResource+".id"),
 				) + authRole.GenerateAuthRoleResource(
 					roleResource1,
 					roleName1,
@@ -84,10 +85,10 @@ func TestAccResourceGroupRolesMembership(t *testing.T) {
 			},
 			{
 				// Remove a role from the group and modify division
-				Config: genesyscloud.GenerateUserWithCustomAttrs(testUserResource, testUserEmail, testUserName) + genesyscloud.GenerateBasicGroupResource(
+				Config: generateUserWithCustomAttrs(testUserResource, testUserEmail, testUserName) + group.GenerateBasicGroupResource(
 					groupResource1,
 					groupName,
-					genesyscloud.GenerateGroupOwners("genesyscloud_user."+testUserResource+".id"),
+					group.GenerateGroupOwners("genesyscloud_user."+testUserResource+".id"),
 				) + authRole.GenerateAuthRoleResource(
 					roleResource1,
 					roleName1,
@@ -103,10 +104,10 @@ func TestAccResourceGroupRolesMembership(t *testing.T) {
 			},
 			{
 				// Remove all roles from the group
-				Config: genesyscloud.GenerateUserWithCustomAttrs(testUserResource, testUserEmail, testUserName) + genesyscloud.GenerateBasicGroupResource(
+				Config: generateUserWithCustomAttrs(testUserResource, testUserEmail, testUserName) + group.GenerateBasicGroupResource(
 					groupResource1,
 					groupName,
-					genesyscloud.GenerateGroupOwners("genesyscloud_user."+testUserResource+".id"),
+					group.GenerateGroupOwners("genesyscloud_user."+testUserResource+".id"),
 				) + authRole.GenerateAuthRoleResource(
 					roleResource1,
 					roleName1,
@@ -211,4 +212,14 @@ func generateResourceRoles(skillID string, divisionIds ...string) string {
 		%s
 	}
 	`, skillID, divAttr)
+}
+
+// TODO: Duplicating this code within the function to not break a cyclic dependency
+func generateUserWithCustomAttrs(resourceID string, email string, name string, attrs ...string) string {
+	return fmt.Sprintf(`resource "genesyscloud_user" "%s" {
+		email = "%s"
+		name = "%s"
+		%s
+	}
+	`, resourceID, email, name, strings.Join(attrs, "\n"))
 }

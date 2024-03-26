@@ -1,5 +1,6 @@
 inboundCall:
-  name: Terraform Flow Test-b9eac7f8-cbf3-4a7f-95fc-f088c95deb6c
+  name: Terraform Flow Test-e74202b4-a83b-4247-a7d1-b1e94e752344
+  description: test description 1
   defaultLanguage: en-us
   startUpRef: ./menus/menu[mainMenu]
   initialGreeting:

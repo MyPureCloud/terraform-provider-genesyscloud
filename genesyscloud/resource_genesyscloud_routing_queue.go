@@ -24,7 +24,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v123/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
 )
 
 var (
@@ -674,7 +674,7 @@ func readQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 
 		if currentQueue.OutboundEmailAddress != nil && *currentQueue.OutboundEmailAddress != nil {
 			outboundEmailAddress := *currentQueue.OutboundEmailAddress
-			_ = d.Set("outbound_email_address", []interface{}{flattenQueueEmailAddress(*outboundEmailAddress)})
+			_ = d.Set("outbound_email_address", []interface{}{FlattenQueueEmailAddress(*outboundEmailAddress)})
 		} else {
 			_ = d.Set("outbound_email_address", nil)
 		}
@@ -1243,7 +1243,7 @@ func buildSdkQueueEmailAddress(d *schema.ResourceData) *platformclientv2.Queueem
 	return nil
 }
 
-func flattenQueueEmailAddress(settings platformclientv2.Queueemailaddress) map[string]interface{} {
+func FlattenQueueEmailAddress(settings platformclientv2.Queueemailaddress) map[string]interface{} {
 	settingsMap := make(map[string]interface{})
 	resourcedata.SetMapReferenceValueIfNotNil(settingsMap, "domain_id", settings.Domain)
 

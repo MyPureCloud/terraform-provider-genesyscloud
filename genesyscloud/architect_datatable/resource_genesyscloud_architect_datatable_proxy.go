@@ -6,7 +6,7 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v123/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
 )
 
 // internalProxy holds a proxy instance that can be used throughout the package
@@ -74,7 +74,7 @@ func createOrUpdateArchitectDatatableFn(ctx context.Context, p *architectDatatab
 	// create path and map variables
 	path := p.architectApi.Configuration.BasePath + "/api/v2/flows/datatables"
 
-	if createAction == false {
+	if !createAction {
 		action = http.MethodPut
 		path += "/" + *datatable.Id
 	}
@@ -156,9 +156,7 @@ func getAllArchitectDatatableFn(ctx context.Context, p *architectDatatableProxy)
 		return &totalRecords, resp, nil
 	}
 
-	for _, table := range *tables.Entities {
-		totalRecords = append(totalRecords, table)
-	}
+	totalRecords = append(totalRecords, *tables.Entities...)
 
 	for pageNum := 2; pageNum <= *tables.PageCount; pageNum++ {
 		tables, resp, getErr := p.architectApi.GetFlowsDatatables("", pageNum, pageSize, "", "", nil, "")
@@ -170,9 +168,7 @@ func getAllArchitectDatatableFn(ctx context.Context, p *architectDatatableProxy)
 			break
 		}
 
-		for _, table := range *tables.Entities {
-			totalRecords = append(totalRecords, table)
-		}
+		totalRecords = append(totalRecords, *tables.Entities...)
 	}
 
 	return &totalRecords, resp, nil

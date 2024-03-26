@@ -17,7 +17,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v123/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
 )
 
 // getAllIvrConfigs retrieves all architect IVRs and is used for the exporter
@@ -48,11 +48,14 @@ func createIvrConfig(ctx context.Context, d *schema.ResourceData, meta interface
 	if ivrBody.Dnis != nil {
 		time.Sleep(3 * time.Second)
 	}
+
 	log.Printf("Creating IVR config %s", *ivrBody.Name)
 	ivrConfig, resp, err := ap.createArchitectIvr(ctx, *ivrBody)
 	if err != nil {
-		return diag.Errorf("Failed to create IVR config %s: %s %v", *ivrBody.Name, err, resp)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create IVR config %s", *ivrBody.Name), resp)
+
 	}
+
 	d.SetId(*ivrConfig.Id)
 
 	log.Printf("Created IVR config %s %s", *ivrBody.Name, *ivrConfig.Id)
@@ -105,7 +108,7 @@ func updateIvrConfig(ctx context.Context, d *schema.ResourceData, meta interface
 		// Get current version
 		ivr, resp, getErr := ap.getArchitectIvr(ctx, d.Id())
 		if getErr != nil {
-			return resp, diag.Errorf("Failed to read IVR config %s: %s", d.Id(), getErr)
+			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to read IVR config %s.", d.Id()), resp)
 		}
 
 		ivrBody := buildArchitectIvrFromResourceData(d)
@@ -120,11 +123,12 @@ func updateIvrConfig(ctx context.Context, d *schema.ResourceData, meta interface
 		_, resp, putErr := ap.updateArchitectIvr(ctx, d.Id(), *ivrBody)
 
 		if putErr != nil {
-			return resp, diag.Errorf("Failed to update IVR config %s: %s", d.Id(), putErr)
+			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update IVR config %s.", d.Id()), resp)
 		}
 
 		return resp, nil
 	})
+
 	if diagErr != nil {
 		return diagErr
 	}
@@ -142,7 +146,8 @@ func deleteIvrConfig(ctx context.Context, d *schema.ResourceData, meta interface
 
 	log.Printf("Deleting IVR config %s", name)
 	if resp, err := ap.deleteArchitectIvr(ctx, d.Id()); err != nil {
-		return diag.Errorf("Failed to delete IVR config %s: %s %v", name, err, resp)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete IVR config %s.", name), resp)
+
 	}
 
 	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {

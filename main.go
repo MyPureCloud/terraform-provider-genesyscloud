@@ -20,6 +20,7 @@ import (
 	externalContacts "terraform-provider-genesyscloud/genesyscloud/external_contacts"
 	flowMilestone "terraform-provider-genesyscloud/genesyscloud/flow_milestone"
 	flowOutcome "terraform-provider-genesyscloud/genesyscloud/flow_outcome"
+	"terraform-provider-genesyscloud/genesyscloud/group"
 	groupRoles "terraform-provider-genesyscloud/genesyscloud/group_roles"
 	"terraform-provider-genesyscloud/genesyscloud/integration"
 	integrationAction "terraform-provider-genesyscloud/genesyscloud/integration_action"
@@ -48,6 +49,7 @@ import (
 	respmanagementLibrary "terraform-provider-genesyscloud/genesyscloud/responsemanagement_library"
 	responsemanagementResponse "terraform-provider-genesyscloud/genesyscloud/responsemanagement_response"
 	responsemanagementResponseasset "terraform-provider-genesyscloud/genesyscloud/responsemanagement_responseasset"
+	routingEmailRoute "terraform-provider-genesyscloud/genesyscloud/routing_email_route"
 	smsAddresses "terraform-provider-genesyscloud/genesyscloud/routing_sms_addresses"
 	"terraform-provider-genesyscloud/genesyscloud/scripts"
 	"terraform-provider-genesyscloud/genesyscloud/station"
@@ -159,6 +161,7 @@ func registerResources() {
 	obCampaignRule.SetRegistrar(regInstance)                               //Registering outbound campaignrule
 	obfst.SetRegistrar(regInstance)                                        //Registering outbound file specification template
 	obDncList.SetRegistrar(regInstance)                                    //Registering outbound dnclist
+	routingEmailRoute.SetRegistrar(regInstance)                            //Registering routing email route
 	scripts.SetRegistrar(regInstance)                                      //Registering Scripts
 	smsAddresses.SetRegistrar(regInstance)                                 //Registering routing sms addresses
 	integration.SetRegistrar(regInstance)                                  //Registering integrations
@@ -189,6 +192,7 @@ func registerResources() {
 	responsemanagementResponse.SetRegistrar(regInstance)                   //Registering responsemanagement responses
 	responsemanagementResponseasset.SetRegistrar(regInstance)              //Registering responsemanagement response asset
 	respmanagementLibrary.SetRegistrar(regInstance)                        //Registering responsemanagement library
+	group.SetRegistrar(regInstance)                                        //Registering group
 
 	// setting resources for Use cases  like TF export where provider is used in resource classes.
 	tfexp.SetRegistrar(regInstance) //Registering tf exporter
