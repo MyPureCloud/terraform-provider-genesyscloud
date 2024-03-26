@@ -68,7 +68,7 @@ func buildAppConversations(conversations []interface{}) *platformclientv2.Conver
 }
 
 func buildAppKnowledge(knowledge []interface{}) *platformclientv2.Knowledge {
-	if len(knowledge) < 1 || knowledge[0] == nil {
+	if len(knowledge) < 1 || (len(knowledge) == 1 && knowledge[0] == nil) {
 		return nil
 	}
 
