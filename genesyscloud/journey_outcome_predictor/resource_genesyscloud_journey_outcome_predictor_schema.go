@@ -40,7 +40,6 @@ func ResourceJourneyOutcomePredictor() *schema.Resource {
 				Type: 		 schema.TypeString,
 				Required: 	 true,
 				ForceNew:    true,
-				MaxItems:    1,
 			},
 		},
 	}
@@ -51,7 +50,7 @@ func JourneyOutcomePredictorExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: provider.GetAllWithPooledClient(getAllAuthJourneyOutcomePredictors),
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
-			"outcome.id": {RefType: "genesyscloud_journey_outcome"},
+			"outcome_id": {RefType: "genesyscloud_journey_outcome"},
 		},
 	}
 }

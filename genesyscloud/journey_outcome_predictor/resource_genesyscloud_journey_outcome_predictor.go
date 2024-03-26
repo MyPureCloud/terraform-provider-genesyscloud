@@ -45,7 +45,7 @@ func createJourneyOutcomePredictor(ctx context.Context, d *schema.ResourceData, 
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	op := getJourneyOutcomePredictorProxy(sdkConfig)
 
-	outcomeId := d.Get("outcome.0.id").(string)
+	outcomeId := d.Get("outcome_id").(string)
 
 	outcome := &platformclientv2.Outcomerefrequest{
 		Id: &outcomeId,

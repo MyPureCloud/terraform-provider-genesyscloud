@@ -25,7 +25,7 @@ func TestAccResourceJourneyOutcomePredictor(t *testing.T) {
 			{
 				Config: predictorResource(),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair(fullResourceName, "outcome.0.id", fullOutcomeResourceName, "id"),
+					resource.TestCheckResourceAttrPair(fullResourceName, "outcome_id", fullOutcomeResourceName, "id"),
 				),
 			},
 			{
@@ -62,9 +62,7 @@ func predictorResource() string {
 	}
 
 	resource "genesyscloud_journey_outcome_predictor" "test_predictor" {
-		outcome {
-			id = "${genesyscloud_journey_outcome.test_outcome.id}"
-		}
+		outcome_id = "${genesyscloud_journey_outcome.test_outcome.id}"
 	}
 	`)
 }

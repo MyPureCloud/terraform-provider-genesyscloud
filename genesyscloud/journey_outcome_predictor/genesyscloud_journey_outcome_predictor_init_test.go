@@ -8,15 +8,14 @@ import (
 )
 
 var (
-providerDataSources map[string]*schema.Resource
+	providerDataSources map[string]*schema.Resource
 	providerResources   map[string]*schema.Resource
 )
 
 type registerTestInstance struct {
 	resourceMapMutex   sync.RWMutex
-datasourceMapMutex sync.RWMutex
+	datasourceMapMutex sync.RWMutex
 }
-
 
 // registerTestResources registers all resources used in the tests
 func (r *registerTestInstance) registerTestResources() {
@@ -30,7 +29,7 @@ func (r *registerTestInstance) registerTestResources() {
 // initTestResources initializes all test resources and data sources.
 func initTestResources() {
 	providerResources = make(map[string]*schema.Resource)
-providerDataSources = make(map[string]*schema.Resource)
+	providerDataSources = make(map[string]*schema.Resource)
 
 	regInstance := &registerTestInstance{}
 
