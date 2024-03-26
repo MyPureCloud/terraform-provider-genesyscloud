@@ -17,11 +17,11 @@ out during testing.
 var internalProxy *architectSchedulegroupsProxy
 
 // Type definitions for each func on our proxy so we can easily mock them out later
-type createArchitectSchedulegroupsFunc func(ctx context.Context, p *architectSchedulegroupsProxy, scheduleGroup *platformclientv2.Schedulegroup) (*platformclientv2.Schedulegroup, error)
-type getAllArchitectSchedulegroupsFunc func(ctx context.Context, p *architectSchedulegroupsProxy) (*[]platformclientv2.Schedulegroup, error)
-type getArchitectSchedulegroupsIdByNameFunc func(ctx context.Context, p *architectSchedulegroupsProxy, name string) (id string, retryable bool, err error)
-type getArchitectSchedulegroupsByIdFunc func(ctx context.Context, p *architectSchedulegroupsProxy, id string) (scheduleGroup *platformclientv2.Schedulegroup, responseCode int, err error)
-type updateArchitectSchedulegroupsFunc func(ctx context.Context, p *architectSchedulegroupsProxy, id string, scheduleGroup *platformclientv2.Schedulegroup) (*platformclientv2.Schedulegroup, error)
+type createArchitectSchedulegroupsFunc func(ctx context.Context, p *architectSchedulegroupsProxy, scheduleGroup *platformclientv2.Schedulegroup) (*platformclientv2.Schedulegroup, *platformclientv2.APIResponse, error)
+type getAllArchitectSchedulegroupsFunc func(ctx context.Context, p *architectSchedulegroupsProxy) (*[]platformclientv2.Schedulegroup, *platformclientv2.APIResponse, error)
+type getArchitectSchedulegroupsIdByNameFunc func(ctx context.Context, p *architectSchedulegroupsProxy, name string) (id string, retryable bool, response *platformclientv2.APIResponse, err error)
+type getArchitectSchedulegroupsByIdFunc func(ctx context.Context, p *architectSchedulegroupsProxy, id string) (scheduleGroup *platformclientv2.Schedulegroup, response *platformclientv2.APIResponse, err error)
+type updateArchitectSchedulegroupsFunc func(ctx context.Context, p *architectSchedulegroupsProxy, id string, scheduleGroup *platformclientv2.Schedulegroup) (*platformclientv2.Schedulegroup, *platformclientv2.APIResponse, error)
 type deleteArchitectSchedulegroupsFunc func(ctx context.Context, p *architectSchedulegroupsProxy, id string) (*platformclientv2.APIResponse, error)
 
 // architectSchedulegroupsProxy contains all of the methods that call genesys cloud APIs.
@@ -57,32 +57,31 @@ func getArchitectSchedulegroupsProxy(clientConfig *platformclientv2.Configuratio
 	if internalProxy == nil {
 		internalProxy = newArchitectSchedulegroupsProxy(clientConfig)
 	}
-
 	return internalProxy
 }
 
 // createArchitectSchedulegroups creates a Genesys Cloud architect schedulegroups
-func (p *architectSchedulegroupsProxy) createArchitectSchedulegroups(ctx context.Context, architectSchedulegroups *platformclientv2.Schedulegroup) (*platformclientv2.Schedulegroup, error) {
+func (p *architectSchedulegroupsProxy) createArchitectSchedulegroups(ctx context.Context, architectSchedulegroups *platformclientv2.Schedulegroup) (*platformclientv2.Schedulegroup, *platformclientv2.APIResponse, error) {
 	return p.createArchitectSchedulegroupsAttr(ctx, p, architectSchedulegroups)
 }
 
 // getArchitectSchedulegroups retrieves all Genesys Cloud architect schedulegroups
-func (p *architectSchedulegroupsProxy) getAllArchitectSchedulegroups(ctx context.Context) (*[]platformclientv2.Schedulegroup, error) {
+func (p *architectSchedulegroupsProxy) getAllArchitectSchedulegroups(ctx context.Context) (*[]platformclientv2.Schedulegroup, *platformclientv2.APIResponse, error) {
 	return p.getAllArchitectSchedulegroupsAttr(ctx, p)
 }
 
 // getArchitectSchedulegroupsIdByName returns a single Genesys Cloud architect schedulegroups by a name
-func (p *architectSchedulegroupsProxy) getArchitectSchedulegroupsIdByName(ctx context.Context, name string) (id string, retryable bool, err error) {
+func (p *architectSchedulegroupsProxy) getArchitectSchedulegroupsIdByName(ctx context.Context, name string) (id string, retryable bool, response *platformclientv2.APIResponse, err error) {
 	return p.getArchitectSchedulegroupsIdByNameAttr(ctx, p, name)
 }
 
 // getArchitectSchedulegroupsById returns a single Genesys Cloud architect schedulegroups by Id
-func (p *architectSchedulegroupsProxy) getArchitectSchedulegroupsById(ctx context.Context, id string) (architectSchedulegroups *platformclientv2.Schedulegroup, statusCode int, err error) {
+func (p *architectSchedulegroupsProxy) getArchitectSchedulegroupsById(ctx context.Context, id string) (architectSchedulegroups *platformclientv2.Schedulegroup, response *platformclientv2.APIResponse, err error) {
 	return p.getArchitectSchedulegroupsByIdAttr(ctx, p, id)
 }
 
 // updateArchitectSchedulegroups updates a Genesys Cloud architect schedulegroups
-func (p *architectSchedulegroupsProxy) updateArchitectSchedulegroups(ctx context.Context, id string, architectSchedulegroups *platformclientv2.Schedulegroup) (*platformclientv2.Schedulegroup, error) {
+func (p *architectSchedulegroupsProxy) updateArchitectSchedulegroups(ctx context.Context, id string, architectSchedulegroups *platformclientv2.Schedulegroup) (*platformclientv2.Schedulegroup, *platformclientv2.APIResponse, error) {
 	return p.updateArchitectSchedulegroupsAttr(ctx, p, id, architectSchedulegroups)
 }
 
@@ -92,35 +91,34 @@ func (p *architectSchedulegroupsProxy) deleteArchitectSchedulegroups(ctx context
 }
 
 // createArchitectSchedulegroupsFn is an implementation function for creating a Genesys Cloud architect schedulegroups
-func createArchitectSchedulegroupsFn(ctx context.Context, p *architectSchedulegroupsProxy, architectSchedulegroups *platformclientv2.Schedulegroup) (*platformclientv2.Schedulegroup, error) {
-	scheduleGroup, _, err := p.architectApi.PostArchitectSchedulegroups(*architectSchedulegroups)
+func createArchitectSchedulegroupsFn(ctx context.Context, p *architectSchedulegroupsProxy, architectSchedulegroups *platformclientv2.Schedulegroup) (*platformclientv2.Schedulegroup, *platformclientv2.APIResponse, error) {
+	scheduleGroup, apiResponse, err := p.architectApi.PostArchitectSchedulegroups(*architectSchedulegroups)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to create architect schedulegroups: %s", err)
+		return nil, apiResponse, fmt.Errorf("Failed to create architect schedulegroups: %s", err)
 	}
-
-	return scheduleGroup, nil
+	return scheduleGroup, apiResponse, nil
 }
 
 // getAllArchitectSchedulegroupsFn is the implementation for retrieving all architect schedulegroups in Genesys Cloud
-func getAllArchitectSchedulegroupsFn(ctx context.Context, p *architectSchedulegroupsProxy) (*[]platformclientv2.Schedulegroup, error) {
+func getAllArchitectSchedulegroupsFn(ctx context.Context, p *architectSchedulegroupsProxy) (*[]platformclientv2.Schedulegroup, *platformclientv2.APIResponse, error) {
 	var allScheduleGroups []platformclientv2.Schedulegroup
 	const pageSize = 100
 
-	scheduleGroups, _, err := p.architectApi.GetArchitectSchedulegroups(1, pageSize, "", "", "", "", nil)
+	scheduleGroups, apiResponse, err := p.architectApi.GetArchitectSchedulegroups(1, pageSize, "", "", "", "", nil)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to get schedule group: %v", err)
+		return nil, apiResponse, fmt.Errorf("Failed to get schedule group: %v", err)
 	}
 	if scheduleGroups.Entities == nil || len(*scheduleGroups.Entities) == 0 {
-		return &allScheduleGroups, nil
+		return &allScheduleGroups, apiResponse, nil
 	}
 	for _, scheduleGroup := range *scheduleGroups.Entities {
 		allScheduleGroups = append(allScheduleGroups, scheduleGroup)
 	}
 
 	for pageNum := 2; pageNum <= *scheduleGroups.PageCount; pageNum++ {
-		scheduleGroups, _, err := p.architectApi.GetArchitectSchedulegroups(pageNum, pageSize, "", "", "", "", nil)
+		scheduleGroups, apiResponse, err := p.architectApi.GetArchitectSchedulegroups(pageNum, pageSize, "", "", "", "", nil)
 		if err != nil {
-			return nil, fmt.Errorf("Failed to get schedule group: %v", err)
+			return nil, apiResponse, fmt.Errorf("Failed to get schedule group: %v", err)
 		}
 
 		if scheduleGroups.Entities == nil || len(*scheduleGroups.Entities) == 0 {
@@ -131,54 +129,50 @@ func getAllArchitectSchedulegroupsFn(ctx context.Context, p *architectSchedulegr
 			allScheduleGroups = append(allScheduleGroups, scheduleGroup)
 		}
 	}
-
-	return &allScheduleGroups, nil
+	return &allScheduleGroups, apiResponse, nil
 }
 
 // getArchitectSchedulegroupsIdByNameFn is an implementation of the function to get a Genesys Cloud architect schedulegroups by name
-func getArchitectSchedulegroupsIdByNameFn(ctx context.Context, p *architectSchedulegroupsProxy, name string) (id string, retryable bool, err error) {
-	scheduleGroups, err := getAllArchitectSchedulegroupsFn(ctx, p)
+func getArchitectSchedulegroupsIdByNameFn(ctx context.Context, p *architectSchedulegroupsProxy, name string) (id string, retryable bool, response *platformclientv2.APIResponse, err error) {
+	scheduleGroups, apiResponse, err := getAllArchitectSchedulegroupsFn(ctx, p)
 	if err != nil {
-		return "", false, err
+		return "", false, apiResponse, err
 	}
 
 	if scheduleGroups == nil || len(*scheduleGroups) == 0 {
-		return "", true, fmt.Errorf("No architect schedulegroups found with name %s", name)
+		return "", true, apiResponse, fmt.Errorf("No architect schedulegroups found with name %s", name)
 	}
 
 	for _, scheduleGroup := range *scheduleGroups {
 		if *scheduleGroup.Name == name {
 			log.Printf("Retrieved the architect schedulegroups id %s by name %s", *scheduleGroup.Id, name)
-			return *scheduleGroup.Id, false, nil
+			return *scheduleGroup.Id, false, apiResponse, nil
 		}
 	}
-
-	return "", true, fmt.Errorf("Unable to find architect schedulegroups with name %s", name)
+	return "", true, apiResponse, fmt.Errorf("Unable to find architect schedulegroups with name %s", name)
 }
 
 // getArchitectSchedulegroupsByIdFn is an implementation of the function to get a Genesys Cloud architect schedulegroups by Id
-func getArchitectSchedulegroupsByIdFn(ctx context.Context, p *architectSchedulegroupsProxy, id string) (architectSchedulegroups *platformclientv2.Schedulegroup, statusCode int, err error) {
-	scheduleGroup, resp, err := p.architectApi.GetArchitectSchedulegroup(id)
+func getArchitectSchedulegroupsByIdFn(ctx context.Context, p *architectSchedulegroupsProxy, id string) (architectSchedulegroups *platformclientv2.Schedulegroup, response *platformclientv2.APIResponse, err error) {
+	scheduleGroup, apiResponse, err := p.architectApi.GetArchitectSchedulegroup(id)
 	if err != nil {
-		return nil, resp.StatusCode, fmt.Errorf("Failed to retrieve architect schedulegroups by id %s: %s", id, err)
+		return nil, apiResponse, fmt.Errorf("Failed to retrieve architect schedulegroups by id %s: %s", id, err)
 	}
-
-	return scheduleGroup, resp.StatusCode, nil
+	return scheduleGroup, apiResponse, nil
 }
 
 // updateArchitectSchedulegroupsFn is an implementation of the function to update a Genesys Cloud architect schedulegroups
-func updateArchitectSchedulegroupsFn(ctx context.Context, p *architectSchedulegroupsProxy, id string, architectSchedulegroups *platformclientv2.Schedulegroup) (*platformclientv2.Schedulegroup, error) {
-	group, _, err := getArchitectSchedulegroupsByIdFn(ctx, p, id)
+func updateArchitectSchedulegroupsFn(ctx context.Context, p *architectSchedulegroupsProxy, id string, architectSchedulegroups *platformclientv2.Schedulegroup) (*platformclientv2.Schedulegroup, *platformclientv2.APIResponse, error) {
+	group, apiResponse, err := getArchitectSchedulegroupsByIdFn(ctx, p, id)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get schedule group %s by id: %s", id, err)
+		return nil, apiResponse, fmt.Errorf("failed to get schedule group %s by id: %s", id, err)
 	}
-
 	architectSchedulegroups.Version = group.Version
-	scheduleGroup, _, err := p.architectApi.PutArchitectSchedulegroup(id, *architectSchedulegroups)
+	scheduleGroup, apiResponse, err := p.architectApi.PutArchitectSchedulegroup(id, *architectSchedulegroups)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to update architect schedulegroups: %s", err)
+		return nil, apiResponse, fmt.Errorf("Failed to update architect schedulegroups: %s", err)
 	}
-	return scheduleGroup, nil
+	return scheduleGroup, apiResponse, nil
 }
 
 // deleteArchitectSchedulegroupsFn is an implementation function for deleting a Genesys Cloud architect schedulegroups
@@ -187,6 +181,5 @@ func deleteArchitectSchedulegroupsFn(ctx context.Context, p *architectSchedulegr
 	if err != nil {
 		return resp, fmt.Errorf("Failed to delete architect schedulegroups: %s", err)
 	}
-
 	return resp, nil
 }

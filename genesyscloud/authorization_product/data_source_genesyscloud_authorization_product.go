@@ -22,7 +22,7 @@ func dataSourceAuthorizationProductRead(ctx context.Context, d *schema.ResourceD
 
 	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
 		// Get the list of enabled products
-		authProductId, retryable, err := proxy.getAuthorizationProduct(ctx, name)
+		authProductId, retryable, _, err := proxy.getAuthorizationProduct(ctx, name)
 
 		if err != nil {
 			if retryable {

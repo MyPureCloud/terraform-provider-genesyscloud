@@ -46,8 +46,8 @@ func TestUnitDataSourceTaskManagementWorktypeStatus(t *testing.T) {
 	}
 
 	workTypeProxy := &taskManagementWorktypeProxy{}
-	workTypeProxy.getTaskManagementWorktypeByNameAttr = func(ctx context.Context, proxy *taskManagementWorktypeProxy, name string) (workItemType *platformclientv2.Worktype, retryable bool, err error) {
-		return workType, false, nil
+	workTypeProxy.getTaskManagementWorktypeByNameAttr = func(ctx context.Context, proxy *taskManagementWorktypeProxy, name string) (workItemType *platformclientv2.Worktype, retryable bool, resp *platformclientv2.APIResponse, err error) {
+		return workType, false, resp, nil
 	}
 
 	internalProxy = workTypeProxy

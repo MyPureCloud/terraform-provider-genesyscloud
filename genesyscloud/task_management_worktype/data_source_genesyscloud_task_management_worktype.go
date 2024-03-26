@@ -26,10 +26,10 @@ func dataSourceTaskManagementWorktypeRead(ctx context.Context, d *schema.Resourc
 	name := d.Get("name").(string)
 
 	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
-		worktypeId, retryable, err := proxy.getTaskManagementWorktypeIdByName(ctx, name)
+		worktypeId, retryable, resp, err := proxy.getTaskManagementWorktypeIdByName(ctx, name)
 
 		if err != nil && !retryable {
-			return retry.NonRetryableError(fmt.Errorf("error searching task management worktype %s: %s", name, err))
+			return retry.NonRetryableError(fmt.Errorf("error searching task management worktype %s: %s %v", name, err, resp))
 		}
 
 		if retryable {
@@ -50,10 +50,10 @@ func dataSourceTaskManagementWorktypeStatusRead(ctx context.Context, d *schema.R
 
 	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
 		//First retrieve the work type id by name
-		workType, retryable, err := proxy.getTaskManagementWorktypeByName(ctx, workTypeName)
+		workType, retryable, resp, err := proxy.getTaskManagementWorktypeByName(ctx, workTypeName)
 
 		if err != nil && !retryable {
-			return retry.NonRetryableError(fmt.Errorf("error searching task management worktype %s: %s", workTypeName, err))
+			return retry.NonRetryableError(fmt.Errorf("error searching task management worktype %s: %s %v", workTypeName, err, resp))
 		}
 
 		if retryable {

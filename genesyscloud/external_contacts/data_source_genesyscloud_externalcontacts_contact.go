@@ -29,10 +29,10 @@ func dataSourceExternalContactsContactRead(ctx context.Context, d *schema.Resour
 	search := d.Get("search").(string)
 	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
 
-		contactId, retryable, err := ep.getExternalContactIdBySearch(ctx, search)
+		contactId, retryable, resp, err := ep.getExternalContactIdBySearch(ctx, search)
 
 		if err != nil && !retryable {
-			return retry.NonRetryableError(fmt.Errorf("Error searching exteral contact %s: %s", search, err))
+			return retry.NonRetryableError(fmt.Errorf("Error searching exteral contact %s: %s %v", search, err, resp))
 		}
 
 		if retryable {

@@ -20,9 +20,9 @@ func dataSourcePhoneRead(ctx context.Context, d *schema.ResourceData, m interfac
 	name := d.Get("name").(string)
 
 	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
-		phone, retryable, err := pp.getPhoneByName(ctx, name)
+		phone, retryable, resp, err := pp.getPhoneByName(ctx, name)
 		if err != nil && !retryable {
-			return retry.NonRetryableError(fmt.Errorf("error requesting phone %s: %s", name, err))
+			return retry.NonRetryableError(fmt.Errorf("error requesting phone %s: %s %v", name, err, resp))
 		}
 
 		if retryable {

@@ -22,16 +22,15 @@ import (
 func getAllExtensionPools(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
 	resources := make(resourceExporter.ResourceIDMetaMap)
 	extensionPoolProxy := getExtensionPoolProxy(clientConfig)
-	extensionPools, err := extensionPoolProxy.getAllExtensionPools(ctx)
+	extensionPools, resp, err := extensionPoolProxy.getAllExtensionPools(ctx)
 	if err != nil {
-		return nil, diag.Errorf("failed to get all extension pools: %s", err)
+		return nil, diag.Errorf("failed to get all extension pools: %s %v", err, resp)
 	}
 	if extensionPools != nil {
 		for _, extensionPool := range *extensionPools {
 			resources[*extensionPool.Id] = &resourceExporter.ResourceMeta{Name: *extensionPool.StartNumber}
 		}
 	}
-
 	return resources, nil
 }
 
@@ -43,13 +42,13 @@ func createExtensionPool(ctx context.Context, d *schema.ResourceData, meta inter
 	extensionPoolProxy := getExtensionPoolProxy(sdkConfig)
 
 	log.Printf("Creating Extension pool %s", startNumber)
-	extensionPool, _, err := extensionPoolProxy.createExtensionPool(ctx, platformclientv2.Extensionpool{
+	extensionPool, resp, err := extensionPoolProxy.createExtensionPool(ctx, platformclientv2.Extensionpool{
 		StartNumber: &startNumber,
 		EndNumber:   &endNumber,
 		Description: &description,
 	})
 	if err != nil {
-		return diag.Errorf("Failed to create Extension pool %s: %s", startNumber, err)
+		return diag.Errorf("Failed to create Extension pool %s: %s %v", startNumber, err, resp)
 	}
 
 	d.SetId(*extensionPool.Id)
@@ -104,8 +103,8 @@ func updateExtensionPool(ctx context.Context, d *schema.ResourceData, meta inter
 		Description: &description,
 	}
 	log.Printf("Updating Extension pool %s", d.Id())
-	if _, _, err := extensionPoolProxy.updateExtensionPool(ctx, d.Id(), extensionPoolBody); err != nil {
-		return diag.Errorf("Error updating Extension pool %s: %s", startNumber, err)
+	if _, resp, err := extensionPoolProxy.updateExtensionPool(ctx, d.Id(), extensionPoolBody); err != nil {
+		return diag.Errorf("Error updating Extension pool %s: %s %v", startNumber, err, resp)
 	}
 	log.Printf("Updated Extension pool %s", d.Id())
 	return readExtensionPool(ctx, d, meta)
@@ -116,8 +115,8 @@ func deleteExtensionPool(ctx context.Context, d *schema.ResourceData, meta inter
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	extensionPoolProxy := getExtensionPoolProxy(sdkConfig)
 	log.Printf("Deleting Extension pool with starting number %s", startNumber)
-	if _, err := extensionPoolProxy.deleteExtensionPool(ctx, d.Id()); err != nil {
-		return diag.Errorf("failed to delete Extension pool with starting number %s: %s", startNumber, err)
+	if resp, err := extensionPoolProxy.deleteExtensionPool(ctx, d.Id()); err != nil {
+		return diag.Errorf("failed to delete Extension pool with starting number %s: %s %v", startNumber, err, resp)
 	}
 	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		extensionPool, resp, err := extensionPoolProxy.getExtensionPool(ctx, d.Id())

@@ -32,7 +32,7 @@ Each proxy implementation:
 var internalProxy *telephonyProvidersEdgesDidProxy
 
 // Type definitions for each func on our proxy so we can easily mock them out later
-type getTelephonyProvidersEdgesDidIdByDidFunc func(ctx context.Context, t *telephonyProvidersEdgesDidProxy, did string) (id string, retryable bool, err error)
+type getTelephonyProvidersEdgesDidIdByDidFunc func(ctx context.Context, t *telephonyProvidersEdgesDidProxy, did string) (id string, retryable bool, resp *platformclientv2.APIResponse, err error)
 
 // telephonyProvidersEdgesDidProxy contains all of the methods that call genesys cloud APIs.
 type telephonyProvidersEdgesDidProxy struct {
@@ -61,33 +61,33 @@ func getTelephonyProvidersEdgesDidProxy(clientConfig *platformclientv2.Configura
 }
 
 // getTelephonyProvidersEdgesDidIdByDid gets a Genesys Cloud telephony DID ID by DID number
-func (t *telephonyProvidersEdgesDidProxy) getTelephonyProvidersEdgesDidIdByDid(ctx context.Context, did string) (string, bool, error) {
+func (t *telephonyProvidersEdgesDidProxy) getTelephonyProvidersEdgesDidIdByDid(ctx context.Context, did string) (string, bool, *platformclientv2.APIResponse, error) {
 	return t.getTelephonyProvidersEdgesDidIdByDidAttr(ctx, t, did)
 }
 
 // getTelephonyProvidersEdgesDidIdByDidFn is an implementation function for getting a telephony DID ID by DID number.
-func getTelephonyProvidersEdgesDidIdByDidFn(_ context.Context, t *telephonyProvidersEdgesDidProxy, did string) (string, bool, error) {
+func getTelephonyProvidersEdgesDidIdByDidFn(_ context.Context, t *telephonyProvidersEdgesDidProxy, did string) (string, bool, *platformclientv2.APIResponse, error) {
 	const pageSize = 100
 
 	pageNum := 1
-	dids, _, getErr := t.telephonyApi.GetTelephonyProvidersEdgesDids(pageSize, pageNum, "", "", did, "", "", nil)
+	dids, resp, getErr := t.telephonyApi.GetTelephonyProvidersEdgesDids(pageSize, pageNum, "", "", did, "", "", nil)
 	if getErr != nil {
-		return "", false, fmt.Errorf("error requesting list of DIDs: %s", getErr)
+		return "", false, resp, fmt.Errorf("error requesting list of DIDs: %s", getErr)
 	}
 
 	for pageNum := 1; pageNum <= *dids.PageCount; pageNum++ {
-		dids, _, getErr := t.telephonyApi.GetTelephonyProvidersEdgesDids(pageSize, pageNum, "", "", did, "", "", nil)
+		dids, resp, getErr := t.telephonyApi.GetTelephonyProvidersEdgesDids(pageSize, pageNum, "", "", did, "", "", nil)
 		if getErr != nil {
-			return "", false, fmt.Errorf("error requesting list of DIDs: %s", getErr)
+			return "", false, resp, fmt.Errorf("error requesting list of DIDs: %s", getErr)
 		}
 		if dids.Entities == nil || len(*dids.Entities) == 0 {
 			break
 		}
 		for _, entity := range *dids.Entities {
 			if *entity.PhoneNumber == did {
-				return *entity.Id, false, nil
+				return *entity.Id, false, resp, nil
 			}
 		}
 	}
-	return "", true, fmt.Errorf("failed to find ID of did number '%s'", did)
+	return "", true, resp, fmt.Errorf("failed to find ID of did number '%s'", did)
 }

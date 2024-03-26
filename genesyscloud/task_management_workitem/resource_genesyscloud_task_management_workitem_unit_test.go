@@ -53,7 +53,7 @@ func TestUnitResourceWorkitemCreate(t *testing.T) {
 	wi := utWorkitemConfig
 
 	taskProxy := &taskManagementWorkitemProxy{}
-	taskProxy.getTaskManagementWorkitemByIdAttr = func(ctx context.Context, p *taskManagementWorkitemProxy, id string) (*platformclientv2.Workitem, int, error) {
+	taskProxy.getTaskManagementWorkitemByIdAttr = func(ctx context.Context, p *taskManagementWorkitemProxy, id string) (*platformclientv2.Workitem, *platformclientv2.APIResponse, error) {
 		assert.Equal(t, tId, id)
 
 		dateDueTime, err := time.Parse(resourcedata.TimeParseFormat, wi.date_due)
@@ -129,10 +129,10 @@ func TestUnitResourceWorkitemCreate(t *testing.T) {
 			},
 		}
 
-		return workitem, http.StatusOK, nil
+		return workitem, nil, nil
 	}
 
-	taskProxy.createTaskManagementWorkitemAttr = func(ctx context.Context, p *taskManagementWorkitemProxy, workitem *platformclientv2.Workitemcreate) (*platformclientv2.Workitem, error) {
+	taskProxy.createTaskManagementWorkitemAttr = func(ctx context.Context, p *taskManagementWorkitemProxy, workitem *platformclientv2.Workitemcreate) (*platformclientv2.Workitem, *platformclientv2.APIResponse, error) {
 		assert.Equal(t, wi.name, *workitem.Name, "Name check failed in create createTaskManagementWorkitemAttr")
 		assert.Equal(t, wi.worktype_id, *workitem.TypeId, "TypeId check failed in create createTaskManagementWorkitemAttr")
 		assert.Equal(t, wi.description, *workitem.Description, "Description check failed in create createTaskManagementWorkitemAttr")
@@ -163,7 +163,7 @@ func TestUnitResourceWorkitemCreate(t *testing.T) {
 
 		return &platformclientv2.Workitem{
 			Id: &tId,
-		}, nil
+		}, nil, nil
 	}
 
 	internalProxy = taskProxy
@@ -193,7 +193,7 @@ func TestUnitResourceWorkitemRead(t *testing.T) {
 
 	taskProxy := &taskManagementWorkitemProxy{}
 
-	taskProxy.getTaskManagementWorkitemByIdAttr = func(ctx context.Context, p *taskManagementWorkitemProxy, id string) (*platformclientv2.Workitem, int, error) {
+	taskProxy.getTaskManagementWorkitemByIdAttr = func(ctx context.Context, p *taskManagementWorkitemProxy, id string) (*platformclientv2.Workitem, *platformclientv2.APIResponse, error) {
 		assert.Equal(t, tId, id)
 
 		dateDueTime, err := time.Parse(resourcedata.TimeParseFormat, wi.date_due)
@@ -269,7 +269,7 @@ func TestUnitResourceWorkitemRead(t *testing.T) {
 			},
 		}
 
-		return workitem, http.StatusOK, nil
+		return workitem, nil, nil
 	}
 
 	internalProxy = taskProxy
@@ -324,7 +324,7 @@ func TestUnitResourceWorkitemUpdate(t *testing.T) {
 
 	taskProxy := &taskManagementWorkitemProxy{}
 
-	taskProxy.updateTaskManagementWorkitemAttr = func(ctx context.Context, p *taskManagementWorkitemProxy, id string, workitem *platformclientv2.Workitemupdate) (*platformclientv2.Workitem, error) {
+	taskProxy.updateTaskManagementWorkitemAttr = func(ctx context.Context, p *taskManagementWorkitemProxy, id string, workitem *platformclientv2.Workitemupdate) (*platformclientv2.Workitem, *platformclientv2.APIResponse, error) {
 		assert.Equal(t, wi.name, *workitem.Name, "Name check failed in create updateTaskManagementWorktypeAttr")
 		assert.Equal(t, wi.description, *workitem.Description, "Description check failed in create updateTaskManagementWorktypeAttr")
 		assert.Equal(t, wi.language_id, *workitem.LanguageId, "LanguageId check failed in create updateTaskManagementWorktypeAttr")
@@ -354,10 +354,10 @@ func TestUnitResourceWorkitemUpdate(t *testing.T) {
 
 		return &platformclientv2.Workitem{
 			Id: &tId,
-		}, nil
+		}, nil, nil
 	}
 
-	taskProxy.getTaskManagementWorkitemByIdAttr = func(ctx context.Context, p *taskManagementWorkitemProxy, id string) (*platformclientv2.Workitem, int, error) {
+	taskProxy.getTaskManagementWorkitemByIdAttr = func(ctx context.Context, p *taskManagementWorkitemProxy, id string) (*platformclientv2.Workitem, *platformclientv2.APIResponse, error) {
 		assert.Equal(t, tId, id)
 
 		dateDueTime, err := time.Parse(resourcedata.TimeParseFormat, wi.date_due)
@@ -433,7 +433,7 @@ func TestUnitResourceWorkitemUpdate(t *testing.T) {
 			},
 		}
 
-		return workitem, http.StatusOK, nil
+		return workitem, nil, nil
 	}
 
 	internalProxy = taskProxy
@@ -463,17 +463,18 @@ func TestUnitResourceWorkitemDelete(t *testing.T) {
 
 	taskProxy := &taskManagementWorkitemProxy{}
 
-	taskProxy.deleteTaskManagementWorkitemAttr = func(ctx context.Context, p *taskManagementWorkitemProxy, id string) (responseCode int, err error) {
+	taskProxy.deleteTaskManagementWorkitemAttr = func(ctx context.Context, p *taskManagementWorkitemProxy, id string) (resp *platformclientv2.APIResponse, err error) {
 		assert.Equal(t, tId, id)
 
 		apiResponse := &platformclientv2.APIResponse{StatusCode: http.StatusNoContent}
-		return apiResponse.StatusCode, nil
+		return apiResponse, nil
 	}
 
-	taskProxy.getTaskManagementWorkitemByIdAttr = func(ctx context.Context, p *taskManagementWorkitemProxy, id string) (workitem *platformclientv2.Workitem, responseCode int, err error) {
+	taskProxy.getTaskManagementWorkitemByIdAttr = func(ctx context.Context, p *taskManagementWorkitemProxy, id string) (workitem *platformclientv2.Workitem, resp *platformclientv2.APIResponse, err error) {
 		assert.Equal(t, tId, id)
+		apiResponse := &platformclientv2.APIResponse{StatusCode: http.StatusNotFound}
 
-		return nil, http.StatusNotFound, fmt.Errorf("not found")
+		return nil, apiResponse, fmt.Errorf("not found")
 	}
 
 	internalProxy = taskProxy

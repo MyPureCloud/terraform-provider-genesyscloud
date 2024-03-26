@@ -42,9 +42,9 @@ func customizeSiteDiff(ctx context.Context, diff *schema.ResourceDiff, meta inte
 			return nil
 		}
 
-		numberPlansFromApi, _, err := edgesAPI.GetTelephonyProvidersEdgesSiteNumberplans(siteId)
+		numberPlansFromApi, resp, err := edgesAPI.GetTelephonyProvidersEdgesSiteNumberplans(siteId)
 		if err != nil {
-			return fmt.Errorf("failed to get number plans from site %s: %s", siteId, err)
+			return fmt.Errorf("failed to get number plans from site %s: %s %v", siteId, err, resp)
 		}
 
 		for _, np := range numberPlansFromApi {
@@ -62,7 +62,7 @@ func customizeSiteDiff(ctx context.Context, diff *schema.ResourceDiff, meta inte
 }
 
 func validateMediaRegions(ctx context.Context, sp *siteProxy, regions *[]string) error {
-	telephonyRegions, err := sp.getTelephonyMediaregions(ctx)
+	telephonyRegions, _, err := sp.getTelephonyMediaregions(ctx)
 	if err != nil {
 		return err
 	}
@@ -196,9 +196,9 @@ func updateSiteNumberPlans(ctx context.Context, sp *siteProxy, d *schema.Resourc
 	// The default plans won't be assigned yet if there isn't a wait
 	time.Sleep(5 * time.Second)
 
-	numberPlansFromAPI, _, err := sp.getSiteNumberPlans(ctx, d.Id())
+	numberPlansFromAPI, resp, err := sp.getSiteNumberPlans(ctx, d.Id())
 	if err != nil {
-		return diag.Errorf("Failed to get number plans for site %s: %s", d.Id(), err)
+		return diag.Errorf("Failed to get number plans for site %s: %s %v", d.Id(), err, resp)
 	}
 
 	updatedNumberPlans := make([]platformclientv2.Numberplan, 0)
@@ -297,9 +297,9 @@ func updateSiteOutboundRoutes(ctx context.Context, sp *siteProxy, d *schema.Reso
 	time.Sleep(5 * time.Second)
 
 	// Get the current outbound routes
-	outboundRoutesFromAPI, err := sp.getSiteOutboundRoutes(ctx, d.Id())
+	outboundRoutesFromAPI, resp, err := sp.getSiteOutboundRoutes(ctx, d.Id())
 	if err != nil {
-		return diag.Errorf("Failed to get outbound routes for site %s: %s", d.Id(), err)
+		return diag.Errorf("Failed to get outbound routes for site %s: %s %v", d.Id(), err, resp)
 	}
 
 	// Delete unwanted outbound roues first to free up classifications assigned to them
@@ -328,15 +328,15 @@ func updateSiteOutboundRoutes(ctx context.Context, sp *siteProxy, d *schema.Reso
 			outboundRoute.Distribution = outboundRouteFromTf.Distribution
 			outboundRoute.ExternalTrunkBases = outboundRouteFromTf.ExternalTrunkBases
 
-			_, err := sp.updateSiteOutboundRoute(ctx, d.Id(), *outboundRoute.Id, outboundRoute)
+			_, resp, err := sp.updateSiteOutboundRoute(ctx, d.Id(), *outboundRoute.Id, outboundRoute)
 			if err != nil {
-				return diag.Errorf("Failed to update outbound route with id %s for site %s: %s", *outboundRoute.Id, d.Id(), err)
+				return diag.Errorf("Failed to update outbound route with id %s for site %s: %s %v", *outboundRoute.Id, d.Id(), err, resp)
 			}
 		} else {
 			// Add the outbound route
-			_, err := sp.createSiteOutboundRoute(ctx, d.Id(), &outboundRouteFromTf)
+			_, resp, err := sp.createSiteOutboundRoute(ctx, d.Id(), &outboundRouteFromTf)
 			if err != nil {
-				return diag.Errorf("Failed to add outbound route to site %s: %s", d.Id(), err)
+				return diag.Errorf("Failed to add outbound route to site %s: %s %v", d.Id(), err, resp)
 			}
 		}
 	}
@@ -392,9 +392,9 @@ func readSiteNumberPlans(ctx context.Context, sp *siteProxy, d *schema.ResourceD
 }
 
 func readSiteOutboundRoutes(ctx context.Context, sp *siteProxy, d *schema.ResourceData) *retry.RetryError {
-	outboundRoutes, err := sp.getSiteOutboundRoutes(ctx, d.Id())
+	outboundRoutes, resp, err := sp.getSiteOutboundRoutes(ctx, d.Id())
 	if err != nil {
-		return retry.NonRetryableError(fmt.Errorf("failed to get outbound routes for site %s: %s", d.Id(), err))
+		return retry.NonRetryableError(fmt.Errorf("failed to get outbound routes for site %s: %s %v", d.Id(), err, resp))
 	}
 
 	dOutboundRoutes := schema.NewSet(schema.HashResource(outboundRouteSchema), []interface{}{})

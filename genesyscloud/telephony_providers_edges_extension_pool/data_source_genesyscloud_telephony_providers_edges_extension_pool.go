@@ -21,10 +21,10 @@ func dataSourceExtensionPoolRead(ctx context.Context, d *schema.ResourceData, m 
 
 	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
 
-		extensionPools, getErr := extensionPoolProxy.getAllExtensionPools(ctx)
+		extensionPools, resp, getErr := extensionPoolProxy.getAllExtensionPools(ctx)
 
 		if getErr != nil {
-			return retry.NonRetryableError(fmt.Errorf("error requesting list of extension pools: %s", getErr))
+			return retry.NonRetryableError(fmt.Errorf("error requesting list of extension pools: %s %v", getErr, resp))
 		}
 
 		if extensionPools == nil || len(*extensionPools) == 0 {

@@ -248,6 +248,7 @@ func flattenAppConversations(conversations *platformclientv2.Conversationappsett
 	}
 
 	if conversations.Humanize != nil {
+
 		if conversations.Humanize.Bot != nil {
 			retMap["humanize"] = []interface{}{map[string]interface{}{
 				"enabled": conversations.Humanize.Enabled,

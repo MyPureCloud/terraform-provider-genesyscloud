@@ -19,7 +19,6 @@ func getCampaignruleFromResourceData(d *schema.ResourceData) platformclientv2.Ca
 		CampaignRuleActions:    buildCampaignRuleAction(d.Get("campaign_rule_actions").([]interface{})),
 		MatchAnyConditions:     &matchAnyConditions,
 	}
-
 	return campaignRule
 }
 
@@ -42,7 +41,6 @@ func buildCampaignRuleEntities(entities *schema.Set) *platformclientv2.Campaignr
 	if sequences := campaignRuleEntitiesMap["sequence_ids"].([]interface{}); sequences != nil {
 		campaignRuleEntities.Sequences = util.BuildSdkDomainEntityRefArrFromArr(sequences)
 	}
-
 	return &campaignRuleEntities
 }
 
