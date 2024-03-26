@@ -37,12 +37,12 @@ func buildAppConversations(conversations []interface{}) *platformclientv2.Conver
 		}
 	}
 
-	if humanizeArr, ok := conversation["humanize"].([]interface{}); ok && len(humanizeArr) > 0 {
+	if humanizeArr, ok := conversation["humanize"].([]interface{}); ok && len(humanizeArr) > 0 && humanizeArr[0] != nil {
 		humanize := humanizeArr[0].(map[string]interface{})
 		ret.Humanize = &platformclientv2.Humanize{
 			Enabled: platformclientv2.Bool(humanize["enabled"].(bool)),
 		}
-		if botArr, ok := humanize["bot"].([]interface{}); ok && len(botArr) > 0 {
+		if botArr, ok := humanize["bot"].([]interface{}); ok && len(botArr) > 0 && botArr[0] != nil {
 			bot := botArr[0].(map[string]interface{})
 			ret.Humanize.Bot = &platformclientv2.Botmessengerprofile{
 				Name:      platformclientv2.String(bot["name"].(string)),
@@ -248,20 +248,22 @@ func flattenAppConversations(conversations *platformclientv2.Conversationappsett
 	}
 
 	if conversations.Humanize != nil {
-		humanizeMap := map[string]interface{}{
-			"enabled": conversations.Humanize.Enabled,
-		}
 
 		if conversations.Humanize.Bot != nil {
-			humanizeMap["bot"] = []interface{}{map[string]interface{}{
-				"name":       conversations.Humanize.Bot.Name,
-				"avatar_url": conversations.Humanize.Bot.AvatarUrl,
+			retMap["humanize"] = []interface{}{map[string]interface{}{
+				"enabled": conversations.Humanize.Enabled,
+				"bot": []interface{}{map[string]interface{}{
+					"name":       conversations.Humanize.Bot.Name,
+					"avatar_url": conversations.Humanize.Bot.AvatarUrl,
+				}},
 			}}
+		} else {
+			retMap["humanize"] = []interface{}{map[string]interface{}{
+				"enabled": conversations.Humanize.Enabled,
+			},
+			}
 		}
-
-		retMap["humanize"] = []interface{}{humanizeMap}
 	}
-
 	return []interface{}{retMap}
 }
 
