@@ -1,13 +1,12 @@
-package architect_datatable
+package group
 
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"sync"
-
+	"terraform-provider-genesyscloud/genesyscloud"
 	"testing"
 )
 
-// providerDataSources holds a map of all registered datasources
 var providerDataSources map[string]*schema.Resource
 
 // providerResources holds a map of all registered resources
@@ -22,17 +21,21 @@ type registerTestInstance struct {
 func (r *registerTestInstance) registerTestResources() {
 	r.resourceMapMutex.Lock()
 	defer r.resourceMapMutex.Unlock()
-	providerResources["genesyscloud_architect_datatable"] = ResourceArchitectDatatable()
+
+	providerResources[resourceName] = ResourceGroup()
+	providerResources["genesyscloud_user"] = genesyscloud.ResourceUser()
+
 }
 
 // registerTestDataSources registers all data sources used in the tests.
 func (r *registerTestInstance) registerTestDataSources() {
 	r.datasourceMapMutex.Lock()
 	defer r.datasourceMapMutex.Unlock()
-	providerDataSources["genesyscloud_architect_datatable"] = DataSourceArchitectDatatable()
+
+	providerDataSources[resourceName] = DataSourceGroup()
 }
 
-// initTestResources initializes all test_data resources and data sources.
+// initTestResources initializes all test resources and data sources.
 func initTestResources() {
 	providerDataSources = make(map[string]*schema.Resource)
 	providerResources = make(map[string]*schema.Resource)
@@ -43,11 +46,11 @@ func initTestResources() {
 	regInstance.registerTestDataSources()
 }
 
-// TestMain is a "setup" function called by the testing framework when run the test_data
+// TestMain is a "setup" function called by the testing framework when run the test
 func TestMain(m *testing.M) {
-	// Run setup function before starting the test_data suite for the package
+	// Run setup function before starting the test suite for the flow_outcome package
 	initTestResources()
 
-	// Run the test_data suite for the architect_grammar_language package
+	// Run the test suite for the flow_outcome package
 	m.Run()
 }

@@ -1,4 +1,4 @@
-package genesyscloud
+package group
 
 import (
 	"fmt"
@@ -26,8 +26,8 @@ func TestAccDataSourceGroup(t *testing.T) {
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
-				Config: GenerateUserWithCustomAttrs(testUserResource, testUserEmail, testUserName) +
-					generateGroupResource(
+				Config: generateUserWithCustomAttrs(testUserResource, testUserEmail, testUserName) +
+					GenerateGroupResource(
 						groupResource,
 						groupName,
 						util.NullValue, // No description

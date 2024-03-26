@@ -3,11 +3,11 @@ package integration
 import (
 	"fmt"
 	"strconv"
+	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	integrationCred "terraform-provider-genesyscloud/genesyscloud/integration_credential"
 
 	"github.com/google/uuid"
@@ -163,10 +163,10 @@ func TestAccResourceIntegration(t *testing.T) {
 				ImportStateVerify: true,
 			},
 			{ // Create a group first and use it as reference for a new integration
-				Config: gcloud.GenerateUserWithCustomAttrs(testUserResource, testUserEmail, testUserName) + gcloud.GenerateBasicGroupResource(
+				Config: generateUserWithCustomAttrs(testUserResource, testUserEmail, testUserName) + generateBasicGroupResource(
 					groupResource1,
 					groupName,
-					gcloud.GenerateGroupOwners("genesyscloud_user."+testUserResource+".id"),
+					generateGroupOwners("genesyscloud_user."+testUserResource+".id"),
 				) + GenerateIntegrationResource(
 					inteResource1,
 					strconv.Quote(enabledState),
@@ -383,4 +383,43 @@ func testVerifyIntegrationDestroyed(state *terraform.State) error {
 	}
 	// Success. All integrations destroyed
 	return nil
+}
+
+// TODO: Duplicating this code within the function to not break a cyclic dependency
+func generateUserWithCustomAttrs(resourceID string, email string, name string, attrs ...string) string {
+	return fmt.Sprintf(`resource "genesyscloud_user" "%s" {
+		email = "%s"
+		name = "%s"
+		%s
+	}
+	`, resourceID, email, name, strings.Join(attrs, "\n"))
+}
+
+// TODO: Duplicating this code within the function to not break a cyclic dependency
+func generateBasicGroupResource(resourceID string, name string, nestedBlocks ...string) string {
+	return generateGroupResource(resourceID, name, util.NullValue, util.NullValue, util.NullValue, util.TrueValue, nestedBlocks...)
+}
+
+func generateGroupResource(
+	resourceID string,
+	name string,
+	desc string,
+	groupType string,
+	visibility string,
+	rulesVisible string,
+	nestedBlocks ...string) string {
+	return fmt.Sprintf(`resource "genesyscloud_group" "%s" {
+		name = "%s"
+		description = %s
+		type = %s
+		visibility = %s
+		rules_visible = %s
+        %s
+	}
+	`, resourceID, name, desc, groupType, visibility, rulesVisible, strings.Join(nestedBlocks, "\n"))
+}
+
+func generateGroupOwners(userIDs ...string) string {
+	return fmt.Sprintf(`owner_ids = [%s]
+	`, strings.Join(userIDs, ","))
 }

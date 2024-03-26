@@ -1,8 +1,11 @@
 package group_roles
 
 import (
+	"context"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"terraform-provider-genesyscloud/genesyscloud"
+	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
+
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
@@ -67,7 +70,7 @@ func ResourceGroupRoles() *schema.Resource {
 // GroupRolesExporter returns the resourceExporter object used to hold the genesyscloud_group_roles exporter's config
 func GroupRolesExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
-		GetResourcesFunc: provider.GetAllWithPooledClient(genesyscloud.GetAllGroups),
+		GetResourcesFunc: provider.GetAllWithPooledClient(getAllGroups),
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			"group_id":           {RefType: "genesyscloud_group"},
 			"roles.role_id":      {RefType: "genesyscloud_auth_role"},
@@ -77,4 +80,28 @@ func GroupRolesExporter() *resourceExporter.ResourceExporter {
 			"roles": {"role_id"},
 		},
 	}
+}
+
+// Duplicated this from the group package to break a cyclical dependency.  We should be asking ourselves why we are doing this at some point
+func getAllGroups(_ context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+	resources := make(resourceExporter.ResourceIDMetaMap)
+	groupsAPI := platformclientv2.NewGroupsApiWithConfig(clientConfig)
+
+	for pageNum := 1; ; pageNum++ {
+		const pageSize = 100
+		groups, _, getErr := groupsAPI.GetGroups(pageSize, pageNum, nil, nil, "")
+		if getErr != nil {
+			return nil, diag.Errorf("Failed to get page of groups: %v", getErr)
+		}
+
+		if groups.Entities == nil || len(*groups.Entities) == 0 {
+			break
+		}
+
+		for _, group := range *groups.Entities {
+			resources[*group.Id] = &resourceExporter.ResourceMeta{Name: *group.Name}
+		}
+	}
+
+	return resources, nil
 }

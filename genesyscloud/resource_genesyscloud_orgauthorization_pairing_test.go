@@ -2,6 +2,7 @@ package genesyscloud
 
 import (
 	"fmt"
+	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
@@ -35,14 +36,14 @@ func TestAccResourceOrgAuthorizationPairing(t *testing.T) {
 		Steps: []resource.TestStep{
 			// 1 user and 1 group
 			{
-				Config: GenerateUserWithCustomAttrs(testUserResource, testUserEmail, testUserName) + GenerateBasicUserResource(
+				Config: generateUserWithCustomAttrs(testUserResource, testUserEmail, testUserName) + GenerateBasicUserResource(
 					userResource1,
 					email1,
 					userName1,
-				) + GenerateBasicGroupResource(
+				) + generateBasicGroupResource(
 					groupResource1,
 					groupName1,
-					GenerateGroupOwners("genesyscloud_user."+testUserResource+".id"),
+					generateGroupOwners("genesyscloud_user."+testUserResource+".id"),
 				) + fmt.Sprintf(`resource "genesyscloud_orgauthorization_pairing" "%s" {
   user_ids  = [genesyscloud_user.%s.id]
   group_ids = [genesyscloud_group.%s.id]
@@ -54,7 +55,7 @@ func TestAccResourceOrgAuthorizationPairing(t *testing.T) {
 			},
 			// 2 users and 2 groups
 			{
-				Config: GenerateUserWithCustomAttrs(testUserResource, testUserEmail, testUserName) + GenerateBasicUserResource(
+				Config: generateUserWithCustomAttrs(testUserResource, testUserEmail, testUserName) + GenerateBasicUserResource(
 					userResource1,
 					email1,
 					userName1,
@@ -62,14 +63,14 @@ func TestAccResourceOrgAuthorizationPairing(t *testing.T) {
 					userResource2,
 					email2,
 					userName2,
-				) + GenerateBasicGroupResource(
+				) + generateBasicGroupResource(
 					groupResource1,
 					groupName1,
-					GenerateGroupOwners("genesyscloud_user."+testUserResource+".id"),
-				) + GenerateBasicGroupResource(
+					generateGroupOwners("genesyscloud_user."+testUserResource+".id"),
+				) + generateBasicGroupResource(
 					groupResource2,
 					groupName2,
-					GenerateGroupOwners("genesyscloud_user."+testUserResource+".id"),
+					generateGroupOwners("genesyscloud_user."+testUserResource+".id"),
 				) + fmt.Sprintf(`resource "genesyscloud_orgauthorization_pairing" "%s" {
   user_ids  = [genesyscloud_user.%s.id, genesyscloud_user.%s.id]
   group_ids = [genesyscloud_group.%s.id, genesyscloud_group.%s.id]
@@ -123,10 +124,10 @@ func TestAccResourceOrgAuthorizationPairing(t *testing.T) {
 			},
 			// 1 group
 			{
-				Config: GenerateUserWithCustomAttrs(testUserResource, testUserEmail, testUserName) + GenerateBasicGroupResource(
+				Config: generateUserWithCustomAttrs(testUserResource, testUserEmail, testUserName) + generateBasicGroupResource(
 					groupResource1,
 					groupName1,
-					GenerateGroupOwners("genesyscloud_user."+testUserResource+".id"),
+					generateGroupOwners("genesyscloud_user."+testUserResource+".id"),
 				) + fmt.Sprintf(`resource "genesyscloud_orgauthorization_pairing" "%s" {
   group_ids = [genesyscloud_group.%s.id]
 }`, orgAuthorizationPairingResource, groupResource1),
@@ -136,14 +137,14 @@ func TestAccResourceOrgAuthorizationPairing(t *testing.T) {
 			},
 			// 2 groups
 			{
-				Config: GenerateUserWithCustomAttrs(testUserResource, testUserEmail, testUserName) + GenerateBasicGroupResource(
+				Config: generateUserWithCustomAttrs(testUserResource, testUserEmail, testUserName) + generateBasicGroupResource(
 					groupResource1,
 					groupName1,
-					GenerateGroupOwners("genesyscloud_user."+testUserResource+".id"),
-				) + GenerateBasicGroupResource(
+					generateGroupOwners("genesyscloud_user."+testUserResource+".id"),
+				) + generateBasicGroupResource(
 					groupResource2,
 					groupName2,
-					GenerateGroupOwners("genesyscloud_user."+testUserResource+".id"),
+					generateGroupOwners("genesyscloud_user."+testUserResource+".id"),
 				) + fmt.Sprintf(`resource "genesyscloud_orgauthorization_pairing" "%s" {
   group_ids = [genesyscloud_group.%s.id, genesyscloud_group.%s.id]
 }`, orgAuthorizationPairingResource, groupResource1, groupResource2),
@@ -163,4 +164,42 @@ func TestAccResourceOrgAuthorizationPairing(t *testing.T) {
 			},
 		},
 	})
+}
+
+func generateBasicGroupResource(resourceID string, name string, nestedBlocks ...string) string {
+	return generateGroupResource(resourceID, name, util.NullValue, util.NullValue, util.NullValue, util.TrueValue, nestedBlocks...)
+}
+
+func generateGroupResource(
+	resourceID string,
+	name string,
+	desc string,
+	groupType string,
+	visibility string,
+	rulesVisible string,
+	nestedBlocks ...string) string {
+	return fmt.Sprintf(`resource "genesyscloud_group" "%s" {
+		name = "%s"
+		description = %s
+		type = %s
+		visibility = %s
+		rules_visible = %s
+        %s
+	}
+	`, resourceID, name, desc, groupType, visibility, rulesVisible, strings.Join(nestedBlocks, "\n"))
+}
+
+func generateGroupOwners(userIDs ...string) string {
+	return fmt.Sprintf(`owner_ids = [%s]
+	`, strings.Join(userIDs, ","))
+}
+
+// TODO: Duplicating this code within the function to not break a cyclic dependency
+func generateUserWithCustomAttrs(resourceID string, email string, name string, attrs ...string) string {
+	return fmt.Sprintf(`resource "genesyscloud_user" "%s" {
+		email = "%s"
+		name = "%s"
+		%s
+	}
+	`, resourceID, email, name, strings.Join(attrs, "\n"))
 }
