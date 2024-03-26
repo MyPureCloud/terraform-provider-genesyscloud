@@ -72,9 +72,9 @@ func readArchitectGrammarLanguage(ctx context.Context, d *schema.ResourceData, m
 
 		if getErr != nil {
 			if util.IsStatus404ByInt(respCode) {
-				return retry.RetryableError(fmt.Errorf("Failed to read Architect Grammar Language %s: %s", d.Id(), getErr))
+				return retry.RetryableError(fmt.Errorf("failed to read Architect Grammar Language %s: %s", d.Id(), getErr))
 			}
-			return retry.NonRetryableError(fmt.Errorf("Failed to read Architect Grammar Language %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(fmt.Errorf("failed to read Architect Grammar Language %s: %s", d.Id(), getErr))
 		}
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceArchitectGrammarLanguage())
@@ -82,10 +82,10 @@ func readArchitectGrammarLanguage(ctx context.Context, d *schema.ResourceData, m
 		resourcedata.SetNillableValue(d, "grammar_id", language.GrammarId)
 		resourcedata.SetNillableValue(d, "language", language.Language)
 		if language.VoiceFileMetadata != nil {
-			d.Set("voice_file_data", flattenGrammarLanguageFileMetadata(d, language.VoiceFileMetadata, Voice))
+			_ = d.Set("voice_file_data", flattenGrammarLanguageFileMetadata(d, language.VoiceFileMetadata, Voice))
 		}
 		if language.DtmfFileMetadata != nil {
-			d.Set("dtmf_file_data", flattenGrammarLanguageFileMetadata(d, language.DtmfFileMetadata, Dtmf))
+			_ = d.Set("dtmf_file_data", flattenGrammarLanguageFileMetadata(d, language.DtmfFileMetadata, Dtmf))
 		}
 
 		log.Printf("Read Architect Grammar Language %s", d.Id())

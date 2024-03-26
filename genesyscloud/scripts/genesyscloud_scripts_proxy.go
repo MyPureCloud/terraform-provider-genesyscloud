@@ -237,7 +237,7 @@ func (p *scriptsProxy) uploadScriptFile(filePath, scriptName, scriptId string, s
 		return nil, err
 	}
 
-	headers := make(map[string]string, 0)
+	headers := make(map[string]string)
 	headers["Authorization"] = "Bearer " + p.accessToken
 
 	s3Uploader := files.NewS3Uploader(nil, formData, substitutions, headers, "POST", p.basePath+"/uploads/v2/scripter")

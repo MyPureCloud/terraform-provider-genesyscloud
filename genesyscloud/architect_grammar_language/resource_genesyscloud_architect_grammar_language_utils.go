@@ -23,12 +23,20 @@ and unmarshal data into formats consumable by Terraform and/or Genesys Cloud.
 
 // getArchitectGrammarLanguageFromResourceData maps data from schema ResourceData into a Genesys Cloud platformclientv2.Grammarlanguage
 func getArchitectGrammarLanguageFromResourceData(d *schema.ResourceData) platformclientv2.Grammarlanguage {
-	return platformclientv2.Grammarlanguage{
-		GrammarId:         platformclientv2.String(d.Get("grammar_id").(string)),
-		Language:          platformclientv2.String(d.Get("language").(string)),
-		VoiceFileMetadata: buildGrammarLanguageFileMetadata(d.Get("voice_file_data").([]interface{})),
-		DtmfFileMetadata:  buildGrammarLanguageFileMetadata(d.Get("dtmf_file_data").([]interface{})),
+	grammarLanguage := platformclientv2.Grammarlanguage{
+		GrammarId: platformclientv2.String(d.Get("grammar_id").(string)),
+		Language:  platformclientv2.String(d.Get("language").(string)),
 	}
+
+	if voiceFileDataList, ok := d.Get("voice_file_data").([]interface{}); ok {
+		grammarLanguage.VoiceFileMetadata = buildGrammarLanguageFileMetadata(voiceFileDataList)
+	}
+
+	if dtmfFileDataList, ok := d.Get("dtmf_file_data").([]interface{}); ok {
+		grammarLanguage.DtmfFileMetadata = buildGrammarLanguageFileMetadata(dtmfFileDataList)
+	}
+
+	return grammarLanguage
 }
 
 func buildGrammarLanguageFileMetadata(fileMetadata []interface{}) *platformclientv2.Grammarlanguagefilemetadata {
