@@ -2,7 +2,6 @@ package webdeployments_configuration_utils
 
 import (
 	"fmt"
-	"log"
 	"terraform-provider-genesyscloud/genesyscloud/util/lists"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
