@@ -5,12 +5,12 @@ import (
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v121/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
 	"log"
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
-
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
@@ -36,15 +36,15 @@ func createOrganizationAuthenticationSettings(ctx context.Context, d *schema.Res
 
 // readOrganizationAuthenticationSettings is used by the organization_authentication_settings resource to read an organization authentication settings from genesys cloud
 func readOrganizationAuthenticationSettings(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getOrgAuthSettingsProxy(sdkConfig)
 
 	log.Printf("Reading organization authentication settings %s", d.Id())
 
-	return gcloud.WithRetriesForRead(ctx, d, func() *retry.RetryError {
+	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		orgAuthSettings, resp, getErr := proxy.getOrgAuthSettingsById(ctx, d.Id())
 		if getErr != nil {
-			if gcloud.IsStatus404(resp) {
+			if util.IsStatus404(resp) {
 				return retry.RetryableError(fmt.Errorf("Failed to read organization authentication settings %s: %s", d.Id(), getErr))
 			}
 			return retry.NonRetryableError(fmt.Errorf("Failed to read organization authentication settings %s: %s", d.Id(), getErr))
@@ -65,7 +65,7 @@ func readOrganizationAuthenticationSettings(ctx context.Context, d *schema.Resou
 
 // updateOrganizationAuthenticationSettings is used by the organization_authentication_settings resource to update an organization authentication settings in Genesys Cloud
 func updateOrganizationAuthenticationSettings(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getOrgAuthSettingsProxy(sdkConfig)
 	authSettings := getOrganizationAuthenticationSettingsFromResourceData(d)
 

@@ -4,10 +4,10 @@ import (
 	"context"
 	"github.com/google/go-cmp/cmp"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v121/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
 	"github.com/stretchr/testify/assert"
 	"net/http"
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"testing"
 )
 
@@ -57,7 +57,7 @@ func TestUnitResourceOrganizationAuthenticationSettingsRead(t *testing.T) {
 	defer func() { internalProxy = nil }()
 
 	ctx := context.Background()
-	gcloud := &gcloud.ProviderMeta{ClientConfig: &platformclientv2.Configuration{}}
+	gcloud := &provider.ProviderMeta{ClientConfig: &platformclientv2.Configuration{}}
 	// Get defined Schema
 	resourceSchema := ResourceOrganizationAuthenticationSettings().Schema
 	//Setup map of values
@@ -106,7 +106,7 @@ func TestUnitResourceOrganizationAuthenticationSettingsUpdate(t *testing.T) {
 	defer func() { internalProxy = nil }()
 
 	ctx := context.Background()
-	gcloud := &gcloud.ProviderMeta{ClientConfig: &platformclientv2.Configuration{}}
+	gcloud := &provider.ProviderMeta{ClientConfig: &platformclientv2.Configuration{}}
 
 	resourceSchema := ResourceOrganizationAuthenticationSettings().Schema
 

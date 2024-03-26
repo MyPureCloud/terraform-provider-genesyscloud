@@ -2,9 +2,9 @@ package organization_authentication_settings
 
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
 )
 
@@ -74,10 +74,10 @@ func ResourceOrganizationAuthenticationSettings() *schema.Resource {
 	return &schema.Resource{
 		Description: `Genesys Cloud organization authentication settings`,
 
-		CreateContext: gcloud.CreateWithPooledClient(createOrganizationAuthenticationSettings),
-		ReadContext:   gcloud.ReadWithPooledClient(readOrganizationAuthenticationSettings),
-		UpdateContext: gcloud.UpdateWithPooledClient(updateOrganizationAuthenticationSettings),
-		DeleteContext: gcloud.DeleteWithPooledClient(deleteOrganizationAuthenticationSettings),
+		CreateContext: provider.CreateWithPooledClient(createOrganizationAuthenticationSettings),
+		ReadContext:   provider.ReadWithPooledClient(readOrganizationAuthenticationSettings),
+		UpdateContext: provider.UpdateWithPooledClient(updateOrganizationAuthenticationSettings),
+		DeleteContext: provider.DeleteWithPooledClient(deleteOrganizationAuthenticationSettings),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -118,7 +118,7 @@ func ResourceOrganizationAuthenticationSettings() *schema.Resource {
 
 func OrganizationAuthenticationSettingsExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
-		GetResourcesFunc: gcloud.GetAllWithPooledClient(getAllOrganizationAuthenticationSettings),
+		GetResourcesFunc: provider.GetAllWithPooledClient(getAllOrganizationAuthenticationSettings),
 		RefAttrs:         map[string]*resourceExporter.RefAttrSettings{},
 	}
 }
