@@ -107,7 +107,7 @@ func deleteJourneyOutcomePredictor(ctx context.Context, d *schema.ResourceData, 
 			return retry.NonRetryableError(fmt.Errorf("Error deleting predictor %s: %s", d.Id(), err))
 		}
 		if util.IsStatus404ByInt(respCode) {
-			// Success  : External contact deleted
+			// Success  : Predictor deleted
 			log.Printf("Deleted predictor %s", d.Id())
 			return nil
 		}
