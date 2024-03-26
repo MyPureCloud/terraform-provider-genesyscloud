@@ -100,7 +100,7 @@ func ResourceOrganizationAuthenticationSettings() *schema.Resource {
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 			`ip_address_allowlist`: {
-				Description: `The list of IP addresses that will be allowed to authenticate with Genesys Cloud.`,
+				Description: `The list of IP addresses that will be allowed to authenticate with Genesys Cloud. Warning: Changing these will result in only allowing specified ip Addresses to log in and will invalidate credentials with a different ip address`,
 				Optional:    true,
 				Type:        schema.TypeList,
 				Elem:        &schema.Schema{Type: schema.TypeString},

@@ -67,13 +67,13 @@ func readOrganizationAuthenticationSettings(ctx context.Context, d *schema.Resou
 func updateOrganizationAuthenticationSettings(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
 	proxy := getOrgAuthSettingsProxy(sdkConfig)
-	AuthSettings := getOrganizationAuthenticationSettingsFromResourceData(d)
+	authSettings := getOrganizationAuthenticationSettingsFromResourceData(d)
 
 	log.Printf("Updating organization authentication settings %s", d.Id())
 
-	orgAuthSettings, _, err := proxy.updateOrgAuthSettings(ctx, &AuthSettings)
+	orgAuthSettings, resp, err := proxy.updateOrgAuthSettings(ctx, &authSettings)
 	if err != nil {
-		return diag.Errorf("Failed to update organization authentication settings: %s", err)
+		return diag.Errorf("Failed to update organization authentication settings: %s %v", err, resp)
 	}
 
 	log.Printf("Updated organization authentication settings %s %s", d.Id(), orgAuthSettings)

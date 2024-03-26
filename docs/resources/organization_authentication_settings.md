@@ -42,7 +42,7 @@ resource "genesyscloud_organization_authentication_settings" "example-authentica
 
 - `domain_allowlist` (List of String) The list of domains that will be allowed to embed Genesys Cloud applications.
 - `domain_allowlist_enabled` (Boolean) Indicates whether the domain allowlist is enabled.
-- `ip_address_allowlist` (List of String) The list of IP addresses that will be allowed to authenticate with Genesys Cloud.
+- `ip_address_allowlist` (List of String) The list of IP addresses that will be allowed to authenticate with Genesys Cloud. Warning: Changing these will result in only allowing specified ip Addresses to log in and will invalidate credentials with a different ip address
 - `multifactor_authentication_required` (Boolean) Indicates whether multi-factor authentication is required.
 - `password_requirements` (Block List, Max: 1) The password requirements for the organization. (see [below for nested schema](#nestedblock--password_requirements))
 
