@@ -62,8 +62,9 @@ func CleanupRoutingEmailDomains() {
 
 	for pageNum := 1; ; pageNum++ {
 		const pageSize = 100
-		routingEmailDomains, _, getErr := routingAPI.GetRoutingEmailDomains(pageNum, pageSize, false, "")
+		routingEmailDomains, _, getErr := routingAPI.GetRoutingEmailDomains(pageSize, pageNum, false, "")
 		if getErr != nil {
+			log.Printf("failed to get page %v of routing email domains: %v", pageNum, getErr)
 			return
 		}
 
