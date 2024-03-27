@@ -6,6 +6,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 
+	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/mypurecloud/platform-client-sdk-go/v123/platformclientv2"
@@ -23,7 +24,7 @@ func TestAccResourceJourneyOutcomePredictor(t *testing.T) {
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
-				Config: predictorResource(),
+				Config: predictorResource("tf test outcome "+uuid.NewString(),),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrPair(fullResourceName, "outcome_id", fullOutcomeResourceName, "id"),
 				),
@@ -39,11 +40,11 @@ func TestAccResourceJourneyOutcomePredictor(t *testing.T) {
 
 }
 
-func predictorResource() string {
-	return fmt.Sprint(`
+func predictorResource(outcomeName string) string {
+	return fmt.Sprintf(`
 	resource "genesyscloud_journey_outcome" "test_outcome" {
 		is_active    = true
-		display_name = "tf test outcome " + uuid.NewString()"
+		display_name = "%s"
 		description  = "description of journey outcome"
 		is_positive  = true
 		journey {
@@ -64,7 +65,7 @@ func predictorResource() string {
 	resource "genesyscloud_journey_outcome_predictor" "test_predictor" {
 		outcome_id = "${genesyscloud_journey_outcome.test_outcome.id}"
 	}
-	`)
+	`, outcomeName)
 }
 
 func testVerifyPredictorDestroyed(state *terraform.State) error {
