@@ -21,6 +21,7 @@ import (
 	integrationAction "terraform-provider-genesyscloud/genesyscloud/integration_action"
 	integrationCred "terraform-provider-genesyscloud/genesyscloud/integration_credential"
 	"terraform-provider-genesyscloud/genesyscloud/oauth_client"
+	oAuthSettings "terraform-provider-genesyscloud/genesyscloud/organization_authentication_settings"
 	ob "terraform-provider-genesyscloud/genesyscloud/outbound"
 	outboundAttemptLimit "terraform-provider-genesyscloud/genesyscloud/outbound_attempt_limit"
 	obCallableTimeset "terraform-provider-genesyscloud/genesyscloud/outbound_callabletimeset"
@@ -83,6 +84,7 @@ type registerTestInstance struct {
 }
 
 func (r *registerTestInstance) registerTestResources() {
+	providerResources["genesyscloud_organization_authentication_settings"] = oAuthSettings.ResourceOrganizationAuthenticationSettings()
 	providerResources["genesyscloud_architect_grammar"] = grammar.ResourceArchitectGrammar()
 	providerResources["genesyscloud_architect_grammar_language"] = grammarLanguage.ResourceArchitectGrammarLanguage()
 	providerResources["genesyscloud_architect_datatable"] = dt.ResourceArchitectDatatable()
@@ -176,6 +178,7 @@ func (r *registerTestInstance) registerTestResources() {
 }
 
 func (r *registerTestInstance) registerTestExporters() {
+	RegisterExporter("genesyscloud_organization_authentication_settings", oAuthSettings.OrganizationAuthenticationSettingsExporter())
 	RegisterExporter("genesyscloud_architect_grammar", grammar.ArchitectGrammarExporter())
 	RegisterExporter("genesyscloud_architect_grammar_language", grammarLanguage.ArchitectGrammarLanguageExporter())
 	RegisterExporter("genesyscloud_architect_datatable", dt.ArchitectDatatableExporter())
