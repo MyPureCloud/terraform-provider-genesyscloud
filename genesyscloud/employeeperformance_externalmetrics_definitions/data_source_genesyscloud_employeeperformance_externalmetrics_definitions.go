@@ -25,10 +25,10 @@ func dataSourceEmployeeperformanceExternalmetricsDefinitionRead(ctx context.Cont
 	name := d.Get("name").(string)
 
 	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
-		domainOrganizationRoleId, retryable, err := proxy.getEmployeeperformanceExternalmetricsDefinitionIdByName(ctx, name)
+		domainOrganizationRoleId, retryable, resp, err := proxy.getEmployeeperformanceExternalmetricsDefinitionIdByName(ctx, name)
 
 		if err != nil && !retryable {
-			return retry.NonRetryableError(fmt.Errorf("Error searching employeeperformance externalmetrics definition %s: %s", name, err))
+			return retry.NonRetryableError(fmt.Errorf("Error searching employeeperformance externalmetrics definition %s: %s %v", name, err, resp))
 		}
 
 		if retryable {

@@ -25,16 +25,15 @@ func dataSourceOutboundCallanalysisresponsesetRead(ctx context.Context, d *schem
 	name := d.Get("name").(string)
 
 	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
-		responseSetId, retryable, err := proxy.getOutboundCallanalysisresponsesetIdByName(ctx, name)
+		responseSetId, retryable, resp, err := proxy.getOutboundCallanalysisresponsesetIdByName(ctx, name)
 
 		if err != nil && !retryable {
-			return retry.NonRetryableError(fmt.Errorf("Error searching outbound callanalysisresponseset %s: %s", name, err))
+			return retry.NonRetryableError(fmt.Errorf("Error searching outbound callanalysisresponseset %s: %v %s", name, resp, err))
 		}
 
 		if retryable {
 			return retry.RetryableError(fmt.Errorf("No outbound callanalysisresponseset found with name %s", name))
 		}
-
 		d.SetId(responseSetId)
 		return nil
 	})

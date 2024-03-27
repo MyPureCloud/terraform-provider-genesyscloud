@@ -25,10 +25,10 @@ func dataSourceFlowOutcomeRead(ctx context.Context, d *schema.ResourceData, meta
 	name := d.Get("name").(string)
 
 	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
-		flowOutcomeId, retryable, err := proxy.getFlowOutcomeIdByName(ctx, name)
+		flowOutcomeId, retryable, resp, err := proxy.getFlowOutcomeIdByName(ctx, name)
 
 		if err != nil && !retryable {
-			return retry.NonRetryableError(fmt.Errorf("Error searching flow outcome %s: %s", name, err))
+			return retry.NonRetryableError(fmt.Errorf("Error searching flow outcome %s: %s %v", name, err, resp))
 		}
 
 		if retryable {

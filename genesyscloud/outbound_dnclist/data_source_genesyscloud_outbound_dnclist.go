@@ -19,9 +19,9 @@ func dataSourceOutboundDncListRead(ctx context.Context, d *schema.ResourceData, 
 	name := d.Get("name").(string)
 
 	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
-		dnclistId, retryable, getErr := proxy.getOutboundDnclistByName(ctx, name)
+		dnclistId, retryable, resp, getErr := proxy.getOutboundDnclistByName(ctx, name)
 		if getErr != nil && !retryable {
-			return retry.NonRetryableError(fmt.Errorf("error requesting dnc lists %s: %s", name, getErr))
+			return retry.NonRetryableError(fmt.Errorf("error requesting dnc lists %s: %s %v", name, getErr, resp))
 		}
 		if retryable {
 			return retry.RetryableError(fmt.Errorf("no dnc lists found with name %s", name))

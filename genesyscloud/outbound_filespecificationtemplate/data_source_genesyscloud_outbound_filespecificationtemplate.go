@@ -20,10 +20,10 @@ func dataSourceOutboundFileSpecificationTemplateRead(ctx context.Context, d *sch
 	name := d.Get("name").(string)
 
 	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
-		fstId, retryable, err := proxy.getOutboundFilespecificationtemplateIdByName(ctx, name)
+		fstId, retryable, resp, err := proxy.getOutboundFilespecificationtemplateIdByName(ctx, name)
 
 		if err != nil && !retryable {
-			return retry.NonRetryableError(fmt.Errorf("Error requesting file specification template %s: %s", name, err))
+			return retry.NonRetryableError(fmt.Errorf("Error requesting file specification template %s: %s %v", name, err, resp))
 		}
 		if retryable {
 			return retry.RetryableError(fmt.Errorf("No file specification template found with name %s", name))

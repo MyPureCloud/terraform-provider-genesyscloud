@@ -20,7 +20,7 @@ func dataSourceRoutingSmsAddressRead(ctx context.Context, d *schema.ResourceData
 
 	log.Printf("Searching for routing sms address with name '%s'", name)
 	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
-		smsAddressId, retryable, err := smsAddressProxy.getSmsAddressIdByName(name, ctx)
+		smsAddressId, retryable, _, err := smsAddressProxy.getSmsAddressIdByName(name, ctx)
 		if err != nil && !retryable {
 			return retry.NonRetryableError(err)
 		}
