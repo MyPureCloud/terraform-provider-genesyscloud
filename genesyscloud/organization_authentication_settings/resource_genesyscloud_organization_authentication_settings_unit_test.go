@@ -3,6 +3,7 @@ package organization_authentication_settings
 import (
 	"context"
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
 	"github.com/stretchr/testify/assert"
@@ -73,6 +74,7 @@ func TestUnitResourceOrganizationAuthenticationSettingsRead(t *testing.T) {
 }
 
 func TestUnitResourceOrganizationAuthenticationSettingsUpdate(t *testing.T) {
+	tId := uuid.NewString()
 	domainAllowList := []string{"Genesys.ie", "Updated.com"}
 	allowList := make([]interface{}, len(domainAllowList))
 	for i, v := range domainAllowList {
@@ -113,9 +115,11 @@ func TestUnitResourceOrganizationAuthenticationSettingsUpdate(t *testing.T) {
 	resourceDataMap := buildOrgAuthSettingsDataMap(*testOrgAuthSettings.MultifactorAuthenticationRequired, *testOrgAuthSettings.DomainAllowlistEnabled, allowList, ipAddressAllowList, *testOrgAuthSettings.PasswordRequirements)
 
 	d := schema.TestResourceDataRaw(t, resourceSchema, resourceDataMap)
+	d.SetId(tId)
 
 	diag := updateOrganizationAuthenticationSettings(ctx, d, gcloud)
 	assert.Equal(t, false, diag.HasError())
+	assert.Equal(t, tId, d.Id())
 	assert.Equal(t, *testOrgAuthSettings.DomainAllowlist, domainAllowList)
 }
 
