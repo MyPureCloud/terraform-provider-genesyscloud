@@ -135,7 +135,7 @@ func ReplyEmailAddressSelfReferenceRouteExporterResolver(configMap map[string]in
 	return nil
 }
 
-func ConditionValueResolver(configMap map[string]interface{}, exporters map[string]*ResourceExporter) error {
+func ConditionValueResolver(configMap map[string]interface{}, exporters map[string]*ResourceExporter, resourceName string) error {
 	if value := configMap["condition_value"]; value == nil {
 		configMap["condition_value"] = 0
 	}

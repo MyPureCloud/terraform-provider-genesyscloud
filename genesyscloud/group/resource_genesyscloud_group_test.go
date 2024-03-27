@@ -35,11 +35,7 @@ func TestAccResourceGroupBasic(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				// Create a basic group
-<<<<<<< HEAD:genesyscloud/group/resource_genesyscloud_group_test.go
 				Config: generateUserWithCustomAttrs(testUserResource, testUserEmail, testUserName) +
-=======
-				Config: GenerateUserWithCustomAttrs(testUserResource, testUserEmail, testUserName) +
->>>>>>> acab4f67 (Added routing_queue_conditional_group_routing resource):genesyscloud/resource_genesyscloud_group_test.go
 					GenerateGroupResource(
 						groupResource1,
 						groupName,
@@ -59,11 +55,7 @@ func TestAccResourceGroupBasic(t *testing.T) {
 			},
 			{
 				// Update group
-<<<<<<< HEAD:genesyscloud/group/resource_genesyscloud_group_test.go
 				Config: generateUserWithCustomAttrs(testUserResource, testUserEmail, testUserName) + GenerateGroupResource(
-=======
-				Config: GenerateUserWithCustomAttrs(testUserResource, testUserEmail, testUserName) + GenerateGroupResource(
->>>>>>> acab4f67 (Added routing_queue_conditional_group_routing resource):genesyscloud/resource_genesyscloud_group_test.go
 					groupResource1,
 					groupName,
 					strconv.Quote(groupDesc2),

@@ -86,7 +86,7 @@ func TestAccResourceRoutingQueueConditionalGroupRouting(t *testing.T) {
 			},
 			{
 				// Add rule
-				Config: gcloud.GenerateUserWithCustomAttrs(
+				Config: generateUserWithCustomAttrs(
 					testUserResource,
 					testUserEmail,
 					testUserName,
@@ -155,7 +155,7 @@ func TestAccResourceRoutingQueueConditionalGroupRouting(t *testing.T) {
 			},
 			{
 				// Remove a rule
-				Config: gcloud.GenerateUserWithCustomAttrs(
+				Config: generateUserWithCustomAttrs(
 					testUserResource,
 					testUserEmail,
 					testUserName,
@@ -232,4 +232,13 @@ func generateConditionalGroupRoutingRuleGroupBlock(groupId, groupType string) st
 		member_group_type = "%s"
 	}
 	`, groupId, groupType)
+}
+
+func generateUserWithCustomAttrs(resourceID string, email string, name string, attrs ...string) string {
+	return fmt.Sprintf(`resource "genesyscloud_user" "%s" {
+		email = "%s"
+		name = "%s"
+		%s
+	}
+	`, resourceID, email, name, strings.Join(attrs, "\n"))
 }
