@@ -89,7 +89,7 @@ func getPhoneFromResourceData(ctx context.Context, pp *phoneProxy, d *schema.Res
 }
 
 func getLineBaseSettingsID(ctx context.Context, pp *phoneProxy, phoneBaseSettingsId string) (string, error) {
-	phoneBase, err := pp.getPhoneBaseSetting(ctx, phoneBaseSettingsId)
+	phoneBase, _, err := pp.getPhoneBaseSetting(ctx, phoneBaseSettingsId)
 	if err != nil {
 		return "", err
 	}
@@ -104,9 +104,9 @@ func assignUserToWebRtcPhone(ctx context.Context, pp *phoneProxy, userId string)
 	stationIsAssociated := false
 
 	retryErr := util.WithRetries(ctx, 60*time.Second, func() *retry.RetryError {
-		station, retryable, err := pp.getStationOfUser(ctx, userId)
+		station, retryable, resp, err := pp.getStationOfUser(ctx, userId)
 		if err != nil && !retryable {
-			return retry.NonRetryableError(fmt.Errorf("error requesting stations: %s", err))
+			return retry.NonRetryableError(fmt.Errorf("error requesting stations: %s %v", err, resp))
 		}
 		if retryable {
 			return retry.RetryableError(fmt.Errorf("no stations found with userID %v", userId))
@@ -157,7 +157,7 @@ func buildSdkPhoneBaseSettings(d *schema.ResourceData, idAttr string) *platformc
 }
 
 func getPhoneMetaBaseId(ctx context.Context, pp *phoneProxy, phoneBaseSettingsId string) (string, error) {
-	phoneBase, err := pp.getPhoneBaseSetting(ctx, phoneBaseSettingsId)
+	phoneBase, _, err := pp.getPhoneBaseSetting(ctx, phoneBaseSettingsId)
 	if err != nil {
 		return "", err
 	}

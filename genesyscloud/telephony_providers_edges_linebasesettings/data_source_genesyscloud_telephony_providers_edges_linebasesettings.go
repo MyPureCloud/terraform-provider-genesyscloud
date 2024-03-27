@@ -23,9 +23,9 @@ func dataSourceLineBaseSettingsRead(ctx context.Context, d *schema.ResourceData,
 	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
 		for pageNum := 1; ; pageNum++ {
 			const pageSize = 50
-			lineBaseSettings, _, getErr := edgesAPI.GetTelephonyProvidersEdgesLinebasesettings(pageNum, pageSize, "", "", nil)
+			lineBaseSettings, resp, getErr := edgesAPI.GetTelephonyProvidersEdgesLinebasesettings(pageNum, pageSize, "", "", nil)
 			if getErr != nil {
-				return retry.NonRetryableError(fmt.Errorf("Error requesting line base settings %s: %s", name, getErr))
+				return retry.NonRetryableError(fmt.Errorf("Error requesting line base settings %s: %s %v", name, getErr, resp))
 			}
 
 			if lineBaseSettings.Entities == nil || len(*lineBaseSettings.Entities) == 0 {

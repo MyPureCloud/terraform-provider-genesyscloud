@@ -26,10 +26,10 @@ func dataSourceTaskManagementWorkbinRead(ctx context.Context, d *schema.Resource
 	name := d.Get("name").(string)
 
 	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
-		workbinId, retryable, err := proxy.getTaskManagementWorkbinIdByName(ctx, name)
+		workbinId, retryable, resp, err := proxy.getTaskManagementWorkbinIdByName(ctx, name)
 
 		if err != nil && !retryable {
-			return retry.NonRetryableError(fmt.Errorf("error searching task management workbin %s: %s", name, err))
+			return retry.NonRetryableError(fmt.Errorf("error searching task management workbin %s: %s %v", name, err, resp))
 		}
 
 		if retryable {

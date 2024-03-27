@@ -23,10 +23,10 @@ func dataSourceOutboundContactlistfilterRead(ctx context.Context, d *schema.Reso
 	name := d.Get("name").(string)
 
 	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
-		contactListFilterId, retryable, err := proxy.getOutboundContactlistfilterIdByName(ctx, name)
+		contactListFilterId, retryable, resp, err := proxy.getOutboundContactlistfilterIdByName(ctx, name)
 
 		if err != nil && !retryable {
-			return retry.NonRetryableError(fmt.Errorf("error requesting contact list filter %s: %s", name, err))
+			return retry.NonRetryableError(fmt.Errorf("error requesting contact list filter %s: %s %v", name, err, resp))
 		}
 
 		if retryable {

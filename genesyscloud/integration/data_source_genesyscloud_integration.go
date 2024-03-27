@@ -24,19 +24,16 @@ import (
 func dataSourceIntegrationRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	sdkConfig := m.(*provider.ProviderMeta).ClientConfig
 	ip := getIntegrationsProxy(sdkConfig)
-
 	integrationName := d.Get("name").(string)
 
 	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
-		integration, retryable, err := ip.getIntegrationByName(ctx, integrationName)
+		integration, retryable, resp, err := ip.getIntegrationByName(ctx, integrationName)
 		if err != nil && !retryable {
-			return retry.NonRetryableError(fmt.Errorf("failed to get page of integrations: %s. %s", integrationName, err))
+			return retry.NonRetryableError(fmt.Errorf("failed to get page of integrations: %s. %s %v", integrationName, err, resp))
 		}
-
 		if retryable {
 			return retry.RetryableError(fmt.Errorf("failed to get integration %s", integrationName))
 		}
-
 		d.SetId(*integration.Id)
 		return nil
 	})

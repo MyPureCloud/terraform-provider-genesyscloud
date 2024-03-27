@@ -29,15 +29,13 @@ func dataSourceIntegrationCredentialRead(ctx context.Context, d *schema.Resource
 	credName := d.Get("name").(string)
 
 	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
-		credential, retryable, err := ip.getIntegrationCredByName(ctx, credName)
+		credential, retryable, resp, err := ip.getIntegrationCredByName(ctx, credName)
 		if err != nil && !retryable {
-			return retry.NonRetryableError(fmt.Errorf("failed to get integration credential: %s. %s", credential, err))
+			return retry.NonRetryableError(fmt.Errorf("failed to get integration credential: %s. %s %v", credential, err, resp))
 		}
-
 		if retryable {
 			return retry.RetryableError(fmt.Errorf("no integration credential found: %s", credName))
 		}
-
 		d.SetId(*credential.Id)
 		return nil
 	})

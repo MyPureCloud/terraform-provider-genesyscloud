@@ -21,7 +21,7 @@ func ScriptResolver(scriptId, exportDirectory, subDirectory string, configMap ma
 		return err
 	}
 	ctx := context.Background()
-	url, err := scriptsProxy.getScriptExportUrl(ctx, scriptId)
+	url, _, err := scriptsProxy.getScriptExportUrl(ctx, scriptId)
 	if err != nil {
 		return err
 	}

@@ -90,9 +90,9 @@ func updateIntegrationConfigFromResourceData(ctx context.Context, d *schema.Reso
 	if d.HasChange("config") {
 		if configInput := d.Get("config").([]interface{}); configInput != nil {
 
-			integrationConfig, _, err := p.getIntegrationConfig(ctx, d.Id())
+			integrationConfig, resp, err := p.getIntegrationConfig(ctx, d.Id())
 			if err != nil {
-				return diag.Errorf("Failed to get the integration config for integration %s before updating its config: %s", d.Id(), err), ""
+				return diag.Errorf("Failed to get the integration config for integration %s before updating its config: %s %v", d.Id(), err, resp), ""
 			}
 
 			name := *integrationConfig.Name
