@@ -3,6 +3,7 @@ package flow_logLevel
 import (
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"strconv"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
@@ -10,13 +11,13 @@ import (
 
 func TestAccResourceFlowOutcome(t *testing.T) {
 	var (
-		outcomeResource1      = "flow-outcome1"
 		communications        = false
 		eventError            = false
 		eventOther            = false
 		eventWarning          = false
 		executionInputOutputs = false
 		executionItems        = true
+		flowLoglevel          = "Base"
 		names                 = false
 		variables             = false
 	)
@@ -28,20 +29,20 @@ func TestAccResourceFlowOutcome(t *testing.T) {
 			{
 				// Create using only required fields i.e. name
 				Config: generateFlowLogLevelResource(
-					outcomeResource1,
-					executionItems,
-					executionInputOutputs,
-					eventError,
-					eventWarning,
-					eventOther,
 					communications,
-					variables,
+					eventError,
+					eventOther,
+					eventWarning,
+					executionInputOutputs,
+					executionItems,
+					flowLoglevel,
 					names,
+					variables,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_flow_outcome."+outcomeResource1, "names", "false"),
-					resource.TestCheckResourceAttr("genesyscloud_flow_outcome."+outcomeResource1, "execution_items", "true"),
-					provider.TestDefaultHomeDivision("genesyscloud_flow_outcome."+outcomeResource1),
+					resource.TestCheckResourceAttr("genesyscloud_flow_logLevel."+flowLoglevel, "names", "false"),
+					resource.TestCheckResourceAttr("genesyscloud_flow_logLevel."+flowLoglevel, "executionItems", "true"),
+					provider.TestDefaultHomeDivision("genesyscloud_flow_logLevel."+flowLoglevel),
 				),
 			},
 		},
@@ -49,35 +50,38 @@ func TestAccResourceFlowOutcome(t *testing.T) {
 }
 
 func generateFlowLogLevelResource(
-	flowLoglevel string,
-	executionItems bool,
-	executionInputOutputs bool,
-	eventError bool,
-	eventWarning bool,
-	eventOther bool,
 	communications bool,
+	eventError bool,
+	eventOther bool,
+	eventWarning bool,
+	executionInputOutputs bool,
+	executionItems bool,
+	flowLoglevel string,
+	names bool,
 	variables bool,
-	names bool) string {
-	return fmt.Sprintf(`resource "genesyscloud_flow_loglevel" "flowLogLevel" {
-	  flow_log_level = "%s"
-	  flow_characteristics {
-		execution_items         = "%s"
-		execution_input_outputs = "%s"
+) string {
+	return fmt.Sprintf(`resource "genesyscloud_flow_logLevel" "flowLogLevel" {
+	  level { 
+		level 					= "%s" 
+      }
+	  characteristics {
 		communications          = "%s"
-		event_error             = "%s"
-		event_warning           = "%s"
-		event_other             = "%s"
-		variables               = "%s"
+		eventError              = "%s"
+		eventOther              = "%s"
+		eventWarning            = "%s"
+		executionItems          = "%s"
+		executionInputOutputs   = "%s"
 		names                   = "%s"
+		variables               = "%s"
 	  }
 	}
 	`, flowLoglevel,
-		executionItems,
-		executionInputOutputs,
-		eventError,
-		eventWarning,
-		eventOther,
-		communications,
-		variables,
-		names)
+		strconv.FormatBool(executionItems),
+		strconv.FormatBool(executionInputOutputs),
+		strconv.FormatBool(eventError),
+		strconv.FormatBool(eventWarning),
+		strconv.FormatBool(eventOther),
+		strconv.FormatBool(communications),
+		strconv.FormatBool(variables),
+		strconv.FormatBool(names))
 }

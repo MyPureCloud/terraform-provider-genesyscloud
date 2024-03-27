@@ -27,8 +27,8 @@ func SetRegistrar(regInstance registrar.Registrar) {
 func ResourceFlowLoglevel() *schema.Resource {
 	flowLogLevel := &schema.Resource{
 		Schema: map[string]*schema.Schema{
-			"search": {
-				Description: "The search string for the flow log level.",
+			"level": {
+				Description: "The flow log level.",
 				Type:        schema.TypeString,
 				Optional:    true,
 			},
@@ -43,7 +43,7 @@ func ResourceFlowLoglevel() *schema.Resource {
 				Optional:    true,
 			},
 			"executionInputOutputs": {
-				Description: "Whether to report input setting input setting values and output data values for individual execution items above.  For example, if you have FlowExecutionInputOutputs and a Call Data Action ran in a flow, if FlowExecutionItems was enabled you'd see the fact a Call Data Action ran and the output path it took but nothing about which Data Action it ran, the input data sent to it at flow runtime and the data returned from it.  If you enable this characteristic, execution data will contain this additional detail.",
+				Description: "Whether to report input setting values and output data values for individual execution items above.  For example, if you have FlowExecutionInputOutputs and a Call Data Action ran in a flow, if FlowExecutionItems was enabled you'd see the fact a Call Data Action ran and the output path it took but nothing about which Data Action it ran, the input data sent to it at flow runtime and the data returned from it.  If you enable this characteristic, execution data will contain this additional detail.",
 				Type:        schema.TypeBool,
 				Optional:    true,
 			},
@@ -55,7 +55,7 @@ func ResourceFlowLoglevel() *schema.Resource {
 			"eventError": {
 				Description: "Whether to report flow error events.",
 				Type:        schema.TypeBool,
-				Computed:    true,
+				Optional:    true,
 			},
 			"eventWarning": {
 				Description: "Whether to report flow warning events.",
@@ -75,7 +75,7 @@ func ResourceFlowLoglevel() *schema.Resource {
 			"names": {
 				Description: "This characteristic specifies whether or not name information should be emitted in execution data such as action, task, state or even the flow name itself.  Names are very handy from a readability standpoint but they do take up additional space in flow execution data instances.",
 				Type:        schema.TypeBool,
-				Computed:    true,
+				Optional:    true,
 			},
 		},
 	}
@@ -93,7 +93,7 @@ func ResourceFlowLoglevel() *schema.Resource {
 		Schema: map[string]*schema.Schema{
 			"level": {
 				Description: "The logLevel for this characteristics set",
-				Type:        schema.TypeString,
+				Type:        schema.TypeList,
 				MaxItems:    1,
 				Optional:    true,
 				Elem:        flowLogLevel,

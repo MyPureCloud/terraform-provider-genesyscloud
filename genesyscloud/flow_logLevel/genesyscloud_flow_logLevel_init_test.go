@@ -53,9 +53,9 @@ func initTestResources() {
 
 // TestMain is a "setup" function called by the testing framework when run the test
 func TestMain(m *testing.M) {
-	// Run setup function before starting the test suite for external_contacts package
+	// Run setup function before starting the test suite for flow_logLevel package
 	initTestResources()
 
-	// Run the test suite for the external_contacts package
+	// Run the test suite for the flow_logLevel package
 	m.Run()
 }
