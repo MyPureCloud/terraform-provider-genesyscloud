@@ -24,22 +24,17 @@ The resource_genesyscloud_auth_role_utils.go contains all of the methods that pe
 // getAllAuthAuthRole retrieves all of the auth role via Terraform in the Genesys Cloud and is used for the exporter
 func getAllAuthAuthRoles(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
 	resources := make(resourceExporter.ResourceIDMetaMap)
-	authAPI := platformclientv2.NewAuthorizationApiWithConfig(clientConfig)
+	proxy := getAuthRoleProxy(clientConfig)
 
-	for pageNum := 1; ; pageNum++ {
-		const pageSize = 100
-		roles, proxyResponse, getErr := authAPI.GetAuthorizationRoles(pageSize, pageNum, "", nil, "", "", "", nil, nil, false, nil)
-		if getErr != nil {
-			return nil, diag.Errorf("Failed to get page of roles: %v %v ", getErr, proxyResponse)
-		}
-
-		if roles.Entities == nil || len(*roles.Entities) == 0 {
-			break
-		}
-		for _, role := range *roles.Entities {
-			resources[*role.Id] = &resourceExporter.ResourceMeta{Name: *role.Name}
-		}
+	roles, proxyResponse, getErr := proxy.getAllAuthRole(ctx)
+	if getErr != nil {
+		return nil, diag.Errorf("Failed to get auth roles: %v %v ", getErr, proxyResponse)
 	}
+
+	for _, role := range *roles {
+		resources[*role.Id] = &resourceExporter.ResourceMeta{Name: *role.Name}
+	}
+
 	return resources, nil
 }
 
