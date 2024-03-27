@@ -33,7 +33,7 @@ type updateArchitectGrammarLanguageFunc func(ctx context.Context, p *architectGr
 type deleteArchitectGrammarLanguageFunc func(ctx context.Context, p *architectGrammarLanguageProxy, grammarId string, languageCode string) (*platformclientv2.APIResponse, error)
 type getAllArchitectGrammarLanguageFunc func(ctx context.Context, p *architectGrammarLanguageProxy) (*[]platformclientv2.Grammarlanguage, *platformclientv2.APIResponse, error)
 
-// architectGrammarLanguageProxy contains all of the methods that call genesys cloud APIs.
+// architectGrammarLanguageProxy contains all the methods that call genesys cloud APIs.
 type architectGrammarLanguageProxy struct {
 	clientConfig                        *platformclientv2.Configuration
 	architectApi                        *platformclientv2.ArchitectApi
@@ -94,7 +94,7 @@ func (p *architectGrammarLanguageProxy) getAllArchitectGrammarLanguage(ctx conte
 }
 
 // createArchitectGrammarLanguageFn is an implementation function for creating a Genesys Cloud Architect Grammar Language
-func createArchitectGrammarLanguageFn(ctx context.Context, p *architectGrammarLanguageProxy, language *platformclientv2.Grammarlanguage) (*platformclientv2.Grammarlanguage, *platformclientv2.APIResponse, error) {
+func createArchitectGrammarLanguageFn(_ context.Context, p *architectGrammarLanguageProxy, language *platformclientv2.Grammarlanguage) (*platformclientv2.Grammarlanguage, *platformclientv2.APIResponse, error) {
 	languageSdk, resp, err := p.architectApi.PostArchitectGrammarLanguages(*language.GrammarId, *language)
 	if err != nil {
 		return nil, resp, err
@@ -181,7 +181,7 @@ func uploadGrammarLanguageFile(p *architectGrammarLanguageProxy, language *platf
 
 	reader, _, err := files.DownloadOrOpenFile(filePath)
 	if err != nil {
-		return fmt.Errorf("error downloading file '%s': %v", filePath, err)
+		return nil, fmt.Errorf("error opening file '%s': %v", filePath, err)
 	}
 
 	s3Uploader := files.NewS3Uploader(reader, nil, nil, *uploadResponse.Headers, http.MethodPut, *uploadResponse.Url)
