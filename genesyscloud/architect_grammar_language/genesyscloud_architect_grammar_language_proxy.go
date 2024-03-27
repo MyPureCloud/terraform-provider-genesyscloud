@@ -3,10 +3,9 @@ package architect_grammar_language
 import (
 	"context"
 	"fmt"
-	"io"
-	"log"
 	"net/http"
-	"os"
+	"terraform-provider-genesyscloud/genesyscloud/util/files"
+	"time"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
 )
@@ -163,7 +162,7 @@ func deleteArchitectGrammarLanguageFn(_ context.Context, p *architectGrammarLang
 }
 
 // uploadGrammarLanguageFile is a function for uploading a grammar language file to Genesys cloud
-func uploadGrammarLanguageFile(p *architectGrammarLanguageProxy, language *platformclientv2.Grammarlanguage, filename string, fileType FileType) error {
+func uploadGrammarLanguageFile(p *architectGrammarLanguageProxy, language *platformclientv2.Grammarlanguage, filePath string, fileType FileType) error {
 	var (
 		uploadResponse *platformclientv2.Uploadurlresponse
 		err            error
@@ -181,58 +180,20 @@ func uploadGrammarLanguageFile(p *architectGrammarLanguageProxy, language *platf
 		uploadResponse, _, err = p.architectApi.PostArchitectGrammarLanguageFilesDtmf(grammarId, languageCode, uploadBody)
 	}
 	if err != nil {
-		return fmt.Errorf("failed to get language file presignedUri: %s for file %s", err, filename)
+		return fmt.Errorf("failed to get language file presignedUri: %s for file %s", err, filePath)
 	}
 
-	var response *http.Response
-	var file *os.File
-
-	defer func(Body io.ReadCloser) {
-		if err := Body.Close(); err != nil {
-			log.Printf("failed to close response body: %v", err)
-		}
-	}(response.Body)
-
-	file, err = os.Open(filename)
+	reader, _, err := files.DownloadOrOpenFile(filePath)
 	if err != nil {
-		return fmt.Errorf("failed to find file '%s': %s", filename, err)
+		//setFileContentHashToNil(d)
+		return fmt.Errorf("")
 	}
 
-	defer func(file *os.File) {
-		if err := file.Close(); err != nil {
-			log.Printf("failed to close file '%s': %v", filename, err)
-		}
-	}(file)
+	s3Uploader := files.NewS3Uploader(reader, nil, nil, *uploadResponse.Headers, http.MethodPut, *uploadResponse.Url)
 
-	// Start building HTTP request
-	client := &http.Client{}
-	request, err := http.NewRequest(http.MethodPut, *uploadResponse.Url, file)
-	if err != nil {
-		return err
-	}
-
-	for key, value := range *uploadResponse.Headers {
-		request.Header.Add(key, value)
-	}
-
-	maxRetries := 5
-	for i := 0; i < maxRetries; i++ {
-		response, err = client.Do(request)
-		if err != nil {
-			return err
-		}
-
-		if response.StatusCode == http.StatusNotImplemented {
-			if i == maxRetries-1 {
-				return fmt.Errorf("max retry attempts reached, status: %s", response.Status)
-			}
-		} else if response.StatusCode >= http.StatusBadRequest {
-			return fmt.Errorf("invalid request, status: %s", response.Status)
-		}
-
-		if response.StatusCode == http.StatusOK {
-			break
-		}
+	if _, uploadErr := s3Uploader.UploadWithRetries(context.Background(), filePath, 20*time.Second); uploadErr != nil {
+		//setFileContentHashToNil(d)
+		return fmt.Errorf("failed to upload language file for grammar '%s': %v", *language.GrammarId, uploadErr)
 	}
 
 	return nil

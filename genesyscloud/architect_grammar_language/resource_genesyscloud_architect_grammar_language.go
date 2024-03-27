@@ -54,8 +54,9 @@ func createArchitectGrammarLanguage(ctx context.Context, d *schema.ResourceData,
 	}
 
 	// Language id is always in format <grammar-id>:<language-code>
-	d.SetId(*language.GrammarId + ":" + *language.Language)
-	log.Printf("Created Architect Grammar Language %s", *language.GrammarId+":"+*language.Language)
+	languageId := fmt.Sprintf("%s:%s", *language.GrammarId, *language.Language)
+	d.SetId(languageId)
+	log.Printf("Created Architect Grammar Language %s", languageId)
 	return readArchitectGrammarLanguage(ctx, d, meta)
 }
 
