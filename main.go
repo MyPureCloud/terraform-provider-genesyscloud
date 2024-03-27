@@ -156,6 +156,7 @@ func registerResources() {
 	obCallableTimeset.SetRegistrar(regInstance)             //Registering outbound callable timeset
 	obCampaign.SetRegistrar(regInstance)                    //Registering outbound campaign
 	obContactList.SetRegistrar(regInstance)                 //Registering outbound contact list
+	obContactListFilter.SetRegistrar(regInstance)           //Registering outbound contact list filter
 	obSequence.SetRegistrar(regInstance)                    //Registering outbound sequence
 	obCampaignRule.SetRegistrar(regInstance)                //Registering outbound campaignrule
 	obSettings.SetRegistrar(regInstance)                    //Registering outbound settings
