@@ -1,7 +1,6 @@
 package webdeployments_configuration_utils
 
 import (
-	"fmt"
 	"terraform-provider-genesyscloud/genesyscloud/util/lists"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
@@ -38,7 +37,6 @@ func buildAppConversations(conversations []interface{}) *platformclientv2.Conver
 		}
 	}
 
-
 	if humanizeArr, ok := conversation["humanize"].([]interface{}); ok && len(humanizeArr) > 0 && humanizeArr[0] != nil {
 		humanize := humanizeArr[0].(map[string]interface{})
 		ret.Humanize = &platformclientv2.Humanize{
@@ -57,7 +55,7 @@ func buildAppConversations(conversations []interface{}) *platformclientv2.Conver
 }
 
 func buildAppKnowledge(knowledge []interface{}) *platformclientv2.Knowledge {
-	if len(knowledge) < 1 || (len(knowledge) == 1 && knowledge[0] == nil) {
+	if len(knowledge) < 1 {
 		return nil
 	}
 
@@ -71,6 +69,7 @@ func buildAppKnowledge(knowledge []interface{}) *platformclientv2.Knowledge {
 			Id: &knowledgeBaseId,
 		}
 	}
+
 	return ret
 }
 
@@ -80,17 +79,9 @@ func buildMessengerApps(apps []interface{}) *platformclientv2.Messengerapps {
 	}
 
 	app := apps[0].(map[string]interface{})
-	conversations, conversationsOk := app["conversations"].([]interface{})
-	knowledge, knowledgeOk := app["knowledge"].([]interface{})
-
-	if !conversationsOk || !knowledgeOk {
-		fmt.Println("error in build Messenger Apps")
-		return nil
-	}
-
 	return &platformclientv2.Messengerapps{
-		Conversations: buildAppConversations(conversations),
-		Knowledge:     buildAppKnowledge(knowledge),
+		Conversations: buildAppConversations(app["conversations"].([]interface{})),
+		Knowledge:     buildAppKnowledge(app["knowledge"].([]interface{})),
 	}
 }
 
@@ -225,6 +216,7 @@ func flattenFileUpload(settings *platformclientv2.Fileuploadsettings) []interfac
 
 	return []interface{}{ret}
 }
+
 func flattenAppConversations(conversations *platformclientv2.Conversationappsettings) []interface{} {
 	if conversations == nil {
 		return nil
