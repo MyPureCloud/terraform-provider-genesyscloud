@@ -88,7 +88,7 @@ resource "genesyscloud_routing_queue" "example_queue" {
 - `bullseye_rings` (Block List, Max: 5) The bullseye ring settings for the queue. (see [below for nested schema](#nestedblock--bullseye_rings))
 - `calling_party_name` (String) The name to use for caller identification for outbound calls from this queue.
 - `calling_party_number` (String) The phone number to use for caller identification for outbound calls from this queue.
-- `conditional_group_routing_rules` (Block List, Max: 5) The Conditional Group Routing settings for the queue. (see [below for nested schema](#nestedblock--conditional_group_routing_rules))
+- `conditional_group_routing_rules` (Block List, Max: 5, Deprecated) The Conditional Group Routing settings for the queue. (see [below for nested schema](#nestedblock--conditional_group_routing_rules))
 - `default_script_ids` (Map of String) The default script IDs for each communication type. Communication types: (CALL | CALLBACK | CHAT | COBROWSE | EMAIL | MESSAGE | SOCIAL_EXPRESSION | VIDEO | SCREENSHARE)
 - `description` (String) Queue description.
 - `direct_routing` (Block List, Max: 1) Used by the System to set Direct Routing settings for a system Direct Routing queue. (see [below for nested schema](#nestedblock--direct_routing))

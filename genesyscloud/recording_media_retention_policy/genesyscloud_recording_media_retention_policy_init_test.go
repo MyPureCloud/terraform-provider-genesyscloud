@@ -8,6 +8,7 @@ import (
 	authRole "terraform-provider-genesyscloud/genesyscloud/auth_role"
 	integration "terraform-provider-genesyscloud/genesyscloud/integration"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
+	routingQueue "terraform-provider-genesyscloud/genesyscloud/routing_queue"
 	userRoles "terraform-provider-genesyscloud/genesyscloud/user_roles"
 
 	"testing"
@@ -44,7 +45,7 @@ func (r *registerTestInstance) registerTestResources() {
 
 	providerResources[resourceName] = ResourceMediaRetentionPolicy()
 	providerResources["genesyscloud_routing_email_domain"] = gcloud.ResourceRoutingEmailDomain()
-	providerResources["genesyscloud_routing_queue"] = gcloud.ResourceRoutingQueue()
+	providerResources["genesyscloud_routing_queue"] = routingQueue.ResourceRoutingQueue()
 	providerResources["genesyscloud_auth_role"] = authRole.ResourceAuthRole()
 	providerResources["genesyscloud_user_roles"] = userRoles.ResourceUserRoles()
 	providerResources["genesyscloud_user"] = gcloud.ResourceUser()

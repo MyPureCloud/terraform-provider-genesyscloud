@@ -18,7 +18,7 @@ func TestAccDataSourceRoutingSkillGroup(t *testing.T) {
 		skillGroupDescription = "description-" + uuid.NewString()
 	)
 
-	config := generateRoutingSkillGroupResourceBasic(
+	config := GenerateRoutingSkillGroupResourceBasic(
 		skillGroupResource,
 		skillGroupName,
 		skillGroupDescription,
