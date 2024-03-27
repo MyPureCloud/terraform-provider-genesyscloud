@@ -42,7 +42,7 @@ func getAllAuthRoutingQueueConditionalGroup(ctx context.Context, clientConfig *p
 func createRoutingQueueConditionalRoutingGroup(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	queueId := d.Get("queue_id").(string)
 	log.Printf("creating conditional group routing rules for queue %s", queueId)
-	d.SetId(queueId) // Adding /rule to the id so the id doesn't conflict with the id of the routing queue these rules belong to
+	d.SetId(queueId + "/rule") // Adding /rule to the id so the id doesn't conflict with the id of the routing queue these rules belong to
 
 	return updateRoutingQueueConditionalRoutingGroup(ctx, d, meta)
 }

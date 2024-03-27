@@ -58,24 +58,15 @@ func TestAccResourceRoutingQueueBasic(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				// Create
-<<<<<<< HEAD:genesyscloud/resource_genesyscloud_routing_queue_test.go
-				Config: generateUserWithCustomAttrs(testUserResource, testUserEmail, testUserName) + GenerateRoutingSkillResource(queueSkillResource, queueSkillName) +
-					generateGroupResource(
-=======
-				Config: genesyscloud.GenerateUserWithCustomAttrs(testUserResource, testUserEmail, testUserName) + genesyscloud.GenerateRoutingSkillResource(queueSkillResource, queueSkillName) +
-					genesyscloud.GenerateGroupResource(
->>>>>>> acab4f67 (Added routing_queue_conditional_group_routing resource):genesyscloud/routing_queue/resource_genesyscloud_routing_queue_test.go
+				Config: generateUserWithCustomAttrs(testUserResource, testUserEmail, testUserName) + genesyscloud.GenerateRoutingSkillResource(queueSkillResource, queueSkillName) +
+					group.GenerateGroupResource(
 						bullseyeMemberGroupName,
 						"MySeries6Groupv2",
 						strconv.Quote("TestGroupForSeries6"),
 						util.NullValue, // Default type
 						util.NullValue, // Default visibility
 						util.NullValue, // Default rules_visible
-<<<<<<< HEAD:genesyscloud/resource_genesyscloud_routing_queue_test.go
 						group.GenerateGroupOwners("genesyscloud_user."+testUserResource+".id"),
-=======
-						genesyscloud.GenerateGroupOwners("genesyscloud_user."+testUserResource+".id"),
->>>>>>> acab4f67 (Added routing_queue_conditional_group_routing resource):genesyscloud/routing_queue/resource_genesyscloud_routing_queue_test.go
 					) + GenerateRoutingQueueResource(
 					queueResource1,
 					queueName1,
@@ -280,17 +271,10 @@ func TestAccResourceRoutingQueueConditionalRouting(t *testing.T) {
 			},
 			{
 				// Update
-<<<<<<< HEAD:genesyscloud/resource_genesyscloud_routing_queue_test.go
 				Config: generateUserWithCustomAttrs(testUserResource, testUserEmail, testUserName) + group.GenerateBasicGroupResource(
 					groupResourceId,
 					groupName,
 					group.GenerateGroupOwners("genesyscloud_user."+testUserResource+".id"),
-=======
-				Config: genesyscloud.GenerateUserWithCustomAttrs(testUserResource, testUserEmail, testUserName) + genesyscloud.GenerateBasicGroupResource(
-					groupResourceId,
-					groupName,
-					genesyscloud.GenerateGroupOwners("genesyscloud_user."+testUserResource+".id"),
->>>>>>> acab4f67 (Added routing_queue_conditional_group_routing resource):genesyscloud/routing_queue/resource_genesyscloud_routing_queue_test.go
 				) +
 					generateRoutingQueueResourceBasic(
 						queueResource2,
@@ -1499,15 +1483,9 @@ func TestAccResourceRoutingQueueSkillGroups(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				// Create
-<<<<<<< HEAD:genesyscloud/resource_genesyscloud_routing_queue_test.go
-				Config: generateUserWithCustomAttrs(testUserResource, testUserEmail, testUserName) + generateRoutingSkillGroupResourceBasic(skillGroupResource, skillGroupName, skillGroupDescription) +
+				Config: generateUserWithCustomAttrs(testUserResource, testUserEmail, testUserName) + genesyscloud.GenerateRoutingSkillGroupResourceBasic(skillGroupResource, skillGroupName, skillGroupDescription) +
 					group.GenerateBasicGroupResource(groupResource, groupName,
 						group.GenerateGroupOwners("genesyscloud_user."+testUserResource+".id"),
-=======
-				Config: genesyscloud.GenerateUserWithCustomAttrs(testUserResource, testUserEmail, testUserName) + genesyscloud.GenerateRoutingSkillGroupResourceBasic(skillGroupResource, skillGroupName, skillGroupDescription) +
-					genesyscloud.GenerateBasicGroupResource(groupResource, groupName,
-						genesyscloud.GenerateGroupOwners("genesyscloud_user."+testUserResource+".id"),
->>>>>>> acab4f67 (Added routing_queue_conditional_group_routing resource):genesyscloud/routing_queue/resource_genesyscloud_routing_queue_test.go
 					) +
 					GenerateRoutingQueueResourceBasicWithDepends(
 						queueResource,
@@ -1535,4 +1513,13 @@ func TestAccResourceRoutingQueueSkillGroups(t *testing.T) {
 		},
 		CheckDestroy: testVerifyQueuesDestroyed,
 	})
+}
+
+func generateUserWithCustomAttrs(resourceID string, email string, name string, attrs ...string) string {
+	return fmt.Sprintf(`resource "genesyscloud_user" "%s" {
+		email = "%s"
+		name = "%s"
+		%s
+	}
+	`, resourceID, email, name, strings.Join(attrs, "\n"))
 }

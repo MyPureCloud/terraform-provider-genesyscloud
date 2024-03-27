@@ -17,8 +17,7 @@ used in testing the routing_queue_conditional_group_routing resource.
 var providerResources map[string]*schema.Resource
 
 type registerTestInstance struct {
-	resourceMapMutex   sync.RWMutex
-	datasourceMapMutex sync.RWMutex
+	resourceMapMutex sync.RWMutex
 }
 
 // registerTestResources registers all resources used in the tests

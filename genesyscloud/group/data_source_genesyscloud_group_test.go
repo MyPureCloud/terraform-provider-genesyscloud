@@ -26,11 +26,7 @@ func TestAccDataSourceGroup(t *testing.T) {
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
-<<<<<<< HEAD:genesyscloud/group/data_source_genesyscloud_group_test.go
 				Config: generateUserWithCustomAttrs(testUserResource, testUserEmail, testUserName) +
-=======
-				Config: GenerateUserWithCustomAttrs(testUserResource, testUserEmail, testUserName) +
->>>>>>> acab4f67 (Added routing_queue_conditional_group_routing resource):genesyscloud/data_source_genesyscloud_group_test.go
 					GenerateGroupResource(
 						groupResource,
 						groupName,
