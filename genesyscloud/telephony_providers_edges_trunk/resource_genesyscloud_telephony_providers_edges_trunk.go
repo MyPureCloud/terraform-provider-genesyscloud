@@ -16,7 +16,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v123/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
 )
 
 func createTrunk(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -52,9 +52,9 @@ func createTrunk(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		}
 
 		log.Printf("Assigning trunk base settings to edge %s", edgeId)
-		_, _, err := tp.putEdge(ctx, edgeId, *edge)
+		_, resp, err := tp.putEdge(ctx, edgeId, *edge)
 		if err != nil {
-			return diag.Errorf("Failed to assign trunk base settings to edge %s: %s", edgeId, err)
+			return diag.Errorf("Failed to assign trunk base settings to edge %s: %s %v", edgeId, err, resp)
 		}
 	} else if edgeGroupIdI, ok := d.GetOk("edge_group_id"); ok {
 		edgeGroupId := edgeGroupIdI.(string)
@@ -70,9 +70,9 @@ func createTrunk(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		}
 
 		log.Printf("Assigning trunk base settings to edge group %s", edgeGroupId)
-		_, _, err := tp.putEdgeGroup(ctx, edgeGroupId, *edgeGroup)
+		_, resp, err := tp.putEdgeGroup(ctx, edgeGroupId, *edgeGroup)
 		if err != nil {
-			return diag.Errorf("Failed to assign trunk base settings to edge group %s: %s", edgeGroupId, err)
+			return diag.Errorf("Failed to assign trunk base settings to edge group %s: %s %v", edgeGroupId, err, resp)
 		}
 	} else {
 		return diag.Errorf("edge_id or edge_group_id were not set. One must be set in order to assign the trunk base settings")
@@ -98,9 +98,9 @@ func getTrunkByTrunkBaseId(ctx context.Context, trunkBaseId string, meta interfa
 	// It should return the trunk as the first object. Paginating to be safe
 	for pageNum := 1; ; pageNum++ {
 		const pageSize = 100
-		trunks, _, getErr := tp.getAllTrunks(ctx, pageNum, pageSize)
+		trunks, resp, getErr := tp.getAllTrunks(ctx, pageNum, pageSize)
 		if getErr != nil {
-			return nil, fmt.Errorf("Failed to get page of trunks: %v", getErr)
+			return nil, fmt.Errorf("Failed to get page of trunks: %v %v", getErr, resp)
 		}
 
 		if trunks.Entities == nil || len(*trunks.Entities) == 0 {

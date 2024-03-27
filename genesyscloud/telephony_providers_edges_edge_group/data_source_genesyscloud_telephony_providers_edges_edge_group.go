@@ -22,10 +22,10 @@ func dataSourceEdgeGroupRead(ctx context.Context, d *schema.ResourceData, m inte
 
 	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
 
-		edgeGroup, retryable, getErr := edgeGroupProxy.getEdgeGroupByName(ctx, name, managed)
+		edgeGroup, retryable, resp, getErr := edgeGroupProxy.getEdgeGroupByName(ctx, name, managed)
 
 		if getErr != nil && !retryable {
-			return retry.NonRetryableError(fmt.Errorf("Error requesting edge group %s: %s", name, getErr))
+			return retry.NonRetryableError(fmt.Errorf("Error requesting edge group %s: %s %v", name, getErr, resp))
 		}
 
 		if retryable {

@@ -11,7 +11,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v123/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
 )
 
 func DataSourceArchitectDatatableRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
@@ -24,9 +24,9 @@ func DataSourceArchitectDatatableRead(ctx context.Context, d *schema.ResourceDat
 	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
 		const pageNum = 1
 		const pageSize = 100
-		datatables, _, getErr := archAPI.GetFlowsDatatables("", pageNum, pageSize, "", "", nil, name)
+		datatables, resp, getErr := archAPI.GetFlowsDatatables("", pageNum, pageSize, "", "", nil, name)
 		if getErr != nil {
-			return retry.NonRetryableError(fmt.Errorf("Error requesting architect architect_datatable %s: %s", name, getErr))
+			return retry.NonRetryableError(fmt.Errorf("Error requesting architect architect_datatable %s: %s %v", name, getErr, resp))
 		}
 
 		if datatables.Entities == nil || len(*datatables.Entities) == 0 {

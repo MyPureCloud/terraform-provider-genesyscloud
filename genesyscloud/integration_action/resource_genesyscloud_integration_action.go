@@ -18,7 +18,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v123/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
 )
 
 /*
@@ -46,9 +46,9 @@ func getAllIntegrationActions(ctx context.Context, clientConfig *platformclientv
 	resources := make(resourceExporter.ResourceIDMetaMap)
 	iap := getIntegrationActionsProxy(clientConfig)
 
-	actions, err := iap.getAllIntegrationActions(ctx)
+	actions, resp, err := iap.getAllIntegrationActions(ctx)
 	if err != nil {
-		return nil, diag.Errorf("Failed to get page of integration actions: %v", err)
+		return nil, diag.Errorf("Failed to get page of integration actions: %v %v", err, resp)
 	}
 
 	for _, action := range *actions {
@@ -58,7 +58,6 @@ func getAllIntegrationActions(ctx context.Context, clientConfig *platformclientv
 		}
 		resources[*action.Id] = &resourceExporter.ResourceMeta{Name: *action.Name}
 	}
-
 	return resources, nil
 }
 

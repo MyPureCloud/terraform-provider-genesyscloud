@@ -17,16 +17,16 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v123/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
 )
 
 func getAllOutboundDncLists(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
 	resources := make(resourceExporter.ResourceIDMetaMap)
 	proxy := getOutboundDnclistProxy(clientConfig)
 
-	dnclists, _, err := proxy.getAllOutboundDnclist(ctx)
+	dnclists, resp, err := proxy.getAllOutboundDnclist(ctx)
 	if err != nil {
-		return nil, diag.Errorf("Failed to get dnclists: %v", err)
+		return nil, diag.Errorf("Failed to get dnclists: %v %v", err, resp)
 	}
 	for _, dncListConfig := range *dnclists {
 		resources[*dncListConfig.Id] = &resourceExporter.ResourceMeta{Name: *dncListConfig.Name}
@@ -72,9 +72,9 @@ func createOutboundDncList(ctx context.Context, d *schema.ResourceData, meta int
 	}
 
 	log.Printf("Creating Outbound DNC list %s", name)
-	outboundDncList, _, err := proxy.createOutboundDnclist(ctx, &sdkDncListCreate)
+	outboundDncList, resp, err := proxy.createOutboundDnclist(ctx, &sdkDncListCreate)
 	if err != nil {
-		return diag.Errorf("Failed to create Outbound DNC list %s: %s", name, err)
+		return diag.Errorf("Failed to create Outbound DNC list %s: %s %v", name, err, resp)
 	}
 
 	d.SetId(*outboundDncList.Id)
@@ -82,16 +82,15 @@ func createOutboundDncList(ctx context.Context, d *schema.ResourceData, meta int
 	if len(entries) > 0 {
 		if *sdkDncListCreate.DncSourceType == "rds" {
 			for _, entry := range entries {
-				_, err := proxy.uploadPhoneEntriesToDncList(outboundDncList, entry)
+				resp, err := proxy.uploadPhoneEntriesToDncList(outboundDncList, entry)
 				if err != nil {
-					return err
+					return diag.Errorf("error creating dnc list %v %v", err, resp)
 				}
 			}
 		} else {
 			return diag.Errorf("Phone numbers can only be uploaded to internal DNC lists.")
 		}
 	}
-
 	log.Printf("Created Outbound DNC list %s %s", name, *outboundDncList.Id)
 	return readOutboundDncList(ctx, d, meta)
 }
@@ -140,9 +139,9 @@ func updateOutboundDncList(ctx context.Context, d *schema.ResourceData, meta int
 			return resp, diag.Errorf("Failed to read Outbound DNC list %s: %s", d.Id(), getErr)
 		}
 		sdkDncList.Version = outboundDncList.Version
-		outboundDncList, _, updateErr := proxy.updateOutboundDnclist(ctx, d.Id(), &sdkDncList)
+		outboundDncList, response, updateErr := proxy.updateOutboundDnclist(ctx, d.Id(), &sdkDncList)
 		if updateErr != nil {
-			return resp, diag.Errorf("Failed to update Outbound DNC list %s: %s", name, updateErr)
+			return resp, diag.Errorf("Failed to update Outbound DNC list %s: %s %v", name, updateErr, response)
 		}
 		if len(entries) > 0 {
 			if *sdkDncList.DncSourceType == "rds" {
@@ -244,7 +243,6 @@ func deleteOutboundDncList(ctx context.Context, d *schema.ResourceData, meta int
 			}
 			return retry.NonRetryableError(fmt.Errorf("error deleting Outbound DNC list %s: %s", d.Id(), err))
 		}
-
 		return retry.RetryableError(fmt.Errorf("Outbound DNC list %s still exists", d.Id()))
 	})
 }

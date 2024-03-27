@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v123/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
 	"log"
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
@@ -27,9 +27,9 @@ func getAllAuthEmployeeperformanceExternalmetricsDefinitions(ctx context.Context
 	proxy := newEmployeeperformanceExternalmetricsDefinitionProxy(clientConfig)
 	resources := make(resourceExporter.ResourceIDMetaMap)
 
-	definitions, err := proxy.getAllEmployeeperformanceExternalmetricsDefinition(ctx)
+	definitions, resp, err := proxy.getAllEmployeeperformanceExternalmetricsDefinition(ctx)
 	if err != nil {
-		return nil, diag.Errorf("Failed to get employeeperformance externalmetrics definition: %v", err)
+		return nil, diag.Errorf("Failed to get employeeperformance externalmetrics definition: %v %v", err, resp)
 	}
 
 	for _, definition := range *definitions {
@@ -58,9 +58,9 @@ func createEmployeeperformanceExternalmetricsDefinition(ctx context.Context, d *
 	}
 
 	log.Printf("Creating employeeperformance externalmetrics definition %s", *metricDefinition.Name)
-	definition, err := proxy.createEmployeeperformanceExternalmetricsDefinition(ctx, &metricDefinition)
+	definition, resp, err := proxy.createEmployeeperformanceExternalmetricsDefinition(ctx, &metricDefinition)
 	if err != nil {
-		return diag.Errorf("Failed to create employeeperformance externalmetrics definition %s: %s", *metricDefinition.Name, err)
+		return diag.Errorf("Failed to create employeeperformance externalmetrics definition %s: %s %v", *metricDefinition.Name, err, resp)
 	}
 
 	d.SetId(*definition.Id)
@@ -76,9 +76,9 @@ func readEmployeeperformanceExternalmetricsDefinition(ctx context.Context, d *sc
 	log.Printf("Reading employeeperformance externalmetrics definition %s", d.Id())
 
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
-		definition, respCode, getErr := proxy.getEmployeeperformanceExternalmetricsDefinitionById(ctx, d.Id())
+		definition, resp, getErr := proxy.getEmployeeperformanceExternalmetricsDefinitionById(ctx, d.Id())
 		if getErr != nil {
-			if util.IsStatus404ByInt(respCode) {
+			if util.IsStatus404(resp) {
 				return retry.RetryableError(fmt.Errorf("Failed to read employeeperformance externalmetrics definition %s: %s", d.Id(), getErr))
 			}
 			return retry.NonRetryableError(fmt.Errorf("Failed to read employeeperformance externalmetrics definition %s: %s", d.Id(), getErr))
@@ -111,9 +111,9 @@ func updateEmployeeperformanceExternalmetricsDefinition(ctx context.Context, d *
 	}
 
 	log.Printf("Updating employeeperformance externalmetrics definition %s: %s", *metricDefinition.Name, d.Id())
-	definition, err := proxy.updateEmployeeperformanceExternalmetricsDefinition(ctx, d.Id(), &metricDefinition)
+	definition, resp, err := proxy.updateEmployeeperformanceExternalmetricsDefinition(ctx, d.Id(), &metricDefinition)
 	if err != nil {
-		return diag.Errorf("Failed to update employeeperformance externalmetrics definition: %s", err)
+		return diag.Errorf("Failed to update employeeperformance externalmetrics definition: %s %v", err, resp)
 	}
 
 	log.Printf("Updated employeeperformance externalmetrics definition %s", *definition.Id)
@@ -125,22 +125,21 @@ func deleteEmployeeperformanceExternalmetricsDefinition(ctx context.Context, d *
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getEmployeeperformanceExternalmetricsDefinitionProxy(sdkConfig)
 
-	_, err := proxy.deleteEmployeeperformanceExternalmetricsDefinition(ctx, d.Id())
+	resp, err := proxy.deleteEmployeeperformanceExternalmetricsDefinition(ctx, d.Id())
 	if err != nil {
-		return diag.Errorf("Failed to delete employeeperformance externalmetrics definition %s: %s", d.Id(), err)
+		return diag.Errorf("Failed to delete employeeperformance externalmetrics definition %s: %s %v", d.Id(), err, resp)
 	}
 
 	return util.WithRetries(ctx, 180*time.Second, func() *retry.RetryError {
-		_, respCode, err := proxy.getEmployeeperformanceExternalmetricsDefinitionById(ctx, d.Id())
+		_, resp, err := proxy.getEmployeeperformanceExternalmetricsDefinitionById(ctx, d.Id())
 
 		if err != nil {
-			if util.IsStatus404ByInt(respCode) {
+			if util.IsStatus404(resp) {
 				log.Printf("Deleted employeeperformance externalmetrics definition %s", d.Id())
 				return nil
 			}
 			return retry.NonRetryableError(fmt.Errorf("Error deleting employeeperformance externalmetrics definition %s: %s", d.Id(), err))
 		}
-
 		return retry.RetryableError(fmt.Errorf("employeeperformance externalmetrics definition %s still exists", d.Id()))
 	})
 }

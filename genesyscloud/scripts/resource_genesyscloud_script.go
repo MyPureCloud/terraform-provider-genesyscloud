@@ -11,7 +11,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/util"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
-	"github.com/mypurecloud/platform-client-sdk-go/v123/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -22,9 +22,9 @@ func getAllScripts(ctx context.Context, clientConfig *platformclientv2.Configura
 	scriptsProxy := getScriptsProxy(clientConfig)
 	resources := make(resourceExporter.ResourceIDMetaMap)
 
-	scripts, err := scriptsProxy.getAllPublishedScripts(ctx)
+	scripts, resp, err := scriptsProxy.getAllPublishedScripts(ctx)
 	if err != nil {
-		return resources, diag.Errorf("Failed to get page of scripts: %v", err)
+		return resources, diag.Errorf("Failed to get page of scripts: %v %v", err, resp)
 	}
 
 	for _, script := range *scripts {
@@ -84,8 +84,8 @@ func readScript(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	scriptsProxy := getScriptsProxy(sdkConfig)
 
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
-		script, statusCode, err := scriptsProxy.getScriptById(ctx, d.Id())
-		if statusCode == http.StatusNotFound {
+		script, resp, err := scriptsProxy.getScriptById(ctx, d.Id())
+		if resp.StatusCode == http.StatusNotFound {
 			return retry.RetryableError(fmt.Errorf("Failed to read flow %s: %s", d.Id(), err))
 		}
 

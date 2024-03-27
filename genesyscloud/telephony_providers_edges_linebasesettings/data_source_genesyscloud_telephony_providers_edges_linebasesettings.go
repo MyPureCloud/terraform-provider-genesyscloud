@@ -11,7 +11,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v123/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
 )
 
 func dataSourceLineBaseSettingsRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
@@ -23,9 +23,9 @@ func dataSourceLineBaseSettingsRead(ctx context.Context, d *schema.ResourceData,
 	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
 		for pageNum := 1; ; pageNum++ {
 			const pageSize = 50
-			lineBaseSettings, _, getErr := edgesAPI.GetTelephonyProvidersEdgesLinebasesettings(pageNum, pageSize, "", "", nil)
+			lineBaseSettings, resp, getErr := edgesAPI.GetTelephonyProvidersEdgesLinebasesettings(pageNum, pageSize, "", "", nil)
 			if getErr != nil {
-				return retry.NonRetryableError(fmt.Errorf("Error requesting line base settings %s: %s", name, getErr))
+				return retry.NonRetryableError(fmt.Errorf("Error requesting line base settings %s: %s %v", name, getErr, resp))
 			}
 
 			if lineBaseSettings.Entities == nil || len(*lineBaseSettings.Entities) == 0 {

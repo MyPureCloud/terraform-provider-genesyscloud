@@ -5,7 +5,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v123/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
 )
 
 func getCampaignruleFromResourceData(d *schema.ResourceData) platformclientv2.Campaignrule {
@@ -19,7 +19,6 @@ func getCampaignruleFromResourceData(d *schema.ResourceData) platformclientv2.Ca
 		CampaignRuleActions:    buildCampaignRuleAction(d.Get("campaign_rule_actions").([]interface{})),
 		MatchAnyConditions:     &matchAnyConditions,
 	}
-
 	return campaignRule
 }
 
@@ -42,7 +41,6 @@ func buildCampaignRuleEntities(entities *schema.Set) *platformclientv2.Campaignr
 	if sequences := campaignRuleEntitiesMap["sequence_ids"].([]interface{}); sequences != nil {
 		campaignRuleEntities.Sequences = util.BuildSdkDomainEntityRefArrFromArr(sequences)
 	}
-
 	return &campaignRuleEntities
 }
 

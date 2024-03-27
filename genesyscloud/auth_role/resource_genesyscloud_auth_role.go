@@ -6,7 +6,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v123/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
 	"log"
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
@@ -28,20 +28,18 @@ func getAllAuthAuthRoles(ctx context.Context, clientConfig *platformclientv2.Con
 
 	for pageNum := 1; ; pageNum++ {
 		const pageSize = 100
-		roles, _, getErr := authAPI.GetAuthorizationRoles(pageSize, pageNum, "", nil, "", "", "", nil, nil, false, nil)
+		roles, proxyResponse, getErr := authAPI.GetAuthorizationRoles(pageSize, pageNum, "", nil, "", "", "", nil, nil, false, nil)
 		if getErr != nil {
-			return nil, diag.Errorf("Failed to get page of roles: %v", getErr)
+			return nil, diag.Errorf("Failed to get page of roles: %v %v ", getErr, proxyResponse)
 		}
 
 		if roles.Entities == nil || len(*roles.Entities) == 0 {
 			break
 		}
-
 		for _, role := range *roles.Entities {
 			resources[*role.Id] = &resourceExporter.ResourceMeta{Name: *role.Name}
 		}
 	}
-
 	return resources, nil
 }
 
@@ -70,9 +68,9 @@ func createAuthRole(ctx context.Context, d *schema.ResourceData, meta interface{
 	log.Printf("Creating role %s", name)
 	if defaultRoleID != "" {
 		// Default roles must already exist, or they cannot be modified
-		defaultRole, err := proxy.getDefaultRoleById(ctx, defaultRoleID)
+		defaultRole, proxyResponse, err := proxy.getDefaultRoleById(ctx, defaultRoleID)
 		if err != nil {
-			return diag.Errorf("Error requesting default role %s: %s", defaultRoleID, err)
+			return diag.Errorf("Error requesting default role %s: %s %v", defaultRoleID, err, proxyResponse)
 		}
 		d.SetId(defaultRole)
 		return updateAuthRole(ctx, d, meta)
@@ -85,9 +83,9 @@ func createAuthRole(ctx context.Context, d *schema.ResourceData, meta interface{
 		PermissionPolicies: policies,
 	}
 
-	role, err := proxy.createAuthRole(ctx, &roleObj)
+	role, proxyResponse, err := proxy.createAuthRole(ctx, &roleObj)
 	if err != nil {
-		return diag.Errorf("Failed to create role %s: %s", name, err)
+		return diag.Errorf("Failed to create role %s: %s %v", name, proxyResponse, err)
 	}
 
 	d.SetId(*role.Id)
@@ -103,9 +101,9 @@ func readAuthRole(ctx context.Context, d *schema.ResourceData, meta interface{})
 	log.Printf("Reading role %s", d.Id())
 
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
-		role, respCode, getErr := proxy.getAuthRoleById(ctx, d.Id())
+		role, proxyResponse, getErr := proxy.getAuthRoleById(ctx, d.Id())
 		if getErr != nil {
-			if util.IsStatus404ByInt(respCode) {
+			if util.IsStatus404(proxyResponse) {
 				return retry.RetryableError(fmt.Errorf("Failed to read role %s: %s", d.Id(), getErr))
 			}
 			return retry.NonRetryableError(fmt.Errorf("Failed to read role %s: %s", d.Id(), getErr))
@@ -164,9 +162,9 @@ func updateAuthRole(ctx context.Context, d *schema.ResourceData, meta interface{
 		PermissionPolicies: policies,
 		DefaultRoleId:      &defaultRoleID,
 	}
-	_, err := proxy.updateAuthRole(ctx, d.Id(), &roleObj)
+	_, proxyResponse, err := proxy.updateAuthRole(ctx, d.Id(), &roleObj)
 	if err != nil {
-		return diag.Errorf("Failed to update role %s: %s", name, err)
+		return diag.Errorf("Failed to update role %s: %s %v", name, err, proxyResponse)
 	}
 
 	log.Printf("Updated role %s", name)
@@ -185,27 +183,27 @@ func deleteAuthRole(ctx context.Context, d *schema.ResourceData, meta interface{
 		// Restore default roles to their default state instead of deleting them
 		log.Printf("Restoring default role %s", name)
 		id := d.Id()
-		err := proxy.restoreDefaultRoles(ctx, &[]platformclientv2.Domainorganizationrole{
+		proxyResponse, err := proxy.restoreDefaultRoles(ctx, &[]platformclientv2.Domainorganizationrole{
 			{
 				Id: &id,
 			},
 		})
 		if err != nil {
-			return diag.Errorf("Failed to restore default role %s: %s", defaultRoleID, err)
+			return diag.Errorf("Failed to restore default role %s: %s %v", defaultRoleID, err, proxyResponse)
 		}
 		return nil
 	}
 
 	log.Printf("Deleting role %s", name)
-	_, err := proxy.deleteAuthRole(ctx, d.Id())
+	proxyResponse, err := proxy.deleteAuthRole(ctx, d.Id())
 	if err != nil {
-		return diag.Errorf("Failed to delete role %s: %s", name, err)
+		return diag.Errorf("Failed to delete role %s: %s %v", name, err, proxyResponse)
 	}
 
 	return util.WithRetries(ctx, 60*time.Second, func() *retry.RetryError {
-		_, resp, err := proxy.getAuthRoleById(ctx, d.Id())
+		_, proxyResponse, err := proxy.getAuthRoleById(ctx, d.Id())
 		if err != nil {
-			if util.IsStatus404ByInt(resp) {
+			if util.IsStatus404(proxyResponse) {
 				// role deleted
 				log.Printf("Deleted role %s", d.Id())
 				return nil

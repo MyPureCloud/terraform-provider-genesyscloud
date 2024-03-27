@@ -18,7 +18,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v123/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
 )
 
 // getOutboundWrapupCodeMappings is used by the exporter to return all wrapupcode mappings
@@ -52,9 +52,9 @@ func readOutboundWrapUpCodeMappings(ctx context.Context, d *schema.ResourceData,
 			return retry.NonRetryableError(fmt.Errorf("failed to read Outbound Wrap-up Code Mappings: %s", err))
 		}
 
-		wrapupCodes, err := proxy.getAllWrapupCodes(ctx)
+		wrapupCodes, resp, err := proxy.getAllWrapupCodes(ctx)
 		if err != nil {
-			return retry.NonRetryableError(fmt.Errorf("failed to get wrapup codes: %s", err))
+			return retry.NonRetryableError(fmt.Errorf("failed to get wrapup codes: %s %v", err, resp))
 		}
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundWrapUpCodeMappings())
@@ -92,9 +92,9 @@ func updateOutboundWrapUpCodeMappings(ctx context.Context, d *schema.ResourceDat
 			Mapping:    buildWrapupCodeMappings(d),
 			Version:    wrapupCodeMappings.Version,
 		}
-		_, _, err = proxy.updateOutboundWrapUpCodeMappings(ctx, wrapupCodeUpdate)
+		_, resp, err = proxy.updateOutboundWrapUpCodeMappings(ctx, wrapupCodeUpdate)
 		if err != nil {
-			return resp, diag.Errorf("failed to update wrap-up code mappings: %s", err)
+			return resp, diag.Errorf("failed to update wrap-up code mappings: %s %v", err, resp)
 		}
 		return resp, nil
 	})
@@ -102,7 +102,6 @@ func updateOutboundWrapUpCodeMappings(ctx context.Context, d *schema.ResourceDat
 	if diagErr != nil {
 		return diagErr
 	}
-
 	log.Print("Updated Outbound Wrap-up Code Mappings")
 	return readOutboundWrapUpCodeMappings(ctx, d, meta)
 }

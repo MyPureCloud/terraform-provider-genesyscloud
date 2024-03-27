@@ -25,10 +25,10 @@ func dataSourceTeamRead(ctx context.Context, d *schema.ResourceData, meta interf
 	name := d.Get("name").(string)
 
 	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
-		teamId, retryable, err := proxy.getTeamIdByName(ctx, name)
+		teamId, retryable, resp, err := proxy.getTeamIdByName(ctx, name)
 
 		if err != nil && !retryable {
-			return retry.NonRetryableError(fmt.Errorf("Error searching team %s: %s", name, err))
+			return retry.NonRetryableError(fmt.Errorf("Error searching team %s: %s %v", name, err, resp))
 		}
 
 		if retryable {

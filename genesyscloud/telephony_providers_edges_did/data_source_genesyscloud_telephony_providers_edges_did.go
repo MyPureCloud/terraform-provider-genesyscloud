@@ -20,7 +20,7 @@ func dataSourceDidRead(ctx context.Context, d *schema.ResourceData, m interface{
 	didPhoneNumber := d.Get("phone_number").(string)
 
 	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
-		id, retryable, err := proxy.getTelephonyProvidersEdgesDidIdByDid(ctx, didPhoneNumber)
+		id, retryable, _, err := proxy.getTelephonyProvidersEdgesDidIdByDid(ctx, didPhoneNumber)
 		if err != nil && !retryable {
 			return retry.NonRetryableError(err)
 		}

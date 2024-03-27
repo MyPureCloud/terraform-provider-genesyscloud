@@ -18,7 +18,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v123/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
 )
 
 func getAllWebDeploymentConfigurations(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
@@ -211,10 +211,10 @@ func deleteWebDeploymentConfiguration(ctx context.Context, d *schema.ResourceDat
 	wp := getWebDeploymentConfigurationsProxy(sdkConfig)
 
 	log.Printf("Deleting web deployment configuration %s", name)
-	_, err := wp.deleteWebDeploymentConfiguration(ctx, d.Id())
+	resp, err := wp.deleteWebDeploymentConfiguration(ctx, d.Id())
 
 	if err != nil {
-		return diag.Errorf("Failed to delete web deployment configuration %s: %s", name, err)
+		return diag.Errorf("Failed to delete web deployment configuration %s: %s %v", name, err, resp)
 	}
 
 	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {

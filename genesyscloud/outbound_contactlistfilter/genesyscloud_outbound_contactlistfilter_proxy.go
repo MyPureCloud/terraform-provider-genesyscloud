@@ -3,7 +3,7 @@ package outbound_contactlistfilter
 import (
 	"context"
 	"fmt"
-	"github.com/mypurecloud/platform-client-sdk-go/v123/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
 	"log"
 )
 
@@ -17,11 +17,11 @@ out during testing.
 var internalProxy *outboundContactlistfilterProxy
 
 // Type definitions for each func on our proxy so we can easily mock them out later
-type createOutboundContactlistfilterFunc func(ctx context.Context, p *outboundContactlistfilterProxy, contactListFilter *platformclientv2.Contactlistfilter) (*platformclientv2.Contactlistfilter, error)
-type getAllOutboundContactlistfilterFunc func(ctx context.Context, p *outboundContactlistfilterProxy, name string) (*[]platformclientv2.Contactlistfilter, error)
-type getOutboundContactlistfilterIdByNameFunc func(ctx context.Context, p *outboundContactlistfilterProxy, name string) (id string, retryable bool, err error)
-type getOutboundContactlistfilterByIdFunc func(ctx context.Context, p *outboundContactlistfilterProxy, id string) (contactListFilter *platformclientv2.Contactlistfilter, responseCode int, err error)
-type updateOutboundContactlistfilterFunc func(ctx context.Context, p *outboundContactlistfilterProxy, id string, contactListFilter *platformclientv2.Contactlistfilter) (*platformclientv2.Contactlistfilter, error)
+type createOutboundContactlistfilterFunc func(ctx context.Context, p *outboundContactlistfilterProxy, contactListFilter *platformclientv2.Contactlistfilter) (*platformclientv2.Contactlistfilter, *platformclientv2.APIResponse, error)
+type getAllOutboundContactlistfilterFunc func(ctx context.Context, p *outboundContactlistfilterProxy, name string) (*[]platformclientv2.Contactlistfilter, *platformclientv2.APIResponse, error)
+type getOutboundContactlistfilterIdByNameFunc func(ctx context.Context, p *outboundContactlistfilterProxy, name string) (id string, retryable bool, response *platformclientv2.APIResponse, err error)
+type getOutboundContactlistfilterByIdFunc func(ctx context.Context, p *outboundContactlistfilterProxy, id string) (contactListFilter *platformclientv2.Contactlistfilter, response *platformclientv2.APIResponse, err error)
+type updateOutboundContactlistfilterFunc func(ctx context.Context, p *outboundContactlistfilterProxy, id string, contactListFilter *platformclientv2.Contactlistfilter) (*platformclientv2.Contactlistfilter, *platformclientv2.APIResponse, error)
 type deleteOutboundContactlistfilterFunc func(ctx context.Context, p *outboundContactlistfilterProxy, id string) (response *platformclientv2.APIResponse, err error)
 
 // outboundContactlistfilterProxy contains all of the methods that call genesys cloud APIs.
@@ -57,32 +57,31 @@ func getOutboundContactlistfilterProxy(clientConfig *platformclientv2.Configurat
 	if internalProxy == nil {
 		internalProxy = newOutboundContactlistfilterProxy(clientConfig)
 	}
-
 	return internalProxy
 }
 
 // createOutboundContactlistfilter creates a Genesys Cloud outbound contactlistfilter
-func (p *outboundContactlistfilterProxy) createOutboundContactlistfilter(ctx context.Context, outboundContactlistfilter *platformclientv2.Contactlistfilter) (*platformclientv2.Contactlistfilter, error) {
+func (p *outboundContactlistfilterProxy) createOutboundContactlistfilter(ctx context.Context, outboundContactlistfilter *platformclientv2.Contactlistfilter) (*platformclientv2.Contactlistfilter, *platformclientv2.APIResponse, error) {
 	return p.createOutboundContactlistfilterAttr(ctx, p, outboundContactlistfilter)
 }
 
 // getOutboundContactlistfilter retrieves all Genesys Cloud outbound contactlistfilter
-func (p *outboundContactlistfilterProxy) getAllOutboundContactlistfilter(ctx context.Context) (*[]platformclientv2.Contactlistfilter, error) {
+func (p *outboundContactlistfilterProxy) getAllOutboundContactlistfilter(ctx context.Context) (*[]platformclientv2.Contactlistfilter, *platformclientv2.APIResponse, error) {
 	return p.getAllOutboundContactlistfilterAttr(ctx, p, "")
 }
 
 // getOutboundContactlistfilterIdByName returns a single Genesys Cloud outbound contactlistfilter by a name
-func (p *outboundContactlistfilterProxy) getOutboundContactlistfilterIdByName(ctx context.Context, name string) (id string, retryable bool, err error) {
+func (p *outboundContactlistfilterProxy) getOutboundContactlistfilterIdByName(ctx context.Context, name string) (id string, retryable bool, response *platformclientv2.APIResponse, err error) {
 	return p.getOutboundContactlistfilterIdByNameAttr(ctx, p, name)
 }
 
 // getOutboundContactlistfilterById returns a single Genesys Cloud outbound contactlistfilter by Id
-func (p *outboundContactlistfilterProxy) getOutboundContactlistfilterById(ctx context.Context, id string) (outboundContactlistfilter *platformclientv2.Contactlistfilter, statusCode int, err error) {
+func (p *outboundContactlistfilterProxy) getOutboundContactlistfilterById(ctx context.Context, id string) (outboundContactlistfilter *platformclientv2.Contactlistfilter, response *platformclientv2.APIResponse, err error) {
 	return p.getOutboundContactlistfilterByIdAttr(ctx, p, id)
 }
 
 // updateOutboundContactlistfilter updates a Genesys Cloud outbound contactlistfilter
-func (p *outboundContactlistfilterProxy) updateOutboundContactlistfilter(ctx context.Context, id string, outboundContactlistfilter *platformclientv2.Contactlistfilter) (*platformclientv2.Contactlistfilter, error) {
+func (p *outboundContactlistfilterProxy) updateOutboundContactlistfilter(ctx context.Context, id string, outboundContactlistfilter *platformclientv2.Contactlistfilter) (*platformclientv2.Contactlistfilter, *platformclientv2.APIResponse, error) {
 	return p.updateOutboundContactlistfilterAttr(ctx, p, id, outboundContactlistfilter)
 }
 
@@ -92,27 +91,26 @@ func (p *outboundContactlistfilterProxy) deleteOutboundContactlistfilter(ctx con
 }
 
 // createOutboundContactlistfilterFn is an implementation function for creating a Genesys Cloud outbound contactlistfilter
-func createOutboundContactlistfilterFn(ctx context.Context, p *outboundContactlistfilterProxy, outboundContactlistfilter *platformclientv2.Contactlistfilter) (*platformclientv2.Contactlistfilter, error) {
-	contactListFilter, _, err := p.outboundApi.PostOutboundContactlistfilters(*outboundContactlistfilter)
+func createOutboundContactlistfilterFn(ctx context.Context, p *outboundContactlistfilterProxy, outboundContactlistfilter *platformclientv2.Contactlistfilter) (*platformclientv2.Contactlistfilter, *platformclientv2.APIResponse, error) {
+	contactListFilter, resp, err := p.outboundApi.PostOutboundContactlistfilters(*outboundContactlistfilter)
 	if err != nil {
-		return nil, err
+		return nil, resp, err
 	}
-
-	return contactListFilter, nil
+	return contactListFilter, resp, nil
 }
 
 // getAllOutboundContactlistfilterFn is the implementation for retrieving all outbound contactlistfilter in Genesys Cloud
-func getAllOutboundContactlistfilterFn(ctx context.Context, p *outboundContactlistfilterProxy, name string) (*[]platformclientv2.Contactlistfilter, error) {
+func getAllOutboundContactlistfilterFn(ctx context.Context, p *outboundContactlistfilterProxy, name string) (*[]platformclientv2.Contactlistfilter, *platformclientv2.APIResponse, error) {
 	var allContactlistfilters []platformclientv2.Contactlistfilter
 	const pageSize = 100
 
-	contactListFilters, _, err := p.outboundApi.GetOutboundContactlistfilters(pageSize, 1, true, "", name, "", "", "")
+	contactListFilters, resp, err := p.outboundApi.GetOutboundContactlistfilters(pageSize, 1, true, "", name, "", "", "")
 	if err != nil {
-		return nil, fmt.Errorf("failed to get page of contact list filter: %v", err)
+		return nil, resp, fmt.Errorf("failed to get page of contact list filter: %v", err)
 	}
 
 	if contactListFilters.Entities == nil || len(*contactListFilters.Entities) == 0 {
-		return &allContactlistfilters, nil
+		return &allContactlistfilters, resp, nil
 	}
 
 	for _, contactListFilter := range *contactListFilters.Entities {
@@ -120,9 +118,9 @@ func getAllOutboundContactlistfilterFn(ctx context.Context, p *outboundContactli
 	}
 
 	for pageNum := 2; pageNum <= *contactListFilters.PageCount; pageNum++ {
-		contactListFilters, _, err := p.outboundApi.GetOutboundContactlistfilters(pageSize, pageNum, true, "", name, "", "", "")
+		contactListFilters, resp, err := p.outboundApi.GetOutboundContactlistfilters(pageSize, pageNum, true, "", name, "", "", "")
 		if err != nil {
-			return nil, fmt.Errorf("failed to get page of contact list filter: %v", err)
+			return nil, resp, fmt.Errorf("failed to get page of contact list filter: %v", err)
 		}
 
 		if contactListFilters.Entities == nil || len(*contactListFilters.Entities) == 0 {
@@ -134,14 +132,14 @@ func getAllOutboundContactlistfilterFn(ctx context.Context, p *outboundContactli
 		}
 	}
 
-	return &allContactlistfilters, nil
+	return &allContactlistfilters, resp, nil
 }
 
 // getOutboundContactlistfilterIdByNameFn is an implementation of the function to get a Genesys Cloud outbound contactlistfilter by name
-func getOutboundContactlistfilterIdByNameFn(ctx context.Context, p *outboundContactlistfilterProxy, name string) (id string, retryable bool, err error) {
-	contactListFilters, err := getAllOutboundContactlistfilterFn(ctx, p, name)
+func getOutboundContactlistfilterIdByNameFn(ctx context.Context, p *outboundContactlistfilterProxy, name string) (id string, retryable bool, response *platformclientv2.APIResponse, err error) {
+	contactListFilters, resp, err := getAllOutboundContactlistfilterFn(ctx, p, name)
 	if err != nil {
-		return "", false, fmt.Errorf("error searching outbound contact list filter %s: %s", name, err)
+		return "", false, resp, fmt.Errorf("error searching outbound contact list filter %s: %s", name, err)
 	}
 
 	var filter platformclientv2.Contactlistfilter
@@ -149,37 +147,35 @@ func getOutboundContactlistfilterIdByNameFn(ctx context.Context, p *outboundCont
 		if *contactListFilter.Name == name {
 			log.Printf("Retrieved the contact list filter id %s by name %s", *contactListFilter.Id, name)
 			filter = contactListFilter
-			return *filter.Id, false, nil
+			return *filter.Id, false, resp, nil
 		}
 	}
 
-	return "", true, nil
+	return "", true, resp, nil
 }
 
 // getOutboundContactlistfilterByIdFn is an implementation of the function to get a Genesys Cloud outbound contactlistfilter by Id
-func getOutboundContactlistfilterByIdFn(ctx context.Context, p *outboundContactlistfilterProxy, id string) (outboundContactlistfilter *platformclientv2.Contactlistfilter, statusCode int, err error) {
+func getOutboundContactlistfilterByIdFn(ctx context.Context, p *outboundContactlistfilterProxy, id string) (outboundContactlistfilter *platformclientv2.Contactlistfilter, response *platformclientv2.APIResponse, err error) {
 	contactListFilter, resp, err := p.outboundApi.GetOutboundContactlistfilter(id)
 	if err != nil {
-		return nil, resp.StatusCode, err
+		return nil, resp, err
 	}
-
-	return contactListFilter, resp.StatusCode, nil
+	return contactListFilter, resp, nil
 }
 
 // updateOutboundContactlistfilterFn is an implementation of the function to update a Genesys Cloud outbound contactlistfilter
-func updateOutboundContactlistfilterFn(ctx context.Context, p *outboundContactlistfilterProxy, id string, outboundContactlistfilter *platformclientv2.Contactlistfilter) (*platformclientv2.Contactlistfilter, error) {
-	contactListFilter, _, err := p.outboundApi.GetOutboundContactlistfilter(id)
+func updateOutboundContactlistfilterFn(ctx context.Context, p *outboundContactlistfilterProxy, id string, outboundContactlistfilter *platformclientv2.Contactlistfilter) (*platformclientv2.Contactlistfilter, *platformclientv2.APIResponse, error) {
+	contactListFilter, resp, err := p.outboundApi.GetOutboundContactlistfilter(id)
 	if err != nil {
-		return nil, err
+		return nil, resp, err
 	}
 
 	outboundContactlistfilter.Version = contactListFilter.Version
-	outboundContactlistfilter, _, updateErr := p.outboundApi.PutOutboundContactlistfilter(id, *outboundContactlistfilter)
+	outboundContactlistfilter, resp, updateErr := p.outboundApi.PutOutboundContactlistfilter(id, *outboundContactlistfilter)
 	if updateErr != nil {
-		return nil, updateErr
+		return nil, resp, updateErr
 	}
-
-	return outboundContactlistfilter, nil
+	return outboundContactlistfilter, resp, nil
 }
 
 // deleteOutboundContactlistfilterFn is an implementation function for deleting a Genesys Cloud outbound contactlistfilter

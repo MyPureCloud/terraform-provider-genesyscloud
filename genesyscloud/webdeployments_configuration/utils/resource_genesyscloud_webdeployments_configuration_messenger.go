@@ -1,11 +1,12 @@
 package webdeployments_configuration_utils
 
 import (
+	"fmt"
 	"terraform-provider-genesyscloud/genesyscloud/util/lists"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v123/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
 )
 
 func buildAppConversations(conversations []interface{}) *platformclientv2.Conversationappsettings {
@@ -37,12 +38,13 @@ func buildAppConversations(conversations []interface{}) *platformclientv2.Conver
 		}
 	}
 
-	if humanizeArr, ok := conversation["humanize"].([]interface{}); ok && len(humanizeArr) > 0 {
+
+	if humanizeArr, ok := conversation["humanize"].([]interface{}); ok && len(humanizeArr) > 0 && humanizeArr[0] != nil {
 		humanize := humanizeArr[0].(map[string]interface{})
 		ret.Humanize = &platformclientv2.Humanize{
 			Enabled: platformclientv2.Bool(humanize["enabled"].(bool)),
 		}
-		if botArr, ok := humanize["bot"].([]interface{}); ok && len(botArr) > 0 {
+		if botArr, ok := humanize["bot"].([]interface{}); ok && len(botArr) > 0 && botArr[0] != nil {
 			bot := botArr[0].(map[string]interface{})
 			ret.Humanize.Bot = &platformclientv2.Botmessengerprofile{
 				Name:      platformclientv2.String(bot["name"].(string)),
@@ -55,7 +57,7 @@ func buildAppConversations(conversations []interface{}) *platformclientv2.Conver
 }
 
 func buildAppKnowledge(knowledge []interface{}) *platformclientv2.Knowledge {
-	if len(knowledge) < 1 {
+	if len(knowledge) < 1 || (len(knowledge) == 1 && knowledge[0] == nil) {
 		return nil
 	}
 
@@ -69,7 +71,6 @@ func buildAppKnowledge(knowledge []interface{}) *platformclientv2.Knowledge {
 			Id: &knowledgeBaseId,
 		}
 	}
-
 	return ret
 }
 
@@ -79,9 +80,17 @@ func buildMessengerApps(apps []interface{}) *platformclientv2.Messengerapps {
 	}
 
 	app := apps[0].(map[string]interface{})
+	conversations, conversationsOk := app["conversations"].([]interface{})
+	knowledge, knowledgeOk := app["knowledge"].([]interface{})
+
+	if !conversationsOk || !knowledgeOk {
+		fmt.Println("error in build Messenger Apps")
+		return nil
+	}
+
 	return &platformclientv2.Messengerapps{
-		Conversations: buildAppConversations(app["conversations"].([]interface{})),
-		Knowledge:     buildAppKnowledge(app["knowledge"].([]interface{})),
+		Conversations: buildAppConversations(conversations),
+		Knowledge:     buildAppKnowledge(knowledge),
 	}
 }
 
@@ -216,7 +225,6 @@ func flattenFileUpload(settings *platformclientv2.Fileuploadsettings) []interfac
 
 	return []interface{}{ret}
 }
-
 func flattenAppConversations(conversations *platformclientv2.Conversationappsettings) []interface{} {
 	if conversations == nil {
 		return nil
@@ -248,15 +256,22 @@ func flattenAppConversations(conversations *platformclientv2.Conversationappsett
 	}
 
 	if conversations.Humanize != nil {
-		retMap["humanize"] = []interface{}{map[string]interface{}{
-			"enabled": conversations.Humanize.Enabled,
-			"bot": []interface{}{map[string]interface{}{
-				"name":       conversations.Humanize.Bot.Name,
-				"avatar_url": conversations.Humanize.Bot.AvatarUrl,
-			}},
-		}}
-	}
 
+		if conversations.Humanize.Bot != nil {
+			retMap["humanize"] = []interface{}{map[string]interface{}{
+				"enabled": conversations.Humanize.Enabled,
+				"bot": []interface{}{map[string]interface{}{
+					"name":       conversations.Humanize.Bot.Name,
+					"avatar_url": conversations.Humanize.Bot.AvatarUrl,
+				}},
+			}}
+		} else {
+			retMap["humanize"] = []interface{}{map[string]interface{}{
+				"enabled": conversations.Humanize.Enabled,
+			},
+			}
+		}
+	}
 	return []interface{}{retMap}
 }
 

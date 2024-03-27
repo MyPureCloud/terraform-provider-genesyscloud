@@ -11,7 +11,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v123/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
 
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
@@ -29,16 +29,15 @@ func getAllAuthTaskManagementWorkbins(ctx context.Context, clientConfig *platfor
 	proxy := getTaskManagementWorkbinProxy(clientConfig)
 	resources := make(resourceExporter.ResourceIDMetaMap)
 
-	workbins, err := proxy.getAllTaskManagementWorkbin(ctx)
+	workbins, resp, err := proxy.getAllTaskManagementWorkbin(ctx)
 	if err != nil {
-		return nil, diag.Errorf("failed to get all workbins: %v", err)
+		return nil, diag.Errorf("failed to get all workbins: %v %v", err, resp)
 	}
 
 	for _, workbin := range *workbins {
 		log.Printf("Dealing with task management workbin id: %s", *workbin.Id)
 		resources[*workbin.Id] = &resourceExporter.ResourceMeta{Name: *workbin.Name}
 	}
-
 	return resources, nil
 }
 
@@ -54,9 +53,9 @@ func createTaskManagementWorkbin(ctx context.Context, d *schema.ResourceData, me
 	}
 
 	log.Printf("Creating task management workbin %s", *taskManagementWorkbin.Name)
-	workbin, err := proxy.createTaskManagementWorkbin(ctx, &taskManagementWorkbin)
+	workbin, resp, err := proxy.createTaskManagementWorkbin(ctx, &taskManagementWorkbin)
 	if err != nil {
-		return diag.Errorf("failed to create task management workbin: %s", err)
+		return diag.Errorf("failed to create task management workbin: %s %v", err, resp)
 	}
 
 	d.SetId(*workbin.Id)
@@ -72,9 +71,9 @@ func readTaskManagementWorkbin(ctx context.Context, d *schema.ResourceData, meta
 	log.Printf("Reading task management workbin %s", d.Id())
 
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
-		workbin, respCode, getErr := proxy.getTaskManagementWorkbinById(ctx, d.Id())
+		workbin, resp, getErr := proxy.getTaskManagementWorkbinById(ctx, d.Id())
 		if getErr != nil {
-			if util.IsStatus404ByInt(respCode) {
+			if util.IsStatus404(resp) {
 				return retry.RetryableError(fmt.Errorf("failed to read task management workbin %s: %s", d.Id(), getErr))
 			}
 			return retry.NonRetryableError(fmt.Errorf("failed to read task management workbin %s: %s", d.Id(), getErr))
@@ -102,9 +101,9 @@ func updateTaskManagementWorkbin(ctx context.Context, d *schema.ResourceData, me
 	}
 
 	log.Printf("Updating task management workbin %s", *taskManagementWorkbin.Name)
-	workbin, err := proxy.updateTaskManagementWorkbin(ctx, d.Id(), &taskManagementWorkbin)
+	workbin, resp, err := proxy.updateTaskManagementWorkbin(ctx, d.Id(), &taskManagementWorkbin)
 	if err != nil {
-		return diag.Errorf("failed to update task management workbin: %s", err)
+		return diag.Errorf("failed to update task management workbin: %s %v", err, resp)
 	}
 
 	log.Printf("Updated task management workbin %s", *workbin.Id)
@@ -116,22 +115,21 @@ func deleteTaskManagementWorkbin(ctx context.Context, d *schema.ResourceData, me
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getTaskManagementWorkbinProxy(sdkConfig)
 
-	_, err := proxy.deleteTaskManagementWorkbin(ctx, d.Id())
+	resp, err := proxy.deleteTaskManagementWorkbin(ctx, d.Id())
 	if err != nil {
-		return diag.Errorf("failed to delete task management workbin %s: %s", d.Id(), err)
+		return diag.Errorf("failed to delete task management workbin %s: %s %v", d.Id(), err, resp)
 	}
 
 	return util.WithRetries(ctx, 180*time.Second, func() *retry.RetryError {
-		_, respCode, err := proxy.getTaskManagementWorkbinById(ctx, d.Id())
+		_, resp, err := proxy.getTaskManagementWorkbinById(ctx, d.Id())
 
 		if err != nil {
-			if util.IsStatus404ByInt(respCode) {
+			if util.IsStatus404(resp) {
 				log.Printf("Deleted task management workbin %s", d.Id())
 				return nil
 			}
 			return retry.NonRetryableError(fmt.Errorf("error deleting task management workbin %s: %s", d.Id(), err))
 		}
-
 		return retry.RetryableError(fmt.Errorf("task management workbin %s still exists", d.Id()))
 	})
 }

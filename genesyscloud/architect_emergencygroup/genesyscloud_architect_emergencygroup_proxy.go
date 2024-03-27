@@ -3,8 +3,7 @@ package architect_emergencygroup
 import (
 	"context"
 	"fmt"
-
-	"github.com/mypurecloud/platform-client-sdk-go/v123/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
 )
 
 var internalProxy *architectEmergencyGroupProxy
@@ -118,6 +117,7 @@ func getArchitectEmergencyGroupFn(ctx context.Context, p *architectEmergencyGrou
 func getArchitectEmergencyGroupIdByNameFn(ctx context.Context, p *architectEmergencyGroupProxy, name string) (emergencyGroup *platformclientv2.Emergencygrouplisting, apiResponse *platformclientv2.APIResponse, err error) {
 	const pageNum = 1
 	const pageSize = 100
+
 	return p.architectApi.GetArchitectEmergencygroups(pageNum, pageSize, "", "", name)
 }
 

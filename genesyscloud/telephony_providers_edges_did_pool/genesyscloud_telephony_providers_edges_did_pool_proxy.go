@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v123/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
 )
 
 /*
@@ -32,12 +32,12 @@ Each proxy implementation:
 var internalProxy *telephonyDidPoolProxy
 
 // Type definitions for each func on our proxy, so we can easily mock them out later
-type createTelephonyDidPool func(ctx context.Context, t *telephonyDidPoolProxy, didPool *platformclientv2.Didpool) (*platformclientv2.Didpool, error)
-type getTelephonyDidPoolById func(context.Context, *telephonyDidPoolProxy, string) (didPool *platformclientv2.Didpool, respCode int, err error)
-type updateTelephonyDidPool func(context.Context, *telephonyDidPoolProxy, string, *platformclientv2.Didpool) (*platformclientv2.Didpool, error)
+type createTelephonyDidPool func(ctx context.Context, t *telephonyDidPoolProxy, didPool *platformclientv2.Didpool) (*platformclientv2.Didpool, *platformclientv2.APIResponse, error)
+type getTelephonyDidPoolById func(context.Context, *telephonyDidPoolProxy, string) (didPool *platformclientv2.Didpool, resp *platformclientv2.APIResponse, err error)
+type updateTelephonyDidPool func(context.Context, *telephonyDidPoolProxy, string, *platformclientv2.Didpool) (*platformclientv2.Didpool, *platformclientv2.APIResponse, error)
 type deleteTelephonyDidPool func(context.Context, *telephonyDidPoolProxy, string) (*platformclientv2.APIResponse, error)
-type getTelephonyDidPoolIdByStartAndEndNumber func(ctx context.Context, t *telephonyDidPoolProxy, start, end string) (id string, retryable bool, err error)
-type getAllTelephonyDidPools func(context.Context, *telephonyDidPoolProxy) (*[]platformclientv2.Didpool, error)
+type getTelephonyDidPoolIdByStartAndEndNumber func(ctx context.Context, t *telephonyDidPoolProxy, start, end string) (id string, retryable bool, resp *platformclientv2.APIResponse, err error)
+type getAllTelephonyDidPools func(context.Context, *telephonyDidPoolProxy) (*[]platformclientv2.Didpool, *platformclientv2.APIResponse, error)
 
 // telephonyDidPoolProxy contains all methods that call genesys cloud APIs.
 type telephonyDidPoolProxy struct {
@@ -76,17 +76,17 @@ func getTelephonyDidPoolProxy(clientConfig *platformclientv2.Configuration) *tel
 }
 
 // createTelephonyDidPool creates a Genesys Cloud did pool
-func (t *telephonyDidPoolProxy) createTelephonyDidPool(ctx context.Context, didPool *platformclientv2.Didpool) (*platformclientv2.Didpool, error) {
+func (t *telephonyDidPoolProxy) createTelephonyDidPool(ctx context.Context, didPool *platformclientv2.Didpool) (*platformclientv2.Didpool, *platformclientv2.APIResponse, error) {
 	return t.createTelephonyDidPoolAttr(ctx, t, didPool)
 }
 
 // getTelephonyDidPoolById reads a Genesys Cloud did pool by id
-func (t *telephonyDidPoolProxy) getTelephonyDidPoolById(ctx context.Context, id string) (*platformclientv2.Didpool, int, error) {
+func (t *telephonyDidPoolProxy) getTelephonyDidPoolById(ctx context.Context, id string) (*platformclientv2.Didpool, *platformclientv2.APIResponse, error) {
 	return t.getTelephonyDidPoolByIdAttr(ctx, t, id)
 }
 
 // updateTelephonyDidPool update a Genesys Cloud did pool
-func (t *telephonyDidPoolProxy) updateTelephonyDidPool(ctx context.Context, id string, didPool *platformclientv2.Didpool) (*platformclientv2.Didpool, error) {
+func (t *telephonyDidPoolProxy) updateTelephonyDidPool(ctx context.Context, id string, didPool *platformclientv2.Didpool) (*platformclientv2.Didpool, *platformclientv2.APIResponse, error) {
 	return t.updateEdgesDidPoolAttr(ctx, t, id, didPool)
 }
 
@@ -96,40 +96,40 @@ func (t *telephonyDidPoolProxy) deleteTelephonyDidPool(ctx context.Context, id s
 }
 
 // getTelephonyDidPoolIdByStartAndEndNumber find a Genesys Cloud did pool id using the start and end number
-func (t *telephonyDidPoolProxy) getTelephonyDidPoolIdByStartAndEndNumber(ctx context.Context, start, end string) (string, bool, error) {
+func (t *telephonyDidPoolProxy) getTelephonyDidPoolIdByStartAndEndNumber(ctx context.Context, start, end string) (string, bool, *platformclientv2.APIResponse, error) {
 	return t.getTelephonyDidPoolIdByStartAndEndNumberAttr(ctx, t, start, end)
 }
 
 // getAllTelephonyDidPools read all Genesys Cloud did pools
-func (t *telephonyDidPoolProxy) getAllTelephonyDidPools(ctx context.Context) (*[]platformclientv2.Didpool, error) {
+func (t *telephonyDidPoolProxy) getAllTelephonyDidPools(ctx context.Context) (*[]platformclientv2.Didpool, *platformclientv2.APIResponse, error) {
 	return t.getAllTelephonyDidPoolsAttr(ctx, t)
 }
 
 // createTelephonyDidPoolFn is an implementation function for creating a Genesys Cloud did pool
-func createTelephonyDidPoolFn(_ context.Context, t *telephonyDidPoolProxy, didPool *platformclientv2.Didpool) (*platformclientv2.Didpool, error) {
-	postDidPool, _, err := t.telephonyApi.PostTelephonyProvidersEdgesDidpools(*didPool)
+func createTelephonyDidPoolFn(_ context.Context, t *telephonyDidPoolProxy, didPool *platformclientv2.Didpool) (*platformclientv2.Didpool, *platformclientv2.APIResponse, error) {
+	postDidPool, resp, err := t.telephonyApi.PostTelephonyProvidersEdgesDidpools(*didPool)
 	if err != nil {
-		return nil, err
+		return nil, resp, err
 	}
-	return postDidPool, nil
+	return postDidPool, resp, nil
 }
 
 // getTelephonyDidPoolByIdFn is an implementation function for reading a Genesys Cloud did pool by ID
-func getTelephonyDidPoolByIdFn(_ context.Context, t *telephonyDidPoolProxy, id string) (*platformclientv2.Didpool, int, error) {
+func getTelephonyDidPoolByIdFn(_ context.Context, t *telephonyDidPoolProxy, id string) (*platformclientv2.Didpool, *platformclientv2.APIResponse, error) {
 	didPool, resp, err := t.telephonyApi.GetTelephonyProvidersEdgesDidpool(id)
 	if err != nil {
-		return nil, resp.StatusCode, err
+		return nil, resp, err
 	}
-	return didPool, resp.StatusCode, nil
+	return didPool, resp, nil
 }
 
 // updateEdgesDidPoolFn is an implementation function for updating a Genesys Cloud did pool
-func updateEdgesDidPoolFn(_ context.Context, t *telephonyDidPoolProxy, id string, didPool *platformclientv2.Didpool) (*platformclientv2.Didpool, error) {
-	updatedDidPool, _, err := t.telephonyApi.PutTelephonyProvidersEdgesDidpool(id, *didPool)
+func updateEdgesDidPoolFn(_ context.Context, t *telephonyDidPoolProxy, id string, didPool *platformclientv2.Didpool) (*platformclientv2.Didpool, *platformclientv2.APIResponse, error) {
+	updatedDidPool, resp, err := t.telephonyApi.PutTelephonyProvidersEdgesDidpool(id, *didPool)
 	if err != nil {
-		return nil, err
+		return nil, resp, err
 	}
-	return updatedDidPool, nil
+	return updatedDidPool, resp, nil
 }
 
 // deleteTelephonyDidPoolFn is an implementation function for deleting a Genesys Cloud did pool
@@ -139,7 +139,7 @@ func deleteTelephonyDidPoolFn(_ context.Context, t *telephonyDidPoolProxy, id st
 }
 
 // getAllTelephonyDidPoolsFn is an implementation function for reading all Genesys Cloud did pools
-func getAllTelephonyDidPoolsFn(_ context.Context, t *telephonyDidPoolProxy) (*[]platformclientv2.Didpool, error) {
+func getAllTelephonyDidPoolsFn(_ context.Context, t *telephonyDidPoolProxy) (*[]platformclientv2.Didpool, *platformclientv2.APIResponse, error) {
 	var (
 		allDidPools []platformclientv2.Didpool
 		pageCount   int
@@ -147,9 +147,9 @@ func getAllTelephonyDidPoolsFn(_ context.Context, t *telephonyDidPoolProxy) (*[]
 	)
 	const pageSize = 100
 
-	didPools, _, getErr := t.telephonyApi.GetTelephonyProvidersEdgesDidpools(pageSize, pageNum, "", nil)
+	didPools, resp, getErr := t.telephonyApi.GetTelephonyProvidersEdgesDidpools(pageSize, pageNum, "", nil)
 	if getErr != nil {
-		return nil, getErr
+		return nil, resp, getErr
 	}
 	pageCount = *didPools.PageCount
 
@@ -158,13 +158,13 @@ func getAllTelephonyDidPoolsFn(_ context.Context, t *telephonyDidPoolProxy) (*[]
 	}
 
 	if pageCount < 2 {
-		return &allDidPools, nil
+		return &allDidPools, resp, nil
 	}
 
 	for pageNum := 2; pageNum <= pageCount; pageNum++ {
-		didPools, _, getErr := t.telephonyApi.GetTelephonyProvidersEdgesDidpools(pageSize, pageNum, "", nil)
+		didPools, resp, getErr := t.telephonyApi.GetTelephonyProvidersEdgesDidpools(pageSize, pageNum, "", nil)
 		if getErr != nil {
-			return nil, getErr
+			return nil, resp, getErr
 		}
 
 		if didPools.Entities == nil || len(*didPools.Entities) == 0 {
@@ -173,21 +173,21 @@ func getAllTelephonyDidPoolsFn(_ context.Context, t *telephonyDidPoolProxy) (*[]
 
 		allDidPools = append(allDidPools, *didPools.Entities...)
 	}
-	return &allDidPools, nil
+	return &allDidPools, resp, nil
 }
 
 // getTelephonyDidPoolIdByStartAndEndNumberFn is an implementation function for finding a Genesys Cloud did pool using the start and end number
-func getTelephonyDidPoolIdByStartAndEndNumberFn(ctx context.Context, t *telephonyDidPoolProxy, start, end string) (string, bool, error) {
-	allDidPools, err := getAllTelephonyDidPoolsFn(ctx, t)
+func getTelephonyDidPoolIdByStartAndEndNumberFn(ctx context.Context, t *telephonyDidPoolProxy, start, end string) (string, bool, *platformclientv2.APIResponse, error) {
+	allDidPools, resp, err := getAllTelephonyDidPoolsFn(ctx, t)
 	if err != nil {
-		return "", false, fmt.Errorf("failed to read did pools: %v", err)
+		return "", false, resp, fmt.Errorf("failed to read did pools: %v", err)
 	}
 	for _, didPool := range *allDidPools {
 		if didPool.StartPhoneNumber != nil && *didPool.StartPhoneNumber == start &&
 			didPool.EndPhoneNumber != nil && *didPool.EndPhoneNumber == end &&
 			didPool.State != nil && *didPool.State != "deleted" {
-			return *didPool.Id, false, nil
+			return *didPool.Id, false, resp, nil
 		}
 	}
-	return "", true, fmt.Errorf("failed to find DID pool with start phone number '%s' and end phone number '%s'", start, end)
+	return "", true, resp, fmt.Errorf("failed to find DID pool with start phone number '%s' and end phone number '%s'", start, end)
 }

@@ -17,7 +17,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v123/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
 )
 
 // getAllDidPools retrieves all DID pools and is used for the exporter
@@ -25,9 +25,9 @@ func getAllDidPools(ctx context.Context, clientConfig *platformclientv2.Configur
 	resources := make(resourceExporter.ResourceIDMetaMap)
 	proxy := getTelephonyDidPoolProxy(clientConfig)
 
-	didPools, err := proxy.getAllTelephonyDidPools(ctx)
+	didPools, resp, err := proxy.getAllTelephonyDidPools(ctx)
 	if err != nil {
-		return nil, diag.Errorf("failed to read did pools: %v", err)
+		return nil, diag.Errorf("failed to read did pools: %v %v", err, resp)
 	}
 
 	for _, didPool := range *didPools {
@@ -35,7 +35,6 @@ func getAllDidPools(ctx context.Context, clientConfig *platformclientv2.Configur
 			resources[*didPool.Id] = &resourceExporter.ResourceMeta{Name: *didPool.StartPhoneNumber}
 		}
 	}
-
 	return resources, nil
 }
 
@@ -58,9 +57,9 @@ func createDidPool(ctx context.Context, d *schema.ResourceData, meta interface{}
 		Provider:         &poolProvider,
 	}
 	log.Printf("Creating DID pool %s", startPhoneNumber)
-	createdDidPool, err := proxy.createTelephonyDidPool(ctx, didPool)
+	createdDidPool, resp, err := proxy.createTelephonyDidPool(ctx, didPool)
 	if err != nil {
-		return diag.Errorf("Failed to create DID pool %s: %s", startPhoneNumber, err)
+		return diag.Errorf("Failed to create DID pool %s: %s %v", startPhoneNumber, err, resp)
 	}
 
 	d.SetId(*createdDidPool.Id)
@@ -76,9 +75,9 @@ func readDidPool(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 
 	log.Printf("Reading DID pool %s", d.Id())
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
-		didPool, respCode, getErr := proxy.getTelephonyDidPoolById(ctx, d.Id())
+		didPool, resp, getErr := proxy.getTelephonyDidPoolById(ctx, d.Id())
 		if getErr != nil {
-			if util.IsStatus404ByInt(respCode) {
+			if util.IsStatus404(resp) {
 				return retry.RetryableError(fmt.Errorf("Failed to read DID pool %s: %s", d.Id(), getErr))
 			}
 			return retry.NonRetryableError(fmt.Errorf("Failed to read DID pool %s: %s", d.Id(), getErr))
@@ -122,8 +121,8 @@ func updateDidPool(ctx context.Context, d *schema.ResourceData, meta interface{}
 	}
 
 	log.Printf("Updating DID pool %s", d.Id())
-	if _, err := proxy.updateTelephonyDidPool(ctx, d.Id(), didPoolBody); err != nil {
-		return diag.Errorf("Error updating DID pool %s: %s", startPhoneNumber, err)
+	if _, resp, err := proxy.updateTelephonyDidPool(ctx, d.Id(), didPoolBody); err != nil {
+		return diag.Errorf("Error updating DID pool %s: %s %v", startPhoneNumber, err, resp)
 	}
 
 	log.Printf("Updated DID pool %s", d.Id())
@@ -151,9 +150,9 @@ func deleteDidPool(ctx context.Context, d *schema.ResourceData, meta interface{}
 	}
 
 	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
-		didPool, respCode, err := proxy.getTelephonyDidPoolById(ctx, d.Id())
+		didPool, resp, err := proxy.getTelephonyDidPoolById(ctx, d.Id())
 		if err != nil {
-			if util.IsStatus404ByInt(respCode) {
+			if util.IsStatus404(resp) {
 				// DID pool deleted
 				log.Printf("Deleted DID pool %s", d.Id())
 				return nil
@@ -166,7 +165,6 @@ func deleteDidPool(ctx context.Context, d *schema.ResourceData, meta interface{}
 			log.Printf("Deleted DID pool %s", d.Id())
 			return nil
 		}
-
 		return retry.RetryableError(fmt.Errorf("DID pool %s still exists", d.Id()))
 	})
 }

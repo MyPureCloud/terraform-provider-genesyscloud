@@ -26,10 +26,10 @@ func dataSourceOutboundRulesetRead(ctx context.Context, d *schema.ResourceData, 
 	name := d.Get("name").(string)
 
 	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
-		rulesetId, retryable, err := proxy.getOutboundRulesetIdByName(ctx, name)
+		rulesetId, retryable, resp, err := proxy.getOutboundRulesetIdByName(ctx, name)
 
 		if err != nil && !retryable {
-			return retry.NonRetryableError(fmt.Errorf("Error ruleset %s: %s", name, err))
+			return retry.NonRetryableError(fmt.Errorf("Error ruleset %s: %s %v", name, err, resp))
 		}
 
 		if retryable {

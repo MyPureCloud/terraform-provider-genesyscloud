@@ -12,7 +12,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v123/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
 
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
@@ -30,16 +30,15 @@ func getAllTaskManagementWorkitemSchemas(ctx context.Context, clientConfig *plat
 	proxy := getTaskManagementProxy(clientConfig)
 	resources := make(resourceExporter.ResourceIDMetaMap)
 
-	schemas, err := proxy.getAllTaskManagementWorkitemSchema(ctx)
+	schemas, resp, err := proxy.getAllTaskManagementWorkitemSchema(ctx)
 	if err != nil {
-		return nil, diag.Errorf("failed to get all workitem schemas: %v", err)
+		return nil, diag.Errorf("failed to get all workitem schemas: %v %v", err, resp)
 	}
 
 	for _, schema := range *schemas {
 		log.Printf("Dealing with task management workitem schema id: %s", *schema.Id)
 		resources[*schema.Id] = &resourceExporter.ResourceMeta{Name: *schema.Name}
 	}
-
 	return resources, nil
 }
 
@@ -54,9 +53,9 @@ func createTaskManagementWorkitemSchema(ctx context.Context, d *schema.ResourceD
 	}
 
 	log.Printf("Creating task management workitem schema")
-	schema, err := proxy.createTaskManagementWorkitemSchema(ctx, dataSchema)
+	schema, resp, err := proxy.createTaskManagementWorkitemSchema(ctx, dataSchema)
 	if err != nil {
-		return diag.Errorf("failed to create task management workitem schema: %s", err)
+		return diag.Errorf("failed to create task management workitem schema: %s %v", err, resp)
 	}
 
 	d.SetId(*schema.Id)
@@ -65,9 +64,9 @@ func createTaskManagementWorkitemSchema(ctx context.Context, d *schema.ResourceD
 	if enabled, ok := d.Get("enabled").(bool); ok && !enabled {
 		log.Printf("Updating task management workitem schema: %s, to set 'enabled' to 'false'", *schema.Name)
 		dataSchema.Version = platformclientv2.Int(1)
-		_, err := proxy.updateTaskManagementWorkitemSchema(ctx, *schema.Id, dataSchema)
+		_, resp, err := proxy.updateTaskManagementWorkitemSchema(ctx, *schema.Id, dataSchema)
 		if err != nil {
-			return diag.Errorf("failed to update task management workitem schema: %s", err)
+			return diag.Errorf("failed to update task management workitem schema: %s %v", err, resp)
 		}
 		log.Printf("Updated newly created workitem schema: %s. 'enabled' set to to 'false'", *schema.Name)
 	}
@@ -84,9 +83,9 @@ func readTaskManagementWorkitemSchema(ctx context.Context, d *schema.ResourceDat
 	log.Printf("Reading task management workitem schema %s", d.Id())
 
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
-		schema, respCode, getErr := proxy.getTaskManagementWorkitemSchemaById(ctx, d.Id())
+		schema, resp, getErr := proxy.getTaskManagementWorkitemSchemaById(ctx, d.Id())
 		if getErr != nil {
-			if util.IsStatus404ByInt(respCode) {
+			if util.IsStatus404(resp) {
 				return retry.RetryableError(fmt.Errorf("failed to read task management workitem schema %s: %s", d.Id(), getErr))
 			}
 			return retry.NonRetryableError(fmt.Errorf("failed to read task management workitem schema %s: %s", d.Id(), getErr))
@@ -120,9 +119,9 @@ func updateTaskManagementWorkitemSchema(ctx context.Context, d *schema.ResourceD
 	proxy := getTaskManagementProxy(sdkConfig)
 
 	log.Printf("Getting version of workitem schema")
-	curSchema, _, err := proxy.getTaskManagementWorkitemSchemaById(ctx, d.Id())
+	curSchema, resp, err := proxy.getTaskManagementWorkitemSchemaById(ctx, d.Id())
 	if err != nil {
-		return diag.Errorf("failed to update task management workitem schema: %s", err)
+		return diag.Errorf("failed to update task management workitem schema: %s %v", err, resp)
 	}
 
 	dataSchema, err := BuildSdkWorkitemSchema(d, curSchema.Version)
@@ -131,9 +130,9 @@ func updateTaskManagementWorkitemSchema(ctx context.Context, d *schema.ResourceD
 	}
 
 	log.Printf("Updating task management workitem schema")
-	updatedSchema, err := proxy.updateTaskManagementWorkitemSchema(ctx, d.Id(), dataSchema)
+	updatedSchema, resp, err := proxy.updateTaskManagementWorkitemSchema(ctx, d.Id(), dataSchema)
 	if err != nil {
-		return diag.Errorf("failed to update task management workitem schema: %s", err)
+		return diag.Errorf("failed to update task management workitem schema: %s %v", err, resp)
 	}
 
 	log.Printf("Updated task management workitem schema %s", *updatedSchema.Id)
@@ -145,15 +144,15 @@ func deleteTaskManagementWorkitemSchema(ctx context.Context, d *schema.ResourceD
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getTaskManagementProxy(sdkConfig)
 
-	_, err := proxy.deleteTaskManagementWorkitemSchema(ctx, d.Id())
+	resp, err := proxy.deleteTaskManagementWorkitemSchema(ctx, d.Id())
 	if err != nil {
-		return diag.Errorf("failed to delete task management workitem schema %s: %s", d.Id(), err)
+		return diag.Errorf("failed to delete task management workitem schema %s: %s %v", d.Id(), err, resp)
 	}
 
 	return util.WithRetries(ctx, 180*time.Second, func() *retry.RetryError {
-		isDeleted, respCode, err := proxy.getTaskManagementWorkitemSchemaDeletedStatus(ctx, d.Id())
+		isDeleted, resp, err := proxy.getTaskManagementWorkitemSchemaDeletedStatus(ctx, d.Id())
 		if err != nil {
-			if util.IsStatus404ByInt(respCode) {
+			if util.IsStatus404(resp) {
 				log.Printf("Deleted task management workitem schema %s", d.Id())
 				return nil
 			}
@@ -164,7 +163,6 @@ func deleteTaskManagementWorkitemSchema(ctx context.Context, d *schema.ResourceD
 			log.Printf("Deleted task management workitem schema %s", d.Id())
 			return nil
 		}
-
 		return retry.RetryableError(fmt.Errorf("task management workitem schema %s still exists", d.Id()))
 	})
 }

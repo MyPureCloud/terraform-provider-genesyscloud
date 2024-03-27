@@ -6,7 +6,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v123/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
@@ -28,15 +28,14 @@ func DataSourceAuthRoleRead(ctx context.Context, d *schema.ResourceData, m inter
 	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
 		const pageSize = 100
 		const pageNum = 1
-		roles, _, getErr := authAPI.GetAuthorizationRoles(pageSize, pageNum, "", nil, "", "", name, nil, nil, false, nil)
+		roles, proxyResponse, getErr := authAPI.GetAuthorizationRoles(pageSize, pageNum, "", nil, "", "", name, nil, nil, false, nil)
 		if getErr != nil {
-			return retry.NonRetryableError(fmt.Errorf("Error requesting role %s: %s", name, getErr))
+			return retry.NonRetryableError(fmt.Errorf("Error requesting role %s: %s %v", name, proxyResponse, getErr))
 		}
 
 		if roles.Entities == nil || len(*roles.Entities) == 0 {
 			return retry.RetryableError(fmt.Errorf("No authorization roles found with name %s", name))
 		}
-
 		role := (*roles.Entities)[0]
 		d.SetId(*role.Id)
 		return nil

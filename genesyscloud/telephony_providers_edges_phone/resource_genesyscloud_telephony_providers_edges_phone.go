@@ -16,22 +16,21 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v123/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
 )
 
 func getAllPhones(ctx context.Context, sdkConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
 	resources := make(resourceExporter.ResourceIDMetaMap)
 	pp := getPhoneProxy(sdkConfig)
 
-	phones, err := pp.getAllPhones(ctx)
+	phones, resp, err := pp.getAllPhones(ctx)
 	if err != nil {
-		return nil, diag.Errorf("Failed to get page of phones: %v", err)
+		return nil, diag.Errorf("Failed to get page of phones: %v %v", err, resp)
 	}
 
 	for _, phone := range *phones {
 		resources[*phone.Id] = &resourceExporter.ResourceMeta{Name: *phone.Name}
 	}
-
 	return resources, nil
 }
 
@@ -40,10 +39,6 @@ func createPhone(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 	pp := getPhoneProxy(sdkConfig)
 
 	phoneConfig, err := getPhoneFromResourceData(ctx, pp, d)
-	if err != nil {
-		return diag.Errorf("failed to create phone %v: %v", *phoneConfig.Name, err)
-	}
-	_, err = validatePhoneHardwareIdRequirements(phoneConfig)
 	if err != nil {
 		return diag.Errorf("failed to create phone %v: %v", *phoneConfig.Name, err)
 	}
@@ -132,14 +127,10 @@ func updatePhone(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 	if err != nil {
 		return diag.Errorf("failed to updated phone %v: %v", *phoneConfig.Name, err)
 	}
-	_, err = validatePhoneHardwareIdRequirements(phoneConfig)
-	if err != nil {
-		return diag.Errorf("failed to updated phone %v: %v", *phoneConfig.Name, err)
-	}
 	log.Printf("Updating phone %s", *phoneConfig.Name)
-	phone, err := pp.updatePhone(ctx, d.Id(), phoneConfig)
+	phone, resp, err := pp.updatePhone(ctx, d.Id(), phoneConfig)
 	if err != nil {
-		return diag.Errorf("failed to update phone %s: %s", *phoneConfig.Name, err)
+		return diag.Errorf("failed to update phone %s: %s %v", *phoneConfig.Name, err, resp)
 	}
 
 	log.Printf("Updated phone %s", *phone.Id)
@@ -162,7 +153,7 @@ func deletePhone(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 	pp := getPhoneProxy(sdkConfig)
 
 	log.Printf("Deleting Phone")
-	_, err := pp.deletePhone(ctx, d.Id())
+	resp, err := pp.deletePhone(ctx, d.Id())
 
 	/*
 	  Adding a small sleep because when a phone is deleted, the station associated with the phone and the site
@@ -171,7 +162,7 @@ func deletePhone(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 	*/
 	time.Sleep(5 * time.Second)
 	if err != nil {
-		return diag.Errorf("failed to delete phone: %s", err)
+		return diag.Errorf("failed to delete phone: %s %v", err, resp)
 	}
 
 	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {

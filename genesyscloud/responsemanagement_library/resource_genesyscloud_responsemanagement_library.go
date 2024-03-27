@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v123/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
 	"log"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
@@ -28,9 +28,9 @@ func getAllAuthResponsemanagementLibrarys(ctx context.Context, clientConfig *pla
 	proxy := newResponsemanagementLibraryProxy(clientConfig)
 	resources := make(resourceExporter.ResourceIDMetaMap)
 
-	librarys, err := proxy.getAllResponsemanagementLibrary(ctx)
+	librarys, resp, err := proxy.getAllResponsemanagementLibrary(ctx)
 	if err != nil {
-		return nil, diag.Errorf("Failed to get responsemanagement library: %v", err)
+		return nil, diag.Errorf("Failed to get responsemanagement library: %v %v", err, resp)
 	}
 
 	for _, library := range *librarys {
@@ -48,9 +48,9 @@ func createResponsemanagementLibrary(ctx context.Context, d *schema.ResourceData
 	}
 
 	log.Printf("Creating responsemanagement library %s", *responsemanagementLibrary.Name)
-	library, err := proxy.createResponsemanagementLibrary(ctx, &responsemanagementLibrary)
+	library, resp, err := proxy.createResponsemanagementLibrary(ctx, &responsemanagementLibrary)
 	if err != nil {
-		return diag.Errorf("Failed to create responsemanagement library: %s", err)
+		return diag.Errorf("Failed to create responsemanagement library: %s %v", err, resp)
 	}
 
 	d.SetId(*library.Id)
@@ -66,9 +66,9 @@ func readResponsemanagementLibrary(ctx context.Context, d *schema.ResourceData, 
 	log.Printf("Reading responsemanagement library %s", d.Id())
 
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
-		library, respCode, getErr := proxy.getResponsemanagementLibraryById(ctx, d.Id())
+		library, resp, getErr := proxy.getResponsemanagementLibraryById(ctx, d.Id())
 		if getErr != nil {
-			if util.IsStatus404ByInt(respCode) {
+			if util.IsStatus404(resp) {
 				return retry.RetryableError(fmt.Errorf("Failed to read responsemanagement library %s: %s", d.Id(), getErr))
 			}
 			return retry.NonRetryableError(fmt.Errorf("Failed to read responsemanagement library %s: %s", d.Id(), getErr))
@@ -77,7 +77,6 @@ func readResponsemanagementLibrary(ctx context.Context, d *schema.ResourceData, 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceResponsemanagementLibrary())
 
 		resourcedata.SetNillableValue(d, "name", library.Name)
-
 		log.Printf("Read responsemanagement library %s %s", d.Id(), *library.Name)
 		return cc.CheckState()
 	})
@@ -93,9 +92,9 @@ func updateResponsemanagementLibrary(ctx context.Context, d *schema.ResourceData
 	}
 
 	log.Printf("Updating responsemanagement library %s", *responsemanagementLibrary.Name)
-	library, err := proxy.updateResponsemanagementLibrary(ctx, d.Id(), &responsemanagementLibrary)
+	library, resp, err := proxy.updateResponsemanagementLibrary(ctx, d.Id(), &responsemanagementLibrary)
 	if err != nil {
-		return diag.Errorf("Failed to update responsemanagement library: %s", err)
+		return diag.Errorf("Failed to update responsemanagement library: %s %v", err, resp)
 	}
 	log.Printf("Updated responsemanagement library %s", *library.Id)
 	return readResponsemanagementLibrary(ctx, d, meta)
@@ -106,16 +105,16 @@ func deleteResponsemanagementLibrary(ctx context.Context, d *schema.ResourceData
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getResponsemanagementLibraryProxy(sdkConfig)
 
-	_, err := proxy.deleteResponsemanagementLibrary(ctx, d.Id())
+	resp, err := proxy.deleteResponsemanagementLibrary(ctx, d.Id())
 	if err != nil {
-		return diag.Errorf("Failed to delete responsemanagement library %s: %s", d.Id(), err)
+		return diag.Errorf("Failed to delete responsemanagement library %s: %s %v", d.Id(), err, resp)
 	}
 
 	return util.WithRetries(ctx, 180*time.Second, func() *retry.RetryError {
-		_, respCode, err := proxy.getResponsemanagementLibraryById(ctx, d.Id())
+		_, resp, err := proxy.getResponsemanagementLibraryById(ctx, d.Id())
 
 		if err != nil {
-			if util.IsStatus404ByInt(respCode) {
+			if util.IsStatus404(resp) {
 				log.Printf("Deleted responsemanagement library %s", d.Id())
 				return nil
 			}

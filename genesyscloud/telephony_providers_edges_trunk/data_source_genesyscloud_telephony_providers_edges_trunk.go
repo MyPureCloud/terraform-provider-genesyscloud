@@ -11,7 +11,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v123/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
 )
 
 func dataSourceTrunkRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
@@ -23,10 +23,10 @@ func dataSourceTrunkRead(ctx context.Context, d *schema.ResourceData, m interfac
 	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
 		for pageNum := 1; ; pageNum++ {
 			const pageSize = 100
-			trunks, _, getErr := edgesAPI.GetTelephonyProvidersEdgesTrunks(pageNum, pageSize, "", "", "", "", "")
+			trunks, resp, getErr := edgesAPI.GetTelephonyProvidersEdgesTrunks(pageNum, pageSize, "", "", "", "", "")
 
 			if getErr != nil {
-				return retry.NonRetryableError(fmt.Errorf("Error requesting trunk %s: %s", name, getErr))
+				return retry.NonRetryableError(fmt.Errorf("Error requesting trunk %s: %s %v", name, getErr, resp))
 			}
 
 			if trunks.Entities == nil || len(*trunks.Entities) == 0 {

@@ -17,7 +17,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v123/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
 )
 
 /*
@@ -77,7 +77,6 @@ func getOutboundCampaignFromResourceData(d *schema.ResourceData) platformclientv
 	if priority != 0 {
 		campaign.Priority = &priority
 	}
-
 	return campaign
 }
 
@@ -89,9 +88,9 @@ func updateOutboundCampaignStatus(ctx context.Context, campaignId string, proxy 
 	if (*campaign.CampaignStatus == "on" && newCampaignStatus == "off") || newCampaignStatus == "on" {
 		campaign.CampaignStatus = &newCampaignStatus
 		log.Printf("Updating Outbound Campaign %s status to %s", *campaign.Name, newCampaignStatus)
-		_, err := proxy.updateOutboundCampaign(ctx, campaignId, &campaign)
+		_, resp, err := proxy.updateOutboundCampaign(ctx, campaignId, &campaign)
 		if err != nil {
-			return diag.Errorf("Failed to update Outbound Campaign %s: %s", *campaign.Name, err)
+			return diag.Errorf("Failed to update Outbound Campaign %s: %s %v", *campaign.Name, err, resp)
 		}
 	}
 	return nil

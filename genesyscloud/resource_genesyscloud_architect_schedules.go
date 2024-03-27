@@ -19,7 +19,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/leekchan/timeutil"
-	"github.com/mypurecloud/platform-client-sdk-go/v123/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
 )
 
 func getAllArchitectSchedules(_ context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
@@ -28,9 +28,9 @@ func getAllArchitectSchedules(_ context.Context, clientConfig *platformclientv2.
 
 	for pageNum := 1; ; pageNum++ {
 		const pageSize = 100
-		schedules, _, getErr := archAPI.GetArchitectSchedules(pageNum, pageSize, "", "", "", nil)
+		schedules, resp, getErr := archAPI.GetArchitectSchedules(pageNum, pageSize, "", "", "", nil)
 		if getErr != nil {
-			return nil, diag.Errorf("Failed to get page of schedules: %v", getErr)
+			return nil, util.BuildAPIDiagnosticError("genesyscloud_architect_schedules", "Failed to get page of schedules", resp)
 		}
 
 		if schedules.Entities == nil || len(*schedules.Entities) == 0 {
@@ -146,13 +146,14 @@ func createArchitectSchedules(ctx context.Context, d *schema.ResourceData, meta 
 	}
 
 	log.Printf("Creating schedule %s", name)
-	schedule, _, getErr := archAPI.PostArchitectSchedules(sched)
+	schedule, resp, getErr := archAPI.PostArchitectSchedules(sched)
 	if getErr != nil {
 		msg := ""
 		if strings.Contains(fmt.Sprintf("%v", getErr), "routing:schedule:add") {
 			msg = "\nYou must have all divisions and future divisions selected in your OAuth client role"
 		}
-		return diag.Errorf("Failed to create schedule %s | ERROR: %s%s", *sched.Name, getErr, msg)
+
+		return util.BuildAPIDiagnosticError("genesyscloud_archiect_schedules", fmt.Sprintf("Failed to create schedule %s | MSG: %s", *sched.Name, msg), resp)
 	}
 
 	d.SetId(*schedule.Id)
@@ -235,8 +236,9 @@ func updateArchitectSchedules(ctx context.Context, d *schema.ResourceData, meta 
 	diagErr := util.RetryWhen(util.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		// Get current schedule version
 		sched, resp, getErr := archAPI.GetArchitectSchedule(d.Id())
+
 		if getErr != nil {
-			return resp, diag.Errorf("Failed to read schedule %s: %s", d.Id(), getErr)
+			return resp, util.BuildAPIDiagnosticError("genesyscloud_archiect_schedules", fmt.Sprintf("Failed to read schedule %s", d.Id()), resp)
 		}
 
 		log.Printf("Updating schedule %s", name)
@@ -254,10 +256,12 @@ func updateArchitectSchedules(ctx context.Context, d *schema.ResourceData, meta 
 			if strings.Contains(fmt.Sprintf("%v", getErr), "routing:schedule:add") {
 				msg = "\nYou must have all divisions and future divisions selected in your OAuth client role"
 			}
-			return resp, diag.Errorf("Failed to update schedule %s | ERROR: %s%s", *sched.Name, getErr, msg)
+
+			return resp, util.BuildAPIDiagnosticError("genesyscloud_archiect_schedules", fmt.Sprintf("Failed to update schedule %s | MSG: %s", *sched.Name, msg), resp)
 		}
 		return resp, nil
 	})
+
 	if diagErr != nil {
 		return diagErr
 	}
@@ -276,10 +280,11 @@ func deleteArchitectSchedules(ctx context.Context, d *schema.ResourceData, meta 
 		log.Printf("Deleting schedule %s", d.Id())
 		resp, err := archAPI.DeleteArchitectSchedule(d.Id())
 		if err != nil {
-			return resp, diag.Errorf("Failed to delete schedule %s: %s", d.Id(), err)
+			return resp, util.BuildAPIDiagnosticError("genesyscloud_archiect_schedules", fmt.Sprintf("Failed to delete schedule %s.", d.Id()), resp)
 		}
 		return resp, nil
 	})
+
 	if diagErr != nil {
 		return diagErr
 	}

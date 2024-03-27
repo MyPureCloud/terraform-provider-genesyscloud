@@ -18,7 +18,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v123/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
 )
 
 /*
@@ -46,15 +46,14 @@ func getAllMediaRetentionPolicies(ctx context.Context, clientConfig *platformcli
 	resources := make(resourceExporter.ResourceIDMetaMap)
 	pp := getPolicyProxy(clientConfig)
 
-	retentionPolicies, err := pp.getAllPolicies(ctx)
+	retentionPolicies, resp, err := pp.getAllPolicies(ctx)
 	if err != nil {
-		return nil, diag.Errorf("Failed to get page of media retention policies %v", err)
+		return nil, diag.Errorf("Failed to get page of media retention policies %v %v", err, resp)
 	}
 
 	for _, retentionPolicy := range *retentionPolicies {
 		resources[*retentionPolicy.Id] = &resourceExporter.ResourceMeta{Name: *retentionPolicy.Name}
 	}
-
 	return resources, nil
 }
 
@@ -130,7 +129,6 @@ func readMediaRetentionPolicy(ctx context.Context, d *schema.ResourceData, meta 
 		if retentionPolicy.Actions != nil {
 			d.Set("actions", flattenPolicyActions(retentionPolicy.Actions, pp, ctx))
 		}
-
 		return cc.CheckState()
 	})
 }
@@ -162,9 +160,9 @@ func updateMediaRetentionPolicy(ctx context.Context, d *schema.ResourceData, met
 	}
 
 	log.Printf("Updating media retention policy %s", name)
-	policy, err := pp.updatePolicy(ctx, d.Id(), &reqBody)
+	policy, resp, err := pp.updatePolicy(ctx, d.Id(), &reqBody)
 	if err != nil {
-		return diag.Errorf("Failed to update media retention policy %s: %s", name, err)
+		return diag.Errorf("Failed to update media retention policy %s: %s %v", name, err, resp)
 	}
 
 	log.Printf("Updated media retention policy %s %s", name, *policy.Id)
@@ -179,9 +177,9 @@ func deleteMediaRetentionPolicy(ctx context.Context, d *schema.ResourceData, met
 	pp := getPolicyProxy(sdkConfig)
 
 	log.Printf("Deleting media retention policy %s", name)
-	_, err := pp.deletePolicy(ctx, d.Id())
+	resp, err := pp.deletePolicy(ctx, d.Id())
 	if err != nil {
-		return diag.Errorf("Failed to delete media retention policy %s: %s", name, err)
+		return diag.Errorf("Failed to delete media retention policy %s: %s %v", name, err, resp)
 	}
 
 	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
@@ -194,7 +192,6 @@ func deleteMediaRetentionPolicy(ctx context.Context, d *schema.ResourceData, met
 			}
 			return retry.NonRetryableError(fmt.Errorf("error deleting media retention policy %s: %s", d.Id(), err))
 		}
-
 		return retry.RetryableError(fmt.Errorf("media retention policy %s still exists", d.Id()))
 	})
 }

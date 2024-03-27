@@ -53,7 +53,7 @@ type ResourceInfo struct {
 
 // Allows the definition of a custom resolver for an exporter.
 type RefAttrCustomResolver struct {
-	ResolverFunc func(map[string]interface{}, map[string]*ResourceExporter) error
+	ResolverFunc func(map[string]interface{}, map[string]*ResourceExporter, string) error
 }
 
 // Allows the definition of a custom resolver for an exporter.
@@ -120,7 +120,6 @@ type ResourceExporter struct {
 
 	// Map of resource id->names. This is set after a call to loadSanitizedResourceMap
 	SanitizedResourceMap ResourceIDMetaMap
-
 	// List of attributes to exclude from config. This is set by the export configuration.
 	ExcludedAttributes []string
 
@@ -141,6 +140,7 @@ type ResourceExporter struct {
 	FilterResource func(ResourceIDMetaMap, string, []string) ResourceIDMetaMap
 	// Attributes that are mentioned with custom exports like e164 numbers,rrule  should be ensured to export in the correct format (remove hyphens, whitespace, etc.)
 	CustomValidateExports map[string][]string
+	mutex                 sync.RWMutex
 }
 
 func (r *ResourceExporter) LoadSanitizedResourceMap(ctx context.Context, name string, filter []string) diag.Diagnostics {
@@ -152,7 +152,12 @@ func (r *ResourceExporter) LoadSanitizedResourceMap(ctx context.Context, name st
 	if r.FilterResource != nil {
 		result = r.FilterResource(result, name, filter)
 	}
+
+	// Lock the Resource Map as it is accessed by goroutines
+	r.mutex.Lock()
 	r.SanitizedResourceMap = result
+	r.mutex.Unlock()
+
 	sanitizer := NewSanitizerProvider()
 	sanitizer.S.Sanitize(r.SanitizedResourceMap)
 

@@ -17,16 +17,16 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v123/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
 )
 
 func getAllEmergencyGroups(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
 	resources := make(resourceExporter.ResourceIDMetaMap)
 	ap := getArchitectEmergencyGroupProxy(clientConfig)
 
-	emergencyGroupConfigs, _, getErr := ap.getAllArchitectEmergencyGroups(ctx)
+	emergencyGroupConfigs, resp, getErr := ap.getAllArchitectEmergencyGroups(ctx)
 	if getErr != nil {
-		return nil, diag.FromErr(getErr)
+		return nil, diag.Errorf("Failed to get Architect Emergency Groups %v %s", resp, getErr)
 	}
 
 	for _, emergencyGroupConfig := range *emergencyGroupConfigs {
@@ -62,9 +62,9 @@ func createEmergencyGroup(ctx context.Context, d *schema.ResourceData, meta inte
 	}
 
 	log.Printf("Creating emergency group %s", name)
-	eGroup, _, err := ap.createArchitectEmergencyGroup(ctx, emergencyGroup)
+	eGroup, resp, err := ap.createArchitectEmergencyGroup(ctx, emergencyGroup)
 	if err != nil {
-		return diag.Errorf("Failed to create emergency group %s: %s", name, err)
+		return diag.Errorf("Failed to create emergency group %s: %s %v", name, err, resp)
 	}
 
 	d.SetId(*eGroup.Id)
@@ -160,9 +160,9 @@ func deleteEmergencyGroup(ctx context.Context, d *schema.ResourceData, meta inte
 	ap := getArchitectEmergencyGroupProxy(sdkConfig)
 
 	log.Printf("Deleting emergency group %s", d.Id())
-	_, err := ap.deleteArchitectEmergencyGroup(ctx, d.Id())
+	resp, err := ap.deleteArchitectEmergencyGroup(ctx, d.Id())
 	if err != nil {
-		return diag.Errorf("Failed to delete emergency group %s: %s", d.Id(), err)
+		return diag.Errorf("Failed to delete emergency group %s: %s %v", d.Id(), err, resp)
 	}
 	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		emergencyGroup, resp, err := ap.getArchitectEmergencyGroup(ctx, d.Id())

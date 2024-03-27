@@ -6,11 +6,11 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/util/lists"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v123/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
 )
 
 func validatePermissionPolicy(proxy *authRoleProxy, policy platformclientv2.Domainpermissionpolicy) error {
-	allowedPermissions, err := proxy.getAllowedPermissions(*policy.Domain)
+	allowedPermissions, _, err := proxy.getAllowedPermissions(*policy.Domain)
 	if err != nil {
 		return fmt.Errorf("error requesting org permissions: %s", err)
 	}

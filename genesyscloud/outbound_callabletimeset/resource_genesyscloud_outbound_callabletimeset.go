@@ -17,7 +17,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v123/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
 )
 
 /*
@@ -29,9 +29,9 @@ func getAllOutboundCallableTimesets(ctx context.Context, clientConfig *platformc
 	resources := make(resourceExporter.ResourceIDMetaMap)
 	proxy := getOutboundCallabletimesetProxy(clientConfig)
 
-	callabletimesets, _, getErr := proxy.getAllOutboundCallableTimeset(ctx)
+	callabletimesets, resp, getErr := proxy.getAllOutboundCallableTimeset(ctx)
 	if getErr != nil {
-		return nil, diag.Errorf("Failed to get page of callable timeset configs: %v", getErr)
+		return nil, diag.Errorf("Failed to get page of callable timeset configs: %v %v", getErr, resp)
 	}
 	for _, callabletimesets := range *callabletimesets {
 		resources[*callabletimesets.Id] = &resourceExporter.ResourceMeta{Name: *callabletimesets.Name}
@@ -49,13 +49,12 @@ func createOutboundCallabletimeset(ctx context.Context, d *schema.ResourceData, 
 	callableTimeset := getOutboundCallableTimesetFromResourceData(d)
 
 	log.Printf("Creating Outbound Callabletimeset %s", name)
-	outboundCallabletimeset, _, err := proxy.createOutboundCallabletimeset(ctx, &callableTimeset)
+	outboundCallabletimeset, resp, err := proxy.createOutboundCallabletimeset(ctx, &callableTimeset)
 	if err != nil {
-		return diag.Errorf("Failed to create Outbound Callabletimeset %s: %s", name, err)
+		return diag.Errorf("Failed to create Outbound Callabletimeset %s: %s %v", name, err, resp)
 	}
 
 	d.SetId(*outboundCallabletimeset.Id)
-
 	log.Printf("Created Outbound Callabletimeset %s %s", name, *outboundCallabletimeset.Id)
 	return readOutboundCallabletimeset(ctx, d, meta)
 }
@@ -68,11 +67,10 @@ func updateOutboundCallabletimeset(ctx context.Context, d *schema.ResourceData, 
 	callableTimeset := getOutboundCallableTimesetFromResourceData(d)
 
 	log.Printf("Updating Outbound Callabletimeset %s", d.Id())
-	outboundCallabletimeset, _, err := proxy.updateOutboundCallabletimeset(ctx, d.Id(), &callableTimeset)
+	outboundCallabletimeset, resp, err := proxy.updateOutboundCallabletimeset(ctx, d.Id(), &callableTimeset)
 	if err != nil {
-		return diag.Errorf("Failed to read Outbound Callabletimeset %s: %s", d.Id(), err)
+		return diag.Errorf("Failed to read Outbound Callabletimeset %s: %s %v", d.Id(), err, resp)
 	}
-
 	log.Printf("Updated Outbound Callabletimeset %s", *outboundCallabletimeset.Id)
 	return readOutboundCallabletimeset(ctx, d, meta)
 }
@@ -87,7 +85,7 @@ func readOutboundCallabletimeset(ctx context.Context, d *schema.ResourceData, me
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		callableTimeset, resp, getErr := proxy.getOutboundCallabletimesetById(ctx, d.Id())
 		if getErr != nil {
-			if util.IsStatus404ByInt(resp) {
+			if util.IsStatus404(resp) {
 				return retry.RetryableError(fmt.Errorf("Failed to read Outbound Callabletimeset %s: %s", d.Id(), getErr))
 			}
 			return retry.NonRetryableError(fmt.Errorf("Failed to read Outbound Callabletimeset %s: %s", d.Id(), getErr))
@@ -101,7 +99,6 @@ func readOutboundCallabletimeset(ctx context.Context, d *schema.ResourceData, me
 			trimTime(callableTimeset.CallableTimes)
 			d.Set("callable_times", flattenCallableTimes(*callableTimeset.CallableTimes))
 		}
-
 		log.Printf("Read Outbound Callabletimeset %s %s", d.Id(), *callableTimeset.Name)
 		return cc.CheckState()
 	})
@@ -113,22 +110,21 @@ func deleteOutboundCallabletimeset(ctx context.Context, d *schema.ResourceData, 
 	proxy := getOutboundCallabletimesetProxy(sdkConfig)
 
 	log.Printf("Deleting Outbound Callabletimeset")
-	_, err := proxy.deleteOutboundCallabletimeset(ctx, d.Id())
+	resp, err := proxy.deleteOutboundCallabletimeset(ctx, d.Id())
 	if err != nil {
-		return diag.Errorf("Failed to delete Outbound Callabletimeset: %s", err)
+		return diag.Errorf("Failed to delete Outbound Callabletimeset: %s %v", err, resp)
 	}
 
 	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		resp, err := proxy.deleteOutboundCallabletimeset(ctx, d.Id())
 		if err != nil {
-			if util.IsStatus404ByInt(resp) {
+			if util.IsStatus404(resp) {
 				// Outbound Callabletimeset deleted
 				log.Printf("Deleted Outbound Callabletimeset %s", d.Id())
 				return nil
 			}
 			return retry.NonRetryableError(fmt.Errorf("Error deleting Outbound Callabletimeset %s: %s", d.Id(), err))
 		}
-
 		return retry.RetryableError(fmt.Errorf("Outbound Callabletimeset %s still exists", d.Id()))
 	})
 }

@@ -18,17 +18,17 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v123/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
 )
 
 func getAllOAuthClients(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
 	resources := make(resourceExporter.ResourceIDMetaMap)
 
 	oauthClientProxy := getOAuthClientProxy(clientConfig)
-	clients, getErr := oauthClientProxy.getAllOAuthClients(ctx)
+	clients, resp, getErr := oauthClientProxy.getAllOAuthClients(ctx)
 
 	if getErr != nil {
-		return nil, diag.Errorf("Failed to get page of oauth clients: %v", getErr)
+		return nil, diag.Errorf("Failed to get page of oauth clients: %v %v", getErr, resp)
 	}
 
 	for _, client := range *clients {
@@ -38,7 +38,6 @@ func getAllOAuthClients(ctx context.Context, clientConfig *platformclientv2.Conf
 		}
 		resources[*client.Id] = &resourceExporter.ResourceMeta{Name: *client.Name}
 	}
-
 	return resources, nil
 }
 
@@ -58,7 +57,7 @@ func createOAuthClient(ctx context.Context, d *schema.ResourceData, meta interfa
 	}
 
 	log.Printf("Creating oauth client %s", name)
-	client, _, err := oauthClientProxy.createOAuthClient(ctx, platformclientv2.Oauthclientrequest{
+	client, resp, err := oauthClientProxy.createOAuthClient(ctx, platformclientv2.Oauthclientrequest{
 		Name:                       &name,
 		Description:                &description,
 		AccessTokenValiditySeconds: &tokenSeconds,
@@ -69,7 +68,7 @@ func createOAuthClient(ctx context.Context, d *schema.ResourceData, meta interfa
 		RoleDivisions:              roles,
 	})
 	if err != nil {
-		return diag.Errorf("Failed to create oauth client %s: %s", name, err)
+		return diag.Errorf("Failed to create oauth client %s: %s %v", name, err, resp)
 	}
 
 	credentialName := resourcedata.GetNillableValue[string](d, "integration_credential_name")
@@ -88,10 +87,10 @@ func createOAuthClient(ctx context.Context, d *schema.ResourceData, meta interfa
 			CredentialFields: &results,
 		}
 
-		credential, _, err := oauthClientProxy.createIntegrationClient(ctx, createCredential)
+		credential, resp, err := oauthClientProxy.createIntegrationClient(ctx, createCredential)
 
 		if err != nil {
-			return diag.Errorf("Failed to create credential %s : %s", name, err)
+			return diag.Errorf("Failed to create credential %s : %s %v", name, err, resp)
 		}
 
 		d.Set("integration_credential_id", *credential.Id)
@@ -165,7 +164,7 @@ func updateOAuthClient(ctx context.Context, d *schema.ResourceData, meta interfa
 	}
 
 	log.Printf("Updating oauth client %s", name)
-	_, _, err := oauthClientProxy.updateOAuthClient(ctx, d.Id(), platformclientv2.Oauthclientrequest{
+	_, resp, err := oauthClientProxy.updateOAuthClient(ctx, d.Id(), platformclientv2.Oauthclientrequest{
 		Name:                       &name,
 		Description:                &description,
 		AccessTokenValiditySeconds: &tokenSeconds,
@@ -176,11 +175,10 @@ func updateOAuthClient(ctx context.Context, d *schema.ResourceData, meta interfa
 		RoleDivisions:              roles,
 	})
 	if err != nil {
-		return diag.Errorf("Failed to update oauth client %s: %s", name, err)
+		return diag.Errorf("Failed to update oauth client %s: %s %v", name, err, resp)
 	}
 
 	log.Printf("Updated oauth client %s", name)
-
 	return readOAuthClient(ctx, d, meta)
 }
 
@@ -191,10 +189,10 @@ func deleteOAuthClient(ctx context.Context, d *schema.ResourceData, meta interfa
 	// check if there is a integration credential to delete
 	credentialId := resourcedata.GetNillableValue[string](d, "integration_credential_id")
 	if credentialId != nil {
-		currentCredential, _, getErr := oauthClientProxy.getIntegrationCredential(ctx, d.Id())
+		currentCredential, resp, getErr := oauthClientProxy.getIntegrationCredential(ctx, d.Id())
 		if getErr == nil {
 			_, err := oauthClientProxy.deleteIntegrationCredential(ctx, d.Id())
-			return diag.Errorf("failed to delete integration credential %s (%s): %s", *currentCredential.Id, *currentCredential.Name, err)
+			return diag.Errorf("failed to delete integration credential %s (%s): %s %v", *currentCredential.Id, *currentCredential.Name, err, resp)
 		}
 	}
 
@@ -209,9 +207,9 @@ func deleteOAuthClient(ctx context.Context, d *schema.ResourceData, meta interfa
 		return diagErr
 	}
 
-	_, err := oauthClientProxy.deleteOAuthClient(ctx, d.Id())
+	resp, err := oauthClientProxy.deleteOAuthClient(ctx, d.Id())
 	if err != nil {
-		return diag.Errorf("Failed to delete oauth client %s: %s", name, err)
+		return diag.Errorf("Failed to delete oauth client %s: %s %v", name, err, resp)
 	}
 
 	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
@@ -230,7 +228,6 @@ func deleteOAuthClient(ctx context.Context, d *schema.ResourceData, meta interfa
 			log.Printf("Deleted OAuth client %s", d.Id())
 			return nil
 		}
-
 		return retry.RetryableError(fmt.Errorf("OAuth client %s still exists", d.Id()))
 	})
 }

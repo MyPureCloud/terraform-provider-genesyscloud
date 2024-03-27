@@ -10,7 +10,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v123/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
 
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
@@ -28,15 +28,14 @@ func getAllAuthFlowOutcomes(ctx context.Context, clientConfig *platformclientv2.
 	proxy := newFlowOutcomeProxy(clientConfig)
 	resources := make(resourceExporter.ResourceIDMetaMap)
 
-	flowOutcomes, err := proxy.getAllFlowOutcome(ctx)
+	flowOutcomes, resp, err := proxy.getAllFlowOutcome(ctx)
 	if err != nil {
-		return nil, diag.Errorf("Failed to get flow outcome: %v", err)
+		return nil, diag.Errorf("Failed to get flow outcome: %v %v", err, resp)
 	}
 
 	for _, flowOutcome := range *flowOutcomes {
 		resources[*flowOutcome.Id] = &resourceExporter.ResourceMeta{Name: *flowOutcome.Name}
 	}
-
 	return resources, nil
 }
 
@@ -48,9 +47,9 @@ func createFlowOutcome(ctx context.Context, d *schema.ResourceData, meta interfa
 	flowOutcome := getFlowOutcomeFromResourceData(d)
 
 	log.Printf("Creating flow outcome %s", *flowOutcome.Name)
-	outcome, err := proxy.createFlowOutcome(ctx, &flowOutcome)
+	outcome, resp, err := proxy.createFlowOutcome(ctx, &flowOutcome)
 	if err != nil {
-		return diag.Errorf("Failed to create flow outcome: %s", err)
+		return diag.Errorf("Failed to create flow outcome: %s %v", err, resp)
 	}
 
 	d.SetId(*outcome.Id)
@@ -66,10 +65,10 @@ func readFlowOutcome(ctx context.Context, d *schema.ResourceData, meta interface
 	log.Printf("Reading flow outcome %s", d.Id())
 
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
-		flowOutcome, respCode, getErr := proxy.getFlowOutcomeById(ctx, d.Id())
+		flowOutcome, resp, getErr := proxy.getFlowOutcomeById(ctx, d.Id())
 
 		if getErr != nil {
-			if util.IsStatus404ByInt(respCode) {
+			if util.IsStatus404(resp) {
 				return retry.RetryableError(fmt.Errorf("Failed to read flow outcome %s: %s", d.Id(), getErr))
 			}
 			return retry.NonRetryableError(fmt.Errorf("Failed to read flow outcome %s: %s", d.Id(), getErr))
@@ -94,9 +93,9 @@ func updateFlowOutcome(ctx context.Context, d *schema.ResourceData, meta interfa
 	flowOutcome := getFlowOutcomeFromResourceData(d)
 
 	log.Printf("Updating flow outcome %s", *flowOutcome.Name)
-	_, err := proxy.updateFlowOutcome(ctx, d.Id(), &flowOutcome)
+	_, resp, err := proxy.updateFlowOutcome(ctx, d.Id(), &flowOutcome)
 	if err != nil {
-		return diag.Errorf("Failed to update flow outcome: %s", err)
+		return diag.Errorf("Failed to update flow outcome: %s %v", err, resp)
 	}
 
 	log.Printf("Updated flow outcome %s", d.Id())

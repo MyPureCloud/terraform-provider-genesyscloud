@@ -18,24 +18,24 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v123/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
 )
 
 func getSites(ctx context.Context, sdkConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
 	resources := make(resourceExporter.ResourceIDMetaMap)
 	sp := getSiteProxy(sdkConfig)
 
-	unmanagedSites, err := sp.getAllUnmanagedSites(ctx)
+	unmanagedSites, resp, err := sp.getAllUnmanagedSites(ctx)
 	if err != nil {
-		return nil, diag.FromErr(err)
+		return nil, diag.Errorf("error getting unmanaged sites %s %v", err, resp)
 	}
 	for _, unmanagedSite := range *unmanagedSites {
 		resources[*unmanagedSite.Id] = &resourceExporter.ResourceMeta{Name: *unmanagedSite.Name}
 	}
 
-	managedSites, err := sp.getAllManagedSites(ctx)
+	managedSites, resp, err := sp.getAllManagedSites(ctx)
 	if err != nil {
-		return nil, diag.FromErr(err)
+		return nil, diag.Errorf("error getting managed sites %s %v", err, resp)
 	}
 	for _, managedSite := range *managedSites {
 		resources[*managedSite.Id] = &resourceExporter.ResourceMeta{Name: *managedSite.Name}
@@ -65,9 +65,9 @@ func createSite(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	mediaRegions := lists.BuildSdkStringListFromInterfaceArray(d, "media_regions")
 
 	locationId := d.Get("location_id").(string)
-	location, err := sp.getLocation(ctx, locationId)
+	location, resp, err := sp.getLocation(ctx, locationId)
 	if err != nil {
-		return diag.FromErr(err)
+		return diag.Errorf("error getting location %s %v", err, resp)
 	}
 
 	err = validateMediaRegions(ctx, sp, mediaRegions)
@@ -89,9 +89,9 @@ func createSite(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	}
 
 	log.Printf("Creating site %s", *siteReq.Name)
-	site, err := sp.createSite(ctx, siteReq)
+	site, resp, err := sp.createSite(ctx, siteReq)
 	if err != nil {
-		return diag.FromErr(err)
+		return diag.Errorf("error creating site %s %v", err, resp)
 	}
 
 	d.SetId(*site.Id)
@@ -123,9 +123,9 @@ func createSite(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	// Default site
 	if d.Get("set_as_default_site").(bool) {
 		log.Printf("Setting default site to %s", *site.Id)
-		err := sp.setDefaultSite(ctx, *site.Id)
+		resp, err := sp.setDefaultSite(ctx, *site.Id)
 		if err != nil {
-			return diag.Errorf("unable to set default site to %s. err: %v", *site.Id, err)
+			return diag.Errorf("unable to set default site to %s. err: %v api response: %v", *site.Id, err, resp)
 		}
 	}
 
@@ -178,9 +178,9 @@ func readSite(ctx context.Context, d *schema.ResourceData, meta interface{}) dia
 			return retryErr
 		}
 
-		defaultSiteId, err := sp.getDefaultSiteId(ctx)
+		defaultSiteId, resp, err := sp.getDefaultSiteId(ctx)
 		if err != nil {
-			return retry.NonRetryableError(fmt.Errorf("failed to get default site id: %v", err))
+			return retry.NonRetryableError(fmt.Errorf("failed to get default site id: %v %v", err, resp))
 		}
 		d.Set("set_as_default_site", defaultSiteId == *currentSite.Id)
 
@@ -213,9 +213,9 @@ func updateSite(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 
 	mediaRegions := lists.BuildSdkStringListFromInterfaceArray(d, "media_regions")
 
-	location, err := sp.getLocation(ctx, locationId)
+	location, resp, err := sp.getLocation(ctx, locationId)
 	if err != nil {
-		return diag.FromErr(err)
+		return diag.Errorf("error getting location %s %v", err, resp)
 	}
 	site.Location = &platformclientv2.Locationdefinition{
 		Id:              &locationId,
@@ -275,9 +275,9 @@ func updateSite(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 
 	if d.Get("set_as_default_site").(bool) {
 		log.Printf("Setting default site to %s", *site.Id)
-		err := sp.setDefaultSite(ctx, *site.Id)
+		resp, err := sp.setDefaultSite(ctx, *site.Id)
 		if err != nil {
-			return diag.Errorf("unable to set default site to %s. err: %v", *site.Id, err)
+			return diag.Errorf("unable to set default site to %s. err: %v api response: %v", *site.Id, err, resp)
 		}
 	}
 

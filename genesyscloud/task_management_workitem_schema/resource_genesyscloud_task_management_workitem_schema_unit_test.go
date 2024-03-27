@@ -12,7 +12,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v123/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -42,7 +42,7 @@ func TestUnitResourceWorkitemSchemaCreate(t *testing.T) {
 
 	taskProxy := &taskManagementProxy{}
 
-	taskProxy.getTaskManagementWorkitemSchemaByIdAttr = func(ctx context.Context, p *taskManagementProxy, id string) (*platformclientv2.Dataschema, int, error) {
+	taskProxy.getTaskManagementWorkitemSchemaByIdAttr = func(ctx context.Context, p *taskManagementProxy, id string) (*platformclientv2.Dataschema, *platformclientv2.APIResponse, error) {
 		assert.Equal(t, tId, id)
 		schema := &platformclientv2.Dataschema{
 			Name:       &tName,
@@ -52,10 +52,10 @@ func TestUnitResourceWorkitemSchemaCreate(t *testing.T) {
 
 		apiResponse := &platformclientv2.APIResponse{StatusCode: http.StatusOK}
 
-		return schema, apiResponse.StatusCode, nil
+		return schema, apiResponse, nil
 	}
 
-	taskProxy.createTaskManagementWorkitemSchemaAttr = func(ctx context.Context, p *taskManagementProxy, schemaCreate *platformclientv2.Dataschema) (*platformclientv2.Dataschema, error) {
+	taskProxy.createTaskManagementWorkitemSchemaAttr = func(ctx context.Context, p *taskManagementProxy, schemaCreate *platformclientv2.Dataschema) (*platformclientv2.Dataschema, *platformclientv2.APIResponse, error) {
 		schema := platformclientv2.Dataschema{}
 
 		assert.Equal(t, tName, *schemaCreate.Name, "schema.Name check failed in create createTaskManagementWorkitemSchemaAttr")
@@ -67,7 +67,7 @@ func TestUnitResourceWorkitemSchemaCreate(t *testing.T) {
 		schema.Id = &tId
 		schema.Name = &tName
 
-		return &schema, nil
+		return &schema, nil, nil
 	}
 
 	internalProxy = taskProxy
@@ -120,7 +120,7 @@ func TestUnitResourceWorkitemSchemaRead(t *testing.T) {
 
 	taskProxy := &taskManagementProxy{}
 
-	taskProxy.getTaskManagementWorkitemSchemaByIdAttr = func(ctx context.Context, p *taskManagementProxy, id string) (*platformclientv2.Dataschema, int, error) {
+	taskProxy.getTaskManagementWorkitemSchemaByIdAttr = func(ctx context.Context, p *taskManagementProxy, id string) (*platformclientv2.Dataschema, *platformclientv2.APIResponse, error) {
 		assert.Equal(t, tId, id)
 		schema := &platformclientv2.Dataschema{
 			Name:       &tName,
@@ -129,7 +129,7 @@ func TestUnitResourceWorkitemSchemaRead(t *testing.T) {
 		}
 
 		apiResponse := &platformclientv2.APIResponse{StatusCode: http.StatusOK}
-		return schema, apiResponse.StatusCode, nil
+		return schema, apiResponse, nil
 	}
 	internalProxy = taskProxy
 	defer func() { internalProxy = nil }()
@@ -185,18 +185,18 @@ func TestUnitResourceWorkitemSchemaDelete(t *testing.T) {
 
 	taskProxy := &taskManagementProxy{}
 
-	taskProxy.deleteTaskManagementWorkitemSchemaAttr = func(ctx context.Context, p *taskManagementProxy, id string) (int, error) {
+	taskProxy.deleteTaskManagementWorkitemSchemaAttr = func(ctx context.Context, p *taskManagementProxy, id string) (*platformclientv2.APIResponse, error) {
 		assert.Equal(t, tId, id)
 
 		apiResponse := &platformclientv2.APIResponse{StatusCode: http.StatusNoContent}
-		return apiResponse.StatusCode, nil
+		return apiResponse, nil
 	}
 
-	taskProxy.getTaskManagementWorkitemSchemaDeletedStatusAttr = func(ctx context.Context, p *taskManagementProxy, schemaId string) (isDeleted bool, statusCode int, err error) {
+	taskProxy.getTaskManagementWorkitemSchemaDeletedStatusAttr = func(ctx context.Context, p *taskManagementProxy, schemaId string) (isDeleted bool, resp *platformclientv2.APIResponse, err error) {
 		assert.Equal(t, tId, schemaId)
 
 		apiResponse := &platformclientv2.APIResponse{StatusCode: http.StatusOK}
-		return true, apiResponse.StatusCode, nil
+		return true, apiResponse, nil
 	}
 
 	internalProxy = taskProxy
@@ -249,7 +249,7 @@ func TestUnitResourceWorkitemSchemaUpdate(t *testing.T) {
 
 	taskProxy := &taskManagementProxy{}
 
-	taskProxy.getTaskManagementWorkitemSchemaByIdAttr = func(ctx context.Context, p *taskManagementProxy, id string) (*platformclientv2.Dataschema, int, error) {
+	taskProxy.getTaskManagementWorkitemSchemaByIdAttr = func(ctx context.Context, p *taskManagementProxy, id string) (*platformclientv2.Dataschema, *platformclientv2.APIResponse, error) {
 		assert.Equal(t, tId, id)
 		schema := &platformclientv2.Dataschema{
 			Name:       &tName,
@@ -259,10 +259,10 @@ func TestUnitResourceWorkitemSchemaUpdate(t *testing.T) {
 
 		apiResponse := &platformclientv2.APIResponse{StatusCode: http.StatusOK}
 
-		return schema, apiResponse.StatusCode, nil
+		return schema, apiResponse, nil
 	}
 
-	taskProxy.updateTaskManagementWorkitemSchemaAttr = func(ctx context.Context, p *taskManagementProxy, schemaId string, schemaCreate *platformclientv2.Dataschema) (*platformclientv2.Dataschema, error) {
+	taskProxy.updateTaskManagementWorkitemSchemaAttr = func(ctx context.Context, p *taskManagementProxy, schemaId string, schemaCreate *platformclientv2.Dataschema) (*platformclientv2.Dataschema, *platformclientv2.APIResponse, error) {
 		schema := platformclientv2.Dataschema{}
 
 		assert.Equal(t, tName, *schemaCreate.Name, "schema.Name check failed in create createTaskManagementWorkitemSchemaAttr")
@@ -274,7 +274,7 @@ func TestUnitResourceWorkitemSchemaUpdate(t *testing.T) {
 		schema.Id = &tId
 		schema.Name = &tName
 
-		return &schema, nil
+		return &schema, nil, nil
 	}
 
 	internalProxy = taskProxy

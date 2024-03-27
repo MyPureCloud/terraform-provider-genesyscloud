@@ -28,7 +28,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/mohae/deepcopy"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v123/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
 )
 
 /*
@@ -84,6 +84,7 @@ type GenesysCloudResourceExporter struct {
 	meta                   interface{}
 	dependsList            map[string][]string
 	buildSecondDeps        map[string][]string
+	exMutex                sync.RWMutex
 	cyclicDependsList      []string
 	ignoreCyclicDeps       bool
 }
@@ -307,7 +308,7 @@ func (g *GenesysCloudResourceExporter) retrieveGenesysCloudObjectInstances() dia
 		wg.Add(1)
 		go func(resType string, exporter *resourceExporter.ResourceExporter) {
 			defer wg.Done()
-			//
+
 			typeResources, err := g.getResourcesForType(resType, g.provider, exporter, g.meta)
 
 			if err != nil {
@@ -379,7 +380,7 @@ func (g *GenesysCloudResourceExporter) buildResourceConfigMap() diag.Diagnostics
 			exportDir, _ := getFilePath(g.d, "")
 			err := resourceFilesWriterFunc(resource.State.ID, exportDir, exporter.CustomFileWriter.SubDirectory, jsonResult, g.meta)
 			if err != nil {
-				log.Printf("An error has occured while trying invoking the RetrieveAndWriteFilesFunc for resource type %s: %v", resource.Type, err)
+				log.Printf("An error has occurred while trying invoking the RetrieveAndWriteFilesFunc for resource type %s: %v", resource.Type, err)
 			}
 		}
 
@@ -646,7 +647,7 @@ func (g *GenesysCloudResourceExporter) retainExporterList(resources resourceExpo
 			}
 		}
 		for _, removeId := range removeChan {
-			log.Printf("deleted removeId %v", removeId)
+			log.Printf("Deleted removeId %v", removeId)
 			delete(exporter.SanitizedResourceMap, removeId)
 		}
 	}
@@ -714,6 +715,7 @@ func (g *GenesysCloudResourceExporter) chainDependencies(
 	if len(*g.filterList) > 0 {
 		g.resources = nil
 		g.exporters = nil
+
 		err := g.rebuildExports(*g.filterList)
 		if err != nil {
 			return err
@@ -789,6 +791,7 @@ func (g *GenesysCloudResourceExporter) buildSanitizedResourceMaps(exporters map[
 			defer wg.Done()
 			log.Printf("Getting all resources for type %s", name)
 			exporter.FilterResource = g.resourceFilter
+
 			err := exporter.LoadSanitizedResourceMap(ctx, name, filter)
 
 			// Used in tests
@@ -913,13 +916,11 @@ func (g *GenesysCloudResourceExporter) getResourcesForType(resType string, provi
 	}
 
 	ctyType := res.CoreConfigSchema().ImpliedType()
-
 	var wg sync.WaitGroup
 	wg.Add(lenResources)
 	for id, resMeta := range exporter.SanitizedResourceMap {
 		go func(id string, resMeta *resourceExporter.ResourceMeta) {
 			defer wg.Done()
-
 			fetchResourceState := func() error {
 				ctx, cancel := context.WithTimeout(context.Background(), time.Duration(30)*time.Minute)
 				defer cancel()
@@ -928,13 +929,16 @@ func (g *GenesysCloudResourceExporter) getResourcesForType(resType string, provi
 				instanceState, err := getResourceState(ctx, res, id, resMeta, meta)
 
 				if g.isDataSource(resType, resMeta.Name) {
+					g.exMutex.Lock()
 					res = provider.DataSourcesMap[resType]
+					g.exMutex.Unlock()
 
 					if res == nil {
 						return fmt.Errorf("DataSource type %v not defined", resType)
 					}
 
 					schemaMap := res.SchemaMap()
+
 					attributes := make(map[string]string)
 
 					for attr, _ := range schemaMap {
@@ -997,7 +1001,7 @@ func (g *GenesysCloudResourceExporter) getResourcesForType(resType string, provi
 
 	// Remove resources that weren't found in this pass
 	for id := range removeChan {
-		log.Printf("deleted %v", id)
+		log.Printf("Deleted resource %v", id)
 		delete(exporter.SanitizedResourceMap, id)
 	}
 
@@ -1163,13 +1167,13 @@ func (g *GenesysCloudResourceExporter) sanitizeConfigMap(
 		case map[string]interface{}:
 			// Maps are sanitized in-place
 			currMap := val.(map[string]interface{})
-			_, res := g.sanitizeConfigMap(resourceType, "", val.(map[string]interface{}), currAttr, exporters, exportingState, exportingAsHCL, false)
+			_, res := g.sanitizeConfigMap(resourceType, resourceName, val.(map[string]interface{}), currAttr, exporters, exportingState, exportingAsHCL, false)
 			if !res || len(currMap) == 0 {
 				// Remove empty maps or maps indicating they should be removed
 				configMap[key] = nil
 			}
 		case []interface{}:
-			if arr := g.sanitizeConfigArray(resourceType, val.([]interface{}), currAttr, exporters, exportingState, exportingAsHCL); len(arr) > 0 {
+			if arr := g.sanitizeConfigArray(resourceType, resourceName, val.([]interface{}), currAttr, exporters, exportingState, exportingAsHCL); len(arr) > 0 {
 				configMap[key] = arr
 			} else {
 				// Remove empty arrays
@@ -1241,7 +1245,7 @@ func (g *GenesysCloudResourceExporter) sanitizeConfigMap(
 		//If the exporter as has customer resolver for an attribute, invoke it.
 		if refAttrCustomResolver, ok := exporter.CustomAttributeResolver[currAttr]; ok {
 			log.Printf("Custom resolver invoked for attribute: %s", currAttr)
-			err := refAttrCustomResolver.ResolverFunc(configMap, exporters)
+			err := refAttrCustomResolver.ResolverFunc(configMap, exporters, resourceName)
 
 			if err != nil {
 				log.Printf("An error has occurred while trying invoke a custom resolver for attribute %s", currAttr)
@@ -1263,7 +1267,7 @@ func (g *GenesysCloudResourceExporter) sanitizeConfigMap(
 			if vStr, ok := configMap[key].(string); ok {
 				decodedData, err := getDecodedData(vStr, currAttr)
 				if err != nil {
-					log.Printf("error decoding json string: %v\n", err)
+					log.Printf("Error decoding JSON string: %v\n", err)
 					configMap[key] = vStr
 				} else {
 					uid := uuid.NewString()
@@ -1303,6 +1307,7 @@ func removeZeroValues(key string, val interface{}, configMap util.JsonMap) {
 // Identify the parent config map and if the resources have further dependent resources add a new attribute depends_on
 func (g *GenesysCloudResourceExporter) addDependsOnValues(key string, configMap util.JsonMap) {
 	list, exists := g.dependsList[key]
+
 	resourceDependsList := make([]string, 0)
 	if exists {
 		for _, res := range list {
@@ -1329,6 +1334,7 @@ func escapeString(strValue string) string {
 
 func (g *GenesysCloudResourceExporter) sanitizeConfigArray(
 	resourceType string,
+	resourceName string,
 	anArray []interface{},
 	currAttr string,
 	exporters map[string]*resourceExporter.ResourceExporter,
@@ -1341,12 +1347,12 @@ func (g *GenesysCloudResourceExporter) sanitizeConfigArray(
 		case map[string]interface{}:
 			// Only include in the result if sanitizeConfigMap returns true and the map is not empty
 			currMap := val.(map[string]interface{})
-			_, res := g.sanitizeConfigMap(resourceType, "", currMap, currAttr, exporters, exportingState, exportingAsHCL, false)
+			_, res := g.sanitizeConfigMap(resourceType, resourceName, currMap, currAttr, exporters, exportingState, exportingAsHCL, false)
 			if res && len(currMap) > 0 {
 				result = append(result, val)
 			}
 		case []interface{}:
-			if arr := g.sanitizeConfigArray(resourceType, val.([]interface{}), currAttr, exporters, exportingState, exportingAsHCL); len(arr) > 0 {
+			if arr := g.sanitizeConfigArray(resourceType, resourceName, val.([]interface{}), currAttr, exporters, exportingState, exportingAsHCL); len(arr) > 0 {
 				result = append(result, arr)
 			}
 		case string:
@@ -1452,7 +1458,7 @@ func (g *GenesysCloudResourceExporter) resourceIdExists(refID string) bool {
 				return true
 			}
 		}
-		log.Printf("resource present in sanitizedconfigmap and not present in resources section %v", refID)
+		log.Printf("Resource present in sanitizedConfigMap and not present in resources section %v", refID)
 		return false
 	}
 	return true

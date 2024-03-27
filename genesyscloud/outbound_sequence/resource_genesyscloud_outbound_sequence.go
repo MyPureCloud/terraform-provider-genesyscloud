@@ -11,7 +11,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v123/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
 
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
@@ -29,15 +29,14 @@ func getAllAuthOutboundSequences(ctx context.Context, clientConfig *platformclie
 	proxy := newOutboundSequenceProxy(clientConfig)
 	resources := make(resourceExporter.ResourceIDMetaMap)
 
-	campaignSequences, err := proxy.getAllOutboundSequence(ctx)
+	campaignSequences, resp, err := proxy.getAllOutboundSequence(ctx)
 	if err != nil {
-		return nil, diag.Errorf("Failed to get outbound sequence: %v", err)
+		return nil, diag.Errorf("Failed to get outbound sequence: %v %v", err, resp)
 	}
 
 	for _, campaignSequence := range *campaignSequences {
 		resources[*campaignSequence.Id] = &resourceExporter.ResourceMeta{Name: *campaignSequence.Name}
 	}
-
 	return resources, nil
 }
 
@@ -50,9 +49,9 @@ func createOutboundSequence(ctx context.Context, d *schema.ResourceData, meta in
 	outboundSequence := getOutboundSequenceFromResourceData(d)
 
 	log.Printf("Creating outbound sequence %s", *outboundSequence.Name)
-	campaignSequence, err := proxy.createOutboundSequence(ctx, &outboundSequence)
+	campaignSequence, resp, err := proxy.createOutboundSequence(ctx, &outboundSequence)
 	if err != nil {
-		return diag.Errorf("Failed to create outbound sequence: %s", err)
+		return diag.Errorf("Failed to create outbound sequence: %s %v", err, resp)
 	}
 
 	d.SetId(*campaignSequence.Id)
@@ -77,9 +76,9 @@ func readOutboundSequence(ctx context.Context, d *schema.ResourceData, meta inte
 	log.Printf("Reading outbound sequence %s", d.Id())
 
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
-		campaignSequence, respCode, getErr := proxy.getOutboundSequenceById(ctx, d.Id())
+		campaignSequence, resp, getErr := proxy.getOutboundSequenceById(ctx, d.Id())
 		if getErr != nil {
-			if util.IsStatus404ByInt(respCode) {
+			if util.IsStatus404(resp) {
 				return retry.RetryableError(fmt.Errorf("Failed to read outbound sequence %s: %s", d.Id(), getErr))
 			}
 			return retry.NonRetryableError(fmt.Errorf("Failed to read outbound sequence %s: %s", d.Id(), getErr))
@@ -111,9 +110,9 @@ func updateOutboundSequence(ctx context.Context, d *schema.ResourceData, meta in
 	}
 
 	log.Printf("Updating outbound sequence %s", *outboundSequence.Name)
-	campaignSequence, err := proxy.updateOutboundSequence(ctx, d.Id(), &outboundSequence)
+	campaignSequence, resp, err := proxy.updateOutboundSequence(ctx, d.Id(), &outboundSequence)
 	if err != nil {
-		return diag.Errorf("Failed to update outbound sequence: %s", err)
+		return diag.Errorf("Failed to update outbound sequence: %s %v", err, resp)
 	}
 
 	log.Printf("Updated outbound sequence %s", *campaignSequence.Id)
@@ -126,35 +125,34 @@ func deleteOutboundSequence(ctx context.Context, d *schema.ResourceData, meta in
 	proxy := getOutboundSequenceProxy(sdkConfig)
 
 	// Sequence can't be deleted while running
-	sequence, _, err := proxy.getOutboundSequenceById(ctx, d.Id())
+	sequence, resp, err := proxy.getOutboundSequenceById(ctx, d.Id())
 	if *sequence.Status == "on" {
 		if err != nil {
-			return diag.Errorf("Failed to get outbound sequence %s: %s", d.Id(), err)
+			return diag.Errorf("Failed to get outbound sequence %s: %s %v", d.Id(), err, resp)
 		}
 		sequence.Status = platformclientv2.String("off")
-		_, err = proxy.updateOutboundSequence(ctx, d.Id(), sequence)
+		_, resp, err = proxy.updateOutboundSequence(ctx, d.Id(), sequence)
 		if err != nil {
-			return diag.Errorf("Failed to turn off outbound sequence %s: %s", d.Id(), err)
+			return diag.Errorf("Failed to turn off outbound sequence %s: %s %v", d.Id(), err, resp)
 		}
 		time.Sleep(20 * time.Second) // Give the sequence a chance to turned off
 	}
 
-	_, err = proxy.deleteOutboundSequence(ctx, d.Id())
+	resp, err = proxy.deleteOutboundSequence(ctx, d.Id())
 	if err != nil {
-		return diag.Errorf("Failed to delete outbound sequence %s: %s", d.Id(), err)
+		return diag.Errorf("Failed to delete outbound sequence %s: %s %v", d.Id(), err, resp)
 	}
 
 	return util.WithRetries(ctx, 180*time.Second, func() *retry.RetryError {
-		_, respCode, err := proxy.getOutboundSequenceById(ctx, d.Id())
+		_, resp, err := proxy.getOutboundSequenceById(ctx, d.Id())
 
 		if err != nil {
-			if util.IsStatus404ByInt(respCode) {
+			if util.IsStatus404(resp) {
 				log.Printf("Deleted outbound sequence %s", d.Id())
 				return nil
 			}
 			return retry.NonRetryableError(fmt.Errorf("Error deleting outbound sequence %s: %s", d.Id(), err))
 		}
-
 		return retry.RetryableError(fmt.Errorf("outbound sequence %s still exists", d.Id()))
 	})
 }

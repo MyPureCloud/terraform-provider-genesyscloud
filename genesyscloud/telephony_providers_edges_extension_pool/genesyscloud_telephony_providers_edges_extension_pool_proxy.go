@@ -3,7 +3,7 @@ package telephony_providers_edges_extension_pool
 import (
 	"context"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v123/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
 )
 
 var internalProxy *extensionPoolProxy
@@ -12,7 +12,7 @@ type getExtensionPoolFunc func(ctxctx context.Context, p *extensionPoolProxy, ex
 type deleteExtensionPoolFunc func(ctx context.Context, p *extensionPoolProxy, extensionPoolId string) (*platformclientv2.APIResponse, error)
 type updateExtensionPoolFunc func(ctx context.Context, p *extensionPoolProxy, extensionPoolId string, body platformclientv2.Extensionpool) (*platformclientv2.Extensionpool, *platformclientv2.APIResponse, error)
 type createExtensionPoolFunc func(ctx context.Context, p *extensionPoolProxy, body platformclientv2.Extensionpool) (*platformclientv2.Extensionpool, *platformclientv2.APIResponse, error)
-type getAllExtensionPoolsFunc func(ctx context.Context, p *extensionPoolProxy) (*[]platformclientv2.Extensionpool, error)
+type getAllExtensionPoolsFunc func(ctx context.Context, p *extensionPoolProxy) (*[]platformclientv2.Extensionpool, *platformclientv2.APIResponse, error)
 
 // ExtensionPoolProxy represents the interface required to access the extension pool custom resource
 type extensionPoolProxy struct {
@@ -45,7 +45,6 @@ func getExtensionPoolProxy(clientConfig *platformclientv2.Configuration) *extens
 	if internalProxy == nil {
 		internalProxy = newExtensionPoolProxy(clientConfig)
 	}
-
 	return internalProxy
 }
 
@@ -65,7 +64,7 @@ func (p *extensionPoolProxy) createExtensionPool(ctx context.Context, body platf
 	return p.createExtensionPoolAttr(ctx, p, body)
 }
 
-func (p *extensionPoolProxy) getAllExtensionPools(ctx context.Context) (*[]platformclientv2.Extensionpool, error) {
+func (p *extensionPoolProxy) getAllExtensionPools(ctx context.Context) (*[]platformclientv2.Extensionpool, *platformclientv2.APIResponse, error) {
 	return p.getAllExtensionPoolsAttr(ctx, p)
 }
 
@@ -101,7 +100,7 @@ func createExtensionPoolFn(ctx context.Context, p *extensionPoolProxy, body plat
 	return extensionPool, resp, nil
 }
 
-func getAllExtensionPoolsFn(ctx context.Context, p *extensionPoolProxy) (*[]platformclientv2.Extensionpool, error) {
+func getAllExtensionPoolsFn(ctx context.Context, p *extensionPoolProxy) (*[]platformclientv2.Extensionpool, *platformclientv2.APIResponse, error) {
 
 	const pageSize = 100
 	var (
@@ -109,9 +108,9 @@ func getAllExtensionPoolsFn(ctx context.Context, p *extensionPoolProxy) (*[]plat
 		pageNum           = 1
 	)
 	//Checking First Page
-	extensionPools, _, err := p.edgesApi.GetTelephonyProvidersEdgesExtensionpools(pageSize, pageNum, "", "")
+	extensionPools, resp, err := p.edgesApi.GetTelephonyProvidersEdgesExtensionpools(pageSize, pageNum, "", "")
 	if err != nil {
-		return nil, err
+		return nil, resp, err
 	}
 	if extensionPools.Entities != nil && len(*extensionPools.Entities) > 0 {
 		for _, extensionPool := range *extensionPools.Entities {
@@ -121,13 +120,13 @@ func getAllExtensionPoolsFn(ctx context.Context, p *extensionPoolProxy) (*[]plat
 		}
 	}
 	if *extensionPools.PageCount < 2 {
-		return &allExtensionPools, nil
+		return &allExtensionPools, resp, nil
 	}
 
 	for pageNum := 2; pageNum <= *extensionPools.PageCount; pageNum++ {
-		extensionPools, _, err := p.edgesApi.GetTelephonyProvidersEdgesExtensionpools(pageSize, pageNum, "", "")
+		extensionPools, resp, err := p.edgesApi.GetTelephonyProvidersEdgesExtensionpools(pageSize, pageNum, "", "")
 		if err != nil {
-			return nil, err
+			return nil, resp, err
 		}
 		if extensionPools.Entities == nil || len(*extensionPools.Entities) == 0 {
 			break
@@ -139,5 +138,5 @@ func getAllExtensionPoolsFn(ctx context.Context, p *extensionPoolProxy) (*[]plat
 		}
 	}
 
-	return &allExtensionPools, nil
+	return &allExtensionPools, resp, nil
 }

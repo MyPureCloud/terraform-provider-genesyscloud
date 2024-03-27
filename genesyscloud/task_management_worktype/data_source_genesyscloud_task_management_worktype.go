@@ -21,15 +21,15 @@ import (
 // dataSourceTaskManagementWorktypeRead retrieves by name the id in question
 func dataSourceTaskManagementWorktypeRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-	proxy := newTaskManagementWorktypeProxy(sdkConfig)
+	proxy := getTaskManagementWorktypeProxy(sdkConfig)
 
 	name := d.Get("name").(string)
 
 	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
-		worktypeId, retryable, err := proxy.getTaskManagementWorktypeIdByName(ctx, name)
+		worktypeId, retryable, resp, err := proxy.getTaskManagementWorktypeIdByName(ctx, name)
 
 		if err != nil && !retryable {
-			return retry.NonRetryableError(fmt.Errorf("error searching task management worktype %s: %s", name, err))
+			return retry.NonRetryableError(fmt.Errorf("error searching task management worktype %s: %s %v", name, err, resp))
 		}
 
 		if retryable {
@@ -38,5 +38,35 @@ func dataSourceTaskManagementWorktypeRead(ctx context.Context, d *schema.Resourc
 
 		d.SetId(worktypeId)
 		return nil
+	})
+}
+
+func dataSourceTaskManagementWorktypeStatusRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
+	proxy := getTaskManagementWorktypeProxy(sdkConfig)
+
+	workTypeName := d.Get("worktype_name").(string)
+	statusName := d.Get("worktype_status_name").(string)
+
+	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
+		//First retrieve the work type id by name
+		workType, retryable, resp, err := proxy.getTaskManagementWorktypeByName(ctx, workTypeName)
+
+		if err != nil && !retryable {
+			return retry.NonRetryableError(fmt.Errorf("error searching task management worktype %s: %s %v", workTypeName, err, resp))
+		}
+
+		if retryable {
+			return retry.RetryableError(fmt.Errorf("no task management worktype found with name %s", workTypeName))
+		}
+
+		for _, status := range *workType.Statuses {
+			if *status.Name == statusName {
+				d.SetId(*status.Id)
+				return nil
+			}
+		}
+
+		return retry.NonRetryableError(fmt.Errorf("No records found for  management worktype %s with status name %s: %s", workTypeName, statusName, err))
 	})
 }

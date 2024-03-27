@@ -14,7 +14,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v123/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
 )
 
 /*
@@ -26,9 +26,9 @@ func getAllAuthOutboundCampaign(ctx context.Context, clientConfig *platformclien
 	resources := make(resourceExporter.ResourceIDMetaMap)
 	proxy := getOutboundCampaignProxy(clientConfig)
 
-	campaigns, err := proxy.getAllOutboundCampaign(ctx)
+	campaigns, resp, err := proxy.getAllOutboundCampaign(ctx)
 	if err != nil {
-		return nil, diag.Errorf("Failed to get campaigns: %s", err)
+		return nil, diag.Errorf("Failed to get campaigns: %s %v", err, resp)
 	}
 
 	for _, campaign := range *campaigns {
@@ -59,7 +59,6 @@ func getAllAuthOutboundCampaign(ctx context.Context, clientConfig *platformclien
 		}
 		resources[*campaign.Id] = &resourceExporter.ResourceMeta{Name: *campaign.Name}
 	}
-
 	return resources, nil
 }
 
@@ -73,9 +72,9 @@ func createOutboundCampaign(ctx context.Context, d *schema.ResourceData, meta in
 
 	// Create campaign
 	log.Printf("Creating Outbound Campaign %s", *campaign.Name)
-	outboundCampaign, err := proxy.createOutboundCampaign(ctx, &campaign)
+	outboundCampaign, resp, err := proxy.createOutboundCampaign(ctx, &campaign)
 	if err != nil {
-		return diag.Errorf("Failed to create Outbound Campaign %s: %s", *campaign.Name, err)
+		return diag.Errorf("Failed to create Outbound Campaign %s: %s %v", *campaign.Name, err, resp)
 	}
 
 	d.SetId(*outboundCampaign.Id)
@@ -90,7 +89,6 @@ func createOutboundCampaign(ctx context.Context, d *schema.ResourceData, meta in
 	}
 
 	log.Printf("Created Outbound Campaign %s %s", *outboundCampaign.Name, *outboundCampaign.Id)
-
 	return readOutboundCampaign(ctx, d, meta)
 }
 
@@ -164,9 +162,9 @@ func updateOutboundCampaign(ctx context.Context, d *schema.ResourceData, meta in
 	campaign := getOutboundCampaignFromResourceData(d)
 
 	log.Printf("Updating Outbound Campaign %s", *campaign.Name)
-	campaignSdk, err := proxy.updateOutboundCampaign(ctx, d.Id(), &campaign)
+	campaignSdk, resp, err := proxy.updateOutboundCampaign(ctx, d.Id(), &campaign)
 	if err != nil {
-		return diag.Errorf("Failed to update campaign %s", err)
+		return diag.Errorf("Failed to update campaign %s %v", err, resp)
 	}
 
 	// Check if Campaign Status needs updated
@@ -188,9 +186,9 @@ func deleteOutboundCampaign(ctx context.Context, d *schema.ResourceData, meta in
 
 	// Campaigns have to be turned off before they can be deleted
 	if campaignStatus == "on" {
-		currentCampaign, _, err := proxy.getOutboundCampaignById(ctx, d.Id())
+		currentCampaign, resp, err := proxy.getOutboundCampaignById(ctx, d.Id())
 		if err != nil {
-			log.Printf("failed to read campaign %s: %v", d.Id(), err)
+			log.Printf("failed to read campaign %s: %v %v", d.Id(), err, resp)
 		}
 		if *currentCampaign.CampaignStatus == "complete" {
 			log.Printf("Deleting campaign %s in 'complete' state", *currentCampaign.Id)
@@ -203,9 +201,9 @@ func deleteOutboundCampaign(ctx context.Context, d *schema.ResourceData, meta in
 	}
 
 	log.Printf("Deleting Outbound Campaign %s", d.Id())
-	_, err := proxy.deleteOutboundCampaign(ctx, d.Id())
+	resp, err := proxy.deleteOutboundCampaign(ctx, d.Id())
 	if err != nil {
-		return diag.Errorf("Failed to delete campaign %s: %s", d.Id(), err)
+		return diag.Errorf("Failed to delete campaign %s: %s %v", d.Id(), err, resp)
 	}
 	log.Printf("Deleted Outbound Campaign %s", d.Id())
 

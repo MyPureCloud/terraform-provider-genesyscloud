@@ -11,7 +11,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v123/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
 
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
@@ -28,9 +28,9 @@ The resource_genesyscloud_team.go contains all of the methods that perform the c
 func getAllAuthTeams(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
 	proxy := getTeamProxy(clientConfig)
 	resources := make(resourceExporter.ResourceIDMetaMap)
-	teams, err := proxy.getAllTeam(ctx, "")
+	teams, resp, err := proxy.getAllTeam(ctx, "")
 	if err != nil {
-		return nil, diag.Errorf("Failed to get team: %v", err)
+		return nil, diag.Errorf("Failed to get team: %v %v", err, resp)
 	}
 	for _, team := range *teams {
 		resources[*team.Id] = &resourceExporter.ResourceMeta{Name: *team.Name}
@@ -44,9 +44,9 @@ func createTeam(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	proxy := getTeamProxy(sdkConfig)
 	team := getTeamFromResourceData(d)
 	log.Printf("Creating team %s", *team.Name)
-	teamObj, err := proxy.createTeam(ctx, &team)
+	teamObj, resp, err := proxy.createTeam(ctx, &team)
 	if err != nil {
-		return diag.Errorf("Failed to create team: %s", err)
+		return diag.Errorf("Failed to create team: %s %v", err, resp)
 	}
 	d.SetId(*teamObj.Id)
 	log.Printf("Created team %s", *teamObj.Id)
@@ -77,9 +77,9 @@ func readTeam(ctx context.Context, d *schema.ResourceData, meta interface{}) dia
 		d.Set("member_ids", members)
 	}
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
-		team, respCode, getErr := proxy.getTeamById(ctx, d.Id())
+		team, resp, getErr := proxy.getTeamById(ctx, d.Id())
 		if getErr != nil {
-			if util.IsStatus404ByInt(respCode) {
+			if util.IsStatus404(resp) {
 				return retry.RetryableError(fmt.Errorf("failed to read team %s: %s", d.Id(), getErr))
 			}
 			return retry.NonRetryableError(fmt.Errorf("failed to read team %s: %s", d.Id(), getErr))
@@ -99,9 +99,9 @@ func updateTeam(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	proxy := getTeamProxy(sdkConfig)
 	team := getTeamFromResourceData(d)
 	log.Printf("updating team %s", *team.Name)
-	teamObj, err := proxy.updateTeam(ctx, d.Id(), &team)
+	teamObj, resp, err := proxy.updateTeam(ctx, d.Id(), &team)
 	if err != nil {
-		return diag.Errorf("failed to update team %s : %s", d.Id(), err)
+		return diag.Errorf("failed to update team %s : %s %v", d.Id(), err, resp)
 	}
 	members, ok := d.GetOk("member_ids")
 
@@ -141,14 +141,14 @@ func updateTeam(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 func deleteTeam(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getTeamProxy(sdkConfig)
-	_, err := proxy.deleteTeam(ctx, d.Id())
+	resp, err := proxy.deleteTeam(ctx, d.Id())
 	if err != nil {
-		return diag.Errorf("failed to delete team %s: %s", d.Id(), err)
+		return diag.Errorf("failed to delete team %s: %s %v", d.Id(), err, resp)
 	}
 	return util.WithRetries(ctx, 180*time.Second, func() *retry.RetryError {
-		_, respCode, err := proxy.getTeamById(ctx, d.Id())
+		_, resp, err := proxy.getTeamById(ctx, d.Id())
 		if err != nil {
-			if util.IsStatus404ByInt(respCode) {
+			if util.IsStatus404(resp) {
 				log.Printf("deleted team %s", d.Id())
 				return nil
 			}
@@ -161,9 +161,9 @@ func deleteTeam(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 // readMembers is used by the members resource to read a members from genesys cloud
 func readMembers(ctx context.Context, d *schema.ResourceData, proxy *teamProxy) ([]interface{}, error) {
 	log.Printf("attempting to read members of team %s", d.Id())
-	teamMemberListing, err := proxy.getMembersById(ctx, d.Id())
+	teamMemberListing, resp, err := proxy.getMembersById(ctx, d.Id())
 	if err != nil {
-		log.Printf("unable to retrieve members of team %s : %s", d.Id(), err)
+		log.Printf("unable to retrieve members of team %s : %s %v", d.Id(), err, resp)
 		return nil, err
 	}
 	log.Printf("success reading members of team %s", d.Id())
@@ -175,9 +175,9 @@ func readMembers(ctx context.Context, d *schema.ResourceData, proxy *teamProxy) 
 
 // deleteMembers is used by the members resource to delete a members from Genesys cloud
 func deleteMembers(ctx context.Context, teamId string, memberList []interface{}, proxy *teamProxy) diag.Diagnostics {
-	_, err := proxy.deleteMembers(ctx, teamId, convertMemberListtoString(memberList))
+	resp, err := proxy.deleteMembers(ctx, teamId, convertMemberListtoString(memberList))
 	if err != nil {
-		return diag.Errorf("failed to remove members from team %s : %s", teamId, err)
+		return diag.Errorf("failed to remove members from team %s : %s %v", teamId, err, resp)
 	}
 	log.Printf("success removing members from team %s", teamId)
 	return nil
@@ -193,17 +193,17 @@ func createMembers(ctx context.Context, teamId string, members []interface{}, pr
 	for _, member := range members {
 		membersChunk = append(membersChunk, member)
 		if len(membersChunk)%chunkSize == 0 {
-			_, err := proxy.createMembers(ctx, teamId, buildTeamMembers(membersChunk))
+			_, resp, err := proxy.createMembers(ctx, teamId, buildTeamMembers(membersChunk))
 			if err != nil {
-				return diag.Errorf("failed to add members to team %s: %s", teamId, err)
+				return diag.Errorf("failed to add members to team %s: %s %v", teamId, err, resp)
 			}
 			membersChunk = nil
 		}
 	}
 
-	_, err := proxy.createMembers(ctx, teamId, buildTeamMembers(membersChunk))
+	_, resp, err := proxy.createMembers(ctx, teamId, buildTeamMembers(membersChunk))
 	if err != nil {
-		return diag.Errorf("failed to add members to team %s: %s", teamId, err)
+		return diag.Errorf("failed to add members to team %s: %s %v", teamId, err, resp)
 	}
 
 	log.Printf("success adding members to team %s", teamId)

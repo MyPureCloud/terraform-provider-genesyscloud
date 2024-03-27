@@ -18,7 +18,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v123/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
 )
 
 /*
@@ -48,9 +48,9 @@ func getAllModifiedCustomAuthActions(ctx context.Context, clientConfig *platform
 	resources := make(resourceExporter.ResourceIDMetaMap)
 	cap := getCustomAuthActionsProxy(clientConfig)
 
-	actions, err := cap.getAllIntegrationCustomAuthActions(ctx)
+	actions, resp, err := cap.getAllIntegrationCustomAuthActions(ctx)
 	if err != nil {
-		return nil, diag.Errorf("failed to get integration custom auth actions: %v", err)
+		return nil, diag.Errorf("failed to get integration custom auth actions: %v %v", err, resp)
 	}
 
 	for _, action := range *actions {
@@ -59,7 +59,6 @@ func getAllModifiedCustomAuthActions(ctx context.Context, clientConfig *platform
 		}
 		resources[*action.Id] = &resourceExporter.ResourceMeta{Name: *action.Name}
 	}
-
 	return resources, nil
 }
 
@@ -129,7 +128,6 @@ func createIntegrationCustomAuthAction(ctx context.Context, d *schema.ResourceDa
 	}
 
 	log.Printf("Updated custom auth action %s", *name)
-
 	return readIntegrationCustomAuthAction(ctx, d, meta)
 }
 
@@ -226,16 +224,13 @@ func updateIntegrationCustomAuthAction(ctx context.Context, d *schema.ResourceDa
 	}
 
 	log.Printf("Updated custom auth action %s", *name)
-
 	return readIntegrationCustomAuthAction(ctx, d, meta)
 }
 
 // deleteIntegrationCustomAuthAction does not do anything as deleting a custom auth action is not possible
 func deleteIntegrationCustomAuthAction(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	name := d.Get("name").(string)
-
 	log.Printf("Removing terraform resource integration_custom_auth_action %s will not remove the Data Action itself in the org", name)
 	log.Printf("The Custom Auth Data Action cannot be removed unless the Web Services Data Action Integration itself is deleted or if the Credentials type is changed from 'User Defined (OAuth)' to a different type")
-
 	return nil
 }

@@ -18,7 +18,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v123/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
 )
 
 /*
@@ -46,9 +46,9 @@ func getAllCredentials(ctx context.Context, clientConfig *platformclientv2.Confi
 	resources := make(resourceExporter.ResourceIDMetaMap)
 	ip := getIntegrationCredsProxy(clientConfig)
 
-	credentials, err := ip.getAllIntegrationCreds(ctx)
+	credentials, resp, err := ip.getAllIntegrationCreds(ctx)
 	if err != nil {
-		return nil, diag.Errorf("Failed to get all credentials: %v", err)
+		return nil, diag.Errorf("Failed to get all credentials: %v %v", err, resp)
 	}
 
 	for _, cred := range *credentials {
@@ -75,7 +75,6 @@ func getAllCredentials(ctx context.Context, clientConfig *platformclientv2.Confi
 			resources[*cred.Id] = &resourceExporter.ResourceMeta{Name: *cred.Name}
 		}
 	}
-
 	return resources, nil
 }
 
@@ -95,13 +94,12 @@ func createCredential(ctx context.Context, d *schema.ResourceData, meta interfac
 		CredentialFields: buildCredentialFields(d),
 	}
 
-	credential, err := ip.createIntegrationCred(ctx, &createCredential)
+	credential, resp, err := ip.createIntegrationCred(ctx, &createCredential)
 	if err != nil {
-		return diag.Errorf("Failed to create credential %s : %s", name, err)
+		return diag.Errorf("Failed to create credential %s : %s %v", name, err, resp)
 	}
 
 	d.SetId(*credential.Id)
-
 	log.Printf("Created credential %s, %s", name, *credential.Id)
 	return readCredential(ctx, d, meta)
 }
@@ -143,7 +141,7 @@ func updateCredential(ctx context.Context, d *schema.ResourceData, meta interfac
 	if d.HasChanges("name", "credential_type_name", "fields") {
 		log.Printf("Updating credential %s", name)
 
-		_, err := ip.updateIntegrationCred(ctx, d.Id(), &platformclientv2.Credential{
+		_, resp, err := ip.updateIntegrationCred(ctx, d.Id(), &platformclientv2.Credential{
 			Name: &name,
 			VarType: &platformclientv2.Credentialtype{
 				Name: &cred_type,
@@ -151,10 +149,9 @@ func updateCredential(ctx context.Context, d *schema.ResourceData, meta interfac
 			CredentialFields: buildCredentialFields(d),
 		})
 		if err != nil {
-			return diag.Errorf("Failed to update credential %s: %s", name, err)
+			return diag.Errorf("Failed to update credential %s: %s %v", name, err, resp)
 		}
 	}
-
 	log.Printf("Updated credential %s %s", name, d.Id())
 	return readCredential(ctx, d, meta)
 }
@@ -164,9 +161,9 @@ func deleteCredential(ctx context.Context, d *schema.ResourceData, meta interfac
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	ip := getIntegrationCredsProxy(sdkConfig)
 
-	_, err := ip.deleteIntegrationCred(ctx, d.Id())
+	resp, err := ip.deleteIntegrationCred(ctx, d.Id())
 	if err != nil {
-		return diag.Errorf("Failed to delete the credential %s: %s", d.Id(), err)
+		return diag.Errorf("Failed to delete the credential %s: %s %v", d.Id(), err, resp)
 	}
 
 	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {

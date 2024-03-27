@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v123/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
 )
 
 /*
@@ -98,7 +98,6 @@ func flattenCampaignTimeslots(campaigntimeslots []platformclientv2.Campaigntimes
 
 		campaigntimeslotSet.Add(campaigntimeslotMap)
 	}
-
 	return campaigntimeslotSet
 }
 
@@ -120,7 +119,6 @@ func flattenCallableTimes(callabletimes []platformclientv2.Callabletime) *schema
 
 		callabletimeSet.Add(callabletimeMap)
 	}
-
 	return callabletimeSet
 }
 

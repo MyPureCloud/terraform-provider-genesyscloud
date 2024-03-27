@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v123/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/google/uuid"
@@ -57,9 +57,9 @@ func TestUnitDataSourceArchitectIvr(t *testing.T) {
 	targetId := uuid.NewString()
 	targetName := "MyTargetId"
 	archProxy := &architectIvrProxy{}
-	archProxy.getArchitectIvrIdByNameAttr = func(ctx context.Context, a *architectIvrProxy, name string) (string, bool, error) {
+	archProxy.getArchitectIvrIdByNameAttr = func(ctx context.Context, a *architectIvrProxy, name string) (string, bool, *platformclientv2.APIResponse, error) {
 		assert.Equal(t, targetName, name)
-		return targetId, false, nil
+		return targetId, false, nil, nil
 	}
 	internalProxy = archProxy
 	ctx := context.Background()

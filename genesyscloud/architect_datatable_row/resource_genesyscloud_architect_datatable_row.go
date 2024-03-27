@@ -17,7 +17,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v123/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
 )
 
 type Datatableproperty struct {
@@ -49,16 +49,16 @@ func getAllArchitectDatatableRows(ctx context.Context, clientConfig *platformcli
 	resources := make(resourceExporter.ResourceIDMetaMap)
 	archProxy := getArchitectDatatableRowProxy(clientConfig)
 
-	tables, err := archProxy.getAllArchitectDatatable(ctx)
+	tables, resp, err := archProxy.getAllArchitectDatatable(ctx)
 	if err != nil {
-		return nil, diag.FromErr(err)
+		return nil, diag.Errorf("Failed to get architect Datatables %v %s", resp, err)
 	}
 
 	for _, tableMeta := range *tables {
-		rows, err := archProxy.getAllArchitectDatatableRows(ctx, *tableMeta.Id)
+		rows, resp, err := archProxy.getAllArchitectDatatableRows(ctx, *tableMeta.Id)
 
 		if err != nil {
-			return nil, diag.FromErr(err)
+			return nil, diag.Errorf("Failed to get architect Datatable Rows %v %s", resp, err)
 		}
 
 		for _, row := range *rows {
@@ -88,9 +88,9 @@ func createArchitectDatatableRow(ctx context.Context, d *schema.ResourceData, me
 	rowId := createDatatableRowId(tableId, keyStr)
 	log.Printf("Creating Datatable Row %s", rowId)
 
-	_, _, err := archProxy.createArchitectDatatableRow(ctx, tableId, &rowMap)
+	_, resp, err := archProxy.createArchitectDatatableRow(ctx, tableId, &rowMap)
 	if err != nil {
-		return diag.Errorf("Failed to create Datatable Row %s: %s", rowId, err)
+		return diag.Errorf("Failed to create Datatable Row %s: %s %v", rowId, err, resp)
 	}
 
 	d.SetId(rowId)
@@ -152,9 +152,9 @@ func updateArchitectDatatableRow(ctx context.Context, d *schema.ResourceData, me
 
 	log.Printf("Updating Datatable Row %s", d.Id())
 
-	_, _, err := archProxy.updateArchitectDatatableRow(ctx, tableId, keyStr, &rowMap)
+	_, resp, err := archProxy.updateArchitectDatatableRow(ctx, tableId, keyStr, &rowMap)
 	if err != nil {
-		return diag.Errorf("Failed to update Datatable Row %s: %s", d.Id(), err)
+		return diag.Errorf("Failed to update Datatable Row %s: %s %v", d.Id(), err, resp)
 	}
 
 	log.Printf("Updated Datatable Row %s", d.Id())

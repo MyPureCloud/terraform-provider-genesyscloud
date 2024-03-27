@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v123/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
 )
 
 /*
@@ -32,12 +32,12 @@ Each proxy implementation:
 var internalProxy *integrationsProxy
 
 // Type definitions for each func on our proxy so we can easily mock them out later
-type getAllIntegrationsFunc func(ctx context.Context, p *integrationsProxy) (*[]platformclientv2.Integration, error)
-type createIntegrationFunc func(ctx context.Context, p *integrationsProxy, integration *platformclientv2.Createintegrationrequest) (*platformclientv2.Integration, error)
+type getAllIntegrationsFunc func(ctx context.Context, p *integrationsProxy) (*[]platformclientv2.Integration, *platformclientv2.APIResponse, error)
+type createIntegrationFunc func(ctx context.Context, p *integrationsProxy, integration *platformclientv2.Createintegrationrequest) (*platformclientv2.Integration, *platformclientv2.APIResponse, error)
 type getIntegrationByIdFunc func(ctx context.Context, p *integrationsProxy, integrationId string) (integration *platformclientv2.Integration, response *platformclientv2.APIResponse, err error)
-type getIntegrationByNameFunc func(ctx context.Context, p *integrationsProxy, integrationName string) (integration *platformclientv2.Integration, retryable bool, err error)
-type updateIntegrationFunc func(ctx context.Context, p *integrationsProxy, integrationId string, integration *platformclientv2.Integration) (*platformclientv2.Integration, error)
-type deleteIntegrationFunc func(ctx context.Context, p *integrationsProxy, integrationId string) (responseCode int, err error)
+type getIntegrationByNameFunc func(ctx context.Context, p *integrationsProxy, integrationName string) (integration *platformclientv2.Integration, retryable bool, response *platformclientv2.APIResponse, err error)
+type updateIntegrationFunc func(ctx context.Context, p *integrationsProxy, integrationId string, integration *platformclientv2.Integration) (*platformclientv2.Integration, *platformclientv2.APIResponse, error)
+type deleteIntegrationFunc func(ctx context.Context, p *integrationsProxy, integrationId string) (response *platformclientv2.APIResponse, err error)
 type getIntegrationConfigFunc func(ctx context.Context, p *integrationsProxy, integrationId string) (config *platformclientv2.Integrationconfiguration, response *platformclientv2.APIResponse, err error)
 type updateIntegrationConfigFunc func(ctx context.Context, p *integrationsProxy, integrationId string, integrationConfig *platformclientv2.Integrationconfiguration) (integration *platformclientv2.Integrationconfiguration, response *platformclientv2.APIResponse, err error)
 
@@ -78,17 +78,16 @@ func getIntegrationsProxy(clientConfig *platformclientv2.Configuration) *integra
 	if internalProxy == nil {
 		internalProxy = newIntegrationsProxy(clientConfig)
 	}
-
 	return internalProxy
 }
 
 // getAllIntegrations retrieves all Genesys Cloud Integrations
-func (p *integrationsProxy) getAllIntegrations(ctx context.Context) (*[]platformclientv2.Integration, error) {
+func (p *integrationsProxy) getAllIntegrations(ctx context.Context) (*[]platformclientv2.Integration, *platformclientv2.APIResponse, error) {
 	return p.getAllIntegrationsAttr(ctx, p)
 }
 
 // createIntegration creates a Genesys Cloud Integration
-func (p *integrationsProxy) createIntegration(ctx context.Context, integrationReq *platformclientv2.Createintegrationrequest) (*platformclientv2.Integration, error) {
+func (p *integrationsProxy) createIntegration(ctx context.Context, integrationReq *platformclientv2.Createintegrationrequest) (*platformclientv2.Integration, *platformclientv2.APIResponse, error) {
 	return p.createIntegrationAttr(ctx, p, integrationReq)
 }
 
@@ -98,17 +97,17 @@ func (p *integrationsProxy) getIntegrationById(ctx context.Context, integrationI
 }
 
 // getIntegrationByName gets a Genesys Cloud Integration by name
-func (p *integrationsProxy) getIntegrationByName(ctx context.Context, integrationName string) (*platformclientv2.Integration, bool, error) {
+func (p *integrationsProxy) getIntegrationByName(ctx context.Context, integrationName string) (*platformclientv2.Integration, bool, *platformclientv2.APIResponse, error) {
 	return p.getIntegrationByNameAttr(ctx, p, integrationName)
 }
 
 // updateIntegration updates a Genesys Cloud Integration
-func (p *integrationsProxy) updateIntegration(ctx context.Context, integrationId string, integration *platformclientv2.Integration) (*platformclientv2.Integration, error) {
+func (p *integrationsProxy) updateIntegration(ctx context.Context, integrationId string, integration *platformclientv2.Integration) (*platformclientv2.Integration, *platformclientv2.APIResponse, error) {
 	return p.updateIntegrationAttr(ctx, p, integrationId, integration)
 }
 
 // deleteIntegration deletes a Genesys Cloud Integration
-func (p *integrationsProxy) deleteIntegration(ctx context.Context, integrationId string) (responseCode int, err error) {
+func (p *integrationsProxy) deleteIntegration(ctx context.Context, integrationId string) (response *platformclientv2.APIResponse, err error) {
 	return p.deleteIntegrationAttr(ctx, p, integrationId)
 }
 
@@ -123,34 +122,31 @@ func (p *integrationsProxy) updateIntegrationConfig(ctx context.Context, integra
 }
 
 // getAllIntegrationsFn is the implementation for retrieving all integrations in Genesys Cloud
-func getAllIntegrationsFn(ctx context.Context, p *integrationsProxy) (*[]platformclientv2.Integration, error) {
+func getAllIntegrationsFn(ctx context.Context, p *integrationsProxy) (*[]platformclientv2.Integration, *platformclientv2.APIResponse, error) {
 	var allIntegrations []platformclientv2.Integration
-
+	var resp *platformclientv2.APIResponse
 	for pageNum := 1; ; pageNum++ {
 		const pageSize = 100
-		integrations, _, err := p.integrationsApi.GetIntegrations(pageSize, pageNum, "", nil, "", "")
+		integrations, response, err := p.integrationsApi.GetIntegrations(pageSize, pageNum, "", nil, "", "")
 		if err != nil {
-			return nil, err
+			return nil, resp, err
 		}
-
+		resp = response
 		if integrations.Entities == nil || len(*integrations.Entities) == 0 {
 			break
 		}
-
 		allIntegrations = append(allIntegrations, *integrations.Entities...)
 	}
-
-	return &allIntegrations, nil
+	return &allIntegrations, resp, nil
 }
 
 // createIntegrationFn is the implementation for creating an integration in Genesys Cloud
-func createIntegrationFn(ctx context.Context, p *integrationsProxy, integrationReq *platformclientv2.Createintegrationrequest) (*platformclientv2.Integration, error) {
-	integration, _, err := p.integrationsApi.PostIntegrations(*integrationReq)
+func createIntegrationFn(ctx context.Context, p *integrationsProxy, integrationReq *platformclientv2.Createintegrationrequest) (*platformclientv2.Integration, *platformclientv2.APIResponse, error) {
+	integration, resp, err := p.integrationsApi.PostIntegrations(*integrationReq)
 	if err != nil {
-		return nil, err
+		return nil, resp, err
 	}
-
-	return integration, nil
+	return integration, resp, nil
 }
 
 // getIntegrationByIdFn is the implementation for getting a Genesys Cloud Integration by id
@@ -161,23 +157,22 @@ func getIntegrationByIdFn(ctx context.Context, p *integrationsProxy, integration
 	if err != nil {
 		return nil, resp, err
 	}
-
 	return integration, resp, nil
 }
 
 // getIntegrationByNameFn is the implementation for getting a Genesys Cloud Integration by name
-func getIntegrationByNameFn(ctx context.Context, p *integrationsProxy, integrationName string) (*platformclientv2.Integration, bool, error) {
+func getIntegrationByNameFn(ctx context.Context, p *integrationsProxy, integrationName string) (*platformclientv2.Integration, bool, *platformclientv2.APIResponse, error) {
 	var foundIntegration *platformclientv2.Integration
-
+	var resp *platformclientv2.APIResponse
 	const pageSize = 100
 	for pageNum := 1; ; pageNum++ {
-		integrations, _, err := p.integrationsApi.GetIntegrations(pageSize, pageNum, "", nil, "", "")
+		integrations, response, err := p.integrationsApi.GetIntegrations(pageSize, pageNum, "", nil, "", "")
 		if err != nil {
-			return nil, false, err
+			return nil, false, resp, err
 		}
-
+		resp = response
 		if integrations.Entities == nil || len(*integrations.Entities) == 0 {
-			return nil, true, fmt.Errorf("no integrations found with name: %s", integrationName)
+			return nil, true, resp, fmt.Errorf("no integrations found with name: %s", integrationName)
 		}
 
 		for _, integration := range *integrations.Entities {
@@ -190,29 +185,27 @@ func getIntegrationByNameFn(ctx context.Context, p *integrationsProxy, integrati
 			break
 		}
 	}
-
-	return foundIntegration, false, nil
+	return foundIntegration, false, resp, nil
 }
 
 // updateIntegrationFn is the implementation for updating a Genesys Cloud Integration
-func updateIntegrationFn(ctx context.Context, p *integrationsProxy, integrationId string, integration *platformclientv2.Integration) (*platformclientv2.Integration, error) {
+func updateIntegrationFn(ctx context.Context, p *integrationsProxy, integrationId string, integration *platformclientv2.Integration) (*platformclientv2.Integration, *platformclientv2.APIResponse, error) {
 	const pageSize = 25
 	const pageNum = 1
-	integration, _, err := p.integrationsApi.PatchIntegration(integrationId, pageSize, pageNum, "", nil, "", "", *integration)
+	integration, resp, err := p.integrationsApi.PatchIntegration(integrationId, pageSize, pageNum, "", nil, "", "", *integration)
 	if err != nil {
-		return nil, err
+		return nil, resp, err
 	}
-
-	return integration, nil
+	return integration, resp, nil
 }
 
 // deleteIntegrationFn is the implementation for deleting a Genesys Cloud Integration
-func deleteIntegrationFn(ctx context.Context, p *integrationsProxy, integrationId string) (responseCode int, err error) {
+func deleteIntegrationFn(ctx context.Context, p *integrationsProxy, integrationId string) (response *platformclientv2.APIResponse, err error) {
 	_, resp, err := p.integrationsApi.DeleteIntegration(integrationId)
 	if err != nil {
-		return resp.StatusCode, err
+		return resp, err
 	}
-	return resp.StatusCode, nil
+	return resp, nil
 }
 
 // getIntegrationConfigFn is the implementation for getting the current config of a Genesys Cloud Integration
@@ -221,7 +214,6 @@ func getIntegrationConfigFn(ctx context.Context, p *integrationsProxy, integrati
 	if err != nil {
 		return nil, resp, err
 	}
-
 	return config, resp, nil
 }
 
@@ -231,6 +223,5 @@ func updateIntegrationConfigFn(ctx context.Context, p *integrationsProxy, integr
 	if err != nil {
 		return nil, resp, err
 	}
-
 	return config, resp, nil
 }

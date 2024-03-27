@@ -7,7 +7,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v123/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
 )
 
 /*
@@ -360,9 +360,9 @@ func createWorktypeStatuses(ctx context.Context, proxy *taskManagementWorktypePr
 
 	sdkWorkitemStatusCreates := buildWorkitemStatusCreates(statuses)
 	for _, statusCreate := range *sdkWorkitemStatusCreates {
-		status, err := proxy.createTaskManagementWorktypeStatus(ctx, worktypeId, &statusCreate)
+		status, resp, err := proxy.createTaskManagementWorktypeStatus(ctx, worktypeId, &statusCreate)
 		if err != nil {
-			return nil, fmt.Errorf("failed to create worktype status %s: %v", *statusCreate.Name, err)
+			return nil, fmt.Errorf("failed to create worktype status %s: %v %v", *statusCreate.Name, err, resp)
 		}
 
 		ret = append(ret, *status)
@@ -379,9 +379,9 @@ func updateWorktypeStatuses(ctx context.Context, proxy *taskManagementWorktypePr
 	ret := []platformclientv2.Workitemstatus{}
 
 	// Get all the worktype statuses so we'll have the new statuses for referencing
-	worktype, _, err := proxy.getTaskManagementWorktypeById(ctx, worktypeId)
+	worktype, resp, err := proxy.getTaskManagementWorktypeById(ctx, worktypeId)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get task management worktype %s: %v", worktypeId, err)
+		return nil, fmt.Errorf("failed to get task management worktype %s: %v %v", worktypeId, err, resp)
 	}
 
 	// Update the worktype statuses as they need to build the "destination status" references
@@ -401,9 +401,9 @@ func updateWorktypeStatuses(ctx context.Context, proxy *taskManagementWorktypePr
 			continue
 		}
 
-		status, err := proxy.updateTaskManagementWorktypeStatus(ctx, *worktype.Id, *existingStatus.Id, &statusUpdate)
+		status, resp, err := proxy.updateTaskManagementWorktypeStatus(ctx, *worktype.Id, *existingStatus.Id, &statusUpdate)
 		if err != nil {
-			return nil, fmt.Errorf("failed to update worktype status %s: %v", *statusUpdate.Name, err)
+			return nil, fmt.Errorf("failed to update worktype status %s: %v %v", *statusUpdate.Name, err, resp)
 		}
 
 		ret = append(ret, *status)
@@ -415,15 +415,15 @@ func updateWorktypeStatuses(ctx context.Context, proxy *taskManagementWorktypePr
 // updateDefaultStatusName updates a worktype's default status name. This should be called after
 // the statuses and their references have been finalized.
 func updateDefaultStatusName(ctx context.Context, proxy *taskManagementWorktypeProxy, d *schema.ResourceData, worktypeId string) error {
-	worktype, _, err := proxy.getTaskManagementWorktypeById(ctx, worktypeId)
+	worktype, resp, err := proxy.getTaskManagementWorktypeById(ctx, worktypeId)
 	if err != nil {
 		return fmt.Errorf("failed to get task management worktype: %s", err)
 	}
 
 	taskManagementWorktype := getWorktypeupdateFromResourceData(d, worktype.Statuses)
-	_, err = proxy.updateTaskManagementWorktype(ctx, *worktype.Id, &taskManagementWorktype)
+	_, resp, err = proxy.updateTaskManagementWorktype(ctx, *worktype.Id, &taskManagementWorktype)
 	if err != nil {
-		return fmt.Errorf("failed to update worktype's default status name %s", err)
+		return fmt.Errorf("failed to update worktype's default status name %s %v", err, resp)
 	}
 
 	return nil

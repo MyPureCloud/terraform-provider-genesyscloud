@@ -10,7 +10,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v123/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
 )
 
 /*
@@ -90,9 +90,9 @@ func updateIntegrationConfigFromResourceData(ctx context.Context, d *schema.Reso
 	if d.HasChange("config") {
 		if configInput := d.Get("config").([]interface{}); configInput != nil {
 
-			integrationConfig, _, err := p.getIntegrationConfig(ctx, d.Id())
+			integrationConfig, resp, err := p.getIntegrationConfig(ctx, d.Id())
 			if err != nil {
-				return diag.Errorf("Failed to get the integration config for integration %s before updating its config: %s", d.Id(), err), ""
+				return diag.Errorf("Failed to get the integration config for integration %s before updating its config: %s %v", d.Id(), err, resp), ""
 			}
 
 			name := *integrationConfig.Name

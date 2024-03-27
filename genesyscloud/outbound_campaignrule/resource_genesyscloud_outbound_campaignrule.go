@@ -17,22 +17,21 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v123/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
 )
 
 func getAllAuthCampaignRules(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
 	resources := make(resourceExporter.ResourceIDMetaMap)
 	proxy := getOutboundCampaignruleProxy(clientConfig)
 
-	campaignRules, err := proxy.getAllOutboundCampaignrule(ctx)
+	campaignRules, resp, err := proxy.getAllOutboundCampaignrule(ctx)
 	if err != nil {
-		return nil, diag.Errorf("Failed to get outbound campaign rules: %v", err)
+		return nil, diag.Errorf("Failed to get outbound campaign rules: %v %v", err, resp)
 	}
 
 	for _, campaignRule := range *campaignRules {
 		resources[*campaignRule.Id] = &resourceExporter.ResourceMeta{Name: *campaignRule.Name}
 	}
-
 	return resources, nil
 }
 
@@ -43,9 +42,9 @@ func createOutboundCampaignRule(ctx context.Context, d *schema.ResourceData, met
 	rule := getCampaignruleFromResourceData(d)
 
 	log.Printf("Creating Outbound Campaign Rule %s", *rule.Name)
-	outboundCampaignRule, err := proxy.createOutboundCampaignrule(ctx, &rule)
+	outboundCampaignRule, resp, err := proxy.createOutboundCampaignrule(ctx, &rule)
 	if err != nil {
-		return diag.Errorf("Failed to create Outbound Campaign Rule %s: %s", *rule.Name, err)
+		return diag.Errorf("Failed to create Outbound Campaign Rule %s: %s %v", *rule.Name, err, resp)
 	}
 
 	d.SetId(*outboundCampaignRule.Id)
@@ -60,7 +59,6 @@ func createOutboundCampaignRule(ctx context.Context, d *schema.ResourceData, met
 			return diag
 		}
 	}
-
 	return readOutboundCampaignRule(ctx, d, meta)
 }
 
@@ -75,9 +73,9 @@ func updateOutboundCampaignRule(ctx context.Context, d *schema.ResourceData, met
 	}
 
 	log.Printf("Updating Outbound Campaign Rule %s", *rule.Name)
-	_, err := proxy.updateOutboundCampaignrule(ctx, d.Id(), &rule)
+	_, resp, err := proxy.updateOutboundCampaignrule(ctx, d.Id(), &rule)
 	if err != nil {
-		return diag.Errorf("Failed to update campaign rule %s: %s", d.Id(), err)
+		return diag.Errorf("Failed to update campaign rule %s: %s %v", d.Id(), err, resp)
 	}
 
 	log.Printf("Updated Outbound Campaign Rule %s", *rule.Name)
@@ -93,7 +91,7 @@ func readOutboundCampaignRule(ctx context.Context, d *schema.ResourceData, meta 
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		campaignRule, resp, getErr := proxy.getOutboundCampaignruleById(ctx, d.Id())
 		if getErr != nil {
-			if util.IsStatus404ByInt(resp) {
+			if util.IsStatus404(resp) {
 				return retry.RetryableError(fmt.Errorf("failed to read Outbound Campaign Rule %s: %s", d.Id(), getErr))
 			}
 			return retry.NonRetryableError(fmt.Errorf("failed to read Outbound Campaign Rule %s: %s", d.Id(), getErr))
@@ -128,14 +126,14 @@ func deleteOutboundCampaignRule(ctx context.Context, d *schema.ResourceData, met
 		// Have to disable rule before we can delete
 		log.Printf("Disabling Outbound Campaign Rule")
 		d.Set("enabled", false)
-		rule, _, err := proxy.getOutboundCampaignruleById(ctx, d.Id())
+		rule, resp, err := proxy.getOutboundCampaignruleById(ctx, d.Id())
 		if err != nil {
-			return diag.Errorf("Failed to find Outbound campaign rule %s for delete: %s", d.Id(), err)
+			return diag.Errorf("Failed to find Outbound campaign rule %s for delete: %s %v", d.Id(), err, resp)
 		}
 		rule.Enabled = platformclientv2.Bool(false)
-		_, err = proxy.updateOutboundCampaignrule(ctx, d.Id(), rule)
+		_, resp, err = proxy.updateOutboundCampaignrule(ctx, d.Id(), rule)
 		if err != nil {
-			return diag.Errorf("Failed to disable outbound campaign rule %s: %s", d.Id(), err)
+			return diag.Errorf("Failed to disable outbound campaign rule %s: %s %v", d.Id(), err, resp)
 		}
 	}
 
@@ -154,14 +152,13 @@ func deleteOutboundCampaignRule(ctx context.Context, d *schema.ResourceData, met
 	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		_, resp, err := proxy.getOutboundCampaignruleById(ctx, d.Id())
 		if err != nil {
-			if util.IsStatus404ByInt(resp) {
+			if util.IsStatus404(resp) {
 				// Outbound Campaign Rule deleted
 				log.Printf("Deleted Outbound Campaign Rule %s", d.Id())
 				return nil
 			}
 			return retry.NonRetryableError(fmt.Errorf("error deleting Outbound Campaign Rule %s: %s", d.Id(), err))
 		}
-
 		return retry.RetryableError(fmt.Errorf("Outbound Campaign Rule %s still exists", d.Id()))
 	})
 }

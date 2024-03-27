@@ -25,10 +25,10 @@ func dataSourceArchitectSchedulegroupsRead(ctx context.Context, d *schema.Resour
 	name := d.Get("name").(string)
 
 	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
-		scheduleGroupId, retryable, err := proxy.getArchitectSchedulegroupsIdByName(ctx, name)
+		scheduleGroupId, retryable, proxyResponse, err := proxy.getArchitectSchedulegroupsIdByName(ctx, name)
 
 		if err != nil && !retryable {
-			return retry.NonRetryableError(fmt.Errorf("Error searching architect schedulegroups %s: %s", name, err))
+			return retry.NonRetryableError(fmt.Errorf("Error searching architect schedulegroups %s: %s %v", name, err, proxyResponse))
 		}
 
 		if retryable {

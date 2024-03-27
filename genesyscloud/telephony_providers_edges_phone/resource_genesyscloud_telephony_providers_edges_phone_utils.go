@@ -18,7 +18,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v123/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
 )
 
 type PhoneConfig struct {
@@ -89,7 +89,7 @@ func getPhoneFromResourceData(ctx context.Context, pp *phoneProxy, d *schema.Res
 }
 
 func getLineBaseSettingsID(ctx context.Context, pp *phoneProxy, phoneBaseSettingsId string) (string, error) {
-	phoneBase, err := pp.getPhoneBaseSetting(ctx, phoneBaseSettingsId)
+	phoneBase, _, err := pp.getPhoneBaseSetting(ctx, phoneBaseSettingsId)
 	if err != nil {
 		return "", err
 	}
@@ -104,9 +104,9 @@ func assignUserToWebRtcPhone(ctx context.Context, pp *phoneProxy, userId string)
 	stationIsAssociated := false
 
 	retryErr := util.WithRetries(ctx, 60*time.Second, func() *retry.RetryError {
-		station, retryable, err := pp.getStationOfUser(ctx, userId)
+		station, retryable, resp, err := pp.getStationOfUser(ctx, userId)
 		if err != nil && !retryable {
-			return retry.NonRetryableError(fmt.Errorf("error requesting stations: %s", err))
+			return retry.NonRetryableError(fmt.Errorf("error requesting stations: %s %v", err, resp))
 		}
 		if retryable {
 			return retry.RetryableError(fmt.Errorf("no stations found with userID %v", userId))
@@ -157,7 +157,7 @@ func buildSdkPhoneBaseSettings(d *schema.ResourceData, idAttr string) *platformc
 }
 
 func getPhoneMetaBaseId(ctx context.Context, pp *phoneProxy, phoneBaseSettingsId string) (string, error) {
-	phoneBase, err := pp.getPhoneBaseSetting(ctx, phoneBaseSettingsId)
+	phoneBase, _, err := pp.getPhoneBaseSetting(ctx, phoneBaseSettingsId)
 	if err != nil {
 		return "", err
 	}
@@ -381,36 +381,4 @@ func generatePhoneProperties(hardware_id string) string {
 						util.GenerateJsonProperty("instance", strconv.Quote(hardware_id)),
 					)))),
 	)
-}
-
-func validatePhoneHardwareIdRequirements(phone *platformclientv2.Phone) (bool, error) {
-	var (
-		hardwareIdType  string
-		hardwareIdValue string
-	)
-	hardwareIdRequiredTypes := map[string]bool{
-		"mac":  true,
-		"fqdn": true,
-	}
-
-	if phone.Capabilities != nil && phone.Capabilities.HardwareIdType != nil {
-		hardwareIdType = *phone.Capabilities.HardwareIdType
-	}
-
-	if phone.Properties != nil && (*phone.Properties)["phone_hardwareId"] != nil {
-		hardwareIdval, exists := (*phone.Properties)["phone_hardwareId"].(map[string]interface{})["value"].(map[string]interface{})["instance"]
-		if exists {
-			hardwareIdValue = hardwareIdval.(string)
-		}
-	}
-
-	_, exists := hardwareIdRequiredTypes[hardwareIdType]
-	if exists && len(hardwareIdValue) <= 0 {
-		return false, fmt.Errorf("hardwareId is required based on the phone capabilities hardwareIdType: %s", hardwareIdType)
-	}
-	if (!exists) && len(hardwareIdValue) > 0 {
-		return false, fmt.Errorf("hardwareId is not required based on the phone capabilities hardwareIdType:%s", hardwareIdType)
-	}
-	return true, nil
-
 }

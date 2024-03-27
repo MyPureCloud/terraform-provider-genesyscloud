@@ -17,7 +17,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v123/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
 )
 
 func createPhoneBaseSettings(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -47,9 +47,9 @@ func createPhoneBaseSettings(ctx context.Context, d *schema.ResourceData, meta i
 	phoneBaseProxy := getPhoneBaseProxy(sdkConfig)
 
 	log.Printf("Creating phone base settings %s", name)
-	phoneBaseSettings, _, err := phoneBaseProxy.postPhoneBaseSetting(ctx, phoneBase)
+	phoneBaseSettings, resp, err := phoneBaseProxy.postPhoneBaseSetting(ctx, phoneBase)
 	if err != nil {
-		return diag.Errorf("Failed to create phone base settings %s: %s", name, err)
+		return diag.Errorf("Failed to create phone base settings %s: %s %v", name, err, resp)
 	}
 
 	d.SetId(*phoneBaseSettings.Id)
@@ -157,9 +157,9 @@ func deletePhoneBaseSettings(ctx context.Context, d *schema.ResourceData, meta i
 	phoneBaseProxy := getPhoneBaseProxy(sdkConfig)
 
 	log.Printf("Deleting phone base settings")
-	_, err := phoneBaseProxy.deletePhoneBaseSetting(ctx, d.Id())
+	resp, err := phoneBaseProxy.deletePhoneBaseSetting(ctx, d.Id())
 	if err != nil {
-		return diag.Errorf("failed to delete phone base settings: %s", err)
+		return diag.Errorf("failed to delete phone base settings: %s %v", err, resp)
 	}
 
 	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
@@ -186,9 +186,9 @@ func deletePhoneBaseSettings(ctx context.Context, d *schema.ResourceData, meta i
 func getAllPhoneBaseSettings(ctx context.Context, sdkConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
 	resources := make(resourceExporter.ResourceIDMetaMap)
 	phoneBaseProxy := getPhoneBaseProxy(sdkConfig)
-	phoneBaseSettings, err := phoneBaseProxy.getAllPhoneBaseSettings(ctx)
+	phoneBaseSettings, resp, err := phoneBaseProxy.getAllPhoneBaseSettings(ctx)
 	if err != nil {
-		return nil, diag.Errorf("failed to get all phone base settings: %s", err)
+		return nil, diag.Errorf("failed to get all phone base settings: %s %v", err, resp)
 	}
 
 	if phoneBaseSettings != nil {
