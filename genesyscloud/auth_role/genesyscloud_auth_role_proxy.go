@@ -123,7 +123,32 @@ func createAuthRoleFn(ctx context.Context, p *authRoleProxy, authRole *platformc
 
 // getAllAuthRoleFn is the implementation for retrieving all auth role in Genesys Cloud
 func getAllAuthRoleFn(ctx context.Context, p *authRoleProxy) (*[]platformclientv2.Domainorganizationrole, *platformclientv2.APIResponse, error) {
-	return nil, nil, nil
+	const pageSize = 100
+	var allAuthRoles []platformclientv2.Domainorganizationrole
+
+	roles, resp, getErr := p.authorizationApi.GetAuthorizationRoles(pageSize, 1, "", nil, "", "", "", nil, nil, false, nil)
+	if getErr != nil {
+		return nil, resp, fmt.Errorf("failed to get page of auth roles: %s", getErr)
+	}
+
+	if roles.Entities != nil && len(*roles.Entities) > 0 {
+		allAuthRoles = append(allAuthRoles, *roles.Entities...)
+	}
+
+	for pageNum := 2; pageNum <= *roles.PageCount; pageNum++ {
+		roles, resp, getErr := p.authorizationApi.GetAuthorizationRoles(pageSize, pageNum, "", nil, "", "", "", nil, nil, false, nil)
+		if getErr != nil {
+			return nil, resp, fmt.Errorf("failed to get page of auth roles: %s", getErr)
+		}
+
+		if roles.Entities == nil || len(*roles.Entities) == 0 {
+			break
+		}
+
+		allAuthRoles = append(allAuthRoles, *roles.Entities...)
+	}
+
+	return &allAuthRoles, resp, nil
 }
 
 // getAuthRoleIdByNameFn is an implementation of the function to get a Genesys Cloud auth role by name
