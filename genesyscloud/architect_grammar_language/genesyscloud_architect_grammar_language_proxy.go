@@ -185,14 +185,12 @@ func uploadGrammarLanguageFile(p *architectGrammarLanguageProxy, language *platf
 
 	reader, _, err := files.DownloadOrOpenFile(filePath)
 	if err != nil {
-		//setFileContentHashToNil(d)
-		return fmt.Errorf("")
+		return fmt.Errorf("error downloading file '%s': %v", filePath, err)
 	}
 
 	s3Uploader := files.NewS3Uploader(reader, nil, nil, *uploadResponse.Headers, http.MethodPut, *uploadResponse.Url)
 
 	if _, uploadErr := s3Uploader.UploadWithRetries(context.Background(), filePath, 20*time.Second); uploadErr != nil {
-		//setFileContentHashToNil(d)
 		return fmt.Errorf("failed to upload language file for grammar '%s': %v", *language.GrammarId, uploadErr)
 	}
 
