@@ -99,7 +99,7 @@ func getAllRoutingQueuesFn(ctx context.Context, p *routingQueueConditionalGroupR
 func getRoutingQueueConditionRoutingFn(ctx context.Context, p *routingQueueConditionalGroupRoutingProxy, queueId string) (*[]platformclientv2.Conditionalgrouproutingrule, *platformclientv2.APIResponse, error) {
 	queue, resp, err := p.routingApi.GetRoutingQueue(queueId)
 	if err != nil {
-		return nil, resp, fmt.Errorf("routing queue %s not found: %s", queueId, err)
+		return nil, resp, fmt.Errorf("error when reading queue %s: %s", queueId, err)
 	}
 
 	if queue.ConditionalGroupRouting != nil && queue.ConditionalGroupRouting.Rules != nil {
@@ -114,7 +114,7 @@ func updateRoutingQueueConditionRoutingFn(ctx context.Context, p *routingQueueCo
 	// Get the routing queue the rules belong to
 	queue, resp, err := p.routingApi.GetRoutingQueue(queueId)
 	if err != nil {
-		return nil, resp, fmt.Errorf("routing queue %s not found: %s", queueId, err)
+		return nil, resp, fmt.Errorf("error when reading queue %s: %s", queueId, err)
 	}
 
 	groupRoutingObj := platformclientv2.Conditionalgrouprouting{Rules: rules}
