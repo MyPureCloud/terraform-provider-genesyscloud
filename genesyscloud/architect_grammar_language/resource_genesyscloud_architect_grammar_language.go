@@ -54,8 +54,9 @@ func createArchitectGrammarLanguage(ctx context.Context, d *schema.ResourceData,
 	}
 
 	// Language id is always in format <grammar-id>:<language-code>
-	d.SetId(*language.GrammarId + ":" + *language.Language)
-	log.Printf("Created Architect Grammar Language %s", *language.GrammarId+":"+*language.Language)
+	languageId := fmt.Sprintf("%s:%s", *language.GrammarId, *language.Language)
+	d.SetId(languageId)
+	log.Printf("Created Architect Grammar Language %s", languageId)
 	return readArchitectGrammarLanguage(ctx, d, meta)
 }
 
@@ -72,9 +73,9 @@ func readArchitectGrammarLanguage(ctx context.Context, d *schema.ResourceData, m
 
 		if getErr != nil {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(fmt.Errorf("Failed to read Architect Grammar Language %s: %s", d.Id(), getErr))
+				return retry.RetryableError(fmt.Errorf("failed to read Architect Grammar Language %s: %s", d.Id(), getErr))
 			}
-			return retry.NonRetryableError(fmt.Errorf("Failed to read Architect Grammar Language %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(fmt.Errorf("failed to read Architect Grammar Language %s: %s", d.Id(), getErr))
 		}
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceArchitectGrammarLanguage())
@@ -82,10 +83,10 @@ func readArchitectGrammarLanguage(ctx context.Context, d *schema.ResourceData, m
 		resourcedata.SetNillableValue(d, "grammar_id", language.GrammarId)
 		resourcedata.SetNillableValue(d, "language", language.Language)
 		if language.VoiceFileMetadata != nil {
-			d.Set("voice_file_data", flattenGrammarLanguageFileMetadata(d, language.VoiceFileMetadata, Voice))
+			_ = d.Set("voice_file_data", flattenGrammarLanguageFileMetadata(d, language.VoiceFileMetadata, Voice))
 		}
 		if language.DtmfFileMetadata != nil {
-			d.Set("dtmf_file_data", flattenGrammarLanguageFileMetadata(d, language.DtmfFileMetadata, Dtmf))
+			_ = d.Set("dtmf_file_data", flattenGrammarLanguageFileMetadata(d, language.DtmfFileMetadata, Dtmf))
 		}
 
 		log.Printf("Read Architect Grammar Language %s", d.Id())

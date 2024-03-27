@@ -2,17 +2,22 @@ package files
 
 import (
 	"bytes"
+	"context"
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"io"
 	"io/ioutil"
+	"log"
 	"mime/multipart"
 	"net/http"
 	"net/url"
 	"os"
 	"path"
 	"strings"
+	"terraform-provider-genesyscloud/genesyscloud/util"
+	"time"
 )
 
 type S3Uploader struct {
@@ -26,7 +31,8 @@ type S3Uploader struct {
 	presignedUrl  string
 	client        http.Client
 
-	UploadFunc func(s *S3Uploader) ([]byte, error)
+	UploadFunc            func(s *S3Uploader) ([]byte, error)
+	UploadWithRetriesFunc func(ctx context.Context, s *S3Uploader, filePath string, timeout time.Duration) ([]byte, error)
 }
 
 func NewS3Uploader(reader io.Reader, formData map[string]io.Reader, substitutions map[string]interface{}, headers map[string]string, method, presignedUrl string) *S3Uploader {
@@ -44,7 +50,8 @@ func NewS3Uploader(reader io.Reader, formData map[string]io.Reader, substitution
 		presignedUrl:  presignedUrl,
 		client:        *c,
 
-		UploadFunc: UploadFn,
+		UploadFunc:            UploadFn,
+		UploadWithRetriesFunc: UploadWithRetriesFn,
 	}
 	return s3Uploader
 }
@@ -64,6 +71,10 @@ func (s *S3Uploader) substituteValues() {
 
 func (s *S3Uploader) Upload() ([]byte, error) {
 	return s.UploadFunc(s)
+}
+
+func (s *S3Uploader) UploadWithRetries(ctx context.Context, filePath string, timeout time.Duration) ([]byte, error) {
+	return s.UploadWithRetriesFunc(ctx, s, filePath, timeout)
 }
 
 func UploadFn(s *S3Uploader) ([]byte, error) {
@@ -104,6 +115,33 @@ func UploadFn(s *S3Uploader) ([]byte, error) {
 		return nil, fmt.Errorf("failed to read response body when uploading file. %s", err)
 	}
 
+	return response, nil
+}
+
+func UploadWithRetriesFn(ctx context.Context, s *S3Uploader, filePath string, timeout time.Duration) ([]byte, error) {
+	var response []byte
+
+	fileInfo, err := os.Stat(filePath)
+	if err != nil {
+		log.Printf("failed to read file information. Path: '%s' Error: %v", filePath, err)
+	}
+
+	uploadErr := util.WithRetries(ctx, timeout, func() *retry.RetryError {
+		uploadStartTime := time.Now()
+		response, err = s.Upload()
+		if err != nil {
+			uploadDuration := time.Since(uploadStartTime)
+			log.Printf("failed to upload file %s after %d milliseconds (%v seconds). Error: %v", filePath, uploadDuration.Milliseconds(), uploadDuration.Seconds(), err)
+			if fileInfo != nil {
+				log.Printf("size of file '%s': %v bytes", filePath, fileInfo.Size())
+			}
+			return retry.RetryableError(err)
+		}
+		return nil
+	})
+	if uploadErr != nil {
+		return nil, fmt.Errorf("%v", uploadErr)
+	}
 	return response, nil
 }
 
@@ -152,7 +190,7 @@ func DownloadOrOpenFile(path string) (io.Reader, *os.File, error) {
 			}
 			reader = resp.Body
 		} else {
-			return nil, nil, fmt.Errorf("Invalid file path or URL: %v", path)
+			return nil, nil, fmt.Errorf("invalid file path or URL: %v", path)
 		}
 	} else {
 		file, err = os.Open(path)
@@ -165,7 +203,7 @@ func DownloadOrOpenFile(path string) (io.Reader, *os.File, error) {
 	return reader, file, nil
 }
 
-// Download file from uri to directory/fileName
+// DownloadExportFile Download file from uri to directory/fileName
 func DownloadExportFile(directory, fileName, uri string) error {
 	resp, err := http.Get(uri)
 	if err != nil {

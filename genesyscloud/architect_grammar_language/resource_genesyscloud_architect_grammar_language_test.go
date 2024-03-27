@@ -182,19 +182,19 @@ func verifyFileUpload(grammarResourceName string, language string, fileType File
 	return func(state *terraform.State) error {
 		grammarResource, ok := state.RootModule().Resources[grammarResourceName]
 		if !ok {
-			return fmt.Errorf("Failed to find grammar %s in state", grammarResourceName)
+			return fmt.Errorf("failed to find grammar %s in state", grammarResourceName)
 		}
 		grammarId := grammarResource.Primary.ID
 		architectAPI := platformclientv2.NewArchitectApi()
 
 		grammarLanguage, _, err := architectAPI.GetArchitectGrammarLanguage(grammarId, language)
 		if err != nil {
-			return fmt.Errorf("Failed to find language %s for resource %s", language, grammarResourceName)
+			return fmt.Errorf("failed to find language %s for resource %s", language, grammarResourceName)
 		}
 
 		if fileType == Dtmf {
 			if grammarLanguage.DtmfFileUrl == nil {
-				return fmt.Errorf("Dtmf file url not found for file %s", filename)
+				return fmt.Errorf("dtmf file url not found for file %s", filename)
 			}
 			err := validateFileContent(*grammarLanguage.DtmfFileMetadata, *grammarLanguage.DtmfFileUrl)
 			if err != nil {
@@ -203,7 +203,7 @@ func verifyFileUpload(grammarResourceName string, language string, fileType File
 		}
 		if fileType == Voice {
 			if grammarLanguage.VoiceFileUrl == nil {
-				return fmt.Errorf("Voice file url not found for file %s", filename)
+				return fmt.Errorf("voice file url not found for file %s", filename)
 			}
 			err := validateFileContent(*grammarLanguage.DtmfFileMetadata, *grammarLanguage.DtmfFileUrl)
 			if err != nil {
@@ -230,7 +230,7 @@ func validateFileContent(fileData platformclientv2.Grammarlanguagefilemetadata, 
 	}
 
 	if string(localFileContent) != downloadedFileContent {
-		return fmt.Errorf("Downloaded file does not match local file")
+		return fmt.Errorf("downloaded file does not match local file")
 	}
 	return nil
 }
