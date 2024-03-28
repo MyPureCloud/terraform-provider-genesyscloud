@@ -6,6 +6,7 @@ import (
 	"log"
 	"regexp"
 	"strings"
+	oauth "terraform-provider-genesyscloud/genesyscloud/oauth_client"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
@@ -82,16 +83,37 @@ func getAllCredentials(ctx context.Context, clientConfig *platformclientv2.Confi
 func createCredential(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	name := d.Get("name").(string)
 	cred_type := d.Get("credential_type_name").(string)
-
+	fields := buildCredentialFields(d)
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	ip := getIntegrationCredsProxy(sdkConfig)
+
+	if cred_type == "pureCloudOAuthClient" {
+		op := oauth.GetOAuthClientProxy(sdkConfig)
+
+		var targetClientId string = ""
+
+		//See if I can turn this into indexing
+		for k, v := range fields {
+			if k == "clientId" {
+				targetClientId = v
+				log.Printf("Successfully matched with OAuth Client Credential id %s", targetClientId)
+			}
+		}
+
+		if targetClientId != "" {
+			log.Printf("JCC TARGET CLIENT ID: %s", targetClientId)
+			oAuthClient := op.GetCachedOAuthClient(targetClientId)
+			fields["clientSecret"] = *oAuthClient.Secret
+		}
+
+	}
 
 	createCredential := platformclientv2.Credential{
 		Name: &name,
 		VarType: &platformclientv2.Credentialtype{
 			Name: &cred_type,
 		},
-		CredentialFields: buildCredentialFields(d),
+		CredentialFields: &fields,
 	}
 
 	credential, resp, err := ip.createIntegrationCred(ctx, &createCredential)
@@ -121,8 +143,8 @@ func readCredential(ctx context.Context, d *schema.ResourceData, meta interface{
 		}
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceIntegrationCredential())
-		d.Set("name", *currentCredential.Name)
-		d.Set("credential_type_name", *currentCredential.VarType.Name)
+		_ = d.Set("name", *currentCredential.Name)
+		_ = d.Set("credential_type_name", *currentCredential.VarType.Name)
 
 		log.Printf("Read credential %s %s", d.Id(), *currentCredential.Name)
 
@@ -134,6 +156,7 @@ func readCredential(ctx context.Context, d *schema.ResourceData, meta interface{
 func updateCredential(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	name := d.Get("name").(string)
 	cred_type := d.Get("credential_type_name").(string)
+	fields := buildCredentialFields(d)
 
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	ip := getIntegrationCredsProxy(sdkConfig)
@@ -146,7 +169,7 @@ func updateCredential(ctx context.Context, d *schema.ResourceData, meta interfac
 			VarType: &platformclientv2.Credentialtype{
 				Name: &cred_type,
 			},
-			CredentialFields: buildCredentialFields(d),
+			CredentialFields: &fields,
 		})
 		if err != nil {
 			return diag.Errorf("Failed to update credential %s: %s %v", name, err, resp)

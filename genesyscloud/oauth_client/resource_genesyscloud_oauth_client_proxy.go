@@ -2,8 +2,9 @@ package oauth_client
 
 import (
 	"context"
-
 	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
+	"log"
+	"sync"
 )
 
 var internalProxy *oauthClientProxy
@@ -18,9 +19,11 @@ type deleteOAuthClientFunc func(context.Context, *oauthClientProxy, string) (*pl
 type deleteIntegrationCredentialFunc func(context.Context, *oauthClientProxy, string) (*platformclientv2.APIResponse, error)
 
 type oauthClientProxy struct {
-	clientConfig   *platformclientv2.Configuration
-	api            *platformclientv2.OAuthApi
-	integrationApi *platformclientv2.IntegrationsApi
+	clientConfig           *platformclientv2.Configuration
+	api                    *platformclientv2.OAuthApi
+	integrationApi         *platformclientv2.IntegrationsApi
+	createdClientCache     map[string]platformclientv2.Oauthclient //Being added for DEVTOOLING-448
+	createdClientCacheLock sync.Mutex
 
 	createOAuthClientAttr           createOAuthClientFunc
 	createIntegrationCredentialAttr createIntegrationClientFunc
@@ -32,15 +35,17 @@ type oauthClientProxy struct {
 	deleteIntegrationCredentialAttr deleteIntegrationCredentialFunc
 }
 
-// newArchitectIvrProxy initializes the proxy with all the data needed to communicate with Genesys Cloud
+// newAuthClientProxy initializes the proxy with all the data needed to communicate with Genesys Cloud
 func newOAuthClientProxy(clientConfig *platformclientv2.Configuration) *oauthClientProxy {
 	api := platformclientv2.NewOAuthApiWithConfig(clientConfig)
 	intApi := platformclientv2.NewIntegrationsApiWithConfig(clientConfig)
+	createdClientCache := make(map[string]platformclientv2.Oauthclient)
 
 	return &oauthClientProxy{
-		clientConfig:   clientConfig,
-		api:            api,
-		integrationApi: intApi,
+		clientConfig:       clientConfig,
+		api:                api,
+		integrationApi:     intApi,
+		createdClientCache: createdClientCache,
 
 		createOAuthClientAttr:           createOAuthClientFn,
 		createIntegrationCredentialAttr: createIntegrationCredentialFn,
@@ -53,7 +58,13 @@ func newOAuthClientProxy(clientConfig *platformclientv2.Configuration) *oauthCli
 	}
 }
 
-func getOAuthClientProxy(clientConfig *platformclientv2.Configuration) *oauthClientProxy {
+/*
+Being added for DEVTOOLING-448
+
+This is one of the only places where we use a public method to return the OAuthClientProxy.  We do this because
+we need the ability to retrieve any OAuthClient's created during the run of the provider that is beign cached.
+*/
+func GetOAuthClientProxy(clientConfig *platformclientv2.Configuration) *oauthClientProxy {
 	if internalProxy == nil {
 		internalProxy = newOAuthClientProxy(clientConfig)
 	}
@@ -76,8 +87,24 @@ func (o *oauthClientProxy) getIntegrationCredential(ctx context.Context, id stri
 	return o.getIntegrationCredentialAttr(ctx, o, id)
 }
 
+func (o *oauthClientProxy) GetCachedOAuthClient(clientId string) platformclientv2.Oauthclient {
+	o.createdClientCacheLock.Lock()
+	defer o.createdClientCacheLock.Unlock()
+	return o.createdClientCache[clientId]
+}
+
 func (o *oauthClientProxy) createOAuthClient(ctx context.Context, oauthClient platformclientv2.Oauthclientrequest) (*platformclientv2.Oauthclient, *platformclientv2.APIResponse, error) {
-	return o.createOAuthClientAttr(ctx, o, oauthClient)
+	oauthClientResult, response, err := o.createOAuthClientAttr(ctx, o, oauthClient)
+	if err != nil {
+		return oauthClientResult, response, err
+	}
+
+	//Being added for DEVTOOLING-448.  This is one of the few places where we want to use a cache outside the export
+	o.createdClientCacheLock.Lock()
+	defer o.createdClientCacheLock.Unlock()
+	o.createdClientCache[*oauthClientResult.Id] = *oauthClientResult
+	log.Printf("Successfully added oauth client %s to cache", *oauthClientResult.Id)
+	return oauthClientResult, response, err
 }
 
 func (o *oauthClientProxy) createIntegrationClient(ctx context.Context, credential platformclientv2.Credential) (*platformclientv2.Credentialinfo, *platformclientv2.APIResponse, error) {
@@ -103,9 +130,7 @@ func getAllOauthClientsFn(ctx context.Context, o *oauthClientProxy) (*[]platform
 		return nil, resp, err
 	}
 
-	for _, entity := range *firstPage.Entities {
-		clients = append(clients, entity)
-	}
+	clients = append(clients, *firstPage.Entities...)
 
 	for pageNum := 2; pageNum <= *firstPage.PageCount; pageNum++ {
 		page, resp, err := o.api.GetOauthClients()
@@ -114,9 +139,7 @@ func getAllOauthClientsFn(ctx context.Context, o *oauthClientProxy) (*[]platform
 			return nil, resp, err
 		}
 
-		for _, entity := range *page.Entities {
-			clients = append(clients, entity)
-		}
+		clients = append(clients, *page.Entities...)
 	}
 
 	return &clients, resp, nil

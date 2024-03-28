@@ -15,7 +15,7 @@ import (
 
 func dataSourceOAuthClientRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	sdkConfig := m.(*provider.ProviderMeta).ClientConfig
-	oauthClientProxy := getOAuthClientProxy(sdkConfig)
+	oauthClientProxy := GetOAuthClientProxy(sdkConfig)
 
 	name := d.Get("name").(string)
 

@@ -24,7 +24,7 @@ import (
 func getAllOAuthClients(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
 	resources := make(resourceExporter.ResourceIDMetaMap)
 
-	oauthClientProxy := getOAuthClientProxy(clientConfig)
+	oauthClientProxy := GetOAuthClientProxy(clientConfig)
 	clients, resp, getErr := oauthClientProxy.getAllOAuthClients(ctx)
 
 	if getErr != nil {
@@ -49,7 +49,7 @@ func createOAuthClient(ctx context.Context, d *schema.ResourceData, meta interfa
 	state := d.Get("state").(string)
 
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-	oauthClientProxy := getOAuthClientProxy(sdkConfig)
+	oauthClientProxy := GetOAuthClientProxy(sdkConfig)
 
 	roles, diagErr := buildOAuthRoles(d)
 	if diagErr != nil {
@@ -93,8 +93,8 @@ func createOAuthClient(ctx context.Context, d *schema.ResourceData, meta interfa
 			return diag.Errorf("Failed to create credential %s : %s %v", name, err, resp)
 		}
 
-		d.Set("integration_credential_id", *credential.Id)
-		d.Set("integration_credential_name", *credential.Name)
+		_ = d.Set("integration_credential_id", *credential.Id)
+		_ = d.Set("integration_credential_name", *credential.Name)
 	}
 
 	d.SetId(*client.Id)
@@ -104,7 +104,7 @@ func createOAuthClient(ctx context.Context, d *schema.ResourceData, meta interfa
 
 func readOAuthClient(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-	oAuthProxy := getOAuthClientProxy(sdkConfig)
+	oAuthProxy := GetOAuthClientProxy(sdkConfig)
 
 	log.Printf("Reading oauth client %s", d.Id())
 
@@ -118,7 +118,7 @@ func readOAuthClient(ctx context.Context, d *schema.ResourceData, meta interface
 		}
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOAuthClient())
-		d.Set("name", *client.Name)
+		_ = d.Set("name", *client.Name)
 
 		resourcedata.SetNillableValue(d, "description", client.Description)
 		resourcedata.SetNillableValue(d, "access_token_validity_seconds", client.AccessTokenValiditySeconds)
@@ -126,21 +126,21 @@ func readOAuthClient(ctx context.Context, d *schema.ResourceData, meta interface
 		resourcedata.SetNillableValue(d, "state", client.State)
 
 		if client.RegisteredRedirectUri != nil {
-			d.Set("registered_redirect_uris", lists.StringListToSet(*client.RegisteredRedirectUri))
+			_ = d.Set("registered_redirect_uris", lists.StringListToSet(*client.RegisteredRedirectUri))
 		} else {
-			d.Set("registered_redirect_uris", nil)
+			_ = d.Set("registered_redirect_uris", nil)
 		}
 
 		if client.Scope != nil {
-			d.Set("scopes", lists.StringListToSet(*client.Scope))
+			_ = d.Set("scopes", lists.StringListToSet(*client.Scope))
 		} else {
-			d.Set("scopes", nil)
+			_ = d.Set("scopes", nil)
 		}
 
 		if client.RoleDivisions != nil {
-			d.Set("roles", flattenOAuthRoles(*client.RoleDivisions))
+			_ = d.Set("roles", flattenOAuthRoles(*client.RoleDivisions))
 		} else {
-			d.Set("roles", nil)
+			_ = d.Set("roles", nil)
 		}
 
 		log.Printf("Read oauth client %s %s", d.Id(), *client.Name)
@@ -156,7 +156,7 @@ func updateOAuthClient(ctx context.Context, d *schema.ResourceData, meta interfa
 	state := d.Get("state").(string)
 
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-	oauthClientProxy := getOAuthClientProxy(sdkConfig)
+	oauthClientProxy := GetOAuthClientProxy(sdkConfig)
 
 	roles, diagErr := buildOAuthRoles(d)
 	if diagErr != nil {
@@ -184,7 +184,7 @@ func updateOAuthClient(ctx context.Context, d *schema.ResourceData, meta interfa
 
 func deleteOAuthClient(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-	oauthClientProxy := getOAuthClientProxy(sdkConfig)
+	oauthClientProxy := GetOAuthClientProxy(sdkConfig)
 
 	// check if there is a integration credential to delete
 	credentialId := resourcedata.GetNillableValue[string](d, "integration_credential_id")
@@ -201,7 +201,7 @@ func deleteOAuthClient(ctx context.Context, d *schema.ResourceData, meta interfa
 	log.Printf("Deleting oauth client %s", name)
 
 	// The client state must be set to inactive before deleting
-	d.Set("state", "inactive")
+	_ = d.Set("state", "inactive")
 	diagErr := updateOAuthClient(ctx, d, meta)
 	if diagErr != nil {
 		return diagErr
