@@ -73,6 +73,7 @@ import (
 	userRoles "terraform-provider-genesyscloud/genesyscloud/user_roles"
 	webDeployConfig "terraform-provider-genesyscloud/genesyscloud/webdeployments_configuration"
 	webDeployDeploy "terraform-provider-genesyscloud/genesyscloud/webdeployments_deployment"
+	journeyOutcomePrecdictor "terraform-provider-genesyscloud/genesyscloud/journey_outcome_predictor"
 )
 
 // Run "go generate" to format example terraform files and generate the docs for the registry/website
@@ -195,6 +196,7 @@ func registerResources() {
 	edgesTrunk.SetRegistrar(regInstance)                    //Registering Edges Trunk Settings
 	resourceExporter.SetRegisterExporter(resourceExporters) //Registering register exporters
 	userRoles.SetRegistrar(regInstance)                     //Registering user roles
+	journeyOutcomePrecdictor.SetRegistrar(regInstance)					   //Registering journey outcome predictor
 	group.SetRegistrar(regInstance)                                        //Registering group
 
 	// setting resources for Use cases  like TF export where provider is used in resource classes.
