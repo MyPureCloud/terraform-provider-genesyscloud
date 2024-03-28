@@ -1,7 +1,6 @@
 package webdeployments_configuration_utils
 
 import (
-	"fmt"
 	"terraform-provider-genesyscloud/genesyscloud/util/lists"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
@@ -77,19 +76,10 @@ func buildMessengerApps(apps []interface{}) *platformclientv2.Messengerapps {
 	if len(apps) < 1 {
 		return nil
 	}
-
 	app := apps[0].(map[string]interface{})
-	conversations, conversationsOk := app["conversations"].([]interface{})
-	knowledge, knowledgeOk := app["knowledge"].([]interface{})
-
-	if !conversationsOk || !knowledgeOk {
-		fmt.Println("error in build Messenger Apps")
-		return nil
-	}
-
 	return &platformclientv2.Messengerapps{
-		Conversations: buildAppConversations(conversations),
-		Knowledge:     buildAppKnowledge(knowledge),
+		Conversations: buildAppConversations(app["conversations"].([]interface{})),
+		Knowledge:     buildAppKnowledge(app["knowledge"].([]interface{})),
 	}
 }
 
