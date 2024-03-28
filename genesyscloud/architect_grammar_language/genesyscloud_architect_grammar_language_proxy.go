@@ -27,7 +27,7 @@ out during testing.
 // internalProxy holds a proxy instance that can be used throughout the package
 var internalProxy *architectGrammarLanguageProxy
 
-// Type definitions for each func on our proxy so we can easily mock them out later
+// Type definitions for each func on our proxy so that we can easily mock them out later
 type createArchitectGrammarLanguageFunc func(ctx context.Context, p *architectGrammarLanguageProxy, language *platformclientv2.Grammarlanguage) (*platformclientv2.Grammarlanguage, *platformclientv2.APIResponse, error)
 type getArchitectGrammarLanguageByIdFunc func(ctx context.Context, p *architectGrammarLanguageProxy, grammarId string, languageCode string) (*platformclientv2.Grammarlanguage, *platformclientv2.APIResponse, error)
 type updateArchitectGrammarLanguageFunc func(ctx context.Context, p *architectGrammarLanguageProxy, grammarId string, languageCode string, language *platformclientv2.Grammarlanguage) (*platformclientv2.Grammarlanguage, *platformclientv2.APIResponse, error)
@@ -77,7 +77,7 @@ func (p *architectGrammarLanguageProxy) createArchitectGrammarLanguage(ctx conte
 	return p.createArchitectGrammarLanguageAttr(ctx, p, language)
 }
 
-// getArchitectGrammarLanguageById returns a single Genesys Cloud Architect Grammar Language by Id
+// getArchitectGrammarLanguageById returns a single Genesys Cloud Architect Grammar Language by ID
 func (p *architectGrammarLanguageProxy) getArchitectGrammarLanguageById(ctx context.Context, grammarId string, languageCode string) (*platformclientv2.Grammarlanguage, *platformclientv2.APIResponse, error) {
 	return p.getArchitectGrammarLanguageByIdAttr(ctx, p, grammarId, languageCode)
 }
@@ -87,7 +87,7 @@ func (p *architectGrammarLanguageProxy) updateArchitectGrammarLanguage(ctx conte
 	return p.updateArchitectGrammarLanguageAttr(ctx, p, grammarId, languageCode, language)
 }
 
-// deleteArchitectGrammarLanguage deletes a Genesys Cloud Architect Grammar Language by Id
+// deleteArchitectGrammarLanguage deletes a Genesys Cloud Architect Grammar Language by ID
 func (p *architectGrammarLanguageProxy) deleteArchitectGrammarLanguage(ctx context.Context, grammarId string, languageCode string) (*platformclientv2.APIResponse, error) {
 	return p.deleteArchitectGrammarLanguageAttr(ctx, p, grammarId, languageCode)
 }
@@ -121,7 +121,7 @@ func createArchitectGrammarLanguageFn(_ context.Context, p *architectGrammarLang
 	return languageSdk, resp, nil
 }
 
-// getArchitectGrammarLanguageByIdFn is an implementation of the function to get a Genesys Cloud Architect Grammar Language by Id
+// getArchitectGrammarLanguageByIdFn is an implementation of the function to get a Genesys Cloud Architect Grammar Language by ID
 func getArchitectGrammarLanguageByIdFn(_ context.Context, p *architectGrammarLanguageProxy, grammarId string, languageCode string) (*platformclientv2.Grammarlanguage, *platformclientv2.APIResponse, error) {
 	language := rc.GetCache(p.grammarLanguageCache, fmt.Sprintf("%s:%s", grammarId, languageCode))
 	if language != nil {
