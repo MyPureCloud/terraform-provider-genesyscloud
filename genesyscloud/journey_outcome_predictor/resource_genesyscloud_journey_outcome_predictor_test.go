@@ -9,13 +9,13 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v123/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
 )
 
 func TestAccResourceJourneyOutcomePredictor(t *testing.T) {
 	t.Parallel()
 	var (
-		fullResourceName = "genesyscloud_journey_outcome_predictor.test_predictor"
+		fullResourceName        = "genesyscloud_journey_outcome_predictor.test_predictor"
 		fullOutcomeResourceName = "genesyscloud_journey_outcome.test_outcome"
 	)
 
@@ -24,20 +24,19 @@ func TestAccResourceJourneyOutcomePredictor(t *testing.T) {
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
-				Config: predictorResource("tf test outcome "+uuid.NewString(),),
+				Config: predictorResource("tf test outcome " + uuid.NewString()),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrPair(fullResourceName, "outcome_id", fullOutcomeResourceName, "id"),
 				),
 			},
 			{
-				ResourceName:            fullResourceName,
-				ImportState:             true,
-				ImportStateVerify:       false,
+				ResourceName:      fullResourceName,
+				ImportState:       true,
+				ImportStateVerify: true,
 			},
 		},
 		CheckDestroy: testVerifyPredictorDestroyed,
 	})
-
 }
 
 func predictorResource(outcomeName string) string {
@@ -77,16 +76,15 @@ func testVerifyPredictorDestroyed(state *terraform.State) error {
 
 		predictor, resp, err := journeyAPI.GetJourneyOutcomesPredictor(rs.Primary.ID)
 		if predictor != nil {
-			return fmt.Errorf("Predictor (%s) still exists", rs.Primary.ID)
+			return fmt.Errorf("predictor (%s) still exists", rs.Primary.ID)
 		} else if util.IsStatus404(resp) {
 			// Predictor not found as expected
 			continue
 		} else {
 			// Unexpected error
-			return fmt.Errorf("Unexpected error: %s", err)
+			return fmt.Errorf("unexpected error: %s", err)
 		}
 	}
 	// Success. All predictors destroyed
 	return nil
-
 }
