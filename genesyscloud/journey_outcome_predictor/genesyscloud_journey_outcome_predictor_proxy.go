@@ -2,7 +2,7 @@ package journey_outcome_predictor
 
 import (
 	"context"
-	"github.com/mypurecloud/platform-client-sdk-go/v123/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
 )
 
 /*
@@ -22,24 +22,24 @@ type deleteJourneyOutcomePredictorFunc func(ctx context.Context, p *journeyOutco
 
 // journeyOutcomePredictorProxy contains all of the methods that call genesys cloud APIs.
 type journeyOutcomePredictorProxy struct {
-	clientConfig                           *platformclientv2.Configuration
-	journeyApi                             *platformclientv2.JourneyApi
-	createJourneyOutcomePredictorAttr      createJourneyOutcomePredictorFunc
-	getAllJourneyOutcomePredictorAttr      getAllJourneyOutcomePredictorFunc
-	getJourneyOutcomePredictorByIdAttr     getJourneyOutcomePredictorByIdFunc
-	deleteJourneyOutcomePredictorAttr      deleteJourneyOutcomePredictorFunc
+	clientConfig                       *platformclientv2.Configuration
+	journeyApi                         *platformclientv2.JourneyApi
+	createJourneyOutcomePredictorAttr  createJourneyOutcomePredictorFunc
+	getAllJourneyOutcomePredictorAttr  getAllJourneyOutcomePredictorFunc
+	getJourneyOutcomePredictorByIdAttr getJourneyOutcomePredictorByIdFunc
+	deleteJourneyOutcomePredictorAttr  deleteJourneyOutcomePredictorFunc
 }
 
 // newJourneyOutcomePredictorProxy initializes the journey outcome predictor proxy with all of the data needed to communicate with Genesys Cloud
 func newJourneyOutcomePredictorProxy(clientConfig *platformclientv2.Configuration) *journeyOutcomePredictorProxy {
 	journeyApi := platformclientv2.NewJourneyApiWithConfig(clientConfig)
 	return &journeyOutcomePredictorProxy{
-		clientConfig:                           clientConfig,
-		journeyApi:                             journeyApi,
-		createJourneyOutcomePredictorAttr:      createJourneyOutcomePredictorFn,
-		getAllJourneyOutcomePredictorAttr:      getAllJourneyOutcomePredictorFn,
-		getJourneyOutcomePredictorByIdAttr:     getJourneyOutcomePredictorByIdFn,
-		deleteJourneyOutcomePredictorAttr:      deleteJourneyOutcomePredictorFn,
+		clientConfig:                       clientConfig,
+		journeyApi:                         journeyApi,
+		createJourneyOutcomePredictorAttr:  createJourneyOutcomePredictorFn,
+		getAllJourneyOutcomePredictorAttr:  getAllJourneyOutcomePredictorFn,
+		getJourneyOutcomePredictorByIdAttr: getJourneyOutcomePredictorByIdFn,
+		deleteJourneyOutcomePredictorAttr:  deleteJourneyOutcomePredictorFn,
 	}
 }
 
@@ -76,7 +76,7 @@ func (p *journeyOutcomePredictorProxy) deleteJourneyOutcomePredictor(ctx context
 // createJourneyOutcomePredictorFn is an implementation function for creating a Genesys Cloud journey outcome predictor
 func createJourneyOutcomePredictorFn(ctx context.Context, p *journeyOutcomePredictorProxy, outcomePredictor *platformclientv2.Outcomepredictorrequest) (*platformclientv2.Outcomepredictor, error) {
 
-	predictor, _, err :=  p.journeyApi.PostJourneyOutcomesPredictors(*outcomePredictor)
+	predictor, _, err := p.journeyApi.PostJourneyOutcomesPredictors(*outcomePredictor)
 	if err != nil {
 		return nil, err
 	}
