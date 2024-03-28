@@ -1,10 +1,10 @@
 package flow_logLevel
 
 import (
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"log"
 	"sync"
 	"testing"
-
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 /*
@@ -44,11 +44,15 @@ func (r *registerTestInstance) registerTestDataSources() {
 func initTestResources() {
 	providerDataSources = make(map[string]*schema.Resource)
 	providerResources = make(map[string]*schema.Resource)
-
+	log.Printf("initTestResources providerDataSources=%v", providerDataSources)
+	log.Printf("initTestResources providerResources=%v", providerResources)
 	regInstance := &registerTestInstance{}
 
 	regInstance.registerTestDataSources()
 	regInstance.registerTestResources()
+	log.Printf("initTestResources providerDataSources=%v", providerDataSources)
+	log.Printf("initTestResources providerResources=%v", providerResources)
+	log.Printf("initTestResources regInstance=%v", regInstance)
 }
 
 // TestMain is a "setup" function called by the testing framework when run the test

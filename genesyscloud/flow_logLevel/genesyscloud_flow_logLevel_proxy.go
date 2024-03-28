@@ -99,7 +99,7 @@ func (p *flowLogLevelProxy) deleteFlowLogLevelById(ctx context.Context, flowId s
 
 // createFlowLogLevelFn is an implementation function for creating a Genesys Cloud External Contact
 func createFlowLogLevelFn(ctx context.Context, p *flowLogLevelProxy, flowId string, flowLogLevelRequest *platformclientv2.Flowloglevelrequest) (*platformclientv2.Flowsettingsresponse, error) {
-	logLevel, _, err := p.architectApi.PutFlowInstancesSettingsLoglevels(flowId, *flowLogLevelRequest, nil)
+	logLevel, _, err := p.architectApi.PostFlowInstancesSettingsLoglevels(flowId, *flowLogLevelRequest, nil)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to create flow log level: %s", err)
 	}

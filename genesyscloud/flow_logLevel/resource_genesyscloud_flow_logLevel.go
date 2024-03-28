@@ -60,10 +60,10 @@ func getAllFlowLogLevels(ctx context.Context, clientConfig *platformclientv2.Con
 func createFlowLogLevel(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	ep := getFlowLogLevelProxy(sdkConfig)
-
+	flowId := d.Get("flow_id").(string)
 	flowLogLevelRequest := getFlowLogLevelRequestFromResourceData(d)
 
-	contact, err := ep.createFlowLogLevel(ctx, d.Id(), &flowLogLevelRequest)
+	contact, err := ep.createFlowLogLevel(ctx, flowId, &flowLogLevelRequest)
 	if err != nil {
 		return diag.Errorf("Failed to create flow log level: %s", err)
 	}
@@ -77,26 +77,26 @@ func createFlowLogLevel(ctx context.Context, d *schema.ResourceData, meta interf
 func readFlowLogLevel(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	ep := getFlowLogLevelProxy(sdkConfig)
+	flowId := d.Get("flow_id").(string)
 
-	log.Printf("Reading contact %s", d.Id())
+	log.Printf("Reading contact %s", flowId)
 
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
-		flowSettingsResponse, respCode, err := ep.getFlowLogLevelById(ctx, d.Id())
+		flowSettingsResponse, respCode, err := ep.getFlowLogLevelById(ctx, flowId)
 		if err != nil {
 			if util.IsStatus404ByInt(respCode) {
-				return retry.RetryableError(fmt.Errorf("Failed to read flow log level %s: %s", d.Id(), err))
+				return retry.RetryableError(fmt.Errorf("Failed to read flow log level %s: %s", flowId, err))
 			}
-			return retry.NonRetryableError(fmt.Errorf("Failed to read flow log level %s: %s", d.Id(), err))
+			return retry.NonRetryableError(fmt.Errorf("Failed to read flow log level %s: %s", flowId, err))
 		}
 
 		flowLogLevel := flowSettingsResponse.LogLevelCharacteristics
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceFlowLoglevel())
-		resourcedata.SetNillableValue(d, "level", flowLogLevel.Level)
-		resourcedata.SetNillableValue(d, "log_level_characteristics", flowLogLevel.Characteristics)
-		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "work_phone", flowLogLevel.Characteristics, flattenFlowCharacteristics)
+		resourcedata.SetNillableValue(d, "flow_log_level", flowLogLevel.Level)
+		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "flow_characteristics", flowLogLevel.Characteristics, flattenFlowCharacteristics)
 
-		log.Printf("Read flow log level %s", d.Id())
+		log.Printf("Read flow log level %s", flowId)
 		return cc.CheckState()
 	})
 }
@@ -105,10 +105,11 @@ func readFlowLogLevel(ctx context.Context, d *schema.ResourceData, meta interfac
 func updateFlowLogLevel(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	ep := getFlowLogLevelProxy(sdkConfig)
+	flowId := d.Get("flow_id").(string)
 
-	flowLogLevel, _, err := ep.getFlowLogLevelById(ctx, d.Id())
+	flowLogLevel, _, err := ep.getFlowLogLevelById(ctx, flowId)
 	flowLogLevelRequest := getFlowLogLevelRequestFromFlowLogLevel(flowLogLevel.LogLevelCharacteristics)
-	_, err = ep.updateFlowLogLevel(ctx, d.Id(), &flowLogLevelRequest)
+	_, err = ep.updateFlowLogLevel(ctx, flowId, &flowLogLevelRequest)
 	if err != nil {
 		return diag.Errorf("Failed to update flow log level: %s", err)
 	}
@@ -122,25 +123,26 @@ func updateFlowLogLevel(ctx context.Context, d *schema.ResourceData, meta interf
 func deleteFlowLogLevel(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	ep := getFlowLogLevelProxy(sdkConfig)
+	flowId := d.Get("flow_id").(string)
 
-	_, err := ep.deleteFlowLogLevelById(ctx, d.Id())
+	_, err := ep.deleteFlowLogLevelById(ctx, flowId)
 	if err != nil {
-		return diag.Errorf("Failed to delete flow log level %s: %s", d.Id(), err)
+		return diag.Errorf("Failed to delete flow log level %s: %s", flowId, err)
 	}
 
 	return util.WithRetries(ctx, 180*time.Second, func() *retry.RetryError {
-		_, respCode, err := ep.getFlowLogLevelById(ctx, d.Id())
+		_, respCode, err := ep.getFlowLogLevelById(ctx, flowId)
 
 		if err == nil {
-			return retry.NonRetryableError(fmt.Errorf("Error deleting flow log level %s: %s", d.Id(), err))
+			return retry.NonRetryableError(fmt.Errorf("Error deleting flow log level %s: %s", flowId, err))
 		}
 		if util.IsStatus404ByInt(respCode) {
 			// Success  : External contact deleted
-			log.Printf("Deleted flow log level %s", d.Id())
+			log.Printf("Deleted flow log level %s", flowId)
 			return nil
 		}
 
-		return retry.RetryableError(fmt.Errorf("External contact %s still exists", d.Id()))
+		return retry.RetryableError(fmt.Errorf("External contact %s still exists", flowId))
 	})
 }
 
@@ -162,7 +164,7 @@ func getFlowLogLevelRequestFromFlowLogLevel(d *platformclientv2.Flowloglevel) pl
 
 // getFlowLogLevelRequestFromResourceData maps data from schema ResourceData object to a platformclientv2.Flowloglevelrequest
 func getFlowLogLvlFromResourceData(d *schema.ResourceData) *platformclientv2.Flowloglevel {
-	level := d.Get("level").(string)
+	level := d.Get("flow_log_level").(string)
 	return &platformclientv2.Flowloglevel{
 		Level:           &level,
 		Characteristics: getFlowLogLevelCharacteristicsFromResourceData(d),
@@ -171,14 +173,15 @@ func getFlowLogLvlFromResourceData(d *schema.ResourceData) *platformclientv2.Flo
 
 // getFlowLogLevelRequestFromResourceData maps data from schema ResourceData object to a platformclientv2.Flowloglevelrequest
 func getFlowLogLevelCharacteristicsFromResourceData(d *schema.ResourceData) *platformclientv2.Flowcharacteristics {
-	communications := d.Get("communications").(bool)
-	eventError := d.Get("event_error").(bool)
-	eventOther := d.Get("event_other").(bool)
-	eventWarning := d.Get("event_warning").(bool)
-	executionInputOutputs := d.Get("execution_input_outputs").(bool)
-	executionItems := d.Get("execution_items").(bool)
-	names := d.Get("names").(bool)
-	variables := d.Get("variables").(bool)
+	characteristics := d.Get("flow_characteristics").([]interface{})[0].(map[string]interface{})
+	communications := characteristics["communications"].(bool)
+	eventError := characteristics["event_error"].(bool)
+	eventOther := characteristics["event_other"].(bool)
+	eventWarning := characteristics["event_warning"].(bool)
+	executionInputOutputs := characteristics["execution_input_outputs"].(bool)
+	executionItems := characteristics["execution_items"].(bool)
+	names := characteristics["names"].(bool)
+	variables := characteristics["variables"].(bool)
 
 	return &platformclientv2.Flowcharacteristics{
 		ExecutionItems:        &executionItems,

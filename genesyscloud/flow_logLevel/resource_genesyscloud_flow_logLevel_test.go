@@ -1,15 +1,13 @@
 package flow_logLevel
 
 import (
-	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"strconv"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 )
 
-func TestAccResourceFlowOutcome(t *testing.T) {
+func TestAccResourceFlowLogLevel(t *testing.T) {
 	var (
 		communications        = false
 		eventError            = false
@@ -20,6 +18,7 @@ func TestAccResourceFlowOutcome(t *testing.T) {
 		flowLoglevel          = "Base"
 		names                 = false
 		variables             = false
+		flowId                = "e3aebe90-5a65-409e-9775-43d547b66e07"
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -35,53 +34,17 @@ func TestAccResourceFlowOutcome(t *testing.T) {
 					eventWarning,
 					executionInputOutputs,
 					executionItems,
+					flowId,
 					flowLoglevel,
 					names,
 					variables,
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_flow_logLevel."+flowLoglevel, "names", "false"),
-					resource.TestCheckResourceAttr("genesyscloud_flow_logLevel."+flowLoglevel, "executionItems", "true"),
+					resource.TestCheckResourceAttr("genesyscloud_flow_logLevel."+flowLoglevel, "execution_items", "true"),
 					provider.TestDefaultHomeDivision("genesyscloud_flow_logLevel."+flowLoglevel),
 				),
 			},
 		},
 	})
-}
-
-func generateFlowLogLevelResource(
-	communications bool,
-	eventError bool,
-	eventOther bool,
-	eventWarning bool,
-	executionInputOutputs bool,
-	executionItems bool,
-	flowLoglevel string,
-	names bool,
-	variables bool,
-) string {
-	return fmt.Sprintf(`resource "genesyscloud_flow_logLevel" "flowLogLevel" {
-	  level { 
-		level 					= "%s" 
-      }
-	  characteristics {
-		communications          = "%s"
-		eventError              = "%s"
-		eventOther              = "%s"
-		eventWarning            = "%s"
-		executionItems          = "%s"
-		executionInputOutputs   = "%s"
-		names                   = "%s"
-		variables               = "%s"
-	  }
-	}
-	`, flowLoglevel,
-		strconv.FormatBool(executionItems),
-		strconv.FormatBool(executionInputOutputs),
-		strconv.FormatBool(eventError),
-		strconv.FormatBool(eventWarning),
-		strconv.FormatBool(eventOther),
-		strconv.FormatBool(communications),
-		strconv.FormatBool(variables),
-		strconv.FormatBool(names))
 }

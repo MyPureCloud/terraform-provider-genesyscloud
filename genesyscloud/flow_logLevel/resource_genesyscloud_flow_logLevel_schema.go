@@ -25,55 +25,46 @@ func SetRegistrar(regInstance registrar.Registrar) {
 
 // ResourceFlowLoglevel registers the genesyscloud_flow_loglevel resource with Terraform
 func ResourceFlowLoglevel() *schema.Resource {
-	flowLogLevel := &schema.Resource{
-		Schema: map[string]*schema.Schema{
-			"level": {
-				Description: "The flow log level.",
-				Type:        schema.TypeString,
-				Optional:    true,
-			},
-		},
-	}
 
 	flowCharacteristics := &schema.Resource{
 		Schema: map[string]*schema.Schema{
-			"executionItems": {
-				Description: "Whether to report execution data about individual actions, menus, states, tasks, etc. etc. that ran during execution of the flow.",
-				Type:        schema.TypeBool,
-				Optional:    true,
-			},
-			"executionInputOutputs": {
-				Description: "Whether to report input setting values and output data values for individual execution items above.  For example, if you have FlowExecutionInputOutputs and a Call Data Action ran in a flow, if FlowExecutionItems was enabled you'd see the fact a Call Data Action ran and the output path it took but nothing about which Data Action it ran, the input data sent to it at flow runtime and the data returned from it.  If you enable this characteristic, execution data will contain this additional detail.",
-				Type:        schema.TypeBool,
-				Optional:    true,
-			},
 			"communications": {
 				Description: "Communications are either audio or digital communications sent to or received from a participant.  An example here would be the initial greeting in an inbound call flow where it plays a greeting message to the participant.",
 				Type:        schema.TypeBool,
 				Optional:    true,
 			},
-			"eventError": {
+			"event_error": {
 				Description: "Whether to report flow error events.",
 				Type:        schema.TypeBool,
 				Optional:    true,
 			},
-			"eventWarning": {
-				Description: "Whether to report flow warning events.",
-				Type:        schema.TypeBool,
-				Optional:    true,
-			},
-			"eventOther": {
+			"event_other": {
 				Description: "Whether to report events other than errors or warnings such as a language change, loop event.",
 				Type:        schema.TypeBool,
 				Optional:    true,
 			},
-			"variables": {
-				Description: "Whether to report assignment of values to variables in flow execution data. It's important to remember there is a difference between variable value assignments and output data from an action.  If you have a Call Digital Bot flow action in an Inbound Message flow and there is no variable bound to the Exit Reason output but FlowExecutionInputOutputs is enabled, you will still be able to see the exit reason from the digital bot flow in execution data even though it is not bound to a variable.",
+			"event_warning": {
+				Description: "Whether to report flow warning events.",
+				Type:        schema.TypeBool,
+				Optional:    true,
+			},
+			"execution_input_outputs": {
+				Description: "Whether to report input setting values and output data values for individual execution items above.  For example, if you have FlowExecutionInputOutputs and a Call Data Action ran in a flow, if FlowExecutionItems was enabled you'd see the fact a Call Data Action ran and the output path it took but nothing about which Data Action it ran, the input data sent to it at flow runtime and the data returned from it.  If you enable this characteristic, execution data will contain this additional detail.",
+				Type:        schema.TypeBool,
+				Optional:    true,
+			},
+			"execution_items": {
+				Description: "Whether to report execution data about individual actions, menus, states, tasks, etc. etc. that ran during execution of the flow.",
 				Type:        schema.TypeBool,
 				Optional:    true,
 			},
 			"names": {
 				Description: "This characteristic specifies whether or not name information should be emitted in execution data such as action, task, state or even the flow name itself.  Names are very handy from a readability standpoint but they do take up additional space in flow execution data instances.",
+				Type:        schema.TypeBool,
+				Optional:    true,
+			},
+			"variables": {
+				Description: "Whether to report assignment of values to variables in flow execution data. It's important to remember there is a difference between variable value assignments and output data from an action.  If you have a Call Digital Bot flow action in an Inbound Message flow and there is no variable bound to the Exit Reason output but FlowExecutionInputOutputs is enabled, you will still be able to see the exit reason from the digital bot flow in execution data even though it is not bound to a variable.",
 				Type:        schema.TypeBool,
 				Optional:    true,
 			},
@@ -91,14 +82,17 @@ func ResourceFlowLoglevel() *schema.Resource {
 		},
 		SchemaVersion: 1,
 		Schema: map[string]*schema.Schema{
-			"level": {
-				Description: "The logLevel for this characteristics set",
-				Type:        schema.TypeList,
-				MaxItems:    1,
+			"flow_id": {
+				Description: "The flowId for this characteristics set",
+				Type:        schema.TypeString,
 				Optional:    true,
-				Elem:        flowLogLevel,
 			},
-			"characteristics": {
+			"flow_log_level": {
+				Description: "The logLevel for this characteristics set",
+				Type:        schema.TypeString,
+				Optional:    true,
+			},
+			"flow_characteristics": {
 				Description: "Shows what characteristics are enabled for this log level",
 				Type:        schema.TypeList,
 				MaxItems:    1,
