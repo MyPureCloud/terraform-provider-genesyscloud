@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	rc "terraform-provider-genesyscloud/genesyscloud/resource_cache"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
 )
@@ -25,7 +26,7 @@ type getArchitectGrammarIdByNameFunc func(ctx context.Context, p *architectGramm
 type updateArchitectGrammarFunc func(ctx context.Context, p *architectGrammarProxy, grammarId string, grammar *platformclientv2.Grammar) (*platformclientv2.Grammar, *platformclientv2.APIResponse, error)
 type deleteArchitectGrammarFunc func(ctx context.Context, p *architectGrammarProxy, grammarId string) (*platformclientv2.APIResponse, error)
 
-// architectGrammarProxy contains all of the methods that call genesys cloud APIs.
+// architectGrammarProxy contains all the methods that call genesys cloud APIs.
 type architectGrammarProxy struct {
 	clientConfig                    *platformclientv2.Configuration
 	architectApi                    *platformclientv2.ArchitectApi
@@ -35,11 +36,13 @@ type architectGrammarProxy struct {
 	getArchitectGrammarIdByNameAttr getArchitectGrammarIdByNameFunc
 	updateArchitectGrammarAttr      updateArchitectGrammarFunc
 	deleteArchitectGrammarAttr      deleteArchitectGrammarFunc
+	grammarCache                    rc.CacheInterface[platformclientv2.Grammar]
 }
 
-// newArchitectGrammarProxy initializes the grammar proxy with all of the data needed to communicate with Genesys Cloud
+// newArchitectGrammarProxy initializes the grammar proxy with all the data needed to communicate with Genesys Cloud
 func newArchitectGrammarProxy(clientConfig *platformclientv2.Configuration) *architectGrammarProxy {
 	api := platformclientv2.NewArchitectApiWithConfig(clientConfig)
+	grammarCache := rc.NewResourceCache[platformclientv2.Grammar]()
 	return &architectGrammarProxy{
 		clientConfig:                    clientConfig,
 		architectApi:                    api,
@@ -49,6 +52,7 @@ func newArchitectGrammarProxy(clientConfig *platformclientv2.Configuration) *arc
 		getArchitectGrammarIdByNameAttr: getArchitectGrammarIdByNameFn,
 		updateArchitectGrammarAttr:      updateArchitectGrammarFn,
 		deleteArchitectGrammarAttr:      deleteArchitectGrammarFn,
+		grammarCache:                    grammarCache,
 	}
 }
 
@@ -112,9 +116,7 @@ func getAllArchitectGrammarFn(ctx context.Context, p *architectGrammarProxy) (*[
 	if grammars.Entities == nil || len(*grammars.Entities) == 0 {
 		return &allGrammars, resp, nil
 	}
-	for _, grammar := range *grammars.Entities {
-		allGrammars = append(allGrammars, grammar)
-	}
+	allGrammars = append(allGrammars, *grammars.Entities...)
 
 	for pageNum := 2; pageNum <= *grammars.PageCount; pageNum++ {
 		const pageSize = 100
@@ -128,9 +130,11 @@ func getAllArchitectGrammarFn(ctx context.Context, p *architectGrammarProxy) (*[
 			break
 		}
 
-		for _, grammar := range *grammars.Entities {
-			allGrammars = append(allGrammars, grammar)
-		}
+		allGrammars = append(allGrammars, *grammars.Entities...)
+	}
+
+	for _, grammar := range allGrammars {
+		rc.SetCache(p.grammarCache, *grammar.Id, grammar)
 	}
 
 	return &allGrammars, resp, nil
@@ -138,6 +142,11 @@ func getAllArchitectGrammarFn(ctx context.Context, p *architectGrammarProxy) (*[
 
 // getArchitectGrammarByIdFn is an implementation of the function to get a Genesys Cloud Architect Grammar by Id
 func getArchitectGrammarByIdFn(ctx context.Context, p *architectGrammarProxy, grammarId string) (*platformclientv2.Grammar, *platformclientv2.APIResponse, error) {
+	grammar := rc.GetCache(p.grammarCache, grammarId)
+	if grammar != nil {
+		return grammar, nil, nil
+	}
+
 	grammar, resp, err := p.architectApi.GetArchitectGrammar(grammarId, true)
 	if err != nil {
 		return nil, resp, fmt.Errorf("Failed to retrieve grammar by id %s: %s", grammarId, err)

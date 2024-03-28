@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	rc "terraform-provider-genesyscloud/genesyscloud/resource_cache"
 	"terraform-provider-genesyscloud/genesyscloud/util/files"
 	"time"
 
@@ -42,11 +43,13 @@ type architectGrammarLanguageProxy struct {
 	updateArchitectGrammarLanguageAttr  updateArchitectGrammarLanguageFunc
 	deleteArchitectGrammarLanguageAttr  deleteArchitectGrammarLanguageFunc
 	getAllArchitectGrammarLanguageAttr  getAllArchitectGrammarLanguageFunc
+	grammarLanguageCache                rc.CacheInterface[platformclientv2.Grammarlanguage]
 }
 
-// newArchitectGrammarLanguageProxy initializes the grammar Language proxy with all of the data needed to communicate with Genesys Cloud
+// newArchitectGrammarLanguageProxy initializes the grammar Language proxy with all the data needed to communicate with Genesys Cloud
 func newArchitectGrammarLanguageProxy(clientConfig *platformclientv2.Configuration) *architectGrammarLanguageProxy {
 	api := platformclientv2.NewArchitectApiWithConfig(clientConfig)
+	grammarLanguageCache := rc.NewResourceCache[platformclientv2.Grammarlanguage]()
 	return &architectGrammarLanguageProxy{
 		clientConfig:                        clientConfig,
 		architectApi:                        api,
@@ -55,6 +58,7 @@ func newArchitectGrammarLanguageProxy(clientConfig *platformclientv2.Configurati
 		updateArchitectGrammarLanguageAttr:  updateArchitectGrammarLanguageFn,
 		deleteArchitectGrammarLanguageAttr:  deleteArchitectGrammarLanguageFn,
 		getAllArchitectGrammarLanguageAttr:  getAllArchitectGrammarLanguageFn,
+		grammarLanguageCache:                grammarLanguageCache,
 	}
 }
 
@@ -119,6 +123,10 @@ func createArchitectGrammarLanguageFn(_ context.Context, p *architectGrammarLang
 
 // getArchitectGrammarLanguageByIdFn is an implementation of the function to get a Genesys Cloud Architect Grammar Language by Id
 func getArchitectGrammarLanguageByIdFn(_ context.Context, p *architectGrammarLanguageProxy, grammarId string, languageCode string) (*platformclientv2.Grammarlanguage, *platformclientv2.APIResponse, error) {
+	language := rc.GetCache(p.grammarLanguageCache, fmt.Sprintf("%s:%s", grammarId, languageCode))
+	if language != nil {
+		return language, nil, nil
+	}
 	return p.architectApi.GetArchitectGrammarLanguage(grammarId, languageCode)
 }
 
@@ -207,9 +215,7 @@ func getAllArchitectGrammarLanguageFn(_ context.Context, p *architectGrammarLang
 
 	for _, grammar := range *grammars.Entities {
 		if grammar.Languages != nil {
-			for _, language := range *grammar.Languages {
-				allLanguages = append(allLanguages, language)
-			}
+			allLanguages = append(allLanguages, *grammar.Languages...)
 		}
 	}
 
@@ -227,11 +233,13 @@ func getAllArchitectGrammarLanguageFn(_ context.Context, p *architectGrammarLang
 
 		for _, grammar := range *grammars.Entities {
 			if grammar.Languages != nil {
-				for _, language := range *grammar.Languages {
-					allLanguages = append(allLanguages, language)
-				}
+				allLanguages = append(allLanguages, *grammar.Languages...)
 			}
 		}
+	}
+
+	for _, language := range allLanguages {
+		rc.SetCache(p.grammarLanguageCache, fmt.Sprintf("%s:%s", *language.GrammarId, *language.Language), language)
 	}
 
 	return &allLanguages, resp, nil
