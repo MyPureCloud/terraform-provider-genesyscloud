@@ -57,9 +57,9 @@ func readFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) dia
 		flow, resp, err := proxy.GetFlow(ctx, d.Id())
 		if err != nil {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(fmt.Errorf("Failed to read flow %s: %s", d.Id(), err))
+				return retry.RetryableError(fmt.Errorf("failed to read flow %s: %s", d.Id(), err))
 			}
-			return retry.NonRetryableError(fmt.Errorf("Failed to read flow %s: %s", d.Id(), err))
+			return retry.NonRetryableError(fmt.Errorf("failed to read flow %s: %s", d.Id(), err))
 		}
 
 		log.Printf("Read flow %s %s", d.Id(), *flow.Name)
@@ -131,13 +131,13 @@ func updateFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 
 		if *flowJob.Status == "Failure" {
 			if flowJob.Messages == nil {
-				return retry.NonRetryableError(fmt.Errorf("Flow publish failed. JobID: %s, no tracing messages available.", jobId))
+				return retry.NonRetryableError(fmt.Errorf("flow publish failed. JobID: %s, no tracing messages available", jobId))
 			}
 			messages := make([]string, 0)
 			for _, m := range *flowJob.Messages {
 				messages = append(messages, *m.Text)
 			}
-			return retry.NonRetryableError(fmt.Errorf("Flow publish failed. JobID: %s, tracing messages: %v ", jobId, strings.Join(messages, "\n\n")))
+			return retry.NonRetryableError(fmt.Errorf("flow publish failed. JobID: %s, tracing messages: %v ", jobId, strings.Join(messages, "\n\n")))
 		}
 
 		if *flowJob.Status == "Success" {
@@ -186,9 +186,9 @@ func deleteFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 				return nil
 			}
 			if resp.StatusCode == http.StatusConflict {
-				return retry.RetryableError(fmt.Errorf("Error deleting flow %s: %s", d.Id(), err))
+				return retry.RetryableError(fmt.Errorf("error deleting flow %s: %s", d.Id(), err))
 			}
-			return retry.NonRetryableError(fmt.Errorf("Error deleting flow %s: %s", d.Id(), err))
+			return retry.NonRetryableError(fmt.Errorf("error deleting flow %s: %s", d.Id(), err))
 		}
 		return nil
 	})
@@ -201,7 +201,11 @@ func updateFile(filepath, content string) {
 		log.Println(err)
 		return
 	}
-	defer file.Close()
+	defer func(file *os.File) {
+		if err := file.Close(); err != nil {
+			log.Printf("failed to close file %s: %v", filepath, err)
+		}
+	}(file)
 
-	file.WriteString(content)
+	_, _ = file.WriteString(content)
 }
