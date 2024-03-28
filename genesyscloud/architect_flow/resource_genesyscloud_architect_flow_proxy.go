@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
 	"log"
+	rc "terraform-provider-genesyscloud/genesyscloud/resource_cache"
 )
 
 var internalProxy *architectFlowProxy
@@ -26,10 +27,13 @@ type architectFlowProxy struct {
 	deleteArchitectFlowAttr     deleteArchitectFlowFunc
 	createArchitectFlowJobsAttr createArchitectFlowJobsFunc
 	getArchitectFlowJobsAttr    getArchitectFlowJobsFunc
+
+	flowCache rc.CacheInterface[platformclientv2.Flow]
 }
 
 func newArchitectFlowProxy(clientConfig *platformclientv2.Configuration) *architectFlowProxy {
 	api := platformclientv2.NewArchitectApiWithConfig(clientConfig)
+	flowCache := rc.NewResourceCache[platformclientv2.Flow]()
 	return &architectFlowProxy{
 		clientConfig: clientConfig,
 		api:          api,
@@ -40,6 +44,7 @@ func newArchitectFlowProxy(clientConfig *platformclientv2.Configuration) *archit
 		deleteArchitectFlowAttr:     deleteArchitectFlowFn,
 		createArchitectFlowJobsAttr: createArchitectFlowJobsFn,
 		getArchitectFlowJobsAttr:    getArchitectFlowJobsFn,
+		flowCache:                   flowCache,
 	}
 }
 
@@ -75,6 +80,10 @@ func (a *architectFlowProxy) GetAllFlows(ctx context.Context) (*[]platformclient
 }
 
 func getArchitectFlowFn(_ context.Context, p *architectFlowProxy, id string) (*platformclientv2.Flow, *platformclientv2.APIResponse, error) {
+	flow := rc.GetCache(p.flowCache, id)
+	if flow != nil {
+		return flow, nil, nil
+	}
 	return p.api.GetFlow(id, false)
 }
 
@@ -104,19 +113,25 @@ func getAllArchitectFlowsFn(_ context.Context, p *architectFlowProxy) (*[]platfo
 	if err != nil {
 		return nil, fmt.Errorf("failed to get page of flows: %v %v", err, resp)
 	}
-
-	for _, flow := range *flows.Entities {
-		totalFlows = append(totalFlows, flow)
+	if flows.Entities == nil || len(*flows.Entities) == 0 {
+		return &totalFlows, nil
 	}
+
+	totalFlows = append(totalFlows, *flows.Entities...)
 
 	for pageNum := 2; pageNum <= *flows.PageCount; pageNum++ {
 		flows, resp, err := p.api.GetFlows(nil, pageNum, pageSize, "", "", nil, "", "", "", "", "", "", "", "", false, true, "", "", nil)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get page %d of flows: %v %v", pageNum, err, resp)
 		}
-		for _, flow := range *flows.Entities {
-			totalFlows = append(totalFlows, flow)
+		if flows.Entities == nil || len(*flows.Entities) == 0 {
+			break
 		}
+		totalFlows = append(totalFlows, *flows.Entities...)
+	}
+
+	for _, flow := range totalFlows {
+		rc.SetCache(p.flowCache, *flow.Id, flow)
 	}
 
 	return &totalFlows, nil
