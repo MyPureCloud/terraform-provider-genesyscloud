@@ -29,7 +29,7 @@ func getAllAuthArchitectGrammarLanguage(ctx context.Context, clientConfig *platf
 
 	languages, resp, err := proxy.getAllArchitectGrammarLanguage(ctx)
 	if err != nil {
-		return nil, diag.Errorf("Failed to get grammar languages: %v %v", err, resp)
+		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get grammar languages"), resp)
 	}
 
 	for _, language := range *languages {
@@ -50,7 +50,7 @@ func createArchitectGrammarLanguage(ctx context.Context, d *schema.ResourceData,
 	log.Printf("Creating Architect Grammar Language %s for grammar %s", *architectGrammarLanguage.Language, *architectGrammarLanguage.GrammarId)
 	language, resp, err := proxy.createArchitectGrammarLanguage(ctx, &architectGrammarLanguage)
 	if err != nil {
-		return diag.Errorf("Failed to create grammar language: %s %v", err, resp)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create grammar language %s", d.Id()), resp)
 	}
 
 	// Language id is always in format <grammar-id>:<language-code>
@@ -111,7 +111,7 @@ func updateArchitectGrammarLanguage(ctx context.Context, d *schema.ResourceData,
 	log.Printf("Updating Architect Grammar Language %s", d.Id())
 	_, resp, err := proxy.updateArchitectGrammarLanguage(ctx, *architectGrammarLanguage.GrammarId, *architectGrammarLanguage.Language, &architectGrammarLanguage)
 	if err != nil {
-		return diag.Errorf("Failed to update grammar language: %s %v", err, resp)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update grammar language: %s", d.Id()), resp)
 	}
 
 	log.Printf("Updated Architect Grammar Language %s", d.Id())
@@ -126,7 +126,7 @@ func deleteArchitectGrammarLanguage(ctx context.Context, d *schema.ResourceData,
 	grammarId, languageCode := splitLanguageId(d.Id())
 	resp, err := proxy.deleteArchitectGrammarLanguage(ctx, grammarId, languageCode)
 	if err != nil {
-		return diag.Errorf("Failed to delete grammar language %s: %s %v", d.Id(), err, resp)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete grammar language %s", d.Id()), resp)
 	}
 
 	return util.WithRetries(ctx, 180*time.Second, func() *retry.RetryError {

@@ -25,9 +25,9 @@ func getAllFlows(ctx context.Context, clientConfig *platformclientv2.Configurati
 	resources := make(resourceExporter.ResourceIDMetaMap)
 	p := getArchitectFlowProxy(clientConfig)
 
-	flows, err := p.GetAllFlows(ctx)
+	flows, resp, err := p.GetAllFlows(ctx)
 	if err != nil {
-		return nil, diag.Errorf("failed to get architect flows %v", err)
+		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get architect flows"), resp)
 	}
 
 	for _, flow := range *flows {
@@ -83,15 +83,14 @@ func updateFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 		resp, err := p.ForceUnlockFlow(ctx, d.Id())
 		if err != nil {
 			setFileContentHashToNil(d)
-			return diag.Errorf("Failed to unlock targeted flow %s with error %s %v", d.Id(), err, resp)
+			return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to unlock targeted flow %s", d.Id()), resp)
 		}
 	}
 
 	flowJob, response, err := p.CreateFlowsDeployJob(ctx)
-
 	if err != nil {
 		setFileContentHashToNil(d)
-		return diag.Errorf("Failed to update job %s", err)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update job"), response)
 	}
 
 	if err == nil && response.Error != nil {
@@ -189,7 +188,7 @@ func deleteFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	if isForceUnlockEnabled(d) {
 		resp, err := p.ForceUnlockFlow(ctx, d.Id())
 		if err != nil {
-			return diag.Errorf("Failed to unlock targeted flow %s with error %s %v", d.Id(), err, resp)
+			return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to unlock targeted flow %s", d.Id()), resp)
 		}
 	}
 

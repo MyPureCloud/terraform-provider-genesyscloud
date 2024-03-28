@@ -23,9 +23,9 @@ func dataSourceFlowRead(ctx context.Context, d *schema.ResourceData, m interface
 	return util.WithRetries(ctx, 5*time.Second, func() *retry.RetryError {
 		const pageSize = 100
 		for pageNum := 1; ; pageNum++ {
-			flows, getErr := p.GetAllFlows(ctx)
+			flows, resp, getErr := p.GetAllFlows(ctx)
 			if getErr != nil {
-				return retry.NonRetryableError(fmt.Errorf("Error requesting flow %s: %s", name, getErr))
+				return retry.NonRetryableError(fmt.Errorf("Error requesting flow %s: %s %s", name, getErr, resp))
 			}
 
 			if flows == nil || len(*flows) == 0 {

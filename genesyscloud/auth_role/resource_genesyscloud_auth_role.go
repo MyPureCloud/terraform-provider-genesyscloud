@@ -30,7 +30,7 @@ func getAllAuthAuthRoles(ctx context.Context, clientConfig *platformclientv2.Con
 		const pageSize = 100
 		roles, proxyResponse, getErr := authAPI.GetAuthorizationRoles(pageSize, pageNum, "", nil, "", "", "", nil, nil, false, nil)
 		if getErr != nil {
-			return nil, diag.Errorf("Failed to get page of roles: %v %v ", getErr, proxyResponse)
+			return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get page of roles"), proxyResponse)
 		}
 
 		if roles.Entities == nil || len(*roles.Entities) == 0 {
@@ -54,9 +54,9 @@ func createAuthRole(ctx context.Context, d *schema.ResourceData, meta interface{
 	policies := buildSdkRolePermPolicies(d)
 	if policies != nil {
 		for _, policy := range *policies {
-			err := validatePermissionPolicy(proxy, policy)
+			resp, err := validatePermissionPolicy(proxy, policy)
 			if err != nil {
-				return diag.Errorf("Permission policy not found: %s, ensure your org has the required product for this permission", err)
+				return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Permission policy not found: %s, ensure your org has the required product for this permission", err), resp)
 			}
 		}
 	}
@@ -70,7 +70,7 @@ func createAuthRole(ctx context.Context, d *schema.ResourceData, meta interface{
 		// Default roles must already exist, or they cannot be modified
 		defaultRole, proxyResponse, err := proxy.getDefaultRoleById(ctx, defaultRoleID)
 		if err != nil {
-			return diag.Errorf("Error requesting default role %s: %s %v", defaultRoleID, err, proxyResponse)
+			return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get default role %s", d.Id()), proxyResponse)
 		}
 		d.SetId(defaultRole)
 		return updateAuthRole(ctx, d, meta)
@@ -85,7 +85,7 @@ func createAuthRole(ctx context.Context, d *schema.ResourceData, meta interface{
 
 	role, proxyResponse, err := proxy.createAuthRole(ctx, &roleObj)
 	if err != nil {
-		return diag.Errorf("Failed to create role %s: %s %v", name, proxyResponse, err)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create role %s %s", d.Id(), *roleObj.Name), proxyResponse)
 	}
 
 	d.SetId(*role.Id)
@@ -143,9 +143,9 @@ func updateAuthRole(ctx context.Context, d *schema.ResourceData, meta interface{
 	policies := buildSdkRolePermPolicies(d)
 	if policies != nil {
 		for _, policy := range *policies {
-			err := validatePermissionPolicy(proxy, policy)
+			resp, err := validatePermissionPolicy(proxy, policy)
 			if err != nil {
-				return diag.Errorf("Permission policy not found: %s, ensure your org has the required product for this permission", err)
+				return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Permission policy not found: %s, ensure your org has the required product for this permission", err), resp)
 			}
 		}
 	}
@@ -164,7 +164,7 @@ func updateAuthRole(ctx context.Context, d *schema.ResourceData, meta interface{
 	}
 	_, proxyResponse, err := proxy.updateAuthRole(ctx, d.Id(), &roleObj)
 	if err != nil {
-		return diag.Errorf("Failed to update role %s: %s %v", name, err, proxyResponse)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update role %s %s", d.Id(), *roleObj.Name), proxyResponse)
 	}
 
 	log.Printf("Updated role %s", name)
@@ -189,7 +189,7 @@ func deleteAuthRole(ctx context.Context, d *schema.ResourceData, meta interface{
 			},
 		})
 		if err != nil {
-			return diag.Errorf("Failed to restore default role %s: %s %v", defaultRoleID, err, proxyResponse)
+			return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to restore default role %s", defaultRoleID), proxyResponse)
 		}
 		return nil
 	}
@@ -197,7 +197,7 @@ func deleteAuthRole(ctx context.Context, d *schema.ResourceData, meta interface{
 	log.Printf("Deleting role %s", name)
 	proxyResponse, err := proxy.deleteAuthRole(ctx, d.Id())
 	if err != nil {
-		return diag.Errorf("Failed to delete role %s: %s %v", name, err, proxyResponse)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete auth role %s %s", d.Id(), name), proxyResponse)
 	}
 
 	return util.WithRetries(ctx, 60*time.Second, func() *retry.RetryError {
