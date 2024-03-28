@@ -109,7 +109,7 @@ func updateFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	reader, _, err := files.DownloadOrOpenFile(filePath)
 	if err != nil {
 		setFileContentHashToNil(d)
-		return diag.Errorf(err.Error())
+		return diag.FromErr(err)
 	}
 
 	s3Uploader := files.NewS3Uploader(reader, nil, substitutions, headers, "PUT", presignedUrl)
