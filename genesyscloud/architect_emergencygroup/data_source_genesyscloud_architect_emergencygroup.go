@@ -23,9 +23,9 @@ func dataSourceEmergencyGroupRead(ctx context.Context, d *schema.ResourceData, m
 	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
 		const pageNum = 1
 		const pageSize = 100
-		emergencyGroups, _, getErr := ap.getArchitectEmergencyGroupIdByName(ctx, name)
+		emergencyGroups, resp, getErr := ap.getArchitectEmergencyGroupIdByName(ctx, name)
 		if getErr != nil {
-			return retry.NonRetryableError(fmt.Errorf("Error requesting emergency group %s: %s", name, getErr))
+			return retry.NonRetryableError(fmt.Errorf("Error requesting emergency group %s: %s %v", name, getErr, resp))
 		}
 
 		if emergencyGroups.Entities == nil || len(*emergencyGroups.Entities) == 0 {

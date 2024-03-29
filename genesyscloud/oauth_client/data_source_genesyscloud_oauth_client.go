@@ -21,9 +21,9 @@ func dataSourceOAuthClientRead(ctx context.Context, d *schema.ResourceData, m in
 
 	// Find first non-deleted oauth client by name. Retry in case new oauth client is not yet indexed by search
 	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
-		clients, getErr := oauthClientProxy.getAllOAuthClients(ctx)
+		clients, resp, getErr := oauthClientProxy.getAllOAuthClients(ctx)
 		if getErr != nil {
-			return retry.NonRetryableError(fmt.Errorf("Error requesting oauth client %s: %s", name, getErr))
+			return retry.NonRetryableError(fmt.Errorf("Error requesting oauth client %s: %s %v", name, getErr, resp))
 		}
 
 		if len(*clients) == 0 {

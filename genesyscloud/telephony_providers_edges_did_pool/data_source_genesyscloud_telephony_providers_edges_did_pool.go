@@ -21,7 +21,7 @@ func dataSourceDidPoolRead(ctx context.Context, d *schema.ResourceData, m interf
 	didPoolEndPhoneNumber := d.Get("end_phone_number").(string)
 
 	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
-		id, retryable, err := proxy.getTelephonyDidPoolIdByStartAndEndNumber(ctx, didPoolStartPhoneNumber, didPoolEndPhoneNumber)
+		id, retryable, _, err := proxy.getTelephonyDidPoolIdByStartAndEndNumber(ctx, didPoolStartPhoneNumber, didPoolEndPhoneNumber)
 		if err != nil && !retryable {
 			return retry.NonRetryableError(err)
 		}

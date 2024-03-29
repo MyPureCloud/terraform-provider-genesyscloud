@@ -20,15 +20,13 @@ func dataSourceStationRead(ctx context.Context, d *schema.ResourceData, m interf
 	stationName := d.Get("name").(string)
 
 	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
-		stationId, retryable, err := sp.getStationIdByName(ctx, stationName)
+		stationId, retryable, resp, err := sp.getStationIdByName(ctx, stationName)
 		if err != nil && !retryable {
-			return retry.NonRetryableError(fmt.Errorf("error requesting station %s", err))
+			return retry.NonRetryableError(fmt.Errorf("error requesting station %s %v", err, resp))
 		}
-
 		if retryable {
 			return retry.RetryableError(fmt.Errorf("no stations found"))
 		}
-
 		d.SetId(stationId)
 		return nil
 	})

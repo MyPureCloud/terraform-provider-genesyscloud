@@ -11,7 +11,7 @@ var internalProxy *outboundWrapupCodeMappingsProxy
 
 type getAllOutboundWrapupCodeMappingsFunc func(ctx context.Context, p *outboundWrapupCodeMappingsProxy) (wrapupcodeMappings *platformclientv2.Wrapupcodemapping, resp *platformclientv2.APIResponse, err error)
 type updateOutboundWrapUpCodeMappingsFunc func(ctx context.Context, p *outboundWrapupCodeMappingsProxy, outBoundWrappingCodes *platformclientv2.Wrapupcodemapping) (updatedWrapupCodeMappings *platformclientv2.Wrapupcodemapping, resp *platformclientv2.APIResponse, err error)
-type getAllWrapupCodesFunc func(ctx context.Context, p *outboundWrapupCodeMappingsProxy) (updatedWrapupCodeMappings *[]platformclientv2.Wrapupcode, err error)
+type getAllWrapupCodesFunc func(ctx context.Context, p *outboundWrapupCodeMappingsProxy) (updatedWrapupCodeMappings *[]platformclientv2.Wrapupcode, resp *platformclientv2.APIResponse, err error)
 
 type outboundWrapupCodeMappingsProxy struct {
 	clientConfig                         *platformclientv2.Configuration
@@ -41,7 +41,6 @@ func getOutboundWrapupCodeMappingsProxy(clientConfig *platformclientv2.Configura
 	if internalProxy == nil {
 		internalProxy = newOutboundWrapupCodeMappingsProxy(clientConfig)
 	}
-
 	return internalProxy
 }
 
@@ -56,7 +55,7 @@ func (p *outboundWrapupCodeMappingsProxy) updateOutboundWrapUpCodeMappings(ctx c
 }
 
 // getAllWrapupCodes gets all the wrapup codes in the org.  This is the struct implementation that should be consumed by everyone.
-func (p *outboundWrapupCodeMappingsProxy) getAllWrapupCodes(ctx context.Context) (updatedWrapupCodeMappings *[]platformclientv2.Wrapupcode, err error) {
+func (p *outboundWrapupCodeMappingsProxy) getAllWrapupCodes(ctx context.Context) (updatedWrapupCodeMappings *[]platformclientv2.Wrapupcode, resp *platformclientv2.APIResponse, err error) {
 	return p.getAllWrapupCodesAttr(ctx, p)
 }
 
@@ -76,28 +75,26 @@ func updateOutboundWrapUpCodeMappingsFn(ctx context.Context, p *outboundWrapupCo
 }
 
 // getAllWrapupCodesFn is the implementation of the getAllWrapupCodes call
-func getAllWrapupCodesFn(ctx context.Context, p *outboundWrapupCodeMappingsProxy) (updatedWrapupCodeMappings *[]platformclientv2.Wrapupcode, err error) {
+func getAllWrapupCodesFn(ctx context.Context, p *outboundWrapupCodeMappingsProxy) (updatedWrapupCodeMappings *[]platformclientv2.Wrapupcode, response *platformclientv2.APIResponse, err error) {
 	wucs := []platformclientv2.Wrapupcode{}
 	const pageSize = 100
 
-	wucList, _, err := p.routingApi.GetRoutingWrapupcodes(pageSize, 1, "", "", "", nil, nil)
+	wucList, resp, err := p.routingApi.GetRoutingWrapupcodes(pageSize, 1, "", "", "", nil, nil)
 	if err != nil {
-		return nil, err
+		return nil, resp, err
 	}
 	wucs = append(wucs, *wucList.Entities...)
 
 	for pageNum := 2; pageNum <= *wucList.PageCount; pageNum++ {
-		wucList, _, err := p.routingApi.GetRoutingWrapupcodes(pageSize, pageNum, "", "", "", nil, nil)
+		wucList, resp, err := p.routingApi.GetRoutingWrapupcodes(pageSize, pageNum, "", "", "", nil, nil)
 		if err != nil {
-			return nil, err
+			return nil, resp, err
 		}
 
 		if wucList.Entities == nil || len(*wucList.Entities) == 0 {
 			break
 		}
-
 		wucs = append(wucs, *wucList.Entities...)
 	}
-
-	return &wucs, nil
+	return &wucs, resp, nil
 }

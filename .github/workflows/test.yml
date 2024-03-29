@@ -84,8 +84,7 @@ jobs:
   all-other-unit-tests:
     uses: ./.github/workflows/test-workflow.yml
     name: All Other Unit Tests
-    needs:
-      - build
+    needs: build
     with:
       package-path: './genesyscloud/...'
       skip-regexp: 'TfExport|Outbound|Routing|TestAccDataSource|TestAccResource'
@@ -98,10 +97,7 @@ jobs:
       client-secret: ${{ secrets.TEST_GENESYSCLOUD_OAUTHCLIENT_SECRET }}
 
   all-other-datasource-tests:
-    needs:
-      - routing-tests
-      - export-tests
-      - outbound-tests
+    needs: build
     if: ${{ always() }}
     uses: ./.github/workflows/test-workflow.yml
     name: All Other DataSource Tests
@@ -119,10 +115,7 @@ jobs:
   all-other-resource-tests:
     uses: ./.github/workflows/test-workflow.yml
     name: All Other Resource Tests
-    needs:
-      - routing-tests
-      - export-tests
-      - outbound-tests
+    needs: build
     if: ${{ always() }}
     with:
       package-path: './genesyscloud/...'

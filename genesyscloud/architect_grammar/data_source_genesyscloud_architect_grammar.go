@@ -25,10 +25,10 @@ func dataSourceArchitectGrammarRead(ctx context.Context, d *schema.ResourceData,
 	name := d.Get("name").(string)
 
 	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
-		grammarId, retryable, err := proxy.getArchitectGrammarIdByName(ctx, name)
+		grammarId, retryable, resp, err := proxy.getArchitectGrammarIdByName(ctx, name)
 
 		if err != nil && !retryable {
-			return retry.NonRetryableError(fmt.Errorf("Error grammar %s: %s", name, err))
+			return retry.NonRetryableError(fmt.Errorf("Error grammar %s: %s %v", name, err, resp))
 		}
 
 		if retryable {

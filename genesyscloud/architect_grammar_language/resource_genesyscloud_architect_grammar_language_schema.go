@@ -99,5 +99,8 @@ func ArchitectGrammarLanguageExporter() *resourceExporter.ResourceExporter {
 			RetrieveAndWriteFilesFunc: ArchitectGrammarLanguageResolver,
 			SubDirectory:              "language_files",
 		},
+		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
+			"grammar_id": {RefType: "genesyscloud_architect_grammar"},
+		},
 	}
 }

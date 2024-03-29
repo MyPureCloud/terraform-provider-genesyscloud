@@ -24,10 +24,10 @@ func dataSourceResponsemanagementLibraryRead(ctx context.Context, d *schema.Reso
 
 	name := d.Get("name").(string)
 	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
-		libraryId, retryable, err := proxy.getResponsemanagementLibraryIdByName(ctx, name)
+		libraryId, retryable, resp, err := proxy.getResponsemanagementLibraryIdByName(ctx, name)
 
 		if err != nil && !retryable {
-			return retry.NonRetryableError(fmt.Errorf("Error searching responsemanagement library %s: %s", name, err))
+			return retry.NonRetryableError(fmt.Errorf("Error searching responsemanagement library %s: %s %v", name, err, resp))
 		}
 
 		if retryable {

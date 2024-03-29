@@ -12,19 +12,21 @@ import (
    used in testing the architect_grammar_language resource.
 */
 
-// providerDataSources holds a map of all registered datasources
+// providerDataSources holds a map of all registered data sources
 var providerDataSources map[string]*schema.Resource
 
 // providerResources holds a map of all registered resources
 var providerResources map[string]*schema.Resource
 
 type registerTestInstance struct {
-	resourceMapMutex   sync.RWMutex
-	datasourceMapMutex sync.RWMutex
+	resourceMapMutex sync.RWMutex
 }
 
 // registerTestResources registers all resources used in the tests
 func (r *registerTestInstance) registerTestResources() {
+	r.resourceMapMutex.Lock()
+	defer r.resourceMapMutex.Unlock()
+
 	providerResources["genesyscloud_architect_grammar_language"] = ResourceArchitectGrammarLanguage()
 	providerResources["genesyscloud_architect_grammar"] = architectGrammar.ResourceArchitectGrammar()
 }

@@ -31,9 +31,9 @@ func getAllAuthOutboundRuleset(ctx context.Context, clientConfig *platformclient
 	proxy := getOutboundRulesetProxy(clientConfig)
 	resources := make(resourceExporter.ResourceIDMetaMap)
 
-	rulesets, rsErr := proxy.getAllOutboundRuleset(ctx)
+	rulesets, resp, rsErr := proxy.getAllOutboundRuleset(ctx)
 	if rsErr != nil {
-		return nil, diag.Errorf("Failed to get ruleset: %v", rsErr)
+		return nil, diag.Errorf("Failed to get ruleset: %v %v", rsErr, resp)
 	}
 
 	// DEVTOOLING-319: filters rule sets by removing the ones that reference skills that no longer exist in GC
@@ -51,7 +51,6 @@ func getAllAuthOutboundRuleset(ctx context.Context, clientConfig *platformclient
 		log.Printf("Dealing with ruleset id : %s", *ruleset.Id)
 		resources[*ruleset.Id] = &resourceExporter.ResourceMeta{Name: *ruleset.Name}
 	}
-
 	return resources, nil
 }
 
@@ -62,9 +61,9 @@ func createOutboundRuleset(ctx context.Context, d *schema.ResourceData, meta int
 
 	outboundRuleset := getOutboundRulesetFromResourceData(d)
 
-	ruleset, err := proxy.createOutboundRuleset(ctx, &outboundRuleset)
+	ruleset, resp, err := proxy.createOutboundRuleset(ctx, &outboundRuleset)
 	if err != nil {
-		return diag.Errorf("Failed to create ruleset: %s", err)
+		return diag.Errorf("Failed to create ruleset: %s %v", err, resp)
 	}
 
 	d.SetId(*ruleset.Id)
@@ -80,9 +79,9 @@ func readOutboundRuleset(ctx context.Context, d *schema.ResourceData, meta inter
 	log.Printf("Reading Outbound Ruleset %s", d.Id())
 
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
-		ruleset, respCode, getErr := proxy.getOutboundRulesetById(ctx, d.Id())
+		ruleset, resp, getErr := proxy.getOutboundRulesetById(ctx, d.Id())
 		if getErr != nil {
-			if util.IsStatus404ByInt(respCode) {
+			if util.IsStatus404(resp) {
 				return retry.RetryableError(fmt.Errorf("Failed to read Outbound Ruleset %s: %s", d.Id(), getErr))
 			}
 			return retry.NonRetryableError(fmt.Errorf("Failed to read Outbound Ruleset %s: %s", d.Id(), getErr))
@@ -107,9 +106,9 @@ func updateOutboundRuleset(ctx context.Context, d *schema.ResourceData, meta int
 
 	outboundRuleset := getOutboundRulesetFromResourceData(d)
 
-	ruleset, err := proxy.updateOutboundRuleset(ctx, d.Id(), &outboundRuleset)
+	ruleset, resp, err := proxy.updateOutboundRuleset(ctx, d.Id(), &outboundRuleset)
 	if err != nil {
-		return diag.Errorf("Failed to update ruleset: %s", err)
+		return diag.Errorf("Failed to update ruleset: %s %v", err, resp)
 	}
 
 	log.Printf("Updated Outbound Ruleset %s", *ruleset.Id)
@@ -121,17 +120,17 @@ func deleteOutboundRuleset(ctx context.Context, d *schema.ResourceData, meta int
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := newOutboundRulesetProxy(sdkConfig)
 
-	_, err := proxy.deleteOutboundRuleset(ctx, d.Id())
+	resp, err := proxy.deleteOutboundRuleset(ctx, d.Id())
 	if err != nil {
-		return diag.Errorf("Failed to delete ruleset %s: %s", d.Id(), err)
+		return diag.Errorf("Failed to delete ruleset %s: %s %v", d.Id(), err, resp)
 	}
 
 	return util.WithRetries(ctx, 1800*time.Second, func() *retry.RetryError {
-		_, respCode, err := proxy.getOutboundRulesetById(ctx, d.Id())
+		_, resp, err := proxy.getOutboundRulesetById(ctx, d.Id())
 
 		//Now that I am checking for th error string of API 404 and there is no error, I need to move the isStatus404
 		//moved out of the code
-		if util.IsStatus404ByInt(respCode) {
+		if util.IsStatus404(resp) {
 			// Outbound Ruleset deleted
 			log.Printf("Deleted Outbound Ruleset %s", d.Id())
 			return nil
@@ -140,7 +139,6 @@ func deleteOutboundRuleset(ctx context.Context, d *schema.ResourceData, meta int
 		if err != nil {
 			return retry.NonRetryableError(fmt.Errorf("Error deleting Outbound Ruleset %s: %s", d.Id(), err))
 		}
-
 		return retry.RetryableError(fmt.Errorf("Outbound Ruleset %s still exists", d.Id()))
 	})
 }
@@ -165,6 +163,5 @@ func filterOutboundRulesets(ruleSets []platformclientv2.Ruleset, skillMap resour
 			filteredRuleSets = append(filteredRuleSets, ruleSet)
 		}
 	}
-
 	return filteredRuleSets, nil
 }

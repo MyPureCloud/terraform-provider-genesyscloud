@@ -12,7 +12,7 @@ type getPhoneBaseSettingFunc func(ctx context.Context, p *phoneBaseProxy, phoneB
 type deletePhoneBaseSettingFunc func(ctx context.Context, p *phoneBaseProxy, phoneBaseSettingsId string) (*platformclientv2.APIResponse, error)
 type putPhoneBaseSettingFunc func(ctx context.Context, p *phoneBaseProxy, phoneBaseSettingsId string, body platformclientv2.Phonebase) (*platformclientv2.Phonebase, *platformclientv2.APIResponse, error)
 type postPhoneBaseSettingFunc func(ctx context.Context, p *phoneBaseProxy, body platformclientv2.Phonebase) (*platformclientv2.Phonebase, *platformclientv2.APIResponse, error)
-type getAllPhoneBaseSettingsFunc func(ctx context.Context, p *phoneBaseProxy) (*[]platformclientv2.Phonebase, error)
+type getAllPhoneBaseSettingsFunc func(ctx context.Context, p *phoneBaseProxy) (*[]platformclientv2.Phonebase, *platformclientv2.APIResponse, error)
 
 // PhoneBaseSettinProxy contains all of the methods that call genesys cloud APIs.
 type phoneBaseProxy struct {
@@ -48,7 +48,6 @@ func getPhoneBaseProxy(clientConfig *platformclientv2.Configuration) *phoneBaseP
 	if internalProxy == nil {
 		internalProxy = newphoneBaseProxy(clientConfig)
 	}
-
 	return internalProxy
 }
 
@@ -68,7 +67,7 @@ func (p *phoneBaseProxy) postPhoneBaseSetting(ctx context.Context, body platform
 	return p.postPhoneBaseSettingAttr(ctx, p, body)
 }
 
-func (p *phoneBaseProxy) getAllPhoneBaseSettings(ctx context.Context) (*[]platformclientv2.Phonebase, error) {
+func (p *phoneBaseProxy) getAllPhoneBaseSettings(ctx context.Context) (*[]platformclientv2.Phonebase, *platformclientv2.APIResponse, error) {
 	return p.getAllPhoneBaseSettingsAttr(ctx, p)
 }
 
@@ -78,7 +77,6 @@ func getPhoneBaseSettingFn(ctx context.Context, p *phoneBaseProxy, phoneBaseSett
 	if err != nil {
 		return nil, resp, err
 	}
-
 	return phoneBase, resp, nil
 }
 
@@ -92,7 +90,6 @@ func putPhoneBaseSettingFn(ctx context.Context, p *phoneBaseProxy, phoneBaseSett
 	if err != nil {
 		return nil, resp, err
 	}
-
 	return phoneBase, resp, nil
 }
 
@@ -101,20 +98,19 @@ func postPhoneBaseSettingFn(ctx context.Context, p *phoneBaseProxy, body platfor
 	if err != nil {
 		return nil, resp, err
 	}
-
 	return phoneBase, resp, nil
 }
 
-func getAllPhoneBaseSettingsFn(ctx context.Context, p *phoneBaseProxy) (*[]platformclientv2.Phonebase, error) {
+func getAllPhoneBaseSettingsFn(ctx context.Context, p *phoneBaseProxy) (*[]platformclientv2.Phonebase, *platformclientv2.APIResponse, error) {
 	const pageSize = 100
 	var allPhoneBaseSettings []platformclientv2.Phonebase
-
+	var response *platformclientv2.APIResponse
 	for pageNum := 1; ; pageNum++ {
-		phoneBaseSettings, _, err := p.edgesApi.GetTelephonyProvidersEdgesPhonebasesettings(pageSize, pageNum, "", "", nil, "")
+		phoneBaseSettings, resp, err := p.edgesApi.GetTelephonyProvidersEdgesPhonebasesettings(pageSize, pageNum, "", "", nil, "")
 		if err != nil {
-			return nil, err
+			return nil, resp, err
 		}
-
+		response = resp
 		if phoneBaseSettings.Entities == nil || len(*phoneBaseSettings.Entities) == 0 {
 			break
 		}
@@ -125,6 +121,5 @@ func getAllPhoneBaseSettingsFn(ctx context.Context, p *phoneBaseProxy) (*[]platf
 			}
 		}
 	}
-
-	return &allPhoneBaseSettings, nil
+	return &allPhoneBaseSettings, response, nil
 }

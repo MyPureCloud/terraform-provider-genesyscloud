@@ -13,7 +13,7 @@ type createIntegrationClientFunc func(context.Context, *oauthClientProxy, platfo
 type updateOAuthClientFunc func(context.Context, *oauthClientProxy, string, platformclientv2.Oauthclientrequest) (*platformclientv2.Oauthclient, *platformclientv2.APIResponse, error)
 type getOAuthClientFunc func(context.Context, *oauthClientProxy, string) (*platformclientv2.Oauthclient, *platformclientv2.APIResponse, error)
 type getIntegrationCredentialFunc func(context.Context, *oauthClientProxy, string) (*platformclientv2.Credential, *platformclientv2.APIResponse, error)
-type getAllOauthClientsFunc func(ctx context.Context, o *oauthClientProxy) (*[]platformclientv2.Oauthclientlisting, error)
+type getAllOauthClientsFunc func(ctx context.Context, o *oauthClientProxy) (*[]platformclientv2.Oauthclientlisting, *platformclientv2.APIResponse, error)
 type deleteOAuthClientFunc func(context.Context, *oauthClientProxy, string) (*platformclientv2.APIResponse, error)
 type deleteIntegrationCredentialFunc func(context.Context, *oauthClientProxy, string) (*platformclientv2.APIResponse, error)
 
@@ -88,7 +88,7 @@ func (o *oauthClientProxy) updateOAuthClient(ctx context.Context, id string, cli
 	return o.updateOAuthClientAttr(ctx, o, id, client)
 }
 
-func (o *oauthClientProxy) getAllOAuthClients(ctx context.Context) (*[]platformclientv2.Oauthclientlisting, error) {
+func (o *oauthClientProxy) getAllOAuthClients(ctx context.Context) (*[]platformclientv2.Oauthclientlisting, *platformclientv2.APIResponse, error) {
 	return o.getAllOauthClientsAttr(ctx, o)
 }
 
@@ -96,33 +96,30 @@ func getOAuthClientFn(ctx context.Context, o *oauthClientProxy, id string) (*pla
 	return o.api.GetOauthClient(id)
 }
 
-func getAllOauthClientsFn(ctx context.Context, o *oauthClientProxy) (*[]platformclientv2.Oauthclientlisting, error) {
+func getAllOauthClientsFn(ctx context.Context, o *oauthClientProxy) (*[]platformclientv2.Oauthclientlisting, *platformclientv2.APIResponse, error) {
 	var clients []platformclientv2.Oauthclientlisting
-	firstPage, _, err := o.api.GetOauthClients()
-
+	firstPage, resp, err := o.api.GetOauthClients()
 	if err != nil {
-		return nil, err
+		return nil, resp, err
 	}
 
 	for _, entity := range *firstPage.Entities {
 		clients = append(clients, entity)
-
 	}
 
 	for pageNum := 2; pageNum <= *firstPage.PageCount; pageNum++ {
-		page, _, err := o.api.GetOauthClients()
+		page, resp, err := o.api.GetOauthClients()
 
 		if err != nil {
-			return nil, err
+			return nil, resp, err
 		}
 
 		for _, entity := range *page.Entities {
 			clients = append(clients, entity)
-
 		}
 	}
 
-	return &clients, nil
+	return &clients, resp, nil
 }
 
 func getIntegrationClientFn(ctx context.Context, o *oauthClientProxy, id string) (*platformclientv2.Credential, *platformclientv2.APIResponse, error) {

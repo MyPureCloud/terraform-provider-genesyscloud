@@ -45,9 +45,7 @@ func dataSourceIntegrationCustomAuthActionRead(ctx context.Context, d *schema.Re
 			}
 			return retry.NonRetryableError(fmt.Errorf("error deleting integration %s: %s", d.Id(), err))
 		}
-
 		d.SetId(*authAction.Id)
-
 		return nil
 	})
 }

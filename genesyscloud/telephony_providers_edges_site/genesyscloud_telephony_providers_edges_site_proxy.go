@@ -32,26 +32,26 @@ Each proxy implementation:
 var internalProxy *siteProxy
 
 // Type definitions for each func on our proxy so we can easily mock them out later
-type getAllManagedSitesFunc func(ctx context.Context, p *siteProxy) (*[]platformclientv2.Site, error)
-type getAllUnmanagedSitesFunc func(ctx context.Context, p *siteProxy) (*[]platformclientv2.Site, error)
-type createSiteFunc func(ctx context.Context, p *siteProxy, site *platformclientv2.Site) (*platformclientv2.Site, error)
+type getAllManagedSitesFunc func(ctx context.Context, p *siteProxy) (*[]platformclientv2.Site, *platformclientv2.APIResponse, error)
+type getAllUnmanagedSitesFunc func(ctx context.Context, p *siteProxy) (*[]platformclientv2.Site, *platformclientv2.APIResponse, error)
+type createSiteFunc func(ctx context.Context, p *siteProxy, site *platformclientv2.Site) (*platformclientv2.Site, *platformclientv2.APIResponse, error)
 type deleteSiteFunc func(ctx context.Context, p *siteProxy, siteId string) (*platformclientv2.APIResponse, error)
 type getSiteByIdFunc func(ctx context.Context, p *siteProxy, siteId string) (site *platformclientv2.Site, resp *platformclientv2.APIResponse, err error)
-type getSiteIdByNameFunc func(ctx context.Context, p *siteProxy, siteName string, managed bool) (siteId string, retryable bool, err error)
+type getSiteIdByNameFunc func(ctx context.Context, p *siteProxy, siteName string, managed bool) (siteId string, retryable bool, resp *platformclientv2.APIResponse, err error)
 type updateSiteFunc func(ctx context.Context, p *siteProxy, siteId string, site *platformclientv2.Site) (*platformclientv2.Site, *platformclientv2.APIResponse, error)
 
-type createSiteOutboundRouteFunc func(ctx context.Context, p *siteProxy, siteId string, outboundRoute *platformclientv2.Outboundroutebase) (*platformclientv2.Outboundroutebase, error)
-type getSiteOutboundRoutesFunc func(ctx context.Context, p *siteProxy, siteId string) (*[]platformclientv2.Outboundroutebase, error)
-type updateSiteOutboundRouteFunc func(ctx context.Context, p *siteProxy, siteId string, outboundRouteId string, outboundRoute *platformclientv2.Outboundroutebase) (*platformclientv2.Outboundroutebase, error)
+type createSiteOutboundRouteFunc func(ctx context.Context, p *siteProxy, siteId string, outboundRoute *platformclientv2.Outboundroutebase) (*platformclientv2.Outboundroutebase, *platformclientv2.APIResponse, error)
+type getSiteOutboundRoutesFunc func(ctx context.Context, p *siteProxy, siteId string) (*[]platformclientv2.Outboundroutebase, *platformclientv2.APIResponse, error)
+type updateSiteOutboundRouteFunc func(ctx context.Context, p *siteProxy, siteId string, outboundRouteId string, outboundRoute *platformclientv2.Outboundroutebase) (*platformclientv2.Outboundroutebase, *platformclientv2.APIResponse, error)
 type deleteSiteOutboundRouteFunc func(ctx context.Context, p *siteProxy, siteId string, outboundRouteId string) (*platformclientv2.APIResponse, error)
 
 type getSiteNumberPlansFunc func(ctx context.Context, p *siteProxy, siteId string) (*[]platformclientv2.Numberplan, *platformclientv2.APIResponse, error)
 type updateSiteNumberPlansFunc func(ctx context.Context, p *siteProxy, siteId string, numberPlans *[]platformclientv2.Numberplan) (*[]platformclientv2.Numberplan, *platformclientv2.APIResponse, error)
 
-type getLocationFunc func(ctx context.Context, p *siteProxy, locationId string) (*platformclientv2.Locationdefinition, error)
-type getTelephonyMediaregionsFunc func(ctx context.Context, p *siteProxy) (*platformclientv2.Mediaregions, error)
-type setDefaultSiteFunc func(ctx context.Context, p *siteProxy, siteId string) error
-type getDefaultSiteIdFunc func(ctx context.Context, p *siteProxy) (siteId string, err error)
+type getLocationFunc func(ctx context.Context, p *siteProxy, locationId string) (*platformclientv2.Locationdefinition, *platformclientv2.APIResponse, error)
+type getTelephonyMediaregionsFunc func(ctx context.Context, p *siteProxy) (*platformclientv2.Mediaregions, *platformclientv2.APIResponse, error)
+type setDefaultSiteFunc func(ctx context.Context, p *siteProxy, siteId string) (*platformclientv2.APIResponse, error)
+type getDefaultSiteIdFunc func(ctx context.Context, p *siteProxy) (siteId string, resp *platformclientv2.APIResponse, err error)
 
 // siteProxy contains all of the methods that call genesys cloud APIs.
 type siteProxy struct {
@@ -130,17 +130,17 @@ func getSiteProxy(clientConfig *platformclientv2.Configuration) *siteProxy {
 }
 
 // getAllManagedSitesFunc retrieves all managed Genesys Cloud Sites
-func (p *siteProxy) getAllManagedSites(ctx context.Context) (*[]platformclientv2.Site, error) {
+func (p *siteProxy) getAllManagedSites(ctx context.Context) (*[]platformclientv2.Site, *platformclientv2.APIResponse, error) {
 	return p.getAllManagedSitesAttr(ctx, p)
 }
 
 // getAllUnmanagedSitesFunc retrieves all unmanaged Genesys Cloud Sites
-func (p *siteProxy) getAllUnmanagedSites(ctx context.Context) (*[]platformclientv2.Site, error) {
+func (p *siteProxy) getAllUnmanagedSites(ctx context.Context) (*[]platformclientv2.Site, *platformclientv2.APIResponse, error) {
 	return p.getAllUnmanagedSitesAttr(ctx, p)
 }
 
 // createSiteFunc creates a Genesys Cloud Site
-func (p *siteProxy) createSite(ctx context.Context, site *platformclientv2.Site) (*platformclientv2.Site, error) {
+func (p *siteProxy) createSite(ctx context.Context, site *platformclientv2.Site) (*platformclientv2.Site, *platformclientv2.APIResponse, error) {
 	return p.createSiteAttr(ctx, p, site)
 }
 
@@ -155,7 +155,7 @@ func (p *siteProxy) getSiteById(ctx context.Context, siteId string) (site *platf
 }
 
 // getSiteIdByNameFunc returns a single Genesys Cloud Site by Name
-func (p *siteProxy) getSiteIdByName(ctx context.Context, siteName string, managed bool) (siteId string, retryable bool, err error) {
+func (p *siteProxy) getSiteIdByName(ctx context.Context, siteName string, managed bool) (siteId string, retryable bool, resp *platformclientv2.APIResponse, err error) {
 	return p.getSiteIdByNameAttr(ctx, p, siteName, managed)
 }
 
@@ -165,17 +165,17 @@ func (p *siteProxy) updateSite(ctx context.Context, siteId string, site *platfor
 }
 
 // createSiteOutboundRouteFunc creates an Outbound Route for a Genesys Cloud Site
-func (p *siteProxy) createSiteOutboundRoute(ctx context.Context, siteId string, outboundRoute *platformclientv2.Outboundroutebase) (*platformclientv2.Outboundroutebase, error) {
+func (p *siteProxy) createSiteOutboundRoute(ctx context.Context, siteId string, outboundRoute *platformclientv2.Outboundroutebase) (*platformclientv2.Outboundroutebase, *platformclientv2.APIResponse, error) {
 	return p.createSiteOutboundRouteAttr(ctx, p, siteId, outboundRoute)
 }
 
 // getSiteByIdFunc returns a single Outbound Route by Id
-func (p *siteProxy) getSiteOutboundRoutes(ctx context.Context, siteId string) (*[]platformclientv2.Outboundroutebase, error) {
+func (p *siteProxy) getSiteOutboundRoutes(ctx context.Context, siteId string) (*[]platformclientv2.Outboundroutebase, *platformclientv2.APIResponse, error) {
 	return p.getSiteOutboundRoutesAttr(ctx, p, siteId)
 }
 
 // updateSiteFunc updates a Genesys Cloud Outbound Route for a Genesys Cloud Site
-func (p *siteProxy) updateSiteOutboundRoute(ctx context.Context, siteId string, outboundRouteId string, outboundRoute *platformclientv2.Outboundroutebase) (*platformclientv2.Outboundroutebase, error) {
+func (p *siteProxy) updateSiteOutboundRoute(ctx context.Context, siteId string, outboundRouteId string, outboundRoute *platformclientv2.Outboundroutebase) (*platformclientv2.Outboundroutebase, *platformclientv2.APIResponse, error) {
 	return p.updateSiteOutboundRouteAttr(ctx, p, siteId, outboundRouteId, outboundRoute)
 }
 
@@ -195,33 +195,33 @@ func (p *siteProxy) updateSiteNumberPlans(ctx context.Context, siteId string, nu
 }
 
 // getLocation retrieves a Genesys Cloud Location by Id
-func (p *siteProxy) getLocation(ctx context.Context, locationId string) (*platformclientv2.Locationdefinition, error) {
+func (p *siteProxy) getLocation(ctx context.Context, locationId string) (*platformclientv2.Locationdefinition, *platformclientv2.APIResponse, error) {
 	return p.getLocationAttr(ctx, p, locationId)
 }
 
 // getTelephonyMediaregions retrieves the Genesys Cloud media regions
-func (p *siteProxy) getTelephonyMediaregions(ctx context.Context) (*platformclientv2.Mediaregions, error) {
+func (p *siteProxy) getTelephonyMediaregions(ctx context.Context) (*platformclientv2.Mediaregions, *platformclientv2.APIResponse, error) {
 	return p.getTelephonyMediaregionsAttr(ctx, p)
 }
 
 // setDefaultSite sets a Genesys Cloud Site as the default site for the org
-func (p *siteProxy) setDefaultSite(ctx context.Context, siteId string) error {
+func (p *siteProxy) setDefaultSite(ctx context.Context, siteId string) (*platformclientv2.APIResponse, error) {
 	return p.setDefaultSiteAttr(ctx, p, siteId)
 }
 
 // getDefaultSiteId gets the default Site for the Genesys Cloud org
-func (p *siteProxy) getDefaultSiteId(ctx context.Context) (siteId string, err error) {
+func (p *siteProxy) getDefaultSiteId(ctx context.Context) (siteId string, resp *platformclientv2.APIResponse, err error) {
 	return p.getDefaultSiteIdAttr(ctx, p)
 }
 
 // getAllManagedSitesFn is an implementation function for retrieving all Genesys Cloud Outbound managed Sites
-func getAllManagedSitesFn(ctx context.Context, p *siteProxy) (*[]platformclientv2.Site, error) {
+func getAllManagedSitesFn(ctx context.Context, p *siteProxy) (*[]platformclientv2.Site, *platformclientv2.APIResponse, error) {
 	var allManagedSites []platformclientv2.Site
 
 	const pageSize = 100
-	sites, _, err := p.edgesApi.GetTelephonyProvidersEdgesSites(pageSize, 1, "", "", "", "", true, nil)
+	sites, resp, err := p.edgesApi.GetTelephonyProvidersEdgesSites(pageSize, 1, "", "", "", "", true, nil)
 	if err != nil {
-		return nil, err
+		return nil, resp, err
 	}
 
 	// Get only sites that are not 'deleted'
@@ -232,9 +232,9 @@ func getAllManagedSitesFn(ctx context.Context, p *siteProxy) (*[]platformclientv
 	}
 
 	for pageNum := 2; pageNum <= *sites.PageCount; pageNum++ {
-		sites, _, err := p.edgesApi.GetTelephonyProvidersEdgesSites(pageSize, pageNum, "", "", "", "", true, nil)
+		sites, resp, err := p.edgesApi.GetTelephonyProvidersEdgesSites(pageSize, pageNum, "", "", "", "", true, nil)
 		if err != nil {
-			return nil, err
+			return nil, resp, err
 		}
 		if sites.Entities == nil || len(*sites.Entities) == 0 {
 			break
@@ -247,18 +247,17 @@ func getAllManagedSitesFn(ctx context.Context, p *siteProxy) (*[]platformclientv
 			}
 		}
 	}
-
-	return &allManagedSites, nil
+	return &allManagedSites, resp, nil
 }
 
 // getAllUnmanagedSitesFn is an implementation function for retrieving all Genesys Cloud Outbound unmanaged Sites
-func getAllUnmanagedSitesFn(ctx context.Context, p *siteProxy) (*[]platformclientv2.Site, error) {
+func getAllUnmanagedSitesFn(ctx context.Context, p *siteProxy) (*[]platformclientv2.Site, *platformclientv2.APIResponse, error) {
 	var allUnManagedSites []platformclientv2.Site
 
 	const pageSize = 100
-	sites, _, err := p.edgesApi.GetTelephonyProvidersEdgesSites(pageSize, 1, "", "", "", "", false, nil)
+	sites, resp, err := p.edgesApi.GetTelephonyProvidersEdgesSites(pageSize, 1, "", "", "", "", false, nil)
 	if err != nil {
-		return nil, err
+		return nil, resp, err
 	}
 
 	// Get only sites that are not 'deleted'
@@ -269,9 +268,9 @@ func getAllUnmanagedSitesFn(ctx context.Context, p *siteProxy) (*[]platformclien
 	}
 
 	for pageNum := 2; pageNum <= *sites.PageCount; pageNum++ {
-		sites, _, err := p.edgesApi.GetTelephonyProvidersEdgesSites(pageSize, pageNum, "", "", "", "", false, nil)
+		sites, resp, err := p.edgesApi.GetTelephonyProvidersEdgesSites(pageSize, pageNum, "", "", "", "", false, nil)
 		if err != nil {
-			return nil, err
+			return nil, resp, err
 		}
 		if sites.Entities == nil || len(*sites.Entities) == 0 {
 			break
@@ -284,18 +283,16 @@ func getAllUnmanagedSitesFn(ctx context.Context, p *siteProxy) (*[]platformclien
 			}
 		}
 	}
-
-	return &allUnManagedSites, nil
+	return &allUnManagedSites, resp, nil
 }
 
 // createSiteFn is an implementation function for creating a Genesys Cloud Site
-func createSiteFn(ctx context.Context, p *siteProxy, siteReq *platformclientv2.Site) (*platformclientv2.Site, error) {
-	site, _, err := p.edgesApi.PostTelephonyProvidersEdgesSites(*siteReq)
+func createSiteFn(ctx context.Context, p *siteProxy, siteReq *platformclientv2.Site) (*platformclientv2.Site, *platformclientv2.APIResponse, error) {
+	site, resp, err := p.edgesApi.PostTelephonyProvidersEdgesSites(*siteReq)
 	if err != nil {
-		return nil, err
+		return nil, resp, err
 	}
-
-	return site, nil
+	return site, resp, nil
 }
 
 // deleteSiteFn is an implementation function for deleting a Genesys Cloud Site
@@ -319,39 +316,38 @@ func getSiteByIdFn(ctx context.Context, p *siteProxy, siteId string) (*platformc
 }
 
 // getSiteIdByNameFn is an implementation function for retrieving a Genesys Cloud Site by name
-func getSiteIdByNameFn(ctx context.Context, p *siteProxy, siteName string, managed bool) (string, bool, error) {
+func getSiteIdByNameFn(ctx context.Context, p *siteProxy, siteName string, managed bool) (string, bool, *platformclientv2.APIResponse, error) {
 	const pageSize = 100
-	sites, _, err := p.edgesApi.GetTelephonyProvidersEdgesSites(pageSize, 1, "", "", siteName, "", managed, nil)
+	sites, resp, err := p.edgesApi.GetTelephonyProvidersEdgesSites(pageSize, 1, "", "", siteName, "", managed, nil)
 	if err != nil {
-		return "", false, err
+		return "", false, resp, err
 	}
 	if sites.Entities == nil || len(*sites.Entities) == 0 {
-		return "", true, fmt.Errorf("no sites found with name %s", siteName)
+		return "", true, resp, fmt.Errorf("no sites found with name %s", siteName)
 	}
 	for _, site := range *sites.Entities {
 		if (site.Name != nil && *site.Name == siteName) && (site.State != nil && *site.State != "deleted") {
-			return *site.Id, false, nil
+			return *site.Id, false, resp, nil
 		}
 	}
 
 	for pageNum := 2; pageNum <= *sites.PageCount; pageNum++ {
-		sites, _, err := p.edgesApi.GetTelephonyProvidersEdgesSites(pageSize, pageNum, "", "", siteName, "", managed, nil)
+		sites, resp, err := p.edgesApi.GetTelephonyProvidersEdgesSites(pageSize, pageNum, "", "", siteName, "", managed, nil)
 		if err != nil {
-			return "", false, err
+			return "", false, resp, err
 		}
 
 		if sites.Entities == nil || len(*sites.Entities) == 0 {
-			return "", true, fmt.Errorf("no sites found with name %s", siteName)
+			return "", true, resp, fmt.Errorf("no sites found with name %s", siteName)
 		}
 
 		for _, site := range *sites.Entities {
 			if (site.Name != nil && *site.Name == siteName) && (site.State != nil && *site.State != "deleted") {
-				return *site.Id, false, nil
+				return *site.Id, false, resp, nil
 			}
 		}
 	}
-
-	return "", true, fmt.Errorf("no sites found with name %s", siteName)
+	return "", true, resp, fmt.Errorf("no sites found with name %s", siteName)
 }
 
 // updateSiteFn is an implementation function for updating a Genesys Cloud Site
@@ -365,47 +361,46 @@ func updateSiteFn(ctx context.Context, p *siteProxy, siteId string, site *platfo
 }
 
 // createSiteOutboundRouteFn is an implementation function for creating an outbound route for a Genesys Cloud Site
-func createSiteOutboundRouteFn(ctx context.Context, p *siteProxy, siteId string, outboundRoute *platformclientv2.Outboundroutebase) (*platformclientv2.Outboundroutebase, error) {
-	obr, _, err := p.edgesApi.PostTelephonyProvidersEdgesSiteOutboundroutes(siteId, *outboundRoute)
+func createSiteOutboundRouteFn(ctx context.Context, p *siteProxy, siteId string, outboundRoute *platformclientv2.Outboundroutebase) (*platformclientv2.Outboundroutebase, *platformclientv2.APIResponse, error) {
+	obr, resp, err := p.edgesApi.PostTelephonyProvidersEdgesSiteOutboundroutes(siteId, *outboundRoute)
 	if err != nil {
-		return nil, err
+		return nil, resp, err
 	}
 
-	return obr, nil
+	return obr, resp, nil
 }
 
 // getSiteOutboundRoutesFn is an implementation function for getting an outbound route for a Genesys Cloud Site
-func getSiteOutboundRoutesFn(ctx context.Context, p *siteProxy, siteId string) (*[]platformclientv2.Outboundroutebase, error) {
+func getSiteOutboundRoutesFn(ctx context.Context, p *siteProxy, siteId string) (*[]platformclientv2.Outboundroutebase, *platformclientv2.APIResponse, error) {
 	var allOutboundRoutes = []platformclientv2.Outboundroutebase{}
 	const pageSize = 100
-	outboundRoutes, _, err := p.edgesApi.GetTelephonyProvidersEdgesSiteOutboundroutes(siteId, pageSize, 1, "", "", "")
+	outboundRoutes, resp, err := p.edgesApi.GetTelephonyProvidersEdgesSiteOutboundroutes(siteId, pageSize, 1, "", "", "")
 	if err != nil {
-		return nil, err
+		return nil, resp, err
 	}
 	allOutboundRoutes = append(allOutboundRoutes, *outboundRoutes.Entities...)
 
 	for pageNum := 2; pageNum <= *outboundRoutes.PageCount; pageNum++ {
-		outboundRoutes, _, err := p.edgesApi.GetTelephonyProvidersEdgesSiteOutboundroutes(siteId, pageSize, pageNum, "", "", "")
+		outboundRoutes, resp, err := p.edgesApi.GetTelephonyProvidersEdgesSiteOutboundroutes(siteId, pageSize, pageNum, "", "", "")
 		if err != nil {
-			return nil, err
+			return nil, resp, err
 		}
 		if outboundRoutes.Entities == nil {
 			break
 		}
 		allOutboundRoutes = append(allOutboundRoutes, *outboundRoutes.Entities...)
 	}
-
-	return &allOutboundRoutes, nil
+	return &allOutboundRoutes, resp, nil
 }
 
 // updateSiteOutboundRouteFn is an implementation function for updating an outbound route for a Genesys Cloud Site
-func updateSiteOutboundRouteFn(ctx context.Context, p *siteProxy, siteId string, outboundRouteId string, outboundRoute *platformclientv2.Outboundroutebase) (*platformclientv2.Outboundroutebase, error) {
-	obrs, _, err := p.edgesApi.PutTelephonyProvidersEdgesSiteOutboundroute(siteId, outboundRouteId, *outboundRoute)
+func updateSiteOutboundRouteFn(ctx context.Context, p *siteProxy, siteId string, outboundRouteId string, outboundRoute *platformclientv2.Outboundroutebase) (*platformclientv2.Outboundroutebase, *platformclientv2.APIResponse, error) {
+	obrs, resp, err := p.edgesApi.PutTelephonyProvidersEdgesSiteOutboundroute(siteId, outboundRouteId, *outboundRoute)
 	if err != nil {
-		return nil, err
+		return nil, resp, err
 	}
 
-	return obrs, nil
+	return obrs, resp, nil
 }
 
 // deleteSiteOutboundRouteFn is an implementation function for deleting an outbound route for a Genesys Cloud Site
@@ -439,52 +434,52 @@ func updateSiteNumberPlansFn(ctx context.Context, p *siteProxy, siteId string, n
 }
 
 // getLocationFn is an implementation function for retrieving a Genesys Cloud Location
-func getLocationFn(ctx context.Context, p *siteProxy, locationId string) (*platformclientv2.Locationdefinition, error) {
-	location, _, err := p.locationsApi.GetLocation(locationId, nil)
+func getLocationFn(ctx context.Context, p *siteProxy, locationId string) (*platformclientv2.Locationdefinition, *platformclientv2.APIResponse, error) {
+	location, resp, err := p.locationsApi.GetLocation(locationId, nil)
 	if err != nil {
-		return nil, err
+		return nil, resp, err
 	}
 	if location.EmergencyNumber == nil {
-		return nil, fmt.Errorf("location with id %v does not have an emergency number", locationId)
+		return nil, resp, fmt.Errorf("location with id %v does not have an emergency number", locationId)
 	}
 
-	return location, nil
+	return location, resp, nil
 }
 
 // getTelephonyMediaregionsFn is an implementation function for retrieving a Genesys Cloud Media Regions
-func getTelephonyMediaregionsFn(ctx context.Context, p *siteProxy) (*platformclientv2.Mediaregions, error) {
-	telephonyRegions, _, err := p.telephonyApi.GetTelephonyMediaregions()
+func getTelephonyMediaregionsFn(ctx context.Context, p *siteProxy) (*platformclientv2.Mediaregions, *platformclientv2.APIResponse, error) {
+	telephonyRegions, resp, err := p.telephonyApi.GetTelephonyMediaregions()
 	if err != nil {
-		return nil, err
+		return nil, resp, err
 	}
 
-	return telephonyRegions, nil
+	return telephonyRegions, resp, nil
 }
 
 // setDefaultSiteFn is an implementation function for setting the default Site of a Genesys Cloud org
-func setDefaultSiteFn(ctx context.Context, p *siteProxy, siteId string) error {
-	org, _, err := p.organizationApi.GetOrganizationsMe()
+func setDefaultSiteFn(ctx context.Context, p *siteProxy, siteId string) (*platformclientv2.APIResponse, error) {
+	org, resp, err := p.organizationApi.GetOrganizationsMe()
 	if err != nil {
-		return err
+		return resp, err
 	}
 
 	// Update org details
 	*org.DefaultSiteId = siteId
 
-	_, _, err = p.organizationApi.PutOrganizationsMe(*org)
+	_, resp, err = p.organizationApi.PutOrganizationsMe(*org)
 	if err != nil {
-		return fmt.Errorf("error on setting default site. Make sure only one resource has the `set_as_default_site` set to true. %v", err)
+		return resp, fmt.Errorf("error on setting default site. Make sure only one resource has the `set_as_default_site` set to true. %v", err)
 	}
 
-	return nil
+	return resp, nil
 }
 
 // getDefaultSiteIdFn is an implementation function for getting the default Site of a Genesys Cloud org
-func getDefaultSiteIdFn(ctx context.Context, p *siteProxy) (string, error) {
-	org, _, err := p.organizationApi.GetOrganizationsMe()
+func getDefaultSiteIdFn(ctx context.Context, p *siteProxy) (string, *platformclientv2.APIResponse, error) {
+	org, resp, err := p.organizationApi.GetOrganizationsMe()
 	if err != nil {
-		return "", err
+		return "", resp, err
 	}
 
-	return *org.DefaultSiteId, nil
+	return *org.DefaultSiteId, resp, nil
 }

@@ -1,6 +1,7 @@
 package webdeployments_configuration_utils
 
 import (
+	"fmt"
 	"terraform-provider-genesyscloud/genesyscloud/util/lists"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
@@ -36,6 +37,7 @@ func buildAppConversations(conversations []interface{}) *platformclientv2.Conver
 			VarType: platformclientv2.String(conversationDisconnect["type"].(string)),
 		}
 	}
+
 
 	if humanizeArr, ok := conversation["humanize"].([]interface{}); ok && len(humanizeArr) > 0 && humanizeArr[0] != nil {
 		humanize := humanizeArr[0].(map[string]interface{})
@@ -79,6 +81,7 @@ func buildMessengerApps(apps []interface{}) *platformclientv2.Messengerapps {
 
 	m := platformclientv2.Messengerapps{}
 	app := apps[0].(map[string]interface{})
+
 
 	if c, ok := app["conversations"].([]interface{}); ok {
 		m.Conversations = buildAppConversations(c)
