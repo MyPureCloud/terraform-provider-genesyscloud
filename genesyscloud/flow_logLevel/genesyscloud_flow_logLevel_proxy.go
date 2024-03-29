@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
+	"log"
 )
 
 /*
@@ -99,17 +100,23 @@ func (p *flowLogLevelProxy) deleteFlowLogLevelById(ctx context.Context, flowId s
 
 // createFlowLogLevelFn is an implementation function for creating a Genesys Cloud External Contact
 func createFlowLogLevelFn(ctx context.Context, p *flowLogLevelProxy, flowId string, flowLogLevelRequest *platformclientv2.Flowloglevelrequest) (*platformclientv2.Flowsettingsresponse, error) {
-	logLevel, _, err := p.architectApi.PostFlowInstancesSettingsLoglevels(flowId, *flowLogLevelRequest, nil)
+	flowLogLevel, resp, err := p.architectApi.PostFlowInstancesSettingsLoglevels(flowId, *flowLogLevelRequest, nil)
+	log.Printf("createFlowLogLevelFn flowLogLevelRequest  %v", flowLogLevelRequest)
+	log.Printf("createFlowLogLevelFn flowId %s", flowId)
+	log.Printf("createFlowLogLevelFn flowLogLevel %v", flowLogLevel)
+	log.Printf("createFlowLogLevelFn resp %v", resp)
+	log.Printf("createFlowLogLevelFn err %v", err)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to create flow log level: %s", err)
 	}
 
-	return logLevel, nil
+	return flowLogLevel, nil
 }
 
 // getFlowLogLevelByIdFn is an implementation of the function to get a Genesys Cloud External Contact by Id
 func getFlowLogLevelByIdFn(ctx context.Context, p *flowLogLevelProxy, flowId string) (*platformclientv2.Flowsettingsresponse, int, error) {
-	flowLogLevel, resp, err := p.architectApi.GetFlowInstancesSettingsLoglevels(flowId, nil)
+	expandArray := []string{"logLevelCharacteristics.characteristics"}
+	flowLogLevel, resp, err := p.architectApi.GetFlowInstancesSettingsLoglevels(flowId, expandArray)
 	if err != nil {
 		return nil, resp.StatusCode, fmt.Errorf("Failed to retrieve flow log level by id %s: %s", flowId, err)
 	}

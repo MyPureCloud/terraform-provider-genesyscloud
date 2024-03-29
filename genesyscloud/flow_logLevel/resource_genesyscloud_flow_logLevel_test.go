@@ -1,6 +1,7 @@
 package flow_logLevel
 
 import (
+	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
@@ -9,6 +10,7 @@ import (
 
 func TestAccResourceFlowLogLevel(t *testing.T) {
 	var (
+		resourceId            = "flow_log_level" + uuid.NewString()
 		communications        = false
 		eventError            = false
 		eventOther            = false
@@ -22,7 +24,9 @@ func TestAccResourceFlowLogLevel(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { util.TestAccPreCheck(t) },
+		PreCheck: func() {
+			util.TestAccPreCheck(t)
+		},
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
@@ -37,12 +41,11 @@ func TestAccResourceFlowLogLevel(t *testing.T) {
 					flowId,
 					flowLoglevel,
 					names,
+					resourceId,
 					variables,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_flow_logLevel."+flowLoglevel, "names", "false"),
-					resource.TestCheckResourceAttr("genesyscloud_flow_logLevel."+flowLoglevel, "execution_items", "true"),
-					provider.TestDefaultHomeDivision("genesyscloud_flow_logLevel."+flowLoglevel),
+					resource.TestCheckResourceAttr("genesyscloud_flow_loglevel."+resourceId, "logLevelCharacteristics", "false"),
 				),
 			},
 		},

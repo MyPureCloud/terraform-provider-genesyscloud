@@ -15,9 +15,10 @@ func generateFlowLogLevelResource(
 	flowId string,
 	flowLoglevel string,
 	names bool,
+	resourceId string,
 	variables bool,
 ) string {
-	return fmt.Sprintf(`resource "genesyscloud_flow_logLevel" "flowLogLevel" {
+	return fmt.Sprintf(`resource "genesyscloud_flow_loglevel" "%s" {
 	  flow_id					= "%s"
 	  flow_log_level 					= "%s"
 	  flow_characteristics {
@@ -32,6 +33,7 @@ func generateFlowLogLevelResource(
 	  }
 	}
 	`,
+		resourceId,
 		flowId,
 		flowLoglevel,
 		strconv.FormatBool(communications),

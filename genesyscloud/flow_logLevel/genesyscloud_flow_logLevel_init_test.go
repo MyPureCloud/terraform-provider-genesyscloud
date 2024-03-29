@@ -8,7 +8,7 @@ import (
 )
 
 /*
-   The genesyscloud_flow_logLevel_init_test.go file is used to initialize the data sources and resources
+   The genesyscloud_flow_loglevel_init_test.go file is used to initialize the data sources and resources
    used in testing the flow_logLevel resource.
 
    Please make sure you register ALL resources and data sources your test cases will use.
@@ -30,7 +30,7 @@ func (r *registerTestInstance) registerTestResources() {
 	r.resourceMapMutex.Lock()
 	defer r.resourceMapMutex.Unlock()
 
-	providerResources["genesyscloud_flow_logLevel"] = ResourceFlowLoglevel()
+	providerResources["genesyscloud_flow_loglevel"] = ResourceFlowLoglevel()
 }
 
 // registerTestDataSources registers all data sources used in the tests.

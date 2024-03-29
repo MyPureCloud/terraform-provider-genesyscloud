@@ -63,13 +63,12 @@ func createFlowLogLevel(ctx context.Context, d *schema.ResourceData, meta interf
 	flowId := d.Get("flow_id").(string)
 	flowLogLevelRequest := getFlowLogLevelRequestFromResourceData(d)
 
-	contact, err := ep.createFlowLogLevel(ctx, flowId, &flowLogLevelRequest)
+	flowLogLevel, err := ep.createFlowLogLevel(ctx, flowId, &flowLogLevelRequest)
 	if err != nil {
 		return diag.Errorf("Failed to create flow log level: %s", err)
 	}
 
-	d.SetId(*contact.Id)
-	log.Printf("Created flow log level %s", *contact.Id)
+	d.SetId(*flowLogLevel.Id)
 	return readFlowLogLevel(ctx, d, meta)
 }
 
@@ -79,13 +78,21 @@ func readFlowLogLevel(ctx context.Context, d *schema.ResourceData, meta interfac
 	ep := getFlowLogLevelProxy(sdkConfig)
 	flowId := d.Get("flow_id").(string)
 
-	log.Printf("Reading contact %s", flowId)
-
+	log.Printf("Reading readFlowLogLevel with flowId %s", flowId)
+	if flowId == "" {
+		log.Printf("flow log level with blank flowId %s", flowId)
+		return diag.Errorf("flowId not found")
+	}
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		flowSettingsResponse, respCode, err := ep.getFlowLogLevelById(ctx, flowId)
+		log.Printf("getFlowLogLevelByIdFn flowId %s", flowId)
+		log.Printf("getFlowLogLevelByIdFn flowSettingsResponse %v", flowSettingsResponse)
+		log.Printf("getFlowLogLevelByIdFn respCode %v", respCode)
+		log.Printf("getFlowLogLevelByIdFn err %v", err)
 		if err != nil {
+			log.Print(err)
 			if util.IsStatus404ByInt(respCode) {
-				return retry.RetryableError(fmt.Errorf("Failed to read flow log level %s: %s", flowId, err))
+				return retry.NonRetryableError(fmt.Errorf("Failed to read flow log level %s: %s", flowId, err))
 			}
 			return retry.NonRetryableError(fmt.Errorf("Failed to read flow log level %s: %s", flowId, err))
 		}
@@ -97,7 +104,9 @@ func readFlowLogLevel(ctx context.Context, d *schema.ResourceData, meta interfac
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "flow_characteristics", flowLogLevel.Characteristics, flattenFlowCharacteristics)
 
 		log.Printf("Read flow log level %s", flowId)
-		return cc.CheckState()
+		checkState := cc.CheckState()
+		log.Printf("checkState result =  %v", checkState)
+		return checkState
 	})
 }
 
@@ -148,7 +157,6 @@ func deleteFlowLogLevel(ctx context.Context, d *schema.ResourceData, meta interf
 
 // getFlowLogLevelRequestFromResourceData maps data from schema ResourceData object to a platformclientv2.Flowloglevelrequest
 func getFlowLogLevelRequestFromResourceData(d *schema.ResourceData) platformclientv2.Flowloglevelrequest {
-
 	return platformclientv2.Flowloglevelrequest{
 		LogLevelCharacteristics: getFlowLogLvlFromResourceData(d),
 	}
