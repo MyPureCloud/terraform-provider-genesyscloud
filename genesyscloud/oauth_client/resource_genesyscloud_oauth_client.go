@@ -57,7 +57,7 @@ func createOAuthClient(ctx context.Context, d *schema.ResourceData, meta interfa
 	}
 
 	log.Printf("Creating oauth client %s", name)
-	client, resp, err := oauthClientProxy.createOAuthClient(ctx, platformclientv2.Oauthclientrequest{
+	oauthRequest := &platformclientv2.Oauthclientrequest{
 		Name:                       &name,
 		Description:                &description,
 		AccessTokenValiditySeconds: &tokenSeconds,
@@ -66,7 +66,9 @@ func createOAuthClient(ctx context.Context, d *schema.ResourceData, meta interfa
 		RegisteredRedirectUri:      buildOAuthRedirectURIs(d),
 		Scope:                      buildOAuthScopes(d),
 		RoleDivisions:              roles,
-	})
+	}
+
+	client, resp, err := oauthClientProxy.createOAuthClient(ctx, *oauthRequest)
 	if err != nil {
 		return diag.Errorf("Failed to create oauth client %s: %s %v", name, err, resp)
 	}

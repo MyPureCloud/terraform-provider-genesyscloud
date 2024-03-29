@@ -2,6 +2,8 @@ package integration_credential
 
 import (
 	"sync"
+	"terraform-provider-genesyscloud/genesyscloud/auth_role"
+	oauth "terraform-provider-genesyscloud/genesyscloud/oauth_client"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -31,6 +33,7 @@ func (r *registerTestInstance) registerTestResources() {
 	defer r.resourceMapMutex.Unlock()
 
 	providerResources["genesyscloud_integration_credential"] = ResourceIntegrationCredential()
+	providerResources["genesyscloud_oauth_client"] = oauth.ResourceOAuthClient()
 }
 
 // registerTestDataSources registers all data sources used in the tests.
@@ -39,6 +42,7 @@ func (r *registerTestInstance) registerTestDataSources() {
 	defer r.datasourceMapMutex.Unlock()
 
 	providerDataSources["genesyscloud_integration_credential"] = DataSourceIntegrationCredential()
+	providerDataSources["genesyscloud_auth_role"] = auth_role.DataSourceAuthRole()
 }
 
 // initTestResources initializes all test resources and data sources.

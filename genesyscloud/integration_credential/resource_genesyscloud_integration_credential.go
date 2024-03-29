@@ -84,28 +84,15 @@ func createCredential(ctx context.Context, d *schema.ResourceData, meta interfac
 	name := d.Get("name").(string)
 	cred_type := d.Get("credential_type_name").(string)
 	fields := buildCredentialFields(d)
+	_, secretFieldPresent := fields["clientSecret"]
+
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	ip := getIntegrationCredsProxy(sdkConfig)
 
-	if cred_type == "pureCloudOAuthClient" {
-		op := oauth.GetOAuthClientProxy(sdkConfig)
-
-		var targetClientId string = ""
-
-		//See if I can turn this into indexing
-		for k, v := range fields {
-			if k == "clientId" {
-				targetClientId = v
-				log.Printf("Successfully matched with OAuth Client Credential id %s", targetClientId)
-			}
-		}
-
-		if targetClientId != "" {
-			log.Printf("JCC TARGET CLIENT ID: %s", targetClientId)
-			oAuthClient := op.GetCachedOAuthClient(targetClientId)
-			fields["clientSecret"] = *oAuthClient.Secret
-		}
-
+	//If if is a Genesys Cloud OAuth Client and the user has not provided a secret field we should look for the
+	//item in the cache DEVTOOLING-448
+	if cred_type == "pureCloudOAuthClient" && !secretFieldPresent {
+		retrieveCachedOauthClientSecret(sdkConfig, fields)
 	}
 
 	createCredential := platformclientv2.Credential{
@@ -124,6 +111,24 @@ func createCredential(ctx context.Context, d *schema.ResourceData, meta interfac
 	d.SetId(*credential.Id)
 	log.Printf("Created credential %s, %s", name, *credential.Id)
 	return readCredential(ctx, d, meta)
+}
+
+func retrieveCachedOauthClientSecret(sdkConfig *platformclientv2.Configuration, fields map[string]string) {
+	op := oauth.GetOAuthClientProxy(sdkConfig)
+	var targetClientId string = ""
+
+	//See if I can turn this into indexing
+	for k, v := range fields {
+		if k == "clientId" {
+			targetClientId = v
+			log.Printf("Successfully matched with OAuth Client Credential id %s", targetClientId)
+		}
+	}
+
+	if targetClientId != "" {
+		oAuthClient := op.GetCachedOAuthClient(targetClientId)
+		fields["clientSecret"] = *oAuthClient.Secret
+	}
 }
 
 // readCredential is used by the integration credential resource to read a  credential from genesys cloud.

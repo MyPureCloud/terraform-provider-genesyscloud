@@ -59,10 +59,15 @@ func newOAuthClientProxy(clientConfig *platformclientv2.Configuration) *oauthCli
 }
 
 /*
-Being added for DEVTOOLING-448
+Note:  Normally we do not make proxies or their methods public outside the package. However, we are doing this
+specifically for DEVTOOLING-448.  In DEVTOOLING-448, we are adding the ability to cache a OAuthClient that was
+created in a Terraform run so that when can use that secret to create a Genesys Cloud Integration Credential in the same
+run without having to expose the secret.
 
-This is one of the only places where we use a public method to return the OAuthClientProxy.  We do this because
-we need the ability to retrieve any OAuthClient's created during the run of the provider that is beign cached.
+We need this so that we can support the ability run CX as Code Accelerator where we can create a OAuth Client, a Role with Permissions
+and then an OAuth client with out the need for the user to support passing the Genesys Cloud OAuth Client Credentials
+into the integration credential object.  Today the integration credential object has no way of looking up the client id/client secret
+without because once the oauth client is created, we dont want to expose the secret.
 */
 func GetOAuthClientProxy(clientConfig *platformclientv2.Configuration) *oauthClientProxy {
 	if internalProxy == nil {
