@@ -22,7 +22,7 @@ func dataSourceFlowRead(ctx context.Context, d *schema.ResourceData, m interface
 	// Query flow by name. Retry in case search has not yet indexed the flow.
 	return util.WithRetries(ctx, 5*time.Second, func() *retry.RetryError {
 		for pageNum := 1; ; pageNum++ {
-			flows, getErr := p.GetAllFlows(ctx)
+			flows, _, getErr := p.GetAllFlows(ctx)
 			if getErr != nil {
 				return retry.NonRetryableError(fmt.Errorf("error requesting flow %s: %s", name, getErr))
 			}

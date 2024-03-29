@@ -25,9 +25,9 @@ func getAllFlows(ctx context.Context, clientConfig *platformclientv2.Configurati
 	resources := make(resourceExporter.ResourceIDMetaMap)
 	p := getArchitectFlowProxy(clientConfig)
 
-	flows, err := p.GetAllFlows(ctx)
+	flows, resp, err := p.GetAllFlows(ctx)
 	if err != nil {
-		return nil, diag.Errorf("failed to get architect flows %v", err)
+		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("failed to get architect flows %v", err), resp)
 	}
 
 	for _, flow := range *flows {
@@ -56,10 +56,11 @@ func readFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) dia
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		flow, resp, err := proxy.GetFlow(ctx, d.Id())
 		if err != nil {
+			apiDiagErr := util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("failed to read flow %s: %s", d.Id(), err), resp)
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(fmt.Errorf("failed to read flow %s: %s", d.Id(), err))
+				return retry.RetryableError(fmt.Errorf("%v", apiDiagErr))
 			}
-			return retry.NonRetryableError(fmt.Errorf("failed to read flow %s: %s", d.Id(), err))
+			return retry.NonRetryableError(fmt.Errorf("%v", apiDiagErr))
 		}
 
 		log.Printf("Read flow %s %s", d.Id(), *flow.Name)
@@ -83,20 +84,21 @@ func updateFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 		resp, err := p.ForceUnlockFlow(ctx, d.Id())
 		if err != nil {
 			setFileContentHashToNil(d)
-			return diag.Errorf("Failed to unlock targeted flow %s with error %s %v", d.Id(), err, resp)
+			return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to unlock targeted flow %s with error %s", d.Id(), err), resp)
 		}
 	}
 
 	flowJob, response, err := p.CreateFlowsDeployJob(ctx)
 
-	if err != nil {
+	if err != nil || response.Error != nil {
+		var errorString string
+		if err != nil {
+			errorString = err.Error()
+		} else {
+			errorString = response.ErrorMessage
+		}
 		setFileContentHashToNil(d)
-		return diag.Errorf("Failed to update job %s", err)
-	}
-
-	if err == nil && response.Error != nil {
-		setFileContentHashToNil(d)
-		return diag.Errorf("Failed to register job. %s", err)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to register job %s", errorString), response)
 	}
 
 	presignedUrl := *flowJob.PresignedUrl
@@ -126,7 +128,8 @@ func updateFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	retryErr := util.WithRetries(ctx, 16*time.Minute, func() *retry.RetryError {
 		flowJob, response, err := p.GetFlowsDeployJob(ctx, jobId)
 		if err != nil {
-			return retry.NonRetryableError(fmt.Errorf("Error retrieving job status. JobID: %s, error: %s ", jobId, response.ErrorMessage))
+			apiDiagErr := util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Error retrieving job status. JobID: %s, error: %s ", jobId, err), response)
+			return retry.NonRetryableError(fmt.Errorf("%v", apiDiagErr))
 		}
 
 		if *flowJob.Status == "Failure" {
@@ -169,11 +172,13 @@ func deleteFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	p := getArchitectFlowProxy(sdkConfig)
 
+	log.Printf("Deleting flow %s", d.Id())
+
 	//Check to see if we need to force
 	if isForceUnlockEnabled(d) {
 		resp, err := p.ForceUnlockFlow(ctx, d.Id())
 		if err != nil {
-			return diag.Errorf("Failed to unlock targeted flow %s with error %s %v", d.Id(), err, resp)
+			return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to unlock targeted flow %s with error %v", d.Id(), err), resp)
 		}
 	}
 
@@ -185,10 +190,11 @@ func deleteFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 				log.Printf("Deleted Flow %s", d.Id())
 				return nil
 			}
+			apiDiagErr := util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("error deleting flow %s: %s", d.Id(), err), resp)
 			if resp.StatusCode == http.StatusConflict {
-				return retry.RetryableError(fmt.Errorf("error deleting flow %s: %s", d.Id(), err))
+				return retry.RetryableError(fmt.Errorf("%v", apiDiagErr))
 			}
-			return retry.NonRetryableError(fmt.Errorf("error deleting flow %s: %s", d.Id(), err))
+			return retry.NonRetryableError(fmt.Errorf("%v", apiDiagErr))
 		}
 		return nil
 	})
