@@ -5,6 +5,21 @@ import (
 	"strconv"
 )
 
+func generateFlowLogLevelWithoutCharacteristicsResource(
+	flowId string,
+	flowLoglevel string,
+	resourceId string,
+) string {
+	return fmt.Sprintf(`resource "genesyscloud_flow_loglevel" "%s" {
+	  flow_id					= "%s"
+	  flow_log_level 					= "%s"
+	}
+	`,
+		resourceId,
+		flowId,
+		flowLoglevel,
+	)
+}
 func generateFlowLogLevelResource(
 	communications bool,
 	eventError bool,
@@ -36,6 +51,37 @@ func generateFlowLogLevelResource(
 		resourceId,
 		flowId,
 		flowLoglevel,
+		strconv.FormatBool(communications),
+		strconv.FormatBool(eventError),
+		strconv.FormatBool(eventOther),
+		strconv.FormatBool(eventWarning),
+		strconv.FormatBool(executionInputOutputs),
+		strconv.FormatBool(executionItems),
+		strconv.FormatBool(names),
+		strconv.FormatBool(variables))
+}
+
+func generateFlowCharacteristics(
+	communications bool,
+	eventError bool,
+	eventOther bool,
+	eventWarning bool,
+	executionInputOutputs bool,
+	executionItems bool,
+	names bool,
+	variables bool,
+) string {
+	return fmt.Sprintf(`	flow_characteristics {
+		communications          = "%s"
+		event_error              = "%s"
+		event_other              = "%s"
+		event_warning            = "%s"
+		execution_input_outputs   = "%s"
+		execution_items          = "%s"
+		names                   = "%s"
+		variables               = "%s"
+	  }
+	`,
 		strconv.FormatBool(communications),
 		strconv.FormatBool(eventError),
 		strconv.FormatBool(eventOther),

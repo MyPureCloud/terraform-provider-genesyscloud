@@ -115,8 +115,7 @@ func createFlowLogLevelFn(ctx context.Context, p *flowLogLevelProxy, flowId stri
 
 // getFlowLogLevelByIdFn is an implementation of the function to get a Genesys Cloud External Contact by Id
 func getFlowLogLevelByIdFn(ctx context.Context, p *flowLogLevelProxy, flowId string) (*platformclientv2.Flowsettingsresponse, int, error) {
-	expandArray := []string{"logLevelCharacteristics.characteristics"}
-	flowLogLevel, resp, err := p.architectApi.GetFlowInstancesSettingsLoglevels(flowId, expandArray)
+	flowLogLevel, resp, err := p.architectApi.GetFlowInstancesSettingsLoglevels(flowId, []string{"logLevelCharacteristics.characteristics"})
 	if err != nil {
 		return nil, resp.StatusCode, fmt.Errorf("Failed to retrieve flow log level by id %s: %s", flowId, err)
 	}
@@ -129,7 +128,7 @@ func getAllFlowLogLevelsFn(ctx context.Context, p *flowLogLevelProxy) (*[]platfo
 	const pageSize = 100
 	var totalFlowLogLevels []platformclientv2.Flowsettingsresponse
 
-	flowSettingsResponse, _, err := p.architectApi.GetFlowsInstancesSettingsLoglevels(nil, 1, pageSize)
+	flowSettingsResponse, _, err := p.architectApi.GetFlowsInstancesSettingsLoglevels([]string{"logLevelCharacteristics.characteristics"}, 1, pageSize)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to get page of flows: %v", err)
 	}
@@ -139,7 +138,7 @@ func getAllFlowLogLevelsFn(ctx context.Context, p *flowLogLevelProxy) (*[]platfo
 	}
 
 	for pageNum := 2; pageNum <= *flowSettingsResponse.PageCount; pageNum++ {
-		flowSettingsResponse, _, err := p.architectApi.GetFlowsInstancesSettingsLoglevels(nil, pageNum, pageSize)
+		flowSettingsResponse, _, err := p.architectApi.GetFlowsInstancesSettingsLoglevels([]string{"logLevelCharacteristics.characteristics"}, pageNum, pageSize)
 		if err != nil {
 			return nil, fmt.Errorf("Failed to get page %d of flow log levels: %v", pageNum, err)
 		}

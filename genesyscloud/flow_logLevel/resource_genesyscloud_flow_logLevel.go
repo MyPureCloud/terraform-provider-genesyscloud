@@ -61,7 +61,7 @@ func createFlowLogLevel(ctx context.Context, d *schema.ResourceData, meta interf
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	ep := getFlowLogLevelProxy(sdkConfig)
 	flowId := d.Get("flow_id").(string)
-	flowLogLevelRequest := getFlowLogLevelRequestFromResourceData(d)
+	flowLogLevelRequest := getFlowLogLevelSettingsRequestFromResourceData(d)
 
 	flowLogLevel, err := ep.createFlowLogLevel(ctx, flowId, &flowLogLevelRequest)
 	if err != nil {
@@ -155,10 +155,10 @@ func deleteFlowLogLevel(ctx context.Context, d *schema.ResourceData, meta interf
 	})
 }
 
-// getFlowLogLevelRequestFromResourceData maps data from schema ResourceData object to a platformclientv2.Flowloglevelrequest
-func getFlowLogLevelRequestFromResourceData(d *schema.ResourceData) platformclientv2.Flowloglevelrequest {
+// getFlowLogLevelSettingsRequestFromResourceData maps data from schema ResourceData object to a platformclientv2.Flowloglevelrequest
+func getFlowLogLevelSettingsRequestFromResourceData(d *schema.ResourceData) platformclientv2.Flowloglevelrequest {
 	return platformclientv2.Flowloglevelrequest{
-		LogLevelCharacteristics: getFlowLogLvlFromResourceData(d),
+		LogLevelCharacteristics: getFlowLogLevelFromResourceData(d),
 	}
 }
 
@@ -170,16 +170,23 @@ func getFlowLogLevelRequestFromFlowLogLevel(d *platformclientv2.Flowloglevel) pl
 	}
 }
 
-// getFlowLogLevelRequestFromResourceData maps data from schema ResourceData object to a platformclientv2.Flowloglevelrequest
-func getFlowLogLvlFromResourceData(d *schema.ResourceData) *platformclientv2.Flowloglevel {
+// getFlowLogLevelFromResourceData maps data from schema ResourceData object to a platformclientv2.Flowloglevel
+func getFlowLogLevelFromResourceData(d *schema.ResourceData) *platformclientv2.Flowloglevel {
 	level := d.Get("flow_log_level").(string)
-	return &platformclientv2.Flowloglevel{
-		Level:           &level,
-		Characteristics: getFlowLogLevelCharacteristicsFromResourceData(d),
+	if len(d.Get("flow_characteristics").([]interface{})) > 0 {
+		return &platformclientv2.Flowloglevel{
+			Level:           &level,
+			Characteristics: getFlowLogLevelCharacteristicsFromResourceData(d),
+		}
+	} else {
+		return &platformclientv2.Flowloglevel{
+			Level: &level,
+		}
 	}
+
 }
 
-// getFlowLogLevelRequestFromResourceData maps data from schema ResourceData object to a platformclientv2.Flowloglevelrequest
+// getFlowLogLevelCharacteristicsFromResourceData maps data from schema ResourceData object to a platformclientv2.Flowcharacteristics
 func getFlowLogLevelCharacteristicsFromResourceData(d *schema.ResourceData) *platformclientv2.Flowcharacteristics {
 	characteristics := d.Get("flow_characteristics").([]interface{})[0].(map[string]interface{})
 	communications := characteristics["communications"].(bool)
