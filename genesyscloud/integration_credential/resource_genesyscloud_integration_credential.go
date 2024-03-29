@@ -115,19 +115,10 @@ func createCredential(ctx context.Context, d *schema.ResourceData, meta interfac
 
 func retrieveCachedOauthClientSecret(sdkConfig *platformclientv2.Configuration, fields map[string]string) {
 	op := oauth.GetOAuthClientProxy(sdkConfig)
-	var targetClientId string = ""
-
-	//See if I can turn this into indexing
-	for k, v := range fields {
-		if k == "clientId" {
-			targetClientId = v
-			log.Printf("Successfully matched with OAuth Client Credential id %s", targetClientId)
-		}
-	}
-
-	if targetClientId != "" {
-		oAuthClient := op.GetCachedOAuthClient(targetClientId)
+	if clientId, ok := fields["clientId"]; ok {
+		oAuthClient := op.GetCachedOAuthClient(clientId)
 		fields["clientSecret"] = *oAuthClient.Secret
+		log.Printf("Successfully matched with OAuth Client Credential id %s", clientId)
 	}
 }
 
