@@ -3,7 +3,6 @@ package recording_media_retention_policy
 import (
 	"context"
 	"fmt"
-
 	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
 )
 
