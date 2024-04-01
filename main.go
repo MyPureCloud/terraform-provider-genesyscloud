@@ -26,7 +26,7 @@ import (
 	integrationAction "terraform-provider-genesyscloud/genesyscloud/integration_action"
 	integrationCred "terraform-provider-genesyscloud/genesyscloud/integration_credential"
 	integrationCustomAuth "terraform-provider-genesyscloud/genesyscloud/integration_custom_auth_action"
-	journeyOutcomePrecdictor "terraform-provider-genesyscloud/genesyscloud/journey_outcome_predictor"
+	journeyOutcomePredictor "terraform-provider-genesyscloud/genesyscloud/journey_outcome_predictor"
 	oauth "terraform-provider-genesyscloud/genesyscloud/oauth_client"
 	oAuthSettings "terraform-provider-genesyscloud/genesyscloud/organization_authentication_settings"
 	ob "terraform-provider-genesyscloud/genesyscloud/outbound"
@@ -195,7 +195,7 @@ func registerResources() {
 	edgesTrunk.SetRegistrar(regInstance)                                   //Registering Edges Trunk Settings
 	resourceExporter.SetRegisterExporter(resourceExporters)                //Registering register exporters
 	userRoles.SetRegistrar(regInstance)                                    //Registering user roles
-	journeyOutcomePrecdictor.SetRegistrar(regInstance)                     //Registering journey outcome predictor
+	journeyOutcomePredictor.SetRegistrar(regInstance)                      //Registering journey outcome predictor
 	group.SetRegistrar(regInstance)                                        //Registering group
 
 	// setting resources for Use cases  like TF export where provider is used in resource classes.
