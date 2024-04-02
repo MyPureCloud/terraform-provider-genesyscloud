@@ -37,7 +37,6 @@ func buildAppConversations(conversations []interface{}) *platformclientv2.Conver
 		}
 	}
 
-
 	if humanizeArr, ok := conversation["humanize"].([]interface{}); ok && len(humanizeArr) > 0 && humanizeArr[0] != nil {
 		humanize := humanizeArr[0].(map[string]interface{})
 		ret.Humanize = &platformclientv2.Humanize{
@@ -78,18 +77,17 @@ func buildMessengerApps(apps []interface{}) *platformclientv2.Messengerapps {
 		return nil
 	}
 
-	m := platformclientv2.Messengerapps{}
+	messengerApps := platformclientv2.Messengerapps{}
 	app := apps[0].(map[string]interface{})
 
-
-	if c, ok := app["conversations"].([]interface{}); ok {
-		m.Conversations = buildAppConversations(c)
+	if conversations, ok := app["conversations"].([]interface{}); ok {
+		messengerApps.Conversations = buildAppConversations(conversations)
 	}
 
-	if k, ok := app["knowledge"].([]interface{}); ok {
-		m.Knowledge = buildAppKnowledge(k)
+	if knowledge, ok := app["knowledge"].([]interface{}); ok {
+		messengerApps.Knowledge = buildAppKnowledge(knowledge)
 	}
-	return &m
+	return &messengerApps
 }
 
 func buildMessengerSettings(d *schema.ResourceData) *platformclientv2.Messengersettings {
