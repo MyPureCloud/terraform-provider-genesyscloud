@@ -49,12 +49,12 @@ func (p *routingQueueOutboundEmailAddressProxy) getAllRoutingQueues(ctx context.
 
 // getRoutingQueueOutboundEmailAddress gets the Outbound Email Address for a queue
 func (p *routingQueueOutboundEmailAddressProxy) getRoutingQueueOutboundEmailAddress(ctx context.Context, queueId string) (*platformclientv2.Queueemailaddress, *platformclientv2.APIResponse, error) {
-	return nil, nil, nil
+	return p.getRoutingQueueOutboundEmailAddressAttr(ctx, p, queueId)
 }
 
 // updateRoutingQueueOutboundEmailAddress updates the Outbound Email Address for a queue
 func (p *routingQueueOutboundEmailAddressProxy) updateRoutingQueueOutboundEmailAddress(ctx context.Context, queueId string, rules *platformclientv2.Queueemailaddress) (*platformclientv2.Queueemailaddress, *platformclientv2.APIResponse, error) {
-	return nil, nil, nil
+	return p.updateRoutingQueueOutboundEmailAddressAttr(ctx, p, queueId, rules)
 }
 
 // getAllRoutingQueuesFn is an implementation function for getting all queues in an org
