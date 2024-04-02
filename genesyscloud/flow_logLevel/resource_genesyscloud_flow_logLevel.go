@@ -85,10 +85,6 @@ func readFlowLogLevel(ctx context.Context, d *schema.ResourceData, meta interfac
 	}
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		flowSettingsResponse, respCode, err := ep.getFlowLogLevelById(ctx, flowId)
-		log.Printf("getFlowLogLevelByIdFn flowId %s", flowId)
-		log.Printf("getFlowLogLevelByIdFn flowSettingsResponse %v", flowSettingsResponse)
-		log.Printf("getFlowLogLevelByIdFn respCode %v", respCode)
-		log.Printf("getFlowLogLevelByIdFn err %v", err)
 		if err != nil {
 			log.Print(err)
 			if util.IsStatus404ByInt(respCode) {
@@ -116,15 +112,9 @@ func updateFlowLogLevel(ctx context.Context, d *schema.ResourceData, meta interf
 	ep := getFlowLogLevelProxy(sdkConfig)
 	flowId := d.Get("flow_id").(string)
 
-	flowLogLevel, respCode, err := ep.getFlowLogLevelById(ctx, flowId)
+	_, _, err := ep.getFlowLogLevelById(ctx, flowId)
 	flowLogLevelRequest := getFlowLogLevelSettingsRequestFromResourceData(d)
-	flowSettingsResponse, err := ep.updateFlowLogLevel(ctx, flowId, &flowLogLevelRequest)
-	log.Printf("updateFlowLogLevel flowId %s", flowId)
-	log.Printf("updateFlowLogLevel flowLogLevel %v", flowLogLevel)
-	log.Printf("updateFlowLogLevel respCode %v", respCode)
-	log.Printf("updateFlowLogLevel err %v", err)
-	log.Printf("updateFlowLogLevel flowLogLevelRequest %v", flowLogLevelRequest)
-	log.Printf("updateFlowLogLevel flowSettingsResponse %v", flowSettingsResponse)
+	_, err = ep.updateFlowLogLevel(ctx, flowId, &flowLogLevelRequest)
 
 	if err != nil {
 		return diag.Errorf("Failed to update flow log level: %s", err)

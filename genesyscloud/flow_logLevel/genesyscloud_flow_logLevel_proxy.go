@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
-	"log"
 )
 
 /*
@@ -100,12 +99,8 @@ func (p *flowLogLevelProxy) deleteFlowLogLevelById(ctx context.Context, flowId s
 
 // createFlowLogLevelFn is an implementation function for creating a Genesys Cloud External Contact
 func createFlowLogLevelFn(ctx context.Context, p *flowLogLevelProxy, flowId string, flowLogLevelRequest *platformclientv2.Flowloglevelrequest) (*platformclientv2.Flowsettingsresponse, error) {
-	flowLogLevel, resp, err := p.architectApi.PostFlowInstancesSettingsLoglevels(flowId, *flowLogLevelRequest, []string{"logLevelCharacteristics.characteristics"})
-	log.Printf("createFlowLogLevelFn flowLogLevelRequest  %v", flowLogLevelRequest)
-	log.Printf("createFlowLogLevelFn flowId %s", flowId)
-	log.Printf("createFlowLogLevelFn flowLogLevel %v", flowLogLevel)
-	log.Printf("createFlowLogLevelFn resp %v", resp)
-	log.Printf("createFlowLogLevelFn err %v", err)
+	flowLogLevel, _, err := p.architectApi.PostFlowInstancesSettingsLoglevels(flowId, *flowLogLevelRequest, []string{"logLevelCharacteristics.characteristics"})
+
 	if err != nil {
 		return nil, fmt.Errorf("Failed to create flow log level: %s", err)
 	}
