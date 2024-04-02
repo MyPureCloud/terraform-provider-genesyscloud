@@ -46,7 +46,7 @@ func getAllIntegrations(ctx context.Context, clientConfig *platformclientv2.Conf
 
 	integrations, resp, err := ip.getAllIntegrations(ctx)
 	if err != nil {
-		return nil, diag.Errorf("Failed to get all integrations: %v %v", err, resp)
+		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get all integrations %s", err), resp)
 	}
 
 	for _, integration := range *integrations {
@@ -71,7 +71,7 @@ func createIntegration(ctx context.Context, d *schema.ResourceData, meta interfa
 	}
 	integration, resp, err := ip.createIntegration(ctx, createIntegrationReq)
 	if err != nil {
-		return diag.Errorf("Failed to create integration: %s %v", err, resp)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create integration %s", *createIntegrationReq.Name), resp)
 	}
 
 	d.SetId(*integration.Id)
@@ -89,7 +89,7 @@ func createIntegration(ctx context.Context, d *schema.ResourceData, meta interfa
 			IntendedState: &intendedState,
 		})
 		if patchErr != nil {
-			return diag.Errorf("Failed to update integration %s: %v %v", name, patchErr, resp)
+			return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update integration %s", d.Id()), resp)
 		}
 	}
 	log.Printf("Created integration %s %s", name, *integration.Id)
@@ -145,7 +145,7 @@ func updateIntegration(ctx context.Context, d *schema.ResourceData, meta interfa
 			IntendedState: &intendedState,
 		})
 		if patchErr != nil {
-			return diag.Errorf("Failed to update integration %s: %s %v", name, patchErr, resp)
+			return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update Integration %s %s", d.Id(), patchErr), resp)
 		}
 	}
 	log.Printf("Updated integration %s %s", name, d.Id())
@@ -159,7 +159,7 @@ func deleteIntegration(ctx context.Context, d *schema.ResourceData, meta interfa
 
 	resp, err := ip.deleteIntegration(ctx, d.Id())
 	if err != nil {
-		return diag.Errorf("Failed to delete the integration %s: %s %v", d.Id(), err, resp)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete Integration %s", d.Id()), resp)
 	}
 
 	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {

@@ -30,7 +30,7 @@ func getAllAuthFlowMilestones(ctx context.Context, clientConfig *platformclientv
 	resources := make(resourceExporter.ResourceIDMetaMap)
 	flowMilestones, resp, err := proxy.getAllFlowMilestone(ctx)
 	if err != nil {
-		return nil, diag.Errorf("Failed to get flow milestone: %v %v", err, resp)
+		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get flow milestone"), resp)
 	}
 
 	for _, flowMilestone := range *flowMilestones {
@@ -49,7 +49,7 @@ func createFlowMilestone(ctx context.Context, d *schema.ResourceData, meta inter
 	log.Printf("Creating flow milestone %s", *flowMilestone.Name)
 	flowMilestoneSdk, resp, err := proxy.createFlowMilestone(ctx, &flowMilestone)
 	if err != nil {
-		return diag.Errorf("Failed to create flow milestone: %s %v", err, resp)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create flow milestone %s", *flowMilestone.Name), resp)
 	}
 
 	d.SetId(*flowMilestoneSdk.Id)
@@ -94,7 +94,7 @@ func updateFlowMilestone(ctx context.Context, d *schema.ResourceData, meta inter
 	log.Printf("Updating flow milestone %s", *flowMilestone.Name)
 	flowMilestoneSdk, resp, err := proxy.updateFlowMilestone(ctx, d.Id(), &flowMilestone)
 	if err != nil {
-		return diag.Errorf("Failed to update flow milestone: %s %v", err, resp)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update flow milestone %s", *flowMilestone.Name), resp)
 	}
 
 	log.Printf("Updated flow milestone %s", *flowMilestoneSdk.Id)
@@ -108,7 +108,7 @@ func deleteFlowMilestone(ctx context.Context, d *schema.ResourceData, meta inter
 
 	resp, err := proxy.deleteFlowMilestone(ctx, d.Id())
 	if err != nil {
-		return diag.Errorf("Failed to delete flow milestone %s: %s %v", d.Id(), err, resp)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete flow milestone %s", d.Id()), resp)
 	}
 
 	return util.WithRetries(ctx, 180*time.Second, func() *retry.RetryError {

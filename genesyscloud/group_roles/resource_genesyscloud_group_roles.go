@@ -69,7 +69,7 @@ func updateGroupRoles(ctx context.Context, d *schema.ResourceData, meta interfac
 	resp, diagErr := proxy.updateGroupRoles(ctx, d.Id(), rolesConfig, "PC_GROUP")
 
 	if diagErr != nil {
-		return diag.Errorf("error %v %v", diagErr, resp)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update group role %s", d.Id()), resp)
 	}
 	log.Printf("Updated group roles %v", d.Id())
 	return readGroupRoles(ctx, d, meta)

@@ -49,7 +49,7 @@ func createFlowOutcome(ctx context.Context, d *schema.ResourceData, meta interfa
 	log.Printf("Creating flow outcome %s", *flowOutcome.Name)
 	outcome, resp, err := proxy.createFlowOutcome(ctx, &flowOutcome)
 	if err != nil {
-		return diag.Errorf("Failed to create flow outcome: %s %v", err, resp)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create flow outcome %s", *flowOutcome.Name), resp)
 	}
 
 	d.SetId(*outcome.Id)
@@ -95,7 +95,7 @@ func updateFlowOutcome(ctx context.Context, d *schema.ResourceData, meta interfa
 	log.Printf("Updating flow outcome %s", *flowOutcome.Name)
 	_, resp, err := proxy.updateFlowOutcome(ctx, d.Id(), &flowOutcome)
 	if err != nil {
-		return diag.Errorf("Failed to update flow outcome: %s %v", err, resp)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update flow outcome %s", *flowOutcome.Name), resp)
 	}
 
 	log.Printf("Updated flow outcome %s", d.Id())

@@ -146,7 +146,6 @@ func updateGroup(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		group, resp, getErr := gp.getGroupById(ctx, d.Id())
 		if getErr != nil {
 			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to read group %s: %s", d.Id(), getErr), resp)
-
 		}
 
 		addresses, err := buildSdkGroupAddresses(d)
