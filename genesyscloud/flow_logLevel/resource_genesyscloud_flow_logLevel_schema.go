@@ -95,7 +95,7 @@ func ResourceFlowLoglevel() *schema.Resource {
 			"flow_characteristics": {
 				Description: "Shows what characteristics are enabled for this log level",
 				Type:        schema.TypeList,
-				MaxItems:    1,
+				Computed:    true,
 				Optional:    true,
 				Elem:        flowCharacteristics,
 			},

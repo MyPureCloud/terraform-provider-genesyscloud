@@ -18,17 +18,11 @@ func getTestFlow() {
 
 func TestAccResourceFlowLogLevel(t *testing.T) {
 	var (
-		resourceId            = "flow_log_level" + uuid.NewString()
-		communications        = true
-		eventError            = true
-		eventOther            = false
-		eventWarning          = true
-		executionInputOutputs = false
-		executionItems        = true
-		flowLoglevel          = "Base"
-		names                 = false
-		variables             = false
-		flowId                = "e3aebe90-5a65-409e-9775-43d547b66e07"
+		resourceId           = "flow_log_level" + uuid.NewString()
+		flowLoglevelBase     = "Base"
+		flowLoglevelAll      = "All"
+		flowLogLevelDisabled = "Disabled"
+		flowId               = "e3aebe90-5a65-409e-9775-43d547b66e07"
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -37,42 +31,62 @@ func TestAccResourceFlowLogLevel(t *testing.T) {
 		},
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
-			//{
-			//	// Create using only flow log level
-			//	Config: generateFlowLogLevelWithoutCharacteristicsResource(
-			//		flowId,
-			//		flowLoglevel,
-			//		resourceId,
-			//	),
-			//	Check: resource.ComposeTestCheckFunc(
-			//		resource.TestCheckResourceAttr("genesyscloud_flow_loglevel."+resourceId, "flow_log_level", flowLoglevel),
-			//		resource.TestCheckResourceAttr("genesyscloud_flow_loglevel."+resourceId, "flow_id", flowId),
-			//	),
-			//},
 			{
-				// Update using all fields
+				// Create using only flow log level
 				Config: generateFlowLogLevelResource(
-					communications,
-					eventError,
-					eventOther,
-					eventWarning,
-					executionInputOutputs,
-					executionItems,
 					flowId,
-					flowLoglevel,
-					names,
+					flowLoglevelBase,
 					resourceId,
-					variables,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_flow_loglevel."+resourceId, "flow_log_level", flowLoglevel),
+					resource.TestCheckResourceAttr("genesyscloud_flow_loglevel."+resourceId, "flow_log_level", flowLoglevelBase),
 					resource.TestCheckResourceAttr("genesyscloud_flow_loglevel."+resourceId, "flow_id", flowId),
-					resource.TestCheckResourceAttr("genesyscloud_flow_loglevel."+resourceId, "flow_characteristics.0.communications", "true"),
+					resource.TestCheckResourceAttr("genesyscloud_flow_loglevel."+resourceId, "flow_characteristics.0.communications", "false"),
 					resource.TestCheckResourceAttr("genesyscloud_flow_loglevel."+resourceId, "flow_characteristics.0.event_error", "true"),
 					resource.TestCheckResourceAttr("genesyscloud_flow_loglevel."+resourceId, "flow_characteristics.0.event_other", "false"),
 					resource.TestCheckResourceAttr("genesyscloud_flow_loglevel."+resourceId, "flow_characteristics.0.event_warning", "true"),
 					resource.TestCheckResourceAttr("genesyscloud_flow_loglevel."+resourceId, "flow_characteristics.0.execution_input_outputs", "false"),
 					resource.TestCheckResourceAttr("genesyscloud_flow_loglevel."+resourceId, "flow_characteristics.0.execution_items", "true"),
+					resource.TestCheckResourceAttr("genesyscloud_flow_loglevel."+resourceId, "flow_characteristics.0.names", "false"),
+					resource.TestCheckResourceAttr("genesyscloud_flow_loglevel."+resourceId, "flow_characteristics.0.variables", "false"),
+				),
+			},
+			{
+				// Create using only flow log level
+				Config: generateFlowLogLevelResource(
+					flowId,
+					flowLoglevelAll,
+					resourceId,
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("genesyscloud_flow_loglevel."+resourceId, "flow_log_level", flowLoglevelAll),
+					resource.TestCheckResourceAttr("genesyscloud_flow_loglevel."+resourceId, "flow_id", flowId),
+					resource.TestCheckResourceAttr("genesyscloud_flow_loglevel."+resourceId, "flow_characteristics.0.communications", "true"),
+					resource.TestCheckResourceAttr("genesyscloud_flow_loglevel."+resourceId, "flow_characteristics.0.event_error", "true"),
+					resource.TestCheckResourceAttr("genesyscloud_flow_loglevel."+resourceId, "flow_characteristics.0.event_other", "true"),
+					resource.TestCheckResourceAttr("genesyscloud_flow_loglevel."+resourceId, "flow_characteristics.0.event_warning", "true"),
+					resource.TestCheckResourceAttr("genesyscloud_flow_loglevel."+resourceId, "flow_characteristics.0.execution_input_outputs", "true"),
+					resource.TestCheckResourceAttr("genesyscloud_flow_loglevel."+resourceId, "flow_characteristics.0.execution_items", "true"),
+					resource.TestCheckResourceAttr("genesyscloud_flow_loglevel."+resourceId, "flow_characteristics.0.names", "true"),
+					resource.TestCheckResourceAttr("genesyscloud_flow_loglevel."+resourceId, "flow_characteristics.0.variables", "true"),
+				),
+			},
+			{
+				// Create using only flow log level
+				Config: generateFlowLogLevelResource(
+					flowId,
+					flowLogLevelDisabled,
+					resourceId,
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("genesyscloud_flow_loglevel."+resourceId, "flow_log_level", flowLogLevelDisabled),
+					resource.TestCheckResourceAttr("genesyscloud_flow_loglevel."+resourceId, "flow_id", flowId),
+					resource.TestCheckResourceAttr("genesyscloud_flow_loglevel."+resourceId, "flow_characteristics.0.communications", "false"),
+					resource.TestCheckResourceAttr("genesyscloud_flow_loglevel."+resourceId, "flow_characteristics.0.event_error", "false"),
+					resource.TestCheckResourceAttr("genesyscloud_flow_loglevel."+resourceId, "flow_characteristics.0.event_other", "false"),
+					resource.TestCheckResourceAttr("genesyscloud_flow_loglevel."+resourceId, "flow_characteristics.0.event_warning", "false"),
+					resource.TestCheckResourceAttr("genesyscloud_flow_loglevel."+resourceId, "flow_characteristics.0.execution_input_outputs", "false"),
+					resource.TestCheckResourceAttr("genesyscloud_flow_loglevel."+resourceId, "flow_characteristics.0.execution_items", "false"),
 					resource.TestCheckResourceAttr("genesyscloud_flow_loglevel."+resourceId, "flow_characteristics.0.names", "false"),
 					resource.TestCheckResourceAttr("genesyscloud_flow_loglevel."+resourceId, "flow_characteristics.0.variables", "false"),
 				),
