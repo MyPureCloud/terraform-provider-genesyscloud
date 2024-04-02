@@ -85,18 +85,17 @@ func ResourceFlowLoglevel() *schema.Resource {
 			"flow_id": {
 				Description: "The flowId for this characteristics set",
 				Type:        schema.TypeString,
-				Optional:    true,
+				Required:    true,
 			},
 			"flow_log_level": {
 				Description: "The logLevel for this characteristics set",
 				Type:        schema.TypeString,
-				Optional:    true,
+				Required:    true,
 			},
 			"flow_characteristics": {
 				Description: "Shows what characteristics are enabled for this log level",
 				Type:        schema.TypeList,
 				Computed:    true,
-				Optional:    true,
 				Elem:        flowCharacteristics,
 			},
 		},
