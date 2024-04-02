@@ -1,7 +1,6 @@
 package webdeployments_configuration_utils
 
 import (
-	"fmt"
 	"terraform-provider-genesyscloud/genesyscloud/util/lists"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
@@ -10,7 +9,7 @@ import (
 )
 
 func buildAppConversations(conversations []interface{}) *platformclientv2.Conversationappsettings {
-	if len(conversations) < 1 {
+	if len(conversations) < 1 || (len(conversations) == 1 && conversations[0] == nil) {
 		return nil
 	}
 
@@ -30,14 +29,13 @@ func buildAppConversations(conversations []interface{}) *platformclientv2.Conver
 		},
 	}
 
-	if conversationDisconnectArr, ok := conversation["conversation_disconnect"].([]interface{}); ok && len(conversationDisconnectArr) > 0 {
+	if conversationDisconnectArr, ok := conversation["conversation_disconnect"].([]interface{}); ok && len(conversationDisconnectArr) > 0 && conversationDisconnectArr[0] != nil {
 		conversationDisconnect := conversationDisconnectArr[0].(map[string]interface{})
 		ret.ConversationDisconnect = &platformclientv2.Conversationdisconnectsettings{
 			Enabled: platformclientv2.Bool(conversationDisconnect["enabled"].(bool)),
 			VarType: platformclientv2.String(conversationDisconnect["type"].(string)),
 		}
 	}
-
 
 	if humanizeArr, ok := conversation["humanize"].([]interface{}); ok && len(humanizeArr) > 0 && humanizeArr[0] != nil {
 		humanize := humanizeArr[0].(map[string]interface{})
@@ -75,23 +73,21 @@ func buildAppKnowledge(knowledge []interface{}) *platformclientv2.Knowledge {
 }
 
 func buildMessengerApps(apps []interface{}) *platformclientv2.Messengerapps {
-	if len(apps) < 1 {
+	if len(apps) < 1 || (len(apps) == 1 && apps[0] == nil) {
 		return nil
 	}
 
+	messengerApps := platformclientv2.Messengerapps{}
 	app := apps[0].(map[string]interface{})
-	conversations, conversationsOk := app["conversations"].([]interface{})
-	knowledge, knowledgeOk := app["knowledge"].([]interface{})
 
-	if !conversationsOk || !knowledgeOk {
-		fmt.Println("error in build Messenger Apps")
-		return nil
+	if conversations, ok := app["conversations"].([]interface{}); ok {
+		messengerApps.Conversations = buildAppConversations(conversations)
 	}
 
-	return &platformclientv2.Messengerapps{
-		Conversations: buildAppConversations(conversations),
-		Knowledge:     buildAppKnowledge(knowledge),
+	if knowledge, ok := app["knowledge"].([]interface{}); ok {
+		messengerApps.Knowledge = buildAppKnowledge(knowledge)
 	}
+	return &messengerApps
 }
 
 func buildMessengerSettings(d *schema.ResourceData) *platformclientv2.Messengersettings {
@@ -112,7 +108,7 @@ func buildMessengerSettings(d *schema.ResourceData) *platformclientv2.Messengers
 		Apps:    buildMessengerApps(cfg["apps"].([]interface{})),
 	}
 
-	if styles, ok := cfg["styles"].([]interface{}); ok && len(styles) > 0 {
+	if styles, ok := cfg["styles"].([]interface{}); ok && len(styles) > 0 && styles[0] != nil {
 		style := styles[0].(map[string]interface{})
 		if primaryColor, ok := style["primary_color"].(string); ok {
 			messengerSettings.Styles = &platformclientv2.Messengerstyles{
@@ -121,7 +117,7 @@ func buildMessengerSettings(d *schema.ResourceData) *platformclientv2.Messengers
 		}
 	}
 
-	if launchers, ok := cfg["launcher_button"].([]interface{}); ok && len(launchers) > 0 {
+	if launchers, ok := cfg["launcher_button"].([]interface{}); ok && len(launchers) > 0 && launchers[0] != nil {
 		launcher := launchers[0].(map[string]interface{})
 		if visibility, ok := launcher["visibility"].(string); ok {
 			messengerSettings.LauncherButton = &platformclientv2.Launcherbuttonsettings{
@@ -130,7 +126,7 @@ func buildMessengerSettings(d *schema.ResourceData) *platformclientv2.Messengers
 		}
 	}
 
-	if screens, ok := cfg["home_screen"].([]interface{}); ok && len(screens) > 0 {
+	if screens, ok := cfg["home_screen"].([]interface{}); ok && len(screens) > 0 && screens[0] != nil {
 		if screen, ok := screens[0].(map[string]interface{}); ok {
 			enabled, enabledOk := screen["enabled"].(bool)
 			logoUrl, logoUrlOk := screen["logo_url"].(string)
@@ -144,7 +140,7 @@ func buildMessengerSettings(d *schema.ResourceData) *platformclientv2.Messengers
 		}
 	}
 
-	if fileUploads, ok := cfg["file_upload"].([]interface{}); ok && len(fileUploads) > 0 {
+	if fileUploads, ok := cfg["file_upload"].([]interface{}); ok && len(fileUploads) > 0 && fileUploads[0] != nil {
 		fileUpload := fileUploads[0].(map[string]interface{})
 		if modesCfg, ok := fileUpload["mode"].([]interface{}); ok && len(modesCfg) > 0 {
 			modes := make([]platformclientv2.Fileuploadmode, len(modesCfg))
