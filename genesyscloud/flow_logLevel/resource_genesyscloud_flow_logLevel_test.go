@@ -6,24 +6,33 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
+	"terraform-provider-genesyscloud/genesyscloud/architect_flow"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 )
 
-// these operations need to be performed on a given flow.
-func getTestFlow() {
-
-}
-
 func TestAccResourceFlowLogLevel(t *testing.T) {
 	var (
+		flowResource         = "test_logLevel_flow1"
 		resourceId           = "flow_log_level" + uuid.NewString()
+		flowName             = "Terraform Test Flow log level " + uuid.NewString()
 		flowLoglevelBase     = "Base"
 		flowLoglevelAll      = "All"
 		flowLogLevelDisabled = "Disabled"
-		flowId               = "e3aebe90-5a65-409e-9775-43d547b66e07"
+		flowId               = "${genesyscloud_flow." + flowResource + ".id}"
+		filePath             = "../../examples/resources/genesyscloud_flow/inboundcall_flow_example.yaml"
+		inboundCallConfig    = fmt.Sprintf("inboundCall:\n  name: %s\n  defaultLanguage: en-us\n  startUpRef: ./menus/menu[mainMenu]\n  initialGreeting:\n    tts: Archy says hi!!!\n  menus:\n    - menu:\n        name: Main Menu\n        audio:\n          tts: You are at the Main Menu, press 9 to disconnect.\n        refId: mainMenu\n        choices:\n          - menuDisconnect:\n              name: Disconnect\n              dtmf: digit_9", flowName)
 	)
+
+	flowResourceConfig := architect_flow.GenerateFlowResource(
+		flowResource,
+		filePath,
+		inboundCallConfig,
+		true,
+	)
+
+	var ()
 
 	resource.Test(t, resource.TestCase{
 		PreCheck: func() {
@@ -33,14 +42,13 @@ func TestAccResourceFlowLogLevel(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				// Create using only flow log level
-				Config: generateFlowLogLevelResource(
+				Config: flowResourceConfig + generateFlowLogLevelResource(
 					flowId,
 					flowLoglevelBase,
 					resourceId,
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_flow_loglevel."+resourceId, "flow_log_level", flowLoglevelBase),
-					resource.TestCheckResourceAttr("genesyscloud_flow_loglevel."+resourceId, "flow_id", flowId),
 					resource.TestCheckResourceAttr("genesyscloud_flow_loglevel."+resourceId, "flow_characteristics.0.communications", "false"),
 					resource.TestCheckResourceAttr("genesyscloud_flow_loglevel."+resourceId, "flow_characteristics.0.event_error", "true"),
 					resource.TestCheckResourceAttr("genesyscloud_flow_loglevel."+resourceId, "flow_characteristics.0.event_other", "false"),
@@ -53,14 +61,13 @@ func TestAccResourceFlowLogLevel(t *testing.T) {
 			},
 			{
 				// Create using only flow log level
-				Config: generateFlowLogLevelResource(
+				Config: flowResourceConfig + generateFlowLogLevelResource(
 					flowId,
 					flowLoglevelAll,
 					resourceId,
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_flow_loglevel."+resourceId, "flow_log_level", flowLoglevelAll),
-					resource.TestCheckResourceAttr("genesyscloud_flow_loglevel."+resourceId, "flow_id", flowId),
 					resource.TestCheckResourceAttr("genesyscloud_flow_loglevel."+resourceId, "flow_characteristics.0.communications", "true"),
 					resource.TestCheckResourceAttr("genesyscloud_flow_loglevel."+resourceId, "flow_characteristics.0.event_error", "true"),
 					resource.TestCheckResourceAttr("genesyscloud_flow_loglevel."+resourceId, "flow_characteristics.0.event_other", "true"),
@@ -73,14 +80,13 @@ func TestAccResourceFlowLogLevel(t *testing.T) {
 			},
 			{
 				// Create using only flow log level
-				Config: generateFlowLogLevelResource(
+				Config: flowResourceConfig + generateFlowLogLevelResource(
 					flowId,
 					flowLogLevelDisabled,
 					resourceId,
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_flow_loglevel."+resourceId, "flow_log_level", flowLogLevelDisabled),
-					resource.TestCheckResourceAttr("genesyscloud_flow_loglevel."+resourceId, "flow_id", flowId),
 					resource.TestCheckResourceAttr("genesyscloud_flow_loglevel."+resourceId, "flow_characteristics.0.communications", "false"),
 					resource.TestCheckResourceAttr("genesyscloud_flow_loglevel."+resourceId, "flow_characteristics.0.event_error", "false"),
 					resource.TestCheckResourceAttr("genesyscloud_flow_loglevel."+resourceId, "flow_characteristics.0.event_other", "false"),

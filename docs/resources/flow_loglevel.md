@@ -17,7 +17,6 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 * [GET /api/v2/flows/{flowId}/instances/settings/loglevels/{flowId}]()
 * [PUT /api/v2/flows/{flowId}/instances/settings/loglevels/{flowId}]()
 * [DELETE /api/v2/flows/{flowId}/instances/settings/loglevels/{flowId}]()
-* [GET /api/v2/flows/instances/settings/loglevels/characteristics]() // do we need this?
 
 ## Example Usage
 
@@ -25,16 +24,6 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 resource "genesyscloud_flow_loglevel" "flowLogLevel" {
   flow_id        = "UUID"
   flow_log_level = "Base"
-  flow_characteristics {
-    execution_items         = "true"
-    execution_input_outputs = "false"
-    communications          = "false"
-    event_error             = "true"
-    event_warning           = "true"
-    event_other             = "false"
-    variables               = "false"
-    names                   = "false"
-  }
 }
 ```
 
@@ -43,7 +32,7 @@ resource "genesyscloud_flow_loglevel" "flowLogLevel" {
 
 ### Optional
 
-- `flow_characteristics` (Block List, Max: 1) Shows what characteristics are enabled for this log level (see [below for nested schema](#nestedblock--flow_characteristics))
+- `flow_characteristics` (Block List) Shows what characteristics are enabled for this log level (see [below for nested schema](#nestedblock--flow_characteristics))
 - `flow_id` (String) The flowId for this characteristics set
 - `flow_log_level` (String) The logLevel for this characteristics set
 

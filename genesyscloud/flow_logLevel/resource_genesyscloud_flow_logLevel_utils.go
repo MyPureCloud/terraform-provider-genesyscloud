@@ -15,8 +15,7 @@ func generateFlowLogLevelResource(
 	return fmt.Sprintf(`resource "genesyscloud_flow_loglevel" "%s" {
 	  flow_id					= "%s"
 	  flow_log_level 			= "%s"
-	}
-	`,
+	}`,
 		resourceId,
 		flowId,
 		flowLoglevel)
@@ -26,14 +25,6 @@ func generateFlowLogLevelResource(
 func getFlowLogLevelSettingsRequestFromResourceData(d *schema.ResourceData) platformclientv2.Flowloglevelrequest {
 	return platformclientv2.Flowloglevelrequest{
 		LogLevelCharacteristics: getFlowLogLevelFromResourceData(d),
-	}
-}
-
-// getFlowLogLevelRequestFromFlowLogLevel maps data from schema ResourceData object to a platformclientv2.Flowloglevelrequest
-func getFlowLogLevelRequestFromFlowLogLevel(d *platformclientv2.Flowloglevel) platformclientv2.Flowloglevelrequest {
-
-	return platformclientv2.Flowloglevelrequest{
-		LogLevelCharacteristics: d,
 	}
 }
 

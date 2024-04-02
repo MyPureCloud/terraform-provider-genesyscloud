@@ -2,8 +2,8 @@ package flow_logLevel
 
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"log"
 	"sync"
+	architect_flow "terraform-provider-genesyscloud/genesyscloud/architect_flow"
 	"testing"
 )
 
@@ -29,13 +29,14 @@ type registerTestInstance struct {
 func (r *registerTestInstance) registerTestResources() {
 	r.resourceMapMutex.Lock()
 	defer r.resourceMapMutex.Unlock()
-
+	providerResources["genesyscloud_flow"] = architect_flow.ResourceArchitectFlow()
 	providerResources["genesyscloud_flow_loglevel"] = ResourceFlowLoglevel()
 }
 
 // registerTestDataSources registers all data sources used in the tests.
 func (r *registerTestInstance) registerTestDataSources() {
 	r.datasourceMapMutex.Lock()
+	providerDataSources["genesyscloud_flow"] = architect_flow.DataSourceArchitectFlow()
 	defer r.datasourceMapMutex.Unlock()
 
 }
@@ -44,15 +45,10 @@ func (r *registerTestInstance) registerTestDataSources() {
 func initTestResources() {
 	providerDataSources = make(map[string]*schema.Resource)
 	providerResources = make(map[string]*schema.Resource)
-	log.Printf("initTestResources providerDataSources=%v", providerDataSources)
-	log.Printf("initTestResources providerResources=%v", providerResources)
 	regInstance := &registerTestInstance{}
 
 	regInstance.registerTestDataSources()
 	regInstance.registerTestResources()
-	log.Printf("initTestResources providerDataSources=%v", providerDataSources)
-	log.Printf("initTestResources providerResources=%v", providerResources)
-	log.Printf("initTestResources regInstance=%v", regInstance)
 }
 
 // TestMain is a "setup" function called by the testing framework when run the test
