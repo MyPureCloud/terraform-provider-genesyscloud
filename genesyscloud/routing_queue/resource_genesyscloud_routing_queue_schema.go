@@ -246,55 +246,6 @@ func ResourceRoutingQueue() *schema.Resource {
 					},
 				},
 			},
-			"conditional_group_routing_rules": {
-				Description: "The Conditional Group Routing settings for the queue.",
-				Deprecated:  "conditional_group_routing_rules is deprecated. Please use dedicated conditional_group_routing_rules resource instead.",
-				Type:        schema.TypeList,
-				Optional:    true,
-				Computed:    true,
-				MaxItems:    5,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						"queue_id": {
-							Type:        schema.TypeString,
-							Optional:    true,
-							Description: `The ID of the queue being evaluated for this rule. For rule 1, this is always be the current queue, so no queue id should be specified for the first rule.`,
-						},
-						"operator": {
-							Description:  "The operator that compares the actual value against the condition value. Valid values: GreaterThan, GreaterThanOrEqualTo, LessThan, LessThanOrEqualTo.",
-							Type:         schema.TypeString,
-							Required:     true,
-							ValidateFunc: validation.StringInSlice([]string{"GreaterThan", "LessThan", "GreaterThanOrEqualTo", "LessThanOrEqualTo"}, false),
-						},
-						"metric": {
-							Description: "The queue metric being evaluated. Valid values: EstimatedWaitTime, ServiceLevel",
-							Type:        schema.TypeString,
-							Optional:    true,
-							Default:     "EstimatedWaitTime",
-						},
-						"condition_value": {
-							Description:  "The limit value, beyond which a rule evaluates as true.",
-							Type:         schema.TypeFloat,
-							Required:     true,
-							ValidateFunc: validation.FloatBetween(0, 259200),
-						},
-						"wait_seconds": {
-							Description:  "The number of seconds to wait in this rule, if it evaluates as true, before evaluating the next rule. For the final rule, this is ignored, so need not be specified.",
-							Type:         schema.TypeInt,
-							Optional:     true,
-							Default:      2,
-							ValidateFunc: validation.IntBetween(0, 259200),
-						},
-						"groups": {
-							Type:        schema.TypeList,
-							Required:    true,
-							MinItems:    1,
-							Description: "The group(s) to activate if the rule evaluates as true.",
-							Elem:        memberGroupResource,
-						},
-					},
-				},
-			},
 			"acw_wrapup_prompt": {
 				Description:  "This field controls how the UI prompts the agent for a wrapup (MANDATORY | OPTIONAL | MANDATORY_TIMEOUT | MANDATORY_FORCED_TIMEOUT | AGENT_REQUESTED).",
 				Type:         schema.TypeString,
