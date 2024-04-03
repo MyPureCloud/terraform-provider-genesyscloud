@@ -4,12 +4,15 @@ import (
 	"fmt"
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
+	"log"
 	"strings"
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	routingEmailRoute "terraform-provider-genesyscloud/genesyscloud/routing_email_route"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
+	"time"
 )
 
 func TestAccResourceRoutingQueueOutboundEmailAddress(t *testing.T) {
@@ -26,6 +29,8 @@ func TestAccResourceRoutingQueueOutboundEmailAddress(t *testing.T) {
 		routePattern  = "terraform1"
 		fromName      = "John Terraform"
 	)
+
+	CleanupRoutingEmailDomains()
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
@@ -79,4 +84,38 @@ func generateRoutingQueueOutboundEmailAddressResource(resourceId, queueId, domai
 		domain_id = %s
 		route_id = %s
 	}`, resourceName, resourceId, queueId, domainId, routeId)
+}
+
+func CleanupRoutingEmailDomains() {
+	var sdkConfig *platformclientv2.Configuration
+	var err error
+	if sdkConfig, err = provider.AuthorizeSdk(); err != nil {
+		log.Fatal(err)
+	}
+
+	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
+
+	for pageNum := 1; ; pageNum++ {
+		const pageSize = 100
+		routingEmailDomains, _, getErr := routingAPI.GetRoutingEmailDomains(pageSize, pageNum, false, "")
+		if getErr != nil {
+			log.Printf("failed to get page %v of routing email domains: %v", pageNum, getErr)
+			return
+		}
+
+		if routingEmailDomains.Entities == nil || len(*routingEmailDomains.Entities) == 0 {
+			return
+		}
+
+		for _, routingEmailDomain := range *routingEmailDomains.Entities {
+			if routingEmailDomain.Id != nil && strings.HasPrefix(*routingEmailDomain.Id, "terraform") {
+				_, err := routingAPI.DeleteRoutingEmailDomain(*routingEmailDomain.Id)
+				if err != nil {
+					log.Printf("Failed to delete routing email domain %s: %s", *routingEmailDomain.Id, err)
+					continue
+				}
+				time.Sleep(5 * time.Second)
+			}
+		}
+	}
 }
