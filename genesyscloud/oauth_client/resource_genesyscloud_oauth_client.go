@@ -41,6 +41,56 @@ func getAllOAuthClients(ctx context.Context, clientConfig *platformclientv2.Conf
 	return resources, nil
 }
 
+func updateTerraformUserWithRole(ctx context.Context, sdkConfig *platformclientv2.Configuration, roles *[]platformclientv2.Roledivision) diag.Diagnostics {
+	op := getOAuthClientProxy(sdkConfig)
+
+	//Step #1 Retrieve the parent oauth client from the token API and check to make sure it is not a client credential grant
+	tokenInfo, resp, err := op.getParentOAuthClientToken(ctx)
+	if err != nil {
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Error trying to retrieve the token for the OAuth client running our CX as Code provider %s", err), resp)
+	}
+
+	if *tokenInfo.OAuthClient.Organization.Id != "purecloud-builtin" {
+		log.Printf("This terraform client is being run with an OAuth Client Credential Grant.  You might get an error in your terraform scripts if you try to create a role in CX as Code and try to assign it to the oauth client.")
+		return nil
+	}
+
+	//Step #2: Look up the user who is running the user
+	log.Printf("The OAuth Client being used is purecloud-builtin.  Retrieving the user running the terraform client and assigning the target role to them.")
+	terraformUser, resp, err := op.GetTerraformUser(ctx)
+	if err != nil {
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to retrieved the terraform user running this terraform code %s", err), resp)
+	}
+
+	//Step #3: Lookup the users roles
+	userRoles, resp, err := op.GetTerraformUserRoles(ctx, *terraformUser.Id)
+	if err != nil {
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failued to retrieve the terraform user roles running this terraform code %s", err), resp)
+	}
+
+	var totalRoles []string
+	//Step #4  - Add the new roles together
+	for _, role := range *roles {
+		totalRoles = append(totalRoles, *role.RoleId)
+	}
+
+	for _, role := range *userRoles.Roles {
+		totalRoles = append(totalRoles, *role.Id)
+	}
+
+	if len(totalRoles) <= 1 {
+		log.Printf("JCC SOMETHING IS WRONG.  NOT UPDATING ROLES")
+	}
+
+	//Step #5 - Update roles
+	_, resp, err = op.UpdateTerraformUserRoles(ctx, *terraformUser.Id, totalRoles)
+	if err != nil {
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failued to update the terraform user roles running this terraform code %s", err), resp)
+	}
+
+	return nil
+}
+
 func createOAuthClient(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	name := d.Get("name").(string)
 	description := d.Get("description").(string)
@@ -52,6 +102,12 @@ func createOAuthClient(ctx context.Context, d *schema.ResourceData, meta interfa
 	oauthClientProxy := getOAuthClientProxy(sdkConfig)
 
 	roles, diagErr := buildOAuthRoles(d)
+	if diagErr != nil {
+		return diagErr
+	}
+
+	//Before we create the oauth client we need to take any roles that are assigned to this oauth client and assign them to the oauth client running this script
+	diagErr = updateTerraformUserWithRole(ctx, sdkConfig, roles)
 	if diagErr != nil {
 		return diagErr
 	}
