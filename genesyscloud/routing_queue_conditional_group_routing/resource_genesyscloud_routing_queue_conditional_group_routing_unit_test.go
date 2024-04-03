@@ -82,7 +82,8 @@ func TestUnitResourceRoutingQueueConditionalGroupRoutingRead(t *testing.T) {
 	assert.Equal(t, false, diag.HasError(), diag)
 
 	assert.Equal(t, tId, d.Id())
-	rules := buildConditionalGroupRouting(d.Get("queue_id").(string), d.Get("rules").([]interface{}))
+	rules, err := buildConditionalGroupRouting(d.Get("rules").([]interface{}))
+	assert.Equal(t, err, nil)
 	equal := cmp.Equal(tRules, rules)
 	assert.Equal(t, true, equal, "rules not equal to expected value in read: %s", cmp.Diff(tRules, rules))
 }

@@ -47,7 +47,7 @@ resource "genesyscloud_routing_queue_conditional_group_routing" "example-name" {
 
 ### Required
 
-- `queue_id` (String) Routing queue Id
+- `queue_id` (String) Id of the routing queue to which the rules belong
 - `rules` (Block List, Min: 1, Max: 5) The Conditional Group Routing settings for the queue. (see [below for nested schema](#nestedblock--rules))
 
 ### Read-Only
@@ -61,11 +61,12 @@ Required:
 
 - `condition_value` (Number) The limit value, beyond which a rule evaluates as true.
 - `groups` (Block List, Min: 1) The group(s) to activate if the rule evaluates as true. (see [below for nested schema](#nestedblock--rules--groups))
-- `operator` (String) The operator that compares the actual value against the condition value. Valid values: GreaterThan, GreaterThanOrEqualTo, LessThan, LessThanOrEqualTo.
+- `operator` (String) The operator that compares the actual value against the condition value.
 
 Optional:
 
-- `metric` (String) The queue metric being evaluated. Valid values: EstimatedWaitTime, ServiceLevel Defaults to `EstimatedWaitTime`.
+- `evaluated_queue_id` (String) The queue being evaluated for this rule. For rule 1, this is always the current queue, so should not be specified.
+- `metric` (String) The queue metric being evaluated. Defaults to `EstimatedWaitTime`.
 - `wait_seconds` (Number) The number of seconds to wait in this rule, if it evaluates as true, before evaluating the next rule. For the final rule, this is ignored, so need not be specified. Defaults to `2`.
 
 <a id="nestedblock--rules--groups"></a>

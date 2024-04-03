@@ -161,7 +161,7 @@ func updateRoutingQueueConditionRoutingFn(ctx context.Context, p *routingQueueCo
 	// Update the queue with th new rules
 	queue, resp, err = p.routingApi.PutRoutingQueue(queueId, updateQueue)
 	if err != nil {
-		return nil, resp, fmt.Errorf("failed to update routing queue %s conditional group routing rules: %s", queueId, err)
+		return nil, resp, fmt.Errorf("failed to update conditional group routing rules for routing queue %s : %s", queueId, err)
 	}
 
 	if queue.ConditionalGroupRouting != nil && queue.ConditionalGroupRouting.Rules != nil {

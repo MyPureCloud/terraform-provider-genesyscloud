@@ -80,12 +80,15 @@ func updateRoutingQueueConditionalRoutingGroup(ctx context.Context, d *schema.Re
 	queueId := strings.Split(d.Id(), "/")[0]
 	rules := d.Get("rules").([]interface{})
 
-	sdkRules := buildConditionalGroupRouting(queueId, rules)
+	sdkRules, err := buildConditionalGroupRouting(rules)
+	if err != nil {
+		return diag.Errorf("%s", err)
+	}
 
 	log.Printf("updating conditional group routing rules for queue %s", queueId)
-	_, _, err := proxy.updateRoutingQueueConditionRouting(ctx, queueId, &sdkRules)
+	_, _, err = proxy.updateRoutingQueueConditionRouting(ctx, queueId, &sdkRules)
 	if err != nil {
-		return diag.Errorf("failed to update queue %s: %s", queueId, err)
+		return diag.Errorf("%s", err)
 	}
 	log.Printf("updated conditional group routing rules for queue %s", queueId)
 
@@ -126,7 +129,7 @@ func deleteRoutingQueueConditionalRoutingGroup(ctx context.Context, d *schema.Re
 	return nil
 }
 
-func buildConditionalGroupRouting(queueId string, rules []interface{}) []platformclientv2.Conditionalgrouproutingrule {
+func buildConditionalGroupRouting(rules []interface{}) ([]platformclientv2.Conditionalgrouproutingrule, error) {
 	var sdkRules []platformclientv2.Conditionalgrouproutingrule
 	for i, rule := range rules {
 		configRule := rule.(map[string]interface{})
@@ -135,9 +138,11 @@ func buildConditionalGroupRouting(queueId string, rules []interface{}) []platfor
 			ConditionValue: platformclientv2.Float64(configRule["condition_value"].(float64)),
 		}
 
-		// Don't specify the queue for the first rule
-		if i != 0 {
-			sdkRule.Queue = &platformclientv2.Domainentityref{Id: &queueId}
+		if evaluatedQueue, ok := configRule["evaluated_queue_id"].(string); ok && evaluatedQueue != "" {
+			if i == 0 {
+				return nil, fmt.Errorf("for rule 1, the current queue is used so evaluated_queue_id should not be specified")
+			}
+			sdkRule.Queue = &platformclientv2.Domainentityref{Id: &evaluatedQueue}
 		}
 
 		resourcedata.BuildSDKStringValueIfNotNil(&sdkRule.Metric, configRule, "metric")
@@ -165,14 +170,18 @@ func buildConditionalGroupRouting(queueId string, rules []interface{}) []platfor
 		sdkRules = append(sdkRules, sdkRule)
 	}
 
-	return sdkRules
+	return sdkRules, nil
 }
 
 func flattenConditionalGroupRouting(sdkRules *[]platformclientv2.Conditionalgrouproutingrule) []interface{} {
 	var rules []interface{}
-	for _, sdkRule := range *sdkRules {
+	for i, sdkRule := range *sdkRules {
 		rule := make(map[string]interface{})
 
+		// The first rule is assumed to apply to this queue, so evaluated_queue_id should be omitted
+		if i > 0 {
+			resourcedata.SetMapReferenceValueIfNotNil(rule, "evaluated_queue_id", sdkRule.Queue)
+		}
 		resourcedata.SetMapValueIfNotNil(rule, "wait_seconds", sdkRule.WaitSeconds)
 		resourcedata.SetMapValueIfNotNil(rule, "operator", sdkRule.Operator)
 		resourcedata.SetMapValueIfNotNil(rule, "condition_value", sdkRule.ConditionValue)

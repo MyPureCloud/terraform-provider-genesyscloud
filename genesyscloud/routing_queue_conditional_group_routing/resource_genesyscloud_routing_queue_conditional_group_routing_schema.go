@@ -49,7 +49,7 @@ func ResourceRoutingQueueConditionalGroupRouting() *schema.Resource {
 		SchemaVersion: 1,
 		Schema: map[string]*schema.Schema{
 			"queue_id": {
-				Description: "Routing queue Id",
+				Description: "Id of the routing queue to which the rules belong",
 				Type:        schema.TypeString,
 				Required:    true,
 			},
@@ -61,17 +61,23 @@ func ResourceRoutingQueueConditionalGroupRouting() *schema.Resource {
 				MaxItems:    5,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
+						"evaluated_queue_id": {
+							Description: "The queue being evaluated for this rule. For rule 1, this is always the current queue, so should not be specified.",
+							Type:        schema.TypeString,
+							Optional:    true,
+						},
 						"operator": {
-							Description:  "The operator that compares the actual value against the condition value. Valid values: GreaterThan, GreaterThanOrEqualTo, LessThan, LessThanOrEqualTo.",
+							Description:  "The operator that compares the actual value against the condition value.",
 							Type:         schema.TypeString,
 							Required:     true,
 							ValidateFunc: validation.StringInSlice([]string{"GreaterThan", "LessThan", "GreaterThanOrEqualTo", "LessThanOrEqualTo"}, false),
 						},
 						"metric": {
-							Description: "The queue metric being evaluated. Valid values: EstimatedWaitTime, ServiceLevel",
-							Type:        schema.TypeString,
-							Optional:    true,
-							Default:     "EstimatedWaitTime",
+							Description:  "The queue metric being evaluated.",
+							Type:         schema.TypeString,
+							Optional:     true,
+							Default:      "EstimatedWaitTime",
+							ValidateFunc: validation.StringInSlice([]string{"EstimatedWaitTime", "ServiceLevel"}, false),
 						},
 						"condition_value": {
 							Description:  "The limit value, beyond which a rule evaluates as true.",
@@ -104,7 +110,8 @@ func RoutingQueueConditionalGroupRoutingExporter() *resourceExporter.ResourceExp
 	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: provider.GetAllWithPooledClient(getAllAuthRoutingQueueConditionalGroup),
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
-			"queue_id": {RefType: "genesyscloud_routing_queue"},
+			"queue_id":                 {RefType: "genesyscloud_routing_queue"},
+			"rules.evaluated_queue_id": {RefType: "genesyscloud_routing_queue"},
 		},
 		CustomAttributeResolver: map[string]*resourceExporter.RefAttrCustomResolver{
 			"rules.groups.member_group_id": {ResolverFunc: resourceExporter.MemberGroupsResolver},
