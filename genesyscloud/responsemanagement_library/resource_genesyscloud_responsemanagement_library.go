@@ -30,7 +30,7 @@ func getAllAuthResponsemanagementLibrarys(ctx context.Context, clientConfig *pla
 
 	librarys, resp, err := proxy.getAllResponsemanagementLibrary(ctx)
 	if err != nil {
-		return nil, diag.Errorf("Failed to get responsemanagement library: %v %v", err, resp)
+		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get responsemanagement library"), resp)
 	}
 
 	for _, library := range *librarys {
@@ -50,7 +50,7 @@ func createResponsemanagementLibrary(ctx context.Context, d *schema.ResourceData
 	log.Printf("Creating responsemanagement library %s", *responsemanagementLibrary.Name)
 	library, resp, err := proxy.createResponsemanagementLibrary(ctx, &responsemanagementLibrary)
 	if err != nil {
-		return diag.Errorf("Failed to create responsemanagement library: %s %v", err, resp)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create responsemanagement library %s", *responsemanagementLibrary.Name), resp)
 	}
 
 	d.SetId(*library.Id)
@@ -94,7 +94,7 @@ func updateResponsemanagementLibrary(ctx context.Context, d *schema.ResourceData
 	log.Printf("Updating responsemanagement library %s", *responsemanagementLibrary.Name)
 	library, resp, err := proxy.updateResponsemanagementLibrary(ctx, d.Id(), &responsemanagementLibrary)
 	if err != nil {
-		return diag.Errorf("Failed to update responsemanagement library: %s %v", err, resp)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update responsemanagement library %s", *responsemanagementLibrary.Name), resp)
 	}
 	log.Printf("Updated responsemanagement library %s", *library.Id)
 	return readResponsemanagementLibrary(ctx, d, meta)

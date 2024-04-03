@@ -33,7 +33,7 @@ func getAllAuthOutboundRuleset(ctx context.Context, clientConfig *platformclient
 
 	rulesets, resp, rsErr := proxy.getAllOutboundRuleset(ctx)
 	if rsErr != nil {
-		return nil, diag.Errorf("Failed to get ruleset: %v %v", rsErr, resp)
+		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get rulesets"), resp)
 	}
 
 	// DEVTOOLING-319: filters rule sets by removing the ones that reference skills that no longer exist in GC
@@ -63,7 +63,7 @@ func createOutboundRuleset(ctx context.Context, d *schema.ResourceData, meta int
 
 	ruleset, resp, err := proxy.createOutboundRuleset(ctx, &outboundRuleset)
 	if err != nil {
-		return diag.Errorf("Failed to create ruleset: %s %v", err, resp)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create ruleset %s", *outboundRuleset.Name), resp)
 	}
 
 	d.SetId(*ruleset.Id)
@@ -108,7 +108,7 @@ func updateOutboundRuleset(ctx context.Context, d *schema.ResourceData, meta int
 
 	ruleset, resp, err := proxy.updateOutboundRuleset(ctx, d.Id(), &outboundRuleset)
 	if err != nil {
-		return diag.Errorf("Failed to update ruleset: %s %v", err, resp)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update ruleset %s", *outboundRuleset.Name), resp)
 	}
 
 	log.Printf("Updated Outbound Ruleset %s", *ruleset.Id)
@@ -122,7 +122,7 @@ func deleteOutboundRuleset(ctx context.Context, d *schema.ResourceData, meta int
 
 	resp, err := proxy.deleteOutboundRuleset(ctx, d.Id())
 	if err != nil {
-		return diag.Errorf("Failed to delete ruleset %s: %s %v", d.Id(), err, resp)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete ruleset %s", d.Id()), resp)
 	}
 
 	return util.WithRetries(ctx, 1800*time.Second, func() *retry.RetryError {

@@ -31,7 +31,7 @@ func getAllAuthOutboundSequences(ctx context.Context, clientConfig *platformclie
 
 	campaignSequences, resp, err := proxy.getAllOutboundSequence(ctx)
 	if err != nil {
-		return nil, diag.Errorf("Failed to get outbound sequence: %v %v", err, resp)
+		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get outbound sequences"), resp)
 	}
 
 	for _, campaignSequence := range *campaignSequences {
@@ -51,7 +51,7 @@ func createOutboundSequence(ctx context.Context, d *schema.ResourceData, meta in
 	log.Printf("Creating outbound sequence %s", *outboundSequence.Name)
 	campaignSequence, resp, err := proxy.createOutboundSequence(ctx, &outboundSequence)
 	if err != nil {
-		return diag.Errorf("Failed to create outbound sequence: %s %v", err, resp)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create outbound sequence %s", *outboundSequence.Name), resp)
 	}
 
 	d.SetId(*campaignSequence.Id)
@@ -112,7 +112,7 @@ func updateOutboundSequence(ctx context.Context, d *schema.ResourceData, meta in
 	log.Printf("Updating outbound sequence %s", *outboundSequence.Name)
 	campaignSequence, resp, err := proxy.updateOutboundSequence(ctx, d.Id(), &outboundSequence)
 	if err != nil {
-		return diag.Errorf("Failed to update outbound sequence: %s %v", err, resp)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update outbound sequence %s", *outboundSequence.Name), resp)
 	}
 
 	log.Printf("Updated outbound sequence %s", *campaignSequence.Id)
@@ -128,19 +128,19 @@ func deleteOutboundSequence(ctx context.Context, d *schema.ResourceData, meta in
 	sequence, resp, err := proxy.getOutboundSequenceById(ctx, d.Id())
 	if *sequence.Status == "on" {
 		if err != nil {
-			return diag.Errorf("Failed to get outbound sequence %s: %s %v", d.Id(), err, resp)
+			return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get outbound sequence %s", d.Id()), resp)
 		}
 		sequence.Status = platformclientv2.String("off")
 		_, resp, err = proxy.updateOutboundSequence(ctx, d.Id(), sequence)
 		if err != nil {
-			return diag.Errorf("Failed to turn off outbound sequence %s: %s %v", d.Id(), err, resp)
+			return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to turn off outbound sequence %s", d.Id()), resp)
 		}
 		time.Sleep(20 * time.Second) // Give the sequence a chance to turned off
 	}
 
 	resp, err = proxy.deleteOutboundSequence(ctx, d.Id())
 	if err != nil {
-		return diag.Errorf("Failed to delete outbound sequence %s: %s %v", d.Id(), err, resp)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete outbound sequence %s", d.Id()), resp)
 	}
 
 	return util.WithRetries(ctx, 180*time.Second, func() *retry.RetryError {

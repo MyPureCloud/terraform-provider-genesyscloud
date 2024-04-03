@@ -49,7 +49,7 @@ func createPhoneBaseSettings(ctx context.Context, d *schema.ResourceData, meta i
 	log.Printf("Creating phone base settings %s", name)
 	phoneBaseSettings, resp, err := phoneBaseProxy.postPhoneBaseSetting(ctx, phoneBase)
 	if err != nil {
-		return diag.Errorf("Failed to create phone base settings %s: %s %v", name, err, resp)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create phone base settings %s", name), resp)
 	}
 
 	d.SetId(*phoneBaseSettings.Id)
@@ -98,7 +98,7 @@ func updatePhoneBaseSettings(ctx context.Context, d *schema.ResourceData, meta i
 	log.Printf("Updating phone base settings %s", name)
 	phoneBaseSettings, resp, err := phoneBaseProxy.putPhoneBaseSetting(ctx, d.Id(), phoneBase)
 	if err != nil {
-		return diag.Errorf("Failed to update phone base settings %s: %v", name, err)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update phone base settings %s", name), resp)
 	}
 
 	log.Printf("Updated phone base settings %s", d.Id())
@@ -159,7 +159,7 @@ func deletePhoneBaseSettings(ctx context.Context, d *schema.ResourceData, meta i
 	log.Printf("Deleting phone base settings")
 	resp, err := phoneBaseProxy.deletePhoneBaseSetting(ctx, d.Id())
 	if err != nil {
-		return diag.Errorf("failed to delete phone base settings: %s %v", err, resp)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete phone base settings %s", d.Id()), resp)
 	}
 
 	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
@@ -188,7 +188,7 @@ func getAllPhoneBaseSettings(ctx context.Context, sdkConfig *platformclientv2.Co
 	phoneBaseProxy := getPhoneBaseProxy(sdkConfig)
 	phoneBaseSettings, resp, err := phoneBaseProxy.getAllPhoneBaseSettings(ctx)
 	if err != nil {
-		return nil, diag.Errorf("failed to get all phone base settings: %s %v", err, resp)
+		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get all phone base settings"), resp)
 	}
 
 	if phoneBaseSettings != nil {

@@ -27,7 +27,7 @@ func getAllRoutingLanguages(_ context.Context, clientConfig *platformclientv2.Co
 		const pageSize = 100
 		languages, _, getErr := routingAPI.GetRoutingLanguages(pageSize, pageNum, "", "", nil)
 		if getErr != nil {
-			return nil, diag.Errorf("Failed to get page of languages: %v", getErr)
+			return nil, utils.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get page of languages: %v", getErr)
 		}
 
 		if languages.Entities == nil || len(*languages.Entities) == 0 {

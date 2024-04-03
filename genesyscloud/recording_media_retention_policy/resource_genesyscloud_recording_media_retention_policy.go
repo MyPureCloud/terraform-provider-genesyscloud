@@ -48,7 +48,7 @@ func getAllMediaRetentionPolicies(ctx context.Context, clientConfig *platformcli
 
 	retentionPolicies, resp, err := pp.getAllPolicies(ctx)
 	if err != nil {
-		return nil, diag.Errorf("Failed to get page of media retention policies %v %v", err, resp)
+		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get page of media retention policies"), resp)
 	}
 
 	for _, retentionPolicy := range *retentionPolicies {
@@ -86,9 +86,8 @@ func createMediaRetentionPolicy(ctx context.Context, d *schema.ResourceData, met
 
 	policy, resp, err := pp.createPolicy(ctx, &reqBody)
 	log.Printf("Media retention policy creation status %#v", resp.Status)
-
 	if err != nil {
-		return diag.Errorf("Failed to create media retention policy %s: %s", name, err)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create media retention policy %s", name), resp)
 	}
 
 	// Make sure form is properly created
@@ -162,7 +161,7 @@ func updateMediaRetentionPolicy(ctx context.Context, d *schema.ResourceData, met
 	log.Printf("Updating media retention policy %s", name)
 	policy, resp, err := pp.updatePolicy(ctx, d.Id(), &reqBody)
 	if err != nil {
-		return diag.Errorf("Failed to update media retention policy %s: %s %v", name, err, resp)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update media retention policy %s", name), resp)
 	}
 
 	log.Printf("Updated media retention policy %s %s", name, *policy.Id)
@@ -179,7 +178,7 @@ func deleteMediaRetentionPolicy(ctx context.Context, d *schema.ResourceData, met
 	log.Printf("Deleting media retention policy %s", name)
 	resp, err := pp.deletePolicy(ctx, d.Id())
 	if err != nil {
-		return diag.Errorf("Failed to delete media retention policy %s: %s %v", name, err, resp)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete media retention policy %s", d.Id()), resp)
 	}
 
 	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {

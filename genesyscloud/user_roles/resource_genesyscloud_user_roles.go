@@ -68,7 +68,7 @@ func updateUserRoles(ctx context.Context, d *schema.ResourceData, meta interface
 	log.Printf("Updating roles for user %s", d.Id())
 	resp, diagErr := proxy.updateUserRoles(ctx, d.Id(), rolesConfig, "PC_USER")
 	if diagErr != nil {
-		return diag.Errorf("error %v %v", diagErr, resp)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update user roles %s", d.Id()), resp)
 	}
 
 	log.Printf("Updated user roles for %s", d.Id())

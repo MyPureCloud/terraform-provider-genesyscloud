@@ -26,7 +26,7 @@ func getAllAuthCampaignRules(ctx context.Context, clientConfig *platformclientv2
 
 	campaignRules, resp, err := proxy.getAllOutboundCampaignrule(ctx)
 	if err != nil {
-		return nil, diag.Errorf("Failed to get outbound campaign rules: %v %v", err, resp)
+		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get outbound campaign rules"), resp)
 	}
 
 	for _, campaignRule := range *campaignRules {
@@ -44,7 +44,7 @@ func createOutboundCampaignRule(ctx context.Context, d *schema.ResourceData, met
 	log.Printf("Creating Outbound Campaign Rule %s", *rule.Name)
 	outboundCampaignRule, resp, err := proxy.createOutboundCampaignrule(ctx, &rule)
 	if err != nil {
-		return diag.Errorf("Failed to create Outbound Campaign Rule %s: %s %v", *rule.Name, err, resp)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create Outbound Campaign Rule  %s", *rule.Name), resp)
 	}
 
 	d.SetId(*outboundCampaignRule.Id)
@@ -75,7 +75,7 @@ func updateOutboundCampaignRule(ctx context.Context, d *schema.ResourceData, met
 	log.Printf("Updating Outbound Campaign Rule %s", *rule.Name)
 	_, resp, err := proxy.updateOutboundCampaignrule(ctx, d.Id(), &rule)
 	if err != nil {
-		return diag.Errorf("Failed to update campaign rule %s: %s %v", d.Id(), err, resp)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update campaign rule %s", *rule.Name), resp)
 	}
 
 	log.Printf("Updated Outbound Campaign Rule %s", *rule.Name)
@@ -128,12 +128,12 @@ func deleteOutboundCampaignRule(ctx context.Context, d *schema.ResourceData, met
 		d.Set("enabled", false)
 		rule, resp, err := proxy.getOutboundCampaignruleById(ctx, d.Id())
 		if err != nil {
-			return diag.Errorf("Failed to find Outbound campaign rule %s for delete: %s %v", d.Id(), err, resp)
+			return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get Outbound campaign rule %s", d.Id()), resp)
 		}
 		rule.Enabled = platformclientv2.Bool(false)
 		_, resp, err = proxy.updateOutboundCampaignrule(ctx, d.Id(), rule)
 		if err != nil {
-			return diag.Errorf("Failed to disable outbound campaign rule %s: %s %v", d.Id(), err, resp)
+			return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to disable outbound campagin rule %s", d.Id()), resp)
 		}
 	}
 
@@ -141,7 +141,7 @@ func deleteOutboundCampaignRule(ctx context.Context, d *schema.ResourceData, met
 		log.Printf("Deleting Outbound Campaign Rule")
 		resp, err := proxy.deleteOutboundCampaignrule(ctx, d.Id())
 		if err != nil {
-			return resp, diag.Errorf("Failed to delete Outbound Campaign Rule: %s", err)
+			return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete outbound campaign rule %s", d.Id()), resp)
 		}
 		return resp, nil
 	})

@@ -24,7 +24,7 @@ func getAllExtensionPools(ctx context.Context, clientConfig *platformclientv2.Co
 	extensionPoolProxy := getExtensionPoolProxy(clientConfig)
 	extensionPools, resp, err := extensionPoolProxy.getAllExtensionPools(ctx)
 	if err != nil {
-		return nil, diag.Errorf("failed to get all extension pools: %s %v", err, resp)
+		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get extension pools"), resp)
 	}
 	if extensionPools != nil {
 		for _, extensionPool := range *extensionPools {
@@ -48,7 +48,7 @@ func createExtensionPool(ctx context.Context, d *schema.ResourceData, meta inter
 		Description: &description,
 	})
 	if err != nil {
-		return diag.Errorf("Failed to create Extension pool %s: %s %v", startNumber, err, resp)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create extension pool %s", startNumber), resp)
 	}
 
 	d.SetId(*extensionPool.Id)
@@ -104,7 +104,7 @@ func updateExtensionPool(ctx context.Context, d *schema.ResourceData, meta inter
 	}
 	log.Printf("Updating Extension pool %s", d.Id())
 	if _, resp, err := extensionPoolProxy.updateExtensionPool(ctx, d.Id(), extensionPoolBody); err != nil {
-		return diag.Errorf("Error updating Extension pool %s: %s %v", startNumber, err, resp)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update extension pool %s", startNumber), resp)
 	}
 	log.Printf("Updated Extension pool %s", d.Id())
 	return readExtensionPool(ctx, d, meta)
@@ -116,7 +116,7 @@ func deleteExtensionPool(ctx context.Context, d *schema.ResourceData, meta inter
 	extensionPoolProxy := getExtensionPoolProxy(sdkConfig)
 	log.Printf("Deleting Extension pool with starting number %s", startNumber)
 	if resp, err := extensionPoolProxy.deleteExtensionPool(ctx, d.Id()); err != nil {
-		return diag.Errorf("failed to delete Extension pool with starting number %s: %s %v", startNumber, err, resp)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete extension pool %s", startNumber), resp)
 	}
 	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		extensionPool, resp, err := extensionPoolProxy.getExtensionPool(ctx, d.Id())

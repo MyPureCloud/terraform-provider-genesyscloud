@@ -28,7 +28,7 @@ func getAllAuthOutboundCampaign(ctx context.Context, clientConfig *platformclien
 
 	campaigns, resp, err := proxy.getAllOutboundCampaign(ctx)
 	if err != nil {
-		return nil, diag.Errorf("Failed to get campaigns: %s %v", err, resp)
+		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get campaigns"), resp)
 	}
 
 	for _, campaign := range *campaigns {
@@ -74,7 +74,7 @@ func createOutboundCampaign(ctx context.Context, d *schema.ResourceData, meta in
 	log.Printf("Creating Outbound Campaign %s", *campaign.Name)
 	outboundCampaign, resp, err := proxy.createOutboundCampaign(ctx, &campaign)
 	if err != nil {
-		return diag.Errorf("Failed to create Outbound Campaign %s: %s %v", *campaign.Name, err, resp)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create Outbound Campaign %s", *campaign.Name), resp)
 	}
 
 	d.SetId(*outboundCampaign.Id)
@@ -164,7 +164,7 @@ func updateOutboundCampaign(ctx context.Context, d *schema.ResourceData, meta in
 	log.Printf("Updating Outbound Campaign %s", *campaign.Name)
 	campaignSdk, resp, err := proxy.updateOutboundCampaign(ctx, d.Id(), &campaign)
 	if err != nil {
-		return diag.Errorf("Failed to update campaign %s %v", err, resp)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update campaign %s", *campaign.Name), resp)
 	}
 
 	// Check if Campaign Status needs updated
@@ -203,7 +203,7 @@ func deleteOutboundCampaign(ctx context.Context, d *schema.ResourceData, meta in
 	log.Printf("Deleting Outbound Campaign %s", d.Id())
 	resp, err := proxy.deleteOutboundCampaign(ctx, d.Id())
 	if err != nil {
-		return diag.Errorf("Failed to delete campaign %s: %s %v", d.Id(), err, resp)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete campaign %s", d.Id()), resp)
 	}
 	log.Printf("Deleted Outbound Campaign %s", d.Id())
 

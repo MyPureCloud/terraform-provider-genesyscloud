@@ -43,7 +43,7 @@ func createEdgeGroup(ctx context.Context, d *schema.ResourceData, meta interface
 		log.Printf("Creating edge group %s", name)
 		edgeGroup, resp, err := edgeGroupProxy.createEdgeGroup(ctx, *edgeGroup)
 		if err != nil {
-			return resp, diag.Errorf("Failed to create edge group %s: %s", name, err)
+			return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create edge group %s", name), resp)
 		}
 
 		d.SetId(*edgeGroup.Id)
@@ -93,7 +93,7 @@ func updateEdgeGroup(ctx context.Context, d *schema.ResourceData, meta interface
 		log.Printf("Updating edge group %s", name)
 		_, resp, putErr := edgeGroupProxy.updateEdgeGroup(ctx, d.Id(), *edgeGroup)
 		if putErr != nil {
-			return resp, diag.Errorf("Failed to update edge group %s: %s", name, putErr)
+			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update edge group %s", name), resp)
 		}
 		return resp, nil
 	})
@@ -112,7 +112,7 @@ func deleteEdgeGroup(ctx context.Context, d *schema.ResourceData, meta interface
 	log.Printf("Deleting edge group")
 	resp, err := edgeGroupProxy.deleteEdgeGroup(ctx, d.Id())
 	if err != nil {
-		return diag.Errorf("Failed to delete edge group: %s %v", err, resp)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete edge group %s", d.Id()), resp)
 	}
 
 	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
@@ -179,7 +179,7 @@ func getAllEdgeGroups(ctx context.Context, sdkConfig *platformclientv2.Configura
 	edgeGroups, resp, err := edgeGroupProxy.getAllEdgeGroups(ctx, "", false)
 
 	if err != nil {
-		return nil, diag.Errorf("Failed to get Edge groups: %s %v", err, resp)
+		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get edge groups"), resp)
 	}
 	if edgeGroups != nil {
 		for _, edgeGroup := range *edgeGroups {

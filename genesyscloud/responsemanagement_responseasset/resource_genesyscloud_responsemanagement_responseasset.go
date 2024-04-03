@@ -38,7 +38,7 @@ func createRespManagementRespAsset(ctx context.Context, d *schema.ResourceData, 
 	log.Printf("Creating Responsemanagement response asset %s", fileName)
 	postResponseData, resp, err := proxy.createRespManagementRespAsset(ctx, &sdkResponseAsset)
 	if err != nil {
-		return diag.Errorf("Failed to upload response asset %s: %v %v", fileName, err, resp)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create response asset %s", fileName), resp)
 	}
 
 	headers := *postResponseData.Headers
@@ -107,7 +107,7 @@ func updateRespManagementRespAsset(ctx context.Context, d *schema.ResourceData, 
 	log.Printf("Updating Responsemanagement response asset %s", d.Id())
 	putResponseData, resp, err := proxy.updateRespManagementRespAsset(ctx, d.Id(), &bodyRequest)
 	if err != nil {
-		return diag.Errorf("Failed to update Responsemanagement response asset %s: %v %v", d.Id(), err, resp)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update Responsemanagement response asset%s", d.Id()), resp)
 	}
 
 	// Adding a sleep with retry logic to determine when the division ID has actually been updated.
@@ -117,7 +117,7 @@ func updateRespManagementRespAsset(ctx context.Context, d *schema.ResourceData, 
 		time.Sleep(20 * time.Second)
 		getResponseData, resp, err := proxy.getRespManagementRespAssetById(ctx, d.Id())
 		if err != nil {
-			return diag.Errorf("Failed to read response asset %s: %v %v", d.Id(), err, resp)
+			return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to read response asset %s", d.Id()), resp)
 		}
 		if *getResponseData.Division.Id == *putResponseData.Division.Id {
 			log.Printf("Updated Responsemanagement response asset %s", d.Id())
@@ -135,7 +135,7 @@ func deleteRespManagementRespAsset(ctx context.Context, d *schema.ResourceData, 
 		log.Printf("Deleting Responsemanagement response asset")
 		resp, err := proxy.deleteRespManagementRespAsset(ctx, d.Id())
 		if err != nil {
-			return nil, diag.Errorf("failed to delete response asset: %s", err)
+			return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete response asset %s", d.Id()), resp)
 		}
 		return resp, nil
 	})

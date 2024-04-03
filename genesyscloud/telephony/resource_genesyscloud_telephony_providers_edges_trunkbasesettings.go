@@ -24,6 +24,10 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
 )
 
+const (
+	resourceName = "genesyscloud_telephony_providers_edges_trunkbasesettings"
+)
+
 func ResourceTrunkBaseSettings() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud Trunk Base Settings",
@@ -122,9 +126,9 @@ func createTrunkBaseSettings(ctx context.Context, d *schema.ResourceData, meta i
 	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
 
 	log.Printf("Creating trunk base settings %s", name)
-	trunkBaseSettings, _, err := edgesAPI.PostTelephonyProvidersEdgesTrunkbasesettings(trunkBase)
+	trunkBaseSettings, resp, err := edgesAPI.PostTelephonyProvidersEdgesTrunkbasesettings(trunkBase)
 	if err != nil {
-		return diag.Errorf("Failed to create trunk base settings %s: %s", name, err)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create trunk base settings %s", name), resp)
 	}
 
 	d.SetId(*trunkBaseSettings.Id)
@@ -186,11 +190,8 @@ func updateTrunkBaseSettings(ctx context.Context, d *schema.ResourceData, meta i
 		log.Printf("Updating trunk base settings %s", name)
 		trunkBaseSettings, resp, err := edgesAPI.PutTelephonyProvidersEdgesTrunkbasesetting(d.Id(), trunkBase)
 		if err != nil {
-			respString := ""
-			if resp != nil {
-				respString = resp.String()
-			}
-			return resp, diag.Errorf("Failed to update trunk base settings %s: %s %v", name, err, respString)
+
+			return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update trunk base settings %s", name), resp)
 		}
 		return resp, nil
 	})
@@ -212,11 +213,7 @@ func updateTrunkBaseSettings(ctx context.Context, d *schema.ResourceData, meta i
 	log.Printf("Updating trunk base settings %s", name)
 	trunkBaseSettings, resp, err := edgesAPI.PutTelephonyProvidersEdgesTrunkbasesetting(d.Id(), trunkBase)
 	if err != nil {
-		respString := ""
-		if resp != nil {
-			respString = resp.String()
-		}
-		return diag.Errorf("Failed to update trunk base settings %s: %s %v", name, err, respString)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update trunk base settings %s", d.Id()), resp)
 	}
 
 	log.Printf("Updated trunk base settings %s", *trunkBaseSettings.Id)
@@ -284,7 +281,7 @@ func deleteTrunkBaseSettings(ctx context.Context, d *schema.ResourceData, meta i
 				// trunk base settings not found, goal achieved!
 				return nil, nil
 			}
-			return resp, diag.Errorf("Failed to delete trunk base settings: %s", err)
+			return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete trunk base settings %s", d.Id()), resp)
 		}
 		return resp, nil
 	})
@@ -318,9 +315,9 @@ func getAllTrunkBaseSettings(ctx context.Context, sdkConfig *platformclientv2.Co
 
 	for pageNum := 1; ; pageNum++ {
 		const pageSize = 100
-		trunkBaseSettings, _, getErr := getTelephonyProvidersEdgesTrunkbasesettings(sdkConfig, pageNum, pageSize, "")
+		trunkBaseSettings, resp, getErr := getTelephonyProvidersEdgesTrunkbasesettings(sdkConfig, pageNum, pageSize, "")
 		if getErr != nil {
-			return nil, diag.Errorf("Failed to get page of trunk base settings: %v", getErr)
+			return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get page of trunk base settings"), resp)
 		}
 
 		if trunkBaseSettings.Entities == nil || len(*trunkBaseSettings.Entities) == 0 {

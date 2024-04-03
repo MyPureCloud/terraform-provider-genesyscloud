@@ -113,7 +113,7 @@ func updateOutboundSettings(ctx context.Context, d *schema.ResourceData, meta in
 		// Get current Outbound settings version
 		setting, resp, getErr := proxy.getOutboundSettingsById(ctx, d.Id())
 		if getErr != nil {
-			return resp, diag.Errorf("Failed to read Outbound Setting %s: %s", d.Id(), getErr)
+			return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update Outbound Setting %s", d.Id()), resp)
 		}
 
 		update := platformclientv2.Outboundsettings{

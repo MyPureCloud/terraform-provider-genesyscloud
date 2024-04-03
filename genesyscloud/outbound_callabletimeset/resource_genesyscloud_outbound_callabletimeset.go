@@ -31,7 +31,7 @@ func getAllOutboundCallableTimesets(ctx context.Context, clientConfig *platformc
 
 	callabletimesets, resp, getErr := proxy.getAllOutboundCallableTimeset(ctx)
 	if getErr != nil {
-		return nil, diag.Errorf("Failed to get page of callable timeset configs: %v %v", getErr, resp)
+		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get page of callable timeset configs"), resp)
 	}
 	for _, callabletimesets := range *callabletimesets {
 		resources[*callabletimesets.Id] = &resourceExporter.ResourceMeta{Name: *callabletimesets.Name}
@@ -51,7 +51,7 @@ func createOutboundCallabletimeset(ctx context.Context, d *schema.ResourceData, 
 	log.Printf("Creating Outbound Callabletimeset %s", name)
 	outboundCallabletimeset, resp, err := proxy.createOutboundCallabletimeset(ctx, &callableTimeset)
 	if err != nil {
-		return diag.Errorf("Failed to create Outbound Callabletimeset %s: %s %v", name, err, resp)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create Outbound Callabletimeset %s", *callableTimeset.Name), resp)
 	}
 
 	d.SetId(*outboundCallabletimeset.Id)
@@ -69,7 +69,7 @@ func updateOutboundCallabletimeset(ctx context.Context, d *schema.ResourceData, 
 	log.Printf("Updating Outbound Callabletimeset %s", d.Id())
 	outboundCallabletimeset, resp, err := proxy.updateOutboundCallabletimeset(ctx, d.Id(), &callableTimeset)
 	if err != nil {
-		return diag.Errorf("Failed to read Outbound Callabletimeset %s: %s %v", d.Id(), err, resp)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update Outbound Callabletimeset %s", *callableTimeset.Name), resp)
 	}
 	log.Printf("Updated Outbound Callabletimeset %s", *outboundCallabletimeset.Id)
 	return readOutboundCallabletimeset(ctx, d, meta)
@@ -112,7 +112,7 @@ func deleteOutboundCallabletimeset(ctx context.Context, d *schema.ResourceData, 
 	log.Printf("Deleting Outbound Callabletimeset")
 	resp, err := proxy.deleteOutboundCallabletimeset(ctx, d.Id())
 	if err != nil {
-		return diag.Errorf("Failed to delete Outbound Callabletimeset: %s %v", err, resp)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete Outbound Callabletimeset %s", d.Id()), resp)
 	}
 
 	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {

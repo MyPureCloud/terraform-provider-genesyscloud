@@ -27,7 +27,7 @@ func getAllAuthOutboundCallanalysisresponsesets(ctx context.Context, clientConfi
 
 	responseSets, resp, getErr := proxy.getAllOutboundCallanalysisresponseset(ctx)
 	if getErr != nil {
-		return nil, diag.Errorf("Failed to get page of call analysis response set configs: %v %v", getErr, resp)
+		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get page of call analysis response set configs"), resp)
 	}
 	for _, responseSet := range *responseSets {
 		resources[*responseSet.Id] = &resourceExporter.ResourceMeta{Name: *responseSet.Name}
@@ -45,7 +45,7 @@ func createOutboundCallanalysisresponseset(ctx context.Context, d *schema.Resour
 	log.Printf("Creating Outbound Call Analysis Response Set %s", *responseSet.Name)
 	outboundCallanalysisresponseset, resp, err := proxy.createOutboundCallanalysisresponseset(ctx, &responseSet)
 	if err != nil {
-		return diag.Errorf("Failed to create Outbound Call Analysis Response Set %s: %s %v", *responseSet.Name, err, resp)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create Outbound Call Analysis Response Set %s", *responseSet.Name), resp)
 	}
 	d.SetId(*outboundCallanalysisresponseset.Id)
 
@@ -89,7 +89,7 @@ func updateOutboundCallanalysisresponseset(ctx context.Context, d *schema.Resour
 	log.Printf("Updating Outbound Call Analysis Response Set %s %s", *responseSet.Name, d.Id())
 	_, resp, err := proxy.updateOutboundCallanalysisresponseset(ctx, d.Id(), &responseSet)
 	if err != nil {
-		return diag.Errorf("Failed to update Outbound Call Analysis Response Set %s: %s %v", *responseSet.Name, err, resp)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update Outbound Call Analysis Response Set %s", *responseSet.Name), resp)
 	}
 	log.Printf("Updated Outbound Call Analysis Response Set %s %s", *responseSet.Name, d.Id())
 	return readOutboundCallanalysisresponseset(ctx, d, meta)
@@ -104,7 +104,7 @@ func deleteOutboundCallanalysisresponseset(ctx context.Context, d *schema.Resour
 		log.Printf("Deleting Outbound Call Analysis Response Set")
 		resp, err := proxy.deleteOutboundCallanalysisresponseset(ctx, d.Id())
 		if err != nil {
-			return resp, diag.Errorf("Failed to delete Outbound Call Analysis Response Set: %s", err)
+			return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete Outbound Call Analysis Response Set %s", d.Id()), resp)
 		}
 		return resp, nil
 	})

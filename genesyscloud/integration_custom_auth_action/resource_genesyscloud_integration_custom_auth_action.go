@@ -50,7 +50,7 @@ func getAllModifiedCustomAuthActions(ctx context.Context, clientConfig *platform
 
 	actions, resp, err := cap.getAllIntegrationCustomAuthActions(ctx)
 	if err != nil {
-		return nil, diag.Errorf("failed to get integration custom auth actions: %v %v", err, resp)
+		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get integration custom auth actions"), resp)
 	}
 
 	for _, action := range *actions {
@@ -119,7 +119,7 @@ func createIntegrationCustomAuthAction(ctx context.Context, d *schema.ResourceDa
 			Config:  BuildSdkCustomAuthActionConfig(d),
 		})
 		if err != nil {
-			return resp, diag.Errorf("Failed to update integration action %s: %s", *name, err)
+			return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update integration action %s", *name), resp)
 		}
 		return resp, nil
 	})
@@ -203,7 +203,7 @@ func updateIntegrationCustomAuthAction(ctx context.Context, d *schema.ResourceDa
 		// Get the latest action version to send with PATCH
 		action, resp, err := cap.getCustomAuthActionById(ctx, d.Id())
 		if err != nil {
-			return resp, diag.Errorf("Failed to read integration custom auth action %s: %s", d.Id(), err)
+			return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to read integration custom auth action %s ", d.Id()), resp)
 		}
 		if name == nil {
 			name = action.Name
@@ -215,7 +215,7 @@ func updateIntegrationCustomAuthAction(ctx context.Context, d *schema.ResourceDa
 			Config:  BuildSdkCustomAuthActionConfig(d),
 		})
 		if err != nil {
-			return resp, diag.Errorf("Failed to update integration action %s: %s", *name, err)
+			return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update integration action %s", *name), resp)
 		}
 		return resp, nil
 	})

@@ -30,7 +30,7 @@ func createTrunk(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		if util.IsStatus404(resp) {
 			return nil
 		}
-		return diag.Errorf("Failed to read trunk base settings %s: %s", d.Id(), getErr)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to read trunk base settings %s", d.Id()), resp)
 	}
 
 	// Assign to edge if edge_id is set
@@ -41,7 +41,7 @@ func createTrunk(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 			if util.IsStatus404(resp) {
 				return nil
 			}
-			return diag.Errorf("Failed to read edge %s: %s", edgeId, getErr)
+			return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to read edge %s", edgeId), resp)
 		}
 
 		if edge.EdgeGroup == nil {
@@ -54,16 +54,16 @@ func createTrunk(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		log.Printf("Assigning trunk base settings to edge %s", edgeId)
 		_, resp, err := tp.putEdge(ctx, edgeId, *edge)
 		if err != nil {
-			return diag.Errorf("Failed to assign trunk base settings to edge %s: %s %v", edgeId, err, resp)
+			return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to assign trunk base settings to edge %s", edgeId), resp)
 		}
 	} else if edgeGroupIdI, ok := d.GetOk("edge_group_id"); ok {
 		edgeGroupId := edgeGroupIdI.(string)
 		edgeGroup, resp, getErr := tp.getEdgeGroup(ctx, edgeGroupId)
 		if getErr != nil {
 			if util.IsStatus404(resp) {
-				return diag.Errorf("Failed to get edge group %s: %s", edgeGroupId, getErr)
+				return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get edge group %s", edgeGroupId), resp)
 			}
-			return diag.Errorf("Failed to read edge group %s: %s", edgeGroupId, getErr)
+			return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to read edge group %s", edgeGroupId), resp)
 		}
 		edgeGroup.EdgeTrunkBaseAssignment = &platformclientv2.Trunkbaseassignment{
 			TrunkBase: trunkBase,
@@ -72,15 +72,15 @@ func createTrunk(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		log.Printf("Assigning trunk base settings to edge group %s", edgeGroupId)
 		_, resp, err := tp.putEdgeGroup(ctx, edgeGroupId, *edgeGroup)
 		if err != nil {
-			return diag.Errorf("Failed to assign trunk base settings to edge group %s: %s %v", edgeGroupId, err, resp)
+			return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to assign trunk base settings to edge group %s", edgeGroupId), resp)
 		}
 	} else {
 		return diag.Errorf("edge_id or edge_group_id were not set. One must be set in order to assign the trunk base settings")
 	}
 
-	trunk, err := getTrunkByTrunkBaseId(ctx, trunkBaseSettingsId, meta)
+	trunk, resp, err := getTrunkByTrunkBaseId(ctx, trunkBaseSettingsId, meta)
 	if err != nil {
-		return diag.Errorf("Failed to get trunk by trunk base id %s: %s", trunkBaseSettingsId, err)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get trunk by trunk base id %s", trunkBaseSettingsId), resp)
 	}
 
 	d.SetId(*trunk.Id)
@@ -90,17 +90,18 @@ func createTrunk(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 	return readTrunk(ctx, d, meta)
 }
 
-func getTrunkByTrunkBaseId(ctx context.Context, trunkBaseId string, meta interface{}) (*platformclientv2.Trunk, error) {
+func getTrunkByTrunkBaseId(ctx context.Context, trunkBaseId string, meta interface{}) (*platformclientv2.Trunk, *platformclientv2.APIResponse, error) {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	tp := getTrunkProxy(sdkConfig)
-
+	var response *platformclientv2.APIResponse
 	time.Sleep(2 * time.Second)
 	// It should return the trunk as the first object. Paginating to be safe
 	for pageNum := 1; ; pageNum++ {
 		const pageSize = 100
 		trunks, resp, getErr := tp.getAllTrunks(ctx, pageNum, pageSize)
+		response = resp
 		if getErr != nil {
-			return nil, fmt.Errorf("Failed to get page of trunks: %v %v", getErr, resp)
+			return nil, resp, fmt.Errorf("Failed to get page of trunks: %v %v", getErr, resp)
 		}
 
 		if trunks.Entities == nil || len(*trunks.Entities) == 0 {
@@ -109,12 +110,12 @@ func getTrunkByTrunkBaseId(ctx context.Context, trunkBaseId string, meta interfa
 
 		for _, trunk := range *trunks.Entities {
 			if *trunk.TrunkBase.Id == trunkBaseId {
-				return &trunk, nil
+				return &trunk, resp, nil
 			}
 		}
 	}
 
-	return nil, fmt.Errorf("Could not find trunk for trunk base setting id: %v", trunkBaseId)
+	return nil, response, fmt.Errorf("Could not find trunk for trunk base setting id: %v", trunkBaseId)
 }
 
 func updateTrunk(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -173,7 +174,6 @@ func TrunkExporter() *resourceExporter.ResourceExporter {
 
 func getAllTrunks(ctx context.Context, sdkConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
 	resources := make(resourceExporter.ResourceIDMetaMap)
-
 	tp := getTrunkProxy(sdkConfig)
 
 	err := util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
@@ -190,16 +190,13 @@ func getAllTrunks(ctx context.Context, sdkConfig *platformclientv2.Configuration
 			if trunks.Entities == nil || len(*trunks.Entities) == 0 {
 				break
 			}
-
 			for _, trunk := range *trunks.Entities {
 				if trunk.State != nil && *trunk.State != "deleted" {
 					resources[*trunk.Id] = &resourceExporter.ResourceMeta{Name: *trunk.Name}
 				}
 			}
 		}
-
 		return nil
 	})
-
 	return resources, err
 }
