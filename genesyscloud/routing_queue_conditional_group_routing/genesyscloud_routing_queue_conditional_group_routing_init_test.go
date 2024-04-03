@@ -4,6 +4,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"sync"
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	"terraform-provider-genesyscloud/genesyscloud/group"
 	routingQueue "terraform-provider-genesyscloud/genesyscloud/routing_queue"
 	"testing"
 )
@@ -29,7 +30,7 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_routing_queue"] = routingQueue.ResourceRoutingQueue()
 	providerResources["genesyscloud_routing_skill_group"] = gcloud.ResourceRoutingSkillGroup()
 	providerResources["genesyscloud_user"] = gcloud.ResourceUser()
-	providerResources["genesyscloud_group"] = gcloud.ResourceGroup()
+	providerResources["genesyscloud_group"] = group.ResourceGroup()
 }
 
 // initTestResources initializes all test resources and data sources.
