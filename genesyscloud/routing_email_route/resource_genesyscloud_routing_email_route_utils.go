@@ -159,3 +159,18 @@ func importRoutingEmailRoute(_ context.Context, d *schema.ResourceData, _ interf
 	d.SetId(idParts[1])
 	return []*schema.ResourceData{d}, nil
 }
+
+func GenerateRoutingEmailRouteResource(
+	resourceID string,
+	domainID string,
+	pattern string,
+	fromName string,
+	otherAttrs ...string) string {
+	return fmt.Sprintf(`resource "genesyscloud_routing_email_route" "%s" {
+            domain_id = %s
+            pattern = "%s"
+            from_name = "%s"
+            %s
+        }
+        `, resourceID, domainID, pattern, fromName, strings.Join(otherAttrs, "\n"))
+}

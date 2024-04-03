@@ -13,6 +13,7 @@ import (
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
+	"time"
 )
 
 /*
@@ -50,7 +51,7 @@ func readRoutingQueueOutboundEmailAddress(ctx context.Context, d *schema.Resourc
 	proxy := getRoutingQueueOutboundEmailAddressProxy(sdkConfig)
 	queueId := d.Id()
 
-	log.Printf("Reading routing queue %s outbound email address", queueId)
+	log.Printf("Reading outbound email address for queue %s", queueId)
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		queueEmailAddress, resp, getErr := proxy.getRoutingQueueOutboundEmailAddress(ctx, queueId)
 		if getErr != nil {
@@ -70,7 +71,7 @@ func readRoutingQueueOutboundEmailAddress(ctx context.Context, d *schema.Resourc
 			_ = d.Set("route_id", *(*queueEmailAddress.Route).Id)
 		}
 
-		log.Printf("Reading routing queue %s outbound email address", queueId)
+		log.Printf("Reading outbound email address for queue %s", queueId)
 		return cc.CheckState()
 	})
 }
@@ -108,6 +109,7 @@ func deleteRoutingQueueOutboundEmailAddress(ctx context.Context, d *schema.Resou
 
 	log.Printf("Removing email address from queue %s", queueId)
 
+	time.Sleep(time.Second * 30)
 	// check if routing queue still exists before trying to remove outbound email address
 	_, resp, err := proxy.getRoutingQueueOutboundEmailAddress(ctx, queueId)
 	if err != nil {
@@ -130,6 +132,6 @@ func deleteRoutingQueueOutboundEmailAddress(ctx context.Context, d *schema.Resou
 		return diag.Errorf("outbound email address still exist for queue %s", queueId)
 	}
 
-	log.Printf("Removed email address from queue %s", queueId)
+	log.Printf("Removed outbound email address from queue %s", queueId)
 	return nil
 }

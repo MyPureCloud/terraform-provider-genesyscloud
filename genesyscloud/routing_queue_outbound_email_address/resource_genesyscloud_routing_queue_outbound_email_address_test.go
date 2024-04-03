@@ -7,6 +7,7 @@ import (
 	"strings"
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
+	routingEmailRoute "terraform-provider-genesyscloud/genesyscloud/routing_email_route"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 )
@@ -20,6 +21,10 @@ func TestAccResourceRoutingQueueOutboundEmailAddress(t *testing.T) {
 
 		domainResource = "test-domain"
 		domainId       = fmt.Sprintf("terraform.%s.com", strings.Replace(uuid.NewString(), "-", "", -1))
+
+		routeResource = "email-route"
+		routePattern  = "terraform1"
+		fromName      = "John Terraform"
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -27,20 +32,24 @@ func TestAccResourceRoutingQueueOutboundEmailAddress(t *testing.T) {
 		ProviderFactories: provider.GetProviderFactories(providerResources, nil),
 		Steps: []resource.TestStep{
 			{
-				// TODO: Add last dependency
-				Config: gcloud.GenerateRoutingEmailDomainResource(
+				Config: gcloud.GenerateRoutingQueueResourceBasic(
+					queueResource,
+					queueName1,
+				) + gcloud.GenerateRoutingEmailDomainResource(
 					domainResource,
 					domainId,
 					util.FalseValue,
 					util.NullValue,
-				) + gcloud.GenerateRoutingQueueResourceBasic(
-					queueResource,
-					queueName1,
+				) + routingEmailRoute.GenerateRoutingEmailRouteResource(
+					routeResource,
+					"genesyscloud_routing_email_domain."+domainResource+".id",
+					routePattern,
+					fromName,
 				) + generateRoutingQueueOutboundEmailAddressResource(
 					outboundEmailAddressResource,
 					"genesyscloud_routing_queue."+queueResource+".id",
 					"genesyscloud_routing_email_domain."+domainResource+".id",
-					"",
+					"genesyscloud_routing_email_route."+routeResource+".id",
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrPair(
@@ -48,6 +57,9 @@ func TestAccResourceRoutingQueueOutboundEmailAddress(t *testing.T) {
 					),
 					resource.TestCheckResourceAttrPair(
 						"genesyscloud_routing_queue_conditional_group_routing."+outboundEmailAddressResource, "domain_id", "genesyscloud_routing_email_domain."+domainResource, "id",
+					),
+					resource.TestCheckResourceAttrPair(
+						"genesyscloud_routing_queue_conditional_group_routing."+outboundEmailAddressResource, "route_id", "genesyscloud_routing_email_route."+routeResource, "id",
 					),
 				),
 			},

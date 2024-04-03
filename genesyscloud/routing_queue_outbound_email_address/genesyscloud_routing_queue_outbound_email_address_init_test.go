@@ -3,6 +3,8 @@ package routing_queue_outbound_email_address
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"sync"
+	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	routingEmailRoute "terraform-provider-genesyscloud/genesyscloud/routing_email_route"
 	"testing"
 )
 
@@ -24,6 +26,9 @@ func (r *registerTestInstance) registerTestResources() {
 	defer r.resourceMapMutex.Unlock()
 
 	providerResources[resourceName] = ResourceRoutingQueueOutboundEmailAddress()
+	providerResources["genesyscloud_routing_queue"] = gcloud.ResourceRoutingQueue()
+	providerResources["genesyscloud_routing_email_route"] = routingEmailRoute.ResourceRoutingEmailRoute()
+	providerResources["genesyscloud_routing_email_domain"] = gcloud.ResourceRoutingEmailDomain()
 }
 
 // initTestResources initializes all test resources and data sources.
