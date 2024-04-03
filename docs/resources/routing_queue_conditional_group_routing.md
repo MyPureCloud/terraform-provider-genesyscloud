@@ -64,12 +64,12 @@ Required:
 
 - `condition_value` (Number) The limit value, beyond which a rule evaluates as true.
 - `groups` (Block List, Min: 1) The group(s) to activate if the rule evaluates as true. (see [below for nested schema](#nestedblock--rules--groups))
-- `operator` (String) The operator that compares the actual value against the condition value.
+- `operator` (String) The operator that compares the actual value against the condition value. Valid values: GreaterThan, GreaterThanOrEqualTo, LessThan, LessThanOrEqualTo.
 
 Optional:
 
 - `evaluated_queue_id` (String) The queue being evaluated for this rule. For rule 1, this is always the current queue, so should not be specified.
-- `metric` (String) The queue metric being evaluated. Defaults to `EstimatedWaitTime`.
+- `metric` (String) The queue metric being evaluated. Valid values: EstimatedWaitTime, ServiceLevel. Defaults to `EstimatedWaitTime`.
 - `wait_seconds` (Number) The number of seconds to wait in this rule, if it evaluates as true, before evaluating the next rule. For the final rule, this is ignored, so need not be specified. Defaults to `2`.
 
 <a id="nestedblock--rules--groups"></a>
