@@ -25,7 +25,7 @@ func TestAccResourceRoutingQueueOutboundEmailAddress(t *testing.T) {
 		domainResource = "test-domain"
 		domainId       = fmt.Sprintf("terraform.%s.com", strings.Replace(uuid.NewString(), "-", "", -1))
 
-		routeResource = "email-route"
+		routeResource = "test-route"
 		routePattern  = "terraform1"
 		fromName      = "John Terraform"
 	)
@@ -58,19 +58,19 @@ func TestAccResourceRoutingQueueOutboundEmailAddress(t *testing.T) {
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrPair(
-						"genesyscloud_routing_queue_conditional_group_routing."+outboundEmailAddressResource, "queue_id", "genesyscloud_routing_queue."+queueResource, "id",
+						"genesyscloud_routing_queue_outbound_email_address."+outboundEmailAddressResource, "queue_id", "genesyscloud_routing_queue."+queueResource, "id",
 					),
 					resource.TestCheckResourceAttrPair(
-						"genesyscloud_routing_queue_conditional_group_routing."+outboundEmailAddressResource, "domain_id", "genesyscloud_routing_email_domain."+domainResource, "id",
+						"genesyscloud_routing_queue_outbound_email_address."+outboundEmailAddressResource, "domain_id", "genesyscloud_routing_email_domain."+domainResource, "id",
 					),
 					resource.TestCheckResourceAttrPair(
-						"genesyscloud_routing_queue_conditional_group_routing."+outboundEmailAddressResource, "route_id", "genesyscloud_routing_email_route."+routeResource, "id",
+						"genesyscloud_routing_queue_outbound_email_address."+outboundEmailAddressResource, "route_id", "genesyscloud_routing_email_route."+routeResource, "id",
 					),
 				),
 			},
 			{
 				// Import/Read
-				ResourceName:      resourceName + outboundEmailAddressResource,
+				ResourceName:      "genesyscloud_routing_queue_outbound_email_address." + outboundEmailAddressResource,
 				ImportState:       true,
 				ImportStateVerify: true,
 			},
@@ -79,11 +79,11 @@ func TestAccResourceRoutingQueueOutboundEmailAddress(t *testing.T) {
 }
 
 func generateRoutingQueueOutboundEmailAddressResource(resourceId, queueId, domainId, routeId string) string {
-	return fmt.Sprintf(`resource "%s" "%s" {
+	return fmt.Sprintf(`resource "genesyscloud_routing_queue_outbound_email_address" "%s" {
 		queue_id = %s
 		domain_id = %s
 		route_id = %s
-	}`, resourceName, resourceId, queueId, domainId, routeId)
+	}`, resourceId, queueId, domainId, routeId)
 }
 
 func CleanupRoutingEmailDomains() {

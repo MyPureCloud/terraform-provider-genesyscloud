@@ -154,12 +154,12 @@ func updateRoutingQueueOutboundEmailAddressFn(ctx context.Context, p *routingQue
 	// Update the queue
 	queue, resp, err = p.routingApi.PutRoutingQueue(queueId, updateQueue)
 	if err != nil {
-		return nil, resp, fmt.Errorf("failed to update routing queue %s outbound email address: %s", queueId, err)
+		return nil, resp, fmt.Errorf("failed to update outbound email address for routing queue %s: %s", queueId, err)
 	}
 
 	if queue.OutboundEmailAddress != nil && *queue.OutboundEmailAddress != nil {
 		return *queue.OutboundEmailAddress, resp, nil
 	}
 
-	return nil, resp, fmt.Errorf("error updating routing queue %s outbound email address: %s", queueId, err)
+	return nil, resp, fmt.Errorf("error updating outbound email address for routing queue %s: %s", queueId, err)
 }

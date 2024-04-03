@@ -8,12 +8,12 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
 	"log"
+	"strings"
 	consistencyChecker "terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
-	"time"
 )
 
 /*
@@ -109,7 +109,6 @@ func deleteRoutingQueueOutboundEmailAddress(ctx context.Context, d *schema.Resou
 
 	log.Printf("Removing email address from queue %s", queueId)
 
-	time.Sleep(time.Second * 30)
 	// check if routing queue still exists before trying to remove outbound email address
 	_, resp, err := proxy.getRoutingQueueOutboundEmailAddress(ctx, queueId)
 	if err != nil {
@@ -122,7 +121,7 @@ func deleteRoutingQueueOutboundEmailAddress(ctx context.Context, d *schema.Resou
 	// To delete, update the queue with an empty email address
 	var emptyAddress platformclientv2.Queueemailaddress
 	_, _, err = proxy.updateRoutingQueueOutboundEmailAddress(ctx, queueId, &emptyAddress)
-	if err != nil {
+	if err != nil && !strings.Contains(err.Error(), "error updating outbound email address for routing queue") {
 		return diag.Errorf("failed to remove outbound email address from queue %s: %s", queueId, err)
 	}
 
