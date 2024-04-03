@@ -56,6 +56,12 @@ func createOAuthClient(ctx context.Context, d *schema.ResourceData, meta interfa
 		return diagErr
 	}
 
+	//Before we create the oauth client take any roles on it and update the user
+	diagErr = updateTerraformUserWithRole(ctx, sdkConfig, roles)
+	if diagErr != nil {
+		return diagErr
+	}
+
 	log.Printf("Creating oauth client %s", name)
 	oauthRequest := &platformclientv2.Oauthclientrequest{
 		Name:                       &name,
@@ -102,6 +108,85 @@ func createOAuthClient(ctx context.Context, d *schema.ResourceData, meta interfa
 	d.SetId(*client.Id)
 	log.Printf("Created oauth client %s %s", name, *client.Id)
 	return readOAuthClient(ctx, d, meta)
+}
+
+func updateTerraformUserWithRole(ctx context.Context, sdkConfig *platformclientv2.Configuration, addedRoles *[]platformclientv2.Roledivision) diag.Diagnostics {
+	op := GetOAuthClientProxy(sdkConfig)
+
+	//Step #1 Retrieve the parent oauth client from the token API and check to make sure it is not a client credential grant
+	tokenInfo, resp, err := op.getParentOAuthClientToken(ctx)
+	if err != nil {
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Error trying to retrieve the token for the OAuth client running our CX as Code provider %s", err), resp)
+	}
+
+	if *tokenInfo.OAuthClient.Organization.Id != "purecloud-builtin" {
+		log.Printf("This terraform client is being run with an OAuth Client Credential Grant.  You might get an error in your terraform scripts if you try to create a role in CX as Code and try to assign it to the oauth client.")
+		return nil
+	}
+
+	//Step #2: Look up the user who is running the user
+	log.Printf("The OAuth Client being used is purecloud-builtin. Retrieving the user running the terraform client and assigning the target role to them.")
+	terraformUser, resp, err := op.GetTerraformUser(ctx)
+	if err != nil {
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to retrieved the terraform user running this terraform code %s", err), resp)
+	}
+
+	//Step #3: Lookup the users addedRoles
+	userRoles, resp, err := op.GetTerraformUserRoles(ctx, *terraformUser.Id)
+	if err != nil {
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failued to retrieve the terraform user addedRoles running this terraform code %s", err), resp)
+	}
+
+	var totalRoles []string
+	//Step #4  - Concat the addedRoles
+	for _, role := range *addedRoles {
+		totalRoles = append(totalRoles, *role.RoleId)
+	}
+
+	for _, role := range *userRoles.Roles {
+		totalRoles = append(totalRoles, *role.Id)
+	}
+
+	//Step #5 - Update addedRoles
+	_, resp, err = op.UpdateTerraformUserRoles(ctx, *terraformUser.Id, totalRoles)
+	if err != nil {
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failued to update the terraform user addedRoles running this terraform code %s", err), resp)
+	}
+
+	time.Sleep(5 * time.Second)
+	return nil
+}
+
+func checkRoleAddedToUser(ctx context.Context, op *oauthClientProxy, terraformUser *platformclientv2.Userme, addedRoles *[]platformclientv2.Roledivision) diag.Diagnostics {
+	log.Printf("Checking to see if the role has been added to the default user.")
+	diagErr := util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
+		userAuth, _, err := op.GetTerraformUserRoles(ctx, *terraformUser.Id)
+		if err != nil {
+			return retry.NonRetryableError(fmt.Errorf("Error while trying to validate if the user addedRoles have been updated "))
+		}
+
+		//Getting all the roles retrieved from the user and putting them into a map
+		retrievedRolesMap := make(map[string]string)
+		for _, role := range *userAuth.Roles {
+			log.Printf("Adding a role to the retrievedRolesMap %s", *role.Id)
+			retrievedRolesMap[*role.Id] = ""
+		}
+
+		//Going through each of the roles we added.  If the addedRole is not added, then return a retryable error
+		for _, addedRole := range *addedRoles {
+			if _, roleFound := retrievedRolesMap[*addedRole.RoleId]; !roleFound {
+				log.Printf("Did ot match a role %s. Retrying", *addedRole.RoleId)
+				return retry.RetryableError(fmt.Errorf("Was unable to find addedRole %s in the roles assigned to user.  Retrying read", *addedRole.RoleId))
+			} else {
+				log.Printf("Matched role: %s", *addedRole.RoleId)
+			}
+
+		}
+
+		log.Printf("Succesfully matched all roles")
+		return nil
+	})
+	return diagErr
 }
 
 func readOAuthClient(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
