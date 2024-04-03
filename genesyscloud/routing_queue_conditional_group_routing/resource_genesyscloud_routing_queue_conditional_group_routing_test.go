@@ -6,6 +6,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"strings"
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	"terraform-provider-genesyscloud/genesyscloud/group"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	routingQueue "terraform-provider-genesyscloud/genesyscloud/routing_queue"
 	"terraform-provider-genesyscloud/genesyscloud/util"
@@ -90,10 +91,10 @@ func TestAccResourceRoutingQueueConditionalGroupRouting(t *testing.T) {
 					testUserResource,
 					testUserEmail,
 					testUserName,
-				) + gcloud.GenerateBasicGroupResource(
+				) + group.GenerateBasicGroupResource(
 					groupResourceId,
 					groupName,
-					gcloud.GenerateGroupOwners("genesyscloud_user."+testUserResource+".id"),
+					group.GenerateGroupOwners("genesyscloud_user."+testUserResource+".id"),
 				) + gcloud.GenerateRoutingSkillGroupResourceBasic(
 					skillGroupResourceId,
 					skillGroupName,
@@ -163,10 +164,10 @@ func TestAccResourceRoutingQueueConditionalGroupRouting(t *testing.T) {
 					testUserResource,
 					testUserEmail,
 					testUserName,
-				) + gcloud.GenerateBasicGroupResource(
+				) + group.GenerateBasicGroupResource(
 					groupResourceId,
 					groupName,
-					gcloud.GenerateGroupOwners("genesyscloud_user."+testUserResource+".id"),
+					group.GenerateGroupOwners("genesyscloud_user."+testUserResource+".id"),
 				) + routingQueue.GenerateRoutingQueueResourceBasic(
 					queueResource,
 					queueName1,
