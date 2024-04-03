@@ -67,13 +67,13 @@ func ResourceRoutingQueueConditionalGroupRouting() *schema.Resource {
 							Optional:    true,
 						},
 						"operator": {
-							Description:  "The operator that compares the actual value against the condition value.",
+							Description:  "The operator that compares the actual value against the condition value. Valid values: GreaterThan, GreaterThanOrEqualTo, LessThan, LessThanOrEqualTo.",
 							Type:         schema.TypeString,
 							Required:     true,
 							ValidateFunc: validation.StringInSlice([]string{"GreaterThan", "LessThan", "GreaterThanOrEqualTo", "LessThanOrEqualTo"}, false),
 						},
 						"metric": {
-							Description:  "The queue metric being evaluated.",
+							Description:  "The queue metric being evaluated. Valid values: EstimatedWaitTime, ServiceLevel.",
 							Type:         schema.TypeString,
 							Optional:     true,
 							Default:      "EstimatedWaitTime",
