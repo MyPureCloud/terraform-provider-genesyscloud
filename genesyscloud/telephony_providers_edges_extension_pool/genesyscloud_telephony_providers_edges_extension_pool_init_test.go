@@ -27,7 +27,7 @@ func (r *registerTestInstance) registerTestDataSources() {
 	providerDataSources["genesyscloud_telephony_providers_edges_extension_pool"] = DataSourceExtensionPool()
 }
 
-func initTestresources() {
+func initTestResources() {
 	providerDataSources = make(map[string]*schema.Resource)
 	providerResources = make(map[string]*schema.Resource)
 	regInstance := &registerTestInstance{}
@@ -37,7 +37,7 @@ func initTestresources() {
 
 func TestMain(m *testing.M) {
 	// Run setup function before starting the test suite
-	initTestresources()
+	initTestResources()
 	// Run the actual test suite
 	m.Run()
 }

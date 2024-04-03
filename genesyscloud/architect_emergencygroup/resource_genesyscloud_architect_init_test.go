@@ -21,6 +21,8 @@ type registerTestInstance struct {
 
 // registerTestResources registers all resources used in the tests
 func (r *registerTestInstance) registerTestResources() {
+	r.resourceMapMutex.Lock()
+	defer r.resourceMapMutex.Unlock()
 	providerResources["genesyscloud_architect_ivr"] = architect_ivr.ResourceArchitectIvrConfig()
 	providerResources["genesyscloud_flow"] = flow.ResourceArchitectFlow()
 	providerResources["genesyscloud_architect_emergencygroup"] = ResourceArchitectEmergencyGroup()
@@ -28,6 +30,8 @@ func (r *registerTestInstance) registerTestResources() {
 
 // registerTestDataSources registers all data sources used in the tests.
 func (r *registerTestInstance) registerTestDataSources() {
+	r.datasourceMapMutex.Lock()
+	defer r.datasourceMapMutex.Unlock()
 	providerDataSources["genesyscloud_architect_ivr"] = architect_ivr.DataSourceArchitectIvr()
 	providerDataSources["genesyscloud_flow"] = flow.DataSourceArchitectFlow()
 	providerDataSources["genesyscloud_architect_emergencygroup"] = DataSourceArchitectEmergencyGroup()

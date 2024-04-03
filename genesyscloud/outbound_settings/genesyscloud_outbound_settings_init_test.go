@@ -12,8 +12,6 @@ import (
    used in testing the outbound_settings resource.
 */
 
-// providerDataSources holds a map of all registered datasources
-
 // providerResources holds a map of all registered resources
 var providerResources map[string]*schema.Resource
 

@@ -95,16 +95,16 @@ func readEmergencyGroup(ctx context.Context, d *schema.ResourceData, meta interf
 			return nil
 		}
 
-		d.Set("name", *emergencyGroup.Name)
-		d.Set("division_id", *emergencyGroup.Division.Id)
+		_ = d.Set("name", *emergencyGroup.Name)
+		_ = d.Set("division_id", *emergencyGroup.Division.Id)
 
 		resourcedata.SetNillableValue(d, "description", emergencyGroup.Description)
 		resourcedata.SetNillableValue(d, "enabled", emergencyGroup.Enabled)
 
 		if emergencyGroup.EmergencyCallFlows != nil && len(*emergencyGroup.EmergencyCallFlows) > 0 {
-			d.Set("emergency_call_flows", flattenEmergencyCallFlows(*emergencyGroup.EmergencyCallFlows))
+			_ = d.Set("emergency_call_flows", flattenEmergencyCallFlows(*emergencyGroup.EmergencyCallFlows))
 		} else {
-			d.Set("emergency_call_flows", nil)
+			_ = d.Set("emergency_call_flows", nil)
 		}
 
 		log.Printf("Read emergency group %s %s", d.Id(), *emergencyGroup.Name)
