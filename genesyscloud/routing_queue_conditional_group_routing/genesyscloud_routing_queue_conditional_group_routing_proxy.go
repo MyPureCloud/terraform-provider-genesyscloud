@@ -73,9 +73,7 @@ func getAllRoutingQueuesFn(ctx context.Context, p *routingQueueConditionalGroupR
 		return &allQueues, resp, nil
 	}
 
-	for _, queue := range *queues.Entities {
-		allQueues = append(allQueues, queue)
-	}
+	allQueues = append(allQueues, *queues.Entities...)
 
 	for pageNum := 2; pageNum <= *queues.PageCount; pageNum++ {
 		queues, resp, err := p.routingApi.GetRoutingQueues(pageNum, pageSize, "", "", nil, nil, nil, false)
@@ -87,9 +85,7 @@ func getAllRoutingQueuesFn(ctx context.Context, p *routingQueueConditionalGroupR
 			break
 		}
 
-		for _, queue := range *queues.Entities {
-			allQueues = append(allQueues, queue)
-		}
+		allQueues = append(allQueues, *queues.Entities...)
 	}
 
 	return &allQueues, nil, nil

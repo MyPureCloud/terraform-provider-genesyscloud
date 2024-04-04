@@ -401,22 +401,21 @@ func RoutingQueueExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: provider.GetAllWithPooledClient(getAllRoutingQueues),
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
-			"division_id":                              {RefType: "genesyscloud_auth_division"},
-			"queue_flow_id":                            {RefType: "genesyscloud_flow"},
-			"email_in_queue_flow_id":                   {RefType: "genesyscloud_flow"},
-			"message_in_queue_flow_id":                 {RefType: "genesyscloud_flow"},
-			"whisper_prompt_id":                        {RefType: "genesyscloud_architect_user_prompt"},
-			"outbound_messaging_sms_address_id":        {},                               // Ref type not yet defined
-			"default_script_ids.*":                     {RefType: "genesyscloud_script"}, // Ref type not yet defined
-			"outbound_email_address.route_id":          {RefType: "genesyscloud_routing_email_route"},
-			"outbound_email_address.domain_id":         {RefType: "genesyscloud_routing_email_domain"},
-			"bullseye_rings.skills_to_remove":          {RefType: "genesyscloud_routing_skill"},
-			"members.user_id":                          {RefType: "genesyscloud_user"},
-			"wrapup_codes":                             {RefType: "genesyscloud_routing_wrapupcode"},
-			"skill_groups":                             {RefType: "genesyscloud_routing_skill_group"},
-			"teams":                                    {RefType: "genesyscloud_team"},
-			"groups":                                   {RefType: "genesyscloud_group"},
-			"conditional_group_routing_rules.queue_id": {RefType: "genesyscloud_routing_queue"},
+			"division_id":                       {RefType: "genesyscloud_auth_division"},
+			"queue_flow_id":                     {RefType: "genesyscloud_flow"},
+			"email_in_queue_flow_id":            {RefType: "genesyscloud_flow"},
+			"message_in_queue_flow_id":          {RefType: "genesyscloud_flow"},
+			"whisper_prompt_id":                 {RefType: "genesyscloud_architect_user_prompt"},
+			"outbound_messaging_sms_address_id": {},                               // Ref type not yet defined
+			"default_script_ids.*":              {RefType: "genesyscloud_script"}, // Ref type not yet defined
+			"outbound_email_address.route_id":   {RefType: "genesyscloud_routing_email_route"},
+			"outbound_email_address.domain_id":  {RefType: "genesyscloud_routing_email_domain"},
+			"bullseye_rings.skills_to_remove":   {RefType: "genesyscloud_routing_skill"},
+			"members.user_id":                   {RefType: "genesyscloud_user"},
+			"wrapup_codes":                      {RefType: "genesyscloud_routing_wrapupcode"},
+			"skill_groups":                      {RefType: "genesyscloud_routing_skill_group"},
+			"teams":                             {RefType: "genesyscloud_team"},
+			"groups":                            {RefType: "genesyscloud_group"},
 		},
 		RemoveIfMissing: map[string][]string{
 			"outbound_email_address": {"route_id"},
@@ -424,8 +423,7 @@ func RoutingQueueExporter() *resourceExporter.ResourceExporter {
 		},
 		AllowZeroValues: []string{"bullseye_rings.expansion_timeout_seconds"},
 		CustomAttributeResolver: map[string]*resourceExporter.RefAttrCustomResolver{
-			"bullseye_rings.member_groups.member_group_id":           {ResolverFunc: resourceExporter.MemberGroupsResolver},
-			"conditional_group_routing_rules.groups.member_group_id": {ResolverFunc: resourceExporter.MemberGroupsResolver},
+			"bullseye_rings.member_groups.member_group_id": {ResolverFunc: resourceExporter.MemberGroupsResolver},
 		},
 	}
 }

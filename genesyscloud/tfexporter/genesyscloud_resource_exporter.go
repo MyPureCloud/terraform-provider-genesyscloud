@@ -1248,7 +1248,7 @@ func (g *GenesysCloudResourceExporter) sanitizeConfigMap(
 			err := refAttrCustomResolver.ResolverFunc(configMap, exporters, resourceName)
 
 			if err != nil {
-				log.Printf("An error has occurred while trying invoke a custom resolver for attribute %s", currAttr)
+				log.Printf("An error has occurred while trying invoke a custom resolver for attribute %s: %s", currAttr, err)
 			}
 		}
 
@@ -1259,7 +1259,7 @@ func (g *GenesysCloudResourceExporter) sanitizeConfigMap(
 			err := refAttrCustomFlowResolver.ResolverFunc(configMap, varReference)
 
 			if err != nil {
-				log.Printf("An error has occurred while trying invoke a custom resolver for attribute %s", currAttr)
+				log.Printf("An error has occurred while trying invoke a custom resolver for attribute %s: %s", currAttr, err)
 			}
 		}
 
