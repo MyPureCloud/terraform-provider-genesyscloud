@@ -57,19 +57,28 @@ func ValidateRrule(rrule interface{}, _ cty.Path) diag.Diagnostics {
 			// BYMONTH Attribute validation
 			if strings.Contains(value, "BYMONTH=") {
 				byMonth := value
-				byMonthString := strings.Split(byMonth, "=")
-				byMonthValue, err := strconv.Atoi(byMonthString[1])
-				if err != nil || byMonthValue <= 0 || byMonthValue > 12 {
-					return diag.Errorf("Invalid BYMONTH attribute. Should be a valid month (1-12) without leading zeros for single-digit months.")
+				byMonthString := strings.Split(byMonth, "=")[1]
+				byMonthValues := strings.Split(byMonthString, ",")
+
+				for _, month := range byMonthValues {
+					byMonthValue, err := strconv.Atoi(month)
+					if err != nil || byMonthValue <= 0 || byMonthValue > 12 {
+						return diag.Errorf("Invalid BYMONTH attribute. Should be a valid month (1-12) without leading zeros for single-digit months.")
+					}
 				}
 			}
+
 			// BYMONTHDAY Attribute validation
 			if strings.Contains(value, "BYMONTHDAY=") {
 				byMonthDay := value
-				byMonthDayString := strings.Split(byMonthDay, "=")
-				byMonthDayValue, err := strconv.Atoi(byMonthDayString[1])
-				if err != nil || byMonthDayValue <= 0 || byMonthDayValue > 31 {
-					return diag.Errorf("Invalid BYMONTHDAY attribute. Should be a valid day of the month (1-31) without leading zeros for single-digit days.")
+				byMonthDayString := strings.Split(byMonthDay, "=")[1]
+				byMonthDayValues := strings.Split(byMonthDayString, ",")
+
+				for _, day := range byMonthDayValues {
+					byMonthDayValue, err := strconv.Atoi(day)
+					if err != nil || byMonthDayValue <= 0 || byMonthDayValue > 31 {
+						return diag.Errorf("Invalid BYMONTHDAY attribute. Should be a valid day of the month (1-31) without leading zeros for single-digit days.")
+					}
 				}
 			}
 		}
