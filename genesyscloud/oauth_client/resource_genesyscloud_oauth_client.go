@@ -134,7 +134,7 @@ func updateTerraformUserWithRole(ctx context.Context, sdkConfig *platformclientv
 	//Step #3: Lookup the users addedRoles
 	userRoles, resp, err := op.GetTerraformUserRoles(ctx, *terraformUser.Id)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failued to retrieve the terraform user addedRoles running this terraform code %s", err), resp)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to retrieve the terraform user addedRoles running this terraform code %s", err), resp)
 	}
 
 	var totalRoles []string
@@ -150,43 +150,15 @@ func updateTerraformUserWithRole(ctx context.Context, sdkConfig *platformclientv
 	//Step #5 - Update addedRoles
 	_, resp, err = op.UpdateTerraformUserRoles(ctx, *terraformUser.Id, totalRoles)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failued to update the terraform user addedRoles running this terraform code %s", err), resp)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update the terraform user addedRoles running this terraform code %s", err), resp)
 	}
 
-	time.Sleep(5 * time.Second)
+	//Do not remove this sleep.  The auth service is a mishmash of caches and eventually consistency.  After we perform an update we need
+	//to sleep approximately 10 seconds for the item to be written across multiple databases.  Originally, I tried to do a retry loop to
+	//wait until the retry happens but the act of the first call immediately happen could cause bad data to cache.  After talking with the auth
+	//team we put a sleep in here.
+	time.Sleep(10 * time.Second)
 	return nil
-}
-
-func checkRoleAddedToUser(ctx context.Context, op *oauthClientProxy, terraformUser *platformclientv2.Userme, addedRoles *[]platformclientv2.Roledivision) diag.Diagnostics {
-	log.Printf("Checking to see if the role has been added to the default user.")
-	diagErr := util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
-		userAuth, _, err := op.GetTerraformUserRoles(ctx, *terraformUser.Id)
-		if err != nil {
-			return retry.NonRetryableError(fmt.Errorf("Error while trying to validate if the user addedRoles have been updated "))
-		}
-
-		//Getting all the roles retrieved from the user and putting them into a map
-		retrievedRolesMap := make(map[string]string)
-		for _, role := range *userAuth.Roles {
-			log.Printf("Adding a role to the retrievedRolesMap %s", *role.Id)
-			retrievedRolesMap[*role.Id] = ""
-		}
-
-		//Going through each of the roles we added.  If the addedRole is not added, then return a retryable error
-		for _, addedRole := range *addedRoles {
-			if _, roleFound := retrievedRolesMap[*addedRole.RoleId]; !roleFound {
-				log.Printf("Did ot match a role %s. Retrying", *addedRole.RoleId)
-				return retry.RetryableError(fmt.Errorf("Was unable to find addedRole %s in the roles assigned to user.  Retrying read", *addedRole.RoleId))
-			} else {
-				log.Printf("Matched role: %s", *addedRole.RoleId)
-			}
-
-		}
-
-		log.Printf("Succesfully matched all roles")
-		return nil
-	})
-	return diagErr
 }
 
 func readOAuthClient(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {

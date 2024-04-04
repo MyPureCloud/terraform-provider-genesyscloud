@@ -1,14 +1,15 @@
 package oauth_client
 
 import (
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
-	"net/http"
-	"terraform-provider-genesyscloud/genesyscloud/provider"
-
 	"context"
 	"github.com/google/uuid"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
 	"github.com/stretchr/testify/assert"
+	"net/http"
+	"sort"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 )
 
@@ -48,6 +49,32 @@ func TestUnitCreateOAuthClientWithCache(t *testing.T) {
 		return oAuthClient, apiResponse, nil
 	}
 
+	ocproxy.getParentOAuthClientTokenAttr = func(context.Context, *oauthClientProxy) (*platformclientv2.Tokeninfo, *platformclientv2.APIResponse, error) {
+		orgId := uuid.NewString()
+		oauthId := uuid.NewString()
+		oauthClientName := "CX as Code"
+		name := "mytestorg"
+
+		token := platformclientv2.Tokeninfo{
+			Organization: &platformclientv2.Namedentity{
+				Id:   &orgId,
+				Name: &name,
+			},
+			HomeOrganization: &platformclientv2.Namedentity{
+				Id: &orgId,
+			},
+			OAuthClient: &platformclientv2.Orgoauthclient{
+				Id:   &oauthId,
+				Name: &oauthClientName,
+				Organization: &platformclientv2.Namedentity{
+					Id: &orgId,
+				},
+			},
+		}
+		apiResponse := &platformclientv2.APIResponse{StatusCode: http.StatusOK}
+		return &token, apiResponse, nil
+	}
+
 	internalProxy = ocproxy
 	defer func() { internalProxy = nil }()
 
@@ -79,5 +106,101 @@ func TestUnitCreateOAuthClientWithCache(t *testing.T) {
 	assert.Equal(t, tAuthorizedGrantType, d.Get("authorized_grant_type").(string))
 	assert.Equal(t, tState, d.Get("state").(string))
 	assert.Equal(t, tAccessTokenValiditySeconds, d.Get("access_token_validity_seconds").(int))
+}
 
+func TestUnitUpdateTerraformUserWithRole(t *testing.T) {
+	getParentOAuthClientTokenCount := 0
+	getTerraformUserCount := 0
+	getTerraformUserRolesCount := 0
+	updateTerraformUserRoleCount := 0
+
+	userId := uuid.NewString()
+	existingRoles := &[]platformclientv2.Domainrole{
+		platformclientv2.Domainrole{Id: util.ToStrPtr(uuid.NewString()), Name: util.ToStrPtr("Master Admin")},
+		platformclientv2.Domainrole{Id: util.ToStrPtr(uuid.NewString()), Name: util.ToStrPtr("Admin")},
+		platformclientv2.Domainrole{Id: util.ToStrPtr(uuid.NewString()), Name: util.ToStrPtr("Employee")},
+	}
+
+	addedRoles := &[]platformclientv2.Roledivision{
+		platformclientv2.Roledivision{RoleId: util.ToStrPtr(uuid.NewString())},
+		platformclientv2.Roledivision{RoleId: util.ToStrPtr(uuid.NewString())},
+	}
+
+	contains := func(s []string, searchterm string) bool {
+		sort.Strings(s)
+		i := sort.SearchStrings(s, searchterm)
+		result := (s[i] == searchterm)
+		return result
+	}
+	ocproxy := &oauthClientProxy{}
+
+	ocproxy.getParentOAuthClientTokenAttr = func(context.Context, *oauthClientProxy) (*platformclientv2.Tokeninfo, *platformclientv2.APIResponse, error) {
+		orgId := uuid.NewString()
+		oauthId := uuid.NewString()
+
+		token := platformclientv2.Tokeninfo{
+			Organization: &platformclientv2.Namedentity{
+				Id:   &orgId,
+				Name: util.ToStrPtr("mytestorg"),
+			},
+			HomeOrganization: &platformclientv2.Namedentity{
+				Id: &orgId,
+			},
+			OAuthClient: &platformclientv2.Orgoauthclient{
+				Id:   &oauthId,
+				Name: util.ToStrPtr("Developer Tools"),
+				Organization: &platformclientv2.Namedentity{
+					Id: util.ToStrPtr("purecloud-builtin"),
+				},
+			},
+		}
+		apiResponse := &platformclientv2.APIResponse{StatusCode: http.StatusOK}
+		getParentOAuthClientTokenCount++
+		return &token, apiResponse, nil
+	}
+
+	ocproxy.getTerraformUserAttr = func(context.Context, *oauthClientProxy) (*platformclientv2.Userme, *platformclientv2.APIResponse, error) {
+		userName := "Bill Smith"
+		userEmail := "bill.smith@genesys.com"
+
+		user := &platformclientv2.Userme{
+			Id:    &userId,
+			Name:  &userName,
+			Email: &userEmail,
+		}
+
+		apiResponse := &platformclientv2.APIResponse{StatusCode: http.StatusOK}
+		getTerraformUserCount++
+		return user, apiResponse, nil
+	}
+
+	ocproxy.getTerraformUserRolesAttr = func(ctx context.Context, proxy *oauthClientProxy, userId string) (*platformclientv2.Userauthorization, *platformclientv2.APIResponse, error) {
+		userAuth := &platformclientv2.Userauthorization{
+			Roles: existingRoles,
+		}
+
+		apiResponse := &platformclientv2.APIResponse{StatusCode: http.StatusOK}
+		getTerraformUserRolesCount++
+		return userAuth, apiResponse, nil
+	}
+
+	ocproxy.updateTerraformUserRolesAttr = func(ctx context.Context, op *oauthClientProxy, userId string, roles []string) (*platformclientv2.Userauthorization, *platformclientv2.APIResponse, error) {
+		assert.True(t, contains(roles, *(*existingRoles)[0].Id))
+		assert.True(t, contains(roles, *(*existingRoles)[1].Id))
+		assert.True(t, contains(roles, *(*existingRoles)[2].Id))
+		assert.True(t, contains(roles, *(*addedRoles)[0].RoleId))
+		assert.True(t, contains(roles, *(*addedRoles)[1].RoleId))
+		updateTerraformUserRoleCount++
+		return nil, &platformclientv2.APIResponse{StatusCode: http.StatusOK}, nil
+	}
+
+	internalProxy = ocproxy
+	defer func() { internalProxy = nil }()
+
+	ctx := context.Background()
+	updateTerraformUserWithRole(ctx, &platformclientv2.Configuration{}, addedRoles)
+	assert.Equal(t, getParentOAuthClientTokenCount, 1)
+	assert.Equal(t, getTerraformUserCount, 1)
+	assert.Equal(t, getTerraformUserRolesCount, 1)
+	assert.Equal(t, updateTerraformUserRoleCount, 1)
 }
