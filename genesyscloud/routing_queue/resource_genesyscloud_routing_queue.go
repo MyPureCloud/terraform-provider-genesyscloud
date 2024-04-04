@@ -78,7 +78,6 @@ func createQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		CallingPartyNumber:           platformclientv2.String(d.Get("calling_party_number").(string)),
 		DefaultScripts:               buildSdkDefaultScriptsMap(d),
 		OutboundMessagingAddresses:   buildSdkQueueMessagingAddresses(d),
-		OutboundEmailAddress:         buildSdkQueueEmailAddress(d),
 		EnableTranscription:          platformclientv2.Bool(d.Get("enable_transcription").(bool)),
 		SuppressInQueueCallRecording: platformclientv2.Bool(d.Get("suppress_in_queue_call_recording").(bool)),
 		EnableManualAssignment:       platformclientv2.Bool(d.Get("enable_manual_assignment").(bool)),
@@ -207,13 +206,6 @@ func readQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 			_ = d.Set("outbound_messaging_sms_address_id", nil)
 		}
 
-		if currentQueue.OutboundEmailAddress != nil && *currentQueue.OutboundEmailAddress != nil {
-			outboundEmailAddress := *currentQueue.OutboundEmailAddress
-			_ = d.Set("outbound_email_address", []interface{}{FlattenQueueEmailAddress(*outboundEmailAddress)})
-		} else {
-			_ = d.Set("outbound_email_address", nil)
-		}
-
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "direct_routing", currentQueue.DirectRouting, flattenDirectRouting)
 
 		wrapupCodes, err := flattenQueueWrapupCodes(ctx, d.Id(), proxy)
@@ -274,7 +266,6 @@ func updateQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		CallingPartyNumber:           platformclientv2.String(d.Get("calling_party_number").(string)),
 		DefaultScripts:               buildSdkDefaultScriptsMap(d),
 		OutboundMessagingAddresses:   buildSdkQueueMessagingAddresses(d),
-		OutboundEmailAddress:         buildSdkQueueEmailAddress(d),
 		EnableTranscription:          platformclientv2.Bool(d.Get("enable_transcription").(bool)),
 		SuppressInQueueCallRecording: platformclientv2.Bool(d.Get("suppress_in_queue_call_recording").(bool)),
 		EnableManualAssignment:       platformclientv2.Bool(d.Get("enable_manual_assignment").(bool)),
@@ -803,34 +794,6 @@ func buildSdkQueueMessagingAddresses(d *schema.ResourceData) *platformclientv2.Q
 		}
 	}
 	return nil
-}
-
-func buildSdkQueueEmailAddress(d *schema.ResourceData) *platformclientv2.Queueemailaddress {
-	outboundEmailAddress := d.Get("outbound_email_address").([]interface{})
-	if outboundEmailAddress != nil && len(outboundEmailAddress) > 0 {
-		settingsMap := outboundEmailAddress[0].(map[string]interface{})
-
-		inboundRoute := &platformclientv2.Inboundroute{
-			Id: platformclientv2.String(settingsMap["route_id"].(string)),
-		}
-		return &platformclientv2.Queueemailaddress{
-			Domain: &platformclientv2.Domainentityref{Id: platformclientv2.String(settingsMap["domain_id"].(string))},
-			Route:  &inboundRoute,
-		}
-	}
-	return nil
-}
-
-func FlattenQueueEmailAddress(settings platformclientv2.Queueemailaddress) map[string]interface{} {
-	settingsMap := make(map[string]interface{})
-	resourcedata.SetMapReferenceValueIfNotNil(settingsMap, "domain_id", settings.Domain)
-
-	if settings.Route != nil {
-		route := *settings.Route
-		settingsMap["route_id"] = *route.Id
-	}
-
-	return settingsMap
 }
 
 func buildSdkDirectRouting(d *schema.ResourceData) *platformclientv2.Directrouting {

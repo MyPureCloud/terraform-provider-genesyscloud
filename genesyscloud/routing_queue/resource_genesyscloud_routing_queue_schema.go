@@ -432,26 +432,6 @@ func ResourceRoutingQueue() *schema.Resource {
 				Type:        schema.TypeString,
 				Optional:    true,
 			},
-			"outbound_email_address": {
-				Description: "The outbound email address settings for this queue.",
-				Type:        schema.TypeList,
-				MaxItems:    1,
-				Optional:    true,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						"domain_id": {
-							Description: "Unique ID of the email domain. e.g. \"test.example.com\"",
-							Type:        schema.TypeString,
-							Required:    true,
-						},
-						"route_id": {
-							Description: "Unique ID of the email route.",
-							Type:        schema.TypeString,
-							Required:    true,
-						},
-					},
-				},
-			},
 			"members": {
 				Description: "Users in the queue. If not set, this resource will not manage members. If a user is already assigned to this queue via a group, attempting to assign them using this field will cause an error to be thrown.",
 				Type:        schema.TypeSet,
@@ -518,8 +498,7 @@ func RoutingQueueExporter() *resourceExporter.ResourceExporter {
 			"conditional_group_routing_rules.queue_id": {RefType: "genesyscloud_routing_queue"},
 		},
 		RemoveIfMissing: map[string][]string{
-			"outbound_email_address": {"route_id"},
-			"members":                {"user_id"},
+			"members": {"user_id"},
 		},
 		AllowZeroValues: []string{"bullseye_rings.expansion_timeout_seconds"},
 		CustomAttributeResolver: map[string]*resourceExporter.RefAttrCustomResolver{
