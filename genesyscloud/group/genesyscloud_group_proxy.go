@@ -164,7 +164,7 @@ func getAllGroupFn(ctx context.Context, p *groupProxy) (*[]platformclientv2.Grou
 
 	groups, resp, getErr := p.groupsApi.GetGroups(pageSize, 1, nil, nil, "")
 	if getErr != nil {
-		return nil, resp, fmt.Errorf("Failed to get first page of groups: %v", getErr)
+		return nil, resp, fmt.Errorf("failed to get first page of groups: %v", getErr)
 	}
 
 	allGroups = append(allGroups, *groups.Entities...)
@@ -172,7 +172,7 @@ func getAllGroupFn(ctx context.Context, p *groupProxy) (*[]platformclientv2.Grou
 	for pageNum := 2; pageNum <= *groups.PageCount; pageNum++ {
 		groups, resp, getErr := p.groupsApi.GetGroups(pageSize, pageNum, nil, nil, "")
 		if getErr != nil {
-			return nil, resp, fmt.Errorf("Failed to get page of groups: %v", getErr)
+			return nil, resp, fmt.Errorf("failed to get page of groups: %v", getErr)
 		}
 		allGroups = append(allGroups, *groups.Entities...)
 	}
