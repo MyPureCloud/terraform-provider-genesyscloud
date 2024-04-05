@@ -9,7 +9,7 @@ import (
 
 const resourceName = "genesyscloud_routing_queue_outbound_email_address"
 
-// SetRegistrar registers all of the resources, datasources and exporters in the package
+// SetRegistrar registers all the resources, datasources and exporters in the package
 func SetRegistrar(regInstance registrar.Registrar) {
 	regInstance.RegisterResource(resourceName, ResourceRoutingQueueOutboundEmailAddress())
 	regInstance.RegisterExporter(resourceName, OutboundRoutingQueueOutboundEmailAddressExporter())

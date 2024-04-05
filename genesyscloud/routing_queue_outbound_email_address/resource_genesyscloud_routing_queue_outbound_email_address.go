@@ -24,9 +24,9 @@ func getAllAuthRoutingQueueOutboundEmailAddress(ctx context.Context, clientConfi
 	resources := make(resourceExporter.ResourceIDMetaMap)
 	proxy := getRoutingQueueOutboundEmailAddressProxy(clientConfig)
 
-	queues, _, err := proxy.getAllRoutingQueues(ctx)
+	queues, resp, err := proxy.getAllRoutingQueues(ctx)
 	if err != nil {
-		return nil, diag.Errorf("failed to get routing queues outbound email address: %s", err)
+		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprint("failed to get outbound email addresses for routing queues"), resp)
 	}
 
 	for _, queue := range *queues {
@@ -93,9 +93,9 @@ func updateRoutingQueueOutboundEmailAddress(ctx context.Context, d *schema.Resou
 	}
 
 	log.Printf("updating outbound email address for queue %s", queueId)
-	_, _, err := proxy.updateRoutingQueueOutboundEmailAddress(ctx, queueId, &emailAddress)
+	_, resp, err := proxy.updateRoutingQueueOutboundEmailAddress(ctx, queueId, &emailAddress)
 	if err != nil {
-		return diag.Errorf("failed to update outbound email address for queue %s: %s", queueId, err)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("failed to update outbound email address for queue %s", queueId), resp)
 	}
 	log.Printf("updated outbound email address for queue %s", queueId)
 
@@ -122,13 +122,13 @@ func deleteRoutingQueueOutboundEmailAddress(ctx context.Context, d *schema.Resou
 	var emptyAddress platformclientv2.Queueemailaddress
 	_, _, err = proxy.updateRoutingQueueOutboundEmailAddress(ctx, queueId, &emptyAddress)
 	if err != nil && !strings.Contains(err.Error(), "error updating outbound email address for routing queue") {
-		return diag.Errorf("failed to remove outbound email address from queue %s: %s", queueId, err)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("failed to remove outbound email address from queue %s", queueId), resp)
 	}
 
 	// Verify there is no email address
 	rules, _, err := proxy.getRoutingQueueOutboundEmailAddress(ctx, queueId)
 	if rules != nil {
-		return diag.Errorf("outbound email address still exist for queue %s", queueId)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("outbound email address still exist for queue %s", queueId), resp)
 	}
 
 	log.Printf("Removed outbound email address from queue %s", queueId)
