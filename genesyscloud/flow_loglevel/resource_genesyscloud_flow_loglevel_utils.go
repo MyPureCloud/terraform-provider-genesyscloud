@@ -1,4 +1,4 @@
-package flow_logLevel
+package flow_loglevel
 
 import (
 	"fmt"

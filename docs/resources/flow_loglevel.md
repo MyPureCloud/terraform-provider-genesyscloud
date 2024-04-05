@@ -11,18 +11,17 @@ Genesys Cloud flow log level
 ## API Usage
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* todo add links when available
-* [GET /api/v2/flows/instances/settings/loglevels]()
-* [POST /api/v2/flows/{flowId}/instances/settings/loglevels/{flowId}]()
-* [GET /api/v2/flows/{flowId}/instances/settings/loglevels/{flowId}]()
-* [PUT /api/v2/flows/{flowId}/instances/settings/loglevels/{flowId}]()
-* [DELETE /api/v2/flows/{flowId}/instances/settings/loglevels/{flowId}]()
+* [GET /api/v2/flows/instances/settings/loglevels](https://developer.genesys.cloud/platform/preview-apis#get-api-v2-flows-instances-settings-loglevels)
+* [POST /api/v2/flows/{flowId}/instances/settings/loglevels](https://developer.genesys.cloud/platform/preview-apis#post-api-v2-flows--flowId--instances-settings-loglevels)
+* [GET /api/v2/flows/{flowId}/instances/settings/loglevels](https://developer.genesys.cloud/platform/preview-apis#get-api-v2-flows--flowId--instances-settings-loglevels)
+* [PUT /api/v2/flows/{flowId}/instances/settings/loglevels](https://developer.genesys.cloud/platform/preview-apis#put-api-v2-flows-instances-settings-loglevels-default)
+* [DELETE /api/v2/flows/{flowId}/instances/settings/loglevels](https://developer.genesys.cloud/platform/preview-apis#delete-api-v2-flows-instances-settings-loglevels-default)
 
 ## Example Usage
 
 ```terraform
 resource "genesyscloud_flow_loglevel" "flowLogLevel" {
-  flow_id        = "UUID"
+  flow_id        = genesyscloud_flow.flow.id
   flow_log_level = "Base"
 }
 ```

@@ -1,4 +1,4 @@
-package flow_logLevel
+package flow_loglevel
 
 import (
 	"context"
@@ -7,7 +7,7 @@ import (
 )
 
 /*
-The genesyscloud_flow_logLevel_proxy.go file contains the proxy structures and methods that interact
+The genesyscloud_flow_loglevel_proxy.go file contains the proxy structures and methods that interact
 with the Genesys Cloud SDK. We use composition here for each function on the proxy so individual functions can be stubbed
 out during testing.
 
@@ -31,11 +31,11 @@ Each proxy implementation:
 var internalProxy *flowLogLevelProxy
 
 // Type definitions for each func on our proxy so we can easily mock them out later
-type createFlowLogLevelFunc func(ctx context.Context, p *flowLogLevelProxy, flowId string, flowLogLevelRequest *platformclientv2.Flowloglevelrequest) (*platformclientv2.Flowsettingsresponse, error)
-type getAllFlowLogLevelsFunc func(ctx context.Context, p *flowLogLevelProxy) (*[]platformclientv2.Flowsettingsresponse, error)
-type getFlowLogLevelByIdFunc func(ctx context.Context, p *flowLogLevelProxy, flowId string) (flowLogLevel *platformclientv2.Flowsettingsresponse, responseCode int, err error)
-type updateFlowLogLevelFunc func(ctx context.Context, p *flowLogLevelProxy, flowId string, flowLogLevel *platformclientv2.Flowloglevelrequest) (*platformclientv2.Flowsettingsresponse, error)
-type deleteFlowLogLevelFunc func(ctx context.Context, p *flowLogLevelProxy, flowId string) (responseCode int, err error)
+type createFlowLogLevelFunc func(ctx context.Context, p *flowLogLevelProxy, flowId string, flowLogLevelRequest *platformclientv2.Flowloglevelrequest) (*platformclientv2.Flowsettingsresponse, *platformclientv2.APIResponse, error)
+type getAllFlowLogLevelsFunc func(ctx context.Context, p *flowLogLevelProxy) (*[]platformclientv2.Flowsettingsresponse, *platformclientv2.APIResponse, error)
+type getFlowLogLevelByIdFunc func(ctx context.Context, p *flowLogLevelProxy, flowId string) (flowLogLevel *platformclientv2.Flowsettingsresponse, apiResponse *platformclientv2.APIResponse, err error)
+type updateFlowLogLevelFunc func(ctx context.Context, p *flowLogLevelProxy, flowId string, flowLogLevel *platformclientv2.Flowloglevelrequest) (*platformclientv2.Flowsettingsresponse, *platformclientv2.APIResponse, error)
+type deleteFlowLogLevelFunc func(ctx context.Context, p *flowLogLevelProxy, flowId string) (*platformclientv2.APIResponse, error)
 
 // flowLogLevelProxy contains all the methods that call genesys cloud APIs.
 type flowLogLevelProxy struct {
@@ -73,59 +73,59 @@ func getFlowLogLevelProxy(clientConfig *platformclientv2.Configuration) *flowLog
 }
 
 // getAllFlowLogLevels retrieves all Genesys Cloud External Contacts
-func (p *flowLogLevelProxy) getAllFlowLogLevels(ctx context.Context) (*[]platformclientv2.Flowsettingsresponse, error) {
+func (p *flowLogLevelProxy) getAllFlowLogLevels(ctx context.Context) (*[]platformclientv2.Flowsettingsresponse, *platformclientv2.APIResponse, error) {
 	return p.getAllFlowLogLevelsAttr(ctx, p)
 }
 
 // createFlowLogLevel creates a Genesys Cloud External Contact
-func (p *flowLogLevelProxy) createFlowLogLevel(ctx context.Context, flowLogLevelId string, flowLogLevelRequest *platformclientv2.Flowloglevelrequest) (*platformclientv2.Flowsettingsresponse, error) {
+func (p *flowLogLevelProxy) createFlowLogLevel(ctx context.Context, flowLogLevelId string, flowLogLevelRequest *platformclientv2.Flowloglevelrequest) (*platformclientv2.Flowsettingsresponse, *platformclientv2.APIResponse, error) {
 	return p.createFlowLogLevelAttr(ctx, p, flowLogLevelId, flowLogLevelRequest)
 }
 
 // getFlowLogLevelById returns a single Genesys Cloud External Contact by Id
-func (p *flowLogLevelProxy) getFlowLogLevelById(ctx context.Context, flowId string) (*platformclientv2.Flowsettingsresponse, int, error) {
+func (p *flowLogLevelProxy) getFlowLogLevelById(ctx context.Context, flowId string) (*platformclientv2.Flowsettingsresponse, *platformclientv2.APIResponse, error) {
 	return p.getFlowLogLevelByIdAttr(ctx, p, flowId)
 }
 
 // updateFlowLogLevel updates a Genesys Cloud External Contact
-func (p *flowLogLevelProxy) updateFlowLogLevel(ctx context.Context, flowId string, flowLogLevelRequest *platformclientv2.Flowloglevelrequest) (*platformclientv2.Flowsettingsresponse, error) {
+func (p *flowLogLevelProxy) updateFlowLogLevel(ctx context.Context, flowId string, flowLogLevelRequest *platformclientv2.Flowloglevelrequest) (*platformclientv2.Flowsettingsresponse, *platformclientv2.APIResponse, error) {
 	return p.updateFlowLogLevelAttr(ctx, p, flowId, flowLogLevelRequest)
 }
 
 // DeleteFlowLogLevel deletes a Genesys Cloud External Contact by Id
-func (p *flowLogLevelProxy) deleteFlowLogLevelById(ctx context.Context, flowId string) (int, error) {
+func (p *flowLogLevelProxy) deleteFlowLogLevelById(ctx context.Context, flowId string) (*platformclientv2.APIResponse, error) {
 	return p.deleteFlowLogLevelByIdAttr(ctx, p, flowId)
 }
 
 // createFlowLogLevelFn is an implementation function for creating a Genesys Cloud External Contact
-func createFlowLogLevelFn(ctx context.Context, p *flowLogLevelProxy, flowId string, flowLogLevelRequest *platformclientv2.Flowloglevelrequest) (*platformclientv2.Flowsettingsresponse, error) {
-	flowLogLevel, _, err := p.architectApi.PostFlowInstancesSettingsLoglevels(flowId, *flowLogLevelRequest, []string{"logLevelCharacteristics.characteristics"})
+func createFlowLogLevelFn(ctx context.Context, p *flowLogLevelProxy, flowId string, flowLogLevelRequest *platformclientv2.Flowloglevelrequest) (*platformclientv2.Flowsettingsresponse, *platformclientv2.APIResponse, error) {
+	flowLogLevel, apiResponse, err := p.architectApi.PostFlowInstancesSettingsLoglevels(flowId, *flowLogLevelRequest, []string{"logLevelCharacteristics.characteristics"})
 
 	if err != nil {
-		return nil, fmt.Errorf("Failed to create flow log level: %s", err)
+		return nil, apiResponse, fmt.Errorf("Failed to create flow log level: %s", err)
 	}
 
-	return flowLogLevel, nil
+	return flowLogLevel, apiResponse, nil
 }
 
 // getFlowLogLevelByIdFn is an implementation of the function to get a Genesys Cloud External Contact by Id
-func getFlowLogLevelByIdFn(ctx context.Context, p *flowLogLevelProxy, flowId string) (*platformclientv2.Flowsettingsresponse, int, error) {
-	flowLogLevel, resp, err := p.architectApi.GetFlowInstancesSettingsLoglevels(flowId, []string{"logLevelCharacteristics.characteristics"})
+func getFlowLogLevelByIdFn(ctx context.Context, p *flowLogLevelProxy, flowId string) (*platformclientv2.Flowsettingsresponse, *platformclientv2.APIResponse, error) {
+	flowLogLevel, apiResponse, err := p.architectApi.GetFlowInstancesSettingsLoglevels(flowId, []string{"logLevelCharacteristics.characteristics"})
 	if err != nil {
-		return nil, resp.StatusCode, fmt.Errorf("Failed to retrieve flow log level by id %s: %s", flowId, err)
+		return nil, apiResponse, fmt.Errorf("Failed to retrieve flow log level by id %s: %s", flowId, err)
 	}
 
-	return flowLogLevel, 0, nil
+	return flowLogLevel, apiResponse, nil
 }
 
 // getAllFlowLogLevelsFn is the implementation for retrieving all flow log levels in Genesys Cloud
-func getAllFlowLogLevelsFn(ctx context.Context, p *flowLogLevelProxy) (*[]platformclientv2.Flowsettingsresponse, error) {
+func getAllFlowLogLevelsFn(ctx context.Context, p *flowLogLevelProxy) (*[]platformclientv2.Flowsettingsresponse, *platformclientv2.APIResponse, error) {
 	const pageSize = 100
 	var totalFlowLogLevels []platformclientv2.Flowsettingsresponse
 
-	flowSettingsResponse, _, err := p.architectApi.GetFlowsInstancesSettingsLoglevels([]string{"logLevelCharacteristics.characteristics"}, 1, pageSize)
+	flowSettingsResponse, apiResponse, err := p.architectApi.GetFlowsInstancesSettingsLoglevels([]string{"logLevelCharacteristics.characteristics"}, 1, pageSize)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to get page of flows: %v", err)
+		return nil, apiResponse, fmt.Errorf("Failed to get page of flows: %v", err)
 	}
 
 	for _, flowLogLevel := range *flowSettingsResponse.Entities {
@@ -133,32 +133,32 @@ func getAllFlowLogLevelsFn(ctx context.Context, p *flowLogLevelProxy) (*[]platfo
 	}
 
 	for pageNum := 2; pageNum <= *flowSettingsResponse.PageCount; pageNum++ {
-		flowSettingsResponse, _, err := p.architectApi.GetFlowsInstancesSettingsLoglevels([]string{"logLevelCharacteristics.characteristics"}, pageNum, pageSize)
+		flowSettingsResponse, apiResponse, err := p.architectApi.GetFlowsInstancesSettingsLoglevels([]string{"logLevelCharacteristics.characteristics"}, pageNum, pageSize)
 		if err != nil {
-			return nil, fmt.Errorf("Failed to get page %d of flow log levels: %v", pageNum, err)
+			return nil, apiResponse, fmt.Errorf("Failed to get page %d of flow log levels: %v", pageNum, err)
 		}
 		for _, flowLogLevel := range *flowSettingsResponse.Entities {
 			totalFlowLogLevels = append(totalFlowLogLevels, flowLogLevel)
 		}
 	}
-	return &totalFlowLogLevels, nil
+	return &totalFlowLogLevels, apiResponse, nil
 }
 
 // updateFlowLogLevelFn is an implementation of the function to update a Genesys Cloud flow log level
-func updateFlowLogLevelFn(ctx context.Context, p *flowLogLevelProxy, flowLogLevelId string, flowLogLevelRequest *platformclientv2.Flowloglevelrequest) (*platformclientv2.Flowsettingsresponse, error) {
-	flowSettingsResponse, _, err := p.architectApi.PutFlowInstancesSettingsLoglevels(flowLogLevelId, *flowLogLevelRequest, []string{"logLevelCharacteristics.characteristics"})
+func updateFlowLogLevelFn(ctx context.Context, p *flowLogLevelProxy, flowLogLevelId string, flowLogLevelRequest *platformclientv2.Flowloglevelrequest) (*platformclientv2.Flowsettingsresponse, *platformclientv2.APIResponse, error) {
+	flowSettingsResponse, apiResponse, err := p.architectApi.PutFlowInstancesSettingsLoglevels(flowLogLevelId, *flowLogLevelRequest, []string{"logLevelCharacteristics.characteristics"})
 	if err != nil {
-		return nil, fmt.Errorf("Failed to update flow log level: %s", err)
+		return nil, apiResponse, fmt.Errorf("Failed to update flow log level: %s", err)
 	}
-	return flowSettingsResponse, nil
+	return flowSettingsResponse, apiResponse, nil
 }
 
 // deleteFlowLogLevelsFn is an implementation function for deleting a Genesys Cloud External Contact
-func deleteFlowLogLevelsFn(ctx context.Context, p *flowLogLevelProxy, flowLogLevelId string) (int, error) {
-	resp, err := p.architectApi.DeleteFlowInstancesSettingsLoglevels(flowLogLevelId)
+func deleteFlowLogLevelsFn(ctx context.Context, p *flowLogLevelProxy, flowLogLevelId string) (*platformclientv2.APIResponse, error) {
+	apiResponse, err := p.architectApi.DeleteFlowInstancesSettingsLoglevels(flowLogLevelId)
 	if err != nil {
-		return resp.StatusCode, fmt.Errorf("Failed to delete flow log level: %s", err)
+		return apiResponse, fmt.Errorf("Failed to delete flow log level: %s", err)
 	}
 
-	return resp.StatusCode, nil
+	return apiResponse, nil
 }

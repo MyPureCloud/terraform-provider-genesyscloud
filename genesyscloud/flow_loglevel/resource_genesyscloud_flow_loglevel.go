@@ -1,4 +1,4 @@
-package flow_logLevel
+package flow_loglevel
 
 import (
 	"context"
@@ -21,7 +21,7 @@ import (
 )
 
 /*
-The resource_genesyscloud_flow_logLevel.go contains all of the methods that perform the core logic for a resource.
+The resource_genesyscloud_flow_loglevel.go contains all of the methods that perform the core logic for a resource.
 In general a resource should have a approximately 5 methods in it:
 
 1.  A getAll.... function that the CX as Code exporter will use during the process of exporting Genesys Cloud.
@@ -43,36 +43,38 @@ func getAllFlowLogLevels(ctx context.Context, clientConfig *platformclientv2.Con
 	ep := getFlowLogLevelProxy(clientConfig)
 	resources := make(resourceExporter.ResourceIDMetaMap)
 
-	flowLogLevels, err := ep.getAllFlowLogLevels(ctx)
+	flowLogLevels, apiResponse, err := ep.getAllFlowLogLevels(ctx)
 	if err != nil {
-		return nil, diag.Errorf("Failed to get flow log levels: %v", err)
+		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get flow log levels: %v", err), apiResponse)
 	}
 
 	for _, flowLogLevel := range *flowLogLevels {
-		log.Printf("Dealing with flow log level id : %s", *flowLogLevel.Id)
 		resources[*flowLogLevel.Id] = &resourceExporter.ResourceMeta{Name: *flowLogLevel.Id}
 	}
 
 	return resources, nil
 }
 
-// createFlowLogLevel is used by the flow_logLevel resource to create Genesyscloud flow_logLevel
+// createFlowLogLevel is used by the flow_loglevel resource to create Genesyscloud flow_loglevel
 func createFlowLogLevel(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	ep := getFlowLogLevelProxy(sdkConfig)
 	flowId := d.Get("flow_id").(string)
-	flowLogLevelRequest := getFlowLogLevelSettingsRequestFromResourceData(d)
+	log.Printf("Creating flow log level for flow  %s", flowId)
 
-	flowLogLevel, err := ep.createFlowLogLevel(ctx, flowId, &flowLogLevelRequest)
+	flowLogLevelRequest := getFlowLogLevelSettingsRequestFromResourceData(d)
+	flowLogLevel, apiResponse, err := ep.createFlowLogLevel(ctx, flowId, &flowLogLevelRequest)
 	if err != nil {
-		return diag.Errorf("Failed to create flow log level: %s", err)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create flow log level: %s %s", err, d.Id()), apiResponse)
 	}
+
+	log.Printf("Sucessfully created flow log level for flow:  %s flowLogLevelId: %s", flowId, *flowLogLevel.Id)
 
 	d.SetId(*flowLogLevel.Id)
 	return readFlowLogLevel(ctx, d, meta)
 }
 
-// readFlowLogLevels is used by the flow_logLevel resource to read a flow log level from genesys cloud.
+// readFlowLogLevels is used by the flow_loglevel resource to read a flow log level from genesys cloud.
 func readFlowLogLevel(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	ep := getFlowLogLevelProxy(sdkConfig)
@@ -81,13 +83,13 @@ func readFlowLogLevel(ctx context.Context, d *schema.ResourceData, meta interfac
 	log.Printf("Reading readFlowLogLevel with flowId %s", flowId)
 	if flowId == "" {
 		log.Printf("flow log level with blank flowId %s", flowId)
-		return diag.Errorf("flowId not found")
+		return diag.Errorf("flowId: %s not found ", flowId)
 	}
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
-		flowSettingsResponse, respCode, err := ep.getFlowLogLevelById(ctx, flowId)
+		flowSettingsResponse, apiResponse, err := ep.getFlowLogLevelById(ctx, flowId)
 		if err != nil {
 			log.Print(err)
-			if util.IsStatus404ByInt(respCode) {
+			if util.IsStatus404ByInt(apiResponse.StatusCode) {
 				return retry.NonRetryableError(fmt.Errorf("Failed to read flow log level %s: %s", flowId, err))
 			}
 			return retry.NonRetryableError(fmt.Errorf("Failed to read flow log level %s: %s", flowId, err))
@@ -100,50 +102,53 @@ func readFlowLogLevel(ctx context.Context, d *schema.ResourceData, meta interfac
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "flow_characteristics", flowLogLevel.Characteristics, flattenFlowCharacteristics)
 
 		log.Printf("Read flow log level %s", flowId)
-		checkState := cc.CheckState()
-		log.Printf("checkState result =  %v", checkState)
-		return checkState
+		return cc.CheckState()
 	})
 }
 
-// updateFlowLogLevels is used by the flow_logLevel resource to update an flow log level in Genesys Cloud
+// updateFlowLogLevels is used by the flow_loglevel resource to update an flow log level in Genesys Cloud
 func updateFlowLogLevel(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	ep := getFlowLogLevelProxy(sdkConfig)
 	flowId := d.Get("flow_id").(string)
+	log.Printf("Updating flow log level for flow %s", flowId)
 
-	_, _, err := ep.getFlowLogLevelById(ctx, flowId)
-	flowLogLevelRequest := getFlowLogLevelSettingsRequestFromResourceData(d)
-	_, err = ep.updateFlowLogLevel(ctx, flowId, &flowLogLevelRequest)
-
+	_, apiResponse, err := ep.getFlowLogLevelById(ctx, flowId)
 	if err != nil {
-		return diag.Errorf("Failed to update flow log level: %s", err)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to retrieve flow log leve for flowId: %s %s", flowId, d.Id()), apiResponse)
 	}
 
-	log.Printf("Updated flow log level")
+	flowLogLevelRequest := getFlowLogLevelSettingsRequestFromResourceData(d)
+	updatedFlow, apiResponse, err := ep.updateFlowLogLevel(ctx, flowId, &flowLogLevelRequest)
+
+	if err != nil {
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update flow log level: %s %s", flowId, d.Id()), apiResponse)
+	}
+
+	log.Printf("Sucessfully updated flow log level for flow:  %s flowLogLevelId: %s", flowId, *updatedFlow.Id)
 
 	return readFlowLogLevel(ctx, d, meta)
 }
 
-// deleteFlowLogLevels is used by the flow_logLevel resource to delete an flow log level from Genesys cloud.
+// deleteFlowLogLevels is used by the flow_loglevel resource to delete an flow log level from Genesys cloud.
 func deleteFlowLogLevel(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	ep := getFlowLogLevelProxy(sdkConfig)
 	flowId := d.Get("flow_id").(string)
+	log.Printf("Deleting flow log level for flow  %s", flowId)
 
-	_, err := ep.deleteFlowLogLevelById(ctx, flowId)
+	apiResponse, err := ep.deleteFlowLogLevelById(ctx, flowId)
 	if err != nil {
-		return diag.Errorf("Failed to delete flow log level %s: %s", flowId, err)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete flow log level %s: %s", flowId, d.Id()), apiResponse)
 	}
 
 	return util.WithRetries(ctx, 180*time.Second, func() *retry.RetryError {
-		_, respCode, err := ep.getFlowLogLevelById(ctx, flowId)
+		_, apiResponse, err := ep.getFlowLogLevelById(ctx, flowId)
 
 		if err == nil {
-			return retry.NonRetryableError(fmt.Errorf("Error deleting flow log level %s: %s", flowId, err))
+			return retry.NonRetryableError(fmt.Errorf("Error deleting flow log level %s %s %s", flowId, d.Id(), err))
 		}
-		if util.IsStatus404ByInt(respCode) {
-			// Success  : External contact deleted
+		if util.IsStatus404ByInt(apiResponse.StatusCode) {
 			log.Printf("Deleted flow log level %s", flowId)
 			return nil
 		}

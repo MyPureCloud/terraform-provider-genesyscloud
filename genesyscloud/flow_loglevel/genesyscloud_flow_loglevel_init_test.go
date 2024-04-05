@@ -1,15 +1,15 @@
-package flow_logLevel
+package flow_loglevel
 
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"sync"
-	architect_flow "terraform-provider-genesyscloud/genesyscloud/architect_flow"
+	"terraform-provider-genesyscloud/genesyscloud/architect_flow"
 	"testing"
 )
 
 /*
    The genesyscloud_flow_loglevel_init_test.go file is used to initialize the data sources and resources
-   used in testing the flow_logLevel resource.
+   used in testing the flow_loglevel resource.
 
    Please make sure you register ALL resources and data sources your test cases will use.
 */
@@ -36,9 +36,8 @@ func (r *registerTestInstance) registerTestResources() {
 // registerTestDataSources registers all data sources used in the tests.
 func (r *registerTestInstance) registerTestDataSources() {
 	r.datasourceMapMutex.Lock()
-	providerDataSources["genesyscloud_flow"] = architect_flow.DataSourceArchitectFlow()
 	defer r.datasourceMapMutex.Unlock()
-
+	providerDataSources["genesyscloud_flow"] = architect_flow.DataSourceArchitectFlow()
 }
 
 // initTestResources initializes all test resources and data sources.
@@ -53,9 +52,9 @@ func initTestResources() {
 
 // TestMain is a "setup" function called by the testing framework when run the test
 func TestMain(m *testing.M) {
-	// Run setup function before starting the test suite for flow_logLevel package
+	// Run setup function before starting the test suite for flow_loglevel package
 	initTestResources()
 
-	// Run the test suite for the flow_logLevel package
+	// Run the test suite for the flow_loglevel package
 	m.Run()
 }

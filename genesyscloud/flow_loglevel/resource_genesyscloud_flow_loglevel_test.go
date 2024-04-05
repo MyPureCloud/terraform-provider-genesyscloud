@@ -1,4 +1,4 @@
-package flow_logLevel
+package flow_loglevel
 
 import (
 	"fmt"
@@ -31,8 +31,6 @@ func TestAccResourceFlowLogLevel(t *testing.T) {
 		inboundCallConfig,
 		true,
 	)
-
-	var ()
 
 	resource.Test(t, resource.TestCase{
 		PreCheck: func() {
@@ -113,13 +111,13 @@ func testVerifyFlowLogLevelDestroyed(state *terraform.State) error {
 		if flowLogLevel != nil {
 			return fmt.Errorf("flowLogLevel for flowId (%s) still exists", rs.Primary.ID)
 		} else if util.IsStatus404(resp) {
-			// Language not found as expected
+			// flow log level not found as expected
 			continue
 		} else {
 			// Unexpected error
 			return fmt.Errorf("Unexpected error: %s", err)
 		}
 	}
-	// Success. All grammar languages deleted
+	// Success. All low log levels deleted
 	return nil
 }
