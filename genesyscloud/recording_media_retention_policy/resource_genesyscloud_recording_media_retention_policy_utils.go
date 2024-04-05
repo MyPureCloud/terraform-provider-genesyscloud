@@ -84,27 +84,32 @@ func flattenEvaluationAssignments(assignments *[]platformclientv2.Evaluationassi
 	return evaluationAssignments
 }
 
-func buildTimeInterval(timeInterval []interface{}) *platformclientv2.Timeinterval {
-	if timeInterval == nil || len(timeInterval) <= 0 {
+func buildTimeInterval(interval []interface{}) *platformclientv2.Timeinterval {
+	var timeInterval platformclientv2.Timeinterval
+
+	if interval == nil || len(interval) <= 0 || (len(interval) == 1 && interval[0] == nil) {
 		return nil
 	}
 
-	timeIntervalMap, ok := timeInterval[0].(map[string]interface{})
+	timeIntervalMap, ok := interval[0].(map[string]interface{})
 	if !ok {
 		return nil
 	}
 
-	months := timeIntervalMap["months"].(int)
-	weeks := timeIntervalMap["weeks"].(int)
-	days := timeIntervalMap["days"].(int)
-	hours := timeIntervalMap["hours"].(int)
-
-	return &platformclientv2.Timeinterval{
-		Months: &months,
-		Weeks:  &weeks,
-		Days:   &days,
-		Hours:  &hours,
+	if months, ok := timeIntervalMap["months"].(int); ok && months != 0 {
+		timeInterval.Months = &months
 	}
+	if weeks, ok := timeIntervalMap["weeks"].(int); ok && weeks != 0 {
+		timeInterval.Weeks = &weeks
+	}
+	if days, ok := timeIntervalMap["days"].(int); ok && days != 0 {
+		timeInterval.Days = &days
+	}
+	if hours, ok := timeIntervalMap["hours"].(int); ok && hours != 0 {
+		timeInterval.Hours = &hours
+	}
+
+	return &timeInterval
 }
 
 func flattenTimeInterval(timeInterval *platformclientv2.Timeinterval) []interface{} {
