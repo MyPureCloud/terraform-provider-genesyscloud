@@ -97,34 +97,34 @@ func (p *groupProxy) getGroupsByName(ctx context.Context, name string) (*platfor
 	return p.getGroupByNameAttr(ctx, p, name)
 }
 
-func createGroupFn(ctx context.Context, p *groupProxy, group *platformclientv2.Groupcreate) (*platformclientv2.Group, *platformclientv2.APIResponse, error) {
+func createGroupFn(_ context.Context, p *groupProxy, group *platformclientv2.Groupcreate) (*platformclientv2.Group, *platformclientv2.APIResponse, error) {
 	return p.groupsApi.PostGroups(*group)
 }
 
-func updateGroupFn(ctx context.Context, p *groupProxy, id string, group *platformclientv2.Groupupdate) (*platformclientv2.Group, *platformclientv2.APIResponse, error) {
+func updateGroupFn(_ context.Context, p *groupProxy, id string, group *platformclientv2.Groupupdate) (*platformclientv2.Group, *platformclientv2.APIResponse, error) {
 	return p.groupsApi.PutGroup(id, *group)
 }
 
-func deleteGroupFn(ctx context.Context, p *groupProxy, id string) (*platformclientv2.APIResponse, error) {
+func deleteGroupFn(_ context.Context, p *groupProxy, id string) (*platformclientv2.APIResponse, error) {
 	return p.groupsApi.DeleteGroup(id)
 }
 
-func getGroupByIdFn(ctx context.Context, p *groupProxy, id string) (*platformclientv2.Group, *platformclientv2.APIResponse, error) {
+func getGroupByIdFn(_ context.Context, p *groupProxy, id string) (*platformclientv2.Group, *platformclientv2.APIResponse, error) {
 	group := rc.GetCache(p.groupCache, id)
 	if group != nil {
 		return group, nil, nil
 	}
 	return p.groupsApi.GetGroup(id)
 }
-func addGroupMembersFn(ctx context.Context, p *groupProxy, id string, members *platformclientv2.Groupmembersupdate) (*interface{}, *platformclientv2.APIResponse, error) {
+func addGroupMembersFn(_ context.Context, p *groupProxy, id string, members *platformclientv2.Groupmembersupdate) (*interface{}, *platformclientv2.APIResponse, error) {
 	return p.groupsApi.PostGroupMembers(id, *members)
 }
 
-func deleteGroupMembersFn(ctx context.Context, p *groupProxy, id string, members string) (*interface{}, *platformclientv2.APIResponse, error) {
+func deleteGroupMembersFn(_ context.Context, p *groupProxy, id string, members string) (*interface{}, *platformclientv2.APIResponse, error) {
 	return p.groupsApi.DeleteGroupMembers(id, members)
 }
 
-func getGroupMembersFn(ctx context.Context, p *groupProxy, id string) (*[]string, *platformclientv2.APIResponse, error) {
+func getGroupMembersFn(_ context.Context, p *groupProxy, id string) (*[]string, *platformclientv2.APIResponse, error) {
 	members, response, err := p.groupsApi.GetGroupIndividuals(id)
 
 	if err != nil {
@@ -140,7 +140,7 @@ func getGroupMembersFn(ctx context.Context, p *groupProxy, id string) (*[]string
 	return &existingMembers, nil, nil
 }
 
-func getGroupByNameFn(ctx context.Context, p *groupProxy, name string) (*platformclientv2.Groupssearchresponse, *platformclientv2.APIResponse, error) {
+func getGroupByNameFn(_ context.Context, p *groupProxy, name string) (*platformclientv2.Groupssearchresponse, *platformclientv2.APIResponse, error) {
 	exactSearchType := "EXACT"
 	nameField := "name"
 	nameStr := name
@@ -158,7 +158,7 @@ func getGroupByNameFn(ctx context.Context, p *groupProxy, name string) (*platfor
 	return groups, resp, getErr
 }
 
-func getAllGroupFn(ctx context.Context, p *groupProxy) (*[]platformclientv2.Group, *platformclientv2.APIResponse, error) {
+func getAllGroupFn(_ context.Context, p *groupProxy) (*[]platformclientv2.Group, *platformclientv2.APIResponse, error) {
 	var allGroups []platformclientv2.Group
 	const pageSize = 100
 
