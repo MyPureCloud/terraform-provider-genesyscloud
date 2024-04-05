@@ -28,38 +28,20 @@ import (
 
 var bullseyeExpansionTypeTimeout = "TIMEOUT_SECONDS"
 
-func getAllRoutingQueues(_ context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+func getAllRoutingQueues(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
 	resources := make(resourceExporter.ResourceIDMetaMap)
-	routingAPI := platformclientv2.NewRoutingApiWithConfig(clientConfig)
+	proxy := getRoutingQueueProxy(clientConfig)
 
 	// Newly created resources often aren't returned unless there's a delay
 	time.Sleep(5 * time.Second)
 
-	queues, _, getErr := routingAPI.GetRoutingQueues(1, 100, "", "", nil, nil, nil, false)
-	if getErr != nil {
-		return nil, diag.Errorf("Failed to get first page of queues: %v", getErr)
+	queues, resp, err := proxy.getAllRoutingQueues(ctx)
+	if err != nil {
+		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("failed to get routing queues"), resp)
 	}
-	if queues.Entities == nil || len(*queues.Entities) == 0 {
-		return resources, nil
-	}
-	for _, queue := range *queues.Entities {
+
+	for _, queue := range *queues {
 		resources[*queue.Id] = &resourceExporter.ResourceMeta{Name: *queue.Name}
-	}
-
-	for pageNum := 2; pageNum <= *queues.PageCount; pageNum++ {
-		const pageSize = 100
-		queues, _, getErr := routingAPI.GetRoutingQueues(pageNum, pageSize, "", "", nil, nil, nil, false)
-		if getErr != nil {
-			return nil, diag.Errorf("Failed to get page of queues: %v", getErr)
-		}
-
-		if queues.Entities == nil || len(*queues.Entities) == 0 {
-			break
-		}
-
-		for _, queue := range *queues.Entities {
-			resources[*queue.Id] = &resourceExporter.ResourceMeta{Name: *queue.Name}
-		}
 	}
 
 	return resources, nil
