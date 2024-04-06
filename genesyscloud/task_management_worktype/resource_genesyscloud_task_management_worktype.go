@@ -154,9 +154,7 @@ func updateTaskManagementWorktype(ctx context.Context, d *schema.ResourceData, m
 		worktype, resp, err := proxy.updateTaskManagementWorktype(ctx, d.Id(), &taskManagementWorktype)
 		if err != nil {
 			return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update task management worktype %s", *taskManagementWorktype.Name), resp)
-			return diag.Errorf("failed to update task management worktype: %s %v", err, resp)
 		}
-
 		log.Printf("Updated base configuration of task management worktype %s", *worktype.Id)
 	}
 

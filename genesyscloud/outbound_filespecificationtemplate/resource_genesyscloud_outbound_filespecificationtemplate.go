@@ -109,7 +109,7 @@ func deleteOutboundFileSpecificationTemplate(ctx context.Context, d *schema.Reso
 		log.Printf("Deleting Outbound File Specification Template")
 		resp, err := proxy.deleteOutboundFilespecificationtemplate(ctx, d.Id())
 		if err != nil {
-			return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete Outbound File Specification Template %s", d.Id()), resp)
+			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete Outbound File Specification Template %s", d.Id()), resp)
 		}
 		return resp, nil
 	})

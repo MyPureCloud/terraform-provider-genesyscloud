@@ -49,9 +49,8 @@ func getAllArchitectDatatables(ctx context.Context, clientConfig *platformclient
 
 	archProxy := getArchitectDatatableProxy(clientConfig)
 	tables, resp, err := archProxy.getAllArchitectDatatable(ctx)
-
 	if err != nil {
-		return resources, diag.Errorf("Error encountered while calling getAllArchitectDatattables %s %v.\n", err, resp)
+		return resources, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Error encountered while calling getAllArchitectDatattables"), resp)
 	}
 
 	for _, table := range *tables {

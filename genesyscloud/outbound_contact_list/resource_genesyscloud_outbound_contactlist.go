@@ -298,12 +298,12 @@ func updateOutboundContactList(ctx context.Context, d *schema.ResourceData, meta
 		// Get current Outbound Contact list version
 		outboundContactList, resp, getErr := outboundApi.GetOutboundContactlist(d.Id(), false, false)
 		if getErr != nil {
-			return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to read Outbound Contact List %s", d.Id()), resp)
+			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to read Outbound Contact List %s", d.Id()), resp)
 		}
 		sdkContactList.Version = outboundContactList.Version
 		outboundContactList, resp, updateErr := outboundApi.PutOutboundContactlist(d.Id(), sdkContactList)
 		if updateErr != nil {
-			return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update Outbound contact list %s", name), resp)
+			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update Outbound contact list %s", name), resp)
 		}
 		return nil, nil
 	})
@@ -387,7 +387,7 @@ func deleteOutboundContactList(ctx context.Context, d *schema.ResourceData, meta
 		log.Printf("Deleting Outbound Contact List")
 		resp, err := outboundApi.DeleteOutboundContactlist(d.Id())
 		if err != nil {
-			return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete Outbound Contact List %s", d.Id()), resp)
+			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete Outbound Contact List %s", d.Id()), resp)
 		}
 		return resp, nil
 	})

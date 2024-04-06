@@ -110,7 +110,7 @@ func createIntegrationCustomAuthAction(ctx context.Context, d *schema.ResourceDa
 		// Get the latest action version to send with PATCH
 		action, resp, err := cap.getCustomAuthActionById(ctx, authActionId)
 		if err != nil {
-			return resp, diag.Errorf("Failed to read integration custom auth action %s: %s", authActionId, err)
+			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to read integration custom auth action %s", authActionId), resp)
 		}
 
 		_, resp, err = cap.updateCustomAuthAction(ctx, authActionId, &platformclientv2.Updateactioninput{
@@ -203,7 +203,7 @@ func updateIntegrationCustomAuthAction(ctx context.Context, d *schema.ResourceDa
 		// Get the latest action version to send with PATCH
 		action, resp, err := cap.getCustomAuthActionById(ctx, d.Id())
 		if err != nil {
-			return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to read integration custom auth action %s ", d.Id()), resp)
+			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to read integration custom auth action %s ", d.Id()), resp)
 		}
 		if name == nil {
 			name = action.Name

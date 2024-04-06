@@ -131,7 +131,7 @@ func deleteRoutingSmsAddress(ctx context.Context, d *schema.ResourceData, meta i
 		log.Printf("Deleting Routing Sms Address")
 		resp, err := proxy.deleteSmsAddress(d.Id())
 		if err != nil {
-			return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete routing sms address %s", d.Id()), resp)
+			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete routing sms address %s", d.Id()), resp)
 		}
 		return resp, nil
 	})

@@ -90,7 +90,7 @@ func updateOutboundCampaignStatus(ctx context.Context, campaignId string, proxy 
 		log.Printf("Updating Outbound Campaign %s status to %s", *campaign.Name, newCampaignStatus)
 		_, resp, err := proxy.updateOutboundCampaign(ctx, campaignId, &campaign)
 		if err != nil {
-			return diag.Errorf("Failed to update Outbound Campaign %s: %s %v", *campaign.Name, err, resp)
+			return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update Outbound Campaign %s", *campaign.Name), resp)
 		}
 	}
 	return nil

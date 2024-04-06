@@ -135,7 +135,7 @@ func deleteRespManagementRespAsset(ctx context.Context, d *schema.ResourceData, 
 		log.Printf("Deleting Responsemanagement response asset")
 		resp, err := proxy.deleteRespManagementRespAsset(ctx, d.Id())
 		if err != nil {
-			return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete response asset %s", d.Id()), resp)
+			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete response asset %s", d.Id()), resp)
 		}
 		return resp, nil
 	})

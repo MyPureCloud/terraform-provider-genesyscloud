@@ -150,7 +150,7 @@ func updateGroup(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 
 		addresses, err := buildSdkGroupAddresses(d)
 		if err != nil {
-			return nil, util.BuildDiagnosticError(resourceName, fmt.Sprintf("Error while trying to buildSdkGroupAddresses for group id: %s", d.Id()), err)
+			return resp, util.BuildDiagnosticError(resourceName, fmt.Sprintf("Error while trying to buildSdkGroupAddresses for group id: %s", d.Id()), err)
 		}
 
 		log.Printf("Updating group %s", name)
@@ -312,7 +312,7 @@ func addGroupMembers(ctx context.Context, d *schema.ResourceData, membersToAdd [
 		// Need the current group version to add members
 		groupInfo, resp, getErr := gp.getGroupById(ctx, d.Id())
 		if getErr != nil {
-			return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to read group %s: %s", d.Id(), getErr), resp)
+			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to read group %s: %s", d.Id(), getErr), resp)
 		}
 
 		groupMemberUpdate := &platformclientv2.Groupmembersupdate{

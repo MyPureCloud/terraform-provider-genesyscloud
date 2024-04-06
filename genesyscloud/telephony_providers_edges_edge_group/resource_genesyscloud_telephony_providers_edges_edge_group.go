@@ -43,7 +43,7 @@ func createEdgeGroup(ctx context.Context, d *schema.ResourceData, meta interface
 		log.Printf("Creating edge group %s", name)
 		edgeGroup, resp, err := edgeGroupProxy.createEdgeGroup(ctx, *edgeGroup)
 		if err != nil {
-			return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create edge group %s", name), resp)
+			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create edge group %s", name), resp)
 		}
 
 		d.SetId(*edgeGroup.Id)
@@ -84,9 +84,9 @@ func updateEdgeGroup(ctx context.Context, d *schema.ResourceData, meta interface
 		edgeGroupFromApi, resp, getErr := edgeGroupProxy.getEdgeGroupById(ctx, d.Id())
 		if getErr != nil {
 			if util.IsStatus404(resp) {
-				return resp, diag.Errorf("The edge group does not exist %s: %s", d.Id(), getErr)
+				return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("The edge group does not exist %s", d.Id()), resp)
 			}
-			return resp, diag.Errorf("Failed to read edge group %s: %s", d.Id(), getErr)
+			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to read edge group %s", d.Id()), resp)
 		}
 		edgeGroup.Version = edgeGroupFromApi.Version
 

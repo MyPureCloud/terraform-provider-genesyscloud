@@ -81,7 +81,7 @@ func createRoutingEmailRoute(ctx context.Context, d *schema.ResourceData, meta i
 		_, resp, err = proxy.updateRoutingEmailRoute(ctx, *inboundRoute.Id, domainId, inboundRoute)
 
 		if err != nil {
-			return diag.Errorf("Created routing email route %v %s %s, but failed to update the reply answer route to itself. Error %v %s", inboundRoute.Pattern, domainId, *inboundRoute.Id, resp, err)
+			return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Created routing email route %v %s %s, but failed to update the reply answer route to itself", inboundRoute.Pattern, domainId, *inboundRoute.Id), resp)
 		}
 	}
 

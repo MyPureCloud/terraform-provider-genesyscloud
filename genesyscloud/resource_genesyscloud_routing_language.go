@@ -25,9 +25,9 @@ func getAllRoutingLanguages(_ context.Context, clientConfig *platformclientv2.Co
 
 	for pageNum := 1; ; pageNum++ {
 		const pageSize = 100
-		languages, _, getErr := routingAPI.GetRoutingLanguages(pageSize, pageNum, "", "", nil)
+		languages, resp, getErr := routingAPI.GetRoutingLanguages(pageSize, pageNum, "", "", nil)
 		if getErr != nil {
-			return nil, utils.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get page of languages: %v", getErr)
+			return nil, util.BuildAPIDiagnosticError("genesyscloud_routing_language", fmt.Sprintf("Failed to get page of languages: %v", getErr), resp)
 		}
 
 		if languages.Entities == nil || len(*languages.Entities) == 0 {

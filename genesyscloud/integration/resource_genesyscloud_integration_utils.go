@@ -92,7 +92,7 @@ func updateIntegrationConfigFromResourceData(ctx context.Context, d *schema.Reso
 
 			integrationConfig, resp, err := p.getIntegrationConfig(ctx, d.Id())
 			if err != nil {
-				return diag.Errorf("Failed to get the integration config for integration %s before updating its config: %s %v", d.Id(), err, resp), ""
+				return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get the integration config for integration %s before updating its config", d.Id()), resp), ""
 			}
 
 			name := *integrationConfig.Name
@@ -130,7 +130,7 @@ func updateIntegrationConfigFromResourceData(ctx context.Context, d *schema.Reso
 				// Get latest config version
 				integrationConfig, resp, err := p.getIntegrationConfig(ctx, d.Id())
 				if err != nil {
-					return resp, diag.Errorf("Failed to get the integration config for integration %s before updating its config: %s", d.Id(), err)
+					return resp, util.BuildAPIDiagnosticError("Failed to get the integration config for integration %s before updating its config: %s", d.Id(), resp)
 				}
 
 				_, resp, err = p.updateIntegrationConfig(ctx, d.Id(), &platformclientv2.Integrationconfiguration{
@@ -142,7 +142,7 @@ func updateIntegrationConfigFromResourceData(ctx context.Context, d *schema.Reso
 					Credentials: &credential,
 				})
 				if err != nil {
-					return resp, diag.Errorf("Failed to update config for integration %s: %s", d.Id(), err)
+					return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update config for integration %s", d.Id()), resp)
 				}
 				return nil, nil
 			})

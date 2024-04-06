@@ -110,7 +110,7 @@ func deleteOutboundContactlistfilter(ctx context.Context, d *schema.ResourceData
 		log.Printf("Deleting Outbound Contact List Filter")
 		resp, err := proxy.deleteOutboundContactlistfilter(ctx, d.Id())
 		if err != nil {
-			return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete Outbound Contact List Filter %s", d.Id()), resp)
+			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete Outbound Contact List Filter %s", d.Id()), resp)
 		}
 		return resp, nil
 	})

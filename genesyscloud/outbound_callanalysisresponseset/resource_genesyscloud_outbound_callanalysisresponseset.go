@@ -104,7 +104,7 @@ func deleteOutboundCallanalysisresponseset(ctx context.Context, d *schema.Resour
 		log.Printf("Deleting Outbound Call Analysis Response Set")
 		resp, err := proxy.deleteOutboundCallanalysisresponseset(ctx, d.Id())
 		if err != nil {
-			return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete Outbound Call Analysis Response Set %s", d.Id()), resp)
+			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete Outbound Call Analysis Response Set %s", d.Id()), resp)
 		}
 		return resp, nil
 	})

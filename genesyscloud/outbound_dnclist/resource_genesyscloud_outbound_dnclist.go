@@ -136,19 +136,19 @@ func updateOutboundDncList(ctx context.Context, d *schema.ResourceData, meta int
 		// Get current Outbound DNC list version
 		outboundDncList, resp, getErr := proxy.getOutboundDnclistById(ctx, d.Id())
 		if getErr != nil {
-			return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to read Outbound DNC list %s", name), resp)
+			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to read Outbound DNC list %s", name), resp)
 		}
 		sdkDncList.Version = outboundDncList.Version
 		outboundDncList, response, updateErr := proxy.updateOutboundDnclist(ctx, d.Id(), &sdkDncList)
 		if updateErr != nil {
-			return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update Outbound DNC list %s", name), response)
+			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update Outbound DNC list %s", name), response)
 		}
 		if len(entries) > 0 {
 			if *sdkDncList.DncSourceType == "rds" {
 				for _, entry := range entries {
 					response, err := proxy.uploadPhoneEntriesToDncList(outboundDncList, entry)
 					if err != nil {
-						return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update Outbound DNC list %s", name), response)
+						return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update Outbound DNC list %s", name), response)
 					}
 				}
 			} else {
@@ -225,7 +225,7 @@ func deleteOutboundDncList(ctx context.Context, d *schema.ResourceData, meta int
 		log.Printf("Deleting Outbound DNC list")
 		resp, err := proxy.deleteOutboundDnclist(ctx, d.Id())
 		if err != nil {
-			return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete Outbound DNC list %s", d.Id()), resp)
+			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete Outbound DNC list %s", d.Id()), resp)
 		}
 		return resp, nil
 	})

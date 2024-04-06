@@ -30,7 +30,7 @@ func getAllAuthFlowOutcomes(ctx context.Context, clientConfig *platformclientv2.
 
 	flowOutcomes, resp, err := proxy.getAllFlowOutcome(ctx)
 	if err != nil {
-		return nil, diag.Errorf("Failed to get flow outcome: %v %v", err, resp)
+		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get flow outcomes"), resp)
 	}
 
 	for _, flowOutcome := range *flowOutcomes {

@@ -101,7 +101,7 @@ func updateTeam(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	log.Printf("updating team %s", *team.Name)
 	teamObj, resp, err := proxy.updateTeam(ctx, d.Id(), &team)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update team %s", &team.Name), resp)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update team %s", *team.Name), resp)
 	}
 	members, ok := d.GetOk("member_ids")
 

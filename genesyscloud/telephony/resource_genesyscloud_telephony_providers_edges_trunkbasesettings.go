@@ -181,9 +181,9 @@ func updateTrunkBaseSettings(ctx context.Context, d *schema.ResourceData, meta i
 		trunkBaseSettings, resp, getErr := edgesAPI.GetTelephonyProvidersEdgesTrunkbasesetting(d.Id(), true)
 		if getErr != nil {
 			if util.IsStatus404(resp) {
-				return resp, diag.Errorf("The trunk base settings does not exist %s: %s", d.Id(), getErr)
+				return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("The trunk base settings does not exist %s", d.Id()), resp)
 			}
-			return resp, diag.Errorf("Failed to read trunk base settings %s: %s", d.Id(), getErr)
+			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to read trunk base settings %s", d.Id()), resp)
 		}
 		trunkBase.Version = trunkBaseSettings.Version
 
@@ -191,7 +191,7 @@ func updateTrunkBaseSettings(ctx context.Context, d *schema.ResourceData, meta i
 		trunkBaseSettings, resp, err := edgesAPI.PutTelephonyProvidersEdgesTrunkbasesetting(d.Id(), trunkBase)
 		if err != nil {
 
-			return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update trunk base settings %s", name), resp)
+			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update trunk base settings %s", name), resp)
 		}
 		return resp, nil
 	})
@@ -206,7 +206,7 @@ func updateTrunkBaseSettings(ctx context.Context, d *schema.ResourceData, meta i
 		if util.IsStatus404(resp) {
 			return nil
 		}
-		return diag.Errorf("Failed to read trunk base settings %s: %s", d.Id(), getErr)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to read trunk base settings %s", d.Id()), resp)
 	}
 	trunkBase.Version = trunkBaseSettings.Version
 
@@ -281,7 +281,7 @@ func deleteTrunkBaseSettings(ctx context.Context, d *schema.ResourceData, meta i
 				// trunk base settings not found, goal achieved!
 				return nil, nil
 			}
-			return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete trunk base settings %s", d.Id()), resp)
+			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete trunk base settings %s", d.Id()), resp)
 		}
 		return resp, nil
 	})

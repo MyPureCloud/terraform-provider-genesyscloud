@@ -107,7 +107,7 @@ func deleteResponsemanagementLibrary(ctx context.Context, d *schema.ResourceData
 
 	resp, err := proxy.deleteResponsemanagementLibrary(ctx, d.Id())
 	if err != nil {
-		return diag.Errorf("Failed to delete responsemanagement library %s: %s %v", d.Id(), err, resp)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete responsemanagement library %s", d.Id()), resp)
 	}
 
 	return util.WithRetries(ctx, 180*time.Second, func() *retry.RetryError {

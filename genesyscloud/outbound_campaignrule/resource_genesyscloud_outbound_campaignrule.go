@@ -141,7 +141,7 @@ func deleteOutboundCampaignRule(ctx context.Context, d *schema.ResourceData, met
 		log.Printf("Deleting Outbound Campaign Rule")
 		resp, err := proxy.deleteOutboundCampaignrule(ctx, d.Id())
 		if err != nil {
-			return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete outbound campaign rule %s", d.Id()), resp)
+			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete outbound campaign rule %s", d.Id()), resp)
 		}
 		return resp, nil
 	})

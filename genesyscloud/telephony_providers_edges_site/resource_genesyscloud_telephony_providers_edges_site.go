@@ -125,7 +125,7 @@ func createSite(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 		log.Printf("Setting default site to %s", *site.Id)
 		resp, err := sp.setDefaultSite(ctx, *site.Id)
 		if err != nil {
-			return diag.Errorf("unable to set default site to %s. err: %v api response: %v", *site.Id, err, resp)
+			return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("unable to set default site to %s", *site.Id), resp)
 		}
 	}
 
