@@ -110,7 +110,7 @@ func deleteGroupFn(ctx context.Context, p *groupProxy, id string) (*platformclie
 }
 
 func getGroupByIdFn(ctx context.Context, p *groupProxy, id string) (*platformclientv2.Group, *platformclientv2.APIResponse, error) {
-	group := rc.GetCache(p.groupCache, id)
+	group := rc.GetCacheItem(p.groupCache, id)
 	if group != nil {
 		return group, nil, nil
 	}

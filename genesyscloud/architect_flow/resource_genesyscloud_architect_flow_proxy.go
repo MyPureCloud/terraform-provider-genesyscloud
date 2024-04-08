@@ -80,7 +80,7 @@ func (a *architectFlowProxy) GetAllFlows(ctx context.Context) (*[]platformclient
 }
 
 func getArchitectFlowFn(_ context.Context, p *architectFlowProxy, id string) (*platformclientv2.Flow, *platformclientv2.APIResponse, error) {
-	flow := rc.GetCache(p.flowCache, id)
+	flow := rc.GetCacheItem(p.flowCache, id)
 	if flow != nil {
 		return flow, nil, nil
 	}

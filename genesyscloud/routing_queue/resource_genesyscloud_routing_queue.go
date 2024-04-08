@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
-	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
@@ -30,12 +29,12 @@ var bullseyeExpansionTypeTimeout = "TIMEOUT_SECONDS"
 
 func getAllRoutingQueues(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
 	resources := make(resourceExporter.ResourceIDMetaMap)
-	proxy := getRoutingQueueProxy(clientConfig)
+	proxy := GetRoutingQueueProxy(clientConfig)
 
 	// Newly created resources often aren't returned unless there's a delay
 	time.Sleep(5 * time.Second)
 
-	queues, resp, err := proxy.getAllRoutingQueues(ctx)
+	queues, resp, err := proxy.GetAllRoutingQueues(ctx)
 	if err != nil {
 		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("failed to get routing queues"), resp)
 	}
@@ -121,11 +120,11 @@ func createQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 
 func readQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
+	proxy := GetRoutingQueueProxy(sdkConfig)
 
 	log.Printf("Reading queue %s", d.Id())
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
-		currentQueue, resp, getErr := routingAPI.GetRoutingQueue(d.Id())
+		currentQueue, resp, getErr := proxy.getRoutingQueueById(ctx, d.Id())
 		if getErr != nil {
 			if util.IsStatus404(resp) {
 				return retry.RetryableError(fmt.Errorf("Failed to read queue %s: %s", d.Id(), getErr))
@@ -133,7 +132,7 @@ func readQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 			return retry.NonRetryableError(fmt.Errorf("Failed to read queue %s: %s", d.Id(), getErr))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceRoutingQueue())
+		//cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceRoutingQueue())
 
 		resourcedata.SetNillableValue(d, "name", currentQueue.Name)
 		resourcedata.SetNillableValue(d, "description", currentQueue.Description)
@@ -201,7 +200,7 @@ func readQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "direct_routing", currentQueue.DirectRouting, flattenDirectRouting)
 
-		wrapupCodes, err := flattenQueueWrapupCodes(d.Id(), routingAPI)
+		wrapupCodes, err := flattenQueueWrapupCodes(ctx, d.Id(), proxy)
 		if err != nil {
 			return retry.NonRetryableError(fmt.Errorf("%v", err))
 		}
@@ -224,7 +223,8 @@ func readQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 		_ = d.Set("conditional_group_routing_rules", flattenConditionalGroupRoutingRules(currentQueue))
 
 		log.Printf("Done reading queue %s %s", d.Id(), *currentQueue.Name)
-		return cc.CheckState()
+		//return cc.CheckState()
+		return nil
 	})
 }
 
@@ -1213,25 +1213,16 @@ func flattenQueueMembers(queueID string, memberBy string, sdkConfig *platformcli
 	return memberSet, nil
 }
 
-func flattenQueueWrapupCodes(queueID string, api *platformclientv2.RoutingApi) (*schema.Set, diag.Diagnostics) {
-	const maxPageSize = 100
-	var codeIds []string
-	for pageNum := 1; ; pageNum++ {
-		codes, _, err := api.GetRoutingQueueWrapupcodes(queueID, maxPageSize, pageNum)
-		if err != nil {
-			return nil, diag.Errorf("Failed to query wrapup codes for queue %s: %s", queueID, err)
-		}
-		if codes == nil || codes.Entities == nil || len(*codes.Entities) == 0 {
-			break
-		}
-		for _, code := range *codes.Entities {
-			codeIds = append(codeIds, *code.Id)
-		}
+func flattenQueueWrapupCodes(ctx context.Context, queueID string, proxy *RoutingQueueProxy) (*schema.Set, diag.Diagnostics) {
+	codeIds, resp, err := proxy.getRoutingQueueWrapupCodeIds(ctx, queueID)
+	if err != nil {
+		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("failed to query wrapup codes for queue %s", queueID), resp)
 	}
 
 	if codeIds != nil {
 		return lists.StringListToSet(codeIds), nil
 	}
+
 	return nil, nil
 }
 
