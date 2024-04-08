@@ -36,6 +36,15 @@ func MemberGroupsResolver(configMap map[string]interface{}, exporters map[string
 		} else {
 			return fmt.Errorf("unable to locate genesyscloud_group in the exporters array. Unable to resolve the ID for the member group resource")
 		}
+
+	case "TEAM":
+		if exporter, ok := exporters["genesyscloud_team"]; ok {
+			exportId := (*exporter.SanitizedResourceMap[memberGroupID]).Name
+			configMap["member_group_id"] = fmt.Sprintf("${genesyscloud_team.%s.id}", exportId)
+		} else {
+			return fmt.Errorf("unable to locate genesyscloud_team in the exporters array. Unable to resolve the ID for the member group resource")
+		}
+
 	default:
 		return fmt.Errorf("the memberGroupType %s cannot be located. Can not resolve to a reference attribute", memberGroupType)
 	}
@@ -132,5 +141,13 @@ func ReplyEmailAddressSelfReferenceRouteExporterResolver(configMap map[string]in
 		configMap["self_reference_route"] = true
 		configMap["route_id"] = nil
 	}
+	return nil
+}
+
+func ConditionValueResolver(configMap map[string]interface{}, exporters map[string]*ResourceExporter, resourceName string) error {
+	if value := configMap["condition_value"]; value == nil {
+		configMap["condition_value"] = 0
+	}
+
 	return nil
 }

@@ -10,6 +10,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/architect_flow"
 	authRole "terraform-provider-genesyscloud/genesyscloud/auth_role"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
+	routingQueue "terraform-provider-genesyscloud/genesyscloud/routing_queue"
 	userRoles "terraform-provider-genesyscloud/genesyscloud/user_roles"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
@@ -944,7 +945,7 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 					domainId,
 					util.FalseValue, // Subdomain
 					util.NullValue,
-				) + gcloud.GenerateRoutingQueueResourceBasic(queueResource1, queueName, "") +
+				) + routingQueue.GenerateRoutingQueueResourceBasic(queueResource1, queueName, "") +
 					authRole.GenerateAuthRoleResource(
 						roleResource1,
 						roleName1,
@@ -1051,7 +1052,7 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 					domainId,
 					util.FalseValue, // Subdomain
 					util.NullValue,
-				) + gcloud.GenerateRoutingQueueResourceBasic(queueResource1, queueName, "") +
+				) + routingQueue.GenerateRoutingQueueResourceBasic(queueResource1, queueName, "") +
 					authRole.GenerateAuthRoleResource(
 						roleResource1,
 						roleName1,
@@ -1158,7 +1159,7 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 					domainId,
 					util.FalseValue, // Subdomain
 					util.NullValue,
-				) + gcloud.GenerateRoutingQueueResourceBasic(queueResource1, queueName, "") +
+				) + routingQueue.GenerateRoutingQueueResourceBasic(queueResource1, queueName, "") +
 					authRole.GenerateAuthRoleResource(
 						roleResource1,
 						roleName1,
@@ -1265,7 +1266,7 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 					domainId,
 					util.FalseValue, // Subdomain
 					util.NullValue,
-				) + gcloud.GenerateRoutingQueueResourceBasic(queueResource1, queueName, "") +
+				) + routingQueue.GenerateRoutingQueueResourceBasic(queueResource1, queueName, "") +
 					authRole.GenerateAuthRoleResource(
 						roleResource1,
 						roleName1,
@@ -2361,8 +2362,9 @@ func CleanupRoutingEmailDomains() {
 
 	for pageNum := 1; ; pageNum++ {
 		const pageSize = 100
-		routingEmailDomains, _, getErr := routingAPI.GetRoutingEmailDomains(pageNum, pageSize, false, "")
+		routingEmailDomains, _, getErr := routingAPI.GetRoutingEmailDomains(pageSize, pageNum, false, "")
 		if getErr != nil {
+			log.Printf("failed to get page %v of routing email domains: %v", pageNum, getErr)
 			return
 		}
 

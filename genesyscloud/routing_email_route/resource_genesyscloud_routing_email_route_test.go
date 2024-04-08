@@ -8,6 +8,7 @@ import (
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	"terraform-provider-genesyscloud/genesyscloud/architect_flow"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
+	routingQueue "terraform-provider-genesyscloud/genesyscloud/routing_queue"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 	"time"
@@ -115,7 +116,7 @@ func TestAccResourceRoutingEmailRoute(t *testing.T) {
 					domainId,
 					util.FalseValue,
 					util.NullValue,
-				) + gcloud.GenerateRoutingQueueResourceBasic(
+				) + routingQueue.GenerateRoutingQueueResourceBasic(
 					queueResource,
 					queueName,
 				) + gcloud.GenerateRoutingLanguageResource(
@@ -185,7 +186,8 @@ func TestAccResourceRoutingEmailRoute(t *testing.T) {
 					domainId,
 					util.FalseValue,
 					util.NullValue,
-				) + gcloud.GenerateRoutingQueueResourceBasic(
+				) + routingQueue.GenerateRoutingQueueResourceBasic(
+
 					queueResource,
 					queueName,
 				) + gcloud.GenerateRoutingLanguageResource(
@@ -242,7 +244,7 @@ func TestAccResourceRoutingEmailRoute(t *testing.T) {
 					domainId,
 					util.FalseValue,
 					util.NullValue,
-				) + gcloud.GenerateRoutingQueueResourceBasic(
+				) + routingQueue.GenerateRoutingQueueResourceBasic(
 					queueResource,
 					queueName,
 				) + gcloud.GenerateRoutingLanguageResource(
@@ -300,7 +302,7 @@ func TestAccResourceRoutingEmailRoute(t *testing.T) {
 					domainId,
 					util.FalseValue,
 					util.NullValue,
-				) + gcloud.GenerateRoutingQueueResourceBasic(
+				) + routingQueue.GenerateRoutingQueueResourceBasic(
 					queueResource,
 					queueName,
 				) + gcloud.GenerateRoutingLanguageResource(
@@ -469,14 +471,16 @@ func testVerifyRoutingEmailRouteDestroyed(state *terraform.State) error {
 func CleanupRoutingEmailDomains() {
 	sdkConfig, err := provider.AuthorizeSdk()
 	if err != nil {
-		log.Fatal(err)
+		log.Printf("failed to authorize sdk inside function CleanupRoutingEmailDomains: %v", err)
+		return
 	}
 	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
 
 	for pageNum := 1; ; pageNum++ {
 		const pageSize = 100
-		routingEmailDomains, _, getErr := routingAPI.GetRoutingEmailDomains(pageNum, pageSize, false, "")
+		routingEmailDomains, _, getErr := routingAPI.GetRoutingEmailDomains(pageSize, pageNum, false, "")
 		if getErr != nil {
+			log.Printf("failed to get page %v of routing email domains: %v", pageNum, getErr)
 			return
 		}
 

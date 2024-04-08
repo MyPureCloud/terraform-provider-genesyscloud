@@ -21,7 +21,6 @@ func dataSourceFlowRead(ctx context.Context, d *schema.ResourceData, m interface
 
 	// Query flow by name. Retry in case search has not yet indexed the flow.
 	return util.WithRetries(ctx, 5*time.Second, func() *retry.RetryError {
-		const pageSize = 100
 		for pageNum := 1; ; pageNum++ {
 			flows, resp, getErr := p.GetAllFlows(ctx)
 			if getErr != nil {
@@ -29,7 +28,7 @@ func dataSourceFlowRead(ctx context.Context, d *schema.ResourceData, m interface
 			}
 
 			if flows == nil || len(*flows) == 0 {
-				return retry.RetryableError(fmt.Errorf("No flows found with name %s", name))
+				return retry.RetryableError(fmt.Errorf("no flows found with name %s", name))
 			}
 
 			for _, entity := range *flows {

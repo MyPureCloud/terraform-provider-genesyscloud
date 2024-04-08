@@ -112,12 +112,12 @@ func TestAccResourceOutboundCallabletimeset(t *testing.T) {
 }
 
 func testVerifyCallabletimesetDestroyed(state *terraform.State) error {
-	outboutAPI := platformclientv2.NewOutboundApi()
+	outboundAPI := platformclientv2.NewOutboundApi()
 	for _, rs := range state.RootModule().Resources {
 		if rs.Type != "genesyscloud_outbound_callabletimeset" {
 			continue
 		}
-		timeSet, resp, err := outboutAPI.GetOutboundCallabletimeset(rs.Primary.ID)
+		timeSet, resp, err := outboundAPI.GetOutboundCallabletimeset(rs.Primary.ID)
 		if timeSet != nil {
 			return fmt.Errorf("Callable time set (%s) still exists", rs.Primary.ID)
 		} else if util.IsStatus404(resp) {

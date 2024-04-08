@@ -3,7 +3,6 @@ package architect_flow
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -31,11 +30,11 @@ func lockFlow(flowName string, flowType string) {
 		for pageNum := 1; ; pageNum++ {
 			flows, _, getErr := archAPI.GetFlows(nil, pageNum, pageSize, "", "", nil, flowName, "", "", "", "", "", "", "", false, false, "", "", nil)
 			if getErr != nil {
-				return retry.NonRetryableError(fmt.Errorf("Error requesting flow %s: %s", flowName, getErr))
+				return retry.NonRetryableError(fmt.Errorf("error requesting flow %s: %s", flowName, getErr))
 			}
 
 			if flows.Entities == nil || len(*flows.Entities) == 0 {
-				return retry.RetryableError(fmt.Errorf("No flows found with name %s", flowName))
+				return retry.RetryableError(fmt.Errorf("no flows found with name %s", flowName))
 			}
 
 			for _, entity := range *flows.Entities {
@@ -43,7 +42,7 @@ func lockFlow(flowName string, flowType string) {
 					flow, response, err := archAPI.PostFlowsActionsCheckout(*entity.Id)
 
 					if err != nil || response.Error != nil {
-						return retry.NonRetryableError(fmt.Errorf("Error requesting flow %s: %s", flowName, getErr))
+						return retry.NonRetryableError(fmt.Errorf("error requesting flow %s: %s", flowName, getErr))
 					}
 
 					log.Printf("Flow (%s) with FlowName: %s has been locked Flow resource after checkout: %v\n", *flow.Id, flowName, *flow.LockedClient.Name)
@@ -273,13 +272,13 @@ func TestAccResourceArchFlowSubstitutions(t *testing.T) {
 }
 
 func copyFile(src string, dest string) {
-	bytesRead, err := ioutil.ReadFile(src)
+	bytesRead, err := os.ReadFile(src)
 
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	err = ioutil.WriteFile(dest, bytesRead, 0644)
+	err = os.WriteFile(dest, bytesRead, 0644)
 
 	if err != nil {
 		log.Fatal(err)
@@ -294,7 +293,7 @@ func removeFile(fileName string) {
 }
 
 func transformFile(fileName string) {
-	input, err := ioutil.ReadFile(fileName)
+	input, err := os.ReadFile(fileName)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -306,7 +305,7 @@ func transformFile(fileName string) {
 	}
 
 	output := strings.Join(lines, "\n")
-	err = ioutil.WriteFile(fileName, []byte(output), 0644)
+	err = os.WriteFile(fileName, []byte(output), 0644)
 	if err != nil {
 		log.Fatalln(err)
 	}

@@ -62,7 +62,7 @@ func createWebDeploymentConfiguration(ctx context.Context, d *schema.ResourceDat
 
 	name, inputCfg := wdcUtils.BuildWebDeploymentConfigurationFromResourceData(d)
 	log.Printf("Creating web deployment configuration %s", name)
-
+	log.Println("Current Deployment: ", inputCfg)
 	diagErr := util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		configuration, resp, err := wp.createWebdeploymentsConfiguration(ctx, *inputCfg)
 		if err != nil {
