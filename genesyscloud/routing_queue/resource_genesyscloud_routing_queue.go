@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
@@ -132,7 +133,7 @@ func readQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 			return retry.NonRetryableError(fmt.Errorf("Failed to read queue %s: %s", d.Id(), getErr))
 		}
 
-		//cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceRoutingQueue())
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceRoutingQueue())
 
 		resourcedata.SetNillableValue(d, "name", currentQueue.Name)
 		resourcedata.SetNillableValue(d, "description", currentQueue.Description)
@@ -223,8 +224,7 @@ func readQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 		_ = d.Set("conditional_group_routing_rules", flattenConditionalGroupRoutingRules(currentQueue))
 
 		log.Printf("Done reading queue %s %s", d.Id(), *currentQueue.Name)
-		//return cc.CheckState()
-		return nil
+		return cc.CheckState()
 	})
 }
 
