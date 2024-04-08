@@ -113,7 +113,7 @@ func createQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return util.BuildAPIDiagnosticError("genesyscloud_routing_queue", fmt.Sprintf("Failed to create queue %s with status code %s", *createQueue.Name, resp.StatusCode), resp)
+		return util.BuildAPIDiagnosticError("genesyscloud_routing_queue", fmt.Sprintf("Failed to create queue %s with status code %v", *createQueue.Name, resp.StatusCode), resp)
 	}
 
 	d.SetId(*queue.Id)

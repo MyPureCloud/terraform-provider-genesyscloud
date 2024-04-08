@@ -194,7 +194,7 @@ func updateJourneyOutcome(ctx context.Context, d *schema.ResourceData, meta inte
 		patchOutcome.Version = journeyOutcome.Version
 		_, resp, patchErr := journeyApi.PatchJourneyOutcome(d.Id(), *patchOutcome)
 		if patchErr != nil {
-			return resp, util.BuildAPIDiagnosticError("genesyscloud_journey_outcome", fmt.Sprintf("Failed to update journey outcome 5s", *patchOutcome.DisplayName), resp)
+			return resp, util.BuildAPIDiagnosticError("genesyscloud_journey_outcome", fmt.Sprintf("Failed to update journey outcome %s", *patchOutcome.DisplayName), resp)
 		}
 		return resp, nil
 	})

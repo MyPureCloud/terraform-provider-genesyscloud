@@ -288,7 +288,7 @@ func createSurveyForm(ctx context.Context, d *schema.ResourceData, meta interfac
 	qualityAPI := platformclientv2.NewQualityApiWithConfig(sdkConfig)
 
 	log.Printf("Creating Survey Form %s", name)
-	form, _, err := qualityAPI.PostQualityFormsSurveys(platformclientv2.Surveyform{
+	form, resp, err := qualityAPI.PostQualityFormsSurveys(platformclientv2.Surveyform{
 		Name:           &name,
 		Disabled:       &disabled,
 		Language:       &language,
