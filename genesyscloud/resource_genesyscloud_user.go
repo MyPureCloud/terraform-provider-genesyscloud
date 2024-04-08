@@ -1058,7 +1058,7 @@ func readUserRoutingUtilization(d *schema.ResourceData, sdkConfig *platformclien
 			d.SetId("") // User doesn't exist
 			return nil
 		}
-		return util.BuildAPIDiagnosticError("genesyscloud_user", fmt.Sprintf("Failed to read routing utilization for user %s", d.Id()), response)
+		return util.BuildAPIDiagnosticError("genesyscloud_user", fmt.Sprintf("Failed to read routing utilization for user %s error: %s", d.Id(), err), response)
 	}
 
 	agentUtilization := &AgentUtilizationWithLabels{}
