@@ -24,7 +24,7 @@ func TestUnitResourceTeamRead(t *testing.T) {
 
 	teamProxyobj := &teamProxy{}
 
-	teamProxyobj.getTeamByIdAttr = func(ctx context.Context, p *teamProxy, id string) (team *platformclientv2.Team, statusCode int, err error) {
+	teamProxyobj.getTeamByIdAttr = func(ctx context.Context, p *teamProxy, id string) (team *platformclientv2.Team, resp *platformclientv2.APIResponse, err error) {
 		assert.Equal(t, tId, id)
 		teamObj := &platformclientv2.Team{
 			Name:        &tName,
@@ -33,10 +33,10 @@ func TestUnitResourceTeamRead(t *testing.T) {
 		}
 
 		apiResponse := &platformclientv2.APIResponse{StatusCode: http.StatusOK}
-		return teamObj, apiResponse.StatusCode, nil
+		return teamObj, apiResponse, nil
 	}
-	teamProxyobj.getMembersByIdAttr = func(ctx context.Context, p *teamProxy, teamId string) (members *[]platformclientv2.Userreferencewithname, err error) {
-		return nil, nil
+	teamProxyobj.getMembersByIdAttr = func(ctx context.Context, p *teamProxy, teamId string) (members *[]platformclientv2.Userreferencewithname, resp *platformclientv2.APIResponse, err error) {
+		return nil, nil, nil
 	}
 
 	internalProxy = teamProxyobj
@@ -70,18 +70,18 @@ func TestUnitResourceTeamDelete(t *testing.T) {
 
 	teamProxyobj := &teamProxy{}
 
-	teamProxyobj.deleteTeamAttr = func(ctx context.Context, p *teamProxy, id string) (statusCode int, err error) {
+	teamProxyobj.deleteTeamAttr = func(ctx context.Context, p *teamProxy, id string) (resp *platformclientv2.APIResponse, err error) {
 		assert.Equal(t, tId, id)
 
 		apiResponse := &platformclientv2.APIResponse{StatusCode: http.StatusOK}
-		return apiResponse.StatusCode, nil
+		return apiResponse, nil
 	}
 
-	teamProxyobj.getTeamByIdAttr = func(ctx context.Context, p *teamProxy, id string) (team *platformclientv2.Team, statusCode int, err error) {
+	teamProxyobj.getTeamByIdAttr = func(ctx context.Context, p *teamProxy, id string) (team *platformclientv2.Team, resp *platformclientv2.APIResponse, err error) {
 		assert.Equal(t, tId, id)
 
 		apiResponse := &platformclientv2.APIResponse{StatusCode: http.StatusNotFound}
-		return nil, apiResponse.StatusCode, fmt.Errorf("Unable to find the team: %s", id)
+		return nil, apiResponse, fmt.Errorf("Unable to find the team: %s", id)
 	}
 
 	internalProxy = teamProxyobj
@@ -111,7 +111,7 @@ func TestUnitResourceTeamCreate(t *testing.T) {
 
 	teamProxyobj := &teamProxy{}
 
-	teamProxyobj.getTeamByIdAttr = func(ctx context.Context, p *teamProxy, id string) (team *platformclientv2.Team, statusCode int, err error) {
+	teamProxyobj.getTeamByIdAttr = func(ctx context.Context, p *teamProxy, id string) (team *platformclientv2.Team, resp *platformclientv2.APIResponse, err error) {
 		assert.Equal(t, tId, id)
 		teamObj := &platformclientv2.Team{
 			Name:        &tName,
@@ -120,21 +120,21 @@ func TestUnitResourceTeamCreate(t *testing.T) {
 		}
 
 		apiResponse := &platformclientv2.APIResponse{StatusCode: http.StatusOK}
-		return teamObj, apiResponse.StatusCode, nil
+		return teamObj, apiResponse, nil
 	}
 
-	teamProxyobj.createTeamAttr = func(ctx context.Context, p *teamProxy, team *platformclientv2.Team) (*platformclientv2.Team, error) {
+	teamProxyobj.createTeamAttr = func(ctx context.Context, p *teamProxy, team *platformclientv2.Team) (*platformclientv2.Team, *platformclientv2.APIResponse, error) {
 		assert.Equal(t, tName, *team.Name, "team.Name check failed in create team")
 		assert.Equal(t, tDescription, *team.Description, "team.Description check failed in create team")
 		assert.Equal(t, tDivisionId, *team.Division.Id, "team.Division.Id check failed in create team")
 
 		team.Id = &tId
 
-		return team, nil
+		return team, nil, nil
 	}
 
-	teamProxyobj.getMembersByIdAttr = func(ctx context.Context, p *teamProxy, teamId string) (members *[]platformclientv2.Userreferencewithname, err error) {
-		return nil, nil
+	teamProxyobj.getMembersByIdAttr = func(ctx context.Context, p *teamProxy, teamId string) (members *[]platformclientv2.Userreferencewithname, resp *platformclientv2.APIResponse, err error) {
+		return nil, nil, nil
 	}
 
 	internalProxy = teamProxyobj
@@ -164,7 +164,7 @@ func TestUnitResourceTeamUpdate(t *testing.T) {
 
 	teamProxyobj := &teamProxy{}
 
-	teamProxyobj.getTeamByIdAttr = func(ctx context.Context, p *teamProxy, id string) (team *platformclientv2.Team, statusCode int, err error) {
+	teamProxyobj.getTeamByIdAttr = func(ctx context.Context, p *teamProxy, id string) (team *platformclientv2.Team, resp *platformclientv2.APIResponse, err error) {
 		assert.Equal(t, tId, id)
 		teamObj := &platformclientv2.Team{
 			Name:        &tName,
@@ -173,21 +173,21 @@ func TestUnitResourceTeamUpdate(t *testing.T) {
 		}
 
 		apiResponse := &platformclientv2.APIResponse{StatusCode: http.StatusOK}
-		return teamObj, apiResponse.StatusCode, nil
+		return teamObj, apiResponse, nil
 	}
 
-	teamProxyobj.updateTeamAttr = func(ctx context.Context, p *teamProxy, id string, team *platformclientv2.Team) (*platformclientv2.Team, error) {
+	teamProxyobj.updateTeamAttr = func(ctx context.Context, p *teamProxy, id string, team *platformclientv2.Team) (*platformclientv2.Team, *platformclientv2.APIResponse, error) {
 		assert.Equal(t, tName, *team.Name, "team.Name check failed in create team")
 		assert.Equal(t, tDescription, *team.Description, "team.Description check failed in create team")
 		assert.Equal(t, tDivisionId, *team.Division.Id, "team.Division.Id check failed in create team")
 
 		team.Id = &tId
 
-		return team, nil
+		return team, nil, nil
 	}
 
-	teamProxyobj.getMembersByIdAttr = func(ctx context.Context, p *teamProxy, teamId string) (members *[]platformclientv2.Userreferencewithname, err error) {
-		return nil, nil
+	teamProxyobj.getMembersByIdAttr = func(ctx context.Context, p *teamProxy, teamId string) (members *[]platformclientv2.Userreferencewithname, resp *platformclientv2.APIResponse, err error) {
+		return nil, nil, nil
 	}
 
 	internalProxy = teamProxyobj
@@ -222,7 +222,7 @@ func TestUnitResourceTeamGetAll(t *testing.T) {
 
 	teamProxyobj := &teamProxy{}
 
-	teamProxyobj.getAllTeamAttr = func(ctx context.Context, p *teamProxy, name string) (*[]platformclientv2.Team, error) {
+	teamProxyobj.getAllTeamAttr = func(ctx context.Context, p *teamProxy, name string) (*[]platformclientv2.Team, *platformclientv2.APIResponse, error) {
 		var allTeams []platformclientv2.Team
 
 		teamObjFirst := &platformclientv2.Team{
@@ -242,7 +242,7 @@ func TestUnitResourceTeamGetAll(t *testing.T) {
 		allTeams = append(allTeams, *teamObjFirst)
 		allTeams = append(allTeams, *teamObjSecond)
 
-		return &allTeams, nil
+		return &allTeams, nil, nil
 	}
 
 	internalProxy = teamProxyobj

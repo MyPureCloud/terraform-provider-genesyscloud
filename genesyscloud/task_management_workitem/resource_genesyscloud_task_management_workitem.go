@@ -29,9 +29,9 @@ func getAllAuthTaskManagementWorkitems(ctx context.Context, clientConfig *platfo
 	proxy := getTaskManagementWorkitemProxy(clientConfig)
 	resources := make(resourceExporter.ResourceIDMetaMap)
 
-	workitems, err := proxy.getAllTaskManagementWorkitem(ctx)
+	workitems, resp, err := proxy.getAllTaskManagementWorkitem(ctx)
 	if err != nil {
-		return nil, diag.Errorf("Failed to get task management workitem: %v", err)
+		return nil, diag.Errorf("Failed to get task management workitem: %v %v", err, resp)
 	}
 
 	for _, workitem := range *workitems {
@@ -52,9 +52,9 @@ func createTaskManagementWorkitem(ctx context.Context, d *schema.ResourceData, m
 	}
 
 	log.Printf("Creating task management workitem %s", *taskManagementWorkitem.Name)
-	workitem, err := proxy.createTaskManagementWorkitem(ctx, taskManagementWorkitem)
+	workitem, resp, err := proxy.createTaskManagementWorkitem(ctx, taskManagementWorkitem)
 	if err != nil {
-		return diag.Errorf("Failed to create task management workitem: %s", err)
+		return diag.Errorf("Failed to create task management workitem: %s %v", err, resp)
 	}
 
 	d.SetId(*workitem.Id)
@@ -70,9 +70,9 @@ func readTaskManagementWorkitem(ctx context.Context, d *schema.ResourceData, met
 	log.Printf("Reading task management workitem %s", d.Id())
 
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
-		workitem, respCode, getErr := proxy.getTaskManagementWorkitemById(ctx, d.Id())
+		workitem, resp, getErr := proxy.getTaskManagementWorkitemById(ctx, d.Id())
 		if getErr != nil {
-			if util.IsStatus404ByInt(respCode) {
+			if util.IsStatus404(resp) {
 				return retry.RetryableError(fmt.Errorf("failed to read task management workitem %s: %s", d.Id(), getErr))
 			}
 			return retry.NonRetryableError(fmt.Errorf("failed to read task management workitem %s: %s", d.Id(), getErr))
@@ -142,9 +142,9 @@ func updateTaskManagementWorkitem(ctx context.Context, d *schema.ResourceData, m
 	}
 
 	log.Printf("Updating task management workitem %s", *taskManagementWorkitem.Name)
-	workitem, err := proxy.updateTaskManagementWorkitem(ctx, d.Id(), taskManagementWorkitem)
+	workitem, resp, err := proxy.updateTaskManagementWorkitem(ctx, d.Id(), taskManagementWorkitem)
 	if err != nil {
-		return diag.Errorf("Failed to update task management workitem: %s", err)
+		return diag.Errorf("Failed to update task management workitem: %s %v", err, resp)
 	}
 
 	log.Printf("Updated task management workitem %s", *workitem.Id)
@@ -156,22 +156,21 @@ func deleteTaskManagementWorkitem(ctx context.Context, d *schema.ResourceData, m
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getTaskManagementWorkitemProxy(sdkConfig)
 
-	_, err := proxy.deleteTaskManagementWorkitem(ctx, d.Id())
+	resp, err := proxy.deleteTaskManagementWorkitem(ctx, d.Id())
 	if err != nil {
-		return diag.Errorf("Failed to delete task management workitem %s: %s", d.Id(), err)
+		return diag.Errorf("Failed to delete task management workitem %s: %s %v", d.Id(), err, resp)
 	}
 
 	return util.WithRetries(ctx, 180*time.Second, func() *retry.RetryError {
-		_, respCode, err := proxy.getTaskManagementWorkitemById(ctx, d.Id())
+		_, resp, err := proxy.getTaskManagementWorkitemById(ctx, d.Id())
 
 		if err != nil {
-			if util.IsStatus404ByInt(respCode) {
+			if util.IsStatus404(resp) {
 				log.Printf("Deleted task management workitem %s", d.Id())
 				return nil
 			}
 			return retry.NonRetryableError(fmt.Errorf("error deleting task management workitem %s: %s", d.Id(), err))
 		}
-
 		return retry.RetryableError(fmt.Errorf("task management workitem %s still exists", d.Id()))
 	})
 }

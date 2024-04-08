@@ -31,15 +31,14 @@ func getAllAuthTaskManagementWorktypes(ctx context.Context, clientConfig *platfo
 	proxy := getTaskManagementWorktypeProxy(clientConfig)
 	resources := make(resourceExporter.ResourceIDMetaMap)
 
-	worktypes, err := proxy.getAllTaskManagementWorktype(ctx)
+	worktypes, resp, err := proxy.getAllTaskManagementWorktype(ctx)
 	if err != nil {
-		return nil, diag.Errorf("Failed to get task management worktype: %v", err)
+		return nil, diag.Errorf("Failed to get task management worktype: %v %v", err, resp)
 	}
 
 	for _, worktype := range *worktypes {
 		resources[*worktype.Id] = &resourceExporter.ResourceMeta{Name: *worktype.Name}
 	}
-
 	return resources, nil
 }
 
@@ -52,9 +51,9 @@ func createTaskManagementWorktype(ctx context.Context, d *schema.ResourceData, m
 
 	// Create the base worktype
 	log.Printf("Creating task management worktype %s", *taskManagementWorktype.Name)
-	worktype, err := proxy.createTaskManagementWorktype(ctx, &taskManagementWorktype)
+	worktype, resp, err := proxy.createTaskManagementWorktype(ctx, &taskManagementWorktype)
 	if err != nil {
-		return diag.Errorf("failed to create task management worktype: %s", err)
+		return diag.Errorf("failed to create task management worktype: %s %v", err, resp)
 	}
 
 	log.Printf("Created the base task management worktype %s", *worktype.Id)
@@ -92,9 +91,9 @@ func readTaskManagementWorktype(ctx context.Context, d *schema.ResourceData, met
 	log.Printf("Reading task management worktype %s", d.Id())
 
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
-		worktype, respCode, getErr := proxy.getTaskManagementWorktypeById(ctx, d.Id())
+		worktype, resp, getErr := proxy.getTaskManagementWorktypeById(ctx, d.Id())
 		if getErr != nil {
-			if util.IsStatus404ByInt(respCode) {
+			if util.IsStatus404(resp) {
 				return retry.RetryableError(fmt.Errorf("failed to read task management worktype %s: %s", d.Id(), getErr))
 			}
 			return retry.NonRetryableError(fmt.Errorf("failed to read task management worktype %s: %s", d.Id(), getErr))
@@ -152,9 +151,9 @@ func updateTaskManagementWorktype(ctx context.Context, d *schema.ResourceData, m
 	// Update the base configuration of the Worktype
 	taskManagementWorktype := getWorktypeupdateFromResourceData(d, nil)
 	if d.HasChangesExcept("statuses", "default_status_name") {
-		worktype, err := proxy.updateTaskManagementWorktype(ctx, d.Id(), &taskManagementWorktype)
+		worktype, resp, err := proxy.updateTaskManagementWorktype(ctx, d.Id(), &taskManagementWorktype)
 		if err != nil {
-			return diag.Errorf("failed to update task management worktype: %s", err)
+			return diag.Errorf("failed to update task management worktype: %s %v", err, resp)
 		}
 
 		log.Printf("Updated base configuration of task management worktype %s", *worktype.Id)
@@ -162,9 +161,9 @@ func updateTaskManagementWorktype(ctx context.Context, d *schema.ResourceData, m
 
 	// Get the current state of the worktype because we will cross-check if any of the existing ones
 	// need to be deleted
-	oldWorktype, _, err := proxy.getTaskManagementWorktypeById(ctx, d.Id())
+	oldWorktype, resp, err := proxy.getTaskManagementWorktypeById(ctx, d.Id())
 	if err != nil {
-		return diag.Errorf("failed to get task management worktype: %s", err)
+		return diag.Errorf("failed to get task management worktype: %s %v", err, resp)
 	}
 	oldStatusIds := []string{}
 	for _, oldStatus := range *oldWorktype.Statuses {
@@ -238,16 +237,16 @@ func updateTaskManagementWorktype(ctx context.Context, d *schema.ResourceData, m
 		description := "this status is set for deletion by CX as Code " + uuid.NewString()
 		updateForCleaning.SetField("Description", &description)
 
-		if _, err := proxy.updateTaskManagementWorktypeStatus(ctx, d.Id(), forDeletionId, &updateForCleaning); err != nil {
-			return diag.Errorf("failed to clean up references of task management worktype status %s: %v", forDeletionId, err)
+		if _, resp, err := proxy.updateTaskManagementWorktypeStatus(ctx, d.Id(), forDeletionId, &updateForCleaning); err != nil {
+			return diag.Errorf("failed to clean up references of task management worktype status %s: %v %v", forDeletionId, err, resp)
 		}
 	}
 
 	// Actually delete the status
 	log.Printf("Deleting unused statuses of worktype %s", d.Id())
 	for _, forDeletionId := range forDeletionIds {
-		if _, err := proxy.deleteTaskManagementWorktypeStatus(ctx, d.Id(), forDeletionId); err != nil {
-			return diag.Errorf("failed to delete task management worktype status %s: %v", forDeletionId, err)
+		if resp, err := proxy.deleteTaskManagementWorktypeStatus(ctx, d.Id(), forDeletionId); err != nil {
+			return diag.Errorf("failed to delete task management worktype status %s: %v %v", forDeletionId, err, resp)
 		}
 	}
 
@@ -272,22 +271,21 @@ func deleteTaskManagementWorktype(ctx context.Context, d *schema.ResourceData, m
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getTaskManagementWorktypeProxy(sdkConfig)
 
-	_, err := proxy.deleteTaskManagementWorktype(ctx, d.Id())
+	resp, err := proxy.deleteTaskManagementWorktype(ctx, d.Id())
 	if err != nil {
-		return diag.Errorf("failed to delete task management worktype %s: %s", d.Id(), err)
+		return diag.Errorf("failed to delete task management worktype %s: %s %v", d.Id(), err, resp)
 	}
 
 	return util.WithRetries(ctx, 180*time.Second, func() *retry.RetryError {
-		_, respCode, err := proxy.getTaskManagementWorktypeById(ctx, d.Id())
+		_, resp, err := proxy.getTaskManagementWorktypeById(ctx, d.Id())
 
 		if err != nil {
-			if util.IsStatus404ByInt(respCode) {
+			if util.IsStatus404(resp) {
 				log.Printf("Deleted task management worktype %s", d.Id())
 				return nil
 			}
 			return retry.NonRetryableError(fmt.Errorf("error deleting task management worktype %s: %s", d.Id(), err))
 		}
-
 		return retry.RetryableError(fmt.Errorf("task management worktype %s still exists", d.Id()))
 	})
 }

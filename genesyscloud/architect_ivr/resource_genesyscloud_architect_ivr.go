@@ -25,9 +25,9 @@ func getAllIvrConfigs(ctx context.Context, clientConfig *platformclientv2.Config
 	resources := make(resourceExporter.ResourceIDMetaMap)
 	ap := getArchitectIvrProxy(clientConfig)
 
-	allIvrs, err := ap.getAllArchitectIvrs(ctx, "")
+	allIvrs, resp, err := ap.getAllArchitectIvrs(ctx, "")
 	if err != nil {
-		return nil, diag.Errorf("failed to get architect ivrs: %v", err)
+		return nil, diag.Errorf("failed to get architect ivrs: %v %v", err, resp)
 	}
 
 	for _, entity := range *allIvrs {
@@ -53,6 +53,7 @@ func createIvrConfig(ctx context.Context, d *schema.ResourceData, meta interface
 	ivrConfig, resp, err := ap.createArchitectIvr(ctx, *ivrBody)
 	if err != nil {
 		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create IVR config %s", *ivrBody.Name), resp)
+
 	}
 
 	d.SetId(*ivrConfig.Id)
@@ -146,6 +147,7 @@ func deleteIvrConfig(ctx context.Context, d *schema.ResourceData, meta interface
 	log.Printf("Deleting IVR config %s", name)
 	if resp, err := ap.deleteArchitectIvr(ctx, d.Id()); err != nil {
 		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete IVR config %s.", name), resp)
+
 	}
 
 	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {

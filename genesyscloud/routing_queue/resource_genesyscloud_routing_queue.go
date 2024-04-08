@@ -1,4 +1,4 @@
-package genesyscloud
+package routing_queue
 
 import (
 	"context"
@@ -23,116 +23,10 @@ import (
 	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
 )
 
-var (
-	bullseyeExpansionTypeTimeout = "TIMEOUT_SECONDS"
-
-	memberGroupResource = &schema.Resource{
-		Schema: map[string]*schema.Schema{
-			"member_group_id": {
-				Description: "ID (GUID) for Group, SkillGroup, Team",
-				Type:        schema.TypeString,
-				Required:    true,
-			},
-			"member_group_type": {
-				Description:  "The type of the member group. Accepted values: TEAM, GROUP, SKILLGROUP",
-				Type:         schema.TypeString,
-				Required:     true,
-				ValidateFunc: validation.StringInSlice([]string{"TEAM", "GROUP", "SKILLGROUP"}, false),
-			},
-		},
-	}
-
-	queueMediaSettingsResource = &schema.Resource{
-		Schema: map[string]*schema.Schema{
-			"alerting_timeout_sec": {
-				Description:  "Alerting timeout in seconds. Must be >= 7",
-				Type:         schema.TypeInt,
-				Required:     true,
-				ValidateFunc: validation.IntAtLeast(7),
-			},
-			"enable_auto_answer": {
-				Description: "Auto-Answer for digital channels(Email, Message)",
-				Type:        schema.TypeBool,
-				Optional:    true,
-				Default:     false,
-			},
-			"service_level_percentage": {
-				Description:  "The desired Service Level. A float value between 0 and 1.",
-				Type:         schema.TypeFloat,
-				Required:     true,
-				ValidateFunc: validation.FloatBetween(0, 1),
-			},
-			"service_level_duration_ms": {
-				Description:  "Service Level target in milliseconds. Must be >= 1000",
-				Type:         schema.TypeInt,
-				Required:     true,
-				ValidateFunc: validation.IntAtLeast(1000),
-			},
-		},
-	}
-
-	queueMemberResource = &schema.Resource{
-		Schema: map[string]*schema.Schema{
-			"user_id": {
-				Description: "User ID",
-				Type:        schema.TypeString,
-				Required:    true,
-			},
-			"ring_num": {
-				Description:  "Ring number between 1 and 6 for this user in the queue.",
-				Type:         schema.TypeInt,
-				Optional:     true,
-				Default:      1,
-				ValidateFunc: validation.IntBetween(1, 6),
-			},
-		},
-	}
-
-	directRoutingResource = &schema.Resource{
-		Schema: map[string]*schema.Schema{
-			"backup_queue_id": {
-				Description: "Direct Routing default backup queue id (if none supplied this queue will be used as backup).",
-				Type:        schema.TypeString,
-				Optional:    true,
-				Computed:    true,
-			},
-			"agent_wait_seconds": {
-				Description: "The queue default time a Direct Routing interaction will wait for an agent before it goes to configured backup.",
-				Type:        schema.TypeInt,
-				Optional:    true,
-				Default:     60,
-			},
-			"wait_for_agent": {
-				Description: "Boolean indicating if Direct Routing interactions should wait for the targeted agent by default.",
-				Type:        schema.TypeBool,
-				Optional:    true,
-				Default:     false,
-			},
-			"call_use_agent_address_outbound": {
-				Description: "Boolean indicating if user Direct Routing addresses should be used outbound on behalf of queue in place of Queue address for calls.",
-				Type:        schema.TypeBool,
-				Optional:    true,
-				Default:     true,
-			},
-			"email_use_agent_address_outbound": {
-				Description: "Boolean indicating if user Direct Routing addresses should be used outbound on behalf of queue in place of Queue address for emails.",
-				Type:        schema.TypeBool,
-				Optional:    true,
-				Default:     true,
-			},
-			"message_use_agent_address_outbound": {
-				Description: "Boolean indicating if user Direct Routing addresses should be used outbound on behalf of queue in place of Queue address for messages.",
-				Type:        schema.TypeBool,
-				Optional:    true,
-				Default:     true,
-			},
-		},
-	}
-)
+var bullseyeExpansionTypeTimeout = "TIMEOUT_SECONDS"
 
 func getAllRoutingQueues(_ context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
 	resources := make(resourceExporter.ResourceIDMetaMap)
@@ -171,362 +65,6 @@ func getAllRoutingQueues(_ context.Context, clientConfig *platformclientv2.Confi
 	return resources, nil
 }
 
-func RoutingQueueExporter() *resourceExporter.ResourceExporter {
-	return &resourceExporter.ResourceExporter{
-		GetResourcesFunc: provider.GetAllWithPooledClient(getAllRoutingQueues),
-		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
-			"division_id":                              {RefType: "genesyscloud_auth_division"},
-			"queue_flow_id":                            {RefType: "genesyscloud_flow"},
-			"email_in_queue_flow_id":                   {RefType: "genesyscloud_flow"},
-			"message_in_queue_flow_id":                 {RefType: "genesyscloud_flow"},
-			"whisper_prompt_id":                        {RefType: "genesyscloud_architect_user_prompt"},
-			"outbound_messaging_sms_address_id":        {},                               // Ref type not yet defined
-			"default_script_ids.*":                     {RefType: "genesyscloud_script"}, // Ref type not yet defined
-			"outbound_email_address.route_id":          {RefType: "genesyscloud_routing_email_route"},
-			"outbound_email_address.domain_id":         {RefType: "genesyscloud_routing_email_domain"},
-			"bullseye_rings.skills_to_remove":          {RefType: "genesyscloud_routing_skill"},
-			"members.user_id":                          {RefType: "genesyscloud_user"},
-			"wrapup_codes":                             {RefType: "genesyscloud_routing_wrapupcode"},
-			"skill_groups":                             {RefType: "genesyscloud_routing_skill_group"},
-			"teams":                                    {RefType: "genesyscloud_team"},
-			"groups":                                   {RefType: "genesyscloud_group"},
-			"conditional_group_routing_rules.queue_id": {RefType: "genesyscloud_routing_queue"},
-		},
-		RemoveIfMissing: map[string][]string{
-			"outbound_email_address": {"route_id"},
-			"members":                {"user_id"},
-		},
-		AllowZeroValues: []string{"bullseye_rings.expansion_timeout_seconds"},
-		CustomAttributeResolver: map[string]*resourceExporter.RefAttrCustomResolver{
-			"bullseye_rings.member_groups.member_group_id":           {ResolverFunc: resourceExporter.MemberGroupsResolver},
-			"conditional_group_routing_rules.groups.member_group_id": {ResolverFunc: resourceExporter.MemberGroupsResolver},
-		},
-	}
-}
-
-func ResourceRoutingQueue() *schema.Resource {
-	return &schema.Resource{
-		Description: "Genesys Cloud Routing Queue",
-
-		CreateContext: provider.CreateWithPooledClient(createQueue),
-		ReadContext:   provider.ReadWithPooledClient(readQueue),
-		UpdateContext: provider.UpdateWithPooledClient(updateQueue),
-		DeleteContext: provider.DeleteWithPooledClient(deleteQueue),
-		Importer: &schema.ResourceImporter{
-			StateContext: schema.ImportStatePassthroughContext,
-		},
-		SchemaVersion: 1,
-		Schema: map[string]*schema.Schema{
-			"name": {
-				Description: "Queue name.",
-				Type:        schema.TypeString,
-				Required:    true,
-			},
-			"division_id": {
-				Description: "The division to which this queue will belong. If not set, the home division will be used.",
-				Type:        schema.TypeString,
-				Optional:    true,
-				Computed:    true,
-			},
-			"description": {
-				Description: "Queue description.",
-				Type:        schema.TypeString,
-				Optional:    true,
-			},
-			"media_settings_call": {
-				Description: "Call media settings.",
-				Type:        schema.TypeList,
-				MaxItems:    1,
-				Optional:    true,
-				Computed:    true,
-				Elem:        queueMediaSettingsResource,
-			},
-			"media_settings_callback": {
-				Description: "Callback media settings.",
-				Type:        schema.TypeList,
-				MaxItems:    1,
-				Optional:    true,
-				Computed:    true,
-				Elem:        queueMediaSettingsResource,
-			},
-			"media_settings_chat": {
-				Description: "Chat media settings.",
-				Type:        schema.TypeList,
-				MaxItems:    1,
-				Optional:    true,
-				Computed:    true,
-				Elem:        queueMediaSettingsResource,
-			},
-			"media_settings_email": {
-				Description: "Email media settings.",
-				Type:        schema.TypeList,
-				MaxItems:    1,
-				Optional:    true,
-				Computed:    true,
-				Elem:        queueMediaSettingsResource,
-			},
-			"media_settings_message": {
-				Description: "Message media settings.",
-				Type:        schema.TypeList,
-				MaxItems:    1,
-				Optional:    true,
-				Computed:    true,
-				Elem:        queueMediaSettingsResource,
-			},
-			"routing_rules": {
-				Description: "The routing rules for the queue, used for routing to known or preferred agents.",
-				Type:        schema.TypeList,
-				Optional:    true,
-				MaxItems:    6,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						"operator": {
-							Description:  "Matching operator (MEETS_THRESHOLD | ANY). MEETS_THRESHOLD matches any agent with a score at or above the rule's threshold. ANY matches all specified agents, regardless of score.",
-							Type:         schema.TypeString,
-							Optional:     true,
-							Default:      "MEETS_THRESHOLD",
-							ValidateFunc: validation.StringInSlice([]string{"MEETS_THRESHOLD", "ANY"}, false),
-						},
-						"threshold": {
-							Description: "Threshold required for routing attempt (generally an agent score). Ignored for operator ANY.",
-							Type:        schema.TypeInt,
-							Optional:    true,
-						},
-						"wait_seconds": {
-							Description:  "Seconds to wait in this rule before moving to the next.",
-							Type:         schema.TypeFloat,
-							Optional:     true,
-							Default:      5,
-							ValidateFunc: validation.FloatBetween(2, 259200),
-						},
-					},
-				},
-			},
-			"bullseye_rings": {
-				Description: "The bullseye ring settings for the queue.",
-				Type:        schema.TypeList,
-				Optional:    true,
-				MaxItems:    5,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						"expansion_timeout_seconds": {
-							Description:  "Seconds to wait in this ring before moving to the next.",
-							Type:         schema.TypeFloat,
-							Required:     true,
-							ValidateFunc: validation.FloatBetween(0, 259200),
-						},
-						"skills_to_remove": {
-							Description: "Skill IDs to remove on ring exit.",
-							Type:        schema.TypeSet,
-							Optional:    true,
-							Elem:        &schema.Schema{Type: schema.TypeString},
-						},
-						"member_groups": {
-							Type:     schema.TypeSet,
-							Optional: true,
-							Elem:     memberGroupResource,
-						},
-					},
-				},
-			},
-			"conditional_group_routing_rules": {
-				Description: "The Conditional Group Routing settings for the queue.",
-				Type:        schema.TypeList,
-				Optional:    true,
-				MaxItems:    5,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						"queue_id": {
-							Type:        schema.TypeString,
-							Optional:    true,
-							Description: `The ID of the queue being evaluated for this rule. For rule 1, this is always be the current queue, so no queue id should be specified for the first rule.`,
-						},
-						"operator": {
-							Description:  "The operator that compares the actual value against the condition value. Valid values: GreaterThan, GreaterThanOrEqualTo, LessThan, LessThanOrEqualTo.",
-							Type:         schema.TypeString,
-							Required:     true,
-							ValidateFunc: validation.StringInSlice([]string{"GreaterThan", "LessThan", "GreaterThanOrEqualTo", "LessThanOrEqualTo"}, false),
-						},
-						"metric": {
-							Description: "The queue metric being evaluated. Valid values: EstimatedWaitTime, ServiceLevel",
-							Type:        schema.TypeString,
-							Optional:    true,
-							Default:     "EstimatedWaitTime",
-						},
-						"condition_value": {
-							Description:  "The limit value, beyond which a rule evaluates as true.",
-							Type:         schema.TypeFloat,
-							Required:     true,
-							ValidateFunc: validation.FloatBetween(0, 259200),
-						},
-						"wait_seconds": {
-							Description:  "The number of seconds to wait in this rule, if it evaluates as true, before evaluating the next rule. For the final rule, this is ignored, so need not be specified.",
-							Type:         schema.TypeInt,
-							Optional:     true,
-							Default:      2,
-							ValidateFunc: validation.IntBetween(0, 259200),
-						},
-						"groups": {
-							Type:        schema.TypeList,
-							Required:    true,
-							MinItems:    1,
-							Description: "The group(s) to activate if the rule evaluates as true.",
-							Elem:        memberGroupResource,
-						},
-					},
-				},
-			},
-			"acw_wrapup_prompt": {
-				Description:  "This field controls how the UI prompts the agent for a wrapup (MANDATORY | OPTIONAL | MANDATORY_TIMEOUT | MANDATORY_FORCED_TIMEOUT | AGENT_REQUESTED).",
-				Type:         schema.TypeString,
-				Optional:     true,
-				Default:      "MANDATORY_TIMEOUT",
-				ValidateFunc: validation.StringInSlice([]string{"MANDATORY", "OPTIONAL", "MANDATORY_TIMEOUT", "MANDATORY_FORCED_TIMEOUT", "AGENT_REQUESTED"}, false),
-			},
-			"acw_timeout_ms": {
-				Description:  "The amount of time the agent can stay in ACW. Only set when ACW is MANDATORY_TIMEOUT, MANDATORY_FORCED_TIMEOUT or AGENT_REQUESTED.",
-				Type:         schema.TypeInt,
-				Optional:     true,
-				Computed:     true, // Default may be set by server
-				ValidateFunc: validation.IntBetween(0, 86400000),
-			},
-			"skill_evaluation_method": {
-				Description:  "The skill evaluation method to use when routing conversations (NONE | BEST | ALL).",
-				Type:         schema.TypeString,
-				Optional:     true,
-				Default:      "ALL",
-				ValidateFunc: validation.StringInSlice([]string{"NONE", "BEST", "ALL"}, false),
-			},
-			"queue_flow_id": {
-				Description: "The in-queue flow ID to use for call conversations waiting in queue.",
-				Type:        schema.TypeString,
-				Optional:    true,
-			},
-			"email_in_queue_flow_id": {
-				Description: "The in-queue flow ID to use for email conversations waiting in queue.",
-				Type:        schema.TypeString,
-				Optional:    true,
-			},
-			"message_in_queue_flow_id": {
-				Description: "The in-queue flow ID to use for message conversations waiting in queue.",
-				Type:        schema.TypeString,
-				Optional:    true,
-			},
-			"whisper_prompt_id": {
-				Description: "The prompt ID used for whisper on the queue, if configured.",
-				Type:        schema.TypeString,
-				Optional:    true,
-			},
-			"auto_answer_only": {
-				Description: "Specifies whether the configured whisper should play for all ACD calls, or only for those which are auto-answered.",
-				Type:        schema.TypeBool,
-				Optional:    true,
-				Default:     true,
-			},
-			"enable_transcription": {
-				Description: "Indicates whether voice transcription is enabled for this queue.",
-				Type:        schema.TypeBool,
-				Optional:    true,
-				Default:     false,
-			},
-			"suppress_in_queue_call_recording": {
-				Description: "Indicates whether recording in-queue calls is suppressed for this queue.",
-				Type:        schema.TypeBool,
-				Optional:    true,
-				Default:     true,
-			},
-			"enable_manual_assignment": {
-				Description: "Indicates whether manual assignment is enabled for this queue.",
-				Type:        schema.TypeBool,
-				Optional:    true,
-				Default:     false,
-			},
-			"calling_party_name": {
-				Description: "The name to use for caller identification for outbound calls from this queue.",
-				Type:        schema.TypeString,
-				Optional:    true,
-			},
-			"calling_party_number": {
-				Description: "The phone number to use for caller identification for outbound calls from this queue.",
-				Type:        schema.TypeString,
-				Optional:    true,
-			},
-			"default_script_ids": {
-				Description:      "The default script IDs for each communication type. Communication types: (CALL | CALLBACK | CHAT | COBROWSE | EMAIL | MESSAGE | SOCIAL_EXPRESSION | VIDEO | SCREENSHARE)",
-				Type:             schema.TypeMap,
-				ValidateDiagFunc: validateMapCommTypes,
-				Optional:         true,
-				Elem:             &schema.Schema{Type: schema.TypeString},
-			},
-			"outbound_messaging_sms_address_id": {
-				Description: "The unique ID of the outbound messaging SMS address for the queue.",
-				Type:        schema.TypeString,
-				Optional:    true,
-			},
-			"outbound_email_address": {
-				Description: "The outbound email address settings for this queue.",
-				Type:        schema.TypeList,
-				MaxItems:    1,
-				Optional:    true,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						"domain_id": {
-							Description: "Unique ID of the email domain. e.g. \"test.example.com\"",
-							Type:        schema.TypeString,
-							Required:    true,
-						},
-						"route_id": {
-							Description: "Unique ID of the email route.",
-							Type:        schema.TypeString,
-							Required:    true,
-						},
-					},
-				},
-			},
-			"members": {
-				Description: "Users in the queue. If not set, this resource will not manage members. If a user is already assigned to this queue via a group, attempting to assign them using this field will cause an error to be thrown.",
-				Type:        schema.TypeSet,
-				Optional:    true,
-				Computed:    true,
-				ConfigMode:  schema.SchemaConfigModeAttr,
-				Elem:        queueMemberResource,
-			},
-			"wrapup_codes": {
-				Description: "IDs of wrapup codes assigned to this queue. If not set, this resource will not manage wrapup codes.",
-				Type:        schema.TypeSet,
-				Optional:    true,
-				Computed:    true,
-				Elem:        &schema.Schema{Type: schema.TypeString},
-			},
-			"direct_routing": {
-				Description: "Used by the System to set Direct Routing settings for a system Direct Routing queue.",
-				Type:        schema.TypeList,
-				MaxItems:    1,
-				Optional:    true,
-				Elem:        directRoutingResource,
-			},
-			"skill_groups": {
-				Description: "List of skill group ids assigned to the queue.",
-				Type:        schema.TypeSet,
-				Optional:    true,
-				Elem:        &schema.Schema{Type: schema.TypeString},
-			},
-			"groups": {
-				Description: "List of group ids assigned to the queue",
-				Type:        schema.TypeSet,
-				Optional:    true,
-				Elem:        &schema.Schema{Type: schema.TypeString},
-			},
-			"teams": {
-				Description: "List of ids assigned to the queue",
-				Type:        schema.TypeSet,
-				Optional:    true,
-				Elem:        &schema.Schema{Type: schema.TypeString},
-			},
-		},
-	}
-}
-
 func createQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
@@ -538,18 +76,12 @@ func createQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 	memberGroups := append(*skillGroups, *groups...)
 	memberGroups = append(memberGroups, *teams...)
 
-	conditionalGroupRouting, diagErr := buildSdkConditionalGroupRouting(d)
-	if diagErr != nil {
-		return diagErr
-	}
-
 	createQueue := platformclientv2.Createqueuerequest{
 		Name:                         platformclientv2.String(d.Get("name").(string)),
 		Description:                  platformclientv2.String(d.Get("description").(string)),
 		MediaSettings:                buildSdkMediaSettings(d),
 		RoutingRules:                 buildSdkRoutingRules(d),
 		Bullseye:                     buildSdkBullseyeSettings(d),
-		ConditionalGroupRouting:      conditionalGroupRouting,
 		AcwSettings:                  buildSdkAcwSettings(d),
 		SkillEvaluationMethod:        platformclientv2.String(d.Get("skill_evaluation_method").(string)),
 		QueueFlow:                    util.BuildSdkDomainEntityRef(d, "queue_flow_id"),
@@ -586,7 +118,7 @@ func createQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 
 	d.SetId(*queue.Id)
 
-	diagErr = updateQueueMembers(d, sdkConfig)
+	diagErr := updateQueueMembers(d, sdkConfig)
 	if diagErr != nil {
 		return diagErr
 	}
@@ -701,8 +233,6 @@ func readQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 		_ = d.Set("teams", flattenQueueMemberGroupsList(currentQueue, &team))
 		_ = d.Set("groups", flattenQueueMemberGroupsList(currentQueue, &group))
 
-		_ = d.Set("conditional_group_routing_rules", flattenConditionalGroupRoutingRules(currentQueue))
-
 		log.Printf("Done reading queue %s %s", d.Id(), *currentQueue.Name)
 		return cc.CheckState()
 	})
@@ -718,18 +248,12 @@ func updateQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 	memberGroups := append(*skillGroups, *groups...)
 	memberGroups = append(memberGroups, *teams...)
 
-	conditionalGroupRouting, diagErr := buildSdkConditionalGroupRouting(d)
-	if diagErr != nil {
-		return diagErr
-	}
-
 	updateQueue := platformclientv2.Queuerequest{
 		Name:                         platformclientv2.String(d.Get("name").(string)),
 		Description:                  platformclientv2.String(d.Get("description").(string)),
 		MediaSettings:                buildSdkMediaSettings(d),
 		RoutingRules:                 buildSdkRoutingRules(d),
 		Bullseye:                     buildSdkBullseyeSettings(d),
-		ConditionalGroupRouting:      conditionalGroupRouting,
 		AcwSettings:                  buildSdkAcwSettings(d),
 		SkillEvaluationMethod:        platformclientv2.String(d.Get("skill_evaluation_method").(string)),
 		QueueFlow:                    util.BuildSdkDomainEntityRef(d, "queue_flow_id"),
@@ -756,7 +280,7 @@ func updateQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		return diag.Errorf("Error updating queue %s: %s", *updateQueue.Name, err)
 	}
 
-	diagErr = util.UpdateObjectDivision(d, "QUEUE", sdkConfig)
+	diagErr := util.UpdateObjectDivision(d, "QUEUE", sdkConfig)
 	if diagErr != nil {
 		return diagErr
 	}
@@ -1067,96 +591,6 @@ func flattenBullseyeRings(sdkRings *[]platformclientv2.Ring) []interface{} {
 		}
 	}
 	return rings
-}
-
-func buildSdkConditionalGroupRouting(d *schema.ResourceData) (*platformclientv2.Conditionalgrouprouting, diag.Diagnostics) {
-	if configRules, ok := d.GetOk("conditional_group_routing_rules"); ok {
-		var sdkCGRRules []platformclientv2.Conditionalgrouproutingrule
-		for i, configRules := range configRules.([]interface{}) {
-			ruleSettings, ok := configRules.(map[string]interface{})
-			if !ok {
-				continue
-			}
-			var sdkCGRRule platformclientv2.Conditionalgrouproutingrule
-
-			if waitSeconds, ok := ruleSettings["wait_seconds"].(int); ok {
-				sdkCGRRule.WaitSeconds = &waitSeconds
-			}
-			resourcedata.BuildSDKStringValueIfNotNil(&sdkCGRRule.Operator, ruleSettings, "operator")
-			if conditionValue, ok := ruleSettings["condition_value"].(float64); ok {
-				sdkCGRRule.ConditionValue = &conditionValue
-			}
-			resourcedata.BuildSDKStringValueIfNotNil(&sdkCGRRule.Metric, ruleSettings, "metric")
-
-			if queueId, ok := ruleSettings["queue_id"].(string); ok && queueId != "" {
-				if i == 0 {
-					return nil, diag.Errorf("For rule 1, queue_id is always assumed to be the current queue, so queue id should not be specified.")
-				}
-				sdkCGRRule.Queue = &platformclientv2.Domainentityref{Id: &queueId}
-			}
-
-			if memberGroupList, ok := ruleSettings["groups"].([]interface{}); ok {
-				if len(memberGroupList) > 0 {
-					sdkMemberGroups := make([]platformclientv2.Membergroup, len(memberGroupList))
-					for i, memberGroup := range memberGroupList {
-						settingsMap, ok := memberGroup.(map[string]interface{})
-						if !ok {
-							continue
-						}
-
-						sdkMemberGroups[i] = platformclientv2.Membergroup{
-							Id:      platformclientv2.String(settingsMap["member_group_id"].(string)),
-							VarType: platformclientv2.String(settingsMap["member_group_type"].(string)),
-						}
-					}
-					sdkCGRRule.Groups = &sdkMemberGroups
-				}
-			}
-			sdkCGRRules = append(sdkCGRRules, sdkCGRRule)
-		}
-		rules := &sdkCGRRules
-		return &platformclientv2.Conditionalgrouprouting{Rules: rules}, nil
-	}
-	return nil, nil
-}
-
-func flattenConditionalGroupRoutingRules(queue *platformclientv2.Queue) []interface{} {
-	if queue.ConditionalGroupRouting == nil || len(*queue.ConditionalGroupRouting.Rules) == 0 {
-		return nil
-	}
-
-	rules := make([]interface{}, len(*queue.ConditionalGroupRouting.Rules))
-	for i, rule := range *queue.ConditionalGroupRouting.Rules {
-		ruleSettings := make(map[string]interface{})
-
-		resourcedata.SetMapValueIfNotNil(ruleSettings, "wait_seconds", rule.WaitSeconds)
-		resourcedata.SetMapValueIfNotNil(ruleSettings, "operator", rule.Operator)
-		resourcedata.SetMapValueIfNotNil(ruleSettings, "condition_value", rule.ConditionValue)
-		resourcedata.SetMapValueIfNotNil(ruleSettings, "metric", rule.Metric)
-
-		// The first rule is assumed to apply to this queue, so queue_id should be omitted if the conditional grouping routing rule
-		//is the first one being looked at.
-		if rule.Queue != nil && i > 0 {
-			ruleSettings["queue_id"] = *rule.Queue.Id
-		}
-
-		if rule.Groups != nil {
-			memberGroups := make([]interface{}, 0)
-			for _, group := range *rule.Groups {
-				memberGroupMap := make(map[string]interface{})
-
-				resourcedata.SetMapValueIfNotNil(memberGroupMap, "member_group_id", group.Id)
-				resourcedata.SetMapValueIfNotNil(memberGroupMap, "member_group_type", group.VarType)
-
-				memberGroups = append(memberGroups, memberGroupMap)
-			}
-			ruleSettings["groups"] = memberGroups
-		}
-
-		rules[i] = ruleSettings
-	}
-
-	return rules
 }
 
 func buildSdkAcwSettings(d *schema.ResourceData) *platformclientv2.Acwsettings {
@@ -1733,145 +1167,4 @@ func flattenQueueMemberGroupsList(queue *platformclientv2.Queue, groupType *stri
 	}
 
 	return nil
-}
-
-func GenerateRoutingQueueResource(
-	resourceID string,
-	name string,
-	desc string,
-	acwWrapupPrompt string,
-	acwTimeout string,
-	skillEvalMethod string,
-	autoAnswerOnly string,
-	callingPartyName string,
-	callingPartyNumber string,
-	enableTranscription string,
-	suppressInQueueCallRecording string,
-	enableManualAssignment string,
-	nestedBlocks ...string) string {
-	return fmt.Sprintf(`resource "genesyscloud_routing_queue" "%s" {
-		name = "%s"
-		description = "%s"
-		acw_wrapup_prompt = %s
-		acw_timeout_ms = %s
-		skill_evaluation_method = %s
-		auto_answer_only = %s
-		calling_party_name = %s
-		calling_party_number = %s
-		enable_transcription = %s
-        suppress_in_queue_call_recording = %s
-  		enable_manual_assignment = %s
-		%s
-	}
-	`, resourceID,
-		name,
-		desc,
-		acwWrapupPrompt,
-		acwTimeout,
-		skillEvalMethod,
-		autoAnswerOnly,
-		callingPartyName,
-		callingPartyNumber,
-		enableTranscription,
-		suppressInQueueCallRecording,
-		enableManualAssignment,
-		strings.Join(nestedBlocks, "\n"))
-}
-
-func GenerateRoutingQueueResourceBasic(resourceID string, name string, nestedBlocks ...string) string {
-	return fmt.Sprintf(`resource "genesyscloud_routing_queue" "%s" {
-		name = "%s"
-		%s
-	}
-	`, resourceID, name, strings.Join(nestedBlocks, "\n"))
-}
-
-// GenerateRoutingQueueResourceBasicWithDepends Used when testing skills group dependencies.
-func GenerateRoutingQueueResourceBasicWithDepends(resourceID string, dependsOn string, name string, nestedBlocks ...string) string {
-	return fmt.Sprintf(`resource "genesyscloud_routing_queue" "%s" {
-		depends_on = [%s]
-		name = "%s"
-		%s
-	}
-	`, resourceID, dependsOn, name, strings.Join(nestedBlocks, "\n"))
-}
-
-func GenerateMediaSettings(attrName string, alertingTimeout string, enableAutoAnswer string, slPercent string, slDurationMs string) string {
-	return fmt.Sprintf(`%s {
-		alerting_timeout_sec = %s
-		enable_auto_answer = %s
-		service_level_percentage = %s
-		service_level_duration_ms = %s
-	}
-	`, attrName, alertingTimeout, enableAutoAnswer, slPercent, slDurationMs)
-}
-
-func GenerateRoutingRules(operator string, threshold string, waitSeconds string) string {
-	return fmt.Sprintf(`routing_rules {
-		operator = "%s"
-		threshold = %s
-		wait_seconds = %s
-	}
-	`, operator, threshold, waitSeconds)
-}
-
-func GenerateDefaultScriptIDs(chat, email string) string {
-	return fmt.Sprintf(`default_script_ids = {
-		CHAT  = "%s"
-		EMAIL = "%s"
-	}`, chat, email)
-}
-
-func GenerateBullseyeSettings(expTimeout string, skillsToRemove ...string) string {
-	return fmt.Sprintf(`bullseye_rings {
-		expansion_timeout_seconds = %s
-		skills_to_remove = [%s]
-	}
-	`, expTimeout, strings.Join(skillsToRemove, ", "))
-}
-
-func GenerateConditionalGroupRoutingRules(queueId, operator, metric, conditionValue, waitSeconds string, nestedBlocks ...string) string {
-	return fmt.Sprintf(`conditional_group_routing_rules {
-		queue_id        = %s
-		operator        = "%s"
-		metric          = "%s"
-		condition_value = %s
-		wait_seconds    = %s
-		%s
-	}
-	`, queueId, operator, metric, conditionValue, waitSeconds, strings.Join(nestedBlocks, "\n"))
-}
-
-func GenerateConditionalGroupRoutingRuleGroup(groupId, groupType string) string {
-	return fmt.Sprintf(`groups {
-		member_group_id   = %s
-		member_group_type = "%s"
-	}
-	`, groupId, groupType)
-}
-
-func GenerateBullseyeSettingsWithMemberGroup(expTimeout, memberGroupId, memberGroupType string, skillsToRemove ...string) string {
-	return fmt.Sprintf(`bullseye_rings {
-		expansion_timeout_seconds = %s
-		skills_to_remove = [%s]
-		member_groups {
-			member_group_id = %s
-			member_group_type = "%s"
-		}
-	}
-	`, expTimeout, strings.Join(skillsToRemove, ", "), memberGroupId, memberGroupType)
-}
-
-func GenerateMemberBlock(userID, ringNum string) string {
-	return fmt.Sprintf(`members {
-		user_id = %s
-		ring_num = %s
-	}
-	`, userID, ringNum)
-}
-
-func GenerateQueueWrapupCodes(wrapupCodes ...string) string {
-	return fmt.Sprintf(`
-		wrapup_codes = [%s]
-	`, strings.Join(wrapupCodes, ", "))
 }

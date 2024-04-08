@@ -24,15 +24,14 @@ func getAllFileSpecificationTemplates(ctx context.Context, clientConfig *platfor
 	resources := make(resourceExporter.ResourceIDMetaMap)
 	proxy := getOutboundFilespecificationtemplateProxy(clientConfig)
 
-	fileSpecificationTemplates, err := proxy.getAllOutboundFilespecificationtemplate(ctx)
+	fileSpecificationTemplates, resp, err := proxy.getAllOutboundFilespecificationtemplate(ctx)
 	if err != nil {
-		return nil, diag.Errorf("Failed to get outbound file specification templates: %v", err)
+		return nil, diag.Errorf("Failed to get outbound file specification templates: %v %v", err, resp)
 	}
 
 	for _, fst := range *fileSpecificationTemplates {
 		resources[*fst.Id] = &resourceExporter.ResourceMeta{Name: *fst.Name}
 	}
-
 	return resources, nil
 }
 
@@ -43,13 +42,12 @@ func createOutboundFileSpecificationTemplate(ctx context.Context, d *schema.Reso
 	proxy := getOutboundFilespecificationtemplateProxy(sdkConfig)
 
 	log.Printf("Creating File Specification Template %s", *sdkFileSpecificationTemplate.Name)
-	outboundFileSpecificationTemplate, err := proxy.createOutboundFilespecificationtemplate(ctx, &sdkFileSpecificationTemplate)
+	outboundFileSpecificationTemplate, resp, err := proxy.createOutboundFilespecificationtemplate(ctx, &sdkFileSpecificationTemplate)
 	if err != nil {
-		return diag.Errorf("Failed to create File Specification Template %s: %s", *sdkFileSpecificationTemplate.Name, err)
+		return diag.Errorf("Failed to create File Specification Template %s: %s %v", *sdkFileSpecificationTemplate.Name, err, resp)
 	}
 
 	d.SetId(*outboundFileSpecificationTemplate.Id)
-
 	log.Printf("Created File Specification Template %s %s", *outboundFileSpecificationTemplate.Name, *outboundFileSpecificationTemplate.Id)
 	return readOutboundFileSpecificationTemplate(ctx, d, meta)
 }
@@ -61,9 +59,9 @@ func updateOutboundFileSpecificationTemplate(ctx context.Context, d *schema.Reso
 	proxy := getOutboundFilespecificationtemplateProxy(sdkConfig)
 
 	log.Printf("Updating File Specification Template %s", *sdkFileSpecificationTemplate.Name)
-	_, err := proxy.updateOutboundFilespecificationtemplate(ctx, d.Id(), &sdkFileSpecificationTemplate)
+	_, resp, err := proxy.updateOutboundFilespecificationtemplate(ctx, d.Id(), &sdkFileSpecificationTemplate)
 	if err != nil {
-		return diag.Errorf("Failed to update File Specification Template: %s", err)
+		return diag.Errorf("Failed to update File Specification Template: %s %v", err, resp)
 	}
 
 	log.Printf("Updated Outbound File Specification Template %s", *sdkFileSpecificationTemplate.Name)
@@ -79,7 +77,7 @@ func readOutboundFileSpecificationTemplate(ctx context.Context, d *schema.Resour
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		sdkFileSpecificationTemplate, resp, getErr := proxy.getOutboundFilespecificationtemplateById(ctx, d.Id())
 		if getErr != nil {
-			if util.IsStatus404ByInt(resp) {
+			if util.IsStatus404(resp) {
 				return retry.RetryableError(fmt.Errorf("failed to read Outbound File Specification Template %s: %s", d.Id(), getErr))
 			}
 			return retry.NonRetryableError(fmt.Errorf("failed to read Outbound File Specification Template %s: %s", d.Id(), getErr))
@@ -122,7 +120,7 @@ func deleteOutboundFileSpecificationTemplate(ctx context.Context, d *schema.Reso
 	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		_, resp, err := proxy.getOutboundFilespecificationtemplateById(ctx, d.Id())
 		if err != nil {
-			if util.IsStatus404ByInt(resp) {
+			if util.IsStatus404(resp) {
 				// File Specification Template List deleted
 				log.Printf("Deleted Outbound File Specification Template %s", d.Id())
 				return nil

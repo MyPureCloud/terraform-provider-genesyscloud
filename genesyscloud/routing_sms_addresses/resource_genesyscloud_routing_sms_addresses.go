@@ -26,9 +26,9 @@ func getAllRoutingSmsAddress(ctx context.Context, clientConfig *platformclientv2
 	resources := make(resourceExporter.ResourceIDMetaMap)
 	proxy := getRoutingSmsAddressProxy(clientConfig)
 
-	allSmsAddresses, err := proxy.getAllSmsAddresses(ctx)
+	allSmsAddresses, resp, err := proxy.getAllSmsAddresses(ctx)
 	if err != nil {
-		return nil, diag.Errorf("failed to get sms addresses: %v", err)
+		return nil, diag.Errorf("failed to get sms addresses: %v %v", err, resp)
 	}
 
 	for _, entity := range *allSmsAddresses {
@@ -40,7 +40,6 @@ func getAllRoutingSmsAddress(ctx context.Context, clientConfig *platformclientv2
 		}
 		resources[*entity.Id] = &resourceExporter.ResourceMeta{Name: name}
 	}
-
 	return resources, nil
 }
 
@@ -80,9 +79,9 @@ func createRoutingSmsAddress(ctx context.Context, d *schema.ResourceData, meta i
 	}
 
 	log.Printf("Creating Routing Sms Address %s", name)
-	routingSmsAddress, _, err := proxy.createSmsAddress(sdkSmsAddressProvision)
+	routingSmsAddress, resp, err := proxy.createSmsAddress(sdkSmsAddressProvision)
 	if err != nil {
-		return diag.Errorf("Failed to create Routing Sms Addresse %s: %s", name, err)
+		return diag.Errorf("Failed to create Routing Sms Addresse %s: %s %v", name, err, resp)
 	}
 
 	d.SetId(*routingSmsAddress.Id)
@@ -150,7 +149,6 @@ func deleteRoutingSmsAddress(ctx context.Context, d *schema.ResourceData, meta i
 			}
 			return retry.NonRetryableError(fmt.Errorf("Error deleting Routing Sms Address %s: %s", d.Id(), err))
 		}
-
 		return retry.RetryableError(fmt.Errorf("Routing Sms Address %s still exists", d.Id()))
 	})
 }

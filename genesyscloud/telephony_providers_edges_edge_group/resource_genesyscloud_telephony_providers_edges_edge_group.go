@@ -110,9 +110,9 @@ func deleteEdgeGroup(ctx context.Context, d *schema.ResourceData, meta interface
 	edgeGroupProxy := getEdgeGroupProxy(sdkConfig)
 
 	log.Printf("Deleting edge group")
-	_, err := edgeGroupProxy.deleteEdgeGroup(ctx, d.Id())
+	resp, err := edgeGroupProxy.deleteEdgeGroup(ctx, d.Id())
 	if err != nil {
-		return diag.Errorf("Failed to delete edge group: %s", err)
+		return diag.Errorf("Failed to delete edge group: %s %v", err, resp)
 	}
 
 	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
@@ -176,16 +176,15 @@ func readEdgeGroup(ctx context.Context, d *schema.ResourceData, meta interface{}
 func getAllEdgeGroups(ctx context.Context, sdkConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
 	resources := make(resourceExporter.ResourceIDMetaMap)
 	edgeGroupProxy := getEdgeGroupProxy(sdkConfig)
-	edgeGroups, err := edgeGroupProxy.getAllEdgeGroups(ctx, "", false)
+	edgeGroups, resp, err := edgeGroupProxy.getAllEdgeGroups(ctx, "", false)
 
 	if err != nil {
-		return nil, diag.Errorf("Failed to get Edge groups: %s", err)
+		return nil, diag.Errorf("Failed to get Edge groups: %s %v", err, resp)
 	}
 	if edgeGroups != nil {
 		for _, edgeGroup := range *edgeGroups {
 			resources[*edgeGroup.Id] = &resourceExporter.ResourceMeta{Name: *edgeGroup.Name}
 		}
 	}
-
 	return resources, nil
 }

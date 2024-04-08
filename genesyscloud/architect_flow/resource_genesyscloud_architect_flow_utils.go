@@ -19,11 +19,11 @@ func isForceUnlockEnabled(d *schema.ResourceData) bool {
 	return false
 }
 
-func GenerateFlowResource(resourceID, srcFile, filecontent string, force_unlock bool, substitutions ...string) string {
+func GenerateFlowResource(resourceID, srcFile, fileContent string, forceUnlock bool, substitutions ...string) string {
 	fullyQualifiedPath, _ := filepath.Abs(srcFile)
 
-	if filecontent != "" {
-		updateFile(srcFile, filecontent)
+	if fileContent != "" {
+		updateFile(srcFile, fileContent)
 	}
 
 	flowResourceStr := fmt.Sprintf(`resource "genesyscloud_flow" "%s" {
@@ -32,7 +32,7 @@ func GenerateFlowResource(resourceID, srcFile, filecontent string, force_unlock 
 		force_unlock = %v
 		%s
 	}
-	`, resourceID, strconv.Quote(srcFile), strconv.Quote(fullyQualifiedPath), force_unlock, strings.Join(substitutions, "\n"))
+	`, resourceID, strconv.Quote(srcFile), strconv.Quote(fullyQualifiedPath), forceUnlock, strings.Join(substitutions, "\n"))
 
 	return flowResourceStr
 }

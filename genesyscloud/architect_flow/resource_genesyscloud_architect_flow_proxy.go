@@ -5,16 +5,17 @@ import (
 	"fmt"
 	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
 	"log"
+	rc "terraform-provider-genesyscloud/genesyscloud/resource_cache"
 )
 
 var internalProxy *architectFlowProxy
 
 type getArchitectFunc func(context.Context, *architectFlowProxy, string) (*platformclientv2.Flow, *platformclientv2.APIResponse, error)
-type forceUnlockFlowFunc func(context.Context, *architectFlowProxy, string) error
+type forceUnlockFlowFunc func(context.Context, *architectFlowProxy, string) (*platformclientv2.APIResponse, error)
 type deleteArchitectFlowFunc func(context.Context, *architectFlowProxy, string) (*platformclientv2.APIResponse, error)
 type createArchitectFlowJobsFunc func(context.Context, *architectFlowProxy) (*platformclientv2.Registerarchitectjobresponse, *platformclientv2.APIResponse, error)
 type getArchitectFlowJobsFunc func(context.Context, *architectFlowProxy, string) (*platformclientv2.Architectjobstateresponse, *platformclientv2.APIResponse, error)
-type getAllArchitectFlowsFunc func(context.Context, *architectFlowProxy) (*[]platformclientv2.Flow, error)
+type getAllArchitectFlowsFunc func(context.Context, *architectFlowProxy) (*[]platformclientv2.Flow, *platformclientv2.APIResponse, error)
 
 type architectFlowProxy struct {
 	clientConfig *platformclientv2.Configuration
@@ -26,10 +27,13 @@ type architectFlowProxy struct {
 	deleteArchitectFlowAttr     deleteArchitectFlowFunc
 	createArchitectFlowJobsAttr createArchitectFlowJobsFunc
 	getArchitectFlowJobsAttr    getArchitectFlowJobsFunc
+
+	flowCache rc.CacheInterface[platformclientv2.Flow]
 }
 
 func newArchitectFlowProxy(clientConfig *platformclientv2.Configuration) *architectFlowProxy {
 	api := platformclientv2.NewArchitectApiWithConfig(clientConfig)
+	flowCache := rc.NewResourceCache[platformclientv2.Flow]()
 	return &architectFlowProxy{
 		clientConfig: clientConfig,
 		api:          api,
@@ -40,6 +44,7 @@ func newArchitectFlowProxy(clientConfig *platformclientv2.Configuration) *archit
 		deleteArchitectFlowAttr:     deleteArchitectFlowFn,
 		createArchitectFlowJobsAttr: createArchitectFlowJobsFn,
 		getArchitectFlowJobsAttr:    getArchitectFlowJobsFn,
+		flowCache:                   flowCache,
 	}
 }
 
@@ -54,7 +59,7 @@ func (a *architectFlowProxy) GetFlow(ctx context.Context, id string) (*platformc
 	return a.getArchitectFlowAttr(ctx, a, id)
 }
 
-func (a *architectFlowProxy) ForceUnlockFlow(ctx context.Context, id string) error {
+func (a *architectFlowProxy) ForceUnlockFlow(ctx context.Context, id string) (*platformclientv2.APIResponse, error) {
 	return a.forceUnlockFlowAttr(ctx, a, id)
 }
 
@@ -70,58 +75,64 @@ func (a *architectFlowProxy) GetFlowsDeployJob(ctx context.Context, jobId string
 	return a.getArchitectFlowJobsAttr(ctx, a, jobId)
 }
 
-func (a *architectFlowProxy) GetAllFlows(ctx context.Context) (*[]platformclientv2.Flow, error) {
+func (a *architectFlowProxy) GetAllFlows(ctx context.Context) (*[]platformclientv2.Flow, *platformclientv2.APIResponse, error) {
 	return a.getAllArchitectFlowsAttr(ctx, a)
 }
 
-func getArchitectFlowFn(ctx context.Context, p *architectFlowProxy, id string) (*platformclientv2.Flow, *platformclientv2.APIResponse, error) {
+func getArchitectFlowFn(_ context.Context, p *architectFlowProxy, id string) (*platformclientv2.Flow, *platformclientv2.APIResponse, error) {
+	flow := rc.GetCache(p.flowCache, id)
+	if flow != nil {
+		return flow, nil, nil
+	}
 	return p.api.GetFlow(id, false)
 }
 
-func forceUnlockFlowFn(ctx context.Context, p *architectFlowProxy, flowId string) error {
+func forceUnlockFlowFn(_ context.Context, p *architectFlowProxy, flowId string) (*platformclientv2.APIResponse, error) {
 	log.Printf("Attempting to perform an unlock on flow: %s", flowId)
-	_, _, err := p.api.PostFlowsActionsUnlock(flowId)
-
-	if err != nil {
-		return err
-	}
-	return nil
+	_, resp, err := p.api.PostFlowsActionsUnlock(flowId)
+	return resp, err
 }
 
-func deleteArchitectFlowFn(ctx context.Context, p *architectFlowProxy, flowId string) (*platformclientv2.APIResponse, error) {
+func deleteArchitectFlowFn(_ context.Context, p *architectFlowProxy, flowId string) (*platformclientv2.APIResponse, error) {
 	return p.api.DeleteFlow(flowId)
 }
 
-func createArchitectFlowJobsFn(ctx context.Context, p *architectFlowProxy) (*platformclientv2.Registerarchitectjobresponse, *platformclientv2.APIResponse, error) {
+func createArchitectFlowJobsFn(_ context.Context, p *architectFlowProxy) (*platformclientv2.Registerarchitectjobresponse, *platformclientv2.APIResponse, error) {
 	return p.api.PostFlowsJobs()
 }
 
-func getArchitectFlowJobsFn(ctx context.Context, p *architectFlowProxy, jobId string) (*platformclientv2.Architectjobstateresponse, *platformclientv2.APIResponse, error) {
+func getArchitectFlowJobsFn(_ context.Context, p *architectFlowProxy, jobId string) (*platformclientv2.Architectjobstateresponse, *platformclientv2.APIResponse, error) {
 	return p.api.GetFlowsJob(jobId, []string{"messages"})
 }
 
-func getAllArchitectFlowsFn(ctx context.Context, p *architectFlowProxy) (*[]platformclientv2.Flow, error) {
+func getAllArchitectFlowsFn(_ context.Context, p *architectFlowProxy) (*[]platformclientv2.Flow, *platformclientv2.APIResponse, error) {
 	const pageSize = 100
 	var totalFlows []platformclientv2.Flow
 
-	flows, _, err := p.api.GetFlows(nil, 1, pageSize, "", "", nil, "", "", "", "", "", "", "", "", false, true, "", "", nil)
+	flows, resp, err := p.api.GetFlows(nil, 1, pageSize, "", "", nil, "", "", "", "", "", "", "", "", false, true, "", "", nil)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to get page of flows: %v", err)
+		return nil, resp, fmt.Errorf("failed to get page of flows: %v", err)
+	}
+	if flows.Entities == nil || len(*flows.Entities) == 0 {
+		return &totalFlows, nil, nil
 	}
 
-	for _, flow := range *flows.Entities {
-		totalFlows = append(totalFlows, flow)
-	}
+	totalFlows = append(totalFlows, *flows.Entities...)
 
 	for pageNum := 2; pageNum <= *flows.PageCount; pageNum++ {
-		flows, _, err := p.api.GetFlows(nil, pageNum, pageSize, "", "", nil, "", "", "", "", "", "", "", "", false, true, "", "", nil)
+		flows, resp, err := p.api.GetFlows(nil, pageNum, pageSize, "", "", nil, "", "", "", "", "", "", "", "", false, true, "", "", nil)
 		if err != nil {
-			return nil, fmt.Errorf("Failed to get page %d of flows: %v", pageNum, err)
+			return nil, resp, fmt.Errorf("failed to get page %d of flows: %v", pageNum, err)
 		}
-		for _, flow := range *flows.Entities {
-			totalFlows = append(totalFlows, flow)
+		if flows.Entities == nil || len(*flows.Entities) == 0 {
+			break
 		}
+		totalFlows = append(totalFlows, *flows.Entities...)
 	}
 
-	return &totalFlows, nil
+	for _, flow := range totalFlows {
+		rc.SetCache(p.flowCache, *flow.Id, flow)
+	}
+
+	return &totalFlows, nil, nil
 }

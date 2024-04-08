@@ -28,9 +28,9 @@ func dataSourceTaskManagementWorkitemSchemaRead(ctx context.Context, d *schema.R
 	// Query for workitem schemas by name. Retry in case new schema is not yet indexed by search.
 	// As schema names are non-unique, fail in case of multiple results.
 	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
-		schemas, retryable, err := proxy.getTaskManagementWorkitemSchemasByName(ctx, name)
+		schemas, retryable, resp, err := proxy.getTaskManagementWorkitemSchemasByName(ctx, name)
 		if err != nil && !retryable {
-			return retry.NonRetryableError(fmt.Errorf("error getting workitem schema %s: %v", name, err))
+			return retry.NonRetryableError(fmt.Errorf("error getting workitem schema %s: %v %v", name, err, resp))
 		}
 
 		if retryable {

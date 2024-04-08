@@ -21,14 +21,14 @@ import (
 The resource_genesyscloud_architect_grammar.go contains all the methods that perform the core logic for a resource.
 */
 
-// getAllAuthArchitectGrammar retrieves all of the architect grammars via Terraform in the Genesys Cloud and is used for the exporter
+// getAllAuthArchitectGrammar retrieves all the architect grammars via Terraform in the Genesys Cloud and is used for the exporter
 func getAllAuthArchitectGrammar(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
 	proxy := getArchitectGrammarProxy(clientConfig)
 	resources := make(resourceExporter.ResourceIDMetaMap)
 
-	grammars, err := proxy.getAllArchitectGrammar(ctx)
+	grammars, resp, err := proxy.getAllArchitectGrammar(ctx)
 	if err != nil {
-		return nil, diag.Errorf("Failed to get grammars: %v", err)
+		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to retrieve all grammars: %s", err), resp)
 	}
 
 	for _, grammar := range *grammars {
@@ -41,7 +41,7 @@ func getAllAuthArchitectGrammar(ctx context.Context, clientConfig *platformclien
 // createArchitectGrammar is used by the architect_grammar_language resource to create a Genesys cloud architect grammar
 func createArchitectGrammar(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-	proxy := newArchitectGrammarProxy(sdkConfig)
+	proxy := getArchitectGrammarProxy(sdkConfig)
 
 	architectGrammar := platformclientv2.Grammar{
 		Name:        platformclientv2.String(d.Get("name").(string)),
@@ -50,9 +50,9 @@ func createArchitectGrammar(ctx context.Context, d *schema.ResourceData, meta in
 
 	// Create grammar
 	log.Printf("Creating Architect Grammar %s", *architectGrammar.Name)
-	grammar, err := proxy.createArchitectGrammar(ctx, &architectGrammar)
+	grammar, resp, err := proxy.createArchitectGrammar(ctx, &architectGrammar)
 	if err != nil {
-		return diag.Errorf("Failed to create grammar: %s", err)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create grammar: %s", err), resp)
 	}
 
 	d.SetId(*grammar.Id)
@@ -63,18 +63,19 @@ func createArchitectGrammar(ctx context.Context, d *schema.ResourceData, meta in
 // readArchitectGrammar is used by the architect_grammar_language resource to read an architect grammar from genesys cloud.
 func readArchitectGrammar(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-	proxy := newArchitectGrammarProxy(sdkConfig)
+	proxy := getArchitectGrammarProxy(sdkConfig)
 
 	log.Printf("Reading Architect Grammar %s", d.Id())
 
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
-		grammar, respCode, getErr := proxy.getArchitectGrammarById(ctx, d.Id())
+		grammar, resp, getErr := proxy.getArchitectGrammarById(ctx, d.Id())
 
 		if getErr != nil {
-			if util.IsStatus404ByInt(respCode) {
-				return retry.RetryableError(fmt.Errorf("Failed to read Architect Grammar %s: %s", d.Id(), getErr))
+			apiDiagErr := util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("failed to read Architect Grammar %s: %s", d.Id(), getErr), resp)
+			if util.IsStatus404(resp) {
+				return retry.RetryableError(fmt.Errorf("%v", apiDiagErr))
 			}
-			return retry.NonRetryableError(fmt.Errorf("Failed to read Architect Grammar %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(fmt.Errorf("%v", apiDiagErr))
 		}
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceArchitectGrammar())
@@ -90,7 +91,7 @@ func readArchitectGrammar(ctx context.Context, d *schema.ResourceData, meta inte
 // updateArchitectGrammar is used by the architect_grammar_language resource to update an architect grammar in Genesys Cloud
 func updateArchitectGrammar(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-	proxy := newArchitectGrammarProxy(sdkConfig)
+	proxy := getArchitectGrammarProxy(sdkConfig)
 
 	architectGrammar := platformclientv2.Grammar{
 		Name:        platformclientv2.String(d.Get("name").(string)),
@@ -99,9 +100,9 @@ func updateArchitectGrammar(ctx context.Context, d *schema.ResourceData, meta in
 
 	// Update grammar
 	log.Printf("Updating Architect Grammar %s", *architectGrammar.Name)
-	grammar, err := proxy.updateArchitectGrammar(ctx, d.Id(), &architectGrammar)
+	grammar, resp, err := proxy.updateArchitectGrammar(ctx, d.Id(), &architectGrammar)
 	if err != nil {
-		return diag.Errorf("Failed to update grammar: %s", err)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update grammar: %s", err), resp)
 	}
 
 	log.Printf("Updated Architect Grammar %s", *grammar.Id)
@@ -111,26 +112,26 @@ func updateArchitectGrammar(ctx context.Context, d *schema.ResourceData, meta in
 // deleteArchitectGrammar is used by the architect_grammar_language resource to delete an architect grammar from Genesys cloud.
 func deleteArchitectGrammar(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-	proxy := newArchitectGrammarProxy(sdkConfig)
+	proxy := getArchitectGrammarProxy(sdkConfig)
 
-	_, err := proxy.deleteArchitectGrammar(ctx, d.Id())
+	resp, err := proxy.deleteArchitectGrammar(ctx, d.Id())
 	if err != nil {
-		return diag.Errorf("Failed to delete grammar %s: %s", d.Id(), err)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete grammar %s: %s", d.Id(), err), resp)
 	}
 
 	return util.WithRetries(ctx, 180*time.Second, func() *retry.RetryError {
-		_, respCode, err := proxy.getArchitectGrammarById(ctx, d.Id())
+		_, resp, err := proxy.getArchitectGrammarById(ctx, d.Id())
 
 		if err != nil {
-			if util.IsStatus404ByInt(respCode) {
+			if util.IsStatus404(resp) {
 				log.Printf("Deleted Grammar %s", d.Id())
 				return nil
 			}
-
-			return retry.NonRetryableError(fmt.Errorf("Error deleting grammar %s: %s", d.Id(), err))
+			apiDiagErr := util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Error deleting grammar %s: %s", d.Id(), err), resp)
+			return retry.NonRetryableError(fmt.Errorf("%v", apiDiagErr))
 		}
 
-		return retry.RetryableError(fmt.Errorf("Grammar %s still exists", d.Id()))
+		return retry.RetryableError(fmt.Errorf("grammar %s still exists", d.Id()))
 	})
 }
 

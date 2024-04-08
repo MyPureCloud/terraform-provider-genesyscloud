@@ -44,16 +44,15 @@ func getAllIntegrations(ctx context.Context, clientConfig *platformclientv2.Conf
 	ip := getIntegrationsProxy(clientConfig)
 	resources := make(resourceExporter.ResourceIDMetaMap)
 
-	integrations, err := ip.getAllIntegrations(ctx)
+	integrations, resp, err := ip.getAllIntegrations(ctx)
 	if err != nil {
-		return nil, diag.Errorf("Failed to get all integrations: %v", err)
+		return nil, diag.Errorf("Failed to get all integrations: %v %v", err, resp)
 	}
 
 	for _, integration := range *integrations {
 		log.Printf("Dealing with integration id : %s", *integration.Id)
 		resources[*integration.Id] = &resourceExporter.ResourceMeta{Name: *integration.Name}
 	}
-
 	return resources, nil
 }
 
@@ -70,9 +69,9 @@ func createIntegration(ctx context.Context, d *schema.ResourceData, meta interfa
 			Id: &integrationType,
 		},
 	}
-	integration, err := ip.createIntegration(ctx, createIntegrationReq)
+	integration, resp, err := ip.createIntegration(ctx, createIntegrationReq)
 	if err != nil {
-		return diag.Errorf("Failed to create integration: %s", err)
+		return diag.Errorf("Failed to create integration: %s %v", err, resp)
 	}
 
 	d.SetId(*integration.Id)
@@ -86,15 +85,13 @@ func createIntegration(ctx context.Context, d *schema.ResourceData, meta interfa
 	// Set attributes that can only be modified in a patch
 	if d.HasChange("intended_state") {
 		log.Printf("Updating additional attributes for integration %s", name)
-		_, patchErr := ip.updateIntegration(ctx, d.Id(), &platformclientv2.Integration{
+		_, resp, patchErr := ip.updateIntegration(ctx, d.Id(), &platformclientv2.Integration{
 			IntendedState: &intendedState,
 		})
-
 		if patchErr != nil {
-			return diag.Errorf("Failed to update integration %s: %v", name, patchErr)
+			return diag.Errorf("Failed to update integration %s: %v %v", name, patchErr, resp)
 		}
 	}
-
 	log.Printf("Created integration %s %s", name, *integration.Id)
 	return readIntegration(ctx, d, meta)
 }
@@ -119,16 +116,14 @@ func readIntegration(ctx context.Context, d *schema.ResourceData, meta interface
 		resourcedata.SetNillableValue(d, "intended_state", currentIntegration.IntendedState)
 
 		// Use returned ID to get current config, which contains complete configuration
-		integrationConfig, _, err := ip.getIntegrationConfig(ctx, *currentIntegration.Id)
+		integrationConfig, resp, err := ip.getIntegrationConfig(ctx, *currentIntegration.Id)
 
 		if err != nil {
-			return retry.NonRetryableError(fmt.Errorf("failed to read config of integration %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(fmt.Errorf("failed to read config of integration %s: %s %v", d.Id(), getErr, resp))
 		}
 
 		d.Set("config", flattenIntegrationConfig(integrationConfig))
-
 		log.Printf("Read integration %s %s", d.Id(), *currentIntegration.Name)
-
 		return nil
 	})
 }
@@ -136,7 +131,6 @@ func readIntegration(ctx context.Context, d *schema.ResourceData, meta interface
 // updateIntegration is used by the integration resource to update an integration in Genesys Cloud
 func updateIntegration(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	intendedState := d.Get("intended_state").(string)
-
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	ip := getIntegrationsProxy(sdkConfig)
 
@@ -147,14 +141,13 @@ func updateIntegration(ctx context.Context, d *schema.ResourceData, meta interfa
 
 	if d.HasChange("intended_state") {
 		log.Printf("Updating integration %s", name)
-		_, patchErr := ip.updateIntegration(ctx, d.Id(), &platformclientv2.Integration{
+		_, resp, patchErr := ip.updateIntegration(ctx, d.Id(), &platformclientv2.Integration{
 			IntendedState: &intendedState,
 		})
 		if patchErr != nil {
-			return diag.Errorf("Failed to update integration %s: %s", name, patchErr)
+			return diag.Errorf("Failed to update integration %s: %s %v", name, patchErr, resp)
 		}
 	}
-
 	log.Printf("Updated integration %s %s", name, d.Id())
 	return readIntegration(ctx, d, meta)
 }
@@ -164,9 +157,9 @@ func deleteIntegration(ctx context.Context, d *schema.ResourceData, meta interfa
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	ip := getIntegrationsProxy(sdkConfig)
 
-	_, err := ip.deleteIntegration(ctx, d.Id())
+	resp, err := ip.deleteIntegration(ctx, d.Id())
 	if err != nil {
-		return diag.Errorf("Failed to delete the integration %s: %s", d.Id(), err)
+		return diag.Errorf("Failed to delete the integration %s: %s %v", d.Id(), err, resp)
 	}
 
 	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {

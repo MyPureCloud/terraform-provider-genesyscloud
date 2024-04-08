@@ -43,10 +43,10 @@ helper methods and types are created to invoke the APIs with Genesys Cloud.
 var internalProxy *integrationActionsProxy
 
 // Type definitions for each func on our proxy so we can easily mock them out later
-type getAllIntegrationActionsFunc func(ctx context.Context, p *integrationActionsProxy) (*[]platformclientv2.Action, error)
+type getAllIntegrationActionsFunc func(ctx context.Context, p *integrationActionsProxy) (*[]platformclientv2.Action, *platformclientv2.APIResponse, error)
 type createIntegrationActionFunc func(ctx context.Context, p *integrationActionsProxy, action *IntegrationAction) (*IntegrationAction, *platformclientv2.APIResponse, error)
 type getIntegrationActionByIdFunc func(ctx context.Context, p *integrationActionsProxy, actionId string) (*IntegrationAction, *platformclientv2.APIResponse, error)
-type getIntegrationActionsByNameFunc func(ctx context.Context, p *integrationActionsProxy, actionName string) (actions *[]platformclientv2.Action, err error)
+type getIntegrationActionsByNameFunc func(ctx context.Context, p *integrationActionsProxy, actionName string) (actions *[]platformclientv2.Action, response *platformclientv2.APIResponse, err error)
 type updateIntegrationActionFunc func(ctx context.Context, p *integrationActionsProxy, actionId string, updateAction *platformclientv2.Updateactioninput) (*platformclientv2.Action, *platformclientv2.APIResponse, error)
 type deleteIntegrationActionFunc func(ctx context.Context, p *integrationActionsProxy, actionId string) (*platformclientv2.APIResponse, error)
 type getIntegrationActionTemplateFunc func(ctx context.Context, p *integrationActionsProxy, actionId string, fileName string) (*string, *platformclientv2.APIResponse, error)
@@ -86,12 +86,11 @@ func getIntegrationActionsProxy(clientConfig *platformclientv2.Configuration) *i
 	if internalProxy == nil {
 		internalProxy = newIntegrationActionsProxy(clientConfig)
 	}
-
 	return internalProxy
 }
 
 // getAllIntegrationActions retrieves all Genesys Cloud Integration Actions
-func (p *integrationActionsProxy) getAllIntegrationActions(ctx context.Context) (*[]platformclientv2.Action, error) {
+func (p *integrationActionsProxy) getAllIntegrationActions(ctx context.Context) (*[]platformclientv2.Action, *platformclientv2.APIResponse, error) {
 	return p.getAllIntegrationActionsAttr(ctx, p)
 }
 
@@ -106,7 +105,7 @@ func (p *integrationActionsProxy) getIntegrationActionById(ctx context.Context, 
 }
 
 // getIntegrationActionsByName gets a Genesys Cloud Integration Action by name
-func (p *integrationActionsProxy) getIntegrationActionsByName(ctx context.Context, actionName string) (actions *[]platformclientv2.Action, err error) {
+func (p *integrationActionsProxy) getIntegrationActionsByName(ctx context.Context, actionName string) (actions *[]platformclientv2.Action, response *platformclientv2.APIResponse, err error) {
 	return p.getIntegrationActionsByNameAttr(ctx, p, actionName)
 }
 
@@ -126,24 +125,22 @@ func (p *integrationActionsProxy) getIntegrationActionTemplate(ctx context.Conte
 }
 
 // getAllIntegrationActionsFn is the implementation for retrieving all integration actions in Genesys Cloud
-func getAllIntegrationActionsFn(ctx context.Context, p *integrationActionsProxy) (*[]platformclientv2.Action, error) {
+func getAllIntegrationActionsFn(ctx context.Context, p *integrationActionsProxy) (*[]platformclientv2.Action, *platformclientv2.APIResponse, error) {
 	actions := []platformclientv2.Action{}
-
+	var resp *platformclientv2.APIResponse
 	for pageNum := 1; ; pageNum++ {
 		const pageSize = 100
-		actionsList, _, err := p.integrationsApi.GetIntegrationsActions(pageSize, pageNum, "", "", "", "", "", "", "", "", "")
+		actionsList, response, err := p.integrationsApi.GetIntegrationsActions(pageSize, pageNum, "", "", "", "", "", "", "", "", "")
 		if err != nil {
-			return nil, err
+			return nil, resp, err
 		}
-
+		resp = response
 		if actionsList.Entities == nil || len(*actionsList.Entities) == 0 {
 			break
 		}
-
 		actions = append(actions, *actionsList.Entities...)
 	}
-
-	return &actions, nil
+	return &actions, resp, nil
 }
 
 // createIntegrationActionFn is the implementation for creating an integration action in Genesys Cloud
@@ -152,7 +149,6 @@ func createIntegrationActionFn(ctx context.Context, p *integrationActionsProxy, 
 	if err != nil {
 		return nil, resp, err
 	}
-
 	return action, resp, nil
 }
 
@@ -162,21 +158,20 @@ func getIntegrationActionByIdFn(ctx context.Context, p *integrationActionsProxy,
 	if err != nil {
 		return nil, resp, err
 	}
-
 	return action, resp, nil
 }
 
 // getIntegrationActionsByNameFn is the implementation for getting an integration action by name in Genesys Cloud
-func getIntegrationActionsByNameFn(ctx context.Context, p *integrationActionsProxy, actionName string) (*[]platformclientv2.Action, error) {
+func getIntegrationActionsByNameFn(ctx context.Context, p *integrationActionsProxy, actionName string) (*[]platformclientv2.Action, *platformclientv2.APIResponse, error) {
 	var actions []platformclientv2.Action
-
+	var resp *platformclientv2.APIResponse
 	for pageNum := 1; ; pageNum++ {
 		const pageSize = 100
-		integrationAction, _, err := p.integrationsApi.GetIntegrationsActions(pageSize, pageNum, "", "", "", "", "", actionName, "", "", "")
+		integrationAction, response, err := p.integrationsApi.GetIntegrationsActions(pageSize, pageNum, "", "", "", "", "", actionName, "", "", "")
 		if err != nil {
-			return nil, err
+			return nil, response, err
 		}
-
+		resp = response
 		if integrationAction.Entities == nil || len(*integrationAction.Entities) == 0 {
 			break
 		}
@@ -187,8 +182,7 @@ func getIntegrationActionsByNameFn(ctx context.Context, p *integrationActionsPro
 			}
 		}
 	}
-
-	return &actions, nil
+	return &actions, resp, nil
 }
 
 // updateIntegrationActionFn is the implementation for updating an integration action in Genesys Cloud
@@ -197,7 +191,6 @@ func updateIntegrationActionFn(ctx context.Context, p *integrationActionsProxy, 
 	if err != nil {
 		return nil, resp, err
 	}
-
 	return action, resp, nil
 }
 
@@ -207,7 +200,6 @@ func deleteIntegrationActionFn(ctx context.Context, p *integrationActionsProxy, 
 	if err != nil {
 		return resp, err
 	}
-
 	return resp, nil
 }
 

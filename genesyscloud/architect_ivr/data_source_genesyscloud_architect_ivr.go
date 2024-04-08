@@ -20,9 +20,9 @@ func dataSourceIvrRead(ctx context.Context, d *schema.ResourceData, m interface{
 	name := d.Get("name").(string)
 	// Query ivr by name. Retry in case search has not yet indexed the ivr.
 	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
-		id, retryable, err := ap.getArchitectIvrIdByName(ctx, name)
+		id, retryable, resp, err := ap.getArchitectIvrIdByName(ctx, name)
 		if err != nil && !retryable {
-			return retry.NonRetryableError(fmt.Errorf("error requesting IVR %s: %s", name, err))
+			return retry.NonRetryableError(fmt.Errorf("error requesting IVR %s: %s %v", name, err, resp))
 		}
 		if retryable {
 			return retry.RetryableError(err)

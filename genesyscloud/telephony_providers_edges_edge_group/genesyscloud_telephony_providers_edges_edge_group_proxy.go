@@ -14,8 +14,8 @@ type getEdgeGroupByIdFunc func(ctx context.Context, p *edgeGroupProxy, edgeGroup
 type deleteEdgeGroupFunc func(ctx context.Context, p *edgeGroupProxy, edgeGroupId string) (*platformclientv2.APIResponse, error)
 type updateEdgeGroupFunc func(ctx context.Context, p *edgeGroupProxy, edgeGroupId string, body platformclientv2.Edgegroup) (*platformclientv2.Edgegroup, *platformclientv2.APIResponse, error)
 type createEdgeGroupFunc func(ctx context.Context, p *edgeGroupProxy, body platformclientv2.Edgegroup) (*platformclientv2.Edgegroup, *platformclientv2.APIResponse, error)
-type getAllEdgeGroupsFunc func(ctx context.Context, p *edgeGroupProxy, edgeGroupName string, managed bool) (*[]platformclientv2.Edgegroup, error)
-type getEdgeGroupByNameFunc func(ctx context.Context, p *edgeGroupProxy, edgeGroupName string, managed bool) (string, bool, error)
+type getAllEdgeGroupsFunc func(ctx context.Context, p *edgeGroupProxy, edgeGroupName string, managed bool) (*[]platformclientv2.Edgegroup, *platformclientv2.APIResponse, error)
+type getEdgeGroupByNameFunc func(ctx context.Context, p *edgeGroupProxy, edgeGroupName string, managed bool) (string, bool, *platformclientv2.APIResponse, error)
 
 type edgeGroupProxy struct {
 	clientConfig *platformclientv2.Configuration
@@ -68,29 +68,28 @@ func (p *edgeGroupProxy) createEdgeGroup(ctx context.Context, body platformclien
 	return p.createEdgeGroupAttr(ctx, p, body)
 }
 
-func (p *edgeGroupProxy) getAllEdgeGroups(ctx context.Context, edgeGroupName string, managed bool) (*[]platformclientv2.Edgegroup, error) {
+func (p *edgeGroupProxy) getAllEdgeGroups(ctx context.Context, edgeGroupName string, managed bool) (*[]platformclientv2.Edgegroup, *platformclientv2.APIResponse, error) {
 	return p.getAllEdgeGroupsAttr(ctx, p, edgeGroupName, managed)
 }
 
-func (p *edgeGroupProxy) getEdgeGroupByName(ctx context.Context, edgeGroupName string, managed bool) (string, bool, error) {
+func (p *edgeGroupProxy) getEdgeGroupByName(ctx context.Context, edgeGroupName string, managed bool) (string, bool, *platformclientv2.APIResponse, error) {
 	return p.getEdgeGroupByNameAttr(ctx, p, edgeGroupName, managed)
 }
 
-func getEdgeGroupByNameFn(ctx context.Context, p *edgeGroupProxy, edgeGroupName string, managed bool) (string, bool, error) {
+func getEdgeGroupByNameFn(ctx context.Context, p *edgeGroupProxy, edgeGroupName string, managed bool) (string, bool, *platformclientv2.APIResponse, error) {
 	var targetEdgeGroup platformclientv2.Edgegroup
-	edgeGroups, err := getAllEdgeGroupsFn(ctx, p, edgeGroupName, managed)
+	edgeGroups, resp, err := getAllEdgeGroupsFn(ctx, p, edgeGroupName, managed)
 	if err != nil {
-		return "", true, fmt.Errorf("Error searching Edge Group By Name %s: %s", edgeGroupName, err)
+		return "", true, resp, fmt.Errorf("Error searching Edge Group By Name %s: %s", edgeGroupName, err)
 	}
 	for _, edgeGroup := range *edgeGroups {
 		if *edgeGroup.Name == edgeGroupName {
 			log.Printf("Retrieved Edge Group id %s by name %s", *edgeGroup.Id, edgeGroupName)
 			targetEdgeGroup = edgeGroup
-			return *targetEdgeGroup.Id, false, nil
+			return *targetEdgeGroup.Id, false, resp, nil
 		}
 	}
-	return "", true, fmt.Errorf("Unable to find EdgeGroup with name %s", edgeGroupName)
-
+	return "", true, resp, fmt.Errorf("Unable to find EdgeGroup with name %s", edgeGroupName)
 }
 
 func getEdgeGroupByIdFn(ctx context.Context, p *edgeGroupProxy, edgeGroupId string) (*platformclientv2.Edgegroup, *platformclientv2.APIResponse, error) {
@@ -122,14 +121,14 @@ func createEdgeGroupFn(ctx context.Context, p *edgeGroupProxy, body platformclie
 	return edgeGroup, resp, nil
 }
 
-func getAllEdgeGroupsFn(ctx context.Context, p *edgeGroupProxy, edgeGroupName string, managed bool) (*[]platformclientv2.Edgegroup, error) {
+func getAllEdgeGroupsFn(ctx context.Context, p *edgeGroupProxy, edgeGroupName string, managed bool) (*[]platformclientv2.Edgegroup, *platformclientv2.APIResponse, error) {
 	const pageSize = 100
 	var allEdgeGroups []platformclientv2.Edgegroup
 	var pageNum = 1
 
-	edgeGroups, _, err := p.edgesApi.GetTelephonyProvidersEdgesEdgegroups(pageSize, pageNum, edgeGroupName, "", managed)
+	edgeGroups, resp, err := p.edgesApi.GetTelephonyProvidersEdgesEdgegroups(pageSize, pageNum, edgeGroupName, "", managed)
 	if err != nil {
-		return nil, err
+		return nil, resp, err
 	}
 	if edgeGroups.Entities != nil && len(*edgeGroups.Entities) > 0 {
 		for _, edgeGroup := range *edgeGroups.Entities {
@@ -140,9 +139,9 @@ func getAllEdgeGroupsFn(ctx context.Context, p *edgeGroupProxy, edgeGroupName st
 	}
 
 	for pageNum := 2; pageNum <= *edgeGroups.PageCount; pageNum++ {
-		edgeGroups, _, err := p.edgesApi.GetTelephonyProvidersEdgesEdgegroups(pageSize, pageNum, edgeGroupName, "", managed)
+		edgeGroups, resp, err := p.edgesApi.GetTelephonyProvidersEdgesEdgegroups(pageSize, pageNum, edgeGroupName, "", managed)
 		if err != nil {
-			return nil, err
+			return nil, resp, err
 		}
 		if edgeGroups.Entities == nil || len(*edgeGroups.Entities) == 0 {
 			break
@@ -153,5 +152,5 @@ func getAllEdgeGroupsFn(ctx context.Context, p *edgeGroupProxy, edgeGroupName st
 			}
 		}
 	}
-	return &allEdgeGroups, nil
+	return &allEdgeGroups, resp, nil
 }

@@ -16,8 +16,8 @@ var internalProxy *architectDatatableRowProxy
 
 // Type definitions for each func on our proxy so we can easily mock them out later
 type getArchitectDatatableFunc func(ctx context.Context, p *architectDatatableRowProxy, datatableId string, expanded string) (*Datatable, *platformclientv2.APIResponse, error)
-type getAllArchitectDatatableFunc func(ctx context.Context, p *architectDatatableRowProxy) (*[]platformclientv2.Datatable, error)
-type getAllArchitectDatatableRowsFunc func(ctx context.Context, p *architectDatatableRowProxy, tableId string) (*[]map[string]interface{}, error)
+type getAllArchitectDatatableFunc func(ctx context.Context, p *architectDatatableRowProxy) (*[]platformclientv2.Datatable, *platformclientv2.APIResponse, error)
+type getAllArchitectDatatableRowsFunc func(ctx context.Context, p *architectDatatableRowProxy, tableId string) (*[]map[string]interface{}, *platformclientv2.APIResponse, error)
 type getArchitectDatatableRowFunc func(ctx context.Context, p *architectDatatableRowProxy, tableId string, key string) (*map[string]interface{}, *platformclientv2.APIResponse, error)
 type createArchitectDatatableRowFunc func(ctx context.Context, p *architectDatatableRowProxy, tableId string, row *map[string]interface{}) (*map[string]interface{}, *platformclientv2.APIResponse, error)
 type updateArchitectDatatableRowFunc func(ctx context.Context, p *architectDatatableRowProxy, tableId string, key string, row *map[string]interface{}) (*map[string]interface{}, *platformclientv2.APIResponse, error)
@@ -60,7 +60,6 @@ func getArchitectDatatableRowProxy(clientConfig *platformclientv2.Configuration)
 	if internalProxy == nil {
 		internalProxy = newArchitectDatatableRowProxy(clientConfig)
 	}
-
 	return internalProxy
 }
 
@@ -68,11 +67,11 @@ func (p *architectDatatableRowProxy) getArchitectDatatable(ctx context.Context, 
 	return p.getArchitectDatatableAttr(ctx, p, id, expanded)
 }
 
-func (p *architectDatatableRowProxy) getAllArchitectDatatable(ctx context.Context) (*[]platformclientv2.Datatable, error) {
+func (p *architectDatatableRowProxy) getAllArchitectDatatable(ctx context.Context) (*[]platformclientv2.Datatable, *platformclientv2.APIResponse, error) {
 	return p.getAllArchitectDatatableAttr(ctx, p)
 }
 
-func (p *architectDatatableRowProxy) getAllArchitectDatatableRows(ctx context.Context, tableId string) (*[]map[string]interface{}, error) {
+func (p *architectDatatableRowProxy) getAllArchitectDatatableRows(ctx context.Context, tableId string) (*[]map[string]interface{}, *platformclientv2.APIResponse, error) {
 	return p.getAllArchitectDatatableRowsAttr(ctx, p, tableId)
 }
 
@@ -92,17 +91,17 @@ func (p *architectDatatableRowProxy) deleteArchitectDatatableRow(ctx context.Con
 	return p.deleteArchitectDatatableRowAttr(ctx, p, tableId, rowId)
 }
 
-func getAllArchitectDatatableFn(ctx context.Context, p *architectDatatableRowProxy) (*[]platformclientv2.Datatable, error) {
+func getAllArchitectDatatableFn(_ context.Context, p *architectDatatableRowProxy) (*[]platformclientv2.Datatable, *platformclientv2.APIResponse, error) {
 	var totalRecords []platformclientv2.Datatable
 
 	const pageSize = 100
-	tables, _, getErr := p.architectApi.GetFlowsDatatables("", 1, pageSize, "", "", nil, "")
+	tables, apiResponse, getErr := p.architectApi.GetFlowsDatatables("", 1, pageSize, "", "", nil, "")
 	if getErr != nil {
-		return &totalRecords, getErr
+		return &totalRecords, apiResponse, getErr
 	}
 
 	if tables.Entities == nil || len(*tables.Entities) == 0 {
-		return &totalRecords, nil
+		return &totalRecords, apiResponse, nil
 	}
 
 	for _, table := range *tables.Entities {
@@ -111,9 +110,9 @@ func getAllArchitectDatatableFn(ctx context.Context, p *architectDatatableRowPro
 	}
 
 	for pageNum := 2; pageNum <= *tables.PageCount; pageNum++ {
-		tables, _, getErr := p.architectApi.GetFlowsDatatables("", pageNum, pageSize, "", "", nil, "")
+		tables, apiResponse, getErr := p.architectApi.GetFlowsDatatables("", pageNum, pageSize, "", "", nil, "")
 		if getErr != nil {
-			return &totalRecords, getErr
+			return &totalRecords, apiResponse, getErr
 		}
 
 		if tables.Entities == nil || len(*tables.Entities) == 0 {
@@ -125,8 +124,7 @@ func getAllArchitectDatatableFn(ctx context.Context, p *architectDatatableRowPro
 			rc.SetCache(p.dataTableCache, *table.Id, *ConvertDatatable(table))
 		}
 	}
-
-	return &totalRecords, nil
+	return &totalRecords, apiResponse, nil
 }
 
 func ConvertDatatable(master platformclientv2.Datatable) *Datatable {
@@ -139,7 +137,7 @@ func ConvertDatatable(master platformclientv2.Datatable) *Datatable {
 	return &datatable
 }
 
-func getArchitectDatatableFn(ctx context.Context, p *architectDatatableRowProxy, datatableId string, expanded string) (*Datatable, *platformclientv2.APIResponse, error) {
+func getArchitectDatatableFn(_ context.Context, p *architectDatatableRowProxy, datatableId string, expanded string) (*Datatable, *platformclientv2.APIResponse, error) {
 
 	eg := rc.GetCache(p.dataTableCache, datatableId)
 	if eg != nil {
@@ -180,17 +178,17 @@ func getArchitectDatatableFn(ctx context.Context, p *architectDatatableRowProxy,
 	return successPayload, response, err
 }
 
-func getAllArchitectDatatableRowsFn(ctx context.Context, p *architectDatatableRowProxy, tableId string) (*[]map[string]interface{}, error) {
+func getAllArchitectDatatableRowsFn(_ context.Context, p *architectDatatableRowProxy, tableId string) (*[]map[string]interface{}, *platformclientv2.APIResponse, error) {
 	var resources []map[string]interface{}
 	const pageSize = 100
 
-	rows, _, getErr := p.architectApi.GetFlowsDatatableRows(tableId, 1, pageSize, false, "")
+	rows, apiResponse, getErr := p.architectApi.GetFlowsDatatableRows(tableId, 1, pageSize, false, "")
 	if getErr != nil {
-		return nil, getErr
+		return nil, apiResponse, getErr
 	}
 
 	if rows.Entities == nil || len(*rows.Entities) == 0 {
-		return &resources, nil
+		return &resources, apiResponse, nil
 	}
 
 	for _, row := range *rows.Entities {
@@ -202,9 +200,9 @@ func getAllArchitectDatatableRowsFn(ctx context.Context, p *architectDatatableRo
 
 	for pageNum := 2; pageNum <= *rows.PageCount; pageNum++ {
 
-		rows, _, getErr := p.architectApi.GetFlowsDatatableRows(tableId, pageNum, pageSize, false, "")
+		rows, apiResponse, getErr := p.architectApi.GetFlowsDatatableRows(tableId, pageNum, pageSize, false, "")
 		if getErr != nil {
-			return nil, getErr
+			return nil, apiResponse, getErr
 		}
 
 		if rows.Entities == nil || len(*rows.Entities) == 0 {
@@ -218,11 +216,10 @@ func getAllArchitectDatatableRowsFn(ctx context.Context, p *architectDatatableRo
 			}
 		}
 	}
-
-	return &resources, nil
+	return &resources, apiResponse, nil
 }
 
-func getArchitectDataTableRowFn(ctx context.Context, p *architectDatatableRowProxy, tableId string, key string) (*map[string]interface{}, *platformclientv2.APIResponse, error) {
+func getArchitectDataTableRowFn(_ context.Context, p *architectDatatableRowProxy, tableId string, key string) (*map[string]interface{}, *platformclientv2.APIResponse, error) {
 	eg := rc.GetCache(p.dataTableRowCache, tableId+"_"+key)
 	if eg != nil {
 		return eg, nil, nil
@@ -230,14 +227,14 @@ func getArchitectDataTableRowFn(ctx context.Context, p *architectDatatableRowPro
 	return p.architectApi.GetFlowsDatatableRow(tableId, key, false)
 }
 
-func createArchitectDatatableRowFn(ctx context.Context, p *architectDatatableRowProxy, tableId string, row *map[string]interface{}) (*map[string]interface{}, *platformclientv2.APIResponse, error) {
+func createArchitectDatatableRowFn(_ context.Context, p *architectDatatableRowProxy, tableId string, row *map[string]interface{}) (*map[string]interface{}, *platformclientv2.APIResponse, error) {
 	return p.architectApi.PostFlowsDatatableRows(tableId, *row)
 }
 
-func updateArchitectDatatableRowFn(ctx context.Context, p *architectDatatableRowProxy, tableId string, key string, row *map[string]interface{}) (*map[string]interface{}, *platformclientv2.APIResponse, error) {
+func updateArchitectDatatableRowFn(_ context.Context, p *architectDatatableRowProxy, tableId string, key string, row *map[string]interface{}) (*map[string]interface{}, *platformclientv2.APIResponse, error) {
 	return p.architectApi.PutFlowsDatatableRow(tableId, key, *row)
 }
 
-func deleteArchitectDatatableRowFn(ctx context.Context, p *architectDatatableRowProxy, tableId string, rowId string) (*platformclientv2.APIResponse, error) {
+func deleteArchitectDatatableRowFn(_ context.Context, p *architectDatatableRowProxy, tableId string, rowId string) (*platformclientv2.APIResponse, error) {
 	return p.architectApi.DeleteFlowsDatatableRow(tableId, rowId)
 }

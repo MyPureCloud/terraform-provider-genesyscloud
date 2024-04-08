@@ -39,9 +39,9 @@ func buildEvaluationAssignments(evaluations []interface{}, pp *policyProxy, ctx 
 
 		// if evaluation form id is present, get the context id and build the evaluation form
 		if evaluationFormId != "" {
-			form, err := pp.getFormsEvaluation(ctx, evaluationFormId)
+			form, resp, err := pp.getFormsEvaluation(ctx, evaluationFormId)
 			if err != nil {
-				log.Fatalf("failed to read evaluation form %s: %s", evaluationFormId, err)
+				log.Fatalf("failed to read evaluation form %s: %s %v", evaluationFormId, err, resp)
 			} else {
 				evaluationFormContextId := form.ContextId
 				assignment.EvaluationForm = &platformclientv2.Evaluationform{Id: &evaluationFormId, ContextId: evaluationFormContextId}
@@ -52,7 +52,6 @@ func buildEvaluationAssignments(evaluations []interface{}, pp *policyProxy, ctx 
 		}
 		assignEvaluations = append(assignEvaluations, assignment)
 	}
-
 	return &assignEvaluations
 }
 
@@ -68,9 +67,9 @@ func flattenEvaluationAssignments(assignments *[]platformclientv2.Evaluationassi
 		// if form is present in the response, assign the most recent unpublished version id to align with evaluation form resource behavior for export purposes.
 		if assignment.EvaluationForm != nil {
 			formId := *assignment.EvaluationForm.Id
-			formVersionId, err := pp.getEvaluationFormRecentVerId(ctx, formId)
+			formVersionId, resp, err := pp.getEvaluationFormRecentVerId(ctx, formId)
 			if err != nil {
-				log.Fatalf("Failed to get evaluation form versions %s", *assignment.EvaluationForm.Name)
+				log.Fatalf("Failed to get evaluation form versions %s %v", *assignment.EvaluationForm.Name, resp)
 			} else {
 				formId = formVersionId
 			}
@@ -156,9 +155,9 @@ func buildAssignMeteredEvaluations(assignments []interface{}, pp *policyProxy, c
 
 		// if evaluation form id is present, get the context id and build the evaluation form
 		if evaluationFormId != "" {
-			form, err := pp.getFormsEvaluation(ctx, evaluationFormId)
+			form, resp, err := pp.getFormsEvaluation(ctx, evaluationFormId)
 			if err != nil {
-				log.Fatalf("failed to read media evaluation form %s: %s", evaluationFormId, err)
+				log.Fatalf("failed to read media evaluation form %s: %s %v", evaluationFormId, err, resp)
 			} else {
 				evaluationFormContextId := form.ContextId
 				temp.EvaluationForm = &platformclientv2.Evaluationform{Id: &evaluationFormId, ContextId: evaluationFormContextId}
@@ -166,7 +165,6 @@ func buildAssignMeteredEvaluations(assignments []interface{}, pp *policyProxy, c
 		}
 		meteredAssignments = append(meteredAssignments, temp)
 	}
-
 	return &meteredAssignments
 }
 
@@ -191,9 +189,9 @@ func flattenAssignMeteredEvaluations(assignments *[]platformclientv2.Meteredeval
 		// if form is present in the response, assign the most recent unpublished version id to align with evaluation form resource behavior for export purposes.
 		if assignment.EvaluationForm != nil {
 			formId := *assignment.EvaluationForm.Id
-			formVersionId, err := pp.getEvaluationFormRecentVerId(ctx, formId)
+			formVersionId, resp, err := pp.getEvaluationFormRecentVerId(ctx, formId)
 			if err != nil {
-				log.Fatalf("Failed to get evaluation form versions %s", *assignment.EvaluationForm.Name)
+				log.Fatalf("Failed to get evaluation form versions %s %v", *assignment.EvaluationForm.Name, resp)
 			} else {
 				formId = formVersionId
 			}
@@ -241,9 +239,9 @@ func buildAssignMeteredAssignmentByAgent(assignments []interface{}, pp *policyPr
 
 		// if evaluation form id is present, get the context id and build the evaluation form
 		if evaluationFormId != "" {
-			form, err := pp.getFormsEvaluation(ctx, evaluationFormId)
+			form, resp, err := pp.getFormsEvaluation(ctx, evaluationFormId)
 			if err != nil {
-				log.Fatalf("failed to read evaluation form %s: %s", evaluationFormId, err)
+				log.Fatalf("failed to read evaluation form %s: %s %v", evaluationFormId, err, resp)
 			} else {
 				evaluationFormContextId := form.ContextId
 				temp.EvaluationForm = &platformclientv2.Evaluationform{Id: &evaluationFormId, ContextId: evaluationFormContextId}
@@ -252,7 +250,6 @@ func buildAssignMeteredAssignmentByAgent(assignments []interface{}, pp *policyPr
 
 		meteredAssignments = append(meteredAssignments, temp)
 	}
-
 	return &meteredAssignments
 }
 
@@ -277,9 +274,9 @@ func flattenAssignMeteredAssignmentByAgent(assignments *[]platformclientv2.Meter
 		// if form is present in the response, assign the most recent unpublished version id to align with evaluation form resource behavior for export purposes.
 		if assignment.EvaluationForm != nil {
 			formId := *assignment.EvaluationForm.Id
-			formVersionId, err := pp.getEvaluationFormRecentVerId(ctx, formId)
+			formVersionId, resp, err := pp.getEvaluationFormRecentVerId(ctx, formId)
 			if err != nil {
-				log.Fatalf("Failed to get evaluation form versions %s", *assignment.EvaluationForm.Name)
+				log.Fatalf("Failed to get evaluation form versions %s %v", *assignment.EvaluationForm.Name, resp)
 			} else {
 				formId = formVersionId
 			}
@@ -325,9 +322,9 @@ func buildAssignCalibrations(assignments []interface{}, pp *policyProxy, ctx con
 
 		// if evaluation form id is present, get the context id and build the evaluation form
 		if evaluationFormId != "" {
-			form, err := pp.getFormsEvaluation(ctx, evaluationFormId)
+			form, resp, err := pp.getFormsEvaluation(ctx, evaluationFormId)
 			if err != nil {
-				log.Fatalf("failed to read evaluation form %s: %s", evaluationFormId, err)
+				log.Fatalf("failed to read evaluation form %s: %s %v", evaluationFormId, err, resp)
 			} else {
 				evaluationFormContextId := form.ContextId
 				temp.EvaluationForm = &platformclientv2.Evaluationform{Id: &evaluationFormId, ContextId: evaluationFormContextId}
@@ -368,9 +365,9 @@ func flattenAssignCalibrations(assignments *[]platformclientv2.Calibrationassign
 		// if form is present in the response, assign the most recent unpublished version id to align with evaluation form resource behavior for export purposes.
 		if assignment.EvaluationForm != nil {
 			formId := *assignment.EvaluationForm.Id
-			formVersionId, err := pp.getEvaluationFormRecentVerId(ctx, formId)
+			formVersionId, resp, err := pp.getEvaluationFormRecentVerId(ctx, formId)
 			if err != nil {
-				log.Fatalf("Failed to get evaluation form versions %s", *assignment.EvaluationForm.Name)
+				log.Fatalf("Failed to get evaluation form versions %s %v", *assignment.EvaluationForm.Name, resp)
 			} else {
 				formId = formVersionId
 			}
@@ -418,9 +415,9 @@ func buildAssignSurveys(assignments []interface{}, pp *policyProxy, ctx context.
 
 		// If a survey form name is provided, get the context id and build the published survey form reference
 		if surveyFormName != "" {
-			form, err := pp.getQualityFormsSurveyByName(ctx, surveyFormName)
+			form, resp, err := pp.getQualityFormsSurveyByName(ctx, surveyFormName)
 			if err != nil {
-				log.Fatalf("Error requesting survey forms %s: %s", surveyFormName, err)
+				log.Fatalf("Error requesting survey forms %s: %s %v", surveyFormName, err, resp)
 			} else {
 				surveyFormReference := platformclientv2.Publishedsurveyformreference{Name: &surveyFormName, ContextId: form.ContextId}
 				temp.SurveyForm = &surveyFormReference

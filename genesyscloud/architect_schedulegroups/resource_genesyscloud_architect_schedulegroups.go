@@ -26,9 +26,9 @@ func getAllAuthArchitectSchedulegroups(ctx context.Context, clientConfig *platfo
 	proxy := getArchitectSchedulegroupsProxy(clientConfig)
 	resources := make(resourceExporter.ResourceIDMetaMap)
 
-	scheduleGroups, err := proxy.getAllArchitectSchedulegroups(ctx)
+	scheduleGroups, proxyResponse, err := proxy.getAllArchitectSchedulegroups(ctx)
 	if err != nil {
-		return nil, diag.Errorf("Failed to get page of schedule groups: %v", err)
+		return nil, diag.Errorf("Failed to get page of schedule groups: %v %v", err, proxyResponse)
 	}
 
 	for _, scheduleGroup := range *scheduleGroups {
@@ -46,13 +46,13 @@ func createArchitectSchedulegroups(ctx context.Context, d *schema.ResourceData, 
 	schedGroup := getArchitectScheduleGroupFromResourceData(d)
 
 	log.Printf("Creating schedule group %s", *schedGroup.Name)
-	scheduleGroup, err := proxy.createArchitectSchedulegroups(ctx, &schedGroup)
+	scheduleGroup, proxyResponse, err := proxy.createArchitectSchedulegroups(ctx, &schedGroup)
 	if err != nil {
 		msg := ""
 		if strings.Contains(fmt.Sprintf("%v", err), "routing:schedule:add") {
 			msg = "\nYou must have all divisions and future divisions selected in your OAuth client role"
 		}
-		return diag.Errorf("Failed to create schedule group %s | ERROR: %s%s", *schedGroup.Name, err, msg)
+		return diag.Errorf("Failed to create schedule group %s | ERROR: %s%s %v", *schedGroup.Name, err, msg, proxyResponse)
 	}
 
 	d.SetId(*scheduleGroup.Id)
@@ -69,9 +69,9 @@ func readArchitectSchedulegroups(ctx context.Context, d *schema.ResourceData, me
 	log.Printf("Reading schedule group %s", d.Id())
 
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
-		scheduleGroup, resp, getErr := proxy.getArchitectSchedulegroupsById(ctx, d.Id())
+		scheduleGroup, proxyResponse, getErr := proxy.getArchitectSchedulegroupsById(ctx, d.Id())
 		if getErr != nil {
-			if util.IsStatus404ByInt(resp) {
+			if util.IsStatus404(proxyResponse) {
 				return retry.RetryableError(fmt.Errorf("Failed to read schedule group %s: %s", d.Id(), getErr))
 			}
 			return retry.NonRetryableError(fmt.Errorf("Failed to read schedule group %s: %s", d.Id(), getErr))
@@ -121,14 +121,14 @@ func updateArchitectSchedulegroups(ctx context.Context, d *schema.ResourceData, 
 	scheduleGroup := getArchitectScheduleGroupFromResourceData(d)
 
 	log.Printf("Updating schedule group %s %s", *scheduleGroup.Name, d.Id())
-	_, err := proxy.updateArchitectSchedulegroups(ctx, d.Id(), &scheduleGroup)
+	_, proxyResponse, err := proxy.updateArchitectSchedulegroups(ctx, d.Id(), &scheduleGroup)
 
 	if err != nil {
 		msg := ""
 		if strings.Contains(fmt.Sprintf("%v", err), "routing:schedule:add") {
 			msg = "\nYou must have all divisions and future divisions selected in your OAuth client role"
 		}
-		return diag.Errorf("Failed to update schedule group %s: %s%s", d.Id(), err, msg)
+		return diag.Errorf("Failed to update schedule group %s: %s%s %v", d.Id(), err, msg, proxyResponse)
 	}
 
 	log.Printf("Updated schedule group %s %s", *scheduleGroup.Name, d.Id())
@@ -144,20 +144,20 @@ func deleteArchitectSchedulegroups(ctx context.Context, d *schema.ResourceData, 
 	log.Printf("Deleting schedule group %s", d.Id())
 	diagErr := util.RetryWhen(util.IsStatus409, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		log.Printf("Deleting schedule group %s", d.Id())
-		resp, err := proxy.deleteArchitectSchedulegroups(ctx, d.Id())
+		proxyResponse, err := proxy.deleteArchitectSchedulegroups(ctx, d.Id())
 		if err != nil {
-			return resp, diag.Errorf("Failed to delete schedule group %s: %s", d.Id(), err)
+			return proxyResponse, diag.Errorf("Failed to delete schedule group %s: %s", d.Id(), err)
 		}
-		return resp, nil
+		return proxyResponse, nil
 	})
 	if diagErr != nil {
 		return diagErr
 	}
 
 	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
-		scheduleGroup, resp, err := proxy.getArchitectSchedulegroupsById(ctx, d.Id())
+		scheduleGroup, proxyResponse, err := proxy.getArchitectSchedulegroupsById(ctx, d.Id())
 		if err != nil {
-			if util.IsStatus404ByInt(resp) {
+			if util.IsStatus404(proxyResponse) {
 				// schedule group deleted
 				log.Printf("Deleted schedule group %s", d.Id())
 				return nil
@@ -170,7 +170,6 @@ func deleteArchitectSchedulegroups(ctx context.Context, d *schema.ResourceData, 
 			log.Printf("Deleted schedule group %s", d.Id())
 			return nil
 		}
-
 		return retry.RetryableError(fmt.Errorf("Schedule group %s still exists", d.Id()))
 	})
 }
