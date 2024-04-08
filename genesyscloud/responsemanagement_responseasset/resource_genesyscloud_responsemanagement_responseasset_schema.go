@@ -3,6 +3,7 @@ package responsemanagement_responseasset
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"terraform-provider-genesyscloud/genesyscloud/validators"
 
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
@@ -22,6 +23,7 @@ const resourceName = "genesyscloud_responsemanagement_responseasset"
 func SetRegistrar(regInstance registrar.Registrar) {
 	regInstance.RegisterResource(resourceName, ResourceResponseManagementResponseAsset())
 	regInstance.RegisterDataSource(resourceName, DataSourceResponseManagementResponseAsset())
+	regInstance.RegisterExporter(resourceName, ExporterResponseManagementResponseAsset())
 }
 
 // ResourceResponsemanagementResponseasset registers the genesyscloud_responsemanagement_responseasset resource with Terraform
@@ -65,6 +67,20 @@ func DataSourceResponseManagementResponseAsset() *schema.Resource {
 				Type:        schema.TypeString,
 				Required:    true,
 			},
+		},
+	}
+}
+
+func ExporterResponseManagementResponseAsset() *resourceExporter.ResourceExporter {
+	// TODO: Add to files
+	return &resourceExporter.ResourceExporter{
+		GetResourcesFunc: provider.GetAllWithPooledClient(getAllResponseAssets),
+		CustomFileWriter: resourceExporter.CustomFileWriterSettings{
+			RetrieveAndWriteFilesFunc: responsemanagementResponseassetResolver,
+			SubDirectory:              "response_asset_files",
+		},
+		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
+			// TODO
 		},
 	}
 }
