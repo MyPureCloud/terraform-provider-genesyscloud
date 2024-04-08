@@ -18,12 +18,11 @@ func dataSourceUserPromptRead(ctx context.Context, d *schema.ResourceData, m int
 	proxy := getArchitectUserPromptProxy(sdkConfig)
 
 	name := d.Get("name").(string)
-	nameArr := []string{name}
 
 	// Query user prompt by name. Retry in case search has not yet indexed the user prompt.
 	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
 
-		promptId, _, getErr, retryable := proxy.getArchitectUserPromptIdByName(ctx, nameArr)
+		promptId, _, getErr, retryable := proxy.getArchitectUserPromptIdByName(ctx, name)
 		if retryable {
 			return retry.RetryableError(fmt.Errorf("error requesting user prompt by name %s: %s", name, getErr))
 		}

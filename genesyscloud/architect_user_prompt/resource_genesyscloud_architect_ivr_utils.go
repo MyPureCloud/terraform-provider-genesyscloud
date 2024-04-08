@@ -211,12 +211,3 @@ func uploadPrompt(uploadUri *string, filename *string, sdkConfig *platformclient
 
 	return nil
 }
-
-func sliceContains(slice *[]string, element string) bool {
-	for _, item := range *slice {
-		if element == item {
-			return true
-		}
-	}
-	return false
-}
