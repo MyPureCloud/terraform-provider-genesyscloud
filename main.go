@@ -201,16 +201,12 @@ func registerResources() {
 	edgesTrunk.SetRegistrar(regInstance)                                   //Registering Edges Trunk Settings
 	resourceExporter.SetRegisterExporter(resourceExporters)                //Registering register exporters
 	userRoles.SetRegistrar(regInstance)                                    //Registering user roles
-	responsemanagementResponse.SetRegistrar(regInstance)                   //Registering responsemanagement responses
-	responsemanagementResponseasset.SetRegistrar(regInstance)              //Registering responsemanagement response asset
-	respmanagementLibrary.SetRegistrar(regInstance)                        //Registering responsemanagement library
 	userPrompt.SetRegistrar(regInstance)                                   //Registering architect user prompt
 	group.SetRegistrar(regInstance)                                        //Registering group
 	journeyOutcomePrecdictor.SetRegistrar(regInstance)                     //Registering journey outcome predictor
-	group.SetRegistrar(regInstance)                                        //Registering group
 	routingQueue.SetRegistrar(regInstance)                                 //Registering routing queue
 	routingQueueCondtionalGroupRouting.SetRegistrar(regInstance)           //Registering routing queue conditional group routing
-	tfexp.SetRegistrar(regInstance) //Registering tf exporter
+	tfexp.SetRegistrar(regInstance)                                        //Registering tf exporter
 	registrar.SetResources(providerResources, providerDataSources)
 
 }
