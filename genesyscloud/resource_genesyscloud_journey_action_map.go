@@ -363,7 +363,7 @@ func getAllJourneyActionMaps(_ context.Context, clientConfig *platformclientv2.C
 		const pageSize = 100
 		actionMaps, resp, getErr := journeyApi.GetJourneyActionmaps(pageNum, pageSize, "", "", "", nil, nil, "")
 		if getErr != nil {
-			return nil, util.BuildAPIDiagnosticError("genesyscloud_journey_action_map", fmt.Sprintf("failed to get page of journey action maps"), resp)
+			return nil, util.BuildAPIDiagnosticError("genesyscloud_journey_action_map", fmt.Sprintf("failed to get page of journey action maps error: %s", getErr), resp)
 		}
 
 		if actionMaps.Entities == nil || len(*actionMaps.Entities) == 0 {
@@ -459,7 +459,7 @@ func updateJourneyActionMap(ctx context.Context, d *schema.ResourceData, meta in
 		// Get current journey action map version
 		actionMap, resp, getErr := journeyApi.GetJourneyActionmap(d.Id())
 		if getErr != nil {
-			return resp, util.BuildAPIDiagnosticError("genesyscloud_journey_action_map", fmt.Sprintf("failed to read journey action map %s", d.Id()), resp)
+			return resp, util.BuildAPIDiagnosticError("genesyscloud_journey_action_map", fmt.Sprintf("failed to read journey action map %s error: %s", d.Id(), getErr), resp)
 		}
 
 		patchActionMap.Version = actionMap.Version
@@ -486,7 +486,7 @@ func deleteJourneyActionMap(ctx context.Context, d *schema.ResourceData, meta in
 
 	log.Printf("Deleting journey action map with display name %s", displayName)
 	if resp, err := journeyApi.DeleteJourneyActionmap(d.Id()); err != nil {
-		return util.BuildAPIDiagnosticError("genesyscloud_journey_action_map", fmt.Sprintf("failed to delete journey action map with display name %s", displayName), resp)
+		return util.BuildAPIDiagnosticError("genesyscloud_journey_action_map", fmt.Sprintf("failed to delete journey action map with display name %s error: %s", displayName, err), resp)
 	}
 
 	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {

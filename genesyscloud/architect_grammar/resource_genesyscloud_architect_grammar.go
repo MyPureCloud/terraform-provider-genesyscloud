@@ -52,7 +52,7 @@ func createArchitectGrammar(ctx context.Context, d *schema.ResourceData, meta in
 	log.Printf("Creating Architect Grammar %s", *architectGrammar.Name)
 	grammar, resp, err := proxy.createArchitectGrammar(ctx, &architectGrammar)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create grammar %s", d.Id()), resp)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create grammar %s error: %s", d.Id(), err), resp)
 	}
 
 	d.SetId(*grammar.Id)
@@ -102,7 +102,7 @@ func updateArchitectGrammar(ctx context.Context, d *schema.ResourceData, meta in
 	log.Printf("Updating Architect Grammar %s", *architectGrammar.Name)
 	grammar, resp, err := proxy.updateArchitectGrammar(ctx, d.Id(), &architectGrammar)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update grammar: %s", d.Id()), resp)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update grammar: %s error: %s", d.Id(), err), resp)
 	}
 
 	log.Printf("Updated Architect Grammar %s", *grammar.Id)
@@ -116,7 +116,7 @@ func deleteArchitectGrammar(ctx context.Context, d *schema.ResourceData, meta in
 
 	resp, err := proxy.deleteArchitectGrammar(ctx, d.Id())
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete grammar %s", d.Id()), resp)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete grammar %s error: %s", d.Id(), err), resp)
 	}
 
 	return util.WithRetries(ctx, 180*time.Second, func() *retry.RetryError {

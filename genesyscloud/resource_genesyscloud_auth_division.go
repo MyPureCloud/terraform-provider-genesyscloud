@@ -27,7 +27,7 @@ func getAllAuthDivisions(_ context.Context, clientConfig *platformclientv2.Confi
 		const pageSize = 100
 		divisions, resp, getErr := authAPI.GetAuthorizationDivisions(pageSize, pageNum, "", nil, "", "", false, nil, "")
 		if getErr != nil {
-			return nil, util.BuildAPIDiagnosticError("genesyscloud_auth_division", fmt.Sprint("Failed to get page of divisions"), resp)
+			return nil, util.BuildAPIDiagnosticError("genesyscloud_auth_division", fmt.Sprintf("Failed to get page of divisions error: %s", getErr), resp)
 		}
 
 		if divisions.Entities == nil || len(*divisions.Entities) == 0 {
@@ -106,7 +106,7 @@ func createAuthDivision(ctx context.Context, d *schema.ResourceData, meta interf
 		Description: &description,
 	})
 	if err != nil {
-		return util.BuildAPIDiagnosticError("genesyscloud_auth_division", fmt.Sprintf("Failed to create division %s", name), resp)
+		return util.BuildAPIDiagnosticError("genesyscloud_auth_division", fmt.Sprintf("Failed to create division %s error: %s", name, err), resp)
 	}
 
 	d.SetId(*division.Id)
@@ -162,7 +162,7 @@ func updateAuthDivision(ctx context.Context, d *schema.ResourceData, meta interf
 		Description: &description,
 	})
 	if err != nil {
-		return util.BuildAPIDiagnosticError("genesyscloud_auth_division", fmt.Sprintf("Failed to update division %s", name), resp)
+		return util.BuildAPIDiagnosticError("genesyscloud_auth_division", fmt.Sprintf("Failed to update division %s error: %s", name, err), resp)
 	}
 
 	log.Printf("Updated division %s", name)
@@ -189,7 +189,7 @@ func deleteAuthDivision(ctx context.Context, d *schema.ResourceData, meta interf
 		log.Printf("Deleting division %s", name)
 		resp, err := authAPI.DeleteAuthorizationDivision(d.Id(), false)
 		if err != nil {
-			return resp, util.BuildAPIDiagnosticError("genesyscloud_auth_division", fmt.Sprintf("Failed to delete Division %s", d.Id()), resp)
+			return resp, util.BuildAPIDiagnosticError("genesyscloud_auth_division", fmt.Sprintf("Failed to delete Division %s error: %s", d.Id(), err), resp)
 		}
 		return resp, nil
 	})

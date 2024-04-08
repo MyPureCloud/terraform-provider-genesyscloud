@@ -30,7 +30,7 @@ func getAllIdpOnelogin(_ context.Context, clientConfig *platformclientv2.Configu
 			// Don't export if config doesn't exist
 			return resources, nil
 		}
-		return nil, util.BuildAPIDiagnosticError("genesyscloud_idp_onelogin", fmt.Sprintf("Failed to get IDP Onelogin"), resp)
+		return nil, util.BuildAPIDiagnosticError("genesyscloud_idp_onelogin", fmt.Sprintf("Failed to get IDP Onelogin error: %s", getErr), resp)
 	}
 
 	resources["0"] = &resourceExporter.ResourceMeta{Name: "onelogin"}
@@ -166,7 +166,7 @@ func updateIdpOnelogin(ctx context.Context, d *schema.ResourceData, meta interfa
 
 	_, resp, err := idpAPI.PutIdentityprovidersOnelogin(update)
 	if err != nil {
-		return util.BuildAPIDiagnosticError("genesyscloud_idp_onelogin", fmt.Sprintf("Failed to update IDP Onelogin %s", d.Id()), resp)
+		return util.BuildAPIDiagnosticError("genesyscloud_idp_onelogin", fmt.Sprintf("Failed to update IDP Onelogin %s error: %s", d.Id(), err), resp)
 	}
 
 	log.Printf("Updated IDP Onelogin")
@@ -180,7 +180,7 @@ func deleteIdpOnelogin(ctx context.Context, d *schema.ResourceData, meta interfa
 	log.Printf("Deleting IDP Onelogin")
 	_, resp, err := idpAPI.DeleteIdentityprovidersOnelogin()
 	if err != nil {
-		return util.BuildAPIDiagnosticError("genesyscloud_idp_onelogin", fmt.Sprintf("Failed to updadeletete IDP Onelogin %s", d.Id()), resp)
+		return util.BuildAPIDiagnosticError("genesyscloud_idp_onelogin", fmt.Sprintf("Failed to updadeletete IDP Onelogin %s error: %s", d.Id(), err), resp)
 	}
 
 	return util.WithRetries(ctx, 60*time.Second, func() *retry.RetryError {

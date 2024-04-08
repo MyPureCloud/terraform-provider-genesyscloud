@@ -29,7 +29,7 @@ func getAllAuthEmployeeperformanceExternalmetricsDefinitions(ctx context.Context
 
 	definitions, resp, err := proxy.getAllEmployeeperformanceExternalmetricsDefinition(ctx)
 	if err != nil {
-		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get employeeperformance externalmetrics definition"), resp)
+		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get employeeperformance externalmetrics definition error: %s", err), resp)
 	}
 
 	for _, definition := range *definitions {
@@ -60,7 +60,7 @@ func createEmployeeperformanceExternalmetricsDefinition(ctx context.Context, d *
 	log.Printf("Creating employeeperformance externalmetrics definition %s", *metricDefinition.Name)
 	definition, resp, err := proxy.createEmployeeperformanceExternalmetricsDefinition(ctx, &metricDefinition)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create employeeperformance externalmetrics definition %s", *metricDefinition.Name), resp)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create employeeperformance externalmetrics definition %s error: %s", *metricDefinition.Name, err), resp)
 	}
 
 	d.SetId(*definition.Id)
@@ -113,7 +113,7 @@ func updateEmployeeperformanceExternalmetricsDefinition(ctx context.Context, d *
 	log.Printf("Updating employeeperformance externalmetrics definition %s: %s", *metricDefinition.Name, d.Id())
 	definition, resp, err := proxy.updateEmployeeperformanceExternalmetricsDefinition(ctx, d.Id(), &metricDefinition)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update employeeperformance externalmetrics definition %s", *metricDefinition.Name), resp)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update employeeperformance externalmetrics definition %s error: %s", *metricDefinition.Name, err), resp)
 	}
 
 	log.Printf("Updated employeeperformance externalmetrics definition %s", *definition.Id)
@@ -127,7 +127,7 @@ func deleteEmployeeperformanceExternalmetricsDefinition(ctx context.Context, d *
 
 	resp, err := proxy.deleteEmployeeperformanceExternalmetricsDefinition(ctx, d.Id())
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete employeeperformance externalmetrics definition %s", d.Id()), resp)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete employeeperformance externalmetrics definition %s error: %s", d.Id(), err), resp)
 	}
 
 	return util.WithRetries(ctx, 180*time.Second, func() *retry.RetryError {

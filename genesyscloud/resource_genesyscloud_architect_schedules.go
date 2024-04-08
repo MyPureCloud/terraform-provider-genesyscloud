@@ -238,7 +238,7 @@ func updateArchitectSchedules(ctx context.Context, d *schema.ResourceData, meta 
 		sched, resp, getErr := archAPI.GetArchitectSchedule(d.Id())
 
 		if getErr != nil {
-			return resp, util.BuildAPIDiagnosticError("genesyscloud_archiect_schedules", fmt.Sprintf("Failed to read schedule %s", d.Id()), resp)
+			return resp, util.BuildAPIDiagnosticError("genesyscloud_archiect_schedules", fmt.Sprintf("Failed to read schedule %s error: %s", d.Id(), err), resp)
 		}
 
 		log.Printf("Updating schedule %s", name)
@@ -280,7 +280,7 @@ func deleteArchitectSchedules(ctx context.Context, d *schema.ResourceData, meta 
 		log.Printf("Deleting schedule %s", d.Id())
 		resp, err := archAPI.DeleteArchitectSchedule(d.Id())
 		if err != nil {
-			return resp, util.BuildAPIDiagnosticError("genesyscloud_archiect_schedules", fmt.Sprintf("Failed to delete schedule %s.", d.Id()), resp)
+			return resp, util.BuildAPIDiagnosticError("genesyscloud_archiect_schedules", fmt.Sprintf("Failed to delete schedule %s error: %s", d.Id(), err), resp)
 		}
 		return resp, nil
 	})

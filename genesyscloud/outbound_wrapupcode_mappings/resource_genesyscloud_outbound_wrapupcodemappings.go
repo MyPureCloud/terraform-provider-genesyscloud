@@ -83,7 +83,7 @@ func updateOutboundWrapUpCodeMappings(ctx context.Context, d *schema.ResourceDat
 	diagErr := util.RetryWhen(util.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		wrapupCodeMappings, resp, err := proxy.getAllOutboundWrapupCodeMappings(ctx)
 		if err != nil {
-			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get  wrap-up code mappings"), resp)
+			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get  wrap-up code mappings error: %s", err), resp)
 		}
 
 		wrapupCodeUpdate := platformclientv2.Wrapupcodemapping{
@@ -93,7 +93,7 @@ func updateOutboundWrapUpCodeMappings(ctx context.Context, d *schema.ResourceDat
 		}
 		_, resp, err = proxy.updateOutboundWrapUpCodeMappings(ctx, wrapupCodeUpdate)
 		if err != nil {
-			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update wrap-up code mappings %s", d.Id()), resp)
+			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update wrap-up code mappings %s error: %s", d.Id(), err), resp)
 		}
 		return resp, nil
 	})

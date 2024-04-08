@@ -27,7 +27,7 @@ func getAllRoutingSkills(_ context.Context, clientConfig *platformclientv2.Confi
 		const pageSize = 100
 		skills, resp, getErr := routingAPI.GetRoutingSkills(pageSize, pageNum, "", nil)
 		if getErr != nil {
-			return nil, util.BuildAPIDiagnosticError("genesyscloud_routing_skill", fmt.Sprintf("Failed to get skills"), resp)
+			return nil, util.BuildAPIDiagnosticError("genesyscloud_routing_skill", fmt.Sprintf("Failed to get skills error: %s", getErr), resp)
 		}
 
 		if skills.Entities == nil || len(*skills.Entities) == 0 {
@@ -84,7 +84,7 @@ func createRoutingSkill(ctx context.Context, d *schema.ResourceData, meta interf
 		Name: &name,
 	})
 	if err != nil {
-		return util.BuildAPIDiagnosticError("genesyscloud_routing_skill", fmt.Sprintf("Failed to create skill %s", name), resp)
+		return util.BuildAPIDiagnosticError("genesyscloud_routing_skill", fmt.Sprintf("Failed to create skill %s error: %s", name, err), resp)
 	}
 
 	d.SetId(*skill.Id)
@@ -128,7 +128,7 @@ func deleteRoutingSkill(ctx context.Context, d *schema.ResourceData, meta interf
 	log.Printf("Deleting skill %s", name)
 	resp, err := routingAPI.DeleteRoutingSkill(d.Id())
 	if err != nil {
-		return util.BuildAPIDiagnosticError("genesyscloud_routing_skill", fmt.Sprintf("Failed to delete skill %s", name), resp)
+		return util.BuildAPIDiagnosticError("genesyscloud_routing_skill", fmt.Sprintf("Failed to delete skill %s error: %s", name, err), resp)
 	}
 
 	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {

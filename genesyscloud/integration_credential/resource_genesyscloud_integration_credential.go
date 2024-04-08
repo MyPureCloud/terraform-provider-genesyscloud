@@ -48,7 +48,7 @@ func getAllCredentials(ctx context.Context, clientConfig *platformclientv2.Confi
 
 	credentials, resp, err := ip.getAllIntegrationCreds(ctx)
 	if err != nil {
-		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get all credentials"), resp)
+		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get all credentials error: %s", err), resp)
 	}
 
 	for _, cred := range *credentials {
@@ -96,7 +96,7 @@ func createCredential(ctx context.Context, d *schema.ResourceData, meta interfac
 
 	credential, resp, err := ip.createIntegrationCred(ctx, &createCredential)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create credential %s", name), resp)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create credential %s error: %s", name, err), resp)
 	}
 
 	d.SetId(*credential.Id)
@@ -149,7 +149,7 @@ func updateCredential(ctx context.Context, d *schema.ResourceData, meta interfac
 			CredentialFields: buildCredentialFields(d),
 		})
 		if err != nil {
-			return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update credential %s", name), resp)
+			return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update credential %s error: %s", name, err), resp)
 		}
 	}
 	log.Printf("Updated credential %s %s", name, d.Id())
@@ -163,7 +163,7 @@ func deleteCredential(ctx context.Context, d *schema.ResourceData, meta interfac
 
 	resp, err := ip.deleteIntegrationCred(ctx, d.Id())
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete credential %s", d.Id()), resp)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete credential %s error: %s", d.Id(), err), resp)
 	}
 
 	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {

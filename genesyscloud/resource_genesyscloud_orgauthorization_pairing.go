@@ -65,7 +65,7 @@ func createOrgauthorizationPairing(ctx context.Context, d *schema.ResourceData, 
 	log.Printf("Creating Orgauthorization Pairing")
 	orgauthorizationPairing, resp, err := organizationAuthorizationApi.PostOrgauthorizationPairings(sdktrustrequestcreate)
 	if err != nil {
-		return util.BuildAPIDiagnosticError("genesyscloud_orgauthorization_pairing", fmt.Sprintf("Failed to create Orgauthorization Pairing"), resp)
+		return util.BuildAPIDiagnosticError("genesyscloud_orgauthorization_pairing", fmt.Sprintf("Failed to create Orgauthorization Pairing error: %s", err), resp)
 	}
 
 	d.SetId(*orgauthorizationPairing.Id)

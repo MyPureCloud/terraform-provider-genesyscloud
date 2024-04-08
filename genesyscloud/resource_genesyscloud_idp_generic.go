@@ -31,7 +31,7 @@ func getAllIdpGeneric(_ context.Context, clientConfig *platformclientv2.Configur
 			// Don't export if config doesn't exist
 			return resources, nil
 		}
-		return nil, util.BuildAPIDiagnosticError("genesyscloud_idp_generic", fmt.Sprintf("Failed to get IDP Generic"), resp)
+		return nil, util.BuildAPIDiagnosticError("genesyscloud_idp_generic", fmt.Sprintf("Failed to get IDP Generic error: %s", getErr), resp)
 	}
 
 	resources["0"] = &resourceExporter.ResourceMeta{Name: "generic"}
@@ -244,7 +244,7 @@ func updateIdpGeneric(ctx context.Context, d *schema.ResourceData, meta interfac
 
 	_, resp, err := idpAPI.PutIdentityprovidersGeneric(update)
 	if err != nil {
-		return util.BuildAPIDiagnosticError("genesyscloud_idp_generic", fmt.Sprintf("Failed to update IDP Generic %s", d.Id()), resp)
+		return util.BuildAPIDiagnosticError("genesyscloud_idp_generic", fmt.Sprintf("Failed to update IDP Generic %s error: %s", d.Id(), err), resp)
 	}
 
 	log.Printf("Updated IDP Generic")
@@ -258,7 +258,7 @@ func deleteIdpGeneric(ctx context.Context, d *schema.ResourceData, meta interfac
 	log.Printf("Deleting IDP Generic")
 	_, resp, err := idpAPI.DeleteIdentityprovidersGeneric()
 	if err != nil {
-		return util.BuildAPIDiagnosticError("genesyscloud_idp_generic", fmt.Sprintf("Failed to delete IDP Generic %s", d.Id()), resp)
+		return util.BuildAPIDiagnosticError("genesyscloud_idp_generic", fmt.Sprintf("Failed to delete IDP Generic %s error: %s", d.Id(), err), resp)
 	}
 
 	return util.WithRetries(ctx, 60*time.Second, func() *retry.RetryError {

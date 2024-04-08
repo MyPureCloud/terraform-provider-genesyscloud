@@ -56,7 +56,7 @@ func getAllKnowledgebaseEntities(knowledgeApi platformclientv2.KnowledgeApi, pub
 	for i := 0; ; i++ {
 		knowledgeBases, resp, getErr := knowledgeApi.GetKnowledgeKnowledgebases("", after, "", fmt.Sprintf("%v", pageSize), "", "", published, "", "")
 		if getErr != nil {
-			return nil, util.BuildAPIDiagnosticError("genesyscloud_knowledge_knowledgebase", fmt.Sprintf("Failed to get page of knowledge bases"), resp)
+			return nil, util.BuildAPIDiagnosticError("genesyscloud_knowledge_knowledgebase", fmt.Sprintf("Failed to get page of knowledge bases error: %s", getErr), resp)
 		}
 
 		if knowledgeBases.Entities == nil || len(*knowledgeBases.Entities) == 0 {
@@ -147,7 +147,7 @@ func createKnowledgeKnowledgebase(ctx context.Context, d *schema.ResourceData, m
 	})
 
 	if err != nil {
-		return util.BuildAPIDiagnosticError("genesyscloud_knowledge_knowledgebase", fmt.Sprintf("Failed to create knowledge base %s", name), resp)
+		return util.BuildAPIDiagnosticError("genesyscloud_knowledge_knowledgebase", fmt.Sprintf("Failed to create knowledge base %s error: %s", name, err), resp)
 	}
 
 	d.SetId(*knowledgeBase.Id)
@@ -193,7 +193,7 @@ func updateKnowledgeKnowledgebase(ctx context.Context, d *schema.ResourceData, m
 		// Get current knowledge base version
 		_, resp, getErr := knowledgeAPI.GetKnowledgeKnowledgebase(d.Id())
 		if getErr != nil {
-			return resp, util.BuildAPIDiagnosticError("genesyscloud_knowledge_knowledgebase", fmt.Sprintf("Failed to read knowledge base %s", name), resp)
+			return resp, util.BuildAPIDiagnosticError("genesyscloud_knowledge_knowledgebase", fmt.Sprintf("Failed to read knowledge base %s error: %s", name, getErr), resp)
 		}
 
 		update := platformclientv2.Knowledgebaseupdaterequest{
@@ -204,7 +204,7 @@ func updateKnowledgeKnowledgebase(ctx context.Context, d *schema.ResourceData, m
 		log.Printf("Updating knowledge base %s", name)
 		_, resp, putErr := knowledgeAPI.PatchKnowledgeKnowledgebase(d.Id(), update)
 		if putErr != nil {
-			return resp, util.BuildAPIDiagnosticError("genesyscloud_knowledge_knowledgebase", fmt.Sprintf("Failed to update knowledge base %s", name), resp)
+			return resp, util.BuildAPIDiagnosticError("genesyscloud_knowledge_knowledgebase", fmt.Sprintf("Failed to update knowledge base %s error: %s", name, putErr), resp)
 		}
 		return resp, nil
 	})
@@ -225,7 +225,7 @@ func deleteKnowledgeKnowledgebase(ctx context.Context, d *schema.ResourceData, m
 	log.Printf("Deleting knowledge base %s", name)
 	_, resp, err := knowledgeAPI.DeleteKnowledgeKnowledgebase(d.Id())
 	if err != nil {
-		return util.BuildAPIDiagnosticError("genesyscloud_knowledge_knowledgebase", fmt.Sprintf("Failed to delete knowledge base %s", name), resp)
+		return util.BuildAPIDiagnosticError("genesyscloud_knowledge_knowledgebase", fmt.Sprintf("Failed to delete knowledge base %s error: %s", name, err), resp)
 	}
 
 	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {

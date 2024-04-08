@@ -32,7 +32,7 @@ func getAllLocations(_ context.Context, clientConfig *platformclientv2.Configura
 		const pageSize = 100
 		locations, resp, getErr := locationsAPI.GetLocations(pageSize, pageNum, nil, "")
 		if getErr != nil {
-			return nil, util.BuildAPIDiagnosticError("genesyscloud_location", fmt.Sprintf("Failed to get page of locations"), resp)
+			return nil, util.BuildAPIDiagnosticError("genesyscloud_location", fmt.Sprintf("Failed to get page of locations error: %s", getErr), resp)
 		}
 
 		if locations.Entities == nil || len(*locations.Entities) == 0 {
@@ -177,7 +177,7 @@ func createLocation(ctx context.Context, d *schema.ResourceData, meta interface{
 	log.Printf("Creating location %s", name)
 	location, resp, err := locationsAPI.PostLocations(create)
 	if err != nil {
-		return util.BuildAPIDiagnosticError("genesyscloud_location", fmt.Sprintf("Failed to create location %s", name), resp)
+		return util.BuildAPIDiagnosticError("genesyscloud_location", fmt.Sprintf("Failed to create location %s error: %s", name, err), resp)
 	}
 
 	d.SetId(*location.Id)
@@ -240,7 +240,7 @@ func updateLocation(ctx context.Context, d *schema.ResourceData, meta interface{
 		// Get current location version
 		location, resp, getErr := locationsAPI.GetLocation(d.Id(), nil)
 		if getErr != nil {
-			return resp, util.BuildAPIDiagnosticError("genesyscloud_location", fmt.Sprintf("Failed to read location %s", name), resp)
+			return resp, util.BuildAPIDiagnosticError("genesyscloud_location", fmt.Sprintf("Failed to read location %s error: %s", name, getErr), resp)
 		}
 
 		update := platformclientv2.Locationupdatedefinition{
@@ -268,7 +268,7 @@ func updateLocation(ctx context.Context, d *schema.ResourceData, meta interface{
 		log.Printf("Updating location %s", name)
 		_, resp, putErr := locationsAPI.PatchLocation(d.Id(), update)
 		if putErr != nil {
-			return resp, util.BuildAPIDiagnosticError("genesyscloud_location", fmt.Sprintf("Failed to update location %s", name), resp)
+			return resp, util.BuildAPIDiagnosticError("genesyscloud_location", fmt.Sprintf("Failed to update location %s error: %s", name, putErr), resp)
 		}
 		return resp, nil
 	})
@@ -291,7 +291,7 @@ func deleteLocation(ctx context.Context, d *schema.ResourceData, meta interface{
 		// Directory occasionally returns version errors on deletes if an object was updated at the same time.
 		resp, err := locationsAPI.DeleteLocation(d.Id())
 		if err != nil {
-			return resp, util.BuildAPIDiagnosticError("genesyscloud_location", fmt.Sprintf("Failed to delete location %s", name), resp)
+			return resp, util.BuildAPIDiagnosticError("genesyscloud_location", fmt.Sprintf("Failed to delete location %s error: %s", name, err), resp)
 		}
 		return nil, nil
 	})

@@ -192,7 +192,7 @@ func getAllSurveyForms(_ context.Context, clientConfig *platformclientv2.Configu
 		const pageSize = 100
 		surveyForms, resp, getErr := qualityAPI.GetQualityFormsSurveys(pageSize, pageNum, "", "", "", "", "", "")
 		if getErr != nil {
-			return nil, util.BuildAPIDiagnosticError("genesyscloud_quality_forms_survey", fmt.Sprintf("Failed to get quality forms surveys"), resp)
+			return nil, util.BuildAPIDiagnosticError("genesyscloud_quality_forms_survey", fmt.Sprintf("Failed to get quality forms surveys error: %s", getErr), resp)
 		}
 
 		if surveyForms.Entities == nil || len(*surveyForms.Entities) == 0 {
@@ -297,7 +297,7 @@ func createSurveyForm(ctx context.Context, d *schema.ResourceData, meta interfac
 		QuestionGroups: questionGroups,
 	})
 	if err != nil {
-		return util.BuildAPIDiagnosticError("genesyscloud_quality_forms_survey", fmt.Sprintf("Failed to create survey form %s", name), resp)
+		return util.BuildAPIDiagnosticError("genesyscloud_quality_forms_survey", fmt.Sprintf("Failed to create survey form %s error: %s", name, err), resp)
 	}
 
 	// Make sure form is properly created
@@ -312,7 +312,7 @@ func createSurveyForm(ctx context.Context, d *schema.ResourceData, meta interfac
 			Published: &published,
 		})
 		if err != nil {
-			return util.BuildAPIDiagnosticError("genesyscloud_quality_forms_survey", fmt.Sprintf("Failed to publish survey form %s", name), resp)
+			return util.BuildAPIDiagnosticError("genesyscloud_quality_forms_survey", fmt.Sprintf("Failed to publish survey form %s error: %s", name, err), resp)
 		}
 	}
 
@@ -439,7 +439,7 @@ func deleteSurveyForm(ctx context.Context, d *schema.ResourceData, meta interfac
 	// Get the latest unpublished version of the form
 	formVersions, resp, err := qualityAPI.GetQualityFormsSurveyVersions(d.Id(), 25, 1)
 	if err != nil {
-		return util.BuildAPIDiagnosticError("genesyscloud_quality_forms_survey", fmt.Sprintf("Failed to get survey form versions %s", name), resp)
+		return util.BuildAPIDiagnosticError("genesyscloud_quality_forms_survey", fmt.Sprintf("Failed to get survey form versions %s error: %s", name, err), resp)
 	}
 	versions := *formVersions.Entities
 	latestUnpublishedVersion := ""
@@ -452,7 +452,7 @@ func deleteSurveyForm(ctx context.Context, d *schema.ResourceData, meta interfac
 
 	log.Printf("Deleting survey form %s", name)
 	if resp, err := qualityAPI.DeleteQualityFormsSurvey(d.Id()); err != nil {
-		return util.BuildAPIDiagnosticError("genesyscloud_quality_forms_survey", fmt.Sprintf("Failed to delete survey form %s", name), resp)
+		return util.BuildAPIDiagnosticError("genesyscloud_quality_forms_survey", fmt.Sprintf("Failed to delete survey form %s error: %s", name, err), resp)
 	}
 
 	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {

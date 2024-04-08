@@ -30,7 +30,7 @@ func getAllIdpOkta(_ context.Context, clientConfig *platformclientv2.Configurati
 			// Don't export if config doesn't exist
 			return resources, nil
 		}
-		return nil, util.BuildAPIDiagnosticError("genesyscloud_idp_okta", fmt.Sprintf("Failed to get IDP okta"), resp)
+		return nil, util.BuildAPIDiagnosticError("genesyscloud_idp_okta", fmt.Sprintf("Failed to get IDP okta error: %s", getErr), resp)
 	}
 
 	resources["0"] = &resourceExporter.ResourceMeta{Name: "okta"}
@@ -166,7 +166,7 @@ func updateIdpOkta(ctx context.Context, d *schema.ResourceData, meta interface{}
 
 	_, resp, err := idpAPI.PutIdentityprovidersOkta(update)
 	if err != nil {
-		return util.BuildAPIDiagnosticError("genesyscloud_idp_okta", fmt.Sprintf("Failed to update IDP okta %s", d.Id()), resp)
+		return util.BuildAPIDiagnosticError("genesyscloud_idp_okta", fmt.Sprintf("Failed to update IDP okta %s error: %s", d.Id(), err), resp)
 	}
 
 	log.Printf("Updated IDP Okta")
@@ -180,7 +180,7 @@ func deleteIdpOkta(ctx context.Context, d *schema.ResourceData, meta interface{}
 	log.Printf("Deleting IDP Okta")
 	_, resp, err := idpAPI.DeleteIdentityprovidersOkta()
 	if err != nil {
-		return util.BuildAPIDiagnosticError("genesyscloud_idp_okta", fmt.Sprintf("Failed to delete IDP okta %s", d.Id()), resp)
+		return util.BuildAPIDiagnosticError("genesyscloud_idp_okta", fmt.Sprintf("Failed to delete IDP okta %s error: %s", d.Id(), err), resp)
 	}
 
 	return util.WithRetries(ctx, 60*time.Second, func() *retry.RetryError {

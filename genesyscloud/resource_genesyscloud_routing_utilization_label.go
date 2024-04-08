@@ -27,7 +27,7 @@ func getAllRoutingUtilizationLabels(_ context.Context, clientConfig *platformcli
 		const pageSize = 100
 		labels, resp, getErr := routingAPI.GetRoutingUtilizationLabels(pageSize, pageNum, "", "")
 		if getErr != nil {
-			return nil, util.BuildAPIDiagnosticError("genesyscloud_routing_utilization_label", fmt.Sprintf("Failed to get page of labels"), resp)
+			return nil, util.BuildAPIDiagnosticError("genesyscloud_routing_utilization_label", fmt.Sprintf("Failed to get page of labels error: %s", getErr), resp)
 		}
 
 		if labels.Entities == nil || len(*labels.Entities) == 0 {
@@ -82,7 +82,7 @@ func createRoutingUtilizationLabel(ctx context.Context, d *schema.ResourceData, 
 		Name: &name,
 	})
 	if err != nil {
-		return util.BuildAPIDiagnosticError("genesyscloud_routing_utilization_label", fmt.Sprintf("Failed to create label %s", name), resp)
+		return util.BuildAPIDiagnosticError("genesyscloud_routing_utilization_label", fmt.Sprintf("Failed to create label %s error: %s", name, err), resp)
 	}
 
 	d.SetId(*label.Id)
@@ -104,7 +104,7 @@ func updateRoutingUtilizationLabel(ctx context.Context, d *schema.ResourceData, 
 		Name: &name,
 	})
 	if err != nil {
-		return util.BuildAPIDiagnosticError("genesyscloud_routing_utilization_label", fmt.Sprintf("Failed to update label %s", id), resp)
+		return util.BuildAPIDiagnosticError("genesyscloud_routing_utilization_label", fmt.Sprintf("Failed to update label %s error: %s", id, err), resp)
 	}
 
 	log.Printf("Updated label %s", id)
@@ -142,7 +142,7 @@ func deleteRoutingUtilizationLabel(ctx context.Context, d *schema.ResourceData, 
 	resp, err := routingApi.DeleteRoutingUtilizationLabel(d.Id(), true)
 
 	if err != nil {
-		return util.BuildAPIDiagnosticError("genesyscloud_routing_utilization_label", fmt.Sprintf("Failed to delete label %s", name), resp)
+		return util.BuildAPIDiagnosticError("genesyscloud_routing_utilization_label", fmt.Sprintf("Failed to delete label %s error: %s", name, err), resp)
 	}
 
 	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {

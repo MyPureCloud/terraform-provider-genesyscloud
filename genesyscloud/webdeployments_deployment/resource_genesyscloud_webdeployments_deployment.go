@@ -26,7 +26,7 @@ func getAllWebDeployments(ctx context.Context, clientConfig *platformclientv2.Co
 
 	deployments, resp, getErr := wd.getWebDeployments(ctx)
 	if getErr != nil {
-		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get web deployments"), resp)
+		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get web deployments error: %s", getErr), resp)
 	}
 
 	for _, deployment := range *deployments.Entities {
@@ -233,7 +233,7 @@ func deleteWebDeployment(ctx context.Context, d *schema.ResourceData, meta inter
 	log.Printf("Deleting web deployment %s", name)
 	resp, err := wd.deleteWebDeployment(ctx, d.Id())
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete webb deployment %s", name), resp)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete webb deployment %s error: %s", name, err), resp)
 	}
 
 	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {

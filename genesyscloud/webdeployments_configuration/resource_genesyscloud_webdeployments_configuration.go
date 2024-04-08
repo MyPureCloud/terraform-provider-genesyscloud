@@ -27,7 +27,7 @@ func getAllWebDeploymentConfigurations(ctx context.Context, clientConfig *platfo
 
 	configurations, resp, err := wp.getWebDeploymentsConfiguration(ctx)
 	if err != nil {
-		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get webdeployments configuration"), resp)
+		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get webdeployments configuration error: %s", err), resp)
 	}
 	for _, configuration := range *configurations.Entities {
 		resources[*configuration.Id] = &resourceExporter.ResourceMeta{Name: *configuration.Name}
@@ -212,7 +212,7 @@ func deleteWebDeploymentConfiguration(ctx context.Context, d *schema.ResourceDat
 	resp, err := wp.deleteWebDeploymentConfiguration(ctx, d.Id())
 
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete web deployment configuration %s", name), resp)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete web deployment configuration %s error: %s", name, err), resp)
 	}
 
 	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {

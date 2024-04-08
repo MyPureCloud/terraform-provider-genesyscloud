@@ -24,7 +24,7 @@ func getAllScripts(ctx context.Context, clientConfig *platformclientv2.Configura
 
 	scripts, resp, err := scriptsProxy.getAllPublishedScripts(ctx)
 	if err != nil {
-		return resources, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get page of scripts"), resp)
+		return resources, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get page of scripts error: %s", err), resp)
 	}
 
 	for _, script := range *scripts {

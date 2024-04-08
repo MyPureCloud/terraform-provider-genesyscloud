@@ -88,7 +88,7 @@ func createIntegrationAction(ctx context.Context, d *schema.ResourceData, meta i
 			Config:        BuildSdkActionConfig(d),
 		})
 		if err != nil {
-			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create integration action %s", name), resp)
+			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create integration action %s error: %s", name, err), resp)
 		}
 		d.SetId(*action.Id)
 
@@ -198,7 +198,7 @@ func updateIntegrationAction(ctx context.Context, d *schema.ResourceData, meta i
 		// Get the latest action version to send with PATCH
 		action, resp, err := iap.getIntegrationActionById(ctx, d.Id())
 		if err != nil {
-			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to read integration action %s", d.Id()), resp)
+			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to read integration action %s error: %s", d.Id(), err), resp)
 		}
 
 		_, resp, err = iap.updateIntegrationAction(ctx, d.Id(), &platformclientv2.Updateactioninput{
@@ -208,7 +208,7 @@ func updateIntegrationAction(ctx context.Context, d *schema.ResourceData, meta i
 			Config:   BuildSdkActionConfig(d),
 		})
 		if err != nil {
-			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update integration action %s", name), resp)
+			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update integration action %s error: %s", name, err), resp)
 		}
 		return resp, nil
 	})
@@ -235,7 +235,7 @@ func deleteIntegrationAction(ctx context.Context, d *schema.ResourceData, meta i
 			log.Printf("Integration action already deleted %s", d.Id())
 			return nil
 		}
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete Integration action %s", d.Id()), resp)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete Integration action %s error: %s", d.Id(), err), resp)
 	}
 
 	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {

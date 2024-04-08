@@ -26,7 +26,7 @@ func getAllEmergencyGroups(ctx context.Context, clientConfig *platformclientv2.C
 
 	emergencyGroupConfigs, resp, getErr := ap.getAllArchitectEmergencyGroups(ctx)
 	if getErr != nil {
-		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get Architect Emergency Groups"), resp)
+		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get Architect Emergency Groups error: %s", getErr), resp)
 	}
 
 	for _, emergencyGroupConfig := range *emergencyGroupConfigs {
@@ -64,7 +64,7 @@ func createEmergencyGroup(ctx context.Context, d *schema.ResourceData, meta inte
 	log.Printf("Creating emergency group %s", name)
 	eGroup, resp, err := ap.createArchitectEmergencyGroup(ctx, emergencyGroup)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create emergency group %s", d.Id()), resp)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create emergency group %s error: %s", d.Id(), err), resp)
 	}
 
 	d.SetId(*eGroup.Id)
@@ -125,7 +125,7 @@ func updateEmergencyGroup(ctx context.Context, d *schema.ResourceData, meta inte
 		// Get current emergency group version
 		emergencyGroup, resp, getErr := ap.getArchitectEmergencyGroup(ctx, d.Id())
 		if getErr != nil {
-			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to read emergency group %s", d.Id()), resp)
+			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to read emergency group %s error: %s", d.Id(), getErr), resp)
 		}
 
 		log.Printf("Updating emergency group %s", name)
@@ -141,7 +141,7 @@ func updateEmergencyGroup(ctx context.Context, d *schema.ResourceData, meta inte
 
 		_, resp, putErr := ap.updateArchitectEmergencyGroup(ctx, d.Id(), updatedEmergencyGroup)
 		if putErr != nil {
-			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update emergency group %s", d.Id()), resp)
+			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update emergency group %s error: %s", d.Id(), putErr), resp)
 		}
 		return resp, nil
 	})
@@ -161,7 +161,7 @@ func deleteEmergencyGroup(ctx context.Context, d *schema.ResourceData, meta inte
 	log.Printf("Deleting emergency group %s", d.Id())
 	resp, err := ap.deleteArchitectEmergencyGroup(ctx, d.Id())
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update emergency group %s", d.Id()), resp)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update emergency group %s error: %s", d.Id(), err), resp)
 	}
 	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		emergencyGroup, resp, err := ap.getArchitectEmergencyGroup(ctx, d.Id())

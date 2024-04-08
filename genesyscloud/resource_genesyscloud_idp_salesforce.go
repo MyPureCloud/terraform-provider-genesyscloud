@@ -30,7 +30,7 @@ func getAllIdpSalesforce(_ context.Context, clientConfig *platformclientv2.Confi
 			// Don't export if config doesn't exist
 			return resources, nil
 		}
-		return nil, util.BuildAPIDiagnosticError("genesyscloud_idp_salesforce", fmt.Sprintf("Failed to get IDP Salesforce"), resp)
+		return nil, util.BuildAPIDiagnosticError("genesyscloud_idp_salesforce", fmt.Sprintf("Failed to get IDP Salesforce error: %s", getErr), resp)
 	}
 
 	resources["0"] = &resourceExporter.ResourceMeta{Name: "salesforce"}
@@ -166,7 +166,7 @@ func updateIdpSalesforce(ctx context.Context, d *schema.ResourceData, meta inter
 
 	_, resp, err := idpAPI.PutIdentityprovidersSalesforce(update)
 	if err != nil {
-		return util.BuildAPIDiagnosticError("genesyscloud_idp_salesforce", fmt.Sprintf("Failed to update IDP Salesforce %s", d.Id()), resp)
+		return util.BuildAPIDiagnosticError("genesyscloud_idp_salesforce", fmt.Sprintf("Failed to update IDP Salesforce %s error: %s", d.Id(), err), resp)
 	}
 
 	log.Printf("Updated IDP Salesforce")
@@ -180,7 +180,7 @@ func deleteIdpSalesforce(ctx context.Context, _ *schema.ResourceData, meta inter
 	log.Printf("Deleting IDP Salesforce")
 	_, resp, err := idpAPI.DeleteIdentityprovidersSalesforce()
 	if err != nil {
-		return util.BuildAPIDiagnosticError("genesyscloud_idp_salesforce", fmt.Sprintf("Failed to delete IDP Salesforce"), resp)
+		return util.BuildAPIDiagnosticError("genesyscloud_idp_salesforce", fmt.Sprintf("Failed to delete IDP Salesforceerror: %s", err), resp)
 	}
 
 	return util.WithRetries(ctx, 180*time.Second, func() *retry.RetryError {

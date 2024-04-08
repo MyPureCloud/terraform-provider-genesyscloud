@@ -168,7 +168,7 @@ func getAllEvaluationForms(_ context.Context, clientConfig *platformclientv2.Con
 		const pageSize = 100
 		evaluationForms, resp, getErr := qualityAPI.GetQualityFormsEvaluations(pageSize, pageNum, "", "", "", "", "", "")
 		if getErr != nil {
-			return nil, util.BuildAPIDiagnosticError("genesyscloud_quality_forms_evaluation", fmt.Sprintf("Failed to get page of evaluation forms"), resp)
+			return nil, util.BuildAPIDiagnosticError("genesyscloud_quality_forms_evaluation", fmt.Sprintf("Failed to get page of evaluation forms error: %s", getErr), resp)
 		}
 
 		if evaluationForms.Entities == nil || len(*evaluationForms.Entities) == 0 {
@@ -243,7 +243,7 @@ func createEvaluationForm(ctx context.Context, d *schema.ResourceData, meta inte
 		QuestionGroups: questionGroups,
 	})
 	if err != nil {
-		return util.BuildAPIDiagnosticError("genesyscloud_quality_forms_evaluation", fmt.Sprintf("Failed to create evaluation form %s", name), resp)
+		return util.BuildAPIDiagnosticError("genesyscloud_quality_forms_evaluation", fmt.Sprintf("Failed to create evaluation form %s error: %s", name, err), resp)
 	}
 
 	// Make sure form is properly created
@@ -258,7 +258,7 @@ func createEvaluationForm(ctx context.Context, d *schema.ResourceData, meta inte
 			Published: &published,
 		})
 		if err != nil {
-			return util.BuildAPIDiagnosticError("genesyscloud_quality_forms_evaluation", fmt.Sprintf("Failed to publish evaluation form %s", name), resp)
+			return util.BuildAPIDiagnosticError("genesyscloud_quality_forms_evaluation", fmt.Sprintf("Failed to publish evaluation form %s error: %s", name, err), resp)
 		}
 	}
 
@@ -312,7 +312,7 @@ func updateEvaluationForm(ctx context.Context, d *schema.ResourceData, meta inte
 	// Get the latest unpublished version of the form
 	formVersions, resp, err := qualityAPI.GetQualityFormsEvaluationVersions(d.Id(), 25, 1, "desc")
 	if err != nil {
-		return util.BuildAPIDiagnosticError("genesyscloud_quality_forms_evaluation", fmt.Sprintf("Failed to get evaluation form versions %s", name), resp)
+		return util.BuildAPIDiagnosticError("genesyscloud_quality_forms_evaluation", fmt.Sprintf("Failed to get evaluation form versions %s error: %s", name, err), resp)
 	}
 
 	unpublishedForm := (*formVersions.Entities)[0]
@@ -323,7 +323,7 @@ func updateEvaluationForm(ctx context.Context, d *schema.ResourceData, meta inte
 		QuestionGroups: questionGroups,
 	})
 	if err != nil {
-		return util.BuildAPIDiagnosticError("genesyscloud_quality_forms_evaluation", fmt.Sprintf("Failed to update evaluation form %s", name), resp)
+		return util.BuildAPIDiagnosticError("genesyscloud_quality_forms_evaluation", fmt.Sprintf("Failed to update evaluation form %s error: %s", name, err), resp)
 	}
 
 	// Set published property on evaluation form update.
@@ -333,7 +333,7 @@ func updateEvaluationForm(ctx context.Context, d *schema.ResourceData, meta inte
 			Published: &published,
 		})
 		if err != nil {
-			return util.BuildAPIDiagnosticError("genesyscloud_quality_forms_evaluation", fmt.Sprintf("Failed to publish evaluation form %s", name), resp)
+			return util.BuildAPIDiagnosticError("genesyscloud_quality_forms_evaluation", fmt.Sprintf("Failed to publish evaluation form %s error: %s", name, err), resp)
 		}
 	} else {
 		// If published property is reset to false, set the resource Id to the latest unpublished form
@@ -353,7 +353,7 @@ func deleteEvaluationForm(ctx context.Context, d *schema.ResourceData, meta inte
 	// Get the latest unpublished version of the form
 	formVersions, resp, err := qualityAPI.GetQualityFormsEvaluationVersions(d.Id(), 25, 1, "desc")
 	if err != nil {
-		return util.BuildAPIDiagnosticError("genesyscloud_quality_forms_evaluation", fmt.Sprintf("Failed to get evaluation form versions %s", name), resp)
+		return util.BuildAPIDiagnosticError("genesyscloud_quality_forms_evaluation", fmt.Sprintf("Failed to get evaluation form versions %s error: %s", name, err), resp)
 	}
 
 	latestFormVersion := (*formVersions.Entities)[0]
@@ -361,7 +361,7 @@ func deleteEvaluationForm(ctx context.Context, d *schema.ResourceData, meta inte
 
 	log.Printf("Deleting evaluation form %s", name)
 	if resp, err := qualityAPI.DeleteQualityFormsEvaluation(d.Id()); err != nil {
-		return util.BuildAPIDiagnosticError("genesyscloud_quality_forms_evaluation", fmt.Sprintf("Failed to delete evaluation form %s", name), resp)
+		return util.BuildAPIDiagnosticError("genesyscloud_quality_forms_evaluation", fmt.Sprintf("Failed to delete evaluation form %s error: %s", name, err), resp)
 	}
 
 	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {

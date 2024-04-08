@@ -30,7 +30,7 @@ func getAllIdpPing(_ context.Context, clientConfig *platformclientv2.Configurati
 			// Don't export if config doesn't exist
 			return resources, nil
 		}
-		return nil, util.BuildAPIDiagnosticError("genesyscloud_idp_ping", fmt.Sprintf("Failed to get IDP Ping"), resp)
+		return nil, util.BuildAPIDiagnosticError("genesyscloud_idp_ping", fmt.Sprintf("Failed to get IDP Ping error: %s", getErr), resp)
 	}
 
 	resources["0"] = &resourceExporter.ResourceMeta{Name: "ping"}
@@ -179,7 +179,7 @@ func updateIdpPing(ctx context.Context, d *schema.ResourceData, meta interface{}
 
 	_, resp, err := idpAPI.PutIdentityprovidersPing(update)
 	if err != nil {
-		return util.BuildAPIDiagnosticError("genesyscloud_idp_ping", fmt.Sprintf("Failed to update IDP Ping %s", d.Id()), resp)
+		return util.BuildAPIDiagnosticError("genesyscloud_idp_ping", fmt.Sprintf("Failed to update IDP Ping %s error: %s", d.Id(), err), resp)
 	}
 
 	log.Printf("Updated IDP Ping")
@@ -193,7 +193,7 @@ func deleteIdpPing(ctx context.Context, d *schema.ResourceData, meta interface{}
 	log.Printf("Deleting IDP Ping")
 	_, resp, err := idpAPI.DeleteIdentityprovidersPing()
 	if err != nil {
-		return util.BuildAPIDiagnosticError("genesyscloud_idp_ping", fmt.Sprintf("Failed to delete IDP Ping %s", d.Id()), resp)
+		return util.BuildAPIDiagnosticError("genesyscloud_idp_ping", fmt.Sprintf("Failed to delete IDP Ping %s error: %s", d.Id(), err), resp)
 	}
 
 	return util.WithRetries(ctx, 60*time.Second, func() *retry.RetryError {

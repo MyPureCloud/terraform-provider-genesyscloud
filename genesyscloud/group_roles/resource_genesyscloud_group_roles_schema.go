@@ -93,7 +93,7 @@ func getAllGroups(_ context.Context, clientConfig *platformclientv2.Configuratio
 		const pageSize = 100
 		groups, resp, getErr := groupsAPI.GetGroups(pageSize, pageNum, nil, nil, "")
 		if getErr != nil {
-			return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get page of groups"), resp)
+			return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get page of groups error: %s", getErr), resp)
 		}
 
 		if groups.Entities == nil || len(*groups.Entities) == 0 {

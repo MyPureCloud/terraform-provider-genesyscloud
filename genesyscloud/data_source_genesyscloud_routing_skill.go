@@ -38,7 +38,7 @@ func dataSourceRoutingSkillRead(ctx context.Context, d *schema.ResourceData, m i
 
 	skills, resp, getErr := routingAPI.GetRoutingSkills(pageSize, 1, name, nil)
 	if getErr != nil {
-		return util.BuildAPIDiagnosticError("genesyscloud_routing_skill", fmt.Sprintf("Error requesting skills"), resp)
+		return util.BuildAPIDiagnosticError("genesyscloud_routing_skill", fmt.Sprintf("Error requesting skills error: %s", getErr), resp)
 	}
 	pageCount = *skills.PageCount
 

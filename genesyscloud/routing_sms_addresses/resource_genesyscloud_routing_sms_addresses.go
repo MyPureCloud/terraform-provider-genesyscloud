@@ -28,7 +28,7 @@ func getAllRoutingSmsAddress(ctx context.Context, clientConfig *platformclientv2
 
 	allSmsAddresses, resp, err := proxy.getAllSmsAddresses(ctx)
 	if err != nil {
-		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get sms addresses"), resp)
+		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get sms addresses error: %s", err), resp)
 	}
 
 	for _, entity := range *allSmsAddresses {
@@ -81,7 +81,7 @@ func createRoutingSmsAddress(ctx context.Context, d *schema.ResourceData, meta i
 	log.Printf("Creating Routing Sms Address %s", name)
 	routingSmsAddress, resp, err := proxy.createSmsAddress(sdkSmsAddressProvision)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create sms address %s", name), resp)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create sms address %s error: %s", name, err), resp)
 	}
 
 	d.SetId(*routingSmsAddress.Id)
@@ -131,7 +131,7 @@ func deleteRoutingSmsAddress(ctx context.Context, d *schema.ResourceData, meta i
 		log.Printf("Deleting Routing Sms Address")
 		resp, err := proxy.deleteSmsAddress(d.Id())
 		if err != nil {
-			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete routing sms address %s", d.Id()), resp)
+			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete routing sms address %s error: %s", d.Id(), err), resp)
 		}
 		return resp, nil
 	})

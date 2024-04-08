@@ -71,7 +71,7 @@ func createIntegration(ctx context.Context, d *schema.ResourceData, meta interfa
 	}
 	integration, resp, err := ip.createIntegration(ctx, createIntegrationReq)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create integration %s", *createIntegrationReq.Name), resp)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create integration %s error: %s", *createIntegrationReq.Name, err), resp)
 	}
 
 	d.SetId(*integration.Id)
@@ -89,7 +89,7 @@ func createIntegration(ctx context.Context, d *schema.ResourceData, meta interfa
 			IntendedState: &intendedState,
 		})
 		if patchErr != nil {
-			return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update integration %s", d.Id()), resp)
+			return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update integration %s error: %s", d.Id(), err), resp)
 		}
 	}
 	log.Printf("Created integration %s %s", name, *integration.Id)
@@ -159,7 +159,7 @@ func deleteIntegration(ctx context.Context, d *schema.ResourceData, meta interfa
 
 	resp, err := ip.deleteIntegration(ctx, d.Id())
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete Integration %s", d.Id()), resp)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete Integration %s error: %s", d.Id(), err), resp)
 	}
 
 	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {

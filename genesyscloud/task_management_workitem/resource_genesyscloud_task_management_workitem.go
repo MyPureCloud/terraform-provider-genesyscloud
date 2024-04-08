@@ -31,7 +31,7 @@ func getAllAuthTaskManagementWorkitems(ctx context.Context, clientConfig *platfo
 
 	workitems, resp, err := proxy.getAllTaskManagementWorkitem(ctx)
 	if err != nil {
-		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get task management workitem"), resp)
+		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get task management workitem error: %s", err), resp)
 	}
 
 	for _, workitem := range *workitems {
@@ -54,7 +54,7 @@ func createTaskManagementWorkitem(ctx context.Context, d *schema.ResourceData, m
 	log.Printf("Creating task management workitem %s", *taskManagementWorkitem.Name)
 	workitem, resp, err := proxy.createTaskManagementWorkitem(ctx, taskManagementWorkitem)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create task management workitem %s", *taskManagementWorkitem.Name), resp)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create task management workitem %s error: %s", *taskManagementWorkitem.Name, err), resp)
 	}
 
 	d.SetId(*workitem.Id)
@@ -144,7 +144,7 @@ func updateTaskManagementWorkitem(ctx context.Context, d *schema.ResourceData, m
 	log.Printf("Updating task management workitem %s", *taskManagementWorkitem.Name)
 	workitem, resp, err := proxy.updateTaskManagementWorkitem(ctx, d.Id(), taskManagementWorkitem)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update task management workitem %s", *taskManagementWorkitem.Name), resp)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update task management workitem %s error: %s", *taskManagementWorkitem.Name, err), resp)
 	}
 
 	log.Printf("Updated task management workitem %s", *workitem.Id)
@@ -158,7 +158,7 @@ func deleteTaskManagementWorkitem(ctx context.Context, d *schema.ResourceData, m
 
 	resp, err := proxy.deleteTaskManagementWorkitem(ctx, d.Id())
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete task management workitem %s", d.Id()), resp)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete task management workitem %s error: %s", d.Id(), err), resp)
 	}
 
 	return util.WithRetries(ctx, 180*time.Second, func() *retry.RetryError {

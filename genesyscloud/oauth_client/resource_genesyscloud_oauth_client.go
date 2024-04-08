@@ -28,7 +28,7 @@ func getAllOAuthClients(ctx context.Context, clientConfig *platformclientv2.Conf
 	clients, resp, getErr := oauthClientProxy.getAllOAuthClients(ctx)
 
 	if getErr != nil {
-		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get page of oauth clients"), resp)
+		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get page of oauth clients error: %s", getErr), resp)
 	}
 
 	for _, client := range *clients {
@@ -68,7 +68,7 @@ func createOAuthClient(ctx context.Context, d *schema.ResourceData, meta interfa
 		RoleDivisions:              roles,
 	})
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create oauth client %s", name), resp)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create oauth client %s error: %s", name, err), resp)
 	}
 
 	credentialName := resourcedata.GetNillableValue[string](d, "integration_credential_name")
@@ -90,7 +90,7 @@ func createOAuthClient(ctx context.Context, d *schema.ResourceData, meta interfa
 		credential, resp, err := oauthClientProxy.createIntegrationClient(ctx, createCredential)
 
 		if err != nil {
-			return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create credential %s", name), resp)
+			return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create credential %s error: %s", name, err), resp)
 		}
 
 		d.Set("integration_credential_id", *credential.Id)
@@ -175,7 +175,7 @@ func updateOAuthClient(ctx context.Context, d *schema.ResourceData, meta interfa
 		RoleDivisions:              roles,
 	})
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update oauth client %s", d.Id()), resp)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update oauth client %s error: %s", d.Id(), err), resp)
 	}
 
 	log.Printf("Updated oauth client %s", name)
@@ -209,7 +209,7 @@ func deleteOAuthClient(ctx context.Context, d *schema.ResourceData, meta interfa
 
 	resp, err := oauthClientProxy.deleteOAuthClient(ctx, d.Id())
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete oauth client %s", name), resp)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete oauth client %s error: %s", name, err), resp)
 	}
 
 	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {

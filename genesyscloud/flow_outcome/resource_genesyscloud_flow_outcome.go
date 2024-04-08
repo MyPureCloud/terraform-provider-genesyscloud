@@ -30,7 +30,7 @@ func getAllAuthFlowOutcomes(ctx context.Context, clientConfig *platformclientv2.
 
 	flowOutcomes, resp, err := proxy.getAllFlowOutcome(ctx)
 	if err != nil {
-		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get flow outcomes"), resp)
+		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get flow outcomes error: %s", err), resp)
 	}
 
 	for _, flowOutcome := range *flowOutcomes {
@@ -49,7 +49,7 @@ func createFlowOutcome(ctx context.Context, d *schema.ResourceData, meta interfa
 	log.Printf("Creating flow outcome %s", *flowOutcome.Name)
 	outcome, resp, err := proxy.createFlowOutcome(ctx, &flowOutcome)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create flow outcome %s", *flowOutcome.Name), resp)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create flow outcome %s error: %s", *flowOutcome.Name, err), resp)
 	}
 
 	d.SetId(*outcome.Id)
@@ -95,7 +95,7 @@ func updateFlowOutcome(ctx context.Context, d *schema.ResourceData, meta interfa
 	log.Printf("Updating flow outcome %s", *flowOutcome.Name)
 	_, resp, err := proxy.updateFlowOutcome(ctx, d.Id(), &flowOutcome)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update flow outcome %s", *flowOutcome.Name), resp)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update flow outcome %s error: %s", *flowOutcome.Name, err), resp)
 	}
 
 	log.Printf("Updated flow outcome %s", d.Id())

@@ -27,7 +27,7 @@ func getAllRoutingWrapupCodes(_ context.Context, clientConfig *platformclientv2.
 		const pageSize = 100
 		wrapupcodes, resp, getErr := routingAPI.GetRoutingWrapupcodes(pageSize, pageNum, "", "", "", []string{}, []string{})
 		if getErr != nil {
-			return nil, util.BuildAPIDiagnosticError("genesyscloud_routing_wrapupcode", fmt.Sprintf("Failed to get wrapupcodes"), resp)
+			return nil, util.BuildAPIDiagnosticError("genesyscloud_routing_wrapupcode", fmt.Sprintf("Failed to get wrapupcodes error: %s", getErr), resp)
 		}
 
 		if wrapupcodes.Entities == nil || len(*wrapupcodes.Entities) == 0 {
@@ -82,7 +82,7 @@ func createRoutingWrapupCode(ctx context.Context, d *schema.ResourceData, meta i
 		Name: &name,
 	})
 	if err != nil {
-		return util.BuildAPIDiagnosticError("genesyscloud_routing_wrapupcode", fmt.Sprintf("Failed to create wrapupcode %s", name), resp)
+		return util.BuildAPIDiagnosticError("genesyscloud_routing_wrapupcode", fmt.Sprintf("Failed to create wrapupcode %s error: %s", name, err), resp)
 	}
 
 	d.SetId(*wrapupcode.Id)
@@ -123,7 +123,7 @@ func updateRoutingWrapupCode(ctx context.Context, d *schema.ResourceData, meta i
 		Name: &name,
 	})
 	if err != nil {
-		return util.BuildAPIDiagnosticError("genesyscloud_routing_wrapupcode", fmt.Sprintf("Failed to update wrapupcode %s", name), resp)
+		return util.BuildAPIDiagnosticError("genesyscloud_routing_wrapupcode", fmt.Sprintf("Failed to update wrapupcode %s error: %s", name, err), resp)
 	}
 
 	log.Printf("Updated wrapupcode %s", name)
@@ -140,7 +140,7 @@ func deleteRoutingWrapupCode(ctx context.Context, d *schema.ResourceData, meta i
 	log.Printf("Deleting wrapupcode %s", name)
 	resp, err := routingAPI.DeleteRoutingWrapupcode(d.Id())
 	if err != nil {
-		return util.BuildAPIDiagnosticError("genesyscloud_routing_wrapupcode", fmt.Sprintf("Failed to delete wrapupcode %s", name), resp)
+		return util.BuildAPIDiagnosticError("genesyscloud_routing_wrapupcode", fmt.Sprintf("Failed to delete wrapupcode %s error: %s", name, err), resp)
 	}
 
 	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {

@@ -30,7 +30,7 @@ func getAllIdpGsuite(_ context.Context, clientConfig *platformclientv2.Configura
 			// Don't export if config doesn't exist
 			return resources, nil
 		}
-		return nil, util.BuildAPIDiagnosticError("genesyscloud_idp_gsuite", fmt.Sprintf("Failed to get IDP GSuite"), resp)
+		return nil, util.BuildAPIDiagnosticError("genesyscloud_idp_gsuite", fmt.Sprintf("Failed to get IDP GSuite error: %s", getErr), resp)
 	}
 
 	resources["0"] = &resourceExporter.ResourceMeta{Name: "gsuite"}
@@ -179,7 +179,7 @@ func updateIdpGsuite(ctx context.Context, d *schema.ResourceData, meta interface
 
 	_, resp, err := idpAPI.PutIdentityprovidersGsuite(update)
 	if err != nil {
-		return util.BuildAPIDiagnosticError("genesyscloud_idp_gsuite", fmt.Sprintf("Failed to update IDP GSuite %s", d.Id()), resp)
+		return util.BuildAPIDiagnosticError("genesyscloud_idp_gsuite", fmt.Sprintf("Failed to update IDP GSuite %s error: %s", d.Id(), err), resp)
 	}
 
 	log.Printf("Updated IDP GSuite")
@@ -193,7 +193,7 @@ func deleteIdpGsuite(ctx context.Context, d *schema.ResourceData, meta interface
 	log.Printf("Deleting IDP GSuite")
 	_, resp, err := idpAPI.DeleteIdentityprovidersGsuite()
 	if err != nil {
-		return util.BuildAPIDiagnosticError("genesyscloud_idp_gsuite", fmt.Sprintf("Failed to delete IDP GSuite %s", d.Id()), resp)
+		return util.BuildAPIDiagnosticError("genesyscloud_idp_gsuite", fmt.Sprintf("Failed to delete IDP GSuite %s error: %s", d.Id(), err), resp)
 	}
 
 	return util.WithRetries(ctx, 60*time.Second, func() *retry.RetryError {

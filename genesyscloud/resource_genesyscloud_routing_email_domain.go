@@ -29,7 +29,7 @@ func getAllRoutingEmailDomains(_ context.Context, clientConfig *platformclientv2
 
 		domains, resp, getErr := routingAPI.GetRoutingEmailDomains(pageSize, pageNum, false, "")
 		if getErr != nil {
-			return nil, util.BuildAPIDiagnosticError("genesyscloud_routing_email_domain", fmt.Sprintf("Failed to get routing email domains"), resp)
+			return nil, util.BuildAPIDiagnosticError("genesyscloud_routing_email_domain", fmt.Sprintf("Failed to get routing email domains error: %s", getErr), resp)
 		}
 
 		if domains.Entities == nil || len(*domains.Entities) == 0 {
@@ -112,7 +112,7 @@ func createRoutingEmailDomain(ctx context.Context, d *schema.ResourceData, meta 
 	log.Printf("Creating routing email domain %s", domainID)
 	domain, resp, err := routingAPI.PostRoutingEmailDomains(sdkDomain)
 	if err != nil {
-		return util.BuildAPIDiagnosticError("genesyscloud_routing_email_domain", fmt.Sprintf("Failed to create routing email domain %s", domainID), resp)
+		return util.BuildAPIDiagnosticError("genesyscloud_routing_email_domain", fmt.Sprintf("Failed to create routing email domain %s error: %s", domainID, err), resp)
 	}
 
 	d.SetId(*domain.Id)
@@ -195,7 +195,7 @@ func updateRoutingEmailDomain(ctx context.Context, d *schema.ResourceData, meta 
 		},
 	})
 	if err != nil {
-		return util.BuildAPIDiagnosticError("genesyscloud_routing_email_domain", fmt.Sprintf("Failed to update routing email domain %s", d.Id()), resp)
+		return util.BuildAPIDiagnosticError("genesyscloud_routing_email_domain", fmt.Sprintf("Failed to update routing email domain %s error: %s", d.Id(), err), resp)
 	}
 
 	log.Printf("Updated routing email domain %s", d.Id())
@@ -209,7 +209,7 @@ func deleteRoutingEmailDomain(ctx context.Context, d *schema.ResourceData, meta 
 	log.Printf("Deleting routing email domain %s", d.Id())
 	resp, err := routingAPI.DeleteRoutingEmailDomain(d.Id())
 	if err != nil {
-		return util.BuildAPIDiagnosticError("genesyscloud_routing_email_domain", fmt.Sprintf("Failed to delete routing email domain %s", d.Id()), resp)
+		return util.BuildAPIDiagnosticError("genesyscloud_routing_email_domain", fmt.Sprintf("Failed to delete routing email domain %s error: %s", d.Id(), err), resp)
 	}
 
 	return util.WithRetries(ctx, 90*time.Second, func() *retry.RetryError {

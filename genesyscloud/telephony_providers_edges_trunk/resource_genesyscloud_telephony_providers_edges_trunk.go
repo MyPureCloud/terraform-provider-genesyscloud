@@ -30,7 +30,7 @@ func createTrunk(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		if util.IsStatus404(resp) {
 			return nil
 		}
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to read trunk base settings %s", d.Id()), resp)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to read trunk base settings %s error: %s", d.Id(), getErr), resp)
 	}
 
 	// Assign to edge if edge_id is set
@@ -41,7 +41,7 @@ func createTrunk(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 			if util.IsStatus404(resp) {
 				return nil
 			}
-			return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to read edge %s", edgeId), resp)
+			return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to read edge %s error: %s", edgeId, getErr), resp)
 		}
 
 		if edge.EdgeGroup == nil {
@@ -54,16 +54,16 @@ func createTrunk(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		log.Printf("Assigning trunk base settings to edge %s", edgeId)
 		_, resp, err := tp.putEdge(ctx, edgeId, *edge)
 		if err != nil {
-			return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to assign trunk base settings to edge %s", edgeId), resp)
+			return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to assign trunk base settings to edge %s error: %s", edgeId, err), resp)
 		}
 	} else if edgeGroupIdI, ok := d.GetOk("edge_group_id"); ok {
 		edgeGroupId := edgeGroupIdI.(string)
 		edgeGroup, resp, getErr := tp.getEdgeGroup(ctx, edgeGroupId)
 		if getErr != nil {
 			if util.IsStatus404(resp) {
-				return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get edge group %s", edgeGroupId), resp)
+				return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get edge group %s error: %s", edgeGroupId, getErr), resp)
 			}
-			return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to read edge group %s", edgeGroupId), resp)
+			return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to read edge group %s error: %s", edgeGroupId, getErr), resp)
 		}
 		edgeGroup.EdgeTrunkBaseAssignment = &platformclientv2.Trunkbaseassignment{
 			TrunkBase: trunkBase,
@@ -72,7 +72,7 @@ func createTrunk(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		log.Printf("Assigning trunk base settings to edge group %s", edgeGroupId)
 		_, resp, err := tp.putEdgeGroup(ctx, edgeGroupId, *edgeGroup)
 		if err != nil {
-			return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to assign trunk base settings to edge group %s", edgeGroupId), resp)
+			return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to assign trunk base settings to edge group %s error: %s", edgeGroupId, err), resp)
 		}
 	} else {
 		return diag.Errorf("edge_id or edge_group_id were not set. One must be set in order to assign the trunk base settings")
@@ -80,7 +80,7 @@ func createTrunk(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 
 	trunk, resp, err := getTrunkByTrunkBaseId(ctx, trunkBaseSettingsId, meta)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get trunk by trunk base id %s", trunkBaseSettingsId), resp)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get trunk by trunk base id %s error: %s", trunkBaseSettingsId, err), resp)
 	}
 
 	d.SetId(*trunk.Id)

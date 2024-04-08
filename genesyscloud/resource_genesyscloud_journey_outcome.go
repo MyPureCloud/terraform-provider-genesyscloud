@@ -101,7 +101,7 @@ func getAllJourneyOutcomes(_ context.Context, clientConfig *platformclientv2.Con
 		const pageSize = 100
 		journeyOutcomes, resp, getErr := journeyApi.GetJourneyOutcomes(pageNum, pageSize, "", nil, nil, "")
 		if getErr != nil {
-			return nil, util.BuildAPIDiagnosticError("genesyscloud_journey_outcome", fmt.Sprintf("Failed to get page of journey outcomes"), resp)
+			return nil, util.BuildAPIDiagnosticError("genesyscloud_journey_outcome", fmt.Sprintf("Failed to get page of journey outcomes error: %s", getErr), resp)
 		}
 
 		if journeyOutcomes.Entities == nil || len(*journeyOutcomes.Entities) == 0 {
@@ -147,7 +147,7 @@ func createJourneyOutcome(ctx context.Context, d *schema.ResourceData, meta inte
 	log.Printf("Creating journey outcome %s", *journeyOutcome.DisplayName)
 	result, resp, err := journeyApi.PostJourneyOutcomes(*journeyOutcome)
 	if err != nil {
-		return util.BuildAPIDiagnosticError("genesyscloud_journey_outcome", fmt.Sprintf("Failed to create journey outcome %s", *journeyOutcome.DisplayName), resp)
+		return util.BuildAPIDiagnosticError("genesyscloud_journey_outcome", fmt.Sprintf("Failed to create journey outcome %s error: %s", *journeyOutcome.DisplayName, err), resp)
 	}
 
 	d.SetId(*result.Id)
@@ -188,13 +188,13 @@ func updateJourneyOutcome(ctx context.Context, d *schema.ResourceData, meta inte
 		// Get current journey outcome version
 		journeyOutcome, resp, getErr := journeyApi.GetJourneyOutcome(d.Id())
 		if getErr != nil {
-			return nil, util.BuildAPIDiagnosticError("genesyscloud_journey_outcome", fmt.Sprintf("Failed to read journey outcome %s", d.Id()), resp)
+			return nil, util.BuildAPIDiagnosticError("genesyscloud_journey_outcome", fmt.Sprintf("Failed to read journey outcome %s error: %s", d.Id(), getErr), resp)
 		}
 
 		patchOutcome.Version = journeyOutcome.Version
 		_, resp, patchErr := journeyApi.PatchJourneyOutcome(d.Id(), *patchOutcome)
 		if patchErr != nil {
-			return resp, util.BuildAPIDiagnosticError("genesyscloud_journey_outcome", fmt.Sprintf("Failed to update journey outcome %s", *patchOutcome.DisplayName), resp)
+			return resp, util.BuildAPIDiagnosticError("genesyscloud_journey_outcome", fmt.Sprintf("Failed to update journey outcome %s error: %s", *patchOutcome.DisplayName, patchErr), resp)
 		}
 		return resp, nil
 	})
@@ -214,7 +214,7 @@ func deleteJourneyOutcome(ctx context.Context, d *schema.ResourceData, meta inte
 
 	log.Printf("Deleting journey outcome with display name %s", displayName)
 	if resp, err := journeyApi.DeleteJourneyOutcome(d.Id()); err != nil {
-		return util.BuildAPIDiagnosticError("genesyscloud_journey_outcome", fmt.Sprintf("Failed to delete journey outcome %s", displayName), resp)
+		return util.BuildAPIDiagnosticError("genesyscloud_journey_outcome", fmt.Sprintf("Failed to delete journey outcome %s error: %s", displayName, err), resp)
 	}
 
 	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {

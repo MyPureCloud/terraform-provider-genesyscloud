@@ -81,7 +81,7 @@ func getAllAttemptLimits(_ context.Context, clientConfig *platformclientv2.Confi
 		const pageSize = 100
 		attemptLimitConfigs, resp, getErr := outboundAPI.GetOutboundAttemptlimits(pageSize, pageNum, true, "", "", "", "")
 		if getErr != nil {
-			return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get page of attempt limit configs"), resp)
+			return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get page of attempt limit configs error: %s", getErr), resp)
 		}
 
 		if attemptLimitConfigs.Entities == nil || len(*attemptLimitConfigs.Entities) == 0 {
@@ -188,7 +188,7 @@ func createOutboundAttemptLimit(ctx context.Context, d *schema.ResourceData, met
 	log.Printf("Creating Outbound Attempt Limit %s", name)
 	outboundAttemptLimit, resp, err := outboundApi.PostOutboundAttemptlimits(sdkAttemptLimits)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create  Outbound Attempt Limit %s", *sdkAttemptLimits.Name), resp)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create  Outbound Attempt Limit %s error: %s", *sdkAttemptLimits.Name, err), resp)
 	}
 
 	d.SetId(*outboundAttemptLimit.Id)
@@ -234,12 +234,12 @@ func updateOutboundAttemptLimit(ctx context.Context, d *schema.ResourceData, met
 		// Get current Outbound Attempt Limit version
 		outboundAttemptLimit, resp, getErr := outboundApi.GetOutboundAttemptlimit(d.Id())
 		if getErr != nil {
-			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to read outbound attempt limit %s", d.Id()), resp)
+			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to read outbound attempt limit %s error: %s", d.Id(), getErr), resp)
 		}
 		sdkAttemptLimits.Version = outboundAttemptLimit.Version
 		outboundAttemptLimit, resp, updateErr := outboundApi.PutOutboundAttemptlimit(d.Id(), sdkAttemptLimits)
 		if updateErr != nil {
-			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update outbound attempt limit %s", *sdkAttemptLimits.Name), resp)
+			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update outbound attempt limit %s error: %s", *sdkAttemptLimits.Name, updateErr), resp)
 		}
 		return nil, nil
 	})
@@ -301,7 +301,7 @@ func deleteOutboundAttemptLimit(ctx context.Context, d *schema.ResourceData, met
 		log.Printf("Deleting Outbound Attempt Limit")
 		resp, err := outboundApi.DeleteOutboundAttemptlimit(d.Id())
 		if err != nil {
-			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete outbound attempt limit %s", d.Id()), resp)
+			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete outbound attempt limit %s error: %s", d.Id(), err), resp)
 		}
 		return resp, nil
 	})

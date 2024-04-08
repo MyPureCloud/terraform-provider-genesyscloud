@@ -255,7 +255,7 @@ func getAllKnowledgeDocumentVariations(_ context.Context, clientConfig *platform
 			// get the variations for each document
 			knowledgeDocumentVariations, resp, getErr := knowledgeAPI.GetKnowledgeKnowledgebaseDocumentVariations(*knowledgeBase.Id, *knowledgeDocument.Id, "", "", fmt.Sprintf("%v", pageSize), documentState)
 			if getErr != nil {
-				return nil, util.BuildAPIDiagnosticError("genesyscloud_knowledge_document_variation", fmt.Sprintf("Failed to get page of knowledge document variations"), resp)
+				return nil, util.BuildAPIDiagnosticError("genesyscloud_knowledge_document_variation", fmt.Sprintf("Failed to get page of knowledge document variations error: %v", err), resp)
 			}
 
 			if knowledgeDocumentVariations.Entities == nil || len(*knowledgeDocumentVariations.Entities) == 0 {
@@ -340,14 +340,14 @@ func createKnowledgeDocumentVariation(ctx context.Context, d *schema.ResourceDat
 
 	knowledgeDocumentVariationResponse, resp, err := knowledgeAPI.PostKnowledgeKnowledgebaseDocumentVariations(knowledgeBaseId, knowledgeDocumentId, *knowledgeDocumentVariationRequest)
 	if err != nil {
-		return util.BuildAPIDiagnosticError("genesyscloud_knowledge_document_variation", fmt.Sprintf("Failed to create variation for knowledge document %s", d.Id()), resp)
+		return util.BuildAPIDiagnosticError("genesyscloud_knowledge_document_variation", fmt.Sprintf("Failed to create variation for knowledge document %s error: %s", d.Id(), err), resp)
 	}
 
 	if published == true {
 		_, resp, versionErr := knowledgeAPI.PostKnowledgeKnowledgebaseDocumentVersions(knowledgeBaseId, knowledgeDocumentId, platformclientv2.Knowledgedocumentversion{})
 
 		if versionErr != nil {
-			return util.BuildAPIDiagnosticError("genesyscloud_knowledge_document_variation", fmt.Sprintf("Failed to publish knowledge document"), resp)
+			return util.BuildAPIDiagnosticError("genesyscloud_knowledge_document_variation", fmt.Sprintf("Failed to publish knowledge documenterror: %s", err), resp)
 		}
 	}
 
@@ -480,7 +480,7 @@ func updateKnowledgeDocumentVariation(ctx context.Context, d *schema.ResourceDat
 		// Get current knowledge document variation version
 		_, resp, getErr := knowledgeAPI.GetKnowledgeKnowledgebaseDocumentVariation(documentVariationId, knowledgeDocumentId, knowledgeBaseId, "Draft")
 		if getErr != nil {
-			return resp, util.BuildAPIDiagnosticError("genesyscloud_knowledge_document_variation", fmt.Sprintf("Failed to read knowledge document variation %s", id), resp)
+			return resp, util.BuildAPIDiagnosticError("genesyscloud_knowledge_document_variation", fmt.Sprintf("Failed to read knowledge document variation %s error: %s", id, getErr), resp)
 		}
 
 		knowledgeDocumentVariationUpdate := buildKnowledgeDocumentVariationUpdate(knowledgeDocumentVariation)
@@ -488,13 +488,13 @@ func updateKnowledgeDocumentVariation(ctx context.Context, d *schema.ResourceDat
 		log.Printf("Updating knowledge document variation %s", documentVariationId)
 		_, resp, putErr := knowledgeAPI.PatchKnowledgeKnowledgebaseDocumentVariation(documentVariationId, knowledgeDocumentId, knowledgeBaseId, *knowledgeDocumentVariationUpdate)
 		if putErr != nil {
-			return resp, util.BuildAPIDiagnosticError("genesyscloud_knowledge_document_variation", fmt.Sprintf("Failed to update knowledge document variation %s", documentVariationId), resp)
+			return resp, util.BuildAPIDiagnosticError("genesyscloud_knowledge_document_variation", fmt.Sprintf("Failed to update knowledge document variation %s error: %s", documentVariationId, putErr), resp)
 		}
 		if published == true {
 			_, resp, versionErr := knowledgeAPI.PostKnowledgeKnowledgebaseDocumentVersions(knowledgeBaseId, knowledgeDocumentId, platformclientv2.Knowledgedocumentversion{})
 
 			if versionErr != nil {
-				return resp, util.BuildAPIDiagnosticError("genesyscloud_knowledge_document_variation", fmt.Sprintf("Failed to publish knowledge document %s", id), resp)
+				return resp, util.BuildAPIDiagnosticError("genesyscloud_knowledge_document_variation", fmt.Sprintf("Failed to publish knowledge document %s error: %s", id, versionErr), resp)
 			}
 		}
 
@@ -526,7 +526,7 @@ func deleteKnowledgeDocumentVariation(ctx context.Context, d *schema.ResourceDat
 	log.Printf("Deleting knowledge document variation %s", id)
 	resp, err := knowledgeAPI.DeleteKnowledgeKnowledgebaseDocumentVariation(documentVariationId, knowledgeDocumentId, knowledgeBaseId)
 	if err != nil {
-		return util.BuildAPIDiagnosticError("genesyscloud_knowledge_document_variation", fmt.Sprintf("Failed to delete knowledge document variation %s", id), resp)
+		return util.BuildAPIDiagnosticError("genesyscloud_knowledge_document_variation", fmt.Sprintf("Failed to delete knowledge document variation %s error: %s", id, err), resp)
 	}
 
 	if published == true {
@@ -539,14 +539,14 @@ func deleteKnowledgeDocumentVariation(ctx context.Context, d *schema.ResourceDat
 		variations, resp, variationErr := knowledgeAPI.GetKnowledgeKnowledgebaseDocumentVariations(knowledgeBaseId, knowledgeDocumentId, "", "", fmt.Sprintf("%v", pageSize), "Draft")
 
 		if variationErr != nil {
-			return util.BuildAPIDiagnosticError("genesyscloud_knowledge_document_variation", fmt.Sprintf("Failed to retrieve knowledge document variations"), resp)
+			return util.BuildAPIDiagnosticError("genesyscloud_knowledge_document_variation", fmt.Sprintf("Failed to retrieve knowledge document variations error: %s", err), resp)
 		}
 
 		if len(*variations.Entities) > 0 {
 			_, resp, versionErr := knowledgeAPI.PostKnowledgeKnowledgebaseDocumentVersions(knowledgeBaseId, knowledgeDocumentId, platformclientv2.Knowledgedocumentversion{})
 
 			if versionErr != nil {
-				return util.BuildAPIDiagnosticError("genesyscloud_knowledge_document_variation", fmt.Sprintf("Failed to publish knowledge document"), resp)
+				return util.BuildAPIDiagnosticError("genesyscloud_knowledge_document_variation", fmt.Sprintf("Failed to publish knowledge document error: %s", err), resp)
 			}
 		}
 	}

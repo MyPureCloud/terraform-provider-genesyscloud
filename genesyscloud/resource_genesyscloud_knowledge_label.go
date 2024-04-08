@@ -83,7 +83,7 @@ func getAllKnowledgeLabelEntities(knowledgeAPI platformclientv2.KnowledgeApi, kn
 	for i := 0; ; i++ {
 		knowledgeLabels, resp, getErr := knowledgeAPI.GetKnowledgeKnowledgebaseLabels(*knowledgeBase.Id, "", after, fmt.Sprintf("%v", pageSize), "", false)
 		if getErr != nil {
-			return nil, util.BuildAPIDiagnosticError("genesyscloud_knowledge_label", fmt.Sprintf("Failed to get knowledge labels"), resp)
+			return nil, util.BuildAPIDiagnosticError("genesyscloud_knowledge_label", fmt.Sprintf("Failed to get knowledge labels error: %s", getErr), resp)
 		}
 
 		if knowledgeLabels.Entities == nil || len(*knowledgeLabels.Entities) == 0 {
@@ -162,7 +162,7 @@ func createKnowledgeLabel(ctx context.Context, d *schema.ResourceData, meta inte
 	log.Printf("Creating knowledge label %s", knowledgeLabel["name"].(string))
 	knowledgeLabelResponse, resp, err := knowledgeAPI.PostKnowledgeKnowledgebaseLabels(knowledgeBaseId, knowledgeLabelRequest)
 	if err != nil {
-		return util.BuildAPIDiagnosticError("genesyscloud_knowledge_label", fmt.Sprintf("Failed to create knowledge label %s", knowledgeBaseId), resp)
+		return util.BuildAPIDiagnosticError("genesyscloud_knowledge_label", fmt.Sprintf("Failed to create knowledge label %s error: %s", knowledgeBaseId, err), resp)
 	}
 
 	id := fmt.Sprintf("%s,%s", *knowledgeLabelResponse.Id, knowledgeBaseId)
@@ -216,7 +216,7 @@ func updateKnowledgeLabel(ctx context.Context, d *schema.ResourceData, meta inte
 		// Get current knowledge label version
 		_, resp, getErr := knowledgeAPI.GetKnowledgeKnowledgebaseLabel(knowledgeBaseId, knowledgeLabelId)
 		if getErr != nil {
-			return resp, util.BuildAPIDiagnosticError("genesyscloud_knowledge_label", fmt.Sprintf("Failed to read knowledge label %s", knowledgeLabelId), resp)
+			return resp, util.BuildAPIDiagnosticError("genesyscloud_knowledge_label", fmt.Sprintf("Failed to read knowledge label %s error: %s", knowledgeLabelId, getErr), resp)
 		}
 
 		knowledgeLabelUpdate := buildKnowledgeLabelUpdate(knowledgeLabel)
@@ -224,7 +224,7 @@ func updateKnowledgeLabel(ctx context.Context, d *schema.ResourceData, meta inte
 		log.Printf("Updating knowledge label %s", knowledgeLabel["name"].(string))
 		_, resp, putErr := knowledgeAPI.PatchKnowledgeKnowledgebaseLabel(knowledgeBaseId, knowledgeLabelId, knowledgeLabelUpdate)
 		if putErr != nil {
-			return resp, util.BuildAPIDiagnosticError("genesyscloud_knowledge_label", fmt.Sprintf("Failed to update knowledge label %s", knowledgeLabelId), resp)
+			return resp, util.BuildAPIDiagnosticError("genesyscloud_knowledge_label", fmt.Sprintf("Failed to update knowledge label %s error: %s", knowledgeLabelId, putErr), resp)
 		}
 		return resp, nil
 	})
@@ -247,7 +247,7 @@ func deleteKnowledgeLabel(ctx context.Context, d *schema.ResourceData, meta inte
 	log.Printf("Deleting knowledge label %s", id)
 	_, resp, err := knowledgeAPI.DeleteKnowledgeKnowledgebaseLabel(knowledgeBaseId, knowledgeLabelId)
 	if err != nil {
-		return util.BuildAPIDiagnosticError("genesyscloud_knowledge_label", fmt.Sprintf("Failed to delete knowledge label %s", id), resp)
+		return util.BuildAPIDiagnosticError("genesyscloud_knowledge_label", fmt.Sprintf("Failed to delete knowledge label %s error: %s", id, err), resp)
 	}
 
 	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {

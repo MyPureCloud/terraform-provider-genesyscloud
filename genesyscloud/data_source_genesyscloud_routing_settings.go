@@ -25,7 +25,7 @@ func dataSourceRoutingSettingsRead(ctx context.Context, d *schema.ResourceData, 
 
 	settings, resp, getErr := routingAPI.GetRoutingSettings()
 	if getErr != nil {
-		return util.BuildAPIDiagnosticError("genesyscloud_routing_settings", fmt.Sprintf("Error requesting routing settings"), resp)
+		return util.BuildAPIDiagnosticError("genesyscloud_routing_settings", fmt.Sprintf("Error requesting routing settings error: %s", getErr), resp)
 	}
 
 	d.SetId("datasource-settings")

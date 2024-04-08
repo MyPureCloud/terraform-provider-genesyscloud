@@ -69,7 +69,7 @@ func createRoutingEmailRoute(ctx context.Context, d *schema.ResourceData, meta i
 	log.Printf("Creating routing email route %s", d.Id())
 	inboundRoute, resp, err := proxy.createRoutingEmailRoute(ctx, domainId, &routingEmailRoute)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create routing email route%s", *routingEmailRoute.Name), resp)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create routing email route %s error: %s", *routingEmailRoute.Name, err), resp)
 	}
 
 	d.SetId(*inboundRoute.Id)
@@ -81,7 +81,7 @@ func createRoutingEmailRoute(ctx context.Context, d *schema.ResourceData, meta i
 		_, resp, err = proxy.updateRoutingEmailRoute(ctx, *inboundRoute.Id, domainId, inboundRoute)
 
 		if err != nil {
-			return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Created routing email route %v %s %s, but failed to update the reply answer route to itself", inboundRoute.Pattern, domainId, *inboundRoute.Id), resp)
+			return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Created routing email route %v %s %s, but failed to update the reply answer route to itself error: %s", inboundRoute.Pattern, domainId, *inboundRoute.Id, err), resp)
 		}
 	}
 
@@ -189,7 +189,7 @@ func updateRoutingEmailRoute(ctx context.Context, d *schema.ResourceData, meta i
 	log.Printf("Updating routing email route %s", d.Id())
 	inboundRoute, resp, err := proxy.updateRoutingEmailRoute(ctx, d.Id(), domainId, &routingEmailRoute)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update routing email route%s", *routingEmailRoute.Name), resp)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update routing email route %s error: %s", *routingEmailRoute.Name, err), resp)
 	}
 
 	log.Printf("Updated routing email route %s", *inboundRoute.Id)
@@ -204,7 +204,7 @@ func deleteRoutingEmailRoute(ctx context.Context, d *schema.ResourceData, meta i
 
 	resp, err := proxy.deleteRoutingEmailRoute(ctx, domainId, d.Id())
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete routing email route %s", d.Id()), resp)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete routing email route %s error: %s", d.Id(), err), resp)
 	}
 
 	return util.WithRetries(ctx, 180*time.Second, func() *retry.RetryError {

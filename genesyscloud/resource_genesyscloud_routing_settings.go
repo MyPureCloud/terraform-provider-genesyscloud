@@ -167,7 +167,7 @@ func updateRoutingSettings(ctx context.Context, d *schema.ResourceData, meta int
 
 	_, resp, err := routingAPI.PutRoutingSettings(update)
 	if err != nil {
-		return util.BuildAPIDiagnosticError("genesyscloud_routing_settings", fmt.Sprintf("Failed to update routing settings %s", d.Id()), resp)
+		return util.BuildAPIDiagnosticError("genesyscloud_routing_settings", fmt.Sprintf("Failed to update routing settings %s error: %s", d.Id(), err), resp)
 	}
 
 	time.Sleep(5 * time.Second)
@@ -183,7 +183,7 @@ func deleteRoutingSettings(ctx context.Context, d *schema.ResourceData, meta int
 	log.Printf("Resetting Routing Setting")
 	resp, err := routingAPI.DeleteRoutingSettings()
 	if err != nil {
-		return util.BuildAPIDiagnosticError("genesyscloud_routing_settings", fmt.Sprintf("Failed to delete routing settings"), resp)
+		return util.BuildAPIDiagnosticError("genesyscloud_routing_settings", fmt.Sprintf("Failed to delete routing settings error: %s", err), resp)
 	}
 	log.Printf("Reset Routing Settings")
 	return nil
@@ -195,7 +195,7 @@ func readRoutingSettingsContactCenter(d *schema.ResourceData, routingAPI *platfo
 		if util.IsStatus404(resp) {
 			return nil
 		}
-		return util.BuildAPIDiagnosticError("genesyscloud_routing_settings", fmt.Sprintf("Failed to read contact center for routing setting %s", d.Id()), resp)
+		return util.BuildAPIDiagnosticError("genesyscloud_routing_settings", fmt.Sprintf("Failed to read contact center for routing setting %s error: %s", d.Id(), getErr), resp)
 	}
 
 	if contactcenter == nil {
@@ -219,7 +219,7 @@ func readRoutingSettingsTranscription(d *schema.ResourceData, routingAPI *platfo
 		if util.IsStatus404(resp) {
 			return nil
 		}
-		return util.BuildAPIDiagnosticError("genesyscloud_routing_settings", fmt.Sprintf("Failed to read contact center for routing settings %s", d.Id()), resp)
+		return util.BuildAPIDiagnosticError("genesyscloud_routing_settings", fmt.Sprintf("Failed to read contact center for routing settings %s error: %s", d.Id(), getErr), resp)
 	}
 
 	if transcription == nil {
@@ -261,7 +261,7 @@ func updateContactCenter(d *schema.ResourceData, routingAPI *platformclientv2.Ro
 			})
 
 			if err != nil {
-				return util.BuildAPIDiagnosticError("genesyscloud_routing_settings", fmt.Sprintf("Failed to update contact center for routing settings %s", d.Id()), resp)
+				return util.BuildAPIDiagnosticError("genesyscloud_routing_settings", fmt.Sprintf("Failed to update contact center for routing settings %s error: %s", d.Id(), err), resp)
 			}
 		}
 	}
@@ -299,7 +299,7 @@ func updateTranscription(d *schema.ResourceData, routingAPI *platformclientv2.Ro
 			})
 
 			if err != nil {
-				return util.BuildAPIDiagnosticError("genesyscloud_routing_settings", fmt.Sprintf("Failed to update Transcription for routing settings %s", d.Id()), resp)
+				return util.BuildAPIDiagnosticError("genesyscloud_routing_settings", fmt.Sprintf("Failed to update Transcription for routing settings %s error: %s", d.Id(), err), resp)
 			}
 		}
 	}

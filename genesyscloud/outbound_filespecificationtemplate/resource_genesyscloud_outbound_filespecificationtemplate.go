@@ -26,7 +26,7 @@ func getAllFileSpecificationTemplates(ctx context.Context, clientConfig *platfor
 
 	fileSpecificationTemplates, resp, err := proxy.getAllOutboundFilespecificationtemplate(ctx)
 	if err != nil {
-		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get outbound file specification templates"), resp)
+		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get outbound file specification templates error: %s", err), resp)
 	}
 
 	for _, fst := range *fileSpecificationTemplates {
@@ -44,7 +44,7 @@ func createOutboundFileSpecificationTemplate(ctx context.Context, d *schema.Reso
 	log.Printf("Creating File Specification Template %s", *sdkFileSpecificationTemplate.Name)
 	outboundFileSpecificationTemplate, resp, err := proxy.createOutboundFilespecificationtemplate(ctx, &sdkFileSpecificationTemplate)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create File Specification Template %s", *sdkFileSpecificationTemplate.Name), resp)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create File Specification Template %s error: %s", *sdkFileSpecificationTemplate.Name, err), resp)
 	}
 
 	d.SetId(*outboundFileSpecificationTemplate.Id)
@@ -61,7 +61,7 @@ func updateOutboundFileSpecificationTemplate(ctx context.Context, d *schema.Reso
 	log.Printf("Updating File Specification Template %s", *sdkFileSpecificationTemplate.Name)
 	_, resp, err := proxy.updateOutboundFilespecificationtemplate(ctx, d.Id(), &sdkFileSpecificationTemplate)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update File Specification Template%s", d.Id()), resp)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update File Specification Template%s error: %s", d.Id(), err), resp)
 	}
 
 	log.Printf("Updated Outbound File Specification Template %s", *sdkFileSpecificationTemplate.Name)
@@ -109,7 +109,7 @@ func deleteOutboundFileSpecificationTemplate(ctx context.Context, d *schema.Reso
 		log.Printf("Deleting Outbound File Specification Template")
 		resp, err := proxy.deleteOutboundFilespecificationtemplate(ctx, d.Id())
 		if err != nil {
-			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete Outbound File Specification Template %s", d.Id()), resp)
+			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete Outbound File Specification Template %s error: %s", d.Id(), err), resp)
 		}
 		return resp, nil
 	})

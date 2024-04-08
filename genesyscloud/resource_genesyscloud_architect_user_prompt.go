@@ -730,7 +730,7 @@ func getAllUserPrompts(_ context.Context, clientConfig *platformclientv2.Configu
 		const pageSize = 100
 		userPrompts, resp, getErr := architectAPI.GetArchitectPrompts(pageNum, pageSize, nil, "", "", "", "", false, false, nil)
 		if getErr != nil {
-			return nil, util.BuildAPIDiagnosticError("genesyscloud_architect_user_prompts", fmt.Sprintf("Failed to get prompts"), resp)
+			return nil, util.BuildAPIDiagnosticError("genesyscloud_architect_user_prompts", fmt.Sprintf("Failed to get prompts error: %s", getErr), resp)
 		}
 
 		if userPrompts.Entities == nil || len(*userPrompts.Entities) == 0 {
@@ -810,7 +810,7 @@ func createUserPrompt(ctx context.Context, d *schema.ResourceData, meta interfac
 	log.Printf("Creating user prompt %s", name)
 	userPrompt, resp, err := architectApi.PostArchitectPrompts(prompt)
 	if err != nil {
-		return util.BuildAPIDiagnosticError("genesyscloud_architect_user_prompt", fmt.Sprintf("failed to create user prompt %s", name), resp)
+		return util.BuildAPIDiagnosticError("genesyscloud_architect_user_prompt", fmt.Sprintf("failed to create user prompt %s error: %s", name, err), resp)
 	}
 
 	// Create the prompt resources
@@ -843,7 +843,7 @@ func createUserPrompt(ctx context.Context, d *schema.ResourceData, meta interfac
 			log.Printf("Creating user prompt resource for language: %s", resourceLanguage)
 			userPromptResource, resp, err := architectApi.PostArchitectPromptResources(*userPrompt.Id, promptResource)
 			if err != nil {
-				return util.BuildAPIDiagnosticError("genesyscloud_architect_user_prompt", fmt.Sprintf("failed to create user prompt resources %s", name), resp)
+				return util.BuildAPIDiagnosticError("genesyscloud_architect_user_prompt", fmt.Sprintf("failed to create user prompt resources %s error: %s", name, err), resp)
 			}
 			uploadUri := userPromptResource.UploadUri
 
@@ -947,7 +947,7 @@ func updateUserPrompt(ctx context.Context, d *schema.ResourceData, meta interfac
 	log.Printf("Updating user prompt %s", name)
 	_, resp, err := architectApi.PutArchitectPrompt(d.Id(), prompt)
 	if err != nil {
-		return util.BuildAPIDiagnosticError("genesyscloud_architect_user_prompt", fmt.Sprintf("failed to update user prompt %s", name), resp)
+		return util.BuildAPIDiagnosticError("genesyscloud_architect_user_prompt", fmt.Sprintf("failed to update user prompt %s error: %s", name, err), resp)
 	}
 
 	diagErr := updatePromptResource(d, architectApi, sdkConfig)
@@ -967,7 +967,7 @@ func deleteUserPrompt(ctx context.Context, d *schema.ResourceData, meta interfac
 
 	log.Printf("Deleting user prompt %s", name)
 	if resp, err := architectApi.DeleteArchitectPrompt(d.Id(), true); err != nil {
-		return util.BuildAPIDiagnosticError("genesyscloud_architect_user_prompt", fmt.Sprintf("failed to delete user prompt %s", name), resp)
+		return util.BuildAPIDiagnosticError("genesyscloud_architect_user_prompt", fmt.Sprintf("failed to delete user prompt %s error: %s", name, err), resp)
 	}
 	log.Printf("Deleted user prompt %s", name)
 
@@ -1081,7 +1081,7 @@ func updatePromptResource(d *schema.ResourceData, architectApi *platformclientv2
 	// Get the prompt so we can get existing prompt resources
 	userPrompt, resp, err := architectApi.GetArchitectPrompt(d.Id(), true, true, nil)
 	if err != nil {
-		return util.BuildAPIDiagnosticError("genesyscloud_architect_user_prompt", fmt.Sprintf("failed to get user prompt %s", d.Id()), resp)
+		return util.BuildAPIDiagnosticError("genesyscloud_architect_user_prompt", fmt.Sprintf("failed to get user prompt %s error: %s", d.Id(), err), resp)
 	}
 
 	// Update the prompt resources
@@ -1127,7 +1127,7 @@ func updatePromptResource(d *schema.ResourceData, architectApi *platformclientv2
 				log.Printf("Updating user prompt resource for language: %s", resourceLanguage)
 				res, resp, err := architectApi.PutArchitectPromptResource(*userPrompt.Id, resourceLanguage, promptResource)
 				if err != nil {
-					return util.BuildAPIDiagnosticError("genesyscloud_architect_user_prompt", fmt.Sprintf("failed to create user prompt resource %s", name), resp)
+					return util.BuildAPIDiagnosticError("genesyscloud_architect_user_prompt", fmt.Sprintf("failed to create user prompt resource %s error: %s", name, err), resp)
 				}
 
 				userPromptResource = res
@@ -1153,7 +1153,7 @@ func updatePromptResource(d *schema.ResourceData, architectApi *platformclientv2
 				log.Printf("Creating user prompt resource for language: %s", resourceLanguage)
 				res, resp, err := architectApi.PostArchitectPromptResources(*userPrompt.Id, promptResource)
 				if err != nil {
-					return util.BuildAPIDiagnosticError("genesyscloud_architect_user_prompt", fmt.Sprintf("failed to create user prompt resource %s", name), resp)
+					return util.BuildAPIDiagnosticError("genesyscloud_architect_user_prompt", fmt.Sprintf("failed to create user prompt resource %s error: %s", name, err), resp)
 				}
 
 				userPromptResource = res

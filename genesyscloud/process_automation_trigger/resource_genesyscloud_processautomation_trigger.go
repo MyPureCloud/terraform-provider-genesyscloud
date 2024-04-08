@@ -189,7 +189,7 @@ func createProcessAutomationTrigger(ctx context.Context, d *schema.ResourceData,
 	diagErr := util.RetryWhen(util.IsStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		trigger, resp, err := postProcessAutomationTrigger(triggerInput, integAPI)
 		if err != nil {
-			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create process automation trigger %s", name), resp)
+			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create process automation trigger %s error: %s", name, err), resp)
 		}
 
 		d.SetId(*trigger.Id)
@@ -283,7 +283,7 @@ func updateProcessAutomationTrigger(ctx context.Context, d *schema.ResourceData,
 		// Get the latest trigger version to send with PATCH
 		trigger, resp, getErr := getProcessAutomationTrigger(d.Id(), integAPI)
 		if getErr != nil {
-			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to read process automation trigger %s", d.Id()), resp)
+			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to read process automation trigger %s error: %s", d.Id(), getErr), resp)
 		}
 
 		if eventTTLSeconds > 0 && delayBySeconds > 0 {
@@ -311,7 +311,7 @@ func updateProcessAutomationTrigger(ctx context.Context, d *schema.ResourceData,
 		_, putResp, err := putProcessAutomationTrigger(d.Id(), triggerInput, integAPI)
 
 		if err != nil {
-			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update process automation trigger %s", name), resp)
+			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update process automation trigger %s error: %s", name, err), resp)
 		}
 		return putResp, nil
 	})
