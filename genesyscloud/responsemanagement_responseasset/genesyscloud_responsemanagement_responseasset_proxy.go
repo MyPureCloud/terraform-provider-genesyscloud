@@ -17,6 +17,7 @@ out during testing.
 var internalProxy *responsemanagementResponseassetProxy
 
 // Type definitions for each func on our proxy so we can easily mock them out later
+type getAllResponseAssetsFunc func(ctx context.Context, p *responsemanagementResponseassetProxy) (*[]platformclientv2.Responseassetsearchrequest, *platformclientv2.APIResponse, error)
 type createRespManagementRespAssetFunc func(ctx context.Context, p *responsemanagementResponseassetProxy, respAsset *platformclientv2.Createresponseassetrequest) (*platformclientv2.Createresponseassetresponse, *platformclientv2.APIResponse, error)
 type updateRespManagementRespAssetFunc func(ctx context.Context, p *responsemanagementResponseassetProxy, id string, respAsset *platformclientv2.Responseassetrequest) (*platformclientv2.Responseasset, *platformclientv2.APIResponse, error)
 type getRespManagementRespAssetByIdFunc func(ctx context.Context, p *responsemanagementResponseassetProxy, id string) (*platformclientv2.Responseasset, *platformclientv2.APIResponse, error)
@@ -27,6 +28,7 @@ type deleteRespManagementRespAssetFunc func(ctx context.Context, p *responsemana
 type responsemanagementResponseassetProxy struct {
 	clientConfig                         *platformclientv2.Configuration
 	responseManagementApi                *platformclientv2.ResponseManagementApi
+	getAllResponseAssetsAttr             getAllResponseAssetsFunc
 	createRespManagementRespAssetAttr    createRespManagementRespAssetFunc
 	updateRespManagementRespAssetAttr    updateRespManagementRespAssetFunc
 	getRespManagementRespAssetByIdAttr   getRespManagementRespAssetByIdFunc
@@ -40,6 +42,7 @@ func newRespManagementRespAssetProxy(clientConfig *platformclientv2.Configuratio
 	return &responsemanagementResponseassetProxy{
 		clientConfig:                         clientConfig,
 		responseManagementApi:                api,
+		getAllResponseAssetsAttr:             getAllResponseAssetsFn,
 		createRespManagementRespAssetAttr:    createRespManagementRespAssetFn,
 		updateRespManagementRespAssetAttr:    updateRespManagementRespAssetFn,
 		getRespManagementRespAssetByIdAttr:   getRespManagementRespAssetByIdFn,
@@ -55,6 +58,10 @@ func getRespManagementRespAssetProxy(clientConfig *platformclientv2.Configuratio
 		internalProxy = newRespManagementRespAssetProxy(clientConfig)
 	}
 	return internalProxy
+}
+
+func (p *responsemanagementResponseassetProxy) getAllResponseAssets(ctx context.Context) (*[]platformclientv2.Responseassetsearchrequest, *platformclientv2.APIResponse, error) {
+	return p.getAllResponseAssetsAttr(ctx, p)
 }
 
 // createRespManagementRespAsset creates a Genesys Cloud responsemanagement responseasset by Id
@@ -78,6 +85,39 @@ func (p *responsemanagementResponseassetProxy) getRespManagementRespAssetByName(
 // deleteRespManagementRespAsset deletes a Genesys Cloud responsemanagement responseasset by Id
 func (p *responsemanagementResponseassetProxy) deleteRespManagementRespAsset(ctx context.Context, id string) (response *platformclientv2.APIResponse, err error) {
 	return p.deleteRespManagementRespAssetAttr(ctx, p, id)
+}
+
+func getAllResponseAssetsFn(ctx context.Context, p *responsemanagementResponseassetProxy) (*[]platformclientv2.Responseassetsearchrequest, *platformclientv2.APIResponse, error) {
+	var allResponseAssets []platformclientv2.Responseassetsearchrequest
+	var response *platformclientv2.APIResponse
+	pageSize := 100
+
+	responseAssets, resp, err := p.responseManagementApi.PostResponsemanagementResponseassetsSearch()
+	if err != nil {
+		return nil, resp, fmt.Errorf("Failed to get response asset search request: %v", err)
+	}
+
+	if responseAssets.Results == nil || len(*responseAssets.Results) == 0 {
+		return &allResponseAssets, resp, nil
+	}
+	for _, responseAssetSearchRequest := range *responseAssets.Results {
+		allResponseAssets = append(allResponseAssets, responseAssetSearchRequest)
+	}
+
+	for pageNum := 2; pageNum <= *responseAssets.PageCount; pageNum++ {
+		responseAssets, resp, err := p.responseManagementApi.PostResponsemanagementResponseassetsSearch()
+		if err != nil {
+			return nil, resp, fmt.Errorf("Failed to get response asset search request: %v", err)
+		}
+
+		if responseAssets.Results == nil || len(*responseAssets.Results) == 0 {
+			break
+		}
+
+		for _, responseAssetSearchRequest := range *responseAssets.Results {
+			allResponseAssets = append(allResponseAssets, responseAssetSearchRequest)
+		}
+	}
 }
 
 // createRespManagementRespAssetFn is an implementation of the function to create a Genesys Cloud responsemanagement responseasset

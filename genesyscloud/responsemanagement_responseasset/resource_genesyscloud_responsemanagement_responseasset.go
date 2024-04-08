@@ -10,6 +10,7 @@ import (
 	"log"
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"terraform-provider-genesyscloud/genesyscloud/util/files"
 	"time"
@@ -18,6 +19,20 @@ import (
 /*
 The resource_genesyscloud_responsemanagement_responseasset.go contains all of the methods that perform the core logic for a resource.
 */
+func getAllResponseAssets(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+	proxy := getRespManagementRespAssetProxy(clientConfig)
+	resources := make(resourceExporter.ResourceIDMetaMap)
+
+	assets, resp, err := proxy.getAllResponseAssets(ctx)
+	if err != nil {
+		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get response management response assets"), resp)
+	}
+
+	for _, asset := range *assets {
+		resources[*asset.Id] = &resourceExporter.ResourceMeta{Name: *asset.Name}
+	}
+	return resources, nil
+}
 
 // createResponsemanagementResponseasset is used by the responsemanagement_responseasset resource to create Genesys cloud responsemanagement responseasset
 func createRespManagementRespAsset(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
