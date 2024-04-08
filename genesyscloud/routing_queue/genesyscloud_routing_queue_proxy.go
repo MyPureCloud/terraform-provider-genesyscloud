@@ -2,7 +2,6 @@ package routing_queue
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
 	rc "terraform-provider-genesyscloud/genesyscloud/resource_cache"
@@ -161,13 +160,4 @@ func getRoutingQueueWrapupCodeIdsFn(ctx context.Context, p *RoutingQueueProxy, q
 	}
 
 	return codeIds, resp, nil
-}
-
-// Function to format JSON response - Go
-func formatJSON(input any) string {
-	output, err := json.MarshalIndent(input, "", "	")
-	if err != nil {
-		fmt.Println(err)
-	}
-	return string(output)
 }
