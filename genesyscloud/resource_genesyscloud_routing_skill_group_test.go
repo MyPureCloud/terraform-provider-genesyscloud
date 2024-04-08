@@ -742,7 +742,7 @@ func getAllSkillGroupMemberDivisionIds(routingAPI *platformclientv2.RoutingApi, 
 	path := fmt.Sprintf("%s/api/v2/routing/skillgroups/%s/members/divisions", routingAPI.Configuration.BasePath, resourceId)
 	response, err := apiClient.CallAPI(path, "GET", nil, headers, nil, nil, "", nil)
 	if err != nil || response.Error != nil {
-		return nil, diag.Errorf("Failed to get member divisions for skill group %s: %v", resourceId, err)
+		return nil, util.BuildAPIDiagnosticError("genesyscloud_routing_skill_group", fmt.Sprintf("Failed to update Routing Utilization %s", resourceId), response)
 	}
 
 	memberDivisionsPayload := make(map[string]interface{}, 0)

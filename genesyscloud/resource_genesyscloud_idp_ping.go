@@ -30,7 +30,7 @@ func getAllIdpPing(_ context.Context, clientConfig *platformclientv2.Configurati
 			// Don't export if config doesn't exist
 			return resources, nil
 		}
-		return nil, diag.Errorf("Failed to get IDP Ping: %v", getErr)
+		return nil, util.BuildAPIDiagnosticError("genesyscloud_idp_ping", fmt.Sprintf("Failed to get IDP Ping"), resp)
 	}
 
 	resources["0"] = &resourceExporter.ResourceMeta{Name: "ping"}
@@ -177,23 +177,23 @@ func updateIdpPing(ctx context.Context, d *schema.ResourceData, meta interface{}
 		update.Certificates = certificates
 	}
 
-	_, _, err := idpAPI.PutIdentityprovidersPing(update)
+	_, resp, err := idpAPI.PutIdentityprovidersPing(update)
 	if err != nil {
-		return diag.Errorf("Failed to update IDP Ping: %s", err)
+		return util.BuildAPIDiagnosticError("genesyscloud_idp_ping", fmt.Sprintf("Failed to update IDP Ping %s", d.Id()), resp)
 	}
 
 	log.Printf("Updated IDP Ping")
 	return readIdpPing(ctx, d, meta)
 }
 
-func deleteIdpPing(ctx context.Context, _ *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func deleteIdpPing(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	idpAPI := platformclientv2.NewIdentityProviderApiWithConfig(sdkConfig)
 
 	log.Printf("Deleting IDP Ping")
-	_, _, err := idpAPI.DeleteIdentityprovidersPing()
+	_, resp, err := idpAPI.DeleteIdentityprovidersPing()
 	if err != nil {
-		return diag.Errorf("Failed to delete IDP Ping: %s", err)
+		return util.BuildAPIDiagnosticError("genesyscloud_idp_ping", fmt.Sprintf("Failed to delete IDP Ping %s", d.Id()), resp)
 	}
 
 	return util.WithRetries(ctx, 60*time.Second, func() *retry.RetryError {

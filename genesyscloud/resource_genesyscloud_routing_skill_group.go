@@ -58,8 +58,7 @@ func getAllSkillGroups(ctx context.Context, clientConfig *platformclientv2.Confi
 		response, err := apiClient.CallAPI(path, "GET", nil, headerParams, nil, nil, "", nil)
 
 		if err != nil {
-			return nil, diag.Errorf("Failed to get page of skill groups: %s", err)
-
+			return nil, util.BuildAPIDiagnosticError("genesyscloud_routing_skill_group", fmt.Sprintf("Failed to get page of skill groups"), response)
 		}
 
 		err = json.Unmarshal(response.RawBody, &skillGroupPayload)
@@ -200,7 +199,7 @@ func createOrUpdateSkillGroups(ctx context.Context, d *schema.ResourceData, meta
 
 	response, err := apiClient.CallAPI(path, httpMethod, skillGroupsPayload, headerParams, nil, nil, "", nil)
 	if err != nil {
-		return diag.Errorf("Failed to create/update skill groups %s: %s", skillGroupsRequest.Name, err)
+		return util.BuildAPIDiagnosticError("genesyscloud_routing_skill_group", fmt.Sprintf("Failed to create/update skill groups %s", skillGroupsRequest.Name), response)
 	}
 
 	//Get the results and pull out the id
@@ -270,7 +269,7 @@ func postSkillGroupMemberDivisions(ctx context.Context, d *schema.ResourceData, 
 	path := fmt.Sprintf("%s/api/v2/routing/skillgroups/%s/members/divisions", routingAPI.Configuration.BasePath, d.Id())
 	response, err := apiClient.CallAPI(path, "POST", skillGroupsMemberDivisionIdsPayload, headerParams, nil, nil, "", nil)
 	if err != nil || response.Error != nil {
-		return diag.Errorf("Failed to create/update skill group %s member divisions: %s", name, err)
+		return util.BuildAPIDiagnosticError("genesyscloud_routing_skill_group", fmt.Sprintf("Failed to create/update skill group %s member divisions", d.Id()), response)
 	}
 
 	log.Printf("Updated skill group %s member divisions", name)
@@ -482,7 +481,7 @@ func deleteSkillGroups(ctx context.Context, d *schema.ResourceData, meta interfa
 			log.Printf("Skills Group was already deleted %s", d.Id())
 			return nil
 		}
-		return diag.Errorf("Failed to delete skills group %s: %s", d.Id(), err)
+		return util.BuildAPIDiagnosticError("genesyscloud_routing_skill_group", fmt.Sprintf("Failed to delete skill group %s", d.Id()), response)
 	}
 
 	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
@@ -510,7 +509,7 @@ func readSkillGroupMemberDivisionIds(d *schema.ResourceData, routingAPI *platfor
 
 	response, err := apiClient.CallAPI(path, "GET", nil, headers, nil, nil, "", nil)
 	if err != nil || response.Error != nil {
-		return nil, diag.Errorf("Failed to get member divisions for skill group %s: %v", d.Id(), err)
+		return nil, util.BuildAPIDiagnosticError("genesyscloud_routing_skill_group", fmt.Sprintf("Failed to  get member divisions for skill group %s", d.Id()), response)
 	}
 
 	memberDivisionsPayload := make(map[string]interface{}, 0)

@@ -189,7 +189,7 @@ func deleteAuthDivision(ctx context.Context, d *schema.ResourceData, meta interf
 		log.Printf("Deleting division %s", name)
 		resp, err := authAPI.DeleteAuthorizationDivision(d.Id(), false)
 		if err != nil {
-			return resp, diag.Errorf("Failed to delete division %s: %s", name, err)
+			return resp, util.BuildAPIDiagnosticError("genesyscloud_auth_division", fmt.Sprintf("Failed to delete Division %s", d.Id()), resp)
 		}
 		return resp, nil
 	})

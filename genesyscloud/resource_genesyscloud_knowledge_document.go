@@ -136,7 +136,7 @@ func getAllKnowledgeDocumentEntities(knowledgeAPI platformclientv2.KnowledgeApi,
 		// execute request
 		response, err := clientConfig.APIClient.CallAPI(listDocumentsBaseUrl, "GET", nil, headers, queryParams, nil, "", nil)
 		if err != nil {
-			return nil, diag.Errorf("Failed to read knowledge document list response %v", err)
+			return nil, util.BuildAPIDiagnosticError("genesyscloud_knowledge_document", fmt.Sprintf("Failed to read knowledge document list response"), response)
 		}
 
 		// process response
@@ -262,9 +262,9 @@ func buildKnowledgeDocumentRequest(d *schema.ResourceData, knowledgeAPI *platfor
 
 	if categoryName, ok := requestIn["category_name"].(string); ok && categoryName != "" {
 		pageSize := 1
-		knowledgeCategories, _, getErr := knowledgeAPI.GetKnowledgeKnowledgebaseCategories(knowledgeBaseId, "", "", fmt.Sprintf("%v", pageSize), "", false, categoryName, "", "", false)
+		knowledgeCategories, resp, getErr := knowledgeAPI.GetKnowledgeKnowledgebaseCategories(knowledgeBaseId, "", "", fmt.Sprintf("%v", pageSize), "", false, categoryName, "", "", false)
 		if getErr != nil {
-			return nil, diag.Errorf("Failed to get page of knowledge categories: %v", getErr)
+			return nil, util.BuildAPIDiagnosticError("genesyscloud_knowledge_document", fmt.Sprintf("Failed to get page of knowledge categories"), resp)
 		}
 		if len(*knowledgeCategories.Entities) > 0 {
 			matchingCategory := (*knowledgeCategories.Entities)[0]
@@ -276,9 +276,9 @@ func buildKnowledgeDocumentRequest(d *schema.ResourceData, knowledgeAPI *platfor
 		pageSize := 1
 		labelIds := make([]string, 0)
 		for _, labelName := range labelStringList {
-			knowledgeLabels, _, getErr := knowledgeAPI.GetKnowledgeKnowledgebaseLabels(knowledgeBaseId, "", "", fmt.Sprintf("%v", pageSize), labelName, false)
+			knowledgeLabels, resp, getErr := knowledgeAPI.GetKnowledgeKnowledgebaseLabels(knowledgeBaseId, "", "", fmt.Sprintf("%v", pageSize), labelName, false)
 			if getErr != nil {
-				return nil, diag.Errorf("Failed to get page of knowledge labels: %v", getErr)
+				return nil, util.BuildAPIDiagnosticError("genesyscloud_knowledge_document", fmt.Sprintf("Failed to get page of knowledge labels"), resp)
 			}
 			if len(*knowledgeLabels.Entities) > 0 {
 				matchingLabel := (*knowledgeLabels.Entities)[0]
@@ -369,16 +369,16 @@ func createKnowledgeDocument(ctx context.Context, d *schema.ResourceData, meta i
 	}
 
 	log.Printf("Creating knowledge document")
-	knowledgeDocument, _, err := knowledgeAPI.PostKnowledgeKnowledgebaseDocuments(knowledgeBaseId, *body)
+	knowledgeDocument, resp, err := knowledgeAPI.PostKnowledgeKnowledgebaseDocuments(knowledgeBaseId, *body)
 
 	if err != nil {
-		return diag.Errorf("Failed to create knowledge document: %s", err)
+		return util.BuildAPIDiagnosticError("genesyscloud_knowledge_document", fmt.Sprintf("Failed to create knowledge document %s", d.Id()), resp)
 	}
 
 	if published == true {
-		_, _, versionErr := knowledgeAPI.PostKnowledgeKnowledgebaseDocumentVersions(knowledgeBaseId, *knowledgeDocument.Id, platformclientv2.Knowledgedocumentversion{})
+		_, resp, versionErr := knowledgeAPI.PostKnowledgeKnowledgebaseDocumentVersions(knowledgeBaseId, *knowledgeDocument.Id, platformclientv2.Knowledgedocumentversion{})
 		if versionErr != nil {
-			return diag.Errorf("Failed to publish knowledge document: %s", versionErr)
+			return util.BuildAPIDiagnosticError("genesyscloud_knowledge_document", fmt.Sprintf("Failed to publish knowledge document"), resp)
 		}
 	}
 
@@ -453,7 +453,7 @@ func updateKnowledgeDocument(ctx context.Context, d *schema.ResourceData, meta i
 		// Get current Knowledge document version
 		_, resp, getErr := knowledgeAPI.GetKnowledgeKnowledgebaseDocument(knowledgeBaseId, knowledgeDocumentId, nil, state)
 		if getErr != nil {
-			return resp, diag.Errorf("Failed to read Knowledge document %s: %s", knowledgeDocumentId, getErr)
+			return resp, util.BuildAPIDiagnosticError("genesyscloud_knowledge_document", fmt.Sprintf("Failed to read knowledge document %s", knowledgeDocumentId), resp)
 		}
 
 		update, err := buildKnowledgeDocumentRequest(d, knowledgeAPI, knowledgeBaseId)
@@ -464,7 +464,7 @@ func updateKnowledgeDocument(ctx context.Context, d *schema.ResourceData, meta i
 		log.Printf("Updating knowledge document %s", knowledgeDocumentId)
 		_, resp, putErr := knowledgeAPI.PatchKnowledgeKnowledgebaseDocument(knowledgeBaseId, knowledgeDocumentId, *update)
 		if putErr != nil {
-			return resp, diag.Errorf("Failed to update knowledge document %s: %s", knowledgeDocumentId, putErr)
+			return resp, util.BuildAPIDiagnosticError("genesyscloud_knowledge_document", fmt.Sprintf("Failed to update knowledge document %s", knowledgeDocumentId), resp)
 		}
 		return resp, nil
 	})
@@ -485,9 +485,9 @@ func deleteKnowledgeDocument(ctx context.Context, d *schema.ResourceData, meta i
 	knowledgeAPI := platformclientv2.NewKnowledgeApiWithConfig(sdkConfig)
 
 	log.Printf("Deleting Knowledge document %s", knowledgeDocumentId)
-	_, err := knowledgeAPI.DeleteKnowledgeKnowledgebaseDocument(knowledgeBaseId, knowledgeDocumentId)
+	resp, err := knowledgeAPI.DeleteKnowledgeKnowledgebaseDocument(knowledgeBaseId, knowledgeDocumentId)
 	if err != nil {
-		return diag.Errorf("Failed to delete Knowledge document %s: %s", knowledgeDocumentId, err)
+		return util.BuildAPIDiagnosticError("genesyscloud_knowledge_document", fmt.Sprintf("Failed to delete knowledge document %s", knowledgeDocumentId), resp)
 	}
 
 	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {

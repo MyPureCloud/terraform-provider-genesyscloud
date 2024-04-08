@@ -80,11 +80,11 @@ func createRoutingLanguage(ctx context.Context, d *schema.ResourceData, meta int
 	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
 
 	log.Printf("Creating language %s", name)
-	language, _, err := routingAPI.PostRoutingLanguages(platformclientv2.Language{
+	language, resp, err := routingAPI.PostRoutingLanguages(platformclientv2.Language{
 		Name: &name,
 	})
 	if err != nil {
-		return diag.Errorf("Failed to create language %s: %s", name, err)
+		return util.BuildAPIDiagnosticError("genesyscloud_routing_language", fmt.Sprintf("Failed to create language %s", name), resp)
 	}
 
 	d.SetId(*language.Id)
@@ -126,10 +126,10 @@ func deleteRoutingLanguage(ctx context.Context, d *schema.ResourceData, meta int
 	routingApi := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
 
 	log.Printf("Deleting language %s", name)
-	_, err := routingApi.DeleteRoutingLanguage(d.Id())
+	resp, err := routingApi.DeleteRoutingLanguage(d.Id())
 
 	if err != nil {
-		return diag.Errorf("Failed to delete language %s: %s", name, err)
+		return util.BuildAPIDiagnosticError("genesyscloud_routing_language", fmt.Sprintf("Failed to delete language %s", name), resp)
 	}
 
 	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {

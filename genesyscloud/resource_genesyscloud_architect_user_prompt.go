@@ -728,9 +728,9 @@ func getAllUserPrompts(_ context.Context, clientConfig *platformclientv2.Configu
 
 	for pageNum := 1; ; pageNum++ {
 		const pageSize = 100
-		userPrompts, _, getErr := architectAPI.GetArchitectPrompts(pageNum, pageSize, nil, "", "", "", "", false, false, nil)
+		userPrompts, resp, getErr := architectAPI.GetArchitectPrompts(pageNum, pageSize, nil, "", "", "", "", false, false, nil)
 		if getErr != nil {
-			return nil, diag.Errorf("Failed to get page of prompts: %v", getErr)
+			return nil, util.BuildAPIDiagnosticError("genesyscloud_architect_user_prompts", fmt.Sprintf("Failed to get prompts"), resp)
 		}
 
 		if userPrompts.Entities == nil || len(*userPrompts.Entities) == 0 {

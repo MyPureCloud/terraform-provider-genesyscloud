@@ -361,9 +361,9 @@ func getAllJourneyActionMaps(_ context.Context, clientConfig *platformclientv2.C
 	pageCount := 1 // Needed because of broken journey common paging
 	for pageNum := 1; pageNum <= pageCount; pageNum++ {
 		const pageSize = 100
-		actionMaps, _, getErr := journeyApi.GetJourneyActionmaps(pageNum, pageSize, "", "", "", nil, nil, "")
+		actionMaps, resp, getErr := journeyApi.GetJourneyActionmaps(pageNum, pageSize, "", "", "", nil, nil, "")
 		if getErr != nil {
-			return nil, diag.Errorf("Failed to get page of journey action maps: %v", getErr)
+			return nil, util.BuildAPIDiagnosticError("genesyscloud_journey_action_map", fmt.Sprintf("failed to get page of journey action maps"), resp)
 		}
 
 		if actionMaps.Entities == nil || len(*actionMaps.Entities) == 0 {
@@ -459,7 +459,7 @@ func updateJourneyActionMap(ctx context.Context, d *schema.ResourceData, meta in
 		// Get current journey action map version
 		actionMap, resp, getErr := journeyApi.GetJourneyActionmap(d.Id())
 		if getErr != nil {
-			return resp, diag.Errorf("Failed to read current journey action map %s: %s", d.Id(), getErr)
+			return resp, util.BuildAPIDiagnosticError("genesyscloud_journey_action_map", fmt.Sprintf("failed to read journey action map %s", d.Id()), resp)
 		}
 
 		patchActionMap.Version = actionMap.Version
@@ -485,8 +485,8 @@ func deleteJourneyActionMap(ctx context.Context, d *schema.ResourceData, meta in
 	journeyApi := platformclientv2.NewJourneyApiWithConfig(sdkConfig)
 
 	log.Printf("Deleting journey action map with display name %s", displayName)
-	if _, err := journeyApi.DeleteJourneyActionmap(d.Id()); err != nil {
-		return diag.Errorf("Failed to delete journey action map with display name %s: %s", displayName, err)
+	if resp, err := journeyApi.DeleteJourneyActionmap(d.Id()); err != nil {
+		return util.BuildAPIDiagnosticError("genesyscloud_journey_action_map", fmt.Sprintf("failed to delete journey action map with display name %s", displayName), resp)
 	}
 
 	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {

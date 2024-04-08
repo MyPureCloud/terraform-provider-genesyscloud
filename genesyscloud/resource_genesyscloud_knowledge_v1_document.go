@@ -153,9 +153,9 @@ func getAllKnowledgeV1DocumentEntities(knowledgeAPI platformclientv2.KnowledgeAp
 
 	const pageSize = 100
 	for i := 0; ; i++ {
-		knowledgeDocuments, _, getErr := knowledgeAPI.GetKnowledgeKnowledgebaseLanguageDocuments(*knowledgeBase.Id, *knowledgeBase.CoreLanguage, "", after, "", fmt.Sprintf("%v", pageSize), "", "", "", "", nil)
+		knowledgeDocuments, resp, getErr := knowledgeAPI.GetKnowledgeKnowledgebaseLanguageDocuments(*knowledgeBase.Id, *knowledgeBase.CoreLanguage, "", after, "", fmt.Sprintf("%v", pageSize), "", "", "", "", nil)
 		if getErr != nil {
-			return nil, diag.Errorf("Failed to get page of knowledge documents: %v", getErr)
+			return nil, util.BuildAPIDiagnosticError("genesyscloud_knowledge_v1_document", fmt.Sprintf("Failed to get page of knowledge documents"), resp)
 		}
 
 		if knowledgeDocuments.Entities == nil || len(*knowledgeDocuments.Entities) == 0 {
@@ -259,10 +259,10 @@ func buildCategories(requestBody map[string]interface{}, knowledgeAPI *platformc
 	categoryList := lists.SetToStringList(requestBody["categories"].(*schema.Set))
 	for _, categoryName := range *categoryList {
 		pageSize := 100
-		knowledgeCategories, _, getErr := knowledgeAPI.GetKnowledgeKnowledgebaseLanguageCategories(knowledgeBaseId, languageCode, "", "", "", fmt.Sprintf("%v", pageSize), categoryName)
+		knowledgeCategories, resp, getErr := knowledgeAPI.GetKnowledgeKnowledgebaseLanguageCategories(knowledgeBaseId, languageCode, "", "", "", fmt.Sprintf("%v", pageSize), categoryName)
 
 		if getErr != nil {
-			return nil, diag.Errorf("Failed to get page of knowledge categories: %v", getErr)
+			return nil, util.BuildAPIDiagnosticError("genesyscloud_knowledge_v1_document", fmt.Sprintf("Failed to get page of knowledge categories"), resp)
 		}
 
 		matchingCategory := (*knowledgeCategories.Entities)[0]
@@ -407,9 +407,9 @@ func createKnowledgeDocumentV1(ctx context.Context, d *schema.ResourceData, meta
 	body := buildKnowledgeDocumentRequestV1(d, knowledgeAPI, knowledgeBaseId, languageCode)
 
 	log.Printf("Creating knowledge document")
-	knowledgeDocument, _, err := knowledgeAPI.PostKnowledgeKnowledgebaseLanguageDocuments(knowledgeBaseId, languageCode, body)
+	knowledgeDocument, resp, err := knowledgeAPI.PostKnowledgeKnowledgebaseLanguageDocuments(knowledgeBaseId, languageCode, body)
 	if err != nil {
-		return diag.Errorf("Failed to create knowledge document: %s", err)
+		return util.BuildAPIDiagnosticError("genesyscloud_knowledge_v1_document", fmt.Sprintf("Failed to create knowledge document %s", d.Id()), resp)
 	}
 
 	id := fmt.Sprintf("%s %s %s", *knowledgeDocument.Id, *knowledgeDocument.KnowledgeBase.Id, *knowledgeDocument.LanguageCode)
@@ -467,7 +467,7 @@ func updateKnowledgeDocumentV1(ctx context.Context, d *schema.ResourceData, meta
 		// Get current Knowledge document version
 		_, resp, getErr := knowledgeAPI.GetKnowledgeKnowledgebaseLanguageDocument(knowledgeDocumentId, knowledgeBaseId, languageCode)
 		if getErr != nil {
-			return resp, diag.Errorf("Failed to read Knowledge document %s: %s", knowledgeDocumentId, getErr)
+			return resp, util.BuildAPIDiagnosticError("genesyscloud_knowledge_v1_document", fmt.Sprintf("Failed to read knowledge document %s", knowledgeDocumentId), resp)
 		}
 
 		body := d.Get("knowledge_document").([]interface{})[0].(map[string]interface{})
@@ -490,7 +490,7 @@ func updateKnowledgeDocumentV1(ctx context.Context, d *schema.ResourceData, meta
 		log.Printf("Updating knowledge document %s", knowledgeDocumentId)
 		_, resp, putErr := knowledgeAPI.PatchKnowledgeKnowledgebaseLanguageDocument(knowledgeDocumentId, knowledgeBaseId, languageCode, update)
 		if putErr != nil {
-			return resp, diag.Errorf("Failed to update knowledge document %s: %s", knowledgeDocumentId, putErr)
+			return resp, util.BuildAPIDiagnosticError("genesyscloud_knowledge_v1_document", fmt.Sprintf("Failed to update knowledge document %s", knowledgeDocumentId), resp)
 		}
 		return resp, nil
 	})
@@ -512,9 +512,9 @@ func deleteKnowledgeDocumentV1(ctx context.Context, d *schema.ResourceData, meta
 	knowledgeAPI := platformclientv2.NewKnowledgeApiWithConfig(sdkConfig)
 
 	log.Printf("Deleting Knowledge document %s", knowledgeDocumentId)
-	_, _, err := knowledgeAPI.DeleteKnowledgeKnowledgebaseLanguageDocument(knowledgeDocumentId, knowledgeBaseId, languageCode)
+	_, resp, err := knowledgeAPI.DeleteKnowledgeKnowledgebaseLanguageDocument(knowledgeDocumentId, knowledgeBaseId, languageCode)
 	if err != nil {
-		return diag.Errorf("Failed to delete Knowledge document %s: %s", knowledgeDocumentId, err)
+		return util.BuildAPIDiagnosticError("genesyscloud_knowledge_v1_document", fmt.Sprintf("Failed to delete knowledge document %s", knowledgeDocumentId), resp)
 	}
 
 	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {

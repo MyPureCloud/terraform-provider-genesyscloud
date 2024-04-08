@@ -261,9 +261,9 @@ func getAllJourneySegments(_ context.Context, clientConfig *platformclientv2.Con
 	pageCount := 1 // Needed because of broken journey common paging
 	for pageNum := 1; pageNum <= pageCount; pageNum++ {
 		const pageSize = 100
-		journeySegments, _, getErr := journeyApi.GetJourneySegments("", pageSize, pageNum, true, nil, nil, "")
+		journeySegments, resp, getErr := journeyApi.GetJourneySegments("", pageSize, pageNum, true, nil, nil, "")
 		if getErr != nil {
-			return nil, diag.Errorf("Failed to get page of journey segments: %v", getErr)
+			return nil, util.BuildAPIDiagnosticError("genesyscloud_journey_segment", fmt.Sprintf("Failed to get page of journey segments"), resp)
 		}
 
 		if journeySegments.Entities == nil || len(*journeySegments.Entities) == 0 {
@@ -352,14 +352,14 @@ func updateJourneySegment(ctx context.Context, d *schema.ResourceData, meta inte
 		// Get current journey segment version
 		journeySegment, resp, getErr := journeyApi.GetJourneySegment(d.Id())
 		if getErr != nil {
-			return resp, diag.Errorf("Failed to read current journey segment %s: %s", d.Id(), getErr)
+			return resp, util.BuildAPIDiagnosticError("genesyscloud_journey_segment", fmt.Sprintf("Failed to read current journey segment %s", d.Id()), resp)
 		}
 
 		patchSegment.Version = journeySegment.Version
 		_, resp, patchErr := journeyApi.PatchJourneySegment(d.Id(), *patchSegment)
 		if patchErr != nil {
 			input, _ := util.InterfaceToJson(*patchSegment)
-			return resp, diag.Errorf("Error updating journey segment %s: %s\n(input: %+v)\n(resp: %s)", *patchSegment.DisplayName, patchErr, input, util.GetBody(resp))
+			return resp, util.BuildAPIDiagnosticError("genesyscloud_journey_segment", fmt.Sprintf("Failed to update journey segment %s (input: %+v)", *patchSegment.DisplayName, input), resp)
 		}
 		return resp, nil
 	})
