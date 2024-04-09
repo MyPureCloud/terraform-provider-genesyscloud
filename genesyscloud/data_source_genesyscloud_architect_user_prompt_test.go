@@ -1,4 +1,4 @@
-package architect_user_prompt
+package genesyscloud
 
 import (
 	"fmt"
