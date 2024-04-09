@@ -656,7 +656,7 @@ func (g *GenesysCloudResourceExporter) retainExporterList(resources resourceExpo
 
 func (g *GenesysCloudResourceExporter) reAssignFilters() {
 	g.resourceTypeFilter = IncludeFilterByResourceType
-	g.resourceFilter = FilterResourceByName
+	g.resourceFilter = FilterResourceById
 }
 
 func (g *GenesysCloudResourceExporter) attainUniqueResourceList(resources resourceExporter.ResourceIDMetaMap) []resourceExporter.ResourceInfo {
