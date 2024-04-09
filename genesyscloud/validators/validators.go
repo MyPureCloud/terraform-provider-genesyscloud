@@ -62,7 +62,10 @@ func ValidateRrule(rrule interface{}, _ cty.Path) diag.Diagnostics {
 
 				for _, month := range byMonthValues {
 					byMonthValue, err := strconv.Atoi(month)
-					if err != nil || byMonthValue <= 0 || byMonthValue > 12 {
+					if err != nil {
+						return diag.Errorf("Failed to validate BYMONTH. [Error: %v]", err)
+					}
+					if byMonthValue <= 0 || byMonthValue > 12 {
 						return diag.Errorf("Invalid BYMONTH attribute. Should be a valid month (1-12) without leading zeros for single-digit months.")
 					}
 				}
@@ -76,7 +79,11 @@ func ValidateRrule(rrule interface{}, _ cty.Path) diag.Diagnostics {
 
 				for _, day := range byMonthDayValues {
 					byMonthDayValue, err := strconv.Atoi(day)
-					if err != nil || byMonthDayValue <= 0 || byMonthDayValue > 31 {
+					if err != nil {
+						return diag.Errorf("Failed to validate BYMONTHDAY. [Error: %v]", err)
+					}
+
+					if byMonthDayValue <= 0 || byMonthDayValue > 31 {
 						return diag.Errorf("Invalid BYMONTHDAY attribute. Should be a valid day of the month (1-31) without leading zeros for single-digit days.")
 					}
 				}
