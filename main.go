@@ -2,8 +2,6 @@ package main
 
 import (
 	"flag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/plugin"
 	"sync"
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	dt "terraform-provider-genesyscloud/genesyscloud/architect_datatable"
@@ -14,6 +12,7 @@ import (
 	grammarLanguage "terraform-provider-genesyscloud/genesyscloud/architect_grammar_language"
 	archIvr "terraform-provider-genesyscloud/genesyscloud/architect_ivr"
 	architectSchedulegroups "terraform-provider-genesyscloud/genesyscloud/architect_schedulegroups"
+	userPrompt "terraform-provider-genesyscloud/genesyscloud/architect_user_prompt"
 	authRole "terraform-provider-genesyscloud/genesyscloud/auth_role"
 	authorizatioProduct "terraform-provider-genesyscloud/genesyscloud/authorization_product"
 	employeeperformanceExternalmetricsDefinition "terraform-provider-genesyscloud/genesyscloud/employeeperformance_externalmetrics_definitions"
@@ -76,6 +75,9 @@ import (
 	userRoles "terraform-provider-genesyscloud/genesyscloud/user_roles"
 	webDeployConfig "terraform-provider-genesyscloud/genesyscloud/webdeployments_configuration"
 	webDeployDeploy "terraform-provider-genesyscloud/genesyscloud/webdeployments_deployment"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/plugin"
+
 )
 
 // Run "go generate" to format example terraform files and generate the docs for the registry/website
@@ -133,7 +135,6 @@ type RegisterInstance struct {
 
 func registerResources() {
 	regInstance := &RegisterInstance{}
-
 	authRole.SetRegistrar(regInstance)                                     //Registering auth_role
 	oauth.SetRegistrar(regInstance)                                        //Registering oauth_client
 	dt.SetRegistrar(regInstance)                                           //Registering architect data table
@@ -201,6 +202,7 @@ func registerResources() {
 	userRoles.SetRegistrar(regInstance)                                    //Registering user roles
 	journeyOutcomePrecdictor.SetRegistrar(regInstance)                     //Registering journey outcome predictor
 	group.SetRegistrar(regInstance)                                        //Registering group
+	userPrompt.SetRegistrar(regInstance)                                   //Registering user prompt
 	routingQueue.SetRegistrar(regInstance)                                 //Registering routing queue
 	routingQueueCondtionalGroupRouting.SetRegistrar(regInstance)           //Registering routing queue conditional group routing
 
