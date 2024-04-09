@@ -16,6 +16,7 @@ import (
 	obContactList "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	routingQueue "terraform-provider-genesyscloud/genesyscloud/routing_queue"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 	"time"
@@ -183,7 +184,7 @@ func TestAccResourceTfExportByName(t *testing.T) {
 					userResource1,
 					userEmail1,
 					userName1,
-				) + gcloud.GenerateRoutingQueueResource(
+				) + routingQueue.GenerateRoutingQueueResource(
 					queueResource,
 					queueName,
 					queueDesc,
@@ -224,7 +225,7 @@ func TestAccResourceTfExportByName(t *testing.T) {
 					userResource1,
 					userEmail1,
 					userName1,
-				) + gcloud.GenerateRoutingQueueResource(
+				) + routingQueue.GenerateRoutingQueueResource(
 					queueResource,
 					queueName,
 					queueDesc,
@@ -278,7 +279,7 @@ func TestAccResourceTfExportByName(t *testing.T) {
 					userResource2,
 					userEmail2,
 					userName2,
-				) + gcloud.GenerateRoutingQueueResource(
+				) + routingQueue.GenerateRoutingQueueResource(
 					queueResource,
 					queueName,
 					queueDesc,
@@ -812,7 +813,7 @@ func TestAccResourceTfExportQueueAsHCL(t *testing.T) {
 		emailScriptID = uuid.NewString()
 	)
 
-	routingQueue := gcloud.GenerateRoutingQueueResource(
+	routingQueue := routingQueue.GenerateRoutingQueueResource(
 		queueID,
 		queueName,
 		description,
@@ -825,9 +826,9 @@ func TestAccResourceTfExportQueueAsHCL(t *testing.T) {
 		"true",
 		util.TrueValue,
 		util.FalseValue,
-		gcloud.GenerateMediaSettings("media_settings_call", alertTimeoutSec, util.FalseValue, slPercentage, slDurationMs),
-		gcloud.GenerateRoutingRules(rrOperator, rrThreshold, rrWaitSeconds),
-		gcloud.GenerateDefaultScriptIDs(chatScriptID, emailScriptID),
+		routingQueue.GenerateMediaSettings("media_settings_call", alertTimeoutSec, util.FalseValue, slPercentage, slDurationMs),
+		routingQueue.GenerateRoutingRules(rrOperator, rrThreshold, rrWaitSeconds),
+		routingQueue.GenerateDefaultScriptIDs(chatScriptID, emailScriptID),
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -1904,7 +1905,7 @@ func validateRoutingRules(resourceName string, ringNum int, operator string, thr
 func buildQueueResources(queueExports []QueueExport) string {
 	queueResourceDefinitions := ""
 	for _, queueExport := range queueExports {
-		queueResourceDefinitions = queueResourceDefinitions + gcloud.GenerateRoutingQueueResource(
+		queueResourceDefinitions = queueResourceDefinitions + routingQueue.GenerateRoutingQueueResource(
 			queueExport.ResourceName,
 			queueExport.Name,
 			queueExport.Description,

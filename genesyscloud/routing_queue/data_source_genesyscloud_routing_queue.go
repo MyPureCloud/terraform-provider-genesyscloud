@@ -1,4 +1,4 @@
-package genesyscloud
+package routing_queue
 
 import (
 	"context"
@@ -29,20 +29,6 @@ type DataSourceCache struct {
 var (
 	dataSourceRoutingQueueCache *DataSourceCache
 )
-
-func DataSourceRoutingQueue() *schema.Resource {
-	return &schema.Resource{
-		Description: "Data source for Genesys Cloud Routing Queues. Select a queue by name.",
-		ReadContext: provider.ReadWithPooledClient(dataSourceRoutingQueueRead),
-		Schema: map[string]*schema.Schema{
-			"name": {
-				Description: "Queue name.",
-				Type:        schema.TypeString,
-				Required:    true,
-			},
-		},
-	}
-}
 
 func dataSourceRoutingQueueRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	sdkConfig := m.(*provider.ProviderMeta).ClientConfig

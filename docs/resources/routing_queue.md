@@ -88,7 +88,6 @@ resource "genesyscloud_routing_queue" "example_queue" {
 - `bullseye_rings` (Block List, Max: 5) The bullseye ring settings for the queue. (see [below for nested schema](#nestedblock--bullseye_rings))
 - `calling_party_name` (String) The name to use for caller identification for outbound calls from this queue.
 - `calling_party_number` (String) The phone number to use for caller identification for outbound calls from this queue.
-- `conditional_group_routing_rules` (Block List, Max: 5) The Conditional Group Routing settings for the queue. (see [below for nested schema](#nestedblock--conditional_group_routing_rules))
 - `default_script_ids` (Map of String) The default script IDs for each communication type. Communication types: (CALL | CALLBACK | CHAT | COBROWSE | EMAIL | MESSAGE | SOCIAL_EXPRESSION | VIDEO | SCREENSHARE)
 - `description` (String) Queue description.
 - `direct_routing` (Block List, Max: 1) Used by the System to set Direct Routing settings for a system Direct Routing queue. (see [below for nested schema](#nestedblock--direct_routing))
@@ -133,31 +132,6 @@ Optional:
 
 <a id="nestedblock--bullseye_rings--member_groups"></a>
 ### Nested Schema for `bullseye_rings.member_groups`
-
-Required:
-
-- `member_group_id` (String) ID (GUID) for Group, SkillGroup, Team
-- `member_group_type` (String) The type of the member group. Accepted values: TEAM, GROUP, SKILLGROUP
-
-
-
-<a id="nestedblock--conditional_group_routing_rules"></a>
-### Nested Schema for `conditional_group_routing_rules`
-
-Required:
-
-- `condition_value` (Number) The limit value, beyond which a rule evaluates as true.
-- `groups` (Block List, Min: 1) The group(s) to activate if the rule evaluates as true. (see [below for nested schema](#nestedblock--conditional_group_routing_rules--groups))
-- `operator` (String) The operator that compares the actual value against the condition value. Valid values: GreaterThan, GreaterThanOrEqualTo, LessThan, LessThanOrEqualTo.
-
-Optional:
-
-- `metric` (String) The queue metric being evaluated. Valid values: EstimatedWaitTime, ServiceLevel Defaults to `EstimatedWaitTime`.
-- `queue_id` (String) The ID of the queue being evaluated for this rule. For rule 1, this is always be the current queue, so no queue id should be specified for the first rule.
-- `wait_seconds` (Number) The number of seconds to wait in this rule, if it evaluates as true, before evaluating the next rule. For the final rule, this is ignored, so need not be specified. Defaults to `2`.
-
-<a id="nestedblock--conditional_group_routing_rules--groups"></a>
-### Nested Schema for `conditional_group_routing_rules.groups`
 
 Required:
 
