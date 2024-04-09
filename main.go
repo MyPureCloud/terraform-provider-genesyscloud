@@ -2,6 +2,8 @@ package main
 
 import (
 	"flag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/plugin"
 	"sync"
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	dt "terraform-provider-genesyscloud/genesyscloud/architect_datatable"
@@ -52,7 +54,6 @@ import (
 	responsemanagementResponseasset "terraform-provider-genesyscloud/genesyscloud/responsemanagement_responseasset"
 	routingEmailRoute "terraform-provider-genesyscloud/genesyscloud/routing_email_route"
 	routingQueue "terraform-provider-genesyscloud/genesyscloud/routing_queue"
-	routingQueueCondtionalGroupRouting "terraform-provider-genesyscloud/genesyscloud/routing_queue_conditional_group_routing"
 	smsAddresses "terraform-provider-genesyscloud/genesyscloud/routing_sms_addresses"
 	"terraform-provider-genesyscloud/genesyscloud/scripts"
 	"terraform-provider-genesyscloud/genesyscloud/station"
@@ -75,9 +76,6 @@ import (
 	userRoles "terraform-provider-genesyscloud/genesyscloud/user_roles"
 	webDeployConfig "terraform-provider-genesyscloud/genesyscloud/webdeployments_configuration"
 	webDeployDeploy "terraform-provider-genesyscloud/genesyscloud/webdeployments_deployment"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/plugin"
-
 )
 
 // Run "go generate" to format example terraform files and generate the docs for the registry/website
@@ -204,7 +202,6 @@ func registerResources() {
 	group.SetRegistrar(regInstance)                                        //Registering group
 	userPrompt.SetRegistrar(regInstance)                                   //Registering user prompt
 	routingQueue.SetRegistrar(regInstance)                                 //Registering routing queue
-	routingQueueCondtionalGroupRouting.SetRegistrar(regInstance)           //Registering routing queue conditional group routing
 
 	// setting resources for Use cases  like TF export where provider is used in resource classes.
 	tfexp.SetRegistrar(regInstance) //Registering tf exporter
