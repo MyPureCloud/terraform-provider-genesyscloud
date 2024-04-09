@@ -77,7 +77,7 @@ func ExporterResponseManagementResponseAsset() *resourceExporter.ResourceExporte
 		GetResourcesFunc: provider.GetAllWithPooledClient(getAllResponseAssets),
 		CustomFileWriter: resourceExporter.CustomFileWriterSettings{
 			RetrieveAndWriteFilesFunc: responsemanagementResponseassetResolver,
-			SubDirectory:              "response_asset_files",
+			SubDirectory:              "asset_files",
 		},
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			// TODO
