@@ -1,11 +1,9 @@
 package webdeployments_configuration_utils
 
 import (
-	"terraform-provider-genesyscloud/genesyscloud/util/lists"
-	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
-
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
+	"terraform-provider-genesyscloud/genesyscloud/util/lists"
 )
 
 func buildAppConversations(conversations []interface{}) *platformclientv2.Conversationappsettings {
@@ -155,9 +153,7 @@ func buildMessengerSettings(d *schema.ResourceData) *platformclientv2.Messengers
 				}
 			}
 
-			messengerSettings.FileUpload = &platformclientv2.Fileuploadsettings{
-				UseSupportedContentProfile: resourcedata.GetNillableBool(d, "messenger.0.file_upload.0.use_supported_content_profile"),
-			}
+			messengerSettings.FileUpload = &platformclientv2.Fileuploadsettings{}
 
 			if len(modes) > 0 {
 				messengerSettings.FileUpload.Modes = &modes
@@ -216,8 +212,6 @@ func flattenFileUpload(settings *platformclientv2.Fileuploadsettings) []interfac
 	ret := map[string]interface{}{
 		"mode": modes,
 	}
-
-	resourcedata.SetMapValueIfNotNil(ret, "use_supported_content_profile", settings.UseSupportedContentProfile)
 
 	return []interface{}{ret}
 }
