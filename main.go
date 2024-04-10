@@ -27,7 +27,7 @@ import (
 	integrationAction "terraform-provider-genesyscloud/genesyscloud/integration_action"
 	integrationCred "terraform-provider-genesyscloud/genesyscloud/integration_credential"
 	integrationCustomAuth "terraform-provider-genesyscloud/genesyscloud/integration_custom_auth_action"
-	journeyOutcomePrecdictor "terraform-provider-genesyscloud/genesyscloud/journey_outcome_predictor"
+	journeyOutcomePredictor "terraform-provider-genesyscloud/genesyscloud/journey_outcome_predictor"
 	oauth "terraform-provider-genesyscloud/genesyscloud/oauth_client"
 	oAuthSettings "terraform-provider-genesyscloud/genesyscloud/organization_authentication_settings"
 	ob "terraform-provider-genesyscloud/genesyscloud/outbound"
@@ -88,7 +88,6 @@ import (
 // can be customized.
 //
 //go:generate go run github.com/hashicorp/terraform-plugin-docs/cmd/tfplugindocs
-//go:generate git restore docs/index.md
 //go:generate go run terraform-provider-genesyscloud/apidocs
 var (
 	// these will be set by the goreleaser configuration
@@ -198,7 +197,7 @@ func registerResources() {
 	edgesTrunk.SetRegistrar(regInstance)                                   //Registering Edges Trunk Settings
 	resourceExporter.SetRegisterExporter(resourceExporters)                //Registering register exporters
 	userRoles.SetRegistrar(regInstance)                                    //Registering user roles
-	journeyOutcomePrecdictor.SetRegistrar(regInstance)                     //Registering journey outcome predictor
+	journeyOutcomePredictor.SetRegistrar(regInstance)                      //Registering journey outcome predictor
 	group.SetRegistrar(regInstance)                                        //Registering group
 	userPrompt.SetRegistrar(regInstance)                                   //Registering user prompt
 	routingQueue.SetRegistrar(regInstance)                                 //Registering routing queue

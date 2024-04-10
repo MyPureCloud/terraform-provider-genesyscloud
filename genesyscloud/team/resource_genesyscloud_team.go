@@ -63,7 +63,7 @@ func createTeam(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	return readTeam(ctx, d, meta)
 }
 
-// readTeam is used by the team resource to read an team from genesys cloud
+// readTeam is used by the team resource to read a team from genesys cloud
 func readTeam(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getTeamProxy(sdkConfig)
