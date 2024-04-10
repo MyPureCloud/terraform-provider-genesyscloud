@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"sort"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
-	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 )
 
@@ -116,14 +115,14 @@ func TestUnitUpdateTerraformUserWithRole(t *testing.T) {
 
 	userId := uuid.NewString()
 	existingRoles := &[]platformclientv2.Domainrole{
-		platformclientv2.Domainrole{Id: util.ToStrPtr(uuid.NewString()), Name: util.ToStrPtr("Master Admin")},
-		platformclientv2.Domainrole{Id: util.ToStrPtr(uuid.NewString()), Name: util.ToStrPtr("Admin")},
-		platformclientv2.Domainrole{Id: util.ToStrPtr(uuid.NewString()), Name: util.ToStrPtr("Employee")},
+		platformclientv2.Domainrole{Id: platformclientv2.String(uuid.NewString()), Name: platformclientv2.String("Master Admin")},
+		platformclientv2.Domainrole{Id: platformclientv2.String(uuid.NewString()), Name: platformclientv2.String("Admin")},
+		platformclientv2.Domainrole{Id: platformclientv2.String(uuid.NewString()), Name: platformclientv2.String("Employee")},
 	}
 
 	addedRoles := &[]platformclientv2.Roledivision{
-		platformclientv2.Roledivision{RoleId: util.ToStrPtr(uuid.NewString())},
-		platformclientv2.Roledivision{RoleId: util.ToStrPtr(uuid.NewString())},
+		platformclientv2.Roledivision{RoleId: platformclientv2.String(uuid.NewString())},
+		platformclientv2.Roledivision{RoleId: platformclientv2.String(uuid.NewString())},
 	}
 
 	contains := func(s []string, searchterm string) bool {
@@ -141,16 +140,16 @@ func TestUnitUpdateTerraformUserWithRole(t *testing.T) {
 		token := platformclientv2.Tokeninfo{
 			Organization: &platformclientv2.Namedentity{
 				Id:   &orgId,
-				Name: util.ToStrPtr("mytestorg"),
+				Name: platformclientv2.String("mytestorg"),
 			},
 			HomeOrganization: &platformclientv2.Namedentity{
 				Id: &orgId,
 			},
 			OAuthClient: &platformclientv2.Orgoauthclient{
 				Id:   &oauthId,
-				Name: util.ToStrPtr("Developer Tools"),
+				Name: platformclientv2.String("Developer Tools"),
 				Organization: &platformclientv2.Namedentity{
-					Id: util.ToStrPtr("purecloud-builtin"),
+					Id: platformclientv2.String("purecloud-builtin"),
 				},
 			},
 		}
