@@ -84,6 +84,34 @@ func flattenEvaluationAssignments(assignments *[]platformclientv2.Evaluationassi
 	return evaluationAssignments
 }
 
+func buildMeteredEvaluationsTimeInterval(interval []interface{}) *platformclientv2.Timeinterval {
+	var timeInterval platformclientv2.Timeinterval
+
+	if interval == nil || len(interval) <= 0 || (len(interval) == 1 && interval[0] == nil) {
+		return nil
+	}
+
+	timeIntervalMap, ok := interval[0].(map[string]interface{})
+	if !ok {
+		return nil
+	}
+
+	if months, ok := timeIntervalMap["months"].(int); ok && months != 0 {
+		timeInterval.Months = &months
+	}
+	if weeks, ok := timeIntervalMap["weeks"].(int); ok && weeks != 0 {
+		timeInterval.Weeks = &weeks
+	}
+	if days, ok := timeIntervalMap["days"].(int); ok {
+		timeInterval.Days = &days
+	}
+	if hours, ok := timeIntervalMap["hours"].(int); ok && hours != 0 {
+		timeInterval.Hours = &hours
+	}
+
+	return &timeInterval
+}
+
 func buildTimeInterval(interval []interface{}) *platformclientv2.Timeinterval {
 	var timeInterval platformclientv2.Timeinterval
 
@@ -155,7 +183,7 @@ func buildAssignMeteredEvaluations(assignments []interface{}, pp *policyProxy, c
 			Evaluators:           &evaluators,
 			MaxNumberEvaluations: &maxNumberEvaluations,
 			AssignToActiveUser:   &assignToActiveUser,
-			TimeInterval:         buildTimeInterval(assignmentMap["time_interval"].([]interface{})),
+			TimeInterval:         buildMeteredEvaluationsTimeInterval(assignmentMap["time_interval"].([]interface{})),
 		}
 
 		// if evaluation form id is present, get the context id and build the evaluation form
