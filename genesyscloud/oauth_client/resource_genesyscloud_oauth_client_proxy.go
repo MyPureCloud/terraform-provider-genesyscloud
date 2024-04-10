@@ -12,6 +12,11 @@ type createOAuthClientFunc func(context.Context, *oauthClientProxy, platformclie
 type createIntegrationClientFunc func(context.Context, *oauthClientProxy, platformclientv2.Credential) (*platformclientv2.Credentialinfo, *platformclientv2.APIResponse, error)
 type updateOAuthClientFunc func(context.Context, *oauthClientProxy, string, platformclientv2.Oauthclientrequest) (*platformclientv2.Oauthclient, *platformclientv2.APIResponse, error)
 type getOAuthClientFunc func(context.Context, *oauthClientProxy, string) (*platformclientv2.Oauthclient, *platformclientv2.APIResponse, error)
+type getParentOAuthClientTokenFunc func(context.Context, *oauthClientProxy) (*platformclientv2.Tokeninfo, *platformclientv2.APIResponse, error)
+type getTerraformUserFunc func(context.Context, *oauthClientProxy) (*platformclientv2.Userme, *platformclientv2.APIResponse, error)
+type getTerraformUserRolesFunc func(context.Context, *oauthClientProxy, string) (*platformclientv2.Userauthorization, *platformclientv2.APIResponse, error)
+type updateTerraformUserRolesFunc func(context.Context, *oauthClientProxy, string, []string) (*platformclientv2.Userauthorization, *platformclientv2.APIResponse, error)
+type getHomeDivisionInfoFunc func(context.Context, *oauthClientProxy) (*platformclientv2.Authzdivision, *platformclientv2.APIResponse, error)
 type getIntegrationCredentialFunc func(context.Context, *oauthClientProxy, string) (*platformclientv2.Credential, *platformclientv2.APIResponse, error)
 type getAllOauthClientsFunc func(ctx context.Context, o *oauthClientProxy) (*[]platformclientv2.Oauthclientlisting, *platformclientv2.APIResponse, error)
 type deleteOAuthClientFunc func(context.Context, *oauthClientProxy, string) (*platformclientv2.APIResponse, error)
@@ -19,12 +24,20 @@ type deleteIntegrationCredentialFunc func(context.Context, *oauthClientProxy, st
 
 type oauthClientProxy struct {
 	clientConfig   *platformclientv2.Configuration
-	api            *platformclientv2.OAuthApi
+	oauthApi       *platformclientv2.OAuthApi
+	usersApi       *platformclientv2.UsersApi
+	tokenApi       *platformclientv2.TokensApi
+	authApi        *platformclientv2.AuthorizationApi
 	integrationApi *platformclientv2.IntegrationsApi
 
 	createOAuthClientAttr           createOAuthClientFunc
 	createIntegrationCredentialAttr createIntegrationClientFunc
 	getOAuthClientAttr              getOAuthClientFunc
+	getParentOAuthClientTokenAttr   getParentOAuthClientTokenFunc
+	getTerraformUserAttr            getTerraformUserFunc
+	getTerraformUserRolesAttr       getTerraformUserRolesFunc
+	updateTerraformUserRolesAttr    updateTerraformUserRolesFunc
+	getHomeDivisionInfoAttr         getHomeDivisionInfoFunc
 	getAllOauthClientsAttr          getAllOauthClientsFunc
 	getIntegrationCredentialAttr    getIntegrationCredentialFunc
 	updateOAuthClientAttr           updateOAuthClientFunc
@@ -34,18 +47,27 @@ type oauthClientProxy struct {
 
 // newArchitectIvrProxy initializes the proxy with all the data needed to communicate with Genesys Cloud
 func newOAuthClientProxy(clientConfig *platformclientv2.Configuration) *oauthClientProxy {
-	api := platformclientv2.NewOAuthApiWithConfig(clientConfig)
+	oauthApi := platformclientv2.NewOAuthApiWithConfig(clientConfig)
+	usersApi := platformclientv2.NewUsersApiWithConfig(clientConfig)
 	intApi := platformclientv2.NewIntegrationsApiWithConfig(clientConfig)
+	tokenApi := platformclientv2.NewTokensApiWithConfig(clientConfig)
 
 	return &oauthClientProxy{
 		clientConfig:   clientConfig,
-		api:            api,
+		oauthApi:       oauthApi,
+		usersApi:       usersApi,
+		tokenApi:       tokenApi,
 		integrationApi: intApi,
 
 		createOAuthClientAttr:           createOAuthClientFn,
 		createIntegrationCredentialAttr: createIntegrationCredentialFn,
 		updateOAuthClientAttr:           updateOAuthClientFn,
 		getOAuthClientAttr:              getOAuthClientFn,
+		getParentOAuthClientTokenAttr:   getParentOAuthClientTokenFn,
+		getTerraformUserRolesAttr:       getTerraformUserRolesFn,
+		getTerraformUserAttr:            getTerraformUserFn,
+		updateTerraformUserRolesAttr:    updateTerraformUserRolesFn,
+		getHomeDivisionInfoAttr:         getHomeDivisionInfoFn,
 		getIntegrationCredentialAttr:    getIntegrationClientFn,
 		getAllOauthClientsAttr:          getAllOauthClientsFn,
 		deleteOAuthClientAttr:           deleteOAuthClientFn,
@@ -72,6 +94,22 @@ func (o *oauthClientProxy) getOAuthClient(ctx context.Context, id string) (*plat
 	return o.getOAuthClientAttr(ctx, o, id)
 }
 
+func (o *oauthClientProxy) getParentOAuthClientToken(ctx context.Context) (*platformclientv2.Tokeninfo, *platformclientv2.APIResponse, error) {
+	return o.getParentOAuthClientTokenAttr(ctx, o)
+}
+
+func (o *oauthClientProxy) GetTerraformUser(ctx context.Context) (*platformclientv2.Userme, *platformclientv2.APIResponse, error) {
+	return o.getTerraformUserAttr(ctx, o)
+}
+
+func (o *oauthClientProxy) GetTerraformUserRoles(ctx context.Context, userId string) (*platformclientv2.Userauthorization, *platformclientv2.APIResponse, error) {
+	return o.getTerraformUserRolesAttr(ctx, o, userId)
+}
+
+func (o *oauthClientProxy) UpdateTerraformUserRoles(ctx context.Context, userId string, roles []string) (*platformclientv2.Userauthorization, *platformclientv2.APIResponse, error) {
+	return o.updateTerraformUserRolesAttr(ctx, o, userId, roles)
+}
+
 func (o *oauthClientProxy) getIntegrationCredential(ctx context.Context, id string) (*platformclientv2.Credential, *platformclientv2.APIResponse, error) {
 	return o.getIntegrationCredentialAttr(ctx, o, id)
 }
@@ -92,13 +130,37 @@ func (o *oauthClientProxy) getAllOAuthClients(ctx context.Context) (*[]platformc
 	return o.getAllOauthClientsAttr(ctx, o)
 }
 
+func (o *oauthClientProxy) getHomeDivisionInfo(ctx context.Context) (*platformclientv2.Authzdivision, *platformclientv2.APIResponse, error) {
+	return o.getHomeDivisionInfo(ctx)
+}
+
 func getOAuthClientFn(ctx context.Context, o *oauthClientProxy, id string) (*platformclientv2.Oauthclient, *platformclientv2.APIResponse, error) {
-	return o.api.GetOauthClient(id)
+	return o.oauthApi.GetOauthClient(id)
+}
+
+func getParentOAuthClientTokenFn(ctx context.Context, o *oauthClientProxy) (*platformclientv2.Tokeninfo, *platformclientv2.APIResponse, error) {
+	return o.tokenApi.GetTokensMe(false)
+}
+
+func getTerraformUserFn(ctx context.Context, o *oauthClientProxy) (*platformclientv2.Userme, *platformclientv2.APIResponse, error) {
+	return o.usersApi.GetUsersMe(nil, "")
+}
+
+func getTerraformUserRolesFn(ctx context.Context, o *oauthClientProxy, userId string) (*platformclientv2.Userauthorization, *platformclientv2.APIResponse, error) {
+	return o.usersApi.GetUserRoles(userId)
+}
+
+func updateTerraformUserRolesFn(ctx context.Context, o *oauthClientProxy, userId string, roles []string) (*platformclientv2.Userauthorization, *platformclientv2.APIResponse, error) {
+	return o.usersApi.PutUserRoles(userId, roles)
+}
+
+func getHomeDivisionInfoFn(ctx context.Context, o *oauthClientProxy) (*platformclientv2.Authzdivision, *platformclientv2.APIResponse, error) {
+	return o.authApi.GetAuthorizationDivisionsHome()
 }
 
 func getAllOauthClientsFn(ctx context.Context, o *oauthClientProxy) (*[]platformclientv2.Oauthclientlisting, *platformclientv2.APIResponse, error) {
 	var clients []platformclientv2.Oauthclientlisting
-	firstPage, resp, err := o.api.GetOauthClients()
+	firstPage, resp, err := o.oauthApi.GetOauthClients()
 	if err != nil {
 		return nil, resp, err
 	}
@@ -108,7 +170,7 @@ func getAllOauthClientsFn(ctx context.Context, o *oauthClientProxy) (*[]platform
 	}
 
 	for pageNum := 2; pageNum <= *firstPage.PageCount; pageNum++ {
-		page, resp, err := o.api.GetOauthClients()
+		page, resp, err := o.oauthApi.GetOauthClients()
 
 		if err != nil {
 			return nil, resp, err
@@ -127,7 +189,7 @@ func getIntegrationClientFn(ctx context.Context, o *oauthClientProxy, id string)
 }
 
 func deleteOAuthClientFn(ctx context.Context, o *oauthClientProxy, id string) (*platformclientv2.APIResponse, error) {
-	return o.api.DeleteOauthClient(id)
+	return o.oauthApi.DeleteOauthClient(id)
 }
 
 func deleteIntegrationClientFn(ctx context.Context, o *oauthClientProxy, id string) (*platformclientv2.APIResponse, error) {
@@ -135,7 +197,7 @@ func deleteIntegrationClientFn(ctx context.Context, o *oauthClientProxy, id stri
 }
 
 func createOAuthClientFn(ctx context.Context, o *oauthClientProxy, request platformclientv2.Oauthclientrequest) (*platformclientv2.Oauthclient, *platformclientv2.APIResponse, error) {
-	return o.api.PostOauthClients(request)
+	return o.oauthApi.PostOauthClients(request)
 }
 
 func createIntegrationCredentialFn(ctx context.Context, o *oauthClientProxy, request platformclientv2.Credential) (*platformclientv2.Credentialinfo, *platformclientv2.APIResponse, error) {
@@ -143,5 +205,5 @@ func createIntegrationCredentialFn(ctx context.Context, o *oauthClientProxy, req
 }
 
 func updateOAuthClientFn(ctx context.Context, o *oauthClientProxy, id string, request platformclientv2.Oauthclientrequest) (*platformclientv2.Oauthclient, *platformclientv2.APIResponse, error) {
-	return o.api.PutOauthClient(id, request)
+	return o.oauthApi.PutOauthClient(id, request)
 }
