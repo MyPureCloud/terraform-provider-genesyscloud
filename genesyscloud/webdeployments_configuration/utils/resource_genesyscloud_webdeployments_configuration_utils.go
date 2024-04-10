@@ -87,7 +87,7 @@ func buildPosition(d *schema.ResourceData) *platformclientv2.Positionsettings {
 	}
 
 	position := value.([]interface{})
-	if len(position) < 1 {
+	if len(position) < 1 || len(position) == 1 && position[0] == nil {
 		return nil
 	}
 

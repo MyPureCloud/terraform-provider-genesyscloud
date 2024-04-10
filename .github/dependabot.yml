@@ -4,6 +4,7 @@ version: 2
 updates:
   # Maintain dependencies for GitHub Actions
   - package-ecosystem: "github-actions"
+    target-branch: "dev"
     directory: "/"
     schedule:
       # Check for updates to GitHub Actions every weekday
@@ -11,6 +12,7 @@ updates:
 
   # Maintain dependencies for Go modules
   - package-ecosystem: "gomod"
+    target-branch: "dev"
     directory: "/"
     schedule:
       # Check for updates to Go modules every weekday

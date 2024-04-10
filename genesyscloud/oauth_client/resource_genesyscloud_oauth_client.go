@@ -56,7 +56,7 @@ func createOAuthClient(ctx context.Context, d *schema.ResourceData, meta interfa
 		return diagErr
 	}
 
-	//Before we create the oauth client take any roles on it and update the user
+	//Before we create the oauth client we need to take any roles that are assigned to this oauth client and assign them to the oauth client running this script
 	diagErr = updateTerraformUserWithRole(ctx, sdkConfig, roles)
 	if diagErr != nil {
 		return diagErr

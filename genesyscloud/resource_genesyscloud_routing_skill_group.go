@@ -589,3 +589,14 @@ func removeSkillGroupDivisionID(d *schema.ResourceData, list []string) ([]string
 	}
 	return list, nil
 }
+
+func GenerateRoutingSkillGroupResourceBasic(
+	resourceID string,
+	name string,
+	description string) string {
+	return fmt.Sprintf(`resource "genesyscloud_routing_skill_group" "%s" {
+		name = "%s"
+		description="%s"
+	}
+	`, resourceID, name, description)
+}
