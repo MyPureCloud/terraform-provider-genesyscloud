@@ -27,7 +27,7 @@ func getAllAuthOutboundContactlistfilters(ctx context.Context, clientConfig *pla
 
 	contactListFilters, resp, err := proxy.getAllOutboundContactlistfilter(ctx)
 	if err != nil {
-		return nil, diag.Errorf("Failed to get contact list filters: %v %v", err, resp)
+		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get contact list filters error: %s", err), resp)
 	}
 
 	for _, contactListFilter := range *contactListFilters {
@@ -47,7 +47,7 @@ func createOutboundContactlistfilter(ctx context.Context, d *schema.ResourceData
 	log.Printf("Creating Outbound Contact List Filter %s", *contactListFilter.Name)
 	outboundContactListFilter, resp, err := proxy.createOutboundContactlistfilter(ctx, &contactListFilter)
 	if err != nil {
-		return diag.Errorf("Failed to create Outbound Contact List Filter %s: %s %v", *contactListFilter.Name, err, resp)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create Outbound Contact List Filter %s error: %s", *contactListFilter.Name, err), resp)
 	}
 
 	d.SetId(*outboundContactListFilter.Id)
@@ -94,7 +94,7 @@ func updateOutboundContactlistfilter(ctx context.Context, d *schema.ResourceData
 	log.Printf("Updating Outbound Contact List Filter %s", *contactListFilter.Name)
 	_, resp, err := proxy.updateOutboundContactlistfilter(ctx, d.Id(), &contactListFilter)
 	if err != nil {
-		diag.Errorf("Failed to update Outbound Contact List Filter %s %s: %s %v", *contactListFilter.Name, d.Id(), err, resp)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update Outbound Contact List Filter %s error: %s", *contactListFilter.Name, err), resp)
 	}
 
 	log.Printf("Updated Outbound Contact List Filter %s", *contactListFilter.Name)
@@ -110,7 +110,7 @@ func deleteOutboundContactlistfilter(ctx context.Context, d *schema.ResourceData
 		log.Printf("Deleting Outbound Contact List Filter")
 		resp, err := proxy.deleteOutboundContactlistfilter(ctx, d.Id())
 		if err != nil {
-			return resp, diag.Errorf("Failed to delete Outbound Contact List Filter: %s", err)
+			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete Outbound Contact List Filter %s error: %s", d.Id(), err), resp)
 		}
 		return resp, nil
 	})

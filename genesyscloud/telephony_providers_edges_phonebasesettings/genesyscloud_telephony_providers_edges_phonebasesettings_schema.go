@@ -9,6 +9,10 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/util"
 )
 
+const (
+	resourceName = "genesyscloud_telephony_providers_edges_phonebasesettings"
+)
+
 var (
 	phoneCapabilities = &schema.Resource{
 		Schema: map[string]*schema.Schema{

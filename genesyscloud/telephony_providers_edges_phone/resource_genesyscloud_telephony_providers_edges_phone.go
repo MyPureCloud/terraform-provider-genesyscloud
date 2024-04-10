@@ -25,7 +25,7 @@ func getAllPhones(ctx context.Context, sdkConfig *platformclientv2.Configuration
 
 	phones, resp, err := pp.getAllPhones(ctx)
 	if err != nil {
-		return nil, diag.Errorf("Failed to get page of phones: %v %v", err, resp)
+		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get page of phones error: %s", err), resp)
 	}
 
 	for _, phone := range *phones {
@@ -47,7 +47,7 @@ func createPhone(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		phone, resp, err := pp.createPhone(ctx, phoneConfig)
 		log.Printf("Completed call to create phone name %s with status code %d, correlation id %s and err %s", *phoneConfig.Name, resp.StatusCode, resp.CorrelationID, err)
 		if err != nil {
-			return resp, diag.Errorf("failed to create phone %s: %s", *phoneConfig.Name, err)
+			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create phone %s error: %s", *phoneConfig.Name, err), resp)
 		}
 		d.SetId(*phone.Id)
 
@@ -130,7 +130,7 @@ func updatePhone(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 	log.Printf("Updating phone %s", *phoneConfig.Name)
 	phone, resp, err := pp.updatePhone(ctx, d.Id(), phoneConfig)
 	if err != nil {
-		return diag.Errorf("failed to update phone %s: %s %v", *phoneConfig.Name, err, resp)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update phone %s error: %s", *phoneConfig.Name, err), resp)
 	}
 
 	log.Printf("Updated phone %s", *phone.Id)
@@ -162,7 +162,7 @@ func deletePhone(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 	*/
 	time.Sleep(5 * time.Second)
 	if err != nil {
-		return diag.Errorf("failed to delete phone: %s %v", err, resp)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete phone %s error: %s", d.Id(), err), resp)
 	}
 
 	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {

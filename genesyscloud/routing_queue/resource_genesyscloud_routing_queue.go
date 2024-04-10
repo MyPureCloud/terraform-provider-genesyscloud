@@ -35,9 +35,9 @@ func getAllRoutingQueues(_ context.Context, clientConfig *platformclientv2.Confi
 	// Newly created resources often aren't returned unless there's a delay
 	time.Sleep(5 * time.Second)
 
-	queues, _, getErr := routingAPI.GetRoutingQueues(1, 100, "", "", nil, nil, nil, false)
+	queues, resp, getErr := routingAPI.GetRoutingQueues(1, 100, "", "", nil, nil, nil, false)
 	if getErr != nil {
-		return nil, diag.Errorf("Failed to get first page of queues: %v", getErr)
+		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get first page of queues error: %s", getErr), resp)
 	}
 	if queues.Entities == nil || len(*queues.Entities) == 0 {
 		return resources, nil
@@ -48,9 +48,9 @@ func getAllRoutingQueues(_ context.Context, clientConfig *platformclientv2.Confi
 
 	for pageNum := 2; pageNum <= *queues.PageCount; pageNum++ {
 		const pageSize = 100
-		queues, _, getErr := routingAPI.GetRoutingQueues(pageNum, pageSize, "", "", nil, nil, nil, false)
+		queues, resp, getErr := routingAPI.GetRoutingQueues(pageNum, pageSize, "", "", nil, nil, nil, false)
 		if getErr != nil {
-			return nil, diag.Errorf("Failed to get page of queues: %v", getErr)
+			return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get page of queues error: %s", getErr), resp)
 		}
 
 		if queues.Entities == nil || len(*queues.Entities) == 0 {
@@ -115,11 +115,11 @@ func createQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 	queue, resp, err := routingAPI.PostRoutingQueues(createQueue)
 	if err != nil {
 		log.Printf("error while trying to create queue: %s. Err %s", *createQueue.Name, err)
-		return diag.Errorf("Failed to create queue %s: %s", *createQueue.Name, err)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create queue %s error: %s", *createQueue.Name, err), resp)
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return diag.Errorf("Failed to create queue %s: with httpStatus code: %d", *createQueue.Name, resp.StatusCode)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create queue %s with error: %s, status code %v", *createQueue.Name, err, resp.StatusCode), resp)
 	}
 
 	d.SetId(*queue.Id)
@@ -288,10 +288,10 @@ func updateQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 	}
 
 	log.Printf("Updating queue %s", *updateQueue.Name)
-	_, _, err := routingAPI.PutRoutingQueue(d.Id(), updateQueue)
+	_, resp, err := routingAPI.PutRoutingQueue(d.Id(), updateQueue)
 
 	if err != nil {
-		return diag.Errorf("Error updating queue %s: %s", *updateQueue.Name, err)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update queue %s error: %s", *updateQueue.Name, err), resp)
 	}
 
 	diagErr = util.UpdateObjectDivision(d, "QUEUE", sdkConfig)
@@ -320,9 +320,9 @@ func deleteQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
 
 	log.Printf("Deleting queue %s", name)
-	_, err := routingAPI.DeleteRoutingQueue(d.Id(), true)
+	resp, err := routingAPI.DeleteRoutingQueue(d.Id(), true)
 	if err != nil {
-		return diag.Errorf("Failed to delete queue %s: %s", name, err)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete queue %s error: %s", name, err), resp)
 	}
 
 	// Queue deletes are not immediate. Query until queue is no longer found
@@ -888,7 +888,7 @@ func updateQueueWrapupCodes(d *schema.ResourceData, routingAPI *platformclientv2
 							// Ignore missing queue or wrapup code
 							continue
 						}
-						return diag.Errorf("Failed to remove wrapup code from queue %s: %s", d.Id(), err)
+						return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to remove wrapup codes for queue %s error: %s", d.Id(), err), resp)
 					}
 				}
 			}
@@ -919,9 +919,9 @@ func addWrapupCodesInChunks(queueID string, codesToAdd []string, api *platformcl
 		}
 
 		if len(updateChunk) > 0 {
-			_, _, err := api.PostRoutingQueueWrapupcodes(queueID, updateChunk)
+			_, resp, err := api.PostRoutingQueueWrapupcodes(queueID, updateChunk)
 			if err != nil {
-				return diag.Errorf("Failed to update wrapup codes in queue %s: %s", queueID, err)
+				return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update wrapup codes for queue %s error: %s", queueID, err), resp)
 			}
 		}
 	}
@@ -933,9 +933,9 @@ func getRoutingQueueWrapupCodes(queueID string, api *platformclientv2.RoutingApi
 
 	var codes []platformclientv2.Wrapupcode
 	for pageNum := 1; ; pageNum++ {
-		codeResult, _, err := api.GetRoutingQueueWrapupcodes(queueID, maxPageSize, pageNum)
+		codeResult, resp, err := api.GetRoutingQueueWrapupcodes(queueID, maxPageSize, pageNum)
 		if err != nil {
-			return nil, diag.Errorf("Failed to query wrapup codes for queue %s: %s", queueID, err)
+			return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to query wrapup codes for queue %s error: %s", queueID, err), resp)
 		}
 		if codeResult == nil || codeResult.Entities == nil || len(*codeResult.Entities) == 0 {
 			return codes, nil
@@ -1105,9 +1105,9 @@ func updateMembersInChunks(queueID string, membersToUpdate []string, remove bool
 		chunks := chunksProcess.ChunkItems(membersToUpdate, platformWritableEntityFunc, 100)
 		// Closure to process the chunks
 		chunkProcessor := func(chunk []platformclientv2.Writableentity) diag.Diagnostics {
-			_, err := api.PostRoutingQueueMembers(queueID, chunk, remove)
+			resp, err := api.PostRoutingQueueMembers(queueID, chunk, remove)
 			if err != nil {
-				return diag.Errorf("Failed to update members in queue %s: %s", queueID, err)
+				return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update members in queue %s error: %s", queueID, err), resp)
 			}
 			return nil
 		}
@@ -1124,12 +1124,12 @@ func platformWritableEntityFunc(val string) platformclientv2.Writableentity {
 
 func updateQueueUserRingNum(queueID string, userID string, ringNum int, sdkConfig *platformclientv2.Configuration) diag.Diagnostics {
 	api := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
-	_, err := api.PatchRoutingQueueMember(queueID, userID, platformclientv2.Queuemember{
+	resp, err := api.PatchRoutingQueueMember(queueID, userID, platformclientv2.Queuemember{
 		Id:         &userID,
 		RingNumber: &ringNum,
 	})
 	if err != nil {
-		return diag.Errorf("Failed to update ring number for queue %s user %s: %s", queueID, userID, err)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update ring number for queue %s user %s error: %s", queueID, userID, err), resp)
 	}
 	return nil
 }
@@ -1140,9 +1140,9 @@ func getRoutingQueueMembers(queueID string, memberBy string, sdkConfig *platform
 	api := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
 
 	// Need to call this method to find the member count for a queue. GetRoutingQueueMembers does not return a `total` property for us to use.
-	queue, _, err := api.GetRoutingQueue(queueID)
+	queue, resp, err := api.GetRoutingQueue(queueID)
 	if err != nil {
-		return nil, diag.Errorf("Can't find queue %s", queueID)
+		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to find queue %s error: %s", queueID, err), resp)
 	}
 	queueMembers := *queue.MemberCount
 	log.Printf("%d members belong to queue %s", queueMembers, queueID)
@@ -1150,7 +1150,7 @@ func getRoutingQueueMembers(queueID string, memberBy string, sdkConfig *platform
 	for pageNum := 1; ; pageNum++ {
 		users, resp, err := sdkGetRoutingQueueMembers(queueID, memberBy, "", pageNum, pageSize, api)
 		if err != nil || resp.StatusCode != http.StatusOK {
-			return nil, diag.Errorf("Failed to query users for queue %s: %s", queueID, err)
+			return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to query users for queue %s error: %s", queueID, err), resp)
 		}
 		if users == nil || users.Entities == nil || len(*users.Entities) == 0 {
 			membersFound := len(members)
@@ -1235,9 +1235,9 @@ func flattenQueueWrapupCodes(queueID string, api *platformclientv2.RoutingApi) (
 	const maxPageSize = 100
 	var codeIds []string
 	for pageNum := 1; ; pageNum++ {
-		codes, _, err := api.GetRoutingQueueWrapupcodes(queueID, maxPageSize, pageNum)
+		codes, resp, err := api.GetRoutingQueueWrapupcodes(queueID, maxPageSize, pageNum)
 		if err != nil {
-			return nil, diag.Errorf("Failed to query wrapup codes for queue %s: %s", queueID, err)
+			return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to query wrapup codes for queue %s error: %s", queueID, err), resp)
 		}
 		if codes == nil || codes.Entities == nil || len(*codes.Entities) == 0 {
 			break

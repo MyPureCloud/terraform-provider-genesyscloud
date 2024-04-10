@@ -89,9 +89,9 @@ func getAllKnowledgeV1CategoryEntities(knowledgeAPI platformclientv2.KnowledgeAp
 
 	const pageSize = 100
 	for i := 0; ; i++ {
-		knowledgeCategories, _, getErr := knowledgeAPI.GetKnowledgeKnowledgebaseLanguageCategories(*knowledgeBase.Id, *knowledgeBase.CoreLanguage, "", after, "", fmt.Sprintf("%v", pageSize), "")
+		knowledgeCategories, resp, getErr := knowledgeAPI.GetKnowledgeKnowledgebaseLanguageCategories(*knowledgeBase.Id, *knowledgeBase.CoreLanguage, "", after, "", fmt.Sprintf("%v", pageSize), "")
 		if getErr != nil {
-			return nil, diag.Errorf("Failed to get page of knowledge categories: %v", getErr)
+			return nil, util.BuildAPIDiagnosticError("genesyscloud_knowledge_v1_category", fmt.Sprintf("Failed to get knowledge categorys error: %s", getErr), resp)
 		}
 
 		if knowledgeCategories.Entities == nil || len(*knowledgeCategories.Entities) == 0 {
@@ -175,9 +175,9 @@ func createKnowledgeCategoryV1(ctx context.Context, d *schema.ResourceData, meta
 	knowledgeCategoryRequest := buildKnowledgeCategoryV1(knowledgeCategory)
 
 	log.Printf("Creating knowledge category %s", knowledgeCategory["name"].(string))
-	knowledgeCategoryResponse, _, err := knowledgeAPI.PostKnowledgeKnowledgebaseLanguageCategories(knowledgeBaseId, languageCode, knowledgeCategoryRequest)
+	knowledgeCategoryResponse, resp, err := knowledgeAPI.PostKnowledgeKnowledgebaseLanguageCategories(knowledgeBaseId, languageCode, knowledgeCategoryRequest)
 	if err != nil {
-		return diag.Errorf("Failed to create knowledge category %s: %s", knowledgeBaseId, err)
+		return util.BuildAPIDiagnosticError("genesyscloud_knowledge_v1_category", fmt.Sprintf("Failed to create knowledge category %s error: %s", knowledgeBaseId, err), resp)
 	}
 
 	id := fmt.Sprintf("%s %s %s", *knowledgeCategoryResponse.Id, *knowledgeCategoryResponse.KnowledgeBase.Id, *knowledgeCategoryResponse.LanguageCode)
@@ -234,7 +234,7 @@ func updateKnowledgeCategoryV1(ctx context.Context, d *schema.ResourceData, meta
 		// Get current knowledge category version
 		_, resp, getErr := knowledgeAPI.GetKnowledgeKnowledgebaseLanguageCategory(knowledgeCategoryId, knowledgeBaseId, languageCode)
 		if getErr != nil {
-			return resp, diag.Errorf("Failed to read knowledge category %s: %s", knowledgeCategoryId, getErr)
+			return resp, util.BuildAPIDiagnosticError("genesyscloud_knowledge_v1_category", fmt.Sprintf("Failed to read knowledge category %s error: %s", knowledgeCategoryId, getErr), resp)
 		}
 
 		knowledgeCategoryUpdate := buildKnowledgeCategoryV1(knowledgeCategory)
@@ -242,7 +242,7 @@ func updateKnowledgeCategoryV1(ctx context.Context, d *schema.ResourceData, meta
 		log.Printf("Updating knowledge category %s", knowledgeCategory["name"].(string))
 		_, resp, putErr := knowledgeAPI.PatchKnowledgeKnowledgebaseLanguageCategory(knowledgeCategoryId, knowledgeBaseId, languageCode, knowledgeCategoryUpdate)
 		if putErr != nil {
-			return resp, diag.Errorf("Failed to update knowledge category %s: %s", knowledgeCategoryId, putErr)
+			return resp, util.BuildAPIDiagnosticError("genesyscloud_knowledge_v1_category", fmt.Sprintf("Failed to update knowledge category %s error: %s", knowledgeCategoryId, putErr), resp)
 		}
 		return resp, nil
 	})
@@ -264,9 +264,9 @@ func deleteKnowledgeCategoryV1(ctx context.Context, d *schema.ResourceData, meta
 	knowledgeAPI := platformclientv2.NewKnowledgeApiWithConfig(sdkConfig)
 
 	log.Printf("Deleting knowledge category %s", id)
-	_, _, err := knowledgeAPI.DeleteKnowledgeKnowledgebaseLanguageCategory(knowledgeCategoryId, knowledgeBaseId, languageCode)
+	_, resp, err := knowledgeAPI.DeleteKnowledgeKnowledgebaseLanguageCategory(knowledgeCategoryId, knowledgeBaseId, languageCode)
 	if err != nil {
-		return diag.Errorf("Failed to delete knowledge category %s: %s", id, err)
+		return util.BuildAPIDiagnosticError("genesyscloud_knowledge_v1_category", fmt.Sprintf("Failed to delete knowledge category %s error: %s", id, err), resp)
 	}
 
 	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {

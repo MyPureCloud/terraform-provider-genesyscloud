@@ -30,7 +30,7 @@ func getAllAuthTeams(ctx context.Context, clientConfig *platformclientv2.Configu
 	resources := make(resourceExporter.ResourceIDMetaMap)
 	teams, resp, err := proxy.getAllTeam(ctx, "")
 	if err != nil {
-		return nil, diag.Errorf("Failed to get team: %v %v", err, resp)
+		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get team error: %s", err), resp)
 	}
 	for _, team := range *teams {
 		resources[*team.Id] = &resourceExporter.ResourceMeta{Name: *team.Name}
@@ -46,7 +46,7 @@ func createTeam(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	log.Printf("Creating team %s", *team.Name)
 	teamObj, resp, err := proxy.createTeam(ctx, &team)
 	if err != nil {
-		return diag.Errorf("Failed to create team: %s %v", err, resp)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create team %s error: %s", *team.Name, err), resp)
 	}
 	d.SetId(*teamObj.Id)
 	log.Printf("Created team %s", *teamObj.Id)
@@ -101,7 +101,7 @@ func updateTeam(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	log.Printf("updating team %s", *team.Name)
 	teamObj, resp, err := proxy.updateTeam(ctx, d.Id(), &team)
 	if err != nil {
-		return diag.Errorf("failed to update team %s : %s %v", d.Id(), err, resp)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update team %s error: %s", *team.Name, err), resp)
 	}
 	members, ok := d.GetOk("member_ids")
 
@@ -143,7 +143,7 @@ func deleteTeam(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	proxy := getTeamProxy(sdkConfig)
 	resp, err := proxy.deleteTeam(ctx, d.Id())
 	if err != nil {
-		return diag.Errorf("failed to delete team %s: %s %v", d.Id(), err, resp)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete team %s error: %s", d.Id(), err), resp)
 	}
 	return util.WithRetries(ctx, 180*time.Second, func() *retry.RetryError {
 		_, resp, err := proxy.getTeamById(ctx, d.Id())
@@ -177,7 +177,7 @@ func readMembers(ctx context.Context, d *schema.ResourceData, proxy *teamProxy) 
 func deleteMembers(ctx context.Context, teamId string, memberList []interface{}, proxy *teamProxy) diag.Diagnostics {
 	resp, err := proxy.deleteMembers(ctx, teamId, convertMemberListtoString(memberList))
 	if err != nil {
-		return diag.Errorf("failed to remove members from team %s : %s %v", teamId, err, resp)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update remove members from team %s error: %s", teamId, err), resp)
 	}
 	log.Printf("success removing members from team %s", teamId)
 	return nil
@@ -195,7 +195,7 @@ func createMembers(ctx context.Context, teamId string, members []interface{}, pr
 		if len(membersChunk)%chunkSize == 0 {
 			_, resp, err := proxy.createMembers(ctx, teamId, buildTeamMembers(membersChunk))
 			if err != nil {
-				return diag.Errorf("failed to add members to team %s: %s %v", teamId, err, resp)
+				return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to add members to team %s error: %s", teamId, err), resp)
 			}
 			membersChunk = nil
 		}
@@ -203,7 +203,7 @@ func createMembers(ctx context.Context, teamId string, members []interface{}, pr
 
 	_, resp, err := proxy.createMembers(ctx, teamId, buildTeamMembers(membersChunk))
 	if err != nil {
-		return diag.Errorf("failed to add members to team %s: %s %v", teamId, err, resp)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to add members to team %s error: %s", teamId, err), resp)
 	}
 
 	log.Printf("success adding members to team %s", teamId)

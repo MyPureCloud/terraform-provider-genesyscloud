@@ -27,7 +27,7 @@ func getAllDidPools(ctx context.Context, clientConfig *platformclientv2.Configur
 
 	didPools, resp, err := proxy.getAllTelephonyDidPools(ctx)
 	if err != nil {
-		return nil, diag.Errorf("failed to read did pools: %v %v", err, resp)
+		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get did pools error: %s", err), resp)
 	}
 
 	for _, didPool := range *didPools {
@@ -59,7 +59,7 @@ func createDidPool(ctx context.Context, d *schema.ResourceData, meta interface{}
 	log.Printf("Creating DID pool %s", startPhoneNumber)
 	createdDidPool, resp, err := proxy.createTelephonyDidPool(ctx, didPool)
 	if err != nil {
-		return diag.Errorf("Failed to create DID pool %s: %s %v", startPhoneNumber, err, resp)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create DID pool %s error: %s", startPhoneNumber, err), resp)
 	}
 
 	d.SetId(*createdDidPool.Id)
@@ -122,7 +122,7 @@ func updateDidPool(ctx context.Context, d *schema.ResourceData, meta interface{}
 
 	log.Printf("Updating DID pool %s", d.Id())
 	if _, resp, err := proxy.updateTelephonyDidPool(ctx, d.Id(), didPoolBody); err != nil {
-		return diag.Errorf("Error updating DID pool %s: %s %v", startPhoneNumber, err, resp)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update DID pool %s error: %s", startPhoneNumber, err), resp)
 	}
 
 	log.Printf("Updated DID pool %s", d.Id())
@@ -141,7 +141,7 @@ func deleteDidPool(ctx context.Context, d *schema.ResourceData, meta interface{}
 		log.Printf("Deleting DID pool with starting number %s", startPhoneNumber)
 		resp, err := proxy.deleteTelephonyDidPool(ctx, d.Id())
 		if err != nil {
-			return resp, diag.Errorf("Failed to delete DID pool with starting number %s: %s", startPhoneNumber, err)
+			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete DID pool %s error: %s", startPhoneNumber, err), resp)
 		}
 		return resp, nil
 	})

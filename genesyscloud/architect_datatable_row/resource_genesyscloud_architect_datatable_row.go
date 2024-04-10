@@ -51,14 +51,14 @@ func getAllArchitectDatatableRows(ctx context.Context, clientConfig *platformcli
 
 	tables, resp, err := archProxy.getAllArchitectDatatable(ctx)
 	if err != nil {
-		return nil, diag.Errorf("Failed to get architect Datatables %v %s", resp, err)
+		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get architect datatables error: %s", err), resp)
 	}
 
 	for _, tableMeta := range *tables {
 		rows, resp, err := archProxy.getAllArchitectDatatableRows(ctx, *tableMeta.Id)
 
 		if err != nil {
-			return nil, diag.Errorf("Failed to get architect Datatable Rows %v %s", resp, err)
+			return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get architect Datatable Rows error: %s", err), resp)
 		}
 
 		for _, row := range *rows {
@@ -90,7 +90,7 @@ func createArchitectDatatableRow(ctx context.Context, d *schema.ResourceData, me
 
 	_, resp, err := archProxy.createArchitectDatatableRow(ctx, tableId, &rowMap)
 	if err != nil {
-		return diag.Errorf("Failed to create Datatable Row %s: %s %v", rowId, err, resp)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create Datatable Row %s error: %s", d.Id(), err), resp)
 	}
 
 	d.SetId(rowId)
@@ -154,7 +154,7 @@ func updateArchitectDatatableRow(ctx context.Context, d *schema.ResourceData, me
 
 	_, resp, err := archProxy.updateArchitectDatatableRow(ctx, tableId, keyStr, &rowMap)
 	if err != nil {
-		return diag.Errorf("Failed to update Datatable Row %s: %s %v", d.Id(), err, resp)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update Datatable Row %s error: %s", d.Id(), err), resp)
 	}
 
 	log.Printf("Updated Datatable Row %s", d.Id())
@@ -178,7 +178,7 @@ func deleteArchitectDatatableRow(ctx context.Context, d *schema.ResourceData, me
 			log.Printf("Datatable row already deleted %s", d.Id())
 			return nil
 		}
-		return diag.Errorf("Failed to delete Datatable Row %s: %s", d.Id(), err)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete Datatable Row %s error: %s", d.Id(), err), resp)
 	}
 
 	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {

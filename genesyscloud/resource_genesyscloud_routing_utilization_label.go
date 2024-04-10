@@ -25,9 +25,9 @@ func getAllRoutingUtilizationLabels(_ context.Context, clientConfig *platformcli
 
 	for pageNum := 1; ; pageNum++ {
 		const pageSize = 100
-		labels, _, getErr := routingAPI.GetRoutingUtilizationLabels(pageSize, pageNum, "", "")
+		labels, resp, getErr := routingAPI.GetRoutingUtilizationLabels(pageSize, pageNum, "", "")
 		if getErr != nil {
-			return nil, diag.Errorf("Failed to get page of labels: %v", getErr)
+			return nil, util.BuildAPIDiagnosticError("genesyscloud_routing_utilization_label", fmt.Sprintf("Failed to get page of labels error: %s", getErr), resp)
 		}
 
 		if labels.Entities == nil || len(*labels.Entities) == 0 {
@@ -78,11 +78,11 @@ func createRoutingUtilizationLabel(ctx context.Context, d *schema.ResourceData, 
 	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
 
 	log.Printf("Creating label %s", name)
-	label, _, err := routingAPI.PostRoutingUtilizationLabels(platformclientv2.Createutilizationlabelrequest{
+	label, resp, err := routingAPI.PostRoutingUtilizationLabels(platformclientv2.Createutilizationlabelrequest{
 		Name: &name,
 	})
 	if err != nil {
-		return diag.Errorf("Failed to create label %s: %s", name, err)
+		return util.BuildAPIDiagnosticError("genesyscloud_routing_utilization_label", fmt.Sprintf("Failed to create label %s error: %s", name, err), resp)
 	}
 
 	d.SetId(*label.Id)
@@ -100,11 +100,11 @@ func updateRoutingUtilizationLabel(ctx context.Context, d *schema.ResourceData, 
 
 	log.Printf("Updating label %s with name %s", id, name)
 
-	_, _, err := routingAPI.PutRoutingUtilizationLabel(id, platformclientv2.Updateutilizationlabelrequest{
+	_, resp, err := routingAPI.PutRoutingUtilizationLabel(id, platformclientv2.Updateutilizationlabelrequest{
 		Name: &name,
 	})
 	if err != nil {
-		return diag.Errorf("Failed to update label %s: %s", id, err)
+		return util.BuildAPIDiagnosticError("genesyscloud_routing_utilization_label", fmt.Sprintf("Failed to update label %s error: %s", id, err), resp)
 	}
 
 	log.Printf("Updated label %s", id)
@@ -139,10 +139,10 @@ func deleteRoutingUtilizationLabel(ctx context.Context, d *schema.ResourceData, 
 	routingApi := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
 
 	log.Printf("Deleting label %s", name)
-	_, err := routingApi.DeleteRoutingUtilizationLabel(d.Id(), true)
+	resp, err := routingApi.DeleteRoutingUtilizationLabel(d.Id(), true)
 
 	if err != nil {
-		return diag.Errorf("Failed to delete label %s: %s", name, err)
+		return util.BuildAPIDiagnosticError("genesyscloud_routing_utilization_label", fmt.Sprintf("Failed to delete label %s error: %s", name, err), resp)
 	}
 
 	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
