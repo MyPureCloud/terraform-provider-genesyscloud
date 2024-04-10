@@ -77,7 +77,7 @@ func New(version string, providerResources map[string]*schema.Resource, provider
 				},
 				"aws_region": {
 					Type:         schema.TypeString,
-					Required:     true,
+					Optional:     true,
 					DefaultFunc:  schema.EnvDefaultFunc("GENESYSCLOUD_REGION", nil),
 					Description:  "AWS region where org exists. e.g. us-east-1. Can be set with the `GENESYSCLOUD_REGION` environment variable.",
 					ValidateFunc: validation.StringInSlice(getAllowedRegions(), true),
