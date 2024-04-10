@@ -116,16 +116,16 @@ func readGroup(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "owner_ids", group.Owners, flattenGroupOwners)
 
 		if group.Addresses != nil {
-			d.Set("addresses", flattenGroupAddresses(d, group.Addresses))
+			_ = d.Set("addresses", flattenGroupAddresses(d, group.Addresses))
 		} else {
-			d.Set("addresses", nil)
+			_ = d.Set("addresses", nil)
 		}
 
 		members, err := readGroupMembers(ctx, d.Id(), sdkConfig)
 		if err != nil {
 			return retry.NonRetryableError(fmt.Errorf("%v", err))
 		}
-		d.Set("member_ids", members)
+		_ = d.Set("member_ids", members)
 
 		log.Printf("Read group %s %s", d.Id(), *group.Name)
 		return cc.CheckState()

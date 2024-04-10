@@ -109,9 +109,9 @@ func ResourceGroup() *schema.Resource {
 			"owner_ids": {
 				Description: "IDs of owners of the group.",
 				Type:        schema.TypeList,
-				Required:    true,
+				Optional:    true,
 				Elem:        &schema.Schema{Type: schema.TypeString},
-				MinItems:    1,
+				Computed:    true,
 			},
 			"member_ids": {
 				Description: "IDs of members assigned to the group. If not set, this resource will not manage group members.",
