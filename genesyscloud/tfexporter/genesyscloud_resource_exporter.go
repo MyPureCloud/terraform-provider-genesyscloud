@@ -1245,10 +1245,8 @@ func (g *GenesysCloudResourceExporter) sanitizeConfigMap(
 		//If the exporter as has customer resolver for an attribute, invoke it.
 		if refAttrCustomResolver, ok := exporter.CustomAttributeResolver[currAttr]; ok {
 			log.Printf("Custom resolver invoked for attribute: %s", currAttr)
-			err := refAttrCustomResolver.ResolverFunc(configMap, exporters, resourceName)
-
-			if err != nil {
-				log.Printf("An error has occurred while trying to invoke a custom resolver for attribute %s: %s", currAttr, err)
+			if err := refAttrCustomResolver.ResolverFunc(configMap, exporters, resourceName); err != nil {
+				log.Printf("An error has occurred while trying invoke a custom resolver for attribute %s: %v", currAttr, err)
 			}
 		}
 
@@ -1256,10 +1254,8 @@ func (g *GenesysCloudResourceExporter) sanitizeConfigMap(
 		if refAttrCustomFlowResolver, ok := exporter.CustomFlowResolver[currAttr]; ok {
 			log.Printf("Custom resolver invoked for attribute: %s", currAttr)
 			varReference := fmt.Sprintf("%s_%s_%s", resourceType, resourceName, "filepath")
-			err := refAttrCustomFlowResolver.ResolverFunc(configMap, varReference)
-
-			if err != nil {
-				log.Printf("An error has occurred while trying to invoke a custom resolver for attribute %s: %s", currAttr, err)
+			if err := refAttrCustomFlowResolver.ResolverFunc(configMap, varReference); err != nil {
+				log.Printf("An error has occurred while trying invoke a custom resolver for attribute %s: %v", currAttr, err)
 			}
 		}
 

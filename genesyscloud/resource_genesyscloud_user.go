@@ -888,7 +888,7 @@ func buildSdkLocations(d *schema.ResourceData) *[]platformclientv2.Location {
 func buildSdkEmployerInfo(d *schema.ResourceData) *platformclientv2.Employerinfo {
 	if configInfo := d.Get("employer_info").([]interface{}); configInfo != nil {
 		var sdkInfo platformclientv2.Employerinfo
-		if len(configInfo) > 0 {
+		if len(configInfo) > 0 && configInfo[0] != nil {
 			if _, ok := configInfo[0].(map[string]interface{}); !ok {
 				return nil
 			}
@@ -1082,7 +1082,7 @@ func readUserRoutingUtilization(d *schema.ResourceData, sdkConfig *platformclien
 
 		if agentUtilization.LabelUtilizations != nil {
 			utilConfig := d.Get("routing_utilization").([]interface{})
-			if utilConfig != nil && len(utilConfig) > 0 {
+			if utilConfig != nil && len(utilConfig) > 0 && utilConfig[0] != nil {
 				originalSettings := utilConfig[0].(map[string]interface{})
 				originalLabelUtilizations := originalSettings["label_utilizations"].([]interface{})
 
@@ -1283,7 +1283,7 @@ func updateUserRoutingUtilization(d *schema.ResourceData, usersAPI *platformclie
 
 			log.Printf("Updating user utilization for user %s", d.Id())
 
-			if len(utilConfig) > 0 { // Specified but empty utilization list will reset to org-wide defaults
+			if len(utilConfig) > 0 && utilConfig[0] != nil { // Specified but empty utilization list will reset to org-wide defaults
 				// Update settings
 				allSettings := utilConfig[0].(map[string]interface{})
 				labelUtilizations := allSettings["label_utilizations"].([]interface{})
