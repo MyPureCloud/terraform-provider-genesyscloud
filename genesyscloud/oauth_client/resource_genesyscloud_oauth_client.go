@@ -24,7 +24,7 @@ import (
 func getAllOAuthClients(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
 	resources := make(resourceExporter.ResourceIDMetaMap)
 
-	oauthClientProxy := getOAuthClientProxy(clientConfig)
+	oauthClientProxy := GetOAuthClientProxy(clientConfig)
 	clients, resp, getErr := oauthClientProxy.getAllOAuthClients(ctx)
 
 	if getErr != nil {
@@ -41,56 +41,6 @@ func getAllOAuthClients(ctx context.Context, clientConfig *platformclientv2.Conf
 	return resources, nil
 }
 
-func updateTerraformUserWithRole(ctx context.Context, sdkConfig *platformclientv2.Configuration, roles *[]platformclientv2.Roledivision) diag.Diagnostics {
-	op := getOAuthClientProxy(sdkConfig)
-
-	//Step #1 Retrieve the parent oauth client from the token API and check to make sure it is not a client credential grant
-	tokenInfo, resp, err := op.getParentOAuthClientToken(ctx)
-	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Error trying to retrieve the token for the OAuth client running our CX as Code provider %s", err), resp)
-	}
-
-	if *tokenInfo.OAuthClient.Organization.Id != "purecloud-builtin" {
-		log.Printf("This terraform client is being run with an OAuth Client Credential Grant.  You might get an error in your terraform scripts if you try to create a role in CX as Code and try to assign it to the oauth client.")
-		return nil
-	}
-
-	//Step #2: Look up the user who is running the user
-	log.Printf("The OAuth Client being used is purecloud-builtin.  Retrieving the user running the terraform client and assigning the target role to them.")
-	terraformUser, resp, err := op.GetTerraformUser(ctx)
-	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to retrieved the terraform user running this terraform code %s", err), resp)
-	}
-
-	//Step #3: Lookup the users roles
-	userRoles, resp, err := op.GetTerraformUserRoles(ctx, *terraformUser.Id)
-	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failued to retrieve the terraform user roles running this terraform code %s", err), resp)
-	}
-
-	var totalRoles []string
-	//Step #4  - Add the new roles together
-	for _, role := range *roles {
-		totalRoles = append(totalRoles, *role.RoleId)
-	}
-
-	for _, role := range *userRoles.Roles {
-		totalRoles = append(totalRoles, *role.Id)
-	}
-
-	if len(totalRoles) <= 1 {
-		log.Printf("JCC SOMETHING IS WRONG.  NOT UPDATING ROLES")
-	}
-
-	//Step #5 - Update roles
-	_, resp, err = op.UpdateTerraformUserRoles(ctx, *terraformUser.Id, totalRoles)
-	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failued to update the terraform user roles running this terraform code %s", err), resp)
-	}
-
-	return nil
-}
-
 func createOAuthClient(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	name := d.Get("name").(string)
 	description := d.Get("description").(string)
@@ -99,7 +49,7 @@ func createOAuthClient(ctx context.Context, d *schema.ResourceData, meta interfa
 	state := d.Get("state").(string)
 
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-	oauthClientProxy := getOAuthClientProxy(sdkConfig)
+	oauthClientProxy := GetOAuthClientProxy(sdkConfig)
 
 	roles, diagErr := buildOAuthRoles(d)
 	if diagErr != nil {
@@ -113,7 +63,7 @@ func createOAuthClient(ctx context.Context, d *schema.ResourceData, meta interfa
 	}
 
 	log.Printf("Creating oauth client %s", name)
-	client, resp, err := oauthClientProxy.createOAuthClient(ctx, platformclientv2.Oauthclientrequest{
+	oauthRequest := &platformclientv2.Oauthclientrequest{
 		Name:                       &name,
 		Description:                &description,
 		AccessTokenValiditySeconds: &tokenSeconds,
@@ -122,7 +72,9 @@ func createOAuthClient(ctx context.Context, d *schema.ResourceData, meta interfa
 		RegisteredRedirectUri:      buildOAuthRedirectURIs(d),
 		Scope:                      buildOAuthScopes(d),
 		RoleDivisions:              roles,
-	})
+	}
+
+	client, resp, err := oauthClientProxy.createOAuthClient(ctx, *oauthRequest)
 	if err != nil {
 		return diag.Errorf("Failed to create oauth client %s: %s %v", name, err, resp)
 	}
@@ -149,8 +101,8 @@ func createOAuthClient(ctx context.Context, d *schema.ResourceData, meta interfa
 			return diag.Errorf("Failed to create credential %s : %s %v", name, err, resp)
 		}
 
-		d.Set("integration_credential_id", *credential.Id)
-		d.Set("integration_credential_name", *credential.Name)
+		_ = d.Set("integration_credential_id", *credential.Id)
+		_ = d.Set("integration_credential_name", *credential.Name)
 	}
 
 	d.SetId(*client.Id)
@@ -158,9 +110,60 @@ func createOAuthClient(ctx context.Context, d *schema.ResourceData, meta interfa
 	return readOAuthClient(ctx, d, meta)
 }
 
+func updateTerraformUserWithRole(ctx context.Context, sdkConfig *platformclientv2.Configuration, addedRoles *[]platformclientv2.Roledivision) diag.Diagnostics {
+	op := GetOAuthClientProxy(sdkConfig)
+
+	//Step #1 Retrieve the parent oauth client from the token API and check to make sure it is not a client credential grant
+	tokenInfo, resp, err := op.getParentOAuthClientToken(ctx)
+	if err != nil {
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Error trying to retrieve the token for the OAuth client running our CX as Code provider %s", err), resp)
+	}
+
+	if *tokenInfo.OAuthClient.Organization.Id != "purecloud-builtin" {
+		log.Printf("This terraform client is being run with an OAuth Client Credential Grant.  You might get an error in your terraform scripts if you try to create a role in CX as Code and try to assign it to the oauth client.")
+		return nil
+	}
+
+	//Step #2: Look up the user who is running the user
+	log.Printf("The OAuth Client being used is purecloud-builtin. Retrieving the user running the terraform client and assigning the target role to them.")
+	terraformUser, resp, err := op.GetTerraformUser(ctx)
+	if err != nil {
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to retrieved the terraform user running this terraform code %s", err), resp)
+	}
+
+	//Step #3: Lookup the users addedRoles
+	userRoles, resp, err := op.GetTerraformUserRoles(ctx, *terraformUser.Id)
+	if err != nil {
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to retrieve the terraform user addedRoles running this terraform code %s", err), resp)
+	}
+
+	var totalRoles []string
+	//Step #4  - Concat the addedRoles
+	for _, role := range *addedRoles {
+		totalRoles = append(totalRoles, *role.RoleId)
+	}
+
+	for _, role := range *userRoles.Roles {
+		totalRoles = append(totalRoles, *role.Id)
+	}
+
+	//Step #5 - Update addedRoles
+	_, resp, err = op.UpdateTerraformUserRoles(ctx, *terraformUser.Id, totalRoles)
+	if err != nil {
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update the terraform user addedRoles running this terraform code %s", err), resp)
+	}
+
+	//Do not remove this sleep.  The auth service is a mishmash of caches and eventually consistency.  After we perform an update we need
+	//to sleep approximately 10 seconds for the item to be written across multiple databases.  Originally, I tried to do a retry loop to
+	//wait until the retry happens but the act of the first call immediately happen could cause bad data to cache.  After talking with the auth
+	//team we put a sleep in here.
+	time.Sleep(10 * time.Second)
+	return nil
+}
+
 func readOAuthClient(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-	oAuthProxy := getOAuthClientProxy(sdkConfig)
+	oAuthProxy := GetOAuthClientProxy(sdkConfig)
 
 	log.Printf("Reading oauth client %s", d.Id())
 
@@ -174,7 +177,7 @@ func readOAuthClient(ctx context.Context, d *schema.ResourceData, meta interface
 		}
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOAuthClient())
-		d.Set("name", *client.Name)
+		_ = d.Set("name", *client.Name)
 
 		resourcedata.SetNillableValue(d, "description", client.Description)
 		resourcedata.SetNillableValue(d, "access_token_validity_seconds", client.AccessTokenValiditySeconds)
@@ -182,21 +185,21 @@ func readOAuthClient(ctx context.Context, d *schema.ResourceData, meta interface
 		resourcedata.SetNillableValue(d, "state", client.State)
 
 		if client.RegisteredRedirectUri != nil {
-			d.Set("registered_redirect_uris", lists.StringListToSet(*client.RegisteredRedirectUri))
+			_ = d.Set("registered_redirect_uris", lists.StringListToSet(*client.RegisteredRedirectUri))
 		} else {
-			d.Set("registered_redirect_uris", nil)
+			_ = d.Set("registered_redirect_uris", nil)
 		}
 
 		if client.Scope != nil {
-			d.Set("scopes", lists.StringListToSet(*client.Scope))
+			_ = d.Set("scopes", lists.StringListToSet(*client.Scope))
 		} else {
-			d.Set("scopes", nil)
+			_ = d.Set("scopes", nil)
 		}
 
 		if client.RoleDivisions != nil {
-			d.Set("roles", flattenOAuthRoles(*client.RoleDivisions))
+			_ = d.Set("roles", flattenOAuthRoles(*client.RoleDivisions))
 		} else {
-			d.Set("roles", nil)
+			_ = d.Set("roles", nil)
 		}
 
 		log.Printf("Read oauth client %s %s", d.Id(), *client.Name)
@@ -212,7 +215,7 @@ func updateOAuthClient(ctx context.Context, d *schema.ResourceData, meta interfa
 	state := d.Get("state").(string)
 
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-	oauthClientProxy := getOAuthClientProxy(sdkConfig)
+	oauthClientProxy := GetOAuthClientProxy(sdkConfig)
 
 	roles, diagErr := buildOAuthRoles(d)
 	if diagErr != nil {
@@ -240,7 +243,7 @@ func updateOAuthClient(ctx context.Context, d *schema.ResourceData, meta interfa
 
 func deleteOAuthClient(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-	oauthClientProxy := getOAuthClientProxy(sdkConfig)
+	oauthClientProxy := GetOAuthClientProxy(sdkConfig)
 
 	// check if there is a integration credential to delete
 	credentialId := resourcedata.GetNillableValue[string](d, "integration_credential_id")
@@ -257,7 +260,7 @@ func deleteOAuthClient(ctx context.Context, d *schema.ResourceData, meta interfa
 	log.Printf("Deleting oauth client %s", name)
 
 	// The client state must be set to inactive before deleting
-	d.Set("state", "inactive")
+	_ = d.Set("state", "inactive")
 	diagErr := updateOAuthClient(ctx, d, meta)
 	if diagErr != nil {
 		return diagErr

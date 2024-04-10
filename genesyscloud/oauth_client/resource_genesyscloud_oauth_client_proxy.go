@@ -2,8 +2,9 @@ package oauth_client
 
 import (
 	"context"
-
 	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
+	"log"
+	"sync"
 )
 
 var internalProxy *oauthClientProxy
@@ -16,20 +17,19 @@ type getParentOAuthClientTokenFunc func(context.Context, *oauthClientProxy) (*pl
 type getTerraformUserFunc func(context.Context, *oauthClientProxy) (*platformclientv2.Userme, *platformclientv2.APIResponse, error)
 type getTerraformUserRolesFunc func(context.Context, *oauthClientProxy, string) (*platformclientv2.Userauthorization, *platformclientv2.APIResponse, error)
 type updateTerraformUserRolesFunc func(context.Context, *oauthClientProxy, string, []string) (*platformclientv2.Userauthorization, *platformclientv2.APIResponse, error)
-type getHomeDivisionInfoFunc func(context.Context, *oauthClientProxy) (*platformclientv2.Authzdivision, *platformclientv2.APIResponse, error)
 type getIntegrationCredentialFunc func(context.Context, *oauthClientProxy, string) (*platformclientv2.Credential, *platformclientv2.APIResponse, error)
 type getAllOauthClientsFunc func(ctx context.Context, o *oauthClientProxy) (*[]platformclientv2.Oauthclientlisting, *platformclientv2.APIResponse, error)
 type deleteOAuthClientFunc func(context.Context, *oauthClientProxy, string) (*platformclientv2.APIResponse, error)
 type deleteIntegrationCredentialFunc func(context.Context, *oauthClientProxy, string) (*platformclientv2.APIResponse, error)
 
 type oauthClientProxy struct {
-	clientConfig   *platformclientv2.Configuration
-	oauthApi       *platformclientv2.OAuthApi
-	usersApi       *platformclientv2.UsersApi
-	tokenApi       *platformclientv2.TokensApi
-	authApi        *platformclientv2.AuthorizationApi
-	integrationApi *platformclientv2.IntegrationsApi
-
+	clientConfig                    *platformclientv2.Configuration
+	oAuthApi                        *platformclientv2.OAuthApi
+	integrationApi                  *platformclientv2.IntegrationsApi
+	tokenApi                        *platformclientv2.TokensApi
+	usersApi                        *platformclientv2.UsersApi
+	createdClientCache              map[string]platformclientv2.Oauthclient //Being added for DEVTOOLING-448
+	createdClientCacheLock          sync.Mutex
 	createOAuthClientAttr           createOAuthClientFunc
 	createIntegrationCredentialAttr createIntegrationClientFunc
 	getOAuthClientAttr              getOAuthClientFunc
@@ -37,7 +37,6 @@ type oauthClientProxy struct {
 	getTerraformUserAttr            getTerraformUserFunc
 	getTerraformUserRolesAttr       getTerraformUserRolesFunc
 	updateTerraformUserRolesAttr    updateTerraformUserRolesFunc
-	getHomeDivisionInfoAttr         getHomeDivisionInfoFunc
 	getAllOauthClientsAttr          getAllOauthClientsFunc
 	getIntegrationCredentialAttr    getIntegrationCredentialFunc
 	updateOAuthClientAttr           updateOAuthClientFunc
@@ -45,19 +44,22 @@ type oauthClientProxy struct {
 	deleteIntegrationCredentialAttr deleteIntegrationCredentialFunc
 }
 
-// newArchitectIvrProxy initializes the proxy with all the data needed to communicate with Genesys Cloud
+// newAuthClientProxy initializes the proxy with all the data needed to communicate with Genesys Cloud
 func newOAuthClientProxy(clientConfig *platformclientv2.Configuration) *oauthClientProxy {
-	oauthApi := platformclientv2.NewOAuthApiWithConfig(clientConfig)
-	usersApi := platformclientv2.NewUsersApiWithConfig(clientConfig)
+
+	oAuthApi := platformclientv2.NewOAuthApiWithConfig(clientConfig)
 	intApi := platformclientv2.NewIntegrationsApiWithConfig(clientConfig)
+	usersApi := platformclientv2.NewUsersApiWithConfig(clientConfig)
+	createdClientCache := make(map[string]platformclientv2.Oauthclient)
 	tokenApi := platformclientv2.NewTokensApiWithConfig(clientConfig)
 
 	return &oauthClientProxy{
-		clientConfig:   clientConfig,
-		oauthApi:       oauthApi,
-		usersApi:       usersApi,
-		tokenApi:       tokenApi,
-		integrationApi: intApi,
+		clientConfig:       clientConfig,
+		oAuthApi:           oAuthApi,
+		integrationApi:     intApi,
+		usersApi:           usersApi,
+		tokenApi:           tokenApi,
+		createdClientCache: createdClientCache,
 
 		createOAuthClientAttr:           createOAuthClientFn,
 		createIntegrationCredentialAttr: createIntegrationCredentialFn,
@@ -67,7 +69,7 @@ func newOAuthClientProxy(clientConfig *platformclientv2.Configuration) *oauthCli
 		getTerraformUserRolesAttr:       getTerraformUserRolesFn,
 		getTerraformUserAttr:            getTerraformUserFn,
 		updateTerraformUserRolesAttr:    updateTerraformUserRolesFn,
-		getHomeDivisionInfoAttr:         getHomeDivisionInfoFn,
+
 		getIntegrationCredentialAttr:    getIntegrationClientFn,
 		getAllOauthClientsAttr:          getAllOauthClientsFn,
 		deleteOAuthClientAttr:           deleteOAuthClientFn,
@@ -75,7 +77,18 @@ func newOAuthClientProxy(clientConfig *platformclientv2.Configuration) *oauthCli
 	}
 }
 
-func getOAuthClientProxy(clientConfig *platformclientv2.Configuration) *oauthClientProxy {
+/*
+Note:  Normally we do not make proxies or their methods public outside the package. However, we are doing this
+specifically for DEVTOOLING-448.  In DEVTOOLING-448, we are adding the ability to cache a OAuthClient that was
+created in a Terraform run so that when can use that secret to create a Genesys Cloud Integration Credential in the same
+run without having to expose the secret.
+
+We need this so that we can support the ability run CX as Code Accelerator where we can create a OAuth Client, a Role with Permissions
+and then an OAuth client with out the need for the user to support passing the Genesys Cloud OAuth Client Credentials
+into the integration credential object.  Today the integration credential object has no way of looking up the client id/client secret
+without because once the oauth client is created, we dont want to expose the secret.
+*/
+func GetOAuthClientProxy(clientConfig *platformclientv2.Configuration) *oauthClientProxy {
 	if internalProxy == nil {
 		internalProxy = newOAuthClientProxy(clientConfig)
 	}
@@ -114,8 +127,24 @@ func (o *oauthClientProxy) getIntegrationCredential(ctx context.Context, id stri
 	return o.getIntegrationCredentialAttr(ctx, o, id)
 }
 
+func (o *oauthClientProxy) GetCachedOAuthClient(clientId string) platformclientv2.Oauthclient {
+	o.createdClientCacheLock.Lock()
+	defer o.createdClientCacheLock.Unlock()
+	return o.createdClientCache[clientId]
+}
+
 func (o *oauthClientProxy) createOAuthClient(ctx context.Context, oauthClient platformclientv2.Oauthclientrequest) (*platformclientv2.Oauthclient, *platformclientv2.APIResponse, error) {
-	return o.createOAuthClientAttr(ctx, o, oauthClient)
+	oauthClientResult, response, err := o.createOAuthClientAttr(ctx, o, oauthClient)
+	if err != nil {
+		return oauthClientResult, response, err
+	}
+
+	//Being added for DEVTOOLING-448.  This is one of the few places where we want to use a cache outside the export
+	o.createdClientCacheLock.Lock()
+	defer o.createdClientCacheLock.Unlock()
+	o.createdClientCache[*oauthClientResult.Id] = *oauthClientResult
+	log.Printf("Successfully added oauth client %s to cache", *oauthClientResult.Id)
+	return oauthClientResult, response, err
 }
 
 func (o *oauthClientProxy) createIntegrationClient(ctx context.Context, credential platformclientv2.Credential) (*platformclientv2.Credentialinfo, *platformclientv2.APIResponse, error) {
@@ -135,7 +164,54 @@ func (o *oauthClientProxy) getHomeDivisionInfo(ctx context.Context) (*platformcl
 }
 
 func getOAuthClientFn(ctx context.Context, o *oauthClientProxy, id string) (*platformclientv2.Oauthclient, *platformclientv2.APIResponse, error) {
-	return o.oauthApi.GetOauthClient(id)
+	return o.oAuthApi.GetOauthClient(id)
+}
+func getAllOauthClientsFn(ctx context.Context, o *oauthClientProxy) (*[]platformclientv2.Oauthclientlisting, *platformclientv2.APIResponse, error) {
+	var clients []platformclientv2.Oauthclientlisting
+	firstPage, resp, err := o.oAuthApi.GetOauthClients()
+
+	if err != nil {
+		return nil, resp, err
+	}
+
+	clients = append(clients, *firstPage.Entities...)
+
+	for pageNum := 2; pageNum <= *firstPage.PageCount; pageNum++ {
+		page, resp, err := o.oAuthApi.GetOauthClients()
+
+		if err != nil {
+			return nil, resp, err
+		}
+
+		clients = append(clients, *page.Entities...)
+	}
+
+	return &clients, resp, nil
+}
+
+func getIntegrationClientFn(ctx context.Context, o *oauthClientProxy, id string) (*platformclientv2.Credential, *platformclientv2.APIResponse, error) {
+	return o.integrationApi.GetIntegrationsCredential(id)
+}
+
+func deleteOAuthClientFn(ctx context.Context, o *oauthClientProxy, id string) (*platformclientv2.APIResponse, error) {
+	return o.oAuthApi.DeleteOauthClient(id)
+
+}
+
+func deleteIntegrationClientFn(ctx context.Context, o *oauthClientProxy, id string) (*platformclientv2.APIResponse, error) {
+	return o.integrationApi.DeleteIntegrationsCredential(id)
+}
+
+func createOAuthClientFn(ctx context.Context, o *oauthClientProxy, request platformclientv2.Oauthclientrequest) (*platformclientv2.Oauthclient, *platformclientv2.APIResponse, error) {
+	return o.oAuthApi.PostOauthClients(request)
+}
+
+func createIntegrationCredentialFn(ctx context.Context, o *oauthClientProxy, request platformclientv2.Credential) (*platformclientv2.Credentialinfo, *platformclientv2.APIResponse, error) {
+	return o.integrationApi.PostIntegrationsCredentials(request)
+}
+
+func updateOAuthClientFn(ctx context.Context, o *oauthClientProxy, id string, request platformclientv2.Oauthclientrequest) (*platformclientv2.Oauthclient, *platformclientv2.APIResponse, error) {
+	return o.oAuthApi.PutOauthClient(id, request)
 }
 
 func getParentOAuthClientTokenFn(ctx context.Context, o *oauthClientProxy) (*platformclientv2.Tokeninfo, *platformclientv2.APIResponse, error) {
@@ -152,58 +228,4 @@ func getTerraformUserRolesFn(ctx context.Context, o *oauthClientProxy, userId st
 
 func updateTerraformUserRolesFn(ctx context.Context, o *oauthClientProxy, userId string, roles []string) (*platformclientv2.Userauthorization, *platformclientv2.APIResponse, error) {
 	return o.usersApi.PutUserRoles(userId, roles)
-}
-
-func getHomeDivisionInfoFn(ctx context.Context, o *oauthClientProxy) (*platformclientv2.Authzdivision, *platformclientv2.APIResponse, error) {
-	return o.authApi.GetAuthorizationDivisionsHome()
-}
-
-func getAllOauthClientsFn(ctx context.Context, o *oauthClientProxy) (*[]platformclientv2.Oauthclientlisting, *platformclientv2.APIResponse, error) {
-	var clients []platformclientv2.Oauthclientlisting
-	firstPage, resp, err := o.oauthApi.GetOauthClients()
-	if err != nil {
-		return nil, resp, err
-	}
-
-	for _, entity := range *firstPage.Entities {
-		clients = append(clients, entity)
-	}
-
-	for pageNum := 2; pageNum <= *firstPage.PageCount; pageNum++ {
-		page, resp, err := o.oauthApi.GetOauthClients()
-
-		if err != nil {
-			return nil, resp, err
-		}
-
-		for _, entity := range *page.Entities {
-			clients = append(clients, entity)
-		}
-	}
-
-	return &clients, resp, nil
-}
-
-func getIntegrationClientFn(ctx context.Context, o *oauthClientProxy, id string) (*platformclientv2.Credential, *platformclientv2.APIResponse, error) {
-	return o.integrationApi.GetIntegrationsCredential(id)
-}
-
-func deleteOAuthClientFn(ctx context.Context, o *oauthClientProxy, id string) (*platformclientv2.APIResponse, error) {
-	return o.oauthApi.DeleteOauthClient(id)
-}
-
-func deleteIntegrationClientFn(ctx context.Context, o *oauthClientProxy, id string) (*platformclientv2.APIResponse, error) {
-	return o.integrationApi.DeleteIntegrationsCredential(id)
-}
-
-func createOAuthClientFn(ctx context.Context, o *oauthClientProxy, request platformclientv2.Oauthclientrequest) (*platformclientv2.Oauthclient, *platformclientv2.APIResponse, error) {
-	return o.oauthApi.PostOauthClients(request)
-}
-
-func createIntegrationCredentialFn(ctx context.Context, o *oauthClientProxy, request platformclientv2.Credential) (*platformclientv2.Credentialinfo, *platformclientv2.APIResponse, error) {
-	return o.integrationApi.PostIntegrationsCredentials(request)
-}
-
-func updateOAuthClientFn(ctx context.Context, o *oauthClientProxy, id string, request platformclientv2.Oauthclientrequest) (*platformclientv2.Oauthclient, *platformclientv2.APIResponse, error) {
-	return o.oauthApi.PutOauthClient(id, request)
 }
