@@ -1,17 +1,12 @@
-package auth_role
+package architect_user_prompt
 
 import (
 	"sync"
-	routingQueue "terraform-provider-genesyscloud/genesyscloud/routing_queue"
+	"terraform-provider-genesyscloud/genesyscloud"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
-
-/*
-   The genesyscloud_auth_role_init_test.go file is used to initialize the data sources and resources
-   used in testing the auth_role resource.
-*/
 
 // providerDataSources holds a map of all registered datasources
 var providerDataSources map[string]*schema.Resource
@@ -29,8 +24,8 @@ func (r *registerTestInstance) registerTestResources() {
 	r.resourceMapMutex.Lock()
 	defer r.resourceMapMutex.Unlock()
 
-	providerResources[resourceName] = ResourceAuthRole()
-	providerResources["genesyscloud_routing_queue"] = routingQueue.ResourceRoutingQueue()
+	providerResources[resource_name] = ResourceArchitectUserPrompt()
+	providerResources["genesyscloud_auth_division"] = genesyscloud.ResourceAuthDivision()
 }
 
 // registerTestDataSources registers all data sources used in the tests.
@@ -38,7 +33,7 @@ func (r *registerTestInstance) registerTestDataSources() {
 	r.datasourceMapMutex.Lock()
 	defer r.datasourceMapMutex.Unlock()
 
-	providerDataSources[resourceName] = DataSourceAuthRole()
+	providerDataSources[resource_name] = DataSourceUserPrompt()
 }
 
 // initTestResources initializes all test resources and data sources.
@@ -54,9 +49,9 @@ func initTestResources() {
 
 // TestMain is a "setup" function called by the testing framework when run the test
 func TestMain(m *testing.M) {
-	// Run setup function before starting the test suite for the auth_role package
+	// Run setup function before starting the test suite for the architect_user_prompt package
 	initTestResources()
 
-	// Run the test suite for the auth_role package
+	// Run the test suite for the architect_user_prompt package
 	m.Run()
 }

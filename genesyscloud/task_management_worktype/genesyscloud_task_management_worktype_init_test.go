@@ -2,6 +2,7 @@ package task_management_worktype
 
 import (
 	"sync"
+	routingQueue "terraform-provider-genesyscloud/genesyscloud/routing_queue"
 	"testing"
 
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
@@ -36,7 +37,7 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_task_management_workbin"] = workbin.ResourceTaskManagementWorkbin()
 	providerResources["genesyscloud_task_management_workitem_schema"] = workitemSchema.ResourceTaskManagementWorkitemSchema()
 	providerResources["genesyscloud_routing_language"] = gcloud.ResourceRoutingLanguage()
-	providerResources["genesyscloud_routing_queue"] = gcloud.ResourceRoutingQueue()
+	providerResources["genesyscloud_routing_queue"] = routingQueue.ResourceRoutingQueue()
 	providerResources["genesyscloud_routing_skill"] = gcloud.ResourceRoutingSkill()
 }
 
