@@ -28,7 +28,7 @@ func getAllAuthArchitectSchedulegroups(ctx context.Context, clientConfig *platfo
 
 	scheduleGroups, proxyResponse, err := proxy.getAllArchitectSchedulegroups(ctx)
 	if err != nil {
-		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get page of schedule groups"), proxyResponse)
+		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get page of schedule groups error: %s", err), proxyResponse)
 	}
 
 	for _, scheduleGroup := range *scheduleGroups {
@@ -52,7 +52,7 @@ func createArchitectSchedulegroups(ctx context.Context, d *schema.ResourceData, 
 		if strings.Contains(fmt.Sprintf("%v", err), "routing:schedule:add") {
 			msg = "\nYou must have all divisions and future divisions selected in your OAuth client role"
 		}
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create schedule group %s %s", d.Id(), msg), proxyResponse)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create schedule group %s | Error: %s %s", d.Id(), err, msg), proxyResponse)
 	}
 
 	d.SetId(*scheduleGroup.Id)
@@ -128,7 +128,7 @@ func updateArchitectSchedulegroups(ctx context.Context, d *schema.ResourceData, 
 		if strings.Contains(fmt.Sprintf("%v", err), "routing:schedule:add") {
 			msg = "\nYou must have all divisions and future divisions selected in your OAuth client role"
 		}
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update schedule group %s. %s", d.Id(), msg), proxyResponse)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update schedule group %s | Error: %s %s", d.Id(), err, msg), proxyResponse)
 	}
 
 	log.Printf("Updated schedule group %s %s", *scheduleGroup.Name, d.Id())
@@ -146,7 +146,7 @@ func deleteArchitectSchedulegroups(ctx context.Context, d *schema.ResourceData, 
 		log.Printf("Deleting schedule group %s", d.Id())
 		proxyResponse, err := proxy.deleteArchitectSchedulegroups(ctx, d.Id())
 		if err != nil {
-			return proxyResponse, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete schedule group %s", d.Id()), proxyResponse)
+			return proxyResponse, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete schedule group %s error: %s", d.Id(), err), proxyResponse)
 		}
 		return proxyResponse, nil
 	})

@@ -384,7 +384,7 @@ func updateSurveyForm(ctx context.Context, d *schema.ResourceData, meta interfac
 		// Get the latest unpublished version of the form
 		formVersions, getResp, err := qualityAPI.GetQualityFormsSurveyVersions(d.Id(), 25, 1)
 		if err != nil {
-			return getResp, util.BuildAPIDiagnosticError("genesyscloud_quality_forms_survey", fmt.Sprintf("Failed to get survey form versions %s", name), getResp)
+			return getResp, util.BuildAPIDiagnosticError("genesyscloud_quality_forms_survey", fmt.Sprintf("Failed to get survey form versions %s error: %s", name, err), getResp)
 		}
 
 		versions := *formVersions.Entities
@@ -405,7 +405,7 @@ func updateSurveyForm(ctx context.Context, d *schema.ResourceData, meta interfac
 			QuestionGroups: questionGroups,
 		})
 		if err != nil {
-			return putResp, util.BuildAPIDiagnosticError("genesyscloud_quality_forms_survey", fmt.Sprintf("Failed to update survey form %s", name), putResp)
+			return putResp, util.BuildAPIDiagnosticError("genesyscloud_quality_forms_survey", fmt.Sprintf("Failed to update survey form %s error: %s", name, err), putResp)
 		}
 		log.Printf("Updated survey form %s %s", name, *form.Id)
 
@@ -416,7 +416,7 @@ func updateSurveyForm(ctx context.Context, d *schema.ResourceData, meta interfac
 				Published: &published,
 			})
 			if err != nil {
-				return postResp, util.BuildAPIDiagnosticError("genesyscloud_quality_forms_survey", fmt.Sprintf("Failed to publish survey form %s", name), postResp)
+				return postResp, util.BuildAPIDiagnosticError("genesyscloud_quality_forms_survey", fmt.Sprintf("Failed to publish survey form %s error: %s", name, err), postResp)
 			}
 		} else {
 			// If published property is reset to false, set the resource Id to the latest unpublished form

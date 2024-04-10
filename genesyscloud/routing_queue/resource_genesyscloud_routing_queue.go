@@ -37,7 +37,7 @@ func getAllRoutingQueues(_ context.Context, clientConfig *platformclientv2.Confi
 
 	queues, resp, getErr := routingAPI.GetRoutingQueues(1, 100, "", "", nil, nil, nil, false)
 	if getErr != nil {
-		return nil, util.BuildAPIDiagnosticError("genesyscloud_routing_queue", fmt.Sprintf("Failed to get first page of queues error: %s", getErr), resp)
+		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get first page of queues error: %s", getErr), resp)
 	}
 	if queues.Entities == nil || len(*queues.Entities) == 0 {
 		return resources, nil
@@ -50,7 +50,7 @@ func getAllRoutingQueues(_ context.Context, clientConfig *platformclientv2.Confi
 		const pageSize = 100
 		queues, resp, getErr := routingAPI.GetRoutingQueues(pageNum, pageSize, "", "", nil, nil, nil, false)
 		if getErr != nil {
-			return nil, util.BuildAPIDiagnosticError("genesyscloud_routing_queue", fmt.Sprintf("Failed to get page of queues error: %s", getErr), resp)
+			return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get page of queues error: %s", getErr), resp)
 		}
 
 		if queues.Entities == nil || len(*queues.Entities) == 0 {
@@ -109,11 +109,11 @@ func createQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 	queue, resp, err := routingAPI.PostRoutingQueues(createQueue)
 	if err != nil {
 		log.Printf("error while trying to create queue: %s. Err %s", *createQueue.Name, err)
-		return util.BuildAPIDiagnosticError("genesyscloud_routing_queue", fmt.Sprintf("Failed to create queue %s error: %s", *createQueue.Name, err), resp)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create queue %s error: %s", *createQueue.Name, err), resp)
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return util.BuildAPIDiagnosticError("genesyscloud_routing_queue", fmt.Sprintf("Failed to create queue %s with error: %s, status code %v", *createQueue.Name, err, resp.StatusCode), resp)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create queue %s with error: %s, status code %v", *createQueue.Name, err, resp.StatusCode), resp)
 	}
 
 	d.SetId(*queue.Id)
@@ -277,7 +277,7 @@ func updateQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 	_, resp, err := routingAPI.PutRoutingQueue(d.Id(), updateQueue)
 
 	if err != nil {
-		return util.BuildAPIDiagnosticError("genesyscloud_routing_queue", fmt.Sprintf("Failed to update queue %s error: %s", *updateQueue.Name, err), resp)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update queue %s error: %s", *updateQueue.Name, err), resp)
 	}
 
 	diagErr := util.UpdateObjectDivision(d, "QUEUE", sdkConfig)
@@ -308,7 +308,7 @@ func deleteQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 	log.Printf("Deleting queue %s", name)
 	resp, err := routingAPI.DeleteRoutingQueue(d.Id(), true)
 	if err != nil {
-		return util.BuildAPIDiagnosticError("genesyscloud_routing_queue", fmt.Sprintf("Failed to delete queue %s error: %s", name, err), resp)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete queue %s error: %s", name, err), resp)
 	}
 
 	// Queue deletes are not immediate. Query until queue is no longer found
@@ -784,7 +784,7 @@ func updateQueueWrapupCodes(d *schema.ResourceData, routingAPI *platformclientv2
 							// Ignore missing queue or wrapup code
 							continue
 						}
-						return util.BuildAPIDiagnosticError("genesyscloud_routing_queue", fmt.Sprintf("Failed to remove wrapup codes for queue %s error: %s", d.Id(), err), resp)
+						return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to remove wrapup codes for queue %s error: %s", d.Id(), err), resp)
 					}
 				}
 			}
@@ -817,7 +817,7 @@ func addWrapupCodesInChunks(queueID string, codesToAdd []string, api *platformcl
 		if len(updateChunk) > 0 {
 			_, resp, err := api.PostRoutingQueueWrapupcodes(queueID, updateChunk)
 			if err != nil {
-				return util.BuildAPIDiagnosticError("genesyscloud_routing_queue", fmt.Sprintf("Failed to update wrapup codes for queue %s error: %s", queueID, err), resp)
+				return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update wrapup codes for queue %s error: %s", queueID, err), resp)
 			}
 		}
 	}
@@ -831,7 +831,7 @@ func getRoutingQueueWrapupCodes(queueID string, api *platformclientv2.RoutingApi
 	for pageNum := 1; ; pageNum++ {
 		codeResult, resp, err := api.GetRoutingQueueWrapupcodes(queueID, maxPageSize, pageNum)
 		if err != nil {
-			return nil, util.BuildAPIDiagnosticError("genesyscloud_routing_queue", fmt.Sprintf("Failed to query wrapup codes for queue %s error: %s", queueID, err), resp)
+			return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to query wrapup codes for queue %s error: %s", queueID, err), resp)
 		}
 		if codeResult == nil || codeResult.Entities == nil || len(*codeResult.Entities) == 0 {
 			return codes, nil
@@ -1025,7 +1025,7 @@ func updateQueueUserRingNum(queueID string, userID string, ringNum int, sdkConfi
 		RingNumber: &ringNum,
 	})
 	if err != nil {
-		return util.BuildAPIDiagnosticError("genesyscloud_routing_queue", fmt.Sprintf("Failed to update ring number for queue %s user %s error: %s", queueID, userID, err), resp)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update ring number for queue %s user %s error: %s", queueID, userID, err), resp)
 	}
 	return nil
 }
@@ -1038,7 +1038,7 @@ func getRoutingQueueMembers(queueID string, memberBy string, sdkConfig *platform
 	// Need to call this method to find the member count for a queue. GetRoutingQueueMembers does not return a `total` property for us to use.
 	queue, resp, err := api.GetRoutingQueue(queueID)
 	if err != nil {
-		return nil, util.BuildAPIDiagnosticError("genesyscloud_routing_queue", fmt.Sprintf("Failed to find queue %s error: %s", queueID, err), resp)
+		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to find queue %s error: %s", queueID, err), resp)
 	}
 	queueMembers := *queue.MemberCount
 	log.Printf("%d members belong to queue %s", queueMembers, queueID)

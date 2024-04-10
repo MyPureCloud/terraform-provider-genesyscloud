@@ -30,7 +30,7 @@ func getAllArchitectSchedules(_ context.Context, clientConfig *platformclientv2.
 		const pageSize = 100
 		schedules, resp, getErr := archAPI.GetArchitectSchedules(pageNum, pageSize, "", "", "", nil)
 		if getErr != nil {
-			return nil, util.BuildAPIDiagnosticError("genesyscloud_architect_schedules", "Failed to get page of schedules", resp)
+			return nil, util.BuildAPIDiagnosticError("genesyscloud_architect_schedules", fmt.Sprintf("Failed to get page of schedules error: %s", getErr), resp)
 		}
 
 		if schedules.Entities == nil || len(*schedules.Entities) == 0 {
@@ -153,7 +153,7 @@ func createArchitectSchedules(ctx context.Context, d *schema.ResourceData, meta 
 			msg = "\nYou must have all divisions and future divisions selected in your OAuth client role"
 		}
 
-		return util.BuildAPIDiagnosticError("genesyscloud_archiect_schedules", fmt.Sprintf("Failed to create schedule %s | MSG: %s", *sched.Name, msg), resp)
+		return util.BuildAPIDiagnosticError("genesyscloud_archiect_schedules", fmt.Sprintf("Failed to create schedule %s | Error: %s MSG: %s", *sched.Name, err, msg), resp)
 	}
 
 	d.SetId(*schedule.Id)
@@ -257,7 +257,7 @@ func updateArchitectSchedules(ctx context.Context, d *schema.ResourceData, meta 
 				msg = "\nYou must have all divisions and future divisions selected in your OAuth client role"
 			}
 
-			return resp, util.BuildAPIDiagnosticError("genesyscloud_archiect_schedules", fmt.Sprintf("Failed to update schedule %s | MSG: %s", *sched.Name, msg), resp)
+			return resp, util.BuildAPIDiagnosticError("genesyscloud_archiect_schedules", fmt.Sprintf("Failed to update schedule %s | Error: %s MSG: %s", *sched.Name, putErr, msg), resp)
 		}
 		return resp, nil
 	})

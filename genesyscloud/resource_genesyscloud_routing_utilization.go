@@ -273,7 +273,7 @@ func updateRoutingUtilization(ctx context.Context, d *schema.ResourceData, meta 
 		}
 
 		if err != nil {
-			return resp, util.BuildAPIDiagnosticError("genesyscloud_routing_utilization", fmt.Sprintf("Failed to update Routing Utilization error: %s", err), resp)
+			return resp, util.BuildAPIDiagnosticError("genesyscloud_routing_utilization", fmt.Sprintf("Failed to update Routing Utilization %s error: %s", d.Id(), err), resp)
 		}
 		return resp, nil
 	})

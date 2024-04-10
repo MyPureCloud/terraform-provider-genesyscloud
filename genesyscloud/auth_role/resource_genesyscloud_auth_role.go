@@ -28,7 +28,7 @@ func getAllAuthAuthRoles(ctx context.Context, clientConfig *platformclientv2.Con
 
 	roles, proxyResponse, getErr := proxy.getAllAuthRole(ctx)
 	if getErr != nil {
-		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get page of roles"), proxyResponse)
+		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get page of roles %s", getErr), proxyResponse)
 	}
 
 	for _, role := range *roles {
@@ -65,7 +65,7 @@ func createAuthRole(ctx context.Context, d *schema.ResourceData, meta interface{
 		// Default roles must already exist, or they cannot be modified
 		defaultRole, proxyResponse, err := proxy.getDefaultRoleById(ctx, defaultRoleID)
 		if err != nil {
-			return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get default role %s", d.Id()), proxyResponse)
+			return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get default role %s error: %s", d.Id(), err), proxyResponse)
 		}
 		d.SetId(defaultRole)
 		return updateAuthRole(ctx, d, meta)
@@ -80,7 +80,7 @@ func createAuthRole(ctx context.Context, d *schema.ResourceData, meta interface{
 
 	role, proxyResponse, err := proxy.createAuthRole(ctx, &roleObj)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create role %s %s", d.Id(), *roleObj.Name), proxyResponse)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create role %s %s errror: %s", d.Id(), *roleObj.Name, err), proxyResponse)
 	}
 
 	d.SetId(*role.Id)
@@ -159,7 +159,7 @@ func updateAuthRole(ctx context.Context, d *schema.ResourceData, meta interface{
 	}
 	_, proxyResponse, err := proxy.updateAuthRole(ctx, d.Id(), &roleObj)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update role %s %s", d.Id(), *roleObj.Name), proxyResponse)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update role %s %s error: %s", d.Id(), *roleObj.Name, err), proxyResponse)
 	}
 
 	log.Printf("Updated role %s", name)
@@ -184,7 +184,7 @@ func deleteAuthRole(ctx context.Context, d *schema.ResourceData, meta interface{
 			},
 		})
 		if err != nil {
-			return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to restore default role %s", defaultRoleID), proxyResponse)
+			return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to restore default role %s error: %s", defaultRoleID, err), proxyResponse)
 		}
 		return nil
 	}
@@ -192,7 +192,7 @@ func deleteAuthRole(ctx context.Context, d *schema.ResourceData, meta interface{
 	log.Printf("Deleting role %s", name)
 	proxyResponse, err := proxy.deleteAuthRole(ctx, d.Id())
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete auth role %s %s", d.Id(), name), proxyResponse)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete auth role %s %s error: %s", d.Id(), name, err), proxyResponse)
 	}
 
 	return util.WithRetries(ctx, 60*time.Second, func() *retry.RetryError {

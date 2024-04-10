@@ -167,7 +167,7 @@ func updateArchitectDatatable(ctx context.Context, d *schema.ResourceData, meta 
 
 	_, resp, err := archProxy.updateArchitectDatatable(ctx, datatable)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update architect_datatable error: %s", err), resp)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update architect_datatable %s, error: %s", name, err), resp)
 	}
 
 	log.Printf("Updated architect_datatable %s", name)

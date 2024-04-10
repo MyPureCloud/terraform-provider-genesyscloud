@@ -215,7 +215,7 @@ func updateSite(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 
 	location, resp, err := sp.getLocation(ctx, locationId)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get location error: %s", err), resp)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get location %s error: %s", locationId, err), resp)
 	}
 	site.Location = &platformclientv2.Locationdefinition{
 		Id:              &locationId,

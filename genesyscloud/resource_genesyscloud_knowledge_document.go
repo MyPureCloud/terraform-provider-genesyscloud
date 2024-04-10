@@ -378,7 +378,7 @@ func createKnowledgeDocument(ctx context.Context, d *schema.ResourceData, meta i
 	if published == true {
 		_, resp, versionErr := knowledgeAPI.PostKnowledgeKnowledgebaseDocumentVersions(knowledgeBaseId, *knowledgeDocument.Id, platformclientv2.Knowledgedocumentversion{})
 		if versionErr != nil {
-			return util.BuildAPIDiagnosticError("genesyscloud_knowledge_document", fmt.Sprintf("Failed to publish knowledge documenterror: %s", err), resp)
+			return util.BuildAPIDiagnosticError("genesyscloud_knowledge_document", fmt.Sprintf("Failed to publish knowledge document error: %s", err), resp)
 		}
 	}
 
@@ -464,7 +464,7 @@ func updateKnowledgeDocument(ctx context.Context, d *schema.ResourceData, meta i
 		log.Printf("Updating knowledge document %s", knowledgeDocumentId)
 		_, resp, putErr := knowledgeAPI.PatchKnowledgeKnowledgebaseDocument(knowledgeBaseId, knowledgeDocumentId, *update)
 		if putErr != nil {
-			return resp, util.BuildAPIDiagnosticError("genesyscloud_knowledge_document", fmt.Sprintf("Failed to update knowledge document %s", knowledgeDocumentId), resp)
+			return resp, util.BuildAPIDiagnosticError("genesyscloud_knowledge_document", fmt.Sprintf("Failed to update knowledge document %s error: %s", knowledgeDocumentId, putErr), resp)
 		}
 		return resp, nil
 	})

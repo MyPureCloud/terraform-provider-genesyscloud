@@ -347,7 +347,7 @@ func createKnowledgeDocumentVariation(ctx context.Context, d *schema.ResourceDat
 		_, resp, versionErr := knowledgeAPI.PostKnowledgeKnowledgebaseDocumentVersions(knowledgeBaseId, knowledgeDocumentId, platformclientv2.Knowledgedocumentversion{})
 
 		if versionErr != nil {
-			return util.BuildAPIDiagnosticError("genesyscloud_knowledge_document_variation", fmt.Sprintf("Failed to publish knowledge documenterror: %s", err), resp)
+			return util.BuildAPIDiagnosticError("genesyscloud_knowledge_document_variation", fmt.Sprintf("Failed to publish knowledge document error: %s", err), resp)
 		}
 	}
 
