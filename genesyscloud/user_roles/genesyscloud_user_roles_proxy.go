@@ -107,7 +107,7 @@ func updateUserRolesFn(_ context.Context, p *userRolesProxy, roleId string, role
 		diagErr := util.RetryWhen(util.IsStatus404, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 			resp, err := p.authorizationApi.PostAuthorizationSubjectBulkadd(roleId, roleDivPairsToGrants(grantsToAdd), subjectType)
 			if err != nil {
-				return resp, diag.Errorf("failed to add role grants for subject %s: %s", roleId, err)
+				return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("failed to add role grants for subject %s error: %s", roleId, err), resp)
 			}
 			return nil, nil
 		})

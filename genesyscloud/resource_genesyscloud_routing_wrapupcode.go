@@ -25,9 +25,9 @@ func getAllRoutingWrapupCodes(_ context.Context, clientConfig *platformclientv2.
 
 	for pageNum := 1; ; pageNum++ {
 		const pageSize = 100
-		wrapupcodes, _, getErr := routingAPI.GetRoutingWrapupcodes(pageSize, pageNum, "", "", "", []string{}, []string{})
+		wrapupcodes, resp, getErr := routingAPI.GetRoutingWrapupcodes(pageSize, pageNum, "", "", "", []string{}, []string{})
 		if getErr != nil {
-			return nil, diag.Errorf("Failed to get page of wrapupcodes: %v", getErr)
+			return nil, util.BuildAPIDiagnosticError("genesyscloud_routing_wrapupcode", fmt.Sprintf("Failed to get wrapupcodes error: %s", getErr), resp)
 		}
 
 		if wrapupcodes.Entities == nil || len(*wrapupcodes.Entities) == 0 {
@@ -78,11 +78,11 @@ func createRoutingWrapupCode(ctx context.Context, d *schema.ResourceData, meta i
 	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
 
 	log.Printf("Creating wrapupcode %s", name)
-	wrapupcode, _, err := routingAPI.PostRoutingWrapupcodes(platformclientv2.Wrapupcoderequest{
+	wrapupcode, resp, err := routingAPI.PostRoutingWrapupcodes(platformclientv2.Wrapupcoderequest{
 		Name: &name,
 	})
 	if err != nil {
-		return diag.Errorf("Failed to create wrapupcode %s: %s", name, err)
+		return util.BuildAPIDiagnosticError("genesyscloud_routing_wrapupcode", fmt.Sprintf("Failed to create wrapupcode %s error: %s", name, err), resp)
 	}
 
 	d.SetId(*wrapupcode.Id)
@@ -119,11 +119,11 @@ func updateRoutingWrapupCode(ctx context.Context, d *schema.ResourceData, meta i
 	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
 
 	log.Printf("Updating wrapupcode %s", name)
-	_, _, err := routingAPI.PutRoutingWrapupcode(d.Id(), platformclientv2.Wrapupcoderequest{
+	_, resp, err := routingAPI.PutRoutingWrapupcode(d.Id(), platformclientv2.Wrapupcoderequest{
 		Name: &name,
 	})
 	if err != nil {
-		return diag.Errorf("Failed to update wrapupcode %s: %s", name, err)
+		return util.BuildAPIDiagnosticError("genesyscloud_routing_wrapupcode", fmt.Sprintf("Failed to update wrapupcode %s error: %s", name, err), resp)
 	}
 
 	log.Printf("Updated wrapupcode %s", name)
@@ -138,9 +138,9 @@ func deleteRoutingWrapupCode(ctx context.Context, d *schema.ResourceData, meta i
 	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
 
 	log.Printf("Deleting wrapupcode %s", name)
-	_, err := routingAPI.DeleteRoutingWrapupcode(d.Id())
+	resp, err := routingAPI.DeleteRoutingWrapupcode(d.Id())
 	if err != nil {
-		return diag.Errorf("Failed to delete wrapupcode %s: %s", name, err)
+		return util.BuildAPIDiagnosticError("genesyscloud_routing_wrapupcode", fmt.Sprintf("Failed to delete wrapupcode %s error: %s", name, err), resp)
 	}
 
 	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {

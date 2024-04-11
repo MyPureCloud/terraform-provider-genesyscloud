@@ -31,7 +31,7 @@ func getAllAuthTaskManagementWorkbins(ctx context.Context, clientConfig *platfor
 
 	workbins, resp, err := proxy.getAllTaskManagementWorkbin(ctx)
 	if err != nil {
-		return nil, diag.Errorf("failed to get all workbins: %v %v", err, resp)
+		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get all workbins error: %s", err), resp)
 	}
 
 	for _, workbin := range *workbins {
@@ -55,7 +55,7 @@ func createTaskManagementWorkbin(ctx context.Context, d *schema.ResourceData, me
 	log.Printf("Creating task management workbin %s", *taskManagementWorkbin.Name)
 	workbin, resp, err := proxy.createTaskManagementWorkbin(ctx, &taskManagementWorkbin)
 	if err != nil {
-		return diag.Errorf("failed to create task management workbin: %s %v", err, resp)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create task management workbin %s error: %s", *taskManagementWorkbin.Name, err), resp)
 	}
 
 	d.SetId(*workbin.Id)
@@ -103,7 +103,7 @@ func updateTaskManagementWorkbin(ctx context.Context, d *schema.ResourceData, me
 	log.Printf("Updating task management workbin %s", *taskManagementWorkbin.Name)
 	workbin, resp, err := proxy.updateTaskManagementWorkbin(ctx, d.Id(), &taskManagementWorkbin)
 	if err != nil {
-		return diag.Errorf("failed to update task management workbin: %s %v", err, resp)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update task management workbin %s error: %s", *taskManagementWorkbin.Name, err), resp)
 	}
 
 	log.Printf("Updated task management workbin %s", *workbin.Id)
@@ -117,7 +117,7 @@ func deleteTaskManagementWorkbin(ctx context.Context, d *schema.ResourceData, me
 
 	resp, err := proxy.deleteTaskManagementWorkbin(ctx, d.Id())
 	if err != nil {
-		return diag.Errorf("failed to delete task management workbin %s: %s %v", d.Id(), err, resp)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete task management workbin %s error: %s", d.Id(), err), resp)
 	}
 
 	return util.WithRetries(ctx, 180*time.Second, func() *retry.RetryError {

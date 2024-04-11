@@ -9,17 +9,17 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
 )
 
-func validatePermissionPolicy(proxy *authRoleProxy, policy platformclientv2.Domainpermissionpolicy) error {
-	allowedPermissions, _, err := proxy.getAllowedPermissions(*policy.Domain)
+func validatePermissionPolicy(proxy *authRoleProxy, policy platformclientv2.Domainpermissionpolicy) (*platformclientv2.APIResponse, error) {
+	allowedPermissions, resp, err := proxy.getAllowedPermissions(*policy.Domain)
 	if err != nil {
-		return fmt.Errorf("error requesting org permissions: %s", err)
+		return resp, fmt.Errorf("error requesting org permissions: %s", err)
 	}
 	if len(*allowedPermissions) == 0 {
-		return fmt.Errorf("domain %s not found", *policy.Domain)
+		return resp, fmt.Errorf("domain %s not found", *policy.Domain)
 	}
 
 	if *policy.EntityName == "*" {
-		return nil
+		return resp, nil
 	}
 
 	// Check entity type (e.g. callableTimeSet) exists in the map of allowed permissions
@@ -39,14 +39,14 @@ func validatePermissionPolicy(proxy *authRoleProxy, policy platformclientv2.Doma
 				}
 			}
 			if !found {
-				return fmt.Errorf("action %s not found for domain %s, entity name %s", action, *policy.Domain, *policy.EntityName)
+				return resp, fmt.Errorf("action %s not found for domain %s, entity name %s", action, *policy.Domain, *policy.EntityName)
 			}
 		}
 		// All actions have been found, permission exists
-		return nil
+		return resp, nil
 	}
 
-	return fmt.Errorf("entity_name %s not found for domain %s", *policy.EntityName, *policy.Domain)
+	return resp, fmt.Errorf("entity_name %s not found for domain %s", *policy.EntityName, *policy.Domain)
 }
 
 func buildSdkRolePermissions(d *schema.ResourceData) *[]string {

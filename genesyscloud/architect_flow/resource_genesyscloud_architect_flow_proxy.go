@@ -105,13 +105,13 @@ func getArchitectFlowJobsFn(_ context.Context, p *architectFlowProxy, jobId stri
 	return p.api.GetFlowsJob(jobId, []string{"messages"})
 }
 
-func getAllArchitectFlowsFn(_ context.Context, p *architectFlowProxy) (*[]platformclientv2.Flow, *platformclientv2.APIResponse, error) {
+func getAllArchitectFlowsFn(ctx context.Context, p *architectFlowProxy) (*[]platformclientv2.Flow, *platformclientv2.APIResponse, error) {
 	const pageSize = 100
 	var totalFlows []platformclientv2.Flow
 
 	flows, resp, err := p.api.GetFlows(nil, 1, pageSize, "", "", nil, "", "", "", "", "", "", "", "", false, true, "", "", nil)
 	if err != nil {
-		return nil, resp, fmt.Errorf("failed to get page of flows: %v", err)
+		return nil, resp, fmt.Errorf("Failed to get page of flows: %v %v", err, resp)
 	}
 	if flows.Entities == nil || len(*flows.Entities) == 0 {
 		return &totalFlows, nil, nil
