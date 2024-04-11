@@ -95,6 +95,7 @@ func ResourceFlowLoglevel() *schema.Resource {
 				Type:        schema.TypeList,
 				Computed:    true,
 				Elem:        flowCharacteristics,
+				MaxItems:    1,
 			},
 		},
 	}

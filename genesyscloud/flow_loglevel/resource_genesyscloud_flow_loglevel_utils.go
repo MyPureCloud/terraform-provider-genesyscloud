@@ -1,46 +1,20 @@
 package flow_loglevel
 
 import (
-	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 )
 
-func generateFlowLogLevelResource(
-	flowId string,
-	flowLoglevel string,
-	resourceId string,
-) string {
-	return fmt.Sprintf(`resource "genesyscloud_flow_loglevel" "%s" {
-	  flow_id					= "%s"
-	  flow_log_level 			= "%s"
-	}`,
-		resourceId,
-		flowId,
-		flowLoglevel)
-}
-
-// getFlowLogLevelSettingsRequestFromResourceData maps data from schema ResourceData object to a platformclientv2.Flowloglevelrequest
-func getFlowLogLevelSettingsRequestFromResourceData(d *schema.ResourceData) platformclientv2.Flowloglevelrequest {
-	return platformclientv2.Flowloglevelrequest{
-		LogLevelCharacteristics: getFlowLogLevelFromResourceData(d),
-	}
-}
-
 // getFlowLogLevelFromResourceData maps data from schema ResourceData object to a platformclientv2.Flowloglevel
 func getFlowLogLevelFromResourceData(d *schema.ResourceData) *platformclientv2.Flowloglevel {
-	level := d.Get("flow_log_level").(string)
-	if len(d.Get("flow_characteristics").([]interface{})) > 0 {
-		return &platformclientv2.Flowloglevel{
-			Level:           &level,
-			Characteristics: getFlowLogLevelCharacteristicsFromResourceData(d),
-		}
-	} else {
-		return &platformclientv2.Flowloglevel{
-			Level: &level,
-		}
+	logLevel := platformclientv2.Flowloglevel{
+		Level: platformclientv2.String(d.Get("flow_log_level").(string)),
 	}
+	if len(d.Get("flow_characteristics").([]interface{})) > 0 {
+		logLevel.Characteristics = getFlowLogLevelCharacteristicsFromResourceData(d)
+	}
+	return &logLevel
 
 }
 

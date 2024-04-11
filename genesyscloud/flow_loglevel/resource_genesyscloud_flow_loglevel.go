@@ -62,7 +62,10 @@ func createFlowLogLevel(ctx context.Context, d *schema.ResourceData, meta interf
 	flowId := d.Get("flow_id").(string)
 	log.Printf("Creating flow log level for flow  %s", flowId)
 
-	flowLogLevelRequest := getFlowLogLevelSettingsRequestFromResourceData(d)
+	flowLogLevelRequest := platformclientv2.Flowloglevelrequest{
+		LogLevelCharacteristics: getFlowLogLevelFromResourceData(d),
+	}
+
 	flowLogLevel, apiResponse, err := ep.createFlowLogLevel(ctx, flowId, &flowLogLevelRequest)
 	if err != nil {
 		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create flow log level: %s %s", err, d.Id()), apiResponse)
@@ -81,14 +84,10 @@ func readFlowLogLevel(ctx context.Context, d *schema.ResourceData, meta interfac
 	flowId := d.Get("flow_id").(string)
 
 	log.Printf("Reading readFlowLogLevel with flowId %s", flowId)
-	if flowId == "" {
-		log.Printf("flow log level with blank flowId %s", flowId)
-		return diag.Errorf("flowId: %s not found ", flowId)
-	}
+
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		flowSettingsResponse, apiResponse, err := ep.getFlowLogLevelById(ctx, flowId)
 		if err != nil {
-			log.Print(err)
 			if util.IsStatus404ByInt(apiResponse.StatusCode) {
 				return retry.NonRetryableError(fmt.Errorf("Failed to read flow log level %s: %s", flowId, err))
 			}
@@ -113,12 +112,10 @@ func updateFlowLogLevel(ctx context.Context, d *schema.ResourceData, meta interf
 	flowId := d.Get("flow_id").(string)
 	log.Printf("Updating flow log level for flow %s", flowId)
 
-	_, apiResponse, err := ep.getFlowLogLevelById(ctx, flowId)
-	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to retrieve flow log leve for flowId: %s %s", flowId, d.Id()), apiResponse)
+	flowLogLevelRequest := platformclientv2.Flowloglevelrequest{
+		LogLevelCharacteristics: getFlowLogLevelFromResourceData(d),
 	}
 
-	flowLogLevelRequest := getFlowLogLevelSettingsRequestFromResourceData(d)
 	updatedFlow, apiResponse, err := ep.updateFlowLogLevel(ctx, flowId, &flowLogLevelRequest)
 
 	if err != nil {
@@ -153,6 +150,6 @@ func deleteFlowLogLevel(ctx context.Context, d *schema.ResourceData, meta interf
 			return nil
 		}
 
-		return retry.RetryableError(fmt.Errorf("External contact %s still exists", flowId))
+		return retry.RetryableError(fmt.Errorf("flow log level %s still exists", flowId))
 	})
 }

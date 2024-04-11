@@ -39,7 +39,7 @@ func TestAccResourceFlowLogLevel(t *testing.T) {
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
-				// Create using only flow log level
+				// Create using flow log level Base
 				Config: flowResourceConfig + generateFlowLogLevelResource(
 					flowId,
 					flowLoglevelBase,
@@ -58,7 +58,7 @@ func TestAccResourceFlowLogLevel(t *testing.T) {
 				),
 			},
 			{
-				// Create using only flow log level
+				// Create using flow log level All
 				Config: flowResourceConfig + generateFlowLogLevelResource(
 					flowId,
 					flowLoglevelAll,
@@ -77,7 +77,7 @@ func TestAccResourceFlowLogLevel(t *testing.T) {
 				),
 			},
 			{
-				// Create using only flow log level
+				// Create using flow log level Disabled
 				Config: flowResourceConfig + generateFlowLogLevelResource(
 					flowId,
 					flowLogLevelDisabled,
@@ -120,4 +120,18 @@ func testVerifyFlowLogLevelDestroyed(state *terraform.State) error {
 	}
 	// Success. All low log levels deleted
 	return nil
+}
+
+func generateFlowLogLevelResource(
+	flowId string,
+	flowLoglevel string,
+	resourceId string,
+) string {
+	return fmt.Sprintf(`resource "genesyscloud_flow_loglevel" "%s" {
+	  flow_id					= "%s"
+	  flow_log_level 			= "%s"
+	}`,
+		resourceId,
+		flowId,
+		flowLoglevel)
 }
