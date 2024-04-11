@@ -123,7 +123,7 @@ func createArchitectGrammarLanguageFn(_ context.Context, p *architectGrammarLang
 
 // getArchitectGrammarLanguageByIdFn is an implementation of the function to get a Genesys Cloud Architect Grammar Language by ID
 func getArchitectGrammarLanguageByIdFn(_ context.Context, p *architectGrammarLanguageProxy, grammarId string, languageCode string) (*platformclientv2.Grammarlanguage, *platformclientv2.APIResponse, error) {
-	language := rc.GetCache(p.grammarLanguageCache, fmt.Sprintf("%s:%s", grammarId, languageCode))
+	language := rc.GetCacheItem(p.grammarLanguageCache, fmt.Sprintf("%s:%s", grammarId, languageCode))
 	if language != nil {
 		return language, nil, nil
 	}

@@ -110,12 +110,13 @@ func deleteGroupFn(_ context.Context, p *groupProxy, id string) (*platformclient
 }
 
 func getGroupByIdFn(_ context.Context, p *groupProxy, id string) (*platformclientv2.Group, *platformclientv2.APIResponse, error) {
-	group := rc.GetCache(p.groupCache, id)
+	group := rc.GetCacheItem(p.groupCache, id)
 	if group != nil {
 		return group, nil, nil
 	}
 	return p.groupsApi.GetGroup(id)
 }
+
 func addGroupMembersFn(_ context.Context, p *groupProxy, id string, members *platformclientv2.Groupmembersupdate) (*interface{}, *platformclientv2.APIResponse, error) {
 	return p.groupsApi.PostGroupMembers(id, *members)
 }

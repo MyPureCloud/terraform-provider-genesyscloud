@@ -142,7 +142,7 @@ func getAllArchitectGrammarFn(_ context.Context, p *architectGrammarProxy) (*[]p
 
 // getArchitectGrammarByIdFn is an implementation of the function to get a Genesys Cloud Architect Grammar by ID
 func getArchitectGrammarByIdFn(_ context.Context, p *architectGrammarProxy, grammarId string) (*platformclientv2.Grammar, *platformclientv2.APIResponse, error) {
-	grammar := rc.GetCache(p.grammarCache, grammarId)
+	grammar := rc.GetCacheItem(p.grammarCache, grammarId)
 	if grammar != nil {
 		return grammar, nil, nil
 	}

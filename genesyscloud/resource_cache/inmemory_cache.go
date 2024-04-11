@@ -21,3 +21,24 @@ func (c *inMemoryCache[T]) Get(key string) (T, bool) {
 	value, ok := c.data[key]
 	return value, ok
 }
+
+// GetAll retrieves all the values from the in-memory cache
+func (c *inMemoryCache[T]) GetAll() []T {
+	c.lock.Lock()
+	defer c.lock.Unlock()
+
+	var items []T
+	for _, item := range c.data {
+		items = append(items, item)
+	}
+
+	return items
+}
+
+// GetSize retrieves the size of the in-memory cache
+func (c *inMemoryCache[T]) GetSize() int {
+	c.lock.Lock()
+	defer c.lock.Unlock()
+
+	return len(c.data)
+}

@@ -28,38 +28,20 @@ import (
 
 var bullseyeExpansionTypeTimeout = "TIMEOUT_SECONDS"
 
-func getAllRoutingQueues(_ context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+func getAllRoutingQueues(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
 	resources := make(resourceExporter.ResourceIDMetaMap)
-	routingAPI := platformclientv2.NewRoutingApiWithConfig(clientConfig)
+	proxy := GetRoutingQueueProxy(clientConfig)
 
 	// Newly created resources often aren't returned unless there's a delay
 	time.Sleep(5 * time.Second)
 
-	queues, resp, getErr := routingAPI.GetRoutingQueues(1, 100, "", "", nil, nil, nil, false)
-	if getErr != nil {
-		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get first page of queues error: %s", getErr), resp)
+	queues, resp, err := proxy.GetAllRoutingQueues(ctx)
+	if err != nil {
+		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("failed to get routing queues"), resp)
 	}
-	if queues.Entities == nil || len(*queues.Entities) == 0 {
-		return resources, nil
-	}
-	for _, queue := range *queues.Entities {
+
+	for _, queue := range *queues {
 		resources[*queue.Id] = &resourceExporter.ResourceMeta{Name: *queue.Name}
-	}
-
-	for pageNum := 2; pageNum <= *queues.PageCount; pageNum++ {
-		const pageSize = 100
-		queues, resp, getErr := routingAPI.GetRoutingQueues(pageNum, pageSize, "", "", nil, nil, nil, false)
-		if getErr != nil {
-			return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get page of queues error: %s", getErr), resp)
-		}
-
-		if queues.Entities == nil || len(*queues.Entities) == 0 {
-			break
-		}
-
-		for _, queue := range *queues.Entities {
-			resources[*queue.Id] = &resourceExporter.ResourceMeta{Name: *queue.Name}
-		}
 	}
 
 	return resources, nil
@@ -139,11 +121,11 @@ func createQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 
 func readQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
+	proxy := GetRoutingQueueProxy(sdkConfig)
 
 	log.Printf("Reading queue %s", d.Id())
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
-		currentQueue, resp, getErr := routingAPI.GetRoutingQueue(d.Id())
+		currentQueue, resp, getErr := proxy.getRoutingQueueById(ctx, d.Id())
 		if getErr != nil {
 			if util.IsStatus404(resp) {
 				return retry.RetryableError(fmt.Errorf("Failed to read queue %s: %s", d.Id(), getErr))
@@ -219,7 +201,7 @@ func readQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "direct_routing", currentQueue.DirectRouting, flattenDirectRouting)
 
-		wrapupCodes, err := flattenQueueWrapupCodes(d.Id(), routingAPI)
+		wrapupCodes, err := flattenQueueWrapupCodes(ctx, d.Id(), proxy)
 		if err != nil {
 			return retry.NonRetryableError(fmt.Errorf("%v", err))
 		}
@@ -1231,25 +1213,16 @@ func flattenQueueMembers(queueID string, memberBy string, sdkConfig *platformcli
 	return memberSet, nil
 }
 
-func flattenQueueWrapupCodes(queueID string, api *platformclientv2.RoutingApi) (*schema.Set, diag.Diagnostics) {
-	const maxPageSize = 100
-	var codeIds []string
-	for pageNum := 1; ; pageNum++ {
-		codes, resp, err := api.GetRoutingQueueWrapupcodes(queueID, maxPageSize, pageNum)
-		if err != nil {
-			return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to query wrapup codes for queue %s error: %s", queueID, err), resp)
-		}
-		if codes == nil || codes.Entities == nil || len(*codes.Entities) == 0 {
-			break
-		}
-		for _, code := range *codes.Entities {
-			codeIds = append(codeIds, *code.Id)
-		}
+func flattenQueueWrapupCodes(ctx context.Context, queueID string, proxy *RoutingQueueProxy) (*schema.Set, diag.Diagnostics) {
+	codeIds, resp, err := proxy.getRoutingQueueWrapupCodeIds(ctx, queueID)
+	if err != nil {
+		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("failed to query wrapup codes for queue %s", queueID), resp)
 	}
 
 	if codeIds != nil {
 		return lists.StringListToSet(codeIds), nil
 	}
+
 	return nil, nil
 }
 
