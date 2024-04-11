@@ -297,7 +297,7 @@ func updateQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 	if scoringMethod != "" {
 		updateQueue.ScoringMethod = &scoringMethod
 	}
-  
+
 	_, resp, err := routingAPI.PutRoutingQueue(d.Id(), updateQueue)
 
 	if err != nil {
