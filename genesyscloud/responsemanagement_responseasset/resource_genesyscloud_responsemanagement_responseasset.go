@@ -17,7 +17,7 @@ import (
 )
 
 /*
-The resource_genesyscloud_responsemanagement_responseasset.go contains all of the methods that perform the core logic for a resource.
+The resource_genesyscloud_responsemanagement_responseasset.go contains all the methods that perform the core logic for a resource.
 */
 func getAllResponseAssets(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
 	proxy := getRespManagementRespAssetProxy(clientConfig)
@@ -25,7 +25,7 @@ func getAllResponseAssets(ctx context.Context, clientConfig *platformclientv2.Co
 
 	assets, resp, err := proxy.getAllResponseAssets(ctx)
 	if err != nil {
-		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get response management response assets"), resp)
+		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get response management response assets | Error: %s", err), resp)
 	}
 
 	for _, asset := range *assets {
@@ -87,9 +87,9 @@ func readRespManagementRespAsset(ctx context.Context, d *schema.ResourceData, me
 		sdkAsset, resp, getErr := proxy.getRespManagementRespAssetById(ctx, d.Id())
 		if getErr != nil {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(fmt.Errorf("Failed to read response asset %s: %s", d.Id(), getErr))
+				return retry.RetryableError(fmt.Errorf("failed to read response asset %s: %s", d.Id(), getErr))
 			}
-			return retry.NonRetryableError(fmt.Errorf("Failed to read response asset %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(fmt.Errorf("failed to read response asset %s: %s", d.Id(), getErr))
 		}
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceResponseManagementResponseAsset())
@@ -114,7 +114,6 @@ func updateRespManagementRespAsset(ctx context.Context, d *schema.ResourceData, 
 
 	var bodyRequest platformclientv2.Responseassetrequest
 	bodyRequest.Name = &fileName
-
 	if divisionId != "" {
 		bodyRequest.DivisionId = &divisionId
 	}
@@ -146,6 +145,7 @@ func updateRespManagementRespAsset(ctx context.Context, d *schema.ResourceData, 
 func deleteRespManagementRespAsset(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getRespManagementRespAssetProxy(sdkConfig)
+
 	diagErr := util.RetryWhen(util.IsStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		log.Printf("Deleting Responsemanagement response asset")
 		resp, err := proxy.deleteRespManagementRespAsset(ctx, d.Id())
@@ -167,17 +167,8 @@ func deleteRespManagementRespAsset(ctx context.Context, d *schema.ResourceData, 
 				log.Printf("Deleted Responsemanagement response asset %s", d.Id())
 				return nil
 			}
-			return retry.NonRetryableError(fmt.Errorf("Error deleting response asset %s: %s", d.Id(), err))
+			return retry.NonRetryableError(fmt.Errorf("error deleting response asset %s: %s", d.Id(), err))
 		}
-		return retry.RetryableError(fmt.Errorf("Response asset %s still exists", d.Id()))
+		return retry.RetryableError(fmt.Errorf("response asset %s still exists", d.Id()))
 	})
-}
-
-func GenerateResponseManagementResponseAssetResource(resourceId string, fileName string, divisionId string) string {
-	return fmt.Sprintf(`
-resource "genesyscloud_responsemanagement_responseasset" "%s" {
-    filename    = "%s"
-    division_id = %s
-}
-`, resourceId, fileName, divisionId)
 }

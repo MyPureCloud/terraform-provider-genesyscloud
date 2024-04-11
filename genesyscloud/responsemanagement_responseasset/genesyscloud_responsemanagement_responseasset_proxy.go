@@ -24,8 +24,6 @@ type getRespManagementRespAssetByIdFunc func(ctx context.Context, p *responseman
 type getRespManagementRespAssetByNameFunc func(ctx context.Context, p *responsemanagementResponseassetProxy, name string) (string, bool, *platformclientv2.APIResponse, error)
 type deleteRespManagementRespAssetFunc func(ctx context.Context, p *responsemanagementResponseassetProxy, id string) (response *platformclientv2.APIResponse, err error)
 
-type getRespAssetExportUrlFunc func(ctx context.Context, p *responsemanagementResponseassetProxy, responseAssetId string) (string, *platformclientv2.APIResponse, error)
-
 // responsemanagementResponseassetProxy contains all of the methods that call genesys cloud APIs.
 type responsemanagementResponseassetProxy struct {
 	clientConfig                         *platformclientv2.Configuration
@@ -36,7 +34,6 @@ type responsemanagementResponseassetProxy struct {
 	getRespManagementRespAssetByIdAttr   getRespManagementRespAssetByIdFunc
 	getRespManagementRespAssetByNameAttr getRespManagementRespAssetByNameFunc
 	deleteRespManagementRespAssetAttr    deleteRespManagementRespAssetFunc
-	getRespAssetExportUrlAttr            getRespAssetExportUrlFunc
 }
 
 // newRespManagementRespAssetProxy initializes the responsemanagement responseasset proxy with all of the data needed to communicate with Genesys Cloud
@@ -51,7 +48,6 @@ func newRespManagementRespAssetProxy(clientConfig *platformclientv2.Configuratio
 		getRespManagementRespAssetByIdAttr:   getRespManagementRespAssetByIdFn,
 		getRespManagementRespAssetByNameAttr: getRespManagementRespAssetByNameFn,
 		deleteRespManagementRespAssetAttr:    deleteRespManagementRespAssetFn,
-		getRespAssetExportUrlAttr:            getRespAssetExportUrlFn,
 	}
 }
 
@@ -89,10 +85,6 @@ func (p *responsemanagementResponseassetProxy) getRespManagementRespAssetByName(
 // deleteRespManagementRespAsset deletes a Genesys Cloud responsemanagement responseasset by Id
 func (p *responsemanagementResponseassetProxy) deleteRespManagementRespAsset(ctx context.Context, id string) (response *platformclientv2.APIResponse, err error) {
 	return p.deleteRespManagementRespAssetAttr(ctx, p, id)
-}
-
-func (p *responsemanagementResponseassetProxy) getRespAssetExportUrl(ctx context.Context, responseAssetId string) (string, *platformclientv2.APIResponse, error) {
-	return p.getRespAssetExportUrlAttr(ctx, p, responseAssetId)
 }
 
 func getAllResponseAssetsFn(ctx context.Context, p *responsemanagementResponseassetProxy) (*[]platformclientv2.Responseasset, *platformclientv2.APIResponse, error) {
@@ -200,8 +192,4 @@ func deleteRespManagementRespAssetFn(ctx context.Context, p *responsemanagementR
 		return resp, fmt.Errorf("failed to delete response asset: %s", err)
 	}
 	return resp, nil
-}
-
-func getRespAssetExportUrlFn(_ context.Context, p *responsemanagementResponseassetProxy, responseAssetId string) (string, *platformclientv2.APIResponse, error) {
-
 }

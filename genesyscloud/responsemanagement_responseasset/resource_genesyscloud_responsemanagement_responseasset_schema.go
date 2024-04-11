@@ -53,6 +53,12 @@ func ResourceResponseManagementResponseAsset() *schema.Resource {
 				Computed:    true,
 				Type:        schema.TypeString,
 			},
+			"filepath": {
+				Description:  "Path to the script file to upload.",
+				Type:         schema.TypeString,
+				Required:     true,
+				ValidateFunc: validators.ValidatePath,
+			},
 		},
 	}
 }
@@ -72,15 +78,11 @@ func DataSourceResponseManagementResponseAsset() *schema.Resource {
 }
 
 func ExporterResponseManagementResponseAsset() *resourceExporter.ResourceExporter {
-	// TODO: Add to files
 	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: provider.GetAllWithPooledClient(getAllResponseAssets),
 		CustomFileWriter: resourceExporter.CustomFileWriterSettings{
 			RetrieveAndWriteFilesFunc: responsemanagementResponseassetResolver,
 			SubDirectory:              "asset_files",
-		},
-		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
-			// TODO
 		},
 	}
 }
