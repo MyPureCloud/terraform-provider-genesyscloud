@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"os"
 	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
@@ -81,6 +82,16 @@ func createQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		EnableManualAssignment:       platformclientv2.Bool(d.Get("enable_manual_assignment").(bool)),
 		DirectRouting:                buildSdkDirectRouting(d),
 		MemberGroups:                 &memberGroups,
+	}
+
+	if _, exists := os.LookupEnv("ENABLE_STANDALONE_CGR"); !exists {
+		conditionalGroupRouting, diagErr := buildSdkConditionalGroupRouting(d)
+		if diagErr != nil {
+			return diagErr
+		}
+		createQueue.ConditionalGroupRouting = conditionalGroupRouting
+	} else {
+		log.Printf("ENABLE_STANDALONE_CGR is set, not creating conditional_group_routing_rules attribute in routing_queue %s resource", d.Id())
 	}
 
 	if divisionID != "" {
@@ -215,6 +226,12 @@ func readQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 		_ = d.Set("teams", flattenQueueMemberGroupsList(currentQueue, &team))
 		_ = d.Set("groups", flattenQueueMemberGroupsList(currentQueue, &group))
 
+		if _, exists := os.LookupEnv("ENABLE_STANDALONE_CGR"); !exists {
+			_ = d.Set("conditional_group_routing_rules", flattenConditionalGroupRoutingRules(currentQueue))
+		} else {
+			log.Printf("ENABLE_STANDALONE_CGR is set, not reading conditional_group_routing_rules attribute in routing_queue %s resource", d.Id())
+		}
+
 		log.Printf("Done reading queue %s %s", d.Id(), *currentQueue.Name)
 		return cc.CheckState()
 	})
@@ -253,6 +270,16 @@ func updateQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		EnableManualAssignment:       platformclientv2.Bool(d.Get("enable_manual_assignment").(bool)),
 		DirectRouting:                buildSdkDirectRouting(d),
 		MemberGroups:                 &memberGroups,
+	}
+
+	if _, exists := os.LookupEnv("ENABLE_STANDALONE_CGR"); !exists {
+		conditionalGroupRouting, diagErr := buildSdkConditionalGroupRouting(d)
+		if diagErr != nil {
+			return diagErr
+		}
+		updateQueue.ConditionalGroupRouting = conditionalGroupRouting
+	} else {
+		log.Printf("ENABLE_STANDALONE_CGR is set, not updating conditional_group_routing_rules attribute in routing_queue %s resource", d.Id())
 	}
 
 	log.Printf("Updating queue %s", *updateQueue.Name)
@@ -573,6 +600,96 @@ func flattenBullseyeRings(sdkRings *[]platformclientv2.Ring) []interface{} {
 		}
 	}
 	return rings
+}
+
+func buildSdkConditionalGroupRouting(d *schema.ResourceData) (*platformclientv2.Conditionalgrouprouting, diag.Diagnostics) {
+	if configRules, ok := d.GetOk("conditional_group_routing_rules"); ok {
+		var sdkCGRRules []platformclientv2.Conditionalgrouproutingrule
+		for i, configRules := range configRules.([]interface{}) {
+			ruleSettings, ok := configRules.(map[string]interface{})
+			if !ok {
+				continue
+			}
+			var sdkCGRRule platformclientv2.Conditionalgrouproutingrule
+
+			if waitSeconds, ok := ruleSettings["wait_seconds"].(int); ok {
+				sdkCGRRule.WaitSeconds = &waitSeconds
+			}
+			resourcedata.BuildSDKStringValueIfNotNil(&sdkCGRRule.Operator, ruleSettings, "operator")
+			if conditionValue, ok := ruleSettings["condition_value"].(float64); ok {
+				sdkCGRRule.ConditionValue = &conditionValue
+			}
+			resourcedata.BuildSDKStringValueIfNotNil(&sdkCGRRule.Metric, ruleSettings, "metric")
+
+			if queueId, ok := ruleSettings["queue_id"].(string); ok && queueId != "" {
+				if i == 0 {
+					return nil, diag.Errorf("For rule 1, queue_id is always assumed to be the current queue, so queue id should not be specified.")
+				}
+				sdkCGRRule.Queue = &platformclientv2.Domainentityref{Id: &queueId}
+			}
+
+			if memberGroupList, ok := ruleSettings["groups"].([]interface{}); ok {
+				if len(memberGroupList) > 0 {
+					sdkMemberGroups := make([]platformclientv2.Membergroup, len(memberGroupList))
+					for i, memberGroup := range memberGroupList {
+						settingsMap, ok := memberGroup.(map[string]interface{})
+						if !ok {
+							continue
+						}
+
+						sdkMemberGroups[i] = platformclientv2.Membergroup{
+							Id:      platformclientv2.String(settingsMap["member_group_id"].(string)),
+							VarType: platformclientv2.String(settingsMap["member_group_type"].(string)),
+						}
+					}
+					sdkCGRRule.Groups = &sdkMemberGroups
+				}
+			}
+			sdkCGRRules = append(sdkCGRRules, sdkCGRRule)
+		}
+		rules := &sdkCGRRules
+		return &platformclientv2.Conditionalgrouprouting{Rules: rules}, nil
+	}
+	return nil, nil
+}
+
+func flattenConditionalGroupRoutingRules(queue *platformclientv2.Queue) []interface{} {
+	if queue.ConditionalGroupRouting == nil || len(*queue.ConditionalGroupRouting.Rules) == 0 {
+		return nil
+	}
+
+	rules := make([]interface{}, len(*queue.ConditionalGroupRouting.Rules))
+	for i, rule := range *queue.ConditionalGroupRouting.Rules {
+		ruleSettings := make(map[string]interface{})
+
+		resourcedata.SetMapValueIfNotNil(ruleSettings, "wait_seconds", rule.WaitSeconds)
+		resourcedata.SetMapValueIfNotNil(ruleSettings, "operator", rule.Operator)
+		resourcedata.SetMapValueIfNotNil(ruleSettings, "condition_value", rule.ConditionValue)
+		resourcedata.SetMapValueIfNotNil(ruleSettings, "metric", rule.Metric)
+
+		// The first rule is assumed to apply to this queue, so queue_id should be omitted if the conditional grouping routing rule
+		//is the first one being looked at.
+		if rule.Queue != nil && i > 0 {
+			ruleSettings["queue_id"] = *rule.Queue.Id
+		}
+
+		if rule.Groups != nil {
+			memberGroups := make([]interface{}, 0)
+			for _, group := range *rule.Groups {
+				memberGroupMap := make(map[string]interface{})
+
+				resourcedata.SetMapValueIfNotNil(memberGroupMap, "member_group_id", group.Id)
+				resourcedata.SetMapValueIfNotNil(memberGroupMap, "member_group_type", group.VarType)
+
+				memberGroups = append(memberGroups, memberGroupMap)
+			}
+			ruleSettings["groups"] = memberGroups
+		}
+
+		rules[i] = ruleSettings
+	}
+
+	return rules
 }
 
 func buildSdkAcwSettings(d *schema.ResourceData) *platformclientv2.Acwsettings {
