@@ -107,7 +107,7 @@ func fetchDepConsumers(ctx context.Context,
 				pageCount := 1
 				const pageSize = 100
 				dependencies, _, err := p.ArchitectApi.GetArchitectDependencytrackingConsumedresources(resourceKey, *data.PublishedVersion.Id, objectType, nil, pageCount, pageSize)
-
+				log.Printf("dependencies %v for id %v", dependencies, resourceKey)
 				if err != nil {
 					return nil, nil, nil, err
 				}
@@ -185,6 +185,7 @@ func iterateDependencies(dependencies *platformclientv2.Consumedresourcesentityl
 					}
 				} else {
 					cyclicDependsList = append(cyclicDependsList, gflow+"."+*consumer.Name+" , "+gflow+"."+resourceName)
+					log.Printf("cyclic Dependencies Identified %v for %v", cyclicDependsList, *consumer.Name)
 					continue
 				}
 			}
