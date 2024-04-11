@@ -273,7 +273,7 @@ func updateRoutingUtilization(ctx context.Context, d *schema.ResourceData, meta 
 		}
 
 		if err != nil {
-			return resp, diag.Errorf("Failed to update Routing Utilization: %s", err)
+			return resp, util.BuildAPIDiagnosticError("genesyscloud_routing_utilization", fmt.Sprintf("Failed to update Routing Utilization %s error: %s", d.Id(), err), resp)
 		}
 		return resp, nil
 	})
@@ -292,9 +292,9 @@ func deleteRoutingUtilization(_ context.Context, _ *schema.ResourceData, meta in
 
 	// Resets to default values
 	log.Printf("Resetting Routing Utilization")
-	_, err := routingAPI.DeleteRoutingUtilization()
+	resp, err := routingAPI.DeleteRoutingUtilization()
 	if err != nil {
-		return diag.Errorf("Failed to reset Routing Utilization: %s", err)
+		return util.BuildAPIDiagnosticError("genesyscloud_routing_utilization", fmt.Sprintf("Failed to reset Routing Utilization error: %s", err), resp)
 	}
 	log.Printf("Reset Routing Utilization")
 	return nil

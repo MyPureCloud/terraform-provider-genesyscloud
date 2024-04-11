@@ -27,7 +27,7 @@ func getAllAuthResponsemanagementResponses(ctx context.Context, clientConfig *pl
 
 	responseManagementResponses, resp, err := proxy.getAllResponsemanagementResponse(ctx)
 	if err != nil {
-		return nil, diag.Errorf("Failed to get list of response management responses: %v %v", err, resp)
+		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get list of response management responses error: %s", err), resp)
 	}
 
 	for _, response := range *responseManagementResponses {
@@ -115,7 +115,7 @@ func updateResponsemanagementResponse(ctx context.Context, d *schema.ResourceDat
 	log.Printf("Updating Responsemanagement Response %s", *sdkResponse.Name)
 	managementResponse, resp, err := proxy.updateResponsemanagementResponse(ctx, d.Id(), &sdkResponse)
 	if err != nil {
-		return diag.Errorf("Failed to update response management response %s: %s %v", d.Id(), err, resp)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update response management response %s error: %s", d.Id(), err), resp)
 	}
 
 	log.Printf("Updated Responsemanagement Response %s", *managementResponse.Id)
@@ -130,7 +130,7 @@ func deleteResponsemanagementResponse(ctx context.Context, d *schema.ResourceDat
 	log.Printf("Deleting Responsemanagement Response")
 	resp, err := proxy.deleteResponsemanagementResponse(ctx, d.Id())
 	if err != nil {
-		return diag.Errorf("Failed to delete Responsemanagement Response: %s %v", err, resp)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete Responsemanagement Response %s error: %s", d.Id(), err), resp)
 	}
 
 	time.Sleep(30 * time.Second) //Give time for any libraries or assets to be deleted

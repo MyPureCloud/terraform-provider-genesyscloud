@@ -24,6 +24,10 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
 )
 
+const (
+	resourceName = "genesyscloud_telephony_providers_edges_trunkbasesettings"
+)
+
 func ResourceTrunkBaseSettings() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud Trunk Base Settings",
@@ -122,9 +126,9 @@ func createTrunkBaseSettings(ctx context.Context, d *schema.ResourceData, meta i
 	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
 
 	log.Printf("Creating trunk base settings %s", name)
-	trunkBaseSettings, _, err := edgesAPI.PostTelephonyProvidersEdgesTrunkbasesettings(trunkBase)
+	trunkBaseSettings, resp, err := edgesAPI.PostTelephonyProvidersEdgesTrunkbasesettings(trunkBase)
 	if err != nil {
-		return diag.Errorf("Failed to create trunk base settings %s: %s", name, err)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create trunk base settings %s error: %s", name, err), resp)
 	}
 
 	d.SetId(*trunkBaseSettings.Id)
@@ -177,20 +181,17 @@ func updateTrunkBaseSettings(ctx context.Context, d *schema.ResourceData, meta i
 		trunkBaseSettings, resp, getErr := edgesAPI.GetTelephonyProvidersEdgesTrunkbasesetting(d.Id(), true)
 		if getErr != nil {
 			if util.IsStatus404(resp) {
-				return resp, diag.Errorf("The trunk base settings does not exist %s: %s", d.Id(), getErr)
+				return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("The trunk base settings does not exist %s error: %s", d.Id(), getErr), resp)
 			}
-			return resp, diag.Errorf("Failed to read trunk base settings %s: %s", d.Id(), getErr)
+			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to read trunk base settings %s error: %s", d.Id(), getErr), resp)
 		}
 		trunkBase.Version = trunkBaseSettings.Version
 
 		log.Printf("Updating trunk base settings %s", name)
 		trunkBaseSettings, resp, err := edgesAPI.PutTelephonyProvidersEdgesTrunkbasesetting(d.Id(), trunkBase)
 		if err != nil {
-			respString := ""
-			if resp != nil {
-				respString = resp.String()
-			}
-			return resp, diag.Errorf("Failed to update trunk base settings %s: %s %v", name, err, respString)
+
+			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update trunk base settings %s error: %s", name, err), resp)
 		}
 		return resp, nil
 	})
@@ -205,18 +206,14 @@ func updateTrunkBaseSettings(ctx context.Context, d *schema.ResourceData, meta i
 		if util.IsStatus404(resp) {
 			return nil
 		}
-		return diag.Errorf("Failed to read trunk base settings %s: %s", d.Id(), getErr)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to read trunk base settings %s error: %s", d.Id(), getErr), resp)
 	}
 	trunkBase.Version = trunkBaseSettings.Version
 
 	log.Printf("Updating trunk base settings %s", name)
 	trunkBaseSettings, resp, err := edgesAPI.PutTelephonyProvidersEdgesTrunkbasesetting(d.Id(), trunkBase)
 	if err != nil {
-		respString := ""
-		if resp != nil {
-			respString = resp.String()
-		}
-		return diag.Errorf("Failed to update trunk base settings %s: %s %v", name, err, respString)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update trunk base settings %s error: %s", d.Id(), err), resp)
 	}
 
 	log.Printf("Updated trunk base settings %s", *trunkBaseSettings.Id)
@@ -284,7 +281,7 @@ func deleteTrunkBaseSettings(ctx context.Context, d *schema.ResourceData, meta i
 				// trunk base settings not found, goal achieved!
 				return nil, nil
 			}
-			return resp, diag.Errorf("Failed to delete trunk base settings: %s", err)
+			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete trunk base settings %s error: %s", d.Id(), err), resp)
 		}
 		return resp, nil
 	})
@@ -318,9 +315,9 @@ func getAllTrunkBaseSettings(ctx context.Context, sdkConfig *platformclientv2.Co
 
 	for pageNum := 1; ; pageNum++ {
 		const pageSize = 100
-		trunkBaseSettings, _, getErr := getTelephonyProvidersEdgesTrunkbasesettings(sdkConfig, pageNum, pageSize, "")
+		trunkBaseSettings, resp, getErr := getTelephonyProvidersEdgesTrunkbasesettings(sdkConfig, pageNum, pageSize, "")
 		if getErr != nil {
-			return nil, diag.Errorf("Failed to get page of trunk base settings: %v", getErr)
+			return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get page of trunk base settings error: %s", getErr), resp)
 		}
 
 		if trunkBaseSettings.Entities == nil || len(*trunkBaseSettings.Entities) == 0 {

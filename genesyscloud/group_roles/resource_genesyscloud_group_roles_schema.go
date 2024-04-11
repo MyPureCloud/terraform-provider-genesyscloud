@@ -2,9 +2,11 @@ package group_roles
 
 import (
 	"context"
+	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
@@ -89,9 +91,9 @@ func getAllGroups(_ context.Context, clientConfig *platformclientv2.Configuratio
 
 	for pageNum := 1; ; pageNum++ {
 		const pageSize = 100
-		groups, _, getErr := groupsAPI.GetGroups(pageSize, pageNum, nil, nil, "")
+		groups, resp, getErr := groupsAPI.GetGroups(pageSize, pageNum, nil, nil, "")
 		if getErr != nil {
-			return nil, diag.Errorf("Failed to get page of groups: %v", getErr)
+			return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get page of groups error: %s", getErr), resp)
 		}
 
 		if groups.Entities == nil || len(*groups.Entities) == 0 {

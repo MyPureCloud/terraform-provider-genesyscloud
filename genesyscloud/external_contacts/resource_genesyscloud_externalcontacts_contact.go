@@ -45,7 +45,7 @@ func getAllAuthExternalContacts(ctx context.Context, clientConfig *platformclien
 
 	externalContacts, resp, err := ep.getAllExternalContacts(ctx)
 	if err != nil {
-		return nil, diag.Errorf("Failed to get external contacts: %v %v", err, resp)
+		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get External Contacts error: %s", err), resp)
 	}
 
 	for _, externalContact := range *externalContacts {
@@ -64,7 +64,7 @@ func createExternalContact(ctx context.Context, d *schema.ResourceData, meta int
 
 	contact, resp, err := ep.createExternalContact(ctx, &externalContact)
 	if err != nil {
-		return diag.Errorf("Failed to create external contact: %s %v", err, resp)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create external contact %s error: %s", *externalContact.Id, err), resp)
 	}
 
 	d.SetId(*contact.Id)
@@ -123,7 +123,7 @@ func updateExternalContact(ctx context.Context, d *schema.ResourceData, meta int
 	externalContact := getExternalContactFromResourceData(d)
 	_, resp, err := ep.updateExternalContact(ctx, d.Id(), &externalContact)
 	if err != nil {
-		return diag.Errorf("Failed to update external contact: %s %v", err, resp)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update external contact %s error: %s", *externalContact.Id, err), resp)
 	}
 
 	log.Printf("Updated external contact")
@@ -137,7 +137,7 @@ func deleteExternalContact(ctx context.Context, d *schema.ResourceData, meta int
 
 	resp, err := ep.deleteExternalContactId(ctx, d.Id())
 	if err != nil {
-		return diag.Errorf("Failed to delete external contact %s: %s %v", d.Id(), err, resp)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete external contact %s error: %s", d.Id(), err), resp)
 	}
 
 	return util.WithRetries(ctx, 180*time.Second, func() *retry.RetryError {

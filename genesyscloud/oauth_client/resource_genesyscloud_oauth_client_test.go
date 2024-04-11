@@ -199,11 +199,11 @@ func validateOauthRole(resourceName string, roleResourceName string, division st
 		}
 
 		resourceAttrs := resourceState.Primary.Attributes
-		numRolesAttr, _ := resourceAttrs["roles.#"]
+		numRolesAttr := resourceAttrs["roles.#"]
 		numRoles, _ := strconv.Atoi(numRolesAttr)
 		for i := 0; i < numRoles; i++ {
 			if resourceAttrs["roles."+strconv.Itoa(i)+".role_id"] == roleID {
-				divId, _ := resourceAttrs["roles."+strconv.Itoa(i)+".division_id"]
+				divId := resourceAttrs["roles."+strconv.Itoa(i)+".division_id"]
 				if divId == division {
 					// Found expected role and division
 					return nil

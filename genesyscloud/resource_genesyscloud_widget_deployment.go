@@ -56,9 +56,9 @@ var (
 func getAllWidgetDeployments(_ context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
 	resources := make(resourceExporter.ResourceIDMetaMap)
 	widgetsAPI := platformclientv2.NewWidgetsApiWithConfig(clientConfig)
-	widgetDeployments, _, getErr := widgetsAPI.GetWidgetsDeployments()
+	widgetDeployments, resp, getErr := widgetsAPI.GetWidgetsDeployments()
 	if getErr != nil {
-		return nil, diag.Errorf("Failed to get page of widget deployments: %v", getErr)
+		return nil, util.BuildAPIDiagnosticError("genesyscloud_widget_deployment", fmt.Sprintf("Failed to get page of widget deployment error: %s", getErr), resp)
 	}
 
 	for _, widgetDeployment := range *widgetDeployments.Entities {
@@ -337,9 +337,9 @@ func createWidgetDeployment(ctx context.Context, d *schema.ResourceData, meta in
 	// Get all existing deployments
 	resourceIDMetaMap, _ := getAllWidgetDeployments(ctx, sdkConfig)
 
-	widget, _, err := widgetsAPI.PostWidgetsDeployments(createWidget)
+	widget, resp, err := widgetsAPI.PostWidgetsDeployments(createWidget)
 	if err != nil {
-		return diag.Errorf("Failed to create widget deployment %s, %s", name, err)
+		return util.BuildAPIDiagnosticError("genesyscloud_widget_deployment", fmt.Sprintf("Failed to create widget deployment %s error: %s", name, err), resp)
 	}
 	log.Printf("Widget created %s with id %s", name, *widget.Id)
 	d.SetId(*widget.Id)
@@ -382,9 +382,9 @@ func deleteWidgetDeployment(ctx context.Context, d *schema.ResourceData, meta in
 	widgetAPI := platformclientv2.NewWidgetsApiWithConfig(sdkConfig)
 
 	log.Printf("Deleting widget deployment %s", name)
-	_, err := widgetAPI.DeleteWidgetsDeployment(d.Id())
+	resp, err := widgetAPI.DeleteWidgetsDeployment(d.Id())
 	if err != nil {
-		return diag.Errorf("Failed to delete widget deployment %s: %s", name, err)
+		return util.BuildAPIDiagnosticError("genesyscloud_widget_deployment", fmt.Sprintf("Failed to delete widget deployment %s error: %s", name, err), resp)
 	}
 
 	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
@@ -429,9 +429,9 @@ func updateWidgetDeployment(ctx context.Context, d *schema.ResourceData, meta in
 	}
 
 	log.Printf("Updating widget deployment %s", name)
-	widget, _, err := widgetsAPI.PutWidgetsDeployment(d.Id(), updateWidget)
+	widget, resp, err := widgetsAPI.PutWidgetsDeployment(d.Id(), updateWidget)
 	if err != nil {
-		return diag.Errorf("Failed to update widget deployment %s, %s", name, err)
+		return util.BuildAPIDiagnosticError("genesyscloud_widget_deployment", fmt.Sprintf("Failed to update widget deployment %s error: %s", name, err), resp)
 	}
 	d.SetId(*widget.Id)
 

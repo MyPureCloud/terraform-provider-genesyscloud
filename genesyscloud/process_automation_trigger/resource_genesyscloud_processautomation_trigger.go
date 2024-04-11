@@ -22,6 +22,10 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
+const (
+	resourceName = "genesyscloud_processautomation_trigger"
+)
+
 var (
 	workflowTargetSettings = &schema.Resource{
 		Schema: map[string]*schema.Schema{
@@ -184,12 +188,11 @@ func createProcessAutomationTrigger(ctx context.Context, d *schema.ResourceData,
 
 	diagErr := util.RetryWhen(util.IsStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		trigger, resp, err := postProcessAutomationTrigger(triggerInput, integAPI)
-
 		if err != nil {
-			return resp, diag.Errorf("Failed to create process automation trigger %s: %s", name, err)
+			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create process automation trigger %s error: %s", name, err), resp)
 		}
-		d.SetId(*trigger.Id)
 
+		d.SetId(*trigger.Id)
 		log.Printf("Created process automation trigger %s %s", name, *trigger.Id)
 		return resp, nil
 	})
@@ -280,7 +283,7 @@ func updateProcessAutomationTrigger(ctx context.Context, d *schema.ResourceData,
 		// Get the latest trigger version to send with PATCH
 		trigger, resp, getErr := getProcessAutomationTrigger(d.Id(), integAPI)
 		if getErr != nil {
-			return resp, diag.Errorf("Failed to read process automation trigger %s: %s", d.Id(), getErr)
+			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to read process automation trigger %s error: %s", d.Id(), getErr), resp)
 		}
 
 		if eventTTLSeconds > 0 && delayBySeconds > 0 {
@@ -308,7 +311,7 @@ func updateProcessAutomationTrigger(ctx context.Context, d *schema.ResourceData,
 		_, putResp, err := putProcessAutomationTrigger(d.Id(), triggerInput, integAPI)
 
 		if err != nil {
-			return putResp, diag.Errorf("Failed to update process automation trigger %s: %s", name, err)
+			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update process automation trigger %s error: %s", name, err), resp)
 		}
 		return putResp, nil
 	})
