@@ -199,7 +199,7 @@ func getResourceType(consumer platformclientv2.Dependency, dependentConsumerMap 
 }
 
 func getResourceFilter(consumer platformclientv2.Dependency, resourceType string) string {
-	return resourceType + "::::" + *consumer.Name
+	return resourceType + "::::" + *consumer.Id
 }
 
 func processResource(consumer platformclientv2.Dependency, resourceType string, resources resourceExporter.ResourceIDMetaMap, architectDependencies map[string][]string, key string) (resourceExporter.ResourceIDMetaMap, map[string][]string) {
