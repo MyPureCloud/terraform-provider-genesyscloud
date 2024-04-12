@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
+	rc "terraform-provider-genesyscloud/genesyscloud/resource_cache"
+	routingQueue "terraform-provider-genesyscloud/genesyscloud/routing_queue"
 )
 
 // internalProxy holds a proxy instance that can be used throughout the package
@@ -21,17 +23,20 @@ type routingQueueConditionalGroupRoutingProxy struct {
 	getAllRoutingQueueConditionRoutingAttr getAllRoutingQueuesFunc
 	getRoutingQueueConditionRoutingAttr    getRoutingQueueConditionRoutingFunc
 	updateRoutingQueueConditionRoutingAttr updateRoutingQueueConditionRoutingFunc
+	routingQueueProxy                      *routingQueue.RoutingQueueProxy
 }
 
 // newRoutingQueueConditionalGroupRoutingProxy initializes the Routing queue conditional group routing proxy with all of the data needed to communicate with Genesys Cloud
 func newRoutingQueueConditionalGroupRoutingProxy(clientConfig *platformclientv2.Configuration) *routingQueueConditionalGroupRoutingProxy {
 	api := platformclientv2.NewRoutingApiWithConfig(clientConfig)
+	routingQueueProxy := routingQueue.GetRoutingQueueProxy(clientConfig)
+
 	return &routingQueueConditionalGroupRoutingProxy{
 		clientConfig:                           clientConfig,
 		routingApi:                             api,
-		getAllRoutingQueueConditionRoutingAttr: getAllRoutingQueuesFn,
 		getRoutingQueueConditionRoutingAttr:    getRoutingQueueConditionRoutingFn,
 		updateRoutingQueueConditionRoutingAttr: updateRoutingQueueConditionRoutingFn,
+		routingQueueProxy:                      routingQueueProxy,
 	}
 }
 
@@ -44,11 +49,6 @@ func getRoutingQueueConditionalGroupRoutingProxy(clientConfig *platformclientv2.
 	return internalProxy
 }
 
-// getAllRoutingQueues gets all routing queues in an org
-func (p *routingQueueConditionalGroupRoutingProxy) getAllRoutingQueues(ctx context.Context) (*[]platformclientv2.Queue, *platformclientv2.APIResponse, error) {
-	return p.getAllRoutingQueueConditionRoutingAttr(ctx, p)
-}
-
 // getRoutingQueueConditionRouting gets the conditional group routing rules for a queue
 func (p *routingQueueConditionalGroupRoutingProxy) getRoutingQueueConditionRouting(ctx context.Context, queueId string) (*[]platformclientv2.Conditionalgrouproutingrule, *platformclientv2.APIResponse, error) {
 	return p.getRoutingQueueConditionRoutingAttr(ctx, p, queueId)
@@ -59,43 +59,20 @@ func (p *routingQueueConditionalGroupRoutingProxy) updateRoutingQueueConditionRo
 	return p.updateRoutingQueueConditionRoutingAttr(ctx, p, queueId, rules)
 }
 
-// getAllRoutingQueuesFn is an implementation function for getting all queues in an org
-func getAllRoutingQueuesFn(ctx context.Context, p *routingQueueConditionalGroupRoutingProxy) (*[]platformclientv2.Queue, *platformclientv2.APIResponse, error) {
-	var allQueues []platformclientv2.Queue
-	const pageSize = 100
-
-	queues, resp, err := p.routingApi.GetRoutingQueues(1, pageSize, "", "", nil, nil, nil, false)
-	if err != nil {
-		return nil, resp, fmt.Errorf("failed to get routing queues: %s", err)
-	}
-
-	if queues.Entities == nil || len(*queues.Entities) == 0 {
-		return &allQueues, resp, nil
-	}
-
-	allQueues = append(allQueues, *queues.Entities...)
-
-	for pageNum := 2; pageNum <= *queues.PageCount; pageNum++ {
-		queues, resp, err := p.routingApi.GetRoutingQueues(pageNum, pageSize, "", "", nil, nil, nil, false)
-		if err != nil {
-			return nil, resp, fmt.Errorf("failed to get routing queues: %s", err)
-		}
-
-		if queues.Entities == nil || len(*queues.Entities) == 0 {
-			break
-		}
-
-		allQueues = append(allQueues, *queues.Entities...)
-	}
-
-	return &allQueues, nil, nil
-}
-
 // getRoutingQueueConditionRoutingFn is an implementation function for getting the conditional group routing rules for a queue
 func getRoutingQueueConditionRoutingFn(ctx context.Context, p *routingQueueConditionalGroupRoutingProxy, queueId string) (*[]platformclientv2.Conditionalgrouproutingrule, *platformclientv2.APIResponse, error) {
-	queue, resp, err := p.routingApi.GetRoutingQueue(queueId)
-	if err != nil {
-		return nil, resp, fmt.Errorf("error when reading queue %s: %s", queueId, err)
+	var (
+		queue *platformclientv2.Queue
+		resp  *platformclientv2.APIResponse
+		err   error
+	)
+
+	queue = rc.GetCacheItem(p.routingQueueProxy.RoutingQueueCache, queueId)
+	if queue == nil {
+		queue, resp, err = p.routingApi.GetRoutingQueue(queueId)
+		if err != nil {
+			return nil, resp, fmt.Errorf("error when reading queue %s: %s", queueId, err)
+		}
 	}
 
 	if queue.ConditionalGroupRouting != nil && queue.ConditionalGroupRouting.Rules != nil {

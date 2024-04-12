@@ -25,9 +25,9 @@ func getAllAuthRoutingQueueConditionalGroup(ctx context.Context, clientConfig *p
 	resources := make(resourceExporter.ResourceIDMetaMap)
 	proxy := getRoutingQueueConditionalGroupRoutingProxy(clientConfig)
 
-	queues, _, err := proxy.getAllRoutingQueues(ctx)
+	queues, _, err := proxy.routingQueueProxy.GetAllRoutingQueues(ctx)
 	if err != nil {
-		return nil, diag.Errorf("failed to get routing queues conditional group routing rules: %s", err)
+		return nil, diag.Errorf("failed to get conditional group routing rules: %s", err)
 	}
 
 	for _, queue := range *queues {

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"os"
 	"strings"
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	"terraform-provider-genesyscloud/genesyscloud/group"
@@ -42,6 +43,11 @@ func TestAccResourceRoutingQueueConditionalGroupRouting(t *testing.T) {
 		conditionalGroupRoutingRule2WaitSeconds    = "15"
 		conditionalGroupRoutingRule2GroupType      = "GROUP"
 	)
+
+	err := os.Setenv("ENABLE_STANDALONE_CGR", "enabled")
+	if err != nil {
+		t.Error("ENABLE_STANDALONE_CGR is not set")
+	}
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
