@@ -9,8 +9,9 @@ import (
 )
 
 const resourceName = "genesyscloud_routing_queue_conditional_group_routing"
+const EnvToggle = "ENABLE_STANDALONE_CGR"
 
-// SetRegistrar registers all of the resources and exporters in the package
+// SetRegistrar registers all the resources and exporters in the package
 func SetRegistrar(regInstance registrar.Registrar) {
 	regInstance.RegisterResource(resourceName, ResourceRoutingQueueConditionalGroupRouting())
 	regInstance.RegisterExporter(resourceName, RoutingQueueConditionalGroupRoutingExporter())
@@ -52,6 +53,7 @@ func ResourceRoutingQueueConditionalGroupRouting() *schema.Resource {
 				Description: "Id of the routing queue to which the rules belong",
 				Type:        schema.TypeString,
 				Required:    true,
+				ForceNew:    true,
 			},
 			"rules": {
 				Description: "The Conditional Group Routing settings for the queue.",

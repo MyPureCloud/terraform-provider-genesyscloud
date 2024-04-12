@@ -44,9 +44,9 @@ func TestAccResourceRoutingQueueConditionalGroupRouting(t *testing.T) {
 		conditionalGroupRoutingRule2GroupType      = "GROUP"
 	)
 
-	err := os.Setenv("ENABLE_STANDALONE_CGR", "enabled")
+	err := os.Setenv(EnvToggle, "enabled")
 	if err != nil {
-		t.Error("ENABLE_STANDALONE_CGR is not set")
+		t.Errorf("%s is not set", EnvToggle)
 	}
 
 	resource.Test(t, resource.TestCase{

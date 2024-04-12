@@ -3,6 +3,7 @@ package routing_queue
 import (
 	"fmt"
 	"log"
+	"os"
 	"strconv"
 	"strings"
 	"terraform-provider-genesyscloud/genesyscloud"
@@ -166,6 +167,10 @@ func TestAccResourceRoutingQueueBasic(t *testing.T) {
 }
 
 func TestAccResourceRoutingQueueConditionalRouting(t *testing.T) {
+	if _, exists := os.LookupEnv(cgrEnvToggle); exists {
+		t.Skip("conditional group routing is deprecated in this resource, skipping test")
+	}
+
 	var (
 		queueResource1          = "test-queue"
 		queueName1              = "Terraform Test Queue1-" + uuid.NewString()

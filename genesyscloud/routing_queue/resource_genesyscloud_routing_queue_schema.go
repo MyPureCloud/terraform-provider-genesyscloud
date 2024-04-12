@@ -251,6 +251,7 @@ func ResourceRoutingQueue() *schema.Resource {
 				Type:        schema.TypeList,
 				Optional:    true,
 				MaxItems:    5,
+				Deprecated:  "conditional_group_routing_rules is deprecated in genesyscloud_routing_queue. CGR is now a standalone resource, please set ENABLE_STANDALONE_CGR in your environment variables to enable and use genesyscloud_routing_queue_conditional_group_routing",
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"queue_id": {

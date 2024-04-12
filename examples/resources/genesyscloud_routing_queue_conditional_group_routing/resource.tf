@@ -1,3 +1,4 @@
+// To enable this resource, set ENABLE_STANDALONE_CGR as an environment variable
 // WARNING: This resource will overwrite any conditional group routing rules that already on the queue
 // For this reason, all conditional group routing rules for a queue should be managed solely by this resource
 resource "genesyscloud_routing_queue_conditional_group_routing" "example-name" {

@@ -25,8 +25,8 @@ func getAllAuthRoutingQueueConditionalGroup(ctx context.Context, clientConfig *p
 	resources := make(resourceExporter.ResourceIDMetaMap)
 	proxy := getRoutingQueueConditionalGroupRoutingProxy(clientConfig)
 
-	if _, exists := os.LookupEnv("ENABLE_STANDALONE_CGR"); !exists {
-		log.Printf("Environment variable ENABLE_STANDALONE_CGR not set, skipping exporter for %s", resourceName)
+	if _, exists := os.LookupEnv(EnvToggle); !exists {
+		log.Printf("Environment variable %s not set, skipping exporter for %s", EnvToggle, resourceName)
 		return nil, nil
 	}
 
@@ -46,8 +46,8 @@ func getAllAuthRoutingQueueConditionalGroup(ctx context.Context, clientConfig *p
 
 // createRoutingQueueConditionalRoutingGroup is used by the routing_queue_conditional_group_routing resource to create Conditional Group Routing Rules
 func createRoutingQueueConditionalRoutingGroup(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	if _, exists := os.LookupEnv("ENABLE_STANDALONE_CGR"); !exists {
-		return util.BuildDiagnosticError(resourceName, "Environment variable ENABLE_STANDALONE_CGR not set", fmt.Errorf("environment variable ENABLE_STANDALONE_CGR not set"))
+	if _, exists := os.LookupEnv(EnvToggle); !exists {
+		return util.BuildDiagnosticError(resourceName, "Environment variable ENABLE_STANDALONE_CGR not set", fmt.Errorf("environment variable %s not set", EnvToggle))
 	}
 
 	queueId := d.Get("queue_id").(string)
@@ -59,8 +59,8 @@ func createRoutingQueueConditionalRoutingGroup(ctx context.Context, d *schema.Re
 
 // readRoutingQueueConditionalRoutingGroup is used by the routing_queue_conditional_group_routing resource to read Conditional Group Routing Rules
 func readRoutingQueueConditionalRoutingGroup(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	if _, exists := os.LookupEnv("ENABLE_STANDALONE_CGR"); !exists {
-		return util.BuildDiagnosticError(resourceName, "Environment variable ENABLE_STANDALONE_CGR not set", fmt.Errorf("environment variable ENABLE_STANDALONE_CGR not set"))
+	if _, exists := os.LookupEnv(EnvToggle); !exists {
+		return util.BuildDiagnosticError(resourceName, "Environment variable ENABLE_STANDALONE_CGR not set", fmt.Errorf("environment variable %s not set", EnvToggle))
 	}
 
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
@@ -88,8 +88,8 @@ func readRoutingQueueConditionalRoutingGroup(ctx context.Context, d *schema.Reso
 
 // updateRoutingQueueConditionalRoutingGroup is used by the routing_queue_conditional_group_routing resource to update Conditional Group Routing Rules
 func updateRoutingQueueConditionalRoutingGroup(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	if _, exists := os.LookupEnv("ENABLE_STANDALONE_CGR"); !exists {
-		return util.BuildDiagnosticError(resourceName, "Environment variable ENABLE_STANDALONE_CGR not set", fmt.Errorf("environment variable ENABLE_STANDALONE_CGR not set"))
+	if _, exists := os.LookupEnv(EnvToggle); !exists {
+		return util.BuildDiagnosticError(resourceName, "Environment variable ENABLE_STANDALONE_CGR not set", fmt.Errorf("environment variable %s not set", EnvToggle))
 	}
 
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig

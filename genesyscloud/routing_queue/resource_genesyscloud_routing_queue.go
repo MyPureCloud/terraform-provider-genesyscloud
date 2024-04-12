@@ -29,6 +29,8 @@ import (
 
 var bullseyeExpansionTypeTimeout = "TIMEOUT_SECONDS"
 
+const cgrEnvToggle = "ENABLE_STANDALONE_CGR"
+
 func getAllRoutingQueues(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
 	resources := make(resourceExporter.ResourceIDMetaMap)
 	proxy := GetRoutingQueueProxy(clientConfig)
@@ -84,14 +86,14 @@ func createQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		MemberGroups:                 &memberGroups,
 	}
 
-	if _, exists := os.LookupEnv("ENABLE_STANDALONE_CGR"); !exists {
+	if _, exists := os.LookupEnv(cgrEnvToggle); !exists {
 		conditionalGroupRouting, diagErr := buildSdkConditionalGroupRouting(d)
 		if diagErr != nil {
 			return diagErr
 		}
 		createQueue.ConditionalGroupRouting = conditionalGroupRouting
 	} else {
-		log.Printf("ENABLE_STANDALONE_CGR is set, not creating conditional_group_routing_rules attribute in routing_queue %s resource", d.Id())
+		log.Printf("%s is set, not creating conditional_group_routing_rules attribute in routing_queue %s resource", cgrEnvToggle, d.Id())
 	}
 
 	if divisionID != "" {
@@ -226,10 +228,10 @@ func readQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 		_ = d.Set("teams", flattenQueueMemberGroupsList(currentQueue, &team))
 		_ = d.Set("groups", flattenQueueMemberGroupsList(currentQueue, &group))
 
-		if _, exists := os.LookupEnv("ENABLE_STANDALONE_CGR"); !exists {
+		if _, exists := os.LookupEnv(cgrEnvToggle); !exists {
 			_ = d.Set("conditional_group_routing_rules", flattenConditionalGroupRoutingRules(currentQueue))
 		} else {
-			log.Printf("ENABLE_STANDALONE_CGR is set, not reading conditional_group_routing_rules attribute in routing_queue %s resource", d.Id())
+			log.Printf("%s is set, not reading conditional_group_routing_rules attribute in routing_queue %s resource", cgrEnvToggle, d.Id())
 		}
 
 		log.Printf("Done reading queue %s %s", d.Id(), *currentQueue.Name)
@@ -272,14 +274,14 @@ func updateQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		MemberGroups:                 &memberGroups,
 	}
 
-	if _, exists := os.LookupEnv("ENABLE_STANDALONE_CGR"); !exists {
+	if _, exists := os.LookupEnv(cgrEnvToggle); !exists {
 		conditionalGroupRouting, diagErr := buildSdkConditionalGroupRouting(d)
 		if diagErr != nil {
 			return diagErr
 		}
 		updateQueue.ConditionalGroupRouting = conditionalGroupRouting
 	} else {
-		log.Printf("ENABLE_STANDALONE_CGR is set, not updating conditional_group_routing_rules attribute in routing_queue %s resource", d.Id())
+		log.Printf("%s is set, not updating conditional_group_routing_rules attribute in routing_queue %s resource", cgrEnvToggle, d.Id())
 	}
 
 	log.Printf("Updating queue %s", *updateQueue.Name)
