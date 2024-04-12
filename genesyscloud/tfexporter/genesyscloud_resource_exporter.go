@@ -87,6 +87,7 @@ type GenesysCloudResourceExporter struct {
 	exMutex                sync.RWMutex
 	cyclicDependsList      []string
 	ignoreCyclicDeps       bool
+	flowResourcesList      []string
 }
 
 func configureExporterType(ctx context.Context, d *schema.ResourceData, gre *GenesysCloudResourceExporter, filterType ExporterFilterType) {
@@ -503,7 +504,16 @@ func (g *GenesysCloudResourceExporter) processAndBuildDependencies() (filters []
 
 	for _, resourceKeys := range g.resources {
 
+		exists := util.StringExists(resourceKeys.State.ID, g.flowResourcesList)
+		if exists {
+			log.Printf("dependent consumers retrieved %v", resourceKeys.State.ID)
+			continue
+		}
+
 		resources, dependsStruct, err := proxy.GetAllWithPooledClient(retrieveDependentConsumers(resourceKeys))
+
+		g.flowResourcesList = append(g.flowResourcesList, resourceKeys.State.ID)
+
 		if err != nil {
 			return nil, nil, err
 		}
@@ -528,6 +538,7 @@ func (g *GenesysCloudResourceExporter) processAndBuildDependencies() (filters []
 }
 
 func (g *GenesysCloudResourceExporter) rebuildExports(filterList []string) (diagErr diag.Diagnostics) {
+	log.Printf("rebuild exporters list")
 	diagErr = g.retrieveExporters()
 	if diagErr != nil {
 		return diagErr
