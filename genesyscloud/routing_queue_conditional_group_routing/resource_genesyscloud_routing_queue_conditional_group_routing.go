@@ -25,6 +25,11 @@ func getAllAuthRoutingQueueConditionalGroup(ctx context.Context, clientConfig *p
 	resources := make(resourceExporter.ResourceIDMetaMap)
 	proxy := getRoutingQueueConditionalGroupRoutingProxy(clientConfig)
 
+	if _, exists := os.LookupEnv("ENABLE_STANDALONE_CGR"); !exists {
+		log.Printf("Environment variable ENABLE_STANDALONE_CGR not set, skipping exporter for %s", resourceName)
+		return nil, nil
+	}
+
 	queues, _, err := proxy.routingQueueProxy.GetAllRoutingQueues(ctx)
 	if err != nil {
 		return nil, diag.Errorf("failed to get conditional group routing rules: %s", err)
