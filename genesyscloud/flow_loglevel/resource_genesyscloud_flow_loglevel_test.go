@@ -47,14 +47,6 @@ func TestAccResourceFlowLogLevel(t *testing.T) {
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_flow_loglevel."+resourceId, "flow_log_level", flowLoglevelBase),
-					resource.TestCheckResourceAttr("genesyscloud_flow_loglevel."+resourceId, "flow_characteristics.0.communications", "false"),
-					resource.TestCheckResourceAttr("genesyscloud_flow_loglevel."+resourceId, "flow_characteristics.0.event_error", "true"),
-					resource.TestCheckResourceAttr("genesyscloud_flow_loglevel."+resourceId, "flow_characteristics.0.event_other", "false"),
-					resource.TestCheckResourceAttr("genesyscloud_flow_loglevel."+resourceId, "flow_characteristics.0.event_warning", "true"),
-					resource.TestCheckResourceAttr("genesyscloud_flow_loglevel."+resourceId, "flow_characteristics.0.execution_input_outputs", "false"),
-					resource.TestCheckResourceAttr("genesyscloud_flow_loglevel."+resourceId, "flow_characteristics.0.execution_items", "true"),
-					resource.TestCheckResourceAttr("genesyscloud_flow_loglevel."+resourceId, "flow_characteristics.0.names", "false"),
-					resource.TestCheckResourceAttr("genesyscloud_flow_loglevel."+resourceId, "flow_characteristics.0.variables", "false"),
 				),
 			},
 			{
@@ -66,14 +58,6 @@ func TestAccResourceFlowLogLevel(t *testing.T) {
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_flow_loglevel."+resourceId, "flow_log_level", flowLoglevelAll),
-					resource.TestCheckResourceAttr("genesyscloud_flow_loglevel."+resourceId, "flow_characteristics.0.communications", "true"),
-					resource.TestCheckResourceAttr("genesyscloud_flow_loglevel."+resourceId, "flow_characteristics.0.event_error", "true"),
-					resource.TestCheckResourceAttr("genesyscloud_flow_loglevel."+resourceId, "flow_characteristics.0.event_other", "true"),
-					resource.TestCheckResourceAttr("genesyscloud_flow_loglevel."+resourceId, "flow_characteristics.0.event_warning", "true"),
-					resource.TestCheckResourceAttr("genesyscloud_flow_loglevel."+resourceId, "flow_characteristics.0.execution_input_outputs", "true"),
-					resource.TestCheckResourceAttr("genesyscloud_flow_loglevel."+resourceId, "flow_characteristics.0.execution_items", "true"),
-					resource.TestCheckResourceAttr("genesyscloud_flow_loglevel."+resourceId, "flow_characteristics.0.names", "true"),
-					resource.TestCheckResourceAttr("genesyscloud_flow_loglevel."+resourceId, "flow_characteristics.0.variables", "true"),
 				),
 			},
 			{
@@ -85,14 +69,6 @@ func TestAccResourceFlowLogLevel(t *testing.T) {
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_flow_loglevel."+resourceId, "flow_log_level", flowLogLevelDisabled),
-					resource.TestCheckResourceAttr("genesyscloud_flow_loglevel."+resourceId, "flow_characteristics.0.communications", "false"),
-					resource.TestCheckResourceAttr("genesyscloud_flow_loglevel."+resourceId, "flow_characteristics.0.event_error", "false"),
-					resource.TestCheckResourceAttr("genesyscloud_flow_loglevel."+resourceId, "flow_characteristics.0.event_other", "false"),
-					resource.TestCheckResourceAttr("genesyscloud_flow_loglevel."+resourceId, "flow_characteristics.0.event_warning", "false"),
-					resource.TestCheckResourceAttr("genesyscloud_flow_loglevel."+resourceId, "flow_characteristics.0.execution_input_outputs", "false"),
-					resource.TestCheckResourceAttr("genesyscloud_flow_loglevel."+resourceId, "flow_characteristics.0.execution_items", "false"),
-					resource.TestCheckResourceAttr("genesyscloud_flow_loglevel."+resourceId, "flow_characteristics.0.names", "false"),
-					resource.TestCheckResourceAttr("genesyscloud_flow_loglevel."+resourceId, "flow_characteristics.0.variables", "false"),
 				),
 			},
 		},
@@ -106,8 +82,7 @@ func testVerifyFlowLogLevelDestroyed(state *terraform.State) error {
 		if rs.Type != "genesyscloud_flow_loglevel" {
 			continue
 		}
-		expandArray := []string{"logLevelCharacteristics.characteristics"}
-		flowLogLevel, resp, err := architectAPI.GetFlowInstancesSettingsLoglevels(rs.Primary.ID, expandArray)
+		flowLogLevel, resp, err := architectAPI.GetFlowInstancesSettingsLoglevels(rs.Primary.ID, nil)
 		if flowLogLevel != nil {
 			return fmt.Errorf("flowLogLevel for flowId (%s) still exists", rs.Primary.ID)
 		} else if util.IsStatus404(resp) {

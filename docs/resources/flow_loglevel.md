@@ -36,20 +36,5 @@ resource "genesyscloud_flow_loglevel" "flowLogLevel" {
 
 ### Read-Only
 
-- `flow_characteristics` (List of Object) Shows what characteristics are enabled for this log level (see [below for nested schema](#nestedatt--flow_characteristics))
 - `id` (String) The ID of this resource.
-
-<a id="nestedatt--flow_characteristics"></a>
-### Nested Schema for `flow_characteristics`
-
-Read-Only:
-
-- `communications` (Boolean)
-- `event_error` (Boolean)
-- `event_other` (Boolean)
-- `event_warning` (Boolean)
-- `execution_input_outputs` (Boolean)
-- `execution_items` (Boolean)
-- `names` (Boolean)
-- `variables` (Boolean)
 

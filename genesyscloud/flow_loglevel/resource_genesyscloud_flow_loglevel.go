@@ -98,7 +98,6 @@ func readFlowLogLevel(ctx context.Context, d *schema.ResourceData, meta interfac
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceFlowLoglevel())
 		resourcedata.SetNillableValue(d, "flow_log_level", flowLogLevel.Level)
-		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "flow_characteristics", flowLogLevel.Characteristics, flattenFlowCharacteristics)
 
 		log.Printf("Read flow log level %s", flowId)
 		return cc.CheckState()

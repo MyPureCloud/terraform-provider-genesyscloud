@@ -99,7 +99,7 @@ func (p *flowLogLevelProxy) deleteFlowLogLevelById(ctx context.Context, flowId s
 
 // createFlowLogLevelFn is an implementation function for creating a Genesys Cloud Flow Log Level
 func createFlowLogLevelFn(ctx context.Context, p *flowLogLevelProxy, flowId string, flowLogLevelRequest *platformclientv2.Flowloglevelrequest) (*platformclientv2.Flowsettingsresponse, *platformclientv2.APIResponse, error) {
-	flowLogLevel, apiResponse, err := p.architectApi.PostFlowInstancesSettingsLoglevels(flowId, *flowLogLevelRequest, []string{"logLevelCharacteristics.characteristics"})
+	flowLogLevel, apiResponse, err := p.architectApi.PostFlowInstancesSettingsLoglevels(flowId, *flowLogLevelRequest, nil)
 
 	if err != nil {
 		return nil, apiResponse, fmt.Errorf("Failed to create flow log level: %s", err)
@@ -110,7 +110,7 @@ func createFlowLogLevelFn(ctx context.Context, p *flowLogLevelProxy, flowId stri
 
 // getFlowLogLevelByIdFn is an implementation of the function to get a Genesys Cloud Flow Log Level by Id
 func getFlowLogLevelByIdFn(ctx context.Context, p *flowLogLevelProxy, flowId string) (*platformclientv2.Flowsettingsresponse, *platformclientv2.APIResponse, error) {
-	flowLogLevel, apiResponse, err := p.architectApi.GetFlowInstancesSettingsLoglevels(flowId, []string{"logLevelCharacteristics.characteristics"})
+	flowLogLevel, apiResponse, err := p.architectApi.GetFlowInstancesSettingsLoglevels(flowId, nil)
 	if err != nil {
 		return nil, apiResponse, fmt.Errorf("Failed to retrieve flow log level by id %s: %s", flowId, err)
 	}
@@ -123,7 +123,7 @@ func getAllFlowLogLevelsFn(ctx context.Context, p *flowLogLevelProxy) (*[]platfo
 	const pageSize = 100
 	var totalFlowLogLevels []platformclientv2.Flowsettingsresponse
 
-	flowSettingsResponse, apiResponse, err := p.architectApi.GetFlowsInstancesSettingsLoglevels([]string{"logLevelCharacteristics.characteristics"}, 1, pageSize)
+	flowSettingsResponse, apiResponse, err := p.architectApi.GetFlowsInstancesSettingsLoglevels(nil, 1, pageSize)
 	if err != nil {
 		return nil, apiResponse, fmt.Errorf("Failed to get page of flows: %v", err)
 	}
@@ -131,7 +131,7 @@ func getAllFlowLogLevelsFn(ctx context.Context, p *flowLogLevelProxy) (*[]platfo
 	totalFlowLogLevels = append(totalFlowLogLevels, *flowSettingsResponse.Entities...)
 
 	for pageNum := 2; pageNum <= *flowSettingsResponse.PageCount; pageNum++ {
-		flowSettingsResponse, apiResponse, err := p.architectApi.GetFlowsInstancesSettingsLoglevels([]string{"logLevelCharacteristics.characteristics"}, pageNum, pageSize)
+		flowSettingsResponse, apiResponse, err := p.architectApi.GetFlowsInstancesSettingsLoglevels(nil, pageNum, pageSize)
 		if err != nil {
 			return nil, apiResponse, fmt.Errorf("Failed to get page %d of flow log levels: %v", pageNum, err)
 		}
@@ -142,7 +142,7 @@ func getAllFlowLogLevelsFn(ctx context.Context, p *flowLogLevelProxy) (*[]platfo
 
 // updateFlowLogLevelFn is an implementation of the function to update a Genesys Cloud flow log level
 func updateFlowLogLevelFn(ctx context.Context, p *flowLogLevelProxy, flowLogLevelId string, flowLogLevelRequest *platformclientv2.Flowloglevelrequest) (*platformclientv2.Flowsettingsresponse, *platformclientv2.APIResponse, error) {
-	flowSettingsResponse, apiResponse, err := p.architectApi.PutFlowInstancesSettingsLoglevels(flowLogLevelId, *flowLogLevelRequest, []string{"logLevelCharacteristics.characteristics"})
+	flowSettingsResponse, apiResponse, err := p.architectApi.PutFlowInstancesSettingsLoglevels(flowLogLevelId, *flowLogLevelRequest, nil)
 	if err != nil {
 		return nil, apiResponse, fmt.Errorf("Failed to update flow log level: %s", err)
 	}
