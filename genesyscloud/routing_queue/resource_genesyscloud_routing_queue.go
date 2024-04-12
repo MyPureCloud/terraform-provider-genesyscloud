@@ -29,6 +29,8 @@ import (
 
 var bullseyeExpansionTypeTimeout = "TIMEOUT_SECONDS"
 
+const cgrEnvToggle = "ENABLE_STANDALONE_CGR"
+
 func getAllRoutingQueues(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
 	resources := make(resourceExporter.ResourceIDMetaMap)
 	proxy := GetRoutingQueueProxy(clientConfig)

@@ -9,6 +9,7 @@ import (
 )
 
 const resourceName = "genesyscloud_routing_queue_conditional_group_routing"
+const EnvToggle = "ENABLE_STANDALONE_CGR"
 
 // SetRegistrar registers all the resources and exporters in the package
 func SetRegistrar(regInstance registrar.Registrar) {
