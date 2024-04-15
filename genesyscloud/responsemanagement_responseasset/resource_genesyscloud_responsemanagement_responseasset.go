@@ -10,14 +10,30 @@ import (
 	"log"
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"terraform-provider-genesyscloud/genesyscloud/util/files"
 	"time"
 )
 
 /*
-The resource_genesyscloud_responsemanagement_responseasset.go contains all of the methods that perform the core logic for a resource.
+The resource_genesyscloud_responsemanagement_responseasset.go contains all the methods that perform the core logic for a resource.
 */
+func getAllResponseAssets(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+	proxy := getRespManagementRespAssetProxy(clientConfig)
+	resources := make(resourceExporter.ResourceIDMetaMap)
+
+	assets, resp, err := proxy.getAllResponseAssets(ctx)
+	if err != nil {
+		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get response management response assets | Error: %s", err), resp)
+	}
+
+	for _, asset := range *assets {
+		resources[*asset.Id] = &resourceExporter.ResourceMeta{Name: *asset.Name}
+	}
+
+	return resources, nil
+}
 
 // createResponsemanagementResponseasset is used by the responsemanagement_responseasset resource to create Genesys cloud responsemanagement responseasset
 func createRespManagementRespAsset(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -38,7 +54,7 @@ func createRespManagementRespAsset(ctx context.Context, d *schema.ResourceData, 
 	log.Printf("Creating Responsemanagement response asset %s", fileName)
 	postResponseData, resp, err := proxy.createRespManagementRespAsset(ctx, &sdkResponseAsset)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create response asset %s error: %s", fileName, err), resp)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("failed to upload response asset: %s | error: %s", fileName, err), resp)
 	}
 
 	headers := *postResponseData.Headers
@@ -72,9 +88,9 @@ func readRespManagementRespAsset(ctx context.Context, d *schema.ResourceData, me
 		sdkAsset, resp, getErr := proxy.getRespManagementRespAssetById(ctx, d.Id())
 		if getErr != nil {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(fmt.Errorf("Failed to read response asset %s: %s", d.Id(), getErr))
+				return retry.RetryableError(fmt.Errorf("failed to read response asset %s: %s", d.Id(), getErr))
 			}
-			return retry.NonRetryableError(fmt.Errorf("Failed to read response asset %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(fmt.Errorf("failed to read response asset %s: %s", d.Id(), getErr))
 		}
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceResponseManagementResponseAsset())
@@ -99,7 +115,6 @@ func updateRespManagementRespAsset(ctx context.Context, d *schema.ResourceData, 
 
 	var bodyRequest platformclientv2.Responseassetrequest
 	bodyRequest.Name = &fileName
-
 	if divisionId != "" {
 		bodyRequest.DivisionId = &divisionId
 	}
@@ -107,7 +122,7 @@ func updateRespManagementRespAsset(ctx context.Context, d *schema.ResourceData, 
 	log.Printf("Updating Responsemanagement response asset %s", d.Id())
 	putResponseData, resp, err := proxy.updateRespManagementRespAsset(ctx, d.Id(), &bodyRequest)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update Responsemanagement response asset%s error: %s", d.Id(), err), resp)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("failed to update response asset: %s | error: %s", d.Id(), err), resp)
 	}
 
 	// Adding a sleep with retry logic to determine when the division ID has actually been updated.
@@ -117,25 +132,26 @@ func updateRespManagementRespAsset(ctx context.Context, d *schema.ResourceData, 
 		time.Sleep(20 * time.Second)
 		getResponseData, resp, err := proxy.getRespManagementRespAssetById(ctx, d.Id())
 		if err != nil {
-			return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to read response asset %s error: %s", d.Id(), err), resp)
+			return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("failed to read response asset: %s | error: %s", d.Id(), err), resp)
 		}
 		if *getResponseData.Division.Id == *putResponseData.Division.Id {
 			log.Printf("Updated Responsemanagement response asset %s", d.Id())
 			return readRespManagementRespAsset(ctx, d, meta)
 		}
 	}
-	return diag.Errorf("Responsemanagement response asset %s did not update properly", d.Id())
+	return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Responsemanagement response asset %s did not update properly | error: %s", d.Id(), err), resp)
 }
 
 // deleteResponsemanagementResponseasset is used by the responsemanagement_responseasset resource to delete an responsemanagement responseasset from Genesys cloud
 func deleteRespManagementRespAsset(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getRespManagementRespAssetProxy(sdkConfig)
+
 	diagErr := util.RetryWhen(util.IsStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		log.Printf("Deleting Responsemanagement response asset")
 		resp, err := proxy.deleteRespManagementRespAsset(ctx, d.Id())
 		if err != nil {
-			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete response asset %s error: %s", d.Id(), err), resp)
+			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("failed to delete response asset: %s | error: %s", d.Id(), err), resp)
 		}
 		return resp, nil
 	})
@@ -152,17 +168,8 @@ func deleteRespManagementRespAsset(ctx context.Context, d *schema.ResourceData, 
 				log.Printf("Deleted Responsemanagement response asset %s", d.Id())
 				return nil
 			}
-			return retry.NonRetryableError(fmt.Errorf("Error deleting response asset %s: %s", d.Id(), err))
+			return retry.NonRetryableError(fmt.Errorf("error deleting response asset %s: %s", d.Id(), err))
 		}
-		return retry.RetryableError(fmt.Errorf("Response asset %s still exists", d.Id()))
+		return retry.RetryableError(fmt.Errorf("response asset %s still exists", d.Id()))
 	})
-}
-
-func GenerateResponseManagementResponseAssetResource(resourceId string, fileName string, divisionId string) string {
-	return fmt.Sprintf(`
-resource "genesyscloud_responsemanagement_responseasset" "%s" {
-    filename    = "%s"
-    division_id = %s
-}
-`, resourceId, fileName, divisionId)
 }
