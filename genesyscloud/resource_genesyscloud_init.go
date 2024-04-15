@@ -65,7 +65,6 @@ func registerResources(l registrar.Registrar) {
 	l.RegisterResource("genesyscloud_knowledge_v1_category", ResourceKnowledgeCategoryV1())
 	l.RegisterResource("genesyscloud_knowledge_label", ResourceKnowledgeLabel())
 	l.RegisterResource("genesyscloud_location", ResourceLocation())
-	l.RegisterResource("genesyscloud_orgauthorization_pairing", resourceOrgauthorizationPairing())
 	l.RegisterResource("genesyscloud_quality_forms_evaluation", ResourceEvaluationForm())
 	l.RegisterResource("genesyscloud_quality_forms_survey", ResourceSurveyForm())
 	l.RegisterResource("genesyscloud_routing_email_domain", ResourceRoutingEmailDomain())
