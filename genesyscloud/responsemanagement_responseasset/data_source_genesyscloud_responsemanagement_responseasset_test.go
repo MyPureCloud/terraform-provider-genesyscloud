@@ -3,6 +3,7 @@ package responsemanagement_responseasset
 import (
 	"fmt"
 	"log"
+	"path/filepath"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
@@ -14,7 +15,7 @@ func TestAccDataSourceResponseManagementResponseAsset(t *testing.T) {
 	var (
 		resourceId   = "resp_asset"
 		testDirName  = "test_responseasset_data"
-		fileName     = fmt.Sprintf("%s/yeti-img.png", testDirName)
+		fileName     = filepath.Join(testDirName, "yeti-img.png")
 		dataSourceId = "resp_asset_data"
 	)
 
