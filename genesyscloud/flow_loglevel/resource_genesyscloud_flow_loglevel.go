@@ -152,3 +152,10 @@ func deleteFlowLogLevel(ctx context.Context, d *schema.ResourceData, meta interf
 		return retry.RetryableError(fmt.Errorf("flow log level %s still exists", flowId))
 	})
 }
+
+// getFlowLogLevelFromResourceData maps data from schema ResourceData object to a platformclientv2.Flowloglevel
+func getFlowLogLevelFromResourceData(d *schema.ResourceData) *platformclientv2.Flowloglevel {
+	return &platformclientv2.Flowloglevel{
+		Level: platformclientv2.String(d.Get("flow_log_level").(string)),
+	}
+}

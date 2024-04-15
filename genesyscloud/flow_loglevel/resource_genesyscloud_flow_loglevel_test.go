@@ -50,7 +50,7 @@ func TestAccResourceFlowLogLevel(t *testing.T) {
 				),
 			},
 			{
-				// Create using flow log level All
+				// Update using flow log level All
 				Config: flowResourceConfig + generateFlowLogLevelResource(
 					flowId,
 					flowLoglevelAll,
@@ -61,7 +61,7 @@ func TestAccResourceFlowLogLevel(t *testing.T) {
 				),
 			},
 			{
-				// Create using flow log level Disabled
+				// Update using flow log level Disabled
 				Config: flowResourceConfig + generateFlowLogLevelResource(
 					flowId,
 					flowLogLevelDisabled,

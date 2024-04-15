@@ -3,6 +3,7 @@ package flow_loglevel
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
 )
 
@@ -19,6 +20,14 @@ const resourceName = "genesyscloud_flow_loglevel"
 // SetRegistrar registers all of the resources, datasources and exporters in the package
 func SetRegistrar(regInstance registrar.Registrar) {
 	regInstance.RegisterResource(resourceName, ResourceFlowLoglevel())
+}
+
+// FlowMilestoneExporter returns the resourceExporter object used to hold the genesyscloud_flow_milestone exporter's config
+func FlowLogLevelExporter() *resourceExporter.ResourceExporter {
+	return &resourceExporter.ResourceExporter{
+		GetResourcesFunc: provider.GetAllWithPooledClient(getAllFlowLogLevels),
+		RefAttrs:         map[string]*resourceExporter.RefAttrSettings{}, // No references
+	}
 }
 
 // ResourceFlowLoglevel registers the genesyscloud_flow_loglevel resource with Terraform
@@ -39,6 +48,7 @@ func ResourceFlowLoglevel() *schema.Resource {
 				Description: "The flowId for this characteristics set",
 				Type:        schema.TypeString,
 				Required:    true,
+				ForceNew:    true,
 			},
 			"flow_log_level": {
 				Description: "The logLevel for this characteristics set",
