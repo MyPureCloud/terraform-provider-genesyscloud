@@ -176,6 +176,7 @@ func TestAccResourceRoutingQueueParToCGR(t *testing.T) {
 		wrapupPromptMandTimeout = "MANDATORY_TIMEOUT"
 		routingRuleOpAny        = "ANY"
 		skillEvalAll            = "ALL"
+		callbackHours           = "7"
 
 		skillGroupResourceId = "skillgroup"
 		skillGroupName       = "test skillgroup " + uuid.NewString()
@@ -204,6 +205,7 @@ func TestAccResourceRoutingQueueParToCGR(t *testing.T) {
 					util.NullValue,  // enable_transcription false
 					util.FalseValue, // suppress_in_queue_call_recording false
 					util.NullValue,  // enable_manual_assignment false
+					GenerateAgentOwnedRouting("agent_owned_routing", util.TrueValue, callbackHours, callbackHours),
 					GenerateMediaSettings("media_settings_call", alertTimeout1, util.FalseValue, slPercent1, slDuration1),
 					GenerateMediaSettings("media_settings_callback", alertTimeout1, util.FalseValue, slPercent1, slDuration1),
 					GenerateMediaSettings("media_settings_chat", alertTimeout1, util.FalseValue, slPercent1, slDuration1),
@@ -229,6 +231,7 @@ func TestAccResourceRoutingQueueParToCGR(t *testing.T) {
 					validateMediaSettings(queueResource1, "media_settings_chat", alertTimeout1, util.FalseValue, slPercent1, slDuration1),
 					validateMediaSettings(queueResource1, "media_settings_email", alertTimeout1, util.FalseValue, slPercent1, slDuration1),
 					validateMediaSettings(queueResource1, "media_settings_message", alertTimeout1, util.FalseValue, slPercent1, slDuration1),
+					validateAgentOwnedRouting(queueResource1, "agent_owned_routing", util.TrueValue, callbackHours, callbackHours),
 					validateRoutingRules(queueResource1, 0, routingRuleOpAny, "50", "6"),
 				),
 			},
@@ -1137,6 +1140,14 @@ func validateMediaSettings(resourceName, settingsAttr, alertingTimeout, enableAu
 		resource.TestCheckResourceAttr("genesyscloud_routing_queue."+resourceName, settingsAttr+".0.service_level_percentage", slPercent),
 		resource.TestCheckResourceAttr("genesyscloud_routing_queue."+resourceName, settingsAttr+".0.service_level_duration_ms", slDurationMs),
 		resource.TestCheckResourceAttr("genesyscloud_routing_queue."+resourceName, settingsAttr+".0.enable_auto_answer", enableAutoAnswer),
+	)
+}
+
+func validateAgentOwnedRouting(resourceName string, agentattr, enableAgentOwnedCallBacks string, maxOwnedCallBackHours string, maxOwnedCallBackDelayHours string) resource.TestCheckFunc {
+	return resource.ComposeAggregateTestCheckFunc(
+		resource.TestCheckResourceAttr("genesyscloud_routing_queue."+resourceName, agentattr+".0.enable_agent_owned_callbacks", enableAgentOwnedCallBacks),
+		resource.TestCheckResourceAttr("genesyscloud_routing_queue."+resourceName, agentattr+".0.max_owned_callback_hours", maxOwnedCallBackHours),
+		resource.TestCheckResourceAttr("genesyscloud_routing_queue."+resourceName, agentattr+".0.max_owned_callback_delay_hours", maxOwnedCallBackDelayHours),
 	)
 }
 

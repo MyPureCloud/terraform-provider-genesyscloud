@@ -66,6 +66,15 @@ func GenerateRoutingQueueResourceBasicWithDepends(resourceID string, dependsOn s
 	`, resourceID, dependsOn, name, strings.Join(nestedBlocks, "\n"))
 }
 
+func GenerateAgentOwnedRouting(attrName string, enableAgentOwnedCallBacks string, maxOwnedCallBackHours string, maxOwnedCallBackDelayHours string) string {
+	return fmt.Sprintf(`%s {
+		enable_agent_owned_callbacks = %s
+		max_owned_callback_hours = %s
+		max_owned_callback_delay_hours = %s
+	}
+	`, attrName, enableAgentOwnedCallBacks, maxOwnedCallBackHours, maxOwnedCallBackDelayHours)
+}
+
 func GenerateMediaSettings(attrName string, alertingTimeout string, enableAutoAnswer string, slPercent string, slDurationMs string) string {
 	return fmt.Sprintf(`%s {
 		alerting_timeout_sec = %s

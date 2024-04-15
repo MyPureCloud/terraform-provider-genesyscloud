@@ -71,6 +71,7 @@ func createQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		Bullseye:                     buildSdkBullseyeSettings(d),
 		ConditionalGroupRouting:      conditionalGroupRouting,
 		AcwSettings:                  buildSdkAcwSettings(d),
+		AgentOwnedRouting:            constructAgentOwnedRouting(d),
 		SkillEvaluationMethod:        platformclientv2.String(d.Get("skill_evaluation_method").(string)),
 		QueueFlow:                    util.BuildSdkDomainEntityRef(d, "queue_flow_id"),
 		EmailInQueueFlow:             util.BuildSdkDomainEntityRef(d, "email_in_queue_flow_id"),
@@ -154,6 +155,7 @@ func readQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 		_ = d.Set("media_settings_chat", nil)
 		_ = d.Set("media_settings_email", nil)
 		_ = d.Set("media_settings_message", nil)
+		_ = d.Set("agent_owned_routing", nil)
 
 		if currentQueue.MediaSettings != nil {
 			resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "media_settings_call", currentQueue.MediaSettings.Call, flattenMediaSetting)
@@ -161,6 +163,10 @@ func readQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 			resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "media_settings_chat", currentQueue.MediaSettings.Chat, flattenMediaSetting)
 			resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "media_settings_email", currentQueue.MediaSettings.Email, flattenMediaSetting)
 			resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "media_settings_message", currentQueue.MediaSettings.Message, flattenMediaSetting)
+		}
+
+		if currentQueue.AgentOwnedRouting != nil {
+			resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "agent_owned_routing", currentQueue.AgentOwnedRouting, flattenAgentOwnedRouting)
 		}
 
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "routing_rules", currentQueue.RoutingRules, flattenRoutingRules)
@@ -359,6 +365,23 @@ func buildSdkMediaSettings(d *schema.ResourceData) *platformclientv2.Queuemedias
 	return queueMediaSettings
 }
 
+func constructAgentOwnedRouting(d *schema.ResourceData) *platformclientv2.Agentownedrouting {
+	if agentOwnedRouting, ok := d.Get("agent_owned_routing").([]interface{}); ok {
+		return buildAgentOwnedRouting(agentOwnedRouting)
+	}
+	return &platformclientv2.Agentownedrouting{}
+}
+
+func buildAgentOwnedRouting(routing []interface{}) *platformclientv2.Agentownedrouting {
+	settingsMap := routing[0].(map[string]interface{})
+
+	return &platformclientv2.Agentownedrouting{
+		EnableAgentOwnedCallbacks:  platformclientv2.Bool(settingsMap["enable_agent_owned_callbacks"].(bool)),
+		MaxOwnedCallbackDelayHours: platformclientv2.Int(settingsMap["max_owned_callback_delay_hours"].(int)),
+		MaxOwnedCallbackHours:      platformclientv2.Int(settingsMap["max_owned_callback_hours"].(int)),
+	}
+}
+
 func buildSdkMediaSetting(settings []interface{}) *platformclientv2.Mediasettings {
 	settingsMap := settings[0].(map[string]interface{})
 
@@ -371,7 +394,6 @@ func buildSdkMediaSetting(settings []interface{}) *platformclientv2.Mediasetting
 		},
 	}
 }
-
 func buildSdkMediaSettingCallback(settings []interface{}) *platformclientv2.Callbackmediasettings {
 	settingsMap := settings[0].(map[string]interface{})
 
@@ -381,8 +403,21 @@ func buildSdkMediaSettingCallback(settings []interface{}) *platformclientv2.Call
 			Percentage: platformclientv2.Float64(settingsMap["service_level_percentage"].(float64)),
 			DurationMs: platformclientv2.Int(settingsMap["service_level_duration_ms"].(int)),
 		},
-		EnableAutoAnswer: platformclientv2.Bool(settingsMap["enable_auto_answer"].(bool)),
+		EnableAutoAnswer:     platformclientv2.Bool(settingsMap["enable_auto_answer"].(bool)),
+		AutoEndDelaySeconds:  platformclientv2.Int(settingsMap["auto_end_delay_seconds"].(int)),
+		AutoDialDelaySeconds: platformclientv2.Int(settingsMap["auto_dial_delay_seconds"].(int)),
+		EnableAutoDialAndEnd: platformclientv2.Bool(settingsMap["enable_auto_dial_and_end"].(bool)),
 	}
+}
+
+func flattenAgentOwnedRouting(settings *platformclientv2.Agentownedrouting) []interface{} {
+	settingsMap := make(map[string]interface{})
+
+	settingsMap["max_owned_callback_delay_hours"] = *settings.MaxOwnedCallbackDelayHours
+	resourcedata.SetMapValueIfNotNil(settingsMap, "enable_agent_owned_callbacks", settings.EnableAgentOwnedCallbacks)
+	settingsMap["max_owned_callback_hours"] = *settings.MaxOwnedCallbackHours
+
+	return []interface{}{settingsMap}
 }
 
 func flattenMediaSetting(settings *platformclientv2.Mediasettings) []interface{} {

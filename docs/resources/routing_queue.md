@@ -84,6 +84,7 @@ resource "genesyscloud_routing_queue" "example_queue" {
 
 - `acw_timeout_ms` (Number) The amount of time the agent can stay in ACW. Only set when ACW is MANDATORY_TIMEOUT, MANDATORY_FORCED_TIMEOUT or AGENT_REQUESTED.
 - `acw_wrapup_prompt` (String) This field controls how the UI prompts the agent for a wrapup (MANDATORY | OPTIONAL | MANDATORY_TIMEOUT | MANDATORY_FORCED_TIMEOUT | AGENT_REQUESTED). Defaults to `MANDATORY_TIMEOUT`.
+- `agent_owned_routing` (Block List, Max: 1) Agent Owned Routing. (see [below for nested schema](#nestedblock--agent_owned_routing))
 - `auto_answer_only` (Boolean) Specifies whether the configured whisper should play for all ACD calls, or only for those which are auto-answered. Defaults to `true`.
 - `bullseye_rings` (Block List, Max: 5) The bullseye ring settings for the queue. (see [below for nested schema](#nestedblock--bullseye_rings))
 - `calling_party_name` (String) The name to use for caller identification for outbound calls from this queue.
@@ -118,6 +119,16 @@ resource "genesyscloud_routing_queue" "example_queue" {
 ### Read-Only
 
 - `id` (String) The ID of this resource.
+
+<a id="nestedblock--agent_owned_routing"></a>
+### Nested Schema for `agent_owned_routing`
+
+Required:
+
+- `enable_agent_owned_callbacks` (Boolean) Enable Agent Owned Callbacks Defaults to `false`.
+- `max_owned_callback_delay_hours` (Number) Max Owned Call Back Delay Hours >= 7
+- `max_owned_callback_hours` (Number) Auto End Delay Seconds Must be >= 7
+
 
 <a id="nestedblock--bullseye_rings"></a>
 ### Nested Schema for `bullseye_rings`
@@ -190,7 +201,10 @@ Required:
 
 Optional:
 
+- `auto_dial_delay_seconds` (Number) Auto Dial Delay Seconds Must be >= 7
+- `auto_end_delay_seconds` (Number) Auto End Delay Seconds Must be >= 7
 - `enable_auto_answer` (Boolean) Auto-Answer for digital channels(Email, Message) Defaults to `false`.
+- `enable_auto_dial_and_end` (Boolean) Auto Dail and End Defaults to `false`.
 
 
 <a id="nestedblock--media_settings_callback"></a>
@@ -204,7 +218,10 @@ Required:
 
 Optional:
 
+- `auto_dial_delay_seconds` (Number) Auto Dial Delay Seconds Must be >= 7
+- `auto_end_delay_seconds` (Number) Auto End Delay Seconds Must be >= 7
 - `enable_auto_answer` (Boolean) Auto-Answer for digital channels(Email, Message) Defaults to `false`.
+- `enable_auto_dial_and_end` (Boolean) Auto Dail and End Defaults to `false`.
 
 
 <a id="nestedblock--media_settings_chat"></a>
@@ -218,7 +235,10 @@ Required:
 
 Optional:
 
+- `auto_dial_delay_seconds` (Number) Auto Dial Delay Seconds Must be >= 7
+- `auto_end_delay_seconds` (Number) Auto End Delay Seconds Must be >= 7
 - `enable_auto_answer` (Boolean) Auto-Answer for digital channels(Email, Message) Defaults to `false`.
+- `enable_auto_dial_and_end` (Boolean) Auto Dail and End Defaults to `false`.
 
 
 <a id="nestedblock--media_settings_email"></a>
@@ -232,7 +252,10 @@ Required:
 
 Optional:
 
+- `auto_dial_delay_seconds` (Number) Auto Dial Delay Seconds Must be >= 7
+- `auto_end_delay_seconds` (Number) Auto End Delay Seconds Must be >= 7
 - `enable_auto_answer` (Boolean) Auto-Answer for digital channels(Email, Message) Defaults to `false`.
+- `enable_auto_dial_and_end` (Boolean) Auto Dail and End Defaults to `false`.
 
 
 <a id="nestedblock--media_settings_message"></a>
@@ -246,7 +269,10 @@ Required:
 
 Optional:
 
+- `auto_dial_delay_seconds` (Number) Auto Dial Delay Seconds Must be >= 7
+- `auto_end_delay_seconds` (Number) Auto End Delay Seconds Must be >= 7
 - `enable_auto_answer` (Boolean) Auto-Answer for digital channels(Email, Message) Defaults to `false`.
+- `enable_auto_dial_and_end` (Boolean) Auto Dail and End Defaults to `false`.
 
 
 <a id="nestedatt--members"></a>
