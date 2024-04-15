@@ -63,16 +63,16 @@ var (
 				ValidateFunc: validation.IntAtLeast(7),
 			},
 			"auto_end_delay_seconds": {
-				Description:  "Auto End Delay Seconds Must be >= 7",
+				Description:  "Auto End Delay Seconds Must be >= 5",
 				Type:         schema.TypeInt,
 				Optional:     true,
-				ValidateFunc: validation.IntAtLeast(7),
+				ValidateFunc: validation.IntAtLeast(5),
 			},
 			"auto_dial_delay_seconds": {
-				Description:  "Auto Dial Delay Seconds Must be >= 7",
+				Description:  "Auto Dial Delay Seconds Must be >= 5",
 				Type:         schema.TypeInt,
 				Optional:     true,
-				ValidateFunc: validation.IntAtLeast(7),
+				ValidateFunc: validation.IntAtLeast(5),
 			},
 			"enable_auto_answer": {
 				Description: "Auto-Answer for digital channels(Email, Message)",

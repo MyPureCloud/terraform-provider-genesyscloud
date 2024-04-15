@@ -201,8 +201,8 @@ Required:
 
 Optional:
 
-- `auto_dial_delay_seconds` (Number) Auto Dial Delay Seconds Must be >= 7
-- `auto_end_delay_seconds` (Number) Auto End Delay Seconds Must be >= 7
+- `auto_dial_delay_seconds` (Number) Auto Dial Delay Seconds Must be >= 5
+- `auto_end_delay_seconds` (Number) Auto End Delay Seconds Must be >= 5
 - `enable_auto_answer` (Boolean) Auto-Answer for digital channels(Email, Message) Defaults to `false`.
 - `enable_auto_dial_and_end` (Boolean) Auto Dail and End Defaults to `false`.
 
@@ -218,8 +218,8 @@ Required:
 
 Optional:
 
-- `auto_dial_delay_seconds` (Number) Auto Dial Delay Seconds Must be >= 7
-- `auto_end_delay_seconds` (Number) Auto End Delay Seconds Must be >= 7
+- `auto_dial_delay_seconds` (Number) Auto Dial Delay Seconds Must be >= 5
+- `auto_end_delay_seconds` (Number) Auto End Delay Seconds Must be >= 5
 - `enable_auto_answer` (Boolean) Auto-Answer for digital channels(Email, Message) Defaults to `false`.
 - `enable_auto_dial_and_end` (Boolean) Auto Dail and End Defaults to `false`.
 
@@ -235,8 +235,8 @@ Required:
 
 Optional:
 
-- `auto_dial_delay_seconds` (Number) Auto Dial Delay Seconds Must be >= 7
-- `auto_end_delay_seconds` (Number) Auto End Delay Seconds Must be >= 7
+- `auto_dial_delay_seconds` (Number) Auto Dial Delay Seconds Must be >= 5
+- `auto_end_delay_seconds` (Number) Auto End Delay Seconds Must be >= 5
 - `enable_auto_answer` (Boolean) Auto-Answer for digital channels(Email, Message) Defaults to `false`.
 - `enable_auto_dial_and_end` (Boolean) Auto Dail and End Defaults to `false`.
 
@@ -252,8 +252,8 @@ Required:
 
 Optional:
 
-- `auto_dial_delay_seconds` (Number) Auto Dial Delay Seconds Must be >= 7
-- `auto_end_delay_seconds` (Number) Auto End Delay Seconds Must be >= 7
+- `auto_dial_delay_seconds` (Number) Auto Dial Delay Seconds Must be >= 5
+- `auto_end_delay_seconds` (Number) Auto End Delay Seconds Must be >= 5
 - `enable_auto_answer` (Boolean) Auto-Answer for digital channels(Email, Message) Defaults to `false`.
 - `enable_auto_dial_and_end` (Boolean) Auto Dail and End Defaults to `false`.
 
@@ -269,8 +269,8 @@ Required:
 
 Optional:
 
-- `auto_dial_delay_seconds` (Number) Auto Dial Delay Seconds Must be >= 7
-- `auto_end_delay_seconds` (Number) Auto End Delay Seconds Must be >= 7
+- `auto_dial_delay_seconds` (Number) Auto Dial Delay Seconds Must be >= 5
+- `auto_end_delay_seconds` (Number) Auto End Delay Seconds Must be >= 5
 - `enable_auto_answer` (Boolean) Auto-Answer for digital channels(Email, Message) Defaults to `false`.
 - `enable_auto_dial_and_end` (Boolean) Auto Dail and End Defaults to `false`.
 
