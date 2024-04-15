@@ -24,10 +24,10 @@ func dataSourceOutboundCampaignRead(ctx context.Context, d *schema.ResourceData,
 	name := d.Get("name").(string)
 
 	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
-		campaignId, retryable, err := proxy.getOutboundCampaignIdByName(ctx, name)
+		campaignId, retryable, resp, err := proxy.getOutboundCampaignIdByName(ctx, name)
 
 		if err != nil && !retryable {
-			return retry.NonRetryableError(fmt.Errorf("Error campaign %s: %s", name, err))
+			return retry.NonRetryableError(fmt.Errorf("Error campaign %s: %s %v", name, err, resp))
 		}
 
 		if retryable {

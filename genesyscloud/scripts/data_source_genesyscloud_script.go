@@ -25,7 +25,7 @@ func dataSourceScriptRead(ctx context.Context, d *schema.ResourceData, m interfa
 
 	// Query for scripts by name. Retry in case new script is not yet indexed by search.
 	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
-		scriptId, retryable, err := scriptsProxy.getScriptIdByName(ctx, name)
+		scriptId, retryable, _, err := scriptsProxy.getScriptIdByName(ctx, name)
 		if err != nil {
 			if retryable {
 				return retry.RetryableError(err)

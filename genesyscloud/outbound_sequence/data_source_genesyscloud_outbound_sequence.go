@@ -25,10 +25,10 @@ func dataSourceOutboundSequenceRead(ctx context.Context, d *schema.ResourceData,
 	name := d.Get("name").(string)
 
 	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
-		campaignSequenceId, retryable, err := proxy.getOutboundSequenceIdByName(ctx, name)
+		campaignSequenceId, retryable, resp, err := proxy.getOutboundSequenceIdByName(ctx, name)
 
 		if err != nil && !retryable {
-			return retry.NonRetryableError(fmt.Errorf("Error searching outbound sequence %s: %s", name, err))
+			return retry.NonRetryableError(fmt.Errorf("Error searching outbound sequence %s: %s %v", name, err, resp))
 		}
 
 		if retryable {

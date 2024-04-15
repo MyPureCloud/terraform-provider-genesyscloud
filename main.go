@@ -27,7 +27,9 @@ import (
 	integrationAction "terraform-provider-genesyscloud/genesyscloud/integration_action"
 	integrationCred "terraform-provider-genesyscloud/genesyscloud/integration_credential"
 	integrationCustomAuth "terraform-provider-genesyscloud/genesyscloud/integration_custom_auth_action"
+	journeyOutcomePrecdictor "terraform-provider-genesyscloud/genesyscloud/journey_outcome_predictor"
 	oauth "terraform-provider-genesyscloud/genesyscloud/oauth_client"
+	oAuthSettings "terraform-provider-genesyscloud/genesyscloud/organization_authentication_settings"
 	ob "terraform-provider-genesyscloud/genesyscloud/outbound"
 	obAttemptLimit "terraform-provider-genesyscloud/genesyscloud/outbound_attempt_limit"
 	obCallableTimeset "terraform-provider-genesyscloud/genesyscloud/outbound_callabletimeset"
@@ -135,8 +137,8 @@ func registerResources() {
 	dt.SetRegistrar(regInstance)                                           //Registering architect data table
 	dtr.SetRegistrar(regInstance)                                          //Registering architect data table row
 	emergencyGroup.SetRegistrar(regInstance)                               //Registering architect emergency group
-	employeeperformanceExternalmetricsDefinition.SetRegistrar(regInstance) //Registering employee performance external metrics definitions
 	architectSchedulegroups.SetRegistrar(regInstance)                      //Registering architect schedule groups
+	employeeperformanceExternalmetricsDefinition.SetRegistrar(regInstance) //Registering employee performance external metrics definitions
 	grammar.SetRegistrar(regInstance)                                      //Registering architect grammar
 	grammarLanguage.SetRegistrar(regInstance)                              //Registering architect grammar language
 	groupRoles.SetRegistrar(regInstance)                                   //Registering group roles
@@ -152,6 +154,7 @@ func registerResources() {
 	ob.SetRegistrar(regInstance)                                           //Registering outbound
 	obSettings.SetRegistrar(regInstance)                                   //Registering outbound settings
 	obwm.SetRegistrar(regInstance)                                         //Registering outbound wrapup code mappings
+	oAuthSettings.SetRegistrar(regInstance)                                //Registering organization authentication settings
 	gcloud.SetRegistrar(regInstance)                                       //Registering genesyscloud
 	obAttemptLimit.SetRegistrar(regInstance)                               //Registering outbound attempt limit
 	obCallableTimeset.SetRegistrar(regInstance)                            //Registering outbound callable timeset
@@ -191,6 +194,7 @@ func registerResources() {
 	edgesTrunk.SetRegistrar(regInstance)                                   //Registering Edges Trunk Settings
 	resourceExporter.SetRegisterExporter(resourceExporters)                //Registering register exporters
 	userRoles.SetRegistrar(regInstance)                                    //Registering user roles
+	journeyOutcomePrecdictor.SetRegistrar(regInstance)                     //Registering journey outcome predictor
 	responsemanagementResponse.SetRegistrar(regInstance)                   //Registering responsemanagement responses
 	responsemanagementResponseasset.SetRegistrar(regInstance)              //Registering responsemanagement response asset
 	respmanagementLibrary.SetRegistrar(regInstance)                        //Registering responsemanagement library

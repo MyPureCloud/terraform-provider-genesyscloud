@@ -43,8 +43,8 @@ func TestUnitDataSourceAuthorizationProduct(t *testing.T) {
 	tId := uuid.NewString()
 	authProxy := &authProductProxy{}
 
-	authProxy.getAuthorizationProductAttr = func(ctx context.Context, a *authProductProxy, name string) (id string, retry bool, err error) {
-		return name, false, nil
+	authProxy.getAuthorizationProductAttr = func(ctx context.Context, a *authProductProxy, name string) (id string, retry bool, resp *platformclientv2.APIResponse, err error) {
+		return name, false, nil, nil
 	}
 	internalProxy = authProxy
 	defer func() { internalProxy = nil }()
