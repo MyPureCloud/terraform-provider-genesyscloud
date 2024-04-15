@@ -129,7 +129,7 @@ func getAllFlowLogLevelsFn(ctx context.Context, p *flowLogLevelProxy) (*[]platfo
 	}
 
 	if flowSettingsResponse.Entities == nil || len(*flowSettingsResponse.Entities) == 0 {
-		return nil, nil, fmt.Errorf("No flow log level found")
+		return &totalFlowLogLevels, apiResponse, nil
 	}
 
 	totalFlowLogLevels = append(totalFlowLogLevels, *flowSettingsResponse.Entities...)
@@ -140,7 +140,7 @@ func getAllFlowLogLevelsFn(ctx context.Context, p *flowLogLevelProxy) (*[]platfo
 			return nil, apiResponse, fmt.Errorf("Failed to get page %d of flow log levels: %v", pageNum, err)
 		}
 		if flowSettingsResponse.Entities == nil || len(*flowSettingsResponse.Entities) == 0 {
-			return nil, nil, fmt.Errorf("No flow log level found on page %d of flow log levels", pageNum)
+			return &totalFlowLogLevels, apiResponse, nil
 		}
 
 		totalFlowLogLevels = append(totalFlowLogLevels, *flowSettingsResponse.Entities...)
