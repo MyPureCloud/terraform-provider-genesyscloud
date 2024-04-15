@@ -105,9 +105,7 @@ func getAllRoutingEmailRouteByDomainIdFn(ctx context.Context, p *routingEmailRou
 			if routes.Entities == nil || len(*routes.Entities) == 0 {
 				break
 			}
-			for _, route := range *routes.Entities {
-				allDomainRoutes = append(allDomainRoutes, route)
-			}
+			allDomainRoutes = append(allDomainRoutes, *routes.Entities...)
 			allInboundRoutes[*domain.Id] = allDomainRoutes
 		}
 	}

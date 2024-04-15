@@ -15,12 +15,13 @@ var providerDataSources map[string]*schema.Resource
 var providerResources map[string]*schema.Resource
 
 type registerTestInstance struct {
-	resourceMapMutex   sync.RWMutex
-	datasourceMapMutex sync.RWMutex
+	resourceMapMutex sync.RWMutex
 }
 
 // registerTestResources registers all resources used in the tests
 func (r *registerTestInstance) registerTestResources() {
+	r.resourceMapMutex.Lock()
+	defer r.resourceMapMutex.Unlock()
 	providerResources["genesyscloud_architect_datatable_row"] = ResourceArchitectDatatableRow()
 	providerResources["genesyscloud_architect_datatable"] = dt.ResourceArchitectDatatable()
 }

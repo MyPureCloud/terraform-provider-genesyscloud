@@ -66,7 +66,7 @@ func readOutboundWrapUpCodeMappings(ctx context.Context, d *schema.ResourceData,
 		}
 
 		if sdkWrapupCodeMappings.Mapping != nil {
-			d.Set("mappings", flattenOutboundWrapupCodeMappings(d, sdkWrapupCodeMappings, &existingWrapupCodes))
+			_ = d.Set("mappings", flattenOutboundWrapupCodeMappings(d, sdkWrapupCodeMappings, &existingWrapupCodes))
 		}
 
 		log.Print("Read Outbound Wrap-up Code Mappings")
