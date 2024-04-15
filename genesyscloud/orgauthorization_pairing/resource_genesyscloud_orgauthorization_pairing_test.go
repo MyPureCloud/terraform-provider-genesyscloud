@@ -1,8 +1,9 @@
-package genesyscloud
+package orgauthorization_pairing
 
 import (
 	"fmt"
 	"strings"
+	"terraform-provider-genesyscloud/genesyscloud"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
@@ -32,11 +33,11 @@ func TestAccResourceOrgAuthorizationPairing(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
-		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		ProviderFactories: provider.GetProviderFactories(providerResources, nil),
 		Steps: []resource.TestStep{
 			// 1 user and 1 group
 			{
-				Config: generateUserWithCustomAttrs(testUserResource, testUserEmail, testUserName) + GenerateBasicUserResource(
+				Config: generateUserWithCustomAttrs(testUserResource, testUserEmail, testUserName) + genesyscloud.GenerateBasicUserResource(
 					userResource1,
 					email1,
 					userName1,
@@ -55,11 +56,11 @@ func TestAccResourceOrgAuthorizationPairing(t *testing.T) {
 			},
 			// 2 users and 2 groups
 			{
-				Config: generateUserWithCustomAttrs(testUserResource, testUserEmail, testUserName) + GenerateBasicUserResource(
+				Config: generateUserWithCustomAttrs(testUserResource, testUserEmail, testUserName) + genesyscloud.GenerateBasicUserResource(
 					userResource1,
 					email1,
 					userName1,
-				) + GenerateBasicUserResource(
+				) + genesyscloud.GenerateBasicUserResource(
 					userResource2,
 					email2,
 					userName2,
@@ -90,7 +91,7 @@ func TestAccResourceOrgAuthorizationPairing(t *testing.T) {
 			},
 			// 1 user
 			{
-				Config: GenerateBasicUserResource(
+				Config: genesyscloud.GenerateBasicUserResource(
 					userResource1,
 					email1,
 					userName1,
@@ -103,11 +104,11 @@ func TestAccResourceOrgAuthorizationPairing(t *testing.T) {
 			},
 			// 2 users
 			{
-				Config: GenerateBasicUserResource(
+				Config: genesyscloud.GenerateBasicUserResource(
 					userResource1,
 					email1,
 					userName1,
-				) + GenerateBasicUserResource(
+				) + genesyscloud.GenerateBasicUserResource(
 					userResource2,
 					email2,
 					userName2,

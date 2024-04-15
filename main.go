@@ -30,6 +30,7 @@ import (
 	journeyOutcomePredictor "terraform-provider-genesyscloud/genesyscloud/journey_outcome_predictor"
 	oauth "terraform-provider-genesyscloud/genesyscloud/oauth_client"
 	oAuthSettings "terraform-provider-genesyscloud/genesyscloud/organization_authentication_settings"
+	oAuthPairing "terraform-provider-genesyscloud/genesyscloud/orgauthorization_pairing"
 	ob "terraform-provider-genesyscloud/genesyscloud/outbound"
 	obAttemptLimit "terraform-provider-genesyscloud/genesyscloud/outbound_attempt_limit"
 	obCallableTimeset "terraform-provider-genesyscloud/genesyscloud/outbound_callabletimeset"
@@ -166,6 +167,7 @@ func registerResources() {
 	obCampaign.SetRegistrar(regInstance)                                   //Registering outbound campaign
 	obfst.SetRegistrar(regInstance)                                        //Registering outbound file specification template
 	obDncList.SetRegistrar(regInstance)                                    //Registering outbound dnclist
+	oAuthPairing.SetRegistrar(regInstance)                                 //Registering orgauthorization pairing
 	scripts.SetRegistrar(regInstance)                                      //Registering Scripts
 	smsAddresses.SetRegistrar(regInstance)                                 //Registering routing sms addresses
 	integration.SetRegistrar(regInstance)                                  //Registering integrations
