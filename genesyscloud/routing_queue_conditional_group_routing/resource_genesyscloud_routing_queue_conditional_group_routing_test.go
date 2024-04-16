@@ -60,7 +60,7 @@ func TestAccResourceRoutingQueueConditionalGroupRouting(t *testing.T) {
 		ProviderFactories: provider.GetProviderFactories(providerResources, nil),
 		Steps: []resource.TestStep{
 			{
-				// Create the queue first so we can save the id to a variable and use it in the later test steps
+				// Create the queue first so we can save the id to a channel and use it in the later test steps
 				// The reason we are doing this is that we need to verify the parent queue is never dropped and recreated because of CGR
 				Config: gcloud.GenerateRoutingSkillGroupResourceBasic(
 					skillGroupResourceId,
