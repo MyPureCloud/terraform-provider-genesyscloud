@@ -12,7 +12,6 @@ import (
 var internalProxy *routingQueueConditionalGroupRoutingProxy
 
 // Type definitions for each func on our proxy so we can easily mock them out later
-type getAllRoutingQueuesFunc func(ctx context.Context, p *routingQueueConditionalGroupRoutingProxy) (*[]platformclientv2.Queue, *platformclientv2.APIResponse, error)
 type getRoutingQueueConditionRoutingFunc func(ctx context.Context, p *routingQueueConditionalGroupRoutingProxy, queueId string) (*[]platformclientv2.Conditionalgrouproutingrule, *platformclientv2.APIResponse, error)
 type updateRoutingQueueConditionRoutingFunc func(ctx context.Context, p *routingQueueConditionalGroupRoutingProxy, queueId string, rules *[]platformclientv2.Conditionalgrouproutingrule) (*[]platformclientv2.Conditionalgrouproutingrule, *platformclientv2.APIResponse, error)
 
@@ -20,7 +19,6 @@ type updateRoutingQueueConditionRoutingFunc func(ctx context.Context, p *routing
 type routingQueueConditionalGroupRoutingProxy struct {
 	clientConfig                           *platformclientv2.Configuration
 	routingApi                             *platformclientv2.RoutingApi
-	getAllRoutingQueueConditionRoutingAttr getAllRoutingQueuesFunc
 	getRoutingQueueConditionRoutingAttr    getRoutingQueueConditionRoutingFunc
 	updateRoutingQueueConditionRoutingAttr updateRoutingQueueConditionRoutingFunc
 	routingQueueProxy                      *routingQueue.RoutingQueueProxy

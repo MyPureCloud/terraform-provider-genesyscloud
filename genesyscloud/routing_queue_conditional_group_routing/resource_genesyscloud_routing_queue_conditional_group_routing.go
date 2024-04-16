@@ -140,7 +140,7 @@ func deleteRoutingQueueConditionalRoutingGroup(ctx context.Context, d *schema.Re
 	// Verify there are no rules
 	rules, _, err := proxy.getRoutingQueueConditionRouting(ctx, queueId)
 	if rules != nil {
-		return diag.Errorf("conditional group routing rules still exist for queue %s", queueId)
+		return diag.Errorf("conditional group routing rules still exist for queue %s: %s", queueId, err)
 	}
 
 	log.Printf("Removed rules from queue %s", queueId)
