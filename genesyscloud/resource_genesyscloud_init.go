@@ -14,11 +14,9 @@ func SetRegistrar(l registrar.Registrar) {
 func registerDataSources(l registrar.Registrar) {
 
 	l.RegisterDataSource("genesyscloud_routing_wrapupcode", DataSourceRoutingWrapupcode())
-	l.RegisterDataSource("genesyscloud_routing_queue", DataSourceRoutingQueue())
 	l.RegisterDataSource("genesyscloud_location", DataSourceLocation())
 	l.RegisterDataSource("genesyscloud_auth_division_home", DataSourceAuthDivisionHome())
 	l.RegisterDataSource("genesyscloud_architect_schedules", DataSourceSchedule())
-	l.RegisterDataSource("genesyscloud_architect_user_prompt", dataSourceUserPrompt())
 	l.RegisterDataSource("genesyscloud_auth_division", dataSourceAuthDivision())
 	l.RegisterDataSource("genesyscloud_auth_division_home", DataSourceAuthDivisionHome())
 	l.RegisterDataSource("genesyscloud_journey_action_map", dataSourceJourneyActionMap())
@@ -33,7 +31,6 @@ func registerDataSources(l registrar.Registrar) {
 	l.RegisterDataSource("genesyscloud_quality_forms_evaluation", DataSourceQualityFormsEvaluations())
 	l.RegisterDataSource("genesyscloud_quality_forms_survey", dataSourceQualityFormsSurvey())
 	l.RegisterDataSource("genesyscloud_routing_language", dataSourceRoutingLanguage())
-	l.RegisterDataSource("genesyscloud_routing_queue", DataSourceRoutingQueue())
 	l.RegisterDataSource("genesyscloud_routing_settings", dataSourceRoutingSettings())
 	l.RegisterDataSource("genesyscloud_routing_skill", dataSourceRoutingSkill())
 	l.RegisterDataSource("genesyscloud_routing_skill_group", dataSourceRoutingSkillGroup())
@@ -46,10 +43,8 @@ func registerDataSources(l registrar.Registrar) {
 
 func registerResources(l registrar.Registrar) {
 
-	l.RegisterResource("genesyscloud_routing_queue", ResourceRoutingQueue())
 	l.RegisterResource("genesyscloud_location", ResourceLocation())
 	l.RegisterResource("genesyscloud_architect_schedules", ResourceArchitectSchedules())
-	l.RegisterResource("genesyscloud_architect_user_prompt", ResourceArchitectUserPrompt())
 	l.RegisterResource("genesyscloud_auth_division", ResourceAuthDivision())
 	l.RegisterResource("genesyscloud_idp_adfs", ResourceIdpAdfs())
 	l.RegisterResource("genesyscloud_idp_generic", ResourceIdpGeneric())
@@ -70,12 +65,10 @@ func registerResources(l registrar.Registrar) {
 	l.RegisterResource("genesyscloud_knowledge_v1_category", ResourceKnowledgeCategoryV1())
 	l.RegisterResource("genesyscloud_knowledge_label", ResourceKnowledgeLabel())
 	l.RegisterResource("genesyscloud_location", ResourceLocation())
-	l.RegisterResource("genesyscloud_orgauthorization_pairing", resourceOrgauthorizationPairing())
 	l.RegisterResource("genesyscloud_quality_forms_evaluation", ResourceEvaluationForm())
 	l.RegisterResource("genesyscloud_quality_forms_survey", ResourceSurveyForm())
 	l.RegisterResource("genesyscloud_routing_email_domain", ResourceRoutingEmailDomain())
 	l.RegisterResource("genesyscloud_routing_language", ResourceRoutingLanguage())
-	l.RegisterResource("genesyscloud_routing_queue", ResourceRoutingQueue())
 	l.RegisterResource("genesyscloud_routing_skill", ResourceRoutingSkill())
 	l.RegisterResource("genesyscloud_routing_skill_group", ResourceRoutingSkillGroup())
 	l.RegisterResource("genesyscloud_routing_settings", ResourceRoutingSettings())
@@ -89,7 +82,6 @@ func registerResources(l registrar.Registrar) {
 
 func registerExporters(l registrar.Registrar) {
 	l.RegisterExporter("genesyscloud_architect_schedules", ArchitectSchedulesExporter())
-	l.RegisterExporter("genesyscloud_architect_user_prompt", ArchitectUserPromptExporter())
 	l.RegisterExporter("genesyscloud_auth_division", AuthDivisionExporter())
 	l.RegisterExporter("genesyscloud_idp_adfs", IdpAdfsExporter())
 	l.RegisterExporter("genesyscloud_idp_generic", IdpGenericExporter())
@@ -110,7 +102,6 @@ func registerExporters(l registrar.Registrar) {
 	l.RegisterExporter("genesyscloud_quality_forms_survey", SurveyFormExporter())
 	l.RegisterExporter("genesyscloud_routing_email_domain", RoutingEmailDomainExporter())
 	l.RegisterExporter("genesyscloud_routing_language", RoutingLanguageExporter())
-	l.RegisterExporter("genesyscloud_routing_queue", RoutingQueueExporter())
 	l.RegisterExporter("genesyscloud_routing_settings", RoutingSettingsExporter())
 	l.RegisterExporter("genesyscloud_routing_skill", RoutingSkillExporter())
 	l.RegisterExporter("genesyscloud_routing_skill_group", ResourceSkillGroupExporter())

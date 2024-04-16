@@ -58,7 +58,6 @@ resource "genesyscloud_webdeployments_configuration" "exampleConfiguration" {
       primary_color = "#B0B0B0"
     }
     file_upload {
-      use_supported_content_profile = true
       mode {
         file_types       = ["image/png"]
         max_file_size_kb = 256
@@ -378,7 +377,6 @@ Optional:
 Optional:
 
 - `mode` (Block List) The list of supported file upload modes (see [below for nested schema](#nestedblock--messenger--file_upload--mode))
-- `use_supported_content_profile` (Boolean) Whether or not supported content profile is enabled
 
 <a id="nestedblock--messenger--file_upload--mode"></a>
 ### Nested Schema for `messenger.file_upload.mode`

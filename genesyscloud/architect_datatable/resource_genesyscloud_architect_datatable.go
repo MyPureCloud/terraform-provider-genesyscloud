@@ -49,9 +49,8 @@ func getAllArchitectDatatables(ctx context.Context, clientConfig *platformclient
 
 	archProxy := getArchitectDatatableProxy(clientConfig)
 	tables, resp, err := archProxy.getAllArchitectDatatable(ctx)
-
 	if err != nil {
-		return resources, diag.Errorf("Error encountered while calling getAllArchitectDatattables %s %v.\n", err, resp)
+		return resources, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Error encountered while calling getAllArchitectDatattables error: %s", err), resp)
 	}
 
 	for _, table := range *tables {
@@ -91,7 +90,7 @@ func createArchitectDatatable(ctx context.Context, d *schema.ResourceData, meta 
 
 	table, resp, err := archProxy.createArchitectDatatable(ctx, datatable)
 	if err != nil {
-		return diag.Errorf("Failed to create architect_datatable %s: %s %v", name, err, resp)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create architect_datatable %s error: %s", *datatable.Name, err), resp)
 	}
 
 	d.SetId(*table.Id)
@@ -168,7 +167,7 @@ func updateArchitectDatatable(ctx context.Context, d *schema.ResourceData, meta 
 
 	_, resp, err := archProxy.updateArchitectDatatable(ctx, datatable)
 	if err != nil {
-		return diag.Errorf("Failed to update architect_datatable %s: %s %v", name, err, resp)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update architect_datatable %s, error: %s", name, err), resp)
 	}
 
 	log.Printf("Updated architect_datatable %s", name)
@@ -184,7 +183,7 @@ func deleteArchitectDatatable(ctx context.Context, d *schema.ResourceData, meta 
 	log.Printf("Deleting architect_datatable %s", name)
 	resp, err := archProxy.deleteArchitectDatatable(ctx, d.Id())
 	if err != nil {
-		return diag.Errorf("Failed to delete architect_datatable %s: %s %v", name, err, resp)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete architect_datatable %s error: %s", name, err), resp)
 	}
 
 	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {

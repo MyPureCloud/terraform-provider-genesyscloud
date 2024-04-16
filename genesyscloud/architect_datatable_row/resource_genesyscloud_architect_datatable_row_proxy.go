@@ -139,7 +139,7 @@ func ConvertDatatable(master platformclientv2.Datatable) *Datatable {
 
 func getArchitectDatatableFn(_ context.Context, p *architectDatatableRowProxy, datatableId string, expanded string) (*Datatable, *platformclientv2.APIResponse, error) {
 
-	eg := rc.GetCache(p.dataTableCache, datatableId)
+	eg := rc.GetCacheItem(p.dataTableCache, datatableId)
 	if eg != nil {
 		return eg, nil, nil
 	}
@@ -220,7 +220,7 @@ func getAllArchitectDatatableRowsFn(_ context.Context, p *architectDatatableRowP
 }
 
 func getArchitectDataTableRowFn(_ context.Context, p *architectDatatableRowProxy, tableId string, key string) (*map[string]interface{}, *platformclientv2.APIResponse, error) {
-	eg := rc.GetCache(p.dataTableRowCache, tableId+"_"+key)
+	eg := rc.GetCacheItem(p.dataTableRowCache, tableId+"_"+key)
 	if eg != nil {
 		return eg, nil, nil
 	}

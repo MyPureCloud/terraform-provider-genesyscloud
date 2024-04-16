@@ -10,14 +10,14 @@ func TestUnitWithoutExporterState(t *testing.T) {
 	// Test SetCache
 	SetCache(cache, "key1", 10)
 
-	// Test GetCache
-	valPtr := GetCache(cache, "key1")
+	// Test GetCacheItem
+	valPtr := GetCacheItem(cache, "key1")
 	if valPtr != nil {
 		t.Errorf("Expected Nil Value for key 'key1', got %v", valPtr)
 	}
 
-	// Test GetCache for non-existent key
-	valPtr = GetCache(cache, "nonexistent")
+	// Test GetCacheItem for non-existent key
+	valPtr = GetCacheItem(cache, "nonexistent")
 	if valPtr != nil {
 		t.Errorf("Expected nil value from the Cache")
 	}
@@ -29,14 +29,14 @@ func TestUnitSetCacheAndGetCache(t *testing.T) {
 	// Test SetCache
 	SetCache(cache, "key1", 10)
 
-	// Test GetCache
-	valPtr := GetCache(cache, "key1")
+	// Test GetCacheItem
+	valPtr := GetCacheItem(cache, "key1")
 	if *valPtr != 10 {
 		t.Errorf("Expected value %d for key 'key1', got %v", 10, valPtr)
 	}
 
-	// Test GetCache for non-existent key
-	valPtr = GetCache(cache, "nonexistent")
+	// Test GetCacheItem for non-existent key
+	valPtr = GetCacheItem(cache, "nonexistent")
 	if &valPtr == nil {
 		t.Errorf("Expected key 'nonexistent' to not exist in the cache")
 	}

@@ -7,6 +7,10 @@ import (
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
 )
 
+const (
+	resourceName = "genesyscloud_telephony_providers_edges_edge_group"
+)
+
 func ResourceEdgeGroup() *schema.Resource {
 	return &schema.Resource{
 		Description: `Genesys Cloud Edge Group. NOTE: This resource is being kept here for backwards compatibility with older Genesys Cloud Organization. You may get an error if you try to create an edge group with a Genesys Cloud Organization created in 2022 or later.`,

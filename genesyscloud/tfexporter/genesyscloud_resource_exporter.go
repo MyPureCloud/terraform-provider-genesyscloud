@@ -87,6 +87,7 @@ type GenesysCloudResourceExporter struct {
 	exMutex                sync.RWMutex
 	cyclicDependsList      []string
 	ignoreCyclicDeps       bool
+	flowResourcesList      []string
 }
 
 func configureExporterType(ctx context.Context, d *schema.ResourceData, gre *GenesysCloudResourceExporter, filterType ExporterFilterType) {
@@ -503,7 +504,16 @@ func (g *GenesysCloudResourceExporter) processAndBuildDependencies() (filters []
 
 	for _, resourceKeys := range g.resources {
 
+		exists := util.StringExists(resourceKeys.State.ID, g.flowResourcesList)
+		if exists {
+			log.Printf("dependent consumers retrieved %v", resourceKeys.State.ID)
+			continue
+		}
+
 		resources, dependsStruct, err := proxy.GetAllWithPooledClient(retrieveDependentConsumers(resourceKeys))
+
+		g.flowResourcesList = append(g.flowResourcesList, resourceKeys.State.ID)
+
 		if err != nil {
 			return nil, nil, err
 		}
@@ -528,6 +538,7 @@ func (g *GenesysCloudResourceExporter) processAndBuildDependencies() (filters []
 }
 
 func (g *GenesysCloudResourceExporter) rebuildExports(filterList []string) (diagErr diag.Diagnostics) {
+	log.Printf("rebuild exporters list")
 	diagErr = g.retrieveExporters()
 	if diagErr != nil {
 		return diagErr
@@ -656,7 +667,7 @@ func (g *GenesysCloudResourceExporter) retainExporterList(resources resourceExpo
 
 func (g *GenesysCloudResourceExporter) reAssignFilters() {
 	g.resourceTypeFilter = IncludeFilterByResourceType
-	g.resourceFilter = FilterResourceByName
+	g.resourceFilter = FilterResourceById
 }
 
 func (g *GenesysCloudResourceExporter) attainUniqueResourceList(resources resourceExporter.ResourceIDMetaMap) []resourceExporter.ResourceInfo {
@@ -1245,10 +1256,8 @@ func (g *GenesysCloudResourceExporter) sanitizeConfigMap(
 		//If the exporter as has customer resolver for an attribute, invoke it.
 		if refAttrCustomResolver, ok := exporter.CustomAttributeResolver[currAttr]; ok {
 			log.Printf("Custom resolver invoked for attribute: %s", currAttr)
-			err := refAttrCustomResolver.ResolverFunc(configMap, exporters, resourceName)
-
-			if err != nil {
-				log.Printf("An error has occurred while trying invoke a custom resolver for attribute %s", currAttr)
+			if err := refAttrCustomResolver.ResolverFunc(configMap, exporters, resourceName); err != nil {
+				log.Printf("An error has occurred while trying invoke a custom resolver for attribute %s: %v", currAttr, err)
 			}
 		}
 
@@ -1256,10 +1265,8 @@ func (g *GenesysCloudResourceExporter) sanitizeConfigMap(
 		if refAttrCustomFlowResolver, ok := exporter.CustomFlowResolver[currAttr]; ok {
 			log.Printf("Custom resolver invoked for attribute: %s", currAttr)
 			varReference := fmt.Sprintf("%s_%s_%s", resourceType, resourceName, "filepath")
-			err := refAttrCustomFlowResolver.ResolverFunc(configMap, varReference)
-
-			if err != nil {
-				log.Printf("An error has occurred while trying invoke a custom resolver for attribute %s", currAttr)
+			if err := refAttrCustomFlowResolver.ResolverFunc(configMap, varReference); err != nil {
+				log.Printf("An error has occurred while trying invoke a custom resolver for attribute %s: %v", currAttr, err)
 			}
 		}
 

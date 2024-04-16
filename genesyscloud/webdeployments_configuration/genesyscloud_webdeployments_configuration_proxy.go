@@ -14,7 +14,7 @@ import (
 
 var internalProxy *webDeploymentsConfigurationProxy
 
-type getAllWebDeploymentsConfigurationFunc func(ctx context.Context, p *webDeploymentsConfigurationProxy) (*platformclientv2.Webdeploymentconfigurationversionentitylisting, error)
+type getAllWebDeploymentsConfigurationFunc func(ctx context.Context, p *webDeploymentsConfigurationProxy) (*platformclientv2.Webdeploymentconfigurationversionentitylisting, *platformclientv2.APIResponse, error)
 type getWebdeploymentsConfigurationVersionFunc func(ctx context.Context, p *webDeploymentsConfigurationProxy, id string, version string) (*platformclientv2.Webdeploymentconfigurationversion, *platformclientv2.APIResponse, error)
 type determineLatestVersionFunc func(ctx context.Context, p *webDeploymentsConfigurationProxy, configurationId string) string
 type deleteWebDeploymentConfigurationFunc func(ctx context.Context, p *webDeploymentsConfigurationProxy, configurationId string) (*platformclientv2.APIResponse, error)
@@ -62,7 +62,7 @@ type webDeploymentsConfigurationProxy struct {
 	updateWebdeploymentsConfigurationVersionsDraftAttr        updateWebdeploymentsConfigurationVersionsDraftFunc
 }
 
-func (p *webDeploymentsConfigurationProxy) getWebDeploymentsConfiguration(ctx context.Context) (*platformclientv2.Webdeploymentconfigurationversionentitylisting, error) {
+func (p *webDeploymentsConfigurationProxy) getWebDeploymentsConfiguration(ctx context.Context) (*platformclientv2.Webdeploymentconfigurationversionentitylisting, *platformclientv2.APIResponse, error) {
 	return p.getAllWebDeploymentConfigurationsAttr(ctx, p)
 }
 
@@ -94,13 +94,13 @@ func (p *webDeploymentsConfigurationProxy) updateWebdeploymentsConfigurationVers
 	return p.updateWebdeploymentsConfigurationVersionsDraftAttr(ctx, p, configurationId, configurationVersion)
 }
 
-func getAllWebDeploymentsConfigurationFn(ctx context.Context, p *webDeploymentsConfigurationProxy) (*platformclientv2.Webdeploymentconfigurationversionentitylisting, error) {
-	configurations, _, getErr := p.webDeploymentsApi.GetWebdeploymentsConfigurations(false)
+func getAllWebDeploymentsConfigurationFn(ctx context.Context, p *webDeploymentsConfigurationProxy) (*platformclientv2.Webdeploymentconfigurationversionentitylisting, *platformclientv2.APIResponse, error) {
+	configurations, resp, getErr := p.webDeploymentsApi.GetWebdeploymentsConfigurations(false)
 
 	if getErr != nil {
-		return nil, fmt.Errorf("Failed to get web deployment configurations: %v", getErr)
+		return nil, resp, fmt.Errorf("Failed to get web deployment configurations: %v", getErr)
 	}
-	return configurations, nil
+	return configurations, resp, nil
 }
 
 func getWebdeploymentsConfigurationVersionFn(ctx context.Context, p *webDeploymentsConfigurationProxy, id string, version string) (*platformclientv2.Webdeploymentconfigurationversion, *platformclientv2.APIResponse, error) {

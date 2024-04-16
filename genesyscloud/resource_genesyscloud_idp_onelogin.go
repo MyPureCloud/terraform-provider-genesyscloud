@@ -30,7 +30,7 @@ func getAllIdpOnelogin(_ context.Context, clientConfig *platformclientv2.Configu
 			// Don't export if config doesn't exist
 			return resources, nil
 		}
-		return nil, diag.Errorf("Failed to get IDP Onelogin: %v", getErr)
+		return nil, util.BuildAPIDiagnosticError("genesyscloud_idp_onelogin", fmt.Sprintf("Failed to get IDP Onelogin error: %s", getErr), resp)
 	}
 
 	resources["0"] = &resourceExporter.ResourceMeta{Name: "onelogin"}
@@ -164,23 +164,23 @@ func updateIdpOnelogin(ctx context.Context, d *schema.ResourceData, meta interfa
 		update.Certificates = certificates
 	}
 
-	_, _, err := idpAPI.PutIdentityprovidersOnelogin(update)
+	_, resp, err := idpAPI.PutIdentityprovidersOnelogin(update)
 	if err != nil {
-		return diag.Errorf("Failed to update IDP Onelogin: %s", err)
+		return util.BuildAPIDiagnosticError("genesyscloud_idp_onelogin", fmt.Sprintf("Failed to update IDP Onelogin %s error: %s", d.Id(), err), resp)
 	}
 
 	log.Printf("Updated IDP Onelogin")
 	return readIdpOnelogin(ctx, d, meta)
 }
 
-func deleteIdpOnelogin(ctx context.Context, _ *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func deleteIdpOnelogin(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	idpAPI := platformclientv2.NewIdentityProviderApiWithConfig(sdkConfig)
 
 	log.Printf("Deleting IDP Onelogin")
-	_, _, err := idpAPI.DeleteIdentityprovidersOnelogin()
+	_, resp, err := idpAPI.DeleteIdentityprovidersOnelogin()
 	if err != nil {
-		return diag.Errorf("Failed to delete IDP Onelogin: %s", err)
+		return util.BuildAPIDiagnosticError("genesyscloud_idp_onelogin", fmt.Sprintf("Failed to updadeletete IDP Onelogin %s error: %s", d.Id(), err), resp)
 	}
 
 	return util.WithRetries(ctx, 60*time.Second, func() *retry.RetryError {

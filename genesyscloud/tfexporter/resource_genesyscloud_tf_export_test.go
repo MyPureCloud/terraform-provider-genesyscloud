@@ -16,6 +16,7 @@ import (
 	obContactList "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	routingQueue "terraform-provider-genesyscloud/genesyscloud/routing_queue"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 	"time"
@@ -27,6 +28,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 
 	"github.com/google/uuid"
+
+	userPrompt "terraform-provider-genesyscloud/genesyscloud/architect_user_prompt"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
@@ -181,7 +184,7 @@ func TestAccResourceTfExportByName(t *testing.T) {
 					userResource1,
 					userEmail1,
 					userName1,
-				) + gcloud.GenerateRoutingQueueResource(
+				) + routingQueue.GenerateRoutingQueueResource(
 					queueResource,
 					queueName,
 					queueDesc,
@@ -194,6 +197,7 @@ func TestAccResourceTfExportByName(t *testing.T) {
 					util.NullValue,                     // enable_manual_assignment false
 					util.FalseValue,                    //suppressCall_record_false
 					util.NullValue,                     // enable_transcription false
+					strconv.Quote("TimestampAndPriority"),
 				) + generateTfExportByName(
 					exportResource1,
 					exportTestDir,
@@ -222,7 +226,7 @@ func TestAccResourceTfExportByName(t *testing.T) {
 					userResource1,
 					userEmail1,
 					userName1,
-				) + gcloud.GenerateRoutingQueueResource(
+				) + routingQueue.GenerateRoutingQueueResource(
 					queueResource,
 					queueName,
 					queueDesc,
@@ -235,6 +239,7 @@ func TestAccResourceTfExportByName(t *testing.T) {
 					util.NullValue,                     // enable_manual_assignment false
 					util.FalseValue,                    //suppressCall_record_false
 					util.NullValue,                     // enable_transcription false
+					strconv.Quote("TimestampAndPriority"),
 				) + generateTfExportByName(
 					exportResource1,
 					exportTestDir,
@@ -276,7 +281,7 @@ func TestAccResourceTfExportByName(t *testing.T) {
 					userResource2,
 					userEmail2,
 					userName2,
-				) + gcloud.GenerateRoutingQueueResource(
+				) + routingQueue.GenerateRoutingQueueResource(
 					queueResource,
 					queueName,
 					queueDesc,
@@ -289,6 +294,7 @@ func TestAccResourceTfExportByName(t *testing.T) {
 					util.NullValue,                     // enable_manual_assignment false
 					util.FalseValue,                    //suppressCall_record_false
 					util.NullValue,                     // enable_transcription false
+					strconv.Quote("TimestampAndPriority"),
 				) + generateTfExportByName(
 					exportResource1,
 					exportTestDir,
@@ -810,7 +816,7 @@ func TestAccResourceTfExportQueueAsHCL(t *testing.T) {
 		emailScriptID = uuid.NewString()
 	)
 
-	routingQueue := gcloud.GenerateRoutingQueueResource(
+	routingQueue := routingQueue.GenerateRoutingQueueResource(
 		queueID,
 		queueName,
 		description,
@@ -823,9 +829,10 @@ func TestAccResourceTfExportQueueAsHCL(t *testing.T) {
 		"true",
 		util.TrueValue,
 		util.FalseValue,
-		gcloud.GenerateMediaSettings("media_settings_call", alertTimeoutSec, util.FalseValue, slPercentage, slDurationMs),
-		gcloud.GenerateRoutingRules(rrOperator, rrThreshold, rrWaitSeconds),
-		gcloud.GenerateDefaultScriptIDs(chatScriptID, emailScriptID),
+		strconv.Quote("TimestampAndPriority"),
+		routingQueue.GenerateMediaSettings("media_settings_call", alertTimeoutSec, util.FalseValue, slPercentage, slDurationMs),
+		routingQueue.GenerateRoutingRules(rrOperator, rrThreshold, rrWaitSeconds),
+		routingQueue.GenerateDefaultScriptIDs(chatScriptID, emailScriptID),
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -989,7 +996,7 @@ func TestAccResourceTfExportUserPromptExportAudioFile(t *testing.T) {
 		exportTestDir    = "../.terraform" + uuid.NewString()
 	)
 
-	userPromptAsset := gcloud.UserPromptResourceStruct{
+	userPromptAsset := userPrompt.UserPromptResourceStruct{
 		Language:        userPromptResourceLanguage,
 		Tts_string:      util.NullValue,
 		Text:            strconv.Quote(userPromptResourceText),
@@ -997,7 +1004,7 @@ func TestAccResourceTfExportUserPromptExportAudioFile(t *testing.T) {
 		FileContentHash: userResourcePromptFilename1,
 	}
 
-	userPromptAsset2 := gcloud.UserPromptResourceStruct{
+	userPromptAsset2 := userPrompt.UserPromptResourceStruct{
 		Language:        userPromptResourceLanguage2,
 		Tts_string:      util.NullValue,
 		Text:            strconv.Quote(userPromptResourceText2),
@@ -1005,8 +1012,8 @@ func TestAccResourceTfExportUserPromptExportAudioFile(t *testing.T) {
 		FileContentHash: userResourcePromptFilename2,
 	}
 
-	userPromptResources := []*gcloud.UserPromptResourceStruct{&userPromptAsset}
-	userPromptResources2 := []*gcloud.UserPromptResourceStruct{&userPromptAsset, &userPromptAsset2}
+	userPromptResources := []*userPrompt.UserPromptResourceStruct{&userPromptAsset}
+	userPromptResources2 := []*userPrompt.UserPromptResourceStruct{&userPromptAsset, &userPromptAsset2}
 
 	defer os.RemoveAll(exportTestDir)
 
@@ -1015,7 +1022,7 @@ func TestAccResourceTfExportUserPromptExportAudioFile(t *testing.T) {
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
-				Config: gcloud.GenerateUserPromptResource(&gcloud.UserPromptStruct{
+				Config: userPrompt.GenerateUserPromptResource(&userPrompt.UserPromptStruct{
 					ResourceID:  userPromptResourceId,
 					Name:        userPromptName,
 					Description: strconv.Quote(userPromptDescription),
@@ -1034,7 +1041,7 @@ func TestAccResourceTfExportUserPromptExportAudioFile(t *testing.T) {
 					[]string{
 						strconv.Quote("genesyscloud_architect_user_prompt." + userPromptResourceId),
 					},
-				) + gcloud.GenerateUserPromptResource(&gcloud.UserPromptStruct{
+				) + userPrompt.GenerateUserPromptResource(&userPrompt.UserPromptStruct{
 					ResourceID:  userPromptResourceId,
 					Name:        userPromptName,
 					Description: strconv.Quote(userPromptDescription),
@@ -1051,7 +1058,7 @@ func TestAccResourceTfExportUserPromptExportAudioFile(t *testing.T) {
 			},
 			// Update to two resources with separate audio files
 			{
-				Config: gcloud.GenerateUserPromptResource(&gcloud.UserPromptStruct{
+				Config: userPrompt.GenerateUserPromptResource(&userPrompt.UserPromptStruct{
 					ResourceID:  userPromptResourceId,
 					Name:        userPromptName,
 					Description: strconv.Quote(userPromptDescription),
@@ -1070,7 +1077,7 @@ func TestAccResourceTfExportUserPromptExportAudioFile(t *testing.T) {
 					[]string{
 						strconv.Quote("genesyscloud_architect_user_prompt." + userPromptResourceId),
 					},
-				) + gcloud.GenerateUserPromptResource(&gcloud.UserPromptStruct{
+				) + userPrompt.GenerateUserPromptResource(&userPrompt.UserPromptStruct{
 					ResourceID:  userPromptResourceId,
 					Name:        userPromptName,
 					Description: strconv.Quote(userPromptDescription),
@@ -1902,7 +1909,7 @@ func validateRoutingRules(resourceName string, ringNum int, operator string, thr
 func buildQueueResources(queueExports []QueueExport) string {
 	queueResourceDefinitions := ""
 	for _, queueExport := range queueExports {
-		queueResourceDefinitions = queueResourceDefinitions + gcloud.GenerateRoutingQueueResource(
+		queueResourceDefinitions = queueResourceDefinitions + routingQueue.GenerateRoutingQueueResource(
 			queueExport.ResourceName,
 			queueExport.Name,
 			queueExport.Description,
@@ -1915,6 +1922,7 @@ func buildQueueResources(queueExports []QueueExport) string {
 			util.NullValue,                              // enable_manual_assignment false
 			util.NullValue,                              //suppressCall_record_false
 			util.NullValue,                              // enable_transcription false
+			strconv.Quote("TimestampAndPriority"),
 		)
 	}
 

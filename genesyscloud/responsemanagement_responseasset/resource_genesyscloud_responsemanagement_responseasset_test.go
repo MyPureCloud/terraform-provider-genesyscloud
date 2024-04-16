@@ -3,6 +3,7 @@ package responsemanagement_responseasset
 import (
 	"fmt"
 	"log"
+	"path/filepath"
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
@@ -21,8 +22,8 @@ func TestAccResourceResponseManagementResponseAsset(t *testing.T) {
 		testFilesDir       = "test_responseasset_data"
 		fileName1          = "yeti-img.png"
 		fileName2          = "genesys-img.png"
-		fullPath1          = fmt.Sprintf("%s/%s", testFilesDir, fileName1)
-		fullPath2          = fmt.Sprintf("%s/%s", testFilesDir, fileName2)
+		fullPath1          = filepath.Join(testFilesDir, fileName1)
+		fullPath2          = filepath.Join(testFilesDir, fileName2)
 		divisionResourceId = "test_div"
 		divisionName       = "test tf divison " + uuid.NewString()
 	)
@@ -68,6 +69,9 @@ func TestAccResourceResponseManagementResponseAsset(t *testing.T) {
 				ResourceName:      "genesyscloud_responsemanagement_responseasset." + resourceId,
 				ImportState:       true,
 				ImportStateVerify: true,
+				ImportStateVerifyIgnore: []string{
+					"file_content_hash",
+				},
 			},
 		},
 		CheckDestroy: testVerifyResponseAssetDestroyed,

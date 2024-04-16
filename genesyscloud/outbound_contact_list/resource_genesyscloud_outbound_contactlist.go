@@ -22,6 +22,10 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
 )
 
+const (
+	resourceName = "genesyscloud_outbound_contactlist"
+)
+
 var (
 	outboundContactListContactPhoneNumberColumnResource = &schema.Resource{
 		Schema: map[string]*schema.Schema{
@@ -102,9 +106,9 @@ func getAllOutboundContactLists(_ context.Context, clientConfig *platformclientv
 
 	for pageNum := 1; ; pageNum++ {
 		const pageSize = 100
-		contactListConfigs, _, getErr := outboundAPI.GetOutboundContactlists(false, false, pageSize, pageNum, true, "", "", []string{}, []string{}, "", "")
+		contactListConfigs, resp, getErr := outboundAPI.GetOutboundContactlists(false, false, pageSize, pageNum, true, "", "", []string{}, []string{}, "", "")
 		if getErr != nil {
-			return nil, diag.Errorf("Failed to get page of contact list configs: %v", getErr)
+			return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get page of contact list configs error: %s", getErr), resp)
 		}
 
 		if contactListConfigs.Entities == nil || len(*contactListConfigs.Entities) == 0 {
@@ -246,9 +250,9 @@ func createOutboundContactList(ctx context.Context, d *schema.ResourceData, meta
 	}
 
 	log.Printf("Creating Outbound Contact List %s", name)
-	outboundContactList, _, err := outboundApi.PostOutboundContactlists(sdkContactList)
+	outboundContactList, resp, err := outboundApi.PostOutboundContactlists(sdkContactList)
 	if err != nil {
-		return diag.Errorf("Failed to create Outbound Contact List %s: %s", name, err)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create Outbound Contact List %s error: %s", name, err), resp)
 	}
 
 	d.SetId(*outboundContactList.Id)
@@ -294,12 +298,12 @@ func updateOutboundContactList(ctx context.Context, d *schema.ResourceData, meta
 		// Get current Outbound Contact list version
 		outboundContactList, resp, getErr := outboundApi.GetOutboundContactlist(d.Id(), false, false)
 		if getErr != nil {
-			return resp, diag.Errorf("Failed to read Outbound Contact List %s: %s", d.Id(), getErr)
+			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to read Outbound Contact List %s error: %s", d.Id(), getErr), resp)
 		}
 		sdkContactList.Version = outboundContactList.Version
-		outboundContactList, _, updateErr := outboundApi.PutOutboundContactlist(d.Id(), sdkContactList)
+		outboundContactList, resp, updateErr := outboundApi.PutOutboundContactlist(d.Id(), sdkContactList)
 		if updateErr != nil {
-			return resp, diag.Errorf("Failed to update Outbound Contact List %s: %s", name, updateErr)
+			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update Outbound contact list %s error: %s", name, updateErr), resp)
 		}
 		return nil, nil
 	})
@@ -383,7 +387,7 @@ func deleteOutboundContactList(ctx context.Context, d *schema.ResourceData, meta
 		log.Printf("Deleting Outbound Contact List")
 		resp, err := outboundApi.DeleteOutboundContactlist(d.Id())
 		if err != nil {
-			return resp, diag.Errorf("Failed to delete Outbound Contact List: %s", err)
+			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete Outbound Contact List %s error: %s", d.Id(), err), resp)
 		}
 		return resp, nil
 	})

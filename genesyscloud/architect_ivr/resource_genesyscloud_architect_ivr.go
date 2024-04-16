@@ -27,7 +27,7 @@ func getAllIvrConfigs(ctx context.Context, clientConfig *platformclientv2.Config
 
 	allIvrs, resp, err := ap.getAllArchitectIvrs(ctx, "")
 	if err != nil {
-		return nil, diag.Errorf("failed to get architect ivrs: %v %v", err, resp)
+		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get archictect IVRs error: %s", err), resp)
 	}
 
 	for _, entity := range *allIvrs {
@@ -52,8 +52,7 @@ func createIvrConfig(ctx context.Context, d *schema.ResourceData, meta interface
 	log.Printf("Creating IVR config %s", *ivrBody.Name)
 	ivrConfig, resp, err := ap.createArchitectIvr(ctx, *ivrBody)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create IVR config %s", *ivrBody.Name), resp)
-
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create IVR config %s error: %s", *ivrBody.Name, err), resp)
 	}
 
 	d.SetId(*ivrConfig.Id)
@@ -108,7 +107,7 @@ func updateIvrConfig(ctx context.Context, d *schema.ResourceData, meta interface
 		// Get current version
 		ivr, resp, getErr := ap.getArchitectIvr(ctx, d.Id())
 		if getErr != nil {
-			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to read IVR config %s.", d.Id()), resp)
+			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to read IVR config %s error: %s", d.Id(), getErr), resp)
 		}
 
 		ivrBody := buildArchitectIvrFromResourceData(d)
@@ -123,7 +122,7 @@ func updateIvrConfig(ctx context.Context, d *schema.ResourceData, meta interface
 		_, resp, putErr := ap.updateArchitectIvr(ctx, d.Id(), *ivrBody)
 
 		if putErr != nil {
-			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update IVR config %s.", d.Id()), resp)
+			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update IVR config %s error: %s", d.Id(), putErr), resp)
 		}
 
 		return resp, nil
@@ -146,7 +145,7 @@ func deleteIvrConfig(ctx context.Context, d *schema.ResourceData, meta interface
 
 	log.Printf("Deleting IVR config %s", name)
 	if resp, err := ap.deleteArchitectIvr(ctx, d.Id()); err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete IVR config %s.", name), resp)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete IVR config %s error: %s", name, err), resp)
 
 	}
 

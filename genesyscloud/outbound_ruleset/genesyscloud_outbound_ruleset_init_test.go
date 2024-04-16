@@ -2,11 +2,11 @@ package outbound_ruleset
 
 import (
 	"sync"
+	routingQueue "terraform-provider-genesyscloud/genesyscloud/routing_queue"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	obContactList "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
 )
 
@@ -28,12 +28,18 @@ type registerTestInstance struct {
 
 // registerTestResources registers all resources used in the tests
 func (r *registerTestInstance) registerTestResources() {
+	r.resourceMapMutex.Lock()
+	defer r.resourceMapMutex.Unlock()
+
 	providerResources["genesyscloud_outbound_ruleset"] = ResourceOutboundRuleset()
-	providerResources["genesyscloud_routing_queue"] = gcloud.ResourceRoutingQueue()
+	providerResources["genesyscloud_routing_queue"] = routingQueue.ResourceRoutingQueue()
 }
 
 // registerTestDataSources registers all data sources used in the tests.
 func (r *registerTestInstance) registerTestDataSources() {
+	r.datasourceMapMutex.Lock()
+	defer r.datasourceMapMutex.Unlock()
+
 	providerDataSources["genesyscloud_outbound_ruleset"] = DataSourceOutboundRuleset()
 	providerResources["genesyscloud_outbound_contact_list"] = obContactList.ResourceOutboundContactList()
 }

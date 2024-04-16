@@ -30,7 +30,7 @@ func getAllAuthResponsemanagementLibrarys(ctx context.Context, clientConfig *pla
 
 	librarys, resp, err := proxy.getAllResponsemanagementLibrary(ctx)
 	if err != nil {
-		return nil, diag.Errorf("Failed to get responsemanagement library: %v %v", err, resp)
+		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get responsemanagement library error: %s", err), resp)
 	}
 
 	for _, library := range *librarys {
@@ -50,7 +50,7 @@ func createResponsemanagementLibrary(ctx context.Context, d *schema.ResourceData
 	log.Printf("Creating responsemanagement library %s", *responsemanagementLibrary.Name)
 	library, resp, err := proxy.createResponsemanagementLibrary(ctx, &responsemanagementLibrary)
 	if err != nil {
-		return diag.Errorf("Failed to create responsemanagement library: %s %v", err, resp)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create responsemanagement library %s error: %s", *responsemanagementLibrary.Name, err), resp)
 	}
 
 	d.SetId(*library.Id)
@@ -94,7 +94,7 @@ func updateResponsemanagementLibrary(ctx context.Context, d *schema.ResourceData
 	log.Printf("Updating responsemanagement library %s", *responsemanagementLibrary.Name)
 	library, resp, err := proxy.updateResponsemanagementLibrary(ctx, d.Id(), &responsemanagementLibrary)
 	if err != nil {
-		return diag.Errorf("Failed to update responsemanagement library: %s %v", err, resp)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update responsemanagement library %s error: %s", *responsemanagementLibrary.Name, err), resp)
 	}
 	log.Printf("Updated responsemanagement library %s", *library.Id)
 	return readResponsemanagementLibrary(ctx, d, meta)
@@ -107,7 +107,7 @@ func deleteResponsemanagementLibrary(ctx context.Context, d *schema.ResourceData
 
 	resp, err := proxy.deleteResponsemanagementLibrary(ctx, d.Id())
 	if err != nil {
-		return diag.Errorf("Failed to delete responsemanagement library %s: %s %v", d.Id(), err, resp)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete responsemanagement library %s error: %s", d.Id(), err), resp)
 	}
 
 	return util.WithRetries(ctx, 180*time.Second, func() *retry.RetryError {

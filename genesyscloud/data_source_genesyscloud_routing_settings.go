@@ -2,10 +2,12 @@ package genesyscloud
 
 import (
 	"context"
+	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 )
 
 func dataSourceRoutingSettings() *schema.Resource {
@@ -21,9 +23,9 @@ func dataSourceRoutingSettingsRead(ctx context.Context, d *schema.ResourceData, 
 	sdkConfig := m.(*provider.ProviderMeta).ClientConfig
 	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
 
-	settings, _, getErr := routingAPI.GetRoutingSettings()
+	settings, resp, getErr := routingAPI.GetRoutingSettings()
 	if getErr != nil {
-		return diag.Errorf("Error requesting routing settings: %s", getErr)
+		return util.BuildAPIDiagnosticError("genesyscloud_routing_settings", fmt.Sprintf("Error requesting routing settings error: %s", getErr), resp)
 	}
 
 	d.SetId("datasource-settings")

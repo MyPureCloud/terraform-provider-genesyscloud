@@ -25,9 +25,9 @@ func getAllAuthDivisions(_ context.Context, clientConfig *platformclientv2.Confi
 
 	for pageNum := 1; ; pageNum++ {
 		const pageSize = 100
-		divisions, _, getErr := authAPI.GetAuthorizationDivisions(pageSize, pageNum, "", nil, "", "", false, nil, "")
+		divisions, resp, getErr := authAPI.GetAuthorizationDivisions(pageSize, pageNum, "", nil, "", "", false, nil, "")
 		if getErr != nil {
-			return nil, diag.Errorf("Failed to get page of divisions: %v", getErr)
+			return nil, util.BuildAPIDiagnosticError("genesyscloud_auth_division", fmt.Sprintf("Failed to get page of divisions error: %s", getErr), resp)
 		}
 
 		if divisions.Entities == nil || len(*divisions.Entities) == 0 {
@@ -101,12 +101,12 @@ func createAuthDivision(ctx context.Context, d *schema.ResourceData, meta interf
 	}
 
 	log.Printf("Creating division %s", name)
-	division, _, err := authAPI.PostAuthorizationDivisions(platformclientv2.Authzdivision{
+	division, resp, err := authAPI.PostAuthorizationDivisions(platformclientv2.Authzdivision{
 		Name:        &name,
 		Description: &description,
 	})
 	if err != nil {
-		return diag.Errorf("Failed to create division %s: %s", name, err)
+		return util.BuildAPIDiagnosticError("genesyscloud_auth_division", fmt.Sprintf("Failed to create division %s error: %s", name, err), resp)
 	}
 
 	d.SetId(*division.Id)
@@ -157,12 +157,12 @@ func updateAuthDivision(ctx context.Context, d *schema.ResourceData, meta interf
 	authAPI := platformclientv2.NewAuthorizationApiWithConfig(sdkConfig)
 
 	log.Printf("Updating division %s", name)
-	_, _, err := authAPI.PutAuthorizationDivision(d.Id(), platformclientv2.Authzdivision{
+	_, resp, err := authAPI.PutAuthorizationDivision(d.Id(), platformclientv2.Authzdivision{
 		Name:        &name,
 		Description: &description,
 	})
 	if err != nil {
-		return diag.Errorf("Failed to update division %s: %s", name, err)
+		return util.BuildAPIDiagnosticError("genesyscloud_auth_division", fmt.Sprintf("Failed to update division %s error: %s", name, err), resp)
 	}
 
 	log.Printf("Updated division %s", name)
@@ -189,7 +189,7 @@ func deleteAuthDivision(ctx context.Context, d *schema.ResourceData, meta interf
 		log.Printf("Deleting division %s", name)
 		resp, err := authAPI.DeleteAuthorizationDivision(d.Id(), false)
 		if err != nil {
-			return resp, diag.Errorf("Failed to delete division %s: %s", name, err)
+			return resp, util.BuildAPIDiagnosticError("genesyscloud_auth_division", fmt.Sprintf("Failed to delete Division %s error: %s", d.Id(), err), resp)
 		}
 		return resp, nil
 	})

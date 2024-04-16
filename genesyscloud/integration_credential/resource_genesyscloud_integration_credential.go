@@ -6,6 +6,7 @@ import (
 	"log"
 	"regexp"
 	"strings"
+	oauth "terraform-provider-genesyscloud/genesyscloud/oauth_client"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
@@ -48,7 +49,7 @@ func getAllCredentials(ctx context.Context, clientConfig *platformclientv2.Confi
 
 	credentials, resp, err := ip.getAllIntegrationCreds(ctx)
 	if err != nil {
-		return nil, diag.Errorf("Failed to get all credentials: %v %v", err, resp)
+		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get all credentials error: %s", err), resp)
 	}
 
 	for _, cred := range *credentials {
@@ -82,26 +83,43 @@ func getAllCredentials(ctx context.Context, clientConfig *platformclientv2.Confi
 func createCredential(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	name := d.Get("name").(string)
 	cred_type := d.Get("credential_type_name").(string)
+	fields := buildCredentialFields(d)
+	_, secretFieldPresent := fields["clientSecret"]
 
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	ip := getIntegrationCredsProxy(sdkConfig)
+
+	//If if is a Genesys Cloud OAuth Client and the user has not provided a secret field we should look for the
+	//item in the cache DEVTOOLING-448
+	if cred_type == "pureCloudOAuthClient" && !secretFieldPresent {
+		retrieveCachedOauthClientSecret(sdkConfig, fields)
+	}
 
 	createCredential := platformclientv2.Credential{
 		Name: &name,
 		VarType: &platformclientv2.Credentialtype{
 			Name: &cred_type,
 		},
-		CredentialFields: buildCredentialFields(d),
+		CredentialFields: &fields,
 	}
 
 	credential, resp, err := ip.createIntegrationCred(ctx, &createCredential)
 	if err != nil {
-		return diag.Errorf("Failed to create credential %s : %s %v", name, err, resp)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create credential %s error: %s", name, err), resp)
 	}
 
 	d.SetId(*credential.Id)
 	log.Printf("Created credential %s, %s", name, *credential.Id)
 	return readCredential(ctx, d, meta)
+}
+
+func retrieveCachedOauthClientSecret(sdkConfig *platformclientv2.Configuration, fields map[string]string) {
+	op := oauth.GetOAuthClientProxy(sdkConfig)
+	if clientId, ok := fields["clientId"]; ok {
+		oAuthClient := op.GetCachedOAuthClient(clientId)
+		fields["clientSecret"] = *oAuthClient.Secret
+		log.Printf("Successfully matched with OAuth Client Credential id %s", clientId)
+	}
 }
 
 // readCredential is used by the integration credential resource to read a  credential from genesys cloud.
@@ -121,8 +139,8 @@ func readCredential(ctx context.Context, d *schema.ResourceData, meta interface{
 		}
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceIntegrationCredential())
-		d.Set("name", *currentCredential.Name)
-		d.Set("credential_type_name", *currentCredential.VarType.Name)
+		_ = d.Set("name", *currentCredential.Name)
+		_ = d.Set("credential_type_name", *currentCredential.VarType.Name)
 
 		log.Printf("Read credential %s %s", d.Id(), *currentCredential.Name)
 
@@ -134,6 +152,7 @@ func readCredential(ctx context.Context, d *schema.ResourceData, meta interface{
 func updateCredential(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	name := d.Get("name").(string)
 	cred_type := d.Get("credential_type_name").(string)
+	fields := buildCredentialFields(d)
 
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	ip := getIntegrationCredsProxy(sdkConfig)
@@ -146,10 +165,10 @@ func updateCredential(ctx context.Context, d *schema.ResourceData, meta interfac
 			VarType: &platformclientv2.Credentialtype{
 				Name: &cred_type,
 			},
-			CredentialFields: buildCredentialFields(d),
+			CredentialFields: &fields,
 		})
 		if err != nil {
-			return diag.Errorf("Failed to update credential %s: %s %v", name, err, resp)
+			return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update credential %s error: %s", name, err), resp)
 		}
 	}
 	log.Printf("Updated credential %s %s", name, d.Id())
@@ -163,7 +182,7 @@ func deleteCredential(ctx context.Context, d *schema.ResourceData, meta interfac
 
 	resp, err := ip.deleteIntegrationCred(ctx, d.Id())
 	if err != nil {
-		return diag.Errorf("Failed to delete the credential %s: %s %v", d.Id(), err, resp)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete credential %s error: %s", d.Id(), err), resp)
 	}
 
 	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {

@@ -11,6 +11,7 @@ import (
 	obContactList "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
 	obContactListFilter "terraform-provider-genesyscloud/genesyscloud/outbound_contactlistfilter"
 	obDnclist "terraform-provider-genesyscloud/genesyscloud/outbound_dnclist"
+	routingQueue "terraform-provider-genesyscloud/genesyscloud/routing_queue"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
@@ -90,7 +91,7 @@ func updateOutboundCampaignStatus(ctx context.Context, campaignId string, proxy 
 		log.Printf("Updating Outbound Campaign %s status to %s", *campaign.Name, newCampaignStatus)
 		_, resp, err := proxy.updateOutboundCampaign(ctx, campaignId, &campaign)
 		if err != nil {
-			return diag.Errorf("Failed to update Outbound Campaign %s: %s %v", *campaign.Name, err, resp)
+			return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update Outbound Campaign %s error: %s", *campaign.Name, err), resp)
 		}
 	}
 	return nil
@@ -281,7 +282,7 @@ func GenerateReferencedResourcesForOutboundCampaignTests(
 		dncList = obDnclist.GenerateOutboundDncListBasic(dncListResourceId, "tf dnc list "+uuid.NewString())
 	}
 	if queueResourceId != "" {
-		queue = gcloud.GenerateRoutingQueueResourceBasic(queueResourceId, "tf test queue "+uuid.NewString())
+		queue = routingQueue.GenerateRoutingQueueResourceBasic(queueResourceId, "tf test queue "+uuid.NewString())
 	}
 	if carResourceId != "" {
 		if outboundFlowFilePath != "" {
