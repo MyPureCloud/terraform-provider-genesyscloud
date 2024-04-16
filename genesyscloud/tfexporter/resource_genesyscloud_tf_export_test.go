@@ -1922,7 +1922,7 @@ func buildQueueResources(queueExports []QueueExport) string {
 			util.NullValue,                              // enable_manual_assignment false
 			util.NullValue,                              //suppressCall_record_false
 			util.NullValue,                              // enable_transcription false
-			"TimestampAndPriority",
+			strconv.Quote("TimestampAndPriority"),
 		)
 	}
 
