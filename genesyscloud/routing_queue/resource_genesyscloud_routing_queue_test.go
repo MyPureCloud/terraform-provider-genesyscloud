@@ -3,11 +3,11 @@ package routing_queue
 import (
 	"fmt"
 	"log"
-	"os"
 	"strconv"
 	"strings"
 	"terraform-provider-genesyscloud/genesyscloud"
 	"terraform-provider-genesyscloud/genesyscloud/architect_flow"
+	featureToggles "terraform-provider-genesyscloud/genesyscloud/feature_toggles"
 	"terraform-provider-genesyscloud/genesyscloud/group"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
@@ -167,7 +167,7 @@ func TestAccResourceRoutingQueueBasic(t *testing.T) {
 }
 
 func TestAccResourceRoutingQueueConditionalRouting(t *testing.T) {
-	if _, exists := os.LookupEnv(cgrEnvToggle); exists {
+	if exists := featureToggles.CSGToggleExists(); exists {
 		t.Skip("conditional group routing is deprecated in this resource, skipping test")
 	}
 

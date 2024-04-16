@@ -7,6 +7,7 @@ import (
 	"os"
 	"strings"
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	featureToggles "terraform-provider-genesyscloud/genesyscloud/feature_toggles"
 	"terraform-provider-genesyscloud/genesyscloud/group"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	routingQueue "terraform-provider-genesyscloud/genesyscloud/routing_queue"
@@ -44,9 +45,9 @@ func TestAccResourceRoutingQueueConditionalGroupRouting(t *testing.T) {
 		conditionalGroupRoutingRule2GroupType      = "GROUP"
 	)
 
-	err := os.Setenv(EnvToggle, "enabled")
+	err := os.Setenv(featureToggles.CSGToggleName(), "enabled")
 	if err != nil {
-		t.Errorf("%s is not set", EnvToggle)
+		t.Errorf("%s is not set", featureToggles.CSGToggleName())
 	}
 
 	resource.Test(t, resource.TestCase{

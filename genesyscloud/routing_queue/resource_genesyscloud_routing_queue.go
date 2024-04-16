@@ -7,9 +7,9 @@ import (
 	"log"
 	"net/http"
 	"net/url"
-	"os"
 	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
+	featureToggles "terraform-provider-genesyscloud/genesyscloud/feature_toggles"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
@@ -28,8 +28,6 @@ import (
 )
 
 var bullseyeExpansionTypeTimeout = "TIMEOUT_SECONDS"
-
-const cgrEnvToggle = "ENABLE_STANDALONE_CGR"
 
 func getAllRoutingQueues(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
 	resources := make(resourceExporter.ResourceIDMetaMap)
@@ -86,14 +84,14 @@ func createQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		MemberGroups:                 &memberGroups,
 	}
 
-	if _, exists := os.LookupEnv(cgrEnvToggle); !exists {
+	if exists := featureToggles.CSGToggleExists(); !exists {
 		conditionalGroupRouting, diagErr := buildSdkConditionalGroupRouting(d)
 		if diagErr != nil {
 			return diagErr
 		}
 		createQueue.ConditionalGroupRouting = conditionalGroupRouting
 	} else {
-		log.Printf("%s is set, not creating conditional_group_routing_rules attribute in routing_queue %s resource", cgrEnvToggle, d.Id())
+		log.Printf("%s is set, not creating conditional_group_routing_rules attribute in routing_queue %s resource", featureToggles.CSGToggleName(), d.Id())
 	}
 
 	if divisionID != "" {
@@ -228,10 +226,10 @@ func readQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 		_ = d.Set("teams", flattenQueueMemberGroupsList(currentQueue, &team))
 		_ = d.Set("groups", flattenQueueMemberGroupsList(currentQueue, &group))
 
-		if _, exists := os.LookupEnv(cgrEnvToggle); !exists {
+		if exists := featureToggles.CSGToggleExists(); !exists {
 			_ = d.Set("conditional_group_routing_rules", flattenConditionalGroupRoutingRules(currentQueue))
 		} else {
-			log.Printf("%s is set, not reading conditional_group_routing_rules attribute in routing_queue %s resource", cgrEnvToggle, d.Id())
+			log.Printf("%s is set, not reading conditional_group_routing_rules attribute in routing_queue %s resource", featureToggles.CSGToggleName(), d.Id())
 		}
 
 		log.Printf("Done reading queue %s %s", d.Id(), *currentQueue.Name)
@@ -274,14 +272,14 @@ func updateQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		MemberGroups:                 &memberGroups,
 	}
 
-	if _, exists := os.LookupEnv(cgrEnvToggle); !exists {
+	if exists := featureToggles.CSGToggleExists(); !exists {
 		conditionalGroupRouting, diagErr := buildSdkConditionalGroupRouting(d)
 		if diagErr != nil {
 			return diagErr
 		}
 		updateQueue.ConditionalGroupRouting = conditionalGroupRouting
 	} else {
-		log.Printf("%s is set, not updating conditional_group_routing_rules attribute in routing_queue %s resource", cgrEnvToggle, d.Id())
+		log.Printf("%s is set, not updating conditional_group_routing_rules attribute in routing_queue %s resource", featureToggles.CSGToggleName(), d.Id())
 	}
 
 	log.Printf("Updating queue %s", *updateQueue.Name)
