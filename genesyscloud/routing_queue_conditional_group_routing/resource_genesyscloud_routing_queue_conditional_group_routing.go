@@ -10,10 +10,10 @@ import (
 	"log"
 	"strings"
 	consistencyChecker "terraform-provider-genesyscloud/genesyscloud/consistency_checker"
-	featureToggles "terraform-provider-genesyscloud/genesyscloud/feature_toggles"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	featureToggles "terraform-provider-genesyscloud/genesyscloud/util/feature_toggles"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 )
 
