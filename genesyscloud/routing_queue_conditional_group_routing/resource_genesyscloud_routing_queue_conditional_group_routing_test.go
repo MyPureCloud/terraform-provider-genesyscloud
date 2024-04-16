@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"os"
 	"strings"
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
@@ -45,15 +46,43 @@ func TestAccResourceRoutingQueueConditionalGroupRouting(t *testing.T) {
 		conditionalGroupRoutingRule2GroupType      = "GROUP"
 	)
 
+	// Use this to save the id of the parent queue
+	queueIdChan := make(chan string, 1)
 	err := os.Setenv(featureToggles.CSGToggleName(), "enabled")
 	if err != nil {
 		t.Errorf("%s is not set", featureToggles.CSGToggleName())
 	}
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { util.TestAccPreCheck(t) },
+		PreCheck: func() {
+			util.TestAccPreCheck(t)
+		},
 		ProviderFactories: provider.GetProviderFactories(providerResources, nil),
 		Steps: []resource.TestStep{
+			{
+				// Create the queue first so we can save the id to a variable and use it in the later test steps
+				// The reason we are doing this is that we need to verify the parent queue is never dropped and recreated because of CGR
+				Config: gcloud.GenerateRoutingSkillGroupResourceBasic(
+					skillGroupResourceId,
+					skillGroupName,
+					"description",
+				) + routingQueue.GenerateRoutingQueueResourceBasic(
+					queueResource,
+					queueName1,
+					"skill_groups = [genesyscloud_routing_skill_group."+skillGroupResourceId+".id]",
+				),
+				Check: resource.ComposeTestCheckFunc(
+					func(state *terraform.State) error {
+						resourceState, ok := state.RootModule().Resources["genesyscloud_routing_queue."+queueResource]
+						if !ok {
+							return fmt.Errorf("failed to find resource %s in state", "genesyscloud_routing_queue."+queueResource)
+						}
+						queueIdChan <- resourceState.Primary.ID
+
+						return nil
+					},
+				),
+			},
 			{
 				// Create rule
 				Config: gcloud.GenerateRoutingSkillGroupResourceBasic(
@@ -79,6 +108,7 @@ func TestAccResourceRoutingQueueConditionalGroupRouting(t *testing.T) {
 					),
 				),
 				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttrWith("genesyscloud_routing_queue."+queueResource, "id", checkQueueId(queueIdChan, false)),
 					resource.TestCheckResourceAttrPair(
 						"genesyscloud_routing_queue_conditional_group_routing."+conditionalGroupRoutingResource, "queue_id", "genesyscloud_routing_queue."+queueResource, "id",
 					),
@@ -137,6 +167,7 @@ func TestAccResourceRoutingQueueConditionalGroupRouting(t *testing.T) {
 					),
 				),
 				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttrWith("genesyscloud_routing_queue."+queueResource, "id", checkQueueId(queueIdChan, false)),
 					resource.TestCheckResourceAttrPair(
 						"genesyscloud_routing_queue_conditional_group_routing."+conditionalGroupRoutingResource, "queue_id", "genesyscloud_routing_queue."+queueResource, "id",
 					),
@@ -194,6 +225,7 @@ func TestAccResourceRoutingQueueConditionalGroupRouting(t *testing.T) {
 					),
 				),
 				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttrWith("genesyscloud_routing_queue."+queueResource, "id", checkQueueId(queueIdChan, true)),
 					resource.TestCheckResourceAttrPair(
 						"genesyscloud_routing_queue_conditional_group_routing."+conditionalGroupRoutingResource, "queue_id", "genesyscloud_routing_queue."+queueResource, "id",
 					),
@@ -217,6 +249,27 @@ func TestAccResourceRoutingQueueConditionalGroupRouting(t *testing.T) {
 			},
 		},
 	})
+}
+
+func checkQueueId(queueIdChan chan string, closeChannel bool) func(value string) error {
+	return func(value string) error {
+		queueId, ok := <-queueIdChan
+		if !ok {
+			return fmt.Errorf("queue id channel closed unexpectedly")
+		}
+
+		if value != queueId {
+			return fmt.Errorf("queue id not equal to expected. Expected: %s, Actual: %s", queueId, value)
+		}
+
+		if closeChannel {
+			close(queueIdChan)
+		} else {
+			queueIdChan <- queueId
+		}
+
+		return nil
+	}
 }
 
 func generateConditionalGroupRouting(resourceId string, queueId string, nestedBlocks ...string) string {
