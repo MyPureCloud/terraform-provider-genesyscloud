@@ -39,7 +39,6 @@ var (
 				Description: "Enable Agent Owned Callbacks",
 				Type:        schema.TypeBool,
 				Required:    true,
-				Default:     false,
 			},
 			"max_owned_callback_hours": {
 				Description: "Auto End Delay Seconds Must be >= 7",
@@ -63,16 +62,14 @@ var (
 				ValidateFunc: validation.IntAtLeast(7),
 			},
 			"auto_end_delay_seconds": {
-				Description:  "Auto End Delay Seconds Must be >= 5",
-				Type:         schema.TypeInt,
-				Optional:     true,
-				ValidateFunc: validation.IntAtLeast(5),
+				Description: "Auto End Delay Seconds.",
+				Type:        schema.TypeInt,
+				Optional:    true,
 			},
 			"auto_dial_delay_seconds": {
-				Description:  "Auto Dial Delay Seconds Must be >= 5",
-				Type:         schema.TypeInt,
-				Optional:     true,
-				ValidateFunc: validation.IntAtLeast(5),
+				Description: "Auto Dial Delay Seconds.",
+				Type:        schema.TypeInt,
+				Optional:    true,
 			},
 			"enable_auto_answer": {
 				Description: "Auto-Answer for digital channels(Email, Message)",
@@ -414,6 +411,13 @@ func ResourceRoutingQueue() *schema.Resource {
 				Description: "The phone number to use for caller identification for outbound calls from this queue.",
 				Type:        schema.TypeString,
 				Optional:    true,
+			},
+			"scoring_method": {
+				Description:  "The Scoring Method for the queue. Defaults to TimestampAndPriority.",
+				Type:         schema.TypeString,
+				Optional:     true,
+				Default:      "TimestampAndPriority",
+				ValidateFunc: validation.StringInSlice([]string{"TimestampAndPriority", "PriorityOnly"}, false),
 			},
 			"default_script_ids": {
 				Description:      "The default script IDs for each communication type. Communication types: (CALL | CALLBACK | CHAT | COBROWSE | EMAIL | MESSAGE | SOCIAL_EXPRESSION | VIDEO | SCREENSHARE)",

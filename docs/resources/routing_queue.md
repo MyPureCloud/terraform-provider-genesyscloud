@@ -109,6 +109,7 @@ resource "genesyscloud_routing_queue" "example_queue" {
 - `outbound_messaging_sms_address_id` (String) The unique ID of the outbound messaging SMS address for the queue.
 - `queue_flow_id` (String) The in-queue flow ID to use for call conversations waiting in queue.
 - `routing_rules` (Block List, Max: 6) The routing rules for the queue, used for routing to known or preferred agents. (see [below for nested schema](#nestedblock--routing_rules))
+- `scoring_method` (String) The Scoring Method for the queue. Defaults to TimestampAndPriority. Defaults to `TimestampAndPriority`.
 - `skill_evaluation_method` (String) The skill evaluation method to use when routing conversations (NONE | BEST | ALL). Defaults to `ALL`.
 - `skill_groups` (Set of String) List of skill group ids assigned to the queue.
 - `suppress_in_queue_call_recording` (Boolean) Indicates whether recording in-queue calls is suppressed for this queue. Defaults to `true`.
@@ -125,7 +126,7 @@ resource "genesyscloud_routing_queue" "example_queue" {
 
 Required:
 
-- `enable_agent_owned_callbacks` (Boolean) Enable Agent Owned Callbacks Defaults to `false`.
+- `enable_agent_owned_callbacks` (Boolean) Enable Agent Owned Callbacks
 - `max_owned_callback_delay_hours` (Number) Max Owned Call Back Delay Hours >= 7
 - `max_owned_callback_hours` (Number) Auto End Delay Seconds Must be >= 7
 
@@ -201,8 +202,8 @@ Required:
 
 Optional:
 
-- `auto_dial_delay_seconds` (Number) Auto Dial Delay Seconds Must be >= 5
-- `auto_end_delay_seconds` (Number) Auto End Delay Seconds Must be >= 5
+- `auto_dial_delay_seconds` (Number) Auto Dial Delay Seconds.
+- `auto_end_delay_seconds` (Number) Auto End Delay Seconds.
 - `enable_auto_answer` (Boolean) Auto-Answer for digital channels(Email, Message) Defaults to `false`.
 - `enable_auto_dial_and_end` (Boolean) Auto Dail and End Defaults to `false`.
 
@@ -218,8 +219,8 @@ Required:
 
 Optional:
 
-- `auto_dial_delay_seconds` (Number) Auto Dial Delay Seconds Must be >= 5
-- `auto_end_delay_seconds` (Number) Auto End Delay Seconds Must be >= 5
+- `auto_dial_delay_seconds` (Number) Auto Dial Delay Seconds.
+- `auto_end_delay_seconds` (Number) Auto End Delay Seconds.
 - `enable_auto_answer` (Boolean) Auto-Answer for digital channels(Email, Message) Defaults to `false`.
 - `enable_auto_dial_and_end` (Boolean) Auto Dail and End Defaults to `false`.
 
@@ -235,8 +236,8 @@ Required:
 
 Optional:
 
-- `auto_dial_delay_seconds` (Number) Auto Dial Delay Seconds Must be >= 5
-- `auto_end_delay_seconds` (Number) Auto End Delay Seconds Must be >= 5
+- `auto_dial_delay_seconds` (Number) Auto Dial Delay Seconds.
+- `auto_end_delay_seconds` (Number) Auto End Delay Seconds.
 - `enable_auto_answer` (Boolean) Auto-Answer for digital channels(Email, Message) Defaults to `false`.
 - `enable_auto_dial_and_end` (Boolean) Auto Dail and End Defaults to `false`.
 
@@ -252,8 +253,8 @@ Required:
 
 Optional:
 
-- `auto_dial_delay_seconds` (Number) Auto Dial Delay Seconds Must be >= 5
-- `auto_end_delay_seconds` (Number) Auto End Delay Seconds Must be >= 5
+- `auto_dial_delay_seconds` (Number) Auto Dial Delay Seconds.
+- `auto_end_delay_seconds` (Number) Auto End Delay Seconds.
 - `enable_auto_answer` (Boolean) Auto-Answer for digital channels(Email, Message) Defaults to `false`.
 - `enable_auto_dial_and_end` (Boolean) Auto Dail and End Defaults to `false`.
 
@@ -269,8 +270,8 @@ Required:
 
 Optional:
 
-- `auto_dial_delay_seconds` (Number) Auto Dial Delay Seconds Must be >= 5
-- `auto_end_delay_seconds` (Number) Auto End Delay Seconds Must be >= 5
+- `auto_dial_delay_seconds` (Number) Auto Dial Delay Seconds.
+- `auto_end_delay_seconds` (Number) Auto End Delay Seconds.
 - `enable_auto_answer` (Boolean) Auto-Answer for digital channels(Email, Message) Defaults to `false`.
 - `enable_auto_dial_and_end` (Boolean) Auto Dail and End Defaults to `false`.
 

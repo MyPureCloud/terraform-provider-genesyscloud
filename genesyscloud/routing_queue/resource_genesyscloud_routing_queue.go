@@ -52,6 +52,7 @@ func createQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
 
 	divisionID := d.Get("division_id").(string)
+	scoringMethod := d.Get("scoring_method").(string)
 	skillGroups := buildMemberGroupList(d, "skill_groups", "SKILLGROUP")
 	groups := buildMemberGroupList(d, "groups", "GROUP")
 	teams := buildMemberGroupList(d, "teams", "TEAM")
@@ -94,7 +95,9 @@ func createQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		createQueue.Division = &platformclientv2.Writabledivision{Id: &divisionID}
 	}
 
-	log.Printf("creating queue %s using routingAPI.PostRoutingQueues", *createQueue.Name)
+	if scoringMethod != "" {
+		createQueue.ScoringMethod = &scoringMethod
+	}
 	queue, resp, err := routingAPI.PostRoutingQueues(createQueue)
 	if err != nil {
 		log.Printf("error while trying to create queue: %s. Err %s", *createQueue.Name, err)
@@ -185,6 +188,7 @@ func readQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 		resourcedata.SetNillableValue(d, "enable_manual_assignment", currentQueue.EnableManualAssignment)
 		resourcedata.SetNillableValue(d, "calling_party_name", currentQueue.CallingPartyName)
 		resourcedata.SetNillableValue(d, "calling_party_number", currentQueue.CallingPartyNumber)
+		resourcedata.SetNillableValue(d, "scoring_method", currentQueue.ScoringMethod)
 
 		if currentQueue.DefaultScripts != nil {
 			_ = d.Set("default_script_ids", flattenDefaultScripts(*currentQueue.DefaultScripts))
@@ -237,7 +241,7 @@ func readQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 func updateQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
-
+	scoringMethod := d.Get("scoring_method").(string)
 	skillGroups := buildMemberGroupList(d, "skill_groups", "SKILLGROUP")
 	groups := buildMemberGroupList(d, "groups", "GROUP")
 	teams := buildMemberGroupList(d, "teams", "TEAM")
@@ -275,7 +279,9 @@ func updateQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		MemberGroups:                 &memberGroups,
 	}
 
-	log.Printf("Updating queue %s", *updateQueue.Name)
+	if scoringMethod != "" {
+		updateQueue.ScoringMethod = &scoringMethod
+	}
 	_, resp, err := routingAPI.PutRoutingQueue(d.Id(), updateQueue)
 
 	if err != nil {
@@ -367,14 +373,15 @@ func buildSdkMediaSettings(d *schema.ResourceData) *platformclientv2.Queuemedias
 
 func constructAgentOwnedRouting(d *schema.ResourceData) *platformclientv2.Agentownedrouting {
 	if agentOwnedRouting, ok := d.Get("agent_owned_routing").([]interface{}); ok {
-		return buildAgentOwnedRouting(agentOwnedRouting)
+		if agentOwnedRouting != nil && len(agentOwnedRouting) > 0 {
+			return buildAgentOwnedRouting(agentOwnedRouting)
+		}
 	}
 	return &platformclientv2.Agentownedrouting{}
 }
 
 func buildAgentOwnedRouting(routing []interface{}) *platformclientv2.Agentownedrouting {
 	settingsMap := routing[0].(map[string]interface{})
-
 	return &platformclientv2.Agentownedrouting{
 		EnableAgentOwnedCallbacks:  platformclientv2.Bool(settingsMap["enable_agent_owned_callbacks"].(bool)),
 		MaxOwnedCallbackDelayHours: platformclientv2.Int(settingsMap["max_owned_callback_delay_hours"].(int)),
