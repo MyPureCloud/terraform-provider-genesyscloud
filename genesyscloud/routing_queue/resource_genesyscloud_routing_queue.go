@@ -9,7 +9,6 @@ import (
 	"net/url"
 	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
-	featureToggles "terraform-provider-genesyscloud/genesyscloud/feature_toggles"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	featureToggles "terraform-provider-genesyscloud/genesyscloud/util/feature_toggles"

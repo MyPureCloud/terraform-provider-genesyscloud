@@ -7,7 +7,6 @@ import (
 	"strings"
 	"terraform-provider-genesyscloud/genesyscloud"
 	"terraform-provider-genesyscloud/genesyscloud/architect_flow"
-	featureToggles "terraform-provider-genesyscloud/genesyscloud/feature_toggles"
 	"terraform-provider-genesyscloud/genesyscloud/group"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
