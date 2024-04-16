@@ -97,12 +97,12 @@ func buildMeteredEvaluationsTimeInterval(interval []interface{}) *platformclient
 	}
 
 	if months, ok := timeIntervalMap["months"].(int); ok && months != 0 {
-		timeInterval.Months = &months
+		panic("Failed to create Time Interval | The time interval for metered evaluations must be valid (Daily/Hourly)")
 	}
 	if weeks, ok := timeIntervalMap["weeks"].(int); ok && weeks != 0 {
-		timeInterval.Weeks = &weeks
+		panic("Failed to create Time Interval | The time interval for metered evaluations must be valid (Daily/Hourly)")
 	}
-	if days, ok := timeIntervalMap["days"].(int); ok {
+	if days, ok := timeIntervalMap["days"].(int); ok && days != 0 {
 		timeInterval.Days = &days
 	}
 	if hours, ok := timeIntervalMap["hours"].(int); ok && hours != 0 {
@@ -112,15 +112,21 @@ func buildMeteredEvaluationsTimeInterval(interval []interface{}) *platformclient
 	return &timeInterval
 }
 
-func buildTimeInterval(interval []interface{}) *platformclientv2.Timeinterval {
+func buildMeteredAssignmentByAgentTimeInterval(interval []interface{}) *platformclientv2.Timeinterval {
 	var timeInterval platformclientv2.Timeinterval
 
 	if interval == nil || len(interval) <= 0 || (len(interval) == 1 && interval[0] == nil) {
 		return nil
 	}
+	log.Println("HERE1: ", interval)
 
 	timeIntervalMap, ok := interval[0].(map[string]interface{})
 	if !ok {
+		return nil
+	}
+
+	log.Println("HERE2: ", len(timeIntervalMap))
+	if len(timeIntervalMap) > 1 {
 		return nil
 	}
 
@@ -134,8 +140,10 @@ func buildTimeInterval(interval []interface{}) *platformclientv2.Timeinterval {
 		timeInterval.Days = &days
 	}
 	if hours, ok := timeIntervalMap["hours"].(int); ok && hours != 0 {
-		timeInterval.Hours = &hours
+		panic("Error: Failed to create Time Interval | The time interval for metered assignment by agent must specify only one of the following: days, weeks, or months")
 	}
+
+	log.Println("HERE: ", &timeInterval)
 
 	return &timeInterval
 }
@@ -263,10 +271,12 @@ func buildAssignMeteredAssignmentByAgent(assignments []interface{}, pp *policyPr
 			evaluators = append(evaluators, platformclientv2.User{Id: &evaluator})
 		}
 
+		timeInterval := buildMeteredAssignmentByAgentTimeInterval(assignmentMap["time_interval"].([]interface{}))
+
 		temp := platformclientv2.Meteredassignmentbyagent{
 			Evaluators:           &evaluators,
 			MaxNumberEvaluations: &maxNumberEvaluations,
-			TimeInterval:         buildTimeInterval(assignmentMap["time_interval"].([]interface{})),
+			TimeInterval:         timeInterval,
 			TimeZone:             &timeZone,
 		}
 
@@ -697,13 +707,15 @@ func buildPolicyActionsFromMediaPolicy(actions []interface{}, pp *policyProxy, c
 	deleteRecording := actionsMap["delete_recording"].(bool)
 	alwaysDelete := actionsMap["always_delete"].(bool)
 
+	assignMeteredAssignmentByAgent := buildAssignMeteredAssignmentByAgent(actionsMap["assign_metered_assignment_by_agent"].([]interface{}), pp, ctx)
+
 	return &platformclientv2.Policyactions{
 		RetainRecording:                &retainRecording,
 		DeleteRecording:                &deleteRecording,
 		AlwaysDelete:                   &alwaysDelete,
 		AssignEvaluations:              buildEvaluationAssignments(actionsMap["assign_evaluations"].([]interface{}), pp, ctx),
 		AssignMeteredEvaluations:       buildAssignMeteredEvaluations(actionsMap["assign_metered_evaluations"].([]interface{}), pp, ctx),
-		AssignMeteredAssignmentByAgent: buildAssignMeteredAssignmentByAgent(actionsMap["assign_metered_assignment_by_agent"].([]interface{}), pp, ctx),
+		AssignMeteredAssignmentByAgent: assignMeteredAssignmentByAgent,
 		AssignCalibrations:             buildAssignCalibrations(actionsMap["assign_calibrations"].([]interface{}), pp, ctx),
 		AssignSurveys:                  buildAssignSurveys(actionsMap["assign_surveys"].([]interface{}), pp, ctx),
 		RetentionDuration:              buildRetentionDuration(actionsMap["retention_duration"].([]interface{})),
@@ -1348,8 +1360,10 @@ func buildCallMediaPolicy(callMediaPolicy []interface{}, pp *policyProxy, ctx co
 	if !ok {
 		return nil
 	}
+	actions := buildPolicyActionsFromMediaPolicy(policyMap["actions"].([]interface{}), pp, ctx)
+
 	return &platformclientv2.Callmediapolicy{
-		Actions:    buildPolicyActionsFromMediaPolicy(policyMap["actions"].([]interface{}), pp, ctx),
+		Actions:    actions,
 		Conditions: buildCallMediaPolicyConditions(policyMap["conditions"].([]interface{})),
 	}
 }
@@ -1379,8 +1393,10 @@ func buildChatMediaPolicy(chatMediaPolicy []interface{}, pp *policyProxy, ctx co
 		return nil
 	}
 
+	actions := buildPolicyActionsFromMediaPolicy(policyMap["actions"].([]interface{}), pp, ctx)
+
 	return &platformclientv2.Chatmediapolicy{
-		Actions:    buildPolicyActionsFromMediaPolicy(policyMap["actions"].([]interface{}), pp, ctx),
+		Actions:    actions,
 		Conditions: buildChatMediaPolicyConditions(policyMap["conditions"].([]interface{})),
 	}
 }
@@ -1410,8 +1426,10 @@ func buildEmailMediaPolicy(emailMediaPolicy []interface{}, pp *policyProxy, ctx 
 		return nil
 	}
 
+	actions := buildPolicyActionsFromMediaPolicy(policyMap["actions"].([]interface{}), pp, ctx)
+
 	return &platformclientv2.Emailmediapolicy{
-		Actions:    buildPolicyActionsFromMediaPolicy(policyMap["actions"].([]interface{}), pp, ctx),
+		Actions:    actions,
 		Conditions: buildEmailMediaPolicyConditions(policyMap["conditions"].([]interface{})),
 	}
 }
@@ -1441,8 +1459,10 @@ func buildMessageMediaPolicy(messageMediaPolicy []interface{}, pp *policyProxy, 
 		return nil
 	}
 
+	actions := buildPolicyActionsFromMediaPolicy(policyMap["actions"].([]interface{}), pp, ctx)
+
 	return &platformclientv2.Messagemediapolicy{
-		Actions:    buildPolicyActionsFromMediaPolicy(policyMap["actions"].([]interface{}), pp, ctx),
+		Actions:    actions,
 		Conditions: buildMessageMediaPolicyConditions(policyMap["conditions"].([]interface{})),
 	}
 }
