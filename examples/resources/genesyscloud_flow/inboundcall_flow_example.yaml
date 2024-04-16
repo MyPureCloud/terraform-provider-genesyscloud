@@ -1,6 +1,5 @@
 inboundCall:
-  name: Terraform Flow Test-e74202b4-a83b-4247-a7d1-b1e94e752344
-  description: test description 1
+  name: Terraform Flow Test ForceUnlock-96c30a3c-c486-4117-8367-8cca520dd910
   defaultLanguage: en-us
   startUpRef: ./menus/menu[mainMenu]
   initialGreeting:

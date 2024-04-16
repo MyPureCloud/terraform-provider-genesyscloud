@@ -15,7 +15,7 @@ import (
 Test Class for the team Data Source
 */
 
-func TestAccDataSourceArchitectGrammar(t *testing.T) {
+func TestAccDataSourceResourceTeam(t *testing.T) {
 	var (
 		teamResource = "team-resource"
 		teamData     = "team-data"

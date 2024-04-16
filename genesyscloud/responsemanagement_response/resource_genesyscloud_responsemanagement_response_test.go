@@ -2,6 +2,7 @@ package responsemanagement_response
 
 import (
 	"fmt"
+	"log"
 	"strconv"
 	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
@@ -18,7 +19,6 @@ import (
 )
 
 func TestAccResourceResponseManagementResponseFooterField(t *testing.T) {
-	t.Parallel()
 	var (
 		// Responses initial values
 		responseResource          = "response-resource"
@@ -39,16 +39,18 @@ func TestAccResourceResponseManagementResponseFooterField(t *testing.T) {
 
 		// Library resources variables
 		libraryResource1 = "library-resource1"
-		libraryName1     = "Reference library1"
+		libraryName1     = "Referencelibrary1"
 		libraryResource2 = "library-resource2"
-		libraryName2     = "Reference library2"
+		libraryName2     = "Referencelibrary2"
 
 		// Asset resources variables
 		testFilesDir  = "test_responseasset_data"
-		assetResource = "asset-resource"
+		assetResource = "asset-resource-response"
 		fileName      = "yeti-img.png"
 		fullPath      = fmt.Sprintf("%s/%s", testFilesDir, fileName)
 	)
+
+	cleanupResponseAssets("yeti")
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
@@ -202,11 +204,11 @@ func TestAccResourceResponseManagementResponseFooterField(t *testing.T) {
 }
 
 func TestAccResourceResponseManagementResponseMessaging(t *testing.T) {
-	t.Parallel()
+	//t.Parallel()
 	var (
 		// Responses initial values
-		responseResource          = "response-resource"
-		name1                     = "Response-" + uuid.NewString()
+		responseResource          = "response-resource-message"
+		name1                     = "Response-message" + uuid.NewString()
 		textsContent1             = "Random text block content string"
 		textsContentTypes         = []string{"text/plain", "text/html"}
 		interactionTypes          = []string{"chat", "email", "twitter"}
@@ -215,25 +217,28 @@ func TestAccResourceResponseManagementResponseMessaging(t *testing.T) {
 		substitutionsDefaultValue = "Substitutions default value"
 		substitutionsSchema       = "schema document"
 		responseTypes             = []string{`MessagingTemplate`, `CampaignSmsTemplate`, `CampaignEmailTemplate`}
-		templateName              = "Sample template name"
-		templateNamespace         = "Template namespace"
+		templateName              = "Sample template name message"
+		templateNamespace         = "Template namespace message"
 
 		// Responses Updated values
 		name2         = "Response-" + uuid.NewString()
 		textsContent2 = "Random text block content string new"
 
 		// Library resources variables
-		libraryResource1 = "library-resource1"
-		libraryName1     = "Reference library1"
-		libraryResource2 = "library-resource2"
-		libraryName2     = "Reference library2"
+		libraryResource1 = "library-resource1-message"
+		libraryName1     = "ReferencelibraryMessage1"
+		libraryResource2 = "library-resource2-message"
+		libraryName2     = "ReferencelibraryMessage2"
 
 		// Asset resources variables
 		testFilesDir  = "test_responseasset_data"
-		assetResource = "asset-resource"
-		fileName      = "yeti-img.png"
+		assetResource = "asset-resource-response-message"
+		fileName      = "genesys-img-asset.png"
 		fullPath      = fmt.Sprintf("%s/%s", testFilesDir, fileName)
 	)
+
+	cleanupResponseAssets("genesys")
+	cleanupResponseAssets("yeti")
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
@@ -402,6 +407,7 @@ func TestAccResourceResponseManagementResponseMessaging(t *testing.T) {
 		},
 		CheckDestroy: testVerifyResponseManagementResponseDestroyed,
 	})
+	cleanupResponseAssets(testFilesDir)
 }
 
 func generateResponseManagementResponseResource(
@@ -503,5 +509,44 @@ func testVerifyResponseManagementResponseDestroyed(state *terraform.State) error
 		}
 	}
 	// Success. All responses destroyed
+	return nil
+}
+
+func cleanupResponseAssets(folderName string) error {
+	var (
+		name    = "name"
+		fields  = []string{name}
+		varType = "STARTS_WITH"
+	)
+	config, err := provider.AuthorizeSdk()
+	if err != nil {
+		return err
+	}
+	respManagementApi := platformclientv2.NewResponseManagementApiWithConfig(config)
+
+	var filter = platformclientv2.Responseassetfilter{
+		Fields:  &fields,
+		Value:   &folderName,
+		VarType: &varType,
+	}
+
+	var body = platformclientv2.Responseassetsearchrequest{
+		Query:  &[]platformclientv2.Responseassetfilter{filter},
+		SortBy: &name,
+	}
+
+	responseData, _, err := respManagementApi.PostResponsemanagementResponseassetsSearch(body, nil)
+	if err != nil {
+		return err
+	}
+
+	if responseData.Results != nil && len(*responseData.Results) > 0 {
+		for _, result := range *responseData.Results {
+			_, err = respManagementApi.DeleteResponsemanagementResponseasset(*result.Id)
+			if err != nil {
+				log.Printf("Failed to delete response assets %s: %v", *result.Id, err)
+			}
+		}
+	}
 	return nil
 }

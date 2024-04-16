@@ -15,11 +15,11 @@ import (
 )
 
 func TestAccResourcePhoneBaseSettings(t *testing.T) {
-	t.Parallel()
+	//t.Parallel()
 	var (
 		phoneBaseSettingsRes = "phoneBaseSettings1234"
-		name1                = "test phone base settings " + uuid.NewString()
-		name2                = "test phone base settings " + uuid.NewString()
+		name1                = "test phone base settings resource" + uuid.NewString()
+		name2                = "test phone base settings resource" + uuid.NewString()
 		description1         = "test description 1"
 		description2         = "test description 2"
 		phoneMetaBaseId      = "generic_sip.json"

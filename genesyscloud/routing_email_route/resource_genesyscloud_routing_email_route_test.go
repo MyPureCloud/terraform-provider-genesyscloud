@@ -19,10 +19,15 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
 )
 
+var (
+	sdkConfig *platformclientv2.Configuration
+)
+
 func TestAccResourceRoutingEmailRoute(t *testing.T) {
+
 	var (
 		domainRes          = "routing-domain1"
-		domainId           = fmt.Sprintf("terraform.%s.com", strings.Replace(uuid.NewString(), "-", "", -1))
+		domainId           = fmt.Sprintf("terraformroutes.%s.com", strings.Replace(uuid.NewString(), "-", "", -1))
 		queueResource      = "email-queue"
 		queueName          = "Terraform Email Queue-" + uuid.NewString()
 		langResource       = "email-lang"
@@ -44,8 +49,6 @@ func TestAccResourceRoutingEmailRoute(t *testing.T) {
 		emailFlowResource1 = "test_flow1"
 		emailFlowFilePath1 = "../../examples/resources/genesyscloud_flow/inboundcall_flow_example.yaml"
 	)
-
-	CleanupRoutingEmailDomains()
 
 	// Test error configs
 	resource.Test(t, resource.TestCase{
@@ -79,6 +82,10 @@ func TestAccResourceRoutingEmailRoute(t *testing.T) {
 					generateRoutingAutoBcc(fromName2, bccEmail2),
 				),
 				ExpectError: regexp.MustCompile("Conflicting configuration arguments"),
+				PreConfig: func() {
+					// Wait for a specified duration - to avoid getting non empty plan
+					time.Sleep(30 * time.Second)
+				},
 			},
 			{
 				// Confirm mutual exclusivity of reply_email_address and auto_bcc
@@ -467,11 +474,6 @@ func testVerifyRoutingEmailRouteDestroyed(state *terraform.State) error {
 }
 
 func CleanupRoutingEmailDomains() {
-	sdkConfig, err := provider.AuthorizeSdk()
-	if err != nil {
-		log.Printf("failed to authorize sdk inside function CleanupRoutingEmailDomains: %v", err)
-		return
-	}
 	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
 
 	for pageNum := 1; ; pageNum++ {
@@ -483,15 +485,15 @@ func CleanupRoutingEmailDomains() {
 		}
 
 		if routingEmailDomains.Entities == nil || len(*routingEmailDomains.Entities) == 0 {
-			return
+			break
 		}
 
 		for _, routingEmailDomain := range *routingEmailDomains.Entities {
-			if routingEmailDomain.Id != nil && strings.HasPrefix(*routingEmailDomain.Id, "terraform") {
+			if routingEmailDomain.Name != nil && strings.HasPrefix(*routingEmailDomain.Name, "terraformroutes") {
 				_, err := routingAPI.DeleteRoutingEmailDomain(*routingEmailDomain.Id)
 				if err != nil {
 					log.Printf("Failed to delete routing email domain %s: %s", *routingEmailDomain.Id, err)
-					continue
+					return
 				}
 				time.Sleep(5 * time.Second)
 			}

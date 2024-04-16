@@ -15,6 +15,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/google/uuid"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
@@ -50,6 +51,8 @@ func TestAccResourceRoutingQueueBasic(t *testing.T) {
 		testUserName            = "nameUser1" + uuid.NewString()
 		testUserEmail           = uuid.NewString() + "@example.com"
 	)
+
+	cleanupGroup("MySeries6Group")
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
@@ -472,7 +475,7 @@ func TestAccResourceRoutingQueueParToCGR(t *testing.T) {
 	})
 }
 
-func TestAccResourceRoutingQueueFlows(t *testing.T) {
+func TestAccResourceRoutingQueue(t *testing.T) {
 	var (
 		queueResource1 = "test-queue"
 		queueName1     = "Terraform Test Queue1-" + uuid.NewString()
@@ -493,6 +496,8 @@ func TestAccResourceRoutingQueueFlows(t *testing.T) {
 		queueFlowInboundcallConfig1          = fmt.Sprintf("inboundCall:\n  name: %s\n  defaultLanguage: en-us\n  startUpRef: ./menus/menu[mainMenu]\n  initialGreeting:\n    tts: Archy says hi!!!\n  menus:\n    - menu:\n        name: Main Menu\n        audio:\n          tts: You are at the Main Menu, press 9 to disconnect.\n        refId: mainMenu\n        choices:\n          - menuDisconnect:\n              name: Disconnect\n              dtmf: digit_9", queueFlowName1)
 		messageInQueueFlowInboundcallConfig3 = fmt.Sprintf("inboundCall:\n  name: %s\n  defaultLanguage: en-us\n  startUpRef: ./menus/menu[mainMenu]\n  initialGreeting:\n    tts: Archy says hi!!!!!\n  menus:\n    - menu:\n        name: Main Menu\n        audio:\n          tts: You are at the Main Menu, press 9 to disconnect.\n        refId: mainMenu\n        choices:\n          - menuDisconnect:\n              name: Disconnect\n              dtmf: digit_9", queueFlowName3)
 	)
+
+	cleanupFlows("Terraform Flow Test")
 
 	var homeDivisionName string
 	resource.Test(t, resource.TestCase{
@@ -566,6 +571,31 @@ func TestAccResourceRoutingQueueFlows(t *testing.T) {
 					resource.TestCheckResourceAttrPair("genesyscloud_routing_queue."+queueResource1, "queue_flow_id", "genesyscloud_flow."+queueFlowResource1, "id"),
 					resource.TestCheckResourceAttrPair("genesyscloud_routing_queue."+queueResource1, "email_in_queue_flow_id", "genesyscloud_flow."+emailInQueueFlowResource1, "id"),
 					resource.TestCheckResourceAttrPair("genesyscloud_routing_queue."+queueResource1, "message_in_queue_flow_id", "genesyscloud_flow."+messageInQueueFlowResource1, "id"),
+				),
+			},
+			{
+				// Create
+				Config: architect_flow.GenerateFlowResource(
+					queueFlowResource1,
+					queueFlowFilePath1,
+					queueFlowInboundcallConfig1,
+					false,
+				) + architect_flow.GenerateFlowResource(
+					emailInQueueFlowResource1,
+					queueFlowFilePath2,
+					emailInQueueFlowInboundcallConfig2,
+					false,
+				) + architect_flow.GenerateFlowResource(
+					messageInQueueFlowResource1,
+					queueFlowFilePath3,
+					messageInQueueFlowInboundcallConfig3,
+					false,
+				) + GenerateRoutingQueueResourceBasic(
+					queueResource1,
+					queueName1,
+					"queue_flow_id = genesyscloud_flow."+queueFlowResource1+".id",
+					"email_in_queue_flow_id = genesyscloud_flow."+emailInQueueFlowResource1+".id",
+					"message_in_queue_flow_id = genesyscloud_flow."+messageInQueueFlowResource1+".id",
 				),
 			},
 			{
@@ -1570,6 +1600,8 @@ func TestAccResourceRoutingQueueSkillGroups(t *testing.T) {
 		testUserEmail         = uuid.NewString() + "@example.com"
 	)
 
+	cleanupGroup("group")
+
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
@@ -1606,4 +1638,31 @@ func TestAccResourceRoutingQueueSkillGroups(t *testing.T) {
 		},
 		CheckDestroy: testVerifyQueuesDestroyed,
 	})
+}
+
+func cleanupGroup(idPrefix string) {
+	GroupsApi := platformclientv2.NewGroupsApi()
+
+	for pageNum := 1; ; pageNum++ {
+		const pageSize = 100
+		groups, _, getErr := GroupsApi.GetGroups(pageSize, pageNum, nil, nil, "")
+		if getErr != nil {
+			return
+		}
+
+		if groups.Entities == nil || len(*groups.Entities) == 0 {
+			break
+		}
+
+		for _, group := range *groups.Entities {
+			if group.Name != nil && strings.HasPrefix(*group.Name, idPrefix) {
+				_, delErr := GroupsApi.DeleteGroup(*group.Id)
+				if delErr != nil {
+					diag.Errorf("failed to delete group %s", delErr)
+					return
+				}
+				log.Printf("Deleted group %s (%s)", *group.Id, *group.Name)
+			}
+		}
+	}
 }

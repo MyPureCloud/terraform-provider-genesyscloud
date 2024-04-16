@@ -58,6 +58,7 @@ func TestAccDataSourceResponsemanagementResponse(t *testing.T) {
 				),
 			},
 		},
+		CheckDestroy: testVerifyResponseManagementResponseDestroyed,
 	})
 }
 

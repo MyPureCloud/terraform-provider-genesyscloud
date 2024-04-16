@@ -134,7 +134,7 @@ func TestAccDataSourceRecordingMediaRetentionPolicy(t *testing.T) {
 
 	var (
 		domainRes = "routing-domain1"
-		domainId  = "terraform" + strconv.Itoa(rand.Intn(1000)) + ".com"
+		domainId  = "terraformmedia" + strconv.Itoa(rand.Intn(1000)) + ".com"
 	)
 
 	_, err := provider.AuthorizeSdk()
@@ -199,6 +199,7 @@ func TestAccDataSourceRecordingMediaRetentionPolicy(t *testing.T) {
 				),
 			},
 		},
+		CheckDestroy: testVerifyMediaRetentionPolicyDestroyed,
 	})
 }
 

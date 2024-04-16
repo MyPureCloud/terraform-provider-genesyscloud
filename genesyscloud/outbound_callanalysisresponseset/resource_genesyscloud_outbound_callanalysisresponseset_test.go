@@ -18,7 +18,7 @@ import (
 )
 
 func TestAccResourceOutboundCallAnalysisResponseSet(t *testing.T) {
-	t.Parallel()
+	//t.Parallel()
 	var (
 		resourceId          = "cars"
 		name                = "Terraform test CAR " + uuid.NewString()

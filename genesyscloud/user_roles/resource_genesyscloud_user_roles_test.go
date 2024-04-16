@@ -2,7 +2,6 @@ package user_roles
 
 import (
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"strconv"
 	"strings"
 	"terraform-provider-genesyscloud/genesyscloud"
@@ -12,12 +11,14 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/util/lists"
 	"testing"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
 
 func TestAccResourceUserRolesMembership(t *testing.T) {
-	t.Parallel()
+	//t.Parallel()
 	var (
 		empRoleDataSrc   = "employee-role"
 		empRoleName      = "employee"

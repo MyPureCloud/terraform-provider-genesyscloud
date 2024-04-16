@@ -2,11 +2,14 @@ package team
 
 import (
 	"fmt"
+	"log"
+	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 
 	"github.com/google/uuid"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
 
@@ -21,7 +24,7 @@ tests for team.
 */
 
 func TestAccResourceMembers(t *testing.T) {
-	t.Parallel()
+	//t.Parallel()
 	var (
 		resourceId = "Teams" + uuid.NewString()
 		name1      = "Test Teams " + uuid.NewString()
@@ -29,14 +32,16 @@ func TestAccResourceMembers(t *testing.T) {
 		divResource = "test-division"
 		divName     = "terraform-" + uuid.NewString()
 
-		testUserResource1 = "user_resource1"
+		testUserResource1 = "user_resource_1"
 		testUserName1     = "nameUser1" + uuid.NewString()
 		testUserEmail1    = fmt.Sprintf(randString(5) + "@" + randString(5) + ".com")
 
-		testUserResource2 = "user_resource2"
+		testUserResource2 = "user_resource_2"
 		testUserName2     = "nameUser2" + uuid.NewString()
 		testUserEmail2    = fmt.Sprintf(randString(5) + "@" + randString(5) + ".com")
 	)
+
+	//cleanupResourceTeam("Test Teams")
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
@@ -92,7 +97,7 @@ func TestAccResourceMembers(t *testing.T) {
 }
 
 func TestAccResourceTeam(t *testing.T) {
-	t.Parallel()
+	//t.Parallel()
 	var (
 		resourceId   = "Teams" + uuid.NewString()
 		name1        = "Test Teams " + uuid.NewString()
@@ -167,4 +172,31 @@ func testVerifyTeamDestroyed(state *terraform.State) error {
 	}
 
 	return nil
+}
+
+func cleanupResourceTeam(idPrefix string) {
+	teamsAPI := platformclientv2.NewTeamsApi()
+
+	for pageNum := 1; ; pageNum++ {
+		const pageSize = 100
+		team, _, getErr := teamsAPI.GetTeams(pageSize, "", "", "", "")
+		if getErr != nil {
+			return
+		}
+
+		if team.Entities == nil || len(*team.Entities) == 0 {
+			break
+		}
+
+		for _, teams := range *team.Entities {
+			if teams.Name != nil && strings.HasPrefix(*teams.Name, idPrefix) {
+				_, delErr := teamsAPI.DeleteTeam(*teams.Id)
+				if delErr != nil {
+					diag.Errorf("failed to delete resource team %s", delErr)
+					return
+				}
+				log.Printf("Deleted resource team %s (%s)", *teams.Id, *teams.Name)
+			}
+		}
+	}
 }

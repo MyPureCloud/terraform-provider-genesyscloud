@@ -10,7 +10,7 @@ import (
 )
 
 func TestAccDataSourcePhoneBaseSettings(t *testing.T) {
-	t.Parallel()
+	//t.Parallel()
 	var (
 		phoneBaseSettingsRes     = "phoneBaseSettings"
 		phoneBaseSettingsDataRes = "phoneBaseSettingsData"
