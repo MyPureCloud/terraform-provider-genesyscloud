@@ -2,7 +2,6 @@ package routing_queue
 
 import (
 	"fmt"
-	"log"
 	"strings"
 )
 
@@ -21,7 +20,7 @@ func GenerateRoutingQueueResource(
 	enableManualAssignment string,
 	scoringMethod string,
 	nestedBlocks ...string) string {
-	f := fmt.Sprintf(`resource "genesyscloud_routing_queue" "%s" {
+	return fmt.Sprintf(`resource "genesyscloud_routing_queue" "%s" {
 		name = "%s"
 		description = "%s"
 		acw_wrapup_prompt = %s
@@ -50,9 +49,6 @@ func GenerateRoutingQueueResource(
 		suppressInQueueCallRecording,
 		enableManualAssignment,
 		strings.Join(nestedBlocks, "\n"))
-
-	log.Print(f)
-	return f
 }
 
 func GenerateRoutingQueueResourceBasic(resourceID string, name string, nestedBlocks ...string) string {
