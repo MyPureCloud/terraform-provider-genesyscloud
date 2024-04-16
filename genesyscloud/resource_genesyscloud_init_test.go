@@ -54,7 +54,6 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_knowledge_category"] = ResourceKnowledgeCategory()
 	providerResources["genesyscloud_knowledge_label"] = ResourceKnowledgeLabel()
 	providerResources["genesyscloud_location"] = ResourceLocation()
-	providerResources["genesyscloud_orgauthorization_pairing"] = resourceOrgauthorizationPairing()
 	providerResources["genesyscloud_quality_forms_evaluation"] = ResourceEvaluationForm()
 	providerResources["genesyscloud_quality_forms_survey"] = ResourceSurveyForm()
 	providerResources["genesyscloud_routing_email_domain"] = ResourceRoutingEmailDomain()

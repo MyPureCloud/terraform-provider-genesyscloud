@@ -1,6 +1,7 @@
 package authorization_product
 
 import (
+	"sync"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -18,9 +19,13 @@ func initTestResources() {
 }
 
 type registerTestInstance struct {
+	datasourceMapMutex sync.RWMutex
 }
 
 func (r *registerTestInstance) registerTestDataSources() {
+	r.datasourceMapMutex.Lock()
+	defer r.datasourceMapMutex.Unlock()
+
 	providerDataSources["genesyscloud_authorization_product"] = DataSourceAuthorizationProduct()
 }
 

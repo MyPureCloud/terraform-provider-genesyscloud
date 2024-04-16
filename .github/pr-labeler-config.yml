@@ -1,2 +1,3 @@
 feature: ['feature/*', 'feat/*']
 bug: ['fix/*', 'bug/*']
+refactor: ['refactor/*']

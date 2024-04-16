@@ -13,8 +13,7 @@ var (
 )
 
 type registerTestInstance struct {
-	resourceMapMutex   sync.RWMutex
-	datasourceMapMutex sync.RWMutex
+	resourceMapMutex sync.RWMutex
 }
 
 // registerTestResources registers all resources used in the tests

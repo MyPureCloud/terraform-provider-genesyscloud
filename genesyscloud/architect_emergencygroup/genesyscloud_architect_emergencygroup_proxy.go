@@ -87,9 +87,7 @@ func getAllArchitectEmergencyGroupFn(ctx context.Context, p *architectEmergencyG
 		return &totalRecords, nil, nil
 	}
 
-	for _, emergencyGroup := range *emergencyGroupConfigs.Entities {
-		totalRecords = append(totalRecords, emergencyGroup)
-	}
+	totalRecords = append(totalRecords, *emergencyGroupConfigs.Entities...)
 
 	for pageNum := 2; pageNum <= *emergencyGroupConfigs.PageCount; pageNum++ {
 		emergencyGroupConfigs, resp, getErr := p.architectApi.GetArchitectEmergencygroups(pageNum, pageSize, "", "", "")
@@ -102,9 +100,7 @@ func getAllArchitectEmergencyGroupFn(ctx context.Context, p *architectEmergencyG
 			break
 		}
 
-		for _, emergencyGroup := range *emergencyGroupConfigs.Entities {
-			totalRecords = append(totalRecords, emergencyGroup)
-		}
+		totalRecords = append(totalRecords, *emergencyGroupConfigs.Entities...)
 	}
 
 	return &totalRecords, nil, nil
