@@ -720,7 +720,7 @@ func (g *GenesysCloudResourceExporter) chainDependencies(
 					if !g.resourceIdExists(guid, existingResources) {
 						filterListById = append(filterListById, fmt.Sprintf("%s::%s", refType, guid))
 					} else {
-						log.Printf("Id already present in the resoueces. %v", guid)
+						log.Printf("Id already present in the resources. %v", guid)
 					}
 
 				}
