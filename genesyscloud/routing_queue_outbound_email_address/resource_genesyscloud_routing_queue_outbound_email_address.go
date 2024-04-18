@@ -13,6 +13,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	featureToggles "terraform-provider-genesyscloud/genesyscloud/util/feature_toggles"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 )
 
@@ -21,6 +22,11 @@ The resource_genesyscloud_routing_queue_outbound-email_address.go contains all t
 */
 
 func getAllAuthRoutingQueueOutboundEmailAddress(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+	if exists := featureToggles.OEAToggleExists(); !exists {
+		log.Printf("Environment variable %s not set, skipping exporter for %s", featureToggles.OEAToggleName(), resourceName)
+		return nil, nil
+	}
+
 	resources := make(resourceExporter.ResourceIDMetaMap)
 	proxy := getRoutingQueueOutboundEmailAddressProxy(clientConfig)
 
@@ -39,6 +45,10 @@ func getAllAuthRoutingQueueOutboundEmailAddress(ctx context.Context, clientConfi
 }
 
 func createRoutingQueueOutboundEmailAddress(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	if exists := featureToggles.OEAToggleExists(); !exists {
+		return util.BuildDiagnosticError(resourceName, "Environment variable ENABLE_STANDALONE_EMAIL_ADDRESS not set", fmt.Errorf("environment variable %s not set", featureToggles.OEAToggleName()))
+	}
+
 	queueId := d.Get("queue_id").(string)
 	log.Printf("creating outbound email address for queue %s", queueId)
 	d.SetId(queueId)
@@ -47,6 +57,10 @@ func createRoutingQueueOutboundEmailAddress(ctx context.Context, d *schema.Resou
 }
 
 func readRoutingQueueOutboundEmailAddress(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	if exists := featureToggles.OEAToggleExists(); !exists {
+		return util.BuildDiagnosticError(resourceName, "Environment variable ENABLE_STANDALONE_EMAIL_ADDRESS not set", fmt.Errorf("environment variable %s not set", featureToggles.OEAToggleName()))
+	}
+
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getRoutingQueueOutboundEmailAddressProxy(sdkConfig)
 	queueId := d.Id()
@@ -77,6 +91,10 @@ func readRoutingQueueOutboundEmailAddress(ctx context.Context, d *schema.Resourc
 }
 
 func updateRoutingQueueOutboundEmailAddress(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	if exists := featureToggles.OEAToggleExists(); !exists {
+		return util.BuildDiagnosticError(resourceName, "Environment variable ENABLE_STANDALONE_EMAIL_ADDRESS not set", fmt.Errorf("environment variable %s not set", featureToggles.OEAToggleName()))
+	}
+
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getRoutingQueueOutboundEmailAddressProxy(sdkConfig)
 	queueId := d.Id()
@@ -103,6 +121,10 @@ func updateRoutingQueueOutboundEmailAddress(ctx context.Context, d *schema.Resou
 }
 
 func deleteRoutingQueueOutboundEmailAddress(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	if exists := featureToggles.OEAToggleExists(); !exists {
+		return util.BuildDiagnosticError(resourceName, "Environment variable ENABLE_STANDALONE_EMAIL_ADDRESS not set", fmt.Errorf("environment variable %s not set", featureToggles.OEAToggleName()))
+	}
+
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getRoutingQueueOutboundEmailAddressProxy(sdkConfig)
 	queueId := d.Id()
