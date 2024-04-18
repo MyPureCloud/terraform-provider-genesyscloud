@@ -561,6 +561,7 @@ func (g *GenesysCloudResourceExporter) exportDependentResources(filterList []str
 	g.filterList = &filterList
 	existingExporters := g.copyExporters()
 	existingResources := g.copyResources()
+	log.Printf("rebuild exports from exportDependentResources")
 
 	err := g.rebuildExports(filterList)
 	if err != nil {
@@ -716,17 +717,23 @@ func (g *GenesysCloudResourceExporter) chainDependencies(
 		if refType != "" {
 			for _, guid := range guidList {
 				if guid != "" {
-					filterListById = append(filterListById, fmt.Sprintf("%s::%s", refType, guid))
+					if !g.resourceIdExists(guid, existingResources) {
+						filterListById = append(filterListById, fmt.Sprintf("%s::%s", refType, guid))
+					} else {
+						log.Printf("Id already present in the resoueces. %v", guid)
+					}
+
 				}
 			}
 		}
 	}
 	g.filterList = &filterListById
 	g.buildSecondDeps = nil
+
 	if len(*g.filterList) > 0 {
 		g.resources = nil
 		g.exporters = nil
-
+		log.Printf("rebuild exporters list from chainDependencies")
 		err := g.rebuildExports(*g.filterList)
 		if err != nil {
 			return err
@@ -1422,10 +1429,10 @@ func (g *GenesysCloudResourceExporter) resolveReference(refSettings *resourceExp
 		if idMetaMap := exporters[refSettings.RefType].SanitizedResourceMap; idMetaMap != nil {
 			if meta := idMetaMap[refID]; meta != nil && meta.Name != "" {
 
-				if g.isDataSource(refSettings.RefType, meta.Name) && g.resourceIdExists(refID) {
+				if g.isDataSource(refSettings.RefType, meta.Name) && g.resourceIdExists(refID, nil) {
 					return fmt.Sprintf("${%s.%s.%s.id}", "data", refSettings.RefType, meta.Name)
 				}
-				if g.resourceIdExists(refID) {
+				if g.resourceIdExists(refID, nil) {
 					return fmt.Sprintf("${%s.%s.id}", refSettings.RefType, meta.Name)
 				}
 			}
@@ -1458,8 +1465,15 @@ func (g *GenesysCloudResourceExporter) resolveReference(refSettings *resourceExp
 	return ""
 }
 
-func (g *GenesysCloudResourceExporter) resourceIdExists(refID string) bool {
+func (g *GenesysCloudResourceExporter) resourceIdExists(refID string, existingResources []resourceExporter.ResourceInfo) bool {
 	if g.addDependsOn {
+		if existingResources != nil {
+			for _, resource := range existingResources {
+				if refID == resource.State.ID {
+					return true
+				}
+			}
+		}
 		for _, resource := range g.resources {
 			if refID == resource.State.ID {
 				return true
