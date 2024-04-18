@@ -82,7 +82,7 @@ func getAllRoutingQueuesFn(ctx context.Context, p *RoutingQueueProxy) (*[]platfo
 
 	// Check if the routing queue cache is populated with all the data, if it is, return that instead
 	// If the size of the cache is the same as the total number of queues, the cache is up-to-date
-	if rc.GetCacheSize(p.RoutingQueueCache) == *queues.Total {
+	if rc.GetCacheSize(p.RoutingQueueCache) == *queues.Total && rc.GetCacheSize(p.RoutingQueueCache) != 0 {
 		return rc.GetCache(p.RoutingQueueCache), nil, nil
 	} else if rc.GetCacheSize(p.RoutingQueueCache) != *queues.Total && rc.GetCacheSize(p.RoutingQueueCache) != 0 {
 		// The cache is populated but not with the right data, clear the cache so it can be re populated
