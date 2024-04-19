@@ -97,94 +97,122 @@ func buildCallableWindowsUnmapped(unmappedWindows *schema.Set) *platformclientv2
 	return &platformclientv2.Atzmtimeslotwithtimezone{}
 }
 
-func flattenOutboundSettingsAutomaticTimeZoneMapping(timeZoneMappings platformclientv2.Automatictimezonemappingsettings, automaticTimeZoneMapping []interface{}) []interface{} {
-	callableWindows := automaticTimeZoneMapping[0].(map[string]interface{})["callable_windows"].(*schema.Set)
-	requestMap := make(map[string]interface{})
+func flattenOutboundSettingsAutomaticTimeZoneMapping(timeZoneMappings *platformclientv2.Automatictimezonemappingsettings) *schema.Set {
+	automaticTimeZoneMappings := schema.NewSet(schema.HashResource(automaticTimeZoneMappingResource), []interface{}{})
+	timeZoneMap := make(map[string]interface{})
+
 	if timeZoneMappings.CallableWindows != nil {
-		requestMap["callable_windows"] = flattenCallableWindows(*timeZoneMappings.CallableWindows, callableWindows)
+		timeZoneMap["callable_windows"] = flattenCallableWindows(*timeZoneMappings.CallableWindows)
 	}
 	if timeZoneMappings.SupportedCountries != nil {
-		requestMap["supported_countries"] = *timeZoneMappings.SupportedCountries
+		supportedCountries := *timeZoneMappings.SupportedCountries
+		supportedCountriesInterface := lists.StringListToInterfaceList(supportedCountries)
+		timeZoneMap["supported_countries"] = supportedCountriesInterface
 	}
-	return []interface{}{requestMap}
+	automaticTimeZoneMappings.Add(timeZoneMap)
+
+	return automaticTimeZoneMappings
+	//var requestMap []interface{}
+	//
+	//if timeZoneMappings != nil {
+	//
+	//	automaticTimeZoneMapping := make(map[string]interface{})
+	//	if timeZoneMappings.CallableWindows != nil {
+	//
+	//		automaticTimeZoneMapping["0"] = map[string]interface{}{
+	//			"callable_windows": *timeZoneMappings.CallableWindows,
+	//		}
+	//	}
+	//	if timeZoneMappings.SupportedCountries != nil {
+	//		requestMap["supported_countries"] = *timeZoneMappings.SupportedCountries
+	//	}
+	//}
+	//return []interface{}{requestMap}
 }
 
-func flattenCallableWindows(windows []platformclientv2.Callablewindow, windowsSchema *schema.Set) *schema.Set {
+func flattenCallableWindows(windows []platformclientv2.Callablewindow) *schema.Set {
 	if len(windows) == 0 {
 		return nil
 	}
 
-	var mappedSchema *schema.Set
-	var unmappedSchema *schema.Set
-	for _, callableWindowsSchema := range windowsSchema.List() {
-		mappedSchema = callableWindowsSchema.(map[string]interface{})["mapped"].(*schema.Set)
-		unmappedSchema = callableWindowsSchema.(map[string]interface{})["unmapped"].(*schema.Set)
-	}
-
 	callableWindowsSet := schema.NewSet(schema.HashResource(callableWindowsResource), []interface{}{})
-	for _, callableWindow := range windows {
+	for _, window := range windows {
 		callableWindowMap := make(map[string]interface{})
 
-		if callableWindow.Mapped != nil {
-			callableWindowMap["mapped"] = flattenOutboundSettingsMapped(callableWindow.Mapped, mappedSchema)
+		if window.Mapped != nil {
+			callableWindowMap["mapped"] = flattenOutboundSettingsMapped(*window.Mapped)
 		}
-		if callableWindow.Unmapped != nil {
-			callableWindowMap["unmapped"] = flattenOutboundSettingsUnmapped(callableWindow.Unmapped, unmappedSchema)
+		if window.Unmapped != nil {
+			callableWindowMap["unmapped"] = flattenOutboundSettingsUnmapped(*window.Unmapped)
 		}
-
 		callableWindowsSet.Add(callableWindowMap)
 	}
 	return callableWindowsSet
 }
 
-func flattenOutboundSettingsMapped(mapped *platformclientv2.Atzmtimeslot, mappedSchema *schema.Set) *schema.Set {
-	requestSet := schema.NewSet(schema.HashResource(mappedResource), []interface{}{})
-	requestMap := make(map[string]interface{})
+func flattenOutboundSettingsMapped(outboundSettingsMapped platformclientv2.Atzmtimeslot) *schema.Set {
 
-	mappedSchemaMap := mappedSchema.List()[0].(map[string]interface{})
-	earliestTimeSchema := mappedSchemaMap["earliest_callable_time"].(string)
-	latestTimeSchema := mappedSchemaMap["latest_callable_time"].(string)
+	mappedSet := schema.NewSet(schema.HashResource(mappedResource), []interface{}{})
+	mappedMap := make(map[string]interface{})
 
-	if earliestTimeSchema != "" {
-		if mapped.EarliestCallableTime != nil {
-			requestMap["earliest_callable_time"] = *mapped.EarliestCallableTime
-		}
+	if outboundSettingsMapped.EarliestCallableTime != nil {
+		mappedMap["earliest_callable_time"] = *outboundSettingsMapped.EarliestCallableTime
 	}
-	if latestTimeSchema != "" {
-		if mapped.LatestCallableTime != nil {
-			requestMap["latest_callable_time"] = *mapped.LatestCallableTime
-		}
+	if outboundSettingsMapped.LatestCallableTime != nil {
+		mappedMap["latest_callable_time"] = *outboundSettingsMapped.LatestCallableTime
 	}
-	requestSet.Add(requestMap)
+	mappedSet.Add(mappedMap)
 
-	return requestSet
+	//var (
+	//	requestSet = schema.NewSet(schema.HashResource(mappedResource), []interface{}{})
+	//	requestMap = make(map[string]interface{})
+	//
+	//	mapped []interface{}
+	//	unmapped interface{}
+	//)
+	//
+	//if outboundSettingsMapped == nil { return nil }
+	//
+	//if outboundSettingsMapped.
+
+	//requestSet := schema.NewSet(schema.HashResource(mappedResource), []interface{}{})
+	//requestMap := make(map[string]interface{})
+	//
+	//mappedSchemaMap := mappedSchema.List()[0].(map[string]interface{})
+	//earliestTimeSchema := mappedSchemaMap["earliest_callable_time"].(string)
+	//latestTimeSchema := mappedSchemaMap["latest_callable_time"].(string)
+	//
+	//if earliestTimeSchema != "" {
+	//	if mapped.EarliestCallableTime != nil {
+	//		requestMap["earliest_callable_time"] = *mapped.EarliestCallableTime
+	//	}
+	//}
+	//if latestTimeSchema != "" {
+	//	if mapped.LatestCallableTime != nil {
+	//		requestMap["latest_callable_time"] = *mapped.LatestCallableTime
+	//	}
+	//}
+	//requestSet.Add(requestMap)
+	//
+	//return requestSet
+	return mappedSet
 }
 
-func flattenOutboundSettingsUnmapped(unmapped *platformclientv2.Atzmtimeslotwithtimezone, unmappedSchema *schema.Set) *schema.Set {
-	requestSet := schema.NewSet(schema.HashResource(mappedResource), []interface{}{})
-	requestMap := make(map[string]interface{})
+func flattenOutboundSettingsUnmapped(outboundSettingsUnmapped platformclientv2.Atzmtimeslotwithtimezone) *schema.Set {
+	unmappedSet := schema.NewSet(schema.HashResource(UnmappedResource), []interface{}{})
 
-	mappedSchemaMap := unmappedSchema.List()[0].(map[string]interface{})
-	earliestTimeSchema := mappedSchemaMap["earliest_callable_time"].(string)
-	latestTimeSchema := mappedSchemaMap["latest_callable_time"].(string)
-	timeZone := mappedSchemaMap["time_zone_id"].(string)
+	unmappedMap := make(map[string]interface{})
 
-	if earliestTimeSchema != "" {
-		if unmapped.EarliestCallableTime != nil {
-			requestMap["earliest_callable_time"] = *unmapped.EarliestCallableTime
-		}
+	if outboundSettingsUnmapped.EarliestCallableTime != nil {
+		unmappedMap["earliest_callable_time"] = *outboundSettingsUnmapped.EarliestCallableTime
 	}
-	if latestTimeSchema != "" {
-		if unmapped.LatestCallableTime != nil {
-			requestMap["latest_callable_time"] = *unmapped.LatestCallableTime
-		}
+	if outboundSettingsUnmapped.LatestCallableTime != nil {
+		unmappedMap["latest_callable_time"] = *outboundSettingsUnmapped.LatestCallableTime
 	}
-	if timeZone != "" {
-		if unmapped.TimeZoneId != nil {
-			requestMap["time_zone_id"] = *unmapped.TimeZoneId
-		}
+	if outboundSettingsUnmapped.TimeZoneId != nil {
+		unmappedMap["time_zone_id"] = *outboundSettingsUnmapped.TimeZoneId
 	}
-	requestSet.Add(requestMap)
+	unmappedSet.Add(unmappedMap)
 
-	return requestSet
+	return unmappedSet
 }
