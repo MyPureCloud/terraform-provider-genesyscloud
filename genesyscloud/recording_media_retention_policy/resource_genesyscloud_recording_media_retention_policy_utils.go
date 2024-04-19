@@ -84,23 +84,16 @@ func flattenEvaluationAssignments(assignments *[]platformclientv2.Evaluationassi
 	return evaluationAssignments
 }
 
-func buildMeteredEvaluationsTimeInterval(interval []interface{}) (*platformclientv2.Timeinterval, error) {
+func buildMeteredEvaluationsTimeInterval(interval []interface{}) *platformclientv2.Timeinterval {
 	var timeInterval platformclientv2.Timeinterval
 
 	if interval == nil || len(interval) <= 0 || (len(interval) == 1 && interval[0] == nil) {
-		return nil, nil
+		return nil
 	}
 
 	timeIntervalMap, ok := interval[0].(map[string]interface{})
 	if !ok {
-		return nil, nil
-	}
-
-	if months, ok := timeIntervalMap["months"].(int); ok && months != 0 {
-		return nil, fmt.Errorf("the time interval for metered evaluations must be valid (Daily/Hourly)")
-	}
-	if weeks, ok := timeIntervalMap["weeks"].(int); ok && weeks != 0 {
-		return nil, fmt.Errorf("the time interval for metered evaluations must be valid (Daily/Hourly)")
+		return nil
 	}
 
 	if days, ok := timeIntervalMap["days"].(int); ok && days != 0 {
@@ -109,19 +102,19 @@ func buildMeteredEvaluationsTimeInterval(interval []interface{}) (*platformclien
 	if hours, ok := timeIntervalMap["hours"].(int); ok && hours != 0 {
 		timeInterval.Hours = &hours
 	}
-	return &timeInterval, nil
+	return &timeInterval
 }
 
-func buildMeteredAssignmentByAgentTimeInterval(interval []interface{}) (*platformclientv2.Timeinterval, error) {
+func buildMeteredAssignmentByAgentTimeInterval(interval []interface{}) *platformclientv2.Timeinterval {
 	var timeInterval platformclientv2.Timeinterval
 
 	if interval == nil || len(interval) <= 0 || (len(interval) == 1 && interval[0] == nil) {
-		return nil, nil
+		return nil
 	}
 
 	timeIntervalMap, ok := interval[0].(map[string]interface{})
 	if !ok {
-		return nil, nil
+		return nil
 	}
 
 	if months, ok := timeIntervalMap["months"].(int); ok && months != 0 {
@@ -133,13 +126,24 @@ func buildMeteredAssignmentByAgentTimeInterval(interval []interface{}) (*platfor
 	if days, ok := timeIntervalMap["days"].(int); ok && days != 0 {
 		timeInterval.Days = &days
 	}
-	if hours, ok := timeIntervalMap["hours"].(int); ok && hours != 0 {
-		return &timeInterval, fmt.Errorf("the time interval for metered assignment by agent should specify only one of day, month, or week")
-	}
-	return &timeInterval, nil
+
+	return &timeInterval
 }
 
-func flattenTimeInterval(timeInterval *platformclientv2.Timeinterval) []interface{} {
+func flattenEvalTimeInterval(timeInterval *platformclientv2.Timeinterval) []interface{} {
+	if timeInterval == nil {
+		return nil
+	}
+
+	timeIntervalMap := make(map[string]interface{})
+
+	resourcedata.SetMapValueIfNotNil(timeIntervalMap, "days", timeInterval.Days)
+	resourcedata.SetMapValueIfNotNil(timeIntervalMap, "hours", timeInterval.Hours)
+
+	return []interface{}{timeIntervalMap}
+}
+
+func flattenAgentTimeInterval(timeInterval *platformclientv2.Timeinterval) []interface{} {
 	if timeInterval == nil {
 		return nil
 	}
@@ -149,12 +153,11 @@ func flattenTimeInterval(timeInterval *platformclientv2.Timeinterval) []interfac
 	resourcedata.SetMapValueIfNotNil(timeIntervalMap, "months", timeInterval.Months)
 	resourcedata.SetMapValueIfNotNil(timeIntervalMap, "weeks", timeInterval.Weeks)
 	resourcedata.SetMapValueIfNotNil(timeIntervalMap, "days", timeInterval.Days)
-	resourcedata.SetMapValueIfNotNil(timeIntervalMap, "hours", timeInterval.Hours)
 
 	return []interface{}{timeIntervalMap}
 }
 
-func buildAssignMeteredEvaluations(assignments []interface{}, pp *policyProxy, ctx context.Context) (*[]platformclientv2.Meteredevaluationassignment, error) {
+func buildAssignMeteredEvaluations(assignments []interface{}, pp *policyProxy, ctx context.Context) *[]platformclientv2.Meteredevaluationassignment {
 	meteredAssignments := make([]platformclientv2.Meteredevaluationassignment, 0)
 
 	for _, assignment := range assignments {
@@ -178,10 +181,7 @@ func buildAssignMeteredEvaluations(assignments []interface{}, pp *policyProxy, c
 			evaluators = append(evaluators, platformclientv2.User{Id: &evaluator})
 		}
 
-		timeInterval, err := buildMeteredEvaluationsTimeInterval(assignmentMap["time_interval"].([]interface{}))
-		if err != nil {
-			return &meteredAssignments, err
-		}
+		timeInterval := buildMeteredEvaluationsTimeInterval(assignmentMap["time_interval"].([]interface{}))
 
 		temp := platformclientv2.Meteredevaluationassignment{
 			Evaluators:           &evaluators,
@@ -237,14 +237,14 @@ func flattenAssignMeteredEvaluations(assignments *[]platformclientv2.Meteredeval
 		}
 
 		resourcedata.SetMapValueIfNotNil(assignmentMap, "assign_to_active_user", assignment.AssignToActiveUser)
-		resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(assignmentMap, "time_interval", assignment.TimeInterval, flattenTimeInterval)
+		resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(assignmentMap, "time_interval", assignment.TimeInterval, flattenEvalTimeInterval)
 
 		meteredAssignments = append(meteredAssignments, assignmentMap)
 	}
 	return meteredAssignments
 }
 
-func buildAssignMeteredAssignmentByAgent(assignments []interface{}, pp *policyProxy, ctx context.Context) (*[]platformclientv2.Meteredassignmentbyagent, error) {
+func buildAssignMeteredAssignmentByAgent(assignments []interface{}, pp *policyProxy, ctx context.Context) *[]platformclientv2.Meteredassignmentbyagent {
 	meteredAssignments := make([]platformclientv2.Meteredassignmentbyagent, 0)
 	for _, assignment := range assignments {
 		assignmentMap, ok := assignment.(map[string]interface{})
@@ -267,10 +267,7 @@ func buildAssignMeteredAssignmentByAgent(assignments []interface{}, pp *policyPr
 			evaluators = append(evaluators, platformclientv2.User{Id: &evaluator})
 		}
 
-		timeInterval, err := buildMeteredAssignmentByAgentTimeInterval(assignmentMap["time_interval"].([]interface{}))
-		if err != nil {
-			return nil, err
-		}
+		timeInterval := buildMeteredAssignmentByAgentTimeInterval(assignmentMap["time_interval"].([]interface{}))
 
 		temp := platformclientv2.Meteredassignmentbyagent{
 			Evaluators:           &evaluators,
@@ -325,7 +322,7 @@ func flattenAssignMeteredAssignmentByAgent(assignments *[]platformclientv2.Meter
 			assignmentMap["evaluation_form_id"] = formId
 		}
 
-		resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(assignmentMap, "time_interval", assignment.TimeInterval, flattenTimeInterval)
+		resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(assignmentMap, "time_interval", assignment.TimeInterval, flattenAgentTimeInterval)
 		resourcedata.SetMapValueIfNotNil(assignmentMap, "time_zone", assignment.TimeZone)
 
 		meteredAssignments = append(meteredAssignments, assignmentMap)
@@ -691,29 +688,23 @@ func flattenIntegrationExport(integrationExport *platformclientv2.Integrationexp
 	return []interface{}{integrationExportMap}
 }
 
-func buildPolicyActionsFromMediaPolicy(actions []interface{}, pp *policyProxy, ctx context.Context) (policyActions *platformclientv2.Policyactions, err error) {
+func buildPolicyActionsFromMediaPolicy(actions []interface{}, pp *policyProxy, ctx context.Context) *platformclientv2.Policyactions {
 	if actions == nil || len(actions) <= 0 {
-		return nil, nil
+		return nil
 	}
 
 	actionsMap, ok := actions[0].(map[string]interface{})
 	if !ok {
-		return nil, nil
+		return nil
 	}
 
 	retainRecording := actionsMap["retain_recording"].(bool)
 	deleteRecording := actionsMap["delete_recording"].(bool)
 	alwaysDelete := actionsMap["always_delete"].(bool)
 
-	assignMeteredAssignmentByAgent, err := buildAssignMeteredAssignmentByAgent(actionsMap["assign_metered_assignment_by_agent"].([]interface{}), pp, ctx)
-	if err != nil {
-		return nil, err
-	}
+	assignMeteredAssignmentByAgent := buildAssignMeteredAssignmentByAgent(actionsMap["assign_metered_assignment_by_agent"].([]interface{}), pp, ctx)
 
-	assignMeteredEvaluations, err := buildAssignMeteredEvaluations(actionsMap["assign_metered_evaluations"].([]interface{}), pp, ctx)
-	if err != nil {
-		return nil, err
-	}
+	assignMeteredEvaluations := buildAssignMeteredEvaluations(actionsMap["assign_metered_evaluations"].([]interface{}), pp, ctx)
 
 	return &platformclientv2.Policyactions{
 		RetainRecording:                &retainRecording,
@@ -728,7 +719,7 @@ func buildPolicyActionsFromMediaPolicy(actions []interface{}, pp *policyProxy, c
 		InitiateScreenRecording:        buildInitiateScreenRecording(actionsMap["initiate_screen_recording"].([]interface{})),
 		MediaTranscriptions:            buildMediaTranscriptions(actionsMap["media_transcriptions"].([]interface{})),
 		IntegrationExport:              buildIntegrationExport(actionsMap["integration_export"].([]interface{})),
-	}, nil
+	}
 }
 
 func flattenPolicyActions(actions *platformclientv2.Policyactions, pp *policyProxy, ctx context.Context) []interface{} {
@@ -1357,23 +1348,21 @@ func flattenMessageMediaPolicyConditions(conditions *platformclientv2.Messagemed
 	return []interface{}{conditionsMap}
 }
 
-func buildCallMediaPolicy(callMediaPolicy []interface{}, pp *policyProxy, ctx context.Context) (builtCallMediaPolicy *platformclientv2.Callmediapolicy, err error) {
+func buildCallMediaPolicy(callMediaPolicy []interface{}, pp *policyProxy, ctx context.Context) *platformclientv2.Callmediapolicy {
 	if callMediaPolicy == nil || len(callMediaPolicy) <= 0 {
-		return nil, nil
+		return nil
 	}
 
 	policyMap, ok := callMediaPolicy[0].(map[string]interface{})
 	if !ok {
-		return nil, nil
+		return nil
 	}
-	actions, err := buildPolicyActionsFromMediaPolicy(policyMap["actions"].([]interface{}), pp, ctx)
-	if err != nil {
-		return nil, err
-	}
+	actions := buildPolicyActionsFromMediaPolicy(policyMap["actions"].([]interface{}), pp, ctx)
+
 	return &platformclientv2.Callmediapolicy{
 		Actions:    actions,
 		Conditions: buildCallMediaPolicyConditions(policyMap["conditions"].([]interface{})),
-	}, nil
+	}
 }
 
 func flattenCallMediaPolicy(chatMediaPolicy *platformclientv2.Callmediapolicy, pp *policyProxy, ctx context.Context) []interface{} {
@@ -1391,24 +1380,22 @@ func flattenCallMediaPolicy(chatMediaPolicy *platformclientv2.Callmediapolicy, p
 	return []interface{}{chatMediaPolicyMap}
 }
 
-func buildChatMediaPolicy(chatMediaPolicy []interface{}, pp *policyProxy, ctx context.Context) (builtChatMediaPolicy *platformclientv2.Chatmediapolicy, err error) {
+func buildChatMediaPolicy(chatMediaPolicy []interface{}, pp *policyProxy, ctx context.Context) *platformclientv2.Chatmediapolicy {
 	if chatMediaPolicy == nil || len(chatMediaPolicy) <= 0 {
-		return nil, nil
+		return nil
 	}
 
 	policyMap, ok := chatMediaPolicy[0].(map[string]interface{})
 	if !ok {
-		return nil, nil
+		return nil
 	}
 
-	actions, err := buildPolicyActionsFromMediaPolicy(policyMap["actions"].([]interface{}), pp, ctx)
-	if err != nil {
-		return nil, err
-	}
+	actions := buildPolicyActionsFromMediaPolicy(policyMap["actions"].([]interface{}), pp, ctx)
+
 	return &platformclientv2.Chatmediapolicy{
 		Actions:    actions,
 		Conditions: buildChatMediaPolicyConditions(policyMap["conditions"].([]interface{})),
-	}, nil
+	}
 }
 
 func flattenChatMediaPolicy(chatMediaPolicy *platformclientv2.Chatmediapolicy, pp *policyProxy, ctx context.Context) []interface{} {
@@ -1426,24 +1413,22 @@ func flattenChatMediaPolicy(chatMediaPolicy *platformclientv2.Chatmediapolicy, p
 	return []interface{}{chatMediaPolicyMap}
 }
 
-func buildEmailMediaPolicy(emailMediaPolicy []interface{}, pp *policyProxy, ctx context.Context) (builtEmailMediaPolicy *platformclientv2.Emailmediapolicy, err error) {
+func buildEmailMediaPolicy(emailMediaPolicy []interface{}, pp *policyProxy, ctx context.Context) *platformclientv2.Emailmediapolicy {
 	if emailMediaPolicy == nil || len(emailMediaPolicy) <= 0 {
-		return nil, nil
+		return nil
 	}
 
 	policyMap, ok := emailMediaPolicy[0].(map[string]interface{})
 	if !ok {
-		return nil, nil
+		return nil
 	}
 
-	actions, err := buildPolicyActionsFromMediaPolicy(policyMap["actions"].([]interface{}), pp, ctx)
-	if err != nil {
-		return nil, err
-	}
+	actions := buildPolicyActionsFromMediaPolicy(policyMap["actions"].([]interface{}), pp, ctx)
+
 	return &platformclientv2.Emailmediapolicy{
 		Actions:    actions,
 		Conditions: buildEmailMediaPolicyConditions(policyMap["conditions"].([]interface{})),
-	}, nil
+	}
 }
 
 func flattenEmailMediaPolicy(emailMediaPolicy *platformclientv2.Emailmediapolicy, pp *policyProxy, ctx context.Context) []interface{} {
@@ -1461,24 +1446,22 @@ func flattenEmailMediaPolicy(emailMediaPolicy *platformclientv2.Emailmediapolicy
 	return []interface{}{emailMediaPolicyMap}
 }
 
-func buildMessageMediaPolicy(messageMediaPolicy []interface{}, pp *policyProxy, ctx context.Context) (builtMessageMediaPolicy *platformclientv2.Messagemediapolicy, err error) {
+func buildMessageMediaPolicy(messageMediaPolicy []interface{}, pp *policyProxy, ctx context.Context) *platformclientv2.Messagemediapolicy {
 	if messageMediaPolicy == nil || len(messageMediaPolicy) <= 0 {
-		return nil, nil
+		return nil
 	}
 
 	policyMap, ok := messageMediaPolicy[0].(map[string]interface{})
 	if !ok {
-		return nil, nil
+		return nil
 	}
 
-	actions, err := buildPolicyActionsFromMediaPolicy(policyMap["actions"].([]interface{}), pp, ctx)
-	if err != nil {
-		return nil, err
-	}
+	actions := buildPolicyActionsFromMediaPolicy(policyMap["actions"].([]interface{}), pp, ctx)
+
 	return &platformclientv2.Messagemediapolicy{
 		Actions:    actions,
 		Conditions: buildMessageMediaPolicyConditions(policyMap["conditions"].([]interface{})),
-	}, nil
+	}
 }
 
 func flattenMessageMediaPolicy(messageMediaPolicy *platformclientv2.Messagemediapolicy, pp *policyProxy, ctx context.Context) []interface{} {
@@ -1496,44 +1479,32 @@ func flattenMessageMediaPolicy(messageMediaPolicy *platformclientv2.Messagemedia
 	return []interface{}{messageMediaPolicyMap}
 }
 
-func buildMediaPolicies(d *schema.ResourceData, pp *policyProxy, ctx context.Context) (mediaPolicies *platformclientv2.Mediapolicies, err error) {
+func buildMediaPolicies(d *schema.ResourceData, pp *policyProxy, ctx context.Context) *platformclientv2.Mediapolicies {
 	sdkMediaPolicies := platformclientv2.Mediapolicies{}
 
 	if mediaPolicies, ok := d.Get("media_policies").([]interface{}); ok && len(mediaPolicies) > 0 {
 		mediaPoliciesMap, ok := mediaPolicies[0].(map[string]interface{})
 		if !ok {
-			return nil, nil
+			return nil
 		}
 
 		if callPolicy := mediaPoliciesMap["call_policy"]; callPolicy != nil {
-			sdkMediaPolicies.CallPolicy, err = buildCallMediaPolicy(callPolicy.([]interface{}), pp, ctx)
-			if err != nil {
-				return nil, fmt.Errorf("failed to build call media policy: %s", err)
-			}
+			sdkMediaPolicies.CallPolicy = buildCallMediaPolicy(callPolicy.([]interface{}), pp, ctx)
 		}
 
 		if chatPolicy := mediaPoliciesMap["chat_policy"]; chatPolicy != nil {
-			sdkMediaPolicies.ChatPolicy, err = buildChatMediaPolicy(chatPolicy.([]interface{}), pp, ctx)
-			if err != nil {
-				return nil, fmt.Errorf("failed to build chat media policy: %s", err)
-			}
+			sdkMediaPolicies.ChatPolicy = buildChatMediaPolicy(chatPolicy.([]interface{}), pp, ctx)
 		}
 
 		if emailPolicy := mediaPoliciesMap["email_policy"]; emailPolicy != nil {
-			sdkMediaPolicies.EmailPolicy, err = buildEmailMediaPolicy(emailPolicy.([]interface{}), pp, ctx)
-			if err != nil {
-				return nil, fmt.Errorf("failed to build email media policy: %s", err)
-			}
+			sdkMediaPolicies.EmailPolicy = buildEmailMediaPolicy(emailPolicy.([]interface{}), pp, ctx)
 		}
 
 		if messagePolicy := mediaPoliciesMap["message_policy"]; messagePolicy != nil {
-			sdkMediaPolicies.MessagePolicy, err = buildMessageMediaPolicy(messagePolicy.([]interface{}), pp, ctx)
-			if err != nil {
-				return nil, fmt.Errorf("failed to build message media policy: %s", err)
-			}
+			sdkMediaPolicies.MessagePolicy = buildMessageMediaPolicy(messagePolicy.([]interface{}), pp, ctx)
 		}
 	}
-	return &sdkMediaPolicies, nil
+	return &sdkMediaPolicies
 }
 
 func flattenMediaPolicies(mediaPolicies *platformclientv2.Mediapolicies, pp *policyProxy, ctx context.Context) []interface{} {
@@ -1674,26 +1645,20 @@ func flattenConditions(conditions *platformclientv2.Policyconditions) []interfac
 	return []interface{}{conditionsMap}
 }
 
-func buildPolicyActionsFromResource(d *schema.ResourceData, pp *policyProxy, ctx context.Context) (policyActions *platformclientv2.Policyactions, err error) {
+func buildPolicyActionsFromResource(d *schema.ResourceData, pp *policyProxy, ctx context.Context) *platformclientv2.Policyactions {
 	if actions, ok := d.Get("actions").([]interface{}); ok && len(actions) > 0 {
 		actionsMap, ok := actions[0].(map[string]interface{})
 		if !ok {
-			return nil, nil
+			return nil
 		}
 
 		retainRecording := actionsMap["retain_recording"].(bool)
 		deleteRecording := actionsMap["delete_recording"].(bool)
 		alwaysDelete := actionsMap["always_delete"].(bool)
 
-		meteredAssignmentByAgent, err := buildAssignMeteredAssignmentByAgent(actionsMap["assign_metered_assignment_by_agent"].([]interface{}), pp, ctx)
-		if err != nil {
-			return nil, err
-		}
+		meteredAssignmentByAgent := buildAssignMeteredAssignmentByAgent(actionsMap["assign_metered_assignment_by_agent"].([]interface{}), pp, ctx)
 
-		assignMeteredEvaluations, err := buildAssignMeteredEvaluations(actionsMap["assign_metered_evaluations"].([]interface{}), pp, ctx)
-		if err != nil {
-			return nil, err
-		}
+		assignMeteredEvaluations := buildAssignMeteredEvaluations(actionsMap["assign_metered_evaluations"].([]interface{}), pp, ctx)
 
 		return &platformclientv2.Policyactions{
 			RetainRecording:                &retainRecording,
@@ -1708,9 +1673,9 @@ func buildPolicyActionsFromResource(d *schema.ResourceData, pp *policyProxy, ctx
 			InitiateScreenRecording:        buildInitiateScreenRecording(actionsMap["initiate_screen_recording"].([]interface{})),
 			MediaTranscriptions:            buildMediaTranscriptions(actionsMap["media_transcriptions"].([]interface{})),
 			IntegrationExport:              buildIntegrationExport(actionsMap["integration_export"].([]interface{})),
-		}, nil
+		}
 	}
-	return nil, err
+	return nil
 }
 
 func buildUserParams(params []interface{}) *[]platformclientv2.Userparam {

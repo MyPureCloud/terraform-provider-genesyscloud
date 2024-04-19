@@ -55,7 +55,7 @@ func TestAccDataSourceRecordingMediaRetentionPolicy(t *testing.T) {
 						Evaluators:           []User{{}},
 						MaxNumberEvaluations: 1,
 						AssignToActiveUser:   true,
-						TimeInterval: Timeinterval{
+						TimeInterval: EvalTimeinterval{
 							Days:  1,
 							Hours: 1,
 						},
@@ -65,7 +65,7 @@ func TestAccDataSourceRecordingMediaRetentionPolicy(t *testing.T) {
 					{
 						Evaluators:           []User{{}},
 						MaxNumberEvaluations: 1,
-						TimeInterval: Timeinterval{
+						TimeInterval: AgentTimeinterval{
 							Months: 1,
 							Weeks:  1,
 							Days:   1,

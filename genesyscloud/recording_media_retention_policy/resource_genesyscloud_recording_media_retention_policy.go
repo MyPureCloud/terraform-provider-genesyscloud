@@ -66,16 +66,9 @@ func createMediaRetentionPolicy(ctx context.Context, d *schema.ResourceData, met
 	order := d.Get("order").(int)
 	description := d.Get("description").(string)
 	enabled := d.Get("enabled").(bool)
-
-	mediaPolicies, err := buildMediaPolicies(d, pp, ctx)
-	if err != nil {
-		return diag.Errorf("%s", err)
-	}
+	mediaPolicies := buildMediaPolicies(d, pp, ctx)
 	conditions := buildConditions(d)
-	actions, err := buildPolicyActionsFromResource(d, pp, ctx)
-	if err != nil {
-		return diag.Errorf("FFFD %s", err)
-	}
+	actions := buildPolicyActionsFromResource(d, pp, ctx)
 	policyErrors := buildPolicyErrors(d)
 
 	reqBody := platformclientv2.Policycreate{
@@ -147,16 +140,9 @@ func updateMediaRetentionPolicy(ctx context.Context, d *schema.ResourceData, met
 	order := d.Get("order").(int)
 	description := d.Get("description").(string)
 	enabled := d.Get("enabled").(bool)
-
-	mediaPolicies, err := buildMediaPolicies(d, pp, ctx)
-	if err != nil {
-		return diag.Errorf("FFFD %s", err)
-	}
+	mediaPolicies := buildMediaPolicies(d, pp, ctx)
 	conditions := buildConditions(d)
-	actions, err := buildPolicyActionsFromResource(d, pp, ctx)
-	if err != nil {
-		return diag.Errorf("FFFD %s", err)
-	}
+	actions := buildPolicyActionsFromResource(d, pp, ctx)
 	policyErrors := buildPolicyErrors(d)
 
 	reqBody := platformclientv2.Policy{
