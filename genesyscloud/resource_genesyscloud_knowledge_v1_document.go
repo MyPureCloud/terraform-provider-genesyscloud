@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"net/url"
 	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
@@ -152,7 +151,7 @@ func getAllKnowledgeV1DocumentEntities(knowledgeAPI platformclientv2.KnowledgeAp
 	)
 
 	const pageSize = 100
-	for i := 0; ; i++ {
+	for {
 		knowledgeDocuments, resp, getErr := knowledgeAPI.GetKnowledgeKnowledgebaseLanguageDocuments(*knowledgeBase.Id, *knowledgeBase.CoreLanguage, "", after, "", fmt.Sprintf("%v", pageSize), "", "", "", "", nil)
 		if getErr != nil {
 			return nil, util.BuildAPIDiagnosticError("genesyscloud_knowledge_v1_document", fmt.Sprintf("Failed to get page of knowledge documents error: %s", getErr), resp)
@@ -168,16 +167,12 @@ func getAllKnowledgeV1DocumentEntities(knowledgeAPI platformclientv2.KnowledgeAp
 			break
 		}
 
-		u, err := url.Parse(*knowledgeDocuments.NextUri)
+		after, err := util.GetQueryParamValueFromUri(*knowledgeDocuments.NextUri, "after")
 		if err != nil {
 			return nil, diag.Errorf("Failed to parse after cursor from knowledge document nextUri: %v", err)
 		}
-		m, _ := url.ParseQuery(u.RawQuery)
-		if afterSlice, ok := m["after"]; ok && len(afterSlice) > 0 {
-			after = afterSlice[0]
-			if after == "" {
-				break
-			}
+		if after == "" {
+			break
 		}
 	}
 

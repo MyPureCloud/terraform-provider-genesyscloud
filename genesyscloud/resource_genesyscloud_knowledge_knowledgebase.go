@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"net/url"
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
@@ -53,7 +52,7 @@ func getAllKnowledgebaseEntities(knowledgeApi platformclientv2.KnowledgeApi, pub
 	)
 
 	const pageSize = 100
-	for i := 0; ; i++ {
+	for {
 		knowledgeBases, resp, getErr := knowledgeApi.GetKnowledgeKnowledgebases("", after, "", fmt.Sprintf("%v", pageSize), "", "", published, "", "")
 		if getErr != nil {
 			return nil, util.BuildAPIDiagnosticError("genesyscloud_knowledge_knowledgebase", fmt.Sprintf("Failed to get page of knowledge bases error: %s", getErr), resp)
@@ -69,13 +68,9 @@ func getAllKnowledgebaseEntities(knowledgeApi platformclientv2.KnowledgeApi, pub
 			break
 		}
 
-		u, err := url.Parse(*knowledgeBases.NextUri)
+		after, err := util.GetQueryParamValueFromUri(*knowledgeBases.NextUri, "after")
 		if err != nil {
 			return nil, diag.Errorf("Failed to parse after cursor from knowledge base nextUri: %v", err)
-		}
-		m, _ := url.ParseQuery(u.RawQuery)
-		if afterSlice, ok := m["after"]; ok && len(afterSlice) > 0 {
-			after = afterSlice[0]
 		}
 		if after == "" {
 			break
