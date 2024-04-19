@@ -88,6 +88,17 @@ func GenerateMediaSettings(attrName string, alertingTimeout string, enableAutoAn
 	`, attrName, alertingTimeout, enableAutoAnswer, slPercent, slDurationMs)
 }
 
+func GenerateMediaSettingsCallBack(attrName string, alertingTimeout string, enableAutoAnswer string, slPercent string, slDurationMs string, enableAutoDial string) string {
+	return fmt.Sprintf(`%s {
+		alerting_timeout_sec = %s
+		enable_auto_answer = %s
+		service_level_percentage = %s
+		service_level_duration_ms = %s
+		enable_auto_dial_and_end = %s
+	}
+	`, attrName, alertingTimeout, enableAutoAnswer, slPercent, slDurationMs, enableAutoDial)
+}
+
 func GenerateRoutingRules(operator string, threshold string, waitSeconds string) string {
 	return fmt.Sprintf(`routing_rules {
 		operator = "%s"

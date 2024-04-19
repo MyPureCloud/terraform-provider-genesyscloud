@@ -445,6 +445,9 @@ func flattenMediaSettingCallback(settings *platformclientv2.Callbackmediasetting
 	settingsMap["service_level_percentage"] = *settings.ServiceLevel.Percentage
 	settingsMap["service_level_duration_ms"] = *settings.ServiceLevel.DurationMs
 	resourcedata.SetMapValueIfNotNil(settingsMap, "enable_auto_answer", settings.EnableAutoAnswer)
+	resourcedata.SetMapValueIfNotNil(settingsMap, "enable_auto_dial_and_end", settings.EnableAutoDialAndEnd)
+	settingsMap["auto_end_delay_seconds"] = *settings.AutoEndDelaySeconds
+	settingsMap["auto_dial_delay_seconds"] = *settings.AutoDialDelaySeconds
 
 	return []interface{}{settingsMap}
 }
