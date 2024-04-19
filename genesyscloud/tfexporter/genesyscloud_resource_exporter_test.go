@@ -390,3 +390,34 @@ func TestUnitTfExportMergeExporters(t *testing.T) {
 		}
 	}
 }
+
+func TestUnitTfExportTestExcludeAttributes(t *testing.T) {
+
+	gre := &GenesysCloudResourceExporter{
+		exportAsHCL:          false,
+		splitFilesByResource: true,
+	}
+
+	m1 := map[string]*resourceExporter.ResourceExporter{
+		"exporter1": &resourceExporter.ResourceExporter{AllowZeroValues: []string{"key1", "key2"}},
+		"exporter2": &resourceExporter.ResourceExporter{AllowZeroValues: []string{"key3", "key4"}},
+		"exporter3": &resourceExporter.ResourceExporter{AllowZeroValues: []string{"key3", "key4"}},
+	}
+
+	filter := []string{"e*.name"}
+
+	// Call the function
+	gre.populateConfigExcluded(m1, filter)
+	name := "name"
+	// Check if the exporters in the result have the expected keys
+	for _, exporter := range m1 {
+
+		attributes := exporter.ExcludedAttributes
+
+		for _, atribute := range attributes {
+			if atribute != name {
+				t.Errorf("Attribute %s not excluded in exporter", name)
+			}
+		}
+	}
+}
