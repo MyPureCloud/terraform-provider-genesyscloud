@@ -98,6 +98,20 @@ func TestAccResourceTfExport(t *testing.T) {
 					validateFileCreated(statePath),
 				),
 			},
+			{
+				// Run export with state file and excluded attribute with regex
+				Config: generateTfExportResourceMin(
+					exportResource1,
+					exportTestDir,
+					util.TrueValue,
+					strconv.Quote("g*.name"),
+				),
+				Check: resource.ComposeTestCheckFunc(
+					validateFileCreated(configPath),
+					validateConfigFile(configPath),
+					validateFileCreated(statePath),
+				),
+			},
 		},
 		CheckDestroy: testVerifyExportsDestroyedFunc(exportTestDir),
 	})
@@ -1718,6 +1732,26 @@ func generateTfExportResource(
 			"genesyscloud_webdeployments_configuration",
 			"genesyscloud_webdeployments_deployment",
 			"genesyscloud_knowledge_knowledgebase"
+		]
+		exclude_attributes = [%s]
+	}
+	`, resourceID, directory, includeState, excludedAttributes)
+}
+
+func generateTfExportResourceMin(
+	resourceID string,
+	directory string,
+	includeState string,
+	excludedAttributes string) string {
+	return fmt.Sprintf(`resource "genesyscloud_tf_export" "%s" {
+		directory = "%s"
+		include_state_file = %s
+		resource_types = [
+			"genesyscloud_routing_language",
+			"genesyscloud_routing_settings",
+			"genesyscloud_routing_skill",
+			"genesyscloud_routing_utilization",
+			"genesyscloud_routing_wrapupcode",
 		]
 		exclude_attributes = [%s]
 	}
