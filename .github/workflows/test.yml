@@ -36,22 +36,6 @@ jobs:
 
   # run acceptance tests in a matrix with Terraform core versions
 
-  all-other-unit-tests:
-    uses: ./.github/workflows/test-workflow.yml
-    name: All Other Unit Tests
-    needs: build
-    with:
-      package-path: './genesyscloud/...'
-      skip-regexp: 'TfExport|Outbound|Routing|Architect|Telephony|TaskManagement
-      |ResponseManagement+|Idp+|Journey|Knowledge|TestAccDataSource|TestAccResource'
-      coverage-out-filename: 'unit-coverage.out'
-      coverage-html-filename: 'unit-coverage.html'
-      test-log-artifact-name: 'unit test logs'
-      tf-unit: '*'
-    secrets:
-      client-id: ${{ secrets.TEST_GENESYSCLOUD_OAUTHCLIENT_ID }}
-      client-secret: ${{ secrets.TEST_GENESYSCLOUD_OAUTHCLIENT_SECRET }}
-
   export-tests:
     uses: ./.github/workflows/test-workflow.yml
     name: Export
@@ -202,6 +186,37 @@ jobs:
       client-id: ${{ secrets.TEST_GENESYSCLOUD_OAUTHCLIENT_ID }}
       client-secret: ${{ secrets.TEST_GENESYSCLOUD_OAUTHCLIENT_SECRET }}
 
+  integration-tests:
+    uses: ./.github/workflows/test-workflow.yml
+    name: Integration
+    needs: build
+    with:
+      package-path: './genesyscloud/...'
+      run-regexp: '(Integration)+'
+      coverage-out-filename: 'integration-coverage.out'
+      coverage-html-filename: 'integration-coverage.html'
+      test-log-artifact-name: 'integration logs'
+      sdk-log-artifact-name: 'integration sdk_log'
+    secrets:
+      client-id: ${{ secrets.TEST_GENESYSCLOUD_OAUTHCLIENT_ID }}
+      client-secret: ${{ secrets.TEST_GENESYSCLOUD_OAUTHCLIENT_SECRET }}
+
+  all-other-unit-tests:
+    uses: ./.github/workflows/test-workflow.yml
+    name: All Other Unit Tests
+    needs: build
+    with:
+      package-path: './genesyscloud/...'
+      skip-regexp: 'TfExport|Outbound|Routing|Architect|Telephony|TaskManagement
+      |ResponseManagement+|Idp+|Journey|Knowledge|Integration|TestAccDataSource|TestAccResource'
+      coverage-out-filename: 'unit-coverage.out'
+      coverage-html-filename: 'unit-coverage.html'
+      test-log-artifact-name: 'unit test logs'
+      tf-unit: '*'
+    secrets:
+      client-id: ${{ secrets.TEST_GENESYSCLOUD_OAUTHCLIENT_ID }}
+      client-secret: ${{ secrets.TEST_GENESYSCLOUD_OAUTHCLIENT_SECRET }}
+
   all-other-resource-tests:
     uses: ./.github/workflows/test-workflow.yml
     name: All Other Resource Tests
@@ -210,7 +225,7 @@ jobs:
     with:
       package-path: './genesyscloud/...'
       skip-regexp: '(TfExport)+|(Outbound)+|(Routing)+|(Architect)+|(Telephony)+
-      |(TaskManagement)+|(ResponseManagement)+|(Idp)+|(Journey)+|(Knowledge)+'
+      |(TaskManagement)+|(ResponseManagement)+|(Idp)+|(Journey)+|(Knowledge)+|(Integration)+'
       run-regexp: 'TestAccResource'
       coverage-out-filename: 'resource-coverage.out'
       coverage-html-filename: 'resource-coverage.html'
@@ -227,7 +242,7 @@ jobs:
     with:
       package-path: './genesyscloud/...'
       skip-regexp: '(TfExport)+|(Outbound)+|(Routing)+|(Architect)+|(Telephony)+
-      |(TaskManagement)+|(ResponseManagement)+|(Idp)+|(Journey)+|(Knowledge)+'
+      |(TaskManagement)+|(ResponseManagement)+|(Idp)+|(Journey)+|(Knowledge)+|(Integration)+'
       run-regexp: 'TestAccDataSource'
       coverage-out-filename: 'data-source-coverage.out'
       coverage-html-filename: 'data-source-coverage.html'
