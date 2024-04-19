@@ -30,7 +30,7 @@ func getAllIdpAdfs(_ context.Context, clientConfig *platformclientv2.Configurati
 			// Don't export if config doesn't exist
 			return resources, nil
 		}
-		return nil, diag.Errorf("Failed to get IDP ADFS: %v", getErr)
+		return nil, util.BuildAPIDiagnosticError("genesyscloud_idp_adfs", fmt.Sprintf("Failed to get IDP ADFS error: %s", getErr), resp)
 	}
 
 	resources["0"] = &resourceExporter.ResourceMeta{Name: "adfs"}
@@ -176,23 +176,23 @@ func updateIdpAdfs(ctx context.Context, d *schema.ResourceData, meta interface{}
 		update.Certificates = certificates
 	}
 
-	_, _, err := idpAPI.PutIdentityprovidersAdfs(update)
+	_, resp, err := idpAPI.PutIdentityprovidersAdfs(update)
 	if err != nil {
-		return diag.Errorf("Failed to update IDP ADFS: %s", err)
+		return util.BuildAPIDiagnosticError("genesyscloud_idp_adfs", fmt.Sprintf("Failed to update IDP ADFS %s error: %s", d.Id(), err), resp)
 	}
 
 	log.Printf("Updated IDP ADFS")
 	return readIdpAdfs(ctx, d, meta)
 }
 
-func deleteIdpAdfs(ctx context.Context, _ *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func deleteIdpAdfs(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	idpAPI := platformclientv2.NewIdentityProviderApiWithConfig(sdkConfig)
 
 	log.Printf("Deleting IDP ADFS")
-	_, _, err := idpAPI.DeleteIdentityprovidersAdfs()
+	_, resp, err := idpAPI.DeleteIdentityprovidersAdfs()
 	if err != nil {
-		return diag.Errorf("Failed to delete IDP ADFS: %s", err)
+		return util.BuildAPIDiagnosticError("genesyscloud_idp_adfs", fmt.Sprintf("Failed to delete IDP ADFS %s error: %s", d.Id(), err), resp)
 	}
 
 	return util.WithRetries(ctx, 180*time.Second, func() *retry.RetryError {

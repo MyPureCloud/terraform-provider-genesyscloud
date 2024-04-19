@@ -20,6 +20,10 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
 )
 
+const (
+	resourceName = "genesyscloud_outbound_messagingcampaign"
+)
+
 var (
 	OutboundmessagingcampaigncontactsortResource = &schema.Resource{
 		Schema: map[string]*schema.Schema{
@@ -169,9 +173,9 @@ func getAllOutboundMessagingcampaign(_ context.Context, clientConfig *platformcl
 
 	for pageNum := 1; ; pageNum++ {
 		const pageSize = 100
-		sdkMessagingcampaignEntityListing, _, getErr := outboundApi.GetOutboundMessagingcampaigns(pageSize, pageNum, "", "", "", "", []string{}, "", "", []string{})
+		sdkMessagingcampaignEntityListing, resp, getErr := outboundApi.GetOutboundMessagingcampaigns(pageSize, pageNum, "", "", "", "", []string{}, "", "", []string{})
 		if getErr != nil {
-			return nil, diag.Errorf("Error requesting page of Outbound Messagingcampaign: %s", getErr)
+			return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Error requesting page of Outbound Messagingcampaign error: %s", getErr), resp)
 		}
 
 		if sdkMessagingcampaignEntityListing.Entities == nil || len(*sdkMessagingcampaignEntityListing.Entities) == 0 {
@@ -231,9 +235,9 @@ func createOutboundMessagingcampaign(ctx context.Context, d *schema.ResourceData
 	}
 
 	log.Printf("Creating Outbound Messagingcampaign %s", name)
-	outboundMessagingcampaign, _, err := outboundApi.PostOutboundMessagingcampaigns(sdkmessagingcampaign)
+	outboundMessagingcampaign, resp, err := outboundApi.PostOutboundMessagingcampaigns(sdkmessagingcampaign)
 	if err != nil {
-		return diag.Errorf("Failed to create Outbound Messagingcampaign %s: %s", name, err)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create outbound messagingcampaign %s error: %s", name, err), resp)
 	}
 
 	d.SetId(*outboundMessagingcampaign.Id)
@@ -276,12 +280,12 @@ func updateOutboundMessagingcampaign(ctx context.Context, d *schema.ResourceData
 		// Get current Outbound Messagingcampaign version
 		outboundMessagingcampaign, resp, getErr := outboundApi.GetOutboundMessagingcampaign(d.Id())
 		if getErr != nil {
-			return resp, diag.Errorf("Failed to read Outbound Messagingcampaign %s: %s", d.Id(), getErr)
+			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to read Outbound Messagingcampaign %s error: %s", name, getErr), resp)
 		}
 		sdkmessagingcampaign.Version = outboundMessagingcampaign.Version
-		outboundMessagingcampaign, _, updateErr := outboundApi.PutOutboundMessagingcampaign(d.Id(), sdkmessagingcampaign)
+		outboundMessagingcampaign, resp, updateErr := outboundApi.PutOutboundMessagingcampaign(d.Id(), sdkmessagingcampaign)
 		if updateErr != nil {
-			return resp, diag.Errorf("Failed to update Outbound Messagingcampaign %s: %s", name, updateErr)
+			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update Outbound Messagingcampaign %s error: %s", name, updateErr), resp)
 		}
 		return nil, nil
 	})
@@ -365,7 +369,7 @@ func deleteOutboundMessagingcampaign(ctx context.Context, d *schema.ResourceData
 		log.Printf("Deleting Outbound Messagingcampaign")
 		_, resp, err := outboundApi.DeleteOutboundMessagingcampaign(d.Id())
 		if err != nil {
-			return resp, diag.Errorf("Failed to delete Outbound Messagingcampaign: %s", err)
+			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete outbound Messagingcampaign %s error: %s", d.Id(), err), resp)
 		}
 		return resp, nil
 	})

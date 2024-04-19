@@ -8,6 +8,10 @@ import (
 	gcloud "terraform-provider-genesyscloud/genesyscloud/validators"
 )
 
+const (
+	resourceName = "genesyscloud_telephony_providers_edges_extension_pool"
+)
+
 func ResourceTelephonyExtensionPool() *schema.Resource {
 	return &schema.Resource{
 		Description:   "Genesys Cloud Extension Pool",

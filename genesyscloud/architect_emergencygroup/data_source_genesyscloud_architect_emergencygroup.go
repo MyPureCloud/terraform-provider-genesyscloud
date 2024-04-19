@@ -21,8 +21,6 @@ func dataSourceEmergencyGroupRead(ctx context.Context, d *schema.ResourceData, m
 
 	// Query emergency group by name. Retry in case search has not yet indexed the emergency group.
 	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
-		const pageNum = 1
-		const pageSize = 100
 		emergencyGroups, resp, getErr := ap.getArchitectEmergencyGroupIdByName(ctx, name)
 		if getErr != nil {
 			return retry.NonRetryableError(fmt.Errorf("Error requesting emergency group %s: %s %v", name, getErr, resp))

@@ -3,6 +3,7 @@ package responsemanagement_responseasset
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"terraform-provider-genesyscloud/genesyscloud/validators"
 
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
@@ -22,6 +23,7 @@ const resourceName = "genesyscloud_responsemanagement_responseasset"
 func SetRegistrar(regInstance registrar.Registrar) {
 	regInstance.RegisterResource(resourceName, ResourceResponseManagementResponseAsset())
 	regInstance.RegisterDataSource(resourceName, DataSourceResponseManagementResponseAsset())
+	regInstance.RegisterExporter(resourceName, ExporterResponseManagementResponseAsset())
 }
 
 // ResourceResponsemanagementResponseasset registers the genesyscloud_responsemanagement_responseasset resource with Terraform
@@ -51,6 +53,11 @@ func ResourceResponseManagementResponseAsset() *schema.Resource {
 				Computed:    true,
 				Type:        schema.TypeString,
 			},
+			"file_content_hash": {
+				Description: "Hash value of the response asset file content. Used to detect changes.",
+				Type:        schema.TypeString,
+				Required:    true,
+			},
 		},
 	}
 }
@@ -65,6 +72,16 @@ func DataSourceResponseManagementResponseAsset() *schema.Resource {
 				Type:        schema.TypeString,
 				Required:    true,
 			},
+		},
+	}
+}
+
+func ExporterResponseManagementResponseAsset() *resourceExporter.ResourceExporter {
+	return &resourceExporter.ResourceExporter{
+		GetResourcesFunc: provider.GetAllWithPooledClient(getAllResponseAssets),
+		CustomFileWriter: resourceExporter.CustomFileWriterSettings{
+			RetrieveAndWriteFilesFunc: responsemanagementResponseassetResolver,
+			SubDirectory:              "response_assets",
 		},
 	}
 }

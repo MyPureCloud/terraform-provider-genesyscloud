@@ -50,7 +50,7 @@ func createArchitectGrammarLanguage(ctx context.Context, d *schema.ResourceData,
 	log.Printf("Creating Architect Grammar Language %s for grammar %s", *architectGrammarLanguage.Language, *architectGrammarLanguage.GrammarId)
 	language, resp, err := proxy.createArchitectGrammarLanguage(ctx, &architectGrammarLanguage)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create grammar language: %s", err), resp)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create grammar language: %s error %s", d.Id(), err), resp)
 	}
 
 	// Language id is always in format <grammar-id>:<language-code>
@@ -113,7 +113,7 @@ func updateArchitectGrammarLanguage(ctx context.Context, d *schema.ResourceData,
 	log.Printf("Updating Architect Grammar Language %s", d.Id())
 	_, resp, err := proxy.updateArchitectGrammarLanguage(ctx, *architectGrammarLanguage.GrammarId, *architectGrammarLanguage.Language, &architectGrammarLanguage)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update grammar language: %s", err), resp)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update grammar language: %s error: %s", d.Id(), err), resp)
 	}
 
 	log.Printf("Updated Architect Grammar Language %s", d.Id())

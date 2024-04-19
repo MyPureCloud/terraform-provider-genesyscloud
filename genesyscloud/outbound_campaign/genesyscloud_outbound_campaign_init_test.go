@@ -12,6 +12,7 @@ import (
 	obDnclist "terraform-provider-genesyscloud/genesyscloud/outbound_dnclist"
 	outboundRuleset "terraform-provider-genesyscloud/genesyscloud/outbound_ruleset"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
+	routingQueue "terraform-provider-genesyscloud/genesyscloud/routing_queue"
 	telephonyProvidersEdgesSite "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site"
 	"testing"
 
@@ -43,6 +44,9 @@ type registerTestInstance struct {
 
 // registerTestResources registers all resources used in the tests
 func (r *registerTestInstance) registerTestResources() {
+	r.resourceMapMutex.Lock()
+	defer r.resourceMapMutex.Unlock()
+
 	providerResources[resourceName] = ResourceOutboundCampaign()
 	providerResources["genesyscloud_outbound_contact_list"] = outboundContactList.ResourceOutboundContactList()
 	providerResources["genesyscloud_routing_wrapupcode"] = gcloud.ResourceRoutingWrapupCode()
@@ -51,7 +55,7 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_location"] = gcloud.ResourceLocation()
 	providerResources["genesyscloud_telephony_providers_edges_site"] = telephonyProvidersEdgesSite.ResourceSite()
 	providerResources["genesyscloud_outbound_dnclist"] = obDnclist.ResourceOutboundDncList()
-	providerResources["genesyscloud_routing_queue"] = gcloud.ResourceRoutingQueue()
+	providerResources["genesyscloud_routing_queue"] = routingQueue.ResourceRoutingQueue()
 	providerResources["genesyscloud_outbound_contactlistfilter"] = obContactListFilter.ResourceOutboundContactlistfilter()
 	providerResources["genesyscloud_outbound_ruleset"] = outboundRuleset.ResourceOutboundRuleset()
 	providerResources["genesyscloud_outbound_callabletimeset"] = obCallableTimeset.ResourceOutboundCallabletimeset()
@@ -59,6 +63,9 @@ func (r *registerTestInstance) registerTestResources() {
 
 // registerTestDataSources registers all data sources used in the tests.
 func (r *registerTestInstance) registerTestDataSources() {
+	r.datasourceMapMutex.Lock()
+	defer r.datasourceMapMutex.Unlock()
+
 	providerDataSources[resourceName] = DataSourceOutboundCampaign()
 	providerDataSources["genesyscloud_auth_division_home"] = gcloud.DataSourceAuthDivisionHome()
 }

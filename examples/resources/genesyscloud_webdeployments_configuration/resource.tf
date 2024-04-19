@@ -33,7 +33,6 @@ resource "genesyscloud_webdeployments_configuration" "exampleConfiguration" {
       primary_color = "#B0B0B0"
     }
     file_upload {
-      use_supported_content_profile = true
       mode {
         file_types       = ["image/png"]
         max_file_size_kb = 256

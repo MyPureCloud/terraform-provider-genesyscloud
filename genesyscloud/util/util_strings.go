@@ -27,3 +27,12 @@ func ToCamelCase(str string) string {
 	}
 	return camel
 }
+
+func StringExists(target string, slice []string) bool {
+	for _, str := range slice {
+		if str == target {
+			return true
+		}
+	}
+	return false
+}

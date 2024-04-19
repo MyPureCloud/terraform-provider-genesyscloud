@@ -165,6 +165,15 @@ func TestAccResourceUserBasic(t *testing.T) {
 	})
 }
 
+func generateUserWithCustomAttrs(resourceID string, email string, name string, attrs ...string) string {
+	return fmt.Sprintf(`resource "genesyscloud_user" "%s" {
+		email = "%s"
+		name = "%s"
+		%s
+	}
+	`, resourceID, email, name, strings.Join(attrs, "\n"))
+}
+
 func TestAccResourceUserAddresses(t *testing.T) {
 	t.Parallel()
 	var (
