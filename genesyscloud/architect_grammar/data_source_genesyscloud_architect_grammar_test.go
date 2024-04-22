@@ -3,16 +3,18 @@ package architect_grammar
 import (
 	"fmt"
 	"log"
-	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 
 	"github.com/google/uuid"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
+)
+
+var (
+	sdkConfig *platformclientv2.Configuration
 )
 
 func TestAccDataSourceArchitectGrammar(t *testing.T) {
@@ -58,12 +60,13 @@ func generateGrammarDataSource(
 }
 
 func cleanupArchitectGrammar(idPrefix string) {
-	architectApi := platformclientv2.NewArchitectApi()
+	architectApi := platformclientv2.NewArchitectApi(sdkConfig)
 
 	for pageNum := 1; ; pageNum++ {
 		const pageSize = 100
-		architectGrammars, _, getErr := architectApi.GetArchitectGrammars(pageNum, pageSize, "", "", nil, "", "", "", false)
+		architectGrammars, _, getErr := architectApi.GetArchitectGrammars(pageNum, pageSize, "", "", nil, idPrefix, "", "", false)
 		if getErr != nil {
+			log.Printf("failed to get architect grammar %s", getErr)
 			return
 		}
 
@@ -72,10 +75,10 @@ func cleanupArchitectGrammar(idPrefix string) {
 		}
 
 		for _, grammar := range *architectGrammars.Entities {
-			if grammar.Name != nil && strings.HasPrefix(*grammar.Name, idPrefix) {
+			if grammar.Name != nil {
 				_, _, delErr := architectApi.DeleteArchitectGrammar(*grammar.Id)
 				if delErr != nil {
-					diag.Errorf("failed to delete architect grammar %s", delErr)
+					log.Printf("failed to delete architect grammar %s", delErr)
 					return
 				}
 				log.Printf("Deleted architect grammar %s (%s)", *grammar.Id, *grammar.Name)

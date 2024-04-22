@@ -11,10 +11,13 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
+)
+
+var (
+	sdkConfig *platformclientv2.Configuration
 )
 
 func TestAccResourceAuthDivisionBasic(t *testing.T) {
@@ -195,12 +198,13 @@ func validateHomeDivisionID(divResourceName string) resource.TestCheckFunc {
 }
 
 func cleanupAuthDivision(idPrefix string) {
-	authAPI := platformclientv2.NewAuthorizationApi()
+	authAPI := platformclientv2.NewAuthorizationApi(sdkConfig)
 
 	for pageNum := 1; ; pageNum++ {
 		const pageSize = 100
 		divisions, _, getErr := authAPI.GetAuthorizationDivisions(pageSize, pageNum, "", nil, "", "", false, nil, "")
 		if getErr != nil {
+			log.Printf("failed to get auth division %s", getErr)
 			return
 		}
 
@@ -212,7 +216,7 @@ func cleanupAuthDivision(idPrefix string) {
 			if div.Name != nil && strings.HasPrefix(*div.Name, idPrefix) {
 				_, delErr := authAPI.DeleteAuthorizationDivision(*div.Id, true)
 				if delErr != nil {
-					diag.Errorf("failed to delete Auth division %s", delErr)
+					log.Printf("failed to delete Auth division %s", delErr)
 					return
 				}
 				log.Printf("Deleted auth division %s (%s)", *div.Id, *div.Name)

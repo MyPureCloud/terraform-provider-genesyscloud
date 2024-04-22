@@ -16,8 +16,7 @@ import (
 )
 
 func TestAccResourceArchitectEmergencyGroups(t *testing.T) {
-	//t.Parallel()
-	//t.Skip("skipping flow tests")
+
 	var (
 		resourceType = "genesyscloud_architect_emergencygroup"
 		resourceName = "test_emergency_group"
