@@ -95,6 +95,12 @@ func createQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		log.Printf("%s is set, not creating conditional_group_routing_rules attribute in routing_queue %s resource", featureToggles.CSGToggleName(), d.Id())
 	}
 
+	if exists := featureToggles.OEAToggleExists(); !exists {
+		createQueue.OutboundEmailAddress = buildSdkQueueEmailAddress(d)
+	} else {
+		log.Printf("%s is set, not creating outbound_email_address attribute in routing_queue %s resource", featureToggles.OEAToggleName(), d.Id())
+	}
+
 	if divisionID != "" {
 		createQueue.Division = &platformclientv2.Writabledivision{Id: &divisionID}
 	}
@@ -234,6 +240,17 @@ func readQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 			log.Printf("%s is set, not reading conditional_group_routing_rules attribute in routing_queue %s resource", featureToggles.CSGToggleName(), d.Id())
 		}
 
+		if exists := featureToggles.OEAToggleExists(); !exists {
+			if currentQueue.OutboundEmailAddress != nil && *currentQueue.OutboundEmailAddress != nil {
+				outboundEmailAddress := *currentQueue.OutboundEmailAddress
+				_ = d.Set("outbound_email_address", []interface{}{FlattenQueueEmailAddress(*outboundEmailAddress)})
+			} else {
+				_ = d.Set("outbound_email_address", nil)
+			}
+		} else {
+			log.Printf("%s is set, not reading outbound_email_address attribute in routing_queue %s resource", featureToggles.OEAToggleName(), d.Id())
+		}
+
 		log.Printf("Done reading queue %s %s", d.Id(), *currentQueue.Name)
 		return cc.CheckState()
 	})
@@ -281,6 +298,12 @@ func updateQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		updateQueue.ConditionalGroupRouting = conditionalGroupRouting
 	} else {
 		log.Printf("%s is set, not updating conditional_group_routing_rules attribute in routing_queue %s resource", featureToggles.CSGToggleName(), d.Id())
+	}
+
+	if exists := featureToggles.OEAToggleExists(); !exists {
+		updateQueue.OutboundEmailAddress = buildSdkQueueEmailAddress(d)
+	} else {
+		log.Printf("%s is set, not creating outbound_email_address attribute in routing_queue %s resource", featureToggles.OEAToggleName(), d.Id())
 	}
 
 	log.Printf("Updating queue %s", *updateQueue.Name)
@@ -794,6 +817,34 @@ func buildSdkQueueMessagingAddresses(d *schema.ResourceData) *platformclientv2.Q
 		}
 	}
 	return nil
+}
+
+func buildSdkQueueEmailAddress(d *schema.ResourceData) *platformclientv2.Queueemailaddress {
+	outboundEmailAddress := d.Get("outbound_email_address").([]interface{})
+	if outboundEmailAddress != nil && len(outboundEmailAddress) > 0 {
+		settingsMap := outboundEmailAddress[0].(map[string]interface{})
+
+		inboundRoute := &platformclientv2.Inboundroute{
+			Id: platformclientv2.String(settingsMap["route_id"].(string)),
+		}
+		return &platformclientv2.Queueemailaddress{
+			Domain: &platformclientv2.Domainentityref{Id: platformclientv2.String(settingsMap["domain_id"].(string))},
+			Route:  &inboundRoute,
+		}
+	}
+	return nil
+}
+
+func FlattenQueueEmailAddress(settings platformclientv2.Queueemailaddress) map[string]interface{} {
+	settingsMap := make(map[string]interface{})
+	resourcedata.SetMapReferenceValueIfNotNil(settingsMap, "domain_id", settings.Domain)
+
+	if settings.Route != nil {
+		route := *settings.Route
+		settingsMap["route_id"] = *route.Id
+	}
+
+	return settingsMap
 }
 
 func buildSdkDirectRouting(d *schema.ResourceData) *platformclientv2.Directrouting {
