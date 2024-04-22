@@ -20,10 +20,10 @@ func dataSourceConfigurationRead(ctx context.Context, d *schema.ResourceData, m 
 	name := d.Get("name").(string)
 
 	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
-		configs, err := wp.getWebDeploymentsConfiguration(ctx)
+		configs, resp, err := wp.getWebDeploymentsConfiguration(ctx)
 
 		if err != nil {
-			return retry.NonRetryableError(fmt.Errorf("Error retrieving web deployment configuration %s: %s", name, err))
+			return retry.NonRetryableError(fmt.Errorf("Error retrieving web deployment configuration %s: %s %s", name, err, resp))
 		}
 
 		for _, config := range *configs.Entities {

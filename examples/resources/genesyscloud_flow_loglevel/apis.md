@@ -1,0 +1,5 @@
+* [GET /api/v2/flows/instances/settings/loglevels](https://developer.genesys.cloud/platform/preview-apis#get-api-v2-flows-instances-settings-loglevels)
+* [POST /api/v2/flows/{flowId}/instances/settings/loglevels](https://developer.genesys.cloud/platform/preview-apis#post-api-v2-flows--flowId--instances-settings-loglevels)
+* [GET /api/v2/flows/{flowId}/instances/settings/loglevels](https://developer.genesys.cloud/platform/preview-apis#get-api-v2-flows--flowId--instances-settings-loglevels)
+* [PUT /api/v2/flows/{flowId}/instances/settings/loglevels](https://developer.genesys.cloud/platform/preview-apis#put-api-v2-flows-instances-settings-loglevels-default)
+* [DELETE /api/v2/flows/{flowId}/instances/settings/loglevels](https://developer.genesys.cloud/platform/preview-apis#delete-api-v2-flows-instances-settings-loglevels-default)

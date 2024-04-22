@@ -133,11 +133,6 @@ var (
 
 	fileUploadSettings = &schema.Resource{
 		Schema: map[string]*schema.Schema{
-			"use_supported_content_profile": {
-				Description: "Whether or not supported content profile is enabled",
-				Type:        schema.TypeBool,
-				Optional:    true,
-			},
 			"mode": {
 				Description: "The list of supported file upload modes",
 				Type:        schema.TypeList,

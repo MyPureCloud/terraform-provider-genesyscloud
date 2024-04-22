@@ -1,4 +1,4 @@
-package genesyscloud
+package routing_queue
 
 import (
 	"fmt"
@@ -39,6 +39,7 @@ func TestAccDataSourceRoutingQueueBasic(t *testing.T) {
 					util.NullValue, // enable_manual_assignment false
 					util.NullValue, //suppressCall_record_false
 					util.NullValue, // enable_transcription false
+					strconv.Quote("TimestampAndPriority"),
 				) + generateRoutingQueueDataSource(
 					queueDataSource,
 					"genesyscloud_routing_queue."+queueResource+".name",

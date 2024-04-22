@@ -110,10 +110,10 @@ func updatePrimarySecondarySites(ctx context.Context, sp *siteProxy, d *schema.R
 
 	site, resp, err := sp.getSiteById(ctx, siteId)
 	if resp.StatusCode != 200 {
-		return diag.Errorf("Unable to retrieve site record after site %s was created, but unable to update the primary or secondary site.  Status code %d. RespBody %s", siteId, resp.StatusCode, resp.RawBody)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Unable to retrieve site record after site %s was created, but unable to update the primary or secondary site error: %s", siteId, err), resp)
 	}
 	if err != nil {
-		return diag.Errorf("Unable to retrieve site record after site %s was created, but unable to update the primary or secondary site.  Err: %s", siteId, err)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Unable to retrieve site record after site %s was created, but unable to update the primary or secondary siteerror: %s ", siteId, err), resp)
 	}
 
 	if len(primarySites) == 0 && len(secondarySites) > 0 {
@@ -198,7 +198,7 @@ func updateSiteNumberPlans(ctx context.Context, sp *siteProxy, d *schema.Resourc
 
 	numberPlansFromAPI, resp, err := sp.getSiteNumberPlans(ctx, d.Id())
 	if err != nil {
-		return diag.Errorf("Failed to get number plans for site %s: %s %v", d.Id(), err, resp)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get number plans for site %s error: %s", d.Id(), err), resp)
 	}
 
 	updatedNumberPlans := make([]platformclientv2.Numberplan, 0)
@@ -299,7 +299,7 @@ func updateSiteOutboundRoutes(ctx context.Context, sp *siteProxy, d *schema.Reso
 	// Get the current outbound routes
 	outboundRoutesFromAPI, resp, err := sp.getSiteOutboundRoutes(ctx, d.Id())
 	if err != nil {
-		return diag.Errorf("Failed to get outbound routes for site %s: %s %v", d.Id(), err, resp)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get outbound routes for site %s error: %s", d.Id(), err), resp)
 	}
 
 	// Delete unwanted outbound roues first to free up classifications assigned to them
@@ -311,7 +311,7 @@ func updateSiteOutboundRoutes(ctx context.Context, sp *siteProxy, d *schema.Reso
 				if util.IsStatus404(resp) {
 					return nil
 				}
-				return diag.Errorf("failed to delete outbound route from site %s: %s", d.Id(), err)
+				return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete outbound route from site %s error: %s", d.Id(), err), resp)
 			}
 		}
 	}
@@ -330,13 +330,13 @@ func updateSiteOutboundRoutes(ctx context.Context, sp *siteProxy, d *schema.Reso
 
 			_, resp, err := sp.updateSiteOutboundRoute(ctx, d.Id(), *outboundRoute.Id, outboundRoute)
 			if err != nil {
-				return diag.Errorf("Failed to update outbound route with id %s for site %s: %s %v", *outboundRoute.Id, d.Id(), err, resp)
+				return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update outbound route with id %s for site %s error: %s", *outboundRoute.Id, d.Id(), err), resp)
 			}
 		} else {
 			// Add the outbound route
 			_, resp, err := sp.createSiteOutboundRoute(ctx, d.Id(), &outboundRouteFromTf)
 			if err != nil {
-				return diag.Errorf("Failed to add outbound route to site %s: %s %v", d.Id(), err, resp)
+				return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to add outbound route to site %s error: %s", d.Id(), err), resp)
 			}
 		}
 	}

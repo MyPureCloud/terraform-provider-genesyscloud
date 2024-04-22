@@ -3,6 +3,7 @@ package responsemanagement_response
 import (
 	"fmt"
 	"log"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
@@ -47,7 +48,7 @@ func TestAccResourceResponseManagementResponseFooterField(t *testing.T) {
 		testFilesDir  = "test_responseasset_data"
 		assetResource = "asset-resource-response"
 		fileName      = "yeti-img.png"
-		fullPath      = fmt.Sprintf("%s/%s", testFilesDir, fileName)
+		fullPath      = filepath.Join(testFilesDir, fileName)
 	)
 
 	cleanupResponseAssets("yeti")
@@ -234,7 +235,7 @@ func TestAccResourceResponseManagementResponseMessaging(t *testing.T) {
 		testFilesDir  = "test_responseasset_data"
 		assetResource = "asset-resource-response-message"
 		fileName      = "genesys-img-asset.png"
-		fullPath      = fmt.Sprintf("%s/%s", testFilesDir, fileName)
+		fullPath      = filepath.Join(testFilesDir, fileName)
 	)
 
 	cleanupResponseAssets("genesys")

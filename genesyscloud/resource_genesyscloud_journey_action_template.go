@@ -295,9 +295,9 @@ func getAllJourneyActionTemplates(_ context.Context, clientConfig *platformclien
 	pageCount := 1 // Needed because of broken journey common paging
 	for pageNum := 1; pageNum <= pageCount; pageNum++ {
 		const pageSize = 100
-		actionTemplates, _, getErr := journeyApi.GetJourneyActiontemplates(pageNum, pageSize, "", "", "", nil, "")
+		actionTemplates, resp, getErr := journeyApi.GetJourneyActiontemplates(pageNum, pageSize, "", "", "", nil, "")
 		if getErr != nil {
-			return nil, diag.Errorf("Failed to get page of journey action maps: %v", getErr)
+			return nil, util.BuildAPIDiagnosticError("genesyscloud_journey_action_template", fmt.Sprintf("Failed to get page of journey action maps error: %s", getErr), resp)
 		}
 		if actionTemplates.Entities == nil || len(*actionTemplates.Entities) == 0 {
 			break
@@ -339,7 +339,7 @@ func createJourneyActionTemplate(ctx context.Context, data *schema.ResourceData,
 	result, resp, err := journeyApi.PostJourneyActiontemplates(*actionTemplate)
 	if err != nil {
 		input, _ := util.InterfaceToJson(*actionTemplate)
-		return diag.Errorf("failed to create journey action template %s: %s\n(input: %+v)\n(resp: %s)", *actionTemplate.Name, err, input, util.GetBody(resp))
+		return util.BuildAPIDiagnosticError("genesyscloud_journey_action_template", fmt.Sprintf("Failed to create journey action template %s (input: %+v) error: %s", *actionTemplate.Name, input, err), resp)
 	}
 	data.SetId(*result.Id)
 	log.Printf("Created Journey Action Template %s %s", *result.Name, *result.Id)
@@ -371,13 +371,13 @@ func updateJourneyActionTemplate(ctx context.Context, data *schema.ResourceData,
 	diagErr := util.RetryWhen(util.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		actionTemplate, resp, getErr := journeyApi.GetJourneyActiontemplate(data.Id())
 		if getErr != nil {
-			return resp, diag.Errorf("failed to read current journey action template %s: %s", data.Id(), getErr)
+			return resp, util.BuildAPIDiagnosticError("genesyscloud_journey_action_template", fmt.Sprintf("failed to read journey action template %s error: %s", data.Id(), getErr), resp)
 		}
 		patchActionTemplate.Version = actionTemplate.Version
 		_, resp, patchErr := journeyApi.PatchJourneyActiontemplate(data.Id(), *patchActionTemplate)
 		if patchErr != nil {
 			input, _ := util.InterfaceToJson(*patchActionTemplate)
-			return resp, diag.Errorf("error updating journey action template %s: %s\n(input: %+v)\n(resp: %s)", *patchActionTemplate.Name, patchErr, input, util.GetBody(resp))
+			return resp, util.BuildAPIDiagnosticError("genesyscloud_journey_action_template", fmt.Sprintf("failed to update journey action template %s (input: %+v) error: %s", *actionTemplate.Name, input, patchErr), resp)
 		}
 		return resp, nil
 	})
@@ -392,8 +392,8 @@ func deleteJourneyActionTemplate(ctx context.Context, data *schema.ResourceData,
 	journeyApi := journeyApiConfig(i)
 	name := data.Get("name").(string)
 	log.Printf("Deleting Journey Action Template with name %s", name)
-	if _, err := journeyApi.DeleteJourneyActiontemplate(data.Id(), true); err != nil {
-		return diag.Errorf("Failed to delete journey action template with name %s: %s", name, err)
+	if resp, err := journeyApi.DeleteJourneyActiontemplate(data.Id(), true); err != nil {
+		return util.BuildAPIDiagnosticError("genesyscloud_journey_action_template", fmt.Sprintf("create journey action template %s error: %s", name, err), resp)
 	}
 	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		_, resp, err := journeyApi.GetJourneyActiontemplate(data.Id())

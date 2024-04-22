@@ -24,7 +24,6 @@ import (
 // getOutboundWrapupCodeMappings is used by the exporter to return all wrapupcode mappings
 func getOutboundWrapupCodeMappings(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
 	resources := make(resourceExporter.ResourceIDMetaMap)
-
 	resources["0"] = &resourceExporter.ResourceMeta{Name: "wrapupcodemappings"}
 	return resources, nil
 }
@@ -67,7 +66,7 @@ func readOutboundWrapUpCodeMappings(ctx context.Context, d *schema.ResourceData,
 		}
 
 		if sdkWrapupCodeMappings.Mapping != nil {
-			d.Set("mappings", flattenOutboundWrapupCodeMappings(d, sdkWrapupCodeMappings, &existingWrapupCodes))
+			_ = d.Set("mappings", flattenOutboundWrapupCodeMappings(d, sdkWrapupCodeMappings, &existingWrapupCodes))
 		}
 
 		log.Print("Read Outbound Wrap-up Code Mappings")
@@ -84,7 +83,7 @@ func updateOutboundWrapUpCodeMappings(ctx context.Context, d *schema.ResourceDat
 	diagErr := util.RetryWhen(util.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		wrapupCodeMappings, resp, err := proxy.getAllOutboundWrapupCodeMappings(ctx)
 		if err != nil {
-			return resp, diag.Errorf("failed to read wrap-up code mappings: %s", err)
+			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get  wrap-up code mappings error: %s", err), resp)
 		}
 
 		wrapupCodeUpdate := platformclientv2.Wrapupcodemapping{
@@ -94,7 +93,7 @@ func updateOutboundWrapUpCodeMappings(ctx context.Context, d *schema.ResourceDat
 		}
 		_, resp, err = proxy.updateOutboundWrapUpCodeMappings(ctx, wrapupCodeUpdate)
 		if err != nil {
-			return resp, diag.Errorf("failed to update wrap-up code mappings: %s %v", err, resp)
+			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update wrap-up code mappings %s error: %s", d.Id(), err), resp)
 		}
 		return resp, nil
 	})

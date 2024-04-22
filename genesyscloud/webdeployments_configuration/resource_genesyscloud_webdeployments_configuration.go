@@ -25,15 +25,13 @@ func getAllWebDeploymentConfigurations(ctx context.Context, clientConfig *platfo
 	resources := make(resourceExporter.ResourceIDMetaMap)
 	wp := getWebDeploymentConfigurationsProxy(clientConfig)
 
-	configurations, err := wp.getWebDeploymentsConfiguration(ctx)
+	configurations, resp, err := wp.getWebDeploymentsConfiguration(ctx)
 	if err != nil {
-		return nil, diag.Errorf("%v", err)
+		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get webdeployments configuration error: %s", err), resp)
 	}
-
 	for _, configuration := range *configurations.Entities {
 		resources[*configuration.Id] = &resourceExporter.ResourceMeta{Name: *configuration.Name}
 	}
-
 	return resources, nil
 }
 
@@ -64,7 +62,7 @@ func createWebDeploymentConfiguration(ctx context.Context, d *schema.ResourceDat
 
 	name, inputCfg := wdcUtils.BuildWebDeploymentConfigurationFromResourceData(d)
 	log.Printf("Creating web deployment configuration %s", name)
-
+	log.Println("Current Deployment: ", inputCfg)
 	diagErr := util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		configuration, resp, err := wp.createWebdeploymentsConfiguration(ctx, *inputCfg)
 		if err != nil {
@@ -214,7 +212,7 @@ func deleteWebDeploymentConfiguration(ctx context.Context, d *schema.ResourceDat
 	resp, err := wp.deleteWebDeploymentConfiguration(ctx, d.Id())
 
 	if err != nil {
-		return diag.Errorf("Failed to delete web deployment configuration %s: %s %v", name, err, resp)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete web deployment configuration %s error: %s", name, err), resp)
 	}
 
 	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
@@ -227,7 +225,6 @@ func deleteWebDeploymentConfiguration(ctx context.Context, d *schema.ResourceDat
 			}
 			return retry.NonRetryableError(fmt.Errorf("error deleting web deployment configuration %s: %s", d.Id(), err))
 		}
-
 		return retry.RetryableError(fmt.Errorf("web deployment configuration %s still exists", d.Id()))
 	})
 }

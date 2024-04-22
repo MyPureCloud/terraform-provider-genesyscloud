@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
-	"terraform-provider-genesyscloud/genesyscloud"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
+	routingQueue "terraform-provider-genesyscloud/genesyscloud/routing_queue"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 
@@ -193,7 +193,7 @@ func TestAccResourceAuthRoleConditions(t *testing.T) {
 			},
 			{
 				// Create a queue and update with a queue condition
-				Config: genesyscloud.GenerateRoutingQueueResourceBasic(queueResource1, queueName1) +
+				Config: routingQueue.GenerateRoutingQueueResourceBasic(queueResource1, queueName1) +
 					GenerateAuthRoleResource(
 						roleResource1,
 						roleName1,
