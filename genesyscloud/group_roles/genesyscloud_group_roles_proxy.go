@@ -48,7 +48,7 @@ func (p *groupRolesProxy) updateGroupRoles(ctx context.Context, roleID string, r
 
 func getGroupRolesByIdFn(_ context.Context, p *groupRolesProxy, roleId string) (*[]platformclientv2.Authzgrant, *platformclientv2.APIResponse, error) {
 	var grants []platformclientv2.Authzgrant
-	subject, resp, err := p.authorizationApi.GetAuthorizationSubject(roleId)
+	subject, resp, err := p.authorizationApi.GetAuthorizationSubject(roleId, true)
 	if err != nil {
 		return nil, resp, fmt.Errorf("failed to get current grants for subject %s: %s", roleId, err)
 	}
@@ -68,7 +68,7 @@ func getGroupRolesByIdFn(_ context.Context, p *groupRolesProxy, roleId string) (
 
 func updateGroupRolesFn(_ context.Context, p *groupRolesProxy, roleId string, rolesConfig *schema.Set, subjectType string) (*platformclientv2.APIResponse, error) {
 	// Get existing roles/divisions
-	subject, resp, err := p.authorizationApi.GetAuthorizationSubject(roleId)
+	subject, resp, err := p.authorizationApi.GetAuthorizationSubject(roleId, true)
 	grants, resp, err := getAssignedGrants(*subject.Id, p)
 
 	existingGrants, configGrants, _ := getExistingAndConfigGrants(grants, rolesConfig)
@@ -118,7 +118,7 @@ func updateGroupRolesFn(_ context.Context, p *groupRolesProxy, roleId string, ro
 
 func getAssignedGrants(subjectID string, p *groupRolesProxy) ([]platformclientv2.Authzgrant, *platformclientv2.APIResponse, error) {
 	var grants []platformclientv2.Authzgrant
-	subject, resp, err := p.authorizationApi.GetAuthorizationSubject(subjectID)
+	subject, resp, err := p.authorizationApi.GetAuthorizationSubject(subjectID, true)
 
 	if err != nil {
 		return nil, resp, fmt.Errorf("failed to get current grants for subject %s: %s", subjectID, err)
