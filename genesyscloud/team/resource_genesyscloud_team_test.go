@@ -5,6 +5,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -21,7 +22,7 @@ tests for team.
 */
 
 func TestAccResourceMembers(t *testing.T) {
-	//t.Parallel()
+
 	var (
 		resourceId = "Teams" + uuid.NewString()
 		name1      = "Test Teams " + uuid.NewString()
@@ -78,6 +79,10 @@ func TestAccResourceMembers(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_team."+resourceId, "name", name1),
 					resource.TestCheckResourceAttrPair("genesyscloud_team."+resourceId, "division_id", "genesyscloud_auth_division."+divResource, "id"),
 				),
+				PreConfig: func() {
+					// Wait for a specified duration - to avoid getting non empty plan
+					time.Sleep(15 * time.Second)
+				},
 			},
 			{
 				// Read
