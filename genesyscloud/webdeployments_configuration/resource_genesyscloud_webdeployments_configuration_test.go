@@ -178,6 +178,7 @@ func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
 					generateWebDeploymentConfigCobrowseSettings(
 						util.TrueValue,
 						util.TrueValue,
+						util.TrueValue,
 						channels,
 						[]string{strconv.Quote("selector-one")},
 						[]string{strconv.Quote("selector-one")},
@@ -244,6 +245,7 @@ func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
 					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.#", "1"),
 					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.enabled", util.TrueValue),
 					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.allow_agent_control", util.TrueValue),
+					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.allow_agent_navigation", util.TrueValue),
 					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.channels.#", "1"),
 					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.channels.0", "Webmessaging"),
 					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.mask_selectors.#", "1"),
@@ -301,6 +303,7 @@ func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
 					generateWebDeploymentConfigCobrowseSettings(
 						util.FalseValue,
 						util.FalseValue,
+						util.FalseValue,
 						channelsUpdate,
 						[]string{strconv.Quote("selector-one"), strconv.Quote("selector-two")},
 						[]string{strconv.Quote("selector-one"), strconv.Quote("selector-two")},
@@ -327,6 +330,7 @@ func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
 					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.#", "1"),
 					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.enabled", util.FalseValue),
 					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.allow_agent_control", util.FalseValue),
+					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.allow_agent_navigation", util.FalseValue),
 					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.channels.#", "2"),
 					util.ValidateStringInArray(fullResourceName, "cobrowse.0.channels", "Webmessaging"),
 					util.ValidateStringInArray(fullResourceName, "cobrowse.0.channels", "Voice"),
@@ -1023,16 +1027,17 @@ func complexConfigurationResource(name, description, kbId string, nestedBlocks .
 	`, name, description, kbId, strings.Join(nestedBlocks, "\n"))
 }
 
-func generateWebDeploymentConfigCobrowseSettings(cbEnabled, cbAllowAgentControl string, cbChannels []string, cbMaskSelectors []string, cbReadonlySelectors []string) string {
+func generateWebDeploymentConfigCobrowseSettings(cbEnabled, cbAllowAgentControl string, cbAllowAgentNavigation string, cbChannels []string, cbMaskSelectors []string, cbReadonlySelectors []string) string {
 	return fmt.Sprintf(`
 	cobrowse {
 		enabled = %s
 		allow_agent_control = %s
+		allow_agent_navigation = %s
 		channels = [ %s ]
 		mask_selectors = [ %s ]
 		readonly_selectors = [ %s ]
 	}
-`, cbEnabled, cbAllowAgentControl, strings.Join(cbChannels, ", "), strings.Join(cbMaskSelectors, ", "), strings.Join(cbReadonlySelectors, ", "))
+`, cbEnabled, cbAllowAgentControl, cbAllowAgentNavigation, strings.Join(cbChannels, ", "), strings.Join(cbMaskSelectors, ", "), strings.Join(cbReadonlySelectors, ", "))
 }
 
 func generateSupportCenterSettings(supportCenter scConfig) string {

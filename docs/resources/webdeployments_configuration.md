@@ -94,11 +94,12 @@ resource "genesyscloud_webdeployments_configuration" "exampleConfiguration" {
     }
   }
   cobrowse {
-    enabled             = true
-    allow_agent_control = true
-    channels            = ["Webmessaging", "Voice"]
-    mask_selectors      = [".my-class", "#my-id"]
-    readonly_selectors  = [".my-class", "#my-id"]
+    enabled                = true
+    allow_agent_control    = true
+    allow_agent_navigation = true 
+    channels               = ["Webmessaging", "Voice"]
+    mask_selectors         = [".my-class", "#my-id"]
+    readonly_selectors     = [".my-class", "#my-id"]
   }
   journey_events {
     enabled                   = true
@@ -212,6 +213,7 @@ Optional:
 - `enabled` (Boolean) Whether or not cobrowse is enabled
 - `mask_selectors` (List of String) List of CSS selectors which should be masked when screen sharing is active
 - `readonly_selectors` (List of String) List of CSS selectors which should be read-only when screen sharing is active
+- `allow_agent_navigation` (Boolean) Whether or not cobrowse navigation feature is enabled
 
 
 <a id="nestedblock--custom_i18n_labels"></a>
