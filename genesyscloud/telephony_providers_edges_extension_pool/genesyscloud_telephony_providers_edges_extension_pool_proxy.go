@@ -3,7 +3,7 @@ package telephony_providers_edges_extension_pool
 import (
 	"context"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 )
 
 var internalProxy *extensionPoolProxy

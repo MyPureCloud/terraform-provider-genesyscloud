@@ -7,7 +7,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
 

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	rc "terraform-provider-genesyscloud/genesyscloud/resource_cache"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 )
 
 /*
