@@ -9,12 +9,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-
 	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
-)
-
-var (
-	sdkConfig *platformclientv2.Configuration
 )
 
 func TestAccDataSourceArchitectGrammar(t *testing.T) {
@@ -60,7 +55,7 @@ func generateGrammarDataSource(
 }
 
 func cleanupArchitectGrammar(idPrefix string) {
-	architectApi := platformclientv2.NewArchitectApi(sdkConfig)
+	architectApi := platformclientv2.NewArchitectApi()
 
 	for pageNum := 1; ; pageNum++ {
 		const pageSize = 100

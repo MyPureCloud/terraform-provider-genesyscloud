@@ -16,10 +16,6 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
 )
 
-var (
-	sdkConfig *platformclientv2.Configuration
-)
-
 func TestAccResourceAuthDivisionBasic(t *testing.T) {
 	var (
 		divResource1 = "auth-division1"
@@ -198,7 +194,7 @@ func validateHomeDivisionID(divResourceName string) resource.TestCheckFunc {
 }
 
 func cleanupAuthDivision(idPrefix string) {
-	authAPI := platformclientv2.NewAuthorizationApi(sdkConfig)
+	authAPI := platformclientv2.NewAuthorizationApiWithConfig(sdkConfig)
 
 	for pageNum := 1; ; pageNum++ {
 		const pageSize = 100
