@@ -196,6 +196,7 @@ func TestAccResourceTfExportByName(t *testing.T) {
 					util.NullValue,                     // enable_manual_assignment false
 					util.FalseValue,                    //suppressCall_record_false
 					util.NullValue,                     // enable_transcription false
+					strconv.Quote("TimestampAndPriority"),
 				) + generateTfExportByName(
 					exportResource1,
 					exportTestDir,
@@ -237,6 +238,7 @@ func TestAccResourceTfExportByName(t *testing.T) {
 					util.NullValue,                     // enable_manual_assignment false
 					util.FalseValue,                    //suppressCall_record_false
 					util.NullValue,                     // enable_transcription false
+					strconv.Quote("TimestampAndPriority"),
 				) + generateTfExportByName(
 					exportResource1,
 					exportTestDir,
@@ -291,6 +293,7 @@ func TestAccResourceTfExportByName(t *testing.T) {
 					util.NullValue,                     // enable_manual_assignment false
 					util.FalseValue,                    //suppressCall_record_false
 					util.NullValue,                     // enable_transcription false
+					strconv.Quote("TimestampAndPriority"),
 				) + generateTfExportByName(
 					exportResource1,
 					exportTestDir,
@@ -825,6 +828,7 @@ func TestAccResourceTfExportQueueAsHCL(t *testing.T) {
 		"true",
 		util.TrueValue,
 		util.FalseValue,
+		strconv.Quote("TimestampAndPriority"),
 		routingQueue.GenerateMediaSettings("media_settings_call", alertTimeoutSec, util.FalseValue, slPercentage, slDurationMs),
 		routingQueue.GenerateRoutingRules(rrOperator, rrThreshold, rrWaitSeconds),
 		routingQueue.GenerateDefaultScriptIDs(chatScriptID, emailScriptID),
@@ -1917,6 +1921,7 @@ func buildQueueResources(queueExports []QueueExport) string {
 			util.NullValue,                              // enable_manual_assignment false
 			util.NullValue,                              //suppressCall_record_false
 			util.NullValue,                              // enable_transcription false
+			strconv.Quote("TimestampAndPriority"),
 		)
 	}
 

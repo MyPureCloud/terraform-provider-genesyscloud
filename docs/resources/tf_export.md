@@ -3,7 +3,7 @@ page_title: "genesyscloud_tf_export Resource - terraform-provider-genesyscloud"
 subcategory: ""
 description: |-
   Genesys Cloud Resource to export Terraform config and (optionally) tfstate files to a local directory. 
-      The config file is named 'genesyscloud.tf.json' or 'genesyscloud.tf', and the state file is named 'terraform.tfstate'.
+  	The config file is named 'genesyscloud.tf.json' or 'genesyscloud.tf', and the state file is named 'terraform.tfstate'.
 ---
 # genesyscloud_tf_export (Resource)
 

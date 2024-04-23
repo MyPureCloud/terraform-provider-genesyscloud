@@ -33,6 +33,26 @@ var (
 		},
 	}
 
+	agentOwnedRoutingResource = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"enable_agent_owned_callbacks": {
+				Description: "Enable Agent Owned Callbacks",
+				Type:        schema.TypeBool,
+				Required:    true,
+			},
+			"max_owned_callback_hours": {
+				Description: "Auto End Delay Seconds Must be >= 7",
+				Type:        schema.TypeInt,
+				Required:    true,
+			},
+			"max_owned_callback_delay_hours": {
+				Description: "Max Owned Call Back Delay Hours >= 7",
+				Type:        schema.TypeInt,
+				Required:    true,
+			},
+		},
+	}
+
 	queueMediaSettingsResource = &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			"alerting_timeout_sec": {
@@ -41,8 +61,24 @@ var (
 				Required:     true,
 				ValidateFunc: validation.IntAtLeast(7),
 			},
+			"auto_end_delay_seconds": {
+				Description: "Auto End Delay Seconds.",
+				Type:        schema.TypeInt,
+				Optional:    true,
+			},
+			"auto_dial_delay_seconds": {
+				Description: "Auto Dial Delay Seconds.",
+				Type:        schema.TypeInt,
+				Optional:    true,
+			},
 			"enable_auto_answer": {
 				Description: "Auto-Answer for digital channels(Email, Message)",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     false,
+			},
+			"enable_auto_dial_and_end": {
+				Description: "Auto Dail and End",
 				Type:        schema.TypeBool,
 				Optional:    true,
 				Default:     false,
@@ -157,6 +193,14 @@ func ResourceRoutingQueue() *schema.Resource {
 				Optional:    true,
 				Computed:    true,
 				Elem:        queueMediaSettingsResource,
+			},
+			"agent_owned_routing": {
+				Description: "Agent Owned Routing.",
+				Type:        schema.TypeList,
+				MaxItems:    1,
+				Optional:    true,
+				Computed:    true,
+				Elem:        agentOwnedRoutingResource,
 			},
 			"media_settings_callback": {
 				Description: "Callback media settings.",
@@ -368,6 +412,13 @@ func ResourceRoutingQueue() *schema.Resource {
 				Description: "The phone number to use for caller identification for outbound calls from this queue.",
 				Type:        schema.TypeString,
 				Optional:    true,
+			},
+			"scoring_method": {
+				Description:  "The Scoring Method for the queue. Defaults to TimestampAndPriority.",
+				Type:         schema.TypeString,
+				Optional:     true,
+				Default:      "TimestampAndPriority",
+				ValidateFunc: validation.StringInSlice([]string{"TimestampAndPriority", "PriorityOnly"}, false),
 			},
 			"default_script_ids": {
 				Description:      "The default script IDs for each communication type. Communication types: (CALL | CALLBACK | CHAT | COBROWSE | EMAIL | MESSAGE | SOCIAL_EXPRESSION | VIDEO | SCREENSHARE)",
