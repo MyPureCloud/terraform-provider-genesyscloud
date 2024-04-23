@@ -232,11 +232,36 @@ func TestAccResourceRoutingQueueConditionalRouting(t *testing.T) {
 					util.NullValue,  // enable_transcription false
 					util.FalseValue, // suppress_in_queue_call_recording false
 					util.NullValue,  // enable_manual_assignment false
-					GenerateMediaSettings("media_settings_call", alertTimeout1, util.TrueValue, slPercent1, slDuration1),
-					GenerateMediaSettings("media_settings_callback", alertTimeout1, util.TrueValue, slPercent1, slDuration1),
-					GenerateMediaSettings("media_settings_chat", alertTimeout1, util.FalseValue, slPercent1, slDuration1),
-					GenerateMediaSettings("media_settings_email", alertTimeout1, util.TrueValue, slPercent1, slDuration1),
-					GenerateMediaSettings("media_settings_message", alertTimeout1, util.TrueValue, slPercent1, slDuration1),
+					strconv.Quote("TimestampAndPriority"),
+					GenerateMediaSettings(
+						"media_settings_call",
+						alertTimeout1,
+						util.TrueValue,
+						slPercent1,
+						slDuration1),
+					GenerateMediaSettings(
+						"media_settings_callback",
+						alertTimeout1,
+						util.TrueValue,
+						slPercent1,
+						slDuration1),
+					GenerateMediaSettings(
+						"media_settings_chat",
+						alertTimeout1,
+						util.FalseValue,
+						slPercent1,
+						slDuration1),
+					GenerateMediaSettings(
+						"media_settings_email",
+						alertTimeout1,
+						util.TrueValue,
+						slPercent1,
+						slDuration1),
+					GenerateMediaSettings(
+						"media_settings_message",
+						alertTimeout1,
+						util.TrueValue, slPercent1,
+						slDuration1),
 					GenerateConditionalGroupRoutingRules(
 						util.NullValue,                         // queue_id (queue_id in the first rule should be omitted)
 						conditionalGroupRouting1Operator,       // operator
@@ -304,6 +329,7 @@ func TestAccResourceRoutingQueueConditionalRouting(t *testing.T) {
 					util.NullValue,  // enable_transcription false
 					util.FalseValue, // suppress_in_queue_call_recording false
 					util.NullValue,  // enable_manual_assignment false
+					strconv.Quote("TimestampAndPriority"),
 					GenerateMediaSettings("media_settings_call", alertTimeout1, util.FalseValue, slPercent1, slDuration1),
 					GenerateMediaSettings("media_settings_callback", alertTimeout1, util.FalseValue, slPercent1, slDuration1),
 					GenerateMediaSettings("media_settings_chat", alertTimeout1, util.FalseValue, slPercent1, slDuration1),
