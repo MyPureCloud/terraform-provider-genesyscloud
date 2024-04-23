@@ -3,9 +3,9 @@ package routing_email_route
 import (
 	"sync"
 	"terraform-provider-genesyscloud/genesyscloud"
+
 	architectFlow "terraform-provider-genesyscloud/genesyscloud/architect_flow"
 	routingQueue "terraform-provider-genesyscloud/genesyscloud/routing_queue"
-
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
