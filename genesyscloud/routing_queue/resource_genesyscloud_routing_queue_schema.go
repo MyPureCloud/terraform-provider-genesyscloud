@@ -519,7 +519,8 @@ func RoutingQueueExporter() *resourceExporter.ResourceExporter {
 			"conditional_group_routing_rules.queue_id": {RefType: "genesyscloud_routing_queue"},
 		},
 		RemoveIfMissing: map[string][]string{
-			"members": {"user_id"},
+			"outbound_email_address": {"route_id"},
+			"members":                {"user_id"},
 		},
 		AllowZeroValues: []string{"bullseye_rings.expansion_timeout_seconds"},
 		CustomAttributeResolver: map[string]*resourceExporter.RefAttrCustomResolver{
