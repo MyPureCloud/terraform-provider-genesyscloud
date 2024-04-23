@@ -37,7 +37,7 @@ func generatePhoneColumnNoTypeBlock(columnName string) string {
 }
 
 func TestAccResourceOutboundCampaignBasic(t *testing.T) {
-	//t.Parallel()
+	t.Parallel()
 
 	var (
 		resourceId            = "campaign1"
@@ -404,7 +404,7 @@ func TestAccResourceOutboundCampaignBasic(t *testing.T) {
 }
 
 func TestAccResourceOutboundCampaignCampaignStatus(t *testing.T) {
-	//t.Parallel()
+	t.Parallel()
 	var (
 		resourceId            = "campaign2"
 		name                  = "Test Campaign " + uuid.NewString()

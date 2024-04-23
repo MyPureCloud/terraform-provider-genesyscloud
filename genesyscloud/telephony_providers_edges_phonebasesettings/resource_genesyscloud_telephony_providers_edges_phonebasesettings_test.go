@@ -15,7 +15,7 @@ import (
 )
 
 func TestAccResourcePhoneBaseSettings(t *testing.T) {
-	//t.Parallel()
+	t.Parallel()
 	var (
 		phoneBaseSettingsRes = "phoneBaseSettings1234"
 		name1                = "test phone base settings resource" + uuid.NewString()

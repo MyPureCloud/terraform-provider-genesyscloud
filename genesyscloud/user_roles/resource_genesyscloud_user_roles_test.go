@@ -18,7 +18,7 @@ import (
 )
 
 func TestAccResourceUserRolesMembership(t *testing.T) {
-	//t.Parallel()
+	t.Parallel()
 	var (
 		empRoleDataSrc   = "employee-role"
 		empRoleName      = "employee"

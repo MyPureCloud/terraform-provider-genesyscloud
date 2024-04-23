@@ -205,7 +205,7 @@ func TestAccResourceResponseManagementResponseFooterField(t *testing.T) {
 }
 
 func TestAccResourceResponseManagementResponseMessaging(t *testing.T) {
-	//t.Parallel()
+	t.Parallel()
 	var (
 		// Responses initial values
 		responseResource          = "response-resource-message"
@@ -538,6 +538,7 @@ func cleanupResponseAssets(folderName string) error {
 
 	responseData, _, err := respManagementApi.PostResponsemanagementResponseassetsSearch(body, nil)
 	if err != nil {
+		log.Printf("Failed to search assets %s", err)
 		return err
 	}
 

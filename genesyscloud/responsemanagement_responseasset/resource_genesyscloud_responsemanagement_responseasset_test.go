@@ -16,7 +16,6 @@ import (
 )
 
 func TestAccResourceResponseManagementResponseAsset(t *testing.T) {
-	//t.Parallel()
 	var (
 		resourceId         = "responseasset"
 		testFilesDir       = "test_responseasset_data"

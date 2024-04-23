@@ -17,7 +17,7 @@ import (
 )
 
 func TestAccResourceBasicRoutingUtilization(t *testing.T) {
-	//t.Parallel()
+	t.Parallel()
 	var (
 		maxCapacity1  = "3"
 		maxCapacity2  = "4"
