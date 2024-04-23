@@ -56,11 +56,9 @@ import (
 	responsemanagementResponseasset "terraform-provider-genesyscloud/genesyscloud/responsemanagement_responseasset"
 	routingEmailRoute "terraform-provider-genesyscloud/genesyscloud/routing_email_route"
 	routingQueue "terraform-provider-genesyscloud/genesyscloud/routing_queue"
-<<<<<<< HEAD
+
 	routingQueueConditionalGroupRouting "terraform-provider-genesyscloud/genesyscloud/routing_queue_conditional_group_routing"
-=======
 	routingQueueOutboundEmailAddress "terraform-provider-genesyscloud/genesyscloud/routing_queue_outbound_email_address"
->>>>>>> 78692604 (Finished resource)
 	smsAddresses "terraform-provider-genesyscloud/genesyscloud/routing_sms_addresses"
 	"terraform-provider-genesyscloud/genesyscloud/scripts"
 	"terraform-provider-genesyscloud/genesyscloud/station"
@@ -210,11 +208,8 @@ func registerResources() {
 	group.SetRegistrar(regInstance)                                        //Registering group
 	userPrompt.SetRegistrar(regInstance)                                   //Registering user prompt
 	routingQueue.SetRegistrar(regInstance)                                 //Registering routing queue
-<<<<<<< HEAD
 	routingQueueConditionalGroupRouting.SetRegistrar(regInstance)          //Registering routing queue conditional group routing
-=======
 	routingQueueOutboundEmailAddress.SetRegistrar(regInstance)             //Registering routing queue outbound email address
->>>>>>> 78692604 (Finished resource)
 
 	// setting resources for Use cases  like TF export where provider is used in resource classes.
 	tfexp.SetRegistrar(regInstance) //Registering tf exporter

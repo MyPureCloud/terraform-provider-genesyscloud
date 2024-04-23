@@ -46,17 +46,11 @@ func TestAccResourceRoutingQueueConditionalGroupRouting(t *testing.T) {
 		conditionalGroupRoutingRule2GroupType      = "GROUP"
 	)
 
-<<<<<<< HEAD
 	// Use this to save the id of the parent queue
 	queueIdChan := make(chan string, 1)
 	err := os.Setenv(featureToggles.CSGToggleName(), "enabled")
 	if err != nil {
 		t.Errorf("%s is not set", featureToggles.CSGToggleName())
-=======
-	err := os.Setenv(EnvToggle, "enabled")
-	if err != nil {
-		t.Errorf("%s is not set", EnvToggle)
->>>>>>> d60d30ab (Made some changes)
 	}
 
 	resource.Test(t, resource.TestCase{

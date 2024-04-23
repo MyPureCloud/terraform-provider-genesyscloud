@@ -4,12 +4,13 @@ import (
 	"context"
 	"fmt"
 	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
+	rc "terraform-provider-genesyscloud/genesyscloud/resource_cache"
+	routingQueue "terraform-provider-genesyscloud/genesyscloud/routing_queue"
 )
 
 // internalProxy holds a proxy instance that can be used throughout the package
 var internalProxy *routingQueueOutboundEmailAddressProxy
 
-type getAllRoutingQueuesFunc func(ctx context.Context, p *routingQueueOutboundEmailAddressProxy) (*[]platformclientv2.Queue, *platformclientv2.APIResponse, error)
 type getRoutingQueueOutboundEmailAddressFunc func(ctx context.Context, p *routingQueueOutboundEmailAddressProxy, queueId string) (*platformclientv2.Queueemailaddress, *platformclientv2.APIResponse, error)
 type updateRoutingQueueOutboundEmailAddressFunc func(ctx context.Context, p *routingQueueOutboundEmailAddressProxy, queueId string, address *platformclientv2.Queueemailaddress) (*platformclientv2.Queueemailaddress, *platformclientv2.APIResponse, error)
 
@@ -17,20 +18,22 @@ type updateRoutingQueueOutboundEmailAddressFunc func(ctx context.Context, p *rou
 type routingQueueOutboundEmailAddressProxy struct {
 	clientConfig                               *platformclientv2.Configuration
 	routingApi                                 *platformclientv2.RoutingApi
-	getAllRoutingQueuesAttr                    getAllRoutingQueuesFunc
 	getRoutingQueueOutboundEmailAddressAttr    getRoutingQueueOutboundEmailAddressFunc
 	updateRoutingQueueOutboundEmailAddressAttr updateRoutingQueueOutboundEmailAddressFunc
+	routingQueueProxy                          *routingQueue.RoutingQueueProxy
 }
 
 // newRoutingQueueOutboundEmailAddressProxy initializes the Routing queue outbound email address proxy with the data needed to communicate with Genesys Cloud
 func newRoutingQueueOutboundEmailAddressProxy(clientConfig *platformclientv2.Configuration) *routingQueueOutboundEmailAddressProxy {
 	api := platformclientv2.NewRoutingApiWithConfig(clientConfig)
+	routingQueueProxy := routingQueue.GetRoutingQueueProxy(clientConfig)
+
 	return &routingQueueOutboundEmailAddressProxy{
-		clientConfig:                               clientConfig,
-		routingApi:                                 api,
-		getAllRoutingQueuesAttr:                    getAllRoutingQueuesFn,
-		getRoutingQueueOutboundEmailAddressAttr:    getRoutingQueueOutboundEmailAddressFn,
+		clientConfig:                            clientConfig,
+		routingApi:                              api,
+		getRoutingQueueOutboundEmailAddressAttr: getRoutingQueueOutboundEmailAddressFn,
 		updateRoutingQueueOutboundEmailAddressAttr: updateRoutingQueueOutboundEmailAddressFn,
+		routingQueueProxy:                          routingQueueProxy,
 	}
 }
 
@@ -40,11 +43,6 @@ func getRoutingQueueOutboundEmailAddressProxy(clientConfig *platformclientv2.Con
 	}
 
 	return internalProxy
-}
-
-// getAllRoutingQueues gets all routing queues in an org
-func (p *routingQueueOutboundEmailAddressProxy) getAllRoutingQueues(ctx context.Context) (*[]platformclientv2.Queue, *platformclientv2.APIResponse, error) {
-	return p.getAllRoutingQueuesAttr(ctx, p)
 }
 
 // getRoutingQueueOutboundEmailAddress gets the Outbound Email Address for a queue
@@ -57,45 +55,23 @@ func (p *routingQueueOutboundEmailAddressProxy) updateRoutingQueueOutboundEmailA
 	return p.updateRoutingQueueOutboundEmailAddressAttr(ctx, p, queueId, rules)
 }
 
-// getAllRoutingQueuesFn is an implementation function for getting all queues in an org
-func getAllRoutingQueuesFn(ctx context.Context, p *routingQueueOutboundEmailAddressProxy) (*[]platformclientv2.Queue, *platformclientv2.APIResponse, error) {
-	var allQueues []platformclientv2.Queue
-	const pageSize = 100
-
-	queues, resp, err := p.routingApi.GetRoutingQueues(1, pageSize, "", "", nil, nil, nil, false)
-	if err != nil {
-		return nil, resp, fmt.Errorf("failed to get routing queues: %s", err)
-	}
-
-	if queues.Entities == nil || len(*queues.Entities) == 0 {
-		return &allQueues, resp, nil
-	}
-
-	for _, queue := range *queues.Entities {
-		allQueues = append(allQueues, queue)
-	}
-
-	for pageNum := 2; pageNum <= *queues.PageCount; pageNum++ {
-		queues, resp, err := p.routingApi.GetRoutingQueues(pageNum, pageSize, "", "", nil, nil, nil, false)
-		if err != nil {
-			return nil, resp, fmt.Errorf("failed to get routing queues: %s", err)
-		}
-
-		if queues.Entities == nil || len(*queues.Entities) == 0 {
-			break
-		}
-
-		for _, queue := range *queues.Entities {
-			allQueues = append(allQueues, queue)
-		}
-	}
-
-	return &allQueues, nil, nil
-}
-
 // getRoutingQueueOutboundEmailAddressFn is an implementation function for getting the outbound email address for a queue
 func getRoutingQueueOutboundEmailAddressFn(ctx context.Context, p *routingQueueOutboundEmailAddressProxy, queueId string) (*platformclientv2.Queueemailaddress, *platformclientv2.APIResponse, error) {
-	queue, resp, err := p.routingApi.GetRoutingQueue(queueId)
+	var (
+		queue *platformclientv2.Queue
+		resp  *platformclientv2.APIResponse
+		err   error
+	)
+
+	queue = rc.GetCacheItem(p.routingQueueProxy.RoutingQueueCache, queueId)
+	if queue == nil {
+		queue, resp, err = p.routingApi.GetRoutingQueue(queueId)
+		if err != nil {
+			return nil, resp, fmt.Errorf("error when reading queue %s: %s", queueId, err)
+		}
+	}
+
+	queue, resp, err = p.routingApi.GetRoutingQueue(queueId)
 	if err != nil {
 		return nil, resp, fmt.Errorf("error when reading queue %s: %s", queueId, err)
 	}

@@ -30,14 +30,14 @@ func getAllAuthRoutingQueueOutboundEmailAddress(ctx context.Context, clientConfi
 	resources := make(resourceExporter.ResourceIDMetaMap)
 	proxy := getRoutingQueueOutboundEmailAddressProxy(clientConfig)
 
-	queues, resp, err := proxy.getAllRoutingQueues(ctx)
+	queues, resp, err := proxy.routingQueueProxy.GetAllRoutingQueues(ctx)
 	if err != nil {
-		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprint("failed to get outbound email addresses for routing queues"), resp)
+		return nil, util.BuildAPIDiagnosticError(resourceName, "failed to get outbound email addresses for routing queues", resp)
 	}
 
 	for _, queue := range *queues {
 		if queue.OutboundEmailAddress != nil && *queue.OutboundEmailAddress != nil {
-			resources[*queue.Id] = &resourceExporter.ResourceMeta{Name: *queue.Id + "-email-address"}
+			resources[*queue.Id] = &resourceExporter.ResourceMeta{Name: *queue.Name + "-email-address"}
 		}
 	}
 
@@ -138,6 +138,8 @@ func deleteRoutingQueueOutboundEmailAddress(ctx context.Context, d *schema.Resou
 			log.Printf("outbound email address's parent queue %s already deleted", queueId)
 			return nil
 		}
+
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("failed to remove outbound email address for queue %s", queueId), resp)
 	}
 
 	// To delete, update the queue with an empty email address
@@ -148,7 +150,7 @@ func deleteRoutingQueueOutboundEmailAddress(ctx context.Context, d *schema.Resou
 	}
 
 	// Verify there is no email address
-	rules, _, err := proxy.getRoutingQueueOutboundEmailAddress(ctx, queueId)
+	rules, _, _ := proxy.getRoutingQueueOutboundEmailAddress(ctx, queueId)
 	if rules != nil {
 		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("outbound email address still exist for queue %s", queueId), resp)
 	}
