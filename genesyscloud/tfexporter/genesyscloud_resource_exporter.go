@@ -374,13 +374,12 @@ func (g *GenesysCloudResourceExporter) buildResourceConfigMap() diag.Diagnostics
 		} else {
 			g.sanitizeDataConfigMap(jsonResult)
 		}
-		//todo put this in seperate call
+
+		// TODO put this in separate call
 		exporters := *g.exporters
-		exporter := *exporters[resource.Type]
-		if resourceFilesWriterFunc := exporter.CustomFileWriter.RetrieveAndWriteFilesFunc; resourceFilesWriterFunc != nil {
+		if resourceFilesWriterFunc := exporters[resource.Type].CustomFileWriter.RetrieveAndWriteFilesFunc; resourceFilesWriterFunc != nil {
 			exportDir, _ := getFilePath(g.d, "")
-			err := resourceFilesWriterFunc(resource.State.ID, exportDir, exporter.CustomFileWriter.SubDirectory, jsonResult, g.meta)
-			if err != nil {
+			if err := resourceFilesWriterFunc(resource.State.ID, exportDir, exporters[resource.Type].CustomFileWriter.SubDirectory, jsonResult, g.meta); err != nil {
 				log.Printf("An error has occurred while trying invoking the RetrieveAndWriteFilesFunc for resource type %s: %v", resource.Type, err)
 			}
 		}
