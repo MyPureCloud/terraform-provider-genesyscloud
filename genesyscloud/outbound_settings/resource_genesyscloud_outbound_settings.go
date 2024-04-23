@@ -11,8 +11,8 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	"terraform-provider-genesyscloud/genesyscloud/tfexporter_state"
 	"terraform-provider-genesyscloud/genesyscloud/util"
-	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 )
 
 /*
@@ -37,12 +37,12 @@ func readOutboundSettings(ctx context.Context, d *schema.ResourceData, meta inte
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getOutboundSettingsProxy(sdkConfig)
 
-	//maxCallsPerAgent := d.Get("max_calls_per_agent").(int)
-	//maxLineUtilization := d.Get("max_line_utilization").(float64)
-	//abandonSeconds := d.Get("abandon_seconds").(float64)
-	//complianceAbandonRateDenominator := d.Get("compliance_abandon_rate_denominator").(string)
-	//automaticTimeZoneMapping := d.Get("automatic_time_zone_mapping").([]interface{})
-
+	maxCallsPerAgent := d.Get("max_calls_per_agent").(int)
+	maxLineUtilization := d.Get("max_line_utilization").(float64)
+	abandonSeconds := d.Get("abandon_seconds").(float64)
+	complianceAbandonRateDenominator := d.Get("compliance_abandon_rate_denominator").(string)
+	automaticTimeZoneMapping := d.Get("automatic_time_zone_mapping").(interface{})
+	log.Println(automaticTimeZoneMapping)
 	log.Printf("Reading Outbound setting %s", d.Id())
 
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
@@ -57,61 +57,40 @@ func readOutboundSettings(ctx context.Context, d *schema.ResourceData, meta inte
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundSettings())
 
 		// Only read values if they are part of the terraform plan
-		resourcedata.SetNillableValue(d, "max_calls_per_agent", settings.MaxCallsPerAgent)
-		resourcedata.SetNillableValue(d, "max_line_utilization", settings.MaxLineUtilization)
-		resourcedata.SetNillableValue(d, "abandon_seconds", settings.AbandonSeconds)
-		resourcedata.SetNillableValue(d, "compliance_abandon_rate_denominator", settings.ComplianceAbandonRateDenominator)
-		//		resourcedata.SetNillableValue(d, "", settings.MaxConfigurableCallsPerAgent)
-
-		if settings.AutomaticTimeZoneMapping != nil {
-			// Assuming flattenOutboundSettingsAutomaticTimeZoneMapping returns *schema.Set
-			timeZoneMappingSet := flattenOutboundSettingsAutomaticTimeZoneMapping(settings.AutomaticTimeZoneMapping)
-			timeZoneMappingList := timeZoneMappingSet.List()
-			// Convert the list to a slice of interface{} and set it on the resource data
-			timeZoneMappingSlice := make([]interface{}, len(timeZoneMappingList))
-			for i, v := range timeZoneMappingList {
-				timeZoneMappingSlice[i] = v
+		if maxCallsPerAgent != 0 || tfexporter_state.IsExporterActive() {
+			if settings.MaxCallsPerAgent != nil {
+				d.Set("max_calls_per_agent", *settings.MaxCallsPerAgent)
+			} else {
+				d.Set("max_calls_per_agent", nil)
 			}
-			_ = d.Set("automatic_time_zone_mapping", timeZoneMappingSlice)
-		} else {
-			// If AutomaticTimeZoneMapping is nil, set the attribute to nil
-			_ = d.Set("automatic_time_zone_mapping", nil)
 		}
 
-		//resourcedata.SetNillableValue(d, "automatic_time_zone_mapping", settings.AutomaticTimeZoneMapping)
-		//if maxCallsPerAgent != 0 {
-		//	if settings.MaxCallsPerAgent != nil {
-		//		d.Set("max_calls_per_agent", *settings.MaxCallsPerAgent)
-		//	} else {
-		//		d.Set("max_calls_per_agent", nil)
-		//	}
-		//}
-		//
-		//if maxLineUtilization != 0 {
-		//	if settings.MaxLineUtilization != nil {
-		//		d.Set("max_line_utilization", *settings.MaxLineUtilization)
-		//	} else {
-		//		d.Set("max_line_utilization", nil)
-		//	}
-		//}
-		//
-		//if abandonSeconds != 0 {
-		//	if settings.AbandonSeconds != nil {
-		//		d.Set("abandon_seconds", *settings.AbandonSeconds)
-		//	} else {
-		//		d.Set("abandon_seconds", nil)
-		//	}
-		//}
-		//
-		//if complianceAbandonRateDenominator != "" {
-		//	if settings.ComplianceAbandonRateDenominator != nil {
-		//		_ = d.Set("compliance_abandon_rate_denominator", *settings.ComplianceAbandonRateDenominator)
-		//	} else {
-		//		_ = d.Set("compliance_abandon_rate_denominator", nil)
-		//	}
-		//}
-		//
-		//if len(automaticTimeZoneMapping) > 0 {
+		if maxLineUtilization != 0 || tfexporter_state.IsExporterActive() {
+			if settings.MaxLineUtilization != nil {
+				d.Set("max_line_utilization", *settings.MaxLineUtilization)
+			} else {
+				d.Set("max_line_utilization", nil)
+			}
+		}
+
+		if abandonSeconds != 0 || tfexporter_state.IsExporterActive() {
+			if settings.AbandonSeconds != nil {
+				d.Set("abandon_seconds", *settings.AbandonSeconds)
+			} else {
+				d.Set("abandon_seconds", nil)
+			}
+		}
+
+		if complianceAbandonRateDenominator != "" || tfexporter_state.IsExporterActive() {
+			if settings.ComplianceAbandonRateDenominator != nil {
+				d.Set("compliance_abandon_rate_denominator", *settings.ComplianceAbandonRateDenominator)
+			} else {
+				d.Set("compliance_abandon_rate_denominator", nil)
+			}
+		}
+
+		//if len(automaticTimeZoneMapping) > 0 || tfexporter_state.IsExporterActive() {
+		//	log.Println("HERE:", automaticTimeZoneMapping)
 		//	d.Set("automatic_time_zone_mapping", flattenOutboundSettingsAutomaticTimeZoneMapping(*settings.AutomaticTimeZoneMapping, automaticTimeZoneMapping))
 		//}
 		log.Printf("Read Outbound Setting")
