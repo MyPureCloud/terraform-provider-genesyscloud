@@ -719,7 +719,7 @@ func (g *GenesysCloudResourceExporter) chainDependencies(
 					if !g.resourceIdExists(guid, existingResources) {
 						filterListById = append(filterListById, fmt.Sprintf("%s::%s", refType, guid))
 					} else {
-						log.Printf("Id already present in the resources. %v", guid)
+						log.Printf("Resource already present in the resources. %v", guid)
 					}
 
 				}
@@ -1388,6 +1388,7 @@ func (g *GenesysCloudResourceExporter) sanitizeConfigArray(
 
 func (g *GenesysCloudResourceExporter) populateConfigExcluded(exporters map[string]*resourceExporter.ResourceExporter, configExcluded []string) diag.Diagnostics {
 	for _, excluded := range configExcluded {
+		matchFound := false
 		resourceIdx := strings.Index(excluded, ".")
 		if resourceIdx == -1 {
 			return diag.Errorf("Invalid excluded_attribute %s", excluded)
@@ -1398,21 +1399,37 @@ func (g *GenesysCloudResourceExporter) populateConfigExcluded(exporters map[stri
 		}
 
 		resourceName := excluded[:resourceIdx]
+		// identify all the resource names which match the regex
 		exporter := exporters[resourceName]
 		if exporter == nil {
-			if dependsOn, ok := g.d.GetOk("enable_dependency_resolution"); ok {
-				if dependsOn == true {
+			for name, exporter1 := range exporters {
+				match, _ := regexp.MatchString(resourceName, name)
+
+				if match {
 					excludedAttr := excluded[resourceIdx+1:]
-					log.Printf("Ignoring exclude attribute %s on %s resources. Since exporter is not retrieved", excludedAttr, resourceName)
+					exporter1.AddExcludedAttribute(excludedAttr)
+					log.Printf("Excluding attribute %s on %s resources.", excludedAttr, resourceName)
+					matchFound = true
 					continue
 				}
 			}
-			return diag.Errorf("Resource %s in excluded_attributes is not being exported.", resourceName)
-		}
 
-		excludedAttr := excluded[resourceIdx+1:]
-		exporter.AddExcludedAttribute(excludedAttr)
-		log.Printf("Excluding attribute %s on %s resources.", excludedAttr, resourceName)
+			if !matchFound {
+				if dependsOn, ok := g.d.GetOk("enable_dependency_resolution"); ok {
+					if dependsOn == true {
+						excludedAttr := excluded[resourceIdx+1:]
+						log.Printf("Ignoring exclude attribute %s on %s resources. Since exporter is not retrieved", excludedAttr, resourceName)
+						continue
+					}
+				} else {
+					return diag.Errorf("Resource %s in excluded_attributes is not being exported.", resourceName)
+				}
+			}
+		} else {
+			excludedAttr := excluded[resourceIdx+1:]
+			exporter.AddExcludedAttribute(excludedAttr)
+			log.Printf("Excluding attribute %s on %s resources.", excludedAttr, resourceName)
+		}
 	}
 	return nil
 }
