@@ -80,7 +80,7 @@ Required:
 
 Optional:
 
-- `content_template_id` (String) The content template used to formulate the message to send to the contact.
+- `content_template_id` (String) The content template used to formulate the message to send to the contact. Either message_column or content_template_id is required.
 - `message_column` (String) The Contact List column specifying the message to send to the contact. Either message_column or content_template_id is required.
 
 

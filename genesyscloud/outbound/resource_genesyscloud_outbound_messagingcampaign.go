@@ -66,7 +66,7 @@ var (
 				Type:        schema.TypeString,
 			},
 			`content_template_id`: {
-				Description: `The content template used to formulate the message to send to the contact.`,
+				Description: `The content template used to formulate the message to send to the contact. Either message_column or content_template_id is required.`,
 				Optional:    true,
 				Type:        schema.TypeString,
 			},
