@@ -51,8 +51,8 @@ var (
 	outboundmessagingcampaignsmsconfigResource = &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			`message_column`: {
-				Description: `The Contact List column specifying the message to send to the contact.`,
-				Required:    true,
+				Description: `The Contact List column specifying the message to send to the contact. Either message_column or content_template_id is required.`,
+				Optional:    true,
 				Type:        schema.TypeString,
 			},
 			`phone_column`: {
