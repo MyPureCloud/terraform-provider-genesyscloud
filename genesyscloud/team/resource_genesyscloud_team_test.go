@@ -9,7 +9,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
 

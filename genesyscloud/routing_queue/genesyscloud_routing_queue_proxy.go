@@ -5,7 +5,7 @@ import (
 	"fmt"
 	rc "terraform-provider-genesyscloud/genesyscloud/resource_cache"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 )
 
 /*
@@ -76,7 +76,7 @@ func getAllRoutingQueuesFn(ctx context.Context, p *RoutingQueueProxy) (*[]platfo
 	var allQueues []platformclientv2.Queue
 	const pageSize = 100
 
-	queues, resp, getErr := p.routingApi.GetRoutingQueues(1, pageSize, "", "", nil, nil, nil, false)
+	queues, resp, getErr := p.routingApi.GetRoutingQueues(1, pageSize, "", "", nil, nil, nil, "", false)
 	if getErr != nil {
 		return nil, resp, fmt.Errorf("failed to get first page of queues: %v", getErr)
 	}
@@ -97,7 +97,7 @@ func getAllRoutingQueuesFn(ctx context.Context, p *RoutingQueueProxy) (*[]platfo
 	allQueues = append(allQueues, *queues.Entities...)
 
 	for pageNum := 2; pageNum <= *queues.PageCount; pageNum++ {
-		queues, resp, getErr := p.routingApi.GetRoutingQueues(pageNum, pageSize, "", "", nil, nil, nil, false)
+		queues, resp, getErr := p.routingApi.GetRoutingQueues(pageNum, pageSize, "", "", nil, nil, nil, "", false)
 		if getErr != nil {
 			return nil, resp, fmt.Errorf("failed to get page of queues: %v", getErr)
 		}
