@@ -11,6 +11,7 @@ import (
 )
 
 func TestAccDataSourceJourneySegment(t *testing.T) {
+	t.Skip("Customer segment not implemented")
 	runDataJourneySegmentTestCase(t, "find_by_name")
 }
 

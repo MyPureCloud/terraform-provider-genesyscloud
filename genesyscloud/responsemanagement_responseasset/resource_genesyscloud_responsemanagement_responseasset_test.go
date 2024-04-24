@@ -16,7 +16,6 @@ import (
 )
 
 func TestAccResourceResponseManagementResponseAsset(t *testing.T) {
-	t.Parallel()
 	var (
 		resourceId         = "responseasset"
 		testFilesDir       = "test_responseasset_data"
@@ -28,12 +27,8 @@ func TestAccResourceResponseManagementResponseAsset(t *testing.T) {
 		divisionName       = "test tf divison " + uuid.NewString()
 	)
 
-	defer func() {
-		err := cleanupResponseAssets(testFilesDir)
-		if err != nil {
-			log.Printf("error cleaning up response assets: %v. Dangling assets may exist.", err)
-		}
-	}()
+	cleanupResponseAssets("genesys")
+	cleanupResponseAssets("yeti")
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },

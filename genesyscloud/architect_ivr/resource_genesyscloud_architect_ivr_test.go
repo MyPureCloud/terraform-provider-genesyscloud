@@ -92,8 +92,8 @@ func TestAccResourceIvrConfigDivision(t *testing.T) {
 	ivrConfigResource1 := "test-ivrconfig1"
 	ivrConfigName := "terraform-ivrconfig-" + uuid.NewString()
 	ivrConfigDescription := "Terraform IVR config"
-	number1 := "+14175550011"
-	number2 := "+14175550012"
+	number1 := "+14175550013"
+	number2 := "+14175550014"
 	divResource1 := "auth-division1"
 	divResource2 := "auth-division2"
 	divName1 := "TerraformDiv-" + uuid.NewString()

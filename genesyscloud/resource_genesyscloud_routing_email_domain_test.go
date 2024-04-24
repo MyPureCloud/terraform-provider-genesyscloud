@@ -22,7 +22,7 @@ import (
 func TestAccResourceRoutingEmailDomainSub(t *testing.T) {
 	var (
 		domainRes = "routing-domain1"
-		domainId  = "terraform" + strings.Replace(uuid.NewString(), "-", "", -1)
+		domainId  = "terraformdomain" + strings.Replace(uuid.NewString(), "-", "", -1)
 	)
 
 	CleanupRoutingEmailDomains()
@@ -58,7 +58,7 @@ func TestAccResourceRoutingEmailDomainSub(t *testing.T) {
 func TestAccResourceRoutingEmailDomainCustom(t *testing.T) {
 	var (
 		domainRes       = "routing-domain1"
-		domainId        = fmt.Sprintf("terraform.%s.com", strings.Replace(uuid.NewString(), "-", "", -1))
+		domainId        = fmt.Sprintf("terraformdomain.%s.com", strings.Replace(uuid.NewString(), "-", "", -1))
 		mailFromDomain1 = "test." + domainId
 	)
 
