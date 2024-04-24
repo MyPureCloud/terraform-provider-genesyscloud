@@ -8,7 +8,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 	"log"
-	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"terraform-provider-genesyscloud/genesyscloud/tfexporter_state"
@@ -41,8 +40,8 @@ func readOutboundSettings(ctx context.Context, d *schema.ResourceData, meta inte
 	maxLineUtilization := d.Get("max_line_utilization").(float64)
 	abandonSeconds := d.Get("abandon_seconds").(float64)
 	complianceAbandonRateDenominator := d.Get("compliance_abandon_rate_denominator").(string)
-	automaticTimeZoneMapping := d.Get("automatic_time_zone_mapping").(interface{})
-	log.Println(automaticTimeZoneMapping)
+	automaticTimeZoneMapping := d.Get("automatic_time_zone_mapping").([]interface{})
+
 	log.Printf("Reading Outbound setting %s", d.Id())
 
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
@@ -54,7 +53,7 @@ func readOutboundSettings(ctx context.Context, d *schema.ResourceData, meta inte
 			return retry.NonRetryableError(fmt.Errorf("Failed to read Outbound Setting: %s", getErr))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundSettings())
+		//cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundSettings())
 
 		// Only read values if they are part of the terraform plan
 		if maxCallsPerAgent != 0 || tfexporter_state.IsExporterActive() {
@@ -89,13 +88,14 @@ func readOutboundSettings(ctx context.Context, d *schema.ResourceData, meta inte
 			}
 		}
 
-		//if len(automaticTimeZoneMapping) > 0 || tfexporter_state.IsExporterActive() {
-		//	log.Println("HERE:", automaticTimeZoneMapping)
-		//	d.Set("automatic_time_zone_mapping", flattenOutboundSettingsAutomaticTimeZoneMapping(*settings.AutomaticTimeZoneMapping, automaticTimeZoneMapping))
-		//}
-		log.Printf("Read Outbound Setting")
+		if len(automaticTimeZoneMapping) > 0 || tfexporter_state.IsExporterActive() {
+			d.Set("automatic_time_zone_mapping", flattenOutboundSettingsAutomaticTimeZoneMapping(*settings.AutomaticTimeZoneMapping, automaticTimeZoneMapping))
+		}
 
-		return cc.CheckState()
+		log.Printf("Read Outbound Setting")
+		log.Println(d.State().String())
+		//return cc.CheckState()
+		return nil
 	})
 }
 
@@ -105,6 +105,7 @@ func updateOutboundSettings(ctx context.Context, d *schema.ResourceData, meta in
 	maxLineUtilization := d.Get("max_line_utilization").(float64)
 	abandonSeconds := d.Get("abandon_seconds").(float64)
 	complianceAbandonRateDenominator := d.Get("compliance_abandon_rate_denominator").(string)
+	automaticTimeZoneMapping := d.Get("automatic_time_zone_mapping").([]interface{})
 
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getOutboundSettingsProxy(sdkConfig)
@@ -121,20 +122,23 @@ func updateOutboundSettings(ctx context.Context, d *schema.ResourceData, meta in
 		update := platformclientv2.Outboundsettings{
 			Name:                     setting.Name,
 			Version:                  setting.Version,
-			AutomaticTimeZoneMapping: buildOutboundSettingsAutomaticTimeZoneMapping(d),
+			AutomaticTimeZoneMapping: setting.AutomaticTimeZoneMapping,
 		}
 
-		if maxCallsPerAgent != 0 {
+		if maxCallsPerAgent != 0 || tfexporter_state.IsExporterActive() {
 			update.MaxCallsPerAgent = &maxCallsPerAgent
 		}
-		if maxLineUtilization != 0 {
+		if maxLineUtilization != 0 || tfexporter_state.IsExporterActive() {
 			update.MaxLineUtilization = &maxLineUtilization
 		}
-		if abandonSeconds != 0 {
+		if abandonSeconds != 0 || tfexporter_state.IsExporterActive() {
 			update.AbandonSeconds = &abandonSeconds
 		}
-		if complianceAbandonRateDenominator != "" {
+		if complianceAbandonRateDenominator != "" || tfexporter_state.IsExporterActive() {
 			update.ComplianceAbandonRateDenominator = &complianceAbandonRateDenominator
+		}
+		if automaticTimeZoneMapping != nil || tfexporter_state.IsExporterActive() {
+			update.AutomaticTimeZoneMapping = buildOutboundSettingsAutomaticTimeZoneMapping(d)
 		}
 
 		_, resp, err := proxy.updateOutboundSettings(ctx, d.Id(), &update)

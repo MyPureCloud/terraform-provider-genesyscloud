@@ -3,12 +3,13 @@ package outbound_settings
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
-	"log"
+	"terraform-provider-genesyscloud/genesyscloud/tfexporter_state"
 	"terraform-provider-genesyscloud/genesyscloud/util/lists"
 )
 
 func buildOutboundSettingsAutomaticTimeZoneMapping(d *schema.ResourceData) *platformclientv2.Automatictimezonemappingsettings {
 	if mappingRequest := d.Get("automatic_time_zone_mapping"); mappingRequest != nil {
+
 		if mappingList := mappingRequest.([]interface{}); len(mappingList) > 0 {
 			mappingMap := mappingList[0].(map[string]interface{})
 
@@ -18,7 +19,7 @@ func buildOutboundSettingsAutomaticTimeZoneMapping(d *schema.ResourceData) *plat
 			}
 		}
 	}
-	return &platformclientv2.Automatictimezonemappingsettings{}
+	return nil
 }
 
 func buildSupportedCountries(d *schema.ResourceData) *[]string {
@@ -99,11 +100,12 @@ func buildCallableWindowsUnmapped(unmappedWindows *schema.Set) *platformclientv2
 }
 
 func flattenOutboundSettingsAutomaticTimeZoneMapping(timeZoneMappings platformclientv2.Automatictimezonemappingsettings, automaticTimeZoneMapping []interface{}) []interface{} {
-	log.Println(timeZoneMappings.String(), " | ", automaticTimeZoneMapping)
-	callableWindows := automaticTimeZoneMapping[0].(map[string]interface{})["callable_windows"].(*schema.Set)
 	requestMap := make(map[string]interface{})
-	if timeZoneMappings.CallableWindows != nil {
-		requestMap["callable_windows"] = flattenCallableWindows(*timeZoneMappings.CallableWindows, callableWindows)
+	if len(automaticTimeZoneMapping) > 0 || tfexporter_state.IsExporterActive() {
+		callableWindows := automaticTimeZoneMapping[0].(map[string]interface{})["callable_windows"].(*schema.Set)
+		if timeZoneMappings.CallableWindows != nil {
+			requestMap["callable_windows"] = flattenCallableWindows(*timeZoneMappings.CallableWindows, callableWindows)
+		}
 	}
 	if timeZoneMappings.SupportedCountries != nil {
 		requestMap["supported_countries"] = *timeZoneMappings.SupportedCountries
@@ -115,7 +117,6 @@ func flattenCallableWindows(windows []platformclientv2.Callablewindow, windowsSc
 	if len(windows) == 0 {
 		return nil
 	}
-
 	var mappedSchema *schema.Set
 	var unmappedSchema *schema.Set
 	for _, callableWindowsSchema := range windowsSchema.List() {
