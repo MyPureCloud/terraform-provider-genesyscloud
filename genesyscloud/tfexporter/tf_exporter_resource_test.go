@@ -7,7 +7,6 @@ import (
 	emergencyGroup "terraform-provider-genesyscloud/genesyscloud/architect_emergencygroup"
 	flow "terraform-provider-genesyscloud/genesyscloud/architect_flow"
 	flowLogLevel "terraform-provider-genesyscloud/genesyscloud/flow_loglevel"
-	"terraform-provider-genesyscloud/genesyscloud/scripts"
 
 	grammar "terraform-provider-genesyscloud/genesyscloud/architect_grammar"
 	grammarLanguage "terraform-provider-genesyscloud/genesyscloud/architect_grammar_language"
@@ -19,6 +18,7 @@ import (
 	flowOutcome "terraform-provider-genesyscloud/genesyscloud/flow_outcome"
 	"terraform-provider-genesyscloud/genesyscloud/group"
 	groupRoles "terraform-provider-genesyscloud/genesyscloud/group_roles"
+	idpSalesforce "terraform-provider-genesyscloud/genesyscloud/idp_salesforce"
 	integration "terraform-provider-genesyscloud/genesyscloud/integration"
 	integrationAction "terraform-provider-genesyscloud/genesyscloud/integration_action"
 	integrationCred "terraform-provider-genesyscloud/genesyscloud/integration_credential"
@@ -50,6 +50,7 @@ import (
 	routingQueueConditionalGroupRouting "terraform-provider-genesyscloud/genesyscloud/routing_queue_conditional_group_routing"
 	routingQueueOutboundEmailAddress "terraform-provider-genesyscloud/genesyscloud/routing_queue_outbound_email_address"
 	routingSmsAddress "terraform-provider-genesyscloud/genesyscloud/routing_sms_addresses"
+	"terraform-provider-genesyscloud/genesyscloud/scripts"
 	workbin "terraform-provider-genesyscloud/genesyscloud/task_management_workbin"
 	workitemSchema "terraform-provider-genesyscloud/genesyscloud/task_management_workitem_schema"
 	worktype "terraform-provider-genesyscloud/genesyscloud/task_management_worktype"
@@ -118,7 +119,7 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_idp_okta"] = gcloud.ResourceIdpOkta()
 	providerResources["genesyscloud_idp_onelogin"] = gcloud.ResourceIdpOnelogin()
 	providerResources["genesyscloud_idp_ping"] = gcloud.ResourceIdpPing()
-	providerResources["genesyscloud_idp_salesforce"] = gcloud.ResourceIdpSalesforce()
+	providerResources["genesyscloud_idp_salesforce"] = idpSalesforce.ResourceIdpSalesforce()
 	providerResources["genesyscloud_integration"] = integration.ResourceIntegration()
 	providerResources["genesyscloud_integration_action"] = integrationAction.ResourceIntegrationAction()
 	providerResources["genesyscloud_integration_credential"] = integrationCred.ResourceIntegrationCredential()
@@ -216,7 +217,7 @@ func (r *registerTestInstance) registerTestExporters() {
 	RegisterExporter("genesyscloud_idp_okta", gcloud.IdpOktaExporter())
 	RegisterExporter("genesyscloud_idp_onelogin", gcloud.IdpOneloginExporter())
 	RegisterExporter("genesyscloud_idp_ping", gcloud.IdpPingExporter())
-	RegisterExporter("genesyscloud_idp_salesforce", gcloud.IdpSalesforceExporter())
+	RegisterExporter("genesyscloud_idp_salesforce", idpSalesforce.IdpSalesforceExporter())
 	RegisterExporter("genesyscloud_integration", integration.IntegrationExporter())
 	RegisterExporter("genesyscloud_integration_action", integrationAction.IntegrationActionExporter())
 	RegisterExporter("genesyscloud_integration_credential", integrationCred.IntegrationCredentialExporter())
