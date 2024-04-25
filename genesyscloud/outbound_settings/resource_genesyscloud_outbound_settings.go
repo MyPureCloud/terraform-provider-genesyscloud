@@ -103,7 +103,6 @@ func updateOutboundSettings(ctx context.Context, d *schema.ResourceData, meta in
 		update := platformclientv2.Outboundsettings{
 			Name:                              setting.Name,
 			Version:                           setting.Version,
-			AutomaticTimeZoneMapping:          setting.AutomaticTimeZoneMapping,
 			RescheduleTimeZoneSkippedContacts: platformclientv2.Bool(d.Get("reschedule_time_zone_skipped_contacts").(bool)),
 		}
 		if maxCallsPerAgent != 0 || tfexporter_state.IsExporterActive() {
