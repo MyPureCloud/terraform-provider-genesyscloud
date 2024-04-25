@@ -31,11 +31,12 @@ func TestAccResourceOutboundSettings(t *testing.T) {
 					"0.2",
 					"12.6",
 					complianceAbandonRateDenominator[1],
-					false,
+					util.FalseValue,
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_outbound_settings."+resourceId, "max_calls_per_agent", "5"),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_settings."+resourceId, "max_line_utilization", "0.2"),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_settings."+resourceId, "reschedule_time_zone_skipped_contacts", util.FalseValue),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_settings."+resourceId, "abandon_seconds", "12.6"),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_settings."+resourceId, "compliance_abandon_rate_denominator", complianceAbandonRateDenominator[1]),
 				),
@@ -48,7 +49,7 @@ func TestAccResourceOutboundSettings(t *testing.T) {
 					"0",
 					"10.0",
 					"",
-					true,
+					util.TrueValue,
 					generateAutomaticTimeZoneMapping(
 						[]string{"CA"},
 						generateCallableWindowsBlock(
@@ -67,6 +68,7 @@ func TestAccResourceOutboundSettings(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_outbound_settings."+resourceId, "max_calls_per_agent", "7"),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_settings."+resourceId, "abandon_seconds", "10"),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_settings."+resourceId, "reschedule_time_zone_skipped_contacts", util.TrueValue),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_settings."+resourceId,
 						"automatic_time_zone_mapping.0.supported_countries.0", "CA"),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_settings."+resourceId,
@@ -83,7 +85,7 @@ func TestAccResourceOutboundSettings(t *testing.T) {
 					"0.5",
 					"6.5",
 					complianceAbandonRateDenominator[0],
-					false,
+					util.FalseValue,
 					generateAutomaticTimeZoneMapping(
 						[]string{"US"},
 						generateCallableWindowsBlock(
@@ -101,6 +103,7 @@ func TestAccResourceOutboundSettings(t *testing.T) {
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_outbound_settings."+resourceId, "max_calls_per_agent", "10"),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_settings."+resourceId, "reschedule_time_zone_skipped_contacts", util.FalseValue),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_settings."+resourceId, "max_line_utilization", "0.5"),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_settings."+resourceId, "abandon_seconds", "6.5"),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_settings."+resourceId, "compliance_abandon_rate_denominator", complianceAbandonRateDenominator[0]),
@@ -135,7 +138,7 @@ func generateOutboundSettingsResource(
 	maxLineUtilization string,
 	abandonSeconds string,
 	complianceAbandonRateDenominator string,
-	rescheduleTimeZoneSkippedContacts bool,
+	rescheduleTimeZoneSkippedContacts string,
 	nestedBlocks ...string) string {
 	return fmt.Sprintf(`
 		resource "genesyscloud_outbound_settings" "%s"{
@@ -143,7 +146,7 @@ func generateOutboundSettingsResource(
   			max_line_utilization = %s
 			abandon_seconds = %s
   			compliance_abandon_rate_denominator = "%s"
-			reschedule_time_zone_skipped_contacts = %v
+			reschedule_time_zone_skipped_contacts = %s
 			%s
 		}
 		`, resourceId, maxCallsPerAgent, maxLineUtilization, abandonSeconds, complianceAbandonRateDenominator, rescheduleTimeZoneSkippedContacts, strings.Join(nestedBlocks, "\n"),
