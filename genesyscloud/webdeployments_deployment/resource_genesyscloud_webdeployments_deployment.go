@@ -52,15 +52,28 @@ func createWebDeployment(ctx context.Context, d *schema.ResourceData, meta inter
 	log.Printf("Creating web deployment %s", name)
 
 	configId := d.Get("configuration.0.id").(string)
-	configVersion := d.Get("configuration.0.version").(string)
+	inputConfigVersion := d.Get("configuration.0.version").(string)
 
 	flow := util.BuildSdkDomainEntityRef(d, "flow_id")
+
+	configVersion, versionList := wd.determineLatestVersion(ctx, configId)
+
+	if inputConfigVersion == "" {
+		inputConfigVersion = configVersion
+	}
+
+	exists := util.StringExists(inputConfigVersion, versionList)
+	if !exists {
+		log.Printf("For Web deployment Resource %v, Configuration Version Input %v doesnot match with any existing versions %v",
+			name, inputConfigVersion, versionList)
+		return util.BuildDiagnosticError(resourceName, fmt.Sprintf("For Web Deployment Resource %v, Configuration Version Input %v doesnot match with any existing versions %v", name, inputConfigVersion, versionList), nil)
+	}
 
 	inputDeployment := platformclientv2.Webdeployment{
 		Name: &name,
 		Configuration: &platformclientv2.Webdeploymentconfigurationversionentityref{
 			Id:      &configId,
-			Version: &configVersion,
+			Version: &inputConfigVersion,
 		},
 		AllowAllDomains: &allowAllDomains,
 		AllowedDomains:  &allowedDomains,
