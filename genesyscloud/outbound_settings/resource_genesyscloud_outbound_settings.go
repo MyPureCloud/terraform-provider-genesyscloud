@@ -8,10 +8,12 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 	"log"
+	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"terraform-provider-genesyscloud/genesyscloud/tfexporter_state"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 )
 
 /*
@@ -41,6 +43,7 @@ func readOutboundSettings(ctx context.Context, d *schema.ResourceData, meta inte
 	abandonSeconds := d.Get("abandon_seconds").(float64)
 	complianceAbandonRateDenominator := d.Get("compliance_abandon_rate_denominator").(string)
 	automaticTimeZoneMapping := d.Get("automatic_time_zone_mapping").([]interface{})
+	rescheduleTimeZoneSkippedContacts := d.Get("reschedule_time_zone_skipped_contacts").(bool)
 
 	log.Printf("Reading Outbound setting %s", d.Id())
 
@@ -48,67 +51,45 @@ func readOutboundSettings(ctx context.Context, d *schema.ResourceData, meta inte
 		settings, resp, getErr := proxy.getOutboundSettingsById(ctx, d.Id())
 		if getErr != nil {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(fmt.Errorf("Failed to read Outbound Setting: %s", getErr))
+				return retry.RetryableError(fmt.Errorf("failed to read Outbound Setting: %s", getErr))
 			}
-			return retry.NonRetryableError(fmt.Errorf("Failed to read Outbound Setting: %s", getErr))
+			return retry.NonRetryableError(fmt.Errorf("failed to read Outbound Setting: %s", getErr))
 		}
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundSettings())
 
-		//cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundSettings())
-
-		// Only read values if they are part of the terraform plan
+		// Only read values if they are part of the terraform plan or during Export
 		if maxCallsPerAgent != 0 || tfexporter_state.IsExporterActive() {
-			if settings.MaxCallsPerAgent != nil {
-				d.Set("max_calls_per_agent", *settings.MaxCallsPerAgent)
-			} else {
-				d.Set("max_calls_per_agent", nil)
-			}
+			resourcedata.SetNillableValue(d, "max_calls_per_agent", settings.MaxCallsPerAgent)
 		}
-
 		if maxLineUtilization != 0 || tfexporter_state.IsExporterActive() {
-			if settings.MaxLineUtilization != nil {
-				d.Set("max_line_utilization", *settings.MaxLineUtilization)
-			} else {
-				d.Set("max_line_utilization", nil)
-			}
+			resourcedata.SetNillableValue(d, "max_line_utilization", settings.MaxLineUtilization)
 		}
-
 		if abandonSeconds != 0 || tfexporter_state.IsExporterActive() {
-			if settings.AbandonSeconds != nil {
-				d.Set("abandon_seconds", *settings.AbandonSeconds)
-			} else {
-				d.Set("abandon_seconds", nil)
-			}
+			resourcedata.SetNillableValue(d, "abandon_seconds", settings.AbandonSeconds)
 		}
-
 		if complianceAbandonRateDenominator != "" || tfexporter_state.IsExporterActive() {
-			if settings.ComplianceAbandonRateDenominator != nil {
-				d.Set("compliance_abandon_rate_denominator", *settings.ComplianceAbandonRateDenominator)
-			} else {
-				d.Set("compliance_abandon_rate_denominator", nil)
-			}
+			resourcedata.SetNillableValue(d, "compliance_abandon_rate_denominator", settings.ComplianceAbandonRateDenominator)
 		}
-
 		if len(automaticTimeZoneMapping) > 0 || tfexporter_state.IsExporterActive() {
-			d.Set("automatic_time_zone_mapping", flattenOutboundSettingsAutomaticTimeZoneMapping(*settings.AutomaticTimeZoneMapping, automaticTimeZoneMapping))
+			_ = d.Set("automatic_time_zone_mapping", flattenOutboundSettingsAutomaticTimeZoneMapping(*settings.AutomaticTimeZoneMapping, automaticTimeZoneMapping))
 		}
+		resourcedata.SetNillableValue(d, "reschedule_time_zone_skipped_contacts", &rescheduleTimeZoneSkippedContacts)
 
 		log.Printf("Read Outbound Setting")
-		log.Println(d.State().String())
-		//return cc.CheckState()
-		return nil
+		return cc.CheckState()
 	})
 }
 
 // updateOutboundSettings is used by the outbound_settings resource to update an outbound settings in Genesys Cloud
 func updateOutboundSettings(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
+	proxy := getOutboundSettingsProxy(sdkConfig)
+
 	maxCallsPerAgent := d.Get("max_calls_per_agent").(int)
 	maxLineUtilization := d.Get("max_line_utilization").(float64)
 	abandonSeconds := d.Get("abandon_seconds").(float64)
 	complianceAbandonRateDenominator := d.Get("compliance_abandon_rate_denominator").(string)
 	automaticTimeZoneMapping := d.Get("automatic_time_zone_mapping").([]interface{})
-
-	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-	proxy := getOutboundSettingsProxy(sdkConfig)
 
 	log.Printf("Updating Outbound Settings %s", d.Id())
 
@@ -120,11 +101,11 @@ func updateOutboundSettings(ctx context.Context, d *schema.ResourceData, meta in
 		}
 
 		update := platformclientv2.Outboundsettings{
-			Name:                     setting.Name,
-			Version:                  setting.Version,
-			AutomaticTimeZoneMapping: setting.AutomaticTimeZoneMapping,
+			Name:                              setting.Name,
+			Version:                           setting.Version,
+			AutomaticTimeZoneMapping:          setting.AutomaticTimeZoneMapping,
+			RescheduleTimeZoneSkippedContacts: platformclientv2.Bool(d.Get("reschedule_time_zone_skipped_contacts").(bool)),
 		}
-
 		if maxCallsPerAgent != 0 || tfexporter_state.IsExporterActive() {
 			update.MaxCallsPerAgent = &maxCallsPerAgent
 		}
@@ -147,7 +128,6 @@ func updateOutboundSettings(ctx context.Context, d *schema.ResourceData, meta in
 		}
 		return nil, nil
 	})
-
 	if diagErr != nil {
 		return diagErr
 	}

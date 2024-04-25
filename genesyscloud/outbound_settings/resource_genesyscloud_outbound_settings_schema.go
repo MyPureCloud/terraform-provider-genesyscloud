@@ -69,12 +69,14 @@ var (
 				Optional:         true,
 				ValidateDiagFunc: gcloud.ValidateTimeHHMM,
 				Type:             schema.TypeString,
+				Computed:         true,
 			},
 			`latest_callable_time`: {
 				Description:      "The latest time to dial a contact. Valid format is HH:mm.",
 				Optional:         true,
 				ValidateDiagFunc: gcloud.ValidateTimeHHMM,
 				Type:             schema.TypeString,
+				Computed:         true,
 			},
 		},
 	}
@@ -85,17 +87,20 @@ var (
 				Optional:         true,
 				ValidateDiagFunc: gcloud.ValidateTimeHHMM,
 				Type:             schema.TypeString,
+				Computed:         true,
 			},
 			`latest_callable_time`: {
 				Description:      "The latest time to dial a contact. Valid format is HH:mm.",
 				Optional:         true,
 				ValidateDiagFunc: gcloud.ValidateTimeHHMM,
 				Type:             schema.TypeString,
+				Computed:         true,
 			},
 			`time_zone_id`: {
 				Description: "The time zone to use for contacts that cannot be mapped.",
 				Optional:    true,
 				Type:        schema.TypeString,
+				Computed:    true,
 			},
 		},
 	}
@@ -142,6 +147,11 @@ func ResourceOutboundSettings() *schema.Resource {
 				Optional:    true,
 				Type:        schema.TypeList,
 				Elem:        automaticTimeZoneMappingResource,
+			},
+			`reschedule_time_zone_skipped_contacts`: {
+				Description: "Whether or not to reschedule time-zone blocked contacts.",
+				Optional:    true,
+				Type:        schema.TypeBool,
 			},
 		},
 	}
