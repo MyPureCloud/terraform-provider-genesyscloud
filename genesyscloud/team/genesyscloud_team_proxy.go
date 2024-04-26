@@ -213,7 +213,6 @@ func deleteTeamFn(ctx context.Context, p *teamProxy, id string) (resp *platformc
 
 // createMembersFn is an implementation function for creating a Genesys Cloud members
 func createMembersFn(ctx context.Context, p *teamProxy, teamId string, members platformclientv2.Teammembers) (*platformclientv2.Teammemberaddlistingresponse, *platformclientv2.APIResponse, error) {
-
 	teamListingResponse, resp, err := p.teamsApi.PostTeamMembers(teamId, members)
 	if err != nil {
 		return nil, resp, fmt.Errorf("Failed to create members: %s", err)
