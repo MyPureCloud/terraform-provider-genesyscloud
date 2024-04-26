@@ -28,7 +28,7 @@ func SetRegistrar(regInstance registrar.Registrar) {
 // ResourceIdpSalesforce registers the genesyscloud_idp_salesforce resource with Terraform
 func ResourceIdpSalesforce() *schema.Resource {
 	return &schema.Resource{
-		Description: `Genesys Cloud idp salesforce`,
+		Description: "Genesys Cloud Single Sign-on Salesforce Identity Provider. See this page for detailed configuration instructions: https://help.mypurecloud.com/articles/add-salesforce-as-a-single-sign-on-provider/",
 
 		CreateContext: provider.CreateWithPooledClient(createIdpSalesforce),
 		ReadContext:   provider.ReadWithPooledClient(readIdpSalesforce),
