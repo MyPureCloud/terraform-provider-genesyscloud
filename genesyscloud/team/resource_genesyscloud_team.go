@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"terraform-provider-genesyscloud/genesyscloud/util"
@@ -74,7 +75,7 @@ func readTeam(ctx context.Context, d *schema.ResourceData, meta interface{}) dia
 			}
 			return retry.NonRetryableError(fmt.Errorf("failed to read team %s: %s", d.Id(), getErr))
 		}
-		//cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceTeam())
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceTeam())
 
 		resourcedata.SetNillableValue(d, "name", team.Name)
 		resourcedata.SetNillableReferenceWritableDivision(d, "division_id", team.Division)
@@ -91,8 +92,7 @@ func readTeam(ctx context.Context, d *schema.ResourceData, meta interface{}) dia
 		_ = d.Set("member_ids", members)
 
 		log.Printf("Read team %s %s", d.Id(), *team.Name)
-		//return cc.CheckState()
-		return nil
+		return cc.CheckState()
 	})
 }
 
@@ -106,29 +106,29 @@ func updateTeam(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	if err != nil {
 		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update team %s error: %s", *team.Name, err), resp)
 	}
-	members, ok := d.GetOk("member_ids")
 
-	if ok {
-		memberList := members.([]interface{})
-		currentMembers, _ := readMembers(ctx, d, proxy)
-		if len(memberList) == 0 {
-			if len(currentMembers) > 0 {
-				deleteMembers(ctx, d.Id(), currentMembers, proxy)
+	members := d.Get("member_ids")
+	memberList := members.([]interface{})
+	currentMembers, _ := readMembers(ctx, d, proxy)
+	if len(memberList) == 0 {
+		if len(currentMembers) > 0 {
+			log.Printf("removing all members from team %s", d.Id())
+			deleteMembers(ctx, d.Id(), currentMembers, proxy)
+		}
+	}
+
+	if len(memberList) > 0 {
+		removeMembers, addMembers := SliceDifferenceMembers(currentMembers, memberList)
+		if len(removeMembers) > 0 {
+			diagErr := deleteMembers(ctx, d.Id(), removeMembers, proxy)
+			if diagErr != nil {
+				return diagErr
 			}
 		}
-		if len(memberList) > 0 {
-			removeMembers, addMembers := SliceDifferenceMembers(currentMembers, memberList)
-			if len(removeMembers) > 0 {
-				diagErr := deleteMembers(ctx, d.Id(), removeMembers, proxy)
-				if diagErr != nil {
-					return diagErr
-				}
-			}
-			if len(addMembers) > 0 {
-				diagErr := createMembers(ctx, d.Id(), addMembers, proxy)
-				if diagErr != nil {
-					return diagErr
-				}
+		if len(addMembers) > 0 {
+			diagErr := createMembers(ctx, d.Id(), addMembers, proxy)
+			if diagErr != nil {
+				return diagErr
 			}
 		}
 	}
@@ -141,6 +141,8 @@ func updateTeam(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 func deleteTeam(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getTeamProxy(sdkConfig)
+
+	log.Printf("Deleting team %s", d.Id())
 	resp, err := proxy.deleteTeam(ctx, d.Id())
 	if err != nil {
 		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete team %s error: %s", d.Id(), err), resp)
@@ -149,7 +151,7 @@ func deleteTeam(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 		_, resp, err := proxy.getTeamById(ctx, d.Id())
 		if err != nil {
 			if util.IsStatus404(resp) {
-				log.Printf("deleted team %s", d.Id())
+				log.Printf("Deleted team %s", d.Id())
 				return nil
 			}
 			return retry.NonRetryableError(fmt.Errorf("error deleting team %s: %s", d.Id(), err))

@@ -190,6 +190,8 @@ func getTeamByIdFn(ctx context.Context, p *teamProxy, id string) (team *platform
 	if err != nil {
 		return nil, resp, fmt.Errorf("Failed to retrieve team by id %s: %s", id, err)
 	}
+
+	//fmt.Println(formatJSON(team))
 	return team, resp, nil
 }
 

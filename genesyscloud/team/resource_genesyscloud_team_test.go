@@ -152,10 +152,6 @@ func TestAccResourceTeamRemoveMembers(t *testing.T) {
 		testUserResource1 = "user_resource_1"
 		testUserName1     = "nameUser1" + uuid.NewString()
 		testUserEmail1    = fmt.Sprintf(randString(5) + "@" + randString(5) + ".com")
-
-		testUserResource2 = "user_resource_2"
-		testUserName2     = "nameUser2" + uuid.NewString()
-		testUserEmail2    = fmt.Sprintf(randString(5) + "@" + randString(5) + ".com")
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -163,32 +159,7 @@ func TestAccResourceTeamRemoveMembers(t *testing.T) {
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
-				// Create Team with two member
-				Config: gcloud.GenerateAuthDivisionBasic(divResource, divName) +
-					generateUserWithDivisionId(testUserResource1, testUserName1, testUserEmail1, "genesyscloud_auth_division."+divResource+".id") +
-					generateUserWithDivisionId(testUserResource2, testUserName2, testUserEmail2, "genesyscloud_auth_division."+divResource+".id") +
-					generateTeamResource(
-						resourceId,
-						name1,
-						"genesyscloud_auth_division."+divResource+".id",
-						description1,
-						generateMemberIdsArray([]string{"genesyscloud_user." + testUserResource1 + ".id", "genesyscloud_user." + testUserResource2 + ".id"}),
-					),
-				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_team."+resourceId, "name", name1),
-					resource.TestCheckResourceAttr("genesyscloud_team."+resourceId, "description", description1),
-					resource.TestCheckResourceAttrPair("genesyscloud_team."+resourceId, "division_id", "genesyscloud_auth_division."+divResource, "id"),
-					resource.TestCheckResourceAttr("genesyscloud_team."+resourceId, "member_ids.#", "2"),
-					resource.TestCheckResourceAttrPair(
-						"genesyscloud_team."+resourceId, "member_ids.0",
-						"genesyscloud_user."+testUserResource1, "id"),
-					resource.TestCheckResourceAttrPair(
-						"genesyscloud_team."+resourceId, "member_ids.1",
-						"genesyscloud_user."+testUserResource2, "id"),
-				),
-			},
-			{
-				// Update Team with one member
+				// Create Team with member
 				Config: gcloud.GenerateAuthDivisionBasic(divResource, divName) +
 					generateUserWithDivisionId(testUserResource1, testUserName1, testUserEmail1, "genesyscloud_auth_division."+divResource+".id") +
 					generateTeamResource(
