@@ -244,10 +244,51 @@ func InitClientConfig(data *schema.ResourceData, version string, config *platfor
 	oauthclientID := data.Get("oauthclient_id").(string)
 	oauthclientSecret := data.Get("oauthclient_secret").(string)
 	basePath := GetRegionBasePath(data.Get("aws_region").(string))
-
-	sdkDebugFilePath := data.Get("sdk_debug_file_path").(string)
-
 	config.BasePath = basePath
+
+	diagErr := setUpSDKLogging(data, config)
+	if diagErr != nil {
+		return diagErr
+	}
+	setupProxy(data, config)
+
+	config.AddDefaultHeader("User-Agent", "GC Terraform Provider/"+version)
+	config.RetryConfiguration = &platformclientv2.RetryConfiguration{
+		RetryWaitMin: time.Second * 1,
+		RetryWaitMax: time.Second * 30,
+		RetryMax:     20,
+		RequestLogHook: func(request *http.Request, count int) {
+			if count > 0 && request != nil {
+				log.Printf("Retry #%d for %s %s", count, request.Method, request.URL)
+			}
+		},
+		ResponseLogHook: func(response *http.Response) {
+			if response.StatusCode < http.StatusOK || response.StatusCode >= http.StatusMultipleChoices {
+				log.Printf("Response %s for request:%s %s", response.Status, response.Request.Method, response.Request.URL)
+			}
+		},
+	}
+
+	if accessToken != "" {
+		log.Print("Setting access token set on configuration instance.")
+		config.AccessToken = accessToken
+	} else {
+		config.AutomaticTokenRefresh = true // Enable automatic token refreshing
+		err := config.AuthorizeClientCredentials(oauthclientID, oauthclientSecret)
+		if err != nil {
+			if strings.Contains(err.Error(), "Auth Error: 400 - invalid_request (rate limit exceeded;") {
+				return diag.Errorf("Rate limit hit: %v", err)
+			}
+			return diag.Errorf("Failed to authorize Genesys Cloud client credentials: %v", err)
+		}
+	}
+
+	log.Printf("Initialized Go SDK Client. Debug=%t", data.Get("sdk_debug").(bool))
+	return nil
+}
+
+func setUpSDKLogging(data *schema.ResourceData, config *platformclientv2.Configuration) diag.Diagnostics {
+	sdkDebugFilePath := data.Get("sdk_debug_file_path").(string)
 	if data.Get("sdk_debug").(bool) {
 		config.LoggingConfiguration = &platformclientv2.LoggingConfiguration{
 			LogLevel:        platformclientv2.LTrace,
@@ -268,7 +309,10 @@ func InitClientConfig(data *schema.ResourceData, version string, config *platfor
 			config.LoggingConfiguration.SetLogFormat(platformclientv2.Text)
 		}
 	}
+	return nil
+}
 
+func setupProxy(data *schema.ResourceData, config *platformclientv2.Configuration) {
 	proxySet := data.Get("proxy").(*schema.Set)
 	for _, proxyObj := range proxySet.List() {
 		proxy := proxyObj.(map[string]interface{})
@@ -296,39 +340,7 @@ func InitClientConfig(data *schema.ResourceData, version string, config *platfor
 			config.ProxyConfiguration.Auth.UserName = username
 			config.ProxyConfiguration.Auth.Password = password
 		}
-
 	}
-
-	config.AddDefaultHeader("User-Agent", "GC Terraform Provider/"+version)
-	config.RetryConfiguration = &platformclientv2.RetryConfiguration{
-		RetryWaitMin: time.Second * 1,
-		RetryWaitMax: time.Second * 30,
-		RetryMax:     20,
-		RequestLogHook: func(request *http.Request, count int) {
-			if count > 0 && request != nil {
-				log.Printf("Retry #%d for %s %s", count, request.Method, request.URL)
-			}
-		},
-		ResponseLogHook: func(response *http.Response) {
-			if response.StatusCode < http.StatusOK || response.StatusCode >= http.StatusMultipleChoices {
-				log.Printf("Response %s for request:%s %s", response.Status, response.Request.Method, response.Request.URL)
-			}
-		},
-	}
-
-	if accessToken != "" {
-		log.Print("Setting access token set on configuration instance.")
-		config.AccessToken = accessToken
-	} else {
-		config.AutomaticTokenRefresh = true // Enable automatic token refreshing
-		err := config.AuthorizeClientCredentials(oauthclientID, oauthclientSecret)
-		if err != nil {
-			return diag.Errorf("Failed to authorize Genesys Cloud client credentials: %v", err)
-		}
-	}
-
-	log.Printf("Initialized Go SDK Client. Debug=%t", data.Get("sdk_debug").(bool))
-	return nil
 }
 
 func AuthorizeSdk() (*platformclientv2.Configuration, error) {
