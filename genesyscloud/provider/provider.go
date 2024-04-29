@@ -274,13 +274,18 @@ func InitClientConfig(data *schema.ResourceData, version string, config *platfor
 		config.AccessToken = accessToken
 	} else {
 		config.AutomaticTokenRefresh = true // Enable automatic token refreshing
-		err := config.AuthorizeClientCredentials(oauthclientID, oauthclientSecret)
-		if err != nil {
-			if strings.Contains(err.Error(), "Auth Error: 400 - invalid_request (rate limit exceeded;") {
-				return diag.Errorf("Rate limit hit: %v", err)
+
+		var err error
+		for i := 0; i < 10; i++ { // Retry when we get rate limited every 5 seconds. Try 10 times
+			err = config.AuthorizeClientCredentials(oauthclientID, oauthclientSecret)
+			if err != nil {
+				if !strings.Contains(err.Error(), "Auth Error: 400 - invalid_request (rate limit exceeded;") {
+					return diag.Errorf("Failed to authorize Genesys Cloud client credentials: %v", err)
+				}
+				time.Sleep(time.Second * 5)
 			}
-			return diag.Errorf("Failed to authorize Genesys Cloud client credentials: %v", err)
 		}
+		return diag.Errorf("Failed to authorize Genesys Cloud client credentials: %v", err)
 	}
 
 	log.Printf("Initialized Go SDK Client. Debug=%t", data.Get("sdk_debug").(bool))
