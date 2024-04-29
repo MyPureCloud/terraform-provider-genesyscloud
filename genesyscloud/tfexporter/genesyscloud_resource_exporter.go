@@ -15,10 +15,10 @@ import (
 	dependentconsumers "terraform-provider-genesyscloud/genesyscloud/dependent_consumers"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
-	r_registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
-	util "terraform-provider-genesyscloud/genesyscloud/util"
-	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
-	stringmap "terraform-provider-genesyscloud/genesyscloud/util/stringmap"
+	rRegistrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
+	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/lists"
+	"terraform-provider-genesyscloud/genesyscloud/util/stringmap"
 	"time"
 
 	"github.com/google/uuid"
@@ -128,7 +128,7 @@ func configureExporterType(ctx context.Context, d *schema.ResourceData, gre *Gen
 func NewGenesysCloudResourceExporter(ctx context.Context, d *schema.ResourceData, meta interface{}, filterType ExporterFilterType) (*GenesysCloudResourceExporter, diag.Diagnostics) {
 
 	if providerResources == nil {
-		providerResources, providerDataSources = r_registrar.GetResources()
+		providerResources, providerDataSources = rRegistrar.GetResources()
 	}
 
 	gre := &GenesysCloudResourceExporter{
@@ -373,6 +373,12 @@ func (g *GenesysCloudResourceExporter) buildResourceConfigMap() diag.Diagnostics
 			}
 		} else {
 			g.sanitizeDataConfigMap(jsonResult)
+		}
+
+		if resource.Type == "genesyscloud_outbound_campaign" {
+			for k, v := range g.dataSourceTypesMaps {
+				log.Printf("\n\nKey: %v \nValue: %v \n\n", k, v)
+			}
 		}
 
 		// TODO put this in separate call
@@ -1262,8 +1268,28 @@ func (g *GenesysCloudResourceExporter) sanitizeConfigMap(
 		//If the exporter as has customer resolver for an attribute, invoke it.
 		if refAttrCustomResolver, ok := exporter.CustomAttributeResolver[currAttr]; ok {
 			log.Printf("Custom resolver invoked for attribute: %s", currAttr)
-			if err := refAttrCustomResolver.ResolverFunc(configMap, exporters, resourceName); err != nil {
-				log.Printf("An error has occurred while trying invoke a custom resolver for attribute %s: %v", currAttr, err)
+			if resolverFunc := refAttrCustomResolver.ResolverFunc; resolverFunc != nil {
+				if err := resolverFunc(configMap, exporters, resourceName); err != nil {
+					log.Printf("An error has occurred while trying invoke a custom resolver for attribute %s: %v", currAttr, err)
+				}
+			}
+			if resolveToDataSourceFunc := refAttrCustomResolver.ResolveToDataSourceFunc; resolveToDataSourceFunc != nil {
+				sdkConfig := g.meta.(*provider.ProviderMeta).ClientConfig
+				if dataSourceType, dataSourceId, dataSourceConfig, resolve := resolveToDataSourceFunc(configMap, sdkConfig); resolve {
+					if g.dataSourceTypesMaps[dataSourceType] == nil {
+						g.dataSourceTypesMaps[dataSourceType] = make(resourceJSONMaps)
+					}
+					// add the data source if it hasn't already been added
+					if _, ok := g.dataSourceTypesMaps[dataSourceType][dataSourceId]; !ok {
+						g.dataSourceTypesMaps[dataSourceType][dataSourceId] = dataSourceConfig
+					}
+					if g.exportAsHCL {
+						if _, ok := g.resourceTypesHCLBlocks[dataSourceType]; !ok {
+							g.resourceTypesHCLBlocks[dataSourceType] = make(resourceHCLBlock, 0)
+						}
+						g.resourceTypesHCLBlocks[dataSourceType] = append(g.resourceTypesHCLBlocks[dataSourceType], instanceStateToHCLBlock(dataSourceType, dataSourceId, dataSourceConfig, true))
+					}
+				}
 			}
 		}
 

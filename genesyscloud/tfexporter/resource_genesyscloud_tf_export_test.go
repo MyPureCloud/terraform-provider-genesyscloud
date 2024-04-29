@@ -55,6 +55,41 @@ type WrapupcodeExport struct {
 	ResourceName string ``
 }
 
+func TestAccResourceTfExportCampaignScriptDataSource(t *testing.T) {
+	var (
+		exportTestDir = "../../.terraform" + uuid.NewString()
+		resourceID    = "export"
+	)
+
+	theConfig := fmt.Sprintf(`
+resource "genesyscloud_tf_export" "%s" {
+  directory = "%s"
+
+  include_filter_resources     = ["genesyscloud_outbound_campaign::My Campaign 1"]
+  include_state_file           = false
+  export_as_hcl                = true
+  enable_dependency_resolution = true
+}
+`, resourceID, exportTestDir)
+
+	defer func(path string) {
+		if err := os.RemoveAll(path); err != nil {
+			t.Logf("failed to remove dir %s: %s", path, err)
+		}
+	}(exportTestDir)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			{
+				Config: theConfig,
+			},
+		},
+		CheckDestroy: testVerifyExportsDestroyedFunc(exportTestDir),
+	})
+}
+
 // TestAccResourceTfExport does a basic test check to make sure the export file is created.
 func TestAccResourceTfExport(t *testing.T) {
 	var (

@@ -2,13 +2,13 @@ package resource_exporter
 
 import (
 	"context"
-	"regexp"
-	"strings"
-	"sync"
-
 	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
+	"regexp"
+	"strings"
+	"sync"
 
 	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 
@@ -26,12 +26,12 @@ type ResourceMeta struct {
 	IdPrefix string
 }
 
-// resourceExporter.ResourceIDMetaMap is a map of IDs to ResourceMeta
+// ResourceIDMetaMap is a map of IDs to ResourceMeta
 type ResourceIDMetaMap map[string]*ResourceMeta
 
-// GetAllResourcesFunc is a method that returns all resource IDs
 type GetAllCustomResourcesFunc func(context.Context) (ResourceIDMetaMap, *DependencyResource, diag.Diagnostics)
 
+// GetAllResourcesFunc is a method that returns all resource IDs
 type GetAllResourcesFunc func(context.Context) (ResourceIDMetaMap, diag.Diagnostics)
 
 // RefAttrSettings contains behavior settings for references
@@ -51,12 +51,13 @@ type ResourceInfo struct {
 	CtyType cty.Type
 }
 
-// Allows the definition of a custom resolver for an exporter.
+// RefAttrCustomResolver allows the definition of a custom resolver for an exporter.
 type RefAttrCustomResolver struct {
-	ResolverFunc func(map[string]interface{}, map[string]*ResourceExporter, string) error
+	ResolverFunc            func(map[string]interface{}, map[string]*ResourceExporter, string) error
+	ResolveToDataSourceFunc func(map[string]interface{}, *platformclientv2.Configuration) (string, string, map[string]interface{}, bool)
 }
 
-// Allows the definition of a custom resolver for an exporter.
+// CustomFlowResolver allows the definition of a custom resolver for an exporter.
 type CustomFlowResolver struct {
 	ResolverFunc func(map[string]interface{}, string) error
 }
@@ -136,7 +137,10 @@ type ResourceExporter struct {
 
 	CustomFlowResolver map[string]*CustomFlowResolver
 
-	//This a place holder filter out specific resources from a filter.
+	// SdkConfig for making API calls in the custom attr resolver methods where necessary
+	SdkConfig *platformclientv2.Configuration
+
+	//This a placeholder filter out specific resources from a filter.
 	FilterResource func(ResourceIDMetaMap, string, []string) ResourceIDMetaMap
 	// Attributes that are mentioned with custom exports like e164 numbers,rrule  should be ensured to export in the correct format (remove hyphens, whitespace, etc.)
 	CustomValidateExports map[string][]string
@@ -182,7 +186,7 @@ func (r *ResourceExporter) GetNestedRefAttrSettings(attribute string) *RefAttrSe
 
 func (r *ResourceExporter) ContainsNestedRefAttrs(attribute string) ([]string, bool) {
 	var nestedAttributes []string
-	for key, _ := range r.EncodedRefAttrs {
+	for key := range r.EncodedRefAttrs {
 		if key.Attr == attribute {
 			nestedAttributes = append(nestedAttributes, key.NestedAttr)
 		}

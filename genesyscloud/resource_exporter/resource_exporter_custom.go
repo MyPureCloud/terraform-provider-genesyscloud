@@ -3,9 +3,77 @@ package resource_exporter
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 	"log"
+	"regexp"
 	"strings"
 )
+
+const defaultOutboundScriptName = "Default Outbound Script"
+
+/*
+OutboundCampaignAgentScriptResolver
+Forces script_id to reference a data source for the Default Outbound Script
+and the returns the script resource type "", the data source ID, and the config of the data source for the tfexporter package to add it to the export.
+(We can't pass in the map and add the data source here because it causes a cyclic error between packages resource_exporter and tfexporter,
+so instead we pass back all the details tfexporter needs to do it itself)
+*/
+func OutboundCampaignAgentScriptResolver(configMap map[string]interface{}, sdkConfig *platformclientv2.Configuration) (dsType string, dsID string, dsConfig map[string]interface{}, resolve bool) {
+	var (
+		scriptDataSourceConfig = make(map[string]interface{})
+		scriptDataSourceId     = strings.Replace(defaultOutboundScriptName, " ", "_", -1)
+	)
+
+	scriptId, ok := configMap["script_id"].(string)
+
+	// if the script ID is nil or an empty string, we can assume this means the Default Outbound Script is being referenced by the campaign. Even if that is not the case,
+	// it is invalid for a campaign to not reference a script, so we might as well resolve to the data source.
+	// If include_state_file == true, the raw GUID of the Def Outbound Script will be present, so we want to check that it is in fact the DOS before resolving it to the data source
+	if !ok || scriptId == "" || isDefaultOutboundScript(scriptId, sdkConfig) {
+		if !ok || scriptId == "" {
+			log.Printf("No script_id value present in export of outbound campaign %s. Resolving to Default Outbound Script data source.", configMap["name"].(string))
+		}
+		scriptDataSourceConfig["name"] = defaultOutboundScriptName
+
+		configMap["script_id"] = fmt.Sprintf("${data.genesyscloud_script.%s.id}", scriptDataSourceId)
+
+		return "genesyscloud_script", scriptDataSourceId, scriptDataSourceConfig, true
+	}
+
+	return "", "", nil, false
+}
+
+/*
+isDefaultOutboundScript
+Takes a script ID and checks if the name of the script equals defaultOutboundScriptName.
+If the operation fails, we will just log the error and allow the exporter to include the hard-coded GUID, as opposed to failing.
+*/
+func isDefaultOutboundScript(scriptId string, sdkConfig *platformclientv2.Configuration) bool {
+	if !isValidGuid(scriptId) {
+		return false
+	}
+
+	apiInstance := platformclientv2.NewScriptsApiWithConfig(sdkConfig)
+
+	log.Printf("reading published script %s", scriptId)
+	data, _, err := apiInstance.GetScriptsPublishedScriptId(scriptId, "")
+	if err != nil {
+		log.Printf("failed to read script %s: %v", scriptId, err)
+		return false
+	}
+
+	log.Printf("read published script %s %s", scriptId, *data.Name)
+	return *data.Name == defaultOutboundScriptName
+}
+
+func isValidGuid(id string) bool {
+	matched, err := regexp.MatchString("^[a-z0-9]{8}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{12}$", id)
+	if err != nil {
+		log.Printf("failed to validate format of GUID %s: %v", id, err)
+		return false
+	}
+	return matched
+}
 
 /*
 MemberGroupsResolver
