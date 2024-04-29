@@ -15,7 +15,7 @@ import (
 )
 
 /*
-The resource_genesyscloud_outbound_settings.go contains all of the methods that perform the core logic for a resource.
+The resource_genesyscloud_outbound_settings.go contains all the methods that perform the core logic for a resource.
 */
 
 func getAllOutboundSettings(_ context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
@@ -48,9 +48,9 @@ func readOutboundSettings(ctx context.Context, d *schema.ResourceData, meta inte
 		settings, resp, getErr := proxy.getOutboundSettingsById(ctx, d.Id())
 		if getErr != nil {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(fmt.Errorf("Failed to read Outbound Setting: %s", getErr))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read Outbound Setting: %s", getErr), resp))
 			}
-			return retry.NonRetryableError(fmt.Errorf("Failed to read Outbound Setting: %s", getErr))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read Outbound Setting: %s", getErr), resp))
 		}
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundSettings())

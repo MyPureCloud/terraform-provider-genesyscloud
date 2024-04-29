@@ -119,9 +119,9 @@ func readRoutingSettings(ctx context.Context, d *schema.ResourceData, meta inter
 		if getErr != nil {
 			if util.IsStatus404(resp) {
 				//createRoutingSettings(ctx, d, meta)
-				return retry.RetryableError(fmt.Errorf("Failed to read Routing Setting: %s", getErr))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_routing_settings", fmt.Sprintf("Failed to read Routing Setting %s | error: %s", d.Id(), getErr), resp))
 			}
-			return retry.NonRetryableError(fmt.Errorf("Failed to read Routing Setting: %s", getErr))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_routing_settings", fmt.Sprintf("Failed to read Routing Setting %s | error: %s", d.Id(), getErr), resp))
 		}
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceRoutingSettings())

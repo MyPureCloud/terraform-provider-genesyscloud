@@ -29,10 +29,10 @@ func dataSourceIntegrationRead(ctx context.Context, d *schema.ResourceData, m in
 	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
 		integration, retryable, resp, err := ip.getIntegrationByName(ctx, integrationName)
 		if err != nil && !retryable {
-			return retry.NonRetryableError(fmt.Errorf("failed to get page of integrations: %s. %s %v", integrationName, err, resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to get page of integrations: %s | error: %s", integrationName, err), resp))
 		}
 		if retryable {
-			return retry.RetryableError(fmt.Errorf("failed to get integration %s", integrationName))
+			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to get integration %s", integrationName), resp))
 		}
 		d.SetId(*integration.Id)
 		return nil

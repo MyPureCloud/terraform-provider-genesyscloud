@@ -72,9 +72,9 @@ func readRoutingQueueConditionalRoutingGroup(ctx context.Context, d *schema.Reso
 		sdkRules, resp, getErr := proxy.getRoutingQueueConditionRouting(ctx, queueId)
 		if getErr != nil {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(fmt.Errorf("failed to read conditional group routing for queue %s: %s", queueId, getErr))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read conditional group routing for queue %s | error: %s", queueId, getErr), resp))
 			}
-			return retry.NonRetryableError(fmt.Errorf("failed to read conditional group routing for queue %s: %s", queueId, getErr))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read conditional group routing for queue %s | error: %s", queueId, getErr), resp))
 		}
 
 		cc := consistencyChecker.NewConsistencyCheck(ctx, d, meta, ResourceRoutingQueueConditionalGroupRouting())

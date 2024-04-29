@@ -80,9 +80,9 @@ func readTeam(ctx context.Context, d *schema.ResourceData, meta interface{}) dia
 		team, resp, getErr := proxy.getTeamById(ctx, d.Id())
 		if getErr != nil {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(fmt.Errorf("failed to read team %s: %s", d.Id(), getErr))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read team %s | error: %s", d.Id(), getErr), resp))
 			}
-			return retry.NonRetryableError(fmt.Errorf("failed to read team %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read team %s | error: %s", d.Id(), getErr), resp))
 		}
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceTeam())
 		resourcedata.SetNillableValue(d, "name", team.Name)
@@ -152,9 +152,9 @@ func deleteTeam(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 				log.Printf("deleted team %s", d.Id())
 				return nil
 			}
-			return retry.NonRetryableError(fmt.Errorf("error deleting team %s: %s", d.Id(), err))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("error deleting team %s | error: %s", d.Id(), err), resp))
 		}
-		return retry.RetryableError(fmt.Errorf("team %s still exists", d.Id()))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("team %s still exists", d.Id()), resp))
 	})
 }
 

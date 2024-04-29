@@ -35,14 +35,14 @@ func dataSourceTrunkBaseSettingsRead(ctx context.Context, d *schema.ResourceData
 	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
 		for pageNum := 1; ; pageNum++ {
 			const pageSize = 100
-			trunkBaseSettings, _, getErr := getTelephonyProvidersEdgesTrunkbasesettings(sdkConfig, pageNum, pageSize, name)
+			trunkBaseSettings, resp, getErr := getTelephonyProvidersEdgesTrunkbasesettings(sdkConfig, pageNum, pageSize, name)
 
 			if getErr != nil {
-				return retry.NonRetryableError(fmt.Errorf("Error requesting trunk base settings %s: %s", name, getErr))
+				return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Error requesting trunk base settings %s | error: %s", name, getErr), resp))
 			}
 
 			if trunkBaseSettings.Entities == nil || len(*trunkBaseSettings.Entities) == 0 {
-				return retry.RetryableError(fmt.Errorf("No trunkBaseSettings found with name %s", name))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("No trunkBaseSettings found with name %s", name), resp))
 			}
 
 			for _, trunkBaseSetting := range *trunkBaseSettings.Entities {

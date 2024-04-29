@@ -42,9 +42,9 @@ func readGroupRoles(ctx context.Context, d *schema.ResourceData, meta interface{
 		roles, resp, err := flattenSubjectRoles(d, proxy)
 		if err != nil {
 			if util.IsStatus404ByInt(resp.StatusCode) {
-				return retry.RetryableError(fmt.Errorf("Failed to read roles for group %s: %v", d.Id(), err))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read roles for group %s | error: %v", d.Id(), err), resp))
 			}
-			return retry.NonRetryableError(fmt.Errorf("Failed to read roles for group %s: %v", d.Id(), err))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read roles for group %s | error: %v", d.Id(), err), resp))
 		}
 		d.Set("roles", roles)
 

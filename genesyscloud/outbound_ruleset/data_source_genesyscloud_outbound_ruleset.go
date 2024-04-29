@@ -29,11 +29,11 @@ func dataSourceOutboundRulesetRead(ctx context.Context, d *schema.ResourceData, 
 		rulesetId, retryable, resp, err := proxy.getOutboundRulesetIdByName(ctx, name)
 
 		if err != nil && !retryable {
-			return retry.NonRetryableError(fmt.Errorf("Error ruleset %s: %s %v", name, err, resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Error ruleset %s | error: %s", name, err), resp))
 		}
 
 		if retryable {
-			return retry.RetryableError(fmt.Errorf("No ruleset found with name %s", name))
+			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("No ruleset found with name %s", name), resp))
 		}
 
 		d.SetId(rulesetId)

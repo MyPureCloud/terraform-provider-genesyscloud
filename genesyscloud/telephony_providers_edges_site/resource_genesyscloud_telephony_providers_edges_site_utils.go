@@ -374,7 +374,7 @@ func readSiteNumberPlans(ctx context.Context, sp *siteProxy, d *schema.ResourceD
 			d.SetId("") // Site doesn't exist
 			return nil
 		}
-		return retry.NonRetryableError(fmt.Errorf("failed to read number plans for site %s: %s", d.Id(), err))
+		return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read number plans for site %s | error: %s", d.Id(), err), resp))
 	}
 
 	dNumberPlans := make([]interface{}, 0)
@@ -394,7 +394,7 @@ func readSiteNumberPlans(ctx context.Context, sp *siteProxy, d *schema.ResourceD
 func readSiteOutboundRoutes(ctx context.Context, sp *siteProxy, d *schema.ResourceData) *retry.RetryError {
 	outboundRoutes, resp, err := sp.getSiteOutboundRoutes(ctx, d.Id())
 	if err != nil {
-		return retry.NonRetryableError(fmt.Errorf("failed to get outbound routes for site %s: %s %v", d.Id(), err, resp))
+		return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to get outbound routes for site %s | error: %s", d.Id(), err), resp))
 	}
 
 	dOutboundRoutes := schema.NewSet(schema.HashResource(outboundRouteSchema), []interface{}{})

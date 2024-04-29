@@ -106,10 +106,10 @@ func assignUserToWebRtcPhone(ctx context.Context, pp *phoneProxy, userId string)
 	retryErr := util.WithRetries(ctx, 60*time.Second, func() *retry.RetryError {
 		station, retryable, resp, err := pp.getStationOfUser(ctx, userId)
 		if err != nil && !retryable {
-			return retry.NonRetryableError(fmt.Errorf("error requesting stations: %s %v", err, resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("error requesting stations: %s", err), resp))
 		}
 		if retryable {
-			return retry.RetryableError(fmt.Errorf("no stations found with userID %v", userId))
+			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("no stations found with userID %v", userId), resp))
 		}
 
 		stationId = *station.Id

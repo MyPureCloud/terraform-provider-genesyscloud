@@ -79,9 +79,9 @@ func readPhone(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 		currentPhone, resp, getErr := pp.getPhoneById(ctx, d.Id())
 		if getErr != nil {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(fmt.Errorf("failed to read phone %s: %s", d.Id(), getErr))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read phone %s | error: %s", d.Id(), getErr), resp))
 			}
-			return retry.NonRetryableError(fmt.Errorf("failed to read phone %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read phone %s | error: %s", d.Id(), getErr), resp))
 		}
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourcePhone())
@@ -173,7 +173,7 @@ func deletePhone(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 				log.Printf("Deleted Phone %s", d.Id())
 				return nil
 			}
-			return retry.NonRetryableError(fmt.Errorf("error deleting Phone %s: %s", d.Id(), err))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("error deleting Phone %s | error: %s", d.Id(), err), resp))
 		}
 
 		if phone.State != nil && *phone.State == "deleted" {

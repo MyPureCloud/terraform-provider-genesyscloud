@@ -123,9 +123,9 @@ func readUserPrompt(ctx context.Context, d *schema.ResourceData, meta interface{
 		userPrompt, resp, getErr, retryable := proxy.getArchitectUserPrompt(ctx, d.Id(), true, true, nil)
 		if retryable {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(fmt.Errorf("failed to read User Prompt %s: %s", d.Id(), getErr))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read User Prompt %s | error: %s", d.Id(), getErr), resp))
 			}
-			return retry.NonRetryableError(fmt.Errorf("failed to read User Prompt %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read User Prompt %s | error: %s", d.Id(), getErr), resp))
 		}
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceArchitectUserPrompt())
@@ -222,9 +222,9 @@ func deleteUserPrompt(ctx context.Context, d *schema.ResourceData, meta interfac
 				log.Printf("Deleted user prompt %s", name)
 				return nil
 			}
-			return retry.NonRetryableError(fmt.Errorf("error deleting user prompt %s: %s", name, err))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("error deleting user prompt %s | error: %s", name, err), resp))
 		}
-		return retry.RetryableError(fmt.Errorf("user prompt %s still exists", name))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("user prompt %s still exists", name), resp))
 	})
 }
 

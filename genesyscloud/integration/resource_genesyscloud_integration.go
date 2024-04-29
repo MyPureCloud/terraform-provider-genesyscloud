@@ -107,9 +107,9 @@ func readIntegration(ctx context.Context, d *schema.ResourceData, meta interface
 		currentIntegration, resp, getErr := ip.getIntegrationById(ctx, d.Id())
 		if getErr != nil {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(fmt.Errorf("failed to read integration %s: %s", d.Id(), getErr))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read integration %s | error: %s", d.Id(), getErr), resp))
 			}
-			return retry.NonRetryableError(fmt.Errorf("failed to read integration %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read integration %s | error: %s", d.Id(), getErr), resp))
 		}
 
 		d.Set("integration_type", *currentIntegration.IntegrationType.Id)
@@ -119,7 +119,7 @@ func readIntegration(ctx context.Context, d *schema.ResourceData, meta interface
 		integrationConfig, resp, err := ip.getIntegrationConfig(ctx, *currentIntegration.Id)
 
 		if err != nil {
-			return retry.NonRetryableError(fmt.Errorf("failed to read config of integration %s: %s %v", d.Id(), getErr, resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read config of integration %s | error: %s", d.Id(), getErr), resp))
 		}
 
 		d.Set("config", flattenIntegrationConfig(integrationConfig))
@@ -170,8 +170,8 @@ func deleteIntegration(ctx context.Context, d *schema.ResourceData, meta interfa
 				log.Printf("Deleted Integration %s", d.Id())
 				return nil
 			}
-			return retry.NonRetryableError(fmt.Errorf("error deleting integration %s: %s", d.Id(), err))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("error deleting integration %s | error: %s", d.Id(), err), resp))
 		}
-		return retry.RetryableError(fmt.Errorf("integration %s still exists", d.Id()))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("integration %s still exists", d.Id()), resp))
 	})
 }

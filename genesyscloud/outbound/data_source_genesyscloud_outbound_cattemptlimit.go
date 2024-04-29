@@ -36,12 +36,12 @@ func dataSourceOutboundAttemptLimitRead(ctx context.Context, d *schema.ResourceD
 	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
 		const pageNum = 1
 		const pageSize = 100
-		attemptLimits, _, getErr := outboundAPI.GetOutboundAttemptlimits(pageSize, pageNum, true, "", name, "", "")
+		attemptLimits, resp, getErr := outboundAPI.GetOutboundAttemptlimits(pageSize, pageNum, true, "", name, "", "")
 		if getErr != nil {
-			return retry.NonRetryableError(fmt.Errorf("error requesting attempt limit %s: %s", name, getErr))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("error requesting attempt limit %s | error: %s", name, getErr), resp))
 		}
 		if attemptLimits.Entities == nil || len(*attemptLimits.Entities) == 0 {
-			return retry.RetryableError(fmt.Errorf("no attempt limits found with name %s", name))
+			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("no attempt limits found with name %s", name), resp))
 		}
 		attemptLimit := (*attemptLimits.Entities)[0]
 		d.SetId(*attemptLimit.Id)

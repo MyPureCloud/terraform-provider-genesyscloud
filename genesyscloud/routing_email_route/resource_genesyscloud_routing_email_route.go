@@ -100,13 +100,13 @@ func readRoutingEmailRoute(ctx context.Context, d *schema.ResourceData, meta int
 	// The normal GET route API has a long cache TTL (5 minutes) which can result in stale data.
 	// This can be bypassed by issuing a domain query instead.
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
-		inboundRoutesMap, respCode, getErr := proxy.getAllRoutingEmailRoute(ctx, domainId, "")
+		inboundRoutesMap, resp, getErr := proxy.getAllRoutingEmailRoute(ctx, domainId, "")
 		if getErr != nil {
-			if util.IsStatus404(respCode) {
+			if util.IsStatus404(resp) {
 				d.SetId("")
-				return retry.RetryableError(fmt.Errorf("failed to read routing email route %s: %s", d.Id(), getErr))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read routing email route %s | error: %s", d.Id(), getErr), resp))
 			}
-			return retry.NonRetryableError(fmt.Errorf("failed to read routing email route %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read routing email route %s | error: %s", d.Id(), getErr), resp))
 		}
 
 		for _, inboundRoutes := range *inboundRoutesMap {
@@ -208,14 +208,14 @@ func deleteRoutingEmailRoute(ctx context.Context, d *schema.ResourceData, meta i
 	}
 
 	return util.WithRetries(ctx, 180*time.Second, func() *retry.RetryError {
-		_, respCode, err := proxy.getRoutingEmailRouteById(ctx, domainId, d.Id())
+		_, resp, err := proxy.getRoutingEmailRouteById(ctx, domainId, d.Id())
 		if err != nil {
-			if util.IsStatus404(respCode) {
+			if util.IsStatus404(resp) {
 				log.Printf("Deleted routing email route %s", d.Id())
 				return nil
 			}
-			return retry.NonRetryableError(fmt.Errorf("error deleting routing email route %s: %s", d.Id(), err))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("error deleting routing email route %s | error: %s", d.Id(), err), resp))
 		}
-		return retry.RetryableError(fmt.Errorf("routing email route %s still exists", d.Id()))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("routing email route %s still exists", d.Id()), resp))
 	})
 }

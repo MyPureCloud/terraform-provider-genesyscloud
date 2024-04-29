@@ -71,9 +71,9 @@ func readIvrConfig(ctx context.Context, d *schema.ResourceData, meta interface{}
 		ivrConfig, resp, getErr := ap.getArchitectIvr(ctx, d.Id())
 		if getErr != nil {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(fmt.Errorf("Failed to read IVR config %s: %s", d.Id(), getErr))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read IVR config %s | error: %s", d.Id(), getErr), resp))
 			}
-			return retry.NonRetryableError(fmt.Errorf("Failed to read IVR config %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read IVR config %s | error: %s", d.Id(), getErr), resp))
 		}
 
 		if ivrConfig.State != nil && *ivrConfig.State == "deleted" {
@@ -157,7 +157,7 @@ func deleteIvrConfig(ctx context.Context, d *schema.ResourceData, meta interface
 				log.Printf("Deleted IVR config %s", d.Id())
 				return nil
 			}
-			return retry.NonRetryableError(fmt.Errorf("Error deleting IVR config %s: %s", d.Id(), err))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Error deleting IVR config %s | error: %s", d.Id(), err), resp))
 		}
 
 		if ivr.State != nil && *ivr.State == "deleted" {
@@ -166,6 +166,6 @@ func deleteIvrConfig(ctx context.Context, d *schema.ResourceData, meta interface
 			return nil
 		}
 
-		return retry.RetryableError(fmt.Errorf("IVR config %s still exists", d.Id()))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("IVR config %s still exists", d.Id()), resp))
 	})
 }

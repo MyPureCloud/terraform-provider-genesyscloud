@@ -28,11 +28,11 @@ func dataSourceEmployeeperformanceExternalmetricsDefinitionRead(ctx context.Cont
 		domainOrganizationRoleId, retryable, resp, err := proxy.getEmployeeperformanceExternalmetricsDefinitionIdByName(ctx, name)
 
 		if err != nil && !retryable {
-			return retry.NonRetryableError(fmt.Errorf("Error searching employeeperformance externalmetrics definition %s: %s %v", name, err, resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Error searching employeeperformance externalmetrics definition %s | error: %s", name, err), resp))
 		}
 
 		if retryable {
-			return retry.RetryableError(fmt.Errorf("No employeeperformance externalmetrics definition found with name %s", name))
+			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("No employeeperformance externalmetrics definition found with name %s", name), resp))
 		}
 
 		d.SetId(domainOrganizationRoleId)

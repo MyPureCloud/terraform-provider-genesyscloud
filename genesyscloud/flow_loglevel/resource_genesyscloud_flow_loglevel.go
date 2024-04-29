@@ -89,9 +89,9 @@ func readFlowLogLevel(ctx context.Context, d *schema.ResourceData, meta interfac
 		flowSettingsResponse, apiResponse, err := ep.getFlowLogLevelById(ctx, flowId)
 		if err != nil {
 			if util.IsStatus404ByInt(apiResponse.StatusCode) {
-				return retry.NonRetryableError(fmt.Errorf("Failed to read flow log level %s: %s", flowId, err))
+				return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read flow log level %s | error: %s", flowId, err), apiResponse))
 			}
-			return retry.NonRetryableError(fmt.Errorf("Failed to read flow log level %s: %s", flowId, err))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read flow log level %s | error: %s", flowId, err), apiResponse))
 		}
 
 		flowLogLevel := flowSettingsResponse.LogLevelCharacteristics
@@ -142,14 +142,14 @@ func deleteFlowLogLevel(ctx context.Context, d *schema.ResourceData, meta interf
 		_, apiResponse, err := ep.getFlowLogLevelById(ctx, flowId)
 
 		if err == nil {
-			return retry.NonRetryableError(fmt.Errorf("Error deleting flow log level %s %s %s", flowId, d.Id(), err))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Error deleting flow log level %s %s | error: %s", flowId, d.Id(), err), apiResponse))
 		}
 		if util.IsStatus404ByInt(apiResponse.StatusCode) {
 			log.Printf("Deleted flow log level %s", flowId)
 			return nil
 		}
 
-		return retry.RetryableError(fmt.Errorf("flow log level %s still exists", flowId))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("flow log level %s still exists", flowId), apiResponse))
 	})
 }
 
