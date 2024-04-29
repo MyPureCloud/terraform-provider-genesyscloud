@@ -3,9 +3,10 @@ package responsemanagement_responseasset
 import (
 	"context"
 	"fmt"
-	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 	"log"
 	rc "terraform-provider-genesyscloud/genesyscloud/resource_cache"
+
+	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 )
 
 /*
