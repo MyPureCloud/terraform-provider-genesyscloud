@@ -3,6 +3,7 @@ package webdeployments_deployment
 import (
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"log"
 	"strconv"
@@ -19,7 +20,7 @@ type getWebDeploymentsFunc func(ctx context.Context, p *webDeploymentsProxy, dep
 type createWebdeploymentsFunc func(ctx context.Context, p *webDeploymentsProxy, deployment platformclientv2.Webdeployment) (*platformclientv2.Webdeployment, *platformclientv2.APIResponse, error)
 type updateWebdeploymentsFunc func(ctx context.Context, p *webDeploymentsProxy, deploymentId string, deployment platformclientv2.Webdeployment) (*platformclientv2.Webdeployment, *platformclientv2.APIResponse, error)
 type deleteWebdeploymentsFunc func(ctx context.Context, p *webDeploymentsProxy, deploymentId string) (*platformclientv2.APIResponse, error)
-type determineLatestVersionFunc func(ctx context.Context, p *webDeploymentsProxy, configurationId string) (string, []string)
+type determineLatestVersionFunc func(ctx context.Context, p *webDeploymentsProxy, configurationId string) (string, []string, diag.Diagnostics)
 
 type webDeploymentsProxy struct {
 	clientConfig      *platformclientv2.Configuration
@@ -62,7 +63,7 @@ func (p *webDeploymentsProxy) getWebDeployments(ctx context.Context) (*platformc
 func (p *webDeploymentsProxy) getWebDeployment(ctx context.Context, deployId string) (*platformclientv2.Webdeployment, *platformclientv2.APIResponse, error) {
 	return p.getWebDeploymentAttr(ctx, p, deployId)
 }
-func (p *webDeploymentsProxy) determineLatestVersion(ctx context.Context, configurationId string) (string, []string) {
+func (p *webDeploymentsProxy) determineLatestVersion(ctx context.Context, configurationId string) (string, []string, diag.Diagnostics) {
 	return p.determineLatestVersionAttr(ctx, p, configurationId)
 }
 
@@ -98,11 +99,11 @@ func deleteWebdeploymentsFn(ctx context.Context, p *webDeploymentsProxy, deploym
 	return p.webDeploymentsApi.DeleteWebdeploymentsDeployment(deploymentId)
 }
 
-func determineLatestVersionFn(ctx context.Context, p *webDeploymentsProxy, configurationId string) (string, []string) {
+func determineLatestVersionFn(ctx context.Context, p *webDeploymentsProxy, configurationId string) (string, []string, diag.Diagnostics) {
 	version := ""
 	draft := "DRAFT"
 	versionList := []string{}
-	_ = util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
+	err := util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		versions, resp, getErr := p.webDeploymentsApi.GetWebdeploymentsConfigurationVersions(configurationId)
 		if getErr != nil {
 			if util.IsStatus404(resp) {
@@ -138,5 +139,8 @@ func determineLatestVersionFn(ctx context.Context, p *webDeploymentsProxy, confi
 
 		return nil
 	})
-	return version, versionList
+	if err != nil {
+		return "", nil, err
+	}
+	return version, versionList, nil
 }

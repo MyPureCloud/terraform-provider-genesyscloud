@@ -56,7 +56,10 @@ func createWebDeployment(ctx context.Context, d *schema.ResourceData, meta inter
 
 	flow := util.BuildSdkDomainEntityRef(d, "flow_id")
 
-	configVersion, versionList := wd.determineLatestVersion(ctx, configId)
+	configVersion, versionList, er := wd.determineLatestVersion(ctx, configId)
+	if er != nil {
+		return er
+	}
 	if inputConfigVersion == "" {
 		inputConfigVersion = configVersion
 	}
@@ -193,7 +196,10 @@ func updateWebDeployment(ctx context.Context, d *schema.ResourceData, meta inter
 	flow := util.BuildSdkDomainEntityRef(d, "flow_id")
 
 	// always update to latest version of configuration during update of an existing webdeployment
-	configVersion, _ := wd.determineLatestVersion(ctx, configId)
+	configVersion, _, er := wd.determineLatestVersion(ctx, configId)
+	if err != nil {
+		return er
+	}
 	inputDeployment := platformclientv2.Webdeployment{
 		Name: &name,
 		Configuration: &platformclientv2.Webdeploymentconfigurationversionentityref{
