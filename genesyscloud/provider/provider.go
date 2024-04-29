@@ -283,9 +283,15 @@ func InitClientConfig(data *schema.ResourceData, version string, config *platfor
 					return diag.Errorf("Failed to authorize Genesys Cloud client credentials: %v", err)
 				}
 				time.Sleep(time.Second * 5)
+			} else {
+				err = nil
+				break
 			}
 		}
-		return diag.Errorf("Failed to authorize Genesys Cloud client credentials: %v", err)
+
+		if err != nil {
+			return diag.Errorf("Failed to authorize Genesys Cloud client credentials: %v", err)
+		}
 	}
 
 	log.Printf("Initialized Go SDK Client. Debug=%t", data.Get("sdk_debug").(bool))
