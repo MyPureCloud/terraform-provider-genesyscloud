@@ -1,7 +1,6 @@
 package team
 
 import (
-	"fmt"
 	"log"
 	"math/rand"
 	"strings"
@@ -86,41 +85,4 @@ func randString(n int) string {
 		s[i] = letters[rand.Intn(len(letters))]
 	}
 	return string(s)
-}
-
-func generateTeamsWithMemberResource(
-	teamResource string,
-	name string,
-	member_ids []string,
-	divisionId string,
-) string {
-	returnString := fmt.Sprintf(`resource "genesyscloud_team" "%s" {
-		name = "%s"
-		member_ids = [%s]
-		division_id = %s
-	}
-	`, teamResource, name, strings.Join(member_ids, ", "), divisionId)
-	return returnString
-}
-
-func GenerateUserWithDivisionId(resourceID string, name string, email string, divisionId string) string {
-	return fmt.Sprintf(`resource "genesyscloud_user" "%s" {
-		name = "%s"
-		email = "%s"
-		division_id = %s
-	}
-	`, resourceID, name, email, divisionId)
-}
-
-func generateTeamResource(
-	teamResource string,
-	name string,
-	divisionId string,
-	description string) string {
-	return fmt.Sprintf(`resource "genesyscloud_team" "%s" {
-		name = "%s"
-		division_id = %s
-		description = "%s"
-	}
-	`, teamResource, name, divisionId, description)
 }
