@@ -286,14 +286,14 @@ func InitClientConfig(data *schema.ResourceData, version string, config *platfor
 
 func authorizeSdkWithRetries(config *platformclientv2.Configuration, oauthID, oauthSecret string) diag.Diagnostics {
 	var lastErr error
-	for i := 0; i < 10; i++ {
+	for i := 0; i < 20; i++ {
 		lastErr = config.AuthorizeClientCredentials(oauthID, oauthSecret)
 		if lastErr != nil {
 			if !strings.Contains(lastErr.Error(), "Auth Error: 400 - invalid_request (rate limit exceeded;") {
 				return diag.Errorf("Failed to authorize Genesys Cloud client credentials: %v", lastErr)
 			}
 			// Wait and try again
-			time.Sleep(time.Second)
+			time.Sleep(time.Second * 5)
 			continue
 		}
 		// Success
