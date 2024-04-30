@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -274,23 +275,9 @@ func InitClientConfig(data *schema.ResourceData, version string, config *platfor
 		config.AccessToken = accessToken
 	} else {
 		config.AutomaticTokenRefresh = true // Enable automatic token refreshing
-
-		var err error
-		for i := 0; i < 10; i++ { // Retry when we get rate limited every 5 seconds. Try 10 times
-			err = config.AuthorizeClientCredentials(oauthclientID, oauthclientSecret)
-			if err != nil {
-				if !strings.Contains(err.Error(), "Auth Error: 400 - invalid_request (rate limit exceeded;") {
-					return diag.Errorf("Failed to authorize Genesys Cloud client credentials: %v", err)
-				}
-				time.Sleep(time.Second * 5)
-			} else {
-				err = nil
-				break
-			}
-		}
-
+		err := util.AuthorizeSdkWithRetries(config, oauthclientID, oauthclientSecret)
 		if err != nil {
-			return diag.Errorf("Failed to authorize Genesys Cloud client credentials: %v", err)
+			return err
 		}
 	}
 
