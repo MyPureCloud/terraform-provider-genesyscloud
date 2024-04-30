@@ -276,7 +276,7 @@ func InitClientConfig(data *schema.ResourceData, version string, config *platfor
 		config.AutomaticTokenRefresh = true // Enable automatic token refreshing
 		err := authorizeSdkWithRetries(config, oauthclientID, oauthclientSecret)
 		if err != nil {
-			return err
+			return diag.Errorf(err.Error())
 		}
 	}
 
@@ -284,13 +284,13 @@ func InitClientConfig(data *schema.ResourceData, version string, config *platfor
 	return nil
 }
 
-func authorizeSdkWithRetries(config *platformclientv2.Configuration, oauthID, oauthSecret string) diag.Diagnostics {
+func authorizeSdkWithRetries(config *platformclientv2.Configuration, oauthID, oauthSecret string) error {
 	var lastErr error
 	for i := 0; i < 20; i++ {
 		lastErr = config.AuthorizeClientCredentials(oauthID, oauthSecret)
 		if lastErr != nil {
 			if !strings.Contains(lastErr.Error(), "Auth Error: 400 - invalid_request (rate limit exceeded;") {
-				return diag.Errorf("Failed to authorize Genesys Cloud client credentials: %v", lastErr)
+				return fmt.Errorf("Failed to authorize Genesys Cloud client credentials: %v", lastErr)
 			}
 			// Wait and try again
 			time.Sleep(time.Second * 5)
@@ -299,7 +299,7 @@ func authorizeSdkWithRetries(config *platformclientv2.Configuration, oauthID, oa
 		// Success
 		return nil
 	}
-	return diag.Errorf("Exhausted retries on Genesys Cloud client credentials. Last error: %v", lastErr)
+	return fmt.Errorf("Exhausted retries on Genesys Cloud client credentials. Last error: %v", lastErr)
 }
 
 func setUpSDKLogging(data *schema.ResourceData, config *platformclientv2.Configuration) diag.Diagnostics {
@@ -359,7 +359,6 @@ func setupProxy(data *schema.ResourceData, config *platformclientv2.Configuratio
 }
 
 func AuthorizeSdk() (*platformclientv2.Configuration, error) {
-
 	// Create new config
 	sdkConfig := platformclientv2.GetDefaultConfiguration()
 
@@ -371,7 +370,7 @@ func AuthorizeSdk() (*platformclientv2.Configuration, error) {
 
 	sdkConfig.BasePath = GetRegionBasePath(os.Getenv("GENESYSCLOUD_REGION"))
 
-	err := sdkConfig.AuthorizeClientCredentials(os.Getenv("GENESYSCLOUD_OAUTHCLIENT_ID"), os.Getenv("GENESYSCLOUD_OAUTHCLIENT_SECRET"))
+	err := authorizeSdkWithRetries(sdkConfig, os.Getenv("GENESYSCLOUD_OAUTHCLIENT_ID"), os.Getenv("GENESYSCLOUD_OAUTHCLIENT_SECRET"))
 	if err != nil {
 		return sdkConfig, err
 	}
