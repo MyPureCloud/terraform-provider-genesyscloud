@@ -22,7 +22,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 )
 
 /*
@@ -82,14 +82,14 @@ type Meteredevaluationassignment struct {
 	MaxNumberEvaluations int
 	EvaluationForm       Evaluationform
 	AssignToActiveUser   bool
-	TimeInterval         Timeinterval
+	TimeInterval         EvalTimeinterval
 }
 
 type Meteredassignmentbyagent struct {
 	Evaluators           []User
 	MaxNumberEvaluations int
 	EvaluationForm       Evaluationform
-	TimeInterval         Timeinterval
+	TimeInterval         AgentTimeinterval
 	TimeZone             string
 }
 
@@ -228,11 +228,15 @@ type Emailaddress struct {
 	Name  string
 }
 
-type Timeinterval struct {
+type AgentTimeinterval struct {
 	Months int
 	Weeks  int
 	Days   int
-	Hours  int
+}
+
+type EvalTimeinterval struct {
+	Days  int
+	Hours int
 }
 
 type Policyerrors struct {
@@ -556,11 +560,9 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 						Evaluators:           []User{{}},
 						MaxNumberEvaluations: 1,
 						AssignToActiveUser:   true,
-						TimeInterval: Timeinterval{
-							Months: 1,
-							Weeks:  1,
-							Days:   1,
-							Hours:  1,
+						TimeInterval: EvalTimeinterval{
+							Days:  1,
+							Hours: 1,
 						},
 					},
 				},
@@ -568,11 +570,10 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 					{
 						Evaluators:           []User{{}},
 						MaxNumberEvaluations: 1,
-						TimeInterval: Timeinterval{
+						TimeInterval: AgentTimeinterval{
 							Months: 1,
 							Weeks:  1,
 							Days:   1,
-							Hours:  1,
 						},
 						TimeZone: "EST",
 					},
@@ -651,11 +652,9 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 						Evaluators:           []User{{}},
 						MaxNumberEvaluations: 1,
 						AssignToActiveUser:   true,
-						TimeInterval: Timeinterval{
-							Months: 1,
-							Weeks:  1,
-							Days:   1,
-							Hours:  1,
+						TimeInterval: EvalTimeinterval{
+							Days:  1,
+							Hours: 1,
 						},
 					},
 				},
@@ -663,11 +662,10 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 					{
 						Evaluators:           []User{{}},
 						MaxNumberEvaluations: 1,
-						TimeInterval: Timeinterval{
+						TimeInterval: AgentTimeinterval{
 							Months: 1,
 							Weeks:  1,
 							Days:   1,
-							Hours:  1,
 						},
 						TimeZone: "EST",
 					},
@@ -751,11 +749,9 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 						},
 						MaxNumberEvaluations: 1,
 						AssignToActiveUser:   true,
-						TimeInterval: Timeinterval{
-							Months: 1,
-							Weeks:  1,
-							Days:   1,
-							Hours:  1,
+						TimeInterval: EvalTimeinterval{
+							Days:  1,
+							Hours: 1,
 						},
 					},
 				},
@@ -763,11 +759,10 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 					{
 						Evaluators:           []User{{}},
 						MaxNumberEvaluations: 1,
-						TimeInterval: Timeinterval{
+						TimeInterval: AgentTimeinterval{
 							Months: 1,
 							Weeks:  1,
 							Days:   1,
-							Hours:  1,
 						},
 						TimeZone: "EST",
 					},
@@ -846,11 +841,9 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 						Evaluators:           []User{{}},
 						MaxNumberEvaluations: 1,
 						AssignToActiveUser:   true,
-						TimeInterval: Timeinterval{
-							Months: 1,
-							Weeks:  1,
-							Days:   1,
-							Hours:  1,
+						TimeInterval: EvalTimeinterval{
+							Days:  1,
+							Hours: 1,
 						},
 					},
 				},
@@ -858,11 +851,10 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 					{
 						Evaluators:           []User{{}},
 						MaxNumberEvaluations: 1,
-						TimeInterval: Timeinterval{
+						TimeInterval: AgentTimeinterval{
 							Months: 1,
 							Weeks:  1,
 							Days:   1,
-							Hours:  1,
 						},
 						TimeZone: "EST",
 					},
@@ -926,7 +918,7 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 
 	var (
 		domainRes = "routing-domain1"
-		domainId  = fmt.Sprintf("terraform%v.com", time.Now().Unix())
+		domainId  = fmt.Sprintf("terraformmedia%v.com", time.Now().Unix())
 	)
 
 	_, err := provider.AuthorizeSdk()
@@ -2175,7 +2167,7 @@ func generateAssignMeteredAssignmentByAgent(assignments *[]Meteredassignmentbyag
         	`, evaluatorIdsString,
 			assignment.MaxNumberEvaluations,
 			evaluationFormResource1,
-			generateTimeInterval(&assignment.TimeInterval),
+			generateAgentTimeInterval(&assignment.TimeInterval),
 			assignment.TimeZone,
 		)
 
@@ -2211,7 +2203,7 @@ func generateAssignMeteredEvaluations(assignments *[]Meteredevaluationassignment
 			assignment.MaxNumberEvaluations,
 			evaluationFormResource1,
 			assignment.AssignToActiveUser,
-			generateTimeInterval(&assignment.TimeInterval),
+			generateEvalTimeInterval(&assignment.TimeInterval),
 		)
 
 		assignmentsString += assignmentString
@@ -2232,8 +2224,8 @@ func generateAssignEvaluations() string {
 	return assignmentString
 }
 
-func generateTimeInterval(timeInterval *Timeinterval) string {
-	if reflect.DeepEqual(*timeInterval, Timeinterval{}) {
+func generateAgentTimeInterval(timeInterval *AgentTimeinterval) string {
+	if reflect.DeepEqual(*timeInterval, AgentTimeinterval{}) {
 		return ""
 	}
 
@@ -2242,10 +2234,26 @@ func generateTimeInterval(timeInterval *Timeinterval) string {
             months = %v
             weeks = %v
             days = %v
-            hours = %v
         }
         `, timeInterval.Months,
 		timeInterval.Weeks,
+		timeInterval.Days,
+	)
+
+	return timeIntervalString
+}
+
+func generateEvalTimeInterval(timeInterval *EvalTimeinterval) string {
+	if reflect.DeepEqual(*timeInterval, EvalTimeinterval{}) {
+		return ""
+	}
+
+	timeIntervalString := fmt.Sprintf(`
+        time_interval {
+            days = %v
+            hours = %v
+        }
+        `,
 		timeInterval.Days,
 		timeInterval.Hours,
 	)
@@ -2369,15 +2377,15 @@ func CleanupRoutingEmailDomains() {
 		}
 
 		if routingEmailDomains.Entities == nil || len(*routingEmailDomains.Entities) == 0 {
-			return
+			break
 		}
 
 		for _, routingEmailDomain := range *routingEmailDomains.Entities {
-			if routingEmailDomain.Id != nil && strings.HasPrefix(*routingEmailDomain.Id, "terraform") {
+			if routingEmailDomain.Name != nil && strings.HasPrefix(*routingEmailDomain.Name, "terraformmedia") {
 				_, err := routingAPI.DeleteRoutingEmailDomain(*routingEmailDomain.Id)
 				if err != nil {
 					log.Printf("Failed to delete routing email domain %s: %s", *routingEmailDomain.Id, err)
-					continue
+					return
 				}
 				time.Sleep(5 * time.Second)
 			}

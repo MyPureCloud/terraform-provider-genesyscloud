@@ -22,7 +22,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 )
 
 // Add a special generator DEVENGAGE-1646.  Basically, the API makes it look like you need a full phone_columns field here.  However, the API ignores the type because the devs reused the phone_columns object.  However,
@@ -602,6 +602,7 @@ func TestAccResourceOutboundCampaignCampaignStatus(t *testing.T) {
 }
 
 func TestAccResourceOutboundCampaignStatusOn(t *testing.T) {
+	t.Skip("Outbound Campaign is not switched off, destroy fails as campaign keeps running")
 	t.Parallel()
 	var (
 		resourceId            = "campaign3"

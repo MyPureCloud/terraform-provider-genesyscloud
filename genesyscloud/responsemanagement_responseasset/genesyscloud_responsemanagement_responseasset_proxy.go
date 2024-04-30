@@ -3,9 +3,10 @@ package responsemanagement_responseasset
 import (
 	"context"
 	"fmt"
-	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
 	"log"
 	rc "terraform-provider-genesyscloud/genesyscloud/resource_cache"
+
+	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 )
 
 /*
@@ -153,7 +154,7 @@ func updateRespManagementRespAssetFn(ctx context.Context, p *responsemanagementR
 
 // getRespManagementRespAssetByIdFn is an implementation of the function to get a Genesys Cloud responsemanagement responseasset by Id
 func getRespManagementRespAssetByIdFn(ctx context.Context, p *responsemanagementResponseassetProxy, id string) (*platformclientv2.Responseasset, *platformclientv2.APIResponse, error) {
-  asset := rc.GetCacheItem(p.assetCache, id)
+	asset := rc.GetCacheItem(p.assetCache, id)
 	if asset != nil {
 		return asset, nil, nil
 	}

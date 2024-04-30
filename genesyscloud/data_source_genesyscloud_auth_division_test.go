@@ -14,7 +14,7 @@ func TestAccDataSourceAuthDivision(t *testing.T) {
 	var (
 		divResource   = "auth-div"
 		divDataSource = "auth-div-data"
-		divName       = "Terraform Div-" + uuid.NewString()
+		divName       = "Terraform Division-" + uuid.NewString()
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -37,6 +37,7 @@ func TestAccDataSourceAuthDivision(t *testing.T) {
 				),
 			},
 		},
+		CheckDestroy: testVerifyDivisionsDestroyed,
 	})
 }
 

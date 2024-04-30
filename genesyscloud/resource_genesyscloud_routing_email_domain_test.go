@@ -16,13 +16,13 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 )
 
 func TestAccResourceRoutingEmailDomainSub(t *testing.T) {
 	var (
 		domainRes = "routing-domain1"
-		domainId  = "terraform" + strings.Replace(uuid.NewString(), "-", "", -1)
+		domainId  = "terraformdomain" + strings.Replace(uuid.NewString(), "-", "", -1)
 	)
 
 	CleanupRoutingEmailDomains()
@@ -58,7 +58,7 @@ func TestAccResourceRoutingEmailDomainSub(t *testing.T) {
 func TestAccResourceRoutingEmailDomainCustom(t *testing.T) {
 	var (
 		domainRes       = "routing-domain1"
-		domainId        = fmt.Sprintf("terraform.%s.com", strings.Replace(uuid.NewString(), "-", "", -1))
+		domainId        = fmt.Sprintf("terraformdomain.%s.com", strings.Replace(uuid.NewString(), "-", "", -1))
 		mailFromDomain1 = "test." + domainId
 	)
 

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 	"log"
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
@@ -18,7 +18,7 @@ import (
 )
 
 /*
-The resource_genesyscloud_organization_authentication_settings.go contains all of the methods that perform the core logic for a resource.
+The resource_genesyscloud_organization_authentication_settings.go contains all the methods that perform the core logic for a resource.
 */
 
 func getAllOrganizationAuthenticationSettings(_ context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {

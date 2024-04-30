@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"net/url"
 	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
@@ -18,7 +17,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 )
 
 var (
@@ -103,16 +102,12 @@ func getAllKnowledgeCategoryEntities(knowledgeAPI platformclientv2.KnowledgeApi,
 			break
 		}
 
-		u, err := url.Parse(*knowledgeCategories.NextUri)
+		after, err := util.GetQueryParamValueFromUri(*knowledgeCategories.NextUri, "after")
 		if err != nil {
 			return nil, diag.Errorf("Failed to parse after cursor from knowledge category nextUri: %v", err)
 		}
-		m, _ := url.ParseQuery(u.RawQuery)
-		if afterSlice, ok := m["after"]; ok && len(afterSlice) > 0 {
-			after = afterSlice[0]
-			if after == "" {
-				break
-			}
+		if after == "" {
+			break
 		}
 	}
 

@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"net/url"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 )
 
 /*
@@ -152,14 +152,9 @@ func getAllTeamFn(ctx context.Context, p *teamProxy, name string) (*[]platformcl
 			break
 		}
 
-		u, err := url.Parse(*teams.NextUri)
+		after, err := util.GetQueryParamValueFromUri(*teams.NextUri, "after")
 		if err != nil {
-			return nil, resp, fmt.Errorf("Unable to find team entities %s", err)
-		}
-
-		m, _ := url.ParseQuery(u.RawQuery)
-		if afterSlice, ok := m["after"]; ok && len(afterSlice) > 0 {
-			after = afterSlice[0]
+			return nil, resp, fmt.Errorf("unable to parse after cursor from teams next uri: %v", err)
 		}
 		if after == "" {
 			break
@@ -195,6 +190,7 @@ func getTeamByIdFn(ctx context.Context, p *teamProxy, id string) (team *platform
 	if err != nil {
 		return nil, resp, fmt.Errorf("Failed to retrieve team by id %s: %s", id, err)
 	}
+
 	return team, resp, nil
 }
 
@@ -218,7 +214,6 @@ func deleteTeamFn(ctx context.Context, p *teamProxy, id string) (resp *platformc
 
 // createMembersFn is an implementation function for creating a Genesys Cloud members
 func createMembersFn(ctx context.Context, p *teamProxy, teamId string, members platformclientv2.Teammembers) (*platformclientv2.Teammemberaddlistingresponse, *platformclientv2.APIResponse, error) {
-
 	teamListingResponse, resp, err := p.teamsApi.PostTeamMembers(teamId, members)
 	if err != nil {
 		return nil, resp, fmt.Errorf("Failed to create members: %s", err)
@@ -227,8 +222,7 @@ func createMembersFn(ctx context.Context, p *teamProxy, teamId string, members p
 }
 
 // getMembersByIdFn is an implementation of the function to get a Genesys Cloud members by Id
-func getMembersByIdFn(ctx context.Context, p *teamProxy, teamId string) (members *[]platformclientv2.Userreferencewithname, resp *platformclientv2.APIResponse, err error) {
-
+func getMembersByIdFn(_ context.Context, p *teamProxy, teamId string) (*[]platformclientv2.Userreferencewithname, *platformclientv2.APIResponse, error) {
 	var (
 		after      string
 		allMembers []platformclientv2.Userreferencewithname
@@ -236,11 +230,11 @@ func getMembersByIdFn(ctx context.Context, p *teamProxy, teamId string) (members
 	)
 	const pageSize = 100
 
-	for i := 0; ; i++ {
+	for {
 		members, resp, getErr := p.teamsApi.GetTeamMembers(teamId, pageSize, "", after, "")
 		response = resp
 		if getErr != nil {
-			return nil, resp, fmt.Errorf("Unable to find member entities %s", getErr)
+			return nil, resp, fmt.Errorf("unable to find member entities %s", getErr)
 		}
 		if members.Entities == nil || len(*members.Entities) == 0 {
 			break
@@ -249,13 +243,10 @@ func getMembersByIdFn(ctx context.Context, p *teamProxy, teamId string) (members
 		if members.NextUri == nil || *members.NextUri == "" {
 			break
 		}
-		u, err := url.Parse(*members.NextUri)
+
+		after, err := util.GetQueryParamValueFromUri(*members.NextUri, "after")
 		if err != nil {
-			return nil, resp, fmt.Errorf("Unable to find member entities %s", err)
-		}
-		m, _ := url.ParseQuery(u.RawQuery)
-		if afterSlice, ok := m["after"]; ok && len(afterSlice) > 0 {
-			after = afterSlice[0]
+			return nil, resp, fmt.Errorf("unable to parse after cursor from members next uri: %v", err)
 		}
 		if after == "" {
 			break

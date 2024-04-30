@@ -11,9 +11,10 @@ import (
 )
 
 func TestAccDataSourceRoutingSkillGroup(t *testing.T) {
+	t.Parallel()
 	var (
-		skillGroupResource    = "routing-skill-group"
-		skillGroupDataSource  = "routing-skill-group-data"
+		skillGroupResource    = "routing-skill-groups"
+		skillGroupDataSource  = "routing-skill-groups-data"
 		skillGroupName        = "Skillgroup" + uuid.NewString()
 		skillGroupDescription = "description-" + uuid.NewString()
 	)

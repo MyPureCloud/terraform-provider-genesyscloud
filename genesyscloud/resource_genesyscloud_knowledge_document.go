@@ -19,7 +19,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 )
 
 var (
@@ -120,7 +120,7 @@ func getAllKnowledgeDocumentEntities(knowledgeAPI platformclientv2.KnowledgeApi,
 	resourcePath := fmt.Sprintf("/api/v2/knowledge/knowledgebases/%s/documents", url.PathEscape(*knowledgeBase.Id))
 	listDocumentsBaseUrl := fmt.Sprintf("%s%s", knowledgeAPI.Configuration.BasePath, resourcePath)
 
-	for i := 0; ; i++ {
+	for {
 		// prepare query params
 		queryParams := make(map[string]string, 0)
 		queryParams["after"] = after
@@ -164,20 +164,16 @@ func getAllKnowledgeDocumentEntities(knowledgeAPI platformclientv2.KnowledgeApi,
 			break
 		}
 
-		u, err := url.Parse(*knowledgeDocuments.NextUri)
+		after, err := util.GetQueryParamValueFromUri(*knowledgeDocuments.NextUri, "after")
 		if err != nil {
 			return nil, diag.Errorf("Failed to parse after cursor from knowledge document nextUri: %v", err)
 		}
-		m, _ := url.ParseQuery(u.RawQuery)
-		if afterSlice, ok := m["after"]; ok && len(afterSlice) > 0 {
-			after = afterSlice[0]
-			if after == "" {
-				break
-			}
-			for _, knowledgeDocument := range *knowledgeDocuments.Entities {
-				id := fmt.Sprintf("%s,%s", *knowledgeDocument.Id, *knowledgeDocument.KnowledgeBase.Id)
-				resources[id] = &resourceExporter.ResourceMeta{Name: *knowledgeDocument.Title}
-			}
+		if after == "" {
+			break
+		}
+		for _, knowledgeDocument := range *knowledgeDocuments.Entities {
+			id := fmt.Sprintf("%s,%s", *knowledgeDocument.Id, *knowledgeDocument.KnowledgeBase.Id)
+			resources[id] = &resourceExporter.ResourceMeta{Name: *knowledgeDocument.Title}
 		}
 	}
 

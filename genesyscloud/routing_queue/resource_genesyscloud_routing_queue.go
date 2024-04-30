@@ -11,6 +11,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	featureToggles "terraform-provider-genesyscloud/genesyscloud/util/feature_toggles"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 	"time"
 
@@ -23,7 +24,7 @@ import (
 	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 )
 
 var bullseyeExpansionTypeTimeout = "TIMEOUT_SECONDS"
@@ -59,18 +60,12 @@ func createQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 	memberGroups := append(*skillGroups, *groups...)
 	memberGroups = append(memberGroups, *teams...)
 
-	conditionalGroupRouting, diagErr := buildSdkConditionalGroupRouting(d)
-	if diagErr != nil {
-		return diagErr
-	}
-
 	createQueue := platformclientv2.Createqueuerequest{
 		Name:                         platformclientv2.String(d.Get("name").(string)),
 		Description:                  platformclientv2.String(d.Get("description").(string)),
 		MediaSettings:                buildSdkMediaSettings(d),
 		RoutingRules:                 buildSdkRoutingRules(d),
 		Bullseye:                     buildSdkBullseyeSettings(d),
-		ConditionalGroupRouting:      conditionalGroupRouting,
 		AcwSettings:                  buildSdkAcwSettings(d),
 		AgentOwnedRouting:            constructAgentOwnedRouting(d),
 		SkillEvaluationMethod:        platformclientv2.String(d.Get("skill_evaluation_method").(string)),
@@ -83,12 +78,27 @@ func createQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		CallingPartyNumber:           platformclientv2.String(d.Get("calling_party_number").(string)),
 		DefaultScripts:               buildSdkDefaultScriptsMap(d),
 		OutboundMessagingAddresses:   buildSdkQueueMessagingAddresses(d),
-		OutboundEmailAddress:         buildSdkQueueEmailAddress(d),
 		EnableTranscription:          platformclientv2.Bool(d.Get("enable_transcription").(bool)),
 		SuppressInQueueCallRecording: platformclientv2.Bool(d.Get("suppress_in_queue_call_recording").(bool)),
 		EnableManualAssignment:       platformclientv2.Bool(d.Get("enable_manual_assignment").(bool)),
 		DirectRouting:                buildSdkDirectRouting(d),
 		MemberGroups:                 &memberGroups,
+	}
+
+	if exists := featureToggles.CSGToggleExists(); !exists {
+		conditionalGroupRouting, diagErr := buildSdkConditionalGroupRouting(d)
+		if diagErr != nil {
+			return diagErr
+		}
+		createQueue.ConditionalGroupRouting = conditionalGroupRouting
+	} else {
+		log.Printf("%s is set, not creating conditional_group_routing_rules attribute in routing_queue %s resource", featureToggles.CSGToggleName(), d.Id())
+	}
+
+	if exists := featureToggles.OEAToggleExists(); !exists {
+		createQueue.OutboundEmailAddress = buildSdkQueueEmailAddress(d)
+	} else {
+		log.Printf("%s is set, not creating outbound_email_address attribute in routing_queue %s resource", featureToggles.OEAToggleName(), d.Id())
 	}
 
 	if divisionID != "" {
@@ -110,7 +120,7 @@ func createQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 
 	d.SetId(*queue.Id)
 
-	diagErr = updateQueueMembers(d, sdkConfig)
+	diagErr := updateQueueMembers(d, sdkConfig)
 	if diagErr != nil {
 		return diagErr
 	}
@@ -202,13 +212,6 @@ func readQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 			_ = d.Set("outbound_messaging_sms_address_id", nil)
 		}
 
-		if currentQueue.OutboundEmailAddress != nil && *currentQueue.OutboundEmailAddress != nil {
-			outboundEmailAddress := *currentQueue.OutboundEmailAddress
-			_ = d.Set("outbound_email_address", []interface{}{FlattenQueueEmailAddress(*outboundEmailAddress)})
-		} else {
-			_ = d.Set("outbound_email_address", nil)
-		}
-
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "direct_routing", currentQueue.DirectRouting, flattenDirectRouting)
 
 		wrapupCodes, err := flattenQueueWrapupCodes(ctx, d.Id(), proxy)
@@ -231,7 +234,22 @@ func readQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 		_ = d.Set("teams", flattenQueueMemberGroupsList(currentQueue, &team))
 		_ = d.Set("groups", flattenQueueMemberGroupsList(currentQueue, &group))
 
-		_ = d.Set("conditional_group_routing_rules", flattenConditionalGroupRoutingRules(currentQueue))
+		if exists := featureToggles.CSGToggleExists(); !exists {
+			_ = d.Set("conditional_group_routing_rules", flattenConditionalGroupRoutingRules(currentQueue))
+		} else {
+			log.Printf("%s is set, not reading conditional_group_routing_rules attribute in routing_queue %s resource", featureToggles.CSGToggleName(), d.Id())
+		}
+
+		if exists := featureToggles.OEAToggleExists(); !exists {
+			if currentQueue.OutboundEmailAddress != nil && *currentQueue.OutboundEmailAddress != nil {
+				outboundEmailAddress := *currentQueue.OutboundEmailAddress
+				_ = d.Set("outbound_email_address", []interface{}{FlattenQueueEmailAddress(*outboundEmailAddress)})
+			} else {
+				_ = d.Set("outbound_email_address", nil)
+			}
+		} else {
+			log.Printf("%s is set, not reading outbound_email_address attribute in routing_queue %s resource", featureToggles.OEAToggleName(), d.Id())
+		}
 
 		log.Printf("Done reading queue %s %s", d.Id(), *currentQueue.Name)
 		return cc.CheckState()
@@ -248,18 +266,12 @@ func updateQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 	memberGroups := append(*skillGroups, *groups...)
 	memberGroups = append(memberGroups, *teams...)
 
-	conditionalGroupRouting, diagErr := buildSdkConditionalGroupRouting(d)
-	if diagErr != nil {
-		return diagErr
-	}
-
 	updateQueue := platformclientv2.Queuerequest{
 		Name:                         platformclientv2.String(d.Get("name").(string)),
 		Description:                  platformclientv2.String(d.Get("description").(string)),
 		MediaSettings:                buildSdkMediaSettings(d),
 		RoutingRules:                 buildSdkRoutingRules(d),
 		Bullseye:                     buildSdkBullseyeSettings(d),
-		ConditionalGroupRouting:      conditionalGroupRouting,
 		AcwSettings:                  buildSdkAcwSettings(d),
 		SkillEvaluationMethod:        platformclientv2.String(d.Get("skill_evaluation_method").(string)),
 		QueueFlow:                    util.BuildSdkDomainEntityRef(d, "queue_flow_id"),
@@ -271,7 +283,6 @@ func updateQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		CallingPartyNumber:           platformclientv2.String(d.Get("calling_party_number").(string)),
 		DefaultScripts:               buildSdkDefaultScriptsMap(d),
 		OutboundMessagingAddresses:   buildSdkQueueMessagingAddresses(d),
-		OutboundEmailAddress:         buildSdkQueueEmailAddress(d),
 		EnableTranscription:          platformclientv2.Bool(d.Get("enable_transcription").(bool)),
 		SuppressInQueueCallRecording: platformclientv2.Bool(d.Get("suppress_in_queue_call_recording").(bool)),
 		EnableManualAssignment:       platformclientv2.Bool(d.Get("enable_manual_assignment").(bool)),
@@ -279,16 +290,35 @@ func updateQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		MemberGroups:                 &memberGroups,
 	}
 
+	if exists := featureToggles.CSGToggleExists(); !exists {
+		conditionalGroupRouting, diagErr := buildSdkConditionalGroupRouting(d)
+		if diagErr != nil {
+			return diagErr
+		}
+		updateQueue.ConditionalGroupRouting = conditionalGroupRouting
+	} else {
+		log.Printf("%s is set, not updating conditional_group_routing_rules attribute in routing_queue %s resource", featureToggles.CSGToggleName(), d.Id())
+	}
+
+	if exists := featureToggles.OEAToggleExists(); !exists {
+		updateQueue.OutboundEmailAddress = buildSdkQueueEmailAddress(d)
+	} else {
+		log.Printf("%s is set, not creating outbound_email_address attribute in routing_queue %s resource", featureToggles.OEAToggleName(), d.Id())
+	}
+
+	log.Printf("Updating queue %s", *updateQueue.Name)
+
 	if scoringMethod != "" {
 		updateQueue.ScoringMethod = &scoringMethod
 	}
+
 	_, resp, err := routingAPI.PutRoutingQueue(d.Id(), updateQueue)
 
 	if err != nil {
 		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update queue %s error: %s", *updateQueue.Name, err), resp)
 	}
 
-	diagErr = util.UpdateObjectDivision(d, "QUEUE", sdkConfig)
+	diagErr := util.UpdateObjectDivision(d, "QUEUE", sdkConfig)
 	if diagErr != nil {
 		return diagErr
 	}
@@ -445,6 +475,9 @@ func flattenMediaSettingCallback(settings *platformclientv2.Callbackmediasetting
 	settingsMap["service_level_percentage"] = *settings.ServiceLevel.Percentage
 	settingsMap["service_level_duration_ms"] = *settings.ServiceLevel.DurationMs
 	resourcedata.SetMapValueIfNotNil(settingsMap, "enable_auto_answer", settings.EnableAutoAnswer)
+	resourcedata.SetMapValueIfNotNil(settingsMap, "enable_auto_dial_and_end", settings.EnableAutoDialAndEnd)
+	settingsMap["auto_end_delay_seconds"] = *settings.AutoEndDelaySeconds
+	settingsMap["auto_dial_delay_seconds"] = *settings.AutoDialDelaySeconds
 
 	return []interface{}{settingsMap}
 }

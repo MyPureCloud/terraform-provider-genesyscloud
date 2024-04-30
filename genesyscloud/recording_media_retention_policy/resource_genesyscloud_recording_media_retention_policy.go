@@ -18,7 +18,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 )
 
 /*
@@ -83,7 +83,6 @@ func createMediaRetentionPolicy(ctx context.Context, d *schema.ResourceData, met
 	}
 
 	log.Printf("Creating media retention policy %s", name)
-
 	policy, resp, err := pp.createPolicy(ctx, &reqBody)
 	log.Printf("Media retention policy creation status %#v", resp.Status)
 	if err != nil {
@@ -141,7 +140,6 @@ func updateMediaRetentionPolicy(ctx context.Context, d *schema.ResourceData, met
 	order := d.Get("order").(int)
 	description := d.Get("description").(string)
 	enabled := d.Get("enabled").(bool)
-
 	mediaPolicies := buildMediaPolicies(d, pp, ctx)
 	conditions := buildConditions(d)
 	actions := buildPolicyActionsFromResource(d, pp, ctx)

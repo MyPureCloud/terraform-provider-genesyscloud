@@ -2,18 +2,19 @@ package architect_grammar
 
 import (
 	"fmt"
-	"github.com/google/uuid"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
+
+	"github.com/google/uuid"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
 
 func TestAccDataSourceArchitectGrammar(t *testing.T) {
 	var (
 		grammarResource = "grammar-resource"
 		grammarData     = "grammar-data"
-		name            = "Grammar" + uuid.NewString()
+		name            = "GrammarArchitect" + uuid.NewString()
 		description     = "Sample description"
 	)
 

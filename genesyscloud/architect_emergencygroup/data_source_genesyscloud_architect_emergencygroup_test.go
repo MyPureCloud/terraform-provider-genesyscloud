@@ -10,7 +10,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
 
-func TestAccDataSourceEmergencyGroup(t *testing.T) {
+func TestAccDataSourceArchitectEmergencyGroup(t *testing.T) {
 	var (
 		emergencyGroupResourceID   = "e-group-1"
 		emergencyGroupDataSourceID = "e-group-data"
@@ -38,6 +38,7 @@ func TestAccDataSourceEmergencyGroup(t *testing.T) {
 				),
 			},
 		},
+		CheckDestroy: testVerifyEmergencyGroupDestroyed,
 	})
 }
 

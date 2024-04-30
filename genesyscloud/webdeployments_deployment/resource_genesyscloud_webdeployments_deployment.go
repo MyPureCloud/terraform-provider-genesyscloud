@@ -17,7 +17,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 )
 
 func getAllWebDeployments(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
@@ -52,15 +52,30 @@ func createWebDeployment(ctx context.Context, d *schema.ResourceData, meta inter
 	log.Printf("Creating web deployment %s", name)
 
 	configId := d.Get("configuration.0.id").(string)
-	configVersion := d.Get("configuration.0.version").(string)
+	inputConfigVersion := d.Get("configuration.0.version").(string)
 
 	flow := util.BuildSdkDomainEntityRef(d, "flow_id")
+
+	configVersion, versionList, er := wd.determineLatestVersion(ctx, configId)
+	if er != nil {
+		return er
+	}
+	if inputConfigVersion == "" {
+		inputConfigVersion = configVersion
+	}
+
+	exists := util.StringExists(inputConfigVersion, versionList)
+	if !exists {
+		log.Printf("For Web deployment Resource %v, Configuration Version Input %v does not match with any existing versions %v",
+			name, inputConfigVersion, versionList)
+		return util.BuildDiagnosticError(resourceName, fmt.Sprintf("For Web Deployment Resource %v, Configuration Version Input %v does not match with any existing versions %v", name, inputConfigVersion, versionList), nil)
+	}
 
 	inputDeployment := platformclientv2.Webdeployment{
 		Name: &name,
 		Configuration: &platformclientv2.Webdeploymentconfigurationversionentityref{
 			Id:      &configId,
-			Version: &configVersion,
+			Version: &inputConfigVersion,
 		},
 		AllowAllDomains: &allowAllDomains,
 		AllowedDomains:  &allowedDomains,
@@ -177,10 +192,14 @@ func updateWebDeployment(ctx context.Context, d *schema.ResourceData, meta inter
 	log.Printf("Updating web deployment %s", name)
 
 	configId := d.Get("configuration.0.id").(string)
-	configVersion := d.Get("configuration.0.version").(string)
 
 	flow := util.BuildSdkDomainEntityRef(d, "flow_id")
 
+	// always update to latest version of configuration during update of an existing webdeployment
+	configVersion, _, er := wd.determineLatestVersion(ctx, configId)
+	if err != nil {
+		return er
+	}
 	inputDeployment := platformclientv2.Webdeployment{
 		Name: &name,
 		Configuration: &platformclientv2.Webdeploymentconfigurationversionentityref{

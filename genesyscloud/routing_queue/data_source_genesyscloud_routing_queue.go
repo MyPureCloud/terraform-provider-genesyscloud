@@ -14,7 +14,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 )
 
 // Cache for Data Sources
@@ -99,7 +99,7 @@ func hydrateRoutingQueueCacheFn(c *DataSourceCache) error {
 
 	for pageNum := 1; ; pageNum++ {
 		const pageSize = 100
-		queues, _, getErr := routingApi.GetRoutingQueues(pageNum, pageSize, "", "", nil, nil, nil, false)
+		queues, _, getErr := routingApi.GetRoutingQueues(pageNum, pageSize, "", "", nil, nil, nil, "", false)
 		if getErr != nil {
 			return fmt.Errorf("failed to get page of queues: %v", getErr)
 		}
@@ -126,7 +126,7 @@ func getQueueByName(ctx context.Context, routingApi *platformclientv2.RoutingApi
 	diag := util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
 		for pageNum := 1; ; pageNum++ {
 			const pageSize = 100
-			queues, _, getErr := routingApi.GetRoutingQueues(pageNum, pageSize, "", name, nil, nil, nil, false)
+			queues, _, getErr := routingApi.GetRoutingQueues(pageNum, pageSize, "", name, nil, nil, nil, "", false)
 			if getErr != nil {
 				return retry.NonRetryableError(fmt.Errorf("error requesting queue %s: %s", name, getErr))
 			}

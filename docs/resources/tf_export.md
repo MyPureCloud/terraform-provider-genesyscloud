@@ -3,7 +3,7 @@ page_title: "genesyscloud_tf_export Resource - terraform-provider-genesyscloud"
 subcategory: ""
 description: |-
   Genesys Cloud Resource to export Terraform config and (optionally) tfstate files to a local directory. 
-      The config file is named 'genesyscloud.tf.json' or 'genesyscloud.tf', and the state file is named 'terraform.tfstate'.
+  	The config file is named 'genesyscloud.tf.json' or 'genesyscloud.tf', and the state file is named 'terraform.tfstate'.
 ---
 # genesyscloud_tf_export (Resource)
 
@@ -18,14 +18,40 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 ## Example Usage
 
 ```terraform
-resource "genesyscloud_tf_export" "export" {
-  directory = "./terraform"
-  // leaving resource_types empty will cause all exportable resources to be exported
-  // export all resources of a single type by providing the resource type
-  // resources can be exported by name with the syntax `resource_type::regular expression`
-  include_filter_resources = ["genesyscloud_user", "genesyscloud_routing_queue::-(dev|test)$"]
+resource "genesyscloud_tf_export" "include-filter" {
+  directory                = "./genesyscloud/include-filter"
+  export_as_hcl            = true
+  log_permission_errors    = true
   include_state_file       = true
-  exclude_attributes       = ["genesyscloud_user.skills"]
+  include_filter_resources = ["genesyscloud_group::-(agent)$"]
+
+}
+
+resource "genesyscloud_tf_export" "exclude-filter" {
+  directory              = "./genesyscloud/exclude-filter"
+  export_as_hcl          = true
+  log_permission_errors  = true
+  include_state_file     = true
+  enable_flow_depends_on = false
+  exclude_attributes     = ["genesyscloud_user.skill"]
+
+  split_files_by_resource = true
+  exclude_filter_resources = [
+    "genesyscloud_group",
+    "genesyscloud_routing_queue",
+    "genesyscloud_user"
+  ]
+}
+
+resource "genesyscloud_tf_export" "export" {
+  directory = "./genesyscloud/datasource"
+
+  replace_with_datasource = [
+    "genesyscloud_group::group"
+  ]
+  ignore_cyclic_deps           = true
+  split_files_by_resource      = true
+  enable_dependency_resolution = true
 }
 ```
 

@@ -11,7 +11,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 )
 
 func TestAccResourceWebDeploymentsDeployment(t *testing.T) {
@@ -121,6 +121,16 @@ func TestAccResourceWebDeploymentsDeployment_Versioning(t *testing.T) {
 				),
 			},
 			{
+				Config: deploymentResourceWithoutConfigVersion(t, deploymentName, "updated description again", "en-us", []string{"en-us", "ja"}),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(fullDeploymentResourceName, "name", deploymentName),
+					resource.TestCheckResourceAttr(fullDeploymentResourceName, "configuration.0.version", "3"),
+					resource.TestCheckResourceAttrPair(fullDeploymentResourceName, "configuration.0.id", fullConfigResourceName, "id"),
+					resource.TestCheckResourceAttrPair(fullDeploymentResourceName, "configuration.0.version", fullConfigResourceName, "version"),
+				),
+			},
+
+			{
 				ResourceName:            fullDeploymentResourceName,
 				ImportState:             true,
 				ImportStateVerify:       true,
@@ -198,6 +208,31 @@ func versioningDeploymentResource(t *testing.T, name, description, defaultLangua
 		configuration {
 			id = "${genesyscloud_webdeployments_configuration.minimal.id}"
 			version = genesyscloud_webdeployments_configuration.minimal.version
+		}
+	}
+	`, minimalConfigName, value, defaultLanguage, name, description)
+}
+
+func deploymentResourceWithoutConfigVersion(t *testing.T, name, description, defaultLanguage string, languages []string) string {
+	value, err := json.Marshal(languages)
+	if err != nil {
+		t.Error(err)
+	}
+	minimalConfigName := "Minimal Config " + uuid.NewString()
+
+	return fmt.Sprintf(`
+	resource "genesyscloud_webdeployments_configuration" "minimal" {
+		name = "%s"
+		languages = %s
+		default_language = "%s"
+	}
+
+	resource "genesyscloud_webdeployments_deployment" "versioning" {
+		name = "%s"
+		description = "%s"
+		allow_all_domains = true
+		configuration {
+			id = "${genesyscloud_webdeployments_configuration.minimal.id}"
 		}
 	}
 	`, minimalConfigName, value, defaultLanguage, name, description)
