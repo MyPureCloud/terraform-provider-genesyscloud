@@ -3,6 +3,7 @@ package provider
 import (
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"log"
 	"net/http"
 	"os"
@@ -274,23 +275,41 @@ func InitClientConfig(data *schema.ResourceData, version string, config *platfor
 		config.AccessToken = accessToken
 	} else {
 		config.AutomaticTokenRefresh = true // Enable automatic token refreshing
-		err := authorizeSdkWithRetries(config, oauthclientID, oauthclientSecret)
-		if err != nil {
-			return diag.Errorf(err.Error())
-		}
+
+		return withRetries(context.Background(), time.Minute, func() *retry.RetryError {
+			err := config.AuthorizeClientCredentials(oauthclientID, oauthclientSecret)
+			if err != nil {
+				if !strings.Contains(err.Error(), "Auth Error: 400 - invalid_request (rate limit exceeded;") {
+					return retry.NonRetryableError(fmt.Errorf("failed to authorize Genesys Cloud client credentials: %v", err))
+				}
+				return retry.RetryableError(fmt.Errorf("exhausted retries on Genesys Cloud client credentials. %v", err))
+			}
+
+			return nil
+		})
 	}
 
 	log.Printf("Initialized Go SDK Client. Debug=%t", data.Get("sdk_debug").(bool))
 	return nil
 }
 
+func withRetries(ctx context.Context, timeout time.Duration, method func() *retry.RetryError) diag.Diagnostics {
+	err := diag.FromErr(retry.RetryContext(ctx, timeout, method))
+	if err != nil && strings.Contains(fmt.Sprintf("%v", err), "timeout while waiting for state to become") {
+		ctx, cancel := context.WithTimeout(context.Background(), timeout)
+		defer cancel()
+		return withRetries(ctx, timeout, method)
+	}
+	return err
+}
+
 func authorizeSdkWithRetries(config *platformclientv2.Configuration, oauthID, oauthSecret string) error {
-	var lastErr error
+	var err error
 	for i := 0; i < 20; i++ {
-		lastErr = config.AuthorizeClientCredentials(oauthID, oauthSecret)
-		if lastErr != nil {
-			if !strings.Contains(lastErr.Error(), "Auth Error: 400 - invalid_request (rate limit exceeded;") {
-				return fmt.Errorf("Failed to authorize Genesys Cloud client credentials: %v", lastErr)
+		err = config.AuthorizeClientCredentials(oauthID, oauthSecret)
+		if err != nil {
+			if !strings.Contains(err.Error(), "Auth Error: 400 - invalid_request (rate limit exceeded;") {
+				return fmt.Errorf("Failed to authorize Genesys Cloud client credentials: %v", err)
 			}
 			// Wait and try again
 			time.Sleep(time.Second * 5)
@@ -299,7 +318,7 @@ func authorizeSdkWithRetries(config *platformclientv2.Configuration, oauthID, oa
 		// Success
 		return nil
 	}
-	return fmt.Errorf("Exhausted retries on Genesys Cloud client credentials. Last error: %v", lastErr)
+	return fmt.Errorf("Exhausted retries on Genesys Cloud client credentials. Last error: %v", err)
 }
 
 func setUpSDKLogging(data *schema.ResourceData, config *platformclientv2.Configuration) diag.Diagnostics {
@@ -370,9 +389,19 @@ func AuthorizeSdk() (*platformclientv2.Configuration, error) {
 
 	sdkConfig.BasePath = GetRegionBasePath(os.Getenv("GENESYSCLOUD_REGION"))
 
-	err := authorizeSdkWithRetries(sdkConfig, os.Getenv("GENESYSCLOUD_OAUTHCLIENT_ID"), os.Getenv("GENESYSCLOUD_OAUTHCLIENT_SECRET"))
-	if err != nil {
-		return sdkConfig, err
+	diagErr := withRetries(context.Background(), time.Minute, func() *retry.RetryError {
+		err := sdkConfig.AuthorizeClientCredentials(os.Getenv("GENESYSCLOUD_OAUTHCLIENT_ID"), os.Getenv("GENESYSCLOUD_OAUTHCLIENT_SECRET"))
+		if err != nil {
+			if !strings.Contains(err.Error(), "Auth Error: 400 - invalid_request (rate limit exceeded;") {
+				return retry.NonRetryableError(fmt.Errorf("failed to authorize Genesys Cloud client credentials: %v", err))
+			}
+			return retry.RetryableError(fmt.Errorf("exhausted retries on Genesys Cloud client credentials. %v", err))
+		}
+
+		return nil
+	})
+	if diagErr != nil {
+		return sdkConfig, fmt.Errorf("%v", diagErr)
 	}
 
 	return sdkConfig, nil
