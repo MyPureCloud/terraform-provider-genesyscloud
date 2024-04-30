@@ -77,24 +77,6 @@ func RetryWhen(shouldRetry checkResponseFunc, callSdk callSdkFunc, additionalCod
 	return diag.Errorf("Exhausted retries. Last error: %v", lastErr)
 }
 
-func AuthorizeSdkWithRetries(config *platformclientv2.Configuration, oauthID, oauthSecret string) diag.Diagnostics {
-	var lastErr error
-	for i := 0; i < 10; i++ {
-		lastErr = config.AuthorizeClientCredentials(oauthID, oauthSecret)
-		if lastErr != nil {
-			if !strings.Contains(lastErr.Error(), "Auth Error: 400 - invalid_request (rate limit exceeded;") {
-				return diag.Errorf("Failed to authorize Genesys Cloud client credentials: %v", lastErr)
-			}
-			// Wait and try again
-			time.Sleep(time.Second)
-			continue
-		}
-		// Success
-		return nil
-	}
-	return diag.Errorf("Exhausted retries on Genesys Cloud client credentials. Last error: %v", lastErr)
-}
-
 func IsAdditionalCode(statusCode int, additionalCodes ...int) bool {
 	for _, additionalCode := range additionalCodes {
 		if statusCode == additionalCode {

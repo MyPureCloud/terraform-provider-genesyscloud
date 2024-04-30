@@ -9,7 +9,6 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
-	"terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -275,7 +274,7 @@ func InitClientConfig(data *schema.ResourceData, version string, config *platfor
 		config.AccessToken = accessToken
 	} else {
 		config.AutomaticTokenRefresh = true // Enable automatic token refreshing
-		err := util.AuthorizeSdkWithRetries(config, oauthclientID, oauthclientSecret)
+		err := authorizeSdkWithRetries(config, oauthclientID, oauthclientSecret)
 		if err != nil {
 			return err
 		}
@@ -283,6 +282,24 @@ func InitClientConfig(data *schema.ResourceData, version string, config *platfor
 
 	log.Printf("Initialized Go SDK Client. Debug=%t", data.Get("sdk_debug").(bool))
 	return nil
+}
+
+func authorizeSdkWithRetries(config *platformclientv2.Configuration, oauthID, oauthSecret string) diag.Diagnostics {
+	var lastErr error
+	for i := 0; i < 10; i++ {
+		lastErr = config.AuthorizeClientCredentials(oauthID, oauthSecret)
+		if lastErr != nil {
+			if !strings.Contains(lastErr.Error(), "Auth Error: 400 - invalid_request (rate limit exceeded;") {
+				return diag.Errorf("Failed to authorize Genesys Cloud client credentials: %v", lastErr)
+			}
+			// Wait and try again
+			time.Sleep(time.Second)
+			continue
+		}
+		// Success
+		return nil
+	}
+	return diag.Errorf("Exhausted retries on Genesys Cloud client credentials. Last error: %v", lastErr)
 }
 
 func setUpSDKLogging(data *schema.ResourceData, config *platformclientv2.Configuration) diag.Diagnostics {
