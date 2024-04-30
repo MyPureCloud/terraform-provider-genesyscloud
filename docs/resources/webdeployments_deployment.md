@@ -63,11 +63,11 @@ resource "genesyscloud_webdeployments_deployment" "exampleDeployment" {
 <a id="nestedblock--configuration"></a>
 ### Nested Schema for `configuration`
 
+Required:
+
+- `id` (String)
+
 Optional:
 
 - `version` (String)
-
-Read-Only:
-
-- `id` (String) The ID of this resource.
 
