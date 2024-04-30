@@ -46,13 +46,13 @@ func dataSourceRoutingSkillRead(ctx context.Context, d *schema.ResourceData, m i
 	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
 		for pageNum := 1; pageNum <= pageCount; pageNum++ {
 			const pageSize = 100
-			skills, _, getErr := routingAPI.GetRoutingSkills(pageSize, pageNum, name, nil)
+			skills, resp, getErr := routingAPI.GetRoutingSkills(pageSize, pageNum, name, nil)
 			if getErr != nil {
-				return retry.NonRetryableError(fmt.Errorf("error requesting skill %s: %s", name, getErr))
+				return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_routing_skill", fmt.Sprintf("error requesting skill %s | error: %s", name, getErr), resp))
 			}
 
 			if skills.Entities == nil || len(*skills.Entities) == 0 {
-				return retry.RetryableError(fmt.Errorf("no routing skills found with name %s", name))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_routing_skill", fmt.Sprintf("no routing skills found with name %s", name), resp))
 			}
 
 			for _, skill := range *skills.Entities {
@@ -63,6 +63,6 @@ func dataSourceRoutingSkillRead(ctx context.Context, d *schema.ResourceData, m i
 				}
 			}
 		}
-		return retry.RetryableError(fmt.Errorf("no routing skills found with name %s", name))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_routing_skill", fmt.Sprintf("no routing skills found with name %s", name), resp))
 	})
 }

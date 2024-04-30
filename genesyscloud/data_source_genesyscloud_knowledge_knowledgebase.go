@@ -45,14 +45,14 @@ func dataSourceKnowledgeKnowledgebaseRead(ctx context.Context, d *schema.Resourc
 	// Find first non-deleted knowledge base by name. Retry in case new knowledge base is not yet indexed by search
 	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
 		const pageSize = 100
-		publishedKnowledgeBases, _, getPublishedErr := knowledgeAPI.GetKnowledgeKnowledgebases("", "", "", fmt.Sprintf("%v", pageSize), name, coreLanguage, true, "", "")
-		unpublishedKnowledgeBases, _, getUnpublishedErr := knowledgeAPI.GetKnowledgeKnowledgebases("", "", "", fmt.Sprintf("%v", pageSize), name, coreLanguage, false, "", "")
+		publishedKnowledgeBases, publishedResp, getPublishedErr := knowledgeAPI.GetKnowledgeKnowledgebases("", "", "", fmt.Sprintf("%v", pageSize), name, coreLanguage, true, "", "")
+		unpublishedKnowledgeBases, unpublishedResp, getUnpublishedErr := knowledgeAPI.GetKnowledgeKnowledgebases("", "", "", fmt.Sprintf("%v", pageSize), name, coreLanguage, false, "", "")
 
 		if getPublishedErr != nil {
-			return retry.NonRetryableError(fmt.Errorf("error requesting knowledge base %s: %s", name, getPublishedErr))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_knowledge_knowledgebase", fmt.Sprintf("error requesting knowledge base %s | error: %s", name, getPublishedErr), publishedResp))
 		}
 		if getUnpublishedErr != nil {
-			return retry.NonRetryableError(fmt.Errorf("error requesting knowledge base %s: %s", name, getUnpublishedErr))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_knowledge_knowledgebase", fmt.Sprintf("error requesting knowledge base %s | error: %s", name, getUnpublishedErr), unpublishedResp))
 		}
 
 		noPublishedEntities := publishedKnowledgeBases.Entities == nil || len(*publishedKnowledgeBases.Entities) == 0

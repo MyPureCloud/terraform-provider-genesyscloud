@@ -38,13 +38,13 @@ func dataSourceRoutingLanguageRead(ctx context.Context, d *schema.ResourceData, 
 	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
 		for pageNum := 1; ; pageNum++ {
 			const pageSize = 50
-			languages, _, getErr := routingAPI.GetRoutingLanguages(pageSize, pageNum, "", name, nil)
+			languages, resp, getErr := routingAPI.GetRoutingLanguages(pageSize, pageNum, "", name, nil)
 			if getErr != nil {
-				return retry.NonRetryableError(fmt.Errorf("Error requesting language %s: %s", name, getErr))
+				return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_routing_language", fmt.Sprintf("Error requesting language %s | error: %s", name, getErr), resp))
 			}
 
 			if languages.Entities == nil || len(*languages.Entities) == 0 {
-				return retry.RetryableError(fmt.Errorf("No routing languages found with name %s", name))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_routing_language", fmt.Sprintf("No routing languages found with name %s", name), resp))
 			}
 
 			for _, language := range *languages.Entities {

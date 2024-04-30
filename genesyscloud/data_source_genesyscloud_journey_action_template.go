@@ -38,13 +38,13 @@ func dataSourceJourneyActionTemplateRead(ctx context.Context, d *schema.Resource
 		pageCount := 1 // Needed because of broken journey common paging
 		for pageNum := 1; pageNum <= pageCount; pageNum++ {
 			const pageSize = 100
-			journeyActionTemplates, _, getErr := journeyApi.GetJourneyActiontemplates(pageNum, pageSize, "", "", "", nil, "")
+			journeyActionTemplates, resp, getErr := journeyApi.GetJourneyActiontemplates(pageNum, pageSize, "", "", "", nil, "")
 			if getErr != nil {
-				return retry.NonRetryableError(fmt.Errorf("failed to get page of journey action template: %v", getErr))
+				return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_journey_action_template", fmt.Sprintf("failed to get page of journey action template: %v", getErr), resp))
 			}
 
 			if journeyActionTemplates.Entities == nil || len(*journeyActionTemplates.Entities) == 0 {
-				return retry.RetryableError(fmt.Errorf("no journey action template found with name %s", name))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_journey_action_template", fmt.Sprintf("no journey action template found with name %s", name), resp))
 			}
 
 			for _, actionTemplate := range *journeyActionTemplates.Entities {
