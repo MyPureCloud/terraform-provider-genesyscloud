@@ -58,20 +58,65 @@ type WrapupcodeExport struct {
 func TestAccResourceTfExportCampaignScriptDataSource(t *testing.T) {
 	var (
 		exportTestDir = "../../.terraform" + uuid.NewString()
-		resourceID    = "export"
+		//resourceID    = "export"
+
+		campaignName    = "tf test campaign " + uuid.NewString()
+		contactListName = "tf test contact list " + uuid.NewString()
+		queueName       = "tf test queue " + uuid.NewString()
 	)
 
-	theConfig := fmt.Sprintf(`
-resource "genesyscloud_tf_export" "%s" {
-  directory = "%s"
-
-  include_filter_resources     = ["genesyscloud_outbound_campaign::My Campaign 1"]
-  include_state_file           = false
-  export_as_hcl                = true
-  enable_dependency_resolution = true
+	theContactList := fmt.Sprintf(`
+resource "genesyscloud_outbound_contact_list" "contact_list" {
+  name = "%s"
+  column_names     = ["First Name", "Last Name", "Cell", "Home"]
+  phone_columns {
+    column_name = "Cell"
+    type        = "cell"
+  }
+  phone_columns {
+    column_name = "Home"
+    type        = "home"
+  }
 }
-`, resourceID, exportTestDir)
+`, contactListName)
 
+	theConfig := fmt.Sprintf(`
+resource "genesyscloud_outbound_campaign" "campaign" {
+  name                     = "%s"
+  queue_id                 = "${genesyscloud_routing_queue.queue.id}"
+  caller_address           = "+13335551234"
+  contact_list_id          = "${genesyscloud_outbound_contact_list.contact_list.id}"
+  dialing_mode             = "preview"
+  script_id                = "476c2b71-7429-11e4-9a5b-3f91746bffa3"
+  caller_name              = "Callbacks Test Queue 1"
+  division_id              = "${data.genesyscloud_auth_division_home.home.id}"
+  dynamic_contact_queueing_settings {
+    sort = false
+  }
+  phone_columns {
+    column_name = "Cell"
+  }
+}
+
+data "genesyscloud_auth_division_home" "home" {}
+
+resource "genesyscloud_routing_queue" "queue" {
+  name = "%s"
+}
+`, campaignName, queueName)
+
+	/*
+			theExportResource := fmt.Sprintf(`
+		resource "genesyscloud_tf_export" "%s" {
+		  directory = "%s"
+
+		  include_filter_resources     = ["genesyscloud_outbound_campaign::My Campaign 1"]
+		  include_state_file           = false
+		  export_as_hcl                = false
+		  enable_dependency_resolution = true
+		}
+		`, resourceID, exportTestDir)
+	*/
 	defer func(path string) {
 		if err := os.RemoveAll(path); err != nil {
 			t.Logf("failed to remove dir %s: %s", path, err)
@@ -83,11 +128,61 @@ resource "genesyscloud_tf_export" "%s" {
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
-				Config: theConfig,
+				Config: theContactList,
+				Check:  addContactsToContactList,
+			},
+			{
+				Config: theContactList + theConfig,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign.campaign", "name", campaignName),
+				),
 			},
 		},
 		CheckDestroy: testVerifyExportsDestroyedFunc(exportTestDir),
 	})
+}
+
+func addContactsToContactList(state *terraform.State) error {
+	outboundAPI := platformclientv2.NewOutboundApi()
+	contactListResource := state.RootModule().Resources["genesyscloud_outbound_contact_list.contact_list"]
+	if contactListResource == nil {
+		return fmt.Errorf("genesyscloud_outbound_contact_list.contact_list contactListResource not found in state")
+	}
+
+	contactList, _, err := outboundAPI.GetOutboundContactlist(contactListResource.Primary.ID, false, false)
+	if err != nil {
+		return fmt.Errorf("genesyscloud_outbound_contact_list (%s) not available", contactListResource.Primary.ID)
+	}
+	contactsJSON := `[{
+			"data": {
+			  "First Name": "Asa",
+			  "Last Name": "Acosta",
+			  "Cell": "+13335554",
+			  "Home": "3335552345"
+			},
+			"callable": true,
+			"phoneNumberStatus": {}
+		  },
+		  {
+			"data": {
+			  "First Name": "Leonidas",
+			  "Last Name": "Acosta",
+			  "Cell": "4445551234",
+			  "Home": "4445552345"
+			},
+			"callable": true,
+			"phoneNumberStatus": {}
+		  }]`
+	var contacts []platformclientv2.Writabledialercontact
+	err = json.Unmarshal([]byte(contactsJSON), &contacts)
+	if err != nil {
+		return fmt.Errorf("could not unmarshall JSON contacts to add to contact list")
+	}
+	_, _, err = outboundAPI.PostOutboundContactlistContacts(*contactList.Id, contacts, false, false, false)
+	if err != nil {
+		return fmt.Errorf("could not post contacts to contact list")
+	}
+	return nil
 }
 
 // TestAccResourceTfExport does a basic test check to make sure the export file is created.

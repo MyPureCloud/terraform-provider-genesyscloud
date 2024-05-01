@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 	"strings"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"terraform-provider-genesyscloud/genesyscloud/util/files"
 	"time"
@@ -24,7 +25,7 @@ type createScriptFunc func(ctx context.Context, filePath, scriptName string, sub
 type updateScriptFunc func(ctx context.Context, filePath, scriptName, scriptId string, substitutions map[string]interface{}, p *scriptsProxy) (id string, err error)
 type getAllPublishedScriptsFunc func(ctx context.Context, p *scriptsProxy) (*[]platformclientv2.Script, *platformclientv2.APIResponse, error)
 type publishScriptFunc func(ctx context.Context, p *scriptsProxy, scriptId string) (*platformclientv2.APIResponse, error)
-type getScriptByNameFunc func(ctx context.Context, p *scriptsProxy, scriptName string) ([]platformclientv2.Script, *platformclientv2.APIResponse, error)
+type getScriptsByNameFunc func(ctx context.Context, p *scriptsProxy, scriptName string) ([]platformclientv2.Script, *platformclientv2.APIResponse, error)
 type getScriptIdByNameFunc func(ctx context.Context, p *scriptsProxy, name string) (scriptId string, retryable bool, resp *platformclientv2.APIResponse, err error)
 type verifyScriptUploadSuccessFunc func(ctx context.Context, p *scriptsProxy, body []byte) (bool, error)
 type scriptWasUploadedSuccessfullyFunc func(ctx context.Context, p *scriptsProxy, uploadId string) (bool, *platformclientv2.APIResponse, error)
@@ -44,7 +45,7 @@ type scriptsProxy struct {
 	getAllScriptsAttr                 getAllPublishedScriptsFunc
 	publishScriptAttr                 publishScriptFunc
 	getScriptIdByNameAttr             getScriptIdByNameFunc
-	getScriptByNameAttr               getScriptByNameFunc
+	getScriptsByNameAttr              getScriptsByNameFunc
 	verifyScriptUploadSuccessAttr     verifyScriptUploadSuccessFunc
 	scriptWasUploadedSuccessfullyAttr scriptWasUploadedSuccessfullyFunc
 	getScriptExportUrlAttr            getScriptExportUrlFunc
@@ -75,7 +76,7 @@ func newScriptsProxy(clientConfig *platformclientv2.Configuration) *scriptsProxy
 		getAllScriptsAttr:                 getAllPublishedScriptsFn,
 		publishScriptAttr:                 publishScriptFn,
 		getScriptIdByNameAttr:             getScriptIdByNameFn,
-		getScriptByNameAttr:               getScriptsByNameFn,
+		getScriptsByNameAttr:              getScriptsByNameFn,
 		verifyScriptUploadSuccessAttr:     verifyScriptUploadSuccessFn,
 		scriptWasUploadedSuccessfullyAttr: scriptWasUploadedSuccessfullyFn,
 		getScriptExportUrlAttr:            getScriptExportUrlFn,
@@ -103,8 +104,8 @@ func (p *scriptsProxy) publishScript(ctx context.Context, scriptId string) (*pla
 	return p.publishScriptAttr(ctx, p, scriptId)
 }
 
-func (p *scriptsProxy) getScriptByName(ctx context.Context, scriptName string) ([]platformclientv2.Script, *platformclientv2.APIResponse, error) {
-	return p.getScriptByNameAttr(ctx, p, scriptName)
+func (p *scriptsProxy) getScriptsByName(ctx context.Context, scriptName string) ([]platformclientv2.Script, *platformclientv2.APIResponse, error) {
+	return p.getScriptsByNameAttr(ctx, p, scriptName)
 }
 
 func (p *scriptsProxy) getScriptIdByName(ctx context.Context, name string) (string, bool, *platformclientv2.APIResponse, error) {
@@ -188,17 +189,19 @@ func getAllPublishedScriptsFn(_ context.Context, p *scriptsProxy) (*[]platformcl
 
 // getScriptsByNameFn Retrieves all scripts instances that match the name passed in
 func getScriptsByNameFn(_ context.Context, p *scriptsProxy, scriptName string) ([]platformclientv2.Script, *platformclientv2.APIResponse, error) {
-	var scripts []platformclientv2.Script
-	var response *platformclientv2.APIResponse
+	const pageSize = 50
+	var (
+		scripts            []platformclientv2.Script
+		response           *platformclientv2.APIResponse
+		processedScriptIds []string
+	)
+
 	log.Printf("Retrieving scripts with name '%s'", scriptName)
-	pageSize := 50
-	for i := 0; ; i++ {
-		pageNumber := i + 1
-		data, resp, err := p.scriptsApi.GetScripts(pageSize, pageNumber, "", scriptName, "", "", "", "", "", "")
+	for pageNum := 1; ; pageNum++ {
+		data, response, err := p.scriptsApi.GetScripts(pageSize, pageNum, "", scriptName, "", "", "", "", "", "")
 		if err != nil {
-			return scripts, resp, err
+			return scripts, response, err
 		}
-		response = resp
 
 		if data.Entities == nil || len(*data.Entities) == 0 {
 			break
@@ -207,9 +210,27 @@ func getScriptsByNameFn(_ context.Context, p *scriptsProxy, scriptName string) (
 		for _, script := range *data.Entities {
 			if *script.Name == scriptName {
 				scripts = append(scripts, script)
+				processedScriptIds = append(processedScriptIds, *script.Id)
 			}
 		}
 	}
+
+	for pageNum := 1; ; pageNum++ {
+		data, response, err := p.scriptsApi.GetScriptsPublished(pageSize, pageNum, "", scriptName, "", "", "", "")
+		if err != nil {
+			return nil, response, err
+		}
+		if data.Entities == nil || len(*data.Entities) == 0 {
+			break
+		}
+		for _, script := range *data.Entities {
+			if *script.Name == scriptName && !util.StringExists(*script.Id, processedScriptIds) {
+				scripts = append(scripts, script)
+				processedScriptIds = append(processedScriptIds, *script.Id)
+			}
+		}
+	}
+
 	return scripts, response, nil
 }
 
@@ -246,7 +267,7 @@ func (p *scriptsProxy) uploadScriptFile(filePath, scriptName, scriptId string, s
 
 // getScriptIdByNameFn is the implementation function for retrieving a script ID by name, if no other scripts have the same name
 func getScriptIdByNameFn(ctx context.Context, p *scriptsProxy, name string) (string, bool, *platformclientv2.APIResponse, error) {
-	sdkScripts, resp, err := p.getScriptByName(ctx, name)
+	sdkScripts, resp, err := p.getScriptsByName(ctx, name)
 	if err != nil {
 		return "", false, resp, err
 	}
@@ -464,7 +485,7 @@ func updateScriptFn(ctx context.Context, filePath, scriptName, scriptId string, 
 
 // scriptExistsWithName is a helper method to determine if a script already exists with the name the user is trying to create a script with
 func scriptExistsWithName(ctx context.Context, scriptsProxy *scriptsProxy, scriptName string) (bool, error) {
-	sdkScripts, _, err := scriptsProxy.getScriptByName(ctx, scriptName)
+	sdkScripts, _, err := scriptsProxy.getScriptsByName(ctx, scriptName)
 	if err != nil {
 		return true, err
 	}

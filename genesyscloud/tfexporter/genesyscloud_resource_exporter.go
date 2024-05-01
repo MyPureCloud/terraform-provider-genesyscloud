@@ -375,12 +375,6 @@ func (g *GenesysCloudResourceExporter) buildResourceConfigMap() diag.Diagnostics
 			g.sanitizeDataConfigMap(jsonResult)
 		}
 
-		if resource.Type == "genesyscloud_outbound_campaign" {
-			for k, v := range g.dataSourceTypesMaps {
-				log.Printf("\n\nKey: %v \nValue: %v \n\n", k, v)
-			}
-		}
-
 		// TODO put this in separate call
 		exporters := *g.exporters
 		if resourceFilesWriterFunc := exporters[resource.Type].CustomFileWriter.RetrieveAndWriteFilesFunc; resourceFilesWriterFunc != nil {
@@ -1282,12 +1276,12 @@ func (g *GenesysCloudResourceExporter) sanitizeConfigMap(
 					// add the data source if it hasn't already been added
 					if _, ok := g.dataSourceTypesMaps[dataSourceType][dataSourceId]; !ok {
 						g.dataSourceTypesMaps[dataSourceType][dataSourceId] = dataSourceConfig
-					}
-					if g.exportAsHCL {
-						if _, ok := g.resourceTypesHCLBlocks[dataSourceType]; !ok {
-							g.resourceTypesHCLBlocks[dataSourceType] = make(resourceHCLBlock, 0)
+						if g.exportAsHCL {
+							if _, ok := g.resourceTypesHCLBlocks[dataSourceType]; !ok {
+								g.resourceTypesHCLBlocks[dataSourceType] = make(resourceHCLBlock, 0)
+							}
+							g.resourceTypesHCLBlocks[dataSourceType] = append(g.resourceTypesHCLBlocks[dataSourceType], instanceStateToHCLBlock(dataSourceType, dataSourceId, dataSourceConfig, true))
 						}
-						g.resourceTypesHCLBlocks[dataSourceType] = append(g.resourceTypesHCLBlocks[dataSourceType], instanceStateToHCLBlock(dataSourceType, dataSourceId, dataSourceConfig, true))
 					}
 				}
 			}
