@@ -11,7 +11,9 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	"terraform-provider-genesyscloud/genesyscloud/tfexporter_state"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 )
 
 /*
@@ -41,6 +43,7 @@ func readOutboundSettings(ctx context.Context, d *schema.ResourceData, meta inte
 	abandonSeconds := d.Get("abandon_seconds").(float64)
 	complianceAbandonRateDenominator := d.Get("compliance_abandon_rate_denominator").(string)
 	automaticTimeZoneMapping := d.Get("automatic_time_zone_mapping").([]interface{})
+	rescheduleTimeZoneSkippedContacts := d.Get("reschedule_time_zone_skipped_contacts").(bool)
 
 	log.Printf("Reading Outbound setting %s", d.Id())
 
@@ -51,61 +54,43 @@ func readOutboundSettings(ctx context.Context, d *schema.ResourceData, meta inte
 				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read Outbound Setting: %s", getErr), resp))
 			}
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read Outbound Setting: %s", getErr), resp))
-		}
 
+		}
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundSettings())
 
-		// Only read values if they are part of the terraform plan
-		if maxCallsPerAgent != 0 {
-			if settings.MaxCallsPerAgent != nil {
-				d.Set("max_calls_per_agent", *settings.MaxCallsPerAgent)
-			} else {
-				d.Set("max_calls_per_agent", nil)
-			}
+		// Only read values if they are part of the terraform plan or during Export
+		if maxCallsPerAgent != 0 || tfexporter_state.IsExporterActive() {
+			resourcedata.SetNillableValue(d, "max_calls_per_agent", settings.MaxCallsPerAgent)
 		}
+		if maxLineUtilization != 0 || tfexporter_state.IsExporterActive() {
+			resourcedata.SetNillableValue(d, "max_line_utilization", settings.MaxLineUtilization)
+		}
+		if abandonSeconds != 0 || tfexporter_state.IsExporterActive() {
+			resourcedata.SetNillableValue(d, "abandon_seconds", settings.AbandonSeconds)
+		}
+		if complianceAbandonRateDenominator != "" || tfexporter_state.IsExporterActive() {
+			resourcedata.SetNillableValue(d, "compliance_abandon_rate_denominator", settings.ComplianceAbandonRateDenominator)
+		}
+		if len(automaticTimeZoneMapping) > 0 || tfexporter_state.IsExporterActive() {
+			_ = d.Set("automatic_time_zone_mapping", flattenOutboundSettingsAutomaticTimeZoneMapping(*settings.AutomaticTimeZoneMapping, automaticTimeZoneMapping))
+		}
+		resourcedata.SetNillableValue(d, "reschedule_time_zone_skipped_contacts", &rescheduleTimeZoneSkippedContacts)
 
-		if maxLineUtilization != 0 {
-			if settings.MaxLineUtilization != nil {
-				d.Set("max_line_utilization", *settings.MaxLineUtilization)
-			} else {
-				d.Set("max_line_utilization", nil)
-			}
-		}
-
-		if abandonSeconds != 0 {
-			if settings.AbandonSeconds != nil {
-				d.Set("abandon_seconds", *settings.AbandonSeconds)
-			} else {
-				d.Set("abandon_seconds", nil)
-			}
-		}
-
-		if complianceAbandonRateDenominator != "" {
-			if settings.ComplianceAbandonRateDenominator != nil {
-				d.Set("compliance_abandon_rate_denominator", *settings.ComplianceAbandonRateDenominator)
-			} else {
-				d.Set("compliance_abandon_rate_denominator", nil)
-			}
-		}
-
-		if len(automaticTimeZoneMapping) > 0 {
-			d.Set("automatic_time_zone_mapping", flattenOutboundSettingsAutomaticTimeZoneMapping(*settings.AutomaticTimeZoneMapping, automaticTimeZoneMapping))
-		}
 		log.Printf("Read Outbound Setting")
-
 		return cc.CheckState()
 	})
 }
 
 // updateOutboundSettings is used by the outbound_settings resource to update an outbound settings in Genesys Cloud
 func updateOutboundSettings(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
+	proxy := getOutboundSettingsProxy(sdkConfig)
+
 	maxCallsPerAgent := d.Get("max_calls_per_agent").(int)
 	maxLineUtilization := d.Get("max_line_utilization").(float64)
 	abandonSeconds := d.Get("abandon_seconds").(float64)
 	complianceAbandonRateDenominator := d.Get("compliance_abandon_rate_denominator").(string)
-
-	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-	proxy := getOutboundSettingsProxy(sdkConfig)
+	automaticTimeZoneMapping := d.Get("automatic_time_zone_mapping").([]interface{})
 
 	log.Printf("Updating Outbound Settings %s", d.Id())
 
@@ -117,22 +102,24 @@ func updateOutboundSettings(ctx context.Context, d *schema.ResourceData, meta in
 		}
 
 		update := platformclientv2.Outboundsettings{
-			Name:                     setting.Name,
-			Version:                  setting.Version,
-			AutomaticTimeZoneMapping: buildOutboundSettingsAutomaticTimeZoneMapping(d),
+			Name:                              setting.Name,
+			Version:                           setting.Version,
+			RescheduleTimeZoneSkippedContacts: platformclientv2.Bool(d.Get("reschedule_time_zone_skipped_contacts").(bool)),
 		}
-
-		if maxCallsPerAgent != 0 {
+		if maxCallsPerAgent != 0 || tfexporter_state.IsExporterActive() {
 			update.MaxCallsPerAgent = &maxCallsPerAgent
 		}
-		if maxLineUtilization != 0 {
+		if maxLineUtilization != 0 || tfexporter_state.IsExporterActive() {
 			update.MaxLineUtilization = &maxLineUtilization
 		}
-		if abandonSeconds != 0 {
+		if abandonSeconds != 0 || tfexporter_state.IsExporterActive() {
 			update.AbandonSeconds = &abandonSeconds
 		}
-		if complianceAbandonRateDenominator != "" {
+		if complianceAbandonRateDenominator != "" || tfexporter_state.IsExporterActive() {
 			update.ComplianceAbandonRateDenominator = &complianceAbandonRateDenominator
+		}
+		if automaticTimeZoneMapping != nil || tfexporter_state.IsExporterActive() {
+			update.AutomaticTimeZoneMapping = buildOutboundSettingsAutomaticTimeZoneMapping(d)
 		}
 
 		_, resp, err := proxy.updateOutboundSettings(ctx, d.Id(), &update)
@@ -141,7 +128,6 @@ func updateOutboundSettings(ctx context.Context, d *schema.ResourceData, meta in
 		}
 		return nil, nil
 	})
-
 	if diagErr != nil {
 		return diagErr
 	}

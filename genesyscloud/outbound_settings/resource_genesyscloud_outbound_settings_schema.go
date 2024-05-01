@@ -143,6 +143,11 @@ func ResourceOutboundSettings() *schema.Resource {
 				Type:        schema.TypeList,
 				Elem:        automaticTimeZoneMappingResource,
 			},
+			`reschedule_time_zone_skipped_contacts`: {
+				Description: "Whether or not to reschedule time-zone blocked contacts.",
+				Optional:    true,
+				Type:        schema.TypeBool,
+			},
 		},
 	}
 }

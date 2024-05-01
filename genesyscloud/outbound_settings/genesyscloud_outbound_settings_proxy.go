@@ -63,7 +63,6 @@ func getOutboundSettingsByIdFn(ctx context.Context, p *outboundSettingsProxy, id
 	if err != nil {
 		return nil, resp, fmt.Errorf("Failed to retrieve outbound settings by id %s: %s", id, err)
 	}
-
 	return outboundSettings, resp, nil
 }
 

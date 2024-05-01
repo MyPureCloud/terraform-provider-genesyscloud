@@ -101,6 +101,7 @@ func WebDeploymentExporter() *resourceExporter.ResourceExporter {
 			"flow_id":          {RefType: "genesyscloud_flow"},
 			"configuration.id": {RefType: "genesyscloud_webdeployments_configuration"},
 		},
+		ExcludedAttributes: []string{"configuration.version"},
 	}
 }
 

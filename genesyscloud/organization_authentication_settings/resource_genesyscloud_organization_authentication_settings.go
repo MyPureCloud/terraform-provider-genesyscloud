@@ -18,7 +18,7 @@ import (
 )
 
 /*
-The resource_genesyscloud_organization_authentication_settings.go contains all of the methods that perform the core logic for a resource.
+The resource_genesyscloud_organization_authentication_settings.go contains all the methods that perform the core logic for a resource.
 */
 
 func getAllOrganizationAuthenticationSettings(_ context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
