@@ -7,9 +7,8 @@ import (
 	"log"
 	"regexp"
 	"strings"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 )
-
-const defaultOutboundScriptName = "Default Outbound Script"
 
 /*
 OutboundCampaignAgentScriptResolver
@@ -21,7 +20,7 @@ so instead we pass back all the details tfexporter needs to do it itself)
 func OutboundCampaignAgentScriptResolver(configMap map[string]interface{}, sdkConfig *platformclientv2.Configuration) (dsType string, dsID string, dsConfig map[string]interface{}, resolve bool) {
 	var (
 		scriptDataSourceConfig = make(map[string]interface{})
-		scriptDataSourceId     = strings.Replace(defaultOutboundScriptName, " ", "_", -1)
+		scriptDataSourceId     = strings.Replace(constants.DefaultOutboundScriptName, " ", "_", -1)
 	)
 
 	scriptId, ok := configMap["script_id"].(string)
@@ -33,7 +32,7 @@ func OutboundCampaignAgentScriptResolver(configMap map[string]interface{}, sdkCo
 		if !ok || scriptId == "" {
 			log.Printf("No script_id value present in export of outbound campaign %s. Resolving to Default Outbound Script data source.", configMap["name"].(string))
 		}
-		scriptDataSourceConfig["name"] = defaultOutboundScriptName
+		scriptDataSourceConfig["name"] = constants.DefaultOutboundScriptName
 
 		configMap["script_id"] = fmt.Sprintf("${data.genesyscloud_script.%s.id}", scriptDataSourceId)
 
@@ -63,7 +62,7 @@ func isDefaultOutboundScript(scriptId string, sdkConfig *platformclientv2.Config
 	}
 
 	log.Printf("read published script %s %s", scriptId, *data.Name)
-	return *data.Name == defaultOutboundScriptName
+	return *data.Name == constants.DefaultOutboundScriptName
 }
 
 func isValidGuid(id string) bool {

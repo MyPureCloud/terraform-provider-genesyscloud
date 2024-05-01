@@ -8,7 +8,8 @@ import (
 	"log"
 	"net/http"
 	"strings"
-	files "terraform-provider-genesyscloud/genesyscloud/util/files"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
+	"terraform-provider-genesyscloud/genesyscloud/util/files"
 	"time"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
@@ -250,12 +251,20 @@ func getScriptIdByNameFn(ctx context.Context, p *scriptsProxy, name string) (str
 		return "", false, resp, err
 	}
 	if len(sdkScripts) > 1 {
-		return "", false, resp, fmt.Errorf("more than one script found with name '%s'", name)
+		var extraErrorInfo string
+		if isNameOfDefaultScript(name) {
+			extraErrorInfo = fmt.Sprintf("'%s' is the name of a reserved script in Genesys Cloud that cannot be deleted. Please select another name.", name)
+		}
+		return "", false, resp, fmt.Errorf("more than one script found with name '%s'. %s", name, extraErrorInfo)
 	}
 	if len(sdkScripts) == 0 {
 		return "", true, resp, fmt.Errorf("no script found with name '%s'", name)
 	}
 	return *sdkScripts[0].Id, false, resp, nil
+}
+
+func isNameOfDefaultScript(name string) bool {
+	return name == constants.DefaultOutboundScriptName || name == constants.DefaultInboundScriptName || name == constants.DefaultCallbackScriptName
 }
 
 // verifyScriptUploadSuccessFn checks to see if a file has successfully uploaded
