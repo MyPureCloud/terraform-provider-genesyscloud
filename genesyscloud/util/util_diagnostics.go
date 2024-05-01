@@ -70,7 +70,7 @@ func BuildDiagnosticError(resourceName string, summary string, err error) diag.D
 	return dgs
 }
 
-// BuildWithRetriesApiDiagnosticError converts the diag.Diagnostic error from API responses into am error to be used in withRetries functions for more clear error information
+// BuildWithRetriesApiDiagnosticError converts the diag.Diagnostic error from API responses into an error to be used in withRetries functions for more clear error information
 func BuildWithRetriesApiDiagnosticError(resourceName string, summary string, apiResponse *platformclientv2.APIResponse) error {
 	var errorMsg string
 
