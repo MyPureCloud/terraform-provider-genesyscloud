@@ -303,24 +303,6 @@ func withRetries(ctx context.Context, timeout time.Duration, method func() *retr
 	return err
 }
 
-func authorizeSdkWithRetries(config *platformclientv2.Configuration, oauthID, oauthSecret string) error {
-	var err error
-	for i := 0; i < 20; i++ {
-		err = config.AuthorizeClientCredentials(oauthID, oauthSecret)
-		if err != nil {
-			if !strings.Contains(err.Error(), "Auth Error: 400 - invalid_request (rate limit exceeded;") {
-				return fmt.Errorf("Failed to authorize Genesys Cloud client credentials: %v", err)
-			}
-			// Wait and try again
-			time.Sleep(time.Second * 5)
-			continue
-		}
-		// Success
-		return nil
-	}
-	return fmt.Errorf("Exhausted retries on Genesys Cloud client credentials. Last error: %v", err)
-}
-
 func setUpSDKLogging(data *schema.ResourceData, config *platformclientv2.Configuration) diag.Diagnostics {
 	sdkDebugFilePath := data.Get("sdk_debug_file_path").(string)
 	if data.Get("sdk_debug").(bool) {
