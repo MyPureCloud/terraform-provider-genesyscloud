@@ -7,6 +7,7 @@ import (
 	emergencyGroup "terraform-provider-genesyscloud/genesyscloud/architect_emergencygroup"
 	flow "terraform-provider-genesyscloud/genesyscloud/architect_flow"
 	flowLogLevel "terraform-provider-genesyscloud/genesyscloud/flow_loglevel"
+	"terraform-provider-genesyscloud/genesyscloud/scripts"
 
 	grammar "terraform-provider-genesyscloud/genesyscloud/architect_grammar"
 	grammarLanguage "terraform-provider-genesyscloud/genesyscloud/architect_grammar_language"
@@ -180,6 +181,7 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_routing_sms_address"] = routingSmsAddress.ResourceRoutingSmsAddress()
 	providerResources["genesyscloud_routing_skill_group"] = gcloud.ResourceRoutingSkillGroup()
 	providerResources["genesyscloud_telephony_providers_edges_did_pool"] = didPool.ResourceTelephonyDidPool()
+	providerResources["genesyscloud_script"] = scripts.ResourceScript()
 
 	providerResources["genesyscloud_task_management_workbin"] = workbin.ResourceTaskManagementWorkbin()
 	providerResources["genesyscloud_task_management_workitem_schema"] = workitemSchema.ResourceTaskManagementWorkitemSchema()
@@ -282,11 +284,14 @@ func (r *registerTestInstance) registerTestExporters() {
 	RegisterExporter("genesyscloud_task_management_workitem_schema", workbin.TaskManagementWorkbinExporter())
 	RegisterExporter("genesyscloud_task_management_worktype", worktype.TaskManagementWorktypeExporter())
 
+	RegisterExporter("genesyscloud_script", scripts.ExporterScript())
+
 	resourceExporter.SetRegisterExporter(resourceExporters)
 }
 
 func (r *registerTestInstance) registerTestDataSources() {
 	providerDataSources["genesyscloud_auth_division_home"] = gcloud.DataSourceAuthDivisionHome()
+	providerDataSources["genesyscloud_script"] = scripts.DataSourceScript()
 }
 
 func RegisterExporter(exporterName string, resourceExporter *resourceExporter.ResourceExporter) {
