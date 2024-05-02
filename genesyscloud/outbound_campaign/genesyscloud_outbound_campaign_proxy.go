@@ -150,9 +150,7 @@ func getAllOutboundCampaignFn(ctx context.Context, p *outboundCampaignProxy) (*[
 		return &allCampaigns, resp, nil
 	}
 
-	for _, campaign := range *campaigns.Entities {
-		allCampaigns = append(allCampaigns, campaign)
-	}
+	allCampaigns = append(allCampaigns, *campaigns.Entities...)
 
 	for pageNum := 2; pageNum <= *campaigns.PageCount; pageNum++ {
 		campaigns, resp, err := p.outboundApi.GetOutboundCampaigns(pageSize, pageNum, "", "", nil, "", "", "", "", "", nil, "", "")
@@ -164,9 +162,7 @@ func getAllOutboundCampaignFn(ctx context.Context, p *outboundCampaignProxy) (*[
 			break
 		}
 
-		for _, campaign := range *campaigns.Entities {
-			allCampaigns = append(allCampaigns, campaign)
-		}
+		allCampaigns = append(allCampaigns, *campaigns.Entities...)
 	}
 	return &allCampaigns, resp, nil
 }

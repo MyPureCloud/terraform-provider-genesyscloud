@@ -30,9 +30,7 @@ func TestAccDataSourceOutboundCampaign(t *testing.T) {
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
-				Config: fmt.Sprintf(`
-data "genesyscloud_auth_division_home" "home" {}
-`) + GenerateOutboundCampaignBasic(
+				Config: `data "genesyscloud_auth_division_home" "home" {}` + GenerateOutboundCampaignBasic(
 					resourceId,
 					campaignName,
 					"contact_list",
