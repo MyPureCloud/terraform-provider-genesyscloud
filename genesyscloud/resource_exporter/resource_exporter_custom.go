@@ -25,9 +25,12 @@ func OutboundCampaignAgentScriptResolver(configMap map[string]interface{}, sdkCo
 
 	scriptId, ok := configMap["script_id"].(string)
 
-	// if the script ID is nil or an empty string, we can assume this means the Default Outbound Script is being referenced by the campaign. Even if that is not the case,
-	// it is invalid for a campaign to not reference a script, so we might as well resolve to the data source.
-	// If include_state_file == true, the raw GUID of the Def Outbound Script will be present, so we want to check that it is in fact the DOS before resolving it to the data source
+	// If the script ID is nil or an empty string, we can assume this means the Default Outbound Script is being referenced by the campaign.
+	// It could also mean that the state file is not being exported and script_ids are not being resolved for whatever reason. In this case,
+	// we can't know what script the campaign was referencing, but we might as well resolve to the data source anyway because script_id is a required field
+	// and the export is invalid without it.
+	// If include_state_file == true, the raw GUID of the Def Outbound Script will be present, so we want to check that it is in fact the Default Outbound Script
+	// before resolving it to the data source
 	if !ok || scriptId == "" || isDefaultOutboundScript(scriptId, sdkConfig) {
 		if !ok || scriptId == "" {
 			log.Printf("No script_id value present in export of outbound campaign %s. Resolving to Default Outbound Script data source.", configMap["name"].(string))
