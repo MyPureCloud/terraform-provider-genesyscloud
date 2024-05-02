@@ -2,6 +2,7 @@ package outbound
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
@@ -51,8 +52,8 @@ var (
 	outboundmessagingcampaignsmsconfigResource = &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			`message_column`: {
-				Description: `The Contact List column specifying the message to send to the contact.`,
-				Required:    true,
+				Description: `The Contact List column specifying the message to send to the contact. Either message_column or content_template_id is required.`,
+				Optional:    true,
 				Type:        schema.TypeString,
 			},
 			`phone_column`: {
@@ -66,7 +67,7 @@ var (
 				Type:        schema.TypeString,
 			},
 			`content_template_id`: {
-				Description: `The content template used to formulate the message to send to the contact.`,
+				Description: `The content template used to formulate the message to send to the contact. Either message_column or content_template_id is required.`,
 				Optional:    true,
 				Type:        schema.TypeString,
 			},
@@ -234,6 +235,12 @@ func createOutboundMessagingcampaign(ctx context.Context, d *schema.ResourceData
 		sdkmessagingcampaign.CampaignStatus = &campaignStatus
 	}
 
+	msg, valid := validateSmsconfig(d.Get("sms_config").(*schema.Set))
+
+	if !valid {
+		return util.BuildDiagnosticError(resourceName, "Configuration error", errors.New(msg))
+	}
+
 	log.Printf("Creating Outbound Messagingcampaign %s", name)
 	outboundMessagingcampaign, resp, err := outboundApi.PostOutboundMessagingcampaigns(sdkmessagingcampaign)
 	if err != nil {
@@ -273,6 +280,12 @@ func updateOutboundMessagingcampaign(ctx context.Context, d *schema.ResourceData
 
 	if campaignStatus != "" {
 		sdkmessagingcampaign.CampaignStatus = &campaignStatus
+	}
+
+	msg, valid := validateSmsconfig(d.Get("sms_config").(*schema.Set))
+
+	if !valid {
+		return util.BuildDiagnosticError(resourceName, "Configuration error", errors.New(msg))
 	}
 
 	log.Printf("Updating Outbound Messagingcampaign %s", name)
@@ -509,4 +522,22 @@ func GenerateOutboundMessagingCampaignContactSort(fieldName string, direction st
         %s
 	}
 `, fieldName, direction, numeric)
+}
+
+func validateSmsconfig(smsconfig *schema.Set) (string, bool) {
+	if smsconfig == nil {
+		return "", true
+	}
+
+	smsconfigList := smsconfig.List()
+	if len(smsconfigList) > 0 {
+		smsconfigMap := smsconfigList[0].(map[string]interface{})
+		if smsconfigMap["message_column"].(string) == "" && smsconfigMap["content_template_id"].(string) == "" {
+			return "Either message_column or content_template_id is required.", false
+		} else if smsconfigMap["message_column"].(string) != "" && smsconfigMap["content_template_id"] != "" {
+			return "Only one of message_column or content_template_id can be defined", false
+		}
+	}
+
+	return "", true
 }
