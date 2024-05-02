@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 	"strings"
+	rc "terraform-provider-genesyscloud/genesyscloud/resource_cache"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"terraform-provider-genesyscloud/genesyscloud/util/files"
@@ -52,6 +53,7 @@ type scriptsProxy struct {
 	deleteScriptAttr                  deleteScriptFunc
 	getScriptByIdAttr                 getScriptByIdFunc
 	getPublishedScriptsByNameAttr     getPublishedScriptsByNameFunc
+	scriptCache                       rc.CacheInterface[platformclientv2.Script]
 }
 
 // getScriptsProxy acts as a singleton to for the internalProxy.  It also ensures
@@ -66,6 +68,7 @@ func getScriptsProxy(clientConfig *platformclientv2.Configuration) *scriptsProxy
 // newScriptsProxy initializes the Scripts proxy with all of the data needed to communicate with Genesys Cloud
 func newScriptsProxy(clientConfig *platformclientv2.Configuration) *scriptsProxy {
 	scriptsAPI := platformclientv2.NewScriptsApiWithConfig(clientConfig)
+	scriptCache := rc.NewResourceCache[platformclientv2.Script]()
 	return &scriptsProxy{
 		clientConfig:                      clientConfig,
 		scriptsApi:                        scriptsAPI,
@@ -83,6 +86,7 @@ func newScriptsProxy(clientConfig *platformclientv2.Configuration) *scriptsProxy
 		deleteScriptAttr:                  deleteScriptFn,
 		getScriptByIdAttr:                 getScriptByIdFn,
 		getPublishedScriptsByNameAttr:     getPublishedScriptsByNameFn,
+		scriptCache:                       scriptCache,
 	}
 }
 
@@ -184,6 +188,11 @@ func getAllPublishedScriptsFn(_ context.Context, p *scriptsProxy) (*[]platformcl
 			allScripts = append(allScripts, script)
 		}
 	}
+
+	for _, script := range allScripts {
+		rc.SetCache(p.scriptCache, *script.Id, script)
+	}
+
 	return &allScripts, response, nil
 }
 
@@ -385,8 +394,11 @@ func deleteScriptFn(_ context.Context, p *scriptsProxy, scriptId string) error {
 
 // getScriptByIdFn retrieves a script by Id
 func getScriptByIdFn(_ context.Context, p *scriptsProxy, scriptId string) (script *platformclientv2.Script, resp *platformclientv2.APIResponse, err error) {
-	script, resp, err = p.scriptsApi.GetScript(scriptId)
+	if script := rc.GetCacheItem(p.scriptCache, scriptId); script != nil {
+		return script, nil, nil
+	}
 
+	script, resp, err = p.scriptsApi.GetScript(scriptId)
 	if err != nil {
 		if resp.StatusCode == http.StatusNotFound {
 			return nil, resp, nil

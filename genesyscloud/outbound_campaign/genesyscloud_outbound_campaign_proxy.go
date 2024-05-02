@@ -228,5 +228,6 @@ func deleteOutboundCampaignFn(_ context.Context, p *outboundCampaignProxy, id st
 	if err != nil {
 		return resp, fmt.Errorf("failed to delete campaign: %s", err)
 	}
+	rc.DeleteCacheItem(p.campaignCache, id)
 	return resp, nil
 }

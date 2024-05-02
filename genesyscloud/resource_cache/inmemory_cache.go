@@ -14,6 +14,12 @@ func (c *inMemoryCache[T]) Set(key string, value T) {
 	c.data[key] = value
 }
 
+func (c *inMemoryCache[T]) Delete(key string) {
+	c.lock.Lock()
+	defer c.lock.Unlock()
+	delete(c.data, key)
+}
+
 // Get retrieves a value from the in-memory cache
 func (c *inMemoryCache[T]) Get(key string) (T, bool) {
 	c.lock.Lock()

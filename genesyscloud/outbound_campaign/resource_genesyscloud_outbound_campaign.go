@@ -216,8 +216,8 @@ func deleteOutboundCampaign(ctx context.Context, d *schema.ResourceData, meta in
 				log.Printf("Deleted Outbound Campaign %s", d.Id())
 				return nil
 			}
-			return retry.NonRetryableError(fmt.Errorf("Error deleting Outbound Campaign %s: %s", d.Id(), err))
+			return retry.NonRetryableError(fmt.Errorf("error deleting Outbound Campaign %s: %s", d.Id(), err))
 		}
-		return retry.RetryableError(fmt.Errorf("Outbound Campaign %s still exists", d.Id()))
+		return retry.RetryableError(fmt.Errorf("outbound Campaign %s still exists", d.Id()))
 	})
 }

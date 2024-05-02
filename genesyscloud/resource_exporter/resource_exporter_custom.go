@@ -17,24 +17,13 @@ and the returns the script resource type "", the data source ID, and the config 
 (We can't pass in the map and add the data source here because it causes a cyclic error between packages resource_exporter and tfexporter,
 so instead we pass back all the details tfexporter needs to do it itself)
 */
-func OutboundCampaignAgentScriptResolver(configMap map[string]interface{}, sdkConfig *platformclientv2.Configuration) (dsType string, dsID string, dsConfig map[string]interface{}, resolve bool) {
+func OutboundCampaignAgentScriptResolver(configMap map[string]interface{}, scriptId string, sdkConfig *platformclientv2.Configuration) (dsType string, dsID string, dsConfig map[string]interface{}, resolve bool) {
 	var (
 		scriptDataSourceConfig = make(map[string]interface{})
 		scriptDataSourceId     = strings.Replace(constants.DefaultOutboundScriptName, " ", "_", -1)
 	)
 
-	scriptId, ok := configMap["script_id"].(string)
-
-	// If the script ID is nil or an empty string, we can assume this means the Default Outbound Script is being referenced by the campaign.
-	// It could also mean that the state file is not being exported and script_ids are not being resolved for whatever reason. In this case,
-	// we can't know what script the campaign was referencing, but we might as well resolve to the data source anyway because script_id is a required field
-	// and the export is invalid without it.
-	// If include_state_file == true, the raw GUID of the Def Outbound Script will be present, so we want to check that it is in fact the Default Outbound Script
-	// before resolving it to the data source
-	if !ok || scriptId == "" || isDefaultOutboundScript(scriptId, sdkConfig) {
-		if !ok || scriptId == "" {
-			log.Printf("No script_id value present in export of outbound campaign %s. Resolving to Default Outbound Script data source.", configMap["name"].(string))
-		}
+	if IsDefaultOutboundScript(scriptId, sdkConfig) {
 		scriptDataSourceConfig["name"] = constants.DefaultOutboundScriptName
 
 		configMap["script_id"] = fmt.Sprintf("${data.genesyscloud_script.%s.id}", scriptDataSourceId)
@@ -46,11 +35,11 @@ func OutboundCampaignAgentScriptResolver(configMap map[string]interface{}, sdkCo
 }
 
 /*
-isDefaultOutboundScript
+IsDefaultOutboundScript
 Takes a script ID and checks if the name of the script equals defaultOutboundScriptName.
 If the operation fails, we will just log the error and allow the exporter to include the hard-coded GUID, as opposed to failing.
 */
-func isDefaultOutboundScript(scriptId string, sdkConfig *platformclientv2.Configuration) bool {
+func IsDefaultOutboundScript(scriptId string, sdkConfig *platformclientv2.Configuration) bool {
 	if !isValidGuid(scriptId) {
 		return false
 	}

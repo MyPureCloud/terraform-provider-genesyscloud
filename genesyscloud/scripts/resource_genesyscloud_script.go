@@ -85,12 +85,12 @@ func readScript(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		script, resp, err := scriptsProxy.getScriptById(ctx, d.Id())
-		if resp.StatusCode == http.StatusNotFound {
-			return retry.RetryableError(fmt.Errorf("Failed to read flow %s: %s", d.Id(), err))
+		if resp != nil && resp.StatusCode == http.StatusNotFound {
+			return retry.RetryableError(fmt.Errorf("failed to read flow %s: %s", d.Id(), err))
 		}
 
 		if err != nil {
-			return retry.NonRetryableError(fmt.Errorf("Failed to read flow %s: %s", d.Id(), err))
+			return retry.NonRetryableError(fmt.Errorf("failed to read flow %s: %s", d.Id(), err))
 		}
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceScript())

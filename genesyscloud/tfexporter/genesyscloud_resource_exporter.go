@@ -1221,6 +1221,29 @@ func (g *GenesysCloudResourceExporter) sanitizeConfigMap(
 			} else {
 				configMap[key] = escapeString(val.(string))
 			}
+
+			// custom function to resolve the field to a specific data source depending on the value
+			if refAttrCustomResolver, ok := exporter.CustomAttributeResolver[currAttr]; ok {
+				if resolveToDataSourceFunc := refAttrCustomResolver.ResolveToDataSourceFunc; resolveToDataSourceFunc != nil {
+					valStr, _ := val.(string)
+					sdkConfig := g.meta.(*provider.ProviderMeta).ClientConfig
+					if dataSourceType, dataSourceId, dataSourceConfig, resolve := resolveToDataSourceFunc(configMap, valStr, sdkConfig); resolve {
+						if g.dataSourceTypesMaps[dataSourceType] == nil {
+							g.dataSourceTypesMaps[dataSourceType] = make(resourceJSONMaps)
+						}
+						// add the data source to the export if it hasn't already been added
+						if _, ok := g.dataSourceTypesMaps[dataSourceType][dataSourceId]; !ok {
+							g.dataSourceTypesMaps[dataSourceType][dataSourceId] = dataSourceConfig
+							if g.exportAsHCL {
+								if _, ok := g.resourceTypesHCLBlocks[dataSourceType]; !ok {
+									g.resourceTypesHCLBlocks[dataSourceType] = make(resourceHCLBlock, 0)
+								}
+								g.resourceTypesHCLBlocks[dataSourceType] = append(g.resourceTypesHCLBlocks[dataSourceType], instanceStateToHCLBlock(dataSourceType, dataSourceId, dataSourceConfig, true))
+							}
+						}
+					}
+				}
+			}
 		}
 
 		if attr, ok := attrInUnResolvableAttrs(key, exporter.UnResolvableAttributes); ok {
@@ -1265,24 +1288,6 @@ func (g *GenesysCloudResourceExporter) sanitizeConfigMap(
 			if resolverFunc := refAttrCustomResolver.ResolverFunc; resolverFunc != nil {
 				if err := resolverFunc(configMap, exporters, resourceName); err != nil {
 					log.Printf("An error has occurred while trying invoke a custom resolver for attribute %s: %v", currAttr, err)
-				}
-			}
-			if resolveToDataSourceFunc := refAttrCustomResolver.ResolveToDataSourceFunc; resolveToDataSourceFunc != nil {
-				sdkConfig := g.meta.(*provider.ProviderMeta).ClientConfig
-				if dataSourceType, dataSourceId, dataSourceConfig, resolve := resolveToDataSourceFunc(configMap, sdkConfig); resolve {
-					if g.dataSourceTypesMaps[dataSourceType] == nil {
-						g.dataSourceTypesMaps[dataSourceType] = make(resourceJSONMaps)
-					}
-					// add the data source if it hasn't already been added
-					if _, ok := g.dataSourceTypesMaps[dataSourceType][dataSourceId]; !ok {
-						g.dataSourceTypesMaps[dataSourceType][dataSourceId] = dataSourceConfig
-						if g.exportAsHCL {
-							if _, ok := g.resourceTypesHCLBlocks[dataSourceType]; !ok {
-								g.resourceTypesHCLBlocks[dataSourceType] = make(resourceHCLBlock, 0)
-							}
-							g.resourceTypesHCLBlocks[dataSourceType] = append(g.resourceTypesHCLBlocks[dataSourceType], instanceStateToHCLBlock(dataSourceType, dataSourceId, dataSourceConfig, true))
-						}
-					}
 				}
 			}
 		}

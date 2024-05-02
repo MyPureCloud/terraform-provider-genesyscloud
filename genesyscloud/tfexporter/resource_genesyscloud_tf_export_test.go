@@ -1310,14 +1310,15 @@ data "genesyscloud_script" "default" {
 }
 
 resource "genesyscloud_outbound_campaign" "%s" {
-  name                     = "%s"
-  queue_id                 = "${genesyscloud_routing_queue.queue.id}"
-  caller_address           = "+13335551234"
-  contact_list_id          = "${genesyscloud_outbound_contact_list.%s.id}"
-  dialing_mode             = "preview"
-  script_id                = "${data.genesyscloud_script.default.id}"
-  caller_name              = "Callbacks Test Queue 1"
-  division_id              = "${data.genesyscloud_auth_division_home.home.id}"
+  name            = "%s"
+  queue_id        = "${genesyscloud_routing_queue.queue.id}"
+  caller_address  = "+13335551234"
+  contact_list_id = "${genesyscloud_outbound_contact_list.%s.id}"
+  dialing_mode    = "preview"
+  script_id       = "${data.genesyscloud_script.default.id}"
+  caller_name     = "Callbacks Test Queue 1"
+  division_id     = "${data.genesyscloud_auth_division_home.home.id}"
+  campaign_status = "off"
   dynamic_contact_queueing_settings {
     sort = false
   }
@@ -1327,14 +1328,15 @@ resource "genesyscloud_outbound_campaign" "%s" {
 }
 
 resource "genesyscloud_outbound_campaign" "%s" {
-  name                     = "%s"
-  queue_id                 = "${genesyscloud_routing_queue.queue.id}"
-  caller_address           = "+13335551234"
-  contact_list_id          = "${genesyscloud_outbound_contact_list.%s.id}"
-  dialing_mode             = "preview"
-  script_id                = "${genesyscloud_script.script.id}"
-  caller_name              = "Callbacks Test Queue 1"
-  division_id              = "${data.genesyscloud_auth_division_home.home.id}"
+  name            = "%s"
+  queue_id        = "${genesyscloud_routing_queue.queue.id}"
+  caller_address  = "+13335551234"
+  contact_list_id = "${genesyscloud_outbound_contact_list.%s.id}"
+  dialing_mode    = "preview"
+  script_id       = "${genesyscloud_script.script.id}"
+  caller_name     = "Callbacks Test Queue 1"
+  division_id     = "${data.genesyscloud_auth_division_home.home.id}"
+  campaign_status = "off"
   dynamic_contact_queueing_settings {
     sort = false
   }
