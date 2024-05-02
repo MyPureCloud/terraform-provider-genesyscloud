@@ -194,12 +194,11 @@ func TestAccResourceIntegration(t *testing.T) {
 					resource.TestCheckNoResourceAttr("genesyscloud_integration."+inteResource1, "config.0.credentials.%"),
 					validateIntegrationProperties("genesyscloud_integration."+inteResource1, "genesyscloud_group."+groupResource1, propDisplayType, propSandbox, propURL, ""),
 				),
+				PreConfig: func() {
+					time.Sleep(30 * time.Second)
+				},
 			},
 			{ // Remove the group reference and update intendedState and notes
-				PreConfig: func() {
-					//Wait for user deletion to take place
-					time.Sleep(20 * time.Second)
-				},
 				Config: GenerateIntegrationResource(
 					inteResource1,
 					util.NullValue, //Change to default value
