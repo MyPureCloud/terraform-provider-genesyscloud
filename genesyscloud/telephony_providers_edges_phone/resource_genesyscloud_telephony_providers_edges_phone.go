@@ -42,10 +42,11 @@ func createPhone(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 	if err != nil {
 		return diag.Errorf("failed to create phone %v: %v", *phoneConfig.Name, err)
 	}
+
 	log.Printf("Creating phone %s", *phoneConfig.Name)
+
 	diagErr := util.RetryWhen(util.IsStatus404, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		phone, resp, err := pp.createPhone(ctx, phoneConfig)
-		log.Printf("Completed call to create phone name %s with status code %d, correlation id %s and err %s", *phoneConfig.Name, resp.StatusCode, resp.CorrelationID, err)
 		if err != nil {
 			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create phone %s error: %s", *phoneConfig.Name, err), resp)
 		}
