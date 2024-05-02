@@ -7,6 +7,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -101,6 +102,9 @@ func TestAccResourceOrgAuthorizationPairing(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrPair("genesyscloud_orgauthorization_pairing."+orgAuthorizationPairingResource, "user_ids.0", "genesyscloud_user."+userResource1, "id"),
 				),
+				PreConfig: func() {
+					time.Sleep(30 * time.Second)
+				},
 			},
 			// 2 users
 			{
