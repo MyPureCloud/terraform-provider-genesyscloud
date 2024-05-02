@@ -1,4 +1,13 @@
 @Library('pipeline-library') _
+
+final def CREDENTIALS_MAP = [
+  'tca': 'GENESYSCLOUD_OAUTHCLIENT_ID_AND_SECRET_TCA',
+  'us-east-1': 'GENESYSCLOUD_OAUTHCLIENT_ID_AND_SECRET'
+]
+
+final def region = REGION
+def credentials = CREDENTIALS_MAP.get(region, 'GENESYSCLOUD_OAUTHCLIENT_ID_AND_SECRET')
+
 pipeline {
     agent {
         node {
@@ -7,11 +16,11 @@ pipeline {
     }
 
     environment {
-        CREDENTIALS_ID  = "GENESYSCLOUD_OAUTHCLIENT_ID_AND_SECRET"
+        CREDENTIALS_ID  = "${credentials}"
         GOPATH = "$HOME/go"
         TF_LOG = "DEBUG"
         TF_LOG_PATH = "../test.log"
-		GENESYSCLOUD_REGION = "us-east-1"
+		GENESYSCLOUD_REGION = "${region}"
         GENESYSCLOUD_SDK_DEBUG =  "true"
         GENESYSCLOUD_TOKEN_POOL_SIZE =  20
     }
@@ -26,6 +35,8 @@ pipeline {
         stage('Install Dependencies & Build') {
             steps {
                 echo 'Installing dependencies'
+                echo "${region}"
+                echo "${credentials}"
                 sh 'go version'
                 sh 'go mod download'
                 sh 'go clean -i -cache'

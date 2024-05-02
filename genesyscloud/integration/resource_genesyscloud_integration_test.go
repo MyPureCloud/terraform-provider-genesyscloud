@@ -7,6 +7,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
+	"time"
 
 	integrationCred "terraform-provider-genesyscloud/genesyscloud/integration_credential"
 
@@ -195,6 +196,10 @@ func TestAccResourceIntegration(t *testing.T) {
 				),
 			},
 			{ // Remove the group reference and update intendedState and notes
+				PreConfig: func() {
+					//Wait for user deletion to take place
+					time.Sleep(20 * time.Second)
+				},
 				Config: GenerateIntegrationResource(
 					inteResource1,
 					util.NullValue, //Change to default value

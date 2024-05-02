@@ -5,6 +5,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -69,6 +70,10 @@ func TestAccDataSourceScriptPublishedDefaults(t *testing.T) {
 					callbackName,
 					"",
 				),
+				PreConfig: func() {
+					// Wait for a specified duration for it to get created properly
+					time.Sleep(20 * time.Second)
+				},
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(fmt.Sprintf("data.%s.%s", resourceName, callbackDataSource), "id",
 						callbackId,
@@ -81,6 +86,10 @@ func TestAccDataSourceScriptPublishedDefaults(t *testing.T) {
 					inboundName,
 					"",
 				),
+				PreConfig: func() {
+					// Wait for a specified duration  for it to get created properly
+					time.Sleep(20 * time.Second)
+				},
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(fmt.Sprintf("data.%s.%s", resourceName, inboundDataSource), "id",
 						inboundId,
@@ -93,6 +102,10 @@ func TestAccDataSourceScriptPublishedDefaults(t *testing.T) {
 					outboundName,
 					"",
 				),
+				PreConfig: func() {
+					// Wait for a specified duration for it to get created properly
+					time.Sleep(20 * time.Second)
+				},
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(fmt.Sprintf("data.%s.%s", resourceName, outboundDataSource), "id",
 						outboundId,

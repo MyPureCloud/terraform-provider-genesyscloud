@@ -158,6 +158,10 @@ func TestAccResourceRoutingQueueBasic(t *testing.T) {
 					validateRoutingRules(queueResource1, 0, routingRuleOpMeetsThresh, "90", "30"),
 					validateRoutingRules(queueResource1, 1, routingRuleOpAny, "45", "15"),
 				),
+				PreConfig: func() {
+					// Wait for a specified duration
+					time.Sleep(20 * time.Second)
+				},
 			},
 			{
 				// Import/Read
