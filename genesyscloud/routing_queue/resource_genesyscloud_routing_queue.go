@@ -142,9 +142,9 @@ func readQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 		currentQueue, resp, getErr := proxy.getRoutingQueueById(ctx, d.Id())
 		if getErr != nil {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(fmt.Errorf("Failed to read queue %s: %s", d.Id(), getErr))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read queue %s | error: %s", d.Id(), getErr), resp))
 			}
-			return retry.NonRetryableError(fmt.Errorf("Failed to read queue %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read queue %s | error: %s", d.Id(), getErr), resp))
 		}
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceRoutingQueue())
@@ -363,9 +363,9 @@ func deleteQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 				log.Printf("Queue %s deleted", name)
 				return nil
 			}
-			return retry.NonRetryableError(fmt.Errorf("Error deleting queue %s: %s", d.Id(), err))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Error deleting queue %s | error: %s", d.Id(), err), resp))
 		}
-		return retry.RetryableError(fmt.Errorf("Queue %s still exists", d.Id()))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Queue %s still exists", d.Id()), resp))
 	})
 }
 

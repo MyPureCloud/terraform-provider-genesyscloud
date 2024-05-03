@@ -126,13 +126,13 @@ func getQueueByName(ctx context.Context, routingApi *platformclientv2.RoutingApi
 	diag := util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
 		for pageNum := 1; ; pageNum++ {
 			const pageSize = 100
-			queues, _, getErr := routingApi.GetRoutingQueues(pageNum, pageSize, "", name, nil, nil, nil, "", false)
+			queues, resp, getErr := routingApi.GetRoutingQueues(pageNum, pageSize, "", name, nil, nil, nil, "", false)
 			if getErr != nil {
-				return retry.NonRetryableError(fmt.Errorf("error requesting queue %s: %s", name, getErr))
+				return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("error requesting queue %s | error %s", name, getErr), resp))
 			}
 
 			if queues.Entities == nil || len(*queues.Entities) == 0 {
-				return retry.RetryableError(fmt.Errorf("no routing queues found with name %s", name))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("no routing queues found with name %s", name), resp))
 			}
 
 			for _, queue := range *queues.Entities {

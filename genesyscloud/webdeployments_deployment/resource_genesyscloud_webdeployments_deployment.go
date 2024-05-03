@@ -52,15 +52,30 @@ func createWebDeployment(ctx context.Context, d *schema.ResourceData, meta inter
 	log.Printf("Creating web deployment %s", name)
 
 	configId := d.Get("configuration.0.id").(string)
-	configVersion := d.Get("configuration.0.version").(string)
+	inputConfigVersion := d.Get("configuration.0.version").(string)
 
 	flow := util.BuildSdkDomainEntityRef(d, "flow_id")
+
+	configVersion, versionList, er := wd.determineLatestVersion(ctx, configId)
+	if er != nil {
+		return er
+	}
+	if inputConfigVersion == "" {
+		inputConfigVersion = configVersion
+	}
+
+	exists := util.StringExists(inputConfigVersion, versionList)
+	if !exists {
+		log.Printf("For Web deployment Resource %v, Configuration Version Input %v does not match with any existing versions %v",
+			name, inputConfigVersion, versionList)
+		return util.BuildDiagnosticError(resourceName, fmt.Sprintf("For Web Deployment Resource %v, Configuration Version Input %v does not match with any existing versions %v", name, inputConfigVersion, versionList), nil)
+	}
 
 	inputDeployment := platformclientv2.Webdeployment{
 		Name: &name,
 		Configuration: &platformclientv2.Webdeploymentconfigurationversionentityref{
 			Id:      &configId,
-			Version: &configVersion,
+			Version: &inputConfigVersion,
 		},
 		AllowAllDomains: &allowAllDomains,
 		AllowedDomains:  &allowedDomains,
@@ -78,9 +93,9 @@ func createWebDeployment(ctx context.Context, d *schema.ResourceData, meta inter
 		deployment, resp, err := wd.createWebDeployment(ctx, inputDeployment)
 		if err != nil {
 			if util.IsStatus400(resp) {
-				return retry.RetryableError(fmt.Errorf("Failed to create web deployment %s: %s", name, err))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to create web deployment %s | error: %s", name, err), resp))
 			}
-			return retry.NonRetryableError(fmt.Errorf("Failed to create web deployment %s: %s", name, err))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to create web deployment %s | error: %s", name, err), resp))
 		}
 
 		d.SetId(*deployment.Id)
@@ -107,16 +122,16 @@ func waitForDeploymentToBeActive(ctx context.Context, sdkConfig *platformclientv
 		deployment, resp, err := wd.getWebDeployment(ctx, id)
 		if err != nil {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(fmt.Errorf("Error verifying active status for new web deployment %s: %s", id, err))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Error verifying active status for new web deployment %s | error: %s", id, err), resp))
 			}
-			return retry.NonRetryableError(fmt.Errorf("Error verifying active status for new web deployment %s: %s", id, err))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Error verifying active status for new web deployment %s | error: %s", id, err), resp))
 		}
 
 		if *deployment.Status == "Active" {
 			return nil
 		}
 
-		return retry.RetryableError(fmt.Errorf("Web deployment %s not active yet. Status: %s", id, *deployment.Status))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Web deployment %s not active yet | Status: %s", id, *deployment.Status), resp))
 	})
 }
 
@@ -129,9 +144,9 @@ func readWebDeployment(ctx context.Context, d *schema.ResourceData, meta interfa
 		deployment, resp, getErr := wd.getWebDeployment(ctx, d.Id())
 		if getErr != nil {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(fmt.Errorf("Failed to read web deployment %s: %s", d.Id(), getErr))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read web deployment %s | error: %s", d.Id(), getErr), resp))
 			}
-			return retry.NonRetryableError(fmt.Errorf("Failed to read web deployment %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read web deployment %s | error: %s", d.Id(), getErr), resp))
 		}
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceWebDeployment())
@@ -177,10 +192,14 @@ func updateWebDeployment(ctx context.Context, d *schema.ResourceData, meta inter
 	log.Printf("Updating web deployment %s", name)
 
 	configId := d.Get("configuration.0.id").(string)
-	configVersion := d.Get("configuration.0.version").(string)
 
 	flow := util.BuildSdkDomainEntityRef(d, "flow_id")
 
+	// always update to latest version of configuration during update of an existing webdeployment
+	configVersion, _, er := wd.determineLatestVersion(ctx, configId)
+	if err != nil {
+		return er
+	}
 	inputDeployment := platformclientv2.Webdeployment{
 		Name: &name,
 		Configuration: &platformclientv2.Webdeploymentconfigurationversionentityref{
@@ -204,9 +223,9 @@ func updateWebDeployment(ctx context.Context, d *schema.ResourceData, meta inter
 		_, resp, err := wd.updateWebDeployment(ctx, d.Id(), inputDeployment)
 		if err != nil {
 			if util.IsStatus400(resp) {
-				return retry.RetryableError(fmt.Errorf("Error updating web deployment %s: %s", name, err))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Error updating web deployment %s | error: %s", name, err), resp))
 			}
-			return retry.NonRetryableError(fmt.Errorf("Error updating web deployment %s: %s", name, err))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Error updating web deployment %s | error: %s", name, err), resp))
 		}
 
 		return nil
@@ -233,7 +252,7 @@ func deleteWebDeployment(ctx context.Context, d *schema.ResourceData, meta inter
 	log.Printf("Deleting web deployment %s", name)
 	resp, err := wd.deleteWebDeployment(ctx, d.Id())
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete webb deployment %s error: %s", name, err), resp)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete web deployment %s error: %s", name, err), resp)
 	}
 
 	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
@@ -243,9 +262,8 @@ func deleteWebDeployment(ctx context.Context, d *schema.ResourceData, meta inter
 				log.Printf("Deleted web deployment %s", d.Id())
 				return nil
 			}
-			return retry.NonRetryableError(fmt.Errorf("Error deleting web deployment %s: %s", d.Id(), err))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Error deleting web deployment %s | error: %s", d.Id(), err), resp))
 		}
-
-		return retry.RetryableError(fmt.Errorf("Web deployment %s still exists", d.Id()))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Web deployment %s still exists", d.Id()), resp))
 	})
 }

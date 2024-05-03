@@ -142,9 +142,9 @@ func readIdpGeneric(ctx context.Context, d *schema.ResourceData, meta interface{
 		if getErr != nil {
 			if util.IsStatus404(resp) {
 				createIdpGeneric(ctx, d, meta)
-				return retry.RetryableError(fmt.Errorf("Failed to read IDP Generic: %s", getErr))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_idp_generic", fmt.Sprintf("Failed to read IDP Generic: %s", getErr), resp))
 			}
-			return retry.NonRetryableError(fmt.Errorf("Failed to read IDP Generic: %s", getErr))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_idp_generic", fmt.Sprintf("Failed to read IDP Generic: %s", getErr), resp))
 		}
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceIdpGeneric())
@@ -269,8 +269,8 @@ func deleteIdpGeneric(ctx context.Context, d *schema.ResourceData, meta interfac
 				log.Printf("Deleted IDP Generic")
 				return nil
 			}
-			return retry.NonRetryableError(fmt.Errorf("Error deleting IDP Generic: %s", err))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_idp_generic", fmt.Sprintf("Error deleting IDP Generic: %s", err), resp))
 		}
-		return retry.RetryableError(fmt.Errorf("IDP Generic still exists"))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_idp_generic", fmt.Sprintf("IDP Generic still exists"), resp))
 	})
 }

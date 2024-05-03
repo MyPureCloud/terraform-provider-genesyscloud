@@ -195,9 +195,9 @@ func readLocation(ctx context.Context, d *schema.ResourceData, meta interface{})
 		location, resp, getErr := locationsAPI.GetLocation(d.Id(), nil)
 		if getErr != nil {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(fmt.Errorf("Failed to read location %s: %s", d.Id(), getErr))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_location", fmt.Sprintf("Failed to read location %s | error: %s", d.Id(), getErr), resp))
 			}
-			return retry.NonRetryableError(fmt.Errorf("Failed to read location %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_location", fmt.Sprintf("Failed to read location %s | error: %s", d.Id(), getErr), resp))
 		}
 
 		if location.State != nil && *location.State == "deleted" {
@@ -307,7 +307,7 @@ func deleteLocation(ctx context.Context, d *schema.ResourceData, meta interface{
 				log.Printf("Deleted location %s", d.Id())
 				return nil
 			}
-			return retry.NonRetryableError(fmt.Errorf("Error deleting location %s: %s", d.Id(), err))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_location", fmt.Sprintf("Error deleting location %s | error: %s", d.Id(), err), resp))
 		}
 
 		if location.State != nil && *location.State == "deleted" {
@@ -316,7 +316,7 @@ func deleteLocation(ctx context.Context, d *schema.ResourceData, meta interface{
 			return nil
 		}
 
-		return retry.RetryableError(fmt.Errorf("Location %s still exists", d.Id()))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_location", fmt.Sprintf("Location %s still exists", d.Id()), resp))
 	})
 }
 

@@ -209,9 +209,9 @@ func readRoutingUtilization(ctx context.Context, d *schema.ResourceData, meta in
 		response, err := apiClient.CallAPI(path, "GET", nil, headerParams, nil, nil, "", nil)
 		if err != nil {
 			if util.IsStatus404(response) {
-				return retry.RetryableError(fmt.Errorf("Failed to read Routing Utilization: %s", err))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_routing_utilization", fmt.Sprintf("Failed to read Routing Utilization: %s", err), response))
 			}
-			return retry.NonRetryableError(fmt.Errorf("Failed to read Routing Utilization: %s", err))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_routing_utilization", fmt.Sprintf("Failed to read Routing Utilization: %s", err), response))
 		}
 
 		orgUtilization := &OrgUtilizationWithLabels{}

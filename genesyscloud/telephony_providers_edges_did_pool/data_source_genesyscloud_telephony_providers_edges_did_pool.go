@@ -2,6 +2,7 @@ package telephony_providers_edges_did_pool
 
 import (
 	"context"
+	"fmt"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
@@ -21,12 +22,12 @@ func dataSourceDidPoolRead(ctx context.Context, d *schema.ResourceData, m interf
 	didPoolEndPhoneNumber := d.Get("end_phone_number").(string)
 
 	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
-		id, retryable, _, err := proxy.getTelephonyDidPoolIdByStartAndEndNumber(ctx, didPoolStartPhoneNumber, didPoolEndPhoneNumber)
+		id, retryable, resp, err := proxy.getTelephonyDidPoolIdByStartAndEndNumber(ctx, didPoolStartPhoneNumber, didPoolEndPhoneNumber)
 		if err != nil && !retryable {
-			return retry.NonRetryableError(err)
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to get telephony DID pool %s", err), resp))
 		}
 		if retryable {
-			return retry.RetryableError(err)
+			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to get telephony DID pool %s", err), resp))
 		}
 		d.SetId(id)
 		return nil

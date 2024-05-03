@@ -120,9 +120,9 @@ func readRoutingUtilizationLabel(ctx context.Context, d *schema.ResourceData, me
 		label, resp, getErr := routingApi.GetRoutingUtilizationLabel(d.Id())
 		if getErr != nil {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(fmt.Errorf("Failed to read label %s: %s", d.Id(), getErr))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_routing_utilization_label", fmt.Sprintf("Failed to read label %s | error: %s", d.Id(), getErr), resp))
 			}
-			return retry.NonRetryableError(fmt.Errorf("Failed to read label %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_routing_utilization_label", fmt.Sprintf("Failed to read label %s | error: %s", d.Id(), getErr), resp))
 		}
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceRoutingUtilizationLabel())
@@ -153,9 +153,9 @@ func deleteRoutingUtilizationLabel(ctx context.Context, d *schema.ResourceData, 
 				log.Printf("Deleted Routing label %s", d.Id())
 				return nil
 			}
-			return retry.NonRetryableError(fmt.Errorf("Error deleting Routing label %s: %s", d.Id(), err))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_routing_utilization_label", fmt.Sprintf("Error deleting Routing label %s: %s", d.Id(), err), resp))
 		}
 
-		return retry.RetryableError(fmt.Errorf("Routing label %s still exists", d.Id()))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_routing_utilization_label", fmt.Sprintf("Routing label %s still exists", d.Id()), resp))
 	})
 }

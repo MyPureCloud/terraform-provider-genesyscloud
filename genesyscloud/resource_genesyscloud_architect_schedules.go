@@ -172,9 +172,9 @@ func readArchitectSchedules(ctx context.Context, d *schema.ResourceData, meta in
 		schedule, resp, getErr := archAPI.GetArchitectSchedule(d.Id())
 		if getErr != nil {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(fmt.Errorf("Failed to read schedule %s: %s", d.Id(), getErr))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_architect_schedules", fmt.Sprintf("Failed to read schedule %s | error: %s", d.Id(), getErr), resp))
 			}
-			return retry.NonRetryableError(fmt.Errorf("Failed to read schedule %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_architect_schedules", fmt.Sprintf("Failed to read schedule %s | error: %s", d.Id(), getErr), resp))
 		}
 
 		Start := new(string)
@@ -297,7 +297,7 @@ func deleteArchitectSchedules(ctx context.Context, d *schema.ResourceData, meta 
 				log.Printf("Deleted schedule %s", d.Id())
 				return nil
 			}
-			return retry.NonRetryableError(fmt.Errorf("Error deleting schedule %s: %s", d.Id(), err))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_architect_schedules", fmt.Sprintf("Error deleting schedule %s | error: %s", d.Id(), err), resp))
 		}
 
 		if schedule.State != nil && *schedule.State == "deleted" {
@@ -306,7 +306,7 @@ func deleteArchitectSchedules(ctx context.Context, d *schema.ResourceData, meta 
 			return nil
 		}
 
-		return retry.RetryableError(fmt.Errorf("Schedule %s still exists", d.Id()))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_architect_schedules", fmt.Sprintf("Schedule %s still exists", d.Id()), resp))
 	})
 }
 
