@@ -160,6 +160,9 @@ func TestAccResourceOrgAuthorizationPairing(t *testing.T) {
 						"genesyscloud_group."+groupResource2, "id"),
 					resource.TestCheckResourceAttr("genesyscloud_orgauthorization_pairing."+orgAuthorizationPairingResource, "group_ids.#", "2"),
 				),
+				PreConfig: func() {
+					time.Sleep(30 * time.Second)
+				},
 			},
 			{
 				// Import/Read
