@@ -166,7 +166,7 @@ func getAllEvaluationForms(_ context.Context, clientConfig *platformclientv2.Con
 
 	for pageNum := 1; ; pageNum++ {
 		const pageSize = 100
-		evaluationForms, resp, getErr := qualityAPI.GetQualityFormsEvaluations(pageSize, pageNum, "", "", "", "", "", "")
+		evaluationForms, resp, getErr := qualityAPI.GetQualityFormsEvaluations(pageSize, pageNum, "", "", "", "publishHistory", "", "")
 		if getErr != nil {
 			return nil, util.BuildAPIDiagnosticError("genesyscloud_quality_forms_evaluation", fmt.Sprintf("Failed to get page of evaluation forms error: %s", getErr), resp)
 		}
@@ -177,6 +177,13 @@ func getAllEvaluationForms(_ context.Context, clientConfig *platformclientv2.Con
 
 		for _, evaluationForm := range *evaluationForms.Entities {
 			resources[*evaluationForm.Id] = &resourceExporter.ResourceMeta{Name: *evaluationForm.Name}
+
+			// TODO: Remove this when properly exporting only latest version
+			if evaluationForm.PublishedVersions != nil && evaluationForm.PublishedVersions.Entities != nil {
+				for _, publishedVersion := range *evaluationForm.PublishedVersions.Entities {
+					resources[*publishedVersion.Id] = &resourceExporter.ResourceMeta{Name: *publishedVersion.Name}
+				}
+			}
 		}
 	}
 
@@ -283,11 +290,21 @@ func readEvaluationForm(ctx context.Context, d *schema.ResourceData, meta interf
 		}
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceEvaluationForm())
+
+		// TODO: Option 2 - Use contextID to set based on latest version
+		publishedVersions, _, err := qualityAPI.GetQualityFormsEvaluationsBulkContexts([]string{*evaluationForm.ContextId})
+		if err != nil {
+			return nil
+		}
+
+		if len(publishedVersions) > 0 {
+			_ = d.Set("published", true)
+		} else {
+			_ = d.Set("published", false)
+		}
+
 		if evaluationForm.Name != nil {
 			d.Set("name", *evaluationForm.Name)
-		}
-		if evaluationForm.Published != nil {
-			d.Set("published", *evaluationForm.Published)
 		}
 		if evaluationForm.QuestionGroups != nil {
 			d.Set("question_groups", flattenQuestionGroups(evaluationForm.QuestionGroups))
