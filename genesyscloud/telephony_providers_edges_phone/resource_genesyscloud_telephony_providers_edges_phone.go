@@ -86,31 +86,31 @@ func readPhone(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 		}
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourcePhone())
-		d.Set("name", *currentPhone.Name)
-		d.Set("state", *currentPhone.State)
-		d.Set("site_id", *currentPhone.Site.Id)
-		d.Set("phone_base_settings_id", *currentPhone.PhoneBaseSettings.Id)
-		d.Set("line_base_settings_id", *currentPhone.LineBaseSettings.Id)
+		_ = d.Set("name", *currentPhone.Name)
+		_ = d.Set("state", *currentPhone.State)
+		_ = d.Set("site_id", *currentPhone.Site.Id)
+		_ = d.Set("phone_base_settings_id", *currentPhone.PhoneBaseSettings.Id)
+		_ = d.Set("line_base_settings_id", *currentPhone.LineBaseSettings.Id)
 
 		if currentPhone.PhoneMetaBase != nil {
-			d.Set("phone_meta_base_id", *currentPhone.PhoneMetaBase.Id)
+			_ = d.Set("phone_meta_base_id", *currentPhone.PhoneMetaBase.Id)
 		}
 
 		if currentPhone.WebRtcUser != nil {
-			d.Set("web_rtc_user_id", *currentPhone.WebRtcUser.Id)
+			_ = d.Set("web_rtc_user_id", *currentPhone.WebRtcUser.Id)
 		}
 
 		if currentPhone.Lines != nil {
-			d.Set("line_addresses", flattenPhoneLines(currentPhone.Lines))
+			_ = d.Set("line_addresses", flattenPhoneLines(currentPhone.Lines))
 		}
 
-		d.Set("properties", nil)
+		_ = d.Set("properties", nil)
 		if currentPhone.Properties != nil {
 			properties, err := util.FlattenTelephonyProperties(currentPhone.Properties)
 			if err != nil {
 				return retry.NonRetryableError(fmt.Errorf("%v", err))
 			}
-			d.Set("properties", properties)
+			_ = d.Set("properties", properties)
 		}
 
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "capabilities", currentPhone.Capabilities, flattenPhoneCapabilities)
