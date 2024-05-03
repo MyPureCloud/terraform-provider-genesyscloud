@@ -132,7 +132,7 @@ func deleteEdgeGroup(ctx context.Context, d *schema.ResourceData, meta interface
 			return nil
 		}
 
-		return retry.RetryableError(fmt.Errorf("Edge group %s still exists", d.Id()))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Edge group %s still exists", d.Id()), resp))
 	})
 }
 

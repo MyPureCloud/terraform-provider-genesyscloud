@@ -31,6 +31,7 @@ func dataSourceJourneyOutcome() *schema.Resource {
 func dataSourceJourneyOutcomeRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	sdkConfig := m.(*provider.ProviderMeta).ClientConfig
 	journeyApi := platformclientv2.NewJourneyApiWithConfig(sdkConfig)
+	var response *platformclientv2.APIResponse
 
 	name := d.Get("name").(string)
 
@@ -42,6 +43,8 @@ func dataSourceJourneyOutcomeRead(ctx context.Context, d *schema.ResourceData, m
 			if getErr != nil {
 				return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_journey_outcome", fmt.Sprintf("failed to get page of journey outcomes: %v", getErr), resp))
 			}
+
+			response = resp
 
 			if journeyOutcomes.Entities == nil || len(*journeyOutcomes.Entities) == 0 {
 				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_journey_outcome", fmt.Sprintf("no journey outcome found with name %s", name), resp))
@@ -56,6 +59,6 @@ func dataSourceJourneyOutcomeRead(ctx context.Context, d *schema.ResourceData, m
 
 			pageCount = *journeyOutcomes.PageCount
 		}
-		return retry.RetryableError(fmt.Errorf("no journey outcome found with name %s", name))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_journey_outcome", fmt.Sprintf("no journey outcome found with name %s", name), response))
 	})
 }

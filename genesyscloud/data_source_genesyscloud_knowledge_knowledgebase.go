@@ -58,7 +58,7 @@ func dataSourceKnowledgeKnowledgebaseRead(ctx context.Context, d *schema.Resourc
 		noPublishedEntities := publishedKnowledgeBases.Entities == nil || len(*publishedKnowledgeBases.Entities) == 0
 		noUnpublishedEntities := unpublishedKnowledgeBases.Entities == nil || len(*unpublishedKnowledgeBases.Entities) == 0
 		if noPublishedEntities && noUnpublishedEntities {
-			return retry.RetryableError(fmt.Errorf("no knowledge bases found with name %s", name))
+			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_knowledge_knowledgebase", fmt.Sprintf("no knowledge bases found with name %s", name), publishedResp))
 		}
 
 		// prefer published knowledge base

@@ -31,6 +31,7 @@ func dataSourceJourneySegment() *schema.Resource {
 func dataSourceJourneySegmentRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	sdkConfig := m.(*provider.ProviderMeta).ClientConfig
 	journeyApi := platformclientv2.NewJourneyApiWithConfig(sdkConfig)
+	var response *platformclientv2.APIResponse
 
 	name := d.Get("name").(string)
 
@@ -42,6 +43,8 @@ func dataSourceJourneySegmentRead(ctx context.Context, d *schema.ResourceData, m
 			if getErr != nil {
 				return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_journey_segment", fmt.Sprintf("failed to get page of journey segments: %v", getErr), resp))
 			}
+
+			response = resp
 
 			if journeySegments.Entities == nil || len(*journeySegments.Entities) == 0 {
 				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_journey_segment", fmt.Sprintf("no journey segment found with name %s", name), resp))
@@ -56,6 +59,6 @@ func dataSourceJourneySegmentRead(ctx context.Context, d *schema.ResourceData, m
 
 			pageCount = *journeySegments.PageCount
 		}
-		return retry.RetryableError(fmt.Errorf("no journey segment found with name %s", name))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_journey_segment", fmt.Sprintf("no journey segment found with name %s", name), response))
 	})
 }

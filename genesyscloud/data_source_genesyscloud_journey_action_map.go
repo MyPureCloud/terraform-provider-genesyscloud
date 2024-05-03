@@ -31,6 +31,7 @@ func dataSourceJourneyActionMap() *schema.Resource {
 func dataSourceJourneyActionMapRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	sdkConfig := m.(*provider.ProviderMeta).ClientConfig
 	journeyApi := platformclientv2.NewJourneyApiWithConfig(sdkConfig)
+	var response *platformclientv2.APIResponse
 
 	name := d.Get("name").(string)
 
@@ -42,6 +43,7 @@ func dataSourceJourneyActionMapRead(ctx context.Context, d *schema.ResourceData,
 			if getErr != nil {
 				return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_journey_action_map", fmt.Sprintf("failed to get page of journey action maps: %v", getErr), resp))
 			}
+			response = resp
 
 			if journeyActionMaps.Entities == nil || len(*journeyActionMaps.Entities) == 0 {
 				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_journey_action_map", fmt.Sprintf("no journey action map found with name %s", name), resp))
@@ -56,6 +58,6 @@ func dataSourceJourneyActionMapRead(ctx context.Context, d *schema.ResourceData,
 
 			pageCount = *journeyActionMaps.PageCount
 		}
-		return retry.RetryableError(fmt.Errorf("no journey action map found with name %s", name))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_journey_action_map", fmt.Sprintf("no journey action map found with name %s", name), response))
 	})
 }

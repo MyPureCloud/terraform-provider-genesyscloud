@@ -182,6 +182,6 @@ func deletePhone(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 			return nil
 		}
 
-		return retry.RetryableError(fmt.Errorf("phone %s still exists", d.Id()))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("phone %s still exists", d.Id()), resp))
 	})
 }

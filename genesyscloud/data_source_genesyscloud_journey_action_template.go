@@ -31,6 +31,7 @@ func dataSourceJourneyActionTemplate() *schema.Resource {
 func dataSourceJourneyActionTemplateRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	sdkConfig := m.(*provider.ProviderMeta).ClientConfig
 	journeyApi := platformclientv2.NewJourneyApiWithConfig(sdkConfig)
+	var response *platformclientv2.APIResponse
 
 	name := d.Get("name").(string)
 
@@ -42,6 +43,8 @@ func dataSourceJourneyActionTemplateRead(ctx context.Context, d *schema.Resource
 			if getErr != nil {
 				return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_journey_action_template", fmt.Sprintf("failed to get page of journey action template: %v", getErr), resp))
 			}
+
+			response = resp
 
 			if journeyActionTemplates.Entities == nil || len(*journeyActionTemplates.Entities) == 0 {
 				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_journey_action_template", fmt.Sprintf("no journey action template found with name %s", name), resp))
@@ -56,6 +59,6 @@ func dataSourceJourneyActionTemplateRead(ctx context.Context, d *schema.Resource
 
 			pageCount = *journeyActionTemplates.PageCount
 		}
-		return retry.RetryableError(fmt.Errorf("no journey action template found with name %s", name))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_journey_action_template", fmt.Sprintf("no journey action template found with name %s", name), response))
 	})
 }

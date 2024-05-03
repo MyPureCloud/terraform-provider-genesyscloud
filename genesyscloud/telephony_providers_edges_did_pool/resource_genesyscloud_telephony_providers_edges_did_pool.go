@@ -165,6 +165,6 @@ func deleteDidPool(ctx context.Context, d *schema.ResourceData, meta interface{}
 			log.Printf("Deleted DID pool %s", d.Id())
 			return nil
 		}
-		return retry.RetryableError(fmt.Errorf("DID pool %s still exists", d.Id()))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("DID pool %s still exists", d.Id()), resp))
 	})
 }
