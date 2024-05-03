@@ -1217,9 +1217,7 @@ func getRoutingQueueMembers(queueID string, memberBy string, sdkConfig *platform
 			}
 			return members, nil
 		}
-		for _, user := range *users.Entities {
-			members = append(members, user)
-		}
+		members = append(members, *users.Entities...)
 	}
 }
 
@@ -1243,8 +1241,8 @@ func sdkGetRoutingQueueMembers(queueID, memberBy, name string, pageNumber, pageS
 		headerParams["Authorization"] = "Bearer " + api.Configuration.AccessToken
 	}
 	// add default headers if any
-	for key := range api.Configuration.DefaultHeader {
-		headerParams[key] = api.Configuration.DefaultHeader[key]
+	for key, val := range api.Configuration.DefaultHeader {
+		headerParams[key] = val
 	}
 
 	queryParams["pageSize"] = apiClient.ParameterToString(pageSize, "")
