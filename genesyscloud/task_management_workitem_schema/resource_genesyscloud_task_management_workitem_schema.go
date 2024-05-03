@@ -86,16 +86,16 @@ func readTaskManagementWorkitemSchema(ctx context.Context, d *schema.ResourceDat
 		schema, resp, getErr := proxy.getTaskManagementWorkitemSchemaById(ctx, d.Id())
 		if getErr != nil {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(fmt.Errorf("failed to read task management workitem schema %s: %s", d.Id(), getErr))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read task management workitem schema %s | error: %s", d.Id(), getErr), resp))
 			}
-			return retry.NonRetryableError(fmt.Errorf("failed to read task management workitem schema %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read task management workitem schema %s | error: %s", d.Id(), getErr), resp))
 		}
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceTaskManagementWorkitemSchema())
 
 		schemaProps, err := json.Marshal(schema.JsonSchema.Properties)
 		if err != nil {
-			return retry.NonRetryableError(fmt.Errorf("error in reading json schema properties of %s: %v", *schema.Name, err))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("error in reading json schema properties of %s | error: %v", *schema.Name, err), resp))
 		}
 		var schemaPropsPtr *string
 		if string(schemaProps) != util.NullValue {
@@ -156,13 +156,13 @@ func deleteTaskManagementWorkitemSchema(ctx context.Context, d *schema.ResourceD
 				log.Printf("Deleted task management workitem schema %s", d.Id())
 				return nil
 			}
-			return retry.NonRetryableError(fmt.Errorf("error deleting task management workitem schema %s: %s", d.Id(), err))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("error deleting task management workitem schema %s | error: %s", d.Id(), err), resp))
 		}
 
 		if isDeleted {
 			log.Printf("Deleted task management workitem schema %s", d.Id())
 			return nil
 		}
-		return retry.RetryableError(fmt.Errorf("task management workitem schema %s still exists", d.Id()))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("task management workitem schema %s still exists", d.Id()), resp))
 	})
 }

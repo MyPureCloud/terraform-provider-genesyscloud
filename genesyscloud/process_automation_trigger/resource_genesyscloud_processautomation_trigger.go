@@ -213,9 +213,9 @@ func readProcessAutomationTrigger(ctx context.Context, d *schema.ResourceData, m
 		trigger, resp, getErr := getProcessAutomationTrigger(d.Id(), integAPI)
 		if getErr != nil {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(fmt.Errorf("Failed to read process automation trigger %s: %s", d.Id(), getErr))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read process automation trigger %s | error: %s", d.Id(), getErr), resp))
 			}
-			return retry.NonRetryableError(fmt.Errorf("Failed to process read automation trigger %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to process read automation trigger %s | error: %s", d.Id(), getErr), resp))
 		}
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceProcessAutomationTrigger())
@@ -339,7 +339,7 @@ func removeProcessAutomationTrigger(ctx context.Context, d *schema.ResourceData,
 				log.Printf("process automation trigger already deleted %s", d.Id())
 				return nil
 			}
-			return retry.RetryableError(fmt.Errorf("process automation trigger %s still exists", d.Id()))
+			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("process automation trigger %s still exists", d.Id()), resp))
 		}
 		return nil
 	})

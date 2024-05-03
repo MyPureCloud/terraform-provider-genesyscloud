@@ -99,9 +99,9 @@ func readAuthRole(ctx context.Context, d *schema.ResourceData, meta interface{})
 		role, proxyResponse, getErr := proxy.getAuthRoleById(ctx, d.Id())
 		if getErr != nil {
 			if util.IsStatus404(proxyResponse) {
-				return retry.RetryableError(fmt.Errorf("Failed to read role %s: %s", d.Id(), getErr))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read role %s | error: %s", d.Id(), getErr), proxyResponse))
 			}
-			return retry.NonRetryableError(fmt.Errorf("Failed to read role %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read role %s | error: %s", d.Id(), getErr), proxyResponse))
 		}
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceAuthRole())
@@ -203,8 +203,8 @@ func deleteAuthRole(ctx context.Context, d *schema.ResourceData, meta interface{
 				log.Printf("Deleted role %s", d.Id())
 				return nil
 			}
-			return retry.NonRetryableError(fmt.Errorf("Error deleting role %s: %s", d.Id(), err))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Error deleting role %s | error: %s", d.Id(), err), proxyResponse))
 		}
-		return retry.RetryableError(fmt.Errorf("Role %s still exists", d.Id()))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Role %s still exists", d.Id()), proxyResponse))
 	})
 }

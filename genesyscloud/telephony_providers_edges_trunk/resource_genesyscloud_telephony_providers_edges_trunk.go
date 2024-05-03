@@ -131,9 +131,9 @@ func readTrunk(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 		trunk, resp, getErr := tp.getTrunkById(ctx, d.Id())
 		if getErr != nil {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(fmt.Errorf("Failed to read trunk %s: %s", d.Id(), getErr))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read trunk %s | error: %s", d.Id(), getErr), resp))
 			}
-			return retry.NonRetryableError(fmt.Errorf("Failed to read trunk %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read trunk %s | error: %s", d.Id(), getErr), resp))
 		}
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceTrunk())
@@ -182,9 +182,9 @@ func getAllTrunks(ctx context.Context, sdkConfig *platformclientv2.Configuration
 			trunks, resp, getErr := tp.getAllTrunks(ctx, pageNum, pageSize)
 			if getErr != nil {
 				if util.IsStatus404(resp) {
-					return retry.RetryableError(fmt.Errorf("Failed to get page of trunks: %v", getErr))
+					return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to get page of trunks: %v", getErr), resp))
 				}
-				return retry.NonRetryableError(fmt.Errorf("Failed to get page of trunks: %v", getErr))
+				return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to get page of trunks: %v", getErr), resp))
 			}
 
 			if trunks.Entities == nil || len(*trunks.Entities) == 0 {

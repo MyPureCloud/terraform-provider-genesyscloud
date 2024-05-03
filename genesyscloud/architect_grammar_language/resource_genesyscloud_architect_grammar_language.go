@@ -72,11 +72,10 @@ func readArchitectGrammarLanguage(ctx context.Context, d *schema.ResourceData, m
 		language, resp, getErr := proxy.getArchitectGrammarLanguageById(ctx, grammarId, languageCode)
 
 		if getErr != nil {
-			apiDiagErr := util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to read Architect Grammar Language %s: %s", d.Id(), getErr), resp)
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(fmt.Errorf("%v", apiDiagErr))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read Architect Grammar Language %s: %s", d.Id(), getErr), resp))
 			}
-			return retry.NonRetryableError(fmt.Errorf("%v", apiDiagErr))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read Architect Grammar Language %s: %s", d.Id(), getErr), resp))
 		}
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceArchitectGrammarLanguage())
@@ -139,9 +138,8 @@ func deleteArchitectGrammarLanguage(ctx context.Context, d *schema.ResourceData,
 				log.Printf("Deleted Grammar Language %s", d.Id())
 				return nil
 			}
-			apiDiagErr := util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Error deleting grammar language %s: %s", d.Id(), err), resp)
-			return retry.NonRetryableError(fmt.Errorf("%v", apiDiagErr))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("grammar Language %s still exists", d.Id()), resp))
 		}
-		return retry.RetryableError(fmt.Errorf("grammar Language %s still exists", d.Id()))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("grammar Language %s still exists", d.Id()), resp))
 	})
 }

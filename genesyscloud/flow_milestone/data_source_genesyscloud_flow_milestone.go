@@ -28,11 +28,11 @@ func dataSourceFlowMilestoneRead(ctx context.Context, d *schema.ResourceData, me
 		flowMilestoneId, retryable, resp, err := proxy.getFlowMilestoneIdByName(ctx, name)
 
 		if err != nil && !retryable {
-			return retry.NonRetryableError(fmt.Errorf("Error searching flow milestone %s: %s %v", name, err, resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Error searching flow milestone %s | error: %s", name, err), resp))
 		}
 
 		if retryable {
-			return retry.RetryableError(fmt.Errorf("No flow milestone found with name %s", name))
+			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("No flow milestone found with name %s", name), resp))
 		}
 
 		d.SetId(flowMilestoneId)

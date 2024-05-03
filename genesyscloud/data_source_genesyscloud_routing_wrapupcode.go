@@ -36,14 +36,14 @@ func dataSourceRoutingWrapupcodeRead(ctx context.Context, d *schema.ResourceData
 
 	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
 		for pageNum := 1; ; pageNum++ {
-			wrapCode, _, getErr := routingAPI.GetRoutingWrapupcodes(100, pageNum, "", "", name, []string{}, []string{})
+			wrapCode, resp, getErr := routingAPI.GetRoutingWrapupcodes(100, pageNum, "", "", name, []string{}, []string{})
 
 			if getErr != nil {
-				return retry.NonRetryableError(fmt.Errorf("Error requesting wrap-up code %s: %s", name, getErr))
+				return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_routing_wrapupcode", fmt.Sprintf("Error requesting wrap-up code %s | error: %s", name, getErr), resp))
 			}
 
 			if wrapCode.Entities == nil || len(*wrapCode.Entities) == 0 {
-				return retry.RetryableError(fmt.Errorf("No wrap-up code found with name %s", name))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_routing_wrapupcode", fmt.Sprintf("No wrap-up code found with name %s", name), resp))
 			}
 
 			d.SetId(*(*wrapCode.Entities)[0].Id)

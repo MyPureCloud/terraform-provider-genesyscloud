@@ -104,9 +104,9 @@ func readIdpSalesforce(ctx context.Context, d *schema.ResourceData, meta interfa
 		if getErr != nil {
 			if util.IsStatus404(resp) {
 				createIdpSalesforce(ctx, d, meta)
-				return retry.RetryableError(fmt.Errorf("Failed to read IDP Salesforce: %s", getErr))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_idp_salesforce", fmt.Sprintf("Failed to read IDP Salesforce: %s", getErr), resp))
 			}
-			return retry.NonRetryableError(fmt.Errorf("Failed to read IDP Salesforce: %s", getErr))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_idp_salesforce", fmt.Sprintf("Failed to read IDP Salesforce: %s", getErr), resp))
 		}
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceIdpSalesforce())
@@ -191,8 +191,8 @@ func deleteIdpSalesforce(ctx context.Context, _ *schema.ResourceData, meta inter
 				log.Printf("Deleted Salesforce Ping")
 				return nil
 			}
-			return retry.NonRetryableError(fmt.Errorf("Error deleting IDP Salesforce: %s", err))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_idp_salesforce", fmt.Sprintf("Error deleting IDP Salesforce: %s", err), resp))
 		}
-		return retry.RetryableError(fmt.Errorf("IDP Salesforce still exists"))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_idp_salesforce", fmt.Sprintf("IDP Salesforce still exists"), resp))
 	})
 }

@@ -37,14 +37,14 @@ func dataSourceScheduleRead(ctx context.Context, d *schema.ResourceData, m inter
 	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
 		const pageSize = 100
 		for pageNum := 1; ; pageNum++ {
-			schedule, _, getErr := archAPI.GetArchitectSchedules(pageNum, pageSize, "", "", name, nil)
+			schedule, resp, getErr := archAPI.GetArchitectSchedules(pageNum, pageSize, "", "", name, nil)
 
 			if getErr != nil {
-				return retry.NonRetryableError(fmt.Errorf("Error requesting schedule %s: %s", name, getErr))
+				return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_architect_schedules", fmt.Sprintf("Error requesting schedule %s | error: %s", name, getErr), resp))
 			}
 
 			if schedule.Entities == nil || len(*schedule.Entities) == 0 {
-				return retry.RetryableError(fmt.Errorf("No schedule found with name %s", name))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_architect_schedules", fmt.Sprintf("No schedule found with name %s", name), resp))
 			}
 
 			d.SetId(*(*schedule.Entities)[0].Id)

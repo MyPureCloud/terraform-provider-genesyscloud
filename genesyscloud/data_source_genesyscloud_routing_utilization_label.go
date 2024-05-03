@@ -37,13 +37,13 @@ func dataSourceRoutingUtilizationLabelRead(ctx context.Context, d *schema.Resour
 	name := d.Get("name").(string)
 
 	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
-		labels, _, getErr := routingAPI.GetRoutingUtilizationLabels(1, 1, "", name)
+		labels, resp, getErr := routingAPI.GetRoutingUtilizationLabels(1, 1, "", name)
 		if getErr != nil {
-			return retry.NonRetryableError(fmt.Errorf("Error requesting label %s: %s", name, getErr))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_routing_utilization_label", fmt.Sprintf("Error requesting label %s | error: %s", name, getErr), resp))
 		}
 
 		if labels.Entities == nil || len(*labels.Entities) == 0 {
-			return retry.RetryableError(fmt.Errorf("No labels found with name %s", name))
+			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_routing_utilization_label", fmt.Sprintf("No labels found with name %s", name), resp))
 		}
 
 		label := (*labels.Entities)[0]

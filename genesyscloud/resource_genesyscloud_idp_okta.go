@@ -104,9 +104,9 @@ func readIdpOkta(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		if getErr != nil {
 			if util.IsStatus404(resp) {
 				createIdpOkta(ctx, d, meta)
-				return retry.RetryableError(fmt.Errorf("Failed to read IDP Okta: %s", getErr))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_idp_okta", fmt.Sprintf("Failed to read IDP Okta: %s", getErr), resp))
 			}
-			return retry.NonRetryableError(fmt.Errorf("Failed to read IDP Okta: %s", getErr))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_idp_okta", fmt.Sprintf("Failed to read IDP Okta: %s", getErr), resp))
 		}
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceIdpOkta())
@@ -191,8 +191,8 @@ func deleteIdpOkta(ctx context.Context, d *schema.ResourceData, meta interface{}
 				log.Printf("Deleted IDP Okta")
 				return nil
 			}
-			return retry.NonRetryableError(fmt.Errorf("Error deleting IDP Okta: %s", err))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_idp_okta", fmt.Sprintf("Error deleting IDP Okta: %s", err), resp))
 		}
-		return retry.RetryableError(fmt.Errorf("IDP Okta still exists"))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_idp_okta", fmt.Sprintf("IDP Okta still exists"), resp))
 	})
 }

@@ -75,14 +75,14 @@ func dataSourceQualityFormsEvaluationsRead(ctx context.Context, d *schema.Resour
 	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
 		for pageNum := 1; ; pageNum++ {
 			const pageSize = 100
-			form, _, getErr := qualityAPI.GetQualityForms(pageSize, pageNum, "", "", "", "", name, "")
+			form, resp, getErr := qualityAPI.GetQualityForms(pageSize, pageNum, "", "", "", "", name, "")
 
 			if getErr != nil {
-				return retry.NonRetryableError(fmt.Errorf("Error requesting evaluation form %s: %s", name, getErr))
+				return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_quality_forms_evaluation", fmt.Sprintf("Error requesting evaluation form %s | error: %s", name, getErr), resp))
 			}
 
 			if form.Entities == nil || len(*form.Entities) == 0 {
-				return retry.RetryableError(fmt.Errorf("No evaluation form found with name %s", name))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_quality_forms_evaluation", fmt.Sprintf("No evaluation form found with name %s", name), resp))
 			}
 
 			d.SetId(*(*form.Entities)[0].Id)

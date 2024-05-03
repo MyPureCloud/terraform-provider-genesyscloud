@@ -369,11 +369,11 @@ func readSkillGroups(ctx context.Context, d *schema.ResourceData, meta interface
 		response, err := apiClient.CallAPI(path, "GET", nil, headerParams, nil, nil, "", nil)
 
 		if err != nil {
-			return retry.NonRetryableError(fmt.Errorf("Failed to retrieve skill groups %s", err))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_routing_skill_group", fmt.Sprintf("Failed to retrieve skill groups %s", err), response))
 		}
 
 		if err == nil && response.Error != nil && response.StatusCode != http.StatusNotFound {
-			return retry.NonRetryableError(fmt.Errorf("Failed to retrieve skill groups. %s", err))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_routing_skill_group", fmt.Sprintf("Failed to retrieve skill groups. %s", err), response))
 		}
 
 		err = json.Unmarshal(response.RawBody, &skillGroupPayload)
@@ -382,7 +382,7 @@ func readSkillGroups(ctx context.Context, d *schema.ResourceData, meta interface
 		}
 
 		if err == nil && util.IsStatus404(response) {
-			return retry.RetryableError(fmt.Errorf("Failed to read skill groups %s: %s", d.Id(), err))
+			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_routing_skill_group", fmt.Sprintf("Failed to read skill groups %s | error: %s", d.Id(), err), response))
 		}
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceRoutingSkillGroup())
@@ -494,9 +494,9 @@ func deleteSkillGroups(ctx context.Context, d *schema.ResourceData, meta interfa
 				log.Printf("Deleted skills group %s", d.Id())
 				return nil
 			}
-			return retry.NonRetryableError(fmt.Errorf("Error deleting skill group %s: %s", d.Id(), err))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_routing_skill_group", fmt.Sprintf("Error deleting skill group %s | error: %s", d.Id(), err), response))
 		}
-		return retry.RetryableError(fmt.Errorf("Skill group %s still exists", d.Id()))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_routing_skill_group", fmt.Sprintf("Skill group %s still exists", d.Id()), response))
 	})
 }
 

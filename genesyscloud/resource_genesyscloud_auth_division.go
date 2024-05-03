@@ -124,9 +124,9 @@ func readAuthDivision(ctx context.Context, d *schema.ResourceData, meta interfac
 		division, resp, getErr := authAPI.GetAuthorizationDivision(d.Id(), false)
 		if getErr != nil {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(fmt.Errorf("Failed to read division %s: %s", d.Id(), getErr))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_auth_division", fmt.Sprintf("Failed to read division %s | error: %s", d.Id(), getErr), resp))
 			}
-			return retry.NonRetryableError(fmt.Errorf("Failed to read division %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_auth_division", fmt.Sprintf("Failed to read division %s | error: %s", d.Id(), getErr), resp))
 		}
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceAuthDivision())
@@ -205,9 +205,9 @@ func deleteAuthDivision(ctx context.Context, d *schema.ResourceData, meta interf
 				log.Printf("Deleted division %s", name)
 				return nil
 			}
-			return retry.NonRetryableError(fmt.Errorf("Error deleting division %s: %s", name, err))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_auth_division", fmt.Sprintf("Error deleting division %s | error:: %s", name, err), resp))
 		}
-		return retry.RetryableError(fmt.Errorf("Division %s still exists", name))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_auth_division", fmt.Sprintf("Division %s still exists", name), resp))
 	})
 }
 

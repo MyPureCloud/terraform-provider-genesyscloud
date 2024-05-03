@@ -48,9 +48,9 @@ func createResponsemanagementResponse(ctx context.Context, d *schema.ResourceDat
 		responsemanagementResponse, resp, err := proxy.createResponsemanagementResponse(ctx, &sdkResponse)
 		if err != nil {
 			if util.IsStatus412(resp) {
-				return retry.RetryableError(fmt.Errorf("failed to create Responsemanagement Response %s: %s", *sdkResponse.Name, err))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to create Responsemanagement Response %s | error: %s", *sdkResponse.Name, err), resp))
 			}
-			return retry.NonRetryableError(fmt.Errorf("failed to create Responsemanagement Response %s: %s", *sdkResponse.Name, err))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to create Responsemanagement Response %s | error: %s", *sdkResponse.Name, err), resp))
 		}
 		d.SetId(*responsemanagementResponse.Id)
 		log.Printf("Created Responsemanagement Response %s %s", *sdkResponse.Name, *responsemanagementResponse.Id)
@@ -74,9 +74,9 @@ func readResponsemanagementResponse(ctx context.Context, d *schema.ResourceData,
 		sdkResponse, resp, getErr := proxy.getResponsemanagementResponseById(ctx, d.Id())
 		if getErr != nil {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(fmt.Errorf("Failed to read Responsemanagement Response %s: %s", d.Id(), getErr))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read Responsemanagement Response %s | error: %s", d.Id(), getErr), resp))
 			}
-			return retry.NonRetryableError(fmt.Errorf("Failed to read Responsemanagement Response %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read Responsemanagement Response %s | error: %s", d.Id(), getErr), resp))
 		}
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceResponsemanagementResponse())
@@ -142,8 +142,8 @@ func deleteResponsemanagementResponse(ctx context.Context, d *schema.ResourceDat
 				log.Printf("Deleted Responsemanagement Response %s", d.Id())
 				return nil
 			}
-			return retry.NonRetryableError(fmt.Errorf("Error deleting Responsemanagement Response %s: %s", d.Id(), err))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Error deleting Responsemanagement Response %s | error: %s", d.Id(), err), resp))
 		}
-		return retry.RetryableError(fmt.Errorf("Responsemanagement Response %s still exists", d.Id()))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Responsemanagement Response %s still exists", d.Id()), resp))
 	})
 }

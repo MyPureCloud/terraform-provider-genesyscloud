@@ -27,11 +27,11 @@ func dataSourceOutboundCallabletimesetRead(ctx context.Context, d *schema.Resour
 		timesetId, retryable, resp, err := proxy.getOutboundCallabletimesetByName(ctx, timesetName)
 
 		if err != nil && !retryable {
-			return retry.NonRetryableError(fmt.Errorf("error requesting callable timeset %s: %s %v", timesetName, err, resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("error requesting callable timeset %s | error: %s", timesetName, err), resp))
 		}
 
 		if retryable {
-			return retry.RetryableError(fmt.Errorf("no callable timeset found with timesetName %s", timesetName))
+			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("no callable timeset found with timesetName %s", timesetName), resp))
 		}
 		d.SetId(timesetId)
 		return nil

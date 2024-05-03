@@ -109,9 +109,9 @@ func readIdpPing(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		if getErr != nil {
 			if util.IsStatus404(resp) {
 				createIdpPing(ctx, d, meta)
-				return retry.RetryableError(fmt.Errorf("Failed to read IDP Ping: %s", getErr))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_idp_ping", fmt.Sprintf("Failed to read IDP Ping: %s", getErr), resp))
 			}
-			return retry.NonRetryableError(fmt.Errorf("Failed to read IDP Ping: %s", getErr))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_idp_ping", fmt.Sprintf("Failed to read IDP Ping: %s", getErr), resp))
 		}
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceIdpPing())
@@ -204,8 +204,8 @@ func deleteIdpPing(ctx context.Context, d *schema.ResourceData, meta interface{}
 				log.Printf("Deleted IDP Ping")
 				return nil
 			}
-			return retry.NonRetryableError(fmt.Errorf("Error deleting IDP Ping: %s", err))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_idp_ping", fmt.Sprintf("Error deleting IDP Ping: %s", err), resp))
 		}
-		return retry.RetryableError(fmt.Errorf("IDP Ping still exists"))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_idp_ping", fmt.Sprintf("IDP Ping still exists"), resp))
 	})
 }

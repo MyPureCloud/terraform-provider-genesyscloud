@@ -83,9 +83,9 @@ func readExternalContact(ctx context.Context, d *schema.ResourceData, meta inter
 		externalContact, resp, getErr := ep.getExternalContactById(ctx, d.Id())
 		if getErr != nil {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(fmt.Errorf("Failed to read external contact %s: %s", d.Id(), getErr))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read external contact %s | error: %s", d.Id(), getErr), resp))
 			}
-			return retry.NonRetryableError(fmt.Errorf("Failed to read external contact %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read external contact %s | error: %s", d.Id(), getErr), resp))
 		}
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceExternalContact())
@@ -144,13 +144,13 @@ func deleteExternalContact(ctx context.Context, d *schema.ResourceData, meta int
 		_, resp, err := ep.getExternalContactById(ctx, d.Id())
 
 		if err == nil {
-			return retry.NonRetryableError(fmt.Errorf("Error deleting external contact %s: %s", d.Id(), err))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Error deleting external contact %s | error: %s", d.Id(), err), resp))
 		}
 		if util.IsStatus404(resp) {
 			// Success  : External contact deleted
 			log.Printf("Deleted external contact %s", d.Id())
 			return nil
 		}
-		return retry.RetryableError(fmt.Errorf("External contact %s still exists", d.Id()))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("External contact %s still exists", d.Id()), resp))
 	})
 }

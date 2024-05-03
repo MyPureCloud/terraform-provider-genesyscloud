@@ -102,9 +102,9 @@ func readRoutingLanguage(ctx context.Context, d *schema.ResourceData, meta inter
 		language, resp, getErr := routingApi.GetRoutingLanguage(d.Id())
 		if getErr != nil {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(fmt.Errorf("Failed to read language %s: %s", d.Id(), getErr))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_routing_language", fmt.Sprintf("Failed to read language %s | error: %s", d.Id(), getErr), resp))
 			}
-			return retry.NonRetryableError(fmt.Errorf("Failed to read language %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_routing_language", fmt.Sprintf("Failed to read language %s | error: %s", d.Id(), getErr), resp))
 		}
 
 		if language.State != nil && *language.State == "deleted" {
@@ -140,7 +140,7 @@ func deleteRoutingLanguage(ctx context.Context, d *schema.ResourceData, meta int
 				log.Printf("Deleted Routing language %s", d.Id())
 				return nil
 			}
-			return retry.NonRetryableError(fmt.Errorf("Error deleting Routing language %s: %s", d.Id(), err))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_routing_language", fmt.Sprintf("Error deleting Routing language %s | error: %s", d.Id(), err), resp))
 		}
 
 		if routingLanguage.State != nil && *routingLanguage.State == "deleted" {
@@ -149,7 +149,7 @@ func deleteRoutingLanguage(ctx context.Context, d *schema.ResourceData, meta int
 			return nil
 		}
 
-		return retry.RetryableError(fmt.Errorf("Routing language %s still exists", d.Id()))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_routing_language", fmt.Sprintf("Routing language %s still exists", d.Id()), resp))
 	})
 }
 
