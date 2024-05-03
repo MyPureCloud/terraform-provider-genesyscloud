@@ -91,7 +91,7 @@ func updatePhoneBaseSettings(ctx context.Context, d *schema.ResourceData, meta i
 		if util.IsStatus404(resp) {
 			return nil
 		}
-		return diag.Errorf("Failed to read phone base settings %s: %s", d.Id(), getErr)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to read phone base settings %s | error: %s", d.Id(), getErr), resp)
 	}
 	(*phoneBase.Lines)[0].Id = (*phoneBaseSettings.Lines)[0].Id
 

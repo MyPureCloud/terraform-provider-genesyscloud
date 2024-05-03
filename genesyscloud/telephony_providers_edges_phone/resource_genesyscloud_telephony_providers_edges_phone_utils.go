@@ -125,18 +125,18 @@ func assignUserToWebRtcPhone(ctx context.Context, pp *phoneProxy, userId string)
 		if stationIsAssociated {
 			log.Printf("Disassociating user from phone station %s", stationId)
 			if resp, err := pp.unassignUserFromStation(ctx, stationId); err != nil {
-				return resp, diag.Errorf("Error unassigning user from station %s: %v", stationId, err)
+				return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Error unassigning user from station %s: %v", stationId, err), resp)
 			}
 		}
 
 		resp, putErr := pp.assignUserToStation(ctx, userId, stationId)
 		if putErr != nil {
-			return resp, diag.Errorf("Failed to assign user %v to the station %s: %s", userId, stationId, putErr)
+			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to assign user %v to the station %s: %s", userId, stationId, putErr), resp)
 		}
 
 		resp, putErr = pp.assignStationAsDefault(ctx, userId, stationId)
 		if putErr != nil {
-			return resp, diag.Errorf("Failed to assign Station %v as the default station for user %s: %s", stationId, userId, putErr)
+			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to assign Station %v as the default station for user %s: %s", stationId, userId, putErr), resp)
 		}
 
 		return resp, nil

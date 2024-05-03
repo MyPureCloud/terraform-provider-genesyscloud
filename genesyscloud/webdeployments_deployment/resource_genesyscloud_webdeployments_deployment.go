@@ -43,7 +43,7 @@ func createWebDeployment(ctx context.Context, d *schema.ResourceData, meta inter
 
 	err := validAllowedDomainsSettings(d)
 	if err != nil {
-		return diag.Errorf("Failed to create web deployment %s: %s", name, err)
+		return util.BuildDiagnosticError(resourceName, fmt.Sprintf("Failed to create web deployment %s", name), err)
 	}
 
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
@@ -111,7 +111,7 @@ func createWebDeployment(ctx context.Context, d *schema.ResourceData, meta inter
 	time.Sleep(10 * time.Second)
 	activeError := waitForDeploymentToBeActive(ctx, sdkConfig, d.Id())
 	if activeError != nil {
-		return diag.Errorf("Web deployment %s did not become active and could not be created", name)
+		return util.BuildDiagnosticError(resourceName, fmt.Sprintf("Web deployment %s did not become active and could not be created", name), activeError)
 	}
 	return readWebDeployment(ctx, d, meta)
 }
@@ -183,7 +183,7 @@ func updateWebDeployment(ctx context.Context, d *schema.ResourceData, meta inter
 
 	err := validAllowedDomainsSettings(d)
 	if err != nil {
-		return diag.Errorf("Failed to update web deployment %s: %s", name, err)
+		return util.BuildDiagnosticError(resourceName, fmt.Sprintf("Failed to update web deployment %s", name), err)
 	}
 
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
@@ -235,8 +235,9 @@ func updateWebDeployment(ctx context.Context, d *schema.ResourceData, meta inter
 	}
 
 	activeError := waitForDeploymentToBeActive(ctx, sdkConfig, d.Id())
+
 	if activeError != nil {
-		return diag.Errorf("Web deployment %s did not become active and could not be created", name)
+		return util.BuildDiagnosticError(resourceName, fmt.Sprintf("Web deployment %s did not become active and could not be created", name), activeError)
 	}
 
 	log.Printf("Finished updating web deployment %s", name)

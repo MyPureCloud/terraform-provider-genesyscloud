@@ -49,7 +49,7 @@ func createTaskManagementWorkitemSchema(ctx context.Context, d *schema.ResourceD
 
 	dataSchema, err := BuildSdkWorkitemSchema(d, nil)
 	if err != nil {
-		return diag.Errorf("create: failed to build task management workitem schema: %s", err)
+		return util.BuildDiagnosticError(resourceName, fmt.Sprintf("create: failed to build task management workitem schema"), err)
 	}
 
 	log.Printf("Creating task management workitem schema")
@@ -126,7 +126,7 @@ func updateTaskManagementWorkitemSchema(ctx context.Context, d *schema.ResourceD
 
 	dataSchema, err := BuildSdkWorkitemSchema(d, curSchema.Version)
 	if err != nil {
-		return diag.Errorf("update: failed to build task management workitem schema: %s", err)
+		return util.BuildDiagnosticError(resourceName, fmt.Sprintf("update: failed to build task management workitem schema"), err)
 	}
 
 	log.Printf("Updating task management workitem schema")

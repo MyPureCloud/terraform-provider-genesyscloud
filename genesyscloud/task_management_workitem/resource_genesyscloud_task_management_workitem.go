@@ -48,7 +48,7 @@ func createTaskManagementWorkitem(ctx context.Context, d *schema.ResourceData, m
 
 	taskManagementWorkitem, err := getWorkitemCreateFromResourceData(d)
 	if err != nil {
-		return diag.Errorf("failed to build Workitem create from resource data: %v", err)
+		return util.BuildDiagnosticError(resourceName, fmt.Sprintf("failed to build Workitem create from resource data"), err)
 	}
 
 	log.Printf("Creating task management workitem %s", *taskManagementWorkitem.Name)
@@ -138,7 +138,7 @@ func updateTaskManagementWorkitem(ctx context.Context, d *schema.ResourceData, m
 
 	taskManagementWorkitem, err := getWorkitemUpdateFromResourceData(d)
 	if err != nil {
-		return diag.Errorf("failed to update Workitem create from resource data: %v", err)
+		return util.BuildDiagnosticError(resourceName, fmt.Sprintf("failed to update Workitem create from resource data"), err)
 	}
 
 	log.Printf("Updating task management workitem %s", *taskManagementWorkitem.Name)

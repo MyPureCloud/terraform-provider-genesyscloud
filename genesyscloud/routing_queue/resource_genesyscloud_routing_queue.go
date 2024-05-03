@@ -1030,7 +1030,7 @@ func updateQueueMembers(d *schema.ResourceData, sdkConfig *platformclientv2.Conf
 		time.Sleep(10 * time.Second)
 		for _, userId := range newUserIds {
 			if err := verifyUserIsNotGroupMemberOfQueue(d.Id(), userId, sdkConfig); err != nil {
-				return diag.Errorf("%v", err)
+				return util.BuildDiagnosticError(resourceName, fmt.Sprintf("Error verifying user %s is not group member of queue", d.Id()), err)
 			}
 		}
 	}
