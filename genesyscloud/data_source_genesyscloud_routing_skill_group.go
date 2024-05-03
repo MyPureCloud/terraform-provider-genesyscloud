@@ -63,7 +63,7 @@ func dataSourceRoutingSkillGroupRead(ctx context.Context, d *schema.ResourceData
 
 			err = json.Unmarshal(response.RawBody, &allSkillGroups)
 			if err != nil {
-				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_routing_skill_group", fmt.Sprintf("error encountered while trying to retrieve routing skills group found with name %s %w", name, err), response))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_routing_skill_group", fmt.Sprintf("error encountered while trying to retrieve routing skills group found with name %s %s", name, err), response))
 			}
 
 			if allSkillGroups.Entities == nil || len(allSkillGroups.Entities) == 0 {
