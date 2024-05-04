@@ -532,9 +532,11 @@ func validateSmsconfig(smsconfig *schema.Set) (string, bool) {
 	smsconfigList := smsconfig.List()
 	if len(smsconfigList) > 0 {
 		smsconfigMap := smsconfigList[0].(map[string]interface{})
-		if smsconfigMap["message_column"].(string) == "" && smsconfigMap["content_template_id"].(string) == "" {
+		messageColumn, _ := smsconfigMap["message_column"].(string)
+		contentTemplateId, _ := smsconfigMap["content_template_id"].(string)
+		if messageColumn == "" && contentTemplateId == "" {
 			return "Either message_column or content_template_id is required.", false
-		} else if smsconfigMap["message_column"].(string) != "" && smsconfigMap["content_template_id"] != "" {
+		} else if messageColumn != "" && contentTemplateId != "" {
 			return "Only one of message_column or content_template_id can be defined", false
 		}
 	}
