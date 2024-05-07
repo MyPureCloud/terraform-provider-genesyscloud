@@ -54,7 +54,7 @@ func DataSourceUserRead(ctx context.Context, d *schema.ResourceData, m interface
 		searchCriteria.Fields = &[]string{nameField}
 		searchCriteria.Value = &nameStr
 	} else {
-		return diag.Errorf("No user search field specified")
+		return util.BuildDiagnosticError("genesyscloud_user", fmt.Sprintf("No user search field specified"), fmt.Errorf("no user search field specified"))
 	}
 
 	// Retry in case user is not yet indexed

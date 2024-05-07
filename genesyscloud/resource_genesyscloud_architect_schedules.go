@@ -121,12 +121,12 @@ func createArchitectSchedules(ctx context.Context, d *schema.ResourceData, meta 
 
 	schedStart, err := time.Parse("2006-01-02T15:04:05.000000", start)
 	if err != nil {
-		return diag.Errorf("Failed to parse date %s: %s", start, err)
+		return util.BuildDiagnosticError("genesyscloud_architect_schedules", fmt.Sprintf("Failed to parse date %s", start), err)
 	}
 
 	schedEnd, err := time.Parse("2006-01-02T15:04:05.000000", end)
 	if err != nil {
-		return diag.Errorf("Failed to parse date %s: %s", end, err)
+		return util.BuildDiagnosticError("genesyscloud_architect_schedules", fmt.Sprintf("Failed to parse date %s", end), err)
 	}
 
 	sched := platformclientv2.Schedule{
@@ -225,12 +225,12 @@ func updateArchitectSchedules(ctx context.Context, d *schema.ResourceData, meta 
 
 	schedStart, err := time.Parse("2006-01-02T15:04:05.000000", start)
 	if err != nil {
-		return diag.Errorf("Failed to parse date %s: %s", start, err)
+		return util.BuildDiagnosticError("genesyscloud_architect_schedules", fmt.Sprintf("Failed to parse date %s", start), err)
 	}
 
 	schedEnd, err := time.Parse("2006-01-02T15:04:05.000000", end)
 	if err != nil {
-		return diag.Errorf("Failed to parse date %s: %s", end, err)
+		return util.BuildDiagnosticError("genesyscloud_architect_schedules", fmt.Sprintf("Failed to parse date %s", end), err)
 	}
 
 	diagErr := util.RetryWhen(util.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {

@@ -2,10 +2,12 @@ package genesyscloud
 
 import (
 	"context"
+	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 )
 
 func DataSourceOrganizationsMe() *schema.Resource {
@@ -71,9 +73,9 @@ func dataSourceOrganizationsMeRead(ctx context.Context, d *schema.ResourceData, 
 	sdkConfig := m.(*provider.ProviderMeta).ClientConfig
 	orgAPI := platformclientv2.NewOrganizationApiWithConfig(sdkConfig)
 
-	orgMe, _, getErr := orgAPI.GetOrganizationsMe()
+	orgMe, resp, getErr := orgAPI.GetOrganizationsMe()
 	if getErr != nil {
-		return diag.Errorf("Error requesting organization: %s", getErr)
+		return util.BuildAPIDiagnosticError("genesyscloud_organizations_me", fmt.Sprintf("Error requesting organization: %s", getErr), resp)
 	}
 
 	d.SetId(*orgMe.Id)
