@@ -1222,28 +1222,8 @@ func (g *GenesysCloudResourceExporter) sanitizeConfigMap(
 				configMap[key] = escapeString(val.(string))
 			}
 
-			// custom function to resolve the field to a specific data source depending on the value
-			if refAttrCustomResolver, ok := exporter.CustomAttributeResolver[currAttr]; ok {
-				if resolveToDataSourceFunc := refAttrCustomResolver.ResolveToDataSourceFunc; resolveToDataSourceFunc != nil {
-					valStr, _ := val.(string)
-					sdkConfig := g.meta.(*provider.ProviderMeta).ClientConfig
-					if dataSourceType, dataSourceId, dataSourceConfig, resolve := resolveToDataSourceFunc(configMap, valStr, sdkConfig); resolve {
-						if g.dataSourceTypesMaps[dataSourceType] == nil {
-							g.dataSourceTypesMaps[dataSourceType] = make(resourceJSONMaps)
-						}
-						// add the data source to the export if it hasn't already been added
-						if _, ok := g.dataSourceTypesMaps[dataSourceType][dataSourceId]; !ok {
-							g.dataSourceTypesMaps[dataSourceType][dataSourceId] = dataSourceConfig
-							if g.exportAsHCL {
-								if _, ok := g.resourceTypesHCLBlocks[dataSourceType]; !ok {
-									g.resourceTypesHCLBlocks[dataSourceType] = make(resourceHCLBlock, 0)
-								}
-								g.resourceTypesHCLBlocks[dataSourceType] = append(g.resourceTypesHCLBlocks[dataSourceType], instanceStateToHCLBlock(dataSourceType, dataSourceId, dataSourceConfig, true))
-							}
-						}
-					}
-				}
-			}
+			// custom function to resolve the field to a data source depending on the value
+			g.resolveValueToDataSource(exporter, configMap, currAttr, val)
 		}
 
 		if attr, ok := attrInUnResolvableAttrs(key, exporter.UnResolvableAttributes); ok {
@@ -1322,6 +1302,42 @@ func (g *GenesysCloudResourceExporter) sanitizeConfigMap(
 	}
 
 	return unresolvableAttrs, true
+}
+
+// resolveValueToDataSource invokes a custom resolver method to add a data source to the export and
+// update an attribute to reference the data source
+func (g *GenesysCloudResourceExporter) resolveValueToDataSource(exporter *resourceExporter.ResourceExporter, configMap map[string]any, attribute string, originalValue any) {
+	// return if ResolveToDataSourceFunc does not exist for this attribute
+	refAttrCustomResolver, ok := exporter.CustomAttributeResolver[attribute]
+	if !ok {
+		return
+	}
+	resolveToDataSourceFunc := refAttrCustomResolver.ResolveToDataSourceFunc
+	if resolveToDataSourceFunc == nil {
+		return
+	}
+
+	sdkConfig := g.meta.(*provider.ProviderMeta).ClientConfig
+	dataSourceType, dataSourceId, dataSourceConfig, resolve := resolveToDataSourceFunc(configMap, originalValue, sdkConfig)
+	if !resolve {
+		return
+	}
+
+	if g.dataSourceTypesMaps[dataSourceType] == nil {
+		g.dataSourceTypesMaps[dataSourceType] = make(resourceJSONMaps)
+	}
+
+	// add the data source to the export if it hasn't already been added
+	if _, ok := g.dataSourceTypesMaps[dataSourceType][dataSourceId]; ok {
+		return
+	}
+	g.dataSourceTypesMaps[dataSourceType][dataSourceId] = dataSourceConfig
+	if g.exportAsHCL {
+		if _, ok := g.resourceTypesHCLBlocks[dataSourceType]; !ok {
+			g.resourceTypesHCLBlocks[dataSourceType] = make(resourceHCLBlock, 0)
+		}
+		g.resourceTypesHCLBlocks[dataSourceType] = append(g.resourceTypesHCLBlocks[dataSourceType], instanceStateToHCLBlock(dataSourceType, dataSourceId, dataSourceConfig, true))
+	}
 }
 
 func attrInUnResolvableAttrs(a string, myMap map[string]*schema.Schema) (*schema.Schema, bool) {

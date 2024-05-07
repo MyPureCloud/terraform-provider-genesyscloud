@@ -17,12 +17,12 @@ and the returns the script resource type "", the data source ID, and the config 
 (We can't pass in the map and add the data source here because it causes a cyclic error between packages resource_exporter and tfexporter,
 so instead we pass back all the details tfexporter needs to do it itself)
 */
-func OutboundCampaignAgentScriptResolver(configMap map[string]interface{}, scriptId string, sdkConfig *platformclientv2.Configuration) (dsType string, dsID string, dsConfig map[string]interface{}, resolve bool) {
+func OutboundCampaignAgentScriptResolver(configMap map[string]interface{}, value any, sdkConfig *platformclientv2.Configuration) (dsType string, dsID string, dsConfig map[string]interface{}, resolve bool) {
 	var (
 		scriptDataSourceConfig = make(map[string]interface{})
 		scriptDataSourceId     = strings.Replace(constants.DefaultOutboundScriptName, " ", "_", -1)
 	)
-
+	scriptId, _ := value.(string)
 	if IsDefaultOutboundScript(scriptId, sdkConfig) {
 		scriptDataSourceConfig["name"] = constants.DefaultOutboundScriptName
 

@@ -1270,7 +1270,7 @@ func TestAccResourceTfExportSplitFilesAsJSON(t *testing.T) {
 // is working properly i.e. script_id should reference a data source pointing to the Default Outbound Script under particular circumstances
 func TestAccResourceTfExportCampaignScriptIdReferences(t *testing.T) {
 	var (
-		exportTestDir = "../../.terraform" + uuid.NewString()
+		exportTestDir = filepath.Join("..", "..", ".terraform"+uuid.NewString())
 		resourceID    = "export"
 
 		campaignNameDefaultScript       = "tf test df campaign " + uuid.NewString()
@@ -1292,8 +1292,8 @@ func TestAccResourceTfExportCampaignScriptIdReferences(t *testing.T) {
 
 	contactListConfig := fmt.Sprintf(`
 resource "genesyscloud_outbound_contact_list" "%s" {
-  name = "%s"
-  column_names     = ["First Name", "Last Name", "Cell", "Home"]
+  name         = "%s"
+  column_names = ["First Name", "Last Name", "Cell", "Home"]
   phone_columns {
     column_name = "Cell"
     type        = "cell"
@@ -1384,9 +1384,6 @@ resource "genesyscloud_routing_queue" "queue" {
 			},
 			{
 				Config: remainingConfig + contactListConfig,
-				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+campaignResourceIdDefaultScript, "name", campaignNameDefaultScript),
-				),
 			},
 			// Verify script_id fields are resolved properly when include_state_file = false and enable_dependency_resolution = true
 			{
@@ -1414,6 +1411,7 @@ resource "genesyscloud_routing_queue" "queue" {
 						fmt.Sprintf("${genesyscloud_script.%s.id}", scriptName),
 						true,
 					),
+					validateNumberOfExportedDataSources(configPath),
 				),
 			},
 			// Verify script_id fields are resolved properly when include_state_file = true and enable_dependency_resolution = true
@@ -1442,6 +1440,7 @@ resource "genesyscloud_routing_queue" "queue" {
 						fmt.Sprintf("${genesyscloud_script.%s.id}", scriptName),
 						true,
 					),
+					validateNumberOfExportedDataSources(configPath),
 				),
 			},
 			// Verify script_id fields are resolved properly when include_state_file = true and enable_dependency_resolution = false
@@ -1470,6 +1469,7 @@ resource "genesyscloud_routing_queue" "queue" {
 						"",
 						false,
 					),
+					validateNumberOfExportedDataSources(configPath),
 				),
 			},
 		},
@@ -1481,6 +1481,8 @@ func removeTerraformProviderBlock(export string) string {
 	return strings.Replace(export, terraformHCLBlock, "", -1)
 }
 
+// validateExportedCampaignScriptIds loads the exported content and validates that the custom resolver function
+// resolved the script_id attr to the Default Outbound Script data source, and did not affect the campaign with a custom-made script
 func validateExportedCampaignScriptIds(
 	filename,
 	customCampaignResourceId,
@@ -1532,6 +1534,32 @@ func validateExportedCampaignScriptIds(
 			}
 
 			log.Println("Successfully verified that campaign script_ids were resolved correctly.")
+		}
+
+		return nil
+	}
+}
+
+// validateNumberOfExportedDataSources validates that exactly one script data source is exported
+func validateNumberOfExportedDataSources(filename string) resource.TestCheckFunc {
+	return func(state *terraform.State) error {
+		jsonFile, err := os.Open(filename)
+		if err != nil {
+			return fmt.Errorf("failed to open export file at path %s: %v", filename, err)
+		}
+		defer func(jsonFile *os.File) {
+			_ = jsonFile.Close()
+		}(jsonFile)
+
+		byteValue, err := io.ReadAll(jsonFile)
+		if err != nil {
+			return fmt.Errorf("failed to unmarshal json exportData to map variable: %v", err)
+		}
+
+		exportAsString := fmt.Sprintf("%s", byteValue)
+		numberOfDataSourcesExported := strings.Count(exportAsString, "\"Default_Outbound_Script\"")
+		if numberOfDataSourcesExported != 1 {
+			return fmt.Errorf("expected to find \"Default_Outbound_Script\" once in the exported content (actual %v). It is possible the Default Outbound Script data source is being exported more or less than once", numberOfDataSourcesExported)
 		}
 
 		return nil
