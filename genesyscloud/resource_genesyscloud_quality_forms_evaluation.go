@@ -166,7 +166,7 @@ func getAllEvaluationForms(_ context.Context, clientConfig *platformclientv2.Con
 
 	for pageNum := 1; ; pageNum++ {
 		const pageSize = 100
-		evaluationForms, resp, getErr := qualityAPI.GetQualityFormsEvaluations(pageSize, pageNum, "", "", "", "publishHistory", "", "")
+		evaluationForms, resp, getErr := qualityAPI.GetQualityFormsEvaluations(pageSize, pageNum, "", "", "", "", "", "")
 		if getErr != nil {
 			return nil, util.BuildAPIDiagnosticError("genesyscloud_quality_forms_evaluation", fmt.Sprintf("Failed to get page of evaluation forms error: %s", getErr), resp)
 		}
