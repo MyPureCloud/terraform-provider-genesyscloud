@@ -111,7 +111,7 @@ func createWebDeployment(ctx context.Context, d *schema.ResourceData, meta inter
 	time.Sleep(10 * time.Second)
 	activeError := waitForDeploymentToBeActive(ctx, sdkConfig, d.Id())
 	if activeError != nil {
-		return util.BuildDiagnosticError(resourceName, fmt.Sprintf("Web deployment %s did not become active and could not be created", name), activeError)
+		return util.BuildDiagnosticError(resourceName, fmt.Sprintf("Web deployment %s did not become active and could not be created", name), fmt.Errorf("%v", activeError))
 	}
 	return readWebDeployment(ctx, d, meta)
 }
@@ -237,7 +237,7 @@ func updateWebDeployment(ctx context.Context, d *schema.ResourceData, meta inter
 	activeError := waitForDeploymentToBeActive(ctx, sdkConfig, d.Id())
 
 	if activeError != nil {
-		return util.BuildDiagnosticError(resourceName, fmt.Sprintf("Web deployment %s did not become active and could not be created", name), activeError)
+		return util.BuildDiagnosticError(resourceName, fmt.Sprintf("Web deployment %s did not become active and could not be created", name), fmt.Errorf("%v", activeError))
 	}
 
 	log.Printf("Finished updating web deployment %s", name)

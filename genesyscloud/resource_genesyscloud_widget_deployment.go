@@ -104,11 +104,12 @@ func validateAuthURL(authUrl interface{}, _ cty.Path) diag.Diagnostics {
 	if u.Scheme == "" || u.Host == "" {
 		log.Printf("Scheme: %s", u.Scheme)
 		log.Printf("Host: %s", u.Host)
-		return diag.Errorf("Authorization url %s provided is not valid url", authUrlString)
+		return util.BuildDiagnosticError("genesyscloud_widget_deployment", fmt.Sprintf("Authorization url %s provided is not valid url", authUrlString), fmt.Errorf("authorization url provided is not valid url"))
 	}
 
 	if u.Scheme != HTTPSPROTOCOL {
-		return diag.Errorf("Authorization url %s provided must begin with https", authUrlString)
+		return util.BuildDiagnosticError("genesyscloud_widget_deployment", fmt.Sprintf("Authorization url provided must begin with https"), fmt.Errorf("authorization url provided must begin with https"))
+
 	}
 
 	return nil

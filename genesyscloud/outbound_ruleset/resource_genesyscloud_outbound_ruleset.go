@@ -40,11 +40,11 @@ func getAllAuthOutboundRuleset(ctx context.Context, clientConfig *platformclient
 	skillExporter := gcloud.RoutingSkillExporter()
 	skillMap, skillErr := skillExporter.GetResourcesFunc(ctx)
 	if skillErr != nil {
-		return nil, util.BuildDiagnosticError(resourceName, fmt.Sprintf("Failed to get skill resources"), skillErr)
+		return nil, util.BuildDiagnosticError(resourceName, fmt.Sprintf("Failed to get skill resources"), fmt.Errorf("%v", skillErr))
 	}
 	filteredRuleSets, filterErr := filterOutboundRulesets(*rulesets, skillMap)
 	if filterErr != nil {
-		return nil, util.BuildDiagnosticError(resourceName, fmt.Sprintf("Failed to filter outbound rulesets"), filterErr)
+		return nil, util.BuildDiagnosticError(resourceName, fmt.Sprintf("Failed to filter outbound rulesets"), fmt.Errorf("%v", filterErr))
 	}
 
 	for _, ruleset := range filteredRuleSets {

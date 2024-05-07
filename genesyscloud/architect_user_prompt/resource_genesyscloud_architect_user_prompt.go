@@ -101,7 +101,7 @@ func createUserPrompt(ctx context.Context, d *schema.ResourceData, meta interfac
 					log.Printf("Error deleting user prompt resource %s: %v", *userPrompt.Id, diagErr)
 				}
 				d.SetId("")
-				return diag.Errorf("Failed to upload user prompt resource %s: %s", name, err)
+				return util.BuildDiagnosticError(resourceName, fmt.Sprintf("Failed to upload user prompt resource %s", name), err)
 			}
 
 			log.Printf("Successfully uploaded user prompt resource for language: %s", resourceLanguage)
