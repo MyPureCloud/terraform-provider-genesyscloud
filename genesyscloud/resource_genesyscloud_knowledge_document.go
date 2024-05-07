@@ -143,7 +143,7 @@ func getAllKnowledgeDocumentEntities(knowledgeAPI platformclientv2.KnowledgeApi,
 		var knowledgeDocuments platformclientv2.Knowledgedocumentresponselisting
 		unmarshalErr := json.Unmarshal(response.RawBody, &knowledgeDocuments)
 		if unmarshalErr != nil {
-			return nil, diag.Errorf("Failed to unmarshal knowledge document list response %v", unmarshalErr)
+			return nil, util.BuildDiagnosticError("genesyscloud_knowledge_document", fmt.Sprintf("Failed to unmarshal knowledge document list response"), unmarshalErr)
 		}
 
 		/**
@@ -166,7 +166,7 @@ func getAllKnowledgeDocumentEntities(knowledgeAPI platformclientv2.KnowledgeApi,
 
 		after, err := util.GetQueryParamValueFromUri(*knowledgeDocuments.NextUri, "after")
 		if err != nil {
-			return nil, diag.Errorf("Failed to parse after cursor from knowledge document nextUri: %v", err)
+			return nil, util.BuildDiagnosticError("genesyscloud_knowledge_document", fmt.Sprintf("Failed to parse after cursor from knowledge document nextUri"), err)
 		}
 		if after == "" {
 			break

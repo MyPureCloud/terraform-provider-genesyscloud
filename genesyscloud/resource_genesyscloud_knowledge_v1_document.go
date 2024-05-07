@@ -169,7 +169,7 @@ func getAllKnowledgeV1DocumentEntities(knowledgeAPI platformclientv2.KnowledgeAp
 
 		after, err := util.GetQueryParamValueFromUri(*knowledgeDocuments.NextUri, "after")
 		if err != nil {
-			return nil, diag.Errorf("Failed to parse after cursor from knowledge document nextUri: %v", err)
+			return nil, util.BuildDiagnosticError("genesyscloud_knowledge_v1_document", fmt.Sprintf("Failed to parse after cursor from knowledge document nextUri"), err)
 		}
 		if after == "" {
 			break

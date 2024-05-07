@@ -98,7 +98,7 @@ func validateAuthURL(authUrl interface{}, _ cty.Path) diag.Diagnostics {
 	authUrlString := authUrl.(string)
 	u, err := url.Parse(authUrlString)
 	if err != nil {
-		return diag.Errorf("Authorization url %s provided is not a valid URL", authUrlString)
+		return util.BuildDiagnosticError("genesyscloud_widget_deployment", fmt.Sprintf("Authorization url %s provided is not a valid URL", authUrlString), err)
 	}
 
 	if u.Scheme == "" || u.Host == "" {
@@ -315,7 +315,7 @@ func createWidgetDeployment(ctx context.Context, d *schema.ResourceData, meta in
 	client_config, client_config_err := buildSDKClientConfig(client_type, d)
 
 	if client_config_err != nil {
-		return diag.Errorf("Failed to create widget deployment %s, %s", name, client_config_err)
+		return util.BuildDiagnosticError("genesyscloud_widget_deployment", fmt.Sprintf("Failed to create widget deployment %s", name), client_config_err)
 	}
 
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
@@ -411,7 +411,7 @@ func updateWidgetDeployment(ctx context.Context, d *schema.ResourceData, meta in
 	client_config, client_config_err := buildSDKClientConfig(client_type, d)
 
 	if client_config_err != nil {
-		return diag.Errorf("Failed updating widget deployment %s, %s", name, client_config_err)
+		return util.BuildDiagnosticError("genesyscloud_widget_deployment", fmt.Sprintf("Failed updating widget deployment %s", name), client_config_err)
 	}
 
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig

@@ -178,7 +178,7 @@ func updateRoutingEmailDomain(ctx context.Context, d *schema.ResourceData, meta 
 	domainID := d.Get("domain_id").(string)
 
 	if !strings.Contains(mailFromDomain, domainID) || mailFromDomain == domainID {
-		return diag.Errorf("domain_id must be a subdomain of mail_from_domain")
+		return util.BuildDiagnosticError("genesyscloud_routing_email_domain", fmt.Sprintf("domain_id must be a subdomain of mail_from_domain"), fmt.Errorf("domain_id must be a subdomain of mail_from_domain"))
 	}
 
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig

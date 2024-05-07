@@ -102,7 +102,7 @@ func createArchitectDatatableRow(ctx context.Context, d *schema.ResourceData, me
 func readArchitectDatatableRow(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	tableId, keyStr := splitDatatableRowId(d.Id())
 	if keyStr == "" {
-		return diag.Errorf("Invalid Row ID %s", d.Id())
+		return util.BuildDiagnosticError(resourceName, fmt.Sprintf("Invalid Row ID %s", d.Id()), fmt.Errorf("keyStr is nil"))
 	}
 
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
@@ -164,7 +164,7 @@ func updateArchitectDatatableRow(ctx context.Context, d *schema.ResourceData, me
 func deleteArchitectDatatableRow(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	tableId, keyStr := splitDatatableRowId(d.Id())
 	if keyStr == "" {
-		return diag.Errorf("Invalid Row ID %s", d.Id())
+		return util.BuildDiagnosticError(resourceName, fmt.Sprintf("Invalid Row ID %s", d.Id()), fmt.Errorf("keyStr is nil"))
 	}
 
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
