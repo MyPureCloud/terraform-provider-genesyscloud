@@ -50,6 +50,8 @@ func createPhone(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		if err != nil {
 			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create phone %s error: %s", *phoneConfig.Name, err), resp)
 		}
+		log.Printf("Completed call to create phone name %s with status code %d, correlation id %s", *phoneConfig.Name, resp.StatusCode, resp.CorrelationID)
+
 		d.SetId(*phone.Id)
 
 		webRtcUserId := d.Get("web_rtc_user_id")
