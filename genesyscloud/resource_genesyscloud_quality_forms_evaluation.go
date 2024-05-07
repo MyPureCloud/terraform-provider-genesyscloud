@@ -177,13 +177,6 @@ func getAllEvaluationForms(_ context.Context, clientConfig *platformclientv2.Con
 
 		for _, evaluationForm := range *evaluationForms.Entities {
 			resources[*evaluationForm.Id] = &resourceExporter.ResourceMeta{Name: *evaluationForm.Name}
-
-			// TODO: Remove this when properly exporting only latest version
-			if evaluationForm.PublishedVersions != nil && evaluationForm.PublishedVersions.Entities != nil {
-				for _, publishedVersion := range *evaluationForm.PublishedVersions.Entities {
-					resources[*publishedVersion.Id] = &resourceExporter.ResourceMeta{Name: *publishedVersion.Name}
-				}
-			}
 		}
 	}
 
@@ -291,10 +284,14 @@ func readEvaluationForm(ctx context.Context, d *schema.ResourceData, meta interf
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceEvaluationForm())
 
-		// TODO: Option 2 - Use contextID to set based on latest version
-		publishedVersions, _, err := qualityAPI.GetQualityFormsEvaluationsBulkContexts([]string{*evaluationForm.ContextId})
+		// Retrieve a list of any published versions of the evaluation form
+		// If there are published versions, published will be set to true
+		publishedVersions, resp, err := qualityAPI.GetQualityFormsEvaluationsBulkContexts([]string{*evaluationForm.ContextId})
 		if err != nil {
-			return nil
+			if util.IsStatus404(resp) {
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_quality_forms_evaluation", fmt.Sprintf("Failed to retrieve a list of the latest published evaluation form versions"), resp))
+			}
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_quality_forms_evaluation", fmt.Sprintf("Failed to retrieve a list of the latest published evaluation form versions"), resp))
 		}
 
 		if len(publishedVersions) > 0 {
