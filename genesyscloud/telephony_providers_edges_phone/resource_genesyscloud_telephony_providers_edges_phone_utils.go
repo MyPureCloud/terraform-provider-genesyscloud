@@ -29,7 +29,7 @@ type PhoneConfig struct {
 	PhoneBaseSettingsId string
 	LineAddresses       []string
 	WebRtcUserId        string
-	DependsOn           string
+	Depends_on          string
 }
 
 func getPhoneFromResourceData(ctx context.Context, pp *phoneProxy, d *schema.ResourceData) (*platformclientv2.Phone, error) {
@@ -72,12 +72,12 @@ func getPhoneFromResourceData(ctx context.Context, pp *phoneProxy, d *schema.Res
 		if phoneConfig.Properties == nil {
 			phoneConfig.Properties = &map[string]interface{}{}
 		}
-		phoneStandalone := map[string]interface{}{
+		phone_standalone := map[string]interface{}{
 			"value": &map[string]interface{}{
 				"instance": true,
 			},
 		}
-		(*phoneConfig.Properties)["phone_standalone"] = phoneStandalone
+		(*phoneConfig.Properties)["phone_standalone"] = phone_standalone
 	}
 
 	webRtcUserId := d.Get("web_rtc_user_id")
@@ -341,7 +341,7 @@ func GeneratePhoneResourceWithCustomAttrs(config *PhoneConfig, otherAttrs ...str
 		config.SiteId,
 		config.PhoneBaseSettingsId,
 		strings.Join(lineStrs, ","),
-		config.DependsOn,
+		config.Depends_on,
 		webRtcUser,
 		strings.Join(otherAttrs, "\n"),
 	)
