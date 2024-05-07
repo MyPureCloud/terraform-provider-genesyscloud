@@ -73,7 +73,7 @@ func updateOrganizationAuthenticationSettings(ctx context.Context, d *schema.Res
 
 	orgAuthSettings, resp, err := proxy.updateOrgAuthSettings(ctx, &authSettings)
 	if err != nil {
-		return diag.Errorf("Failed to update organization authentication settings: %s %v", err, resp)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update organization authentication settings: %s", err), resp)
 	}
 
 	log.Printf("Updated organization authentication settings %s %s", d.Id(), orgAuthSettings)

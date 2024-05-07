@@ -56,7 +56,7 @@ func createRoutingEmailRoute(ctx context.Context, d *schema.ResourceData, meta i
 	replyEmail, err := validateSdkReplyEmailAddress(d)
 	// Checking the self_reference_route flag and routeId rules
 	if err != nil {
-		return diag.Errorf("Error occurred while validating the reply email address when creating the record: %s", err)
+		return util.BuildDiagnosticError(resourceName, fmt.Sprintf("Error occurred while validating the reply email address when creating the record"), err)
 	}
 
 	replyDomainID, replyRouteID, _ := extractReplyEmailAddressValue(d)
@@ -173,7 +173,7 @@ func updateRoutingEmailRoute(ctx context.Context, d *schema.ResourceData, meta i
 	//Checking the self_reference_route flag and routeId rules
 	replyEmail, err := validateSdkReplyEmailAddress(d)
 	if err != nil {
-		return diag.Errorf("Error occurred while validating the reply email address while trying to update the record: %s", err)
+		return util.BuildDiagnosticError(resourceName, fmt.Sprintf("Error occurred while validating the reply email address while trying to update the record"), err)
 	}
 
 	replyDomainID, replyRouteID, _ := extractReplyEmailAddressValue(d)

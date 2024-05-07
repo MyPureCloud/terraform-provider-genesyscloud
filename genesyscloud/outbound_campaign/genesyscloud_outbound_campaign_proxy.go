@@ -101,7 +101,7 @@ func (p *outboundCampaignProxy) turnOffCampaign(ctx context.Context, campaignId 
 	log.Printf("Reading Outbound Campaign %s", campaignId)
 	outboundCampaign, resp, getErr := p.getOutboundCampaignById(ctx, campaignId)
 	if getErr != nil {
-		return diag.Errorf("Failed to read Outbound Campaign %s: %s %v", campaignId, getErr, resp)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to read Outbound Campaign %s: %s", campaignId, getErr), resp)
 	}
 	log.Printf("Read Outbound Campaign %s", campaignId)
 
