@@ -81,10 +81,10 @@ func createOutboundCampaign(ctx context.Context, d *schema.ResourceData, meta in
 
 	// Campaigns can be enabled after creation
 	if campaignStatus == "on" {
-		d.Set("campaign_status", campaignStatus)
-		diag := updateOutboundCampaignStatus(ctx, d.Id(), proxy, *outboundCampaign, campaignStatus)
-		if diag != nil {
-			return diag
+		_ = d.Set("campaign_status", campaignStatus)
+		diagErr := updateOutboundCampaignStatus(ctx, d.Id(), proxy, *outboundCampaign, campaignStatus)
+		if diagErr != nil {
+			return diagErr
 		}
 	}
 
@@ -125,7 +125,7 @@ func readOutboundCampaign(ctx context.Context, d *schema.ResourceData, meta inte
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "phone_columns", campaign.PhoneColumns, flattenPhoneColumn)
 		resourcedata.SetNillableValue(d, "abandon_rate", campaign.AbandonRate)
 		if campaign.DncLists != nil {
-			d.Set("dnc_list_ids", util.SdkDomainEntityRefArrToList(*campaign.DncLists))
+			_ = d.Set("dnc_list_ids", util.SdkDomainEntityRefArrToList(*campaign.DncLists))
 		}
 		resourcedata.SetNillableReference(d, "callable_time_set_id", campaign.CallableTimeSet)
 		resourcedata.SetNillableReference(d, "call_analysis_response_set_id", campaign.CallAnalysisResponseSet)
@@ -133,7 +133,7 @@ func readOutboundCampaign(ctx context.Context, d *schema.ResourceData, meta inte
 		resourcedata.SetNillableValue(d, "caller_address", campaign.CallerAddress)
 		resourcedata.SetNillableValue(d, "outbound_line_count", campaign.OutboundLineCount)
 		if campaign.RuleSets != nil {
-			d.Set("rule_set_ids", util.SdkDomainEntityRefArrToList(*campaign.RuleSets))
+			_ = d.Set("rule_set_ids", util.SdkDomainEntityRefArrToList(*campaign.RuleSets))
 		}
 		resourcedata.SetNillableValue(d, "skip_preview_disabled", campaign.SkipPreviewDisabled)
 		resourcedata.SetNillableValue(d, "preview_time_out_seconds", campaign.PreviewTimeOutSeconds)
@@ -143,7 +143,7 @@ func readOutboundCampaign(ctx context.Context, d *schema.ResourceData, meta inte
 		resourcedata.SetNillableValue(d, "call_analysis_language", campaign.CallAnalysisLanguage)
 		resourcedata.SetNillableValue(d, "priority", campaign.Priority)
 		if campaign.ContactListFilters != nil {
-			d.Set("contact_list_filter_ids", util.SdkDomainEntityRefArrToList(*campaign.ContactListFilters))
+			_ = d.Set("contact_list_filter_ids", util.SdkDomainEntityRefArrToList(*campaign.ContactListFilters))
 		}
 		resourcedata.SetNillableReference(d, "division_id", campaign.Division)
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "dynamic_contact_queueing_settings", campaign.DynamicContactQueueingSettings, flattenSettings)

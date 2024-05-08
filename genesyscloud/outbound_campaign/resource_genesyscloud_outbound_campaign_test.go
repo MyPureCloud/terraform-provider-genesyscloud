@@ -71,9 +71,7 @@ func TestAccResourceOutboundCampaignBasic(t *testing.T) {
 		t.Skipf("failed to delete location with number %s: %v", emergencyNumber, err)
 	}
 
-	referencedResources := fmt.Sprintf(`
-		data "genesyscloud_auth_division_home" "home" {}
-		`) + obContactList.GenerateOutboundContactList(
+	referencedResources := `data "genesyscloud_auth_division_home" "home" {}` + obContactList.GenerateOutboundContactList(
 		contactListResourceId,
 		"contact list "+uuid.NewString(),
 		util.NullValue,
@@ -496,7 +494,7 @@ func TestAccResourceOutboundCampaignCampaignStatus(t *testing.T) {
 		"[\"us-east-1\"]",
 		util.NullValue,
 		util.NullValue,
-	) + fmt.Sprintf("\ndata \"genesyscloud_auth_division_home\" \"home\" {}\n")
+	) + "\ndata \"genesyscloud_auth_division_home\" \"home\" {}\n"
 
 	// Test campaign_status can be turned on in a second run after first run's initial creation in off state, and then back off again
 	resource.Test(t, resource.TestCase{
@@ -629,9 +627,7 @@ func TestAccResourceOutboundCampaignStatusOn(t *testing.T) {
 		Steps: []resource.TestStep{
 			// Create resources for outbound campaign
 			{
-				Config: fmt.Sprintf(`
-data "genesyscloud_auth_division_home" "home" {}
-`) + GenerateReferencedResourcesForOutboundCampaignTests(
+				Config: `data "genesyscloud_auth_division_home" "home" {}` + GenerateReferencedResourcesForOutboundCampaignTests(
 					contactListResourceId,
 					"",
 					"",
@@ -654,9 +650,7 @@ data "genesyscloud_auth_division_home" "home" {}
 			// Now, we create the outbound campaign and it should stay running because it has contacts to call. We leave it running to test
 			// the destroy command takes care of turning it off before deleting.
 			{
-				Config: fmt.Sprintf(`
-data "genesyscloud_auth_division_home" "home" {}
-`) + GenerateOutboundCampaignBasic(
+				Config: `data "genesyscloud_auth_division_home" "home" {}` + GenerateOutboundCampaignBasic(
 					resourceId,
 					name,
 					contactListResourceId,
