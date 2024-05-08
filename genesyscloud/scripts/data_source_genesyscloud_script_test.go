@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"testing"
 
 	"github.com/google/uuid"
@@ -47,16 +48,15 @@ func TestAccDataSourceScript(t *testing.T) {
 
 // Test that published scripts can also return hard-coded default scripts
 func TestAccDataSourceScriptPublishedDefaults(t *testing.T) {
-	var (
-		callbackDataSource = "callback-script-data"
-		callbackName       = "Default Callback Script"
-		callbackId         = "1a5ab5f6-a967-4010-8c54-bd88f092e5a8"
-		inboundDataSource  = "inbound-script-data"
-		inboundName        = "Default Inbound Script"
-		inboundId          = "28bfd948-427f-4956-947e-600ad17ced68"
-		outboundDataSource = "outbound-script-data"
-		outboundName       = "Default Outbound Script"
-		outboundId         = "e86ac8b2-fdbc-4d85-8c6c-16da0a6493a0"
+	const (
+		callbackDataSource      = "callback-script-data"
+		defaultCallbackScriptId = "ffde0662-8395-9b04-7dcb-b90172109065"
+
+		inboundDataSource      = "inbound-script-data"
+		defaultInboundScriptId = "766f1221-047a-11e5-bba2-db8c0964d007"
+
+		outboundDataSource      = "outbound-script-data"
+		defaultOutboundScriptId = "476c2b71-7429-11e4-9a5b-3f91746bffa3"
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -66,36 +66,36 @@ func TestAccDataSourceScriptPublishedDefaults(t *testing.T) {
 			{
 				Config: generateScriptDataSource(
 					callbackDataSource,
-					callbackName,
+					constants.DefaultCallbackScriptName,
 					"",
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(fmt.Sprintf("data.%s.%s", resourceName, callbackDataSource), "id",
-						callbackId,
+						defaultCallbackScriptId,
 					),
 				),
 			},
 			{
 				Config: generateScriptDataSource(
 					inboundDataSource,
-					inboundName,
+					constants.DefaultInboundScriptName,
 					"",
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(fmt.Sprintf("data.%s.%s", resourceName, inboundDataSource), "id",
-						inboundId,
+						defaultInboundScriptId,
 					),
 				),
 			},
 			{
 				Config: generateScriptDataSource(
 					outboundDataSource,
-					outboundName,
+					constants.DefaultOutboundScriptName,
 					"",
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(fmt.Sprintf("data.%s.%s", resourceName, outboundDataSource), "id",
-						outboundId,
+						defaultOutboundScriptId,
 					),
 				),
 			},
