@@ -2,7 +2,9 @@ package tfexporter
 
 import (
 	"context"
+	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 	"reflect"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
@@ -420,4 +422,114 @@ func TestUnitTfExportMergeExporters(t *testing.T) {
 			t.Errorf("Exporter %s has unexpected keys. Expected: %v, Got: %v", exporterID, actual, exporter)
 		}
 	}
+}
+
+func TestUnitResolveValueToDataSource(t *testing.T) {
+	var (
+		originalValueOfScriptId         = "1234"
+		scriptResourceId                = "genesyscloud_script"
+		defaultOutboundScriptName       = "Default Outbound Script"
+		defaultOutboundScriptResourceId = "Default_Outbound_Script"
+	)
+
+	// set up
+	g := setupGenesysCloudResourceExporter(t)
+
+	resolverFunc := func(configMap map[string]any, value any, sdkConfig *platformclientv2.Configuration) (string, string, map[string]any, bool) {
+		configMap["script_id"] = fmt.Sprintf(`${data.%s.%s.id}`, scriptResourceId, defaultOutboundScriptResourceId)
+		dataSourceConfig := make(map[string]any)
+		dataSourceConfig["name"] = defaultOutboundScriptName
+		return scriptResourceId, defaultOutboundScriptResourceId, dataSourceConfig, true
+	}
+	attrCustomResolver := make(map[string]*resourceExporter.RefAttrCustomResolver)
+	attrCustomResolver["script_id"] = &resourceExporter.RefAttrCustomResolver{ResolveToDataSourceFunc: resolverFunc}
+	exporter := &resourceExporter.ResourceExporter{
+		CustomAttributeResolver: attrCustomResolver,
+	}
+
+	configMap := getMockCampaignConfig(originalValueOfScriptId)
+
+	// invoke - expecting script data source to be added to export
+	g.resolveValueToDataSource(exporter, configMap, "script_id", originalValueOfScriptId)
+
+	if _, ok := g.dataSourceTypesMaps[scriptResourceId]; !ok {
+		t.Errorf("expected key '%s' to exist in dataSourceTypesMaps", scriptResourceId)
+	}
+
+	if _, ok := g.dataSourceTypesMaps[scriptResourceId][defaultOutboundScriptResourceId]; !ok {
+		t.Errorf("expected dataSourceTypesMaps['%s'] to hold nested key '%s'", scriptResourceId, defaultOutboundScriptResourceId)
+	}
+
+	dataSourceConfig := g.dataSourceTypesMaps[scriptResourceId][defaultOutboundScriptResourceId]
+	nameInDataSource, ok := dataSourceConfig["name"].(string)
+	if !ok {
+		t.Errorf("expected the data source config to contain key 'name'")
+	}
+	if nameInDataSource != defaultOutboundScriptName {
+		t.Errorf("expected data source name to be '%s', got '%s'", defaultOutboundScriptName, nameInDataSource)
+	}
+
+	hclBlocks, ok := g.resourceTypesHCLBlocks[scriptResourceId]
+	if !ok {
+		t.Errorf("expected resourceTypesHCLBlocks to contain key '%s'", scriptResourceId)
+	}
+	if len(hclBlocks) == 0 {
+		t.Errorf("expected length of resourceTypesHCLBlocks to not be zero")
+	}
+
+	// set up
+	resolverFunc = func(configMap map[string]any, value any, sdkConfig *platformclientv2.Configuration) (string, string, map[string]any, bool) {
+		return "", "", nil, false
+	}
+	g.dataSourceTypesMaps = make(map[string]resourceJSONMaps)
+	g.resourceTypesHCLBlocks = make(map[string]resourceHCLBlock)
+	attrCustomResolver["script_id"] = &resourceExporter.RefAttrCustomResolver{ResolveToDataSourceFunc: resolverFunc}
+	exporter = &resourceExporter.ResourceExporter{
+		CustomAttributeResolver: attrCustomResolver,
+	}
+
+	// invoke - not expecting script data source to be added to export
+	g.resolveValueToDataSource(exporter, configMap, "script_id", originalValueOfScriptId)
+
+	if _, ok := g.dataSourceTypesMaps[scriptResourceId]; ok {
+		t.Errorf("expected key '%s' to not exist in dataSourceTypesMaps", scriptResourceId)
+	}
+
+	if _, ok := g.resourceTypesHCLBlocks[scriptResourceId]; ok {
+		t.Errorf("expected key '%s' to not exist in resourceTypesHCLBlocks map", scriptResourceId)
+	}
+}
+
+func setupGenesysCloudResourceExporter(t *testing.T) *GenesysCloudResourceExporter {
+	exportMap := map[string]interface{}{
+		"export_as_hcl":                false,
+		"split_files_by_resource":      false,
+		"log_permission_errors":        false,
+		"enable_dependency_resolution": false,
+		"include_state_file":           true,
+		"ignore_cyclic_deps":           true,
+	}
+	resourceData := schema.TestResourceDataRaw(t, ResourceTfExport().Schema, exportMap)
+	providerMeta := &provider.ProviderMeta{
+		Version:      "0.1.0",
+		ClientConfig: platformclientv2.GetDefaultConfiguration(),
+		Domain:       "mypurecloud.com",
+	}
+	g, diagErr := NewGenesysCloudResourceExporter(context.TODO(), resourceData, providerMeta, IncludeResources)
+	if diagErr != nil {
+		t.Errorf("%v", diagErr)
+	}
+	g.dataSourceTypesMaps = make(map[string]resourceJSONMaps)
+	g.resourceTypesHCLBlocks = make(map[string]resourceHCLBlock)
+	g.exportAsHCL = true
+	return g
+}
+
+func getMockCampaignConfig(originalValueOfScriptId string) map[string]any {
+	config := make(map[string]any)
+
+	config["name"] = "Mock Campaign"
+	config["script_id"] = originalValueOfScriptId
+
+	return config
 }

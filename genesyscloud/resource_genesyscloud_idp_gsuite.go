@@ -109,9 +109,9 @@ func readIdpGsuite(ctx context.Context, d *schema.ResourceData, meta interface{}
 		if getErr != nil {
 			if util.IsStatus404(resp) {
 				createIdpGsuite(ctx, d, meta)
-				return retry.RetryableError(fmt.Errorf("Failed to read IDP GSuite: %s", getErr))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_idp_gsuite", fmt.Sprintf("Failed to read IDP GSuite: %s", getErr), resp))
 			}
-			return retry.NonRetryableError(fmt.Errorf("Failed to read IDP GSuite: %s", getErr))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_idp_gsuite", fmt.Sprintf("Failed to read IDP GSuite: %s", getErr), resp))
 		}
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceIdpGsuite())
@@ -204,8 +204,8 @@ func deleteIdpGsuite(ctx context.Context, d *schema.ResourceData, meta interface
 				log.Printf("Deleted IDP GSuite")
 				return nil
 			}
-			return retry.NonRetryableError(fmt.Errorf("Error deleting IDP GSuite: %s", err))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_idp_gsuite", fmt.Sprintf("Error deleting IDP GSuite: %s", err), resp))
 		}
-		return retry.RetryableError(fmt.Errorf("IDP GSuite still exists"))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_idp_gsuite", fmt.Sprintf("IDP GSuite still exists"), resp))
 	})
 }

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"math/rand"
 	"os"
 	"path"
@@ -1265,8 +1266,323 @@ func TestAccResourceTfExportSplitFilesAsJSON(t *testing.T) {
 	})
 }
 
+// TestAccResourceTfExportCampaignScriptIdReferences exports two campaigns and ensures that the custom revolver OutboundCampaignAgentScriptResolver
+// is working properly i.e. script_id should reference a data source pointing to the Default Outbound Script under particular circumstances
+func TestAccResourceTfExportCampaignScriptIdReferences(t *testing.T) {
+	var (
+		exportTestDir = filepath.Join("..", "..", ".terraform"+uuid.NewString())
+		resourceID    = "export"
+
+		campaignNameDefaultScript       = "tf test df campaign " + uuid.NewString()
+		campaignResourceIdDefaultScript = strings.Replace(campaignNameDefaultScript, " ", "_", -1)
+
+		campaignNameCustomScript       = "tf test ct campaign " + uuid.NewString()
+		campaignResourceIdCustomScript = strings.Replace(campaignNameCustomScript, " ", "_", -1)
+
+		contactListResourceId = "contact_list"
+		contactListName       = "tf test contact list " + uuid.NewString()
+		queueName             = "tf test queue " + uuid.NewString()
+
+		scriptName            = "tf_test_script_" + uuid.NewString()
+		pathToScriptFile      = filepath.Join("..", "..", "test", "data", "resource", "genesyscloud_script", "test_script.json")
+		fullyQualifiedPath, _ = filepath.Abs(pathToScriptFile)
+
+		configPath = filepath.Join(exportTestDir, defaultTfJSONFile)
+	)
+
+	contactListConfig := fmt.Sprintf(`
+resource "genesyscloud_outbound_contact_list" "%s" {
+  name         = "%s"
+  column_names = ["First Name", "Last Name", "Cell", "Home"]
+  phone_columns {
+    column_name = "Cell"
+    type        = "cell"
+  }
+  phone_columns {
+    column_name = "Home"
+    type        = "home"
+  }
+}
+`, contactListResourceId, contactListName)
+
+	remainingConfig := fmt.Sprintf(`
+data "genesyscloud_script" "default" {
+	name = "Default Outbound Script"
+}
+
+resource "genesyscloud_outbound_campaign" "%s" {
+  name            = "%s"
+  queue_id        = "${genesyscloud_routing_queue.queue.id}"
+  caller_address  = "+13335551234"
+  contact_list_id = "${genesyscloud_outbound_contact_list.%s.id}"
+  dialing_mode    = "preview"
+  script_id       = "${data.genesyscloud_script.default.id}"
+  caller_name     = "Callbacks Test Queue 1"
+  division_id     = "${data.genesyscloud_auth_division_home.home.id}"
+  campaign_status = "off"
+  dynamic_contact_queueing_settings {
+    sort = false
+  }
+  phone_columns {
+    column_name = "Cell"
+  }
+}
+
+resource "genesyscloud_outbound_campaign" "%s" {
+  name            = "%s"
+  queue_id        = "${genesyscloud_routing_queue.queue.id}"
+  caller_address  = "+13335551234"
+  contact_list_id = "${genesyscloud_outbound_contact_list.%s.id}"
+  dialing_mode    = "preview"
+  script_id       = "${genesyscloud_script.script.id}"
+  caller_name     = "Callbacks Test Queue 1"
+  division_id     = "${data.genesyscloud_auth_division_home.home.id}"
+  campaign_status = "off"
+  dynamic_contact_queueing_settings {
+    sort = false
+  }
+  phone_columns {
+    column_name = "Cell"
+  }
+}
+
+resource "genesyscloud_script" "script" {
+	script_name       = "%s"
+	filepath          = "%s"
+	file_content_hash = filesha256("%s")	
+}
+
+data "genesyscloud_auth_division_home" "home" {}
+
+resource "genesyscloud_routing_queue" "queue" {
+  name = "%s"
+}
+`, campaignResourceIdDefaultScript,
+		campaignNameDefaultScript,
+		contactListResourceId,
+		campaignResourceIdCustomScript,
+		campaignNameCustomScript,
+		contactListResourceId,
+		scriptName,
+		pathToScriptFile,
+		fullyQualifiedPath,
+		queueName)
+
+	defer func(path string) {
+		if err := os.RemoveAll(path); err != nil {
+			t.Logf("failed to remove dir %s: %s", path, err)
+		}
+	}(exportTestDir)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			{
+				Config: contactListConfig, // need to add contact list first to seed it with contacts before creating the campaigns
+				Check:  addContactsToContactList,
+			},
+			{
+				Config: remainingConfig + contactListConfig,
+			},
+			// Verify script_id fields are resolved properly when include_state_file = false and enable_dependency_resolution = true
+			{
+				Config: remainingConfig + contactListConfig + generateExportResourceIncludeFilterWithEnableDepRes(
+					resourceID,
+					exportTestDir,
+					util.FalseValue, // include_state_file
+					util.FalseValue, // export_as_hcl
+					util.TrueValue,  // enable_dependency_resolution
+					[]string{ // include_filter_resources
+						strconv.Quote("genesyscloud_outbound_campaign::" + campaignNameDefaultScript),
+						strconv.Quote("genesyscloud_outbound_campaign::" + campaignNameCustomScript),
+					},
+					[]string{ // depends_on
+						"genesyscloud_outbound_campaign." + campaignResourceIdDefaultScript,
+						"genesyscloud_outbound_campaign." + campaignResourceIdCustomScript,
+					},
+				),
+				Check: resource.ComposeTestCheckFunc(
+					validateExportedCampaignScriptIds(
+						configPath,
+						campaignResourceIdCustomScript,
+						campaignResourceIdDefaultScript,
+						"${data.genesyscloud_script.Default_Outbound_Script.id}",
+						fmt.Sprintf("${genesyscloud_script.%s.id}", scriptName),
+						true,
+					),
+					validateNumberOfExportedDataSources(configPath),
+				),
+			},
+			// Verify script_id fields are resolved properly when include_state_file = true and enable_dependency_resolution = true
+			{
+				Config: remainingConfig + contactListConfig + generateExportResourceIncludeFilterWithEnableDepRes(
+					resourceID,
+					exportTestDir,
+					util.TrueValue,  // include_state_file
+					util.FalseValue, // export_as_hcl
+					util.TrueValue,  // enable_dependency_resolution
+					[]string{ // include_filter_resources
+						strconv.Quote("genesyscloud_outbound_campaign::" + campaignNameDefaultScript),
+						strconv.Quote("genesyscloud_outbound_campaign::" + campaignNameCustomScript),
+					},
+					[]string{ // depends_on
+						"genesyscloud_outbound_campaign." + campaignResourceIdDefaultScript,
+						"genesyscloud_outbound_campaign." + campaignResourceIdCustomScript,
+					},
+				),
+				Check: resource.ComposeTestCheckFunc(
+					validateExportedCampaignScriptIds(
+						configPath,
+						campaignResourceIdCustomScript,
+						campaignResourceIdDefaultScript,
+						"${data.genesyscloud_script.Default_Outbound_Script.id}",
+						fmt.Sprintf("${genesyscloud_script.%s.id}", scriptName),
+						true,
+					),
+					validateNumberOfExportedDataSources(configPath),
+				),
+			},
+			// Verify script_id fields are resolved properly when include_state_file = true and enable_dependency_resolution = false
+			{
+				Config: remainingConfig + contactListConfig + generateExportResourceIncludeFilterWithEnableDepRes(
+					resourceID,
+					exportTestDir,
+					util.TrueValue,  // include_state_file
+					util.FalseValue, // export_as_hcl
+					util.FalseValue, // enable_dependency_resolution
+					[]string{ // include_filter_resources
+						strconv.Quote("genesyscloud_outbound_campaign::" + campaignNameDefaultScript),
+						strconv.Quote("genesyscloud_outbound_campaign::" + campaignNameCustomScript),
+					},
+					[]string{ // depends_on
+						"genesyscloud_outbound_campaign." + campaignResourceIdDefaultScript,
+						"genesyscloud_outbound_campaign." + campaignResourceIdCustomScript,
+					},
+				),
+				Check: resource.ComposeTestCheckFunc(
+					validateExportedCampaignScriptIds(
+						configPath,
+						campaignResourceIdCustomScript,
+						campaignResourceIdDefaultScript,
+						"${data.genesyscloud_script.Default_Outbound_Script.id}",
+						"",
+						false,
+					),
+					validateNumberOfExportedDataSources(configPath),
+				),
+			},
+		},
+		CheckDestroy: testVerifyExportsDestroyedFunc(exportTestDir),
+	})
+}
+
 func removeTerraformProviderBlock(export string) string {
 	return strings.Replace(export, terraformHCLBlock, "", -1)
+}
+
+// validateExportedCampaignScriptIds loads the exported content and validates that the custom resolver function
+// resolved the script_id attr to the Default Outbound Script data source, and did not affect the campaign with a custom-made script
+func validateExportedCampaignScriptIds(
+	filename,
+	customCampaignResourceId,
+	defaultCampaignResourceId,
+	expectedValueForCampaignWithDefaultScript,
+	expectedValueForCampaignWithCustomScript string,
+	verifyCustomScriptIdValue bool,
+) resource.TestCheckFunc {
+	return func(state *terraform.State) error {
+		_, err := os.Stat(filename)
+		if err != nil {
+			return fmt.Errorf("failed to find file %s", filename)
+		}
+
+		log.Println("Loading export config into map variable")
+		exportData, err := loadJsonFileToMap(filename)
+		if err != nil {
+			return err
+		}
+		log.Println("Successfully loaded export config into map variable")
+
+		if resources, ok := exportData["resource"].(map[string]interface{}); ok {
+			campaigns, ok := resources["genesyscloud_outbound_campaign"].(map[string]interface{})
+			if !ok {
+				return fmt.Errorf("no campaign resources exported")
+			}
+
+			log.Println("Checking that campaign script_id values were resolved as expected")
+
+			customCampaign, ok := campaigns[customCampaignResourceId].(map[string]interface{})
+			if !ok {
+				return fmt.Errorf("campaign with custom script was not exported")
+			}
+
+			if verifyCustomScriptIdValue {
+				customCampaignScriptId, _ := customCampaign["script_id"].(string)
+				if customCampaignScriptId != expectedValueForCampaignWithCustomScript {
+					return fmt.Errorf("expected script ID to be '%s' for campaign with custom script, got '%s'", expectedValueForCampaignWithCustomScript, customCampaignScriptId)
+				}
+			}
+
+			defaultCampaign, ok := campaigns[defaultCampaignResourceId].(map[string]interface{})
+			if !ok {
+				return fmt.Errorf("campaign with Default Outbound Script was not exported")
+			}
+			defaultCampaignScriptId, _ := defaultCampaign["script_id"].(string)
+			if defaultCampaignScriptId != expectedValueForCampaignWithDefaultScript {
+				return fmt.Errorf("expected script ID to be '%s' for campaign with default script, got '%s'", expectedValueForCampaignWithDefaultScript, defaultCampaignScriptId)
+			}
+
+			log.Println("Successfully verified that campaign script_ids were resolved correctly.")
+		}
+
+		return nil
+	}
+}
+
+// validateNumberOfExportedDataSources validates that exactly one script data source is exported
+func validateNumberOfExportedDataSources(filename string) resource.TestCheckFunc {
+	return func(state *terraform.State) error {
+		jsonFile, err := os.Open(filename)
+		if err != nil {
+			return fmt.Errorf("failed to open export file at path %s: %v", filename, err)
+		}
+		defer func(jsonFile *os.File) {
+			_ = jsonFile.Close()
+		}(jsonFile)
+
+		byteValue, err := io.ReadAll(jsonFile)
+		if err != nil {
+			return fmt.Errorf("failed to unmarshal json exportData to map variable: %v", err)
+		}
+
+		exportAsString := fmt.Sprintf("%s", byteValue)
+		numberOfDataSourcesExported := strings.Count(exportAsString, "\"Default_Outbound_Script\"")
+		if numberOfDataSourcesExported != 1 {
+			return fmt.Errorf("expected to find \"Default_Outbound_Script\" once in the exported content (actual %v). It is possible the Default Outbound Script data source is being exported more or less than once", numberOfDataSourcesExported)
+		}
+
+		return nil
+	}
+}
+
+func loadJsonFileToMap(filename string) (map[string]interface{}, error) {
+	var data map[string]interface{}
+
+	jsonFile, err := os.Open(filename)
+	if err != nil {
+		return nil, fmt.Errorf("failed to open export file at path %s: %v", filename, err)
+	}
+	defer func(jsonFile *os.File) {
+		_ = jsonFile.Close()
+	}(jsonFile)
+
+	byteValue, _ := io.ReadAll(jsonFile)
+	if err := json.Unmarshal(byteValue, &data); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal json exportData to map variable: %v", err)
+	}
+
+	return data, nil
 }
 
 func testUserPromptAudioFileExport(filePath, resourceType, resourceId, exportDir, resourceName string) resource.TestCheckFunc {
@@ -1650,6 +1966,70 @@ func TestForExportCycles(t *testing.T) {
 	}
 }
 
+func generateExportResourceIncludeFilterWithEnableDepRes(
+	resourceId,
+	directory,
+	includeStateFile,
+	exportAHcl,
+	enableDepRes string,
+	includeResources,
+	dependsOn []string,
+) string {
+	return fmt.Sprintf(`
+resource "genesyscloud_tf_export" "%s" {
+	directory                    = "%s"
+  	include_state_file           = %s
+  	export_as_hcl                = %s
+  	enable_dependency_resolution = %s
+  	include_filter_resources     = [%s]
+    depends_on = [%s]
+}
+`, resourceId, directory, includeStateFile, exportAHcl, enableDepRes, strings.Join(includeResources, ", "), strings.Join(dependsOn, ", "))
+}
+
+func addContactsToContactList(state *terraform.State) error {
+	outboundAPI := platformclientv2.NewOutboundApi()
+	contactListResource := state.RootModule().Resources["genesyscloud_outbound_contact_list.contact_list"]
+	if contactListResource == nil {
+		return fmt.Errorf("genesyscloud_outbound_contact_list.contact_list contactListResource not found in state")
+	}
+
+	contactList, _, err := outboundAPI.GetOutboundContactlist(contactListResource.Primary.ID, false, false)
+	if err != nil {
+		return fmt.Errorf("genesyscloud_outbound_contact_list (%s) not available", contactListResource.Primary.ID)
+	}
+	contactsJSON := `[{
+			"data": {
+			  "First Name": "Asa",
+			  "Last Name": "Acosta",
+			  "Cell": "+13335554",
+			  "Home": "3335552345"
+			},
+			"callable": true,
+			"phoneNumberStatus": {}
+		  },
+		  {
+			"data": {
+			  "First Name": "Leonidas",
+			  "Last Name": "Acosta",
+			  "Cell": "4445551234",
+			  "Home": "4445552345"
+			},
+			"callable": true,
+			"phoneNumberStatus": {}
+		  }]`
+	var contacts []platformclientv2.Writabledialercontact
+	err = json.Unmarshal([]byte(contactsJSON), &contacts)
+	if err != nil {
+		return fmt.Errorf("could not unmarshall JSON contacts to add to contact list")
+	}
+	_, _, err = outboundAPI.PostOutboundContactlistContacts(*contactList.Id, contacts, false, false, false)
+	if err != nil {
+		return fmt.Errorf("could not post contacts to contact list")
+	}
+	return nil
+}
+
 func isIgnoredReferenceCycle(cycle []string) bool {
 	// Some cycles cannot be broken with a schema change and must be dealt with in the config
 	// These cycles can be ignored by this test
@@ -1898,26 +2278,17 @@ func validateEvaluationFormAttributes(resourceName string, form gcloud.Evaluatio
 
 func validateConfigFile(path string) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
-		jsonFile, err := os.Open(path)
-		if err != nil {
-			return err
-		}
-		defer jsonFile.Close()
-
-		byteValue, _ := io.ReadAll(jsonFile)
-
-		var result map[string]interface{}
-		err = json.Unmarshal([]byte(byteValue), &result)
+		result, err := loadJsonFileToMap(path)
 		if err != nil {
 			return err
 		}
 
 		if _, ok := result["resource"]; !ok {
-			return fmt.Errorf("Config file missing resource attribute.")
+			return fmt.Errorf("config file missing resource attribute")
 		}
 
 		if _, ok := result["terraform"]; !ok {
-			return fmt.Errorf("Config file missing terraform attribute.")
+			return fmt.Errorf("config file missing terraform attribute")
 		}
 		return nil
 	}

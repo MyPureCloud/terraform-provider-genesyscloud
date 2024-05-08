@@ -105,7 +105,7 @@ func getAllKnowledgeV1CategoryEntities(knowledgeAPI platformclientv2.KnowledgeAp
 
 		after, err := util.GetQueryParamValueFromUri(*knowledgeCategories.NextUri, "after")
 		if err != nil {
-			return nil, diag.Errorf("Failed to parse after cursor from knowledge category nextUri: %v", err)
+			return nil, util.BuildDiagnosticError("genesyscloud_knowledge_v1_category", fmt.Sprintf("Failed to parse after cursor from knowledge category nextUri"), err)
 		}
 		if after == "" {
 			break
@@ -196,10 +196,10 @@ func readKnowledgeCategoryV1(ctx context.Context, d *schema.ResourceData, meta i
 		knowledgeCategory, resp, getErr := knowledgeAPI.GetKnowledgeKnowledgebaseLanguageCategory(knowledgeCategoryId, knowledgeBaseId, languageCode)
 		if getErr != nil {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(fmt.Errorf("Failed to read knowledge category %s: %s", knowledgeCategoryId, getErr))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_knowledge_v1_category", fmt.Sprintf("Failed to read knowledge category %s | error: %s", knowledgeCategoryId, getErr), resp))
 			}
 			log.Printf("%s", getErr)
-			return retry.NonRetryableError(fmt.Errorf("Failed to read knowledge category %s: %s", knowledgeCategoryId, getErr))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_knowledge_v1_category", fmt.Sprintf("Failed to read knowledge category %s | error: %s", knowledgeCategoryId, getErr), resp))
 		}
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceKnowledgeCategory())
@@ -272,10 +272,10 @@ func deleteKnowledgeCategoryV1(ctx context.Context, d *schema.ResourceData, meta
 				log.Printf("Deleted knowledge category %s", knowledgeCategoryId)
 				return nil
 			}
-			return retry.NonRetryableError(fmt.Errorf("Error deleting knowledge category %s: %s", knowledgeCategoryId, err))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_knowledge_v1_category", fmt.Sprintf("Error deleting knowledge category %s | error: %s", knowledgeCategoryId, err), resp))
 		}
 
-		return retry.RetryableError(fmt.Errorf("Knowledge category %s still exists", knowledgeCategoryId))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_knowledge_v1_category", fmt.Sprintf("Knowledge category %s still exists", knowledgeCategoryId), resp))
 	})
 }
 

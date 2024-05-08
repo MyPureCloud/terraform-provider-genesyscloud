@@ -28,11 +28,11 @@ func dataSourceOutboundSequenceRead(ctx context.Context, d *schema.ResourceData,
 		campaignSequenceId, retryable, resp, err := proxy.getOutboundSequenceIdByName(ctx, name)
 
 		if err != nil && !retryable {
-			return retry.NonRetryableError(fmt.Errorf("Error searching outbound sequence %s: %s %v", name, err, resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Error searching outbound sequence %s | error: %s", name, err), resp))
 		}
 
 		if retryable {
-			return retry.RetryableError(fmt.Errorf("No outbound sequence found with name %s", name))
+			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("No outbound sequence found with name %s", name), resp))
 		}
 
 		d.SetId(campaignSequenceId)

@@ -108,9 +108,9 @@ func readIdpAdfs(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		if getErr != nil {
 			if util.IsStatus404(resp) {
 				createIdpAdfs(ctx, d, meta)
-				return retry.RetryableError(fmt.Errorf("Failed to read IDP ADFS: %s", getErr))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_idp_adfs", fmt.Sprintf("Failed to read IDP ADFS: %s", getErr), resp))
 			}
-			return retry.NonRetryableError(fmt.Errorf("Failed to read IDP ADFS: %s", getErr))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_idp_adfs", fmt.Sprintf("Failed to read IDP ADFS: %s", getErr), resp))
 		}
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceIdpAdfs())
@@ -203,8 +203,8 @@ func deleteIdpAdfs(ctx context.Context, d *schema.ResourceData, meta interface{}
 				log.Printf("Deleted IDP ADFS")
 				return nil
 			}
-			return retry.NonRetryableError(fmt.Errorf("Error deleting IDP ADFS: %s", err))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_idp_adfs", fmt.Sprintf("Error deleting IDP ADFS: %s", err), resp))
 		}
-		return retry.RetryableError(fmt.Errorf("IDP ADFS still exists"))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_idp_adfs", fmt.Sprintf("IDP ADFS still exists"), resp))
 	})
 }

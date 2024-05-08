@@ -10,6 +10,7 @@ type CacheInterface[T any] interface {
 	Get(key string) (T, bool)
 	GetAll() []T
 	GetSize() int
+	Delete(key string)
 }
 
 // NewResourceCache is a factory method to return the cache implementation. We have made this a cache so we can plugin in
@@ -22,6 +23,12 @@ func NewResourceCache[T any]() CacheInterface[T] {
 func SetCache[T any](cache CacheInterface[T], key string, value T) {
 	if tfexporter_state.IsExporterActive() {
 		cache.Set(key, value)
+	}
+}
+
+func DeleteCacheItem[T any](cache CacheInterface[T], key string) {
+	if tfexporter_state.IsExporterActive() {
+		cache.Delete(key)
 	}
 }
 

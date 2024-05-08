@@ -28,11 +28,11 @@ func dataSourceTeamRead(ctx context.Context, d *schema.ResourceData, meta interf
 		teamId, retryable, resp, err := proxy.getTeamIdByName(ctx, name)
 
 		if err != nil && !retryable {
-			return retry.NonRetryableError(fmt.Errorf("Error searching team %s: %s %v", name, err, resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Error searching team %s | error: %s", name, err), resp))
 		}
 
 		if retryable {
-			return retry.RetryableError(fmt.Errorf("No team found with name %s", name))
+			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("No team found with name %s", name), resp))
 		}
 
 		d.SetId(teamId)

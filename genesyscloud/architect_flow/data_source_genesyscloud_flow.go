@@ -21,14 +21,13 @@ func dataSourceFlowRead(ctx context.Context, d *schema.ResourceData, m interface
 
 	// Query flow by name. Retry in case search has not yet indexed the flow.
 	return util.WithRetries(ctx, 5*time.Second, func() *retry.RetryError {
-		flows, _, getErr := p.GetAllFlows(ctx)
+		flows, resp, getErr := p.GetAllFlows(ctx)
 		if getErr != nil {
-			return retry.NonRetryableError(fmt.Errorf("error requesting flow %s: %s", name, getErr))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("error requesting flow %s | error: %s", name, getErr), resp))
 		}
 
-
 		if flows == nil || len(*flows) == 0 {
-			return retry.RetryableError(fmt.Errorf("no flows found with name %s", name))
+			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("no flows found with name %s", name), resp))
 		}
 
 		for _, entity := range *flows {
@@ -38,6 +37,6 @@ func dataSourceFlowRead(ctx context.Context, d *schema.ResourceData, m interface
 			}
 		}
 
-		return retry.RetryableError(fmt.Errorf("no flows found with name %s", name))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("no flows found with name %s", name), resp))
 	})
 }

@@ -51,7 +51,7 @@ func createGroup(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 
 	addresses, err := buildSdkGroupAddresses(d)
 	if err != nil {
-		return diag.Errorf("%v", err)
+		return util.BuildDiagnosticError(resourceName, fmt.Sprintf("Error Building SDK group addresses"), err)
 	}
 
 	createGroup := &platformclientv2.Groupcreate{
@@ -100,9 +100,9 @@ func readGroup(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 		group, resp, getErr := gp.getGroupById(ctx, d.Id())
 		if getErr != nil {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(fmt.Errorf("Failed to read group %s: %s", d.Id(), getErr))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read group %s | error: %s", d.Id(), getErr), resp))
 			}
-			return retry.NonRetryableError(fmt.Errorf("Failed to read group %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read group %s | error: %s", d.Id(), getErr), resp))
 		}
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceGroup())
@@ -206,7 +206,7 @@ func deleteGroup(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 				log.Printf("Group %s deleted", name)
 				return nil
 			}
-			return retry.NonRetryableError(fmt.Errorf("Error deleting group %s: %s", d.Id(), err))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Error deleting group %s | error: %s", d.Id(), err), resp))
 		}
 
 		if group.State != nil && *group.State == "deleted" {
@@ -228,7 +228,7 @@ func deleteGroup(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 				name, resp.CorrelationID)
 		}
 
-		return retry.RetryableError(fmt.Errorf("Group %s still exists", d.Id()))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Group %s still exists", d.Id()), resp))
 	})
 }
 

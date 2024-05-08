@@ -80,7 +80,7 @@ func TestAccDataSourcePhone(t *testing.T) {
 						true,
 						"mac",
 						[]string{strconv.Quote("audio/opus")},
-					), generatePhoneProperties("BTR143543"),
+					), generatePhoneProperties(uuid.NewString()),
 				) + generatePhoneDataSource(
 					phoneDataRes,
 					name1,

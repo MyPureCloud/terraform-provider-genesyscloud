@@ -2,6 +2,7 @@ package telephony_providers_edges_did
 
 import (
 	"context"
+	"fmt"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
@@ -20,12 +21,12 @@ func dataSourceDidRead(ctx context.Context, d *schema.ResourceData, m interface{
 	didPhoneNumber := d.Get("phone_number").(string)
 
 	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
-		id, retryable, _, err := proxy.getTelephonyProvidersEdgesDidIdByDid(ctx, didPhoneNumber)
+		id, retryable, resp, err := proxy.getTelephonyProvidersEdgesDidIdByDid(ctx, didPhoneNumber)
 		if err != nil && !retryable {
-			return retry.NonRetryableError(err)
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to get telephony providers Edges %s", err), resp))
 		}
 		if retryable {
-			return retry.RetryableError(err)
+			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to get telephony providers edges %s", err), resp))
 		}
 		d.SetId(id)
 		return nil

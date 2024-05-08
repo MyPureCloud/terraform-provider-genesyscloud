@@ -104,9 +104,9 @@ func readIdpOnelogin(ctx context.Context, d *schema.ResourceData, meta interface
 		if getErr != nil {
 			if util.IsStatus404(resp) {
 				createIdpOkta(ctx, d, meta)
-				return retry.RetryableError(fmt.Errorf("Failed to read IDP Onelogin: %s", getErr))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_idp_onelogin", fmt.Sprintf("Failed to read IDP Onelogin: %s", getErr), resp))
 			}
-			return retry.NonRetryableError(fmt.Errorf("Failed to read IDP Onelogin: %s", getErr))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_idp_onelogin", fmt.Sprintf("Failed to read IDP Onelogin: %s", getErr), resp))
 		}
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceIdpOnelogin())
@@ -191,8 +191,8 @@ func deleteIdpOnelogin(ctx context.Context, d *schema.ResourceData, meta interfa
 				log.Printf("Deleted IDP Onelogin")
 				return nil
 			}
-			return retry.NonRetryableError(fmt.Errorf("Error deleting IDP Onelogin: %s", err))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_idp_onelogin", fmt.Sprintf("Error deleting IDP Onelogin: %s", err), resp))
 		}
-		return retry.RetryableError(fmt.Errorf("IDP Onelogin still exists"))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_idp_onelogin", fmt.Sprintf("IDP Onelogin still exists"), resp))
 	})
 }
