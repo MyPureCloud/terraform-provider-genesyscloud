@@ -97,7 +97,7 @@ func getAllKnowledgeLabelEntities(knowledgeAPI platformclientv2.KnowledgeApi, kn
 
 		after, err := util.GetQueryParamValueFromUri(*knowledgeLabels.NextUri, "after")
 		if err != nil {
-			return nil, diag.Errorf("Failed to parse after cursor from knowledge label nextUri: %v", err)
+			return nil, util.BuildDiagnosticError("genesyscloud_knowledge_label", fmt.Sprintf("Failed to parse after cursor from knowledge label nextUri"), err)
 		}
 		if after == "" {
 			break

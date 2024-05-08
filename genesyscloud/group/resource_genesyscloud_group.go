@@ -51,7 +51,7 @@ func createGroup(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 
 	addresses, err := buildSdkGroupAddresses(d)
 	if err != nil {
-		return diag.Errorf("%v", err)
+		return util.BuildDiagnosticError(resourceName, fmt.Sprintf("Error Building SDK group addresses"), err)
 	}
 
 	createGroup := &platformclientv2.Groupcreate{

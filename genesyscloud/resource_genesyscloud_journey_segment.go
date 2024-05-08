@@ -311,7 +311,7 @@ func createJourneySegment(ctx context.Context, d *schema.ResourceData, meta inte
 	result, resp, err := journeyApi.PostJourneySegments(*journeySegment)
 	if err != nil {
 		input, _ := util.InterfaceToJson(*journeySegment)
-		return diag.Errorf("failed to create journey segment %s: %s\n(input: %+v)\n(resp: %s)", *journeySegment.DisplayName, err, input, util.GetBody(resp))
+		return util.BuildAPIDiagnosticError("genesyscloud_journey_segment", fmt.Sprintf("failed to create journey segment %s: %s\n(input: %+v)", *journeySegment.DisplayName, err, input), resp)
 	}
 
 	d.SetId(*result.Id)
@@ -378,8 +378,8 @@ func deleteJourneySegment(ctx context.Context, d *schema.ResourceData, meta inte
 	journeyApi := platformclientv2.NewJourneyApiWithConfig(sdkConfig)
 
 	log.Printf("Deleting journey segment with display name %s", displayName)
-	if _, err := journeyApi.DeleteJourneySegment(d.Id()); err != nil {
-		return diag.Errorf("Failed to delete journey segment with display name %s: %s", displayName, err)
+	if resp, err := journeyApi.DeleteJourneySegment(d.Id()); err != nil {
+		return util.BuildAPIDiagnosticError("genesyscloud_journey_segment", fmt.Sprintf("Failed to delete journey segment with display name %s: %s", displayName, err), resp)
 	}
 
 	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {

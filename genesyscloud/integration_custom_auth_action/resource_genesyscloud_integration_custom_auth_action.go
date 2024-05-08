@@ -74,7 +74,7 @@ func createIntegrationCustomAuthAction(ctx context.Context, d *schema.ResourceDa
 
 	// Precheck that integration type and its credential type if it should have a custom auth data action
 	if ok, err := isIntegrationAndCredTypesCorrect(ctx, cap, integrationId); !ok || err != nil {
-		return diag.Errorf("configuration of integration %s does not allow for a custom auth data action. %v", integrationId, err)
+		return util.BuildDiagnosticError(resourceName, fmt.Sprintf("configuration of integration %s does not allow for a custom auth data action", integrationId), err)
 	}
 
 	log.Printf("Retrieving the custom auth action of integration %s", integrationId)

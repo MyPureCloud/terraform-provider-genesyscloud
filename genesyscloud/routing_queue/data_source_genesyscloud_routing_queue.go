@@ -56,7 +56,7 @@ func dataSourceRoutingQueueRead(ctx context.Context, d *schema.ResourceData, m i
 
 		d.SetId(queueId)
 		if err := dataSourceRoutingQueueCache.updateCacheEntry(name, queueId); err != nil {
-			return diag.Errorf("error updating cache: %v", err)
+			return util.BuildDiagnosticError(resourceName, fmt.Sprintf("error updating cache"), err)
 		}
 		return nil
 	}

@@ -11,8 +11,8 @@ import (
 type detailedDiagnosticInfo struct {
 	ResourceName  string `json:"resourceName,omitempty"`
 	Method        string `json:"method,omitempty"`
-	Path          string `json:"path:omitempty"`
-	StatusCode    int    `json:"statusCode:omitempty"`
+	Path          string `json:"path,omitempty"`
+	StatusCode    int    `json:"statusCode,omitempty"`
 	ErrorMessage  string `json:"errorMessage,omitempty"`
 	CorrelationID string `json:"correlationId,omitempty"`
 }
@@ -51,7 +51,6 @@ func BuildAPIDiagnosticError(resourceName string, summary string, apiResponse *p
 
 func BuildDiagnosticError(resourceName string, summary string, err error) diag.Diagnostics {
 	var msg string
-
 	diagInfo := &detailedDiagnosticInfo{
 		ResourceName: resourceName,
 		ErrorMessage: fmt.Sprintf("%s", err),
@@ -65,6 +64,7 @@ func BuildDiagnosticError(resourceName string, summary string, err error) diag.D
 	}
 
 	dg := diag.Diagnostic{Severity: diag.Error, Summary: summary, Detail: msg}
+
 	var dgs diag.Diagnostics
 	dgs = append(dgs, dg)
 	return dgs

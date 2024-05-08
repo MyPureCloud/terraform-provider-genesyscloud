@@ -161,13 +161,13 @@ func GetAllUsers(ctx context.Context, sdkConfig *platformclientv2.Configuration)
 
 	activeUsers, err := getUsersByStatus("active")
 	if err != nil {
-		return nil, diag.Errorf("failed to get 'active' users: %v", err)
+		return nil, util.BuildDiagnosticError("genesyscloud_user", fmt.Sprintf("failed to get 'active' users"), err)
 	}
 	allUsers = append(allUsers, *activeUsers...)
 
 	inactiveUsers, err := getUsersByStatus("inactive")
 	if err != nil {
-		return nil, diag.Errorf("failed to get 'inactive' users: %v", err)
+		return nil, util.BuildDiagnosticError("genesyscloud_user", fmt.Sprintf("failed to get 'inactive' users"), err)
 	}
 	allUsers = append(allUsers, *inactiveUsers...)
 
@@ -1312,7 +1312,7 @@ func updateUserRoutingUtilization(d *schema.ResourceData, usersAPI *platformclie
 				}
 
 				if err != nil {
-					return diag.Errorf("Failed to update Routing Utilization for user %s: %s", d.Id(), err)
+					return util.BuildDiagnosticError("genesyscloud_user", fmt.Sprintf("Failed to update Routing Utilization for user %s", d.Id()), err)
 				}
 			} else {
 				// Reset to org-wide defaults
