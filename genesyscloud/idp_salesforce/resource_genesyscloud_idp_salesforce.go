@@ -25,7 +25,7 @@ func getAllIdpSalesforce(ctx context.Context, clientConfig *platformclientv2.Con
 	proxy := getIdpSalesforceProxy(clientConfig)
 	resources := make(resourceExporter.ResourceIDMetaMap)
 
-	_, resp, getErr := proxy.getIdpSalesforceById(ctx)
+	_, resp, getErr := proxy.getIdpSalesforce(ctx)
 	if getErr != nil {
 		if util.IsStatus404(resp) {
 			// Don't export if config doesn't exist
@@ -51,7 +51,7 @@ func readIdpSalesforce(ctx context.Context, d *schema.ResourceData, meta interfa
 	log.Printf("Reading IDP Salesforce")
 
 	return util.WithRetriesForReadCustomTimeout(ctx, d.Timeout(schema.TimeoutRead), d, func() *retry.RetryError {
-		salesforce, resp, getErr := proxy.getIdpSalesforceById(ctx)
+		salesforce, resp, getErr := proxy.getIdpSalesforce(ctx)
 		if getErr != nil {
 			if util.IsStatus404(resp) {
 				createIdpSalesforce(ctx, d, meta)
@@ -120,7 +120,7 @@ func deleteIdpSalesforce(ctx context.Context, _ *schema.ResourceData, meta inter
 	}
 
 	return util.WithRetries(ctx, 180*time.Second, func() *retry.RetryError {
-		_, resp, err := proxy.getIdpSalesforceById(ctx)
+		_, resp, err := proxy.getIdpSalesforce(ctx)
 		if err != nil {
 			if util.IsStatus404(resp) {
 				// IDP Salesforce deleted

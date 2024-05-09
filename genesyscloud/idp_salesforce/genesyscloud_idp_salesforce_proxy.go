@@ -15,28 +15,28 @@ out during testing.
 var internalProxy *idpSalesforceProxy
 
 // Type definitions for each func on our proxy so we can easily mock them out later
-type getIdpSalesforceByIdFunc func(ctx context.Context, p *idpSalesforceProxy) (salesforce *platformclientv2.Salesforce, resp *platformclientv2.APIResponse, err error)
+type getIdpSalesforceFunc func(ctx context.Context, p *idpSalesforceProxy) (salesforce *platformclientv2.Salesforce, resp *platformclientv2.APIResponse, err error)
 type updateIdpSalesforceFunc func(ctx context.Context, p *idpSalesforceProxy, salesforce *platformclientv2.Salesforce) (*platformclientv2.Identityprovider, *platformclientv2.APIResponse, error)
 type deleteIdpSalesforceFunc func(ctx context.Context, p *idpSalesforceProxy) (resp *platformclientv2.APIResponse, err error)
 
 // idpSalesforceProxy contains all of the methods that call genesys cloud APIs.
 type idpSalesforceProxy struct {
-	clientConfig             *platformclientv2.Configuration
-	identityProviderApi      *platformclientv2.IdentityProviderApi
-	getIdpSalesforceByIdAttr getIdpSalesforceByIdFunc
-	updateIdpSalesforceAttr  updateIdpSalesforceFunc
-	deleteIdpSalesforceAttr  deleteIdpSalesforceFunc
+	clientConfig            *platformclientv2.Configuration
+	identityProviderApi     *platformclientv2.IdentityProviderApi
+	getIdpSalesforceAttr    getIdpSalesforceFunc
+	updateIdpSalesforceAttr updateIdpSalesforceFunc
+	deleteIdpSalesforceAttr deleteIdpSalesforceFunc
 }
 
 // newIdpSalesforceProxy initializes the idp salesforce proxy with all of the data needed to communicate with Genesys Cloud
 func newIdpSalesforceProxy(clientConfig *platformclientv2.Configuration) *idpSalesforceProxy {
 	api := platformclientv2.NewIdentityProviderApiWithConfig(clientConfig)
 	return &idpSalesforceProxy{
-		clientConfig:             clientConfig,
-		identityProviderApi:      api,
-		getIdpSalesforceByIdAttr: getIdpSalesforceByIdFn,
-		updateIdpSalesforceAttr:  updateIdpSalesforceFn,
-		deleteIdpSalesforceAttr:  deleteIdpSalesforceFn,
+		clientConfig:            clientConfig,
+		identityProviderApi:     api,
+		getIdpSalesforceAttr:    getIdpSalesforceFn,
+		updateIdpSalesforceAttr: updateIdpSalesforceFn,
+		deleteIdpSalesforceAttr: deleteIdpSalesforceFn,
 	}
 }
 
@@ -50,9 +50,9 @@ func getIdpSalesforceProxy(clientConfig *platformclientv2.Configuration) *idpSal
 	return internalProxy
 }
 
-// getIdpSalesforceById returns a single Genesys Cloud idp salesforce by Id
-func (p *idpSalesforceProxy) getIdpSalesforceById(ctx context.Context) (idpSalesforce *platformclientv2.Salesforce, resp *platformclientv2.APIResponse, err error) {
-	return p.getIdpSalesforceByIdAttr(ctx, p)
+// getIdpSalesforce returns a single Genesys Cloud idp salesforce
+func (p *idpSalesforceProxy) getIdpSalesforce(ctx context.Context) (idpSalesforce *platformclientv2.Salesforce, resp *platformclientv2.APIResponse, err error) {
+	return p.getIdpSalesforceAttr(ctx, p)
 }
 
 // updateIdpSalesforce updates a Genesys Cloud idp salesforce
@@ -65,8 +65,8 @@ func (p *idpSalesforceProxy) deleteIdpSalesforce(ctx context.Context) (resp *pla
 	return p.deleteIdpSalesforceAttr(ctx, p)
 }
 
-// getIdpSalesforceByIdFn is an implementation of the function to get a Genesys Cloud idp salesforce by Id
-func getIdpSalesforceByIdFn(ctx context.Context, p *idpSalesforceProxy) (idpSalesforce *platformclientv2.Salesforce, resp *platformclientv2.APIResponse, err error) {
+// getIdpSalesforceFn is an implementation of the function to get a Genesys Cloud idp salesforce
+func getIdpSalesforceFn(ctx context.Context, p *idpSalesforceProxy) (idpSalesforce *platformclientv2.Salesforce, resp *platformclientv2.APIResponse, err error) {
 	salesforce, resp, err := p.identityProviderApi.GetIdentityprovidersSalesforce()
 	if err != nil {
 		return nil, resp, err
