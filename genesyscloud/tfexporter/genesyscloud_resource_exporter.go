@@ -17,6 +17,7 @@ import (
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	r_registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
 	util "terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/files"
 	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 	stringmap "terraform-provider-genesyscloud/genesyscloud/util/stringmap"
 	"time"
@@ -199,6 +200,9 @@ func (g *GenesysCloudResourceExporter) Export() (diagErr diag.Diagnostics) {
 	if diagErr != nil {
 		return diagErr
 	}
+
+	// step #8 Verify the terraform state file with Exporter Resources
+	g.verifyTerraformState()
 
 	return nil
 }
@@ -455,7 +459,7 @@ func (g *GenesysCloudResourceExporter) generateOutputFiles() diag.Diagnostics {
 	}
 
 	if g.cyclicDependsList != nil && len(g.cyclicDependsList) > 0 {
-		err = writeToFile([]byte(strings.Join(g.cyclicDependsList, "\n")), filepath.Join(g.exportDirPath, "cyclicDepends.txt"))
+		err = files.WriteToFile([]byte(strings.Join(g.cyclicDependsList, "\n")), filepath.Join(g.exportDirPath, "cyclicDepends.txt"))
 
 		if err != nil {
 			return err
@@ -1097,14 +1101,6 @@ func correctDependsOn(config string, isHcl bool) string {
 	return correctedConfig
 }
 
-func writeToFile(bytes []byte, path string) diag.Diagnostics {
-	err := os.WriteFile(path, bytes, os.ModePerm)
-	if err != nil {
-		return diag.Errorf("Error writing file %s: %v", path, err)
-	}
-	return nil
-}
-
 func (g *GenesysCloudResourceExporter) sanitizeDataConfigMap(
 	configMap map[string]interface{}) {
 
@@ -1518,4 +1514,18 @@ func fetchByRegex(fullName string, resType string, name string) bool {
 		return match
 	}
 	return false
+}
+
+func (g *GenesysCloudResourceExporter) verifyTerraformState() diag.Diagnostics {
+
+	key, exists := os.LookupEnv("ENABLE_EXPORTER_STATE_COMPARISON")
+	if exists && key == "true" {
+		if g.exportAsHCL {
+			tfstatePath, _ := getFilePath(g.d, defaultTfStateFile)
+			hclExporter := NewTfStateExportReader(tfstatePath, g.exportDirPath)
+			hclExporter.compareExportAndTFState()
+		}
+	}
+
+	return nil
 }
