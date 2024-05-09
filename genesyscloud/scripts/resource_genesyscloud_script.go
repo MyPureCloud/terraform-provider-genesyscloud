@@ -85,7 +85,7 @@ func readScript(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		script, resp, err := scriptsProxy.getScriptById(ctx, d.Id())
-		if resp.StatusCode == http.StatusNotFound {
+		if resp != nil && resp.StatusCode == http.StatusNotFound {
 			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read flow %s | error: %s", d.Id(), err), resp))
 		}
 
@@ -111,7 +111,7 @@ func deleteScript(ctx context.Context, d *schema.ResourceData, meta interface{})
 
 	log.Printf("Deleting script %s", d.Id())
 	if err := scriptsProxy.deleteScript(ctx, d.Id()); err != nil {
-		return diag.Errorf("failed to delete script %s: %s", d.Id(), err)
+		return util.BuildDiagnosticError(resourceName, fmt.Sprintf("failed to delete script %s", d.Id()), err)
 	}
 
 	log.Printf("Successfully deleted script %s", d.Id())

@@ -418,7 +418,7 @@ func createJourneyActionMap(ctx context.Context, d *schema.ResourceData, meta in
 	result, resp, err := journeyApi.PostJourneyActionmaps(*actionMap)
 	if err != nil {
 		input, _ := util.InterfaceToJson(*actionMap)
-		return diag.Errorf("failed to create journey action map %s: %s\n(input: %+v)\n(resp: %s)", *actionMap.DisplayName, err, input, util.GetBody(resp))
+		return util.BuildAPIDiagnosticError("genesyscloud_journey_action_map", fmt.Sprintf("failed to create journey action map %s: %s\n(input: %+v)", *actionMap.DisplayName, err, input), resp)
 	}
 
 	d.SetId(*result.Id)
@@ -466,7 +466,7 @@ func updateJourneyActionMap(ctx context.Context, d *schema.ResourceData, meta in
 		_, resp, patchErr := journeyApi.PatchJourneyActionmap(d.Id(), *patchActionMap)
 		if patchErr != nil {
 			input, _ := util.InterfaceToJson(*patchActionMap)
-			return resp, diag.Errorf("Error updating journey action map %s: %s\n(input: %+v)\n(resp: %s)", *patchActionMap.DisplayName, patchErr, input, util.GetBody(resp))
+			return resp, util.BuildAPIDiagnosticError("genesyscloud_journey_action_map", fmt.Sprintf("Error updating journey action map %s: %s\n(input: %+v)", *patchActionMap.DisplayName, patchErr, input), resp)
 		}
 		return resp, nil
 	})

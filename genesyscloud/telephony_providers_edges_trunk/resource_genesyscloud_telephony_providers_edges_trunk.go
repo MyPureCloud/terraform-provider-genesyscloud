@@ -75,7 +75,7 @@ func createTrunk(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 			return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to assign trunk base settings to edge group %s error: %s", edgeGroupId, err), resp)
 		}
 	} else {
-		return diag.Errorf("edge_id or edge_group_id were not set. One must be set in order to assign the trunk base settings")
+		return util.BuildDiagnosticError(resourceName, fmt.Sprintf("edge_id or edge_group_id were not set. One must be set in order to assign the trunk base settings"), fmt.Errorf("edge_id or edge_group_id were not set"))
 	}
 
 	trunk, resp, err := getTrunkByTrunkBaseId(ctx, trunkBaseSettingsId, meta)

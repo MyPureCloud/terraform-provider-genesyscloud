@@ -283,11 +283,25 @@ func readEvaluationForm(ctx context.Context, d *schema.ResourceData, meta interf
 		}
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceEvaluationForm())
+
+		// Retrieve a list of any published versions of the evaluation form
+		// If there are published versions, published will be set to true
+		publishedVersions, resp, err := qualityAPI.GetQualityFormsEvaluationsBulkContexts([]string{*evaluationForm.ContextId})
+		if err != nil {
+			if util.IsStatus404(resp) {
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_quality_forms_evaluation", fmt.Sprintf("Failed to retrieve a list of the latest published evaluation form versions"), resp))
+			}
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_quality_forms_evaluation", fmt.Sprintf("Failed to retrieve a list of the latest published evaluation form versions"), resp))
+		}
+
+		if len(publishedVersions) > 0 {
+			_ = d.Set("published", true)
+		} else {
+			_ = d.Set("published", false)
+		}
+
 		if evaluationForm.Name != nil {
 			d.Set("name", *evaluationForm.Name)
-		}
-		if evaluationForm.Published != nil {
-			d.Set("published", *evaluationForm.Published)
 		}
 		if evaluationForm.QuestionGroups != nil {
 			d.Set("question_groups", flattenQuestionGroups(evaluationForm.QuestionGroups))

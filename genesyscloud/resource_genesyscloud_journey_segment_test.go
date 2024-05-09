@@ -10,7 +10,6 @@ import (
 
 	"terraform-provider-genesyscloud/genesyscloud/util/testrunner"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
@@ -74,7 +73,7 @@ func cleanupJourneySegments(idPrefix string) {
 			if journeySegment.DisplayName != nil && strings.HasPrefix(*journeySegment.DisplayName, idPrefix) {
 				_, delErr := journeyApi.DeleteJourneySegment(*journeySegment.Id)
 				if delErr != nil {
-					diag.Errorf("failed to delete journey segment %s (%s): %s", *journeySegment.Id, *journeySegment.DisplayName, delErr)
+					util.BuildDiagnosticError("genesyscloud_journey_segment", fmt.Sprintf("failed to delete journey segment %s (%s)", *journeySegment.Id, *journeySegment.DisplayName), delErr)
 					return
 				}
 				log.Printf("Deleted journey segment %s (%s)", *journeySegment.Id, *journeySegment.DisplayName)

@@ -164,7 +164,7 @@ func createProcessAutomationTrigger(ctx context.Context, d *schema.ResourceData,
 	integAPI := platformclientv2.NewIntegrationsApiWithConfig(sdkConfig)
 
 	if eventTTLSeconds > 0 && delayBySeconds > 0 {
-		return diag.Errorf("Only one of event_ttl_seconds or delay_by_seconds can be set.")
+		return util.BuildDiagnosticError(resourceName, fmt.Sprintf("Only one of event_ttl_seconds or delay_by_seconds can be set."), fmt.Errorf("event_ttl_seconds and delay_by_seconds are both set"))
 	}
 
 	log.Printf("Creating process automation trigger %s", name)
@@ -287,7 +287,7 @@ func updateProcessAutomationTrigger(ctx context.Context, d *schema.ResourceData,
 		}
 
 		if eventTTLSeconds > 0 && delayBySeconds > 0 {
-			return resp, diag.Errorf("Only one of event_ttl_seconds or delay_by_seconds can be set.")
+			return resp, util.BuildDiagnosticError(resourceName, fmt.Sprintf("Only one of event_ttl_seconds or delay_by_seconds can be set."), fmt.Errorf("event_ttl_seconds and delay_by_seconds are both set"))
 		}
 
 		triggerInput := &ProcessAutomationTrigger{

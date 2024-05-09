@@ -261,7 +261,7 @@ func updateLocation(ctx context.Context, d *schema.ResourceData, meta interface{
 			update.Notes = &filler
 			err := d.Set("notes", filler)
 			if err != nil {
-				return nil, diag.Errorf("error setting the value of 'notes' attribute: %v", err)
+				return nil, util.BuildDiagnosticError("genesyscloud_location", fmt.Sprintf("error setting the value of 'notes' attribute"), err)
 			}
 		}
 

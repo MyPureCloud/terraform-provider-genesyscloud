@@ -88,7 +88,7 @@ func createOutboundDncList(ctx context.Context, d *schema.ResourceData, meta int
 				}
 			}
 		} else {
-			return diag.Errorf("Phone numbers can only be uploaded to internal DNC lists.")
+			return util.BuildDiagnosticError(resourceName, fmt.Sprintf("Phone numbers can only be uploaded to internal DNC lists."), fmt.Errorf("phone numbers can only be uploaded to internal DNC Lists"))
 		}
 	}
 	log.Printf("Created Outbound DNC list %s %s", name, *outboundDncList.Id)
@@ -152,7 +152,7 @@ func updateOutboundDncList(ctx context.Context, d *schema.ResourceData, meta int
 					}
 				}
 			} else {
-				return nil, diag.Errorf("Phone numbers can only be uploaded to internal DNC lists.")
+				return nil, util.BuildDiagnosticError(resourceName, fmt.Sprintf("Phone numbers can only be uploaded to internal DNC lists"), fmt.Errorf("phone numbers can only be uploaded to internal DNC lists"))
 			}
 		}
 		return nil, nil

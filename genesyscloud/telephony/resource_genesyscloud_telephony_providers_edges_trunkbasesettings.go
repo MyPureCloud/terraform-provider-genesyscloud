@@ -115,7 +115,7 @@ func createTrunkBaseSettings(ctx context.Context, d *schema.ResourceData, meta i
 		trunkBase.InboundSite = inboundSite
 	}
 	if errorInboundSite != nil {
-		return diag.Errorf("Failed to create trunk base settings %s: %s", name, errorInboundSite)
+		return util.BuildDiagnosticError(resourceName, fmt.Sprintf("Failed to create trunk base settings %s", name), errorInboundSite)
 	}
 
 	if description != "" {
@@ -166,7 +166,7 @@ func updateTrunkBaseSettings(ctx context.Context, d *schema.ResourceData, meta i
 		trunkBase.InboundSite = inboundSite
 	}
 	if errorInboundSite != nil {
-		return diag.Errorf("Failed to update trunk base settings %s: %s", name, errorInboundSite)
+		return util.BuildDiagnosticError(resourceName, fmt.Sprintf("Failed to update trunk base settings %s", name), errorInboundSite)
 	}
 
 	if description != "" {

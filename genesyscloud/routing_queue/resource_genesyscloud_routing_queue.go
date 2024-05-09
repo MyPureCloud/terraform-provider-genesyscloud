@@ -685,9 +685,10 @@ func buildSdkConditionalGroupRouting(d *schema.ResourceData) (*platformclientv2.
 
 			if queueId, ok := ruleSettings["queue_id"].(string); ok && queueId != "" {
 				if i == 0 {
-					return nil, diag.Errorf("For rule 1, queue_id is always assumed to be the current queue, so queue id should not be specified.")
+					return nil, util.BuildDiagnosticError(resourceName, fmt.Sprintf("For rule 1, queue_id is always assumed to be the current queue, so queue id should not be specified"), fmt.Errorf("queue id is not nil"))
 				}
 				sdkCGRRule.Queue = &platformclientv2.Domainentityref{Id: &queueId}
+
 			}
 
 			if memberGroupList, ok := ruleSettings["groups"].([]interface{}); ok {
@@ -807,7 +808,7 @@ func validateMapCommTypes(val interface{}, _ cty.Path) diag.Diagnostics {
 	m := val.(map[string]interface{})
 	for k := range m {
 		if !lists.ItemInSlice(k, commTypes) {
-			return diag.Errorf("%s is an invalid communication type key.", k)
+			return util.BuildDiagnosticError(resourceName, fmt.Sprintf("%s is an invalid communication type key.", k), fmt.Errorf("invalid communication type key"))
 		}
 	}
 	return nil
@@ -1030,7 +1031,7 @@ func updateQueueMembers(d *schema.ResourceData, sdkConfig *platformclientv2.Conf
 		time.Sleep(10 * time.Second)
 		for _, userId := range newUserIds {
 			if err := verifyUserIsNotGroupMemberOfQueue(d.Id(), userId, sdkConfig); err != nil {
-				return diag.Errorf("%v", err)
+				return util.BuildDiagnosticError(resourceName, fmt.Sprintf("Error verifying user %s is not group member of queue", d.Id()), err)
 			}
 		}
 	}

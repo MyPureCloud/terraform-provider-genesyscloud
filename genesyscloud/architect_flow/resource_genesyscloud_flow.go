@@ -157,7 +157,7 @@ func updateFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 
 	if flowID == "" {
 		setFileContentHashToNil(d)
-		return diag.Errorf("Failed to get the flowId from Architect Job (%s).", jobId)
+		return util.BuildDiagnosticError(resourceName, fmt.Sprintf("Failed to get the flowId from Architect Job (%s).", jobId), fmt.Errorf("FlowID is nil"))
 	}
 
 	d.SetId(flowID)

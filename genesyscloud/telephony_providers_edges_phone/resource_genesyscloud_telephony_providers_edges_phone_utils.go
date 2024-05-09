@@ -29,7 +29,7 @@ type PhoneConfig struct {
 	PhoneBaseSettingsId string
 	LineAddresses       []string
 	WebRtcUserId        string
-	Depends_on          string
+	DependsOn           string
 }
 
 func getPhoneFromResourceData(ctx context.Context, pp *phoneProxy, d *schema.ResourceData) (*platformclientv2.Phone, error) {
@@ -72,12 +72,12 @@ func getPhoneFromResourceData(ctx context.Context, pp *phoneProxy, d *schema.Res
 		if phoneConfig.Properties == nil {
 			phoneConfig.Properties = &map[string]interface{}{}
 		}
-		phone_standalone := map[string]interface{}{
+		phoneStandalone := map[string]interface{}{
 			"value": &map[string]interface{}{
 				"instance": true,
 			},
 		}
-		(*phoneConfig.Properties)["phone_standalone"] = phone_standalone
+		(*phoneConfig.Properties)["phone_standalone"] = phoneStandalone
 	}
 
 	webRtcUserId := d.Get("web_rtc_user_id")
@@ -125,18 +125,18 @@ func assignUserToWebRtcPhone(ctx context.Context, pp *phoneProxy, userId string)
 		if stationIsAssociated {
 			log.Printf("Disassociating user from phone station %s", stationId)
 			if resp, err := pp.unassignUserFromStation(ctx, stationId); err != nil {
-				return resp, diag.Errorf("Error unassigning user from station %s: %v", stationId, err)
+				return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Error unassigning user from station %s: %v", stationId, err), resp)
 			}
 		}
 
 		resp, putErr := pp.assignUserToStation(ctx, userId, stationId)
 		if putErr != nil {
-			return resp, diag.Errorf("Failed to assign user %v to the station %s: %s", userId, stationId, putErr)
+			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to assign user %v to the station %s: %s", userId, stationId, putErr), resp)
 		}
 
 		resp, putErr = pp.assignStationAsDefault(ctx, userId, stationId)
 		if putErr != nil {
-			return resp, diag.Errorf("Failed to assign Station %v as the default station for user %s: %s", stationId, userId, putErr)
+			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to assign Station %v as the default station for user %s: %s", stationId, userId, putErr), resp)
 		}
 
 		return resp, nil
@@ -341,7 +341,7 @@ func GeneratePhoneResourceWithCustomAttrs(config *PhoneConfig, otherAttrs ...str
 		config.SiteId,
 		config.PhoneBaseSettingsId,
 		strings.Join(lineStrs, ","),
-		config.Depends_on,
+		config.DependsOn,
 		webRtcUser,
 		strings.Join(otherAttrs, "\n"),
 	)

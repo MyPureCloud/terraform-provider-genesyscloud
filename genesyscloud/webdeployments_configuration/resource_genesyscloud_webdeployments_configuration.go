@@ -87,7 +87,7 @@ func createWebDeploymentConfiguration(ctx context.Context, d *schema.ResourceDat
 
 	activeError := waitForConfigurationDraftToBeActive(ctx, meta, d.Id())
 	if activeError != nil {
-		return diag.Errorf("Web deployment configuration %s did not become active and could not be published", name)
+		return util.BuildDiagnosticError(resourceName, fmt.Sprintf("Web deployment configuration %s did not become active and could not be published", name), fmt.Errorf("%v", activeError))
 	}
 
 	diagErr = util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
@@ -179,7 +179,7 @@ func updateWebDeploymentConfiguration(ctx context.Context, d *schema.ResourceDat
 
 	activeError := waitForConfigurationDraftToBeActive(ctx, meta, d.Id())
 	if activeError != nil {
-		return diag.Errorf("Web deployment configuration %s did not become active and could not be published", name)
+		return util.BuildDiagnosticError(resourceName, fmt.Sprintf("Web deployment configuration %s did not become active and could not be published", name), fmt.Errorf("%v", activeError))
 	}
 
 	diagErr = util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {

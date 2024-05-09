@@ -102,7 +102,7 @@ func processTerraformFile(path string, resourceTypes []string) error {
 	// Parse the Terraform file
 	content, diag := parser.ParseHCLFile(path)
 	if diag.HasErrors() {
-		return fmt.Errorf("error parsing HCL in %s: %v", path, diag)
+		return fmt.Errorf("error parsing exxport tf in %s: %v", path, diag)
 	}
 
 	log.Printf("bytess %v", string(content.Bytes))
@@ -124,7 +124,7 @@ func readTfState(path string) []string {
 	// Read the JSON file
 	jsonFile, err := ioutil.ReadFile(path)
 	if err != nil {
-		log.Printf("Error reading JSON file:", err)
+		log.Printf("Error reading TF State File: %v", err)
 		return nil
 	}
 
@@ -132,7 +132,7 @@ func readTfState(path string) []string {
 	var jsonData map[string]interface{}
 	err = json.Unmarshal(jsonFile, &jsonData)
 	if err != nil {
-		log.Printf("Error parsing JSON:", err)
+		log.Printf("Error parsing TF State File: %v", err)
 		return nil
 	}
 
@@ -145,26 +145,26 @@ func extractResourceTypes(data map[string]interface{}) []string {
 	var resourceTypesFromTf []string
 	resources, ok := data["resources"].([]interface{})
 	if !ok {
-		log.Printf("Error: resources not found in JSON")
+		log.Printf("Error: resources not found in TF State File")
 		return resourceTypesFromTf
 	}
 
 	for _, resource := range resources {
 		resourceMap, ok := resource.(map[string]interface{})
 		if !ok {
-			log.Printf("Error: invalid resource format in JSON")
+			log.Printf("Error: invalid resource format in TF State File")
 			continue
 		}
 
 		resourceType, ok := resourceMap["type"].(string)
 		if !ok {
-			log.Printf("Error: name attribute not found in resource")
+			log.Printf("Error: Type attribute not found in resource %v", resource)
 			continue
 		}
 
 		name, ok := resourceMap["name"].(string)
 		if !ok {
-			log.Printf("Error: name attribute not found in resource %v")
+			log.Printf("Error: name attribute not found in resource %v", resource)
 			continue
 		}
 		resourceTypesFromTf = append(resourceTypesFromTf, resourceType+"."+name)

@@ -63,11 +63,11 @@ func createTaskManagementWorktype(ctx context.Context, d *schema.ResourceData, m
 	log.Printf("Creating the task management worktype statuses of %s", *worktype.Id)
 	statuses := d.Get("statuses").(*schema.Set).List()
 	if _, err := createWorktypeStatuses(ctx, proxy, *worktype.Id, statuses); err != nil {
-		return diag.Errorf("failed to create task management worktype statuses: %v", err)
+		return util.BuildDiagnosticError(resourceName, fmt.Sprintf("failed to create task management worktype statuses"), err)
 	}
 	log.Printf("Updating the destination statuses of the statuses of worktype %s", *worktype.Id)
 	if _, err := updateWorktypeStatuses(ctx, proxy, *worktype.Id, statuses, true); err != nil {
-		return diag.Errorf("failed to update task management worktype statuses: %v", err)
+		return util.BuildDiagnosticError(resourceName, fmt.Sprintf("failed to update task management worktype statuses"), err)
 	}
 
 	// Update the worktype if 'default_status_name' is set
@@ -75,7 +75,7 @@ func createTaskManagementWorktype(ctx context.Context, d *schema.ResourceData, m
 		time.Sleep(5 * time.Second)
 		err := updateDefaultStatusName(ctx, proxy, d, *worktype.Id)
 		if err != nil {
-			return diag.Errorf("failed to update default status name of worktype: %v", err)
+			return util.BuildDiagnosticError(resourceName, fmt.Sprintf("failed to update default status name of worktype"), err)
 		}
 	}
 
@@ -191,14 +191,14 @@ func updateTaskManagementWorktype(ctx context.Context, d *schema.ResourceData, m
 	// Create new statuses
 	log.Printf("Creating the task management worktype statuses of %s", d.Id())
 	if _, err := createWorktypeStatuses(ctx, proxy, d.Id(), forCreation); err != nil {
-		return diag.Errorf("failed to create task management worktype statuses: %v", err)
+		return util.BuildDiagnosticError(resourceName, fmt.Sprintf("failed to create task management worktype statuses"), err)
 	}
 
 	// Update the newly created statuses with status refs
 	log.Printf("Updating the newly created statuses of worktype %s", d.Id())
 	createdStatuses, err := updateWorktypeStatuses(ctx, proxy, d.Id(), forCreation, true)
 	if err != nil {
-		return diag.Errorf("failed to update task management worktype statuses: %v", err)
+		return util.BuildDiagnosticError(resourceName, fmt.Sprintf("failed to update task management worktype statuses"), err)
 	}
 	for _, updateStat := range *createdStatuses {
 		statusIdsToStay = append(statusIdsToStay, *updateStat.Id)
@@ -208,7 +208,7 @@ func updateTaskManagementWorktype(ctx context.Context, d *schema.ResourceData, m
 	log.Printf("Updating the destination statuses of the statuses of worktype %s", d.Id())
 	updatedStatuses, err := updateWorktypeStatuses(ctx, proxy, d.Id(), forUpdate, false)
 	if err != nil {
-		return diag.Errorf("failed to update task management worktype statuses: %v", err)
+		return util.BuildDiagnosticError(resourceName, fmt.Sprintf("failed to update task management worktype statuses"), err)
 	}
 	for _, updateStat := range *updatedStatuses {
 		statusIdsToStay = append(statusIdsToStay, *updateStat.Id)
@@ -256,7 +256,7 @@ func updateTaskManagementWorktype(ctx context.Context, d *schema.ResourceData, m
 		time.Sleep(5 * time.Second)
 		err := updateDefaultStatusName(ctx, proxy, d, d.Id())
 		if err != nil {
-			return diag.Errorf("failed to update default status name of worktype: %v", err)
+			return util.BuildDiagnosticError(resourceName, fmt.Sprintf("failed to update default status name of worktype"), err)
 		}
 	}
 

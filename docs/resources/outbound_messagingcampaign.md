@@ -75,13 +75,13 @@ resource "genesyscloud_outbound_messagingcampaign" "example_outbound_messagingca
 
 Required:
 
-- `message_column` (String) The Contact List column specifying the message to send to the contact.
 - `phone_column` (String) The Contact List column specifying the phone number to send a message to.
 - `sender_sms_phone_number` (String) A phone number provisioned for SMS communications in E.164 format. E.g. +13175555555 or +34234234234
 
 Optional:
 
-- `content_template_id` (String) The content template used to formulate the message to send to the contact.
+- `content_template_id` (String) The content template used to formulate the message to send to the contact. Either message_column or content_template_id is required.
+- `message_column` (String) The Contact List column specifying the message to send to the contact. Either message_column or content_template_id is required.
 
 
 <a id="nestedblock--contact_sorts"></a>
