@@ -1632,7 +1632,7 @@ func TestAccResourceTfExportEnableDependsOn(t *testing.T) {
 		exportTestDir         = "../.terraform" + uuid.NewString()
 		exportResource        = "test-export2"
 		contactListResourceId = "contact_list" + uuid.NewString()
-		contatListname        = "terraform contact list" + uuid.NewString()
+		contactListName       = "terraform contact list" + uuid.NewString()
 		outboundFlowFilePath  = "../../examples/resources/genesyscloud_flow/outboundcall_flow_example.yaml"
 		flowName              = "testflowcxcase"
 		flowResourceId        = "flow"
@@ -1653,7 +1653,7 @@ create_duration = "100s"
 		flowName,
 		"${data.genesyscloud_auth_division_home.home.name}",
 		wrapupcodeResourceId,
-		contatListname,
+		contactListName,
 	) +
 		generateTfExportByFlowDependsOnResources(
 			exportResource,
@@ -1683,8 +1683,8 @@ create_duration = "100s"
 				Config: config,
 				Check: resource.ComposeTestCheckFunc(
 					validateFlow("genesyscloud_flow."+flowResourceId, flowName),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+contactListResourceId, "name", contatListname),
-					testDependentContactList(exportTestDir+"/"+defaultTfJSONFile, "genesyscloud_outbound_contact_list", sanitizer.S.SanitizeResourceName(contatListname)),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+contactListResourceId, "name", contactListName),
+					testDependentContactList(exportTestDir+"/"+defaultTfJSONFile, "genesyscloud_outbound_contact_list", sanitizer.S.SanitizeResourceName(contactListName)),
 				),
 			},
 		},
@@ -1752,7 +1752,7 @@ func testQueueExportEqual(filePath, resourceType, name string, expectedQueue Que
 	}
 }
 
-// testDependentContactList tests to see if the dependedent conatctListResource for the flow is exported.
+// testDependentContactList tests to see if the dependent contactListResource for the flow is exported.
 func testDependentContactList(filePath, resourceType, name string) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
 
@@ -2453,17 +2453,16 @@ func GenerateReferencedResourcesForOutboundCampaignTests(
 func validateFlow(flowResourceName, name string) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
 		flowResource, ok := state.RootModule().Resources[flowResourceName]
-		fmt.Printf("%v flowResource", flowResource)
 		if !ok {
-			return fmt.Errorf("Failed to find flow %s in state", flowResourceName)
+			return fmt.Errorf("failed to find flow %s in state", flowResourceName)
 		}
 		flowID := flowResource.Primary.ID
 		architectAPI := platformclientv2.NewArchitectApi()
 
+		log.Printf("Reading flow %s", flowID)
 		flow, _, err := architectAPI.GetFlow(flowID, false)
-		fmt.Printf("%v flow", flow)
 		if err != nil {
-			return fmt.Errorf("Unexpected error: %s", err)
+			return fmt.Errorf("unexpected error: %s", err)
 		}
 
 		if flow == nil {
@@ -2471,7 +2470,7 @@ func validateFlow(flowResourceName, name string) resource.TestCheckFunc {
 		}
 
 		if *flow.Name != name {
-			return fmt.Errorf("Returned flow (%s) has incorrect name. Expect: %s, Actual: %s", flowID, name, *flow.Name)
+			return fmt.Errorf("returned flow (%s) has incorrect name. Expect: %s, Actual: %s", flowID, name, *flow.Name)
 		}
 
 		return nil
