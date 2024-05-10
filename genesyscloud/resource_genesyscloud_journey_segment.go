@@ -442,8 +442,8 @@ func buildSdkPatchSegment(journeySegment *schema.ResourceData) *platformclientv2
 	description := resourcedata.GetNillableValue[string](journeySegment, "description")
 	color := journeySegment.Get("color").(string)
 	shouldDisplayToAgent := resourcedata.GetNillableBool(journeySegment, "should_display_to_agent")
-	sdkContext := resourcedata.BuildSdkListFirstElement(journeySegment, "context", buildSdkRequestContext, false)
-	journey := resourcedata.BuildSdkListFirstElement(journeySegment, "journey", buildSdkRequestJourney, false)
+	sdkContext := resourcedata.BuildSdkListFirstElement(journeySegment, "context", buildSdkPatchContext, false)
+	journey := resourcedata.BuildSdkListFirstElement(journeySegment, "journey", buildSdkPatchRequestJourney, false)
 	externalSegment := resourcedata.BuildSdkListFirstElement(journeySegment, "external_segment", buildSdkPatchExternalSegment, true)
 	assignmentExpirationDays := resourcedata.GetNillableValue[int](journeySegment, "assignment_expiration_days")
 
@@ -456,7 +456,9 @@ func buildSdkPatchSegment(journeySegment *schema.ResourceData) *platformclientv2
 	sdkPatchSegment.SetField("Context", sdkContext)
 	sdkPatchSegment.SetField("Journey", journey)
 	sdkPatchSegment.SetField("ExternalSegment", externalSegment)
-	sdkPatchSegment.SetField("AssignmentExpirationDays", assignmentExpirationDays)
+	if assignmentExpirationDays != nil {
+		sdkPatchSegment.SetField("AssignmentExpirationDays", assignmentExpirationDays)
+	}
 	return &sdkPatchSegment
 }
 
@@ -500,6 +502,7 @@ func buildSdkRequestContextPattern(contextPattern map[string]interface{}) *platf
 		Criteria: stringmap.BuildSdkList(contextPattern, "criteria", buildSdkRequestEntityTypeCriteria),
 	}
 }
+
 func buildSdkPatchContextPattern(contextPattern map[string]interface{}) *platformclientv2.Patchcontextpattern {
 	return &platformclientv2.Patchcontextpattern{
 		Criteria: stringmap.BuildSdkList(contextPattern, "criteria", buildSdkPatchEntityTypeCriteria),
@@ -567,6 +570,16 @@ func buildSdkRequestJourney(journey map[string]interface{}) *platformclientv2.Re
 	}
 }
 
+func buildSdkPatchRequestJourney(journey map[string]any) *platformclientv2.Patchjourney {
+	patterns := &[]platformclientv2.Patchjourneypattern{}
+	if journey != nil {
+		patterns = stringmap.BuildSdkList(journey, "patterns", buildSdkPatchRequestJourneyPattern)
+	}
+	return &platformclientv2.Patchjourney{
+		Patterns: patterns,
+	}
+}
+
 func buildSdkPatchJourney(journey map[string]interface{}) *platformclientv2.Patchjourney {
 	patterns := &[]platformclientv2.Patchjourneypattern{}
 	if journey != nil {
@@ -595,6 +608,22 @@ func buildSdkRequestJourneyPattern(journeyPattern map[string]interface{}) *platf
 	eventName := stringmap.GetNonDefaultValue[string](journeyPattern, "event_name")
 
 	return &platformclientv2.Requestjourneypattern{
+		Criteria:    criteria,
+		Count:       &count,
+		StreamType:  &streamType,
+		SessionType: &sessionType,
+		EventName:   eventName,
+	}
+}
+
+func buildSdkPatchRequestJourneyPattern(journeyPattern map[string]any) *platformclientv2.Patchjourneypattern {
+	criteria := stringmap.BuildSdkList(journeyPattern, "criteria", buildSdkPatchRequestCriteria)
+	count := journeyPattern["count"].(int)
+	streamType := journeyPattern["stream_type"].(string)
+	sessionType := journeyPattern["session_type"].(string)
+	eventName := stringmap.GetNonDefaultValue[string](journeyPattern, "event_name")
+
+	return &platformclientv2.Patchjourneypattern{
 		Criteria:    criteria,
 		Count:       &count,
 		StreamType:  &streamType,
@@ -635,6 +664,20 @@ func buildSdkRequestCriteria(criteria map[string]interface{}) *platformclientv2.
 	operator := criteria["operator"].(string)
 
 	return &platformclientv2.Requestcriteria{
+		Key:              &key,
+		Values:           values,
+		ShouldIgnoreCase: &shouldIgnoreCase,
+		Operator:         &operator,
+	}
+}
+
+func buildSdkPatchRequestCriteria(criteria map[string]interface{}) *platformclientv2.Patchcriteria {
+	key := criteria["key"].(string)
+	values := stringmap.BuildSdkStringList(criteria, "values")
+	shouldIgnoreCase := criteria["should_ignore_case"].(bool)
+	operator := criteria["operator"].(string)
+
+	return &platformclientv2.Patchcriteria{
 		Key:              &key,
 		Values:           values,
 		ShouldIgnoreCase: &shouldIgnoreCase,
