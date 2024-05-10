@@ -1730,6 +1730,10 @@ func testQueueExportEqual(filePath, resourceType, name string, expectedQueue Que
 			return err
 		}
 
+		if _, ok := raw[name]; !ok {
+			return fmt.Errorf("failed to find resource %s in resource definition", name)
+		}
+
 		var r *json.RawMessage
 		if err := json.Unmarshal(*raw[name], &r); err != nil {
 			return err
