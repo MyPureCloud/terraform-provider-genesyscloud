@@ -422,18 +422,23 @@ func buildSdkJourneySegment(journeySegment *schema.ResourceData) *platformclient
 	externalSegment := resourcedata.BuildSdkListFirstElement(journeySegment, "external_segment", buildSdkExternalSegment, true)
 	assignmentExpirationDays := resourcedata.GetNillableValue[int](journeySegment, "assignment_expiration_days")
 
-	return &platformclientv2.Journeysegmentrequest{
-		IsActive:                 &isActive,
-		DisplayName:              &displayName,
-		Description:              description,
-		Color:                    &color,
-		Scope:                    &scope,
-		ShouldDisplayToAgent:     shouldDisplayToAgent,
-		Context:                  sdkContext,
-		Journey:                  journey,
-		ExternalSegment:          externalSegment,
-		AssignmentExpirationDays: assignmentExpirationDays,
+	journeySegmentRequest := platformclientv2.Journeysegmentrequest{}
+
+	journeySegmentRequest.SetField("IsActive", &isActive)
+	journeySegmentRequest.SetField("DisplayName", &displayName)
+	journeySegmentRequest.SetField("Description", description)
+	journeySegmentRequest.SetField("Color", &color)
+	journeySegmentRequest.SetField("Scope", &scope)
+	journeySegmentRequest.SetField("ShouldDisplayToAgent", shouldDisplayToAgent)
+	journeySegmentRequest.SetField("Context", sdkContext)
+	journeySegmentRequest.SetField("Journey", journey)
+	journeySegmentRequest.SetField("ExternalSegment", externalSegment)
+
+	if assignmentExpirationDays != nil {
+		journeySegmentRequest.SetField("AssignmentExpirationDays", assignmentExpirationDays)
 	}
+
+	return &journeySegmentRequest
 }
 
 func buildSdkPatchSegment(journeySegment *schema.ResourceData) *platformclientv2.Patchsegment {
