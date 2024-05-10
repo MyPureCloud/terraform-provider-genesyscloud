@@ -422,23 +422,18 @@ func buildSdkJourneySegment(journeySegment *schema.ResourceData) *platformclient
 	externalSegment := resourcedata.BuildSdkListFirstElement(journeySegment, "external_segment", buildSdkExternalSegment, true)
 	assignmentExpirationDays := resourcedata.GetNillableValue[int](journeySegment, "assignment_expiration_days")
 
-	journeySegmentRequest := platformclientv2.Journeysegmentrequest{}
-
-	journeySegmentRequest.SetField("IsActive", &isActive)
-	journeySegmentRequest.SetField("DisplayName", &displayName)
-	journeySegmentRequest.SetField("Description", description)
-	journeySegmentRequest.SetField("Color", &color)
-	journeySegmentRequest.SetField("Scope", &scope)
-	journeySegmentRequest.SetField("ShouldDisplayToAgent", shouldDisplayToAgent)
-	journeySegmentRequest.SetField("Context", sdkContext)
-	journeySegmentRequest.SetField("Journey", journey)
-	journeySegmentRequest.SetField("ExternalSegment", externalSegment)
-
-	if assignmentExpirationDays != nil {
-		journeySegmentRequest.SetField("AssignmentExpirationDays", assignmentExpirationDays)
+	return &platformclientv2.Journeysegmentrequest{
+		IsActive:                 &isActive,
+		DisplayName:              &displayName,
+		Description:              description,
+		Color:                    &color,
+		Scope:                    &scope,
+		ShouldDisplayToAgent:     shouldDisplayToAgent,
+		Context:                  sdkContext,
+		Journey:                  journey,
+		ExternalSegment:          externalSegment,
+		AssignmentExpirationDays: assignmentExpirationDays,
 	}
-
-	return &journeySegmentRequest
 }
 
 func buildSdkPatchSegment(journeySegment *schema.ResourceData) *platformclientv2.Patchsegment {
@@ -575,16 +570,6 @@ func buildSdkRequestJourney(journey map[string]interface{}) *platformclientv2.Re
 	}
 }
 
-func buildSdkPatchRequestJourney(journey map[string]any) *platformclientv2.Patchjourney {
-	patterns := &[]platformclientv2.Patchjourneypattern{}
-	if journey != nil {
-		patterns = stringmap.BuildSdkList(journey, "patterns", buildSdkPatchRequestJourneyPattern)
-	}
-	return &platformclientv2.Patchjourney{
-		Patterns: patterns,
-	}
-}
-
 func buildSdkPatchJourney(journey map[string]interface{}) *platformclientv2.Patchjourney {
 	patterns := &[]platformclientv2.Patchjourneypattern{}
 	if journey != nil {
@@ -613,22 +598,6 @@ func buildSdkRequestJourneyPattern(journeyPattern map[string]interface{}) *platf
 	eventName := stringmap.GetNonDefaultValue[string](journeyPattern, "event_name")
 
 	return &platformclientv2.Requestjourneypattern{
-		Criteria:    criteria,
-		Count:       &count,
-		StreamType:  &streamType,
-		SessionType: &sessionType,
-		EventName:   eventName,
-	}
-}
-
-func buildSdkPatchRequestJourneyPattern(journeyPattern map[string]any) *platformclientv2.Patchjourneypattern {
-	criteria := stringmap.BuildSdkList(journeyPattern, "criteria", buildSdkPatchRequestCriteria)
-	count := journeyPattern["count"].(int)
-	streamType := journeyPattern["stream_type"].(string)
-	sessionType := journeyPattern["session_type"].(string)
-	eventName := stringmap.GetNonDefaultValue[string](journeyPattern, "event_name")
-
-	return &platformclientv2.Patchjourneypattern{
 		Criteria:    criteria,
 		Count:       &count,
 		StreamType:  &streamType,
@@ -669,20 +638,6 @@ func buildSdkRequestCriteria(criteria map[string]interface{}) *platformclientv2.
 	operator := criteria["operator"].(string)
 
 	return &platformclientv2.Requestcriteria{
-		Key:              &key,
-		Values:           values,
-		ShouldIgnoreCase: &shouldIgnoreCase,
-		Operator:         &operator,
-	}
-}
-
-func buildSdkPatchRequestCriteria(criteria map[string]interface{}) *platformclientv2.Patchcriteria {
-	key := criteria["key"].(string)
-	values := stringmap.BuildSdkStringList(criteria, "values")
-	shouldIgnoreCase := criteria["should_ignore_case"].(bool)
-	operator := criteria["operator"].(string)
-
-	return &platformclientv2.Patchcriteria{
 		Key:              &key,
 		Values:           values,
 		ShouldIgnoreCase: &shouldIgnoreCase,
