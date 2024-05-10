@@ -362,7 +362,7 @@ func readJourneyActionTemplate(ctx context.Context, data *schema.ResourceData, i
 		}
 		flattenActionTemplate(data, actionTemplate)
 		log.Printf("Read Journey Action Template %s %s", data.Id(), *actionTemplate.Name)
-		return cc.CheckState(d)
+		return cc.CheckState(data)
 	})
 }
 

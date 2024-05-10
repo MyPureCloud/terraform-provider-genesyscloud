@@ -2,6 +2,7 @@ package consistency_checker
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"os"
@@ -42,6 +43,12 @@ type consistencyError struct {
 	key      string
 	oldValue interface{}
 	newValue interface{}
+}
+
+type consistencyErrorJson struct {
+	ResourceType string          `json:"resourceType"`
+	ResourceName string          `json:"resourceName"`
+	ErrorMessage json.RawMessage `json:"errorMessage"`
 }
 
 func (e *consistencyError) Error() string {
@@ -252,7 +259,7 @@ func (c *ConsistencyCheck) CheckState(currentState *schema.ResourceData) *retry.
 						})
 
 						if _, exists := os.LookupEnv("BYPASS_CONSISTENCY_CHECKER"); c.checks >= c.maxStateChecks && exists {
-							log.Println(err)
+							c.writeConsistencyErrorToFile(err)
 							return nil
 						}
 
@@ -269,7 +276,7 @@ func (c *ConsistencyCheck) CheckState(currentState *schema.ResourceData) *retry.
 					})
 
 					if _, exists := os.LookupEnv("BYPASS_CONSISTENCY_CHECKER"); c.checks >= c.maxStateChecks && exists {
-						log.Println(err)
+						c.writeConsistencyErrorToFile(err)
 						return nil
 					}
 
@@ -282,4 +289,24 @@ func (c *ConsistencyCheck) CheckState(currentState *schema.ResourceData) *retry.
 
 	DeleteConsistencyCheck(currentState.Id())
 	return nil
+}
+
+func (c *ConsistencyCheck) writeConsistencyErrorToFile(consistencyError *retry.RetryError) {
+	const filePath = "consistency-errors.log.json"
+	thing := consistencyErrorJson{
+		ResourceType: "",
+		ResourceName: "",
+		ErrorMessage: json.RawMessage(consistencyError.Err.Error()),
+	}
+
+	jsonData, err := json.Marshal(thing)
+	if err != nil {
+		fmt.Println("Error marshaling JSON:", err)
+		return
+	}
+
+	err = os.WriteFile(filePath, jsonData, os.ModePerm)
+	if err != nil {
+		log.Printf("Error writing file %s: %v", filePath, err)
+	}
 }
