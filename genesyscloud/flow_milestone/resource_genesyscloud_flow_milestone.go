@@ -7,6 +7,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -61,6 +62,7 @@ func createFlowMilestone(ctx context.Context, d *schema.ResourceData, meta inter
 func readFlowMilestone(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getFlowMilestoneProxy(sdkConfig)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceFlowMilestone(), constants.DefaultConsistencyChecks)
 
 	log.Printf("Reading flow milestone %s", d.Id())
 
@@ -73,14 +75,12 @@ func readFlowMilestone(ctx context.Context, d *schema.ResourceData, meta interfa
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read flow milestone %s | error: %s", d.Id(), getErr), resp))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceFlowMilestone())
-
 		resourcedata.SetNillableValue(d, "name", flowMilestone.Name)
 		resourcedata.SetNillableReferenceWritableDivision(d, "division_id", flowMilestone.Division)
 		resourcedata.SetNillableValue(d, "description", flowMilestone.Description)
 
 		log.Printf("Read flow milestone %s %s", d.Id(), *flowMilestone.Name)
-		return cc.CheckState()
+		return cc.CheckState(d)
 	})
 }
 

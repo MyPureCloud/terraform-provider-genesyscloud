@@ -8,6 +8,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -368,6 +369,7 @@ func readKnowledgeDocumentVariation(ctx context.Context, d *schema.ResourceData,
 
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	knowledgeAPI := platformclientv2.NewKnowledgeApiWithConfig(sdkConfig)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceKnowledgeDocumentVariation(), constants.DefaultConsistencyChecks)
 
 	documentState := ""
 
@@ -440,8 +442,6 @@ func readKnowledgeDocumentVariation(ctx context.Context, d *schema.ResourceData,
 			knowledgeDocumentVariation = variation
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceKnowledgeDocumentVariation())
-
 		newId := fmt.Sprintf("%s %s %s", *knowledgeDocumentVariation.Id, *knowledgeDocumentVariation.Document.KnowledgeBase.Id, documentResourceId)
 		d.SetId(newId)
 		d.Set("knowledge_base_id", *knowledgeDocumentVariation.Document.KnowledgeBase.Id)
@@ -456,7 +456,7 @@ func readKnowledgeDocumentVariation(ctx context.Context, d *schema.ResourceData,
 
 		log.Printf("Read knowledge document variation %s", documentVariationId)
 
-		return cc.CheckState()
+		return cc.CheckState(d)
 	})
 }
 

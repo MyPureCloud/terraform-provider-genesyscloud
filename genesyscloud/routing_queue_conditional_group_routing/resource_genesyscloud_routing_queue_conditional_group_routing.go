@@ -13,6 +13,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	featureToggles "terraform-provider-genesyscloud/genesyscloud/util/feature_toggles"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 )
@@ -65,6 +66,7 @@ func readRoutingQueueConditionalRoutingGroup(ctx context.Context, d *schema.Reso
 
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getRoutingQueueConditionalGroupRoutingProxy(sdkConfig)
+	cc := consistencyChecker.NewConsistencyCheck(ctx, d, meta, ResourceRoutingQueueConditionalGroupRouting(), constants.DefaultConsistencyChecks)
 	queueId := strings.Split(d.Id(), "/")[0]
 
 	log.Printf("Reading routing queue %s conditional group routing rules", queueId)
@@ -77,12 +79,10 @@ func readRoutingQueueConditionalRoutingGroup(ctx context.Context, d *schema.Reso
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read conditional group routing for queue %s | error: %s", queueId, getErr), resp))
 		}
 
-		cc := consistencyChecker.NewConsistencyCheck(ctx, d, meta, ResourceRoutingQueueConditionalGroupRouting())
-
 		_ = d.Set("queue_id", queueId)
 		_ = d.Set("rules", flattenConditionalGroupRouting(sdkRules))
 
-		return cc.CheckState()
+		return cc.CheckState(d)
 	})
 }
 

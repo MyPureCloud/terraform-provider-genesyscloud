@@ -8,6 +8,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 	"time"
 
@@ -64,6 +65,7 @@ func createArchitectGrammar(ctx context.Context, d *schema.ResourceData, meta in
 func readArchitectGrammar(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getArchitectGrammarProxy(sdkConfig)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceArchitectGrammar(), constants.DefaultConsistencyChecks)
 
 	log.Printf("Reading Architect Grammar %s", d.Id())
 
@@ -77,13 +79,11 @@ func readArchitectGrammar(ctx context.Context, d *schema.ResourceData, meta inte
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read Architect Grammar %s: %s", d.Id(), getErr), resp))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceArchitectGrammar())
-
 		resourcedata.SetNillableValue(d, "name", grammar.Name)
 		resourcedata.SetNillableValue(d, "description", grammar.Description)
 
 		log.Printf("Read Architect Grammar %s", d.Id())
-		return cc.CheckState()
+		return cc.CheckState(d)
 	})
 }
 

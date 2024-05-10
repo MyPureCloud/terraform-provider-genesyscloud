@@ -11,6 +11,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	featureToggles "terraform-provider-genesyscloud/genesyscloud/util/feature_toggles"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 	"time"
@@ -136,6 +137,7 @@ func createQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 func readQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := GetRoutingQueueProxy(sdkConfig)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceRoutingQueue(), constants.DefaultConsistencyChecks)
 
 	log.Printf("Reading queue %s", d.Id())
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
@@ -146,8 +148,6 @@ func readQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 			}
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read queue %s | error: %s", d.Id(), getErr), resp))
 		}
-
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceRoutingQueue())
 
 		resourcedata.SetNillableValue(d, "name", currentQueue.Name)
 		resourcedata.SetNillableValue(d, "description", currentQueue.Description)
@@ -252,7 +252,7 @@ func readQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 		}
 
 		log.Printf("Done reading queue %s %s", d.Id(), *currentQueue.Name)
-		return cc.CheckState()
+		return cc.CheckState(d)
 	})
 }
 

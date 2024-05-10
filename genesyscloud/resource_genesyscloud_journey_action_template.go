@@ -7,6 +7,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 	"terraform-provider-genesyscloud/genesyscloud/util/stringmap"
 	"terraform-provider-genesyscloud/genesyscloud/util/typeconv"
@@ -348,6 +349,8 @@ func createJourneyActionTemplate(ctx context.Context, data *schema.ResourceData,
 
 func readJourneyActionTemplate(ctx context.Context, data *schema.ResourceData, i interface{}) diag.Diagnostics {
 	journeyApi := journeyApiConfig(i)
+	cc := consistency_checker.NewConsistencyCheck(ctx, data, i, ResourceJourneyActionTemplate(), constants.DefaultConsistencyChecks)
+
 	log.Printf("Reading Journey Action Template %s", data.Id())
 	return util.WithRetriesForRead(ctx, data, func() *retry.RetryError {
 		actionTemplate, resp, getErr := journeyApi.GetJourneyActiontemplate(data.Id())
@@ -357,10 +360,9 @@ func readJourneyActionTemplate(ctx context.Context, data *schema.ResourceData, i
 			}
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_journey_action_template", fmt.Sprintf("failed to read Journey Action Template %s | error: %s", data.Id(), getErr), resp))
 		}
-		cc := consistency_checker.NewConsistencyCheck(ctx, data, i, ResourceJourneyActionTemplate())
 		flattenActionTemplate(data, actionTemplate)
 		log.Printf("Read Journey Action Template %s %s", data.Id(), *actionTemplate.Name)
-		return cc.CheckState()
+		return cc.CheckState(d)
 	})
 }
 

@@ -7,6 +7,7 @@ import (
 	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -90,7 +91,7 @@ func createGroup(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 
 func readGroup(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceGroup(), constants.DefaultConsistencyChecks)
 	gp := getGroupProxy(sdkConfig)
 
 	log.Printf("Reading group %s", d.Id())
@@ -104,8 +105,6 @@ func readGroup(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 			}
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read group %s | error: %s", d.Id(), getErr), resp))
 		}
-
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceGroup())
 
 		resourcedata.SetNillableValue(d, "name", group.Name)
 		resourcedata.SetNillableValue(d, "type", group.VarType)
@@ -128,7 +127,7 @@ func readGroup(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 		_ = d.Set("member_ids", members)
 
 		log.Printf("Read group %s %s", d.Id(), *group.Name)
-		return cc.CheckState()
+		return cc.CheckState(d)
 	})
 }
 

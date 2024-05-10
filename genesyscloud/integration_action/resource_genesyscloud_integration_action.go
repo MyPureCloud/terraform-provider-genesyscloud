@@ -7,6 +7,7 @@ import (
 	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -106,6 +107,7 @@ func createIntegrationAction(ctx context.Context, d *schema.ResourceData, meta i
 func readIntegrationAction(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	iap := getIntegrationActionsProxy(sdkConfig)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceIntegrationAction(), constants.DefaultConsistencyChecks)
 
 	log.Printf("Reading integration action %s", d.Id())
 
@@ -136,8 +138,6 @@ func readIntegrationAction(ctx context.Context, d *schema.ResourceData, meta int
 			}
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read success template for integration action %s | error: %s", d.Id(), err), resp))
 		}
-
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceIntegrationAction())
 
 		resourcedata.SetNillableValue(d, "name", action.Name)
 		resourcedata.SetNillableValue(d, "category", action.Category)
@@ -180,7 +180,7 @@ func readIntegrationAction(ctx context.Context, d *schema.ResourceData, meta int
 		}
 
 		log.Printf("Read integration action %s %s", d.Id(), *action.Name)
-		return cc.CheckState()
+		return cc.CheckState(d)
 	})
 }
 

@@ -6,6 +6,7 @@ import (
 	"log"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -96,6 +97,7 @@ func createRoutingLanguage(ctx context.Context, d *schema.ResourceData, meta int
 func readRoutingLanguage(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	routingApi := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceRoutingLanguage(), constants.DefaultConsistencyChecks)
 
 	log.Printf("Reading language %s", d.Id())
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
@@ -112,10 +114,9 @@ func readRoutingLanguage(ctx context.Context, d *schema.ResourceData, meta inter
 			return nil
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceRoutingLanguage())
 		d.Set("name", *language.Name)
 		log.Printf("Read language %s %s", d.Id(), *language.Name)
-		return cc.CheckState()
+		return cc.CheckState(d)
 	})
 }
 

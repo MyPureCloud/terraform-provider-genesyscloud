@@ -7,6 +7,7 @@ import (
 	"log"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -107,6 +108,7 @@ func readArchitectDatatableRow(ctx context.Context, d *schema.ResourceData, meta
 
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	archProxy := getArchitectDatatableRowProxy(sdkConfig)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceArchitectDatatableRow(), constants.DefaultConsistencyChecks)
 
 	log.Printf("Reading Datatable Row %s", d.Id())
 
@@ -119,7 +121,6 @@ func readArchitectDatatableRow(ctx context.Context, d *schema.ResourceData, meta
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read Datatable Row %s | error: %s", d.Id(), getErr), resp))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceArchitectDatatableRow())
 		d.Set("datatable_id", tableId)
 		d.Set("key_value", keyStr)
 
@@ -133,7 +134,7 @@ func readArchitectDatatableRow(ctx context.Context, d *schema.ResourceData, meta
 		d.Set("properties_json", string(valueBytes))
 
 		log.Printf("Read Datatable Row %s", d.Id())
-		return cc.CheckState()
+		return cc.CheckState(d)
 	})
 }
 

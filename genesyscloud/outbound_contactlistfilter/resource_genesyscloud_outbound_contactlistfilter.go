@@ -12,6 +12,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 	"time"
 )
@@ -60,6 +61,7 @@ func createOutboundContactlistfilter(ctx context.Context, d *schema.ResourceData
 func readOutboundContactlistfilter(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getOutboundContactlistfilterProxy(sdkConfig)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundContactlistfilter(), constants.DefaultConsistencyChecks)
 
 	log.Printf("Reading Outbound Contact List Filter %s", d.Id())
 
@@ -72,15 +74,13 @@ func readOutboundContactlistfilter(ctx context.Context, d *schema.ResourceData, 
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read Outbound Contact List Filter %s | error: %s", d.Id(), getErr), resp))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundContactlistfilter())
-
 		resourcedata.SetNillableValue(d, "name", sdkContactListFilter.Name)
 		resourcedata.SetNillableReference(d, "contact_list_id", sdkContactListFilter.ContactList)
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "clauses", sdkContactListFilter.Clauses, flattenContactListFilterClauses)
 		resourcedata.SetNillableValue(d, "filter_type", sdkContactListFilter.FilterType)
 
 		log.Printf("Read Outbound Contact List Filter %s %s", d.Id(), *sdkContactListFilter.Name)
-		return cc.CheckState()
+		return cc.CheckState(d)
 	})
 }
 

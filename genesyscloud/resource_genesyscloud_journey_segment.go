@@ -7,6 +7,7 @@ import (
 	"regexp"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -323,6 +324,7 @@ func createJourneySegment(ctx context.Context, d *schema.ResourceData, meta inte
 func readJourneySegment(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	journeyApi := platformclientv2.NewJourneyApiWithConfig(sdkConfig)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceJourneySegment(), constants.DefaultConsistencyChecks)
 
 	log.Printf("Reading journey segment %s", d.Id())
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
@@ -334,11 +336,10 @@ func readJourneySegment(ctx context.Context, d *schema.ResourceData, meta interf
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_journey_segment", fmt.Sprintf("failed to read journey segment %s | error: %s", d.Id(), getErr), resp))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceJourneySegment())
 		flattenJourneySegment(d, journeySegment)
 
 		log.Printf("Read journey segment %s %s", d.Id(), *journeySegment.DisplayName)
-		return cc.CheckState()
+		return cc.CheckState(d)
 	})
 }
 

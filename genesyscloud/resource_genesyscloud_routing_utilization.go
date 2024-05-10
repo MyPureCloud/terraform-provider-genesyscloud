@@ -9,6 +9,7 @@ import (
 	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -200,6 +201,7 @@ func readRoutingUtilization(ctx context.Context, d *schema.ResourceData, meta in
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
 	apiClient := &routingAPI.Configuration.APIClient
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceRoutingSkill(), constants.DefaultConsistencyChecks)
 
 	path := fmt.Sprintf("%s/api/v2/routing/utilization", routingAPI.Configuration.BasePath)
 	headerParams := buildHeaderParams(routingAPI)
@@ -216,8 +218,6 @@ func readRoutingUtilization(ctx context.Context, d *schema.ResourceData, meta in
 
 		orgUtilization := &OrgUtilizationWithLabels{}
 		err = json.Unmarshal(response.RawBody, &orgUtilization)
-
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceRoutingSkill())
 
 		if orgUtilization.Utilization != nil {
 			for sdkType, schemaType := range utilizationMediaTypes {
@@ -238,7 +238,7 @@ func readRoutingUtilization(ctx context.Context, d *schema.ResourceData, meta in
 		}
 
 		log.Printf("Read Routing Utilization")
-		return cc.CheckState()
+		return cc.CheckState(d)
 	})
 }
 

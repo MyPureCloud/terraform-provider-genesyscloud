@@ -6,6 +6,7 @@ import (
 	"log"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -111,6 +112,7 @@ func createRoutingSettings(ctx context.Context, d *schema.ResourceData, meta int
 func readRoutingSettings(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceRoutingSettings(), constants.DefaultConsistencyChecks)
 
 	log.Printf("Reading setting: %s", d.Id())
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
@@ -124,7 +126,6 @@ func readRoutingSettings(ctx context.Context, d *schema.ResourceData, meta inter
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_routing_settings", fmt.Sprintf("Failed to read Routing Setting %s | error: %s", d.Id(), getErr), resp))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceRoutingSettings())
 		if settings.ResetAgentScoreOnPresenceChange != nil {
 			d.Set("reset_agent_on_presence_change", *settings.ResetAgentScoreOnPresenceChange)
 		} else {
@@ -140,7 +141,7 @@ func readRoutingSettings(ctx context.Context, d *schema.ResourceData, meta inter
 		}
 
 		log.Printf("Read Routing Setting")
-		return cc.CheckState()
+		return cc.CheckState(d)
 	})
 }
 

@@ -9,6 +9,7 @@ import (
 	oauth "terraform-provider-genesyscloud/genesyscloud/oauth_client"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -126,6 +127,7 @@ func retrieveCachedOauthClientSecret(sdkConfig *platformclientv2.Configuration, 
 func readCredential(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	ip := getIntegrationCredsProxy(sdkConfig)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceIntegrationCredential(), constants.DefaultConsistencyChecks)
 
 	log.Printf("Reading credential %s", d.Id())
 
@@ -138,13 +140,12 @@ func readCredential(ctx context.Context, d *schema.ResourceData, meta interface{
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read credential %s | error: %s", d.Id(), err), resp))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceIntegrationCredential())
 		_ = d.Set("name", *currentCredential.Name)
 		_ = d.Set("credential_type_name", *currentCredential.VarType.Name)
 
 		log.Printf("Read credential %s %s", d.Id(), *currentCredential.Name)
 
-		return cc.CheckState()
+		return cc.CheckState(d)
 	})
 }
 

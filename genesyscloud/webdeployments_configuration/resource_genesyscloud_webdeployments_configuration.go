@@ -6,6 +6,7 @@ import (
 	"log"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -114,6 +115,7 @@ func createWebDeploymentConfiguration(ctx context.Context, d *schema.ResourceDat
 func readWebDeploymentConfiguration(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	wp := getWebDeploymentConfigurationsProxy(sdkConfig)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceWebDeploymentConfiguration(), constants.DefaultConsistencyChecks)
 
 	version := d.Get("version").(string)
 	log.Printf("Reading web deployment configuration %s", d.Id())
@@ -130,7 +132,6 @@ func readWebDeploymentConfiguration(ctx context.Context, d *schema.ResourceData,
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read web deployment configuration %s | error: %s", d.Id(), getErr), resp))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceWebDeploymentConfiguration())
 		d.Set("name", *configuration.Name)
 
 		resourcedata.SetNillableValue(d, "description", configuration.Description)
@@ -152,7 +153,7 @@ func readWebDeploymentConfiguration(ctx context.Context, d *schema.ResourceData,
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "support_center", configuration.SupportCenter, wdcUtils.FlattenSupportCenterSettings)
 
 		log.Printf("Read web deployment configuration %s %s", d.Id(), *configuration.Name)
-		return cc.CheckState()
+		return cc.CheckState(d)
 	})
 }
 

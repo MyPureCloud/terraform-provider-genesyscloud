@@ -6,6 +6,7 @@ import (
 	"log"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 	"time"
 
@@ -93,6 +94,7 @@ func createRoutingSmsAddress(ctx context.Context, d *schema.ResourceData, meta i
 func readRoutingSmsAddress(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getRoutingSmsAddressProxy(sdkConfig)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceRoutingSmsAddress(), constants.DefaultConsistencyChecks)
 
 	log.Printf("Reading Routing Sms Address %s", d.Id())
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
@@ -104,8 +106,6 @@ func readRoutingSmsAddress(ctx context.Context, d *schema.ResourceData, meta int
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read Routing Sms Address %s | error: %s", d.Id(), getErr), resp))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceRoutingSmsAddress())
-
 		resourcedata.SetNillableValue(d, "name", sdkSmsAddress.Name)
 		resourcedata.SetNillableValue(d, "street", sdkSmsAddress.Street)
 		resourcedata.SetNillableValue(d, "city", sdkSmsAddress.City)
@@ -114,7 +114,7 @@ func readRoutingSmsAddress(ctx context.Context, d *schema.ResourceData, meta int
 		resourcedata.SetNillableValue(d, "country_code", sdkSmsAddress.CountryCode)
 
 		log.Printf("Read Routing Sms Address %s", d.Id())
-		return cc.CheckState()
+		return cc.CheckState(d)
 	})
 }
 

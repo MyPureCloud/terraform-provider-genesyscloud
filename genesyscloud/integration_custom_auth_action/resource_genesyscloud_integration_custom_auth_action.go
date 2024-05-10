@@ -6,6 +6,7 @@ import (
 	"log"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -135,6 +136,7 @@ func createIntegrationCustomAuthAction(ctx context.Context, d *schema.ResourceDa
 func readIntegrationCustomAuthAction(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	cap := getCustomAuthActionsProxy(sdkConfig)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceIntegrationCustomAuthAction(), constants.DefaultConsistencyChecks)
 
 	log.Printf("Reading integration action %s", d.Id())
 
@@ -166,8 +168,6 @@ func readIntegrationCustomAuthAction(ctx context.Context, d *schema.ResourceData
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read success template for integration action %s | error: %s", d.Id(), err), resp))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceIntegrationCustomAuthAction())
-
 		resourcedata.SetNillableValue(d, "name", action.Name)
 		resourcedata.SetNillableValue(d, "integration_id", action.IntegrationId)
 
@@ -186,7 +186,7 @@ func readIntegrationCustomAuthAction(ctx context.Context, d *schema.ResourceData
 		}
 
 		log.Printf("Read integration action %s %s", d.Id(), *action.Name)
-		return cc.CheckState()
+		return cc.CheckState(d)
 	})
 }
 

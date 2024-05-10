@@ -8,6 +8,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 	"time"
 
@@ -96,6 +97,7 @@ func createOutboundCampaign(ctx context.Context, d *schema.ResourceData, meta in
 func readOutboundCampaign(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	clientConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getOutboundCampaignProxy(clientConfig)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundCampaign(), constants.DefaultConsistencyChecks)
 
 	log.Printf("Reading Outbound Campaign %s", d.Id())
 
@@ -111,8 +113,6 @@ func readOutboundCampaign(ctx context.Context, d *schema.ResourceData, meta inte
 		if *campaign.CampaignStatus == "stopping" {
 			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Outbound Campaign still stopping %s", d.Id()), resp))
 		}
-
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundCampaign())
 
 		resourcedata.SetNillableValue(d, "name", campaign.Name)
 		resourcedata.SetNillableReference(d, "contact_list_id", campaign.ContactList)
@@ -149,7 +149,7 @@ func readOutboundCampaign(ctx context.Context, d *schema.ResourceData, meta inte
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "dynamic_contact_queueing_settings", campaign.DynamicContactQueueingSettings, flattenSettings)
 
 		log.Printf("Read Outbound Campaign %s %s", d.Id(), *campaign.Name)
-		return cc.CheckState()
+		return cc.CheckState(d)
 	})
 }
 

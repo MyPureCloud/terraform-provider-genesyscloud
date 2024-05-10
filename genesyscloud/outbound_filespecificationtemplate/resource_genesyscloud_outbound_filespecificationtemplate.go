@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 	"time"
 
@@ -71,6 +72,7 @@ func updateOutboundFileSpecificationTemplate(ctx context.Context, d *schema.Reso
 func readOutboundFileSpecificationTemplate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getOutboundFilespecificationtemplateProxy(sdkConfig)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundFileSpecificationTemplate(), constants.DefaultConsistencyChecks)
 
 	log.Printf("Reading Outbound File Specification Template %s", d.Id())
 
@@ -82,8 +84,6 @@ func readOutboundFileSpecificationTemplate(ctx context.Context, d *schema.Resour
 			}
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read Outbound File Specification Template %s | error: %s", d.Id(), getErr), resp))
 		}
-
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundFileSpecificationTemplate())
 
 		resourcedata.SetNillableValue(d, "name", sdkFileSpecificationTemplate.Name)
 		resourcedata.SetNillableValue(d, "description", sdkFileSpecificationTemplate.Description)
@@ -97,7 +97,7 @@ func readOutboundFileSpecificationTemplate(ctx context.Context, d *schema.Resour
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "preprocessing_rule", sdkFileSpecificationTemplate.PreprocessingRules, flattenSdkOutboundFileSpecificationTemplatePreprocessingRulesSlice)
 
 		log.Printf("Read Outbound File Specification Template %s %s", d.Id(), *sdkFileSpecificationTemplate.Name)
-		return cc.CheckState()
+		return cc.CheckState(d)
 	})
 }
 

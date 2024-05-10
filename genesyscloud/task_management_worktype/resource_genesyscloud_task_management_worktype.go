@@ -7,6 +7,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"time"
 
 	"github.com/google/uuid"
@@ -87,6 +88,7 @@ func createTaskManagementWorktype(ctx context.Context, d *schema.ResourceData, m
 func readTaskManagementWorktype(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getTaskManagementWorktypeProxy(sdkConfig)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceTaskManagementWorktype(), constants.DefaultConsistencyChecks)
 
 	log.Printf("Reading task management worktype %s", d.Id())
 
@@ -98,8 +100,6 @@ func readTaskManagementWorktype(ctx context.Context, d *schema.ResourceData, met
 			}
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read task management worktype %s | error: %s", d.Id(), getErr), resp))
 		}
-
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceTaskManagementWorktype())
 
 		resourcedata.SetNillableValue(d, "name", worktype.Name)
 		resourcedata.SetNillableValue(d, "description", worktype.Description)
@@ -139,7 +139,7 @@ func readTaskManagementWorktype(ctx context.Context, d *schema.ResourceData, met
 		}
 
 		log.Printf("Read task management worktype %s %s", d.Id(), *worktype.Name)
-		return cc.CheckState()
+		return cc.CheckState(d)
 	})
 }
 

@@ -7,6 +7,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -67,6 +68,7 @@ func createTaskManagementWorkbin(ctx context.Context, d *schema.ResourceData, me
 func readTaskManagementWorkbin(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getTaskManagementWorkbinProxy(sdkConfig)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceTaskManagementWorkbin(), constants.DefaultConsistencyChecks)
 
 	log.Printf("Reading task management workbin %s", d.Id())
 
@@ -79,14 +81,12 @@ func readTaskManagementWorkbin(ctx context.Context, d *schema.ResourceData, meta
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read task management workbin %s | error: %s", d.Id(), getErr), resp))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceTaskManagementWorkbin())
-
 		resourcedata.SetNillableValue(d, "name", workbin.Name)
 		resourcedata.SetNillableReferenceDivision(d, "division_id", workbin.Division)
 		resourcedata.SetNillableValue(d, "description", workbin.Description)
 
 		log.Printf("Read task management workbin %s %s", d.Id(), *workbin.Name)
-		return cc.CheckState()
+		return cc.CheckState(d)
 	})
 }
 

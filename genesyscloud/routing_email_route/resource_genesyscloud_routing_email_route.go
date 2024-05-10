@@ -7,6 +7,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -92,6 +93,7 @@ func createRoutingEmailRoute(ctx context.Context, d *schema.ResourceData, meta i
 func readRoutingEmailRoute(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getRoutingEmailRouteProxy(sdkConfig)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceRoutingEmailRoute(), constants.DefaultConsistencyChecks)
 	domainId := d.Get("domain_id").(string)
 
 	log.Printf("Reading routing email route %s", d.Id())
@@ -121,8 +123,6 @@ func readRoutingEmailRoute(ctx context.Context, d *schema.ResourceData, meta int
 			d.SetId("")
 			return nil
 		}
-
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceRoutingEmailRoute())
 
 		resourcedata.SetNillableValue(d, "pattern", route.Pattern)
 		resourcedata.SetNillableReference(d, "queue_id", route.Queue)
@@ -158,7 +158,7 @@ func readRoutingEmailRoute(ctx context.Context, d *schema.ResourceData, meta int
 		}
 
 		log.Printf("Read routing email route %s %v", d.Id(), route.Name)
-		return cc.CheckState()
+		return cc.CheckState(d)
 	})
 }
 

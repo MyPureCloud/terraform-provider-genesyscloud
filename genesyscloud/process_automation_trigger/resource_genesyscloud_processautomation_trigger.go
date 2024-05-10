@@ -5,6 +5,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 
 	"fmt"
 	"log"
@@ -206,6 +207,7 @@ func createProcessAutomationTrigger(ctx context.Context, d *schema.ResourceData,
 func readProcessAutomationTrigger(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	integAPI := platformclientv2.NewIntegrationsApiWithConfig(sdkConfig)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceProcessAutomationTrigger(), constants.DefaultConsistencyChecks)
 
 	log.Printf("Reading process automation trigger %s", d.Id())
 
@@ -217,8 +219,6 @@ func readProcessAutomationTrigger(ctx context.Context, d *schema.ResourceData, m
 			}
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to process read automation trigger %s | error: %s", d.Id(), getErr), resp))
 		}
-
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceProcessAutomationTrigger())
 
 		if trigger.Name != nil {
 			d.Set("name", *trigger.Name)
@@ -260,7 +260,7 @@ func readProcessAutomationTrigger(ctx context.Context, d *schema.ResourceData, m
 		}
 
 		log.Printf("Read process automation trigger %s %s", d.Id(), *trigger.Name)
-		return cc.CheckState()
+		return cc.CheckState(d)
 	})
 }
 

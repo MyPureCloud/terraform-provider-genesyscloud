@@ -13,6 +13,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	featureToggles "terraform-provider-genesyscloud/genesyscloud/util/feature_toggles"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 )
@@ -63,6 +64,8 @@ func readRoutingQueueOutboundEmailAddress(ctx context.Context, d *schema.Resourc
 
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getRoutingQueueOutboundEmailAddressProxy(sdkConfig)
+	cc := consistencyChecker.NewConsistencyCheck(ctx, d, meta, ResourceRoutingQueueOutboundEmailAddress(), constants.DefaultConsistencyChecks)
+
 	queueId := d.Id()
 
 	log.Printf("Reading outbound email address for queue %s", queueId)
@@ -75,8 +78,6 @@ func readRoutingQueueOutboundEmailAddress(ctx context.Context, d *schema.Resourc
 			return retry.NonRetryableError(fmt.Errorf("failed to read outbound email address for queue %s: %s", queueId, getErr))
 		}
 
-		cc := consistencyChecker.NewConsistencyCheck(ctx, d, meta, ResourceRoutingQueueOutboundEmailAddress())
-
 		_ = d.Set("queue_id", queueId)
 		resourcedata.SetNillableReference(d, "domain_id", queueEmailAddress.Domain)
 
@@ -86,7 +87,7 @@ func readRoutingQueueOutboundEmailAddress(ctx context.Context, d *schema.Resourc
 		}
 
 		log.Printf("Reading outbound email address for queue %s", queueId)
-		return cc.CheckState()
+		return cc.CheckState(d)
 	})
 }
 

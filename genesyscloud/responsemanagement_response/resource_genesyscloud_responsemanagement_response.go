@@ -12,6 +12,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 	"time"
 )
@@ -67,6 +68,7 @@ func createResponsemanagementResponse(ctx context.Context, d *schema.ResourceDat
 func readResponsemanagementResponse(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getResponsemanagementResponseProxy(sdkConfig)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceResponsemanagementResponse(), constants.DefaultConsistencyChecks)
 
 	log.Printf("Reading Responsemanagement Response %s", d.Id())
 
@@ -78,8 +80,6 @@ func readResponsemanagementResponse(ctx context.Context, d *schema.ResourceData,
 			}
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read Responsemanagement Response %s | error: %s", d.Id(), getErr), resp))
 		}
-
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceResponsemanagementResponse())
 
 		resourcedata.SetNillableValue(d, "name", sdkResponse.Name)
 		if sdkResponse.Libraries != nil {
@@ -101,7 +101,7 @@ func readResponsemanagementResponse(ctx context.Context, d *schema.ResourceData,
 		resourcedata.SetNillableValueWithSchemaSetWithFunc(d, "footer", sdkResponse.Footer, flattenFooterTemplate)
 
 		log.Printf("Read Responsemanagement Response %s %s", d.Id(), *sdkResponse.Name)
-		return cc.CheckState()
+		return cc.CheckState(d)
 	})
 }
 

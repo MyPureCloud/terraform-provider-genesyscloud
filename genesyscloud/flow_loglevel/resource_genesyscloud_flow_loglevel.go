@@ -6,6 +6,7 @@ import (
 	"log"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -82,6 +83,7 @@ func readFlowLogLevel(ctx context.Context, d *schema.ResourceData, meta interfac
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	ep := getFlowLogLevelProxy(sdkConfig)
 	flowId := d.Get("flow_id").(string)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceFlowLoglevel(), constants.DefaultConsistencyChecks)
 
 	log.Printf("Reading readFlowLogLevel with flowId %s", flowId)
 
@@ -96,11 +98,10 @@ func readFlowLogLevel(ctx context.Context, d *schema.ResourceData, meta interfac
 
 		flowLogLevel := flowSettingsResponse.LogLevelCharacteristics
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceFlowLoglevel())
 		resourcedata.SetNillableValue(d, "flow_log_level", flowLogLevel.Level)
 
 		log.Printf("Read flow log level %s", flowId)
-		return cc.CheckState()
+		return cc.CheckState(d)
 	})
 }
 

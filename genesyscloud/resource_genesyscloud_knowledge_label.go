@@ -7,6 +7,7 @@ import (
 	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -174,6 +175,7 @@ func readKnowledgeLabel(ctx context.Context, d *schema.ResourceData, meta interf
 
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	knowledgeAPI := platformclientv2.NewKnowledgeApiWithConfig(sdkConfig)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceKnowledgeLabel(), constants.DefaultConsistencyChecks)
 
 	log.Printf("Reading knowledge label %s", knowledgeLabelId)
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
@@ -186,14 +188,12 @@ func readKnowledgeLabel(ctx context.Context, d *schema.ResourceData, meta interf
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_knowledge_label", fmt.Sprintf("Failed to read knowledge label %s | error: %s", knowledgeLabelId, getErr), resp))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceKnowledgeLabel())
-
 		newId := fmt.Sprintf("%s,%s", *knowledgeLabel.Id, knowledgeBaseId)
 		d.SetId(newId)
 		d.Set("knowledge_base_id", knowledgeBaseId)
 		d.Set("knowledge_label", flattenKnowledgeLabel(knowledgeLabel))
 		log.Printf("Read knowledge label %s", knowledgeLabelId)
-		return cc.CheckState()
+		return cc.CheckState(d)
 	})
 }
 

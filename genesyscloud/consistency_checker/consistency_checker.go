@@ -3,6 +3,8 @@ package consistency_checker
 import (
 	"context"
 	"fmt"
+	"log"
+	"os"
 	"reflect"
 	"strconv"
 	"strings"
@@ -27,12 +29,13 @@ func init() {
 }
 
 type ConsistencyCheck struct {
-	ctx           context.Context
-	d             *schema.ResourceData
-	r             *schema.Resource
-	originalState map[string]interface{}
-	meta          interface{}
-	isEmptyState  *bool
+	ctx            context.Context
+	r              *schema.Resource
+	originalState  map[string]interface{}
+	meta           interface{}
+	isEmptyState   *bool
+	checks         int
+	maxStateChecks int
 }
 
 type consistencyError struct {
@@ -47,7 +50,7 @@ expected value: %v
 actual value:   %v`, e.key, e.oldValue, e.newValue)
 }
 
-func NewConsistencyCheck(ctx context.Context, d *schema.ResourceData, meta interface{}, r *schema.Resource) *ConsistencyCheck {
+func NewConsistencyCheck(ctx context.Context, d *schema.ResourceData, meta interface{}, r *schema.Resource, maxStateChecks int) *ConsistencyCheck {
 	emptyState := isEmptyState(d)
 	if *emptyState {
 		return &ConsistencyCheck{isEmptyState: emptyState}
@@ -71,12 +74,12 @@ func NewConsistencyCheck(ctx context.Context, d *schema.ResourceData, meta inter
 	}
 
 	cc = &ConsistencyCheck{
-		ctx:           ctx,
-		d:             d,
-		r:             r,
-		originalState: originalState,
-		meta:          meta,
-		isEmptyState:  emptyState,
+		ctx:            ctx,
+		r:              r,
+		originalState:  originalState,
+		meta:           meta,
+		isEmptyState:   emptyState,
+		maxStateChecks: maxStateChecks,
 	}
 	mccMutex.Lock()
 	mcc[d.Id()] = cc
@@ -186,8 +189,8 @@ func compareValues(oldValue, newValue interface{}, slice1Index, slice2Index int,
 	}
 }
 
-func (c *ConsistencyCheck) isComputed(key string) bool {
-	schemaInterface := getUnexportedField(reflect.ValueOf(c.d).Elem().FieldByName("schema"))
+func (c *ConsistencyCheck) isComputed(d *schema.ResourceData, key string) bool {
+	schemaInterface := getUnexportedField(reflect.ValueOf(d).Elem().FieldByName("schema"))
 	resourceSchema := schemaInterface.(map[string]*schema.Schema)
 
 	k := key
@@ -201,7 +204,7 @@ func (c *ConsistencyCheck) isComputed(key string) bool {
 	return resourceSchema[k].Computed
 }
 
-func (c *ConsistencyCheck) CheckState() *retry.RetryError {
+func (c *ConsistencyCheck) CheckState(currentState *schema.ResourceData) *retry.RetryError {
 	if c.isEmptyState == nil {
 		panic("consistencyCheck must be initialized with NewConsistencyCheck")
 	}
@@ -218,7 +221,7 @@ func (c *ConsistencyCheck) CheckState() *retry.RetryError {
 		Raw:          originalState,
 	}
 
-	diff, _ := c.r.SimpleDiff(c.ctx, c.d.State(), resourceConfig, c.meta)
+	diff, _ := c.r.SimpleDiff(c.ctx, currentState.State(), resourceConfig, c.meta)
 	if diff != nil && len(diff.Attributes) > 0 {
 		for k, v := range diff.Attributes {
 			if strings.HasSuffix(k, "#") {
@@ -240,27 +243,43 @@ func (c *ConsistencyCheck) CheckState() *retry.RetryError {
 				}
 
 				vv := v.New
-				if c.d.HasChange(k) {
+				if currentState.HasChange(k) {
 					if !compareValues(c.originalState[parts[0]], vv, slice1Index, slice2Index, key) {
-						return retry.RetryableError(&consistencyError{
+						err := retry.RetryableError(&consistencyError{
 							key:      k,
 							oldValue: c.originalState[k],
-							newValue: c.d.Get(k),
+							newValue: currentState.Get(k),
 						})
+
+						if _, exists := os.LookupEnv("BYPASS_CONSISTENCY_CHECKER"); c.checks >= c.maxStateChecks && exists {
+							log.Println(err)
+							return nil
+						}
+
+						c.checks++
+						return err
 					}
 				}
 			} else {
-				if c.d.HasChange(k) {
-					return retry.RetryableError(&consistencyError{
+				if currentState.HasChange(k) {
+					err := retry.RetryableError(&consistencyError{
 						key:      k,
 						oldValue: c.originalState[k],
-						newValue: c.d.Get(k),
+						newValue: currentState.Get(k),
 					})
+
+					if _, exists := os.LookupEnv("BYPASS_CONSISTENCY_CHECKER"); c.checks >= c.maxStateChecks && exists {
+						log.Println(err)
+						return nil
+					}
+
+					c.checks++
+					return err
 				}
 			}
 		}
 	}
 
-	DeleteConsistencyCheck(c.d.Id())
+	DeleteConsistencyCheck(currentState.Id())
 	return nil
 }

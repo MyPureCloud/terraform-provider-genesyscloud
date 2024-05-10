@@ -7,6 +7,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 	"time"
 
@@ -65,6 +66,7 @@ func createIvrConfig(ctx context.Context, d *schema.ResourceData, meta interface
 func readIvrConfig(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	ap := getArchitectIvrProxy(sdkConfig)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceArchitectIvrConfig(), constants.DefaultConsistencyChecks)
 
 	log.Printf("Reading IVR config %s", d.Id())
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
@@ -81,7 +83,6 @@ func readIvrConfig(ctx context.Context, d *schema.ResourceData, meta interface{}
 			return nil
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceArchitectIvrConfig())
 		_ = d.Set("name", *ivrConfig.Name)
 		_ = d.Set("dnis", lists.StringListToSetOrNil(ivrConfig.Dnis))
 
@@ -94,7 +95,7 @@ func readIvrConfig(ctx context.Context, d *schema.ResourceData, meta interface{}
 
 		log.Printf("Read IVR config %s %s", d.Id(), *ivrConfig.Name)
 
-		return cc.CheckState()
+		return cc.CheckState(d)
 	})
 }
 

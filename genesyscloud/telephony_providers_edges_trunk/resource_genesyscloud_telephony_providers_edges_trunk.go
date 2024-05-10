@@ -6,6 +6,7 @@ import (
 	"log"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -125,6 +126,7 @@ func updateTrunk(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 func readTrunk(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	tp := getTrunkProxy(sdkConfig)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceTrunk(), constants.DefaultConsistencyChecks)
 
 	log.Printf("Reading trunk %s", d.Id())
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
@@ -136,7 +138,6 @@ func readTrunk(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read trunk %s | error: %s", d.Id(), getErr), resp))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceTrunk())
 		d.Set("name", *trunk.Name)
 		if trunk.TrunkBase != nil {
 			d.Set("trunk_base_settings_id", *trunk.TrunkBase.Id)
@@ -150,7 +151,7 @@ func readTrunk(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 
 		log.Printf("Read trunk %s %s", d.Id(), *trunk.Name)
 
-		return cc.CheckState()
+		return cc.CheckState(d)
 	})
 }
 

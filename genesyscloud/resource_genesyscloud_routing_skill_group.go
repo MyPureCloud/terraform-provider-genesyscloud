@@ -9,6 +9,7 @@ import (
 	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -353,6 +354,7 @@ func mergeSkillConditionsIntoSkillGroups(d *schema.ResourceData, skillGroupsRequ
 func readSkillGroups(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceRoutingSkillGroup(), constants.DefaultConsistencyChecks)
 
 	// TODO: After public API endpoint is published and exposed to public, change to SDK method instead of direct invocation
 	apiClient := &routingAPI.Configuration.APIClient
@@ -384,8 +386,6 @@ func readSkillGroups(ctx context.Context, d *schema.ResourceData, meta interface
 		if err == nil && util.IsStatus404(response) {
 			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_routing_skill_group", fmt.Sprintf("Failed to read skill groups %s | error: %s", d.Id(), err), response))
 		}
-
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceRoutingSkillGroup())
 
 		name := skillGroupPayload["name"]
 		divisionId := skillGroupPayload["division"].(map[string]interface{})["id"]
@@ -436,7 +436,7 @@ func readSkillGroups(ctx context.Context, d *schema.ResourceData, meta interface
 		_ = d.Set("member_division_ids", memberDivisionIds)
 
 		log.Printf("Read skill groups name  %s %s", d.Id(), name)
-		return cc.CheckState()
+		return cc.CheckState(d)
 	})
 }
 

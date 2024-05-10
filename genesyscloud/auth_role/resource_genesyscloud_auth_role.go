@@ -12,6 +12,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"terraform-provider-genesyscloud/genesyscloud/util/lists"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 	"time"
@@ -92,6 +93,7 @@ func createAuthRole(ctx context.Context, d *schema.ResourceData, meta interface{
 func readAuthRole(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getAuthRoleProxy(sdkConfig)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceAuthRole(), constants.DefaultConsistencyChecks)
 
 	log.Printf("Reading role %s", d.Id())
 
@@ -103,8 +105,6 @@ func readAuthRole(ctx context.Context, d *schema.ResourceData, meta interface{})
 			}
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read role %s | error: %s", d.Id(), getErr), proxyResponse))
 		}
-
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceAuthRole())
 
 		d.Set("name", *role.Name)
 		resourcedata.SetNillableValue(d, "description", role.Description)
@@ -123,7 +123,7 @@ func readAuthRole(ctx context.Context, d *schema.ResourceData, meta interface{})
 		}
 
 		log.Printf("Read role %s %s", d.Id(), *role.Name)
-		return cc.CheckState()
+		return cc.CheckState(d)
 	})
 }
 
