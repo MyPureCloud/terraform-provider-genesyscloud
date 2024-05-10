@@ -448,7 +448,7 @@ func buildSdkPatchSegment(journeySegment *schema.ResourceData) *platformclientv2
 	color := journeySegment.Get("color").(string)
 	shouldDisplayToAgent := resourcedata.GetNillableBool(journeySegment, "should_display_to_agent")
 	sdkContext := resourcedata.BuildSdkListFirstElement(journeySegment, "context", buildSdkPatchContext, false)
-	journey := resourcedata.BuildSdkListFirstElement(journeySegment, "journey", buildSdkPatchRequestJourney, false)
+	journey := resourcedata.BuildSdkListFirstElement(journeySegment, "journey", buildSdkPatchJourney, false)
 	externalSegment := resourcedata.BuildSdkListFirstElement(journeySegment, "external_segment", buildSdkPatchExternalSegment, true)
 	assignmentExpirationDays := resourcedata.GetNillableValue[int](journeySegment, "assignment_expiration_days")
 
