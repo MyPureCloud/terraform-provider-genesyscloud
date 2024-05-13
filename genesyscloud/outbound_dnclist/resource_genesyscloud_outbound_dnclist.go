@@ -88,7 +88,7 @@ func createOutboundDncList(ctx context.Context, d *schema.ResourceData, meta int
 				}
 			}
 		} else {
-			return diag.Errorf("Phone numbers can only be uploaded to internal DNC lists.")
+			return util.BuildDiagnosticError(resourceName, fmt.Sprintf("Phone numbers can only be uploaded to internal DNC lists."), fmt.Errorf("phone numbers can only be uploaded to internal DNC Lists"))
 		}
 	}
 	log.Printf("Created Outbound DNC list %s %s", name, *outboundDncList.Id)
@@ -152,7 +152,7 @@ func updateOutboundDncList(ctx context.Context, d *schema.ResourceData, meta int
 					}
 				}
 			} else {
-				return nil, diag.Errorf("Phone numbers can only be uploaded to internal DNC lists.")
+				return nil, util.BuildDiagnosticError(resourceName, fmt.Sprintf("Phone numbers can only be uploaded to internal DNC lists"), fmt.Errorf("phone numbers can only be uploaded to internal DNC lists"))
 			}
 		}
 		return nil, nil
@@ -175,9 +175,9 @@ func readOutboundDncList(ctx context.Context, d *schema.ResourceData, meta inter
 		sdkDncList, resp, getErr := proxy.getOutboundDnclistById(ctx, d.Id())
 		if getErr != nil {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(fmt.Errorf("failed to read Outbound DNC list %s: %s", d.Id(), getErr))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read Outbound DNC list %s | error: %s", d.Id(), getErr), resp))
 			}
-			return retry.NonRetryableError(fmt.Errorf("failed to read Outbound DNC list %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read Outbound DNC list %s | error: %s", d.Id(), getErr), resp))
 		}
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundDncList())
@@ -241,9 +241,9 @@ func deleteOutboundDncList(ctx context.Context, d *schema.ResourceData, meta int
 				log.Printf("Deleted Outbound DNC list %s", d.Id())
 				return nil
 			}
-			return retry.NonRetryableError(fmt.Errorf("error deleting Outbound DNC list %s: %s", d.Id(), err))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("error deleting Outbound DNC list %s | error: %s", d.Id(), err), resp))
 		}
-		return retry.RetryableError(fmt.Errorf("Outbound DNC list %s still exists", d.Id()))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Outbound DNC list %s still exists", d.Id()), resp))
 	})
 }
 

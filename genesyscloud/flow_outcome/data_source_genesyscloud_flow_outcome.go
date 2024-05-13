@@ -28,11 +28,11 @@ func dataSourceFlowOutcomeRead(ctx context.Context, d *schema.ResourceData, meta
 		flowOutcomeId, retryable, resp, err := proxy.getFlowOutcomeIdByName(ctx, name)
 
 		if err != nil && !retryable {
-			return retry.NonRetryableError(fmt.Errorf("Error searching flow outcome %s: %s %v", name, err, resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Error searching flow outcome %s | error: %s", name, err), resp))
 		}
 
 		if retryable {
-			return retry.RetryableError(fmt.Errorf("No flow outcome found with name %s", name))
+			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("No flow outcome found with name %s", name), resp))
 		}
 
 		d.SetId(flowOutcomeId)

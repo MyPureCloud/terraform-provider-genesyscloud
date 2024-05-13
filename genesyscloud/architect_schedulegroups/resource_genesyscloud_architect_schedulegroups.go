@@ -72,9 +72,9 @@ func readArchitectSchedulegroups(ctx context.Context, d *schema.ResourceData, me
 		scheduleGroup, proxyResponse, getErr := proxy.getArchitectSchedulegroupsById(ctx, d.Id())
 		if getErr != nil {
 			if util.IsStatus404(proxyResponse) {
-				return retry.RetryableError(fmt.Errorf("Failed to read schedule group %s: %s", d.Id(), getErr))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read schedule group %s | error: %s", d.Id(), getErr), proxyResponse))
 			}
-			return retry.NonRetryableError(fmt.Errorf("Failed to read schedule group %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read schedule group %s | error: %s", d.Id(), getErr), proxyResponse))
 		}
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceArchitectSchedulegroups())
@@ -162,7 +162,7 @@ func deleteArchitectSchedulegroups(ctx context.Context, d *schema.ResourceData, 
 				log.Printf("Deleted schedule group %s", d.Id())
 				return nil
 			}
-			return retry.NonRetryableError(fmt.Errorf("Error deleting schedule group %s: %s", d.Id(), err))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Error deleting schedule group %s | error: %s", d.Id(), err), proxyResponse))
 		}
 
 		if scheduleGroup.State != nil && *scheduleGroup.State == "deleted" {
@@ -170,7 +170,7 @@ func deleteArchitectSchedulegroups(ctx context.Context, d *schema.ResourceData, 
 			log.Printf("Deleted schedule group %s", d.Id())
 			return nil
 		}
-		return retry.RetryableError(fmt.Errorf("Schedule group %s still exists", d.Id()))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Schedule group %s still exists", d.Id()), proxyResponse))
 	})
 }
 

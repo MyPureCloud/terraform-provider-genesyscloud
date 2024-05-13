@@ -257,6 +257,9 @@ func OutboundCampaignExporter() *resourceExporter.ResourceExporter {
 		},
 		CustomAttributeResolver: map[string]*resourceExporter.RefAttrCustomResolver{
 			"campaign_status": {ResolverFunc: resourceExporter.CampaignStatusResolver},
+			"script_id": {
+				ResolveToDataSourceFunc: resourceExporter.OutboundCampaignAgentScriptResolver,
+			},
 		},
 	}
 }

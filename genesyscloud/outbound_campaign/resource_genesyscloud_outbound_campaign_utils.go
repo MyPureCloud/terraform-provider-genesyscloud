@@ -98,7 +98,7 @@ func updateOutboundCampaignStatus(ctx context.Context, campaignId string, proxy 
 }
 
 func buildPhoneColumns(phonecolumns []interface{}) *[]platformclientv2.Phonecolumn {
-	if phonecolumns == nil || len(phonecolumns) == 0 {
+	if len(phonecolumns) == 0 {
 		return nil
 	}
 	phonecolumnSlice := make([]platformclientv2.Phonecolumn, 0)
@@ -131,7 +131,7 @@ func buildSettings(settings []interface{}) *platformclientv2.Dynamiccontactqueue
 }
 
 func buildContactSorts(contactSortList []interface{}) *[]platformclientv2.Contactsort {
-	if contactSortList == nil || len(contactSortList) == 0 {
+	if len(contactSortList) == 0 {
 		return nil
 	}
 	sdkContactsortSlice := make([]platformclientv2.Contactsort, 0)

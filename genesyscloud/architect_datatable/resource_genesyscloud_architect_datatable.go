@@ -109,9 +109,9 @@ func readArchitectDatatable(ctx context.Context, d *schema.ResourceData, meta in
 		datatable, resp, getErr := archProxy.getArchitectDatatable(ctx, d.Id(), "schema")
 		if getErr != nil {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(fmt.Errorf("Failed to read architect_datatable %s: %s", d.Id(), getErr))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read architect_datatable %s | error: %s", d.Id(), getErr), resp))
 			}
-			return retry.NonRetryableError(fmt.Errorf("Failed to read architect_datatable %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read architect_datatable %s | error: %s", d.Id(), getErr), resp))
 		}
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceArchitectDatatable())
 		_ = d.Set("name", *datatable.Name)
@@ -195,8 +195,8 @@ func deleteArchitectDatatable(ctx context.Context, d *schema.ResourceData, meta 
 				log.Printf("Deleted architect_datatable row %s", name)
 				return nil
 			}
-			return retry.NonRetryableError(fmt.Errorf("Error deleting architect_datatable row %s: %s", name, err))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Error deleting architect_datatable row %s | error: %s", name, err), resp))
 		}
-		return retry.RetryableError(fmt.Errorf("Datatable row %s still exists", name))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Datatable row %s still exists", name), resp))
 	})
 }

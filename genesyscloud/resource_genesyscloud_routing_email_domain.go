@@ -136,9 +136,9 @@ func readRoutingEmailDomain(ctx context.Context, d *schema.ResourceData, meta in
 		domain, resp, getErr := routingAPI.GetRoutingEmailDomain(d.Id())
 		if getErr != nil {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(fmt.Errorf("Failed to read routing email domain %s: %s", d.Id(), getErr))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_routing_email_domain", fmt.Sprintf("Failed to read routing email domain %s | error: %s", d.Id(), getErr), resp))
 			}
-			return retry.NonRetryableError(fmt.Errorf("Failed to read routing email domain %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_routing_email_domain", fmt.Sprintf("Failed to read routing email domain %s | error: %s", d.Id(), getErr), resp))
 		}
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceRoutingEmailDomain())
@@ -178,7 +178,7 @@ func updateRoutingEmailDomain(ctx context.Context, d *schema.ResourceData, meta 
 	domainID := d.Get("domain_id").(string)
 
 	if !strings.Contains(mailFromDomain, domainID) || mailFromDomain == domainID {
-		return diag.Errorf("domain_id must be a subdomain of mail_from_domain")
+		return util.BuildDiagnosticError("genesyscloud_routing_email_domain", fmt.Sprintf("domain_id must be a subdomain of mail_from_domain"), fmt.Errorf("domain_id must be a subdomain of mail_from_domain"))
 	}
 
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
@@ -220,11 +220,11 @@ func deleteRoutingEmailDomain(ctx context.Context, d *schema.ResourceData, meta 
 				log.Printf("Deleted Routing email domain %s", d.Id())
 				return nil
 			}
-			return retry.NonRetryableError(fmt.Errorf("Error deleting Routing email domain %s: %s", d.Id(), err))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_routing_email_domain", fmt.Sprintf("Error deleting Routing email domain %s | error: %s", d.Id(), err), resp))
 		}
 
 		routingAPI.DeleteRoutingEmailDomain(d.Id())
-		return retry.RetryableError(fmt.Errorf("Routing email domain %s still exists", d.Id()))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_routing_email_domain", fmt.Sprintf("Routing email domain %s still exists", d.Id()), resp))
 	})
 }
 

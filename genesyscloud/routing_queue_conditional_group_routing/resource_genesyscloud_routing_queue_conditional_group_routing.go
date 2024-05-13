@@ -30,9 +30,9 @@ func getAllAuthRoutingQueueConditionalGroup(ctx context.Context, clientConfig *p
 		return nil, nil
 	}
 
-	queues, _, err := proxy.routingQueueProxy.GetAllRoutingQueues(ctx)
+	queues, resp, err := proxy.routingQueueProxy.GetAllRoutingQueues(ctx)
 	if err != nil {
-		return nil, diag.Errorf("failed to get conditional group routing rules: %s", err)
+		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("failed to get conditional group routing rules: %s", err), resp)
 	}
 
 	for _, queue := range *queues {
@@ -72,9 +72,9 @@ func readRoutingQueueConditionalRoutingGroup(ctx context.Context, d *schema.Reso
 		sdkRules, resp, getErr := proxy.getRoutingQueueConditionRouting(ctx, queueId)
 		if getErr != nil {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(fmt.Errorf("failed to read conditional group routing for queue %s: %s", queueId, getErr))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read conditional group routing for queue %s | error: %s", queueId, getErr), resp))
 			}
-			return retry.NonRetryableError(fmt.Errorf("failed to read conditional group routing for queue %s: %s", queueId, getErr))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read conditional group routing for queue %s | error: %s", queueId, getErr), resp))
 		}
 
 		cc := consistencyChecker.NewConsistencyCheck(ctx, d, meta, ResourceRoutingQueueConditionalGroupRouting())
@@ -100,13 +100,13 @@ func updateRoutingQueueConditionalRoutingGroup(ctx context.Context, d *schema.Re
 
 	sdkRules, err := buildConditionalGroupRouting(rules)
 	if err != nil {
-		return diag.Errorf("%s", err)
+		return util.BuildDiagnosticError(resourceName, fmt.Sprintf("Error building conditional group routing"), err)
 	}
 
 	log.Printf("updating conditional group routing rules for queue %s", queueId)
-	_, _, err = proxy.updateRoutingQueueConditionRouting(ctx, queueId, &sdkRules)
+	_, resp, err := proxy.updateRoutingQueueConditionRouting(ctx, queueId, &sdkRules)
 	if err != nil {
-		return diag.Errorf("%s", err)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Error updating routing queue conditional routing %s | error: %s", queueId, err), resp)
 	}
 	log.Printf("updated conditional group routing rules for queue %s", queueId)
 
@@ -132,15 +132,16 @@ func deleteRoutingQueueConditionalRoutingGroup(ctx context.Context, d *schema.Re
 
 	// To delete conditional group routing, update the queue with no rules
 	var newRules []platformclientv2.Conditionalgrouproutingrule
-	_, _, err = proxy.updateRoutingQueueConditionRouting(ctx, queueId, &newRules)
+	_, resp, err = proxy.updateRoutingQueueConditionRouting(ctx, queueId, &newRules)
 	if err != nil && !strings.Contains(err.Error(), "no conditional group routing rules found for queue") {
-		return diag.Errorf("failed to remove rules from queue %s: %s", queueId, err)
+
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("failed to remove rules from queue %s: %s", queueId, err), resp)
 	}
 
 	// Verify there are no rules
-	rules, _, err := proxy.getRoutingQueueConditionRouting(ctx, queueId)
+	rules, resp, err := proxy.getRoutingQueueConditionRouting(ctx, queueId)
 	if rules != nil {
-		return diag.Errorf("conditional group routing rules still exist for queue %s: %s", queueId, err)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("conditional group routing rules still exist for queue %s: %s", queueId, err), resp)
 	}
 
 	log.Printf("Removed rules from queue %s", queueId)

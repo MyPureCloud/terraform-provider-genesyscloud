@@ -23,11 +23,11 @@ func dataSourceEmergencyGroupRead(ctx context.Context, d *schema.ResourceData, m
 	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
 		emergencyGroups, resp, getErr := ap.getArchitectEmergencyGroupIdByName(ctx, name)
 		if getErr != nil {
-			return retry.NonRetryableError(fmt.Errorf("Error requesting emergency group %s: %s %v", name, getErr, resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Error requesting emergency group %s | error: %s", name, getErr), resp))
 		}
 
 		if emergencyGroups.Entities == nil || len(*emergencyGroups.Entities) == 0 {
-			return retry.RetryableError(fmt.Errorf("No emergency groups found with name %s", name))
+			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("No emergency groups found with name %s", name), resp))
 		}
 
 		emergencyGroup := (*emergencyGroups.Entities)[0]

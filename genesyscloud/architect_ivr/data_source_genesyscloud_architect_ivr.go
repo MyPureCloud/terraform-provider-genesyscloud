@@ -22,10 +22,10 @@ func dataSourceIvrRead(ctx context.Context, d *schema.ResourceData, m interface{
 	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
 		id, retryable, resp, err := ap.getArchitectIvrIdByName(ctx, name)
 		if err != nil && !retryable {
-			return retry.NonRetryableError(fmt.Errorf("error requesting IVR %s: %s %v", name, err, resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("error requesting IVR %s | error: %s", name, err), resp))
 		}
 		if retryable {
-			return retry.RetryableError(err)
+			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("error requesting IVR %s | error: %s", name, err), resp))
 		}
 		d.SetId(id)
 		return nil

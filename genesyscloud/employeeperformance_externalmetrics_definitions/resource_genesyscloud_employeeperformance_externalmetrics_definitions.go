@@ -79,9 +79,9 @@ func readEmployeeperformanceExternalmetricsDefinition(ctx context.Context, d *sc
 		definition, resp, getErr := proxy.getEmployeeperformanceExternalmetricsDefinitionById(ctx, d.Id())
 		if getErr != nil {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(fmt.Errorf("Failed to read employeeperformance externalmetrics definition %s: %s", d.Id(), getErr))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read employeeperformance externalmetrics definition %s | error: %s", d.Id(), getErr), resp))
 			}
-			return retry.NonRetryableError(fmt.Errorf("Failed to read employeeperformance externalmetrics definition %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read employeeperformance externalmetrics definition %s | error: %s", d.Id(), getErr), resp))
 		}
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceEmployeeperformanceExternalmetricsDefinition())
@@ -138,8 +138,8 @@ func deleteEmployeeperformanceExternalmetricsDefinition(ctx context.Context, d *
 				log.Printf("Deleted employeeperformance externalmetrics definition %s", d.Id())
 				return nil
 			}
-			return retry.NonRetryableError(fmt.Errorf("Error deleting employeeperformance externalmetrics definition %s: %s", d.Id(), err))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Error deleting employeeperformance externalmetrics definition %s | error: %s", d.Id(), err), resp))
 		}
-		return retry.RetryableError(fmt.Errorf("employeeperformance externalmetrics definition %s still exists", d.Id()))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("employeeperformance externalmetrics definition %s still exists", d.Id()), resp))
 	})
 }

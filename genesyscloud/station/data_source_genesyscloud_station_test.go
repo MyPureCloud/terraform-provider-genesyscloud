@@ -64,7 +64,7 @@ func TestAccDataSourceStation(t *testing.T) {
 		PhoneBaseSettingsId: "genesyscloud_telephony_providers_edges_phonebasesettings." + phoneBaseSettingsRes + ".id",
 		LineAddresses:       nil, // no line addresses
 		WebRtcUserId:        "genesyscloud_user." + userRes1 + ".id",
-		Depends_on:          "", // no depends on
+		DependsOn:           "", // no depends on
 	},
 	)
 

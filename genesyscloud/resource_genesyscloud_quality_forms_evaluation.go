@@ -6,6 +6,7 @@ import (
 	"log"
 	"strconv"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/tfexporter_state"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
 
@@ -277,17 +278,35 @@ func readEvaluationForm(ctx context.Context, d *schema.ResourceData, meta interf
 		evaluationForm, resp, getErr := qualityAPI.GetQualityFormsEvaluation(d.Id())
 		if getErr != nil {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(fmt.Errorf("Failed to read evaluation form %s: %s", d.Id(), getErr))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_quality_forms_evaluation", fmt.Sprintf("Failed to read evaluation form %s | error: %s", d.Id(), getErr), resp))
 			}
-			return retry.NonRetryableError(fmt.Errorf("Failed to read evaluation form %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_quality_forms_evaluation", fmt.Sprintf("Failed to read evaluation form %s | error: %s", d.Id(), getErr), resp))
 		}
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceEvaluationForm())
+
+		// During an export, Retrieve a list of any published versions of the evaluation form
+		// If there are published versions, published will be set to true
+		if tfexporter_state.IsExporterActive() {
+			publishedVersions, resp, err := qualityAPI.GetQualityFormsEvaluationsBulkContexts([]string{*evaluationForm.ContextId})
+			if err != nil {
+				if util.IsStatus404(resp) {
+					return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_quality_forms_evaluation", fmt.Sprintf("Failed to retrieve a list of the latest published evaluation form versions"), resp))
+				}
+				return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_quality_forms_evaluation", fmt.Sprintf("Failed to retrieve a list of the latest published evaluation form versions"), resp))
+			}
+
+			if len(publishedVersions) > 0 {
+				_ = d.Set("published", true)
+			} else {
+				_ = d.Set("published", false)
+			}
+		} else {
+			_ = d.Set("published", *evaluationForm.Published)
+		}
+
 		if evaluationForm.Name != nil {
 			d.Set("name", *evaluationForm.Name)
-		}
-		if evaluationForm.Published != nil {
-			d.Set("published", *evaluationForm.Published)
 		}
 		if evaluationForm.QuestionGroups != nil {
 			d.Set("question_groups", flattenQuestionGroups(evaluationForm.QuestionGroups))
@@ -372,10 +391,10 @@ func deleteEvaluationForm(ctx context.Context, d *schema.ResourceData, meta inte
 				log.Printf("Deleted evaluation form %s", d.Id())
 				return nil
 			}
-			return retry.NonRetryableError(fmt.Errorf("Error deleting evaluation form %s: %s", d.Id(), err))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_quality_forms_evaluation", fmt.Sprintf("Error deleting evaluation form %s | error: %s", d.Id(), err), resp))
 		}
 
-		return retry.RetryableError(fmt.Errorf("Evaluation form %s still exists", d.Id()))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_quality_forms_evaluationn", fmt.Sprintf("Evaluation form %s still exists", d.Id()), resp))
 	})
 }
 

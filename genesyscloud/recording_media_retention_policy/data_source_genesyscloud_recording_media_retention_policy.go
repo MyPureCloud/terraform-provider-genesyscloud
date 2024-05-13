@@ -30,11 +30,11 @@ func dataSourceRecordingMediaRetentionPolicyRead(ctx context.Context, d *schema.
 	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
 		policy, retryable, resp, err := pp.getPolicyByName(ctx, name)
 		if err != nil && !retryable {
-			return retry.NonRetryableError(fmt.Errorf("error requesting media retention policy %s: %s %v", name, err, resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("error requesting media retention policy %s | error: %s", name, err), resp))
 		}
 
 		if retryable {
-			return retry.RetryableError(fmt.Errorf("no media retention policy found with name %s", name))
+			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("no media retention policy found with name %s", name), resp))
 		}
 
 		d.SetId(*policy.Id)

@@ -401,7 +401,7 @@ func readKnowledgeDocumentVariation(ctx context.Context, d *schema.ResourceData,
 					if retryErr != nil {
 						if !util.IsStatus404(retryResp) {
 							log.Printf("%s", retryErr)
-							return retry.NonRetryableError(fmt.Errorf("Failed to read knowledge document variation %s: %s", documentVariationId, retryErr))
+							return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_knowledge_document_variation", fmt.Sprintf("Failed to read knowledge document variation %s: %s", documentVariationId, retryErr), retryResp))
 						}
 					} else {
 						publishedVariation = retryVariation
@@ -409,17 +409,17 @@ func readKnowledgeDocumentVariation(ctx context.Context, d *schema.ResourceData,
 
 				} else {
 					log.Printf("%s", publishedErr)
-					return retry.NonRetryableError(fmt.Errorf("Failed to read knowledge document variation %s: %s", documentVariationId, publishedErr))
+					return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_knowledge_document_variation", fmt.Sprintf("Failed to read knowledge document variation %s: %s", documentVariationId, publishedErr), resp))
 				}
 			}
 
 			draftVariation, resp, draftErr := knowledgeAPI.GetKnowledgeKnowledgebaseDocumentVariation(documentVariationId, knowledgeDocumentId, knowledgeBaseId, "Draft")
 			if draftErr != nil {
 				if util.IsStatus404(resp) {
-					return retry.RetryableError(fmt.Errorf("Failed to read knowledge document variation %s: %s", documentVariationId, draftErr))
+					return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_knowledge_document_variation", fmt.Sprintf("Failed to read knowledge document variation %s: %s", documentVariationId, draftErr), resp))
 				}
 				log.Printf("%s", draftErr)
-				return retry.NonRetryableError(fmt.Errorf("Failed to read knowledge document variation %s: %s", documentVariationId, draftErr))
+				return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_knowledge_document_variation", fmt.Sprintf("Failed to read knowledge document variation %s: %s", documentVariationId, draftErr), resp))
 			}
 
 			if publishedVariation != nil && publishedVariation.DateModified != nil && publishedVariation.DateModified.After(*draftVariation.DateModified) {
@@ -431,10 +431,10 @@ func readKnowledgeDocumentVariation(ctx context.Context, d *schema.ResourceData,
 			variation, resp, getErr := knowledgeAPI.GetKnowledgeKnowledgebaseDocumentVariation(documentVariationId, knowledgeDocumentId, knowledgeBaseId, documentState)
 			if getErr != nil {
 				if util.IsStatus404(resp) {
-					return retry.RetryableError(fmt.Errorf("Failed to read knowledge document variation %s: %s", documentVariationId, getErr))
+					return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_knowledge_document_variation", fmt.Sprintf("Failed to read knowledge document variation %s | error: %s", documentVariationId, getErr), resp))
 				}
 				log.Printf("%s", getErr)
-				return retry.NonRetryableError(fmt.Errorf("Failed to read knowledge document variation %s: %s", documentVariationId, getErr))
+				return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_knowledge_document_variation", fmt.Sprintf("Failed to read knowledge document variation %s | error: %s", documentVariationId, getErr), resp))
 			}
 
 			knowledgeDocumentVariation = variation
@@ -560,10 +560,10 @@ func deleteKnowledgeDocumentVariation(ctx context.Context, d *schema.ResourceDat
 				log.Printf("Deleted knowledge document variation %s", documentVariationId)
 				return nil
 			}
-			return retry.NonRetryableError(fmt.Errorf("Error deleting knowledge document variation %s: %s", documentVariationId, err))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_knowledge_document_variation", fmt.Sprintf("Error deleting knowledge document variation %s | error: %s", documentVariationId, err), resp))
 		}
 
-		return retry.RetryableError(fmt.Errorf("Knowledge document variation %s still exists", documentVariationId))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_knowledge_document_variation", fmt.Sprintf("Knowledge document variation %s still exists", documentVariationId), resp))
 	})
 }
 

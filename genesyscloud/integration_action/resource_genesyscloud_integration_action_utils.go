@@ -2,6 +2,7 @@ package integration_action
 
 import (
 	"encoding/json"
+	"fmt"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -51,13 +52,13 @@ func BuildSdkActionContract(d *schema.ResourceData) (*ActionContract, diag.Diagn
 	configInput := d.Get("contract_input").(string)
 	inputVal, err := util.JsonStringToInterface(configInput)
 	if err != nil {
-		return nil, diag.Errorf("Failed to parse contract input %s: %v", configInput, err)
+		return nil, util.BuildDiagnosticError(resourceName, fmt.Sprintf("Failed to parse contract input %s", configInput), err)
 	}
 
 	configOutput := d.Get("contract_output").(string)
 	outputVal, err := util.JsonStringToInterface(configOutput)
 	if err != nil {
-		return nil, diag.Errorf("Failed to parse contract output %s: %v", configInput, err)
+		return nil, util.BuildDiagnosticError(resourceName, fmt.Sprintf("Failed to parse contract output %s", configInput), err)
 	}
 
 	return &ActionContract{
@@ -148,7 +149,7 @@ func flattenActionContract(schema interface{}) (string, diag.Diagnostics) {
 	}
 	schemaBytes, err := json.Marshal(schema)
 	if err != nil {
-		return "", diag.Errorf("Error marshalling action contract %v: %v", schema, err)
+		return "", util.BuildDiagnosticError(resourceName, fmt.Sprintf("Error marshalling action contract %v", schema), err)
 	}
 	return string(schemaBytes), nil
 }

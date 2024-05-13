@@ -31,11 +31,11 @@ func dataSourceTaskManagementWorkitemRead(ctx context.Context, d *schema.Resourc
 		workitemId, retryable, resp, err := proxy.getTaskManagementWorkitemIdByName(ctx, name, workbinId, worktypeId)
 
 		if err != nil && !retryable {
-			return retry.NonRetryableError(fmt.Errorf("error searching task management workitem %s: %s %v", name, err, resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("error searching task management workitem %s | error: %s", name, err), resp))
 		}
 
 		if retryable {
-			return retry.RetryableError(fmt.Errorf("no task management workitem found with name %s", name))
+			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("no task management workitem found with name %s", name), resp))
 		}
 
 		d.SetId(workitemId)

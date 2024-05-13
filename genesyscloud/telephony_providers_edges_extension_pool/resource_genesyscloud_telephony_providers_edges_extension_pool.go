@@ -65,9 +65,9 @@ func readExtensionPool(ctx context.Context, d *schema.ResourceData, meta interfa
 		extensionPool, resp, getErr := extensionPoolProxy.getExtensionPool(ctx, d.Id())
 		if getErr != nil {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(fmt.Errorf("Failed to read Extension pool %s: %s", d.Id(), getErr))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read Extension pool %s | error: %s", d.Id(), getErr), resp))
 			}
-			return retry.NonRetryableError(fmt.Errorf("Failed to read Extension pool %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read Extension pool %s | error: %s", d.Id(), getErr), resp))
 		}
 
 		if extensionPool.State != nil && *extensionPool.State == "deleted" {
@@ -126,13 +126,13 @@ func deleteExtensionPool(ctx context.Context, d *schema.ResourceData, meta inter
 				log.Printf("Deleted Extension pool %s", d.Id())
 				return nil
 			}
-			return retry.NonRetryableError(fmt.Errorf("error deleting Extension pool %s: %s", d.Id(), err))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("error deleting Extension pool %s | error: %s", d.Id(), err), resp))
 		}
 		if extensionPool.State != nil && *extensionPool.State == "deleted" {
 			// Extension pool deleted
 			log.Printf("Deleted Extension pool %s", d.Id())
 			return nil
 		}
-		return retry.RetryableError(fmt.Errorf("extension pool %s still exists", d.Id()))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("extension pool %s still exists", d.Id()), resp))
 	})
 }

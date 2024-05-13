@@ -5,6 +5,7 @@ import (
 	"os"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"testing"
 	"time"
 
@@ -89,7 +90,7 @@ func TestAccDataSourceScriptPublishedDefaults(t *testing.T) {
 			{
 				Config: generateScriptDataSource(
 					callbackDataSource,
-					callbackName,
+					constants.DefaultCallbackScriptName,
 					"",
 				),
 				PreConfig: func() {
@@ -98,14 +99,14 @@ func TestAccDataSourceScriptPublishedDefaults(t *testing.T) {
 				},
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(fmt.Sprintf("data.%s.%s", resourceName, callbackDataSource), "id",
-						callbackId,
+						defaultCallbackScriptId,
 					),
 				),
 			},
 			{
 				Config: generateScriptDataSource(
 					inboundDataSource,
-					inboundName,
+					constants.DefaultInboundScriptName,
 					"",
 				),
 				PreConfig: func() {
@@ -114,14 +115,14 @@ func TestAccDataSourceScriptPublishedDefaults(t *testing.T) {
 				},
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(fmt.Sprintf("data.%s.%s", resourceName, inboundDataSource), "id",
-						inboundId,
+						defaultInboundScriptId,
 					),
 				),
 			},
 			{
 				Config: generateScriptDataSource(
 					outboundDataSource,
-					outboundName,
+					constants.DefaultOutboundScriptName,
 					"",
 				),
 				PreConfig: func() {
@@ -130,7 +131,7 @@ func TestAccDataSourceScriptPublishedDefaults(t *testing.T) {
 				},
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(fmt.Sprintf("data.%s.%s", resourceName, outboundDataSource), "id",
-						outboundId,
+						defaultOutboundScriptId,
 					),
 				),
 			},

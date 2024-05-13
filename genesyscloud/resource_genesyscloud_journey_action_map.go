@@ -418,7 +418,7 @@ func createJourneyActionMap(ctx context.Context, d *schema.ResourceData, meta in
 	result, resp, err := journeyApi.PostJourneyActionmaps(*actionMap)
 	if err != nil {
 		input, _ := util.InterfaceToJson(*actionMap)
-		return diag.Errorf("failed to create journey action map %s: %s\n(input: %+v)\n(resp: %s)", *actionMap.DisplayName, err, input, util.GetBody(resp))
+		return util.BuildAPIDiagnosticError("genesyscloud_journey_action_map", fmt.Sprintf("failed to create journey action map %s: %s\n(input: %+v)", *actionMap.DisplayName, err, input), resp)
 	}
 
 	d.SetId(*result.Id)
@@ -436,9 +436,9 @@ func readJourneyActionMap(ctx context.Context, d *schema.ResourceData, meta inte
 		actionMap, resp, getErr := journeyApi.GetJourneyActionmap(d.Id())
 		if getErr != nil {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(fmt.Errorf("failed to read journey action map %s: %s", d.Id(), getErr))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_journey_action_map", fmt.Sprintf("failed to read journey action map %s | error: %s", d.Id(), getErr), resp))
 			}
-			return retry.NonRetryableError(fmt.Errorf("failed to read journey action map %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_journey_action_map", fmt.Sprintf("failed to read journey action map %s | error: %s", d.Id(), getErr), resp))
 		}
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceJourneyActionMap())
@@ -466,7 +466,7 @@ func updateJourneyActionMap(ctx context.Context, d *schema.ResourceData, meta in
 		_, resp, patchErr := journeyApi.PatchJourneyActionmap(d.Id(), *patchActionMap)
 		if patchErr != nil {
 			input, _ := util.InterfaceToJson(*patchActionMap)
-			return resp, diag.Errorf("Error updating journey action map %s: %s\n(input: %+v)\n(resp: %s)", *patchActionMap.DisplayName, patchErr, input, util.GetBody(resp))
+			return resp, util.BuildAPIDiagnosticError("genesyscloud_journey_action_map", fmt.Sprintf("Error updating journey action map %s: %s\n(input: %+v)", *patchActionMap.DisplayName, patchErr, input), resp)
 		}
 		return resp, nil
 	})
@@ -497,10 +497,10 @@ func deleteJourneyActionMap(ctx context.Context, d *schema.ResourceData, meta in
 				log.Printf("Deleted journey action map %s", d.Id())
 				return nil
 			}
-			return retry.NonRetryableError(fmt.Errorf("error deleting journey action map %s: %s", d.Id(), err))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_journey_action_map", fmt.Sprintf("error deleting journey action map %s | error: %s", d.Id(), err), resp))
 		}
 
-		return retry.RetryableError(fmt.Errorf("journey action map %s still exists", d.Id()))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_journey_action_map", fmt.Sprintf("journey action map %s still exists", d.Id()), resp))
 	})
 }
 
