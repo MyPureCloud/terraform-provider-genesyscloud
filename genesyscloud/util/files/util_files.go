@@ -302,7 +302,7 @@ func prepareAndUploadFile(filename string, substitutions map[string]interface{},
 func WriteToFile(bytes []byte, path string) diag.Diagnostics {
 	err := os.WriteFile(path, bytes, os.ModePerm)
 	if err != nil {
-		return diag.Errorf("Error writing file %s: %v", path, err)
+		return util.BuildDiagnosticError("File Writer", fmt.Sprintf("Error writing file with Path %s", path), err)
 	}
 	return nil
 }

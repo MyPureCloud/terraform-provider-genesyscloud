@@ -2,7 +2,6 @@ package tfexporter
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/hashicorp/hcl/v2/hclparse"
 	"github.com/hashicorp/hcl/v2/hclsyntax"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -10,8 +9,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
-	"strings"
-	files "terraform-provider-genesyscloud/genesyscloud/util/files"
+	"terraform-provider-genesyscloud/genesyscloud/util/files"
 	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 )
 
@@ -36,76 +34,72 @@ func (t *TfStateExportReader) compareExportAndTFState() diag.Diagnostics {
 	tfStateDirectory := t.tfStateDirectoryPath
 	exporterDirectory := t.exporterDirectoryPath
 
-	var resourceTypes []string
-
-	// Traverse the directory
-	err := filepath.Walk(exporterDirectory, func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
-
-		// Check if the current item is a file
-		if !info.IsDir() && filepath.Ext(path) == ".tf" {
-			// Process the Terraform configuration
-			if err := processTerraformFile(path, resourceTypes); err != nil {
-				log.Printf("Error processing %s: %v\n", path, err)
-			}
-		}
-
-		return nil
-	})
-	if err != nil {
-		log.Fatal(err)
-	}
-
+	resourceTypes := readExporterInstances(exporterDirectory)
 	resourcesFromTf := readTfState(tfStateDirectory)
 
-	differences := compareStates(resourceTypes, resourcesFromTf)
+	compareStatesAndWriteFile(resourceTypes, resourcesFromTf, exporterDirectory)
 
-	if len(differences) == 0 {
-		log.Printf("The state and Exporter are consistent.")
-	} else {
-		log.Printf("The state and Exporter have differences:")
-		diagErr := files.WriteToFile([]byte(strings.Join(differences, "\n")), filepath.Join(t.exporterDirectoryPath, "TFStateInconsistencies.txt"))
-
-		if diagErr != nil {
-			log.Printf("Error WritingFile %s: %v\n", t.exporterDirectoryPath, diagErr)
-		}
-	}
 	return nil
 }
 
-func compareStates(resourceTypes, resourcesFromTf []string) []string {
-	differences := []string{}
-
+func compareStatesAndWriteFile(resourceTypes, resourcesFromTf []string, exporterDirectoryPath string) {
 	diffResourceTypes := lists.SliceDifference(resourceTypes, resourcesFromTf)
-
+	jsonData := make(map[string]interface{})
 	if len(diffResourceTypes) > 0 {
-		differences = append(differences, fmt.Sprintf("Elements present in TFState but not in Exporter"))
-		differences = append(differences, diffResourceTypes...)
+		exporterJSON := createResourceJSON("Elements present in TFState but not in Exporter", diffResourceTypes)
+		jsonData["MissingExporterResources"] = exporterJSON
 	}
 
 	diffTFState := lists.SliceDifference(resourcesFromTf, resourceTypes)
-
-	if len(diffTFState) > 0 {
-		differences = append(differences, fmt.Sprintf("Elements present in Exporter but not in TFState"))
-		differences = append(differences, diffTFState...)
+	if len(diffResourceTypes) > 0 {
+		tfStateJSON := createResourceJSON("Elements present in Exporter but not in TFState", diffTFState)
+		jsonData["MissingTfStateResources"] = tfStateJSON
 	}
 
-	return differences
+	if len(jsonData) > 0 {
+		jsonBytes, err := json.MarshalIndent(jsonData, "", "  ")
+		if err != nil {
+			log.Printf("Error Marshalling Json %s: %v\n", jsonData, err)
+			return
+		}
+		log.Printf("The state and Exporter have differences:")
+		diagErr := files.WriteToFile(jsonBytes, filepath.Join(exporterDirectoryPath, "TFStateInconsistencies.txt"))
+
+		if diagErr != nil {
+			log.Printf("Error WritingFile %s: %v\n", exporterDirectoryPath, diagErr)
+		}
+		return
+	} else {
+		log.Printf("The state and Exporter are consistent.")
+	}
 }
 
-func processTerraformFile(path string, resourceTypes []string) error {
+func createResourceJSON(description string, resources []string) map[string]interface{} {
+	resourceMaps := make([]map[string]string, len(resources))
+	for i, res := range resources {
+		resourceMaps[i] = map[string]string{"name": res}
+	}
+
+	// Create JSON structure for resources
+	json := map[string]interface{}{
+		"description": description,
+		"resources":   resourceMaps,
+	}
+
+	return json
+}
+
+func processTerraformFile(path string, resourceTypes []string) []string {
 	// Create a new HCL parser
 	parser := hclparse.NewParser()
 
 	// Parse the Terraform file
 	content, diag := parser.ParseHCLFile(path)
 	if diag.HasErrors() {
-		return fmt.Errorf("error parsing exxport tf in %s: %v", path, diag)
+		log.Printf("error parsing exxport tf in %s: %v", path, diag)
+		return nil
 	}
 
-	log.Printf("bytess %v", string(content.Bytes))
 	body, _ := content.Body.(*hclsyntax.Body)
 
 	for _, block := range body.Blocks {
@@ -117,7 +111,32 @@ func processTerraformFile(path string, resourceTypes []string) error {
 		}
 
 	}
-	return nil
+	return resourceTypes
+}
+
+func readExporterInstances(exporterDirectory string) []string {
+	var resourceTypes []string
+	err := filepath.Walk(exporterDirectory, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			log.Printf("Error processing %s: %v\n", path, err)
+			return nil
+		}
+
+		// Check if the current item is a file
+		if !info.IsDir() && filepath.Ext(path) == ".tf" {
+			// Process the Terraform configuration
+			if resourceTypes = processTerraformFile(path, resourceTypes); err != nil {
+				log.Printf("Error processing %s: %v\n", path, err)
+				return nil
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		log.Fatal(err)
+		return nil
+	}
+	return resourceTypes
 }
 
 func readTfState(path string) []string {

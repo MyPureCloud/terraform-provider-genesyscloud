@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"hash/fnv"
 	"log"
-	"os"
 	"path/filepath"
 	"reflect"
 	"regexp"
@@ -17,9 +16,10 @@ import (
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	rRegistrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	featureToggles "terraform-provider-genesyscloud/genesyscloud/util/feature_toggles"
+	"terraform-provider-genesyscloud/genesyscloud/util/files"
 	"terraform-provider-genesyscloud/genesyscloud/util/lists"
 	"terraform-provider-genesyscloud/genesyscloud/util/stringmap"
-  "terraform-provider-genesyscloud/genesyscloud/util/files"
 	"time"
 
 	"github.com/google/uuid"
@@ -1559,8 +1559,7 @@ func fetchByRegex(fullName string, resType string, name string) bool {
 
 func (g *GenesysCloudResourceExporter) verifyTerraformState() diag.Diagnostics {
 
-	key, exists := os.LookupEnv("ENABLE_EXPORTER_STATE_COMPARISON")
-	if exists && key == "true" {
+	if exists := featureToggles.StateComparisonTrue(); exists {
 		if g.exportAsHCL {
 			tfstatePath, _ := getFilePath(g.d, defaultTfStateFile)
 			hclExporter := NewTfStateExportReader(tfstatePath, g.exportDirPath)
