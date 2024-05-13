@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"strings"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	"terraform-provider-genesyscloud/genesyscloud/util/files"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -60,7 +61,7 @@ func (t *TFStateFileWriter) writeTfState() diag.Diagnostics {
 	}
 
 	log.Printf("Writing export state file to %s", stateFilePath)
-	if err := writeToFile(data, stateFilePath); err != nil {
+	if err := files.WriteToFile(data, stateFilePath); err != nil {
 		return err
 	}
 
@@ -143,5 +144,5 @@ func writeTfVars(tfVars map[string]interface{}, path string) diag.Diagnostics {
 		"\n// The variables contained in this file have been given default values and should be edited as necessary\n\n%s", tfVarsStr)
 
 	log.Printf("Writing export tfvars file to %s", path)
-	return writeToFile([]byte(tfVarsStr), path)
+	return files.WriteToFile([]byte(tfVarsStr), path)
 }
