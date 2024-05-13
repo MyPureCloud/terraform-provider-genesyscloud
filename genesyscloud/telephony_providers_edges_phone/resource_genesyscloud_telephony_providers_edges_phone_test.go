@@ -186,7 +186,7 @@ func TestAccResourcePhoneBasic(t *testing.T) {
 
 func TestAccResourcePhoneStandalone(t *testing.T) {
 	t.Parallel()
-	number := "+14175538119"
+	number := "+12005538119"
 	// TODO: Use did pool resource inside config once cyclic dependency issue is resolved between genesyscloud and did_pools package
 	didPoolId, err := createDidPoolForEdgesPhoneTest(sdkConfig, number)
 	if err != nil {
@@ -307,7 +307,7 @@ func TestAccResourcePhoneStandalone(t *testing.T) {
 
 func TestAccResourceHardPhoneStandalone(t *testing.T) {
 	t.Skip("Skipped as sites with edges required for the hard phone test")
-	number := "+14172128941"
+	number := "+13172128941"
 	phoneMac := "AB12CD34"
 	phoneMacUpdated := "BANANAS"
 	// TODO: Use did pool resource inside config once cyclic dependency issue is resolved between genesyscloud and did_pools package
