@@ -456,7 +456,9 @@ func buildSdkPatchSegment(journeySegment *schema.ResourceData) *platformclientv2
 	sdkPatchSegment.SetField("Context", sdkContext)
 	sdkPatchSegment.SetField("Journey", journey)
 	sdkPatchSegment.SetField("ExternalSegment", externalSegment)
-	sdkPatchSegment.SetField("AssignmentExpirationDays", assignmentExpirationDays)
+	if assignmentExpirationDays != nil {
+		sdkPatchSegment.SetField("AssignmentExpirationDays", assignmentExpirationDays)
+	}
 	return &sdkPatchSegment
 }
 
@@ -500,6 +502,7 @@ func buildSdkRequestContextPattern(contextPattern map[string]interface{}) *platf
 		Criteria: stringmap.BuildSdkList(contextPattern, "criteria", buildSdkRequestEntityTypeCriteria),
 	}
 }
+
 func buildSdkPatchContextPattern(contextPattern map[string]interface{}) *platformclientv2.Patchcontextpattern {
 	return &platformclientv2.Patchcontextpattern{
 		Criteria: stringmap.BuildSdkList(contextPattern, "criteria", buildSdkPatchEntityTypeCriteria),
