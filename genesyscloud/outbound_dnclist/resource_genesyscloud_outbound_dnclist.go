@@ -169,7 +169,7 @@ func updateOutboundDncList(ctx context.Context, d *schema.ResourceData, meta int
 func readOutboundDncList(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getOutboundDnclistProxy(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundDncList(), constants.DefaultConsistencyChecks)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundDncList(), constants.DefaultConsistencyChecks, resourceName)
 
 	log.Printf("Reading Outbound DNC list %s", d.Id())
 

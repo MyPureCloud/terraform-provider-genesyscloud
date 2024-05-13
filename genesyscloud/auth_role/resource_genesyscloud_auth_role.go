@@ -93,7 +93,7 @@ func createAuthRole(ctx context.Context, d *schema.ResourceData, meta interface{
 func readAuthRole(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getAuthRoleProxy(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceAuthRole(), constants.DefaultConsistencyChecks)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceAuthRole(), constants.DefaultConsistencyChecks, resourceName)
 
 	log.Printf("Reading role %s", d.Id())
 

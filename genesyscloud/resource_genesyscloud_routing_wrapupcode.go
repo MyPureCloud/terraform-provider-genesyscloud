@@ -94,7 +94,7 @@ func createRoutingWrapupCode(ctx context.Context, d *schema.ResourceData, meta i
 func readRoutingWrapupCode(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceRoutingWrapupCode(), constants.DefaultConsistencyChecks)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceRoutingWrapupCode(), constants.DefaultConsistencyChecks, "genesyscloud_routing_wrapupcode")
 
 	log.Printf("Reading wrapupcode %s", d.Id())
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {

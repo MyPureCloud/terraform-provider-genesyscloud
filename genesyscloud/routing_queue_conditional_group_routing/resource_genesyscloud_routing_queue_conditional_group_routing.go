@@ -66,7 +66,7 @@ func readRoutingQueueConditionalRoutingGroup(ctx context.Context, d *schema.Reso
 
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getRoutingQueueConditionalGroupRoutingProxy(sdkConfig)
-	cc := consistencyChecker.NewConsistencyCheck(ctx, d, meta, ResourceRoutingQueueConditionalGroupRouting(), constants.DefaultConsistencyChecks)
+	cc := consistencyChecker.NewConsistencyCheck(ctx, d, meta, ResourceRoutingQueueConditionalGroupRouting(), constants.DefaultConsistencyChecks, resourceName)
 	queueId := strings.Split(d.Id(), "/")[0]
 
 	log.Printf("Reading routing queue %s conditional group routing rules", queueId)

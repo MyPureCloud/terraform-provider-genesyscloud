@@ -64,7 +64,7 @@ func readRoutingQueueOutboundEmailAddress(ctx context.Context, d *schema.Resourc
 
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getRoutingQueueOutboundEmailAddressProxy(sdkConfig)
-	cc := consistencyChecker.NewConsistencyCheck(ctx, d, meta, ResourceRoutingQueueOutboundEmailAddress(), constants.DefaultConsistencyChecks)
+	cc := consistencyChecker.NewConsistencyCheck(ctx, d, meta, ResourceRoutingQueueOutboundEmailAddress(), constants.DefaultConsistencyChecks, resourceName)
 
 	queueId := d.Id()
 

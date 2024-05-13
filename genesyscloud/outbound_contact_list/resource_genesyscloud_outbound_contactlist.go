@@ -319,7 +319,7 @@ func updateOutboundContactList(ctx context.Context, d *schema.ResourceData, meta
 func readOutboundContactList(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	outboundApi := platformclientv2.NewOutboundApiWithConfig(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundContactList(), constants.DefaultConsistencyChecks)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundContactList(), constants.DefaultConsistencyChecks, resourceName)
 
 	log.Printf("Reading Outbound Contact List %s", d.Id())
 

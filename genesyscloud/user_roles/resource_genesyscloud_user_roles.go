@@ -31,7 +31,7 @@ func createUserRoles(ctx context.Context, d *schema.ResourceData, meta interface
 func readUserRoles(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getUserRolesProxy(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceUserRoles(), constants.DefaultConsistencyChecks)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceUserRoles(), constants.DefaultConsistencyChecks, resourceName)
 
 	log.Printf("Reading roles for user %s", d.Id())
 	d.Set("user_id", d.Id())

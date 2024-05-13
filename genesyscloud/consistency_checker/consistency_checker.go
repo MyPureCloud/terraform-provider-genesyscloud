@@ -37,6 +37,7 @@ type ConsistencyCheck struct {
 	isEmptyState   *bool
 	checks         int
 	maxStateChecks int
+	resourceType   string
 }
 
 type consistencyError struct {
@@ -46,9 +47,10 @@ type consistencyError struct {
 }
 
 type consistencyErrorJson struct {
-	ResourceType string          `json:"resourceType"`
-	ResourceName string          `json:"resourceName"`
-	ErrorMessage json.RawMessage `json:"errorMessage"`
+	ResourceType     string `json:"resourceType"`
+	ResourceId       string `json:"resourceId"`
+	GCloudObjectName string `json:"GCloudObjectName"`
+	ErrorMessage     string `json:"errorMessage"`
 }
 
 func (e *consistencyError) Error() string {
@@ -57,7 +59,7 @@ expected value: %v
 actual value:   %v`, e.key, e.oldValue, e.newValue)
 }
 
-func NewConsistencyCheck(ctx context.Context, d *schema.ResourceData, meta interface{}, r *schema.Resource, maxStateChecks int) *ConsistencyCheck {
+func NewConsistencyCheck(ctx context.Context, d *schema.ResourceData, meta interface{}, r *schema.Resource, maxStateChecks int, resourceType string) *ConsistencyCheck {
 	emptyState := isEmptyState(d)
 	if *emptyState {
 		return &ConsistencyCheck{isEmptyState: emptyState}
@@ -87,6 +89,7 @@ func NewConsistencyCheck(ctx context.Context, d *schema.ResourceData, meta inter
 		meta:           meta,
 		isEmptyState:   emptyState,
 		maxStateChecks: maxStateChecks,
+		resourceType:   resourceType,
 	}
 	mccMutex.Lock()
 	mcc[d.Id()] = cc
@@ -259,7 +262,7 @@ func (c *ConsistencyCheck) CheckState(currentState *schema.ResourceData) *retry.
 						})
 
 						if _, exists := os.LookupEnv("BYPASS_CONSISTENCY_CHECKER"); c.checks >= c.maxStateChecks && exists {
-							c.writeConsistencyErrorToFile(err)
+							c.writeConsistencyErrorToFile(currentState, err)
 							return nil
 						}
 
@@ -276,7 +279,7 @@ func (c *ConsistencyCheck) CheckState(currentState *schema.ResourceData) *retry.
 					})
 
 					if _, exists := os.LookupEnv("BYPASS_CONSISTENCY_CHECKER"); c.checks >= c.maxStateChecks && exists {
-						c.writeConsistencyErrorToFile(err)
+						c.writeConsistencyErrorToFile(currentState, err)
 						return nil
 					}
 
@@ -291,12 +294,13 @@ func (c *ConsistencyCheck) CheckState(currentState *schema.ResourceData) *retry.
 	return nil
 }
 
-func (c *ConsistencyCheck) writeConsistencyErrorToFile(consistencyError *retry.RetryError) {
+func (c *ConsistencyCheck) writeConsistencyErrorToFile(d *schema.ResourceData, consistencyError *retry.RetryError) {
 	const filePath = "consistency-errors.log.json"
 	thing := consistencyErrorJson{
-		ResourceType: "",
-		ResourceName: "",
-		ErrorMessage: json.RawMessage(consistencyError.Err.Error()),
+		ResourceType:     c.resourceType,
+		ResourceId:       d.Id(),
+		GCloudObjectName: d.Get("name").(string),
+		ErrorMessage:     consistencyError.Err.Error(),
 	}
 
 	jsonData, err := json.Marshal(thing)

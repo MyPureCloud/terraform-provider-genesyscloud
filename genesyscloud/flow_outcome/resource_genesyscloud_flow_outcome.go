@@ -62,7 +62,7 @@ func createFlowOutcome(ctx context.Context, d *schema.ResourceData, meta interfa
 func readFlowOutcome(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getFlowOutcomeProxy(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceFlowOutcome(), constants.DefaultConsistencyChecks)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceFlowOutcome(), constants.DefaultConsistencyChecks, resourceName)
 
 	log.Printf("Reading flow outcome %s", d.Id())
 

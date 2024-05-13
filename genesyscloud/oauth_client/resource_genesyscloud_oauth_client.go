@@ -165,7 +165,7 @@ func updateTerraformUserWithRole(ctx context.Context, sdkConfig *platformclientv
 func readOAuthClient(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	oAuthProxy := GetOAuthClientProxy(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOAuthClient(), constants.DefaultConsistencyChecks)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOAuthClient(), constants.DefaultConsistencyChecks, resourceName)
 
 	log.Printf("Reading oauth client %s", d.Id())
 

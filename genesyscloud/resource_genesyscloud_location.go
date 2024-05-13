@@ -190,7 +190,7 @@ func createLocation(ctx context.Context, d *schema.ResourceData, meta interface{
 func readLocation(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	locationsAPI := platformclientv2.NewLocationsApiWithConfig(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceLocation(), constants.DefaultConsistencyChecks)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceLocation(), constants.DefaultConsistencyChecks, "genesyscloud_location")
 
 	log.Printf("Reading location %s", d.Id())
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {

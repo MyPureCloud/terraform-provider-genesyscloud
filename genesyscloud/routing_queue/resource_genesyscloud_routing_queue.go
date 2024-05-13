@@ -137,7 +137,7 @@ func createQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 func readQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := GetRoutingQueueProxy(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceRoutingQueue(), constants.DefaultConsistencyChecks)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceRoutingQueue(), constants.DefaultConsistencyChecks, resourceName)
 
 	log.Printf("Reading queue %s", d.Id())
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {

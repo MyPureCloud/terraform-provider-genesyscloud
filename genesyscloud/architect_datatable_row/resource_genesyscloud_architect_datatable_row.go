@@ -108,7 +108,7 @@ func readArchitectDatatableRow(ctx context.Context, d *schema.ResourceData, meta
 
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	archProxy := getArchitectDatatableRowProxy(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceArchitectDatatableRow(), constants.DefaultConsistencyChecks)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceArchitectDatatableRow(), constants.DefaultConsistencyChecks, resourceName)
 
 	log.Printf("Reading Datatable Row %s", d.Id())
 

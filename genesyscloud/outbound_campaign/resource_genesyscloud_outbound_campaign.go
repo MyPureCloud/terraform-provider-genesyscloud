@@ -97,7 +97,7 @@ func createOutboundCampaign(ctx context.Context, d *schema.ResourceData, meta in
 func readOutboundCampaign(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	clientConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getOutboundCampaignProxy(clientConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundCampaign(), constants.DefaultConsistencyChecks)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundCampaign(), constants.DefaultConsistencyChecks, resourceName)
 
 	log.Printf("Reading Outbound Campaign %s", d.Id())
 

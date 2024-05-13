@@ -354,7 +354,7 @@ func mergeSkillConditionsIntoSkillGroups(d *schema.ResourceData, skillGroupsRequ
 func readSkillGroups(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceRoutingSkillGroup(), constants.DefaultConsistencyChecks)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceRoutingSkillGroup(), constants.DefaultConsistencyChecks, "genesyscloud_skill_group")
 
 	// TODO: After public API endpoint is published and exposed to public, change to SDK method instead of direct invocation
 	apiClient := &routingAPI.Configuration.APIClient

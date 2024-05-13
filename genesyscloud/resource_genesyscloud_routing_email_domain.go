@@ -130,7 +130,7 @@ func createRoutingEmailDomain(ctx context.Context, d *schema.ResourceData, meta 
 func readRoutingEmailDomain(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceRoutingEmailDomain(), constants.DefaultConsistencyChecks)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceRoutingEmailDomain(), constants.DefaultConsistencyChecks, "genesyscloud_routing_email_domain")
 
 	log.Printf("Reading routing email domain %s", d.Id())
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {

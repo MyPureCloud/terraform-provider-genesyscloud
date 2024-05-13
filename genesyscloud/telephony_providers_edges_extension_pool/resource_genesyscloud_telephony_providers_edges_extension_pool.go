@@ -60,7 +60,7 @@ func createExtensionPool(ctx context.Context, d *schema.ResourceData, meta inter
 func readExtensionPool(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	extensionPoolProxy := getExtensionPoolProxy(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceTelephonyExtensionPool(), constants.DefaultConsistencyChecks)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceTelephonyExtensionPool(), constants.DefaultConsistencyChecks, resourceName)
 
 	log.Printf("Reading Extension pool %s", d.Id())
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {

@@ -66,7 +66,7 @@ func createArchitectSchedulegroups(ctx context.Context, d *schema.ResourceData, 
 func readArchitectSchedulegroups(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getArchitectSchedulegroupsProxy(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceArchitectSchedulegroups(), constants.DefaultConsistencyChecks)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceArchitectSchedulegroups(), constants.DefaultConsistencyChecks, resourceName)
 
 	log.Printf("Reading schedule group %s", d.Id())
 

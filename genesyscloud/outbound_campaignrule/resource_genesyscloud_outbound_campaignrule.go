@@ -86,7 +86,7 @@ func updateOutboundCampaignRule(ctx context.Context, d *schema.ResourceData, met
 func readOutboundCampaignRule(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getOutboundCampaignruleProxy(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundCampaignrule(), constants.DefaultConsistencyChecks)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundCampaignrule(), constants.DefaultConsistencyChecks, resourceName)
 
 	log.Printf("Reading Outbound Campaign Rule %s", d.Id())
 

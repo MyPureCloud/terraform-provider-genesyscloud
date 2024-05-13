@@ -72,7 +72,7 @@ func createJourneyOutcomePredictor(ctx context.Context, d *schema.ResourceData, 
 func readJourneyOutcomePredictor(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	op := getJourneyOutcomePredictorProxy(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceJourneyOutcomePredictor(), constants.DefaultConsistencyChecks)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceJourneyOutcomePredictor(), constants.DefaultConsistencyChecks, resourceName)
 
 	log.Printf("Reading predictor %s", d.Id())
 

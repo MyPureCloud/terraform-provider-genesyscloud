@@ -39,7 +39,7 @@ func createOrganizationAuthenticationSettings(ctx context.Context, d *schema.Res
 func readOrganizationAuthenticationSettings(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getOrgAuthSettingsProxy(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOrganizationAuthenticationSettings(), constants.DefaultConsistencyChecks)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOrganizationAuthenticationSettings(), constants.DefaultConsistencyChecks, resourceName)
 
 	log.Printf("Reading organization authentication settings %s", d.Id())
 

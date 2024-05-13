@@ -112,7 +112,7 @@ func createRoutingSettings(ctx context.Context, d *schema.ResourceData, meta int
 func readRoutingSettings(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceRoutingSettings(), constants.DefaultConsistencyChecks)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceRoutingSettings(), constants.DefaultConsistencyChecks, "genesyscloud_routing_settings")
 
 	log.Printf("Reading setting: %s", d.Id())
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {

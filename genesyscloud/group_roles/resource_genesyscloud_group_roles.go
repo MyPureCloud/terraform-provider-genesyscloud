@@ -33,7 +33,7 @@ func deleteGroupRoles(_ context.Context, _ *schema.ResourceData, _ interface{}) 
 func readGroupRoles(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getGroupRolesProxy(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceGroupRoles(), constants.DefaultConsistencyChecks)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceGroupRoles(), constants.DefaultConsistencyChecks, resourceName)
 
 	log.Printf("Reading roles for group %s", d.Id())
 

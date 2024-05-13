@@ -255,7 +255,7 @@ func updateOutboundAttemptLimit(ctx context.Context, d *schema.ResourceData, met
 func readOutboundAttemptLimit(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	outboundApi := platformclientv2.NewOutboundApiWithConfig(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundAttemptLimit(), constants.DefaultConsistencyChecks)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundAttemptLimit(), constants.DefaultConsistencyChecks, resourceName)
 
 	log.Printf("Reading Outbound Attempt Limit %s", d.Id())
 

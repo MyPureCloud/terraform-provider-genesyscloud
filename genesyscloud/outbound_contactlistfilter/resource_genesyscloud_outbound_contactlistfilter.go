@@ -61,7 +61,7 @@ func createOutboundContactlistfilter(ctx context.Context, d *schema.ResourceData
 func readOutboundContactlistfilter(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getOutboundContactlistfilterProxy(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundContactlistfilter(), constants.DefaultConsistencyChecks)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundContactlistfilter(), constants.DefaultConsistencyChecks, resourceName)
 
 	log.Printf("Reading Outbound Contact List Filter %s", d.Id())
 

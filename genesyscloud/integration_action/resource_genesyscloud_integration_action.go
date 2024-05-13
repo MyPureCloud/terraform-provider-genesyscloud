@@ -107,7 +107,7 @@ func createIntegrationAction(ctx context.Context, d *schema.ResourceData, meta i
 func readIntegrationAction(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	iap := getIntegrationActionsProxy(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceIntegrationAction(), constants.DefaultConsistencyChecks)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceIntegrationAction(), constants.DefaultConsistencyChecks, resourceName)
 
 	log.Printf("Reading integration action %s", d.Id())
 
