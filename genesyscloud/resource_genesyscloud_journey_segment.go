@@ -443,8 +443,8 @@ func buildSdkPatchSegment(journeySegment *schema.ResourceData) *platformclientv2
 	description := resourcedata.GetNillableValue[string](journeySegment, "description")
 	color := journeySegment.Get("color").(string)
 	shouldDisplayToAgent := resourcedata.GetNillableBool(journeySegment, "should_display_to_agent")
-	sdkContext := resourcedata.BuildSdkListFirstElement(journeySegment, "context", buildSdkRequestContext, false)
-	journey := resourcedata.BuildSdkListFirstElement(journeySegment, "journey", buildSdkRequestJourney, false)
+	sdkContext := resourcedata.BuildSdkListFirstElement(journeySegment, "context", buildSdkPatchContext, false)
+	journey := resourcedata.BuildSdkListFirstElement(journeySegment, "journey", buildSdkPatchJourney, false)
 	externalSegment := resourcedata.BuildSdkListFirstElement(journeySegment, "external_segment", buildSdkPatchExternalSegment, true)
 	assignmentExpirationDays := resourcedata.GetNillableValue[int](journeySegment, "assignment_expiration_days")
 
@@ -457,7 +457,9 @@ func buildSdkPatchSegment(journeySegment *schema.ResourceData) *platformclientv2
 	sdkPatchSegment.SetField("Context", sdkContext)
 	sdkPatchSegment.SetField("Journey", journey)
 	sdkPatchSegment.SetField("ExternalSegment", externalSegment)
-	sdkPatchSegment.SetField("AssignmentExpirationDays", assignmentExpirationDays)
+	if assignmentExpirationDays != nil {
+		sdkPatchSegment.SetField("AssignmentExpirationDays", assignmentExpirationDays)
+	}
 	return &sdkPatchSegment
 }
 
@@ -501,6 +503,7 @@ func buildSdkRequestContextPattern(contextPattern map[string]interface{}) *platf
 		Criteria: stringmap.BuildSdkList(contextPattern, "criteria", buildSdkRequestEntityTypeCriteria),
 	}
 }
+
 func buildSdkPatchContextPattern(contextPattern map[string]interface{}) *platformclientv2.Patchcontextpattern {
 	return &platformclientv2.Patchcontextpattern{
 		Criteria: stringmap.BuildSdkList(contextPattern, "criteria", buildSdkPatchEntityTypeCriteria),

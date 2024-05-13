@@ -2,6 +2,7 @@ package genesyscloud
 
 import (
 	"fmt"
+	"github.com/google/uuid"
 	"log"
 	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
@@ -16,7 +17,9 @@ import (
 )
 
 func TestAccResourceJourneySegmentCustomer(t *testing.T) {
-	t.Skip("Customer segment not implemented")
+	if supported, errorMessage := customerSegmentationIsSupported(t); !supported {
+		t.Skipf("Skipping because feature is not supported. Error message: %s", errorMessage)
+	}
 	runResourceJourneySegmentTestCase(t, "basic_customer_attributes")
 }
 
@@ -30,6 +33,9 @@ func TestAccResourceJourneySegmentContextOnly(t *testing.T) {
 }
 
 func TestAccResourceJourneySegmentOptionalAttributes(t *testing.T) {
+	if supported, errorMessage := customerSegmentationIsSupported(t); !supported {
+		t.Skipf("Skipping because feature is not supported. Error message: %s", errorMessage)
+	}
 	runResourceJourneySegmentTestCase(t, "optional_attributes")
 }
 
@@ -106,4 +112,37 @@ func testVerifyJourneySegmentsDestroyed(state *terraform.State) error {
 	}
 	// Success. All Journey segment destroyed
 	return nil
+}
+
+func customerSegmentationIsSupported(t *testing.T) (bool, string) {
+	segmentRequest := platformclientv2.Journeysegmentrequest{
+		DisplayName:          platformclientv2.String("terraform_test_" + uuid.NewString()),
+		Color:                platformclientv2.String("#008000"),
+		Scope:                platformclientv2.String("Customer"),
+		ShouldDisplayToAgent: platformclientv2.Bool(false),
+		ExternalSegment: &platformclientv2.Requestexternalsegment{
+			Id:     platformclientv2.String("4654654654"),
+			Name:   platformclientv2.String("external segment name"),
+			Source: platformclientv2.String("AdobeExperiencePlatform"),
+		},
+	}
+
+	apiInstance := platformclientv2.NewJourneyApiWithConfig(sdkConfig)
+	segment, response, err := apiInstance.PostJourneySegments(segmentRequest)
+	if err != nil {
+		if response != nil && response.StatusCode == 501 && strings.Contains(response.ErrorMessage, "not currently supported") {
+			return false, response.ErrorMessage
+		}
+		t.Logf("failed to create segment inside method customerSegmentationIsSupported: %v", err)
+		return true, ""
+	}
+
+	t.Logf("Customer segmentation has been implemented.")
+
+	// cleanup segment
+	if _, err := apiInstance.DeleteJourneySegment(*segment.Id); err != nil {
+		t.Logf("failed to cleanup segment inside method customerSegmentationIsSupported. Segment ID: '%s'. Error: '%v'", *segment.Id, err)
+	}
+
+	return true, ""
 }

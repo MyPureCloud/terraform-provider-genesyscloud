@@ -107,10 +107,10 @@ func fetchDepConsumers(ctx context.Context,
 				pageCount := 1
 				const pageSize = 100
 				dependencies, _, err := p.ArchitectApi.GetArchitectDependencytrackingConsumedresources(resourceKey, *data.PublishedVersion.Id, objectType, nil, pageCount, pageSize)
-				log.Printf("dependencies %v for id %v", dependencies, resourceKey)
 				if err != nil {
 					return nil, nil, nil, err
 				}
+				log.Printf("Retrieved dependencies for ID %s", resourceKey)
 
 				pageCount = *dependencies.PageCount
 
