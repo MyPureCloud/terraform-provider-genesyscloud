@@ -6,6 +6,7 @@ import (
 	"log"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -59,6 +60,7 @@ func createExtensionPool(ctx context.Context, d *schema.ResourceData, meta inter
 func readExtensionPool(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	extensionPoolProxy := getExtensionPoolProxy(sdkConfig)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceTelephonyExtensionPool(), constants.DefaultConsistencyChecks, resourceName)
 
 	log.Printf("Reading Extension pool %s", d.Id())
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
@@ -75,7 +77,6 @@ func readExtensionPool(ctx context.Context, d *schema.ResourceData, meta interfa
 			return nil
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceTelephonyExtensionPool())
 		d.Set("start_number", *extensionPool.StartNumber)
 		d.Set("end_number", *extensionPool.EndNumber)
 
@@ -86,7 +87,7 @@ func readExtensionPool(ctx context.Context, d *schema.ResourceData, meta interfa
 		}
 
 		log.Printf("Read Extension pool %s %s", d.Id(), *extensionPool.StartNumber)
-		return cc.CheckState()
+		return cc.CheckState(d)
 	})
 }
 

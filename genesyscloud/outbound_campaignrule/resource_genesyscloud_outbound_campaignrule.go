@@ -6,6 +6,7 @@ import (
 	"log"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 	"time"
 
@@ -85,6 +86,7 @@ func updateOutboundCampaignRule(ctx context.Context, d *schema.ResourceData, met
 func readOutboundCampaignRule(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getOutboundCampaignruleProxy(sdkConfig)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundCampaignrule(), constants.DefaultConsistencyChecks, resourceName)
 
 	log.Printf("Reading Outbound Campaign Rule %s", d.Id())
 
@@ -96,8 +98,6 @@ func readOutboundCampaignRule(ctx context.Context, d *schema.ResourceData, meta 
 			}
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read Outbound Campaign Rule %s | error: %s", d.Id(), getErr), resp))
 		}
-
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundCampaignrule())
 
 		resourcedata.SetNillableValue(d, "name", campaignRule.Name)
 		if campaignRule.CampaignRuleEntities != nil {
@@ -113,7 +113,7 @@ func readOutboundCampaignRule(ctx context.Context, d *schema.ResourceData, meta 
 		resourcedata.SetNillableValue(d, "enabled", campaignRule.Enabled)
 
 		log.Printf("Read Outbound Campaign Rule %s %s", d.Id(), *campaignRule.Name)
-		return cc.CheckState()
+		return cc.CheckState(d)
 	})
 }
 

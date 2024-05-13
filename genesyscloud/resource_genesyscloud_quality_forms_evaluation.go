@@ -8,6 +8,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/tfexporter_state"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -272,8 +273,9 @@ func createEvaluationForm(ctx context.Context, d *schema.ResourceData, meta inte
 func readEvaluationForm(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	qualityAPI := platformclientv2.NewQualityApiWithConfig(sdkConfig)
-	log.Printf("Reading evaluation form %s", d.Id())
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceEvaluationForm(), constants.DefaultConsistencyChecks, "genesyscloud_quality_forms_evaluation")
 
+	log.Printf("Reading evaluation form %s", d.Id())
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		evaluationForm, resp, getErr := qualityAPI.GetQualityFormsEvaluation(d.Id())
 		if getErr != nil {
@@ -282,8 +284,6 @@ func readEvaluationForm(ctx context.Context, d *schema.ResourceData, meta interf
 			}
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_quality_forms_evaluation", fmt.Sprintf("Failed to read evaluation form %s | error: %s", d.Id(), getErr), resp))
 		}
-
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceEvaluationForm())
 
 		// During an export, Retrieve a list of any published versions of the evaluation form
 		// If there are published versions, published will be set to true
@@ -312,7 +312,7 @@ func readEvaluationForm(ctx context.Context, d *schema.ResourceData, meta interf
 			d.Set("question_groups", flattenQuestionGroups(evaluationForm.QuestionGroups))
 		}
 
-		return cc.CheckState()
+		return cc.CheckState(d)
 	})
 }
 

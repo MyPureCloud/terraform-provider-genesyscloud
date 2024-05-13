@@ -7,6 +7,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -61,6 +62,7 @@ func createFlowOutcome(ctx context.Context, d *schema.ResourceData, meta interfa
 func readFlowOutcome(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getFlowOutcomeProxy(sdkConfig)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceFlowOutcome(), constants.DefaultConsistencyChecks, resourceName)
 
 	log.Printf("Reading flow outcome %s", d.Id())
 
@@ -74,8 +76,6 @@ func readFlowOutcome(ctx context.Context, d *schema.ResourceData, meta interface
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read flow outcome %s | error: %s", d.Id(), getErr), resp))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceFlowOutcome())
-
 		resourcedata.SetNillableValue(d, "name", flowOutcome.Name)
 		resourcedata.SetNillableReferenceWritableDivision(d, "division_id", flowOutcome.Division)
 
@@ -88,7 +88,7 @@ func readFlowOutcome(ctx context.Context, d *schema.ResourceData, meta interface
 		}
 
 		log.Printf("Read flow outcome %s %s", d.Id(), *flowOutcome.Name)
-		return cc.CheckState()
+		return cc.CheckState(d)
 	})
 }
 

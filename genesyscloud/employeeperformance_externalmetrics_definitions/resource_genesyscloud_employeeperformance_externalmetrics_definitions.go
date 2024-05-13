@@ -11,6 +11,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"time"
 
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
@@ -72,6 +73,7 @@ func createEmployeeperformanceExternalmetricsDefinition(ctx context.Context, d *
 func readEmployeeperformanceExternalmetricsDefinition(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getEmployeeperformanceExternalmetricsDefinitionProxy(sdkConfig)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceEmployeeperformanceExternalmetricsDefinition(), constants.DefaultConsistencyChecks, resourceName)
 
 	log.Printf("Reading employeeperformance externalmetrics definition %s", d.Id())
 
@@ -84,8 +86,6 @@ func readEmployeeperformanceExternalmetricsDefinition(ctx context.Context, d *sc
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read employeeperformance externalmetrics definition %s | error: %s", d.Id(), getErr), resp))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceEmployeeperformanceExternalmetricsDefinition())
-
 		resourcedata.SetNillableValue(d, "name", definition.Name)
 		resourcedata.SetNillableValue(d, "precision", definition.Precision)
 		resourcedata.SetNillableValue(d, "default_objective_type", definition.DefaultObjectiveType)
@@ -94,7 +94,7 @@ func readEmployeeperformanceExternalmetricsDefinition(ctx context.Context, d *sc
 		resourcedata.SetNillableValue(d, "unit_definition", definition.UnitDefinition)
 
 		log.Printf("Read employeeperformance externalmetrics definition %s %s", d.Id(), *definition.Name)
-		return cc.CheckState()
+		return cc.CheckState(d)
 	})
 }
 

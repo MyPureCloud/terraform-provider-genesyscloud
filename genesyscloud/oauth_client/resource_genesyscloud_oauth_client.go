@@ -6,6 +6,7 @@ import (
 	"log"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -164,6 +165,7 @@ func updateTerraformUserWithRole(ctx context.Context, sdkConfig *platformclientv
 func readOAuthClient(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	oAuthProxy := GetOAuthClientProxy(sdkConfig)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOAuthClient(), constants.DefaultConsistencyChecks, resourceName)
 
 	log.Printf("Reading oauth client %s", d.Id())
 
@@ -176,7 +178,6 @@ func readOAuthClient(ctx context.Context, d *schema.ResourceData, meta interface
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read oauth client %s | error: %s", d.Id(), getErr), resp))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOAuthClient())
 		_ = d.Set("name", *client.Name)
 
 		resourcedata.SetNillableValue(d, "description", client.Description)
@@ -203,7 +204,7 @@ func readOAuthClient(ctx context.Context, d *schema.ResourceData, meta interface
 		}
 
 		log.Printf("Read oauth client %s %s", d.Id(), *client.Name)
-		return cc.CheckState()
+		return cc.CheckState(d)
 	})
 }
 

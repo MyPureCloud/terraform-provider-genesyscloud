@@ -7,6 +7,7 @@ import (
 	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -254,6 +255,7 @@ func updateOutboundAttemptLimit(ctx context.Context, d *schema.ResourceData, met
 func readOutboundAttemptLimit(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	outboundApi := platformclientv2.NewOutboundApiWithConfig(sdkConfig)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundAttemptLimit(), constants.DefaultConsistencyChecks, resourceName)
 
 	log.Printf("Reading Outbound Attempt Limit %s", d.Id())
 
@@ -265,8 +267,6 @@ func readOutboundAttemptLimit(ctx context.Context, d *schema.ResourceData, meta 
 			}
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read Outbound Attempt Limit %s | error: %s", d.Id(), getErr), resp))
 		}
-
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundAttemptLimit())
 
 		if sdkAttemptLimits.Name != nil {
 			_ = d.Set("name", *sdkAttemptLimits.Name)
@@ -289,7 +289,7 @@ func readOutboundAttemptLimit(ctx context.Context, d *schema.ResourceData, meta 
 		}
 
 		log.Printf("Read Outbound Attempt Limit %s %s", d.Id(), *sdkAttemptLimits.Name)
-		return cc.CheckState()
+		return cc.CheckState(d)
 	})
 }
 

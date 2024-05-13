@@ -7,6 +7,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 
@@ -43,6 +44,7 @@ func createOrgauthorizationPairing(ctx context.Context, d *schema.ResourceData, 
 func readOrgauthorizationPairing(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getOrgauthorizationPairingProxy(sdkConfig)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOrgauthorizationPairing(), constants.DefaultConsistencyChecks, resourceName)
 
 	log.Printf("Reading Orgauthorization Pairing %s", d.Id())
 
@@ -55,8 +57,6 @@ func readOrgauthorizationPairing(ctx context.Context, d *schema.ResourceData, me
 			}
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read Orgauthorization Pairing %s | error: %s", d.Id(), getErr), resp))
 		}
-
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOrgauthorizationPairing())
 
 		schemaUserIds := lists.InterfaceListToStrings(d.Get("user_ids").([]interface{}))
 		if trustRequest.Users != nil {
@@ -87,7 +87,7 @@ func readOrgauthorizationPairing(ctx context.Context, d *schema.ResourceData, me
 		}
 
 		log.Printf("Read Orgauthorization Pairing %s", d.Id())
-		return cc.CheckState()
+		return cc.CheckState(d)
 	})
 }
 

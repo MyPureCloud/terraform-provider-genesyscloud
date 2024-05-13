@@ -7,6 +7,7 @@ import (
 	"net/url"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -244,6 +245,7 @@ func flattenClientConfig(clientType string, clientConfig platformclientv2.Widget
 func readWidgetDeployment(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	widgetsAPI := platformclientv2.NewWidgetsApiWithConfig(sdkConfig)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceWidgetDeployment(), constants.DefaultConsistencyChecks, "genesyscloud_widget_deployment")
 
 	log.Printf("Reading widget deployment %s", d.Id())
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
@@ -257,7 +259,6 @@ func readWidgetDeployment(ctx context.Context, d *schema.ResourceData, meta inte
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_widget_deployment", fmt.Sprintf("Failed to read widget deployment %s | error: %s", d.Id(), getErr), resp))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceWidgetDeployment())
 		d.Set("name", *currentWidget.Name)
 		if currentWidget.Description != nil {
 			d.Set("description", *currentWidget.Description)
@@ -301,7 +302,7 @@ func readWidgetDeployment(ctx context.Context, d *schema.ResourceData, meta inte
 			d.Set("client_config", nil)
 		}
 
-		return cc.CheckState()
+		return cc.CheckState(d)
 	})
 }
 

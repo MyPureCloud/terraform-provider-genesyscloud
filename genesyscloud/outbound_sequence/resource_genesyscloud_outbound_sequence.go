@@ -7,6 +7,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -72,6 +73,7 @@ func createOutboundSequence(ctx context.Context, d *schema.ResourceData, meta in
 func readOutboundSequence(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getOutboundSequenceProxy(sdkConfig)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundSequence(), constants.DefaultConsistencyChecks, resourceName)
 
 	log.Printf("Reading outbound sequence %s", d.Id())
 
@@ -84,8 +86,6 @@ func readOutboundSequence(ctx context.Context, d *schema.ResourceData, meta inte
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read outbound sequence %s | error: %s", d.Id(), getErr), resp))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundSequence())
-
 		resourcedata.SetNillableValue(d, "name", campaignSequence.Name)
 		if campaignSequence.Campaigns != nil {
 			d.Set("campaign_ids", util.SdkDomainEntityRefArrToList(*campaignSequence.Campaigns))
@@ -94,7 +94,7 @@ func readOutboundSequence(ctx context.Context, d *schema.ResourceData, meta inte
 		resourcedata.SetNillableValue(d, "repeat", campaignSequence.Repeat)
 
 		log.Printf("Read outbound sequence %s %s", d.Id(), *campaignSequence.Name)
-		return cc.CheckState()
+		return cc.CheckState(d)
 	})
 }
 

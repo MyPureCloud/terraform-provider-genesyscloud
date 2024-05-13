@@ -6,6 +6,7 @@ import (
 	"log"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -96,6 +97,7 @@ func createIdpOnelogin(ctx context.Context, d *schema.ResourceData, meta interfa
 func readIdpOnelogin(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	idpAPI := platformclientv2.NewIdentityProviderApiWithConfig(sdkConfig)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceIdpOnelogin(), constants.DefaultConsistencyChecks, "genesyscloud_idp_onelogin")
 
 	log.Printf("Reading IDP Onelogin")
 
@@ -109,7 +111,6 @@ func readIdpOnelogin(ctx context.Context, d *schema.ResourceData, meta interface
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_idp_onelogin", fmt.Sprintf("Failed to read IDP Onelogin: %s", getErr), resp))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceIdpOnelogin())
 		if onelogin.Certificate != nil {
 			d.Set("certificates", lists.StringListToInterfaceList([]string{*onelogin.Certificate}))
 		} else if onelogin.Certificates != nil {
@@ -137,7 +138,7 @@ func readIdpOnelogin(ctx context.Context, d *schema.ResourceData, meta interface
 		}
 
 		log.Printf("Read IDP Onelogin")
-		return cc.CheckState()
+		return cc.CheckState(d)
 	})
 }
 

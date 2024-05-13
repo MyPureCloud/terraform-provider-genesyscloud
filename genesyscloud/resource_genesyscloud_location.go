@@ -7,6 +7,7 @@ import (
 	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"terraform-provider-genesyscloud/genesyscloud/validators"
 	"time"
 
@@ -189,6 +190,7 @@ func createLocation(ctx context.Context, d *schema.ResourceData, meta interface{
 func readLocation(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	locationsAPI := platformclientv2.NewLocationsApiWithConfig(sdkConfig)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceLocation(), constants.DefaultConsistencyChecks, "genesyscloud_location")
 
 	log.Printf("Reading location %s", d.Id())
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
@@ -205,7 +207,6 @@ func readLocation(ctx context.Context, d *schema.ResourceData, meta interface{})
 			return nil
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceLocation())
 		d.Set("name", *location.Name)
 
 		if location.Notes != nil {
@@ -224,7 +225,7 @@ func readLocation(ctx context.Context, d *schema.ResourceData, meta interface{})
 		d.Set("address", flattenLocationAddress(location.Address))
 
 		log.Printf("Read location %s %s", d.Id(), *location.Name)
-		return cc.CheckState()
+		return cc.CheckState(d)
 	})
 }
 

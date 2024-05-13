@@ -9,6 +9,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 	"time"
 
@@ -64,6 +65,7 @@ func createArchitectGrammarLanguage(ctx context.Context, d *schema.ResourceData,
 func readArchitectGrammarLanguage(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getArchitectGrammarLanguageProxy(sdkConfig)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceArchitectGrammarLanguage(), constants.DefaultConsistencyChecks, resourceName)
 
 	log.Printf("Reading Architect Grammar Language %s", d.Id())
 
@@ -78,8 +80,6 @@ func readArchitectGrammarLanguage(ctx context.Context, d *schema.ResourceData, m
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read Architect Grammar Language %s: %s", d.Id(), getErr), resp))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceArchitectGrammarLanguage())
-
 		resourcedata.SetNillableValue(d, "grammar_id", language.GrammarId)
 		resourcedata.SetNillableValue(d, "language", language.Language)
 		if language.VoiceFileMetadata != nil {
@@ -90,7 +90,7 @@ func readArchitectGrammarLanguage(ctx context.Context, d *schema.ResourceData, m
 		}
 
 		log.Printf("Read Architect Grammar Language %s", d.Id())
-		return cc.CheckState()
+		return cc.CheckState(d)
 	})
 }
 

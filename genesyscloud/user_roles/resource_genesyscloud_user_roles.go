@@ -8,6 +8,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -30,6 +31,7 @@ func createUserRoles(ctx context.Context, d *schema.ResourceData, meta interface
 func readUserRoles(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getUserRolesProxy(sdkConfig)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceUserRoles(), constants.DefaultConsistencyChecks, resourceName)
 
 	log.Printf("Reading roles for user %s", d.Id())
 	d.Set("user_id", d.Id())
@@ -43,11 +45,10 @@ func readUserRoles(ctx context.Context, d *schema.ResourceData, meta interface{}
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read roles for user %s | error: %v", d.Id(), err), resp))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceUserRoles())
 		_ = d.Set("roles", roles)
 
 		log.Printf("Read roles for user %s", d.Id())
-		return cc.CheckState()
+		return cc.CheckState(d)
 	})
 }
 

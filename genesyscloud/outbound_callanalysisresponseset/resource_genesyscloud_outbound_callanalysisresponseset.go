@@ -12,6 +12,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 	"time"
 )
@@ -57,6 +58,7 @@ func createOutboundCallanalysisresponseset(ctx context.Context, d *schema.Resour
 func readOutboundCallanalysisresponseset(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getOutboundCallanalysisresponsesetProxy(sdkConfig)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundCallanalysisresponseset(), constants.DefaultConsistencyChecks, resourceName)
 
 	log.Printf("Reading Outbound Call Analysis Response Set %s", d.Id())
 
@@ -68,14 +70,13 @@ func readOutboundCallanalysisresponseset(ctx context.Context, d *schema.Resource
 			}
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read Outbound Call Analysis Response Set %s | error: %s", d.Id(), getErr), resp))
 		}
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundCallanalysisresponseset())
 
 		resourcedata.SetNillableValue(d, "name", responseSet.Name)
 		resourcedata.SetNillableValue(d, "beep_detection_enabled", responseSet.BeepDetectionEnabled)
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "responses", responseSet.Responses, flattenSdkOutboundCallAnalysisResponseSetReaction)
 
 		log.Printf("Read Outbound Call Analysis Response Set %s %s", d.Id(), *responseSet.Name)
-		return cc.CheckState()
+		return cc.CheckState(d)
 	})
 }
 

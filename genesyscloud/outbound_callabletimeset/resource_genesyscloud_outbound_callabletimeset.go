@@ -6,6 +6,7 @@ import (
 	"log"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 	"time"
 
@@ -82,6 +83,8 @@ func readOutboundCallabletimeset(ctx context.Context, d *schema.ResourceData, me
 
 	log.Printf("Reading Outbound Callabletimeset %s", d.Id())
 
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundCallabletimeset(), constants.DefaultConsistencyChecks, resourceName)
+
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		callableTimeset, resp, getErr := proxy.getOutboundCallabletimesetById(ctx, d.Id())
 		if getErr != nil {
@@ -91,8 +94,6 @@ func readOutboundCallabletimeset(ctx context.Context, d *schema.ResourceData, me
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read Outbound Callabletimeset %s | error: %s", d.Id(), getErr), resp))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundCallabletimeset())
-
 		resourcedata.SetNillableValue(d, "name", callableTimeset.Name)
 		if callableTimeset.CallableTimes != nil {
 			// Remove the milliseconds added to start_time and stop_time by the API
@@ -100,7 +101,7 @@ func readOutboundCallabletimeset(ctx context.Context, d *schema.ResourceData, me
 			d.Set("callable_times", flattenCallableTimes(*callableTimeset.CallableTimes))
 		}
 		log.Printf("Read Outbound Callabletimeset %s %s", d.Id(), *callableTimeset.Name)
-		return cc.CheckState()
+		return cc.CheckState(d)
 	})
 }
 

@@ -6,6 +6,7 @@ import (
 	"log"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -325,8 +326,9 @@ func createSurveyForm(ctx context.Context, d *schema.ResourceData, meta interfac
 func readSurveyForm(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	qualityAPI := platformclientv2.NewQualityApiWithConfig(sdkConfig)
-	log.Printf("Reading survey form %s", d.Id())
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceSurveyForm(), constants.DefaultConsistencyChecks, "genesyscloud_quality_forms_survey")
 
+	log.Printf("Reading survey form %s", d.Id())
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		surveyForm, resp, getErr := qualityAPI.GetQualityFormsSurvey(d.Id())
 		if getErr != nil {
@@ -336,7 +338,6 @@ func readSurveyForm(ctx context.Context, d *schema.ResourceData, meta interface{
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_quality_forms_survey", fmt.Sprintf("Failed to read survey form %s | error: %s", d.Id(), getErr), resp))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceSurveyForm())
 		if surveyForm.Name != nil {
 			d.Set("name", *surveyForm.Name)
 		}
@@ -359,7 +360,7 @@ func readSurveyForm(ctx context.Context, d *schema.ResourceData, meta interface{
 			d.Set("question_groups", flattenSurveyQuestionGroups(surveyForm.QuestionGroups))
 		}
 
-		return cc.CheckState()
+		return cc.CheckState(d)
 	})
 }
 

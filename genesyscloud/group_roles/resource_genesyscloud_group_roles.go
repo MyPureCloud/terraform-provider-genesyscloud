@@ -8,6 +8,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -32,11 +33,11 @@ func deleteGroupRoles(_ context.Context, _ *schema.ResourceData, _ interface{}) 
 func readGroupRoles(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getGroupRolesProxy(sdkConfig)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceGroupRoles(), constants.DefaultConsistencyChecks, resourceName)
 
 	log.Printf("Reading roles for group %s", d.Id())
 
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceGroupRoles())
 		d.Set("group_id", d.Id())
 
 		roles, resp, err := flattenSubjectRoles(d, proxy)
@@ -49,7 +50,7 @@ func readGroupRoles(ctx context.Context, d *schema.ResourceData, meta interface{
 		d.Set("roles", roles)
 
 		log.Printf("Read roles for group %s", d.Id())
-		return cc.CheckState()
+		return cc.CheckState(d)
 	})
 }
 

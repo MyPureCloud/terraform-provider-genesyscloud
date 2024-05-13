@@ -12,6 +12,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"terraform-provider-genesyscloud/genesyscloud/util/files"
 	"time"
 )
@@ -81,6 +82,7 @@ func createRespManagementRespAsset(ctx context.Context, d *schema.ResourceData, 
 func readRespManagementRespAsset(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getRespManagementRespAssetProxy(sdkConfig)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceResponseManagementResponseAsset(), constants.DefaultConsistencyChecks, resourceName)
 
 	log.Printf("Reading Responsemanagement response asset %s", d.Id())
 
@@ -93,7 +95,6 @@ func readRespManagementRespAsset(ctx context.Context, d *schema.ResourceData, me
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read response asset %s | error: %s", d.Id(), getErr), resp))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceResponseManagementResponseAsset())
 		d.Set("filename", *sdkAsset.Name)
 
 		if sdkAsset.Division != nil && sdkAsset.Division.Id != nil {
@@ -102,7 +103,7 @@ func readRespManagementRespAsset(ctx context.Context, d *schema.ResourceData, me
 
 		log.Printf("Read Responsemanagement response asset %s %s", d.Id(), *sdkAsset.Name)
 
-		return cc.CheckState()
+		return cc.CheckState(d)
 	})
 }
 

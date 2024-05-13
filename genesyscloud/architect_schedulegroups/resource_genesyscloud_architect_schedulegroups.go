@@ -9,6 +9,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -65,6 +66,7 @@ func createArchitectSchedulegroups(ctx context.Context, d *schema.ResourceData, 
 func readArchitectSchedulegroups(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getArchitectSchedulegroupsProxy(sdkConfig)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceArchitectSchedulegroups(), constants.DefaultConsistencyChecks, resourceName)
 
 	log.Printf("Reading schedule group %s", d.Id())
 
@@ -77,7 +79,6 @@ func readArchitectSchedulegroups(ctx context.Context, d *schema.ResourceData, me
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read schedule group %s | error: %s", d.Id(), getErr), proxyResponse))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceArchitectSchedulegroups())
 		d.Set("name", *scheduleGroup.Name)
 		d.Set("division_id", *scheduleGroup.Division.Id)
 		d.Set("description", nil)
@@ -109,7 +110,7 @@ func readArchitectSchedulegroups(ctx context.Context, d *schema.ResourceData, me
 		}
 
 		log.Printf("Read schedule group %s %s", d.Id(), *scheduleGroup.Name)
-		return cc.CheckState()
+		return cc.CheckState(d)
 	})
 }
 

@@ -6,6 +6,7 @@ import (
 	"log"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -101,6 +102,7 @@ func createIdpPing(ctx context.Context, d *schema.ResourceData, meta interface{}
 func readIdpPing(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	idpAPI := platformclientv2.NewIdentityProviderApiWithConfig(sdkConfig)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceIdpPing(), constants.DefaultConsistencyChecks, "genesyscloud_idp_ping")
 
 	log.Printf("Reading IDP Ping")
 
@@ -114,7 +116,6 @@ func readIdpPing(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_idp_ping", fmt.Sprintf("Failed to read IDP Ping: %s", getErr), resp))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceIdpPing())
 		if ping.Certificate != nil {
 			d.Set("certificates", lists.StringListToInterfaceList([]string{*ping.Certificate}))
 		} else if ping.Certificates != nil {
@@ -148,7 +149,7 @@ func readIdpPing(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		}
 
 		log.Printf("Read IDP Ping")
-		return cc.CheckState()
+		return cc.CheckState(d)
 	})
 }
 

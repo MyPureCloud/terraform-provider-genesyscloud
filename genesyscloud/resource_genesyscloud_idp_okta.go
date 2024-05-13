@@ -6,6 +6,7 @@ import (
 	"log"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -96,6 +97,7 @@ func createIdpOkta(ctx context.Context, d *schema.ResourceData, meta interface{}
 func readIdpOkta(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	idpAPI := platformclientv2.NewIdentityProviderApiWithConfig(sdkConfig)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceIdpOkta(), constants.DefaultConsistencyChecks, "genesyscloud_idp_okta")
 
 	log.Printf("Reading IDP Okta")
 
@@ -109,7 +111,6 @@ func readIdpOkta(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_idp_okta", fmt.Sprintf("Failed to read IDP Okta: %s", getErr), resp))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceIdpOkta())
 		if okta.Certificate != nil {
 			d.Set("certificates", lists.StringListToInterfaceList([]string{*okta.Certificate}))
 		} else if okta.Certificates != nil {
@@ -137,7 +138,7 @@ func readIdpOkta(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		}
 
 		log.Printf("Read IDP Okta")
-		return cc.CheckState()
+		return cc.CheckState(d)
 	})
 }
 

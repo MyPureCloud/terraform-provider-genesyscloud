@@ -6,6 +6,7 @@ import (
 	"log"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -101,6 +102,7 @@ func createIdpGsuite(ctx context.Context, d *schema.ResourceData, meta interface
 func readIdpGsuite(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	idpAPI := platformclientv2.NewIdentityProviderApiWithConfig(sdkConfig)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceIdpGsuite(), constants.DefaultConsistencyChecks, "genesyscloud_idp_gsuite")
 
 	log.Printf("Reading IDP GSuite")
 
@@ -114,7 +116,6 @@ func readIdpGsuite(ctx context.Context, d *schema.ResourceData, meta interface{}
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_idp_gsuite", fmt.Sprintf("Failed to read IDP GSuite: %s", getErr), resp))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceIdpGsuite())
 		if gsuite.Certificate != nil {
 			d.Set("certificates", lists.StringListToInterfaceList([]string{*gsuite.Certificate}))
 		} else if gsuite.Certificates != nil {
@@ -148,7 +149,7 @@ func readIdpGsuite(ctx context.Context, d *schema.ResourceData, meta interface{}
 		}
 
 		log.Printf("Read IDP GSuite")
-		return cc.CheckState()
+		return cc.CheckState(d)
 	})
 }
 

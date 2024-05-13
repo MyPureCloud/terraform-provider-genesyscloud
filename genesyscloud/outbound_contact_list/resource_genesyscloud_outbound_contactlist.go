@@ -7,6 +7,7 @@ import (
 	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -318,6 +319,7 @@ func updateOutboundContactList(ctx context.Context, d *schema.ResourceData, meta
 func readOutboundContactList(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	outboundApi := platformclientv2.NewOutboundApiWithConfig(sdkConfig)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundContactList(), constants.DefaultConsistencyChecks, resourceName)
 
 	log.Printf("Reading Outbound Contact List %s", d.Id())
 
@@ -329,8 +331,6 @@ func readOutboundContactList(ctx context.Context, d *schema.ResourceData, meta i
 			}
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read Outbound Contact List %s | error: %s", d.Id(), getErr), resp))
 		}
-
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundContactList())
 
 		if sdkContactList.Name != nil {
 			_ = d.Set("name", *sdkContactList.Name)
@@ -375,7 +375,7 @@ func readOutboundContactList(ctx context.Context, d *schema.ResourceData, meta i
 		}
 
 		log.Printf("Read Outbound Contact List %s %s", d.Id(), *sdkContactList.Name)
-		return cc.CheckState()
+		return cc.CheckState(d)
 	})
 }
 

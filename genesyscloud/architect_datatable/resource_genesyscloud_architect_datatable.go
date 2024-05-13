@@ -6,6 +6,7 @@ import (
 	"log"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -102,6 +103,7 @@ func createArchitectDatatable(ctx context.Context, d *schema.ResourceData, meta 
 func readArchitectDatatable(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	archProxy := getArchitectDatatableProxy(sdkConfig)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceArchitectDatatable(), constants.DefaultConsistencyChecks, resourceName)
 
 	log.Printf("Reading architect_datatable %s", d.Id())
 
@@ -113,7 +115,7 @@ func readArchitectDatatable(ctx context.Context, d *schema.ResourceData, meta in
 			}
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read architect_datatable %s | error: %s", d.Id(), getErr), resp))
 		}
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceArchitectDatatable())
+
 		_ = d.Set("name", *datatable.Name)
 		_ = d.Set("division_id", *datatable.Division.Id)
 
@@ -131,7 +133,7 @@ func readArchitectDatatable(ctx context.Context, d *schema.ResourceData, meta in
 
 		log.Printf("Read architect_datatable %s %s", d.Id(), *datatable.Name)
 
-		return cc.CheckState()
+		return cc.CheckState(d)
 	})
 }
 

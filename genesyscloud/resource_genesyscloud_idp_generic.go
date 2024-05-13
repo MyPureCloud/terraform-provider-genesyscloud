@@ -6,6 +6,7 @@ import (
 	"log"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -134,6 +135,7 @@ func createIdpGeneric(ctx context.Context, d *schema.ResourceData, meta interfac
 func readIdpGeneric(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	idpAPI := platformclientv2.NewIdentityProviderApiWithConfig(sdkConfig)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceIdpGeneric(), constants.DefaultConsistencyChecks, "genesyscloud_idp_generic")
 
 	log.Printf("Reading IDP Generic")
 
@@ -147,7 +149,6 @@ func readIdpGeneric(ctx context.Context, d *schema.ResourceData, meta interface{
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_idp_generic", fmt.Sprintf("Failed to read IDP Generic: %s", getErr), resp))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceIdpGeneric())
 		if generic.Name != nil {
 			d.Set("name", *generic.Name)
 		} else {
@@ -205,7 +206,7 @@ func readIdpGeneric(ctx context.Context, d *schema.ResourceData, meta interface{
 		}
 
 		log.Printf("Read IDP Generic")
-		return cc.CheckState()
+		return cc.CheckState(d)
 	})
 }
 

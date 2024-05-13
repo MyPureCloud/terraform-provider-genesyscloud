@@ -6,6 +6,7 @@ import (
 	"log"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -75,6 +76,7 @@ func createOutboundRuleset(ctx context.Context, d *schema.ResourceData, meta int
 func readOutboundRuleset(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := newOutboundRulesetProxy(sdkConfig)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundRuleset(), constants.DefaultConsistencyChecks, resourceName)
 
 	log.Printf("Reading Outbound Ruleset %s", d.Id())
 
@@ -87,15 +89,13 @@ func readOutboundRuleset(ctx context.Context, d *schema.ResourceData, meta inter
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read Outbound Ruleset %s | error: %s", d.Id(), getErr), resp))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundRuleset())
-
 		resourcedata.SetNillableValue(d, "name", ruleset.Name)
 		resourcedata.SetNillableReference(d, "contact_list_id", ruleset.ContactList)
 		resourcedata.SetNillableReference(d, "queue_id", ruleset.Queue)
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "rules", ruleset.Rules, flattenDialerrules)
 
 		log.Printf("Read Outbound Ruleset %s %s", d.Id(), *ruleset.Name)
-		return cc.CheckState()
+		return cc.CheckState(d)
 	})
 }
 

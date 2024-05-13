@@ -6,6 +6,7 @@ import (
 	"log"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 	"time"
 
@@ -72,6 +73,7 @@ func createDidPool(ctx context.Context, d *schema.ResourceData, meta interface{}
 func readDidPool(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getTelephonyDidPoolProxy(sdkConfig)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceTelephonyDidPool(), constants.DefaultConsistencyChecks, resourceName)
 
 	log.Printf("Reading DID pool %s", d.Id())
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
@@ -88,7 +90,6 @@ func readDidPool(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 			return nil
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceTelephonyDidPool())
 		_ = d.Set("start_phone_number", *didPool.StartPhoneNumber)
 		_ = d.Set("end_phone_number", *didPool.EndPhoneNumber)
 
@@ -97,7 +98,7 @@ func readDidPool(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		resourcedata.SetNillableValue(d, "pool_provider", didPool.Provider)
 
 		log.Printf("Read DID pool %s %s", d.Id(), *didPool.StartPhoneNumber)
-		return cc.CheckState()
+		return cc.CheckState(d)
 	})
 }
 

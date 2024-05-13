@@ -7,6 +7,7 @@ import (
 	"regexp"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -159,6 +160,7 @@ func createJourneyOutcome(ctx context.Context, d *schema.ResourceData, meta inte
 func readJourneyOutcome(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	journeyApi := platformclientv2.NewJourneyApiWithConfig(sdkConfig)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceJourneyOutcome(), constants.DefaultConsistencyChecks, "genesyscloud_journey_outcome")
 
 	log.Printf("Reading journey outcome %s", d.Id())
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
@@ -170,11 +172,10 @@ func readJourneyOutcome(ctx context.Context, d *schema.ResourceData, meta interf
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_journey_outcome", fmt.Sprintf("failed to read journey outcome %s | error: %s", d.Id(), getErr), resp))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceJourneyOutcome())
 		flattenJourneyOutcome(d, journeyOutcome)
 
 		log.Printf("Read journey outcome %s %s", d.Id(), *journeyOutcome.DisplayName)
-		return cc.CheckState()
+		return cc.CheckState(d)
 	})
 }
 

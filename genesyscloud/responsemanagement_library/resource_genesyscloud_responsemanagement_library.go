@@ -10,6 +10,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"time"
 
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
@@ -62,6 +63,7 @@ func createResponsemanagementLibrary(ctx context.Context, d *schema.ResourceData
 func readResponsemanagementLibrary(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getResponsemanagementLibraryProxy(sdkConfig)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceResponsemanagementLibrary(), constants.DefaultConsistencyChecks, resourceName)
 
 	log.Printf("Reading responsemanagement library %s", d.Id())
 
@@ -74,11 +76,9 @@ func readResponsemanagementLibrary(ctx context.Context, d *schema.ResourceData, 
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read responsemanagement library %s | error: %s", d.Id(), getErr), resp))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceResponsemanagementLibrary())
-
 		resourcedata.SetNillableValue(d, "name", library.Name)
 		log.Printf("Read responsemanagement library %s %s", d.Id(), *library.Name)
-		return cc.CheckState()
+		return cc.CheckState(d)
 	})
 }
 

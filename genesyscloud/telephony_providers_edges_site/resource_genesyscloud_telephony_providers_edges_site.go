@@ -6,6 +6,7 @@ import (
 	"log"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -135,6 +136,7 @@ func createSite(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 func readSite(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	sp := getSiteProxy(sdkConfig)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceSite(), constants.DefaultConsistencyChecks, resourceName)
 
 	log.Printf("Reading site %s", d.Id())
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
@@ -146,7 +148,6 @@ func readSite(ctx context.Context, d *schema.ResourceData, meta interface{}) dia
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read site %s | error: %s", d.Id(), err), resp))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceSite())
 		d.Set("name", *currentSite.Name)
 		d.Set("location_id", nil)
 		if currentSite.Location != nil {
@@ -185,7 +186,7 @@ func readSite(ctx context.Context, d *schema.ResourceData, meta interface{}) dia
 		d.Set("set_as_default_site", defaultSiteId == *currentSite.Id)
 
 		log.Printf("Read site %s %s", d.Id(), *currentSite.Name)
-		return cc.CheckState()
+		return cc.CheckState(d)
 	})
 }
 

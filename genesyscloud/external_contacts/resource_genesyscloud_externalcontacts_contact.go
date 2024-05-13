@@ -6,6 +6,7 @@ import (
 	"log"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -76,6 +77,7 @@ func createExternalContact(ctx context.Context, d *schema.ResourceData, meta int
 func readExternalContact(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	ep := getExternalContactsContactsProxy(sdkConfig)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceExternalContact(), constants.DefaultConsistencyChecks, resourceName)
 
 	log.Printf("Reading contact %s", d.Id())
 
@@ -87,8 +89,6 @@ func readExternalContact(ctx context.Context, d *schema.ResourceData, meta inter
 			}
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read external contact %s | error: %s", d.Id(), getErr), resp))
 		}
-
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceExternalContact())
 
 		resourcedata.SetNillableValue(d, "first_name", externalContact.FirstName)
 		resourcedata.SetNillableValue(d, "middle_name", externalContact.MiddleName)
@@ -111,7 +111,7 @@ func readExternalContact(ctx context.Context, d *schema.ResourceData, meta inter
 		resourcedata.SetNillableValue(d, "external_system_url", externalContact.ExternalSystemUrl)
 
 		log.Printf("Read external contact %s", d.Id())
-		return cc.CheckState()
+		return cc.CheckState(d)
 	})
 }
 

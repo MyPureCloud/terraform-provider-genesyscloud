@@ -6,6 +6,7 @@ import (
 	"log"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -109,8 +110,9 @@ func updatePhoneBaseSettings(ctx context.Context, d *schema.ResourceData, meta i
 func readPhoneBaseSettings(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	phoneBaseProxy := getPhoneBaseProxy(sdkConfig)
-	log.Printf("Reading phone base settings %s", d.Id())
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourcePhoneBaseSettings(), constants.DefaultConsistencyChecks, resourceName)
 
+	log.Printf("Reading phone base settings %s", d.Id())
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		phoneBaseSettings, resp, getErr := phoneBaseProxy.getPhoneBaseSetting(ctx, d.Id())
 		if getErr != nil {
@@ -120,7 +122,6 @@ func readPhoneBaseSettings(ctx context.Context, d *schema.ResourceData, meta int
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read phone base settings %s | error: %s", d.Id(), getErr), resp))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourcePhoneBaseSettings())
 		d.Set("name", *phoneBaseSettings.Name)
 
 		resourcedata.SetNillableValue(d, "description", phoneBaseSettings.Description)
@@ -148,7 +149,7 @@ func readPhoneBaseSettings(ctx context.Context, d *schema.ResourceData, meta int
 
 		log.Printf("Read phone base settings %s %s", d.Id(), *phoneBaseSettings.Name)
 
-		return cc.CheckState()
+		return cc.CheckState(d)
 	})
 }
 

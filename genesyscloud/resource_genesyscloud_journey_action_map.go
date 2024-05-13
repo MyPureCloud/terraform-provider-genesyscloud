@@ -6,6 +6,7 @@ import (
 	"log"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"terraform-provider-genesyscloud/genesyscloud/validators"
 	"time"
 
@@ -430,6 +431,7 @@ func createJourneyActionMap(ctx context.Context, d *schema.ResourceData, meta in
 func readJourneyActionMap(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	journeyApi := platformclientv2.NewJourneyApiWithConfig(sdkConfig)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceJourneyActionMap(), constants.DefaultConsistencyChecks, "genesyscloud_journey_action_map")
 
 	log.Printf("Reading journey action map %s", d.Id())
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
@@ -441,11 +443,10 @@ func readJourneyActionMap(ctx context.Context, d *schema.ResourceData, meta inte
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_journey_action_map", fmt.Sprintf("failed to read journey action map %s | error: %s", d.Id(), getErr), resp))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceJourneyActionMap())
 		flattenActionMap(d, actionMap)
 
 		log.Printf("Read journey action map %s %s", d.Id(), *actionMap.DisplayName)
-		return cc.CheckState()
+		return cc.CheckState(d)
 	})
 }
 

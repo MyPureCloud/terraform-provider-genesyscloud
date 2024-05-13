@@ -8,6 +8,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -79,6 +80,7 @@ func createTaskManagementWorkitemSchema(ctx context.Context, d *schema.ResourceD
 func readTaskManagementWorkitemSchema(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getTaskManagementProxy(sdkConfig)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceTaskManagementWorkitemSchema(), constants.DefaultConsistencyChecks, resourceName)
 
 	log.Printf("Reading task management workitem schema %s", d.Id())
 
@@ -90,8 +92,6 @@ func readTaskManagementWorkitemSchema(ctx context.Context, d *schema.ResourceDat
 			}
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read task management workitem schema %s | error: %s", d.Id(), getErr), resp))
 		}
-
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceTaskManagementWorkitemSchema())
 
 		schemaProps, err := json.Marshal(schema.JsonSchema.Properties)
 		if err != nil {
@@ -109,7 +109,7 @@ func readTaskManagementWorkitemSchema(ctx context.Context, d *schema.ResourceDat
 		resourcedata.SetNillableValue(d, "enabled", schema.Enabled)
 
 		log.Printf("Read task management workitem schema %s %s", d.Id(), *schema.Name)
-		return cc.CheckState()
+		return cc.CheckState(d)
 	})
 }
 

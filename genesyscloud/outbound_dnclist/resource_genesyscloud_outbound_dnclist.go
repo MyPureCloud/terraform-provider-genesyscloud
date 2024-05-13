@@ -6,6 +6,7 @@ import (
 	"log"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -168,6 +169,7 @@ func updateOutboundDncList(ctx context.Context, d *schema.ResourceData, meta int
 func readOutboundDncList(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getOutboundDnclistProxy(sdkConfig)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundDncList(), constants.DefaultConsistencyChecks, resourceName)
 
 	log.Printf("Reading Outbound DNC list %s", d.Id())
 
@@ -179,8 +181,6 @@ func readOutboundDncList(ctx context.Context, d *schema.ResourceData, meta inter
 			}
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read Outbound DNC list %s | error: %s", d.Id(), getErr), resp))
 		}
-
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundDncList())
 
 		if sdkDncList.Name != nil {
 			_ = d.Set("name", *sdkDncList.Name)
@@ -213,7 +213,7 @@ func readOutboundDncList(ctx context.Context, d *schema.ResourceData, meta inter
 			_ = d.Set("division_id", *sdkDncList.Division.Id)
 		}
 		log.Printf("Read Outbound DNC list %s %s", d.Id(), *sdkDncList.Name)
-		return cc.CheckState()
+		return cc.CheckState(d)
 	})
 }
 

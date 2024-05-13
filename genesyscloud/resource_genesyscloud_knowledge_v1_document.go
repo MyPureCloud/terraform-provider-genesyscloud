@@ -7,6 +7,7 @@ import (
 	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -422,6 +423,7 @@ func readKnowledgeDocumentV1(ctx context.Context, d *schema.ResourceData, meta i
 
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	knowledgeAPI := platformclientv2.NewKnowledgeApiWithConfig(sdkConfig)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceKnowledgeDocument(), constants.DefaultConsistencyChecks, "genesyscloud_knowledge_v1_document")
 
 	log.Printf("Reading knowledge document %s", knowledgeDocumentId)
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
@@ -433,8 +435,6 @@ func readKnowledgeDocumentV1(ctx context.Context, d *schema.ResourceData, meta i
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_knowledge_v1_document", fmt.Sprintf("Failed to read knowledge document %s | error: %s", knowledgeDocumentId, getErr), resp))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceKnowledgeDocument())
-
 		// required
 		newId := fmt.Sprintf("%s %s %s", *knowledgeDocument.Id, *knowledgeDocument.KnowledgeBase.Id, *knowledgeDocument.LanguageCode)
 		d.SetId(newId)
@@ -443,8 +443,7 @@ func readKnowledgeDocumentV1(ctx context.Context, d *schema.ResourceData, meta i
 		d.Set("knowledge_document", flattenKnowledgeDocumentV1(knowledgeDocument))
 
 		log.Printf("Read Knowledge document %s", *knowledgeDocument.Id)
-		checkState := cc.CheckState()
-		return checkState
+		return cc.CheckState(d)
 	})
 }
 

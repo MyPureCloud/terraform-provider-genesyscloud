@@ -6,6 +6,7 @@ import (
 	"log"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 	"time"
 
@@ -116,6 +117,7 @@ func createUserPrompt(ctx context.Context, d *schema.ResourceData, meta interfac
 func readUserPrompt(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getArchitectUserPromptProxy(sdkConfig)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceArchitectUserPrompt(), constants.DefaultConsistencyChecks, resourceName)
 
 	log.Printf("Reading User Prompt %s", d.Id())
 
@@ -127,8 +129,6 @@ func readUserPrompt(ctx context.Context, d *schema.ResourceData, meta interface{
 			}
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read User Prompt %s | error: %s", d.Id(), getErr), resp))
 		}
-
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceArchitectUserPrompt())
 
 		resourcedata.SetNillableValue(d, "name", userPrompt.Name)
 		resourcedata.SetNillableValue(d, "description", userPrompt.Description)
@@ -168,7 +168,7 @@ func readUserPrompt(ctx context.Context, d *schema.ResourceData, meta interface{
 		_ = d.Set("resources", flattenPromptResources(d, userPrompt.Resources))
 
 		log.Printf("Read Audio Prompt %s %s", d.Id(), *userPrompt.Id)
-		return cc.CheckState()
+		return cc.CheckState(d)
 	})
 }
 

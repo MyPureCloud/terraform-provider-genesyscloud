@@ -7,6 +7,7 @@ import (
 	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -190,6 +191,7 @@ func readKnowledgeCategoryV1(ctx context.Context, d *schema.ResourceData, meta i
 
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	knowledgeAPI := platformclientv2.NewKnowledgeApiWithConfig(sdkConfig)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceKnowledgeCategory(), constants.DefaultConsistencyChecks, "genesyscloud_knowledge_v1_category")
 
 	log.Printf("Reading knowledge category %s", knowledgeCategoryId)
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
@@ -202,15 +204,13 @@ func readKnowledgeCategoryV1(ctx context.Context, d *schema.ResourceData, meta i
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_knowledge_v1_category", fmt.Sprintf("Failed to read knowledge category %s | error: %s", knowledgeCategoryId, getErr), resp))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceKnowledgeCategory())
-
 		newId := fmt.Sprintf("%s %s %s", *knowledgeCategory.Id, *knowledgeCategory.KnowledgeBase.Id, *knowledgeCategory.LanguageCode)
 		d.SetId(newId)
 		d.Set("knowledge_base_id", *knowledgeCategory.KnowledgeBase.Id)
 		d.Set("language_code", *knowledgeCategory.LanguageCode)
 		d.Set("knowledge_category", flattenKnowledgeCategoryV1(knowledgeCategory))
 		log.Printf("Read knowledge category %s", knowledgeCategoryId)
-		return cc.CheckState()
+		return cc.CheckState(d)
 	})
 }
 

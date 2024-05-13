@@ -6,6 +6,7 @@ import (
 	"log"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -101,6 +102,7 @@ func createIdpAdfs(ctx context.Context, d *schema.ResourceData, meta interface{}
 func readIdpAdfs(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	idpAPI := platformclientv2.NewIdentityProviderApiWithConfig(sdkConfig)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceIdpAdfs(), constants.DefaultConsistencyChecks, "genesyscloud_idp_adfs")
 
 	log.Printf("Reading IDP ADFS")
 	return util.WithRetriesForReadCustomTimeout(ctx, d.Timeout(schema.TimeoutRead), d, func() *retry.RetryError {
@@ -113,7 +115,6 @@ func readIdpAdfs(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_idp_adfs", fmt.Sprintf("Failed to read IDP ADFS: %s", getErr), resp))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceIdpAdfs())
 		if adfs.Certificate != nil {
 			d.Set("certificates", lists.StringListToInterfaceList([]string{*adfs.Certificate}))
 		} else if adfs.Certificates != nil {
@@ -147,7 +148,7 @@ func readIdpAdfs(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		}
 
 		log.Printf("Read IDP ADFS")
-		return cc.CheckState()
+		return cc.CheckState(d)
 	})
 }
 

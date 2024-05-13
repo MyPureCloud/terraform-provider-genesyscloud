@@ -6,6 +6,7 @@ import (
 	"log"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -139,6 +140,7 @@ func deleteEdgeGroup(ctx context.Context, d *schema.ResourceData, meta interface
 func readEdgeGroup(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	edgeGroupProxy := getEdgeGroupProxy(sdkConfig)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceEdgeGroup(), constants.DefaultConsistencyChecks, resourceName)
 
 	log.Printf("Reading edge group %s", d.Id())
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
@@ -150,7 +152,6 @@ func readEdgeGroup(ctx context.Context, d *schema.ResourceData, meta interface{}
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read edge group %s | error: %s", d.Id(), getErr), resp))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceEdgeGroup())
 		d.Set("name", *edgeGroup.Name)
 		d.Set("state", *edgeGroup.State)
 		if edgeGroup.Description != nil {
@@ -169,7 +170,7 @@ func readEdgeGroup(ctx context.Context, d *schema.ResourceData, meta interface{}
 
 		log.Printf("Read edge group %s %s", d.Id(), *edgeGroup.Name)
 
-		return cc.CheckState()
+		return cc.CheckState(d)
 	})
 }
 
