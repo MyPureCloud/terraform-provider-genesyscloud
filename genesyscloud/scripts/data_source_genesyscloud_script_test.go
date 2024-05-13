@@ -2,12 +2,10 @@ package scripts
 
 import (
 	"fmt"
-	"os"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"testing"
-	"time"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -50,38 +48,16 @@ func TestAccDataSourceScript(t *testing.T) {
 
 // Test that published scripts can also return hard-coded default scripts
 func TestAccDataSourceScriptPublishedDefaults(t *testing.T) {
-	var (
-		callbackDataSource string
-		callbackName       string
-		callbackId         string
-		inboundDataSource  string
-		inboundName        string
-		inboundId          string
-		outboundDataSource string
-		outboundName       string
-		outboundId         string
+	const (
+		callbackDataSource      = "callback-script-data"
+		defaultCallbackScriptId = "ffde0662-8395-9b04-7dcb-b90172109065"
+
+		inboundDataSource      = "inbound-script-data"
+		defaultInboundScriptId = "766f1221-047a-11e5-bba2-db8c0964d007"
+
+		outboundDataSource      = "outbound-script-data"
+		defaultOutboundScriptId = "476c2b71-7429-11e4-9a5b-3f91746bffa3"
 	)
-	if v := os.Getenv("GENESYSCLOUD_REGION"); v == "tca" {
-		callbackDataSource = "callback-script-data"
-		callbackName = "Default Callback Script"
-		callbackId = "ec2275b0-126b-46c1-a4f4-5524c2e91c9d"
-		inboundDataSource = "inbound-script-data"
-		inboundName = "Default Inbound Script"
-		inboundId = "77832ba6-e02f-4bdc-8200-b7e7043b756e"
-		outboundDataSource = "outbound-script-data"
-		outboundName = "Default Outbound Script"
-		outboundId = "055be875-2f9e-4fa0-a331-2cdc690c20f9"
-	} else if v == "us-east-1" {
-		callbackDataSource = "callback-script-data"
-		callbackName = "Default Callback Script"
-		callbackId = "1a5ab5f6-a967-4010-8c54-bd88f092e5a8"
-		inboundDataSource = "inbound-script-data"
-		inboundName = "Default Inbound Script"
-		inboundId = "28bfd948-427f-4956-947e-600ad17ced68"
-		outboundDataSource = "outbound-script-data"
-		outboundName = "Default Outbound Script"
-		outboundId = "b82ddcec-6941-4831-9dca-9b6be19fa1ff"
-	}
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
@@ -93,10 +69,6 @@ func TestAccDataSourceScriptPublishedDefaults(t *testing.T) {
 					constants.DefaultCallbackScriptName,
 					"",
 				),
-				PreConfig: func() {
-					// Wait for a specified duration for it to get created properly
-					time.Sleep(30 * time.Second)
-				},
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(fmt.Sprintf("data.%s.%s", resourceName, callbackDataSource), "id",
 						defaultCallbackScriptId,
@@ -109,10 +81,6 @@ func TestAccDataSourceScriptPublishedDefaults(t *testing.T) {
 					constants.DefaultInboundScriptName,
 					"",
 				),
-				PreConfig: func() {
-					// Wait for a specified duration  for it to get created properly
-					time.Sleep(30 * time.Second)
-				},
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(fmt.Sprintf("data.%s.%s", resourceName, inboundDataSource), "id",
 						defaultInboundScriptId,
@@ -125,10 +93,6 @@ func TestAccDataSourceScriptPublishedDefaults(t *testing.T) {
 					constants.DefaultOutboundScriptName,
 					"",
 				),
-				PreConfig: func() {
-					// Wait for a specified duration for it to get created properly
-					time.Sleep(30 * time.Second)
-				},
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(fmt.Sprintf("data.%s.%s", resourceName, outboundDataSource), "id",
 						defaultOutboundScriptId,
