@@ -296,14 +296,17 @@ func (c *ConsistencyCheck) CheckState(currentState *schema.ResourceData) *retry.
 
 func (c *ConsistencyCheck) writeConsistencyErrorToFile(d *schema.ResourceData, consistencyError *retry.RetryError) {
 	const filePath = "consistency-errors.log.json"
-	thing := consistencyErrorJson{
-		ResourceType:     c.resourceType,
-		ResourceId:       d.Id(),
-		GCloudObjectName: d.Get("name").(string),
-		ErrorMessage:     consistencyError.Err.Error(),
+	errorJson := consistencyErrorJson{
+		ResourceType: c.resourceType,
+		ResourceId:   d.Id(),
+		ErrorMessage: consistencyError.Err.Error(),
 	}
 
-	jsonData, err := json.Marshal(thing)
+	if name := d.Get("name").(string); name != "" {
+		errorJson.GCloudObjectName = name
+	}
+
+	jsonData, err := json.Marshal(errorJson)
 	if err != nil {
 		fmt.Println("Error marshaling JSON:", err)
 		return
