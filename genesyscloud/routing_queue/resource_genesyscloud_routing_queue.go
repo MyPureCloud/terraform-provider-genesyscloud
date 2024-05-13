@@ -273,6 +273,7 @@ func updateQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		RoutingRules:                 buildSdkRoutingRules(d),
 		Bullseye:                     buildSdkBullseyeSettings(d),
 		AcwSettings:                  buildSdkAcwSettings(d),
+		AgentOwnedRouting:            constructAgentOwnedRouting(d),
 		SkillEvaluationMethod:        platformclientv2.String(d.Get("skill_evaluation_method").(string)),
 		QueueFlow:                    util.BuildSdkDomainEntityRef(d, "queue_flow_id"),
 		EmailInQueueFlow:             util.BuildSdkDomainEntityRef(d, "email_in_queue_flow_id"),
@@ -407,7 +408,7 @@ func constructAgentOwnedRouting(d *schema.ResourceData) *platformclientv2.Agento
 			return buildAgentOwnedRouting(agentOwnedRouting)
 		}
 	}
-	return &platformclientv2.Agentownedrouting{}
+	return nil
 }
 
 func buildAgentOwnedRouting(routing []interface{}) *platformclientv2.Agentownedrouting {
