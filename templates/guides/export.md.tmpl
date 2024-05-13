@@ -85,3 +85,8 @@ resource "genesyscloud_tf_export" "export" {
 In its standard setup, this Terraform configuration exports only the dependencies explicitly defined in your configuration. However, by enabling `enable_dependency_resolution`, Terraform can automatically export additional dependencies, including static ones associated with an architecture flow. This feature enhances the comprehensiveness of your exports, ensuring that not just the primary resource, but also its related entities, are included.
 
 On the other hand, Terraform also provides the `exclude_attributes` option for instances where certain fields need to be omitted from an export. This, along with the ability to automatically export additional dependencies, contributes to Terraform’s flexible framework for managing resource exports. It allows for granular control over the inclusion or exclusion of elements in the export, ensuring that your exported configuration aligns precisely with your requirements.
+
+## Export State Comparision file:
+
+In its standard setup, during a full org download, the exporter doesnt verify if the state of the terraform configuration is in sync with the exporter configuration.
+This is an experimental feature enabled just for troubleshooting few problems. To enable this , Set env value of ENABLE_EXPORTER_STATE_COMPARISON to true.
