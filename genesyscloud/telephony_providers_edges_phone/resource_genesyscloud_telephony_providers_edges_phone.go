@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
@@ -84,7 +83,6 @@ func readPhone(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 			return retry.NonRetryableError(fmt.Errorf("failed to read phone %s: %s", d.Id(), getErr))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourcePhone())
 		d.Set("name", *currentPhone.Name)
 		d.Set("state", *currentPhone.State)
 		d.Set("site_id", *currentPhone.Site.Id)
@@ -115,7 +113,7 @@ func readPhone(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "capabilities", currentPhone.Capabilities, flattenPhoneCapabilities)
 
 		log.Printf("Read phone %s %s", d.Id(), *currentPhone.Name)
-		return cc.CheckState()
+		return nil
 	})
 }
 
