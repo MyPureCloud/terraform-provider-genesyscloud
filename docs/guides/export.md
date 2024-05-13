@@ -86,7 +86,7 @@ In its standard setup, this Terraform configuration exports only the dependencie
 
 On the other hand, Terraform also provides the `exclude_attributes` option for instances where certain fields need to be omitted from an export. This, along with the ability to automatically export additional dependencies, contributes to Terraform’s flexible framework for managing resource exports. It allows for granular control over the inclusion or exclusion of elements in the export, ensuring that your exported configuration aligns precisely with your requirements.
 
-## Export State Comparision file:
+## Export State File Comparison:
 
-In its standard setup, during a full org download, the exporter doesnt verify if the state of the terraform configuration is in sync with the exporter configuration.
-This is an experimental feature enabled just for troubleshooting few problems. To enable this , Set env value of ENABLE_EXPORTER_STATE_COMPARISON to true.
+In its standard setup, during a full org download, the exporter doesnt verify if the exported state file is in sync with the exported configuration.
+This is an experimental feature enabled just for troubleshooting. To enable this,set env value of ENABLE_EXPORTER_STATE_COMPARISON to true.
