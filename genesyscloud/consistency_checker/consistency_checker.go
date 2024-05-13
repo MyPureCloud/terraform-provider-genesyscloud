@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	featureToggles "terraform-provider-genesyscloud/genesyscloud/util/feature_toggles"
 	"unsafe"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -223,6 +224,12 @@ func (c *ConsistencyCheck) CheckState(currentState *schema.ResourceData) *retry.
 		return nil
 	}
 
+	if featureToggles.CCToggleExists() {
+		log.Printf("%s is set, write consistency errors to consistency-errors.log.json", featureToggles.CCToggleName())
+	} else {
+		log.Printf("%s is not set, consistency checker behaving as default", featureToggles.CCToggleName())
+	}
+
 	originalState := filterMap(c.originalState)
 
 	resourceConfig := &terraform.ResourceConfig{
@@ -261,7 +268,7 @@ func (c *ConsistencyCheck) CheckState(currentState *schema.ResourceData) *retry.
 							newValue: currentState.Get(k),
 						})
 
-						if _, exists := os.LookupEnv("BYPASS_CONSISTENCY_CHECKER"); c.checks >= c.maxStateChecks && exists {
+						if exists := featureToggles.CCToggleExists(); c.checks >= c.maxStateChecks && exists {
 							c.writeConsistencyErrorToFile(currentState, err)
 							return nil
 						}
@@ -278,7 +285,7 @@ func (c *ConsistencyCheck) CheckState(currentState *schema.ResourceData) *retry.
 						newValue: currentState.Get(k),
 					})
 
-					if _, exists := os.LookupEnv("BYPASS_CONSISTENCY_CHECKER"); c.checks >= c.maxStateChecks && exists {
+					if exists := featureToggles.CCToggleExists(); c.checks >= c.maxStateChecks && exists {
 						c.writeConsistencyErrorToFile(currentState, err)
 						return nil
 					}
