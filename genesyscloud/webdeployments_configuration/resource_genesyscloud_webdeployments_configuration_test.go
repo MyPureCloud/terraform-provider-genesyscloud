@@ -9,6 +9,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -83,6 +84,8 @@ func TestAccResourceWebDeploymentsConfiguration(t *testing.T) {
 		languages2               = []string{"es"}
 		defaultLang2             = "es"
 	)
+
+	_ = cleanupWebDeploymentsConfiguration()
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
@@ -160,6 +163,8 @@ func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
 		channels       = []string{strconv.Quote("Webmessaging")}
 		channelsUpdate = []string{strconv.Quote("Webmessaging"), strconv.Quote("Voice")}
 	)
+
+	_ = cleanupWebDeploymentsConfiguration()
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
@@ -652,6 +657,8 @@ func TestAccResourceWebDeploymentsConfigurationSupportCenter(t *testing.T) {
 			feedbackEnabled: false,
 		}
 	)
+
+	_ = cleanupWebDeploymentsConfiguration()
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
@@ -1155,5 +1162,29 @@ func verifyConfigurationDestroyed(state *terraform.State) error {
 		return fmt.Errorf("Configuration %s still exists when it was expected to have been destroyed", rs.Primary.ID)
 	}
 
+	return nil
+}
+
+func cleanupWebDeploymentsConfiguration() error {
+	config, err := provider.AuthorizeSdk()
+	if err != nil {
+		return err
+	}
+	deploymentsAPI := platformclientv2.NewWebDeploymentsApiWithConfig(config)
+
+	configurations, resp, getErr := deploymentsAPI.GetWebdeploymentsConfigurations(false)
+	if getErr != nil {
+		return util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to get page of configurations: %v", getErr), resp)
+	}
+
+	for _, configuration := range *configurations.Entities {
+		if configuration.Name != nil && strings.HasPrefix(*configuration.Name, "Test Configuration ") {
+			resp, delErr := deploymentsAPI.DeleteWebdeploymentsConfiguration(*configuration.Id)
+			if delErr != nil {
+				return util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to delete configuration %s: %s", *configuration.Id, delErr), resp)
+			}
+			time.Sleep(5 * time.Second)
+		}
+	}
 	return nil
 }

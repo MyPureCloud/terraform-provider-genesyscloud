@@ -151,23 +151,28 @@ func readWebDeployment(ctx context.Context, d *schema.ResourceData, meta interfa
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read web deployment %s | error: %s", d.Id(), getErr), resp))
 		}
 
+<<<<<<< HEAD
 		d.Set("name", *deployment.Name)
+=======
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceWebDeployment())
+		_ = d.Set("name", *deployment.Name)
+>>>>>>> 73c4fde3 (Added cleanup function for webdeployments resources)
 
 		if deployment.Description != nil {
-			d.Set("description", *deployment.Description)
+			_ = d.Set("description", *deployment.Description)
 		}
 		if deployment.AllowAllDomains != nil {
-			d.Set("allow_all_domains", *deployment.AllowAllDomains)
+			_ = d.Set("allow_all_domains", *deployment.AllowAllDomains)
 		}
-		d.Set("configuration", flattenConfiguration(deployment.Configuration))
+		_ = d.Set("configuration", flattenConfiguration(deployment.Configuration))
 		if deployment.AllowedDomains != nil && len(*deployment.AllowedDomains) > 0 {
-			d.Set("allowed_domains", *deployment.AllowedDomains)
+			_ = d.Set("allowed_domains", *deployment.AllowedDomains)
 		}
 		if deployment.Flow != nil {
-			d.Set("flow_id", *deployment.Flow.Id)
+			_ = d.Set("flow_id", *deployment.Flow.Id)
 		}
 		if deployment.Status != nil {
-			d.Set("status", *deployment.Status)
+			_ = d.Set("status", *deployment.Status)
 		}
 
 		log.Printf("Read web deployment %s %s", d.Id(), *deployment.Name)
