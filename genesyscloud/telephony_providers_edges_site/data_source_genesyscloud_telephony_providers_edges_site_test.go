@@ -2,7 +2,6 @@ package telephony_providers_edges_site
 
 import (
 	"fmt"
-	"os"
 	"strconv"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
@@ -28,7 +27,6 @@ func TestAccDataSourceSite(t *testing.T) {
 
 		// location
 		locationRes = "test-location1"
-		region      string
 	)
 
 	emergencyNumber := "+13173124745"
@@ -52,14 +50,6 @@ func TestAccDataSourceSite(t *testing.T) {
 			"46278",
 		))
 
-	if v := os.Getenv("GENESYSCLOUD_REGION"); v == "tca" {
-		region = "us-east-1"
-	} else if v == "us-east-1" {
-		region = "us-west-2"
-	}
-
-	regionJSON := "[" + strconv.Quote(region) + "]"
-
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
@@ -72,7 +62,7 @@ func TestAccDataSourceSite(t *testing.T) {
 					"genesyscloud_location."+locationRes+".id",
 					mediaModel,
 					false,
-					regionJSON,
+					util.AssignRegion(),
 					strconv.Quote("+19205551212"),
 					strconv.Quote("Wilco plumbing")) + location + generateSiteDataSource(
 					siteDataRes,

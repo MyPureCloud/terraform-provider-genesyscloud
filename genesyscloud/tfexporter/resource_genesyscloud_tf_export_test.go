@@ -146,7 +146,7 @@ func TestAccResourceTfExportIncludeFilterResourcesByRegExExclusiveToResource(t *
 			{ResourceName: "test-wrapupcode-test", Name: "test-wrapupcode-" + uuid.NewString() + "-test"},
 		}
 	)
-	//defer os.RemoveAll(exportTestDir)
+	defer os.RemoveAll(exportTestDir)
 
 	queueResourceDef := buildQueueResources(queueResources)
 	wrapupcodeResourceDef := buildWrapupcodeResources(wrapupCodeResources)
@@ -211,7 +211,7 @@ func TestAccResourceTfExportExcludeFilterResourcesByRegExExclusiveToResource(t *
 			{ResourceName: "test-wrapupcode-dev", Name: "test-wrapupcode-" + uuid.NewString() + "-dev"},
 		}
 	)
-	//defer os.RemoveAll(exportTestDir)
+	defer os.RemoveAll(exportTestDir)
 
 	queueResourceDef := buildQueueResources(queueResources)
 	wrapupcodeResourceDef := buildWrapupcodeResources(wrapupCodeResources)
@@ -289,7 +289,7 @@ func TestAccResourceTfExportSplitFilesAsJSON(t *testing.T) {
 			{ResourceName: "test-wrapupcode-2", Name: "test-wrapupcode-2-" + uuid.NewString() + uniquePostfix},
 		}
 	)
-	//defer os.RemoveAll(exportTestDir)
+	defer os.RemoveAll(exportTestDir)
 
 	queueResourceDef := buildQueueResources(queueResources)
 	userResourcesDef := buildUserResources(userResources)
