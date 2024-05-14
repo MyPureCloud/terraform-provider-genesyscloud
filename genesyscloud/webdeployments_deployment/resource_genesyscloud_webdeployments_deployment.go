@@ -151,12 +151,7 @@ func readWebDeployment(ctx context.Context, d *schema.ResourceData, meta interfa
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read web deployment %s | error: %s", d.Id(), getErr), resp))
 		}
 
-<<<<<<< HEAD
-		d.Set("name", *deployment.Name)
-=======
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceWebDeployment())
 		_ = d.Set("name", *deployment.Name)
->>>>>>> 73c4fde3 (Added cleanup function for webdeployments resources)
 
 		if deployment.Description != nil {
 			_ = d.Set("description", *deployment.Description)
