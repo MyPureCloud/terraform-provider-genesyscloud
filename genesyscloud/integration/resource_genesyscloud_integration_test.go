@@ -7,6 +7,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
+	"time"
 
 	integrationCred "terraform-provider-genesyscloud/genesyscloud/integration_credential"
 
@@ -193,6 +194,9 @@ func TestAccResourceIntegration(t *testing.T) {
 					resource.TestCheckNoResourceAttr("genesyscloud_integration."+inteResource1, "config.0.credentials.%"),
 					validateIntegrationProperties("genesyscloud_integration."+inteResource1, "genesyscloud_group."+groupResource1, propDisplayType, propSandbox, propURL, ""),
 				),
+				PreConfig: func() {
+					time.Sleep(30 * time.Second)
+				},
 			},
 			{ // Remove the group reference and update intendedState and notes
 				Config: GenerateIntegrationResource(
