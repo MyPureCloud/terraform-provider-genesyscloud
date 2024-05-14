@@ -20,7 +20,7 @@ import (
 */
 
 func getTestDataPath(elem ...string) string {
-	basePath := filepath.Join("../..", "test", "data")
+	basePath := filepath.Join("..", "..", "test", "data")
 	subPath := filepath.Join(elem...)
 	return filepath.Join(basePath, subPath)
 }

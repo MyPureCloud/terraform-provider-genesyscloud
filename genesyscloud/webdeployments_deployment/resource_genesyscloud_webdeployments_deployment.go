@@ -6,6 +6,7 @@ import (
 	"log"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -43,7 +44,7 @@ func createWebDeployment(ctx context.Context, d *schema.ResourceData, meta inter
 
 	err := validAllowedDomainsSettings(d)
 	if err != nil {
-		return diag.Errorf("Failed to create web deployment %s: %s", name, err)
+		return util.BuildDiagnosticError(resourceName, fmt.Sprintf("Failed to create web deployment %s", name), err)
 	}
 
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
@@ -93,9 +94,9 @@ func createWebDeployment(ctx context.Context, d *schema.ResourceData, meta inter
 		deployment, resp, err := wd.createWebDeployment(ctx, inputDeployment)
 		if err != nil {
 			if util.IsStatus400(resp) {
-				return retry.RetryableError(fmt.Errorf("Failed to create web deployment %s: %s", name, err))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to create web deployment %s | error: %s", name, err), resp))
 			}
-			return retry.NonRetryableError(fmt.Errorf("Failed to create web deployment %s: %s", name, err))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to create web deployment %s | error: %s", name, err), resp))
 		}
 
 		d.SetId(*deployment.Id)
@@ -111,7 +112,7 @@ func createWebDeployment(ctx context.Context, d *schema.ResourceData, meta inter
 	time.Sleep(10 * time.Second)
 	activeError := waitForDeploymentToBeActive(ctx, sdkConfig, d.Id())
 	if activeError != nil {
-		return diag.Errorf("Web deployment %s did not become active and could not be created", name)
+		return util.BuildDiagnosticError(resourceName, fmt.Sprintf("Web deployment %s did not become active and could not be created", name), fmt.Errorf("%v", activeError))
 	}
 	return readWebDeployment(ctx, d, meta)
 }
@@ -122,34 +123,34 @@ func waitForDeploymentToBeActive(ctx context.Context, sdkConfig *platformclientv
 		deployment, resp, err := wd.getWebDeployment(ctx, id)
 		if err != nil {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(fmt.Errorf("Error verifying active status for new web deployment %s: %s", id, err))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Error verifying active status for new web deployment %s | error: %s", id, err), resp))
 			}
-			return retry.NonRetryableError(fmt.Errorf("Error verifying active status for new web deployment %s: %s", id, err))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Error verifying active status for new web deployment %s | error: %s", id, err), resp))
 		}
 
 		if *deployment.Status == "Active" {
 			return nil
 		}
 
-		return retry.RetryableError(fmt.Errorf("Web deployment %s not active yet. Status: %s", id, *deployment.Status))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Web deployment %s not active yet | Status: %s", id, *deployment.Status), resp))
 	})
 }
 
 func readWebDeployment(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	wd := getWebDeploymentsProxy(sdkConfig)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceWebDeployment(), constants.DefaultConsistencyChecks, resourceName)
 
 	log.Printf("Reading web deployment %s", d.Id())
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		deployment, resp, getErr := wd.getWebDeployment(ctx, d.Id())
 		if getErr != nil {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(fmt.Errorf("Failed to read web deployment %s: %s", d.Id(), getErr))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read web deployment %s | error: %s", d.Id(), getErr), resp))
 			}
-			return retry.NonRetryableError(fmt.Errorf("Failed to read web deployment %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read web deployment %s | error: %s", d.Id(), getErr), resp))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceWebDeployment())
 		d.Set("name", *deployment.Name)
 
 		if deployment.Description != nil {
@@ -170,7 +171,7 @@ func readWebDeployment(ctx context.Context, d *schema.ResourceData, meta interfa
 		}
 
 		log.Printf("Read web deployment %s %s", d.Id(), *deployment.Name)
-		return cc.CheckState()
+		return cc.CheckState(d)
 	})
 }
 
@@ -183,7 +184,7 @@ func updateWebDeployment(ctx context.Context, d *schema.ResourceData, meta inter
 
 	err := validAllowedDomainsSettings(d)
 	if err != nil {
-		return diag.Errorf("Failed to update web deployment %s: %s", name, err)
+		return util.BuildDiagnosticError(resourceName, fmt.Sprintf("Failed to update web deployment %s", name), err)
 	}
 
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
@@ -223,9 +224,9 @@ func updateWebDeployment(ctx context.Context, d *schema.ResourceData, meta inter
 		_, resp, err := wd.updateWebDeployment(ctx, d.Id(), inputDeployment)
 		if err != nil {
 			if util.IsStatus400(resp) {
-				return retry.RetryableError(fmt.Errorf("Error updating web deployment %s: %s", name, err))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Error updating web deployment %s | error: %s", name, err), resp))
 			}
-			return retry.NonRetryableError(fmt.Errorf("Error updating web deployment %s: %s", name, err))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Error updating web deployment %s | error: %s", name, err), resp))
 		}
 
 		return nil
@@ -235,8 +236,9 @@ func updateWebDeployment(ctx context.Context, d *schema.ResourceData, meta inter
 	}
 
 	activeError := waitForDeploymentToBeActive(ctx, sdkConfig, d.Id())
+
 	if activeError != nil {
-		return diag.Errorf("Web deployment %s did not become active and could not be created", name)
+		return util.BuildDiagnosticError(resourceName, fmt.Sprintf("Web deployment %s did not become active and could not be created", name), fmt.Errorf("%v", activeError))
 	}
 
 	log.Printf("Finished updating web deployment %s", name)
@@ -252,7 +254,7 @@ func deleteWebDeployment(ctx context.Context, d *schema.ResourceData, meta inter
 	log.Printf("Deleting web deployment %s", name)
 	resp, err := wd.deleteWebDeployment(ctx, d.Id())
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete webb deployment %s error: %s", name, err), resp)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete web deployment %s error: %s", name, err), resp)
 	}
 
 	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
@@ -262,9 +264,8 @@ func deleteWebDeployment(ctx context.Context, d *schema.ResourceData, meta inter
 				log.Printf("Deleted web deployment %s", d.Id())
 				return nil
 			}
-			return retry.NonRetryableError(fmt.Errorf("Error deleting web deployment %s: %s", d.Id(), err))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Error deleting web deployment %s | error: %s", d.Id(), err), resp))
 		}
-
-		return retry.RetryableError(fmt.Errorf("Web deployment %s still exists", d.Id()))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Web deployment %s still exists", d.Id()), resp))
 	})
 }

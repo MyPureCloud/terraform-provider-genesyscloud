@@ -6,6 +6,7 @@ import (
 	"log"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -75,7 +76,7 @@ func createTrunk(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 			return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to assign trunk base settings to edge group %s error: %s", edgeGroupId, err), resp)
 		}
 	} else {
-		return diag.Errorf("edge_id or edge_group_id were not set. One must be set in order to assign the trunk base settings")
+		return util.BuildDiagnosticError(resourceName, fmt.Sprintf("edge_id or edge_group_id were not set. One must be set in order to assign the trunk base settings"), fmt.Errorf("edge_id or edge_group_id were not set"))
 	}
 
 	trunk, resp, err := getTrunkByTrunkBaseId(ctx, trunkBaseSettingsId, meta)
@@ -125,18 +126,18 @@ func updateTrunk(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 func readTrunk(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	tp := getTrunkProxy(sdkConfig)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceTrunk(), constants.DefaultConsistencyChecks, resourceName)
 
 	log.Printf("Reading trunk %s", d.Id())
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		trunk, resp, getErr := tp.getTrunkById(ctx, d.Id())
 		if getErr != nil {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(fmt.Errorf("Failed to read trunk %s: %s", d.Id(), getErr))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read trunk %s | error: %s", d.Id(), getErr), resp))
 			}
-			return retry.NonRetryableError(fmt.Errorf("Failed to read trunk %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read trunk %s | error: %s", d.Id(), getErr), resp))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceTrunk())
 		d.Set("name", *trunk.Name)
 		if trunk.TrunkBase != nil {
 			d.Set("trunk_base_settings_id", *trunk.TrunkBase.Id)
@@ -150,7 +151,7 @@ func readTrunk(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 
 		log.Printf("Read trunk %s %s", d.Id(), *trunk.Name)
 
-		return cc.CheckState()
+		return cc.CheckState(d)
 	})
 }
 
@@ -182,9 +183,9 @@ func getAllTrunks(ctx context.Context, sdkConfig *platformclientv2.Configuration
 			trunks, resp, getErr := tp.getAllTrunks(ctx, pageNum, pageSize)
 			if getErr != nil {
 				if util.IsStatus404(resp) {
-					return retry.RetryableError(fmt.Errorf("Failed to get page of trunks: %v", getErr))
+					return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to get page of trunks: %v", getErr), resp))
 				}
-				return retry.NonRetryableError(fmt.Errorf("Failed to get page of trunks: %v", getErr))
+				return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to get page of trunks: %v", getErr), resp))
 			}
 
 			if trunks.Entities == nil || len(*trunks.Entities) == 0 {

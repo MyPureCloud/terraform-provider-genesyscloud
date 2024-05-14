@@ -22,13 +22,13 @@ func dataSourceAuthorizationProductRead(ctx context.Context, d *schema.ResourceD
 
 	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
 		// Get the list of enabled products
-		authProductId, retryable, _, err := proxy.getAuthorizationProduct(ctx, name)
+		authProductId, retryable, resp, err := proxy.getAuthorizationProduct(ctx, name)
 
 		if err != nil {
 			if retryable {
-				return retry.RetryableError(err)
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to get Authorization product %s | error: %s", authProductId, err), resp))
 			}
-			return retry.NonRetryableError(err)
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to get Authorization product %s | error: %s", authProductId, err), resp))
 		}
 
 		d.SetId(authProductId)

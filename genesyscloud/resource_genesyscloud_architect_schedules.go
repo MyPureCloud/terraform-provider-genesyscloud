@@ -7,6 +7,7 @@ import (
 	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"terraform-provider-genesyscloud/genesyscloud/validators"
 	"time"
 
@@ -121,12 +122,12 @@ func createArchitectSchedules(ctx context.Context, d *schema.ResourceData, meta 
 
 	schedStart, err := time.Parse("2006-01-02T15:04:05.000000", start)
 	if err != nil {
-		return diag.Errorf("Failed to parse date %s: %s", start, err)
+		return util.BuildDiagnosticError("genesyscloud_architect_schedules", fmt.Sprintf("Failed to parse date %s", start), err)
 	}
 
 	schedEnd, err := time.Parse("2006-01-02T15:04:05.000000", end)
 	if err != nil {
-		return diag.Errorf("Failed to parse date %s: %s", end, err)
+		return util.BuildDiagnosticError("genesyscloud_architect_schedules", fmt.Sprintf("Failed to parse date %s", end), err)
 	}
 
 	sched := platformclientv2.Schedule{
@@ -165,6 +166,7 @@ func createArchitectSchedules(ctx context.Context, d *schema.ResourceData, meta 
 func readArchitectSchedules(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	archAPI := platformclientv2.NewArchitectApiWithConfig(sdkConfig)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceArchitectSchedules(), constants.DefaultConsistencyChecks, "genesyscloud_architect_schedules")
 
 	log.Printf("Reading schedule %s", d.Id())
 
@@ -172,9 +174,9 @@ func readArchitectSchedules(ctx context.Context, d *schema.ResourceData, meta in
 		schedule, resp, getErr := archAPI.GetArchitectSchedule(d.Id())
 		if getErr != nil {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(fmt.Errorf("Failed to read schedule %s: %s", d.Id(), getErr))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_architect_schedules", fmt.Sprintf("Failed to read schedule %s | error: %s", d.Id(), getErr), resp))
 			}
-			return retry.NonRetryableError(fmt.Errorf("Failed to read schedule %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_architect_schedules", fmt.Sprintf("Failed to read schedule %s | error: %s", d.Id(), getErr), resp))
 		}
 
 		Start := new(string)
@@ -193,7 +195,6 @@ func readArchitectSchedules(ctx context.Context, d *schema.ResourceData, meta in
 			End = nil
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceArchitectSchedules())
 		d.Set("name", *schedule.Name)
 		d.Set("division_id", *schedule.Division.Id)
 		d.Set("description", nil)
@@ -208,7 +209,7 @@ func readArchitectSchedules(ctx context.Context, d *schema.ResourceData, meta in
 		}
 
 		log.Printf("Read schedule %s %s", d.Id(), *schedule.Name)
-		return cc.CheckState()
+		return cc.CheckState(d)
 	})
 }
 
@@ -225,12 +226,12 @@ func updateArchitectSchedules(ctx context.Context, d *schema.ResourceData, meta 
 
 	schedStart, err := time.Parse("2006-01-02T15:04:05.000000", start)
 	if err != nil {
-		return diag.Errorf("Failed to parse date %s: %s", start, err)
+		return util.BuildDiagnosticError("genesyscloud_architect_schedules", fmt.Sprintf("Failed to parse date %s", start), err)
 	}
 
 	schedEnd, err := time.Parse("2006-01-02T15:04:05.000000", end)
 	if err != nil {
-		return diag.Errorf("Failed to parse date %s: %s", end, err)
+		return util.BuildDiagnosticError("genesyscloud_architect_schedules", fmt.Sprintf("Failed to parse date %s", end), err)
 	}
 
 	diagErr := util.RetryWhen(util.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
@@ -297,7 +298,7 @@ func deleteArchitectSchedules(ctx context.Context, d *schema.ResourceData, meta 
 				log.Printf("Deleted schedule %s", d.Id())
 				return nil
 			}
-			return retry.NonRetryableError(fmt.Errorf("Error deleting schedule %s: %s", d.Id(), err))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_architect_schedules", fmt.Sprintf("Error deleting schedule %s | error: %s", d.Id(), err), resp))
 		}
 
 		if schedule.State != nil && *schedule.State == "deleted" {
@@ -306,7 +307,7 @@ func deleteArchitectSchedules(ctx context.Context, d *schema.ResourceData, meta 
 			return nil
 		}
 
-		return retry.RetryableError(fmt.Errorf("Schedule %s still exists", d.Id()))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_architect_schedules", fmt.Sprintf("Schedule %s still exists", d.Id()), resp))
 	})
 }
 

@@ -24,6 +24,7 @@ import (
 	flowOutcome "terraform-provider-genesyscloud/genesyscloud/flow_outcome"
 	"terraform-provider-genesyscloud/genesyscloud/group"
 	groupRoles "terraform-provider-genesyscloud/genesyscloud/group_roles"
+	idpSalesforce "terraform-provider-genesyscloud/genesyscloud/idp_salesforce"
 	"terraform-provider-genesyscloud/genesyscloud/integration"
 	integrationAction "terraform-provider-genesyscloud/genesyscloud/integration_action"
 	integrationCred "terraform-provider-genesyscloud/genesyscloud/integration_credential"
@@ -175,6 +176,7 @@ func registerResources() {
 	oAuthPairing.SetRegistrar(regInstance)                                 //Registering orgauthorization pairing
 	scripts.SetRegistrar(regInstance)                                      //Registering Scripts
 	smsAddresses.SetRegistrar(regInstance)                                 //Registering routing sms addresses
+	idpSalesforce.SetRegistrar(regInstance)                                //Registering idp salesforce
 	integration.SetRegistrar(regInstance)                                  //Registering integrations
 	integrationCustomAuth.SetRegistrar(regInstance)                        //Registering integrations custom auth actions
 	integrationAction.SetRegistrar(regInstance)                            //Registering integrations actions

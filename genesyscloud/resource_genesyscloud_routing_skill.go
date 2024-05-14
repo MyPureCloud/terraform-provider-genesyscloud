@@ -6,6 +6,7 @@ import (
 	"log"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -96,18 +97,18 @@ func createRoutingSkill(ctx context.Context, d *schema.ResourceData, meta interf
 func readRoutingSkill(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceRoutingSkill(), constants.DefaultConsistencyChecks, "genesyscloud_routing_skill")
 
 	log.Printf("Reading skill %s", d.Id())
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		skill, resp, getErr := routingAPI.GetRoutingSkill(d.Id())
 		if getErr != nil {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(fmt.Errorf("Failed to read skill %s: %s", d.Id(), getErr))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_routing_skill", fmt.Sprintf("Failed to read skill %s | error: %s", d.Id(), getErr), resp))
 			}
-			return retry.NonRetryableError(fmt.Errorf("Failed to read skill %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_routing_skill", fmt.Sprintf("Failed to read skill %s | error: %s", d.Id(), getErr), resp))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceRoutingSkill())
 		if skill.State != nil && *skill.State == "deleted" {
 			d.SetId("")
 			return nil
@@ -115,7 +116,7 @@ func readRoutingSkill(ctx context.Context, d *schema.ResourceData, meta interfac
 
 		d.Set("name", *skill.Name)
 		log.Printf("Read skill %s %s", d.Id(), *skill.Name)
-		return cc.CheckState()
+		return cc.CheckState(d)
 	})
 }
 
@@ -139,7 +140,7 @@ func deleteRoutingSkill(ctx context.Context, d *schema.ResourceData, meta interf
 				log.Printf("Deleted Routing skill %s", d.Id())
 				return nil
 			}
-			return retry.NonRetryableError(fmt.Errorf("Error deleting Routing skill %s: %s", d.Id(), err))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_routing_skill", fmt.Sprintf("Error deleting Routing skill %s | error: %s", d.Id(), err), resp))
 		}
 
 		if routingSkill.State != nil && *routingSkill.State == "deleted" {
@@ -148,7 +149,7 @@ func deleteRoutingSkill(ctx context.Context, d *schema.ResourceData, meta interf
 			return nil
 		}
 
-		return retry.RetryableError(fmt.Errorf("Routing skill %s still exists", d.Id()))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_routing_skill", fmt.Sprintf("Routing skill %s still exists", d.Id()), resp))
 	})
 }
 

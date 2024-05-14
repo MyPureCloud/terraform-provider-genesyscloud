@@ -6,6 +6,7 @@ import (
 	"log"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -135,18 +136,18 @@ func createSite(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 func readSite(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	sp := getSiteProxy(sdkConfig)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceSite(), constants.DefaultConsistencyChecks, resourceName)
 
 	log.Printf("Reading site %s", d.Id())
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		currentSite, resp, err := sp.getSiteById(ctx, d.Id())
 		if err != nil {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(fmt.Errorf("failed to read site %s: %s", d.Id(), err))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read site %s | error: %s", d.Id(), err), resp))
 			}
-			return retry.NonRetryableError(fmt.Errorf("failed to read site %s: %s", d.Id(), err))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read site %s | error: %s", d.Id(), err), resp))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceSite())
 		d.Set("name", *currentSite.Name)
 		d.Set("location_id", nil)
 		if currentSite.Location != nil {
@@ -180,12 +181,12 @@ func readSite(ctx context.Context, d *schema.ResourceData, meta interface{}) dia
 
 		defaultSiteId, resp, err := sp.getDefaultSiteId(ctx)
 		if err != nil {
-			return retry.NonRetryableError(fmt.Errorf("failed to get default site id: %v %v", err, resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to get default site id: %v", err), resp))
 		}
 		d.Set("set_as_default_site", defaultSiteId == *currentSite.Id)
 
 		log.Printf("Read site %s %s", d.Id(), *currentSite.Name)
-		return cc.CheckState()
+		return cc.CheckState(d)
 	})
 }
 
@@ -311,7 +312,7 @@ func deleteSite(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 				time.Sleep(8 * time.Second)
 				return nil
 			}
-			return retry.NonRetryableError(fmt.Errorf("error deleting site %s: %s", d.Id(), err))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("error deleting site %s | error: %s", d.Id(), err), resp))
 		}
 
 		if site.State != nil && *site.State == "deleted" {
@@ -323,6 +324,6 @@ func deleteSite(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 			return nil
 		}
 
-		return retry.RetryableError(fmt.Errorf("site %s still exists", d.Id()))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("site %s still exists", d.Id()), resp))
 	})
 }

@@ -7,6 +7,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 	"time"
 
@@ -70,7 +71,7 @@ func getAllKnowledgebaseEntities(knowledgeApi platformclientv2.KnowledgeApi, pub
 
 		after, err := util.GetQueryParamValueFromUri(*knowledgeBases.NextUri, "after")
 		if err != nil {
-			return nil, diag.Errorf("Failed to parse after cursor from knowledge base nextUri: %v", err)
+			return nil, util.BuildDiagnosticError("genesyscloud_knowledge_knowledgebase", fmt.Sprintf("Failed to parse after cursor from knowledge base nextUri"), err)
 		}
 		if after == "" {
 			break
@@ -154,25 +155,24 @@ func createKnowledgeKnowledgebase(ctx context.Context, d *schema.ResourceData, m
 func readKnowledgeKnowledgebase(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	knowledgeAPI := platformclientv2.NewKnowledgeApiWithConfig(sdkConfig)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceKnowledgeKnowledgebase(), constants.DefaultConsistencyChecks, "genesyscloud_knowledge_knowledgebase")
 
 	log.Printf("Reading knowledge base %s", d.Id())
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		knowledgeBase, resp, getErr := knowledgeAPI.GetKnowledgeKnowledgebase(d.Id())
 		if getErr != nil {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(fmt.Errorf("Failed to read knowledge base %s: %s", d.Id(), getErr))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_knowledge_knowledgebase", fmt.Sprintf("Failed to read knowledge base %s | error: %s", d.Id(), getErr), resp))
 			}
-			return retry.NonRetryableError(fmt.Errorf("Failed to read knowledge base %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_knowledge_knowledgebase", fmt.Sprintf("Failed to read knowledge base %s | error: %s", d.Id(), getErr), resp))
 		}
-
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceKnowledgeKnowledgebase())
 
 		resourcedata.SetNillableValue(d, "name", knowledgeBase.Name)
 		resourcedata.SetNillableValue(d, "description", knowledgeBase.Description)
 		resourcedata.SetNillableValue(d, "core_language", knowledgeBase.CoreLanguage)
 		resourcedata.SetNillableValue(d, "published", knowledgeBase.Published)
 		log.Printf("Read knowledge base %s %s", d.Id(), *knowledgeBase.Name)
-		return cc.CheckState()
+		return cc.CheckState(d)
 	})
 }
 
@@ -231,10 +231,10 @@ func deleteKnowledgeKnowledgebase(ctx context.Context, d *schema.ResourceData, m
 				log.Printf("Deleted Knowledge base %s", d.Id())
 				return nil
 			}
-			return retry.NonRetryableError(fmt.Errorf("Error deleting knowledge base %s: %s", d.Id(), err))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_knowledge_knowledgebase", fmt.Sprintf("Error deleting knowledge base %s | error: %s", d.Id(), err), resp))
 		}
 
-		return retry.RetryableError(fmt.Errorf("Knowledge base %s still exists", d.Id()))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_knowledge_knowledgebase", fmt.Sprintf("Knowledge base %s still exists", d.Id()), resp))
 	})
 }
 

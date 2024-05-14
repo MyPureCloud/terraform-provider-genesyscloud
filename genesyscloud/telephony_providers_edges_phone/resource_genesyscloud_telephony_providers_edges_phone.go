@@ -7,6 +7,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 	"time"
 
@@ -40,15 +41,18 @@ func createPhone(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 
 	phoneConfig, err := getPhoneFromResourceData(ctx, pp, d)
 	if err != nil {
-		return diag.Errorf("failed to create phone %v: %v", *phoneConfig.Name, err)
+		return util.BuildDiagnosticError(resourceName, fmt.Sprintf("failed to create phone %v", *phoneConfig.Name), err)
 	}
+
 	log.Printf("Creating phone %s", *phoneConfig.Name)
+
 	diagErr := util.RetryWhen(util.IsStatus404, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		phone, resp, err := pp.createPhone(ctx, phoneConfig)
-		log.Printf("Completed call to create phone name %s with status code %d, correlation id %s and err %s", *phoneConfig.Name, resp.StatusCode, resp.CorrelationID, err)
 		if err != nil {
 			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create phone %s error: %s", *phoneConfig.Name, err), resp)
 		}
+		log.Printf("Completed call to create phone name %s with status code %d, correlation id %s", *phoneConfig.Name, resp.StatusCode, resp.CorrelationID)
+
 		d.SetId(*phone.Id)
 
 		webRtcUserId := d.Get("web_rtc_user_id")
@@ -73,49 +77,49 @@ func createPhone(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 func readPhone(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	pp := getPhoneProxy(sdkConfig)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourcePhone(), constants.DefaultConsistencyChecks, resourceName)
 
 	log.Printf("Reading phone %s", d.Id())
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		currentPhone, resp, getErr := pp.getPhoneById(ctx, d.Id())
 		if getErr != nil {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(fmt.Errorf("failed to read phone %s: %s", d.Id(), getErr))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read phone %s | error: %s", d.Id(), getErr), resp))
 			}
-			return retry.NonRetryableError(fmt.Errorf("failed to read phone %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read phone %s | error: %s", d.Id(), getErr), resp))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourcePhone())
-		d.Set("name", *currentPhone.Name)
-		d.Set("state", *currentPhone.State)
-		d.Set("site_id", *currentPhone.Site.Id)
-		d.Set("phone_base_settings_id", *currentPhone.PhoneBaseSettings.Id)
-		d.Set("line_base_settings_id", *currentPhone.LineBaseSettings.Id)
+		_ = d.Set("name", *currentPhone.Name)
+		_ = d.Set("state", *currentPhone.State)
+		_ = d.Set("site_id", *currentPhone.Site.Id)
+		_ = d.Set("phone_base_settings_id", *currentPhone.PhoneBaseSettings.Id)
+		_ = d.Set("line_base_settings_id", *currentPhone.LineBaseSettings.Id)
 
 		if currentPhone.PhoneMetaBase != nil {
-			d.Set("phone_meta_base_id", *currentPhone.PhoneMetaBase.Id)
+			_ = d.Set("phone_meta_base_id", *currentPhone.PhoneMetaBase.Id)
 		}
 
 		if currentPhone.WebRtcUser != nil {
-			d.Set("web_rtc_user_id", *currentPhone.WebRtcUser.Id)
+			_ = d.Set("web_rtc_user_id", *currentPhone.WebRtcUser.Id)
 		}
 
 		if currentPhone.Lines != nil {
-			d.Set("line_addresses", flattenPhoneLines(currentPhone.Lines))
+			_ = d.Set("line_addresses", flattenPhoneLines(currentPhone.Lines))
 		}
 
-		d.Set("properties", nil)
+		_ = d.Set("properties", nil)
 		if currentPhone.Properties != nil {
 			properties, err := util.FlattenTelephonyProperties(currentPhone.Properties)
 			if err != nil {
 				return retry.NonRetryableError(fmt.Errorf("%v", err))
 			}
-			d.Set("properties", properties)
+			_ = d.Set("properties", properties)
 		}
 
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "capabilities", currentPhone.Capabilities, flattenPhoneCapabilities)
 
 		log.Printf("Read phone %s %s", d.Id(), *currentPhone.Name)
-		return cc.CheckState()
+		return cc.CheckState(d)
 	})
 }
 
@@ -125,7 +129,7 @@ func updatePhone(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 
 	phoneConfig, err := getPhoneFromResourceData(ctx, pp, d)
 	if err != nil {
-		return diag.Errorf("failed to updated phone %v: %v", *phoneConfig.Name, err)
+		return util.BuildDiagnosticError(resourceName, fmt.Sprintf("failed to updated phone %v", *phoneConfig.Name), err)
 	}
 	log.Printf("Updating phone %s", *phoneConfig.Name)
 	phone, resp, err := pp.updatePhone(ctx, d.Id(), phoneConfig)
@@ -173,7 +177,7 @@ func deletePhone(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 				log.Printf("Deleted Phone %s", d.Id())
 				return nil
 			}
-			return retry.NonRetryableError(fmt.Errorf("error deleting Phone %s: %s", d.Id(), err))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("error deleting Phone %s | error: %s", d.Id(), err), resp))
 		}
 
 		if phone.State != nil && *phone.State == "deleted" {
@@ -182,6 +186,6 @@ func deletePhone(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 			return nil
 		}
 
-		return retry.RetryableError(fmt.Errorf("phone %s still exists", d.Id()))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("phone %s still exists", d.Id()), resp))
 	})
 }

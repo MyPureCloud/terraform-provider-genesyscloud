@@ -6,6 +6,7 @@ import (
 	"log"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -28,9 +29,9 @@ func getAllAuthJourneyOutcomePredictors(ctx context.Context, clientConfig *platf
 	op := getJourneyOutcomePredictorProxy(clientConfig)
 	resources := make(resourceExporter.ResourceIDMetaMap)
 
-	predictors, err := op.getAllJourneyOutcomePredictor(ctx)
+	predictors, resp, err := op.getAllJourneyOutcomePredictor(ctx)
 	if err != nil {
-		return nil, diag.Errorf("Failed to get predictors: %v", err)
+		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get predictors: %v", err), resp)
 	}
 
 	for _, predictor := range *predictors {
@@ -57,9 +58,9 @@ func createJourneyOutcomePredictor(ctx context.Context, d *schema.ResourceData, 
 
 	log.Printf("Creating predictor for outcome %s", outcomeId)
 
-	predictor, err := op.createJourneyOutcomePredictor(ctx, &predictorRequest)
+	predictor, resp, err := op.createJourneyOutcomePredictor(ctx, &predictorRequest)
 	if err != nil {
-		return diag.Errorf("Failed to create predictor: %s", err)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create predictor: %s | error: %s", outcomeId, err), resp)
 	}
 
 	d.SetId(*predictor.Id)
@@ -71,22 +72,22 @@ func createJourneyOutcomePredictor(ctx context.Context, d *schema.ResourceData, 
 func readJourneyOutcomePredictor(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	op := getJourneyOutcomePredictorProxy(sdkConfig)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceJourneyOutcomePredictor(), constants.DefaultConsistencyChecks, resourceName)
 
 	log.Printf("Reading predictor %s", d.Id())
 
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
-		predictor, respCode, getErr := op.getJourneyOutcomePredictorById(ctx, d.Id())
+		predictor, resp, getErr := op.getJourneyOutcomePredictorById(ctx, d.Id())
 		if getErr != nil {
-			if util.IsStatus404ByInt(respCode) {
-				return retry.RetryableError(fmt.Errorf("Failed to read predictor %s: %s", d.Id(), getErr))
+			if util.IsStatus404(resp) {
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read predictor %s | error: %s", d.Id(), getErr), resp))
 			}
-			return retry.NonRetryableError(fmt.Errorf("Failed to read predictor %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read predictor %s | error: %s", d.Id(), getErr), resp))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceJourneyOutcomePredictor())
 		d.Set("outcome_id", *predictor.Outcome.Id)
 
-		return cc.CheckState()
+		return cc.CheckState(d)
 	})
 }
 
@@ -95,23 +96,23 @@ func deleteJourneyOutcomePredictor(ctx context.Context, d *schema.ResourceData, 
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	op := getJourneyOutcomePredictorProxy(sdkConfig)
 
-	_, err := op.deleteJourneyOutcomePredictor(ctx, d.Id())
+	resp, err := op.deleteJourneyOutcomePredictor(ctx, d.Id())
 	if err != nil {
-		return diag.Errorf("Failed to delete predictor %s: %s", d.Id(), err)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete predictor %s | error: %s", d.Id(), err), resp)
 	}
 
 	return util.WithRetries(ctx, 180*time.Second, func() *retry.RetryError {
-		_, respCode, err := op.getJourneyOutcomePredictorById(ctx, d.Id())
+		_, resp, err := op.getJourneyOutcomePredictorById(ctx, d.Id())
 
 		if err == nil {
-			return retry.NonRetryableError(fmt.Errorf("Error deleting predictor %s: %s", d.Id(), err))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Error deleting predictor %s | error: %s", d.Id(), err), resp))
 		}
-		if util.IsStatus404ByInt(respCode) {
+		if util.IsStatus404(resp) {
 			// Success  : Predictor deleted
 			log.Printf("Deleted predictor %s", d.Id())
 			return nil
 		}
 
-		return retry.RetryableError(fmt.Errorf("Predictor %s still exists", d.Id()))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Predictor %s still exists", d.Id()), resp))
 	})
 }

@@ -6,6 +6,7 @@ import (
 	"log"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 	"time"
 
@@ -77,18 +78,17 @@ func createEmergencyGroup(ctx context.Context, d *schema.ResourceData, meta inte
 func readEmergencyGroup(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	ap := getArchitectEmergencyGroupProxy(sdkConfig)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceArchitectEmergencyGroup(), constants.DefaultConsistencyChecks, resourceName)
 
 	log.Printf("Reading emergency group %s", d.Id())
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		emergencyGroup, resp, getErr := ap.getArchitectEmergencyGroup(ctx, d.Id())
 		if getErr != nil {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(fmt.Errorf("Failed to read emergency group %s: %s", d.Id(), getErr))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read emergency group %s | error: %s", d.Id(), getErr), resp))
 			}
-			return retry.NonRetryableError(fmt.Errorf("Failed to read emergency group %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read emergency group %s | error: %s", d.Id(), getErr), resp))
 		}
-
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceArchitectEmergencyGroup())
 
 		if emergencyGroup.State != nil && *emergencyGroup.State == "deleted" {
 			d.SetId("")
@@ -108,7 +108,7 @@ func readEmergencyGroup(ctx context.Context, d *schema.ResourceData, meta interf
 		}
 
 		log.Printf("Read emergency group %s %s", d.Id(), *emergencyGroup.Name)
-		return cc.CheckState()
+		return cc.CheckState(d)
 	})
 }
 
@@ -171,7 +171,7 @@ func deleteEmergencyGroup(ctx context.Context, d *schema.ResourceData, meta inte
 				log.Printf("Deleted emergency group %s", d.Id())
 				return nil
 			}
-			return retry.NonRetryableError(fmt.Errorf("error deleting emergency group %s: %s", d.Id(), err))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("error deleting emergency group %s | error: %s", d.Id(), err), resp))
 		}
 
 		if emergencyGroup.State != nil && *emergencyGroup.State == "deleted" {
@@ -180,6 +180,6 @@ func deleteEmergencyGroup(ctx context.Context, d *schema.ResourceData, meta inte
 			return nil
 		}
 
-		return retry.RetryableError(fmt.Errorf("emergency group %s still exists", d.Id()))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("emergency group %s still exists", d.Id()), resp))
 	})
 }

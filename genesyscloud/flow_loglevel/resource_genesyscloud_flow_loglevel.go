@@ -6,6 +6,7 @@ import (
 	"log"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -82,6 +83,7 @@ func readFlowLogLevel(ctx context.Context, d *schema.ResourceData, meta interfac
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	ep := getFlowLogLevelProxy(sdkConfig)
 	flowId := d.Get("flow_id").(string)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceFlowLoglevel(), constants.DefaultConsistencyChecks, resourceName)
 
 	log.Printf("Reading readFlowLogLevel with flowId %s", flowId)
 
@@ -89,18 +91,17 @@ func readFlowLogLevel(ctx context.Context, d *schema.ResourceData, meta interfac
 		flowSettingsResponse, apiResponse, err := ep.getFlowLogLevelById(ctx, flowId)
 		if err != nil {
 			if util.IsStatus404ByInt(apiResponse.StatusCode) {
-				return retry.NonRetryableError(fmt.Errorf("Failed to read flow log level %s: %s", flowId, err))
+				return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read flow log level %s | error: %s", flowId, err), apiResponse))
 			}
-			return retry.NonRetryableError(fmt.Errorf("Failed to read flow log level %s: %s", flowId, err))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read flow log level %s | error: %s", flowId, err), apiResponse))
 		}
 
 		flowLogLevel := flowSettingsResponse.LogLevelCharacteristics
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceFlowLoglevel())
 		resourcedata.SetNillableValue(d, "flow_log_level", flowLogLevel.Level)
 
 		log.Printf("Read flow log level %s", flowId)
-		return cc.CheckState()
+		return cc.CheckState(d)
 	})
 }
 
@@ -142,14 +143,14 @@ func deleteFlowLogLevel(ctx context.Context, d *schema.ResourceData, meta interf
 		_, apiResponse, err := ep.getFlowLogLevelById(ctx, flowId)
 
 		if err == nil {
-			return retry.NonRetryableError(fmt.Errorf("Error deleting flow log level %s %s %s", flowId, d.Id(), err))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Error deleting flow log level %s %s | error: %s", flowId, d.Id(), err), apiResponse))
 		}
 		if util.IsStatus404ByInt(apiResponse.StatusCode) {
 			log.Printf("Deleted flow log level %s", flowId)
 			return nil
 		}
 
-		return retry.RetryableError(fmt.Errorf("flow log level %s still exists", flowId))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("flow log level %s still exists", flowId), apiResponse))
 	})
 }
 

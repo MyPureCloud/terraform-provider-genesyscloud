@@ -13,6 +13,7 @@ import (
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"terraform-provider-genesyscloud/genesyscloud/tfexporter_state"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 )
 
@@ -37,6 +38,7 @@ func createOutboundSettings(ctx context.Context, d *schema.ResourceData, meta in
 func readOutboundSettings(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getOutboundSettingsProxy(sdkConfig)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundSettings(), constants.DefaultConsistencyChecks, resourceName)
 
 	maxCallsPerAgent := d.Get("max_calls_per_agent").(int)
 	maxLineUtilization := d.Get("max_line_utilization").(float64)
@@ -51,11 +53,11 @@ func readOutboundSettings(ctx context.Context, d *schema.ResourceData, meta inte
 		settings, resp, getErr := proxy.getOutboundSettingsById(ctx, d.Id())
 		if getErr != nil {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(fmt.Errorf("failed to read Outbound Setting: %s", getErr))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read Outbound Setting: %s", getErr), resp))
 			}
-			return retry.NonRetryableError(fmt.Errorf("failed to read Outbound Setting: %s", getErr))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read Outbound Setting: %s", getErr), resp))
+
 		}
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundSettings())
 
 		// Only read values if they are part of the terraform plan or during Export
 		if maxCallsPerAgent != 0 || tfexporter_state.IsExporterActive() {
@@ -76,7 +78,7 @@ func readOutboundSettings(ctx context.Context, d *schema.ResourceData, meta inte
 		resourcedata.SetNillableValue(d, "reschedule_time_zone_skipped_contacts", &rescheduleTimeZoneSkippedContacts)
 
 		log.Printf("Read Outbound Setting")
-		return cc.CheckState()
+		return cc.CheckState(d)
 	})
 }
 

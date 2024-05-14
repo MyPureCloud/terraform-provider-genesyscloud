@@ -6,6 +6,7 @@ import (
 	"log"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -100,6 +101,7 @@ func createMediaRetentionPolicy(ctx context.Context, d *schema.ResourceData, met
 func readMediaRetentionPolicy(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	pp := getPolicyProxy(sdkConfig)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, gcloud.ResourceSurveyForm(), constants.DefaultConsistencyChecks, resourceName)
 
 	log.Printf("Reading media retention policy %s", d.Id())
 
@@ -107,12 +109,10 @@ func readMediaRetentionPolicy(ctx context.Context, d *schema.ResourceData, meta 
 		retentionPolicy, resp, err := pp.getPolicyById(ctx, d.Id())
 		if err != nil {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(fmt.Errorf("failed to read media retention policy %s: %s", d.Id(), err))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read media retention policy %s | error: %s", d.Id(), err), resp))
 			}
-			return retry.NonRetryableError(fmt.Errorf("failed to read media retention policy %s: %s", d.Id(), err))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read media retention policy %s | error: %s", d.Id(), err), resp))
 		}
-
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, gcloud.ResourceSurveyForm())
 
 		resourcedata.SetNillableValue(d, "name", retentionPolicy.Name)
 		resourcedata.SetNillableValue(d, "order", retentionPolicy.Order)
@@ -127,7 +127,7 @@ func readMediaRetentionPolicy(ctx context.Context, d *schema.ResourceData, meta 
 		if retentionPolicy.Actions != nil {
 			d.Set("actions", flattenPolicyActions(retentionPolicy.Actions, pp, ctx))
 		}
-		return cc.CheckState()
+		return cc.CheckState(d)
 	})
 }
 
@@ -187,8 +187,8 @@ func deleteMediaRetentionPolicy(ctx context.Context, d *schema.ResourceData, met
 				log.Printf("Deleted media retention policy %s", d.Id())
 				return nil
 			}
-			return retry.NonRetryableError(fmt.Errorf("error deleting media retention policy %s: %s", d.Id(), err))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("error deleting media retention policy %s | error: %s", d.Id(), err), resp))
 		}
-		return retry.RetryableError(fmt.Errorf("media retention policy %s still exists", d.Id()))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("media retention policy %s still exists", d.Id()), resp))
 	})
 }

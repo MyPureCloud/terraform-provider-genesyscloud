@@ -24,11 +24,11 @@ func dataSourceExtensionPoolRead(ctx context.Context, d *schema.ResourceData, m 
 		extensionPools, resp, getErr := extensionPoolProxy.getAllExtensionPools(ctx)
 
 		if getErr != nil {
-			return retry.NonRetryableError(fmt.Errorf("error requesting list of extension pools: %s %v", getErr, resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("error requesting list of extension pools: %s", getErr), resp))
 		}
 
 		if extensionPools == nil || len(*extensionPools) == 0 {
-			return retry.RetryableError(fmt.Errorf("no extension pools found with start phone number: %s and end phone number: %s", extensionPoolStartPhoneNumber, extensionPoolEndPhoneNumber))
+			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("no extension pools found with start phone number: %s and end phone number: %s", extensionPoolStartPhoneNumber, extensionPoolEndPhoneNumber), resp))
 		}
 
 		for _, extensionPool := range *extensionPools {

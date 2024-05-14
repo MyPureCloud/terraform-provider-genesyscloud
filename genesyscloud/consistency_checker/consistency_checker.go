@@ -2,11 +2,15 @@ package consistency_checker
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"log"
+	"os"
 	"reflect"
 	"strconv"
 	"strings"
 	"sync"
+	featureToggles "terraform-provider-genesyscloud/genesyscloud/util/feature_toggles"
 	"unsafe"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -27,12 +31,14 @@ func init() {
 }
 
 type ConsistencyCheck struct {
-	ctx           context.Context
-	d             *schema.ResourceData
-	r             *schema.Resource
-	originalState map[string]interface{}
-	meta          interface{}
-	isEmptyState  *bool
+	ctx            context.Context
+	r              *schema.Resource
+	originalState  map[string]interface{}
+	meta           interface{}
+	isEmptyState   *bool
+	checks         int
+	maxStateChecks int
+	resourceType   string
 }
 
 type consistencyError struct {
@@ -41,13 +47,20 @@ type consistencyError struct {
 	newValue interface{}
 }
 
+type consistencyErrorJson struct {
+	ResourceType     string `json:"resourceType"`
+	ResourceId       string `json:"resourceId"`
+	GCloudObjectName string `json:"GCloudObjectName"`
+	ErrorMessage     string `json:"errorMessage"`
+}
+
 func (e *consistencyError) Error() string {
 	return fmt.Sprintf(`mismatch on attribute %s:
 expected value: %v
 actual value:   %v`, e.key, e.oldValue, e.newValue)
 }
 
-func NewConsistencyCheck(ctx context.Context, d *schema.ResourceData, meta interface{}, r *schema.Resource) *ConsistencyCheck {
+func NewConsistencyCheck(ctx context.Context, d *schema.ResourceData, meta interface{}, r *schema.Resource, maxStateChecks int, resourceType string) *ConsistencyCheck {
 	emptyState := isEmptyState(d)
 	if *emptyState {
 		return &ConsistencyCheck{isEmptyState: emptyState}
@@ -71,12 +84,13 @@ func NewConsistencyCheck(ctx context.Context, d *schema.ResourceData, meta inter
 	}
 
 	cc = &ConsistencyCheck{
-		ctx:           ctx,
-		d:             d,
-		r:             r,
-		originalState: originalState,
-		meta:          meta,
-		isEmptyState:  emptyState,
+		ctx:            ctx,
+		r:              r,
+		originalState:  originalState,
+		meta:           meta,
+		isEmptyState:   emptyState,
+		maxStateChecks: maxStateChecks,
+		resourceType:   resourceType,
 	}
 	mccMutex.Lock()
 	mcc[d.Id()] = cc
@@ -186,8 +200,8 @@ func compareValues(oldValue, newValue interface{}, slice1Index, slice2Index int,
 	}
 }
 
-func (c *ConsistencyCheck) isComputed(key string) bool {
-	schemaInterface := getUnexportedField(reflect.ValueOf(c.d).Elem().FieldByName("schema"))
+func (c *ConsistencyCheck) isComputed(d *schema.ResourceData, key string) bool {
+	schemaInterface := getUnexportedField(reflect.ValueOf(d).Elem().FieldByName("schema"))
 	resourceSchema := schemaInterface.(map[string]*schema.Schema)
 
 	k := key
@@ -201,13 +215,19 @@ func (c *ConsistencyCheck) isComputed(key string) bool {
 	return resourceSchema[k].Computed
 }
 
-func (c *ConsistencyCheck) CheckState() *retry.RetryError {
+func (c *ConsistencyCheck) CheckState(currentState *schema.ResourceData) *retry.RetryError {
 	if c.isEmptyState == nil {
 		panic("consistencyCheck must be initialized with NewConsistencyCheck")
 	}
 
 	if c.r == nil {
 		return nil
+	}
+
+	if featureToggles.CCToggleExists() {
+		log.Printf("%s is set, write consistency errors to consistency-errors.log.json", featureToggles.CCToggleName())
+	} else {
+		log.Printf("%s is not set, consistency checker behaving as default", featureToggles.CCToggleName())
 	}
 
 	originalState := filterMap(c.originalState)
@@ -218,7 +238,7 @@ func (c *ConsistencyCheck) CheckState() *retry.RetryError {
 		Raw:          originalState,
 	}
 
-	diff, _ := c.r.SimpleDiff(c.ctx, c.d.State(), resourceConfig, c.meta)
+	diff, _ := c.r.SimpleDiff(c.ctx, currentState.State(), resourceConfig, c.meta)
 	if diff != nil && len(diff.Attributes) > 0 {
 		for k, v := range diff.Attributes {
 			if strings.HasSuffix(k, "#") {
@@ -240,27 +260,67 @@ func (c *ConsistencyCheck) CheckState() *retry.RetryError {
 				}
 
 				vv := v.New
-				if c.d.HasChange(k) {
+				if currentState.HasChange(k) {
 					if !compareValues(c.originalState[parts[0]], vv, slice1Index, slice2Index, key) {
-						return retry.RetryableError(&consistencyError{
+						err := retry.RetryableError(&consistencyError{
 							key:      k,
 							oldValue: c.originalState[k],
-							newValue: c.d.Get(k),
+							newValue: currentState.Get(k),
 						})
+
+						if exists := featureToggles.CCToggleExists(); c.checks >= c.maxStateChecks && exists {
+							c.writeConsistencyErrorToFile(currentState, err)
+							return nil
+						}
+
+						c.checks++
+						return err
 					}
 				}
 			} else {
-				if c.d.HasChange(k) {
-					return retry.RetryableError(&consistencyError{
+				if currentState.HasChange(k) {
+					err := retry.RetryableError(&consistencyError{
 						key:      k,
 						oldValue: c.originalState[k],
-						newValue: c.d.Get(k),
+						newValue: currentState.Get(k),
 					})
+
+					if exists := featureToggles.CCToggleExists(); c.checks >= c.maxStateChecks && exists {
+						c.writeConsistencyErrorToFile(currentState, err)
+						return nil
+					}
+
+					c.checks++
+					return err
 				}
 			}
 		}
 	}
 
-	DeleteConsistencyCheck(c.d.Id())
+	DeleteConsistencyCheck(currentState.Id())
 	return nil
+}
+
+func (c *ConsistencyCheck) writeConsistencyErrorToFile(d *schema.ResourceData, consistencyError *retry.RetryError) {
+	const filePath = "consistency-errors.log.json"
+	errorJson := consistencyErrorJson{
+		ResourceType: c.resourceType,
+		ResourceId:   d.Id(),
+		ErrorMessage: consistencyError.Err.Error(),
+	}
+
+	if name := d.Get("name").(string); name != "" {
+		errorJson.GCloudObjectName = name
+	}
+
+	jsonData, err := json.Marshal(errorJson)
+	if err != nil {
+		fmt.Println("Error marshaling JSON:", err)
+		return
+	}
+
+	err = os.WriteFile(filePath, jsonData, os.ModePerm)
+	if err != nil {
+		log.Printf("Error writing file %s: %v", filePath, err)
+	}
 }

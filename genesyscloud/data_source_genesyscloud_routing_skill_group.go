@@ -49,25 +49,25 @@ func dataSourceRoutingSkillGroupRead(ctx context.Context, d *schema.ResourceData
 			response, err := apiClient.CallAPI(path, "GET", nil, headerParams, nil, nil, "", nil)
 
 			if err != nil {
-				return retry.RetryableError(fmt.Errorf("error encountered while trying to retrieve routing skills group found with name %s, %w", name, err))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_routing_skill_group", fmt.Sprintf("error encountered while trying to retrieve routing skills group found with name %s | error: %s", name, err), response))
 			}
 
 			if err == nil && response.Error != nil {
-				return retry.RetryableError(fmt.Errorf("error encountered while trying to retrieve routing skills group found with name %s %w", name, err))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_routing_skill_group", fmt.Sprintf("error encountered while trying to retrieve routing skills group found with name %s | error:%s", name, err), response))
 			}
 			if err == nil && response.StatusCode == http.StatusNotFound {
-				return retry.RetryableError(fmt.Errorf("routing skills group not found with name %s", name))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_routing_skill_group", fmt.Sprintf("routing skills group not found with name %s", name), response))
 			}
 
 			allSkillGroups := &AllSkillGroups{}
 
 			err = json.Unmarshal(response.RawBody, &allSkillGroups)
 			if err != nil {
-				return retry.RetryableError(fmt.Errorf("error encountered while trying to retrieve routing skills group found with name %s %w", name, err))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_routing_skill_group", fmt.Sprintf("error encountered while trying to retrieve routing skills group found with name %s %s", name, err), response))
 			}
 
 			if allSkillGroups.Entities == nil || len(allSkillGroups.Entities) == 0 {
-				return retry.RetryableError(fmt.Errorf("no routing skills groups found with name %s", name))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_routing_skill_group", fmt.Sprintf("no routing skills groups found with name %s", name), response))
 			}
 
 			for _, skillGroup := range allSkillGroups.Entities {

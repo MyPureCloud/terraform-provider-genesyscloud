@@ -6,6 +6,7 @@ import (
 	"log"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -91,7 +92,7 @@ func updatePhoneBaseSettings(ctx context.Context, d *schema.ResourceData, meta i
 		if util.IsStatus404(resp) {
 			return nil
 		}
-		return diag.Errorf("Failed to read phone base settings %s: %s", d.Id(), getErr)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to read phone base settings %s | error: %s", d.Id(), getErr), resp)
 	}
 	(*phoneBase.Lines)[0].Id = (*phoneBaseSettings.Lines)[0].Id
 
@@ -109,18 +110,18 @@ func updatePhoneBaseSettings(ctx context.Context, d *schema.ResourceData, meta i
 func readPhoneBaseSettings(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	phoneBaseProxy := getPhoneBaseProxy(sdkConfig)
-	log.Printf("Reading phone base settings %s", d.Id())
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourcePhoneBaseSettings(), constants.DefaultConsistencyChecks, resourceName)
 
+	log.Printf("Reading phone base settings %s", d.Id())
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		phoneBaseSettings, resp, getErr := phoneBaseProxy.getPhoneBaseSetting(ctx, d.Id())
 		if getErr != nil {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(fmt.Errorf("failed to read phone base settings %s: %s", d.Id(), getErr))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read phone base settings %s | error: %s", d.Id(), getErr), resp))
 			}
-			return retry.NonRetryableError(fmt.Errorf("failed to read phone base settings %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read phone base settings %s | error: %s", d.Id(), getErr), resp))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourcePhoneBaseSettings())
 		d.Set("name", *phoneBaseSettings.Name)
 
 		resourcedata.SetNillableValue(d, "description", phoneBaseSettings.Description)
@@ -148,7 +149,7 @@ func readPhoneBaseSettings(ctx context.Context, d *schema.ResourceData, meta int
 
 		log.Printf("Read phone base settings %s %s", d.Id(), *phoneBaseSettings.Name)
 
-		return cc.CheckState()
+		return cc.CheckState(d)
 	})
 }
 
@@ -170,7 +171,7 @@ func deletePhoneBaseSettings(ctx context.Context, d *schema.ResourceData, meta i
 				log.Printf("Deleted Phone base settings %s", d.Id())
 				return nil
 			}
-			return retry.NonRetryableError(fmt.Errorf("error deleting Phone base settings %s: %s", d.Id(), err))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("error deleting Phone base settings %s | error: %s", d.Id(), err), resp))
 		}
 
 		if phoneBaseSettings.State != nil && *phoneBaseSettings.State == "deleted" {
@@ -179,7 +180,7 @@ func deletePhoneBaseSettings(ctx context.Context, d *schema.ResourceData, meta i
 			return nil
 		}
 
-		return retry.RetryableError(fmt.Errorf("phone base settings %s still exists", d.Id()))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("phone base settings %s still exists", d.Id()), resp))
 	})
 }
 

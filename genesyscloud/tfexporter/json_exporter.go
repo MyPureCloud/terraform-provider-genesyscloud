@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/files"
 
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 
@@ -283,7 +284,7 @@ func writeConfig(jsonMap map[string]interface{}, path string) diag.Diagnostics {
 	}
 
 	log.Printf("Writing export config file to %s", path)
-	if err := writeToFile(postProcessJsonBytes(dataJSONBytes), path); err != nil {
+	if err := files.WriteToFile(postProcessJsonBytes(dataJSONBytes), path); err != nil {
 		return err
 	}
 	return nil

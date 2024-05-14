@@ -6,6 +6,7 @@ import (
 	"log"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 
@@ -39,6 +40,7 @@ func createOutboundWrapUpCodeMappings(ctx context.Context, d *schema.ResourceDat
 func readOutboundWrapUpCodeMappings(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getOutboundWrapupCodeMappingsProxy(sdkConfig)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundWrapUpCodeMappings(), constants.DefaultConsistencyChecks, resourceName)
 
 	log.Printf("Reading Outbound Wrap-up Code Mappings")
 
@@ -46,17 +48,15 @@ func readOutboundWrapUpCodeMappings(ctx context.Context, d *schema.ResourceData,
 		sdkWrapupCodeMappings, resp, err := proxy.getAllOutboundWrapupCodeMappings(ctx)
 		if err != nil {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(fmt.Errorf("failed to read Outbound Wrap-up Code Mappings: %s", err))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read Outbound Wrap-up Code Mappings: %s", err), resp))
 			}
-			return retry.NonRetryableError(fmt.Errorf("failed to read Outbound Wrap-up Code Mappings: %s", err))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read Outbound Wrap-up Code Mappings: %s", err), resp))
 		}
 
 		wrapupCodes, resp, err := proxy.getAllWrapupCodes(ctx)
 		if err != nil {
-			return retry.NonRetryableError(fmt.Errorf("failed to get wrapup codes: %s %v", err, resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to get wrapup codes: %s", err), resp))
 		}
-
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundWrapUpCodeMappings())
 
 		resourcedata.SetNillableValue(d, "default_set", sdkWrapupCodeMappings.DefaultSet)
 
@@ -70,7 +70,7 @@ func readOutboundWrapUpCodeMappings(ctx context.Context, d *schema.ResourceData,
 		}
 
 		log.Print("Read Outbound Wrap-up Code Mappings")
-		return cc.CheckState()
+		return cc.CheckState(d)
 	})
 }
 

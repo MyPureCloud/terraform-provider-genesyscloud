@@ -133,10 +133,10 @@ func updatePrimarySecondarySites(ctx context.Context, sp *siteProxy, d *schema.R
 
 	_, resp, err = sp.updateSite(ctx, siteId, site)
 	if resp.StatusCode != 200 {
-		return diag.Errorf("Site %s was created, but unable to update the primary or secondary site.  Status code %d. RespBody %s", siteId, resp.StatusCode, resp.RawBody)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Site %s was created, but unable to update the primary or secondary site. Status code %d. RespBody %s", siteId, resp.StatusCode, resp.RawBody), resp)
 	}
 	if err != nil {
-		return diag.Errorf("[Site %s was created, but unable to update the primary or secondary site.  Err: %s", siteId, err)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Site %s was created, but unable to update the primary or secondary site | error: %s", siteId, err), resp)
 	}
 
 	return nil
@@ -234,11 +234,7 @@ func updateSiteNumberPlans(ctx context.Context, sp *siteProxy, d *schema.Resourc
 
 		_, resp, err := sp.updateSiteNumberPlans(ctx, d.Id(), &updatedNumberPlans)
 		if err != nil {
-			respString := ""
-			if resp != nil {
-				respString = resp.String()
-			}
-			return resp, diag.Errorf("Failed to update number plans for site %s: %s %s", d.Id(), err, respString)
+			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update number plans for site %s | error: %s", d.Id(), err), resp)
 		}
 		return resp, nil
 	})
@@ -374,7 +370,7 @@ func readSiteNumberPlans(ctx context.Context, sp *siteProxy, d *schema.ResourceD
 			d.SetId("") // Site doesn't exist
 			return nil
 		}
-		return retry.NonRetryableError(fmt.Errorf("failed to read number plans for site %s: %s", d.Id(), err))
+		return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read number plans for site %s | error: %s", d.Id(), err), resp))
 	}
 
 	dNumberPlans := make([]interface{}, 0)
@@ -394,7 +390,7 @@ func readSiteNumberPlans(ctx context.Context, sp *siteProxy, d *schema.ResourceD
 func readSiteOutboundRoutes(ctx context.Context, sp *siteProxy, d *schema.ResourceData) *retry.RetryError {
 	outboundRoutes, resp, err := sp.getSiteOutboundRoutes(ctx, d.Id())
 	if err != nil {
-		return retry.NonRetryableError(fmt.Errorf("failed to get outbound routes for site %s: %s %v", d.Id(), err, resp))
+		return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to get outbound routes for site %s | error: %s", d.Id(), err), resp))
 	}
 
 	dOutboundRoutes := schema.NewSet(schema.HashResource(outboundRouteSchema), []interface{}{})

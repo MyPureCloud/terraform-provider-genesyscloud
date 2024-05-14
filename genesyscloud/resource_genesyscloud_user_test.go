@@ -1128,10 +1128,10 @@ func testVerifyUsersDestroyed(state *terraform.State) error {
 				if util.IsStatus404(resp) {
 					continue
 				}
-				return retry.NonRetryableError(fmt.Errorf("Unexpected error: %s", err))
+				return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_user", fmt.Sprintf("Unexpected error: %s", err), resp))
 			}
 
-			return retry.RetryableError(fmt.Errorf("User (%s) still exists", rs.Primary.ID))
+			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_user", fmt.Sprintf("User (%s) still exists", rs.Primary.ID), resp))
 		}
 		return nil
 	})

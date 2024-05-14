@@ -24,7 +24,7 @@ func (r *registerTestInstance) registerTestResources() {
 	r.resourceMapMutex.Lock()
 	defer r.resourceMapMutex.Unlock()
 
-	providerResources[resource_name] = ResourceArchitectUserPrompt()
+	providerResources[resourceName] = ResourceArchitectUserPrompt()
 	providerResources["genesyscloud_auth_division"] = genesyscloud.ResourceAuthDivision()
 }
 
@@ -33,7 +33,7 @@ func (r *registerTestInstance) registerTestDataSources() {
 	r.datasourceMapMutex.Lock()
 	defer r.datasourceMapMutex.Unlock()
 
-	providerDataSources[resource_name] = DataSourceUserPrompt()
+	providerDataSources[resourceName] = DataSourceUserPrompt()
 }
 
 // initTestResources initializes all test resources and data sources.

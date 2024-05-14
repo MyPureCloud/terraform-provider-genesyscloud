@@ -6,6 +6,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"io"
 	"io/ioutil"
@@ -296,4 +297,12 @@ func prepareAndUploadFile(filename string, substitutions map[string]interface{},
 	}
 
 	return response, nil
+}
+
+func WriteToFile(bytes []byte, path string) diag.Diagnostics {
+	err := os.WriteFile(path, bytes, os.ModePerm)
+	if err != nil {
+		return util.BuildDiagnosticError("File Writer", fmt.Sprintf("Error writing file with Path %s", path), err)
+	}
+	return nil
 }
