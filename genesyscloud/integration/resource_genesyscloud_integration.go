@@ -71,7 +71,7 @@ func createIntegration(ctx context.Context, d *schema.ResourceData, meta interfa
 	}
 	integration, resp, err := ip.createIntegration(ctx, createIntegrationReq)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create integration %s error: %s", *createIntegrationReq.Name, err), resp)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create integration error: %s", err), resp)
 	}
 
 	d.SetId(*integration.Id)
