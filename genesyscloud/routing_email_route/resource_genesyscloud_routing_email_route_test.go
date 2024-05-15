@@ -20,10 +20,6 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 )
 
-var (
-	sdkConfig *platformclientv2.Configuration
-)
-
 func TestAccResourceRoutingEmailRoute(t *testing.T) {
 
 	var (
@@ -50,6 +46,8 @@ func TestAccResourceRoutingEmailRoute(t *testing.T) {
 		emailFlowResource1 = "test_flow1"
 		emailFlowFilePath1 = "../../examples/resources/genesyscloud_flow/inboundcall_flow_example.yaml"
 	)
+
+	CleanupRoutingEmailDomains()
 
 	// Test error configs
 	resource.Test(t, resource.TestCase{
@@ -461,7 +459,11 @@ func testVerifyRoutingEmailRouteDestroyed(state *terraform.State) error {
 }
 
 func CleanupRoutingEmailDomains() {
-	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
+	config, err := provider.AuthorizeSdk()
+	if err != nil {
+		return
+	}
+	routingAPI := platformclientv2.NewRoutingApiWithConfig(config)
 
 	for pageNum := 1; ; pageNum++ {
 		const pageSize = 100
