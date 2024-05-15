@@ -1168,6 +1168,7 @@ func verifyConfigurationDestroyed(state *terraform.State) error {
 func cleanupWebDeploymentsConfiguration(t *testing.T, prefix string) {
 	config, err := provider.AuthorizeSdk()
 	if err != nil {
+		t.Logf("Failed to authorize SDK: %s", err)
 		return
 	}
 	deploymentsAPI := platformclientv2.NewWebDeploymentsApiWithConfig(config)
@@ -1183,7 +1184,6 @@ func cleanupWebDeploymentsConfiguration(t *testing.T, prefix string) {
 			resp, delErr := deploymentsAPI.DeleteWebdeploymentsConfiguration(*configuration.Id)
 			if delErr != nil {
 				t.Logf("Failed to delete configuration %s: %s %v", *configuration.Id, delErr, resp)
-				return
 			}
 			time.Sleep(5 * time.Second)
 		}

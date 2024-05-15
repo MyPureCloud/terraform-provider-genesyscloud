@@ -298,6 +298,7 @@ func verifyLanguagesDestroyed(state *terraform.State) error {
 func cleanupWebDeploymentsDeployment(t *testing.T, prefix string) {
 	config, err := provider.AuthorizeSdk()
 	if err != nil {
+		t.Logf("Failed to authorize SDK: %s", err)
 		return
 	}
 	deploymentsAPI := platformclientv2.NewWebDeploymentsApiWithConfig(config)
@@ -313,7 +314,6 @@ func cleanupWebDeploymentsDeployment(t *testing.T, prefix string) {
 			_, err := deploymentsAPI.DeleteWebdeploymentsDeployment(*webDeployment.Id)
 			if err != nil {
 				t.Logf("failed to delete deployment: %v %v %v", *webDeployment.Id, getErr, resp)
-				return
 			}
 			time.Sleep(5 * time.Second)
 		}
