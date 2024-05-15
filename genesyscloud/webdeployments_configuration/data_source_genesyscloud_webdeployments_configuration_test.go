@@ -17,7 +17,7 @@ func TestAccDataSourceWebDeploymentsConfiguration(t *testing.T) {
 		resourceNameReference    = fullResourceName + ".name"
 	)
 
-	_ = cleanupWebDeploymentsConfiguration()
+	cleanupWebDeploymentsConfiguration(t, "Test Configuration ")
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },

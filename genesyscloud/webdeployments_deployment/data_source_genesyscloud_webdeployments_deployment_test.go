@@ -18,7 +18,7 @@ func TestAccDataSourceWebDeploymentsDeployment(t *testing.T) {
 		fullDataSourceName    = "data.genesyscloud_webdeployments_deployment.basic-data"
 	)
 
-	_ = cleanupWebDeploymentsDeployment()
+	cleanupWebDeploymentsDeployment(t, "Test Deployment ")
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },

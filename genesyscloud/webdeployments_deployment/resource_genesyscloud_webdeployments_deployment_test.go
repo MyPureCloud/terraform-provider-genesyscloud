@@ -23,7 +23,7 @@ func TestAccResourceWebDeploymentsDeployment(t *testing.T) {
 		fullResourceName      = "genesyscloud_webdeployments_deployment.basic"
 	)
 
-	_ = cleanupWebDeploymentsDeployment()
+	cleanupWebDeploymentsDeployment(t, "Test Deployment ")
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
@@ -59,7 +59,7 @@ func TestAccResourceWebDeploymentsDeployment_AllowedDomains(t *testing.T) {
 		secondDomain     = "genesys-" + util.RandString(8) + ".com"
 	)
 
-	_ = cleanupWebDeploymentsDeployment()
+	cleanupWebDeploymentsDeployment(t, "Test Deployment ")
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
@@ -103,7 +103,7 @@ func TestAccResourceWebDeploymentsDeployment_Versioning(t *testing.T) {
 		fullConfigResourceName     = "genesyscloud_webdeployments_configuration.minimal"
 	)
 
-	_ = cleanupWebDeploymentsDeployment()
+	cleanupWebDeploymentsDeployment(t, "Test Deployment ")
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
@@ -295,27 +295,27 @@ func verifyLanguagesDestroyed(state *terraform.State) error {
 	return nil
 }
 
-func cleanupWebDeploymentsDeployment() error {
+func cleanupWebDeploymentsDeployment(t *testing.T, prefix string) {
 	config, err := provider.AuthorizeSdk()
-
 	if err != nil {
-		return err
+		return
 	}
 	deploymentsAPI := platformclientv2.NewWebDeploymentsApiWithConfig(config)
 
 	webDeployments, resp, getErr := deploymentsAPI.GetWebdeploymentsDeployments([]string{})
 	if getErr != nil {
-		return util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to get page of deployments: %v", getErr), resp)
+		t.Logf("failed to get page of deployments: %v %v", getErr, resp)
+		return
 	}
 
 	for _, webDeployment := range *webDeployments.Entities {
-		if webDeployment.Name != nil && strings.HasPrefix(*webDeployment.Name, "Test Deployment ") {
+		if webDeployment.Name != nil && strings.HasPrefix(*webDeployment.Name, prefix) {
 			_, err := deploymentsAPI.DeleteWebdeploymentsDeployment(*webDeployment.Id)
 			if err != nil {
-				return util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to delete deployment: %v %v", *webDeployment.Id, getErr), resp)
+				t.Logf("failed to delete deployment: %v %v %v", *webDeployment.Id, getErr, resp)
+				return
 			}
 			time.Sleep(5 * time.Second)
 		}
 	}
-	return nil
 }

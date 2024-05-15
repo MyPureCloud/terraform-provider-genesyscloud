@@ -85,7 +85,7 @@ func TestAccResourceWebDeploymentsConfiguration(t *testing.T) {
 		defaultLang2             = "es"
 	)
 
-	_ = cleanupWebDeploymentsConfiguration()
+	cleanupWebDeploymentsConfiguration(t, "Test Configuration ")
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
@@ -164,7 +164,7 @@ func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
 		channelsUpdate = []string{strconv.Quote("Webmessaging"), strconv.Quote("Voice")}
 	)
 
-	_ = cleanupWebDeploymentsConfiguration()
+	cleanupWebDeploymentsConfiguration(t, "Test Configuration ")
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
@@ -658,7 +658,7 @@ func TestAccResourceWebDeploymentsConfigurationSupportCenter(t *testing.T) {
 		}
 	)
 
-	_ = cleanupWebDeploymentsConfiguration()
+	cleanupWebDeploymentsConfiguration(t, "Test Configuration ")
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
@@ -1165,26 +1165,27 @@ func verifyConfigurationDestroyed(state *terraform.State) error {
 	return nil
 }
 
-func cleanupWebDeploymentsConfiguration() error {
+func cleanupWebDeploymentsConfiguration(t *testing.T, prefix string) {
 	config, err := provider.AuthorizeSdk()
 	if err != nil {
-		return err
+		return
 	}
 	deploymentsAPI := platformclientv2.NewWebDeploymentsApiWithConfig(config)
 
 	configurations, resp, getErr := deploymentsAPI.GetWebdeploymentsConfigurations(false)
 	if getErr != nil {
-		return util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to get page of configurations: %v", getErr), resp)
+		t.Logf("failed to get page of configurations: %v %v", getErr, resp)
+		return
 	}
 
 	for _, configuration := range *configurations.Entities {
-		if configuration.Name != nil && strings.HasPrefix(*configuration.Name, "Test Configuration ") {
+		if configuration.Name != nil && strings.HasPrefix(*configuration.Name, prefix) {
 			resp, delErr := deploymentsAPI.DeleteWebdeploymentsConfiguration(*configuration.Id)
 			if delErr != nil {
-				return util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to delete configuration %s: %s", *configuration.Id, delErr), resp)
+				t.Logf("Failed to delete configuration %s: %s %v", *configuration.Id, delErr, resp)
+				return
 			}
 			time.Sleep(5 * time.Second)
 		}
 	}
-	return nil
 }
