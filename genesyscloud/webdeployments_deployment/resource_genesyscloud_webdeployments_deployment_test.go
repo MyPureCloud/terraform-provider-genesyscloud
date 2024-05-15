@@ -3,15 +3,16 @@ package webdeployments_deployment
 import (
 	"encoding/json"
 	"fmt"
-	"regexp"
-	"terraform-provider-genesyscloud/genesyscloud/provider"
-	"terraform-provider-genesyscloud/genesyscloud/util"
-	"testing"
-
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
+	"regexp"
+	"strings"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
+	"testing"
+	"time"
 )
 
 func TestAccResourceWebDeploymentsDeployment(t *testing.T) {
@@ -21,6 +22,8 @@ func TestAccResourceWebDeploymentsDeployment(t *testing.T) {
 		deploymentDescription = "Test Deployment description " + util.RandString(32)
 		fullResourceName      = "genesyscloud_webdeployments_deployment.basic"
 	)
+
+	cleanupWebDeploymentsDeployment(t, "Test Deployment ")
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
@@ -55,6 +58,8 @@ func TestAccResourceWebDeploymentsDeployment_AllowedDomains(t *testing.T) {
 		firstDomain      = "genesys-" + util.RandString(8) + ".com"
 		secondDomain     = "genesys-" + util.RandString(8) + ".com"
 	)
+
+	cleanupWebDeploymentsDeployment(t, "Test Deployment ")
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
@@ -97,6 +102,8 @@ func TestAccResourceWebDeploymentsDeployment_Versioning(t *testing.T) {
 		fullDeploymentResourceName = "genesyscloud_webdeployments_deployment.versioning"
 		fullConfigResourceName     = "genesyscloud_webdeployments_configuration.minimal"
 	)
+
+	cleanupWebDeploymentsDeployment(t, "Test Deployment ")
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
@@ -286,4 +293,29 @@ func verifyLanguagesDestroyed(state *terraform.State) error {
 	}
 	// Success. All languages destroyed
 	return nil
+}
+
+func cleanupWebDeploymentsDeployment(t *testing.T, prefix string) {
+	config, err := provider.AuthorizeSdk()
+	if err != nil {
+		t.Logf("Failed to authorize SDK: %s", err)
+		return
+	}
+	deploymentsAPI := platformclientv2.NewWebDeploymentsApiWithConfig(config)
+
+	webDeployments, resp, getErr := deploymentsAPI.GetWebdeploymentsDeployments([]string{})
+	if getErr != nil {
+		t.Logf("failed to get page of deployments: %v %v", getErr, resp)
+		return
+	}
+
+	for _, webDeployment := range *webDeployments.Entities {
+		if webDeployment.Name != nil && strings.HasPrefix(*webDeployment.Name, prefix) {
+			_, err := deploymentsAPI.DeleteWebdeploymentsDeployment(*webDeployment.Id)
+			if err != nil {
+				t.Logf("failed to delete deployment: %v %v %v", *webDeployment.Id, getErr, resp)
+			}
+			time.Sleep(5 * time.Second)
+		}
+	}
 }
