@@ -1,17 +1,15 @@
-package architect_schedulegroups
+package architect_schedules
 
 import (
 	"sync"
-	"terraform-provider-genesyscloud/genesyscloud"
-	archiSchedules "terraform-provider-genesyscloud/genesyscloud/architect_schedules"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 /*
-   The genesyscloud_architect_schedulegroups_init_test.go file is used to initialize the data sources and resources
-   used in testing the architect_schedulegroups resource.
+   The genesyscloud_architect_schedules_init_test.go file is used to initialize the data sources and resources
+   used in testing the architect_schedules resource.
 */
 
 // providerDataSources holds a map of all registered datasources
@@ -30,9 +28,7 @@ func (r *registerTestInstance) registerTestResources() {
 	r.resourceMapMutex.Lock()
 	defer r.resourceMapMutex.Unlock()
 
-	providerResources[resourceName] = ResourceArchitectSchedulegroups()
-	providerResources["genesyscloud_architect_schedules"] = archiSchedules.ResourceArchitectSchedules()
-	providerResources["genesyscloud_auth_division"] = genesyscloud.ResourceAuthDivision()
+	providerResources[resourceName] = ResourceArchitectSchedules()
 }
 
 // registerTestDataSources registers all data sources used in the tests.
@@ -40,7 +36,7 @@ func (r *registerTestInstance) registerTestDataSources() {
 	r.datasourceMapMutex.Lock()
 	defer r.datasourceMapMutex.Unlock()
 
-	providerDataSources[resourceName] = DataSourceArchitectSchedulegroups()
+	providerDataSources[resourceName] = DataSourceArchitectScheduls()
 }
 
 // initTestResources initializes all test resources and data sources.

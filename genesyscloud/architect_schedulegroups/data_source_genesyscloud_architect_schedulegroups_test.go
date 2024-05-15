@@ -2,7 +2,7 @@ package architect_schedulegroups
 
 import (
 	"fmt"
-	"terraform-provider-genesyscloud/genesyscloud"
+	archiSchedules "terraform-provider-genesyscloud/genesyscloud/architect_schedules"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
@@ -35,7 +35,7 @@ func TestAccDataSourceArchitectScheduleGroups(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				// Create
-				Config: genesyscloud.GenerateArchitectSchedulesResource( // Create Open schedule
+				Config: archiSchedules.GenerateArchitectSchedulesResource( // Create Open schedule
 					schedResource,
 					openSched,
 					util.NullValue,
