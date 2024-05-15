@@ -108,9 +108,10 @@ func flattenOutboundSettingsAutomaticTimeZoneMapping(timeZoneMappings platformcl
 		}
 	} else {
 		if len(automaticTimeZoneMapping) > 0 {
-			callableWindows := automaticTimeZoneMapping[0].(map[string]interface{})["callable_windows"].(*schema.Set)
-			if timeZoneMappings.CallableWindows != nil {
-				requestMap["callable_windows"] = flattenCallableWindows(*timeZoneMappings.CallableWindows, callableWindows)
+			if callableWindows, ok := automaticTimeZoneMapping[0].(map[string]interface{})["callable_windows"].(*schema.Set); ok {
+				if timeZoneMappings.CallableWindows != nil {
+					requestMap["callable_windows"] = flattenCallableWindows(*timeZoneMappings.CallableWindows, callableWindows)
+				}
 			}
 		}
 	}

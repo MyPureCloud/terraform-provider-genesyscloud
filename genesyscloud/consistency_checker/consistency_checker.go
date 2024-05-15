@@ -309,7 +309,7 @@ func (c *ConsistencyCheck) writeConsistencyErrorToFile(d *schema.ResourceData, c
 		ErrorMessage: consistencyError.Err.Error(),
 	}
 
-	if name := d.Get("name").(string); name != "" {
+	if name, _ := d.Get("name").(string); name != "" {
 		errorJson.GCloudObjectName = name
 	}
 
