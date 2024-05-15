@@ -72,7 +72,7 @@ func readOutboundSettings(ctx context.Context, d *schema.ResourceData, meta inte
 		if complianceAbandonRateDenominator != "" || tfexporter_state.IsExporterActive() {
 			resourcedata.SetNillableValue(d, "compliance_abandon_rate_denominator", settings.ComplianceAbandonRateDenominator)
 		}
-		if len(automaticTimeZoneMapping) > 0 || tfexporter_state.IsExporterActive() {
+		if settings.AutomaticTimeZoneMapping != nil && (len(automaticTimeZoneMapping) > 0 || tfexporter_state.IsExporterActive()) {
 			_ = d.Set("automatic_time_zone_mapping", flattenOutboundSettingsAutomaticTimeZoneMapping(*settings.AutomaticTimeZoneMapping, automaticTimeZoneMapping))
 		}
 		resourcedata.SetNillableValue(d, "reschedule_time_zone_skipped_contacts", &rescheduleTimeZoneSkippedContacts)
