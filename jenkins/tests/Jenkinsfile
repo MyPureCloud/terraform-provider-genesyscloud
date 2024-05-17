@@ -23,7 +23,7 @@ pipeline {
 		GENESYSCLOUD_REGION = "${region}"
         GENESYSCLOUD_SDK_DEBUG =  "true"
         GENESYSCLOUD_TOKEN_POOL_SIZE =  20
-        PATH = "${env.PATH}:${HOME}/go/bin"
+        PATH = "${env.PATH}:${HOME}/go/bin:/home/jenkins/.local/bin"
     }
     tools {
         go 'Go 1.20'
@@ -57,6 +57,23 @@ pipeline {
         }
 
 
+        stage('IvrConfig Tests') {
+            environment {
+                TF_ACC=1
+                TF_LOG="DEBUG"
+            }
+            steps {
+                sh 'go clean -i -cache'
+                catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
+                    echo 'Attempting to Run Remaining Tests'
+                    withCredentials([usernamePassword(credentialsId: CREDENTIALS_ID, usernameVariable: 'GENESYSCLOUD_OAUTHCLIENT_ID', passwordVariable: 'GENESYSCLOUD_OAUTHCLIENT_SECRET')]) {
+                        echo 'Loading Genesys OAuth Credentials'
+                          sh 'gotestsum --junitfile ivr.xml --format standard-verbose ./genesyscloud/... -run TestAcc.*IvrConfig -v -count=1 -timeout 120m -cover -coverprofile=coverageivr.out'
+                    }
+                }
+            }
+        }
+        
     stage('Architect Tests') {
             environment {
                 TF_ACC=1
@@ -67,7 +84,7 @@ pipeline {
                     echo 'Attempting to Run Architect Tests'
                     withCredentials([usernamePassword(credentialsId: CREDENTIALS_ID, usernameVariable: 'GENESYSCLOUD_OAUTHCLIENT_ID', passwordVariable: 'GENESYSCLOUD_OAUTHCLIENT_SECRET')]) {
                         echo 'Loading Genesys OAuth Credentials'
-                        sh 'gotestsum --junitfile architect.xml --format standard-verbose -- ./genesyscloud/... -run "TestAcc.*Architect|IvrConfig" -v -count=1 -timeout 120m -cover -coverprofile=coverageArchitect.out'
+                        sh 'gotestsum --junitfile architect.xml --format standard-verbose ./genesyscloud/... -run "TestAcc.*Architect" -v -count=1 -timeout 120m -cover -coverprofile=coverageArchitect.out'
                     }
                 }
             }
@@ -83,7 +100,7 @@ pipeline {
                     echo 'Attempting to Run Idp Tests'
                     withCredentials([usernamePassword(credentialsId: CREDENTIALS_ID, usernameVariable: 'GENESYSCLOUD_OAUTHCLIENT_ID', passwordVariable: 'GENESYSCLOUD_OAUTHCLIENT_SECRET')]) {
                         echo 'Loading Genesys OAuth Credentials'
-                        sh 'gotestsum --junitfile idp.xml --format standard-verbose -- ./genesyscloud/... -run TestAcc.*Idp -v -count=1 -timeout 120m -cover -coverprofile=coverageIdp.out'
+                        sh 'gotestsum --junitfile idp.xml --format standard-verbose ./genesyscloud/... -run TestAcc.*Idp -v -count=1 -timeout 120m -cover -coverprofile=coverageIdp.out'
                     }
                 }
             }
@@ -99,7 +116,7 @@ pipeline {
                     echo 'Attempting to Run Auth Tests'
                     withCredentials([usernamePassword(credentialsId: CREDENTIALS_ID, usernameVariable: 'GENESYSCLOUD_OAUTHCLIENT_ID', passwordVariable: 'GENESYSCLOUD_OAUTHCLIENT_SECRET')]) {
                         echo 'Loading Genesys OAuth Credentials'
-                        sh 'gotestsum --junitfile auth.xml --format standard-verbose -- ./genesyscloud/... -run TestAcc.*Auth -v -count=1 -timeout 120m -cover -coverprofile=coverageAuth.out'
+                        sh 'gotestsum --junitfile auth.xml --format standard-verbose ./genesyscloud/... -run TestAcc.*Auth -v -count=1 -timeout 120m -cover -coverprofile=coverageAuth.out'
                     }
                 }
             }
@@ -116,7 +133,7 @@ pipeline {
                     echo 'Attempting to Run Integration Tests'
                     withCredentials([usernamePassword(credentialsId: CREDENTIALS_ID, usernameVariable: 'GENESYSCLOUD_OAUTHCLIENT_ID', passwordVariable: 'GENESYSCLOUD_OAUTHCLIENT_SECRET')]) {
                         echo 'Loading Genesys OAuth Credentials'
-                        sh 'gotestsum --junitfile integration.xml --format standard-verbose -- ./genesyscloud/... -run TestAcc.*Integration -v -count=1 -timeout 120m -cover -coverprofile=coverageIntegration.out'
+                        sh 'gotestsum --junitfile integration.xml --format standard-verbose ./genesyscloud/... -run TestAcc.*Integration -v -count=1 -timeout 120m -cover -coverprofile=coverageIntegration.out'
                     }
                 }
             }
@@ -133,7 +150,7 @@ pipeline {
                     echo 'Attempting to Run Flow Tests'
                     withCredentials([usernamePassword(credentialsId: CREDENTIALS_ID, usernameVariable: 'GENESYSCLOUD_OAUTHCLIENT_ID', passwordVariable: 'GENESYSCLOUD_OAUTHCLIENT_SECRET')]) {
                         echo 'Loading Genesys OAuth Credentials'
-                        sh "gotestsum --junitfile flow.xml --format standard-verbose -- ./genesyscloud/... -run 'TestAcc.*Flow' -v -count=1 -timeout 120m -cover -coverprofile=coverageFlow.out"
+                        sh "gotestsum --junitfile flow.xml --format standard-verbose ./genesyscloud/... -run 'TestAcc.*Flow' -v -count=1 -timeout 120m -cover -coverprofile=coverageFlow.out"
                     }
                 }
             }
@@ -149,7 +166,7 @@ pipeline {
                     echo 'Attempting to Run Journey Tests'
                     withCredentials([usernamePassword(credentialsId: CREDENTIALS_ID, usernameVariable: 'GENESYSCLOUD_OAUTHCLIENT_ID', passwordVariable: 'GENESYSCLOUD_OAUTHCLIENT_SECRET')]) {
                         echo 'Loading Genesys OAuth Credentials'
-                        sh 'gotestsum --junitfile journey.xml --format standard-verbose -- ./genesyscloud/... -run TestAcc.*Journey -v -count=1 -timeout 120m -cover -coverprofile=coverageJourney.out'
+                        sh 'gotestsum --junitfile journey.xml --format standard-verbose ./genesyscloud/... -run TestAcc.*Journey -v -count=1 -timeout 120m -cover -coverprofile=coverageJourney.out'
                     }
                 }
             }
@@ -165,7 +182,7 @@ pipeline {
                     echo 'Attempting to Run Knowledge Tests'
                     withCredentials([usernamePassword(credentialsId: CREDENTIALS_ID, usernameVariable: 'GENESYSCLOUD_OAUTHCLIENT_ID', passwordVariable: 'GENESYSCLOUD_OAUTHCLIENT_SECRET')]) {
                         echo 'Loading Genesys OAuth Credentials'
-                        sh 'gotestsum --junitfile knowledge.xml --format standard-verbose -- ./genesyscloud/... -run TestAcc.*Knowledge -v -count=1 -timeout 120m -cover -coverprofile=coverageKnowledge.out'
+                        sh 'gotestsum --junitfile knowledge.xml --format standard-verbose ./genesyscloud/... -run TestAcc.*Knowledge -v -count=1 -timeout 120m -cover -coverprofile=coverageKnowledge.out'
                     }
                 }
             }
@@ -181,7 +198,7 @@ pipeline {
                     echo 'Attempting to Run Outbound Tests'
                     withCredentials([usernamePassword(credentialsId: CREDENTIALS_ID, usernameVariable: 'GENESYSCLOUD_OAUTHCLIENT_ID', passwordVariable: 'GENESYSCLOUD_OAUTHCLIENT_SECRET')]) {
                         echo 'Loading Genesys OAuth Credentials'
-                        sh 'gotestsum --junitfile outbound.xml --format standard-verbose -- ./genesyscloud/... -run TestAcc.*Outbound -v -count=1 -timeout 120m -cover -coverprofile=coverageOutbound.out'
+                        sh 'gotestsum --junitfile outbound.xml --format standard-verbose ./genesyscloud/... -run TestAcc.*Outbound -v -count=1 -timeout 120m -cover -coverprofile=coverageOutbound.out'
                     }
                 }
             }
@@ -197,7 +214,7 @@ pipeline {
                     echo 'Attempting to Run ResponseManagement Tests'
                     withCredentials([usernamePassword(credentialsId: CREDENTIALS_ID, usernameVariable: 'GENESYSCLOUD_OAUTHCLIENT_ID', passwordVariable: 'GENESYSCLOUD_OAUTHCLIENT_SECRET')]) {
                         echo 'Loading Genesys OAuth Credentials'
-                        sh 'gotestsum --junitfile response.xml --format standard-verbose -- ./genesyscloud/... -run TestAcc.*ResponseManagement -v -count=1 -timeout 120m -cover -coverprofile=coverageResponseManagement.out'
+                        sh 'gotestsum --junitfile response.xml --format standard-verbose ./genesyscloud/... -run TestAcc.*ResponseManagement -v -count=1 -timeout 120m -cover -coverprofile=coverageResponseManagement.out'
                     }
                 }
             }
@@ -213,7 +230,7 @@ pipeline {
                     echo 'Attempting to Run Routing Tests'
                     withCredentials([usernamePassword(credentialsId: CREDENTIALS_ID, usernameVariable: 'GENESYSCLOUD_OAUTHCLIENT_ID', passwordVariable: 'GENESYSCLOUD_OAUTHCLIENT_SECRET')]) {
                         echo 'Loading Genesys OAuth Credentials'
-                        sh "gotestsum --junitfile routing.xml --format standard-verbose -- ./genesyscloud/... -run 'TestAcc.*Routing' -v -count=1 -timeout 120m -cover -coverprofile=coverageRouting.out"
+                        sh "gotestsum --junitfile routing.xml --format standard-verbose ./genesyscloud/... -run 'TestAcc.*Routing' -v -count=1 -timeout 120m -cover -coverprofile=coverageRouting.out"
                     }
                 }
             }
@@ -230,7 +247,7 @@ pipeline {
                     echo 'Attempting to Run Location Tests'
                     withCredentials([usernamePassword(credentialsId: CREDENTIALS_ID, usernameVariable: 'GENESYSCLOUD_OAUTHCLIENT_ID', passwordVariable: 'GENESYSCLOUD_OAUTHCLIENT_SECRET')]) {
                         echo 'Loading Genesys OAuth Credentials'
-                        sh 'gotestsum --junitfile location.xml --format standard-verbose -- ./genesyscloud/... -run TestAcc.*Location -v -count=1 -timeout 120m -cover -coverprofile=coverageLocation.out'
+                        sh 'gotestsum --junitfile location.xml --format standard-verbose ./genesyscloud/... -run TestAcc.*Location -v -count=1 -timeout 120m -cover -coverprofile=coverageLocation.out'
                     }
                 }
             }
@@ -247,7 +264,7 @@ pipeline {
                     echo 'Attempting to Run WebDeployment Tests'
                     withCredentials([usernamePassword(credentialsId: CREDENTIALS_ID, usernameVariable: 'GENESYSCLOUD_OAUTHCLIENT_ID', passwordVariable: 'GENESYSCLOUD_OAUTHCLIENT_SECRET')]) {
                         echo 'Loading Genesys OAuth Credentials'
-                        sh 'gotestsum --junitfile web.xml --format standard-verbose -- ./genesyscloud/... -run TestAcc.*WebDeployment -v -count=1 -timeout 120m -cover -coverprofile=coverageWebDeployment.out'
+                        sh 'gotestsum --junitfile web.xml --format standard-verbose ./genesyscloud/... -run TestAcc.*WebDeployment -v -count=1 -timeout 120m -cover -coverprofile=coverageWebDeployment.out'
                     }
                 }
             }
@@ -264,7 +281,7 @@ pipeline {
                     echo 'Attempting to Run Site Tests'
                     withCredentials([usernamePassword(credentialsId: CREDENTIALS_ID, usernameVariable: 'GENESYSCLOUD_OAUTHCLIENT_ID', passwordVariable: 'GENESYSCLOUD_OAUTHCLIENT_SECRET')]) {
                         echo 'Loading Genesys OAuth Credentials'
-                        sh 'gotestsum --junitfile site.xml --format standard-verbose -- ./genesyscloud/... -run TestAcc.*Site -v -count=1 -timeout 120m -cover -coverprofile=coverageSite.out'
+                        sh 'gotestsum --junitfile site.xml --format standard-verbose ./genesyscloud/... -run TestAcc.*Site -v -count=1 -timeout 120m -cover -coverprofile=coverageSite.out'
                     }
                 }
             }
@@ -281,7 +298,7 @@ pipeline {
                     echo 'Attempting to Run Roles & Teams Tests'
                     withCredentials([usernamePassword(credentialsId: CREDENTIALS_ID, usernameVariable: 'GENESYSCLOUD_OAUTHCLIENT_ID', passwordVariable: 'GENESYSCLOUD_OAUTHCLIENT_SECRET')]) {
                         echo 'Loading Genesys OAuth Credentials'
-                        sh 'gotestsum --junitfile role.xml --format standard-verbose -- ./genesyscloud/... -run "TestAcc.*Roles|Team|Members" -v -count=1 -timeout 120m -cover -coverprofile=coverageRoleTeam.out'
+                        sh 'gotestsum --junitfile team.xml --format standard-verbose ./genesyscloud/... -run "TestAcc.*Roles|Team|Members" -v -count=1 -timeout 120m -cover -coverprofile=coverageRoleTeam.out'
                     }
                 }
             }
@@ -298,7 +315,7 @@ pipeline {
                     echo 'Attempting to Run Export Tests'
                     withCredentials([usernamePassword(credentialsId: CREDENTIALS_ID, usernameVariable: 'GENESYSCLOUD_OAUTHCLIENT_ID', passwordVariable: 'GENESYSCLOUD_OAUTHCLIENT_SECRET')]) {
                         echo 'Loading Genesys OAuth Credentials'
-                        sh 'gotestsum --junitfile export.xml --format standard-verbose -- ./genesyscloud/... -run TestAcc.*Export -v -count=1 -timeout 120m -cover -coverprofile=coverageExport.out'
+                        sh 'gotestsum --junitfile export.xml --format standard-verbose ./genesyscloud/... -run TestAcc.*Export -v -count=1 -timeout 120m -cover -coverprofile=coverageExport.out'
                     }
                 }
             }
@@ -315,7 +332,7 @@ pipeline {
                     echo 'Attempting to Run Remaining Tests'
                     withCredentials([usernamePassword(credentialsId: CREDENTIALS_ID, usernameVariable: 'GENESYSCLOUD_OAUTHCLIENT_ID', passwordVariable: 'GENESYSCLOUD_OAUTHCLIENT_SECRET')]) {
                         echo 'Loading Genesys OAuth Credentials'
-                        sh "gotestsum --junitfile remaining.xml --format standard-verbose -- ./genesyscloud/... -run TestAcc -skip 'Architect|IvrConfig|Flow|Idp|Auth|Integration|Journey|Knowledge|Outbound|Routing|ResponseManagement|Export|Location|WebDeployment|Site|Roles|Team|Members' -v -count=1 -timeout 120m -cover -coverprofile=coverageRemaining.out"
+                        sh "gotestsum --junitfile remaining.xml --format standard-verbose ./genesyscloud/... -run TestAcc -skip 'Architect|Flow|Idp|Auth|Integration|Journey|Knowledge|Outbound|Routing|ResponseManagement|Export|Location|WebDeployment|Site|Roles|Team|Members' -v -count=1 -timeout 120m -cover -coverprofile=coverageRemaining.out"
 
                     }
                 }
@@ -326,15 +343,16 @@ pipeline {
             steps {
         sh 'GOBIN=$HOME/bin go install github.com/wadey/gocovmerge@latest'
         // Generate merged coverage report
-        sh '$HOME/bin/gocovmerge coverageArchitect.out coverageIdp.out coverageAuth.out coverageIntegration.out coverageFlow.out coverageJourney.out coverageKnowledge.out coverageOutbound.out coverageResponseManagement.out coverageRouting.out coverageExport.out coverageLocation.out coverageWebDeployment.out coverageRemaining.out coverageSite.out coverageRoleTeam.out > merged_coverage.out'
-        
-        archiveArtifacts artifacts: 'coverageAcceptance.html', allowEmptyArchive: true
+        sh '$HOME/bin/gocovmerge coverageArchitect.out coverageIdp.out coverageAuth.out coverageIntegration.out coverageFlow.out coverageJourney.out coverageKnowledge.out coverageOutbound.out coverageResponseManagement.out coverageRouting.out coverageExport.out coverageLocation.out coverageWebDeployment.out coverageRemaining.out coverageSite.out coverageRoleTeam.out coverageivr.out > merged_coverage.out'
+
         // Convert merged coverage report to HTML
         sh 'go tool cover -html merged_coverage.out -o coverageAcceptance.html'
 
-        sh 'junit-merger -o report.xml architect.xml idp.xml auth.xml integration.xml flow.xml journey.xml knowledge.xml outbound.xml response.xml routing.xml export.xml location.xml web.xml site.xml role.xml team.xml members.xml remaining.xml'
+        sh 'junit-merger -o report.xml architect.xml idp.xml auth.xml integration.xml flow.xml journey.xml knowledge.xml outbound.xml response.xml routing.xml location.xml web.xml site.xml team.xml export.xml ivr.xml remaining.xml'
         
         sh 'junit2html report.xml testreport.html'
+
+        archiveArtifacts artifacts: 'coverageAcceptance.html,report.xml', allowEmptyArchive: true
         
             }
         }
