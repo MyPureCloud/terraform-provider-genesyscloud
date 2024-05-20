@@ -24,6 +24,8 @@ pipeline {
         GENESYSCLOUD_SDK_DEBUG =  "true"
         GENESYSCLOUD_TOKEN_POOL_SIZE =  20
         PATH = "${env.PATH}:${HOME}/go/bin:/home/jenkins/.local/bin"
+        XML_REPORT = 'report.xml'
+        HTML_REPORT = 'report.html'
     }
     tools {
         go 'Go 1.20'
@@ -45,6 +47,7 @@ pipeline {
                 sh 'pip3 install --user junit2html'
                 sh 'go install gotest.tools/gotestsum@latest'
                 sh 'go install github.com/nezorflame/junit-merger@latest'
+                sh 'pip install xmltodict --user'
             }
 	    }
 
@@ -330,11 +333,51 @@ pipeline {
         // Convert merged coverage report to HTML
         sh 'go tool cover -html merged_coverage.out -o coverageAcceptance.html'
 
-        sh 'junit-merger -o Acceptance_tests.xml architect.xml idp.xml auth.xml integration.xml flow.xml journey.xml knowledge.xml outbound.xml response.xml routing.xml location.xml web.xml site.xml team.xml export.xml remaining.xml'
+        sh 'junit-merger -o report.xml architect.xml idp.xml auth.xml integration.xml flow.xml journey.xml knowledge.xml outbound.xml response.xml routing.xml location.xml web.xml site.xml team.xml export.xml remaining.xml'
         
-        sh 'junit2html Acceptance_tests.xml testreport.html'
+        sh 'junit2html report.xml report.html'
 
-        archiveArtifacts artifacts: 'coverageAcceptance.html,Acceptance_tests.xml', allowEmptyArchive: true
+                sh 'junit2html report.xml report.html'
+
+script {
+    // Extract summary information from report.xml using xmltodict
+    def xmlContent = readFile(env.XML_REPORT).trim()
+    def parsedXml = sh(script: "python -c 'import xmltodict, sys, json; print(json.dumps(xmltodict.parse(sys.stdin.read())))' <<< '${xmlContent}'", returnStdout: true).trim()
+    def parsedJson = new groovy.json.JsonSlurperClassic().parseText(parsedXml)
+
+    // Extract tests and failures from the first line of the XML
+    def tests = parsedJson['testsuites']['@tests'].toInteger()
+    def failures = parsedJson['testsuites']['@failures'].toInteger()
+    def passed = tests - failures
+
+    // Read the existing report.html content
+    def htmlContent = readFile(env.HTML_REPORT).trim()
+
+    // Create summary lines with CSS styling
+    def summaryLines = """
+        <style>
+            .summary { margin: 20px 0; }
+            .summary h1 { font-size: 2em; margin-bottom: 10px; }
+            .summary p { font-size: 1.5em; margin: 5px 0; }
+            .summary .value { font-weight: bold; }
+        </style>
+        <div class="summary">
+            <p>Tests: <span class="value">${tests}</span></p>
+            <p>Failures: <span class="value">${failures}</span></p>
+            <p>Passed: <span class="value">${passed}</span></p>
+        </div>
+    """
+
+    // Insert summary lines after the line "Test Report : report.xml" and remove the specified lines
+    def updatedHtmlContent = htmlContent.replaceFirst("(?i)(Test Report : report.xml\\s*)", summaryLines)
+
+    // Write the updated content back to report.html
+    writeFile(file: env.HTML_REPORT, text: updatedHtmlContent.trim())
+
+    // Archive report.html as artifact
+    archiveArtifacts artifacts: env.HTML_REPORT, allowEmptyArchive: true
+}
+        archiveArtifacts artifacts: 'coverageAcceptance.html,report.html', allowEmptyArchive: true
         
             }
         }
