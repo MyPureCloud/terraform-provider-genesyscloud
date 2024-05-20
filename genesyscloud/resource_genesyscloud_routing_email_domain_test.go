@@ -114,10 +114,10 @@ func testVerifyRoutingEmailDomainDestroyed(state *terraform.State) error {
 				if util.IsStatus404(resp) {
 					continue
 				}
-				return retry.NonRetryableError(fmt.Errorf("Unexpected error: %s", err))
+				return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_routing_email_domain", fmt.Sprintf("Unexpected error: %s", err), resp))
 			}
 
-			return retry.RetryableError(fmt.Errorf("Routing email domain %s still exists", rs.Primary.ID))
+			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_routing_email_domain", fmt.Sprintf("Routing email domain %s still exists", rs.Primary.ID), resp))
 		}
 		return nil
 	})

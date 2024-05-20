@@ -34,11 +34,11 @@ func dataSourceRoutingSettingsRead(ctx context.Context, d *schema.ResourceData, 
 	}
 
 	if diagErr := readRoutingSettingsContactCenter(d, routingAPI); diagErr != nil {
-		return diag.Errorf("%v", diagErr)
+		return util.BuildDiagnosticError("genesyscloud_routing_settings", fmt.Sprintf("Error reading routing settings contact center"), fmt.Errorf("%v", diagErr))
 	}
 
 	if diagErr := readRoutingSettingsTranscription(d, routingAPI); diagErr != nil {
-		return diag.Errorf("%v", diagErr)
+		return util.BuildDiagnosticError("genesyscloud_routing_settings", fmt.Sprintf("Error reading routing settings transcription"), fmt.Errorf("%v", diagErr))
 	}
 
 	return nil

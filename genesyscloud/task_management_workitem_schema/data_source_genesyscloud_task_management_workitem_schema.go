@@ -30,15 +30,15 @@ func dataSourceTaskManagementWorkitemSchemaRead(ctx context.Context, d *schema.R
 	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
 		schemas, retryable, resp, err := proxy.getTaskManagementWorkitemSchemasByName(ctx, name)
 		if err != nil && !retryable {
-			return retry.NonRetryableError(fmt.Errorf("error getting workitem schema %s: %v %v", name, err, resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("error getting workitem schema %s | error: %v", name, err), resp))
 		}
 
 		if retryable {
-			return retry.RetryableError(fmt.Errorf("no workitem schema found with name %s", name))
+			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("no workitem schema found with name %s", name), resp))
 		}
 
 		if len(*schemas) > 1 {
-			return retry.NonRetryableError(fmt.Errorf("ambiguous workitem schema name: %s", name))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("ambiguous workitem schema name: %s", name), resp))
 		}
 
 		schema := (*schemas)[0]

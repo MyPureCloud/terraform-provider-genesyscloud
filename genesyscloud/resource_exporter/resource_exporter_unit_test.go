@@ -189,7 +189,7 @@ func TestUnitSanitizeResourceNamesOptimized(t *testing.T) {
 }
 
 // Tests the optimized sanitizing algorithm
-func TestSanitizeResourceNameOptimized(t *testing.T) {
+func TestUnitSanitizeResourceNameOptimized(t *testing.T) {
 	simpleString := "foobar"
 	intString := "1234"
 	underscore := "_"

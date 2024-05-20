@@ -2,6 +2,7 @@ package genesyscloud
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
@@ -20,12 +21,12 @@ func dataSourceRoutingSmsAddressRead(ctx context.Context, d *schema.ResourceData
 
 	log.Printf("Searching for routing sms address with name '%s'", name)
 	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
-		smsAddressId, retryable, _, err := smsAddressProxy.getSmsAddressIdByName(name, ctx)
+		smsAddressId, retryable, resp, err := smsAddressProxy.getSmsAddressIdByName(name, ctx)
 		if err != nil && !retryable {
-			return retry.NonRetryableError(err)
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to get SMS Address | error: %s", err), resp))
 		}
 		if retryable {
-			return retry.RetryableError(err)
+			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to get SMS Address | error: %s", err), resp))
 		}
 		d.SetId(smsAddressId)
 		return nil

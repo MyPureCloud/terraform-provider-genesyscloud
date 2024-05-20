@@ -8,6 +8,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -66,16 +67,17 @@ func createTeam(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 func readTeam(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getTeamProxy(sdkConfig)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceTeam(), constants.DefaultConsistencyChecks, resourceName)
+
 	log.Printf("Reading team %s", d.Id())
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		team, resp, getErr := proxy.getTeamById(ctx, d.Id())
 		if getErr != nil {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(fmt.Errorf("failed to read team %s: %s", d.Id(), getErr))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read team %s | error: %s", d.Id(), getErr), resp))
 			}
-			return retry.NonRetryableError(fmt.Errorf("failed to read team %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read team %s | error: %s", d.Id(), getErr), resp))
 		}
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceTeam())
 
 		resourcedata.SetNillableValue(d, "name", team.Name)
 		resourcedata.SetNillableReferenceWritableDivision(d, "division_id", team.Division)
@@ -92,7 +94,7 @@ func readTeam(ctx context.Context, d *schema.ResourceData, meta interface{}) dia
 		_ = d.Set("member_ids", members)
 
 		log.Printf("Read team %s %s", d.Id(), *team.Name)
-		return cc.CheckState()
+		return cc.CheckState(d)
 	})
 }
 
@@ -154,9 +156,9 @@ func deleteTeam(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 				log.Printf("Deleted team %s", d.Id())
 				return nil
 			}
-			return retry.NonRetryableError(fmt.Errorf("error deleting team %s: %s", d.Id(), err))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("error deleting team %s | error: %s", d.Id(), err), resp))
 		}
-		return retry.RetryableError(fmt.Errorf("team %s still exists", d.Id()))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("team %s still exists", d.Id()), resp))
 	})
 }
 

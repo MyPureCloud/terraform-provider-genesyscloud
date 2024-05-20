@@ -6,6 +6,7 @@ import (
 	"log"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 	"time"
 
@@ -24,9 +25,9 @@ func getAllUserPrompts(ctx context.Context, clientConfig *platformclientv2.Confi
 	resources := make(resourceExporter.ResourceIDMetaMap)
 	proxy := getArchitectUserPromptProxy(clientConfig)
 
-	userPrompts, _, err, _ := proxy.getAllArchitectUserPrompts(ctx, false, false, "")
+	userPrompts, resp, err, _ := proxy.getAllArchitectUserPrompts(ctx, false, false, "")
 	if err != nil {
-		return nil, diag.Errorf("failed to get user prompts: %s", err)
+		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("failed to get user prompts: %s", err), resp)
 	}
 	for _, userPrompt := range *userPrompts {
 		resources[*userPrompt.Id] = &resourceExporter.ResourceMeta{Name: *userPrompt.Name}
@@ -51,9 +52,9 @@ func createUserPrompt(ctx context.Context, d *schema.ResourceData, meta interfac
 	}
 
 	log.Printf("Creating user prompt %s", name)
-	userPrompt, _, err := proxy.createArchitectUserPrompt(ctx, prompt)
+	userPrompt, resp, err := proxy.createArchitectUserPrompt(ctx, prompt)
 	if err != nil {
-		return diag.Errorf("Failed to create user prompt %s: %s", name, err)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create user prompt %s: %s", name, err), resp)
 	}
 
 	// Create the prompt resources
@@ -84,9 +85,9 @@ func createUserPrompt(ctx context.Context, d *schema.ResourceData, meta interfac
 			}
 
 			log.Printf("Creating user prompt resource for language: %s", resourceLanguage)
-			userPromptResource, _, err := proxy.createArchitectUserPromptResource(ctx, *userPrompt.Id, promptResource)
+			userPromptResource, resp, err := proxy.createArchitectUserPromptResource(ctx, *userPrompt.Id, promptResource)
 			if err != nil {
-				return diag.Errorf("Failed to create user prompt resource %s: %s", name, err)
+				return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create user prompt resource %s: %s", name, err), resp)
 			}
 			uploadUri := userPromptResource.UploadUri
 
@@ -101,7 +102,7 @@ func createUserPrompt(ctx context.Context, d *schema.ResourceData, meta interfac
 					log.Printf("Error deleting user prompt resource %s: %v", *userPrompt.Id, diagErr)
 				}
 				d.SetId("")
-				return diag.Errorf("Failed to upload user prompt resource %s: %s", name, err)
+				return util.BuildDiagnosticError(resourceName, fmt.Sprintf("Failed to upload user prompt resource %s", name), err)
 			}
 
 			log.Printf("Successfully uploaded user prompt resource for language: %s", resourceLanguage)
@@ -116,6 +117,7 @@ func createUserPrompt(ctx context.Context, d *schema.ResourceData, meta interfac
 func readUserPrompt(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getArchitectUserPromptProxy(sdkConfig)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceArchitectUserPrompt(), constants.DefaultConsistencyChecks, resourceName)
 
 	log.Printf("Reading User Prompt %s", d.Id())
 
@@ -123,12 +125,10 @@ func readUserPrompt(ctx context.Context, d *schema.ResourceData, meta interface{
 		userPrompt, resp, getErr, retryable := proxy.getArchitectUserPrompt(ctx, d.Id(), true, true, nil)
 		if retryable {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(fmt.Errorf("failed to read User Prompt %s: %s", d.Id(), getErr))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read User Prompt %s | error: %s", d.Id(), getErr), resp))
 			}
-			return retry.NonRetryableError(fmt.Errorf("failed to read User Prompt %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read User Prompt %s | error: %s", d.Id(), getErr), resp))
 		}
-
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceArchitectUserPrompt())
 
 		resourcedata.SetNillableValue(d, "name", userPrompt.Name)
 		resourcedata.SetNillableValue(d, "description", userPrompt.Description)
@@ -168,7 +168,7 @@ func readUserPrompt(ctx context.Context, d *schema.ResourceData, meta interface{
 		_ = d.Set("resources", flattenPromptResources(d, userPrompt.Resources))
 
 		log.Printf("Read Audio Prompt %s %s", d.Id(), *userPrompt.Id)
-		return cc.CheckState()
+		return cc.CheckState(d)
 	})
 }
 
@@ -188,9 +188,9 @@ func updateUserPrompt(ctx context.Context, d *schema.ResourceData, meta interfac
 	}
 
 	log.Printf("Updating user prompt %s", name)
-	_, _, err := proxy.updateArchitectUserPrompt(ctx, d.Id(), prompt)
+	_, resp, err := proxy.updateArchitectUserPrompt(ctx, d.Id(), prompt)
 	if err != nil {
-		return diag.Errorf("Failed to update user prompt %s: %s", name, err)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update user prompt %s: %s", name, err), resp)
 	}
 
 	diagErr := updatePromptResource(ctx, d, proxy, sdkConfig)
@@ -209,8 +209,8 @@ func deleteUserPrompt(ctx context.Context, d *schema.ResourceData, meta interfac
 	proxy := getArchitectUserPromptProxy(sdkConfig)
 
 	log.Printf("Deleting user prompt %s", name)
-	if _, err := proxy.deleteArchitectUserPrompt(ctx, d.Id(), true); err != nil {
-		return diag.Errorf("Failed to delete user prompt %s: %s", name, err)
+	if resp, err := proxy.deleteArchitectUserPrompt(ctx, d.Id(), true); err != nil {
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete user prompt %s: %s", name, err), resp)
 	}
 	log.Printf("Deleted user prompt %s", name)
 
@@ -222,9 +222,9 @@ func deleteUserPrompt(ctx context.Context, d *schema.ResourceData, meta interfac
 				log.Printf("Deleted user prompt %s", name)
 				return nil
 			}
-			return retry.NonRetryableError(fmt.Errorf("error deleting user prompt %s: %s", name, err))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("error deleting user prompt %s | error: %s", name, err), resp))
 		}
-		return retry.RetryableError(fmt.Errorf("user prompt %s still exists", name))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("user prompt %s still exists", name), resp))
 	})
 }
 
@@ -232,9 +232,9 @@ func updatePromptResource(ctx context.Context, d *schema.ResourceData, proxy *ar
 	name := d.Get("name").(string)
 
 	// Get the prompt so we can get existing prompt resources
-	userPrompt, _, err, _ := proxy.getArchitectUserPrompt(ctx, d.Id(), true, true, nil)
+	userPrompt, resp, err, _ := proxy.getArchitectUserPrompt(ctx, d.Id(), true, true, nil)
 	if err != nil {
-		return diag.Errorf("Failed to get user prompt %s: %s", d.Id(), err)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get user prompt %s: %s", d.Id(), err), resp)
 	}
 
 	// Update the prompt resources
@@ -278,9 +278,9 @@ func updatePromptResource(ctx context.Context, d *schema.ResourceData, proxy *ar
 				}
 
 				log.Printf("Updating user prompt resource for language: %s", resourceLanguage)
-				res, _, err := proxy.updateArchitectUserPromptResource(ctx, *userPrompt.Id, resourceLanguage, promptResource)
+				res, resp, err := proxy.updateArchitectUserPromptResource(ctx, *userPrompt.Id, resourceLanguage, promptResource)
 				if err != nil {
-					return diag.Errorf("Failed to create user prompt resource %s: %s", name, err)
+					return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create user prompt resource %s: %s", name, err), resp)
 				}
 
 				userPromptResource = res
@@ -304,9 +304,9 @@ func updatePromptResource(ctx context.Context, d *schema.ResourceData, proxy *ar
 				}
 
 				log.Printf("Creating user prompt resource for language: %s", resourceLanguage)
-				res, _, err := proxy.createArchitectUserPromptResource(ctx, *userPrompt.Id, promptResource)
+				res, resp, err := proxy.createArchitectUserPromptResource(ctx, *userPrompt.Id, promptResource)
 				if err != nil {
-					return diag.Errorf("Failed to create user prompt resource %s: %s", name, err)
+					return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create user prompt resource %s: %s", name, err), resp)
 				}
 
 				userPromptResource = res
@@ -321,7 +321,7 @@ func updatePromptResource(ctx context.Context, d *schema.ResourceData, proxy *ar
 			resourceFilenameStr := resourceFilename.(string)
 
 			if err := uploadPrompt(uploadUri, &resourceFilenameStr, sdkConfig); err != nil {
-				return diag.Errorf("Failed to upload user prompt resource %s: %s", name, err)
+				return util.BuildDiagnosticError(resourceName, fmt.Sprintf("Failed to upload user prompt resource %s", name), err)
 			}
 
 			log.Printf("Successfully uploaded user prompt resource for language: %s", resourceLanguage)

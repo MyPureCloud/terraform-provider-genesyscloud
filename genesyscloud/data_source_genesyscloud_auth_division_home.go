@@ -47,9 +47,9 @@ func dataSourceAuthDivisionHomeRead(ctx context.Context, d *schema.ResourceData,
 
 	// Query home division
 	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
-		division, _, getErr := authAPI.GetAuthorizationDivisionsHome()
+		division, resp, getErr := authAPI.GetAuthorizationDivisionsHome()
 		if getErr != nil {
-			return retry.NonRetryableError(fmt.Errorf("Error requesting division: %s", getErr))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_auth_division_home", fmt.Sprintf("Error requesting divisions: %s", getErr), resp))
 		}
 
 		d.SetId(*division.Id)

@@ -2,6 +2,7 @@ package scripts
 
 import (
 	"context"
+	"fmt"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
@@ -25,12 +26,12 @@ func dataSourceScriptRead(ctx context.Context, d *schema.ResourceData, m interfa
 
 	// Query for scripts by name. Retry in case new script is not yet indexed by search.
 	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
-		scriptId, retryable, _, err := scriptsProxy.getScriptIdByName(ctx, name)
+		scriptId, retryable, resp, err := scriptsProxy.getScriptIdByName(ctx, name)
 		if err != nil {
 			if retryable {
-				return retry.RetryableError(err)
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to get Script %s", err), resp))
 			}
-			return retry.NonRetryableError(err)
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to get Script %s", err), resp))
 		}
 		d.SetId(scriptId)
 		return nil

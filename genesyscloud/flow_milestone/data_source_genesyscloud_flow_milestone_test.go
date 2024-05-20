@@ -5,6 +5,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -28,11 +29,23 @@ func TestAccDataSourceFlowMilestone(t *testing.T) {
 					name,
 					util.NullValue,
 					description,
+				),
+			},
+			{
+				Config: generateFlowMilestoneResource(
+					milestoneRes,
+					name,
+					util.NullValue,
+					description,
 				) + generateFlowMilestoneDataSource(
 					milestoneData,
 					name,
 					"genesyscloud_flow_milestone."+milestoneRes,
 				),
+				PreConfig: func() {
+					t.Log("sleeping to allow for eventual consistency")
+					time.Sleep(3 * time.Second)
+				},
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrPair("data.genesyscloud_flow_milestone."+milestoneData, "id", "genesyscloud_flow_milestone."+milestoneRes, "id"),
 				),
@@ -41,10 +54,10 @@ func TestAccDataSourceFlowMilestone(t *testing.T) {
 	})
 }
 
-func generateFlowMilestoneDataSource(resourceID string, name string, dependsOnResource string) string {
+func generateFlowMilestoneDataSource(resourceID, name, dependsOnResource string) string {
 	return fmt.Sprintf(`data "genesyscloud_flow_milestone" "%s" {
-		name = "%s"
-		depends_on=[%s]
+		name       = "%s"
+		depends_on =[%s]
 	}
 	`, resourceID, name, dependsOnResource)
 }

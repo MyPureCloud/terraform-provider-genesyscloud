@@ -6,6 +6,7 @@ import (
 	"log"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -93,22 +94,22 @@ func createRoutingWrapupCode(ctx context.Context, d *schema.ResourceData, meta i
 func readRoutingWrapupCode(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceRoutingWrapupCode(), constants.DefaultConsistencyChecks, "genesyscloud_routing_wrapupcode")
 
 	log.Printf("Reading wrapupcode %s", d.Id())
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		wrapupcode, resp, getErr := routingAPI.GetRoutingWrapupcode(d.Id())
 		if getErr != nil {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(fmt.Errorf("Failed to read wrapupcode %s: %s", d.Id(), getErr))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_routing_wrapupcode", fmt.Sprintf("Failed to read wrapupcode %s | error: %s", d.Id(), getErr), resp))
 			}
-			return retry.NonRetryableError(fmt.Errorf("Failed to read wrapupcode %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_routing_wrapupcode", fmt.Sprintf("Failed to read wrapupcode %s | error: %s", d.Id(), getErr), resp))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceRoutingWrapupCode())
 		d.Set("name", *wrapupcode.Name)
 
 		log.Printf("Read wrapupcode %s %s", d.Id(), *wrapupcode.Name)
-		return cc.CheckState()
+		return cc.CheckState(d)
 	})
 }
 
@@ -151,9 +152,9 @@ func deleteRoutingWrapupCode(ctx context.Context, d *schema.ResourceData, meta i
 				log.Printf("Deleted Routing wrapup code %s", d.Id())
 				return nil
 			}
-			return retry.NonRetryableError(fmt.Errorf("Error deleting Routing wrapup code %s: %s", d.Id(), err))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_routing_wrapupcode", fmt.Sprintf("Error deleting Routing wrapup code %s | error: %s", d.Id(), err), resp))
 		}
-		return retry.RetryableError(fmt.Errorf("Routing wrapup code %s still exists", d.Id()))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_routing_wrapupcode", fmt.Sprintf("Routing wrapup code %s still exists", d.Id()), resp))
 	})
 }
 

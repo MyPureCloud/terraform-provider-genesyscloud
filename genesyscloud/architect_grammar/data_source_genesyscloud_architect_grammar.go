@@ -28,11 +28,11 @@ func dataSourceArchitectGrammarRead(ctx context.Context, d *schema.ResourceData,
 		grammarId, retryable, resp, err := proxy.getArchitectGrammarIdByName(ctx, name)
 
 		if err != nil && !retryable {
-			return retry.NonRetryableError(fmt.Errorf("Error grammar %s: %s %v", name, err, resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Error grammar %s | error: %s", name, err), resp))
 		}
 
 		if retryable {
-			return retry.RetryableError(fmt.Errorf("No grammar found with name %s", name))
+			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("No grammar found with name %s", name), resp))
 		}
 
 		d.SetId(grammarId)

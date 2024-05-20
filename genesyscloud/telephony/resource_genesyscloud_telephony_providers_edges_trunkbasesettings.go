@@ -10,6 +10,7 @@ import (
 	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -115,7 +116,7 @@ func createTrunkBaseSettings(ctx context.Context, d *schema.ResourceData, meta i
 		trunkBase.InboundSite = inboundSite
 	}
 	if errorInboundSite != nil {
-		return diag.Errorf("Failed to create trunk base settings %s: %s", name, errorInboundSite)
+		return util.BuildDiagnosticError(resourceName, fmt.Sprintf("Failed to create trunk base settings %s", name), errorInboundSite)
 	}
 
 	if description != "" {
@@ -166,7 +167,7 @@ func updateTrunkBaseSettings(ctx context.Context, d *schema.ResourceData, meta i
 		trunkBase.InboundSite = inboundSite
 	}
 	if errorInboundSite != nil {
-		return diag.Errorf("Failed to update trunk base settings %s: %s", name, errorInboundSite)
+		return util.BuildDiagnosticError(resourceName, fmt.Sprintf("Failed to update trunk base settings %s", name), errorInboundSite)
 	}
 
 	if description != "" {
@@ -224,18 +225,18 @@ func updateTrunkBaseSettings(ctx context.Context, d *schema.ResourceData, meta i
 func readTrunkBaseSettings(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceTrunkBaseSettings(), constants.DefaultConsistencyChecks, resourceName)
 
 	log.Printf("Reading trunk base settings %s", d.Id())
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		trunkBaseSettings, resp, getErr := edgesAPI.GetTelephonyProvidersEdgesTrunkbasesetting(d.Id(), true)
 		if getErr != nil {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(fmt.Errorf("Failed to read trunk base settings %s: %s", d.Id(), getErr))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read trunk base settings %s | error: %s", d.Id(), getErr), resp))
 			}
-			return retry.NonRetryableError(fmt.Errorf("Failed to read trunk base settings %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read trunk base settings %s | error: %s", d.Id(), getErr), resp))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceTrunkBaseSettings())
 		d.Set("name", *trunkBaseSettings.Name)
 		d.Set("state", *trunkBaseSettings.State)
 		if trunkBaseSettings.Description != nil {
@@ -265,7 +266,7 @@ func readTrunkBaseSettings(ctx context.Context, d *schema.ResourceData, meta int
 
 		log.Printf("Read trunk base settings %s %s", d.Id(), *trunkBaseSettings.Name)
 
-		return cc.CheckState()
+		return cc.CheckState(d)
 	})
 }
 
@@ -297,7 +298,7 @@ func deleteTrunkBaseSettings(ctx context.Context, d *schema.ResourceData, meta i
 				log.Printf("Deleted trunk base settings %s", d.Id())
 				return nil
 			}
-			return retry.NonRetryableError(fmt.Errorf("Error deleting trunk base settings %s: %s", d.Id(), err))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Error deleting trunk base settings %s | error: %s", d.Id(), err), resp))
 		}
 
 		if trunkBaseSettings.State != nil && *trunkBaseSettings.State == "deleted" {
@@ -306,7 +307,7 @@ func deleteTrunkBaseSettings(ctx context.Context, d *schema.ResourceData, meta i
 			return nil
 		}
 
-		return retry.RetryableError(fmt.Errorf("trunk base settings %s still exists", d.Id()))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("trunk base settings %s still exists", d.Id()), resp))
 	})
 }
 

@@ -20,17 +20,17 @@ func dataSourceGroupRead(ctx context.Context, d *schema.ResourceData, m interfac
 	nameStr := d.Get("name").(string)
 
 	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
-		groups, _, getErr := gp.getGroupsByName(ctx, nameStr)
+		groups, resp, getErr := gp.getGroupsByName(ctx, nameStr)
 		if getErr != nil {
-			return retry.NonRetryableError(fmt.Errorf("Error requesting group %s: %s", nameStr, getErr))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Error requesting group %s | error: %s", nameStr, getErr), resp))
 		}
 
 		if *groups.Total > 1 {
-			return retry.NonRetryableError(fmt.Errorf("Multiple groups found with name %s ", nameStr))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Multiple groups found with name %s ", nameStr), resp))
 		}
 
 		if *groups.Total == 0 {
-			return retry.RetryableError(fmt.Errorf("No groups found with name %s ", nameStr))
+			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("No groups found with name %s ", nameStr), resp))
 		}
 
 		// Select first group in the list

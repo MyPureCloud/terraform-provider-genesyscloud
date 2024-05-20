@@ -54,22 +54,22 @@ func DataSourceUserRead(ctx context.Context, d *schema.ResourceData, m interface
 		searchCriteria.Fields = &[]string{nameField}
 		searchCriteria.Value = &nameStr
 	} else {
-		return diag.Errorf("No user search field specified")
+		return util.BuildDiagnosticError("genesyscloud_user", fmt.Sprintf("No user search field specified"), fmt.Errorf("no user search field specified"))
 	}
 
 	// Retry in case user is not yet indexed
 	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
-		users, _, getErr := usersAPI.PostUsersSearch(platformclientv2.Usersearchrequest{
+		users, resp, getErr := usersAPI.PostUsersSearch(platformclientv2.Usersearchrequest{
 			SortBy:    &emailField,
 			SortOrder: &sortOrderAsc,
 			Query:     &[]platformclientv2.Usersearchcriteria{searchCriteria},
 		})
 		if getErr != nil {
-			return retry.NonRetryableError(fmt.Errorf("Error requesting users: %s", getErr))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_user", fmt.Sprintf("Error requesting users: %s", getErr), resp))
 		}
 
 		if users.Results == nil || len(*users.Results) == 0 {
-			return retry.RetryableError(fmt.Errorf("No users found with search criteria %v", searchCriteria))
+			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_user", fmt.Sprintf("No users found with search criteria %v", searchCriteria), resp))
 		}
 
 		// Select first user in the list

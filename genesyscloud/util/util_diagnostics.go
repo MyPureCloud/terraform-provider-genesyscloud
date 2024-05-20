@@ -2,6 +2,7 @@ package util
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
@@ -10,8 +11,8 @@ import (
 type detailedDiagnosticInfo struct {
 	ResourceName  string `json:"resourceName,omitempty"`
 	Method        string `json:"method,omitempty"`
-	Path          string `json:"path:omitempty"`
-	StatusCode    int    `json:"statusCode:omitempty"`
+	Path          string `json:"path,omitempty"`
+	StatusCode    int    `json:"statusCode,omitempty"`
 	ErrorMessage  string `json:"errorMessage,omitempty"`
 	CorrelationID string `json:"correlationId,omitempty"`
 }
@@ -28,7 +29,6 @@ func convertResponseToWrapper(resourceName string, apiResponse *platformclientv2
 }
 
 func BuildAPIDiagnosticError(resourceName string, summary string, apiResponse *platformclientv2.APIResponse) diag.Diagnostics {
-
 	//Checking to make sure we have properly formed response
 	if apiResponse == nil || apiResponse.Response == nil || apiResponse.Response.Request == nil || apiResponse.Response.Request.URL == nil {
 		error := fmt.Errorf("Unable to build a message from the response because the APIResponse does not contain the appropriate data.%s", "")
@@ -39,7 +39,7 @@ func BuildAPIDiagnosticError(resourceName string, summary string, apiResponse *p
 
 	//Checking to see if we can Marshall the data
 	if err != nil {
-		error := fmt.Errorf("Unable to unmarshal diagnostic info while building diagnostic error. Erro: %s", err)
+		error := fmt.Errorf("Unable to unmarshal diagnostic info while building diagnostic error. Error: %s", err)
 		return BuildDiagnosticError(resourceName, summary, error)
 	}
 
@@ -51,7 +51,6 @@ func BuildAPIDiagnosticError(resourceName string, summary string, apiResponse *p
 
 func BuildDiagnosticError(resourceName string, summary string, err error) diag.Diagnostics {
 	var msg string
-
 	diagInfo := &detailedDiagnosticInfo{
 		ResourceName: resourceName,
 		ErrorMessage: fmt.Sprintf("%s", err),
@@ -65,7 +64,19 @@ func BuildDiagnosticError(resourceName string, summary string, err error) diag.D
 	}
 
 	dg := diag.Diagnostic{Severity: diag.Error, Summary: summary, Detail: msg}
+
 	var dgs diag.Diagnostics
 	dgs = append(dgs, dg)
 	return dgs
+}
+
+// BuildWithRetriesApiDiagnosticError converts the diag.Diagnostic error from API responses into an error to be used in withRetries functions for more clear error information
+func BuildWithRetriesApiDiagnosticError(resourceName string, summary string, apiResponse *platformclientv2.APIResponse) error {
+	var errorMsg string
+
+	diagnostic := BuildAPIDiagnosticError(resourceName, summary, apiResponse)
+	for _, diags := range diagnostic {
+		errorMsg += fmt.Sprintf("%s\n%s\n", diags.Summary, diags.Detail)
+	}
+	return errors.New(errorMsg)
 }

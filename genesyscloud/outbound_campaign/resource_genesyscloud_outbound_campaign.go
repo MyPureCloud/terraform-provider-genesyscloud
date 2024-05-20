@@ -8,6 +8,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 	"time"
 
@@ -41,13 +42,13 @@ func getAllAuthOutboundCampaign(ctx context.Context, clientConfig *platformclien
 				campaign, resp, getErr := proxy.getOutboundCampaignById(ctx, *campaign.Id)
 				if getErr != nil {
 					if util.IsStatus404(resp) {
-						return retry.RetryableError(fmt.Errorf("Failed to read Campaign %s during export: %s", *campaign.Id, getErr))
+						return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read Campaign %s during export | error: %s", *campaign.Id, getErr), resp))
 					}
-					return retry.NonRetryableError(fmt.Errorf("Failed to read Campaign %s: during export %s", *campaign.Id, getErr))
+					return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read Campaign %s: during export | error: %s", *campaign.Id, getErr), resp))
 				}
 
 				if *campaign.CampaignStatus == "stopping" {
-					return retry.RetryableError(fmt.Errorf("Campaign %s didn't stop in time, unable to export", *campaign.Id))
+					return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Campaign %s didn't stop in time, unable to export", *campaign.Id), resp))
 				}
 
 				return nil
@@ -81,10 +82,10 @@ func createOutboundCampaign(ctx context.Context, d *schema.ResourceData, meta in
 
 	// Campaigns can be enabled after creation
 	if campaignStatus == "on" {
-		d.Set("campaign_status", campaignStatus)
-		diag := updateOutboundCampaignStatus(ctx, d.Id(), proxy, *outboundCampaign, campaignStatus)
-		if diag != nil {
-			return diag
+		_ = d.Set("campaign_status", campaignStatus)
+		diagErr := updateOutboundCampaignStatus(ctx, d.Id(), proxy, *outboundCampaign, campaignStatus)
+		if diagErr != nil {
+			return diagErr
 		}
 	}
 
@@ -96,6 +97,7 @@ func createOutboundCampaign(ctx context.Context, d *schema.ResourceData, meta in
 func readOutboundCampaign(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	clientConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getOutboundCampaignProxy(clientConfig)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundCampaign(), constants.DefaultConsistencyChecks, resourceName)
 
 	log.Printf("Reading Outbound Campaign %s", d.Id())
 
@@ -103,16 +105,14 @@ func readOutboundCampaign(ctx context.Context, d *schema.ResourceData, meta inte
 		campaign, resp, getErr := proxy.getOutboundCampaignById(ctx, d.Id())
 		if getErr != nil {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(fmt.Errorf("Failed to read Outbound Campaign %s: %s", d.Id(), getErr))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read Outbound Campaign %s | error: %s", d.Id(), getErr), resp))
 			}
-			return retry.NonRetryableError(fmt.Errorf("Failed to read Outbound Campaign %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read Outbound Campaign %s | error: %s", d.Id(), getErr), resp))
 		}
 
 		if *campaign.CampaignStatus == "stopping" {
-			return retry.RetryableError(fmt.Errorf("Outbound Campaign still stopping %s", d.Id()))
+			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Outbound Campaign still stopping %s", d.Id()), resp))
 		}
-
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundCampaign())
 
 		resourcedata.SetNillableValue(d, "name", campaign.Name)
 		resourcedata.SetNillableReference(d, "contact_list_id", campaign.ContactList)
@@ -125,7 +125,7 @@ func readOutboundCampaign(ctx context.Context, d *schema.ResourceData, meta inte
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "phone_columns", campaign.PhoneColumns, flattenPhoneColumn)
 		resourcedata.SetNillableValue(d, "abandon_rate", campaign.AbandonRate)
 		if campaign.DncLists != nil {
-			d.Set("dnc_list_ids", util.SdkDomainEntityRefArrToList(*campaign.DncLists))
+			_ = d.Set("dnc_list_ids", util.SdkDomainEntityRefArrToList(*campaign.DncLists))
 		}
 		resourcedata.SetNillableReference(d, "callable_time_set_id", campaign.CallableTimeSet)
 		resourcedata.SetNillableReference(d, "call_analysis_response_set_id", campaign.CallAnalysisResponseSet)
@@ -133,7 +133,7 @@ func readOutboundCampaign(ctx context.Context, d *schema.ResourceData, meta inte
 		resourcedata.SetNillableValue(d, "caller_address", campaign.CallerAddress)
 		resourcedata.SetNillableValue(d, "outbound_line_count", campaign.OutboundLineCount)
 		if campaign.RuleSets != nil {
-			d.Set("rule_set_ids", util.SdkDomainEntityRefArrToList(*campaign.RuleSets))
+			_ = d.Set("rule_set_ids", util.SdkDomainEntityRefArrToList(*campaign.RuleSets))
 		}
 		resourcedata.SetNillableValue(d, "skip_preview_disabled", campaign.SkipPreviewDisabled)
 		resourcedata.SetNillableValue(d, "preview_time_out_seconds", campaign.PreviewTimeOutSeconds)
@@ -143,13 +143,13 @@ func readOutboundCampaign(ctx context.Context, d *schema.ResourceData, meta inte
 		resourcedata.SetNillableValue(d, "call_analysis_language", campaign.CallAnalysisLanguage)
 		resourcedata.SetNillableValue(d, "priority", campaign.Priority)
 		if campaign.ContactListFilters != nil {
-			d.Set("contact_list_filter_ids", util.SdkDomainEntityRefArrToList(*campaign.ContactListFilters))
+			_ = d.Set("contact_list_filter_ids", util.SdkDomainEntityRefArrToList(*campaign.ContactListFilters))
 		}
 		resourcedata.SetNillableReference(d, "division_id", campaign.Division)
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "dynamic_contact_queueing_settings", campaign.DynamicContactQueueingSettings, flattenSettings)
 
 		log.Printf("Read Outbound Campaign %s %s", d.Id(), *campaign.Name)
-		return cc.CheckState()
+		return cc.CheckState(d)
 	})
 }
 
@@ -216,8 +216,8 @@ func deleteOutboundCampaign(ctx context.Context, d *schema.ResourceData, meta in
 				log.Printf("Deleted Outbound Campaign %s", d.Id())
 				return nil
 			}
-			return retry.NonRetryableError(fmt.Errorf("Error deleting Outbound Campaign %s: %s", d.Id(), err))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Error deleting Outbound Campaign %s | error: %s", d.Id(), err), resp))
 		}
-		return retry.RetryableError(fmt.Errorf("Outbound Campaign %s still exists", d.Id()))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Outbound Campaign %s still exists", d.Id()), resp))
 	})
 }

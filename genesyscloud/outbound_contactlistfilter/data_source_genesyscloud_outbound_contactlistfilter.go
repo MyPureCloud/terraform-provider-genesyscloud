@@ -26,11 +26,11 @@ func dataSourceOutboundContactlistfilterRead(ctx context.Context, d *schema.Reso
 		contactListFilterId, retryable, resp, err := proxy.getOutboundContactlistfilterIdByName(ctx, name)
 
 		if err != nil && !retryable {
-			return retry.NonRetryableError(fmt.Errorf("error requesting contact list filter %s: %s %v", name, err, resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("error requesting contact list filter %s | error: %s", name, err), resp))
 		}
 
 		if retryable {
-			return retry.RetryableError(fmt.Errorf("no contact list filters found with name %s", name))
+			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("no contact list filters found with name %s", name), resp))
 		}
 
 		d.SetId(contactListFilterId)
