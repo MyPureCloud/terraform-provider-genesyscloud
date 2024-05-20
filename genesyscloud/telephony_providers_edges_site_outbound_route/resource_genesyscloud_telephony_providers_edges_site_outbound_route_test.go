@@ -17,6 +17,8 @@ import (
 func TestAccResourceSiteOutboundRoutes(t *testing.T) {
 	t.Parallel()
 	var (
+		outboundRouteResource = "outbound_route"
+
 		// site
 		siteRes     = "site"
 		name        = "site " + uuid.NewString()
@@ -72,126 +74,118 @@ func TestAccResourceSiteOutboundRoutes(t *testing.T) {
 		"EXTERNAL",
 		false)
 
+	site := telephonyProvidersEdgesSite.GenerateSiteResourceWithCustomAttrs(
+		siteRes,
+		name,
+		description,
+		"genesyscloud_location."+locationRes+".id",
+		mediaModel,
+		false,
+		"[\"us-west-2\"]",
+		strconv.Quote("+19205551212"),
+		strconv.Quote("Wilco plumbing"),
+		"set_as_default_site = false")
+
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
 		ProviderFactories: provider.GetProviderFactories(providerResources, nil),
 		Steps: []resource.TestStep{
 			{
-				Config: telephonyProvidersEdgesSite.GenerateSiteResourceWithCustomAttrs(
-					siteRes,
-					name,
-					description,
-					"genesyscloud_location."+locationRes+".id",
-					mediaModel,
-					false,
-					"[\"us-west-2\"]",
-					strconv.Quote("+19205551212"),
-					strconv.Quote("Wilco plumbing"),
-					generateSiteOutboundRoutesWithCustomAttrs(
+				Config: trunkBaseSettings1 + trunkBaseSettings2 + location + site + generateOutboundRoutesResource(
+					outboundRouteResource,
+					"genesyscloud_telephony_providers_edges_site."+siteRes+".id",
+					generateSiteOutboundRoutes(
 						"outboundRoute name 1",
 						"outboundRoute description",
 						"\"International\"",
 						"genesyscloud_telephony_providers_edges_trunkbasesettings.trunkBaseSettings1.id",
 						"RANDOM",
-						false),
-					generateSiteOutboundRoutesWithCustomAttrs(
+						util.FalseValue),
+					generateSiteOutboundRoutes(
 						"outboundRoute name 2",
 						"outboundRoute description",
 						"\"National\"",
 						"genesyscloud_telephony_providers_edges_trunkbasesettings.trunkBaseSettings2.id",
 						"SEQUENTIAL",
-						false)+"set_as_default_site = false") + trunkBaseSettings1 + trunkBaseSettings2 + location,
+						util.FalseValue),
+				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_site."+siteRes, "outbound_routes.0.name", "outboundRoute name 1"),
-					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_site."+siteRes, "outbound_routes.0.description", "outboundRoute description"),
-					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_site."+siteRes, "outbound_routes.0.classification_types.0", "International"),
-					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_site."+siteRes, "outbound_routes.0.distribution", "RANDOM"),
-					resource.TestCheckResourceAttrPair("genesyscloud_telephony_providers_edges_site."+siteRes, "outbound_routes.0.external_trunk_base_ids.0", "genesyscloud_telephony_providers_edges_trunkbasesettings.trunkBaseSettings1", "id"),
-					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_site."+siteRes, "outbound_routes.0.enabled", util.FalseValue),
+					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_site_outbound_route."+outboundRouteResource, "outbound_routes.0.name", "outboundRoute name 1"),
+					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_site_outbound_route."+outboundRouteResource, "outbound_routes.0.description", "outboundRoute description"),
+					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_site_outbound_route."+outboundRouteResource, "outbound_routes.0.classification_types.0", "International"),
+					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_site_outbound_route."+outboundRouteResource, "outbound_routes.0.distribution", "RANDOM"),
+					resource.TestCheckResourceAttrPair("genesyscloud_telephony_providers_edges_site_outbound_route."+outboundRouteResource, "outbound_routes.0.external_trunk_base_ids.0", "genesyscloud_telephony_providers_edges_trunkbasesettings.trunkBaseSettings1", "id"),
+					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_site_outbound_route."+outboundRouteResource, "outbound_routes.0.enabled", util.FalseValue),
 
-					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_site."+siteRes, "outbound_routes.1.name", "outboundRoute name 2"),
-					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_site."+siteRes, "outbound_routes.1.description", "outboundRoute description"),
-					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_site."+siteRes, "outbound_routes.1.classification_types.0", "National"),
-					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_site."+siteRes, "outbound_routes.1.distribution", "SEQUENTIAL"),
-					resource.TestCheckResourceAttrPair("genesyscloud_telephony_providers_edges_site."+siteRes, "outbound_routes.1.external_trunk_base_ids.0", "genesyscloud_telephony_providers_edges_trunkbasesettings.trunkBaseSettings2", "id"),
-					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_site."+siteRes, "outbound_routes.1.enabled", util.FalseValue),
+					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_site_outbound_route."+outboundRouteResource, "outbound_routes.1.name", "outboundRoute name 2"),
+					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_site_outbound_route."+outboundRouteResource, "outbound_routes.1.description", "outboundRoute description"),
+					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_site_outbound_route."+outboundRouteResource, "outbound_routes.1.classification_types.0", "National"),
+					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_site_outbound_route."+outboundRouteResource, "outbound_routes.1.distribution", "SEQUENTIAL"),
+					resource.TestCheckResourceAttrPair("genesyscloud_telephony_providers_edges_site_outbound_route."+outboundRouteResource, "outbound_routes.1.external_trunk_base_ids.0", "genesyscloud_telephony_providers_edges_trunkbasesettings.trunkBaseSettings2", "id"),
+					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_site_outbound_route."+outboundRouteResource, "outbound_routes.1.enabled", util.FalseValue),
 				),
 			},
 			// Switch around the order of outbound routes which shouldn't have any effect
 			{
-				Config: telephonyProvidersEdgesSite.GenerateSiteResourceWithCustomAttrs(
-					siteRes,
-					name,
-					description,
-					"genesyscloud_location."+locationRes+".id",
-					mediaModel,
-					false,
-					"[\"us-west-2\"]",
-					strconv.Quote("+19205551212"),
-					strconv.Quote("Wilco plumbing"),
-					generateSiteOutboundRoutesWithCustomAttrs(
+				Config: trunkBaseSettings1 + trunkBaseSettings2 + location + site + generateOutboundRoutesResource(
+					outboundRouteResource,
+					"genesyscloud_telephony_providers_edges_site."+siteRes+".id",
+					generateSiteOutboundRoutes(
 						"outboundRoute name 2",
 						"outboundRoute description",
 						"\"National\"",
 						"genesyscloud_telephony_providers_edges_trunkbasesettings.trunkBaseSettings2.id",
 						"SEQUENTIAL",
-						false),
-					generateSiteOutboundRoutesWithCustomAttrs(
+						util.FalseValue),
+					generateSiteOutboundRoutes(
 						"outboundRoute name 1",
 						"outboundRoute description",
 						"\"International\"",
 						"genesyscloud_telephony_providers_edges_trunkbasesettings.trunkBaseSettings1.id",
 						"RANDOM",
-						false)) + trunkBaseSettings1 + trunkBaseSettings2 + location,
+						util.FalseValue)),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_site."+siteRes, "outbound_routes.0.name", "outboundRoute name 1"),
-					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_site."+siteRes, "outbound_routes.0.description", "outboundRoute description"),
-					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_site."+siteRes, "outbound_routes.0.classification_types.0", "International"),
-					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_site."+siteRes, "outbound_routes.0.distribution", "RANDOM"),
-					resource.TestCheckResourceAttrPair("genesyscloud_telephony_providers_edges_site."+siteRes, "outbound_routes.0.external_trunk_base_ids.0", "genesyscloud_telephony_providers_edges_trunkbasesettings.trunkBaseSettings1", "id"),
-					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_site."+siteRes, "outbound_routes.0.enabled", util.FalseValue),
+					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_site_outbound_route."+outboundRouteResource, "outbound_routes.0.name", "outboundRoute name 1"),
+					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_site_outbound_route."+outboundRouteResource, "outbound_routes.0.description", "outboundRoute description"),
+					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_site_outbound_route."+outboundRouteResource, "outbound_routes.0.classification_types.0", "International"),
+					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_site_outbound_route."+outboundRouteResource, "outbound_routes.0.distribution", "RANDOM"),
+					resource.TestCheckResourceAttrPair("genesyscloud_telephony_providers_edges_site_outbound_route."+outboundRouteResource, "outbound_routes.0.external_trunk_base_ids.0", "genesyscloud_telephony_providers_edges_trunkbasesettings.trunkBaseSettings1", "id"),
+					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_site_outbound_route."+outboundRouteResource, "outbound_routes.0.enabled", util.FalseValue),
 
-					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_site."+siteRes, "outbound_routes.1.name", "outboundRoute name 2"),
-					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_site."+siteRes, "outbound_routes.1.description", "outboundRoute description"),
-					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_site."+siteRes, "outbound_routes.1.classification_types.0", "National"),
-					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_site."+siteRes, "outbound_routes.1.distribution", "SEQUENTIAL"),
-					resource.TestCheckResourceAttrPair("genesyscloud_telephony_providers_edges_site."+siteRes, "outbound_routes.1.external_trunk_base_ids.0", "genesyscloud_telephony_providers_edges_trunkbasesettings.trunkBaseSettings2", "id"),
-					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_site."+siteRes, "outbound_routes.1.enabled", util.FalseValue),
+					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_site_outbound_route."+outboundRouteResource, "outbound_routes.1.name", "outboundRoute name 2"),
+					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_site_outbound_route."+outboundRouteResource, "outbound_routes.1.description", "outboundRoute description"),
+					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_site_outbound_route."+outboundRouteResource, "outbound_routes.1.classification_types.0", "National"),
+					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_site_outbound_route."+outboundRouteResource, "outbound_routes.1.distribution", "SEQUENTIAL"),
+					resource.TestCheckResourceAttrPair("genesyscloud_telephony_providers_edges_site_outbound_route."+outboundRouteResource, "outbound_routes.1.external_trunk_base_ids.0", "genesyscloud_telephony_providers_edges_trunkbasesettings.trunkBaseSettings2", "id"),
+					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_site_outbound_route."+outboundRouteResource, "outbound_routes.1.enabled", util.FalseValue),
 				),
 			},
 			// Remove a route and update the description, classification types, trunk base ids, distribution and enabled value of another route
 			{
-				Config: telephonyProvidersEdgesSite.GenerateSiteResourceWithCustomAttrs(
-					siteRes,
-					name,
-					description,
-					"genesyscloud_location."+locationRes+".id",
-					mediaModel,
-					false,
-					"[\"us-west-2\"]",
-					strconv.Quote("+19205551212"),
-					strconv.Quote("Wilco plumbing"),
-					generateSiteOutboundRoutesWithCustomAttrs(
+				Config: trunkBaseSettings1 + trunkBaseSettings2 + trunkBaseSettings3 + location + site + generateOutboundRoutesResource(
+					outboundRouteResource,
+					"genesyscloud_telephony_providers_edges_site."+siteRes+".id",
+					generateSiteOutboundRoutes(
 						"outboundRoute name 1",
 						"outboundRoute description updated",
 						strings.Join([]string{strconv.Quote("Network"), strconv.Quote("International")}, ","),
 						strings.Join([]string{"genesyscloud_telephony_providers_edges_trunkbasesettings.trunkBaseSettings1.id", "genesyscloud_telephony_providers_edges_trunkbasesettings.trunkBaseSettings3.id"}, ","),
 						"RANDOM",
-						true)+"set_as_default_site = false") + trunkBaseSettings1 + trunkBaseSettings2 + trunkBaseSettings3 + location,
+						util.TrueValue)),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_site."+siteRes, "outbound_routes.0.name", "outboundRoute name 1"),
-					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_site."+siteRes, "outbound_routes.0.description", "outboundRoute description updated"),
-					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_site."+siteRes, "outbound_routes.0.classification_types.0", "Network"),
-					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_site."+siteRes, "outbound_routes.0.classification_types.1", "International"),
-					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_site."+siteRes, "outbound_routes.0.distribution", "RANDOM"),
-					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_site."+siteRes, "outbound_routes.0.enabled", util.TrueValue),
-					resource.TestCheckResourceAttrPair("genesyscloud_telephony_providers_edges_site."+siteRes, "outbound_routes.0.external_trunk_base_ids.0", "genesyscloud_telephony_providers_edges_trunkbasesettings.trunkBaseSettings1", "id"),
-					resource.TestCheckResourceAttrPair("genesyscloud_telephony_providers_edges_site."+siteRes, "outbound_routes.0.external_trunk_base_ids.1", "genesyscloud_telephony_providers_edges_trunkbasesettings.trunkBaseSettings3", "id"),
+					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_site_outbound_route."+outboundRouteResource, "outbound_routes.0.name", "outboundRoute name 1"),
+					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_site_outbound_route."+outboundRouteResource, "outbound_routes.0.description", "outboundRoute description updated"),
+					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_site_outbound_route."+outboundRouteResource, "outbound_routes.0.classification_types.0", "Network"),
+					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_site_outbound_route."+outboundRouteResource, "outbound_routes.0.classification_types.1", "International"),
+					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_site_outbound_route."+outboundRouteResource, "outbound_routes.0.distribution", "RANDOM"),
+					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_site_outbound_route."+outboundRouteResource, "outbound_routes.0.enabled", util.TrueValue),
+					resource.TestCheckResourceAttrPair("genesyscloud_telephony_providers_edges_site_outbound_route."+outboundRouteResource, "outbound_routes.0.external_trunk_base_ids.0", "genesyscloud_telephony_providers_edges_trunkbasesettings.trunkBaseSettings1", "id"),
+					resource.TestCheckResourceAttrPair("genesyscloud_telephony_providers_edges_site_outbound_route."+outboundRouteResource, "outbound_routes.0.external_trunk_base_ids.1", "genesyscloud_telephony_providers_edges_trunkbasesettings.trunkBaseSettings3", "id"),
 				),
 			},
 			{
 				// Import/Read
-				ResourceName:      "genesyscloud_telephony_providers_edges_site." + siteRes,
+				ResourceName:      "genesyscloud_telephony_providers_edges_site_outbound_route." + outboundRouteResource,
 				ImportState:       true,
 				ImportStateVerify: true,
 			},
@@ -199,29 +193,27 @@ func TestAccResourceSiteOutboundRoutes(t *testing.T) {
 	})
 }
 
-func generateSiteOutboundRoutesWithCustomAttrs(
+func generateOutboundRoutesResource(routesResource, siteId string, nestedBlocks ...string) string {
+	return fmt.Sprintf(`resource "genesyscloud_telephony_providers_edges_site_outbound_route" "%s" {
+		site_id = %s
+		%s
+	}`, routesResource, siteId, strings.Join(nestedBlocks, "\n"))
+}
+
+func generateSiteOutboundRoutes(
 	name,
 	description,
 	classificationTypes,
 	externalTrunkBaseIds,
-	distribution string,
-	enabled bool,
-	otherAttrs ...string) string {
+	distribution,
+	enabled string) string {
 	return fmt.Sprintf(`outbound_routes {
 		name = "%s"
 		description = "%s"
 		classification_types = [%s]
 		external_trunk_base_ids = [%s]
 		distribution = "%s"
-		enabled = %v
-		%s
+		enabled = %s
 	}
-	`,
-		name,
-		description,
-		classificationTypes,
-		externalTrunkBaseIds,
-		distribution,
-		enabled,
-		strings.Join(otherAttrs, "\n"))
+	`, name, description, classificationTypes, externalTrunkBaseIds, distribution, enabled)
 }

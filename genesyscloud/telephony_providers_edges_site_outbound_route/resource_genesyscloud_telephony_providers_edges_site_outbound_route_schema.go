@@ -20,7 +20,7 @@ const resourceName = "genesyscloud_telephony_providers_edges_site_outbound_route
 
 var (
 	// This is outside the ResourceSite because it is used in a utility function.
-	outboundRoutesSchema = &schema.Resource{
+	outboundRouteSchema = &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Description: "The name of the entity.",
@@ -85,14 +85,15 @@ func ResourceSiteOutboundRoute() *schema.Resource {
 				Description: "The Id of the site to which the outbound routes belong.",
 				Type:        schema.TypeString,
 				Required:    true,
+				ForceNew:    true,
 			},
 			"outbound_routes": {
 				Description: "Outbound Routes for the site. The default outbound route for the site will be deleted if routes are specified",
 				Type:        schema.TypeSet,
-				Optional:    true,
-				Computed:    true,
+				Required:    true,
 				ConfigMode:  schema.SchemaConfigModeAttr,
-				Elem:        outboundRoutesSchema,
+				Elem:        outboundRouteSchema,
+				MinItems:    1,
 			},
 		},
 	}
