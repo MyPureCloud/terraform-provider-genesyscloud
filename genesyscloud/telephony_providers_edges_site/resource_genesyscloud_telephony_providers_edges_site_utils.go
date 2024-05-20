@@ -56,7 +56,7 @@ func customizeSiteDiff(ctx context.Context, diff *schema.ResourceDiff, meta inte
 		for i, x := range newNumberPlansList {
 			log.Printf("%v: %v", i, x)
 		}
-		diff.SetNew("number_plans", newNumberPlansList)
+		_ = diff.SetNew("number_plans", newNumberPlansList)
 	}
 	return nil
 }
@@ -379,9 +379,9 @@ func readSiteNumberPlans(ctx context.Context, sp *siteProxy, d *schema.ResourceD
 			dNumberPlan := flattenNumberPlan(&numberPlan)
 			dNumberPlans = append(dNumberPlans, dNumberPlan)
 		}
-		d.Set("number_plans", dNumberPlans)
+		_ = d.Set("number_plans", dNumberPlans)
 	} else {
-		d.Set("number_plans", nil)
+		_ = d.Set("number_plans", nil)
 	}
 
 	return nil
@@ -418,9 +418,9 @@ func readSiteOutboundRoutes(ctx context.Context, sp *siteProxy, d *schema.Resour
 
 			dOutboundRoutes.Add(dOutboundRoute)
 		}
-		d.Set("outbound_routes", dOutboundRoutes)
+		_ = d.Set("outbound_routes", dOutboundRoutes)
 	} else {
-		d.Set("outbound_routes", nil)
+		_ = d.Set("outbound_routes", nil)
 	}
 
 	return nil

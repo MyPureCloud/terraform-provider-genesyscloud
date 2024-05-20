@@ -27,7 +27,8 @@ func getSites(ctx context.Context, sdkConfig *platformclientv2.Configuration) (r
 	resources := make(resourceExporter.ResourceIDMetaMap)
 	sp := getSiteProxy(sdkConfig)
 
-	unmanagedSites, resp, err := sp.getAllUnmanagedSites(ctx)
+	// get unmanaged sites
+	unmanagedSites, resp, err := sp.getAllSites(ctx, false)
 	if err != nil {
 		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get unmanaged sites error: %s", err), resp)
 	}
@@ -35,7 +36,8 @@ func getSites(ctx context.Context, sdkConfig *platformclientv2.Configuration) (r
 		resources[*unmanagedSite.Id] = &resourceExporter.ResourceMeta{Name: *unmanagedSite.Name}
 	}
 
-	managedSites, resp, err := sp.getAllManagedSites(ctx)
+	// get managed sites
+	managedSites, resp, err := sp.getAllSites(ctx, true)
 	if err != nil {
 		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get managed sites error: %s", err), resp)
 	}
@@ -153,27 +155,27 @@ func readSite(ctx context.Context, d *schema.ResourceData, meta interface{}) dia
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read site %s | error: %s", d.Id(), err), resp))
 		}
 
-		d.Set("name", *currentSite.Name)
-		d.Set("location_id", nil)
+		_ = d.Set("name", *currentSite.Name)
+		_ = d.Set("location_id", nil)
 		if currentSite.Location != nil {
-			d.Set("location_id", *currentSite.Location.Id)
+			_ = d.Set("location_id", *currentSite.Location.Id)
 		}
-		d.Set("media_model", *currentSite.MediaModel)
-		d.Set("media_regions_use_latency_based", *currentSite.MediaRegionsUseLatencyBased)
+		_ = d.Set("media_model", *currentSite.MediaModel)
+		_ = d.Set("media_regions_use_latency_based", *currentSite.MediaRegionsUseLatencyBased)
 
 		resourcedata.SetNillableValue(d, "description", currentSite.Description)
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "edge_auto_update_config", currentSite.EdgeAutoUpdateConfig, flattenSdkEdgeAutoUpdateConfig)
 		resourcedata.SetNillableValue(d, "media_regions", currentSite.MediaRegions)
 
-		d.Set("caller_id", currentSite.CallerId)
-		d.Set("caller_name", currentSite.CallerName)
+		_ = d.Set("caller_id", currentSite.CallerId)
+		_ = d.Set("caller_name", currentSite.CallerName)
 
 		if currentSite.PrimarySites != nil {
-			d.Set("primary_sites", util.SdkDomainEntityRefArrToList(*currentSite.PrimarySites))
+			_ = d.Set("primary_sites", util.SdkDomainEntityRefArrToList(*currentSite.PrimarySites))
 		}
 
 		if currentSite.SecondarySites != nil {
-			d.Set("secondary_sites", util.SdkDomainEntityRefArrToList(*currentSite.SecondarySites))
+			_ = d.Set("secondary_sites", util.SdkDomainEntityRefArrToList(*currentSite.SecondarySites))
 		}
 
 		if retryErr := readSiteNumberPlans(ctx, sp, d); retryErr != nil {
@@ -192,7 +194,7 @@ func readSite(ctx context.Context, d *schema.ResourceData, meta interface{}) dia
 		if err != nil {
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to get default site id: %v", err), resp))
 		}
-		d.Set("set_as_default_site", defaultSiteId == *currentSite.Id)
+		_ = d.Set("set_as_default_site", defaultSiteId == *currentSite.Id)
 
 		log.Printf("Read site %s %s", d.Id(), *currentSite.Name)
 		return cc.CheckState(d)

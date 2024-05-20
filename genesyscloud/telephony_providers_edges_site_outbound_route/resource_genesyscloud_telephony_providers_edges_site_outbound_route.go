@@ -20,8 +20,29 @@ import (
 )
 
 func getSitesOutboundRoutes(ctx context.Context, sdkConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+	if exists := featureToggles.OutboundRoutesToggleExists(); !exists {
+		return nil, util.BuildDiagnosticError(resourceName, fmt.Sprintf("Environment variable %s not set", featureToggles.OutboundRoutesToggleName()), fmt.Errorf("environment variable %s not set", featureToggles.OutboundRoutesToggleName()))
+	}
 	resources := make(resourceExporter.ResourceIDMetaMap)
-	//proxy := getSiteOutboundRouteProxy(sdkConfig)
+	proxy := getSiteOutboundRouteProxy(sdkConfig)
+
+	// get unmanaged sites
+	unmanagedSites, resp, err := proxy.getAllSites(ctx, false)
+	if err != nil {
+		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get unmanaged sites error: %s", err), resp)
+	}
+	for _, unmanagedSite := range *unmanagedSites {
+		resources[*unmanagedSite.Id] = &resourceExporter.ResourceMeta{Name: *unmanagedSite.Name}
+	}
+
+	// get managed sites
+	managedSites, resp, err := proxy.getAllSites(ctx, true)
+	if err != nil {
+		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get managed sites error: %s", err), resp)
+	}
+	for _, managedSite := range *managedSites {
+		resources[*managedSite.Id] = &resourceExporter.ResourceMeta{Name: *managedSite.Name}
+	}
 
 	return resources, nil
 }
@@ -30,7 +51,6 @@ func createSiteOutboundRoutes(ctx context.Context, d *schema.ResourceData, meta 
 	if exists := featureToggles.OutboundRoutesToggleExists(); !exists {
 		return util.BuildDiagnosticError(resourceName, fmt.Sprintf("Environment variable %s not set", featureToggles.OutboundRoutesToggleName()), fmt.Errorf("environment variable %s not set", featureToggles.OutboundRoutesToggleName()))
 	}
-
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getSiteOutboundRouteProxy(sdkConfig)
 	siteId := d.Get("site_id").(string)
