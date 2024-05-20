@@ -334,7 +334,7 @@ pipeline {
         
         sh 'junit2html Acceptance_tests.xml testreport.html'
 
-        archiveArtifacts artifacts: 'coverageAcceptance.html,report.xml', allowEmptyArchive: true
+        archiveArtifacts artifacts: 'coverageAcceptance.html,Acceptance_tests.xml', allowEmptyArchive: true
         
             }
         }

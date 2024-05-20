@@ -402,12 +402,20 @@ func TestAccResourceRoutingQueueConditionalRouting(t *testing.T) {
 					validateMediaSettings(queueResource1, "media_settings_email", alertTimeout1, util.FalseValue, slPercent1, slDuration1),
 					validateMediaSettings(queueResource1, "media_settings_message", alertTimeout1, util.FalseValue, slPercent1, slDuration1),
 				),
+				PreConfig: func() {
+					// Wait for a specified duration - to avoid multiple deletion taking place error
+					time.Sleep(30 * time.Second)
+				},
 			},
 			{
 				// Import/Read
 				ResourceName:      "genesyscloud_routing_queue." + queueResource1,
 				ImportState:       true,
 				ImportStateVerify: true,
+			},
+			PreConfig: func() {
+				// Wait for a specified duration - to avoid multiple deletion taking place error
+				time.Sleep(30 * time.Second)
 			},
 		},
 		CheckDestroy: testVerifyQueuesDestroyed,

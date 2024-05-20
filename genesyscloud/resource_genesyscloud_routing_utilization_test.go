@@ -154,6 +154,10 @@ func TestAccResourceRoutingUtilizationWithLabels(t *testing.T) {
 					resource.TestCheckResourceAttrSet("genesyscloud_routing_utilization.routing-util", "label_utilizations.1.label_id"),
 					resource.TestCheckResourceAttr("genesyscloud_routing_utilization.routing-util", "label_utilizations.1.maximum_capacity", maxCapacity1),
 				),
+				PreConfig: func() {
+					// Wait for a specified duration - to avoid multiple deletion taking place error
+					time.Sleep(30 * time.Second)
+				},
 			},
 			{
 				// Update with a new max capacities and interruptible media types
