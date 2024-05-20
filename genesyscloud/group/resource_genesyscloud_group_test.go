@@ -182,6 +182,9 @@ func TestAccResourceGroupAddresses(t *testing.T) {
 				ImportState:             true,
 				ImportStateVerify:       true,
 				ImportStateVerifyIgnore: []string{"addresses"},
+				PreConfig: func() {
+					time.Sleep(30 * time.Second)
+				},
 			},
 		},
 		CheckDestroy: testVerifyGroupsDestroyed,
