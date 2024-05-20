@@ -12,10 +12,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"terraform-provider-genesyscloud/genesyscloud/util"
-<<<<<<< HEAD
 	"terraform-provider-genesyscloud/genesyscloud/util/constants"
-=======
->>>>>>> origin/dev
 	"terraform-provider-genesyscloud/genesyscloud/util/lists"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 	"time"
@@ -51,10 +48,7 @@ func createIdpSalesforce(ctx context.Context, d *schema.ResourceData, meta inter
 func readIdpSalesforce(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getIdpSalesforceProxy(sdkConfig)
-<<<<<<< HEAD
 	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceIdpSalesforce(), constants.DefaultConsistencyChecks, resourceName)
-=======
->>>>>>> origin/dev
 
 	log.Printf("Reading IDP Salesforce")
 
@@ -68,10 +62,6 @@ func readIdpSalesforce(ctx context.Context, d *schema.ResourceData, meta interfa
 			return retry.NonRetryableError(fmt.Errorf("Failed to read IDP Salesforce: %s", getErr))
 		}
 
-<<<<<<< HEAD
-=======
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceIdpSalesforce())
->>>>>>> origin/dev
 		if salesforce.Certificate != nil {
 			_ = d.Set("certificates", lists.StringListToInterfaceList([]string{*salesforce.Certificate}))
 		} else if salesforce.Certificates != nil {
@@ -85,11 +75,7 @@ func readIdpSalesforce(ctx context.Context, d *schema.ResourceData, meta interfa
 		resourcedata.SetNillableValue(d, "disabled", salesforce.Disabled)
 
 		log.Printf("Read IDP Salesforce")
-<<<<<<< HEAD
 		return cc.CheckState(d)
-=======
-		return cc.CheckState()
->>>>>>> origin/dev
 	})
 }
 

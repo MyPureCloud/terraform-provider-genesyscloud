@@ -32,7 +32,7 @@ func getAllRoutingEmailRoutes(ctx context.Context, clientConfig *platformclientv
 
 	inboundRoutesMap, respCode, err := proxy.getAllRoutingEmailRoute(ctx, "", "")
 	if err != nil {
-		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get routing email route"), respCode)
+		return nil, util.BuildAPIDiagnosticError(resourceName, "Failed to get routing email route", respCode)
 	}
 
 	for domainId, inboundRoutes := range *inboundRoutesMap {
@@ -57,7 +57,7 @@ func createRoutingEmailRoute(ctx context.Context, d *schema.ResourceData, meta i
 	replyEmail, err := validateSdkReplyEmailAddress(d)
 	// Checking the self_reference_route flag and routeId rules
 	if err != nil {
-		return util.BuildDiagnosticError(resourceName, fmt.Sprintf("Error occurred while validating the reply email address when creating the record"), err)
+		return util.BuildDiagnosticError(resourceName, "Error occurred while validating the reply email address when creating the record", err)
 	}
 
 	replyDomainID, replyRouteID, _ := extractReplyEmailAddressValue(d)
@@ -135,9 +135,9 @@ func readRoutingEmailRoute(ctx context.Context, d *schema.ResourceData, meta int
 		resourcedata.SetNillableReference(d, "spam_flow_id", route.SpamFlow)
 
 		if route.Skills != nil {
-			d.Set("skill_ids", util.SdkDomainEntityRefArrToSet(*route.Skills))
+			_ = d.Set("skill_ids", util.SdkDomainEntityRefArrToSet(*route.Skills))
 		} else {
-			d.Set("skill_ids", nil)
+			_ = d.Set("skill_ids", nil)
 		}
 
 		if route.ReplyEmailAddress != nil {
@@ -152,9 +152,9 @@ func readRoutingEmailRoute(ctx context.Context, d *schema.ResourceData, meta int
 				flattenedEmails["route_id"] = nil
 			}
 
-			d.Set("reply_email_address", []interface{}{flattenedEmails})
+			_ = d.Set("reply_email_address", []interface{}{flattenedEmails})
 		} else {
-			d.Set("reply_email_address", nil)
+			_ = d.Set("reply_email_address", nil)
 		}
 
 		log.Printf("Read routing email route %s %v", d.Id(), route.Name)
@@ -173,7 +173,7 @@ func updateRoutingEmailRoute(ctx context.Context, d *schema.ResourceData, meta i
 	//Checking the self_reference_route flag and routeId rules
 	replyEmail, err := validateSdkReplyEmailAddress(d)
 	if err != nil {
-		return util.BuildDiagnosticError(resourceName, fmt.Sprintf("Error occurred while validating the reply email address while trying to update the record"), err)
+		return util.BuildDiagnosticError(resourceName, "Error occurred while validating the reply email address while trying to update the record", err)
 	}
 
 	replyDomainID, replyRouteID, _ := extractReplyEmailAddressValue(d)

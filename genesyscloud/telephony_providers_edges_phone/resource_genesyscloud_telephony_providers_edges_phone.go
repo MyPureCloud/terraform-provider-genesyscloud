@@ -89,10 +89,6 @@ func readPhone(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read phone %s | error: %s", d.Id(), getErr), resp))
 		}
 
-<<<<<<< HEAD
-=======
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourcePhone())
->>>>>>> origin/dev
 		_ = d.Set("name", *currentPhone.Name)
 		_ = d.Set("state", *currentPhone.State)
 		_ = d.Set("site_id", *currentPhone.Site.Id)

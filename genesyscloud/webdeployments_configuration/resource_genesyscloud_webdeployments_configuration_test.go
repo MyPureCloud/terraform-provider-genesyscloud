@@ -9,6 +9,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -83,6 +84,8 @@ func TestAccResourceWebDeploymentsConfiguration(t *testing.T) {
 		languages2               = []string{"es"}
 		defaultLang2             = "es"
 	)
+
+	cleanupWebDeploymentsConfiguration(t, "Test Configuration ")
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
@@ -160,6 +163,8 @@ func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
 		channels       = []string{strconv.Quote("Webmessaging")}
 		channelsUpdate = []string{strconv.Quote("Webmessaging"), strconv.Quote("Voice")}
 	)
+
+	cleanupWebDeploymentsConfiguration(t, "Test Configuration ")
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
@@ -652,6 +657,8 @@ func TestAccResourceWebDeploymentsConfigurationSupportCenter(t *testing.T) {
 			feedbackEnabled: false,
 		}
 	)
+
+	cleanupWebDeploymentsConfiguration(t, "Test Configuration ")
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
@@ -1156,4 +1163,29 @@ func verifyConfigurationDestroyed(state *terraform.State) error {
 	}
 
 	return nil
+}
+
+func cleanupWebDeploymentsConfiguration(t *testing.T, prefix string) {
+	config, err := provider.AuthorizeSdk()
+	if err != nil {
+		t.Logf("Failed to authorize SDK: %s", err)
+		return
+	}
+	deploymentsAPI := platformclientv2.NewWebDeploymentsApiWithConfig(config)
+
+	configurations, resp, getErr := deploymentsAPI.GetWebdeploymentsConfigurations(false)
+	if getErr != nil {
+		t.Logf("failed to get page of configurations: %v %v", getErr, resp)
+		return
+	}
+
+	for _, configuration := range *configurations.Entities {
+		if configuration.Name != nil && strings.HasPrefix(*configuration.Name, prefix) {
+			resp, delErr := deploymentsAPI.DeleteWebdeploymentsConfiguration(*configuration.Id)
+			if delErr != nil {
+				t.Logf("Failed to delete configuration %s: %s %v", *configuration.Id, delErr, resp)
+			}
+			time.Sleep(5 * time.Second)
+		}
+	}
 }

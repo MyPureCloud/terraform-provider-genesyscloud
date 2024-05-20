@@ -37,7 +37,6 @@ func TestAccResourceSite(t *testing.T) {
 		start2   = "2021-08-15T08:00:00.000000"
 		end1     = "2021-08-08T11:00:00.000000"
 		end2     = "2021-08-15T11:00:00.000000"
-
 		// location
 		locationRes = "test-location1"
 	)
@@ -75,7 +74,7 @@ func TestAccResourceSite(t *testing.T) {
 					"genesyscloud_location."+locationRes+".id",
 					mediaModel,
 					false,
-					"[\"us-west-2\"]",
+					util.AssignRegion(),
 					strconv.Quote("+19205551212"),
 					strconv.Quote("Wilco plumbing")) + location,
 				Check: resource.ComposeTestCheckFunc(
@@ -95,7 +94,7 @@ func TestAccResourceSite(t *testing.T) {
 					"genesyscloud_location."+locationRes+".id",
 					mediaModel,
 					true,
-					"[\"us-west-2\"]",
+					util.AssignRegion(),
 					strconv.Quote("+19205551212"),
 					strconv.Quote("Wilco plumbing")) + location,
 				Check: resource.ComposeTestCheckFunc(
@@ -115,7 +114,7 @@ func TestAccResourceSite(t *testing.T) {
 					"genesyscloud_location."+locationRes+".id",
 					mediaModel,
 					true,
-					"[\"us-west-2\"]",
+					util.AssignRegion(),
 					strconv.Quote("+19205551212"),
 					strconv.Quote("Wilco plumbing"),
 					generateSiteEdgeAutoUpdateConfig(
@@ -139,7 +138,7 @@ func TestAccResourceSite(t *testing.T) {
 					"genesyscloud_location."+locationRes+".id",
 					mediaModel,
 					true,
-					"[\"us-west-2\"]",
+					util.AssignRegion(),
 					strconv.Quote("+19205551212"),
 					strconv.Quote("Wilco plumbing"),
 					generateSiteEdgeAutoUpdateConfig(
@@ -205,7 +204,7 @@ func TestAccResourceSiteNumberPlans(t *testing.T) {
 					"genesyscloud_location."+locationRes+".id",
 					mediaModel,
 					false,
-					"[\"us-west-2\"]",
+					util.AssignRegion(),
 					strconv.Quote("+19205551212"),
 					strconv.Quote("Wilco plumbing"),
 					generateSiteNumberPlansWithCustomAttrs(
@@ -263,7 +262,7 @@ func TestAccResourceSiteNumberPlans(t *testing.T) {
 					"genesyscloud_location."+locationRes+".id",
 					mediaModel,
 					false,
-					"[\"us-west-2\"]",
+					util.AssignRegion(),
 					strconv.Quote("+19205551212"),
 					strconv.Quote("Wilco plumbing"),
 					generateSiteNumberPlansWithCustomAttrs(
@@ -306,7 +305,7 @@ func TestAccResourceSiteNumberPlans(t *testing.T) {
 					"genesyscloud_location."+locationRes+".id",
 					mediaModel,
 					false,
-					"[\"us-west-2\"]",
+					util.AssignRegion(),
 					strconv.Quote("+19205551212"),
 					strconv.Quote("Wilco plumbing"),
 					generateSiteNumberPlansWithCustomAttrs(
@@ -424,7 +423,7 @@ func TestAccResourceSiteOutboundRoutes(t *testing.T) {
 					"genesyscloud_location."+locationRes+".id",
 					mediaModel,
 					false,
-					"[\"us-west-2\"]",
+					util.AssignRegion(),
 					strconv.Quote("+19205551212"),
 					strconv.Quote("Wilco plumbing"),
 					generateSiteOutboundRoutesWithCustomAttrs(
@@ -466,7 +465,7 @@ func TestAccResourceSiteOutboundRoutes(t *testing.T) {
 					"genesyscloud_location."+locationRes+".id",
 					mediaModel,
 					false,
-					"[\"us-west-2\"]",
+					util.AssignRegion(),
 					strconv.Quote("+19205551212"),
 					strconv.Quote("Wilco plumbing"),
 					generateSiteOutboundRoutesWithCustomAttrs(
@@ -508,7 +507,7 @@ func TestAccResourceSiteOutboundRoutes(t *testing.T) {
 					"genesyscloud_location."+locationRes+".id",
 					mediaModel,
 					false,
-					"[\"us-west-2\"]",
+					util.AssignRegion(),
 					strconv.Quote("+19205551212"),
 					strconv.Quote("Wilco plumbing"),
 					generateSiteOutboundRoutesWithCustomAttrs(
@@ -597,7 +596,7 @@ func TestAccResourceSiteDefaultSite(t *testing.T) {
 					"genesyscloud_location."+locationRes+".id",
 					mediaModel,
 					false,
-					"[\"us-west-2\"]",
+					util.AssignRegion(),
 					strconv.Quote("+19205551212"),
 					strconv.Quote("Wilco plumbing"),
 					"set_as_default_site = true") + location,
@@ -625,7 +624,7 @@ func TestAccResourceSiteDefaultSite(t *testing.T) {
 					"genesyscloud_location."+locationRes+".id",
 					mediaModel,
 					false,
-					"[\"us-west-2\"]",
+					util.AssignRegion(),
 					strconv.Quote("+19205551212"),
 					strconv.Quote("Wilco plumbing"),
 					"set_as_default_site = false") + location + gcloud.GenerateOrganizationMe(),

@@ -153,9 +153,9 @@ func importRoutingEmailRoute(_ context.Context, d *schema.ResourceData, _ interf
 	// Import must specify domain ID and route ID
 	idParts := strings.Split(d.Id(), "/")
 	if len(idParts) < 2 {
-		return nil, fmt.Errorf("Invalid email route import ID %s", d.Id())
+		return nil, fmt.Errorf("invalid email route import ID %s", d.Id())
 	}
-	d.Set("domain_id", idParts[0])
+	_ = d.Set("domain_id", idParts[0])
 	d.SetId(idParts[1])
 	return []*schema.ResourceData{d}, nil
 }

@@ -7,6 +7,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
+	"time"
 
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
@@ -75,6 +76,9 @@ resource "genesyscloud_outbound_wrapupcodemappings"	"%s" {
 					verifyWrapupCodeMappingsMappingValues("genesyscloud_outbound_wrapupcodemappings."+resourceId,
 						"genesyscloud_routing_wrapupcode."+wrapupCode2ResourceId, []string{"Number_UnCallable", "Right_Party_Contact"}),
 				),
+				PreConfig: func() {
+					time.Sleep(45 * time.Second)
+				},
 			},
 			// Update
 			{

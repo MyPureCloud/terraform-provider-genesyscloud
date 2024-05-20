@@ -16,11 +16,8 @@ import (
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	rRegistrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
 	"terraform-provider-genesyscloud/genesyscloud/util"
-<<<<<<< HEAD
 	featureToggles "terraform-provider-genesyscloud/genesyscloud/util/feature_toggles"
 	"terraform-provider-genesyscloud/genesyscloud/util/files"
-=======
->>>>>>> origin/dev
 	"terraform-provider-genesyscloud/genesyscloud/util/lists"
 	"terraform-provider-genesyscloud/genesyscloud/util/stringmap"
 	"time"
