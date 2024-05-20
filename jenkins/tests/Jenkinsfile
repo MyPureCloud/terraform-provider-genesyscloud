@@ -55,24 +55,6 @@ pipeline {
 
             }
         }
-
-
-        stage('IvrConfig Tests') {
-            environment {
-                TF_ACC=1
-                TF_LOG="DEBUG"
-            }
-            steps {
-                sh 'go clean -i -cache'
-                catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
-                    echo 'Attempting to Run Remaining Tests'
-                    withCredentials([usernamePassword(credentialsId: CREDENTIALS_ID, usernameVariable: 'GENESYSCLOUD_OAUTHCLIENT_ID', passwordVariable: 'GENESYSCLOUD_OAUTHCLIENT_SECRET')]) {
-                        echo 'Loading Genesys OAuth Credentials'
-                          sh 'gotestsum --junitfile ivr.xml --format standard-verbose ./genesyscloud/... -run TestAcc.*IvrConfig -v -count=1 -timeout 120m -cover -coverprofile=coverageivr.out'
-                    }
-                }
-            }
-        }
         
     stage('Architect Tests') {
             environment {
@@ -84,7 +66,7 @@ pipeline {
                     echo 'Attempting to Run Architect Tests'
                     withCredentials([usernamePassword(credentialsId: CREDENTIALS_ID, usernameVariable: 'GENESYSCLOUD_OAUTHCLIENT_ID', passwordVariable: 'GENESYSCLOUD_OAUTHCLIENT_SECRET')]) {
                         echo 'Loading Genesys OAuth Credentials'
-                        sh 'gotestsum --junitfile architect.xml --format standard-verbose ./genesyscloud/... -run "TestAcc.*Architect" -v -count=1 -timeout 120m -cover -coverprofile=coverageArchitect.out'
+                        sh 'gotestsum --junitfile architect.xml --format standard-verbose ./genesyscloud/... -run "TestAcc.*Architect|IvrConfig" -v -count=1 -timeout 120m -cover -coverprofile=coverageArchitect.out'
                     }
                 }
             }
@@ -343,14 +325,14 @@ pipeline {
             steps {
         sh 'GOBIN=$HOME/bin go install github.com/wadey/gocovmerge@latest'
         // Generate merged coverage report
-        sh '$HOME/bin/gocovmerge coverageArchitect.out coverageIdp.out coverageAuth.out coverageIntegration.out coverageFlow.out coverageJourney.out coverageKnowledge.out coverageOutbound.out coverageResponseManagement.out coverageRouting.out coverageExport.out coverageLocation.out coverageWebDeployment.out coverageRemaining.out coverageSite.out coverageRoleTeam.out coverageivr.out > merged_coverage.out'
+        sh '$HOME/bin/gocovmerge coverageArchitect.out coverageIdp.out coverageAuth.out coverageIntegration.out coverageFlow.out coverageJourney.out coverageKnowledge.out coverageOutbound.out coverageResponseManagement.out coverageRouting.out coverageExport.out coverageLocation.out coverageWebDeployment.out coverageRemaining.out coverageSite.out coverageRoleTeam.out > merged_coverage.out'
 
         // Convert merged coverage report to HTML
         sh 'go tool cover -html merged_coverage.out -o coverageAcceptance.html'
 
-        sh 'junit-merger -o report.xml architect.xml idp.xml auth.xml integration.xml flow.xml journey.xml knowledge.xml outbound.xml response.xml routing.xml location.xml web.xml site.xml team.xml export.xml ivr.xml remaining.xml'
+        sh 'junit-merger -o Acceptance_tests.xml architect.xml idp.xml auth.xml integration.xml flow.xml journey.xml knowledge.xml outbound.xml response.xml routing.xml location.xml web.xml site.xml team.xml export.xml remaining.xml'
         
-        sh 'junit2html report.xml testreport.html'
+        sh 'junit2html Acceptance_tests.xml testreport.html'
 
         archiveArtifacts artifacts: 'coverageAcceptance.html,report.xml', allowEmptyArchive: true
         

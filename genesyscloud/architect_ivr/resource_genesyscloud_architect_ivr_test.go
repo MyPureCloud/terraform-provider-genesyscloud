@@ -10,7 +10,6 @@ import (
 	didPool "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_did_pool"
 	util "terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
-	"time"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -18,131 +17,6 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 )
 
-func TestAccResourceIvrConfigDnisOverload(t *testing.T) {
-	var (
-		resourceID = "ivr"
-		name       = "TF Test IVR " + uuid.NewString()
-
-		didRangeLength    = 200 // Should be at least 50 to avoid index out of bounds errors below
-		didPoolResourceId = "did_pool"
-		startNumber       = 35375550120
-		endNumber         = startNumber + didRangeLength
-		startNumberStr    = fmt.Sprintf("+%v", startNumber)
-		endNumberStr      = fmt.Sprintf("+%v", endNumber)
-	)
-
-	/*
-		To avoid clashes, try to get final existing did number and create a pool outside that range
-		If err is not nil, use the hardcoded phone number variables
-	*/
-	lastNumber, err := getLastDidNumberAsInteger()
-	if err == nil {
-		startNumber = lastNumber + 5
-		endNumber = startNumber + didRangeLength
-		startNumberStr = fmt.Sprintf("+%v", startNumber)
-		endNumberStr = fmt.Sprintf("+%v", endNumber)
-	} else {
-		log.Printf("Failed to get last did number for ivr tests: %v", err)
-	}
-
-	allNumbers := createStringArrayOfPhoneNumbers(startNumber, endNumber)
-
-	didPoolResource := didPool.GenerateDidPoolResource(&didPool.DidPoolStruct{
-		ResourceID:       didPoolResourceId,
-		StartPhoneNumber: startNumberStr,
-		EndPhoneNumber:   endNumberStr,
-		Description:      util.NullValue, // No description
-		Comments:         util.NullValue, // No comments
-		PoolProvider:     util.NullValue, // No provider
-	})
-
-	// did pool cleanup
-	defer func() {
-		if _, err := provider.AuthorizeSdk(); err != nil {
-			return
-		}
-		ctx := context.TODO()
-		_, _ = didPool.DeleteDidPoolWithStartAndEndNumber(ctx, startNumberStr, endNumberStr)
-	}()
-
-	fullResourceId := resourceName + "." + resourceID
-
-	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { util.TestAccPreCheck(t) },
-		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
-		Steps: []resource.TestStep{
-			{
-				PreConfig: func() {
-					time.Sleep(45 * time.Second)
-				},
-				Config: didPoolResource + GenerateIvrConfigResource(&IvrConfigStruct{
-					ResourceID:  resourceID,
-					Name:        name,
-					Description: "",
-					Dnis:        createStringArrayOfPhoneNumbers(startNumber, startNumber+20),
-					DependsOn:   "genesyscloud_telephony_providers_edges_did_pool." + didPoolResourceId,
-					DivisionId:  "",
-				}),
-				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(fullResourceId, "name", name),
-					resource.TestCheckResourceAttr(fullResourceId, "dnis.#", "20"),
-				),
-			},
-			{
-				Config: didPoolResource + GenerateIvrConfigResource(&IvrConfigStruct{
-					ResourceID:  resourceID,
-					Name:        name,
-					Description: "",
-					Dnis:        createStringArrayOfPhoneNumbers(startNumber, startNumber+48),
-					DependsOn:   "genesyscloud_telephony_providers_edges_did_pool." + didPoolResourceId,
-					DivisionId:  "",
-				}),
-				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(fullResourceId, "name", name),
-					resource.TestCheckResourceAttr(fullResourceId, "dnis.#", "48"),
-				),
-			},
-			{
-				Config: didPoolResource + GenerateIvrConfigResource(&IvrConfigStruct{
-					ResourceID:  resourceID,
-					Name:        name,
-					Description: "",
-					Dnis:        createStringArrayOfPhoneNumbers(startNumber, startNumber+12),
-					DependsOn:   "genesyscloud_telephony_providers_edges_did_pool." + didPoolResourceId,
-					DivisionId:  "",
-				}),
-				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(fullResourceId, "name", name),
-					resource.TestCheckResourceAttr(fullResourceId, "dnis.#", "12"),
-				),
-			},
-			{
-				Config: didPoolResource + GenerateIvrConfigResource(&IvrConfigStruct{
-					ResourceID:  resourceID,
-					Name:        name,
-					Description: "",
-					Dnis:        createStringArrayOfPhoneNumbers(startNumber, endNumber),
-					DependsOn:   "genesyscloud_telephony_providers_edges_did_pool." + didPoolResourceId,
-					DivisionId:  "",
-				}),
-				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(fullResourceId, "name", name),
-					resource.TestCheckResourceAttr(fullResourceId, "dnis.#", fmt.Sprintf("%v", len(allNumbers))),
-				),
-			},
-			{
-				// Import/Read
-				ResourceName:      fullResourceId,
-				ImportState:       true,
-				ImportStateVerify: true,
-			},
-			{
-				Config: didPoolResource, // Extra step to ensure take-down is done correctly
-			},
-		},
-		CheckDestroy: testVerifyIvrConfigsDestroyed,
-	})
-}
 func TestAccResourceIvrConfigBasic(t *testing.T) {
 	ivrConfigResource1 := "test-ivrconfig1"
 	ivrConfigName := "terraform-ivrconfig-" + uuid.NewString()
@@ -316,6 +190,129 @@ func TestAccResourceIvrConfigDivision(t *testing.T) {
 					util.NullValue, // No description
 					util.NullValue, // Not home division
 				),
+			},
+		},
+		CheckDestroy: testVerifyIvrConfigsDestroyed,
+	})
+}
+
+func TestAccResourceIvrConfigDnisOverload(t *testing.T) {
+	var (
+		resourceID = "ivr"
+		name       = "TF Test IVR " + uuid.NewString()
+
+		didRangeLength    = 100 // Should be at least 50 to avoid index out of bounds errors below
+		didPoolResourceId = "did_pool"
+		startNumber       = 35375550120
+		endNumber         = startNumber + didRangeLength
+		startNumberStr    = fmt.Sprintf("+%v", startNumber)
+		endNumberStr      = fmt.Sprintf("+%v", endNumber)
+	)
+
+	/*
+		To avoid clashes, try to get final existing did number and create a pool outside that range
+		If err is not nil, use the hardcoded phone number variables
+	*/
+	lastNumber, err := getLastDidNumberAsInteger()
+	if err == nil {
+		startNumber = lastNumber + 5
+		endNumber = startNumber + didRangeLength
+		startNumberStr = fmt.Sprintf("+%v", startNumber)
+		endNumberStr = fmt.Sprintf("+%v", endNumber)
+	} else {
+		log.Printf("Failed to get last did number for ivr tests: %v", err)
+	}
+
+	allNumbers := createStringArrayOfPhoneNumbers(startNumber, endNumber)
+
+	didPoolResource := didPool.GenerateDidPoolResource(&didPool.DidPoolStruct{
+		ResourceID:       didPoolResourceId,
+		StartPhoneNumber: startNumberStr,
+		EndPhoneNumber:   endNumberStr,
+		Description:      util.NullValue, // No description
+		Comments:         util.NullValue, // No comments
+		PoolProvider:     util.NullValue, // No provider
+	})
+
+	// did pool cleanup
+	defer func() {
+		if _, err := provider.AuthorizeSdk(); err != nil {
+			return
+		}
+		ctx := context.TODO()
+		_, _ = didPool.DeleteDidPoolWithStartAndEndNumber(ctx, startNumberStr, endNumberStr)
+	}()
+
+	fullResourceId := resourceName + "." + resourceID
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			{
+				Config: didPoolResource + GenerateIvrConfigResource(&IvrConfigStruct{
+					ResourceID:  resourceID,
+					Name:        name,
+					Description: "",
+					Dnis:        createStringArrayOfPhoneNumbers(startNumber, startNumber+20),
+					DependsOn:   "genesyscloud_telephony_providers_edges_did_pool." + didPoolResourceId,
+					DivisionId:  "",
+				}),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(fullResourceId, "name", name),
+					resource.TestCheckResourceAttr(fullResourceId, "dnis.#", "20"),
+				),
+			},
+			{
+				Config: didPoolResource + GenerateIvrConfigResource(&IvrConfigStruct{
+					ResourceID:  resourceID,
+					Name:        name,
+					Description: "",
+					Dnis:        createStringArrayOfPhoneNumbers(startNumber, startNumber+48),
+					DependsOn:   "genesyscloud_telephony_providers_edges_did_pool." + didPoolResourceId,
+					DivisionId:  "",
+				}),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(fullResourceId, "name", name),
+					resource.TestCheckResourceAttr(fullResourceId, "dnis.#", "48"),
+				),
+			},
+			{
+				Config: didPoolResource + GenerateIvrConfigResource(&IvrConfigStruct{
+					ResourceID:  resourceID,
+					Name:        name,
+					Description: "",
+					Dnis:        createStringArrayOfPhoneNumbers(startNumber, startNumber+12),
+					DependsOn:   "genesyscloud_telephony_providers_edges_did_pool." + didPoolResourceId,
+					DivisionId:  "",
+				}),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(fullResourceId, "name", name),
+					resource.TestCheckResourceAttr(fullResourceId, "dnis.#", "12"),
+				),
+			},
+			{
+				Config: didPoolResource + GenerateIvrConfigResource(&IvrConfigStruct{
+					ResourceID:  resourceID,
+					Name:        name,
+					Description: "",
+					Dnis:        createStringArrayOfPhoneNumbers(startNumber, endNumber),
+					DependsOn:   "genesyscloud_telephony_providers_edges_did_pool." + didPoolResourceId,
+					DivisionId:  "",
+				}),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(fullResourceId, "name", name),
+					resource.TestCheckResourceAttr(fullResourceId, "dnis.#", fmt.Sprintf("%v", len(allNumbers))),
+				),
+			},
+			{
+				// Import/Read
+				ResourceName:      fullResourceId,
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+			{
+				Config: didPoolResource, // Extra step to ensure take-down is done correctly
 			},
 		},
 		CheckDestroy: testVerifyIvrConfigsDestroyed,
