@@ -45,6 +45,10 @@ func readUserRoles(ctx context.Context, d *schema.ResourceData, meta interface{}
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read roles for user %s | error: %v", d.Id(), err), resp))
 		}
 
+<<<<<<< HEAD
+=======
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceUserRoles())
+>>>>>>> origin/dev
 		_ = d.Set("roles", roles)
 
 		log.Printf("Read roles for user %s", d.Id())

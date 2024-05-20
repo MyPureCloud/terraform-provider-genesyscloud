@@ -6,7 +6,6 @@ import (
 	"log"
 	"strconv"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
-	"terraform-provider-genesyscloud/genesyscloud/tfexporter_state"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"time"
@@ -285,24 +284,22 @@ func readEvaluationForm(ctx context.Context, d *schema.ResourceData, meta interf
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_quality_forms_evaluation", fmt.Sprintf("Failed to read evaluation form %s | error: %s", d.Id(), getErr), resp))
 		}
 
-		// During an export, Retrieve a list of any published versions of the evaluation form
-		// If there are published versions, published will be set to true
-		if tfexporter_state.IsExporterActive() {
-			publishedVersions, resp, err := qualityAPI.GetQualityFormsEvaluationsBulkContexts([]string{*evaluationForm.ContextId})
-			if err != nil {
-				if util.IsStatus404(resp) {
-					return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_quality_forms_evaluation", fmt.Sprintf("Failed to retrieve a list of the latest published evaluation form versions"), resp))
-				}
-				return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_quality_forms_evaluation", fmt.Sprintf("Failed to retrieve a list of the latest published evaluation form versions"), resp))
-			}
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceEvaluationForm())
 
-			if len(publishedVersions) > 0 {
-				_ = d.Set("published", true)
-			} else {
-				_ = d.Set("published", false)
+		// Retrieve a list of any published versions of the evaluation form
+		// If there are published versions, published will be set to true
+		publishedVersions, resp, err := qualityAPI.GetQualityFormsEvaluationsBulkContexts([]string{*evaluationForm.ContextId})
+		if err != nil {
+			if util.IsStatus404(resp) {
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_quality_forms_evaluation", fmt.Sprintf("Failed to retrieve a list of the latest published evaluation form versions"), resp))
 			}
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_quality_forms_evaluation", fmt.Sprintf("Failed to retrieve a list of the latest published evaluation form versions"), resp))
+		}
+
+		if len(publishedVersions) > 0 {
+			_ = d.Set("published", true)
 		} else {
-			_ = d.Set("published", *evaluationForm.Published)
+			_ = d.Set("published", false)
 		}
 
 		if evaluationForm.Name != nil {
