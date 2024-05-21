@@ -1,6 +1,7 @@
 package telephony_providers_edges_site
 
 import (
+	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/mypurecloud/platform-client-sdk-go/v130/platformclientv2"
@@ -248,6 +249,7 @@ func ResourceSite() *schema.Resource {
 				Computed:    true,
 				ConfigMode:  schema.SchemaConfigModeAttr,
 				Elem:        outboundRouteSchema,
+				Deprecated:  fmt.Sprintf("The outbound routes property is deprecated in %s, please use independent outbound routes resource instead", resourceName),
 			},
 			"primary_sites": {
 				Description: `Used for primary phone edge assignment on physical edges only.  List of primary sites the phones can be assigned to. If no primary_sites are defined, the site id for this site will be used as the primary site id.`,

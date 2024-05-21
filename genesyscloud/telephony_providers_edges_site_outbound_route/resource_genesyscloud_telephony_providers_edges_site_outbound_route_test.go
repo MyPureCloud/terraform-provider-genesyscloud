@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"os"
 	"strconv"
 	"strings"
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
@@ -11,11 +12,17 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/telephony"
 	telephonyProvidersEdgesSite "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	featureToggles "terraform-provider-genesyscloud/genesyscloud/util/feature_toggles"
 	"testing"
 )
 
 func TestAccResourceSiteOutboundRoutes(t *testing.T) {
 	t.Parallel()
+	err := os.Setenv(featureToggles.OutboundRoutesToggleName(), "enabled")
+	if err != nil {
+		t.Errorf("%s is not set", featureToggles.OutboundRoutesToggleName())
+	}
+
 	var (
 		outboundRouteResource = "outbound_route"
 

@@ -354,6 +354,7 @@ func TestAccResourceSiteNumberPlans(t *testing.T) {
 }
 
 func TestAccResourceSiteOutboundRoutes(t *testing.T) {
+	t.Skipf("outbound routes are being deprecated for this resource and moved to independent resource")
 	t.Parallel()
 	var (
 		// site

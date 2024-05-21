@@ -25,10 +25,10 @@ import (
 
 func getSites(ctx context.Context, sdkConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
 	resources := make(resourceExporter.ResourceIDMetaMap)
-	sp := getSiteProxy(sdkConfig)
+	sp := GetSiteProxy(sdkConfig)
 
 	// get unmanaged sites
-	unmanagedSites, resp, err := sp.getAllSites(ctx, false)
+	unmanagedSites, resp, err := sp.GetAllSites(ctx, false)
 	if err != nil {
 		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get unmanaged sites error: %s", err), resp)
 	}
@@ -37,7 +37,7 @@ func getSites(ctx context.Context, sdkConfig *platformclientv2.Configuration) (r
 	}
 
 	// get managed sites
-	managedSites, resp, err := sp.getAllSites(ctx, true)
+	managedSites, resp, err := sp.GetAllSites(ctx, true)
 	if err != nil {
 		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get managed sites error: %s", err), resp)
 	}
@@ -50,7 +50,7 @@ func getSites(ctx context.Context, sdkConfig *platformclientv2.Configuration) (r
 
 func createSite(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-	sp := getSiteProxy(sdkConfig)
+	sp := GetSiteProxy(sdkConfig)
 
 	siteReq := &platformclientv2.Site{
 		Name:                        platformclientv2.String(d.Get("name").(string)),
@@ -142,7 +142,7 @@ func createSite(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 
 func readSite(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-	sp := getSiteProxy(sdkConfig)
+	sp := GetSiteProxy(sdkConfig)
 	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceSite(), constants.DefaultConsistencyChecks, resourceName)
 
 	log.Printf("Reading site %s", d.Id())
@@ -203,7 +203,7 @@ func readSite(ctx context.Context, d *schema.ResourceData, meta interface{}) dia
 
 func updateSite(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-	sp := getSiteProxy(sdkConfig)
+	sp := GetSiteProxy(sdkConfig)
 
 	site := &platformclientv2.Site{
 		Name:                        platformclientv2.String(d.Get("name").(string)),
@@ -304,7 +304,7 @@ func updateSite(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 
 func deleteSite(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-	sp := getSiteProxy(sdkConfig)
+	sp := GetSiteProxy(sdkConfig)
 
 	log.Printf("Deleting site")
 	resp, err := sp.deleteSite(ctx, d.Id())

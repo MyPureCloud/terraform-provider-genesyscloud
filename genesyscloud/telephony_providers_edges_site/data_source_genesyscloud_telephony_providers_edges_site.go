@@ -15,7 +15,7 @@ import (
 
 func dataSourceSiteRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	sdkConfig := m.(*provider.ProviderMeta).ClientConfig
-	sp := getSiteProxy(sdkConfig)
+	sp := GetSiteProxy(sdkConfig)
 
 	name := d.Get("name").(string)
 	managed := d.Get("managed").(bool)

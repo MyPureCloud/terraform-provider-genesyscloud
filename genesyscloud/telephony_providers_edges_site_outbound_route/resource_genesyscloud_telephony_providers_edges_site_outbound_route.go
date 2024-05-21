@@ -25,23 +25,30 @@ func getSitesOutboundRoutes(ctx context.Context, sdkConfig *platformclientv2.Con
 	}
 	resources := make(resourceExporter.ResourceIDMetaMap)
 	proxy := getSiteOutboundRouteProxy(sdkConfig)
+	var allSites []platformclientv2.Site
 
 	// get unmanaged sites
-	unmanagedSites, resp, err := proxy.getAllSites(ctx, false)
+	unmanagedSites, resp, err := proxy.siteProxy.GetAllSites(ctx, true)
 	if err != nil {
 		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get unmanaged sites error: %s", err), resp)
 	}
-	for _, unmanagedSite := range *unmanagedSites {
-		resources[*unmanagedSite.Id] = &resourceExporter.ResourceMeta{Name: *unmanagedSite.Name}
-	}
+	allSites = append(allSites, *unmanagedSites...)
 
 	// get managed sites
-	managedSites, resp, err := proxy.getAllSites(ctx, true)
+	managedSites, resp, err := proxy.siteProxy.GetAllSites(ctx, true)
 	if err != nil {
 		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get managed sites error: %s", err), resp)
 	}
-	for _, managedSite := range *managedSites {
-		resources[*managedSite.Id] = &resourceExporter.ResourceMeta{Name: *managedSite.Name}
+	allSites = append(allSites, *managedSites...)
+
+	for _, site := range allSites {
+		routes, resp, err := proxy.getSiteOutboundRoutes(ctx, *site.Id)
+		if err != nil {
+			return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to check site %s outbound routes: %s", *site.Id, err), resp)
+		}
+		if routes != nil && len(*routes) > 0 {
+			resources[*site.Id] = &resourceExporter.ResourceMeta{Name: *site.Name + "-outbound-routes"}
+		}
 	}
 
 	return resources, nil
