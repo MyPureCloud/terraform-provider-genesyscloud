@@ -30,15 +30,11 @@ func getAllAuthIdpAdfss(ctx context.Context, clientConfig *platformclientv2.Conf
 	proxy := newIdpAdfsProxy(clientConfig)
 	resources := make(resourceExporter.ResourceIDMetaMap)
 
-	aDFSs, err := proxy.getAllIdpAdfs(ctx)
+	aDFS, err := proxy.getAllIdpAdfs(ctx)
 	if err != nil {
 		return nil, diag.Errorf("Failed to get idp adfs: %v", err)
 	}
-
-	for _, aDFS := range *aDFSs {
-		resources[*aDFS.Id] = &resourceExporter.ResourceMeta{Name: *aDFS.Name}
-	}
-
+	resources[*aDFS.Id] = &resourceExporter.ResourceMeta{Name: *aDFS.Name}
 	return resources, nil
 }
 
@@ -55,11 +51,8 @@ func readIdpAdfs(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 	log.Printf("Reading idp adfs %s", d.Id())
 
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
-		aDFS, respCode, getErr := proxy.getIdpAdfsById(ctx, d.Id())
+		aDFS, getErr := proxy.getAllIdpAdfs(ctx)
 		if getErr != nil {
-			if util.IsStatus404ByInt(respCode) {
-				return retry.RetryableError(fmt.Errorf("Failed to read idp adfs %s: %s", d.Id(), getErr))
-			}
 			return retry.NonRetryableError(fmt.Errorf("Failed to read idp adfs %s: %s", d.Id(), getErr))
 		}
 
@@ -74,7 +67,6 @@ func readIdpAdfs(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		resourcedata.SetNillableValue(d, "relying_party_identifier", aDFS.RelyingPartyIdentifier)
 		resourcedata.SetNillableValue(d, "certificate", aDFS.Certificate)
 		resourcedata.SetNillableValue(d, "certificates", aDFS.Certificates)
-
 		log.Printf("Read idp adfs %s %s", d.Id(), *aDFS.Name)
 		return cc.CheckState(d)
 	})
@@ -108,13 +100,9 @@ func deleteIdpAdfs(ctx context.Context, d *schema.ResourceData, meta interface{}
 	}
 
 	return util.WithRetries(ctx, 180*time.Second, func() *retry.RetryError {
-		_, respCode, err := proxy.getIdpAdfsById(ctx, d.Id())
+		_, err := proxy.getAllIdpAdfs(ctx)
 
 		if err != nil {
-			if util.IsStatus404ByInt(respCode) {
-				log.Printf("Deleted idp adfs %s", d.Id())
-				return nil
-			}
 			return retry.NonRetryableError(fmt.Errorf("Error deleting idp adfs %s: %s", d.Id(), err))
 		}
 
