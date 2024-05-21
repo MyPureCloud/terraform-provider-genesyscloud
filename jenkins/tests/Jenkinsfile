@@ -380,8 +380,8 @@ script {
             .summary .value { font-weight: bold; }
         </style>
         <div class="summary">
-            <p>Tests: <span class="value">${tests}</span></p>
-            <p>Failures: <span class="value">${failures}</span></p>
+            <p>Total Tests: <span class="value">${tests}</span></p>
+            <p>Failed: <span class="value">${failures}</span></p>
             <p>Passed: <span class="value">${passed}</span></p>
         </div>
     """

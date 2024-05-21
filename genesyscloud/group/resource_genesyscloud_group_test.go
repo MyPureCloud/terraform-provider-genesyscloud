@@ -88,7 +88,6 @@ func TestAccResourceGroupBasic(t *testing.T) {
 }
 
 func TestAccResourceGroupAddresses(t *testing.T) {
-	t.Parallel()
 	var (
 		groupResource1   = "test-group-addr"
 		groupName        = "TF Group" + uuid.NewString()
@@ -108,6 +107,10 @@ func TestAccResourceGroupAddresses(t *testing.T) {
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
+				PreConfig: func() {
+					// Wait for a specified duration - to avoid multiple deletion taking place error
+					time.Sleep(30 * time.Second)
+				},
 				// Create
 				Config: generateUserWithCustomAttrs(testUserResource, testUserEmail, testUserName) + GenerateBasicGroupResource(
 					groupResource1,
