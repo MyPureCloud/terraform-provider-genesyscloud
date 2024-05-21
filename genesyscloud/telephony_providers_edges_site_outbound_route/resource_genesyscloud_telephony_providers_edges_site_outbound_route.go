@@ -28,7 +28,7 @@ func getSitesOutboundRoutes(ctx context.Context, sdkConfig *platformclientv2.Con
 	var allSites []platformclientv2.Site
 
 	// get unmanaged sites
-	unmanagedSites, resp, err := proxy.siteProxy.GetAllSites(ctx, true)
+	unmanagedSites, resp, err := proxy.siteProxy.GetAllSites(ctx, false)
 	if err != nil {
 		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get unmanaged sites error: %s", err), resp)
 	}

@@ -104,6 +104,7 @@ func SiteExporterOutboundRoute() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: provider.GetAllWithPooledClient(getSitesOutboundRoutes),
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
+			"site_id": {RefType: "genesyscloud_telephony_providers_edges_site"},
 			"outbound_routes.external_trunk_base_ids": {RefType: "genesyscloud_telephony_providers_edges_trunkbasesettings"},
 		},
 	}
