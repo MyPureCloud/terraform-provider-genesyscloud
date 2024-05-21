@@ -16,7 +16,6 @@ import (
 )
 
 func TestAccResourceGroupBasic(t *testing.T) {
-	t.Parallel()
 	var (
 		groupResource1   = "test-group1"
 		groupName        = "terraform-" + uuid.NewString()
@@ -35,6 +34,10 @@ func TestAccResourceGroupBasic(t *testing.T) {
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
+				PreConfig: func() {
+					// Wait for a specified duration - to avoid multiple deletion taking place error
+					time.Sleep(30 * time.Second)
+				},
 				// Create a basic group
 				Config: generateUserWithCustomAttrs(testUserResource, testUserEmail, testUserName) +
 					GenerateGroupResource(
