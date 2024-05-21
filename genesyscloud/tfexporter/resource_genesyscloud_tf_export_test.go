@@ -1801,7 +1801,6 @@ func testDependentContactList(filePath, resourceType, name string) resource.Test
 		}
 
 		raw, err := getResourceDefinition(filePath, resourceType)
-		fmt.Printf("raw %v", raw)
 		if err != nil {
 			return err
 		}

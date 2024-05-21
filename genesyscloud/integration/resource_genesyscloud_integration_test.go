@@ -217,6 +217,10 @@ func TestAccResourceIntegration(t *testing.T) {
 					),
 				),
 				Check: resource.ComposeTestCheckFunc(
+					func(s *terraform.State) error {
+						time.Sleep(30 * time.Second) // Wait for 30 seconds
+						return nil
+					},
 					resource.TestCheckResourceAttr("genesyscloud_integration."+inteResource1, "intended_state", defaultState),
 					resource.TestCheckResourceAttr("genesyscloud_integration."+inteResource1, "integration_type", typeID),
 					resource.TestCheckResourceAttr("genesyscloud_integration."+inteResource1, "config.0.name", inteName1),

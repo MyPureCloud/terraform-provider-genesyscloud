@@ -11,6 +11,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
+	"time"
 
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	obCallableTimeset "terraform-provider-genesyscloud/genesyscloud/outbound_callabletimeset"
@@ -37,7 +38,6 @@ func generatePhoneColumnNoTypeBlock(columnName string) string {
 }
 
 func TestAccResourceOutboundCampaignBasic(t *testing.T) {
-
 	var (
 		resourceId            = "campaign1"
 		name                  = "Test Campaign " + uuid.NewString()
@@ -187,6 +187,9 @@ func TestAccResourceOutboundCampaignBasic(t *testing.T) {
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
+				PreConfig: func() {
+					time.Sleep(30 * time.Second)
+				},
 				Config: referencedResources + generateOutboundCampaign(
 					resourceId,
 					name,

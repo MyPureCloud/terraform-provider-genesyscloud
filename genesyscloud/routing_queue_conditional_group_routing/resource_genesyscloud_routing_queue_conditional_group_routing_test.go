@@ -62,10 +62,6 @@ func TestAccResourceRoutingQueueConditionalGroupRouting(t *testing.T) {
 		ProviderFactories: provider.GetProviderFactories(providerResources, nil),
 		Steps: []resource.TestStep{
 			{
-				PreConfig: func() {
-					// Wait for a specified duration - to avoid multiple deletion taking place error
-					time.Sleep(30 * time.Second)
-				},
 				// Create the queue first so we can save the id to a channel and use it in the later test steps
 				// The reason we are doing this is that we need to verify the parent queue is never dropped and recreated because of CGR
 				Config: gcloud.GenerateRoutingSkillGroupResourceBasic(
@@ -245,6 +241,10 @@ func TestAccResourceRoutingQueueConditionalGroupRouting(t *testing.T) {
 					resource.TestCheckResourceAttrPair(
 						"genesyscloud_routing_queue_conditional_group_routing."+conditionalGroupRoutingResource, "rules.0.groups.0.member_group_id", "genesyscloud_group."+groupResourceId, "id",
 					),
+					func(s *terraform.State) error {
+						time.Sleep(60 * time.Second) // Wait for 60 seconds for resources to get deleted properly
+						return nil
+					},
 				),
 			},
 			{

@@ -339,36 +339,19 @@ pipeline {
 
                 sh 'junit2html report.xml report.html'
 
+
 script {
-    // Read the XML report content
+    // Extract summary information from report.xml using xmltodict
     def xmlContent = readFile(env.XML_REPORT).trim()
-
-    // Parse the XML content to remove test cases with "PASS" in their logs
-    def modifiedXmlContent = new XmlParser().parseText(xmlContent).with { root ->
-        root.'testsuite'.each { testsuite ->
-            testsuite.'testcase'.findAll { testcase ->
-                def testcaseLog = testcase.'system-out'.text()
-                testcaseLog.contains("PASS")
-            }.each { testcase ->
-                testsuite.remove(testcase)
-            }
-        }
-        new groovy.xml.XmlUtil().serialize(root)
-    }
-
-    // Write the modified XML content back to the report file
-    writeFile(file: env.XML_REPORT, text: modifiedXmlContent)
-
-    // Parse the modified XML to JSON
-    def parsedXml = sh(script: "python -c 'import xmltodict, sys, json; print(json.dumps(xmltodict.parse(sys.stdin.read())))' <<< '${modifiedXmlContent}'", returnStdout: true).trim()
+    def parsedXml = sh(script: "python -c 'import xmltodict, sys, json; print(json.dumps(xmltodict.parse(sys.stdin.read())))' <<< '${xmlContent}'", returnStdout: true).trim()
     def parsedJson = new groovy.json.JsonSlurperClassic().parseText(parsedXml)
 
-    // Extract summary information
+    // Extract tests and failures from the first line of the XML
     def tests = parsedJson['testsuites']['@tests'].toInteger()
     def failures = parsedJson['testsuites']['@failures'].toInteger()
     def passed = tests - failures
 
-    // Read the existing HTML report content
+    // Read the existing report.html content
     def htmlContent = readFile(env.HTML_REPORT).trim()
 
     // Create summary lines with CSS styling
@@ -386,19 +369,19 @@ script {
         </div>
     """
 
-    // Insert summary lines after the line "Test Report : report.xml"
+    // Insert summary lines after the line "Test Report : report.xml" and remove the specified lines
     def updatedHtmlContent = htmlContent.replaceFirst("(?i)(Test Report : report.xml\\s*)", summaryLines)
 
-    // Write the updated content back to the HTML report
+    // Write the updated content back to report.html
     writeFile(file: env.HTML_REPORT, text: updatedHtmlContent.trim())
 
 }
-
         archiveArtifacts artifacts: 'coverageAcceptance.html,report.html', allowEmptyArchive: true
         
             }
         }
     }
 }
+ 
 
     

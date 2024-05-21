@@ -42,10 +42,6 @@ func TestAccResourceGroupRolesMembership(t *testing.T) {
 		ProviderFactories: provider.GetProviderFactories(providerResources, nil),
 		Steps: []resource.TestStep{
 			{
-				PreConfig: func() {
-					// Wait for a specified duration - to avoid multiple deletion taking place error
-					time.Sleep(30 * time.Second)
-				},
 				// Create group with 1 role in default division
 				Config: generateUserWithCustomAttrs(testUserResource, testUserEmail, testUserName) + group.GenerateBasicGroupResource(
 					groupResource1,
@@ -124,6 +120,10 @@ func TestAccResourceGroupRolesMembership(t *testing.T) {
 				) + genesyscloud.GenerateAuthDivisionBasic(divResource, divName),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckNoResourceAttr("genesyscloud_group_roles."+groupRoleResource, "roles.%"),
+					func(s *terraform.State) error {
+						time.Sleep(30 * time.Second) // Wait for 30 seconds for resources to get deleted properly
+						return nil
+					},
 				),
 			},
 			{

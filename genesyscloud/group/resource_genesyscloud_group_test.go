@@ -34,10 +34,6 @@ func TestAccResourceGroupBasic(t *testing.T) {
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
-				PreConfig: func() {
-					// Wait for a specified duration - to avoid multiple deletion taking place error
-					time.Sleep(30 * time.Second)
-				},
 				// Create a basic group
 				Config: generateUserWithCustomAttrs(testUserResource, testUserEmail, testUserName) +
 					GenerateGroupResource(
@@ -74,6 +70,10 @@ func TestAccResourceGroupBasic(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_group."+groupResource1, "description", groupDesc2),
 					resource.TestCheckResourceAttr("genesyscloud_group."+groupResource1, "visibility", visMembers),
 					resource.TestCheckResourceAttr("genesyscloud_group."+groupResource1, "rules_visible", util.FalseValue),
+					func(s *terraform.State) error {
+						time.Sleep(30 * time.Second) // Wait for 30 seconds for resources to get deleted properly
+						return nil
+					},
 				),
 			},
 			{
@@ -107,10 +107,6 @@ func TestAccResourceGroupAddresses(t *testing.T) {
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
-				PreConfig: func() {
-					// Wait for a specified duration - to avoid multiple deletion taking place error
-					time.Sleep(30 * time.Second)
-				},
 				// Create
 				Config: generateUserWithCustomAttrs(testUserResource, testUserEmail, testUserName) + GenerateBasicGroupResource(
 					groupResource1,
@@ -177,6 +173,10 @@ func TestAccResourceGroupAddresses(t *testing.T) {
 					GenerateGroupOwners("genesyscloud_user."+testUserResource+".id"),
 				),
 				Check: resource.ComposeTestCheckFunc(
+					func(s *terraform.State) error {
+						time.Sleep(30 * time.Second) // Wait for 30 seconds for resources to get deleted properly
+						return nil
+					},
 					resource.TestCheckResourceAttr("genesyscloud_group."+groupResource1, "name", groupName),
 					resource.TestCheckResourceAttr("genesyscloud_group."+groupResource1, "addresses.0.type", typeGroupPhone),
 					resource.TestCheckResourceAttr("genesyscloud_group."+groupResource1, "addresses.0.extension", addrPhoneExt2),
@@ -188,9 +188,6 @@ func TestAccResourceGroupAddresses(t *testing.T) {
 				ImportState:             true,
 				ImportStateVerify:       true,
 				ImportStateVerifyIgnore: []string{"addresses"},
-				PreConfig: func() {
-					time.Sleep(30 * time.Second)
-				},
 			},
 		},
 		CheckDestroy: testVerifyGroupsDestroyed,
@@ -299,10 +296,11 @@ func TestAccResourceGroupMembers(t *testing.T) {
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckNoResourceAttr("genesyscloud_group."+groupResource, "member_ids.%"),
+					func(s *terraform.State) error {
+						time.Sleep(30 * time.Second) // Wait for 30 seconds for resources to get deleted properly
+						return nil
+					},
 				),
-				PreConfig: func() {
-					time.Sleep(30 * time.Second)
-				},
 			},
 			{
 				// Import/Read

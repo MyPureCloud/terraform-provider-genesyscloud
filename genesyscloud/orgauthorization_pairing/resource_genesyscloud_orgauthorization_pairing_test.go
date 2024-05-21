@@ -11,6 +11,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
 func TestAccResourceOrgAuthorizationPairing(t *testing.T) {
@@ -162,10 +163,11 @@ func TestAccResourceOrgAuthorizationPairing(t *testing.T) {
 					util.ValidateResourceAttributeInArray("genesyscloud_orgauthorization_pairing."+orgAuthorizationPairingResource, "group_ids",
 						"genesyscloud_group."+groupResource2, "id"),
 					resource.TestCheckResourceAttr("genesyscloud_orgauthorization_pairing."+orgAuthorizationPairingResource, "group_ids.#", "2"),
+					func(s *terraform.State) error {
+						time.Sleep(30 * time.Second) // Wait for 30 seconds for resources to get deleted properly
+						return nil
+					},
 				),
-				PreConfig: func() {
-					time.Sleep(30 * time.Second)
-				},
 			},
 			{
 				// Import/Read

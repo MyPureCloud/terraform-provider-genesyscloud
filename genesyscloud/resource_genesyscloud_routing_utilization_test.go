@@ -153,11 +153,11 @@ func TestAccResourceRoutingUtilizationWithLabels(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_routing_utilization.routing-util", "label_utilizations.0.maximum_capacity", maxCapacity1),
 					resource.TestCheckResourceAttrSet("genesyscloud_routing_utilization.routing-util", "label_utilizations.1.label_id"),
 					resource.TestCheckResourceAttr("genesyscloud_routing_utilization.routing-util", "label_utilizations.1.maximum_capacity", maxCapacity1),
+					func(s *terraform.State) error {
+						time.Sleep(30 * time.Second)
+						return nil
+					},
 				),
-				PreConfig: func() {
-					// Wait for a specified duration - to avoid multiple deletion taking place error
-					time.Sleep(30 * time.Second)
-				},
 			},
 			{
 				// Update with a new max capacities and interruptible media types
@@ -193,11 +193,11 @@ func TestAccResourceRoutingUtilizationWithLabels(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_routing_utilization.routing-util", "label_utilizations.0.maximum_capacity", maxCapacity2),
 					resource.TestCheckResourceAttrSet("genesyscloud_routing_utilization.routing-util", "label_utilizations.1.label_id"),
 					resource.TestCheckResourceAttr("genesyscloud_routing_utilization.routing-util", "label_utilizations.1.maximum_capacity", maxCapacity2),
+					func(s *terraform.State) error {
+						time.Sleep(30 * time.Second)
+						return nil
+					},
 				),
-				PreConfig: func() {
-					// Wait for a specified duration - to avoid multiple deletion taking place error
-					time.Sleep(30 * time.Second)
-				},
 			},
 			{
 				// Import/Read
@@ -239,10 +239,6 @@ func TestAccResourceRoutingUtilizationWithLabels(t *testing.T) {
 					}
 
 					return nil
-				},
-				PreConfig: func() {
-					// Wait for a specified duration - to avoid multiple deletion taking place error
-					time.Sleep(30 * time.Second)
 				},
 			},
 		},
