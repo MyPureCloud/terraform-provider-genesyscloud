@@ -52,7 +52,7 @@ func getIdpAdfsProxy(clientConfig *platformclientv2.Configuration) *idpAdfsProxy
 }
 
 // getIdpAdfs retrieves all Genesys Cloud idp adfs
-func (p *idpAdfsProxy) getAllIdpAdfs(ctx context.Context) (*platformclientv2.Adfs, error) {
+func (p *idpAdfsProxy) getIdpAdfs(ctx context.Context) (*platformclientv2.Adfs, error) {
 	return p.getAllIdpAdfsAttr(ctx, p)
 }
 

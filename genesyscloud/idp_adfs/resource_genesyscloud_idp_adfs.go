@@ -16,6 +16,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
 	"terraform-provider-genesyscloud/genesyscloud/util/constants"
+	"terraform-provider-genesyscloud/genesyscloud/util/lists"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -30,17 +31,19 @@ func getAllAuthIdpAdfss(ctx context.Context, clientConfig *platformclientv2.Conf
 	proxy := newIdpAdfsProxy(clientConfig)
 	resources := make(resourceExporter.ResourceIDMetaMap)
 
-	aDFS, err := proxy.getAllIdpAdfs(ctx)
+	_, err := proxy.getIdpAdfs(ctx)
 	if err != nil {
 		return nil, diag.Errorf("Failed to get idp adfs: %v", err)
 	}
-	resources[*aDFS.Id] = &resourceExporter.ResourceMeta{Name: *aDFS.Name}
+	resources["0"] = &resourceExporter.ResourceMeta{Name: "adfs"}
 	return resources, nil
 }
 
 // createIdpAdfs is used by the idp_adfs resource to create Genesys cloud idp adfs
 func createIdpAdfs(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	return nil
+	log.Printf("Creating IDP ADFS")
+	d.SetId("adfs")
+	return updateIdpAdfs(ctx, d, meta)
 }
 
 // readIdpAdfs is used by the idp_adfs resource to read an idp adfs from genesys cloud
@@ -50,8 +53,8 @@ func readIdpAdfs(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 
 	log.Printf("Reading idp adfs %s", d.Id())
 
-	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
-		aDFS, getErr := proxy.getAllIdpAdfs(ctx)
+	return util.WithRetriesForReadCustomTimeout(ctx, d.Timeout(schema.TimeoutRead), d, func() *retry.RetryError {
+		aDFS, getErr := proxy.getIdpAdfs(ctx)
 		if getErr != nil {
 			return retry.NonRetryableError(fmt.Errorf("Failed to read idp adfs %s: %s", d.Id(), getErr))
 		}
@@ -78,7 +81,13 @@ func updateIdpAdfs(ctx context.Context, d *schema.ResourceData, meta interface{}
 	proxy := getIdpAdfsProxy(sdkConfig)
 
 	idpAdfs := getIdpAdfsFromResourceData(d)
-
+	certificates := lists.BuildSdkStringListFromInterfaceArray(d, "certificates")
+	if certificates != nil {
+		if len(*certificates) == 1 {
+			idpAdfs.Certificate = &(*certificates)[0]
+		}
+		idpAdfs.Certificates = certificates
+	}
 	log.Printf("Updating idp adfs %s", *idpAdfs.Name)
 	_, err := proxy.updateIdpAdfs(ctx, d.Id(), &idpAdfs)
 	if err != nil {
@@ -100,7 +109,7 @@ func deleteIdpAdfs(ctx context.Context, d *schema.ResourceData, meta interface{}
 	}
 
 	return util.WithRetries(ctx, 180*time.Second, func() *retry.RetryError {
-		_, err := proxy.getAllIdpAdfs(ctx)
+		_, err := proxy.getIdpAdfs(ctx)
 
 		if err != nil {
 			return retry.NonRetryableError(fmt.Errorf("Error deleting idp adfs %s: %s", d.Id(), err))
