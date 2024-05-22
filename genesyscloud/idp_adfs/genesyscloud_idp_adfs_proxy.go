@@ -2,7 +2,6 @@ package idp_adfs
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 )
@@ -71,7 +70,7 @@ func (p *idpAdfsProxy) deleteIdpAdfs(ctx context.Context, id string) (statusCode
 func getAllIdpAdfsFn(ctx context.Context, p *idpAdfsProxy) (*platformclientv2.Adfs, error) {
 	adfs, _, err := p.identityProviderApi.GetIdentityprovidersAdfs()
 	if err != nil {
-		return nil, fmt.Errorf("Failed to get a d f s: %v", err)
+		return nil, err
 	}
 
 	return adfs, nil
@@ -81,7 +80,7 @@ func getAllIdpAdfsFn(ctx context.Context, p *idpAdfsProxy) (*platformclientv2.Ad
 func updateIdpAdfsFn(ctx context.Context, p *idpAdfsProxy, id string, idpAdfs *platformclientv2.Adfs) (statusCode int, err error) {
 	_, resp, err := p.identityProviderApi.PutIdentityprovidersAdfs(*idpAdfs)
 	if err != nil {
-		return resp.StatusCode, fmt.Errorf("Failed to update idp adfs: %s", err)
+		return resp.StatusCode, err
 	}
 	return resp.StatusCode, nil
 }
@@ -90,7 +89,7 @@ func updateIdpAdfsFn(ctx context.Context, p *idpAdfsProxy, id string, idpAdfs *p
 func deleteIdpAdfsFn(ctx context.Context, p *idpAdfsProxy, id string) (statusCode int, err error) {
 	_, resp, err := p.identityProviderApi.DeleteIdentityprovidersAdfs()
 	if err != nil {
-		return resp.StatusCode, fmt.Errorf("Failed to delete idp adfs: %s", err)
+		return resp.StatusCode, err
 	}
 
 	return resp.StatusCode, nil
