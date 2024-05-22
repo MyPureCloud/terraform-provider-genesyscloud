@@ -114,7 +114,7 @@ func (p *architectSchedulesProxy) deleteArchitectSchedules(ctx context.Context, 
 func createArchitectSchedulesFn(ctx context.Context, p *architectSchedulesProxy, architectSchedules *platformclientv2.Schedule) (*platformclientv2.Schedule, *platformclientv2.APIResponse, error) {
 	schedules, apiResponse, err := p.architectApi.PostArchitectSchedules(*architectSchedules)
 	if err != nil {
-		return nil, apiResponse, fmt.Errorf("failed to create architect schedules: %s", err)
+		return nil, apiResponse, fmt.Errorf("Failed to create architect schedules: %s", err)
 	}
 	return schedules, apiResponse, nil
 }
@@ -126,7 +126,7 @@ func getAllArchitectSchedulesFn(ctx context.Context, p *architectSchedulesProxy)
 
 	schedules, apiResponse, err := p.architectApi.GetArchitectSchedules(1, pageSize, "", "", "", nil)
 	if err != nil {
-		return nil, apiResponse, fmt.Errorf("failed to get schedule : %v", err)
+		return nil, apiResponse, fmt.Errorf("Failed to get schedule : %v", err)
 	}
 
 	if schedules == nil || schedules.Entities == nil || len(*schedules.Entities) == 0 {
@@ -138,7 +138,7 @@ func getAllArchitectSchedulesFn(ctx context.Context, p *architectSchedulesProxy)
 	for pageNum := 2; pageNum <= *schedules.PageCount; pageNum++ {
 		schedules, apiResponse, err := p.architectApi.GetArchitectSchedules(pageNum, pageSize, "", "", "", nil)
 		if err != nil {
-			return nil, apiResponse, fmt.Errorf("failed to get schedule : %v", err)
+			return nil, apiResponse, fmt.Errorf("Failed to get schedule : %v", err)
 		}
 
 		if schedules == nil || schedules.Entities == nil || len(*schedules.Entities) == 0 {
@@ -159,7 +159,7 @@ func getArchitectSchedulesIdByNameFn(ctx context.Context, p *architectSchedulesP
 	}
 
 	if schedules == nil || len(*schedules) == 0 {
-		return "", true, apiResponse, fmt.Errorf("no architect schedules found with name %s", name)
+		return "", true, apiResponse, fmt.Errorf("No architect schedules found with name %s", name)
 	}
 
 	for _, schedules := range *schedules {
@@ -169,14 +169,14 @@ func getArchitectSchedulesIdByNameFn(ctx context.Context, p *architectSchedulesP
 		}
 	}
 
-	return "", true, apiResponse, fmt.Errorf("unable to find architect schedules with name %s", name)
+	return "", true, apiResponse, fmt.Errorf("Unable to find architect schedules with name %s", name)
 }
 
 // getArchitectSchedulesByIdFn is an implementation of the function to get a Genesys Cloud architect schedules by Id
 func getArchitectSchedulesByIdFn(ctx context.Context, p *architectSchedulesProxy, id string) (architectSchedules *platformclientv2.Schedule, response *platformclientv2.APIResponse, err error) {
 	schedule, apiResponse, err := p.architectApi.GetArchitectSchedule(id)
 	if err != nil {
-		return nil, apiResponse, fmt.Errorf("failed to retrieve architect schedule by id %s: %s", id, err)
+		return nil, apiResponse, fmt.Errorf("Failed to retrieve architect schedule by id %s: %s", id, err)
 	}
 	return schedule, apiResponse, nil
 }
@@ -185,12 +185,12 @@ func getArchitectSchedulesByIdFn(ctx context.Context, p *architectSchedulesProxy
 func updateArchitectSchedulesFn(ctx context.Context, p *architectSchedulesProxy, id string, architectSchedules *platformclientv2.Schedule) (*platformclientv2.Schedule, *platformclientv2.APIResponse, error) {
 	schedule, apiResponse, err := getArchitectSchedulesByIdFn(ctx, p, id)
 	if err != nil {
-		return nil, apiResponse, fmt.Errorf("failed to get schedule  %s by id: %s", id, err)
+		return nil, apiResponse, fmt.Errorf("Failed to get schedule  %s by id: %s", id, err)
 	}
 	architectSchedules.Version = schedule.Version
 	scheduleResponse, apiResponse, err := p.architectApi.PutArchitectSchedule(id, *architectSchedules)
 	if err != nil {
-		return nil, apiResponse, fmt.Errorf("failed to update architect schedules: %s", err)
+		return nil, apiResponse, fmt.Errorf("Failed to update architect schedules: %s", err)
 	}
 	return scheduleResponse, apiResponse, nil
 }
@@ -199,7 +199,7 @@ func updateArchitectSchedulesFn(ctx context.Context, p *architectSchedulesProxy,
 func deleteArchitectSchedulesFn(ctx context.Context, p *architectSchedulesProxy, id string) (*platformclientv2.APIResponse, error) {
 	resp, err := p.architectApi.DeleteArchitectSchedule(id)
 	if err != nil {
-		return resp, fmt.Errorf("failed to delete architect schedules: %s", err)
+		return resp, fmt.Errorf("Failed to delete architect schedules: %s", err)
 	}
 	return resp, nil
 }

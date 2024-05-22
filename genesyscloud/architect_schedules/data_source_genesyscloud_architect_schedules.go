@@ -22,11 +22,11 @@ func dataSourceArchitectSchedulesRead(ctx context.Context, d *schema.ResourceDat
 		scheduleId, retryable, proxyResponse, err := proxy.getArchitectSchedulesIdByName(ctx, name)
 
 		if err != nil && !retryable {
-			return retry.NonRetryableError(fmt.Errorf("error requesting schedule %s: %s %v", name, err, proxyResponse))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Error searching architect schedules %s | error: %s", name, err), proxyResponse))
 		}
 
 		if retryable {
-			return retry.RetryableError(fmt.Errorf("no schedule found with name %s", name))
+			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("No architect schedulegs found with name %s", name), proxyResponse))
 		}
 
 		d.SetId(scheduleId)

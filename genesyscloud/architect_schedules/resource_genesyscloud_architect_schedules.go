@@ -17,9 +17,12 @@ import (
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"terraform-provider-genesyscloud/genesyscloud/util/constants"
+	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 )
+
+const timeFormat = "2006-01-02T15:04:05.000000"
 
 func getAllArchitectSchedules(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
 	proxy := getArchitectSchedulesProxy(clientConfig)
@@ -50,14 +53,15 @@ func createArchitectSchedules(ctx context.Context, d *schema.ResourceData, meta 
 	end := d.Get("end").(string)
 	rrule := d.Get("rrule").(string)
 
-	schedStart, err := time.Parse("2006-01-02T15:04:05.000000", start)
+	//The first parameter of the Parse() method specifies the date and time format/layout that should be used to interpret the second parameter.
+	schedStart, err := time.Parse(timeFormat, start)
 	if err != nil {
-		return diag.Errorf("Failed to parse date %s: %s", start, err)
+		return util.BuildDiagnosticError(resourceName, fmt.Sprintf("Failed to parse date %s", start), err)
 	}
 
-	schedEnd, err := time.Parse("2006-01-02T15:04:05.000000", end)
+	schedEnd, err := time.Parse(timeFormat, end)
 	if err != nil {
-		return diag.Errorf("Failed to parse date %s: %s", end, err)
+		return util.BuildDiagnosticError(resourceName, fmt.Sprintf("Failed to parse date %s", end), err)
 	}
 
 	schedule := platformclientv2.Schedule{
@@ -96,6 +100,7 @@ func createArchitectSchedules(ctx context.Context, d *schema.ResourceData, meta 
 func readArchitectSchedules(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getArchitectSchedulesProxy(sdkConfig)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceArchitectSchedules(), constants.DefaultConsistencyChecks, resourceName)
 
 	log.Printf("Reading schedule %s", d.Id())
 
@@ -103,40 +108,33 @@ func readArchitectSchedules(ctx context.Context, d *schema.ResourceData, meta in
 		scheduleResponse, proxyResponse, err := proxy.getArchitectSchedulesById(ctx, d.Id())
 		if err != nil {
 			if util.IsStatus404(proxyResponse) {
-				return retry.RetryableError(fmt.Errorf("failed to read schedule %s: %s", d.Id(), err))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read schedule %s | error: %s", d.Id(), err), proxyResponse))
 			}
-			return retry.NonRetryableError(fmt.Errorf("failed to read schedule %s: %s", d.Id(), err))
+			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read schedule %s | error: %s", d.Id(), err), proxyResponse))
 		}
 
-		Start := new(string)
+		start := new(string)
 		if scheduleResponse.Start != nil {
-			*Start = timeutil.Strftime(scheduleResponse.Start, "%Y-%m-%dT%H:%M:%S.%f")
+			*start = timeutil.Strftime(scheduleResponse.Start, "%Y-%m-%dT%H:%M:%S.%f")
 
 		} else {
-			Start = nil
+			start = nil
 		}
 
-		End := new(string)
+		end := new(string)
 		if scheduleResponse.End != nil {
-			*End = timeutil.Strftime(scheduleResponse.End, "%Y-%m-%dT%H:%M:%S.%f")
+			*end = timeutil.Strftime(scheduleResponse.End, "%Y-%m-%dT%H:%M:%S.%f")
 
 		} else {
-			End = nil
+			end = nil
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceArchitectSchedules(), constants.DefaultConsistencyChecks, resourceName)
-		d.Set("name", *scheduleResponse.Name)
-		d.Set("division_id", *scheduleResponse.Division.Id)
-		d.Set("description", nil)
-		if scheduleResponse.Description != nil {
-			d.Set("description", *scheduleResponse.Description)
-		}
-		d.Set("start", Start)
-		d.Set("end", End)
-		d.Set("rrule", nil)
-		if scheduleResponse.Rrule != nil {
-			d.Set("rrule", *scheduleResponse.Rrule)
-		}
+		resourcedata.SetNillableValue(d, "name", scheduleResponse.Name)
+		resourcedata.SetNillableValue(d, "division_id", scheduleResponse.Division.Id)
+		resourcedata.SetNillableValue(d, "description", scheduleResponse.Description)
+		resourcedata.SetNillableValue(d, "start", start)
+		resourcedata.SetNillableValue(d, "end", end)
+		resourcedata.SetNillableValue(d, "rrule", scheduleResponse.Rrule)
 
 		log.Printf("Read schedule %s %s", d.Id(), *scheduleResponse.Name)
 		return cc.CheckState(d)
@@ -155,12 +153,13 @@ func updateArchitectSchedules(ctx context.Context, d *schema.ResourceData, meta 
 	end := d.Get("end").(string)
 	rrule := d.Get("rrule").(string)
 
-	schedStart, err := time.Parse("2006-01-02T15:04:05.000000", start)
+	//The first parameter of the Parse() method specifies the date and time format/layout that should be used to interpret the second parameter.
+	schedStart, err := time.Parse(timeFormat, start)
 	if err != nil {
 		return diag.Errorf("Failed to parse date %s: %s", start, err)
 	}
 
-	schedEnd, err := time.Parse("2006-01-02T15:04:05.000000", end)
+	schedEnd, err := time.Parse(timeFormat, end)
 	if err != nil {
 		return diag.Errorf("Failed to parse date %s: %s", end, err)
 	}
@@ -229,7 +228,7 @@ func deleteArchitectSchedules(ctx context.Context, d *schema.ResourceData, meta 
 				log.Printf("Deleted schedule %s", d.Id())
 				return nil
 			}
-			return retry.NonRetryableError(fmt.Errorf("error deleting schedule %s: %s", d.Id(), err))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Error deleting schedule %s | error: %s", d.Id(), err), proxyGetResponse))
 		}
 
 		if scheduleResponse.State != nil && *scheduleResponse.State == "deleted" {
@@ -237,8 +236,7 @@ func deleteArchitectSchedules(ctx context.Context, d *schema.ResourceData, meta 
 			log.Printf("Deleted group %s", d.Id())
 			return nil
 		}
-
-		return retry.RetryableError(fmt.Errorf("schedule %s still exists", d.Id()))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Schedule %s still exists", d.Id()), proxyGetResponse))
 	})
 }
 
