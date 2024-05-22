@@ -102,7 +102,7 @@ func ResourceSiteOutboundRoute() *schema.Resource {
 // SiteExporterOutboundRoute returns the resourceExporter object used to hold the genesyscloud_telephony_providers_edges_site_outbound_route exporter's config
 func SiteExporterOutboundRoute() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
-		GetResourcesFunc: provider.GetAllWithPooledClient(getSitesOutboundRoutes),
+		GetResourcesFunc: provider.GetAllWithPooledClient(getAllSitesOutboundRoutes),
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			"site_id": {RefType: "genesyscloud_telephony_providers_edges_site"},
 			"outbound_routes.external_trunk_base_ids": {RefType: "genesyscloud_telephony_providers_edges_trunkbasesettings"},

@@ -19,7 +19,7 @@ import (
 	"time"
 )
 
-func getSitesOutboundRoutes(ctx context.Context, sdkConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+func getAllSitesOutboundRoutes(ctx context.Context, sdkConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
 	if exists := featureToggles.OutboundRoutesToggleExists(); !exists {
 		return nil, util.BuildDiagnosticError(resourceName, fmt.Sprintf("Environment variable %s not set", featureToggles.OutboundRoutesToggleName()), fmt.Errorf("environment variable %s not set", featureToggles.OutboundRoutesToggleName()))
 	}
@@ -136,57 +136,64 @@ func updateSiteOutboundRoutes(ctx context.Context, d *schema.ResourceData, meta 
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getSiteOutboundRouteProxy(sdkConfig)
 
-	outboundRoutes := buildOutboundRoutes(d.Get("outbound_routes").(*schema.Set))
-
 	// Get the current outbound routes
 	outboundRoutesAPI, resp, err := proxy.getSiteOutboundRoutes(ctx, d.Id())
 	if err != nil {
 		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get outbound routes for site %s error: %s", d.Id(), err), resp)
 	}
 
+	createRoutes, updateRoutes, deleteRoutes := splitRoutes(buildOutboundRoutes(d.Get("outbound_routes").(*schema.Set)), outboundRoutesAPI)
+
 	// Delete unwanted outbound routes first to free up classifications assigned to them
-	for _, outboundRouteFromAPI := range *outboundRoutesAPI {
-		// Delete route if no reference to it
-		if _, ok := nameInOutboundRoutes(*outboundRouteFromAPI.Name, *outboundRoutes); !ok {
-			resp, err := proxy.deleteSiteOutboundRoute(ctx, d.Id(), *outboundRouteFromAPI.Id)
-			if err != nil {
-				if util.IsStatus404(resp) {
-					return nil
-				}
-				return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete outbound route from site %s error: %s", d.Id(), err), resp)
+	for _, route := range deleteRoutes {
+		resp, err := proxy.deleteSiteOutboundRoute(ctx, d.Id(), *route.Id)
+		if err != nil {
+			if util.IsStatus404(resp) {
+				return nil
 			}
+			return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete outbound route from site %s error: %s", d.Id(), err), resp)
 		}
 	}
 	time.Sleep(2 * time.Second)
 
-	// Update the outbound routes
-	for _, outboundRoute := range *outboundRoutes {
-		if outboundRouteUpdate, ok := nameInOutboundRoutes(*outboundRoute.Name, *outboundRoutesAPI); ok {
-			// Update the outbound route
-			outboundRouteUpdate.Name = outboundRoute.Name
-			outboundRouteUpdate.Description = outboundRoute.Description
-			outboundRouteUpdate.ClassificationTypes = outboundRoute.ClassificationTypes
-			outboundRouteUpdate.Enabled = outboundRoute.Enabled
-			outboundRouteUpdate.Distribution = outboundRoute.Distribution
-			outboundRouteUpdate.ExternalTrunkBases = outboundRoute.ExternalTrunkBases
-
-			_, resp, err := proxy.updateSiteOutboundRoute(ctx, d.Id(), *outboundRouteUpdate.Id, outboundRouteUpdate)
-			if err != nil {
-				return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update outbound route with id %s for site %s error: %s", *outboundRouteUpdate.Id, d.Id(), err), resp)
-			}
-		} else {
-			// Add the outbound route if not already present
-			_, resp, err := proxy.createSiteOutboundRoute(ctx, d.Id(), &outboundRoute)
-			if err != nil {
-				return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to add outbound route to site %s error: %s", d.Id(), err), resp)
-			}
+	for _, route := range createRoutes {
+		_, resp, err := proxy.createSiteOutboundRoute(ctx, d.Id(), &route)
+		if err != nil {
+			return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to add outbound route to site %s error: %s", d.Id(), err), resp)
 		}
 	}
+	time.Sleep(2 * time.Second)
 
+	for _, route := range updateRoutes {
+		_, resp, err := proxy.updateSiteOutboundRoute(ctx, d.Id(), *route.Id, &route)
+		if err != nil {
+			return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update outbound route with id %s for site %s error: %s", *route.Id, d.Id(), err), resp)
+		}
+	}
 	// Wait for the update before reading
 	time.Sleep(5 * time.Second)
 
 	return readSiteOutboundRoutes(ctx, d, meta)
+}
+
+// splitRoutes will take a list of exists routes and a new list of routes and decide what routes need to be created, updated and deleted
+func splitRoutes(definedRoutes, apiRoutes *[]platformclientv2.Outboundroutebase) (createRoutes, updateRoutes, deleteRoutes []platformclientv2.Outboundroutebase) {
+	for _, apiRoute := range *apiRoutes {
+		if _, present := nameInOutboundRoutes(*apiRoute.Name, *definedRoutes); !present {
+			deleteRoutes = append(deleteRoutes, apiRoute)
+		}
+	}
+
+	for _, definedRoute := range *definedRoutes {
+		if apiRoute, present := nameInOutboundRoutes(*definedRoute.Name, *apiRoutes); present {
+			definedRoute.Id = apiRoute.Id
+			updateRoutes = append(updateRoutes, definedRoute)
+		} else {
+			createRoutes = append(createRoutes, definedRoute)
+		}
+	}
+
+	return createRoutes, updateRoutes, deleteRoutes
 }
 
 func deleteSiteOutboundRoutes(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {

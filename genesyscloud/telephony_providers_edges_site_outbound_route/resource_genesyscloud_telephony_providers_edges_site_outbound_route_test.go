@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"log"
 	"os"
 	"strconv"
 	"strings"
@@ -17,7 +18,13 @@ import (
 )
 
 func TestAccResourceSiteOutboundRoutes(t *testing.T) {
-	t.Parallel()
+	defer func() {
+		err := os.Unsetenv(featureToggles.OutboundRoutesToggleName())
+		if err != nil {
+			log.Printf("%s", err)
+		}
+	}()
+
 	err := os.Setenv(featureToggles.OutboundRoutesToggleName(), "enabled")
 	if err != nil {
 		t.Errorf("%s is not set", featureToggles.OutboundRoutesToggleName())

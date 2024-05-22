@@ -23,7 +23,7 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v130/platformclientv2"
 )
 
-func getSites(ctx context.Context, sdkConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+func getAllSites(ctx context.Context, sdkConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
 	resources := make(resourceExporter.ResourceIDMetaMap)
 	sp := GetSiteProxy(sdkConfig)
 
@@ -115,7 +115,7 @@ func createSite(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 		diagErr = util.WithRetries(ctx, 60*time.Second, func() *retry.RetryError {
 			diagErr = updateSiteOutboundRoutes(ctx, sp, d)
 			if diagErr != nil {
-				return retry.RetryableError(fmt.Errorf(fmt.Sprintf("%v", diagErr), d.Id()))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to create site %s | error: %v", d.Id(), diagErr), nil))
 			}
 			return nil
 		})

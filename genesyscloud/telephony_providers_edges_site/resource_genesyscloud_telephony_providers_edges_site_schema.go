@@ -249,7 +249,7 @@ func ResourceSite() *schema.Resource {
 				Computed:    true,
 				ConfigMode:  schema.SchemaConfigModeAttr,
 				Elem:        outboundRouteSchema,
-				Deprecated:  fmt.Sprintf("The outbound routes property is deprecated in %s, please use independent outbound routes resource instead", resourceName),
+				Deprecated:  fmt.Sprintf("The outbound routes property is deprecated in %s, please use independent outbound routes resource instead, genesyscloud_telephony_providers_edges_site_outbound_route", resourceName),
 			},
 			"primary_sites": {
 				Description: `Used for primary phone edge assignment on physical edges only.  List of primary sites the phones can be assigned to. If no primary_sites are defined, the site id for this site will be used as the primary site id.`,
@@ -279,7 +279,7 @@ func ResourceSite() *schema.Resource {
 // SiteExporter returns the resourceExporter object used to hold the genesyscloud_telephony_providers_edges_site exporter's config
 func SiteExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
-		GetResourcesFunc: provider.GetAllWithPooledClient(getSites),
+		GetResourcesFunc: provider.GetAllWithPooledClient(getAllSites),
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			"location_id": {RefType: "genesyscloud_location"},
 			"outbound_routes.external_trunk_base_ids": {RefType: "genesyscloud_telephony_providers_edges_trunkbasesettings"},
