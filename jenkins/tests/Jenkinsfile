@@ -283,7 +283,7 @@ pipeline {
                     echo 'Attempting to Run Roles & Teams Tests'
                     withCredentials([usernamePassword(credentialsId: CREDENTIALS_ID, usernameVariable: 'GENESYSCLOUD_OAUTHCLIENT_ID', passwordVariable: 'GENESYSCLOUD_OAUTHCLIENT_SECRET')]) {
                         echo 'Loading Genesys OAuth Credentials'
-                        sh 'gotestsum --junitfile team.xml --format standard-verbose ./genesyscloud/... -run "TestAcc.*Roles|Team|Members" -v -count=1 -timeout 120m -cover -coverprofile=coverageRoleTeam.out'
+                        sh 'gotestsum --junitfile team.xml --format standard-verbose ./genesyscloud/... -run "TestAcc.*Roles|Team|ResourceGroup" -v -count=1 -timeout 120m -cover -coverprofile=coverageRoleTeam.out'
                     }
                 }
             }
@@ -317,7 +317,7 @@ pipeline {
                     echo 'Attempting to Run Remaining Tests'
                     withCredentials([usernamePassword(credentialsId: CREDENTIALS_ID, usernameVariable: 'GENESYSCLOUD_OAUTHCLIENT_ID', passwordVariable: 'GENESYSCLOUD_OAUTHCLIENT_SECRET')]) {
                         echo 'Loading Genesys OAuth Credentials'
-                        sh "gotestsum --junitfile remaining.xml --format standard-verbose ./genesyscloud/... -run TestAcc -skip 'Architect|Flow|Idp|Auth|Integration|Journey|Knowledge|Outbound|Routing|ResponseManagement|Export|Location|WebDeployment|Site|Roles|Team|Members' -v -count=1 -timeout 120m -cover -coverprofile=coverageRemaining.out"
+                        sh "gotestsum --junitfile remaining.xml --format standard-verbose ./genesyscloud/... -run TestAcc -skip 'Architect|Flow|Idp|Auth|Integration|Journey|Knowledge|Outbound|Routing|ResponseManagement|Export|Location|WebDeployment|Site|Roles|Team|ResourceGroup' -v -count=1 -timeout 120m -cover -coverprofile=coverageRemaining.out"
 
                     }
                 }
@@ -325,7 +325,8 @@ pipeline {
         }
 
         stage('Generate & Upload Report') {
-            steps {
+            
+        steps {
         sh 'GOBIN=$HOME/bin go install github.com/wadey/gocovmerge@latest'
         // Generate merged coverage report
         sh '$HOME/bin/gocovmerge coverageArchitect.out coverageIdp.out coverageAuth.out coverageIntegration.out coverageFlow.out coverageJourney.out coverageKnowledge.out coverageOutbound.out coverageResponseManagement.out coverageRouting.out coverageExport.out coverageLocation.out coverageWebDeployment.out coverageRemaining.out coverageSite.out coverageRoleTeam.out > merged_coverage.out'
@@ -333,55 +334,207 @@ pipeline {
         // Convert merged coverage report to HTML
         sh 'go tool cover -html merged_coverage.out -o coverageAcceptance.html'
 
-        sh 'junit-merger -o report.xml architect.xml idp.xml auth.xml integration.xml flow.xml journey.xml knowledge.xml outbound.xml response.xml routing.xml location.xml web.xml site.xml team.xml export.xml remaining.xml'
+        sh 'junit-merger -o test-results.xml architect.xml idp.xml auth.xml integration.xml flow.xml journey.xml knowledge.xml outbound.xml response.xml routing.xml location.xml web.xml site.xml team.xml export.xml remaining.xml'
         
-        sh 'junit2html report.xml report.html'
+    
+                script {
+                    // Read the XML file content
+                    def xmlContent = readFile 'test-results.xml'
 
-                sh 'junit2html report.xml report.html'
+                    // Extract test case information using regular expressions
+                    def testCases = []
+                    def testCasePattern = /<testcase\s+classname="([^"]+)"\s+name="([^"]+)"\s+time="([^"]+)"/
+                    def failurePattern = /<failure[^>]*>([\s\S]*?)<\/failure>/
+                    def skippedPattern = /<skipped[^>]*>([\s\S]*?)<\/skipped>/
 
+                    def matcher = xmlContent =~ testCasePattern
+                    while (matcher.find()) {
+                        def classname = matcher.group(1)
+                        def name = matcher.group(2)
+                        def time = matcher.group(3)
+                        def remainingText = xmlContent.substring(matcher.end())
 
-script {
-    // Extract summary information from report.xml using xmltodict
-    def xmlContent = readFile(env.XML_REPORT).trim()
-    def parsedXml = sh(script: "python -c 'import xmltodict, sys, json; print(json.dumps(xmltodict.parse(sys.stdin.read())))' <<< '${xmlContent}'", returnStdout: true).trim()
-    def parsedJson = new groovy.json.JsonSlurperClassic().parseText(parsedXml)
+                        def endIndex = remainingText.indexOf('</testcase>')
+                        def details = endIndex != -1 ? remainingText.substring(0, endIndex) : ""
 
-    // Extract tests and failures from the first line of the XML
-    def tests = parsedJson['testsuites']['@tests'].toInteger()
-    def failures = parsedJson['testsuites']['@failures'].toInteger()
-    def passed = tests - failures
+                        def result = [
+                            name: name,
+                            classname: classname,
+                            time: time,
+                            status: 'Passed', // Default to Passed
+                            reason: '',
+                            log: details
+                        ]
 
-    // Read the existing report.html content
-    def htmlContent = readFile(env.HTML_REPORT).trim()
+                        // Check for failure or skipped
+                        def failureMatcher = details =~ failurePattern
+                        def skippedMatcher = details =~ skippedPattern
+                        if (failureMatcher.find()) {
+                            result.status = 'Failed'
+                            result.log = failureMatcher.group(1).trim()
+                        } else if (skippedMatcher.find()) {
+                            result.status = 'Skipped'
+                            result.log = skippedMatcher.group(1).trim()
+                        }
 
-    // Create summary lines with CSS styling
-    def summaryLines = """
-        <style>
-            .summary { margin: 20px 0; }
-            .summary h1 { font-size: 2em; margin-bottom: 10px; }
-            .summary p { font-size: 1.5em; margin: 5px 0; }
-            .summary .value { font-weight: bold; }
-        </style>
-        <div class="summary">
-            <p>Total Tests: <span class="value">${tests}</span></p>
-            <p>Failed: <span class="value">${failures}</span></p>
-            <p>Passed: <span class="value">${passed}</span></p>
-        </div>
-    """
+                        // Extract reason
+                        if (result.status == 'Failed') {
+                            result.reason = extractReason(result.log)
+                        } else if (result.status == 'Skipped') {
+                            result.reason = extractReason(result.log)
+                        }
 
-    // Insert summary lines after the line "Test Report : report.xml" and remove the specified lines
-    def updatedHtmlContent = htmlContent.replaceFirst("(?i)(Test Report : report.xml\\s*)", summaryLines)
+                        testCases << result
+                    }
 
-    // Write the updated content back to report.html
-    writeFile(file: env.HTML_REPORT, text: updatedHtmlContent.trim())
+                    // Generate HTML report
+                    def html = new StringBuilder()
+                    html.append("""
+                    <html>
+                    <head>
+                        <style>
+                            body { font-family: Arial, sans-serif; margin: 20px; }
+                            table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+                            th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+                            th { background-color: #f2f2f2; }
+                            .passed { background-color: #d4edda; }
+                            .failed { background-color: #f8d7da; }
+                            .skipped { background-color: #fff3cd; }
+                            .summary { margin-bottom: 20px; }
+                            .summary div { margin: 5px 0; }
+                            .link { color: #007bff; text-decoration: none; }
+                            .reason-content { margin-top: 10px; padding: 10px; border: 1px solid #ccc; background-color: #f9f9f9; word-wrap: break-word; white-space: pre-wrap; }
+                            .test-case { border-left: 4px solid #dc3545; padding-left: 10px; margin-top: 20px; background-color: #f8d7da; padding: 10px; border-radius: 5px; }
+                        </style>
+                    </head>
+                    <body>
+                        <h2>Test Results</h2>
+                        <div class="summary">
+                            <div>Total Tests: ${testCases.size()}</div>
+                            <div style="color: green;">Total Passed: ${testCases.count { it.status == 'Passed' }}</div>
+                            <div style="color: red;">Total Failed: ${testCases.count { it.status == 'Failed' }}</div>
+                            <div style="color: orange;">Total Skipped: ${testCases.count { it.status == 'Skipped' }}</div>
+                        </div>
 
-}
-        archiveArtifacts artifacts: 'coverageAcceptance.html,report.html', allowEmptyArchive: true
-        
+                        <h3>Failed Tests</h3>
+                        <table>
+                            <tr>
+                                <th>Status</th>
+                                <th>Class Name</th>
+                                <th>Test Name</th>
+                                <th>Duration (s)</th>
+                            </tr>
+                    """)
+
+                    testCases.findAll { it.status == 'Failed' }.each { result ->
+                        html.append("""
+                        <tr class="failed">
+                            <td>${result.status}</td>
+                            <td>${result.classname}</td>
+                            <td>
+                                <a href="#${result.name}" class="link">${result.name}</a>
+                            </td>
+                            <td>${result.time}</td>
+                        </tr>
+                        """)
+                    }
+
+                    html.append("""
+                        </table>
+
+                        <h3>Skipped Tests</h3>
+                        <table>
+                            <tr>
+                                <th>Status</th>
+                                <th>Class Name</th>
+                                <th>Test Name</th>
+                            </tr>
+                    """)
+
+                    testCases.findAll { it.status == 'Skipped' }.each { result ->
+                        html.append("""
+                        <tr class="skipped">
+                            <td>${result.status}</td>
+                            <td>${result.classname}</td>
+                            <td>${result.name}</td>
+                        </tr>
+                        """)
+                    }
+
+                    html.append("""
+                        </table>
+
+                        <h3>Passed Tests</h3>
+                        <table>
+                            <tr>
+                                <th>Status</th>
+                                <th>Class Name</th>
+                                <th>Test Name</th>
+                                <th>Duration (s)</th>
+                            </tr>
+                    """)
+
+                    testCases.findAll { it.status == 'Passed' }.each { result ->
+                        html.append("""
+                        <tr class="passed">
+                            <td>${result.status}</td>
+                            <td>${result.classname}</td>
+                            <td>${result.name}</td>
+                            <td>${result.time}</td>
+                        </tr>
+                        """)
+                    }
+
+                    html.append("""
+                        </table>
+
+                        <h3>Test Details</h3>
+                    """)
+
+                    testCases.findAll { it.status == 'Failed' }.each { result ->
+                        html.append("""
+                        <div id="${result.name}" class="reason-detail">
+                            <div class="test-case failed">
+                                <h4>${result.classname}.${result.name}</h4>
+                                <p>Status: ${result.status}</p>
+                                <p>Duration: ${result.time}s</p>
+                                <div class="reason-content">
+                                    ${result.log}
+                                </div>
+                            </div>
+                        </div>
+                        """)
+                    }
+
+                    html.append("""
+                    </body>
+                    </html>
+                    """)
+
+                    // Save the HTML report to a file
+                    writeFile file: 'test-report.html', text: html.toString()
+
+                // Optionally, print the location of the HTML report
+                    echo "HTML report generated: \${env.WORKSPACE}/test-report.html"
+                }
+                archiveArtifacts artifacts: 'coverageAcceptance.html,test-report.html,test-results.xml', allowEmptyArchive: true
             }
+   
+           }
         }
     }
-}
+
  
+ def extractReason(String log) {
+    // Extract reason from the log
+    def reason = ""
+    def reasonPattern = /message="([^"]*)">/
+    def matcher = log =~ reasonPattern
+    if (matcher.find()) {
+        reason = matcher.group(1).trim()
+    }
+    return reason
+}
+
 
     

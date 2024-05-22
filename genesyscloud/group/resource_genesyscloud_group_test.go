@@ -297,7 +297,7 @@ func TestAccResourceGroupMembers(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckNoResourceAttr("genesyscloud_group."+groupResource, "member_ids.%"),
 					func(s *terraform.State) error {
-						time.Sleep(30 * time.Second) // Wait for 30 seconds for resources to get deleted properly
+						time.Sleep(45 * time.Second) // Wait for 30 seconds for resources to get deleted properly
 						return nil
 					},
 				),

@@ -228,6 +228,9 @@ func TestAccResourceRoutingQueueConditionalRouting(t *testing.T) {
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
+				PreConfig: func() {
+					time.Sleep(30 * time.Second)
+				},
 				// Create
 				Config: genesyscloud.GenerateRoutingSkillGroupResourceBasic(
 					skillGroupResourceId,
@@ -659,9 +662,6 @@ func TestAccResourceRoutingQueueMembers(t *testing.T) {
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
-				PreConfig: func() {
-					time.Sleep(30 * time.Second)
-				},
 				// Create
 				Config: GenerateRoutingQueueResourceBasic(
 					queueResource,
@@ -681,6 +681,9 @@ func TestAccResourceRoutingQueueMembers(t *testing.T) {
 				),
 			},
 			{
+				PreConfig: func() {
+					time.Sleep(45 * time.Second)
+				},
 				// Update with another queue member and modify rings
 				Config: GenerateRoutingQueueResourceBasic(
 					queueResource,

@@ -134,6 +134,10 @@ func TestAccResourceRoutingUtilizationWithLabels(t *testing.T) {
 						generateLabelUtilization(blueLabelResource, maxCapacity1, redLabelResource),
 					),
 				Check: resource.ComposeTestCheckFunc(
+					func(s *terraform.State) error {
+						time.Sleep(30 * time.Second) // Wait for 30 seconds for resources to be updated
+						return nil
+					},
 					resource.TestCheckResourceAttr("genesyscloud_routing_utilization.routing-util", "call.0.maximum_capacity", maxCapacity1),
 					resource.TestCheckResourceAttr("genesyscloud_routing_utilization.routing-util", "call.0.include_non_acd", util.FalseValue),
 					resource.TestCheckNoResourceAttr("genesyscloud_routing_utilization.routing-util", "call.0.interruptible_media_types"),
