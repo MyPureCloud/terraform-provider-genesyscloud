@@ -40,7 +40,7 @@ func getAllArchitectSchedules(ctx context.Context, clientConfig *platformclientv
 	return resources, nil
 }
 
-// createArchitectSchedulegs is used by the architect_schedulegs resource to create Genesys cloud architect schedules
+// createArchitectSchedules is used by the architect_schedules resource to create Genesys cloud architect schedules
 func createArchitectSchedules(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig

@@ -26,7 +26,7 @@ func dataSourceArchitectSchedulesRead(ctx context.Context, d *schema.ResourceDat
 		}
 
 		if retryable {
-			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("No architect schedulegs found with name %s", name), proxyResponse))
+			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("No architect schedules found with name %s", name), proxyResponse))
 		}
 
 		d.SetId(scheduleId)

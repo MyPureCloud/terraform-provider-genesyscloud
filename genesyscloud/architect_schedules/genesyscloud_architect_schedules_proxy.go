@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	rc "terraform-provider-genesyscloud/genesyscloud/resource_cache"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 )
@@ -44,6 +45,7 @@ type architectSchedulesProxy struct {
 	getArchitectSchedulesByIdAttr     getArchitectSchedulesByIdFunc
 	updateArchitectSchedulesAttr      updateArchitectSchedulesFunc
 	deleteArchitectSchedulesAttr      deleteArchitectSchedulesFunc
+	schedulesCache                    rc.CacheInterface[platformclientv2.Schedule] //Define the cache for architect schedules resource
 }
 
 /*
@@ -53,10 +55,12 @@ This includes configuring the proxy with the required data and settings so that 
 seamlessly with the Genesys Cloud platform.
 */
 func newArchitectSchedulesProxy(clientConfig *platformclientv2.Configuration) *architectSchedulesProxy {
-	api := platformclientv2.NewArchitectApiWithConfig(clientConfig) // NewArchitectApiWithConfig creates an Genesyc Cloud API instance using the provided configuration
+	api := platformclientv2.NewArchitectApiWithConfig(clientConfig)    // NewArchitectApiWithConfig creates an Genesyc Cloud API instance using the provided configuration
+	schedulesCache := rc.NewResourceCache[platformclientv2.Schedule]() // Create Cache for architect schedules resource
 	return &architectSchedulesProxy{
 		clientConfig:                      clientConfig,
 		architectApi:                      api,
+		schedulesCache:                    schedulesCache,
 		createArchitectSchedulesAttr:      createArchitectSchedulesFn,
 		getAllArchitectSchedulesAttr:      getAllArchitectSchedulesFn,
 		getArchitectSchedulesIdByNameAttr: getArchitectSchedulesIdByNameFn,
@@ -80,7 +84,7 @@ func getArchitectSchedulesProxy(clientConfig *platformclientv2.Configuration) *a
 	return internalProxy
 }
 
-// createArchitectSchedules creates a Genesys Cloud architect schedulegs
+// createArchitectSchedules creates a Genesys Cloud architect schedules
 func (p *architectSchedulesProxy) createArchitectSchedules(ctx context.Context, architectSchedules *platformclientv2.Schedule) (*platformclientv2.Schedule, *platformclientv2.APIResponse, error) {
 	return p.createArchitectSchedulesAttr(ctx, p, architectSchedules)
 }
@@ -97,6 +101,9 @@ func (p *architectSchedulesProxy) getArchitectSchedulesIdByName(ctx context.Cont
 
 // getArchitectSchedulesById returns a single Genesys Cloud architect schedules by Id
 func (p *architectSchedulesProxy) getArchitectSchedulesById(ctx context.Context, id string) (architectSchedules *platformclientv2.Schedule, response *platformclientv2.APIResponse, err error) {
+	if schedule := rc.GetCacheItem(p.schedulesCache, id); schedule != nil { // Get the schedule from the cache, if not there in the cache then call p.getArchitectSchedulesByIdAttr()
+		return schedule, nil, nil
+	}
 	return p.getArchitectSchedulesByIdAttr(ctx, p, id)
 }
 
@@ -146,6 +153,11 @@ func getAllArchitectSchedulesFn(ctx context.Context, p *architectSchedulesProxy)
 		}
 
 		allSchedules = append(allSchedules, *schedules.Entities...)
+	}
+
+	// Cache the architect schedules resource into the p.schedulesCache for later use
+	for _, schedule := range allSchedules {
+		rc.SetCache(p.schedulesCache, *schedule.Id, schedule)
 	}
 
 	return &allSchedules, apiResponse, nil

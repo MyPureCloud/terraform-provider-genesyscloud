@@ -3,7 +3,7 @@ package architect_schedulegroups
 import (
 	"sync"
 	"terraform-provider-genesyscloud/genesyscloud"
-	archiSchedules "terraform-provider-genesyscloud/genesyscloud/architect_schedules"
+	architectSchedules "terraform-provider-genesyscloud/genesyscloud/architect_schedules"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -31,7 +31,7 @@ func (r *registerTestInstance) registerTestResources() {
 	defer r.resourceMapMutex.Unlock()
 
 	providerResources[resourceName] = ResourceArchitectSchedulegroups()
-	providerResources["genesyscloud_architect_schedules"] = archiSchedules.ResourceArchitectSchedules()
+	providerResources["genesyscloud_architect_schedules"] = architectSchedules.ResourceArchitectSchedules()
 	providerResources["genesyscloud_auth_division"] = genesyscloud.ResourceAuthDivision()
 }
 
