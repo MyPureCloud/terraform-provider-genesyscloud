@@ -37,7 +37,6 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_location"] = ResourceLocation()
 	providerResources["genesyscloud_architect_schedules"] = ResourceArchitectSchedules()
 	providerResources["genesyscloud_auth_division"] = ResourceAuthDivision()
-	providerResources["genesyscloud_idp_adfs"] = ResourceIdpAdfs()
 	providerResources["genesyscloud_idp_generic"] = ResourceIdpGeneric()
 	providerResources["genesyscloud_idp_gsuite"] = ResourceIdpGsuite()
 	providerResources["genesyscloud_idp_okta"] = ResourceIdpOkta()

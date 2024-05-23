@@ -1,4 +1,4 @@
-package genesyscloud
+package idp_adfs
 
 import (
 	"fmt"

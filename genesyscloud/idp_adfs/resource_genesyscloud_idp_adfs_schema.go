@@ -21,7 +21,6 @@ const resourceName = "genesyscloud_idp_adfs"
 // SetRegistrar registers all of the resources, datasources and exporters in the package
 func SetRegistrar(regInstance registrar.Registrar) {
 	regInstance.RegisterResource(resourceName, ResourceIdpAdfs())
-	//regInstance.RegisterDataSource(resourceName, DataSourceIdpAdfs())
 	regInstance.RegisterExporter(resourceName, IdpAdfsExporter())
 }
 

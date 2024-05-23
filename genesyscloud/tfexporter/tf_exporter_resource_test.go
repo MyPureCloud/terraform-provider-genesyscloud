@@ -6,18 +6,18 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/architect_datatable_row"
 	emergencyGroup "terraform-provider-genesyscloud/genesyscloud/architect_emergencygroup"
 	flow "terraform-provider-genesyscloud/genesyscloud/architect_flow"
-	flowLogLevel "terraform-provider-genesyscloud/genesyscloud/flow_loglevel"
-
 	grammar "terraform-provider-genesyscloud/genesyscloud/architect_grammar"
 	grammarLanguage "terraform-provider-genesyscloud/genesyscloud/architect_grammar_language"
 	archIvr "terraform-provider-genesyscloud/genesyscloud/architect_ivr"
 	architectSchedulegroups "terraform-provider-genesyscloud/genesyscloud/architect_schedulegroups"
 	authRole "terraform-provider-genesyscloud/genesyscloud/auth_role"
 	employeeperformanceExternalmetricsDefinition "terraform-provider-genesyscloud/genesyscloud/employeeperformance_externalmetrics_definitions"
+	flowLogLevel "terraform-provider-genesyscloud/genesyscloud/flow_loglevel"
 	flowMilestone "terraform-provider-genesyscloud/genesyscloud/flow_milestone"
 	flowOutcome "terraform-provider-genesyscloud/genesyscloud/flow_outcome"
 	"terraform-provider-genesyscloud/genesyscloud/group"
 	groupRoles "terraform-provider-genesyscloud/genesyscloud/group_roles"
+	idpAdfs "terraform-provider-genesyscloud/genesyscloud/idp_adfs"
 	idpSalesforce "terraform-provider-genesyscloud/genesyscloud/idp_salesforce"
 	integration "terraform-provider-genesyscloud/genesyscloud/integration"
 	integrationAction "terraform-provider-genesyscloud/genesyscloud/integration_action"
@@ -113,7 +113,7 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_flow_loglevel"] = flowLogLevel.ResourceFlowLoglevel()
 	providerResources["genesyscloud_group"] = group.ResourceGroup()
 	providerResources["genesyscloud_group_roles"] = groupRoles.ResourceGroupRoles()
-	providerResources["genesyscloud_idp_adfs"] = gcloud.ResourceIdpAdfs()
+	providerResources["genesyscloud_idp_adfs"] = idpAdfs.ResourceIdpAdfs()
 	providerResources["genesyscloud_idp_generic"] = gcloud.ResourceIdpGeneric()
 	providerResources["genesyscloud_idp_gsuite"] = gcloud.ResourceIdpGsuite()
 	providerResources["genesyscloud_idp_okta"] = gcloud.ResourceIdpOkta()
@@ -211,7 +211,7 @@ func (r *registerTestInstance) registerTestExporters() {
 	RegisterExporter("genesyscloud_flow_outcome", flowOutcome.FlowOutcomeExporter())
 	RegisterExporter("genesyscloud_group", group.GroupExporter())
 	RegisterExporter("genesyscloud_group_roles", groupRoles.GroupRolesExporter())
-	RegisterExporter("genesyscloud_idp_adfs", gcloud.IdpAdfsExporter())
+	RegisterExporter("genesyscloud_idp_adfs", idpAdfs.IdpAdfsExporter())
 	RegisterExporter("genesyscloud_idp_generic", gcloud.IdpGenericExporter())
 	RegisterExporter("genesyscloud_idp_gsuite", gcloud.IdpGsuiteExporter())
 	RegisterExporter("genesyscloud_idp_okta", gcloud.IdpOktaExporter())
