@@ -31,9 +31,13 @@ func getAllAuthIdpAdfss(ctx context.Context, clientConfig *platformclientv2.Conf
 	proxy := newIdpAdfsProxy(clientConfig)
 	resources := make(resourceExporter.ResourceIDMetaMap)
 
-	_, err := proxy.getIdpAdfs(ctx)
+	_, resp, err := proxy.getIdpAdfs(ctx)
 	if err != nil {
-		return nil, diag.Errorf("Failed to get idp adfs: %v", err)
+		if util.IsStatus404(resp) {
+			// Don't export if config doesn't exist
+			return resources, nil
+		}
+		return nil, util.BuildAPIDiagnosticError("genesyscloud_idp_adfs", fmt.Sprintf("Failed to get IDP ADFS error: %s", err), resp)
 	}
 	resources["0"] = &resourceExporter.ResourceMeta{Name: "adfs"}
 	return resources, nil
@@ -53,23 +57,31 @@ func readIdpAdfs(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 
 	log.Printf("Reading idp adfs %s", d.Id())
 
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceIdpAdfs(), constants.DefaultConsistencyChecks, resourceName)
+
 	return util.WithRetriesForReadCustomTimeout(ctx, d.Timeout(schema.TimeoutRead), d, func() *retry.RetryError {
-		aDFS, getErr := proxy.getIdpAdfs(ctx)
+		aDFS, resp, getErr := proxy.getIdpAdfs(ctx)
 		if getErr != nil {
-			return retry.NonRetryableError(fmt.Errorf("Failed to read idp adfs %s: %s", d.Id(), getErr))
+			if util.IsStatus404(resp) {
+				createIdpAdfs(ctx, d, meta)
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_idp_adfs", fmt.Sprintf("Failed to read IDP ADFS: %s", getErr), resp))
+			}
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_idp_adfs", fmt.Sprintf("Failed to read IDP ADFS: %s", getErr), resp))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceIdpAdfs(), constants.DefaultConsistencyChecks, resourceName)
-
-		resourcedata.SetNillableValue(d, "name", aDFS.Name)
 		resourcedata.SetNillableValue(d, "disabled", aDFS.Disabled)
-		resourcedata.SetNillableValue(d, "issuer_u_r_i", aDFS.IssuerURI)
-		resourcedata.SetNillableValue(d, "sso_target_u_r_i", aDFS.SsoTargetURI)
-		resourcedata.SetNillableValue(d, "slo_u_r_i", aDFS.SloURI)
-		resourcedata.SetNillableValue(d, "slo_binding", aDFS.SloBinding)
+		resourcedata.SetNillableValue(d, "issuer_uri", aDFS.IssuerURI)
+		resourcedata.SetNillableValue(d, "target_uri", aDFS.SsoTargetURI)
 		resourcedata.SetNillableValue(d, "relying_party_identifier", aDFS.RelyingPartyIdentifier)
-		resourcedata.SetNillableValue(d, "certificate", aDFS.Certificate)
-		resourcedata.SetNillableValue(d, "certificates", aDFS.Certificates)
+
+		if aDFS.Certificate != nil {
+			d.Set("certificates", lists.StringListToInterfaceList([]string{*aDFS.Certificate}))
+		} else if aDFS.Certificates != nil {
+			d.Set("certificates", lists.StringListToInterfaceList(*aDFS.Certificates))
+		} else {
+			d.Set("certificates", nil)
+		}
+
 		log.Printf("Read idp adfs %s %s", d.Id(), *aDFS.Name)
 		return cc.CheckState(d)
 	})
@@ -89,12 +101,12 @@ func updateIdpAdfs(ctx context.Context, d *schema.ResourceData, meta interface{}
 		idpAdfs.Certificates = certificates
 	}
 	log.Printf("Updating idp adfs %s", *idpAdfs.Name)
-	_, err := proxy.updateIdpAdfs(ctx, d.Id(), &idpAdfs)
+	resp, err := proxy.updateIdpAdfs(ctx, d.Id(), &idpAdfs)
 	if err != nil {
-		return diag.Errorf("Failed to update idp adfs: %s", err)
+		return util.BuildAPIDiagnosticError("genesyscloud_idp_adfs", fmt.Sprintf("Failed to update IDP ADFS %s error: %s", d.Id(), err), resp)
 	}
 
-	log.Printf("Updated idp adfs %s", d.Id)
+	log.Printf("Updated idp adfs")
 	return readIdpAdfs(ctx, d, meta)
 }
 
@@ -109,28 +121,25 @@ func deleteIdpAdfs(ctx context.Context, d *schema.ResourceData, meta interface{}
 	}
 
 	return util.WithRetries(ctx, 180*time.Second, func() *retry.RetryError {
-		_, err := proxy.getIdpAdfs(ctx)
-
+		_, resp, err := proxy.getIdpAdfs(ctx)
 		if err != nil {
-			return retry.NonRetryableError(fmt.Errorf("Error deleting idp adfs %s: %s", d.Id(), err))
+			if util.IsStatus404(resp) {
+				// IDP ADFS deleted
+				log.Printf("Deleted IDP ADFS")
+				return nil
+			}
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_idp_adfs", fmt.Sprintf("Error deleting IDP ADFS: %s", err), resp))
 		}
-
-		return retry.RetryableError(fmt.Errorf("idp adfs %s still exists", d.Id()))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_idp_adfs", fmt.Sprintf("IDP ADFS still exists"), resp))
 	})
 }
 
 // getIdpAdfsFromResourceData maps data from schema ResourceData object to a platformclientv2.Adfs
 func getIdpAdfsFromResourceData(d *schema.ResourceData) platformclientv2.Adfs {
 	return platformclientv2.Adfs{
-		Name:                   platformclientv2.String(d.Get("name").(string)),
 		Disabled:               platformclientv2.Bool(d.Get("disabled").(bool)),
-		IssuerURI:              platformclientv2.String(d.Get("issuer_u_r_i").(string)),
-		SsoTargetURI:           platformclientv2.String(d.Get("sso_target_u_r_i").(string)),
-		SloURI:                 platformclientv2.String(d.Get("slo_u_r_i").(string)),
-		SloBinding:             platformclientv2.String(d.Get("slo_binding").(string)),
+		IssuerURI:              platformclientv2.String(d.Get("issuer_uri").(string)),
+		SsoTargetURI:           platformclientv2.String(d.Get("target_uri").(string)),
 		RelyingPartyIdentifier: platformclientv2.String(d.Get("relying_party_identifier").(string)),
-		Certificate:            platformclientv2.String(d.Get("certificate").(string)),
-		// TODO: Handle certificates property
-
 	}
 }

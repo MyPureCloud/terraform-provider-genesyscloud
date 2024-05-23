@@ -16,9 +16,9 @@ out during testing.
 var internalProxy *idpAdfsProxy
 
 // Type definitions for each func on our proxy so we can easily mock them out later
-type getAllIdpAdfsFunc func(ctx context.Context, p *idpAdfsProxy) (*platformclientv2.Adfs, error)
-type updateIdpAdfsFunc func(ctx context.Context, p *idpAdfsProxy, id string, aDFS *platformclientv2.Adfs) (statusCode int, err error)
-type deleteIdpAdfsFunc func(ctx context.Context, p *idpAdfsProxy, id string) (statusCode int, err error)
+type getAllIdpAdfsFunc func(ctx context.Context, p *idpAdfsProxy) (*platformclientv2.Adfs, *platformclientv2.APIResponse, error)
+type updateIdpAdfsFunc func(ctx context.Context, p *idpAdfsProxy, id string, aDFS *platformclientv2.Adfs) (resp *platformclientv2.APIResponse, err error)
+type deleteIdpAdfsFunc func(ctx context.Context, p *idpAdfsProxy, id string) (resp *platformclientv2.APIResponse, err error)
 
 // idpAdfsProxy contains all of the methods that call genesys cloud APIs.
 type idpAdfsProxy struct {
@@ -52,45 +52,45 @@ func getIdpAdfsProxy(clientConfig *platformclientv2.Configuration) *idpAdfsProxy
 }
 
 // getIdpAdfs retrieves all Genesys Cloud idp adfs
-func (p *idpAdfsProxy) getIdpAdfs(ctx context.Context) (*platformclientv2.Adfs, error) {
+func (p *idpAdfsProxy) getIdpAdfs(ctx context.Context) (*platformclientv2.Adfs, *platformclientv2.APIResponse, error) {
 	return p.getAllIdpAdfsAttr(ctx, p)
 }
 
 // updateIdpAdfs updates a Genesys Cloud idp adfs
-func (p *idpAdfsProxy) updateIdpAdfs(ctx context.Context, id string, idpAdfs *platformclientv2.Adfs) (statusCode int, err error) {
+func (p *idpAdfsProxy) updateIdpAdfs(ctx context.Context, id string, idpAdfs *platformclientv2.Adfs) (resp *platformclientv2.APIResponse, err error) {
 	return p.updateIdpAdfsAttr(ctx, p, id, idpAdfs)
 }
 
 // deleteIdpAdfs deletes a Genesys Cloud idp adfs by Id
-func (p *idpAdfsProxy) deleteIdpAdfs(ctx context.Context, id string) (statusCode int, err error) {
+func (p *idpAdfsProxy) deleteIdpAdfs(ctx context.Context, id string) (resp *platformclientv2.APIResponse, err error) {
 	return p.deleteIdpAdfsAttr(ctx, p, id)
 }
 
 // getAllIdpAdfsFn is the implementation for retrieving all idp adfs in Genesys Cloud
-func getAllIdpAdfsFn(ctx context.Context, p *idpAdfsProxy) (*platformclientv2.Adfs, error) {
-	adfs, _, err := p.identityProviderApi.GetIdentityprovidersAdfs()
+func getAllIdpAdfsFn(ctx context.Context, p *idpAdfsProxy) (*platformclientv2.Adfs, *platformclientv2.APIResponse, error) {
+	adfs, resp, err := p.identityProviderApi.GetIdentityprovidersAdfs()
 	if err != nil {
-		return nil, err
+		return nil, resp, err
 	}
 
-	return adfs, nil
+	return adfs, resp, nil
 }
 
 // updateIdpAdfsFn is an implementation of the function to update a Genesys Cloud idp adfs
-func updateIdpAdfsFn(ctx context.Context, p *idpAdfsProxy, id string, idpAdfs *platformclientv2.Adfs) (statusCode int, err error) {
+func updateIdpAdfsFn(ctx context.Context, p *idpAdfsProxy, id string, idpAdfs *platformclientv2.Adfs) (statusCode *platformclientv2.APIResponse, err error) {
 	_, resp, err := p.identityProviderApi.PutIdentityprovidersAdfs(*idpAdfs)
 	if err != nil {
-		return resp.StatusCode, err
+		return resp, err
 	}
-	return resp.StatusCode, nil
+	return resp, nil
 }
 
 // deleteIdpAdfsFn is an implementation function for deleting a Genesys Cloud idp adfs
-func deleteIdpAdfsFn(ctx context.Context, p *idpAdfsProxy, id string) (statusCode int, err error) {
+func deleteIdpAdfsFn(ctx context.Context, p *idpAdfsProxy, id string) (response *platformclientv2.APIResponse, err error) {
 	_, resp, err := p.identityProviderApi.DeleteIdentityprovidersAdfs()
 	if err != nil {
-		return resp.StatusCode, err
+		return resp, err
 	}
 
-	return resp.StatusCode, nil
+	return resp, nil
 }
