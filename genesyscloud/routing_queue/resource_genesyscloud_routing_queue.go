@@ -1032,7 +1032,7 @@ func updateQueueMembers(d *schema.ResourceData, sdkConfig *platformclientv2.Conf
 		time.Sleep(10 * time.Second)
 		for _, userId := range newUserIds {
 			if err := verifyUserIsNotGroupMemberOfQueue(d.Id(), userId, sdkConfig); err != nil {
-				return util.BuildDiagnosticError(resourceName, fmt.Sprintf("Error verifying user %s is not group member of queue", d.Id()), err)
+				log.Println(err.Error())
 			}
 		}
 	}
@@ -1146,7 +1146,7 @@ func verifyUserIsNotGroupMemberOfQueue(queueId, userId string, sdkConfig *platfo
 		}
 		for _, member := range *users.Entities {
 			if userId == *member.Id {
-				return fmt.Errorf("member %s '%s' is already assigned to queue '%s' via a group, and cannot be assigned using the members set", userName, userId, queueId)
+				return fmt.Errorf("member %s '%s' is already assigned to queue '%s' via a group, and therefore should not be assigned as a member", userName, userId, queueId)
 			}
 		}
 	}
