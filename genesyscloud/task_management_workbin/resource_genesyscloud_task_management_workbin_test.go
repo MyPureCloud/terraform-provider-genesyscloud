@@ -2,6 +2,8 @@ package task_management_workbin
 
 import (
 	"fmt"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 
 	"github.com/google/uuid"
@@ -10,7 +12,7 @@ import (
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 )
 
 /*
@@ -32,8 +34,8 @@ func TestAccResourceTaskManagementWorkbin(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
-		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			// Default division
 			{
@@ -79,7 +81,7 @@ func testVerifyTaskManagementWorkbinDestroyed(state *terraform.State) error {
 		workbin, resp, err := taskMgmtApi.GetTaskmanagementWorkbin(rs.Primary.ID)
 		if workbin != nil {
 			return fmt.Errorf("Task management workbin (%s) still exists", rs.Primary.ID)
-		} else if gcloud.IsStatus404(resp) {
+		} else if util.IsStatus404(resp) {
 			// Workbin not found as expected
 			continue
 		} else {

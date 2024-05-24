@@ -1,11 +1,11 @@
 package outbound_campaignrule
 
 import (
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 )
 
 func getCampaignruleFromResourceData(d *schema.ResourceData) platformclientv2.Campaignrule {
@@ -19,7 +19,6 @@ func getCampaignruleFromResourceData(d *schema.ResourceData) platformclientv2.Ca
 		CampaignRuleActions:    buildCampaignRuleAction(d.Get("campaign_rule_actions").([]interface{})),
 		MatchAnyConditions:     &matchAnyConditions,
 	}
-
 	return campaignRule
 }
 
@@ -37,12 +36,11 @@ func buildCampaignRuleEntities(entities *schema.Set) *platformclientv2.Campaignr
 
 	campaignRuleEntitiesMap := campaignRuleEntitiesList[0].(map[string]interface{})
 	if campaigns := campaignRuleEntitiesMap["campaign_ids"].([]interface{}); campaigns != nil {
-		campaignRuleEntities.Campaigns = gcloud.BuildSdkDomainEntityRefArrFromArr(campaigns)
+		campaignRuleEntities.Campaigns = util.BuildSdkDomainEntityRefArrFromArr(campaigns)
 	}
 	if sequences := campaignRuleEntitiesMap["sequence_ids"].([]interface{}); sequences != nil {
-		campaignRuleEntities.Sequences = gcloud.BuildSdkDomainEntityRefArrFromArr(sequences)
+		campaignRuleEntities.Sequences = util.BuildSdkDomainEntityRefArrFromArr(sequences)
 	}
-
 	return &campaignRuleEntities
 }
 
@@ -115,11 +113,11 @@ func buildCampaignRuleActionEntities(set *schema.Set) *platformclientv2.Campaign
 	sdkCampaignRuleActionEntities.UseTriggeringEntity = platformclientv2.Bool(entitiesMap["use_triggering_entity"].(bool))
 
 	if campaignIds := entitiesMap["campaign_ids"].([]interface{}); campaignIds != nil {
-		sdkCampaignRuleActionEntities.Campaigns = gcloud.BuildSdkDomainEntityRefArrFromArr(campaignIds)
+		sdkCampaignRuleActionEntities.Campaigns = util.BuildSdkDomainEntityRefArrFromArr(campaignIds)
 	}
 
 	if sequenceIds := entitiesMap["sequence_ids"].([]interface{}); sequenceIds != nil {
-		sdkCampaignRuleActionEntities.Sequences = gcloud.BuildSdkDomainEntityRefArrFromArr(sequenceIds)
+		sdkCampaignRuleActionEntities.Sequences = util.BuildSdkDomainEntityRefArrFromArr(sequenceIds)
 	}
 
 	return &sdkCampaignRuleActionEntities

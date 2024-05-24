@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 )
 
 /*
@@ -33,12 +33,12 @@ Each proxy implementation:
 var internalProxy *externalContactsContactsProxy
 
 // Type definitions for each func on our proxy so we can easily mock them out later
-type getAllExternalContactsFunc func(ctx context.Context, p *externalContactsContactsProxy) (*[]platformclientv2.Externalcontact, error)
-type createExternalContactFunc func(ctx context.Context, p *externalContactsContactsProxy, externalContact *platformclientv2.Externalcontact) (*platformclientv2.Externalcontact, error)
-type deleteExternalContactFunc func(ctx context.Context, p *externalContactsContactsProxy, externalContactId string) (responseCode int, err error)
-type getExternalContactByIdFunc func(ctx context.Context, p *externalContactsContactsProxy, externalContactId string) (externalContact *platformclientv2.Externalcontact, responseCode int, err error)
-type getExternalContactIdBySearchFunc func(ctx context.Context, p *externalContactsContactsProxy, search string) (externalContactId string, retryable bool, err error)
-type updateExternalContactFunc func(ctx context.Context, p *externalContactsContactsProxy, externalContactId string, externalContact *platformclientv2.Externalcontact) (*platformclientv2.Externalcontact, error)
+type getAllExternalContactsFunc func(ctx context.Context, p *externalContactsContactsProxy) (*[]platformclientv2.Externalcontact, *platformclientv2.APIResponse, error)
+type createExternalContactFunc func(ctx context.Context, p *externalContactsContactsProxy, externalContact *platformclientv2.Externalcontact) (*platformclientv2.Externalcontact, *platformclientv2.APIResponse, error)
+type deleteExternalContactFunc func(ctx context.Context, p *externalContactsContactsProxy, externalContactId string) (response *platformclientv2.APIResponse, err error)
+type getExternalContactByIdFunc func(ctx context.Context, p *externalContactsContactsProxy, externalContactId string) (externalContact *platformclientv2.Externalcontact, response *platformclientv2.APIResponse, err error)
+type getExternalContactIdBySearchFunc func(ctx context.Context, p *externalContactsContactsProxy, search string) (externalContactId string, retryable bool, response *platformclientv2.APIResponse, err error)
+type updateExternalContactFunc func(ctx context.Context, p *externalContactsContactsProxy, externalContactId string, externalContact *platformclientv2.Externalcontact) (*platformclientv2.Externalcontact, *platformclientv2.APIResponse, error)
 
 // externalContactsContactsProxy contains all of the methods that call genesys cloud APIs.
 type externalContactsContactsProxy struct {
@@ -73,51 +73,50 @@ func getExternalContactsContactsProxy(clientConfig *platformclientv2.Configurati
 	if internalProxy == nil {
 		internalProxy = newExternalContactsContactsProxy(clientConfig)
 	}
-
 	return internalProxy
 }
 
 // getAllExternalContacts retrieves all Genesys Cloud External Contacts
-func (p *externalContactsContactsProxy) getAllExternalContacts(ctx context.Context) (*[]platformclientv2.Externalcontact, error) {
+func (p *externalContactsContactsProxy) getAllExternalContacts(ctx context.Context) (*[]platformclientv2.Externalcontact, *platformclientv2.APIResponse, error) {
 	return p.getAllExternalContactsAttr(ctx, p)
 }
 
 // createExternalContact creates a Genesys Cloud External Contact
-func (p *externalContactsContactsProxy) createExternalContact(ctx context.Context, externalContact *platformclientv2.Externalcontact) (*platformclientv2.Externalcontact, error) {
+func (p *externalContactsContactsProxy) createExternalContact(ctx context.Context, externalContact *platformclientv2.Externalcontact) (*platformclientv2.Externalcontact, *platformclientv2.APIResponse, error) {
 	return p.createExternalContactAttr(ctx, p, externalContact)
 }
 
 // DeleteExternalContact deletes a Genesys Cloud External Contact by Id
-func (p *externalContactsContactsProxy) deleteExternalContactId(ctx context.Context, externalContactId string) (int, error) {
+func (p *externalContactsContactsProxy) deleteExternalContactId(ctx context.Context, externalContactId string) (*platformclientv2.APIResponse, error) {
 	return p.deleteExternalContactByIdAttr(ctx, p, externalContactId)
 }
 
 // getExternalContactById returns a single Genesys Cloud External Contact by Id
-func (p *externalContactsContactsProxy) getExternalContactById(ctx context.Context, externalContactId string) (*platformclientv2.Externalcontact, int, error) {
+func (p *externalContactsContactsProxy) getExternalContactById(ctx context.Context, externalContactId string) (*platformclientv2.Externalcontact, *platformclientv2.APIResponse, error) {
 	return p.getExternalContactByIdAttr(ctx, p, externalContactId)
 }
 
 // getExternalContactIdBySearch returns a single Genesys Cloud External Contact by a search term
-func (p *externalContactsContactsProxy) getExternalContactIdBySearch(ctx context.Context, search string) (externalContactId string, retryable bool, err error) {
+func (p *externalContactsContactsProxy) getExternalContactIdBySearch(ctx context.Context, search string) (externalContactId string, retryable bool, response *platformclientv2.APIResponse, err error) {
 	return p.getExternalContactIdBySearchAttr(ctx, p, search)
 }
 
 // updateExternalContact updates a Genesys Cloud External Contact
-func (p *externalContactsContactsProxy) updateExternalContact(ctx context.Context, externalContactId string, externalContact *platformclientv2.Externalcontact) (*platformclientv2.Externalcontact, error) {
+func (p *externalContactsContactsProxy) updateExternalContact(ctx context.Context, externalContactId string, externalContact *platformclientv2.Externalcontact) (*platformclientv2.Externalcontact, *platformclientv2.APIResponse, error) {
 	return p.updateExternalContactAttr(ctx, p, externalContactId, externalContact)
 }
 
 // getAllExternalContactsFn is the implementation for retrieving all external contacts in Genesys Cloud
-func getAllExternalContactsFn(ctx context.Context, p *externalContactsContactsProxy) (*[]platformclientv2.Externalcontact, error) {
+func getAllExternalContactsFn(ctx context.Context, p *externalContactsContactsProxy) (*[]platformclientv2.Externalcontact, *platformclientv2.APIResponse, error) {
 	var allExternalContacts []platformclientv2.Externalcontact
-
 	cursor := ""
+	var response *platformclientv2.APIResponse
 	for {
-		externalContacts, _, err := p.externalContactsApi.GetExternalcontactsScanContacts(100, cursor)
+		externalContacts, resp, err := p.externalContactsApi.GetExternalcontactsScanContacts(100, cursor)
 		if err != nil {
-			return nil, fmt.Errorf("Failed to get external contacts: %v", err)
+			return nil, resp, fmt.Errorf("Failed to get external contacts: %v", err)
 		}
-
+		response = resp
 		if externalContacts.Entities == nil || len(*externalContacts.Entities) == 0 {
 			break
 		}
@@ -131,67 +130,63 @@ func getAllExternalContactsFn(ctx context.Context, p *externalContactsContactsPr
 		}
 		cursor = *externalContacts.Cursors.After
 	}
-
-	return &allExternalContacts, nil
+	return &allExternalContacts, response, nil
 }
 
 // createExternalContactFn is an implementation function for creating a Genesys Cloud External Contact
-func createExternalContactFn(ctx context.Context, p *externalContactsContactsProxy, externalContact *platformclientv2.Externalcontact) (*platformclientv2.Externalcontact, error) {
-	contact, _, err := p.externalContactsApi.PostExternalcontactsContacts(*externalContact)
+func createExternalContactFn(ctx context.Context, p *externalContactsContactsProxy, externalContact *platformclientv2.Externalcontact) (*platformclientv2.Externalcontact, *platformclientv2.APIResponse, error) {
+	contact, resp, err := p.externalContactsApi.PostExternalcontactsContacts(*externalContact)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to create external contact: %s", err)
+		return nil, resp, fmt.Errorf("Failed to create external contact: %s", err)
 	}
-
-	return contact, nil
+	return contact, resp, nil
 }
 
 // deleteExternalContactsFn is an implementation function for deleting a Genesys Cloud External Contact
-func deleteExternalContactsFn(ctx context.Context, p *externalContactsContactsProxy, externalContactId string) (int, error) {
+func deleteExternalContactsFn(ctx context.Context, p *externalContactsContactsProxy, externalContactId string) (*platformclientv2.APIResponse, error) {
 	_, resp, err := p.externalContactsApi.DeleteExternalcontactsContact(externalContactId)
 	if err != nil {
-		return resp.StatusCode, fmt.Errorf("Failed to delete external contact: %s", err)
+		return resp, fmt.Errorf("Failed to delete external contact: %s", err)
 	}
-
-	return resp.StatusCode, nil
+	return resp, nil
 }
 
 // getExternalContactByIdFn is an implementation of the function to get a Genesys Cloud External Contact by Id
-func getExternalContactByIdFn(ctx context.Context, p *externalContactsContactsProxy, externalContactId string) (*platformclientv2.Externalcontact, int, error) {
+func getExternalContactByIdFn(ctx context.Context, p *externalContactsContactsProxy, externalContactId string) (*platformclientv2.Externalcontact, *platformclientv2.APIResponse, error) {
 	externalContact, resp, err := p.externalContactsApi.GetExternalcontactsContact(externalContactId, nil)
 	if err != nil {
-		return nil, resp.StatusCode, fmt.Errorf("Failed to retrieve external contact by id %s: %s", externalContactId, err)
+		return nil, resp, fmt.Errorf("Failed to retrieve external contact by id %s: %s", externalContactId, err)
 	}
-
-	return externalContact, 0, nil
+	return externalContact, resp, nil
 }
 
 // getExternalContactIdBySearchFn is an implementation of the function to get a Genesys Cloud External contact by a search team
-func getExternalContactIdBySearchFn(ctx context.Context, p *externalContactsContactsProxy, search string) (externalContactId string, retryable bool, err error) {
+func getExternalContactIdBySearchFn(ctx context.Context, p *externalContactsContactsProxy, search string) (externalContactId string, retryable bool, response *platformclientv2.APIResponse, err error) {
 	const pageNum = 1
 	const pageSize = 100
-	contacts, _, err := p.externalContactsApi.GetExternalcontactsContacts(pageSize, pageNum, search, "", nil)
+	contacts, resp, err := p.externalContactsApi.GetExternalcontactsContacts(pageSize, pageNum, search, "", nil)
 	if err != nil {
-		return "", false, fmt.Errorf("Error searching external contact %s: %s", search, err)
+		return "", false, resp, fmt.Errorf("Error searching external contact %s: %s", search, err)
 	}
 
 	if contacts.Entities == nil || len(*contacts.Entities) == 0 {
-		return "", true, fmt.Errorf("No external contact found with search %s", search)
+		return "", true, resp, fmt.Errorf("No external contact found with search %s", search)
 	}
 
 	if len(*contacts.Entities) > 1 {
-		return "", false, fmt.Errorf("Too many values returned in look for external contact.  Unable to choose 1 external contact.  Please refine search and continue.")
+		return "", false, resp, fmt.Errorf("Too many values returned in look for external contact.  Unable to choose 1 external contact.  Please refine search and continue.")
 	}
 
 	log.Printf("Retrieved the external contact search id %s by name %s", *(*contacts.Entities)[0].Id, search)
 	contact := (*contacts.Entities)[0]
-	return *contact.Id, false, nil
+	return *contact.Id, false, resp, nil
 }
 
 // updateExternalContactFn is an implementation of the function to update a Genesys Cloud external contact
-func updateExternalContactFn(ctx context.Context, p *externalContactsContactsProxy, externalContactId string, externalContact *platformclientv2.Externalcontact) (*platformclientv2.Externalcontact, error) {
-	externalContact, _, err := p.externalContactsApi.PutExternalcontactsContact(externalContactId, *externalContact)
+func updateExternalContactFn(ctx context.Context, p *externalContactsContactsProxy, externalContactId string, externalContact *platformclientv2.Externalcontact) (*platformclientv2.Externalcontact, *platformclientv2.APIResponse, error) {
+	externalContact, resp, err := p.externalContactsApi.PutExternalcontactsContact(externalContactId, *externalContact)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to update external contact: %s", err)
+		return nil, resp, fmt.Errorf("Failed to update external contact: %s", err)
 	}
-	return externalContact, nil
+	return externalContact, resp, nil
 }

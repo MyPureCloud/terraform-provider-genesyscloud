@@ -1,11 +1,11 @@
 package genesyscloud
 
 import (
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
-
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	gcloud "terraform-provider-genesyscloud/genesyscloud/validators"
 )
 
 // SetRegistrar registers all the resources, data sources and exporters in the package
@@ -17,7 +17,7 @@ func SetRegistrar(l registrar.Registrar) {
 
 func RoutingSmsAddressExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
-		GetResourcesFunc: gcloud.GetAllWithPooledClient(getAllRoutingSmsAddress),
+		GetResourcesFunc: provider.GetAllWithPooledClient(getAllRoutingSmsAddress),
 	}
 }
 
@@ -25,9 +25,9 @@ func ResourceRoutingSmsAddress() *schema.Resource {
 	return &schema.Resource{
 		Description: `Genesys Cloud routing sms address`,
 
-		CreateContext: gcloud.CreateWithPooledClient(createRoutingSmsAddress),
-		ReadContext:   gcloud.ReadWithPooledClient(readRoutingSmsAddress),
-		DeleteContext: gcloud.DeleteWithPooledClient(deleteRoutingSmsAddress),
+		CreateContext: provider.CreateWithPooledClient(createRoutingSmsAddress),
+		ReadContext:   provider.ReadWithPooledClient(readRoutingSmsAddress),
+		DeleteContext: provider.DeleteWithPooledClient(deleteRoutingSmsAddress),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -84,7 +84,7 @@ func DataSourceRoutingSmsAddress() *schema.Resource {
 	return &schema.Resource{
 		Description: `Data source for Genesys Cloud Routing Sms Address. Select a Routing Sms Address by name.`,
 
-		ReadContext: gcloud.ReadWithPooledClient(dataSourceRoutingSmsAddressRead),
+		ReadContext: provider.ReadWithPooledClient(dataSourceRoutingSmsAddressRead),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},

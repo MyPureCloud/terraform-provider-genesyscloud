@@ -1,20 +1,24 @@
 package telephony_providers_edges_extension_pool
 
 import (
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
+	gcloud "terraform-provider-genesyscloud/genesyscloud/validators"
+)
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+const (
+	resourceName = "genesyscloud_telephony_providers_edges_extension_pool"
 )
 
 func ResourceTelephonyExtensionPool() *schema.Resource {
 	return &schema.Resource{
 		Description:   "Genesys Cloud Extension Pool",
-		CreateContext: gcloud.CreateWithPooledClient(createExtensionPool),
-		ReadContext:   gcloud.ReadWithPooledClient(readExtensionPool),
-		UpdateContext: gcloud.UpdateWithPooledClient(updateExtensionPool),
-		DeleteContext: gcloud.DeleteWithPooledClient(deleteExtensionPool),
+		CreateContext: provider.CreateWithPooledClient(createExtensionPool),
+		ReadContext:   provider.ReadWithPooledClient(readExtensionPool),
+		UpdateContext: provider.UpdateWithPooledClient(updateExtensionPool),
+		DeleteContext: provider.DeleteWithPooledClient(deleteExtensionPool),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -46,7 +50,7 @@ func ResourceTelephonyExtensionPool() *schema.Resource {
 func DataSourceExtensionPool() *schema.Resource {
 	return &schema.Resource{
 		Description: "Data source for Genesys Cloud Extension pool. Select an Extension pool by starting number and ending number",
-		ReadContext: gcloud.ReadWithPooledClient(dataSourceExtensionPoolRead),
+		ReadContext: provider.ReadWithPooledClient(dataSourceExtensionPoolRead),
 		Schema: map[string]*schema.Schema{
 			"start_number": {
 				Description:      "Starting number of the Extension Pool range.",
@@ -66,7 +70,7 @@ func DataSourceExtensionPool() *schema.Resource {
 
 func TelephonyExtensionPoolExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
-		GetResourcesFunc: gcloud.GetAllWithPooledClient(getAllExtensionPools),
+		GetResourcesFunc: provider.GetAllWithPooledClient(getAllExtensionPools),
 		RefAttrs:         map[string]*resourceExporter.RefAttrSettings{}, // No references
 	}
 }

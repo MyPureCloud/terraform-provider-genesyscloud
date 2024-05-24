@@ -4,12 +4,14 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log"
 	"net/http"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 )
 
 func postProcessAutomationTrigger(pat *ProcessAutomationTrigger, api *platformclientv2.IntegrationsApi) (*ProcessAutomationTrigger, *platformclientv2.APIResponse, error) {
@@ -163,10 +165,10 @@ func getAllProcessAutomationTriggersResourceMap(_ context.Context, clientConfig 
 	path := integAPI.Configuration.BasePath + "/api/v2/processAutomation/triggers"
 
 	for pageNum := 1; ; pageNum++ {
-		processAutomationTriggers, _, getErr := getAllProcessAutomationTriggers(path, integAPI)
+		processAutomationTriggers, resp, getErr := getAllProcessAutomationTriggers(path, integAPI)
 
 		if getErr != nil {
-			return nil, diag.Errorf("failed to get page of process automation triggers: %v", getErr)
+			return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("failed to get page of process automation triggers: %v", getErr), resp)
 		}
 
 		if processAutomationTriggers.Entities == nil || len(*processAutomationTriggers.Entities) == 0 {

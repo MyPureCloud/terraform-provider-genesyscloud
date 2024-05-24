@@ -7,14 +7,15 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	architectGrammar "terraform-provider-genesyscloud/genesyscloud/architect_grammar"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 )
 
 func TestAccResourceArchitectGrammarLanguage(t *testing.T) {
@@ -41,8 +42,8 @@ func TestAccResourceArchitectGrammarLanguage(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
-		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Create Grammar language
@@ -181,19 +182,19 @@ func verifyFileUpload(grammarResourceName string, language string, fileType File
 	return func(state *terraform.State) error {
 		grammarResource, ok := state.RootModule().Resources[grammarResourceName]
 		if !ok {
-			return fmt.Errorf("Failed to find grammar %s in state", grammarResourceName)
+			return fmt.Errorf("failed to find grammar %s in state", grammarResourceName)
 		}
 		grammarId := grammarResource.Primary.ID
 		architectAPI := platformclientv2.NewArchitectApi()
 
 		grammarLanguage, _, err := architectAPI.GetArchitectGrammarLanguage(grammarId, language)
 		if err != nil {
-			return fmt.Errorf("Failed to find language %s for resource %s", language, grammarResourceName)
+			return fmt.Errorf("failed to find language %s for resource %s", language, grammarResourceName)
 		}
 
 		if fileType == Dtmf {
 			if grammarLanguage.DtmfFileUrl == nil {
-				return fmt.Errorf("Dtmf file url not found for file %s", filename)
+				return fmt.Errorf("dtmf file url not found for file %s", filename)
 			}
 			err := validateFileContent(*grammarLanguage.DtmfFileMetadata, *grammarLanguage.DtmfFileUrl)
 			if err != nil {
@@ -202,7 +203,7 @@ func verifyFileUpload(grammarResourceName string, language string, fileType File
 		}
 		if fileType == Voice {
 			if grammarLanguage.VoiceFileUrl == nil {
-				return fmt.Errorf("Voice file url not found for file %s", filename)
+				return fmt.Errorf("voice file url not found for file %s", filename)
 			}
 			err := validateFileContent(*grammarLanguage.DtmfFileMetadata, *grammarLanguage.DtmfFileUrl)
 			if err != nil {
@@ -229,7 +230,7 @@ func validateFileContent(fileData platformclientv2.Grammarlanguagefilemetadata, 
 	}
 
 	if string(localFileContent) != downloadedFileContent {
-		return fmt.Errorf("Downloaded file does not match local file")
+		return fmt.Errorf("downloaded file does not match local file")
 	}
 	return nil
 }
@@ -263,7 +264,7 @@ func testVerifyGrammarLanguageDestroyed(state *terraform.State) error {
 		grammar, resp, err := architectAPI.GetArchitectGrammarLanguage(grammarId, languageCode)
 		if grammar != nil {
 			return fmt.Errorf("Language (%s) still exists", rs.Primary.ID)
-		} else if gcloud.IsStatus404(resp) {
+		} else if util.IsStatus404(resp) {
 			// Language not found as expected
 			continue
 		} else {

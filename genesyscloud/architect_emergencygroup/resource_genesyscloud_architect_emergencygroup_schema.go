@@ -2,7 +2,7 @@ package architect_emergencygroup
 
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"terraform-provider-genesyscloud/genesyscloud"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
 )
@@ -20,10 +20,10 @@ func ResourceArchitectEmergencyGroup() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud Architect Emergency Group",
 
-		CreateContext: genesyscloud.CreateWithPooledClient(createEmergencyGroup),
-		ReadContext:   genesyscloud.ReadWithPooledClient(readEmergencyGroup),
-		UpdateContext: genesyscloud.UpdateWithPooledClient(updateEmergencyGroup),
-		DeleteContext: genesyscloud.DeleteWithPooledClient(deleteEmergencyGroup),
+		CreateContext: provider.CreateWithPooledClient(createEmergencyGroup),
+		ReadContext:   provider.ReadWithPooledClient(readEmergencyGroup),
+		UpdateContext: provider.UpdateWithPooledClient(updateEmergencyGroup),
+		DeleteContext: provider.DeleteWithPooledClient(deleteEmergencyGroup),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -79,7 +79,7 @@ func ResourceArchitectEmergencyGroup() *schema.Resource {
 func DataSourceArchitectEmergencyGroup() *schema.Resource {
 	return &schema.Resource{
 		Description: "Data source for Genesys Cloud Emergency Groups. Select an emergency group by name.",
-		ReadContext: genesyscloud.ReadWithPooledClient(dataSourceEmergencyGroupRead),
+		ReadContext: provider.ReadWithPooledClient(dataSourceEmergencyGroupRead),
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Description: "Emergency Group name.",
@@ -92,7 +92,7 @@ func DataSourceArchitectEmergencyGroup() *schema.Resource {
 
 func ArchitectEmergencyGroupExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
-		GetResourcesFunc: genesyscloud.GetAllWithPooledClient(getAllEmergencyGroups),
+		GetResourcesFunc: provider.GetAllWithPooledClient(getAllEmergencyGroups),
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			"division_id":                            {RefType: "genesyscloud_auth_division"},
 			"emergency_call_flows.emergency_flow_id": {RefType: "genesyscloud_flow"},

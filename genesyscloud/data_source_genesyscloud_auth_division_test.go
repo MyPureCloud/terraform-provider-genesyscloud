@@ -2,6 +2,8 @@ package genesyscloud
 
 import (
 	"fmt"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 
 	"github.com/google/uuid"
@@ -12,19 +14,19 @@ func TestAccDataSourceAuthDivision(t *testing.T) {
 	var (
 		divResource   = "auth-div"
 		divDataSource = "auth-div-data"
-		divName       = "Terraform Div-" + uuid.NewString()
+		divName       = "Terraform Division-" + uuid.NewString()
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				Config: GenerateAuthDivisionResource(
 					divResource,
 					divName,
-					NullValue,
-					NullValue,
+					util.NullValue,
+					util.NullValue,
 				) + generateAuthDivisionDataSource(
 					divDataSource,
 					"genesyscloud_auth_division."+divResource+".name",
@@ -35,6 +37,7 @@ func TestAccDataSourceAuthDivision(t *testing.T) {
 				),
 			},
 		},
+		CheckDestroy: testVerifyDivisionsDestroyed,
 	})
 }
 

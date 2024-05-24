@@ -6,11 +6,12 @@ import (
 	"fmt"
 	"strings"
 	"sync"
-	"terraform-provider-genesyscloud/genesyscloud"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 )
 
 // Row IDs structured as {table-id}/{key-value}
@@ -31,7 +32,7 @@ func buildSdkRowPropertyMap(propertiesJson string, keyStr string) (map[string]in
 	propMap := map[string]interface{}{}
 	if propertiesJson != "" {
 		if err := json.Unmarshal([]byte(propertiesJson), &propMap); err != nil {
-			return nil, diag.Errorf("Error parsing properties_json value %s: %v", propertiesJson, err)
+			return nil, util.BuildDiagnosticError(resourceName, fmt.Sprintf("Error parsing properties_json value %s", propertiesJson), err)
 		}
 	}
 	// Set the key value
@@ -60,7 +61,7 @@ func customizeDatatableRowDiff(ctx context.Context, diff *schema.ResourceDiff, m
 
 	propertiesJson := diff.Get("properties_json").(string)
 
-	sdkConfig := meta.(*genesyscloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 
 	// Retrieve defaults from the architect_datatable for this row
 	datatable, getErr := getArchitectDatatableCached(ctx, tableId, sdkConfig)

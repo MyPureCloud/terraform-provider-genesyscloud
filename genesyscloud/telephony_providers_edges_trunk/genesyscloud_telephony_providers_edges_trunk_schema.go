@@ -1,24 +1,23 @@
 package telephony_providers_edges_trunk
 
 import (
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
-	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
-
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
 )
 
-const resourceName = "genesyscloud_telephony_providers_edges_did"
+const resourceName = "genesyscloud_telephony_providers_edges_trunk"
 
 func SetRegistrar(l registrar.Registrar) {
-	l.RegisterDataSource("genesyscloud_telephony_providers_edges_trunk", DataSourceTrunk())
-	l.RegisterResource("genesyscloud_telephony_providers_edges_trunk", ResourceTrunk())
-	l.RegisterExporter("genesyscloud_telephony_providers_edges_trunk", TrunkExporter())
+	l.RegisterDataSource(resourceName, DataSourceTrunk())
+	l.RegisterResource(resourceName, ResourceTrunk())
+	l.RegisterExporter(resourceName, TrunkExporter())
 }
 
 func DataSourceTrunk() *schema.Resource {
 	return &schema.Resource{
 		Description: "Data source for Genesys Cloud Trunk. Select a trunk by name",
-		ReadContext: gcloud.ReadWithPooledClient(dataSourceTrunkRead),
+		ReadContext: provider.ReadWithPooledClient(dataSourceTrunkRead),
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Description: "Trunk name.",
@@ -33,10 +32,10 @@ func ResourceTrunk() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud Trunk. Created by assigning a trunk base settings to an edge or edge group",
 
-		CreateContext: gcloud.CreateWithPooledClient(createTrunk),
-		ReadContext:   gcloud.ReadWithPooledClient(readTrunk),
-		UpdateContext: gcloud.UpdateWithPooledClient(updateTrunk),
-		DeleteContext: gcloud.DeleteWithPooledClient(deleteTrunk),
+		CreateContext: provider.CreateWithPooledClient(createTrunk),
+		ReadContext:   provider.ReadWithPooledClient(readTrunk),
+		UpdateContext: provider.UpdateWithPooledClient(updateTrunk),
+		DeleteContext: provider.DeleteWithPooledClient(deleteTrunk),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},

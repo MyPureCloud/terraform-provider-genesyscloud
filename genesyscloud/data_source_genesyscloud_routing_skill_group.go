@@ -5,19 +5,21 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 )
 
 func dataSourceRoutingSkillGroup() *schema.Resource {
 	return &schema.Resource{
 		Description: "Data source for Genesys Cloud Routing Skills Groups. Select a skill group by name.",
-		ReadContext: ReadWithPooledClient(dataSourceRoutingSkillGroupRead),
+		ReadContext: provider.ReadWithPooledClient(dataSourceRoutingSkillGroupRead),
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Description: "Skill group name.",
@@ -30,13 +32,13 @@ func dataSourceRoutingSkillGroup() *schema.Resource {
 
 func dataSourceRoutingSkillGroupRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 
-	sdkConfig := m.(*ProviderMeta).ClientConfig
+	sdkConfig := m.(*provider.ProviderMeta).ClientConfig
 	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
 
 	name := d.Get("name").(string)
 
 	// Find first non-deleted skill by name. Retry in case new skill is not yet indexed by search
-	return WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
+	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
 		for pageNum := 1; ; pageNum++ {
 			const pageSize = 100
 
@@ -47,25 +49,25 @@ func dataSourceRoutingSkillGroupRead(ctx context.Context, d *schema.ResourceData
 			response, err := apiClient.CallAPI(path, "GET", nil, headerParams, nil, nil, "", nil)
 
 			if err != nil {
-				return retry.RetryableError(fmt.Errorf("error encountered while trying to retrieve routing skills group found with name %s, %w", name, err))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_routing_skill_group", fmt.Sprintf("error encountered while trying to retrieve routing skills group found with name %s | error: %s", name, err), response))
 			}
 
 			if err == nil && response.Error != nil {
-				return retry.RetryableError(fmt.Errorf("error encountered while trying to retrieve routing skills group found with name %s %w", name, err))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_routing_skill_group", fmt.Sprintf("error encountered while trying to retrieve routing skills group found with name %s | error:%s", name, err), response))
 			}
 			if err == nil && response.StatusCode == http.StatusNotFound {
-				return retry.RetryableError(fmt.Errorf("routing skills group not found with name %s", name))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_routing_skill_group", fmt.Sprintf("routing skills group not found with name %s", name), response))
 			}
 
 			allSkillGroups := &AllSkillGroups{}
 
 			err = json.Unmarshal(response.RawBody, &allSkillGroups)
 			if err != nil {
-				return retry.RetryableError(fmt.Errorf("error encountered while trying to retrieve routing skills group found with name %s %w", name, err))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_routing_skill_group", fmt.Sprintf("error encountered while trying to retrieve routing skills group found with name %s %s", name, err), response))
 			}
 
 			if allSkillGroups.Entities == nil || len(allSkillGroups.Entities) == 0 {
-				return retry.RetryableError(fmt.Errorf("no routing skills groups found with name %s", name))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_routing_skill_group", fmt.Sprintf("no routing skills groups found with name %s", name), response))
 			}
 
 			for _, skillGroup := range allSkillGroups.Entities {

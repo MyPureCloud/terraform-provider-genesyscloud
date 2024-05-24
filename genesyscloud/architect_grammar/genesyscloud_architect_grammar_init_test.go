@@ -24,11 +24,17 @@ type registerTestInstance struct {
 
 // registerTestResources registers all resources used in the tests
 func (r *registerTestInstance) registerTestResources() {
+	r.resourceMapMutex.Lock()
+	defer r.resourceMapMutex.Unlock()
+
 	providerResources["genesyscloud_architect_grammar"] = ResourceArchitectGrammar()
 }
 
 // registerTestDataSources registers all data sources used in the tests.
 func (r *registerTestInstance) registerTestDataSources() {
+	r.datasourceMapMutex.Lock()
+	defer r.datasourceMapMutex.Unlock()
+
 	providerDataSources["genesyscloud_architect_grammar"] = DataSourceArchitectGrammar()
 }
 

@@ -3,12 +3,14 @@ package genesyscloud
 import (
 	"fmt"
 	"strconv"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 )
 
 func TestAccResourceLocationBasic(t *testing.T) {
@@ -37,8 +39,8 @@ func TestAccResourceLocationBasic(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Create
@@ -70,7 +72,7 @@ func TestAccResourceLocationBasic(t *testing.T) {
 					[]string{"genesyscloud_location." + locResource2 + ".id"},
 					GenerateLocationEmergencyNum(
 						emergencyNum1,
-						NullValue, // Default number type
+						util.NullValue, // Default number type
 					),
 					GenerateLocationAddress(street1, city1, state1, country1, zip1),
 				) + GenerateLocationResourceBasic(locResource2, locName3),
@@ -87,7 +89,7 @@ func TestAccResourceLocationBasic(t *testing.T) {
 				Config: GenerateLocationResource(
 					locResource1,
 					locName2,
-					NullValue,
+					util.NullValue,
 					[]string{},
 					GenerateLocationEmergencyNum(
 						emergencyNum2,
@@ -107,7 +109,7 @@ func TestAccResourceLocationBasic(t *testing.T) {
 				Config: GenerateLocationResource(
 					locResource1,
 					locName2,
-					NullValue,
+					util.NullValue,
 					[]string{},
 					GenerateLocationAddress(street1, city1, state1, country1, zip1),
 				),
@@ -122,7 +124,7 @@ func TestAccResourceLocationBasic(t *testing.T) {
 				Config: GenerateLocationResource(
 					locResource1,
 					locName2,
-					NullValue,
+					util.NullValue,
 					[]string{},
 					GenerateLocationAddress(street2, city2, state2, country1, zip2),
 				),
@@ -160,7 +162,7 @@ func testVerifyLocationsDestroyed(state *terraform.State) error {
 				continue
 			}
 			return fmt.Errorf("Location (%s) still exists", rs.Primary.ID)
-		} else if IsStatus404(resp) {
+		} else if util.IsStatus404(resp) {
 			// Location not found as expected
 			continue
 		} else {

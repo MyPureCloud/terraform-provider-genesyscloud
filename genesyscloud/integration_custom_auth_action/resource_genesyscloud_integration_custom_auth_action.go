@@ -4,6 +4,9 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -11,13 +14,12 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	integrationAction "terraform-provider-genesyscloud/genesyscloud/integration_action"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 )
 
 /*
@@ -47,9 +49,9 @@ func getAllModifiedCustomAuthActions(ctx context.Context, clientConfig *platform
 	resources := make(resourceExporter.ResourceIDMetaMap)
 	cap := getCustomAuthActionsProxy(clientConfig)
 
-	actions, err := cap.getAllIntegrationCustomAuthActions(ctx)
+	actions, resp, err := cap.getAllIntegrationCustomAuthActions(ctx)
 	if err != nil {
-		return nil, diag.Errorf("failed to get integration custom auth actions: %v", err)
+		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get integration custom auth actions error: %s", err), resp)
 	}
 
 	for _, action := range *actions {
@@ -58,13 +60,12 @@ func getAllModifiedCustomAuthActions(ctx context.Context, clientConfig *platform
 		}
 		resources[*action.Id] = &resourceExporter.ResourceMeta{Name: *action.Name}
 	}
-
 	return resources, nil
 }
 
 // createIntegrationCustomAuthAction is used by the custom auth actions resource to manage the Genesyscloud integration custom auth action
 func createIntegrationCustomAuthAction(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	cap := getCustomAuthActionsProxy(sdkConfig)
 
 	integrationId := d.Get("integration_id").(string)
@@ -74,20 +75,20 @@ func createIntegrationCustomAuthAction(ctx context.Context, d *schema.ResourceDa
 
 	// Precheck that integration type and its credential type if it should have a custom auth data action
 	if ok, err := isIntegrationAndCredTypesCorrect(ctx, cap, integrationId); !ok || err != nil {
-		return diag.Errorf("configuration of integration %s does not allow for a custom auth data action. %v", integrationId, err)
+		return util.BuildDiagnosticError(resourceName, fmt.Sprintf("configuration of integration %s does not allow for a custom auth data action", integrationId), err)
 	}
 
 	log.Printf("Retrieving the custom auth action of integration %s", integrationId)
 
 	// Retrieve the automatically-generated custom auth action
 	// to make sure it exists before updating
-	diagErr := gcloud.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
+	diagErr := util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
 		authAction, resp, err := cap.getCustomAuthActionById(ctx, authActionId)
 		if err != nil {
-			if gcloud.IsStatus404(resp) {
-				return retry.RetryableError(fmt.Errorf("cannot find custom auth action of integration %s: %v", integrationId, err))
+			if util.IsStatus404(resp) {
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("cannot find custom auth action of integration %s | error: %v", integrationId, err), resp))
 			}
-			return retry.NonRetryableError(fmt.Errorf("error getting custom auth action %s: %s", d.Id(), err))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("error getting custom auth action %s | error: %s", d.Id(), err), resp))
 		}
 
 		// Get default name if not to be overriden
@@ -106,11 +107,11 @@ func createIntegrationCustomAuthAction(ctx context.Context, d *schema.ResourceDa
 	log.Printf("Updating custom auth action of integration %s", integrationId)
 
 	// Update the custom auth action with the actual configuration
-	diagErr = gcloud.RetryWhen(gcloud.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+	diagErr = util.RetryWhen(util.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		// Get the latest action version to send with PATCH
 		action, resp, err := cap.getCustomAuthActionById(ctx, authActionId)
 		if err != nil {
-			return resp, diag.Errorf("Failed to read integration custom auth action %s: %s", authActionId, err)
+			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to read integration custom auth action %s error: %s", authActionId, err), resp)
 		}
 
 		_, resp, err = cap.updateCustomAuthAction(ctx, authActionId, &platformclientv2.Updateactioninput{
@@ -119,7 +120,7 @@ func createIntegrationCustomAuthAction(ctx context.Context, d *schema.ResourceDa
 			Config:  BuildSdkCustomAuthActionConfig(d),
 		})
 		if err != nil {
-			return resp, diag.Errorf("Failed to update integration action %s: %s", *name, err)
+			return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update integration action %s error: %s", *name, err), resp)
 		}
 		return resp, nil
 	})
@@ -128,46 +129,44 @@ func createIntegrationCustomAuthAction(ctx context.Context, d *schema.ResourceDa
 	}
 
 	log.Printf("Updated custom auth action %s", *name)
-
 	return readIntegrationCustomAuthAction(ctx, d, meta)
 }
 
 // readIntegrationCustomAuthAction is used by the integration action resource to read a custom auth action from genesys cloud
 func readIntegrationCustomAuthAction(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	cap := getCustomAuthActionsProxy(sdkConfig)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceIntegrationCustomAuthAction(), constants.DefaultConsistencyChecks, resourceName)
 
 	log.Printf("Reading integration action %s", d.Id())
 
-	return gcloud.WithRetriesForRead(ctx, d, func() *retry.RetryError {
+	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		action, resp, err := cap.getCustomAuthActionById(ctx, d.Id())
 		if err != nil {
-			if gcloud.IsStatus404(resp) {
-				return retry.RetryableError(fmt.Errorf("failed to read integration custom auth action %s: %s", d.Id(), err))
+			if util.IsStatus404(resp) {
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read integration custom auth action %s | error: %s", d.Id(), err), resp))
 			}
-			return retry.NonRetryableError(fmt.Errorf("failed to read integration custom auth action %s: %s", d.Id(), err))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read integration custom auth action %s | error: %s", d.Id(), err), resp))
 		}
 
 		// Retrieve config request/response templates
 		reqTemp, resp, err := cap.getIntegrationActionTemplate(ctx, d.Id(), reqTemplateFileName)
 		if err != nil {
-			if gcloud.IsStatus404(resp) {
+			if util.IsStatus404(resp) {
 				d.SetId("")
 				return nil
 			}
-			return retry.NonRetryableError(fmt.Errorf("failed to read request template for integration action %s: %s", d.Id(), err))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read request template for integration action %s | error: %s", d.Id(), err), resp))
 		}
 
 		successTemp, resp, err := cap.getIntegrationActionTemplate(ctx, d.Id(), successTemplateFileName)
 		if err != nil {
-			if gcloud.IsStatus404(resp) {
+			if util.IsStatus404(resp) {
 				d.SetId("")
 				return nil
 			}
-			return retry.NonRetryableError(fmt.Errorf("failed to read success template for integration action %s: %s", d.Id(), err))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read success template for integration action %s | error: %s", d.Id(), err), resp))
 		}
-
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceIntegrationCustomAuthAction())
 
 		resourcedata.SetNillableValue(d, "name", action.Name)
 		resourcedata.SetNillableValue(d, "integration_id", action.IntegrationId)
@@ -187,24 +186,24 @@ func readIntegrationCustomAuthAction(ctx context.Context, d *schema.ResourceData
 		}
 
 		log.Printf("Read integration action %s %s", d.Id(), *action.Name)
-		return cc.CheckState()
+		return cc.CheckState(d)
 	})
 }
 
 // updateIntegrationCustomAuthAction is used by the integration action resource to update a custom auth in Genesys Cloud
 func updateIntegrationCustomAuthAction(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	cap := getCustomAuthActionsProxy(sdkConfig)
 
 	name := resourcedata.GetNillableValue[string](d, "name")
 
 	log.Printf("Updating integration custom auth action %s", *name)
 
-	diagErr := gcloud.RetryWhen(gcloud.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+	diagErr := util.RetryWhen(util.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		// Get the latest action version to send with PATCH
 		action, resp, err := cap.getCustomAuthActionById(ctx, d.Id())
 		if err != nil {
-			return resp, diag.Errorf("Failed to read integration custom auth action %s: %s", d.Id(), err)
+			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to read integration custom auth action %s error: %s", d.Id(), err), resp)
 		}
 		if name == nil {
 			name = action.Name
@@ -216,7 +215,7 @@ func updateIntegrationCustomAuthAction(ctx context.Context, d *schema.ResourceDa
 			Config:  BuildSdkCustomAuthActionConfig(d),
 		})
 		if err != nil {
-			return resp, diag.Errorf("Failed to update integration action %s: %s", *name, err)
+			return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update integration action %s error: %s", *name, err), resp)
 		}
 		return resp, nil
 	})
@@ -225,16 +224,13 @@ func updateIntegrationCustomAuthAction(ctx context.Context, d *schema.ResourceDa
 	}
 
 	log.Printf("Updated custom auth action %s", *name)
-
 	return readIntegrationCustomAuthAction(ctx, d, meta)
 }
 
 // deleteIntegrationCustomAuthAction does not do anything as deleting a custom auth action is not possible
 func deleteIntegrationCustomAuthAction(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	name := d.Get("name").(string)
-
 	log.Printf("Removing terraform resource integration_custom_auth_action %s will not remove the Data Action itself in the org", name)
 	log.Printf("The Custom Auth Data Action cannot be removed unless the Web Services Data Action Integration itself is deleted or if the Credentials type is changed from 'User Defined (OAuth)' to a different type")
-
 	return nil
 }

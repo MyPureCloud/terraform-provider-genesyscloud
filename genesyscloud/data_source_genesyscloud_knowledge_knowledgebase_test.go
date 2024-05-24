@@ -2,6 +2,8 @@ package genesyscloud
 
 import (
 	"fmt"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 
 	"github.com/google/uuid"
@@ -19,12 +21,12 @@ func TestAccDataSourceKnowledgeKnowledgebaseBasic(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Create
-				Config: generateKnowledgeKnowledgebaseResource(
+				Config: GenerateKnowledgeKnowledgebaseResource(
 					knowledgeBaseResource1,
 					knowledgeBaseName1,
 					knowledgeBaseDescription1,

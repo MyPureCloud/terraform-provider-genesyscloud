@@ -4,8 +4,10 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"net/url"
 	"strings"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -16,7 +18,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 )
 
 var (
@@ -79,9 +81,9 @@ func getAllKnowledgeLabelEntities(knowledgeAPI platformclientv2.KnowledgeApi, kn
 
 	const pageSize = 100
 	for i := 0; ; i++ {
-		knowledgeLabels, _, getErr := knowledgeAPI.GetKnowledgeKnowledgebaseLabels(*knowledgeBase.Id, "", after, fmt.Sprintf("%v", pageSize), "", false)
+		knowledgeLabels, resp, getErr := knowledgeAPI.GetKnowledgeKnowledgebaseLabels(*knowledgeBase.Id, "", after, fmt.Sprintf("%v", pageSize), "", false)
 		if getErr != nil {
-			return nil, diag.Errorf("Failed to get page of knowledge labels: %v", getErr)
+			return nil, util.BuildAPIDiagnosticError("genesyscloud_knowledge_label", fmt.Sprintf("Failed to get knowledge labels error: %s", getErr), resp)
 		}
 
 		if knowledgeLabels.Entities == nil || len(*knowledgeLabels.Entities) == 0 {
@@ -94,16 +96,12 @@ func getAllKnowledgeLabelEntities(knowledgeAPI platformclientv2.KnowledgeApi, kn
 			break
 		}
 
-		u, err := url.Parse(*knowledgeLabels.NextUri)
+		after, err := util.GetQueryParamValueFromUri(*knowledgeLabels.NextUri, "after")
 		if err != nil {
-			return nil, diag.Errorf("Failed to parse after cursor from knowledge label nextUri: %v", err)
+			return nil, util.BuildDiagnosticError("genesyscloud_knowledge_label", fmt.Sprintf("Failed to parse after cursor from knowledge label nextUri"), err)
 		}
-		m, _ := url.ParseQuery(u.RawQuery)
-		if afterSlice, ok := m["after"]; ok && len(afterSlice) > 0 {
-			after = afterSlice[0]
-			if after == "" {
-				break
-			}
+		if after == "" {
+			break
 		}
 	}
 
@@ -112,7 +110,7 @@ func getAllKnowledgeLabelEntities(knowledgeAPI platformclientv2.KnowledgeApi, kn
 
 func KnowledgeLabelExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
-		GetResourcesFunc: GetAllWithPooledClient(getAllKnowledgeLabels),
+		GetResourcesFunc: provider.GetAllWithPooledClient(getAllKnowledgeLabels),
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			"knowledge_base_id": {RefType: "genesyscloud_knowledge_knowledgebase"},
 		},
@@ -123,10 +121,10 @@ func ResourceKnowledgeLabel() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud Knowledge Label",
 
-		CreateContext: CreateWithPooledClient(createKnowledgeLabel),
-		ReadContext:   ReadWithPooledClient(readKnowledgeLabel),
-		UpdateContext: UpdateWithPooledClient(updateKnowledgeLabel),
-		DeleteContext: DeleteWithPooledClient(deleteKnowledgeLabel),
+		CreateContext: provider.CreateWithPooledClient(createKnowledgeLabel),
+		ReadContext:   provider.ReadWithPooledClient(readKnowledgeLabel),
+		UpdateContext: provider.UpdateWithPooledClient(updateKnowledgeLabel),
+		DeleteContext: provider.DeleteWithPooledClient(deleteKnowledgeLabel),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -152,15 +150,15 @@ func createKnowledgeLabel(ctx context.Context, d *schema.ResourceData, meta inte
 	knowledgeBaseId := d.Get("knowledge_base_id").(string)
 	knowledgeLabel := d.Get("knowledge_label").([]interface{})[0].(map[string]interface{})
 
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	knowledgeAPI := platformclientv2.NewKnowledgeApiWithConfig(sdkConfig)
 
 	knowledgeLabelRequest := buildKnowledgeLabel(knowledgeLabel)
 
 	log.Printf("Creating knowledge label %s", knowledgeLabel["name"].(string))
-	knowledgeLabelResponse, _, err := knowledgeAPI.PostKnowledgeKnowledgebaseLabels(knowledgeBaseId, knowledgeLabelRequest)
+	knowledgeLabelResponse, resp, err := knowledgeAPI.PostKnowledgeKnowledgebaseLabels(knowledgeBaseId, knowledgeLabelRequest)
 	if err != nil {
-		return diag.Errorf("Failed to create knowledge label %s: %s", knowledgeBaseId, err)
+		return util.BuildAPIDiagnosticError("genesyscloud_knowledge_label", fmt.Sprintf("Failed to create knowledge label %s error: %s", knowledgeBaseId, err), resp)
 	}
 
 	id := fmt.Sprintf("%s,%s", *knowledgeLabelResponse.Id, knowledgeBaseId)
@@ -175,28 +173,27 @@ func readKnowledgeLabel(ctx context.Context, d *schema.ResourceData, meta interf
 	knowledgeLabelId := id[0]
 	knowledgeBaseId := id[1]
 
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	knowledgeAPI := platformclientv2.NewKnowledgeApiWithConfig(sdkConfig)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceKnowledgeLabel(), constants.DefaultConsistencyChecks, "genesyscloud_knowledge_label")
 
 	log.Printf("Reading knowledge label %s", knowledgeLabelId)
-	return WithRetriesForRead(ctx, d, func() *retry.RetryError {
+	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		knowledgeLabel, resp, getErr := knowledgeAPI.GetKnowledgeKnowledgebaseLabel(knowledgeBaseId, knowledgeLabelId)
 		if getErr != nil {
-			if IsStatus404(resp) {
-				return retry.RetryableError(fmt.Errorf("Failed to read knowledge label %s: %s", knowledgeLabelId, getErr))
+			if util.IsStatus404(resp) {
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_knowledge_label", fmt.Sprintf("Failed to read knowledge label %s | error: %s", knowledgeLabelId, getErr), resp))
 			}
 			log.Printf("%s", getErr)
-			return retry.NonRetryableError(fmt.Errorf("Failed to read knowledge label %s: %s", knowledgeLabelId, getErr))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_knowledge_label", fmt.Sprintf("Failed to read knowledge label %s | error: %s", knowledgeLabelId, getErr), resp))
 		}
-
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceKnowledgeLabel())
 
 		newId := fmt.Sprintf("%s,%s", *knowledgeLabel.Id, knowledgeBaseId)
 		d.SetId(newId)
 		d.Set("knowledge_base_id", knowledgeBaseId)
 		d.Set("knowledge_label", flattenKnowledgeLabel(knowledgeLabel))
 		log.Printf("Read knowledge label %s", knowledgeLabelId)
-		return cc.CheckState()
+		return cc.CheckState(d)
 	})
 }
 
@@ -206,15 +203,15 @@ func updateKnowledgeLabel(ctx context.Context, d *schema.ResourceData, meta inte
 	knowledgeBaseId := id[1]
 	knowledgeLabel := d.Get("knowledge_label").([]interface{})[0].(map[string]interface{})
 
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	knowledgeAPI := platformclientv2.NewKnowledgeApiWithConfig(sdkConfig)
 
 	log.Printf("Updating knowledge label %s", knowledgeLabel["name"].(string))
-	diagErr := RetryWhen(IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+	diagErr := util.RetryWhen(util.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		// Get current knowledge label version
 		_, resp, getErr := knowledgeAPI.GetKnowledgeKnowledgebaseLabel(knowledgeBaseId, knowledgeLabelId)
 		if getErr != nil {
-			return resp, diag.Errorf("Failed to read knowledge label %s: %s", knowledgeLabelId, getErr)
+			return resp, util.BuildAPIDiagnosticError("genesyscloud_knowledge_label", fmt.Sprintf("Failed to read knowledge label %s error: %s", knowledgeLabelId, getErr), resp)
 		}
 
 		knowledgeLabelUpdate := buildKnowledgeLabelUpdate(knowledgeLabel)
@@ -222,7 +219,7 @@ func updateKnowledgeLabel(ctx context.Context, d *schema.ResourceData, meta inte
 		log.Printf("Updating knowledge label %s", knowledgeLabel["name"].(string))
 		_, resp, putErr := knowledgeAPI.PatchKnowledgeKnowledgebaseLabel(knowledgeBaseId, knowledgeLabelId, knowledgeLabelUpdate)
 		if putErr != nil {
-			return resp, diag.Errorf("Failed to update knowledge label %s: %s", knowledgeLabelId, putErr)
+			return resp, util.BuildAPIDiagnosticError("genesyscloud_knowledge_label", fmt.Sprintf("Failed to update knowledge label %s error: %s", knowledgeLabelId, putErr), resp)
 		}
 		return resp, nil
 	})
@@ -239,27 +236,27 @@ func deleteKnowledgeLabel(ctx context.Context, d *schema.ResourceData, meta inte
 	knowledgeLabelId := id[0]
 	knowledgeBaseId := id[1]
 
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	knowledgeAPI := platformclientv2.NewKnowledgeApiWithConfig(sdkConfig)
 
 	log.Printf("Deleting knowledge label %s", id)
-	_, _, err := knowledgeAPI.DeleteKnowledgeKnowledgebaseLabel(knowledgeBaseId, knowledgeLabelId)
+	_, resp, err := knowledgeAPI.DeleteKnowledgeKnowledgebaseLabel(knowledgeBaseId, knowledgeLabelId)
 	if err != nil {
-		return diag.Errorf("Failed to delete knowledge label %s: %s", id, err)
+		return util.BuildAPIDiagnosticError("genesyscloud_knowledge_label", fmt.Sprintf("Failed to delete knowledge label %s error: %s", id, err), resp)
 	}
 
-	return WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
+	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		_, resp, err := knowledgeAPI.GetKnowledgeKnowledgebaseLabel(knowledgeBaseId, knowledgeLabelId)
 		if err != nil {
-			if IsStatus404(resp) {
+			if util.IsStatus404(resp) {
 				// Knowledge label deleted
 				log.Printf("Deleted knowledge label %s", knowledgeLabelId)
 				return nil
 			}
-			return retry.NonRetryableError(fmt.Errorf("Error deleting knowledge label %s: %s", knowledgeLabelId, err))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_knowledge_label", fmt.Sprintf("Error deleting knowledge label %s | error: %s", knowledgeLabelId, err), resp))
 		}
 
-		return retry.RetryableError(fmt.Errorf("Knowledge label %s still exists", knowledgeLabelId))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_knowledge_label", fmt.Sprintf("Knowledge label %s still exists", knowledgeLabelId), resp))
 	})
 }
 

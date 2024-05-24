@@ -28,6 +28,7 @@ pipeline {
                 echo 'Installing dependencies'
                 sh 'go version'
                 sh 'go mod download'
+                sh 'go clean -i -cache'
                 sh 'go build -v .'
             }
 	    }
@@ -40,61 +41,286 @@ pipeline {
             }
         }
 
-        stage('Unit Tests') {
 
-            environment {
-                TF_UNIT=1
-            }
-
-            steps {
-            catchError(buildResult: 'FAILURE', stageResult:'FAILURE'){
-                echo 'Attempting to Run Unit Tests'
-                withCredentials([usernamePassword(credentialsId: CREDENTIALS_ID, usernameVariable: 'GENESYSCLOUD_OAUTHCLIENT_ID',passwordVariable:'GENESYSCLOUD_OAUTHCLIENT_SECRET')])
-                    {
-                        echo 'Loading Genesys OAuth Credentials'
-                        sh 'go test ./genesyscloud/... -run TestUnit -v -timeout 30m -count=1 -cover -coverprofile=coverageUnit.out'
-
-                    }
-                }
-            }
-        }
-
-
-        stage('Acceptance Tests') {
-
+    stage('Architect Tests') {
             environment {
                 TF_ACC=1
+                TF_LOG="DEBUG"
             }
-
             steps {
-            catchError(buildResult: 'SUCCESS', stageResult:'FAILURE'){
-                echo 'Attempting to Run Acceptance Tests'
-                withCredentials([usernamePassword(credentialsId: CREDENTIALS_ID, usernameVariable: 'GENESYSCLOUD_OAUTHCLIENT_ID',passwordVariable:'GENESYSCLOUD_OAUTHCLIENT_SECRET')])
-                    {
+                catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
+                    echo 'Attempting to Run Architect Tests'
+                    withCredentials([usernamePassword(credentialsId: CREDENTIALS_ID, usernameVariable: 'GENESYSCLOUD_OAUTHCLIENT_ID', passwordVariable: 'GENESYSCLOUD_OAUTHCLIENT_SECRET')]) {
                         echo 'Loading Genesys OAuth Credentials'
-                        sh 'go test ./genesyscloud/... -run TestAcc -v -timeout 80m -cover -coverprofile=coverageAcceptance.out'                            
+                        sh 'go test ./genesyscloud/... -run TestAcc.*Architect -v -count=1 -timeout 120m -cover -coverprofile=coverageArchitect.out'
                     }
                 }
             }
         }
 
-        stage('Generating Readable Coverage Report') {
+        stage('Idp Tests') {
+            environment {
+                TF_ACC=1
+                TF_LOG="DEBUG"
+            }
             steps {
-                sh 'go tool cover -html coverageAcceptance.out -o coverageAcceptance.html'
-                sh 'go tool cover -html coverageUnit.out -o coverageUnit.html'
+                catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
+                    echo 'Attempting to Run Idp Tests'
+                    withCredentials([usernamePassword(credentialsId: CREDENTIALS_ID, usernameVariable: 'GENESYSCLOUD_OAUTHCLIENT_ID', passwordVariable: 'GENESYSCLOUD_OAUTHCLIENT_SECRET')]) {
+                        echo 'Loading Genesys OAuth Credentials'
+                        sh 'go test ./genesyscloud/... -run TestAcc.*Idp -v -count=1 -timeout 120m -cover -coverprofile=coverageIdp.out'
+                    }
+                }
+            }
+        }
 
-
+        stage('Auth Tests') {
+            environment {
+                TF_ACC=1
+                TF_LOG="DEBUG"
+            }
+            steps {
+                catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
+                    echo 'Attempting to Run Auth Tests'
+                    withCredentials([usernamePassword(credentialsId: CREDENTIALS_ID, usernameVariable: 'GENESYSCLOUD_OAUTHCLIENT_ID', passwordVariable: 'GENESYSCLOUD_OAUTHCLIENT_SECRET')]) {
+                        echo 'Loading Genesys OAuth Credentials'
+                        sh 'go test ./genesyscloud/... -run TestAcc.*Auth -v -count=1 -timeout 120m -cover -coverprofile=coverageAuth.out'
+                    }
+                }
             }
         }
 
 
-        stage('Uploading Coverage Report') {
+        stage('Integration Tests') {
+            environment {
+                TF_ACC=1
+                TF_LOG="DEBUG"
+            }
             steps {
-                archiveArtifacts artifacts: 'coverageAcceptance.html', allowEmptyArchive: true
-                archiveArtifacts artifacts: 'coverageUnit.html', allowEmptyArchive: true
+                catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
+                    echo 'Attempting to Run Integration Tests'
+                    withCredentials([usernamePassword(credentialsId: CREDENTIALS_ID, usernameVariable: 'GENESYSCLOUD_OAUTHCLIENT_ID', passwordVariable: 'GENESYSCLOUD_OAUTHCLIENT_SECRET')]) {
+                        echo 'Loading Genesys OAuth Credentials'
+                        sh 'go test ./genesyscloud/... -run TestAcc.*Integration -v -count=1 -timeout 120m -cover -coverprofile=coverageIntegration.out'
+                    }
+                }
             }
         }
 
+        stage('Flow Tests') {
+            environment {
+                TF_ACC=1
+                TF_LOG="DEBUG"
+            }
+            steps {
+                sh 'go clean -i -cache'
+                catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
+                    echo 'Attempting to Run Flow Tests'
+                    withCredentials([usernamePassword(credentialsId: CREDENTIALS_ID, usernameVariable: 'GENESYSCLOUD_OAUTHCLIENT_ID', passwordVariable: 'GENESYSCLOUD_OAUTHCLIENT_SECRET')]) {
+                        echo 'Loading Genesys OAuth Credentials'
+                        sh "go test ./genesyscloud/... -run 'TestAcc.*Flow' -v -count=1 -timeout 120m -cover -coverprofile=coverageFlow.out"
+                    }
+                }
+            }
+        }
+        stage('Journey Tests') {
+            environment {
+                TF_ACC=1
+                TF_LOG="DEBUG"
+            }
+            steps {
+                sh 'go clean -i -cache'
+                catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
+                    echo 'Attempting to Run Journey Tests'
+                    withCredentials([usernamePassword(credentialsId: CREDENTIALS_ID, usernameVariable: 'GENESYSCLOUD_OAUTHCLIENT_ID', passwordVariable: 'GENESYSCLOUD_OAUTHCLIENT_SECRET')]) {
+                        echo 'Loading Genesys OAuth Credentials'
+                        sh 'go test ./genesyscloud/... -run TestAcc.*Journey -v -count=1 -timeout 120m -cover -coverprofile=coverageJourney.out'
+                    }
+                }
+            }
+        }
 
-    } 
+        stage('Knowledge Tests') {
+            environment {
+                TF_ACC=1
+                TF_LOG="DEBUG"
+            }
+            steps {
+                catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
+                    echo 'Attempting to Run Knowledge Tests'
+                    withCredentials([usernamePassword(credentialsId: CREDENTIALS_ID, usernameVariable: 'GENESYSCLOUD_OAUTHCLIENT_ID', passwordVariable: 'GENESYSCLOUD_OAUTHCLIENT_SECRET')]) {
+                        echo 'Loading Genesys OAuth Credentials'
+                        sh 'go test ./genesyscloud/... -run TestAcc.*Knowledge -v -count=1 -timeout 120m -cover -coverprofile=coverageKnowledge.out'
+                    }
+                }
+            }
+        }
+
+        stage('Outbound Tests') {
+            environment {
+                TF_ACC=1
+                TF_LOG="DEBUG"
+            }
+            steps {
+                catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
+                    echo 'Attempting to Run Outbound Tests'
+                    withCredentials([usernamePassword(credentialsId: CREDENTIALS_ID, usernameVariable: 'GENESYSCLOUD_OAUTHCLIENT_ID', passwordVariable: 'GENESYSCLOUD_OAUTHCLIENT_SECRET')]) {
+                        echo 'Loading Genesys OAuth Credentials'
+                        sh 'go test ./genesyscloud/... -run TestAcc.*Outbound -v -count=1 -timeout 120m -cover -coverprofile=coverageOutbound.out'
+                    }
+                }
+            }
+        }
+
+        stage('ResponseManagement Tests') {
+            environment {
+                TF_ACC=1
+                TF_LOG="DEBUG"
+            }
+            steps {
+                catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
+                    echo 'Attempting to Run ResponseManagement Tests'
+                    withCredentials([usernamePassword(credentialsId: CREDENTIALS_ID, usernameVariable: 'GENESYSCLOUD_OAUTHCLIENT_ID', passwordVariable: 'GENESYSCLOUD_OAUTHCLIENT_SECRET')]) {
+                        echo 'Loading Genesys OAuth Credentials'
+                        sh 'go test ./genesyscloud/... -run TestAcc.*ResponseManagement -v -count=1 -timeout 120m -cover -coverprofile=coverageResponseManagement.out'
+                    }
+                }
+            }
+        }
+
+        stage('Routing Tests') {
+            environment {
+                TF_ACC=1
+                TF_LOG="DEBUG"
+            }
+            steps {
+                catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
+                    echo 'Attempting to Run Routing Tests'
+                    withCredentials([usernamePassword(credentialsId: CREDENTIALS_ID, usernameVariable: 'GENESYSCLOUD_OAUTHCLIENT_ID', passwordVariable: 'GENESYSCLOUD_OAUTHCLIENT_SECRET')]) {
+                        echo 'Loading Genesys OAuth Credentials'
+                        sh "go test ./genesyscloud/... -run 'TestAcc.*Routing' -v -count=1 -timeout 120m -cover -coverprofile=coverageRouting.out"
+                    }
+                }
+            }
+        }
+
+        stage('Location Tests') {
+            environment {
+                TF_ACC=1
+                TF_LOG="DEBUG"
+            }
+            steps {
+                sh 'go clean -i -cache'
+                catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
+                    echo 'Attempting to Run Location Tests'
+                    withCredentials([usernamePassword(credentialsId: CREDENTIALS_ID, usernameVariable: 'GENESYSCLOUD_OAUTHCLIENT_ID', passwordVariable: 'GENESYSCLOUD_OAUTHCLIENT_SECRET')]) {
+                        echo 'Loading Genesys OAuth Credentials'
+                        sh 'go test ./genesyscloud/... -run TestAcc.*Location -v -count=1 -timeout 120m -cover -coverprofile=coverageLocation.out'
+                    }
+                }
+            }
+        }
+
+        stage('WebDeployment Tests') {
+            environment {
+                TF_ACC=1
+                TF_LOG="DEBUG"
+            }
+            steps {
+                sh 'go clean -i -cache'
+                catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
+                    echo 'Attempting to Run WebDeployment Tests'
+                    withCredentials([usernamePassword(credentialsId: CREDENTIALS_ID, usernameVariable: 'GENESYSCLOUD_OAUTHCLIENT_ID', passwordVariable: 'GENESYSCLOUD_OAUTHCLIENT_SECRET')]) {
+                        echo 'Loading Genesys OAuth Credentials'
+                        sh 'go test ./genesyscloud/... -run TestAcc.*WebDeployment -v -count=1 -timeout 120m -cover -coverprofile=coverageWebDeployment.out'
+                    }
+                }
+            }
+        }
+
+        stage('Site Tests') {
+            environment {
+                TF_ACC=1
+                TF_LOG="DEBUG"
+            }
+            steps {
+                sh 'go clean -i -cache'
+                catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
+                    echo 'Attempting to Run Site Tests'
+                    withCredentials([usernamePassword(credentialsId: CREDENTIALS_ID, usernameVariable: 'GENESYSCLOUD_OAUTHCLIENT_ID', passwordVariable: 'GENESYSCLOUD_OAUTHCLIENT_SECRET')]) {
+                        echo 'Loading Genesys OAuth Credentials'
+                        sh 'go test ./genesyscloud/... -run TestAcc.*Site -v -count=1 -timeout 120m -cover -coverprofile=coverageSite.out'
+                    }
+                }
+            }
+        }
+
+        stage('Roles & Team Tests') {
+            environment {
+                TF_ACC=1
+                TF_LOG="DEBUG"
+            }
+            steps {
+                sh 'go clean -i -cache'
+                catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
+                    echo 'Attempting to Run Roles & Teams Tests'
+                    withCredentials([usernamePassword(credentialsId: CREDENTIALS_ID, usernameVariable: 'GENESYSCLOUD_OAUTHCLIENT_ID', passwordVariable: 'GENESYSCLOUD_OAUTHCLIENT_SECRET')]) {
+                        echo 'Loading Genesys OAuth Credentials'
+                        sh 'go test ./genesyscloud/... -run "TestAcc.*Roles|Team|Members" -v -count=1 -timeout 120m -cover -coverprofile=coverageRoleTeam.out'
+                    }
+                }
+            }
+        }
+
+        stage('Export Tests') {
+            environment {
+                TF_ACC=1
+                TF_LOG="DEBUG"
+            }
+            steps {
+                sh 'go clean -i -cache'
+                catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
+                    echo 'Attempting to Run Export Tests'
+                    withCredentials([usernamePassword(credentialsId: CREDENTIALS_ID, usernameVariable: 'GENESYSCLOUD_OAUTHCLIENT_ID', passwordVariable: 'GENESYSCLOUD_OAUTHCLIENT_SECRET')]) {
+                        echo 'Loading Genesys OAuth Credentials'
+                        sh 'go test ./genesyscloud/... -run TestAcc.*Export -v -count=1 -timeout 120m -cover -coverprofile=coverageExport.out'
+                    }
+                }
+            }
+        }
+
+        stage('Remaining Tests') {
+            environment {
+                TF_ACC=1
+                TF_LOG="DEBUG"
+            }
+            steps {
+                sh 'go clean -i -cache'
+                catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
+                    echo 'Attempting to Run Remaining Tests'
+                    withCredentials([usernamePassword(credentialsId: CREDENTIALS_ID, usernameVariable: 'GENESYSCLOUD_OAUTHCLIENT_ID', passwordVariable: 'GENESYSCLOUD_OAUTHCLIENT_SECRET')]) {
+                        echo 'Loading Genesys OAuth Credentials'
+                        sh "go test ./genesyscloud/... -run TestAcc -skip 'Architect|Flow|Idp|Auth|Integration|Journey|Knowledge|Outbound|Routing|ResponseManagement|Export|Location|WebDeployment|Site|Roles|Team|Members' -v -count=1 -timeout 120m -cover -coverprofile=coverageRemaining.out"
+
+                    }
+                }
+            }
+        }
+
+        stage('Generate & Upload Report') {
+            steps {
+        sh 'GOBIN=$HOME/bin go install github.com/wadey/gocovmerge@latest'
+        // Generate merged coverage report
+        sh '$HOME/bin/gocovmerge coverageArchitect.out coverageIdp.out coverageAuth.out coverageIntegration.out coverageFlow.out coverageJourney.out coverageKnowledge.out coverageOutbound.out coverageResponseManagement.out coverageRouting.out coverageExport.out coverageLocation.out coverageWebDeployment.out coverageRemaining.out coverageSite.out coverageRoleTeam.out > merged_coverage.out'
+        
+        // Convert merged coverage report to HTML
+        sh 'go tool cover -html merged_coverage.out -o coverageAcceptance.html'
+
+        // Archive HTML coverage report
+        archiveArtifacts artifacts: 'coverageAcceptance.html', allowEmptyArchive: true
+            }
+        }
+    }
 }
+
+    

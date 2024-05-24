@@ -1,15 +1,18 @@
 package outbound_sequence
 
 import (
-	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
 	"log"
 	"sync"
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
-	"terraform-provider-genesyscloud/genesyscloud/outbound"
+	flow "terraform-provider-genesyscloud/genesyscloud/architect_flow"
+	obResponseSet "terraform-provider-genesyscloud/genesyscloud/outbound_callanalysisresponseset"
 	outboundCampaign "terraform-provider-genesyscloud/genesyscloud/outbound_campaign"
 	outboundContactList "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
 	edgeSite "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site"
 	"testing"
+
+	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
@@ -44,8 +47,8 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_outbound_campaign"] = outboundCampaign.ResourceOutboundCampaign()
 	providerResources["genesyscloud_outbound_contact_list"] = outboundContactList.ResourceOutboundContactList()
 	providerResources["genesyscloud_routing_wrapupcode"] = gcloud.ResourceRoutingWrapupCode()
-	providerResources["genesyscloud_flow"] = gcloud.ResourceFlow()
-	providerResources["genesyscloud_outbound_callanalysisresponseset"] = outbound.ResourceOutboundCallAnalysisResponseSet()
+	providerResources["genesyscloud_flow"] = flow.ResourceArchitectFlow()
+	providerResources["genesyscloud_outbound_callanalysisresponseset"] = obResponseSet.ResourceOutboundCallanalysisresponseset()
 	providerResources["genesyscloud_location"] = gcloud.ResourceLocation()
 	providerResources["genesyscloud_telephony_providers_edges_site"] = edgeSite.ResourceSite()
 }
@@ -61,7 +64,7 @@ func (r *registerTestInstance) registerTestDataSources() {
 
 // initTestResources initializes all test resources and data sources.
 func initTestResources() {
-	sdkConfig, authErr = gcloud.AuthorizeSdk()
+	sdkConfig, authErr = provider.AuthorizeSdk()
 	if authErr != nil {
 		log.Fatalf("failed to authorize sdk for the package outbound_sequence: %v", authErr)
 	}

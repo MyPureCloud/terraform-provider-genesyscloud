@@ -2,12 +2,14 @@ package genesyscloud
 
 import (
 	"fmt"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 )
 
 func TestAccResourceKnowledgeKnowledgebaseBasic(t *testing.T) {
@@ -20,12 +22,12 @@ func TestAccResourceKnowledgeKnowledgebaseBasic(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Create
-				Config: generateKnowledgeKnowledgebaseResource(
+				Config: GenerateKnowledgeKnowledgebaseResource(
 					knowledgeBaseResource1,
 					knowledgeBaseName1,
 					knowledgeBaseDescription1,
@@ -39,7 +41,7 @@ func TestAccResourceKnowledgeKnowledgebaseBasic(t *testing.T) {
 			},
 			{
 				// Update
-				Config: generateKnowledgeKnowledgebaseResource(
+				Config: GenerateKnowledgeKnowledgebaseResource(
 					knowledgeBaseResource1,
 					knowledgeBaseName1,
 					knowledgeBaseDescription2,
@@ -62,19 +64,6 @@ func TestAccResourceKnowledgeKnowledgebaseBasic(t *testing.T) {
 	})
 }
 
-func generateKnowledgeKnowledgebaseResource(
-	resourceID string,
-	name string,
-	description string,
-	coreLanguage string) string {
-	return fmt.Sprintf(`resource "genesyscloud_knowledge_knowledgebase" "%s" {
-		name = "%s"
-        description = "%s"
-        core_language = "%s"
-	}
-	`, resourceID, name, description, coreLanguage)
-}
-
 func testVerifyKnowledgebasesDestroyed(state *terraform.State) error {
 	knowledgeAPI := platformclientv2.NewKnowledgeApi()
 	for _, rs := range state.RootModule().Resources {
@@ -85,7 +74,7 @@ func testVerifyKnowledgebasesDestroyed(state *terraform.State) error {
 		knowledgeBase, resp, err := knowledgeAPI.GetKnowledgeKnowledgebase(rs.Primary.ID)
 		if knowledgeBase != nil {
 			return fmt.Errorf("Knowledge base (%s) still exists", rs.Primary.ID)
-		} else if IsStatus404(resp) {
+		} else if util.IsStatus404(resp) {
 			// Knowledge base not found as expected
 			continue
 		} else {

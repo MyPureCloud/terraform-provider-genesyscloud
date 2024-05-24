@@ -2,13 +2,18 @@ package genesyscloud
 
 import (
 	"fmt"
+	"log"
 	"strconv"
 	"strings"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 )
 
 func TestAccResourceBasicRoutingUtilization(t *testing.T) {
@@ -21,61 +26,61 @@ func TestAccResourceBasicRoutingUtilization(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Create
 				Config: generateRoutingUtilizationResource(
-					generateRoutingUtilMediaType("call", maxCapacity1, FalseValue),
-					generateRoutingUtilMediaType("callback", maxCapacity1, FalseValue),
-					generateRoutingUtilMediaType("chat", maxCapacity1, FalseValue),
-					generateRoutingUtilMediaType("email", maxCapacity1, FalseValue),
-					generateRoutingUtilMediaType("message", maxCapacity1, FalseValue),
+					generateRoutingUtilMediaType("call", maxCapacity1, util.FalseValue),
+					generateRoutingUtilMediaType("callback", maxCapacity1, util.FalseValue),
+					generateRoutingUtilMediaType("chat", maxCapacity1, util.FalseValue),
+					generateRoutingUtilMediaType("email", maxCapacity1, util.FalseValue),
+					generateRoutingUtilMediaType("message", maxCapacity1, util.FalseValue),
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_routing_utilization.routing-util", "call.0.maximum_capacity", maxCapacity1),
-					resource.TestCheckResourceAttr("genesyscloud_routing_utilization.routing-util", "call.0.include_non_acd", FalseValue),
+					resource.TestCheckResourceAttr("genesyscloud_routing_utilization.routing-util", "call.0.include_non_acd", util.FalseValue),
 					resource.TestCheckNoResourceAttr("genesyscloud_routing_utilization.routing-util", "call.0.interruptible_media_types"),
 					resource.TestCheckResourceAttr("genesyscloud_routing_utilization.routing-util", "callback.0.maximum_capacity", maxCapacity1),
-					resource.TestCheckResourceAttr("genesyscloud_routing_utilization.routing-util", "callback.0.include_non_acd", FalseValue),
+					resource.TestCheckResourceAttr("genesyscloud_routing_utilization.routing-util", "callback.0.include_non_acd", util.FalseValue),
 					resource.TestCheckNoResourceAttr("genesyscloud_routing_utilization.routing-util", "callback.0.interruptible_media_types"),
 					resource.TestCheckResourceAttr("genesyscloud_routing_utilization.routing-util", "chat.0.maximum_capacity", maxCapacity1),
-					resource.TestCheckResourceAttr("genesyscloud_routing_utilization.routing-util", "chat.0.include_non_acd", FalseValue),
+					resource.TestCheckResourceAttr("genesyscloud_routing_utilization.routing-util", "chat.0.include_non_acd", util.FalseValue),
 					resource.TestCheckNoResourceAttr("genesyscloud_routing_utilization.routing-util", "chat.0.interruptible_media_types"),
 					resource.TestCheckResourceAttr("genesyscloud_routing_utilization.routing-util", "email.0.maximum_capacity", maxCapacity1),
-					resource.TestCheckResourceAttr("genesyscloud_routing_utilization.routing-util", "email.0.include_non_acd", FalseValue),
+					resource.TestCheckResourceAttr("genesyscloud_routing_utilization.routing-util", "email.0.include_non_acd", util.FalseValue),
 					resource.TestCheckNoResourceAttr("genesyscloud_routing_utilization.routing-util", "email.0.interruptible_media_types"),
 					resource.TestCheckResourceAttr("genesyscloud_routing_utilization.routing-util", "message.0.maximum_capacity", maxCapacity1),
-					resource.TestCheckResourceAttr("genesyscloud_routing_utilization.routing-util", "message.0.include_non_acd", FalseValue),
+					resource.TestCheckResourceAttr("genesyscloud_routing_utilization.routing-util", "message.0.include_non_acd", util.FalseValue),
 					resource.TestCheckNoResourceAttr("genesyscloud_routing_utilization.routing-util", "message.0.interruptible_media_types"),
 				),
 			},
 			{
 				// Update with a new max capacities and interruptible media types
 				Config: generateRoutingUtilizationResource(
-					generateRoutingUtilMediaType("call", maxCapacity2, TrueValue, strconv.Quote(utilTypeEmail)),
-					generateRoutingUtilMediaType("callback", maxCapacity2, TrueValue, strconv.Quote(utilTypeCall)),
-					generateRoutingUtilMediaType("chat", maxCapacity2, TrueValue, strconv.Quote(utilTypeCall)),
-					generateRoutingUtilMediaType("email", maxCapacity2, TrueValue, strconv.Quote(utilTypeCall)),
-					generateRoutingUtilMediaType("message", maxCapacity2, TrueValue, strconv.Quote(utilTypeCall)),
+					generateRoutingUtilMediaType("call", maxCapacity2, util.TrueValue, strconv.Quote(utilTypeEmail)),
+					generateRoutingUtilMediaType("callback", maxCapacity2, util.TrueValue, strconv.Quote(utilTypeCall)),
+					generateRoutingUtilMediaType("chat", maxCapacity2, util.TrueValue, strconv.Quote(utilTypeCall)),
+					generateRoutingUtilMediaType("email", maxCapacity2, util.TrueValue, strconv.Quote(utilTypeCall)),
+					generateRoutingUtilMediaType("message", maxCapacity2, util.TrueValue, strconv.Quote(utilTypeCall)),
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_routing_utilization.routing-util", "call.0.maximum_capacity", maxCapacity2),
-					resource.TestCheckResourceAttr("genesyscloud_routing_utilization.routing-util", "call.0.include_non_acd", TrueValue),
-					ValidateStringInArray("genesyscloud_routing_utilization.routing-util", "call.0.interruptible_media_types", utilTypeEmail),
+					resource.TestCheckResourceAttr("genesyscloud_routing_utilization.routing-util", "call.0.include_non_acd", util.TrueValue),
+					util.ValidateStringInArray("genesyscloud_routing_utilization.routing-util", "call.0.interruptible_media_types", utilTypeEmail),
 					resource.TestCheckResourceAttr("genesyscloud_routing_utilization.routing-util", "callback.0.maximum_capacity", maxCapacity2),
-					resource.TestCheckResourceAttr("genesyscloud_routing_utilization.routing-util", "callback.0.include_non_acd", TrueValue),
-					ValidateStringInArray("genesyscloud_routing_utilization.routing-util", "callback.0.interruptible_media_types", utilTypeCall),
+					resource.TestCheckResourceAttr("genesyscloud_routing_utilization.routing-util", "callback.0.include_non_acd", util.TrueValue),
+					util.ValidateStringInArray("genesyscloud_routing_utilization.routing-util", "callback.0.interruptible_media_types", utilTypeCall),
 					resource.TestCheckResourceAttr("genesyscloud_routing_utilization.routing-util", "chat.0.maximum_capacity", maxCapacity2),
-					resource.TestCheckResourceAttr("genesyscloud_routing_utilization.routing-util", "chat.0.include_non_acd", TrueValue),
-					ValidateStringInArray("genesyscloud_routing_utilization.routing-util", "chat.0.interruptible_media_types", utilTypeCall),
+					resource.TestCheckResourceAttr("genesyscloud_routing_utilization.routing-util", "chat.0.include_non_acd", util.TrueValue),
+					util.ValidateStringInArray("genesyscloud_routing_utilization.routing-util", "chat.0.interruptible_media_types", utilTypeCall),
 					resource.TestCheckResourceAttr("genesyscloud_routing_utilization.routing-util", "email.0.maximum_capacity", maxCapacity2),
-					resource.TestCheckResourceAttr("genesyscloud_routing_utilization.routing-util", "email.0.include_non_acd", TrueValue),
-					ValidateStringInArray("genesyscloud_routing_utilization.routing-util", "email.0.interruptible_media_types", utilTypeCall),
+					resource.TestCheckResourceAttr("genesyscloud_routing_utilization.routing-util", "email.0.include_non_acd", util.TrueValue),
+					util.ValidateStringInArray("genesyscloud_routing_utilization.routing-util", "email.0.interruptible_media_types", utilTypeCall),
 					resource.TestCheckResourceAttr("genesyscloud_routing_utilization.routing-util", "message.0.maximum_capacity", maxCapacity2),
-					resource.TestCheckResourceAttr("genesyscloud_routing_utilization.routing-util", "message.0.include_non_acd", TrueValue),
-					ValidateStringInArray("genesyscloud_routing_utilization.routing-util", "message.0.interruptible_media_types", utilTypeCall),
+					resource.TestCheckResourceAttr("genesyscloud_routing_utilization.routing-util", "message.0.include_non_acd", util.TrueValue),
+					util.ValidateStringInArray("genesyscloud_routing_utilization.routing-util", "message.0.interruptible_media_types", utilTypeCall),
 				),
 			},
 			{
@@ -95,22 +100,24 @@ func TestAccResourceRoutingUtilizationWithLabels(t *testing.T) {
 		utilTypeCall  = "call"
 		utilTypeEmail = "email"
 
-		redLabelResource   = "label_red"
-		blueLabelResource  = "label_blue"
-		greenLabelResource = "label_green"
-		redLabelName       = "Terraform Red " + uuid.NewString()
-		blueLabelName      = "Terraform Blue " + uuid.NewString()
-		greenLabelName     = "Terraform Green " + uuid.NewString()
+		redLabelResource   = "label_red_resource"
+		blueLabelResource  = "label_blue_resource"
+		greenLabelResource = "label_green_resource"
+		redLabelName       = "Terraform Red Label" + uuid.NewString()
+		blueLabelName      = "Terraform Blue Label" + uuid.NewString()
+		greenLabelName     = "Terraform Green Label" + uuid.NewString()
 	)
+
+	CleanupRoutingUtilizationLabel()
 
 	resource.Test(t, resource.TestCase{
 		PreCheck: func() {
-			TestAccPreCheck(t)
+			util.TestAccPreCheck(t)
 			if err := checkIfLabelsAreEnabled(); err != nil {
 				t.Skipf("%v", err) // be sure to skip the test and not fail it
 			}
 		},
-		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Create
@@ -118,29 +125,29 @@ func TestAccResourceRoutingUtilizationWithLabels(t *testing.T) {
 					GenerateRoutingUtilizationLabelResource(blueLabelResource, blueLabelName, redLabelResource) +
 					GenerateRoutingUtilizationLabelResource(greenLabelResource, greenLabelName, blueLabelResource) +
 					generateRoutingUtilizationResource(
-						generateRoutingUtilMediaType("call", maxCapacity1, FalseValue),
-						generateRoutingUtilMediaType("callback", maxCapacity1, FalseValue),
-						generateRoutingUtilMediaType("chat", maxCapacity1, FalseValue),
-						generateRoutingUtilMediaType("email", maxCapacity1, FalseValue),
-						generateRoutingUtilMediaType("message", maxCapacity1, FalseValue),
+						generateRoutingUtilMediaType("call", maxCapacity1, util.FalseValue),
+						generateRoutingUtilMediaType("callback", maxCapacity1, util.FalseValue),
+						generateRoutingUtilMediaType("chat", maxCapacity1, util.FalseValue),
+						generateRoutingUtilMediaType("email", maxCapacity1, util.FalseValue),
+						generateRoutingUtilMediaType("message", maxCapacity1, util.FalseValue),
 						generateLabelUtilization(redLabelResource, maxCapacity1),
 						generateLabelUtilization(blueLabelResource, maxCapacity1, redLabelResource),
 					),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_routing_utilization.routing-util", "call.0.maximum_capacity", maxCapacity1),
-					resource.TestCheckResourceAttr("genesyscloud_routing_utilization.routing-util", "call.0.include_non_acd", FalseValue),
+					resource.TestCheckResourceAttr("genesyscloud_routing_utilization.routing-util", "call.0.include_non_acd", util.FalseValue),
 					resource.TestCheckNoResourceAttr("genesyscloud_routing_utilization.routing-util", "call.0.interruptible_media_types"),
 					resource.TestCheckResourceAttr("genesyscloud_routing_utilization.routing-util", "callback.0.maximum_capacity", maxCapacity1),
-					resource.TestCheckResourceAttr("genesyscloud_routing_utilization.routing-util", "callback.0.include_non_acd", FalseValue),
+					resource.TestCheckResourceAttr("genesyscloud_routing_utilization.routing-util", "callback.0.include_non_acd", util.FalseValue),
 					resource.TestCheckNoResourceAttr("genesyscloud_routing_utilization.routing-util", "callback.0.interruptible_media_types"),
 					resource.TestCheckResourceAttr("genesyscloud_routing_utilization.routing-util", "chat.0.maximum_capacity", maxCapacity1),
-					resource.TestCheckResourceAttr("genesyscloud_routing_utilization.routing-util", "chat.0.include_non_acd", FalseValue),
+					resource.TestCheckResourceAttr("genesyscloud_routing_utilization.routing-util", "chat.0.include_non_acd", util.FalseValue),
 					resource.TestCheckNoResourceAttr("genesyscloud_routing_utilization.routing-util", "chat.0.interruptible_media_types"),
 					resource.TestCheckResourceAttr("genesyscloud_routing_utilization.routing-util", "email.0.maximum_capacity", maxCapacity1),
-					resource.TestCheckResourceAttr("genesyscloud_routing_utilization.routing-util", "email.0.include_non_acd", FalseValue),
+					resource.TestCheckResourceAttr("genesyscloud_routing_utilization.routing-util", "email.0.include_non_acd", util.FalseValue),
 					resource.TestCheckNoResourceAttr("genesyscloud_routing_utilization.routing-util", "email.0.interruptible_media_types"),
 					resource.TestCheckResourceAttr("genesyscloud_routing_utilization.routing-util", "message.0.maximum_capacity", maxCapacity1),
-					resource.TestCheckResourceAttr("genesyscloud_routing_utilization.routing-util", "message.0.include_non_acd", FalseValue),
+					resource.TestCheckResourceAttr("genesyscloud_routing_utilization.routing-util", "message.0.include_non_acd", util.FalseValue),
 					resource.TestCheckNoResourceAttr("genesyscloud_routing_utilization.routing-util", "message.0.interruptible_media_types"),
 					resource.TestCheckResourceAttrSet("genesyscloud_routing_utilization.routing-util", "label_utilizations.0.label_id"),
 					resource.TestCheckResourceAttr("genesyscloud_routing_utilization.routing-util", "label_utilizations.0.maximum_capacity", maxCapacity1),
@@ -154,30 +161,30 @@ func TestAccResourceRoutingUtilizationWithLabels(t *testing.T) {
 					GenerateRoutingUtilizationLabelResource(blueLabelResource, blueLabelName, redLabelResource) +
 					GenerateRoutingUtilizationLabelResource(greenLabelResource, greenLabelName, blueLabelResource) +
 					generateRoutingUtilizationResource(
-						generateRoutingUtilMediaType("call", maxCapacity2, TrueValue, strconv.Quote(utilTypeEmail)),
-						generateRoutingUtilMediaType("callback", maxCapacity2, TrueValue, strconv.Quote(utilTypeCall)),
-						generateRoutingUtilMediaType("chat", maxCapacity2, TrueValue, strconv.Quote(utilTypeCall)),
-						generateRoutingUtilMediaType("email", maxCapacity2, TrueValue, strconv.Quote(utilTypeCall)),
-						generateRoutingUtilMediaType("message", maxCapacity2, TrueValue, strconv.Quote(utilTypeCall)),
+						generateRoutingUtilMediaType("call", maxCapacity2, util.TrueValue, strconv.Quote(utilTypeEmail)),
+						generateRoutingUtilMediaType("callback", maxCapacity2, util.TrueValue, strconv.Quote(utilTypeCall)),
+						generateRoutingUtilMediaType("chat", maxCapacity2, util.TrueValue, strconv.Quote(utilTypeCall)),
+						generateRoutingUtilMediaType("email", maxCapacity2, util.TrueValue, strconv.Quote(utilTypeCall)),
+						generateRoutingUtilMediaType("message", maxCapacity2, util.TrueValue, strconv.Quote(utilTypeCall)),
 						generateLabelUtilization(redLabelResource, maxCapacity2),
 						generateLabelUtilization(blueLabelResource, maxCapacity2, redLabelResource),
 					),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_routing_utilization.routing-util", "call.0.maximum_capacity", maxCapacity2),
-					resource.TestCheckResourceAttr("genesyscloud_routing_utilization.routing-util", "call.0.include_non_acd", TrueValue),
-					ValidateStringInArray("genesyscloud_routing_utilization.routing-util", "call.0.interruptible_media_types", utilTypeEmail),
+					resource.TestCheckResourceAttr("genesyscloud_routing_utilization.routing-util", "call.0.include_non_acd", util.TrueValue),
+					util.ValidateStringInArray("genesyscloud_routing_utilization.routing-util", "call.0.interruptible_media_types", utilTypeEmail),
 					resource.TestCheckResourceAttr("genesyscloud_routing_utilization.routing-util", "callback.0.maximum_capacity", maxCapacity2),
-					resource.TestCheckResourceAttr("genesyscloud_routing_utilization.routing-util", "callback.0.include_non_acd", TrueValue),
-					ValidateStringInArray("genesyscloud_routing_utilization.routing-util", "callback.0.interruptible_media_types", utilTypeCall),
+					resource.TestCheckResourceAttr("genesyscloud_routing_utilization.routing-util", "callback.0.include_non_acd", util.TrueValue),
+					util.ValidateStringInArray("genesyscloud_routing_utilization.routing-util", "callback.0.interruptible_media_types", utilTypeCall),
 					resource.TestCheckResourceAttr("genesyscloud_routing_utilization.routing-util", "chat.0.maximum_capacity", maxCapacity2),
-					resource.TestCheckResourceAttr("genesyscloud_routing_utilization.routing-util", "chat.0.include_non_acd", TrueValue),
-					ValidateStringInArray("genesyscloud_routing_utilization.routing-util", "chat.0.interruptible_media_types", utilTypeCall),
+					resource.TestCheckResourceAttr("genesyscloud_routing_utilization.routing-util", "chat.0.include_non_acd", util.TrueValue),
+					util.ValidateStringInArray("genesyscloud_routing_utilization.routing-util", "chat.0.interruptible_media_types", utilTypeCall),
 					resource.TestCheckResourceAttr("genesyscloud_routing_utilization.routing-util", "email.0.maximum_capacity", maxCapacity2),
-					resource.TestCheckResourceAttr("genesyscloud_routing_utilization.routing-util", "email.0.include_non_acd", TrueValue),
-					ValidateStringInArray("genesyscloud_routing_utilization.routing-util", "email.0.interruptible_media_types", utilTypeCall),
+					resource.TestCheckResourceAttr("genesyscloud_routing_utilization.routing-util", "email.0.include_non_acd", util.TrueValue),
+					util.ValidateStringInArray("genesyscloud_routing_utilization.routing-util", "email.0.interruptible_media_types", utilTypeCall),
 					resource.TestCheckResourceAttr("genesyscloud_routing_utilization.routing-util", "message.0.maximum_capacity", maxCapacity2),
-					resource.TestCheckResourceAttr("genesyscloud_routing_utilization.routing-util", "message.0.include_non_acd", TrueValue),
-					ValidateStringInArray("genesyscloud_routing_utilization.routing-util", "message.0.interruptible_media_types", utilTypeCall),
+					resource.TestCheckResourceAttr("genesyscloud_routing_utilization.routing-util", "message.0.include_non_acd", util.TrueValue),
+					util.ValidateStringInArray("genesyscloud_routing_utilization.routing-util", "message.0.interruptible_media_types", utilTypeCall),
 					resource.TestCheckResourceAttrSet("genesyscloud_routing_utilization.routing-util", "label_utilizations.0.label_id"),
 					resource.TestCheckResourceAttr("genesyscloud_routing_utilization.routing-util", "label_utilizations.0.maximum_capacity", maxCapacity2),
 					resource.TestCheckResourceAttrSet("genesyscloud_routing_utilization.routing-util", "label_utilizations.1.label_id"),
@@ -224,6 +231,10 @@ func TestAccResourceRoutingUtilizationWithLabels(t *testing.T) {
 					}
 
 					return nil
+				},
+				PreConfig: func() {
+					// Wait for a specified duration - to avoid multiple deletion taking place error
+					time.Sleep(30 * time.Second)
 				},
 			},
 		},
@@ -272,4 +283,32 @@ func generateRoutingUtilizationResource(attributes ...string) string {
 		%s
 	}
 	`, strings.Join(attributes, "\n"))
+}
+
+func CleanupRoutingUtilizationLabel() {
+	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
+
+	for pageNum := 1; ; pageNum++ {
+		const pageSize = 100
+		labels, _, getErr := routingAPI.GetRoutingUtilizationLabels(pageSize, pageNum, "", "")
+		if getErr != nil {
+			log.Printf("failed to get page %v of routing email domains: %v", pageNum, getErr)
+			return
+		}
+
+		if labels.Entities == nil || len(*labels.Entities) == 0 {
+			return
+		}
+
+		for _, label := range *labels.Entities {
+			if label.Id != nil && strings.HasPrefix(*label.Name, "Terraform") {
+				_, err := routingAPI.DeleteRoutingUtilizationLabel(*label.Id, true)
+				if err != nil {
+					log.Printf("Failed to delete routing email domain %s: %s", *label.Id, err)
+					continue
+				}
+				time.Sleep(5 * time.Second)
+			}
+		}
+	}
 }

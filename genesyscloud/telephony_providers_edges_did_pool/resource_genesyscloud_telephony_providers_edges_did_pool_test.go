@@ -4,12 +4,13 @@ import (
 	"context"
 	"fmt"
 	"strconv"
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 )
 
 func TestAccResourceDidPoolBasic(t *testing.T) {
@@ -19,7 +20,7 @@ func TestAccResourceDidPoolBasic(t *testing.T) {
 
 	// did pool cleanup
 	defer func() {
-		if _, err := gcloud.AuthorizeSdk(); err != nil {
+		if _, err := provider.AuthorizeSdk(); err != nil {
 			return
 		}
 		ctx := context.TODO()
@@ -33,8 +34,8 @@ func TestAccResourceDidPoolBasic(t *testing.T) {
 	fullResourceId := resourceName + "." + didPoolResource1
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
-		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Create
@@ -42,9 +43,9 @@ func TestAccResourceDidPoolBasic(t *testing.T) {
 					didPoolResource1,
 					didPoolStartPhoneNumber1,
 					didPoolEndPhoneNumber1,
-					gcloud.NullValue, // No description
-					gcloud.NullValue, // No comments
-					gcloud.NullValue, // No provider
+					util.NullValue, // No description
+					util.NullValue, // No comments
+					util.NullValue, // No provider
 				}),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(fullResourceId, "start_phone_number", didPoolStartPhoneNumber1),
@@ -98,7 +99,7 @@ func testVerifyDidPoolsDestroyed(state *terraform.State) error {
 			return fmt.Errorf("DID Pool (%s) still exists", rs.Primary.ID)
 		}
 
-		if gcloud.IsStatus404(resp) {
+		if util.IsStatus404(resp) {
 			// DID pool not found as expected
 			continue
 		}

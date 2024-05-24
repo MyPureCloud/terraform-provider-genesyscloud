@@ -2,10 +2,8 @@ package integration_credential
 
 import (
 	"fmt"
-
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
-
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 )
 
 /*
@@ -16,16 +14,16 @@ Note:  Look for opportunities to minimize boilerplate code using functions and G
 */
 
 // buildCredentialFields builds a map of credential fields from the resource
-func buildCredentialFields(d *schema.ResourceData) *map[string]string {
+func buildCredentialFields(d *schema.ResourceData) map[string]string {
 	results := make(map[string]string)
 	if fields, ok := d.GetOk("fields"); ok {
 		fieldMap := fields.(map[string]interface{})
 		for k, v := range fieldMap {
 			results[k] = v.(string)
 		}
-		return &results
+		return results
 	}
-	return &results
+	return results
 }
 
 // GenerateCredentialResource generates the terraform string for creating genesyscloud_integration_credential resource. Used for testing.
@@ -40,5 +38,5 @@ func GenerateCredentialResource(resourceID string, name string, credentialType s
 
 // GenerateCredentialFields builds a terraform string for multiple credential fields
 func GenerateCredentialFields(fields ...string) string {
-	return gcloud.GenerateMapAttr("fields", fields...)
+	return util.GenerateMapAttr("fields", fields...)
 }

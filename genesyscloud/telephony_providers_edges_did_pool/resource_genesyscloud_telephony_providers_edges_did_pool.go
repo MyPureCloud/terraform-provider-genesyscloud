@@ -4,7 +4,9 @@ import (
 	"context"
 	"fmt"
 	"log"
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 	"time"
 
@@ -16,7 +18,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 )
 
 // getAllDidPools retrieves all DID pools and is used for the exporter
@@ -24,9 +26,9 @@ func getAllDidPools(ctx context.Context, clientConfig *platformclientv2.Configur
 	resources := make(resourceExporter.ResourceIDMetaMap)
 	proxy := getTelephonyDidPoolProxy(clientConfig)
 
-	didPools, err := proxy.getAllTelephonyDidPools(ctx)
+	didPools, resp, err := proxy.getAllTelephonyDidPools(ctx)
 	if err != nil {
-		return nil, diag.Errorf("failed to read did pools: %v", err)
+		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get did pools error: %s", err), resp)
 	}
 
 	for _, didPool := range *didPools {
@@ -34,7 +36,6 @@ func getAllDidPools(ctx context.Context, clientConfig *platformclientv2.Configur
 			resources[*didPool.Id] = &resourceExporter.ResourceMeta{Name: *didPool.StartPhoneNumber}
 		}
 	}
-
 	return resources, nil
 }
 
@@ -46,7 +47,7 @@ func createDidPool(ctx context.Context, d *schema.ResourceData, meta interface{}
 	comments := d.Get("comments").(string)
 	poolProvider := d.Get("pool_provider").(string)
 
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getTelephonyDidPoolProxy(sdkConfig)
 
 	didPool := &platformclientv2.Didpool{
@@ -57,9 +58,9 @@ func createDidPool(ctx context.Context, d *schema.ResourceData, meta interface{}
 		Provider:         &poolProvider,
 	}
 	log.Printf("Creating DID pool %s", startPhoneNumber)
-	createdDidPool, err := proxy.createTelephonyDidPool(ctx, didPool)
+	createdDidPool, resp, err := proxy.createTelephonyDidPool(ctx, didPool)
 	if err != nil {
-		return diag.Errorf("Failed to create DID pool %s: %s", startPhoneNumber, err)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create DID pool %s error: %s", startPhoneNumber, err), resp)
 	}
 
 	d.SetId(*createdDidPool.Id)
@@ -70,17 +71,18 @@ func createDidPool(ctx context.Context, d *schema.ResourceData, meta interface{}
 
 // readDidPool is used by the resource to read a Genesys Cloud DID pool
 func readDidPool(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getTelephonyDidPoolProxy(sdkConfig)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceTelephonyDidPool(), constants.DefaultConsistencyChecks, resourceName)
 
 	log.Printf("Reading DID pool %s", d.Id())
-	return gcloud.WithRetriesForRead(ctx, d, func() *retry.RetryError {
-		didPool, respCode, getErr := proxy.getTelephonyDidPoolById(ctx, d.Id())
+	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
+		didPool, resp, getErr := proxy.getTelephonyDidPoolById(ctx, d.Id())
 		if getErr != nil {
-			if gcloud.IsStatus404ByInt(respCode) {
-				return retry.RetryableError(fmt.Errorf("Failed to read DID pool %s: %s", d.Id(), getErr))
+			if util.IsStatus404(resp) {
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read DID pool %s | error: %s", d.Id(), getErr), resp))
 			}
-			return retry.NonRetryableError(fmt.Errorf("Failed to read DID pool %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read DID pool %s | error: %s", d.Id(), getErr), resp))
 		}
 
 		if didPool.State != nil && *didPool.State == "deleted" {
@@ -88,7 +90,6 @@ func readDidPool(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 			return nil
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceTelephonyDidPool())
 		_ = d.Set("start_phone_number", *didPool.StartPhoneNumber)
 		_ = d.Set("end_phone_number", *didPool.EndPhoneNumber)
 
@@ -97,7 +98,7 @@ func readDidPool(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		resourcedata.SetNillableValue(d, "pool_provider", didPool.Provider)
 
 		log.Printf("Read DID pool %s %s", d.Id(), *didPool.StartPhoneNumber)
-		return cc.CheckState()
+		return cc.CheckState(d)
 	})
 }
 
@@ -109,7 +110,7 @@ func updateDidPool(ctx context.Context, d *schema.ResourceData, meta interface{}
 	comments := d.Get("comments").(string)
 	poolProvider := d.Get("pool_provider").(string)
 
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getTelephonyDidPoolProxy(sdkConfig)
 
 	didPoolBody := &platformclientv2.Didpool{
@@ -121,8 +122,8 @@ func updateDidPool(ctx context.Context, d *schema.ResourceData, meta interface{}
 	}
 
 	log.Printf("Updating DID pool %s", d.Id())
-	if _, err := proxy.updateTelephonyDidPool(ctx, d.Id(), didPoolBody); err != nil {
-		return diag.Errorf("Error updating DID pool %s: %s", startPhoneNumber, err)
+	if _, resp, err := proxy.updateTelephonyDidPool(ctx, d.Id(), didPoolBody); err != nil {
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update DID pool %s error: %s", startPhoneNumber, err), resp)
 	}
 
 	log.Printf("Updated DID pool %s", d.Id())
@@ -133,15 +134,15 @@ func updateDidPool(ctx context.Context, d *schema.ResourceData, meta interface{}
 func deleteDidPool(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	startPhoneNumber := d.Get("start_phone_number").(string)
 
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getTelephonyDidPoolProxy(sdkConfig)
 
 	// DEVTOOLING-317: Unable to delete DID pool with a number assigned, retrying on HTTP 409
-	diagErr := gcloud.RetryWhen(gcloud.IsStatus409, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+	diagErr := util.RetryWhen(util.IsStatus409, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		log.Printf("Deleting DID pool with starting number %s", startPhoneNumber)
 		resp, err := proxy.deleteTelephonyDidPool(ctx, d.Id())
 		if err != nil {
-			return resp, diag.Errorf("Failed to delete DID pool with starting number %s: %s", startPhoneNumber, err)
+			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete DID pool %s error: %s", startPhoneNumber, err), resp)
 		}
 		return resp, nil
 	})
@@ -149,15 +150,15 @@ func deleteDidPool(ctx context.Context, d *schema.ResourceData, meta interface{}
 		return diagErr
 	}
 
-	return gcloud.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
-		didPool, respCode, err := proxy.getTelephonyDidPoolById(ctx, d.Id())
+	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
+		didPool, resp, err := proxy.getTelephonyDidPoolById(ctx, d.Id())
 		if err != nil {
-			if gcloud.IsStatus404ByInt(respCode) {
+			if util.IsStatus404(resp) {
 				// DID pool deleted
 				log.Printf("Deleted DID pool %s", d.Id())
 				return nil
 			}
-			return retry.NonRetryableError(fmt.Errorf("error deleting DID pool %s: %s", d.Id(), err))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("error deleting DID pool %s | error: %s", d.Id(), err), resp))
 		}
 
 		if didPool.State != nil && *didPool.State == "deleted" {
@@ -165,7 +166,6 @@ func deleteDidPool(ctx context.Context, d *schema.ResourceData, meta interface{}
 			log.Printf("Deleted DID pool %s", d.Id())
 			return nil
 		}
-
-		return retry.RetryableError(fmt.Errorf("DID pool %s still exists", d.Id()))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("DID pool %s still exists", d.Id()), resp))
 	})
 }

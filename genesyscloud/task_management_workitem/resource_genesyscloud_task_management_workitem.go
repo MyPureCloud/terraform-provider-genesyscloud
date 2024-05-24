@@ -4,16 +4,17 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
-
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
 
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
@@ -29,9 +30,9 @@ func getAllAuthTaskManagementWorkitems(ctx context.Context, clientConfig *platfo
 	proxy := getTaskManagementWorkitemProxy(clientConfig)
 	resources := make(resourceExporter.ResourceIDMetaMap)
 
-	workitems, err := proxy.getAllTaskManagementWorkitem(ctx)
+	workitems, resp, err := proxy.getAllTaskManagementWorkitem(ctx)
 	if err != nil {
-		return nil, diag.Errorf("Failed to get task management workitem: %v", err)
+		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get task management workitem error: %s", err), resp)
 	}
 
 	for _, workitem := range *workitems {
@@ -43,18 +44,18 @@ func getAllAuthTaskManagementWorkitems(ctx context.Context, clientConfig *platfo
 
 // createTaskManagementWorkitem is used by the task_management_workitem resource to create Genesys cloud task management workitem
 func createTaskManagementWorkitem(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getTaskManagementWorkitemProxy(sdkConfig)
 
 	taskManagementWorkitem, err := getWorkitemCreateFromResourceData(d)
 	if err != nil {
-		return diag.Errorf("failed to build Workitem create from resource data: %v", err)
+		return util.BuildDiagnosticError(resourceName, fmt.Sprintf("failed to build Workitem create from resource data"), err)
 	}
 
 	log.Printf("Creating task management workitem %s", *taskManagementWorkitem.Name)
-	workitem, err := proxy.createTaskManagementWorkitem(ctx, taskManagementWorkitem)
+	workitem, resp, err := proxy.createTaskManagementWorkitem(ctx, taskManagementWorkitem)
 	if err != nil {
-		return diag.Errorf("Failed to create task management workitem: %s", err)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create task management workitem %s error: %s", *taskManagementWorkitem.Name, err), resp)
 	}
 
 	d.SetId(*workitem.Id)
@@ -64,21 +65,20 @@ func createTaskManagementWorkitem(ctx context.Context, d *schema.ResourceData, m
 
 // readTaskManagementWorkitem is used by the task_management_workitem resource to read an task management workitem from genesys cloud
 func readTaskManagementWorkitem(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getTaskManagementWorkitemProxy(sdkConfig)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceTaskManagementWorkitem(), constants.DefaultConsistencyChecks, resourceName)
 
 	log.Printf("Reading task management workitem %s", d.Id())
 
-	return gcloud.WithRetriesForRead(ctx, d, func() *retry.RetryError {
-		workitem, respCode, getErr := proxy.getTaskManagementWorkitemById(ctx, d.Id())
+	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
+		workitem, resp, getErr := proxy.getTaskManagementWorkitemById(ctx, d.Id())
 		if getErr != nil {
-			if gcloud.IsStatus404ByInt(respCode) {
-				return retry.RetryableError(fmt.Errorf("failed to read task management workitem %s: %s", d.Id(), getErr))
+			if util.IsStatus404(resp) {
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read task management workitem %s | error: %s", d.Id(), getErr), resp))
 			}
-			return retry.NonRetryableError(fmt.Errorf("failed to read task management workitem %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read task management workitem %s | error: %s", d.Id(), getErr), resp))
 		}
-
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceTaskManagementWorkitem())
 
 		resourcedata.SetNillableValue(d, "name", workitem.Name)
 		resourcedata.SetNillableValue(d, "description", workitem.Description)
@@ -127,24 +127,24 @@ func readTaskManagementWorkitem(ctx context.Context, d *schema.ResourceData, met
 		}
 
 		log.Printf("Read task management workitem %s %s", d.Id(), *workitem.Name)
-		return cc.CheckState()
+		return cc.CheckState(d)
 	})
 }
 
 // updateTaskManagementWorkitem is used by the task_management_workitem resource to update an task management workitem in Genesys Cloud
 func updateTaskManagementWorkitem(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getTaskManagementWorkitemProxy(sdkConfig)
 
 	taskManagementWorkitem, err := getWorkitemUpdateFromResourceData(d)
 	if err != nil {
-		return diag.Errorf("failed to update Workitem create from resource data: %v", err)
+		return util.BuildDiagnosticError(resourceName, fmt.Sprintf("failed to update Workitem create from resource data"), err)
 	}
 
 	log.Printf("Updating task management workitem %s", *taskManagementWorkitem.Name)
-	workitem, err := proxy.updateTaskManagementWorkitem(ctx, d.Id(), taskManagementWorkitem)
+	workitem, resp, err := proxy.updateTaskManagementWorkitem(ctx, d.Id(), taskManagementWorkitem)
 	if err != nil {
-		return diag.Errorf("Failed to update task management workitem: %s", err)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update task management workitem %s error: %s", *taskManagementWorkitem.Name, err), resp)
 	}
 
 	log.Printf("Updated task management workitem %s", *workitem.Id)
@@ -153,25 +153,24 @@ func updateTaskManagementWorkitem(ctx context.Context, d *schema.ResourceData, m
 
 // deleteTaskManagementWorkitem is used by the task_management_workitem resource to delete an task management workitem from Genesys cloud
 func deleteTaskManagementWorkitem(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getTaskManagementWorkitemProxy(sdkConfig)
 
-	_, err := proxy.deleteTaskManagementWorkitem(ctx, d.Id())
+	resp, err := proxy.deleteTaskManagementWorkitem(ctx, d.Id())
 	if err != nil {
-		return diag.Errorf("Failed to delete task management workitem %s: %s", d.Id(), err)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete task management workitem %s error: %s", d.Id(), err), resp)
 	}
 
-	return gcloud.WithRetries(ctx, 180*time.Second, func() *retry.RetryError {
-		_, respCode, err := proxy.getTaskManagementWorkitemById(ctx, d.Id())
+	return util.WithRetries(ctx, 180*time.Second, func() *retry.RetryError {
+		_, resp, err := proxy.getTaskManagementWorkitemById(ctx, d.Id())
 
 		if err != nil {
-			if gcloud.IsStatus404ByInt(respCode) {
+			if util.IsStatus404(resp) {
 				log.Printf("Deleted task management workitem %s", d.Id())
 				return nil
 			}
-			return retry.NonRetryableError(fmt.Errorf("error deleting task management workitem %s: %s", d.Id(), err))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("error deleting task management workitem %s | error: %s", d.Id(), err), resp))
 		}
-
-		return retry.RetryableError(fmt.Errorf("task management workitem %s still exists", d.Id()))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("task management workitem %s still exists", d.Id()), resp))
 	})
 }

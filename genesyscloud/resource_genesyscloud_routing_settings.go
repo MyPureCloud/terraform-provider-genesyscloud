@@ -4,6 +4,9 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -14,17 +17,17 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 )
 
 func ResourceRoutingSettings() *schema.Resource {
 	return &schema.Resource{
 		Description: "An organization's routing settings",
 
-		CreateContext: CreateWithPooledClient(createRoutingSettings),
-		ReadContext:   ReadWithPooledClient(readRoutingSettings),
-		UpdateContext: UpdateWithPooledClient(updateRoutingSettings),
-		DeleteContext: DeleteWithPooledClient(deleteRoutingSettings),
+		CreateContext: provider.CreateWithPooledClient(createRoutingSettings),
+		ReadContext:   provider.ReadWithPooledClient(readRoutingSettings),
+		UpdateContext: provider.UpdateWithPooledClient(updateRoutingSettings),
+		DeleteContext: provider.DeleteWithPooledClient(deleteRoutingSettings),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -95,7 +98,7 @@ func getAllRoutingSettings(_ context.Context, clientConfig *platformclientv2.Con
 
 func RoutingSettingsExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
-		GetResourcesFunc: GetAllWithPooledClient(getAllRoutingSettings),
+		GetResourcesFunc: provider.GetAllWithPooledClient(getAllRoutingSettings),
 		RefAttrs:         map[string]*resourceExporter.RefAttrSettings{}, // No references
 	}
 }
@@ -107,22 +110,22 @@ func createRoutingSettings(ctx context.Context, d *schema.ResourceData, meta int
 }
 
 func readRoutingSettings(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceRoutingSettings(), constants.DefaultConsistencyChecks, "genesyscloud_routing_settings")
 
 	log.Printf("Reading setting: %s", d.Id())
-	return WithRetriesForRead(ctx, d, func() *retry.RetryError {
+	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		settings, resp, getErr := routingAPI.GetRoutingSettings()
 
 		if getErr != nil {
-			if IsStatus404(resp) {
+			if util.IsStatus404(resp) {
 				//createRoutingSettings(ctx, d, meta)
-				return retry.RetryableError(fmt.Errorf("Failed to read Routing Setting: %s", getErr))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_routing_settings", fmt.Sprintf("Failed to read Routing Setting %s | error: %s", d.Id(), getErr), resp))
 			}
-			return retry.NonRetryableError(fmt.Errorf("Failed to read Routing Setting: %s", getErr))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_routing_settings", fmt.Sprintf("Failed to read Routing Setting %s | error: %s", d.Id(), getErr), resp))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceRoutingSettings())
 		if settings.ResetAgentScoreOnPresenceChange != nil {
 			d.Set("reset_agent_on_presence_change", *settings.ResetAgentScoreOnPresenceChange)
 		} else {
@@ -138,14 +141,14 @@ func readRoutingSettings(ctx context.Context, d *schema.ResourceData, meta inter
 		}
 
 		log.Printf("Read Routing Setting")
-		return cc.CheckState()
+		return cc.CheckState(d)
 	})
 }
 
 func updateRoutingSettings(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	resetAgentOnPresenceChange := d.Get("reset_agent_on_presence_change").(bool)
 
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
 
 	log.Printf("Updating Routing Settings")
@@ -163,9 +166,9 @@ func updateRoutingSettings(ctx context.Context, d *schema.ResourceData, meta int
 		return diagErr
 	}
 
-	_, _, err := routingAPI.PutRoutingSettings(update)
+	_, resp, err := routingAPI.PutRoutingSettings(update)
 	if err != nil {
-		return diag.Errorf("Failed to update routing settings: %s", err)
+		return util.BuildAPIDiagnosticError("genesyscloud_routing_settings", fmt.Sprintf("Failed to update routing settings %s error: %s", d.Id(), err), resp)
 	}
 
 	time.Sleep(5 * time.Second)
@@ -175,13 +178,13 @@ func updateRoutingSettings(ctx context.Context, d *schema.ResourceData, meta int
 }
 
 func deleteRoutingSettings(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
 
 	log.Printf("Resetting Routing Setting")
-	_, err := routingAPI.DeleteRoutingSettings()
+	resp, err := routingAPI.DeleteRoutingSettings()
 	if err != nil {
-		return diag.Errorf("Failed to reset Routing Setting %s", err)
+		return util.BuildAPIDiagnosticError("genesyscloud_routing_settings", fmt.Sprintf("Failed to delete routing settings error: %s", err), resp)
 	}
 	log.Printf("Reset Routing Settings")
 	return nil
@@ -190,10 +193,10 @@ func deleteRoutingSettings(ctx context.Context, d *schema.ResourceData, meta int
 func readRoutingSettingsContactCenter(d *schema.ResourceData, routingAPI *platformclientv2.RoutingApi) diag.Diagnostics {
 	contactcenter, resp, getErr := routingAPI.GetRoutingSettingsContactcenter()
 	if getErr != nil {
-		if IsStatus404(resp) {
+		if util.IsStatus404(resp) {
 			return nil
 		}
-		return diag.Errorf("Failed to read Contact center for routing setting %s: %s\n", d.Id(), getErr)
+		return util.BuildAPIDiagnosticError("genesyscloud_routing_settings", fmt.Sprintf("Failed to read contact center for routing setting %s error: %s", d.Id(), getErr), resp)
 	}
 
 	if contactcenter == nil {
@@ -214,10 +217,10 @@ func readRoutingSettingsContactCenter(d *schema.ResourceData, routingAPI *platfo
 func readRoutingSettingsTranscription(d *schema.ResourceData, routingAPI *platformclientv2.RoutingApi) diag.Diagnostics {
 	transcription, resp, getErr := routingAPI.GetRoutingSettingsTranscription()
 	if getErr != nil {
-		if IsStatus404(resp) {
+		if util.IsStatus404(resp) {
 			return nil
 		}
-		return diag.Errorf("Failed to read Contact center for routing setting %s: %s\n", d.Id(), getErr)
+		return util.BuildAPIDiagnosticError("genesyscloud_routing_settings", fmt.Sprintf("Failed to read contact center for routing settings %s error: %s", d.Id(), getErr), resp)
 	}
 
 	if transcription == nil {
@@ -254,12 +257,12 @@ func updateContactCenter(d *schema.ResourceData, routingAPI *platformclientv2.Ro
 			if contactCenterMap["remove_skills_from_blind_transfer"] != nil {
 				removeSkillsFromBlindTransfer = contactCenterMap["remove_skills_from_blind_transfer"].(bool)
 			}
-			_, err := routingAPI.PatchRoutingSettingsContactcenter(platformclientv2.Contactcentersettings{
+			resp, err := routingAPI.PatchRoutingSettingsContactcenter(platformclientv2.Contactcentersettings{
 				RemoveSkillsFromBlindTransfer: &removeSkillsFromBlindTransfer,
 			})
 
 			if err != nil {
-				return diag.Errorf("Failed to update Contact center for routing setting %s: %s\n", d.Id(), err)
+				return util.BuildAPIDiagnosticError("genesyscloud_routing_settings", fmt.Sprintf("Failed to update contact center for routing settings %s error: %s", d.Id(), err), resp)
 			}
 		}
 	}
@@ -289,7 +292,7 @@ func updateTranscription(d *schema.ResourceData, routingAPI *platformclientv2.Ro
 				contentSearchEnabled = transcriptionMap["content_search_enabled"].(bool)
 			}
 
-			_, _, err := routingAPI.PutRoutingSettingsTranscription(platformclientv2.Transcriptionsettings{
+			_, resp, err := routingAPI.PutRoutingSettingsTranscription(platformclientv2.Transcriptionsettings{
 				Transcription:                    &transcription,
 				TranscriptionConfidenceThreshold: &transcriptionConfidenceThreshold,
 				LowLatencyTranscriptionEnabled:   &lowLatencyTranscriptionEnabled,
@@ -297,7 +300,7 @@ func updateTranscription(d *schema.ResourceData, routingAPI *platformclientv2.Ro
 			})
 
 			if err != nil {
-				return diag.Errorf("Failed to update Transcription for routing setting %s: %s\n", d.Id(), err)
+				return util.BuildAPIDiagnosticError("genesyscloud_routing_settings", fmt.Sprintf("Failed to update Transcription for routing settings %s error: %s", d.Id(), err), resp)
 			}
 		}
 	}

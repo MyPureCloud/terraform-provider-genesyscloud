@@ -2,10 +2,10 @@ package integration
 
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
@@ -47,14 +47,14 @@ func ResourceIntegration() *schema.Resource {
 				Type:             schema.TypeString,
 				Optional:         true,
 				Computed:         true,
-				DiffSuppressFunc: gcloud.SuppressEquivalentJsonDiffs,
+				DiffSuppressFunc: util.SuppressEquivalentJsonDiffs,
 			},
 			"advanced": {
 				Description:      "Integration advanced config (JSON string).",
 				Type:             schema.TypeString,
 				Optional:         true,
 				Computed:         true,
-				DiffSuppressFunc: gcloud.SuppressEquivalentJsonDiffs,
+				DiffSuppressFunc: util.SuppressEquivalentJsonDiffs,
 			},
 			"credentials": {
 				Description: "Credentials required for the integration. The required keys are indicated in the credentials property of the Integration Type.",
@@ -68,10 +68,10 @@ func ResourceIntegration() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud Integration",
 
-		CreateContext: gcloud.CreateWithPooledClient(createIntegration),
-		ReadContext:   gcloud.ReadWithPooledClient(readIntegration),
-		UpdateContext: gcloud.UpdateWithPooledClient(updateIntegration),
-		DeleteContext: gcloud.DeleteWithPooledClient(deleteIntegration),
+		CreateContext: provider.CreateWithPooledClient(createIntegration),
+		ReadContext:   provider.ReadWithPooledClient(readIntegration),
+		UpdateContext: provider.UpdateWithPooledClient(updateIntegration),
+		DeleteContext: provider.DeleteWithPooledClient(deleteIntegration),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -104,7 +104,7 @@ func ResourceIntegration() *schema.Resource {
 // IntegrationExporter returns the resourceExporter object used to hold the genesyscloud_integration exporter's config
 func IntegrationExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
-		GetResourcesFunc: gcloud.GetAllWithPooledClient(getAllIntegrations),
+		GetResourcesFunc: provider.GetAllWithPooledClient(getAllIntegrations),
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			"config.credentials.*": {RefType: "genesyscloud_integration_credential"},
 		},
@@ -119,7 +119,7 @@ func IntegrationExporter() *resourceExporter.ResourceExporter {
 func DataSourceIntegration() *schema.Resource {
 	return &schema.Resource{
 		Description: "Data source for Genesys Cloud integration. Select an integration by name",
-		ReadContext: gcloud.ReadWithPooledClient(dataSourceIntegrationRead),
+		ReadContext: provider.ReadWithPooledClient(dataSourceIntegrationRead),
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Description: "The name of the integration",

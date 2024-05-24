@@ -5,13 +5,13 @@ import (
 	"fmt"
 	"os"
 	"path"
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util/files"
 )
 
 // ScriptResolver is used to download all Genesys Cloud scripts from Genesys Cloud
 func ScriptResolver(scriptId, exportDirectory, subDirectory string, configMap map[string]interface{}, meta interface{}) error {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	scriptsProxy := getScriptsProxy(sdkConfig)
 
 	exportFileName := fmt.Sprintf("script-%s.json", scriptId)
@@ -21,7 +21,7 @@ func ScriptResolver(scriptId, exportDirectory, subDirectory string, configMap ma
 		return err
 	}
 	ctx := context.Background()
-	url, err := scriptsProxy.getScriptExportUrl(ctx, scriptId)
+	url, _, err := scriptsProxy.getScriptExportUrl(ctx, scriptId)
 	if err != nil {
 		return err
 	}

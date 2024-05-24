@@ -4,8 +4,10 @@ import (
 	"context"
 	"fmt"
 	"log"
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 	"time"
 
@@ -16,7 +18,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 )
 
 // getAllIvrConfigs retrieves all architect IVRs and is used for the exporter
@@ -24,9 +26,9 @@ func getAllIvrConfigs(ctx context.Context, clientConfig *platformclientv2.Config
 	resources := make(resourceExporter.ResourceIDMetaMap)
 	ap := getArchitectIvrProxy(clientConfig)
 
-	allIvrs, err := ap.getAllArchitectIvrs(ctx, "")
+	allIvrs, resp, err := ap.getAllArchitectIvrs(ctx, "")
 	if err != nil {
-		return nil, diag.Errorf("failed to get architect ivrs: %v", err)
+		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get archictect IVRs error: %s", err), resp)
 	}
 
 	for _, entity := range *allIvrs {
@@ -37,7 +39,7 @@ func getAllIvrConfigs(ctx context.Context, clientConfig *platformclientv2.Config
 
 // createIvrConfig is used by the resource to create a Genesys Cloud Architect IVR
 func createIvrConfig(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	ap := getArchitectIvrProxy(sdkConfig)
 
 	ivrBody := buildArchitectIvrFromResourceData(d)
@@ -47,11 +49,13 @@ func createIvrConfig(ctx context.Context, d *schema.ResourceData, meta interface
 	if ivrBody.Dnis != nil {
 		time.Sleep(3 * time.Second)
 	}
+
 	log.Printf("Creating IVR config %s", *ivrBody.Name)
-	ivrConfig, _, err := ap.createArchitectIvr(ctx, *ivrBody)
+	ivrConfig, resp, err := ap.createArchitectIvr(ctx, *ivrBody)
 	if err != nil {
-		return diag.Errorf("Failed to create IVR config %s: %s", *ivrBody.Name, err)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create IVR config %s error: %s", *ivrBody.Name, err), resp)
 	}
+
 	d.SetId(*ivrConfig.Id)
 
 	log.Printf("Created IVR config %s %s", *ivrBody.Name, *ivrConfig.Id)
@@ -60,17 +64,18 @@ func createIvrConfig(ctx context.Context, d *schema.ResourceData, meta interface
 
 // readIvrConfig is used by the resource to read a Genesys Cloud Architect IVR
 func readIvrConfig(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	ap := getArchitectIvrProxy(sdkConfig)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceArchitectIvrConfig(), constants.DefaultConsistencyChecks, resourceName)
 
 	log.Printf("Reading IVR config %s", d.Id())
-	return gcloud.WithRetriesForRead(ctx, d, func() *retry.RetryError {
+	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		ivrConfig, resp, getErr := ap.getArchitectIvr(ctx, d.Id())
 		if getErr != nil {
-			if gcloud.IsStatus404(resp) {
-				return retry.RetryableError(fmt.Errorf("Failed to read IVR config %s: %s", d.Id(), getErr))
+			if util.IsStatus404(resp) {
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read IVR config %s | error: %s", d.Id(), getErr), resp))
 			}
-			return retry.NonRetryableError(fmt.Errorf("Failed to read IVR config %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read IVR config %s | error: %s", d.Id(), getErr), resp))
 		}
 
 		if ivrConfig.State != nil && *ivrConfig.State == "deleted" {
@@ -78,7 +83,6 @@ func readIvrConfig(ctx context.Context, d *schema.ResourceData, meta interface{}
 			return nil
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceArchitectIvrConfig())
 		_ = d.Set("name", *ivrConfig.Name)
 		_ = d.Set("dnis", lists.StringListToSetOrNil(ivrConfig.Dnis))
 
@@ -91,20 +95,20 @@ func readIvrConfig(ctx context.Context, d *schema.ResourceData, meta interface{}
 
 		log.Printf("Read IVR config %s %s", d.Id(), *ivrConfig.Name)
 
-		return cc.CheckState()
+		return cc.CheckState(d)
 	})
 }
 
 // updateIvrConfig is used by the resource to update a Genesys Cloud Architect IVR
 func updateIvrConfig(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	ap := getArchitectIvrProxy(sdkConfig)
 
-	diagErr := gcloud.RetryWhen(gcloud.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+	diagErr := util.RetryWhen(util.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		// Get current version
 		ivr, resp, getErr := ap.getArchitectIvr(ctx, d.Id())
 		if getErr != nil {
-			return resp, diag.Errorf("Failed to read IVR config %s: %s", d.Id(), getErr)
+			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to read IVR config %s error: %s", d.Id(), getErr), resp)
 		}
 
 		ivrBody := buildArchitectIvrFromResourceData(d)
@@ -119,11 +123,12 @@ func updateIvrConfig(ctx context.Context, d *schema.ResourceData, meta interface
 		_, resp, putErr := ap.updateArchitectIvr(ctx, d.Id(), *ivrBody)
 
 		if putErr != nil {
-			return resp, diag.Errorf("Failed to update IVR config %s: %s", d.Id(), putErr)
+			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update IVR config %s error: %s", d.Id(), putErr), resp)
 		}
 
 		return resp, nil
 	})
+
 	if diagErr != nil {
 		return diagErr
 	}
@@ -136,23 +141,24 @@ func updateIvrConfig(ctx context.Context, d *schema.ResourceData, meta interface
 func deleteIvrConfig(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	name := d.Get("name").(string)
 
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	ap := getArchitectIvrProxy(sdkConfig)
 
 	log.Printf("Deleting IVR config %s", name)
-	if _, err := ap.deleteArchitectIvr(ctx, d.Id()); err != nil {
-		return diag.Errorf("Failed to delete IVR config %s: %s", name, err)
+	if resp, err := ap.deleteArchitectIvr(ctx, d.Id()); err != nil {
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete IVR config %s error: %s", name, err), resp)
+
 	}
 
-	return gcloud.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
+	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		ivr, resp, err := ap.getArchitectIvr(ctx, d.Id())
 		if err != nil {
-			if gcloud.IsStatus404(resp) {
+			if util.IsStatus404(resp) {
 				// IVR config deleted
 				log.Printf("Deleted IVR config %s", d.Id())
 				return nil
 			}
-			return retry.NonRetryableError(fmt.Errorf("Error deleting IVR config %s: %s", d.Id(), err))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Error deleting IVR config %s | error: %s", d.Id(), err), resp))
 		}
 
 		if ivr.State != nil && *ivr.State == "deleted" {
@@ -161,6 +167,6 @@ func deleteIvrConfig(ctx context.Context, d *schema.ResourceData, meta interface
 			return nil
 		}
 
-		return retry.RetryableError(fmt.Errorf("IVR config %s still exists", d.Id()))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("IVR config %s still exists", d.Id()), resp))
 	})
 }

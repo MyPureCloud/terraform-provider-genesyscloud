@@ -4,15 +4,15 @@ package task_management_worktype
 import (
 	"context"
 	"fmt"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
 
 	"net/http"
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	"terraform-provider-genesyscloud/genesyscloud/util/lists"
 	"testing"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -76,7 +76,7 @@ func TestUnitResourceWorktypeCreate(t *testing.T) {
 
 	taskProxy := &taskManagementWorktypeProxy{}
 
-	taskProxy.createTaskManagementWorktypeAttr = func(ctx context.Context, p *taskManagementWorktypeProxy, create *platformclientv2.Worktypecreate) (*platformclientv2.Worktype, error) {
+	taskProxy.createTaskManagementWorktypeAttr = func(ctx context.Context, p *taskManagementWorktypeProxy, create *platformclientv2.Worktypecreate) (*platformclientv2.Worktype, *platformclientv2.APIResponse, error) {
 		assert.Equal(t, wt.name, *create.Name, "wt.Name check failed in create createTaskManagementWorktypeAttr")
 		assert.Equal(t, wt.description, *create.Description, "wt.Description check failed in create createTaskManagementWorktypeAttr")
 		assert.Equal(t, wt.divisionId, *create.DivisionId, "wt.divisionId check failed in create createTaskManagementWorktypeAttr")
@@ -118,22 +118,22 @@ func TestUnitResourceWorktypeCreate(t *testing.T) {
 				Id:      &wt.schemaId,
 				Version: &wt.schemaVersion,
 			},
-		}, nil
+		}, nil, nil
 	}
 
-	taskProxy.createTaskManagementWorktypeStatusAttr = func(ctx context.Context, p *taskManagementWorktypeProxy, worktypeId string, status *Workitemstatuscreate) (*Workitemstatus, error) {
-		return &Workitemstatus{
+	taskProxy.createTaskManagementWorktypeStatusAttr = func(ctx context.Context, p *taskManagementWorktypeProxy, worktypeId string, status *platformclientv2.Workitemstatuscreate) (*platformclientv2.Workitemstatus, *platformclientv2.APIResponse, error) {
+		return &platformclientv2.Workitemstatus{
 			Id:                           &worktypeId,
 			Name:                         status.Name,
 			Category:                     status.Category,
 			Description:                  status.Description,
 			StatusTransitionDelaySeconds: status.StatusTransitionDelaySeconds,
 			StatusTransitionTime:         status.StatusTransitionTime,
-		}, nil
+		}, nil, nil
 	}
 
-	taskProxy.updateTaskManagementWorktypeStatusAttr = func(ctx context.Context, p *taskManagementWorktypeProxy, worktypeId string, statusId string, statusUpdate *Workitemstatusupdate) (*Workitemstatus, error) {
-		return &Workitemstatus{
+	taskProxy.updateTaskManagementWorktypeStatusAttr = func(ctx context.Context, p *taskManagementWorktypeProxy, worktypeId string, statusId string, statusUpdate *platformclientv2.Workitemstatusupdate) (*platformclientv2.Workitemstatus, *platformclientv2.APIResponse, error) {
+		return &platformclientv2.Workitemstatus{
 			Id:                  &statusId,
 			Name:                statusUpdate.Name,
 			DestinationStatuses: buildDestinationStatuses(statusUpdate.DestinationStatusIds),
@@ -143,14 +143,14 @@ func TestUnitResourceWorktypeCreate(t *testing.T) {
 			},
 			StatusTransitionDelaySeconds: statusUpdate.StatusTransitionDelaySeconds,
 			StatusTransitionTime:         statusUpdate.StatusTransitionTime,
-		}, nil
+		}, nil, nil
 	}
 
-	taskProxy.getTaskManagementWorktypeByIdAttr = func(ctx context.Context, p *taskManagementWorktypeProxy, id string) (*Worktype, int, error) {
+	taskProxy.getTaskManagementWorktypeByIdAttr = func(ctx context.Context, p *taskManagementWorktypeProxy, id string) (*platformclientv2.Worktype, *platformclientv2.APIResponse, error) {
 		assert.Equal(t, tId, id)
 
 		// The expected final form of the worktype
-		wt := &Worktype{
+		wt := &platformclientv2.Worktype{
 			Id:          &tId,
 			Name:        &wt.name,
 			Description: &wt.description,
@@ -167,7 +167,7 @@ func TestUnitResourceWorktypeCreate(t *testing.T) {
 			DefaultLanguage: &platformclientv2.Languagereference{
 				Id: &wt.defaultLanguageId,
 			},
-			DefaultQueue: &platformclientv2.Queuereference{
+			DefaultQueue: &platformclientv2.Workitemqueuereference{
 				Id: &wt.defaultQueueId,
 			},
 			DefaultSkills: &[]platformclientv2.Routingskillreference{
@@ -184,7 +184,7 @@ func TestUnitResourceWorktypeCreate(t *testing.T) {
 				Version: &wt.schemaVersion,
 			},
 
-			Statuses: &[]Workitemstatus{
+			Statuses: &[]platformclientv2.Workitemstatus{
 				{
 					Id:          &wt.statuses[0].id,
 					Name:        &wt.statuses[0].name,
@@ -231,14 +231,14 @@ func TestUnitResourceWorktypeCreate(t *testing.T) {
 
 		apiResponse := &platformclientv2.APIResponse{StatusCode: http.StatusOK}
 
-		return wt, apiResponse.StatusCode, nil
+		return wt, apiResponse, nil
 	}
 
 	internalProxy = taskProxy
 	defer func() { internalProxy = nil }()
 
 	ctx := context.Background()
-	gcloud := &gcloud.ProviderMeta{ClientConfig: &platformclientv2.Configuration{}}
+	gcloud := &provider.ProviderMeta{ClientConfig: &platformclientv2.Configuration{}}
 
 	//Grab our defined schema
 	resourceSchema := ResourceTaskManagementWorktype().Schema
@@ -314,11 +314,11 @@ func TestUnitResourceWorktypeRead(t *testing.T) {
 
 	taskProxy := &taskManagementWorktypeProxy{}
 
-	taskProxy.getTaskManagementWorktypeByIdAttr = func(ctx context.Context, p *taskManagementWorktypeProxy, id string) (*Worktype, int, error) {
+	taskProxy.getTaskManagementWorktypeByIdAttr = func(ctx context.Context, p *taskManagementWorktypeProxy, id string) (*platformclientv2.Worktype, *platformclientv2.APIResponse, error) {
 		assert.Equal(t, tId, id)
 
 		// The expected final form of the worktype
-		wt := &Worktype{
+		wt := &platformclientv2.Worktype{
 			Id:          &tId,
 			Name:        &wt.name,
 			Description: &wt.description,
@@ -335,7 +335,7 @@ func TestUnitResourceWorktypeRead(t *testing.T) {
 			DefaultLanguage: &platformclientv2.Languagereference{
 				Id: &wt.defaultLanguageId,
 			},
-			DefaultQueue: &platformclientv2.Queuereference{
+			DefaultQueue: &platformclientv2.Workitemqueuereference{
 				Id: &wt.defaultQueueId,
 			},
 			DefaultSkills: &[]platformclientv2.Routingskillreference{
@@ -352,7 +352,7 @@ func TestUnitResourceWorktypeRead(t *testing.T) {
 				Version: &wt.schemaVersion,
 			},
 
-			Statuses: &[]Workitemstatus{
+			Statuses: &[]platformclientv2.Workitemstatus{
 				{
 					Id:          &wt.statuses[0].id,
 					Name:        &wt.statuses[0].name,
@@ -399,13 +399,13 @@ func TestUnitResourceWorktypeRead(t *testing.T) {
 
 		apiResponse := &platformclientv2.APIResponse{StatusCode: http.StatusOK}
 
-		return wt, apiResponse.StatusCode, nil
+		return wt, apiResponse, nil
 	}
 	internalProxy = taskProxy
 	defer func() { internalProxy = nil }()
 
 	ctx := context.Background()
-	gcloud := &gcloud.ProviderMeta{ClientConfig: &platformclientv2.Configuration{}}
+	gcloud := &provider.ProviderMeta{ClientConfig: &platformclientv2.Configuration{}}
 
 	//Grab our defined schema
 	resourceSchema := ResourceTaskManagementWorktype().Schema
@@ -499,7 +499,7 @@ func TestUnitResourceWorktypeUpdate(t *testing.T) {
 
 	taskProxy := &taskManagementWorktypeProxy{}
 
-	taskProxy.updateTaskManagementWorktypeAttr = func(ctx context.Context, p *taskManagementWorktypeProxy, id string, update *platformclientv2.Worktypeupdate) (*platformclientv2.Worktype, error) {
+	taskProxy.updateTaskManagementWorktypeAttr = func(ctx context.Context, p *taskManagementWorktypeProxy, id string, update *platformclientv2.Worktypeupdate) (*platformclientv2.Worktype, *platformclientv2.APIResponse, error) {
 		assert.Equal(t, tId, id)
 		assert.Equal(t, wt.name, *update.Name, "wt.Name check failed in create createTaskManagementWorktypeAttr")
 		assert.Equal(t, wt.description, *update.Description, "wt.Description check failed in create createTaskManagementWorktypeAttr")
@@ -540,22 +540,22 @@ func TestUnitResourceWorktypeUpdate(t *testing.T) {
 				Id:      &wt.schemaId,
 				Version: &wt.schemaVersion,
 			},
-		}, nil
+		}, nil, nil
 	}
 
-	taskProxy.createTaskManagementWorktypeStatusAttr = func(ctx context.Context, p *taskManagementWorktypeProxy, worktypeId string, status *Workitemstatuscreate) (*Workitemstatus, error) {
-		return &Workitemstatus{
+	taskProxy.createTaskManagementWorktypeStatusAttr = func(ctx context.Context, p *taskManagementWorktypeProxy, worktypeId string, status *platformclientv2.Workitemstatuscreate) (*platformclientv2.Workitemstatus, *platformclientv2.APIResponse, error) {
+		return &platformclientv2.Workitemstatus{
 			Id:                           &worktypeId,
 			Name:                         status.Name,
 			Category:                     status.Category,
 			Description:                  status.Description,
 			StatusTransitionDelaySeconds: status.StatusTransitionDelaySeconds,
 			StatusTransitionTime:         status.StatusTransitionTime,
-		}, nil
+		}, nil, nil
 	}
 
-	taskProxy.updateTaskManagementWorktypeStatusAttr = func(ctx context.Context, p *taskManagementWorktypeProxy, worktypeId string, statusId string, statusUpdate *Workitemstatusupdate) (*Workitemstatus, error) {
-		return &Workitemstatus{
+	taskProxy.updateTaskManagementWorktypeStatusAttr = func(ctx context.Context, p *taskManagementWorktypeProxy, worktypeId string, statusId string, statusUpdate *platformclientv2.Workitemstatusupdate) (*platformclientv2.Workitemstatus, *platformclientv2.APIResponse, error) {
+		return &platformclientv2.Workitemstatus{
 			Id:                  &statusId,
 			Name:                statusUpdate.Name,
 			DestinationStatuses: buildDestinationStatuses(statusUpdate.DestinationStatusIds),
@@ -565,16 +565,16 @@ func TestUnitResourceWorktypeUpdate(t *testing.T) {
 			},
 			StatusTransitionDelaySeconds: statusUpdate.StatusTransitionDelaySeconds,
 			StatusTransitionTime:         statusUpdate.StatusTransitionTime,
-		}, nil
+		}, nil, nil
 	}
 
 	// The final complete worktype for read
 	// This is where we'll be asserting the statuses
-	taskProxy.getTaskManagementWorktypeByIdAttr = func(ctx context.Context, p *taskManagementWorktypeProxy, id string) (*Worktype, int, error) {
+	taskProxy.getTaskManagementWorktypeByIdAttr = func(ctx context.Context, p *taskManagementWorktypeProxy, id string) (*platformclientv2.Worktype, *platformclientv2.APIResponse, error) {
 		assert.Equal(t, tId, id)
 
 		// The expected final form of the worktype
-		wt := &Worktype{
+		wt := &platformclientv2.Worktype{
 			Id:          &tId,
 			Name:        &wt.name,
 			Description: &wt.description,
@@ -591,7 +591,7 @@ func TestUnitResourceWorktypeUpdate(t *testing.T) {
 			DefaultLanguage: &platformclientv2.Languagereference{
 				Id: &wt.defaultLanguageId,
 			},
-			DefaultQueue: &platformclientv2.Queuereference{
+			DefaultQueue: &platformclientv2.Workitemqueuereference{
 				Id: &wt.defaultQueueId,
 			},
 			DefaultSkills: &[]platformclientv2.Routingskillreference{
@@ -608,7 +608,7 @@ func TestUnitResourceWorktypeUpdate(t *testing.T) {
 				Version: &wt.schemaVersion,
 			},
 
-			Statuses: &[]Workitemstatus{
+			Statuses: &[]platformclientv2.Workitemstatus{
 				{
 					Id:          &wt.statuses[0].id,
 					Name:        &wt.statuses[0].name,
@@ -655,14 +655,14 @@ func TestUnitResourceWorktypeUpdate(t *testing.T) {
 
 		apiResponse := &platformclientv2.APIResponse{StatusCode: http.StatusOK}
 
-		return wt, apiResponse.StatusCode, nil
+		return wt, apiResponse, nil
 	}
 
 	internalProxy = taskProxy
 	defer func() { internalProxy = nil }()
 
 	ctx := context.Background()
-	gcloud := &gcloud.ProviderMeta{ClientConfig: &platformclientv2.Configuration{}}
+	gcloud := &provider.ProviderMeta{ClientConfig: &platformclientv2.Configuration{}}
 
 	//Grab our defined schema
 	resourceSchema := ResourceTaskManagementWorktype().Schema
@@ -690,14 +690,14 @@ func TestUnitResourceWorktypeDelete(t *testing.T) {
 
 	taskProxy := &taskManagementWorktypeProxy{}
 
-	taskProxy.deleteTaskManagementWorktypeAttr = func(ctx context.Context, p *taskManagementWorktypeProxy, id string) (int, error) {
+	taskProxy.deleteTaskManagementWorktypeAttr = func(ctx context.Context, p *taskManagementWorktypeProxy, id string) (*platformclientv2.APIResponse, error) {
 		assert.Equal(t, tId, id)
 
 		apiResponse := &platformclientv2.APIResponse{StatusCode: http.StatusNoContent}
-		return apiResponse.StatusCode, nil
+		return apiResponse, nil
 	}
 
-	taskProxy.getTaskManagementWorktypeByIdAttr = func(ctx context.Context, p *taskManagementWorktypeProxy, id string) (worktype *Worktype, responseCode int, err error) {
+	taskProxy.getTaskManagementWorktypeByIdAttr = func(ctx context.Context, p *taskManagementWorktypeProxy, id string) (worktype *platformclientv2.Worktype, response *platformclientv2.APIResponse, err error) {
 		assert.Equal(t, tId, id)
 
 		apiResponse := &platformclientv2.APIResponse{
@@ -706,14 +706,14 @@ func TestUnitResourceWorktypeDelete(t *testing.T) {
 				Status: 404,
 			},
 		}
-		return nil, apiResponse.StatusCode, fmt.Errorf("not found")
+		return nil, apiResponse, fmt.Errorf("not found")
 	}
 
 	internalProxy = taskProxy
 	defer func() { internalProxy = nil }()
 
 	ctx := context.Background()
-	gcloud := &gcloud.ProviderMeta{ClientConfig: &platformclientv2.Configuration{}}
+	gcloud := &provider.ProviderMeta{ClientConfig: &platformclientv2.Configuration{}}
 
 	//Grab our defined schema
 	resourceSchema := ResourceTaskManagementWorktype().Schema

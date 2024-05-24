@@ -2,12 +2,12 @@ package integration_action
 
 import (
 	"encoding/json"
-
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	"fmt"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 )
@@ -50,15 +50,15 @@ type IntegrationAction struct {
 // BuildSdkActionContract takes the resource data and builds the custom ActionContract from it
 func BuildSdkActionContract(d *schema.ResourceData) (*ActionContract, diag.Diagnostics) {
 	configInput := d.Get("contract_input").(string)
-	inputVal, err := gcloud.JsonStringToInterface(configInput)
+	inputVal, err := util.JsonStringToInterface(configInput)
 	if err != nil {
-		return nil, diag.Errorf("Failed to parse contract input %s: %v", configInput, err)
+		return nil, util.BuildDiagnosticError(resourceName, fmt.Sprintf("Failed to parse contract input %s", configInput), err)
 	}
 
 	configOutput := d.Get("contract_output").(string)
-	outputVal, err := gcloud.JsonStringToInterface(configOutput)
+	outputVal, err := util.JsonStringToInterface(configOutput)
 	if err != nil {
-		return nil, diag.Errorf("Failed to parse contract output %s: %v", configInput, err)
+		return nil, util.BuildDiagnosticError(resourceName, fmt.Sprintf("Failed to parse contract output %s", configInput), err)
 	}
 
 	return &ActionContract{
@@ -149,7 +149,7 @@ func flattenActionContract(schema interface{}) (string, diag.Diagnostics) {
 	}
 	schemaBytes, err := json.Marshal(schema)
 	if err != nil {
-		return "", diag.Errorf("Error marshalling action contract %v: %v", schema, err)
+		return "", util.BuildDiagnosticError(resourceName, fmt.Sprintf("Error marshalling action contract %v", schema), err)
 	}
 	return string(schemaBytes), nil
 }

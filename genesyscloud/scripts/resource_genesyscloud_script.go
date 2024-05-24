@@ -6,12 +6,13 @@ import (
 	"log"
 	"net/http"
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
-	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
-
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -22,9 +23,9 @@ func getAllScripts(ctx context.Context, clientConfig *platformclientv2.Configura
 	scriptsProxy := getScriptsProxy(clientConfig)
 	resources := make(resourceExporter.ResourceIDMetaMap)
 
-	scripts, err := scriptsProxy.getAllPublishedScripts(ctx)
+	scripts, resp, err := scriptsProxy.getAllPublishedScripts(ctx)
 	if err != nil {
-		return resources, diag.Errorf("Failed to get page of scripts: %v", err)
+		return resources, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get page of scripts error: %s", err), resp)
 	}
 
 	for _, script := range *scripts {
@@ -36,7 +37,7 @@ func getAllScripts(ctx context.Context, clientConfig *platformclientv2.Configura
 
 // createScript providers the Terraform resource logic for creating a Script object
 func createScript(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	scriptsProxy := getScriptsProxy(sdkConfig)
 
 	filePath := d.Get("filepath").(string)
@@ -56,7 +57,7 @@ func createScript(ctx context.Context, d *schema.ResourceData, meta interface{})
 }
 
 func updateScript(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	scriptsProxy := getScriptsProxy(sdkConfig)
 
 	filePath := d.Get("filepath").(string)
@@ -80,38 +81,37 @@ func updateScript(ctx context.Context, d *schema.ResourceData, meta interface{})
 
 // readScript contains all of the logic needed to read resource data from Genesys Cloud
 func readScript(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	scriptsProxy := getScriptsProxy(sdkConfig)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceScript(), constants.DefaultConsistencyChecks, resourceName)
 
-	return gcloud.WithRetriesForRead(ctx, d, func() *retry.RetryError {
-		script, statusCode, err := scriptsProxy.getScriptById(ctx, d.Id())
-		if statusCode == http.StatusNotFound {
-			return retry.RetryableError(fmt.Errorf("Failed to read flow %s: %s", d.Id(), err))
+	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
+		script, resp, err := scriptsProxy.getScriptById(ctx, d.Id())
+		if resp != nil && resp.StatusCode == http.StatusNotFound {
+			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read flow %s | error: %s", d.Id(), err), resp))
 		}
 
 		if err != nil {
-			return retry.NonRetryableError(fmt.Errorf("Failed to read flow %s: %s", d.Id(), err))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read flow %s | error: %s", d.Id(), err), resp))
 		}
-
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceScript())
 
 		if script.Name != nil {
 			_ = d.Set("script_name", *script.Name)
 		}
 
 		log.Printf("Read script %s %s", d.Id(), *script.Name)
-		return cc.CheckState()
+		return cc.CheckState(d)
 	})
 }
 
 // deleteScript contains all the logic needed to delete a resource from Genesys Cloud
 func deleteScript(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	scriptsProxy := getScriptsProxy(sdkConfig)
 
 	log.Printf("Deleting script %s", d.Id())
 	if err := scriptsProxy.deleteScript(ctx, d.Id()); err != nil {
-		return diag.Errorf("failed to delete script %s: %s", d.Id(), err)
+		return util.BuildDiagnosticError(resourceName, fmt.Sprintf("failed to delete script %s", d.Id()), err)
 	}
 
 	log.Printf("Successfully deleted script %s", d.Id())

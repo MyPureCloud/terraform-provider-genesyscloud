@@ -2,25 +2,29 @@ package process_automation_trigger
 
 import (
 	"context"
-
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 
 	"fmt"
 	"log"
 
 	"time"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
-
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
 
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
+)
+
+const (
+	resourceName = "genesyscloud_processautomation_trigger"
 )
 
 var (
@@ -77,10 +81,10 @@ func ResourceProcessAutomationTrigger() *schema.Resource {
 	return &schema.Resource{
 		Description: `Genesys Cloud Process Automation Trigger`,
 
-		CreateContext: gcloud.CreateWithPooledClient(createProcessAutomationTrigger),
-		ReadContext:   gcloud.ReadWithPooledClient(readProcessAutomationTrigger),
-		UpdateContext: gcloud.UpdateWithPooledClient(updateProcessAutomationTrigger),
-		DeleteContext: gcloud.DeleteWithPooledClient(removeProcessAutomationTrigger),
+		CreateContext: provider.CreateWithPooledClient(createProcessAutomationTrigger),
+		ReadContext:   provider.ReadWithPooledClient(readProcessAutomationTrigger),
+		UpdateContext: provider.UpdateWithPooledClient(updateProcessAutomationTrigger),
+		DeleteContext: provider.DeleteWithPooledClient(removeProcessAutomationTrigger),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -141,7 +145,7 @@ func ResourceProcessAutomationTrigger() *schema.Resource {
 
 func ProcessAutomationTriggerExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
-		GetResourcesFunc: gcloud.GetAllWithPooledClient(getAllProcessAutomationTriggersResourceMap),
+		GetResourcesFunc: provider.GetAllWithPooledClient(getAllProcessAutomationTriggersResourceMap),
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			"target.id": {RefType: "genesyscloud_flow"},
 		},
@@ -157,11 +161,11 @@ func createProcessAutomationTrigger(ctx context.Context, d *schema.ResourceData,
 	description := d.Get("description").(string)
 	matchingCriteria := d.Get("match_criteria").(string)
 
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	integAPI := platformclientv2.NewIntegrationsApiWithConfig(sdkConfig)
 
 	if eventTTLSeconds > 0 && delayBySeconds > 0 {
-		return diag.Errorf("Only one of event_ttl_seconds or delay_by_seconds can be set.")
+		return util.BuildDiagnosticError(resourceName, fmt.Sprintf("Only one of event_ttl_seconds or delay_by_seconds can be set."), fmt.Errorf("event_ttl_seconds and delay_by_seconds are both set"))
 	}
 
 	log.Printf("Creating process automation trigger %s", name)
@@ -183,14 +187,13 @@ func createProcessAutomationTrigger(ctx context.Context, d *schema.ResourceData,
 		triggerInput.DelayBySeconds = &delayBySeconds
 	}
 
-	diagErr := gcloud.RetryWhen(gcloud.IsStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+	diagErr := util.RetryWhen(util.IsStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		trigger, resp, err := postProcessAutomationTrigger(triggerInput, integAPI)
-
 		if err != nil {
-			return resp, diag.Errorf("Failed to create process automation trigger %s: %s", name, err)
+			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create process automation trigger %s error: %s", name, err), resp)
 		}
-		d.SetId(*trigger.Id)
 
+		d.SetId(*trigger.Id)
 		log.Printf("Created process automation trigger %s %s", name, *trigger.Id)
 		return resp, nil
 	})
@@ -202,21 +205,20 @@ func createProcessAutomationTrigger(ctx context.Context, d *schema.ResourceData,
 }
 
 func readProcessAutomationTrigger(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	integAPI := platformclientv2.NewIntegrationsApiWithConfig(sdkConfig)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceProcessAutomationTrigger(), constants.DefaultConsistencyChecks, resourceName)
 
 	log.Printf("Reading process automation trigger %s", d.Id())
 
-	return gcloud.WithRetriesForRead(ctx, d, func() *retry.RetryError {
+	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		trigger, resp, getErr := getProcessAutomationTrigger(d.Id(), integAPI)
 		if getErr != nil {
-			if gcloud.IsStatus404(resp) {
-				return retry.RetryableError(fmt.Errorf("Failed to read process automation trigger %s: %s", d.Id(), getErr))
+			if util.IsStatus404(resp) {
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read process automation trigger %s | error: %s", d.Id(), getErr), resp))
 			}
-			return retry.NonRetryableError(fmt.Errorf("Failed to process read automation trigger %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to process read automation trigger %s | error: %s", d.Id(), getErr), resp))
 		}
-
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceProcessAutomationTrigger())
 
 		if trigger.Name != nil {
 			d.Set("name", *trigger.Name)
@@ -258,7 +260,7 @@ func readProcessAutomationTrigger(ctx context.Context, d *schema.ResourceData, m
 		}
 
 		log.Printf("Read process automation trigger %s %s", d.Id(), *trigger.Name)
-		return cc.CheckState()
+		return cc.CheckState(d)
 	})
 }
 
@@ -272,20 +274,20 @@ func updateProcessAutomationTrigger(ctx context.Context, d *schema.ResourceData,
 
 	topic_name := d.Get("topic_name").(string)
 
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	integAPI := platformclientv2.NewIntegrationsApiWithConfig(sdkConfig)
 
 	log.Printf("Updating process automation trigger %s", name)
 
-	diagErr := gcloud.RetryWhen(gcloud.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+	diagErr := util.RetryWhen(util.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		// Get the latest trigger version to send with PATCH
 		trigger, resp, getErr := getProcessAutomationTrigger(d.Id(), integAPI)
 		if getErr != nil {
-			return resp, diag.Errorf("Failed to read process automation trigger %s: %s", d.Id(), getErr)
+			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to read process automation trigger %s error: %s", d.Id(), getErr), resp)
 		}
 
 		if eventTTLSeconds > 0 && delayBySeconds > 0 {
-			return resp, diag.Errorf("Only one of event_ttl_seconds or delay_by_seconds can be set.")
+			return resp, util.BuildDiagnosticError(resourceName, fmt.Sprintf("Only one of event_ttl_seconds or delay_by_seconds can be set."), fmt.Errorf("event_ttl_seconds and delay_by_seconds are both set"))
 		}
 
 		triggerInput := &ProcessAutomationTrigger{
@@ -309,7 +311,7 @@ func updateProcessAutomationTrigger(ctx context.Context, d *schema.ResourceData,
 		_, putResp, err := putProcessAutomationTrigger(d.Id(), triggerInput, integAPI)
 
 		if err != nil {
-			return putResp, diag.Errorf("Failed to update process automation trigger %s: %s", name, err)
+			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update process automation trigger %s error: %s", name, err), resp)
 		}
 		return putResp, nil
 	})
@@ -324,20 +326,20 @@ func updateProcessAutomationTrigger(ctx context.Context, d *schema.ResourceData,
 func removeProcessAutomationTrigger(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	name := d.Get("name").(string)
 
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	integAPI := platformclientv2.NewIntegrationsApiWithConfig(sdkConfig)
 
 	log.Printf("Deleting process automation trigger %s", name)
 
-	return gcloud.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
+	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		resp, err := deleteProcessAutomationTrigger(d.Id(), integAPI)
 
 		if err != nil {
-			if gcloud.IsStatus404(resp) {
+			if util.IsStatus404(resp) {
 				log.Printf("process automation trigger already deleted %s", d.Id())
 				return nil
 			}
-			return retry.RetryableError(fmt.Errorf("process automation trigger %s still exists", d.Id()))
+			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("process automation trigger %s still exists", d.Id()), resp))
 		}
 		return nil
 	})

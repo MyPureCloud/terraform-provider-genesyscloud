@@ -3,12 +3,14 @@ package genesyscloud
 import (
 	"fmt"
 	"strings"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 )
 
 func TestAccResourceKnowledgeDocumentVariationBasic(t *testing.T) {
@@ -37,12 +39,12 @@ func TestAccResourceKnowledgeDocumentVariationBasic(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Create
-				Config: generateKnowledgeKnowledgebaseResource(
+				Config: GenerateKnowledgeKnowledgebaseResource(
 					knowledgeBaseResource1,
 					knowledgeBaseName1,
 					knowledgeBaseDescription1,
@@ -82,7 +84,7 @@ func TestAccResourceKnowledgeDocumentVariationBasic(t *testing.T) {
 			},
 			{
 				// Update
-				Config: generateKnowledgeKnowledgebaseResource(
+				Config: GenerateKnowledgeKnowledgebaseResource(
 					knowledgeBaseResource1,
 					knowledgeBaseName1,
 					knowledgeBaseDescription1,
@@ -341,12 +343,12 @@ func testVerifyKnowledgeDocumentVariationDestroyed(state *terraform.State) error
 		// check both published and draft variations
 		if publishedKnowledgeDocumentVariation != nil {
 			return fmt.Errorf("Knowledge document variation (%s) still exists", knowledgeDocumentVariationId)
-		} else if IsStatus404(publishedResp) || IsStatus400(publishedResp) {
+		} else if util.IsStatus404(publishedResp) || util.IsStatus400(publishedResp) {
 			draftKnowledgeDocumentVariation, draftResp, draftErr := knowledgeAPI.GetKnowledgeKnowledgebaseDocumentVariation(knowledgeDocumentVariationId, knowledgeDocumentId, knowledgeBaseId, "Draft")
 
 			if draftKnowledgeDocumentVariation != nil {
 				return fmt.Errorf("Knowledge document variation (%s) still exists", knowledgeDocumentVariationId)
-			} else if IsStatus404(draftResp) || IsStatus400(draftResp) {
+			} else if util.IsStatus404(draftResp) || util.IsStatus400(draftResp) {
 				// Knowledge base document not found as expected
 				continue
 			} else {

@@ -5,7 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 
 	"github.com/hashicorp/hcl/v2/hclwrite"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -198,11 +198,17 @@ func writeHCLToFile(bytes [][]byte, path string) diag.Diagnostics {
 	return nil
 }
 
-func instanceStateToHCLBlock(resType, resName string, json gcloud.JsonMap) []byte {
+func instanceStateToHCLBlock(resType, resName string, json util.JsonMap, isDataSource bool) []byte {
 	f := hclwrite.NewEmptyFile()
 	rootBody := f.Body()
 
-	block := rootBody.AppendNewBlock("resource", []string{resType, resName})
+	var block *hclwrite.Block
+	if isDataSource {
+		block = rootBody.AppendNewBlock("data", []string{resType, resName})
+	} else {
+		block = rootBody.AppendNewBlock("resource", []string{resType, resName})
+	}
+
 	body := block.Body()
 
 	addBody(body, json)
@@ -211,7 +217,7 @@ func instanceStateToHCLBlock(resType, resName string, json gcloud.JsonMap) []byt
 	return []byte(newCopy)
 }
 
-func addBody(body *hclwrite.Body, json gcloud.JsonMap) {
+func addBody(body *hclwrite.Body, json util.JsonMap) {
 	for k, v := range json {
 		addValue(body, k, v)
 	}

@@ -3,8 +3,8 @@ package tfexporter
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
 	"io"
+	"log"
 	"math/rand"
 	"os"
 	"path"
@@ -13,16 +13,24 @@ import (
 	"strconv"
 	"strings"
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	"terraform-provider-genesyscloud/genesyscloud/architect_flow"
 	obContactList "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	routingQueue "terraform-provider-genesyscloud/genesyscloud/routing_queue"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 	"time"
+
+	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 
 	"terraform-provider-genesyscloud/genesyscloud/util/testrunner"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 
 	"github.com/google/uuid"
+
+	userPrompt "terraform-provider-genesyscloud/genesyscloud/architect_user_prompt"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
@@ -61,15 +69,15 @@ func TestAccResourceTfExport(t *testing.T) {
 	defer os.RemoveAll(exportTestDir)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
-		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Run export without state file
 				Config: generateTfExportResource(
 					exportResource1,
 					exportTestDir,
-					gcloud.FalseValue,
+					util.FalseValue,
 					"",
 				),
 				Check: resource.ComposeTestCheckFunc(
@@ -82,8 +90,22 @@ func TestAccResourceTfExport(t *testing.T) {
 				Config: generateTfExportResource(
 					exportResource1,
 					exportTestDir,
-					gcloud.TrueValue,
+					util.TrueValue,
 					strconv.Quote("genesyscloud_auth_role.permission_policies.conditions"),
+				),
+				Check: resource.ComposeTestCheckFunc(
+					validateFileCreated(configPath),
+					validateConfigFile(configPath),
+					validateFileCreated(statePath),
+				),
+			},
+			{
+				// Run export with state file and excluded attribute with regex
+				Config: generateTfExportResourceMin(
+					exportResource1,
+					exportTestDir,
+					util.TrueValue,
+					strconv.Quote("g*.name"),
 				),
 				Check: resource.ComposeTestCheckFunc(
 					validateFileCreated(configPath),
@@ -138,8 +160,8 @@ func TestAccResourceTfExportByName(t *testing.T) {
 	sanitizer := resourceExporter.NewSanitizerProvider()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
-		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Generate a user and export it
@@ -158,11 +180,11 @@ func TestAccResourceTfExportByName(t *testing.T) {
 				) + generateTfExportByName(
 					exportResource1,
 					exportTestDir,
-					gcloud.TrueValue,
+					util.TrueValue,
 					[]string{strconv.Quote("genesyscloud_user::" + userEmail1)},
 					"",
-					gcloud.FalseValue,
-					gcloud.FalseValue,
+					util.FalseValue,
+					util.FalseValue,
 					[]string{strconv.Quote("genesyscloud_user." + userResource1)},
 				),
 				Check: resource.ComposeTestCheckFunc(
@@ -177,30 +199,31 @@ func TestAccResourceTfExportByName(t *testing.T) {
 					userResource1,
 					userEmail1,
 					userName1,
-				) + gcloud.GenerateRoutingQueueResource(
+				) + routingQueue.GenerateRoutingQueueResource(
 					queueResource,
 					queueName,
 					queueDesc,
-					gcloud.NullValue,                   // MANDATORY_TIMEOUT
+					util.NullValue,                     // MANDATORY_TIMEOUT
 					fmt.Sprintf("%v", queueAcwTimeout), // acw_timeout
-					gcloud.NullValue,                   // ALL
-					gcloud.NullValue,                   // auto_answer_only true
-					gcloud.NullValue,                   // No calling party name
-					gcloud.NullValue,                   // No calling party number
-					gcloud.NullValue,                   // enable_manual_assignment false
-					gcloud.FalseValue,                  //suppressCall_record_false
-					gcloud.NullValue,                   // enable_transcription false
+					util.NullValue,                     // ALL
+					util.NullValue,                     // auto_answer_only true
+					util.NullValue,                     // No calling party name
+					util.NullValue,                     // No calling party number
+					util.NullValue,                     // enable_manual_assignment false
+					util.FalseValue,                    //suppressCall_record_false
+					util.NullValue,                     // enable_transcription false
+					strconv.Quote("TimestampAndPriority"),
 				) + generateTfExportByName(
 					exportResource1,
 					exportTestDir,
-					gcloud.TrueValue,
+					util.TrueValue,
 					[]string{
 						strconv.Quote("genesyscloud_user::" + userEmail1),
 						strconv.Quote("genesyscloud_routing_queue::" + queueName),
 					},
 					"",
-					gcloud.FalseValue,
-					gcloud.FalseValue,
+					util.FalseValue,
+					util.FalseValue,
 					[]string{strconv.Quote("genesyscloud_user." + userResource1)},
 				),
 				Check: resource.ComposeTestCheckFunc(
@@ -218,31 +241,32 @@ func TestAccResourceTfExportByName(t *testing.T) {
 					userResource1,
 					userEmail1,
 					userName1,
-				) + gcloud.GenerateRoutingQueueResource(
+				) + routingQueue.GenerateRoutingQueueResource(
 					queueResource,
 					queueName,
 					queueDesc,
-					gcloud.NullValue,                   // MANDATORY_TIMEOUT
+					util.NullValue,                     // MANDATORY_TIMEOUT
 					fmt.Sprintf("%v", queueAcwTimeout), // acw_timeout
-					gcloud.NullValue,                   // ALL
-					gcloud.NullValue,                   // auto_answer_only true
-					gcloud.NullValue,                   // No calling party name
-					gcloud.NullValue,                   // No calling party number
-					gcloud.NullValue,                   // enable_manual_assignment false
-					gcloud.FalseValue,                  //suppressCall_record_false
-					gcloud.NullValue,                   // enable_transcription false
+					util.NullValue,                     // ALL
+					util.NullValue,                     // auto_answer_only true
+					util.NullValue,                     // No calling party name
+					util.NullValue,                     // No calling party number
+					util.NullValue,                     // enable_manual_assignment false
+					util.FalseValue,                    //suppressCall_record_false
+					util.NullValue,                     // enable_transcription false
+					strconv.Quote("TimestampAndPriority"),
 				) + generateTfExportByName(
 					exportResource1,
 					exportTestDir,
-					gcloud.TrueValue,
+					util.TrueValue,
 					[]string{
 						strconv.Quote("genesyscloud_user::" + userEmail1),
 						strconv.Quote("genesyscloud_routing_queue::" + queueName),
 						strconv.Quote("genesyscloud_telephony_providers_edges_trunkbasesettings"),
 					},
 					"",
-					gcloud.FalseValue,
-					gcloud.FalseValue,
+					util.FalseValue,
+					util.FalseValue,
 					[]string{
 						strconv.Quote("genesyscloud_routing_queue." + queueResource),
 						strconv.Quote("genesyscloud_user." + userResource1)},
@@ -272,23 +296,24 @@ func TestAccResourceTfExportByName(t *testing.T) {
 					userResource2,
 					userEmail2,
 					userName2,
-				) + gcloud.GenerateRoutingQueueResource(
+				) + routingQueue.GenerateRoutingQueueResource(
 					queueResource,
 					queueName,
 					queueDesc,
-					gcloud.NullValue,                   // MANDATORY_TIMEOUT
+					util.NullValue,                     // MANDATORY_TIMEOUT
 					fmt.Sprintf("%v", queueAcwTimeout), // acw_timeout
-					gcloud.NullValue,                   // ALL
-					gcloud.NullValue,                   // auto_answer_only true
-					gcloud.NullValue,                   // No calling party name
-					gcloud.NullValue,                   // No calling party number
-					gcloud.NullValue,                   // enable_manual_assignment false
-					gcloud.FalseValue,                  //suppressCall_record_false
-					gcloud.NullValue,                   // enable_transcription false
+					util.NullValue,                     // ALL
+					util.NullValue,                     // auto_answer_only true
+					util.NullValue,                     // No calling party name
+					util.NullValue,                     // No calling party number
+					util.NullValue,                     // enable_manual_assignment false
+					util.FalseValue,                    //suppressCall_record_false
+					util.NullValue,                     // enable_transcription false
+					strconv.Quote("TimestampAndPriority"),
 				) + generateTfExportByName(
 					exportResource1,
 					exportTestDir,
-					gcloud.TrueValue,
+					util.TrueValue,
 					[]string{
 						strconv.Quote("genesyscloud_user::" + userEmail1),
 						strconv.Quote("genesyscloud_user::" + userEmail2),
@@ -296,8 +321,8 @@ func TestAccResourceTfExportByName(t *testing.T) {
 						strconv.Quote("genesyscloud_telephony_providers_edges_trunkbasesettings"),
 					},
 					"",
-					gcloud.FalseValue,
-					gcloud.FalseValue,
+					util.FalseValue,
+					util.FalseValue,
 					[]string{
 						strconv.Quote("genesyscloud_routing_queue." + queueResource),
 						strconv.Quote("genesyscloud_user." + userResource1),
@@ -347,12 +372,12 @@ func TestAccResourceTfExportIncludeFilterResourcesByType(t *testing.T) {
 		generateTfExportByIncludeFilterResources(
 			exportResource,
 			exportTestDir,
-			gcloud.TrueValue,
+			util.TrueValue,
 			[]string{
 				strconv.Quote("genesyscloud_routing_queue"),
 			},
-			gcloud.FalseValue,
-			gcloud.FalseValue,
+			util.FalseValue,
+			util.FalseValue,
 			[]string{
 				strconv.Quote("genesyscloud_routing_queue." + queueResources[0].ResourceName),
 				strconv.Quote("genesyscloud_routing_queue." + queueResources[1].ResourceName),
@@ -363,8 +388,8 @@ func TestAccResourceTfExportIncludeFilterResourcesByType(t *testing.T) {
 
 	sanitizer := resourceExporter.NewSanitizerProvider()
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
-		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Generate a queue as well and export it
@@ -403,12 +428,12 @@ func TestAccResourceTfExportIncludeFilterResourcesByRegEx(t *testing.T) {
 		generateTfExportByIncludeFilterResources(
 			exportResource,
 			exportTestDir,
-			gcloud.TrueValue,
+			util.TrueValue,
 			[]string{
 				strconv.Quote("genesyscloud_routing_queue::-prod"),
 			},
-			gcloud.FalseValue,
-			gcloud.FalseValue,
+			util.FalseValue,
+			util.FalseValue,
 			[]string{
 				strconv.Quote("genesyscloud_routing_queue." + queueResources[0].ResourceName),
 				strconv.Quote("genesyscloud_routing_queue." + queueResources[1].ResourceName),
@@ -420,8 +445,8 @@ func TestAccResourceTfExportIncludeFilterResourcesByRegEx(t *testing.T) {
 	sanitizer := resourceExporter.NewSanitizerProvider()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
-		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Generate a queue as well and export it
@@ -468,13 +493,13 @@ func TestAccResourceTfExportIncludeFilterResourcesByRegExExclusiveToResource(t *
 		generateTfExportByIncludeFilterResources(
 			exportResource,
 			exportTestDir,
-			gcloud.TrueValue,
+			util.TrueValue,
 			[]string{
 				strconv.Quote("genesyscloud_routing_queue::-prod$"),
 				strconv.Quote("genesyscloud_routing_wrapupcode"),
 			},
-			gcloud.FalseValue,
-			gcloud.FalseValue,
+			util.FalseValue,
+			util.FalseValue,
 			[]string{
 				strconv.Quote("genesyscloud_routing_queue." + queueResources[0].ResourceName),
 				strconv.Quote("genesyscloud_routing_queue." + queueResources[1].ResourceName),
@@ -486,8 +511,8 @@ func TestAccResourceTfExportIncludeFilterResourcesByRegExExclusiveToResource(t *
 	sanitizer := resourceExporter.NewSanitizerProvider()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
-		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Generate a queue as well and export it
@@ -526,7 +551,7 @@ func TestAccResourceTfExportExcludeFilterResourcesByRegEx(t *testing.T) {
 		generateTfExportByExcludeFilterResources(
 			exportResource,
 			exportTestDir,
-			gcloud.TrueValue,
+			util.TrueValue,
 			[]string{
 				strconv.Quote("genesyscloud_routing_queue::-(dev|test)$"),
 				strconv.Quote("genesyscloud_outbound_ruleset"),
@@ -534,8 +559,8 @@ func TestAccResourceTfExportExcludeFilterResourcesByRegEx(t *testing.T) {
 				strconv.Quote("genesyscloud_user_roles"),
 				strconv.Quote("genesyscloud_flow"),
 			},
-			gcloud.FalseValue,
-			gcloud.FalseValue,
+			util.FalseValue,
+			util.FalseValue,
 			[]string{
 				strconv.Quote("genesyscloud_routing_queue." + queueResources[0].ResourceName),
 				strconv.Quote("genesyscloud_routing_queue." + queueResources[1].ResourceName),
@@ -548,8 +573,8 @@ func TestAccResourceTfExportExcludeFilterResourcesByRegEx(t *testing.T) {
 	sanitizer := resourceExporter.NewSanitizerProvider()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
-		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Generate a queue as well and export it
@@ -595,7 +620,7 @@ func TestAccResourceTfExportExcludeFilterResourcesByRegExExclusiveToResource(t *
 		generateTfExportByExcludeFilterResources(
 			exportResource,
 			exportTestDir,
-			gcloud.TrueValue,
+			util.TrueValue,
 			[]string{
 				strconv.Quote("genesyscloud_routing_queue::-(dev|test)$"),
 				strconv.Quote("genesyscloud_outbound_ruleset"),
@@ -603,8 +628,8 @@ func TestAccResourceTfExportExcludeFilterResourcesByRegExExclusiveToResource(t *
 				strconv.Quote("genesyscloud_user_roles"),
 				strconv.Quote("genesyscloud_flow"),
 			},
-			gcloud.FalseValue,
-			gcloud.FalseValue,
+			util.FalseValue,
+			util.FalseValue,
 			[]string{
 				strconv.Quote("genesyscloud_routing_queue." + queueResources[0].ResourceName),
 				strconv.Quote("genesyscloud_routing_queue." + queueResources[1].ResourceName),
@@ -617,8 +642,8 @@ func TestAccResourceTfExportExcludeFilterResourcesByRegExExclusiveToResource(t *
 
 	sanitizer := resourceExporter.NewSanitizerProvider()
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
-		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Generate a queue as well and export it
@@ -728,8 +753,8 @@ func TestAccResourceTfExportFormAsHCL(t *testing.T) {
 	defer os.RemoveAll(exportTestDir)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
-		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				Config: gcloud.GenerateEvaluationFormResource(formResourceName, &evaluationForm1),
@@ -741,11 +766,11 @@ func TestAccResourceTfExportFormAsHCL(t *testing.T) {
 				Config: gcloud.GenerateEvaluationFormResource(formResourceName, &evaluationForm1) + generateTfExportByName(
 					formResourceName,
 					exportTestDir,
-					gcloud.TrueValue,
+					util.TrueValue,
 					[]string{strconv.Quote("genesyscloud_quality_forms_evaluation::" + formName)},
 					"",
-					gcloud.TrueValue,
-					gcloud.FalseValue,
+					util.TrueValue,
+					util.FalseValue,
 					[]string{
 						strconv.Quote("genesyscloud_quality_forms_evaluation." + formResourceName),
 					},
@@ -761,8 +786,8 @@ func TestAccResourceTfExportFormAsHCL(t *testing.T) {
 	exportedContents = removeTerraformProviderBlock(exportedContents)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
-		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				Config: exportedContents,
@@ -806,7 +831,7 @@ func TestAccResourceTfExportQueueAsHCL(t *testing.T) {
 		emailScriptID = uuid.NewString()
 	)
 
-	routingQueue := gcloud.GenerateRoutingQueueResource(
+	routingQueue := routingQueue.GenerateRoutingQueueResource(
 		queueID,
 		queueName,
 		description,
@@ -815,18 +840,19 @@ func TestAccResourceTfExportQueueAsHCL(t *testing.T) {
 		strconv.Quote("BEST"),
 		autoAnswerOnly,
 		strconv.Quote("Example Inc."),
-		gcloud.NullValue,
+		util.NullValue,
 		"true",
-		gcloud.TrueValue,
-		gcloud.FalseValue,
-		gcloud.GenerateMediaSettings("media_settings_call", alertTimeoutSec, gcloud.FalseValue, slPercentage, slDurationMs),
-		gcloud.GenerateRoutingRules(rrOperator, rrThreshold, rrWaitSeconds),
-		gcloud.GenerateDefaultScriptIDs(chatScriptID, emailScriptID),
+		util.TrueValue,
+		util.FalseValue,
+		strconv.Quote("TimestampAndPriority"),
+		routingQueue.GenerateMediaSettings("media_settings_call", alertTimeoutSec, util.FalseValue, slPercentage, slDurationMs),
+		routingQueue.GenerateRoutingRules(rrOperator, rrThreshold, rrWaitSeconds),
+		routingQueue.GenerateDefaultScriptIDs(chatScriptID, emailScriptID),
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
-		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				Config: routingQueue,
@@ -843,11 +869,11 @@ func TestAccResourceTfExportQueueAsHCL(t *testing.T) {
 			{
 				Config: routingQueue + generateTfExportByName("export",
 					exportTestDir,
-					gcloud.TrueValue,
+					util.TrueValue,
 					[]string{strconv.Quote("genesyscloud_routing_queue::" + queueName)},
 					"",
-					gcloud.TrueValue,
-					gcloud.FalseValue,
+					util.TrueValue,
+					util.FalseValue,
 					[]string{
 						strconv.Quote("genesyscloud_routing_queue." + queueID),
 					},
@@ -863,8 +889,8 @@ func TestAccResourceTfExportQueueAsHCL(t *testing.T) {
 	exportContents = removeTerraformProviderBlock(exportContents)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
-		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				Config: exportContents,
@@ -901,17 +927,17 @@ func TestAccResourceTfExportLogMissingPermissions(t *testing.T) {
 
 	// Checking that the config file is created when the error is 403 & log_permission_errors = true
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
-		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				Config: generateTfExportByName("test-export",
 					exportTestDir,
-					gcloud.FalseValue,
+					util.FalseValue,
 					[]string{strconv.Quote("genesyscloud_quality_forms_evaluation")},
 					"",
-					gcloud.FalseValue,
-					gcloud.TrueValue,
+					util.FalseValue,
+					util.TrueValue,
 					[]string{}),
 				Check: resource.ComposeTestCheckFunc(
 					validateFileCreated(configPath),
@@ -925,17 +951,17 @@ func TestAccResourceTfExportLogMissingPermissions(t *testing.T) {
 	mockError = errors2
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
-		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				Config: generateTfExportByName("test-export",
 					exportTestDir,
-					gcloud.FalseValue,
+					util.FalseValue,
 					[]string{strconv.Quote("genesyscloud_quality_forms_evaluation")},
 					"",
-					gcloud.FalseValue,
-					gcloud.TrueValue,
+					util.FalseValue,
+					util.TrueValue,
 					[]string{}),
 				ExpectError: regexp.MustCompile(otherErrorMessage),
 			},
@@ -945,17 +971,17 @@ func TestAccResourceTfExportLogMissingPermissions(t *testing.T) {
 
 	// Check that info about attr exists in error summary when 403 is found & log_permission_errors = false
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
-		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				Config: generateTfExportByName("test-export",
 					exportTestDir,
-					gcloud.FalseValue,
+					util.FalseValue,
 					[]string{strconv.Quote("genesyscloud_quality_forms_evaluation")},
 					"",
-					gcloud.FalseValue,
-					gcloud.FalseValue,
+					util.FalseValue,
+					util.FalseValue,
 					[]string{}),
 				ExpectError: regexp.MustCompile(logAttrInfo),
 			},
@@ -985,33 +1011,33 @@ func TestAccResourceTfExportUserPromptExportAudioFile(t *testing.T) {
 		exportTestDir    = "../.terraform" + uuid.NewString()
 	)
 
-	userPromptAsset := gcloud.UserPromptResourceStruct{
+	userPromptAsset := userPrompt.UserPromptResourceStruct{
 		Language:        userPromptResourceLanguage,
-		Tts_string:      gcloud.NullValue,
+		Tts_string:      util.NullValue,
 		Text:            strconv.Quote(userPromptResourceText),
 		Filename:        strconv.Quote(userResourcePromptFilename1),
 		FileContentHash: userResourcePromptFilename1,
 	}
 
-	userPromptAsset2 := gcloud.UserPromptResourceStruct{
+	userPromptAsset2 := userPrompt.UserPromptResourceStruct{
 		Language:        userPromptResourceLanguage2,
-		Tts_string:      gcloud.NullValue,
+		Tts_string:      util.NullValue,
 		Text:            strconv.Quote(userPromptResourceText2),
 		Filename:        strconv.Quote(userResourcePromptFilename2),
 		FileContentHash: userResourcePromptFilename2,
 	}
 
-	userPromptResources := []*gcloud.UserPromptResourceStruct{&userPromptAsset}
-	userPromptResources2 := []*gcloud.UserPromptResourceStruct{&userPromptAsset, &userPromptAsset2}
+	userPromptResources := []*userPrompt.UserPromptResourceStruct{&userPromptAsset}
+	userPromptResources2 := []*userPrompt.UserPromptResourceStruct{&userPromptAsset, &userPromptAsset2}
 
 	defer os.RemoveAll(exportTestDir)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
-		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
-				Config: gcloud.GenerateUserPromptResource(&gcloud.UserPromptStruct{
+				Config: userPrompt.GenerateUserPromptResource(&userPrompt.UserPromptStruct{
 					ResourceID:  userPromptResourceId,
 					Name:        userPromptName,
 					Description: strconv.Quote(userPromptDescription),
@@ -1022,15 +1048,15 @@ func TestAccResourceTfExportUserPromptExportAudioFile(t *testing.T) {
 				Config: generateTfExportByName(
 					exportResourceId,
 					exportTestDir,
-					gcloud.FalseValue,
+					util.FalseValue,
 					[]string{strconv.Quote("genesyscloud_architect_user_prompt::" + userPromptName)},
 					"",
-					gcloud.FalseValue,
-					gcloud.FalseValue,
+					util.FalseValue,
+					util.FalseValue,
 					[]string{
 						strconv.Quote("genesyscloud_architect_user_prompt." + userPromptResourceId),
 					},
-				) + gcloud.GenerateUserPromptResource(&gcloud.UserPromptStruct{
+				) + userPrompt.GenerateUserPromptResource(&userPrompt.UserPromptStruct{
 					ResourceID:  userPromptResourceId,
 					Name:        userPromptName,
 					Description: strconv.Quote(userPromptDescription),
@@ -1047,7 +1073,7 @@ func TestAccResourceTfExportUserPromptExportAudioFile(t *testing.T) {
 			},
 			// Update to two resources with separate audio files
 			{
-				Config: gcloud.GenerateUserPromptResource(&gcloud.UserPromptStruct{
+				Config: userPrompt.GenerateUserPromptResource(&userPrompt.UserPromptStruct{
 					ResourceID:  userPromptResourceId,
 					Name:        userPromptName,
 					Description: strconv.Quote(userPromptDescription),
@@ -1058,15 +1084,15 @@ func TestAccResourceTfExportUserPromptExportAudioFile(t *testing.T) {
 				Config: generateTfExportByName(
 					exportResourceId,
 					exportTestDir,
-					gcloud.FalseValue,
+					util.FalseValue,
 					[]string{strconv.Quote("genesyscloud_architect_user_prompt::" + userPromptName)},
 					"",
-					gcloud.FalseValue,
-					gcloud.FalseValue,
+					util.FalseValue,
+					util.FalseValue,
 					[]string{
 						strconv.Quote("genesyscloud_architect_user_prompt." + userPromptResourceId),
 					},
-				) + gcloud.GenerateUserPromptResource(&gcloud.UserPromptStruct{
+				) + userPrompt.GenerateUserPromptResource(&userPrompt.UserPromptStruct{
 					ResourceID:  userPromptResourceId,
 					Name:        userPromptName,
 					Description: strconv.Quote(userPromptDescription),
@@ -1130,14 +1156,14 @@ func TestAccResourceTfExportSplitFilesAsHCL(t *testing.T) {
 		generateTfExportByIncludeFilterResources(
 			exportResource,
 			exportTestDir,
-			gcloud.TrueValue,
+			util.TrueValue,
 			[]string{
 				strconv.Quote("genesyscloud_routing_queue::" + uniquePostfix + "$"),
 				strconv.Quote("genesyscloud_user::" + uniquePostfix + "$"),
 				strconv.Quote("genesyscloud_routing_wrapupcode::" + uniquePostfix + "$"),
 			},
-			gcloud.TrueValue,
-			gcloud.TrueValue,
+			util.TrueValue,
+			util.TrueValue,
 			[]string{
 				strconv.Quote("genesyscloud_routing_queue." + queueResources[0].ResourceName),
 				strconv.Quote("genesyscloud_routing_queue." + queueResources[1].ResourceName),
@@ -1149,8 +1175,8 @@ func TestAccResourceTfExportSplitFilesAsHCL(t *testing.T) {
 		)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
-		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				Config: config,
@@ -1204,14 +1230,14 @@ func TestAccResourceTfExportSplitFilesAsJSON(t *testing.T) {
 		generateTfExportByIncludeFilterResources(
 			exportResource,
 			exportTestDir,
-			gcloud.TrueValue,
+			util.TrueValue,
 			[]string{
 				strconv.Quote("genesyscloud_routing_queue::" + uniquePostfix + "$"),
 				strconv.Quote("genesyscloud_user::" + uniquePostfix + "$"),
 				strconv.Quote("genesyscloud_routing_wrapupcode::" + uniquePostfix + "$"),
 			},
-			gcloud.FalseValue,
-			gcloud.TrueValue,
+			util.FalseValue,
+			util.TrueValue,
 			[]string{
 				strconv.Quote("genesyscloud_routing_queue." + queueResources[0].ResourceName),
 				strconv.Quote("genesyscloud_routing_queue." + queueResources[1].ResourceName),
@@ -1223,8 +1249,8 @@ func TestAccResourceTfExportSplitFilesAsJSON(t *testing.T) {
 		)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
-		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				Config: config,
@@ -1240,8 +1266,323 @@ func TestAccResourceTfExportSplitFilesAsJSON(t *testing.T) {
 	})
 }
 
+// TestAccResourceTfExportCampaignScriptIdReferences exports two campaigns and ensures that the custom revolver OutboundCampaignAgentScriptResolver
+// is working properly i.e. script_id should reference a data source pointing to the Default Outbound Script under particular circumstances
+func TestAccResourceTfExportCampaignScriptIdReferences(t *testing.T) {
+	var (
+		exportTestDir = filepath.Join("..", "..", ".terraform"+uuid.NewString())
+		resourceID    = "export"
+
+		campaignNameDefaultScript       = "tf test df campaign " + uuid.NewString()
+		campaignResourceIdDefaultScript = strings.Replace(campaignNameDefaultScript, " ", "_", -1)
+
+		campaignNameCustomScript       = "tf test ct campaign " + uuid.NewString()
+		campaignResourceIdCustomScript = strings.Replace(campaignNameCustomScript, " ", "_", -1)
+
+		contactListResourceId = "contact_list"
+		contactListName       = "tf test contact list " + uuid.NewString()
+		queueName             = "tf test queue " + uuid.NewString()
+
+		scriptName            = "tf_test_script_" + uuid.NewString()
+		pathToScriptFile      = filepath.Join("..", "..", "test", "data", "resource", "genesyscloud_script", "test_script.json")
+		fullyQualifiedPath, _ = filepath.Abs(pathToScriptFile)
+
+		configPath = filepath.Join(exportTestDir, defaultTfJSONFile)
+	)
+
+	contactListConfig := fmt.Sprintf(`
+resource "genesyscloud_outbound_contact_list" "%s" {
+  name         = "%s"
+  column_names = ["First Name", "Last Name", "Cell", "Home"]
+  phone_columns {
+    column_name = "Cell"
+    type        = "cell"
+  }
+  phone_columns {
+    column_name = "Home"
+    type        = "home"
+  }
+}
+`, contactListResourceId, contactListName)
+
+	remainingConfig := fmt.Sprintf(`
+data "genesyscloud_script" "default" {
+	name = "Default Outbound Script"
+}
+
+resource "genesyscloud_outbound_campaign" "%s" {
+  name            = "%s"
+  queue_id        = "${genesyscloud_routing_queue.queue.id}"
+  caller_address  = "+13335551234"
+  contact_list_id = "${genesyscloud_outbound_contact_list.%s.id}"
+  dialing_mode    = "preview"
+  script_id       = "${data.genesyscloud_script.default.id}"
+  caller_name     = "Callbacks Test Queue 1"
+  division_id     = "${data.genesyscloud_auth_division_home.home.id}"
+  campaign_status = "off"
+  dynamic_contact_queueing_settings {
+    sort = false
+  }
+  phone_columns {
+    column_name = "Cell"
+  }
+}
+
+resource "genesyscloud_outbound_campaign" "%s" {
+  name            = "%s"
+  queue_id        = "${genesyscloud_routing_queue.queue.id}"
+  caller_address  = "+13335551234"
+  contact_list_id = "${genesyscloud_outbound_contact_list.%s.id}"
+  dialing_mode    = "preview"
+  script_id       = "${genesyscloud_script.script.id}"
+  caller_name     = "Callbacks Test Queue 1"
+  division_id     = "${data.genesyscloud_auth_division_home.home.id}"
+  campaign_status = "off"
+  dynamic_contact_queueing_settings {
+    sort = false
+  }
+  phone_columns {
+    column_name = "Cell"
+  }
+}
+
+resource "genesyscloud_script" "script" {
+	script_name       = "%s"
+	filepath          = "%s"
+	file_content_hash = filesha256("%s")	
+}
+
+data "genesyscloud_auth_division_home" "home" {}
+
+resource "genesyscloud_routing_queue" "queue" {
+  name = "%s"
+}
+`, campaignResourceIdDefaultScript,
+		campaignNameDefaultScript,
+		contactListResourceId,
+		campaignResourceIdCustomScript,
+		campaignNameCustomScript,
+		contactListResourceId,
+		scriptName,
+		pathToScriptFile,
+		fullyQualifiedPath,
+		queueName)
+
+	defer func(path string) {
+		if err := os.RemoveAll(path); err != nil {
+			t.Logf("failed to remove dir %s: %s", path, err)
+		}
+	}(exportTestDir)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			{
+				Config: contactListConfig, // need to add contact list first to seed it with contacts before creating the campaigns
+				Check:  addContactsToContactList,
+			},
+			{
+				Config: remainingConfig + contactListConfig,
+			},
+			// Verify script_id fields are resolved properly when include_state_file = false and enable_dependency_resolution = true
+			{
+				Config: remainingConfig + contactListConfig + generateExportResourceIncludeFilterWithEnableDepRes(
+					resourceID,
+					exportTestDir,
+					util.FalseValue, // include_state_file
+					util.FalseValue, // export_as_hcl
+					util.TrueValue,  // enable_dependency_resolution
+					[]string{ // include_filter_resources
+						strconv.Quote("genesyscloud_outbound_campaign::" + campaignNameDefaultScript),
+						strconv.Quote("genesyscloud_outbound_campaign::" + campaignNameCustomScript),
+					},
+					[]string{ // depends_on
+						"genesyscloud_outbound_campaign." + campaignResourceIdDefaultScript,
+						"genesyscloud_outbound_campaign." + campaignResourceIdCustomScript,
+					},
+				),
+				Check: resource.ComposeTestCheckFunc(
+					validateExportedCampaignScriptIds(
+						configPath,
+						campaignResourceIdCustomScript,
+						campaignResourceIdDefaultScript,
+						"${data.genesyscloud_script.Default_Outbound_Script.id}",
+						fmt.Sprintf("${genesyscloud_script.%s.id}", scriptName),
+						true,
+					),
+					validateNumberOfExportedDataSources(configPath),
+				),
+			},
+			// Verify script_id fields are resolved properly when include_state_file = true and enable_dependency_resolution = true
+			{
+				Config: remainingConfig + contactListConfig + generateExportResourceIncludeFilterWithEnableDepRes(
+					resourceID,
+					exportTestDir,
+					util.TrueValue,  // include_state_file
+					util.FalseValue, // export_as_hcl
+					util.TrueValue,  // enable_dependency_resolution
+					[]string{ // include_filter_resources
+						strconv.Quote("genesyscloud_outbound_campaign::" + campaignNameDefaultScript),
+						strconv.Quote("genesyscloud_outbound_campaign::" + campaignNameCustomScript),
+					},
+					[]string{ // depends_on
+						"genesyscloud_outbound_campaign." + campaignResourceIdDefaultScript,
+						"genesyscloud_outbound_campaign." + campaignResourceIdCustomScript,
+					},
+				),
+				Check: resource.ComposeTestCheckFunc(
+					validateExportedCampaignScriptIds(
+						configPath,
+						campaignResourceIdCustomScript,
+						campaignResourceIdDefaultScript,
+						"${data.genesyscloud_script.Default_Outbound_Script.id}",
+						fmt.Sprintf("${genesyscloud_script.%s.id}", scriptName),
+						true,
+					),
+					validateNumberOfExportedDataSources(configPath),
+				),
+			},
+			// Verify script_id fields are resolved properly when include_state_file = true and enable_dependency_resolution = false
+			{
+				Config: remainingConfig + contactListConfig + generateExportResourceIncludeFilterWithEnableDepRes(
+					resourceID,
+					exportTestDir,
+					util.TrueValue,  // include_state_file
+					util.FalseValue, // export_as_hcl
+					util.FalseValue, // enable_dependency_resolution
+					[]string{ // include_filter_resources
+						strconv.Quote("genesyscloud_outbound_campaign::" + campaignNameDefaultScript),
+						strconv.Quote("genesyscloud_outbound_campaign::" + campaignNameCustomScript),
+					},
+					[]string{ // depends_on
+						"genesyscloud_outbound_campaign." + campaignResourceIdDefaultScript,
+						"genesyscloud_outbound_campaign." + campaignResourceIdCustomScript,
+					},
+				),
+				Check: resource.ComposeTestCheckFunc(
+					validateExportedCampaignScriptIds(
+						configPath,
+						campaignResourceIdCustomScript,
+						campaignResourceIdDefaultScript,
+						"${data.genesyscloud_script.Default_Outbound_Script.id}",
+						"",
+						false,
+					),
+					validateNumberOfExportedDataSources(configPath),
+				),
+			},
+		},
+		CheckDestroy: testVerifyExportsDestroyedFunc(exportTestDir),
+	})
+}
+
 func removeTerraformProviderBlock(export string) string {
 	return strings.Replace(export, terraformHCLBlock, "", -1)
+}
+
+// validateExportedCampaignScriptIds loads the exported content and validates that the custom resolver function
+// resolved the script_id attr to the Default Outbound Script data source, and did not affect the campaign with a custom-made script
+func validateExportedCampaignScriptIds(
+	filename,
+	customCampaignResourceId,
+	defaultCampaignResourceId,
+	expectedValueForCampaignWithDefaultScript,
+	expectedValueForCampaignWithCustomScript string,
+	verifyCustomScriptIdValue bool,
+) resource.TestCheckFunc {
+	return func(state *terraform.State) error {
+		_, err := os.Stat(filename)
+		if err != nil {
+			return fmt.Errorf("failed to find file %s", filename)
+		}
+
+		log.Println("Loading export config into map variable")
+		exportData, err := loadJsonFileToMap(filename)
+		if err != nil {
+			return err
+		}
+		log.Println("Successfully loaded export config into map variable")
+
+		if resources, ok := exportData["resource"].(map[string]interface{}); ok {
+			campaigns, ok := resources["genesyscloud_outbound_campaign"].(map[string]interface{})
+			if !ok {
+				return fmt.Errorf("no campaign resources exported")
+			}
+
+			log.Println("Checking that campaign script_id values were resolved as expected")
+
+			customCampaign, ok := campaigns[customCampaignResourceId].(map[string]interface{})
+			if !ok {
+				return fmt.Errorf("campaign with custom script was not exported")
+			}
+
+			if verifyCustomScriptIdValue {
+				customCampaignScriptId, _ := customCampaign["script_id"].(string)
+				if customCampaignScriptId != expectedValueForCampaignWithCustomScript {
+					return fmt.Errorf("expected script ID to be '%s' for campaign with custom script, got '%s'", expectedValueForCampaignWithCustomScript, customCampaignScriptId)
+				}
+			}
+
+			defaultCampaign, ok := campaigns[defaultCampaignResourceId].(map[string]interface{})
+			if !ok {
+				return fmt.Errorf("campaign with Default Outbound Script was not exported")
+			}
+			defaultCampaignScriptId, _ := defaultCampaign["script_id"].(string)
+			if defaultCampaignScriptId != expectedValueForCampaignWithDefaultScript {
+				return fmt.Errorf("expected script ID to be '%s' for campaign with default script, got '%s'", expectedValueForCampaignWithDefaultScript, defaultCampaignScriptId)
+			}
+
+			log.Println("Successfully verified that campaign script_ids were resolved correctly.")
+		}
+
+		return nil
+	}
+}
+
+// validateNumberOfExportedDataSources validates that exactly one script data source is exported
+func validateNumberOfExportedDataSources(filename string) resource.TestCheckFunc {
+	return func(state *terraform.State) error {
+		jsonFile, err := os.Open(filename)
+		if err != nil {
+			return fmt.Errorf("failed to open export file at path %s: %v", filename, err)
+		}
+		defer func(jsonFile *os.File) {
+			_ = jsonFile.Close()
+		}(jsonFile)
+
+		byteValue, err := io.ReadAll(jsonFile)
+		if err != nil {
+			return fmt.Errorf("failed to unmarshal json exportData to map variable: %v", err)
+		}
+
+		exportAsString := fmt.Sprintf("%s", byteValue)
+		numberOfDataSourcesExported := strings.Count(exportAsString, "\"Default_Outbound_Script\"")
+		if numberOfDataSourcesExported != 1 {
+			return fmt.Errorf("expected to find \"Default_Outbound_Script\" once in the exported content (actual %v). It is possible the Default Outbound Script data source is being exported more or less than once", numberOfDataSourcesExported)
+		}
+
+		return nil
+	}
+}
+
+func loadJsonFileToMap(filename string) (map[string]interface{}, error) {
+	var data map[string]interface{}
+
+	jsonFile, err := os.Open(filename)
+	if err != nil {
+		return nil, fmt.Errorf("failed to open export file at path %s: %v", filename, err)
+	}
+	defer func(jsonFile *os.File) {
+		_ = jsonFile.Close()
+	}(jsonFile)
+
+	byteValue, _ := io.ReadAll(jsonFile)
+	if err := json.Unmarshal(byteValue, &data); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal json exportData to map variable: %v", err)
+	}
+
+	return data, nil
 }
 
 func testUserPromptAudioFileExport(filePath, resourceType, resourceId, exportDir, resourceName string) resource.TestCheckFunc {
@@ -1291,7 +1632,7 @@ func TestAccResourceTfExportEnableDependsOn(t *testing.T) {
 		exportTestDir         = "../.terraform" + uuid.NewString()
 		exportResource        = "test-export2"
 		contactListResourceId = "contact_list" + uuid.NewString()
-		contatListname        = "terraform contact list" + uuid.NewString()
+		contactListName       = "terraform contact list" + uuid.NewString()
 		outboundFlowFilePath  = "../../examples/resources/genesyscloud_flow/outboundcall_flow_example.yaml"
 		flowName              = "testflowcxcase"
 		flowResourceId        = "flow"
@@ -1312,25 +1653,25 @@ create_duration = "100s"
 		flowName,
 		"${data.genesyscloud_auth_division_home.home.name}",
 		wrapupcodeResourceId,
-		contatListname,
+		contactListName,
 	) +
 		generateTfExportByFlowDependsOnResources(
 			exportResource,
 			exportTestDir,
-			gcloud.TrueValue,
+			util.TrueValue,
 			[]string{
 				strconv.Quote("genesyscloud_flow::" + flowName),
 			},
-			gcloud.FalseValue,
-			gcloud.FalseValue,
-			gcloud.TrueValue,
+			util.FalseValue,
+			util.FalseValue,
+			util.TrueValue,
 		)
 
 	sanitizer := resourceExporter.NewSanitizerProvider()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
-		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		ExternalProviders: map[string]resource.ExternalProvider{
 			"time": {
 				VersionConstraint: "0.10.0",
@@ -1342,8 +1683,8 @@ create_duration = "100s"
 				Config: config,
 				Check: resource.ComposeTestCheckFunc(
 					validateFlow("genesyscloud_flow."+flowResourceId, flowName),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+contactListResourceId, "name", contatListname),
-					testDependentContactList(exportTestDir+"/"+defaultTfJSONFile, "genesyscloud_outbound_contact_list", sanitizer.S.SanitizeResourceName(contatListname)),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+contactListResourceId, "name", contactListName),
+					testDependentContactList(exportTestDir+"/"+defaultTfJSONFile, "genesyscloud_outbound_contact_list", sanitizer.S.SanitizeResourceName(contactListName)),
 				),
 			},
 		},
@@ -1389,6 +1730,10 @@ func testQueueExportEqual(filePath, resourceType, name string, expectedQueue Que
 			return err
 		}
 
+		if _, ok := raw[name]; !ok {
+			return fmt.Errorf("failed to find resource %s in resource definition", name)
+		}
+
 		var r *json.RawMessage
 		if err := json.Unmarshal(*raw[name], &r); err != nil {
 			return err
@@ -1407,7 +1752,7 @@ func testQueueExportEqual(filePath, resourceType, name string, expectedQueue Que
 	}
 }
 
-// testDependentContactList tests to see if the dependedent conatctListResource for the flow is exported.
+// testDependentContactList tests to see if the dependent contactListResource for the flow is exported.
 func testDependentContactList(filePath, resourceType, name string) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
 
@@ -1625,6 +1970,70 @@ func TestForExportCycles(t *testing.T) {
 	}
 }
 
+func generateExportResourceIncludeFilterWithEnableDepRes(
+	resourceId,
+	directory,
+	includeStateFile,
+	exportAHcl,
+	enableDepRes string,
+	includeResources,
+	dependsOn []string,
+) string {
+	return fmt.Sprintf(`
+resource "genesyscloud_tf_export" "%s" {
+	directory                    = "%s"
+  	include_state_file           = %s
+  	export_as_hcl                = %s
+  	enable_dependency_resolution = %s
+  	include_filter_resources     = [%s]
+    depends_on = [%s]
+}
+`, resourceId, directory, includeStateFile, exportAHcl, enableDepRes, strings.Join(includeResources, ", "), strings.Join(dependsOn, ", "))
+}
+
+func addContactsToContactList(state *terraform.State) error {
+	outboundAPI := platformclientv2.NewOutboundApi()
+	contactListResource := state.RootModule().Resources["genesyscloud_outbound_contact_list.contact_list"]
+	if contactListResource == nil {
+		return fmt.Errorf("genesyscloud_outbound_contact_list.contact_list contactListResource not found in state")
+	}
+
+	contactList, _, err := outboundAPI.GetOutboundContactlist(contactListResource.Primary.ID, false, false)
+	if err != nil {
+		return fmt.Errorf("genesyscloud_outbound_contact_list (%s) not available", contactListResource.Primary.ID)
+	}
+	contactsJSON := `[{
+			"data": {
+			  "First Name": "Asa",
+			  "Last Name": "Acosta",
+			  "Cell": "+13335554",
+			  "Home": "3335552345"
+			},
+			"callable": true,
+			"phoneNumberStatus": {}
+		  },
+		  {
+			"data": {
+			  "First Name": "Leonidas",
+			  "Last Name": "Acosta",
+			  "Cell": "4445551234",
+			  "Home": "4445552345"
+			},
+			"callable": true,
+			"phoneNumberStatus": {}
+		  }]`
+	var contacts []platformclientv2.Writabledialercontact
+	err = json.Unmarshal([]byte(contactsJSON), &contacts)
+	if err != nil {
+		return fmt.Errorf("could not unmarshall JSON contacts to add to contact list")
+	}
+	_, _, err = outboundAPI.PostOutboundContactlistContacts(*contactList.Id, contacts, false, false, false)
+	if err != nil {
+		return fmt.Errorf("could not post contacts to contact list")
+	}
+	return nil
+}
+
 func isIgnoredReferenceCycle(cycle []string) bool {
 	// Some cycles cannot be broken with a schema change and must be dealt with in the config
 	// These cycles can be ignored by this test
@@ -1635,7 +2044,7 @@ func isIgnoredReferenceCycle(cycle []string) bool {
 	}
 
 	for _, ignored := range ignoredCycles {
-		if gcloud.StrArrayEquals(ignored, cycle) {
+		if util.StrArrayEquals(ignored, cycle) {
 			return true
 		}
 	}
@@ -1713,6 +2122,26 @@ func generateTfExportResource(
 	`, resourceID, directory, includeState, excludedAttributes)
 }
 
+func generateTfExportResourceMin(
+	resourceID string,
+	directory string,
+	includeState string,
+	excludedAttributes string) string {
+	return fmt.Sprintf(`resource "genesyscloud_tf_export" "%s" {
+		directory = "%s"
+		include_state_file = %s
+		resource_types = [
+			"genesyscloud_routing_language",
+			"genesyscloud_routing_settings",
+			"genesyscloud_routing_skill",
+			"genesyscloud_routing_utilization",
+			"genesyscloud_routing_wrapupcode",
+		]
+		exclude_attributes = [%s]
+	}
+	`, resourceID, directory, includeState, excludedAttributes)
+}
+
 func generateTfExportByName(
 	resourceID string,
 	directory string,
@@ -1769,7 +2198,7 @@ func generateTfExportByFlowDependsOnResources(
 		include_filter_resources = [%s]
 		export_as_hcl = %s
 		split_files_by_resource = %s
-		enable_flow_depends_on = %s
+		enable_dependency_resolution = %s
 		depends_on = [time_sleep.wait_10_seconds]
 	}
 	`, resourceID, directory, includeState, strings.Join(items, ","), exportAsHCL, splitByResource, dependsOn)
@@ -1839,7 +2268,7 @@ func testVerifyExportsDestroyedFunc(exportTestDir string) resource.TestCheckFunc
 func validateEvaluationFormAttributes(resourceName string, form gcloud.EvaluationFormStruct) resource.TestCheckFunc {
 	return resource.ComposeTestCheckFunc(
 		resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+resourceName, "name", resourceName),
-		resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+resourceName, "published", gcloud.FalseValue),
+		resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+resourceName, "published", util.FalseValue),
 		resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+resourceName, "question_groups.0.name", form.QuestionGroups[0].Name),
 		resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+resourceName, "question_groups.0.weight", fmt.Sprintf("%v", form.QuestionGroups[0].Weight)),
 		resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+resourceName, "question_groups.0.questions.1.text", form.QuestionGroups[0].Questions[1].Text),
@@ -1853,26 +2282,17 @@ func validateEvaluationFormAttributes(resourceName string, form gcloud.Evaluatio
 
 func validateConfigFile(path string) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
-		jsonFile, err := os.Open(path)
-		if err != nil {
-			return err
-		}
-		defer jsonFile.Close()
-
-		byteValue, _ := io.ReadAll(jsonFile)
-
-		var result map[string]interface{}
-		err = json.Unmarshal([]byte(byteValue), &result)
+		result, err := loadJsonFileToMap(path)
 		if err != nil {
 			return err
 		}
 
 		if _, ok := result["resource"]; !ok {
-			return fmt.Errorf("Config file missing resource attribute.")
+			return fmt.Errorf("config file missing resource attribute")
 		}
 
 		if _, ok := result["terraform"]; !ok {
-			return fmt.Errorf("Config file missing terraform attribute.")
+			return fmt.Errorf("config file missing terraform attribute")
 		}
 		return nil
 	}
@@ -1898,19 +2318,20 @@ func validateRoutingRules(resourceName string, ringNum int, operator string, thr
 func buildQueueResources(queueExports []QueueExport) string {
 	queueResourceDefinitions := ""
 	for _, queueExport := range queueExports {
-		queueResourceDefinitions = queueResourceDefinitions + gcloud.GenerateRoutingQueueResource(
+		queueResourceDefinitions = queueResourceDefinitions + routingQueue.GenerateRoutingQueueResource(
 			queueExport.ResourceName,
 			queueExport.Name,
 			queueExport.Description,
-			gcloud.NullValue,                            // MANDATORY_TIMEOUT
+			util.NullValue,                              // MANDATORY_TIMEOUT
 			fmt.Sprintf("%v", queueExport.AcwTimeoutMs), // acw_timeout
-			gcloud.NullValue,                            // ALL
-			gcloud.NullValue,                            // auto_answer_only true
-			gcloud.NullValue,                            // No calling party name
-			gcloud.NullValue,                            // No calling party number
-			gcloud.NullValue,                            // enable_manual_assignment false
-			gcloud.NullValue,                            //suppressCall_record_false
-			gcloud.NullValue,                            // enable_transcription false
+			util.NullValue,                              // ALL
+			util.NullValue,                              // auto_answer_only true
+			util.NullValue,                              // No calling party name
+			util.NullValue,                              // No calling party number
+			util.NullValue,                              // enable_manual_assignment false
+			util.NullValue,                              //suppressCall_record_false
+			util.NullValue,                              // enable_transcription false
+			strconv.Quote("TimestampAndPriority"),
 		)
 	}
 
@@ -1995,13 +2416,13 @@ func GenerateReferencedResourcesForOutboundCampaignTests(
 		contactList = obContactList.GenerateOutboundContactList(
 			contactListResourceId,
 			contatListname,
-			gcloud.NullValue,
+			util.NullValue,
 			strconv.Quote("Cell"),
 			[]string{strconv.Quote("Cell")},
 			[]string{strconv.Quote("Cell"), strconv.Quote("Home"), strconv.Quote("zipcode")},
-			gcloud.FalseValue,
-			gcloud.NullValue,
-			gcloud.NullValue,
+			util.FalseValue,
+			util.NullValue,
+			util.NullValue,
 			obContactList.GeneratePhoneColumnsBlock("Cell", "cell", strconv.Quote("Cell")),
 			obContactList.GeneratePhoneColumnsBlock("Home", "home", strconv.Quote("Home")))
 	}
@@ -2009,12 +2430,12 @@ func GenerateReferencedResourcesForOutboundCampaignTests(
 	callAnalysisResponseSet = gcloud.GenerateRoutingWrapupcodeResource(
 		wrapUpCodeResourceId,
 		"wrapupcode "+uuid.NewString(),
-	) + gcloud.GenerateFlowResource(
+	) + architect_flow.GenerateFlowResource(
 		flowResourceId,
 		outboundFlowFilePath,
 		"",
 		false,
-		gcloud.GenerateSubstitutionsMap(map[string]string{
+		util.GenerateSubstitutionsMap(map[string]string{
 			"flow_name":          flowName,
 			"home_division_name": divisionName,
 			"contact_list_name":  "${genesyscloud_outbound_contact_list." + contactListResourceId + ".name}",
@@ -2032,17 +2453,16 @@ func GenerateReferencedResourcesForOutboundCampaignTests(
 func validateFlow(flowResourceName, name string) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
 		flowResource, ok := state.RootModule().Resources[flowResourceName]
-		fmt.Printf("%v flowResource", flowResource)
 		if !ok {
-			return fmt.Errorf("Failed to find flow %s in state", flowResourceName)
+			return fmt.Errorf("failed to find flow %s in state", flowResourceName)
 		}
 		flowID := flowResource.Primary.ID
 		architectAPI := platformclientv2.NewArchitectApi()
 
+		log.Printf("Reading flow %s", flowID)
 		flow, _, err := architectAPI.GetFlow(flowID, false)
-		fmt.Printf("%v flow", flow)
 		if err != nil {
-			return fmt.Errorf("Unexpected error: %s", err)
+			return fmt.Errorf("unexpected error: %s", err)
 		}
 
 		if flow == nil {
@@ -2050,7 +2470,7 @@ func validateFlow(flowResourceName, name string) resource.TestCheckFunc {
 		}
 
 		if *flow.Name != name {
-			return fmt.Errorf("Returned flow (%s) has incorrect name. Expect: %s, Actual: %s", flowID, name, *flow.Name)
+			return fmt.Errorf("returned flow (%s) has incorrect name. Expect: %s, Actual: %s", flowID, name, *flow.Name)
 		}
 
 		return nil

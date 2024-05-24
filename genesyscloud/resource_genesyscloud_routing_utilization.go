@@ -7,6 +7,9 @@ import (
 	"log"
 	"sort"
 	"strings"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -19,7 +22,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 )
 
 type MediaUtilization struct {
@@ -112,7 +115,7 @@ func getAllRoutingUtilization(_ context.Context, _ *platformclientv2.Configurati
 
 func RoutingUtilizationExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
-		GetResourcesFunc: GetAllWithPooledClient(getAllRoutingUtilization),
+		GetResourcesFunc: provider.GetAllWithPooledClient(getAllRoutingUtilization),
 		RefAttrs:         map[string]*resourceExporter.RefAttrSettings{}, // No references
 		AllowZeroValues:  []string{"maximum_capacity"},
 	}
@@ -122,10 +125,10 @@ func ResourceRoutingUtilization() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud Org-wide Routing Utilization Settings.",
 
-		CreateContext: CreateWithPooledClient(createRoutingUtilization),
-		ReadContext:   ReadWithPooledClient(readRoutingUtilization),
-		UpdateContext: UpdateWithPooledClient(updateRoutingUtilization),
-		DeleteContext: DeleteWithPooledClient(deleteRoutingUtilization),
+		CreateContext: provider.CreateWithPooledClient(createRoutingUtilization),
+		ReadContext:   provider.ReadWithPooledClient(readRoutingUtilization),
+		UpdateContext: provider.UpdateWithPooledClient(updateRoutingUtilization),
+		DeleteContext: provider.DeleteWithPooledClient(deleteRoutingUtilization),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -195,27 +198,26 @@ func createRoutingUtilization(ctx context.Context, d *schema.ResourceData, meta 
 func readRoutingUtilization(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	// Calling the Utilization API directly while the label feature is not available.
 	// Once it is, this code can go back to using platformclientv2's RoutingApi to make the call.
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
 	apiClient := &routingAPI.Configuration.APIClient
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceRoutingSkill(), constants.DefaultConsistencyChecks, "genesyscloud_routing_utilization")
 
 	path := fmt.Sprintf("%s/api/v2/routing/utilization", routingAPI.Configuration.BasePath)
 	headerParams := buildHeaderParams(routingAPI)
 
 	log.Printf("Reading Routing Utilization")
-	return WithRetriesForRead(ctx, d, func() *retry.RetryError {
+	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		response, err := apiClient.CallAPI(path, "GET", nil, headerParams, nil, nil, "", nil)
 		if err != nil {
-			if IsStatus404(response) {
-				return retry.RetryableError(fmt.Errorf("Failed to read Routing Utilization: %s", err))
+			if util.IsStatus404(response) {
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_routing_utilization", fmt.Sprintf("Failed to read Routing Utilization: %s", err), response))
 			}
-			return retry.NonRetryableError(fmt.Errorf("Failed to read Routing Utilization: %s", err))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_routing_utilization", fmt.Sprintf("Failed to read Routing Utilization: %s", err), response))
 		}
 
 		orgUtilization := &OrgUtilizationWithLabels{}
 		err = json.Unmarshal(response.RawBody, &orgUtilization)
-
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceRoutingSkill())
 
 		if orgUtilization.Utilization != nil {
 			for sdkType, schemaType := range utilizationMediaTypes {
@@ -236,12 +238,12 @@ func readRoutingUtilization(ctx context.Context, d *schema.ResourceData, meta in
 		}
 
 		log.Printf("Read Routing Utilization")
-		return cc.CheckState()
+		return cc.CheckState(d)
 	})
 }
 
 func updateRoutingUtilization(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
 
 	var resp *platformclientv2.APIResponse
@@ -252,7 +254,7 @@ func updateRoutingUtilization(ctx context.Context, d *schema.ResourceData, meta 
 	labelUtilizations := d.Get("label_utilizations").([]interface{})
 
 	// Retrying on 409s because if a label is created immediately before the utilization update, it can lead to a conflict while the utilization is being updated to handle the new label.
-	diagErr := RetryWhen(IsStatus409, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+	diagErr := util.RetryWhen(util.IsStatus409, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		// If the resource has label(s), calls the Utilization API directly.
 		// This code can go back to using platformclientv2's RoutingApi to make the call once label utilization is available in platformclientv2's RoutingApi.
 		if labelUtilizations != nil && len(labelUtilizations) > 0 {
@@ -271,7 +273,7 @@ func updateRoutingUtilization(ctx context.Context, d *schema.ResourceData, meta 
 		}
 
 		if err != nil {
-			return resp, diag.Errorf("Failed to update Routing Utilization: %s", err)
+			return resp, util.BuildAPIDiagnosticError("genesyscloud_routing_utilization", fmt.Sprintf("Failed to update Routing Utilization %s error: %s", d.Id(), err), resp)
 		}
 		return resp, nil
 	})
@@ -285,14 +287,14 @@ func updateRoutingUtilization(ctx context.Context, d *schema.ResourceData, meta 
 }
 
 func deleteRoutingUtilization(_ context.Context, _ *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
 
 	// Resets to default values
 	log.Printf("Resetting Routing Utilization")
-	_, err := routingAPI.DeleteRoutingUtilization()
+	resp, err := routingAPI.DeleteRoutingUtilization()
 	if err != nil {
-		return diag.Errorf("Failed to reset Routing Utilization: %s", err)
+		return util.BuildAPIDiagnosticError("genesyscloud_routing_utilization", fmt.Sprintf("Failed to reset Routing Utilization error: %s", err), resp)
 	}
 	log.Printf("Reset Routing Utilization")
 	return nil

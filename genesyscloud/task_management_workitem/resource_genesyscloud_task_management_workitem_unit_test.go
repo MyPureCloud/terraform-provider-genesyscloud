@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 	"time"
 
@@ -11,11 +13,10 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/stretchr/testify/assert"
 
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 )
 
 var (
@@ -52,7 +53,7 @@ func TestUnitResourceWorkitemCreate(t *testing.T) {
 	wi := utWorkitemConfig
 
 	taskProxy := &taskManagementWorkitemProxy{}
-	taskProxy.getTaskManagementWorkitemByIdAttr = func(ctx context.Context, p *taskManagementWorkitemProxy, id string) (*platformclientv2.Workitem, int, error) {
+	taskProxy.getTaskManagementWorkitemByIdAttr = func(ctx context.Context, p *taskManagementWorkitemProxy, id string) (*platformclientv2.Workitem, *platformclientv2.APIResponse, error) {
 		assert.Equal(t, tId, id)
 
 		dateDueTime, err := time.Parse(resourcedata.TimeParseFormat, wi.date_due)
@@ -128,10 +129,10 @@ func TestUnitResourceWorkitemCreate(t *testing.T) {
 			},
 		}
 
-		return workitem, http.StatusOK, nil
+		return workitem, nil, nil
 	}
 
-	taskProxy.createTaskManagementWorkitemAttr = func(ctx context.Context, p *taskManagementWorkitemProxy, workitem *platformclientv2.Workitemcreate) (*platformclientv2.Workitem, error) {
+	taskProxy.createTaskManagementWorkitemAttr = func(ctx context.Context, p *taskManagementWorkitemProxy, workitem *platformclientv2.Workitemcreate) (*platformclientv2.Workitem, *platformclientv2.APIResponse, error) {
 		assert.Equal(t, wi.name, *workitem.Name, "Name check failed in create createTaskManagementWorkitemAttr")
 		assert.Equal(t, wi.worktype_id, *workitem.TypeId, "TypeId check failed in create createTaskManagementWorkitemAttr")
 		assert.Equal(t, wi.description, *workitem.Description, "Description check failed in create createTaskManagementWorkitemAttr")
@@ -152,7 +153,7 @@ func TestUnitResourceWorkitemCreate(t *testing.T) {
 		assert.Equal(t, wi.auto_status_transition, *workitem.AutoStatusTransition, "AutoStatusTransition check failed in create createTaskManagementWorkitemAttr")
 		assert.ElementsMatch(t, wi.scored_agents, apiScoredAgentReqToScoredAgentConfig(workitem.ScoredAgents), "ScoredAgents check failed in create createTaskManagementWorkitemAttr")
 
-		cfjson, err := gcloud.MapToJson(workitem.CustomFields)
+		cfjson, err := util.MapToJson(workitem.CustomFields)
 		if err != nil {
 			assert.Fail(t, "Failed to parse CustomFields: %v", err)
 		}
@@ -162,14 +163,14 @@ func TestUnitResourceWorkitemCreate(t *testing.T) {
 
 		return &platformclientv2.Workitem{
 			Id: &tId,
-		}, nil
+		}, nil, nil
 	}
 
 	internalProxy = taskProxy
 	defer func() { internalProxy = nil }()
 
 	ctx := context.Background()
-	gcloud := &gcloud.ProviderMeta{ClientConfig: &platformclientv2.Configuration{}}
+	gcloud := &provider.ProviderMeta{ClientConfig: &platformclientv2.Configuration{}}
 
 	//Grab our defined schema
 	resourceSchema := ResourceTaskManagementWorkitem().Schema
@@ -192,7 +193,7 @@ func TestUnitResourceWorkitemRead(t *testing.T) {
 
 	taskProxy := &taskManagementWorkitemProxy{}
 
-	taskProxy.getTaskManagementWorkitemByIdAttr = func(ctx context.Context, p *taskManagementWorkitemProxy, id string) (*platformclientv2.Workitem, int, error) {
+	taskProxy.getTaskManagementWorkitemByIdAttr = func(ctx context.Context, p *taskManagementWorkitemProxy, id string) (*platformclientv2.Workitem, *platformclientv2.APIResponse, error) {
 		assert.Equal(t, tId, id)
 
 		dateDueTime, err := time.Parse(resourcedata.TimeParseFormat, wi.date_due)
@@ -268,14 +269,14 @@ func TestUnitResourceWorkitemRead(t *testing.T) {
 			},
 		}
 
-		return workitem, http.StatusOK, nil
+		return workitem, nil, nil
 	}
 
 	internalProxy = taskProxy
 	defer func() { internalProxy = nil }()
 
 	ctx := context.Background()
-	gcloud := &gcloud.ProviderMeta{ClientConfig: &platformclientv2.Configuration{}}
+	gcloud := &provider.ProviderMeta{ClientConfig: &platformclientv2.Configuration{}}
 
 	//Grab our defined schema
 	resourceSchema := ResourceTaskManagementWorkitem().Schema
@@ -323,7 +324,7 @@ func TestUnitResourceWorkitemUpdate(t *testing.T) {
 
 	taskProxy := &taskManagementWorkitemProxy{}
 
-	taskProxy.updateTaskManagementWorkitemAttr = func(ctx context.Context, p *taskManagementWorkitemProxy, id string, workitem *platformclientv2.Workitemupdate) (*platformclientv2.Workitem, error) {
+	taskProxy.updateTaskManagementWorkitemAttr = func(ctx context.Context, p *taskManagementWorkitemProxy, id string, workitem *platformclientv2.Workitemupdate) (*platformclientv2.Workitem, *platformclientv2.APIResponse, error) {
 		assert.Equal(t, wi.name, *workitem.Name, "Name check failed in create updateTaskManagementWorktypeAttr")
 		assert.Equal(t, wi.description, *workitem.Description, "Description check failed in create updateTaskManagementWorktypeAttr")
 		assert.Equal(t, wi.language_id, *workitem.LanguageId, "LanguageId check failed in create updateTaskManagementWorktypeAttr")
@@ -343,7 +344,7 @@ func TestUnitResourceWorkitemUpdate(t *testing.T) {
 		assert.Equal(t, wi.auto_status_transition, *workitem.AutoStatusTransition, "AutoStatusTransition check failed in create updateTaskManagementWorktypeAttr")
 		assert.ElementsMatch(t, wi.scored_agents, apiScoredAgentReqToScoredAgentConfig(workitem.ScoredAgents), "ScoredAgents check failed in create updateTaskManagementWorktypeAttr")
 
-		cfjson, err := gcloud.MapToJson(workitem.CustomFields)
+		cfjson, err := util.MapToJson(workitem.CustomFields)
 		if err != nil {
 			assert.Fail(t, "Failed to parse CustomFields: %v", err)
 		}
@@ -353,10 +354,10 @@ func TestUnitResourceWorkitemUpdate(t *testing.T) {
 
 		return &platformclientv2.Workitem{
 			Id: &tId,
-		}, nil
+		}, nil, nil
 	}
 
-	taskProxy.getTaskManagementWorkitemByIdAttr = func(ctx context.Context, p *taskManagementWorkitemProxy, id string) (*platformclientv2.Workitem, int, error) {
+	taskProxy.getTaskManagementWorkitemByIdAttr = func(ctx context.Context, p *taskManagementWorkitemProxy, id string) (*platformclientv2.Workitem, *platformclientv2.APIResponse, error) {
 		assert.Equal(t, tId, id)
 
 		dateDueTime, err := time.Parse(resourcedata.TimeParseFormat, wi.date_due)
@@ -432,14 +433,14 @@ func TestUnitResourceWorkitemUpdate(t *testing.T) {
 			},
 		}
 
-		return workitem, http.StatusOK, nil
+		return workitem, nil, nil
 	}
 
 	internalProxy = taskProxy
 	defer func() { internalProxy = nil }()
 
 	ctx := context.Background()
-	gcloud := &gcloud.ProviderMeta{ClientConfig: &platformclientv2.Configuration{}}
+	gcloud := &provider.ProviderMeta{ClientConfig: &platformclientv2.Configuration{}}
 
 	//Grab our defined schema
 	resourceSchema := ResourceTaskManagementWorkitem().Schema
@@ -462,24 +463,25 @@ func TestUnitResourceWorkitemDelete(t *testing.T) {
 
 	taskProxy := &taskManagementWorkitemProxy{}
 
-	taskProxy.deleteTaskManagementWorkitemAttr = func(ctx context.Context, p *taskManagementWorkitemProxy, id string) (responseCode int, err error) {
+	taskProxy.deleteTaskManagementWorkitemAttr = func(ctx context.Context, p *taskManagementWorkitemProxy, id string) (resp *platformclientv2.APIResponse, err error) {
 		assert.Equal(t, tId, id)
 
 		apiResponse := &platformclientv2.APIResponse{StatusCode: http.StatusNoContent}
-		return apiResponse.StatusCode, nil
+		return apiResponse, nil
 	}
 
-	taskProxy.getTaskManagementWorkitemByIdAttr = func(ctx context.Context, p *taskManagementWorkitemProxy, id string) (workitem *platformclientv2.Workitem, responseCode int, err error) {
+	taskProxy.getTaskManagementWorkitemByIdAttr = func(ctx context.Context, p *taskManagementWorkitemProxy, id string) (workitem *platformclientv2.Workitem, resp *platformclientv2.APIResponse, err error) {
 		assert.Equal(t, tId, id)
+		apiResponse := &platformclientv2.APIResponse{StatusCode: http.StatusNotFound}
 
-		return nil, http.StatusNotFound, fmt.Errorf("not found")
+		return nil, apiResponse, fmt.Errorf("not found")
 	}
 
 	internalProxy = taskProxy
 	defer func() { internalProxy = nil }()
 
 	ctx := context.Background()
-	gcloud := &gcloud.ProviderMeta{ClientConfig: &platformclientv2.Configuration{}}
+	gcloud := &provider.ProviderMeta{ClientConfig: &platformclientv2.Configuration{}}
 
 	//Grab our defined schema
 	resourceSchema := ResourceTaskManagementWorkitem().Schema
@@ -561,5 +563,5 @@ func timePtr(t time.Time) *time.Time {
 	return &t
 }
 func equivalentJsons(json1, json2 string) bool {
-	return gcloud.EquivalentJsons(json1, json2)
+	return util.EquivalentJsons(json1, json2)
 }

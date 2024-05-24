@@ -2,23 +2,25 @@ package architect_grammar
 
 import (
 	"fmt"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
+	"testing"
+
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
-	"testing"
 )
 
 func TestAccDataSourceArchitectGrammar(t *testing.T) {
 	var (
 		grammarResource = "grammar-resource"
 		grammarData     = "grammar-data"
-		name            = "Grammar" + uuid.NewString()
+		name            = "GrammarArchitect" + uuid.NewString()
 		description     = "Sample description"
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
-		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				Config: GenerateGrammarResource(

@@ -2,12 +2,14 @@ package genesyscloud
 
 import (
 	"fmt"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 )
 
 func TestAccResourceRoutingLanguageBasic(t *testing.T) {
@@ -17,8 +19,8 @@ func TestAccResourceRoutingLanguageBasic(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Create
@@ -55,7 +57,7 @@ func ValidateLanguagesDestroyed(state *terraform.State) error {
 				continue
 			}
 			return fmt.Errorf("Language (%s) still exists", rs.Primary.ID)
-		} else if IsStatus404(resp) {
+		} else if util.IsStatus404(resp) {
 			// Language not found as expected
 			continue
 		} else {

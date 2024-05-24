@@ -1,11 +1,12 @@
 package architect_datatable
 
 import (
+	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"sort"
 	"strconv"
-	"terraform-provider-genesyscloud/genesyscloud"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 )
 
 func buildSdkDatatableSchema(d *schema.ResourceData) (*Jsonschemadocument, diag.Diagnostics) {
@@ -72,7 +73,7 @@ func buildSdkDatatableProperties(d *schema.ResourceData) (*map[string]Datatablep
 					case "number":
 						defaultVal, err = strconv.ParseFloat(def, 64)
 					default:
-						return nil, diag.Errorf("Invalid type %s for Datatable property %s", propType, propName)
+						return nil, util.BuildDiagnosticError(resourceName, fmt.Sprintf("Invalid type %s for Datatable property %s", propType, propName), fmt.Errorf("invalid type for Datatable property"))
 					}
 					if err != nil {
 						return nil, diag.FromErr(err)
@@ -123,7 +124,7 @@ func flattenDatatableProperties(properties map[string]Datatableproperty) []inter
 			propMap["title"] = *propKV.Value.Title
 		}
 		if propKV.Value.Default != nil {
-			propMap["default"] = genesyscloud.InterfaceToString(*propKV.Value.Default)
+			propMap["default"] = util.InterfaceToString(*propKV.Value.Default)
 		}
 		configProps = append(configProps, propMap)
 	}

@@ -3,11 +3,13 @@ package genesyscloud
 import (
 	"fmt"
 	"strconv"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 )
 
 func TestAccResourceIdpOkta(t *testing.T) {
@@ -17,86 +19,86 @@ func TestAccResourceIdpOkta(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Create
 				Config: generateIdpOktaResource(
-					GenerateStringArray(strconv.Quote(testCert1)),
+					util.GenerateStringArray(strconv.Quote(util.TestCert1)),
 					uri1,
 					uri2,
-					NullValue, // Not disabled
+					util.NullValue, // Not disabled
 				),
 				Check: resource.ComposeTestCheckFunc(
-					ValidateStringInArray("genesyscloud_idp_okta.okta", "certificates", testCert1),
+					util.ValidateStringInArray("genesyscloud_idp_okta.okta", "certificates", util.TestCert1),
 					resource.TestCheckResourceAttr("genesyscloud_idp_okta.okta", "issuer_uri", uri1),
 					resource.TestCheckResourceAttr("genesyscloud_idp_okta.okta", "target_uri", uri2),
-					resource.TestCheckResourceAttr("genesyscloud_idp_okta.okta", "disabled", FalseValue),
+					resource.TestCheckResourceAttr("genesyscloud_idp_okta.okta", "disabled", util.FalseValue),
 				),
 			},
 			{
 				// Update with new values
 				Config: generateIdpOktaResource(
-					GenerateStringArray(strconv.Quote(testCert2)),
+					util.GenerateStringArray(strconv.Quote(util.TestCert2)),
 					uri2,
 					uri1,
-					TrueValue, // disabled
+					util.TrueValue, // disabled
 				),
 				Check: resource.ComposeTestCheckFunc(
-					ValidateStringInArray("genesyscloud_idp_okta.okta", "certificates", testCert2),
+					util.ValidateStringInArray("genesyscloud_idp_okta.okta", "certificates", util.TestCert2),
 					resource.TestCheckResourceAttr("genesyscloud_idp_okta.okta", "issuer_uri", uri2),
 					resource.TestCheckResourceAttr("genesyscloud_idp_okta.okta", "target_uri", uri1),
-					resource.TestCheckResourceAttr("genesyscloud_idp_okta.okta", "disabled", TrueValue),
+					resource.TestCheckResourceAttr("genesyscloud_idp_okta.okta", "disabled", util.TrueValue),
 				),
 			},
 			{
 				// Update with multiple certs
 				Config: generateIdpOktaResource(
-					GenerateStringArray(strconv.Quote(testCert1), strconv.Quote(testCert2)),
+					util.GenerateStringArray(strconv.Quote(util.TestCert1), strconv.Quote(util.TestCert2)),
 					uri2,
 					uri1,
-					FalseValue, // disabled
+					util.FalseValue, // disabled
 				),
 				Check: resource.ComposeTestCheckFunc(
-					ValidateStringInArray("genesyscloud_idp_okta.okta", "certificates", testCert1),
-					ValidateStringInArray("genesyscloud_idp_okta.okta", "certificates", testCert2),
+					util.ValidateStringInArray("genesyscloud_idp_okta.okta", "certificates", util.TestCert1),
+					util.ValidateStringInArray("genesyscloud_idp_okta.okta", "certificates", util.TestCert2),
 					resource.TestCheckResourceAttr("genesyscloud_idp_okta.okta", "issuer_uri", uri2),
 					resource.TestCheckResourceAttr("genesyscloud_idp_okta.okta", "target_uri", uri1),
-					resource.TestCheckResourceAttr("genesyscloud_idp_okta.okta", "disabled", FalseValue),
+					resource.TestCheckResourceAttr("genesyscloud_idp_okta.okta", "disabled", util.FalseValue),
 				),
 			},
 			{
 				// Update to one cert in array
 				Config: generateIdpOktaResource(
-					GenerateStringArray(strconv.Quote(testCert1)),
+					util.GenerateStringArray(strconv.Quote(util.TestCert1)),
 					uri2,
 					uri1,
-					FalseValue, // disabled
+					util.FalseValue, // disabled
 				),
 				Check: resource.ComposeTestCheckFunc(
-					ValidateStringInArray("genesyscloud_idp_okta.okta", "certificates", testCert1),
+					util.ValidateStringInArray("genesyscloud_idp_okta.okta", "certificates", util.TestCert1),
 					resource.TestCheckResourceAttr("genesyscloud_idp_okta.okta", "certificates.#", "1"),
 					resource.TestCheckResourceAttr("genesyscloud_idp_okta.okta", "issuer_uri", uri2),
 					resource.TestCheckResourceAttr("genesyscloud_idp_okta.okta", "target_uri", uri1),
-					resource.TestCheckResourceAttr("genesyscloud_idp_okta.okta", "disabled", FalseValue),
+					resource.TestCheckResourceAttr("genesyscloud_idp_okta.okta", "disabled", util.FalseValue),
 				),
 			},
 			{
 				// Update back to two certs in array
 				Config: generateIdpOktaResource(
-					GenerateStringArray(strconv.Quote(testCert1), strconv.Quote(testCert2)),
+					util.GenerateStringArray(strconv.Quote(util.TestCert1), strconv.Quote(util.TestCert2)),
 					uri2,
 					uri1,
-					FalseValue, // disabled
+					util.FalseValue, // disabled
 				),
 				Check: resource.ComposeTestCheckFunc(
-					ValidateStringInArray("genesyscloud_idp_okta.okta", "certificates", testCert1),
-					ValidateStringInArray("genesyscloud_idp_okta.okta", "certificates", testCert2),
+					util.ValidateStringInArray("genesyscloud_idp_okta.okta", "certificates", util.TestCert1),
+					util.ValidateStringInArray("genesyscloud_idp_okta.okta", "certificates", util.TestCert2),
 					resource.TestCheckResourceAttr("genesyscloud_idp_okta.okta", "certificates.#", "2"),
 					resource.TestCheckResourceAttr("genesyscloud_idp_okta.okta", "issuer_uri", uri2),
 					resource.TestCheckResourceAttr("genesyscloud_idp_okta.okta", "target_uri", uri1),
-					resource.TestCheckResourceAttr("genesyscloud_idp_okta.okta", "disabled", FalseValue),
+					resource.TestCheckResourceAttr("genesyscloud_idp_okta.okta", "disabled", util.FalseValue),
 				),
 			},
 			{
@@ -134,7 +136,7 @@ func testVerifyIdpOktaDestroyed(state *terraform.State) error {
 		okta, resp, err := idpAPI.GetIdentityprovidersOkta()
 		if okta != nil {
 			return fmt.Errorf("Okta still exists")
-		} else if IsStatus404(resp) {
+		} else if util.IsStatus404(resp) {
 			// Okta not found as expected
 			continue
 		} else {

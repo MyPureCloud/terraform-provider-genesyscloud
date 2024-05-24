@@ -3,6 +3,8 @@ package telephony_providers_edges_phone
 import (
 	"fmt"
 	"strconv"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
@@ -38,21 +40,21 @@ func TestAccDataSourcePhone(t *testing.T) {
 	}
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
-		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				Config: gcloud.GenerateUserResource(
 					userRes1,
 					userEmail1,
 					userName1,
-					gcloud.NullValue, // Defaults to active
+					util.NullValue, // Defaults to active
 					strconv.Quote(userTitle),
 					strconv.Quote(userDepartment),
-					gcloud.NullValue, // No manager
-					gcloud.NullValue, // Default acdAutoAnswer
-					"",               // No profile skills
-					"",               // No certs
+					util.NullValue, // No manager
+					util.NullValue, // Default acdAutoAnswer
+					"",             // No profile skills
+					"",             // No certs
 				) + phoneBaseSettings.GeneratePhoneBaseSettingsResourceWithCustomAttrs(
 					phoneBaseSettingsRes,
 					phoneBaseSettingsName,
@@ -78,7 +80,7 @@ func TestAccDataSourcePhone(t *testing.T) {
 						true,
 						"mac",
 						[]string{strconv.Quote("audio/opus")},
-					),
+					), generatePhoneProperties(uuid.NewString()),
 				) + generatePhoneDataSource(
 					phoneDataRes,
 					name1,

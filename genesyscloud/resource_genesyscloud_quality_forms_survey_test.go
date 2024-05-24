@@ -3,12 +3,14 @@ package genesyscloud
 import (
 	"fmt"
 	"strconv"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 )
 
 func TestAccResourceSurveyFormBasic(t *testing.T) {
@@ -86,15 +88,15 @@ func TestAccResourceSurveyFormBasic(t *testing.T) {
 	surveyForm3.Published = true
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Create
 				Config: GenerateSurveyFormResource(formResource1, &surveyForm1),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_quality_forms_survey."+formResource1, "name", surveyForm1.Name),
-					resource.TestCheckResourceAttr("genesyscloud_quality_forms_survey."+formResource1, "published", FalseValue),
+					resource.TestCheckResourceAttr("genesyscloud_quality_forms_survey."+formResource1, "published", util.FalseValue),
 					resource.TestCheckResourceAttr("genesyscloud_quality_forms_survey."+formResource1, "question_groups.0.name", surveyForm1.QuestionGroups[0].Name),
 					resource.TestCheckResourceAttr("genesyscloud_quality_forms_survey."+formResource1, "question_groups.#", fmt.Sprint(len(surveyForm1.QuestionGroups))),
 					resource.TestCheckResourceAttr("genesyscloud_quality_forms_survey."+formResource1, "question_groups.0.questions.0.text", surveyForm1.QuestionGroups[0].Questions[0].Text),
@@ -106,7 +108,7 @@ func TestAccResourceSurveyFormBasic(t *testing.T) {
 				Config: GenerateSurveyFormResource(formResource1, &surveyForm2),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_quality_forms_survey."+formResource1, "name", surveyForm2.Name),
-					resource.TestCheckResourceAttr("genesyscloud_quality_forms_survey."+formResource1, "published", FalseValue),
+					resource.TestCheckResourceAttr("genesyscloud_quality_forms_survey."+formResource1, "published", util.FalseValue),
 					resource.TestCheckResourceAttr("genesyscloud_quality_forms_survey."+formResource1, "question_groups.0.name", surveyForm2.QuestionGroups[0].Name),
 					resource.TestCheckResourceAttr("genesyscloud_quality_forms_survey."+formResource1, "question_groups.#", fmt.Sprint(len(surveyForm2.QuestionGroups))),
 					resource.TestCheckResourceAttr("genesyscloud_quality_forms_survey."+formResource1, "question_groups.0.questions.0.text", surveyForm2.QuestionGroups[0].Questions[0].Text),
@@ -122,7 +124,7 @@ func TestAccResourceSurveyFormBasic(t *testing.T) {
 				Config: GenerateSurveyFormResource(formResource1, &surveyForm3),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_quality_forms_survey."+formResource1, "name", surveyForm3.Name),
-					resource.TestCheckResourceAttr("genesyscloud_quality_forms_survey."+formResource1, "published", TrueValue),
+					resource.TestCheckResourceAttr("genesyscloud_quality_forms_survey."+formResource1, "published", util.TrueValue),
 					resource.TestCheckResourceAttr("genesyscloud_quality_forms_survey."+formResource1, "question_groups.0.name", surveyForm3.QuestionGroups[0].Name),
 					resource.TestCheckResourceAttr("genesyscloud_quality_forms_survey."+formResource1, "question_groups.#", fmt.Sprint(len(surveyForm3.QuestionGroups))),
 					resource.TestCheckResourceAttr("genesyscloud_quality_forms_survey."+formResource1, "question_groups.0.questions.0.text", surveyForm3.QuestionGroups[0].Questions[0].Text),
@@ -213,15 +215,15 @@ func TestAccResourceSurveyFormComplete(t *testing.T) {
 	}
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Create
 				Config: GenerateSurveyFormResource(formResource1, &surveyForm1),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_quality_forms_survey."+formResource1, "name", surveyForm1.Name),
-					resource.TestCheckResourceAttr("genesyscloud_quality_forms_survey."+formResource1, "published", FalseValue),
+					resource.TestCheckResourceAttr("genesyscloud_quality_forms_survey."+formResource1, "published", util.FalseValue),
 					resource.TestCheckResourceAttr("genesyscloud_quality_forms_survey."+formResource1, "question_groups.0.name", surveyForm1.QuestionGroups[0].Name),
 					resource.TestCheckResourceAttr("genesyscloud_quality_forms_survey."+formResource1, "question_groups.0.na_enabled", strconv.FormatBool(surveyForm1.QuestionGroups[0].NaEnabled)),
 					resource.TestCheckResourceAttr("genesyscloud_quality_forms_survey."+formResource1, "question_groups.1.visibility_condition.0.combining_operation", surveyForm1.QuestionGroups[1].VisibilityCondition.CombiningOperation),
@@ -284,28 +286,28 @@ func TestAccResourceSurveyFormRepublishing(t *testing.T) {
 	surveyForm2.Published = false
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Publish form on creation
 				Config: GenerateSurveyFormResource(formResource1, &surveyForm1),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_quality_forms_survey."+formResource1, "published", TrueValue),
+					resource.TestCheckResourceAttr("genesyscloud_quality_forms_survey."+formResource1, "published", util.TrueValue),
 				),
 			},
 			{
 				// Unpublish
 				Config: GenerateSurveyFormResource(formResource1, &surveyForm2),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_quality_forms_survey."+formResource1, "published", FalseValue),
+					resource.TestCheckResourceAttr("genesyscloud_quality_forms_survey."+formResource1, "published", util.FalseValue),
 				),
 			},
 			{
 				// republish
 				Config: GenerateSurveyFormResource(formResource1, &surveyForm1),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_quality_forms_survey."+formResource1, "published", TrueValue),
+					resource.TestCheckResourceAttr("genesyscloud_quality_forms_survey."+formResource1, "published", util.TrueValue),
 				),
 			},
 			{
@@ -335,7 +337,7 @@ func testVerifySurveyFormDestroyed(state *terraform.State) error {
 			return fmt.Errorf("Survey form (%s) still exists", rs.Primary.ID)
 		}
 
-		if IsStatus404(resp) {
+		if util.IsStatus404(resp) {
 			// Survey form not found as expected
 			continue
 		}

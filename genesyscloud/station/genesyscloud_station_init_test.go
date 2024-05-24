@@ -1,10 +1,12 @@
 package station
 
 import (
-	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
 	"log"
 	"sync"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"testing"
+
+	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	edgePhone "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_phone"
@@ -55,7 +57,7 @@ func (r *registerTestInstance) registerTestDataSources() {
 
 // initTestResources initializes all test resources and data sources.
 func initTestResources() {
-	sdkConfig, authErr = gcloud.AuthorizeSdk()
+	sdkConfig, authErr = provider.AuthorizeSdk()
 	if authErr != nil {
 		log.Fatal(authErr)
 	}

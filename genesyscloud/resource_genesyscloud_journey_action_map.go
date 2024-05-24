@@ -4,6 +4,10 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
+	"terraform-provider-genesyscloud/genesyscloud/validators"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -21,7 +25,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 )
 
 var (
@@ -99,13 +103,13 @@ var (
 			Description:      "Timestamp at which the action map is scheduled to start firing. Date time is represented as an ISO-8601 string without a timezone. For example: 2006-01-02T15:04:05.000000.",
 			Type:             schema.TypeString,
 			Required:         true, // Now is the default value for this field. Better to make it required.
-			ValidateDiagFunc: ValidateLocalDateTimes,
+			ValidateDiagFunc: validators.ValidateLocalDateTimes,
 		},
 		"end_date": {
 			Description:      "Timestamp at which the action map is scheduled to stop firing. Date time is represented as an ISO-8601 string without a timezone. For example: 2006-01-02T15:04:05.000000.",
 			Type:             schema.TypeString,
 			Optional:         true,
-			ValidateDiagFunc: ValidateLocalDateTimes,
+			ValidateDiagFunc: validators.ValidateLocalDateTimes,
 		},
 	}
 
@@ -315,7 +319,7 @@ var (
 				Description:      "Custom fields defined in the schema referenced by the open action type selected.",
 				Type:             schema.TypeString,
 				Optional:         true,
-				DiffSuppressFunc: SuppressEquivalentJsonDiffs,
+				DiffSuppressFunc: util.SuppressEquivalentJsonDiffs,
 			},
 		},
 	}
@@ -358,9 +362,9 @@ func getAllJourneyActionMaps(_ context.Context, clientConfig *platformclientv2.C
 	pageCount := 1 // Needed because of broken journey common paging
 	for pageNum := 1; pageNum <= pageCount; pageNum++ {
 		const pageSize = 100
-		actionMaps, _, getErr := journeyApi.GetJourneyActionmaps(pageNum, pageSize, "", "", "", nil, nil, "")
+		actionMaps, resp, getErr := journeyApi.GetJourneyActionmaps(pageNum, pageSize, "", "", "", nil, nil, "")
 		if getErr != nil {
-			return nil, diag.Errorf("Failed to get page of journey action maps: %v", getErr)
+			return nil, util.BuildAPIDiagnosticError("genesyscloud_journey_action_map", fmt.Sprintf("failed to get page of journey action maps error: %s", getErr), resp)
 		}
 
 		if actionMaps.Entities == nil || len(*actionMaps.Entities) == 0 {
@@ -379,7 +383,7 @@ func getAllJourneyActionMaps(_ context.Context, clientConfig *platformclientv2.C
 
 func JourneyActionMapExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
-		GetResourcesFunc: GetAllWithPooledClient(getAllJourneyActionMaps),
+		GetResourcesFunc: provider.GetAllWithPooledClient(getAllJourneyActionMaps),
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			"trigger_with_segments":                                             {RefType: "genesyscloud_journey_segment"},
 			"trigger_with_outcome_probability_conditions.outcome_id":            {RefType: "genesyscloud_journey_outcome"},
@@ -394,10 +398,10 @@ func JourneyActionMapExporter() *resourceExporter.ResourceExporter {
 func ResourceJourneyActionMap() *schema.Resource {
 	return &schema.Resource{
 		Description:   "Genesys Cloud Journey Action Map",
-		CreateContext: CreateWithPooledClient(createJourneyActionMap),
-		ReadContext:   ReadWithPooledClient(readJourneyActionMap),
-		UpdateContext: UpdateWithPooledClient(updateJourneyActionMap),
-		DeleteContext: DeleteWithPooledClient(deleteJourneyActionMap),
+		CreateContext: provider.CreateWithPooledClient(createJourneyActionMap),
+		ReadContext:   provider.ReadWithPooledClient(readJourneyActionMap),
+		UpdateContext: provider.UpdateWithPooledClient(updateJourneyActionMap),
+		DeleteContext: provider.DeleteWithPooledClient(deleteJourneyActionMap),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -407,15 +411,15 @@ func ResourceJourneyActionMap() *schema.Resource {
 }
 
 func createJourneyActionMap(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	journeyApi := platformclientv2.NewJourneyApiWithConfig(sdkConfig)
 	actionMap := buildSdkActionMap(d)
 
 	log.Printf("Creating journey action map %s", *actionMap.DisplayName)
 	result, resp, err := journeyApi.PostJourneyActionmaps(*actionMap)
 	if err != nil {
-		input, _ := InterfaceToJson(*actionMap)
-		return diag.Errorf("failed to create journey action map %s: %s\n(input: %+v)\n(resp: %s)", *actionMap.DisplayName, err, input, GetBody(resp))
+		input, _ := util.InterfaceToJson(*actionMap)
+		return util.BuildAPIDiagnosticError("genesyscloud_journey_action_map", fmt.Sprintf("failed to create journey action map %s: %s\n(input: %+v)", *actionMap.DisplayName, err, input), resp)
 	}
 
 	d.SetId(*result.Id)
@@ -425,45 +429,45 @@ func createJourneyActionMap(ctx context.Context, d *schema.ResourceData, meta in
 }
 
 func readJourneyActionMap(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	journeyApi := platformclientv2.NewJourneyApiWithConfig(sdkConfig)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceJourneyActionMap(), constants.DefaultConsistencyChecks, "genesyscloud_journey_action_map")
 
 	log.Printf("Reading journey action map %s", d.Id())
-	return WithRetriesForRead(ctx, d, func() *retry.RetryError {
+	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		actionMap, resp, getErr := journeyApi.GetJourneyActionmap(d.Id())
 		if getErr != nil {
-			if IsStatus404(resp) {
-				return retry.RetryableError(fmt.Errorf("failed to read journey action map %s: %s", d.Id(), getErr))
+			if util.IsStatus404(resp) {
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_journey_action_map", fmt.Sprintf("failed to read journey action map %s | error: %s", d.Id(), getErr), resp))
 			}
-			return retry.NonRetryableError(fmt.Errorf("failed to read journey action map %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_journey_action_map", fmt.Sprintf("failed to read journey action map %s | error: %s", d.Id(), getErr), resp))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceJourneyActionMap())
 		flattenActionMap(d, actionMap)
 
 		log.Printf("Read journey action map %s %s", d.Id(), *actionMap.DisplayName)
-		return cc.CheckState()
+		return cc.CheckState(d)
 	})
 }
 
 func updateJourneyActionMap(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	journeyApi := platformclientv2.NewJourneyApiWithConfig(sdkConfig)
 	patchActionMap := buildSdkPatchActionMap(d)
 
 	log.Printf("Updating journey action map %s", d.Id())
-	diagErr := RetryWhen(IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+	diagErr := util.RetryWhen(util.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		// Get current journey action map version
 		actionMap, resp, getErr := journeyApi.GetJourneyActionmap(d.Id())
 		if getErr != nil {
-			return resp, diag.Errorf("Failed to read current journey action map %s: %s", d.Id(), getErr)
+			return resp, util.BuildAPIDiagnosticError("genesyscloud_journey_action_map", fmt.Sprintf("failed to read journey action map %s error: %s", d.Id(), getErr), resp)
 		}
 
 		patchActionMap.Version = actionMap.Version
 		_, resp, patchErr := journeyApi.PatchJourneyActionmap(d.Id(), *patchActionMap)
 		if patchErr != nil {
-			input, _ := InterfaceToJson(*patchActionMap)
-			return resp, diag.Errorf("Error updating journey action map %s: %s\n(input: %+v)\n(resp: %s)", *patchActionMap.DisplayName, patchErr, input, GetBody(resp))
+			input, _ := util.InterfaceToJson(*patchActionMap)
+			return resp, util.BuildAPIDiagnosticError("genesyscloud_journey_action_map", fmt.Sprintf("Error updating journey action map %s: %s\n(input: %+v)", *patchActionMap.DisplayName, patchErr, input), resp)
 		}
 		return resp, nil
 	})
@@ -478,26 +482,26 @@ func updateJourneyActionMap(ctx context.Context, d *schema.ResourceData, meta in
 func deleteJourneyActionMap(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	displayName := d.Get("display_name").(string)
 
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	journeyApi := platformclientv2.NewJourneyApiWithConfig(sdkConfig)
 
 	log.Printf("Deleting journey action map with display name %s", displayName)
-	if _, err := journeyApi.DeleteJourneyActionmap(d.Id()); err != nil {
-		return diag.Errorf("Failed to delete journey action map with display name %s: %s", displayName, err)
+	if resp, err := journeyApi.DeleteJourneyActionmap(d.Id()); err != nil {
+		return util.BuildAPIDiagnosticError("genesyscloud_journey_action_map", fmt.Sprintf("failed to delete journey action map with display name %s error: %s", displayName, err), resp)
 	}
 
-	return WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
+	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		_, resp, err := journeyApi.GetJourneyActionmap(d.Id())
 		if err != nil {
-			if IsStatus404(resp) {
+			if util.IsStatus404(resp) {
 				// journey action map deleted
 				log.Printf("Deleted journey action map %s", d.Id())
 				return nil
 			}
-			return retry.NonRetryableError(fmt.Errorf("error deleting journey action map %s: %s", d.Id(), err))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_journey_action_map", fmt.Sprintf("error deleting journey action map %s | error: %s", d.Id(), err), resp))
 		}
 
-		return retry.RetryableError(fmt.Errorf("journey action map %s still exists", d.Id()))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_journey_action_map", fmt.Sprintf("journey action map %s still exists", d.Id()), resp))
 	})
 }
 
@@ -812,7 +816,7 @@ func flattenOpenActionFields(openActionFields *platformclientv2.Openactionfields
 	architectFlowFieldsMap := make(map[string]interface{})
 	architectFlowFieldsMap["open_action"] = lists.FlattenAsList(openActionFields.OpenAction, flattenOpenActionDomainEntityRef)
 	if openActionFields.ConfigurationFields != nil {
-		jsonString, err := InterfaceToJson(openActionFields.ConfigurationFields)
+		jsonString, err := util.InterfaceToJson(openActionFields.ConfigurationFields)
 		if err != nil {
 			log.Printf("Error marshalling '%s': %v", "configuration_fields", err)
 		}
@@ -829,7 +833,7 @@ func buildSdkOpenActionFields(openActionFieldsMap map[string]interface{}) *platf
 
 	configurationFieldsString := stringmap.GetNonDefaultValue[string](openActionFieldsMap, "configuration_fields")
 	if configurationFieldsString != nil {
-		configurationFieldsInterface, err := JsonStringToInterface(*configurationFieldsString)
+		configurationFieldsInterface, err := util.JsonStringToInterface(*configurationFieldsString)
 		if err != nil {
 			log.Printf("Error unmarshalling '%s': %v", "configuration_fields", err)
 		}

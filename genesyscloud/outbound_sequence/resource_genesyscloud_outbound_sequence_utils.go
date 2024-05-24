@@ -3,10 +3,10 @@ package outbound_sequence
 import (
 	"fmt"
 	"strings"
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 )
 
 /*
@@ -17,7 +17,7 @@ The resource_genesyscloud_outbound_sequence.go contains all of the methods that 
 func getOutboundSequenceFromResourceData(d *schema.ResourceData) platformclientv2.Campaignsequence {
 	return platformclientv2.Campaignsequence{
 		Name:      platformclientv2.String(d.Get("name").(string)),
-		Campaigns: gcloud.BuildSdkDomainEntityRefArr(d, "campaign_ids"),
+		Campaigns: util.BuildSdkDomainEntityRefArr(d, "campaign_ids"),
 		Status:    platformclientv2.String("off"), // This will be updated separately
 		Repeat:    platformclientv2.Bool(d.Get("repeat").(bool)),
 	}

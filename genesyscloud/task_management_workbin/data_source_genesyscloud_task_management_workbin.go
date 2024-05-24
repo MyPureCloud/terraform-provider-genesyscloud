@@ -3,14 +3,14 @@ package task_management_workbin
 import (
 	"context"
 	"fmt"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
-
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
 )
 
 /*
@@ -20,20 +20,20 @@ import (
 
 // dataSourceTaskManagementWorkbinRead retrieves by name the id in question
 func dataSourceTaskManagementWorkbinRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
-	proxy := newTaskManagementWorkbinProxy(sdkConfig)
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
+	proxy := getTaskManagementWorkbinProxy(sdkConfig)
 
 	name := d.Get("name").(string)
 
-	return gcloud.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
-		workbinId, retryable, err := proxy.getTaskManagementWorkbinIdByName(ctx, name)
+	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
+		workbinId, retryable, resp, err := proxy.getTaskManagementWorkbinIdByName(ctx, name)
 
 		if err != nil && !retryable {
-			return retry.NonRetryableError(fmt.Errorf("error searching task management workbin %s: %s", name, err))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("error searching task management workbin %s | error: %s", name, err), resp))
 		}
 
 		if retryable {
-			return retry.RetryableError(fmt.Errorf("no task management workbin found with name %s", name))
+			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("no task management workbin found with name %s", name), resp))
 		}
 
 		d.SetId(workbinId)

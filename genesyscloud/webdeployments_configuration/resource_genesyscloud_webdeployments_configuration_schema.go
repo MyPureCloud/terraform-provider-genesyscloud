@@ -1,11 +1,14 @@
 package webdeployments_configuration
 
 import (
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
+	gcloud "terraform-provider-genesyscloud/genesyscloud/validators"
+	wdcUtils "terraform-provider-genesyscloud/genesyscloud/webdeployments_configuration/utils"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
 const resourceName = "genesyscloud_webdeployments_configuration"
@@ -18,6 +21,57 @@ func SetRegistrar(l registrar.Registrar) {
 }
 
 var (
+	customI18nLabel = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"language": {
+				Description: "Language of localized labels in homescreen app (eg. en-us, de-de)",
+				Type:        schema.TypeString,
+				Optional:    true,
+			},
+			"localized_labels": {
+				Description: "Contains localized labels used in homescreen app",
+				Type:        schema.TypeList,
+				Optional:    true,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"key": {
+							Description:  "Contains localized label key used in messenger homescreen",
+							Type:         schema.TypeString,
+							Required:     true,
+							ValidateFunc: validation.StringInSlice([]string{"MessengerHomeHeaderTitle", "MessengerHomeHeaderSubTitle"}, false),
+						},
+						"value": {
+							Description: "Contains localized label value used in messenger homescreen",
+							Type:        schema.TypeString,
+							Required:    true,
+						},
+					},
+				},
+			},
+		},
+	}
+
+	position = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"alignment": {
+				Description:  "The alignment for position",
+				Type:         schema.TypeString,
+				Optional:     true,
+				ValidateFunc: validation.StringInSlice([]string{"Auto", "Left", "Right"}, false),
+			},
+			"side_space": {
+				Description: "The sidespace value for position",
+				Type:        schema.TypeInt,
+				Optional:    true,
+			},
+			"bottom_space": {
+				Description: "The bottomspace value for position",
+				Type:        schema.TypeInt,
+				Optional:    true,
+			},
+		},
+	}
+
 	messengerStyle = &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			"primary_color": {
@@ -123,6 +177,140 @@ var (
 				MaxItems:    1,
 				Optional:    true,
 				Elem:        fileUploadSettings,
+			},
+			"apps": {
+				Description: "The apps embedded in the messenger",
+				Type:        schema.TypeList,
+				MaxItems:    1,
+				Optional:    true,
+				Computed:    true,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"conversations": {
+							Description: "Conversation settings that handles chats within the messenger",
+							Type:        schema.TypeList,
+							MaxItems:    1,
+							Optional:    true,
+							Computed:    true,
+							Elem: &schema.Resource{
+								Schema: map[string]*schema.Schema{
+									"enabled": {
+										Description: "The toggle to enable or disable conversations",
+										Type:        schema.TypeBool,
+										Optional:    true,
+										Computed:    true,
+									},
+									"show_agent_typing_indicator": {
+										Description: "The toggle to enable or disable typing indicator for messenger",
+										Type:        schema.TypeBool,
+										Optional:    true,
+										Computed:    true,
+									},
+									"show_user_typing_indicator": {
+										Description: "The toggle to enable or disable typing indicator for messenger",
+										Type:        schema.TypeBool,
+										Optional:    true,
+										Computed:    true,
+									},
+									"auto_start_enabled": {
+										Description: "The auto start for the messenger conversation",
+										Type:        schema.TypeBool,
+										Optional:    true,
+										Computed:    true,
+									},
+									"markdown_enabled": {
+										Description: "The markdown for the messenger app",
+										Type:        schema.TypeBool,
+										Optional:    true,
+										Computed:    true,
+									},
+									"conversation_disconnect": {
+										Description: "The conversation disconnect for the messenger app",
+										Type:        schema.TypeList,
+										MaxItems:    1,
+										Optional:    true,
+										Elem: &schema.Resource{
+											Schema: map[string]*schema.Schema{
+												"enabled": {
+													Description: "whether or not conversation disconnect setting is enabled",
+													Type:        schema.TypeBool,
+													Optional:    true,
+												},
+												"type": {
+													Description:  "Conversation disconnect type",
+													Type:         schema.TypeString,
+													Optional:     true,
+													ValidateFunc: validation.StringInSlice([]string{"Send", "ReadOnly"}, false),
+												},
+											},
+										},
+									},
+									"conversation_clear_enabled": {
+										Description: "The conversation clear settings for the messenger app",
+										Type:        schema.TypeBool,
+										Optional:    true,
+										Computed:    true,
+									},
+									"humanize": {
+										Description: "The humanize conversations settings for the messenger app",
+										Type:        schema.TypeList,
+										MaxItems:    1,
+										Optional:    true,
+										Elem: &schema.Resource{
+											Schema: map[string]*schema.Schema{
+												"enabled": {
+													Description: "Whether or not humanize conversations setting is enabled",
+													Type:        schema.TypeBool,
+													Optional:    true,
+												},
+												"bot": {
+													Description: "Bot messenger profile setting",
+													Type:        schema.TypeList,
+													MaxItems:    1,
+													Optional:    true,
+													Elem: &schema.Resource{
+														Schema: map[string]*schema.Schema{
+															"name": {
+																Description: "The name of the bot",
+																Type:        schema.TypeString,
+																Optional:    true,
+															},
+															"avatar_url": {
+																Description: "The avatar URL of the bot",
+																Type:        schema.TypeString,
+																Optional:    true,
+															},
+														},
+													},
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+						"knowledge": {
+							Description: "The knowledge base config for messenger",
+							Type:        schema.TypeList,
+							MaxItems:    1,
+							Optional:    true,
+							Elem: &schema.Resource{
+								Schema: map[string]*schema.Schema{
+									"enabled": {
+										Description: "whether or not knowledge base is enabled",
+										Type:        schema.TypeBool,
+										Optional:    true,
+									},
+									"knowledge_base_id": {
+										Description: "The knowledge base for messenger",
+										Type:        schema.TypeString,
+										Optional:    true,
+									},
+								},
+							},
+						},
+					},
+				},
 			},
 		},
 	}
@@ -237,6 +425,158 @@ var (
 		},
 	}
 
+	customMessage = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"default_value": {
+				Description: "Default value for the custom message",
+				Type:        schema.TypeString,
+				Required:    true,
+			},
+			"type": {
+				Description:  "The custom message type. (Welcome or Fallback)",
+				Type:         schema.TypeString,
+				Required:     true,
+				ValidateFunc: validation.StringInSlice([]string{"Welcome", "Fallback"}, false),
+			},
+		},
+	}
+
+	supportCenterModuleSetting = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"type": {
+				Description:  "Screen module type",
+				Type:         schema.TypeString,
+				Required:     true,
+				ValidateFunc: validation.StringInSlice([]string{"Search", "Categories", "FAQ", "Contact", "Results", "Article", "TopViewedArticles"}, false),
+			},
+			"enabled": {
+				Description: "Whether or not knowledge portal (previously support center) screen module is enabled",
+				Type:        schema.TypeBool,
+				Required:    true,
+			},
+			"compact_category_module_template_active": {
+				Description: "Whether the Support Center Compact Category Module Template is active or not",
+				Type:        schema.TypeBool,
+				Optional:    true,
+			},
+			"detailed_category_module_template": {
+				Description: "Detailed category module template settings",
+				Type:        schema.TypeList,
+				MaxItems:    1,
+				Optional:    true,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"active": {
+							Description: "Whether the Support Center Detailed Category Module Template is active or not",
+							Type:        schema.TypeBool,
+							Required:    true,
+						},
+						"sidebar_enabled": {
+							Description: "Whether the Support Center Detailed Category Module Sidebar is active or not",
+							Type:        schema.TypeBool,
+							Required:    true,
+						},
+					},
+				},
+			},
+		},
+	}
+
+	supportCenterScreen = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"type": {
+				Description:  "The type of the screen",
+				Type:         schema.TypeString,
+				Required:     true,
+				ValidateFunc: validation.StringInSlice([]string{"Home", "Category", "SearchResults", "Article"}, false),
+			},
+			"module_settings": {
+				Description: "Module settings for the screen, valid modules for each screenType: Home: Search, Categories, TopViewedArticles; Category: Search, Categories; SearchResults: Search, Results; Article: Search, Article;",
+				Type:        schema.TypeList,
+				Required:    true,
+				Elem:        supportCenterModuleSetting,
+			},
+		},
+	}
+
+	styleSetting = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"hero_style_setting": {
+				Description: "Knowledge portal (previously support center) hero customizations",
+				Type:        schema.TypeList,
+				MaxItems:    1,
+				Optional:    true,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"background_color": {
+							Description:      "Background color for hero section, in hexadecimal format, eg #ffffff",
+							Type:             schema.TypeString,
+							Required:         true,
+							ValidateDiagFunc: gcloud.ValidateHexColor,
+						},
+						"text_color": {
+							Description:      "Text color for hero section, in hexadecimal format, eg #ffffff",
+							Type:             schema.TypeString,
+							Required:         true,
+							ValidateDiagFunc: gcloud.ValidateHexColor,
+						},
+						"image_uri": {
+							Description:  "Background image for hero section",
+							Type:         schema.TypeString,
+							Required:     true,
+							ValidateFunc: validation.IsURLWithHTTPS,
+						},
+					},
+				},
+			},
+			"global_style_setting": {
+				Description: "Knowledge portal (previously support center) global customizations",
+				Type:        schema.TypeList,
+				MaxItems:    1,
+				Optional:    true,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"background_color": {
+							Description:      "Global background color, in hexadecimal format, eg #ffffff",
+							Type:             schema.TypeString,
+							Required:         true,
+							ValidateDiagFunc: gcloud.ValidateHexColor,
+						},
+						"primary_color": {
+							Description:      "Global primary color, in hexadecimal format, eg #ffffff",
+							Type:             schema.TypeString,
+							Required:         true,
+							ValidateDiagFunc: gcloud.ValidateHexColor,
+						},
+						"primary_color_dark": {
+							Description:      "Global dark primary color, in hexadecimal format, eg #ffffff",
+							Type:             schema.TypeString,
+							Required:         true,
+							ValidateDiagFunc: gcloud.ValidateHexColor,
+						},
+						"primary_color_light": {
+							Description:      "Global light primary color, in hexadecimal format, eg #ffffff",
+							Type:             schema.TypeString,
+							Required:         true,
+							ValidateDiagFunc: gcloud.ValidateHexColor,
+						},
+						"text_color": {
+							Description:      "Global text color, in hexadecimal format, eg #ffffff",
+							Type:             schema.TypeString,
+							Required:         true,
+							ValidateDiagFunc: gcloud.ValidateHexColor,
+						},
+						"font_family": {
+							Description: "Global font family",
+							Type:        schema.TypeString,
+							Required:    true,
+						},
+					},
+				},
+			},
+		},
+	}
+
 	journeyEventsSettings = &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			"enabled": {
@@ -304,12 +644,92 @@ var (
 			},
 		},
 	}
+
+	supportCenterSettings = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"enabled": {
+				Description: "Whether or not knowledge portal (previously support center) is enabled",
+				Type:        schema.TypeBool,
+				Required:    true,
+			},
+			"knowledge_base_id": {
+				Description: "The knowledge base for knowledge portal (previously support center)",
+				Type:        schema.TypeString,
+				Optional:    true,
+			},
+			"custom_messages": {
+				Description: "Customizable display texts for knowledge portal",
+				Type:        schema.TypeList,
+				Optional:    true,
+				Elem:        customMessage,
+			},
+			"router_type": {
+				Description:  "Router type for knowledge portal",
+				Type:         schema.TypeString,
+				Optional:     true,
+				ValidateFunc: validation.StringInSlice([]string{"Hash", "Browser"}, false),
+			},
+			"screens": {
+				Description: "Available screens for the knowledge portal with its modules",
+				Type:        schema.TypeList,
+				Optional:    true,
+				Elem:        supportCenterScreen,
+			},
+			"enabled_categories": {
+				Description: "Featured categories for knowledge portal (previously support center) home screen",
+				Type:        schema.TypeList,
+				Optional:    true,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"category_id": {
+							Description: "The knowledge base category id",
+							Type:        schema.TypeString,
+							Required:    true,
+						},
+						"image_uri": {
+							Description:  "Source URL for the featured category",
+							Type:         schema.TypeString,
+							Optional:     true,
+							ValidateFunc: validation.IsURLWithHTTPS,
+						},
+					},
+				},
+			},
+			"style_setting": {
+				Description: "Style attributes for knowledge portal (previously support center)",
+				Type:        schema.TypeList,
+				MaxItems:    1,
+				Optional:    true,
+				Elem:        styleSetting,
+			},
+			"feedback_enabled": {
+				Description: "Whether or not requesting customer feedback on article content and article search results is enabled",
+				Type:        schema.TypeBool,
+				Optional:    true,
+			},
+		},
+	}
+
+	authenticationSettings = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"enabled": {
+				Description: "Indicate if these auth is required for this deployment. If, for example, this flag is set to true then webmessaging sessions can not send messages unless the end-user is authenticated.",
+				Type:        schema.TypeBool,
+				Required:    true,
+			},
+			"integration_id": {
+				Description: "The integration identifier which contains the auth settings required on the deployment.",
+				Type:        schema.TypeString,
+				Required:    true,
+			},
+		},
+	}
 )
 
 func DataSourceWebDeploymentsConfiguration() *schema.Resource {
 	return &schema.Resource{
 		Description: "Data source for Genesys Cloud Web Deployments Configurations. Select a configuration by name.",
-		ReadContext: gcloud.ReadWithPooledClient(dataSourceConfigurationRead),
+		ReadContext: provider.ReadWithPooledClient(dataSourceConfigurationRead),
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Description: "The name of the configuration",
@@ -329,10 +749,10 @@ func ResourceWebDeploymentConfiguration() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud Web Deployment Configuration",
 
-		CreateContext: gcloud.CreateWithPooledClient(createWebDeploymentConfiguration),
-		ReadContext:   gcloud.ReadWithPooledClient(readWebDeploymentConfiguration),
-		UpdateContext: gcloud.UpdateWithPooledClient(updateWebDeploymentConfiguration),
-		DeleteContext: gcloud.DeleteWithPooledClient(deleteWebDeploymentConfiguration),
+		CreateContext: provider.CreateWithPooledClient(createWebDeploymentConfiguration),
+		ReadContext:   provider.ReadWithPooledClient(readWebDeploymentConfiguration),
+		UpdateContext: provider.UpdateWithPooledClient(updateWebDeploymentConfiguration),
+		DeleteContext: provider.DeleteWithPooledClient(deleteWebDeploymentConfiguration),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -347,6 +767,11 @@ func ResourceWebDeploymentConfiguration() *schema.Resource {
 			"description": {
 				Description: "Deployment description",
 				Type:        schema.TypeString,
+				Optional:    true,
+			},
+			"headless_mode_enabled": {
+				Description: "Headless Mode Support which Controls UI components. When enabled, native UI components will be disabled and allows for custom-built UI.",
+				Type:        schema.TypeBool,
 				Optional:    true,
 			},
 			"languages": {
@@ -373,13 +798,26 @@ func ResourceWebDeploymentConfiguration() *schema.Resource {
 					"Error",
 					"Deleting",
 				}, false),
-				DiffSuppressFunc: validateConfigurationStatusChange,
+				DiffSuppressFunc: wdcUtils.ValidateConfigurationStatusChange,
 			},
 			"version": {
 				Description: "The version of the configuration.",
 				Type:        schema.TypeString,
 				Computed:    true,
 				MaxItems:    0,
+			},
+			"custom_i18n_labels": {
+				Description: "The localization settings for homescreen app",
+				Type:        schema.TypeList,
+				Optional:    true,
+				Elem:        customI18nLabel,
+			},
+			"position": {
+				Description: "Settings concerning position",
+				Type:        schema.TypeList,
+				MaxItems:    1,
+				Optional:    true,
+				Elem:        position,
 			},
 			"messenger": {
 				Description: "Settings concerning messenger",
@@ -402,14 +840,31 @@ func ResourceWebDeploymentConfiguration() *schema.Resource {
 				Optional:    true,
 				Elem:        journeyEventsSettings,
 			},
+			"support_center": {
+				Description: "Settings concerning knowledge portal (previously support center)",
+				Type:        schema.TypeList,
+				MaxItems:    1,
+				Optional:    true,
+				Elem:        supportCenterSettings,
+			},
+			"authentication_settings": {
+				Description: "Settings for authenticated webdeployments.",
+				Type:        schema.TypeList,
+				MaxItems:    1,
+				Optional:    true,
+				Elem:        authenticationSettings,
+			},
 		},
-		CustomizeDiff: customizeConfigurationDiff,
+		CustomizeDiff: wdcUtils.CustomizeConfigurationDiff,
 	}
 }
 
 func WebDeploymentConfigurationExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
-		GetResourcesFunc:   gcloud.GetAllWithPooledClient(getAllWebDeploymentConfigurations),
+		GetResourcesFunc:   provider.GetAllWithPooledClient(getAllWebDeploymentConfigurations),
 		ExcludedAttributes: []string{"version"},
+		RemoveIfMissing: map[string][]string{
+			"authentication_settings": {"integration_id"},
+		},
 	}
 }

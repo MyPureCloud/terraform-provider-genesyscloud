@@ -5,13 +5,15 @@ import (
 	"strconv"
 	"strings"
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
 	edgeSite "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 )
 
 func TestAccResourceTrunkBaseSettings(t *testing.T) {
@@ -28,8 +30,8 @@ func TestAccResourceTrunkBaseSettings(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
-		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				Config: GenerateTrunkBaseSettingsResourceWithCustomAttrs(
@@ -44,7 +46,7 @@ func TestAccResourceTrunkBaseSettings(t *testing.T) {
 						name1,
 						"1m",
 						"25",
-						gcloud.FalseValue,
+						util.FalseValue,
 						[]string{strconv.Quote("audio/pcmu")}),
 				),
 				Check: resource.ComposeTestCheckFunc(
@@ -52,12 +54,12 @@ func TestAccResourceTrunkBaseSettings(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_trunkbasesettings."+trunkBaseSettingsRes, "description", description1),
 					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_trunkbasesettings."+trunkBaseSettingsRes, "trunk_meta_base_id", trunkMetaBaseId),
 					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_trunkbasesettings."+trunkBaseSettingsRes, "trunk_type", trunkType),
-					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_trunkbasesettings."+trunkBaseSettingsRes, "managed", gcloud.FalseValue),
-					gcloud.ValidateValueInJsonPropertiesAttr("genesyscloud_telephony_providers_edges_trunkbasesettings."+trunkBaseSettingsRes, "properties", "trunk_label", name1),
-					gcloud.ValidateValueInJsonPropertiesAttr("genesyscloud_telephony_providers_edges_trunkbasesettings."+trunkBaseSettingsRes, "properties", "trunk_max_dial_timeout", "1m"),
-					gcloud.ValidateValueInJsonPropertiesAttr("genesyscloud_telephony_providers_edges_trunkbasesettings."+trunkBaseSettingsRes, "properties", "trunk_transport_sip_dscp_value", "25"),
-					gcloud.ValidateValueInJsonPropertiesAttr("genesyscloud_telephony_providers_edges_trunkbasesettings."+trunkBaseSettingsRes, "properties", "trunk_media_disconnect_on_idle_rtp", gcloud.FalseValue),
-					gcloud.ValidateValueInJsonPropertiesAttr("genesyscloud_telephony_providers_edges_trunkbasesettings."+trunkBaseSettingsRes, "properties", "trunk_media_codec", strings.Join([]string{"audio/pcmu"}, ",")),
+					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_trunkbasesettings."+trunkBaseSettingsRes, "managed", util.FalseValue),
+					util.ValidateValueInJsonPropertiesAttr("genesyscloud_telephony_providers_edges_trunkbasesettings."+trunkBaseSettingsRes, "properties", "trunk_label", name1),
+					util.ValidateValueInJsonPropertiesAttr("genesyscloud_telephony_providers_edges_trunkbasesettings."+trunkBaseSettingsRes, "properties", "trunk_max_dial_timeout", "1m"),
+					util.ValidateValueInJsonPropertiesAttr("genesyscloud_telephony_providers_edges_trunkbasesettings."+trunkBaseSettingsRes, "properties", "trunk_transport_sip_dscp_value", "25"),
+					util.ValidateValueInJsonPropertiesAttr("genesyscloud_telephony_providers_edges_trunkbasesettings."+trunkBaseSettingsRes, "properties", "trunk_media_disconnect_on_idle_rtp", util.FalseValue),
+					util.ValidateValueInJsonPropertiesAttr("genesyscloud_telephony_providers_edges_trunkbasesettings."+trunkBaseSettingsRes, "properties", "trunk_media_codec", strings.Join([]string{"audio/pcmu"}, ",")),
 				),
 			},
 			// Update with new name, description and properties
@@ -72,7 +74,7 @@ func TestAccResourceTrunkBaseSettings(t *testing.T) {
 					generateTrunkBaseSettingsProperties(name2,
 						"2m",
 						"50",
-						gcloud.TrueValue,
+						util.TrueValue,
 						[]string{strconv.Quote("audio/opus")}),
 				),
 				Check: resource.ComposeTestCheckFunc(
@@ -80,12 +82,12 @@ func TestAccResourceTrunkBaseSettings(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_trunkbasesettings."+trunkBaseSettingsRes, "description", description2),
 					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_trunkbasesettings."+trunkBaseSettingsRes, "trunk_meta_base_id", trunkMetaBaseId),
 					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_trunkbasesettings."+trunkBaseSettingsRes, "trunk_type", trunkType),
-					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_trunkbasesettings."+trunkBaseSettingsRes, "managed", gcloud.FalseValue),
-					gcloud.ValidateValueInJsonPropertiesAttr("genesyscloud_telephony_providers_edges_trunkbasesettings."+trunkBaseSettingsRes, "properties", "trunk_label", name2),
-					gcloud.ValidateValueInJsonPropertiesAttr("genesyscloud_telephony_providers_edges_trunkbasesettings."+trunkBaseSettingsRes, "properties", "trunk_max_dial_timeout", "2m"),
-					gcloud.ValidateValueInJsonPropertiesAttr("genesyscloud_telephony_providers_edges_trunkbasesettings."+trunkBaseSettingsRes, "properties", "trunk_transport_sip_dscp_value", "50"),
-					gcloud.ValidateValueInJsonPropertiesAttr("genesyscloud_telephony_providers_edges_trunkbasesettings."+trunkBaseSettingsRes, "properties", "trunk_media_disconnect_on_idle_rtp", gcloud.TrueValue),
-					gcloud.ValidateValueInJsonPropertiesAttr("genesyscloud_telephony_providers_edges_trunkbasesettings."+trunkBaseSettingsRes, "properties", "trunk_media_codec", strings.Join([]string{"audio/opus"}, ",")),
+					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_trunkbasesettings."+trunkBaseSettingsRes, "managed", util.FalseValue),
+					util.ValidateValueInJsonPropertiesAttr("genesyscloud_telephony_providers_edges_trunkbasesettings."+trunkBaseSettingsRes, "properties", "trunk_label", name2),
+					util.ValidateValueInJsonPropertiesAttr("genesyscloud_telephony_providers_edges_trunkbasesettings."+trunkBaseSettingsRes, "properties", "trunk_max_dial_timeout", "2m"),
+					util.ValidateValueInJsonPropertiesAttr("genesyscloud_telephony_providers_edges_trunkbasesettings."+trunkBaseSettingsRes, "properties", "trunk_transport_sip_dscp_value", "50"),
+					util.ValidateValueInJsonPropertiesAttr("genesyscloud_telephony_providers_edges_trunkbasesettings."+trunkBaseSettingsRes, "properties", "trunk_media_disconnect_on_idle_rtp", util.TrueValue),
+					util.ValidateValueInJsonPropertiesAttr("genesyscloud_telephony_providers_edges_trunkbasesettings."+trunkBaseSettingsRes, "properties", "trunk_media_codec", strings.Join([]string{"audio/opus"}, ",")),
 				),
 			},
 			{
@@ -121,7 +123,7 @@ func TestAccResourceExternralTrunkBaseSettingsInboundSite(t *testing.T) {
 			[]string{},
 			gcloud.GenerateLocationEmergencyNum(
 				"+13100000001",
-				gcloud.NullValue,
+				util.NullValue,
 			),
 			gcloud.GenerateLocationAddress(
 				"7601 Interactive Way",
@@ -138,13 +140,13 @@ func TestAccResourceExternralTrunkBaseSettingsInboundSite(t *testing.T) {
 			"Cloud",
 			false,
 			"[\"us-east-1\"]",
-			gcloud.NullValue,
-			gcloud.NullValue,
+			util.NullValue,
+			util.NullValue,
 		)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
-		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				Config: referencedResources + GenerateTrunkBaseSettingsResourceWithCustomAttrs(
@@ -161,12 +163,12 @@ func TestAccResourceExternralTrunkBaseSettingsInboundSite(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_trunkbasesettings."+trunkBaseSettingsRes, "description", description1),
 					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_trunkbasesettings."+trunkBaseSettingsRes, "trunk_meta_base_id", trunkMetaBaseId),
 					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_trunkbasesettings."+trunkBaseSettingsRes, "trunk_type", trunkType),
-					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_trunkbasesettings."+trunkBaseSettingsRes, "managed", gcloud.FalseValue),
-					gcloud.ValidateValueInJsonPropertiesAttr("genesyscloud_telephony_providers_edges_trunkbasesettings."+trunkBaseSettingsRes, "properties", "trunk_label", name1),
-					gcloud.ValidateValueInJsonPropertiesAttr("genesyscloud_telephony_providers_edges_trunkbasesettings."+trunkBaseSettingsRes, "properties", "trunk_max_dial_timeout", "1m"),
-					gcloud.ValidateValueInJsonPropertiesAttr("genesyscloud_telephony_providers_edges_trunkbasesettings."+trunkBaseSettingsRes, "properties", "trunk_transport_sip_dscp_value", "25"),
-					gcloud.ValidateValueInJsonPropertiesAttr("genesyscloud_telephony_providers_edges_trunkbasesettings."+trunkBaseSettingsRes, "properties", "trunk_media_disconnect_on_idle_rtp", gcloud.FalseValue),
-					gcloud.ValidateValueInJsonPropertiesAttr("genesyscloud_telephony_providers_edges_trunkbasesettings."+trunkBaseSettingsRes, "properties", "trunk_media_codec", strings.Join([]string{"audio/pcmu"}, ",")),
+					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_trunkbasesettings."+trunkBaseSettingsRes, "managed", util.FalseValue),
+					util.ValidateValueInJsonPropertiesAttr("genesyscloud_telephony_providers_edges_trunkbasesettings."+trunkBaseSettingsRes, "properties", "trunk_label", name1),
+					util.ValidateValueInJsonPropertiesAttr("genesyscloud_telephony_providers_edges_trunkbasesettings."+trunkBaseSettingsRes, "properties", "trunk_max_dial_timeout", "1m"),
+					util.ValidateValueInJsonPropertiesAttr("genesyscloud_telephony_providers_edges_trunkbasesettings."+trunkBaseSettingsRes, "properties", "trunk_transport_sip_dscp_value", "25"),
+					util.ValidateValueInJsonPropertiesAttr("genesyscloud_telephony_providers_edges_trunkbasesettings."+trunkBaseSettingsRes, "properties", "trunk_media_disconnect_on_idle_rtp", util.FalseValue),
+					util.ValidateValueInJsonPropertiesAttr("genesyscloud_telephony_providers_edges_trunkbasesettings."+trunkBaseSettingsRes, "properties", "trunk_media_codec", strings.Join([]string{"audio/pcmu"}, ",")),
 				),
 			},
 			// Update with new name, description and properties
@@ -185,12 +187,12 @@ func TestAccResourceExternralTrunkBaseSettingsInboundSite(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_trunkbasesettings."+trunkBaseSettingsRes, "description", description2),
 					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_trunkbasesettings."+trunkBaseSettingsRes, "trunk_meta_base_id", trunkMetaBaseId),
 					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_trunkbasesettings."+trunkBaseSettingsRes, "trunk_type", trunkType),
-					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_trunkbasesettings."+trunkBaseSettingsRes, "managed", gcloud.FalseValue),
-					gcloud.ValidateValueInJsonPropertiesAttr("genesyscloud_telephony_providers_edges_trunkbasesettings."+trunkBaseSettingsRes, "properties", "trunk_label", name2),
-					gcloud.ValidateValueInJsonPropertiesAttr("genesyscloud_telephony_providers_edges_trunkbasesettings."+trunkBaseSettingsRes, "properties", "trunk_max_dial_timeout", "2m"),
-					gcloud.ValidateValueInJsonPropertiesAttr("genesyscloud_telephony_providers_edges_trunkbasesettings."+trunkBaseSettingsRes, "properties", "trunk_transport_sip_dscp_value", "50"),
-					gcloud.ValidateValueInJsonPropertiesAttr("genesyscloud_telephony_providers_edges_trunkbasesettings."+trunkBaseSettingsRes, "properties", "trunk_media_disconnect_on_idle_rtp", gcloud.TrueValue),
-					gcloud.ValidateValueInJsonPropertiesAttr("genesyscloud_telephony_providers_edges_trunkbasesettings."+trunkBaseSettingsRes, "properties", "trunk_media_codec", strings.Join([]string{"audio/opus"}, ",")),
+					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_trunkbasesettings."+trunkBaseSettingsRes, "managed", util.FalseValue),
+					util.ValidateValueInJsonPropertiesAttr("genesyscloud_telephony_providers_edges_trunkbasesettings."+trunkBaseSettingsRes, "properties", "trunk_label", name2),
+					util.ValidateValueInJsonPropertiesAttr("genesyscloud_telephony_providers_edges_trunkbasesettings."+trunkBaseSettingsRes, "properties", "trunk_max_dial_timeout", "2m"),
+					util.ValidateValueInJsonPropertiesAttr("genesyscloud_telephony_providers_edges_trunkbasesettings."+trunkBaseSettingsRes, "properties", "trunk_transport_sip_dscp_value", "50"),
+					util.ValidateValueInJsonPropertiesAttr("genesyscloud_telephony_providers_edges_trunkbasesettings."+trunkBaseSettingsRes, "properties", "trunk_media_disconnect_on_idle_rtp", util.TrueValue),
+					util.ValidateValueInJsonPropertiesAttr("genesyscloud_telephony_providers_edges_trunkbasesettings."+trunkBaseSettingsRes, "properties", "trunk_media_codec", strings.Join([]string{"audio/opus"}, ",")),
 				),
 			},
 			{
@@ -214,7 +216,7 @@ func testVerifyTrunkBaseSettingsDestroyed(state *terraform.State) error {
 		trunkBaseSettings, resp, err := edgesAPI.GetTelephonyProvidersEdgesTrunkbasesetting(rs.Primary.ID, true)
 		if trunkBaseSettings != nil {
 			return fmt.Errorf("TrunkBaseSettings (%s) still exists", rs.Primary.ID)
-		} else if gcloud.IsStatus404(resp) {
+		} else if util.IsStatus404(resp) {
 			// TrunkBaseSettings not found as expected
 			continue
 		} else {
@@ -228,36 +230,36 @@ func testVerifyTrunkBaseSettingsDestroyed(state *terraform.State) error {
 
 func generateTrunkBaseSettingsProperties(settingsName, trunkMaxDialTimeout, trunkTransportSipDscpValue, trunkMediaDisconnectOnIdleRtp string, trunkMediaCodec []string) string {
 	// A random selection of properties
-	return "properties = " + gcloud.GenerateJsonEncodedProperties(
-		gcloud.GenerateJsonProperty(
-			"trunk_label", gcloud.GenerateJsonObject(
-				gcloud.GenerateJsonProperty(
-					"value", gcloud.GenerateJsonObject(
-						gcloud.GenerateJsonProperty("instance", strconv.Quote(settingsName)),
+	return "properties = " + util.GenerateJsonEncodedProperties(
+		util.GenerateJsonProperty(
+			"trunk_label", util.GenerateJsonObject(
+				util.GenerateJsonProperty(
+					"value", util.GenerateJsonObject(
+						util.GenerateJsonProperty("instance", strconv.Quote(settingsName)),
 					)))),
-		gcloud.GenerateJsonProperty(
-			"trunk_max_dial_timeout", gcloud.GenerateJsonObject(
-				gcloud.GenerateJsonProperty(
-					"value", gcloud.GenerateJsonObject(
-						gcloud.GenerateJsonProperty("instance", strconv.Quote(trunkMaxDialTimeout)),
+		util.GenerateJsonProperty(
+			"trunk_max_dial_timeout", util.GenerateJsonObject(
+				util.GenerateJsonProperty(
+					"value", util.GenerateJsonObject(
+						util.GenerateJsonProperty("instance", strconv.Quote(trunkMaxDialTimeout)),
 					)))),
-		gcloud.GenerateJsonProperty(
-			"trunk_transport_sip_dscp_value", gcloud.GenerateJsonObject(
-				gcloud.GenerateJsonProperty(
-					"value", gcloud.GenerateJsonObject(
-						gcloud.GenerateJsonProperty("instance", trunkTransportSipDscpValue),
+		util.GenerateJsonProperty(
+			"trunk_transport_sip_dscp_value", util.GenerateJsonObject(
+				util.GenerateJsonProperty(
+					"value", util.GenerateJsonObject(
+						util.GenerateJsonProperty("instance", trunkTransportSipDscpValue),
 					)))),
-		gcloud.GenerateJsonProperty(
-			"trunk_media_disconnect_on_idle_rtp", gcloud.GenerateJsonObject(
-				gcloud.GenerateJsonProperty(
-					"value", gcloud.GenerateJsonObject(
-						gcloud.GenerateJsonProperty("instance", trunkMediaDisconnectOnIdleRtp),
+		util.GenerateJsonProperty(
+			"trunk_media_disconnect_on_idle_rtp", util.GenerateJsonObject(
+				util.GenerateJsonProperty(
+					"value", util.GenerateJsonObject(
+						util.GenerateJsonProperty("instance", trunkMediaDisconnectOnIdleRtp),
 					)))),
-		gcloud.GenerateJsonProperty(
-			"trunk_media_codec", gcloud.GenerateJsonObject(
-				gcloud.GenerateJsonProperty(
-					"value", gcloud.GenerateJsonObject(
-						gcloud.GenerateJsonArrayProperty("instance", strings.Join(trunkMediaCodec, ",")),
+		util.GenerateJsonProperty(
+			"trunk_media_codec", util.GenerateJsonObject(
+				util.GenerateJsonProperty(
+					"value", util.GenerateJsonObject(
+						util.GenerateJsonArrayProperty("instance", strings.Join(trunkMediaCodec, ",")),
 					)))),
 	)
 }

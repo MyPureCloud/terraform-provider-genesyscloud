@@ -6,15 +6,15 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
-
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 )
 
 type ProcessAutomationTriggers struct {
@@ -25,7 +25,7 @@ type ProcessAutomationTriggers struct {
 func dataSourceProcessAutomationTrigger() *schema.Resource {
 	return &schema.Resource{
 		Description: "Data source for Genesys Cloud process automation trigger. Select a trigger by name",
-		ReadContext: gcloud.ReadWithPooledClient(dataSourceProcessAutomationTriggerRead),
+		ReadContext: provider.ReadWithPooledClient(dataSourceProcessAutomationTriggerRead),
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Description: "The name of the trigger",
@@ -37,24 +37,24 @@ func dataSourceProcessAutomationTrigger() *schema.Resource {
 }
 
 func dataSourceProcessAutomationTriggerRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	sdkConfig := m.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := m.(*provider.ProviderMeta).ClientConfig
 	integrationAPI := platformclientv2.NewIntegrationsApiWithConfig(sdkConfig)
 
 	triggerName := d.Get("name").(string)
 
-	return gcloud.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
+	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
 		// create path
 		path := integrationAPI.Configuration.BasePath + "/api/v2/processAutomation/triggers"
 
 		for pageNum := 1; ; pageNum++ {
-			processAutomationTriggers, _, getErr := getAllProcessAutomationTriggers(path, integrationAPI)
+			processAutomationTriggers, resp, getErr := getAllProcessAutomationTriggers(path, integrationAPI)
 
 			if getErr != nil {
-				return retry.NonRetryableError(fmt.Errorf("failed to get page of process automation triggers: %s", getErr))
+				return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to get page of process automation triggers: %s", getErr), resp))
 			}
 
 			if processAutomationTriggers.Entities == nil || len(*processAutomationTriggers.Entities) == 0 {
-				return retry.RetryableError(fmt.Errorf("no process automation triggers found with name: %s", triggerName))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("no process automation triggers found with name: %s", triggerName), resp))
 			}
 
 			for _, trigger := range *processAutomationTriggers.Entities {
@@ -65,7 +65,7 @@ func dataSourceProcessAutomationTriggerRead(ctx context.Context, d *schema.Resou
 			}
 
 			if processAutomationTriggers.NextUri == nil {
-				return retry.NonRetryableError(fmt.Errorf("no process automation triggers found with name: %s", getErr))
+				return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("no process automation triggers found with name: %s", getErr), resp))
 			}
 
 			path = integrationAPI.Configuration.BasePath + *processAutomationTriggers.NextUri

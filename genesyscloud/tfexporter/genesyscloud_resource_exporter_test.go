@@ -2,11 +2,13 @@ package tfexporter
 
 import (
 	"context"
-	"reflect"
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
-	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
-
+	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
+	"reflect"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
@@ -23,7 +25,7 @@ type PostProcessHclBytesTestCase struct {
 	decodedMap map[string]string
 }
 
-func TestPostProcessHclBytesFunc(t *testing.T) {
+func TestUnitTfExportPostProcessHclBytesFunc(t *testing.T) {
 	testCase1 := PostProcessHclBytesTestCase{
 		original: `
 		resource "example_resource" "example" {
@@ -101,8 +103,8 @@ func TestPostProcessHclBytesFunc(t *testing.T) {
 	}
 }
 
-func TestRemoveZeroValuesFunc(t *testing.T) {
-	m := make(gcloud.JsonMap, 0)
+func TestUnitTfExportRemoveZeroValuesFunc(t *testing.T) {
+	m := make(util.JsonMap, 0)
 
 	nonZeroString := "foobar"
 	nonZeroInt := 1
@@ -136,11 +138,11 @@ func TestRemoveZeroValuesFunc(t *testing.T) {
 	}
 }
 
-// TestAllowEmptyArray will test if fields included in the exporter property `AllowEmptyArrays`
+// TestUnitTfExportAllowEmptyArray will test if fields included in the exporter property `AllowEmptyArrays`
 // will retain empty arrays in the configMap when their state values are null or [].
 // Empty array fields not included in `AllowEmptyArrays` will be sanitized to nil by default,
 // and other arrays shouldn't be affected.
-func TestAllowEmptyArray(t *testing.T) {
+func TestUnitTfExportAllowEmptyArray(t *testing.T) {
 	testResourceType := "test_allow_empty_array_resource"
 	testResourceId := "test_id"
 	testResourceName := "test_res_name"
@@ -231,8 +233,8 @@ func TestAllowEmptyArray(t *testing.T) {
 	assert.Len(t, configMap["arr_attr_3"], 1)
 }
 
-// TestUnitRemoveTrailingZerosRrule will test if rrule is properly sanaitized before export.
-func TestUnitRemoveTrailingZerosRrule(t *testing.T) {
+// TestUnitTfExportRemoveTrailingZerosRrule will test if rrule is properly sanaitized before export.
+func TestUnitTfExportRemoveTrailingZerosRrule(t *testing.T) {
 	testCases := []struct {
 		input    string
 		expected string
@@ -254,7 +256,7 @@ func TestUnitRemoveTrailingZerosRrule(t *testing.T) {
 	}
 }
 
-func TestUnitBuildDependsOnResources(t *testing.T) {
+func TestUnitTfExportBuildDependsOnResources(t *testing.T) {
 
 	meta := &resourceExporter.ResourceMeta{
 		Name:     "example::::resource",
@@ -266,13 +268,18 @@ func TestUnitBuildDependsOnResources(t *testing.T) {
 		"queue resources": meta,
 	}
 
-	retrievePooledClientFn := func(ctx context.Context, a *dependentconsumers.DependentConsumerProxy, resourceKeys resourceExporter.ResourceInfo) (resourceExporter.ResourceIDMetaMap, map[string][]string, error) {
-		return resources, nil, nil
+	dependencyStruct := &resourceExporter.DependencyResource{
+		DependsMap:        nil,
+		CyclicDependsList: nil,
 	}
 
-	getAllPooledFn := func(method gcloud.GetCustomConfigFunc) (resourceExporter.ResourceIDMetaMap, map[string][]string, diag.Diagnostics) {
+	retrievePooledClientFn := func(ctx context.Context, a *dependentconsumers.DependentConsumerProxy, resourceKeys resourceExporter.ResourceInfo) (resourceExporter.ResourceIDMetaMap, *resourceExporter.DependencyResource, error) {
+		return resources, dependencyStruct, nil
+	}
+
+	getAllPooledFn := func(method provider.GetCustomConfigFunc) (resourceExporter.ResourceIDMetaMap, *resourceExporter.DependencyResource, diag.Diagnostics) {
 		//assert.Equal(t, targetName, name)
-		return resources, nil, nil
+		return resources, dependencyStruct, nil
 	}
 
 	dependencyProxy := &dependentconsumers.DependentConsumerProxy{
@@ -309,7 +316,7 @@ func TestUnitBuildDependsOnResources(t *testing.T) {
 
 }
 
-func TestFilterResourceById(t *testing.T) {
+func TestUnitTfExportFilterResourceById(t *testing.T) {
 
 	meta := &resourceExporter.ResourceMeta{
 		Name:     "example resource1",
@@ -353,7 +360,38 @@ func TestFilterResourceById(t *testing.T) {
 	}
 }
 
-func TestUnitMergeExporters(t *testing.T) {
+func TestUnitTfExportTestExcludeAttributes(t *testing.T) {
+
+	gre := &GenesysCloudResourceExporter{
+		exportAsHCL:          false,
+		splitFilesByResource: true,
+	}
+
+	m1 := map[string]*resourceExporter.ResourceExporter{
+		"exporter1": &resourceExporter.ResourceExporter{AllowZeroValues: []string{"key1", "key2"}},
+		"exporter2": &resourceExporter.ResourceExporter{AllowZeroValues: []string{"key3", "key4"}},
+		"exporter3": &resourceExporter.ResourceExporter{AllowZeroValues: []string{"key3", "key4"}},
+	}
+
+	filter := []string{"e*.name"}
+
+	// Call the function
+	gre.populateConfigExcluded(m1, filter)
+	name := "name"
+	// Check if the exporters in the result have the expected keys
+	for _, exporter := range m1 {
+
+		attributes := exporter.ExcludedAttributes
+
+		for _, atribute := range attributes {
+			if atribute != name {
+				t.Errorf("Attribute %s not excluded in exporter", name)
+			}
+		}
+	}
+}
+
+func TestUnitTfExportMergeExporters(t *testing.T) {
 
 	m1 := map[string]*resourceExporter.ResourceExporter{
 		"exporter1": &resourceExporter.ResourceExporter{AllowZeroValues: []string{"key1", "key2"}},
@@ -384,4 +422,114 @@ func TestUnitMergeExporters(t *testing.T) {
 			t.Errorf("Exporter %s has unexpected keys. Expected: %v, Got: %v", exporterID, actual, exporter)
 		}
 	}
+}
+
+func TestUnitResolveValueToDataSource(t *testing.T) {
+	var (
+		originalValueOfScriptId         = "1234"
+		scriptResourceId                = "genesyscloud_script"
+		defaultOutboundScriptName       = "Default Outbound Script"
+		defaultOutboundScriptResourceId = "Default_Outbound_Script"
+	)
+
+	// set up
+	g := setupGenesysCloudResourceExporter(t)
+
+	resolverFunc := func(configMap map[string]any, value any, sdkConfig *platformclientv2.Configuration) (string, string, map[string]any, bool) {
+		configMap["script_id"] = fmt.Sprintf(`${data.%s.%s.id}`, scriptResourceId, defaultOutboundScriptResourceId)
+		dataSourceConfig := make(map[string]any)
+		dataSourceConfig["name"] = defaultOutboundScriptName
+		return scriptResourceId, defaultOutboundScriptResourceId, dataSourceConfig, true
+	}
+	attrCustomResolver := make(map[string]*resourceExporter.RefAttrCustomResolver)
+	attrCustomResolver["script_id"] = &resourceExporter.RefAttrCustomResolver{ResolveToDataSourceFunc: resolverFunc}
+	exporter := &resourceExporter.ResourceExporter{
+		CustomAttributeResolver: attrCustomResolver,
+	}
+
+	configMap := getMockCampaignConfig(originalValueOfScriptId)
+
+	// invoke - expecting script data source to be added to export
+	g.resolveValueToDataSource(exporter, configMap, "script_id", originalValueOfScriptId)
+
+	if _, ok := g.dataSourceTypesMaps[scriptResourceId]; !ok {
+		t.Errorf("expected key '%s' to exist in dataSourceTypesMaps", scriptResourceId)
+	}
+
+	if _, ok := g.dataSourceTypesMaps[scriptResourceId][defaultOutboundScriptResourceId]; !ok {
+		t.Errorf("expected dataSourceTypesMaps['%s'] to hold nested key '%s'", scriptResourceId, defaultOutboundScriptResourceId)
+	}
+
+	dataSourceConfig := g.dataSourceTypesMaps[scriptResourceId][defaultOutboundScriptResourceId]
+	nameInDataSource, ok := dataSourceConfig["name"].(string)
+	if !ok {
+		t.Errorf("expected the data source config to contain key 'name'")
+	}
+	if nameInDataSource != defaultOutboundScriptName {
+		t.Errorf("expected data source name to be '%s', got '%s'", defaultOutboundScriptName, nameInDataSource)
+	}
+
+	hclBlocks, ok := g.resourceTypesHCLBlocks[scriptResourceId]
+	if !ok {
+		t.Errorf("expected resourceTypesHCLBlocks to contain key '%s'", scriptResourceId)
+	}
+	if len(hclBlocks) == 0 {
+		t.Errorf("expected length of resourceTypesHCLBlocks to not be zero")
+	}
+
+	// set up
+	resolverFunc = func(configMap map[string]any, value any, sdkConfig *platformclientv2.Configuration) (string, string, map[string]any, bool) {
+		return "", "", nil, false
+	}
+	g.dataSourceTypesMaps = make(map[string]resourceJSONMaps)
+	g.resourceTypesHCLBlocks = make(map[string]resourceHCLBlock)
+	attrCustomResolver["script_id"] = &resourceExporter.RefAttrCustomResolver{ResolveToDataSourceFunc: resolverFunc}
+	exporter = &resourceExporter.ResourceExporter{
+		CustomAttributeResolver: attrCustomResolver,
+	}
+
+	// invoke - not expecting script data source to be added to export
+	g.resolveValueToDataSource(exporter, configMap, "script_id", originalValueOfScriptId)
+
+	if _, ok := g.dataSourceTypesMaps[scriptResourceId]; ok {
+		t.Errorf("expected key '%s' to not exist in dataSourceTypesMaps", scriptResourceId)
+	}
+
+	if _, ok := g.resourceTypesHCLBlocks[scriptResourceId]; ok {
+		t.Errorf("expected key '%s' to not exist in resourceTypesHCLBlocks map", scriptResourceId)
+	}
+}
+
+func setupGenesysCloudResourceExporter(t *testing.T) *GenesysCloudResourceExporter {
+	exportMap := map[string]interface{}{
+		"export_as_hcl":                false,
+		"split_files_by_resource":      false,
+		"log_permission_errors":        false,
+		"enable_dependency_resolution": false,
+		"include_state_file":           true,
+		"ignore_cyclic_deps":           true,
+	}
+	resourceData := schema.TestResourceDataRaw(t, ResourceTfExport().Schema, exportMap)
+	providerMeta := &provider.ProviderMeta{
+		Version:      "0.1.0",
+		ClientConfig: platformclientv2.GetDefaultConfiguration(),
+		Domain:       "mypurecloud.com",
+	}
+	g, diagErr := NewGenesysCloudResourceExporter(context.TODO(), resourceData, providerMeta, IncludeResources)
+	if diagErr != nil {
+		t.Errorf("%v", diagErr)
+	}
+	g.dataSourceTypesMaps = make(map[string]resourceJSONMaps)
+	g.resourceTypesHCLBlocks = make(map[string]resourceHCLBlock)
+	g.exportAsHCL = true
+	return g
+}
+
+func getMockCampaignConfig(originalValueOfScriptId string) map[string]any {
+	config := make(map[string]any)
+
+	config["name"] = "Mock Campaign"
+	config["script_id"] = originalValueOfScriptId
+
+	return config
 }

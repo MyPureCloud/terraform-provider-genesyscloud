@@ -3,6 +3,8 @@ package authorization_product
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 )
 
 import (
@@ -11,24 +13,22 @@ import (
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
-
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
 )
 
 func dataSourceAuthorizationProductRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getauthProductProxy(sdkConfig)
 	name := d.Get("name").(string)
 
-	return gcloud.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
+	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
 		// Get the list of enabled products
-		authProductId, retryable, err := proxy.getAuthorizationProduct(ctx, name)
+		authProductId, retryable, resp, err := proxy.getAuthorizationProduct(ctx, name)
 
 		if err != nil {
 			if retryable {
-				return retry.RetryableError(err)
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to get Authorization product %s | error: %s", authProductId, err), resp))
 			}
-			return retry.NonRetryableError(err)
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to get Authorization product %s | error: %s", authProductId, err), resp))
 		}
 
 		d.SetId(authProductId)

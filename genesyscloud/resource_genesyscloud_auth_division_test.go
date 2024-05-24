@@ -2,13 +2,18 @@ package genesyscloud
 
 import (
 	"fmt"
+	"log"
 	"strconv"
+	"strings"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 )
 
 func TestAccResourceAuthDivisionBasic(t *testing.T) {
@@ -18,17 +23,19 @@ func TestAccResourceAuthDivisionBasic(t *testing.T) {
 		divName2     = "Terraform Div-" + uuid.NewString()
 		divDesc1     = "Terraform test division"
 	)
+	cleanupAuthDivision("Terraform")
+
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Create
 				Config: GenerateAuthDivisionResource(
 					divResource1,
 					divName1,
-					NullValue, // No description
-					NullValue, // Not home division
+					util.NullValue, // No description
+					util.NullValue, // Not home division
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_auth_division."+divResource1, "name", divName1),
@@ -41,7 +48,20 @@ func TestAccResourceAuthDivisionBasic(t *testing.T) {
 					divResource1,
 					divName2,
 					strconv.Quote(divDesc1),
-					NullValue, // Not home division
+					util.NullValue, // Not home division
+				),
+				PreConfig: func() {
+					// Wait for a specified duration - to avoid getting non empty plan
+					time.Sleep(45 * time.Second)
+				},
+			},
+			{
+				// Update with a new name and description
+				Config: GenerateAuthDivisionResource(
+					divResource1,
+					divName2,
+					strconv.Quote(divDesc1),
+					util.NullValue, // Not home division
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_auth_division."+divResource1, "name", divName2),
@@ -68,8 +88,8 @@ func TestAccResourceAuthDivisionHome(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Set home division description
@@ -77,7 +97,16 @@ func TestAccResourceAuthDivisionHome(t *testing.T) {
 					divHomeRes,
 					divHomeName,
 					strconv.Quote(homeDesc),
-					TrueValue, // Home division
+					util.TrueValue, // Home division
+				),
+			},
+			{
+				// Set home division description again
+				Config: GenerateAuthDivisionResource(
+					divHomeRes,
+					divHomeName,
+					strconv.Quote(homeDesc),
+					util.TrueValue, // Home division
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_auth_division."+divHomeRes, "name", divHomeName),
@@ -86,12 +115,12 @@ func TestAccResourceAuthDivisionHome(t *testing.T) {
 				),
 			},
 			{
-				// Set home division description again (applying twice to allow for desc to update)
+				// Set home division description
 				Config: GenerateAuthDivisionResource(
 					divHomeRes,
 					divHomeName,
 					strconv.Quote(homeDesc2),
-					TrueValue, // Home division
+					util.TrueValue, // Home division
 				),
 			},
 			{
@@ -100,7 +129,7 @@ func TestAccResourceAuthDivisionHome(t *testing.T) {
 					divHomeRes,
 					divHomeName,
 					strconv.Quote(homeDesc2),
-					TrueValue, // Home division
+					util.TrueValue, // Home division
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_auth_division."+divHomeRes, "name", divHomeName),
@@ -133,7 +162,7 @@ func testVerifyDivisionsDestroyed(state *terraform.State) error {
 		division, resp, err := authAPI.GetAuthorizationDivision(rs.Primary.ID, false)
 		if division != nil {
 			return fmt.Errorf("Division (%s) still exists", rs.Primary.ID)
-		} else if IsStatus404(resp) {
+		} else if util.IsStatus404(resp) {
 			// Division not found as expected
 			continue
 		} else {
@@ -152,7 +181,7 @@ func validateHomeDivisionID(divResourceName string) resource.TestCheckFunc {
 			return fmt.Errorf("Failed to find division %s in state", divResourceName)
 		}
 		divID := divResource.Primary.ID
-		homeDivID, err := getHomeDivisionID()
+		homeDivID, err := util.GetHomeDivisionID()
 		if err != nil {
 			return fmt.Errorf("%v", err)
 		}
@@ -161,5 +190,33 @@ func validateHomeDivisionID(divResourceName string) resource.TestCheckFunc {
 			return fmt.Errorf("Resource %s division ID %s not equal to home division ID %s", divResourceName, divID, homeDivID)
 		}
 		return nil
+	}
+}
+
+func cleanupAuthDivision(idPrefix string) {
+	authAPI := platformclientv2.NewAuthorizationApiWithConfig(sdkConfig)
+
+	for pageNum := 1; ; pageNum++ {
+		const pageSize = 100
+		divisions, _, getErr := authAPI.GetAuthorizationDivisions(pageSize, pageNum, "", nil, "", "", false, nil, "")
+		if getErr != nil {
+			log.Printf("failed to get auth division %s", getErr)
+			return
+		}
+
+		if divisions.Entities == nil || len(*divisions.Entities) == 0 {
+			break
+		}
+
+		for _, div := range *divisions.Entities {
+			if div.Name != nil && strings.HasPrefix(*div.Name, idPrefix) {
+				_, delErr := authAPI.DeleteAuthorizationDivision(*div.Id, true)
+				if delErr != nil {
+					log.Printf("failed to delete Auth division %s", delErr)
+					return
+				}
+				log.Printf("Deleted auth division %s (%s)", *div.Id, *div.Name)
+			}
+		}
 	}
 }

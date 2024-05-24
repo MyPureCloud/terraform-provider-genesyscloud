@@ -5,16 +5,16 @@ import (
 	"fmt"
 	"log"
 	"strconv"
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
-	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 )
 
 var internalProxy *webDeploymentsConfigurationProxy
 
-type getAllWebDeploymentsConfigurationFunc func(ctx context.Context, p *webDeploymentsConfigurationProxy) (*platformclientv2.Webdeploymentconfigurationversionentitylisting, error)
+type getAllWebDeploymentsConfigurationFunc func(ctx context.Context, p *webDeploymentsConfigurationProxy) (*platformclientv2.Webdeploymentconfigurationversionentitylisting, *platformclientv2.APIResponse, error)
 type getWebdeploymentsConfigurationVersionFunc func(ctx context.Context, p *webDeploymentsConfigurationProxy, id string, version string) (*platformclientv2.Webdeploymentconfigurationversion, *platformclientv2.APIResponse, error)
 type determineLatestVersionFunc func(ctx context.Context, p *webDeploymentsConfigurationProxy, configurationId string) string
 type deleteWebDeploymentConfigurationFunc func(ctx context.Context, p *webDeploymentsConfigurationProxy, configurationId string) (*platformclientv2.APIResponse, error)
@@ -62,7 +62,7 @@ type webDeploymentsConfigurationProxy struct {
 	updateWebdeploymentsConfigurationVersionsDraftAttr        updateWebdeploymentsConfigurationVersionsDraftFunc
 }
 
-func (p *webDeploymentsConfigurationProxy) getWebDeploymentsConfiguration(ctx context.Context) (*platformclientv2.Webdeploymentconfigurationversionentitylisting, error) {
+func (p *webDeploymentsConfigurationProxy) getWebDeploymentsConfiguration(ctx context.Context) (*platformclientv2.Webdeploymentconfigurationversionentitylisting, *platformclientv2.APIResponse, error) {
 	return p.getAllWebDeploymentConfigurationsAttr(ctx, p)
 }
 
@@ -94,13 +94,13 @@ func (p *webDeploymentsConfigurationProxy) updateWebdeploymentsConfigurationVers
 	return p.updateWebdeploymentsConfigurationVersionsDraftAttr(ctx, p, configurationId, configurationVersion)
 }
 
-func getAllWebDeploymentsConfigurationFn(ctx context.Context, p *webDeploymentsConfigurationProxy) (*platformclientv2.Webdeploymentconfigurationversionentitylisting, error) {
-	configurations, _, getErr := p.webDeploymentsApi.GetWebdeploymentsConfigurations(false)
+func getAllWebDeploymentsConfigurationFn(ctx context.Context, p *webDeploymentsConfigurationProxy) (*platformclientv2.Webdeploymentconfigurationversionentitylisting, *platformclientv2.APIResponse, error) {
+	configurations, resp, getErr := p.webDeploymentsApi.GetWebdeploymentsConfigurations(false)
 
 	if getErr != nil {
-		return nil, fmt.Errorf("Failed to get web deployment configurations: %v", getErr)
+		return nil, resp, fmt.Errorf("Failed to get web deployment configurations: %v", getErr)
 	}
-	return configurations, nil
+	return configurations, resp, nil
 }
 
 func getWebdeploymentsConfigurationVersionFn(ctx context.Context, p *webDeploymentsConfigurationProxy, id string, version string) (*platformclientv2.Webdeploymentconfigurationversion, *platformclientv2.APIResponse, error) {
@@ -110,15 +110,15 @@ func getWebdeploymentsConfigurationVersionFn(ctx context.Context, p *webDeployme
 func determineLatestVersionFn(ctx context.Context, p *webDeploymentsConfigurationProxy, configurationId string) string {
 	version := ""
 	draft := "DRAFT"
-	_ = gcloud.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
+	_ = util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		versions, resp, getErr := p.webDeploymentsApi.GetWebdeploymentsConfigurationVersions(configurationId)
 		if getErr != nil {
-			if gcloud.IsStatus404(resp) {
-				return retry.RetryableError(fmt.Errorf("Failed to determine latest version %s", getErr))
+			if util.IsStatus404(resp) {
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to determine latest version | error: %s", getErr), resp))
 			}
 			log.Printf("Failed to determine latest version. Defaulting to DRAFT. Details: %s", getErr)
 			version = draft
-			return retry.NonRetryableError(fmt.Errorf("Failed to determine latest version %s", getErr))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to determine latest version | error: %s", getErr), resp))
 		}
 
 		maxVersion := 0

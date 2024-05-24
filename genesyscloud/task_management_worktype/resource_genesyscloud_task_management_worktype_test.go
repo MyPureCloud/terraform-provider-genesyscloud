@@ -5,6 +5,9 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	routingQueue "terraform-provider-genesyscloud/genesyscloud/routing_queue"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 
 	"github.com/google/uuid"
@@ -15,7 +18,7 @@ import (
 	workitemSchema "terraform-provider-genesyscloud/genesyscloud/task_management_workitem_schema"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 )
 
 /*
@@ -86,12 +89,12 @@ func TestAccResourceTaskManagementWorktype(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
-		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			// Most basic config, barebones to create a worktype
 			{
-				Config: workbin.GenerateWorkbinResource(wbResourceId, wbName, wbDescription, gcloud.NullValue) +
+				Config: workbin.GenerateWorkbinResource(wbResourceId, wbName, wbDescription, util.NullValue) +
 					workitemSchema.GenerateWorkitemSchemaResourceBasic(wsResourceId, wsName, wsDescription) +
 					GenerateWorktypeResourceBasic(wtRes.resID, wtRes.name, wtRes.description, wtRes.defaultWorkbinId, wtRes.schemaId, ""),
 				Check: resource.ComposeTestCheckFunc(
@@ -103,9 +106,9 @@ func TestAccResourceTaskManagementWorktype(t *testing.T) {
 			},
 			// All optional properties update (except statuses)
 			{
-				Config: workbin.GenerateWorkbinResource(wbResourceId, wbName, wbDescription, gcloud.NullValue) +
+				Config: workbin.GenerateWorkbinResource(wbResourceId, wbName, wbDescription, util.NullValue) +
 					workitemSchema.GenerateWorkitemSchemaResourceBasic(wsResourceId, wsName, wsDescription) +
-					gcloud.GenerateRoutingQueueResourceBasic(queueResId, queueName) +
+					routingQueue.GenerateRoutingQueueResourceBasic(queueResId, queueName) +
 					gcloud.GenerateRoutingLanguageResource(langResId, langName) +
 					gcloud.GenerateRoutingSkillResource(skillResId1, skillResName1) +
 					gcloud.GenerateRoutingSkillResource(skillResId2, skillResName2) +
@@ -226,12 +229,12 @@ func TestAccResourceTaskManagementWorktypeStatus(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
-		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			// Initial basic statuses
 			{
-				Config: workbin.GenerateWorkbinResource(wbResourceId, wbName, wbDescription, gcloud.NullValue) +
+				Config: workbin.GenerateWorkbinResource(wbResourceId, wbName, wbDescription, util.NullValue) +
 					workitemSchema.GenerateWorkitemSchemaResourceBasic(wsResourceId, wsName, wsDescription) +
 					GenerateWorktypeResourceBasic(wtRes.resID, wtRes.name, wtRes.description, wtRes.defaultWorkbinId, wtRes.schemaId, generateWorktypeAllStatuses(wtRes)),
 				Check: resource.ComposeTestCheckFunc(
@@ -255,7 +258,7 @@ func TestAccResourceTaskManagementWorktypeStatus(t *testing.T) {
 			},
 			// Add statuses and destination references
 			{
-				Config: workbin.GenerateWorkbinResource(wbResourceId, wbName, wbDescription, gcloud.NullValue) +
+				Config: workbin.GenerateWorkbinResource(wbResourceId, wbName, wbDescription, util.NullValue) +
 					workitemSchema.GenerateWorkitemSchemaResourceBasic(wsResourceId, wsName, wsDescription) +
 					GenerateWorktypeResourceBasic(wtRes.resID, wtRes.name, wtRes.description, wtRes.defaultWorkbinId, wtRes.schemaId, generateWorktypeAllStatuses(statusUpdates)),
 				Check: resource.ComposeTestCheckFunc(
@@ -294,7 +297,7 @@ func TestAccResourceTaskManagementWorktypeStatus(t *testing.T) {
 			},
 			// Removing statuses and update
 			{
-				Config: workbin.GenerateWorkbinResource(wbResourceId, wbName, wbDescription, gcloud.NullValue) +
+				Config: workbin.GenerateWorkbinResource(wbResourceId, wbName, wbDescription, util.NullValue) +
 					workitemSchema.GenerateWorkitemSchemaResourceBasic(wsResourceId, wsName, wsDescription) +
 					GenerateWorktypeResourceBasic(wtRes.resID, wtRes.name, wtRes.description, wtRes.defaultWorkbinId, wtRes.schemaId, generateWorktypeAllStatuses(statusUpdates2)),
 				Check: resource.ComposeTestCheckFunc(
@@ -331,7 +334,7 @@ func testVerifyTaskManagementWorktypeDestroyed(state *terraform.State) error {
 		worktype, resp, err := taskMgmtApi.GetTaskmanagementWorktype(rs.Primary.ID, nil)
 		if worktype != nil {
 			return fmt.Errorf("Task management worktype (%s) still exists", rs.Primary.ID)
-		} else if gcloud.IsStatus404(resp) {
+		} else if util.IsStatus404(resp) {
 			// Worktype not found as expected
 			continue
 		} else {
@@ -381,7 +384,7 @@ func generateWorktypeResource(wt worktypeConfig) string {
 		wt.defaultTtlS,
 		wt.defaultLanguageId,
 		wt.defaultQueueId,
-		gcloud.GenerateStringArray(wt.defaultSkillIds...),
+		util.GenerateStringArray(wt.defaultSkillIds...),
 		wt.assignmentEnabled,
 		wt.schemaVersion,
 		statuses,
@@ -402,16 +405,16 @@ func generateWorktypeAllStatuses(wt worktypeConfig) string {
 func generateWorktypeStatus(wtStatus worktypeStatusConfig) string {
 	additional := []string{}
 	if len(wtStatus.destinationStatusNames) > 0 {
-		additional = append(additional, gcloud.GenerateMapProperty("destination_status_names", gcloud.GenerateStringArrayEnquote(wtStatus.destinationStatusNames...)))
+		additional = append(additional, util.GenerateMapProperty("destination_status_names", util.GenerateStringArrayEnquote(wtStatus.destinationStatusNames...)))
 	}
 	if wtStatus.defaultDestinationStatusName != "" {
-		additional = append(additional, gcloud.GenerateMapProperty("default_destination_status_name", strconv.Quote(wtStatus.defaultDestinationStatusName)))
+		additional = append(additional, util.GenerateMapProperty("default_destination_status_name", strconv.Quote(wtStatus.defaultDestinationStatusName)))
 	}
 	if wtStatus.transitionDelay != 0 {
-		additional = append(additional, gcloud.GenerateMapProperty("status_transition_delay_seconds", strconv.Itoa(wtStatus.transitionDelay)))
+		additional = append(additional, util.GenerateMapProperty("status_transition_delay_seconds", strconv.Itoa(wtStatus.transitionDelay)))
 	}
 	if wtStatus.statusTransitionTime != "" {
-		additional = append(additional, gcloud.GenerateMapProperty("status_transition_time", strconv.Quote(wtStatus.statusTransitionTime)))
+		additional = append(additional, util.GenerateMapProperty("status_transition_time", strconv.Quote(wtStatus.statusTransitionTime)))
 	}
 
 	return fmt.Sprintf(`statuses {

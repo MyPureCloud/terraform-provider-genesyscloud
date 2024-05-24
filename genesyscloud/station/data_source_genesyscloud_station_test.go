@@ -4,9 +4,11 @@ import (
 	"fmt"
 	"strconv"
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
 	edgePhone "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_phone"
 	phoneBaseSettings "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_phonebasesettings"
 	edgeSite "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 
 	"github.com/google/uuid"
@@ -42,13 +44,13 @@ func TestAccDataSourceStation(t *testing.T) {
 		userRes1,
 		userEmail1,
 		userName1,
-		gcloud.NullValue, // Defaults to active
+		util.NullValue, // Defaults to active
 		strconv.Quote(userTitle),
 		strconv.Quote(userDepartment),
-		gcloud.NullValue, // No manager
-		gcloud.NullValue, // Default acdAutoAnswer
-		"",               // No profile skills
-		"",               // No certs
+		util.NullValue, // No manager
+		util.NullValue, // Default acdAutoAnswer
+		"",             // No profile skills
+		"",             // No certs
 	) + phoneBaseSettings.GeneratePhoneBaseSettingsResourceWithCustomAttrs(
 		phoneBaseSettingsRes,
 		phoneBaseSettingsName,
@@ -62,13 +64,13 @@ func TestAccDataSourceStation(t *testing.T) {
 		PhoneBaseSettingsId: "genesyscloud_telephony_providers_edges_phonebasesettings." + phoneBaseSettingsRes + ".id",
 		LineAddresses:       nil, // no line addresses
 		WebRtcUserId:        "genesyscloud_user." + userRes1 + ".id",
-		Depends_on:          "", // no depends on
+		DependsOn:           "", // no depends on
 	},
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
-		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				Config: config + generateStationDataSource(

@@ -2,10 +2,10 @@ package task_management_worktype
 
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
+	gcloud "terraform-provider-genesyscloud/genesyscloud/validators"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
@@ -19,11 +19,13 @@ resource_genesycloud_task_management_worktype_schema.go holds four functions wit
 4.  The resource exporter configuration for the task_management_worktype exporter.
 */
 const resourceName = "genesyscloud_task_management_worktype"
+const worktypeStatusDataSourceName = "genesyscloud_task_management_worktype_status"
 
 // SetRegistrar registers all of the resources, datasources and exporters in the package
 func SetRegistrar(regInstance registrar.Registrar) {
 	regInstance.RegisterResource(resourceName, ResourceTaskManagementWorktype())
 	regInstance.RegisterDataSource(resourceName, DataSourceTaskManagementWorktype())
+	regInstance.RegisterDataSource(worktypeStatusDataSourceName, DataSourceTaskManagementWorktypeStatus())
 	regInstance.RegisterExporter(resourceName, TaskManagementWorktypeExporter())
 }
 
@@ -83,10 +85,10 @@ func ResourceTaskManagementWorktype() *schema.Resource {
 	return &schema.Resource{
 		Description: `Genesys Cloud task management worktype`,
 
-		CreateContext: gcloud.CreateWithPooledClient(createTaskManagementWorktype),
-		ReadContext:   gcloud.ReadWithPooledClient(readTaskManagementWorktype),
-		UpdateContext: gcloud.UpdateWithPooledClient(updateTaskManagementWorktype),
-		DeleteContext: gcloud.DeleteWithPooledClient(deleteTaskManagementWorktype),
+		CreateContext: provider.CreateWithPooledClient(createTaskManagementWorktype),
+		ReadContext:   provider.ReadWithPooledClient(readTaskManagementWorktype),
+		UpdateContext: provider.UpdateWithPooledClient(updateTaskManagementWorktype),
+		DeleteContext: provider.DeleteWithPooledClient(deleteTaskManagementWorktype),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -194,7 +196,7 @@ func ResourceTaskManagementWorktype() *schema.Resource {
 // TaskManagementWorktypeExporter returns the resourceExporter object used to hold the genesyscloud_task_management_worktype exporter's config
 func TaskManagementWorktypeExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
-		GetResourcesFunc: gcloud.GetAllWithPooledClient(getAllAuthTaskManagementWorktypes),
+		GetResourcesFunc: provider.GetAllWithPooledClient(getAllAuthTaskManagementWorktypes),
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			"division_id":         {RefType: "genesyscloud_auth_division"},
 			"default_workbin_id":  {RefType: "genesyscloud_task_management_workbin"},
@@ -211,13 +213,36 @@ func TaskManagementWorktypeExporter() *resourceExporter.ResourceExporter {
 func DataSourceTaskManagementWorktype() *schema.Resource {
 	return &schema.Resource{
 		Description: `Genesys Cloud task management worktype data source. Select a task management worktype by name`,
-		ReadContext: gcloud.ReadWithPooledClient(dataSourceTaskManagementWorktypeRead),
+		ReadContext: provider.ReadWithPooledClient(dataSourceTaskManagementWorktypeRead),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Description: `Task management worktype name`,
+				Type:        schema.TypeString,
+				Required:    true,
+			},
+		},
+	}
+}
+
+// DataSourceTaskManagementWorktypeStatus registers the genesyscloud_task_management_worktype_status data source
+func DataSourceTaskManagementWorktypeStatus() *schema.Resource {
+	return &schema.Resource{
+		Description: `Genesys Cloud task management worktype_status data source. Select a status by worktype name and status name`,
+		ReadContext: provider.ReadWithPooledClient(dataSourceTaskManagementWorktypeStatusRead),
+		Importer: &schema.ResourceImporter{
+			StateContext: schema.ImportStatePassthroughContext,
+		},
+		Schema: map[string]*schema.Schema{
+			"worktype_name": {
+				Description: `Task management worktype name`,
+				Type:        schema.TypeString,
+				Required:    true,
+			},
+			"worktype_status_name": {
+				Description: `Task management worktype status name`,
 				Type:        schema.TypeString,
 				Required:    true,
 			},

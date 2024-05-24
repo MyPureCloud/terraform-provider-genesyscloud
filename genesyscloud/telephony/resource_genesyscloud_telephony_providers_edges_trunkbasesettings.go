@@ -8,11 +8,13 @@ import (
 	"log"
 	"net/http"
 	"strings"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
@@ -20,17 +22,21 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
+)
+
+const (
+	resourceName = "genesyscloud_telephony_providers_edges_trunkbasesettings"
 )
 
 func ResourceTrunkBaseSettings() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud Trunk Base Settings",
 
-		CreateContext: gcloud.CreateWithPooledClient(createTrunkBaseSettings),
-		ReadContext:   gcloud.ReadWithPooledClient(readTrunkBaseSettings),
-		UpdateContext: gcloud.UpdateWithPooledClient(updateTrunkBaseSettings),
-		DeleteContext: gcloud.DeleteWithPooledClient(deleteTrunkBaseSettings),
+		CreateContext: provider.CreateWithPooledClient(createTrunkBaseSettings),
+		ReadContext:   provider.ReadWithPooledClient(readTrunkBaseSettings),
+		UpdateContext: provider.UpdateWithPooledClient(updateTrunkBaseSettings),
+		DeleteContext: provider.DeleteWithPooledClient(deleteTrunkBaseSettings),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -63,7 +69,7 @@ func ResourceTrunkBaseSettings() *schema.Resource {
 				Type:             schema.TypeString,
 				Optional:         true,
 				Computed:         true,
-				DiffSuppressFunc: gcloud.SuppressEquivalentJsonDiffs,
+				DiffSuppressFunc: util.SuppressEquivalentJsonDiffs,
 			},
 			"trunk_type": {
 				Description:  "The type of this trunk base.Valid values: EXTERNAL, PHONE, EDGE.",
@@ -82,7 +88,7 @@ func ResourceTrunkBaseSettings() *schema.Resource {
 				Optional:    true,
 			},
 		},
-		CustomizeDiff: gcloud.CustomizeTrunkBaseSettingsPropertiesDiff,
+		CustomizeDiff: util.CustomizeTrunkBaseSettingsPropertiesDiff,
 	}
 }
 
@@ -90,9 +96,9 @@ func createTrunkBaseSettings(ctx context.Context, d *schema.ResourceData, meta i
 	name := d.Get("name").(string)
 	description := d.Get("description").(string)
 	trunkMetaBaseString := d.Get("trunk_meta_base_id").(string)
-	trunkMetaBase := gcloud.BuildSdkDomainEntityRef(d, "trunk_meta_base_id")
+	trunkMetaBase := util.BuildSdkDomainEntityRef(d, "trunk_meta_base_id")
 	inboundSiteString := d.Get("inbound_site_id").(string)
-	properties := gcloud.BuildBaseSettingsProperties(d)
+	properties := util.BuildTelephonyProperties(d)
 	trunkType := d.Get("trunk_type").(string)
 	managed := d.Get("managed").(bool)
 	trunkBase := platformclientv2.Trunkbase{
@@ -106,24 +112,24 @@ func createTrunkBaseSettings(ctx context.Context, d *schema.ResourceData, meta i
 	validationInboundSite, errorInboundSite := ValidateInboundSiteSettings(inboundSiteString, trunkMetaBaseString)
 
 	if validationInboundSite && errorInboundSite == nil {
-		inboundSite := gcloud.BuildSdkDomainEntityRef(d, "inbound_site_id")
+		inboundSite := util.BuildSdkDomainEntityRef(d, "inbound_site_id")
 		trunkBase.InboundSite = inboundSite
 	}
 	if errorInboundSite != nil {
-		return diag.Errorf("Failed to create trunk base settings %s: %s", name, errorInboundSite)
+		return util.BuildDiagnosticError(resourceName, fmt.Sprintf("Failed to create trunk base settings %s", name), errorInboundSite)
 	}
 
 	if description != "" {
 		trunkBase.Description = &description
 	}
 
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
 
 	log.Printf("Creating trunk base settings %s", name)
-	trunkBaseSettings, _, err := edgesAPI.PostTelephonyProvidersEdgesTrunkbasesettings(trunkBase)
+	trunkBaseSettings, resp, err := edgesAPI.PostTelephonyProvidersEdgesTrunkbasesettings(trunkBase)
 	if err != nil {
-		return diag.Errorf("Failed to create trunk base settings %s: %s", name, err)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create trunk base settings %s error: %s", name, err), resp)
 	}
 
 	d.SetId(*trunkBaseSettings.Id)
@@ -137,10 +143,10 @@ func updateTrunkBaseSettings(ctx context.Context, d *schema.ResourceData, meta i
 	name := d.Get("name").(string)
 	description := d.Get("description").(string)
 	trunkMetaBaseString := d.Get("trunk_meta_base_id").(string)
-	trunkMetaBase := gcloud.BuildSdkDomainEntityRef(d, "trunk_meta_base_id")
+	trunkMetaBase := util.BuildSdkDomainEntityRef(d, "trunk_meta_base_id")
 	inboundSiteString := d.Get("inbound_site_id").(string)
 
-	properties := gcloud.BuildBaseSettingsProperties(d)
+	properties := util.BuildTelephonyProperties(d)
 	trunkType := d.Get("trunk_type").(string)
 	managed := d.Get("managed").(bool)
 	id := d.Id()
@@ -157,42 +163,40 @@ func updateTrunkBaseSettings(ctx context.Context, d *schema.ResourceData, meta i
 	validationInboundSite, errorInboundSite := ValidateInboundSiteSettings(inboundSiteString, trunkMetaBaseString)
 
 	if validationInboundSite && errorInboundSite == nil {
-		inboundSite := gcloud.BuildSdkDomainEntityRef(d, "inbound_site_id")
+		inboundSite := util.BuildSdkDomainEntityRef(d, "inbound_site_id")
 		trunkBase.InboundSite = inboundSite
 	}
 	if errorInboundSite != nil {
-		return diag.Errorf("Failed to update trunk base settings %s: %s", name, errorInboundSite)
+		return util.BuildDiagnosticError(resourceName, fmt.Sprintf("Failed to update trunk base settings %s", name), errorInboundSite)
 	}
 
 	if description != "" {
 		trunkBase.Description = &description
 	}
 
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
 
-	diagErr := gcloud.RetryWhen(gcloud.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+	diagErr := util.RetryWhen(util.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		// Get the latest version of the setting
 		trunkBaseSettings, resp, getErr := edgesAPI.GetTelephonyProvidersEdgesTrunkbasesetting(d.Id(), true)
 		if getErr != nil {
-			if gcloud.IsStatus404(resp) {
-				return resp, diag.Errorf("The trunk base settings does not exist %s: %s", d.Id(), getErr)
+			if util.IsStatus404(resp) {
+				return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("The trunk base settings does not exist %s error: %s", d.Id(), getErr), resp)
 			}
-			return resp, diag.Errorf("Failed to read trunk base settings %s: %s", d.Id(), getErr)
+			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to read trunk base settings %s error: %s", d.Id(), getErr), resp)
 		}
 		trunkBase.Version = trunkBaseSettings.Version
 
 		log.Printf("Updating trunk base settings %s", name)
 		trunkBaseSettings, resp, err := edgesAPI.PutTelephonyProvidersEdgesTrunkbasesetting(d.Id(), trunkBase)
 		if err != nil {
-			respString := ""
-			if resp != nil {
-				respString = resp.String()
-			}
-			return resp, diag.Errorf("Failed to update trunk base settings %s: %s %v", name, err, respString)
+
+			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update trunk base settings %s error: %s", name, err), resp)
 		}
 		return resp, nil
 	})
+
 	if diagErr != nil {
 		return diagErr
 	}
@@ -200,21 +204,17 @@ func updateTrunkBaseSettings(ctx context.Context, d *schema.ResourceData, meta i
 	// Get the latest version of the setting
 	trunkBaseSettings, resp, getErr := edgesAPI.GetTelephonyProvidersEdgesTrunkbasesetting(d.Id(), true)
 	if getErr != nil {
-		if gcloud.IsStatus404(resp) {
+		if util.IsStatus404(resp) {
 			return nil
 		}
-		return diag.Errorf("Failed to read trunk base settings %s: %s", d.Id(), getErr)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to read trunk base settings %s error: %s", d.Id(), getErr), resp)
 	}
 	trunkBase.Version = trunkBaseSettings.Version
 
 	log.Printf("Updating trunk base settings %s", name)
 	trunkBaseSettings, resp, err := edgesAPI.PutTelephonyProvidersEdgesTrunkbasesetting(d.Id(), trunkBase)
 	if err != nil {
-		respString := ""
-		if resp != nil {
-			respString = resp.String()
-		}
-		return diag.Errorf("Failed to update trunk base settings %s: %s %v", name, err, respString)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update trunk base settings %s error: %s", d.Id(), err), resp)
 	}
 
 	log.Printf("Updated trunk base settings %s", *trunkBaseSettings.Id)
@@ -223,20 +223,20 @@ func updateTrunkBaseSettings(ctx context.Context, d *schema.ResourceData, meta i
 }
 
 func readTrunkBaseSettings(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceTrunkBaseSettings(), constants.DefaultConsistencyChecks, resourceName)
 
 	log.Printf("Reading trunk base settings %s", d.Id())
-	return gcloud.WithRetriesForRead(ctx, d, func() *retry.RetryError {
+	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		trunkBaseSettings, resp, getErr := edgesAPI.GetTelephonyProvidersEdgesTrunkbasesetting(d.Id(), true)
 		if getErr != nil {
-			if gcloud.IsStatus404(resp) {
-				return retry.RetryableError(fmt.Errorf("Failed to read trunk base settings %s: %s", d.Id(), getErr))
+			if util.IsStatus404(resp) {
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read trunk base settings %s | error: %s", d.Id(), getErr), resp))
 			}
-			return retry.NonRetryableError(fmt.Errorf("Failed to read trunk base settings %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read trunk base settings %s | error: %s", d.Id(), getErr), resp))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceTrunkBaseSettings())
 		d.Set("name", *trunkBaseSettings.Name)
 		d.Set("state", *trunkBaseSettings.State)
 		if trunkBaseSettings.Description != nil {
@@ -257,7 +257,7 @@ func readTrunkBaseSettings(ctx context.Context, d *schema.ResourceData, meta int
 
 		d.Set("properties", nil)
 		if trunkBaseSettings.Properties != nil {
-			properties, err := gcloud.FlattenBaseSettingsProperties(trunkBaseSettings.Properties)
+			properties, err := util.FlattenTelephonyProperties(trunkBaseSettings.Properties)
 			if err != nil {
 				return retry.NonRetryableError(fmt.Errorf("%v", err))
 			}
@@ -266,23 +266,23 @@ func readTrunkBaseSettings(ctx context.Context, d *schema.ResourceData, meta int
 
 		log.Printf("Read trunk base settings %s %s", d.Id(), *trunkBaseSettings.Name)
 
-		return cc.CheckState()
+		return cc.CheckState(d)
 	})
 }
 
 func deleteTrunkBaseSettings(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
 
-	diagErr := gcloud.RetryWhen(gcloud.IsStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+	diagErr := util.RetryWhen(util.IsStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		log.Printf("Deleting trunk base settings")
 		resp, err := edgesAPI.DeleteTelephonyProvidersEdgesTrunkbasesetting(d.Id())
 		if err != nil {
-			if gcloud.IsStatus404(resp) {
+			if util.IsStatus404(resp) {
 				// trunk base settings not found, goal achieved!
 				return nil, nil
 			}
-			return resp, diag.Errorf("Failed to delete trunk base settings: %s", err)
+			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete trunk base settings %s error: %s", d.Id(), err), resp)
 		}
 		return resp, nil
 	})
@@ -290,15 +290,15 @@ func deleteTrunkBaseSettings(ctx context.Context, d *schema.ResourceData, meta i
 		return diagErr
 	}
 
-	return gcloud.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
+	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		trunkBaseSettings, resp, err := edgesAPI.GetTelephonyProvidersEdgesTrunkbasesetting(d.Id(), true)
 		if err != nil {
-			if gcloud.IsStatus404(resp) {
+			if util.IsStatus404(resp) {
 				// trunk base settings deleted
 				log.Printf("Deleted trunk base settings %s", d.Id())
 				return nil
 			}
-			return retry.NonRetryableError(fmt.Errorf("Error deleting trunk base settings %s: %s", d.Id(), err))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Error deleting trunk base settings %s | error: %s", d.Id(), err), resp))
 		}
 
 		if trunkBaseSettings.State != nil && *trunkBaseSettings.State == "deleted" {
@@ -307,7 +307,7 @@ func deleteTrunkBaseSettings(ctx context.Context, d *schema.ResourceData, meta i
 			return nil
 		}
 
-		return retry.RetryableError(fmt.Errorf("trunk base settings %s still exists", d.Id()))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("trunk base settings %s still exists", d.Id()), resp))
 	})
 }
 
@@ -316,9 +316,9 @@ func getAllTrunkBaseSettings(ctx context.Context, sdkConfig *platformclientv2.Co
 
 	for pageNum := 1; ; pageNum++ {
 		const pageSize = 100
-		trunkBaseSettings, _, getErr := getTelephonyProvidersEdgesTrunkbasesettings(sdkConfig, pageNum, pageSize, "")
+		trunkBaseSettings, resp, getErr := getTelephonyProvidersEdgesTrunkbasesettings(sdkConfig, pageNum, pageSize, "")
 		if getErr != nil {
-			return nil, diag.Errorf("Failed to get page of trunk base settings: %v", getErr)
+			return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get page of trunk base settings error: %s", getErr), resp)
 		}
 
 		if trunkBaseSettings.Entities == nil || len(*trunkBaseSettings.Entities) == 0 {
@@ -402,7 +402,7 @@ func ValidateInboundSiteSettings(inboundSiteString string, trunkBaseMetaId strin
 
 func TrunkBaseSettingsExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
-		GetResourcesFunc:     gcloud.GetAllWithPooledClient(getAllTrunkBaseSettings),
+		GetResourcesFunc:     provider.GetAllWithPooledClient(getAllTrunkBaseSettings),
 		RefAttrs:             map[string]*resourceExporter.RefAttrSettings{},
 		JsonEncodeAttributes: []string{"properties"},
 	}

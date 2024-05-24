@@ -5,18 +5,19 @@ import (
 	"fmt"
 	"log"
 	"strings"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/leekchan/timeutil"
-	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 )
 
 var (
@@ -33,7 +34,7 @@ func customizeSiteDiff(ctx context.Context, diff *schema.ResourceDiff, meta inte
 			return nil
 		}
 
-		sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+		sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 		edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
 
 		siteId := diff.Id()
@@ -41,9 +42,9 @@ func customizeSiteDiff(ctx context.Context, diff *schema.ResourceDiff, meta inte
 			return nil
 		}
 
-		numberPlansFromApi, _, err := edgesAPI.GetTelephonyProvidersEdgesSiteNumberplans(siteId)
+		numberPlansFromApi, resp, err := edgesAPI.GetTelephonyProvidersEdgesSiteNumberplans(siteId)
 		if err != nil {
-			return fmt.Errorf("failed to get number plans from site %s: %s", siteId, err)
+			return fmt.Errorf("failed to get number plans from site %s: %s %v", siteId, err, resp)
 		}
 
 		for _, np := range numberPlansFromApi {
@@ -61,7 +62,7 @@ func customizeSiteDiff(ctx context.Context, diff *schema.ResourceDiff, meta inte
 }
 
 func validateMediaRegions(ctx context.Context, sp *siteProxy, regions *[]string) error {
-	telephonyRegions, err := sp.getTelephonyMediaregions(ctx)
+	telephonyRegions, _, err := sp.getTelephonyMediaregions(ctx)
 	if err != nil {
 		return err
 	}
@@ -109,10 +110,10 @@ func updatePrimarySecondarySites(ctx context.Context, sp *siteProxy, d *schema.R
 
 	site, resp, err := sp.getSiteById(ctx, siteId)
 	if resp.StatusCode != 200 {
-		return diag.Errorf("Unable to retrieve site record after site %s was created, but unable to update the primary or secondary site.  Status code %d. RespBody %s", siteId, resp.StatusCode, resp.RawBody)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Unable to retrieve site record after site %s was created, but unable to update the primary or secondary site error: %s", siteId, err), resp)
 	}
 	if err != nil {
-		return diag.Errorf("Unable to retrieve site record after site %s was created, but unable to update the primary or secondary site.  Err: %s", siteId, err)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Unable to retrieve site record after site %s was created, but unable to update the primary or secondary siteerror: %s ", siteId, err), resp)
 	}
 
 	if len(primarySites) == 0 && len(secondarySites) > 0 {
@@ -123,19 +124,19 @@ func updatePrimarySecondarySites(ctx context.Context, sp *siteProxy, d *schema.R
 	}
 
 	if len(primarySites) > 0 {
-		site.PrimarySites = gcloud.BuildSdkDomainEntityRefArr(d, "primary_sites")
+		site.PrimarySites = util.BuildSdkDomainEntityRefArr(d, "primary_sites")
 	}
 
 	if len(secondarySites) > 0 {
-		site.SecondarySites = gcloud.BuildSdkDomainEntityRefArr(d, "secondary_sites")
+		site.SecondarySites = util.BuildSdkDomainEntityRefArr(d, "secondary_sites")
 	}
 
 	_, resp, err = sp.updateSite(ctx, siteId, site)
 	if resp.StatusCode != 200 {
-		return diag.Errorf("Site %s was created, but unable to update the primary or secondary site.  Status code %d. RespBody %s", siteId, resp.StatusCode, resp.RawBody)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Site %s was created, but unable to update the primary or secondary site. Status code %d. RespBody %s", siteId, resp.StatusCode, resp.RawBody), resp)
 	}
 	if err != nil {
-		return diag.Errorf("[Site %s was created, but unable to update the primary or secondary site.  Err: %s", siteId, err)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Site %s was created, but unable to update the primary or secondary site | error: %s", siteId, err), resp)
 	}
 
 	return nil
@@ -195,9 +196,9 @@ func updateSiteNumberPlans(ctx context.Context, sp *siteProxy, d *schema.Resourc
 	// The default plans won't be assigned yet if there isn't a wait
 	time.Sleep(5 * time.Second)
 
-	numberPlansFromAPI, _, err := sp.getSiteNumberPlans(ctx, d.Id())
+	numberPlansFromAPI, resp, err := sp.getSiteNumberPlans(ctx, d.Id())
 	if err != nil {
-		return diag.Errorf("Failed to get number plans for site %s: %s", d.Id(), err)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get number plans for site %s error: %s", d.Id(), err), resp)
 	}
 
 	updatedNumberPlans := make([]platformclientv2.Numberplan, 0)
@@ -228,16 +229,12 @@ func updateSiteNumberPlans(ctx context.Context, sp *siteProxy, d *schema.Resourc
 		}
 	}
 
-	diagErr := gcloud.RetryWhen(gcloud.IsStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+	diagErr := util.RetryWhen(util.IsStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		log.Printf("Updating number plans for site %s", d.Id())
 
 		_, resp, err := sp.updateSiteNumberPlans(ctx, d.Id(), &updatedNumberPlans)
 		if err != nil {
-			respString := ""
-			if resp != nil {
-				respString = resp.String()
-			}
-			return resp, diag.Errorf("Failed to update number plans for site %s: %s %s", d.Id(), err, respString)
+			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update number plans for site %s | error: %s", d.Id(), err), resp)
 		}
 		return resp, nil
 	})
@@ -296,9 +293,9 @@ func updateSiteOutboundRoutes(ctx context.Context, sp *siteProxy, d *schema.Reso
 	time.Sleep(5 * time.Second)
 
 	// Get the current outbound routes
-	outboundRoutesFromAPI, err := sp.getSiteOutboundRoutes(ctx, d.Id())
+	outboundRoutesFromAPI, resp, err := sp.getSiteOutboundRoutes(ctx, d.Id())
 	if err != nil {
-		return diag.Errorf("Failed to get outbound routes for site %s: %s", d.Id(), err)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get outbound routes for site %s error: %s", d.Id(), err), resp)
 	}
 
 	// Delete unwanted outbound roues first to free up classifications assigned to them
@@ -307,10 +304,10 @@ func updateSiteOutboundRoutes(ctx context.Context, sp *siteProxy, d *schema.Reso
 		if _, ok := nameInOutboundRoutes(*outboundRouteFromAPI.Name, outboundRoutesFromTf); !ok {
 			resp, err := sp.deleteSiteOutboundRoute(ctx, d.Id(), *outboundRouteFromAPI.Id)
 			if err != nil {
-				if gcloud.IsStatus404(resp) {
+				if util.IsStatus404(resp) {
 					return nil
 				}
-				return diag.Errorf("failed to delete outbound route from site %s: %s", d.Id(), err)
+				return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete outbound route from site %s error: %s", d.Id(), err), resp)
 			}
 		}
 	}
@@ -327,15 +324,15 @@ func updateSiteOutboundRoutes(ctx context.Context, sp *siteProxy, d *schema.Reso
 			outboundRoute.Distribution = outboundRouteFromTf.Distribution
 			outboundRoute.ExternalTrunkBases = outboundRouteFromTf.ExternalTrunkBases
 
-			_, err := sp.updateSiteOutboundRoute(ctx, d.Id(), *outboundRoute.Id, outboundRoute)
+			_, resp, err := sp.updateSiteOutboundRoute(ctx, d.Id(), *outboundRoute.Id, outboundRoute)
 			if err != nil {
-				return diag.Errorf("Failed to update outbound route with id %s for site %s: %s", *outboundRoute.Id, d.Id(), err)
+				return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update outbound route with id %s for site %s error: %s", *outboundRoute.Id, d.Id(), err), resp)
 			}
 		} else {
 			// Add the outbound route
-			_, err := sp.createSiteOutboundRoute(ctx, d.Id(), &outboundRouteFromTf)
+			_, resp, err := sp.createSiteOutboundRoute(ctx, d.Id(), &outboundRouteFromTf)
 			if err != nil {
-				return diag.Errorf("Failed to add outbound route to site %s: %s", d.Id(), err)
+				return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to add outbound route to site %s error: %s", d.Id(), err), resp)
 			}
 		}
 	}
@@ -369,11 +366,11 @@ func isNumberPlanInConfig(planName string, list []interface{}) bool {
 func readSiteNumberPlans(ctx context.Context, sp *siteProxy, d *schema.ResourceData) *retry.RetryError {
 	numberPlans, resp, err := sp.getSiteNumberPlans(ctx, d.Id())
 	if err != nil {
-		if gcloud.IsStatus404(resp) {
+		if util.IsStatus404(resp) {
 			d.SetId("") // Site doesn't exist
 			return nil
 		}
-		return retry.NonRetryableError(fmt.Errorf("failed to read number plans for site %s: %s", d.Id(), err))
+		return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read number plans for site %s | error: %s", d.Id(), err), resp))
 	}
 
 	dNumberPlans := make([]interface{}, 0)
@@ -391,9 +388,9 @@ func readSiteNumberPlans(ctx context.Context, sp *siteProxy, d *schema.ResourceD
 }
 
 func readSiteOutboundRoutes(ctx context.Context, sp *siteProxy, d *schema.ResourceData) *retry.RetryError {
-	outboundRoutes, err := sp.getSiteOutboundRoutes(ctx, d.Id())
+	outboundRoutes, resp, err := sp.getSiteOutboundRoutes(ctx, d.Id())
 	if err != nil {
-		return retry.NonRetryableError(fmt.Errorf("failed to get outbound routes for site %s: %s", d.Id(), err))
+		return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to get outbound routes for site %s | error: %s", d.Id(), err), resp))
 	}
 
 	dOutboundRoutes := schema.NewSet(schema.HashResource(outboundRouteSchema), []interface{}{})
@@ -606,7 +603,7 @@ func deleteSiteWithLocationId(locationId string, config *platformclientv2.Config
 	)
 
 	log.Printf("Reading telephony providers edges sites with location ID %s", locationId)
-	sites, _, getErr := edgesAPI.GetTelephonyProvidersEdgesSites(pageSize, 1, "", "", "", locationId, false)
+	sites, _, getErr := edgesAPI.GetTelephonyProvidersEdgesSites(pageSize, 1, "", "", "", locationId, false, nil)
 	if getErr != nil {
 		return getErr
 	}
@@ -619,7 +616,7 @@ func deleteSiteWithLocationId(locationId string, config *platformclientv2.Config
 
 	for pageNum := 1; pageNum <= pageCount; pageNum++ {
 		log.Printf("Reading telephony providers edges site with location ID %s", locationId)
-		sites, _, getErr = edgesAPI.GetTelephonyProvidersEdgesSites(pageSize, pageNum, "", "", "", locationId, false)
+		sites, _, getErr = edgesAPI.GetTelephonyProvidersEdgesSites(pageSize, pageNum, "", "", "", locationId, false, nil)
 		if getErr != nil {
 			return getErr
 		}

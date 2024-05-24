@@ -4,26 +4,27 @@ import (
 	"encoding/json"
 	"fmt"
 	"regexp"
-	"terraform-provider-genesyscloud/genesyscloud"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 )
 
 func TestAccResourceWebDeploymentsDeployment(t *testing.T) {
 	t.Parallel()
 	var (
-		deploymentName        = "Test Deployment " + genesyscloud.RandString(8)
-		deploymentDescription = "Test Deployment description " + genesyscloud.RandString(32)
+		deploymentName        = "Test Deployment " + util.RandString(8)
+		deploymentDescription = "Test Deployment description " + util.RandString(32)
 		fullResourceName      = "genesyscloud_webdeployments_deployment.basic"
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { genesyscloud.TestAccPreCheck(t) },
-		ProviderFactories: genesyscloud.GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				Config: basicDeploymentResource(deploymentName, deploymentDescription),
@@ -49,15 +50,15 @@ func TestAccResourceWebDeploymentsDeployment(t *testing.T) {
 func TestAccResourceWebDeploymentsDeployment_AllowedDomains(t *testing.T) {
 	t.Parallel()
 	var (
-		deploymentName   = "Test Deployment " + genesyscloud.RandString(8)
+		deploymentName   = "Test Deployment " + util.RandString(8)
 		fullResourceName = "genesyscloud_webdeployments_deployment.basicWithAllowedDomains"
-		firstDomain      = "genesys-" + genesyscloud.RandString(8) + ".com"
-		secondDomain     = "genesys-" + genesyscloud.RandString(8) + ".com"
+		firstDomain      = "genesys-" + util.RandString(8) + ".com"
+		secondDomain     = "genesys-" + util.RandString(8) + ".com"
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { genesyscloud.TestAccPreCheck(t) },
-		ProviderFactories: genesyscloud.GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				Config: deploymentResourceWithAllowedDomains(t, deploymentName, firstDomain),
@@ -92,14 +93,14 @@ func TestAccResourceWebDeploymentsDeployment_AllowedDomains(t *testing.T) {
 func TestAccResourceWebDeploymentsDeployment_Versioning(t *testing.T) {
 	t.Parallel()
 	var (
-		deploymentName             = "Test Deployment " + genesyscloud.RandString(8)
+		deploymentName             = "Test Deployment " + util.RandString(8)
 		fullDeploymentResourceName = "genesyscloud_webdeployments_deployment.versioning"
 		fullConfigResourceName     = "genesyscloud_webdeployments_configuration.minimal"
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { genesyscloud.TestAccPreCheck(t) },
-		ProviderFactories: genesyscloud.GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				Config: versioningDeploymentResource(t, deploymentName, "description 1", "en-us", []string{"en-us"}),
@@ -119,6 +120,16 @@ func TestAccResourceWebDeploymentsDeployment_Versioning(t *testing.T) {
 					resource.TestCheckResourceAttrPair(fullDeploymentResourceName, "configuration.0.version", fullConfigResourceName, "version"),
 				),
 			},
+			{
+				Config: deploymentResourceWithoutConfigVersion(t, deploymentName, "updated description again", "en-us", []string{"en-us", "ja"}),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(fullDeploymentResourceName, "name", deploymentName),
+					resource.TestCheckResourceAttr(fullDeploymentResourceName, "configuration.0.version", "3"),
+					resource.TestCheckResourceAttrPair(fullDeploymentResourceName, "configuration.0.id", fullConfigResourceName, "id"),
+					resource.TestCheckResourceAttrPair(fullDeploymentResourceName, "configuration.0.version", fullConfigResourceName, "version"),
+				),
+			},
+
 			{
 				ResourceName:            fullDeploymentResourceName,
 				ImportState:             true,
@@ -202,6 +213,31 @@ func versioningDeploymentResource(t *testing.T, name, description, defaultLangua
 	`, minimalConfigName, value, defaultLanguage, name, description)
 }
 
+func deploymentResourceWithoutConfigVersion(t *testing.T, name, description, defaultLanguage string, languages []string) string {
+	value, err := json.Marshal(languages)
+	if err != nil {
+		t.Error(err)
+	}
+	minimalConfigName := "Minimal Config " + uuid.NewString()
+
+	return fmt.Sprintf(`
+	resource "genesyscloud_webdeployments_configuration" "minimal" {
+		name = "%s"
+		languages = %s
+		default_language = "%s"
+	}
+
+	resource "genesyscloud_webdeployments_deployment" "versioning" {
+		name = "%s"
+		description = "%s"
+		allow_all_domains = true
+		configuration {
+			id = "${genesyscloud_webdeployments_configuration.minimal.id}"
+		}
+	}
+	`, minimalConfigName, value, defaultLanguage, name, description)
+}
+
 func verifyDeploymentDestroyed(state *terraform.State) error {
 	api := platformclientv2.NewWebDeploymentsApi()
 
@@ -212,7 +248,7 @@ func verifyDeploymentDestroyed(state *terraform.State) error {
 
 		_, response, err := api.GetWebdeploymentsDeployment(rs.Primary.ID, []string{})
 
-		if genesyscloud.IsStatus404(response) {
+		if util.IsStatus404(response) {
 			continue
 		}
 
@@ -240,7 +276,7 @@ func verifyLanguagesDestroyed(state *terraform.State) error {
 				continue
 			}
 			return fmt.Errorf("Language (%s) still exists", rs.Primary.ID)
-		} else if genesyscloud.IsStatus404(resp) {
+		} else if util.IsStatus404(resp) {
 			// Language not found as expected
 			continue
 		} else {

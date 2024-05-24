@@ -4,14 +4,15 @@ import (
 	"fmt"
 	"log"
 	"strings"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 
 	"terraform-provider-genesyscloud/genesyscloud/util/testrunner"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 )
 
 const ActionTemplateResourceName = "genesyscloud_journey_action_template"
@@ -24,15 +25,15 @@ func runJourneyActionTemplateTestCase(t *testing.T, testCaseName string) {
 	setupJourneyActionTemplate(t, testCaseName)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps:             testrunner.GenerateResourceTestSteps(ActionTemplateResourceName, testCaseName, nil),
 		CheckDestroy:      testVerifyJourneyActionTemplatesDestroyed,
 	})
 }
 
 func setupJourneyActionTemplate(t *testing.T, testCaseName string) {
-	_, err := AuthorizeSdk()
+	_, err := provider.AuthorizeSdk()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -58,9 +59,9 @@ func cleanupJourneyActionTemplate(idPrefix string) {
 
 		for _, actionTemp := range *actionTemplate.Entities {
 			if actionTemp.Name != nil && strings.HasPrefix(*actionTemp.Name, idPrefix) {
-				_, delErr := journeyApi.DeleteJourneyActiontemplate(*actionTemp.Id, true)
+				resp, delErr := journeyApi.DeleteJourneyActiontemplate(*actionTemp.Id, true)
 				if delErr != nil {
-					diag.Errorf("failed to delete journey action template %s (%s): %s", *actionTemp.Id, *actionTemp.Name, delErr)
+					util.BuildAPIDiagnosticError("genesyscloud_journey_action_template", fmt.Sprintf("failed to delete journey action template %s (%s): %s", *actionTemp.Id, *actionTemp.Name, delErr), resp)
 					return
 				}
 				log.Printf("Deleted Journey Action Template %s (%s)", *actionTemp.Id, *actionTemp.Name)
@@ -83,7 +84,7 @@ func testVerifyJourneyActionTemplatesDestroyed(state *terraform.State) error {
 			return fmt.Errorf("journey action template (%s) still exists", rs.Primary.ID)
 		}
 
-		if IsStatus404(resp) {
+		if util.IsStatus404(resp) {
 			// Journey action map not found as expected
 			continue
 		}

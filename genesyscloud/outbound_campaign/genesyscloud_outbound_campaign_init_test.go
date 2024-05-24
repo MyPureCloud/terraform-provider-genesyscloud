@@ -1,15 +1,22 @@
 package outbound_campaign
 
 import (
-	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
 	"log"
 	"sync"
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
-	"terraform-provider-genesyscloud/genesyscloud/outbound"
+	flow "terraform-provider-genesyscloud/genesyscloud/architect_flow"
+	obCallableTimeset "terraform-provider-genesyscloud/genesyscloud/outbound_callabletimeset"
+	obResponseSet "terraform-provider-genesyscloud/genesyscloud/outbound_callanalysisresponseset"
 	outboundContactList "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
+	obContactListFilter "terraform-provider-genesyscloud/genesyscloud/outbound_contactlistfilter"
+	obDnclist "terraform-provider-genesyscloud/genesyscloud/outbound_dnclist"
 	outboundRuleset "terraform-provider-genesyscloud/genesyscloud/outbound_ruleset"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	routingQueue "terraform-provider-genesyscloud/genesyscloud/routing_queue"
 	telephonyProvidersEdgesSite "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site"
 	"testing"
+
+	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
@@ -37,29 +44,35 @@ type registerTestInstance struct {
 
 // registerTestResources registers all resources used in the tests
 func (r *registerTestInstance) registerTestResources() {
+	r.resourceMapMutex.Lock()
+	defer r.resourceMapMutex.Unlock()
+
 	providerResources[resourceName] = ResourceOutboundCampaign()
 	providerResources["genesyscloud_outbound_contact_list"] = outboundContactList.ResourceOutboundContactList()
 	providerResources["genesyscloud_routing_wrapupcode"] = gcloud.ResourceRoutingWrapupCode()
-	providerResources["genesyscloud_flow"] = gcloud.ResourceFlow()
-	providerResources["genesyscloud_outbound_callanalysisresponseset"] = outbound.ResourceOutboundCallAnalysisResponseSet()
+	providerResources["genesyscloud_flow"] = flow.ResourceArchitectFlow()
+	providerResources["genesyscloud_outbound_callanalysisresponseset"] = obResponseSet.ResourceOutboundCallanalysisresponseset()
 	providerResources["genesyscloud_location"] = gcloud.ResourceLocation()
 	providerResources["genesyscloud_telephony_providers_edges_site"] = telephonyProvidersEdgesSite.ResourceSite()
-	providerResources["genesyscloud_outbound_dnclist"] = outbound.ResourceOutboundDncList()
-	providerResources["genesyscloud_routing_queue"] = gcloud.ResourceRoutingQueue()
-	providerResources["genesyscloud_outbound_contactlistfilter"] = outbound.ResourceOutboundContactListFilter()
+	providerResources["genesyscloud_outbound_dnclist"] = obDnclist.ResourceOutboundDncList()
+	providerResources["genesyscloud_routing_queue"] = routingQueue.ResourceRoutingQueue()
+	providerResources["genesyscloud_outbound_contactlistfilter"] = obContactListFilter.ResourceOutboundContactlistfilter()
 	providerResources["genesyscloud_outbound_ruleset"] = outboundRuleset.ResourceOutboundRuleset()
-	providerResources["genesyscloud_outbound_callabletimeset"] = outbound.ResourceOutboundCallabletimeset()
+	providerResources["genesyscloud_outbound_callabletimeset"] = obCallableTimeset.ResourceOutboundCallabletimeset()
 }
 
 // registerTestDataSources registers all data sources used in the tests.
 func (r *registerTestInstance) registerTestDataSources() {
+	r.datasourceMapMutex.Lock()
+	defer r.datasourceMapMutex.Unlock()
+
 	providerDataSources[resourceName] = DataSourceOutboundCampaign()
 	providerDataSources["genesyscloud_auth_division_home"] = gcloud.DataSourceAuthDivisionHome()
 }
 
 // initTestResources initializes all test resources and data sources.
 func initTestResources() {
-	sdkConfig, authErr = gcloud.AuthorizeSdk()
+	sdkConfig, authErr = provider.AuthorizeSdk()
 	if authErr != nil {
 		log.Fatalf("failed to authorize sdk for package outbound_campaign: %v", authErr)
 	}

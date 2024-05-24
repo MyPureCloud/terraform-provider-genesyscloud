@@ -1,6 +1,7 @@
 package outbound_attempt_limit
 
 import (
+	"sync"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -20,13 +21,19 @@ func initTestResources() {
 }
 
 type registerTestInstance struct {
+	resourceMapMutex   sync.RWMutex
+	datasourceMapMutex sync.RWMutex
 }
 
 func (r *registerTestInstance) registerTestResources() {
+	r.resourceMapMutex.Lock()
+	defer r.resourceMapMutex.Unlock()
 	providerResources["genesyscloud_outbound_attempt_limit"] = ResourceOutboundAttemptLimit()
 }
 
 func (r *registerTestInstance) registerTestDataSources() {
+	r.datasourceMapMutex.Lock()
+	defer r.datasourceMapMutex.Unlock()
 	providerDataSources["genesyscloud_outbound_attempt_limit"] = DataSourceOutboundAttemptLimit()
 }
 

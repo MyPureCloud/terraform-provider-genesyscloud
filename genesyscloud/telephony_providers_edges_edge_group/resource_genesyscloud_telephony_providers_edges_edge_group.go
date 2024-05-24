@@ -4,7 +4,9 @@ import (
 	"context"
 	"fmt"
 	"log"
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -15,7 +17,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 )
 
 func createEdgeGroup(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -35,14 +37,14 @@ func createEdgeGroup(ctx context.Context, d *schema.ResourceData, meta interface
 		edgeGroup.Description = &description
 	}
 
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
-	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
+	edgeGroupProxy := getEdgeGroupProxy(sdkConfig)
 
-	diagErr := gcloud.RetryWhen(gcloud.IsStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+	diagErr := util.RetryWhen(util.IsStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		log.Printf("Creating edge group %s", name)
-		edgeGroup, resp, err := edgesAPI.PostTelephonyProvidersEdgesEdgegroups(*edgeGroup)
+		edgeGroup, resp, err := edgeGroupProxy.createEdgeGroup(ctx, *edgeGroup)
 		if err != nil {
-			return resp, diag.Errorf("Failed to create edge group %s: %s", name, err)
+			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create edge group %s error: %s", name, err), resp)
 		}
 
 		d.SetId(*edgeGroup.Id)
@@ -76,23 +78,23 @@ func updateEdgeGroup(ctx context.Context, d *schema.ResourceData, meta interface
 		edgeGroup.Description = &description
 	}
 
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
-	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
+	edgeGroupProxy := getEdgeGroupProxy(sdkConfig)
 
-	diagErr := gcloud.RetryWhen(gcloud.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
-		edgeGroupFromApi, resp, getErr := edgesAPI.GetTelephonyProvidersEdgesEdgegroup(d.Id(), nil)
+	diagErr := util.RetryWhen(util.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+		edgeGroupFromApi, resp, getErr := edgeGroupProxy.getEdgeGroupById(ctx, d.Id())
 		if getErr != nil {
-			if gcloud.IsStatus404(resp) {
-				return resp, diag.Errorf("The edge group does not exist %s: %s", d.Id(), getErr)
+			if util.IsStatus404(resp) {
+				return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("The edge group does not exist %s error: %s", d.Id(), getErr), resp)
 			}
-			return resp, diag.Errorf("Failed to read edge group %s: %s", d.Id(), getErr)
+			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to read edge group %s error: %s", d.Id(), getErr), resp)
 		}
 		edgeGroup.Version = edgeGroupFromApi.Version
 
 		log.Printf("Updating edge group %s", name)
-		_, resp, putErr := edgesAPI.PutTelephonyProvidersEdgesEdgegroup(d.Id(), *edgeGroup)
+		_, resp, putErr := edgeGroupProxy.updateEdgeGroup(ctx, d.Id(), *edgeGroup)
 		if putErr != nil {
-			return resp, diag.Errorf("Failed to update edge group %s: %s", name, putErr)
+			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update edge group %s error: %s", name, putErr), resp)
 		}
 		return resp, nil
 	})
@@ -105,24 +107,24 @@ func updateEdgeGroup(ctx context.Context, d *schema.ResourceData, meta interface
 }
 
 func deleteEdgeGroup(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
-	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
+	edgeGroupProxy := getEdgeGroupProxy(sdkConfig)
 
 	log.Printf("Deleting edge group")
-	_, err := edgesAPI.DeleteTelephonyProvidersEdgesEdgegroup(d.Id())
+	resp, err := edgeGroupProxy.deleteEdgeGroup(ctx, d.Id())
 	if err != nil {
-		return diag.Errorf("Failed to delete edge group: %s", err)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete edge group %s error: %s", d.Id(), err), resp)
 	}
 
-	return gcloud.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
-		edgeGroup, resp, err := edgesAPI.GetTelephonyProvidersEdgesEdgegroup(d.Id(), nil)
+	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
+		edgeGroup, resp, err := edgeGroupProxy.getEdgeGroupById(ctx, d.Id())
 		if err != nil {
-			if gcloud.IsStatus404(resp) {
+			if util.IsStatus404(resp) {
 				// Edge group deleted
 				log.Printf("Deleted Edge group %s", d.Id())
 				return nil
 			}
-			return retry.NonRetryableError(fmt.Errorf("Error deleting Edge group %s: %s", d.Id(), err))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Error deleting Edge group %s | error: %s", d.Id(), err), resp))
 		}
 
 		if edgeGroup.State != nil && *edgeGroup.State == "deleted" {
@@ -131,25 +133,25 @@ func deleteEdgeGroup(ctx context.Context, d *schema.ResourceData, meta interface
 			return nil
 		}
 
-		return retry.RetryableError(fmt.Errorf("Edge group %s still exists", d.Id()))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Edge group %s still exists", d.Id()), resp))
 	})
 }
 
 func readEdgeGroup(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
-	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
+	edgeGroupProxy := getEdgeGroupProxy(sdkConfig)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceEdgeGroup(), constants.DefaultConsistencyChecks, resourceName)
 
 	log.Printf("Reading edge group %s", d.Id())
-	return gcloud.WithRetriesForRead(ctx, d, func() *retry.RetryError {
-		edgeGroup, resp, getErr := edgesAPI.GetTelephonyProvidersEdgesEdgegroup(d.Id(), nil)
+	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
+		edgeGroup, resp, getErr := edgeGroupProxy.getEdgeGroupById(ctx, d.Id())
 		if getErr != nil {
-			if gcloud.IsStatus404(resp) {
-				return retry.RetryableError(fmt.Errorf("Failed to read edge group %s: %s", d.Id(), getErr))
+			if util.IsStatus404(resp) {
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read edge group %s | error: %s", d.Id(), getErr), resp))
 			}
-			return retry.NonRetryableError(fmt.Errorf("Failed to read edge group %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read edge group %s | error: %s", d.Id(), getErr), resp))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceEdgeGroup())
 		d.Set("name", *edgeGroup.Name)
 		d.Set("state", *edgeGroup.State)
 		if edgeGroup.Description != nil {
@@ -168,50 +170,22 @@ func readEdgeGroup(ctx context.Context, d *schema.ResourceData, meta interface{}
 
 		log.Printf("Read edge group %s %s", d.Id(), *edgeGroup.Name)
 
-		return cc.CheckState()
+		return cc.CheckState(d)
 	})
 }
 
-func getAllEdgeGroups(_ context.Context, sdkConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+func getAllEdgeGroups(ctx context.Context, sdkConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
 	resources := make(resourceExporter.ResourceIDMetaMap)
+	edgeGroupProxy := getEdgeGroupProxy(sdkConfig)
+	edgeGroups, resp, err := edgeGroupProxy.getAllEdgeGroups(ctx, "", false)
 
-	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
-
-	for pageNum := 1; ; pageNum++ {
-		const pageSize = 100
-		edgeGroups, _, getErr := edgesAPI.GetTelephonyProvidersEdgesEdgegroups(pageSize, pageNum, "", "", false)
-		if getErr != nil {
-			return nil, diag.Errorf("Failed to get page of edge groups: %v", getErr)
-		}
-
-		if edgeGroups.Entities == nil || len(*edgeGroups.Entities) == 0 {
-			break
-		}
-
-		for _, edgeGroup := range *edgeGroups.Entities {
-			if edgeGroup.State != nil && *edgeGroup.State != "deleted" {
-				resources[*edgeGroup.Id] = &resourceExporter.ResourceMeta{Name: *edgeGroup.Name}
-			}
+	if err != nil {
+		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get edge groups error: %s", err), resp)
+	}
+	if edgeGroups != nil {
+		for _, edgeGroup := range *edgeGroups {
+			resources[*edgeGroup.Id] = &resourceExporter.ResourceMeta{Name: *edgeGroup.Name}
 		}
 	}
-
-	for pageNum := 1; ; pageNum++ {
-		const pageSize = 100
-		edgeGroups, _, getErr := edgesAPI.GetTelephonyProvidersEdgesEdgegroups(pageSize, pageNum, "", "", true)
-		if getErr != nil {
-			return nil, diag.Errorf("Failed to get page of edge groups: %v", getErr)
-		}
-
-		if edgeGroups.Entities == nil || len(*edgeGroups.Entities) == 0 {
-			break
-		}
-
-		for _, edgeGroup := range *edgeGroups.Entities {
-			if edgeGroup.State != nil && *edgeGroup.State != "deleted" {
-				resources[*edgeGroup.Id] = &resourceExporter.ResourceMeta{Name: *edgeGroup.Name}
-			}
-		}
-	}
-
 	return resources, nil
 }

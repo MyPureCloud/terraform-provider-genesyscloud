@@ -7,13 +7,13 @@ import (
 	"os"
 	"path"
 	"strings"
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util/files"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 )
 
 /*
@@ -23,12 +23,20 @@ and unmarshal data into formats consumable by Terraform and/or Genesys Cloud.
 
 // getArchitectGrammarLanguageFromResourceData maps data from schema ResourceData into a Genesys Cloud platformclientv2.Grammarlanguage
 func getArchitectGrammarLanguageFromResourceData(d *schema.ResourceData) platformclientv2.Grammarlanguage {
-	return platformclientv2.Grammarlanguage{
-		GrammarId:         platformclientv2.String(d.Get("grammar_id").(string)),
-		Language:          platformclientv2.String(d.Get("language").(string)),
-		VoiceFileMetadata: buildGrammarLanguageFileMetadata(d.Get("voice_file_data").([]interface{})),
-		DtmfFileMetadata:  buildGrammarLanguageFileMetadata(d.Get("dtmf_file_data").([]interface{})),
+	grammarLanguage := platformclientv2.Grammarlanguage{
+		GrammarId: platformclientv2.String(d.Get("grammar_id").(string)),
+		Language:  platformclientv2.String(d.Get("language").(string)),
 	}
+
+	if voiceFileDataList, ok := d.Get("voice_file_data").([]interface{}); ok {
+		grammarLanguage.VoiceFileMetadata = buildGrammarLanguageFileMetadata(voiceFileDataList)
+	}
+
+	if dtmfFileDataList, ok := d.Get("dtmf_file_data").([]interface{}); ok {
+		grammarLanguage.DtmfFileMetadata = buildGrammarLanguageFileMetadata(dtmfFileDataList)
+	}
+
+	return grammarLanguage
 }
 
 func buildGrammarLanguageFileMetadata(fileMetadata []interface{}) *platformclientv2.Grammarlanguagefilemetadata {
@@ -88,8 +96,20 @@ func flattenGrammarLanguageFileMetadata(d *schema.ResourceData, fileMetadata *pl
 	return []interface{}{metadataMap}
 }
 
+type grammarLanguageDownloader struct {
+	configMap             map[string]interface{}
+	exportFilesFolderPath string
+	grammarId             string
+	language              *platformclientv2.Grammarlanguage
+	exportFileName        string
+	subDirectory          string
+	fileUrl               string
+	fileExtension         string
+	fileType              FileType
+}
+
 func ArchitectGrammarLanguageResolver(languageId, exportDirectory, subDirectory string, configMap map[string]interface{}, meta interface{}) error {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getArchitectGrammarLanguageProxy(sdkConfig)
 
 	fullPath := path.Join(exportDirectory, subDirectory)
@@ -97,70 +117,116 @@ func ArchitectGrammarLanguageResolver(languageId, exportDirectory, subDirectory 
 		return err
 	}
 
-	ctx := context.Background()
 	grammarId, languageCode := splitLanguageId(languageId)
-	language, _, err := proxy.getArchitectGrammarLanguageById(ctx, grammarId, languageCode)
+	language, _, err := proxy.getArchitectGrammarLanguageById(context.Background(), grammarId, languageCode)
 	if err != nil {
 		return err
 	}
 
-	if language.VoiceFileMetadata != nil && language.VoiceFileUrl != nil {
-		if language.VoiceFileMetadata.FileType != nil {
-			downloadFiles(grammarId, fullPath, *language.Language, *language.VoiceFileUrl, *language.VoiceFileMetadata.FileType)
-		} else {
-			downloadFiles(grammarId, fullPath, *language.Language, *language.VoiceFileUrl, "")
-		}
+	downloader := grammarLanguageDownloader{
+		configMap:             configMap,
+		exportFilesFolderPath: fullPath,
+		grammarId:             grammarId,
+		language:              language,
+		subDirectory:          subDirectory,
 	}
 
-	if language.DtmfFileMetadata != nil && language.DtmfFileUrl != nil {
-		if language.DtmfFileMetadata.FileType != nil {
-			downloadFiles(grammarId, fullPath, *language.Language, *language.DtmfFileUrl, *language.DtmfFileMetadata.FileType)
-		} else {
-			downloadFiles(grammarId, fullPath, *language.Language, *language.DtmfFileUrl, "")
-		}
-	}
-
-	updateFilenamesInExportConfigMap(configMap, grammarId, *language, subDirectory)
-	return nil
+	return downloader.downloadVoiceAndDtmfFileData()
 }
 
-func downloadFiles(grammarId string, fullPath string, languageCode string, fileUrl string, fileTypeSdk string) error {
-	fileType := ""
-	if fileTypeSdk != "" {
-		fileType = strings.ToLower(fileTypeSdk)
-	}
-	dtmfFileName := fmt.Sprintf("%s-dtmf-%s.%s", languageCode, grammarId, fileType)
-	if err := files.DownloadExportFile(fullPath, dtmfFileName, fileUrl); err != nil {
+func (d *grammarLanguageDownloader) downloadVoiceAndDtmfFileData() error {
+	if err := d.downloadFileData(Voice); err != nil {
 		return err
 	}
+	return d.downloadFileData(Dtmf)
+}
+
+func (d *grammarLanguageDownloader) downloadFileData(fileType FileType) error {
+	var (
+		url         *string
+		fileDataKey string
+	)
+
+	d.fileType = fileType
+
+	if d.fileType == Voice {
+		url = d.language.VoiceFileUrl
+		fileDataKey = "voice_file_data"
+	} else {
+		url = d.language.DtmfFileUrl
+		fileDataKey = "dtmf_file_data"
+	}
+
+	if url != nil {
+		if err := d.downloadLanguageFileAndUpdateConfigMap(*url); err != nil {
+			return fmt.Errorf("error downloading %s %s language file for grammar '%s': %v", fileDataKey, *d.language.Language, d.grammarId, err)
+		}
+	} else {
+		// If there are no files to download, we don't need this block in the export resource
+		d.configMap[fileDataKey] = nil
+	}
+
 	return nil
 }
 
-func updateFilenamesInExportConfigMap(configMap map[string]interface{}, grammarId string, language platformclientv2.Grammarlanguage, subDir string) {
-	if voiceFileData, ok := configMap["voice_file_data"].([]interface{}); ok {
-		setExporterFileData(voiceFileData, grammarId, language, subDir, Voice)
+func (d *grammarLanguageDownloader) downloadLanguageFileAndUpdateConfigMap(url string) error {
+	d.fileUrl = url
+	d.setExportFileName()
+	if err := files.DownloadExportFile(d.exportFilesFolderPath, d.exportFileName, d.fileUrl); err != nil {
+		return err
 	}
-	if dtmfFileData, ok := configMap["dtmf_file_data"].([]interface{}); ok {
-		setExporterFileData(dtmfFileData, grammarId, language, subDir, Dtmf)
-	}
+	d.updatePathsInExportConfigMap()
+	return nil
 }
 
-func setExporterFileData(fileDataMap []interface{}, grammarId string, language platformclientv2.Grammarlanguage, subDir string, fileType FileType) {
-	//Set file name and content hash in the exporter map
-	if fileData, ok := fileDataMap[0].(map[string]interface{}); ok {
-		fileExtension := ""
-		if fileType == Voice && language.VoiceFileMetadata.FileType != nil {
-			fileExtension = strings.ToLower(*language.VoiceFileMetadata.FileType)
-		}
-		if fileType == Dtmf && language.DtmfFileMetadata.FileType != nil {
-			fileExtension = strings.ToLower(*language.DtmfFileMetadata.FileType)
-		}
+func (d *grammarLanguageDownloader) setExportFileName() {
+	d.setLanguageFileExtension()
+	fileTypeStr := "dtmf"
+	if d.fileType == Voice {
+		fileTypeStr = "voice"
+	}
+	d.exportFileName = fmt.Sprintf("%s-%s-%s.%s", *d.language.Language, fileTypeStr, d.grammarId, d.fileExtension)
+}
 
-		fileName := fmt.Sprintf("%s-%v-%s.%s", *language.Language, fileType, grammarId, fileExtension)
-		fileData["file_name"] = path.Join(subDir, fileName)
-		fileData["file_content_hash"] = fmt.Sprintf(`${filesha256("%s")}`, path.Join(subDir, fileName))
-		if fileData["file_type"] == nil {
-			fileData["file_type"] = ""
+func (d *grammarLanguageDownloader) setLanguageFileExtension() {
+	var fileExtension string
+	if d.fileType == Voice {
+		if d.language.VoiceFileMetadata != nil && d.language.VoiceFileMetadata.FileType != nil {
+			fileExtension = strings.ToLower(*d.language.VoiceFileMetadata.FileType)
+		}
+	} else {
+		if d.language.DtmfFileMetadata != nil && d.language.DtmfFileMetadata.FileType != nil {
+			fileExtension = strings.ToLower(*d.language.DtmfFileMetadata.FileType)
+		}
+	}
+	if fileExtension == "" {
+		log.Printf("no file type found when exporting grammar language '%s'. Defaulting to .grxml (grammar ID: '%s', language: '%s')", *d.language.Id, *d.language.GrammarId, *d.language.Language)
+		fileExtension = "grxml"
+	}
+	d.fileExtension = fileExtension
+}
+
+// updatePathsInExportConfigMap updates fields filename and file_content_hash to point to the files we downloaded to the export directory
+func (d *grammarLanguageDownloader) updatePathsInExportConfigMap() {
+	var (
+		fileDataMapKey string
+		filePath       = path.Join(d.subDirectory, d.exportFileName)
+	)
+
+	switch d.fileType {
+	case Voice:
+		fileDataMapKey = "voice_file_data"
+	default:
+		fileDataMapKey = "dtmf_file_data"
+	}
+
+	if fileDataList, ok := d.configMap[fileDataMapKey].([]interface{}); ok {
+		if fileDataMap, ok := fileDataList[0].(map[string]interface{}); ok {
+			fileDataMap["file_name"] = filePath
+			fileDataMap["file_content_hash"] = fmt.Sprintf(`${filesha256("%s")}`, filePath)
+			if fileDataMap["file_type"] == nil {
+				fileDataMap["file_type"] = ""
+			}
 		}
 	}
 }

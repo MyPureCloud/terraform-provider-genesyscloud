@@ -4,6 +4,9 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -14,7 +17,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 )
 
 func getAllRoutingLanguages(_ context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
@@ -23,9 +26,9 @@ func getAllRoutingLanguages(_ context.Context, clientConfig *platformclientv2.Co
 
 	for pageNum := 1; ; pageNum++ {
 		const pageSize = 100
-		languages, _, getErr := routingAPI.GetRoutingLanguages(pageSize, pageNum, "", "", nil)
+		languages, resp, getErr := routingAPI.GetRoutingLanguages(pageSize, pageNum, "", "", nil)
 		if getErr != nil {
-			return nil, diag.Errorf("Failed to get page of languages: %v", getErr)
+			return nil, util.BuildAPIDiagnosticError("genesyscloud_routing_language", fmt.Sprintf("Failed to get page of languages: %v", getErr), resp)
 		}
 
 		if languages.Entities == nil || len(*languages.Entities) == 0 {
@@ -44,7 +47,7 @@ func getAllRoutingLanguages(_ context.Context, clientConfig *platformclientv2.Co
 
 func RoutingLanguageExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
-		GetResourcesFunc: GetAllWithPooledClient(getAllRoutingLanguages),
+		GetResourcesFunc: provider.GetAllWithPooledClient(getAllRoutingLanguages),
 		RefAttrs:         map[string]*resourceExporter.RefAttrSettings{}, // No references
 	}
 }
@@ -53,9 +56,9 @@ func ResourceRoutingLanguage() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud Routing Language",
 
-		CreateContext: CreateWithPooledClient(createRoutingLanguage),
-		ReadContext:   ReadWithPooledClient(readRoutingLanguage),
-		DeleteContext: DeleteWithPooledClient(deleteRoutingLanguage),
+		CreateContext: provider.CreateWithPooledClient(createRoutingLanguage),
+		ReadContext:   provider.ReadWithPooledClient(readRoutingLanguage),
+		DeleteContext: provider.DeleteWithPooledClient(deleteRoutingLanguage),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -74,15 +77,15 @@ func ResourceRoutingLanguage() *schema.Resource {
 func createRoutingLanguage(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	name := d.Get("name").(string)
 
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
 
 	log.Printf("Creating language %s", name)
-	language, _, err := routingAPI.PostRoutingLanguages(platformclientv2.Language{
+	language, resp, err := routingAPI.PostRoutingLanguages(platformclientv2.Language{
 		Name: &name,
 	})
 	if err != nil {
-		return diag.Errorf("Failed to create language %s: %s", name, err)
+		return util.BuildAPIDiagnosticError("genesyscloud_routing_language", fmt.Sprintf("Failed to create language %s error: %s", name, err), resp)
 	}
 
 	d.SetId(*language.Id)
@@ -92,17 +95,18 @@ func createRoutingLanguage(ctx context.Context, d *schema.ResourceData, meta int
 }
 
 func readRoutingLanguage(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	routingApi := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceRoutingLanguage(), constants.DefaultConsistencyChecks, "genesyscloud_routing_language")
 
 	log.Printf("Reading language %s", d.Id())
-	return WithRetriesForRead(ctx, d, func() *retry.RetryError {
+	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		language, resp, getErr := routingApi.GetRoutingLanguage(d.Id())
 		if getErr != nil {
-			if IsStatus404(resp) {
-				return retry.RetryableError(fmt.Errorf("Failed to read language %s: %s", d.Id(), getErr))
+			if util.IsStatus404(resp) {
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_routing_language", fmt.Sprintf("Failed to read language %s | error: %s", d.Id(), getErr), resp))
 			}
-			return retry.NonRetryableError(fmt.Errorf("Failed to read language %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_routing_language", fmt.Sprintf("Failed to read language %s | error: %s", d.Id(), getErr), resp))
 		}
 
 		if language.State != nil && *language.State == "deleted" {
@@ -110,35 +114,34 @@ func readRoutingLanguage(ctx context.Context, d *schema.ResourceData, meta inter
 			return nil
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceRoutingLanguage())
 		d.Set("name", *language.Name)
 		log.Printf("Read language %s %s", d.Id(), *language.Name)
-		return cc.CheckState()
+		return cc.CheckState(d)
 	})
 }
 
 func deleteRoutingLanguage(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	name := d.Get("name").(string)
 
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	routingApi := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
 
 	log.Printf("Deleting language %s", name)
-	_, err := routingApi.DeleteRoutingLanguage(d.Id())
+	resp, err := routingApi.DeleteRoutingLanguage(d.Id())
 
 	if err != nil {
-		return diag.Errorf("Failed to delete language %s: %s", name, err)
+		return util.BuildAPIDiagnosticError("genesyscloud_routing_language", fmt.Sprintf("Failed to delete language %s error: %s", name, err), resp)
 	}
 
-	return WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
+	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		routingLanguage, resp, err := routingApi.GetRoutingLanguage(d.Id())
 		if err != nil {
-			if IsStatus404(resp) {
+			if util.IsStatus404(resp) {
 				// Routing language deleted
 				log.Printf("Deleted Routing language %s", d.Id())
 				return nil
 			}
-			return retry.NonRetryableError(fmt.Errorf("Error deleting Routing language %s: %s", d.Id(), err))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_routing_language", fmt.Sprintf("Error deleting Routing language %s | error: %s", d.Id(), err), resp))
 		}
 
 		if routingLanguage.State != nil && *routingLanguage.State == "deleted" {
@@ -147,7 +150,7 @@ func deleteRoutingLanguage(ctx context.Context, d *schema.ResourceData, meta int
 			return nil
 		}
 
-		return retry.RetryableError(fmt.Errorf("Routing language %s still exists", d.Id()))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_routing_language", fmt.Sprintf("Routing language %s still exists", d.Id()), resp))
 	})
 }
 

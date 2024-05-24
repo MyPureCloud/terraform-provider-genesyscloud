@@ -6,12 +6,11 @@ import (
 	"fmt"
 	"log"
 	"strings"
-
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 )
 
 /*
@@ -91,9 +90,9 @@ func updateIntegrationConfigFromResourceData(ctx context.Context, d *schema.Reso
 	if d.HasChange("config") {
 		if configInput := d.Get("config").([]interface{}); configInput != nil {
 
-			integrationConfig, _, err := p.getIntegrationConfig(ctx, d.Id())
+			integrationConfig, resp, err := p.getIntegrationConfig(ctx, d.Id())
 			if err != nil {
-				return diag.Errorf("Failed to get the integration config for integration %s before updating its config: %s", d.Id(), err), ""
+				return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get the integration config for integration %s before updating its config error: %s", d.Id(), err), resp), ""
 			}
 
 			name := *integrationConfig.Name
@@ -113,25 +112,25 @@ func updateIntegrationConfigFromResourceData(ctx context.Context, d *schema.Reso
 
 				if properties := configMap["properties"].(string); len(properties) > 0 {
 					if err := json.Unmarshal([]byte(properties), &propJSON); err != nil {
-						return diag.Errorf("Failed to convert properties string to JSON for integration %s: %s", d.Id(), err), name
+						return util.BuildDiagnosticError(resourceName, fmt.Sprintf("Failed to convert properties string to JSON for integration %s", d.Id()), err), name
 					}
 				}
 
 				if advanced := configMap["advanced"].(string); len(advanced) > 0 {
 					if err := json.Unmarshal([]byte(advanced), &advJSON); err != nil {
-						return diag.Errorf("Failed to convert advanced property string to JSON for integration %s: %s", d.Id(), err), name
+						return util.BuildDiagnosticError(resourceName, fmt.Sprintf("Failed to convert advanced property string to JSON for integration %s", d.Id()), err), name
 					}
 				}
 
 				credential = buildConfigCredentials(configMap["credentials"].(map[string]interface{}))
 			}
 
-			diagErr := gcloud.RetryWhen(gcloud.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+			diagErr := util.RetryWhen(util.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 
 				// Get latest config version
 				integrationConfig, resp, err := p.getIntegrationConfig(ctx, d.Id())
 				if err != nil {
-					return resp, diag.Errorf("Failed to get the integration config for integration %s before updating its config: %s", d.Id(), err)
+					return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get the integration config for integration %s before updating its config. error: %s", d.Id(), err), resp)
 				}
 
 				_, resp, err = p.updateIntegrationConfig(ctx, d.Id(), &platformclientv2.Integrationconfiguration{
@@ -143,7 +142,7 @@ func updateIntegrationConfigFromResourceData(ctx context.Context, d *schema.Reso
 					Credentials: &credential,
 				})
 				if err != nil {
-					return resp, diag.Errorf("Failed to update config for integration %s: %s", d.Id(), err)
+					return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update config for integration %s error: %s", d.Id(), err), resp)
 				}
 				return nil, nil
 			})

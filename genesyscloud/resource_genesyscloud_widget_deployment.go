@@ -5,6 +5,9 @@ import (
 	"fmt"
 	"log"
 	"net/url"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -18,7 +21,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 )
 
 const (
@@ -54,9 +57,9 @@ var (
 func getAllWidgetDeployments(_ context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
 	resources := make(resourceExporter.ResourceIDMetaMap)
 	widgetsAPI := platformclientv2.NewWidgetsApiWithConfig(clientConfig)
-	widgetDeployments, _, getErr := widgetsAPI.GetWidgetsDeployments()
+	widgetDeployments, resp, getErr := widgetsAPI.GetWidgetsDeployments()
 	if getErr != nil {
-		return nil, diag.Errorf("Failed to get page of widget deployments: %v", getErr)
+		return nil, util.BuildAPIDiagnosticError("genesyscloud_widget_deployment", fmt.Sprintf("Failed to get page of widget deployment error: %s", getErr), resp)
 	}
 
 	for _, widgetDeployment := range *widgetDeployments.Entities {
@@ -96,17 +99,18 @@ func validateAuthURL(authUrl interface{}, _ cty.Path) diag.Diagnostics {
 	authUrlString := authUrl.(string)
 	u, err := url.Parse(authUrlString)
 	if err != nil {
-		return diag.Errorf("Authorization url %s provided is not a valid URL", authUrlString)
+		return util.BuildDiagnosticError("genesyscloud_widget_deployment", fmt.Sprintf("Authorization url %s provided is not a valid URL", authUrlString), err)
 	}
 
 	if u.Scheme == "" || u.Host == "" {
 		log.Printf("Scheme: %s", u.Scheme)
 		log.Printf("Host: %s", u.Host)
-		return diag.Errorf("Authorization url %s provided is not valid url", authUrlString)
+		return util.BuildDiagnosticError("genesyscloud_widget_deployment", fmt.Sprintf("Authorization url %s provided is not valid url", authUrlString), fmt.Errorf("authorization url provided is not valid url"))
 	}
 
 	if u.Scheme != HTTPSPROTOCOL {
-		return diag.Errorf("Authorization url %s provided must begin with https", authUrlString)
+		return util.BuildDiagnosticError("genesyscloud_widget_deployment", fmt.Sprintf("Authorization url provided must begin with https"), fmt.Errorf("authorization url provided must begin with https"))
+
 	}
 
 	return nil
@@ -139,7 +143,7 @@ func buildSDKClientConfig(clientType string, d *schema.ResourceData) (*platformc
 
 func WidgetDeploymentExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
-		GetResourcesFunc: GetAllWithPooledClient(getAllWidgetDeployments),
+		GetResourcesFunc: provider.GetAllWithPooledClient(getAllWidgetDeployments),
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			"flow_id": {RefType: "genesyscloud_flow"},
 		},
@@ -150,10 +154,10 @@ func ResourceWidgetDeployment() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud Widget Deployment",
 
-		CreateContext: CreateWithPooledClient(createWidgetDeployment),
-		ReadContext:   ReadWithPooledClient(readWidgetDeployment),
-		UpdateContext: UpdateWithPooledClient(updateWidgetDeployment),
-		DeleteContext: DeleteWithPooledClient(deleteWidgetDeployment),
+		CreateContext: provider.CreateWithPooledClient(createWidgetDeployment),
+		ReadContext:   provider.ReadWithPooledClient(readWidgetDeployment),
+		UpdateContext: provider.UpdateWithPooledClient(updateWidgetDeployment),
+		DeleteContext: provider.DeleteWithPooledClient(deleteWidgetDeployment),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -239,22 +243,22 @@ func flattenClientConfig(clientType string, clientConfig platformclientv2.Widget
 }
 
 func readWidgetDeployment(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	widgetsAPI := platformclientv2.NewWidgetsApiWithConfig(sdkConfig)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceWidgetDeployment(), constants.DefaultConsistencyChecks, "genesyscloud_widget_deployment")
 
 	log.Printf("Reading widget deployment %s", d.Id())
-	return WithRetriesForRead(ctx, d, func() *retry.RetryError {
+	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		currentWidget, resp, getErr := widgetsAPI.GetWidgetsDeployment(d.Id())
 
 		if getErr != nil {
-			if IsStatus404(resp) {
-				return retry.RetryableError(fmt.Errorf("Failed to read widget deployment %s: %s", d.Id(), getErr))
+			if util.IsStatus404(resp) {
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_widget_deployment", fmt.Sprintf("Failed to read widget deployment %s | error: %s", d.Id(), getErr), resp))
 			}
 
-			return retry.NonRetryableError(fmt.Errorf("Failed to read widget deployment %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_widget_deployment", fmt.Sprintf("Failed to read widget deployment %s | error: %s", d.Id(), getErr), resp))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceWidgetDeployment())
 		d.Set("name", *currentWidget.Name)
 		if currentWidget.Description != nil {
 			d.Set("description", *currentWidget.Description)
@@ -298,7 +302,7 @@ func readWidgetDeployment(ctx context.Context, d *schema.ResourceData, meta inte
 			d.Set("client_config", nil)
 		}
 
-		return cc.CheckState()
+		return cc.CheckState(d)
 	})
 }
 
@@ -307,16 +311,16 @@ func createWidgetDeployment(ctx context.Context, d *schema.ResourceData, meta in
 	description := d.Get("description").(string)
 	auth_required := d.Get("authentication_required").(bool)
 	disabled := d.Get("disabled").(bool)
-	flowId := BuildSdkDomainEntityRef(d, "flow_id")
+	flowId := util.BuildSdkDomainEntityRef(d, "flow_id")
 	allowed_domains := buildSdkAllowedDomains(d) //Need to make this an array of strings.
 	client_type := d.Get("client_type").(string)
 	client_config, client_config_err := buildSDKClientConfig(client_type, d)
 
 	if client_config_err != nil {
-		return diag.Errorf("Failed to create widget deployment %s, %s", name, client_config_err)
+		return util.BuildDiagnosticError("genesyscloud_widget_deployment", fmt.Sprintf("Failed to create widget deployment %s", name), client_config_err)
 	}
 
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	widgetsAPI := platformclientv2.NewWidgetsApiWithConfig(sdkConfig)
 
 	createWidget := platformclientv2.Widgetdeployment{
@@ -335,9 +339,9 @@ func createWidgetDeployment(ctx context.Context, d *schema.ResourceData, meta in
 	// Get all existing deployments
 	resourceIDMetaMap, _ := getAllWidgetDeployments(ctx, sdkConfig)
 
-	widget, _, err := widgetsAPI.PostWidgetsDeployments(createWidget)
+	widget, resp, err := widgetsAPI.PostWidgetsDeployments(createWidget)
 	if err != nil {
-		return diag.Errorf("Failed to create widget deployment %s, %s", name, err)
+		return util.BuildAPIDiagnosticError("genesyscloud_widget_deployment", fmt.Sprintf("Failed to create widget deployment %s error: %s", name, err), resp)
 	}
 	log.Printf("Widget created %s with id %s", name, *widget.Id)
 	d.SetId(*widget.Id)
@@ -376,25 +380,25 @@ func deletePotentialDuplicateDeployments(widgetAPI *platformclientv2.WidgetsApi,
 func deleteWidgetDeployment(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	name := d.Get("name").(string)
 
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	widgetAPI := platformclientv2.NewWidgetsApiWithConfig(sdkConfig)
 
 	log.Printf("Deleting widget deployment %s", name)
-	_, err := widgetAPI.DeleteWidgetsDeployment(d.Id())
+	resp, err := widgetAPI.DeleteWidgetsDeployment(d.Id())
 	if err != nil {
-		return diag.Errorf("Failed to delete widget deployment %s: %s", name, err)
+		return util.BuildAPIDiagnosticError("genesyscloud_widget_deployment", fmt.Sprintf("Failed to delete widget deployment %s error: %s", name, err), resp)
 	}
 
-	return WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
+	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		_, resp, err := widgetAPI.GetWidgetsDeployment(d.Id())
 		if err != nil {
-			if IsStatus404(resp) {
+			if util.IsStatus404(resp) {
 				log.Printf("Widget deployment %s deleted", name)
 				return nil
 			}
-			return retry.NonRetryableError(fmt.Errorf("Error deleting widget deployment %s: %s", d.Id(), err))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_widget_deployment", fmt.Sprintf("Error deleting widget deployment %s | error: %s", d.Id(), err), resp))
 		}
-		return retry.RetryableError(fmt.Errorf("Widget deployment %s still exists", d.Id()))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_widget_deployment", fmt.Sprintf("Widget deployment %s still exists", d.Id()), resp))
 	})
 }
 
@@ -403,16 +407,16 @@ func updateWidgetDeployment(ctx context.Context, d *schema.ResourceData, meta in
 	description := d.Get("description").(string)
 	auth_required := d.Get("authentication_required").(bool)
 	disabled := d.Get("disabled").(bool)
-	flowId := BuildSdkDomainEntityRef(d, "flow_id")
+	flowId := util.BuildSdkDomainEntityRef(d, "flow_id")
 	allowed_domains := buildSdkAllowedDomains(d) //Need to make this an array of strings.
 	client_type := d.Get("client_type").(string)
 	client_config, client_config_err := buildSDKClientConfig(client_type, d)
 
 	if client_config_err != nil {
-		return diag.Errorf("Failed updating widget deployment %s, %s", name, client_config_err)
+		return util.BuildDiagnosticError("genesyscloud_widget_deployment", fmt.Sprintf("Failed updating widget deployment %s", name), client_config_err)
 	}
 
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	widgetsAPI := platformclientv2.NewWidgetsApiWithConfig(sdkConfig)
 
 	updateWidget := platformclientv2.Widgetdeployment{
@@ -427,9 +431,9 @@ func updateWidgetDeployment(ctx context.Context, d *schema.ResourceData, meta in
 	}
 
 	log.Printf("Updating widget deployment %s", name)
-	widget, _, err := widgetsAPI.PutWidgetsDeployment(d.Id(), updateWidget)
+	widget, resp, err := widgetsAPI.PutWidgetsDeployment(d.Id(), updateWidget)
 	if err != nil {
-		return diag.Errorf("Failed to update widget deployment %s, %s", name, err)
+		return util.BuildAPIDiagnosticError("genesyscloud_widget_deployment", fmt.Sprintf("Failed to update widget deployment %s error: %s", name, err), resp)
 	}
 	d.SetId(*widget.Id)
 

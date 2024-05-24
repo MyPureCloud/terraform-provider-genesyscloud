@@ -2,9 +2,10 @@ package outbound_campaign
 
 import (
 	"fmt"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	edgeSite "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site"
 
 	"github.com/google/uuid"
@@ -25,20 +26,18 @@ func TestAccDataSourceOutboundCampaign(t *testing.T) {
 	}
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
-		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
-				Config: fmt.Sprintf(`
-data "genesyscloud_auth_division_home" "home" {}
-`) + GenerateOutboundCampaignBasic(
+				Config: `data "genesyscloud_auth_division_home" "home" {}` + GenerateOutboundCampaignBasic(
 					resourceId,
 					campaignName,
 					"contact_list",
 					"site",
 					emergencyNumber,
 					"car",
-					gcloud.NullValue,
+					util.NullValue,
 					outboundFlowFilePath,
 					"data-campaign-test-flow",
 					"test flow "+uuid.NewString(),

@@ -4,12 +4,14 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
@@ -17,13 +19,12 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 )
 
 // getOutboundWrapupCodeMappings is used by the exporter to return all wrapupcode mappings
 func getOutboundWrapupCodeMappings(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
 	resources := make(resourceExporter.ResourceIDMetaMap)
-
 	resources["0"] = &resourceExporter.ResourceMeta{Name: "wrapupcodemappings"}
 	return resources, nil
 }
@@ -37,26 +38,25 @@ func createOutboundWrapUpCodeMappings(ctx context.Context, d *schema.ResourceDat
 
 // readOutboundWrapUpCodeMappings reads the current state of the outboundwrapupcode mapping object
 func readOutboundWrapUpCodeMappings(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getOutboundWrapupCodeMappingsProxy(sdkConfig)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundWrapUpCodeMappings(), constants.DefaultConsistencyChecks, resourceName)
 
 	log.Printf("Reading Outbound Wrap-up Code Mappings")
 
-	return gcloud.WithRetriesForRead(ctx, d, func() *retry.RetryError {
+	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		sdkWrapupCodeMappings, resp, err := proxy.getAllOutboundWrapupCodeMappings(ctx)
 		if err != nil {
-			if gcloud.IsStatus404(resp) {
-				return retry.RetryableError(fmt.Errorf("failed to read Outbound Wrap-up Code Mappings: %s", err))
+			if util.IsStatus404(resp) {
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read Outbound Wrap-up Code Mappings: %s", err), resp))
 			}
-			return retry.NonRetryableError(fmt.Errorf("failed to read Outbound Wrap-up Code Mappings: %s", err))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read Outbound Wrap-up Code Mappings: %s", err), resp))
 		}
 
-		wrapupCodes, err := proxy.getAllWrapupCodes(ctx)
+		wrapupCodes, resp, err := proxy.getAllWrapupCodes(ctx)
 		if err != nil {
-			return retry.NonRetryableError(fmt.Errorf("failed to get wrapup codes: %s", err))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to get wrapup codes: %s", err), resp))
 		}
-
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundWrapUpCodeMappings())
 
 		resourcedata.SetNillableValue(d, "default_set", sdkWrapupCodeMappings.DefaultSet)
 
@@ -66,24 +66,24 @@ func readOutboundWrapUpCodeMappings(ctx context.Context, d *schema.ResourceData,
 		}
 
 		if sdkWrapupCodeMappings.Mapping != nil {
-			d.Set("mappings", flattenOutboundWrapupCodeMappings(d, sdkWrapupCodeMappings, &existingWrapupCodes))
+			_ = d.Set("mappings", flattenOutboundWrapupCodeMappings(d, sdkWrapupCodeMappings, &existingWrapupCodes))
 		}
 
 		log.Print("Read Outbound Wrap-up Code Mappings")
-		return cc.CheckState()
+		return cc.CheckState(d)
 	})
 }
 
 // updateOutboundWrapUpCodeMappings is sued to update the Terraform backing state associated with an outbound wrapup code mapping
 func updateOutboundWrapUpCodeMappings(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getOutboundWrapupCodeMappingsProxy(sdkConfig)
 
 	log.Printf("Updating Outbound Wrap-up Code Mappings")
-	diagErr := gcloud.RetryWhen(gcloud.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+	diagErr := util.RetryWhen(util.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		wrapupCodeMappings, resp, err := proxy.getAllOutboundWrapupCodeMappings(ctx)
 		if err != nil {
-			return resp, diag.Errorf("failed to read wrap-up code mappings: %s", err)
+			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get  wrap-up code mappings error: %s", err), resp)
 		}
 
 		wrapupCodeUpdate := platformclientv2.Wrapupcodemapping{
@@ -91,9 +91,9 @@ func updateOutboundWrapUpCodeMappings(ctx context.Context, d *schema.ResourceDat
 			Mapping:    buildWrapupCodeMappings(d),
 			Version:    wrapupCodeMappings.Version,
 		}
-		_, _, err = proxy.updateOutboundWrapUpCodeMappings(ctx, wrapupCodeUpdate)
+		_, resp, err = proxy.updateOutboundWrapUpCodeMappings(ctx, wrapupCodeUpdate)
 		if err != nil {
-			return resp, diag.Errorf("failed to update wrap-up code mappings: %s", err)
+			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update wrap-up code mappings %s error: %s", d.Id(), err), resp)
 		}
 		return resp, nil
 	})
@@ -101,7 +101,6 @@ func updateOutboundWrapUpCodeMappings(ctx context.Context, d *schema.ResourceDat
 	if diagErr != nil {
 		return diagErr
 	}
-
 	log.Print("Updated Outbound Wrap-up Code Mappings")
 	return readOutboundWrapUpCodeMappings(ctx, d, meta)
 }

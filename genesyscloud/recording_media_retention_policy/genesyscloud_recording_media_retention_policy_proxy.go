@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 )
 
 /*
@@ -32,15 +32,15 @@ Each proxy implementation:
 var internalProxy *policyProxy
 
 // Type definitions for each func on our proxy so we can easily mock them out later
-type getAllPoliciesFunc func(ctx context.Context, p *policyProxy) (*[]platformclientv2.Policy, error)
+type getAllPoliciesFunc func(ctx context.Context, p *policyProxy) (*[]platformclientv2.Policy, *platformclientv2.APIResponse, error)
 type createPolicyFunc func(ctx context.Context, p *policyProxy, policyCreate *platformclientv2.Policycreate) (*platformclientv2.Policy, *platformclientv2.APIResponse, error)
 type getPolicyByIdFunc func(ctx context.Context, p *policyProxy, policyId string) (policy *platformclientv2.Policy, response *platformclientv2.APIResponse, err error)
-type getPolicyByNameFunc func(ctx context.Context, p *policyProxy, policyName string) (policy *platformclientv2.Policy, retryable bool, err error)
-type updatePolicyFunc func(ctx context.Context, p *policyProxy, policyId string, policy *platformclientv2.Policy) (*platformclientv2.Policy, error)
-type deletePolicyFunc func(ctx context.Context, p *policyProxy, policyId string) (responseCode int, err error)
-type getFormsEvaluationFunc func(ctx context.Context, p *policyProxy, formId string) (*platformclientv2.Evaluationformresponse, error)
-type getEvaluationFormRecentVerIdFunc func(ctx context.Context, p *policyProxy, formId string) (string, error)
-type getQualityFormsSurveyByNameFunc func(ctx context.Context, p *policyProxy, surveyName string) (*platformclientv2.Publishedsurveyformreference, error)
+type getPolicyByNameFunc func(ctx context.Context, p *policyProxy, policyName string) (policy *platformclientv2.Policy, retryable bool, response *platformclientv2.APIResponse, err error)
+type updatePolicyFunc func(ctx context.Context, p *policyProxy, policyId string, policy *platformclientv2.Policy) (*platformclientv2.Policy, *platformclientv2.APIResponse, error)
+type deletePolicyFunc func(ctx context.Context, p *policyProxy, policyId string) (response *platformclientv2.APIResponse, err error)
+type getFormsEvaluationFunc func(ctx context.Context, p *policyProxy, formId string) (*platformclientv2.Evaluationformresponse, *platformclientv2.APIResponse, error)
+type getEvaluationFormRecentVerIdFunc func(ctx context.Context, p *policyProxy, formId string) (string, *platformclientv2.APIResponse, error)
+type getQualityFormsSurveyByNameFunc func(ctx context.Context, p *policyProxy, surveyName string) (*platformclientv2.Publishedsurveyformreference, *platformclientv2.APIResponse, error)
 
 // integrationProxy contains all of the methods that call genesys cloud APIs.
 type policyProxy struct {
@@ -84,12 +84,11 @@ func getPolicyProxy(clientConfig *platformclientv2.Configuration) *policyProxy {
 	if internalProxy == nil {
 		internalProxy = newPolicyProxy(clientConfig)
 	}
-
 	return internalProxy
 }
 
 // getAllPolicies retrieves all Genesys Cloud Recording Media Retention Policies
-func (p *policyProxy) getAllPolicies(ctx context.Context) (*[]platformclientv2.Policy, error) {
+func (p *policyProxy) getAllPolicies(ctx context.Context) (*[]platformclientv2.Policy, *platformclientv2.APIResponse, error) {
 	return p.getAllPoliciesAttr(ctx, p)
 }
 
@@ -104,54 +103,53 @@ func (p *policyProxy) getPolicyById(ctx context.Context, policyId string) (polic
 }
 
 // getPolicyByName gets a Genesys Cloud Recording Media Retention Policy by name
-func (p *policyProxy) getPolicyByName(ctx context.Context, policyName string) (policy *platformclientv2.Policy, retryable bool, err error) {
+func (p *policyProxy) getPolicyByName(ctx context.Context, policyName string) (policy *platformclientv2.Policy, retryable bool, response *platformclientv2.APIResponse, err error) {
 	return p.getPolicyByNameAttr(ctx, p, policyName)
 }
 
 // updatePolicy updates a Genesys Cloud Recording Media Retention Policy
-func (p *policyProxy) updatePolicy(ctx context.Context, policyId string, policy *platformclientv2.Policy) (*platformclientv2.Policy, error) {
+func (p *policyProxy) updatePolicy(ctx context.Context, policyId string, policy *platformclientv2.Policy) (*platformclientv2.Policy, *platformclientv2.APIResponse, error) {
 	return p.updatePolicyAttr(ctx, p, policyId, policy)
 }
 
 // deletePolicy deletes a Genesys Cloud Recording Media Retention Policy
-func (p *policyProxy) deletePolicy(ctx context.Context, policyId string) (responseCode int, err error) {
+func (p *policyProxy) deletePolicy(ctx context.Context, policyId string) (response *platformclientv2.APIResponse, err error) {
 	return p.deletePolicyAttr(ctx, p, policyId)
 }
 
 // getFormsEvaluation gets a Genesys Cloud Evaluation Form by id
-func (p *policyProxy) getFormsEvaluation(ctx context.Context, formId string) (*platformclientv2.Evaluationformresponse, error) {
+func (p *policyProxy) getFormsEvaluation(ctx context.Context, formId string) (*platformclientv2.Evaluationformresponse, *platformclientv2.APIResponse, error) {
 	return p.getFormsEvaluationAttr(ctx, p, formId)
 }
 
 // getFormsEvaluation gets the most recent unpublished version id of a Genesys Cloud Evaluation Form
-func (p *policyProxy) getEvaluationFormRecentVerId(ctx context.Context, formId string) (string, error) {
+func (p *policyProxy) getEvaluationFormRecentVerId(ctx context.Context, formId string) (string, *platformclientv2.APIResponse, error) {
 	return p.getEvaluationFormRecentVerIdAttr(ctx, p, formId)
 }
 
 // getQualityFormsSurveyByName gets a Genesys Cloud Survey Form by name
-func (p *policyProxy) getQualityFormsSurveyByName(ctx context.Context, surveyName string) (*platformclientv2.Publishedsurveyformreference, error) {
+func (p *policyProxy) getQualityFormsSurveyByName(ctx context.Context, surveyName string) (*platformclientv2.Publishedsurveyformreference, *platformclientv2.APIResponse, error) {
 	return p.getQualityFormsSurveyByNameAttr(ctx, p, surveyName)
 }
 
 // getAllIntegrationCredsFn is the implementation for getting all media retention policy in Genesys Cloud
-func getAllPoliciesFn(ctx context.Context, p *policyProxy) (*[]platformclientv2.Policy, error) {
+func getAllPoliciesFn(ctx context.Context, p *policyProxy) (*[]platformclientv2.Policy, *platformclientv2.APIResponse, error) {
 	var allPolicies []platformclientv2.Policy
-
+	var response *platformclientv2.APIResponse
 	for pageNum := 1; ; pageNum++ {
 		const pageSize = 100
-		retentionPolicies, _, err := p.recordingApi.GetRecordingMediaretentionpolicies(pageSize, pageNum, "", []string{}, "", "", "", true, false, false, 0)
+		retentionPolicies, resp, err := p.recordingApi.GetRecordingMediaretentionpolicies(pageSize, pageNum, "", []string{}, "", "", "", true, false, false, 0)
 		if err != nil {
-			return nil, err
+			return nil, resp, err
 		}
-
+		response = resp
 		if retentionPolicies.Entities == nil || len(*retentionPolicies.Entities) == 0 {
 			break
 		}
 
 		allPolicies = append(allPolicies, *retentionPolicies.Entities...)
 	}
-
-	return &allPolicies, nil
+	return &allPolicies, response, nil
 }
 
 // createPolicyFn is the implementation for creating a media retention policy in Genesys Cloud
@@ -160,7 +158,6 @@ func createPolicyFn(ctx context.Context, p *policyProxy, policyCreate *platformc
 	if err != nil {
 		return nil, resp, err
 	}
-
 	return policy, resp, nil
 }
 
@@ -170,83 +167,75 @@ func getPolicyByIdFn(ctx context.Context, p *policyProxy, policyId string) (poli
 	if err != nil {
 		return nil, resp, err
 	}
-
 	return policy, resp, nil
 }
 
 // getPolicyByNameFn is the implementation for getting a media retention policy in Genesys Cloud by name
-func getPolicyByNameFn(ctx context.Context, p *policyProxy, policyName string) (policy *platformclientv2.Policy, retryable bool, err error) {
+func getPolicyByNameFn(ctx context.Context, p *policyProxy, policyName string) (policy *platformclientv2.Policy, retryable bool, response *platformclientv2.APIResponse, err error) {
 	const pageSize = 100
 	const pageNum = 1
-	policies, _, err := p.recordingApi.GetRecordingMediaretentionpolicies(pageSize, pageNum, "", nil, "", "", policyName, true, false, false, 0)
+	policies, resp, err := p.recordingApi.GetRecordingMediaretentionpolicies(pageSize, pageNum, "", nil, "", "", policyName, true, false, false, 0)
 	if err != nil {
-		return nil, false, err
+		return nil, false, resp, err
 	}
 
 	if policies.Entities == nil || len(*policies.Entities) == 0 {
-		return nil, true, fmt.Errorf("no media retention policy found with name %s", policyName)
+		return nil, true, resp, fmt.Errorf("no media retention policy found with name %s", policyName)
 	}
-
 	policy = &(*policies.Entities)[0]
-	return policy, false, nil
-
+	return policy, false, resp, nil
 }
 
 // updatePolicyFn is the implementation for updating a media retention policy in Genesys Cloud
-func updatePolicyFn(ctx context.Context, p *policyProxy, policyId string, policyBody *platformclientv2.Policy) (*platformclientv2.Policy, error) {
-	policy, _, err := p.recordingApi.PutRecordingMediaretentionpolicy(policyId, *policyBody)
+func updatePolicyFn(ctx context.Context, p *policyProxy, policyId string, policyBody *platformclientv2.Policy) (*platformclientv2.Policy, *platformclientv2.APIResponse, error) {
+	policy, resp, err := p.recordingApi.PutRecordingMediaretentionpolicy(policyId, *policyBody)
 	if err != nil {
-		return nil, err
+		return nil, resp, err
 	}
-
-	return policy, nil
+	return policy, resp, nil
 }
 
 // deletePolicyFn is the implementation for deleting a media retention policy in Genesys Cloud
-func deletePolicyFn(ctx context.Context, p *policyProxy, policyId string) (responseCode int, err error) {
+func deletePolicyFn(ctx context.Context, p *policyProxy, policyId string) (response *platformclientv2.APIResponse, err error) {
 	resp, err := p.recordingApi.DeleteRecordingMediaretentionpolicy(policyId)
 	if err != nil {
-		return resp.StatusCode, err
+		return resp, err
 	}
-
-	return resp.StatusCode, nil
+	return resp, nil
 }
 
 // getFormsEvaluationFn is the implementation for getting an evaluation form in Genesys Cloud
-func getFormsEvaluationFn(ctx context.Context, p *policyProxy, formId string) (*platformclientv2.Evaluationformresponse, error) {
-	form, _, err := p.qualityApi.GetQualityFormsEvaluation(formId)
+func getFormsEvaluationFn(ctx context.Context, p *policyProxy, formId string) (*platformclientv2.Evaluationformresponse, *platformclientv2.APIResponse, error) {
+	form, resp, err := p.qualityApi.GetQualityFormsEvaluation(formId)
 	if err != nil {
-		return nil, err
+		return nil, resp, err
 	}
-
-	return form, nil
+	return form, resp, nil
 }
 
 // getEvaluationFormRecentVerIdFn is the implementation for getting the most recent version if of an evaluation form in Genesys Cloud
-func getEvaluationFormRecentVerIdFn(ctx context.Context, p *policyProxy, formId string) (string, error) {
-	formVersions, _, err := p.qualityApi.GetQualityFormsEvaluationVersions(formId, 25, 1, "desc")
+func getEvaluationFormRecentVerIdFn(ctx context.Context, p *policyProxy, formId string) (string, *platformclientv2.APIResponse, error) {
+	formVersions, resp, err := p.qualityApi.GetQualityFormsEvaluationVersions(formId, 25, 1, "desc")
 	if err != nil {
-		return "", err
+		return "", resp, err
 	}
 	if formVersions.Entities == nil || len(*formVersions.Entities) == 0 {
-		return "", fmt.Errorf("no versions found for form %s", formId)
+		return "", resp, fmt.Errorf("no versions found for form %s", formId)
 	}
-
-	return *(*formVersions.Entities)[0].Id, nil
+	return *(*formVersions.Entities)[0].Id, resp, nil
 }
 
 // getQualityFormsSurveyByNameFn is the implementation for getting a survey form in Genesys Cloud
-func getQualityFormsSurveyByNameFn(ctx context.Context, p *policyProxy, surveyName string) (*platformclientv2.Publishedsurveyformreference, error) {
+func getQualityFormsSurveyByNameFn(ctx context.Context, p *policyProxy, surveyName string) (*platformclientv2.Publishedsurveyformreference, *platformclientv2.APIResponse, error) {
 	const pageNum = 1
 	const pageSize = 100
-	forms, _, err := p.qualityApi.GetQualityFormsSurveys(pageSize, pageNum, "", "", "", "", surveyName, "desc")
+	forms, resp, err := p.qualityApi.GetQualityFormsSurveys(pageSize, pageNum, "", "", "", "", surveyName, "desc")
 	if err != nil {
-		return nil, err
+		return nil, resp, err
 	}
 	if forms.Entities == nil || len(*forms.Entities) == 0 {
-		return nil, fmt.Errorf("no survey forms found with name %s", surveyName)
+		return nil, resp, fmt.Errorf("no survey forms found with name %s", surveyName)
 	}
-
 	surveyFormReference := platformclientv2.Publishedsurveyformreference{Name: &surveyName, ContextId: (*forms.Entities)[0].ContextId}
-	return &surveyFormReference, nil
+	return &surveyFormReference, resp, nil
 }

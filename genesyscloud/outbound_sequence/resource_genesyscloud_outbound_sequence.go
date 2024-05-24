@@ -4,16 +4,17 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
-
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
 
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
@@ -29,30 +30,29 @@ func getAllAuthOutboundSequences(ctx context.Context, clientConfig *platformclie
 	proxy := newOutboundSequenceProxy(clientConfig)
 	resources := make(resourceExporter.ResourceIDMetaMap)
 
-	campaignSequences, err := proxy.getAllOutboundSequence(ctx)
+	campaignSequences, resp, err := proxy.getAllOutboundSequence(ctx)
 	if err != nil {
-		return nil, diag.Errorf("Failed to get outbound sequence: %v", err)
+		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get outbound sequences error: %s", err), resp)
 	}
 
 	for _, campaignSequence := range *campaignSequences {
 		resources[*campaignSequence.Id] = &resourceExporter.ResourceMeta{Name: *campaignSequence.Name}
 	}
-
 	return resources, nil
 }
 
 // createOutboundSequence is used by the outbound_sequence resource to create Genesys cloud outbound sequence
 func createOutboundSequence(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getOutboundSequenceProxy(sdkConfig)
 	status := d.Get("status").(string)
 
 	outboundSequence := getOutboundSequenceFromResourceData(d)
 
 	log.Printf("Creating outbound sequence %s", *outboundSequence.Name)
-	campaignSequence, err := proxy.createOutboundSequence(ctx, &outboundSequence)
+	campaignSequence, resp, err := proxy.createOutboundSequence(ctx, &outboundSequence)
 	if err != nil {
-		return diag.Errorf("Failed to create outbound sequence: %s", err)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create outbound sequence %s error: %s", *outboundSequence.Name, err), resp)
 	}
 
 	d.SetId(*campaignSequence.Id)
@@ -71,37 +71,36 @@ func createOutboundSequence(ctx context.Context, d *schema.ResourceData, meta in
 
 // readOutboundSequence is used by the outbound_sequence resource to read an outbound sequence from genesys cloud
 func readOutboundSequence(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getOutboundSequenceProxy(sdkConfig)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundSequence(), constants.DefaultConsistencyChecks, resourceName)
 
 	log.Printf("Reading outbound sequence %s", d.Id())
 
-	return gcloud.WithRetriesForRead(ctx, d, func() *retry.RetryError {
-		campaignSequence, respCode, getErr := proxy.getOutboundSequenceById(ctx, d.Id())
+	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
+		campaignSequence, resp, getErr := proxy.getOutboundSequenceById(ctx, d.Id())
 		if getErr != nil {
-			if gcloud.IsStatus404ByInt(respCode) {
-				return retry.RetryableError(fmt.Errorf("Failed to read outbound sequence %s: %s", d.Id(), getErr))
+			if util.IsStatus404(resp) {
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read outbound sequence %s | error: %s", d.Id(), getErr), resp))
 			}
-			return retry.NonRetryableError(fmt.Errorf("Failed to read outbound sequence %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read outbound sequence %s | error: %s", d.Id(), getErr), resp))
 		}
-
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundSequence())
 
 		resourcedata.SetNillableValue(d, "name", campaignSequence.Name)
 		if campaignSequence.Campaigns != nil {
-			d.Set("campaign_ids", gcloud.SdkDomainEntityRefArrToList(*campaignSequence.Campaigns))
+			d.Set("campaign_ids", util.SdkDomainEntityRefArrToList(*campaignSequence.Campaigns))
 		}
 		resourcedata.SetNillableValue(d, "status", campaignSequence.Status)
 		resourcedata.SetNillableValue(d, "repeat", campaignSequence.Repeat)
 
 		log.Printf("Read outbound sequence %s %s", d.Id(), *campaignSequence.Name)
-		return cc.CheckState()
+		return cc.CheckState(d)
 	})
 }
 
 // updateOutboundSequence is used by the outbound_sequence resource to update an outbound sequence in Genesys Cloud
 func updateOutboundSequence(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getOutboundSequenceProxy(sdkConfig)
 	status := d.Get("status").(string)
 
@@ -111,9 +110,9 @@ func updateOutboundSequence(ctx context.Context, d *schema.ResourceData, meta in
 	}
 
 	log.Printf("Updating outbound sequence %s", *outboundSequence.Name)
-	campaignSequence, err := proxy.updateOutboundSequence(ctx, d.Id(), &outboundSequence)
+	campaignSequence, resp, err := proxy.updateOutboundSequence(ctx, d.Id(), &outboundSequence)
 	if err != nil {
-		return diag.Errorf("Failed to update outbound sequence: %s", err)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update outbound sequence %s error: %s", *outboundSequence.Name, err), resp)
 	}
 
 	log.Printf("Updated outbound sequence %s", *campaignSequence.Id)
@@ -122,39 +121,38 @@ func updateOutboundSequence(ctx context.Context, d *schema.ResourceData, meta in
 
 // deleteOutboundSequence is used by the outbound_sequence resource to delete an outbound sequence from Genesys cloud
 func deleteOutboundSequence(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getOutboundSequenceProxy(sdkConfig)
 
 	// Sequence can't be deleted while running
-	sequence, _, err := proxy.getOutboundSequenceById(ctx, d.Id())
+	sequence, resp, err := proxy.getOutboundSequenceById(ctx, d.Id())
 	if *sequence.Status == "on" {
 		if err != nil {
-			return diag.Errorf("Failed to get outbound sequence %s: %s", d.Id(), err)
+			return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get outbound sequence %s error: %s", d.Id(), err), resp)
 		}
 		sequence.Status = platformclientv2.String("off")
-		_, err = proxy.updateOutboundSequence(ctx, d.Id(), sequence)
+		_, resp, err = proxy.updateOutboundSequence(ctx, d.Id(), sequence)
 		if err != nil {
-			return diag.Errorf("Failed to turn off outbound sequence %s: %s", d.Id(), err)
+			return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to turn off outbound sequence %s error: %s", d.Id(), err), resp)
 		}
 		time.Sleep(20 * time.Second) // Give the sequence a chance to turned off
 	}
 
-	_, err = proxy.deleteOutboundSequence(ctx, d.Id())
+	resp, err = proxy.deleteOutboundSequence(ctx, d.Id())
 	if err != nil {
-		return diag.Errorf("Failed to delete outbound sequence %s: %s", d.Id(), err)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete outbound sequence %s error: %s", d.Id(), err), resp)
 	}
 
-	return gcloud.WithRetries(ctx, 180*time.Second, func() *retry.RetryError {
-		_, respCode, err := proxy.getOutboundSequenceById(ctx, d.Id())
+	return util.WithRetries(ctx, 180*time.Second, func() *retry.RetryError {
+		_, resp, err := proxy.getOutboundSequenceById(ctx, d.Id())
 
 		if err != nil {
-			if gcloud.IsStatus404ByInt(respCode) {
+			if util.IsStatus404(resp) {
 				log.Printf("Deleted outbound sequence %s", d.Id())
 				return nil
 			}
-			return retry.NonRetryableError(fmt.Errorf("Error deleting outbound sequence %s: %s", d.Id(), err))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Error deleting outbound sequence %s | error: %s", d.Id(), err), resp))
 		}
-
-		return retry.RetryableError(fmt.Errorf("outbound sequence %s still exists", d.Id()))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("outbound sequence %s still exists", d.Id()), resp))
 	})
 }

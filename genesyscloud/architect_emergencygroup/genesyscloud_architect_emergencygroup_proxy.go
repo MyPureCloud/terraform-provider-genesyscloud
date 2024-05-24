@@ -3,7 +3,7 @@ package architect_emergencygroup
 import (
 	"context"
 	"fmt"
-	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 )
 
 var internalProxy *architectEmergencyGroupProxy
@@ -87,9 +87,7 @@ func getAllArchitectEmergencyGroupFn(ctx context.Context, p *architectEmergencyG
 		return &totalRecords, nil, nil
 	}
 
-	for _, emergencyGroup := range *emergencyGroupConfigs.Entities {
-		totalRecords = append(totalRecords, emergencyGroup)
-	}
+	totalRecords = append(totalRecords, *emergencyGroupConfigs.Entities...)
 
 	for pageNum := 2; pageNum <= *emergencyGroupConfigs.PageCount; pageNum++ {
 		emergencyGroupConfigs, resp, getErr := p.architectApi.GetArchitectEmergencygroups(pageNum, pageSize, "", "", "")
@@ -102,9 +100,7 @@ func getAllArchitectEmergencyGroupFn(ctx context.Context, p *architectEmergencyG
 			break
 		}
 
-		for _, emergencyGroup := range *emergencyGroupConfigs.Entities {
-			totalRecords = append(totalRecords, emergencyGroup)
-		}
+		totalRecords = append(totalRecords, *emergencyGroupConfigs.Entities...)
 	}
 
 	return &totalRecords, nil, nil
@@ -117,6 +113,7 @@ func getArchitectEmergencyGroupFn(ctx context.Context, p *architectEmergencyGrou
 func getArchitectEmergencyGroupIdByNameFn(ctx context.Context, p *architectEmergencyGroupProxy, name string) (emergencyGroup *platformclientv2.Emergencygrouplisting, apiResponse *platformclientv2.APIResponse, err error) {
 	const pageNum = 1
 	const pageSize = 100
+
 	return p.architectApi.GetArchitectEmergencygroups(pageNum, pageSize, "", "", name)
 }
 

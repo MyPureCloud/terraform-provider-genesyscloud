@@ -3,12 +3,14 @@ package genesyscloud
 import (
 	"fmt"
 	"strconv"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 )
 
 func TestAccResourceEvaluationFormBasic(t *testing.T) {
@@ -84,15 +86,15 @@ func TestAccResourceEvaluationFormBasic(t *testing.T) {
 	evaluationForm3.Published = true
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Create
 				Config: GenerateEvaluationFormResource(formResource1, &evaluationForm1),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResource1, "name", evaluationForm1.Name),
-					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResource1, "published", FalseValue),
+					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResource1, "published", util.FalseValue),
 					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResource1, "question_groups.0.name", evaluationForm1.QuestionGroups[0].Name),
 					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResource1, "question_groups.#", fmt.Sprint(len(evaluationForm1.QuestionGroups))),
 					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResource1, "question_groups.0.questions.0.text", evaluationForm1.QuestionGroups[0].Questions[0].Text),
@@ -104,7 +106,7 @@ func TestAccResourceEvaluationFormBasic(t *testing.T) {
 				Config: GenerateEvaluationFormResource(formResource1, &evaluationForm2),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResource1, "name", evaluationForm2.Name),
-					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResource1, "published", FalseValue),
+					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResource1, "published", util.FalseValue),
 					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResource1, "question_groups.0.name", evaluationForm2.QuestionGroups[0].Name),
 					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResource1, "question_groups.#", fmt.Sprint(len(evaluationForm2.QuestionGroups))),
 					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResource1, "question_groups.1.weight", fmt.Sprint(evaluationForm2.QuestionGroups[1].Weight)),
@@ -121,7 +123,7 @@ func TestAccResourceEvaluationFormBasic(t *testing.T) {
 				Config: GenerateEvaluationFormResource(formResource1, &evaluationForm3),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResource1, "name", evaluationForm3.Name),
-					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResource1, "published", TrueValue),
+					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResource1, "published", util.TrueValue),
 					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResource1, "question_groups.0.name", evaluationForm3.QuestionGroups[0].Name),
 					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResource1, "question_groups.#", fmt.Sprint(len(evaluationForm3.QuestionGroups))),
 					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResource1, "question_groups.0.questions.0.text", evaluationForm3.QuestionGroups[0].Questions[0].Text),
@@ -219,15 +221,15 @@ func TestAccResourceEvaluationFormComplete(t *testing.T) {
 	}
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Create
 				Config: GenerateEvaluationFormResource(formResource1, &evaluationForm1),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResource1, "name", evaluationForm1.Name),
-					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResource1, "published", FalseValue),
+					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResource1, "published", util.FalseValue),
 					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResource1, "question_groups.0.name", evaluationForm1.QuestionGroups[0].Name),
 					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResource1, "question_groups.0.default_answers_to_highest", strconv.FormatBool(evaluationForm1.QuestionGroups[0].DefaultAnswersToHighest)),
 					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResource1, "question_groups.0.default_answers_to_na", strconv.FormatBool(evaluationForm1.QuestionGroups[0].DefaultAnswersToNA)),
@@ -293,28 +295,28 @@ func TestAccResourceEvaluationFormRepublishing(t *testing.T) {
 	evaluationForm2.Published = false
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Publish form on creation
 				Config: GenerateEvaluationFormResource(formResource1, &evaluationForm1),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResource1, "published", TrueValue),
+					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResource1, "published", util.TrueValue),
 				),
 			},
 			{
 				// Unpublish
 				Config: GenerateEvaluationFormResource(formResource1, &evaluationForm2),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResource1, "published", FalseValue),
+					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResource1, "published", util.FalseValue),
 				),
 			},
 			{
 				// republish
 				Config: GenerateEvaluationFormResource(formResource1, &evaluationForm1),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResource1, "published", TrueValue),
+					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResource1, "published", util.TrueValue),
 				),
 			},
 			{
@@ -344,7 +346,7 @@ func testVerifyEvaluationFormDestroyed(state *terraform.State) error {
 			return fmt.Errorf("Evaluation form (%s) still exists", rs.Primary.ID)
 		}
 
-		if IsStatus404(resp) {
+		if util.IsStatus404(resp) {
 			// Evaluation form not found as expected
 			continue
 		}

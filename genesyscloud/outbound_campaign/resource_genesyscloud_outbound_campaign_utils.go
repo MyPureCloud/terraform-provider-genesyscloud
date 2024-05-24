@@ -3,16 +3,22 @@ package outbound_campaign
 import (
 	"context"
 	"fmt"
-	"github.com/google/uuid"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
 	"log"
 	"strconv"
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
-	"terraform-provider-genesyscloud/genesyscloud/outbound"
+	"terraform-provider-genesyscloud/genesyscloud/architect_flow"
+	obResponseSet "terraform-provider-genesyscloud/genesyscloud/outbound_callanalysisresponseset"
 	obContactList "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
+	obContactListFilter "terraform-provider-genesyscloud/genesyscloud/outbound_contactlistfilter"
+	obDnclist "terraform-provider-genesyscloud/genesyscloud/outbound_dnclist"
+	routingQueue "terraform-provider-genesyscloud/genesyscloud/routing_queue"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
+
+	"github.com/google/uuid"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 )
 
 /*
@@ -36,21 +42,21 @@ func getOutboundCampaignFromResourceData(d *schema.ResourceData) platformclientv
 		CallerAddress:                  platformclientv2.String(d.Get("caller_address").(string)),
 		CallerName:                     platformclientv2.String(d.Get("caller_name").(string)),
 		CampaignStatus:                 platformclientv2.String("off"),
-		ContactList:                    gcloud.BuildSdkDomainEntityRef(d, "contact_list_id"),
-		Queue:                          gcloud.BuildSdkDomainEntityRef(d, "queue_id"),
-		Script:                         gcloud.BuildSdkDomainEntityRef(d, "script_id"),
-		EdgeGroup:                      gcloud.BuildSdkDomainEntityRef(d, "edge_group_id"),
-		Site:                           gcloud.BuildSdkDomainEntityRef(d, "site_id"),
+		ContactList:                    util.BuildSdkDomainEntityRef(d, "contact_list_id"),
+		Queue:                          util.BuildSdkDomainEntityRef(d, "queue_id"),
+		Script:                         util.BuildSdkDomainEntityRef(d, "script_id"),
+		EdgeGroup:                      util.BuildSdkDomainEntityRef(d, "edge_group_id"),
+		Site:                           util.BuildSdkDomainEntityRef(d, "site_id"),
 		PhoneColumns:                   buildPhoneColumns(d.Get("phone_columns").([]interface{})),
-		DncLists:                       gcloud.BuildSdkDomainEntityRefArr(d, "dnc_list_ids"),
-		CallableTimeSet:                gcloud.BuildSdkDomainEntityRef(d, "callable_time_set_id"),
-		CallAnalysisResponseSet:        gcloud.BuildSdkDomainEntityRef(d, "call_analysis_response_set_id"),
-		RuleSets:                       gcloud.BuildSdkDomainEntityRefArr(d, "rule_set_ids"),
+		DncLists:                       util.BuildSdkDomainEntityRefArr(d, "dnc_list_ids"),
+		CallableTimeSet:                util.BuildSdkDomainEntityRef(d, "callable_time_set_id"),
+		CallAnalysisResponseSet:        util.BuildSdkDomainEntityRef(d, "call_analysis_response_set_id"),
+		RuleSets:                       util.BuildSdkDomainEntityRefArr(d, "rule_set_ids"),
 		SkipPreviewDisabled:            &skipPreviewDisabled,
 		AlwaysRunning:                  &alwaysRunning,
 		ContactSorts:                   buildContactSorts(d.Get("contact_sorts").([]interface{})),
-		ContactListFilters:             gcloud.BuildSdkDomainEntityRefArr(d, "contact_list_filter_ids"),
-		Division:                       gcloud.BuildSdkDomainEntityRef(d, "division_id"),
+		ContactListFilters:             util.BuildSdkDomainEntityRefArr(d, "contact_list_filter_ids"),
+		Division:                       util.BuildSdkDomainEntityRef(d, "division_id"),
 		DynamicContactQueueingSettings: buildSettings(d.Get("dynamic_contact_queueing_settings").([]interface{})),
 	}
 
@@ -72,7 +78,6 @@ func getOutboundCampaignFromResourceData(d *schema.ResourceData) platformclientv
 	if priority != 0 {
 		campaign.Priority = &priority
 	}
-
 	return campaign
 }
 
@@ -84,16 +89,16 @@ func updateOutboundCampaignStatus(ctx context.Context, campaignId string, proxy 
 	if (*campaign.CampaignStatus == "on" && newCampaignStatus == "off") || newCampaignStatus == "on" {
 		campaign.CampaignStatus = &newCampaignStatus
 		log.Printf("Updating Outbound Campaign %s status to %s", *campaign.Name, newCampaignStatus)
-		_, err := proxy.updateOutboundCampaign(ctx, campaignId, &campaign)
+		_, resp, err := proxy.updateOutboundCampaign(ctx, campaignId, &campaign)
 		if err != nil {
-			return diag.Errorf("Failed to update Outbound Campaign %s: %s", *campaign.Name, err)
+			return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update Outbound Campaign %s error: %s", *campaign.Name, err), resp)
 		}
 	}
 	return nil
 }
 
 func buildPhoneColumns(phonecolumns []interface{}) *[]platformclientv2.Phonecolumn {
-	if phonecolumns == nil || len(phonecolumns) == 0 {
+	if len(phonecolumns) == 0 {
 		return nil
 	}
 	phonecolumnSlice := make([]platformclientv2.Phonecolumn, 0)
@@ -126,7 +131,7 @@ func buildSettings(settings []interface{}) *platformclientv2.Dynamiccontactqueue
 }
 
 func buildContactSorts(contactSortList []interface{}) *[]platformclientv2.Contactsort {
-	if contactSortList == nil || len(contactSortList) == 0 {
+	if len(contactSortList) == 0 {
 		return nil
 	}
 	sdkContactsortSlice := make([]platformclientv2.Contactsort, 0)
@@ -263,44 +268,44 @@ func GenerateReferencedResourcesForOutboundCampaignTests(
 		contactList = obContactList.GenerateOutboundContactList(
 			contactListResourceId,
 			"terraform contact list "+uuid.NewString(),
-			gcloud.NullValue,
+			util.NullValue,
 			strconv.Quote("Cell"),
 			[]string{strconv.Quote("Cell")},
 			[]string{strconv.Quote("Cell"), strconv.Quote("Home"), strconv.Quote("zipcode")},
-			gcloud.FalseValue,
-			gcloud.NullValue,
-			gcloud.NullValue,
+			util.FalseValue,
+			util.NullValue,
+			util.NullValue,
 			obContactList.GeneratePhoneColumnsBlock("Cell", "cell", strconv.Quote("Cell")),
 			obContactList.GeneratePhoneColumnsBlock("Home", "home", strconv.Quote("Home")))
 	}
 	if dncListResourceId != "" {
-		dncList = outbound.GenerateOutboundDncListBasic(dncListResourceId, "tf dnc list "+uuid.NewString())
+		dncList = obDnclist.GenerateOutboundDncListBasic(dncListResourceId, "tf dnc list "+uuid.NewString())
 	}
 	if queueResourceId != "" {
-		queue = gcloud.GenerateRoutingQueueResourceBasic(queueResourceId, "tf test queue "+uuid.NewString())
+		queue = routingQueue.GenerateRoutingQueueResourceBasic(queueResourceId, "tf test queue "+uuid.NewString())
 	}
 	if carResourceId != "" {
 		if outboundFlowFilePath != "" {
 			callAnalysisResponseSet = gcloud.GenerateRoutingWrapupcodeResource(
 				wrapUpCodeResourceId,
 				"wrapupcode "+uuid.NewString(),
-			) + gcloud.GenerateFlowResource(
+			) + architect_flow.GenerateFlowResource(
 				flowResourceId,
 				outboundFlowFilePath,
 				"",
 				false,
-				gcloud.GenerateSubstitutionsMap(map[string]string{
+				util.GenerateSubstitutionsMap(map[string]string{
 					"flow_name":          flowName,
 					"home_division_name": divisionName,
 					"contact_list_name":  "${genesyscloud_outbound_contact_list." + contactListResourceId + ".name}",
 					"wrapup_code_name":   "${genesyscloud_routing_wrapupcode." + wrapUpCodeResourceId + ".name}",
 				}),
-			) + outbound.GenerateOutboundCallAnalysisResponseSetResource(
+			) + obResponseSet.GenerateOutboundCallAnalysisResponseSetResource(
 				carResourceId,
 				"tf test car "+uuid.NewString(),
-				gcloud.FalseValue,
-				outbound.GenerateCarsResponsesBlock(
-					outbound.GenerateCarsResponse(
+				util.FalseValue,
+				obResponseSet.GenerateCarsResponsesBlock(
+					obResponseSet.GenerateCarsResponse(
 						"callable_person",
 						"transfer_flow",
 						flowName,
@@ -308,12 +313,12 @@ func GenerateReferencedResourcesForOutboundCampaignTests(
 					),
 				))
 		} else {
-			callAnalysisResponseSet = outbound.GenerateOutboundCallAnalysisResponseSetResource(
+			callAnalysisResponseSet = obResponseSet.GenerateOutboundCallAnalysisResponseSetResource(
 				carResourceId,
 				"tf test car "+uuid.NewString(),
-				gcloud.TrueValue,
-				outbound.GenerateCarsResponsesBlock(
-					outbound.GenerateCarsResponse(
+				util.TrueValue,
+				obResponseSet.GenerateCarsResponsesBlock(
+					obResponseSet.GenerateCarsResponse(
 						"callable_machine",
 						"transfer",
 						"",
@@ -324,14 +329,14 @@ func GenerateReferencedResourcesForOutboundCampaignTests(
 		}
 	}
 	if clfResourceId != "" {
-		contactListFilter = outbound.GenerateOutboundContactListFilter(
+		contactListFilter = obContactListFilter.GenerateOutboundContactListFilter(
 			clfResourceId,
 			"tf test clf "+uuid.NewString(),
 			"genesyscloud_outbound_contact_list."+contactListResourceId+".id",
 			"",
-			outbound.GenerateOutboundContactListFilterClause(
+			obContactListFilter.GenerateOutboundContactListFilterClause(
 				"",
-				outbound.GenerateOutboundContactListFilterPredicates(
+				obContactListFilter.GenerateOutboundContactListFilterPredicates(
 					"Cell",
 					"alphabetic",
 					"EQUALS",

@@ -6,7 +6,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/leekchan/timeutil"
-	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 )
 
 const (
@@ -102,14 +102,21 @@ func SetMapInterfaceArrayWithFuncIfNotNil[T any](targetMap map[string]interface{
 	}
 }
 
+// SetMapSchemaSetWithFuncIfNotNil will read the values in a nested resource using the provided function and set it in a map
+func SetMapSchemaSetWithFuncIfNotNil[T any](targetMap map[string]interface{}, key string, value *T, f func(*T) *schema.Set) {
+	if value != nil {
+		targetMap[key] = f(value)
+	}
+}
+
 // Use these functions to read values for an object and set them on the schema
 
 // SetNillableReference will read the value of a reference property and set it on the schema
 func SetNillableReference(d *schema.ResourceData, key string, value *platformclientv2.Domainentityref) {
 	if value != nil && value.Id != nil {
-		d.Set(key, value.Id)
+		_ = d.Set(key, value.Id)
 	} else {
-		d.Set(key, nil)
+		_ = d.Set(key, nil)
 	}
 }
 
@@ -149,6 +156,15 @@ func SetNillableValueWithInterfaceArrayWithFunc[T any](d *schema.ResourceData, k
 	}
 }
 
+// SetNillableValueWithInterfaceArrayWithFunc will read the values in a nested resource using the provided function and set it on the schema
+func SetNillableValueWithSchemaSetWithFunc[T any](d *schema.ResourceData, key string, value *T, f func(*T) *schema.Set) {
+	if value != nil {
+		d.Set(key, f(value))
+	} else {
+		d.Set(key, nil)
+	}
+}
+
 func SetNillableTime(d *schema.ResourceData, key string, value *time.Time) {
 	var timeValue *string = nil
 	if value != nil {
@@ -156,6 +172,24 @@ func SetNillableTime(d *schema.ResourceData, key string, value *time.Time) {
 		timeValue = &timeAsString
 	}
 	SetNillableValue(d, key, timeValue)
+}
+
+func GetNillableValueFromMap[T any](targetMap map[string]interface{}, key string) *T {
+	if value, ok := targetMap[key]; ok {
+		v := value.(T)
+		return &v
+	}
+	return nil
+}
+
+// GetNillableNonZeroValueFromMap will get a value from a map if it exists and is not nil or zero value
+// for the type
+func GetNillableNonZeroValueFromMap[T comparable](targetMap map[string]interface{}, key string) *T {
+	if value, ok := targetMap[key]; ok && value != *new(T) {
+		v := value.(T)
+		return &v
+	}
+	return nil
 }
 
 func GetNillableValue[T any](d *schema.ResourceData, key string) *T {

@@ -5,7 +5,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"terraform-provider-genesyscloud/genesyscloud"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -16,7 +18,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 )
 
 type Datatableproperty struct {
@@ -48,16 +50,16 @@ func getAllArchitectDatatableRows(ctx context.Context, clientConfig *platformcli
 	resources := make(resourceExporter.ResourceIDMetaMap)
 	archProxy := getArchitectDatatableRowProxy(clientConfig)
 
-	tables, err := archProxy.getAllArchitectDatatable(ctx)
+	tables, resp, err := archProxy.getAllArchitectDatatable(ctx)
 	if err != nil {
-		return nil, diag.FromErr(err)
+		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get architect datatables error: %s", err), resp)
 	}
 
 	for _, tableMeta := range *tables {
-		rows, err := archProxy.getAllArchitectDatatableRows(ctx, *tableMeta.Id)
+		rows, resp, err := archProxy.getAllArchitectDatatableRows(ctx, *tableMeta.Id)
 
 		if err != nil {
-			return nil, diag.FromErr(err)
+			return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get architect Datatable Rows error: %s", err), resp)
 		}
 
 		for _, row := range *rows {
@@ -76,7 +78,7 @@ func createArchitectDatatableRow(ctx context.Context, d *schema.ResourceData, me
 	keyStr := d.Get("key_value").(string)
 	properties := d.Get("properties_json").(string)
 
-	sdkConfig := meta.(*genesyscloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	archProxy := getArchitectDatatableRowProxy(sdkConfig)
 
 	rowMap, diagErr := buildSdkRowPropertyMap(properties, keyStr)
@@ -87,9 +89,9 @@ func createArchitectDatatableRow(ctx context.Context, d *schema.ResourceData, me
 	rowId := createDatatableRowId(tableId, keyStr)
 	log.Printf("Creating Datatable Row %s", rowId)
 
-	_, _, err := archProxy.createArchitectDatatableRow(ctx, tableId, &rowMap)
+	_, resp, err := archProxy.createArchitectDatatableRow(ctx, tableId, &rowMap)
 	if err != nil {
-		return diag.Errorf("Failed to create Datatable Row %s: %s", rowId, err)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create Datatable Row %s error: %s", d.Id(), err), resp)
 	}
 
 	d.SetId(rowId)
@@ -101,24 +103,24 @@ func createArchitectDatatableRow(ctx context.Context, d *schema.ResourceData, me
 func readArchitectDatatableRow(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	tableId, keyStr := splitDatatableRowId(d.Id())
 	if keyStr == "" {
-		return diag.Errorf("Invalid Row ID %s", d.Id())
+		return util.BuildDiagnosticError(resourceName, fmt.Sprintf("Invalid Row ID %s", d.Id()), fmt.Errorf("keyStr is nil"))
 	}
 
-	sdkConfig := meta.(*genesyscloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	archProxy := getArchitectDatatableRowProxy(sdkConfig)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceArchitectDatatableRow(), constants.DefaultConsistencyChecks, resourceName)
 
 	log.Printf("Reading Datatable Row %s", d.Id())
 
-	return genesyscloud.WithRetriesForRead(ctx, d, func() *retry.RetryError {
+	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		row, resp, getErr := archProxy.getArchitectDatatableRow(ctx, tableId, keyStr)
 		if getErr != nil {
-			if genesyscloud.IsStatus404(resp) {
-				return retry.RetryableError(fmt.Errorf("Failed to read Datatable Row %s: %s", d.Id(), getErr))
+			if util.IsStatus404(resp) {
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read Datatable Row %s | error: %s", d.Id(), getErr), resp))
 			}
-			return retry.NonRetryableError(fmt.Errorf("Failed to read Datatable Row %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read Datatable Row %s | error: %s", d.Id(), getErr), resp))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceArchitectDatatableRow())
 		d.Set("datatable_id", tableId)
 		d.Set("key_value", keyStr)
 
@@ -132,7 +134,7 @@ func readArchitectDatatableRow(ctx context.Context, d *schema.ResourceData, meta
 		d.Set("properties_json", string(valueBytes))
 
 		log.Printf("Read Datatable Row %s", d.Id())
-		return cc.CheckState()
+		return cc.CheckState(d)
 	})
 }
 
@@ -141,7 +143,7 @@ func updateArchitectDatatableRow(ctx context.Context, d *schema.ResourceData, me
 	keyStr := d.Get("key_value").(string)
 	properties := d.Get("properties_json").(string)
 
-	sdkConfig := meta.(*genesyscloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	archProxy := getArchitectDatatableRowProxy(sdkConfig)
 
 	rowMap, diagErr := buildSdkRowPropertyMap(properties, keyStr)
@@ -151,9 +153,9 @@ func updateArchitectDatatableRow(ctx context.Context, d *schema.ResourceData, me
 
 	log.Printf("Updating Datatable Row %s", d.Id())
 
-	_, _, err := archProxy.updateArchitectDatatableRow(ctx, tableId, keyStr, &rowMap)
+	_, resp, err := archProxy.updateArchitectDatatableRow(ctx, tableId, keyStr, &rowMap)
 	if err != nil {
-		return diag.Errorf("Failed to update Datatable Row %s: %s", d.Id(), err)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update Datatable Row %s error: %s", d.Id(), err), resp)
 	}
 
 	log.Printf("Updated Datatable Row %s", d.Id())
@@ -163,33 +165,33 @@ func updateArchitectDatatableRow(ctx context.Context, d *schema.ResourceData, me
 func deleteArchitectDatatableRow(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	tableId, keyStr := splitDatatableRowId(d.Id())
 	if keyStr == "" {
-		return diag.Errorf("Invalid Row ID %s", d.Id())
+		return util.BuildDiagnosticError(resourceName, fmt.Sprintf("Invalid Row ID %s", d.Id()), fmt.Errorf("keyStr is nil"))
 	}
 
-	sdkConfig := meta.(*genesyscloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	archProxy := getArchitectDatatableRowProxy(sdkConfig)
 
 	log.Printf("Deleting Datatable Row %s", d.Id())
 	resp, err := archProxy.deleteArchitectDatatableRow(ctx, tableId, keyStr)
 	if err != nil {
-		if genesyscloud.IsStatus404(resp) {
+		if util.IsStatus404(resp) {
 			// Parent architect_datatable was probably deleted which caused the row to be deleted
 			log.Printf("Datatable row already deleted %s", d.Id())
 			return nil
 		}
-		return diag.Errorf("Failed to delete Datatable Row %s: %s", d.Id(), err)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete Datatable Row %s error: %s", d.Id(), err), resp)
 	}
 
-	return genesyscloud.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
+	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		_, resp, err := archProxy.getArchitectDatatableRow(ctx, tableId, keyStr)
 		if err != nil {
-			if genesyscloud.IsStatus404(resp) {
+			if util.IsStatus404(resp) {
 				// Datatable deleted
 				log.Printf("Deleted architect_datatable row %s", d.Id())
 				return nil
 			}
-			return retry.NonRetryableError(fmt.Errorf("Error deleting architect_datatable row %s: %s", d.Id(), err))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Error deleting architect_datatable row %s | error: %s", d.Id(), err), resp))
 		}
-		return retry.RetryableError(fmt.Errorf("Datatable row %s still exists", d.Id()))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Datatable row %s still exists", d.Id()), resp))
 	})
 }

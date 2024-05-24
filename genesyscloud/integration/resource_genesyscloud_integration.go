@@ -4,18 +4,19 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
 
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 )
 
 /*
@@ -43,16 +44,15 @@ func getAllIntegrations(ctx context.Context, clientConfig *platformclientv2.Conf
 	ip := getIntegrationsProxy(clientConfig)
 	resources := make(resourceExporter.ResourceIDMetaMap)
 
-	integrations, err := ip.getAllIntegrations(ctx)
+	integrations, resp, err := ip.getAllIntegrations(ctx)
 	if err != nil {
-		return nil, diag.Errorf("Failed to get all integrations: %v", err)
+		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get all integrations %s", err), resp)
 	}
 
 	for _, integration := range *integrations {
 		log.Printf("Dealing with integration id : %s", *integration.Id)
 		resources[*integration.Id] = &resourceExporter.ResourceMeta{Name: *integration.Name}
 	}
-
 	return resources, nil
 }
 
@@ -61,7 +61,7 @@ func createIntegration(ctx context.Context, d *schema.ResourceData, meta interfa
 	intendedState := d.Get("intended_state").(string)
 	integrationType := d.Get("integration_type").(string)
 
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	ip := getIntegrationsProxy(sdkConfig)
 
 	createIntegrationReq := &platformclientv2.Createintegrationrequest{
@@ -69,9 +69,9 @@ func createIntegration(ctx context.Context, d *schema.ResourceData, meta interfa
 			Id: &integrationType,
 		},
 	}
-	integration, err := ip.createIntegration(ctx, createIntegrationReq)
+	integration, resp, err := ip.createIntegration(ctx, createIntegrationReq)
 	if err != nil {
-		return diag.Errorf("Failed to create integration: %s", err)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create integration error: %s", err), resp)
 	}
 
 	d.SetId(*integration.Id)
@@ -85,49 +85,45 @@ func createIntegration(ctx context.Context, d *schema.ResourceData, meta interfa
 	// Set attributes that can only be modified in a patch
 	if d.HasChange("intended_state") {
 		log.Printf("Updating additional attributes for integration %s", name)
-		_, patchErr := ip.updateIntegration(ctx, d.Id(), &platformclientv2.Integration{
+		_, resp, patchErr := ip.updateIntegration(ctx, d.Id(), &platformclientv2.Integration{
 			IntendedState: &intendedState,
 		})
-
 		if patchErr != nil {
-			return diag.Errorf("Failed to update integration %s: %v", name, patchErr)
+			return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update integration %s error: %s", d.Id(), err), resp)
 		}
 	}
-
 	log.Printf("Created integration %s %s", name, *integration.Id)
 	return readIntegration(ctx, d, meta)
 }
 
 // readIntegration is used by the integration resource to read an integration from genesys cloud.
 func readIntegration(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	ip := getIntegrationsProxy(sdkConfig)
 
 	log.Printf("Reading integration %s", d.Id())
 
-	return gcloud.WithRetriesForRead(ctx, d, func() *retry.RetryError {
+	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		currentIntegration, resp, getErr := ip.getIntegrationById(ctx, d.Id())
 		if getErr != nil {
-			if gcloud.IsStatus404(resp) {
-				return retry.RetryableError(fmt.Errorf("failed to read integration %s: %s", d.Id(), getErr))
+			if util.IsStatus404(resp) {
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read integration %s | error: %s", d.Id(), getErr), resp))
 			}
-			return retry.NonRetryableError(fmt.Errorf("failed to read integration %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read integration %s | error: %s", d.Id(), getErr), resp))
 		}
 
 		d.Set("integration_type", *currentIntegration.IntegrationType.Id)
 		resourcedata.SetNillableValue(d, "intended_state", currentIntegration.IntendedState)
 
 		// Use returned ID to get current config, which contains complete configuration
-		integrationConfig, _, err := ip.getIntegrationConfig(ctx, *currentIntegration.Id)
+		integrationConfig, resp, err := ip.getIntegrationConfig(ctx, *currentIntegration.Id)
 
 		if err != nil {
-			return retry.NonRetryableError(fmt.Errorf("failed to read config of integration %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read config of integration %s | error: %s", d.Id(), getErr), resp))
 		}
 
 		d.Set("config", flattenIntegrationConfig(integrationConfig))
-
 		log.Printf("Read integration %s %s", d.Id(), *currentIntegration.Name)
-
 		return nil
 	})
 }
@@ -135,8 +131,7 @@ func readIntegration(ctx context.Context, d *schema.ResourceData, meta interface
 // updateIntegration is used by the integration resource to update an integration in Genesys Cloud
 func updateIntegration(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	intendedState := d.Get("intended_state").(string)
-
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	ip := getIntegrationsProxy(sdkConfig)
 
 	diagErr, name := updateIntegrationConfigFromResourceData(ctx, d, ip)
@@ -146,38 +141,37 @@ func updateIntegration(ctx context.Context, d *schema.ResourceData, meta interfa
 
 	if d.HasChange("intended_state") {
 		log.Printf("Updating integration %s", name)
-		_, patchErr := ip.updateIntegration(ctx, d.Id(), &platformclientv2.Integration{
+		_, resp, patchErr := ip.updateIntegration(ctx, d.Id(), &platformclientv2.Integration{
 			IntendedState: &intendedState,
 		})
 		if patchErr != nil {
-			return diag.Errorf("Failed to update integration %s: %s", name, patchErr)
+			return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update Integration %s %s", d.Id(), patchErr), resp)
 		}
 	}
-
 	log.Printf("Updated integration %s %s", name, d.Id())
 	return readIntegration(ctx, d, meta)
 }
 
 // deleteIntegration is used by the integration resource to delete an integration from Genesys cloud.
 func deleteIntegration(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	ip := getIntegrationsProxy(sdkConfig)
 
-	_, err := ip.deleteIntegration(ctx, d.Id())
+	resp, err := ip.deleteIntegration(ctx, d.Id())
 	if err != nil {
-		return diag.Errorf("Failed to delete the integration %s: %s", d.Id(), err)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete Integration %s error: %s", d.Id(), err), resp)
 	}
 
-	return gcloud.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
+	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		_, resp, err := ip.getIntegrationById(ctx, d.Id())
 		if err != nil {
-			if gcloud.IsStatus404(resp) {
+			if util.IsStatus404(resp) {
 				// Integration deleted
 				log.Printf("Deleted Integration %s", d.Id())
 				return nil
 			}
-			return retry.NonRetryableError(fmt.Errorf("error deleting integration %s: %s", d.Id(), err))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("error deleting integration %s | error: %s", d.Id(), err), resp))
 		}
-		return retry.RetryableError(fmt.Errorf("integration %s still exists", d.Id()))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("integration %s still exists", d.Id()), resp))
 	})
 }

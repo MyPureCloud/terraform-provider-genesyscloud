@@ -4,32 +4,34 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 )
 
 func createTrunk(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	trunkBaseSettingsId := d.Get("trunk_base_settings_id").(string)
 
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	tp := getTrunkProxy(sdkConfig)
 
 	trunkBase, resp, getErr := tp.getTrunkBaseSettings(ctx, trunkBaseSettingsId)
 	if getErr != nil {
-		if gcloud.IsStatus404(resp) {
+		if util.IsStatus404(resp) {
 			return nil
 		}
-		return diag.Errorf("Failed to read trunk base settings %s: %s", d.Id(), getErr)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to read trunk base settings %s error: %s", d.Id(), getErr), resp)
 	}
 
 	// Assign to edge if edge_id is set
@@ -37,10 +39,10 @@ func createTrunk(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		edgeId := edgeIdI.(string)
 		edge, resp, getErr := tp.getEdge(ctx, edgeId)
 		if getErr != nil {
-			if gcloud.IsStatus404(resp) {
+			if util.IsStatus404(resp) {
 				return nil
 			}
-			return diag.Errorf("Failed to read edge %s: %s", edgeId, getErr)
+			return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to read edge %s error: %s", edgeId, getErr), resp)
 		}
 
 		if edge.EdgeGroup == nil {
@@ -51,35 +53,35 @@ func createTrunk(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		}
 
 		log.Printf("Assigning trunk base settings to edge %s", edgeId)
-		_, _, err := tp.putEdge(ctx, edgeId, *edge)
+		_, resp, err := tp.putEdge(ctx, edgeId, *edge)
 		if err != nil {
-			return diag.Errorf("Failed to assign trunk base settings to edge %s: %s", edgeId, err)
+			return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to assign trunk base settings to edge %s error: %s", edgeId, err), resp)
 		}
 	} else if edgeGroupIdI, ok := d.GetOk("edge_group_id"); ok {
 		edgeGroupId := edgeGroupIdI.(string)
 		edgeGroup, resp, getErr := tp.getEdgeGroup(ctx, edgeGroupId)
 		if getErr != nil {
-			if gcloud.IsStatus404(resp) {
-				return diag.Errorf("Failed to get edge group %s: %s", edgeGroupId, getErr)
+			if util.IsStatus404(resp) {
+				return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get edge group %s error: %s", edgeGroupId, getErr), resp)
 			}
-			return diag.Errorf("Failed to read edge group %s: %s", edgeGroupId, getErr)
+			return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to read edge group %s error: %s", edgeGroupId, getErr), resp)
 		}
 		edgeGroup.EdgeTrunkBaseAssignment = &platformclientv2.Trunkbaseassignment{
 			TrunkBase: trunkBase,
 		}
 
 		log.Printf("Assigning trunk base settings to edge group %s", edgeGroupId)
-		_, _, err := tp.putEdgeGroup(ctx, edgeGroupId, *edgeGroup)
+		_, resp, err := tp.putEdgeGroup(ctx, edgeGroupId, *edgeGroup)
 		if err != nil {
-			return diag.Errorf("Failed to assign trunk base settings to edge group %s: %s", edgeGroupId, err)
+			return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to assign trunk base settings to edge group %s error: %s", edgeGroupId, err), resp)
 		}
 	} else {
-		return diag.Errorf("edge_id or edge_group_id were not set. One must be set in order to assign the trunk base settings")
+		return util.BuildDiagnosticError(resourceName, fmt.Sprintf("edge_id or edge_group_id were not set. One must be set in order to assign the trunk base settings"), fmt.Errorf("edge_id or edge_group_id were not set"))
 	}
 
-	trunk, err := getTrunkByTrunkBaseId(ctx, trunkBaseSettingsId, meta)
+	trunk, resp, err := getTrunkByTrunkBaseId(ctx, trunkBaseSettingsId, meta)
 	if err != nil {
-		return diag.Errorf("Failed to get trunk by trunk base id %s: %s", trunkBaseSettingsId, err)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get trunk by trunk base id %s error: %s", trunkBaseSettingsId, err), resp)
 	}
 
 	d.SetId(*trunk.Id)
@@ -89,17 +91,18 @@ func createTrunk(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 	return readTrunk(ctx, d, meta)
 }
 
-func getTrunkByTrunkBaseId(ctx context.Context, trunkBaseId string, meta interface{}) (*platformclientv2.Trunk, error) {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+func getTrunkByTrunkBaseId(ctx context.Context, trunkBaseId string, meta interface{}) (*platformclientv2.Trunk, *platformclientv2.APIResponse, error) {
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	tp := getTrunkProxy(sdkConfig)
-
+	var response *platformclientv2.APIResponse
 	time.Sleep(2 * time.Second)
 	// It should return the trunk as the first object. Paginating to be safe
 	for pageNum := 1; ; pageNum++ {
 		const pageSize = 100
-		trunks, _, getErr := tp.getAllTrunks(ctx, pageNum, pageSize)
+		trunks, resp, getErr := tp.getAllTrunks(ctx, pageNum, pageSize)
+		response = resp
 		if getErr != nil {
-			return nil, fmt.Errorf("Failed to get page of trunks: %v", getErr)
+			return nil, resp, fmt.Errorf("Failed to get page of trunks: %v %v", getErr, resp)
 		}
 
 		if trunks.Entities == nil || len(*trunks.Entities) == 0 {
@@ -108,12 +111,12 @@ func getTrunkByTrunkBaseId(ctx context.Context, trunkBaseId string, meta interfa
 
 		for _, trunk := range *trunks.Entities {
 			if *trunk.TrunkBase.Id == trunkBaseId {
-				return &trunk, nil
+				return &trunk, resp, nil
 			}
 		}
 	}
 
-	return nil, fmt.Errorf("Could not find trunk for trunk base setting id: %v", trunkBaseId)
+	return nil, response, fmt.Errorf("Could not find trunk for trunk base setting id: %v", trunkBaseId)
 }
 
 func updateTrunk(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -121,20 +124,20 @@ func updateTrunk(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 }
 
 func readTrunk(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	tp := getTrunkProxy(sdkConfig)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceTrunk(), constants.DefaultConsistencyChecks, resourceName)
 
 	log.Printf("Reading trunk %s", d.Id())
-	return gcloud.WithRetriesForRead(ctx, d, func() *retry.RetryError {
+	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		trunk, resp, getErr := tp.getTrunkById(ctx, d.Id())
 		if getErr != nil {
-			if gcloud.IsStatus404(resp) {
-				return retry.RetryableError(fmt.Errorf("Failed to read trunk %s: %s", d.Id(), getErr))
+			if util.IsStatus404(resp) {
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read trunk %s | error: %s", d.Id(), getErr), resp))
 			}
-			return retry.NonRetryableError(fmt.Errorf("Failed to read trunk %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read trunk %s | error: %s", d.Id(), getErr), resp))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceTrunk())
 		d.Set("name", *trunk.Name)
 		if trunk.TrunkBase != nil {
 			d.Set("trunk_base_settings_id", *trunk.TrunkBase.Id)
@@ -148,7 +151,7 @@ func readTrunk(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 
 		log.Printf("Read trunk %s %s", d.Id(), *trunk.Name)
 
-		return cc.CheckState()
+		return cc.CheckState(d)
 	})
 }
 
@@ -159,7 +162,7 @@ func deleteTrunk(_ context.Context, _ *schema.ResourceData, _ interface{}) diag.
 
 func TrunkExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
-		GetResourcesFunc: gcloud.GetAllWithPooledClient(getAllTrunks),
+		GetResourcesFunc: provider.GetAllWithPooledClient(getAllTrunks),
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			"trunk_base_settings_id": {RefType: "genesyscloud_telephony_providers_edges_trunkbasesettings"},
 			"edge_group_id":          {RefType: "genesyscloud_telephony_providers_edges_edge_group"},
@@ -172,33 +175,29 @@ func TrunkExporter() *resourceExporter.ResourceExporter {
 
 func getAllTrunks(ctx context.Context, sdkConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
 	resources := make(resourceExporter.ResourceIDMetaMap)
-
 	tp := getTrunkProxy(sdkConfig)
 
-	err := gcloud.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
+	err := util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
 		for pageNum := 1; ; pageNum++ {
 			const pageSize = 100
 			trunks, resp, getErr := tp.getAllTrunks(ctx, pageNum, pageSize)
 			if getErr != nil {
-				if gcloud.IsStatus404(resp) {
-					return retry.RetryableError(fmt.Errorf("Failed to get page of trunks: %v", getErr))
+				if util.IsStatus404(resp) {
+					return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to get page of trunks: %v", getErr), resp))
 				}
-				return retry.NonRetryableError(fmt.Errorf("Failed to get page of trunks: %v", getErr))
+				return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to get page of trunks: %v", getErr), resp))
 			}
 
 			if trunks.Entities == nil || len(*trunks.Entities) == 0 {
 				break
 			}
-
 			for _, trunk := range *trunks.Entities {
 				if trunk.State != nil && *trunk.State != "deleted" {
 					resources[*trunk.Id] = &resourceExporter.ResourceMeta{Name: *trunk.Name}
 				}
 			}
 		}
-
 		return nil
 	})
-
 	return resources, err
 }

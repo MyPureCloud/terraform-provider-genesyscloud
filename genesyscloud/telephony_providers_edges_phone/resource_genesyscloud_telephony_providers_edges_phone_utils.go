@@ -3,21 +3,22 @@ package telephony_providers_edges_phone
 import (
 	"context"
 	"fmt"
+	"hash/fnv"
 	"log"
 	"strconv"
 	"strings"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 )
 
 type PhoneConfig struct {
@@ -28,14 +29,15 @@ type PhoneConfig struct {
 	PhoneBaseSettingsId string
 	LineAddresses       []string
 	WebRtcUserId        string
-	Depends_on          string
+	DependsOn           string
 }
 
 func getPhoneFromResourceData(ctx context.Context, pp *phoneProxy, d *schema.ResourceData) (*platformclientv2.Phone, error) {
 	phoneConfig := &platformclientv2.Phone{
-		Name:  platformclientv2.String(d.Get("name").(string)),
-		State: platformclientv2.String(d.Get("state").(string)),
-		Site:  gcloud.BuildSdkDomainEntityRef(d, "site_id"),
+		Name:       platformclientv2.String(d.Get("name").(string)),
+		State:      platformclientv2.String(d.Get("state").(string)),
+		Site:       util.BuildSdkDomainEntityRef(d, "site_id"),
+		Properties: util.BuildTelephonyProperties(d),
 		PhoneBaseSettings: &platformclientv2.Phonebasesettings{
 			Id: buildSdkPhoneBaseSettings(d, "phone_base_settings_id").Id,
 		},
@@ -48,7 +50,7 @@ func getPhoneFromResourceData(ctx context.Context, pp *phoneProxy, d *schema.Res
 	if lineBaseSettingsID == "" {
 		lineBaseSettingsID, err = getLineBaseSettingsID(ctx, pp, *phoneConfig.PhoneBaseSettings.Id)
 		if err != nil {
-			return nil, fmt.Errorf("ailed to get line base settings for %s: %s", *phoneConfig.Name, err)
+			return nil, fmt.Errorf("failed to get line base settings for %s: %s", *phoneConfig.Name, err)
 		}
 	}
 	lineBaseSettings := &platformclientv2.Domainentityref{Id: &lineBaseSettingsID}
@@ -67,25 +69,27 @@ func getPhoneFromResourceData(ctx context.Context, pp *phoneProxy, d *schema.Res
 	phoneConfig.PhoneMetaBase = phoneMetaBase
 
 	if isStandalone {
-		phoneConfig.Properties = &map[string]interface{}{
-			"phone_standalone": &map[string]interface{}{
-				"value": &map[string]interface{}{
-					"instance": true,
-				},
+		if phoneConfig.Properties == nil {
+			phoneConfig.Properties = &map[string]interface{}{}
+		}
+		phoneStandalone := map[string]interface{}{
+			"value": &map[string]interface{}{
+				"instance": true,
 			},
 		}
+		(*phoneConfig.Properties)["phone_standalone"] = phoneStandalone
 	}
 
 	webRtcUserId := d.Get("web_rtc_user_id")
 	if webRtcUserId != "" {
-		phoneConfig.WebRtcUser = gcloud.BuildSdkDomainEntityRef(d, "web_rtc_user_id")
+		phoneConfig.WebRtcUser = util.BuildSdkDomainEntityRef(d, "web_rtc_user_id")
 	}
 
 	return phoneConfig, nil
 }
 
 func getLineBaseSettingsID(ctx context.Context, pp *phoneProxy, phoneBaseSettingsId string) (string, error) {
-	phoneBase, err := pp.getPhoneBaseSetting(ctx, phoneBaseSettingsId)
+	phoneBase, _, err := pp.getPhoneBaseSetting(ctx, phoneBaseSettingsId)
 	if err != nil {
 		return "", err
 	}
@@ -99,13 +103,13 @@ func assignUserToWebRtcPhone(ctx context.Context, pp *phoneProxy, userId string)
 	stationId := ""
 	stationIsAssociated := false
 
-	retryErr := gcloud.WithRetries(ctx, 60*time.Second, func() *retry.RetryError {
-		station, retryable, err := pp.getStationOfUser(ctx, userId)
+	retryErr := util.WithRetries(ctx, 60*time.Second, func() *retry.RetryError {
+		station, retryable, resp, err := pp.getStationOfUser(ctx, userId)
 		if err != nil && !retryable {
-			return retry.NonRetryableError(fmt.Errorf("error requesting stations: %s", err))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("error requesting stations: %s", err), resp))
 		}
 		if retryable {
-			return retry.RetryableError(fmt.Errorf("no stations found with userID %v", userId))
+			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("no stations found with userID %v", userId), resp))
 		}
 
 		stationId = *station.Id
@@ -117,18 +121,24 @@ func assignUserToWebRtcPhone(ctx context.Context, pp *phoneProxy, userId string)
 		return retryErr
 	}
 
-	diagErr := gcloud.RetryWhen(gcloud.IsStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+	diagErr := util.RetryWhen(util.IsStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		if stationIsAssociated {
 			log.Printf("Disassociating user from phone station %s", stationId)
 			if resp, err := pp.unassignUserFromStation(ctx, stationId); err != nil {
-				return resp, diag.Errorf("Error unassigning user from station %s: %v", stationId, err)
+				return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Error unassigning user from station %s: %v", stationId, err), resp)
 			}
 		}
 
 		resp, putErr := pp.assignUserToStation(ctx, userId, stationId)
 		if putErr != nil {
-			return resp, diag.Errorf("Failed to assign user %v to the station %s: %s", userId, stationId, putErr)
+			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to assign user %v to the station %s: %s", userId, stationId, putErr), resp)
 		}
+
+		resp, putErr = pp.assignStationAsDefault(ctx, userId, stationId)
+		if putErr != nil {
+			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to assign Station %v as the default station for user %s: %s", stationId, userId, putErr), resp)
+		}
+
 		return resp, nil
 	})
 	if diagErr != nil {
@@ -147,7 +157,7 @@ func buildSdkPhoneBaseSettings(d *schema.ResourceData, idAttr string) *platformc
 }
 
 func getPhoneMetaBaseId(ctx context.Context, pp *phoneProxy, phoneBaseSettingsId string) (string, error) {
-	phoneBase, err := pp.getPhoneBaseSetting(ctx, phoneBaseSettingsId)
+	phoneBase, _, err := pp.getPhoneBaseSetting(ctx, phoneBaseSettingsId)
 	if err != nil {
 		return "", err
 	}
@@ -208,7 +218,9 @@ func buildSdkLines(ctx context.Context, pp *phoneProxy, d *schema.ResourceData, 
 
 	// If line_addresses is not provided, phone is not standalone
 	if !ok || len(lineStringList) == 0 {
-		lineName := "line_" + *lineBaseSettings.Id + d.Get("name").(string)
+		hasher := fnv.New32()
+		hasher.Write([]byte(d.Get("name").(string)))
+		lineName := "line_" + *lineBaseSettings.Id + fmt.Sprintf("%x", hasher.Sum32())
 		line := platformclientv2.Line{
 			Name:             &lineName,
 			LineBaseSettings: lineBaseSettings,
@@ -329,7 +341,7 @@ func GeneratePhoneResourceWithCustomAttrs(config *PhoneConfig, otherAttrs ...str
 		config.SiteId,
 		config.PhoneBaseSettingsId,
 		strings.Join(lineStrs, ","),
-		config.Depends_on,
+		config.DependsOn,
 		webRtcUser,
 		strings.Join(otherAttrs, "\n"),
 	)
@@ -347,7 +359,7 @@ func TestVerifyWebRtcPhoneDestroyed(state *terraform.State) error {
 		phone, resp, err := edgesAPI.GetTelephonyProvidersEdgesPhone(rs.Primary.ID)
 		if phone != nil {
 			return fmt.Errorf("phone (%s) still exists", rs.Primary.ID)
-		} else if gcloud.IsStatus404(resp) {
+		} else if util.IsStatus404(resp) {
 			// Phone not found as expected
 			continue
 		} else {
@@ -357,4 +369,16 @@ func TestVerifyWebRtcPhoneDestroyed(state *terraform.State) error {
 	}
 	//Success. Phone destroyed
 	return nil
+}
+
+func generatePhoneProperties(hardware_id string) string {
+	// A random selection of properties
+	return "properties = " + util.GenerateJsonEncodedProperties(
+		util.GenerateJsonProperty(
+			"phone_hardwareId", util.GenerateJsonObject(
+				util.GenerateJsonProperty(
+					"value", util.GenerateJsonObject(
+						util.GenerateJsonProperty("instance", strconv.Quote(hardware_id)),
+					)))),
+	)
 }

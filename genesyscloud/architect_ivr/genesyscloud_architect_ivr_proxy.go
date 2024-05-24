@@ -7,7 +7,7 @@ import (
 	utillists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 	"time"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 )
 
 /*
@@ -38,8 +38,8 @@ type createArchitectIvrFunc func(context.Context, *architectIvrProxy, platformcl
 type getArchitectIvrFunc func(context.Context, *architectIvrProxy, string) (*platformclientv2.Ivr, *platformclientv2.APIResponse, error)
 type updateArchitectIvrFunc func(context.Context, *architectIvrProxy, string, platformclientv2.Ivr) (*platformclientv2.Ivr, *platformclientv2.APIResponse, error)
 type deleteArchitectIvrFunc func(context.Context, *architectIvrProxy, string) (*platformclientv2.APIResponse, error)
-type getAllArchitectIvrsFunc func(context.Context, *architectIvrProxy, string) (*[]platformclientv2.Ivr, error)
-type getArchitectIvrIdByNameFunc func(context.Context, *architectIvrProxy, string) (id string, retryable bool, err error)
+type getAllArchitectIvrsFunc func(context.Context, *architectIvrProxy, string) (*[]platformclientv2.Ivr, *platformclientv2.APIResponse, error)
+type getArchitectIvrIdByNameFunc func(context.Context, *architectIvrProxy, string) (id string, retryable bool, response *platformclientv2.APIResponse, err error)
 
 // architectIvrProxy contains all methods that call genesys cloud APIs.
 type architectIvrProxy struct {
@@ -91,12 +91,12 @@ func getArchitectIvrProxy(clientConfig *platformclientv2.Configuration) *archite
 }
 
 // getAllArchitectIvrs retrieves all Genesys Cloud Architect IVRs
-func (a *architectIvrProxy) getAllArchitectIvrs(ctx context.Context, name string) (*[]platformclientv2.Ivr, error) {
+func (a *architectIvrProxy) getAllArchitectIvrs(ctx context.Context, name string) (*[]platformclientv2.Ivr, *platformclientv2.APIResponse, error) {
 	return a.getAllArchitectIvrsAttr(ctx, a, name)
 }
 
 // getArchitectIvrIdByName retrieves a Genesys Cloud Architect IVR ID by name
-func (a *architectIvrProxy) getArchitectIvrIdByName(ctx context.Context, name string) (string, bool, error) {
+func (a *architectIvrProxy) getArchitectIvrIdByName(ctx context.Context, name string) (string, bool, *platformclientv2.APIResponse, error) {
 	return a.getArchitectIvrIdByNameAttr(ctx, a, name)
 }
 
@@ -163,16 +163,16 @@ func deleteArchitectIvrFn(_ context.Context, a *architectIvrProxy, id string) (*
 }
 
 // getAllArchitectIvrsFn is an implementation function for retrieving all Genesys Cloud Architect IVRs
-func getAllArchitectIvrsFn(_ context.Context, a *architectIvrProxy, name string) (*[]platformclientv2.Ivr, error) {
+func getAllArchitectIvrsFn(_ context.Context, a *architectIvrProxy, name string) (*[]platformclientv2.Ivr, *platformclientv2.APIResponse, error) {
 	var (
 		allIvrs   []platformclientv2.Ivr
 		pageCount int
 	)
 	const pageSize = 100
 
-	ivrs, _, err := a.api.GetArchitectIvrs(1, pageSize, "", "", name, "", "")
+	ivrs, resp, err := a.api.GetArchitectIvrs(1, pageSize, "", "", name, "", "")
 	if err != nil {
-		return nil, fmt.Errorf("error requesting page of architect ivrs: %v", err)
+		return nil, resp, fmt.Errorf("error requesting page of architect ivrs: %v", err)
 	}
 	pageCount = *ivrs.PageCount
 
@@ -181,37 +181,37 @@ func getAllArchitectIvrsFn(_ context.Context, a *architectIvrProxy, name string)
 	}
 
 	if pageCount < 2 {
-		return &allIvrs, nil
+		return &allIvrs, resp, nil
 	}
 
 	for pageNum := 2; pageNum <= pageCount; pageNum++ {
-		ivrs, _, err := a.api.GetArchitectIvrs(pageNum, pageSize, "", "", name, "", "")
+		ivrs, resp, err := a.api.GetArchitectIvrs(pageNum, pageSize, "", "", name, "", "")
 		if err != nil {
-			return nil, fmt.Errorf("error requesting page of architect ivrs: %v", err)
+			return nil, resp, fmt.Errorf("error requesting page of architect ivrs: %v", err)
 		}
 		if ivrs.Entities == nil || len(*ivrs.Entities) == 0 {
 			break
 		}
 		allIvrs = append(allIvrs, *ivrs.Entities...)
 	}
-	return &allIvrs, nil
+	return &allIvrs, resp, nil
 }
 
 // getArchitectIvrIdByNameFn is an implementation function for retrieving a Genesys Cloud Architect IVR ID by name
-func getArchitectIvrIdByNameFn(ctx context.Context, a *architectIvrProxy, name string) (string, bool, error) {
-	ivrs, err := getAllArchitectIvrsFn(ctx, a, name)
+func getArchitectIvrIdByNameFn(ctx context.Context, a *architectIvrProxy, name string) (string, bool, *platformclientv2.APIResponse, error) {
+	ivrs, resp, err := getAllArchitectIvrsFn(ctx, a, name)
 	if err != nil {
-		return "", false, fmt.Errorf("failed to read ivrs: %v", err)
+		return "", false, resp, fmt.Errorf("failed to read ivrs: %v", err)
 	}
 	if ivrs == nil || len(*ivrs) == 0 {
-		return "", true, fmt.Errorf("failed to find ivr with name '%s': %v", name, err)
+		return "", true, resp, fmt.Errorf("failed to find ivr with name '%s': %v", name, err)
 	}
 	for _, ivr := range *ivrs {
 		if *ivr.Name == name {
-			return *ivr.Id, false, nil
+			return *ivr.Id, false, resp, nil
 		}
 	}
-	return "", true, fmt.Errorf("failed to find ivr with name '%s': %v", name, err)
+	return "", true, resp, fmt.Errorf("failed to find ivr with name '%s': %v", name, err)
 }
 
 // uploadArchitectIvrWithChunkingLogic creates/updates an IVR. The function breaks the dnis field into chunks and uploads them in subsequent
@@ -226,7 +226,7 @@ func (a *architectIvrProxy) uploadArchitectIvrWithChunkingLogic(ctx context.Cont
 	)
 
 	if ivr.Dnis != nil && len(*ivr.Dnis) > 0 {
-		ivr.Dnis, dnisChunks, err = a.getIvrDnisAndChunks(ctx, id, post, &ivr)
+		ivr.Dnis, dnisChunks, resp, err = a.getIvrDnisAndChunks(ctx, id, post, &ivr)
 		if err != nil {
 			return nil, resp, err
 		}
@@ -235,7 +235,7 @@ func (a *architectIvrProxy) uploadArchitectIvrWithChunkingLogic(ctx context.Cont
 	if !post {
 		// Get copy of ivr before this update
 		log.Printf("Reading IVR %s to save copy of the configuration before attempting an update", id)
-		ivrBeforeUpdate, _, err = a.getArchitectIvr(ctx, id)
+		ivrBeforeUpdate, resp, err = a.getArchitectIvr(ctx, id)
 		if err != nil {
 			log.Printf("Failed to save a copy of IVR %s before starting chunking logic: %v", id, err)
 		}
@@ -262,13 +262,12 @@ func (a *architectIvrProxy) uploadArchitectIvrWithChunkingLogic(ctx context.Cont
 	if len(dnisChunks) > 0 {
 		respIvr, resp, err = a.uploadIvrDnisChunks(ctx, dnisChunks, respIvr)
 		if err != nil {
-			if resetErr := a.resetArchitectIvrAfterFailedChunkUpload(ctx, post, id, ivrBeforeUpdate); resetErr != nil {
-				log.Print(resetErr)
+			if resetResp, resetErr := a.resetArchitectIvrAfterFailedChunkUpload(ctx, post, id, ivrBeforeUpdate); resetErr != nil {
+				log.Print(resetErr, resetResp)
 			}
 			return respIvr, resp, err
 		}
 	}
-
 	return respIvr, resp, err
 }
 
@@ -285,7 +284,6 @@ func (a *architectIvrProxy) uploadIvrDnisChunks(ctx context.Context, dnisChunks 
 		// Update ivr variable to represent the latest state of dnis field
 		ivr = putIvr
 	}
-
 	return ivr, nil, nil
 }
 
@@ -311,7 +309,7 @@ func (a *architectIvrProxy) uploadDnisChunk(ctx context.Context, ivr platformcli
 
 // getIvrDnisAndChunks returns the dnis array to attach to the ivr on the initial POST/PUT
 // along with the chunks to PUT after, if necessary.
-func (a *architectIvrProxy) getIvrDnisAndChunks(ctx context.Context, id string, post bool, ivr *platformclientv2.Ivr) (*[]string, [][]string, error) {
+func (a *architectIvrProxy) getIvrDnisAndChunks(ctx context.Context, id string, post bool, ivr *platformclientv2.Ivr) (*[]string, [][]string, *platformclientv2.APIResponse, error) {
 	var (
 		dnisChunks                [][]string
 		dnisSliceForInitialUpload *[]string
@@ -322,14 +320,14 @@ func (a *architectIvrProxy) getIvrDnisAndChunks(ctx context.Context, id string, 
 		dnisChunks = utillists.ChunkStringSlice(*ivr.Dnis, a.maxDnisPerRequest)
 		dnisSliceForInitialUpload = &dnisChunks[0]
 		dnisChunks = dnisChunks[1:] // all chunks after index 0, if they exist
-		return dnisSliceForInitialUpload, dnisChunks, nil
+		return dnisSliceForInitialUpload, dnisChunks, nil, nil
 	}
 
 	// Update
 	// read the ivr to get current dnis array
-	currentIvr, _, err := a.getArchitectIvr(ctx, id)
+	currentIvr, resp, err := a.getArchitectIvr(ctx, id)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, resp, err
 	}
 
 	// slice to establish what we're adding
@@ -342,11 +340,11 @@ func (a *architectIvrProxy) getIvrDnisAndChunks(ctx context.Context, id string, 
 		// append the first chunk
 		dnisForInitialCall = append(dnisForInitialCall, dnisChunks[0]...)
 		// return dnis for initial upload along with any chunks that may exist after index 0
-		return &dnisForInitialCall, dnisChunks[1:], nil
+		return &dnisForInitialCall, dnisChunks[1:], resp, nil
 	}
 
 	// no chunking logic necessary
-	return ivr.Dnis, nil, nil
+	return ivr.Dnis, nil, resp, nil
 }
 
 // removeItemsToBeAddedFromOriginalList is used to remove the new did numbers from the dnis slice that we collected from the schema
@@ -363,26 +361,25 @@ func removeItemsToBeAddedFromOriginalList(allDnis []string, toBeAdded []string) 
 // Otherwise the CreateContext func will fail and terraform will assume the IVR was never created
 // If it failed on update - reset the ivr to its original state. This is done so that subsequent applies
 // will output the same plan as before the last update failed
-func (a *architectIvrProxy) resetArchitectIvrAfterFailedChunkUpload(ctx context.Context, post bool, id string, originalConfig *platformclientv2.Ivr) error {
+func (a *architectIvrProxy) resetArchitectIvrAfterFailedChunkUpload(ctx context.Context, post bool, id string, originalConfig *platformclientv2.Ivr) (resp *platformclientv2.APIResponse, err error) {
 	if post {
 		log.Printf("Deleting IVR %s because chunking logic failed on create", id)
-		if _, err := a.deleteArchitectIvr(ctx, id); err != nil {
-			return fmt.Errorf("failed to delete ivr %s after dnis chunking logic failed: %v", id, err)
+		if resp, err := a.deleteArchitectIvr(ctx, id); err != nil {
+			return resp, fmt.Errorf("failed to delete ivr %s after dnis chunking logic failed: %v", id, err)
 		}
 		log.Printf("Deleted IVR %s", id)
-		return nil
+		return nil, nil
 	}
 
 	if originalConfig == nil {
-		return fmt.Errorf("cannot reset IVR %s without a copy of the original configuration", id)
+		return nil, fmt.Errorf("cannot reset IVR %s without a copy of the original configuration", id)
 	}
 
 	originalConfig.Version = nil
 	log.Printf("Resetting IVR %s configuration after failed update", id)
-	if _, _, err := a.updateArchitectIvrBasic(ctx, id, *originalConfig); err != nil {
-		return fmt.Errorf("failed to reset ivr %s configuration: %v", id, err)
+	if _, resp, err := a.updateArchitectIvrBasic(ctx, id, *originalConfig); err != nil {
+		return resp, fmt.Errorf("failed to reset ivr %s configuration: %v", id, err)
 	}
 	log.Printf("Reset IVR %s configuration", id)
-
-	return nil
+	return resp, nil
 }

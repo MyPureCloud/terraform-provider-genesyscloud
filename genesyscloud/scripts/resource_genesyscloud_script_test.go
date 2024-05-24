@@ -5,14 +5,14 @@ import (
 	"log"
 	"net/http"
 	"path/filepath"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
-
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 )
 
 /*
@@ -20,7 +20,7 @@ import (
 */
 
 func getTestDataPath(elem ...string) string {
-	basePath := filepath.Join("../..", "test", "data")
+	basePath := filepath.Join("..", "..", "test", "data")
 	subPath := filepath.Join(elem...)
 	return filepath.Join(basePath, subPath)
 }
@@ -35,15 +35,15 @@ func TestAccResourceScriptBasic(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
-		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				Config: generateScriptResource(
 					resourceId,
 					name,
 					filePath,
-					gcloud.GenerateSubstitutionsMap(substitutions),
+					util.GenerateSubstitutionsMap(substitutions),
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName+"."+resourceId, "script_name", name),
@@ -57,7 +57,7 @@ func TestAccResourceScriptBasic(t *testing.T) {
 					resourceId,
 					nameUpdated,
 					filePath,
-					gcloud.GenerateSubstitutionsMap(substitutions),
+					util.GenerateSubstitutionsMap(substitutions),
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName+"."+resourceId, "script_name", nameUpdated),
@@ -97,15 +97,15 @@ func TestAccResourceScriptUpdate(t *testing.T) {
 	substitutionsUpdate["hello"] = "world"
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
-		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				Config: generateScriptResource(
 					resourceId,
 					name,
 					filePath,
-					gcloud.GenerateSubstitutionsMap(substitutions),
+					util.GenerateSubstitutionsMap(substitutions),
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName+"."+resourceId, "script_name", name),
@@ -120,7 +120,7 @@ func TestAccResourceScriptUpdate(t *testing.T) {
 					resourceId,
 					name,
 					filePath,
-					gcloud.GenerateSubstitutionsMap(substitutionsUpdate),
+					util.GenerateSubstitutionsMap(substitutionsUpdate),
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName+"."+resourceId, "script_name", name),

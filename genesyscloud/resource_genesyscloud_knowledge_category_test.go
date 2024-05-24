@@ -3,12 +3,14 @@ package genesyscloud
 import (
 	"fmt"
 	"strings"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 )
 
 func TestAccResourceKnowledgeCategoryBasic(t *testing.T) {
@@ -24,12 +26,12 @@ func TestAccResourceKnowledgeCategoryBasic(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Create
-				Config: generateKnowledgeKnowledgebaseResource(
+				Config: GenerateKnowledgeKnowledgebaseResource(
 					knowledgeBaseResource1,
 					knowledgeBaseName1,
 					knowledgeBaseDescription1,
@@ -49,7 +51,7 @@ func TestAccResourceKnowledgeCategoryBasic(t *testing.T) {
 			},
 			{
 				// Update
-				Config: generateKnowledgeKnowledgebaseResource(
+				Config: GenerateKnowledgeKnowledgebaseResource(
 					knowledgeBaseResource1,
 					knowledgeBaseName1,
 					knowledgeBaseDescription1,
@@ -121,7 +123,7 @@ func testVerifyKnowledgeCategoryDestroyed(state *terraform.State) error {
 		knowledgeCategory, resp, err := knowledgeAPI.GetKnowledgeKnowledgebaseCategory(knowledgeBaseId, knowledgeCategoryId)
 		if knowledgeCategory != nil {
 			return fmt.Errorf("Knowledge category (%s) still exists", knowledgeCategoryId)
-		} else if IsStatus404(resp) || IsStatus400(resp) {
+		} else if util.IsStatus404(resp) || util.IsStatus400(resp) {
 			// Knowledge base category not found as expected
 			continue
 		} else {

@@ -5,8 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	gcloud "terraform-provider-genesyscloud/genesyscloud/validators"
 
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 
@@ -14,6 +13,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"terraform-provider-genesyscloud/genesyscloud/tfexporter_state"
 )
 
 func SetRegistrar(l registrar.Registrar) {
@@ -65,6 +65,15 @@ func ResourceTfExport() *schema.Resource {
 				ForceNew:      true,
 				ConflictsWith: []string{"resource_types", "exclude_filter_resources"},
 			},
+			"replace_with_datasource": {
+				Description: "Include only resources that match either a resource type or a resource type::regular expression.  See export guide for additional information",
+				Type:        schema.TypeList,
+				Optional:    true,
+				Elem: &schema.Schema{
+					Type: schema.TypeString,
+				},
+				ForceNew: true,
+			},
 			"exclude_filter_resources": {
 				Description: "Exclude resources that match either a resource type or a resource type::regular expression.  See export guide for additional information",
 				Type:        schema.TypeList,
@@ -111,11 +120,18 @@ func ResourceTfExport() *schema.Resource {
 				Elem:        &schema.Schema{Type: schema.TypeString},
 				ForceNew:    true,
 			},
-			"enable_flow_depends_on": {
-				Description: "Adds a \"depends_on\" attribute to genesyscloud_flow resources with a list of resources that are referenced inside the flow configuration. Currently this functionality is in beta.",
+			"enable_dependency_resolution": {
+				Description: "Adds a \"depends_on\" attribute to genesyscloud_flow resources with a list of resources that are referenced inside the flow configuration . This also resolves and exports all the dependent resources for any given resource.",
 				Type:        schema.TypeBool,
 				Optional:    true,
 				Default:     false,
+				ForceNew:    true,
+			},
+			"ignore_cyclic_deps": {
+				Description: "Ignore Cyclic Dependencies when building the flows and do not throw an error",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     true,
 				ForceNew:    true,
 			},
 		},
@@ -123,6 +139,8 @@ func ResourceTfExport() *schema.Resource {
 }
 
 func createTfExport(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	tfexporter_state.ActivateExporterState()
+
 	if _, ok := d.GetOk("include_filter_resources"); ok {
 		gre, _ := NewGenesysCloudResourceExporter(ctx, d, meta, IncludeResources)
 		diagErr := gre.Export()
@@ -148,6 +166,7 @@ func createTfExport(ctx context.Context, d *schema.ResourceData, meta interface{
 	//Dealing with the traditional resource
 	gre, _ := NewGenesysCloudResourceExporter(ctx, d, meta, LegacyInclude)
 	diagErr := gre.Export()
+
 	if diagErr != nil {
 		return diagErr
 	}

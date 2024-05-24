@@ -4,16 +4,17 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
-
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
 
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
@@ -28,30 +29,28 @@ The resource_genesyscloud_flow_milestone.go contains all of the methods that per
 func getAllAuthFlowMilestones(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
 	proxy := newFlowMilestoneProxy(clientConfig)
 	resources := make(resourceExporter.ResourceIDMetaMap)
-
-	flowMilestones, err := proxy.getAllFlowMilestone(ctx)
+	flowMilestones, resp, err := proxy.getAllFlowMilestone(ctx)
 	if err != nil {
-		return nil, diag.Errorf("Failed to get flow milestone: %v", err)
+		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get flow milestone error: %s", err), resp)
 	}
 
 	for _, flowMilestone := range *flowMilestones {
 		resources[*flowMilestone.Id] = &resourceExporter.ResourceMeta{Name: *flowMilestone.Name}
 	}
-
 	return resources, nil
 }
 
 // createFlowMilestone is used by the flow_milestone resource to create Genesys cloud flow milestone
 func createFlowMilestone(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getFlowMilestoneProxy(sdkConfig)
 
 	flowMilestone := getFlowMilestoneFromResourceData(d)
 
 	log.Printf("Creating flow milestone %s", *flowMilestone.Name)
-	flowMilestoneSdk, err := proxy.createFlowMilestone(ctx, &flowMilestone)
+	flowMilestoneSdk, resp, err := proxy.createFlowMilestone(ctx, &flowMilestone)
 	if err != nil {
-		return diag.Errorf("Failed to create flow milestone: %s", err)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create flow milestone %s error: %s", *flowMilestone.Name, err), resp)
 	}
 
 	d.SetId(*flowMilestoneSdk.Id)
@@ -61,42 +60,41 @@ func createFlowMilestone(ctx context.Context, d *schema.ResourceData, meta inter
 
 // readFlowMilestone is used by the flow_milestone resource to read a flow milestone from genesys cloud
 func readFlowMilestone(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getFlowMilestoneProxy(sdkConfig)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceFlowMilestone(), constants.DefaultConsistencyChecks, resourceName)
 
 	log.Printf("Reading flow milestone %s", d.Id())
 
-	return gcloud.WithRetriesForRead(ctx, d, func() *retry.RetryError {
-		flowMilestone, respCode, getErr := proxy.getFlowMilestoneById(ctx, d.Id())
+	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
+		flowMilestone, resp, getErr := proxy.getFlowMilestoneById(ctx, d.Id())
 		if getErr != nil {
-			if gcloud.IsStatus404ByInt(respCode) {
-				return retry.RetryableError(fmt.Errorf("Failed to read flow milestone %s: %s", d.Id(), getErr))
+			if util.IsStatus404(resp) {
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read flow milestone %s | error: %s", d.Id(), getErr), resp))
 			}
-			return retry.NonRetryableError(fmt.Errorf("Failed to read flow milestone %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read flow milestone %s | error: %s", d.Id(), getErr), resp))
 		}
-
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceFlowMilestone())
 
 		resourcedata.SetNillableValue(d, "name", flowMilestone.Name)
 		resourcedata.SetNillableReferenceWritableDivision(d, "division_id", flowMilestone.Division)
 		resourcedata.SetNillableValue(d, "description", flowMilestone.Description)
 
 		log.Printf("Read flow milestone %s %s", d.Id(), *flowMilestone.Name)
-		return cc.CheckState()
+		return cc.CheckState(d)
 	})
 }
 
 // updateFlowMilestone is used by the flow_milestone resource to update an flow milestone in Genesys Cloud
 func updateFlowMilestone(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getFlowMilestoneProxy(sdkConfig)
 
 	flowMilestone := getFlowMilestoneFromResourceData(d)
 
 	log.Printf("Updating flow milestone %s", *flowMilestone.Name)
-	flowMilestoneSdk, err := proxy.updateFlowMilestone(ctx, d.Id(), &flowMilestone)
+	flowMilestoneSdk, resp, err := proxy.updateFlowMilestone(ctx, d.Id(), &flowMilestone)
 	if err != nil {
-		return diag.Errorf("Failed to update flow milestone: %s", err)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update flow milestone %s error: %s", *flowMilestone.Name, err), resp)
 	}
 
 	log.Printf("Updated flow milestone %s", *flowMilestoneSdk.Id)
@@ -105,25 +103,24 @@ func updateFlowMilestone(ctx context.Context, d *schema.ResourceData, meta inter
 
 // deleteFlowMilestone is used by the flow_milestone resource to delete a flow milestone from Genesys cloud
 func deleteFlowMilestone(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getFlowMilestoneProxy(sdkConfig)
 
-	_, err := proxy.deleteFlowMilestone(ctx, d.Id())
+	resp, err := proxy.deleteFlowMilestone(ctx, d.Id())
 	if err != nil {
-		return diag.Errorf("Failed to delete flow milestone %s: %s", d.Id(), err)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete flow milestone %s error: %s", d.Id(), err), resp)
 	}
 
-	return gcloud.WithRetries(ctx, 180*time.Second, func() *retry.RetryError {
-		_, respCode, err := proxy.getFlowMilestoneById(ctx, d.Id())
+	return util.WithRetries(ctx, 180*time.Second, func() *retry.RetryError {
+		_, resp, err := proxy.getFlowMilestoneById(ctx, d.Id())
 
 		if err != nil {
-			if gcloud.IsStatus404ByInt(respCode) {
+			if util.IsStatus404(resp) {
 				log.Printf("Deleted flow milestone %s", d.Id())
 				return nil
 			}
-			return retry.NonRetryableError(fmt.Errorf("Error deleting flow milestone %s: %s", d.Id(), err))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Error deleting flow milestone %s | error: %s", d.Id(), err), resp))
 		}
-
-		return retry.RetryableError(fmt.Errorf("flow milestone %s still exists", d.Id()))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("flow milestone %s still exists", d.Id()), resp))
 	})
 }

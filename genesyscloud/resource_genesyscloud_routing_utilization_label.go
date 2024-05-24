@@ -4,6 +4,9 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -14,7 +17,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 )
 
 func getAllRoutingUtilizationLabels(_ context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
@@ -23,9 +26,9 @@ func getAllRoutingUtilizationLabels(_ context.Context, clientConfig *platformcli
 
 	for pageNum := 1; ; pageNum++ {
 		const pageSize = 100
-		labels, _, getErr := routingAPI.GetRoutingUtilizationLabels(pageSize, pageNum, "", "")
+		labels, resp, getErr := routingAPI.GetRoutingUtilizationLabels(pageSize, pageNum, "", "")
 		if getErr != nil {
-			return nil, diag.Errorf("Failed to get page of labels: %v", getErr)
+			return nil, util.BuildAPIDiagnosticError("genesyscloud_routing_utilization_label", fmt.Sprintf("Failed to get page of labels error: %s", getErr), resp)
 		}
 
 		if labels.Entities == nil || len(*labels.Entities) == 0 {
@@ -42,7 +45,7 @@ func getAllRoutingUtilizationLabels(_ context.Context, clientConfig *platformcli
 
 func RoutingUtilizationLabelExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
-		GetResourcesFunc: GetAllWithPooledClient(getAllRoutingUtilizationLabels),
+		GetResourcesFunc: provider.GetAllWithPooledClient(getAllRoutingUtilizationLabels),
 		RefAttrs:         map[string]*resourceExporter.RefAttrSettings{}, // No references
 	}
 }
@@ -51,10 +54,10 @@ func ResourceRoutingUtilizationLabel() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud Routing Utilization Label. This resource is not yet widely available. Only use it if the feature is enabled.",
 
-		CreateContext: CreateWithPooledClient(createRoutingUtilizationLabel),
-		ReadContext:   ReadWithPooledClient(readRoutingUtilizationLabel),
-		UpdateContext: UpdateWithPooledClient(updateRoutingUtilizationLabel),
-		DeleteContext: DeleteWithPooledClient(deleteRoutingUtilizationLabel),
+		CreateContext: provider.CreateWithPooledClient(createRoutingUtilizationLabel),
+		ReadContext:   provider.ReadWithPooledClient(readRoutingUtilizationLabel),
+		UpdateContext: provider.UpdateWithPooledClient(updateRoutingUtilizationLabel),
+		DeleteContext: provider.DeleteWithPooledClient(deleteRoutingUtilizationLabel),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -72,15 +75,15 @@ func ResourceRoutingUtilizationLabel() *schema.Resource {
 func createRoutingUtilizationLabel(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	name := d.Get("name").(string)
 
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
 
 	log.Printf("Creating label %s", name)
-	label, _, err := routingAPI.PostRoutingUtilizationLabels(platformclientv2.Createutilizationlabelrequest{
+	label, resp, err := routingAPI.PostRoutingUtilizationLabels(platformclientv2.Createutilizationlabelrequest{
 		Name: &name,
 	})
 	if err != nil {
-		return diag.Errorf("Failed to create label %s: %s", name, err)
+		return util.BuildAPIDiagnosticError("genesyscloud_routing_utilization_label", fmt.Sprintf("Failed to create label %s error: %s", name, err), resp)
 	}
 
 	d.SetId(*label.Id)
@@ -90,7 +93,7 @@ func createRoutingUtilizationLabel(ctx context.Context, d *schema.ResourceData, 
 }
 
 func updateRoutingUtilizationLabel(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
 
 	id := d.Id()
@@ -98,11 +101,11 @@ func updateRoutingUtilizationLabel(ctx context.Context, d *schema.ResourceData, 
 
 	log.Printf("Updating label %s with name %s", id, name)
 
-	_, _, err := routingAPI.PutRoutingUtilizationLabel(id, platformclientv2.Updateutilizationlabelrequest{
+	_, resp, err := routingAPI.PutRoutingUtilizationLabel(id, platformclientv2.Updateutilizationlabelrequest{
 		Name: &name,
 	})
 	if err != nil {
-		return diag.Errorf("Failed to update label %s: %s", id, err)
+		return util.BuildAPIDiagnosticError("genesyscloud_routing_utilization_label", fmt.Sprintf("Failed to update label %s error: %s", id, err), resp)
 	}
 
 	log.Printf("Updated label %s", id)
@@ -110,50 +113,50 @@ func updateRoutingUtilizationLabel(ctx context.Context, d *schema.ResourceData, 
 }
 
 func readRoutingUtilizationLabel(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	routingApi := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceRoutingUtilizationLabel(), constants.DefaultConsistencyChecks, "genesyscloud_routing_utilization_label")
 
 	log.Printf("Reading label %s", d.Id())
-	return WithRetriesForRead(ctx, d, func() *retry.RetryError {
+	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		label, resp, getErr := routingApi.GetRoutingUtilizationLabel(d.Id())
 		if getErr != nil {
-			if IsStatus404(resp) {
-				return retry.RetryableError(fmt.Errorf("Failed to read label %s: %s", d.Id(), getErr))
+			if util.IsStatus404(resp) {
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_routing_utilization_label", fmt.Sprintf("Failed to read label %s | error: %s", d.Id(), getErr), resp))
 			}
-			return retry.NonRetryableError(fmt.Errorf("Failed to read label %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_routing_utilization_label", fmt.Sprintf("Failed to read label %s | error: %s", d.Id(), getErr), resp))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceRoutingUtilizationLabel())
 		d.Set("name", *label.Name)
 		log.Printf("Read label %s %s", d.Id(), *label.Name)
-		return cc.CheckState()
+		return cc.CheckState(d)
 	})
 }
 
 func deleteRoutingUtilizationLabel(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	name := d.Get("name").(string)
 
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	routingApi := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
 
 	log.Printf("Deleting label %s", name)
-	_, err := routingApi.DeleteRoutingUtilizationLabel(d.Id(), true)
+	resp, err := routingApi.DeleteRoutingUtilizationLabel(d.Id(), true)
 
 	if err != nil {
-		return diag.Errorf("Failed to delete label %s: %s", name, err)
+		return util.BuildAPIDiagnosticError("genesyscloud_routing_utilization_label", fmt.Sprintf("Failed to delete label %s error: %s", name, err), resp)
 	}
 
-	return WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
+	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		_, resp, err := routingApi.GetRoutingUtilizationLabel(d.Id())
 		if err != nil {
-			if IsStatus404(resp) {
+			if util.IsStatus404(resp) {
 				// Routing label deleted
 				log.Printf("Deleted Routing label %s", d.Id())
 				return nil
 			}
-			return retry.NonRetryableError(fmt.Errorf("Error deleting Routing label %s: %s", d.Id(), err))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_routing_utilization_label", fmt.Sprintf("Error deleting Routing label %s: %s", d.Id(), err), resp))
 		}
 
-		return retry.RetryableError(fmt.Errorf("Routing label %s still exists", d.Id()))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_routing_utilization_label", fmt.Sprintf("Routing label %s still exists", d.Id()), resp))
 	})
 }

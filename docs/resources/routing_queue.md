@@ -84,11 +84,12 @@ resource "genesyscloud_routing_queue" "example_queue" {
 
 - `acw_timeout_ms` (Number) The amount of time the agent can stay in ACW. Only set when ACW is MANDATORY_TIMEOUT, MANDATORY_FORCED_TIMEOUT or AGENT_REQUESTED.
 - `acw_wrapup_prompt` (String) This field controls how the UI prompts the agent for a wrapup (MANDATORY | OPTIONAL | MANDATORY_TIMEOUT | MANDATORY_FORCED_TIMEOUT | AGENT_REQUESTED). Defaults to `MANDATORY_TIMEOUT`.
+- `agent_owned_routing` (Block List, Max: 1) Agent Owned Routing. (see [below for nested schema](#nestedblock--agent_owned_routing))
 - `auto_answer_only` (Boolean) Specifies whether the configured whisper should play for all ACD calls, or only for those which are auto-answered. Defaults to `true`.
 - `bullseye_rings` (Block List, Max: 5) The bullseye ring settings for the queue. (see [below for nested schema](#nestedblock--bullseye_rings))
 - `calling_party_name` (String) The name to use for caller identification for outbound calls from this queue.
 - `calling_party_number` (String) The phone number to use for caller identification for outbound calls from this queue.
-- `conditional_group_routing_rules` (Block List, Max: 5) The Conditional Group Routing settings for the queue. (see [below for nested schema](#nestedblock--conditional_group_routing_rules))
+- `conditional_group_routing_rules` (Block List, Max: 5, Deprecated) The Conditional Group Routing settings for the queue. (see [below for nested schema](#nestedblock--conditional_group_routing_rules))
 - `default_script_ids` (Map of String) The default script IDs for each communication type. Communication types: (CALL | CALLBACK | CHAT | COBROWSE | EMAIL | MESSAGE | SOCIAL_EXPRESSION | VIDEO | SCREENSHARE)
 - `description` (String) Queue description.
 - `direct_routing` (Block List, Max: 1) Used by the System to set Direct Routing settings for a system Direct Routing queue. (see [below for nested schema](#nestedblock--direct_routing))
@@ -102,12 +103,13 @@ resource "genesyscloud_routing_queue" "example_queue" {
 - `media_settings_chat` (Block List, Max: 1) Chat media settings. (see [below for nested schema](#nestedblock--media_settings_chat))
 - `media_settings_email` (Block List, Max: 1) Email media settings. (see [below for nested schema](#nestedblock--media_settings_email))
 - `media_settings_message` (Block List, Max: 1) Message media settings. (see [below for nested schema](#nestedblock--media_settings_message))
-- `members` (Set of Object) Users in the queue. If not set, this resource will not manage members. (see [below for nested schema](#nestedatt--members))
+- `members` (Set of Object) Users in the queue. If not set, this resource will not manage members. If a user is already assigned to this queue via a group, attempting to assign them using this field will cause an error to be thrown. (see [below for nested schema](#nestedatt--members))
 - `message_in_queue_flow_id` (String) The in-queue flow ID to use for message conversations waiting in queue.
-- `outbound_email_address` (Block List, Max: 1) The outbound email address settings for this queue. (see [below for nested schema](#nestedblock--outbound_email_address))
+- `outbound_email_address` (Block List, Max: 1, Deprecated) The outbound email address settings for this queue. (see [below for nested schema](#nestedblock--outbound_email_address))
 - `outbound_messaging_sms_address_id` (String) The unique ID of the outbound messaging SMS address for the queue.
 - `queue_flow_id` (String) The in-queue flow ID to use for call conversations waiting in queue.
 - `routing_rules` (Block List, Max: 6) The routing rules for the queue, used for routing to known or preferred agents. (see [below for nested schema](#nestedblock--routing_rules))
+- `scoring_method` (String) The Scoring Method for the queue. Defaults to TimestampAndPriority. Defaults to `TimestampAndPriority`.
 - `skill_evaluation_method` (String) The skill evaluation method to use when routing conversations (NONE | BEST | ALL). Defaults to `ALL`.
 - `skill_groups` (Set of String) List of skill group ids assigned to the queue.
 - `suppress_in_queue_call_recording` (Boolean) Indicates whether recording in-queue calls is suppressed for this queue. Defaults to `true`.
@@ -118,6 +120,16 @@ resource "genesyscloud_routing_queue" "example_queue" {
 ### Read-Only
 
 - `id` (String) The ID of this resource.
+
+<a id="nestedblock--agent_owned_routing"></a>
+### Nested Schema for `agent_owned_routing`
+
+Required:
+
+- `enable_agent_owned_callbacks` (Boolean) Enable Agent Owned Callbacks
+- `max_owned_callback_delay_hours` (Number) Max Owned Call Back Delay Hours >= 7
+- `max_owned_callback_hours` (Number) Auto End Delay Seconds Must be >= 7
+
 
 <a id="nestedblock--bullseye_rings"></a>
 ### Nested Schema for `bullseye_rings`
@@ -190,7 +202,10 @@ Required:
 
 Optional:
 
+- `auto_dial_delay_seconds` (Number) Auto Dial Delay Seconds.
+- `auto_end_delay_seconds` (Number) Auto End Delay Seconds.
 - `enable_auto_answer` (Boolean) Auto-Answer for digital channels(Email, Message) Defaults to `false`.
+- `enable_auto_dial_and_end` (Boolean) Auto Dail and End Defaults to `false`.
 
 
 <a id="nestedblock--media_settings_callback"></a>
@@ -204,7 +219,10 @@ Required:
 
 Optional:
 
+- `auto_dial_delay_seconds` (Number) Auto Dial Delay Seconds.
+- `auto_end_delay_seconds` (Number) Auto End Delay Seconds.
 - `enable_auto_answer` (Boolean) Auto-Answer for digital channels(Email, Message) Defaults to `false`.
+- `enable_auto_dial_and_end` (Boolean) Auto Dail and End Defaults to `false`.
 
 
 <a id="nestedblock--media_settings_chat"></a>
@@ -218,7 +236,10 @@ Required:
 
 Optional:
 
+- `auto_dial_delay_seconds` (Number) Auto Dial Delay Seconds.
+- `auto_end_delay_seconds` (Number) Auto End Delay Seconds.
 - `enable_auto_answer` (Boolean) Auto-Answer for digital channels(Email, Message) Defaults to `false`.
+- `enable_auto_dial_and_end` (Boolean) Auto Dail and End Defaults to `false`.
 
 
 <a id="nestedblock--media_settings_email"></a>
@@ -232,7 +253,10 @@ Required:
 
 Optional:
 
+- `auto_dial_delay_seconds` (Number) Auto Dial Delay Seconds.
+- `auto_end_delay_seconds` (Number) Auto End Delay Seconds.
 - `enable_auto_answer` (Boolean) Auto-Answer for digital channels(Email, Message) Defaults to `false`.
+- `enable_auto_dial_and_end` (Boolean) Auto Dail and End Defaults to `false`.
 
 
 <a id="nestedblock--media_settings_message"></a>
@@ -246,7 +270,10 @@ Required:
 
 Optional:
 
+- `auto_dial_delay_seconds` (Number) Auto Dial Delay Seconds.
+- `auto_end_delay_seconds` (Number) Auto End Delay Seconds.
 - `enable_auto_answer` (Boolean) Auto-Answer for digital channels(Email, Message) Defaults to `false`.
+- `enable_auto_dial_and_end` (Boolean) Auto Dail and End Defaults to `false`.
 
 
 <a id="nestedatt--members"></a>

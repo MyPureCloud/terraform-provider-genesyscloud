@@ -1,11 +1,12 @@
 package architect_ivr
 
 import (
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/google/uuid"
@@ -26,8 +27,8 @@ func TestAccDataSourceArchitectIvr(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
-		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Create
@@ -52,17 +53,17 @@ func TestAccDataSourceArchitectIvr(t *testing.T) {
 /*
 This is a unit test to test whether the Architect IVR data source is properly pulling the id back from the proxy
 */
-func TestDataSourceArchitectIvr(t *testing.T) {
+func TestUnitDataSourceArchitectIvr(t *testing.T) {
 	targetId := uuid.NewString()
 	targetName := "MyTargetId"
 	archProxy := &architectIvrProxy{}
-	archProxy.getArchitectIvrIdByNameAttr = func(ctx context.Context, a *architectIvrProxy, name string) (string, bool, error) {
+	archProxy.getArchitectIvrIdByNameAttr = func(ctx context.Context, a *architectIvrProxy, name string) (string, bool, *platformclientv2.APIResponse, error) {
 		assert.Equal(t, targetName, name)
-		return targetId, false, nil
+		return targetId, false, nil, nil
 	}
 	internalProxy = archProxy
 	ctx := context.Background()
-	gcloud := &gcloud.ProviderMeta{ClientConfig: &platformclientv2.Configuration{}}
+	gcloud := &provider.ProviderMeta{ClientConfig: &platformclientv2.Configuration{}}
 
 	//Grab our defined schema
 	resourceSchema := DataSourceArchitectIvr().Schema

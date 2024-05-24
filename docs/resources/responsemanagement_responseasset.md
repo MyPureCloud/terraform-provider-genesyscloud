@@ -28,6 +28,7 @@ resource "genesyscloud_responsemanagement_responseasset" "asset" {
 
 ### Required
 
+- `file_content_hash` (String) Hash value of the response asset file content. Used to detect changes.
 - `filename` (String) Name of the file to upload. Changing the name attribute will cause the existing response asset to be dropped and recreated with a new ID. It must not start with a dot and not end with a forward slash. Whitespace and the following characters are not allowed: \{^}%`]">[~<#|
 
 ### Optional

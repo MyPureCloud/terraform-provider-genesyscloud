@@ -4,16 +4,18 @@ import (
 	"context"
 	"fmt"
 	"log"
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 )
 
 /*
@@ -25,9 +27,9 @@ func getAllAuthOutboundCampaign(ctx context.Context, clientConfig *platformclien
 	resources := make(resourceExporter.ResourceIDMetaMap)
 	proxy := getOutboundCampaignProxy(clientConfig)
 
-	campaigns, err := proxy.getAllOutboundCampaign(ctx)
+	campaigns, resp, err := proxy.getAllOutboundCampaign(ctx)
 	if err != nil {
-		return nil, diag.Errorf("Failed to get campaigns: %s", err)
+		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get campaigns error: %s", err), resp)
 	}
 
 	for _, campaign := range *campaigns {
@@ -36,17 +38,17 @@ func getAllAuthOutboundCampaign(ctx context.Context, clientConfig *platformclien
 		if *campaign.CampaignStatus == "stopping" {
 			log.Println("Campaign is stopping")
 			// Retry to give the campaign time to turn off
-			err := gcloud.WithRetries(ctx, 5*time.Minute, func() *retry.RetryError {
+			err := util.WithRetries(ctx, 5*time.Minute, func() *retry.RetryError {
 				campaign, resp, getErr := proxy.getOutboundCampaignById(ctx, *campaign.Id)
 				if getErr != nil {
-					if gcloud.IsStatus404(resp) {
-						return retry.RetryableError(fmt.Errorf("Failed to read Campaign %s during export: %s", *campaign.Id, getErr))
+					if util.IsStatus404(resp) {
+						return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read Campaign %s during export | error: %s", *campaign.Id, getErr), resp))
 					}
-					return retry.NonRetryableError(fmt.Errorf("Failed to read Campaign %s: during export %s", *campaign.Id, getErr))
+					return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read Campaign %s: during export | error: %s", *campaign.Id, getErr), resp))
 				}
 
 				if *campaign.CampaignStatus == "stopping" {
-					return retry.RetryableError(fmt.Errorf("Campaign %s didn't stop in time, unable to export", *campaign.Id))
+					return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Campaign %s didn't stop in time, unable to export", *campaign.Id), resp))
 				}
 
 				return nil
@@ -58,13 +60,12 @@ func getAllAuthOutboundCampaign(ctx context.Context, clientConfig *platformclien
 		}
 		resources[*campaign.Id] = &resourceExporter.ResourceMeta{Name: *campaign.Name}
 	}
-
 	return resources, nil
 }
 
 // createOutboundCampaign is used by the outbound_campaign resource to create Genesys cloud outbound campaign
 func createOutboundCampaign(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	clientConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	clientConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getOutboundCampaignProxy(clientConfig)
 	campaignStatus := d.Get("campaign_status").(string)
 
@@ -72,48 +73,46 @@ func createOutboundCampaign(ctx context.Context, d *schema.ResourceData, meta in
 
 	// Create campaign
 	log.Printf("Creating Outbound Campaign %s", *campaign.Name)
-	outboundCampaign, err := proxy.createOutboundCampaign(ctx, &campaign)
+	outboundCampaign, resp, err := proxy.createOutboundCampaign(ctx, &campaign)
 	if err != nil {
-		return diag.Errorf("Failed to create Outbound Campaign %s: %s", *campaign.Name, err)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create Outbound Campaign %s error: %s", *campaign.Name, err), resp)
 	}
 
 	d.SetId(*outboundCampaign.Id)
 
 	// Campaigns can be enabled after creation
 	if campaignStatus == "on" {
-		d.Set("campaign_status", campaignStatus)
-		diag := updateOutboundCampaignStatus(ctx, d.Id(), proxy, *outboundCampaign, campaignStatus)
-		if diag != nil {
-			return diag
+		_ = d.Set("campaign_status", campaignStatus)
+		diagErr := updateOutboundCampaignStatus(ctx, d.Id(), proxy, *outboundCampaign, campaignStatus)
+		if diagErr != nil {
+			return diagErr
 		}
 	}
 
 	log.Printf("Created Outbound Campaign %s %s", *outboundCampaign.Name, *outboundCampaign.Id)
-
 	return readOutboundCampaign(ctx, d, meta)
 }
 
 // readOutboundCampaign is used by the outbound_campaign resource to read an outbound campaign from genesys cloud
 func readOutboundCampaign(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	clientConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	clientConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getOutboundCampaignProxy(clientConfig)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundCampaign(), constants.DefaultConsistencyChecks, resourceName)
 
 	log.Printf("Reading Outbound Campaign %s", d.Id())
 
-	return gcloud.WithRetriesForRead(ctx, d, func() *retry.RetryError {
+	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		campaign, resp, getErr := proxy.getOutboundCampaignById(ctx, d.Id())
 		if getErr != nil {
-			if gcloud.IsStatus404(resp) {
-				return retry.RetryableError(fmt.Errorf("Failed to read Outbound Campaign %s: %s", d.Id(), getErr))
+			if util.IsStatus404(resp) {
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read Outbound Campaign %s | error: %s", d.Id(), getErr), resp))
 			}
-			return retry.NonRetryableError(fmt.Errorf("Failed to read Outbound Campaign %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read Outbound Campaign %s | error: %s", d.Id(), getErr), resp))
 		}
 
 		if *campaign.CampaignStatus == "stopping" {
-			return retry.RetryableError(fmt.Errorf("Outbound Campaign still stopping %s", d.Id()))
+			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Outbound Campaign still stopping %s", d.Id()), resp))
 		}
-
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundCampaign())
 
 		resourcedata.SetNillableValue(d, "name", campaign.Name)
 		resourcedata.SetNillableReference(d, "contact_list_id", campaign.ContactList)
@@ -126,7 +125,7 @@ func readOutboundCampaign(ctx context.Context, d *schema.ResourceData, meta inte
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "phone_columns", campaign.PhoneColumns, flattenPhoneColumn)
 		resourcedata.SetNillableValue(d, "abandon_rate", campaign.AbandonRate)
 		if campaign.DncLists != nil {
-			d.Set("dnc_list_ids", gcloud.SdkDomainEntityRefArrToList(*campaign.DncLists))
+			_ = d.Set("dnc_list_ids", util.SdkDomainEntityRefArrToList(*campaign.DncLists))
 		}
 		resourcedata.SetNillableReference(d, "callable_time_set_id", campaign.CallableTimeSet)
 		resourcedata.SetNillableReference(d, "call_analysis_response_set_id", campaign.CallAnalysisResponseSet)
@@ -134,7 +133,7 @@ func readOutboundCampaign(ctx context.Context, d *schema.ResourceData, meta inte
 		resourcedata.SetNillableValue(d, "caller_address", campaign.CallerAddress)
 		resourcedata.SetNillableValue(d, "outbound_line_count", campaign.OutboundLineCount)
 		if campaign.RuleSets != nil {
-			d.Set("rule_set_ids", gcloud.SdkDomainEntityRefArrToList(*campaign.RuleSets))
+			_ = d.Set("rule_set_ids", util.SdkDomainEntityRefArrToList(*campaign.RuleSets))
 		}
 		resourcedata.SetNillableValue(d, "skip_preview_disabled", campaign.SkipPreviewDisabled)
 		resourcedata.SetNillableValue(d, "preview_time_out_seconds", campaign.PreviewTimeOutSeconds)
@@ -144,28 +143,28 @@ func readOutboundCampaign(ctx context.Context, d *schema.ResourceData, meta inte
 		resourcedata.SetNillableValue(d, "call_analysis_language", campaign.CallAnalysisLanguage)
 		resourcedata.SetNillableValue(d, "priority", campaign.Priority)
 		if campaign.ContactListFilters != nil {
-			d.Set("contact_list_filter_ids", gcloud.SdkDomainEntityRefArrToList(*campaign.ContactListFilters))
+			_ = d.Set("contact_list_filter_ids", util.SdkDomainEntityRefArrToList(*campaign.ContactListFilters))
 		}
 		resourcedata.SetNillableReference(d, "division_id", campaign.Division)
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "dynamic_contact_queueing_settings", campaign.DynamicContactQueueingSettings, flattenSettings)
 
 		log.Printf("Read Outbound Campaign %s %s", d.Id(), *campaign.Name)
-		return cc.CheckState()
+		return cc.CheckState(d)
 	})
 }
 
 // updateOutboundCampaign is used by the outbound_campaign resource to update an outbound campaign in Genesys Cloud
 func updateOutboundCampaign(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	clientConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	clientConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getOutboundCampaignProxy(clientConfig)
 	campaignStatus := d.Get("campaign_status").(string)
 
 	campaign := getOutboundCampaignFromResourceData(d)
 
 	log.Printf("Updating Outbound Campaign %s", *campaign.Name)
-	campaignSdk, err := proxy.updateOutboundCampaign(ctx, d.Id(), &campaign)
+	campaignSdk, resp, err := proxy.updateOutboundCampaign(ctx, d.Id(), &campaign)
 	if err != nil {
-		return diag.Errorf("Failed to update campaign %s", err)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update campaign %s error: %s", *campaign.Name, err), resp)
 	}
 
 	// Check if Campaign Status needs updated
@@ -180,16 +179,16 @@ func updateOutboundCampaign(ctx context.Context, d *schema.ResourceData, meta in
 
 // deleteOutboundCampaign is used by the outbound_campaign resource to delete an outbound campaign from Genesys cloud
 func deleteOutboundCampaign(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	clientConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	clientConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getOutboundCampaignProxy(clientConfig)
 
 	campaignStatus := d.Get("campaign_status").(string)
 
 	// Campaigns have to be turned off before they can be deleted
 	if campaignStatus == "on" {
-		currentCampaign, _, err := proxy.getOutboundCampaignById(ctx, d.Id())
+		currentCampaign, resp, err := proxy.getOutboundCampaignById(ctx, d.Id())
 		if err != nil {
-			log.Printf("failed to read campaign %s: %v", d.Id(), err)
+			log.Printf("failed to read campaign %s: %v %v", d.Id(), err, resp)
 		}
 		if *currentCampaign.CampaignStatus == "complete" {
 			log.Printf("Deleting campaign %s in 'complete' state", *currentCampaign.Id)
@@ -202,23 +201,23 @@ func deleteOutboundCampaign(ctx context.Context, d *schema.ResourceData, meta in
 	}
 
 	log.Printf("Deleting Outbound Campaign %s", d.Id())
-	_, err := proxy.deleteOutboundCampaign(ctx, d.Id())
+	resp, err := proxy.deleteOutboundCampaign(ctx, d.Id())
 	if err != nil {
-		return diag.Errorf("Failed to delete campaign %s: %s", d.Id(), err)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete campaign %s error: %s", d.Id(), err), resp)
 	}
 	log.Printf("Deleted Outbound Campaign %s", d.Id())
 
-	return gcloud.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
+	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		log.Printf("Reading Outbound Campaign %s to confirm is has been deleted", d.Id())
 		_, resp, err := proxy.getOutboundCampaignById(ctx, d.Id())
 		if err != nil {
-			if gcloud.IsStatus404(resp) {
+			if util.IsStatus404(resp) {
 				// Outbound Campaign deleted
 				log.Printf("Deleted Outbound Campaign %s", d.Id())
 				return nil
 			}
-			return retry.NonRetryableError(fmt.Errorf("Error deleting Outbound Campaign %s: %s", d.Id(), err))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Error deleting Outbound Campaign %s | error: %s", d.Id(), err), resp))
 		}
-		return retry.RetryableError(fmt.Errorf("Outbound Campaign %s still exists", d.Id()))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Outbound Campaign %s still exists", d.Id()), resp))
 	})
 }
