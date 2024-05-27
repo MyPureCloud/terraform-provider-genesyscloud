@@ -3,12 +3,12 @@
 page_title: "genesyscloud_architect_schedules Data Source - terraform-provider-genesyscloud"
 subcategory: ""
 description: |-
-  Data source for Genesys Cloud Schedule. Select a schedule by name
+  Data source for Genesys Cloud Schedules. Selecte a schedules by name.
 ---
 
 # genesyscloud_architect_schedules (Data Source)
 
-Data source for Genesys Cloud Schedule. Select a schedule by name
+Data source for Genesys Cloud Schedules. Selecte a schedules by name.
 
 ## Example Usage
 
@@ -23,7 +23,7 @@ data "genesyscloud_architect_schedules" "schedule" {
 
 ### Required
 
-- `name` (String) Schedule name.
+- `name` (String) Schedules name.
 
 ### Read-Only
 
