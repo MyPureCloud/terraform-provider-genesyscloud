@@ -328,6 +328,7 @@ pipeline {
             
         steps {
         sh 'GOBIN=$HOME/bin go install github.com/wadey/gocovmerge@latest'
+        
         // Generate merged coverage report
         sh '$HOME/bin/gocovmerge coverageArchitect.out coverageIdp.out coverageAuth.out coverageIntegration.out coverageFlow.out coverageJourney.out coverageKnowledge.out coverageOutbound.out coverageResponseManagement.out coverageRouting.out coverageExport.out coverageLocation.out coverageWebDeployment.out coverageRemaining.out coverageSite.out coverageRoleTeam.out > merged_coverage.out'
 
@@ -338,7 +339,88 @@ pipeline {
         
     
                 script {
-                    // Read the XML file content
+                    //Step 1 : Generate package wise coverage report
+                    // Step 2: Read the generated HTML file
+                    def htmlFile = readFile 'coverageAcceptance.html'
+                    def selectStart = htmlFile.indexOf('<select id="files">')
+                    def selectEnd = htmlFile.indexOf('</select>', selectStart)
+                    def fileCoverageSection = htmlFile.substring(selectStart, selectEnd + 9) // +9 to include </select>
+
+                    def packageCoverage = [:]
+                    def packageFiles = [:]
+
+                    // Step 3: Parse the existing options to calculate package-wise coverage
+                    fileCoverageSection.split('\n').each { line ->
+                        if (line.contains('<option value=')) {
+                            def filePath = line.substring(line.indexOf('>') + 1, line.indexOf(' (')).trim()
+                            def percentage = line.substring(line.indexOf('(') + 1, line.indexOf('%')).toFloat()
+                            def packageName = filePath.replaceFirst('terraform-provider-genesyscloud/genesyscloud/([^/]+)/.*', '$1')
+                            packageFiles[packageName] = (packageFiles[packageName] ?: 0) + 1
+                            packageCoverage[packageName] = (packageCoverage[packageName] ?: 0) + percentage
+                        }
+                    }
+
+                    // Step 4: Generate the package-wise coverage table with highlighting
+                    def packageCoverageRows = packageCoverage.collect { packageName, totalPercentage ->
+                        def averagePercentage = totalPercentage / packageFiles[packageName]
+                        def colorClass = averagePercentage < 50 ? 'light-red' : 'light-green'
+                        return "<tr class='${colorClass}'><td>${packageName}</td><td>${String.format('%.1f', averagePercentage)}%</td></tr>"
+                    }.join('\n')
+
+                    def packageCoverageHtml = """
+                        <option value="packageCoverage">Package-wise Coverage</option>
+                    """.stripIndent()
+
+                    def tableHtml = """
+                        <div id="packageCoverageTable" style="display:none;">
+                            <table border="1">
+                                <thead>
+                                    <tr>
+                                        <th>Package</th>
+                                        <th>Coverage (%)</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="packageCoverageBody">
+                                    ${packageCoverageRows}
+                                </tbody>
+                            </table>
+                        </div>
+                    """.stripIndent()
+
+                    def scriptHtml = """
+                        <script>
+                            function handleSelection() {
+                                const select = document.getElementById('files');
+                                const packageCoverageTable = document.getElementById('packageCoverageTable');
+                                if (select.value === 'packageCoverage') {
+                                    packageCoverageTable.style.display = 'block';
+                                } else {
+                                    packageCoverageTable.style.display = 'none';
+                                }
+                            }
+                        </script>
+                    """.stripIndent()
+
+                    // Define the CSS classes
+                    def cssStyles = """
+                        <style>
+                            .light-green {
+                                background-color: #c8e6c9; /* light green */
+                            }
+                            .light-red {
+                                background-color: #ffcdd2; /* light red */
+                            }
+                        </style>
+                    """.stripIndent()
+
+                    // Step 5: Insert the new option, table, and styles into the HTML file
+                    def updatedHtmlFile = htmlFile.replace('<select id="files">', '<select id="files" onchange="handleSelection()">\n' + packageCoverageHtml)
+                    updatedHtmlFile = updatedHtmlFile.replace('</head>', cssStyles + '\n</head>')
+                    updatedHtmlFile = updatedHtmlFile.replace('</body>', tableHtml + scriptHtml + '\n</body>')
+
+                    writeFile file: 'coverageAcceptance.html', text: updatedHtmlFile
+
+                    // Generate manual report
                     def xmlContent = readFile 'test-results.xml'
 
                     // Extract test case information using regular expressions
