@@ -138,6 +138,51 @@ func TestUnitTfExportRemoveZeroValuesFunc(t *testing.T) {
 	}
 }
 
+// TestUnitComputeDependsOn will test computeDependsOn function
+func TestUnitComputeDependsOn(t *testing.T) {
+
+	createResourceData := func(enableDependencyResolution bool, includeFilterResources []interface{}) *schema.ResourceData {
+
+		resourceSchema := map[string]*schema.Schema{
+			"enable_dependency_resolution": {
+				Type:     schema.TypeBool,
+				Optional: true,
+				Default:  false,
+			},
+			"include_filter_resources": {
+				Type:     schema.TypeList,
+				Elem:     &schema.Schema{Type: schema.TypeString},
+				Optional: true,
+			},
+		}
+
+		data := schema.TestResourceDataRaw(t, resourceSchema, map[string]interface{}{
+			"enable_dependency_resolution": enableDependencyResolution,
+			"include_filter_resources":     includeFilterResources,
+		})
+		return data
+	}
+
+	tests := []struct {
+		enableDependencyResolution bool
+		includeFilterResources     []interface{}
+		expected                   bool
+	}{
+		{true, []interface{}{"resource1", "resource2"}, true},
+		{true, []interface{}{}, false},
+		{false, []interface{}{"resource1"}, false},
+		{false, []interface{}{}, false},
+	}
+
+	for _, test := range tests {
+		data := createResourceData(test.enableDependencyResolution, test.includeFilterResources)
+		result := computeDependsOn(data)
+		if result != test.expected {
+			t.Errorf("computeDependsOn(%v, %v) = %v; want %v", test.enableDependencyResolution, test.includeFilterResources, result, test.expected)
+		}
+	}
+}
+
 // TestUnitTfExportAllowEmptyArray will test if fields included in the exporter property `AllowEmptyArrays`
 // will retain empty arrays in the configMap when their state values are null or [].
 // Empty array fields not included in `AllowEmptyArrays` will be sanitized to nil by default,
