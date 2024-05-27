@@ -283,6 +283,10 @@ func TestAccResourceRoutingEmailRoute(t *testing.T) {
 					generateRoutingAutoBcc(fromName2, bccEmail2),
 				),
 				Check: resource.ComposeTestCheckFunc(
+					func(s *terraform.State) error {
+						time.Sleep(30 * time.Second) // Wait for 30 seconds for resources to be updated
+						return nil
+					},
 					resource.TestCheckResourceAttr("genesyscloud_routing_email_route."+routeRes, "pattern", routePattern2),
 					resource.TestCheckResourceAttr("genesyscloud_routing_email_route."+routeRes, "from_name", fromName2),
 					resource.TestCheckResourceAttr("genesyscloud_routing_email_route."+routeRes, "from_email", ""),
