@@ -7,7 +7,10 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v130/platformclientv2"
+	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/chunks"
+	"terraform-provider-genesyscloud/genesyscloud/util/lists"
 )
 
 // getTeamFromResourceData maps data from schema ResourceData object to a platformclientv2.Team
@@ -34,6 +37,55 @@ func getTeamMemberIds(ctx context.Context, d *schema.ResourceData, sdkConfig *pl
 	}
 
 	return memberIds, nil
+}
+
+func updateTeamMembers(ctx context.Context, d *schema.ResourceData, sdkConfig *platformclientv2.Configuration) diag.Diagnostics {
+	proxy := getTeamProxy(sdkConfig)
+	if d.HasChange("member_ids") {
+		if membersConfig := d.Get("member_ids"); membersConfig != nil {
+			configMemberIds := *lists.SetToStringList(membersConfig.(*schema.Set))
+			existingMemberIds, err := getTeamMemberIds(ctx, d, sdkConfig)
+			if err != nil {
+				return err
+			}
+
+			maxMembersPerRequest := 25
+			membersToRemoveList := lists.SliceDifference(existingMemberIds, configMemberIds)
+			chunkedMemberIdsDelete := chunks.ChunkBy(membersToRemoveList, maxMembersPerRequest)
+
+			chunkProcessor := func(membersToRemove []string) diag.Diagnostics {
+				if len(membersToRemove) > 0 {
+					if diagErr := util.RetryWhen(util.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+						resp, err := proxy.deleteMembers(ctx, d.Id(), strings.Join(membersToRemove, ","))
+						if err != nil {
+							return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to remove members from team %s: %s", d.Id(), err), resp)
+						}
+						return resp, nil
+					}); diagErr != nil {
+						return diagErr
+					}
+				}
+				return nil
+			}
+
+			if err := chunks.ProcessChunks(chunkedMemberIdsDelete, chunkProcessor); err != nil {
+				return err
+			}
+
+			membersToAdd := lists.SliceDifference(configMemberIds, existingMemberIds)
+			if len(membersToAdd) < 1 {
+				return nil
+			}
+
+			chunkedMemberIds := lists.ChunkStringSlice(membersToAdd, maxMembersPerRequest)
+			for _, chunk := range chunkedMemberIds {
+				if err := addGroupMembers(ctx, d, chunk, sdkConfig); err != nil {
+					return err
+				}
+			}
+		}
+	}
+	return nil
 }
 
 func addGroupMembers(ctx context.Context, d *schema.ResourceData, membersToAdd []string, sdkConfig *platformclientv2.Configuration) diag.Diagnostics {
