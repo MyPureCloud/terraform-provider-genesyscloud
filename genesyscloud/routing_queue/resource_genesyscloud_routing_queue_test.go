@@ -1450,10 +1450,6 @@ func TestAccResourceRoutingQueueSkillGroups(t *testing.T) {
 						GenerateBullseyeSettings("10")),
 				Check: resource.ComposeTestCheckFunc(
 					validateGroups("genesyscloud_routing_queue."+queueResource, "genesyscloud_routing_skill_group."+skillGroupResource, "genesyscloud_group."+groupResource),
-					func(s *terraform.State) error {
-						time.Sleep(45 * time.Second) // Wait for 45 seconds for resource to get deleted properly
-						return nil
-					},
 				),
 			},
 			{
@@ -1464,6 +1460,12 @@ func TestAccResourceRoutingQueueSkillGroups(t *testing.T) {
 				ImportStateVerifyIgnore: []string{
 					"suppress_in_queue_call_recording",
 				},
+				Check: resource.ComposeTestCheckFunc(
+					func(s *terraform.State) error {
+						time.Sleep(45 * time.Second) // Wait for 45 seconds for resource to get deleted properly
+						return nil
+					},
+				),
 			},
 		},
 		CheckDestroy: testVerifyQueuesDestroyed,
