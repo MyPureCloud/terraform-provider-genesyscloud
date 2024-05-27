@@ -4,8 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 	"net/http"
-	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
 )
 
 /*

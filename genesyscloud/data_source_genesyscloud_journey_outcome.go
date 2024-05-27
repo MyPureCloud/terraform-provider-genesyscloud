@@ -11,7 +11,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 )
 
 func dataSourceJourneyOutcome() *schema.Resource {
@@ -31,6 +31,7 @@ func dataSourceJourneyOutcome() *schema.Resource {
 func dataSourceJourneyOutcomeRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	sdkConfig := m.(*provider.ProviderMeta).ClientConfig
 	journeyApi := platformclientv2.NewJourneyApiWithConfig(sdkConfig)
+	var response *platformclientv2.APIResponse
 
 	name := d.Get("name").(string)
 
@@ -38,13 +39,15 @@ func dataSourceJourneyOutcomeRead(ctx context.Context, d *schema.ResourceData, m
 		pageCount := 1 // Needed because of broken journey common paging
 		for pageNum := 1; pageNum <= pageCount; pageNum++ {
 			const pageSize = 100
-			journeyOutcomes, _, getErr := journeyApi.GetJourneyOutcomes(pageNum, pageSize, "", nil, nil, "")
+			journeyOutcomes, resp, getErr := journeyApi.GetJourneyOutcomes(pageNum, pageSize, "", nil, nil, "")
 			if getErr != nil {
-				return retry.NonRetryableError(fmt.Errorf("failed to get page of journey outcomes: %v", getErr))
+				return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_journey_outcome", fmt.Sprintf("failed to get page of journey outcomes: %v", getErr), resp))
 			}
 
+			response = resp
+
 			if journeyOutcomes.Entities == nil || len(*journeyOutcomes.Entities) == 0 {
-				return retry.RetryableError(fmt.Errorf("no journey outcome found with name %s", name))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_journey_outcome", fmt.Sprintf("no journey outcome found with name %s", name), resp))
 			}
 
 			for _, journeyOutcome := range *journeyOutcomes.Entities {
@@ -56,6 +59,6 @@ func dataSourceJourneyOutcomeRead(ctx context.Context, d *schema.ResourceData, m
 
 			pageCount = *journeyOutcomes.PageCount
 		}
-		return retry.RetryableError(fmt.Errorf("no journey outcome found with name %s", name))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_journey_outcome", fmt.Sprintf("no journey outcome found with name %s", name), response))
 	})
 }

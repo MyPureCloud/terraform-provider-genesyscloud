@@ -9,6 +9,7 @@ import (
 	oauth "terraform-provider-genesyscloud/genesyscloud/oauth_client"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -19,7 +20,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 )
 
 /*
@@ -126,6 +127,7 @@ func retrieveCachedOauthClientSecret(sdkConfig *platformclientv2.Configuration, 
 func readCredential(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	ip := getIntegrationCredsProxy(sdkConfig)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceIntegrationCredential(), constants.DefaultConsistencyChecks, resourceName)
 
 	log.Printf("Reading credential %s", d.Id())
 
@@ -133,18 +135,17 @@ func readCredential(ctx context.Context, d *schema.ResourceData, meta interface{
 		currentCredential, resp, err := ip.getIntegrationCredById(ctx, d.Id())
 		if err != nil {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(fmt.Errorf("failed to read credential %s: %s", d.Id(), err))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read credential %s | error: %s", d.Id(), err), resp))
 			}
-			return retry.NonRetryableError(fmt.Errorf("failed to read credential %s: %s", d.Id(), err))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read credential %s | error: %s", d.Id(), err), resp))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceIntegrationCredential())
 		_ = d.Set("name", *currentCredential.Name)
 		_ = d.Set("credential_type_name", *currentCredential.VarType.Name)
 
 		log.Printf("Read credential %s %s", d.Id(), *currentCredential.Name)
 
-		return cc.CheckState()
+		return cc.CheckState(d)
 	})
 }
 
@@ -193,8 +194,8 @@ func deleteCredential(ctx context.Context, d *schema.ResourceData, meta interfac
 				log.Printf("Deleted Integration credential %s", d.Id())
 				return nil
 			}
-			return retry.NonRetryableError(fmt.Errorf("error deleting credential action %s: %s", d.Id(), err))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("error deleting credential action %s | error: %s", d.Id(), err), resp))
 		}
-		return retry.RetryableError(fmt.Errorf("integration credential %s still exists", d.Id()))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("integration credential %s still exists", d.Id()), resp))
 	})
 }

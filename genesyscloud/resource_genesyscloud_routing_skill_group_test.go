@@ -17,7 +17,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 )
 
 func testAccCheckSkillConditions(resourceName string, targetSkillConditionJson string) resource.TestCheckFunc {
@@ -748,7 +748,7 @@ func getAllSkillGroupMemberDivisionIds(routingAPI *platformclientv2.RoutingApi, 
 	memberDivisionsPayload := make(map[string]interface{}, 0)
 	err = json.Unmarshal(response.RawBody, &memberDivisionsPayload)
 	if err != nil {
-		return nil, diag.Errorf("Failed to unmarshal member divisions. %s", err)
+		return nil, util.BuildDiagnosticError("genesyscloud_routing_skill_group", fmt.Sprintf("Failed to unmarshal member divisions"), err)
 	}
 
 	apiSkillGroupMemberDivisionIds := make([]string, 0)

@@ -4,10 +4,10 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"net/url"
 	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -18,7 +18,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 )
 
 var (
@@ -96,16 +96,12 @@ func getAllKnowledgeLabelEntities(knowledgeAPI platformclientv2.KnowledgeApi, kn
 			break
 		}
 
-		u, err := url.Parse(*knowledgeLabels.NextUri)
+		after, err := util.GetQueryParamValueFromUri(*knowledgeLabels.NextUri, "after")
 		if err != nil {
-			return nil, diag.Errorf("Failed to parse after cursor from knowledge label nextUri: %v", err)
+			return nil, util.BuildDiagnosticError("genesyscloud_knowledge_label", fmt.Sprintf("Failed to parse after cursor from knowledge label nextUri"), err)
 		}
-		m, _ := url.ParseQuery(u.RawQuery)
-		if afterSlice, ok := m["after"]; ok && len(afterSlice) > 0 {
-			after = afterSlice[0]
-			if after == "" {
-				break
-			}
+		if after == "" {
+			break
 		}
 	}
 
@@ -179,26 +175,25 @@ func readKnowledgeLabel(ctx context.Context, d *schema.ResourceData, meta interf
 
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	knowledgeAPI := platformclientv2.NewKnowledgeApiWithConfig(sdkConfig)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceKnowledgeLabel(), constants.DefaultConsistencyChecks, "genesyscloud_knowledge_label")
 
 	log.Printf("Reading knowledge label %s", knowledgeLabelId)
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		knowledgeLabel, resp, getErr := knowledgeAPI.GetKnowledgeKnowledgebaseLabel(knowledgeBaseId, knowledgeLabelId)
 		if getErr != nil {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(fmt.Errorf("Failed to read knowledge label %s: %s", knowledgeLabelId, getErr))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_knowledge_label", fmt.Sprintf("Failed to read knowledge label %s | error: %s", knowledgeLabelId, getErr), resp))
 			}
 			log.Printf("%s", getErr)
-			return retry.NonRetryableError(fmt.Errorf("Failed to read knowledge label %s: %s", knowledgeLabelId, getErr))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_knowledge_label", fmt.Sprintf("Failed to read knowledge label %s | error: %s", knowledgeLabelId, getErr), resp))
 		}
-
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceKnowledgeLabel())
 
 		newId := fmt.Sprintf("%s,%s", *knowledgeLabel.Id, knowledgeBaseId)
 		d.SetId(newId)
 		d.Set("knowledge_base_id", knowledgeBaseId)
 		d.Set("knowledge_label", flattenKnowledgeLabel(knowledgeLabel))
 		log.Printf("Read knowledge label %s", knowledgeLabelId)
-		return cc.CheckState()
+		return cc.CheckState(d)
 	})
 }
 
@@ -258,10 +253,10 @@ func deleteKnowledgeLabel(ctx context.Context, d *schema.ResourceData, meta inte
 				log.Printf("Deleted knowledge label %s", knowledgeLabelId)
 				return nil
 			}
-			return retry.NonRetryableError(fmt.Errorf("Error deleting knowledge label %s: %s", knowledgeLabelId, err))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_knowledge_label", fmt.Sprintf("Error deleting knowledge label %s | error: %s", knowledgeLabelId, err), resp))
 		}
 
-		return retry.RetryableError(fmt.Errorf("Knowledge label %s still exists", knowledgeLabelId))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_knowledge_label", fmt.Sprintf("Knowledge label %s still exists", knowledgeLabelId), resp))
 	})
 }
 

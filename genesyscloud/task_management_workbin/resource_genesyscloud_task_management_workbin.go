@@ -7,11 +7,12 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
@@ -67,6 +68,7 @@ func createTaskManagementWorkbin(ctx context.Context, d *schema.ResourceData, me
 func readTaskManagementWorkbin(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getTaskManagementWorkbinProxy(sdkConfig)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceTaskManagementWorkbin(), constants.DefaultConsistencyChecks, resourceName)
 
 	log.Printf("Reading task management workbin %s", d.Id())
 
@@ -74,19 +76,17 @@ func readTaskManagementWorkbin(ctx context.Context, d *schema.ResourceData, meta
 		workbin, resp, getErr := proxy.getTaskManagementWorkbinById(ctx, d.Id())
 		if getErr != nil {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(fmt.Errorf("failed to read task management workbin %s: %s", d.Id(), getErr))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read task management workbin %s | error: %s", d.Id(), getErr), resp))
 			}
-			return retry.NonRetryableError(fmt.Errorf("failed to read task management workbin %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read task management workbin %s | error: %s", d.Id(), getErr), resp))
 		}
-
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceTaskManagementWorkbin())
 
 		resourcedata.SetNillableValue(d, "name", workbin.Name)
 		resourcedata.SetNillableReferenceDivision(d, "division_id", workbin.Division)
 		resourcedata.SetNillableValue(d, "description", workbin.Description)
 
 		log.Printf("Read task management workbin %s %s", d.Id(), *workbin.Name)
-		return cc.CheckState()
+		return cc.CheckState(d)
 	})
 }
 
@@ -128,8 +128,8 @@ func deleteTaskManagementWorkbin(ctx context.Context, d *schema.ResourceData, me
 				log.Printf("Deleted task management workbin %s", d.Id())
 				return nil
 			}
-			return retry.NonRetryableError(fmt.Errorf("error deleting task management workbin %s: %s", d.Id(), err))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("error deleting task management workbin %s | error: %s", d.Id(), err), resp))
 		}
-		return retry.RetryableError(fmt.Errorf("task management workbin %s still exists", d.Id()))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("task management workbin %s still exists", d.Id()), resp))
 	})
 }

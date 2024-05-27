@@ -111,6 +111,8 @@ The example above will attempt to find a role named "employee" which can be refe
 
 If you wish to work on the provider, you'll first need [Go](http://www.golang.org) installed on your machine (see [Requirements](#requirements) above).
 
+**Please branch off of the latest version of dev and be sure to set dev as the target branch of your pull request.**
+
 To compile the provider, run `go install`. This will build the provider and put the provider binary in the `$GOPATH/bin` directory.
 
 In order to run the full suite of Acceptance tests, run `make testacc`. You can also specify individual tests using the TESTARGS variable:

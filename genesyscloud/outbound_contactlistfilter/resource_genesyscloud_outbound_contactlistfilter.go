@@ -6,12 +6,13 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 	"log"
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 	"time"
 )
@@ -60,6 +61,7 @@ func createOutboundContactlistfilter(ctx context.Context, d *schema.ResourceData
 func readOutboundContactlistfilter(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getOutboundContactlistfilterProxy(sdkConfig)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundContactlistfilter(), constants.DefaultConsistencyChecks, resourceName)
 
 	log.Printf("Reading Outbound Contact List Filter %s", d.Id())
 
@@ -67,12 +69,10 @@ func readOutboundContactlistfilter(ctx context.Context, d *schema.ResourceData, 
 		sdkContactListFilter, resp, getErr := proxy.getOutboundContactlistfilterById(ctx, d.Id())
 		if getErr != nil {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(fmt.Errorf("failed to read Outbound Contact List Filter %s: %s", d.Id(), getErr))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read Outbound Contact List Filter %s | error: %s", d.Id(), getErr), resp))
 			}
-			return retry.NonRetryableError(fmt.Errorf("failed to read Outbound Contact List Filter %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read Outbound Contact List Filter %s | error: %s", d.Id(), getErr), resp))
 		}
-
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundContactlistfilter())
 
 		resourcedata.SetNillableValue(d, "name", sdkContactListFilter.Name)
 		resourcedata.SetNillableReference(d, "contact_list_id", sdkContactListFilter.ContactList)
@@ -80,7 +80,7 @@ func readOutboundContactlistfilter(ctx context.Context, d *schema.ResourceData, 
 		resourcedata.SetNillableValue(d, "filter_type", sdkContactListFilter.FilterType)
 
 		log.Printf("Read Outbound Contact List Filter %s %s", d.Id(), *sdkContactListFilter.Name)
-		return cc.CheckState()
+		return cc.CheckState(d)
 	})
 }
 
@@ -126,8 +126,8 @@ func deleteOutboundContactlistfilter(ctx context.Context, d *schema.ResourceData
 				log.Printf("Deleted Outbound Contact List Filter %s", d.Id())
 				return nil
 			}
-			return retry.NonRetryableError(fmt.Errorf("error deleting Outbound Contact List Filter %s: %s", d.Id(), err))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("error deleting Outbound Contact List Filter %s | error: %s", d.Id(), err), resp))
 		}
-		return retry.RetryableError(fmt.Errorf("Outbound Contact List Filter %s still exists", d.Id()))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Outbound Contact List Filter %s still exists", d.Id()), resp))
 	})
 }

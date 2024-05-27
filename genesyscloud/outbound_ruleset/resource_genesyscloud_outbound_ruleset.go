@@ -6,6 +6,7 @@ import (
 	"log"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -19,7 +20,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 )
 
 /*
@@ -40,11 +41,11 @@ func getAllAuthOutboundRuleset(ctx context.Context, clientConfig *platformclient
 	skillExporter := gcloud.RoutingSkillExporter()
 	skillMap, skillErr := skillExporter.GetResourcesFunc(ctx)
 	if skillErr != nil {
-		return nil, diag.Errorf("Failed to get skill resources: %v", skillErr)
+		return nil, util.BuildDiagnosticError(resourceName, fmt.Sprintf("Failed to get skill resources"), fmt.Errorf("%v", skillErr))
 	}
 	filteredRuleSets, filterErr := filterOutboundRulesets(*rulesets, skillMap)
 	if filterErr != nil {
-		return nil, diag.Errorf("Failed to filter outbound rulesets: %v", filterErr)
+		return nil, util.BuildDiagnosticError(resourceName, fmt.Sprintf("Failed to filter outbound rulesets"), fmt.Errorf("%v", filterErr))
 	}
 
 	for _, ruleset := range filteredRuleSets {
@@ -75,6 +76,7 @@ func createOutboundRuleset(ctx context.Context, d *schema.ResourceData, meta int
 func readOutboundRuleset(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := newOutboundRulesetProxy(sdkConfig)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundRuleset(), constants.DefaultConsistencyChecks, resourceName)
 
 	log.Printf("Reading Outbound Ruleset %s", d.Id())
 
@@ -82,12 +84,10 @@ func readOutboundRuleset(ctx context.Context, d *schema.ResourceData, meta inter
 		ruleset, resp, getErr := proxy.getOutboundRulesetById(ctx, d.Id())
 		if getErr != nil {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(fmt.Errorf("Failed to read Outbound Ruleset %s: %s", d.Id(), getErr))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read Outbound Ruleset %s | error: %s", d.Id(), getErr), resp))
 			}
-			return retry.NonRetryableError(fmt.Errorf("Failed to read Outbound Ruleset %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read Outbound Ruleset %s | error: %s", d.Id(), getErr), resp))
 		}
-
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundRuleset())
 
 		resourcedata.SetNillableValue(d, "name", ruleset.Name)
 		resourcedata.SetNillableReference(d, "contact_list_id", ruleset.ContactList)
@@ -95,7 +95,7 @@ func readOutboundRuleset(ctx context.Context, d *schema.ResourceData, meta inter
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "rules", ruleset.Rules, flattenDialerrules)
 
 		log.Printf("Read Outbound Ruleset %s %s", d.Id(), *ruleset.Name)
-		return cc.CheckState()
+		return cc.CheckState(d)
 	})
 }
 
@@ -137,9 +137,9 @@ func deleteOutboundRuleset(ctx context.Context, d *schema.ResourceData, meta int
 		}
 
 		if err != nil {
-			return retry.NonRetryableError(fmt.Errorf("Error deleting Outbound Ruleset %s: %s", d.Id(), err))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Error deleting Outbound Ruleset %s | error: %s", d.Id(), err), resp))
 		}
-		return retry.RetryableError(fmt.Errorf("Outbound Ruleset %s still exists", d.Id()))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Outbound Ruleset %s still exists", d.Id()), resp))
 	})
 }
 

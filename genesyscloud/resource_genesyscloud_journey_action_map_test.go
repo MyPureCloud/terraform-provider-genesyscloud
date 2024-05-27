@@ -12,15 +12,15 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/util/fileserver"
 	"terraform-provider-genesyscloud/genesyscloud/util/testrunner"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 )
 
 const resourceName = "genesyscloud_journey_action_map"
 
 func TestAccResourceJourneyActionMapActionMediaTypes(t *testing.T) {
+	t.Skip("Customer segment not implemented")
 	runJourneyActionMapTestCaseWithFileServer(t, "action_media_types", 8111)
 }
 
@@ -29,14 +29,17 @@ func TestAccResourceJourneyActionMapActionMediaTypesWithTriggerConditions(t *tes
 }
 
 func TestAccResourceJourneyActionMapOptionalAttributes(t *testing.T) {
+	t.Skip("Customer segment not implemented")
 	runJourneyActionMapTestCase(t, "basic_optional_attributes")
 }
 
 func TestAccResourceJourneyActionMapRequiredAttributes(t *testing.T) {
+	t.Skip("Customer segment not implemented")
 	runJourneyActionMapTestCaseWithFileServer(t, "basic_required_attributes", 8112)
 }
 
 func TestAccResourceJourneyActionMapScheduleGroups(t *testing.T) {
+	t.Skip("Customer segment not implemented")
 	runJourneyActionMapTestCase(t, "schedule_groups")
 }
 
@@ -92,9 +95,9 @@ func cleanupJourneyActionMaps(idPrefix string) {
 
 		for _, actionMap := range *actionMaps.Entities {
 			if actionMap.DisplayName != nil && strings.HasPrefix(*actionMap.DisplayName, idPrefix) {
-				_, delErr := journeyApi.DeleteJourneyActionmap(*actionMap.Id)
+				resp, delErr := journeyApi.DeleteJourneyActionmap(*actionMap.Id)
 				if delErr != nil {
-					diag.Errorf("failed to delete journey action map %s (%s): %s", *actionMap.Id, *actionMap.DisplayName, delErr)
+					util.BuildAPIDiagnosticError("genesyscloud_journey_action_map", fmt.Sprintf("failed to delete journey action map %s (%s): %s", *actionMap.Id, *actionMap.DisplayName, delErr), resp)
 					return
 				}
 				log.Printf("Deleted journey action map %s (%s)", *actionMap.Id, *actionMap.DisplayName)
@@ -121,9 +124,9 @@ func cleanupArchitectScheduleGroups(idPrefix string) {
 
 		for _, scheduleGroup := range *architectScheduleGroups.Entities {
 			if scheduleGroup.Name != nil && strings.HasPrefix(*scheduleGroup.Name, idPrefix) {
-				_, delErr := architectApi.DeleteArchitectSchedulegroup(*scheduleGroup.Id)
+				resp, delErr := architectApi.DeleteArchitectSchedulegroup(*scheduleGroup.Id)
 				if delErr != nil {
-					diag.Errorf("failed to delete architect schedule group %s (%s): %s", *scheduleGroup.Id, *scheduleGroup.Name, delErr)
+					util.BuildAPIDiagnosticError("genesyscloud_journey_action_map", fmt.Sprintf("failed to delete architect schedule group %s (%s): %s", *scheduleGroup.Id, *scheduleGroup.Name, delErr), resp)
 					return
 				}
 				log.Printf("Deleted architect schedule group %s (%s)", *scheduleGroup.Id, *scheduleGroup.Name)
@@ -172,9 +175,9 @@ func cleanupFlows(idPrefix string) {
 
 		for _, flow := range *flows.Entities {
 			if flow.Name != nil && strings.HasPrefix(*flow.Name, idPrefix) {
-				_, delErr := architectApi.DeleteFlow(*flow.Id)
+				resp, delErr := architectApi.DeleteFlow(*flow.Id)
 				if delErr != nil {
-					diag.Errorf("failed to delete flow %s (%s): %s", *flow.Id, *flow.Name, delErr)
+					util.BuildAPIDiagnosticError("genesyscloud_journey_action_map", fmt.Sprintf("failed to delete flow %s (%s): %s", *flow.Id, *flow.Name, delErr), resp)
 					return
 				}
 				log.Printf("Deleted flow %s (%s)", *flow.Id, *flow.Name)

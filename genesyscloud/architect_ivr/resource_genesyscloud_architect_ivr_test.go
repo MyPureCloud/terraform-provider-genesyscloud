@@ -14,7 +14,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 )
 
 func TestAccResourceIvrConfigBasic(t *testing.T) {
@@ -92,8 +92,8 @@ func TestAccResourceIvrConfigDivision(t *testing.T) {
 	ivrConfigResource1 := "test-ivrconfig1"
 	ivrConfigName := "terraform-ivrconfig-" + uuid.NewString()
 	ivrConfigDescription := "Terraform IVR config"
-	number1 := "+14175550011"
-	number2 := "+14175550012"
+	number1 := "+14175550013"
+	number2 := "+14175550014"
 	divResource1 := "auth-division1"
 	divResource2 := "auth-division2"
 	divName1 := "TerraformDiv-" + uuid.NewString()

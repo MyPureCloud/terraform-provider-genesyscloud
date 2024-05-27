@@ -2,15 +2,18 @@ package genesyscloud
 
 import (
 	"fmt"
+	"log"
 	"strconv"
 	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 )
 
 func TestAccResourceBasicRoutingUtilization(t *testing.T) {
@@ -97,13 +100,15 @@ func TestAccResourceRoutingUtilizationWithLabels(t *testing.T) {
 		utilTypeCall  = "call"
 		utilTypeEmail = "email"
 
-		redLabelResource   = "label_red"
-		blueLabelResource  = "label_blue"
-		greenLabelResource = "label_green"
-		redLabelName       = "Terraform Red " + uuid.NewString()
-		blueLabelName      = "Terraform Blue " + uuid.NewString()
-		greenLabelName     = "Terraform Green " + uuid.NewString()
+		redLabelResource   = "label_red_resource"
+		blueLabelResource  = "label_blue_resource"
+		greenLabelResource = "label_green_resource"
+		redLabelName       = "Terraform Red Label" + uuid.NewString()
+		blueLabelName      = "Terraform Blue Label" + uuid.NewString()
+		greenLabelName     = "Terraform Green Label" + uuid.NewString()
 	)
+
+	CleanupRoutingUtilizationLabel()
 
 	resource.Test(t, resource.TestCase{
 		PreCheck: func() {
@@ -227,6 +232,10 @@ func TestAccResourceRoutingUtilizationWithLabels(t *testing.T) {
 
 					return nil
 				},
+				PreConfig: func() {
+					// Wait for a specified duration - to avoid multiple deletion taking place error
+					time.Sleep(30 * time.Second)
+				},
 			},
 		},
 	})
@@ -274,4 +283,32 @@ func generateRoutingUtilizationResource(attributes ...string) string {
 		%s
 	}
 	`, strings.Join(attributes, "\n"))
+}
+
+func CleanupRoutingUtilizationLabel() {
+	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
+
+	for pageNum := 1; ; pageNum++ {
+		const pageSize = 100
+		labels, _, getErr := routingAPI.GetRoutingUtilizationLabels(pageSize, pageNum, "", "")
+		if getErr != nil {
+			log.Printf("failed to get page %v of routing email domains: %v", pageNum, getErr)
+			return
+		}
+
+		if labels.Entities == nil || len(*labels.Entities) == 0 {
+			return
+		}
+
+		for _, label := range *labels.Entities {
+			if label.Id != nil && strings.HasPrefix(*label.Name, "Terraform") {
+				_, err := routingAPI.DeleteRoutingUtilizationLabel(*label.Id, true)
+				if err != nil {
+					log.Printf("Failed to delete routing email domain %s: %s", *label.Id, err)
+					continue
+				}
+				time.Sleep(5 * time.Second)
+			}
+		}
+	}
 }

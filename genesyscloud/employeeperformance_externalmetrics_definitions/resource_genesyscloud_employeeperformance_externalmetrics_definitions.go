@@ -5,12 +5,13 @@ import (
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 	"log"
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"time"
 
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
@@ -72,6 +73,7 @@ func createEmployeeperformanceExternalmetricsDefinition(ctx context.Context, d *
 func readEmployeeperformanceExternalmetricsDefinition(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getEmployeeperformanceExternalmetricsDefinitionProxy(sdkConfig)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceEmployeeperformanceExternalmetricsDefinition(), constants.DefaultConsistencyChecks, resourceName)
 
 	log.Printf("Reading employeeperformance externalmetrics definition %s", d.Id())
 
@@ -79,12 +81,10 @@ func readEmployeeperformanceExternalmetricsDefinition(ctx context.Context, d *sc
 		definition, resp, getErr := proxy.getEmployeeperformanceExternalmetricsDefinitionById(ctx, d.Id())
 		if getErr != nil {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(fmt.Errorf("Failed to read employeeperformance externalmetrics definition %s: %s", d.Id(), getErr))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read employeeperformance externalmetrics definition %s | error: %s", d.Id(), getErr), resp))
 			}
-			return retry.NonRetryableError(fmt.Errorf("Failed to read employeeperformance externalmetrics definition %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read employeeperformance externalmetrics definition %s | error: %s", d.Id(), getErr), resp))
 		}
-
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceEmployeeperformanceExternalmetricsDefinition())
 
 		resourcedata.SetNillableValue(d, "name", definition.Name)
 		resourcedata.SetNillableValue(d, "precision", definition.Precision)
@@ -94,7 +94,7 @@ func readEmployeeperformanceExternalmetricsDefinition(ctx context.Context, d *sc
 		resourcedata.SetNillableValue(d, "unit_definition", definition.UnitDefinition)
 
 		log.Printf("Read employeeperformance externalmetrics definition %s %s", d.Id(), *definition.Name)
-		return cc.CheckState()
+		return cc.CheckState(d)
 	})
 }
 
@@ -138,8 +138,8 @@ func deleteEmployeeperformanceExternalmetricsDefinition(ctx context.Context, d *
 				log.Printf("Deleted employeeperformance externalmetrics definition %s", d.Id())
 				return nil
 			}
-			return retry.NonRetryableError(fmt.Errorf("Error deleting employeeperformance externalmetrics definition %s: %s", d.Id(), err))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Error deleting employeeperformance externalmetrics definition %s | error: %s", d.Id(), err), resp))
 		}
-		return retry.RetryableError(fmt.Errorf("employeeperformance externalmetrics definition %s still exists", d.Id()))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("employeeperformance externalmetrics definition %s still exists", d.Id()), resp))
 	})
 }

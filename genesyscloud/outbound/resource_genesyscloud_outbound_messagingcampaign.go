@@ -2,10 +2,12 @@ package outbound
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -17,7 +19,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 )
 
 const (
@@ -51,8 +53,8 @@ var (
 	outboundmessagingcampaignsmsconfigResource = &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			`message_column`: {
-				Description: `The Contact List column specifying the message to send to the contact.`,
-				Required:    true,
+				Description: `The Contact List column specifying the message to send to the contact. Either message_column or content_template_id is required.`,
+				Optional:    true,
 				Type:        schema.TypeString,
 			},
 			`phone_column`: {
@@ -66,7 +68,7 @@ var (
 				Type:        schema.TypeString,
 			},
 			`content_template_id`: {
-				Description: `The content template used to formulate the message to send to the contact.`,
+				Description: `The content template used to formulate the message to send to the contact. Either message_column or content_template_id is required.`,
 				Optional:    true,
 				Type:        schema.TypeString,
 			},
@@ -234,6 +236,12 @@ func createOutboundMessagingcampaign(ctx context.Context, d *schema.ResourceData
 		sdkmessagingcampaign.CampaignStatus = &campaignStatus
 	}
 
+	msg, valid := validateSmsconfig(d.Get("sms_config").(*schema.Set))
+
+	if !valid {
+		return util.BuildDiagnosticError(resourceName, "Configuration error", errors.New(msg))
+	}
+
 	log.Printf("Creating Outbound Messagingcampaign %s", name)
 	outboundMessagingcampaign, resp, err := outboundApi.PostOutboundMessagingcampaigns(sdkmessagingcampaign)
 	if err != nil {
@@ -275,6 +283,12 @@ func updateOutboundMessagingcampaign(ctx context.Context, d *schema.ResourceData
 		sdkmessagingcampaign.CampaignStatus = &campaignStatus
 	}
 
+	msg, valid := validateSmsconfig(d.Get("sms_config").(*schema.Set))
+
+	if !valid {
+		return util.BuildDiagnosticError(resourceName, "Configuration error", errors.New(msg))
+	}
+
 	log.Printf("Updating Outbound Messagingcampaign %s", name)
 	diagErr := util.RetryWhen(util.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		// Get current Outbound Messagingcampaign version
@@ -300,6 +314,7 @@ func updateOutboundMessagingcampaign(ctx context.Context, d *schema.ResourceData
 func readOutboundMessagingcampaign(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	outboundApi := platformclientv2.NewOutboundApiWithConfig(sdkConfig)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundMessagingCampaign(), constants.DefaultConsistencyChecks, resourceName)
 
 	log.Printf("Reading Outbound Messagingcampaign %s", d.Id())
 
@@ -307,12 +322,10 @@ func readOutboundMessagingcampaign(ctx context.Context, d *schema.ResourceData, 
 		sdkmessagingcampaign, resp, getErr := outboundApi.GetOutboundMessagingcampaign(d.Id())
 		if getErr != nil {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(fmt.Errorf("Failed to read Outbound Messagingcampaign %s: %s", d.Id(), getErr))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read Outbound Messagingcampaign %s | error: %s", d.Id(), getErr), resp))
 			}
-			return retry.NonRetryableError(fmt.Errorf("Failed to read Outbound Messagingcampaign %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read Outbound Messagingcampaign %s | error: %s", d.Id(), getErr), resp))
 		}
-
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundMessagingCampaign())
 
 		if sdkmessagingcampaign.Name != nil {
 			d.Set("name", *sdkmessagingcampaign.Name)
@@ -357,7 +370,7 @@ func readOutboundMessagingcampaign(ctx context.Context, d *schema.ResourceData, 
 		}
 
 		log.Printf("Read Outbound Messagingcampaign %s %s", d.Id(), *sdkmessagingcampaign.Name)
-		return cc.CheckState()
+		return cc.CheckState(d)
 	})
 }
 
@@ -385,10 +398,10 @@ func deleteOutboundMessagingcampaign(ctx context.Context, d *schema.ResourceData
 				log.Printf("Deleted Outbound Messagingcampaign %s", d.Id())
 				return nil
 			}
-			return retry.NonRetryableError(fmt.Errorf("Error deleting Outbound Messagingcampaign %s: %s", d.Id(), err))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Error deleting Outbound Messagingcampaign %s | error: %s", d.Id(), err), resp))
 		}
 
-		return retry.RetryableError(fmt.Errorf("Outbound Messagingcampaign %s still exists", d.Id()))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Outbound Messagingcampaign %s still exists", d.Id()), resp))
 	})
 }
 
@@ -509,4 +522,24 @@ func GenerateOutboundMessagingCampaignContactSort(fieldName string, direction st
         %s
 	}
 `, fieldName, direction, numeric)
+}
+
+func validateSmsconfig(smsconfig *schema.Set) (string, bool) {
+	if smsconfig == nil {
+		return "", true
+	}
+
+	smsconfigList := smsconfig.List()
+	if len(smsconfigList) > 0 {
+		smsconfigMap := smsconfigList[0].(map[string]interface{})
+		messageColumn, _ := smsconfigMap["message_column"].(string)
+		contentTemplateId, _ := smsconfigMap["content_template_id"].(string)
+		if messageColumn == "" && contentTemplateId == "" {
+			return "Either message_column or content_template_id is required.", false
+		} else if messageColumn != "" && contentTemplateId != "" {
+			return "Only one of message_column or content_template_id can be defined", false
+		}
+	}
+
+	return "", true
 }

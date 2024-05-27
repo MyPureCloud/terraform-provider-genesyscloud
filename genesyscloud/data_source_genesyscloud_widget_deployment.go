@@ -11,7 +11,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 )
 
 func dataSourceWidgetDeployments() *schema.Resource {
@@ -36,14 +36,14 @@ func dataSourceWidgetDeploymentRead(ctx context.Context, d *schema.ResourceData,
 
 	// Query widget by name. Retry in case search has not yet indexed the widget.
 	return util.WithRetries(ctx, 5*time.Second, func() *retry.RetryError {
-		widgetDeployments, _, getErr := widgetAPI.GetWidgetsDeployments()
+		widgetDeployments, resp, getErr := widgetAPI.GetWidgetsDeployments()
 
 		if getErr != nil {
-			return retry.NonRetryableError(fmt.Errorf("Error requesting widget deployment %s: %s", name, getErr))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_widget_deployment", fmt.Sprintf("Error requesting widget deployment %s | error: %s", name, getErr), resp))
 		}
 
 		if widgetDeployments.Entities == nil || len(*widgetDeployments.Entities) == 0 {
-			return retry.RetryableError(fmt.Errorf("No widget deployment found with name %s", name))
+			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_widget_deployment", fmt.Sprintf("No widget deployment found with name %s", name), resp))
 		}
 
 		for _, widgetDeployment := range *widgetDeployments.Entities {
@@ -53,6 +53,6 @@ func dataSourceWidgetDeploymentRead(ctx context.Context, d *schema.ResourceData,
 			}
 		}
 
-		return retry.NonRetryableError(fmt.Errorf("Unable to locate widget deployment name %s. It does not exist", name))
+		return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_widget_deployment", fmt.Sprintf("Unable to locate widget deployment name %s. It does not exist", name), resp))
 	})
 }

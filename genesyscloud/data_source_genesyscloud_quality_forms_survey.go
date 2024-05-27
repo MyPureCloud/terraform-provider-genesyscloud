@@ -11,7 +11,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 )
 
 func dataSourceQualityFormsSurvey() *schema.Resource {
@@ -37,14 +37,14 @@ func dataSourceQualityFormsSurveyRead(ctx context.Context, d *schema.ResourceDat
 	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
 		for pageNum := 1; ; pageNum++ {
 			const pageSize = 100
-			forms, _, getErr := qualityAPI.GetQualityFormsSurveys(pageSize, pageNum, "", "", "", "", name, "desc")
+			forms, resp, getErr := qualityAPI.GetQualityFormsSurveys(pageSize, pageNum, "", "", "", "", name, "desc")
 
 			if getErr != nil {
-				return retry.NonRetryableError(fmt.Errorf("Error requesting survey forms %s: %s", name, getErr))
+				return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_quality_forms_survey", fmt.Sprintf("Error requesting survey forms %s | error: %s", name, getErr), resp))
 			}
 
 			if forms.Entities == nil || len(*forms.Entities) == 0 {
-				return retry.RetryableError(fmt.Errorf("No survey forms found with name %s", name))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_quality_forms_survey", fmt.Sprintf("No survey forms found with name %s", name), resp))
 			}
 
 			d.SetId(*(*forms.Entities)[0].Id)

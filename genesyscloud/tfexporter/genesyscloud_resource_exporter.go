@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"hash/fnv"
 	"log"
-	"os"
 	"path/filepath"
 	"reflect"
 	"regexp"
@@ -15,10 +14,12 @@ import (
 	dependentconsumers "terraform-provider-genesyscloud/genesyscloud/dependent_consumers"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
-	r_registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
-	util "terraform-provider-genesyscloud/genesyscloud/util"
-	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
-	stringmap "terraform-provider-genesyscloud/genesyscloud/util/stringmap"
+	rRegistrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
+	"terraform-provider-genesyscloud/genesyscloud/util"
+	featureToggles "terraform-provider-genesyscloud/genesyscloud/util/feature_toggles"
+	"terraform-provider-genesyscloud/genesyscloud/util/files"
+	"terraform-provider-genesyscloud/genesyscloud/util/lists"
+	"terraform-provider-genesyscloud/genesyscloud/util/stringmap"
 	"time"
 
 	"github.com/google/uuid"
@@ -28,7 +29,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/mohae/deepcopy"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 )
 
 /*
@@ -128,7 +129,7 @@ func configureExporterType(ctx context.Context, d *schema.ResourceData, gre *Gen
 func NewGenesysCloudResourceExporter(ctx context.Context, d *schema.ResourceData, meta interface{}, filterType ExporterFilterType) (*GenesysCloudResourceExporter, diag.Diagnostics) {
 
 	if providerResources == nil {
-		providerResources, providerDataSources = r_registrar.GetResources()
+		providerResources, providerDataSources = rRegistrar.GetResources()
 	}
 
 	gre := &GenesysCloudResourceExporter{
@@ -199,6 +200,9 @@ func (g *GenesysCloudResourceExporter) Export() (diagErr diag.Diagnostics) {
 	if diagErr != nil {
 		return diagErr
 	}
+
+	// step #8 Verify the terraform state file with Exporter Resources
+	g.verifyTerraformState()
 
 	return nil
 }
@@ -374,13 +378,12 @@ func (g *GenesysCloudResourceExporter) buildResourceConfigMap() diag.Diagnostics
 		} else {
 			g.sanitizeDataConfigMap(jsonResult)
 		}
-		//todo put this in seperate call
+
+		// TODO put this in separate call
 		exporters := *g.exporters
-		exporter := *exporters[resource.Type]
-		if resourceFilesWriterFunc := exporter.CustomFileWriter.RetrieveAndWriteFilesFunc; resourceFilesWriterFunc != nil {
+		if resourceFilesWriterFunc := exporters[resource.Type].CustomFileWriter.RetrieveAndWriteFilesFunc; resourceFilesWriterFunc != nil {
 			exportDir, _ := getFilePath(g.d, "")
-			err := resourceFilesWriterFunc(resource.State.ID, exportDir, exporter.CustomFileWriter.SubDirectory, jsonResult, g.meta)
-			if err != nil {
+			if err := resourceFilesWriterFunc(resource.State.ID, exportDir, exporters[resource.Type].CustomFileWriter.SubDirectory, jsonResult, g.meta); err != nil {
 				log.Printf("An error has occurred while trying invoking the RetrieveAndWriteFilesFunc for resource type %s: %v", resource.Type, err)
 			}
 		}
@@ -456,7 +459,7 @@ func (g *GenesysCloudResourceExporter) generateOutputFiles() diag.Diagnostics {
 	}
 
 	if g.cyclicDependsList != nil && len(g.cyclicDependsList) > 0 {
-		err = writeToFile([]byte(strings.Join(g.cyclicDependsList, "\n")), filepath.Join(g.exportDirPath, "cyclicDepends.txt"))
+		err = files.WriteToFile([]byte(strings.Join(g.cyclicDependsList, "\n")), filepath.Join(g.exportDirPath, "cyclicDepends.txt"))
 
 		if err != nil {
 			return err
@@ -720,7 +723,7 @@ func (g *GenesysCloudResourceExporter) chainDependencies(
 					if !g.resourceIdExists(guid, existingResources) {
 						filterListById = append(filterListById, fmt.Sprintf("%s::%s", refType, guid))
 					} else {
-						log.Printf("Id already present in the resources. %v", guid)
+						log.Printf("Resource already present in the resources. %v", guid)
 					}
 
 				}
@@ -1098,14 +1101,6 @@ func correctDependsOn(config string, isHcl bool) string {
 	return correctedConfig
 }
 
-func writeToFile(bytes []byte, path string) diag.Diagnostics {
-	err := os.WriteFile(path, bytes, os.ModePerm)
-	if err != nil {
-		return diag.Errorf("Error writing file %s: %v", path, err)
-	}
-	return nil
-}
-
 func (g *GenesysCloudResourceExporter) sanitizeDataConfigMap(
 	configMap map[string]interface{}) {
 
@@ -1222,6 +1217,9 @@ func (g *GenesysCloudResourceExporter) sanitizeConfigMap(
 			} else {
 				configMap[key] = escapeString(val.(string))
 			}
+
+			// custom function to resolve the field to a data source depending on the value
+			g.resolveValueToDataSource(exporter, configMap, currAttr, val)
 		}
 
 		if attr, ok := attrInUnResolvableAttrs(key, exporter.UnResolvableAttributes); ok {
@@ -1263,8 +1261,10 @@ func (g *GenesysCloudResourceExporter) sanitizeConfigMap(
 		//If the exporter as has customer resolver for an attribute, invoke it.
 		if refAttrCustomResolver, ok := exporter.CustomAttributeResolver[currAttr]; ok {
 			log.Printf("Custom resolver invoked for attribute: %s", currAttr)
-			if err := refAttrCustomResolver.ResolverFunc(configMap, exporters, resourceName); err != nil {
-				log.Printf("An error has occurred while trying invoke a custom resolver for attribute %s: %v", currAttr, err)
+			if resolverFunc := refAttrCustomResolver.ResolverFunc; resolverFunc != nil {
+				if err := resolverFunc(configMap, exporters, resourceName); err != nil {
+					log.Printf("An error has occurred while trying invoke a custom resolver for attribute %s: %v", currAttr, err)
+				}
 			}
 		}
 
@@ -1298,6 +1298,42 @@ func (g *GenesysCloudResourceExporter) sanitizeConfigMap(
 	}
 
 	return unresolvableAttrs, true
+}
+
+// resolveValueToDataSource invokes a custom resolver method to add a data source to the export and
+// update an attribute to reference the data source
+func (g *GenesysCloudResourceExporter) resolveValueToDataSource(exporter *resourceExporter.ResourceExporter, configMap map[string]any, attribute string, originalValue any) {
+	// return if ResolveToDataSourceFunc does not exist for this attribute
+	refAttrCustomResolver, ok := exporter.CustomAttributeResolver[attribute]
+	if !ok {
+		return
+	}
+	resolveToDataSourceFunc := refAttrCustomResolver.ResolveToDataSourceFunc
+	if resolveToDataSourceFunc == nil {
+		return
+	}
+
+	sdkConfig := g.meta.(*provider.ProviderMeta).ClientConfig
+	dataSourceType, dataSourceId, dataSourceConfig, resolve := resolveToDataSourceFunc(configMap, originalValue, sdkConfig)
+	if !resolve {
+		return
+	}
+
+	if g.dataSourceTypesMaps[dataSourceType] == nil {
+		g.dataSourceTypesMaps[dataSourceType] = make(resourceJSONMaps)
+	}
+
+	// add the data source to the export if it hasn't already been added
+	if _, ok := g.dataSourceTypesMaps[dataSourceType][dataSourceId]; ok {
+		return
+	}
+	g.dataSourceTypesMaps[dataSourceType][dataSourceId] = dataSourceConfig
+	if g.exportAsHCL {
+		if _, ok := g.resourceTypesHCLBlocks[dataSourceType]; !ok {
+			g.resourceTypesHCLBlocks[dataSourceType] = make(resourceHCLBlock, 0)
+		}
+		g.resourceTypesHCLBlocks[dataSourceType] = append(g.resourceTypesHCLBlocks[dataSourceType], instanceStateToHCLBlock(dataSourceType, dataSourceId, dataSourceConfig, true))
+	}
 }
 
 func attrInUnResolvableAttrs(a string, myMap map[string]*schema.Schema) (*schema.Schema, bool) {
@@ -1389,6 +1425,7 @@ func (g *GenesysCloudResourceExporter) sanitizeConfigArray(
 
 func (g *GenesysCloudResourceExporter) populateConfigExcluded(exporters map[string]*resourceExporter.ResourceExporter, configExcluded []string) diag.Diagnostics {
 	for _, excluded := range configExcluded {
+		matchFound := false
 		resourceIdx := strings.Index(excluded, ".")
 		if resourceIdx == -1 {
 			return diag.Errorf("Invalid excluded_attribute %s", excluded)
@@ -1399,21 +1436,37 @@ func (g *GenesysCloudResourceExporter) populateConfigExcluded(exporters map[stri
 		}
 
 		resourceName := excluded[:resourceIdx]
+		// identify all the resource names which match the regex
 		exporter := exporters[resourceName]
 		if exporter == nil {
-			if dependsOn, ok := g.d.GetOk("enable_dependency_resolution"); ok {
-				if dependsOn == true {
+			for name, exporter1 := range exporters {
+				match, _ := regexp.MatchString(resourceName, name)
+
+				if match {
 					excludedAttr := excluded[resourceIdx+1:]
-					log.Printf("Ignoring exclude attribute %s on %s resources. Since exporter is not retrieved", excludedAttr, resourceName)
+					exporter1.AddExcludedAttribute(excludedAttr)
+					log.Printf("Excluding attribute %s on %s resources.", excludedAttr, resourceName)
+					matchFound = true
 					continue
 				}
 			}
-			return diag.Errorf("Resource %s in excluded_attributes is not being exported.", resourceName)
-		}
 
-		excludedAttr := excluded[resourceIdx+1:]
-		exporter.AddExcludedAttribute(excludedAttr)
-		log.Printf("Excluding attribute %s on %s resources.", excludedAttr, resourceName)
+			if !matchFound {
+				if dependsOn, ok := g.d.GetOk("enable_dependency_resolution"); ok {
+					if dependsOn == true {
+						excludedAttr := excluded[resourceIdx+1:]
+						log.Printf("Ignoring exclude attribute %s on %s resources. Since exporter is not retrieved", excludedAttr, resourceName)
+						continue
+					}
+				} else {
+					return diag.Errorf("Resource %s in excluded_attributes is not being exported.", resourceName)
+				}
+			}
+		} else {
+			excludedAttr := excluded[resourceIdx+1:]
+			exporter.AddExcludedAttribute(excludedAttr)
+			log.Printf("Excluding attribute %s on %s resources.", excludedAttr, resourceName)
+		}
 	}
 	return nil
 }
@@ -1502,4 +1555,17 @@ func fetchByRegex(fullName string, resType string, name string) bool {
 		return match
 	}
 	return false
+}
+
+func (g *GenesysCloudResourceExporter) verifyTerraformState() diag.Diagnostics {
+
+	if exists := featureToggles.StateComparisonTrue(); exists {
+		if g.exportAsHCL {
+			tfstatePath, _ := getFilePath(g.d, defaultTfStateFile)
+			hclExporter := NewTfStateExportReader(tfstatePath, g.exportDirPath)
+			hclExporter.compareExportAndTFState()
+		}
+	}
+
+	return nil
 }

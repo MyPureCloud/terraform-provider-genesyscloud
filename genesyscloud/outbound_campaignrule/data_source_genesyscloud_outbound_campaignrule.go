@@ -11,7 +11,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 )
 
 func dataSourceOutboundCampaignruleRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
@@ -26,11 +26,11 @@ func dataSourceOutboundCampaignruleRead(ctx context.Context, d *schema.ResourceD
 		const pageSize = 100
 		campaignRules, resp, getErr := outboundAPI.GetOutboundCampaignrules(pageSize, pageNum, true, "", name, "", "")
 		if getErr != nil {
-			return retry.NonRetryableError(fmt.Errorf("error requesting campaign rule %s: %s %v", name, getErr, resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("error requesting campaign rule %s | error: %s", name, getErr), resp))
 		}
 
 		if campaignRules.Entities == nil || len(*campaignRules.Entities) == 0 {
-			return retry.RetryableError(fmt.Errorf("no campaign rules found with name %s", name))
+			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("no campaign rules found with name %s", name), resp))
 		}
 
 		campaignRule := (*campaignRules.Entities)[0]

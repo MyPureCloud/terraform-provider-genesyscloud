@@ -6,6 +6,7 @@ import (
 	"log"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -16,7 +17,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 )
 
 func getAllRoutingLanguages(_ context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
@@ -96,15 +97,16 @@ func createRoutingLanguage(ctx context.Context, d *schema.ResourceData, meta int
 func readRoutingLanguage(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	routingApi := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceRoutingLanguage(), constants.DefaultConsistencyChecks, "genesyscloud_routing_language")
 
 	log.Printf("Reading language %s", d.Id())
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		language, resp, getErr := routingApi.GetRoutingLanguage(d.Id())
 		if getErr != nil {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(fmt.Errorf("Failed to read language %s: %s", d.Id(), getErr))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_routing_language", fmt.Sprintf("Failed to read language %s | error: %s", d.Id(), getErr), resp))
 			}
-			return retry.NonRetryableError(fmt.Errorf("Failed to read language %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_routing_language", fmt.Sprintf("Failed to read language %s | error: %s", d.Id(), getErr), resp))
 		}
 
 		if language.State != nil && *language.State == "deleted" {
@@ -112,10 +114,9 @@ func readRoutingLanguage(ctx context.Context, d *schema.ResourceData, meta inter
 			return nil
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceRoutingLanguage())
 		d.Set("name", *language.Name)
 		log.Printf("Read language %s %s", d.Id(), *language.Name)
-		return cc.CheckState()
+		return cc.CheckState(d)
 	})
 }
 
@@ -140,7 +141,7 @@ func deleteRoutingLanguage(ctx context.Context, d *schema.ResourceData, meta int
 				log.Printf("Deleted Routing language %s", d.Id())
 				return nil
 			}
-			return retry.NonRetryableError(fmt.Errorf("Error deleting Routing language %s: %s", d.Id(), err))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_routing_language", fmt.Sprintf("Error deleting Routing language %s | error: %s", d.Id(), err), resp))
 		}
 
 		if routingLanguage.State != nil && *routingLanguage.State == "deleted" {
@@ -149,7 +150,7 @@ func deleteRoutingLanguage(ctx context.Context, d *schema.ResourceData, meta int
 			return nil
 		}
 
-		return retry.RetryableError(fmt.Errorf("Routing language %s still exists", d.Id()))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_routing_language", fmt.Sprintf("Routing language %s still exists", d.Id()), resp))
 	})
 }
 

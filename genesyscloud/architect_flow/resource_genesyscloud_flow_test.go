@@ -17,7 +17,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 )
 
 // lockFlow will search for a specific flow and then lock it.  This is to specifically test the force_unlock flag where I want to create a flow,  simulate some one locking it and then attempt to
@@ -28,13 +28,13 @@ func lockFlow(flowName string, flowType string) {
 	util.WithRetries(ctx, 5*time.Second, func() *retry.RetryError {
 		const pageSize = 100
 		for pageNum := 1; ; pageNum++ {
-			flows, _, getErr := archAPI.GetFlows(nil, pageNum, pageSize, "", "", nil, flowName, "", "", "", "", "", "", "", false, false, "", "", nil)
+			flows, resp, getErr := archAPI.GetFlows(nil, pageNum, pageSize, "", "", nil, flowName, "", "", "", "", "", "", "", false, false, "", "", nil)
 			if getErr != nil {
-				return retry.NonRetryableError(fmt.Errorf("error requesting flow %s: %s", flowName, getErr))
+				return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("error requesting flow %s | error: %s", flowName, getErr), resp))
 			}
 
 			if flows.Entities == nil || len(*flows.Entities) == 0 {
-				return retry.RetryableError(fmt.Errorf("no flows found with name %s", flowName))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("no flows found with name %s", flowName), resp))
 			}
 
 			for _, entity := range *flows.Entities {
@@ -42,7 +42,7 @@ func lockFlow(flowName string, flowType string) {
 					flow, response, err := archAPI.PostFlowsActionsCheckout(*entity.Id)
 
 					if err != nil || response.Error != nil {
-						return retry.NonRetryableError(fmt.Errorf("error requesting flow %s: %s", flowName, getErr))
+						return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("error requesting flow %s | error: %s", flowName, getErr), resp))
 					}
 
 					log.Printf("Flow (%s) with FlowName: %s has been locked Flow resource after checkout: %v\n", *flow.Id, flowName, *flow.LockedClient.Name)

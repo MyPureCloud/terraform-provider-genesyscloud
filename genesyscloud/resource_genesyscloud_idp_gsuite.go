@@ -6,6 +6,7 @@ import (
 	"log"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -17,7 +18,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 )
 
 func getAllIdpGsuite(_ context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
@@ -101,6 +102,7 @@ func createIdpGsuite(ctx context.Context, d *schema.ResourceData, meta interface
 func readIdpGsuite(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	idpAPI := platformclientv2.NewIdentityProviderApiWithConfig(sdkConfig)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceIdpGsuite(), constants.DefaultConsistencyChecks, "genesyscloud_idp_gsuite")
 
 	log.Printf("Reading IDP GSuite")
 
@@ -109,12 +111,11 @@ func readIdpGsuite(ctx context.Context, d *schema.ResourceData, meta interface{}
 		if getErr != nil {
 			if util.IsStatus404(resp) {
 				createIdpGsuite(ctx, d, meta)
-				return retry.RetryableError(fmt.Errorf("Failed to read IDP GSuite: %s", getErr))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_idp_gsuite", fmt.Sprintf("Failed to read IDP GSuite: %s", getErr), resp))
 			}
-			return retry.NonRetryableError(fmt.Errorf("Failed to read IDP GSuite: %s", getErr))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_idp_gsuite", fmt.Sprintf("Failed to read IDP GSuite: %s", getErr), resp))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceIdpGsuite())
 		if gsuite.Certificate != nil {
 			d.Set("certificates", lists.StringListToInterfaceList([]string{*gsuite.Certificate}))
 		} else if gsuite.Certificates != nil {
@@ -148,7 +149,7 @@ func readIdpGsuite(ctx context.Context, d *schema.ResourceData, meta interface{}
 		}
 
 		log.Printf("Read IDP GSuite")
-		return cc.CheckState()
+		return cc.CheckState(d)
 	})
 }
 
@@ -204,8 +205,8 @@ func deleteIdpGsuite(ctx context.Context, d *schema.ResourceData, meta interface
 				log.Printf("Deleted IDP GSuite")
 				return nil
 			}
-			return retry.NonRetryableError(fmt.Errorf("Error deleting IDP GSuite: %s", err))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_idp_gsuite", fmt.Sprintf("Error deleting IDP GSuite: %s", err), resp))
 		}
-		return retry.RetryableError(fmt.Errorf("IDP GSuite still exists"))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_idp_gsuite", fmt.Sprintf("IDP GSuite still exists"), resp))
 	})
 }

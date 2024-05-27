@@ -11,7 +11,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 )
 
 func dataSourceAuthDivision() *schema.Resource {
@@ -38,13 +38,13 @@ func dataSourceAuthDivisionRead(ctx context.Context, d *schema.ResourceData, m i
 	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
 		const pageSize = 100
 		const pageNum = 1
-		divisions, _, getErr := authAPI.GetAuthorizationDivisions(pageSize, pageNum, "", nil, "", "", false, nil, name)
+		divisions, resp, getErr := authAPI.GetAuthorizationDivisions(pageSize, pageNum, "", nil, "", "", false, nil, name)
 		if getErr != nil {
-			return retry.NonRetryableError(fmt.Errorf("Error requesting division %s: %s", name, getErr))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_auth_division", fmt.Sprintf("Error requesting division %s | error: %s", name, getErr), resp))
 		}
 
 		if divisions.Entities == nil || len(*divisions.Entities) == 0 {
-			return retry.RetryableError(fmt.Errorf("No authorization divisions found with name %s", name))
+			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_auth_division", fmt.Sprintf("No authorization divisions found with name %s", name), resp))
 		}
 
 		for _, division := range *divisions.Entities {
@@ -54,6 +54,6 @@ func dataSourceAuthDivisionRead(ctx context.Context, d *schema.ResourceData, m i
 			}
 		}
 
-		return retry.RetryableError(fmt.Errorf("No division with name %s found", name))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_auth_division", fmt.Sprintf("No division with name %s found", name), resp))
 	})
 }

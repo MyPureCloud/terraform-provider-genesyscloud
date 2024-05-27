@@ -4,10 +4,10 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"net/url"
 	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -22,7 +22,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 )
 
 var (
@@ -152,7 +152,7 @@ func getAllKnowledgeV1DocumentEntities(knowledgeAPI platformclientv2.KnowledgeAp
 	)
 
 	const pageSize = 100
-	for i := 0; ; i++ {
+	for {
 		knowledgeDocuments, resp, getErr := knowledgeAPI.GetKnowledgeKnowledgebaseLanguageDocuments(*knowledgeBase.Id, *knowledgeBase.CoreLanguage, "", after, "", fmt.Sprintf("%v", pageSize), "", "", "", "", nil)
 		if getErr != nil {
 			return nil, util.BuildAPIDiagnosticError("genesyscloud_knowledge_v1_document", fmt.Sprintf("Failed to get page of knowledge documents error: %s", getErr), resp)
@@ -168,16 +168,12 @@ func getAllKnowledgeV1DocumentEntities(knowledgeAPI platformclientv2.KnowledgeAp
 			break
 		}
 
-		u, err := url.Parse(*knowledgeDocuments.NextUri)
+		after, err := util.GetQueryParamValueFromUri(*knowledgeDocuments.NextUri, "after")
 		if err != nil {
-			return nil, diag.Errorf("Failed to parse after cursor from knowledge document nextUri: %v", err)
+			return nil, util.BuildDiagnosticError("genesyscloud_knowledge_v1_document", fmt.Sprintf("Failed to parse after cursor from knowledge document nextUri"), err)
 		}
-		m, _ := url.ParseQuery(u.RawQuery)
-		if afterSlice, ok := m["after"]; ok && len(afterSlice) > 0 {
-			after = afterSlice[0]
-			if after == "" {
-				break
-			}
+		if after == "" {
+			break
 		}
 	}
 
@@ -427,18 +423,17 @@ func readKnowledgeDocumentV1(ctx context.Context, d *schema.ResourceData, meta i
 
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	knowledgeAPI := platformclientv2.NewKnowledgeApiWithConfig(sdkConfig)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceKnowledgeDocument(), constants.DefaultConsistencyChecks, "genesyscloud_knowledge_v1_document")
 
 	log.Printf("Reading knowledge document %s", knowledgeDocumentId)
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		knowledgeDocument, resp, getErr := knowledgeAPI.GetKnowledgeKnowledgebaseLanguageDocument(knowledgeDocumentId, knowledgeBaseId, languageCode)
 		if getErr != nil {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(fmt.Errorf("Failed to read knowledge document %s: %s", knowledgeDocumentId, getErr))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_knowledge_v1_document", fmt.Sprintf("Failed to read knowledge document %s | error: %s", knowledgeDocumentId, getErr), resp))
 			}
-			return retry.NonRetryableError(fmt.Errorf("Failed to read knowledge document %s: %s", knowledgeDocumentId, getErr))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_knowledge_v1_document", fmt.Sprintf("Failed to read knowledge document %s | error: %s", knowledgeDocumentId, getErr), resp))
 		}
-
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceKnowledgeDocument())
 
 		// required
 		newId := fmt.Sprintf("%s %s %s", *knowledgeDocument.Id, *knowledgeDocument.KnowledgeBase.Id, *knowledgeDocument.LanguageCode)
@@ -448,8 +443,7 @@ func readKnowledgeDocumentV1(ctx context.Context, d *schema.ResourceData, meta i
 		d.Set("knowledge_document", flattenKnowledgeDocumentV1(knowledgeDocument))
 
 		log.Printf("Read Knowledge document %s", *knowledgeDocument.Id)
-		checkState := cc.CheckState()
-		return checkState
+		return cc.CheckState(d)
 	})
 }
 
@@ -525,9 +519,9 @@ func deleteKnowledgeDocumentV1(ctx context.Context, d *schema.ResourceData, meta
 				log.Printf("Deleted Knowledge document %s", knowledgeDocumentId)
 				return nil
 			}
-			return retry.NonRetryableError(fmt.Errorf("Error deleting Knowledge document %s: %s", knowledgeDocumentId, err))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_knowledge_v1_document", fmt.Sprintf("Error deleting Knowledge document %s | error: %s", knowledgeDocumentId, err), resp))
 		}
 
-		return retry.RetryableError(fmt.Errorf("Knowledge document %s still exists", knowledgeDocumentId))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_knowledge_v1_document", fmt.Sprintf("Knowledge document %s still exists", knowledgeDocumentId), resp))
 	})
 }

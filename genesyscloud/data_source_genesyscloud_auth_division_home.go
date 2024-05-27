@@ -11,7 +11,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 )
 
 func DataSourceAuthDivisionHome() *schema.Resource {
@@ -47,9 +47,9 @@ func dataSourceAuthDivisionHomeRead(ctx context.Context, d *schema.ResourceData,
 
 	// Query home division
 	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
-		division, _, getErr := authAPI.GetAuthorizationDivisionsHome()
+		division, resp, getErr := authAPI.GetAuthorizationDivisionsHome()
 		if getErr != nil {
-			return retry.NonRetryableError(fmt.Errorf("Error requesting division: %s", getErr))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_auth_division_home", fmt.Sprintf("Error requesting divisions: %s", getErr), resp))
 		}
 
 		d.SetId(*division.Id)

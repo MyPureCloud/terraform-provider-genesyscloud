@@ -6,6 +6,7 @@ import (
 	"log"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -17,7 +18,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 )
 
 /*
@@ -76,6 +77,7 @@ func createExternalContact(ctx context.Context, d *schema.ResourceData, meta int
 func readExternalContact(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	ep := getExternalContactsContactsProxy(sdkConfig)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceExternalContact(), constants.DefaultConsistencyChecks, resourceName)
 
 	log.Printf("Reading contact %s", d.Id())
 
@@ -83,12 +85,10 @@ func readExternalContact(ctx context.Context, d *schema.ResourceData, meta inter
 		externalContact, resp, getErr := ep.getExternalContactById(ctx, d.Id())
 		if getErr != nil {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(fmt.Errorf("Failed to read external contact %s: %s", d.Id(), getErr))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read external contact %s | error: %s", d.Id(), getErr), resp))
 			}
-			return retry.NonRetryableError(fmt.Errorf("Failed to read external contact %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read external contact %s | error: %s", d.Id(), getErr), resp))
 		}
-
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceExternalContact())
 
 		resourcedata.SetNillableValue(d, "first_name", externalContact.FirstName)
 		resourcedata.SetNillableValue(d, "middle_name", externalContact.MiddleName)
@@ -111,7 +111,7 @@ func readExternalContact(ctx context.Context, d *schema.ResourceData, meta inter
 		resourcedata.SetNillableValue(d, "external_system_url", externalContact.ExternalSystemUrl)
 
 		log.Printf("Read external contact %s", d.Id())
-		return cc.CheckState()
+		return cc.CheckState(d)
 	})
 }
 
@@ -144,13 +144,13 @@ func deleteExternalContact(ctx context.Context, d *schema.ResourceData, meta int
 		_, resp, err := ep.getExternalContactById(ctx, d.Id())
 
 		if err == nil {
-			return retry.NonRetryableError(fmt.Errorf("Error deleting external contact %s: %s", d.Id(), err))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Error deleting external contact %s | error: %s", d.Id(), err), resp))
 		}
 		if util.IsStatus404(resp) {
 			// Success  : External contact deleted
 			log.Printf("Deleted external contact %s", d.Id())
 			return nil
 		}
-		return retry.RetryableError(fmt.Errorf("External contact %s still exists", d.Id()))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("External contact %s still exists", d.Id()), resp))
 	})
 }

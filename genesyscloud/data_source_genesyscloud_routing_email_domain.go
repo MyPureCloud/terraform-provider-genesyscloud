@@ -11,7 +11,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 )
 
 // Returns the schema for the routing email domain
@@ -40,15 +40,15 @@ func DataSourceRoutingEmailDomainRead(ctx context.Context, d *schema.ResourceDat
 		for pageNum := 1; ; pageNum++ {
 			const pageSize = 100
 
-			domains, _, getErr := routingAPI.GetRoutingEmailDomains(pageSize, pageNum, false, "")
+			domains, resp, getErr := routingAPI.GetRoutingEmailDomains(pageSize, pageNum, false, "")
 
 			if getErr != nil {
-				return retry.NonRetryableError(fmt.Errorf("Error requesting email domain %s: %s", name, getErr))
+				return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_routing_email_domain", fmt.Sprintf("Error requesting email domain %s | error: %s", name, getErr), resp))
 			}
 
 			//// No record found, keep trying for X seconds as this might an eventual consistency problem
 			if domains.Entities == nil || len(*domains.Entities) == 0 {
-				return retry.RetryableError(fmt.Errorf("No email domains found with name %s", name))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_routing_email_domain", fmt.Sprintf("No email domains found with name %s", name), resp))
 			}
 
 			// Once I get a result, cycle through until we find a name that matches

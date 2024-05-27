@@ -25,11 +25,11 @@ func dataSourceEdgeGroupRead(ctx context.Context, d *schema.ResourceData, m inte
 		edgeGroup, retryable, resp, getErr := edgeGroupProxy.getEdgeGroupByName(ctx, name, managed)
 
 		if getErr != nil && !retryable {
-			return retry.NonRetryableError(fmt.Errorf("Error requesting edge group %s: %s %v", name, getErr, resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Error requesting edge group %s | error: %s", name, getErr), resp))
 		}
 
 		if retryable {
-			return retry.RetryableError(fmt.Errorf("No edge group found with name %s", name))
+			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("No edge group found with name %s", name), resp))
 		}
 
 		d.SetId(edgeGroup)

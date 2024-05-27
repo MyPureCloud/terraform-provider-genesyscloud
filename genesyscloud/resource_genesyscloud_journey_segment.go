@@ -7,6 +7,7 @@ import (
 	"regexp"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -21,7 +22,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 )
 
 var (
@@ -311,7 +312,7 @@ func createJourneySegment(ctx context.Context, d *schema.ResourceData, meta inte
 	result, resp, err := journeyApi.PostJourneySegments(*journeySegment)
 	if err != nil {
 		input, _ := util.InterfaceToJson(*journeySegment)
-		return diag.Errorf("failed to create journey segment %s: %s\n(input: %+v)\n(resp: %s)", *journeySegment.DisplayName, err, input, util.GetBody(resp))
+		return util.BuildAPIDiagnosticError("genesyscloud_journey_segment", fmt.Sprintf("failed to create journey segment %s: %s\n(input: %+v)", *journeySegment.DisplayName, err, input), resp)
 	}
 
 	d.SetId(*result.Id)
@@ -323,22 +324,22 @@ func createJourneySegment(ctx context.Context, d *schema.ResourceData, meta inte
 func readJourneySegment(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	journeyApi := platformclientv2.NewJourneyApiWithConfig(sdkConfig)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceJourneySegment(), constants.DefaultConsistencyChecks, "genesyscloud_journey_segment")
 
 	log.Printf("Reading journey segment %s", d.Id())
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		journeySegment, resp, getErr := journeyApi.GetJourneySegment(d.Id())
 		if getErr != nil {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(fmt.Errorf("failed to read journey segment %s: %s", d.Id(), getErr))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_journey_segment", fmt.Sprintf("failed to read journey segment %s | error: %s", d.Id(), getErr), resp))
 			}
-			return retry.NonRetryableError(fmt.Errorf("failed to read journey segment %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_journey_segment", fmt.Sprintf("failed to read journey segment %s | error: %s", d.Id(), getErr), resp))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceJourneySegment())
 		flattenJourneySegment(d, journeySegment)
 
 		log.Printf("Read journey segment %s %s", d.Id(), *journeySegment.DisplayName)
-		return cc.CheckState()
+		return cc.CheckState(d)
 	})
 }
 
@@ -378,8 +379,8 @@ func deleteJourneySegment(ctx context.Context, d *schema.ResourceData, meta inte
 	journeyApi := platformclientv2.NewJourneyApiWithConfig(sdkConfig)
 
 	log.Printf("Deleting journey segment with display name %s", displayName)
-	if _, err := journeyApi.DeleteJourneySegment(d.Id()); err != nil {
-		return diag.Errorf("Failed to delete journey segment with display name %s: %s", displayName, err)
+	if resp, err := journeyApi.DeleteJourneySegment(d.Id()); err != nil {
+		return util.BuildAPIDiagnosticError("genesyscloud_journey_segment", fmt.Sprintf("Failed to delete journey segment with display name %s: %s", displayName, err), resp)
 	}
 
 	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
@@ -390,10 +391,10 @@ func deleteJourneySegment(ctx context.Context, d *schema.ResourceData, meta inte
 				log.Printf("Deleted journey segment %s", d.Id())
 				return nil
 			}
-			return retry.NonRetryableError(fmt.Errorf("error deleting journey segment %s: %s", d.Id(), err))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_journey_segment", fmt.Sprintf("error deleting journey segment %s | error: %s", d.Id(), err), resp))
 		}
 
-		return retry.RetryableError(fmt.Errorf("journey segment %s still exists", d.Id()))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_journey_segment", fmt.Sprintf("journey segment %s still exists", d.Id()), resp))
 	})
 }
 
@@ -442,8 +443,8 @@ func buildSdkPatchSegment(journeySegment *schema.ResourceData) *platformclientv2
 	description := resourcedata.GetNillableValue[string](journeySegment, "description")
 	color := journeySegment.Get("color").(string)
 	shouldDisplayToAgent := resourcedata.GetNillableBool(journeySegment, "should_display_to_agent")
-	sdkContext := resourcedata.BuildSdkListFirstElement(journeySegment, "context", buildSdkRequestContext, false)
-	journey := resourcedata.BuildSdkListFirstElement(journeySegment, "journey", buildSdkRequestJourney, false)
+	sdkContext := resourcedata.BuildSdkListFirstElement(journeySegment, "context", buildSdkPatchContext, false)
+	journey := resourcedata.BuildSdkListFirstElement(journeySegment, "journey", buildSdkPatchJourney, false)
 	externalSegment := resourcedata.BuildSdkListFirstElement(journeySegment, "external_segment", buildSdkPatchExternalSegment, true)
 	assignmentExpirationDays := resourcedata.GetNillableValue[int](journeySegment, "assignment_expiration_days")
 
@@ -456,7 +457,9 @@ func buildSdkPatchSegment(journeySegment *schema.ResourceData) *platformclientv2
 	sdkPatchSegment.SetField("Context", sdkContext)
 	sdkPatchSegment.SetField("Journey", journey)
 	sdkPatchSegment.SetField("ExternalSegment", externalSegment)
-	sdkPatchSegment.SetField("AssignmentExpirationDays", assignmentExpirationDays)
+	if assignmentExpirationDays != nil {
+		sdkPatchSegment.SetField("AssignmentExpirationDays", assignmentExpirationDays)
+	}
 	return &sdkPatchSegment
 }
 
@@ -500,6 +503,7 @@ func buildSdkRequestContextPattern(contextPattern map[string]interface{}) *platf
 		Criteria: stringmap.BuildSdkList(contextPattern, "criteria", buildSdkRequestEntityTypeCriteria),
 	}
 }
+
 func buildSdkPatchContextPattern(contextPattern map[string]interface{}) *platformclientv2.Patchcontextpattern {
 	return &platformclientv2.Patchcontextpattern{
 		Criteria: stringmap.BuildSdkList(contextPattern, "criteria", buildSdkPatchEntityTypeCriteria),

@@ -6,6 +6,7 @@ import (
 	"log"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -17,7 +18,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 )
 
 func getAllIdpOkta(_ context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
@@ -96,6 +97,7 @@ func createIdpOkta(ctx context.Context, d *schema.ResourceData, meta interface{}
 func readIdpOkta(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	idpAPI := platformclientv2.NewIdentityProviderApiWithConfig(sdkConfig)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceIdpOkta(), constants.DefaultConsistencyChecks, "genesyscloud_idp_okta")
 
 	log.Printf("Reading IDP Okta")
 
@@ -104,12 +106,11 @@ func readIdpOkta(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		if getErr != nil {
 			if util.IsStatus404(resp) {
 				createIdpOkta(ctx, d, meta)
-				return retry.RetryableError(fmt.Errorf("Failed to read IDP Okta: %s", getErr))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_idp_okta", fmt.Sprintf("Failed to read IDP Okta: %s", getErr), resp))
 			}
-			return retry.NonRetryableError(fmt.Errorf("Failed to read IDP Okta: %s", getErr))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_idp_okta", fmt.Sprintf("Failed to read IDP Okta: %s", getErr), resp))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceIdpOkta())
 		if okta.Certificate != nil {
 			d.Set("certificates", lists.StringListToInterfaceList([]string{*okta.Certificate}))
 		} else if okta.Certificates != nil {
@@ -137,7 +138,7 @@ func readIdpOkta(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		}
 
 		log.Printf("Read IDP Okta")
-		return cc.CheckState()
+		return cc.CheckState(d)
 	})
 }
 
@@ -191,8 +192,8 @@ func deleteIdpOkta(ctx context.Context, d *schema.ResourceData, meta interface{}
 				log.Printf("Deleted IDP Okta")
 				return nil
 			}
-			return retry.NonRetryableError(fmt.Errorf("Error deleting IDP Okta: %s", err))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_idp_okta", fmt.Sprintf("Error deleting IDP Okta: %s", err), resp))
 		}
-		return retry.RetryableError(fmt.Errorf("IDP Okta still exists"))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_idp_okta", fmt.Sprintf("IDP Okta still exists"), resp))
 	})
 }

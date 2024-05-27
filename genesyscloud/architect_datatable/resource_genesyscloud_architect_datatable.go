@@ -6,6 +6,7 @@ import (
 	"log"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -16,7 +17,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 )
 
 type Datatableproperty struct {
@@ -102,6 +103,7 @@ func createArchitectDatatable(ctx context.Context, d *schema.ResourceData, meta 
 func readArchitectDatatable(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	archProxy := getArchitectDatatableProxy(sdkConfig)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceArchitectDatatable(), constants.DefaultConsistencyChecks, resourceName)
 
 	log.Printf("Reading architect_datatable %s", d.Id())
 
@@ -109,11 +111,11 @@ func readArchitectDatatable(ctx context.Context, d *schema.ResourceData, meta in
 		datatable, resp, getErr := archProxy.getArchitectDatatable(ctx, d.Id(), "schema")
 		if getErr != nil {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(fmt.Errorf("Failed to read architect_datatable %s: %s", d.Id(), getErr))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read architect_datatable %s | error: %s", d.Id(), getErr), resp))
 			}
-			return retry.NonRetryableError(fmt.Errorf("Failed to read architect_datatable %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read architect_datatable %s | error: %s", d.Id(), getErr), resp))
 		}
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceArchitectDatatable())
+
 		_ = d.Set("name", *datatable.Name)
 		_ = d.Set("division_id", *datatable.Division.Id)
 
@@ -131,7 +133,7 @@ func readArchitectDatatable(ctx context.Context, d *schema.ResourceData, meta in
 
 		log.Printf("Read architect_datatable %s %s", d.Id(), *datatable.Name)
 
-		return cc.CheckState()
+		return cc.CheckState(d)
 	})
 }
 
@@ -195,8 +197,8 @@ func deleteArchitectDatatable(ctx context.Context, d *schema.ResourceData, meta 
 				log.Printf("Deleted architect_datatable row %s", name)
 				return nil
 			}
-			return retry.NonRetryableError(fmt.Errorf("Error deleting architect_datatable row %s: %s", name, err))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Error deleting architect_datatable row %s | error: %s", name, err), resp))
 		}
-		return retry.RetryableError(fmt.Errorf("Datatable row %s still exists", name))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Datatable row %s still exists", name), resp))
 	})
 }

@@ -8,6 +8,7 @@ import (
 	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"terraform-provider-genesyscloud/genesyscloud/validators"
 	"time"
 
@@ -22,7 +23,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 	"github.com/nyaruka/phonenumbers"
 )
 
@@ -161,13 +162,13 @@ func GetAllUsers(ctx context.Context, sdkConfig *platformclientv2.Configuration)
 
 	activeUsers, err := getUsersByStatus("active")
 	if err != nil {
-		return nil, diag.Errorf("failed to get 'active' users: %v", err)
+		return nil, util.BuildDiagnosticError("genesyscloud_user", fmt.Sprintf("failed to get 'active' users"), err)
 	}
 	allUsers = append(allUsers, *activeUsers...)
 
 	inactiveUsers, err := getUsersByStatus("inactive")
 	if err != nil {
-		return nil, diag.Errorf("failed to get 'inactive' users: %v", err)
+		return nil, util.BuildDiagnosticError("genesyscloud_user", fmt.Sprintf("failed to get 'inactive' users"), err)
 	}
 	allUsers = append(allUsers, *inactiveUsers...)
 
@@ -541,6 +542,7 @@ func createUser(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 func readUser(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	usersAPI := platformclientv2.NewUsersApiWithConfig(sdkConfig)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceUser(), constants.DefaultConsistencyChecks, "genesyscloud_user")
 
 	log.Printf("Reading user %s", d.Id())
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
@@ -556,12 +558,10 @@ func readUser(ctx context.Context, d *schema.ResourceData, meta interface{}) dia
 
 		if getErr != nil {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(fmt.Errorf("Failed to read user %s: %s", d.Id(), getErr))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_user", fmt.Sprintf("Failed to read user %s | error: %s", d.Id(), getErr), resp))
 			}
-			return retry.NonRetryableError(fmt.Errorf("Failed to read user %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_user", fmt.Sprintf("Failed to read user %s | error: %s", d.Id(), getErr), resp))
 		}
-
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceUser())
 
 		// Required attributes
 		d.Set("name", *currentUser.Name)
@@ -606,7 +606,7 @@ func readUser(ctx context.Context, d *schema.ResourceData, meta interface{}) dia
 		}
 
 		log.Printf("Read user %s %s", d.Id(), *currentUser.Email)
-		return cc.CheckState()
+		return cc.CheckState(d)
 	})
 }
 
@@ -1312,7 +1312,7 @@ func updateUserRoutingUtilization(d *schema.ResourceData, usersAPI *platformclie
 				}
 
 				if err != nil {
-					return diag.Errorf("Failed to update Routing Utilization for user %s: %s", d.Id(), err)
+					return util.BuildDiagnosticError("genesyscloud_user", fmt.Sprintf("Failed to update Routing Utilization for user %s", d.Id()), err)
 				}
 			} else {
 				// Reset to org-wide defaults

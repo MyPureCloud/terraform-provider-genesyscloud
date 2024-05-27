@@ -6,6 +6,7 @@ import (
 	"log"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -17,7 +18,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 )
 
 func getAllIdpPing(_ context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
@@ -101,6 +102,7 @@ func createIdpPing(ctx context.Context, d *schema.ResourceData, meta interface{}
 func readIdpPing(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	idpAPI := platformclientv2.NewIdentityProviderApiWithConfig(sdkConfig)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceIdpPing(), constants.DefaultConsistencyChecks, "genesyscloud_idp_ping")
 
 	log.Printf("Reading IDP Ping")
 
@@ -109,12 +111,11 @@ func readIdpPing(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		if getErr != nil {
 			if util.IsStatus404(resp) {
 				createIdpPing(ctx, d, meta)
-				return retry.RetryableError(fmt.Errorf("Failed to read IDP Ping: %s", getErr))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_idp_ping", fmt.Sprintf("Failed to read IDP Ping: %s", getErr), resp))
 			}
-			return retry.NonRetryableError(fmt.Errorf("Failed to read IDP Ping: %s", getErr))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_idp_ping", fmt.Sprintf("Failed to read IDP Ping: %s", getErr), resp))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceIdpPing())
 		if ping.Certificate != nil {
 			d.Set("certificates", lists.StringListToInterfaceList([]string{*ping.Certificate}))
 		} else if ping.Certificates != nil {
@@ -148,7 +149,7 @@ func readIdpPing(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		}
 
 		log.Printf("Read IDP Ping")
-		return cc.CheckState()
+		return cc.CheckState(d)
 	})
 }
 
@@ -204,8 +205,8 @@ func deleteIdpPing(ctx context.Context, d *schema.ResourceData, meta interface{}
 				log.Printf("Deleted IDP Ping")
 				return nil
 			}
-			return retry.NonRetryableError(fmt.Errorf("Error deleting IDP Ping: %s", err))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_idp_ping", fmt.Sprintf("Error deleting IDP Ping: %s", err), resp))
 		}
-		return retry.RetryableError(fmt.Errorf("IDP Ping still exists"))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_idp_ping", fmt.Sprintf("IDP Ping still exists"), resp))
 	})
 }

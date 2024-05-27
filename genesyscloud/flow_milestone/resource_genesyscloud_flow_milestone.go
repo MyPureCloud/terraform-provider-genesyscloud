@@ -7,11 +7,12 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
@@ -61,6 +62,7 @@ func createFlowMilestone(ctx context.Context, d *schema.ResourceData, meta inter
 func readFlowMilestone(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getFlowMilestoneProxy(sdkConfig)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceFlowMilestone(), constants.DefaultConsistencyChecks, resourceName)
 
 	log.Printf("Reading flow milestone %s", d.Id())
 
@@ -68,19 +70,17 @@ func readFlowMilestone(ctx context.Context, d *schema.ResourceData, meta interfa
 		flowMilestone, resp, getErr := proxy.getFlowMilestoneById(ctx, d.Id())
 		if getErr != nil {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(fmt.Errorf("Failed to read flow milestone %s: %s", d.Id(), getErr))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read flow milestone %s | error: %s", d.Id(), getErr), resp))
 			}
-			return retry.NonRetryableError(fmt.Errorf("Failed to read flow milestone %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read flow milestone %s | error: %s", d.Id(), getErr), resp))
 		}
-
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceFlowMilestone())
 
 		resourcedata.SetNillableValue(d, "name", flowMilestone.Name)
 		resourcedata.SetNillableReferenceWritableDivision(d, "division_id", flowMilestone.Division)
 		resourcedata.SetNillableValue(d, "description", flowMilestone.Description)
 
 		log.Printf("Read flow milestone %s %s", d.Id(), *flowMilestone.Name)
-		return cc.CheckState()
+		return cc.CheckState(d)
 	})
 }
 
@@ -119,8 +119,8 @@ func deleteFlowMilestone(ctx context.Context, d *schema.ResourceData, meta inter
 				log.Printf("Deleted flow milestone %s", d.Id())
 				return nil
 			}
-			return retry.NonRetryableError(fmt.Errorf("Error deleting flow milestone %s: %s", d.Id(), err))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Error deleting flow milestone %s | error: %s", d.Id(), err), resp))
 		}
-		return retry.RetryableError(fmt.Errorf("flow milestone %s still exists", d.Id()))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("flow milestone %s still exists", d.Id()), resp))
 	})
 }

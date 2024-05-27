@@ -6,6 +6,7 @@ import (
 	"log"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 	"time"
 
@@ -17,7 +18,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 )
 
 // getAllDidPools retrieves all DID pools and is used for the exporter
@@ -72,15 +73,16 @@ func createDidPool(ctx context.Context, d *schema.ResourceData, meta interface{}
 func readDidPool(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getTelephonyDidPoolProxy(sdkConfig)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceTelephonyDidPool(), constants.DefaultConsistencyChecks, resourceName)
 
 	log.Printf("Reading DID pool %s", d.Id())
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		didPool, resp, getErr := proxy.getTelephonyDidPoolById(ctx, d.Id())
 		if getErr != nil {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(fmt.Errorf("Failed to read DID pool %s: %s", d.Id(), getErr))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read DID pool %s | error: %s", d.Id(), getErr), resp))
 			}
-			return retry.NonRetryableError(fmt.Errorf("Failed to read DID pool %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read DID pool %s | error: %s", d.Id(), getErr), resp))
 		}
 
 		if didPool.State != nil && *didPool.State == "deleted" {
@@ -88,7 +90,6 @@ func readDidPool(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 			return nil
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceTelephonyDidPool())
 		_ = d.Set("start_phone_number", *didPool.StartPhoneNumber)
 		_ = d.Set("end_phone_number", *didPool.EndPhoneNumber)
 
@@ -97,7 +98,7 @@ func readDidPool(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		resourcedata.SetNillableValue(d, "pool_provider", didPool.Provider)
 
 		log.Printf("Read DID pool %s %s", d.Id(), *didPool.StartPhoneNumber)
-		return cc.CheckState()
+		return cc.CheckState(d)
 	})
 }
 
@@ -157,7 +158,7 @@ func deleteDidPool(ctx context.Context, d *schema.ResourceData, meta interface{}
 				log.Printf("Deleted DID pool %s", d.Id())
 				return nil
 			}
-			return retry.NonRetryableError(fmt.Errorf("error deleting DID pool %s: %s", d.Id(), err))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("error deleting DID pool %s | error: %s", d.Id(), err), resp))
 		}
 
 		if didPool.State != nil && *didPool.State == "deleted" {
@@ -165,6 +166,6 @@ func deleteDidPool(ctx context.Context, d *schema.ResourceData, meta interface{}
 			log.Printf("Deleted DID pool %s", d.Id())
 			return nil
 		}
-		return retry.RetryableError(fmt.Errorf("DID pool %s still exists", d.Id()))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("DID pool %s still exists", d.Id()), resp))
 	})
 }

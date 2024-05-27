@@ -6,12 +6,13 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 	"log"
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"terraform-provider-genesyscloud/genesyscloud/util/lists"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 	"time"
@@ -92,6 +93,7 @@ func createAuthRole(ctx context.Context, d *schema.ResourceData, meta interface{
 func readAuthRole(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getAuthRoleProxy(sdkConfig)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceAuthRole(), constants.DefaultConsistencyChecks, resourceName)
 
 	log.Printf("Reading role %s", d.Id())
 
@@ -99,12 +101,10 @@ func readAuthRole(ctx context.Context, d *schema.ResourceData, meta interface{})
 		role, proxyResponse, getErr := proxy.getAuthRoleById(ctx, d.Id())
 		if getErr != nil {
 			if util.IsStatus404(proxyResponse) {
-				return retry.RetryableError(fmt.Errorf("Failed to read role %s: %s", d.Id(), getErr))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read role %s | error: %s", d.Id(), getErr), proxyResponse))
 			}
-			return retry.NonRetryableError(fmt.Errorf("Failed to read role %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read role %s | error: %s", d.Id(), getErr), proxyResponse))
 		}
-
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceAuthRole())
 
 		d.Set("name", *role.Name)
 		resourcedata.SetNillableValue(d, "description", role.Description)
@@ -123,7 +123,7 @@ func readAuthRole(ctx context.Context, d *schema.ResourceData, meta interface{})
 		}
 
 		log.Printf("Read role %s %s", d.Id(), *role.Name)
-		return cc.CheckState()
+		return cc.CheckState(d)
 	})
 }
 
@@ -203,8 +203,8 @@ func deleteAuthRole(ctx context.Context, d *schema.ResourceData, meta interface{
 				log.Printf("Deleted role %s", d.Id())
 				return nil
 			}
-			return retry.NonRetryableError(fmt.Errorf("Error deleting role %s: %s", d.Id(), err))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Error deleting role %s | error: %s", d.Id(), err), proxyResponse))
 		}
-		return retry.RetryableError(fmt.Errorf("Role %s still exists", d.Id()))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Role %s still exists", d.Id()), proxyResponse))
 	})
 }

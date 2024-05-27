@@ -7,6 +7,7 @@ import (
 	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -18,7 +19,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 )
 
 const (
@@ -254,6 +255,7 @@ func updateOutboundAttemptLimit(ctx context.Context, d *schema.ResourceData, met
 func readOutboundAttemptLimit(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	outboundApi := platformclientv2.NewOutboundApiWithConfig(sdkConfig)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundAttemptLimit(), constants.DefaultConsistencyChecks, resourceName)
 
 	log.Printf("Reading Outbound Attempt Limit %s", d.Id())
 
@@ -261,12 +263,10 @@ func readOutboundAttemptLimit(ctx context.Context, d *schema.ResourceData, meta 
 		sdkAttemptLimits, resp, getErr := outboundApi.GetOutboundAttemptlimit(d.Id())
 		if getErr != nil {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(fmt.Errorf("failed to read Outbound Attempt Limit %s: %s", d.Id(), getErr))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read Outbound Attempt Limit %s | error: %s", d.Id(), getErr), resp))
 			}
-			return retry.NonRetryableError(fmt.Errorf("failed to read Outbound Attempt Limit %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read Outbound Attempt Limit %s | error: %s", d.Id(), getErr), resp))
 		}
-
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundAttemptLimit())
 
 		if sdkAttemptLimits.Name != nil {
 			_ = d.Set("name", *sdkAttemptLimits.Name)
@@ -289,7 +289,7 @@ func readOutboundAttemptLimit(ctx context.Context, d *schema.ResourceData, meta 
 		}
 
 		log.Printf("Read Outbound Attempt Limit %s %s", d.Id(), *sdkAttemptLimits.Name)
-		return cc.CheckState()
+		return cc.CheckState(d)
 	})
 }
 
@@ -317,10 +317,10 @@ func deleteOutboundAttemptLimit(ctx context.Context, d *schema.ResourceData, met
 				log.Printf("Deleted Outbound Attempt Limit %s", d.Id())
 				return nil
 			}
-			return retry.NonRetryableError(fmt.Errorf("error deleting Outbound Attempt Limit %s: %s", d.Id(), err))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("error deleting Outbound Attempt Limit %s | error: %s", d.Id(), err), resp))
 		}
 
-		return retry.RetryableError(fmt.Errorf("Outbound Attempt Limit %s still exists", d.Id()))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Outbound Attempt Limit %s still exists", d.Id()), resp))
 	})
 }
 

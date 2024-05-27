@@ -55,11 +55,9 @@ func TestAccDataSourceRecordingMediaRetentionPolicy(t *testing.T) {
 						Evaluators:           []User{{}},
 						MaxNumberEvaluations: 1,
 						AssignToActiveUser:   true,
-						TimeInterval: Timeinterval{
-							Months: 1,
-							Weeks:  1,
-							Days:   1,
-							Hours:  1,
+						TimeInterval: EvalTimeinterval{
+							Days:  1,
+							Hours: 1,
 						},
 					},
 				},
@@ -67,11 +65,10 @@ func TestAccDataSourceRecordingMediaRetentionPolicy(t *testing.T) {
 					{
 						Evaluators:           []User{{}},
 						MaxNumberEvaluations: 1,
-						TimeInterval: Timeinterval{
+						TimeInterval: AgentTimeinterval{
 							Months: 1,
 							Weeks:  1,
 							Days:   1,
-							Hours:  1,
 						},
 						TimeZone: "EST",
 					},
@@ -135,7 +132,7 @@ func TestAccDataSourceRecordingMediaRetentionPolicy(t *testing.T) {
 
 	var (
 		domainRes = "routing-domain1"
-		domainId  = "terraform" + strconv.Itoa(rand.Intn(1000)) + ".com"
+		domainId  = "terraformmedia" + strconv.Itoa(rand.Intn(1000)) + ".com"
 	)
 
 	_, err := provider.AuthorizeSdk()
@@ -200,6 +197,7 @@ func TestAccDataSourceRecordingMediaRetentionPolicy(t *testing.T) {
 				),
 			},
 		},
+		CheckDestroy: testVerifyMediaRetentionPolicyDestroyed,
 	})
 }
 

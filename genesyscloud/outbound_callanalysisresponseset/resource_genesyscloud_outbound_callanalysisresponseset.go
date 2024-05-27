@@ -6,12 +6,13 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 	"log"
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 	"time"
 )
@@ -57,6 +58,7 @@ func createOutboundCallanalysisresponseset(ctx context.Context, d *schema.Resour
 func readOutboundCallanalysisresponseset(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getOutboundCallanalysisresponsesetProxy(sdkConfig)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundCallanalysisresponseset(), constants.DefaultConsistencyChecks, resourceName)
 
 	log.Printf("Reading Outbound Call Analysis Response Set %s", d.Id())
 
@@ -64,18 +66,17 @@ func readOutboundCallanalysisresponseset(ctx context.Context, d *schema.Resource
 		responseSet, resp, getErr := proxy.getOutboundCallanalysisresponsesetById(ctx, d.Id())
 		if getErr != nil {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(fmt.Errorf("failed to read Outbound Call Analysis Response Set %s: %s", d.Id(), getErr))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read Outbound Call Analysis Response Set %s | error: %s", d.Id(), getErr), resp))
 			}
-			return retry.NonRetryableError(fmt.Errorf("failed to read Outbound Call Analysis Response Set %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read Outbound Call Analysis Response Set %s | error: %s", d.Id(), getErr), resp))
 		}
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundCallanalysisresponseset())
 
 		resourcedata.SetNillableValue(d, "name", responseSet.Name)
 		resourcedata.SetNillableValue(d, "beep_detection_enabled", responseSet.BeepDetectionEnabled)
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "responses", responseSet.Responses, flattenSdkOutboundCallAnalysisResponseSetReaction)
 
 		log.Printf("Read Outbound Call Analysis Response Set %s %s", d.Id(), *responseSet.Name)
-		return cc.CheckState()
+		return cc.CheckState(d)
 	})
 }
 
@@ -120,8 +121,8 @@ func deleteOutboundCallanalysisresponseset(ctx context.Context, d *schema.Resour
 				log.Printf("Deleted Outbound Call Analysis Response Set %s", d.Id())
 				return nil
 			}
-			return retry.NonRetryableError(fmt.Errorf("error deleting Outbound Call Analysis Response Set %s: %s", d.Id(), err))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("error deleting Outbound Call Analysis Response Set %s | error: %s", d.Id(), err), resp))
 		}
-		return retry.RetryableError(fmt.Errorf("Outbound Call Analysis Response Set %s still exists", d.Id()))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Outbound Call Analysis Response Set %s still exists", d.Id()), resp))
 	})
 }

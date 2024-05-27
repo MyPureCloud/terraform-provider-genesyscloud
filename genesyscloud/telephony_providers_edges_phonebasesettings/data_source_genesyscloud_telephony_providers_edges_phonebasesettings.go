@@ -11,7 +11,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 )
 
 func dataSourcePhoneBaseSettingsRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
@@ -25,11 +25,11 @@ func dataSourcePhoneBaseSettingsRead(ctx context.Context, d *schema.ResourceData
 			const pageSize = 50
 			phoneBaseSettings, resp, getErr := edgesAPI.GetTelephonyProvidersEdgesPhonebasesettings(pageSize, pageNum, "", "", nil, name)
 			if getErr != nil {
-				return retry.NonRetryableError(fmt.Errorf("Error requesting phone base settings %s: %s %v", name, getErr, resp))
+				return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Error requesting phone base settings %s | error: %s", name, getErr), resp))
 			}
 
 			if phoneBaseSettings.Entities == nil || len(*phoneBaseSettings.Entities) == 0 {
-				return retry.RetryableError(fmt.Errorf("No phoneBaseSettings found with name %s", name))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("No phoneBaseSettings found with name %s", name), resp))
 			}
 
 			for _, phoneBaseSetting := range *phoneBaseSettings.Entities {

@@ -6,6 +6,7 @@ import (
 	"log"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 	"time"
 
@@ -17,7 +18,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 )
 
 /*
@@ -82,16 +83,16 @@ func readOutboundCallabletimeset(ctx context.Context, d *schema.ResourceData, me
 
 	log.Printf("Reading Outbound Callabletimeset %s", d.Id())
 
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundCallabletimeset(), constants.DefaultConsistencyChecks, resourceName)
+
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		callableTimeset, resp, getErr := proxy.getOutboundCallabletimesetById(ctx, d.Id())
 		if getErr != nil {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(fmt.Errorf("Failed to read Outbound Callabletimeset %s: %s", d.Id(), getErr))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read Outbound Callabletimeset %s | error: %s", d.Id(), getErr), resp))
 			}
-			return retry.NonRetryableError(fmt.Errorf("Failed to read Outbound Callabletimeset %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read Outbound Callabletimeset %s | error: %s", d.Id(), getErr), resp))
 		}
-
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundCallabletimeset())
 
 		resourcedata.SetNillableValue(d, "name", callableTimeset.Name)
 		if callableTimeset.CallableTimes != nil {
@@ -100,7 +101,7 @@ func readOutboundCallabletimeset(ctx context.Context, d *schema.ResourceData, me
 			d.Set("callable_times", flattenCallableTimes(*callableTimeset.CallableTimes))
 		}
 		log.Printf("Read Outbound Callabletimeset %s %s", d.Id(), *callableTimeset.Name)
-		return cc.CheckState()
+		return cc.CheckState(d)
 	})
 }
 
@@ -123,8 +124,8 @@ func deleteOutboundCallabletimeset(ctx context.Context, d *schema.ResourceData, 
 				log.Printf("Deleted Outbound Callabletimeset %s", d.Id())
 				return nil
 			}
-			return retry.NonRetryableError(fmt.Errorf("Error deleting Outbound Callabletimeset %s: %s", d.Id(), err))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Error deleting Outbound Callabletimeset %s | error: %s", d.Id(), err), resp))
 		}
-		return retry.RetryableError(fmt.Errorf("Outbound Callabletimeset %s still exists", d.Id()))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Outbound Callabletimeset %s still exists", d.Id()), resp))
 	})
 }

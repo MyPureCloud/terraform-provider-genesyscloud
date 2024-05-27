@@ -7,6 +7,7 @@ import (
 	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -17,7 +18,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 )
 
 func getAllRoutingEmailDomains(_ context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
@@ -129,19 +130,18 @@ func createRoutingEmailDomain(ctx context.Context, d *schema.ResourceData, meta 
 func readRoutingEmailDomain(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceRoutingEmailDomain(), constants.DefaultConsistencyChecks, "genesyscloud_routing_email_domain")
 
 	log.Printf("Reading routing email domain %s", d.Id())
-
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		domain, resp, getErr := routingAPI.GetRoutingEmailDomain(d.Id())
 		if getErr != nil {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(fmt.Errorf("Failed to read routing email domain %s: %s", d.Id(), getErr))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_routing_email_domain", fmt.Sprintf("Failed to read routing email domain %s | error: %s", d.Id(), getErr), resp))
 			}
-			return retry.NonRetryableError(fmt.Errorf("Failed to read routing email domain %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_routing_email_domain", fmt.Sprintf("Failed to read routing email domain %s | error: %s", d.Id(), getErr), resp))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceRoutingEmailDomain())
 		if domain.SubDomain != nil && *domain.SubDomain {
 			// Strip off the regional domain suffix added by the server
 			d.Set("domain_id", strings.SplitN(*domain.Id, ".", 2)[0])
@@ -168,7 +168,7 @@ func readRoutingEmailDomain(ctx context.Context, d *schema.ResourceData, meta in
 		}
 
 		log.Printf("Read routing email domain %s", d.Id())
-		return cc.CheckState()
+		return cc.CheckState(d)
 	})
 }
 
@@ -178,7 +178,7 @@ func updateRoutingEmailDomain(ctx context.Context, d *schema.ResourceData, meta 
 	domainID := d.Get("domain_id").(string)
 
 	if !strings.Contains(mailFromDomain, domainID) || mailFromDomain == domainID {
-		return diag.Errorf("domain_id must be a subdomain of mail_from_domain")
+		return util.BuildDiagnosticError("genesyscloud_routing_email_domain", fmt.Sprintf("domain_id must be a subdomain of mail_from_domain"), fmt.Errorf("domain_id must be a subdomain of mail_from_domain"))
 	}
 
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
@@ -220,11 +220,11 @@ func deleteRoutingEmailDomain(ctx context.Context, d *schema.ResourceData, meta 
 				log.Printf("Deleted Routing email domain %s", d.Id())
 				return nil
 			}
-			return retry.NonRetryableError(fmt.Errorf("Error deleting Routing email domain %s: %s", d.Id(), err))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_routing_email_domain", fmt.Sprintf("Error deleting Routing email domain %s | error: %s", d.Id(), err), resp))
 		}
 
 		routingAPI.DeleteRoutingEmailDomain(d.Id())
-		return retry.RetryableError(fmt.Errorf("Routing email domain %s still exists", d.Id()))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_routing_email_domain", fmt.Sprintf("Routing email domain %s still exists", d.Id()), resp))
 	})
 }
 

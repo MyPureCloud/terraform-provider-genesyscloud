@@ -10,10 +10,9 @@ import (
 
 	"terraform-provider-genesyscloud/genesyscloud/util/testrunner"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 )
 
 func TestAccResourceJourneyOutcome(t *testing.T) {
@@ -59,9 +58,9 @@ func cleanupJourneyOutcomes(idPrefix string) {
 
 		for _, journeyOutcome := range *journeyOutcomes.Entities {
 			if journeyOutcome.DisplayName != nil && strings.HasPrefix(*journeyOutcome.DisplayName, idPrefix) {
-				_, delErr := journeyApi.DeleteJourneyOutcome(*journeyOutcome.Id)
+				resp, delErr := journeyApi.DeleteJourneyOutcome(*journeyOutcome.Id)
 				if delErr != nil {
-					diag.Errorf("failed to delete journey outcome %s (%s): %s", *journeyOutcome.Id, *journeyOutcome.DisplayName, delErr)
+					util.BuildAPIDiagnosticError("journey_outcome", fmt.Sprintf("failed to delete journey outcome %s (%s): %s", *journeyOutcome.Id, *journeyOutcome.DisplayName, delErr), resp)
 					return
 				}
 				log.Printf("Deleted journey outcome %s (%s)", *journeyOutcome.Id, *journeyOutcome.DisplayName)

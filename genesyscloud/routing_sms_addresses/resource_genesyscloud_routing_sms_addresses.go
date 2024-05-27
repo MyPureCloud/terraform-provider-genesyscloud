@@ -6,6 +6,7 @@ import (
 	"log"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 	"time"
 
@@ -17,7 +18,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 )
 
 const resourceName = "genesyscloud_routing_sms_address"
@@ -93,18 +94,17 @@ func createRoutingSmsAddress(ctx context.Context, d *schema.ResourceData, meta i
 func readRoutingSmsAddress(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getRoutingSmsAddressProxy(sdkConfig)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceRoutingSmsAddress(), constants.DefaultConsistencyChecks, resourceName)
 
 	log.Printf("Reading Routing Sms Address %s", d.Id())
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		sdkSmsAddress, resp, getErr := proxy.getSmsAddressById(d.Id())
 		if getErr != nil {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(fmt.Errorf("Failed to read Routing Sms Address %s: %s", d.Id(), getErr))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read Routing Sms Address %s | error: %s", d.Id(), getErr), resp))
 			}
-			return retry.NonRetryableError(fmt.Errorf("Failed to read Routing Sms Address %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read Routing Sms Address %s | error: %s", d.Id(), getErr), resp))
 		}
-
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceRoutingSmsAddress())
 
 		resourcedata.SetNillableValue(d, "name", sdkSmsAddress.Name)
 		resourcedata.SetNillableValue(d, "street", sdkSmsAddress.Street)
@@ -114,7 +114,7 @@ func readRoutingSmsAddress(ctx context.Context, d *schema.ResourceData, meta int
 		resourcedata.SetNillableValue(d, "country_code", sdkSmsAddress.CountryCode)
 
 		log.Printf("Read Routing Sms Address %s", d.Id())
-		return cc.CheckState()
+		return cc.CheckState(d)
 	})
 }
 
@@ -147,8 +147,8 @@ func deleteRoutingSmsAddress(ctx context.Context, d *schema.ResourceData, meta i
 				log.Printf("Deleted Routing Sms Address %s", d.Id())
 				return nil
 			}
-			return retry.NonRetryableError(fmt.Errorf("Error deleting Routing Sms Address %s: %s", d.Id(), err))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Error deleting Routing Sms Address %s | error: %s", d.Id(), err), resp))
 		}
-		return retry.RetryableError(fmt.Errorf("Routing Sms Address %s still exists", d.Id()))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Routing Sms Address %s still exists", d.Id()), resp))
 	})
 }

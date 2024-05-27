@@ -6,6 +6,7 @@ import (
 	"log"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -16,7 +17,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 )
 
 func createEdgeGroup(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -123,7 +124,7 @@ func deleteEdgeGroup(ctx context.Context, d *schema.ResourceData, meta interface
 				log.Printf("Deleted Edge group %s", d.Id())
 				return nil
 			}
-			return retry.NonRetryableError(fmt.Errorf("Error deleting Edge group %s: %s", d.Id(), err))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Error deleting Edge group %s | error: %s", d.Id(), err), resp))
 		}
 
 		if edgeGroup.State != nil && *edgeGroup.State == "deleted" {
@@ -132,25 +133,25 @@ func deleteEdgeGroup(ctx context.Context, d *schema.ResourceData, meta interface
 			return nil
 		}
 
-		return retry.RetryableError(fmt.Errorf("Edge group %s still exists", d.Id()))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Edge group %s still exists", d.Id()), resp))
 	})
 }
 
 func readEdgeGroup(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	edgeGroupProxy := getEdgeGroupProxy(sdkConfig)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceEdgeGroup(), constants.DefaultConsistencyChecks, resourceName)
 
 	log.Printf("Reading edge group %s", d.Id())
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		edgeGroup, resp, getErr := edgeGroupProxy.getEdgeGroupById(ctx, d.Id())
 		if getErr != nil {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(fmt.Errorf("Failed to read edge group %s: %s", d.Id(), getErr))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read edge group %s | error: %s", d.Id(), getErr), resp))
 			}
-			return retry.NonRetryableError(fmt.Errorf("Failed to read edge group %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read edge group %s | error: %s", d.Id(), getErr), resp))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceEdgeGroup())
 		d.Set("name", *edgeGroup.Name)
 		d.Set("state", *edgeGroup.State)
 		if edgeGroup.Description != nil {
@@ -169,7 +170,7 @@ func readEdgeGroup(ctx context.Context, d *schema.ResourceData, meta interface{}
 
 		log.Printf("Read edge group %s %s", d.Id(), *edgeGroup.Name)
 
-		return cc.CheckState()
+		return cc.CheckState(d)
 	})
 }
 

@@ -11,7 +11,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 )
 
 func dataSourceJourneyActionTemplate() *schema.Resource {
@@ -31,6 +31,7 @@ func dataSourceJourneyActionTemplate() *schema.Resource {
 func dataSourceJourneyActionTemplateRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	sdkConfig := m.(*provider.ProviderMeta).ClientConfig
 	journeyApi := platformclientv2.NewJourneyApiWithConfig(sdkConfig)
+	var response *platformclientv2.APIResponse
 
 	name := d.Get("name").(string)
 
@@ -38,13 +39,15 @@ func dataSourceJourneyActionTemplateRead(ctx context.Context, d *schema.Resource
 		pageCount := 1 // Needed because of broken journey common paging
 		for pageNum := 1; pageNum <= pageCount; pageNum++ {
 			const pageSize = 100
-			journeyActionTemplates, _, getErr := journeyApi.GetJourneyActiontemplates(pageNum, pageSize, "", "", "", nil, "")
+			journeyActionTemplates, resp, getErr := journeyApi.GetJourneyActiontemplates(pageNum, pageSize, "", "", "", nil, "")
 			if getErr != nil {
-				return retry.NonRetryableError(fmt.Errorf("failed to get page of journey action template: %v", getErr))
+				return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_journey_action_template", fmt.Sprintf("failed to get page of journey action template: %v", getErr), resp))
 			}
 
+			response = resp
+
 			if journeyActionTemplates.Entities == nil || len(*journeyActionTemplates.Entities) == 0 {
-				return retry.RetryableError(fmt.Errorf("no journey action template found with name %s", name))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_journey_action_template", fmt.Sprintf("no journey action template found with name %s", name), resp))
 			}
 
 			for _, actionTemplate := range *journeyActionTemplates.Entities {
@@ -56,6 +59,6 @@ func dataSourceJourneyActionTemplateRead(ctx context.Context, d *schema.Resource
 
 			pageCount = *journeyActionTemplates.PageCount
 		}
-		return retry.RetryableError(fmt.Errorf("no journey action template found with name %s", name))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_journey_action_template", fmt.Sprintf("no journey action template found with name %s", name), response))
 	})
 }

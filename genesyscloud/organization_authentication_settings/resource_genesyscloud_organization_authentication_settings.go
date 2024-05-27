@@ -5,12 +5,13 @@ import (
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 	"log"
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
@@ -18,7 +19,7 @@ import (
 )
 
 /*
-The resource_genesyscloud_organization_authentication_settings.go contains all of the methods that perform the core logic for a resource.
+The resource_genesyscloud_organization_authentication_settings.go contains all the methods that perform the core logic for a resource.
 */
 
 func getAllOrganizationAuthenticationSettings(_ context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
@@ -38,6 +39,7 @@ func createOrganizationAuthenticationSettings(ctx context.Context, d *schema.Res
 func readOrganizationAuthenticationSettings(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getOrgAuthSettingsProxy(sdkConfig)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOrganizationAuthenticationSettings(), constants.DefaultConsistencyChecks, resourceName)
 
 	log.Printf("Reading organization authentication settings %s", d.Id())
 
@@ -45,12 +47,10 @@ func readOrganizationAuthenticationSettings(ctx context.Context, d *schema.Resou
 		orgAuthSettings, resp, getErr := proxy.getOrgAuthSettingsById(ctx, d.Id())
 		if getErr != nil {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(fmt.Errorf("Failed to read organization authentication settings %s: %s", d.Id(), getErr))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read organization authentication settings %s | error: %s", d.Id(), getErr), resp))
 			}
-			return retry.NonRetryableError(fmt.Errorf("Failed to read organization authentication settings %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read organization authentication settings %s | error: %s", d.Id(), getErr), resp))
 		}
-
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOrganizationAuthenticationSettings())
 
 		resourcedata.SetNillableValue(d, "multifactor_authentication_required", orgAuthSettings.MultifactorAuthenticationRequired)
 		resourcedata.SetNillableValue(d, "domain_allowlist_enabled", orgAuthSettings.DomainAllowlistEnabled)
@@ -59,7 +59,7 @@ func readOrganizationAuthenticationSettings(ctx context.Context, d *schema.Resou
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "password_requirements", orgAuthSettings.PasswordRequirements, flattenPasswordRequirements)
 
 		log.Printf("Read organization authentication settings %s", d.Id())
-		return cc.CheckState()
+		return cc.CheckState(d)
 	})
 }
 
@@ -73,7 +73,7 @@ func updateOrganizationAuthenticationSettings(ctx context.Context, d *schema.Res
 
 	orgAuthSettings, resp, err := proxy.updateOrgAuthSettings(ctx, &authSettings)
 	if err != nil {
-		return diag.Errorf("Failed to update organization authentication settings: %s %v", err, resp)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update organization authentication settings: %s", err), resp)
 	}
 
 	log.Printf("Updated organization authentication settings %s %s", d.Id(), orgAuthSettings)

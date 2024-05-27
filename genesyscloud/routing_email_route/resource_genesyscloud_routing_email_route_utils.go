@@ -8,7 +8,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 )
 
 /*
@@ -158,4 +158,19 @@ func importRoutingEmailRoute(_ context.Context, d *schema.ResourceData, _ interf
 	d.Set("domain_id", idParts[0])
 	d.SetId(idParts[1])
 	return []*schema.ResourceData{d}, nil
+}
+
+func GenerateRoutingEmailRouteResource(
+	resourceID string,
+	domainID string,
+	pattern string,
+	fromName string,
+	otherAttrs ...string) string {
+	return fmt.Sprintf(`resource "genesyscloud_routing_email_route" "%s" {
+            domain_id = %s
+            pattern = "%s"
+            from_name = "%s"
+            %s
+        }
+        `, resourceID, domainID, pattern, fromName, strings.Join(otherAttrs, "\n"))
 }

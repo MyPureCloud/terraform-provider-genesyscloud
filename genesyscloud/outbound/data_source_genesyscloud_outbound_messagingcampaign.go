@@ -11,7 +11,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 )
 
 func dataSourceOutboundMessagingcampaign() *schema.Resource {
@@ -42,13 +42,13 @@ func dataSourceOutboundMessagingcampaignRead(ctx context.Context, d *schema.Reso
 	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
 		for pageNum := 1; ; pageNum++ {
 			const pageSize = 100
-			sdkMessagingcampaignEntityListing, _, getErr := outboundApi.GetOutboundMessagingcampaigns(pageSize, pageNum, "", "", "", "", []string{}, "", "", []string{})
+			sdkMessagingcampaignEntityListing, resp, getErr := outboundApi.GetOutboundMessagingcampaigns(pageSize, pageNum, "", "", "", "", []string{}, "", "", []string{})
 			if getErr != nil {
-				return retry.NonRetryableError(fmt.Errorf("error requesting Outbound Messaging Campaign %s: %s", name, getErr))
+				return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("error requesting Outbound Messaging Campaign %s | error: %s", name, getErr), resp))
 			}
 
 			if sdkMessagingcampaignEntityListing.Entities == nil || len(*sdkMessagingcampaignEntityListing.Entities) == 0 {
-				return retry.RetryableError(fmt.Errorf("no Outbound Messaging Campaign found with name %s", name))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("no Outbound Messaging Campaign found with name %s", name), resp))
 			}
 
 			for _, entity := range *sdkMessagingcampaignEntityListing.Entities {

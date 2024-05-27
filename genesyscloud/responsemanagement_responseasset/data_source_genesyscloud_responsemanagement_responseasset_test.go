@@ -2,7 +2,6 @@ package responsemanagement_responseasset
 
 import (
 	"fmt"
-	"log"
 	"path/filepath"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
@@ -15,30 +14,25 @@ func TestAccDataSourceResponseManagementResponseAsset(t *testing.T) {
 	var (
 		resourceId   = "resp_asset"
 		testDirName  = "test_responseasset_data"
-		fileName     = filepath.Join(testDirName, "yeti-img.png")
+		fileName     = filepath.Join(testDirName, "yeti-img-asset.png")
 		dataSourceId = "resp_asset_data"
 	)
-
-	defer func() {
-		err := cleanupResponseAssets(testDirName)
-		if err != nil {
-			log.Printf("error cleaning up response assets: %v. Dangling assets may exist.", err)
-		}
-	}()
+	cleanupResponseAssets("yeti")
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
-				Config: generateResponseManagementResponseAssetDataSource(dataSourceId, fileName, "genesyscloud_responsemanagement_responseasset."+resourceId) +
-					GenerateResponseManagementResponseAssetResource(resourceId, fileName, util.NullValue),
+				Config: GenerateResponseManagementResponseAssetResource(resourceId, fileName, util.NullValue) +
+					generateResponseManagementResponseAssetDataSource(dataSourceId, fileName, "genesyscloud_responsemanagement_responseasset."+resourceId),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrPair("data.genesyscloud_responsemanagement_responseasset."+dataSourceId, "id",
 						"genesyscloud_responsemanagement_responseasset."+resourceId, "id"),
 				),
 			},
 		},
+		CheckDestroy: testVerifyResponseAssetDestroyed,
 	})
 }
 

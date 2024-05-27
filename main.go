@@ -19,10 +19,12 @@ import (
 	authorizatioProduct "terraform-provider-genesyscloud/genesyscloud/authorization_product"
 	employeeperformanceExternalmetricsDefinition "terraform-provider-genesyscloud/genesyscloud/employeeperformance_externalmetrics_definitions"
 	externalContacts "terraform-provider-genesyscloud/genesyscloud/external_contacts"
+	flowLogLevel "terraform-provider-genesyscloud/genesyscloud/flow_loglevel"
 	flowMilestone "terraform-provider-genesyscloud/genesyscloud/flow_milestone"
 	flowOutcome "terraform-provider-genesyscloud/genesyscloud/flow_outcome"
 	"terraform-provider-genesyscloud/genesyscloud/group"
 	groupRoles "terraform-provider-genesyscloud/genesyscloud/group_roles"
+	idpSalesforce "terraform-provider-genesyscloud/genesyscloud/idp_salesforce"
 	"terraform-provider-genesyscloud/genesyscloud/integration"
 	integrationAction "terraform-provider-genesyscloud/genesyscloud/integration_action"
 	integrationCred "terraform-provider-genesyscloud/genesyscloud/integration_credential"
@@ -55,6 +57,9 @@ import (
 	responsemanagementResponseasset "terraform-provider-genesyscloud/genesyscloud/responsemanagement_responseasset"
 	routingEmailRoute "terraform-provider-genesyscloud/genesyscloud/routing_email_route"
 	routingQueue "terraform-provider-genesyscloud/genesyscloud/routing_queue"
+
+	routingQueueConditionalGroupRouting "terraform-provider-genesyscloud/genesyscloud/routing_queue_conditional_group_routing"
+	routingQueueOutboundEmailAddress "terraform-provider-genesyscloud/genesyscloud/routing_queue_outbound_email_address"
 	smsAddresses "terraform-provider-genesyscloud/genesyscloud/routing_sms_addresses"
 	"terraform-provider-genesyscloud/genesyscloud/scripts"
 	"terraform-provider-genesyscloud/genesyscloud/station"
@@ -146,6 +151,7 @@ func registerResources() {
 	edgePhone.SetRegistrar(regInstance)                                    //Registering telephony providers edges phone
 	edgeSite.SetRegistrar(regInstance)                                     //Registering telephony providers edges site
 	flow.SetRegistrar(regInstance)                                         //Registering architect flow
+	flowLogLevel.SetRegistrar(regInstance)                                 //Registering flow log Level
 	flowMilestone.SetRegistrar(regInstance)                                //Registering flow milestone
 	flowOutcome.SetRegistrar(regInstance)                                  //Registering flow outcome
 	station.SetRegistrar(regInstance)                                      //Registering station
@@ -170,6 +176,7 @@ func registerResources() {
 	oAuthPairing.SetRegistrar(regInstance)                                 //Registering orgauthorization pairing
 	scripts.SetRegistrar(regInstance)                                      //Registering Scripts
 	smsAddresses.SetRegistrar(regInstance)                                 //Registering routing sms addresses
+	idpSalesforce.SetRegistrar(regInstance)                                //Registering idp salesforce
 	integration.SetRegistrar(regInstance)                                  //Registering integrations
 	integrationCustomAuth.SetRegistrar(regInstance)                        //Registering integrations custom auth actions
 	integrationAction.SetRegistrar(regInstance)                            //Registering integrations actions
@@ -203,6 +210,8 @@ func registerResources() {
 	group.SetRegistrar(regInstance)                                        //Registering group
 	userPrompt.SetRegistrar(regInstance)                                   //Registering user prompt
 	routingQueue.SetRegistrar(regInstance)                                 //Registering routing queue
+	routingQueueConditionalGroupRouting.SetRegistrar(regInstance)          //Registering routing queue conditional group routing
+	routingQueueOutboundEmailAddress.SetRegistrar(regInstance)             //Registering routing queue outbound email address
 
 	// setting resources for Use cases  like TF export where provider is used in resource classes.
 	tfexp.SetRegistrar(regInstance) //Registering tf exporter

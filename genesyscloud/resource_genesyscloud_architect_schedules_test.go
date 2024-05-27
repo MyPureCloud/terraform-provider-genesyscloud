@@ -9,10 +9,9 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 )
 
 func TestAccResourceArchitectSchedules(t *testing.T) {
@@ -123,9 +122,9 @@ func cleanupArchitectSchedules(idPrefix string) {
 
 		for _, schedule := range *architectSchedules.Entities {
 			if schedule.Name != nil && strings.HasPrefix(*schedule.Name, idPrefix) {
-				_, delErr := architectApi.DeleteArchitectSchedule(*schedule.Id)
+				resp, delErr := architectApi.DeleteArchitectSchedule(*schedule.Id)
 				if delErr != nil {
-					diag.Errorf("failed to delete architect schedule %s (%s): %s", *schedule.Id, *schedule.Name, delErr)
+					util.BuildAPIDiagnosticError("genesyscloud_architect_schedules", fmt.Sprintf("failed to delete architect schedule %s (%s): %s", *schedule.Id, *schedule.Name, delErr), resp)
 					return
 				}
 				log.Printf("Deleted architect schedule %s (%s)", *schedule.Id, *schedule.Name)

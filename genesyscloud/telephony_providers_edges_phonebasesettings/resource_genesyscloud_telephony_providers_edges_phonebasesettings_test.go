@@ -11,15 +11,15 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 )
 
 func TestAccResourcePhoneBaseSettings(t *testing.T) {
 	t.Parallel()
 	var (
 		phoneBaseSettingsRes = "phoneBaseSettings1234"
-		name1                = "test phone base settings " + uuid.NewString()
-		name2                = "test phone base settings " + uuid.NewString()
+		name1                = "test phone base settings resource" + uuid.NewString()
+		name2                = "test phone base settings resource" + uuid.NewString()
 		description1         = "test description 1"
 		description2         = "test description 2"
 		phoneMetaBaseId      = "generic_sip.json"

@@ -49,6 +49,7 @@ resource "genesyscloud_outbound_settings" "example_settings" {
 - `compliance_abandon_rate_denominator` (String) The denominator to be used in determining the compliance abandon rate.Valid values: ALL_CALLS, CALLS_THAT_REACHED_QUEUE.
 - `max_calls_per_agent` (Number) The maximum number of calls that can be placed per agent on any campaign.
 - `max_line_utilization` (Number) The maximum percentage of lines that should be used for Outbound, expressed as a decimal in the range [0.0, 1.0].
+- `reschedule_time_zone_skipped_contacts` (Boolean) Whether or not to reschedule time-zone blocked contacts.
 
 ### Read-Only
 

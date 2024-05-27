@@ -7,6 +7,7 @@ import (
 	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -18,7 +19,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 )
 
 /*
@@ -106,6 +107,7 @@ func createIntegrationAction(ctx context.Context, d *schema.ResourceData, meta i
 func readIntegrationAction(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	iap := getIntegrationActionsProxy(sdkConfig)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceIntegrationAction(), constants.DefaultConsistencyChecks, resourceName)
 
 	log.Printf("Reading integration action %s", d.Id())
 
@@ -113,9 +115,9 @@ func readIntegrationAction(ctx context.Context, d *schema.ResourceData, meta int
 		action, resp, err := iap.getIntegrationActionById(ctx, d.Id())
 		if err != nil {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(fmt.Errorf("failed to read integration action %s: %s", d.Id(), err))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read integration action %s | error: %s", d.Id(), err), resp))
 			}
-			return retry.NonRetryableError(fmt.Errorf("failed to read integration action %s: %s", d.Id(), err))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read integration action %s | error: %s", d.Id(), err), resp))
 		}
 
 		// Retrieve config request/response templates
@@ -125,7 +127,7 @@ func readIntegrationAction(ctx context.Context, d *schema.ResourceData, meta int
 				d.SetId("")
 				return nil
 			}
-			return retry.NonRetryableError(fmt.Errorf("failed to read request template for integration action %s: %s", d.Id(), err))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read request template for integration action %s | error: %s", d.Id(), err), resp))
 		}
 
 		successTemp, resp, err := iap.getIntegrationActionTemplate(ctx, d.Id(), successTemplateFileName)
@@ -134,10 +136,8 @@ func readIntegrationAction(ctx context.Context, d *schema.ResourceData, meta int
 				d.SetId("")
 				return nil
 			}
-			return retry.NonRetryableError(fmt.Errorf("failed to read success template for integration action %s: %s", d.Id(), err))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read success template for integration action %s | error: %s", d.Id(), err), resp))
 		}
-
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceIntegrationAction())
 
 		resourcedata.SetNillableValue(d, "name", action.Name)
 		resourcedata.SetNillableValue(d, "category", action.Category)
@@ -180,7 +180,7 @@ func readIntegrationAction(ctx context.Context, d *schema.ResourceData, meta int
 		}
 
 		log.Printf("Read integration action %s %s", d.Id(), *action.Name)
-		return cc.CheckState()
+		return cc.CheckState(d)
 	})
 }
 
@@ -246,8 +246,8 @@ func deleteIntegrationAction(ctx context.Context, d *schema.ResourceData, meta i
 				log.Printf("Deleted Integration action %s", d.Id())
 				return nil
 			}
-			return retry.NonRetryableError(fmt.Errorf("error deleting integration action %s: %s", d.Id(), err))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("error deleting integration action %s | error: %s", d.Id(), err), resp))
 		}
-		return retry.RetryableError(fmt.Errorf("integration action %s still exists", d.Id()))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("integration action %s still exists", d.Id()), resp))
 	})
 }

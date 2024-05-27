@@ -5,13 +5,14 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 
 	"fmt"
 	"log"
 
 	"time"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
@@ -164,7 +165,7 @@ func createProcessAutomationTrigger(ctx context.Context, d *schema.ResourceData,
 	integAPI := platformclientv2.NewIntegrationsApiWithConfig(sdkConfig)
 
 	if eventTTLSeconds > 0 && delayBySeconds > 0 {
-		return diag.Errorf("Only one of event_ttl_seconds or delay_by_seconds can be set.")
+		return util.BuildDiagnosticError(resourceName, fmt.Sprintf("Only one of event_ttl_seconds or delay_by_seconds can be set."), fmt.Errorf("event_ttl_seconds and delay_by_seconds are both set"))
 	}
 
 	log.Printf("Creating process automation trigger %s", name)
@@ -206,6 +207,7 @@ func createProcessAutomationTrigger(ctx context.Context, d *schema.ResourceData,
 func readProcessAutomationTrigger(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	integAPI := platformclientv2.NewIntegrationsApiWithConfig(sdkConfig)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceProcessAutomationTrigger(), constants.DefaultConsistencyChecks, resourceName)
 
 	log.Printf("Reading process automation trigger %s", d.Id())
 
@@ -213,12 +215,10 @@ func readProcessAutomationTrigger(ctx context.Context, d *schema.ResourceData, m
 		trigger, resp, getErr := getProcessAutomationTrigger(d.Id(), integAPI)
 		if getErr != nil {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(fmt.Errorf("Failed to read process automation trigger %s: %s", d.Id(), getErr))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read process automation trigger %s | error: %s", d.Id(), getErr), resp))
 			}
-			return retry.NonRetryableError(fmt.Errorf("Failed to process read automation trigger %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to process read automation trigger %s | error: %s", d.Id(), getErr), resp))
 		}
-
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceProcessAutomationTrigger())
 
 		if trigger.Name != nil {
 			d.Set("name", *trigger.Name)
@@ -260,7 +260,7 @@ func readProcessAutomationTrigger(ctx context.Context, d *schema.ResourceData, m
 		}
 
 		log.Printf("Read process automation trigger %s %s", d.Id(), *trigger.Name)
-		return cc.CheckState()
+		return cc.CheckState(d)
 	})
 }
 
@@ -287,7 +287,7 @@ func updateProcessAutomationTrigger(ctx context.Context, d *schema.ResourceData,
 		}
 
 		if eventTTLSeconds > 0 && delayBySeconds > 0 {
-			return resp, diag.Errorf("Only one of event_ttl_seconds or delay_by_seconds can be set.")
+			return resp, util.BuildDiagnosticError(resourceName, fmt.Sprintf("Only one of event_ttl_seconds or delay_by_seconds can be set."), fmt.Errorf("event_ttl_seconds and delay_by_seconds are both set"))
 		}
 
 		triggerInput := &ProcessAutomationTrigger{
@@ -339,7 +339,7 @@ func removeProcessAutomationTrigger(ctx context.Context, d *schema.ResourceData,
 				log.Printf("process automation trigger already deleted %s", d.Id())
 				return nil
 			}
-			return retry.RetryableError(fmt.Errorf("process automation trigger %s still exists", d.Id()))
+			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("process automation trigger %s still exists", d.Id()), resp))
 		}
 		return nil
 	})

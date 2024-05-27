@@ -10,7 +10,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
 
-func TestAccDataSourceSchedule(t *testing.T) {
+func TestAccDataSourceArchitectSchedule(t *testing.T) {
 	var (
 		schedRes    = "arch-sched1"
 		schedData   = "schedData"

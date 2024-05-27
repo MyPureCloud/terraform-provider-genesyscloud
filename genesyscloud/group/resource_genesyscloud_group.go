@@ -7,6 +7,7 @@ import (
 	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -20,7 +21,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 )
 
 func GetAllGroups(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
@@ -51,7 +52,7 @@ func createGroup(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 
 	addresses, err := buildSdkGroupAddresses(d)
 	if err != nil {
-		return diag.Errorf("%v", err)
+		return util.BuildDiagnosticError(resourceName, fmt.Sprintf("Error Building SDK group addresses"), err)
 	}
 
 	createGroup := &platformclientv2.Groupcreate{
@@ -90,7 +91,7 @@ func createGroup(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 
 func readGroup(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceGroup(), constants.DefaultConsistencyChecks, resourceName)
 	gp := getGroupProxy(sdkConfig)
 
 	log.Printf("Reading group %s", d.Id())
@@ -100,12 +101,10 @@ func readGroup(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 		group, resp, getErr := gp.getGroupById(ctx, d.Id())
 		if getErr != nil {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(fmt.Errorf("Failed to read group %s: %s", d.Id(), getErr))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read group %s | error: %s", d.Id(), getErr), resp))
 			}
-			return retry.NonRetryableError(fmt.Errorf("Failed to read group %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read group %s | error: %s", d.Id(), getErr), resp))
 		}
-
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceGroup())
 
 		resourcedata.SetNillableValue(d, "name", group.Name)
 		resourcedata.SetNillableValue(d, "type", group.VarType)
@@ -128,7 +127,7 @@ func readGroup(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 		_ = d.Set("member_ids", members)
 
 		log.Printf("Read group %s %s", d.Id(), *group.Name)
-		return cc.CheckState()
+		return cc.CheckState(d)
 	})
 }
 
@@ -206,7 +205,7 @@ func deleteGroup(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 				log.Printf("Group %s deleted", name)
 				return nil
 			}
-			return retry.NonRetryableError(fmt.Errorf("Error deleting group %s: %s", d.Id(), err))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Error deleting group %s | error: %s", d.Id(), err), resp))
 		}
 
 		if group.State != nil && *group.State == "deleted" {
@@ -228,7 +227,7 @@ func deleteGroup(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 				name, resp.CorrelationID)
 		}
 
-		return retry.RetryableError(fmt.Errorf("Group %s still exists", d.Id()))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Group %s still exists", d.Id()), resp))
 	})
 }
 

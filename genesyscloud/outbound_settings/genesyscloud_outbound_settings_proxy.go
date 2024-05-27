@@ -3,7 +3,7 @@ package outbound_settings
 import (
 	"context"
 	"fmt"
-	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 )
 
 /*
@@ -63,7 +63,6 @@ func getOutboundSettingsByIdFn(ctx context.Context, p *outboundSettingsProxy, id
 	if err != nil {
 		return nil, resp, fmt.Errorf("Failed to retrieve outbound settings by id %s: %s", id, err)
 	}
-
 	return outboundSettings, resp, nil
 }
 

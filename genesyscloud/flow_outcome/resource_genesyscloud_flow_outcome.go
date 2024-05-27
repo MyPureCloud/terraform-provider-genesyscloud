@@ -7,10 +7,11 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
@@ -61,6 +62,7 @@ func createFlowOutcome(ctx context.Context, d *schema.ResourceData, meta interfa
 func readFlowOutcome(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getFlowOutcomeProxy(sdkConfig)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceFlowOutcome(), constants.DefaultConsistencyChecks, resourceName)
 
 	log.Printf("Reading flow outcome %s", d.Id())
 
@@ -69,19 +71,24 @@ func readFlowOutcome(ctx context.Context, d *schema.ResourceData, meta interface
 
 		if getErr != nil {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(fmt.Errorf("Failed to read flow outcome %s: %s", d.Id(), getErr))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read flow outcome %s | error: %s", d.Id(), getErr), resp))
 			}
-			return retry.NonRetryableError(fmt.Errorf("Failed to read flow outcome %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read flow outcome %s | error: %s", d.Id(), getErr), resp))
 		}
-
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceFlowOutcome())
 
 		resourcedata.SetNillableValue(d, "name", flowOutcome.Name)
 		resourcedata.SetNillableReferenceWritableDivision(d, "division_id", flowOutcome.Division)
-		resourcedata.SetNillableValue(d, "description", flowOutcome.Description)
+
+		// The api is adding a description with a space to outcomes without a description with is causing a mismatch with the state
+		// We need to check if the description is not " " before reading it
+		if flowOutcome.Description != nil && *flowOutcome.Description != " " {
+			_ = d.Set("description", *flowOutcome.Description)
+		} else {
+			_ = d.Set("description", nil)
+		}
 
 		log.Printf("Read flow outcome %s %s", d.Id(), *flowOutcome.Name)
-		return cc.CheckState()
+		return cc.CheckState(d)
 	})
 }
 

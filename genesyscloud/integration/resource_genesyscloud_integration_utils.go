@@ -10,7 +10,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 )
 
 /*
@@ -112,13 +112,13 @@ func updateIntegrationConfigFromResourceData(ctx context.Context, d *schema.Reso
 
 				if properties := configMap["properties"].(string); len(properties) > 0 {
 					if err := json.Unmarshal([]byte(properties), &propJSON); err != nil {
-						return diag.Errorf("Failed to convert properties string to JSON for integration %s: %s", d.Id(), err), name
+						return util.BuildDiagnosticError(resourceName, fmt.Sprintf("Failed to convert properties string to JSON for integration %s", d.Id()), err), name
 					}
 				}
 
 				if advanced := configMap["advanced"].(string); len(advanced) > 0 {
 					if err := json.Unmarshal([]byte(advanced), &advJSON); err != nil {
-						return diag.Errorf("Failed to convert advanced property string to JSON for integration %s: %s", d.Id(), err), name
+						return util.BuildDiagnosticError(resourceName, fmt.Sprintf("Failed to convert advanced property string to JSON for integration %s", d.Id()), err), name
 					}
 				}
 

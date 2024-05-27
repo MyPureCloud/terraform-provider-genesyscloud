@@ -11,7 +11,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 )
 
 func DataSourceOutboundContactList() *schema.Resource {
@@ -36,12 +36,12 @@ func dataSourceOutboundContactListRead(ctx context.Context, d *schema.ResourceDa
 	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
 		const pageNum = 1
 		const pageSize = 100
-		contactLists, _, getErr := outboundAPI.GetOutboundContactlists(false, false, pageSize, pageNum, true, "", name, []string{""}, []string{""}, "", "")
+		contactLists, resp, getErr := outboundAPI.GetOutboundContactlists(false, false, pageSize, pageNum, true, "", name, []string{""}, []string{""}, "", "")
 		if getErr != nil {
-			return retry.NonRetryableError(fmt.Errorf("error requesting contact list %s: %s", name, getErr))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("error requesting contact list %s | error: %s", name, getErr), resp))
 		}
 		if contactLists.Entities == nil || len(*contactLists.Entities) == 0 {
-			return retry.RetryableError(fmt.Errorf("no contact lists found with name %s", name))
+			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("no contact lists found with name %s", name), resp))
 		}
 		contactList := (*contactLists.Entities)[0]
 		d.SetId(*contactList.Id)

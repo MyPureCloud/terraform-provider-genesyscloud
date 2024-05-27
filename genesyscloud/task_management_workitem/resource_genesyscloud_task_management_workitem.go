@@ -7,11 +7,12 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
@@ -48,7 +49,7 @@ func createTaskManagementWorkitem(ctx context.Context, d *schema.ResourceData, m
 
 	taskManagementWorkitem, err := getWorkitemCreateFromResourceData(d)
 	if err != nil {
-		return diag.Errorf("failed to build Workitem create from resource data: %v", err)
+		return util.BuildDiagnosticError(resourceName, fmt.Sprintf("failed to build Workitem create from resource data"), err)
 	}
 
 	log.Printf("Creating task management workitem %s", *taskManagementWorkitem.Name)
@@ -66,6 +67,7 @@ func createTaskManagementWorkitem(ctx context.Context, d *schema.ResourceData, m
 func readTaskManagementWorkitem(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getTaskManagementWorkitemProxy(sdkConfig)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceTaskManagementWorkitem(), constants.DefaultConsistencyChecks, resourceName)
 
 	log.Printf("Reading task management workitem %s", d.Id())
 
@@ -73,12 +75,10 @@ func readTaskManagementWorkitem(ctx context.Context, d *schema.ResourceData, met
 		workitem, resp, getErr := proxy.getTaskManagementWorkitemById(ctx, d.Id())
 		if getErr != nil {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(fmt.Errorf("failed to read task management workitem %s: %s", d.Id(), getErr))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read task management workitem %s | error: %s", d.Id(), getErr), resp))
 			}
-			return retry.NonRetryableError(fmt.Errorf("failed to read task management workitem %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read task management workitem %s | error: %s", d.Id(), getErr), resp))
 		}
-
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceTaskManagementWorkitem())
 
 		resourcedata.SetNillableValue(d, "name", workitem.Name)
 		resourcedata.SetNillableValue(d, "description", workitem.Description)
@@ -127,7 +127,7 @@ func readTaskManagementWorkitem(ctx context.Context, d *schema.ResourceData, met
 		}
 
 		log.Printf("Read task management workitem %s %s", d.Id(), *workitem.Name)
-		return cc.CheckState()
+		return cc.CheckState(d)
 	})
 }
 
@@ -138,7 +138,7 @@ func updateTaskManagementWorkitem(ctx context.Context, d *schema.ResourceData, m
 
 	taskManagementWorkitem, err := getWorkitemUpdateFromResourceData(d)
 	if err != nil {
-		return diag.Errorf("failed to update Workitem create from resource data: %v", err)
+		return util.BuildDiagnosticError(resourceName, fmt.Sprintf("failed to update Workitem create from resource data"), err)
 	}
 
 	log.Printf("Updating task management workitem %s", *taskManagementWorkitem.Name)
@@ -169,8 +169,8 @@ func deleteTaskManagementWorkitem(ctx context.Context, d *schema.ResourceData, m
 				log.Printf("Deleted task management workitem %s", d.Id())
 				return nil
 			}
-			return retry.NonRetryableError(fmt.Errorf("error deleting task management workitem %s: %s", d.Id(), err))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("error deleting task management workitem %s | error: %s", d.Id(), err), resp))
 		}
-		return retry.RetryableError(fmt.Errorf("task management workitem %s still exists", d.Id()))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("task management workitem %s still exists", d.Id()), resp))
 	})
 }

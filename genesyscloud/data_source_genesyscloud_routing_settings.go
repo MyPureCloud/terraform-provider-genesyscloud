@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 )
@@ -34,11 +34,11 @@ func dataSourceRoutingSettingsRead(ctx context.Context, d *schema.ResourceData, 
 	}
 
 	if diagErr := readRoutingSettingsContactCenter(d, routingAPI); diagErr != nil {
-		return diag.Errorf("%v", diagErr)
+		return util.BuildDiagnosticError("genesyscloud_routing_settings", fmt.Sprintf("Error reading routing settings contact center"), fmt.Errorf("%v", diagErr))
 	}
 
 	if diagErr := readRoutingSettingsTranscription(d, routingAPI); diagErr != nil {
-		return diag.Errorf("%v", diagErr)
+		return util.BuildDiagnosticError("genesyscloud_routing_settings", fmt.Sprintf("Error reading routing settings transcription"), fmt.Errorf("%v", diagErr))
 	}
 
 	return nil

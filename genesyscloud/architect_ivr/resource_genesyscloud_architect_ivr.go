@@ -7,6 +7,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 	"time"
 
@@ -17,7 +18,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 )
 
 // getAllIvrConfigs retrieves all architect IVRs and is used for the exporter
@@ -65,15 +66,16 @@ func createIvrConfig(ctx context.Context, d *schema.ResourceData, meta interface
 func readIvrConfig(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	ap := getArchitectIvrProxy(sdkConfig)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceArchitectIvrConfig(), constants.DefaultConsistencyChecks, resourceName)
 
 	log.Printf("Reading IVR config %s", d.Id())
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		ivrConfig, resp, getErr := ap.getArchitectIvr(ctx, d.Id())
 		if getErr != nil {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(fmt.Errorf("Failed to read IVR config %s: %s", d.Id(), getErr))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read IVR config %s | error: %s", d.Id(), getErr), resp))
 			}
-			return retry.NonRetryableError(fmt.Errorf("Failed to read IVR config %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read IVR config %s | error: %s", d.Id(), getErr), resp))
 		}
 
 		if ivrConfig.State != nil && *ivrConfig.State == "deleted" {
@@ -81,7 +83,6 @@ func readIvrConfig(ctx context.Context, d *schema.ResourceData, meta interface{}
 			return nil
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceArchitectIvrConfig())
 		_ = d.Set("name", *ivrConfig.Name)
 		_ = d.Set("dnis", lists.StringListToSetOrNil(ivrConfig.Dnis))
 
@@ -94,7 +95,7 @@ func readIvrConfig(ctx context.Context, d *schema.ResourceData, meta interface{}
 
 		log.Printf("Read IVR config %s %s", d.Id(), *ivrConfig.Name)
 
-		return cc.CheckState()
+		return cc.CheckState(d)
 	})
 }
 
@@ -157,7 +158,7 @@ func deleteIvrConfig(ctx context.Context, d *schema.ResourceData, meta interface
 				log.Printf("Deleted IVR config %s", d.Id())
 				return nil
 			}
-			return retry.NonRetryableError(fmt.Errorf("Error deleting IVR config %s: %s", d.Id(), err))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Error deleting IVR config %s | error: %s", d.Id(), err), resp))
 		}
 
 		if ivr.State != nil && *ivr.State == "deleted" {
@@ -166,6 +167,6 @@ func deleteIvrConfig(ctx context.Context, d *schema.ResourceData, meta interface
 			return nil
 		}
 
-		return retry.RetryableError(fmt.Errorf("IVR config %s still exists", d.Id()))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("IVR config %s still exists", d.Id()), resp))
 	})
 }

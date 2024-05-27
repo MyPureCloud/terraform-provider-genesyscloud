@@ -7,11 +7,12 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v125/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
@@ -72,6 +73,7 @@ func createOutboundSequence(ctx context.Context, d *schema.ResourceData, meta in
 func readOutboundSequence(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getOutboundSequenceProxy(sdkConfig)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundSequence(), constants.DefaultConsistencyChecks, resourceName)
 
 	log.Printf("Reading outbound sequence %s", d.Id())
 
@@ -79,12 +81,10 @@ func readOutboundSequence(ctx context.Context, d *schema.ResourceData, meta inte
 		campaignSequence, resp, getErr := proxy.getOutboundSequenceById(ctx, d.Id())
 		if getErr != nil {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(fmt.Errorf("Failed to read outbound sequence %s: %s", d.Id(), getErr))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read outbound sequence %s | error: %s", d.Id(), getErr), resp))
 			}
-			return retry.NonRetryableError(fmt.Errorf("Failed to read outbound sequence %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read outbound sequence %s | error: %s", d.Id(), getErr), resp))
 		}
-
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundSequence())
 
 		resourcedata.SetNillableValue(d, "name", campaignSequence.Name)
 		if campaignSequence.Campaigns != nil {
@@ -94,7 +94,7 @@ func readOutboundSequence(ctx context.Context, d *schema.ResourceData, meta inte
 		resourcedata.SetNillableValue(d, "repeat", campaignSequence.Repeat)
 
 		log.Printf("Read outbound sequence %s %s", d.Id(), *campaignSequence.Name)
-		return cc.CheckState()
+		return cc.CheckState(d)
 	})
 }
 
@@ -151,8 +151,8 @@ func deleteOutboundSequence(ctx context.Context, d *schema.ResourceData, meta in
 				log.Printf("Deleted outbound sequence %s", d.Id())
 				return nil
 			}
-			return retry.NonRetryableError(fmt.Errorf("Error deleting outbound sequence %s: %s", d.Id(), err))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Error deleting outbound sequence %s | error: %s", d.Id(), err), resp))
 		}
-		return retry.RetryableError(fmt.Errorf("outbound sequence %s still exists", d.Id()))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("outbound sequence %s still exists", d.Id()), resp))
 	})
 }

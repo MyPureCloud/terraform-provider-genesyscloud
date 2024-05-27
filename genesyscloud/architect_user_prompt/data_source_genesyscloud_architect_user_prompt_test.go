@@ -12,7 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
 
-func TestAccDataSourceUserPrompt(t *testing.T) {
+func TestAccDataSourceArchitectUserPrompt(t *testing.T) {
 	userPromptResource := "test-user_prompt_1"
 	userPromptName := "TestUserPrompt_1" + strings.Replace(uuid.NewString(), "-", "", -1)
 	userPromptDescription := "Test description"
