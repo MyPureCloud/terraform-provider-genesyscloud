@@ -1,71 +1,14 @@
 package team
 
 import (
-	"log"
-	"math/rand"
-	"strings"
-
+	"context"
+	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+
 	"github.com/mypurecloud/platform-client-sdk-go/v130/platformclientv2"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 )
-
-func buildTeamMembers(teamMembers []interface{}) platformclientv2.Teammembers {
-	var teamMemberObject platformclientv2.Teammembers
-	members := make([]string, len(teamMembers))
-	for i, member := range teamMembers {
-		members[i] = member.(string)
-	}
-	teamMemberObject.MemberIds = &members
-	return teamMemberObject
-}
-
-func convertMemberListtoString(teamMembers []interface{}) string {
-	var memberList []string
-	for _, v := range teamMembers {
-		memberList = append(memberList, v.(string))
-	}
-	memberString := strings.Join(memberList, ",")
-	log.Printf("member list is %s", memberString)
-	return memberString
-}
-
-func flattenMemberIds(teamEntityListing []platformclientv2.Userreferencewithname) []interface{} {
-	memberList := []interface{}{}
-	if len(teamEntityListing) == 0 {
-		return nil
-	}
-	for _, teamEntity := range teamEntityListing {
-		memberList = append(memberList, *teamEntity.Id)
-	}
-	return memberList
-}
-
-func SliceDifferenceMembers(current, target []interface{}) ([]interface{}, []interface{}) {
-	var remove []interface{}
-	var add []interface{}
-	keysTarget := make(map[interface{}]bool)
-	keysCurrent := make(map[interface{}]bool)
-	for _, item := range target {
-		keysTarget[item] = true
-	}
-
-	for _, item := range current {
-		keysCurrent[item] = true
-	}
-
-	for _, item := range current {
-		if _, found := keysTarget[item]; !found {
-			remove = append(remove, item)
-		}
-	}
-
-	for _, item := range target {
-		if _, found := keysCurrent[item]; !found {
-			add = append(add, item)
-		}
-	}
-	return remove, add
-}
 
 // getTeamFromResourceData maps data from schema ResourceData object to a platformclientv2.Team
 func getTeamFromResourceData(d *schema.ResourceData) platformclientv2.Team {
@@ -78,11 +21,51 @@ func getTeamFromResourceData(d *schema.ResourceData) platformclientv2.Team {
 	}
 }
 
-func randString(n int) string {
-	const letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
-	s := make([]byte, n)
-	for i := range s {
-		s[i] = letters[rand.Intn(len(letters))]
+func getTeamMemberIds(ctx context.Context, d *schema.ResourceData, sdkConfig *platformclientv2.Configuration) ([]string, diag.Diagnostics) {
+	gp := getTeamProxy(sdkConfig)
+	members, resp, err := gp.getMembersById(ctx, d.Id())
+	if err != nil {
+		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Unable to retrieve members for group %s. %s", d.Id(), err), resp)
 	}
-	return string(s)
+
+	memberIds := make([]string, len(*members))
+	for i, member := range *members {
+		memberIds[i] = *member.Id
+	}
+
+	return memberIds, nil
+}
+
+func addGroupMembers(ctx context.Context, d *schema.ResourceData, membersToAdd []string, sdkConfig *platformclientv2.Configuration) diag.Diagnostics {
+	proxy := getTeamProxy(sdkConfig)
+
+	teamMembers := &platformclientv2.Teammembers{
+		MemberIds: &membersToAdd,
+	}
+
+	_, resp, err := proxy.createMembers(ctx, d.Id(), *teamMembers)
+	if err != nil {
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to add team members %s: %s", d.Id(), err), resp)
+	}
+
+	return nil
+}
+
+func readTeamMembers(ctx context.Context, teamId string, sdkConfig *platformclientv2.Configuration) (*schema.Set, diag.Diagnostics) {
+	proxy := getTeamProxy(sdkConfig)
+	members, resp, err := proxy.getMembersById(ctx, teamId)
+
+	if err != nil {
+		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to read members for team %s: %s", teamId, err), resp)
+	}
+
+	if members == nil || len(*members) == 0 {
+		return nil, nil
+	}
+
+	interfaceList := make([]interface{}, len(*members))
+	for i, member := range *members {
+		interfaceList[i] = *member.Id
+	}
+	return schema.NewSet(schema.HashString, interfaceList), nil
 }

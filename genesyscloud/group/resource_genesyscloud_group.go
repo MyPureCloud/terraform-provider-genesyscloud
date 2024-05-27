@@ -299,7 +299,6 @@ func getGroupMemberIds(ctx context.Context, d *schema.ResourceData, sdkConfig *p
 	gp := getGroupProxy(sdkConfig)
 	members, resp, err := gp.getGroupMembers(ctx, d.Id())
 	if err != nil {
-
 		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Unable to retrieve members for group %s. %s", d.Id(), err), resp)
 	}
 	return *members, nil
