@@ -3,8 +3,9 @@ package architect_schedulegroups
 import (
 	"context"
 	"fmt"
-	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 	"log"
+
+	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 )
 
 /*

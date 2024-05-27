@@ -136,7 +136,7 @@ func NewGenesysCloudResourceExporter(ctx context.Context, d *schema.ResourceData
 		exportAsHCL:          d.Get("export_as_hcl").(bool),
 		splitFilesByResource: d.Get("split_files_by_resource").(bool),
 		logPermissionErrors:  d.Get("log_permission_errors").(bool),
-		addDependsOn:         d.Get("enable_dependency_resolution").(bool),
+		addDependsOn:         computeDependsOn(d),
 		filterType:           filterType,
 		includeStateFile:     d.Get("include_state_file").(bool),
 		ignoreCyclicDeps:     d.Get("ignore_cyclic_deps").(bool),
@@ -157,6 +157,19 @@ func NewGenesysCloudResourceExporter(ctx context.Context, d *schema.ResourceData
 	//Setting up the filter
 	configureExporterType(ctx, d, gre, filterType)
 	return gre, nil
+}
+
+func computeDependsOn(d *schema.ResourceData) bool {
+	addDependsOn := d.Get("enable_dependency_resolution").(bool)
+	if addDependsOn {
+		if exportableResourceTypes, ok := d.GetOk("include_filter_resources"); ok {
+			filter := lists.InterfaceListToStrings(exportableResourceTypes.([]interface{}))
+			addDependsOn = len(filter) > 0
+		} else {
+			addDependsOn = false
+		}
+	}
+	return addDependsOn
 }
 
 func (g *GenesysCloudResourceExporter) Export() (diagErr diag.Diagnostics) {
@@ -1452,12 +1465,10 @@ func (g *GenesysCloudResourceExporter) populateConfigExcluded(exporters map[stri
 			}
 
 			if !matchFound {
-				if dependsOn, ok := g.d.GetOk("enable_dependency_resolution"); ok {
-					if dependsOn == true {
-						excludedAttr := excluded[resourceIdx+1:]
-						log.Printf("Ignoring exclude attribute %s on %s resources. Since exporter is not retrieved", excludedAttr, resourceName)
-						continue
-					}
+				if g.addDependsOn {
+					excludedAttr := excluded[resourceIdx+1:]
+					log.Printf("Ignoring exclude attribute %s on %s resources. Since exporter is not retrieved", excludedAttr, resourceName)
+					continue
 				} else {
 					return diag.Errorf("Resource %s in excluded_attributes is not being exported.", resourceName)
 				}
