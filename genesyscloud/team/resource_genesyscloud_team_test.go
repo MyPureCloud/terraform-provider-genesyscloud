@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v130/platformclientv2"
 	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
