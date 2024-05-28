@@ -21,7 +21,8 @@ import (
 
 func getAllSitesOutboundRoutes(ctx context.Context, sdkConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
 	if exists := featureToggles.OutboundRoutesToggleExists(); !exists {
-		return nil, util.BuildDiagnosticError(resourceName, fmt.Sprintf("Environment variable %s not set", featureToggles.OutboundRoutesToggleName()), fmt.Errorf("environment variable %s not set", featureToggles.OutboundRoutesToggleName()))
+		log.Printf("cannot export %s because environment variable %s is not set", resourceName, featureToggles.OutboundRoutesToggleName())
+		return nil, nil
 	}
 	resources := make(resourceExporter.ResourceIDMetaMap)
 	proxy := getSiteOutboundRouteProxy(sdkConfig)
