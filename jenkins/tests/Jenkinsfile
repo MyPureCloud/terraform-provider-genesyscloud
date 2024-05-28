@@ -339,8 +339,8 @@ pipeline {
         
     
                 script {
-                    //Step 1 : Generate package wise coverage report
-                    // Step 2: Read the generated HTML file
+                    script {
+                    // Step 1: Read the generated HTML file
                     def htmlFile = readFile 'coverageAcceptance.html'
                     def selectStart = htmlFile.indexOf('<select id="files">')
                     def selectEnd = htmlFile.indexOf('</select>', selectStart)
@@ -349,7 +349,7 @@ pipeline {
                     def packageCoverage = [:]
                     def packageFiles = [:]
 
-                    // Step 3: Parse the existing options to calculate package-wise coverage
+                    // Step 2: Parse the existing options to calculate package-wise coverage
                     fileCoverageSection.split('\n').each { line ->
                         if (line.contains('<option value=')) {
                             def filePath = line.substring(line.indexOf('>') + 1, line.indexOf(' (')).trim()
@@ -360,7 +360,7 @@ pipeline {
                         }
                     }
 
-                    // Step 4: Generate the package-wise coverage table with highlighting
+                    // Step 3: Generate the package-wise coverage table with highlighting
                     def packageCoverageRows = packageCoverage.collect { packageName, totalPercentage ->
                         def averagePercentage = totalPercentage / packageFiles[packageName]
                         def colorClass = averagePercentage < 50 ? 'light-red' : 'light-green'
@@ -368,11 +368,11 @@ pipeline {
                     }.join('\n')
 
                     def packageCoverageHtml = """
-                        <option value="packageCoverage">Package-wise Coverage</option>
+                        <option value="packageCoverage" selected>Package-wise Coverage</option>
                     """.stripIndent()
 
                     def tableHtml = """
-                        <div id="packageCoverageTable" style="display:none;">
+                        <div id="packageCoverageTable">
                             <table border="1">
                                 <thead>
                                     <tr>
@@ -392,12 +392,22 @@ pipeline {
                             function handleSelection() {
                                 const select = document.getElementById('files');
                                 const packageCoverageTable = document.getElementById('packageCoverageTable');
+                                const otherTables = document.querySelectorAll('div[id^="fileTable"]');
                                 if (select.value === 'packageCoverage') {
                                     packageCoverageTable.style.display = 'block';
+                                    otherTables.forEach(table => table.style.display = 'none');
                                 } else {
                                     packageCoverageTable.style.display = 'none';
+                                    otherTables.forEach(table => {
+                                        if (table.id === 'fileTable' + select.value.replace('file', '')) {
+                                            table.style.display = 'block';
+                                        } else {
+                                            table.style.display = 'none';
+                                        }
+                                    });
                                 }
                             }
+                            document.addEventListener("DOMContentLoaded", handleSelection);
                         </script>
                     """.stripIndent()
 
@@ -413,13 +423,12 @@ pipeline {
                         </style>
                     """.stripIndent()
 
-                    // Step 5: Insert the new option, table, and styles into the HTML file
+                    // Step 4: Insert the new option, table, and styles into the HTML file
                     def updatedHtmlFile = htmlFile.replace('<select id="files">', '<select id="files" onchange="handleSelection()">\n' + packageCoverageHtml)
                     updatedHtmlFile = updatedHtmlFile.replace('</head>', cssStyles + '\n</head>')
                     updatedHtmlFile = updatedHtmlFile.replace('</body>', tableHtml + scriptHtml + '\n</body>')
 
                     writeFile file: 'coverageAcceptance.html', text: updatedHtmlFile
-
                     // Generate manual report
                     def xmlContent = readFile 'test-results.xml'
 
@@ -605,7 +614,7 @@ pipeline {
            }
         }
     }
-
+}
  
  def extractReason(String log) {
     // Extract reason from the log
