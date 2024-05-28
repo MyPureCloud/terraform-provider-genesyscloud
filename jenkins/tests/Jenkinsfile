@@ -336,99 +336,99 @@ pipeline {
         sh 'go tool cover -html merged_coverage.out -o coverageAcceptance.html'
 
         sh 'junit-merger -o test-results.xml architect.xml idp.xml auth.xml integration.xml flow.xml journey.xml knowledge.xml outbound.xml response.xml routing.xml location.xml web.xml site.xml team.xml export.xml remaining.xml'
-        
-    
-                script {
-                    script {
-                    // Step 1: Read the generated HTML file
-                    def htmlFile = readFile 'coverageAcceptance.html'
-                    def selectStart = htmlFile.indexOf('<select id="files">')
-                    def selectEnd = htmlFile.indexOf('</select>', selectStart)
-                    def fileCoverageSection = htmlFile.substring(selectStart, selectEnd + 9) // +9 to include </select>
+        script {
+    // Step 1: Read the generated HTML file
+    def htmlFile = readFile 'coverageAcceptance.html'
+    def selectStart = htmlFile.indexOf('<select id="files">')
+    def selectEnd = htmlFile.indexOf('</select>', selectStart)
+    def fileCoverageSection = htmlFile.substring(selectStart, selectEnd + 9) // +9 to include </select>
 
-                    def packageCoverage = [:]
-                    def packageFiles = [:]
+    def packageCoverage = [:]
+    def packageFiles = [:]
 
-                    // Step 2: Parse the existing options to calculate package-wise coverage
-                    fileCoverageSection.split('\n').each { line ->
-                        if (line.contains('<option value=')) {
-                            def filePath = line.substring(line.indexOf('>') + 1, line.indexOf(' (')).trim()
-                            def percentage = line.substring(line.indexOf('(') + 1, line.indexOf('%')).toFloat()
-                            def packageName = filePath.replaceFirst('terraform-provider-genesyscloud/genesyscloud/([^/]+)/.*', '$1')
-                            packageFiles[packageName] = (packageFiles[packageName] ?: 0) + 1
-                            packageCoverage[packageName] = (packageCoverage[packageName] ?: 0) + percentage
+    // Step 2: Parse the existing options to calculate package-wise coverage
+    fileCoverageSection.split('\n').each { line ->
+        if (line.contains('<option value=')) {
+            def filePath = line.substring(line.indexOf('>') + 1, line.indexOf(' (')).trim()
+            def percentage = line.substring(line.indexOf('(') + 1, line.indexOf('%')).toFloat()
+            def packageName = filePath.replaceFirst('terraform-provider-genesyscloud/genesyscloud/([^/]+)/.*', '$1')
+            packageFiles[packageName] = (packageFiles[packageName] ?: 0) + 1
+            packageCoverage[packageName] = (packageCoverage[packageName] ?: 0) + percentage
+        }
+    }
+
+    // Step 3: Generate the package-wise coverage table with highlighting
+    def packageCoverageRows = packageCoverage.collect { packageName, totalPercentage ->
+        def averagePercentage = totalPercentage / packageFiles[packageName]
+        def colorClass = averagePercentage < 50 ? 'light-red' : 'light-green'
+        return "<tr class='${colorClass}'><td>${packageName}</td><td>${String.format('%.1f', averagePercentage)}%</td></tr>"
+    }.join('\n')
+
+    // Step 4: Prepare the HTML content
+    def packageCoverageHtml = """
+        <option value="packageCoverage" selected>Package-wise Coverage</option>
+    """.stripIndent()
+
+    def tableHtml = """
+        <div id="packageCoverageTable">
+            <table border="1">
+                <thead>
+                    <tr>
+                        <th>Package</th>
+                        <th>Coverage (%)</th>
+                    </tr>
+                </thead>
+                <tbody id="packageCoverageBody">
+                    ${packageCoverageRows}
+                </tbody>
+            </table>
+        </div>
+    """.stripIndent()
+
+    def scriptHtml = """
+        <script>
+            function handleSelection() {
+                const select = document.getElementById('files');
+                const packageCoverageTable = document.getElementById('packageCoverageTable');
+                const otherTables = document.querySelectorAll('div[id^="fileTable"]');
+                if (select.value === 'packageCoverage') {
+                    packageCoverageTable.style.display = 'block';
+                    otherTables.forEach(table => table.style.display = 'none');
+                } else {
+                    packageCoverageTable.style.display = 'none';
+                    otherTables.forEach(table => {
+                        if (table.id === 'fileTable' + select.value.replace('file', '')) {
+                            table.style.display = 'block';
+                        } else {
+                            table.style.display = 'none';
                         }
-                    }
+                    });
+                }
+            }
+            document.addEventListener("DOMContentLoaded", handleSelection);
+            handleSelection(); // Ensures the package coverage table is shown by default
+        </script>
+    """.stripIndent()
 
-                    // Step 3: Generate the package-wise coverage table with highlighting
-                    def packageCoverageRows = packageCoverage.collect { packageName, totalPercentage ->
-                        def averagePercentage = totalPercentage / packageFiles[packageName]
-                        def colorClass = averagePercentage < 50 ? 'light-red' : 'light-green'
-                        return "<tr class='${colorClass}'><td>${packageName}</td><td>${String.format('%.1f', averagePercentage)}%</td></tr>"
-                    }.join('\n')
+    // Define the CSS classes
+    def cssStyles = """
+        <style>
+            .light-green {
+                background-color: #c8e6c9; /* light green */
+            }
+            .light-red {
+                background-color: #ffcdd2; /* light red */
+            }
+        </style>
+    """.stripIndent()
 
-                    def packageCoverageHtml = """
-                        <option value="packageCoverage" selected>Package-wise Coverage</option>
-                    """.stripIndent()
+    // Step 5: Insert the new option, table, and styles into the HTML file
+    def updatedHtmlFile = htmlFile.replace('<select id="files">', '<select id="files" onchange="handleSelection()">\n' + packageCoverageHtml)
+    updatedHtmlFile = updatedHtmlFile.replace('</head>', cssStyles + '\n</head>')
+    updatedHtmlFile = updatedHtmlFile.replace('</body>', tableHtml + scriptHtml + '\n</body>')
 
-                    def tableHtml = """
-                        <div id="packageCoverageTable">
-                            <table border="1">
-                                <thead>
-                                    <tr>
-                                        <th>Package</th>
-                                        <th>Coverage (%)</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="packageCoverageBody">
-                                    ${packageCoverageRows}
-                                </tbody>
-                            </table>
-                        </div>
-                    """.stripIndent()
+    writeFile file: 'coverageAcceptance.html', text: updatedHtmlFile
 
-                    def scriptHtml = """
-                        <script>
-                            function handleSelection() {
-                                const select = document.getElementById('files');
-                                const packageCoverageTable = document.getElementById('packageCoverageTable');
-                                const otherTables = document.querySelectorAll('div[id^="fileTable"]');
-                                if (select.value === 'packageCoverage') {
-                                    packageCoverageTable.style.display = 'block';
-                                    otherTables.forEach(table => table.style.display = 'none');
-                                } else {
-                                    packageCoverageTable.style.display = 'none';
-                                    otherTables.forEach(table => {
-                                        if (table.id === 'fileTable' + select.value.replace('file', '')) {
-                                            table.style.display = 'block';
-                                        } else {
-                                            table.style.display = 'none';
-                                        }
-                                    });
-                                }
-                            }
-                            document.addEventListener("DOMContentLoaded", handleSelection);
-                        </script>
-                    """.stripIndent()
-
-                    // Define the CSS classes
-                    def cssStyles = """
-                        <style>
-                            .light-green {
-                                background-color: #c8e6c9; /* light green */
-                            }
-                            .light-red {
-                                background-color: #ffcdd2; /* light red */
-                            }
-                        </style>
-                    """.stripIndent()
-
-                    // Step 4: Insert the new option, table, and styles into the HTML file
-                    def updatedHtmlFile = htmlFile.replace('<select id="files">', '<select id="files" onchange="handleSelection()">\n' + packageCoverageHtml)
-                    updatedHtmlFile = updatedHtmlFile.replace('</head>', cssStyles + '\n</head>')
-                    updatedHtmlFile = updatedHtmlFile.replace('</body>', tableHtml + scriptHtml + '\n</body>')
-
-                    writeFile file: 'coverageAcceptance.html', text: updatedHtmlFile
                     // Generate manual report
                     def xmlContent = readFile 'test-results.xml'
 
@@ -608,9 +608,7 @@ pipeline {
                 // Optionally, print the location of the HTML report
                     echo "HTML report generated: \${env.WORKSPACE}/test-report.html"
                 }
-                archiveArtifacts artifacts: 'coverageAcceptance.html,test-report.html,test-results.xml', allowEmptyArchive: true
-            }
-   
+                archiveArtifacts artifacts: 'coverageAcceptance.html,test-report.html,test-results.xml', allowEmptyArchive: true   
            }
         }
     }
