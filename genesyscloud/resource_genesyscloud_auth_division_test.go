@@ -50,10 +50,12 @@ func TestAccResourceAuthDivisionBasic(t *testing.T) {
 					strconv.Quote(divDesc1),
 					util.NullValue, // Not home division
 				),
-				PreConfig: func() {
-					// Wait for a specified duration - to avoid getting non empty plan
-					time.Sleep(45 * time.Second)
-				},
+				Check: resource.ComposeTestCheckFunc(
+					func(s *terraform.State) error {
+						time.Sleep(30 * time.Second) // Wait for 30 seconds for proper updation
+						return nil
+					},
+				),
 			},
 			{
 				// Update with a new name and description
@@ -121,6 +123,12 @@ func TestAccResourceAuthDivisionHome(t *testing.T) {
 					divHomeName,
 					strconv.Quote(homeDesc2),
 					util.TrueValue, // Home division
+				),
+				Check: resource.ComposeTestCheckFunc(
+					func(s *terraform.State) error {
+						time.Sleep(30 * time.Second) // Wait for 30 seconds for proper updation
+						return nil
+					},
 				),
 			},
 			{

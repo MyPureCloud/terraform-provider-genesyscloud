@@ -123,7 +123,7 @@ func CustomizeConfigurationDiff(ctx context.Context, diff *schema.ResourceDiff, 
 	if len(diff.GetChangedKeysPrefix("")) > 0 {
 		// When any change is made to the configuration we automatically publish a new version, so mark the version as updated
 		// so dependent deployments will update appropriately to reference the newest version
-		diff.SetNewComputed("version")
+		_ = diff.SetNewComputed("version")
 	}
 	return nil
 }

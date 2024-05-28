@@ -374,3 +374,16 @@ func RandString(length int) string {
 func interfaceToString(val interface{}) string {
 	return fmt.Sprintf("%v", val)
 }
+
+func AssignRegion() string {
+
+	region := "us-west-2"
+
+	if v := os.Getenv("GENESYSCLOUD_REGION"); v == "tca" {
+		region = "us-east-1"
+	} else if v == "us-east-1" {
+		region = "us-west-2"
+	}
+	regionJSON := "[" + strconv.Quote(region) + "]"
+	return regionJSON
+}

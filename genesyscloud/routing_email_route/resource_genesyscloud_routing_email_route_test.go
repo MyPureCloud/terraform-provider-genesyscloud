@@ -20,10 +20,6 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v130/platformclientv2"
 )
 
-var (
-	sdkConfig *platformclientv2.Configuration
-)
-
 func TestAccResourceRoutingEmailRoute(t *testing.T) {
 
 	var (
@@ -50,6 +46,8 @@ func TestAccResourceRoutingEmailRoute(t *testing.T) {
 		emailFlowResource1 = "test_flow1"
 		emailFlowFilePath1 = "../../examples/resources/genesyscloud_flow/inboundcall_flow_example.yaml"
 	)
+
+	CleanupRoutingEmailDomains()
 
 	// Test error configs
 	resource.Test(t, resource.TestCase{
@@ -285,6 +283,10 @@ func TestAccResourceRoutingEmailRoute(t *testing.T) {
 					generateRoutingAutoBcc(fromName2, bccEmail2),
 				),
 				Check: resource.ComposeTestCheckFunc(
+					func(s *terraform.State) error {
+						time.Sleep(30 * time.Second) // Wait for 30 seconds for resources to be updated
+						return nil
+					},
 					resource.TestCheckResourceAttr("genesyscloud_routing_email_route."+routeRes, "pattern", routePattern2),
 					resource.TestCheckResourceAttr("genesyscloud_routing_email_route."+routeRes, "from_name", fromName2),
 					resource.TestCheckResourceAttr("genesyscloud_routing_email_route."+routeRes, "from_email", ""),
@@ -461,7 +463,11 @@ func testVerifyRoutingEmailRouteDestroyed(state *terraform.State) error {
 }
 
 func CleanupRoutingEmailDomains() {
-	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
+	config, err := provider.AuthorizeSdk()
+	if err != nil {
+		return
+	}
+	routingAPI := platformclientv2.NewRoutingApiWithConfig(config)
 
 	for pageNum := 1; ; pageNum++ {
 		const pageSize = 100

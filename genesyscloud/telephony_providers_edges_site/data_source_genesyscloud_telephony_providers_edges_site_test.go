@@ -62,7 +62,7 @@ func TestAccDataSourceSite(t *testing.T) {
 					"genesyscloud_location."+locationRes+".id",
 					mediaModel,
 					false,
-					"[\"us-west-2\"]",
+					util.AssignRegion(),
 					strconv.Quote("+19205551212"),
 					strconv.Quote("Wilco plumbing")) + location + generateSiteDataSource(
 					siteDataRes,
