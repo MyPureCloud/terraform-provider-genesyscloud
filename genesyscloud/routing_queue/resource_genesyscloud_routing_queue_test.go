@@ -49,7 +49,7 @@ func TestAccResourceRoutingQueueBasic(t *testing.T) {
 		bullseyeMemberGroupType = "GROUP"
 		testUserResource        = "user_resource1"
 		testUserName            = "nameUser1" + uuid.NewString()
-		testUserEmail           = uuid.NewString() + "@example.com"
+		testUserEmail           = uuid.NewString() + "@examplestest.com"
 		callbackHours           = "7"
 		callbackHours2          = "7"
 	)
@@ -111,10 +111,6 @@ func TestAccResourceRoutingQueueBasic(t *testing.T) {
 					validateBullseyeSettings(queueResource1, 1, alertTimeout1, "genesyscloud_routing_skill."+queueSkillResource),
 					validateRoutingRules(queueResource1, 0, routingRuleOpAny, "50", "5"),
 					validateAgentOwnedRouting(queueResource1, "agent_owned_routing", util.TrueValue, callbackHours, callbackHours),
-					func(s *terraform.State) error {
-						time.Sleep(30 * time.Second) // Wait for 30 seconds for resources to get deleted properly
-						return nil
-					},
 				),
 			},
 			{
@@ -168,7 +164,7 @@ func TestAccResourceRoutingQueueBasic(t *testing.T) {
 					validateRoutingRules(queueResource1, 1, routingRuleOpAny, "45", "15"),
 					validateAgentOwnedRouting(queueResource1, "agent_owned_routing", util.TrueValue, callbackHours2, callbackHours2),
 					func(s *terraform.State) error {
-						time.Sleep(45 * time.Second) // Wait for 30 seconds for resources to get deleted properly
+						time.Sleep(30 * time.Second) // Wait for 30 seconds for resources to get deleted properly
 						return nil
 					},
 				),
@@ -652,8 +648,8 @@ func TestAccResourceRoutingQueueMembers(t *testing.T) {
 		queueMemberResource2 = "test-queue-user2"
 		queueMemberEmail1    = "terraform1-" + uuid.NewString() + "@example.com"
 		queueMemberEmail2    = "terraform2-" + uuid.NewString() + "@example.com"
-		queueMemberName1     = "Henry Terraform"
-		queueMemberName2     = "Amanda Terraform"
+		queueMemberName1     = "Henry Terraform Test"
+		queueMemberName2     = "Amanda Terraform Test"
 		defaultQueueRingNum  = "1"
 		queueRingNum         = "3"
 	)
@@ -681,9 +677,6 @@ func TestAccResourceRoutingQueueMembers(t *testing.T) {
 				),
 			},
 			{
-				PreConfig: func() {
-					time.Sleep(45 * time.Second)
-				},
 				// Update with another queue member and modify rings
 				Config: GenerateRoutingQueueResourceBasic(
 					queueResource,

@@ -36,7 +36,7 @@ func TestAccResourceRoutingQueueConditionalGroupRouting(t *testing.T) {
 
 		testUserResource = "user_resource1"
 		testUserName     = "nameUser1" + uuid.NewString()
-		testUserEmail    = uuid.NewString() + "@example.com"
+		testUserEmail    = uuid.NewString() + "@exampletest.com"
 
 		groupResourceId = "group"
 		groupName       = "terraform test group" + uuid.NewString()
@@ -241,10 +241,6 @@ func TestAccResourceRoutingQueueConditionalGroupRouting(t *testing.T) {
 					resource.TestCheckResourceAttrPair(
 						"genesyscloud_routing_queue_conditional_group_routing."+conditionalGroupRoutingResource, "rules.0.groups.0.member_group_id", "genesyscloud_group."+groupResourceId, "id",
 					),
-					func(s *terraform.State) error {
-						time.Sleep(60 * time.Second) // Wait for 60 seconds for resources to get deleted properly
-						return nil
-					},
 				),
 			},
 			{
@@ -252,6 +248,12 @@ func TestAccResourceRoutingQueueConditionalGroupRouting(t *testing.T) {
 				ResourceName:      "genesyscloud_routing_queue_conditional_group_routing." + conditionalGroupRoutingResource,
 				ImportState:       true,
 				ImportStateVerify: true,
+				Check: resource.ComposeTestCheckFunc(
+					func(s *terraform.State) error {
+						time.Sleep(45 * time.Second) // Wait for 60 seconds for resources to get deleted properly
+						return nil
+					},
+				),
 			},
 		},
 	})
