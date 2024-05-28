@@ -38,7 +38,7 @@ func (r *registerTestInstance) registerTestDataSources() {
 	r.datasourceMapMutex.Lock()
 	defer r.datasourceMapMutex.Unlock()
 
-	providerDataSources[resourceName] = DataSourceArchitectScheduls()
+	providerDataSources[resourceName] = DataSourceArchitectSchedules()
 }
 
 // initTestResources initializes all test resources and data sources.
