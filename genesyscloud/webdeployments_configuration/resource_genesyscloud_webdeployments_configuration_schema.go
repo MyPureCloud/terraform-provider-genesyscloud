@@ -329,6 +329,12 @@ var (
 				Optional:    true,
 				Computed:    true,
 			},
+			"allow_agent_navigation": {
+				Description: "Whether agent can use navigation feature over customer's screen or not",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Computed:    true,
+			},
 			"channels": {
 				Description: "List of channels through which cobrowse is available (for now only Webmessaging and Voice)",
 				Type:        schema.TypeList,

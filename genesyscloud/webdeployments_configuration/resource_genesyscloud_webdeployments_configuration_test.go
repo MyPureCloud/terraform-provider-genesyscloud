@@ -9,11 +9,12 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v130/platformclientv2"
 )
 
 type scCustomMessageConfig struct {
@@ -83,6 +84,8 @@ func TestAccResourceWebDeploymentsConfiguration(t *testing.T) {
 		languages2               = []string{"es"}
 		defaultLang2             = "es"
 	)
+
+	cleanupWebDeploymentsConfiguration(t, "Test Configuration ")
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
@@ -161,6 +164,8 @@ func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
 		channelsUpdate = []string{strconv.Quote("Webmessaging"), strconv.Quote("Voice")}
 	)
 
+	cleanupWebDeploymentsConfiguration(t, "Test Configuration ")
+
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
@@ -176,6 +181,7 @@ func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
 					configDescription,
 					"genesyscloud_knowledge_knowledgebase."+kbResName1+".id",
 					generateWebDeploymentConfigCobrowseSettings(
+						util.TrueValue,
 						util.TrueValue,
 						util.TrueValue,
 						channels,
@@ -244,6 +250,7 @@ func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
 					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.#", "1"),
 					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.enabled", util.TrueValue),
 					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.allow_agent_control", util.TrueValue),
+					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.allow_agent_navigation", util.TrueValue),
 					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.channels.#", "1"),
 					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.channels.0", "Webmessaging"),
 					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.mask_selectors.#", "1"),
@@ -301,6 +308,7 @@ func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
 					generateWebDeploymentConfigCobrowseSettings(
 						util.FalseValue,
 						util.FalseValue,
+						util.FalseValue,
 						channelsUpdate,
 						[]string{strconv.Quote("selector-one"), strconv.Quote("selector-two")},
 						[]string{strconv.Quote("selector-one"), strconv.Quote("selector-two")},
@@ -327,6 +335,7 @@ func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
 					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.#", "1"),
 					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.enabled", util.FalseValue),
 					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.allow_agent_control", util.FalseValue),
+					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.allow_agent_navigation", util.FalseValue),
 					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.channels.#", "2"),
 					util.ValidateStringInArray(fullResourceName, "cobrowse.0.channels", "Webmessaging"),
 					util.ValidateStringInArray(fullResourceName, "cobrowse.0.channels", "Voice"),
@@ -652,6 +661,8 @@ func TestAccResourceWebDeploymentsConfigurationSupportCenter(t *testing.T) {
 			feedbackEnabled: false,
 		}
 	)
+
+	cleanupWebDeploymentsConfiguration(t, "Test Configuration ")
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
@@ -1023,16 +1034,17 @@ func complexConfigurationResource(name, description, kbId string, nestedBlocks .
 	`, name, description, kbId, strings.Join(nestedBlocks, "\n"))
 }
 
-func generateWebDeploymentConfigCobrowseSettings(cbEnabled, cbAllowAgentControl string, cbChannels []string, cbMaskSelectors []string, cbReadonlySelectors []string) string {
+func generateWebDeploymentConfigCobrowseSettings(cbEnabled, cbAllowAgentControl string, cbAllowAgentNavigation string, cbChannels []string, cbMaskSelectors []string, cbReadonlySelectors []string) string {
 	return fmt.Sprintf(`
 	cobrowse {
 		enabled = %s
 		allow_agent_control = %s
+		allow_agent_navigation = %s
 		channels = [ %s ]
 		mask_selectors = [ %s ]
 		readonly_selectors = [ %s ]
 	}
-`, cbEnabled, cbAllowAgentControl, strings.Join(cbChannels, ", "), strings.Join(cbMaskSelectors, ", "), strings.Join(cbReadonlySelectors, ", "))
+`, cbEnabled, cbAllowAgentControl, cbAllowAgentNavigation, strings.Join(cbChannels, ", "), strings.Join(cbMaskSelectors, ", "), strings.Join(cbReadonlySelectors, ", "))
 }
 
 func generateSupportCenterSettings(supportCenter scConfig) string {
@@ -1156,4 +1168,29 @@ func verifyConfigurationDestroyed(state *terraform.State) error {
 	}
 
 	return nil
+}
+
+func cleanupWebDeploymentsConfiguration(t *testing.T, prefix string) {
+	config, err := provider.AuthorizeSdk()
+	if err != nil {
+		t.Logf("Failed to authorize SDK: %s", err)
+		return
+	}
+	deploymentsAPI := platformclientv2.NewWebDeploymentsApiWithConfig(config)
+
+	configurations, resp, getErr := deploymentsAPI.GetWebdeploymentsConfigurations(false)
+	if getErr != nil {
+		t.Logf("failed to get page of configurations: %v %v", getErr, resp)
+		return
+	}
+
+	for _, configuration := range *configurations.Entities {
+		if configuration.Name != nil && strings.HasPrefix(*configuration.Name, prefix) {
+			resp, delErr := deploymentsAPI.DeleteWebdeploymentsConfiguration(*configuration.Id)
+			if delErr != nil {
+				t.Logf("Failed to delete configuration %s: %s %v", *configuration.Id, delErr, resp)
+			}
+			time.Sleep(5 * time.Second)
+		}
+	}
 }

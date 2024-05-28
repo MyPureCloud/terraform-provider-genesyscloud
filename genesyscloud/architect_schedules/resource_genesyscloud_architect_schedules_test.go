@@ -1,9 +1,8 @@
-package genesyscloud
+package architect_schedules
 
 import (
 	"fmt"
-	"log"
-	"strings"
+	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
@@ -11,7 +10,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v130/platformclientv2"
 )
 
 func TestAccResourceArchitectSchedules(t *testing.T) {
@@ -77,7 +76,7 @@ func TestAccResourceArchitectSchedules(t *testing.T) {
 			},
 			{
 				// Create with new division
-				Config: GenerateAuthDivisionBasic(divResource, divName) + GenerateArchitectSchedulesResource(
+				Config: gcloud.GenerateAuthDivisionBasic(divResource, divName) + GenerateArchitectSchedulesResource(
 					schedResource2,
 					name2,
 					"genesyscloud_auth_division."+divResource+".id",
@@ -104,33 +103,6 @@ func TestAccResourceArchitectSchedules(t *testing.T) {
 		},
 		CheckDestroy: testVerifySchedulesDestroyed,
 	})
-}
-
-func cleanupArchitectSchedules(idPrefix string) {
-	architectApi := platformclientv2.NewArchitectApi()
-
-	for pageNum := 1; ; pageNum++ {
-		const pageSize = 100
-		architectSchedules, _, getErr := architectApi.GetArchitectSchedules(pageNum, pageSize, "", "", "", nil)
-		if getErr != nil {
-			return
-		}
-
-		if architectSchedules.Entities == nil || len(*architectSchedules.Entities) == 0 {
-			break
-		}
-
-		for _, schedule := range *architectSchedules.Entities {
-			if schedule.Name != nil && strings.HasPrefix(*schedule.Name, idPrefix) {
-				resp, delErr := architectApi.DeleteArchitectSchedule(*schedule.Id)
-				if delErr != nil {
-					util.BuildAPIDiagnosticError("genesyscloud_architect_schedules", fmt.Sprintf("failed to delete architect schedule %s (%s): %s", *schedule.Id, *schedule.Name, delErr), resp)
-					return
-				}
-				log.Printf("Deleted architect schedule %s (%s)", *schedule.Id, *schedule.Name)
-			}
-		}
-	}
 }
 
 func testVerifySchedulesDestroyed(state *terraform.State) error {

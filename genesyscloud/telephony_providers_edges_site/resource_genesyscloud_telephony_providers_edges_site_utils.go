@@ -17,7 +17,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/leekchan/timeutil"
-	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v130/platformclientv2"
 )
 
 var (
@@ -56,12 +56,12 @@ func customizeSiteDiff(ctx context.Context, diff *schema.ResourceDiff, meta inte
 		for i, x := range newNumberPlansList {
 			log.Printf("%v: %v", i, x)
 		}
-		diff.SetNew("number_plans", newNumberPlansList)
+		_ = diff.SetNew("number_plans", newNumberPlansList)
 	}
 	return nil
 }
 
-func validateMediaRegions(ctx context.Context, sp *siteProxy, regions *[]string) error {
+func validateMediaRegions(ctx context.Context, sp *SiteProxy, regions *[]string) error {
 	telephonyRegions, _, err := sp.getTelephonyMediaregions(ctx)
 	if err != nil {
 		return err
@@ -104,7 +104,7 @@ func nameInOutboundRoutes(name string, outboundRoutes []platformclientv2.Outboun
 }
 
 // Contains the logic to determine if a primary or secondary site need to be updated.
-func updatePrimarySecondarySites(ctx context.Context, sp *siteProxy, d *schema.ResourceData, siteId string) diag.Diagnostics {
+func updatePrimarySecondarySites(ctx context.Context, sp *SiteProxy, d *schema.ResourceData, siteId string) diag.Diagnostics {
 	primarySites := lists.InterfaceListToStrings(d.Get("primary_sites").([]interface{}))
 	secondarySites := lists.InterfaceListToStrings(d.Get("secondary_sites").([]interface{}))
 
@@ -142,7 +142,7 @@ func updatePrimarySecondarySites(ctx context.Context, sp *siteProxy, d *schema.R
 	return nil
 }
 
-func updateSiteNumberPlans(ctx context.Context, sp *siteProxy, d *schema.ResourceData) diag.Diagnostics {
+func updateSiteNumberPlans(ctx context.Context, sp *SiteProxy, d *schema.ResourceData) diag.Diagnostics {
 	if !d.HasChange("number_plans") {
 		return nil
 	}
@@ -247,7 +247,7 @@ func updateSiteNumberPlans(ctx context.Context, sp *siteProxy, d *schema.Resourc
 	return nil
 }
 
-func updateSiteOutboundRoutes(ctx context.Context, sp *siteProxy, d *schema.ResourceData) diag.Diagnostics {
+func updateSiteOutboundRoutes(ctx context.Context, sp *SiteProxy, d *schema.ResourceData) diag.Diagnostics {
 	if !d.HasChange("outbound_routes") {
 		return nil
 	}
@@ -363,7 +363,7 @@ func isNumberPlanInConfig(planName string, list []interface{}) bool {
 	return false
 }
 
-func readSiteNumberPlans(ctx context.Context, sp *siteProxy, d *schema.ResourceData) *retry.RetryError {
+func readSiteNumberPlans(ctx context.Context, sp *SiteProxy, d *schema.ResourceData) *retry.RetryError {
 	numberPlans, resp, err := sp.getSiteNumberPlans(ctx, d.Id())
 	if err != nil {
 		if util.IsStatus404(resp) {
@@ -379,15 +379,15 @@ func readSiteNumberPlans(ctx context.Context, sp *siteProxy, d *schema.ResourceD
 			dNumberPlan := flattenNumberPlan(&numberPlan)
 			dNumberPlans = append(dNumberPlans, dNumberPlan)
 		}
-		d.Set("number_plans", dNumberPlans)
+		_ = d.Set("number_plans", dNumberPlans)
 	} else {
-		d.Set("number_plans", nil)
+		_ = d.Set("number_plans", nil)
 	}
 
 	return nil
 }
 
-func readSiteOutboundRoutes(ctx context.Context, sp *siteProxy, d *schema.ResourceData) *retry.RetryError {
+func readSiteOutboundRoutes(ctx context.Context, sp *SiteProxy, d *schema.ResourceData) *retry.RetryError {
 	outboundRoutes, resp, err := sp.getSiteOutboundRoutes(ctx, d.Id())
 	if err != nil {
 		return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to get outbound routes for site %s | error: %s", d.Id(), err), resp))
@@ -418,9 +418,9 @@ func readSiteOutboundRoutes(ctx context.Context, sp *siteProxy, d *schema.Resour
 
 			dOutboundRoutes.Add(dOutboundRoute)
 		}
-		d.Set("outbound_routes", dOutboundRoutes)
+		_ = d.Set("outbound_routes", dOutboundRoutes)
 	} else {
-		d.Set("outbound_routes", nil)
+		_ = d.Set("outbound_routes", nil)
 	}
 
 	return nil

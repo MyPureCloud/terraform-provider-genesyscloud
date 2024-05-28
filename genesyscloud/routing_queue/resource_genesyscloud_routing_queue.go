@@ -25,7 +25,7 @@ import (
 	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v130/platformclientv2"
 )
 
 var bullseyeExpansionTypeTimeout = "TIMEOUT_SECONDS"
@@ -1032,7 +1032,7 @@ func updateQueueMembers(d *schema.ResourceData, sdkConfig *platformclientv2.Conf
 		time.Sleep(10 * time.Second)
 		for _, userId := range newUserIds {
 			if err := verifyUserIsNotGroupMemberOfQueue(d.Id(), userId, sdkConfig); err != nil {
-				return util.BuildDiagnosticError(resourceName, fmt.Sprintf("Error verifying user %s is not group member of queue", d.Id()), err)
+				log.Println(err.Error())
 			}
 		}
 	}
@@ -1146,7 +1146,7 @@ func verifyUserIsNotGroupMemberOfQueue(queueId, userId string, sdkConfig *platfo
 		}
 		for _, member := range *users.Entities {
 			if userId == *member.Id {
-				return fmt.Errorf("member %s '%s' is already assigned to queue '%s' via a group, and cannot be assigned using the members set", userName, userId, queueId)
+				return fmt.Errorf("member %s '%s' is already assigned to queue '%s' via a group, and therefore should not be assigned as a member", userName, userId, queueId)
 			}
 		}
 	}

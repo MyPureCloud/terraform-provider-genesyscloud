@@ -9,7 +9,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v130/platformclientv2"
 )
 
 func TestAccResourceRoutingSmsAddressesProdOrg(t *testing.T) {
@@ -65,6 +65,7 @@ func TestAccResourceRoutingSmsAddressesProdOrg(t *testing.T) {
 
 // If running in a prod org this test can be removed/skipped, it's only intended as a backup test for test orgs
 func TestAccResourceRoutingSmsAddressesTestOrg(t *testing.T) {
+	t.Skip("returns empty in tca | test not needed in prod")
 	var (
 		// Due to running in a test org, a default address will be returned from the API and not the address we set.
 		// This is because sms addresses are stored in twilio. Test orgs do not have twilio accounts so a default

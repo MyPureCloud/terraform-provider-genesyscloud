@@ -73,7 +73,7 @@ provider "genesyscloud" {
   oauthclient_secret = "<client-secret>"
   aws_region = "<aws-region>"
 
-  proxy {
+  proxy { 
     host     = "example.com"
     port     = "8443"
     protocol = "https"
