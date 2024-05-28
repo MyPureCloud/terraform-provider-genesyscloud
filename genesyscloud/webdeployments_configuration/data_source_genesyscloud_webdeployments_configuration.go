@@ -34,7 +34,7 @@ func dataSourceConfigurationRead(ctx context.Context, d *schema.ResourceData, m 
 					return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Web deployment configuration %s has no published versions and so cannot be used", name), resp))
 				}
 
-				d.Set("version", version)
+				_ = d.Set("version", version)
 
 				return nil
 			}

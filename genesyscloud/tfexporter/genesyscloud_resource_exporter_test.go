@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v130/platformclientv2"
 	"reflect"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
@@ -135,6 +135,51 @@ func TestUnitTfExportRemoveZeroValuesFunc(t *testing.T) {
 	}
 	if m["zeroInt"] != nil {
 		t.Errorf("Expected 'zeroInt' map item to be: nil, got: %v", m["zeroInt"])
+	}
+}
+
+// TestUnitComputeDependsOn will test computeDependsOn function
+func TestUnitComputeDependsOn(t *testing.T) {
+
+	createResourceData := func(enableDependencyResolution bool, includeFilterResources []interface{}) *schema.ResourceData {
+
+		resourceSchema := map[string]*schema.Schema{
+			"enable_dependency_resolution": {
+				Type:     schema.TypeBool,
+				Optional: true,
+				Default:  false,
+			},
+			"include_filter_resources": {
+				Type:     schema.TypeList,
+				Elem:     &schema.Schema{Type: schema.TypeString},
+				Optional: true,
+			},
+		}
+
+		data := schema.TestResourceDataRaw(t, resourceSchema, map[string]interface{}{
+			"enable_dependency_resolution": enableDependencyResolution,
+			"include_filter_resources":     includeFilterResources,
+		})
+		return data
+	}
+
+	tests := []struct {
+		enableDependencyResolution bool
+		includeFilterResources     []interface{}
+		expected                   bool
+	}{
+		{true, []interface{}{"resource1", "resource2"}, true},
+		{true, []interface{}{}, false},
+		{false, []interface{}{"resource1"}, false},
+		{false, []interface{}{}, false},
+	}
+
+	for _, test := range tests {
+		data := createResourceData(test.enableDependencyResolution, test.includeFilterResources)
+		result := computeDependsOn(data)
+		if result != test.expected {
+			t.Errorf("computeDependsOn(%v, %v) = %v; want %v", test.enableDependencyResolution, test.includeFilterResources, result, test.expected)
+		}
 	}
 }
 

@@ -19,7 +19,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v130/platformclientv2"
 )
 
 func getAllWebDeploymentConfigurations(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
@@ -78,7 +78,7 @@ func createWebDeploymentConfiguration(ctx context.Context, d *schema.ResourceDat
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to create web deployment configuration %s: %s. %s", name, err, extraErrorInfo), resp))
 		}
 		d.SetId(*configuration.Id)
-		d.Set("status", configuration.Status)
+		_ = d.Set("status", configuration.Status)
 
 		return nil
 	})
@@ -99,8 +99,8 @@ func createWebDeploymentConfiguration(ctx context.Context, d *schema.ResourceDat
 			}
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("error publishing web deployment configuration %s | error: %s", name, err), resp))
 		}
-		d.Set("version", configuration.Version)
-		d.Set("status", configuration.Status)
+		_ = d.Set("version", configuration.Version)
+		_ = d.Set("status", configuration.Status)
 		log.Printf("Created web deployment configuration %s %s", name, *configuration.Id)
 
 		return nil
@@ -132,7 +132,7 @@ func readWebDeploymentConfiguration(ctx context.Context, d *schema.ResourceData,
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read web deployment configuration %s | error: %s", d.Id(), getErr), resp))
 		}
 
-		d.Set("name", *configuration.Name)
+		_ = d.Set("name", *configuration.Name)
 
 		resourcedata.SetNillableValue(d, "description", configuration.Description)
 		resourcedata.SetNillableValue(d, "languages", configuration.Languages)
@@ -191,8 +191,8 @@ func updateWebDeploymentConfiguration(ctx context.Context, d *schema.ResourceDat
 			}
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("error publishing web deployment configuration %s | error: %s", name, err), resp))
 		}
-		d.Set("version", configuration.Version)
-		d.Set("status", configuration.Status)
+		_ = d.Set("version", configuration.Version)
+		_ = d.Set("status", configuration.Status)
 		return nil
 	})
 	if diagErr != nil {

@@ -16,6 +16,9 @@ func TestAccDataSourceWebDeploymentsConfiguration(t *testing.T) {
 		fullDataSourceName       = "data.genesyscloud_webdeployments_configuration.basic-data"
 		resourceNameReference    = fullResourceName + ".name"
 	)
+
+	cleanupWebDeploymentsConfiguration(t, "Test Configuration ")
+
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),

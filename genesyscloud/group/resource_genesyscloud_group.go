@@ -21,7 +21,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v130/platformclientv2"
 )
 
 func GetAllGroups(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
@@ -299,7 +299,6 @@ func getGroupMemberIds(ctx context.Context, d *schema.ResourceData, sdkConfig *p
 	gp := getGroupProxy(sdkConfig)
 	members, resp, err := gp.getGroupMembers(ctx, d.Id())
 	if err != nil {
-
 		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Unable to retrieve members for group %s. %s", d.Id(), err), resp)
 	}
 	return *members, nil
