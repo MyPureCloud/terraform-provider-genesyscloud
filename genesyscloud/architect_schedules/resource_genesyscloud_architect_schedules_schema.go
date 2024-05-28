@@ -14,7 +14,7 @@ const resourceName = "genesyscloud_architect_schedules"
 // SetRegistrar registers all of the resources, datasources and exporters in the pakage
 func SetRegistrar(regInstance registrar.Registrar) {
 	regInstance.RegisterResource(resourceName, ResourceArchitectSchedules())
-	regInstance.RegisterDataSource(resourceName, DataSourceArchitectScheduls())
+	regInstance.RegisterDataSource(resourceName, DataSourceArchitectSchedules())
 	regInstance.RegisterExporter(resourceName, ArchitectSchedulesExporter())
 }
 
@@ -83,17 +83,17 @@ func ArchitectSchedulesExporter() *resourceExporter.ResourceExporter {
 	}
 }
 
-// DataSourceArchitectSchedule registers the genesyscloud_architect_schedules datat source
-func DataSourceArchitectScheduls() *schema.Resource {
+// DataSourceArchitectSchedules registers the genesyscloud_architect_schedules datat source
+func DataSourceArchitectSchedules() *schema.Resource {
 	return &schema.Resource{
-		Description: "Data source for Genesys Cloud Schedules. Selecte a schedules by name.",
+		Description: "Data source for Genesys Cloud Schedule. Select a schedule by name",
 		ReadContext: provider.ReadWithPooledClient(dataSourceArchitectSchedulesRead),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
 		Schema: map[string]*schema.Schema{
 			"name": {
-				Description: "Schedules name.",
+				Description: "Schedule name.",
 				Type:        schema.TypeString,
 				Required:    true,
 			},
