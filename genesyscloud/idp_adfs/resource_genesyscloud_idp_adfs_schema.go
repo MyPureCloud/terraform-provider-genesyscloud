@@ -48,12 +48,12 @@ func ResourceIdpAdfs() *schema.Resource {
 				Optional:    true,
 				Type:        schema.TypeBool,
 			},
-			`issuer_u_r_i`: {
+			`issuer_uri`: {
 				Description: ``,
 				Optional:    true,
 				Type:        schema.TypeString,
 			},
-			`sso_target_u_r_i`: {
+			`target_uri`: {
 				Description: ``,
 				Optional:    true,
 				Type:        schema.TypeString,
@@ -97,21 +97,3 @@ func IdpAdfsExporter() *resourceExporter.ResourceExporter {
 		},
 	}
 }
-
-// // DataSourceIdpAdfs registers the genesyscloud_idp_adfs data source
-// func DataSourceIdpAdfs() *schema.Resource {
-// 	return &schema.Resource{
-// 		Description: `Genesys Cloud idp adfs data source. Select an idp adfs by name`,
-// 		ReadContext: provider.ReadWithPooledClient(readIdpAdfs),
-// 		Importer: &schema.ResourceImporter{
-// 			StateContext: schema.ImportStatePassthroughContext,
-// 		},
-// 		Schema: map[string]*schema.Schema{
-// 			"name": {
-// 				Description: `idp adfs name`,
-// 				Type:        schema.TypeString,
-// 				Required:    true,
-// 			},
-// 		},
-// 	}
-// }

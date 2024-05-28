@@ -82,7 +82,7 @@ func readIdpAdfs(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 			d.Set("certificates", nil)
 		}
 
-		log.Printf("Read idp adfs %s %s", d.Id(), *aDFS.Name)
+		log.Printf("Read idp adfs")
 		return cc.CheckState(d)
 	})
 }
@@ -100,7 +100,7 @@ func updateIdpAdfs(ctx context.Context, d *schema.ResourceData, meta interface{}
 		}
 		idpAdfs.Certificates = certificates
 	}
-	log.Printf("Updating idp adfs %s", *idpAdfs.Name)
+	log.Printf("Updating idp adfs")
 	resp, err := proxy.updateIdpAdfs(ctx, d.Id(), &idpAdfs)
 	if err != nil {
 		return util.BuildAPIDiagnosticError("genesyscloud_idp_adfs", fmt.Sprintf("Failed to update IDP ADFS %s error: %s", d.Id(), err), resp)
