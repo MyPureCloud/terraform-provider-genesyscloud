@@ -1,9 +1,5 @@
 inboundCall:
-<<<<<<< HEAD
   name: Terraform Test Flow log level f79fc952-6a58-4d00-996e-2c3873e1871a
-=======
-  name: Terraform Flow Test-632a5f38-ff2f-47a8-afec-1ed13a79cba8
->>>>>>> dev
   defaultLanguage: en-us
   startUpRef: ./menus/menu[mainMenu]
   initialGreeting:

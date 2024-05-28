@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 inboundEmail:
     name: Terraform Flow Test-0f374aca-4d2e-4959-b1bb-9b4fa37e6c73
     description: test description 1
@@ -23,21 +22,3 @@ inboundEmail:
             actions:
                 - disconnect:
                     name: Disconnect
-=======
-inboundCall:
-  name: Terraform Flow Test-aac007f2-9733-484e-b798-fd72f6ca9b7e
-  defaultLanguage: en-us
-  startUpRef: ./menus/menu[mainMenu]
-  initialGreeting:
-    tts: Archy says hi!!!!!
-  menus:
-    - menu:
-        name: Main Menu
-        audio:
-          tts: You are at the Main Menu, press 9 to disconnect.
-        refId: mainMenu
-        choices:
-          - menuDisconnect:
-              name: Disconnect
-              dtmf: digit_9
->>>>>>> dev
