@@ -1,8 +1,6 @@
 module terraform-provider-genesyscloud
 
-go 1.21
-
-toolchain go1.22.2
+go 1.20
 
 require (
 	github.com/google/go-cmp v0.6.0
@@ -13,7 +11,6 @@ require (
 	github.com/hashicorp/terraform-plugin-sdk/v2 v2.34.0
 	github.com/leekchan/timeutil v0.0.0-20150802142658-28917288c48d
 	github.com/mohae/deepcopy v0.0.0-20170929034955-c48cc78d4826
-	github.com/mypurecloud/platform-client-sdk-go/v129 v129.1.0
 	github.com/mypurecloud/platform-client-sdk-go/v130 v130.0.0
 	github.com/nyaruka/phonenumbers v1.3.5
 	github.com/rjNemo/underscore v0.6.1
