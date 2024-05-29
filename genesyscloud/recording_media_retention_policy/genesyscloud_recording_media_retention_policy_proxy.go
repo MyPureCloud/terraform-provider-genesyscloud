@@ -186,18 +186,22 @@ func getPolicyByIdFn(ctx context.Context, p *policyProxy, policyId string) (poli
 
 // getPolicyByNameFn is the implementation for getting a media retention policy in Genesys Cloud by name
 func getPolicyByNameFn(ctx context.Context, p *policyProxy, policyName string) (policy *platformclientv2.Policy, retryable bool, response *platformclientv2.APIResponse, err error) {
-	const pageSize = 100
-	const pageNum = 1
-	policies, resp, err := p.recordingApi.GetRecordingMediaretentionpolicies(pageSize, pageNum, "", nil, "", "", policyName, true, false, false, 0)
+	policies, resp, err := getAllPoliciesFn(ctx, p)
 	if err != nil {
 		return nil, false, resp, err
 	}
 
-	if policies.Entities == nil || len(*policies.Entities) == 0 {
+	if policies == nil || len(*policies) == 0 {
 		return nil, true, resp, fmt.Errorf("no media retention policy found with name %s", policyName)
 	}
-	policy = &(*policies.Entities)[0]
-	return policy, false, resp, nil
+
+	for _, policy := range *policies {
+		if *policy.Name == policyName {
+			return &policy, false, resp, nil
+		}
+	}
+
+	return nil, true, resp, fmt.Errorf("unable to find media retention policy with name %s", policyName)
 }
 
 // updatePolicyFn is the implementation for updating a media retention policy in Genesys Cloud
