@@ -11,7 +11,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v130/platformclientv2"
 
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
@@ -26,9 +26,9 @@ import (
 The resource_genesyscloud_idp_adfs.go contains all of the methods that perform the core logic for a resource.
 */
 
-// getAllAuthIdpAdfs retrieves all of the idp adfs via Terraform in the Genesys Cloud and is used for the exporter
+// getAllAuthIdpAdfss retrieves all of the idp adfs via Terraform in the Genesys Cloud and is used for the exporter
 func getAllAuthIdpAdfss(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
-	proxy := newIdpAdfsProxy(clientConfig)
+	proxy := getIdpAdfsProxy(clientConfig)
 	resources := make(resourceExporter.ResourceIDMetaMap)
 
 	_, resp, err := proxy.getIdpAdfs(ctx)
@@ -37,7 +37,7 @@ func getAllAuthIdpAdfss(ctx context.Context, clientConfig *platformclientv2.Conf
 			// Don't export if config doesn't exist
 			return resources, nil
 		}
-		return nil, util.BuildAPIDiagnosticError("genesyscloud_idp_adfs", fmt.Sprintf("Failed to get IDP ADFS error: %s", err), resp)
+		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get IDP ADFS error: %s", err), resp)
 	}
 	resources["0"] = &resourceExporter.ResourceMeta{Name: "adfs"}
 	return resources, nil
@@ -64,9 +64,9 @@ func readIdpAdfs(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		if getErr != nil {
 			if util.IsStatus404(resp) {
 				createIdpAdfs(ctx, d, meta)
-				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_idp_adfs", fmt.Sprintf("Failed to read IDP ADFS: %s", getErr), resp))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read IDP ADFS: %s", getErr), resp))
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_idp_adfs", fmt.Sprintf("Failed to read IDP ADFS: %s", getErr), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read IDP ADFS: %s", getErr), resp))
 		}
 
 		resourcedata.SetNillableValue(d, "disabled", aDFS.Disabled)
@@ -103,7 +103,7 @@ func updateIdpAdfs(ctx context.Context, d *schema.ResourceData, meta interface{}
 	log.Printf("Updating idp adfs")
 	resp, err := proxy.updateIdpAdfs(ctx, d.Id(), &idpAdfs)
 	if err != nil {
-		return util.BuildAPIDiagnosticError("genesyscloud_idp_adfs", fmt.Sprintf("Failed to update IDP ADFS %s error: %s", d.Id(), err), resp)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update IDP ADFS %s error: %s", d.Id(), err), resp)
 	}
 
 	log.Printf("Updated idp adfs")
@@ -128,9 +128,9 @@ func deleteIdpAdfs(ctx context.Context, d *schema.ResourceData, meta interface{}
 				log.Printf("Deleted IDP ADFS")
 				return nil
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_idp_adfs", fmt.Sprintf("Error deleting IDP ADFS: %s", err), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Error deleting IDP ADFS: %s", err), resp))
 		}
-		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_idp_adfs", fmt.Sprintf("IDP ADFS still exists"), resp))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("IDP ADFS still exists"), resp))
 	})
 }
 
