@@ -659,18 +659,14 @@ func TestAccResourceRoutingQueueMembers(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				// Create
-				Config: GenerateRoutingQueueResourceBasic(
-					queueResource,
-					queueName,
-					GenerateMemberBlock("genesyscloud_user."+queueMemberResource1+".id", util.NullValue),
-				) + genesyscloud.GenerateBasicUserResource(
+				Config: genesyscloud.GenerateBasicUserResource(
 					queueMemberResource1,
 					queueMemberEmail1,
 					queueMemberName1,
-				) + genesyscloud.GenerateBasicUserResource(
-					queueMemberResource2,
-					queueMemberEmail2,
-					queueMemberName2,
+				) + GenerateRoutingQueueResourceBasic(
+					queueResource,
+					queueName,
+					GenerateMemberBlock("genesyscloud_user."+queueMemberResource1+".id", util.NullValue),
 				),
 				Check: resource.ComposeTestCheckFunc(
 					validateMember("genesyscloud_routing_queue."+queueResource, "genesyscloud_user."+queueMemberResource1, defaultQueueRingNum),
@@ -678,7 +674,11 @@ func TestAccResourceRoutingQueueMembers(t *testing.T) {
 			},
 			{
 				// Update with another queue member and modify rings
-				Config: GenerateRoutingQueueResourceBasic(
+				Config: genesyscloud.GenerateBasicUserResource(
+					queueMemberResource2,
+					queueMemberEmail2,
+					queueMemberName2,
+				) + GenerateRoutingQueueResourceBasic(
 					queueResource,
 					queueName,
 					GenerateMemberBlock("genesyscloud_user."+queueMemberResource1+".id", queueRingNum),
