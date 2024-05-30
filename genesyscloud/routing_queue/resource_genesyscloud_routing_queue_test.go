@@ -627,6 +627,10 @@ func TestAccResourceRoutingQueueFlows(t *testing.T) {
 					resource.TestCheckResourceAttrPair("genesyscloud_routing_queue."+queueResource1, "queue_flow_id", "genesyscloud_flow."+queueFlowResource2, "id"),
 					resource.TestCheckResourceAttrPair("genesyscloud_routing_queue."+queueResource1, "email_in_queue_flow_id", "genesyscloud_flow."+emailInQueueFlowResource2, "id"),
 					resource.TestCheckResourceAttrPair("genesyscloud_routing_queue."+queueResource1, "message_in_queue_flow_id", "genesyscloud_flow."+messageInQueueFlowResource2, "id"),
+					func(s *terraform.State) error {
+						time.Sleep(45 * time.Second) // Wait for 45 seconds for proper deletion of user
+						return nil
+					},
 				),
 			},
 			{
@@ -678,6 +682,10 @@ func TestAccResourceRoutingQueueMembers(t *testing.T) {
 					queueMemberResource2,
 					queueMemberEmail2,
 					queueMemberName2,
+				) + genesyscloud.GenerateBasicUserResource(
+					queueMemberResource1,
+					queueMemberEmail1,
+					queueMemberName1,
 				) + GenerateRoutingQueueResourceBasic(
 					queueResource,
 					queueName,
@@ -686,14 +694,6 @@ func TestAccResourceRoutingQueueMembers(t *testing.T) {
 					GenerateBullseyeSettings("10"),
 					GenerateBullseyeSettings("10"),
 					GenerateBullseyeSettings("10"),
-				) + genesyscloud.GenerateBasicUserResource(
-					queueMemberResource1,
-					queueMemberEmail1,
-					queueMemberName1,
-				) + genesyscloud.GenerateBasicUserResource(
-					queueMemberResource2,
-					queueMemberEmail2,
-					queueMemberName2,
 				),
 				Check: resource.ComposeTestCheckFunc(
 					validateMember("genesyscloud_routing_queue."+queueResource, "genesyscloud_user."+queueMemberResource1, queueRingNum),
