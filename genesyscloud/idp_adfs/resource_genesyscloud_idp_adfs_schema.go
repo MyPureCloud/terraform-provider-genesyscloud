@@ -2,6 +2,7 @@ package idp_adfs
 
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
@@ -39,48 +40,45 @@ func ResourceIdpAdfs() *schema.Resource {
 		SchemaVersion: 1,
 		Schema: map[string]*schema.Schema{
 			`name`: {
-				Description: ``,
+				Description: `IDP ADFS resource name`,
 				Optional:    true,
 				Type:        schema.TypeString,
 			},
 			`disabled`: {
-				Description: ``,
+				Description: `True if ADFS is disabled.`,
 				Optional:    true,
 				Type:        schema.TypeBool,
+				Default:     false,
 			},
 			`issuer_uri`: {
-				Description: ``,
-				Optional:    true,
+				Description: `Issuer URI provided by ADFS.`,
+				Required:    true,
 				Type:        schema.TypeString,
 			},
 			`target_uri`: {
-				Description: ``,
+				Description: `Target URI provided by ADFS.`,
 				Optional:    true,
 				Type:        schema.TypeString,
 			},
-			`slo_u_r_i`: {
-				Description: ``,
+			`slo_uri`: {
+				Description: `Provided by ADSF on app creation`,
 				Optional:    true,
 				Type:        schema.TypeString,
 			},
 			`slo_binding`: {
-				Description: ``,
-				Optional:    true,
-				Type:        schema.TypeString,
+				Description:  `Valid values: HTTP Redirect, HTTP Post`,
+				Optional:     true,
+				Type:         schema.TypeString,
+				ValidateFunc: validation.StringInSlice([]string{`HTTP Redirect`, `HTTP Post`}, false),
 			},
 			`relying_party_identifier`: {
-				Description: ``,
-				Optional:    true,
-				Type:        schema.TypeString,
-			},
-			`certificate`: {
-				Description: ``,
+				Description: `String used to identify Genesys Cloud to ADFS.`,
 				Optional:    true,
 				Type:        schema.TypeString,
 			},
 			`certificates`: {
-				Description: ``,
-				Optional:    true,
+				Description: `PEM or DER encoded public X.509 certificates for SAML signature validation.`,
+				Required:    true,
 				Type:        schema.TypeList,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
