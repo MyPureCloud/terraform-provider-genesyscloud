@@ -28,10 +28,10 @@ func dataSourceRoutingQueueRead(ctx context.Context, d *schema.ResourceData, m i
 	key = normalizeQueueName(key)
 
 	if dataSourceRoutingQueueCache == nil {
-		dataSourceRoutingQueueCache = rc.NewDataSourceCache(sdkConfig, hydrateRoutingQueueCacheFn, getQueueByNameFn, ctx)
+		dataSourceRoutingQueueCache = rc.NewDataSourceCache(sdkConfig, hydrateRoutingQueueCacheFn, getQueueByNameFn)
 	}
 
-	queueId, err := rc.RetrieveId(dataSourceRoutingQueueCache, resourceName, key)
+	queueId, err := rc.RetrieveId(dataSourceRoutingQueueCache, resourceName, key, ctx)
 
 	if err != nil {
 		return err
@@ -76,11 +76,11 @@ func hydrateRoutingQueueCacheFn(c *rc.DataSourceCache) error {
 
 // Get queue by name.
 // Returns the queue id (blank if not found) and diag
-func getQueueByNameFn(c *rc.DataSourceCache, name string) (string, diag.Diagnostics) {
+func getQueueByNameFn(c *rc.DataSourceCache, name string, ctx context.Context) (string, diag.Diagnostics) {
 	routingApi := platformclientv2.NewRoutingApiWithConfig(c.ClientConfig)
 	queueId := ""
 	const pageSize = 100
-	diag := util.WithRetries(c.Ctx, 15*time.Second, func() *retry.RetryError {
+	diag := util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
 		for pageNum := 1; ; pageNum++ {
 			queues, resp, getErr := routingApi.GetRoutingQueues(pageNum, pageSize, "", name, nil, nil, nil, "", false)
 			if getErr != nil {

@@ -15,20 +15,18 @@ type DataSourceCache struct {
 	Cache            map[string]string
 	mutex            sync.RWMutex
 	ClientConfig     *platformclientv2.Configuration
-	Ctx              context.Context
 	HydrateCacheFunc func(*DataSourceCache) error
-	getApiFunc       func(*DataSourceCache, string) (string, diag.Diagnostics)
+	getApiFunc       func(*DataSourceCache, string, context.Context) (string, diag.Diagnostics)
 }
 
 // NewDataSourceCache creates a new data source cache
-func NewDataSourceCache(clientConfig *platformclientv2.Configuration, hydrateFn func(*DataSourceCache) error, getFn func(*DataSourceCache, string) (string, diag.Diagnostics), ctx context.Context) *DataSourceCache {
+func NewDataSourceCache(clientConfig *platformclientv2.Configuration, hydrateFn func(*DataSourceCache) error, getFn func(*DataSourceCache, string, context.Context) (string, diag.Diagnostics)) *DataSourceCache {
 
 	return &DataSourceCache{
 		Cache:            make(map[string]string),
 		ClientConfig:     clientConfig,
 		HydrateCacheFunc: hydrateFn,
 		getApiFunc:       getFn,
-		Ctx:              ctx,
 	}
 }
 
@@ -90,7 +88,7 @@ func (c *DataSourceCache) Get(key string) (val string, isFound bool) {
 }
 
 func RetrieveId(cache *DataSourceCache,
-	resourceName, key string) (string, diag.Diagnostics) {
+	resourceName, key string, ctx context.Context) (string, diag.Diagnostics) {
 
 	if err := cache.HydrateCacheIfEmpty(); err != nil {
 		return "", diag.FromErr(err)
@@ -101,7 +99,7 @@ func RetrieveId(cache *DataSourceCache,
 	if !ok {
 		// If not found in cache, try to obtain through SDK call
 		log.Printf("could not find the resource %v in cache. Will try API to find value", key)
-		id, diagErr := cache.getApiFunc(cache, key)
+		id, diagErr := cache.getApiFunc(cache, key, ctx)
 		if diagErr != nil {
 			return "", diagErr
 		}

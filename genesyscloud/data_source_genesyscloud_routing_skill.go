@@ -16,10 +16,12 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
 )
 
+// The context is now added without Timeout ,
+// since the warming up of cache will take place for the first Datasource registered during a Terraform Apply.
 func dataSourceRoutingSkill() *schema.Resource {
 	return &schema.Resource{
-		Description: "Data source for Genesys Cloud Routing Skills. Select a skill by name.",
-		ReadContext: provider.ReadWithPooledClient(dataSourceRoutingSkillRead),
+		Description:        "Data source for Genesys Cloud Routing Skills. Select a skill by name.",
+		ReadWithoutTimeout: provider.ReadWithPooledClient(dataSourceRoutingSkillRead),
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Description: "Skill name.",
@@ -40,10 +42,10 @@ func dataSourceRoutingSkillRead(ctx context.Context, d *schema.ResourceData, m i
 	key := d.Get("name").(string)
 
 	if dataSourceRoutingSkillCache == nil {
-		dataSourceRoutingSkillCache = rc.NewDataSourceCache(sdkConfig, hydrateRoutingSkillCacheFn, getSkillByNameFn, ctx)
+		dataSourceRoutingSkillCache = rc.NewDataSourceCache(sdkConfig, hydrateRoutingSkillCacheFn, getSkillByNameFn)
 	}
 
-	queueId, err := rc.RetrieveId(dataSourceRoutingSkillCache, "genesyscloud_routing_skill", key)
+	queueId, err := rc.RetrieveId(dataSourceRoutingSkillCache, "genesyscloud_routing_skill", key, ctx)
 
 	if err != nil {
 		return err
@@ -53,7 +55,7 @@ func dataSourceRoutingSkillRead(ctx context.Context, d *schema.ResourceData, m i
 	return nil
 }
 
-func hydrateRoutingQueueCacheFn(c *rc.DataSourceCache) error {
+func hydrateRoutingSkillCacheFn(c *rc.DataSourceCache) error {
 	log.Printf("hydrating cache for data source genesyscloud_routing_skill")
 
 	routingApi := platformclientv2.NewRoutingApiWithConfig(c.ClientConfig)
@@ -83,13 +85,13 @@ func hydrateRoutingQueueCacheFn(c *rc.DataSourceCache) error {
 	return nil
 }
 
-func getSkillByNameFn(c *rc.DataSourceCache, name string) (string, diag.Diagnostics) {
+func getSkillByNameFn(c *rc.DataSourceCache, name string, ctx context.Context) (string, diag.Diagnostics) {
 	const pageSize = 100
 	skillId := ""
 	routingAPI := platformclientv2.NewRoutingApiWithConfig(c.ClientConfig)
 
 	// Find first non-deleted skill by name. Retry in case new skill is not yet indexed by search
-	diag := util.WithRetries(c.Ctx, 15*time.Second, func() *retry.RetryError {
+	diag := util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
 		for pageNum := 1; ; pageNum++ {
 			skills, resp, getErr := routingAPI.GetRoutingSkills(pageSize, pageNum, name, nil)
 			if getErr != nil {
