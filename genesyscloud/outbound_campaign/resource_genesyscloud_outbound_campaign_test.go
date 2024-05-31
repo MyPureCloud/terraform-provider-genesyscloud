@@ -11,6 +11,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
+	"time"
 
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	obCallableTimeset "terraform-provider-genesyscloud/genesyscloud/outbound_callabletimeset"
@@ -22,7 +23,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v130/platformclientv2"
 )
 
 // Add a special generator DEVENGAGE-1646.  Basically, the API makes it look like you need a full phone_columns field here.  However, the API ignores the type because the devs reused the phone_columns object.  However,
@@ -37,8 +38,6 @@ func generatePhoneColumnNoTypeBlock(columnName string) string {
 }
 
 func TestAccResourceOutboundCampaignBasic(t *testing.T) {
-	t.Parallel()
-
 	var (
 		resourceId            = "campaign1"
 		name                  = "Test Campaign " + uuid.NewString()
@@ -188,6 +187,9 @@ func TestAccResourceOutboundCampaignBasic(t *testing.T) {
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
+				PreConfig: func() {
+					time.Sleep(30 * time.Second)
+				},
 				Config: referencedResources + generateOutboundCampaign(
 					resourceId,
 					name,
@@ -402,7 +404,7 @@ func TestAccResourceOutboundCampaignBasic(t *testing.T) {
 }
 
 func TestAccResourceOutboundCampaignCampaignStatus(t *testing.T) {
-	t.Parallel()
+
 	var (
 		resourceId            = "campaign2"
 		name                  = "Test Campaign " + uuid.NewString()

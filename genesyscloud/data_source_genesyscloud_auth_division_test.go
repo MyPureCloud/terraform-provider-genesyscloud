@@ -5,9 +5,11 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
 func TestAccDataSourceAuthDivision(t *testing.T) {
@@ -34,6 +36,10 @@ func TestAccDataSourceAuthDivision(t *testing.T) {
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrPair("data.genesyscloud_auth_division."+divDataSource, "id", "genesyscloud_auth_division."+divResource, "id"),
+					func(s *terraform.State) error {
+						time.Sleep(30 * time.Second) // Wait for 30 seconds for proper deletion
+						return nil
+					},
 				),
 			},
 		},

@@ -28,9 +28,9 @@ func ResourceTfExport() *schema.Resource {
 		The config file is named '%s' or '%s', and the state file is named '%s'.
 		`, defaultTfJSONFile, defaultTfHCLFile, defaultTfStateFile),
 
-		CreateContext: createTfExport,
-		ReadContext:   readTfExport,
-		DeleteContext: deleteTfExport,
+		CreateWithoutTimeout: createTfExport,
+		ReadWithoutTimeout:   readTfExport,
+		DeleteContext:        deleteTfExport,
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},

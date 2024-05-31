@@ -29,9 +29,9 @@ provider "genesyscloud" {
 - `oauthclient_id` (String) OAuthClient ID found on the OAuth page of Admin UI. Can be set with the `GENESYSCLOUD_OAUTHCLIENT_ID` environment variable.
 - `oauthclient_secret` (String, Sensitive) OAuthClient secret found on the OAuth page of Admin UI. Can be set with the `GENESYSCLOUD_OAUTHCLIENT_SECRET` environment variable.
 - `proxy` (Block Set, Max: 1) (see [below for nested schema](#nestedblock--proxy))
-- `sdk_debug` (Boolean) Enables debug tracing in the Genesys Cloud SDK. Output will be written to the local file 'sdk_debug.log'.
-- `sdk_debug_file_path` (String) Specifies the file path for the log file. Default value is sdk_debug.log
-- `sdk_debug_format` (String) Specifies the data format of the 'sdk_debug.log'. Only applicable if sdk_debug is true. Default value is Text.
+- `sdk_debug` (Boolean) Enables debug tracing in the Genesys Cloud SDK. Output will be written to the local file 'sdk_debug.log'. Can be set with the `GENESYSCLOUD_SDK_DEBUG` environment variable.
+- `sdk_debug_file_path` (String) Specifies the file path for the log file. Can be set with the `GENESYSCLOUD_SDK_DEBUG_FILE_PATH` environment variable. Default value is sdk_debug.log
+- `sdk_debug_format` (String) Specifies the data format of the 'sdk_debug.log'. Only applicable if sdk_debug is true. Can be set with the `GENESYSCLOUD_SDK_DEBUG_FORMAT` environment variable. Default value is Text.
 - `token_pool_size` (Number) Max number of OAuth tokens in the token pool. Can be set with the `GENESYSCLOUD_TOKEN_POOL_SIZE` environment variable.
 
 <a id="nestedblock--proxy"></a>

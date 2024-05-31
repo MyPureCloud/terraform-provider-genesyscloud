@@ -1,4 +1,4 @@
-package genesyscloud
+package architect_schedules
 
 import (
 	"fmt"
