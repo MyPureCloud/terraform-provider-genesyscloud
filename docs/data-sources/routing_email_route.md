@@ -17,7 +17,8 @@ Data source for Genesys Cloud Routing Email Route. Select a routing email by nam
 
 ### Required
 
-- `name` (String) Routing email name.
+- `domain_id` (String) Domain of the route.
+- `pattern` (String) Routing pattern.
 
 ### Read-Only
 
