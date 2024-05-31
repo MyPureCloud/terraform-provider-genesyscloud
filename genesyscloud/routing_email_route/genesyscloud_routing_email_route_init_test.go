@@ -16,11 +16,15 @@ The genesyscloud_routing_email_route_init_test.go file is used to initialize the
 used in testing the routing_email_route resource.
 */
 
+// providerDataSources holds a map of all registered datasources
+var providerDataSources map[string]*schema.Resource
+
 // providerResources holds a map of all registered resources
 var providerResources map[string]*schema.Resource
 
 type registerTestInstance struct {
-	resourceMapMutex sync.RWMutex
+	resourceMapMutex   sync.RWMutex
+	dataSourceMapMutex sync.RWMutex
 }
 
 // registerTestResources registers all resources used in the tests
@@ -28,7 +32,7 @@ func (r *registerTestInstance) registerTestResources() {
 	r.resourceMapMutex.Lock()
 	defer r.resourceMapMutex.Unlock()
 
-	providerResources["genesyscloud_routing_email_route"] = ResourceRoutingEmailRoute()
+	providerResources[resourceName] = ResourceRoutingEmailRoute()
 	providerResources["genesyscloud_routing_email_domain"] = genesyscloud.ResourceRoutingEmailDomain()
 	providerResources["genesyscloud_routing_queue"] = routingQueue.ResourceRoutingQueue()
 	providerResources["genesyscloud_routing_language"] = genesyscloud.ResourceRoutingLanguage()
@@ -37,13 +41,23 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_routing_skill_group"] = genesyscloud.ResourceRoutingSkillGroup()
 }
 
+// registerTestDataSources registers all data sources used in the tests.
+func (r *registerTestInstance) registerTestDataSources() {
+	r.dataSourceMapMutex.Lock()
+	defer r.dataSourceMapMutex.Unlock()
+
+	providerDataSources[resourceName] = DataSourceRoutingEmailRoute()
+}
+
 // initTestResources initializes all test resources and data sources.
 func initTestResources() {
+	providerDataSources = make(map[string]*schema.Resource)
 	providerResources = make(map[string]*schema.Resource)
 
 	regInstance := &registerTestInstance{}
 
 	regInstance.registerTestResources()
+	regInstance.registerTestDataSources()
 }
 
 // TestMain is a "setup" function called by the testing framework when run the test

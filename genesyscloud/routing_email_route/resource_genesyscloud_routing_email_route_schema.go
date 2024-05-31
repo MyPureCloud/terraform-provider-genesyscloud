@@ -40,6 +40,7 @@ var (
 func SetRegistrar(regInstance registrar.Registrar) {
 	regInstance.RegisterResource(resourceName, ResourceRoutingEmailRoute())
 	regInstance.RegisterExporter(resourceName, RoutingEmailRouteExporter())
+	regInstance.RegisterDataSource(resourceName, DataSourceRoutingEmailRoute())
 }
 
 func ResourceRoutingEmailRoute() *schema.Resource {
@@ -146,6 +147,25 @@ func ResourceRoutingEmailRoute() *schema.Resource {
 				Description: "The flow to use for processing inbound emails that have been marked as spam.",
 				Type:        schema.TypeString,
 				Optional:    true,
+			},
+		},
+	}
+}
+
+func DataSourceRoutingEmailRoute() *schema.Resource {
+	return &schema.Resource{
+		Description: "Data source for Genesys Cloud Routing Email Route. Select a routing email by name.",
+		ReadContext: provider.ReadWithPooledClient(dataSourceRoutingEmailRouteRead),
+		Schema: map[string]*schema.Schema{
+			"name": {
+				Description: "Routing email name.",
+				Type:        schema.TypeString,
+				Required:    true,
+			},
+			"domain_id": {
+				Description: "Domain of the route.",
+				Type:        schema.TypeString,
+				Required:    true,
 			},
 		},
 	}
