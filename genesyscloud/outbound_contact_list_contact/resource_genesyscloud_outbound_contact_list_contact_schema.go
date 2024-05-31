@@ -5,27 +5,30 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 )
 
+const resourceName = "genesyscloud_outbound_contact_list_contact"
+
 func ResourceOutboundContactListContact() *schema.Resource {
 	return &schema.Resource{
 		Description: `Genesys Cloud Outbound Contact List Contact`,
 
-		CreateContext: provider.CreateWithPooledClient(nil),
-		ReadContext:   provider.ReadWithPooledClient(nil),
-		UpdateContext: provider.UpdateWithPooledClient(nil),
-		DeleteContext: provider.DeleteWithPooledClient(nil),
+		CreateContext: provider.CreateWithPooledClient(createOutboundContactListContact),
+		ReadContext:   provider.ReadWithPooledClient(readOutboundContactListContact),
+		UpdateContext: provider.UpdateWithPooledClient(updateOutboundContactListContact),
+		DeleteContext: provider.DeleteWithPooledClient(deleteOutboundContactListContact),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
 		SchemaVersion: 1,
 		Schema: map[string]*schema.Schema{
 			"id": {
-				Description: "The globally unique identifier for the object. If none is provided, a GUID will be generated.",
+				Description: `The globally unique identifier for the object. If none is provided, a GUID will be generated.`,
 				Optional:    true,
 				ForceNew:    true,
+				Computed:    true,
 				Type:        schema.TypeString,
 			},
 			"contact_list_id": {
-				Description: "",
+				Description: `The identifier of the contact list containing this contact.`,
 				ForceNew:    true,
 				Required:    true,
 				Type:        schema.TypeString,
