@@ -23,7 +23,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v130/platformclientv2"
 
 	"terraform-provider-genesyscloud/genesyscloud/util/testrunner"
 
@@ -1801,7 +1801,6 @@ func testDependentContactList(filePath, resourceType, name string) resource.Test
 		}
 
 		raw, err := getResourceDefinition(filePath, resourceType)
-		fmt.Printf("raw %v", raw)
 		if err != nil {
 			return err
 		}

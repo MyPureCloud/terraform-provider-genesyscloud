@@ -15,7 +15,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v130/platformclientv2"
 )
 
 func TestAccResourcePhoneBasic(t *testing.T) {
@@ -185,8 +185,7 @@ func TestAccResourcePhoneBasic(t *testing.T) {
 }
 
 func TestAccResourcePhoneStandalone(t *testing.T) {
-	t.Parallel()
-	number := "+12005538119"
+	number := "+12005538112"
 	// TODO: Use did pool resource inside config once cyclic dependency issue is resolved between genesyscloud and did_pools package
 	didPoolId, err := createDidPoolForEdgesPhoneTest(sdkConfig, number)
 	if err != nil {

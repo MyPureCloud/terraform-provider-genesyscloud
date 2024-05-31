@@ -2,7 +2,6 @@ package group_roles
 
 import (
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"strconv"
 	"strings"
 	"terraform-provider-genesyscloud/genesyscloud"
@@ -11,14 +10,17 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"terraform-provider-genesyscloud/genesyscloud/util/lists"
 	"testing"
+	"time"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+
+	authRole "terraform-provider-genesyscloud/genesyscloud/auth_role"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	authRole "terraform-provider-genesyscloud/genesyscloud/auth_role"
 )
 
 func TestAccResourceGroupRolesMembership(t *testing.T) {
-	t.Parallel()
 	var (
 		groupRoleResource = "test-group-roles1"
 		groupResource1    = "test-group"
@@ -118,6 +120,10 @@ func TestAccResourceGroupRolesMembership(t *testing.T) {
 				) + genesyscloud.GenerateAuthDivisionBasic(divResource, divName),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckNoResourceAttr("genesyscloud_group_roles."+groupRoleResource, "roles.%"),
+					func(s *terraform.State) error {
+						time.Sleep(30 * time.Second) // Wait for 30 seconds for resources to get deleted properly
+						return nil
+					},
 				),
 			},
 			{

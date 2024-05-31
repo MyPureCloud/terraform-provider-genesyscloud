@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	architectSchedules "terraform-provider-genesyscloud/genesyscloud/architect_schedules"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
@@ -11,7 +12,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v130/platformclientv2"
 )
 
 func TestAccResourceArchitectScheduleGroups(t *testing.T) {
@@ -49,7 +50,7 @@ func TestAccResourceArchitectScheduleGroups(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				// Create
-				Config: gcloud.GenerateArchitectSchedulesResource( // Create Open schedule
+				Config: architectSchedules.GenerateArchitectSchedulesResource( // Create Open schedule
 					schedResource1,
 					openSched,
 					util.NullValue,
@@ -57,7 +58,7 @@ func TestAccResourceArchitectScheduleGroups(t *testing.T) {
 					start,
 					end,
 					rrule,
-				) + gcloud.GenerateArchitectSchedulesResource( // Create Closed schedule
+				) + architectSchedules.GenerateArchitectSchedulesResource( // Create Closed schedule
 					schedResource2,
 					closedSched,
 					util.NullValue,
@@ -85,7 +86,7 @@ func TestAccResourceArchitectScheduleGroups(t *testing.T) {
 			},
 			{
 				// Update to add Holiday Schedule
-				Config: gcloud.GenerateArchitectSchedulesResource( // Create Open schedule
+				Config: architectSchedules.GenerateArchitectSchedulesResource( // Create Open schedule
 					schedResource1,
 					openSched,
 					util.NullValue,
@@ -93,7 +94,7 @@ func TestAccResourceArchitectScheduleGroups(t *testing.T) {
 					start,
 					end,
 					rrule,
-				) + gcloud.GenerateArchitectSchedulesResource( // Create Closed schedule
+				) + architectSchedules.GenerateArchitectSchedulesResource( // Create Closed schedule
 					schedResource2,
 					closedSched,
 					util.NullValue,
@@ -101,7 +102,7 @@ func TestAccResourceArchitectScheduleGroups(t *testing.T) {
 					start,
 					end,
 					rrule,
-				) + gcloud.GenerateArchitectSchedulesResource( // Create Holiday schedule
+				) + architectSchedules.GenerateArchitectSchedulesResource( // Create Holiday schedule
 					schedResource3,
 					holidaySched,
 					util.NullValue,
@@ -131,7 +132,7 @@ func TestAccResourceArchitectScheduleGroups(t *testing.T) {
 			},
 			{
 				// Create with new division
-				Config: gcloud.GenerateAuthDivisionBasic(divResource, divName) + gcloud.GenerateArchitectSchedulesResource( // Create Open schedule
+				Config: gcloud.GenerateAuthDivisionBasic(divResource, divName) + architectSchedules.GenerateArchitectSchedulesResource( // Create Open schedule
 					schedResource4,
 					openSched2,
 					"genesyscloud_auth_division."+divResource+".id",
@@ -139,7 +140,7 @@ func TestAccResourceArchitectScheduleGroups(t *testing.T) {
 					start,
 					end,
 					rrule,
-				) + gcloud.GenerateArchitectSchedulesResource( // Create Closed schedule
+				) + architectSchedules.GenerateArchitectSchedulesResource( // Create Closed schedule
 					schedResource5,
 					closedSched2,
 					"genesyscloud_auth_division."+divResource+".id",

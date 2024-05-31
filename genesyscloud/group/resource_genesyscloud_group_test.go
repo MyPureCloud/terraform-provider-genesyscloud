@@ -12,11 +12,10 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v130/platformclientv2"
 )
 
 func TestAccResourceGroupBasic(t *testing.T) {
-	t.Parallel()
 	var (
 		groupResource1   = "test-group1"
 		groupName        = "terraform-" + uuid.NewString()
@@ -71,6 +70,10 @@ func TestAccResourceGroupBasic(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_group."+groupResource1, "description", groupDesc2),
 					resource.TestCheckResourceAttr("genesyscloud_group."+groupResource1, "visibility", visMembers),
 					resource.TestCheckResourceAttr("genesyscloud_group."+groupResource1, "rules_visible", util.FalseValue),
+					func(s *terraform.State) error {
+						time.Sleep(30 * time.Second) // Wait for 30 seconds for resources to get deleted properly
+						return nil
+					},
 				),
 			},
 			{
@@ -85,7 +88,6 @@ func TestAccResourceGroupBasic(t *testing.T) {
 }
 
 func TestAccResourceGroupAddresses(t *testing.T) {
-	t.Parallel()
 	var (
 		groupResource1   = "test-group-addr"
 		groupName        = "TF Group" + uuid.NewString()
@@ -171,6 +173,10 @@ func TestAccResourceGroupAddresses(t *testing.T) {
 					GenerateGroupOwners("genesyscloud_user."+testUserResource+".id"),
 				),
 				Check: resource.ComposeTestCheckFunc(
+					func(s *terraform.State) error {
+						time.Sleep(30 * time.Second) // Wait for 30 seconds for resources to get deleted properly
+						return nil
+					},
 					resource.TestCheckResourceAttr("genesyscloud_group."+groupResource1, "name", groupName),
 					resource.TestCheckResourceAttr("genesyscloud_group."+groupResource1, "addresses.0.type", typeGroupPhone),
 					resource.TestCheckResourceAttr("genesyscloud_group."+groupResource1, "addresses.0.extension", addrPhoneExt2),
@@ -290,10 +296,11 @@ func TestAccResourceGroupMembers(t *testing.T) {
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckNoResourceAttr("genesyscloud_group."+groupResource, "member_ids.%"),
+					func(s *terraform.State) error {
+						time.Sleep(45 * time.Second) // Wait for 30 seconds for resources to get deleted properly
+						return nil
+					},
 				),
-				PreConfig: func() {
-					time.Sleep(30 * time.Second)
-				},
 			},
 			{
 				// Import/Read

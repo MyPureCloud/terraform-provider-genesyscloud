@@ -3,10 +3,12 @@ package telephony_providers_edges_site
 import (
 	"fmt"
 	"log"
+	"os"
 	"strconv"
 	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	featureToggles "terraform-provider-genesyscloud/genesyscloud/util/feature_toggles"
 	"testing"
 	"time"
 
@@ -16,11 +18,12 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v130/platformclientv2"
 )
 
 func TestAccResourceSite(t *testing.T) {
 	t.Parallel()
+
 	var (
 		// site
 		siteRes      = "site"
@@ -354,6 +357,14 @@ func TestAccResourceSiteNumberPlans(t *testing.T) {
 }
 
 func TestAccResourceSiteOutboundRoutes(t *testing.T) {
+	if exists := featureToggles.OutboundRoutesToggleExists(); exists {
+		// Unset outbound routes feature toggle so outbound routes will be managed by the site resource for this test
+		err := os.Unsetenv(featureToggles.OutboundRoutesToggleName())
+		if err != nil {
+			t.Skipf("%v is set and unable to unset, skipping test", featureToggles.OutboundRoutesToggleName())
+		}
+	}
+
 	t.Parallel()
 	var (
 		// site

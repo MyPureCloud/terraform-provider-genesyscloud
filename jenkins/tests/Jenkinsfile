@@ -23,6 +23,9 @@ pipeline {
 		GENESYSCLOUD_REGION = "${region}"
         GENESYSCLOUD_SDK_DEBUG =  "true"
         GENESYSCLOUD_TOKEN_POOL_SIZE =  20
+        PATH = "${env.PATH}:${HOME}/go/bin:/home/jenkins/.local/bin"
+        XML_REPORT = 'report.xml'
+        HTML_REPORT = 'report.html'
     }
     tools {
         go 'Go 1.20'
@@ -41,6 +44,10 @@ pipeline {
                 sh 'go mod download'
                 sh 'go clean -i -cache'
                 sh 'go build -v .'
+                sh 'pip3 install --user junit2html'
+                sh 'go install gotest.tools/gotestsum@latest'
+                sh 'go install github.com/nezorflame/junit-merger@latest'
+                sh 'pip install xmltodict --user'
             }
 	    }
 
@@ -51,8 +58,7 @@ pipeline {
 
             }
         }
-
-
+        
     stage('Architect Tests') {
             environment {
                 TF_ACC=1
@@ -63,7 +69,7 @@ pipeline {
                     echo 'Attempting to Run Architect Tests'
                     withCredentials([usernamePassword(credentialsId: CREDENTIALS_ID, usernameVariable: 'GENESYSCLOUD_OAUTHCLIENT_ID', passwordVariable: 'GENESYSCLOUD_OAUTHCLIENT_SECRET')]) {
                         echo 'Loading Genesys OAuth Credentials'
-                        sh 'go test ./genesyscloud/... -run TestAcc.*Architect -v -count=1 -timeout 120m -cover -coverprofile=coverageArchitect.out'
+                        sh 'gotestsum --junitfile architect.xml --format standard-verbose ./genesyscloud/... -run "TestAcc.*Architect|IvrConfig" -v -count=1 -timeout 120m -cover -coverprofile=coverageArchitect.out'
                     }
                 }
             }
@@ -79,7 +85,7 @@ pipeline {
                     echo 'Attempting to Run Idp Tests'
                     withCredentials([usernamePassword(credentialsId: CREDENTIALS_ID, usernameVariable: 'GENESYSCLOUD_OAUTHCLIENT_ID', passwordVariable: 'GENESYSCLOUD_OAUTHCLIENT_SECRET')]) {
                         echo 'Loading Genesys OAuth Credentials'
-                        sh 'go test ./genesyscloud/... -run TestAcc.*Idp -v -count=1 -timeout 120m -cover -coverprofile=coverageIdp.out'
+                        sh 'gotestsum --junitfile idp.xml --format standard-verbose ./genesyscloud/... -run TestAcc.*Idp -v -count=1 -timeout 120m -cover -coverprofile=coverageIdp.out'
                     }
                 }
             }
@@ -95,7 +101,7 @@ pipeline {
                     echo 'Attempting to Run Auth Tests'
                     withCredentials([usernamePassword(credentialsId: CREDENTIALS_ID, usernameVariable: 'GENESYSCLOUD_OAUTHCLIENT_ID', passwordVariable: 'GENESYSCLOUD_OAUTHCLIENT_SECRET')]) {
                         echo 'Loading Genesys OAuth Credentials'
-                        sh 'go test ./genesyscloud/... -run TestAcc.*Auth -v -count=1 -timeout 120m -cover -coverprofile=coverageAuth.out'
+                        sh 'gotestsum --junitfile auth.xml --format standard-verbose ./genesyscloud/... -run TestAcc.*Auth -v -count=1 -timeout 120m -cover -coverprofile=coverageAuth.out'
                     }
                 }
             }
@@ -112,7 +118,7 @@ pipeline {
                     echo 'Attempting to Run Integration Tests'
                     withCredentials([usernamePassword(credentialsId: CREDENTIALS_ID, usernameVariable: 'GENESYSCLOUD_OAUTHCLIENT_ID', passwordVariable: 'GENESYSCLOUD_OAUTHCLIENT_SECRET')]) {
                         echo 'Loading Genesys OAuth Credentials'
-                        sh 'go test ./genesyscloud/... -run TestAcc.*Integration -v -count=1 -timeout 120m -cover -coverprofile=coverageIntegration.out'
+                        sh 'gotestsum --junitfile integration.xml --format standard-verbose ./genesyscloud/... -run TestAcc.*Integration -v -count=1 -timeout 120m -cover -coverprofile=coverageIntegration.out'
                     }
                 }
             }
@@ -129,7 +135,7 @@ pipeline {
                     echo 'Attempting to Run Flow Tests'
                     withCredentials([usernamePassword(credentialsId: CREDENTIALS_ID, usernameVariable: 'GENESYSCLOUD_OAUTHCLIENT_ID', passwordVariable: 'GENESYSCLOUD_OAUTHCLIENT_SECRET')]) {
                         echo 'Loading Genesys OAuth Credentials'
-                        sh "go test ./genesyscloud/... -run 'TestAcc.*Flow' -v -count=1 -timeout 120m -cover -coverprofile=coverageFlow.out"
+                        sh "gotestsum --junitfile flow.xml --format standard-verbose ./genesyscloud/... -run 'TestAcc.*Flow' -v -count=1 -timeout 120m -cover -coverprofile=coverageFlow.out"
                     }
                 }
             }
@@ -145,7 +151,7 @@ pipeline {
                     echo 'Attempting to Run Journey Tests'
                     withCredentials([usernamePassword(credentialsId: CREDENTIALS_ID, usernameVariable: 'GENESYSCLOUD_OAUTHCLIENT_ID', passwordVariable: 'GENESYSCLOUD_OAUTHCLIENT_SECRET')]) {
                         echo 'Loading Genesys OAuth Credentials'
-                        sh 'go test ./genesyscloud/... -run TestAcc.*Journey -v -count=1 -timeout 120m -cover -coverprofile=coverageJourney.out'
+                        sh 'gotestsum --junitfile journey.xml --format standard-verbose ./genesyscloud/... -run TestAcc.*Journey -v -count=1 -timeout 120m -cover -coverprofile=coverageJourney.out'
                     }
                 }
             }
@@ -161,7 +167,7 @@ pipeline {
                     echo 'Attempting to Run Knowledge Tests'
                     withCredentials([usernamePassword(credentialsId: CREDENTIALS_ID, usernameVariable: 'GENESYSCLOUD_OAUTHCLIENT_ID', passwordVariable: 'GENESYSCLOUD_OAUTHCLIENT_SECRET')]) {
                         echo 'Loading Genesys OAuth Credentials'
-                        sh 'go test ./genesyscloud/... -run TestAcc.*Knowledge -v -count=1 -timeout 120m -cover -coverprofile=coverageKnowledge.out'
+                        sh 'gotestsum --junitfile knowledge.xml --format standard-verbose ./genesyscloud/... -run TestAcc.*Knowledge -v -count=1 -timeout 120m -cover -coverprofile=coverageKnowledge.out'
                     }
                 }
             }
@@ -177,7 +183,7 @@ pipeline {
                     echo 'Attempting to Run Outbound Tests'
                     withCredentials([usernamePassword(credentialsId: CREDENTIALS_ID, usernameVariable: 'GENESYSCLOUD_OAUTHCLIENT_ID', passwordVariable: 'GENESYSCLOUD_OAUTHCLIENT_SECRET')]) {
                         echo 'Loading Genesys OAuth Credentials'
-                        sh 'go test ./genesyscloud/... -run TestAcc.*Outbound -v -count=1 -timeout 120m -cover -coverprofile=coverageOutbound.out'
+                        sh 'gotestsum --junitfile outbound.xml --format standard-verbose ./genesyscloud/... -run TestAcc.*Outbound -v -count=1 -timeout 120m -cover -coverprofile=coverageOutbound.out'
                     }
                 }
             }
@@ -193,7 +199,7 @@ pipeline {
                     echo 'Attempting to Run ResponseManagement Tests'
                     withCredentials([usernamePassword(credentialsId: CREDENTIALS_ID, usernameVariable: 'GENESYSCLOUD_OAUTHCLIENT_ID', passwordVariable: 'GENESYSCLOUD_OAUTHCLIENT_SECRET')]) {
                         echo 'Loading Genesys OAuth Credentials'
-                        sh 'go test ./genesyscloud/... -run TestAcc.*ResponseManagement -v -count=1 -timeout 120m -cover -coverprofile=coverageResponseManagement.out'
+                        sh 'gotestsum --junitfile response.xml --format standard-verbose ./genesyscloud/... -run TestAcc.*ResponseManagement -v -count=1 -timeout 120m -cover -coverprofile=coverageResponseManagement.out'
                     }
                 }
             }
@@ -209,7 +215,7 @@ pipeline {
                     echo 'Attempting to Run Routing Tests'
                     withCredentials([usernamePassword(credentialsId: CREDENTIALS_ID, usernameVariable: 'GENESYSCLOUD_OAUTHCLIENT_ID', passwordVariable: 'GENESYSCLOUD_OAUTHCLIENT_SECRET')]) {
                         echo 'Loading Genesys OAuth Credentials'
-                        sh "go test ./genesyscloud/... -run 'TestAcc.*Routing' -v -count=1 -timeout 120m -cover -coverprofile=coverageRouting.out"
+                        sh "gotestsum --junitfile routing.xml --format standard-verbose ./genesyscloud/... -run 'TestAcc.*Routing' -v -count=1 -timeout 120m -cover -coverprofile=coverageRouting.out"
                     }
                 }
             }
@@ -226,7 +232,7 @@ pipeline {
                     echo 'Attempting to Run Location Tests'
                     withCredentials([usernamePassword(credentialsId: CREDENTIALS_ID, usernameVariable: 'GENESYSCLOUD_OAUTHCLIENT_ID', passwordVariable: 'GENESYSCLOUD_OAUTHCLIENT_SECRET')]) {
                         echo 'Loading Genesys OAuth Credentials'
-                        sh 'go test ./genesyscloud/... -run TestAcc.*Location -v -count=1 -timeout 120m -cover -coverprofile=coverageLocation.out'
+                        sh 'gotestsum --junitfile location.xml --format standard-verbose ./genesyscloud/... -run TestAcc.*Location -v -count=1 -timeout 120m -cover -coverprofile=coverageLocation.out'
                     }
                 }
             }
@@ -243,7 +249,7 @@ pipeline {
                     echo 'Attempting to Run WebDeployment Tests'
                     withCredentials([usernamePassword(credentialsId: CREDENTIALS_ID, usernameVariable: 'GENESYSCLOUD_OAUTHCLIENT_ID', passwordVariable: 'GENESYSCLOUD_OAUTHCLIENT_SECRET')]) {
                         echo 'Loading Genesys OAuth Credentials'
-                        sh 'go test ./genesyscloud/... -run TestAcc.*WebDeployment -v -count=1 -timeout 120m -cover -coverprofile=coverageWebDeployment.out'
+                        sh 'gotestsum --junitfile web.xml --format standard-verbose ./genesyscloud/... -run TestAcc.*WebDeployment -v -count=1 -timeout 120m -cover -coverprofile=coverageWebDeployment.out'
                     }
                 }
             }
@@ -260,7 +266,7 @@ pipeline {
                     echo 'Attempting to Run Site Tests'
                     withCredentials([usernamePassword(credentialsId: CREDENTIALS_ID, usernameVariable: 'GENESYSCLOUD_OAUTHCLIENT_ID', passwordVariable: 'GENESYSCLOUD_OAUTHCLIENT_SECRET')]) {
                         echo 'Loading Genesys OAuth Credentials'
-                        sh 'go test ./genesyscloud/... -run TestAcc.*Site -v -count=1 -timeout 120m -cover -coverprofile=coverageSite.out'
+                        sh 'gotestsum --junitfile site.xml --format standard-verbose ./genesyscloud/... -run TestAcc.*Site -v -count=1 -timeout 120m -cover -coverprofile=coverageSite.out'
                     }
                 }
             }
@@ -277,7 +283,7 @@ pipeline {
                     echo 'Attempting to Run Roles & Teams Tests'
                     withCredentials([usernamePassword(credentialsId: CREDENTIALS_ID, usernameVariable: 'GENESYSCLOUD_OAUTHCLIENT_ID', passwordVariable: 'GENESYSCLOUD_OAUTHCLIENT_SECRET')]) {
                         echo 'Loading Genesys OAuth Credentials'
-                        sh 'go test ./genesyscloud/... -run "TestAcc.*Roles|Team|Members" -v -count=1 -timeout 120m -cover -coverprofile=coverageRoleTeam.out'
+                        sh 'gotestsum --junitfile team.xml --format standard-verbose ./genesyscloud/... -run "TestAcc.*Roles|Team|ResourceGroup" -v -count=1 -timeout 120m -cover -coverprofile=coverageRoleTeam.out'
                     }
                 }
             }
@@ -294,7 +300,7 @@ pipeline {
                     echo 'Attempting to Run Export Tests'
                     withCredentials([usernamePassword(credentialsId: CREDENTIALS_ID, usernameVariable: 'GENESYSCLOUD_OAUTHCLIENT_ID', passwordVariable: 'GENESYSCLOUD_OAUTHCLIENT_SECRET')]) {
                         echo 'Loading Genesys OAuth Credentials'
-                        sh 'go test ./genesyscloud/... -run TestAcc.*Export -v -count=1 -timeout 120m -cover -coverprofile=coverageExport.out'
+                        sh 'gotestsum --junitfile export.xml --format standard-verbose ./genesyscloud/... -run TestAcc.*Export -v -count=1 -timeout 120m -cover -coverprofile=coverageExport.out'
                     }
                 }
             }
@@ -311,7 +317,7 @@ pipeline {
                     echo 'Attempting to Run Remaining Tests'
                     withCredentials([usernamePassword(credentialsId: CREDENTIALS_ID, usernameVariable: 'GENESYSCLOUD_OAUTHCLIENT_ID', passwordVariable: 'GENESYSCLOUD_OAUTHCLIENT_SECRET')]) {
                         echo 'Loading Genesys OAuth Credentials'
-                        sh "go test ./genesyscloud/... -run TestAcc -skip 'Architect|Flow|Idp|Auth|Integration|Journey|Knowledge|Outbound|Routing|ResponseManagement|Export|Location|WebDeployment|Site|Roles|Team|Members' -v -count=1 -timeout 120m -cover -coverprofile=coverageRemaining.out"
+                        sh "gotestsum --junitfile remaining.xml --format standard-verbose ./genesyscloud/... -run TestAcc -skip 'Architect|Flow|Idp|Auth|Integration|Journey|Knowledge|Outbound|Routing|ResponseManagement|Export|Location|WebDeployment|Site|Roles|Team|ResourceGroup' -v -count=1 -timeout 120m -cover -coverprofile=coverageRemaining.out"
 
                     }
                 }
@@ -319,19 +325,216 @@ pipeline {
         }
 
         stage('Generate & Upload Report') {
-            steps {
+            
+        steps {
         sh 'GOBIN=$HOME/bin go install github.com/wadey/gocovmerge@latest'
         // Generate merged coverage report
         sh '$HOME/bin/gocovmerge coverageArchitect.out coverageIdp.out coverageAuth.out coverageIntegration.out coverageFlow.out coverageJourney.out coverageKnowledge.out coverageOutbound.out coverageResponseManagement.out coverageRouting.out coverageExport.out coverageLocation.out coverageWebDeployment.out coverageRemaining.out coverageSite.out coverageRoleTeam.out > merged_coverage.out'
-        
+
         // Convert merged coverage report to HTML
         sh 'go tool cover -html merged_coverage.out -o coverageAcceptance.html'
 
-        // Archive HTML coverage report
-        archiveArtifacts artifacts: 'coverageAcceptance.html', allowEmptyArchive: true
+        sh 'junit-merger -o test-results.xml architect.xml idp.xml auth.xml integration.xml flow.xml journey.xml knowledge.xml outbound.xml response.xml routing.xml location.xml web.xml site.xml team.xml export.xml remaining.xml'
+        
+    
+                script {
+                    // Read the XML file content
+                    def xmlContent = readFile 'test-results.xml'
+
+                    // Extract test case information using regular expressions
+                    def testCases = []
+                    def testCasePattern = /<testcase\s+classname="([^"]+)"\s+name="([^"]+)"\s+time="([^"]+)"/
+                    def failurePattern = /<failure[^>]*>([\s\S]*?)<\/failure>/
+                    def skippedPattern = /<skipped[^>]*>([\s\S]*?)<\/skipped>/
+
+                    def matcher = xmlContent =~ testCasePattern
+                    while (matcher.find()) {
+                        def classname = matcher.group(1)
+                        def name = matcher.group(2)
+                        def time = matcher.group(3)
+                        def remainingText = xmlContent.substring(matcher.end())
+
+                        def endIndex = remainingText.indexOf('</testcase>')
+                        def details = endIndex != -1 ? remainingText.substring(0, endIndex) : ""
+
+                        def result = [
+                            name: name,
+                            classname: classname,
+                            time: time,
+                            status: 'Passed', // Default to Passed
+                            reason: '',
+                            log: details
+                        ]
+
+                        // Check for failure or skipped
+                        def failureMatcher = details =~ failurePattern
+                        def skippedMatcher = details =~ skippedPattern
+                        if (failureMatcher.find()) {
+                            result.status = 'Failed'
+                            result.log = failureMatcher.group(1).trim()
+                        } else if (skippedMatcher.find()) {
+                            result.status = 'Skipped'
+                            result.log = skippedMatcher.group(1).trim()
+                        }
+
+                        // Extract reason
+                        if (result.status == 'Failed') {
+                            result.reason = extractReason(result.log)
+                        } else if (result.status == 'Skipped') {
+                            result.reason = extractReason(result.log)
+                        }
+
+                        testCases << result
+                    }
+
+                    // Generate HTML report
+                    def html = new StringBuilder()
+                    html.append("""
+                    <html>
+                    <head>
+                        <style>
+                            body { font-family: Arial, sans-serif; margin: 20px; }
+                            table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+                            th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+                            th { background-color: #f2f2f2; }
+                            .passed { background-color: #d4edda; }
+                            .failed { background-color: #f8d7da; }
+                            .skipped { background-color: #fff3cd; }
+                            .summary { margin-bottom: 20px; }
+                            .summary div { margin: 5px 0; }
+                            .link { color: #007bff; text-decoration: none; }
+                            .reason-content { margin-top: 10px; padding: 10px; border: 1px solid #ccc; background-color: #f9f9f9; word-wrap: break-word; white-space: pre-wrap; }
+                            .test-case { border-left: 4px solid #dc3545; padding-left: 10px; margin-top: 20px; background-color: #f8d7da; padding: 10px; border-radius: 5px; }
+                        </style>
+                    </head>
+                    <body>
+                        <h2>Test Results</h2>
+                        <div class="summary">
+                            <div>Total Tests: ${testCases.size()}</div>
+                            <div style="color: green;">Total Passed: ${testCases.count { it.status == 'Passed' }}</div>
+                            <div style="color: red;">Total Failed: ${testCases.count { it.status == 'Failed' }}</div>
+                            <div style="color: orange;">Total Skipped: ${testCases.count { it.status == 'Skipped' }}</div>
+                        </div>
+
+                        <h3>Failed Tests</h3>
+                        <table>
+                            <tr>
+                                <th>Status</th>
+                                <th>Class Name</th>
+                                <th>Test Name</th>
+                                <th>Duration (s)</th>
+                            </tr>
+                    """)
+
+                    testCases.findAll { it.status == 'Failed' }.each { result ->
+                        html.append("""
+                        <tr class="failed">
+                            <td>${result.status}</td>
+                            <td>${result.classname}</td>
+                            <td>
+                                <a href="#${result.name}" class="link">${result.name}</a>
+                            </td>
+                            <td>${result.time}</td>
+                        </tr>
+                        """)
+                    }
+
+                    html.append("""
+                        </table>
+
+                        <h3>Skipped Tests</h3>
+                        <table>
+                            <tr>
+                                <th>Status</th>
+                                <th>Class Name</th>
+                                <th>Test Name</th>
+                            </tr>
+                    """)
+
+                    testCases.findAll { it.status == 'Skipped' }.each { result ->
+                        html.append("""
+                        <tr class="skipped">
+                            <td>${result.status}</td>
+                            <td>${result.classname}</td>
+                            <td>${result.name}</td>
+                        </tr>
+                        """)
+                    }
+
+                    html.append("""
+                        </table>
+
+                        <h3>Passed Tests</h3>
+                        <table>
+                            <tr>
+                                <th>Status</th>
+                                <th>Class Name</th>
+                                <th>Test Name</th>
+                                <th>Duration (s)</th>
+                            </tr>
+                    """)
+
+                    testCases.findAll { it.status == 'Passed' }.each { result ->
+                        html.append("""
+                        <tr class="passed">
+                            <td>${result.status}</td>
+                            <td>${result.classname}</td>
+                            <td>${result.name}</td>
+                            <td>${result.time}</td>
+                        </tr>
+                        """)
+                    }
+
+                    html.append("""
+                        </table>
+
+                        <h3>Test Details</h3>
+                    """)
+
+                    testCases.findAll { it.status == 'Failed' }.each { result ->
+                        html.append("""
+                        <div id="${result.name}" class="reason-detail">
+                            <div class="test-case failed">
+                                <h4>${result.classname}.${result.name}</h4>
+                                <p>Status: ${result.status}</p>
+                                <p>Duration: ${result.time}s</p>
+                                <div class="reason-content">
+                                    ${result.log}
+                                </div>
+                            </div>
+                        </div>
+                        """)
+                    }
+
+                    html.append("""
+                    </body>
+                    </html>
+                    """)
+
+                    // Save the HTML report to a file
+                    writeFile file: 'test-report.html', text: html.toString()
+
+                // Optionally, print the location of the HTML report
+                    echo "HTML report generated: \${env.WORKSPACE}/test-report.html"
+                }
+                archiveArtifacts artifacts: 'coverageAcceptance.html,test-report.html,test-results.xml', allowEmptyArchive: true
             }
+   
+           }
         }
     }
+
+ 
+ def extractReason(String log) {
+    // Extract reason from the log
+    def reason = ""
+    def reasonPattern = /message="([^"]*)">/
+    def matcher = log =~ reasonPattern
+    if (matcher.find()) {
+        reason = matcher.group(1).trim()
+    }
+    return reason
 }
+
 
     

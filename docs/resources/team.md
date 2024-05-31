@@ -42,7 +42,7 @@ resource "genesyscloud_team" "example_team" {
 ### Optional
 
 - `description` (String) Team information.
-- `member_ids` (List of String) Specifies the members, No modifications to members will be made if not set. If empty all members will be deleted. If populated, only the populated members will be retained
+- `member_ids` (Set of String) IDs of members assigned to the team. If not set, this resource will not manage group members.
 
 ### Read-Only
 

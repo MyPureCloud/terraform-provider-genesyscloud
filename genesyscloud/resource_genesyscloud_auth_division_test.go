@@ -13,7 +13,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v130/platformclientv2"
 )
 
 func TestAccResourceAuthDivisionBasic(t *testing.T) {
@@ -50,10 +50,12 @@ func TestAccResourceAuthDivisionBasic(t *testing.T) {
 					strconv.Quote(divDesc1),
 					util.NullValue, // Not home division
 				),
-				PreConfig: func() {
-					// Wait for a specified duration - to avoid getting non empty plan
-					time.Sleep(45 * time.Second)
-				},
+				Check: resource.ComposeTestCheckFunc(
+					func(s *terraform.State) error {
+						time.Sleep(30 * time.Second) // Wait for 30 seconds for proper updation
+						return nil
+					},
+				),
 			},
 			{
 				// Update with a new name and description
@@ -121,6 +123,12 @@ func TestAccResourceAuthDivisionHome(t *testing.T) {
 					divHomeName,
 					strconv.Quote(homeDesc2),
 					util.TrueValue, // Home division
+				),
+				Check: resource.ComposeTestCheckFunc(
+					func(s *terraform.State) error {
+						time.Sleep(30 * time.Second) // Wait for 30 seconds for proper updation
+						return nil
+					},
 				),
 			},
 			{

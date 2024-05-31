@@ -18,8 +18,6 @@ import (
 )
 
 func TestAccResourceOutboundWrapupCodeMapping(t *testing.T) {
-
-	t.Parallel()
 	var (
 		resourceId            = "wrapupcodemappings"
 		wrapupCode1ResourceId = "wrapupcode1"
@@ -34,6 +32,9 @@ func TestAccResourceOutboundWrapupCodeMapping(t *testing.T) {
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
+				PreConfig: func() {
+					time.Sleep(30 * time.Second)
+				},
 				Config: gcloud.GenerateRoutingWrapupcodeResource(wrapupCode1ResourceId, wrapupCode1Name) +
 					fmt.Sprintf(`
 resource "genesyscloud_outbound_wrapupcodemappings"	"%s" {	
@@ -45,6 +46,10 @@ resource "genesyscloud_outbound_wrapupcodemappings"	"%s" {
 }		
 `, resourceId, wrapupCode1ResourceId),
 				Check: resource.ComposeTestCheckFunc(
+					func(s *terraform.State) error {
+						time.Sleep(30 * time.Second) // Wait for 45 seconds to get proper response
+						return nil
+					},
 					util.ValidateStringInArray("genesyscloud_outbound_wrapupcodemappings."+resourceId, "default_set", "Contact_UnCallable"),
 					util.ValidateStringInArray("genesyscloud_outbound_wrapupcodemappings."+resourceId, "default_set", "Number_UnCallable"),
 					verifyWrapupCodeMappingsMappingValues("genesyscloud_outbound_wrapupcodemappings."+resourceId,
@@ -53,6 +58,9 @@ resource "genesyscloud_outbound_wrapupcodemappings"	"%s" {
 			},
 			// Update
 			{
+				PreConfig: func() {
+					time.Sleep(30 * time.Second)
+				},
 				Config: gcloud.GenerateRoutingWrapupcodeResource(wrapupCode1ResourceId, wrapupCode1Name) +
 					gcloud.GenerateRoutingWrapupcodeResource(wrapupCode2ResourceId, wrapupCode2Name) +
 					fmt.Sprintf(`
@@ -76,9 +84,6 @@ resource "genesyscloud_outbound_wrapupcodemappings"	"%s" {
 					verifyWrapupCodeMappingsMappingValues("genesyscloud_outbound_wrapupcodemappings."+resourceId,
 						"genesyscloud_routing_wrapupcode."+wrapupCode2ResourceId, []string{"Number_UnCallable", "Right_Party_Contact"}),
 				),
-				PreConfig: func() {
-					time.Sleep(45 * time.Second)
-				},
 			},
 			// Update
 			{

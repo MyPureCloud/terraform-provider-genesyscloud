@@ -11,10 +11,10 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
 func TestAccResourceOrgAuthorizationPairing(t *testing.T) {
-	t.Parallel()
 	var (
 		orgAuthorizationPairingResource = "test-orgauthorization-pairing"
 		userResource1                   = "test-user-1"
@@ -89,6 +89,9 @@ func TestAccResourceOrgAuthorizationPairing(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_orgauthorization_pairing."+orgAuthorizationPairingResource, "group_ids.#", "2"),
 					resource.TestCheckResourceAttr("genesyscloud_orgauthorization_pairing."+orgAuthorizationPairingResource, "user_ids.#", "2"),
 				),
+				PreConfig: func() {
+					time.Sleep(30 * time.Second)
+				},
 			},
 			// 1 user
 			{
@@ -120,6 +123,10 @@ func TestAccResourceOrgAuthorizationPairing(t *testing.T) {
   user_ids  = [genesyscloud_user.%s.id, genesyscloud_user.%s.id]
 }`, orgAuthorizationPairingResource, userResource1, userResource2),
 				Check: resource.ComposeTestCheckFunc(
+					func(s *terraform.State) error {
+						time.Sleep(30 * time.Second) // Wait for 30 seconds for proper creation
+						return nil
+					},
 					util.ValidateResourceAttributeInArray("genesyscloud_orgauthorization_pairing."+orgAuthorizationPairingResource, "user_ids",
 						"genesyscloud_user."+userResource1, "id"),
 					util.ValidateResourceAttributeInArray("genesyscloud_orgauthorization_pairing."+orgAuthorizationPairingResource, "user_ids",
@@ -137,6 +144,10 @@ func TestAccResourceOrgAuthorizationPairing(t *testing.T) {
   group_ids = [genesyscloud_group.%s.id]
 }`, orgAuthorizationPairingResource, groupResource1),
 				Check: resource.ComposeTestCheckFunc(
+					func(s *terraform.State) error {
+						time.Sleep(30 * time.Second) // Wait for 30 seconds for proper updation
+						return nil
+					},
 					resource.TestCheckResourceAttrPair("genesyscloud_orgauthorization_pairing."+orgAuthorizationPairingResource, "group_ids.0", "genesyscloud_group."+groupResource1, "id"),
 				),
 			},
@@ -159,10 +170,11 @@ func TestAccResourceOrgAuthorizationPairing(t *testing.T) {
 					util.ValidateResourceAttributeInArray("genesyscloud_orgauthorization_pairing."+orgAuthorizationPairingResource, "group_ids",
 						"genesyscloud_group."+groupResource2, "id"),
 					resource.TestCheckResourceAttr("genesyscloud_orgauthorization_pairing."+orgAuthorizationPairingResource, "group_ids.#", "2"),
+					func(s *terraform.State) error {
+						time.Sleep(30 * time.Second) // Wait for 30 seconds for resources to get deleted properly
+						return nil
+					},
 				),
-				PreConfig: func() {
-					time.Sleep(30 * time.Second)
-				},
 			},
 			{
 				// Import/Read

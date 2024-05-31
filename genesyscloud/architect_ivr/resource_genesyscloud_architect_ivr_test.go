@@ -14,7 +14,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v130/platformclientv2"
 )
 
 func TestAccResourceIvrConfigBasic(t *testing.T) {
@@ -201,7 +201,7 @@ func TestAccResourceIvrConfigDnisOverload(t *testing.T) {
 		resourceID = "ivr"
 		name       = "TF Test IVR " + uuid.NewString()
 
-		didRangeLength    = 200 // Should be at least 50 to avoid index out of bounds errors below
+		didRangeLength    = 100 // Should be at least 50 to avoid index out of bounds errors below
 		didPoolResourceId = "did_pool"
 		startNumber       = 35375550120
 		endNumber         = startNumber + didRangeLength
