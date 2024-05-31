@@ -14,7 +14,6 @@ import (
 
 func TestAccDataSourceRoutingEmailRoute(t *testing.T) {
 	var (
-		name          = "Response-" + uuid.NewString()
 		domainRes     = "routing-domain1"
 		domainId      = fmt.Sprintf("terraformroutes.%s.com", strings.Replace(uuid.NewString(), "-", "", -1))
 		routeRes      = "email-route1"
@@ -45,13 +44,13 @@ func TestAccDataSourceRoutingEmailRoute(t *testing.T) {
 					generateRoutingAutoBcc(fromName1, bccEmail1),
 				) + generateRoutingEmailRouteDataSource(
 					routeRes,
-					name,
+					routePattern1,
 					"genesyscloud_routing_email_domain."+domainRes+".id",
 					"genesyscloud_routing_email_route."+routeRes,
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrPair(
-						"data.genesyscloud_routing_email_route."+domainRes, "id",
+						"data.genesyscloud_routing_email_route."+routeRes, "id",
 						"genesyscloud_routing_email_route."+routeRes, "id",
 					),
 				),
@@ -63,14 +62,14 @@ func TestAccDataSourceRoutingEmailRoute(t *testing.T) {
 
 func generateRoutingEmailRouteDataSource(
 	resourceID string,
-	name string,
+	pattern string,
 	domainId string,
 	dependsOn string) string {
 	return fmt.Sprintf(`
 		data "genesyscloud_routing_email_route" "%s" {
-			name = "%s"
+			pattern = "%s"
 			domain_id = "%s"
 			depends_on=[%s]
 		}
-	`, resourceID, name, domainId, dependsOn)
+	`, resourceID, pattern, domainId, dependsOn)
 }

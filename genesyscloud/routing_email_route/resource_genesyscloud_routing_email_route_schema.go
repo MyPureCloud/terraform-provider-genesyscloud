@@ -157,8 +157,8 @@ func DataSourceRoutingEmailRoute() *schema.Resource {
 		Description: "Data source for Genesys Cloud Routing Email Route. Select a routing email by name.",
 		ReadContext: provider.ReadWithPooledClient(dataSourceRoutingEmailRouteRead),
 		Schema: map[string]*schema.Schema{
-			"name": {
-				Description: "Routing email name.",
+			"pattern": {
+				Description: "Routing pattern.",
 				Type:        schema.TypeString,
 				Required:    true,
 			},

@@ -17,23 +17,23 @@ import (
    for the resource.
 */
 
-// dataSourceRoutingEmailRouteRead retrieves by name, domainId the id in question
+// dataSourceRoutingEmailRouteRead retrieves by pattern, domainId the id in question
 
 func dataSourceRoutingEmailRouteRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	sdkConfig := m.(*provider.ProviderMeta).ClientConfig
 	proxy := getRoutingEmailRouteProxy(sdkConfig)
 
-	name := d.Get("name").(string)
+	pattern := d.Get("pattern").(string)
 	domainId := d.Get("domain_id").(string)
 
 	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
-		responseId, retryable, resp, err := proxy.getRoutingEmailRouteIdByName(ctx, name, domainId)
+		responseId, retryable, resp, err := proxy.getRoutingEmailRouteIdByPattern(ctx, pattern, domainId)
 
 		if err != nil && !retryable {
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Error requesting routing email route %s | error: %s", name, err), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Error requesting routing email route %s | error: %s", pattern, err), resp))
 		}
 		if retryable {
-			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("No routing email route found with name %s", name), resp))
+			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("No routing email route found with pattern %s", pattern), resp))
 		}
 
 		d.SetId(responseId)
