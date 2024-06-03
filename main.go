@@ -2,8 +2,6 @@ package main
 
 import (
 	"flag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/plugin"
 	"sync"
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	dt "terraform-provider-genesyscloud/genesyscloud/architect_datatable"
@@ -24,6 +22,7 @@ import (
 	flowOutcome "terraform-provider-genesyscloud/genesyscloud/flow_outcome"
 	"terraform-provider-genesyscloud/genesyscloud/group"
 	groupRoles "terraform-provider-genesyscloud/genesyscloud/group_roles"
+	idpOkta "terraform-provider-genesyscloud/genesyscloud/idp_okta"
 	idpSalesforce "terraform-provider-genesyscloud/genesyscloud/idp_salesforce"
 	"terraform-provider-genesyscloud/genesyscloud/integration"
 	integrationAction "terraform-provider-genesyscloud/genesyscloud/integration_action"
@@ -57,6 +56,9 @@ import (
 	responsemanagementResponseasset "terraform-provider-genesyscloud/genesyscloud/responsemanagement_responseasset"
 	routingEmailRoute "terraform-provider-genesyscloud/genesyscloud/routing_email_route"
 	routingQueue "terraform-provider-genesyscloud/genesyscloud/routing_queue"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/plugin"
 
 	routingQueueConditionalGroupRouting "terraform-provider-genesyscloud/genesyscloud/routing_queue_conditional_group_routing"
 	routingQueueOutboundEmailAddress "terraform-provider-genesyscloud/genesyscloud/routing_queue_outbound_email_address"
@@ -177,6 +179,7 @@ func registerResources() {
 	scripts.SetRegistrar(regInstance)                                      //Registering Scripts
 	smsAddresses.SetRegistrar(regInstance)                                 //Registering routing sms addresses
 	idpSalesforce.SetRegistrar(regInstance)                                //Registering idp salesforce
+	idpOkta.SetRegistrar(regInstance)                                      //Registering idp okta
 	integration.SetRegistrar(regInstance)                                  //Registering integrations
 	integrationCustomAuth.SetRegistrar(regInstance)                        //Registering integrations custom auth actions
 	integrationAction.SetRegistrar(regInstance)                            //Registering integrations actions

@@ -1,4 +1,4 @@
-package genesyscloud
+package idp_okta
 
 import (
 	"fmt"
