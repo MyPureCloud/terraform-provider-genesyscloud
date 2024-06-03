@@ -16,7 +16,6 @@ func registerDataSources(l registrar.Registrar) {
 	l.RegisterDataSource("genesyscloud_routing_wrapupcode", DataSourceRoutingWrapupcode())
 	l.RegisterDataSource("genesyscloud_location", DataSourceLocation())
 	l.RegisterDataSource("genesyscloud_auth_division_home", DataSourceAuthDivisionHome())
-	l.RegisterDataSource("genesyscloud_architect_schedules", DataSourceSchedule())
 	l.RegisterDataSource("genesyscloud_auth_division", dataSourceAuthDivision())
 	l.RegisterDataSource("genesyscloud_auth_division_home", DataSourceAuthDivisionHome())
 	l.RegisterDataSource("genesyscloud_journey_action_map", dataSourceJourneyActionMap())
@@ -44,7 +43,6 @@ func registerDataSources(l registrar.Registrar) {
 func registerResources(l registrar.Registrar) {
 
 	l.RegisterResource("genesyscloud_location", ResourceLocation())
-	l.RegisterResource("genesyscloud_architect_schedules", ResourceArchitectSchedules())
 	l.RegisterResource("genesyscloud_auth_division", ResourceAuthDivision())
 	l.RegisterResource("genesyscloud_idp_adfs", ResourceIdpAdfs())
 	l.RegisterResource("genesyscloud_idp_generic", ResourceIdpGeneric())
@@ -79,7 +77,6 @@ func registerResources(l registrar.Registrar) {
 }
 
 func registerExporters(l registrar.Registrar) {
-	l.RegisterExporter("genesyscloud_architect_schedules", ArchitectSchedulesExporter())
 	l.RegisterExporter("genesyscloud_auth_division", AuthDivisionExporter())
 	l.RegisterExporter("genesyscloud_idp_adfs", IdpAdfsExporter())
 	l.RegisterExporter("genesyscloud_idp_generic", IdpGenericExporter())

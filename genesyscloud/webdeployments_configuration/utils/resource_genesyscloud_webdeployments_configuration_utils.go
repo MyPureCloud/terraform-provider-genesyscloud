@@ -7,7 +7,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v129/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v130/platformclientv2"
 )
 
 func buildCobrowseSettings(d *schema.ResourceData) *platformclientv2.Cobrowsesettings {
@@ -25,16 +25,18 @@ func buildCobrowseSettings(d *schema.ResourceData) *platformclientv2.Cobrowseset
 
 	enabled, _ := cfg["enabled"].(bool)
 	allowAgentControl, _ := cfg["allow_agent_control"].(bool)
+	allowAgentNavigation, _ := cfg["allow_agent_navigation"].(bool)
 	channels := lists.InterfaceListToStrings(cfg["channels"].([]interface{}))
 	maskSelectors := lists.InterfaceListToStrings(cfg["mask_selectors"].([]interface{}))
 	readonlySelectors := lists.InterfaceListToStrings(cfg["readonly_selectors"].([]interface{}))
 
 	return &platformclientv2.Cobrowsesettings{
-		Enabled:           &enabled,
-		AllowAgentControl: &allowAgentControl,
-		Channels:          &channels,
-		MaskSelectors:     &maskSelectors,
-		ReadonlySelectors: &readonlySelectors,
+		Enabled:              &enabled,
+		AllowAgentControl:    &allowAgentControl,
+		AllowAgentNavigation: &allowAgentNavigation,
+		Channels:             &channels,
+		MaskSelectors:        &maskSelectors,
+		ReadonlySelectors:    &readonlySelectors,
 	}
 }
 
@@ -121,7 +123,7 @@ func CustomizeConfigurationDiff(ctx context.Context, diff *schema.ResourceDiff, 
 	if len(diff.GetChangedKeysPrefix("")) > 0 {
 		// When any change is made to the configuration we automatically publish a new version, so mark the version as updated
 		// so dependent deployments will update appropriately to reference the newest version
-		diff.SetNewComputed("version")
+		_ = diff.SetNewComputed("version")
 	}
 	return nil
 }
@@ -156,11 +158,12 @@ func FlattenCobrowseSettings(cobrowseSettings *platformclientv2.Cobrowsesettings
 	}
 
 	return []interface{}{map[string]interface{}{
-		"enabled":             cobrowseSettings.Enabled,
-		"allow_agent_control": cobrowseSettings.AllowAgentControl,
-		"channels":            cobrowseSettings.Channels,
-		"mask_selectors":      cobrowseSettings.MaskSelectors,
-		"readonly_selectors":  cobrowseSettings.ReadonlySelectors,
+		"enabled":                cobrowseSettings.Enabled,
+		"allow_agent_control":    cobrowseSettings.AllowAgentControl,
+		"allow_agent_navigation": cobrowseSettings.AllowAgentNavigation, 
+		"channels":               cobrowseSettings.Channels,
+		"mask_selectors":         cobrowseSettings.MaskSelectors,
+		"readonly_selectors":     cobrowseSettings.ReadonlySelectors,
 	}}
 }
 
