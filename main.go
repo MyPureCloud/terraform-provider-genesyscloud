@@ -79,6 +79,7 @@ import (
 	edgePhone "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_phone"
 	phoneBaseSettings "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_phonebasesettings"
 	edgeSite "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site"
+	siteOutboundRoutes "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site_outbound_route"
 	edgesTrunk "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_trunk"
 	tfexp "terraform-provider-genesyscloud/genesyscloud/tfexporter"
 	userRoles "terraform-provider-genesyscloud/genesyscloud/user_roles"
@@ -153,6 +154,7 @@ func registerResources() {
 	groupRoles.SetRegistrar(regInstance)                                   //Registering group roles
 	edgePhone.SetRegistrar(regInstance)                                    //Registering telephony providers edges phone
 	edgeSite.SetRegistrar(regInstance)                                     //Registering telephony providers edges site
+	siteOutboundRoutes.SetRegistrar(regInstance)                           //Registering telephony providers edges site outbound routes
 	flow.SetRegistrar(regInstance)                                         //Registering architect flow
 	flowLogLevel.SetRegistrar(regInstance)                                 //Registering flow log Level
 	flowMilestone.SetRegistrar(regInstance)                                //Registering flow milestone
