@@ -107,6 +107,12 @@ func ResourceOutboundCampaign() *schema.Resource {
 				Optional:    true,
 				Type:        schema.TypeFloat,
 			},
+			`max_calls_per_agent`: {
+				Description:  `The maximum number of calls that can be placed per agent on this campaign.`,
+				Optional:     true,
+				Type:         schema.TypeInt,
+				ValidateFunc: validation.IntAtLeast(1),
+			},
 			`dnc_list_ids`: {
 				Description: `DncLists for this Campaign to check before placing a call.`,
 				Optional:    true,
