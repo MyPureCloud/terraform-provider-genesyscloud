@@ -53,7 +53,6 @@ func DataSourceUserRead(ctx context.Context, d *schema.ResourceData, m interface
 	} else {
 		return util.BuildDiagnosticError("genesyscloud_user", "no user search field specified", nil)
 	}
-	log.Printf(fmt.Sprintf("\n\nkey for cache is %s", key))
 
 	if dataSourceUserCache == nil {
 		dataSourceUserCache = rc.NewDataSourceCache(sdkConfig, hydrateUserCacheFn, getUserByNameFn)
