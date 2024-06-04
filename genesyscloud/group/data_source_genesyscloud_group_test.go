@@ -20,7 +20,7 @@ func TestAccDataSourceGroup(t *testing.T) {
 		groupName        = "test group" + uuid.NewString()
 		testUserResource = "user_resource1"
 		testUserName     = "nameUser1" + uuid.NewString()
-		testUserEmail    = uuid.NewString() + "@example.com"
+		testUserEmail    = uuid.NewString() + "@examplegroup.com"
 	)
 
 	resource.Test(t, resource.TestCase{
