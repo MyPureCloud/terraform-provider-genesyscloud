@@ -141,27 +141,27 @@ func SetNillableReferenceDivision(d *schema.ResourceData, key string, value *pla
 // SetNillableValue will read a basic type and set it on the schema
 func SetNillableValue[T any](d *schema.ResourceData, key string, value *T) {
 	if value != nil {
-		d.Set(key, *value)
+		_ = d.Set(key, *value)
 	} else {
-		d.Set(key, nil)
+		_ = d.Set(key, nil)
 	}
 }
 
 // SetNillableValueWithInterfaceArrayWithFunc will read the values in a nested resource using the provided function and set it on the schema
 func SetNillableValueWithInterfaceArrayWithFunc[T any](d *schema.ResourceData, key string, value *T, f func(*T) []interface{}) {
 	if value != nil {
-		d.Set(key, f(value))
+		_ = d.Set(key, f(value))
 	} else {
-		d.Set(key, nil)
+		_ = d.Set(key, nil)
 	}
 }
 
-// SetNillableValueWithInterfaceArrayWithFunc will read the values in a nested resource using the provided function and set it on the schema
+// SetNillableValueWithSchemaSetWithFunc will read the values in a nested resource using the provided function and set it on the schema
 func SetNillableValueWithSchemaSetWithFunc[T any](d *schema.ResourceData, key string, value *T, f func(*T) *schema.Set) {
 	if value != nil {
-		d.Set(key, f(value))
+		_ = d.Set(key, f(value))
 	} else {
-		d.Set(key, nil)
+		_ = d.Set(key, nil)
 	}
 }
 

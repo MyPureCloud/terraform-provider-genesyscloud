@@ -7,6 +7,58 @@ import (
 
 const resourceName = "genesyscloud_outbound_contact_list_contact"
 
+var (
+	contactableStatusResource = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"media_type": {
+				Description: `The key which identifies the media type.`,
+				Type:        schema.TypeString,
+				Required:    true,
+			},
+			"contactable": {
+				Description: `Indicates whether or not the entire contact is contactable for the associated media type.`,
+				Type:        schema.TypeBool,
+				Required:    true,
+			},
+			"column_status": {
+				Description: `A map of individual contact method columns to whether the individual column is contactable for the associated media type.`,
+				Type:        schema.TypeSet,
+				Optional:    true,
+				Elem:        columnStatusResource,
+			},
+		},
+	}
+	columnStatusResource = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"column": {
+				Description: `The key which identifies the contact method column.`,
+				Type:        schema.TypeString,
+				Required:    true,
+			},
+			"contactable": {
+				Description: `Indicates whether or not an individual contact method column is contactable.`,
+				Type:        schema.TypeBool,
+				Required:    true,
+			},
+		},
+	}
+	phoneNumberStatusResource = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"key": {
+				Description: `Phone number column identifier.`,
+				Type:        schema.TypeString,
+				Required:    true,
+			},
+			"callable": {
+				Description: `Indicates whether or not a phone number is callable.`,
+				Type:        schema.TypeBool,
+				Default:     false,
+				Optional:    true,
+			},
+		},
+	}
+)
+
 func ResourceOutboundContactListContact() *schema.Resource {
 	return &schema.Resource{
 		Description: `Genesys Cloud Outbound Contact List Contact`,
@@ -71,59 +123,13 @@ Only applicable on the creation of a contact, so updating this field will force 
 				Description: `A map of phone number columns to PhoneNumberStatuses, which indicate if the phone number is callable or not.`,
 				Type:        schema.TypeSet,
 				Optional:    true,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						"key": {
-							Description: `Phone number column identifier.`,
-							Type:        schema.TypeString,
-							Required:    true,
-						},
-						"callable": {
-							Description: `Indicates whether or not a phone number is callable.`,
-							Type:        schema.TypeBool,
-							Default:     false,
-							Optional:    true,
-						},
-					},
-				},
+				Elem:        phoneNumberStatusResource,
 			},
 			"contactable_status": {
 				Description: `A map of media types (Voice, SMS and Email) to ContactableStatus, which indicates if the contact can be contacted using the specified media type.`,
 				Type:        schema.TypeSet,
 				Optional:    true,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						"media_type": {
-							Description: `The media type.`,
-							Type:        schema.TypeString,
-							Required:    true,
-						},
-						"contactable": {
-							Description: `Indicates whether or not the entire contact is contactable for the associated media type.`,
-							Type:        schema.TypeBool,
-							Required:    true,
-						},
-						"column_status": {
-							Description: `A map of individual contact method columns to whether the individual column is contactable for the associated media type.`,
-							Type:        schema.TypeSet,
-							Optional:    true,
-							Elem: &schema.Resource{
-								Schema: map[string]*schema.Schema{
-									"column": {
-										Description: `Contact method column.`,
-										Type:        schema.TypeString,
-										Required:    true,
-									},
-									"contactable": {
-										Description: `Indicates whether or not an individual contact method column is contactable.`,
-										Type:        schema.TypeBool,
-										Required:    true,
-									},
-								},
-							},
-						},
-					},
-				},
+				Elem:        contactableStatusResource,
 			},
 		},
 	}
