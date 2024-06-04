@@ -17,14 +17,10 @@ import (
 )
 
 func TestAccResourceJourneySegmentCustomer(t *testing.T) {
-	if supported, errorMessage := customerSegmentationIsSupported(t); !supported {
-		t.Skipf("Skipping because feature is not supported. Error message: %s", errorMessage)
-	}
 	runResourceJourneySegmentTestCase(t, "basic_customer_attributes")
 }
 
 func TestAccResourceJourneySegmentSession(t *testing.T) {
-	t.Skip("Issue")
 	runResourceJourneySegmentTestCase(t, "basic_session_attributes")
 }
 
@@ -33,9 +29,6 @@ func TestAccResourceJourneySegmentContextOnly(t *testing.T) {
 }
 
 func TestAccResourceJourneySegmentOptionalAttributes(t *testing.T) {
-	if supported, errorMessage := customerSegmentationIsSupported(t); !supported {
-		t.Skipf("Skipping because feature is not supported. Error message: %s", errorMessage)
-	}
 	runResourceJourneySegmentTestCase(t, "optional_attributes")
 }
 
