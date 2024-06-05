@@ -7,6 +7,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
+	"time"
 
 	"terraform-provider-genesyscloud/genesyscloud/integration"
 	integrationCred "terraform-provider-genesyscloud/genesyscloud/integration_credential"
@@ -180,6 +181,12 @@ func TestAccResourceIntegrationCustomAuthAction(t *testing.T) {
 				ResourceName:      "genesyscloud_integration_custom_auth_action." + actionResource1,
 				ImportState:       true,
 				ImportStateVerify: true,
+				Check: resource.ComposeTestCheckFunc(
+					func(s *terraform.State) error {
+						time.Sleep(30 * time.Second) // Wait for 30 seconds for proper deletion
+						return nil
+					},
+				),
 			},
 		},
 		CheckDestroy: testVerifyIntegrationActionDestroyed,

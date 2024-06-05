@@ -91,7 +91,7 @@ func generateGroupDataSource(
 func checkUserDeleted(id string) resource.TestCheckFunc {
 	fmt.Printf("Fetching user with ID: %s\n", id)
 	return func(s *terraform.State) error {
-		maxAttempts := 12
+		maxAttempts := 18
 		for i := 0; i < maxAttempts; i++ {
 
 			deleted, err := isUserDeleted(id)

@@ -191,6 +191,30 @@ func TestAccResourceRoutingUtilizationWithLabels(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_routing_utilization.routing-util", "label_utilizations.1.maximum_capacity", maxCapacity2),
 				),
 			},
+			{ //Delete one by one to avoid conflict
+				Config: GenerateRoutingUtilizationLabelResource(redLabelResource, redLabelName, "") +
+					GenerateRoutingUtilizationLabelResource(blueLabelResource, blueLabelName, redLabelResource) +
+					generateRoutingUtilizationResource(
+						generateRoutingUtilMediaType("call", maxCapacity2, util.TrueValue, strconv.Quote(utilTypeEmail)),
+						generateRoutingUtilMediaType("callback", maxCapacity2, util.TrueValue, strconv.Quote(utilTypeCall)),
+						generateRoutingUtilMediaType("chat", maxCapacity2, util.TrueValue, strconv.Quote(utilTypeCall)),
+						generateRoutingUtilMediaType("email", maxCapacity2, util.TrueValue, strconv.Quote(utilTypeCall)),
+						generateRoutingUtilMediaType("message", maxCapacity2, util.TrueValue, strconv.Quote(utilTypeCall)),
+						generateLabelUtilization(redLabelResource, maxCapacity2),
+						generateLabelUtilization(blueLabelResource, maxCapacity2, redLabelResource),
+					),
+			},
+			{
+				Config: GenerateRoutingUtilizationLabelResource(redLabelResource, redLabelName, "") +
+					generateRoutingUtilizationResource(
+						generateRoutingUtilMediaType("call", maxCapacity2, util.TrueValue, strconv.Quote(utilTypeEmail)),
+						generateRoutingUtilMediaType("callback", maxCapacity2, util.TrueValue, strconv.Quote(utilTypeCall)),
+						generateRoutingUtilMediaType("chat", maxCapacity2, util.TrueValue, strconv.Quote(utilTypeCall)),
+						generateRoutingUtilMediaType("email", maxCapacity2, util.TrueValue, strconv.Quote(utilTypeCall)),
+						generateRoutingUtilMediaType("message", maxCapacity2, util.TrueValue, strconv.Quote(utilTypeCall)),
+						generateLabelUtilization(redLabelResource, maxCapacity2),
+					),
+			},
 			{
 				// Import/Read
 				ResourceName: "genesyscloud_routing_utilization.routing-util",
@@ -234,7 +258,7 @@ func TestAccResourceRoutingUtilizationWithLabels(t *testing.T) {
 				},
 				Check: resource.ComposeTestCheckFunc(
 					func(s *terraform.State) error {
-						time.Sleep(60 * time.Second)
+						time.Sleep(30 * time.Second)
 						return nil
 					},
 				),
