@@ -683,13 +683,13 @@ func TestAccResourceRoutingQueueMembers(t *testing.T) {
 			{
 				// Update with another queue member and modify rings
 				Config: genesyscloud.GenerateBasicUserResource(
-					queueMemberResource2,
-					queueMemberEmail2,
-					queueMemberName2,
-				) + genesyscloud.GenerateBasicUserResource(
 					queueMemberResource1,
 					queueMemberEmail1,
 					queueMemberName1,
+				) + genesyscloud.GenerateBasicUserResource(
+					queueMemberResource2,
+					queueMemberEmail2,
+					queueMemberName2,
 				) + GenerateRoutingQueueResourceBasic(
 					queueResource,
 					queueName,
