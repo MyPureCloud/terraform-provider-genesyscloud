@@ -3,12 +3,12 @@
 page_title: "genesyscloud_routing_email_route Data Source - terraform-provider-genesyscloud"
 subcategory: ""
 description: |-
-  Data source for Genesys Cloud Routing Email Route. Select a routing email by name.
+  Data source for Genesys Cloud Routing Email Route. Select a routing email route by pattern and domain ID.
 ---
 
 # genesyscloud_routing_email_route (Data Source)
 
-Data source for Genesys Cloud Routing Email Route. Select a routing email by name.
+Data source for Genesys Cloud Routing Email Route. Select a routing email route by pattern and domain ID.
 
 
 
