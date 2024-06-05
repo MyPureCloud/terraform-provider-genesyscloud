@@ -337,39 +337,52 @@ pipeline {
 
         sh 'junit-merger -o test-results.xml architect.xml idp.xml auth.xml integration.xml flow.xml journey.xml knowledge.xml outbound.xml response.xml routing.xml location.xml web.xml site.xml team.xml export.xml remaining.xml'
       
-    script {
-        // Read the generated HTML file
-        def htmlFile = readFile 'coverageAcceptance.html'
-        def selectStart = htmlFile.indexOf('<select id="files">')
-        def selectEnd = htmlFile.indexOf('</select>', selectStart)
-        def fileCoverageSection = htmlFile.substring(selectStart, selectEnd + 9) // +9 to include </select>
+  script {
+    // Read the generated HTML file
+    def htmlFile = readFile 'coverageAcceptance.html'
+    def selectStart = htmlFile.indexOf('<select id="files">')
+    def selectEnd = htmlFile.indexOf('</select>', selectStart)
+    def fileCoverageSection = htmlFile.substring(selectStart, selectEnd + 9) // +9 to include </select>
 
-        def packageCoverage = [:]
-        def packageFiles = [:]
-        def packageFileMap = [:] // To store package and their corresponding files
-        def fileNumberMap = [:] // To store package and their corresponding file numbers
+    def packageCoverage = [:]
+    def packageFiles = [:]
+    def packageFileMap = [:] // To store package and their corresponding files
+    def fileNumberMap = [:] // To store package and their corresponding file numbers
 
     // Parse the existing options to calculate package-wise coverage
-        fileCoverageSection.split('\n').each { line ->
-            if (line.contains('<option value=')) {
-                def fileNumber = line.substring(line.indexOf('value="') + 7, line.indexOf('">')).trim()
-                def filePath = line.substring(line.indexOf('>') + 1, line.indexOf(' (')).trim()
-                def percentage = line.substring(line.indexOf('(') + 1, line.indexOf('%')).toFloat()
-                def packageName = filePath.replaceFirst('terraform-provider-genesyscloud/genesyscloud/([^/]+)/.*', '$1')
-                packageFiles[packageName] = (packageFiles[packageName] ?: []) + fileNumber
-                packageCoverage[packageName] = (packageCoverage[packageName] ?: 0) + percentage
+    fileCoverageSection.split('\n').each { line ->
+        if (line.contains('<option value=')) {
+            def fileNumber = line.substring(line.indexOf('value="') + 7, line.indexOf('">')).trim()
+            def filePath = line.substring(line.indexOf('>') + 1, line.indexOf(' (')).trim()
+            def percentage = line.substring(line.indexOf('(') + 1, line.indexOf('%')).toFloat()
+            def packageName = filePath.replaceFirst('terraform-provider-genesyscloud/genesyscloud/([^/]+)/.*', '$1')
+            packageFiles[packageName] = (packageFiles[packageName] ?: []) + fileNumber
+            packageCoverage[packageName] = (packageCoverage[packageName] ?: 0) + percentage
 
-                // Collect files for each package
-                if (!packageFileMap.containsKey(packageName)) {
-                    packageFileMap[packageName] = []
-                }
-                packageFileMap[packageName].add([fileNumber: fileNumber, filePath: filePath, percentage: percentage])
-                fileNumberMap[filePath] = fileNumber
+            // Collect files for each package
+            if (!packageFileMap.containsKey(packageName)) {
+                packageFileMap[packageName] = []
             }
+            packageFileMap[packageName].add([fileNumber: fileNumber, filePath: filePath, percentage: percentage])
+            fileNumberMap[filePath] = fileNumber
         }
+    }
 
-        // Generate the package-wise coverage table with highlighting
-        def packageCoverageRows = packageCoverage.collect { packageName, totalPercentage ->
+    // Separate packages with and without '.go' in their names
+    def packagesWithGo = []
+    def packagesWithoutGo = []
+    packageCoverage.each { packageName, totalPercentage ->
+        if (packageName.contains('.go')) {
+            packagesWithGo.add(packageName)
+        } else {
+            packagesWithoutGo.add(packageName)
+        }
+    }
+
+    // Generate the package-wise coverage table with highlighting
+    def generatePackageCoverageRows = { packages ->
+        packages.collect { packageName ->
+            def totalPercentage = packageCoverage[packageName]
             def averagePercentage = totalPercentage / packageFiles[packageName].size()
             def colorClass = averagePercentage < 50 ? 'light-red' : 'light-green'
             def fileRows = packageFileMap[packageName].collect { fileEntry ->
@@ -407,78 +420,81 @@ pipeline {
                 ${fileRows}
             """
         }.join('\n')
+    }
 
-        // Define the CSS classes
-        def cssStyles = """
-            .light-green {
-                background-color: #c8e6c9; /* light green */
-            }
-            .light-red {
-                background-color: #ffcdd2; /* light red */
-            }
-            .fileRow {
-                cursor: pointer;
-            }
-            .fileContentRow {
-                background-color: #f5f5f5;
-            }
-            #legend {
-                float: top;
-                margin-top: 15px;
-            }
-            #packageCoverageTable {
-                width: 100%;
-            }
-            .red {
-                color: red; /* red */
-            }
-            .green {
-                color: green; /* green */
-            }
-        """.stripIndent()
+    def packageCoverageRows = generatePackageCoverageRows(packagesWithoutGo) + generatePackageCoverageRows(packagesWithGo)
 
-        // Prepare the HTML content
-        def tableHtml = """
-            <div id="packageCoverageTable">
-                <table border="1" style="width: 100%;">
-                    <thead>
-                        <tr>
-                            <th>Package</th>
-                            <th>Coverage (%)</th>
-                        </tr>
-                    </thead>
-                    <tbody id="packageCoverageBody">
-                        ${packageCoverageRows}
-                    </tbody>
-                </table>
-            </div>
-        """.stripIndent()
+    // Define the CSS classes
+    def cssStyles = """
+        .light-green {
+            background-color: #c8e6c9; /* light green */
+        }
+        .light-red {
+            background-color: #ffcdd2; /* light red */
+        }
+        .fileRow {
+            cursor: pointer;
+        }
+        .fileContentRow {
+            background-color: #f5f5f5;
+        }
+        #legend {
+            float: top;
+            margin-top: 15px;
+        }
+        #packageCoverageTable {
+            width: 100%;
+        }
+        .red {
+            color: red; /* red */
+        }
+        .green {
+            color: green; /* green */
+        }
+    """.stripIndent()
 
-        def scriptHtml = """
-            <script>
-                function toggleFiles(packageName) {
-                    const rows = document.querySelectorAll('.fileRow.' + packageName);
-                    rows.forEach(row => {
-                        row.style.display = row.style.display === 'none' ? 'table-row' : 'none';
-                    });
+    // Prepare the HTML content
+    def tableHtml = """
+        <div id="packageCoverageTable">
+            <table border="1" style="width: 100%;">
+                <thead>
+                    <tr>
+                        <th>Package</th>
+                        <th>Coverage (%)</th>
+                    </tr>
+                </thead>
+                <tbody id="packageCoverageBody">
+                    ${packageCoverageRows}
+                </tbody>
+            </table>
+        </div>
+    """.stripIndent()
+
+    def scriptHtml = """
+        <script>
+            function toggleFiles(packageName) {
+                const rows = document.querySelectorAll('.fileRow.' + packageName);
+                rows.forEach(row => {
+                    row.style.display = row.style.display === 'none' ? 'table-row' : 'none';
+                });
+            }
+            function toggleFileContent(fileId) {
+                const contentRow = document.getElementById('content_' + fileId);
+                if (contentRow) {
+                    contentRow.style.display = contentRow.style.display === 'none' ? 'table-row' : 'none';
                 }
-                function toggleFileContent(fileId) {
-                    const contentRow = document.getElementById('content_' + fileId);
-                    if (contentRow) {
-                        contentRow.style.display = contentRow.style.display === 'none' ? 'table-row' : 'none';
-                    }
-                }
-            </script>
-        """.stripIndent()
+            }
+        </script>
+    """.stripIndent()
 
-        // Remove the dropdown and insert the new table, script, and styles into the HTML file
-        def updatedHtmlFile = htmlFile.replaceAll(/(?s)<select id="files">.*<\/select>/, '')
-        updatedHtmlFile = updatedHtmlFile.replace('<div id="topbar">', '<!-- Removed topbar -->')
-        updatedHtmlFile = updatedHtmlFile.replace('<div id="nav">', '<!-- Removed nav -->')
-        updatedHtmlFile = updatedHtmlFile.replace('</head>', "<style>\n${cssStyles}\n</style>\n</head>")
-        updatedHtmlFile = updatedHtmlFile.replace('</body>', tableHtml + '\n' + scriptHtml + '\n</body>')
+    // Remove the dropdown and insert the new table, script, and styles into the HTML file
+    def updatedHtmlFile = htmlFile.replaceAll(/(?s)<select id="files">.*<\/select>/, '')
+    updatedHtmlFile = updatedHtmlFile.replace('<div id="topbar">', '<!-- Removed topbar -->')
+    updatedHtmlFile = updatedHtmlFile.replace('<div id="nav">', '<!-- Removed nav -->')
+    updatedHtmlFile = updatedHtmlFile.replace('</head>', "<style>\n${cssStyles}\n</style>\n</head>")
+    updatedHtmlFile = updatedHtmlFile.replace('</body>', tableHtml + '\n' + scriptHtml + '\n</body>')
 
-        writeFile file: 'coverageAcceptance.html', text: updatedHtmlFile
+    writeFile file: 'coverageAcceptance.html', text: updatedHtmlFile
 
                     // Generate manual report
                     def xmlContent = readFile 'test-results.xml'

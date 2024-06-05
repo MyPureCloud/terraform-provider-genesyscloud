@@ -650,8 +650,8 @@ func TestAccResourceRoutingQueueMembers(t *testing.T) {
 		queueName            = "Terraform Test Queue3-" + uuid.NewString()
 		queueMemberResource1 = "test-queue-user1"
 		queueMemberResource2 = "test-queue-user2"
-		queueMemberEmail1    = "terraform1-" + uuid.NewString() + "@example.com"
-		queueMemberEmail2    = "terraform2-" + uuid.NewString() + "@example.com"
+		queueMemberEmail1    = "terraform1-" + uuid.NewString() + "@queue.com"
+		queueMemberEmail2    = "terraform2-" + uuid.NewString() + "@queue.com"
 		queueMemberName1     = "Henry Terraform Test"
 		queueMemberName2     = "Amanda Terraform Test"
 		defaultQueueRingNum  = "1"
@@ -662,6 +662,10 @@ func TestAccResourceRoutingQueueMembers(t *testing.T) {
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
+				PreConfig: func() {
+					// Wait for a specified duration to avoid runtime error
+					time.Sleep(30 * time.Second)
+				},
 				// Create
 				Config: genesyscloud.GenerateBasicUserResource(
 					queueMemberResource1,

@@ -14,9 +14,9 @@ import (
 
 func TestAccDataSourceAuthDivision(t *testing.T) {
 	var (
-		divResource   = "auth-div"
+		divResource   = "auth-division"
 		divDataSource = "auth-div-data"
-		divName       = "Terraform Division-" + uuid.NewString()
+		divName       = "Terraform Divisions-" + uuid.NewString()
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -37,7 +37,7 @@ func TestAccDataSourceAuthDivision(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrPair("data.genesyscloud_auth_division."+divDataSource, "id", "genesyscloud_auth_division."+divResource, "id"),
 					func(s *terraform.State) error {
-						time.Sleep(30 * time.Second) // Wait for 30 seconds for proper deletion
+						time.Sleep(45 * time.Second) // Wait for 30 seconds for proper deletion
 						return nil
 					},
 				),

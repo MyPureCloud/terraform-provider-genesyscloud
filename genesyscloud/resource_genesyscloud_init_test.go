@@ -19,6 +19,7 @@ var (
 	providerDataSources map[string]*schema.Resource
 	providerResources   map[string]*schema.Resource
 	err                 error
+	mu                  sync.Mutex
 )
 
 type registerTestInstance struct {
