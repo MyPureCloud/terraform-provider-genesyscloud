@@ -47,10 +47,12 @@ func DataSourceUserRead(ctx context.Context, d *schema.ResourceData, m interface
 	if email, ok := d.GetOk("email"); ok {
 		key = email.(string)
 
-	} else if name, ok := d.GetOk("name"); ok {
+	}
+	if name, ok := d.GetOk("name"); ok {
 		key = name.(string)
 
-	} else {
+	}
+	if d.Get("name").(string) == "" && d.Get("email").(string) == "" {
 		return util.BuildDiagnosticError("genesyscloud_user", "no user search field specified", nil)
 	}
 
@@ -69,25 +71,37 @@ func DataSourceUserRead(ctx context.Context, d *schema.ResourceData, m interface
 
 func hydrateUserCacheFn(c *rc.DataSourceCache) error {
 	log.Printf("hydrating cache for data source genesyscloud_user")
-
+	const pageSize = 100
 	usersAPI := platformclientv2.NewUsersApiWithConfig(c.ClientConfig)
 
-	for pageNum := 1; ; pageNum++ {
-		const pageSize = 100
-		log.Printf("calling cache for data source genesyscloud_user")
+	users, response, err := usersAPI.GetUsers(pageSize, 1, nil, nil, "", nil, "", "")
 
-		userEntityList, _, getErr := usersAPI.GetUsers(pageSize, pageNum, nil, nil, "", nil, "", "")
-		log.Printf("calling cache for data source genesyscloud_user %v", pageNum)
-		if getErr != nil {
-			return fmt.Errorf("failed to get page of users: %v", getErr)
+	if err != nil {
+		return fmt.Errorf("failed to get first page of users: %v %v", err, response)
+	}
+
+	if users.Entities == nil || len(*users.Entities) == 0 {
+		return nil
+	}
+	for _, user := range *users.Entities {
+		c.Cache[*user.Name] = *user.Id
+		c.Cache[*user.Email] = *user.Id
+
+	}
+
+	for pageNum := 2; pageNum <= *users.PageCount; pageNum++ {
+
+		users, response, err := usersAPI.GetUsers(pageSize, pageNum, nil, nil, "", nil, "", "")
+
+		log.Printf("hydrating cache for data source genesyscloud_user with page number: %v", pageNum)
+		if err != nil {
+			return fmt.Errorf("failed to get page of users: %v %v", err, response)
 		}
-
-		if userEntityList.Entities == nil || len(*userEntityList.Entities) == 0 {
+		if users.Entities == nil || len(*users.Entities) == 0 {
 			break
 		}
-
 		// Add ids to cache
-		for _, user := range *userEntityList.Entities {
+		for _, user := range *users.Entities {
 			c.Cache[*user.Name] = *user.Id
 			c.Cache[*user.Email] = *user.Id
 
