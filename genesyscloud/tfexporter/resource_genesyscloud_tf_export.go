@@ -1,13 +1,9 @@
 package tfexporter
 
 import (
-	"archive/zip"
 	"context"
 	"fmt"
-	"io"
-	"log"
 	"os"
-	"path"
 	"path/filepath"
 	gcloud "terraform-provider-genesyscloud/genesyscloud/validators"
 
@@ -159,46 +155,6 @@ func createTfExport(ctx context.Context, d *schema.ResourceData, meta interface{
 		}
 
 		d.SetId(gre.exportDirPath)
-		//read all the files
-		var files []fileMeta
-		err := filepath.Walk(gre.exportDirPath, func(path string, info os.FileInfo, err error) error {
-			files = append(files, fileMeta{Path: path, IsDir: info.IsDir()})
-			return nil
-		})
-		if err != nil {
-			log.Fatalln(err)
-		}
-
-		//create a zip
-		fmt.Println("creating zip archive...")
-		archive, err := os.Create("../archive.zip")
-		if err != nil {
-			panic(err)
-		}
-		defer archive.Close()
-		zipWriter := zip.NewWriter(archive)
-
-		for _, f := range files {
-			if !f.IsDir {
-				fPath := f.Path
-
-				w, err := zipWriter.Create(path.Base(fPath))
-				if err != nil {
-					log.Fatalln(err)
-				}
-
-				file, err := os.Open(f.Path)
-				if err != nil {
-					log.Fatalln(err)
-				}
-				defer file.Close()
-
-				if _, err = io.Copy(w, file); err != nil {
-					log.Fatalln(err)
-				}
-			}
-		}
-		zipWriter.Close()
 		return nil
 	}
 

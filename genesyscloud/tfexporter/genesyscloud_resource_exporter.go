@@ -1,10 +1,14 @@
 package tfexporter
 
 import (
+	"archive/zip"
 	"context"
 	"fmt"
 	"hash/fnv"
+	"io"
 	"log"
+	"os"
+	"path"
 	"path/filepath"
 	"reflect"
 	"regexp"
@@ -478,6 +482,45 @@ func (g *GenesysCloudResourceExporter) generateOutputFiles() diag.Diagnostics {
 			return err
 		}
 	}
+
+	// read all the files
+	var files []fileMeta
+	ferr := filepath.Walk(g.exportDirPath, func(path string, info os.FileInfo, ferr error) error {
+		files = append(files, fileMeta{Path: path, IsDir: info.IsDir()})
+		return nil
+	})
+	if ferr != nil {
+		log.Fatalln(ferr)
+	}
+	//create a zip
+	archive, ferr := os.Create("../archive.zip")
+	if ferr != nil {
+		panic(ferr)
+	}
+	defer archive.Close()
+	zipWriter := zip.NewWriter(archive)
+
+	for _, f := range files {
+		if !f.IsDir {
+			fPath := f.Path
+
+			w, ferr := zipWriter.Create(path.Base(fPath))
+			if ferr != nil {
+				log.Fatalln(ferr)
+			}
+
+			file, ferr := os.Open(f.Path)
+			if ferr != nil {
+				log.Fatalln(ferr)
+			}
+			defer file.Close()
+
+			if _, ferr = io.Copy(w, file); ferr != nil {
+				log.Fatalln(ferr)
+			}
+		}
+	}
+	zipWriter.Close()
 
 	return nil
 }
