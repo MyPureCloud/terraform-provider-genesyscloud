@@ -19,7 +19,7 @@ import (
 
 func DataSourceUser() *schema.Resource {
 	return &schema.Resource{
-		Description:        "Data source for Genesys Cloud Users. Select a user by email or name.",
+		Description:        "Data source for Genesys Cloud Users. Select a user by email or name. If both email & name are specified, the name won't be used for user lookup",
 		ReadWithoutTimeout: provider.ReadWithPooledClient(DataSourceUserRead),
 		Schema: map[string]*schema.Schema{
 			"email": {
