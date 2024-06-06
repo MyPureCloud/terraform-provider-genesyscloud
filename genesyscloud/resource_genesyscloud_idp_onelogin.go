@@ -9,8 +9,6 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"time"
 
-	idpOkta "terraform-provider-genesyscloud/genesyscloud/idp_okta"
-
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
@@ -107,7 +105,7 @@ func readIdpOnelogin(ctx context.Context, d *schema.ResourceData, meta interface
 		onelogin, resp, getErr := idpAPI.GetIdentityprovidersOnelogin()
 		if getErr != nil {
 			if util.IsStatus404(resp) {
-				idpOkta.CreateIdpOkta(ctx, d, meta)
+				createIdpOnelogin(ctx, d, meta)
 				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_idp_onelogin", fmt.Sprintf("Failed to read IDP Onelogin: %s", getErr), resp))
 			}
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_idp_onelogin", fmt.Sprintf("Failed to read IDP Onelogin: %s", getErr), resp))

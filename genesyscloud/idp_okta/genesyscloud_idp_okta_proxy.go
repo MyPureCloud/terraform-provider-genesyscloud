@@ -18,7 +18,7 @@ var internalProxy *idpOktaProxy
 
 // Type definitions for each func on our proxy so we can easily mock them out later
 type getIdpOktaFunc func(ctx context.Context, p *idpOktaProxy) (*platformclientv2.Okta, *platformclientv2.APIResponse, error)
-type updateIdpOktaFunc func(ctx context.Context, p *idpOktaProxy, id string, okta *platformclientv2.Okta) (*platformclientv2.APIResponse, error)
+type updateIdpOktaFunc func(ctx context.Context, p *idpOktaProxy, id string, okta *platformclientv2.Okta) (*platformclientv2.Identityprovider, *platformclientv2.APIResponse, error)
 type deleteIdpOktaFunc func(ctx context.Context, p *idpOktaProxy, id string) (response *platformclientv2.APIResponse, err error)
 
 // idpOktaProxy contains all of the methods that call genesys cloud APIs.
@@ -58,7 +58,7 @@ func (p *idpOktaProxy) getIdpOkta(ctx context.Context) (*platformclientv2.Okta, 
 }
 
 // updateIdpOkta updates a Genesys Cloud idp okta
-func (p *idpOktaProxy) updateIdpOkta(ctx context.Context, id string, idpOkta *platformclientv2.Okta) (*platformclientv2.APIResponse, error) {
+func (p *idpOktaProxy) updateIdpOkta(ctx context.Context, id string, idpOkta *platformclientv2.Okta) (*platformclientv2.Identityprovider, *platformclientv2.APIResponse, error) {
 	return p.updateIdpOktaAttr(ctx, p, id, idpOkta)
 }
 
@@ -69,20 +69,12 @@ func (p *idpOktaProxy) deleteIdpOkta(ctx context.Context, id string) (response *
 
 // getIdpOktaFn is the implementation for retrieving all idp okta in Genesys Cloud
 func getIdpOktaFn(ctx context.Context, p *idpOktaProxy) (*platformclientv2.Okta, *platformclientv2.APIResponse, error) {
-	oktas, resp, err := p.identityProviderApi.GetIdentityprovidersOkta()
-	if err != nil {
-		return nil, resp, fmt.Errorf("Failed to get idp okta: %s", err)
-	}
-	return oktas, resp, nil
+	return p.identityProviderApi.GetIdentityprovidersOkta()
 }
 
 // updateIdpOktaFn is an implementation of the function to update a Genesys Cloud idp okta
-func updateIdpOktaFn(ctx context.Context, p *idpOktaProxy, id string, idpOkta *platformclientv2.Okta) (*platformclientv2.APIResponse, error) {
-	_, resp, err := p.identityProviderApi.PutIdentityprovidersOkta(*idpOkta)
-	if err != nil {
-		return resp, fmt.Errorf("Failed to update idp okta: %s", err)
-	}
-	return resp, nil
+func updateIdpOktaFn(ctx context.Context, p *idpOktaProxy, id string, idpOkta *platformclientv2.Okta) (*platformclientv2.Identityprovider, *platformclientv2.APIResponse, error) {
+	return p.identityProviderApi.PutIdentityprovidersOkta(*idpOkta)
 }
 
 // deleteIdpOktaFn is an implementation function for deleting a Genesys Cloud idp okta

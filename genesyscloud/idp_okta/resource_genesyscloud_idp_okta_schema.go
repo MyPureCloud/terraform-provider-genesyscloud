@@ -29,7 +29,7 @@ func ResourceIdpOkta() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud Single Sign-on Okta Identity Provider. See this page for detailed configuration instructions: https://help.mypurecloud.com/articles/add-okta-as-a-single-sign-on-provider/",
 
-		CreateContext: provider.CreateWithPooledClient(CreateIdpOkta),
+		CreateContext: provider.CreateWithPooledClient(createIdpOkta),
 		ReadContext:   provider.ReadWithPooledClient(readIdpOkta),
 		UpdateContext: provider.UpdateWithPooledClient(updateIdpOkta),
 		DeleteContext: provider.DeleteWithPooledClient(deleteIdpOkta),
@@ -58,23 +58,18 @@ func ResourceIdpOkta() *schema.Resource {
 				Optional:    true,
 				Type:        schema.TypeString,
 			},
-			`slo_u_r_i`: {
-				Description: ``,
+			`slo_uri`: {
+				Description: `Provided by Okta on app creation.`,
 				Optional:    true,
 				Type:        schema.TypeString,
 			},
 			`slo_binding`: {
-				Description: ``,
+				Description: `Valid values: HTTP Redirect, HTTP Post`,
 				Optional:    true,
 				Type:        schema.TypeString,
 			},
 			`relying_party_identifier`: {
-				Description: ``,
-				Optional:    true,
-				Type:        schema.TypeString,
-			},
-			`certificate`: {
-				Description: ``,
+				Description: `String used to identify Genesys Cloud to Okta.`,
 				Optional:    true,
 				Type:        schema.TypeString,
 			},

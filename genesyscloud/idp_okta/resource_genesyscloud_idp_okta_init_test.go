@@ -8,8 +8,8 @@ import (
 )
 
 /*
-   The genesyscloud_architect_grammar_init_test.go file is used to initialize the data sources and resources
-   used in testing the architect_grammar_language resource.
+   The genesyscloud_idp_okta_init_test.go file is used to initialize the data sources and resources
+   used in testing the idp_okta resource.
 */
 
 // providerDataSources holds a map of all registered datasources
@@ -43,9 +43,9 @@ func initTestResources() {
 
 // TestMain is a "setup" function called by the testing framework when run the test_data
 func TestMain(m *testing.M) {
-	// Run setup function before starting the test_data suite for the architect_grammar_language package
+	// Run setup function before starting the test_data suite for the idp_okta package
 	initTestResources()
 
-	// Run the test_data suite for the architect_grammar_language package
+	// Run the test_data suite for the idp_okta package
 	m.Run()
 }

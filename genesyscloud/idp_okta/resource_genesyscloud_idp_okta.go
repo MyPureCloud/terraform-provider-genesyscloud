@@ -45,7 +45,7 @@ func getAllAuthIdpOktas(ctx context.Context, clientConfig *platformclientv2.Conf
 }
 
 // createIdpOkta is used by the idp_okta resource to create Genesys cloud idp okta
-func CreateIdpOkta(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func createIdpOkta(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	log.Printf("Creating IDP Okta")
 	d.SetId("okta")
 	return updateIdpOkta(ctx, d, meta)
@@ -62,7 +62,7 @@ func readIdpOkta(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		okta, resp, getErr := proxy.getIdpOkta(ctx)
 		if getErr != nil {
 			if util.IsStatus404(resp) {
-				CreateIdpOkta(ctx, d, meta)
+				createIdpOkta(ctx, d, meta)
 				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read IDP Okta: %s", getErr), resp))
 			}
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read IDP Okta: %s", getErr), resp))
@@ -108,9 +108,9 @@ func updateIdpOkta(ctx context.Context, d *schema.ResourceData, meta interface{}
 	}
 
 	log.Printf("Updating idp okta")
-	_, err := proxy.updateIdpOkta(ctx, d.Id(), &idpOkta)
+	_, resp, err := proxy.updateIdpOkta(ctx, d.Id(), &idpOkta)
 	if err != nil {
-		return diag.Errorf("Failed to update idp okta: %s", err)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update idp okta: %s", err), resp)
 	}
 
 	log.Printf("Updated idp okta")
@@ -122,9 +122,9 @@ func deleteIdpOkta(ctx context.Context, d *schema.ResourceData, meta interface{}
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getIdpOktaProxy(sdkConfig)
 
-	_, err := proxy.deleteIdpOkta(ctx, d.Id())
+	resp, err := proxy.deleteIdpOkta(ctx, d.Id())
 	if err != nil {
-		return diag.Errorf("Failed to delete idp okta %s: %s", d.Id(), err)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete idp okta: %s", err), resp)
 	}
 
 	return util.WithRetries(ctx, 60*time.Second, func() *retry.RetryError {
@@ -153,7 +153,5 @@ func getIdpOktaFromResourceData(d *schema.ResourceData) platformclientv2.Okta {
 		SloBinding:             platformclientv2.String(d.Get("slo_binding").(string)),
 		RelyingPartyIdentifier: platformclientv2.String(d.Get("relying_party_identifier").(string)),
 		Certificate:            platformclientv2.String(d.Get("certificate").(string)),
-		// TODO: Handle certificates property
-
 	}
 }
