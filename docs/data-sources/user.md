@@ -3,12 +3,12 @@
 page_title: "genesyscloud_user Data Source - terraform-provider-genesyscloud"
 subcategory: ""
 description: |-
-  Data source for Genesys Cloud Users. Select a user by email or name.
+  Data source for Genesys Cloud Users. Select a user by email or name. If both email & name are specified, the name won't be used for user lookup
 ---
 
 # genesyscloud_user (Data Source)
 
-Data source for Genesys Cloud Users. Select a user by email or name.
+Data source for Genesys Cloud Users. Select a user by email or name. If both email & name are specified, the name won't be used for user lookup
 
 ## Example Usage
 
