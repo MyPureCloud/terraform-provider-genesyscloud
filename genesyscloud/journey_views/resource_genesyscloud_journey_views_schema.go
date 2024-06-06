@@ -161,7 +161,7 @@ var (
 )
 
 func SetRegistrar(regInstance registrar.Registrar) {
-	regInstance.RegisterResource(resourceName, ResourceGroup())
+	regInstance.RegisterResource(resourceName, ResourceJourneyViews())
 	/***
 	TODO: Add DataSource and Exporter once we are done with https://inindca.atlassian.net/browse/JM-109
 	regInstance.RegisterDataSource(resourceName, DataSourceGroup())
@@ -169,7 +169,7 @@ func SetRegistrar(regInstance registrar.Registrar) {
 	***/
 }
 
-func ResourceGroup() *schema.Resource {
+func ResourceJourneyViews() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud Directory JourneyView",
 
@@ -185,7 +185,7 @@ func ResourceGroup() *schema.Resource {
 			"name": {
 				Description: "JourneyView name.",
 				Type:        schema.TypeString,
-				Optional:    true,
+				Required:    true,
 			},
 			"description": {
 				Description: "A description of the journey view.",

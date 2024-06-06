@@ -21,7 +21,7 @@ func (r *registerTestInstance) registerTestResources() {
 	r.resourceMapMutex.Lock()
 	defer r.resourceMapMutex.Unlock()
 
-	providerResources[resourceName] = ResourceGroup()
+	providerResources[resourceName] = ResourceJourneyViews()
 	providerResources["genesyscloud_user"] = genesyscloud.ResourceUser()
 
 }
@@ -48,9 +48,9 @@ func initTestResources() {
 
 // TestMain is a "setup" function called by the testing framework when run the test
 func TestMain(m *testing.M) {
-	// Run setup function before starting the test suite for the flow_outcome package
+	// Run setup function before starting the test suite for the journey_views package
 	initTestResources()
 
-	// Run the test suite for the flow_outcome package
+	// Run the test suite for the journey_views package
 	m.Run()
 }

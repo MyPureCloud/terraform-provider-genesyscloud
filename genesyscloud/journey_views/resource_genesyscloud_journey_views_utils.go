@@ -28,12 +28,12 @@ func buildElements(d *schema.ResourceData) (*[]platformclientv2.Journeyvieweleme
 		element.Name = getStringPointerFromInterface(elemMap["name"])
 
 		if attributesSlice, ok := elemMap["attributes"].([]interface{}); ok {
-			attributes := parseJourneyViewElementAttributes(attributesSlice)
+			attributes := buildJourneyViewElementAttributes(attributesSlice)
 			element.Attributes = &attributes
 		}
 
 		if filterSlice, ok := elemMap["filter"].([]interface{}); ok {
-			filter := parseJourneyViewElementFilter(filterSlice)
+			filter := buildJourneyViewElementFilter(filterSlice)
 			element.Filter = &filter
 		}
 
@@ -44,7 +44,7 @@ func buildElements(d *schema.ResourceData) (*[]platformclientv2.Journeyvieweleme
 				if !ok {
 					return nil, errors.New("followedBy element is not a map[string]interface{}")
 				}
-				followedBy[i] = parseJourneyViewLink(followedByMap)
+				followedBy[i] = buildJourneyViewLink(followedByMap)
 			}
 			element.FollowedBy = &followedBy
 		}
@@ -54,7 +54,7 @@ func buildElements(d *schema.ResourceData) (*[]platformclientv2.Journeyvieweleme
 	return &elements, nil
 }
 
-func parseJourneyViewElementAttributes(attributesSlice []interface{}) platformclientv2.Journeyviewelementattributes {
+func buildJourneyViewElementAttributes(attributesSlice []interface{}) platformclientv2.Journeyviewelementattributes {
 	var attributes platformclientv2.Journeyviewelementattributes
 	for _, elem := range attributesSlice {
 		if attributesMap, ok := elem.(map[string]interface{}); ok {
@@ -66,7 +66,7 @@ func parseJourneyViewElementAttributes(attributesSlice []interface{}) platformcl
 	return attributes
 }
 
-func parseJourneyViewElementFilter(filterSlice []interface{}) platformclientv2.Journeyviewelementfilter {
+func buildJourneyViewElementFilter(filterSlice []interface{}) platformclientv2.Journeyviewelementfilter {
 	var filter platformclientv2.Journeyviewelementfilter
 	for _, elem := range filterSlice {
 		if filterMap, ok := elem.(map[string]interface{}); ok {
@@ -76,7 +76,7 @@ func parseJourneyViewElementFilter(filterSlice []interface{}) platformclientv2.J
 				for i, predicate := range predicatesSlice {
 					predicateMap, ok := predicate.(map[string]interface{})
 					if ok {
-						predicates[i] = parseJourneyviewelementfilterpredicate(predicateMap)
+						predicates[i] = buildJourneyviewelementfilterpredicate(predicateMap)
 					}
 				}
 				filter.Predicates = &predicates
@@ -86,7 +86,7 @@ func parseJourneyViewElementFilter(filterSlice []interface{}) platformclientv2.J
 	return filter
 }
 
-func parseJourneyviewelementfilterpredicate(predicateMap map[string]interface{}) platformclientv2.Journeyviewelementfilterpredicate {
+func buildJourneyviewelementfilterpredicate(predicateMap map[string]interface{}) platformclientv2.Journeyviewelementfilterpredicate {
 	var predicate platformclientv2.Journeyviewelementfilterpredicate
 	predicate.Dimension = getStringPointerFromInterface(predicateMap["dimension"])
 	if valuesSlice, ok := predicateMap["values"].([]interface{}); ok {
@@ -103,18 +103,18 @@ func parseJourneyviewelementfilterpredicate(predicateMap map[string]interface{})
 	return predicate
 }
 
-func parseJourneyViewLink(linkMap map[string]interface{}) platformclientv2.Journeyviewlink {
+func buildJourneyViewLink(linkMap map[string]interface{}) platformclientv2.Journeyviewlink {
 	var link platformclientv2.Journeyviewlink
 	link.Id = getStringPointerFromInterface(linkMap["id"])
 	constraintWithinSlice, ok := linkMap["constraint_within"].([]interface{})
 	if ok {
-		link.ConstraintWithin = parseJourneyViewLinkTimeConstraint(constraintWithinSlice)
+		link.ConstraintWithin = buildJourneyViewLinkTimeConstraint(constraintWithinSlice)
 	}
 	if !ok {
 		log.Printf("wrong type. correct type %T", constraintWithinSlice)
 	}
 	if constraintAfterSlice, ok := linkMap["constraint_after"].([]interface{}); ok {
-		link.ConstraintAfter = parseJourneyViewLinkTimeConstraint(constraintAfterSlice)
+		link.ConstraintAfter = buildJourneyViewLinkTimeConstraint(constraintAfterSlice)
 	}
 	link.EventCountType = getStringPointerFromInterface(linkMap["event_count_type"])
 	if joinAttributesSlice, ok := linkMap["join_attributes"].([]interface{}); ok {
@@ -129,7 +129,7 @@ func parseJourneyViewLink(linkMap map[string]interface{}) platformclientv2.Journ
 	return link
 }
 
-func parseJourneyViewLinkTimeConstraint(timeConstraintSlice []interface{}) *platformclientv2.Journeyviewlinktimeconstraint {
+func buildJourneyViewLinkTimeConstraint(timeConstraintSlice []interface{}) *platformclientv2.Journeyviewlinktimeconstraint {
 	var timeConstraint platformclientv2.Journeyviewlinktimeconstraint
 	for _, elem := range timeConstraintSlice {
 		timeConstraintMap, ok := elem.(map[string]interface{})

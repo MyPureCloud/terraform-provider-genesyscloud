@@ -52,7 +52,7 @@ func updateJourneyView(ctx context.Context, d *schema.ResourceData, meta interfa
 func readJourneyView(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	viewId := d.Id()
 
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceGroup(), constants.DefaultConsistencyChecks, resourceName)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceJourneyViews(), constants.DefaultConsistencyChecks, resourceName)
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	gp := getJourneyViewProxy(sdkConfig)
 	log.Printf("Getting journeyView with viewId: %s", viewId)

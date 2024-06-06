@@ -92,7 +92,7 @@ func generateUserWithCustomAttrs(resourceID string, email string, name string, a
 }
 
 func generateJourneyView(journeyResource string, name string, duration string, elementsBlock string) string {
-	jv := fmt.Sprintf(`resource "genesyscloud_journey_views" "%s" {
+	return fmt.Sprintf(`resource "genesyscloud_journey_views" "%s" {
     duration = "%s"
     name = "%s"
     %s
@@ -102,9 +102,6 @@ func generateJourneyView(journeyResource string, name string, duration string, e
 		}
 		return ""
 	}())
-	println(jv)
-	println("----------") //
-	return jv
 }
 
 func generateElements(id string, name string, attributesBlock string, filter string) string {
