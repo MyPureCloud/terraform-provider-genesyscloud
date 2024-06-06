@@ -115,9 +115,9 @@ func deleteIdpAdfs(ctx context.Context, d *schema.ResourceData, meta interface{}
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getIdpAdfsProxy(sdkConfig)
 
-	_, err := proxy.deleteIdpAdfs(ctx, d.Id())
+	resp, err := proxy.deleteIdpAdfs(ctx, d.Id())
 	if err != nil {
-		return diag.Errorf("Failed to delete idp adfs %s: %s", d.Id(), err)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete idp adfs %s error: %s", d.Id(), err), resp)
 	}
 
 	return util.WithRetries(ctx, 180*time.Second, func() *retry.RetryError {

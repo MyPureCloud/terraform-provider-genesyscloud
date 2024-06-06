@@ -2,11 +2,11 @@
 page_title: "genesyscloud_idp_adfs Resource - terraform-provider-genesyscloud"
 subcategory: ""
 description: |-
-  Genesys Cloud idp adfs
+  Genesys Cloud Single Sign-on ADFS Identity Provider. See this page for detailed configuration instructions: https://help.mypurecloud.com/articles/add-microsoft-adfs-single-sign-provider/
 ---
 # genesyscloud_idp_adfs (Resource)
 
-Genesys Cloud idp adfs
+Genesys Cloud Single Sign-on ADFS Identity Provider. See this page for detailed configuration instructions: https://help.mypurecloud.com/articles/add-microsoft-adfs-single-sign-provider/
 
 ## API Usage
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:

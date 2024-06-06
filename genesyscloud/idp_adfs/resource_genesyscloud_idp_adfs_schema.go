@@ -28,7 +28,7 @@ func SetRegistrar(regInstance registrar.Registrar) {
 // ResourceIdpAdfs registers the genesyscloud_idp_adfs resource with Terraform
 func ResourceIdpAdfs() *schema.Resource {
 	return &schema.Resource{
-		Description: `Genesys Cloud idp adfs`,
+		Description: `Genesys Cloud Single Sign-on ADFS Identity Provider. See this page for detailed configuration instructions: https://help.mypurecloud.com/articles/add-microsoft-adfs-single-sign-provider/`,
 
 		CreateContext: provider.CreateWithPooledClient(createIdpAdfs),
 		ReadContext:   provider.ReadWithPooledClient(readIdpAdfs),
