@@ -60,6 +60,7 @@ resource "genesyscloud_tf_export" "export" {
 
 ### Optional
 
+- `compress` (Boolean) Flag to check if compression is allowed Defaults to `true`.
 - `directory` (String) Directory where the config and state files will be exported. Defaults to `./genesyscloud`.
 - `enable_dependency_resolution` (Boolean) Adds a "depends_on" attribute to genesyscloud_flow resources with a list of resources that are referenced inside the flow configuration . This also resolves and exports all the dependent resources for any given resource. Defaults to `false`.
 - `exclude_attributes` (List of String) Attributes to exclude from the config when exporting resources. Each value should be of the form {resource_name}.{attribute}, e.g. 'genesyscloud_user.skills'. Excluded attributes must be optional.
@@ -69,6 +70,7 @@ resource "genesyscloud_tf_export" "export" {
 - `include_filter_resources` (List of String) Include only resources that match either a resource type or a resource type::regular expression.  See export guide for additional information
 - `include_state_file` (Boolean) Export a 'terraform.tfstate' file along with the config file. This can be used for orgs to begin managing existing resources with terraform. When `false`, GUID fields will be omitted from the config file unless a resource reference can be supplied. In this case, the resource type will need to be included in the `resource_types` array. Defaults to `false`.
 - `log_permission_errors` (Boolean) Log permission/product issues rather than fail. Defaults to `false`.
+- `passphrase` (Boolean) Defaults to `true`.
 - `replace_with_datasource` (List of String) Include only resources that match either a resource type or a resource type::regular expression.  See export guide for additional information
 - `resource_types` (List of String, Deprecated) Resource types to export, e.g. 'genesyscloud_user'. Defaults to all exportable types. NOTE: This field is deprecated and will be removed in future release.  Please use the include_filter_resources or exclude_filter_resources attribute.
 - `split_files_by_resource` (Boolean) Split export files by resource type. This will also split the terraform provider and variable declarations into their own files. Defaults to `false`.

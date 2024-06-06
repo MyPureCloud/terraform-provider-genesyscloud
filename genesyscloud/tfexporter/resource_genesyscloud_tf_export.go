@@ -140,6 +140,20 @@ func ResourceTfExport() *schema.Resource {
 				Default:     true,
 				ForceNew:    true,
 			},
+			"compress": {
+				Description: "Flag to check if compression is allowed",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     true,
+				ForceNew:    true,
+			},
+			"passphrase": {
+				Description: "",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     true,
+				ForceNew:    true,
+			},
 		},
 	}
 }

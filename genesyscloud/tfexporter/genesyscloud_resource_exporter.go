@@ -483,44 +483,52 @@ func (g *GenesysCloudResourceExporter) generateOutputFiles() diag.Diagnostics {
 		}
 	}
 
-	// read all the files
-	var files []fileMeta
-	ferr := filepath.Walk(g.exportDirPath, func(path string, info os.FileInfo, ferr error) error {
-		files = append(files, fileMeta{Path: path, IsDir: info.IsDir()})
-		return nil
-	})
-	if ferr != nil {
-		log.Fatalln(ferr)
-	}
-	//create a zip
-	archive, ferr := os.Create("../archive.zip")
-	if ferr != nil {
-		panic(ferr)
-	}
-	defer archive.Close()
-	zipWriter := zip.NewWriter(archive)
-
-	for _, f := range files {
-		if !f.IsDir {
-			fPath := f.Path
-
-			w, ferr := zipWriter.Create(path.Base(fPath))
+	if _, ok := g.d.GetOk("compress"); ok { //if true, compress directory name of where the export is going to occur
+		if _, ok := g.d.GetOk("passphrase"); ok { //Can only be used if compress is true.  If compress is false and this value is set we should throw a validation error
+			// read all the files
+			var files []fileMeta
+			ferr := filepath.Walk(g.exportDirPath, func(path string, info os.FileInfo, ferr error) error {
+				files = append(files, fileMeta{Path: path, IsDir: info.IsDir()})
+				return nil
+			})
 			if ferr != nil {
 				log.Fatalln(ferr)
 			}
-
-			file, ferr := os.Open(f.Path)
+			// create a zip
+			archive, ferr := os.Create("../archive.zip")
 			if ferr != nil {
-				log.Fatalln(ferr)
+				panic(ferr)
 			}
-			defer file.Close()
+			defer archive.Close()
+			zipWriter := zip.NewWriter(archive)
 
-			if _, ferr = io.Copy(w, file); ferr != nil {
-				log.Fatalln(ferr)
+			for _, f := range files {
+				if !f.IsDir {
+					fPath := f.Path
+
+					w, ferr := zipWriter.Create(path.Base(fPath))
+					if ferr != nil {
+						log.Fatalln(ferr)
+					}
+
+					file, ferr := os.Open(f.Path)
+					if ferr != nil {
+						log.Fatalln(ferr)
+					}
+					defer file.Close()
+
+					if _, ferr = io.Copy(w, file); ferr != nil {
+						log.Fatalln(ferr)
+					}
+				}
 			}
+			zipWriter.Close()
+		} else {
+			log.Printf("compress is false")
 		}
+	} else {
+		log.Printf("passphrase is false")
 	}
-	zipWriter.Close()
 
 	return nil
 }
