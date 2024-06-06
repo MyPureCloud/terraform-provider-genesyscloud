@@ -2,6 +2,7 @@ package idp_okta
 
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
@@ -50,7 +51,7 @@ func ResourceIdpOkta() *schema.Resource {
 			},
 			`issuer_uri`: {
 				Description: `Issuer URI provided by Okta.`,
-				Optional:    true,
+				Required:    true,
 				Type:        schema.TypeString,
 			},
 			`target_uri`: {
@@ -64,9 +65,10 @@ func ResourceIdpOkta() *schema.Resource {
 				Type:        schema.TypeString,
 			},
 			`slo_binding`: {
-				Description: `Valid values: HTTP Redirect, HTTP Post`,
-				Optional:    true,
-				Type:        schema.TypeString,
+				Description:  `Valid values: HTTP Redirect, HTTP Post`,
+				Optional:     true,
+				Type:         schema.TypeString,
+				ValidateFunc: validation.StringInSlice([]string{`HTTP Redirect`, `HTTP Post`}, false),
 			},
 			`relying_party_identifier`: {
 				Description: `String used to identify Genesys Cloud to Okta.`,
@@ -75,9 +77,10 @@ func ResourceIdpOkta() *schema.Resource {
 			},
 			`certificates`: {
 				Description: `PEM or DER encoded public X.509 certificates for SAML signature validation.`,
-				Optional:    true,
+				Required:    true,
 				Type:        schema.TypeList,
 				Elem:        &schema.Schema{Type: schema.TypeString},
+				MinItems:    1,
 			},
 		},
 	}
