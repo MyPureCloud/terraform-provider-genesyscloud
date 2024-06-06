@@ -13,9 +13,8 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	rc "terraform-provider-genesyscloud/genesyscloud/resource_cache"
 	"github.com/mypurecloud/platform-client-sdk-go/v130/platformclientv2"
-
+	rc "terraform-provider-genesyscloud/genesyscloud/resource_cache"
 )
 
 var (
@@ -50,28 +49,35 @@ func normalizeQueueName(queueName string) string {
 // hydrateRoutingQueueCacheFn for hydrating the cache with Genesys Cloud routing queues using the SDK
 func hydrateRoutingQueueCacheFn(c *rc.DataSourceCache) error {
 	log.Printf("hydrating cache for data source genesyscloud_routing_queues")
-
 	routingApi := platformclientv2.NewRoutingApiWithConfig(c.ClientConfig)
+	const pageSize = 100
+	queues, _, getErr := routingApi.GetRoutingQueues(1, pageSize, "", "", nil, nil, nil, "", false)
 
-	for pageNum := 1; ; pageNum++ {
-		const pageSize = 100
+	if getErr != nil {
+		return fmt.Errorf("failed to get page of skills: %v", getErr)
+	}
+	if queues.Entities == nil || len(*queues.Entities) == 0 {
+		return nil
+	}
+	for _, queue := range *queues.Entities {
+		c.Cache[normalizeQueueName(*queue.Name)] = *queue.Id
+	}
+
+	for pageNum := 2; pageNum <= *queues.PageCount; pageNum++ {
+
 		queues, _, getErr := routingApi.GetRoutingQueues(pageNum, pageSize, "", "", nil, nil, nil, "", false)
 		if getErr != nil {
 			return fmt.Errorf("failed to get page of queues: %v", getErr)
 		}
-
 		if queues.Entities == nil || len(*queues.Entities) == 0 {
 			break
 		}
-
 		// Add ids to cache
 		for _, queue := range *queues.Entities {
 			c.Cache[normalizeQueueName(*queue.Name)] = *queue.Id
 		}
 	}
-
 	log.Printf("cache hydration completed for data source genesyscloud_routing_queues")
-
 	return nil
 }
 

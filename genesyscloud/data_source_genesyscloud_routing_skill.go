@@ -59,15 +59,29 @@ func hydrateRoutingSkillCacheFn(c *rc.DataSourceCache) error {
 	log.Printf("hydrating cache for data source genesyscloud_routing_skill")
 
 	routingApi := platformclientv2.NewRoutingApiWithConfig(c.ClientConfig)
+	const pageSize = 100
+	skills, _, getErr := routingApi.GetRoutingSkills(pageSize, 1, "", nil)
 
-	for pageNum := 1; ; pageNum++ {
-		const pageSize = 100
+	if getErr != nil {
+		return fmt.Errorf("failed to get page of skills: %v", getErr)
+	}
+
+	if skills.Entities == nil || len(*skills.Entities) == 0 {
+		return nil
+	}
+
+	for _, skill := range *skills.Entities {
+		c.Cache[*skill.Name] = *skill.Id
+	}
+
+	for pageNum := 2; pageNum <= *skills.PageCount; pageNum++ {
+
 		log.Printf("calling cache for data source genesyscloud_routing_skill")
 
 		skills, _, getErr := routingApi.GetRoutingSkills(pageSize, pageNum, "", nil)
 		log.Printf("calling cache for data source genesyscloud_routing_skill %v", pageNum)
 		if getErr != nil {
-			return fmt.Errorf("failed to get page of queues: %v", getErr)
+			return fmt.Errorf("failed to get page of skills: %v", getErr)
 		}
 
 		if skills.Entities == nil || len(*skills.Entities) == 0 {
