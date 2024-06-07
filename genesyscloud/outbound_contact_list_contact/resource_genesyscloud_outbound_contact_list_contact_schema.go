@@ -3,15 +3,20 @@ package outbound_contact_list_contact
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
+	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
 )
 
 const resourceName = "genesyscloud_outbound_contact_list_contact"
+
+func SetRegistrar(regInstance registrar.Registrar) {
+	regInstance.RegisterResource(resourceName, ResourceOutboundContactListContact())
+}
 
 var (
 	contactableStatusResource = &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			"media_type": {
-				Description: `The key which identifies the media type.`,
+				Description: `The key which identifies the media type (Voice, SMS and Email).`,
 				Type:        schema.TypeString,
 				Required:    true,
 			},
@@ -72,7 +77,7 @@ func ResourceOutboundContactListContact() *schema.Resource {
 		SchemaVersion: 1,
 		Schema: map[string]*schema.Schema{
 			"id": {
-				Description: `The globally unique identifier for the object. If none is provided, a GUID will be generated.`,
+				Description: `The globally unique identifier for the object. Updating this value will cause the contact to be deleted and recreated.`,
 				Optional:    true,
 				ForceNew:    true,
 				Computed:    true,

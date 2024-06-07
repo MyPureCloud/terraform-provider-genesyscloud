@@ -2,10 +2,10 @@ package outbound_contact_list_contact
 
 import (
 	"fmt"
-	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v130/platformclientv2"
 	"strings"
+	utillists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 )
 
@@ -18,15 +18,15 @@ func buildWritableContactFromResourceData(d *schema.ResourceData) platformclient
 		Callable:      &callable,
 	}
 
-	contactId, _ := d.Get("id").(string)
-	if contactId == "" {
-		contactId = uuid.NewString() // TODO - determine if the api will compute this
+	if contactId, ok := d.Get("id").(string); ok {
+		contactRequest.Id = &contactId
 	}
-	contactRequest.Id = &contactId
 
-	if dataMap, ok := d.Get("data").(map[string]string); ok {
-		contactRequest.Data = &dataMap
+	if dataMap, ok := d.Get("data").(map[string]any); ok {
+		stringMap := utillists.ConvertMapStringAnyToMapStringString(dataMap)
+		contactRequest.Data = &stringMap
 	}
+
 	contactRequest.PhoneNumberStatus = buildPhoneNumberStatus(d)
 	contactRequest.ContactableStatus = buildContactableStatus(d)
 	return contactRequest
@@ -53,14 +53,15 @@ func buildContactableStatus(d *schema.ResourceData) *map[string]platformclientv2
 		return nil
 	}
 
-	var contactableStatusMap map[string]platformclientv2.Contactablestatus
+	contactableStatusMap := make(map[string]platformclientv2.Contactablestatus)
 
 	contactableStatusList := contactableStatus.List()
 	for _, status := range contactableStatusList {
 		currentStatusMap := status.(map[string]any)
 		mediaType := currentStatusMap["media_type"].(string)
 		contactable := currentStatusMap["contactable"].(bool)
-		var columnStatusMap map[string]platformclientv2.Columnstatus
+
+		columnStatusMap := make(map[string]platformclientv2.Columnstatus)
 		if columnStatus, ok := currentStatusMap["column_status"].(*schema.Set); ok {
 			columnStatusList := columnStatus.List()
 			for _, status := range columnStatusList {
@@ -78,7 +79,7 @@ func buildContactableStatus(d *schema.ResourceData) *map[string]platformclientv2
 		}
 	}
 
-	return nil
+	return &contactableStatusMap
 }
 
 func buildPhoneNumberStatus(d *schema.ResourceData) *map[string]platformclientv2.Phonenumberstatus {
@@ -87,7 +88,7 @@ func buildPhoneNumberStatus(d *schema.ResourceData) *map[string]platformclientv2
 		return nil
 	}
 
-	var phoneNumberStatusMap map[string]platformclientv2.Phonenumberstatus
+	phoneNumberStatusMap := make(map[string]platformclientv2.Phonenumberstatus)
 
 	phoneNumberStatusList := phoneNumberStatus.List()
 	for _, status := range phoneNumberStatusList {
