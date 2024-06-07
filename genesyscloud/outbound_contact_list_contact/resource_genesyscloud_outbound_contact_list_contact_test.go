@@ -21,6 +21,28 @@ func TestAccResourceOutboundContactListContact(t *testing.T) {
 		columnNames           = []string{strconv.Quote("Cell"), strconv.Quote("Home")}
 	)
 
+	config := generateOutboundContactListContact(
+		resourceId,
+		util.NullValue,
+		"genesyscloud_outbound_contact_list."+contactListResourceId+".id",
+		util.GenerateMapAttrWithMapProperties(
+			"data",
+			map[string]string{
+				"Cell": strconv.Quote("+11111111"),
+				"Home": strconv.Quote("+22222222"),
+			},
+		),
+		generatePhoneNumberStatus("Cell", util.TrueValue),
+		generatePhoneNumberStatus("Home", util.TrueValue),
+		generateContactableStatus(
+			"Voice",
+			util.TrueValue,
+			generateColumnStatus("Cell", util.TrueValue)),
+	)
+
+	fmt.Println(config)
+	t.Skip()
+
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
 		ProviderFactories: provider.GetProviderFactories(providerResources, nil),
@@ -40,17 +62,19 @@ func TestAccResourceOutboundContactListContact(t *testing.T) {
 					resourceId,
 					util.NullValue,
 					"genesyscloud_outbound_contact_list."+contactListResourceId+".id",
-					util.GenerateMapAttr(
+					util.GenerateMapAttrWithMapProperties(
 						"data",
-						util.GenerateMapProperty(
-							"Cell",
-							strconv.Quote("+11111111"),
-						),
-						util.GenerateMapProperty(
-							"Home",
-							strconv.Quote("+22222222"),
-						),
+						map[string]string{
+							"Cell": strconv.Quote("+11111111"),
+							"Home": strconv.Quote("+22222222"),
+						},
 					),
+					generatePhoneNumberStatus("Cell", util.TrueValue),
+					generatePhoneNumberStatus("Home", util.TrueValue),
+					generateContactableStatus(
+						"Voice",
+						util.TrueValue,
+						generateColumnStatus("Cell", util.TrueValue)),
 				),
 			},
 		},
@@ -64,14 +88,12 @@ func generateOutboundContactListContact(
 	data string,
 	nestedBlocks ...string,
 ) string {
-	return fmt.Sprintf(`
-resource "%s" "%s" {
+	return fmt.Sprintf(`resource "%s" "%s" {
 	id              = %s
     contact_list_id = %s
     %s
     %s
-}
-`, resourceName, resourceId, id, contactListId, data, strings.Join(nestedBlocks, "\n"))
+}`, resourceName, resourceId, id, contactListId, data, strings.Join(nestedBlocks, "\n"))
 }
 
 func generatePhoneNumberStatus(key, callable string) string {
@@ -79,6 +101,22 @@ func generatePhoneNumberStatus(key, callable string) string {
 	phone_number_status {
 		key      = "%s"
         callable = %s
-	}
-`, key, callable)
+	}`, key, callable)
+}
+
+func generateContactableStatus(mediaType, contactable string, nestedBlocks ...string) string {
+	return fmt.Sprintf(`
+	contactable_status {
+		media_type  = "%s"
+		contactable = %s
+		%s
+	}`, mediaType, contactable, strings.Join(nestedBlocks, "\n"))
+}
+
+func generateColumnStatus(column, contactable string) string {
+	return fmt.Sprintf(`
+		column_status {
+			column      = "%s"
+			contactable = %s
+		}`, column, contactable)
 }

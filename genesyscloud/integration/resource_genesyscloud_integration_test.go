@@ -266,7 +266,9 @@ func TestAccResourceIntegration(t *testing.T) {
 					strconv.Quote(credName1),
 					strconv.Quote(credTypeName1),
 					integrationCred.GenerateCredentialFields(
-						util.GenerateMapProperty(key1, strconv.Quote(val1)),
+						map[string]string{
+							key1: strconv.Quote(val1),
+						},
 					),
 				) + GenerateIntegrationResource(
 					inteResource2,
@@ -297,7 +299,9 @@ func TestAccResourceIntegration(t *testing.T) {
 					strconv.Quote(credName1),
 					strconv.Quote(credTypeName1),
 					integrationCred.GenerateCredentialFields(
-						util.GenerateMapProperty(key1, strconv.Quote(val1)),
+						map[string]string{
+							key1: strconv.Quote(val1),
+						},
 					),
 				) + GenerateIntegrationResource(
 					inteResource2,

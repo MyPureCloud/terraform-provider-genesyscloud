@@ -53,7 +53,9 @@ func TestAccResourceIntegrationCustomAuthAction(t *testing.T) {
 			strconv.Quote(credentialResourceName),
 			strconv.Quote(customAuthCredentialType),
 			integrationCred.GenerateCredentialFields(
-				util.GenerateMapProperty(credKey1, strconv.Quote(credVal1)),
+				map[string]string{
+					credKey1: strconv.Quote(credVal1),
+				},
 			),
 		)
 

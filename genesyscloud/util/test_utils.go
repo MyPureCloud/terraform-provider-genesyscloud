@@ -308,8 +308,7 @@ func GenerateMapProperty(propName string, propValue string) string {
 func GenerateMapAttr(name string, properties ...string) string {
 	return fmt.Sprintf(`%s = {
 		%s
-	}
-	`, name, strings.Join(properties, "\n"))
+	}`, name, strings.Join(properties, "\n"))
 }
 
 func GenerateMapAttrWithMapProperties(name string, properties map[string]string) string {
