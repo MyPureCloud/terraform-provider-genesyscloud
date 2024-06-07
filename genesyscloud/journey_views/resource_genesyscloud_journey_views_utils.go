@@ -4,7 +4,6 @@ import (
 	"errors"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v130/platformclientv2"
-	"log"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 )
 
@@ -106,15 +105,17 @@ func buildJourneyviewelementfilterpredicate(predicateMap map[string]interface{})
 func buildJourneyViewLink(linkMap map[string]interface{}) platformclientv2.Journeyviewlink {
 	var link platformclientv2.Journeyviewlink
 	link.Id = getStringPointerFromInterface(linkMap["id"])
-	constraintWithinSlice, ok := linkMap["constraint_within"].([]interface{})
-	if ok {
-		link.ConstraintWithin = buildJourneyViewLinkTimeConstraint(constraintWithinSlice)
-	}
-	if !ok {
-		log.Printf("wrong type. correct type %T", constraintWithinSlice)
+	if constraintWithinSlice, ok := linkMap["constraint_within"].([]interface{}); ok {
+		constraintWithin := buildJourneyViewLinkTimeConstraint(constraintWithinSlice)
+		if constraintWithin != nil {
+			link.ConstraintWithin = constraintWithin
+		}
 	}
 	if constraintAfterSlice, ok := linkMap["constraint_after"].([]interface{}); ok {
-		link.ConstraintAfter = buildJourneyViewLinkTimeConstraint(constraintAfterSlice)
+		constraintAfter := buildJourneyViewLinkTimeConstraint(constraintAfterSlice)
+		if constraintAfter != nil {
+			link.ConstraintAfter = constraintAfter
+		}
 	}
 	link.EventCountType = getStringPointerFromInterface(linkMap["event_count_type"])
 	if joinAttributesSlice, ok := linkMap["join_attributes"].([]interface{}); ok {
@@ -124,21 +125,23 @@ func buildJourneyViewLink(linkMap map[string]interface{}) platformclientv2.Journ
 				joinAttributes[i] = stringValue
 			}
 		}
-		link.JoinAttributes = &joinAttributes
+		if len(joinAttributes) > 0 {
+			link.JoinAttributes = &joinAttributes
+		}
 	}
 	return link
 }
 
 func buildJourneyViewLinkTimeConstraint(timeConstraintSlice []interface{}) *platformclientv2.Journeyviewlinktimeconstraint {
+	if timeConstraintSlice == nil || len(timeConstraintSlice) == 0 {
+		return nil
+	}
 	var timeConstraint platformclientv2.Journeyviewlinktimeconstraint
 	for _, elem := range timeConstraintSlice {
 		timeConstraintMap, ok := elem.(map[string]interface{})
 		if ok {
 			timeConstraint.Unit = getStringPointerFromInterface(timeConstraintMap["unit"])
 			timeConstraint.Value = getIntPointerFromInterface(timeConstraintMap["value"])
-		}
-		if !ok {
-			log.Printf("wrong type 2, correct %T", timeConstraintMap)
 		}
 	}
 	return &timeConstraint

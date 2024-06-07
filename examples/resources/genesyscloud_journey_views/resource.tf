@@ -1,8 +1,8 @@
 resource "genesyscloud_journey_views" "journey_view" {
   duration = "P1Y"
-  name = "Sample Journey 1"
+  name     = "Sample Journey 1"
   elements {
-    id = "ac6c61b5-1cd4-4c6e-a8a5-edb74d9117eb"
+    id   = "ac6c61b5-1cd4-4c6e-a8a5-edb74d9117eb"
     name = "Wrap Up"
     attributes {
       type   = "Event"
@@ -10,12 +10,12 @@ resource "genesyscloud_journey_views" "journey_view" {
       source = "Voice"
     }
     filter {
-      type       = "And"
-      predicates  {
+      type = "And"
+      predicates {
         dimension = "mediaType"
         values    = ["VOICE"]
         operator  = "Matches"
-        no_value   = false
+        no_value  = false
       }
     }
   }
