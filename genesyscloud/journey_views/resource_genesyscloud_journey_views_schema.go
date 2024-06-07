@@ -51,7 +51,6 @@ var (
 				Type:         schema.TypeString,
 				Optional:     true,
 				ValidateFunc: validation.StringInSlice([]string{"Sequential", "All", "Concurrent"}, false),
-				Default:      "Sequential",
 			},
 			"join_attributes": {
 				Description: "Other (secondary) attributes on which this link should join the customers being counted.",

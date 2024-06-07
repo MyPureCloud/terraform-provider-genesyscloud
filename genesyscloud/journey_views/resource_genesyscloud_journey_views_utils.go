@@ -98,7 +98,7 @@ func buildJourneyviewelementfilterpredicate(predicateMap map[string]interface{})
 		predicate.Values = &values
 	}
 	predicate.Operator = getStringPointerFromInterface(predicateMap["operator"])
-	predicate.NoValue = getBoolPointerFromInterface(predicateMap["noValue"])
+	predicate.NoValue = getBoolPointerFromInterface(predicateMap["no_value"])
 	return predicate
 }
 
@@ -149,6 +149,9 @@ func buildJourneyViewLinkTimeConstraint(timeConstraintSlice []interface{}) *plat
 
 func getStringPointerFromInterface(val interface{}) *string {
 	if valString, ok := val.(string); ok {
+		if valString == "" {
+			return nil
+		}
 		return &valString
 	}
 	return nil
