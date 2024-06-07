@@ -52,8 +52,7 @@ var (
 			"callable": {
 				Description: `Indicates whether or not a phone number is callable.`,
 				Type:        schema.TypeBool,
-				Default:     false,
-				Optional:    true,
+				Required:    true,
 			},
 		},
 	}

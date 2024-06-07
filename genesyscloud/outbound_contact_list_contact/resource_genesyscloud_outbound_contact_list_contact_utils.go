@@ -9,29 +9,41 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 )
 
-func buildWritableContactFromResourceData(d *schema.ResourceData) *platformclientv2.Writabledialercontact {
+func buildWritableContactFromResourceData(d *schema.ResourceData) platformclientv2.Writabledialercontact {
 	contactListId := d.Get("contact_list_id").(string)
-	contactId, _ := d.Get("id").(string)
-	if contactId == "" {
-		contactId = uuid.NewString() // TODO - determine if the api will compute this
-	}
 	callable := d.Get("callable").(bool)
 
-	// TODO - add the rest of the fields
-	var contactRequest = &platformclientv2.Writabledialercontact{
-		Id:            &contactId,
+	var contactRequest = platformclientv2.Writabledialercontact{
 		ContactListId: &contactListId,
 		Callable:      &callable,
 	}
 
+	contactId, _ := d.Get("id").(string)
+	if contactId == "" {
+		contactId = uuid.NewString() // TODO - determine if the api will compute this
+	}
+	contactRequest.Id = &contactId
+
 	if dataMap, ok := d.Get("data").(map[string]string); ok {
 		contactRequest.Data = &dataMap
 	}
-
 	contactRequest.PhoneNumberStatus = buildPhoneNumberStatus(d)
-
 	contactRequest.ContactableStatus = buildContactableStatus(d)
+	return contactRequest
+}
 
+func buildDialerContactFromResourceData(d *schema.ResourceData) platformclientv2.Dialercontact {
+	contactListId := d.Get("contact_list_id").(string)
+	callable := d.Get("callable").(bool)
+	var contactRequest = platformclientv2.Dialercontact{
+		ContactListId: &contactListId,
+		Callable:      &callable,
+	}
+	if dataMap, ok := d.Get("data").(map[string]string); ok {
+		contactRequest.Data = &dataMap
+	}
+	contactRequest.PhoneNumberStatus = buildPhoneNumberStatus(d)
+	contactRequest.ContactableStatus = buildContactableStatus(d)
 	return contactRequest
 }
 
