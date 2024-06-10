@@ -41,8 +41,17 @@ resource "genesyscloud_idp_okta" "okta" {
 - `slo_binding` (String) Valid values: HTTP Redirect, HTTP Post
 - `slo_uri` (String) Provided by Okta on app creation.
 - `target_uri` (String) Target URI provided by Okta.
+- `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 
 ### Read-Only
 
 - `id` (String) The ID of this resource.
+
+<a id="nestedblock--timeouts"></a>
+### Nested Schema for `timeouts`
+
+Optional:
+
+- `read` (String)
+- `update` (String)
 

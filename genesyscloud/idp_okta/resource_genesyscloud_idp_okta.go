@@ -70,14 +70,9 @@ func readIdpOkta(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceIdpOkta(), constants.DefaultConsistencyChecks, "genesyscloud_idp_okta")
 
-		resourcedata.SetNillableValue(d, "name", okta.Name)
 		resourcedata.SetNillableValue(d, "disabled", okta.Disabled)
 		resourcedata.SetNillableValue(d, "issuer_uri", okta.IssuerURI)
 		resourcedata.SetNillableValue(d, "target_uri", okta.SsoTargetURI)
-		resourcedata.SetNillableValue(d, "slo_u_r_i", okta.SloURI)
-		resourcedata.SetNillableValue(d, "slo_binding", okta.SloBinding)
-		resourcedata.SetNillableValue(d, "relying_party_identifier", okta.RelyingPartyIdentifier)
-		resourcedata.SetNillableValue(d, "certificate", okta.Certificate)
 
 		if okta.Certificate != nil {
 			d.Set("certificates", lists.StringListToInterfaceList([]string{*okta.Certificate}))
@@ -145,13 +140,8 @@ func deleteIdpOkta(ctx context.Context, d *schema.ResourceData, meta interface{}
 // getIdpOktaFromResourceData maps data from schema ResourceData object to a platformclientv2.Okta
 func getIdpOktaFromResourceData(d *schema.ResourceData) platformclientv2.Okta {
 	return platformclientv2.Okta{
-		Name:                   platformclientv2.String(d.Get("name").(string)),
-		Disabled:               platformclientv2.Bool(d.Get("disabled").(bool)),
-		IssuerURI:              platformclientv2.String(d.Get("issuer_uri").(string)),
-		SsoTargetURI:           platformclientv2.String(d.Get("target_uri").(string)),
-		SloURI:                 platformclientv2.String(d.Get("slo_u_r_i").(string)),
-		SloBinding:             platformclientv2.String(d.Get("slo_binding").(string)),
-		RelyingPartyIdentifier: platformclientv2.String(d.Get("relying_party_identifier").(string)),
-		Certificate:            platformclientv2.String(d.Get("certificate").(string)),
+		Disabled:     platformclientv2.Bool(d.Get("disabled").(bool)),
+		IssuerURI:    platformclientv2.String(d.Get("issuer_uri").(string)),
+		SsoTargetURI: platformclientv2.String(d.Get("target_uri").(string)),
 	}
 }
