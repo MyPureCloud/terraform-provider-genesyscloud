@@ -75,6 +75,12 @@ func TestAccResourceAuthDivisionBasic(t *testing.T) {
 				ResourceName:      "genesyscloud_auth_division." + divResource1,
 				ImportState:       true,
 				ImportStateVerify: true,
+				Check: resource.ComposeTestCheckFunc(
+					func(s *terraform.State) error {
+						time.Sleep(30 * time.Second) // Wait for 30 seconds for proper deletion
+						return nil
+					},
+				),
 			},
 		},
 		CheckDestroy: testVerifyDivisionsDestroyed,
@@ -149,6 +155,12 @@ func TestAccResourceAuthDivisionHome(t *testing.T) {
 				ResourceName:      "genesyscloud_auth_division." + divHomeRes,
 				ImportState:       true,
 				ImportStateVerify: true,
+				Check: resource.ComposeTestCheckFunc(
+					func(s *terraform.State) error {
+						time.Sleep(30 * time.Second) // Wait for 30 seconds for proper deletion
+						return nil
+					},
+				),
 			},
 		},
 		CheckDestroy: testVerifyDivisionsDestroyed,

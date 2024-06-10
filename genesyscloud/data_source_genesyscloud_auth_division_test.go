@@ -14,9 +14,9 @@ import (
 
 func TestAccDataSourceAuthDivision(t *testing.T) {
 	var (
-		divResource   = "auth-div"
+		divResource   = "auth-division"
 		divDataSource = "auth-div-data"
-		divName       = "Terraform Division-" + uuid.NewString()
+		divName       = "Terraform Divisions-" + uuid.NewString()
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -24,6 +24,9 @@ func TestAccDataSourceAuthDivision(t *testing.T) {
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
+				PreConfig: func() {
+					time.Sleep(30 * time.Second)
+				},
 				Config: GenerateAuthDivisionResource(
 					divResource,
 					divName,

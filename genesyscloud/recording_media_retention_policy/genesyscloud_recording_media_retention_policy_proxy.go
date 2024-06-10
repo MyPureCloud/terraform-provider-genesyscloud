@@ -2,7 +2,10 @@ package recording_media_retention_policy
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"net/http"
+	"net/url"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v130/platformclientv2"
 )
@@ -135,21 +138,33 @@ func (p *policyProxy) getQualityFormsSurveyByName(ctx context.Context, surveyNam
 // getAllIntegrationCredsFn is the implementation for getting all media retention policy in Genesys Cloud
 func getAllPoliciesFn(ctx context.Context, p *policyProxy) (*[]platformclientv2.Policy, *platformclientv2.APIResponse, error) {
 	var allPolicies []platformclientv2.Policy
-	var response *platformclientv2.APIResponse
-	for pageNum := 1; ; pageNum++ {
-		const pageSize = 100
-		retentionPolicies, resp, err := p.recordingApi.GetRecordingMediaretentionpolicies(pageSize, pageNum, "", []string{}, "", "", "", true, false, false, 0)
+	const pageSize = 100
+
+	retentionPolicies, resp, err := callGetAllPoliciesApi(pageSize, 1, p.qualityApi.Configuration)
+	if err != nil {
+		return nil, resp, err
+	}
+
+	if retentionPolicies.Entities == nil || len(*retentionPolicies.Entities) == 0 {
+		return &allPolicies, resp, nil
+	}
+
+	allPolicies = append(allPolicies, *retentionPolicies.Entities...)
+
+	for pageNum := 2; pageNum <= *retentionPolicies.PageCount; pageNum++ {
+		retentionPolicies, resp, err = callGetAllPoliciesApi(pageSize, pageNum, p.qualityApi.Configuration)
 		if err != nil {
 			return nil, resp, err
 		}
-		response = resp
+
 		if retentionPolicies.Entities == nil || len(*retentionPolicies.Entities) == 0 {
 			break
 		}
 
 		allPolicies = append(allPolicies, *retentionPolicies.Entities...)
 	}
-	return &allPolicies, response, nil
+
+	return &allPolicies, resp, nil
 }
 
 // createPolicyFn is the implementation for creating a media retention policy in Genesys Cloud
@@ -172,18 +187,22 @@ func getPolicyByIdFn(ctx context.Context, p *policyProxy, policyId string) (poli
 
 // getPolicyByNameFn is the implementation for getting a media retention policy in Genesys Cloud by name
 func getPolicyByNameFn(ctx context.Context, p *policyProxy, policyName string) (policy *platformclientv2.Policy, retryable bool, response *platformclientv2.APIResponse, err error) {
-	const pageSize = 100
-	const pageNum = 1
-	policies, resp, err := p.recordingApi.GetRecordingMediaretentionpolicies(pageSize, pageNum, "", nil, "", "", policyName, true, false, false, 0)
+	policies, resp, err := getAllPoliciesFn(ctx, p)
 	if err != nil {
 		return nil, false, resp, err
 	}
 
-	if policies.Entities == nil || len(*policies.Entities) == 0 {
+	if policies == nil || len(*policies) == 0 {
 		return nil, true, resp, fmt.Errorf("no media retention policy found with name %s", policyName)
 	}
-	policy = &(*policies.Entities)[0]
-	return policy, false, resp, nil
+
+	for _, policy := range *policies {
+		if *policy.Name == policyName {
+			return &policy, false, resp, nil
+		}
+	}
+
+	return nil, true, resp, fmt.Errorf("unable to find media retention policy with name %s", policyName)
 }
 
 // updatePolicyFn is the implementation for updating a media retention policy in Genesys Cloud
@@ -238,4 +257,45 @@ func getQualityFormsSurveyByNameFn(ctx context.Context, p *policyProxy, surveyNa
 	}
 	surveyFormReference := platformclientv2.Publishedsurveyformreference{Name: &surveyName, ContextId: (*forms.Entities)[0].ContextId}
 	return &surveyFormReference, resp, nil
+}
+
+// We need to call /api/v2/recording/mediaretentionpolicies manually to avoid setting optional boolean and integer parameters than filter results
+func callGetAllPoliciesApi(pageSize, pageNumber int, config *platformclientv2.Configuration) (*platformclientv2.Policyentitylisting, *platformclientv2.APIResponse, error) {
+	apiClient := &config.APIClient
+
+	// create path and map variables
+	path := config.BasePath + "/api/v2/recording/mediaretentionpolicies"
+
+	headerParams := make(map[string]string)
+	queryParams := make(map[string]string)
+	formParams := url.Values{}
+	var postBody interface{}
+	var postFileName string
+	var fileBytes []byte
+
+	// oauth required
+	if config.AccessToken != "" {
+		headerParams["Authorization"] = "Bearer " + config.AccessToken
+	}
+	// add default headers if any
+	for key := range config.DefaultHeader {
+		headerParams[key] = config.DefaultHeader[key]
+	}
+
+	queryParams["pageSize"] = apiClient.ParameterToString(pageSize, "")
+	queryParams["pageNumber"] = apiClient.ParameterToString(pageNumber, "")
+
+	headerParams["Content-Type"] = "application/json"
+	headerParams["Accept"] = "application/json"
+
+	var successPayload *platformclientv2.Policyentitylisting
+	response, err := apiClient.CallAPI(path, http.MethodGet, postBody, headerParams, queryParams, formParams, postFileName, fileBytes)
+	if err != nil {
+		// Nothing special to do here, but do avoid processing the response
+	} else if response.Error != nil {
+		err = fmt.Errorf(response.ErrorMessage)
+	} else {
+		err = json.Unmarshal(response.RawBody, &successPayload)
+	}
+	return successPayload, response, err
 }
