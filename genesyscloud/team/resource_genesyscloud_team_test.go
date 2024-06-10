@@ -188,6 +188,7 @@ func TestAccResourceTeamRemoveMembers(t *testing.T) {
 						name1,
 						"genesyscloud_auth_division."+divResource+".id",
 						description1,
+						generateMemberIdsArray([]string{}),
 					),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_team."+resourceId, "name", name1),

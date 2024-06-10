@@ -6,10 +6,12 @@ import (
 	"strings"
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
+	didPool "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_did_pool"
 	phoneBaseSettings "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_phonebasesettings"
 	edgeSite "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
+	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 
@@ -186,17 +188,7 @@ func TestAccResourcePhoneBasic(t *testing.T) {
 
 func TestAccResourcePhoneStandalone(t *testing.T) {
 	number := "+12005538112"
-	// TODO: Use did pool resource inside config once cyclic dependency issue is resolved between genesyscloud and did_pools package
-	didPoolId, err := createDidPoolForEdgesPhoneTest(sdkConfig, number)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer func() {
-		if err := deleteDidPool(sdkConfig, didPoolId); err != nil {
-			t.Logf("failed to delete did pool '%s': %v", didPoolId, err)
-		}
-	}()
-
+	didPoolResource1 := "test-didpool1"
 	lineAddresses := []string{number}
 	phoneRes := "phone_standalone1234"
 	name1 := "test-phone-standalone_" + uuid.NewString()
@@ -207,7 +199,7 @@ func TestAccResourcePhoneStandalone(t *testing.T) {
 	locationRes := "test-location"
 
 	emergencyNumber := "+13173114121"
-	if err = edgeSite.DeleteLocationWithNumber(emergencyNumber, sdkConfig); err != nil {
+	if err := edgeSite.DeleteLocationWithNumber(emergencyNumber, sdkConfig); err != nil {
 		t.Skipf("failed to delete location with number %s: %v", emergencyNumber, err)
 	}
 
@@ -253,8 +245,15 @@ func TestAccResourcePhoneStandalone(t *testing.T) {
 		"mac",
 		[]string{},
 	)
-
-	config := phoneBaseSettings.GeneratePhoneBaseSettingsResourceWithCustomAttrs(
+	config := didPool.GenerateDidPoolResource(&didPool.DidPoolStruct{
+		ResourceID:       didPoolResource1,
+		StartPhoneNumber: lineAddresses[0],
+		EndPhoneNumber:   lineAddresses[0],
+		Description:      util.NullValue, // No description
+		Comments:         util.NullValue, // No comments
+		PoolProvider:     util.NullValue, // No provider
+	})
+	config += phoneBaseSettings.GeneratePhoneBaseSettingsResourceWithCustomAttrs(
 		phoneBaseSettingsRes,
 		phoneBaseSettingsName,
 		"phoneBaseSettings description",
@@ -267,7 +266,7 @@ func TestAccResourcePhoneStandalone(t *testing.T) {
 		"genesyscloud_telephony_providers_edges_phonebasesettings." + phoneBaseSettingsRes + ".id",
 		lineAddresses,
 		"", // no web rtc user
-		"", // no Depends On
+		"genesyscloud_telephony_providers_edges_did_pool." + didPoolResource1,
 	}, capabilities, generatePhoneProperties(uuid.NewString()))
 
 	resource.Test(t, resource.TestCase{
@@ -275,6 +274,9 @@ func TestAccResourcePhoneStandalone(t *testing.T) {
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
+				PreConfig: func() {
+					time.Sleep(30 * time.Second)
+				},
 				Config: locationConfig + siteConfig + config,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_phone."+phoneRes, "name", name1),
