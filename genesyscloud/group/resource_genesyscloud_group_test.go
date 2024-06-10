@@ -301,7 +301,7 @@ func TestAccResourceGroupMembers(t *testing.T) {
 					func(s *terraform.State) error {
 						rs, ok := s.RootModule().Resources["genesyscloud_user."+testUserResource]
 						if !ok {
-							return log.Fatalf("Not found: %s", "genesyscloud_user."+testUserResource)
+							return fmt.Errorf("not found: %s", "genesyscloud_user."+testUserResource)
 						}
 						userID = rs.Primary.ID
 						log.Printf("User ID: %s\n", userID) // Print user ID
