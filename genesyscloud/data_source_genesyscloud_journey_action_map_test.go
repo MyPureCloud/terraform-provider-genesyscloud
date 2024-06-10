@@ -11,7 +11,6 @@ import (
 )
 
 func TestAccDataSourceJourneyActionMap(t *testing.T) {
-	t.Skip("Customer segment not implemented")
 	runDataJourneyActionMapTestCase(t, "find_by_name")
 }
 

@@ -6,6 +6,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -74,6 +75,9 @@ func TestAccDataSourceRoutingQueueCaching(t *testing.T) {
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
+				PreConfig: func() {
+					time.Sleep(45 * time.Second)
+				},
 				Config: generateRoutingQueueResourceBasic( // queue resource
 					queue1ResourceId,
 					queueName1,

@@ -1,16 +1,23 @@
 package group
 
 import (
-	"fmt"
+	"log"
+	"sync"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/mypurecloud/platform-client-sdk-go/v130/platformclientv2"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+)
+
+var (
+	sdkConfig *platformclientv2.Configuration
+	mu        sync.Mutex
 )
 
 func TestAccDataSourceGroup(t *testing.T) {
@@ -20,7 +27,8 @@ func TestAccDataSourceGroup(t *testing.T) {
 		groupName        = "test group" + uuid.NewString()
 		testUserResource = "user_resource1"
 		testUserName     = "nameUser1" + uuid.NewString()
-		testUserEmail    = uuid.NewString() + "@example.com"
+		testUserEmail    = uuid.NewString() + "@examplegroup.com"
+		userID           string
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -44,9 +52,22 @@ func TestAccDataSourceGroup(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrPair("data.genesyscloud_group."+groupDataSource, "id", "genesyscloud_group."+groupResource, "id"),
 					func(s *terraform.State) error {
-						time.Sleep(30 * time.Second) // Wait for 30 seconds for resources to get deleted properly
+						rs, ok := s.RootModule().Resources["genesyscloud_user."+testUserResource]
+						if !ok {
+							return log.Fatalf("Not found: %s", "genesyscloud_user."+testUserResource)
+						}
+						userID = rs.Primary.ID
+						log.Printf("User ID: %s\n", userID) // Print user ID
 						return nil
 					},
+				),
+			},
+			{
+				ResourceName:      "genesyscloud_user." + testUserResource,
+				ImportState:       true,
+				ImportStateVerify: true,
+				Check: resource.ComposeTestCheckFunc(
+					checkUserDeleted(userID),
 				),
 			},
 		},
@@ -59,9 +80,51 @@ func generateGroupDataSource(
 	// Must explicitly use depends_on in terraform v0.13 when a data source references a resource
 	// Fixed in v0.14 https://github.com/hashicorp/terraform/pull/26284
 	dependsOnResource string) string {
-	return fmt.Sprintf(`data "genesyscloud_group" "%s" {
+	return log.Printf(`data "genesyscloud_group" "%s" {
 		name = "%s"
 		depends_on=[%s]
 	}
 	`, resourceID, name, dependsOnResource)
+}
+
+func checkUserDeleted(id string) resource.TestCheckFunc {
+	log.Printf("Fetching user with ID: %s\n", id)
+	return func(s *terraform.State) error {
+		maxAttempts := 18
+		for i := 0; i < maxAttempts; i++ {
+
+			deleted, err := isUserDeleted(id)
+			if err != nil {
+				return err
+			}
+			if deleted {
+				return nil
+			}
+			time.Sleep(10 * time.Second)
+		}
+		return log.Fatalf("User %s was not deleted properly", id)
+	}
+}
+
+func isUserDeleted(id string) (bool, error) {
+	mu.Lock()
+	defer mu.Unlock()
+
+	usersAPI := platformclientv2.NewUsersApiWithConfig(sdkConfig)
+	// Attempt to get the user
+	_, response, err := usersAPI.GetUser(id, nil, "", "")
+
+	// Check if the user is not found (deleted)
+	if response != nil && response.StatusCode == 404 {
+		return true, nil // User is deleted
+	}
+
+	// Handle other errors
+	if err != nil {
+		log.Printf("Error fetching user: %v", err)
+		return false, err
+	}
+
+	// If user is found, it means the user is not deleted
+	return false, nil
 }

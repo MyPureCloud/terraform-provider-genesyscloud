@@ -3,8 +3,9 @@ package routing_email_route
 import (
 	"context"
 	"fmt"
-	"github.com/mypurecloud/platform-client-sdk-go/v130/platformclientv2"
 	"log"
+
+	"github.com/mypurecloud/platform-client-sdk-go/v130/platformclientv2"
 )
 
 /*
@@ -19,35 +20,35 @@ var internalProxy *routingEmailRouteProxy
 // Type definitions for each func on our proxy so we can easily mock them out later
 type createRoutingEmailRouteFunc func(ctx context.Context, p *routingEmailRouteProxy, domainId string, inboundRoute *platformclientv2.Inboundroute) (*platformclientv2.Inboundroute, *platformclientv2.APIResponse, error)
 type getAllRoutingEmailRouteFunc func(ctx context.Context, p *routingEmailRouteProxy, domainId string, name string) (*map[string][]platformclientv2.Inboundroute, *platformclientv2.APIResponse, error)
-type getRoutingEmailRouteIdByNameFunc func(ctx context.Context, p *routingEmailRouteProxy, name string) (id string, retryable bool, response *platformclientv2.APIResponse, err error)
+type getRoutingEmailRouteIdByPatternFunc func(ctx context.Context, p *routingEmailRouteProxy, pattern string, domainId string) (id string, retryable bool, response *platformclientv2.APIResponse, err error)
 type getRoutingEmailRouteByIdFunc func(ctx context.Context, p *routingEmailRouteProxy, domainId string, id string) (inboundRoute *platformclientv2.Inboundroute, response *platformclientv2.APIResponse, err error)
 type updateRoutingEmailRouteFunc func(ctx context.Context, p *routingEmailRouteProxy, id string, domainId string, inboundRoute *platformclientv2.Inboundroute) (*platformclientv2.Inboundroute, *platformclientv2.APIResponse, error)
 type deleteRoutingEmailRouteFunc func(ctx context.Context, p *routingEmailRouteProxy, domainId string, id string) (response *platformclientv2.APIResponse, err error)
 
 // routingEmailRouteProxy contains all of the methods that call genesys cloud APIs.
 type routingEmailRouteProxy struct {
-	clientConfig                     *platformclientv2.Configuration
-	routingApi                       *platformclientv2.RoutingApi
-	createRoutingEmailRouteAttr      createRoutingEmailRouteFunc
-	getAllRoutingEmailRouteAttr      getAllRoutingEmailRouteFunc
-	getRoutingEmailRouteIdByNameAttr getRoutingEmailRouteIdByNameFunc
-	getRoutingEmailRouteByIdAttr     getRoutingEmailRouteByIdFunc
-	updateRoutingEmailRouteAttr      updateRoutingEmailRouteFunc
-	deleteRoutingEmailRouteAttr      deleteRoutingEmailRouteFunc
+	clientConfig                        *platformclientv2.Configuration
+	routingApi                          *platformclientv2.RoutingApi
+	createRoutingEmailRouteAttr         createRoutingEmailRouteFunc
+	getAllRoutingEmailRouteAttr         getAllRoutingEmailRouteFunc
+	getRoutingEmailRouteIdByPatternAttr getRoutingEmailRouteIdByPatternFunc
+	getRoutingEmailRouteByIdAttr        getRoutingEmailRouteByIdFunc
+	updateRoutingEmailRouteAttr         updateRoutingEmailRouteFunc
+	deleteRoutingEmailRouteAttr         deleteRoutingEmailRouteFunc
 }
 
 // newRoutingEmailRouteProxy initializes the routing email route proxy with all of the data needed to communicate with Genesys Cloud
 func newRoutingEmailRouteProxy(clientConfig *platformclientv2.Configuration) *routingEmailRouteProxy {
 	api := platformclientv2.NewRoutingApiWithConfig(clientConfig)
 	return &routingEmailRouteProxy{
-		clientConfig:                     clientConfig,
-		routingApi:                       api,
-		createRoutingEmailRouteAttr:      createRoutingEmailRouteFn,
-		getAllRoutingEmailRouteAttr:      getAllRoutingEmailRouteFn,
-		getRoutingEmailRouteIdByNameAttr: getRoutingEmailRouteIdByNameFn,
-		getRoutingEmailRouteByIdAttr:     getRoutingEmailRouteByIdFn,
-		updateRoutingEmailRouteAttr:      updateRoutingEmailRouteFn,
-		deleteRoutingEmailRouteAttr:      deleteRoutingEmailRouteFn,
+		clientConfig:                        clientConfig,
+		routingApi:                          api,
+		createRoutingEmailRouteAttr:         createRoutingEmailRouteFn,
+		getAllRoutingEmailRouteAttr:         getAllRoutingEmailRouteFn,
+		getRoutingEmailRouteIdByPatternAttr: getRoutingEmailRouteIdByPatternFn,
+		getRoutingEmailRouteByIdAttr:        getRoutingEmailRouteByIdFn,
+		updateRoutingEmailRouteAttr:         updateRoutingEmailRouteFn,
+		deleteRoutingEmailRouteAttr:         deleteRoutingEmailRouteFn,
 	}
 }
 
@@ -70,9 +71,9 @@ func (p *routingEmailRouteProxy) getAllRoutingEmailRoute(ctx context.Context, do
 	return p.getAllRoutingEmailRouteAttr(ctx, p, domainId, name)
 }
 
-// getRoutingEmailRouteIdByName returns a single Genesys Cloud routing email route by a name
-func (p *routingEmailRouteProxy) getRoutingEmailRouteIdByName(ctx context.Context, name string) (id string, retryable bool, response *platformclientv2.APIResponse, err error) {
-	return p.getRoutingEmailRouteIdByNameAttr(ctx, p, name)
+// getRoutingEmailRouteIdByName returns a single Genesys Cloud routing email route by a pattern
+func (p *routingEmailRouteProxy) getRoutingEmailRouteIdByPattern(ctx context.Context, pattern string, domainId string) (id string, retryable bool, response *platformclientv2.APIResponse, err error) {
+	return p.getRoutingEmailRouteIdByPatternAttr(ctx, p, pattern, domainId)
 }
 
 // getRoutingEmailRouteById returns a single Genesys Cloud routing email route by Id
@@ -194,24 +195,24 @@ func getRoutingEmailRouteByIdFn(ctx context.Context, p *routingEmailRouteProxy, 
 }
 
 // getRoutingEmailRouteIdByNameFn is an implementation of the function to get a Genesys Cloud routing email route by name
-func getRoutingEmailRouteIdByNameFn(ctx context.Context, p *routingEmailRouteProxy, name string) (string, bool, *platformclientv2.APIResponse, error) {
-	inboundRoutesMap, resp, err := getAllRoutingEmailRouteFn(ctx, p, "", name)
+func getRoutingEmailRouteIdByPatternFn(ctx context.Context, p *routingEmailRouteProxy, pattern string, domainId string) (string, bool, *platformclientv2.APIResponse, error) {
+	inboundRoutesMap, resp, err := getAllRoutingEmailRouteFn(ctx, p, domainId, pattern)
 	if err != nil {
 		return "", false, resp, err
 	}
 
 	if inboundRoutesMap == nil || len(*inboundRoutesMap) == 0 {
-		return "", true, resp, fmt.Errorf("No routing email route found with name %s", name)
+		return "", true, resp, fmt.Errorf("No routing email route found with pattern %s", pattern)
 	}
 
 	for _, inboundRoutes := range *inboundRoutesMap {
 		for _, inboundRoute := range inboundRoutes {
-			if *inboundRoute.Name == name {
-				log.Printf("Retrieved the routing email route id %s by name %s", *inboundRoute.Id, name)
+			if *inboundRoute.Pattern == pattern {
+				log.Printf("Retrieved the routing email route id %s by pattern %s", *inboundRoute.Id, pattern)
 				return *inboundRoute.Id, false, resp, nil
 			}
 		}
 	}
 
-	return "", true, resp, fmt.Errorf("Unable to find routing email route with name %s", name)
+	return "", true, resp, fmt.Errorf("Unable to find routing email route with name %s", pattern)
 }

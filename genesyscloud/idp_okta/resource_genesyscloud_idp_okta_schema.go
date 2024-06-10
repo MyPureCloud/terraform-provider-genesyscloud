@@ -1,6 +1,8 @@
 package idp_okta
 
 import (
+	"time"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 
@@ -38,6 +40,10 @@ func ResourceIdpOkta() *schema.Resource {
 			StateContext: schema.ImportStatePassthroughContext,
 		},
 		SchemaVersion: 1,
+		Timeouts: &schema.ResourceTimeout{
+			Update: schema.DefaultTimeout(8 * time.Minute),
+			Read:   schema.DefaultTimeout(8 * time.Minute),
+		},
 		Schema: map[string]*schema.Schema{
 			`name`: {
 				Description: `IDP Okta name`,

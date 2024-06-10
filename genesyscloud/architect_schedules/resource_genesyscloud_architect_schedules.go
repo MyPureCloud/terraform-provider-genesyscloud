@@ -88,7 +88,7 @@ func createArchitectSchedules(ctx context.Context, d *schema.ResourceData, meta 
 			msg = "\nYou must have all divisions and future divisions selected in your OAuth client role"
 		}
 
-		return util.BuildAPIDiagnosticError("genesyscloud_archiect_schedules", fmt.Sprintf("Failed to create schedule %s | Error: %s MSG: %s", *scheduleResponse.Name, err, msg), proxyResponse)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create schedule %s | Error: %s. %s", name, err, msg), proxyResponse)
 	}
 
 	d.SetId(*scheduleResponse.Id)
@@ -169,7 +169,7 @@ func updateArchitectSchedules(ctx context.Context, d *schema.ResourceData, meta 
 		scheduleResponse, proxyResponse, err := proxy.getArchitectSchedulesById(ctx, d.Id())
 
 		if err != nil {
-			return proxyResponse, util.BuildAPIDiagnosticError("genesyscloud_archiect_schedules", fmt.Sprintf("Failed to read schedule %s error: %s", d.Id(), err), proxyResponse)
+			return proxyResponse, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to read schedule %s error: %s", d.Id(), err), proxyResponse)
 		}
 
 		log.Printf("Updating schedule %s", name)
@@ -188,7 +188,7 @@ func updateArchitectSchedules(ctx context.Context, d *schema.ResourceData, meta 
 				msg = "\nYou must have all divisions and future divisions selected in your OAuth client role"
 			}
 
-			return proxyUpdResponse, util.BuildAPIDiagnosticError("genesyscloud_archiect_schedules", fmt.Sprintf("Failed to update schedule %s | Error: %s MSG: %s", *scheduleResponse.Name, putErr, msg), proxyUpdResponse)
+			return proxyUpdResponse, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update schedule %s | Error: %s. %s", name, putErr, msg), proxyUpdResponse)
 		}
 		return proxyUpdResponse, nil
 	})
@@ -211,7 +211,7 @@ func deleteArchitectSchedules(ctx context.Context, d *schema.ResourceData, meta 
 		log.Printf("Deleting schedule %s", d.Id())
 		proxyDelResponse, err := proxy.deleteArchitectSchedules(ctx, d.Id())
 		if err != nil {
-			return proxyDelResponse, util.BuildAPIDiagnosticError("genesyscloud_archiect_schedules", fmt.Sprintf("Failed to delete schedule %s error: %s", d.Id(), err), proxyDelResponse)
+			return proxyDelResponse, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete schedule %s error: %s", d.Id(), err), proxyDelResponse)
 		}
 		return proxyDelResponse, nil
 	})

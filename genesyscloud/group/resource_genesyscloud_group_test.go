@@ -2,6 +2,7 @@ package group
 
 import (
 	"fmt"
+	"log"
 	"strconv"
 	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
@@ -26,7 +27,7 @@ func TestAccResourceGroupBasic(t *testing.T) {
 		visMembers       = "members"
 		testUserResource = "user_resource1"
 		testUserName     = "nameUser1" + uuid.NewString()
-		testUserEmail    = uuid.NewString() + "@example.com"
+		testUserEmail    = uuid.NewString() + "@group.com"
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -99,7 +100,7 @@ func TestAccResourceGroupAddresses(t *testing.T) {
 		typeGroupPhone   = "GROUPPHONE"
 		testUserResource = "user_resource1"
 		testUserName     = "nameUser1" + uuid.NewString()
-		testUserEmail    = uuid.NewString() + "@example.com"
+		testUserEmail    = uuid.NewString() + "@groupadd.com"
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -201,13 +202,14 @@ func TestAccResourceGroupMembers(t *testing.T) {
 		groupName        = "Terraform Test Group-" + uuid.NewString()
 		userResource1    = "group-user1"
 		userResource2    = "group-user2"
-		userEmail1       = "terraform1-" + uuid.NewString() + "@example.com"
-		userEmail2       = "terraform2-" + uuid.NewString() + "@example.com"
+		userEmail1       = "terraform1-" + uuid.NewString() + "@groupmem.com"
+		userEmail2       = "terraform2-" + uuid.NewString() + "@groupmem.com"
 		userName1        = "Johnny Terraform"
 		userName2        = "Ryan Terraform"
 		testUserResource = "user_resource1"
 		testUserName     = "nameUser1" + uuid.NewString()
-		testUserEmail    = uuid.NewString() + "@example.com"
+		testUserEmail    = uuid.NewString() + "@groupmem.com"
+		userID           string
 	)
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
@@ -297,16 +299,23 @@ func TestAccResourceGroupMembers(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckNoResourceAttr("genesyscloud_group."+groupResource, "member_ids.%"),
 					func(s *terraform.State) error {
-						time.Sleep(45 * time.Second) // Wait for 30 seconds for resources to get deleted properly
+						rs, ok := s.RootModule().Resources["genesyscloud_user."+testUserResource]
+						if !ok {
+							return log.Fatalf("Not found: %s", "genesyscloud_user."+testUserResource)
+						}
+						userID = rs.Primary.ID
+						log.Printf("User ID: %s\n", userID) // Print user ID
 						return nil
 					},
 				),
 			},
 			{
-				// Import/Read
-				ResourceName:      "genesyscloud_group." + groupResource,
+				ResourceName:      "genesyscloud_user." + testUserResource,
 				ImportState:       true,
 				ImportStateVerify: true,
+				Check: resource.ComposeTestCheckFunc(
+					checkUserDeleted(userID),
+				),
 			},
 		},
 		CheckDestroy: testVerifyGroupsDestroyed,
