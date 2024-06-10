@@ -76,13 +76,6 @@ func ResourceOutboundContactListContact() *schema.Resource {
 		},
 		SchemaVersion: 1,
 		Schema: map[string]*schema.Schema{
-			"id": {
-				Description: `The globally unique identifier for the object. Updating this value will cause the contact to be deleted and recreated.`,
-				Optional:    true,
-				ForceNew:    true,
-				Computed:    true,
-				Type:        schema.TypeString,
-			},
 			"contact_list_id": {
 				Description: `The identifier of the contact list containing this contact.`,
 				ForceNew:    true,
@@ -127,6 +120,7 @@ Only applicable on the creation of a contact, so updating this field will force 
 				Description: `A map of phone number columns to PhoneNumberStatuses, which indicate if the phone number is callable or not.`,
 				Type:        schema.TypeSet,
 				Optional:    true,
+				ForceNew:    true,
 				Elem:        phoneNumberStatusResource,
 			},
 			"contactable_status": {

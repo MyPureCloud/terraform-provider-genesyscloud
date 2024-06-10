@@ -1,10 +1,8 @@
 package outbound_contact_list_contact
 
 import (
-	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v130/platformclientv2"
-	"strings"
 	utillists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 )
@@ -17,10 +15,6 @@ func buildWritableContactFromResourceData(d *schema.ResourceData) platformclient
 	var contactRequest = platformclientv2.Writabledialercontact{
 		ContactListId: &contactListId,
 		Callable:      &callable,
-	}
-
-	if contactId, ok := d.Get("id").(string); ok {
-		contactRequest.Id = &contactId
 	}
 
 	if dataMap, ok := d.Get("data").(map[string]any); ok {
@@ -141,18 +135,4 @@ func flattenColumnStatus(columnStatus *map[string]platformclientv2.Columnstatus)
 		csSet.Add(cs)
 	}
 	return csSet
-}
-
-const contactIdSplitCharacter = "_-_"
-
-func createContactId(contactListId, contactId string) string {
-	return contactListId + contactIdSplitCharacter + contactId
-}
-
-func parseContactListIdAndContactId(id string) (string, string, error) {
-	ids := strings.Split(id, contactIdSplitCharacter)
-	if len(ids) != 2 {
-		return "", "", fmt.Errorf("expected to parse contact list id and contact id from string %s, splitting by '%s'. Got %v", id, contactIdSplitCharacter, len(ids))
-	}
-	return ids[0], ids[1], nil
 }

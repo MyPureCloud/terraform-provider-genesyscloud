@@ -78,7 +78,6 @@ func TestAccResourceOutboundContactListContact(t *testing.T) {
 			{
 				Config: contactListResource + generateOutboundContactListContact(
 					resourceId,
-					util.NullValue,
 					contactListFullResourceId+".id",
 					util.TrueValue,
 					util.GenerateMapAttrWithMapProperties(
@@ -89,7 +88,8 @@ func TestAccResourceOutboundContactListContact(t *testing.T) {
 							emailColumnKey: strconv.Quote(dataEmailValue),
 						},
 					),
-					generatePhoneNumberStatus(cellColumnKey, util.TrueValue),
+					generatePhoneNumberStatus(cellColumnKey, util.FalseValue),
+					generatePhoneNumberStatus(homeColumnKey, util.TrueValue),
 					generateContactableStatus(
 						voiceMediaType,
 						util.FalseValue, // contactable
@@ -107,9 +107,11 @@ func TestAccResourceOutboundContactListContact(t *testing.T) {
 					resource.TestCheckResourceAttr(fullResourceId, "data."+cellColumnKey, dataCellValue),
 					resource.TestCheckResourceAttr(fullResourceId, "data."+homeColumnKey, dataHomeValue),
 					resource.TestCheckResourceAttr(fullResourceId, "data."+emailColumnKey, dataEmailValue),
-					resource.TestCheckResourceAttr(fullResourceId, "phone_number_status.#", "1"),
+					resource.TestCheckResourceAttr(fullResourceId, "phone_number_status.#", "2"),
 					resource.TestCheckResourceAttr(fullResourceId, "phone_number_status.0.key", cellColumnKey),
-					resource.TestCheckResourceAttr(fullResourceId, "phone_number_status.0.callable", util.TrueValue),
+					resource.TestCheckResourceAttr(fullResourceId, "phone_number_status.0.callable", util.FalseValue),
+					resource.TestCheckResourceAttr(fullResourceId, "phone_number_status.1.key", homeColumnKey),
+					resource.TestCheckResourceAttr(fullResourceId, "phone_number_status.1.callable", util.TrueValue),
 					resource.TestCheckResourceAttr(fullResourceId, "contactable_status.#", "2"),
 					resource.TestCheckResourceAttr(fullResourceId, "contactable_status.0.media_type", voiceMediaType),
 					resource.TestCheckResourceAttr(fullResourceId, "contactable_status.0.contactable", util.FalseValue),
@@ -125,7 +127,6 @@ func TestAccResourceOutboundContactListContact(t *testing.T) {
 				// Update
 				Config: contactListResource + generateOutboundContactListContact(
 					resourceId,
-					util.NullValue,
 					contactListFullResourceId+".id",
 					util.FalseValue,
 					util.GenerateMapAttrWithMapProperties(
@@ -137,7 +138,7 @@ func TestAccResourceOutboundContactListContact(t *testing.T) {
 						},
 					),
 					generatePhoneNumberStatus(cellColumnKey, util.FalseValue),
-					//generatePhoneNumberStatus(homeColumnKey, util.TrueValue),
+					generatePhoneNumberStatus(homeColumnKey, util.TrueValue),
 					generateContactableStatus(
 						voiceMediaType,
 						util.FalseValue, // contactable
@@ -155,11 +156,11 @@ func TestAccResourceOutboundContactListContact(t *testing.T) {
 					resource.TestCheckResourceAttr(fullResourceId, "data."+cellColumnKey, dataCellValueUpdated),
 					resource.TestCheckResourceAttr(fullResourceId, "data."+homeColumnKey, dataHomeValueUpdated),
 					resource.TestCheckResourceAttr(fullResourceId, "data."+emailColumnKey, dataEmailValueUpdated),
-					resource.TestCheckResourceAttr(fullResourceId, "phone_number_status.#", "1"),
+					resource.TestCheckResourceAttr(fullResourceId, "phone_number_status.#", "2"),
 					resource.TestCheckResourceAttr(fullResourceId, "phone_number_status.0.key", cellColumnKey),
 					resource.TestCheckResourceAttr(fullResourceId, "phone_number_status.0.callable", util.FalseValue),
-					//resource.TestCheckResourceAttr(fullResourceId, "phone_number_status.1.key", homeColumnKey),
-					//resource.TestCheckResourceAttr(fullResourceId, "phone_number_status.1.callable", util.TrueValue),
+					resource.TestCheckResourceAttr(fullResourceId, "phone_number_status.1.key", homeColumnKey),
+					resource.TestCheckResourceAttr(fullResourceId, "phone_number_status.1.callable", util.TrueValue),
 					resource.TestCheckResourceAttr(fullResourceId, "contactable_status.#", "2"),
 					resource.TestCheckResourceAttr(fullResourceId, "contactable_status.0.media_type", voiceMediaType),
 					resource.TestCheckResourceAttr(fullResourceId, "contactable_status.0.contactable", util.FalseValue),
@@ -177,19 +178,17 @@ func TestAccResourceOutboundContactListContact(t *testing.T) {
 
 func generateOutboundContactListContact(
 	resourceId,
-	id,
 	contactListId,
 	callable,
 	data string,
 	nestedBlocks ...string,
 ) string {
 	return fmt.Sprintf(`resource "%s" "%s" {
-	id              = %s
     contact_list_id = %s
     callable        = %s
     %s
     %s
-}`, resourceName, resourceId, id, contactListId, callable, data, strings.Join(nestedBlocks, "\n"))
+}`, resourceName, resourceId, contactListId, callable, data, strings.Join(nestedBlocks, "\n"))
 }
 
 func generatePhoneNumberStatus(key, callable string) string {
