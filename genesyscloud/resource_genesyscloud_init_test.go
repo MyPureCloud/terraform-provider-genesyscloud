@@ -5,6 +5,7 @@ import (
 	"sync"
 	"terraform-provider-genesyscloud/genesyscloud/architect_flow"
 	archScheduleGroup "terraform-provider-genesyscloud/genesyscloud/architect_schedulegroups"
+	architectSchedules "terraform-provider-genesyscloud/genesyscloud/architect_schedules"
 	"terraform-provider-genesyscloud/genesyscloud/group"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	routingQueue "terraform-provider-genesyscloud/genesyscloud/routing_queue"
@@ -37,7 +38,6 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_routing_queue"] = routingQueue.ResourceRoutingQueue()
 	providerResources["genesyscloud_location"] = ResourceLocation()
 	providerResources["genesyscloud_auth_division"] = ResourceAuthDivision()
-	providerResources["genesyscloud_idp_adfs"] = ResourceIdpAdfs()
 	providerResources["genesyscloud_idp_generic"] = ResourceIdpGeneric()
 	providerResources["genesyscloud_idp_gsuite"] = ResourceIdpGsuite()
 	providerResources["genesyscloud_idp_okta"] = ResourceIdpOkta()
@@ -66,6 +66,8 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_user"] = ResourceUser()
 	providerResources["genesyscloud_widget_deployment"] = ResourceWidgetDeployment()
 	providerResources["genesyscloud_architect_schedulegroups"] = archScheduleGroup.ResourceArchitectSchedulegroups()
+	providerResources["genesyscloud_architect_schedules"] = architectSchedules.ResourceArchitectSchedules()
+
 }
 
 func (r *registerTestInstance) registerTestDataSources() {

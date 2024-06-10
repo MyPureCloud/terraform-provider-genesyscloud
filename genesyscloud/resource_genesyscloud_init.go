@@ -44,7 +44,6 @@ func registerResources(l registrar.Registrar) {
 
 	l.RegisterResource("genesyscloud_location", ResourceLocation())
 	l.RegisterResource("genesyscloud_auth_division", ResourceAuthDivision())
-	l.RegisterResource("genesyscloud_idp_adfs", ResourceIdpAdfs())
 	l.RegisterResource("genesyscloud_idp_generic", ResourceIdpGeneric())
 	l.RegisterResource("genesyscloud_idp_gsuite", ResourceIdpGsuite())
 	l.RegisterResource("genesyscloud_idp_okta", ResourceIdpOkta())
@@ -79,7 +78,6 @@ func registerResources(l registrar.Registrar) {
 
 func registerExporters(l registrar.Registrar) {
 	l.RegisterExporter("genesyscloud_auth_division", AuthDivisionExporter())
-	l.RegisterExporter("genesyscloud_idp_adfs", IdpAdfsExporter())
 	l.RegisterExporter("genesyscloud_idp_generic", IdpGenericExporter())
 	l.RegisterExporter("genesyscloud_idp_gsuite", IdpGsuiteExporter())
 	l.RegisterExporter("genesyscloud_idp_okta", IdpOktaExporter())

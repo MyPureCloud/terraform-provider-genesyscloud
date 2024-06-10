@@ -3,11 +3,12 @@ package resource_cache
 import (
 	"context"
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/mypurecloud/platform-client-sdk-go/v130/platformclientv2"
 	"log"
 	"sync"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/mypurecloud/platform-client-sdk-go/v130/platformclientv2"
 )
 
 // Cache for Data Sources
@@ -99,7 +100,7 @@ func RetrieveId(cache *DataSourceCache,
 	if !ok {
 		// If not found in cache, try to obtain through SDK call
 		log.Printf("could not find the resource %v in cache. Will try API to find value", key)
-		id, diagErr := cache.getApiFunc(cache, key, ctx)
+		idFromApi, diagErr := cache.getApiFunc(cache, key, ctx)
 		if diagErr != nil {
 			return "", diagErr
 		}
@@ -107,6 +108,8 @@ func RetrieveId(cache *DataSourceCache,
 		if err := cache.UpdateCacheEntry(key, id); err != nil {
 			return "", util.BuildDiagnosticError(resourceName, fmt.Sprintf("error updating cache"), err)
 		}
+		// id gets reset to empty string at the updateCacheEntry method.
+		id = idFromApi
 	}
 	return id, nil
 }
