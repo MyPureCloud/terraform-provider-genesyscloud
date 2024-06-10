@@ -8,10 +8,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v130/platformclientv2"
 	"log"
-	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
-	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 	"time"
 )
@@ -57,7 +55,7 @@ func readOutboundContactListContact(ctx context.Context, d *schema.ResourceData,
 		return util.BuildDiagnosticError(resourceName, "failed to parse contact list and contact ID", err)
 	}
 
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundContactListContact(), constants.DefaultConsistencyChecks, resourceName)
+	//cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundContactListContact(), constants.DefaultConsistencyChecks, resourceName)
 
 	retryErr := util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		var contactResponseBody *platformclientv2.Dialercontact
@@ -77,7 +75,8 @@ func readOutboundContactListContact(ctx context.Context, d *schema.ResourceData,
 		resourcedata.SetNillableValueWithSchemaSetWithFunc(d, "phone_number_status", contactResponseBody.PhoneNumberStatus, flattenPhoneNumberStatus)
 		resourcedata.SetNillableValueWithSchemaSetWithFunc(d, "contactable_status", contactResponseBody.ContactableStatus, flattenContactableStatus)
 
-		return cc.CheckState(d)
+		//return cc.CheckState(d)
+		return nil
 	})
 	if retryErr != nil {
 		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("failed to read contact by ID '%s' from contact list '%s'. Error: %v", contactId, contactListId, retryErr), resp)

@@ -9,6 +9,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 )
 
+// buildWritableContactFromResourceData used to build the request body for contact creation
 func buildWritableContactFromResourceData(d *schema.ResourceData) platformclientv2.Writabledialercontact {
 	contactListId := d.Get("contact_list_id").(string)
 	callable := d.Get("callable").(bool)
@@ -32,6 +33,7 @@ func buildWritableContactFromResourceData(d *schema.ResourceData) platformclient
 	return contactRequest
 }
 
+// buildDialerContactFromResourceData used to build the request body for contact updates
 func buildDialerContactFromResourceData(d *schema.ResourceData) platformclientv2.Dialercontact {
 	contactListId := d.Get("contact_list_id").(string)
 	callable := d.Get("callable").(bool)
@@ -39,8 +41,9 @@ func buildDialerContactFromResourceData(d *schema.ResourceData) platformclientv2
 		ContactListId: &contactListId,
 		Callable:      &callable,
 	}
-	if dataMap, ok := d.Get("data").(map[string]string); ok {
-		contactRequest.Data = &dataMap
+	if dataMap, ok := d.Get("data").(map[string]any); ok {
+		stringMap := utillists.ConvertMapStringAnyToMapStringString(dataMap)
+		contactRequest.Data = &stringMap
 	}
 	contactRequest.PhoneNumberStatus = buildPhoneNumberStatus(d)
 	contactRequest.ContactableStatus = buildContactableStatus(d)
