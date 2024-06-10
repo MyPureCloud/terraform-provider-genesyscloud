@@ -19,8 +19,8 @@ func TestAccResourceOrgAuthorizationPairing(t *testing.T) {
 		orgAuthorizationPairingResource = "test-orgauthorization-pairing"
 		userResource1                   = "test-user-1"
 		userResource2                   = "test-user-2"
-		email1                          = "terraform-1-" + uuid.NewString() + "@example.com"
-		email2                          = "terraform-2-" + uuid.NewString() + "@example.com"
+		email1                          = "terraform-1-" + uuid.NewString() + "@authpair.com"
+		email2                          = "terraform-2-" + uuid.NewString() + "@authpair.com"
 		userName1                       = "test user " + uuid.NewString()
 		userName2                       = "test user " + uuid.NewString()
 		groupResource1                  = "test-group-1"
@@ -29,7 +29,7 @@ func TestAccResourceOrgAuthorizationPairing(t *testing.T) {
 		groupName2                      = "TF Group" + uuid.NewString()
 		testUserResource                = "user_resource1"
 		testUserName                    = "nameUser1" + uuid.NewString()
-		testUserEmail                   = uuid.NewString() + "@example.com"
+		testUserEmail                   = uuid.NewString() + "@authpair.com"
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -171,7 +171,7 @@ func TestAccResourceOrgAuthorizationPairing(t *testing.T) {
 						"genesyscloud_group."+groupResource2, "id"),
 					resource.TestCheckResourceAttr("genesyscloud_orgauthorization_pairing."+orgAuthorizationPairingResource, "group_ids.#", "2"),
 					func(s *terraform.State) error {
-						time.Sleep(30 * time.Second) // Wait for 30 seconds for resources to get deleted properly
+						time.Sleep(45 * time.Second) // Wait for 45 seconds for resources to get deleted properly
 						return nil
 					},
 				),

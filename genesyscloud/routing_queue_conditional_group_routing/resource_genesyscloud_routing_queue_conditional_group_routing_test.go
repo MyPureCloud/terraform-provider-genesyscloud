@@ -2,8 +2,10 @@ package routing_queue_conditional_group_routing
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"strings"
+	"sync"
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	"terraform-provider-genesyscloud/genesyscloud/group"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
@@ -16,6 +18,12 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/mypurecloud/platform-client-sdk-go/v130/platformclientv2"
+)
+
+var (
+	sdkConfig *platformclientv2.Configuration
+	mu        sync.Mutex
 )
 
 func TestAccResourceRoutingQueueConditionalGroupRouting(t *testing.T) {
@@ -36,7 +44,7 @@ func TestAccResourceRoutingQueueConditionalGroupRouting(t *testing.T) {
 
 		testUserResource = "user_resource1"
 		testUserName     = "nameUser1" + uuid.NewString()
-		testUserEmail    = uuid.NewString() + "@example.com"
+		testUserEmail    = uuid.NewString() + "@exampletest.com"
 
 		groupResourceId = "group"
 		groupName       = "terraform test group" + uuid.NewString()
@@ -46,6 +54,7 @@ func TestAccResourceRoutingQueueConditionalGroupRouting(t *testing.T) {
 		conditionalGroupRoutingRule2ConditionValue = "5"
 		conditionalGroupRoutingRule2WaitSeconds    = "15"
 		conditionalGroupRoutingRule2GroupType      = "GROUP"
+		userID                                     string
 	)
 
 	// Use this to save the id of the parent queue
@@ -77,7 +86,7 @@ func TestAccResourceRoutingQueueConditionalGroupRouting(t *testing.T) {
 					func(state *terraform.State) error {
 						resourceState, ok := state.RootModule().Resources["genesyscloud_routing_queue."+queueResource]
 						if !ok {
-							return fmt.Errorf("failed to find resource %s in state", "genesyscloud_routing_queue."+queueResource)
+							return log.Fatalf("failed to find resource %s in state", "genesyscloud_routing_queue."+queueResource)
 						}
 						queueIdChan <- resourceState.Primary.ID
 
@@ -242,7 +251,12 @@ func TestAccResourceRoutingQueueConditionalGroupRouting(t *testing.T) {
 						"genesyscloud_routing_queue_conditional_group_routing."+conditionalGroupRoutingResource, "rules.0.groups.0.member_group_id", "genesyscloud_group."+groupResourceId, "id",
 					),
 					func(s *terraform.State) error {
-						time.Sleep(60 * time.Second) // Wait for 60 seconds for resources to get deleted properly
+						rs, ok := s.RootModule().Resources["genesyscloud_user."+testUserResource]
+						if !ok {
+							return log.Fatalf("Not found: %s", "genesyscloud_user."+testUserResource)
+						}
+						userID = rs.Primary.ID
+						log.Printf("User ID: %s\n", userID) // Print user ID
 						return nil
 					},
 				),
@@ -252,6 +266,9 @@ func TestAccResourceRoutingQueueConditionalGroupRouting(t *testing.T) {
 				ResourceName:      "genesyscloud_routing_queue_conditional_group_routing." + conditionalGroupRoutingResource,
 				ImportState:       true,
 				ImportStateVerify: true,
+				Check: resource.ComposeTestCheckFunc(
+					checkUserDeleted(userID),
+				),
 			},
 		},
 	})
@@ -261,11 +278,11 @@ func checkQueueId(queueIdChan chan string, closeChannel bool) func(value string)
 	return func(value string) error {
 		queueId, ok := <-queueIdChan
 		if !ok {
-			return fmt.Errorf("queue id channel closed unexpectedly")
+			return log.Fatalf("queue id channel closed unexpectedly")
 		}
 
 		if value != queueId {
-			return fmt.Errorf("queue id not equal to expected. Expected: %s, Actual: %s", queueId, value)
+			return log.Fatalf("queue id not equal to expected. Expected: %s, Actual: %s", queueId, value)
 		}
 
 		if closeChannel {
@@ -312,4 +329,45 @@ func generateUserWithCustomAttrs(resourceID string, email string, name string, a
 		%s
 	}
 	`, resourceID, email, name, strings.Join(attrs, "\n"))
+}
+func checkUserDeleted(id string) resource.TestCheckFunc {
+	log.Printf("Fetching user with ID: %s\n", id)
+	return func(s *terraform.State) error {
+		maxAttempts := 18
+		for i := 0; i < maxAttempts; i++ {
+
+			deleted, err := isUserDeleted(id)
+			if err != nil {
+				return err
+			}
+			if deleted {
+				return nil
+			}
+			time.Sleep(10 * time.Second)
+		}
+		return log.Fatalf("User %s was not deleted properly", id)
+	}
+}
+
+func isUserDeleted(id string) (bool, error) {
+	mu.Lock()
+	defer mu.Unlock()
+
+	usersAPI := platformclientv2.NewUsersApiWithConfig(sdkConfig)
+	// Attempt to get the user
+	_, response, err := usersAPI.GetUser(id, nil, "", "")
+
+	// Check if the user is not found (deleted)
+	if response != nil && response.StatusCode == 404 {
+		return true, nil // User is deleted
+	}
+
+	// Handle other errors
+	if err != nil {
+		log.Printf("Error fetching user: %v", err)
+		return false, err
+	}
+
+	// If user is found, it means the user is not deleted
+	return false, nil
 }
