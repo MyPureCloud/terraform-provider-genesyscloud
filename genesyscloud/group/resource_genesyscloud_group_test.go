@@ -2,6 +2,7 @@ package group
 
 import (
 	"fmt"
+	"log"
 	"strconv"
 	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
@@ -300,10 +301,10 @@ func TestAccResourceGroupMembers(t *testing.T) {
 					func(s *terraform.State) error {
 						rs, ok := s.RootModule().Resources["genesyscloud_user."+testUserResource]
 						if !ok {
-							return fmt.Errorf("Not found: %s", "genesyscloud_user."+testUserResource)
+							return log.Fatalf("Not found: %s", "genesyscloud_user."+testUserResource)
 						}
 						userID = rs.Primary.ID
-						fmt.Printf("User ID: %s\n", userID) // Print user ID
+						log.Printf("User ID: %s\n", userID) // Print user ID
 						return nil
 					},
 				),

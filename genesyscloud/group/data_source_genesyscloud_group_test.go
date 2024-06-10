@@ -1,7 +1,6 @@
 package group
 
 import (
-	"fmt"
 	"log"
 	"sync"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
@@ -55,10 +54,10 @@ func TestAccDataSourceGroup(t *testing.T) {
 					func(s *terraform.State) error {
 						rs, ok := s.RootModule().Resources["genesyscloud_user."+testUserResource]
 						if !ok {
-							return fmt.Errorf("Not found: %s", "genesyscloud_user."+testUserResource)
+							return log.Fatalf("Not found: %s", "genesyscloud_user."+testUserResource)
 						}
 						userID = rs.Primary.ID
-						fmt.Printf("User ID: %s\n", userID) // Print user ID
+						log.Printf("User ID: %s\n", userID) // Print user ID
 						return nil
 					},
 				),
@@ -81,7 +80,7 @@ func generateGroupDataSource(
 	// Must explicitly use depends_on in terraform v0.13 when a data source references a resource
 	// Fixed in v0.14 https://github.com/hashicorp/terraform/pull/26284
 	dependsOnResource string) string {
-	return fmt.Sprintf(`data "genesyscloud_group" "%s" {
+	return log.Printf(`data "genesyscloud_group" "%s" {
 		name = "%s"
 		depends_on=[%s]
 	}
@@ -89,7 +88,7 @@ func generateGroupDataSource(
 }
 
 func checkUserDeleted(id string) resource.TestCheckFunc {
-	fmt.Printf("Fetching user with ID: %s\n", id)
+	log.Printf("Fetching user with ID: %s\n", id)
 	return func(s *terraform.State) error {
 		maxAttempts := 18
 		for i := 0; i < maxAttempts; i++ {
@@ -103,7 +102,7 @@ func checkUserDeleted(id string) resource.TestCheckFunc {
 			}
 			time.Sleep(10 * time.Second)
 		}
-		return fmt.Errorf("User %s was not deleted properly", id)
+		return log.Fatalf("User %s was not deleted properly", id)
 	}
 }
 

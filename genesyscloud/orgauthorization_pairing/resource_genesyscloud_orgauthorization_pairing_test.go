@@ -171,7 +171,7 @@ func TestAccResourceOrgAuthorizationPairing(t *testing.T) {
 						"genesyscloud_group."+groupResource2, "id"),
 					resource.TestCheckResourceAttr("genesyscloud_orgauthorization_pairing."+orgAuthorizationPairingResource, "group_ids.#", "2"),
 					func(s *terraform.State) error {
-						time.Sleep(45 * time.Second) // Wait for 30 seconds for resources to get deleted properly
+						time.Sleep(45 * time.Second) // Wait for 45 seconds for resources to get deleted properly
 						return nil
 					},
 				),
