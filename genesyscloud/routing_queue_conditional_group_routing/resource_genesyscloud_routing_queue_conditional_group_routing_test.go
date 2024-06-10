@@ -86,7 +86,7 @@ func TestAccResourceRoutingQueueConditionalGroupRouting(t *testing.T) {
 					func(state *terraform.State) error {
 						resourceState, ok := state.RootModule().Resources["genesyscloud_routing_queue."+queueResource]
 						if !ok {
-							return log.Fatalf("failed to find resource %s in state", "genesyscloud_routing_queue."+queueResource)
+							return fmt.Errorf("failed to find resource %s in state", "genesyscloud_routing_queue."+queueResource)
 						}
 						queueIdChan <- resourceState.Primary.ID
 
@@ -253,7 +253,7 @@ func TestAccResourceRoutingQueueConditionalGroupRouting(t *testing.T) {
 					func(s *terraform.State) error {
 						rs, ok := s.RootModule().Resources["genesyscloud_user."+testUserResource]
 						if !ok {
-							return log.Fatalf("Not found: %s", "genesyscloud_user."+testUserResource)
+							return fmt.Errorf("not found: %s", "genesyscloud_user."+testUserResource)
 						}
 						userID = rs.Primary.ID
 						log.Printf("User ID: %s\n", userID) // Print user ID
@@ -278,11 +278,11 @@ func checkQueueId(queueIdChan chan string, closeChannel bool) func(value string)
 	return func(value string) error {
 		queueId, ok := <-queueIdChan
 		if !ok {
-			return log.Fatalf("queue id channel closed unexpectedly")
+			return fmt.Errorf("queue id channel closed unexpectedly")
 		}
 
 		if value != queueId {
-			return log.Fatalf("queue id not equal to expected. Expected: %s, Actual: %s", queueId, value)
+			return fmt.Errorf("queue id not equal to expected. Expected: %s, Actual: %s", queueId, value)
 		}
 
 		if closeChannel {
@@ -345,7 +345,7 @@ func checkUserDeleted(id string) resource.TestCheckFunc {
 			}
 			time.Sleep(10 * time.Second)
 		}
-		return log.Fatalf("User %s was not deleted properly", id)
+		return fmt.Errorf("user %s was not deleted properly", id)
 	}
 }
 
