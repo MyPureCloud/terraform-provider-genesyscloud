@@ -2,8 +2,8 @@ resource "genesyscloud_outbound_contact_list_contact" "contact" {
   contact_list_id = genesyscloud_outbound_contact_list.contact_list.id
   callable        = true
   data = {
-    Cell = "+11111111"
-    Home = "+2222222"
+    Cell  = "+1111111"
+    Home  = "+2222222"
     Email = "example@email.com"
   }
   phone_number_status {
