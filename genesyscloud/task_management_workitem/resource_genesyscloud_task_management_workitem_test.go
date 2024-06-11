@@ -122,16 +122,16 @@ func TestAccResourceTaskManagementWorkitem(t *testing.T) {
 			worktype_id: fmt.Sprintf("genesyscloud_task_management_worktype.%s.id", wtResName),
 		}
 		workitem1Update = workitemConfig{
-			name:             "tf-workitem" + uuid.NewString(),
-			worktype_id:      fmt.Sprintf("genesyscloud_task_management_worktype.%s.id", wtResName),
-			description:      "test workitem created by CX as Code",
-			language_id:      fmt.Sprintf("genesyscloud_routing_language.%s.id", resLang),
-			priority:         42,
-			date_due:         time.Now().Add(time.Hour * 10).Format(resourcedata.TimeParseFormat), // 1 day from now
-			date_expires:     time.Now().Add(time.Hour * 20).Format(resourcedata.TimeParseFormat), // 2 days from now
-			duration_seconds: 99999,
-			ttl:              int(time.Now().Add(time.Hour * 24 * 30 * 6).Unix()), // ~6 months from now
-
+			name:                   "tf-workitem" + uuid.NewString(),
+			worktype_id:            fmt.Sprintf("genesyscloud_task_management_worktype.%s.id", wtResName),
+			description:            "test workitem created by CX as Code",
+			language_id:            fmt.Sprintf("genesyscloud_routing_language.%s.id", resLang),
+			priority:               42,
+			date_due:               time.Now().Add(time.Hour * 10).Format(resourcedata.TimeParseFormat), // 1 day from now
+			date_expires:           time.Now().Add(time.Hour * 20).Format(resourcedata.TimeParseFormat), // 2 days from now
+			duration_seconds:       99999,
+			ttl:                    int(time.Now().Add(time.Hour * 24 * 30 * 6).Unix()), // ~6 months from now
+			status_id:              util.NullValue,
 			workbin_id:             fmt.Sprintf("genesyscloud_task_management_workbin.%s.id", wbResourceId),
 			assignee_id:            fmt.Sprintf("genesyscloud_user.%s.id", userResId1),
 			external_contact_id:    fmt.Sprintf("genesyscloud_externalcontacts_contact.%s.id", externalContactResId1),

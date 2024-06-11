@@ -113,10 +113,6 @@ func getWorktypeupdateFromResourceData(d *schema.ResourceData, statuses *[]platf
 		worktype.SetField("AssignmentEnabled", platformclientv2.Bool(d.Get("assignment_enabled").(bool)))
 	}
 
-	if d.HasChange("default_status_name") {
-		worktype.SetField("DefaultStatusId", getStatusIdFromName(d.Get("default_status_name").(string), statuses))
-	}
-
 	if d.HasChange("schema_version") {
 		worktype.SetField("SchemaVersion", resourcedata.GetNillableValue[int](d, "schema_version"))
 	}
@@ -134,6 +130,17 @@ func getWorktypeupdateFromResourceData(d *schema.ResourceData, statuses *[]platf
 		worktype.SetField("DefaultTtlSeconds", resourcedata.GetNillableValue[int](d, "default_ttl_seconds"))
 	}
 
+	return worktype
+}
+
+// getWorktypeupdateFromResourceData maps data from schema ResourceData object to a platformclientv2.Worktypeupdate
+func getWorktypeupdateFromResourceDataStatus(d *schema.ResourceData, statuses *[]platformclientv2.Workitemstatus) platformclientv2.Worktypeupdate {
+
+	worktype := platformclientv2.Worktypeupdate{}
+	worktype.SetField("Name", platformclientv2.String(d.Get("name").(string)))
+	if d.HasChange("default_status_name") {
+		worktype.SetField("DefaultStatusId", getStatusIdFromName(d.Get("default_status_name").(string), statuses))
+	}
 	return worktype
 }
 
@@ -454,7 +461,7 @@ func updateDefaultStatusName(ctx context.Context, proxy *taskManagementWorktypeP
 		return fmt.Errorf("failed to get task management worktype: %s", err)
 	}
 
-	taskManagementWorktype := getWorktypeupdateFromResourceData(d, worktype.Statuses)
+	taskManagementWorktype := getWorktypeupdateFromResourceDataStatus(d, worktype.Statuses)
 	_, resp, err = proxy.updateTaskManagementWorktype(ctx, *worktype.Id, &taskManagementWorktype)
 	if err != nil {
 		return fmt.Errorf("failed to update worktype's default status name %s %v", err, resp)
