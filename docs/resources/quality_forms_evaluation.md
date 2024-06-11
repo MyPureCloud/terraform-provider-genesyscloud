@@ -102,7 +102,7 @@ resource "genesyscloud_quality_forms_evaluation" "example-evaluation-form" {
 
 ### Optional
 
-- `published` (Boolean) Specifies if the evalutaion form is published. Defaults to `false`.
+- `published` (Boolean) Specifies if the evaluation form is published. Defaults to `false`.
 
 ### Read-Only
 
@@ -121,6 +121,7 @@ Optional:
 
 - `default_answers_to_highest` (Boolean) Specifies whether to default answers to highest score. Defaults to `false`.
 - `default_answers_to_na` (Boolean) Specifies whether to default answers to not applicable. Defaults to `false`.
+- `id` (String) ID of the question group.
 - `manual_weight` (Boolean) Specifies whether a manual weight is set. Defaults to `true`.
 - `na_enabled` (Boolean) Specifies whether a not applicable answer is enabled. Defaults to `false`.
 - `visibility_condition` (Block List, Max: 1) Defines conditions where question would be visible (see [below for nested schema](#nestedblock--question_groups--visibility_condition))
@@ -137,6 +138,7 @@ Optional:
 
 - `comments_required` (Boolean) Specifies whether comments are required. Defaults to `false`.
 - `help_text` (String) Help text for the question.
+- `id` (String) ID of the question.
 - `is_critical` (Boolean) True if the question is a critical question Defaults to `false`.
 - `is_kill` (Boolean) True if the question is a fatal question Defaults to `false`.
 - `na_enabled` (Boolean) Specifies whether a not applicable answer is enabled. Defaults to `false`.
@@ -149,6 +151,10 @@ Required:
 
 - `text` (String)
 - `value` (Number)
+
+Optional:
+
+- `id` (String)
 
 
 <a id="nestedblock--question_groups--questions--visibility_condition"></a>
