@@ -15,13 +15,11 @@ import (
 
 func TestAccResourceEvaluationFormBasic(t *testing.T) {
 	formResource1 := "test-evaluation-form-1"
-	questionGroupId := "question-group-id"
-	questionId := "question-id"
-	answer1Id := "answer-1-id"
+	questionGroupId := uuid.NewString()
+	questionId := uuid.NewString()
+	answer1Id := uuid.NewString()
 	answer1Text := "Yes"
 	answer1Value := 1
-	answer1AssistanceCondition1Operator := "EXISTS"
-	answer1AssistanceCondition1TopicIds := []string{"topic1"}
 
 	// Most basic evaluation form
 	evaluationForm1 := EvaluationFormStruct{
@@ -40,12 +38,6 @@ func TestAccResourceEvaluationFormBasic(t *testing.T) {
 								Id:    answer1Id,
 								Text:  answer1Text,
 								Value: answer1Value,
-								AssistanceConditions: []AssistanceConditionStruct{
-									{
-										Operator: answer1AssistanceCondition1Operator,
-										TopicIds: answer1AssistanceCondition1TopicIds,
-									},
-								},
 							},
 							{
 								Text:  "No",

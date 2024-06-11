@@ -16,7 +16,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
-	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
+	"terraform-provider-genesyscloud/genesyscloud/util/lists"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -175,12 +175,6 @@ var (
 				Type:     schema.TypeInt,
 				Required: true,
 			},
-			"assistance_conditions": {
-				Description: "List of assistance conditions which are combined together with a logical AND operator. Eg ( assistanceCondtion1 && assistanceCondition2 ) wherein assistanceCondition could be ( EXISTS topic1 || topic2 || ... ) or (NOTEXISTS topic3 || topic4 || ...).",
-				Type:        schema.TypeSet,
-				Optional:    true,
-				Elem:        assistanceConditionsResource,
-			},
 		},
 	}
 )
@@ -270,18 +264,6 @@ func createEvaluationForm(ctx context.Context, d *schema.ResourceData, meta inte
 	if err != nil {
 		return util.BuildAPIDiagnosticError("genesyscloud_quality_forms_evaluation", fmt.Sprintf("Failed to create evaluation form %s error: %s", name, err), resp)
 	}
-
-	theform := platformclientv2.Evaluationform{
-		Name:           &name,
-		QuestionGroups: questionGroups,
-	}
-	fmt.Println("the request")
-	fmt.Println(theform.String())
-	fmt.Println()
-
-	fmt.Println("the response")
-	fmt.Println(form.String())
-	fmt.Println()
 
 	// Make sure form is properly created
 	time.Sleep(2 * time.Second)
@@ -530,31 +512,10 @@ func buildSdkAnswerOptions(answerOptions []interface{}) *[]platformclientv2.Answ
 			sdkAnswerOption.Id = &id
 		}
 
-		sdkAnswerOption.AssistanceConditions = buildSdkAnswerOptionsAssistanceConditions(answerOptionsMap["assistance_conditions"])
-
 		sdkAnswerOptions = append(sdkAnswerOptions, sdkAnswerOption)
 	}
 
 	return &sdkAnswerOptions
-}
-
-func buildSdkAnswerOptionsAssistanceConditions(assistanceConditions any) *[]platformclientv2.Assistancecondition {
-	assistanceConditionsSet, ok := assistanceConditions.(*schema.Set)
-	if !ok {
-		return nil
-	}
-	var sdkAssistanceConditions []platformclientv2.Assistancecondition
-	for _, condition := range assistanceConditionsSet.List() {
-		var sdkCondition platformclientv2.Assistancecondition
-		conditionMap := condition.(map[string]any)
-		sdkCondition.Operator = platformclientv2.String(conditionMap["operator"].(string))
-		if topicIds, ok := conditionMap["topic_ids"].([]any); ok {
-			strTopicIds := lists.InterfaceListToStrings(topicIds)
-			sdkCondition.TopicIds = &strTopicIds
-		}
-		sdkAssistanceConditions = append(sdkAssistanceConditions, sdkCondition)
-	}
-	return &sdkAssistanceConditions
 }
 
 func buildSdkVisibilityCondition(visibilityCondition []interface{}) *platformclientv2.Visibilitycondition {
@@ -675,25 +636,9 @@ func flattenAnswerOptions(answerOptions *[]platformclientv2.Answeroption) []inte
 		if answerOption.Value != nil {
 			answerOptionMap["value"] = *answerOption.Value
 		}
-		if answerOption.AssistanceConditions != nil {
-			answerOptionMap["assistance_conditions"] = flattenAssistanceConditions(*answerOption.AssistanceConditions)
-		}
 		answerOptionsList = append(answerOptionsList, answerOptionMap)
 	}
 	return answerOptionsList
-}
-
-func flattenAssistanceConditions(assistanceConditions []platformclientv2.Assistancecondition) *schema.Set {
-	assistanceConditionsSet := schema.NewSet(schema.HashResource(assistanceConditionsResource), []interface{}{})
-	for _, sdkCondition := range assistanceConditions {
-		conditionMap := make(map[string]any)
-		conditionMap["operator"] = *sdkCondition.Operator
-		if sdkCondition.TopicIds != nil {
-			conditionMap["topic_ids"] = lists.StringListToInterfaceList(*sdkCondition.TopicIds)
-		}
-		assistanceConditionsSet.Add(conditionMap)
-	}
-	return assistanceConditionsSet
 }
 
 func flattenVisibilityCondition(visibilityCondition *platformclientv2.Visibilitycondition) []interface{} {
@@ -733,14 +678,13 @@ func GenerateEvaluationFormQuestionGroups(questionGroups *[]EvaluationFormQuesti
 	questionGroupsString := ""
 
 	for _, questionGroup := range *questionGroups {
-		idField := ""
+		idValue := util.NullValue
 		if questionGroup.Id != "" {
-			idField = fmt.Sprintf(`id = "%s"`, questionGroup.Id)
+			idValue = strconv.Quote(questionGroup.Id)
 		}
-
 		questionGroupString := fmt.Sprintf(`
         question_groups {
-			%s
+			id   = %s
             name = "%s"
             default_answers_to_highest = %v
             default_answers_to_na  = %v
@@ -750,7 +694,7 @@ func GenerateEvaluationFormQuestionGroups(questionGroups *[]EvaluationFormQuesti
             %s
             %s
         }
-        `, idField, questionGroup.Name,
+        `, idValue, questionGroup.Name,
 			questionGroup.DefaultAnswersToHighest,
 			questionGroup.DefaultAnswersToNA,
 			questionGroup.NaEnabled,
@@ -774,23 +718,23 @@ func GenerateEvaluationFormQuestions(questions *[]EvaluationFormQuestionStruct) 
 	questionsString := ""
 
 	for _, question := range *questions {
-		idField := ""
+		idValue := util.NullValue
 		if question.Id != "" {
-			idField = fmt.Sprintf(`id = "%s"`, question.Id)
+			idValue = strconv.Quote(question.Id)
 		}
 		questionString := fmt.Sprintf(`
         questions {
-            %s
-            text = "%s"
-            help_text = "%s"
-            na_enabled = %v
+            id                = %s
+            text              = "%s"
+            help_text         = "%s"
+            na_enabled        = %v
             comments_required = %v
-            is_kill = %v
-            is_critical = %v
+            is_kill           = %v
+            is_critical       = %v
             %s
             %s
         }
-        `, idField, question.Text,
+        `, idValue, question.Text,
 			question.HelpText,
 			question.NaEnabled,
 			question.CommentsRequired,
@@ -814,16 +758,14 @@ func GenerateFormAnswerOptions(answerOptions *[]AnswerOptionStruct) string {
 	answerOptionsString := ""
 
 	for _, answerOption := range *answerOptions {
-		idValue := ""
-		if answerOption.Id == "" {
+		idValue := util.NullValue
+		if answerOption.Id != "" {
 			idValue = strconv.Quote(answerOption.Id)
-		} else {
-			idValue = util.NullValue
 		}
 		answerOptionString := fmt.Sprintf(`
         answer_options {
-			id = %s
-            text = "%s"
+			id    = %s
+            text  = "%s"
             value = %v
         }
         `, idValue,
