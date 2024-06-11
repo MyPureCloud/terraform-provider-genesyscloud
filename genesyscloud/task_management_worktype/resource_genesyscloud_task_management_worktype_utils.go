@@ -97,10 +97,6 @@ func getWorktypeupdateFromResourceData(d *schema.ResourceData, statuses *[]platf
 		worktype.SetField("SchemaId", platformclientv2.String(d.Get("schema_id").(string)))
 	}
 
-	if d.HasChange("division_id") {
-		worktype.SetField("DivisionId", platformclientv2.String(d.Get("division_id").(string)))
-	}
-
 	if d.HasChange("default_language_id") {
 		worktype.SetField("DefaultLanguageId", resourcedata.GetNillableValue[string](d, "default_language_id"))
 	}
