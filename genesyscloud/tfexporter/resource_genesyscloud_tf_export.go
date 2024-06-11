@@ -11,9 +11,10 @@ import (
 
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
 
+	"terraform-provider-genesyscloud/genesyscloud/tfexporter_state"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"terraform-provider-genesyscloud/genesyscloud/tfexporter_state"
 )
 
 func SetRegistrar(l registrar.Registrar) {
