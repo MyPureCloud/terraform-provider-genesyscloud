@@ -1,18 +1,10 @@
-package external_contacts
+package routing_settings
 
 import (
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"sync"
 	"testing"
-
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
-
-/*
-   The genesyscloud_externalcontacts_contacts_init_test.go file is used to initialize the data sources and resources
-   used in testing the externalcontacts_contacts resource.
-
-   Please make sure you register ALL resources and data sources your test cases will use.
-*/
 
 // providerDataSources holds a map of all registered datasources
 var providerDataSources map[string]*schema.Resource
@@ -30,7 +22,7 @@ func (r *registerTestInstance) registerTestResources() {
 	r.resourceMapMutex.Lock()
 	defer r.resourceMapMutex.Unlock()
 
-	providerResources["genesyscloud_externalcontacts_contact"] = ResourceExternalContact()
+	providerResources["genesyscloud_routing_settings"] = ResourceRoutingSettings()
 }
 
 // registerTestDataSources registers all data sources used in the tests.
@@ -38,7 +30,7 @@ func (r *registerTestInstance) registerTestDataSources() {
 	r.datasourceMapMutex.Lock()
 	defer r.datasourceMapMutex.Unlock()
 
-	providerDataSources["genesyscloud_externalcontacts_contact"] = DataSourceExternalContactsContact()
+	providerDataSources["genesyscloud_routing_settings"] = dataSourceRoutingSettings()
 }
 
 // initTestResources initializes all test resources and data sources.

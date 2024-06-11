@@ -66,6 +66,7 @@ import (
 
 	routingQueueConditionalGroupRouting "terraform-provider-genesyscloud/genesyscloud/routing_queue_conditional_group_routing"
 	routingQueueOutboundEmailAddress "terraform-provider-genesyscloud/genesyscloud/routing_queue_outbound_email_address"
+	routingSettings "terraform-provider-genesyscloud/genesyscloud/routing_settings"
 	smsAddresses "terraform-provider-genesyscloud/genesyscloud/routing_sms_addresses"
 	"terraform-provider-genesyscloud/genesyscloud/scripts"
 	"terraform-provider-genesyscloud/genesyscloud/station"
@@ -224,6 +225,7 @@ func registerResources() {
 	routingQueueConditionalGroupRouting.SetRegistrar(regInstance)          //Registering routing queue conditional group routing
 	routingQueueOutboundEmailAddress.SetRegistrar(regInstance)             //Registering routing queue outbound email address
 	outboundContactListContact.SetRegistrar(regInstance)                   //Registering outbound contact list contact
+	routingSettings.SetRegistrar(regInstance)                              //Registering routing Settings
 	journeyViews.SetRegistrar(regInstance)                                 //Registering journey views
 
 	// setting resources for Use cases  like TF export where provider is used in resource classes.
