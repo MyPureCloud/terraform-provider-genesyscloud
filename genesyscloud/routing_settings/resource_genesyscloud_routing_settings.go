@@ -66,7 +66,6 @@ func readRoutingSettings(ctx context.Context, d *schema.ResourceData, meta inter
 
 func updateRoutingSettings(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	resetAgentOnPresenceChange := d.Get("reset_agent_on_presence_change").(bool)
-
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getRoutingSettingsProxy(sdkConfig)
 
@@ -105,6 +104,7 @@ func deleteRoutingSettings(ctx context.Context, d *schema.ResourceData, meta int
 	if err != nil {
 		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete routing settings %s error: %s", d.Id(), err), resp)
 	}
+
 	log.Printf("Reset Routing Settings")
 	return nil
 }
@@ -124,9 +124,8 @@ func readRoutingSettingsContactCenter(ctx context.Context, d *schema.ResourceDat
 	}
 
 	contactSettings := make(map[string]interface{})
-	if contactCenter.RemoveSkillsFromBlindTransfer != nil {
-		contactSettings["remove_skills_from_blind_transfer"] = *contactCenter.RemoveSkillsFromBlindTransfer
-	}
+	resourcedata.SetMapValueIfNotNil(contactSettings, "remove_skills_from_blind_transfer", contactCenter.RemoveSkillsFromBlindTransfer)
+
 	_ = d.Set("contactcenter", []interface{}{contactSettings})
 	return nil
 }
@@ -141,6 +140,7 @@ func updateContactCenter(ctx context.Context, d *schema.ResourceData, proxy *rou
 			if contactCenterMap["remove_skills_from_blind_transfer"] != nil {
 				removeSkillsFromBlindTransfer = contactCenterMap["remove_skills_from_blind_transfer"].(bool)
 			}
+
 			contactCenterSettings := platformclientv2.Contactcentersettings{
 				RemoveSkillsFromBlindTransfer: &removeSkillsFromBlindTransfer,
 			}
@@ -173,6 +173,8 @@ func readRoutingSettingsTranscription(ctx context.Context, d *schema.ResourceDat
 	resourcedata.SetMapValueIfNotNil(transcriptionSettings, "transcription_confidence_threshold", transcription.TranscriptionConfidenceThreshold)
 	resourcedata.SetMapValueIfNotNil(transcriptionSettings, "low_latency_transcription_enabled", transcription.LowLatencyTranscriptionEnabled)
 	resourcedata.SetMapValueIfNotNil(transcriptionSettings, "content_search_enabled", transcription.ContentSearchEnabled)
+	resourcedata.SetMapValueIfNotNil(transcriptionSettings, "pci_dss_redaction_enabled", transcription.PciDssRedactionEnabled)
+	resourcedata.SetMapValueIfNotNil(transcriptionSettings, "pii_redaction_enabled", transcription.PiiRedactionEnabled)
 
 	_ = d.Set("transcription", []interface{}{transcriptionSettings})
 	return nil
@@ -200,6 +202,14 @@ func updateTranscription(ctx context.Context, d *schema.ResourceData, proxy *rou
 			if transcriptionMap["content_search_enabled"] != nil {
 				contentSearchEnabled := transcriptionMap["content_search_enabled"].(bool)
 				transcriptionRequest.ContentSearchEnabled = &contentSearchEnabled
+			}
+			if transcriptionMap["pci_dss_redaction_enabled"] != nil {
+				pciEnabled := transcriptionMap["pci_dss_redaction_enabled"].(bool)
+				transcriptionRequest.PciDssRedactionEnabled = &pciEnabled
+			}
+			if transcriptionMap["pii_redaction_enabled"] != nil {
+				piiEnabled := transcriptionMap["pii_redaction_enabled"].(bool)
+				transcriptionRequest.PiiRedactionEnabled = &piiEnabled
 			}
 
 			_, resp, err := proxy.updateRoutingSettingsTranscription(ctx, transcriptionRequest)

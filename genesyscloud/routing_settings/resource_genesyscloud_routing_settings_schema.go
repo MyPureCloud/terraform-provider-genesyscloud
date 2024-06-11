@@ -78,6 +78,16 @@ func ResourceRoutingSettings() *schema.Resource {
 							Type:        schema.TypeBool,
 							Optional:    true,
 						},
+						`pci_dss_redaction_enabled`: {
+							Description: `Setting to enable/disable PCI DSS Redaction`,
+							Optional:    true,
+							Type:        schema.TypeBool,
+						},
+						`pii_redaction_enabled`: {
+							Description: `Setting to enable/disable PII Redaction`,
+							Optional:    true,
+							Type:        schema.TypeBool,
+						},
 					},
 				},
 			},
