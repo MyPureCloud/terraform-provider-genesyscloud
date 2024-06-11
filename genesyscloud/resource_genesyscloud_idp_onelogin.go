@@ -105,7 +105,7 @@ func readIdpOnelogin(ctx context.Context, d *schema.ResourceData, meta interface
 		onelogin, resp, getErr := idpAPI.GetIdentityprovidersOnelogin()
 		if getErr != nil {
 			if util.IsStatus404(resp) {
-				createIdpOkta(ctx, d, meta)
+				createIdpOnelogin(ctx, d, meta)
 				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_idp_onelogin", fmt.Sprintf("Failed to read IDP Onelogin: %s", getErr), resp))
 			}
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_idp_onelogin", fmt.Sprintf("Failed to read IDP Onelogin: %s", getErr), resp))

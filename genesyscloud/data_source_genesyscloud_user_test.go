@@ -14,8 +14,9 @@ func TestAccDataSourceUser(t *testing.T) {
 	var (
 		userResource   = "test-user"
 		userDataSource = "test-user-data"
-		userEmail      = "terraform-" + uuid.NewString() + "@example.com"
-		userName       = "John Data-" + uuid.NewString()
+		randomString   = uuid.NewString()
+		userEmail      = "John_Doe" + randomString + "@example.com"
+		userName       = "John_Doe" + randomString
 	)
 
 	resource.Test(t, resource.TestCase{

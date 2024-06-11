@@ -64,10 +64,8 @@ resource "genesyscloud_journey_segment" "example_journey_segment_resource" {
 
 ### Optional
 
-- `assignment_expiration_days` (Number) Time, in days, from when the segment is assigned until it is automatically unassigned.
 - `context` (Block Set, Max: 1) The context of the segment. (see [below for nested schema](#nestedblock--context))
 - `description` (String) A description of the segment.
-- `external_segment` (Block Set, Max: 1) Details of an entity corresponding to this segment in an external system. (see [below for nested schema](#nestedblock--external_segment))
 - `is_active` (Boolean) Whether or not the segment is active. Defaults to `true`.
 - `journey` (Block Set, Max: 1) The pattern of rules defining the segment. (see [below for nested schema](#nestedblock--journey))
 - `should_display_to_agent` (Boolean) Whether or not the segment should be displayed to agent/supervisor users.
@@ -105,16 +103,6 @@ Optional:
 - `operator` (String) The comparison operator. Valid values: containsAll, containsAny, notContainsAll, notContainsAny, equal, notEqual, greaterThan, greaterThanOrEqual, lessThan, lessThanOrEqual, startsWith, endsWith. Defaults to `equal`.
 
 
-
-
-<a id="nestedblock--external_segment"></a>
-### Nested Schema for `external_segment`
-
-Required:
-
-- `id` (String) Identifier for the external segment in the system where it originates from. Changing the id attribute will cause the journey_segment resource to be dropped and recreated with a new ID.
-- `name` (String) Name for the external segment in the system where it originates from.
-- `source` (String) The external system where the segment originates from.Valid values: AdobeExperiencePlatform, Custom. Changing the source attribute will cause the journey_segment resource to be dropped and recreated with a new ID.
 
 
 <a id="nestedblock--journey"></a>

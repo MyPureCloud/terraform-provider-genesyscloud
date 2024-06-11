@@ -35,7 +35,11 @@ resource "genesyscloud_idp_okta" "okta" {
 
 ### Optional
 
-- `disabled` (Boolean) True if Okta is disabled. Defaults to `false`.
+- `disabled` (Boolean) True if Okta is disabled.
+- `name` (String) IDP Okta name
+- `relying_party_identifier` (String) String used to identify Genesys Cloud to Okta.
+- `slo_binding` (String) Valid values: HTTP Redirect, HTTP Post
+- `slo_uri` (String) Provided by Okta on app creation.
 - `target_uri` (String) Target URI provided by Okta.
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 

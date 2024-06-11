@@ -57,7 +57,7 @@ var (
 			Type:         schema.TypeString,
 			Required:     true,
 			ForceNew:     true, // scope can be only set during creation
-			ValidateFunc: validation.StringInSlice([]string{"Session", "Customer"}, false),
+			ValidateFunc: validation.StringInSlice([]string{"Session"}, false),
 		},
 		"should_display_to_agent": {
 			Description: "Whether or not the segment should be displayed to agent/supervisor users.",
@@ -78,19 +78,6 @@ var (
 			Optional:    true,
 			MaxItems:    1,
 			Elem:        journeyResource,
-		},
-		"external_segment": {
-			Description: "Details of an entity corresponding to this segment in an external system.",
-			Type:        schema.TypeSet,
-			Optional:    true,
-			MaxItems:    1,
-			Elem:        externalSegmentResource, // can only be used with Customer scope
-		},
-		"assignment_expiration_days": {
-			Description:  "Time, in days, from when the segment is assigned until it is automatically unassigned.",
-			Type:         schema.TypeInt,
-			Optional:     true,
-			ValidateFunc: validation.IntBetween(2, 60),
 		},
 	}
 
@@ -227,29 +214,6 @@ var (
 				Optional:     true,
 				Default:      "equal",
 				ValidateFunc: validation.StringInSlice([]string{"containsAll", "containsAny", "notContainsAll", "notContainsAny", "equal", "notEqual", "greaterThan", "greaterThanOrEqual", "lessThan", "lessThanOrEqual", "startsWith", "endsWith"}, false),
-			},
-		},
-	}
-
-	externalSegmentResource = &schema.Resource{
-		Schema: map[string]*schema.Schema{
-			"id": {
-				Description: "Identifier for the external segment in the system where it originates from. Changing the id attribute will cause the journey_segment resource to be dropped and recreated with a new ID.",
-				Type:        schema.TypeString,
-				Required:    true,
-				ForceNew:    true,
-			},
-			"name": {
-				Description: "Name for the external segment in the system where it originates from.",
-				Type:        schema.TypeString,
-				Required:    true,
-			},
-			"source": {
-				Description:  "The external system where the segment originates from.Valid values: AdobeExperiencePlatform, Custom. Changing the source attribute will cause the journey_segment resource to be dropped and recreated with a new ID.",
-				Type:         schema.TypeString,
-				Required:     true,
-				ForceNew:     true,
-				ValidateFunc: validation.StringInSlice([]string{"AdobeExperiencePlatform", "Custom"}, false),
 			},
 		},
 	}
@@ -407,8 +371,6 @@ func flattenJourneySegment(d *schema.ResourceData, journeySegment *platformclien
 	resourcedata.SetNillableValue(d, "should_display_to_agent", journeySegment.ShouldDisplayToAgent)
 	resourcedata.SetNillableValue(d, "context", lists.FlattenAsList(journeySegment.Context, flattenContext))
 	resourcedata.SetNillableValue(d, "journey", lists.FlattenAsList(journeySegment.Journey, flattenJourney))
-	resourcedata.SetNillableValue(d, "external_segment", lists.FlattenAsList(journeySegment.ExternalSegment, flattenExternalSegment))
-	resourcedata.SetNillableValue(d, "assignment_expiration_days", journeySegment.AssignmentExpirationDays)
 }
 
 func buildSdkJourneySegment(journeySegment *schema.ResourceData) *platformclientv2.Journeysegmentrequest {
@@ -420,20 +382,16 @@ func buildSdkJourneySegment(journeySegment *schema.ResourceData) *platformclient
 	shouldDisplayToAgent := resourcedata.GetNillableBool(journeySegment, "should_display_to_agent")
 	sdkContext := resourcedata.BuildSdkListFirstElement(journeySegment, "context", buildSdkRequestContext, false)
 	journey := resourcedata.BuildSdkListFirstElement(journeySegment, "journey", buildSdkRequestJourney, false)
-	externalSegment := resourcedata.BuildSdkListFirstElement(journeySegment, "external_segment", buildSdkExternalSegment, true)
-	assignmentExpirationDays := resourcedata.GetNillableValue[int](journeySegment, "assignment_expiration_days")
 
 	return &platformclientv2.Journeysegmentrequest{
-		IsActive:                 &isActive,
-		DisplayName:              &displayName,
-		Description:              description,
-		Color:                    &color,
-		Scope:                    &scope,
-		ShouldDisplayToAgent:     shouldDisplayToAgent,
-		Context:                  sdkContext,
-		Journey:                  journey,
-		ExternalSegment:          externalSegment,
-		AssignmentExpirationDays: assignmentExpirationDays,
+		IsActive:             &isActive,
+		DisplayName:          &displayName,
+		Description:          description,
+		Color:                &color,
+		Scope:                &scope,
+		ShouldDisplayToAgent: shouldDisplayToAgent,
+		Context:              sdkContext,
+		Journey:              journey,
 	}
 }
 
@@ -445,8 +403,6 @@ func buildSdkPatchSegment(journeySegment *schema.ResourceData) *platformclientv2
 	shouldDisplayToAgent := resourcedata.GetNillableBool(journeySegment, "should_display_to_agent")
 	sdkContext := resourcedata.BuildSdkListFirstElement(journeySegment, "context", buildSdkPatchContext, false)
 	journey := resourcedata.BuildSdkListFirstElement(journeySegment, "journey", buildSdkPatchJourney, false)
-	externalSegment := resourcedata.BuildSdkListFirstElement(journeySegment, "external_segment", buildSdkPatchExternalSegment, true)
-	assignmentExpirationDays := resourcedata.GetNillableValue[int](journeySegment, "assignment_expiration_days")
 
 	sdkPatchSegment := platformclientv2.Patchsegment{}
 	sdkPatchSegment.SetField("IsActive", &isActive)
@@ -456,10 +412,6 @@ func buildSdkPatchSegment(journeySegment *schema.ResourceData) *platformclientv2
 	sdkPatchSegment.SetField("ShouldDisplayToAgent", shouldDisplayToAgent)
 	sdkPatchSegment.SetField("Context", sdkContext)
 	sdkPatchSegment.SetField("Journey", journey)
-	sdkPatchSegment.SetField("ExternalSegment", externalSegment)
-	if assignmentExpirationDays != nil {
-		sdkPatchSegment.SetField("AssignmentExpirationDays", assignmentExpirationDays)
-	}
 	return &sdkPatchSegment
 }
 
@@ -657,33 +609,5 @@ func buildSdkPatchCriteria(criteria map[string]interface{}) *platformclientv2.Pa
 		Values:           values,
 		ShouldIgnoreCase: &shouldIgnoreCase,
 		Operator:         &operator,
-	}
-}
-
-func flattenExternalSegment(externalSegment *platformclientv2.Externalsegment) map[string]interface{} {
-	externalSegmentMap := make(map[string]interface{})
-	externalSegmentMap["id"] = *externalSegment.Id
-	externalSegmentMap["name"] = *externalSegment.Name
-	externalSegmentMap["source"] = *externalSegment.Source
-	return externalSegmentMap
-}
-
-func buildSdkExternalSegment(externalSegment map[string]interface{}) *platformclientv2.Requestexternalsegment {
-	id := externalSegment["id"].(string)
-	name := externalSegment["name"].(string)
-	source := externalSegment["source"].(string)
-
-	return &platformclientv2.Requestexternalsegment{
-		Id:     &id,
-		Name:   &name,
-		Source: &source,
-	}
-}
-
-func buildSdkPatchExternalSegment(externalSegment map[string]interface{}) *platformclientv2.Patchexternalsegment {
-	name := externalSegment["name"].(string)
-
-	return &platformclientv2.Patchexternalsegment{
-		Name: &name,
 	}
 }
