@@ -27,6 +27,12 @@ import (
 var (
 	evaluationFormQuestionGroup = &schema.Resource{
 		Schema: map[string]*schema.Schema{
+			"id": {
+				Description: "ID of the question group.",
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
+			},
 			"name": {
 				Description: "Name of display question in question group.",
 				Type:        schema.TypeString,
@@ -80,6 +86,12 @@ var (
 
 	evaluationFormQuestion = &schema.Resource{
 		Schema: map[string]*schema.Schema{
+			"id": {
+				Description: "ID of the question.",
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
+			},
 			"text": {
 				Description: "Individual question",
 				Type:        schema.TypeString,
@@ -114,7 +126,7 @@ var (
 				Type:        schema.TypeList,
 				Required:    true,
 				MinItems:    2,
-				Elem:        evaluationFormAnswerOptions,
+				Elem:        evaluationFormAnswerOptionsResource,
 			},
 			"is_kill": {
 				Description: "True if the question is a fatal question",
@@ -148,8 +160,13 @@ var (
 		},
 	}
 
-	evaluationFormAnswerOptions = &schema.Resource{
+	evaluationFormAnswerOptionsResource = &schema.Resource{
 		Schema: map[string]*schema.Schema{
+			"id": {
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
 			"text": {
 				Type:     schema.TypeString,
 				Required: true,
@@ -157,6 +174,12 @@ var (
 			"value": {
 				Type:     schema.TypeInt,
 				Required: true,
+			},
+			"assistance_conditions": {
+				Description: "List of assistance conditions which are combined together with a logical AND operator. Eg ( assistanceCondtion1 && assistanceCondition2 ) wherein assistanceCondition could be ( EXISTS topic1 || topic2 || ... ) or (NOTEXISTS topic3 || topic4 || ...).",
+				Type:        schema.TypeSet,
+				Optional:    true,
+				Elem:        assistanceConditionsResource,
 			},
 		},
 	}
@@ -211,7 +234,7 @@ func ResourceEvaluationForm() *schema.Resource {
 				Required:    true,
 			},
 			"published": {
-				Description: "Specifies if the evalutaion form is published.",
+				Description: "Specifies if the evaluation form is published.",
 				Type:        schema.TypeBool,
 				Optional:    true,
 				Default:     false,
@@ -247,6 +270,18 @@ func createEvaluationForm(ctx context.Context, d *schema.ResourceData, meta inte
 	if err != nil {
 		return util.BuildAPIDiagnosticError("genesyscloud_quality_forms_evaluation", fmt.Sprintf("Failed to create evaluation form %s error: %s", name, err), resp)
 	}
+
+	theform := platformclientv2.Evaluationform{
+		Name:           &name,
+		QuestionGroups: questionGroups,
+	}
+	fmt.Println("the request")
+	fmt.Println(theform.String())
+	fmt.Println()
+
+	fmt.Println("the response")
+	fmt.Println(form.String())
+	fmt.Println()
 
 	// Make sure form is properly created
 	time.Sleep(2 * time.Second)
@@ -426,6 +461,10 @@ func buildSdkQuestionGroups(d *schema.ResourceData) (*[]platformclientv2.Evaluat
 				Questions:               buildSdkQuestions(questions),
 			}
 
+			if id, _ := questionGroupsMap["id"].(string); id != "" {
+				sdkquestionGroup.Id = &id
+			}
+
 			visibilityCondition := questionGroupsMap["visibility_condition"].([]interface{})
 			sdkquestionGroup.VisibilityCondition = buildSdkVisibilityCondition(visibilityCondition)
 
@@ -461,6 +500,10 @@ func buildSdkQuestions(questions []interface{}) *[]platformclientv2.Evaluationqu
 			IsCritical:       &isCritical,
 		}
 
+		if id, _ := questionsMap["id"].(string); id != "" {
+			sdkQuestion.Id = &id
+		}
+
 		visibilityCondition := questionsMap["visibility_condition"].([]interface{})
 		sdkQuestion.VisibilityCondition = buildSdkVisibilityCondition(visibilityCondition)
 
@@ -483,10 +526,35 @@ func buildSdkAnswerOptions(answerOptions []interface{}) *[]platformclientv2.Answ
 			Value: &answerValue,
 		}
 
+		if id, _ := answerOptionsMap["id"].(string); id != "" {
+			sdkAnswerOption.Id = &id
+		}
+
+		sdkAnswerOption.AssistanceConditions = buildSdkAnswerOptionsAssistanceConditions(answerOptionsMap["assistance_conditions"])
+
 		sdkAnswerOptions = append(sdkAnswerOptions, sdkAnswerOption)
 	}
 
 	return &sdkAnswerOptions
+}
+
+func buildSdkAnswerOptionsAssistanceConditions(assistanceConditions any) *[]platformclientv2.Assistancecondition {
+	assistanceConditionsSet, ok := assistanceConditions.(*schema.Set)
+	if !ok {
+		return nil
+	}
+	var sdkAssistanceConditions []platformclientv2.Assistancecondition
+	for _, condition := range assistanceConditionsSet.List() {
+		var sdkCondition platformclientv2.Assistancecondition
+		conditionMap := condition.(map[string]any)
+		sdkCondition.Operator = platformclientv2.String(conditionMap["operator"].(string))
+		if topicIds, ok := conditionMap["topic_ids"].([]any); ok {
+			strTopicIds := lists.InterfaceListToStrings(topicIds)
+			sdkCondition.TopicIds = &strTopicIds
+		}
+		sdkAssistanceConditions = append(sdkAssistanceConditions, sdkCondition)
+	}
+	return &sdkAssistanceConditions
 }
 
 func buildSdkVisibilityCondition(visibilityCondition []interface{}) *platformclientv2.Visibilitycondition {
@@ -510,10 +578,13 @@ func flattenQuestionGroups(questionGroups *[]platformclientv2.Evaluationquestion
 		return nil
 	}
 
-	questionGroupList := []interface{}{}
+	var questionGroupList []interface{}
 
 	for _, questionGroup := range *questionGroups {
 		questionGroupMap := make(map[string]interface{})
+		if questionGroup.Id != nil {
+			questionGroupMap["id"] = *questionGroup.Id
+		}
 		if questionGroup.Name != nil {
 			questionGroupMap["name"] = *questionGroup.Name
 		}
@@ -549,10 +620,13 @@ func flattenQuestions(questions *[]platformclientv2.Evaluationquestion) []interf
 		return nil
 	}
 
-	questionList := []interface{}{}
+	var questionList []interface{}
 
 	for _, question := range *questions {
 		questionMap := make(map[string]interface{})
+		if question.Id != nil {
+			questionMap["id"] = *question.Id
+		}
 		if question.Text != nil {
 			questionMap["text"] = *question.Text
 		}
@@ -588,20 +662,38 @@ func flattenAnswerOptions(answerOptions *[]platformclientv2.Answeroption) []inte
 		return nil
 	}
 
-	answerOptionsList := []interface{}{}
+	var answerOptionsList []interface{}
 
 	for _, answerOption := range *answerOptions {
 		answerOptionMap := make(map[string]interface{})
+		if answerOption.Id != nil {
+			answerOptionMap["id"] = *answerOption.Id
+		}
 		if answerOption.Text != nil {
 			answerOptionMap["text"] = *answerOption.Text
 		}
 		if answerOption.Value != nil {
 			answerOptionMap["value"] = *answerOption.Value
 		}
-
+		if answerOption.AssistanceConditions != nil {
+			answerOptionMap["assistance_conditions"] = flattenAssistanceConditions(*answerOption.AssistanceConditions)
+		}
 		answerOptionsList = append(answerOptionsList, answerOptionMap)
 	}
 	return answerOptionsList
+}
+
+func flattenAssistanceConditions(assistanceConditions []platformclientv2.Assistancecondition) *schema.Set {
+	assistanceConditionsSet := schema.NewSet(schema.HashResource(assistanceConditionsResource), []interface{}{})
+	for _, sdkCondition := range assistanceConditions {
+		conditionMap := make(map[string]any)
+		conditionMap["operator"] = *sdkCondition.Operator
+		if sdkCondition.TopicIds != nil {
+			conditionMap["topic_ids"] = lists.StringListToInterfaceList(*sdkCondition.TopicIds)
+		}
+		assistanceConditionsSet.Add(conditionMap)
+	}
+	return assistanceConditionsSet
 }
 
 func flattenVisibilityCondition(visibilityCondition *platformclientv2.Visibilitycondition) []interface{} {
@@ -641,8 +733,14 @@ func GenerateEvaluationFormQuestionGroups(questionGroups *[]EvaluationFormQuesti
 	questionGroupsString := ""
 
 	for _, questionGroup := range *questionGroups {
+		idField := ""
+		if questionGroup.Id != "" {
+			idField = fmt.Sprintf(`id = "%s"`, questionGroup.Id)
+		}
+
 		questionGroupString := fmt.Sprintf(`
         question_groups {
+			%s
             name = "%s"
             default_answers_to_highest = %v
             default_answers_to_na  = %v
@@ -652,7 +750,7 @@ func GenerateEvaluationFormQuestionGroups(questionGroups *[]EvaluationFormQuesti
             %s
             %s
         }
-        `, questionGroup.Name,
+        `, idField, questionGroup.Name,
 			questionGroup.DefaultAnswersToHighest,
 			questionGroup.DefaultAnswersToNA,
 			questionGroup.NaEnabled,
@@ -676,8 +774,13 @@ func GenerateEvaluationFormQuestions(questions *[]EvaluationFormQuestionStruct) 
 	questionsString := ""
 
 	for _, question := range *questions {
+		idField := ""
+		if question.Id != "" {
+			idField = fmt.Sprintf(`id = "%s"`, question.Id)
+		}
 		questionString := fmt.Sprintf(`
         questions {
+            %s
             text = "%s"
             help_text = "%s"
             na_enabled = %v
@@ -687,7 +790,7 @@ func GenerateEvaluationFormQuestions(questions *[]EvaluationFormQuestionStruct) 
             %s
             %s
         }
-        `, question.Text,
+        `, idField, question.Text,
 			question.HelpText,
 			question.NaEnabled,
 			question.CommentsRequired,
@@ -711,12 +814,20 @@ func GenerateFormAnswerOptions(answerOptions *[]AnswerOptionStruct) string {
 	answerOptionsString := ""
 
 	for _, answerOption := range *answerOptions {
+		idValue := ""
+		if answerOption.Id == "" {
+			idValue = strconv.Quote(answerOption.Id)
+		} else {
+			idValue = util.NullValue
+		}
 		answerOptionString := fmt.Sprintf(`
         answer_options {
+			id = %s
             text = "%s"
             value = %v
         }
-        `, answerOption.Text,
+        `, idValue,
+			answerOption.Text,
 			answerOption.Value,
 		)
 

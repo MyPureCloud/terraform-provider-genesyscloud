@@ -15,6 +15,7 @@ import (
 )
 
 type EvaluationFormQuestionGroupStruct struct {
+	Id                      string
 	Name                    string
 	DefaultAnswersToHighest bool
 	DefaultAnswersToNA      bool
@@ -32,6 +33,7 @@ type EvaluationFormStruct struct {
 }
 
 type EvaluationFormQuestionStruct struct {
+	Id                  string
 	Text                string
 	HelpText            string
 	NaEnabled           bool
@@ -43,8 +45,15 @@ type EvaluationFormQuestionStruct struct {
 }
 
 type AnswerOptionStruct struct {
-	Text  string
-	Value int
+	Id                   string
+	Text                 string
+	Value                int
+	AssistanceConditions []AssistanceConditionStruct
+}
+
+type AssistanceConditionStruct struct {
+	Operator string
+	TopicIds []string
 }
 
 type VisibilityConditionStruct struct {

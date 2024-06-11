@@ -15,25 +15,41 @@ import (
 
 func TestAccResourceEvaluationFormBasic(t *testing.T) {
 	formResource1 := "test-evaluation-form-1"
+	questionGroupId := "question-group-id"
+	questionId := "question-id"
+	answer1Id := "answer-1-id"
+	answer1Text := "Yes"
+	answer1Value := 1
+	answer1AssistanceCondition1Operator := "EXISTS"
+	answer1AssistanceCondition1TopicIds := []string{"topic1"}
 
 	// Most basic evaluation form
 	evaluationForm1 := EvaluationFormStruct{
 		Name: "terraform-form-evaluations-" + uuid.NewString(),
 		QuestionGroups: []EvaluationFormQuestionGroupStruct{
 			{
+				Id:     questionGroupId,
 				Name:   "Test Question Group 1",
 				Weight: 1,
 				Questions: []EvaluationFormQuestionStruct{
 					{
+						Id:   questionId,
 						Text: "Did the agent perform the opening spiel?",
 						AnswerOptions: []AnswerOptionStruct{
 							{
-								Text:  "Yes",
-								Value: 1,
+								Id:    answer1Id,
+								Text:  answer1Text,
+								Value: answer1Value,
+								AssistanceConditions: []AssistanceConditionStruct{
+									{
+										Operator: answer1AssistanceCondition1Operator,
+										TopicIds: answer1AssistanceCondition1TopicIds,
+									},
+								},
 							},
 							{
 								Text:  "No",
-								Value: 0,
+								Value: 2,
 							},
 						},
 					},
@@ -96,7 +112,9 @@ func TestAccResourceEvaluationFormBasic(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResource1, "name", evaluationForm1.Name),
 					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResource1, "published", util.FalseValue),
 					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResource1, "question_groups.0.name", evaluationForm1.QuestionGroups[0].Name),
+					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResource1, "question_groups.0.id", evaluationForm1.QuestionGroups[0].Id),
 					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResource1, "question_groups.#", fmt.Sprint(len(evaluationForm1.QuestionGroups))),
+					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResource1, "question_groups.0.questions.0.id", evaluationForm1.QuestionGroups[0].Questions[0].Id),
 					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResource1, "question_groups.0.questions.0.text", evaluationForm1.QuestionGroups[0].Questions[0].Text),
 					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResource1, "question_groups.0.questions.0.answer_options.#", fmt.Sprint(len(evaluationForm1.QuestionGroups[0].Questions[0].AnswerOptions))),
 				),
