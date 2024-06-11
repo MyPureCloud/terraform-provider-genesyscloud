@@ -58,8 +58,6 @@ signs:
 release:
   draft: true
 changelog:
-  # Defaults to false.
-  skip: 'false'
   use: github
   sort: asc
   abbrev: -1
