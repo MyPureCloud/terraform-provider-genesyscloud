@@ -52,18 +52,10 @@ var (
 				return r
 			}(), ""),
 		},
-		"scope": {
-			Description:  "The target entity that a segment applies to.Valid values: Session, Customer. Changing the scope attribute will cause the existing journey_segment to be dropped and recreated with new ID.",
-			Type:         schema.TypeString,
-			Required:     true,
-			ForceNew:     true, // scope can be only set during creation
-			ValidateFunc: validation.StringInSlice([]string{"Session"}, false),
-		},
 		"should_display_to_agent": {
 			Description: "Whether or not the segment should be displayed to agent/supervisor users.",
 			Type:        schema.TypeBool,
 			Optional:    true,
-			// Customer scope only supports false for this value
 		},
 		"context": {
 			Description: "The context of the segment.",
@@ -367,7 +359,6 @@ func flattenJourneySegment(d *schema.ResourceData, journeySegment *platformclien
 	d.Set("display_name", *journeySegment.DisplayName)
 	resourcedata.SetNillableValue(d, "description", journeySegment.Description)
 	d.Set("color", *journeySegment.Color)
-	d.Set("scope", *journeySegment.Scope)
 	resourcedata.SetNillableValue(d, "should_display_to_agent", journeySegment.ShouldDisplayToAgent)
 	resourcedata.SetNillableValue(d, "context", lists.FlattenAsList(journeySegment.Context, flattenContext))
 	resourcedata.SetNillableValue(d, "journey", lists.FlattenAsList(journeySegment.Journey, flattenJourney))
@@ -378,7 +369,6 @@ func buildSdkJourneySegment(journeySegment *schema.ResourceData) *platformclient
 	displayName := journeySegment.Get("display_name").(string)
 	description := resourcedata.GetNillableValue[string](journeySegment, "description")
 	color := journeySegment.Get("color").(string)
-	scope := journeySegment.Get("scope").(string)
 	shouldDisplayToAgent := resourcedata.GetNillableBool(journeySegment, "should_display_to_agent")
 	sdkContext := resourcedata.BuildSdkListFirstElement(journeySegment, "context", buildSdkRequestContext, false)
 	journey := resourcedata.BuildSdkListFirstElement(journeySegment, "journey", buildSdkRequestJourney, false)
@@ -388,7 +378,6 @@ func buildSdkJourneySegment(journeySegment *schema.ResourceData) *platformclient
 		DisplayName:          &displayName,
 		Description:          description,
 		Color:                &color,
-		Scope:                &scope,
 		ShouldDisplayToAgent: shouldDisplayToAgent,
 		Context:              sdkContext,
 		Journey:              journey,

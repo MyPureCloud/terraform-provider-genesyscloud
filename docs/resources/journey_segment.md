@@ -23,8 +23,7 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 resource "genesyscloud_journey_segment" "example_journey_segment_resource" {
   display_name            = "example journey segment name"
   color                   = "#008000"
-  scope                   = "Session"
-  should_display_to_agent = false
+  should_display_to_agent = true
   context {
     patterns {
       criteria {
@@ -60,7 +59,6 @@ resource "genesyscloud_journey_segment" "example_journey_segment_resource" {
 
 - `color` (String) The hexadecimal color value of the segment.
 - `display_name` (String) The display name of the segment.
-- `scope` (String) The target entity that a segment applies to.Valid values: Session, Customer. Changing the scope attribute will cause the existing journey_segment to be dropped and recreated with new ID.
 
 ### Optional
 

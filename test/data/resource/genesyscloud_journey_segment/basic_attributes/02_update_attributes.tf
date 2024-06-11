@@ -1,9 +1,19 @@
 resource "genesyscloud_journey_segment" "terraform_test_-TEST-CASE-" {
-  # required
+  is_active               = false
   display_name            = "terraform_test_-TEST-CASE-_updated"
-  color                   = "#008000"
-  scope                   = "Session"
+  color                   = "#308000"
   should_display_to_agent = false
+  context {
+    patterns {
+      criteria {
+        key                = "geolocation.region"
+        values             = ["something1"]
+        operator           = "containsAll"
+        should_ignore_case = false
+        entity_type        = "visit"
+      }
+    }
+  }
   journey {
     patterns {
       criteria {

@@ -7,8 +7,7 @@ data "genesyscloud_journey_segment" "terraform_test_-TEST-CASE-" {
 resource "genesyscloud_journey_segment" "terraform_test_-TEST-CASE-" {
   display_name            = "terraform_test_-TEST-CASE-_to_find"
   color                   = "#008000"
-  scope                   = "Session"
-  should_display_to_agent = false
+  should_display_to_agent = true
   journey {
     patterns {
       criteria {
