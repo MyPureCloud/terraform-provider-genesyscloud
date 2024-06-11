@@ -696,7 +696,7 @@ pipeline {
                 // Optionally, print the location of the HTML report
                     echo "HTML report generated: \${env.WORKSPACE}/test-report.html"
                 }
-                archiveArtifacts artifacts: 'coverageAcceptance.html,test-report.html,test-results.xml', allowEmptyArchive: true   
+                archiveArtifacts artifacts: 'coverageReport.html,test-report.html,test-results.xml', allowEmptyArchive: true   
            }
         }
     }
