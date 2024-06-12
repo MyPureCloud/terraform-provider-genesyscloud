@@ -102,11 +102,6 @@ func ResourceWidgetDeployment() *schema.Resource {
 				Required:     true,
 				ValidateFunc: validation.StringInSlice([]string{V2, THIRDPARTY}, false),
 			},
-			"client_config": {
-				Description: "The client configuration options that should be made available to the clients of this Deployment. The map key should match the client_type for this deployment. MaxItems: 1",
-				Type:        schema.TypeMap,
-				Optional:    true,
-			},
 			"v2_client_config": {
 				Description: "The v2 client configuration options that should be made available to the clients of this Deployment.",
 				Type:        schema.TypeMap,

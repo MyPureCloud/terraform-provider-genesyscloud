@@ -22,15 +22,11 @@ func TestAccDataSourceWidgetDeployment(t *testing.T) {
 		name:                   widgetDeploymentsName + uuid.NewString(),
 		description:            "This is a test description",
 		flowID:                 uuid.NewString(),
-		clientType:             "v1",
+		clientType:             V2,
 		authenticationRequired: "true",
 		disabled:               "true",
 	}
 
-	_, err := provider.AuthorizeSdk()
-	if err != nil {
-		t.Fatal(err)
-	}
 	deleteWidgetDeploymentWithName(widgetDeploymentsName)
 
 	resource.Test(t, resource.TestCase{

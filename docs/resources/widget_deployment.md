@@ -47,7 +47,6 @@ resource "genesyscloud_widget_deployment" "mywidget" {
 ### Optional
 
 - `allowed_domains` (List of String) The list of domains that are approved to use this Deployment; the list will be added to CORS headers for ease of web use
-- `client_config` (Map of String) The client configuration options that should be made available to the clients of this Deployment. The map key should match the client_type for this deployment. MaxItems: 1
 - `description` (String) Widget Deployment description.
 - `flow_id` (String) The Inbound Chat Flow to run when new chats are initiated under this Deployment
 - `third_party_client_config` (Map of String) The third party client configuration options that should be made available to the clients of this Deployment.
