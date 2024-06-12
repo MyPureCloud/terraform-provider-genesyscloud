@@ -2,8 +2,6 @@ package telephony_providers_edges_site_outbound_route
 
 import (
 	"fmt"
-	"github.com/google/uuid"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"log"
 	"os"
 	"strconv"
@@ -15,9 +13,12 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	featureToggles "terraform-provider-genesyscloud/genesyscloud/util/feature_toggles"
 	"testing"
+
+	"github.com/google/uuid"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
 
-func TestAccResourceSiteOutboundRoutes(t *testing.T) {
+func TestAccResourceSiteoutboundRoutes(t *testing.T) {
 	defer func() {
 		err := os.Unsetenv(featureToggles.OutboundRoutesToggleName())
 		if err != nil {
@@ -43,7 +44,7 @@ func TestAccResourceSiteOutboundRoutes(t *testing.T) {
 		locationRes = "test-location1"
 	)
 
-	emergencyNumber := "+13173124743"
+	emergencyNumber := "+13173124741"
 	if err := telephonyProvidersEdgesSite.DeleteLocationWithNumber(emergencyNumber, sdkConfig); err != nil {
 		t.Skipf("failed to delete location with number %s, %v", emergencyNumber, err)
 	}
@@ -95,7 +96,7 @@ func TestAccResourceSiteOutboundRoutes(t *testing.T) {
 		"genesyscloud_location."+locationRes+".id",
 		mediaModel,
 		false,
-		"[\"us-west-2\"]",
+		util.AssignRegion(),
 		strconv.Quote("+19205551212"),
 		strconv.Quote("Wilco plumbing"),
 		"set_as_default_site = false")

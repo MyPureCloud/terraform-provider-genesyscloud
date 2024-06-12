@@ -125,7 +125,7 @@ Optional:
 
 - `constraint_after` (Block List, Max: 1) A time constraint on this link, which requires a customer must complete the downstream element after this amount of time to be counted.. (see [below for nested schema](#nestedblock--elements--followed_by--constraint_after))
 - `constraint_within` (Block List, Max: 1) A time constraint on this link, which requires a customer to complete the downstream element within this amount of time to be counted. (see [below for nested schema](#nestedblock--elements--followed_by--constraint_within))
-- `event_count_type` (String) The type of events that will be counted. Note: Concurrent will override any JourneyViewLinkTimeConstraint. Default is Sequential.Valid values: All, Concurrent, Sequential. Defaults to `Sequential`.
+- `event_count_type` (String) The type of events that will be counted. Note: Concurrent will override any JourneyViewLinkTimeConstraint. Default is Sequential.Valid values: All, Concurrent, Sequential.
 - `join_attributes` (List of String) Other (secondary) attributes on which this link should join the customers being counted.
 
 <a id="nestedblock--elements--followed_by--constraint_after"></a>

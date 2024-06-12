@@ -533,8 +533,8 @@ func RoutingQueueExporter() *resourceExporter.ResourceExporter {
 
 func DataSourceRoutingQueue() *schema.Resource {
 	return &schema.Resource{
-		Description: "Data source for Genesys Cloud Routing Queues. Select a queue by name.",
-		ReadContext: provider.ReadWithPooledClient(dataSourceRoutingQueueRead),
+		Description:        "Data source for Genesys Cloud Routing Queues. Select a queue by name.",
+		ReadWithoutTimeout: provider.ReadWithPooledClient(dataSourceRoutingQueueRead),
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Description: "Queue name.",

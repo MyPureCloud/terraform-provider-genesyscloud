@@ -33,7 +33,7 @@ func buildElements(d *schema.ResourceData) (*[]platformclientv2.Journeyvieweleme
 
 		if filterSlice, ok := elemMap["filter"].([]interface{}); ok {
 			filter := buildJourneyViewElementFilter(filterSlice)
-			element.Filter = filter
+			element.Filter = &filter
 		}
 
 		if followedBySlice, ok := elemMap["followed_by"].([]interface{}); ok {
@@ -65,7 +65,7 @@ func buildJourneyViewElementAttributes(attributesSlice []interface{}) platformcl
 	return attributes
 }
 
-func buildJourneyViewElementFilter(filterSlice []interface{}) *platformclientv2.Journeyviewelementfilter {
+func buildJourneyViewElementFilter(filterSlice []interface{}) platformclientv2.Journeyviewelementfilter {
 	var filter platformclientv2.Journeyviewelementfilter
 	for _, elem := range filterSlice {
 		if filterMap, ok := elem.(map[string]interface{}); ok {
@@ -82,10 +82,7 @@ func buildJourneyViewElementFilter(filterSlice []interface{}) *platformclientv2.
 			}
 		}
 	}
-	if len(filterSlice) == 0 {
-		return nil
-	}
-	return &filter
+	return filter
 }
 
 func buildJourneyviewelementfilterpredicate(predicateMap map[string]interface{}) platformclientv2.Journeyviewelementfilterpredicate {

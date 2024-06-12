@@ -24,11 +24,20 @@ resource "genesyscloud_journey_action_map" "terraform_test_-TEST-CASE-" {
 resource "genesyscloud_journey_segment" "terraform_test_-TEST-CASE-_action_map_dependency" {
   display_name            = "terraform_test_-TEST-CASE-_action_map_dependency"
   color                   = "#008000"
-  scope                   = "Customer"
-  should_display_to_agent = false
-  external_segment {
-    id     = "4654654654"
-    name   = "external segment name"
-    source = "AdobeExperiencePlatform"
-  }
+  scope                   = "Session"
+  should_display_to_agent = true
+  journey {
+      patterns {
+        criteria {
+          key                = "page.hostname"
+          values             = ["something_else"]
+          operator           = "equal"
+          should_ignore_case = false
+        }
+        count        = 1
+        stream_type  = "Web"
+        session_type = "web"
+        event_name   = "EventName"
+      }
+    }
 }

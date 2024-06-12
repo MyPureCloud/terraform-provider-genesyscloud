@@ -22,9 +22,9 @@ func TestAccResourceUserBasic(t *testing.T) {
 	var (
 		userResource1 = "test-user1"
 		userResource2 = "test-user2"
-		email1        = "terraform-" + uuid.NewString() + "@example.com"
-		email2        = "terraform-" + uuid.NewString() + "@example.com"
-		email3        = "terraform-" + uuid.NewString() + "@example.com"
+		email1        = "terraform-" + uuid.NewString() + "@user.com"
+		email2        = "terraform-" + uuid.NewString() + "@user.com"
+		email3        = "terraform-" + uuid.NewString() + "@user.com"
 		userName1     = "John Terraform"
 		userName2     = "Jim Terraform"
 		stateActive   = "active"
@@ -179,9 +179,9 @@ func TestAccResourceUserAddresses(t *testing.T) {
 	var (
 		addrUserResource1 = "test-user-addr"
 		addrUserName      = "Nancy Terraform"
-		addrEmail1        = "terraform-" + uuid.NewString() + "@example.com"
-		addrEmail2        = "terraform-" + uuid.NewString() + "@example.com"
-		addrEmail3        = "terraform-" + uuid.NewString() + "@example.com"
+		addrEmail1        = "terraform-" + uuid.NewString() + "@user.com"
+		addrEmail2        = "terraform-" + uuid.NewString() + "@user.com"
+		addrEmail3        = "terraform-" + uuid.NewString() + "@user.com"
 		addrPhone1        = "+13174269078"
 		addrPhone2        = "+441434634996"
 		addrPhoneExt      = "1234"
@@ -270,7 +270,7 @@ func TestAccResourceUserPhone(t *testing.T) {
 	var (
 		addrUserResource1 = "test-user-addr"
 		addrUserName      = "Nancy Terraform"
-		addrEmail1        = "terraform-" + uuid.NewString() + "@example.com"
+		addrEmail1        = "terraform-" + uuid.NewString() + "@user.com"
 		addrPhone1        = "+13173271898"
 		addrPhone2        = "+13173271899"
 		addrExt1          = "353"
@@ -381,7 +381,7 @@ func TestAccResourceUserSkills(t *testing.T) {
 	t.Parallel()
 	var (
 		userResource1  = "test-user"
-		email1         = "terraform-" + uuid.NewString() + "@example.com"
+		email1         = "terraform-" + uuid.NewString() + "@user.com"
 		userName1      = "Skill Terraform"
 		skillResource1 = "test-skill-1"
 		skillResource2 = "test-skill-2"
@@ -463,7 +463,7 @@ func TestAccResourceUserLanguages(t *testing.T) {
 	t.Parallel()
 	var (
 		userResource1 = "test-user"
-		email1        = "terraform-" + uuid.NewString() + "@example.com"
+		email1        = "terraform-" + uuid.NewString() + "@user.com"
 		userName1     = "Lang Terraform"
 		langResource1 = "test-lang-1"
 		langResource2 = "test-lang-2"
@@ -534,6 +534,10 @@ func TestAccResourceUserLanguages(t *testing.T) {
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckNoResourceAttr("genesyscloud_user."+userResource1, "routing_languages.%"),
+					func(s *terraform.State) error {
+						time.Sleep(30 * time.Second) // Wait for 30 seconds for proper deletion
+						return nil
+					},
 				),
 			},
 		},
@@ -545,7 +549,7 @@ func TestAccResourceUserLocations(t *testing.T) {
 	t.Parallel()
 	var (
 		userResource1 = "test-user-loc"
-		email         = "terraform-" + uuid.NewString() + "@example.com"
+		email         = "terraform-" + uuid.NewString() + "@user.com"
 		userName      = "Loki Terraform"
 		locResource1  = "test-location1"
 		locResource2  = "test-location2"
@@ -603,7 +607,7 @@ func TestAccResourceUserEmployerInfo(t *testing.T) {
 	var (
 		userResource1 = "test-user-info"
 		userName      = "Info Terraform"
-		email1        = "terraform-" + uuid.NewString() + "@example.com"
+		email1        = "terraform-" + uuid.NewString() + "@user.com"
 		empTypeFull   = "Full-time"
 		empTypePart   = "Part-time"
 		hireDate1     = "2010-05-06"
@@ -703,12 +707,12 @@ func TestAccResourceUserEmployerInfo(t *testing.T) {
 	})
 }
 
-func TestAccResourceUserRoutingUtil(t *testing.T) {
+func TestAccResourceUserroutingUtil(t *testing.T) {
 	t.Parallel()
 	var (
 		userResource1 = "test-user-util"
 		userName      = "Terraform Util"
-		email1        = "terraform-" + uuid.NewString() + "@example.com"
+		email1        = "terraform-" + uuid.NewString() + "@user.com"
 		maxCapacity0  = "0"
 		maxCapacity1  = "10"
 		maxCapacity2  = "12"
@@ -837,12 +841,12 @@ func TestAccResourceUserRoutingUtil(t *testing.T) {
 	})
 }
 
-func TestAccResourceUserRoutingUtilWithLabels(t *testing.T) {
+func TestAccResourceUserroutingUtilWithLabels(t *testing.T) {
 	t.Parallel()
 	var (
 		userResource1 = "test-user-util"
 		userName      = "Terraform Util"
-		email1        = "terraform-" + uuid.NewString() + "@example.com"
+		email1        = "terraform-" + uuid.NewString() + "@user.com"
 		maxCapacity0  = "0"
 		maxCapacity1  = "10"
 		maxCapacity2  = "12"
@@ -1014,7 +1018,7 @@ func TestAccResourceUserRestore(t *testing.T) {
 	t.Parallel()
 	var (
 		userResource1 = "test-user"
-		email1        = "terraform-" + uuid.NewString() + "@example.com"
+		email1        = "terraform-" + uuid.NewString() + "@user.com"
 		userName1     = "Terraform Restore1"
 		userName2     = "Terraform Restore2"
 	)
@@ -1065,7 +1069,7 @@ func TestAccResourceUserCreateWhenDestroyed(t *testing.T) {
 	t.Parallel()
 	var (
 		userResource1 = "test-user"
-		email1        = "terraform-" + uuid.NewString() + "@example.com"
+		email1        = "terraform-" + uuid.NewString() + "@user.com"
 		userName1     = "Terraform Existing"
 		userName2     = "Terraform Create"
 		stateActive   = "active"
