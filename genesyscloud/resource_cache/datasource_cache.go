@@ -105,11 +105,12 @@ func RetrieveId(cache *DataSourceCache,
 			return "", diagErr
 		}
 
-		if err := cache.UpdateCacheEntry(key, id); err != nil {
+		if err := cache.UpdateCacheEntry(key, idFromApi); err != nil {
 			return "", util.BuildDiagnosticError(resourceName, fmt.Sprintf("error updating cache"), err)
 		}
 		// id gets reset to empty string at the updateCacheEntry method.
 		id = idFromApi
 	}
+	log.Printf(" id identified %v from cache", id)
 	return id, nil
 }
