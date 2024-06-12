@@ -2,6 +2,7 @@ package genesyscloud
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
@@ -22,8 +23,8 @@ type widgetDeploymentConfig struct {
 	flowID                 string
 	allowedDomains         []string
 	clientType             string
-	webChatSkin            string
-	authenticationUrl      string
+	v2ClientConfig         map[string]string
+	thirdPartyClientConfig map[string]string
 }
 
 func deleteWidgetDeploymentWithName(name string) {
@@ -35,12 +36,22 @@ func deleteWidgetDeploymentWithName(name string) {
 
 	for _, widgetDeployment := range *widgetDeployments.Entities {
 		if strings.Contains(*widgetDeployment.Name, name) {
-			widgetsAPI.DeleteWidgetsDeployment(*widgetDeployment.Id)
+			_, _ = widgetsAPI.DeleteWidgetsDeployment(*widgetDeployment.Id)
 		}
 	}
 }
 
-func generateWidgetDeployV2(widgetDeploymentConfig *widgetDeploymentConfig) string {
+func generateWidgetDeployV2(wdConfig *widgetDeploymentConfig) string {
+	var (
+		v2ClientConfigStr   string
+		thirdPartyConfigStr string
+	)
+	if wdConfig.v2ClientConfig != nil {
+		v2ClientConfigStr = util.GenerateMapAttrWithMapProperties("v2_client_config", wdConfig.v2ClientConfig)
+	}
+	if wdConfig.thirdPartyClientConfig != nil {
+		thirdPartyConfigStr = util.GenerateMapAttrWithMapProperties("third_party_client_config", wdConfig.thirdPartyClientConfig)
+	}
 	return fmt.Sprintf(`resource "genesyscloud_widget_deployment" "%s" {
 		name = "%s"
 		description = "%s"
@@ -48,38 +59,19 @@ func generateWidgetDeployV2(widgetDeploymentConfig *widgetDeploymentConfig) stri
 		client_type = "%s"
 		authentication_required = %s
 		disabled = %s
+		%s
+        %s
 	}
-	`, widgetDeploymentConfig.resourceID,
-		widgetDeploymentConfig.name,
-		widgetDeploymentConfig.description,
-		widgetDeploymentConfig.flowID,
-		widgetDeploymentConfig.clientType,
-		widgetDeploymentConfig.authenticationRequired,
-		widgetDeploymentConfig.disabled)
-}
-
-func generateWidgetDeployV1(widgetDeploymentConfig *widgetDeploymentConfig) string {
-	return fmt.Sprintf(`resource "genesyscloud_widget_deployment" "%s" {
-		name = "%s"
-		description = "%s"
-		flow_id = "%s"
-		client_type = "%s"
-		authentication_required = %s
-		disabled = %s
-		client_config {
-    		authentication_url = "%s"
-    		webchat_skin       = "%s"
-  		}
-	}
-	`, widgetDeploymentConfig.resourceID,
-		widgetDeploymentConfig.name,
-		widgetDeploymentConfig.description,
-		widgetDeploymentConfig.flowID,
-		widgetDeploymentConfig.clientType,
-		widgetDeploymentConfig.authenticationRequired,
-		widgetDeploymentConfig.disabled,
-		widgetDeploymentConfig.authenticationUrl,
-		widgetDeploymentConfig.webChatSkin)
+	`, wdConfig.resourceID,
+		wdConfig.name,
+		wdConfig.description,
+		wdConfig.flowID,
+		wdConfig.clientType,
+		wdConfig.authenticationRequired,
+		wdConfig.disabled,
+		v2ClientConfigStr,
+		thirdPartyConfigStr,
+	)
 }
 
 func TestAccResourceWidgetDeploymentV2Widget(t *testing.T) {
@@ -90,15 +82,18 @@ func TestAccResourceWidgetDeploymentV2Widget(t *testing.T) {
 		name:                   name + uuid.NewString(),
 		description:            "This is a test description",
 		flowID:                 uuid.NewString(),
-		clientType:             "v2",
-		authenticationRequired: "false",
-		disabled:               "true",
+		clientType:             V2,
+		authenticationRequired: util.FalseValue,
+		disabled:               util.TrueValue,
+		thirdPartyClientConfig: map[string]string{
+			"foo": strconv.Quote("bar"),
+		},
 	}
 
-	_, err := provider.AuthorizeSdk()
-	if err != nil {
-		t.Fatal(err)
-	}
+	updatedDescription := "New description"
+	widgetDeployV2Update := widgetDeployV2
+	widgetDeployV2Update.description = updatedDescription
+
 	deleteWidgetDeploymentWithName(name)
 
 	resource.Test(t, resource.TestCase{
@@ -116,104 +111,25 @@ func TestAccResourceWidgetDeploymentV2Widget(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_widget_deployment."+widgetDeployV2.resourceID, "client_type", widgetDeployV2.clientType),
 					resource.TestCheckResourceAttr("genesyscloud_widget_deployment."+widgetDeployV2.resourceID, "authentication_required", widgetDeployV2.authenticationRequired),
 					resource.TestCheckResourceAttr("genesyscloud_widget_deployment."+widgetDeployV2.resourceID, "disabled", widgetDeployV2.disabled),
+					resource.TestCheckResourceAttr("genesyscloud_widget_deployment."+widgetDeployV2.resourceID, "third_party_client_config.foo", "bar"),
 				),
 			},
 			{
 				//update
-				Config: generateWidgetDeployV2(&widgetDeploymentConfig{
-					resourceID:             widgetDeployV2.resourceID,
-					name:                   widgetDeployV2.name,
-					description:            "New test description",
-					flowID:                 widgetDeployV2.flowID,
-					clientType:             widgetDeployV2.clientType,
-					authenticationRequired: widgetDeployV2.authenticationRequired,
-					disabled:               widgetDeployV2.disabled,
-				}),
+				Config: generateWidgetDeployV2(widgetDeployV2Update),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_widget_deployment."+widgetDeployV2.resourceID, "name", widgetDeployV2.name),
-					resource.TestCheckResourceAttr("genesyscloud_widget_deployment."+widgetDeployV2.resourceID, "description", "New test description"),
+					resource.TestCheckResourceAttr("genesyscloud_widget_deployment."+widgetDeployV2.resourceID, "description", updatedDescription),
 					resource.TestCheckResourceAttr("genesyscloud_widget_deployment."+widgetDeployV2.resourceID, "flow_id", widgetDeployV2.flowID),
 					resource.TestCheckResourceAttr("genesyscloud_widget_deployment."+widgetDeployV2.resourceID, "client_type", widgetDeployV2.clientType),
 					resource.TestCheckResourceAttr("genesyscloud_widget_deployment."+widgetDeployV2.resourceID, "authentication_required", widgetDeployV2.authenticationRequired),
 					resource.TestCheckResourceAttr("genesyscloud_widget_deployment."+widgetDeployV2.resourceID, "disabled", widgetDeployV2.disabled),
+					resource.TestCheckResourceAttr("genesyscloud_widget_deployment."+widgetDeployV2.resourceID, "third_party_client_config.foo", "bar"),
 				),
 			},
 			{
 				// Import/Read
 				ResourceName:      "genesyscloud_widget_deployment." + widgetDeployV2.resourceID,
-				ImportState:       true,
-				ImportStateVerify: true,
-			},
-		},
-		CheckDestroy: testVerifyWidgetDeploymentDestroyed,
-	})
-}
-
-func TestAccResourceWidgetDeploymentV1Widget(t *testing.T) {
-	t.Parallel()
-	name := "My Text V1 Widget"
-	widgetDeployV1 := &widgetDeploymentConfig{
-		resourceID:             "myTestV1Widget",
-		name:                   name + uuid.NewString(),
-		description:            "This is a test description",
-		flowID:                 uuid.NewString(),
-		clientType:             "v1",
-		authenticationRequired: "true",
-		disabled:               "true",
-		webChatSkin:            "basic",
-		authenticationUrl:      "https://localhost",
-	}
-
-	_, err := provider.AuthorizeSdk()
-	if err != nil {
-		t.Fatal(err)
-	}
-	deleteWidgetDeploymentWithName(name)
-
-	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { util.TestAccPreCheck(t) },
-		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
-
-		Steps: []resource.TestStep{
-			{
-				//create
-				Config: generateWidgetDeployV1(widgetDeployV1),
-				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_widget_deployment."+widgetDeployV1.resourceID, "name", widgetDeployV1.name),
-					resource.TestCheckResourceAttr("genesyscloud_widget_deployment."+widgetDeployV1.resourceID, "description", widgetDeployV1.description),
-					resource.TestCheckResourceAttr("genesyscloud_widget_deployment."+widgetDeployV1.resourceID, "flow_id", widgetDeployV1.flowID),
-					resource.TestCheckResourceAttr("genesyscloud_widget_deployment."+widgetDeployV1.resourceID, "client_type", widgetDeployV1.clientType),
-					resource.TestCheckResourceAttr("genesyscloud_widget_deployment."+widgetDeployV1.resourceID, "authentication_required", widgetDeployV1.authenticationRequired),
-					resource.TestCheckResourceAttr("genesyscloud_widget_deployment."+widgetDeployV1.resourceID, "disabled", widgetDeployV1.disabled),
-					resource.TestCheckResourceAttr("genesyscloud_widget_deployment."+widgetDeployV1.resourceID, "client_config.0.authentication_url", widgetDeployV1.authenticationUrl),
-					resource.TestCheckResourceAttr("genesyscloud_widget_deployment."+widgetDeployV1.resourceID, "client_config.0.webchat_skin", widgetDeployV1.webChatSkin),
-				),
-			},
-			{
-				//update
-				Config: generateWidgetDeployV1(&widgetDeploymentConfig{
-					resourceID:             widgetDeployV1.resourceID,
-					name:                   widgetDeployV1.name,
-					description:            "New test description",
-					flowID:                 widgetDeployV1.flowID,
-					clientType:             widgetDeployV1.clientType,
-					authenticationRequired: widgetDeployV1.authenticationRequired,
-					disabled:               widgetDeployV1.disabled,
-					webChatSkin:            widgetDeployV1.webChatSkin,
-					authenticationUrl:      widgetDeployV1.authenticationUrl,
-				}),
-				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_widget_deployment."+widgetDeployV1.resourceID, "name", widgetDeployV1.name),
-					resource.TestCheckResourceAttr("genesyscloud_widget_deployment."+widgetDeployV1.resourceID, "description", "New test description"),
-					resource.TestCheckResourceAttr("genesyscloud_widget_deployment."+widgetDeployV1.resourceID, "flow_id", widgetDeployV1.flowID),
-					resource.TestCheckResourceAttr("genesyscloud_widget_deployment."+widgetDeployV1.resourceID, "client_type", widgetDeployV1.clientType),
-					resource.TestCheckResourceAttr("genesyscloud_widget_deployment."+widgetDeployV1.resourceID, "authentication_required", widgetDeployV1.authenticationRequired),
-					resource.TestCheckResourceAttr("genesyscloud_widget_deployment."+widgetDeployV1.resourceID, "disabled", widgetDeployV1.disabled),
-				),
-			},
-			{
-				// Import/Read
-				ResourceName:      "genesyscloud_widget_deployment." + widgetDeployV1.resourceID,
 				ImportState:       true,
 				ImportStateVerify: true,
 			},

@@ -48,22 +48,13 @@ resource "genesyscloud_widget_deployment" "mywidget" {
 ### Optional
 
 - `allowed_domains` (List of String) The list of domains that are approved to use this Deployment; the list will be added to CORS headers for ease of web use
-- `client_config` (Block Set, Max: 1) The V1 and V1-http client configuration options that should be made available to the clients of this Deployment. (see [below for nested schema](#nestedblock--client_config))
+- `client_config` (Map of String) The client configuration options that should be made available to the clients of this Deployment. The map key should match the client_type for this deployment. MaxItems: 1
 - `description` (String) Widget Deployment description.
 - `flow_id` (String) The Inbound Chat Flow to run when new chats are initiated under this Deployment
+- `third_party_client_config` (Map of String) The third party client configuration options that should be made available to the clients of this Deployment.
+- `v2_client_config` (Map of String) The v2 client configuration options that should be made available to the clients of this Deployment.
 
 ### Read-Only
 
 - `id` (String) The ID of this resource.
-
-<a id="nestedblock--client_config"></a>
-### Nested Schema for `client_config`
-
-Required:
-
-- `webchat_skin` (String) Skin for the webchat user. (basic, modern-caret-skin)
-
-Optional:
-
-- `authentication_url` (String) Url endpoint to perform_authentication
 
