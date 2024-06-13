@@ -5,6 +5,7 @@ import (
 	"log"
 	"strconv"
 	"strings"
+	"sync"
 	"terraform-provider-genesyscloud/genesyscloud"
 	"terraform-provider-genesyscloud/genesyscloud/architect_flow"
 	"terraform-provider-genesyscloud/genesyscloud/group"
@@ -18,6 +19,11 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/mypurecloud/platform-client-sdk-go/v130/platformclientv2"
+)
+
+var (
+	sdkConfig *platformclientv2.Configuration
+	mu        sync.Mutex
 )
 
 func TestAccResourceRoutingQueueBasic(t *testing.T) {
@@ -681,6 +687,10 @@ func TestAccResourceRoutingQueueMembers(t *testing.T) {
 				),
 			},
 			{
+				PreConfig: func() {
+					// Wait for a specified duration to avoid runtime error
+					time.Sleep(30 * time.Second)
+				},
 				// Update with another queue member and modify rings
 				Config: genesyscloud.GenerateBasicUserResource(
 					queueMemberResource1,
@@ -1088,6 +1098,7 @@ func TestAccResourceRoutingQueueMembersOutsideOfConfig(t *testing.T) {
 		userEmail       = fmt.Sprintf("user%s@test.com", strings.Replace(uuid.NewString(), "-", "", -1))
 		queueResourceId = "queue"
 		queueName       = "tf test queue " + uuid.NewString()
+		userID          string
 	)
 
 	queueResource := fmt.Sprintf(`
@@ -1116,12 +1127,26 @@ resource "genesyscloud_user" "%s" {
 			{
 				Config:             queueResource + userResource,
 				ExpectNonEmptyPlan: false,
+				Check: resource.ComposeTestCheckFunc(
+					func(s *terraform.State) error {
+						rs, ok := s.RootModule().Resources["genesyscloud_user."+userResourceId]
+						if !ok {
+							return fmt.Errorf("not found: %s", "genesyscloud_user."+userResourceId)
+						}
+						userID = rs.Primary.ID
+						log.Printf("User ID: %s\n", userID) // Print user ID
+						return nil
+					},
+				),
 			},
 			{
 				// Import/Read
 				ResourceName:      "genesyscloud_routing_queue." + queueResourceId,
 				ImportState:       true,
 				ImportStateVerify: true,
+				Check: resource.ComposeTestCheckFunc(
+					checkUserDeleted(userID),
+				),
 			},
 		},
 		CheckDestroy: testVerifyQueuesDestroyed,
@@ -1476,4 +1501,46 @@ func generateUserWithCustomAttrs(resourceID string, email string, name string, a
 		%s
 	}
 	`, resourceID, email, name, strings.Join(attrs, "\n"))
+}
+
+func checkUserDeleted(id string) resource.TestCheckFunc {
+	log.Printf("Fetching user with ID: %s\n", id)
+	return func(s *terraform.State) error {
+		maxAttempts := 18
+		for i := 0; i < maxAttempts; i++ {
+
+			deleted, err := isUserDeleted(id)
+			if err != nil {
+				return err
+			}
+			if deleted {
+				return nil
+			}
+			time.Sleep(10 * time.Second)
+		}
+		return fmt.Errorf("user %s was not deleted properly", id)
+	}
+}
+
+func isUserDeleted(id string) (bool, error) {
+	mu.Lock()
+	defer mu.Unlock()
+
+	usersAPI := platformclientv2.NewUsersApiWithConfig(sdkConfig)
+	// Attempt to get the user
+	_, response, err := usersAPI.GetUser(id, nil, "", "")
+
+	// Check if the user is not found (deleted)
+	if response != nil && response.StatusCode == 404 {
+		return true, nil // User is deleted
+	}
+
+	// Handle other errors
+	if err != nil {
+		log.Printf("Error fetching user: %v", err)
+		return false, err
+	}
+
+	// If user is found, it means the user is not deleted
+	return false, nil
 }

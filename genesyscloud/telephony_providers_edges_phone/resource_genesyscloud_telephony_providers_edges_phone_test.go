@@ -188,6 +188,7 @@ func TestAccResourcePhoneBasic(t *testing.T) {
 
 func TestAccResourcePhoneStandalone(t *testing.T) {
 	number := "+12005538112"
+	deleteDidPoolWithNumber(number)
 	didPoolResource1 := "test-didpool1"
 	lineAddresses := []string{number}
 	phoneRes := "phone_standalone1234"
@@ -308,22 +309,20 @@ func TestAccResourcePhoneStandalone(t *testing.T) {
 
 func TestAccResourceHardPhoneStandalone(t *testing.T) {
 	number := "+13172128941"
+	number2 := "+13172128944"
 	phoneMac := "AB12CD34"
 	phoneMacUpdated := "BANANAS"
-	// TODO: Use did pool resource inside config once cyclic dependency issue is resolved between genesyscloud and did_pools package
-	didPoolId, err := createDidPoolForEdgesPhoneTest(sdkConfig, number)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer func() {
-		if err := deleteDidPool(sdkConfig, didPoolId); err != nil {
-			t.Logf("failed to delete did pool '%s': %v", didPoolId, err)
-		}
-	}()
+	deleteDidPoolWithNumber(number)
+	deleteDidPoolWithNumber(number2)
+	didPoolResource1 := "test-didpool1"
+	lineAddresses := []string{number}
+	didPoolResource2 := "test-didpool2"
+	lineAddresses2 := []string{number2}
 
 	phoneRes := "phone_standalone987"
+	phoneRes2 := "phone_standalone989"
 	name := "test-phone-standalone_" + uuid.NewString()
-
+	name2 := "test-phone-standalone_" + uuid.NewString()
 	stateActive := "active"
 	phoneBaseSettingsRes := "phoneBaseSettings987"
 	phoneBaseSettingsName := "phoneBaseSettings " + uuid.NewString()
@@ -331,7 +330,7 @@ func TestAccResourceHardPhoneStandalone(t *testing.T) {
 	locationRes := "test-location-test111"
 
 	emergencyNumber := "+13293100121"
-	if err = edgeSite.DeleteLocationWithNumber(emergencyNumber, sdkConfig); err != nil {
+	if err := edgeSite.DeleteLocationWithNumber(emergencyNumber, sdkConfig); err != nil {
 		t.Skipf("failed to delete location with number %s: %v", emergencyNumber, err)
 	}
 
@@ -377,7 +376,17 @@ func TestAccResourceHardPhoneStandalone(t *testing.T) {
 		"mac",
 		[]string{strconv.Quote("audio/opus"), strconv.Quote("audio/pcmu"), strconv.Quote("audio/pcma")},
 	)
-	config := locationConfig + siteConfig + phoneBaseSettings.GeneratePhoneBaseSettingsResourceWithCustomAttrs(
+
+	config := didPool.GenerateDidPoolResource(&didPool.DidPoolStruct{
+		ResourceID:       didPoolResource1,
+		StartPhoneNumber: lineAddresses[0],
+		EndPhoneNumber:   lineAddresses[0],
+		Description:      util.NullValue, // No description
+		Comments:         util.NullValue, // No comments
+		PoolProvider:     util.NullValue, // No provider
+	})
+
+	config += locationConfig + siteConfig + phoneBaseSettings.GeneratePhoneBaseSettingsResourceWithCustomAttrs(
 		phoneBaseSettingsRes,
 		phoneBaseSettingsName,
 		"phoneBaseSettings description",
@@ -389,21 +398,28 @@ func TestAccResourceHardPhoneStandalone(t *testing.T) {
 		stateActive,
 		"genesyscloud_telephony_providers_edges_site." + siteRes + ".id",
 		"genesyscloud_telephony_providers_edges_phonebasesettings." + phoneBaseSettingsRes + ".id",
-		[]string{},
+		lineAddresses,
 		"", // no web rtc user
-		"", // no Depends On
+		"genesyscloud_telephony_providers_edges_did_pool." + didPoolResource1,
 	}, capabilities, generatePhoneProperties(phoneMac))
 
 	//only mac is updated here, same resource as phone 1
-	phone2 := GeneratePhoneResourceWithCustomAttrs(&PhoneConfig{
-		phoneRes,
-		name,
+	phone2 := didPool.GenerateDidPoolResource(&didPool.DidPoolStruct{
+		ResourceID:       didPoolResource2,
+		StartPhoneNumber: lineAddresses2[0],
+		EndPhoneNumber:   lineAddresses2[0],
+		Description:      util.NullValue, // No description
+		Comments:         util.NullValue, // No comments
+		PoolProvider:     util.NullValue, // No provider
+	}) + GeneratePhoneResourceWithCustomAttrs(&PhoneConfig{
+		phoneRes2,
+		name2,
 		stateActive,
 		"genesyscloud_telephony_providers_edges_site." + siteRes + ".id",
 		"genesyscloud_telephony_providers_edges_phonebasesettings." + phoneBaseSettingsRes + ".id",
-		[]string{},
+		lineAddresses2,
 		"", // no web rtc user
-		"", // no Depends On
+		"genesyscloud_telephony_providers_edges_did_pool." + didPoolResource2,
 	}, capabilities, generatePhoneProperties(phoneMacUpdated))
 
 	resource.Test(t, resource.TestCase{
@@ -432,12 +448,12 @@ func TestAccResourceHardPhoneStandalone(t *testing.T) {
 			{
 				Config: config + phone2,
 				Check: resource.ComposeTestCheckFunc(
-					util.ValidateValueInJsonPropertiesAttr("genesyscloud_telephony_providers_edges_phone."+phoneRes, "properties", "phone_hardwareId", phoneMacUpdated),
+					util.ValidateValueInJsonPropertiesAttr("genesyscloud_telephony_providers_edges_phone."+phoneRes2, "properties", "phone_hardwareId", phoneMacUpdated),
 				),
 			},
 			{
 				// Import/Read
-				ResourceName:      "genesyscloud_telephony_providers_edges_phone." + phoneRes,
+				ResourceName:      "genesyscloud_telephony_providers_edges_phone." + phoneRes2,
 				ImportState:       true,
 				ImportStateVerify: true,
 			},
@@ -531,4 +547,27 @@ func deleteDidPool(config *platformclientv2.Configuration, id string) error {
 		return fmt.Errorf("error deleting did pool: %v", err)
 	}
 	return nil
+}
+func deleteDidPoolWithNumber(number string) {
+	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
+
+	for pageNum := 1; ; pageNum++ {
+		const pageSize = 100
+		didPools, _, getErr := edgesAPI.GetTelephonyProvidersEdgesDidpools(pageSize, pageNum, "", nil)
+		if getErr != nil {
+			return
+		}
+
+		if didPools.Entities == nil || len(*didPools.Entities) == 0 {
+			break
+		}
+
+		for _, didPool := range *didPools.Entities {
+			if (didPool.StartPhoneNumber != nil && *didPool.StartPhoneNumber == number) ||
+				(didPool.EndPhoneNumber != nil && *didPool.EndPhoneNumber == number) {
+				edgesAPI.DeleteTelephonyProvidersEdgesDidpool(*didPool.Id)
+				time.Sleep(5 * time.Second)
+			}
+		}
+	}
 }
