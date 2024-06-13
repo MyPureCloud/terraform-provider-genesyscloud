@@ -219,7 +219,7 @@ func (r *registerTestInstance) registerTestExporters() {
 	RegisterExporter("genesyscloud_group_roles", groupRoles.GroupRolesExporter())
 	RegisterExporter("genesyscloud_idp_adfs", idpAdfs.IdpAdfsExporter())
 	RegisterExporter("genesyscloud_idp_generic", gcloud.IdpGenericExporter())
-	RegisterExporter("genesyscloud_idp_gsuite", gcloud.IdpGsuiteExporter())
+	RegisterExporter("genesyscloud_idp_gsuite", idpGsuite.IdpGsuiteExporter())
 	RegisterExporter("genesyscloud_idp_okta", idpOkta.IdpOktaExporter())
 	RegisterExporter("genesyscloud_idp_onelogin", gcloud.IdpOneloginExporter())
 	RegisterExporter("genesyscloud_idp_ping", gcloud.IdpPingExporter())
