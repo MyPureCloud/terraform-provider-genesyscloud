@@ -139,7 +139,11 @@ This customer custom router will look at the skills array if present and resolve
 func RuleSetSkillPropertyResolver(configMap map[string]interface{}, exporters map[string]*ResourceExporter, resourceName string) error {
 
 	if exporter, ok := exporters["genesyscloud_routing_skill"]; ok {
-		skillIDs := configMap["skills"].(string)
+		skillIDs := ""
+
+		if configMap["skills"] != nil {
+			skillIDs = configMap["skills"].(string)
+		}
 
 		if len(skillIDs) == 0 {
 			return nil
@@ -192,7 +196,11 @@ func CampaignStatusResolver(configMap map[string]interface{}, exporters map[stri
 }
 
 func ReplyEmailAddressSelfReferenceRouteExporterResolver(configMap map[string]interface{}, exporters map[string]*ResourceExporter, resourceName string) error {
-	routeId := configMap["route_id"].(string)
+	routeId := ""
+	if configMap["route_id"] != nil {
+		routeId = configMap["route_id"].(string)
+	}
+
 	currentRouteReference := fmt.Sprintf("${genesyscloud_routing_email_route.%s.id}", resourceName)
 	if routeId == currentRouteReference {
 		configMap["self_reference_route"] = true
