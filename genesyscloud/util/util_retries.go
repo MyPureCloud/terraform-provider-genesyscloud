@@ -28,7 +28,7 @@ func WithRetries(ctx context.Context, timeout time.Duration, method func() *retr
 }
 
 func WithRetriesForRead(ctx context.Context, d *schema.ResourceData, method func() *retry.RetryError) diag.Diagnostics {
-	return WithRetriesForReadCustomTimeout(ctx, 5*time.Minute, d, method)
+	return WithRetriesForReadCustomTimeout(ctx, 30*time.Second, d, method)
 }
 
 func WithRetriesForReadCustomTimeout(ctx context.Context, timeout time.Duration, d *schema.ResourceData, method func() *retry.RetryError) diag.Diagnostics {
