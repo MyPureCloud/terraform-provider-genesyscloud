@@ -3,6 +3,7 @@ package telephony_providers_edges_site
 import (
 	"context"
 	"fmt"
+	"log"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
@@ -18,11 +19,11 @@ func dataSourceSiteRead(ctx context.Context, d *schema.ResourceData, m interface
 	sp := GetSiteProxy(sdkConfig)
 
 	name := d.Get("name").(string)
-	managed := d.Get("managed").(bool)
 
 	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
-		siteId, retryable, resp, err := sp.getSiteIdByName(ctx, name, managed)
+		siteId, retryable, resp, err := sp.getSiteIdByName(ctx, name)
 		if err != nil {
+			log.Println("ERR: ", err)
 			if retryable {
 				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to get site %s", name), resp))
 			}
