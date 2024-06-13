@@ -9,7 +9,11 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/group"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	routingQueue "terraform-provider-genesyscloud/genesyscloud/routing_queue"
+<<<<<<< HEAD
 	routingUtilizationLabel "terraform-provider-genesyscloud/genesyscloud/routing_utilization_label"
+=======
+	"terraform-provider-genesyscloud/genesyscloud/routing_utilization"
+>>>>>>> 17ace7be (Refactored but waiting for cyclic dependency removal)
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -60,6 +64,11 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_routing_skill"] = ResourceRoutingSkill()
 	providerResources["genesyscloud_routing_skill_group"] = ResourceRoutingSkillGroup()
 	providerResources["genesyscloud_routing_settings"] = ResourceRoutingSettings()
+<<<<<<< HEAD
+=======
+	providerResources["genesyscloud_routing_utilization"] = routing_utilization.ResourceRoutingUtilization()
+	providerResources["genesyscloud_routing_utilization_label"] = ResourceRoutingUtilizationLabel()
+>>>>>>> 17ace7be (Refactored but waiting for cyclic dependency removal)
 	providerResources["genesyscloud_routing_wrapupcode"] = ResourceRoutingWrapupCode()
 	providerResources["genesyscloud_user"] = ResourceUser()
 	providerResources["genesyscloud_widget_deployment"] = ResourceWidgetDeployment()

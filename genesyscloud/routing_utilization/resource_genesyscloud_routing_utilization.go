@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"log"
+	"sort"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"terraform-provider-genesyscloud/genesyscloud/util/constants"
@@ -89,6 +90,10 @@ func updateRoutingUtilization(ctx context.Context, d *schema.ResourceData, meta 
 		// If the resource has label(s), calls the Utilization API directly.
 		// This code can go back to using platformclientv2's RoutingApi to make the call once label utilization is available in platformclientv2's RoutingApi.
 		if labelUtilizations != nil && len(labelUtilizations) > 0 {
+<<<<<<< HEAD
+=======
+
+>>>>>>> 17ace7be (Refactored but waiting for cyclic dependency removal)
 			resp, err := proxy.updateDirectly(ctx, d, labelUtilizations)
 			if err != nil {
 				return resp, util.BuildAPIDiagnosticError(resourceName, "Failed to update routing utilization directly", resp)

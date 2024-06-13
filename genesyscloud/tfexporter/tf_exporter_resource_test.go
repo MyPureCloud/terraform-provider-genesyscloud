@@ -12,7 +12,6 @@ import (
 	routingUtilization "terraform-provider-genesyscloud/genesyscloud/routing_utilization"
 	routingUtilizationLabel "terraform-provider-genesyscloud/genesyscloud/routing_utilization_label"
 	outboundRoute "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site_outbound_route"
-
 	grammar "terraform-provider-genesyscloud/genesyscloud/architect_grammar"
 	grammarLanguage "terraform-provider-genesyscloud/genesyscloud/architect_grammar_language"
 	archIvr "terraform-provider-genesyscloud/genesyscloud/architect_ivr"
@@ -155,19 +154,9 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_routing_queue_conditional_group_routing"] = routingQueueConditionalGroupRouting.ResourceRoutingQueueConditionalGroupRouting()
 	providerResources["genesyscloud_routing_queue_outbound_email_address"] = routingQueueOutboundEmailAddress.ResourceRoutingQueueOutboundEmailAddress()
 	providerResources["genesyscloud_routing_skill"] = gcloud.ResourceRoutingSkill()
-<<<<<<< HEAD
 	providerResources["genesyscloud_routing_settings"] = routingSettings.ResourceRoutingSettings()
-	providerResources["genesyscloud_routing_utilization"] = gcloud.ResourceRoutingUtilization()
-=======
-	providerResources["genesyscloud_routing_settings"] = gcloud.ResourceRoutingSettings()
-<<<<<<< HEAD
-	providerResources["genesyscloud_routing_utilization"] = routing_utilization.ResourceRoutingUtilization()
->>>>>>> 1614c2fc (Refactored but waiting for cyclic dependency removal)
-=======
 	providerResources["genesyscloud_routing_utilization"] = routingUtilization.ResourceRoutingUtilization()
 	providerResources["genesyscloud_routing_utilization_label"] = routingUtilizationLabel.ResourceRoutingUtilizationLabel()
->>>>>>> 71d6fcac (fixing naming convention in tf_export)
-
 	providerResources["genesyscloud_routing_wrapupcode"] = gcloud.ResourceRoutingWrapupCode()
 	providerResources["genesyscloud_telephony_providers_edges_extension_pool"] = edgeExtension.ResourceTelephonyExtensionPool()
 	providerResources["genesyscloud_telephony_providers_edges_phone"] = edgePhone.ResourcePhone()

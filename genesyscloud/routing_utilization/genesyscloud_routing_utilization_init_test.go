@@ -26,7 +26,6 @@ func (r *registerTestInstance) registerTestResources() {
 
 	providerResources[resourceName] = ResourceRoutingUtilization()
 	providerResources["genesyscloud_routing_utilization_label"] = routing_utilization_label.ResourceRoutingUtilizationLabel()
-
 }
 
 // initTestResources initializes all test resources and data sources.

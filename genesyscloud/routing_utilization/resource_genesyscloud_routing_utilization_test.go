@@ -316,3 +316,33 @@ func CleanupRoutingUtilizationLabel() error {
 		}
 	}
 }
+
+// TODO: Remove these functions when routing_utilization_label is refactored
+func generateRoutingUtilizationLabelResource(resourceID string, name string, dependsOnResource string) string {
+	dependsOn := ""
+
+	if dependsOnResource != "" {
+		dependsOn = fmt.Sprintf("depends_on=[genesyscloud_routing_utilization_label.%s]", dependsOnResource)
+	}
+
+	return fmt.Sprintf(`resource "genesyscloud_routing_utilization_label" "%s" {
+		name = "%s"
+		%s
+	}
+	`, resourceID, name, dependsOn)
+}
+
+func checkIfLabelsAreEnabled() error {
+	config, err := provider.AuthorizeSdk()
+	if err != nil {
+		return err
+	}
+
+	// remove once the feature is globally enabled
+	api := platformclientv2.NewRoutingApiWithConfig(config) // the variable sdkConfig exists at a package level in ./genesyscloud and is already authorized
+	_, resp, _ := api.GetRoutingUtilizationLabels(100, 1, "", "")
+	if resp.StatusCode == 501 {
+		return fmt.Errorf("feature is not yet implemented in this org.")
+	}
+	return nil
+}
