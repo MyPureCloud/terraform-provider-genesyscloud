@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/routing_utilization"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 	"time"
@@ -731,11 +732,11 @@ func TestAccResourceUserroutingUtil(t *testing.T) {
 					email1,
 					userName,
 					generateUserRoutingUtil(
-						generateRoutingUtilMediaType("call", maxCapacity1, util.FalseValue),
-						generateRoutingUtilMediaType("callback", maxCapacity1, util.FalseValue),
-						generateRoutingUtilMediaType("chat", maxCapacity1, util.FalseValue),
-						generateRoutingUtilMediaType("email", maxCapacity1, util.FalseValue),
-						generateRoutingUtilMediaType("message", maxCapacity1, util.FalseValue),
+						routing_utilization.generateRoutingUtilMediaType("call", maxCapacity1, util.FalseValue),
+						routing_utilization.generateRoutingUtilMediaType("callback", maxCapacity1, util.FalseValue),
+						routing_utilization.generateRoutingUtilMediaType("chat", maxCapacity1, util.FalseValue),
+						routing_utilization.generateRoutingUtilMediaType("email", maxCapacity1, util.FalseValue),
+						routing_utilization.generateRoutingUtilMediaType("message", maxCapacity1, util.FalseValue),
 					),
 				),
 				Check: resource.ComposeTestCheckFunc(
@@ -764,11 +765,11 @@ func TestAccResourceUserroutingUtil(t *testing.T) {
 					email1,
 					userName,
 					generateUserRoutingUtil(
-						generateRoutingUtilMediaType("call", maxCapacity2, util.TrueValue, strconv.Quote(utilTypeEmail)),
-						generateRoutingUtilMediaType("callback", maxCapacity2, util.TrueValue, strconv.Quote(utilTypeCall)),
-						generateRoutingUtilMediaType("chat", maxCapacity2, util.TrueValue, strconv.Quote(utilTypeCall)),
-						generateRoutingUtilMediaType("email", maxCapacity2, util.TrueValue, strconv.Quote(utilTypeCall)),
-						generateRoutingUtilMediaType("message", maxCapacity2, util.TrueValue, strconv.Quote(utilTypeCall)),
+						routing_utilization.generateRoutingUtilMediaType("call", maxCapacity2, util.TrueValue, strconv.Quote(utilTypeEmail)),
+						routing_utilization.generateRoutingUtilMediaType("callback", maxCapacity2, util.TrueValue, strconv.Quote(utilTypeCall)),
+						routing_utilization.generateRoutingUtilMediaType("chat", maxCapacity2, util.TrueValue, strconv.Quote(utilTypeCall)),
+						routing_utilization.generateRoutingUtilMediaType("email", maxCapacity2, util.TrueValue, strconv.Quote(utilTypeCall)),
+						routing_utilization.generateRoutingUtilMediaType("message", maxCapacity2, util.TrueValue, strconv.Quote(utilTypeCall)),
 					),
 				),
 				Check: resource.ComposeTestCheckFunc(
@@ -797,11 +798,11 @@ func TestAccResourceUserroutingUtil(t *testing.T) {
 					email1,
 					userName,
 					generateUserRoutingUtil(
-						generateRoutingUtilMediaType("call", maxCapacity0, util.TrueValue, strconv.Quote(utilTypeEmail)),
-						generateRoutingUtilMediaType("callback", maxCapacity0, util.TrueValue, strconv.Quote(utilTypeCall)),
-						generateRoutingUtilMediaType("chat", maxCapacity0, util.TrueValue, strconv.Quote(utilTypeCall)),
-						generateRoutingUtilMediaType("email", maxCapacity0, util.TrueValue, strconv.Quote(utilTypeCall)),
-						generateRoutingUtilMediaType("message", maxCapacity0, util.TrueValue, strconv.Quote(utilTypeCall)),
+						routing_utilization.generateRoutingUtilMediaType("call", maxCapacity0, util.TrueValue, strconv.Quote(utilTypeEmail)),
+						routing_utilization.generateRoutingUtilMediaType("callback", maxCapacity0, util.TrueValue, strconv.Quote(utilTypeCall)),
+						routing_utilization.generateRoutingUtilMediaType("chat", maxCapacity0, util.TrueValue, strconv.Quote(utilTypeCall)),
+						routing_utilization.generateRoutingUtilMediaType("email", maxCapacity0, util.TrueValue, strconv.Quote(utilTypeCall)),
+						routing_utilization.generateRoutingUtilMediaType("message", maxCapacity0, util.TrueValue, strconv.Quote(utilTypeCall)),
 					),
 				),
 				Check: resource.ComposeTestCheckFunc(
@@ -880,13 +881,13 @@ func TestAccResourceUserroutingUtilWithLabels(t *testing.T) {
 						email1,
 						userName,
 						generateUserRoutingUtil(
-							generateRoutingUtilMediaType("call", maxCapacity1, util.FalseValue),
-							generateRoutingUtilMediaType("callback", maxCapacity1, util.FalseValue),
-							generateRoutingUtilMediaType("chat", maxCapacity1, util.FalseValue),
-							generateRoutingUtilMediaType("email", maxCapacity1, util.FalseValue),
-							generateRoutingUtilMediaType("message", maxCapacity1, util.FalseValue),
-							generateLabelUtilization(redLabelResource, maxCapacity1),
-							generateLabelUtilization(blueLabelResource, maxCapacity1, redLabelResource),
+							routing_utilization.generateRoutingUtilMediaType("call", maxCapacity1, util.FalseValue),
+							routing_utilization.generateRoutingUtilMediaType("callback", maxCapacity1, util.FalseValue),
+							routing_utilization.generateRoutingUtilMediaType("chat", maxCapacity1, util.FalseValue),
+							routing_utilization.generateRoutingUtilMediaType("email", maxCapacity1, util.FalseValue),
+							routing_utilization.generateRoutingUtilMediaType("message", maxCapacity1, util.FalseValue),
+							routing_utilization.generateLabelUtilization(redLabelResource, maxCapacity1),
+							routing_utilization.generateLabelUtilization(blueLabelResource, maxCapacity1, redLabelResource),
 						),
 					),
 				Check: resource.ComposeTestCheckFunc(
@@ -922,13 +923,13 @@ func TestAccResourceUserroutingUtilWithLabels(t *testing.T) {
 						email1,
 						userName,
 						generateUserRoutingUtil(
-							generateRoutingUtilMediaType("call", maxCapacity2, util.TrueValue, strconv.Quote(utilTypeEmail)),
-							generateRoutingUtilMediaType("callback", maxCapacity2, util.TrueValue, strconv.Quote(utilTypeCall)),
-							generateRoutingUtilMediaType("chat", maxCapacity2, util.TrueValue, strconv.Quote(utilTypeCall)),
-							generateRoutingUtilMediaType("email", maxCapacity2, util.TrueValue, strconv.Quote(utilTypeCall)),
-							generateRoutingUtilMediaType("message", maxCapacity2, util.TrueValue, strconv.Quote(utilTypeCall)),
-							generateLabelUtilization(redLabelResource, maxCapacity2),
-							generateLabelUtilization(blueLabelResource, maxCapacity2, redLabelResource),
+							routing_utilization.generateRoutingUtilMediaType("call", maxCapacity2, util.TrueValue, strconv.Quote(utilTypeEmail)),
+							routing_utilization.generateRoutingUtilMediaType("callback", maxCapacity2, util.TrueValue, strconv.Quote(utilTypeCall)),
+							routing_utilization.generateRoutingUtilMediaType("chat", maxCapacity2, util.TrueValue, strconv.Quote(utilTypeCall)),
+							routing_utilization.generateRoutingUtilMediaType("email", maxCapacity2, util.TrueValue, strconv.Quote(utilTypeCall)),
+							routing_utilization.generateRoutingUtilMediaType("message", maxCapacity2, util.TrueValue, strconv.Quote(utilTypeCall)),
+							routing_utilization.generateLabelUtilization(redLabelResource, maxCapacity2),
+							routing_utilization.generateLabelUtilization(blueLabelResource, maxCapacity2, redLabelResource),
 						),
 					),
 				Check: resource.ComposeTestCheckFunc(
@@ -964,13 +965,13 @@ func TestAccResourceUserroutingUtilWithLabels(t *testing.T) {
 						email1,
 						userName,
 						generateUserRoutingUtil(
-							generateRoutingUtilMediaType("call", maxCapacity0, util.TrueValue, strconv.Quote(utilTypeEmail)),
-							generateRoutingUtilMediaType("callback", maxCapacity0, util.TrueValue, strconv.Quote(utilTypeCall)),
-							generateRoutingUtilMediaType("chat", maxCapacity0, util.TrueValue, strconv.Quote(utilTypeCall)),
-							generateRoutingUtilMediaType("email", maxCapacity0, util.TrueValue, strconv.Quote(utilTypeCall)),
-							generateRoutingUtilMediaType("message", maxCapacity0, util.TrueValue, strconv.Quote(utilTypeCall)),
-							generateLabelUtilization(redLabelResource, maxCapacity0),
-							generateLabelUtilization(blueLabelResource, maxCapacity0, redLabelResource),
+							routing_utilization.generateRoutingUtilMediaType("call", maxCapacity0, util.TrueValue, strconv.Quote(utilTypeEmail)),
+							routing_utilization.generateRoutingUtilMediaType("callback", maxCapacity0, util.TrueValue, strconv.Quote(utilTypeCall)),
+							routing_utilization.generateRoutingUtilMediaType("chat", maxCapacity0, util.TrueValue, strconv.Quote(utilTypeCall)),
+							routing_utilization.generateRoutingUtilMediaType("email", maxCapacity0, util.TrueValue, strconv.Quote(utilTypeCall)),
+							routing_utilization.generateRoutingUtilMediaType("message", maxCapacity0, util.TrueValue, strconv.Quote(utilTypeCall)),
+							routing_utilization.generateLabelUtilization(redLabelResource, maxCapacity0),
+							routing_utilization.generateLabelUtilization(blueLabelResource, maxCapacity0, redLabelResource),
 						),
 					),
 				Check: resource.ComposeTestCheckFunc(

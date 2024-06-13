@@ -7,6 +7,7 @@ import (
 	"log"
 	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/routing_utilization"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"terraform-provider-genesyscloud/genesyscloud/validators"
@@ -28,9 +29,9 @@ import (
 )
 
 type AgentUtilizationWithLabels struct {
-	Utilization       map[string]MediaUtilization `json:"utilization"`
-	LabelUtilizations map[string]LabelUtilization `json:"labelUtilizations"`
-	Level             string                      `json:"level"`
+	Utilization       map[string]routing_utilization.MediaUtilization `json:"utilization"`
+	LabelUtilizations map[string]routing_utilization.LabelUtilization `json:"labelUtilizations"`
+	Level             string                                          `json:"level"`
 }
 
 var (
@@ -377,7 +378,7 @@ func ResourceUser() *schema.Resource {
 							Optional:    true,
 							Computed:    true,
 							ConfigMode:  schema.SchemaConfigModeAttr,
-							Elem:        utilizationSettingsResource,
+							Elem:        routing_utilization.UtilizationSettingsResource,
 						},
 						"callback": {
 							Description: "Callback media settings. If not set, this reverts to the default media type settings.",
@@ -386,7 +387,7 @@ func ResourceUser() *schema.Resource {
 							Optional:    true,
 							Computed:    true,
 							ConfigMode:  schema.SchemaConfigModeAttr,
-							Elem:        utilizationSettingsResource,
+							Elem:        routing_utilization.UtilizationSettingsResource,
 						},
 						"message": {
 							Description: "Message media settings. If not set, this reverts to the default media type settings.",
@@ -395,7 +396,7 @@ func ResourceUser() *schema.Resource {
 							Optional:    true,
 							Computed:    true,
 							ConfigMode:  schema.SchemaConfigModeAttr,
-							Elem:        utilizationSettingsResource,
+							Elem:        routing_utilization.UtilizationSettingsResource,
 						},
 						"email": {
 							Description: "Email media settings. If not set, this reverts to the default media type settings.",
@@ -404,7 +405,7 @@ func ResourceUser() *schema.Resource {
 							Optional:    true,
 							Computed:    true,
 							ConfigMode:  schema.SchemaConfigModeAttr,
-							Elem:        utilizationSettingsResource,
+							Elem:        routing_utilization.UtilizationSettingsResource,
 						},
 						"chat": {
 							Description: "Chat media settings. If not set, this reverts to the default media type settings.",
@@ -413,7 +414,7 @@ func ResourceUser() *schema.Resource {
 							Optional:    true,
 							Computed:    true,
 							ConfigMode:  schema.SchemaConfigModeAttr,
-							Elem:        utilizationSettingsResource,
+							Elem:        routing_utilization.UtilizationSettingsResource,
 						},
 						"label_utilizations": {
 							Description: "Label utilization settings. If not set, default label settings will be applied. This is in PREVIEW and should not be used unless the feature is available to your organization.",
@@ -421,7 +422,7 @@ func ResourceUser() *schema.Resource {
 							Optional:    true,
 							Computed:    true,
 							ConfigMode:  schema.SchemaConfigModeAttr,
-							Elem:        utilizationLabelResource,
+							Elem:        routing_utilization.UtilizationLabelResource,
 						},
 					},
 				},
@@ -1050,7 +1051,7 @@ func readUserRoutingUtilization(d *schema.ResourceData, sdkConfig *platformclien
 	apiClient := &routingAPI.Configuration.APIClient
 
 	path := fmt.Sprintf("%s/api/v2/routing/users/%s/utilization", routingAPI.Configuration.BasePath, d.Id())
-	headerParams := buildHeaderParams(routingAPI)
+	headerParams := BuildHeaderParams(routingAPI)
 	response, err := apiClient.CallAPI(path, "GET", nil, headerParams, nil, nil, "", nil)
 
 	if err != nil {
@@ -1073,9 +1074,9 @@ func readUserRoutingUtilization(d *schema.ResourceData, sdkConfig *platformclien
 		allSettings := map[string]interface{}{}
 
 		if agentUtilization.Utilization != nil {
-			for sdkType, schemaType := range utilizationMediaTypes {
+			for sdkType, schemaType := range routing_utilization.UtilizationMediaTypes {
 				if mediaSettings, ok := agentUtilization.Utilization[sdkType]; ok {
-					allSettings[schemaType] = flattenUtilizationSetting(mediaSettings)
+					allSettings[schemaType] = routing_utilization.FlattenUtilizationSetting(mediaSettings)
 				}
 			}
 		}
@@ -1087,7 +1088,7 @@ func readUserRoutingUtilization(d *schema.ResourceData, sdkConfig *platformclien
 				originalLabelUtilizations := originalSettings["label_utilizations"].([]interface{})
 
 				// Only add to the state the configured labels, in the configured order, but not any extras, to help terraform with matching new and old state.
-				filteredLabelUtilizations := filterAndFlattenLabelUtilizations(agentUtilization.LabelUtilizations, originalLabelUtilizations)
+				filteredLabelUtilizations := routing_utilization.FilterAndFlattenLabelUtilizations(agentUtilization.LabelUtilizations, originalLabelUtilizations)
 
 				allSettings["label_utilizations"] = filteredLabelUtilizations
 			} else {
@@ -1293,16 +1294,16 @@ func updateUserRoutingUtilization(d *schema.ResourceData, usersAPI *platformclie
 					apiClient := &routingAPI.Configuration.APIClient
 
 					path := fmt.Sprintf("%s/api/v2/routing/users/%s/utilization", routingAPI.Configuration.BasePath, d.Id())
-					headerParams := buildHeaderParams(routingAPI)
+					headerParams := BuildHeaderParams(routingAPI)
 					requestPayload := make(map[string]interface{})
 					requestPayload["utilization"] = buildMediaTypeUtilizations(allSettings)
-					requestPayload["labelUtilizations"] = buildLabelUtilizationsRequest(labelUtilizations)
+					requestPayload["labelUtilizations"] = routing_utilization.BuildLabelUtilizationsRequest(labelUtilizations)
 					_, err = apiClient.CallAPI(path, "PUT", requestPayload, headerParams, nil, nil, "", nil)
 				} else {
 					sdkSettings := make(map[string]platformclientv2.Mediautilization)
-					for sdkType, schemaType := range utilizationMediaTypes {
+					for sdkType, schemaType := range routing_utilization.UtilizationMediaTypes {
 						if mediaSettings, ok := allSettings[schemaType]; ok && len(mediaSettings.([]interface{})) > 0 {
-							sdkSettings[sdkType] = buildSdkMediaUtilization(mediaSettings.([]interface{}))
+							sdkSettings[sdkType] = routing_utilization.BuildSdkMediaUtilization(mediaSettings.([]interface{}))
 						}
 					}
 
@@ -1391,10 +1392,10 @@ func flattenUserCertifications(certs *[]string) *schema.Set {
 func buildMediaTypeUtilizations(allUtilizations map[string]interface{}) *map[string]platformclientv2.Mediautilization {
 	settings := make(map[string]platformclientv2.Mediautilization)
 
-	for sdkType, schemaType := range utilizationMediaTypes {
+	for sdkType, schemaType := range routing_utilization.UtilizationMediaTypes {
 		mediaSettings := allUtilizations[schemaType].([]interface{})
 		if mediaSettings != nil && len(mediaSettings) > 0 {
-			settings[sdkType] = buildSdkMediaUtilization(mediaSettings)
+			settings[sdkType] = routing_utilization.BuildSdkMediaUtilization(mediaSettings)
 		}
 	}
 

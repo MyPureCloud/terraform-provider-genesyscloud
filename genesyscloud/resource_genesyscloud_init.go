@@ -2,6 +2,7 @@ package genesyscloud
 
 import (
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
+	"terraform-provider-genesyscloud/genesyscloud/routing_utilization"
 )
 
 func SetRegistrar(l registrar.Registrar) {
@@ -93,7 +94,7 @@ func registerExporters(l registrar.Registrar) {
 	l.RegisterExporter("genesyscloud_routing_language", RoutingLanguageExporter())
 	l.RegisterExporter("genesyscloud_routing_skill", RoutingSkillExporter())
 	l.RegisterExporter("genesyscloud_routing_skill_group", ResourceSkillGroupExporter())
-	l.RegisterExporter("genesyscloud_routing_utilization", RoutingUtilizationExporter())
+	l.RegisterExporter("genesyscloud_routing_utilization", routing_utilization.RoutingUtilizationExporter())
 	l.RegisterExporter("genesyscloud_routing_utilization_label", RoutingUtilizationLabelExporter())
 	l.RegisterExporter("genesyscloud_routing_wrapupcode", RoutingWrapupCodeExporter())
 	l.RegisterExporter("genesyscloud_user", UserExporter())
