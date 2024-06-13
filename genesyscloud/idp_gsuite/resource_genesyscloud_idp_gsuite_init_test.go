@@ -8,19 +8,15 @@ import (
 )
 
 /*
-   The genesyscloud_idp_gsuite_init_test.go file is used to initialize the data sources and resources
+   The genesyscloud_idp_gsuite_init_test.go file is used to initialize the resources
    used in testing the idp_gsuite resource.
 */
-
-// providerDataSources holds a map of all registered datasources
-var providerDataSources map[string]*schema.Resource
 
 // providerResources holds a map of all registered resources
 var providerResources map[string]*schema.Resource
 
 type registerTestInstance struct {
-	resourceMapMutex   sync.RWMutex
-	datasourceMapMutex sync.RWMutex
+	resourceMapMutex sync.RWMutex
 }
 
 // registerTestResources registers all resources used in the tests
@@ -31,9 +27,8 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources[resourceName] = ResourceIdpGsuite()
 }
 
-// initTestResources initializes all test_data resources and data sources.
+// initTestResources initializes all test_data resources.
 func initTestResources() {
-	providerDataSources = make(map[string]*schema.Resource)
 	providerResources = make(map[string]*schema.Resource)
 
 	regInstance := &registerTestInstance{}

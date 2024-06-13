@@ -58,6 +58,8 @@ func readIdpGsuite(ctx context.Context, d *schema.ResourceData, meta interface{}
 
 	log.Printf("Reading idp gsuite")
 
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceIdpGsuite(), constants.DefaultConsistencyChecks, resourceName)
+
 	return util.WithRetriesForReadCustomTimeout(ctx, d.Timeout(schema.TimeoutRead), d, func() *retry.RetryError {
 		gSuite, resp, getErr := proxy.getIdpGsuite(ctx)
 		if getErr != nil {
@@ -67,8 +69,6 @@ func readIdpGsuite(ctx context.Context, d *schema.ResourceData, meta interface{}
 			}
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read IDP GSuite: %s", getErr), resp))
 		}
-
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceIdpGsuite(), constants.DefaultConsistencyChecks, "genesyscloud_idp_gsuite")
 
 		resourcedata.SetNillableValue(d, "disabled", gSuite.Disabled)
 		resourcedata.SetNillableValue(d, "issuer_uri", gSuite.IssuerURI)
