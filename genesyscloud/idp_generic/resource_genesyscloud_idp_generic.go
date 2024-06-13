@@ -58,6 +58,8 @@ func readIdpGeneric(ctx context.Context, d *schema.ResourceData, meta interface{
 
 	log.Printf("Reading idp generic %s", d.Id())
 
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceIdpGeneric(), constants.DefaultConsistencyChecks, resourceName)
+
 	return util.WithRetriesForReadCustomTimeout(ctx, d.Timeout(schema.TimeoutRead), d, func() *retry.RetryError {
 		genericSAML, resp, getErr := proxy.getIdpGeneric(ctx)
 		if getErr != nil {
@@ -65,10 +67,8 @@ func readIdpGeneric(ctx context.Context, d *schema.ResourceData, meta interface{
 				createIdpGeneric(ctx, d, meta)
 				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read IDP Generic: %s", getErr), resp))
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_idp_generic", fmt.Sprintf("Failed to read IDP Generic: %s", getErr), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read IDP Generic: %s", getErr), resp))
 		}
-
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceIdpGeneric(), constants.DefaultConsistencyChecks, "genesyscloud_idp_generic")
 
 		resourcedata.SetNillableValue(d, "name", genericSAML.Name)
 		resourcedata.SetNillableValue(d, "disabled", genericSAML.Disabled)
@@ -139,9 +139,9 @@ func deleteIdpGeneric(ctx context.Context, d *schema.ResourceData, meta interfac
 				log.Printf("Deleted IDP Generic")
 				return nil
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_idp_generic", fmt.Sprintf("Error deleting IDP Generic: %s", err), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Error deleting IDP Generic: %s", err), resp))
 		}
-		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_idp_generic", fmt.Sprintf("IDP Generic still exists"), resp))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("IDP Generic still exists"), resp))
 	})
 }
 
