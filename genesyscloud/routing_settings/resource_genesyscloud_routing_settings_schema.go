@@ -11,7 +11,6 @@ var resourceName = "genesyscloud_routing_settings"
 
 func SetRegistrar(regInstance registrar.Registrar) {
 	regInstance.RegisterResource(resourceName, ResourceRoutingSettings())
-	regInstance.RegisterDataSource(resourceName, dataSourceRoutingSettings())
 	regInstance.RegisterExporter(resourceName, RoutingSettingsExporter())
 }
 
@@ -95,18 +94,8 @@ func ResourceRoutingSettings() *schema.Resource {
 	}
 }
 
-func dataSourceRoutingSettings() *schema.Resource {
-	return &schema.Resource{
-		Description:   "An organization's routing settings",
-		ReadContext:   provider.ReadWithPooledClient(dataSourceRoutingSettingsRead),
-		SchemaVersion: 1,
-		Schema:        ResourceRoutingSettings().Schema,
-	}
-}
-
 func RoutingSettingsExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: provider.GetAllWithPooledClient(getAllRoutingSettings),
-		RefAttrs:         map[string]*resourceExporter.RefAttrSettings{}, // No references
 	}
 }

@@ -36,9 +36,9 @@ func createRoutingSettings(ctx context.Context, d *schema.ResourceData, meta int
 func readRoutingSettings(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getRoutingSettingsProxy(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceRoutingSettings(), constants.DefaultConsistencyChecks, "genesyscloud_routing_settings")
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceRoutingSettings(), constants.DefaultConsistencyChecks, resourceName)
 
-	log.Printf("Reading setting: %s", d.Id())
+	log.Printf("Reading routing settings: %s", d.Id())
 
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		settings, resp, getErr := proxy.getRoutingSettings(ctx)
@@ -187,28 +187,22 @@ func updateTranscription(ctx context.Context, d *schema.ResourceData, proxy *rou
 		if transcriptionList := transcriptionConfig.([]interface{}); len(transcriptionList) > 0 {
 			transcriptionMap := transcriptionList[0].(map[string]interface{})
 
-			if transcriptionMap["transcription"] != nil {
-				transcription := transcriptionMap["transcription"].(string)
+			if transcription, ok := transcriptionMap["transcription"].(string); ok && transcription != "" {
 				transcriptionRequest.Transcription = &transcription
 			}
-			if transcriptionMap["transcription_confidence_threshold"] != nil {
-				transcriptionConfidenceThreshold := transcriptionMap["transcription_confidence_threshold"].(int)
+			if transcriptionConfidenceThreshold, ok := transcriptionMap["transcription_confidence_threshold"].(int); ok {
 				transcriptionRequest.TranscriptionConfidenceThreshold = &transcriptionConfidenceThreshold
 			}
-			if transcriptionMap["low_latency_transcription_enabled"] != nil {
-				lowLatencyTranscriptionEnabled := transcriptionMap["low_latency_transcription_enabled"].(bool)
+			if lowLatencyTranscriptionEnabled, ok := transcriptionMap["low_latency_transcription_enabled"].(bool); ok {
 				transcriptionRequest.LowLatencyTranscriptionEnabled = &lowLatencyTranscriptionEnabled
 			}
-			if transcriptionMap["content_search_enabled"] != nil {
-				contentSearchEnabled := transcriptionMap["content_search_enabled"].(bool)
+			if contentSearchEnabled, ok := transcriptionMap["content_search_enabled"].(bool); ok {
 				transcriptionRequest.ContentSearchEnabled = &contentSearchEnabled
 			}
-			if transcriptionMap["pci_dss_redaction_enabled"] != nil {
-				pciEnabled := transcriptionMap["pci_dss_redaction_enabled"].(bool)
+			if pciEnabled, ok := transcriptionMap["pci_dss_redaction_enabled"].(bool); ok {
 				transcriptionRequest.PciDssRedactionEnabled = &pciEnabled
 			}
-			if transcriptionMap["pii_redaction_enabled"] != nil {
-				piiEnabled := transcriptionMap["pii_redaction_enabled"].(bool)
+			if piiEnabled, ok := transcriptionMap["pii_redaction_enabled"].(bool); ok {
 				transcriptionRequest.PiiRedactionEnabled = &piiEnabled
 			}
 
