@@ -3,7 +3,7 @@ package idp_adfs
 import (
 	"context"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v130/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v131/platformclientv2"
 )
 
 /*
