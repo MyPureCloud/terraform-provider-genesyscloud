@@ -483,7 +483,16 @@ func (g *GenesysCloudResourceExporter) generateOutputFiles() diag.Diagnostics {
 		}
 	}
 
-	if _, ok := g.d.GetOk("compress"); ok { //if true, compress directory name of where the export is going to occur
+	err = generateZipForExporter(g)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func generateZipForExporter(g *GenesysCloudResourceExporter) diag.Diagnostics {
+	if compress := g.d.Get("compress").(bool); compress { //if true, compress directory name of where the export is going to occur
 		// read all the files
 		var files []fileMeta
 		ferr := filepath.Walk(g.exportDirPath, func(path string, info os.FileInfo, ferr error) error {
@@ -491,12 +500,12 @@ func (g *GenesysCloudResourceExporter) generateOutputFiles() diag.Diagnostics {
 			return nil
 		})
 		if ferr != nil {
-			log.Fatalln(ferr)
+			return diag.Errorf("Failed to fetch file path %s", ferr)
 		}
 		// create a zip
 		archive, ferr := os.Create("../archive.zip")
 		if ferr != nil {
-			panic(ferr)
+			return diag.Errorf("Failed to create zip %s", ferr)
 		}
 		defer archive.Close()
 		zipWriter := zip.NewWriter(archive)
@@ -507,23 +516,21 @@ func (g *GenesysCloudResourceExporter) generateOutputFiles() diag.Diagnostics {
 
 				w, ferr := zipWriter.Create(path.Base(fPath))
 				if ferr != nil {
-					log.Fatalln(ferr)
+					return diag.Errorf("Failed to create base path for zip %s", ferr)
 				}
 
 				file, ferr := os.Open(f.Path)
 				if ferr != nil {
-					log.Fatalln(ferr)
+					return diag.Errorf("Failed to open the original file %s", ferr)
 				}
 				defer file.Close()
 
 				if _, ferr = io.Copy(w, file); ferr != nil {
-					log.Fatalln(ferr)
+					return diag.Errorf("Failed to copy the file to zip %s", ferr)
 				}
 			}
 		}
 		zipWriter.Close()
-	} else {
-		log.Printf("The compress flag is false")
 	}
 
 	return nil
