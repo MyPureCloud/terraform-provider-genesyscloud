@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"terraform-provider-genesyscloud/genesyscloud/util/constants"
@@ -24,8 +25,28 @@ import (
 )
 
 const (
+	V1         = "v1"
+	V1HTTP     = "v1-http"
 	V2         = "v2"
 	THIRDPARTY = "third-party"
+)
+
+var (
+	validClientTypes           = []string{V1, V1HTTP, V2, THIRDPARTY}
+	clientConfigSchemaResource = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"webchat_skin": {
+				Description: "Skin for the webchat user. (basic, modern-caret-skin)",
+				Type:        schema.TypeString,
+				Optional:    true,
+			},
+			"authentication_url": {
+				Description: "Url endpoint to perform_authentication",
+				Type:        schema.TypeString,
+				Optional:    true,
+			},
+		},
+	}
 )
 
 func getAllWidgetDeployments(_ context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
@@ -97,10 +118,19 @@ func ResourceWidgetDeployment() *schema.Resource {
 				Optional:    true,
 			},
 			"client_type": {
-				Description:  "The type of display widget for which this Deployment is configured, which controls the administrator settings shown.Valid values: v1, v2, v1-http, third-party.",
+				Description:  "The type of display widget for which this Deployment is configured, which controls the administrator settings shown. Valid values: " + strings.Join(validClientTypes, ", "),
 				Type:         schema.TypeString,
 				Required:     true,
-				ValidateFunc: validation.StringInSlice([]string{V2, THIRDPARTY}, false),
+				ValidateFunc: validation.StringInSlice(validClientTypes, false),
+			},
+			"client_config": {
+				Description: "The V1 and V1-http client configuration options that should be made available to the clients of this Deployment.",
+				Type:        schema.TypeSet,
+				MaxItems:    1,
+				Optional:    true,
+				// when this field is removed, V1 and V1HTTP should also be removed from validClientTypes list
+				Deprecated: "This field is inactive and will be removed entirely in a later version. Please use `v2_client_config` or `third_party_client_config` instead.",
+				Elem:       clientConfigSchemaResource,
 			},
 			"v2_client_config": {
 				Description: "The v2 client configuration options that should be made available to the clients of this Deployment.",
