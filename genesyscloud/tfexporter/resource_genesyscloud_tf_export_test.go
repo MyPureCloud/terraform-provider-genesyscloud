@@ -321,6 +321,9 @@ func TestAccResourceTfExportSplitFilesAsJSON(t *testing.T) {
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
+				PreConfig: func() {
+					time.Sleep(30 * time.Second)
+				},
 				Config: config,
 				Check: resource.ComposeTestCheckFunc(
 					validateFileCreated(expectedFilesPath[0]),
@@ -1129,6 +1132,9 @@ func TestAccResourceTfExportUserPromptExportAudioFile(t *testing.T) {
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
+				PreConfig: func() {
+					time.Sleep(30 * time.Second)
+				},
 				Config: userPrompt.GenerateUserPromptResource(&userPrompt.UserPromptStruct{
 					ResourceID:  userPromptResourceId,
 					Name:        userPromptName,
