@@ -679,17 +679,6 @@ pipeline {
            }
         }
     }
-
- 
- def extractReason(String log) {
-    // Extract reason from the log
-    def reason = ""
-    def reasonPattern = /message="([^"]*)">/
-    def matcher = log =~ reasonPattern
-    if (matcher.find()) {
-        reason = matcher.group(1).trim()
-    }
-    return reason
 }
  
  def extractReason(String log) {
@@ -702,7 +691,6 @@ pipeline {
     }
     return reason
 }
-
 
 
     

@@ -111,10 +111,6 @@ func TestAccResourceRoutingQueueBasic(t *testing.T) {
 					validateBullseyeSettings(queueResource1, 1, alertTimeout1, "genesyscloud_routing_skill."+queueSkillResource),
 					validateRoutingRules(queueResource1, 0, routingRuleOpAny, "50", "5"),
 					validateAgentOwnedRouting(queueResource1, "agent_owned_routing", util.TrueValue, callbackHours, callbackHours),
-					func(s *terraform.State) error {
-						time.Sleep(30 * time.Second) // Wait for 30 seconds for resources to get deleted properly
-						return nil
-					},
 				),
 			},
 			{
@@ -685,9 +681,6 @@ func TestAccResourceRoutingQueueMembers(t *testing.T) {
 				),
 			},
 			{
-				PreConfig: func() {
-					time.Sleep(45 * time.Second)
-				},
 				// Update with another queue member and modify rings
 				Config: genesyscloud.GenerateBasicUserResource(
 					queueMemberResource1,
@@ -1454,10 +1447,6 @@ func TestAccResourceRoutingQueueSkillGroups(t *testing.T) {
 						GenerateBullseyeSettings("10")),
 				Check: resource.ComposeTestCheckFunc(
 					validateGroups("genesyscloud_routing_queue."+queueResource, "genesyscloud_routing_skill_group."+skillGroupResource, "genesyscloud_group."+groupResource),
-					func(s *terraform.State) error {
-						time.Sleep(45 * time.Second) // Wait for 45 seconds for resource to get deleted properly
-						return nil
-					},
 				),
 			},
 			{
