@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
+	routingUtilizationLabel "terraform-provider-genesyscloud/genesyscloud/routing_utilization_label"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 	"time"
@@ -108,7 +109,10 @@ func TestAccResourceRoutingUtilizationWithLabels(t *testing.T) {
 		greenLabelName     = "Terraform Green Label" + uuid.NewString()
 	)
 
-	CleanupRoutingUtilizationLabel()
+	err := CleanupRoutingUtilizationLabel()
+	if err != nil {
+		return
+	}
 
 	resource.Test(t, resource.TestCase{
 		PreCheck: func() {
@@ -130,8 +134,8 @@ func TestAccResourceRoutingUtilizationWithLabels(t *testing.T) {
 						GenerateRoutingUtilMediaType("chat", maxCapacity1, util.FalseValue),
 						GenerateRoutingUtilMediaType("email", maxCapacity1, util.FalseValue),
 						GenerateRoutingUtilMediaType("message", maxCapacity1, util.FalseValue),
-						generateLabelUtilization(redLabelResource, maxCapacity1),
-						generateLabelUtilization(blueLabelResource, maxCapacity1, redLabelResource),
+						routingUtilizationLabel.GenerateLabelUtilization(redLabelResource, maxCapacity1),
+						routingUtilizationLabel.GenerateLabelUtilization(blueLabelResource, maxCapacity1, redLabelResource),
 					),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_routing_utilization.routing-util", "call.0.maximum_capacity", maxCapacity1),
@@ -166,8 +170,8 @@ func TestAccResourceRoutingUtilizationWithLabels(t *testing.T) {
 						GenerateRoutingUtilMediaType("chat", maxCapacity2, util.TrueValue, strconv.Quote(utilTypeCall)),
 						GenerateRoutingUtilMediaType("email", maxCapacity2, util.TrueValue, strconv.Quote(utilTypeCall)),
 						GenerateRoutingUtilMediaType("message", maxCapacity2, util.TrueValue, strconv.Quote(utilTypeCall)),
-						generateLabelUtilization(redLabelResource, maxCapacity2),
-						generateLabelUtilization(blueLabelResource, maxCapacity2, redLabelResource),
+						routingUtilizationLabel.GenerateLabelUtilization(redLabelResource, maxCapacity2),
+						routingUtilizationLabel.GenerateLabelUtilization(blueLabelResource, maxCapacity2, redLabelResource),
 					),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_routing_utilization.routing-util", "call.0.maximum_capacity", maxCapacity2),
@@ -200,8 +204,8 @@ func TestAccResourceRoutingUtilizationWithLabels(t *testing.T) {
 						GenerateRoutingUtilMediaType("chat", maxCapacity2, util.TrueValue, strconv.Quote(utilTypeCall)),
 						GenerateRoutingUtilMediaType("email", maxCapacity2, util.TrueValue, strconv.Quote(utilTypeCall)),
 						GenerateRoutingUtilMediaType("message", maxCapacity2, util.TrueValue, strconv.Quote(utilTypeCall)),
-						generateLabelUtilization(redLabelResource, maxCapacity2),
-						generateLabelUtilization(blueLabelResource, maxCapacity2, redLabelResource),
+						routingUtilizationLabel.GenerateLabelUtilization(redLabelResource, maxCapacity2),
+						routingUtilizationLabel.GenerateLabelUtilization(blueLabelResource, maxCapacity2, redLabelResource),
 					),
 			},
 			{
@@ -212,7 +216,7 @@ func TestAccResourceRoutingUtilizationWithLabels(t *testing.T) {
 						GenerateRoutingUtilMediaType("chat", maxCapacity2, util.TrueValue, strconv.Quote(utilTypeCall)),
 						GenerateRoutingUtilMediaType("email", maxCapacity2, util.TrueValue, strconv.Quote(utilTypeCall)),
 						GenerateRoutingUtilMediaType("message", maxCapacity2, util.TrueValue, strconv.Quote(utilTypeCall)),
-						generateLabelUtilization(redLabelResource, maxCapacity2),
+						routingUtilizationLabel.GenerateLabelUtilization(redLabelResource, maxCapacity2),
 					),
 			},
 			{
@@ -271,37 +275,6 @@ func assertAttributeEquals(state *terraform.InstanceState, attributeName, expect
 	if state.Attributes[attributeName] != expectedValue {
 		*errors = append(*errors, fmt.Sprintf("expected %s to be %s, actual: %s", attributeName, expectedValue, state.Attributes[attributeName]))
 	}
-}
-
-func GenerateRoutingUtilMediaType(
-	mediaType string,
-	maxCapacity string,
-	includeNonAcd string,
-	interruptTypes ...string) string {
-	return fmt.Sprintf(`%s {
-		maximum_capacity = %s
-		include_non_acd = %s
-		interruptible_media_types = [%s]
-	}
-	`, mediaType, maxCapacity, includeNonAcd, strings.Join(interruptTypes, ","))
-}
-
-func generateLabelUtilization(
-	labelResource string,
-	maxCapacity string,
-	interruptingLabelResourceNames ...string) string {
-
-	interruptingLabelResources := make([]string, 0)
-	for _, resourceName := range interruptingLabelResourceNames {
-		interruptingLabelResources = append(interruptingLabelResources, "genesyscloud_routing_utilization_label."+resourceName+".id")
-	}
-
-	return fmt.Sprintf(`label_utilizations {
-		label_id = genesyscloud_routing_utilization_label.%s.id
-		maximum_capacity = %s
-		interrupting_label_ids = [%s]
-	}
-	`, labelResource, maxCapacity, strings.Join(interruptingLabelResources, ","))
 }
 
 func generateRoutingUtilizationResource(attributes ...string) string {

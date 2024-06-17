@@ -3,7 +3,7 @@ package routing_utilization
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"sync"
-	"terraform-provider-genesyscloud/genesyscloud"
+	"terraform-provider-genesyscloud/genesyscloud/routing_utilization_label"
 	"testing"
 )
 
@@ -35,14 +35,14 @@ func initTestResources() {
 
 	regInstance.registerTestResources()
 
-	providerResources["genesyscloud_routing_utilization_label"] = genesyscloud.ResourceRoutingUtilizationLabel()
+	providerResources["genesyscloud_routing_utilization_label"] = routing_utilization_label.ResourceRoutingUtilizationLabel()
 }
 
 // TestMain is a "setup" function called by the testing framework when run the test
 func TestMain(m *testing.M) {
-	// Run setup function before starting the test suite for routing_email_route package
+	// Run setup function before starting the test suite for the package
 	initTestResources()
 
-	// Run the test suite for the routing_email_route package
+	// Run the test suite for the package
 	m.Run()
 }

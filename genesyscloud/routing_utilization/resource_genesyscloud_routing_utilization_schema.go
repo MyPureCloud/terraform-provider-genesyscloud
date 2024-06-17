@@ -7,10 +7,17 @@ import (
 	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
 	"time"
 )
 
 const resourceName = "genesyscloud_routing_utilization"
+
+// SetRegistrar registers all the resources and exporters in the package
+func SetRegistrar(regInstance registrar.Registrar) {
+	regInstance.RegisterResource(resourceName, ResourceRoutingUtilization())
+	regInstance.RegisterExporter(resourceName, RoutingUtilizationExporter())
+}
 
 type MediaUtilization struct {
 	MaximumCapacity         int32    `json:"maximumCapacity"`
@@ -158,4 +165,17 @@ func RoutingUtilizationExporter() *resourceExporter.ResourceExporter {
 		RefAttrs:         map[string]*resourceExporter.RefAttrSettings{}, // No references
 		AllowZeroValues:  []string{"maximum_capacity"},
 	}
+}
+
+func GenerateRoutingUtilMediaType(
+	mediaType string,
+	maxCapacity string,
+	includeNonAcd string,
+	interruptTypes ...string) string {
+	return fmt.Sprintf(`%s {
+		maximum_capacity = %s
+		include_non_acd = %s
+		interruptible_media_types = [%s]
+	}
+	`, mediaType, maxCapacity, includeNonAcd, strings.Join(interruptTypes, ","))
 }

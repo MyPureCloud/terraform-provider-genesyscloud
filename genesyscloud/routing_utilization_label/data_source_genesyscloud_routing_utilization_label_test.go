@@ -1,4 +1,4 @@
-package genesyscloud
+package routing_utilization_label
 
 import (
 	"fmt"
@@ -20,7 +20,7 @@ func TestAccDataSourceRoutingUtilizationLabel(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck: func() {
 			util.TestAccPreCheck(t)
-			if err := checkIfLabelsAreEnabled(); err != nil {
+			if err := CheckIfLabelsAreEnabled(); err != nil {
 				t.Skipf("%v", err) // be sure to skip the test and not fail it
 			}
 		},
