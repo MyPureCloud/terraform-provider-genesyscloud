@@ -327,6 +327,7 @@ func (g *GenesysCloudResourceExporter) retrieveGenesysCloudObjectInstances() dia
 		go func(resType string, exporter *resourceExporter.ResourceExporter) {
 			defer wg.Done()
 
+			log.Printf(`Getting exported resources for [%s}]`, resType)
 			typeResources, err := g.getResourcesForType(resType, g.provider, exporter, g.meta)
 
 			if err != nil {
@@ -834,7 +835,7 @@ func (g *GenesysCloudResourceExporter) buildSanitizedResourceMaps(exporters map[
 			}
 			if containsPermissionsErrorOnly(err) && logErrors {
 				log.Printf("%v", err[0].Summary)
-				log.Print("log_permission_errors = true. Resuming export...")
+				log.Printf("Logging permission error for %s. Resuming export...", name)
 				return
 			}
 			if err != nil {
@@ -854,6 +855,7 @@ func (g *GenesysCloudResourceExporter) buildSanitizedResourceMaps(exporters map[
 
 	go func() {
 		wg.Wait()
+		log.Print(`Finished building sanitized resource maps`)
 		close(wgDone)
 	}()
 
