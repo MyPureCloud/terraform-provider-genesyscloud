@@ -56,10 +56,6 @@ var (
 	resourceExporters   map[string]*resourceExporter.ResourceExporter
 )
 
-var (
-	ManagedSites []string
-)
-
 type unresolvableAttributeInfo struct {
 	ResourceType string
 	ResourceName string
@@ -1609,7 +1605,7 @@ func (g *GenesysCloudResourceExporter) resourceIdExists(refID string, existingRe
 }
 
 func (g *GenesysCloudResourceExporter) isDataSource(resType string, name string) bool {
-	for _, element := range ManagedSites {
+	for _, element := range DataSourceExports {
 		if element == resType+"::"+name || fetchByRegex(element, resType, name) {
 			return true
 		}
