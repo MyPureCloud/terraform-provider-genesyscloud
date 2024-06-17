@@ -49,7 +49,8 @@ func getAllSites(ctx context.Context, sdkConfig *platformclientv2.Configuration)
 		// When exporting managed sites, they must automatically be exported as data
 		// Managed sites are added to tfexporter.ManagedSites and formatted correctly for export as data
 		if tfexporter_state.IsExporterActive() {
-			tfexporter.ManagedSites = []string{resourceName + "::" + strings.ReplaceAll(*managedSite.Name, " ", "_")}
+			managedSiteDataSource := resourceName + "::" + strings.ReplaceAll(*managedSite.Name, " ", "_")
+			tfexporter.AddToDataSource(managedSiteDataSource)
 		}
 	}
 	return resources, nil
