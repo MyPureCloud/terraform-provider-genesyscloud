@@ -9,7 +9,10 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/group"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	routingQueue "terraform-provider-genesyscloud/genesyscloud/routing_queue"
+<<<<<<< HEAD
 	"terraform-provider-genesyscloud/genesyscloud/routing_utilization"
+=======
+>>>>>>> d72ca7db (fixing user test)
 	routingUtilizationLabel "terraform-provider-genesyscloud/genesyscloud/routing_utilization_label"
 	"testing"
 
