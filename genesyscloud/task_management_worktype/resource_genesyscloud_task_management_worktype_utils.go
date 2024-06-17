@@ -82,7 +82,7 @@ func getWorktypeupdateFromResourceData(d *schema.ResourceData, statuses *[]platf
 
 	worktype := platformclientv2.Worktypeupdate{}
 	worktype.SetField("Name", platformclientv2.String(d.Get("name").(string)))
-	if d.HasChange("Description") {
+	if d.HasChange("description") {
 		worktype.SetField("Description", platformclientv2.String(d.Get("description").(string)))
 	}
 	if d.HasChange("default_workbin_id") {
