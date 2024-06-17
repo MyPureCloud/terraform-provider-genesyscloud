@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
+	"sort"
 	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
@@ -162,7 +163,6 @@ func ResourceRoutingUtilization() *schema.Resource {
 func RoutingUtilizationExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: provider.GetAllWithPooledClient(getAllRoutingUtilization),
-		RefAttrs:         map[string]*resourceExporter.RefAttrSettings{}, // No references
 		AllowZeroValues:  []string{"maximum_capacity"},
 	}
 }
@@ -178,4 +178,13 @@ func GenerateRoutingUtilMediaType(
 		interruptible_media_types = [%s]
 	}
 	`, mediaType, maxCapacity, includeNonAcd, strings.Join(interruptTypes, ","))
+}
+
+func getSdkUtilizationTypes() []string {
+	types := make([]string, 0, len(UtilizationMediaTypes))
+	for t := range UtilizationMediaTypes {
+		types = append(types, t)
+	}
+	sort.Strings(types)
+	return types
 }

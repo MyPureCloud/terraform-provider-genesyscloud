@@ -73,19 +73,11 @@ func getRoutingUtilizationFn(ctx context.Context, p *routingUtilizationProxy) (*
 }
 
 func updateRoutingUtilizationFn(ctx context.Context, p *routingUtilizationProxy, utilizationRequest *platformclientv2.Utilizationrequest) (*platformclientv2.Utilizationresponse, *platformclientv2.APIResponse, error) {
-	utilization, resp, err := p.routingApi.PutRoutingUtilization(*utilizationRequest)
-	if err != nil {
-		return nil, resp, fmt.Errorf("failed to update routing utilization | error: %s", err)
-	}
-	return utilization, resp, nil
+	return p.routingApi.PutRoutingUtilization(*utilizationRequest)
 }
 
 func deleteRoutingUtilizationFn(ctx context.Context, p *routingUtilizationProxy) (*platformclientv2.APIResponse, error) {
-	resp, err := p.routingApi.DeleteRoutingUtilization()
-	if err != nil {
-		return resp, fmt.Errorf("failed to delete routing utilization | error: %s", err)
-	}
-	return resp, nil
+	return p.routingApi.DeleteRoutingUtilization()
 }
 
 // If the resource has label(s), calls the Utilization API directly.

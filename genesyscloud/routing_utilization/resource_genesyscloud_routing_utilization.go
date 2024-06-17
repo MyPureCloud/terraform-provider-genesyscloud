@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"log"
-	"sort"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"terraform-provider-genesyscloud/genesyscloud/util/constants"
@@ -18,15 +17,6 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v130/platformclientv2"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 )
-
-func getSdkUtilizationTypes() []string {
-	types := make([]string, 0, len(UtilizationMediaTypes))
-	for t := range UtilizationMediaTypes {
-		types = append(types, t)
-	}
-	sort.Strings(types)
-	return types
-}
 
 func getAllRoutingUtilization(_ context.Context, _ *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
 	// Routing utilization config always exists
@@ -61,6 +51,7 @@ func readRoutingUtilization(ctx context.Context, d *schema.ResourceData, meta in
 		}
 
 		err = json.Unmarshal(resp.RawBody, &orgUtilization)
+
 		if orgUtilization.Utilization != nil {
 			for sdkType, schemaType := range UtilizationMediaTypes {
 				if mediaSettings, ok := orgUtilization.Utilization[sdkType]; ok {
@@ -98,7 +89,6 @@ func updateRoutingUtilization(ctx context.Context, d *schema.ResourceData, meta 
 		// If the resource has label(s), calls the Utilization API directly.
 		// This code can go back to using platformclientv2's RoutingApi to make the call once label utilization is available in platformclientv2's RoutingApi.
 		if labelUtilizations != nil && len(labelUtilizations) > 0 {
-
 			resp, err := proxy.updateDirectly(ctx, d, labelUtilizations)
 			if err != nil {
 				return resp, util.BuildAPIDiagnosticError(resourceName, "Failed to update routing utilization directly", resp)

@@ -20,11 +20,11 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v130/platformclientv2"
 )
 
-func getAllRoutingUtilizationLabels(_ context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+func getAllRoutingUtilizationLabels(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
 	resources := make(resourceExporter.ResourceIDMetaMap)
 	proxy := getRoutingUtilizationProxy(clientConfig)
 
-	labels, resp, getErr := proxy.getAllRoutingUtilizationLabels("")
+	labels, resp, getErr := proxy.getAllRoutingUtilizationLabels(ctx, "")
 	if getErr != nil {
 		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get page of labels error: %s", getErr), resp)
 	}
@@ -41,7 +41,7 @@ func createRoutingUtilizationLabel(ctx context.Context, d *schema.ResourceData, 
 	proxy := getRoutingUtilizationProxy(sdkConfig)
 
 	log.Printf("Creating label %s", name)
-	label, resp, err := proxy.createRoutingUtilizationLabel(&platformclientv2.Createutilizationlabelrequest{
+	label, resp, err := proxy.createRoutingUtilizationLabel(ctx, &platformclientv2.Createutilizationlabelrequest{
 		Name: &name,
 	})
 	if err != nil {
@@ -61,7 +61,7 @@ func readRoutingUtilizationLabel(ctx context.Context, d *schema.ResourceData, me
 
 	log.Printf("Reading label %s", d.Id())
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
-		label, resp, getErr := proxy.getRoutingUtilizationLabel(d.Id())
+		label, resp, getErr := proxy.getRoutingUtilizationLabel(ctx, d.Id())
 		if getErr != nil {
 			if util.IsStatus404(resp) {
 				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read label %s | error: %s", d.Id(), getErr), resp))
@@ -84,7 +84,7 @@ func updateRoutingUtilizationLabel(ctx context.Context, d *schema.ResourceData, 
 
 	log.Printf("Updating label %s with name %s", id, name)
 
-	_, resp, err := proxy.updateRoutingUtilizationLabel(id, &platformclientv2.Updateutilizationlabelrequest{
+	_, resp, err := proxy.updateRoutingUtilizationLabel(ctx, id, &platformclientv2.Updateutilizationlabelrequest{
 		Name: &name,
 	})
 	if err != nil {
@@ -101,13 +101,13 @@ func deleteRoutingUtilizationLabel(ctx context.Context, d *schema.ResourceData, 
 	proxy := getRoutingUtilizationProxy(sdkConfig)
 
 	log.Printf("Deleting label %s", name)
-	resp, err := proxy.deleteRoutingUtilizationLabel(d.Id(), true)
+	resp, err := proxy.deleteRoutingUtilizationLabel(ctx, d.Id(), true)
 	if err != nil {
 		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete label %s error: %s", name, err), resp)
 	}
 
 	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
-		_, resp, err := proxy.getRoutingUtilizationLabel(d.Id())
+		_, resp, err := proxy.getRoutingUtilizationLabel(ctx, d.Id())
 		if err != nil {
 			if util.IsStatus404(resp) {
 				log.Printf("Deleted Routing label %s", d.Id())

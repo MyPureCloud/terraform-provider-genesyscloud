@@ -117,7 +117,7 @@ func TestAccResourceRoutingUtilizationWithLabels(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck: func() {
 			util.TestAccPreCheck(t)
-			if err := checkIfLabelsAreEnabled(); err != nil {
+			if err := routingUtilizationLabel.CheckIfLabelsAreEnabled(); err != nil {
 				t.Skipf("%v", err) // be sure to skip the test and not fail it
 			}
 		},
@@ -125,9 +125,9 @@ func TestAccResourceRoutingUtilizationWithLabels(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				// Create
-				Config: generateRoutingUtilizationLabelResource(redLabelResource, redLabelName, "") +
-					generateRoutingUtilizationLabelResource(blueLabelResource, blueLabelName, redLabelResource) +
-					generateRoutingUtilizationLabelResource(greenLabelResource, greenLabelName, blueLabelResource) +
+				Config: routingUtilizationLabel.GenerateRoutingUtilizationLabelResource(redLabelResource, redLabelName, "") +
+					routingUtilizationLabel.GenerateRoutingUtilizationLabelResource(blueLabelResource, blueLabelName, redLabelResource) +
+					routingUtilizationLabel.GenerateRoutingUtilizationLabelResource(greenLabelResource, greenLabelName, blueLabelResource) +
 					generateRoutingUtilizationResource(
 						GenerateRoutingUtilMediaType("call", maxCapacity1, util.FalseValue),
 						GenerateRoutingUtilMediaType("callback", maxCapacity1, util.FalseValue),
@@ -161,9 +161,9 @@ func TestAccResourceRoutingUtilizationWithLabels(t *testing.T) {
 			},
 			{
 				// Update with a new max capacities and interruptible media types
-				Config: generateRoutingUtilizationLabelResource(redLabelResource, redLabelName, "") +
-					generateRoutingUtilizationLabelResource(blueLabelResource, blueLabelName, redLabelResource) +
-					generateRoutingUtilizationLabelResource(greenLabelResource, greenLabelName, blueLabelResource) +
+				Config: routingUtilizationLabel.GenerateRoutingUtilizationLabelResource(redLabelResource, redLabelName, "") +
+					routingUtilizationLabel.GenerateRoutingUtilizationLabelResource(blueLabelResource, blueLabelName, redLabelResource) +
+					routingUtilizationLabel.GenerateRoutingUtilizationLabelResource(greenLabelResource, greenLabelName, blueLabelResource) +
 					generateRoutingUtilizationResource(
 						GenerateRoutingUtilMediaType("call", maxCapacity2, util.TrueValue, strconv.Quote(utilTypeEmail)),
 						GenerateRoutingUtilMediaType("callback", maxCapacity2, util.TrueValue, strconv.Quote(utilTypeCall)),
@@ -196,8 +196,8 @@ func TestAccResourceRoutingUtilizationWithLabels(t *testing.T) {
 				),
 			},
 			{ //Delete one by one to avoid conflict
-				Config: generateRoutingUtilizationLabelResource(redLabelResource, redLabelName, "") +
-					generateRoutingUtilizationLabelResource(blueLabelResource, blueLabelName, redLabelResource) +
+				Config: routingUtilizationLabel.GenerateRoutingUtilizationLabelResource(redLabelResource, redLabelName, "") +
+					routingUtilizationLabel.GenerateRoutingUtilizationLabelResource(blueLabelResource, blueLabelName, redLabelResource) +
 					generateRoutingUtilizationResource(
 						GenerateRoutingUtilMediaType("call", maxCapacity2, util.TrueValue, strconv.Quote(utilTypeEmail)),
 						GenerateRoutingUtilMediaType("callback", maxCapacity2, util.TrueValue, strconv.Quote(utilTypeCall)),
@@ -209,7 +209,7 @@ func TestAccResourceRoutingUtilizationWithLabels(t *testing.T) {
 					),
 			},
 			{
-				Config: generateRoutingUtilizationLabelResource(redLabelResource, redLabelName, "") +
+				Config: routingUtilizationLabel.GenerateRoutingUtilizationLabelResource(redLabelResource, redLabelName, "") +
 					generateRoutingUtilizationResource(
 						GenerateRoutingUtilMediaType("call", maxCapacity2, util.TrueValue, strconv.Quote(utilTypeEmail)),
 						GenerateRoutingUtilMediaType("callback", maxCapacity2, util.TrueValue, strconv.Quote(utilTypeCall)),
@@ -315,34 +315,4 @@ func CleanupRoutingUtilizationLabel() error {
 			}
 		}
 	}
-}
-
-// TODO: Remove these functions when routing_utilization_label is refactored
-func generateRoutingUtilizationLabelResource(resourceID string, name string, dependsOnResource string) string {
-	dependsOn := ""
-
-	if dependsOnResource != "" {
-		dependsOn = fmt.Sprintf("depends_on=[genesyscloud_routing_utilization_label.%s]", dependsOnResource)
-	}
-
-	return fmt.Sprintf(`resource "genesyscloud_routing_utilization_label" "%s" {
-		name = "%s"
-		%s
-	}
-	`, resourceID, name, dependsOn)
-}
-
-func checkIfLabelsAreEnabled() error {
-	config, err := provider.AuthorizeSdk()
-	if err != nil {
-		return err
-	}
-
-	// remove once the feature is globally enabled
-	api := platformclientv2.NewRoutingApiWithConfig(config) // the variable sdkConfig exists at a package level in ./genesyscloud and is already authorized
-	_, resp, _ := api.GetRoutingUtilizationLabels(100, 1, "", "")
-	if resp.StatusCode == 501 {
-		return fmt.Errorf("feature is not yet implemented in this org.")
-	}
-	return nil
 }
