@@ -183,33 +183,33 @@ func readRoutingSettingsTranscription(ctx context.Context, d *schema.ResourceDat
 func updateTranscription(ctx context.Context, d *schema.ResourceData, proxy *routingSettingsProxy) diag.Diagnostics {
 	transcriptionRequest := platformclientv2.Transcriptionsettings{}
 
-	if transcriptionConfig := d.Get("transcription"); transcriptionConfig != nil {
-		if transcriptionList := transcriptionConfig.([]interface{}); len(transcriptionList) > 0 {
-			transcriptionMap := transcriptionList[0].(map[string]interface{})
+	if transcriptionConfigList, ok := d.Get("transcription").([]interface{}); ok && len(transcriptionConfigList) > 0 {
+		transcriptionMap, ok := transcriptionConfigList[0].(map[string]interface{})
+		if !ok {
+			return nil
+		}
+		if transcription, ok := transcriptionMap["transcription"].(string); ok && transcription != "" {
+			transcriptionRequest.Transcription = &transcription
+		}
+		if transcriptionConfidenceThreshold, ok := transcriptionMap["transcription_confidence_threshold"].(int); ok {
+			transcriptionRequest.TranscriptionConfidenceThreshold = &transcriptionConfidenceThreshold
+		}
+		if lowLatencyTranscriptionEnabled, ok := transcriptionMap["low_latency_transcription_enabled"].(bool); ok {
+			transcriptionRequest.LowLatencyTranscriptionEnabled = &lowLatencyTranscriptionEnabled
+		}
+		if contentSearchEnabled, ok := transcriptionMap["content_search_enabled"].(bool); ok {
+			transcriptionRequest.ContentSearchEnabled = &contentSearchEnabled
+		}
+		if pciEnabled, ok := transcriptionMap["pci_dss_redaction_enabled"].(bool); ok {
+			transcriptionRequest.PciDssRedactionEnabled = &pciEnabled
+		}
+		if piiEnabled, ok := transcriptionMap["pii_redaction_enabled"].(bool); ok {
+			transcriptionRequest.PiiRedactionEnabled = &piiEnabled
+		}
 
-			if transcription, ok := transcriptionMap["transcription"].(string); ok && transcription != "" {
-				transcriptionRequest.Transcription = &transcription
-			}
-			if transcriptionConfidenceThreshold, ok := transcriptionMap["transcription_confidence_threshold"].(int); ok {
-				transcriptionRequest.TranscriptionConfidenceThreshold = &transcriptionConfidenceThreshold
-			}
-			if lowLatencyTranscriptionEnabled, ok := transcriptionMap["low_latency_transcription_enabled"].(bool); ok {
-				transcriptionRequest.LowLatencyTranscriptionEnabled = &lowLatencyTranscriptionEnabled
-			}
-			if contentSearchEnabled, ok := transcriptionMap["content_search_enabled"].(bool); ok {
-				transcriptionRequest.ContentSearchEnabled = &contentSearchEnabled
-			}
-			if pciEnabled, ok := transcriptionMap["pci_dss_redaction_enabled"].(bool); ok {
-				transcriptionRequest.PciDssRedactionEnabled = &pciEnabled
-			}
-			if piiEnabled, ok := transcriptionMap["pii_redaction_enabled"].(bool); ok {
-				transcriptionRequest.PiiRedactionEnabled = &piiEnabled
-			}
-
-			_, resp, err := proxy.updateRoutingSettingsTranscription(ctx, transcriptionRequest)
-			if err != nil {
-				return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update Transcription for routing settings %s error: %s", d.Id(), err), resp)
-			}
+		_, resp, err := proxy.updateRoutingSettingsTranscription(ctx, transcriptionRequest)
+		if err != nil {
+			return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update Transcription for routing settings %s error: %s", d.Id(), err), resp)
 		}
 	}
 	return nil

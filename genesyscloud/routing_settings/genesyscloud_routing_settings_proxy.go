@@ -2,7 +2,6 @@ package routing_settings
 
 import (
 	"context"
-	"fmt"
 	"github.com/mypurecloud/platform-client-sdk-go/v130/platformclientv2"
 )
 
@@ -67,73 +66,45 @@ func (p *routingSettingsProxy) deleteRoutingSettings(ctx context.Context) (*plat
 }
 
 func (p *routingSettingsProxy) getRoutingSettingsContactCenter(ctx context.Context) (*platformclientv2.Contactcentersettings, *platformclientv2.APIResponse, error) {
-	return getRoutingSettingsContactCenterFn(ctx, p)
+	return p.getRoutingSettingsContactCenterAttr(ctx, p)
 }
 
 func (p *routingSettingsProxy) updateRoutingSettingsContactCenter(ctx context.Context, contactCenterSettings platformclientv2.Contactcentersettings) (*platformclientv2.APIResponse, error) {
-	return updateRoutingSettingsContactCenterFn(ctx, p, contactCenterSettings)
+	return p.updateRoutingSettingsContactCenterAttr(ctx, p, contactCenterSettings)
 }
 
 func (p *routingSettingsProxy) getRoutingSettingsTranscription(ctx context.Context) (*platformclientv2.Transcriptionsettings, *platformclientv2.APIResponse, error) {
-	return getRoutingSettingsTranscriptionFn(ctx, p)
+	return p.getRoutingSettingsTranscriptionAttr(ctx, p)
 }
 
 func (p *routingSettingsProxy) updateRoutingSettingsTranscription(ctx context.Context, transcriptionSettings platformclientv2.Transcriptionsettings) (*platformclientv2.Transcriptionsettings, *platformclientv2.APIResponse, error) {
-	return updateRoutingSettingsTranscriptionFn(ctx, p, transcriptionSettings)
+	return p.updateRoutingSettingsTranscriptionAttr(ctx, p, transcriptionSettings)
 }
 
 func getRoutingSettingsFn(ctx context.Context, p *routingSettingsProxy) (*platformclientv2.Routingsettings, *platformclientv2.APIResponse, error) {
-	settings, resp, err := p.routingSettingsApi.GetRoutingSettings()
-	if err != nil {
-		return nil, resp, fmt.Errorf("error retrieving routing settings %s", err)
-	}
-	return settings, resp, nil
+	return p.routingSettingsApi.GetRoutingSettings()
 }
 
 func updateRoutingSettingsFn(ctx context.Context, p *routingSettingsProxy, routingSettings *platformclientv2.Routingsettings) (*platformclientv2.Routingsettings, *platformclientv2.APIResponse, error) {
-	settings, resp, err := p.routingSettingsApi.PutRoutingSettings(*routingSettings)
-	if err != nil {
-		return nil, resp, fmt.Errorf("error updating routing settings %s", err)
-	}
-	return settings, resp, nil
+	return p.routingSettingsApi.PutRoutingSettings(*routingSettings)
 }
 
 func deleteRoutingSettingsFn(ctx context.Context, p *routingSettingsProxy) (*platformclientv2.APIResponse, error) {
-	resp, err := p.routingSettingsApi.DeleteRoutingSettings()
-	if err != nil {
-		return resp, fmt.Errorf("error deleting routing settings %s", err)
-	}
-	return resp, nil
+	return p.routingSettingsApi.DeleteRoutingSettings()
 }
 
 func getRoutingSettingsContactCenterFn(ctx context.Context, p *routingSettingsProxy) (*platformclientv2.Contactcentersettings, *platformclientv2.APIResponse, error) {
-	contactCenter, resp, getErr := p.routingSettingsApi.GetRoutingSettingsContactcenter()
-	if getErr != nil {
-		return nil, resp, fmt.Errorf("failed to read Contact center for routing setting %s", getErr)
-	}
-	return contactCenter, resp, nil
+	return p.routingSettingsApi.GetRoutingSettingsContactcenter()
 }
 
 func updateRoutingSettingsContactCenterFn(ctx context.Context, p *routingSettingsProxy, contactCenterSettings platformclientv2.Contactcentersettings) (*platformclientv2.APIResponse, error) {
-	resp, err := p.routingSettingsApi.PatchRoutingSettingsContactcenter(contactCenterSettings)
-	if err != nil {
-		return resp, fmt.Errorf("failed to update transcription for routing setting %s", err)
-	}
-	return resp, nil
+	return p.routingSettingsApi.PatchRoutingSettingsContactcenter(contactCenterSettings)
 }
 
 func getRoutingSettingsTranscriptionFn(ctx context.Context, p *routingSettingsProxy) (*platformclientv2.Transcriptionsettings, *platformclientv2.APIResponse, error) {
-	transcription, resp, getErr := p.routingSettingsApi.GetRoutingSettingsTranscription()
-	if getErr != nil {
-		return nil, resp, fmt.Errorf("failed to read transcription for routing setting %s", getErr)
-	}
-	return transcription, resp, nil
+	return p.routingSettingsApi.GetRoutingSettingsTranscription()
 }
 
 func updateRoutingSettingsTranscriptionFn(ctx context.Context, p *routingSettingsProxy, transcriptionSettings platformclientv2.Transcriptionsettings) (*platformclientv2.Transcriptionsettings, *platformclientv2.APIResponse, error) {
-	transcription, resp, err := p.routingSettingsApi.PutRoutingSettingsTranscription(transcriptionSettings)
-	if err != nil {
-		return nil, resp, fmt.Errorf("failed to update transcription for routing setting %s", err)
-	}
-	return transcription, resp, nil
+	return p.routingSettingsApi.PutRoutingSettingsTranscription(transcriptionSettings)
 }

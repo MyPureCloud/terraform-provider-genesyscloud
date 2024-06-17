@@ -18,7 +18,7 @@ func (r *registerTestInstance) registerTestResources() {
 	r.resourceMapMutex.Lock()
 	defer r.resourceMapMutex.Unlock()
 
-	providerResources["genesyscloud_routing_settings"] = ResourceRoutingSettings()
+	providerResources[resourceName] = ResourceRoutingSettings()
 }
 
 // initTestResources initializes all test resources and data sources.
@@ -35,6 +35,6 @@ func TestMain(m *testing.M) {
 	// Run setup function before starting the test suite for routing_settings package
 	initTestResources()
 
-	// Run the test suite for the external_contacts package
+	// Run the test suite for the routing_settings package
 	m.Run()
 }
