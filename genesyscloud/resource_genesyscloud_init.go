@@ -2,7 +2,6 @@ package genesyscloud
 
 import (
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
-	"terraform-provider-genesyscloud/genesyscloud/routing_utilization"
 )
 
 func SetRegistrar(l registrar.Registrar) {
@@ -68,11 +67,6 @@ func registerResources(l registrar.Registrar) {
 	l.RegisterResource("genesyscloud_routing_utilization", ResourceRoutingUtilization())
 	l.RegisterResource("genesyscloud_routing_utilization_label", ResourceRoutingUtilizationLabel())
 	l.RegisterResource("genesyscloud_routing_settings", ResourceRoutingSettings())
-<<<<<<< HEAD
-=======
-	l.RegisterResource("genesyscloud_routing_utilization", routing_utilization.ResourceRoutingUtilization())
-	l.RegisterResource("genesyscloud_routing_utilization_label", ResourceRoutingUtilizationLabel())
->>>>>>> 17ace7be (Refactored but waiting for cyclic dependency removal)
 	l.RegisterResource("genesyscloud_routing_wrapupcode", ResourceRoutingWrapupCode())
 	l.RegisterResource("genesyscloud_user", ResourceUser())
 	l.RegisterResource("genesyscloud_widget_deployment", ResourceWidgetDeployment())
@@ -99,11 +93,6 @@ func registerExporters(l registrar.Registrar) {
 	l.RegisterExporter("genesyscloud_routing_language", RoutingLanguageExporter())
 	l.RegisterExporter("genesyscloud_routing_skill", RoutingSkillExporter())
 	l.RegisterExporter("genesyscloud_routing_skill_group", ResourceSkillGroupExporter())
-<<<<<<< HEAD
-=======
-	l.RegisterExporter("genesyscloud_routing_utilization", routing_utilization.RoutingUtilizationExporter())
-	l.RegisterExporter("genesyscloud_routing_utilization_label", RoutingUtilizationLabelExporter())
->>>>>>> 17ace7be (Refactored but waiting for cyclic dependency removal)
 	l.RegisterExporter("genesyscloud_routing_wrapupcode", RoutingWrapupCodeExporter())
 	l.RegisterExporter("genesyscloud_user", UserExporter())
 	l.RegisterExporter("genesyscloud_widget_deployment", WidgetDeploymentExporter())
