@@ -11,6 +11,7 @@ const resourceName = "genesyscloud_outbound_contact_list_contact"
 
 func SetRegistrar(regInstance registrar.Registrar) {
 	regInstance.RegisterResource(resourceName, ResourceOutboundContactListContact())
+	regInstance.RegisterExporter(resourceName, ContactExporter())
 }
 
 var (

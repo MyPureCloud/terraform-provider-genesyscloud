@@ -2,8 +2,8 @@ package outbound_contact_list_contact
 
 import (
 	"context"
-	"fmt"
-	"github.com/mypurecloud/platform-client-sdk-go/v130/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v131/platformclientv2"
+	rc "terraform-provider-genesyscloud/genesyscloud/resource_cache"
 )
 
 var internalProxy *contactProxy
@@ -22,10 +22,12 @@ type contactProxy struct {
 	updateContactAttr   updateContactFunc
 	deleteContactAttr   deleteContactFunc
 	getAllContactsAttr  getAllContactsFunc
+	contactCache        rc.CacheInterface[platformclientv2.Dialercontact]
 }
 
 func newContactProxy(clientConfig *platformclientv2.Configuration) *contactProxy {
 	api := platformclientv2.NewOutboundApiWithConfig(clientConfig)
+	contactCache := rc.NewResourceCache[platformclientv2.Dialercontact]()
 	return &contactProxy{
 		clientConfig:        clientConfig,
 		outboundApi:         api,
@@ -34,6 +36,7 @@ func newContactProxy(clientConfig *platformclientv2.Configuration) *contactProxy
 		updateContactAttr:   updateContactFn,
 		deleteContactAttr:   deleteContactFn,
 		getAllContactsAttr:  getAllContactsFn,
+		contactCache:        contactCache,
 	}
 }
 
@@ -70,6 +73,9 @@ func createContactFn(_ context.Context, p *contactProxy, contactListId string, c
 }
 
 func readContactByIdFn(_ context.Context, p *contactProxy, contactListId, contactId string) (*platformclientv2.Dialercontact, *platformclientv2.APIResponse, error) {
+	if contact := rc.GetCacheItem(p.contactCache, contactId); contact != nil {
+		return contact, nil, nil
+	}
 	return p.outboundApi.GetOutboundContactlistContact(contactListId, contactId)
 }
 
@@ -83,28 +89,64 @@ func deleteContactFn(_ context.Context, p *contactProxy, contactListId, contactI
 
 func getAllContactsFn(ctx context.Context, p *contactProxy) ([]platformclientv2.Dialercontact, *platformclientv2.APIResponse, error) {
 	var allContacts []platformclientv2.Dialercontact
-	//pageSize := 50
-	//pageNum := 1
 
-	contactListIds, resp, err := getAllContactListIds(ctx, p)
+	contactListIds, resp, err := p.getAllContactListIds(ctx)
 	if err != nil {
 		return allContacts, resp, err
 	}
 
 	for _, contactListId := range contactListIds {
-		fmt.Print(contactListId)
+		contacts, resp, err := p.getContactsByContactListId(ctx, contactListId)
+		if err != nil {
+			return nil, resp, err
+		}
+		allContacts = append(allContacts, contacts...)
+	}
+
+	for _, contact := range allContacts {
+		rc.SetCache(p.contactCache, *contact.Id, contact)
 	}
 
 	return allContacts, nil, nil
 }
 
-func getContactsByContactListId(ctx context.Context, p *contactProxy, contactListId string) ([]platformclientv2.Dialercontact, *platformclientv2.APIResponse, error) {
-	//pageSize := 50
-	//pageNum := 1
-	return nil, nil, nil
+func (p *contactProxy) getContactsByContactListId(_ context.Context, contactListId string) ([]platformclientv2.Dialercontact, *platformclientv2.APIResponse, error) {
+	var (
+		pageNum     = 1
+		pageSize    = 50
+		allContacts []platformclientv2.Dialercontact
+	)
+
+	body := platformclientv2.Contactlistingrequest{
+		PageNumber: &pageNum,
+		PageSize:   &pageSize,
+	}
+
+	data, resp, err := p.outboundApi.PostOutboundContactlistContactsSearch(contactListId, body)
+	if err != nil {
+		return nil, resp, err
+	}
+	if data.Entities == nil || len(*data.Entities) == 0 {
+		return nil, nil, nil
+	}
+	allContacts = append(allContacts, *data.Entities...)
+
+	for pageNum = 2; pageNum <= *data.PageCount; pageNum++ {
+		body.PageNumber = &pageNum
+		data, resp, err = p.outboundApi.PostOutboundContactlistContactsSearch(contactListId, body)
+		if err != nil {
+			return nil, resp, err
+		}
+		if data.Entities == nil || len(*data.Entities) == 0 {
+			break
+		}
+		allContacts = append(allContacts, *data.Entities...)
+	}
+
+	return allContacts, nil, nil
 }
 
-func getAllContactListIds(_ context.Context, p *contactProxy) ([]string, *platformclientv2.APIResponse, error) {
+func (p *contactProxy) getAllContactListIds(_ context.Context) ([]string, *platformclientv2.APIResponse, error) {
 	const pageSize = 100
 	var pageNum = 1
 	var allContactListIds []string

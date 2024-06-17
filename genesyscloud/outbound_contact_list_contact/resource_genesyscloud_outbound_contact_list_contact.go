@@ -6,7 +6,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v130/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v131/platformclientv2"
 	"log"
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
@@ -18,7 +18,23 @@ import (
 )
 
 func getAllContacts(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
-	return nil, nil
+	resources := make(resourceExporter.ResourceIDMetaMap)
+	cp := getContactProxy(clientConfig)
+
+	contacts, resp, err := cp.getAllContacts(ctx)
+	if err != nil {
+		msg := fmt.Sprintf("Failed to read all contact list contacts. Error: %v", err)
+		if resp != nil {
+			return nil, util.BuildAPIDiagnosticError(resourceName, msg, resp)
+		}
+		return nil, util.BuildDiagnosticError(resourceName, msg, err)
+	}
+
+	for _, contact := range contacts {
+		resources[*contact.Id] = &resourceExporter.ResourceMeta{Name: *contact.Id}
+	}
+
+	return resources, nil
 }
 
 func createOutboundContactListContact(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
