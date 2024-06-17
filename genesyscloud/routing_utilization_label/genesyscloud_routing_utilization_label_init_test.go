@@ -44,16 +44,9 @@ func initTestResources() {
 
 // TestMain is a "setup" function called by the testing framework when run the test
 func TestMain(m *testing.M) {
-<<<<<<< HEAD
 	// Run setup function before starting the test suite for routing_utilization_label package
 	initTestResources()
 
 	// Run the test suite for the routing_utilization_label package
-=======
-	// Run setup function before starting the test suite for routing_sms_addresses package
-	initTestResources()
-
-	// Run the test suite for the routing_sms_addresses package
->>>>>>> f33044e5 (refactor routing utilization label)
 	m.Run()
 }
