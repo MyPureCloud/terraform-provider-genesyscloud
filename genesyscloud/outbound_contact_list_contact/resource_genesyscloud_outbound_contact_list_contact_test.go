@@ -5,7 +5,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"strconv"
-	"strings"
 	outboundContactList "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
@@ -76,7 +75,7 @@ func TestAccResourceOutboundContactListContact(t *testing.T) {
 		ProviderFactories: provider.GetProviderFactories(providerResources, nil),
 		Steps: []resource.TestStep{
 			{
-				Config: contactListResource + generateOutboundContactListContact(
+				Config: contactListResource + GenerateOutboundContactListContact(
 					resourceId,
 					contactListFullResourceId+".id",
 					util.TrueValue,
@@ -88,17 +87,17 @@ func TestAccResourceOutboundContactListContact(t *testing.T) {
 							emailColumnKey: strconv.Quote(dataEmailValue),
 						},
 					),
-					generatePhoneNumberStatus(cellColumnKey, util.FalseValue),
-					generatePhoneNumberStatus(homeColumnKey, util.TrueValue),
-					generateContactableStatus(
+					GeneratePhoneNumberStatus(cellColumnKey, util.FalseValue),
+					GeneratePhoneNumberStatus(homeColumnKey, util.TrueValue),
+					GenerateContactableStatus(
 						voiceMediaType,
 						util.FalseValue, // contactable
-						generateColumnStatus(cellColumnKey, util.FalseValue),
+						GenerateColumnStatus(cellColumnKey, util.FalseValue),
 					),
-					generateContactableStatus(
+					GenerateContactableStatus(
 						emailMediaType,
 						util.TrueValue, // contactable
-						generateColumnStatus(emailColumnKey, util.TrueValue),
+						GenerateColumnStatus(emailColumnKey, util.TrueValue),
 					),
 				),
 				Check: resource.ComposeTestCheckFunc(
@@ -125,7 +124,7 @@ func TestAccResourceOutboundContactListContact(t *testing.T) {
 			},
 			{
 				// Update
-				Config: contactListResource + generateOutboundContactListContact(
+				Config: contactListResource + GenerateOutboundContactListContact(
 					resourceId,
 					contactListFullResourceId+".id",
 					util.FalseValue,
@@ -137,17 +136,17 @@ func TestAccResourceOutboundContactListContact(t *testing.T) {
 							emailColumnKey: strconv.Quote(dataEmailValueUpdated),
 						},
 					),
-					generatePhoneNumberStatus(cellColumnKey, util.FalseValue),
-					generatePhoneNumberStatus(homeColumnKey, util.TrueValue),
-					generateContactableStatus(
+					GeneratePhoneNumberStatus(cellColumnKey, util.FalseValue),
+					GeneratePhoneNumberStatus(homeColumnKey, util.TrueValue),
+					GenerateContactableStatus(
 						voiceMediaType,
 						util.FalseValue, // contactable
-						generateColumnStatus(cellColumnKey, util.FalseValue),
+						GenerateColumnStatus(cellColumnKey, util.FalseValue),
 					),
-					generateContactableStatus(
+					GenerateContactableStatus(
 						emailMediaType,
 						util.TrueValue, // contactable
-						generateColumnStatus(emailColumnKey, util.TrueValue),
+						GenerateColumnStatus(emailColumnKey, util.TrueValue),
 					),
 				),
 				Check: resource.ComposeTestCheckFunc(
@@ -174,44 +173,4 @@ func TestAccResourceOutboundContactListContact(t *testing.T) {
 			},
 		},
 	})
-}
-
-func generateOutboundContactListContact(
-	resourceId,
-	contactListId,
-	callable,
-	data string,
-	nestedBlocks ...string,
-) string {
-	return fmt.Sprintf(`resource "%s" "%s" {
-    contact_list_id = %s
-    callable        = %s
-    %s
-    %s
-}`, resourceName, resourceId, contactListId, callable, data, strings.Join(nestedBlocks, "\n"))
-}
-
-func generatePhoneNumberStatus(key, callable string) string {
-	return fmt.Sprintf(`
-	phone_number_status {
-		key      = "%s"
-        callable = %s
-	}`, key, callable)
-}
-
-func generateContactableStatus(mediaType, contactable string, nestedBlocks ...string) string {
-	return fmt.Sprintf(`
-	contactable_status {
-		media_type  = "%s"
-		contactable = %s
-		%s
-	}`, mediaType, contactable, strings.Join(nestedBlocks, "\n"))
-}
-
-func generateColumnStatus(column, contactable string) string {
-	return fmt.Sprintf(`
-		column_status {
-			column      = "%s"
-			contactable = %s
-		}`, column, contactable)
 }

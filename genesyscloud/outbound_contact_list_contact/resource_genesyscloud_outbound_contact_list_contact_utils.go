@@ -1,8 +1,10 @@
 package outbound_contact_list_contact
 
 import (
+	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v131/platformclientv2"
+	"strings"
 	utillists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 )
@@ -117,7 +119,9 @@ func flattenContactableStatus(contactableStatus *map[string]platformclientv2.Con
 		cs := make(map[string]any)
 		cs["media_type"] = k
 		cs["contactable"] = *v.Contactable
-		cs["column_status"] = flattenColumnStatus(v.ColumnStatus)
+		if v.ColumnStatus != nil {
+			cs["column_status"] = flattenColumnStatus(v.ColumnStatus)
+		}
 		csSet.Add(cs)
 	}
 	return csSet
@@ -135,4 +139,44 @@ func flattenColumnStatus(columnStatus *map[string]platformclientv2.Columnstatus)
 		csSet.Add(cs)
 	}
 	return csSet
+}
+
+func GenerateOutboundContactListContact(
+	resourceId,
+	contactListId,
+	callable,
+	data string,
+	nestedBlocks ...string,
+) string {
+	return fmt.Sprintf(`resource "%s" "%s" {
+    contact_list_id = %s
+    callable        = %s
+    %s
+    %s
+}`, resourceName, resourceId, contactListId, callable, data, strings.Join(nestedBlocks, "\n"))
+}
+
+func GeneratePhoneNumberStatus(key, callable string) string {
+	return fmt.Sprintf(`
+	phone_number_status {
+		key      = "%s"
+        callable = %s
+	}`, key, callable)
+}
+
+func GenerateContactableStatus(mediaType, contactable string, nestedBlocks ...string) string {
+	return fmt.Sprintf(`
+	contactable_status {
+		media_type  = "%s"
+		contactable = %s
+		%s
+	}`, mediaType, contactable, strings.Join(nestedBlocks, "\n"))
+}
+
+func GenerateColumnStatus(column, contactable string) string {
+	return fmt.Sprintf(`
+		column_status {
+			column      = "%s"
+			contactable = %s
+		}`, column, contactable)
 }

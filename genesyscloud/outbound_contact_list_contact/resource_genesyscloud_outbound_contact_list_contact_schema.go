@@ -71,6 +71,7 @@ func ContactExporter() *resourceExporter.ResourceExporter {
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			"contact_list_id": {RefType: "genesyscloud_outbound_contact_list"},
 		},
+		AllowZeroValuesInMap: []string{"data"},
 	}
 }
 
