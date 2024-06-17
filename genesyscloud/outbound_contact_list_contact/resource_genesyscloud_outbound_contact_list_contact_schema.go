@@ -3,6 +3,7 @@ package outbound_contact_list_contact
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
 )
 
@@ -62,6 +63,15 @@ var (
 		},
 	}
 )
+
+func ContactExporter() *resourceExporter.ResourceExporter {
+	return &resourceExporter.ResourceExporter{
+		GetResourcesFunc: provider.GetAllWithPooledClient(getAllContacts),
+		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
+			"contact_list_id": {RefType: "genesyscloud_outbound_contact_list"},
+		},
+	}
+}
 
 func ResourceOutboundContactListContact() *schema.Resource {
 	return &schema.Resource{

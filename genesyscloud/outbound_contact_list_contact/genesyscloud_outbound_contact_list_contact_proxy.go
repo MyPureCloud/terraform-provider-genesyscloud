@@ -2,6 +2,7 @@ package outbound_contact_list_contact
 
 import (
 	"context"
+	"fmt"
 	"github.com/mypurecloud/platform-client-sdk-go/v130/platformclientv2"
 )
 
@@ -11,6 +12,7 @@ type createContactFunc func(ctx context.Context, p *contactProxy, contactListId 
 type readContactByIdFunc func(ctx context.Context, p *contactProxy, contactListId, contactId string) (*platformclientv2.Dialercontact, *platformclientv2.APIResponse, error)
 type updateContactFunc func(ctx context.Context, p *contactProxy, contactListId string, contactId string, contact platformclientv2.Dialercontact) (*platformclientv2.Dialercontact, *platformclientv2.APIResponse, error)
 type deleteContactFunc func(ctx context.Context, p *contactProxy, contactListId, contactId string) (*platformclientv2.APIResponse, error)
+type getAllContactsFunc func(ctx context.Context, p *contactProxy) ([]platformclientv2.Dialercontact, *platformclientv2.APIResponse, error)
 
 type contactProxy struct {
 	clientConfig        *platformclientv2.Configuration
@@ -19,6 +21,7 @@ type contactProxy struct {
 	readContactByIdAttr readContactByIdFunc
 	updateContactAttr   updateContactFunc
 	deleteContactAttr   deleteContactFunc
+	getAllContactsAttr  getAllContactsFunc
 }
 
 func newContactProxy(clientConfig *platformclientv2.Configuration) *contactProxy {
@@ -30,6 +33,7 @@ func newContactProxy(clientConfig *platformclientv2.Configuration) *contactProxy
 		readContactByIdAttr: readContactByIdFn,
 		updateContactAttr:   updateContactFn,
 		deleteContactAttr:   deleteContactFn,
+		getAllContactsAttr:  getAllContactsFn,
 	}
 }
 
@@ -57,6 +61,10 @@ func (p *contactProxy) deleteContact(ctx context.Context, contactListId, contact
 	return p.deleteContactAttr(ctx, p, contactListId, contactId)
 }
 
+func (p *contactProxy) getAllContacts(ctx context.Context) ([]platformclientv2.Dialercontact, *platformclientv2.APIResponse, error) {
+	return p.getAllContactsAttr(ctx, p)
+}
+
 func createContactFn(_ context.Context, p *contactProxy, contactListId string, contact platformclientv2.Writabledialercontact, priority, clearSystemData, doNotQueue bool) ([]platformclientv2.Dialercontact, *platformclientv2.APIResponse, error) {
 	return p.outboundApi.PostOutboundContactlistContacts(contactListId, []platformclientv2.Writabledialercontact{contact}, priority, clearSystemData, doNotQueue)
 }
@@ -71,4 +79,59 @@ func updateContactFn(_ context.Context, p *contactProxy, contactListId, contactI
 
 func deleteContactFn(_ context.Context, p *contactProxy, contactListId, contactId string) (*platformclientv2.APIResponse, error) {
 	return p.outboundApi.DeleteOutboundContactlistContact(contactListId, contactId)
+}
+
+func getAllContactsFn(ctx context.Context, p *contactProxy) ([]platformclientv2.Dialercontact, *platformclientv2.APIResponse, error) {
+	var allContacts []platformclientv2.Dialercontact
+	//pageSize := 50
+	//pageNum := 1
+
+	contactListIds, resp, err := getAllContactListIds(ctx, p)
+	if err != nil {
+		return allContacts, resp, err
+	}
+
+	for _, contactListId := range contactListIds {
+		fmt.Print(contactListId)
+	}
+
+	return allContacts, nil, nil
+}
+
+func getContactsByContactListId(ctx context.Context, p *contactProxy, contactListId string) ([]platformclientv2.Dialercontact, *platformclientv2.APIResponse, error) {
+	//pageSize := 50
+	//pageNum := 1
+	return nil, nil, nil
+}
+
+func getAllContactListIds(_ context.Context, p *contactProxy) ([]string, *platformclientv2.APIResponse, error) {
+	const pageSize = 100
+	var pageNum = 1
+	var allContactListIds []string
+
+	contactListConfigs, resp, getErr := p.outboundApi.GetOutboundContactlists(false, false, pageSize, pageNum, true, "", "", []string{}, []string{}, "", "")
+	if getErr != nil {
+		return nil, resp, getErr
+	}
+	if contactListConfigs.Entities == nil || len(*contactListConfigs.Entities) == 0 {
+		return nil, nil, nil
+	}
+	for _, cl := range *contactListConfigs.Entities {
+		allContactListIds = append(allContactListIds, *cl.Id)
+	}
+
+	for pageNum := 2; pageNum <= *contactListConfigs.PageCount; pageNum++ {
+		contactListConfigs, resp, getErr := p.outboundApi.GetOutboundContactlists(false, false, pageSize, pageNum, true, "", "", []string{}, []string{}, "", "")
+		if getErr != nil {
+			return nil, resp, getErr
+		}
+		if contactListConfigs.Entities == nil || len(*contactListConfigs.Entities) == 0 {
+			break
+		}
+		for _, cl := range *contactListConfigs.Entities {
+			allContactListIds = append(allContactListIds, *cl.Id)
+		}
+	}
+
+	return allContactListIds, nil, nil
 }
