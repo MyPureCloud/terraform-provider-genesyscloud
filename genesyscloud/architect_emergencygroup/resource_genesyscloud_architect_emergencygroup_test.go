@@ -2,15 +2,14 @@ package architect_emergencygroup
 
 import (
 	"fmt"
-	"os"
 	"strconv"
 	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/architect_flow"
 	architectIvr "terraform-provider-genesyscloud/genesyscloud/architect_ivr"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
-	"terraform-provider-genesyscloud/genesyscloud/util/feature_toggles"
 	"testing"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -113,18 +112,18 @@ func TestAccResourceArchitectEmergencyGroupMultipleIvrs(t *testing.T) {
 		description  = "The test description"
 
 		ivrResourceName1 = "test-ivrconfig1"
-		ivrName1         = "terraform-ivrconfig-" + uuid.NewString()
+		ivrName1         = "terraform-ivrconfig-1-" + uuid.NewString()
 
 		ivrResourceName2 = "test-ivrconfig2"
-		ivrName2         = "terraform-ivrconfig-" + uuid.NewString()
+		ivrName2         = "terraform-ivrconfig-2-" + uuid.NewString()
 
-		flowResource1      = "test_flow1"
-		flowName1          = "Terraform Emergency Test Flow 1" + uuid.NewString()
+		flowResourceName1  = "test_flow1"
+		flowName1          = "Terraform Emergency Test Flow 1 " + uuid.NewString()
 		flowFilePath1      = "../../examples/resources/genesyscloud_flow/inboundcall_flow_example.yaml"
 		inboundCallConfig1 = fmt.Sprintf("inboundCall:\n  name: %s\n  defaultLanguage: en-us\n  startUpRef: ./menus/menu[mainMenu]\n  initialGreeting:\n    tts: Archy says hi!!!\n  menus:\n    - menu:\n        name: Main Menu\n        audio:\n          tts: You are at the Main Menu, press 9 to disconnect.\n        refId: mainMenu\n        choices:\n          - menuDisconnect:\n              name: Disconnect\n              dtmf: digit_9", flowName1)
 
-		flowResource2      = "test_flow2"
-		flowName2          = "Terraform Emergency Test Flow 2" + uuid.NewString()
+		flowResourceName2  = "test_flow2"
+		flowName2          = "Terraform Emergency Test Flow 2 " + uuid.NewString()
 		flowFilePath2      = "../../examples/resources/genesyscloud_flow/inboundcall_flow_example2.yaml"
 		inboundCallConfig2 = fmt.Sprintf("inboundCall:\n  name: %s\n  defaultLanguage: en-us\n  startUpRef: ./menus/menu[mainMenu]\n  initialGreeting:\n    tts: Archy says hi!!!\n  menus:\n    - menu:\n        name: Main Menu\n        audio:\n          tts: You are at the Main Menu, press 9 to disconnect.\n        refId: mainMenu\n        choices:\n          - menuDisconnect:\n              name: Disconnect\n              dtmf: digit_9", flowName2)
 	)
@@ -146,36 +145,58 @@ func TestAccResourceArchitectEmergencyGroupMultipleIvrs(t *testing.T) {
 	})
 
 	flowResourceConfig1 := architect_flow.GenerateFlowResource(
-		flowResource1,
+		flowResourceName1,
 		flowFilePath1,
 		inboundCallConfig1,
 		false,
 	)
 
 	flowResourceConfig2 := architect_flow.GenerateFlowResource(
-		flowResource2,
+		flowResourceName2,
 		flowFilePath2,
 		inboundCallConfig2,
 		false,
 	)
 
-	err := os.Setenv(feature_toggles.CCToggleName(), "true")
-	if err != nil {
-		t.Skipf("skiping")
-	}
-
-	defer func() {
-		err := os.Unsetenv(feature_toggles.CCToggleName())
-		if err != nil {
-			fmt.Printf("Unable to unset %s", feature_toggles.CCToggleName())
-			return
-		}
-	}()
+	//err := os.Setenv(feature_toggles.CCToggleName(), "true")
+	//if err != nil {
+	//	t.Skipf("skiping")
+	//}
+	//
+	//defer func() {
+	//	err := os.Unsetenv(feature_toggles.CCToggleName())
+	//	if err != nil {
+	//		fmt.Printf("Unable to unset %s", feature_toggles.CCToggleName())
+	//		return
+	//	}
+	//}()
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
+			{
+				Config: flowResourceConfig1 + ivrResource1 + GenerateArchitectEmergencyGroupResource(
+					resourceName,
+					name,
+					util.NullValue,
+					description,
+					util.TrueValue,
+					generateEmergencyCallFlow("genesyscloud_flow."+flowResourceName1+".id", "genesyscloud_architect_ivr."+ivrResourceName1+".id"),
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(resourceType+"."+resourceName, "name", name),
+					resource.TestCheckResourceAttr(resourceType+"."+resourceName, "description", description),
+					resource.TestCheckResourceAttr(resourceType+"."+resourceName, "enabled", util.TrueValue),
+
+					resource.TestCheckResourceAttr(resourceType+"."+resourceName, "emergency_call_flows.#", "1"),
+					validateEmergencyCallFlows(
+						resourceType+"."+resourceName,
+						"genesyscloud_flow."+flowResourceName1,
+						"genesyscloud_architect_ivr."+ivrResourceName1,
+					),
+				),
+			},
 			{
 				Config: flowResourceConfig1 + flowResourceConfig2 + ivrResource1 + ivrResource2 + GenerateArchitectEmergencyGroupResource(
 					resourceName,
@@ -183,43 +204,31 @@ func TestAccResourceArchitectEmergencyGroupMultipleIvrs(t *testing.T) {
 					util.NullValue,
 					description,
 					util.TrueValue,
-					generateEmergencyCallFlow("genesyscloud_flow."+flowResource1+".id", "genesyscloud_architect_ivr."+ivrResourceName1+".id"),
-					generateEmergencyCallFlow("genesyscloud_flow."+flowResource2+".id", "genesyscloud_architect_ivr."+ivrResourceName2+".id"),
+					generateEmergencyCallFlow("genesyscloud_flow."+flowResourceName1+".id", "genesyscloud_architect_ivr."+ivrResourceName1+".id"),
+					generateEmergencyCallFlow("genesyscloud_flow."+flowResourceName2+".id", "genesyscloud_architect_ivr."+ivrResourceName2+".id"),
 				),
 				Check: resource.ComposeTestCheckFunc(
+					func(s *terraform.State) error {
+						time.Sleep(30 * time.Second)
+						return nil
+					},
 					resource.TestCheckResourceAttr(resourceType+"."+resourceName, "name", name),
 					resource.TestCheckResourceAttr(resourceType+"."+resourceName, "description", description),
 					resource.TestCheckResourceAttr(resourceType+"."+resourceName, "enabled", util.TrueValue),
-					resource.TestCheckResourceAttrPair(resourceType+"."+resourceName, "emergency_call_flows.1.ivr_ids.0",
-						"genesyscloud_architect_ivr."+ivrResourceName1, "id"),
-					resource.TestCheckResourceAttrPair(resourceType+"."+resourceName, "emergency_call_flows.1.emergency_flow_id",
-						"genesyscloud_flow."+flowResource1, "id"),
-					resource.TestCheckResourceAttrPair(resourceType+"."+resourceName, "emergency_call_flows.0.ivr_ids.0",
-						"genesyscloud_architect_ivr."+ivrResourceName2, "id"),
-					resource.TestCheckResourceAttrPair(resourceType+"."+resourceName, "emergency_call_flows.0.emergency_flow_id",
-						"genesyscloud_flow."+flowResource2, "id"),
+
+					resource.TestCheckResourceAttr(resourceType+"."+resourceName, "emergency_call_flows.#", "2"),
+					validateEmergencyCallFlows(
+						resourceType+"."+resourceName,
+						"genesyscloud_flow."+flowResourceName1,
+						"genesyscloud_architect_ivr."+ivrResourceName1,
+					),
+					validateEmergencyCallFlows(
+						resourceType+"."+resourceName,
+						"genesyscloud_flow."+flowResourceName2,
+						"genesyscloud_architect_ivr."+ivrResourceName2,
+					),
 				),
 			},
-			//{
-			//	// Update
-			//	Config: flowResourceConfig + ivrResource1 + GenerateArchitectEmergencyGroupResource(
-			//		resourceName,
-			//		name,
-			//		util.NullValue,
-			//		updatedDescription,
-			//		util.FalseValue,
-			//		generateEmergencyCallFlow("genesyscloud_flow."+flowResource+".id", "genesyscloud_architect_ivr."+ivrResourceName1+".id"),
-			//	),
-			//	Check: resource.ComposeTestCheckFunc(
-			//		resource.TestCheckResourceAttr(resourceType+"."+resourceName, "name", name),
-			//		resource.TestCheckResourceAttr(resourceType+"."+resourceName, "description", updatedDescription),
-			//		resource.TestCheckResourceAttr(resourceType+"."+resourceName, "enabled", util.FalseValue),
-			//		resource.TestCheckResourceAttrPair(resourceType+"."+resourceName, "emergency_call_flows.0.emergency_flow_id",
-			//			"genesyscloud_flow."+flowResource, "id"),
-			//		resource.TestCheckResourceAttrPair(resourceType+"."+resourceName, "emergency_call_flows.0.ivr_ids.0",
-			//			"genesyscloud_architect_ivr."+ivrResourceName1, "id"),
-			//	),
-			//},
 			{
 				// Import/Read
 				ResourceName:      resourceType + "." + resourceName,
@@ -229,6 +238,51 @@ func TestAccResourceArchitectEmergencyGroupMultipleIvrs(t *testing.T) {
 		},
 		CheckDestroy: testVerifyEmergencyGroupDestroyed,
 	})
+}
+
+func validateEmergencyCallFlows(emergencyGroupResourceName, flowResourceName, architectIvrResourceName string) resource.TestCheckFunc {
+	return func(state *terraform.State) error {
+		// Get emergency group form state
+		emergencyGroupResource, ok := state.RootModule().Resources[emergencyGroupResourceName]
+		if !ok {
+			return fmt.Errorf("failed to find emergency group %s in state", emergencyGroupResourceName)
+		}
+
+		// Get IVR resource form state
+		ivrResource, ok := state.RootModule().Resources[architectIvrResourceName]
+		if !ok {
+			return fmt.Errorf("failed to find architect IVR %s in state", architectIvrResourceName)
+		}
+		ivrId := ivrResource.Primary.ID
+
+		// Get flow resource form state
+		flowResource, ok := state.RootModule().Resources[flowResourceName]
+		if !ok {
+			return fmt.Errorf("failed to find flow %s in state", flowResourceName)
+		}
+		flowId := flowResource.Primary.ID
+
+		callFlowsAttr, ok := emergencyGroupResource.Primary.Attributes["emergency_call_flows.#"]
+		if !ok {
+			return fmt.Errorf("no emegrncy call flows found for emergency group %s", emergencyGroupResource.Primary.ID)
+		}
+
+		callFlowNumber, _ := strconv.Atoi(callFlowsAttr)
+		for i := 0; i < callFlowNumber; i++ {
+			iterationString := strconv.Itoa(i)
+			if emergencyGroupResource.Primary.Attributes["emergency_call_flows."+iterationString+".emergency_flow_id"] == flowId {
+				if emergencyGroupResource.Primary.Attributes["emergency_call_flows."+iterationString+".ivr_ids.0"] == ivrId {
+					// emergency group was created with correct flowId and IvrId
+					return nil
+				}
+
+				actualIvr := emergencyGroupResource.Primary.Attributes["emergency_call_flows."+iterationString+".ivr_ids.0"]
+				return fmt.Errorf("flow %s found in emergency call flows with incorrect Ivr. \nexpected: %s, \nactual: %s", flowId, ivrId, actualIvr)
+			}
+		}
+
+		return fmt.Errorf("flow %s not found in emergency call flows", flowId)
+	}
 }
 
 func GenerateArchitectEmergencyGroupResource(

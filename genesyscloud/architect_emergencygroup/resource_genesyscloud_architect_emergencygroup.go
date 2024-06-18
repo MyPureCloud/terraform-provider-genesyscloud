@@ -4,8 +4,10 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 	"time"
 
@@ -66,16 +68,14 @@ func createEmergencyGroup(ctx context.Context, d *schema.ResourceData, meta inte
 	}
 
 	d.SetId(*eGroup.Id)
-
 	log.Printf("Created emergency group %s %s", name, *eGroup.Id)
-
 	return readEmergencyGroup(ctx, d, meta)
 }
 
 func readEmergencyGroup(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	ap := getArchitectEmergencyGroupProxy(sdkConfig)
-	//cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceArchitectEmergencyGroup(), constants.DefaultConsistencyChecks, resourceName)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceArchitectEmergencyGroup(), constants.DefaultConsistencyChecks, resourceName)
 
 	log.Printf("Reading emergency group %s", d.Id())
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
@@ -104,10 +104,9 @@ func readEmergencyGroup(ctx context.Context, d *schema.ResourceData, meta interf
 			_ = d.Set("emergency_call_flows", nil)
 		}
 
-		fmt.Println(d.State().String())
+		//fmt.Println(d.State().String())
 		log.Printf("Read emergency group %s %s", d.Id(), *emergencyGroup.Name)
-		//return cc.CheckState(d)
-		return nil
+		return cc.CheckState(d)
 	})
 }
 
