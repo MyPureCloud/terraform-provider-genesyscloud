@@ -35,6 +35,7 @@ func getOutboundCampaignFromResourceData(d *schema.ResourceData) platformclientv
 	noAnswerTimeout := d.Get("no_answer_timeout").(int)
 	callAnalysisLanguage := d.Get("call_analysis_language").(string)
 	priority := d.Get("priority").(int)
+	maxCallsPerAgent := d.Get("max_calls_per_agent").(int)
 
 	campaign := platformclientv2.Campaign{
 		Name:                           platformclientv2.String(d.Get("name").(string)),
@@ -77,6 +78,9 @@ func getOutboundCampaignFromResourceData(d *schema.ResourceData) platformclientv
 	}
 	if priority != 0 {
 		campaign.Priority = &priority
+	}
+	if maxCallsPerAgent != 0 {
+		campaign.MaxCallsPerAgent = &maxCallsPerAgent
 	}
 	return campaign
 }

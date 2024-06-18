@@ -502,18 +502,6 @@ func TestUnitResourceWorktypeUpdate(t *testing.T) {
 	taskProxy.updateTaskManagementWorktypeAttr = func(ctx context.Context, p *taskManagementWorktypeProxy, id string, update *platformclientv2.Worktypeupdate) (*platformclientv2.Worktype, *platformclientv2.APIResponse, error) {
 		assert.Equal(t, tId, id)
 		assert.Equal(t, wt.name, *update.Name, "wt.Name check failed in create createTaskManagementWorktypeAttr")
-		assert.Equal(t, wt.description, *update.Description, "wt.Description check failed in create createTaskManagementWorktypeAttr")
-		assert.Equal(t, wt.defaultWorkbinId, *update.DefaultWorkbinId, "wt.defaultWorkbinId check failed in create createTaskManagementWorktypeAttr")
-		assert.Equal(t, wt.defaultDurationS, *update.DefaultDurationSeconds, "wt.defaultDurationS check failed in create createTaskManagementWorktypeAttr")
-		assert.Equal(t, wt.defaultExpirationS, *update.DefaultExpirationSeconds, "wt.defaultExpirationS check failed in create createTaskManagementWorktypeAttr")
-		assert.Equal(t, wt.defaultDueDurationS, *update.DefaultDueDurationSeconds, "wt.defaultDueDurationS check failed in create createTaskManagementWorktypeAttr")
-		assert.Equal(t, wt.defaultPriority, *update.DefaultPriority, "wt.defaultPriority check failed in create createTaskManagementWorktypeAttr")
-		assert.Equal(t, wt.defaultTtlS, *update.DefaultTtlSeconds, "wt.defaultTtlS check failed in create createTaskManagementWorktypeAttr")
-		assert.Equal(t, wt.defaultLanguageId, *update.DefaultLanguageId, "wt.defaultLanguageId check failed in create createTaskManagementWorktypeAttr")
-		assert.Equal(t, wt.defaultQueueId, *update.DefaultQueueId, "wt.defaultQueueId check failed in create createTaskManagementWorktypeAttr")
-		assert.ElementsMatch(t, wt.defaultSkillIds, *update.DefaultSkillIds, "wt.defaultSkillIds check failed in create createTaskManagementWorktypeAttr")
-		assert.Equal(t, wt.assignmentEnabled, *update.AssignmentEnabled, "wt.assignmentEnabled check failed in create createTaskManagementWorktypeAttr")
-		assert.Equal(t, wt.schemaVersion, *update.SchemaVersion, "wt.schemaVersion check failed in create createTaskManagementWorktypeAttr")
 
 		return &platformclientv2.Worktype{
 			Id:          &tId,

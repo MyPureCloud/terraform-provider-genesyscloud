@@ -79,27 +79,68 @@ func getWorktypecreateFromResourceData(d *schema.ResourceData) platformclientv2.
 
 // getWorktypeupdateFromResourceData maps data from schema ResourceData object to a platformclientv2.Worktypeupdate
 func getWorktypeupdateFromResourceData(d *schema.ResourceData, statuses *[]platformclientv2.Workitemstatus) platformclientv2.Worktypeupdate {
-	worktype := platformclientv2.Worktypeupdate{
-		Name:             platformclientv2.String(d.Get("name").(string)),
-		Description:      platformclientv2.String(d.Get("description").(string)),
-		DefaultWorkbinId: platformclientv2.String(d.Get("default_workbin_id").(string)),
 
-		DefaultPriority: platformclientv2.Int(d.Get("default_priority").(int)),
-
-		DefaultLanguageId: resourcedata.GetNillableValue[string](d, "default_language_id"),
-		DefaultQueueId:    resourcedata.GetNillableValue[string](d, "default_queue_id"),
-		DefaultSkillIds:   lists.BuildSdkStringListFromInterfaceArray(d, "default_skills_ids"),
-		AssignmentEnabled: platformclientv2.Bool(d.Get("assignment_enabled").(bool)),
-
-		DefaultDurationSeconds:    resourcedata.GetNillableValue[int](d, "default_duration_seconds"),
-		DefaultExpirationSeconds:  resourcedata.GetNillableValue[int](d, "default_expiration_seconds"),
-		DefaultDueDurationSeconds: resourcedata.GetNillableValue[int](d, "default_due_duration_seconds"),
-		DefaultTtlSeconds:         resourcedata.GetNillableValue[int](d, "default_ttl_seconds"),
-
-		DefaultStatusId: getStatusIdFromName(d.Get("default_status_name").(string), statuses),
-		SchemaVersion:   resourcedata.GetNillableValue[int](d, "schema_version"),
+	worktype := platformclientv2.Worktypeupdate{}
+	worktype.SetField("Name", platformclientv2.String(d.Get("name").(string)))
+	if d.HasChange("description") {
+		worktype.SetField("Description", platformclientv2.String(d.Get("description").(string)))
+	}
+	if d.HasChange("default_workbin_id") {
+		worktype.SetField("DefaultWorkbinId", platformclientv2.String(d.Get("default_workbin_id").(string)))
 	}
 
+	if d.HasChange("default_priority") {
+		worktype.SetField("DefaultPriority", platformclientv2.Int(d.Get("default_priority").(int)))
+	}
+
+	if d.HasChange("schema_id") {
+		worktype.SetField("SchemaId", platformclientv2.String(d.Get("schema_id").(string)))
+	}
+
+	if d.HasChange("default_language_id") {
+		worktype.SetField("DefaultLanguageId", resourcedata.GetNillableValue[string](d, "default_language_id"))
+	}
+
+	if d.HasChange("default_queue_id") {
+		worktype.SetField("DefaultQueueId", resourcedata.GetNillableValue[string](d, "default_queue_id"))
+	}
+
+	if d.HasChange("default_skills_ids") {
+		worktype.SetField("DefaultSkillIds", lists.BuildSdkStringListFromInterfaceArray(d, "default_skills_ids"))
+	}
+
+	if d.HasChange("assignment_enabled") {
+		worktype.SetField("AssignmentEnabled", platformclientv2.Bool(d.Get("assignment_enabled").(bool)))
+	}
+
+	if d.HasChange("schema_version") {
+		worktype.SetField("SchemaVersion", resourcedata.GetNillableValue[int](d, "schema_version"))
+	}
+
+	if d.HasChange("default_duration_seconds") {
+		worktype.SetField("DefaultDurationSeconds", resourcedata.GetNillableValue[int](d, "default_duration_seconds"))
+	}
+	if d.HasChange("default_expiration_seconds") {
+		worktype.SetField("DefaultExpirationSeconds", resourcedata.GetNillableValue[int](d, "default_duration_seconds"))
+	}
+	if d.HasChange("default_due_duration_seconds") {
+		worktype.SetField("DefaultDueDurationSeconds", resourcedata.GetNillableValue[int](d, "default_due_duration_seconds"))
+	}
+	if d.HasChange("default_ttl_seconds") {
+		worktype.SetField("DefaultTtlSeconds", resourcedata.GetNillableValue[int](d, "default_ttl_seconds"))
+	}
+
+	return worktype
+}
+
+// getWorktypeupdateFromResourceData maps data from schema ResourceData object to a platformclientv2.Worktypeupdate
+func getWorktypeupdateFromResourceDataStatus(d *schema.ResourceData, statuses *[]platformclientv2.Workitemstatus) platformclientv2.Worktypeupdate {
+
+	worktype := platformclientv2.Worktypeupdate{}
+	worktype.SetField("Name", platformclientv2.String(d.Get("name").(string)))
+	if d.HasChange("default_status_name") {
+		worktype.SetField("DefaultStatusId", getStatusIdFromName(d.Get("default_status_name").(string), statuses))
+	}
 	return worktype
 }
 
@@ -420,7 +461,7 @@ func updateDefaultStatusName(ctx context.Context, proxy *taskManagementWorktypeP
 		return fmt.Errorf("failed to get task management worktype: %s", err)
 	}
 
-	taskManagementWorktype := getWorktypeupdateFromResourceData(d, worktype.Statuses)
+	taskManagementWorktype := getWorktypeupdateFromResourceDataStatus(d, worktype.Statuses)
 	_, resp, err = proxy.updateTaskManagementWorktype(ctx, *worktype.Id, &taskManagementWorktype)
 	if err != nil {
 		return fmt.Errorf("failed to update worktype's default status name %s %v", err, resp)

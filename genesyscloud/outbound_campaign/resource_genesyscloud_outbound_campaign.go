@@ -124,6 +124,7 @@ func readOutboundCampaign(ctx context.Context, d *schema.ResourceData, meta inte
 		resourcedata.SetNillableValue(d, "campaign_status", campaign.CampaignStatus)
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "phone_columns", campaign.PhoneColumns, flattenPhoneColumn)
 		resourcedata.SetNillableValue(d, "abandon_rate", campaign.AbandonRate)
+		resourcedata.SetNillableValue(d, "max_calls_per_agent", campaign.MaxCallsPerAgent)
 		if campaign.DncLists != nil {
 			_ = d.Set("dnc_list_ids", util.SdkDomainEntityRefArrToList(*campaign.DncLists))
 		}

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	gcloud "terraform-provider-genesyscloud/genesyscloud/validators"
+	"terraform-provider-genesyscloud/genesyscloud/validators"
 
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 
@@ -48,7 +48,7 @@ func ResourceTfExport() *schema.Resource {
 				Optional:    true,
 				Elem: &schema.Schema{
 					Type:         schema.TypeString,
-					ValidateFunc: gcloud.ValidateSubStringInSlice(resourceExporter.GetAvailableExporterTypes()),
+					ValidateFunc: validators.ValidateSubStringInSlice(resourceExporter.GetAvailableExporterTypes()),
 				},
 				ForceNew:      true,
 				Deprecated:    "Use include_filter_resources attribute instead",
@@ -60,7 +60,7 @@ func ResourceTfExport() *schema.Resource {
 				Optional:    true,
 				Elem: &schema.Schema{
 					Type:         schema.TypeString,
-					ValidateFunc: gcloud.ValidateSubStringInSlice(resourceExporter.GetAvailableExporterTypes()),
+					ValidateFunc: validators.ValidateSubStringInSlice(resourceExporter.GetAvailableExporterTypes()),
 				},
 				ForceNew:      true,
 				ConflictsWith: []string{"resource_types", "exclude_filter_resources"},
@@ -80,7 +80,7 @@ func ResourceTfExport() *schema.Resource {
 				Optional:    true,
 				Elem: &schema.Schema{
 					Type:         schema.TypeString,
-					ValidateFunc: gcloud.ValidateSubStringInSlice(resourceExporter.GetAvailableExporterTypes()),
+					ValidateFunc: validators.ValidateSubStringInSlice(resourceExporter.GetAvailableExporterTypes()),
 				},
 				ForceNew:      true,
 				ConflictsWith: []string{"resource_types", "include_filter_resources"},
