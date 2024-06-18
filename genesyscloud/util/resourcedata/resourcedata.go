@@ -147,21 +147,21 @@ func SetNillableValue[T any](d *schema.ResourceData, key string, value *T) {
 	}
 }
 
-// SetNillableValueWithInterfaceArrayWithFunc will read the values in a nested resource using the provided function and set it on the schema
+// SetNillableValueWithInterfaceArrayWithFunc will set the value of {key} to an interface array using func {f} if {value} is not nil
 func SetNillableValueWithInterfaceArrayWithFunc[T any](d *schema.ResourceData, key string, value *T, f func(*T) []interface{}) {
 	if value != nil {
-		d.Set(key, f(value))
+		_ = d.Set(key, f(value))
 	} else {
-		d.Set(key, nil)
+		_ = d.Set(key, nil)
 	}
 }
 
-// SetNillableValueWithInterfaceArrayWithFunc will read the values in a nested resource using the provided function and set it on the schema
+// SetNillableValueWithSchemaSetWithFunc will set the value of {key} to a *schema.Set using func {f} if {value} is not nil
 func SetNillableValueWithSchemaSetWithFunc[T any](d *schema.ResourceData, key string, value *T, f func(*T) *schema.Set) {
 	if value != nil {
-		d.Set(key, f(value))
+		_ = d.Set(key, f(value))
 	} else {
-		d.Set(key, nil)
+		_ = d.Set(key, nil)
 	}
 }
 

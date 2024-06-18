@@ -5,7 +5,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
-	gcloud "terraform-provider-genesyscloud/genesyscloud/validators"
+	"terraform-provider-genesyscloud/genesyscloud/validators"
 )
 
 // SetRegistrar registers all the resources, data sources and exporters in the package
@@ -68,7 +68,7 @@ func ResourceRoutingSmsAddress() *schema.Resource {
 				Required:         true,
 				ForceNew:         true,
 				Type:             schema.TypeString,
-				ValidateDiagFunc: gcloud.ValidateCountryCode,
+				ValidateDiagFunc: validators.ValidateCountryCode,
 			},
 			`auto_correct_address`: {
 				Description: `This is used when the address is created. If the value is not set or true, then the system will, if necessary, auto-correct the address you provide. Set this value to false if the system should not auto-correct the address.`,

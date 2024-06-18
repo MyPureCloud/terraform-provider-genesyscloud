@@ -6,7 +6,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
-	gcloud "terraform-provider-genesyscloud/genesyscloud/validators"
+	"terraform-provider-genesyscloud/genesyscloud/validators"
 )
 
 const resourceName = "genesyscloud_outbound_callabletimeset"
@@ -23,13 +23,13 @@ var campaignTimeslotResource = &schema.Resource{
 		`start_time`: {
 			Description:      `The start time of the interval as an ISO-8601 string, i.e. HH:mm:ss`,
 			Required:         true,
-			ValidateDiagFunc: gcloud.ValidateTime,
+			ValidateDiagFunc: validators.ValidateTime,
 			Type:             schema.TypeString,
 		},
 		`stop_time`: {
 			Description:      `The end time of the interval as an ISO-8601 string, i.e. HH:mm:ss`,
 			Required:         true,
-			ValidateDiagFunc: gcloud.ValidateTime,
+			ValidateDiagFunc: validators.ValidateTime,
 			Type:             schema.TypeString,
 		},
 		`day`: {
