@@ -327,7 +327,7 @@ func (g *GenesysCloudResourceExporter) retrieveGenesysCloudObjectInstances() dia
 		go func(resType string, exporter *resourceExporter.ResourceExporter) {
 			defer wg.Done()
 
-			log.Printf(`Getting exported resources for [%s]`, resType)
+			log.Printf("Getting exported resources for [%s]", resType)
 			typeResources, err := g.getResourcesForType(resType, g.provider, exporter, g.meta)
 
 			if err != nil {
