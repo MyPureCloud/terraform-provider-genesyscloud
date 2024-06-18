@@ -625,3 +625,13 @@ func GeneratePhoneColumnsDataTypeSpecBlock(columnName, columnDataType, min, max,
 	}
 	`, columnName, columnDataType, min, max, maxLength)
 }
+
+func GenerateEmailColumnsBlock(columnName, columnType, contactableTimeColumn string) string {
+	return fmt.Sprintf(`
+	email_columns {
+		column_name             = "%s"
+		type                    = "%s"
+		contactable_time_column = %s
+	}
+`, columnName, columnType, contactableTimeColumn)
+}

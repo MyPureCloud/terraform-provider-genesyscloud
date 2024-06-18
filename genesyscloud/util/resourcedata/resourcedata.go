@@ -141,9 +141,9 @@ func SetNillableReferenceDivision(d *schema.ResourceData, key string, value *pla
 // SetNillableValue will read a basic type and set it on the schema
 func SetNillableValue[T any](d *schema.ResourceData, key string, value *T) {
 	if value != nil {
-		d.Set(key, *value)
+		_ = d.Set(key, *value)
 	} else {
-		d.Set(key, nil)
+		_ = d.Set(key, nil)
 	}
 }
 

@@ -33,7 +33,7 @@ import (
 )
 
 /*
-   This file contains all of the logic associated wite the process of exporting a file.
+   This file contains all logic associated with the process of exporting a file.
 */
 
 // Used to store the TF config block as a string so that it can be ignored when testing the exported HCL config file.
@@ -178,7 +178,7 @@ func (g *GenesysCloudResourceExporter) Export() (diagErr diag.Diagnostics) {
 	if diagErr != nil {
 		return diagErr
 	}
-	// Step #2 Retrieve all of the individual resources we are going to export
+	// Step #2 Retrieve all the individual resources we are going to export
 	diagErr = g.retrieveSanitizedResourceMaps()
 	if diagErr != nil {
 		return diagErr
@@ -1138,7 +1138,7 @@ func (g *GenesysCloudResourceExporter) sanitizeConfigMap(
 	resourceName string,
 	configMap map[string]interface{},
 	prevAttr string,
-	exporters map[string]*resourceExporter.ResourceExporter, //Map of all of the exporters
+	exporters map[string]*resourceExporter.ResourceExporter, //Map of all exporters
 	exportingState bool,
 	exportingAsHCL bool,
 	parentKey bool) ([]unresolvableAttributeInfo, bool) {
@@ -1258,7 +1258,7 @@ func (g *GenesysCloudResourceExporter) sanitizeConfigMap(
 		// This can cause invalid config files due to including attributes with limits that don't allow for zero values, so we remove
 		// those attributes from the config by default. Attributes can opt-out of this behavior by being added to a ResourceExporter's
 		// AllowZeroValues list.
-		if !exporter.AllowForZeroValues(currAttr) {
+		if !exporter.AllowForZeroValues(currAttr) && !exporter.AllowForZeroValuesInMap(prevAttr) {
 			removeZeroValues(key, configMap[key], configMap)
 		}
 
