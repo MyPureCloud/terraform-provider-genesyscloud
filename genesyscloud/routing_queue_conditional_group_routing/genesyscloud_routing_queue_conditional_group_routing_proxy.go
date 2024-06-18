@@ -3,7 +3,7 @@ package routing_queue_conditional_group_routing
 import (
 	"context"
 	"fmt"
-	"github.com/mypurecloud/platform-client-sdk-go/v130/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v131/platformclientv2"
 	rc "terraform-provider-genesyscloud/genesyscloud/resource_cache"
 	routingQueue "terraform-provider-genesyscloud/genesyscloud/routing_queue"
 )
