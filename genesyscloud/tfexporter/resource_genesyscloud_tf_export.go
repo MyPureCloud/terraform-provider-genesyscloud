@@ -141,7 +141,7 @@ func ResourceTfExport() *schema.Resource {
 				ForceNew:    true,
 			},
 			"compress": {
-				Description: "Flag to check if compression is allowed",
+				Description: "Compress exported results using zip format",
 				Type:        schema.TypeBool,
 				Optional:    true,
 				Default:     false,
