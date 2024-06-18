@@ -1,8 +1,11 @@
 package routing_utilization
 
 import (
+	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v130/platformclientv2"
+	"sort"
+	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/util/lists"
 )
 
@@ -92,6 +95,28 @@ func flattenLabelUtilization(labelId string, labelUtilization LabelUtilization) 
 	}
 
 	return utilizationMap
+}
+
+func GenerateRoutingUtilMediaType(
+	mediaType string,
+	maxCapacity string,
+	includeNonAcd string,
+	interruptTypes ...string) string {
+	return fmt.Sprintf(`%s {
+		maximum_capacity = %s
+		include_non_acd = %s
+		interruptible_media_types = [%s]
+	}
+	`, mediaType, maxCapacity, includeNonAcd, strings.Join(interruptTypes, ","))
+}
+
+func getSdkUtilizationTypes() []string {
+	types := make([]string, 0, len(UtilizationMediaTypes))
+	for t := range UtilizationMediaTypes {
+		types = append(types, t)
+	}
+	sort.Strings(types)
+	return types
 }
 
 // TODO: remove when routing skill group is refactored

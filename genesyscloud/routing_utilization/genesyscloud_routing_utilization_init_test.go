@@ -25,6 +25,8 @@ func (r *registerTestInstance) registerTestResources() {
 	defer r.resourceMapMutex.Unlock()
 
 	providerResources[resourceName] = ResourceRoutingUtilization()
+	providerResources["genesyscloud_routing_utilization_label"] = routing_utilization_label.ResourceRoutingUtilizationLabel()
+
 }
 
 // initTestResources initializes all test resources and data sources.
@@ -34,8 +36,6 @@ func initTestResources() {
 	regInstance := &registerTestInstance{}
 
 	regInstance.registerTestResources()
-
-	providerResources["genesyscloud_routing_utilization_label"] = routing_utilization_label.ResourceRoutingUtilizationLabel()
 }
 
 // TestMain is a "setup" function called by the testing framework when run the test

@@ -126,8 +126,12 @@ func getRoutingUtilizationLabelByNameFn(ctx context.Context, p *routingUtilizati
 		return nil, resp, fmt.Errorf("error retrieving routing utilization label by name %s", err)
 	}
 
-	label := (*labels)[0]
-	return &label, resp, nil
+	for _, label := range *labels {
+		if *label.Name == name {
+			return &label, resp, nil
+		}
+	}
+	return nil, resp, fmt.Errorf("no routing utilization label found with name: %s", name)
 }
 
 func updateRoutingUtilizationLabelFn(_ context.Context, p *routingUtilizationProxy, id string, req *platformclientv2.Updateutilizationlabelrequest) (*platformclientv2.Utilizationlabel, *platformclientv2.APIResponse, error) {

@@ -57,7 +57,7 @@ func createRoutingUtilizationLabel(ctx context.Context, d *schema.ResourceData, 
 func readRoutingUtilizationLabel(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getRoutingUtilizationProxy(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceRoutingUtilizationLabel(), constants.DefaultConsistencyChecks, "genesyscloud_routing_utilization_label")
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceRoutingUtilizationLabel(), constants.DefaultConsistencyChecks, resourceName)
 
 	log.Printf("Reading label %s", d.Id())
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
@@ -100,7 +100,7 @@ func deleteRoutingUtilizationLabel(ctx context.Context, d *schema.ResourceData, 
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getRoutingUtilizationProxy(sdkConfig)
 
-	log.Printf("Deleting label %s", name)
+	log.Printf("Deleting label %s %s", d.Id(), name)
 	resp, err := proxy.deleteRoutingUtilizationLabel(ctx, d.Id(), true)
 	if err != nil {
 		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete label %s error: %s", name, err), resp)
