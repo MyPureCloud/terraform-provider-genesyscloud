@@ -402,8 +402,10 @@ func ValidateInboundSiteSettings(inboundSiteString string, trunkBaseMetaId strin
 
 func TrunkBaseSettingsExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
-		GetResourcesFunc:     provider.GetAllWithPooledClient(getAllTrunkBaseSettings),
-		RefAttrs:             map[string]*resourceExporter.RefAttrSettings{},
+		GetResourcesFunc: provider.GetAllWithPooledClient(getAllTrunkBaseSettings),
+		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
+			"inbound_site_id": {RefType: "genesyscloud_telephony_providers_edges_site"},
+		},
 		JsonEncodeAttributes: []string{"properties"},
 	}
 }
