@@ -18,7 +18,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v130/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v131/platformclientv2"
 )
 
 func getAllRoutingSettings(_ context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
@@ -38,7 +38,7 @@ func readRoutingSettings(ctx context.Context, d *schema.ResourceData, meta inter
 	proxy := getRoutingSettingsProxy(sdkConfig)
 	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceRoutingSettings(), constants.DefaultConsistencyChecks, resourceName)
 
-	log.Printf("Reading routing settings: %s", d.Id())
+	log.Printf("Reading routing settings")
 
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		settings, resp, getErr := proxy.getRoutingSettings(ctx)
