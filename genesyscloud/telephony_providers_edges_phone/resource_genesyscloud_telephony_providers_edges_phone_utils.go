@@ -174,6 +174,9 @@ func flattenPhoneLines(lines *[]platformclientv2.Line) []string {
 	for i := 0; i < len(*lines); i++ {
 		line := (*lines)[i]
 		did := ""
+		if line.Properties == nil {
+			continue
+		}
 		if k := (*line.Properties)["station_identity_address"]; k != nil {
 			didI := k.(map[string]interface{})["value"].(map[string]interface{})["instance"]
 			if didI != nil {
