@@ -483,7 +483,7 @@ func (g *GenesysCloudResourceExporter) generateOutputFiles() diag.Diagnostics {
 		}
 	}
 
-	err = generateZipForExporter(g)
+	err = g.generateZipForExporter()
 	if err != nil {
 		return err
 	}
@@ -491,7 +491,8 @@ func (g *GenesysCloudResourceExporter) generateOutputFiles() diag.Diagnostics {
 	return nil
 }
 
-func generateZipForExporter(g *GenesysCloudResourceExporter) diag.Diagnostics {
+func (g *GenesysCloudResourceExporter) generateZipForExporter() diag.Diagnostics {
+	zipFileName := "../archive.zip"
 	if compress := g.d.Get("compress").(bool); compress { //if true, compress directory name of where the export is going to occur
 		// read all the files
 		var files []fileMeta
@@ -503,7 +504,7 @@ func generateZipForExporter(g *GenesysCloudResourceExporter) diag.Diagnostics {
 			return diag.Errorf("Failed to fetch file path %s", ferr)
 		}
 		// create a zip
-		archive, ferr := os.Create("../archive.zip")
+		archive, ferr := os.Create(zipFileName)
 		if ferr != nil {
 			return diag.Errorf("Failed to create zip %s", ferr)
 		}
