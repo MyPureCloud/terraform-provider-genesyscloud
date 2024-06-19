@@ -42,6 +42,7 @@ import (
 	obCampaign "terraform-provider-genesyscloud/genesyscloud/outbound_campaign"
 	obCampaignRule "terraform-provider-genesyscloud/genesyscloud/outbound_campaignrule"
 	obContactList "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
+	outboundContactListContact "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list_contact"
 	obContactListFilter "terraform-provider-genesyscloud/genesyscloud/outbound_contactlistfilter"
 	obDncList "terraform-provider-genesyscloud/genesyscloud/outbound_dnclist"
 	obfst "terraform-provider-genesyscloud/genesyscloud/outbound_filespecificationtemplate"
@@ -222,6 +223,7 @@ func registerResources() {
 	routingQueue.SetRegistrar(regInstance)                                 //Registering routing queue
 	routingQueueConditionalGroupRouting.SetRegistrar(regInstance)          //Registering routing queue conditional group routing
 	routingQueueOutboundEmailAddress.SetRegistrar(regInstance)             //Registering routing queue outbound email address
+	outboundContactListContact.SetRegistrar(regInstance)                   //Registering outbound contact list contact
 	journeyViews.SetRegistrar(regInstance)                                 //Registering journey views
 
 	// setting resources for Use cases  like TF export where provider is used in resource classes.

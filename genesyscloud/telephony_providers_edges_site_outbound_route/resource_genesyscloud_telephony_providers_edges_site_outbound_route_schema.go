@@ -1,11 +1,12 @@
 package telephony_providers_edges_site_outbound_route
 
 import (
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
 /*
@@ -93,7 +94,6 @@ func ResourceSiteOutboundRoute() *schema.Resource {
 				Required:    true,
 				ConfigMode:  schema.SchemaConfigModeAttr,
 				Elem:        outboundRouteSchema,
-				MinItems:    1,
 			},
 		},
 	}

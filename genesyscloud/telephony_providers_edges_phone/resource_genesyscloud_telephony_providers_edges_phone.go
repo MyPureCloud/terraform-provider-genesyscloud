@@ -17,7 +17,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v130/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v131/platformclientv2"
 )
 
 func getAllPhones(ctx context.Context, sdkConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
@@ -90,10 +90,16 @@ func readPhone(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 		}
 
 		_ = d.Set("name", *currentPhone.Name)
-		_ = d.Set("state", *currentPhone.State)
 		_ = d.Set("site_id", *currentPhone.Site.Id)
 		_ = d.Set("phone_base_settings_id", *currentPhone.PhoneBaseSettings.Id)
-		_ = d.Set("line_base_settings_id", *currentPhone.LineBaseSettings.Id)
+
+		if currentPhone.State != nil {
+			_ = d.Set("state", *currentPhone.State)
+		}
+
+		if currentPhone.LineBaseSettings != nil {
+			_ = d.Set("line_base_settings_id", *currentPhone.LineBaseSettings.Id)
+		}
 
 		if currentPhone.PhoneMetaBase != nil {
 			_ = d.Set("phone_meta_base_id", *currentPhone.PhoneMetaBase.Id)

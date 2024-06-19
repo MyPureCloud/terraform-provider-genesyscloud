@@ -6,7 +6,9 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v130/platformclientv2"
+	rc "terraform-provider-genesyscloud/genesyscloud/resource_cache"
+
+	"github.com/mypurecloud/platform-client-sdk-go/v131/platformclientv2"
 )
 
 /*
@@ -53,6 +55,7 @@ type phoneProxy struct {
 	edgesApi     *platformclientv2.TelephonyProvidersEdgeApi
 	stationsApi  *platformclientv2.StationsApi
 	usersApi     *platformclientv2.UsersApi
+	phoneCache   rc.CacheInterface[platformclientv2.Phone]
 
 	getAllPhonesAttr   getAllPhonesFunc
 	createPhoneAttr    createPhoneFunc
@@ -73,12 +76,14 @@ func newPhoneProxy(clientConfig *platformclientv2.Configuration) *phoneProxy {
 	edgesApi := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(clientConfig)
 	stationsApi := platformclientv2.NewStationsApiWithConfig(clientConfig)
 	usersApi := platformclientv2.NewUsersApiWithConfig(clientConfig)
+	phoneCache := rc.NewResourceCache[platformclientv2.Phone]()
 
 	return &phoneProxy{
 		clientConfig: clientConfig,
 		edgesApi:     edgesApi,
 		stationsApi:  stationsApi,
 		usersApi:     usersApi,
+		phoneCache:   phoneCache,
 
 		getAllPhonesAttr:   getAllPhonesFn,
 		createPhoneAttr:    createPhoneFn,
@@ -116,6 +121,9 @@ func (p *phoneProxy) createPhone(ctx context.Context, phoneConfig *platformclien
 
 // getPhoneById retrieves a Genesys Cloud Phone by id
 func (p *phoneProxy) getPhoneById(ctx context.Context, phoneId string) (*platformclientv2.Phone, *platformclientv2.APIResponse, error) {
+	if phone := rc.GetCacheItem(p.phoneCache, phoneId); phone != nil {
+		return phone, nil, nil
+	}
 	return p.getPhoneByIdAttr(ctx, p, phoneId)
 }
 
@@ -205,6 +213,9 @@ func getAllPhonesFn(ctx context.Context, p *phoneProxy) (*[]platformclientv2.Pho
 	log.Printf("getAllPhonesFn:: Listing all of the non-deleted phone ids and names that we actually retrieved")
 	for _, phone := range allPhones {
 		log.Printf("getAllPhonesFn::  Retrieved phone id %s with phone name: %s\n", *phone.Id, *phone.Name)
+
+		// Cache the phone resource into the p.phoneCache for later use
+		rc.SetCache(p.phoneCache, *phone.Id, phone)
 	}
 
 	return &allPhones, response, nil

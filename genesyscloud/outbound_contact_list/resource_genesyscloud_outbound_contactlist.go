@@ -20,7 +20,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v130/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v131/platformclientv2"
 )
 
 const (
@@ -624,4 +624,14 @@ func GeneratePhoneColumnsDataTypeSpecBlock(columnName, columnDataType, min, max,
 		max_length       = %s
 	}
 	`, columnName, columnDataType, min, max, maxLength)
+}
+
+func GenerateEmailColumnsBlock(columnName, columnType, contactableTimeColumn string) string {
+	return fmt.Sprintf(`
+	email_columns {
+		column_name             = "%s"
+		type                    = "%s"
+		contactable_time_column = %s
+	}
+`, columnName, columnType, contactableTimeColumn)
 }

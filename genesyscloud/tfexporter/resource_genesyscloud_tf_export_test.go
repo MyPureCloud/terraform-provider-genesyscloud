@@ -23,7 +23,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v130/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v131/platformclientv2"
 
 	"terraform-provider-genesyscloud/genesyscloud/util/testrunner"
 
@@ -117,6 +117,62 @@ func TestAccResourceTfExportIncludeFilterResourcesByRegEx(t *testing.T) {
 					testQueueExportEqual(exportTestDir+"/"+defaultTfJSONFile, "genesyscloud_routing_queue", sanitizer.S.SanitizeResourceName(queueResources[1].Name), queueResources[1]),
 					testQueueExportEqual(exportTestDir+"/"+defaultTfJSONFile, "genesyscloud_routing_queue", sanitizer.S.SanitizeResourceName(queueResources[2].Name), queueResources[2]),
 					testQueueExportMatchesRegEx(exportTestDir+"/"+defaultTfJSONFile, "genesyscloud_routing_queue", "-prod"), //We should not find any "test" queues here because we only wanted to include queues that ended with a -prod
+				),
+			},
+		},
+		CheckDestroy: testVerifyExportsDestroyedFunc(exportTestDir),
+	})
+}
+
+// TestAccResourceTfExportIncludeFilterResourcesByRegExAndSanitizedNames will create 3 queues (two with foo bar, one to be excluded).
+// The test ensures that resources can be exported directly by their actual name or their sanitized names.
+func TestAccResourceTfExportIncludeFilterResourcesByRegExAndSanitizedNames(t *testing.T) {
+	var (
+		exportTestDir  = "../.terraformregex" + uuid.NewString()
+		exportResource = "test-export3_1"
+
+		queueResources = []QueueExport{
+			{ResourceName: "test-queue-test-1", Name: "include filter test - exclude me", Description: "This is an excluded bar test resource", AcwTimeoutMs: 200000},
+			{ResourceName: "test-queue-test-2", Name: "include filter test - foo - bar me", Description: "This is a foo bar test resource", AcwTimeoutMs: 200000},
+			{ResourceName: "test-queue-test-3", Name: "include filter test - fu - barre you", Description: "This is a foo bar test resource", AcwTimeoutMs: 200000},
+		}
+	)
+	defer os.RemoveAll(exportTestDir)
+
+	queueResourceDef := buildQueueResources(queueResources)
+
+	config := queueResourceDef +
+		generateTfExportByIncludeFilterResources(
+			exportResource,
+			exportTestDir,
+			util.TrueValue,
+			[]string{
+				strconv.Quote("genesyscloud_routing_queue::include filter test - foo - bar me"),   // Unsanitized Named Resource
+				strconv.Quote("genesyscloud_routing_queue::include_filter_test_-_fu_-_barre_you"), // Sanitized Named Resource
+			},
+			util.FalseValue,
+			util.FalseValue,
+			[]string{
+				strconv.Quote("genesyscloud_routing_queue." + queueResources[0].ResourceName),
+				strconv.Quote("genesyscloud_routing_queue." + queueResources[1].ResourceName),
+				strconv.Quote("genesyscloud_routing_queue." + queueResources[2].ResourceName),
+			},
+		)
+
+	sanitizer := resourceExporter.NewSanitizerProvider()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			{
+				// Generate a queue as well and export it
+				Config: config,
+				// Wait for a specified duration to avoid runtime error
+				Check: resource.ComposeTestCheckFunc(
+					testQueueExportEqual(exportTestDir+"/"+defaultTfJSONFile, "genesyscloud_routing_queue", sanitizer.S.SanitizeResourceName(queueResources[1].Name), queueResources[1]),
+					testQueueExportEqual(exportTestDir+"/"+defaultTfJSONFile, "genesyscloud_routing_queue", sanitizer.S.SanitizeResourceName(queueResources[2].Name), queueResources[2]),
+					testQueueExportExcludesRegEx(exportTestDir+"/"+defaultTfJSONFile, "genesyscloud_routing_queue", ".*exclude me.*"), //We should not find any "test" queues here because we only wanted to include queues that ended with a -prod
 				),
 			},
 		},
@@ -253,6 +309,75 @@ func TestAccResourceTfExportExcludeFilterResourcesByRegExExclusiveToResource(t *
 					testWrapupcodeExportEqual(exportTestDir+"/"+defaultTfJSONFile, "genesyscloud_routing_wrapupcode", sanitizer.S.SanitizeResourceName(wrapupCodeResources[1].Name), wrapupCodeResources[1]),
 					testWrapupcodeExportEqual(exportTestDir+"/"+defaultTfJSONFile, "genesyscloud_routing_wrapupcode", sanitizer.S.SanitizeResourceName(wrapupCodeResources[2].Name), wrapupCodeResources[2]),
 					testQueueExportExcludesRegEx(exportTestDir+"/"+defaultTfJSONFile, "genesyscloud_routing_queue", "-(dev|test)$"),
+				),
+			},
+		},
+		CheckDestroy: testVerifyExportsDestroyedFunc(exportTestDir),
+	})
+}
+
+// TestAccResourceTfExportExcludeFilterResourcesByRegExExclusiveToResourceAndSanitizedNames will exclude any test resources that match a
+// regular expression provided for the resource. In this test we check against both sanitized and unsanitized names.
+func TestAccResourceTfExportExcludeFilterResourcesByRegExExclusiveToResourceAndSanitizedNames(t *testing.T) {
+	var (
+		exportTestDir  = "../.terraformExclude" + uuid.NewString()
+		exportResource = "test-export6_1"
+
+		queueResources = []QueueExport{
+			{ResourceName: "test-queue-test-1", Name: "exclude filter - exclude me", Description: "This is an excluded bar test resource", AcwTimeoutMs: 200000},
+			{ResourceName: "test-queue-test-2", Name: "exclude filter - foo - bar me", Description: "This is a foo bar test resource", AcwTimeoutMs: 200000},
+			{ResourceName: "test-queue-test-3", Name: "exclude filter - fu - barre you", Description: "This is a foo bar test resource", AcwTimeoutMs: 200000},
+		}
+
+		wrapupCodeResources = []WrapupcodeExport{
+			{ResourceName: "test-wrapupcode-prod", Name: "exclude me"},
+			{ResourceName: "test-wrapupcode-test", Name: "foo + bar me"},
+			{ResourceName: "test-wrapupcode-dev", Name: "fu - barre you"},
+		}
+	)
+	defer os.RemoveAll(exportTestDir)
+
+	queueResourceDef := buildQueueResources(queueResources)
+	wrapupcodeResourceDef := buildWrapupcodeResources(wrapupCodeResources)
+	config := queueResourceDef + wrapupcodeResourceDef +
+		generateTfExportByExcludeFilterResources(
+			exportResource,
+			exportTestDir,
+			util.TrueValue,
+			[]string{
+				strconv.Quote("genesyscloud_routing_queue::exclude filter - foo - bar me"),
+				strconv.Quote("genesyscloud_routing_queue::exclude_filter_-_fu_-_barre_you"),
+				strconv.Quote("genesyscloud_outbound_ruleset"),
+				strconv.Quote("genesyscloud_user"),
+				strconv.Quote("genesyscloud_user_roles"),
+				strconv.Quote("genesyscloud_flow"),
+			},
+			util.FalseValue,
+			util.FalseValue,
+			[]string{
+				strconv.Quote("genesyscloud_routing_queue." + queueResources[0].ResourceName),
+				strconv.Quote("genesyscloud_routing_queue." + queueResources[1].ResourceName),
+				strconv.Quote("genesyscloud_routing_queue." + queueResources[2].ResourceName),
+				strconv.Quote("genesyscloud_routing_wrapupcode." + wrapupCodeResources[0].ResourceName),
+				strconv.Quote("genesyscloud_routing_wrapupcode." + wrapupCodeResources[1].ResourceName),
+				strconv.Quote("genesyscloud_routing_wrapupcode." + wrapupCodeResources[2].ResourceName),
+			},
+		)
+
+	sanitizer := resourceExporter.NewSanitizerProvider()
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			{
+				// Generate a queue as well and export it
+				Config: config,
+				Check: resource.ComposeTestCheckFunc(
+					testQueueExportEqual(exportTestDir+"/"+defaultTfJSONFile, "genesyscloud_routing_queue", sanitizer.S.SanitizeResourceName(queueResources[0].Name), queueResources[0]),
+					testWrapupcodeExportEqual(exportTestDir+"/"+defaultTfJSONFile, "genesyscloud_routing_wrapupcode", sanitizer.S.SanitizeResourceName(wrapupCodeResources[0].Name), wrapupCodeResources[0]),
+					testWrapupcodeExportEqual(exportTestDir+"/"+defaultTfJSONFile, "genesyscloud_routing_wrapupcode", sanitizer.S.SanitizeResourceName(wrapupCodeResources[1].Name), wrapupCodeResources[1]),
+					testWrapupcodeExportEqual(exportTestDir+"/"+defaultTfJSONFile, "genesyscloud_routing_wrapupcode", sanitizer.S.SanitizeResourceName(wrapupCodeResources[2].Name), wrapupCodeResources[2]),
+					testQueueExportExcludesRegEx(exportTestDir+"/"+defaultTfJSONFile, "genesyscloud_routing_queue", "(foo|fu)"),
 				),
 			},
 		},
@@ -1373,7 +1498,7 @@ resource "genesyscloud_outbound_campaign" "%s" {
 resource "genesyscloud_script" "script" {
 	script_name       = "%s"
 	filepath          = "%s"
-	file_content_hash = filesha256("%s")	
+	file_content_hash = filesha256("%s")
 }
 
 data "genesyscloud_auth_division_home" "home" {}
@@ -2135,8 +2260,8 @@ func generateTfExportResource(
 			"genesyscloud_architect_datatable",
 			"genesyscloud_architect_datatable_row",
 			//"genesyscloud_flow",
-			"genesyscloud_flow_milestone",	
-			//"genesyscloud_flow_outcome",	
+			"genesyscloud_flow_milestone",
+			//"genesyscloud_flow_outcome",
 			"genesyscloud_architect_ivr",
 			"genesyscloud_architect_schedules",
 			"genesyscloud_architect_schedulegroups",

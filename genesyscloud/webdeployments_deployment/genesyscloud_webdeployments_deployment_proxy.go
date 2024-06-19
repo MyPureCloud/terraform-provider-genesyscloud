@@ -10,7 +10,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v130/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v131/platformclientv2"
 )
 
 var internalProxy *webDeploymentsProxy
