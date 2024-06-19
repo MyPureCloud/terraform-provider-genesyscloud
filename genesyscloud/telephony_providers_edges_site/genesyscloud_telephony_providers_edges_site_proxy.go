@@ -32,13 +32,12 @@ Each proxy implementation:
 var internalProxy *SiteProxy
 
 // Type definitions for each func on our proxy so we can easily mock them out later
-type getAllManagedSitesFunc func(ctx context.Context, p *siteProxy) (*[]platformclientv2.Site, *platformclientv2.APIResponse, error)
-type getAllUnmanagedSitesFunc func(ctx context.Context, p *siteProxy) (*[]platformclientv2.Site, *platformclientv2.APIResponse, error)
-type createSiteFunc func(ctx context.Context, p *siteProxy, site *platformclientv2.Site) (*platformclientv2.Site, *platformclientv2.APIResponse, error)
-type deleteSiteFunc func(ctx context.Context, p *siteProxy, siteId string) (*platformclientv2.APIResponse, error)
-type getSiteByIdFunc func(ctx context.Context, p *siteProxy, siteId string) (site *platformclientv2.Site, resp *platformclientv2.APIResponse, err error)
-type getSiteIdByNameFunc func(ctx context.Context, p *siteProxy, siteName string) (siteId string, retryable bool, resp *platformclientv2.APIResponse, err error)
-type updateSiteFunc func(ctx context.Context, p *siteProxy, siteId string, site *platformclientv2.Site) (*platformclientv2.Site, *platformclientv2.APIResponse, error)
+type getAllSitesFunc func(ctx context.Context, p *SiteProxy, managed bool) (*[]platformclientv2.Site, *platformclientv2.APIResponse, error)
+type createSiteFunc func(ctx context.Context, p *SiteProxy, site *platformclientv2.Site) (*platformclientv2.Site, *platformclientv2.APIResponse, error)
+type deleteSiteFunc func(ctx context.Context, p *SiteProxy, siteId string) (*platformclientv2.APIResponse, error)
+type getSiteByIdFunc func(ctx context.Context, p *SiteProxy, siteId string) (site *platformclientv2.Site, resp *platformclientv2.APIResponse, err error)
+type getSiteIdByNameFunc func(ctx context.Context, p *SiteProxy, siteName string) (siteId string, retryable bool, resp *platformclientv2.APIResponse, err error)
+type updateSiteFunc func(ctx context.Context, p *SiteProxy, siteId string, site *platformclientv2.Site) (*platformclientv2.Site, *platformclientv2.APIResponse, error)
 
 type createSiteOutboundRouteFunc func(ctx context.Context, p *SiteProxy, siteId string, outboundRoute *platformclientv2.Outboundroutebase) (*platformclientv2.Outboundroutebase, *platformclientv2.APIResponse, error)
 type getSiteOutboundRoutesFunc func(ctx context.Context, p *SiteProxy, siteId string) (*[]platformclientv2.Outboundroutebase, *platformclientv2.APIResponse, error)
@@ -157,8 +156,8 @@ func (p *SiteProxy) getSiteById(ctx context.Context, siteId string) (site *platf
 }
 
 // getSiteIdByNameFunc returns a single Genesys Cloud Site by Name
-func (p *SiteProxy) getSiteIdByName(ctx context.Context, siteName string, managed bool) (siteId string, retryable bool, resp *platformclientv2.APIResponse, err error) {
-	return p.getSiteIdByNameAttr(ctx, p, siteName, managed)
+func (p *SiteProxy) getSiteIdByName(ctx context.Context, siteName string) (siteId string, retryable bool, resp *platformclientv2.APIResponse, err error) {
+	return p.getSiteIdByNameAttr(ctx, p, siteName)
 }
 
 // updateSiteFunc updates a Genesys Cloud Site
@@ -321,8 +320,8 @@ func getSiteByIdFn(ctx context.Context, p *SiteProxy, siteId string) (*platformc
 }
 
 // getSiteIdByNameFn is an implementation function for retrieving a Genesys Cloud Site by name
-func getSiteIdByNameFn(ctx context.Context, p *siteProxy, siteName string) (string, bool, *platformclientv2.APIResponse, error) {
-	managed, resp, err := p.getAllManagedSites(ctx)
+func getSiteIdByNameFn(ctx context.Context, p *SiteProxy, siteName string) (string, bool, *platformclientv2.APIResponse, error) {
+	managed, resp, err := getAllSitesFn(ctx, p, true)
 	if err != nil {
 		return "", false, resp, err
 	}
@@ -335,7 +334,7 @@ func getSiteIdByNameFn(ctx context.Context, p *siteProxy, siteName string) (stri
 		}
 	}
 
-	unmanaged, resp, err := p.getAllUnmanagedSites(ctx)
+	unmanaged, resp, err := getAllSitesFn(ctx, p, false)
 	if err != nil {
 		return "", false, resp, err
 	}
