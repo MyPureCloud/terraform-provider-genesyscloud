@@ -6,7 +6,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v130/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v131/platformclientv2"
 	"log"
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
@@ -65,7 +65,7 @@ func readJourneyView(ctx context.Context, d *schema.ResourceData, meta interface
 			}
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to get journeyView with viewId %s | error: %s", viewId, err), resp))
 		}
-		
+
 		resourcedata.SetNillableValue(d, "name", journeyView.Name)
 		resourcedata.SetNillableValue(d, "description", journeyView.Description)
 		resourcedata.SetNillableValue(d, "interval", journeyView.Interval)

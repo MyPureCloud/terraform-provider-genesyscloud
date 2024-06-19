@@ -18,7 +18,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v130/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v131/platformclientv2"
 )
 
 type PhoneConfig struct {
@@ -174,6 +174,9 @@ func flattenPhoneLines(lines *[]platformclientv2.Line) []string {
 	for i := 0; i < len(*lines); i++ {
 		line := (*lines)[i]
 		did := ""
+		if line.Properties == nil {
+			continue
+		}
 		if k := (*line.Properties)["station_identity_address"]; k != nil {
 			didI := k.(map[string]interface{})["value"].(map[string]interface{})["instance"]
 			if didI != nil {

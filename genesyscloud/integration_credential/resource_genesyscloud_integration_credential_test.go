@@ -10,7 +10,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v130/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v131/platformclientv2"
 )
 
 /*
@@ -49,7 +49,9 @@ func TestAccResourceCredential(t *testing.T) {
 					strconv.Quote(credName1),
 					strconv.Quote(typeName1),
 					GenerateCredentialFields(
-						util.GenerateMapProperty(key1, strconv.Quote(val1)),
+						map[string]string{
+							key1: strconv.Quote(val1),
+						},
 					),
 				),
 				Check: resource.ComposeTestCheckFunc(
@@ -65,7 +67,9 @@ func TestAccResourceCredential(t *testing.T) {
 					strconv.Quote(credName2),
 					strconv.Quote(typeName1),
 					GenerateCredentialFields(
-						util.GenerateMapProperty(key1, strconv.Quote(val1_2)),
+						map[string]string{
+							key1: strconv.Quote(val1_2),
+						},
 					),
 				),
 				Check: resource.ComposeTestCheckFunc(
@@ -81,8 +85,10 @@ func TestAccResourceCredential(t *testing.T) {
 					strconv.Quote(credName2),
 					strconv.Quote(typeName1),
 					GenerateCredentialFields(
-						util.GenerateMapProperty(key1, strconv.Quote(val1)),
-						util.GenerateMapProperty(key2, strconv.Quote(val2)),
+						map[string]string{
+							key1: strconv.Quote(val1),
+							key2: strconv.Quote(val2),
+						},
 					),
 				),
 				Check: resource.ComposeTestCheckFunc(
@@ -99,8 +105,10 @@ func TestAccResourceCredential(t *testing.T) {
 					strconv.Quote(credName2),
 					strconv.Quote(typeName1),
 					GenerateCredentialFields(
-						util.GenerateMapProperty(key1, strconv.Quote(val1)),
-						util.GenerateMapProperty(key2, strconv.Quote(val2_2)),
+						map[string]string{
+							key1: strconv.Quote(val1),
+							key2: strconv.Quote(val2_2),
+						},
 					),
 				),
 				Check: resource.ComposeTestCheckFunc(
@@ -124,7 +132,9 @@ func TestAccResourceCredential(t *testing.T) {
 					strconv.Quote(credName1),
 					strconv.Quote(typeName2),
 					GenerateCredentialFields(
-						util.GenerateMapProperty(key3, strconv.Quote(val3)),
+						map[string]string{
+							key3: strconv.Quote(val3),
+						},
 					),
 				),
 				Check: resource.ComposeTestCheckFunc(
@@ -140,7 +150,9 @@ func TestAccResourceCredential(t *testing.T) {
 					strconv.Quote(credName2),
 					strconv.Quote(typeName2),
 					GenerateCredentialFields(
-						util.GenerateMapProperty(key3, strconv.Quote(val3)),
+						map[string]string{
+							key3: strconv.Quote(val3),
+						},
 					),
 				),
 				Check: resource.ComposeTestCheckFunc(
@@ -213,8 +225,10 @@ func TestAccGenesysCloudOAuthResourceCredentialWithSecret(t *testing.T) {
 					strconv.Quote(credName),
 					strconv.Quote(typeName),
 					GenerateCredentialFields(
-						util.GenerateMapProperty("clientId", strconv.Quote(clientId)),
-						util.GenerateMapProperty("clientSecret", strconv.Quote(clientSecret)),
+						map[string]string{
+							"clientId":     strconv.Quote(clientId),
+							"clientSecret": strconv.Quote(clientSecret),
+						},
 					),
 				),
 				Check: resource.ComposeTestCheckFunc(

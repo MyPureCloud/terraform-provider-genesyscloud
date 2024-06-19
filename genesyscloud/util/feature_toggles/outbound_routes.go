@@ -2,14 +2,14 @@ package feature_toggles
 
 import "os"
 
-const outboundRotesEnvToggle = "ENABLE_STANDALONE_OUTBOUND_ROUTES"
+const outboundRoutesEnvToggle = "ENABLE_STANDALONE_OUTBOUND_ROUTES"
 
 func OutboundRoutesToggleName() string {
-	return outboundRotesEnvToggle
+	return outboundRoutesEnvToggle
 }
 
 func OutboundRoutesToggleExists() bool {
 	var exists bool
-	_, exists = os.LookupEnv(outboundRotesEnvToggle)
+	_, exists = os.LookupEnv(outboundRoutesEnvToggle)
 	return exists
 }

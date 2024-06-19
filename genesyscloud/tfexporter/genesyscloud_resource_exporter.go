@@ -33,11 +33,11 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/mohae/deepcopy"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v130/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v131/platformclientv2"
 )
 
 /*
-   This file contains all of the logic associated wite the process of exporting a file.
+   This file contains all logic associated with the process of exporting a file.
 */
 
 // Used to store the TF config block as a string so that it can be ignored when testing the exported HCL config file.
@@ -182,7 +182,7 @@ func (g *GenesysCloudResourceExporter) Export() (diagErr diag.Diagnostics) {
 	if diagErr != nil {
 		return diagErr
 	}
-	// Step #2 Retrieve all of the individual resources we are going to export
+	// Step #2 Retrieve all the individual resources we are going to export
 	diagErr = g.retrieveSanitizedResourceMaps()
 	if diagErr != nil {
 		return diagErr
@@ -331,6 +331,7 @@ func (g *GenesysCloudResourceExporter) retrieveGenesysCloudObjectInstances() dia
 		go func(resType string, exporter *resourceExporter.ResourceExporter) {
 			defer wg.Done()
 
+			log.Printf("Getting exported resources for [%s]", resType)
 			typeResources, err := g.getResourcesForType(resType, g.provider, exporter, g.meta)
 
 			if err != nil {
@@ -889,7 +890,7 @@ func (g *GenesysCloudResourceExporter) buildSanitizedResourceMaps(exporters map[
 			}
 			if containsPermissionsErrorOnly(err) && logErrors {
 				log.Printf("%v", err[0].Summary)
-				log.Print("log_permission_errors = true. Resuming export...")
+				log.Printf("Logging permission error for %s. Resuming export...", name)
 				return
 			}
 			if err != nil {
@@ -909,6 +910,7 @@ func (g *GenesysCloudResourceExporter) buildSanitizedResourceMaps(exporters map[
 
 	go func() {
 		wg.Wait()
+		log.Print(`Finished building sanitized resource maps`)
 		close(wgDone)
 	}()
 
@@ -1193,7 +1195,7 @@ func (g *GenesysCloudResourceExporter) sanitizeConfigMap(
 	resourceName string,
 	configMap map[string]interface{},
 	prevAttr string,
-	exporters map[string]*resourceExporter.ResourceExporter, //Map of all of the exporters
+	exporters map[string]*resourceExporter.ResourceExporter, //Map of all exporters
 	exportingState bool,
 	exportingAsHCL bool,
 	parentKey bool) ([]unresolvableAttributeInfo, bool) {
@@ -1313,7 +1315,7 @@ func (g *GenesysCloudResourceExporter) sanitizeConfigMap(
 		// This can cause invalid config files due to including attributes with limits that don't allow for zero values, so we remove
 		// those attributes from the config by default. Attributes can opt-out of this behavior by being added to a ResourceExporter's
 		// AllowZeroValues list.
-		if !exporter.AllowForZeroValues(currAttr) {
+		if !exporter.AllowForZeroValues(currAttr) && !exporter.AllowForZeroValuesInMap(prevAttr) {
 			removeZeroValues(key, configMap[key], configMap)
 		}
 

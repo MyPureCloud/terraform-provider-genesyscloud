@@ -129,11 +129,20 @@ func IncludeFilterResourceByRegex(result resourceExporter.ResourceIDMetaMap, nam
 		return result
 	}
 
+	sanitizer := resourceExporter.NewSanitizerProvider()
+
 	for _, pattern := range newFilters {
 		for k := range result {
 			match, _ := regexp.MatchString(pattern, result[k].Name)
 
+			// If name matches original name
 			if match {
+				newResourceMap[k] = result[k]
+			}
+
+			// If name matches sanitized name
+			sanitizedMatch, _ := regexp.MatchString(pattern, sanitizer.S.SanitizeResourceName(result[k].Name))
+			if sanitizedMatch {
 				newResourceMap[k] = result[k]
 			}
 		}
@@ -157,10 +166,12 @@ func ExcludeFilterResourceByRegex(result resourceExporter.ResourceIDMetaMap, nam
 	}
 
 	newResourceMap := make(resourceExporter.ResourceIDMetaMap)
+	sanitizer := resourceExporter.NewSanitizerProvider()
 
 	for k := range result {
 		for _, pattern := range newFilters {
 
+			// If name matches original name
 			match, _ := regexp.MatchString(pattern, result[k].Name)
 			if !match {
 				newResourceMap[k] = result[k]
@@ -168,8 +179,16 @@ func ExcludeFilterResourceByRegex(result resourceExporter.ResourceIDMetaMap, nam
 				delete(newResourceMap, k)
 				break
 			}
-		}
 
+			// If name matches sanitized name
+			sanitizedMatch, _ := regexp.MatchString(pattern, sanitizer.S.SanitizeResourceName(result[k].Name))
+			if !sanitizedMatch {
+				newResourceMap[k] = result[k]
+			} else {
+				delete(newResourceMap, k)
+				break
+			}
+		}
 	}
 	return newResourceMap
 }
