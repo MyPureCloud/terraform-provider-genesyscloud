@@ -73,9 +73,7 @@ func getIdpGenericFn(ctx context.Context, p *idpGenericProxy) (*platformclientv2
 
 // updateIdpGenericFn is an implementation of the function to update a Genesys Cloud idp generic
 func updateIdpGenericFn(ctx context.Context, p *idpGenericProxy, id string, idpGeneric *platformclientv2.Genericsaml) (*platformclientv2.Identityprovider, *platformclientv2.APIResponse, error) {
-	generic, resp, err := p.identityProviderApi.PutIdentityprovidersGeneric(*idpGeneric)
-
-	return generic, resp, err
+	return p.identityProviderApi.PutIdentityprovidersGeneric(*idpGeneric)
 }
 
 // deleteIdpGenericFn is an implementation function for deleting a Genesys Cloud idp generic
@@ -85,5 +83,5 @@ func deleteIdpGenericFn(ctx context.Context, p *idpGenericProxy, id string) (res
 		return resp, err
 	}
 
-	return resp, nil
+	return resp, err
 }
