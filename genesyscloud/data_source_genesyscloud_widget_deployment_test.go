@@ -23,7 +23,6 @@ func TestAccDataSourceWidgetDeployment(t *testing.T) {
 		resourceID:             widgegetDeploymentsResource,
 		description:            strconv.Quote(description),
 		flowID:                 strconv.Quote(flowId),
-		flowID:                 uuid.NewString(),
 		clientType:             V2,
 		authenticationRequired: "true",
 		disabled:               "true",
