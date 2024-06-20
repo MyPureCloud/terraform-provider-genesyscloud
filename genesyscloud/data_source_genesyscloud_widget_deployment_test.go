@@ -2,6 +2,7 @@ package genesyscloud
 
 import (
 	"fmt"
+	"strconv"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
@@ -16,11 +17,12 @@ func TestAccDataSourceWidgetDeployment(t *testing.T) {
 		widgetDeploymentsDataSource = "widget-deployments-data"
 		widgetDeploymentsName       = "Widget_deployments-"
 	)
-
+	description := "This is a test description"
+	flowId := uuid.NewString()
 	widgetDeployV1 := &widgetDeploymentConfig{
 		resourceID:             widgegetDeploymentsResource,
-		name:                   widgetDeploymentsName + uuid.NewString(),
-		description:            "This is a test description",
+		description:            strconv.Quote(description),
+		flowID:                 strconv.Quote(flowId),
 		flowID:                 uuid.NewString(),
 		clientType:             V2,
 		authenticationRequired: "true",
