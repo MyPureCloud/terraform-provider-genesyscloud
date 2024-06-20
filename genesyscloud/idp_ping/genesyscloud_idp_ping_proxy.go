@@ -84,5 +84,5 @@ func deleteIdpPingFn(ctx context.Context, p *idpPingProxy, id string) (response 
 		return resp, fmt.Errorf("Failed to delete idp ping: %s", err)
 	}
 
-	return resp, nil
+	return resp, err
 }
