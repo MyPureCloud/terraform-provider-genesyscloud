@@ -466,7 +466,7 @@ func TestAccResourceTfExportForCompress(t *testing.T) {
 	var (
 		exportTestDir   = "../../.terraform" + uuid.NewString()
 		exportResource1 = "test-export1"
-		zipFileName     = "../archive.zip"
+		zipFileName     = "../archive_genesyscloud_tf_export*"
 	)
 
 	defer os.RemoveAll(exportTestDir)
@@ -485,12 +485,12 @@ func TestAccResourceTfExportForCompress(t *testing.T) {
 					"",
 				),
 				Check: resource.ComposeTestCheckFunc(
-					validateFileCreated(zipFileName),
+					validateCompressedCreated(zipFileName),
 					validateCompressedFile(zipFileName),
 				),
 			},
 		},
-		CheckDestroy: deleteTestCompressedZip(exportTestDir),
+		CheckDestroy: deleteTestCompressedZip(exportTestDir, zipFileName),
 	})
 }
 
@@ -2482,7 +2482,17 @@ func validateFileCreated(filename string) resource.TestCheckFunc {
 	}
 }
 
-func deleteTestCompressedZip(exportPath string) resource.TestCheckFunc {
+func validateCompressedCreated(filename string) resource.TestCheckFunc {
+	return func(state *terraform.State) error {
+		_, err := filepath.Glob(filename)
+		if err != nil {
+			return fmt.Errorf("Failed to find file")
+		}
+		return nil
+	}
+}
+
+func deleteTestCompressedZip(exportPath string, zipFileName string) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
 		dir, err := os.ReadDir(exportPath)
 		if err != nil {
@@ -2491,10 +2501,17 @@ func deleteTestCompressedZip(exportPath string) resource.TestCheckFunc {
 		for _, d := range dir {
 			os.RemoveAll(filepath.Join(exportPath, d.Name()))
 		}
-		err = os.Remove("../archive.zip") // removing compressed zip
+		files, err := filepath.Glob(zipFileName)
+
 		if err != nil {
-			return fmt.Errorf("Failed to delete compressed zip %s", err)
+			return fmt.Errorf("Failed to get zip: %s", err)
 		}
+		for _, f := range files {
+			if err := os.Remove(f); err != nil {
+				return fmt.Errorf("Failed to delete: %s", err)
+			}
+		}
+
 		return nil
 	}
 }
@@ -2536,14 +2553,20 @@ func validateEvaluationFormAttributes(resourceName string, form gcloud.Evaluatio
 // validateCompressedFile unzips and validates the exported resulted in the compressed folder
 func validateCompressedFile(path string) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
-		reader, err := zip.OpenReader(path)
+		files, err := filepath.Glob(path)
 		if err != nil {
 			return err
 		}
-		for _, file := range reader.File {
-			err = validateCompressedConfigFiles(path, file)
+		for _, f := range files {
+			reader, err := zip.OpenReader(f)
 			if err != nil {
 				return err
+			}
+			for _, file := range reader.File {
+				err = validateCompressedConfigFiles(f, file)
+				if err != nil {
+					return err
+				}
 			}
 		}
 		return nil

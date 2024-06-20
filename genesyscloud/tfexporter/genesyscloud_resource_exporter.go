@@ -493,7 +493,7 @@ func (g *GenesysCloudResourceExporter) generateOutputFiles() diag.Diagnostics {
 }
 
 func (g *GenesysCloudResourceExporter) generateZipForExporter() diag.Diagnostics {
-	zipFileName := "../archive.zip"
+	zipFileName := "../archive_genesyscloud_tf_export" + uuid.NewString() + ".zip"
 	if compress := g.d.Get("compress").(bool); compress { //if true, compress directory name of where the export is going to occur
 		// read all the files
 		var files []fileMeta
