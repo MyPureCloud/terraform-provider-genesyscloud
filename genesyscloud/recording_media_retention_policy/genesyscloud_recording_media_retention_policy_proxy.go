@@ -4,9 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/mypurecloud/platform-client-sdk-go/v130/platformclientv2"
 	"net/http"
 	"net/url"
+
+	"github.com/mypurecloud/platform-client-sdk-go/v131/platformclientv2"
 )
 
 /*

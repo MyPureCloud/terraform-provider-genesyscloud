@@ -12,7 +12,7 @@ import (
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v130/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v131/platformclientv2"
 )
 
 var (
@@ -57,7 +57,6 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_routing_language"] = ResourceRoutingLanguage()
 	providerResources["genesyscloud_routing_skill"] = ResourceRoutingSkill()
 	providerResources["genesyscloud_routing_skill_group"] = ResourceRoutingSkillGroup()
-	providerResources["genesyscloud_routing_settings"] = ResourceRoutingSettings()
 	providerResources["genesyscloud_routing_utilization"] = ResourceRoutingUtilization()
 	providerResources["genesyscloud_routing_utilization_label"] = ResourceRoutingUtilizationLabel()
 	providerResources["genesyscloud_routing_wrapupcode"] = ResourceRoutingWrapupCode()
@@ -93,7 +92,6 @@ func (r *registerTestInstance) registerTestDataSources() {
 	providerDataSources["genesyscloud_quality_forms_evaluation"] = DataSourceQualityFormsEvaluations()
 	providerDataSources["genesyscloud_quality_forms_survey"] = dataSourceQualityFormsSurvey()
 	providerDataSources["genesyscloud_routing_language"] = dataSourceRoutingLanguage()
-	providerDataSources["genesyscloud_routing_settings"] = dataSourceRoutingSettings()
 	providerDataSources["genesyscloud_routing_skill"] = dataSourceRoutingSkill()
 	providerDataSources["genesyscloud_routing_skill_group"] = dataSourceRoutingSkillGroup()
 	providerDataSources["genesyscloud_routing_email_domain"] = DataSourceRoutingEmailDomain()
