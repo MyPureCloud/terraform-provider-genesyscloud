@@ -1038,7 +1038,7 @@ func updateQueueMembers(d *schema.ResourceData, sdkConfig *platformclientv2.Conf
 
 		for _, userId := range newUserIds {
 			if err := verifyUserIsNotGroupMemberOfQueue(d.Id(), userId, members); err != nil {
-				return diag.FromErr(err)
+				return util.BuildDiagnosticError(resourceName, "failed to update queue member: ", err)
 			}
 		}
 	}
