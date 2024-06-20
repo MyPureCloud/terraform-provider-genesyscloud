@@ -25,6 +25,8 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
 )
 
+var DataSourceManagedSites []string 
+
 func getAllSites(ctx context.Context, sdkConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
 	resources := make(resourceExporter.ResourceIDMetaMap)
 	sp := GetSiteProxy(sdkConfig)
@@ -46,10 +48,11 @@ func getAllSites(ctx context.Context, sdkConfig *platformclientv2.Configuration)
 	for _, managedSite := range *managedSites {
 		resources[*managedSite.Id] = &resourceExporter.ResourceMeta{Name: *managedSite.Name}
 		// When exporting managed sites, they must automatically be exported as data
-		// Managed sites are added to tfexporter.ManagedSites and formatted correctly for export as data
+		// Managed sites are added to the DataSourceManagedSites []string and formatted correctly for export as data
+		// The genesyscloud_resource_exporter will read DataSourceManagedSites
 		if tfexporter_state.IsExporterActive() {
 			managedSiteDataSource := resourceName + "::" + strings.ReplaceAll(*managedSite.Name, " ", "_")
-			tfexporter.AddToDataSource(managedSiteDataSource)
+			DataSourceManagedSites = append(DataSourceManagedSites, managedSiteDataSource)
 		}
 	}
 	return resources, nil
