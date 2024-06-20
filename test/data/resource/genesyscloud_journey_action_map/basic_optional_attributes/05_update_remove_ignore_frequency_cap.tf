@@ -19,7 +19,7 @@ resource "genesyscloud_journey_segment" "terraform_test_-TEST-CASE-_action_map_d
   display_name            = "terraform_test_-TEST-CASE-_action_map_dependency"
   color                   = "#008000"
   scope                   = "Session"
-   should_display_to_agent = false
+  should_display_to_agent = false
   journey {
     patterns {
       criteria {

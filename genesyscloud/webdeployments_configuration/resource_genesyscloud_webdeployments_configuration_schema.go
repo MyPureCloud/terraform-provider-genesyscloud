@@ -4,7 +4,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
-	gcloud "terraform-provider-genesyscloud/genesyscloud/validators"
+	"terraform-provider-genesyscloud/genesyscloud/validators"
 	wdcUtils "terraform-provider-genesyscloud/genesyscloud/webdeployments_configuration/utils"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -518,13 +518,13 @@ var (
 							Description:      "Background color for hero section, in hexadecimal format, eg #ffffff",
 							Type:             schema.TypeString,
 							Required:         true,
-							ValidateDiagFunc: gcloud.ValidateHexColor,
+							ValidateDiagFunc: validators.ValidateHexColor,
 						},
 						"text_color": {
 							Description:      "Text color for hero section, in hexadecimal format, eg #ffffff",
 							Type:             schema.TypeString,
 							Required:         true,
-							ValidateDiagFunc: gcloud.ValidateHexColor,
+							ValidateDiagFunc: validators.ValidateHexColor,
 						},
 						"image_uri": {
 							Description:  "Background image for hero section",
@@ -546,31 +546,31 @@ var (
 							Description:      "Global background color, in hexadecimal format, eg #ffffff",
 							Type:             schema.TypeString,
 							Required:         true,
-							ValidateDiagFunc: gcloud.ValidateHexColor,
+							ValidateDiagFunc: validators.ValidateHexColor,
 						},
 						"primary_color": {
 							Description:      "Global primary color, in hexadecimal format, eg #ffffff",
 							Type:             schema.TypeString,
 							Required:         true,
-							ValidateDiagFunc: gcloud.ValidateHexColor,
+							ValidateDiagFunc: validators.ValidateHexColor,
 						},
 						"primary_color_dark": {
 							Description:      "Global dark primary color, in hexadecimal format, eg #ffffff",
 							Type:             schema.TypeString,
 							Required:         true,
-							ValidateDiagFunc: gcloud.ValidateHexColor,
+							ValidateDiagFunc: validators.ValidateHexColor,
 						},
 						"primary_color_light": {
 							Description:      "Global light primary color, in hexadecimal format, eg #ffffff",
 							Type:             schema.TypeString,
 							Required:         true,
-							ValidateDiagFunc: gcloud.ValidateHexColor,
+							ValidateDiagFunc: validators.ValidateHexColor,
 						},
 						"text_color": {
 							Description:      "Global text color, in hexadecimal format, eg #ffffff",
 							Type:             schema.TypeString,
 							Required:         true,
-							ValidateDiagFunc: gcloud.ValidateHexColor,
+							ValidateDiagFunc: validators.ValidateHexColor,
 						},
 						"font_family": {
 							Description: "Global font family",

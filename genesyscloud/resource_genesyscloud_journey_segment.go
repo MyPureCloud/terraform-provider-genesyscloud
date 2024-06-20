@@ -22,7 +22,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v130/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v131/platformclientv2"
 )
 
 var (
@@ -53,7 +53,7 @@ var (
 			}(), ""),
 		},
 		"scope": {
-			Description:  "The target entity that a segment applies to.Valid values: Session, Customer. Changing the scope attribute will cause the existing journey_segment to be dropped and recreated with new ID.",
+			Description:  "The target entity that a segment applies to. Valid values: Session",
 			Type:         schema.TypeString,
 			Required:     true,
 			ForceNew:     true, // scope can be only set during creation
@@ -63,7 +63,6 @@ var (
 			Description: "Whether or not the segment should be displayed to agent/supervisor users.",
 			Type:        schema.TypeBool,
 			Optional:    true,
-			// Customer scope only supports false for this value
 		},
 		"context": {
 			Description: "The context of the segment.",

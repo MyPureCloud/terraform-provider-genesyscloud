@@ -6,7 +6,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
-	gcloud "terraform-provider-genesyscloud/genesyscloud/validators"
+	"terraform-provider-genesyscloud/genesyscloud/validators"
 )
 
 const resourceName = "genesyscloud_telephony_providers_edges_did_pool"
@@ -44,13 +44,13 @@ func ResourceTelephonyDidPool() *schema.Resource {
 				Description:      "Starting phone number of the DID Pool range. Phone number must be in a E.164 number format. Changing the start_phone_number attribute will cause the did_pool object to be dropped and recreated with a new ID.",
 				Type:             schema.TypeString,
 				Required:         true,
-				ValidateDiagFunc: gcloud.ValidatePhoneNumber,
+				ValidateDiagFunc: validators.ValidatePhoneNumber,
 			},
 			"end_phone_number": {
 				Description:      "Ending phone number of the DID Pool range.  Phone number must be in an E.164 number format. Changing the end_phone_number attribute will cause the did_pool object to be dropped and recreated with a new ID.",
 				Type:             schema.TypeString,
 				Required:         true,
-				ValidateDiagFunc: gcloud.ValidatePhoneNumber,
+				ValidateDiagFunc: validators.ValidatePhoneNumber,
 			},
 			"description": {
 				Description: "DID Pool description.",
@@ -83,13 +83,13 @@ func DataSourceDidPool() *schema.Resource {
 				Description:      "Starting phone number of the DID Pool range. Must be in an E.164 number format.",
 				Type:             schema.TypeString,
 				Required:         true,
-				ValidateDiagFunc: gcloud.ValidatePhoneNumber,
+				ValidateDiagFunc: validators.ValidatePhoneNumber,
 			},
 			"end_phone_number": {
 				Description:      "Ending phone number of the DID Pool range.",
 				Type:             schema.TypeString,
 				Required:         true,
-				ValidateDiagFunc: gcloud.ValidatePhoneNumber,
+				ValidateDiagFunc: validators.ValidatePhoneNumber,
 			},
 		},
 	}

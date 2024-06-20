@@ -27,9 +27,8 @@ resource "genesyscloud_widget_deployment" "mywidget" {
   client_type             = "v1"
   authentication_required = true
   disabled                = true
-  client_config {
-    authentication_url = "https://examplewebsite.com"
-    webchat_skin       = "modern-caret-skin"
+  third_party_client_config = {
+    foo = "bar"
   }
   allowed_domains = []
 }
@@ -41,16 +40,18 @@ resource "genesyscloud_widget_deployment" "mywidget" {
 ### Required
 
 - `authentication_required` (Boolean) When true, the customer members starting a chat must be authenticated by supplying their JWT to the create operation.
-- `client_type` (String) The type of display widget for which this Deployment is configured, which controls the administrator settings shown.Valid values: v1, v2, v1-http, third-party.
+- `client_type` (String) The type of display widget for which this Deployment is configured, which controls the administrator settings shown. Valid values: v1, v1-http, v2, third-party
 - `disabled` (Boolean) When true, all create chat operations using this Deployment will be rejected.
 - `name` (String) Name of the Widget Deployment.
 
 ### Optional
 
 - `allowed_domains` (List of String) The list of domains that are approved to use this Deployment; the list will be added to CORS headers for ease of web use
-- `client_config` (Block Set, Max: 1) The V1 and V1-http client configuration options that should be made available to the clients of this Deployment. (see [below for nested schema](#nestedblock--client_config))
+- `client_config` (Block Set, Max: 1, Deprecated) The V1 and V1-http client configuration options that should be made available to the clients of this Deployment. (see [below for nested schema](#nestedblock--client_config))
 - `description` (String) Widget Deployment description.
 - `flow_id` (String) The Inbound Chat Flow to run when new chats are initiated under this Deployment
+- `third_party_client_config` (Map of String) The third party client configuration options that should be made available to the clients of this Deployment.
+- `v2_client_config` (Map of String) The v2 client configuration options that should be made available to the clients of this Deployment.
 
 ### Read-Only
 
@@ -59,11 +60,8 @@ resource "genesyscloud_widget_deployment" "mywidget" {
 <a id="nestedblock--client_config"></a>
 ### Nested Schema for `client_config`
 
-Required:
-
-- `webchat_skin` (String) Skin for the webchat user. (basic, modern-caret-skin)
-
 Optional:
 
 - `authentication_url` (String) Url endpoint to perform_authentication
+- `webchat_skin` (String) Skin for the webchat user. (basic, modern-caret-skin)
 

@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v130/platformclientv2"
+	rc "terraform-provider-genesyscloud/genesyscloud/resource_cache"
+
+	"github.com/mypurecloud/platform-client-sdk-go/v131/platformclientv2"
 )
 
 /*
@@ -50,14 +52,17 @@ type externalContactsContactsProxy struct {
 	getExternalContactByIdAttr       getExternalContactByIdFunc
 	getExternalContactIdBySearchAttr getExternalContactIdBySearchFunc
 	updateExternalContactAttr        updateExternalContactFunc
+	externalContactsCache            rc.CacheInterface[platformclientv2.Externalcontact]
 }
 
 // newExternalContactsContactsProxy initializes the External Contacts proxy with all of the data needed to communicate with Genesys Cloud
 func newExternalContactsContactsProxy(clientConfig *platformclientv2.Configuration) *externalContactsContactsProxy {
 	api := platformclientv2.NewExternalContactsApiWithConfig(clientConfig)
+	externalContactsCache := rc.NewResourceCache[platformclientv2.Externalcontact]()
 	return &externalContactsContactsProxy{
 		clientConfig:                     clientConfig,
 		externalContactsApi:              api,
+		externalContactsCache:            externalContactsCache,
 		getAllExternalContactsAttr:       getAllExternalContactsFn,
 		createExternalContactAttr:        createExternalContactFn,
 		getExternalContactByIdAttr:       getExternalContactByIdFn,
@@ -93,6 +98,9 @@ func (p *externalContactsContactsProxy) deleteExternalContactId(ctx context.Cont
 
 // getExternalContactById returns a single Genesys Cloud External Contact by Id
 func (p *externalContactsContactsProxy) getExternalContactById(ctx context.Context, externalContactId string) (*platformclientv2.Externalcontact, *platformclientv2.APIResponse, error) {
+	if externalContacts := rc.GetCacheItem(p.externalContactsCache, externalContactId); externalContacts != nil { // Get the Externalcontact from the cache, if not there in the cache then call p.getExternalContactByIdAttr()
+		return externalContacts, nil, nil
+	}
 	return p.getExternalContactByIdAttr(ctx, p, externalContactId)
 }
 
@@ -130,6 +138,12 @@ func getAllExternalContactsFn(ctx context.Context, p *externalContactsContactsPr
 		}
 		cursor = *externalContacts.Cursors.After
 	}
+
+	// Cache the External Contacts resource into the p.externalContactsCache for later use
+	for _, externalContact := range allExternalContacts {
+		rc.SetCache(p.externalContactsCache, *externalContact.Id, externalContact)
+	}
+
 	return &allExternalContacts, response, nil
 }
 

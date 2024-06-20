@@ -13,7 +13,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v130/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v131/platformclientv2"
 )
 
 /*
@@ -114,20 +114,26 @@ func TestAccResourceIntegrationAction(t *testing.T) {
 						reqUrlTemplate2,
 						reqType2,
 						strconv.Quote(reqTemp),
-						util.GenerateMapAttr(
+						util.GenerateMapAttrWithMapProperties(
 							"headers",
-							util.GenerateMapProperty(headerKey, strconv.Quote(headerVal1)),
+							map[string]string{
+								headerKey: strconv.Quote(headerVal1),
+							},
 						),
 					),
 					generateIntegrationActionConfigResponse(
 						strconv.Quote(successTemplate),
-						util.GenerateMapAttr(
+						util.GenerateMapAttrWithMapProperties(
 							"translation_map",
-							util.GenerateMapProperty(transMapAttr, strconv.Quote(transMapVal1)),
+							map[string]string{
+								transMapAttr: strconv.Quote(transMapVal1),
+							},
 						),
-						util.GenerateMapAttr(
+						util.GenerateMapAttrWithMapProperties(
 							"translation_map_defaults",
-							util.GenerateMapProperty(transMapAttr, strconv.Quote(transMapValDefault1)),
+							map[string]string{
+								transMapAttr: strconv.Quote(transMapValDefault1),
+							},
 						),
 					),
 				),
@@ -165,20 +171,26 @@ func TestAccResourceIntegrationAction(t *testing.T) {
 						reqUrlTemplate2,
 						reqType2,
 						strconv.Quote(reqTemp),
-						util.GenerateMapAttr(
+						util.GenerateMapAttrWithMapProperties(
 							"headers",
-							util.GenerateMapProperty(headerKey, strconv.Quote(headerVal2)),
+							map[string]string{
+								headerKey: strconv.Quote(headerVal2),
+							},
 						),
 					),
 					generateIntegrationActionConfigResponse(
 						strconv.Quote(successTemplate),
-						util.GenerateMapAttr(
+						util.GenerateMapAttrWithMapProperties(
 							"translation_map",
-							util.GenerateMapProperty(transMapAttr, strconv.Quote(transMapVal2)),
+							map[string]string{
+								transMapAttr: strconv.Quote(transMapVal2),
+							},
 						),
-						util.GenerateMapAttr(
+						util.GenerateMapAttrWithMapProperties(
 							"translation_map_defaults",
-							util.GenerateMapProperty(transMapAttr, strconv.Quote(transMapValDefault2)),
+							map[string]string{
+								transMapAttr: strconv.Quote(transMapValDefault2),
+							},
 						),
 					),
 				),
