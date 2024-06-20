@@ -84,5 +84,5 @@ func deleteIdpGsuiteFn(ctx context.Context, p *idpGsuiteProxy, id string) (respo
 		return resp, fmt.Errorf("Failed to delete idp gsuite: %s", err)
 	}
 
-	return resp, nil
+	return resp, err
 }
