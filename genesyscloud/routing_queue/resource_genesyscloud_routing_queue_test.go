@@ -7,10 +7,12 @@ import (
 	"strings"
 	"terraform-provider-genesyscloud/genesyscloud"
 	"terraform-provider-genesyscloud/genesyscloud/architect_flow"
+	"terraform-provider-genesyscloud/genesyscloud/architect_user_prompt"
 	"terraform-provider-genesyscloud/genesyscloud/group"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	featureToggles "terraform-provider-genesyscloud/genesyscloud/util/feature_toggles"
+	"terraform-provider-genesyscloud/genesyscloud/util/testrunner"
 	"testing"
 	"time"
 
@@ -523,6 +525,32 @@ func TestAccResourceRoutingQueueFlows(t *testing.T) {
 
 		queueFlowInboundcallConfig1          = fmt.Sprintf("inboundCall:\n  name: %s\n  defaultLanguage: en-us\n  startUpRef: ./menus/menu[mainMenu]\n  initialGreeting:\n    tts: Archy says hi!!!\n  menus:\n    - menu:\n        name: Main Menu\n        audio:\n          tts: You are at the Main Menu, press 9 to disconnect.\n        refId: mainMenu\n        choices:\n          - menuDisconnect:\n              name: Disconnect\n              dtmf: digit_9", queueFlowName1)
 		messageInQueueFlowInboundcallConfig3 = fmt.Sprintf("inboundCall:\n  name: %s\n  defaultLanguage: en-us\n  startUpRef: ./menus/menu[mainMenu]\n  initialGreeting:\n    tts: Archy says hi!!!!!\n  menus:\n    - menu:\n        name: Main Menu\n        audio:\n          tts: You are at the Main Menu, press 9 to disconnect.\n        refId: mainMenu\n        choices:\n          - menuDisconnect:\n              name: Disconnect\n              dtmf: digit_9", queueFlowName3)
+
+		//variables for testing 'on_hold_prompt_id'
+		userPromptResource1         = "test-user_prompt_1"
+		userPromptName1             = "TestUserPrompt_1" + strings.Replace(uuid.NewString(), "-", "", -1)
+		userPromptDescription1      = "Test description"
+		userPromptResourceLang1     = "en-us"
+		userPromptResourceText1     = "This is a test greeting!"
+		userPromptResourceFileName2 = "../" + testrunner.GetTestDataPath("test-prompt-02.wav")
+		userPromptResourceTTS1      = "This is a test greeting!"
+		userPromptAsset1            = architect_user_prompt.UserPromptResourceStruct{
+			Language:        userPromptResourceLang1,
+			Tts_string:      strconv.Quote(userPromptResourceTTS1),
+			Text:            util.NullValue,
+			Filename:        util.NullValue,
+			FileContentHash: util.NullValue,
+		}
+		userPromptAsset2 = architect_user_prompt.UserPromptResourceStruct{
+			Language:        userPromptResourceLang1,
+			Tts_string:      util.NullValue,
+			Text:            strconv.Quote(userPromptResourceText1),
+			Filename:        strconv.Quote(userPromptResourceFileName2),
+			FileContentHash: userPromptResourceFileName2,
+		}
+
+		userPromptResources1 = []*architect_user_prompt.UserPromptResourceStruct{&userPromptAsset1}
+		userPromptResources2 = []*architect_user_prompt.UserPromptResourceStruct{&userPromptAsset2}
 	)
 
 	var homeDivisionName string
@@ -586,17 +614,24 @@ func TestAccResourceRoutingQueueFlows(t *testing.T) {
 					queueFlowFilePath3,
 					messageInQueueFlowInboundcallConfig3,
 					false,
-				) + GenerateRoutingQueueResourceBasic(
+				) + architect_user_prompt.GenerateUserPromptResource(&architect_user_prompt.UserPromptStruct{
+					ResourceID:  userPromptResource1,
+					Name:        userPromptName1,
+					Description: strconv.Quote(userPromptDescription1),
+					Resources:   userPromptResources1,
+				}) + GenerateRoutingQueueResourceBasic(
 					queueResource1,
 					queueName1,
 					"queue_flow_id = genesyscloud_flow."+queueFlowResource1+".id",
 					"email_in_queue_flow_id = genesyscloud_flow."+emailInQueueFlowResource1+".id",
 					"message_in_queue_flow_id = genesyscloud_flow."+messageInQueueFlowResource1+".id",
+					"on_hold_prompt_id = genesyscloud_architect_user_prompt."+userPromptResource1+".id",
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrPair("genesyscloud_routing_queue."+queueResource1, "queue_flow_id", "genesyscloud_flow."+queueFlowResource1, "id"),
 					resource.TestCheckResourceAttrPair("genesyscloud_routing_queue."+queueResource1, "email_in_queue_flow_id", "genesyscloud_flow."+emailInQueueFlowResource1, "id"),
 					resource.TestCheckResourceAttrPair("genesyscloud_routing_queue."+queueResource1, "message_in_queue_flow_id", "genesyscloud_flow."+messageInQueueFlowResource1, "id"),
+					resource.TestCheckResourceAttrPair("genesyscloud_routing_queue."+queueResource1, "on_hold_prompt_id", "genesyscloud_architect_user_prompt."+userPromptResource1, "id"),
 				),
 			},
 			{
@@ -616,17 +651,24 @@ func TestAccResourceRoutingQueueFlows(t *testing.T) {
 					queueFlowFilePath3,
 					messageInQueueFlowInboundcallConfig3,
 					false,
-				) + GenerateRoutingQueueResourceBasic(
+				) + architect_user_prompt.GenerateUserPromptResource(&architect_user_prompt.UserPromptStruct{
+					ResourceID:  userPromptResource1,
+					Name:        userPromptName1,
+					Description: strconv.Quote(userPromptDescription1),
+					Resources:   userPromptResources2,
+				}) + GenerateRoutingQueueResourceBasic(
 					queueResource1,
 					queueName1,
 					"queue_flow_id = genesyscloud_flow."+queueFlowResource2+".id",
 					"email_in_queue_flow_id = genesyscloud_flow."+emailInQueueFlowResource2+".id",
 					"message_in_queue_flow_id = genesyscloud_flow."+messageInQueueFlowResource2+".id",
+					"on_hold_prompt_id = genesyscloud_architect_user_prompt."+userPromptResource1+".id",
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrPair("genesyscloud_routing_queue."+queueResource1, "queue_flow_id", "genesyscloud_flow."+queueFlowResource2, "id"),
 					resource.TestCheckResourceAttrPair("genesyscloud_routing_queue."+queueResource1, "email_in_queue_flow_id", "genesyscloud_flow."+emailInQueueFlowResource2, "id"),
 					resource.TestCheckResourceAttrPair("genesyscloud_routing_queue."+queueResource1, "message_in_queue_flow_id", "genesyscloud_flow."+messageInQueueFlowResource2, "id"),
+					resource.TestCheckResourceAttrPair("genesyscloud_routing_queue."+queueResource1, "on_hold_prompt_id", "genesyscloud_architect_user_prompt."+userPromptResource1, "id"),
 					func(s *terraform.State) error {
 						time.Sleep(45 * time.Second) // Wait for 45 seconds for proper deletion of user
 						return nil
