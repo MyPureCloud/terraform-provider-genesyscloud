@@ -6,7 +6,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
-	gcloud "terraform-provider-genesyscloud/genesyscloud/validators"
+	"terraform-provider-genesyscloud/genesyscloud/validators"
 )
 
 /*
@@ -67,13 +67,13 @@ var (
 			`earliest_callable_time`: {
 				Description:      "The earliest time to dial a contact. Valid format is HH:mm",
 				Optional:         true,
-				ValidateDiagFunc: gcloud.ValidateTimeHHMM,
+				ValidateDiagFunc: validators.ValidateTimeHHMM,
 				Type:             schema.TypeString,
 			},
 			`latest_callable_time`: {
 				Description:      "The latest time to dial a contact. Valid format is HH:mm.",
 				Optional:         true,
-				ValidateDiagFunc: gcloud.ValidateTimeHHMM,
+				ValidateDiagFunc: validators.ValidateTimeHHMM,
 				Type:             schema.TypeString,
 			},
 		},
@@ -83,13 +83,13 @@ var (
 			`earliest_callable_time`: {
 				Description:      "The earliest time to dial a contact. Valid format is HH:mm.",
 				Optional:         true,
-				ValidateDiagFunc: gcloud.ValidateTimeHHMM,
+				ValidateDiagFunc: validators.ValidateTimeHHMM,
 				Type:             schema.TypeString,
 			},
 			`latest_callable_time`: {
 				Description:      "The latest time to dial a contact. Valid format is HH:mm.",
 				Optional:         true,
-				ValidateDiagFunc: gcloud.ValidateTimeHHMM,
+				ValidateDiagFunc: validators.ValidateTimeHHMM,
 				Type:             schema.TypeString,
 			},
 			`time_zone_id`: {

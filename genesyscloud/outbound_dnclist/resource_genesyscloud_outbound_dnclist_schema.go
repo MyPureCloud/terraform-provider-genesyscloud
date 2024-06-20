@@ -6,7 +6,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
-	gcloud "terraform-provider-genesyscloud/genesyscloud/validators"
+	"terraform-provider-genesyscloud/genesyscloud/validators"
 )
 
 const resourceName = "genesyscloud_outbound_dnclist"
@@ -90,7 +90,7 @@ func ResourceOutboundDncList() *schema.Resource {
 							Description:      `Expiration date for DNC phone numbers in yyyy-MM-ddTHH:mmZ format.`,
 							Optional:         true,
 							Type:             schema.TypeString,
-							ValidateDiagFunc: gcloud.ValidateDateTime,
+							ValidateDiagFunc: validators.ValidateDateTime,
 						},
 						`phone_numbers`: {
 							Description: `Phone numbers to add to a DNC list. Only possible if the dncSourceType is rds.  Phone numbers must be in an E.164 number format.`,
@@ -98,7 +98,7 @@ func ResourceOutboundDncList() *schema.Resource {
 							Type:        schema.TypeList,
 							Elem: &schema.Schema{
 								Type:             schema.TypeString,
-								ValidateDiagFunc: gcloud.ValidatePhoneNumber,
+								ValidateDiagFunc: validators.ValidatePhoneNumber,
 							},
 						},
 					},

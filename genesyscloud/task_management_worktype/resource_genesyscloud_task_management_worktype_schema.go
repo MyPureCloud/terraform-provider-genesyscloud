@@ -5,7 +5,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
-	gcloud "terraform-provider-genesyscloud/genesyscloud/validators"
+	"terraform-provider-genesyscloud/genesyscloud/validators"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
@@ -77,7 +77,7 @@ func ResourceTaskManagementWorktype() *schema.Resource {
 				Optional:         true,
 				Computed:         true,
 				Type:             schema.TypeString,
-				ValidateDiagFunc: gcloud.ValidateTime,
+				ValidateDiagFunc: validators.ValidateTime,
 			},
 		},
 	}

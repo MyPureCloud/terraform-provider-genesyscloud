@@ -1,10 +1,14 @@
 package tfexporter
 
 import (
+	"archive/zip"
 	"context"
 	"fmt"
 	"hash/fnv"
+	"io"
 	"log"
+	"os"
+	"path"
 	"path/filepath"
 	"reflect"
 	"regexp"
@@ -29,11 +33,11 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/mohae/deepcopy"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v130/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v131/platformclientv2"
 )
 
 /*
-   This file contains all of the logic associated wite the process of exporting a file.
+   This file contains all logic associated with the process of exporting a file.
 */
 
 // Used to store the TF config block as a string so that it can be ignored when testing the exported HCL config file.
@@ -178,7 +182,7 @@ func (g *GenesysCloudResourceExporter) Export() (diagErr diag.Diagnostics) {
 	if diagErr != nil {
 		return diagErr
 	}
-	// Step #2 Retrieve all of the individual resources we are going to export
+	// Step #2 Retrieve all the individual resources we are going to export
 	diagErr = g.retrieveSanitizedResourceMaps()
 	if diagErr != nil {
 		return diagErr
@@ -327,6 +331,7 @@ func (g *GenesysCloudResourceExporter) retrieveGenesysCloudObjectInstances() dia
 		go func(resType string, exporter *resourceExporter.ResourceExporter) {
 			defer wg.Done()
 
+			log.Printf("Getting exported resources for [%s]", resType)
 			typeResources, err := g.getResourcesForType(resType, g.provider, exporter, g.meta)
 
 			if err != nil {
@@ -477,6 +482,57 @@ func (g *GenesysCloudResourceExporter) generateOutputFiles() diag.Diagnostics {
 		if err != nil {
 			return err
 		}
+	}
+
+	err = g.generateZipForExporter()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (g *GenesysCloudResourceExporter) generateZipForExporter() diag.Diagnostics {
+	zipFileName := "../archive_genesyscloud_tf_export" + uuid.NewString() + ".zip"
+	if compress := g.d.Get("compress").(bool); compress { //if true, compress directory name of where the export is going to occur
+		// read all the files
+		var files []fileMeta
+		ferr := filepath.Walk(g.exportDirPath, func(path string, info os.FileInfo, ferr error) error {
+			files = append(files, fileMeta{Path: path, IsDir: info.IsDir()})
+			return nil
+		})
+		if ferr != nil {
+			return diag.Errorf("Failed to fetch file path %s", ferr)
+		}
+		// create a zip
+		archive, ferr := os.Create(zipFileName)
+		if ferr != nil {
+			return diag.Errorf("Failed to create zip %s", ferr)
+		}
+		defer archive.Close()
+		zipWriter := zip.NewWriter(archive)
+
+		for _, f := range files {
+			if !f.IsDir {
+				fPath := f.Path
+
+				w, ferr := zipWriter.Create(path.Base(fPath))
+				if ferr != nil {
+					return diag.Errorf("Failed to create base path for zip %s", ferr)
+				}
+
+				file, ferr := os.Open(f.Path)
+				if ferr != nil {
+					return diag.Errorf("Failed to open the original file %s", ferr)
+				}
+				defer file.Close()
+
+				if _, ferr = io.Copy(w, file); ferr != nil {
+					return diag.Errorf("Failed to copy the file to zip %s", ferr)
+				}
+			}
+		}
+		zipWriter.Close()
 	}
 
 	return nil
@@ -834,7 +890,7 @@ func (g *GenesysCloudResourceExporter) buildSanitizedResourceMaps(exporters map[
 			}
 			if containsPermissionsErrorOnly(err) && logErrors {
 				log.Printf("%v", err[0].Summary)
-				log.Print("log_permission_errors = true. Resuming export...")
+				log.Printf("Logging permission error for %s. Resuming export...", name)
 				return
 			}
 			if err != nil {
@@ -854,6 +910,7 @@ func (g *GenesysCloudResourceExporter) buildSanitizedResourceMaps(exporters map[
 
 	go func() {
 		wg.Wait()
+		log.Print(`Finished building sanitized resource maps`)
 		close(wgDone)
 	}()
 
@@ -1138,7 +1195,7 @@ func (g *GenesysCloudResourceExporter) sanitizeConfigMap(
 	resourceName string,
 	configMap map[string]interface{},
 	prevAttr string,
-	exporters map[string]*resourceExporter.ResourceExporter, //Map of all of the exporters
+	exporters map[string]*resourceExporter.ResourceExporter, //Map of all exporters
 	exportingState bool,
 	exportingAsHCL bool,
 	parentKey bool) ([]unresolvableAttributeInfo, bool) {
@@ -1258,7 +1315,7 @@ func (g *GenesysCloudResourceExporter) sanitizeConfigMap(
 		// This can cause invalid config files due to including attributes with limits that don't allow for zero values, so we remove
 		// those attributes from the config by default. Attributes can opt-out of this behavior by being added to a ResourceExporter's
 		// AllowZeroValues list.
-		if !exporter.AllowForZeroValues(currAttr) {
+		if !exporter.AllowForZeroValues(currAttr) && !exporter.AllowForZeroValuesInMap(prevAttr) {
 			removeZeroValues(key, configMap[key], configMap)
 		}
 
