@@ -503,6 +503,9 @@ resource "genesyscloud_routing_skill_group" "%s" {
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
+				PreConfig: func() {
+					time.Sleep(30 * time.Second)
+				},
 				Config: skillGroupResource +
 					routingSkillResource +
 					division1Resource +
