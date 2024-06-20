@@ -1,10 +1,14 @@
 package tfexporter
 
 import (
+	"archive/zip"
 	"context"
 	"fmt"
 	"hash/fnv"
+	"io"
 	"log"
+	"os"
+	"path"
 	"path/filepath"
 	"reflect"
 	"regexp"
@@ -478,6 +482,57 @@ func (g *GenesysCloudResourceExporter) generateOutputFiles() diag.Diagnostics {
 		if err != nil {
 			return err
 		}
+	}
+
+	err = g.generateZipForExporter()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (g *GenesysCloudResourceExporter) generateZipForExporter() diag.Diagnostics {
+	zipFileName := "../archive_genesyscloud_tf_export" + uuid.NewString() + ".zip"
+	if compress := g.d.Get("compress").(bool); compress { //if true, compress directory name of where the export is going to occur
+		// read all the files
+		var files []fileMeta
+		ferr := filepath.Walk(g.exportDirPath, func(path string, info os.FileInfo, ferr error) error {
+			files = append(files, fileMeta{Path: path, IsDir: info.IsDir()})
+			return nil
+		})
+		if ferr != nil {
+			return diag.Errorf("Failed to fetch file path %s", ferr)
+		}
+		// create a zip
+		archive, ferr := os.Create(zipFileName)
+		if ferr != nil {
+			return diag.Errorf("Failed to create zip %s", ferr)
+		}
+		defer archive.Close()
+		zipWriter := zip.NewWriter(archive)
+
+		for _, f := range files {
+			if !f.IsDir {
+				fPath := f.Path
+
+				w, ferr := zipWriter.Create(path.Base(fPath))
+				if ferr != nil {
+					return diag.Errorf("Failed to create base path for zip %s", ferr)
+				}
+
+				file, ferr := os.Open(f.Path)
+				if ferr != nil {
+					return diag.Errorf("Failed to open the original file %s", ferr)
+				}
+				defer file.Close()
+
+				if _, ferr = io.Copy(w, file); ferr != nil {
+					return diag.Errorf("Failed to copy the file to zip %s", ferr)
+				}
+			}
+		}
+		zipWriter.Close()
 	}
 
 	return nil
