@@ -3,7 +3,6 @@ package telephony_providers_edges_site
 import (
 	"context"
 	"fmt"
-	"log"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
