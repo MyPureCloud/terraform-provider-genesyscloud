@@ -21,6 +21,7 @@ func TestAccDataSourceWidgetDeployment(t *testing.T) {
 	flowId := uuid.NewString()
 	widgetDeployV1 := &widgetDeploymentConfig{
 		resourceID:             widgegetDeploymentsResource,
+		name:                   widgetDeploymentsName,
 		description:            strconv.Quote(description),
 		flowID:                 strconv.Quote(flowId),
 		clientType:             V2,
