@@ -3,20 +3,22 @@ package routing_utilization_label
 import (
 	"context"
 	"fmt"
-	"github.com/mypurecloud/platform-client-sdk-go/v131/platformclientv2"
+	"log"
 	rc "terraform-provider-genesyscloud/genesyscloud/resource_cache"
+
+	"github.com/mypurecloud/platform-client-sdk-go/v131/platformclientv2"
 )
 
-var internalProxy *routingUtilizationProxy
+var internalProxy *routingUtilizationLabelProxy
 
-type getAllRoutingUtilizationLabelsFunc func(ctx context.Context, p *routingUtilizationProxy, name string) (*[]platformclientv2.Utilizationlabel, *platformclientv2.APIResponse, error)
-type createRoutingUtilizationLabelFunc func(ctx context.Context, p *routingUtilizationProxy, req *platformclientv2.Createutilizationlabelrequest) (*platformclientv2.Utilizationlabel, *platformclientv2.APIResponse, error)
-type getRoutingUtilizationLabelFunc func(ctx context.Context, p *routingUtilizationProxy, id string) (*platformclientv2.Utilizationlabel, *platformclientv2.APIResponse, error)
-type getRoutingUtilizationLabelByNameFunc func(ctx context.Context, p *routingUtilizationProxy, name string) (*platformclientv2.Utilizationlabel, *platformclientv2.APIResponse, error)
-type updateRoutingUtilizationLabelFunc func(ctx context.Context, p *routingUtilizationProxy, id string, updateutilizationlabelrequest *platformclientv2.Updateutilizationlabelrequest) (*platformclientv2.Utilizationlabel, *platformclientv2.APIResponse, error)
-type deleteRoutingUtilizationLabelFunc func(ctx context.Context, p *routingUtilizationProxy, id string, forceDelete bool) (*platformclientv2.APIResponse, error)
+type getAllRoutingUtilizationLabelsFunc func(ctx context.Context, p *routingUtilizationLabelProxy, name string) (*[]platformclientv2.Utilizationlabel, *platformclientv2.APIResponse, error)
+type createRoutingUtilizationLabelFunc func(ctx context.Context, p *routingUtilizationLabelProxy, req *platformclientv2.Createutilizationlabelrequest) (*platformclientv2.Utilizationlabel, *platformclientv2.APIResponse, error)
+type getRoutingUtilizationLabelFunc func(ctx context.Context, p *routingUtilizationLabelProxy, id string) (*platformclientv2.Utilizationlabel, *platformclientv2.APIResponse, error)
+type getRoutingUtilizationLabelByNameFunc func(ctx context.Context, p *routingUtilizationLabelProxy, name string) (*platformclientv2.Utilizationlabel, bool, *platformclientv2.APIResponse, error)
+type updateRoutingUtilizationLabelFunc func(ctx context.Context, p *routingUtilizationLabelProxy, id string, updateutilizationlabelrequest *platformclientv2.Updateutilizationlabelrequest) (*platformclientv2.Utilizationlabel, *platformclientv2.APIResponse, error)
+type deleteRoutingUtilizationLabelFunc func(ctx context.Context, p *routingUtilizationLabelProxy, id string, forceDelete bool) (*platformclientv2.APIResponse, error)
 
-type routingUtilizationProxy struct {
+type routingUtilizationLabelProxy struct {
 	clientConfig                         *platformclientv2.Configuration
 	routingApi                           *platformclientv2.RoutingApi
 	getAllRoutingUtilizationLabelsAttr   getAllRoutingUtilizationLabelsFunc
@@ -28,10 +30,10 @@ type routingUtilizationProxy struct {
 	routingCache                         rc.CacheInterface[platformclientv2.Utilizationlabel]
 }
 
-func newRoutingUtilizationProxy(clientConfig *platformclientv2.Configuration) *routingUtilizationProxy {
+func newRoutingUtilizationLabelProxy(clientConfig *platformclientv2.Configuration) *routingUtilizationLabelProxy {
 	api := platformclientv2.NewRoutingApiWithConfig(clientConfig)
 	routingCache := rc.NewResourceCache[platformclientv2.Utilizationlabel]()
-	return &routingUtilizationProxy{
+	return &routingUtilizationLabelProxy{
 		clientConfig:                         clientConfig,
 		routingApi:                           api,
 		getAllRoutingUtilizationLabelsAttr:   getAllRoutingUtilizationLabelsFn,
@@ -44,38 +46,38 @@ func newRoutingUtilizationProxy(clientConfig *platformclientv2.Configuration) *r
 	}
 }
 
-func getRoutingUtilizationProxy(clientConfig *platformclientv2.Configuration) *routingUtilizationProxy {
+func getRoutingUtilizationLabelProxy(clientConfig *platformclientv2.Configuration) *routingUtilizationLabelProxy {
 	if internalProxy == nil {
-		internalProxy = newRoutingUtilizationProxy(clientConfig)
+		internalProxy = newRoutingUtilizationLabelProxy(clientConfig)
 	}
 	return internalProxy
 }
 
-func (p *routingUtilizationProxy) getAllRoutingUtilizationLabels(ctx context.Context, name string) (*[]platformclientv2.Utilizationlabel, *platformclientv2.APIResponse, error) {
+func (p *routingUtilizationLabelProxy) getAllRoutingUtilizationLabels(ctx context.Context, name string) (*[]platformclientv2.Utilizationlabel, *platformclientv2.APIResponse, error) {
 	return p.getAllRoutingUtilizationLabelsAttr(ctx, p, name)
 }
 
-func (p *routingUtilizationProxy) createRoutingUtilizationLabel(ctx context.Context, req *platformclientv2.Createutilizationlabelrequest) (*platformclientv2.Utilizationlabel, *platformclientv2.APIResponse, error) {
+func (p *routingUtilizationLabelProxy) createRoutingUtilizationLabel(ctx context.Context, req *platformclientv2.Createutilizationlabelrequest) (*platformclientv2.Utilizationlabel, *platformclientv2.APIResponse, error) {
 	return p.createRoutingUtilizationLabelAttr(ctx, p, req)
 }
 
-func (p *routingUtilizationProxy) getRoutingUtilizationLabel(ctx context.Context, id string) (*platformclientv2.Utilizationlabel, *platformclientv2.APIResponse, error) {
+func (p *routingUtilizationLabelProxy) getRoutingUtilizationLabel(ctx context.Context, id string) (*platformclientv2.Utilizationlabel, *platformclientv2.APIResponse, error) {
 	return p.getRoutingUtilizationLabelAttr(ctx, p, id)
 }
 
-func (p *routingUtilizationProxy) getRoutingUtilizationLabelByName(ctx context.Context, name string) (*platformclientv2.Utilizationlabel, *platformclientv2.APIResponse, error) {
+func (p *routingUtilizationLabelProxy) getRoutingUtilizationLabelByName(ctx context.Context, name string) (*platformclientv2.Utilizationlabel, bool, *platformclientv2.APIResponse, error) {
 	return p.getRoutingUtilizationLabelByNameAttr(ctx, p, name)
 }
 
-func (p *routingUtilizationProxy) updateRoutingUtilizationLabel(ctx context.Context, id string, req *platformclientv2.Updateutilizationlabelrequest) (*platformclientv2.Utilizationlabel, *platformclientv2.APIResponse, error) {
+func (p *routingUtilizationLabelProxy) updateRoutingUtilizationLabel(ctx context.Context, id string, req *platformclientv2.Updateutilizationlabelrequest) (*platformclientv2.Utilizationlabel, *platformclientv2.APIResponse, error) {
 	return p.updateRoutingUtilizationLabelAttr(ctx, p, id, req)
 }
 
-func (p *routingUtilizationProxy) deleteRoutingUtilizationLabel(ctx context.Context, id string, forceDelete bool) (*platformclientv2.APIResponse, error) {
+func (p *routingUtilizationLabelProxy) deleteRoutingUtilizationLabel(ctx context.Context, id string, forceDelete bool) (*platformclientv2.APIResponse, error) {
 	return p.deleteRoutingUtilizationLabelAttr(ctx, p, id, forceDelete)
 }
 
-func getAllRoutingUtilizationLabelsFn(_ context.Context, p *routingUtilizationProxy, name string) (*[]platformclientv2.Utilizationlabel, *platformclientv2.APIResponse, error) {
+func getAllRoutingUtilizationLabelsFn(_ context.Context, p *routingUtilizationLabelProxy, name string) (*[]platformclientv2.Utilizationlabel, *platformclientv2.APIResponse, error) {
 	var allUtilizationLabels []platformclientv2.Utilizationlabel
 	const pageSize = 100
 
@@ -108,35 +110,40 @@ func getAllRoutingUtilizationLabelsFn(_ context.Context, p *routingUtilizationPr
 	return &allUtilizationLabels, resp, nil
 }
 
-func createRoutingUtilizationLabelFn(_ context.Context, p *routingUtilizationProxy, req *platformclientv2.Createutilizationlabelrequest) (*platformclientv2.Utilizationlabel, *platformclientv2.APIResponse, error) {
+func createRoutingUtilizationLabelFn(_ context.Context, p *routingUtilizationLabelProxy, req *platformclientv2.Createutilizationlabelrequest) (*platformclientv2.Utilizationlabel, *platformclientv2.APIResponse, error) {
 	return p.routingApi.PostRoutingUtilizationLabels(*req)
 }
 
-func getRoutingUtilizationLabelFn(_ context.Context, p *routingUtilizationProxy, id string) (*platformclientv2.Utilizationlabel, *platformclientv2.APIResponse, error) {
+func getRoutingUtilizationLabelFn(_ context.Context, p *routingUtilizationLabelProxy, id string) (*platformclientv2.Utilizationlabel, *platformclientv2.APIResponse, error) {
 	if label := rc.GetCacheItem(p.routingCache, id); label != nil {
 		return label, nil, nil
 	}
 	return p.routingApi.GetRoutingUtilizationLabel(id)
 }
 
-func getRoutingUtilizationLabelByNameFn(ctx context.Context, p *routingUtilizationProxy, name string) (*platformclientv2.Utilizationlabel, *platformclientv2.APIResponse, error) {
+func getRoutingUtilizationLabelByNameFn(ctx context.Context, p *routingUtilizationLabelProxy, name string) (*platformclientv2.Utilizationlabel, bool, *platformclientv2.APIResponse, error) {
 	labels, resp, err := getAllRoutingUtilizationLabelsFn(ctx, p, name)
 	if err != nil {
-		return nil, resp, fmt.Errorf("error retrieving routing utilization label by name %s", err)
+		return nil, false, resp, fmt.Errorf("error retrieving routing utilization label by name %s", err)
+	}
+
+	if labels == nil || len(*labels) == 0{
+		return nil, true, resp, fmt.Errorf("no routing utilization labels found with name %s", name)
 	}
 
 	for _, label := range *labels {
 		if *label.Name == name {
-			return &label, resp, nil
+			log.Printf("Retrieved routing utilization label %s by name %s", *label.Id, name)
+			return &label, false, resp, nil
 		}
 	}
-	return nil, resp, fmt.Errorf("no routing utilization label found with name: %s", name)
+	return nil, true, resp, fmt.Errorf("no routing utilization label found with name: %s", name)
 }
 
-func updateRoutingUtilizationLabelFn(_ context.Context, p *routingUtilizationProxy, id string, req *platformclientv2.Updateutilizationlabelrequest) (*platformclientv2.Utilizationlabel, *platformclientv2.APIResponse, error) {
+func updateRoutingUtilizationLabelFn(_ context.Context, p *routingUtilizationLabelProxy, id string, req *platformclientv2.Updateutilizationlabelrequest) (*platformclientv2.Utilizationlabel, *platformclientv2.APIResponse, error) {
 	return p.routingApi.PutRoutingUtilizationLabel(id, *req)
 }
 
-func deleteRoutingUtilizationLabelFn(_ context.Context, p *routingUtilizationProxy, id string, forceDelete bool) (*platformclientv2.APIResponse, error) {
+func deleteRoutingUtilizationLabelFn(_ context.Context, p *routingUtilizationLabelProxy, id string, forceDelete bool) (*platformclientv2.APIResponse, error) {
 	return p.routingApi.DeleteRoutingUtilizationLabel(id, forceDelete)
 }

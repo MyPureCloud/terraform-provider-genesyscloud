@@ -14,17 +14,17 @@ import (
 
 func dataSourceRoutingUtilizationLabelRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	sdkConfig := m.(*provider.ProviderMeta).ClientConfig
-	proxy := getRoutingUtilizationProxy(sdkConfig)
+	proxy := getRoutingUtilizationLabelProxy(sdkConfig)
 	name := d.Get("name").(string)
 
 	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
-		label, resp, getErr := proxy.getRoutingUtilizationLabelByName(ctx, name)
+		label, retryable, resp, getErr := proxy.getRoutingUtilizationLabelByName(ctx, name)
 
-		if getErr != nil {
+		if getErr != nil  && !retryable{
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Error requesting label %s | error: %s", name, getErr), resp))
 		}
 
-		if label == nil {
+		if retryable {
 			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("No labels found with name %s", name), resp))
 		}
 		d.SetId(*label.Id)

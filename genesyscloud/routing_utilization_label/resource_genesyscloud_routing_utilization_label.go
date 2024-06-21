@@ -22,7 +22,7 @@ import (
 
 func getAllRoutingUtilizationLabels(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
 	resources := make(resourceExporter.ResourceIDMetaMap)
-	proxy := getRoutingUtilizationProxy(clientConfig)
+	proxy := getRoutingUtilizationLabelProxy(clientConfig)
 
 	labels, resp, getErr := proxy.getAllRoutingUtilizationLabels(ctx, "")
 	if getErr != nil {
@@ -38,7 +38,7 @@ func getAllRoutingUtilizationLabels(ctx context.Context, clientConfig *platformc
 func createRoutingUtilizationLabel(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	name := d.Get("name").(string)
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-	proxy := getRoutingUtilizationProxy(sdkConfig)
+	proxy := getRoutingUtilizationLabelProxy(sdkConfig)
 
 	log.Printf("Creating label %s", name)
 
@@ -57,7 +57,7 @@ func createRoutingUtilizationLabel(ctx context.Context, d *schema.ResourceData, 
 
 func readRoutingUtilizationLabel(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-	proxy := getRoutingUtilizationProxy(sdkConfig)
+	proxy := getRoutingUtilizationLabelProxy(sdkConfig)
 	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceRoutingUtilizationLabel(), constants.DefaultConsistencyChecks, resourceName)
 
 	log.Printf("Reading label %s", d.Id())
@@ -79,7 +79,7 @@ func readRoutingUtilizationLabel(ctx context.Context, d *schema.ResourceData, me
 
 func updateRoutingUtilizationLabel(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-	proxy := getRoutingUtilizationProxy(sdkConfig)
+	proxy := getRoutingUtilizationLabelProxy(sdkConfig)
 
 	id := d.Id()
 	name := d.Get("name").(string)
@@ -99,7 +99,7 @@ func updateRoutingUtilizationLabel(ctx context.Context, d *schema.ResourceData, 
 func deleteRoutingUtilizationLabel(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	name := d.Get("name").(string)
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-	proxy := getRoutingUtilizationProxy(sdkConfig)
+	proxy := getRoutingUtilizationLabelProxy(sdkConfig)
 
 	log.Printf("Deleting label %s %s", d.Id(), name)
 	resp, err := proxy.deleteRoutingUtilizationLabel(ctx, d.Id(), true)

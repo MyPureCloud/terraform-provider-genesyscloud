@@ -109,9 +109,8 @@ func TestAccResourceRoutingUtilizationWithLabels(t *testing.T) {
 		greenLabelName     = "Terraform Green Label" + uuid.NewString()
 	)
 
-	err := CleanupRoutingUtilizationLabel()
-	if err != nil {
-		return
+	if err := CleanupRoutingUtilizationLabel(); err != nil {
+		t.Skipf("%v", err) // Skip the test and not fail it
 	}
 
 	resource.Test(t, resource.TestCase{
