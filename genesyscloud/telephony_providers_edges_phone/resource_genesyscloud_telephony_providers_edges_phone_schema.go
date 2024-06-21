@@ -30,6 +30,23 @@ func SetRegistrar(l registrar.Registrar) {
 
 // ResourcePhone registers the genesyscloud_telephony_providers_edges_phone resource with Terraform
 func ResourcePhone() *schema.Resource {
+	lineProperties := &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			`line_addresses`: {
+				Description:      `Ordered list of Line DIDs for standalone phones.  Each phone number must be in an E.164 phone number format.`,
+				Optional:         true,
+				Computed:         true,
+				Type:             schema.TypeString,
+				ValidateDiagFunc: validators.ValidatePhoneNumber,
+			},
+			`remote_address`: {
+				Description: `Station remote property for phones`,
+				Optional:    true,
+				Type:        schema.TypeInt,
+			},
+		},
+	}
+
 	phoneCapabilities := &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			"provisions": {
@@ -148,6 +165,12 @@ func ResourcePhone() *schema.Resource {
 				Optional:         true,
 				Computed:         true,
 				DiffSuppressFunc: util.SuppressEquivalentJsonDiffs,
+			},
+			"line_properties": {
+				Description: "line properties",
+				Type:        schema.TypeList,
+				Optional:    true,
+				Elem:        lineProperties,
 			},
 			"capabilities": {
 				Description: "Phone Capabilities.",
