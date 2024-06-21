@@ -2,13 +2,14 @@ package resource_exporter
 
 import (
 	"context"
+	"regexp"
+	"strings"
+	"sync"
+
 	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/mypurecloud/platform-client-sdk-go/v131/platformclientv2"
-	"regexp"
-	"strings"
-	"sync"
 
 	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 
@@ -302,4 +303,17 @@ func SetRegisterExporter(resources map[string]*ResourceExporter) {
 	resourceExporterMapMutex.Lock()
 	defer resourceExporterMapMutex.Unlock()
 	resourceExporters = resources
+}
+
+var (
+	ExportAsData []string
+	dsMutex      sync.Mutex
+)
+
+// The GetDataSourceItems function adds resources to the ExportAsData []string
+// The ExportAsData will be checked in the genesyscloud_resource_exporter to determine resources to be exported as data source
+func GetDataSourceItems(name string) {
+	dsMutex.Lock()
+	defer dsMutex.Unlock()
+	ExportAsData = append(ExportAsData, name)
 }
