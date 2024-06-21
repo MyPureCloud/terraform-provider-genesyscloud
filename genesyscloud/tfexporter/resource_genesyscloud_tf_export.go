@@ -11,10 +11,16 @@ import (
 
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
 
+	"terraform-provider-genesyscloud/genesyscloud/tfexporter_state"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"terraform-provider-genesyscloud/genesyscloud/tfexporter_state"
 )
+
+type fileMeta struct {
+	Path  string
+	IsDir bool
+}
 
 func SetRegistrar(l registrar.Registrar) {
 	l.RegisterResource("genesyscloud_tf_export", ResourceTfExport())
@@ -132,6 +138,13 @@ func ResourceTfExport() *schema.Resource {
 				Type:        schema.TypeBool,
 				Optional:    true,
 				Default:     true,
+				ForceNew:    true,
+			},
+			"compress": {
+				Description: "Compress exported results using zip format",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     false,
 				ForceNew:    true,
 			},
 		},

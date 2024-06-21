@@ -1,6 +1,8 @@
 package tfexporter
 
 import (
+	"archive/zip"
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -447,9 +449,6 @@ func TestAccResourceTfExportExcludeFilterResourcesByRegExExclusiveToResourceAndS
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
-				PreConfig: func() {
-					time.Sleep(30 * time.Second)
-				},
 				// Generate a queue as well and export it
 				Config: config,
 				Check: resource.ComposeTestCheckFunc(
@@ -462,6 +461,112 @@ func TestAccResourceTfExportExcludeFilterResourcesByRegExExclusiveToResourceAndS
 			},
 		},
 		CheckDestroy: testVerifyExportsDestroyedFunc(exportTestDir),
+	})
+}
+
+// TestAccResourceTfExportSplitFilesAsJSON will create 2 queues, 2 wrap up codes, and 2 users.
+// The exporter will be run in split mode so 3 resource tf.jsons should be created as well as a provider.tf.json
+func TestAccResourceTfExportSplitFilesAsJSON(t *testing.T) {
+	var (
+		exportTestDir     = "../.terraform" + uuid.NewString()
+		exportResource    = "test-export-split"
+		uniquePostfix     = randString(7)
+		expectedFilesPath = []string{
+			filepath.Join(exportTestDir, "genesyscloud_routing_queue.tf.json"),
+			filepath.Join(exportTestDir, "genesyscloud_user.tf.json"),
+			filepath.Join(exportTestDir, "genesyscloud_routing_wrapupcode.tf.json"),
+			filepath.Join(exportTestDir, "provider.tf.json"),
+		}
+
+		queueResources = []QueueExport{
+			{ResourceName: "test-queue-1", Name: "test-queue-1-" + uuid.NewString() + uniquePostfix, Description: "This is a test queue", AcwTimeoutMs: 200000},
+			{ResourceName: "test-queue-2", Name: "test-queue-1-" + uuid.NewString() + uniquePostfix, Description: "This is a test queue too", AcwTimeoutMs: 200000},
+		}
+
+		userResources = []UserExport{
+			{ResourceName: "test-user-1", Name: "test-user-1", Email: "test-user-1" + uuid.NewString() + "@test.com" + uniquePostfix, State: "active"},
+			{ResourceName: "test-user-2", Name: "test-user-2", Email: "test-user-2" + uuid.NewString() + "@test.com" + uniquePostfix, State: "active"},
+		}
+
+		wrapupCodeResources = []WrapupcodeExport{
+			{ResourceName: "test-wrapupcode-1", Name: "test-wrapupcode-1-" + uuid.NewString() + uniquePostfix},
+			{ResourceName: "test-wrapupcode-2", Name: "test-wrapupcode-2-" + uuid.NewString() + uniquePostfix},
+		}
+	)
+	defer os.RemoveAll(exportTestDir)
+
+	queueResourceDef := buildQueueResources(queueResources)
+	wrapupcodeResourceDef := buildWrapupcodeResources(wrapupCodeResources)
+	config := queueResourceDef + wrapupcodeResourceDef + userResourcesDef +
+		generateTfExportByIncludeFilterResources(
+			exportResource,
+			exportTestDir,
+			util.TrueValue,
+			[]string{
+				strconv.Quote("genesyscloud_routing_queue::" + uniquePostfix + "$"),
+				strconv.Quote("genesyscloud_user::" + uniquePostfix + "$"),
+				strconv.Quote("genesyscloud_routing_wrapupcode::" + uniquePostfix + "$"),
+			},
+			util.FalseValue,
+			util.TrueValue,
+			[]string{
+				strconv.Quote("genesyscloud_routing_queue." + queueResources[0].ResourceName),
+				strconv.Quote("genesyscloud_routing_queue." + queueResources[1].ResourceName),
+				strconv.Quote("genesyscloud_user." + userResources[0].ResourceName),
+				strconv.Quote("genesyscloud_user." + userResources[1].ResourceName),
+				strconv.Quote("genesyscloud_routing_wrapupcode." + wrapupCodeResources[0].ResourceName),
+				strconv.Quote("genesyscloud_routing_wrapupcode." + wrapupCodeResources[1].ResourceName),
+			},
+		)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			{
+				Config: config,
+				Check: resource.ComposeTestCheckFunc(
+					validateFileCreated(expectedFilesPath[0]),
+					validateFileCreated(expectedFilesPath[1]),
+					validateFileCreated(expectedFilesPath[2]),
+					validateFileCreated(expectedFilesPath[3]),
+				),
+			},
+		},
+		CheckDestroy: deleteTestCompressedZip(exportTestDir, zipFileName),
+	})
+}
+
+// TestAccResourceTfExportForCompress does a basic test check to make sure the compressed file is created.
+func TestAccResourceTfExportForCompress(t *testing.T) {
+	var (
+		exportTestDir   = "../../.terraform" + uuid.NewString()
+		exportResource1 = "test-export1"
+		zipFileName     = "../archive_genesyscloud_tf_export*"
+	)
+
+	defer os.RemoveAll(exportTestDir)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			{
+				// Run export without state file
+				Config: generateTfExportResourceForCompress(
+					exportResource1,
+					exportTestDir,
+					util.TrueValue,
+					util.TrueValue,
+					"",
+				),
+				Check: resource.ComposeTestCheckFunc(
+					validateCompressedCreated(zipFileName),
+					validateCompressedFile(zipFileName),
+				),
+			},
+		},
+		CheckDestroy: deleteTestCompressedZip(exportTestDir, zipFileName),
 	})
 }
 
@@ -2313,6 +2418,25 @@ func generateTfExportResource(
 	`, resourceID, directory, includeState, excludedAttributes)
 }
 
+// generateTfExportResourceForCompress creates a resource to test compressed exported results
+func generateTfExportResourceForCompress(
+	resourceID string,
+	directory string,
+	includeState string,
+	compressFlag string,
+	excludedAttributes string) string {
+	return fmt.Sprintf(`resource "genesyscloud_tf_export" "%s" {
+		directory = "%s"
+		include_state_file = %s
+		compress=%s
+		resource_types = [
+			"genesyscloud_architect_datatable",
+		]
+		exclude_attributes = [%s]
+	}
+	`, resourceID, directory, includeState, compressFlag, excludedAttributes)
+}
+
 func generateTfExportResourceMin(
 	resourceID string,
 	directory string,
@@ -2437,6 +2561,40 @@ func validateFileCreated(filename string) resource.TestCheckFunc {
 	}
 }
 
+func validateCompressedCreated(filename string) resource.TestCheckFunc {
+	return func(state *terraform.State) error {
+		_, err := filepath.Glob(filename)
+		if err != nil {
+			return fmt.Errorf("Failed to find file")
+		}
+		return nil
+	}
+}
+
+func deleteTestCompressedZip(exportPath string, zipFileName string) resource.TestCheckFunc {
+	return func(state *terraform.State) error {
+		dir, err := os.ReadDir(exportPath)
+		if err != nil {
+			return fmt.Errorf("Failed to read compressed zip %s", exportPath)
+		}
+		for _, d := range dir {
+			os.RemoveAll(filepath.Join(exportPath, d.Name()))
+		}
+		files, err := filepath.Glob(zipFileName)
+
+		if err != nil {
+			return fmt.Errorf("Failed to get zip: %s", err)
+		}
+		for _, f := range files {
+			if err := os.Remove(f); err != nil {
+				return fmt.Errorf("Failed to delete: %s", err)
+			}
+		}
+
+		return nil
+	}
+}
+
 func testVerifyExportsDestroyedFunc(exportTestDir string) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
 		// Check config file deleted
@@ -2469,6 +2627,56 @@ func validateEvaluationFormAttributes(resourceName string, form gcloud.Evaluatio
 		resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+resourceName, "question_groups.0.questions.1.visibility_condition.0.predicates.0", form.QuestionGroups[0].Questions[1].VisibilityCondition.Predicates[0]),
 		resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+resourceName, "question_groups.0.questions.1.visibility_condition.0.predicates.1", form.QuestionGroups[0].Questions[1].VisibilityCondition.Predicates[1]),
 	)
+}
+
+// validateCompressedFile unzips and validates the exported resulted in the compressed folder
+func validateCompressedFile(path string) resource.TestCheckFunc {
+	return func(state *terraform.State) error {
+		files, err := filepath.Glob(path)
+		if err != nil {
+			return err
+		}
+		for _, f := range files {
+			reader, err := zip.OpenReader(f)
+			if err != nil {
+				return err
+			}
+			for _, file := range reader.File {
+				err = validateCompressedConfigFiles(f, file)
+				if err != nil {
+					return err
+				}
+			}
+		}
+		return nil
+	}
+}
+
+// validateCompressedConfigFiles validates the data inside the compressed json file
+func validateCompressedConfigFiles(dirName string, file *zip.File) error {
+
+	if file.FileInfo().Name() == defaultTfJSONFile {
+		rc, _ := file.Open()
+
+		buf := new(bytes.Buffer)
+		buf.ReadFrom(rc)
+		var data map[string]interface{}
+
+		if err := json.Unmarshal(buf.Bytes(), &data); err != nil {
+			return fmt.Errorf("failed to unmarshal json exportData to map variable: %v", err)
+		}
+
+		if _, ok := data["resource"]; !ok {
+			return fmt.Errorf("config file missing resource attribute")
+		}
+
+		if _, ok := data["terraform"]; !ok {
+			return fmt.Errorf("config file missing terraform attribute")
+		}
+		rc.Close()
+		return nil
+	}
+	return nil
 }
 
 func validateConfigFile(path string) resource.TestCheckFunc {
