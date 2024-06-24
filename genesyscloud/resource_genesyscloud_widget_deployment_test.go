@@ -54,8 +54,8 @@ func generateWidgetDeploymentResource(wdConfig *widgetDeploymentConfig) string {
 	}
 	return fmt.Sprintf(`resource "genesyscloud_widget_deployment" "%s" {
 		name                    = "%s"
-		description             = %s
-		flow_id                 = %s
+		description             =  %s
+		flow_id                 =  %s
 		client_type             = "%s"
 		authentication_required = %s
 		disabled                = %s
