@@ -70,10 +70,13 @@ func readIdpPing(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read IDP Ping: %s", getErr), resp))
 		}
 
+		resourcedata.SetNillableValue(d, "name", pingIdentity.Name)
 		resourcedata.SetNillableValue(d, "disabled", pingIdentity.Disabled)
 		resourcedata.SetNillableValue(d, "issuer_uri", pingIdentity.IssuerURI)
 		resourcedata.SetNillableValue(d, "target_uri", pingIdentity.SsoTargetURI)
 		resourcedata.SetNillableValue(d, "relying_party_identifier", pingIdentity.RelyingPartyIdentifier)
+		resourcedata.SetNillableValue(d, "slo_uri", pingIdentity.SloURI)
+		resourcedata.SetNillableValue(d, "slo_binding", pingIdentity.SloBinding)
 
 		if pingIdentity.Certificate != nil {
 			d.Set("certificates", lists.StringListToInterfaceList([]string{*pingIdentity.Certificate}))
@@ -141,9 +144,12 @@ func deleteIdpPing(ctx context.Context, d *schema.ResourceData, meta interface{}
 // getIdpPingFromResourceData maps data from schema ResourceData object to a platformclientv2.Pingidentity
 func getIdpPingFromResourceData(d *schema.ResourceData) platformclientv2.Pingidentity {
 	return platformclientv2.Pingidentity{
+		Name:                   platformclientv2.String(d.Get("name").(string)),
 		Disabled:               platformclientv2.Bool(d.Get("disabled").(bool)),
 		IssuerURI:              platformclientv2.String(d.Get("issuer_uri").(string)),
 		SsoTargetURI:           platformclientv2.String(d.Get("target_uri").(string)),
 		RelyingPartyIdentifier: platformclientv2.String(d.Get("relying_party_identifier").(string)),
+		SloURI:                 platformclientv2.String(d.Get("slo_uri").(string)),
+		SloBinding:             platformclientv2.String(d.Get("slo_binding").(string)),
 	}
 }
