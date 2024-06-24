@@ -9,7 +9,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/group"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	routingQueue "terraform-provider-genesyscloud/genesyscloud/routing_queue"
-
+	routingSettings "terraform-provider-genesyscloud/genesyscloud/routing_settings"
 	routingUtilization "terraform-provider-genesyscloud/genesyscloud/routing_utilization"
 	routingUtilizationLabel "terraform-provider-genesyscloud/genesyscloud/routing_utilization_label"
 	"testing"
@@ -61,7 +61,7 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_routing_language"] = ResourceRoutingLanguage()
 	providerResources["genesyscloud_routing_skill"] = ResourceRoutingSkill()
 	providerResources["genesyscloud_routing_skill_group"] = ResourceRoutingSkillGroup()
-	providerResources["genesyscloud_routing_settings"] = ResourceRoutingSettings()
+	providerResources["genesyscloud_routing_settings"] = routingSettings.ResourceRoutingSettings()
 	providerResources["genesyscloud_routing_utilization"] = routingUtilization.ResourceRoutingUtilization()
 	providerResources["genesyscloud_routing_wrapupcode"] = ResourceRoutingWrapupCode()
 	providerResources["genesyscloud_user"] = ResourceUser()

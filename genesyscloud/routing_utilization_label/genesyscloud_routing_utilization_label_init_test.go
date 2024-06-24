@@ -28,7 +28,7 @@ func (r *registerTestInstance) registerTestDataSources() {
 	r.datasourceMapMutex.Lock()
 	defer r.datasourceMapMutex.Unlock()
 
-	providerDataSources[resourceName] = dataSourceRoutingUtilizationLabel()
+	providerDataSources[resourceName] = DataSourceRoutingUtilizationLabel()
 }
 
 // initTestResources initializes all test resources and data sources.
