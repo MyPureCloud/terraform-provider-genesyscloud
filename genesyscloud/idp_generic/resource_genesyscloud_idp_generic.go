@@ -156,5 +156,7 @@ func getIdpGenericFromResourceData(d *schema.ResourceData) platformclientv2.Gene
 		LogoImageData:          platformclientv2.String(d.Get("logo_image_data").(string)),
 		EndpointCompression:    platformclientv2.Bool(d.Get("endpoint_compression").(bool)),
 		NameIdentifierFormat:   platformclientv2.String(d.Get("name_identifier_format").(string)),
+		SloURI:                 platformclientv2.String(d.Get("slo_uri").(string)),
+		SloBinding:             platformclientv2.String(d.Get("slo_binding").(string)),
 	}
 }
