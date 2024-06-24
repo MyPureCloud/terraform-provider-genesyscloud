@@ -417,7 +417,7 @@ func ResourceUser() *schema.Resource {
 							Elem:        routingUtilization.UtilizationSettingsResource,
 						},
 						"label_utilizations": {
-							Description: "Label utilization settings. If not set, default label settings will be applied. This is in PREVIEW and should not be used unless the feature is available to your organization.",
+							Description: "Label utilization settings. If not set, default label settings will be applied.",
 							Type:        schema.TypeList,
 							Optional:    true,
 							Computed:    true,

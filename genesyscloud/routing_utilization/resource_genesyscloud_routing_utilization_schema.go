@@ -2,13 +2,14 @@ package routing_utilization
 
 import (
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
 	"time"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
 const resourceName = "genesyscloud_routing_utilization"
@@ -149,7 +150,7 @@ func ResourceRoutingUtilization() *schema.Resource {
 				Elem:        UtilizationSettingsResource,
 			},
 			"label_utilizations": {
-				Description: "Label utilization settings. If not set, default label settings will be applied. This is in PREVIEW and should not be used unless the feature is available to your organization.",
+				Description: "Label utilization settings. If not set, default label settings will be applied.",
 				Type:        schema.TypeList,
 				Optional:    true,
 				Computed:    true,

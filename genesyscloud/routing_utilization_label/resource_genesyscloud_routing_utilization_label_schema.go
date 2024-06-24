@@ -1,11 +1,12 @@
 package routing_utilization_label
 
 import (
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
 const resourceName = "genesyscloud_routing_utilization_label"
@@ -19,7 +20,7 @@ func SetRegistrar(regInstance registrar.Registrar) {
 
 func ResourceRoutingUtilizationLabel() *schema.Resource {
 	return &schema.Resource{
-		Description: "Genesys Cloud Routing Utilization Label. This resource is not yet widely available. Only use it if the feature is enabled.",
+		Description: "Genesys Cloud Routing Utilization Label.",
 
 		CreateContext: provider.CreateWithPooledClient(createRoutingUtilizationLabel),
 		ReadContext:   provider.ReadWithPooledClient(readRoutingUtilizationLabel),
