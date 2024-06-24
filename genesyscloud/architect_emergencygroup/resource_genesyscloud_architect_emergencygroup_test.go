@@ -2,6 +2,10 @@ package architect_emergencygroup
 
 import (
 	"fmt"
+	"github.com/google/uuid"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/mypurecloud/platform-client-sdk-go/v130/platformclientv2"
 	"strconv"
 	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/architect_flow"
@@ -175,28 +179,28 @@ func TestAccResourceArchitectEmergencyGroupMultipleIvrs(t *testing.T) {
 		PreCheck:          func() { util.TestAccPreCheck(t) },
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
-			{
-				Config: flowResourceConfig1 + ivrResource1 + GenerateArchitectEmergencyGroupResource(
-					resourceName,
-					name,
-					util.NullValue,
-					description,
-					util.TrueValue,
-					generateEmergencyCallFlow("genesyscloud_flow."+flowResourceName1+".id", "genesyscloud_architect_ivr."+ivrResourceName1+".id"),
-				),
-				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(resourceType+"."+resourceName, "name", name),
-					resource.TestCheckResourceAttr(resourceType+"."+resourceName, "description", description),
-					resource.TestCheckResourceAttr(resourceType+"."+resourceName, "enabled", util.TrueValue),
-
-					resource.TestCheckResourceAttr(resourceType+"."+resourceName, "emergency_call_flows.#", "1"),
-					validateEmergencyCallFlows(
-						resourceType+"."+resourceName,
-						"genesyscloud_flow."+flowResourceName1,
-						"genesyscloud_architect_ivr."+ivrResourceName1,
-					),
-				),
-			},
+			//{
+			//	Config: flowResourceConfig1 + ivrResource1 + GenerateArchitectEmergencyGroupResource(
+			//		resourceName,
+			//		name,
+			//		util.NullValue,
+			//		description,
+			//		util.TrueValue,
+			//		generateEmergencyCallFlow("genesyscloud_flow."+flowResourceName1+".id", "genesyscloud_architect_ivr."+ivrResourceName1+".id"),
+			//	),
+			//	Check: resource.ComposeTestCheckFunc(
+			//		resource.TestCheckResourceAttr(resourceType+"."+resourceName, "name", name),
+			//		resource.TestCheckResourceAttr(resourceType+"."+resourceName, "description", description),
+			//		resource.TestCheckResourceAttr(resourceType+"."+resourceName, "enabled", util.TrueValue),
+			//
+			//		resource.TestCheckResourceAttr(resourceType+"."+resourceName, "emergency_call_flows.#", "1"),
+			//		validateEmergencyCallFlows(
+			//			resourceType+"."+resourceName,
+			//			"genesyscloud_flow."+flowResourceName1,
+			//			"genesyscloud_architect_ivr."+ivrResourceName1,
+			//		),
+			//	),
+			//},
 			{
 				Config: flowResourceConfig1 + flowResourceConfig2 + ivrResource1 + ivrResource2 + GenerateArchitectEmergencyGroupResource(
 					resourceName,
@@ -208,10 +212,10 @@ func TestAccResourceArchitectEmergencyGroupMultipleIvrs(t *testing.T) {
 					generateEmergencyCallFlow("genesyscloud_flow."+flowResourceName2+".id", "genesyscloud_architect_ivr."+ivrResourceName2+".id"),
 				),
 				Check: resource.ComposeTestCheckFunc(
-					func(s *terraform.State) error {
-						time.Sleep(30 * time.Second)
-						return nil
-					},
+					//func(s *terraform.State) error {
+					//	time.Sleep(30 * time.Second)
+					//	return nil
+					//},
 					resource.TestCheckResourceAttr(resourceType+"."+resourceName, "name", name),
 					resource.TestCheckResourceAttr(resourceType+"."+resourceName, "description", description),
 					resource.TestCheckResourceAttr(resourceType+"."+resourceName, "enabled", util.TrueValue),

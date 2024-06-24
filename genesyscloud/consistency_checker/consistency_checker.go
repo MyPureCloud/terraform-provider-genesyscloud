@@ -22,17 +22,17 @@ import (
 
 var (
 	mcc      map[string]*ConsistencyCheck
-	mccMutex sync.RWMutex
+	mccMutex sync.Mutex
 )
 
 func init() {
 	mcc = make(map[string]*ConsistencyCheck)
-	mccMutex = sync.RWMutex{}
+	mccMutex = sync.Mutex{}
 }
 
 type ConsistencyCheck struct {
 	ctx            context.Context
-	r              *schema.Resource
+	resource       *schema.Resource
 	originalState  map[string]interface{}
 	meta           interface{}
 	isEmptyState   *bool
@@ -68,8 +68,8 @@ func NewConsistencyCheck(ctx context.Context, d *schema.ResourceData, meta inter
 	var cc *ConsistencyCheck
 
 	mccMutex.Lock()
+	defer mccMutex.Unlock()
 	cc = mcc[d.Id()]
-	mccMutex.Unlock()
 
 	if cc != nil {
 		return cc
@@ -85,24 +85,25 @@ func NewConsistencyCheck(ctx context.Context, d *schema.ResourceData, meta inter
 
 	cc = &ConsistencyCheck{
 		ctx:            ctx,
-		r:              r,
+		resource:       r,
 		originalState:  originalState,
 		meta:           meta,
 		isEmptyState:   emptyState,
 		maxStateChecks: maxStateChecks,
 		resourceType:   resourceType,
 	}
+
 	mccMutex.Lock()
+	defer mccMutex.Unlock()
 	mcc[d.Id()] = cc
-	mccMutex.Unlock()
 
 	return cc
 }
 
 func DeleteConsistencyCheck(id string) {
 	mccMutex.Lock()
+	defer mccMutex.Unlock()
 	delete(mcc, id)
-	mccMutex.Unlock()
 }
 
 func getUnexportedField(field reflect.Value) interface{} {
@@ -220,7 +221,7 @@ func (c *ConsistencyCheck) CheckState(currentState *schema.ResourceData) *retry.
 		panic("consistencyCheck must be initialized with NewConsistencyCheck")
 	}
 
-	if c.r == nil {
+	if c.resource == nil {
 		return nil
 	}
 
@@ -230,6 +231,7 @@ func (c *ConsistencyCheck) CheckState(currentState *schema.ResourceData) *retry.
 		log.Printf("%s is not set, consistency checker behaving as default", featureToggles.CCToggleName())
 	}
 
+	fmt.Println("Checking state")
 	originalState := filterMap(c.originalState)
 
 	resourceConfig := &terraform.ResourceConfig{
@@ -238,7 +240,7 @@ func (c *ConsistencyCheck) CheckState(currentState *schema.ResourceData) *retry.
 		Raw:          originalState,
 	}
 
-	diff, _ := c.r.SimpleDiff(c.ctx, currentState.State(), resourceConfig, c.meta)
+	diff, _ := c.resource.SimpleDiff(c.ctx, currentState.State(), resourceConfig, c.meta)
 	if diff != nil && len(diff.Attributes) > 0 {
 		for k, v := range diff.Attributes {
 			if strings.HasSuffix(k, "#") {
@@ -261,6 +263,7 @@ func (c *ConsistencyCheck) CheckState(currentState *schema.ResourceData) *retry.
 
 				vv := v.New
 				if currentState.HasChange(k) {
+					fmt.Println("here 1", c.resourceType)
 					if !compareValues(c.originalState[parts[0]], vv, slice1Index, slice2Index, key) {
 						err := retry.RetryableError(&consistencyError{
 							key:      k,
@@ -279,6 +282,7 @@ func (c *ConsistencyCheck) CheckState(currentState *schema.ResourceData) *retry.
 				}
 			} else {
 				if currentState.HasChange(k) {
+					fmt.Println("here 2", c.resourceType)
 					err := retry.RetryableError(&consistencyError{
 						key:      k,
 						oldValue: c.originalState[k],
@@ -298,6 +302,7 @@ func (c *ConsistencyCheck) CheckState(currentState *schema.ResourceData) *retry.
 	}
 
 	DeleteConsistencyCheck(currentState.Id())
+	fmt.Println("We good", c.resourceType)
 	return nil
 }
 
