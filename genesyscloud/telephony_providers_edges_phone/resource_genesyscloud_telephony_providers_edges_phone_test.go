@@ -530,8 +530,10 @@ func deleteDidPool(config *platformclientv2.Configuration, id string) error {
 	}
 	return nil
 }
+
 func deleteDidPoolWithNumber(number string) {
 	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
+	var didPoolsToDelete []string
 
 	for pageNum := 1; ; pageNum++ {
 		const pageSize = 100
@@ -547,9 +549,13 @@ func deleteDidPoolWithNumber(number string) {
 		for _, didPool := range *didPools.Entities {
 			if (didPool.StartPhoneNumber != nil && *didPool.StartPhoneNumber == number) ||
 				(didPool.EndPhoneNumber != nil && *didPool.EndPhoneNumber == number) {
-				edgesAPI.DeleteTelephonyProvidersEdgesDidpool(*didPool.Id)
-				time.Sleep(5 * time.Second)
+				didPoolsToDelete = append(didPoolsToDelete, *didPool.Id)
 			}
 		}
+	}
+
+	for _, didPoolId := range didPoolsToDelete {
+		edgesAPI.DeleteTelephonyProvidersEdgesDidpool(didPoolId)
+		time.Sleep(5 * time.Second)
 	}
 }
