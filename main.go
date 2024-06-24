@@ -60,6 +60,8 @@ import (
 	responsemanagementResponseasset "terraform-provider-genesyscloud/genesyscloud/responsemanagement_responseasset"
 	routingEmailRoute "terraform-provider-genesyscloud/genesyscloud/routing_email_route"
 	routingQueue "terraform-provider-genesyscloud/genesyscloud/routing_queue"
+	routingUtilization "terraform-provider-genesyscloud/genesyscloud/routing_utilization"
+	routingUtilizationLabel "terraform-provider-genesyscloud/genesyscloud/routing_utilization_label"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/plugin"
@@ -226,6 +228,8 @@ func registerResources() {
 	routingQueueOutboundEmailAddress.SetRegistrar(regInstance)             //Registering routing queue outbound email address
 	outboundContactListContact.SetRegistrar(regInstance)                   //Registering outbound contact list contact
 	routingSettings.SetRegistrar(regInstance)                              //Registering routing Settings
+	routingUtilization.SetRegistrar(regInstance)                           // Registering routing utilization
+	routingUtilizationLabel.SetRegistrar(regInstance)                      // Registering routing utilization label
 	journeyViews.SetRegistrar(regInstance)                                 //Registering journey views
 
 	// setting resources for Use cases  like TF export where provider is used in resource classes.
