@@ -13,7 +13,7 @@ const resourceName = "genesyscloud_routing_utilization_label"
 // SetRegistrar registers all the resources and exporters in the package
 func SetRegistrar(regInstance registrar.Registrar) {
 	regInstance.RegisterResource(resourceName, ResourceRoutingUtilizationLabel())
-	regInstance.RegisterDataSource(resourceName, dataSourceRoutingUtilizationLabel())
+	regInstance.RegisterDataSource(resourceName, DataSourceRoutingUtilizationLabel())
 	regInstance.RegisterExporter(resourceName, RoutingUtilizationLabelExporter())
 }
 
@@ -39,7 +39,7 @@ func ResourceRoutingUtilizationLabel() *schema.Resource {
 	}
 }
 
-func dataSourceRoutingUtilizationLabel() *schema.Resource {
+func DataSourceRoutingUtilizationLabel() *schema.Resource {
 	return &schema.Resource{
 		Description: "Data source for Genesys Cloud Routing Utilization Labels. Select a label by name.",
 		ReadContext: provider.ReadWithPooledClient(dataSourceRoutingUtilizationLabelRead),
