@@ -70,10 +70,13 @@ func readIdpGsuite(ctx context.Context, d *schema.ResourceData, meta interface{}
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read IDP GSuite: %s", getErr), resp))
 		}
 
+		resourcedata.SetNillableValue(d, "name", gSuite.Name)
 		resourcedata.SetNillableValue(d, "disabled", gSuite.Disabled)
 		resourcedata.SetNillableValue(d, "issuer_uri", gSuite.IssuerURI)
 		resourcedata.SetNillableValue(d, "target_uri", gSuite.SsoTargetURI)
 		resourcedata.SetNillableValue(d, "relying_party_identifier", gSuite.RelyingPartyIdentifier)
+		resourcedata.SetNillableValue(d, "slo_uri", gSuite.SloURI)
+		resourcedata.SetNillableValue(d, "slo_binding", gSuite.SloBinding)
 
 		if gSuite.Certificate != nil {
 			d.Set("certificates", lists.StringListToInterfaceList([]string{*gSuite.Certificate}))
@@ -142,9 +145,12 @@ func deleteIdpGsuite(ctx context.Context, d *schema.ResourceData, meta interface
 // getIdpGsuiteFromResourceData maps data from schema ResourceData object to a platformclientv2.Gsuite
 func getIdpGsuiteFromResourceData(d *schema.ResourceData) platformclientv2.Gsuite {
 	return platformclientv2.Gsuite{
+		Name:                   platformclientv2.String(d.Get("name").(string)),
 		Disabled:               platformclientv2.Bool(d.Get("disabled").(bool)),
 		IssuerURI:              platformclientv2.String(d.Get("issuer_uri").(string)),
 		SsoTargetURI:           platformclientv2.String(d.Get("target_uri").(string)),
 		RelyingPartyIdentifier: platformclientv2.String(d.Get("relying_party_identifier").(string)),
+		SloURI:                 platformclientv2.String(d.Get("slo_uri").(string)),
+		SloBinding:             platformclientv2.String(d.Get("slo_binding").(string)),
 	}
 }
