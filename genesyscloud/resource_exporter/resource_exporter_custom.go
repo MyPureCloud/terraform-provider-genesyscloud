@@ -3,6 +3,10 @@ package resource_exporter
 import (
 	"encoding/json"
 	"fmt"
+<<<<<<< HEAD
+=======
+	"github.com/mypurecloud/platform-client-sdk-go/v131/platformclientv2"
+>>>>>>> dev
 	"log"
 	"regexp"
 	"strings"
@@ -140,7 +144,8 @@ This customer custom router will look at the skills array if present and resolve
 func RuleSetSkillPropertyResolver(configMap map[string]interface{}, exporters map[string]*ResourceExporter, resourceName string) error {
 
 	if exporter, ok := exporters["genesyscloud_routing_skill"]; ok {
-		skillIDs := configMap["skills"].(string)
+
+		skillIDs, _ := configMap["skills"].(string)
 
 		if len(skillIDs) == 0 {
 			return nil
@@ -193,7 +198,8 @@ func CampaignStatusResolver(configMap map[string]interface{}, exporters map[stri
 }
 
 func ReplyEmailAddressSelfReferenceRouteExporterResolver(configMap map[string]interface{}, exporters map[string]*ResourceExporter, resourceName string) error {
-	routeId := configMap["route_id"].(string)
+
+	routeId, _ := configMap["route_id"].(string)
 	currentRouteReference := fmt.Sprintf("${genesyscloud_routing_email_route.%s.id}", resourceName)
 	if routeId == currentRouteReference {
 		configMap["self_reference_route"] = true

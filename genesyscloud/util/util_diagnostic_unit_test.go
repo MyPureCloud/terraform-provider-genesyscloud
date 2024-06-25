@@ -2,6 +2,11 @@ package util
 
 import (
 	"encoding/json"
+<<<<<<< HEAD
+=======
+	"github.com/mypurecloud/platform-client-sdk-go/v131/platformclientv2"
+	"github.com/stretchr/testify/assert"
+>>>>>>> dev
 	"net/http"
 	"net/url"
 	"strings"

@@ -15,7 +15,11 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+<<<<<<< HEAD
 	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
+=======
+	"github.com/mypurecloud/platform-client-sdk-go/v131/platformclientv2"
+>>>>>>> dev
 )
 
 type customAuthActionResource struct {
@@ -54,7 +58,9 @@ func TestAccResourceIntegrationCustomAuthAction(t *testing.T) {
 			strconv.Quote(credentialResourceName),
 			strconv.Quote(customAuthCredentialType),
 			integrationCred.GenerateCredentialFields(
-				util.GenerateMapProperty(credKey1, strconv.Quote(credVal1)),
+				map[string]string{
+					credKey1: strconv.Quote(credVal1),
+				},
 			),
 		)
 

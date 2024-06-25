@@ -11,7 +11,11 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/util"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+<<<<<<< HEAD
 	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
+=======
+	"github.com/mypurecloud/platform-client-sdk-go/v131/platformclientv2"
+>>>>>>> dev
 )
 
 func postProcessAutomationTrigger(pat *ProcessAutomationTrigger, api *platformclientv2.IntegrationsApi) (*ProcessAutomationTrigger, *platformclientv2.APIResponse, error) {

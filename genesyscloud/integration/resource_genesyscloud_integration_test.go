@@ -14,7 +14,11 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+<<<<<<< HEAD
 	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
+=======
+	"github.com/mypurecloud/platform-client-sdk-go/v131/platformclientv2"
+>>>>>>> dev
 )
 
 /*
@@ -266,7 +270,9 @@ func TestAccResourceIntegration(t *testing.T) {
 					strconv.Quote(credName1),
 					strconv.Quote(credTypeName1),
 					integrationCred.GenerateCredentialFields(
-						util.GenerateMapProperty(key1, strconv.Quote(val1)),
+						map[string]string{
+							key1: strconv.Quote(val1),
+						},
 					),
 				) + GenerateIntegrationResource(
 					inteResource2,
@@ -297,7 +303,9 @@ func TestAccResourceIntegration(t *testing.T) {
 					strconv.Quote(credName1),
 					strconv.Quote(credTypeName1),
 					integrationCred.GenerateCredentialFields(
-						util.GenerateMapProperty(key1, strconv.Quote(val1)),
+						map[string]string{
+							key1: strconv.Quote(val1),
+						},
 					),
 				) + GenerateIntegrationResource(
 					inteResource2,

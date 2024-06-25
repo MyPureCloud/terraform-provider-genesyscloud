@@ -3,6 +3,10 @@ package outbound_contactlistfilter
 import (
 	"context"
 	"fmt"
+<<<<<<< HEAD
+=======
+	"github.com/mypurecloud/platform-client-sdk-go/v131/platformclientv2"
+>>>>>>> dev
 	"log"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"

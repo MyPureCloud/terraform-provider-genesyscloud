@@ -4,6 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+<<<<<<< HEAD
+=======
+	"github.com/mitchellh/mapstructure"
+	"github.com/mypurecloud/platform-client-sdk-go/v131/platformclientv2"
+>>>>>>> dev
 	"log"
 	"net/http"
 	rc "terraform-provider-genesyscloud/genesyscloud/resource_cache"

@@ -3,6 +3,10 @@ package architect_flow
 import (
 	"context"
 	"fmt"
+<<<<<<< HEAD
+=======
+	"github.com/mypurecloud/platform-client-sdk-go/v131/platformclientv2"
+>>>>>>> dev
 	"log"
 	rc "terraform-provider-genesyscloud/genesyscloud/resource_cache"
 

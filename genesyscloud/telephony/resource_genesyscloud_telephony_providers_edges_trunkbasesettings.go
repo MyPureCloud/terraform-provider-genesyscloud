@@ -22,7 +22,11 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
+<<<<<<< HEAD
 	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
+=======
+	"github.com/mypurecloud/platform-client-sdk-go/v131/platformclientv2"
+>>>>>>> dev
 )
 
 const (
@@ -402,8 +406,10 @@ func ValidateInboundSiteSettings(inboundSiteString string, trunkBaseMetaId strin
 
 func TrunkBaseSettingsExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
-		GetResourcesFunc:     provider.GetAllWithPooledClient(getAllTrunkBaseSettings),
-		RefAttrs:             map[string]*resourceExporter.RefAttrSettings{},
+		GetResourcesFunc: provider.GetAllWithPooledClient(getAllTrunkBaseSettings),
+		RefAttrs:         map[string]*resourceExporter.RefAttrSettings{
+			//"inbound_site_id": {RefType: "genesyscloud_telephony_providers_edges_site"}, TODO: decide how/if this will be included after DEVTOOLING-676 is resolved
+		},
 		JsonEncodeAttributes: []string{"properties"},
 	}
 }

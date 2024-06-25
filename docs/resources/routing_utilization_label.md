@@ -2,11 +2,11 @@
 page_title: "genesyscloud_routing_utilization_label Resource - terraform-provider-genesyscloud"
 subcategory: ""
 description: |-
-  Genesys Cloud Routing Utilization Label. This resource is not yet widely available. Only use it if the feature is enabled.
+  Genesys Cloud Routing Utilization Label.
 ---
 # genesyscloud_routing_utilization_label (Resource)
 
-Genesys Cloud Routing Utilization Label. This resource is not yet widely available. Only use it if the feature is enabled.
+Genesys Cloud Routing Utilization Label.
 
 ## API Usage
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:

@@ -2,7 +2,11 @@ package architect_emergencygroup
 
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+<<<<<<< HEAD
 	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
+=======
+	"github.com/mypurecloud/platform-client-sdk-go/v131/platformclientv2"
+>>>>>>> dev
 )
 
 func buildSdkEmergencyGroupCallFlows(d *schema.ResourceData) *[]platformclientv2.Emergencycallflow {

@@ -3,6 +3,11 @@ package outbound_dnclist
 import (
 	"context"
 	"fmt"
+<<<<<<< HEAD
+=======
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/mypurecloud/platform-client-sdk-go/v131/platformclientv2"
+>>>>>>> dev
 	"log"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 

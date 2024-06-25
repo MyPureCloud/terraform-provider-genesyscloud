@@ -380,6 +380,11 @@ func ResourceRoutingQueue() *schema.Resource {
 				Type:        schema.TypeString,
 				Optional:    true,
 			},
+			"on_hold_prompt_id": {
+				Description: "The audio to be played when calls on this queue are on hold. If not configured, the default on-hold music will play.",
+				Type:        schema.TypeString,
+				Optional:    true,
+			},
 			"auto_answer_only": {
 				Description: "Specifies whether the configured whisper should play for all ACD calls, or only for those which are auto-answered.",
 				Type:        schema.TypeBool,
@@ -507,6 +512,7 @@ func RoutingQueueExporter() *resourceExporter.ResourceExporter {
 			"email_in_queue_flow_id":                   {RefType: "genesyscloud_flow"},
 			"message_in_queue_flow_id":                 {RefType: "genesyscloud_flow"},
 			"whisper_prompt_id":                        {RefType: "genesyscloud_architect_user_prompt"},
+			"on_hold_prompt_id":                        {RefType: "genesyscloud_architect_user_prompt"},
 			"outbound_messaging_sms_address_id":        {},                               // Ref type not yet defined
 			"default_script_ids.*":                     {RefType: "genesyscloud_script"}, // Ref type not yet defined
 			"outbound_email_address.route_id":          {RefType: "genesyscloud_routing_email_route"},

@@ -2,6 +2,13 @@ package resource_exporter
 
 import (
 	"context"
+<<<<<<< HEAD
+=======
+	"github.com/hashicorp/go-cty/cty"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/mypurecloud/platform-client-sdk-go/v131/platformclientv2"
+>>>>>>> dev
 	"regexp"
 	"strings"
 	"sync"
@@ -104,6 +111,10 @@ type ResourceExporter struct {
 	// By default zero values are removed from the config due to lack of "null" support in the plugin SDK
 	AllowZeroValues []string
 
+	// AllowZeroValuesInMap is a list of attributes that are maps. Adding a map attribute to this list indicates to
+	// the exporter that the values within said map should not be cleaned up if they are zero values
+	AllowZeroValuesInMap []string
+
 	// AllowEmptyArrays is a list of List attributes that should allow empty arrays in export.
 	// By default, empty arrays are removed but some array attributes may be required in the schema
 	// or depending on the API behavior better presented explicitly in the API as empty arrays.
@@ -194,6 +205,10 @@ func (r *ResourceExporter) ContainsNestedRefAttrs(attribute string) ([]string, b
 
 func (r *ResourceExporter) AllowForZeroValues(attribute string) bool {
 	return lists.ItemInSlice(attribute, r.AllowZeroValues)
+}
+
+func (r *ResourceExporter) AllowForZeroValuesInMap(attribute string) bool {
+	return lists.ItemInSlice(attribute, r.AllowZeroValuesInMap)
 }
 
 func (r *ResourceExporter) AllowForEmptyArrays(attribute string) bool {

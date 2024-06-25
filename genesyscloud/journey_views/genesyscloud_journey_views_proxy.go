@@ -2,6 +2,10 @@ package journey_views
 
 import (
 	"context"
+<<<<<<< HEAD
+=======
+	"github.com/mypurecloud/platform-client-sdk-go/v131/platformclientv2"
+>>>>>>> dev
 	rc "terraform-provider-genesyscloud/genesyscloud/resource_cache"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"

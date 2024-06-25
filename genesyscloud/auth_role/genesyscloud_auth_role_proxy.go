@@ -4,7 +4,13 @@ import (
 	"context"
 	"fmt"
 
+<<<<<<< HEAD
 	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
+=======
+	rc "terraform-provider-genesyscloud/genesyscloud/resource_cache"
+
+	"github.com/mypurecloud/platform-client-sdk-go/v131/platformclientv2"
+>>>>>>> dev
 )
 
 /*
@@ -40,14 +46,17 @@ type authRoleProxy struct {
 	deleteAuthRoleAttr        deleteAuthRoleFunc
 	restoreDefaultRolesAttr   restoreDefaultRolesFunc
 	getAllowedPermissionsAttr getAllowedPermissionsFunc
+	authRoleCache             rc.CacheInterface[platformclientv2.Domainorganizationrole]
 }
 
 // newAuthRoleProxy initializes the auth role proxy with all of the data needed to communicate with Genesys Cloud
 func newAuthRoleProxy(clientConfig *platformclientv2.Configuration) *authRoleProxy {
 	api := platformclientv2.NewAuthorizationApiWithConfig(clientConfig)
+	authRoleCache := rc.NewResourceCache[platformclientv2.Domainorganizationrole]() // Create Cache for authRole resource
 	return &authRoleProxy{
 		clientConfig:              clientConfig,
 		authorizationApi:          api,
+		authRoleCache:             authRoleCache,
 		createAuthRoleAttr:        createAuthRoleFn,
 		getAllAuthRoleAttr:        getAllAuthRoleFn,
 		getAuthRoleIdByNameAttr:   getAuthRoleIdByNameFn,
@@ -86,11 +95,17 @@ func (p *authRoleProxy) getAuthRoleIdByName(ctx context.Context, name string) (i
 
 // getAuthRoleById returns a single Genesys Cloud auth role by Id
 func (p *authRoleProxy) getAuthRoleById(ctx context.Context, id string) (authRole *platformclientv2.Domainorganizationrole, response *platformclientv2.APIResponse, err error) {
+	if authRole := rc.GetCacheItem(p.authRoleCache, id); authRole != nil {
+		return authRole, nil, nil
+	}
 	return p.getAuthRoleByIdAttr(ctx, p, id)
 }
 
 // getAuthRoleById returns a single Genesys Cloud auth role by Id
 func (p *authRoleProxy) getDefaultRoleById(ctx context.Context, defaultRoleId string) (roleId string, response *platformclientv2.APIResponse, err error) {
+	if authRole := rc.GetCacheItem(p.authRoleCache, defaultRoleId); authRole != nil {
+		return *authRole.Id, nil, nil
+	}
 	return p.getDefaultRoleIdAttr(ctx, p, defaultRoleId)
 }
 
@@ -147,6 +162,11 @@ func getAllAuthRoleFn(ctx context.Context, p *authRoleProxy) (*[]platformclientv
 		}
 
 		allAuthRoles = append(allAuthRoles, *roles.Entities...)
+	}
+
+	//Cache the Auth Role resource into the p.authRoleCache for later use
+	for _, authRole := range allAuthRoles {
+		rc.SetCache(p.authRoleCache, *authRole.Id, authRole)
 	}
 
 	return &allAuthRoles, resp, nil

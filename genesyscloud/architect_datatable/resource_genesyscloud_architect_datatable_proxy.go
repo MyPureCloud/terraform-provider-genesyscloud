@@ -6,7 +6,11 @@ import (
 	"errors"
 	"net/http"
 
+<<<<<<< HEAD
 	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
+=======
+	"github.com/mypurecloud/platform-client-sdk-go/v131/platformclientv2"
+>>>>>>> dev
 )
 
 // internalProxy holds a proxy instance that can be used throughout the package

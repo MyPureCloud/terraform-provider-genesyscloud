@@ -6,7 +6,11 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/leekchan/timeutil"
+<<<<<<< HEAD
 	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
+=======
+	"github.com/mypurecloud/platform-client-sdk-go/v131/platformclientv2"
+>>>>>>> dev
 )
 
 const (
@@ -141,27 +145,27 @@ func SetNillableReferenceDivision(d *schema.ResourceData, key string, value *pla
 // SetNillableValue will read a basic type and set it on the schema
 func SetNillableValue[T any](d *schema.ResourceData, key string, value *T) {
 	if value != nil {
-		d.Set(key, *value)
+		_ = d.Set(key, *value)
 	} else {
-		d.Set(key, nil)
+		_ = d.Set(key, nil)
 	}
 }
 
-// SetNillableValueWithInterfaceArrayWithFunc will read the values in a nested resource using the provided function and set it on the schema
+// SetNillableValueWithInterfaceArrayWithFunc will set the value of {key} to an interface array using func {f} if {value} is not nil
 func SetNillableValueWithInterfaceArrayWithFunc[T any](d *schema.ResourceData, key string, value *T, f func(*T) []interface{}) {
 	if value != nil {
-		d.Set(key, f(value))
+		_ = d.Set(key, f(value))
 	} else {
-		d.Set(key, nil)
+		_ = d.Set(key, nil)
 	}
 }
 
-// SetNillableValueWithInterfaceArrayWithFunc will read the values in a nested resource using the provided function and set it on the schema
+// SetNillableValueWithSchemaSetWithFunc will set the value of {key} to a *schema.Set using func {f} if {value} is not nil
 func SetNillableValueWithSchemaSetWithFunc[T any](d *schema.ResourceData, key string, value *T, f func(*T) *schema.Set) {
 	if value != nil {
-		d.Set(key, f(value))
+		_ = d.Set(key, f(value))
 	} else {
-		d.Set(key, nil)
+		_ = d.Set(key, nil)
 	}
 }
 

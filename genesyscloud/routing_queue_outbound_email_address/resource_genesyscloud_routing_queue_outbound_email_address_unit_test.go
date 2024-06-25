@@ -2,6 +2,13 @@ package routing_queue_outbound_email_address
 
 import (
 	"context"
+<<<<<<< HEAD
+=======
+	"github.com/google/uuid"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/mypurecloud/platform-client-sdk-go/v131/platformclientv2"
+	"github.com/stretchr/testify/assert"
+>>>>>>> dev
 	"net/http"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"testing"

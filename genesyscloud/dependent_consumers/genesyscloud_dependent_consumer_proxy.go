@@ -4,6 +4,11 @@ import (
 	"context"
 	"fmt"
 
+<<<<<<< HEAD
+=======
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/mypurecloud/platform-client-sdk-go/v131/platformclientv2"
+>>>>>>> dev
 	"log"
 	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/provider"

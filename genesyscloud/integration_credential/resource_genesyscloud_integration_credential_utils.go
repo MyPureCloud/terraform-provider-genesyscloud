@@ -37,6 +37,6 @@ func GenerateCredentialResource(resourceID string, name string, credentialType s
 }
 
 // GenerateCredentialFields builds a terraform string for multiple credential fields
-func GenerateCredentialFields(fields ...string) string {
-	return util.GenerateMapAttr("fields", fields...)
+func GenerateCredentialFields(fields map[string]string) string {
+	return util.GenerateMapAttrWithMapProperties("fields", fields)
 }

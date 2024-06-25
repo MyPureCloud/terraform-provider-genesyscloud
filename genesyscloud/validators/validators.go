@@ -94,7 +94,7 @@ func ValidateRrule(rrule interface{}, _ cty.Path) diag.Diagnostics {
 	return diag.Errorf("Provided rrule %v is not in string format", rrule)
 }
 
-// Validates a phone extension pool
+// ValidateExtensionPool validates a phone extension pool
 func ValidateExtensionPool(number interface{}, _ cty.Path) diag.Diagnostics {
 	if numberStr, ok := number.(string); ok {
 
@@ -109,7 +109,7 @@ func ValidateExtensionPool(number interface{}, _ cty.Path) diag.Diagnostics {
 	return diag.Errorf("Extension provided %v is not a string", number)
 }
 
-// Validates a date string is in the format yyyy-MM-dd
+// ValidateDate validates a date string is in the format yyyy-MM-dd
 func ValidateDate(date interface{}, _ cty.Path) diag.Diagnostics {
 	if dateStr, ok := date.(string); ok {
 		_, err := time.Parse(resourcedata.DateParseFormat, dateStr)
@@ -121,7 +121,7 @@ func ValidateDate(date interface{}, _ cty.Path) diag.Diagnostics {
 	return diag.Errorf("Date %v is not a string", date)
 }
 
-// Validates a date string is in the format 2006-01-02T15:04Z
+// ValidateDateTime validates a date string is in the format 2006-01-02T15:04Z
 func ValidateDateTime(date interface{}, _ cty.Path) diag.Diagnostics {
 	if dateStr, ok := date.(string); ok {
 		_, err := time.Parse("2006-01-02T15:04Z", dateStr)
@@ -133,7 +133,7 @@ func ValidateDateTime(date interface{}, _ cty.Path) diag.Diagnostics {
 	return diag.Errorf("Date %v is not a string", date)
 }
 
-// Validates a country code is in format ISO 3166-1 alpha-2
+// ValidateCountryCode validates a country code is in format ISO 3166-1 alpha-2
 func ValidateCountryCode(code interface{}, _ cty.Path) diag.Diagnostics {
 	countryCode := code.(string)
 	if len(countryCode) == 2 {
@@ -144,7 +144,7 @@ func ValidateCountryCode(code interface{}, _ cty.Path) diag.Diagnostics {
 	return diag.Errorf("Country code %v is not of format ISO 3166-1 alpha-2", code)
 }
 
-// Validates a date string is in format hh:mm:ss
+// ValidateTime validates a date string is in format hh:mm:ss
 func ValidateTime(time interface{}, _ cty.Path) diag.Diagnostics {
 	timeStr := time.(string)
 	if len(timeStr) > 9 {
@@ -157,7 +157,7 @@ func ValidateTime(time interface{}, _ cty.Path) diag.Diagnostics {
 	return diag.Errorf("Time %v is not a valid time", time)
 }
 
-// Validates a date string is in format hh:mm
+// ValidateTimeHHMM validates a date string is in format hh:mm
 func ValidateTimeHHMM(time interface{}, _ cty.Path) diag.Diagnostics {
 	timeStr := time.(string)
 	if timeStr == "" {
@@ -171,7 +171,7 @@ func ValidateTimeHHMM(time interface{}, _ cty.Path) diag.Diagnostics {
 	return diag.Errorf("Time %v is not a valid time, must use format HH:mm", time)
 }
 
-// Validates a date string is in the format 2006-01-02T15:04:05.000000
+// ValidateLocalDateTimes validates a date string is in the format 2006-01-02T15:04:05.000000
 func ValidateLocalDateTimes(date interface{}, _ cty.Path) diag.Diagnostics {
 	if dateStr, ok := date.(string); ok {
 		_, err := time.Parse(resourcedata.TimeParseFormat, dateStr)
@@ -183,7 +183,7 @@ func ValidateLocalDateTimes(date interface{}, _ cty.Path) diag.Diagnostics {
 	return diag.Errorf("Date %v is not a string", date)
 }
 
-// Validates a file path or URL
+// ValidatePath validates a file path or URL
 func ValidatePath(i interface{}, k string) (warnings []string, errors []error) {
 	v, ok := i.(string)
 	if !ok {
@@ -207,7 +207,7 @@ func ValidatePath(i interface{}, k string) (warnings []string, errors []error) {
 	return warnings, errors
 }
 
-// Validate a response asset filename matches the criteria outlined in the description
+// ValidateResponseAssetName validate a response asset filename matches the criteria outlined in the description
 func ValidateResponseAssetName(name interface{}, _ cty.Path) diag.Diagnostics {
 	if nameStr, ok := name.(string); ok {
 		matched, err := regexp.MatchString("^[^\\.][^\\`\\\\{\\^\\}\\% \"\\>\\<\\[\\]\\#\\~|]+[^/]$", nameStr)
@@ -250,7 +250,7 @@ func ValidateSubStringInSlice(valid []string) schema.SchemaValidateFunc {
 	}
 }
 
-// Validate if a string matches '#FFFFFF' RGB color representation.
+// ValidateHexColor validates if a string matches '#FFFFFF' RGB color representation.
 func ValidateHexColor(color interface{}, _ cty.Path) diag.Diagnostics {
 	if colorStr, ok := color.(string); ok {
 		matched, err := regexp.MatchString("^#([A-Fa-f0-9]{6})$", colorStr)

@@ -6,7 +6,11 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"testing"
 
+<<<<<<< HEAD
 	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
+=======
+	"github.com/mypurecloud/platform-client-sdk-go/v131/platformclientv2"
+>>>>>>> dev
 
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	edgePhone "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_phone"

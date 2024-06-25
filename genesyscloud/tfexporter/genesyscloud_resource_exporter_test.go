@@ -3,6 +3,11 @@ package tfexporter
 import (
 	"context"
 	"fmt"
+<<<<<<< HEAD
+=======
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/mypurecloud/platform-client-sdk-go/v131/platformclientv2"
+>>>>>>> dev
 	"reflect"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"

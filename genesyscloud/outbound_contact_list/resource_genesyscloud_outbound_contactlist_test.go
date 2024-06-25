@@ -12,7 +12,11 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+<<<<<<< HEAD
 	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
+=======
+	"github.com/mypurecloud/platform-client-sdk-go/v131/platformclientv2"
+>>>>>>> dev
 )
 
 func TestAccResourceOutboundContactListBasic(t *testing.T) {
@@ -67,12 +71,12 @@ func TestAccResourceOutboundContactListBasic(t *testing.T) {
 						"home",
 						strconv.Quote("Home"),
 					),
-					generateEmailColumnsBlock(
+					GenerateEmailColumnsBlock(
 						"Work",
 						"work",
 						util.NullValue,
 					),
-					generateEmailColumnsBlock(
+					GenerateEmailColumnsBlock(
 						"Personal",
 						"personal",
 						util.NullValue,
@@ -124,12 +128,12 @@ func TestAccResourceOutboundContactListBasic(t *testing.T) {
 						"home",
 						strconv.Quote("Home"),
 					),
-					generateEmailColumnsBlock(
+					GenerateEmailColumnsBlock(
 						"Work",
 						"work",
 						util.NullValue,
 					),
-					generateEmailColumnsBlock(
+					GenerateEmailColumnsBlock(
 						"Personal",
 						"personal",
 						util.NullValue,
@@ -182,12 +186,12 @@ func TestAccResourceOutboundContactListBasic(t *testing.T) {
 						"home",
 						strconv.Quote("Home"),
 					),
-					generateEmailColumnsBlock(
+					GenerateEmailColumnsBlock(
 						"Work",
 						"work",
 						util.NullValue,
 					),
-					generateEmailColumnsBlock(
+					GenerateEmailColumnsBlock(
 						"Personal",
 						"personal",
 						util.NullValue,
@@ -276,12 +280,12 @@ func TestAccResourceOutboundContactListBasic(t *testing.T) {
 						"home",
 						util.NullValue,
 					),
-					generateEmailColumnsBlock(
+					GenerateEmailColumnsBlock(
 						"Work",
 						"work",
 						strconv.Quote(zipCodeColumnName),
 					),
-					generateEmailColumnsBlock(
+					GenerateEmailColumnsBlock(
 						"Personal",
 						"personal",
 						strconv.Quote(zipCodeColumnName),
@@ -340,16 +344,6 @@ func TestAccResourceOutboundContactListBasic(t *testing.T) {
 		},
 		CheckDestroy: testVerifyContactListDestroyed,
 	})
-}
-
-func generateEmailColumnsBlock(columnName, columnType, contactableTimeColumn string) string {
-	return fmt.Sprintf(`
-	email_columns {
-		column_name             = "%s"
-		type                    = "%s"
-		contactable_time_column = %s
-	}
-`, columnName, columnType, contactableTimeColumn)
 }
 
 func testVerifyContactListDestroyed(state *terraform.State) error {

@@ -1,4 +1,4 @@
-package genesyscloud
+package routing_utilization_label
 
 import (
 	"fmt"
@@ -9,7 +9,11 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+<<<<<<< HEAD:genesyscloud/resource_genesyscloud_routing_utilization_label_test.go
 	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
+=======
+	"github.com/mypurecloud/platform-client-sdk-go/v131/platformclientv2"
+>>>>>>> dev:genesyscloud/routing_utilization_label/resource_genesyscloud_routing_utilization_label_test.go
 )
 
 func TestAccResourceRoutingUtilizationLabelBasic(t *testing.T) {
@@ -20,12 +24,7 @@ func TestAccResourceRoutingUtilizationLabelBasic(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck: func() {
-			util.TestAccPreCheck(t)
-			if err := checkIfLabelsAreEnabled(); err != nil {
-				t.Skipf("%v", err) // be sure to skip the test and not fail it
-			}
-		},
+		PreCheck:          func() { util.TestAccPreCheck(t) },
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
@@ -61,20 +60,6 @@ func TestAccResourceRoutingUtilizationLabelBasic(t *testing.T) {
 	})
 }
 
-func GenerateRoutingUtilizationLabelResource(resourceID string, name string, dependsOnResource string) string {
-	dependsOn := ""
-
-	if dependsOnResource != "" {
-		dependsOn = fmt.Sprintf("depends_on=[genesyscloud_routing_utilization_label.%s]", dependsOnResource)
-	}
-
-	return fmt.Sprintf(`resource "genesyscloud_routing_utilization_label" "%s" {
-		name = "%s"
-		%s
-	}
-	`, resourceID, name, dependsOn)
-}
-
 func validateTestLabelDestroyed(state *terraform.State) error {
 	routingApi := platformclientv2.NewRoutingApi()
 
@@ -97,13 +82,4 @@ func validateTestLabelDestroyed(state *terraform.State) error {
 	}
 
 	return fmt.Errorf("No label resource found")
-}
-
-func checkIfLabelsAreEnabled() error { // remove once the feature is globally enabled
-	api := platformclientv2.NewRoutingApiWithConfig(sdkConfig) // the variable sdkConfig exists at a package level in ./genesyscloud and is already authorized
-	_, resp, _ := api.GetRoutingUtilizationLabels(100, 1, "", "")
-	if resp.StatusCode == 501 {
-		return fmt.Errorf("feature is not yet implemented in this org.")
-	}
-	return nil
 }
