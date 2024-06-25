@@ -17,7 +17,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v130/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v131/platformclientv2"
 )
 
 func testAccCheckSkillConditions(resourceName string, targetSkillConditionJson string) resource.TestCheckFunc {
@@ -391,7 +391,6 @@ data "genesyscloud_auth_division_home" "home" {}
 3. Verify the skill group added those users when they match the skill expression.
 */
 func TestAccResourceRoutingSkillGroupMemberDivisionsUsersAssigned(t *testing.T) {
-	t.Parallel()
 	var (
 		skillGroupResourceId  = "testskillgroup3"
 		skillGroupName        = "testskillgroup3 " + uuid.NewString()
@@ -422,6 +421,9 @@ func TestAccResourceRoutingSkillGroupMemberDivisionsUsersAssigned(t *testing.T) 
 			"genesyscloud_auth_division." + division2ResourceId + ".id",
 			"genesyscloud_auth_division." + division3ResourceId + ".id",
 		}
+		userID1 string
+		userID2 string
+		userID3 string
 	)
 
 	routingSkillResource := GenerateRoutingSkillResource(routingSkillResourceId, routingSkillName)
@@ -501,6 +503,9 @@ resource "genesyscloud_routing_skill_group" "%s" {
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
+				PreConfig: func() {
+					time.Sleep(30 * time.Second)
+				},
 				Config: skillGroupResource +
 					routingSkillResource +
 					division1Resource +
@@ -511,6 +516,25 @@ resource "genesyscloud_routing_skill_group" "%s" {
 					user3Resource,
 				Check: resource.ComposeTestCheckFunc(
 					testVerifySkillGroupMemberCount("genesyscloud_routing_skill_group."+skillGroupResourceId, "3"),
+					func(s *terraform.State) error {
+						rs, ok := s.RootModule().Resources["genesyscloud_user."+user1ResourceId]
+						if !ok {
+							return fmt.Errorf("not found: %s", "genesyscloud_user."+user1ResourceId)
+						}
+						userID1 = rs.Primary.ID
+						log.Printf("User ID: %s\n", userID1) // Print user ID
+						rs, ok = s.RootModule().Resources["genesyscloud_user."+user2ResourceId]
+						if !ok {
+							return fmt.Errorf("not found: %s", "genesyscloud_user."+user2ResourceId)
+						}
+						userID2 = rs.Primary.ID
+						rs, ok = s.RootModule().Resources["genesyscloud_user."+user3ResourceId]
+						if !ok {
+							return fmt.Errorf("not found: %s", "genesyscloud_user."+user3ResourceId)
+						}
+						userID3 = rs.Primary.ID
+						return nil
+					},
 				),
 			},
 			{
@@ -518,6 +542,11 @@ resource "genesyscloud_routing_skill_group" "%s" {
 				ImportState:             true,
 				ImportStateVerify:       true,
 				ImportStateVerifyIgnore: []string{"member_division_ids"},
+				Check: resource.ComposeTestCheckFunc(
+					checkUserDeleted(userID1),
+					checkUserDeleted(userID2),
+					checkUserDeleted(userID3),
+				),
 			},
 		},
 		CheckDestroy: testVerifySkillGroupDestroyed,
@@ -574,7 +603,7 @@ func testVerifySkillGroupMemberCount(resourceName string, count string) resource
 
 		// get skill group via GET /api/v2/routing/skillgroups/{skillGroupId}
 		path := fmt.Sprintf("%s/api/v2/routing/skillgroups/%s", routingAPI.Configuration.BasePath, resourceID)
-		headers := buildHeaderParams(routingAPI)
+		headers := BuildHeaderParams(routingAPI)
 		apiClient := &routingAPI.Configuration.APIClient
 
 		response, err := apiClient.CallAPI(path, "GET", nil, headers, nil, nil, "", nil)
@@ -706,7 +735,7 @@ func testVerifySkillGroupDestroyed(state *terraform.State) error {
 
 	// TODO Once this code has been released into the public API we should fix this and use the SDK
 
-	headerParams := buildHeaderParams(routingAPI)
+	headerParams := BuildHeaderParams(routingAPI)
 	for _, rs := range state.RootModule().Resources {
 		if rs.Type != "genesyscloud_routing_skill_group" {
 			continue
@@ -737,7 +766,7 @@ func testVerifySkillGroupDestroyed(state *terraform.State) error {
 }
 
 func getAllSkillGroupMemberDivisionIds(routingAPI *platformclientv2.RoutingApi, resourceId string) ([]string, diag.Diagnostics) {
-	headers := buildHeaderParams(routingAPI)
+	headers := BuildHeaderParams(routingAPI)
 	apiClient := &routingAPI.Configuration.APIClient
 	path := fmt.Sprintf("%s/api/v2/routing/skillgroups/%s/members/divisions", routingAPI.Configuration.BasePath, resourceId)
 	response, err := apiClient.CallAPI(path, "GET", nil, headers, nil, nil, "", nil)
@@ -760,4 +789,46 @@ func getAllSkillGroupMemberDivisionIds(routingAPI *platformclientv2.RoutingApi, 
 	}
 
 	return apiSkillGroupMemberDivisionIds, nil
+}
+
+func checkUserDeleted(id string) resource.TestCheckFunc {
+	log.Printf("Fetching user with ID: %s\n", id)
+	return func(s *terraform.State) error {
+		maxAttempts := 18
+		for i := 0; i < maxAttempts; i++ {
+
+			deleted, err := isUserDeleted(id)
+			if err != nil {
+				return err
+			}
+			if deleted {
+				return nil
+			}
+			time.Sleep(10 * time.Second)
+		}
+		return fmt.Errorf("user %s was not deleted properly", id)
+	}
+}
+
+func isUserDeleted(id string) (bool, error) {
+	mu.Lock()
+	defer mu.Unlock()
+
+	usersAPI := platformclientv2.NewUsersApiWithConfig(sdkConfig)
+	// Attempt to get the user
+	_, response, err := usersAPI.GetUser(id, nil, "", "")
+
+	// Check if the user is not found (deleted)
+	if response != nil && response.StatusCode == 404 {
+		return true, nil // User is deleted
+	}
+
+	// Handle other errors
+	if err != nil {
+		log.Printf("Error fetching user: %v", err)
+		return false, err
+	}
+
+	// If user is found, it means the user is not deleted
+	return false, nil
 }

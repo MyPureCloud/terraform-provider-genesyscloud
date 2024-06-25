@@ -21,7 +21,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v130/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v131/platformclientv2"
 )
 
 type SkillGroupsRequest struct {
@@ -34,54 +34,18 @@ type SkillGroupsRequest struct {
 	SkillConditions struct{} `json:"skillConditions"` //Keep this here.  Even though we do not use this field in the struct The generated attributed is used as a placeholder
 }
 
-type AllSkillGroups struct {
-	Entities []struct {
-		ID   string `json:"id"`
-		Name string `json:"name"`
-	}
-	NextURI     string `json:"nextUri"`
-	SelfURI     string `json:"selfUri"`
-	PreviousURI string `json:"previousUri"`
-}
-
-func getAllSkillGroups(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+func getAllSkillGroups(_ context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
 	resources := make(resourceExporter.ResourceIDMetaMap)
 	routingAPI := platformclientv2.NewRoutingApiWithConfig(clientConfig)
-	apiClient := &routingAPI.Configuration.APIClient
-	route := "/api/v2/routing/skillgroups"
 
-	headerParams := buildHeaderParams(routingAPI)
+	allSkillGroups, resp, err := getAllSkillGroupsByName(routingAPI, "")
+	if err != nil {
+		msg := fmt.Sprintf("failed to read skill groups: %v", err)
+		return nil, util.BuildAPIDiagnosticError(getSkillGroupResourceName(), msg, resp)
+	}
 
-	for {
-		path := routingAPI.Configuration.BasePath + route
-		skillGroupPayload := &AllSkillGroups{}
-
-		response, err := apiClient.CallAPI(path, "GET", nil, headerParams, nil, nil, "", nil)
-
-		if err != nil {
-			return nil, util.BuildAPIDiagnosticError("genesyscloud_routing_skill_group", fmt.Sprintf("Failed to get page of skill groups error: %s", err), response)
-		}
-
-		err = json.Unmarshal(response.RawBody, &skillGroupPayload)
-		if err != nil {
-			return nil, util.BuildDiagnosticError("genesyscloud_routing_skill_group", fmt.Sprintf("Failed to unmarshal skill groups"), err)
-		}
-
-		if skillGroupPayload.Entities == nil || len(skillGroupPayload.Entities) == 0 {
-			break
-		}
-
-		for _, skillGroup := range skillGroupPayload.Entities {
-
-			resources[skillGroup.ID] = &resourceExporter.ResourceMeta{Name: skillGroup.Name}
-		}
-
-		if route == skillGroupPayload.NextURI || skillGroupPayload.NextURI == "" {
-			break
-		} else {
-			route = skillGroupPayload.NextURI
-		}
-
+	for _, skillGroup := range allSkillGroups {
+		resources[*skillGroup.Id] = &resourceExporter.ResourceMeta{Name: *skillGroup.Name}
 	}
 
 	return resources, nil
@@ -99,6 +63,10 @@ func ResourceSkillGroupExporter() *resourceExporter.ResourceExporter {
 		},
 		JsonEncodeAttributes: []string{"skill_conditions"},
 	}
+}
+
+func getSkillGroupResourceName() string {
+	return "genesyscloud_routing_skill_group"
 }
 
 func ResourceRoutingSkillGroup() *schema.Resource {
@@ -174,14 +142,14 @@ func createOrUpdateSkillGroups(ctx context.Context, d *schema.ResourceData, meta
 	//Merge in skill conditions
 	finalSkillGroupsJson, err := mergeSkillConditionsIntoSkillGroups(d, skillGroupsRequest)
 	if err != nil {
-		return util.BuildDiagnosticError("genesyscloud_routing_skill_group", fmt.Sprintf("Failed to read the before skills groups request before: %s", skillGroupsRequest.Name), err)
+		return util.BuildDiagnosticError(getSkillGroupResourceName(), fmt.Sprintf("Failed to read the before skills groups request before: %s", skillGroupsRequest.Name), err)
 	}
 
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
 	apiClient := &routingAPI.Configuration.APIClient
 	path := routingAPI.Configuration.BasePath + route
-	headerParams := buildHeaderParams(routingAPI)
+	headerParams := BuildHeaderParams(routingAPI)
 
 	/*
 	   Since API Client expects either a struct or map of maps (of json), convert the JSON string to a map
@@ -190,7 +158,7 @@ func createOrUpdateSkillGroups(ctx context.Context, d *schema.ResourceData, meta
 	var skillGroupsPayload map[string]interface{}
 	err = json.Unmarshal([]byte(finalSkillGroupsJson), &skillGroupsPayload)
 	if err != nil {
-		return util.BuildDiagnosticError("genesyscloud_routing_skill_group", fmt.Sprintf("Failed to unmarshal the JSON payload while creating/updating the skills group %s", skillGroupsRequest.Name), err)
+		return util.BuildDiagnosticError(getSkillGroupResourceName(), fmt.Sprintf("Failed to unmarshal the JSON payload while creating/updating the skills group %s", skillGroupsRequest.Name), err)
 	}
 
 	httpMethod := "POST"
@@ -200,14 +168,14 @@ func createOrUpdateSkillGroups(ctx context.Context, d *schema.ResourceData, meta
 
 	response, err := apiClient.CallAPI(path, httpMethod, skillGroupsPayload, headerParams, nil, nil, "", nil)
 	if err != nil {
-		return util.BuildAPIDiagnosticError("genesyscloud_routing_skill_group", fmt.Sprintf("Failed to create/update skill groups %s error: %s", skillGroupsRequest.Name, err), response)
+		return util.BuildAPIDiagnosticError(getSkillGroupResourceName(), fmt.Sprintf("Failed to create/update skill groups %s error: %s", skillGroupsRequest.Name, err), response)
 	}
 
 	//Get the results and pull out the id
 	skillGroupPayload := make(map[string]interface{})
 	err = json.Unmarshal(response.RawBody, &skillGroupPayload)
 	if err != nil {
-		return util.BuildDiagnosticError("genesyscloud_routing_skill_group", fmt.Sprintf("Failed to unmarshal skill groups"), err)
+		return util.BuildDiagnosticError(getSkillGroupResourceName(), fmt.Sprintf("Failed to unmarshal skill groups"), err)
 	}
 
 	if create == true {
@@ -265,12 +233,12 @@ func postSkillGroupMemberDivisions(ctx context.Context, d *schema.ResourceData, 
 		skillGroupsMemberDivisionIdsPayload["addDivisionIds"] = toAdd
 	}
 
-	headerParams := buildHeaderParams(routingAPI)
+	headerParams := BuildHeaderParams(routingAPI)
 	apiClient := &routingAPI.Configuration.APIClient
 	path := fmt.Sprintf("%s/api/v2/routing/skillgroups/%s/members/divisions", routingAPI.Configuration.BasePath, d.Id())
 	response, err := apiClient.CallAPI(path, "POST", skillGroupsMemberDivisionIdsPayload, headerParams, nil, nil, "", nil)
 	if err != nil || response.Error != nil {
-		return util.BuildAPIDiagnosticError("genesyscloud_routing_skill_group", fmt.Sprintf("Failed to create/update skill group %s member divisions error: %s", d.Id(), err), response)
+		return util.BuildAPIDiagnosticError(getSkillGroupResourceName(), fmt.Sprintf("Failed to create/update skill group %s member divisions error: %s", d.Id(), err), response)
 	}
 
 	log.Printf("Updated skill group %s member divisions", name)
@@ -300,7 +268,7 @@ func createListsForSkillgroupsMembersDivisionsPost(schemaMemberDivisionIds []str
 
 	if allMemberDivisionsSpecified(schemaMemberDivisionIds) {
 		if len(schemaMemberDivisionIds) > 1 {
-			return nil, nil, util.BuildDiagnosticError("genesyscloud_routing_skill_group", fmt.Sprintf(`member_division_ids should not contain more than one item when the value of an item is "*"`), fmt.Errorf(`member_division_ids should not contain more than one item when the value of an item is "*"`))
+			return nil, nil, util.BuildDiagnosticError(getSkillGroupResourceName(), fmt.Sprintf(`member_division_ids should not contain more than one item when the value of an item is "*"`), fmt.Errorf(`member_division_ids should not contain more than one item when the value of an item is "*"`))
 		}
 		toAdd, err := getAllAuthDivisionIds(meta)
 		return toAdd, nil, err
@@ -361,7 +329,7 @@ func readSkillGroups(ctx context.Context, d *schema.ResourceData, meta interface
 	path := routingAPI.Configuration.BasePath + "/api/v2/routing/skillgroups/" + d.Id()
 
 	// add default headers if any
-	headerParams := buildHeaderParams(routingAPI)
+	headerParams := BuildHeaderParams(routingAPI)
 
 	log.Printf("Reading skills group %s", d.Id())
 
@@ -371,11 +339,11 @@ func readSkillGroups(ctx context.Context, d *schema.ResourceData, meta interface
 		response, err := apiClient.CallAPI(path, "GET", nil, headerParams, nil, nil, "", nil)
 
 		if err != nil {
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_routing_skill_group", fmt.Sprintf("Failed to retrieve skill groups %s", err), response))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(getSkillGroupResourceName(), fmt.Sprintf("Failed to retrieve skill groups %s", err), response))
 		}
 
 		if err == nil && response.Error != nil && response.StatusCode != http.StatusNotFound {
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_routing_skill_group", fmt.Sprintf("Failed to retrieve skill groups. %s", err), response))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(getSkillGroupResourceName(), fmt.Sprintf("Failed to retrieve skill groups. %s", err), response))
 		}
 
 		err = json.Unmarshal(response.RawBody, &skillGroupPayload)
@@ -384,7 +352,7 @@ func readSkillGroups(ctx context.Context, d *schema.ResourceData, meta interface
 		}
 
 		if err == nil && util.IsStatus404(response) {
-			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_routing_skill_group", fmt.Sprintf("Failed to read skill groups %s | error: %s", d.Id(), err), response))
+			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(getSkillGroupResourceName(), fmt.Sprintf("Failed to read skill groups %s | error: %s", d.Id(), err), response))
 		}
 
 		name := skillGroupPayload["name"]
@@ -440,7 +408,7 @@ func readSkillGroups(ctx context.Context, d *schema.ResourceData, meta interface
 	})
 }
 
-func buildHeaderParams(routingAPI *platformclientv2.RoutingApi) map[string]string {
+func BuildHeaderParams(routingAPI *platformclientv2.RoutingApi) map[string]string {
 	headerParams := make(map[string]string)
 
 	for key := range routingAPI.Configuration.DefaultHeader {
@@ -470,7 +438,7 @@ func deleteSkillGroups(ctx context.Context, d *schema.ResourceData, meta interfa
 	path := routingAPI.Configuration.BasePath + "/api/v2/routing/skillgroups/" + d.Id()
 
 	// add default headers if any
-	headerParams := buildHeaderParams(routingAPI)
+	headerParams := BuildHeaderParams(routingAPI)
 
 	log.Printf("Deleting skills group %s", name)
 	response, err := apiClient.CallAPI(path, "DELETE", nil, headerParams, nil, nil, "", nil)
@@ -481,7 +449,7 @@ func deleteSkillGroups(ctx context.Context, d *schema.ResourceData, meta interfa
 			log.Printf("Skills Group was already deleted %s", d.Id())
 			return nil
 		}
-		return util.BuildAPIDiagnosticError("genesyscloud_routing_skill_group", fmt.Sprintf("Failed to delete skill group %s error: %s", d.Id(), err), response)
+		return util.BuildAPIDiagnosticError(getSkillGroupResourceName(), fmt.Sprintf("Failed to delete skill group %s error: %s", d.Id(), err), response)
 	}
 
 	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
@@ -494,14 +462,14 @@ func deleteSkillGroups(ctx context.Context, d *schema.ResourceData, meta interfa
 				log.Printf("Deleted skills group %s", d.Id())
 				return nil
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_routing_skill_group", fmt.Sprintf("Error deleting skill group %s | error: %s", d.Id(), err), response))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(getSkillGroupResourceName(), fmt.Sprintf("Error deleting skill group %s | error: %s", d.Id(), err), response))
 		}
-		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_routing_skill_group", fmt.Sprintf("Skill group %s still exists", d.Id()), response))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(getSkillGroupResourceName(), fmt.Sprintf("Skill group %s still exists", d.Id()), response))
 	})
 }
 
 func readSkillGroupMemberDivisionIds(d *schema.ResourceData, routingAPI *platformclientv2.RoutingApi) ([]string, diag.Diagnostics) {
-	headers := buildHeaderParams(routingAPI)
+	headers := BuildHeaderParams(routingAPI)
 	apiClient := &routingAPI.Configuration.APIClient
 	path := fmt.Sprintf("%s/api/v2/routing/skillgroups/%s/members/divisions", routingAPI.Configuration.BasePath, d.Id())
 
@@ -509,13 +477,13 @@ func readSkillGroupMemberDivisionIds(d *schema.ResourceData, routingAPI *platfor
 
 	response, err := apiClient.CallAPI(path, "GET", nil, headers, nil, nil, "", nil)
 	if err != nil || response.Error != nil {
-		return nil, util.BuildAPIDiagnosticError("genesyscloud_routing_skill_group", fmt.Sprintf("Failed to  get member divisions for skill group %s error: %s", d.Id(), err), response)
+		return nil, util.BuildAPIDiagnosticError(getSkillGroupResourceName(), fmt.Sprintf("Failed to  get member divisions for skill group %s error: %s", d.Id(), err), response)
 	}
 
 	memberDivisionsPayload := make(map[string]interface{}, 0)
 	err = json.Unmarshal(response.RawBody, &memberDivisionsPayload)
 	if err != nil {
-		return nil, util.BuildDiagnosticError("genesyscloud_routing_skill_group", fmt.Sprintf("Failed to unmarshal member divisions"), err)
+		return nil, util.BuildDiagnosticError(getSkillGroupResourceName(), fmt.Sprintf("Failed to unmarshal member divisions"), err)
 	}
 
 	apiSkillGroupMemberDivisionIds := make([]string, 0)
@@ -593,9 +561,9 @@ func GenerateRoutingSkillGroupResourceBasic(
 	resourceID string,
 	name string,
 	description string) string {
-	return fmt.Sprintf(`resource "genesyscloud_routing_skill_group" "%s" {
+	return fmt.Sprintf(`resource "%s" "%s" {
 		name = "%s"
 		description="%s"
 	}
-	`, resourceID, name, description)
+	`, getSkillGroupResourceName(), resourceID, name, description)
 }

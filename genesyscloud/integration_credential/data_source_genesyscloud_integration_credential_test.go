@@ -35,7 +35,9 @@ func TestAccDataSourceIntegrationCredential(t *testing.T) {
 					strconv.Quote(credName1),
 					strconv.Quote(typeName1),
 					GenerateCredentialFields(
-						util.GenerateMapProperty(key1, strconv.Quote(val1)),
+						map[string]string{
+							key1: strconv.Quote(val1),
+						},
 					),
 				) + generateIntegrationCredentialDataSource(credResource2,
 					credName1,

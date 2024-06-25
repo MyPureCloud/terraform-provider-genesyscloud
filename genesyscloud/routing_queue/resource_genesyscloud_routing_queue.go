@@ -25,7 +25,7 @@ import (
 	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v130/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v131/platformclientv2"
 )
 
 var bullseyeExpansionTypeTimeout = "TIMEOUT_SECONDS"
@@ -74,6 +74,7 @@ func createQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		EmailInQueueFlow:             util.BuildSdkDomainEntityRef(d, "email_in_queue_flow_id"),
 		MessageInQueueFlow:           util.BuildSdkDomainEntityRef(d, "message_in_queue_flow_id"),
 		WhisperPrompt:                util.BuildSdkDomainEntityRef(d, "whisper_prompt_id"),
+		OnHoldPrompt:                 util.BuildSdkDomainEntityRef(d, "on_hold_prompt_id"),
 		AutoAnswerOnly:               platformclientv2.Bool(d.Get("auto_answer_only").(bool)),
 		CallingPartyName:             platformclientv2.String(d.Get("calling_party_name").(string)),
 		CallingPartyNumber:           platformclientv2.String(d.Get("calling_party_number").(string)),
@@ -192,6 +193,7 @@ func readQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 		resourcedata.SetNillableReference(d, "message_in_queue_flow_id", currentQueue.MessageInQueueFlow)
 		resourcedata.SetNillableReference(d, "email_in_queue_flow_id", currentQueue.EmailInQueueFlow)
 		resourcedata.SetNillableReference(d, "whisper_prompt_id", currentQueue.WhisperPrompt)
+		resourcedata.SetNillableReference(d, "on_hold_prompt_id", currentQueue.OnHoldPrompt)
 		resourcedata.SetNillableValue(d, "auto_answer_only", currentQueue.AutoAnswerOnly)
 		resourcedata.SetNillableValue(d, "enable_transcription", currentQueue.EnableTranscription)
 		resourcedata.SetNillableValue(d, "suppress_in_queue_call_recording", currentQueue.SuppressInQueueCallRecording)
@@ -279,6 +281,7 @@ func updateQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		EmailInQueueFlow:             util.BuildSdkDomainEntityRef(d, "email_in_queue_flow_id"),
 		MessageInQueueFlow:           util.BuildSdkDomainEntityRef(d, "message_in_queue_flow_id"),
 		WhisperPrompt:                util.BuildSdkDomainEntityRef(d, "whisper_prompt_id"),
+		OnHoldPrompt:                 util.BuildSdkDomainEntityRef(d, "on_hold_prompt_id"),
 		AutoAnswerOnly:               platformclientv2.Bool(d.Get("auto_answer_only").(bool)),
 		CallingPartyName:             platformclientv2.String(d.Get("calling_party_name").(string)),
 		CallingPartyNumber:           platformclientv2.String(d.Get("calling_party_number").(string)),
@@ -1030,9 +1033,15 @@ func updateQueueMembers(d *schema.ResourceData, sdkConfig *platformclientv2.Conf
 	if len(newUserIds) > 0 {
 		log.Printf("Sleeping for 10 seconds")
 		time.Sleep(10 * time.Second)
+
+		members, diagErr := getRoutingQueueMembers(d.Id(), "group", sdkConfig)
+		if diagErr != nil {
+			return diagErr
+		}
+
 		for _, userId := range newUserIds {
-			if err := verifyUserIsNotGroupMemberOfQueue(d.Id(), userId, sdkConfig); err != nil {
-				log.Println(err.Error())
+			if err := verifyUserIsNotGroupMemberOfQueue(d.Id(), userId, members); err != nil {
+				return util.BuildDiagnosticError(resourceName, "failed to update queue member: ", err)
 			}
 		}
 	}
@@ -1115,39 +1124,12 @@ func removeAllExistingUserMembersFromQueue(queueId string, sdkConfig *platformcl
 }
 
 // verifyUserIsNotGroupMemberOfQueue Search through queue group members to verify that a given user is not a group member
-func verifyUserIsNotGroupMemberOfQueue(queueId, userId string, sdkConfig *platformclientv2.Configuration) error {
-	var (
-		userName   string
-		routingApi = platformclientv2.NewRoutingApiWithConfig(sdkConfig)
-		usersApi   = platformclientv2.NewUsersApiWithConfig(sdkConfig)
-	)
-
+func verifyUserIsNotGroupMemberOfQueue(queueId, userId string, members []platformclientv2.Queuemember) error {
 	log.Printf("verifying that member '%s' is not assinged to the queue '%s' via a group", userId, queueId)
 
-	// Read name of user to filter results when listing members of queue
-	log.Printf("reading user %s to fetch name", userId)
-	user, _, err := usersApi.GetUser(userId, nil, "", "")
-	if err != nil {
-		log.Printf("Failed to read name of user '%s' inside verifyUserIsNotGroupMemberOfQueue: %s. Queue ID: %s", userId, err, queueId)
-	} else {
-		userName = *user.Name
-		log.Printf("read user %s %s", userId, userName)
-	}
-
-	const pageSize = 100
-	for pageNum := 1; ; pageNum++ {
-		users, resp, err := sdkGetRoutingQueueMembers(queueId, "group", userName, pageNum, pageSize, routingApi)
-		if err != nil || resp.StatusCode != http.StatusOK {
-			log.Printf("Error requesting group members of queue '%s': %v. Cannot validate that user '%s' is not already assigned via a group", queueId, err, userId)
-			break
-		}
-		if users == nil || users.Entities == nil || len(*users.Entities) == 0 {
-			break
-		}
-		for _, member := range *users.Entities {
-			if userId == *member.Id {
-				return fmt.Errorf("member %s '%s' is already assigned to queue '%s' via a group, and therefore should not be assigned as a member", userName, userId, queueId)
-			}
+	for _, member := range members {
+		if *member.Id == userId {
+			return fmt.Errorf("member %s  is already assigned to queue %s via a group, and therefore should not be assigned as a member", userId, queueId)
 		}
 	}
 
@@ -1207,25 +1189,25 @@ func getRoutingQueueMembers(queueID string, memberBy string, sdkConfig *platform
 	log.Printf("%d members belong to queue %s", queueMembers, queueID)
 
 	for pageNum := 1; ; pageNum++ {
-		users, resp, err := sdkGetRoutingQueueMembers(queueID, memberBy, "", pageNum, pageSize, api)
+		users, resp, err := sdkGetRoutingQueueMembers(queueID, memberBy, pageNum, pageSize, api)
 		if err != nil || resp.StatusCode != http.StatusOK {
 			return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to query users for queue %s error: %s", queueID, err), resp)
 		}
 		if users == nil || users.Entities == nil || len(*users.Entities) == 0 {
 			membersFound := len(members)
 			log.Printf("%d queue members found for queue %s", membersFound, queueID)
+
 			if membersFound != queueMembers {
 				log.Printf("Member count is not equal to queue member found for queue %s, Correlation Id: %s", queueID, resp.CorrelationID)
 			}
 			return members, nil
 		}
-		for _, user := range *users.Entities {
-			members = append(members, user)
-		}
+
+		members = append(members, *users.Entities...)
 	}
 }
 
-func sdkGetRoutingQueueMembers(queueID, memberBy, name string, pageNumber, pageSize int, api *platformclientv2.RoutingApi) (*platformclientv2.Queuememberentitylisting, *platformclientv2.APIResponse, error) {
+func sdkGetRoutingQueueMembers(queueID, memberBy string, pageNumber, pageSize int, api *platformclientv2.RoutingApi) (*platformclientv2.Queuememberentitylisting, *platformclientv2.APIResponse, error) {
 	// SDK does not support nil values for boolean query params yet, so we must manually construct this HTTP request for now
 	apiClient := &api.Configuration.APIClient
 
@@ -1253,9 +1235,6 @@ func sdkGetRoutingQueueMembers(queueID, memberBy, name string, pageNumber, pageS
 	queryParams["pageNumber"] = apiClient.ParameterToString(pageNumber, "")
 	if memberBy != "" {
 		queryParams["memberBy"] = memberBy
-	}
-	if name != "" {
-		queryParams["name"] = name
 	}
 
 	headerParams["Content-Type"] = "application/json"

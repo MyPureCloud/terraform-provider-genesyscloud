@@ -1,4 +1,4 @@
-package genesyscloud
+package routing_utilization
 
 import (
 	"fmt"
@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
+	routingUtilizationLabel "terraform-provider-genesyscloud/genesyscloud/routing_utilization_label"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 	"time"
@@ -13,7 +14,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v130/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v131/platformclientv2"
 )
 
 func TestAccResourceBasicRoutingUtilization(t *testing.T) {
@@ -27,16 +28,16 @@ func TestAccResourceBasicRoutingUtilization(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
-		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		ProviderFactories: provider.GetProviderFactories(providerResources, nil),
 		Steps: []resource.TestStep{
 			{
 				// Create
 				Config: generateRoutingUtilizationResource(
-					generateRoutingUtilMediaType("call", maxCapacity1, util.FalseValue),
-					generateRoutingUtilMediaType("callback", maxCapacity1, util.FalseValue),
-					generateRoutingUtilMediaType("chat", maxCapacity1, util.FalseValue),
-					generateRoutingUtilMediaType("email", maxCapacity1, util.FalseValue),
-					generateRoutingUtilMediaType("message", maxCapacity1, util.FalseValue),
+					GenerateRoutingUtilMediaType("call", maxCapacity1, util.FalseValue),
+					GenerateRoutingUtilMediaType("callback", maxCapacity1, util.FalseValue),
+					GenerateRoutingUtilMediaType("chat", maxCapacity1, util.FalseValue),
+					GenerateRoutingUtilMediaType("email", maxCapacity1, util.FalseValue),
+					GenerateRoutingUtilMediaType("message", maxCapacity1, util.FalseValue),
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_routing_utilization.routing-util", "call.0.maximum_capacity", maxCapacity1),
@@ -59,11 +60,11 @@ func TestAccResourceBasicRoutingUtilization(t *testing.T) {
 			{
 				// Update with a new max capacities and interruptible media types
 				Config: generateRoutingUtilizationResource(
-					generateRoutingUtilMediaType("call", maxCapacity2, util.TrueValue, strconv.Quote(utilTypeEmail)),
-					generateRoutingUtilMediaType("callback", maxCapacity2, util.TrueValue, strconv.Quote(utilTypeCall)),
-					generateRoutingUtilMediaType("chat", maxCapacity2, util.TrueValue, strconv.Quote(utilTypeCall)),
-					generateRoutingUtilMediaType("email", maxCapacity2, util.TrueValue, strconv.Quote(utilTypeCall)),
-					generateRoutingUtilMediaType("message", maxCapacity2, util.TrueValue, strconv.Quote(utilTypeCall)),
+					GenerateRoutingUtilMediaType("call", maxCapacity2, util.TrueValue, strconv.Quote(utilTypeEmail)),
+					GenerateRoutingUtilMediaType("callback", maxCapacity2, util.TrueValue, strconv.Quote(utilTypeCall)),
+					GenerateRoutingUtilMediaType("chat", maxCapacity2, util.TrueValue, strconv.Quote(utilTypeCall)),
+					GenerateRoutingUtilMediaType("email", maxCapacity2, util.TrueValue, strconv.Quote(utilTypeCall)),
+					GenerateRoutingUtilMediaType("message", maxCapacity2, util.TrueValue, strconv.Quote(utilTypeCall)),
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_routing_utilization.routing-util", "call.0.maximum_capacity", maxCapacity2),
@@ -108,30 +109,32 @@ func TestAccResourceRoutingUtilizationWithLabels(t *testing.T) {
 		greenLabelName     = "Terraform Green Label" + uuid.NewString()
 	)
 
-	CleanupRoutingUtilizationLabel()
+	if err := CleanupRoutingUtilizationLabel(); err != nil {
+		t.Skipf("%v", err) // Skip the test and not fail it
+	}
 
 	resource.Test(t, resource.TestCase{
 		PreCheck: func() {
 			util.TestAccPreCheck(t)
-			if err := checkIfLabelsAreEnabled(); err != nil {
+			if err := routingUtilizationLabel.CheckIfLabelsAreEnabled(); err != nil {
 				t.Skipf("%v", err) // be sure to skip the test and not fail it
 			}
 		},
-		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		ProviderFactories: provider.GetProviderFactories(providerResources, nil),
 		Steps: []resource.TestStep{
 			{
 				// Create
-				Config: GenerateRoutingUtilizationLabelResource(redLabelResource, redLabelName, "") +
-					GenerateRoutingUtilizationLabelResource(blueLabelResource, blueLabelName, redLabelResource) +
-					GenerateRoutingUtilizationLabelResource(greenLabelResource, greenLabelName, blueLabelResource) +
+				Config: routingUtilizationLabel.GenerateRoutingUtilizationLabelResource(redLabelResource, redLabelName, "") +
+					routingUtilizationLabel.GenerateRoutingUtilizationLabelResource(blueLabelResource, blueLabelName, redLabelResource) +
+					routingUtilizationLabel.GenerateRoutingUtilizationLabelResource(greenLabelResource, greenLabelName, blueLabelResource) +
 					generateRoutingUtilizationResource(
-						generateRoutingUtilMediaType("call", maxCapacity1, util.FalseValue),
-						generateRoutingUtilMediaType("callback", maxCapacity1, util.FalseValue),
-						generateRoutingUtilMediaType("chat", maxCapacity1, util.FalseValue),
-						generateRoutingUtilMediaType("email", maxCapacity1, util.FalseValue),
-						generateRoutingUtilMediaType("message", maxCapacity1, util.FalseValue),
-						generateLabelUtilization(redLabelResource, maxCapacity1),
-						generateLabelUtilization(blueLabelResource, maxCapacity1, redLabelResource),
+						GenerateRoutingUtilMediaType("call", maxCapacity1, util.FalseValue),
+						GenerateRoutingUtilMediaType("callback", maxCapacity1, util.FalseValue),
+						GenerateRoutingUtilMediaType("chat", maxCapacity1, util.FalseValue),
+						GenerateRoutingUtilMediaType("email", maxCapacity1, util.FalseValue),
+						GenerateRoutingUtilMediaType("message", maxCapacity1, util.FalseValue),
+						routingUtilizationLabel.GenerateLabelUtilization(redLabelResource, maxCapacity1),
+						routingUtilizationLabel.GenerateLabelUtilization(blueLabelResource, maxCapacity1, redLabelResource),
 					),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_routing_utilization.routing-util", "call.0.maximum_capacity", maxCapacity1),
@@ -157,17 +160,17 @@ func TestAccResourceRoutingUtilizationWithLabels(t *testing.T) {
 			},
 			{
 				// Update with a new max capacities and interruptible media types
-				Config: GenerateRoutingUtilizationLabelResource(redLabelResource, redLabelName, "") +
-					GenerateRoutingUtilizationLabelResource(blueLabelResource, blueLabelName, redLabelResource) +
-					GenerateRoutingUtilizationLabelResource(greenLabelResource, greenLabelName, blueLabelResource) +
+				Config: routingUtilizationLabel.GenerateRoutingUtilizationLabelResource(redLabelResource, redLabelName, "") +
+					routingUtilizationLabel.GenerateRoutingUtilizationLabelResource(blueLabelResource, blueLabelName, redLabelResource) +
+					routingUtilizationLabel.GenerateRoutingUtilizationLabelResource(greenLabelResource, greenLabelName, blueLabelResource) +
 					generateRoutingUtilizationResource(
-						generateRoutingUtilMediaType("call", maxCapacity2, util.TrueValue, strconv.Quote(utilTypeEmail)),
-						generateRoutingUtilMediaType("callback", maxCapacity2, util.TrueValue, strconv.Quote(utilTypeCall)),
-						generateRoutingUtilMediaType("chat", maxCapacity2, util.TrueValue, strconv.Quote(utilTypeCall)),
-						generateRoutingUtilMediaType("email", maxCapacity2, util.TrueValue, strconv.Quote(utilTypeCall)),
-						generateRoutingUtilMediaType("message", maxCapacity2, util.TrueValue, strconv.Quote(utilTypeCall)),
-						generateLabelUtilization(redLabelResource, maxCapacity2),
-						generateLabelUtilization(blueLabelResource, maxCapacity2, redLabelResource),
+						GenerateRoutingUtilMediaType("call", maxCapacity2, util.TrueValue, strconv.Quote(utilTypeEmail)),
+						GenerateRoutingUtilMediaType("callback", maxCapacity2, util.TrueValue, strconv.Quote(utilTypeCall)),
+						GenerateRoutingUtilMediaType("chat", maxCapacity2, util.TrueValue, strconv.Quote(utilTypeCall)),
+						GenerateRoutingUtilMediaType("email", maxCapacity2, util.TrueValue, strconv.Quote(utilTypeCall)),
+						GenerateRoutingUtilMediaType("message", maxCapacity2, util.TrueValue, strconv.Quote(utilTypeCall)),
+						routingUtilizationLabel.GenerateLabelUtilization(redLabelResource, maxCapacity2),
+						routingUtilizationLabel.GenerateLabelUtilization(blueLabelResource, maxCapacity2, redLabelResource),
 					),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_routing_utilization.routing-util", "call.0.maximum_capacity", maxCapacity2),
@@ -192,27 +195,27 @@ func TestAccResourceRoutingUtilizationWithLabels(t *testing.T) {
 				),
 			},
 			{ //Delete one by one to avoid conflict
-				Config: GenerateRoutingUtilizationLabelResource(redLabelResource, redLabelName, "") +
-					GenerateRoutingUtilizationLabelResource(blueLabelResource, blueLabelName, redLabelResource) +
+				Config: routingUtilizationLabel.GenerateRoutingUtilizationLabelResource(redLabelResource, redLabelName, "") +
+					routingUtilizationLabel.GenerateRoutingUtilizationLabelResource(blueLabelResource, blueLabelName, redLabelResource) +
 					generateRoutingUtilizationResource(
-						generateRoutingUtilMediaType("call", maxCapacity2, util.TrueValue, strconv.Quote(utilTypeEmail)),
-						generateRoutingUtilMediaType("callback", maxCapacity2, util.TrueValue, strconv.Quote(utilTypeCall)),
-						generateRoutingUtilMediaType("chat", maxCapacity2, util.TrueValue, strconv.Quote(utilTypeCall)),
-						generateRoutingUtilMediaType("email", maxCapacity2, util.TrueValue, strconv.Quote(utilTypeCall)),
-						generateRoutingUtilMediaType("message", maxCapacity2, util.TrueValue, strconv.Quote(utilTypeCall)),
-						generateLabelUtilization(redLabelResource, maxCapacity2),
-						generateLabelUtilization(blueLabelResource, maxCapacity2, redLabelResource),
+						GenerateRoutingUtilMediaType("call", maxCapacity2, util.TrueValue, strconv.Quote(utilTypeEmail)),
+						GenerateRoutingUtilMediaType("callback", maxCapacity2, util.TrueValue, strconv.Quote(utilTypeCall)),
+						GenerateRoutingUtilMediaType("chat", maxCapacity2, util.TrueValue, strconv.Quote(utilTypeCall)),
+						GenerateRoutingUtilMediaType("email", maxCapacity2, util.TrueValue, strconv.Quote(utilTypeCall)),
+						GenerateRoutingUtilMediaType("message", maxCapacity2, util.TrueValue, strconv.Quote(utilTypeCall)),
+						routingUtilizationLabel.GenerateLabelUtilization(redLabelResource, maxCapacity2),
+						routingUtilizationLabel.GenerateLabelUtilization(blueLabelResource, maxCapacity2, redLabelResource),
 					),
 			},
 			{
-				Config: GenerateRoutingUtilizationLabelResource(redLabelResource, redLabelName, "") +
+				Config: routingUtilizationLabel.GenerateRoutingUtilizationLabelResource(redLabelResource, redLabelName, "") +
 					generateRoutingUtilizationResource(
-						generateRoutingUtilMediaType("call", maxCapacity2, util.TrueValue, strconv.Quote(utilTypeEmail)),
-						generateRoutingUtilMediaType("callback", maxCapacity2, util.TrueValue, strconv.Quote(utilTypeCall)),
-						generateRoutingUtilMediaType("chat", maxCapacity2, util.TrueValue, strconv.Quote(utilTypeCall)),
-						generateRoutingUtilMediaType("email", maxCapacity2, util.TrueValue, strconv.Quote(utilTypeCall)),
-						generateRoutingUtilMediaType("message", maxCapacity2, util.TrueValue, strconv.Quote(utilTypeCall)),
-						generateLabelUtilization(redLabelResource, maxCapacity2),
+						GenerateRoutingUtilMediaType("call", maxCapacity2, util.TrueValue, strconv.Quote(utilTypeEmail)),
+						GenerateRoutingUtilMediaType("callback", maxCapacity2, util.TrueValue, strconv.Quote(utilTypeCall)),
+						GenerateRoutingUtilMediaType("chat", maxCapacity2, util.TrueValue, strconv.Quote(utilTypeCall)),
+						GenerateRoutingUtilMediaType("email", maxCapacity2, util.TrueValue, strconv.Quote(utilTypeCall)),
+						GenerateRoutingUtilMediaType("message", maxCapacity2, util.TrueValue, strconv.Quote(utilTypeCall)),
+						routingUtilizationLabel.GenerateLabelUtilization(redLabelResource, maxCapacity2),
 					),
 			},
 			{
@@ -273,37 +276,6 @@ func assertAttributeEquals(state *terraform.InstanceState, attributeName, expect
 	}
 }
 
-func generateRoutingUtilMediaType(
-	mediaType string,
-	maxCapacity string,
-	includeNonAcd string,
-	interruptTypes ...string) string {
-	return fmt.Sprintf(`%s {
-		maximum_capacity = %s
-		include_non_acd = %s
-		interruptible_media_types = [%s]
-	}
-	`, mediaType, maxCapacity, includeNonAcd, strings.Join(interruptTypes, ","))
-}
-
-func generateLabelUtilization(
-	labelResource string,
-	maxCapacity string,
-	interruptingLabelResourceNames ...string) string {
-
-	interruptingLabelResources := make([]string, 0)
-	for _, resourceName := range interruptingLabelResourceNames {
-		interruptingLabelResources = append(interruptingLabelResources, "genesyscloud_routing_utilization_label."+resourceName+".id")
-	}
-
-	return fmt.Sprintf(`label_utilizations {
-		label_id = genesyscloud_routing_utilization_label.%s.id
-		maximum_capacity = %s
-		interrupting_label_ids = [%s]
-	}
-	`, labelResource, maxCapacity, strings.Join(interruptingLabelResources, ","))
-}
-
 func generateRoutingUtilizationResource(attributes ...string) string {
 	return fmt.Sprintf(`resource "genesyscloud_routing_utilization" "routing-util" {
 		%s
@@ -311,19 +283,24 @@ func generateRoutingUtilizationResource(attributes ...string) string {
 	`, strings.Join(attributes, "\n"))
 }
 
-func CleanupRoutingUtilizationLabel() {
-	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
+func CleanupRoutingUtilizationLabel() error {
+	config, err := provider.AuthorizeSdk()
+	if err != nil {
+		return err
+	}
+
+	routingAPI := platformclientv2.NewRoutingApiWithConfig(config)
 
 	for pageNum := 1; ; pageNum++ {
 		const pageSize = 100
 		labels, _, getErr := routingAPI.GetRoutingUtilizationLabels(pageSize, pageNum, "", "")
 		if getErr != nil {
 			log.Printf("failed to get page %v of routing email domains: %v", pageNum, getErr)
-			return
+			return getErr
 		}
 
 		if labels.Entities == nil || len(*labels.Entities) == 0 {
-			return
+			return nil
 		}
 
 		for _, label := range *labels.Entities {

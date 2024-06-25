@@ -17,7 +17,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/mypurecloud/platform-client-sdk-go/v130/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v131/platformclientv2"
 )
 
 func TestAccResourcePhoneBasic(t *testing.T) {
@@ -188,6 +188,7 @@ func TestAccResourcePhoneBasic(t *testing.T) {
 
 func TestAccResourcePhoneStandalone(t *testing.T) {
 	number := "+12005538112"
+	deleteDidPoolWithNumber(number)
 	didPoolResource1 := "test-didpool1"
 	lineAddresses := []string{number}
 	phoneRes := "phone_standalone1234"
@@ -245,29 +246,6 @@ func TestAccResourcePhoneStandalone(t *testing.T) {
 		"mac",
 		[]string{},
 	)
-	config := didPool.GenerateDidPoolResource(&didPool.DidPoolStruct{
-		ResourceID:       didPoolResource1,
-		StartPhoneNumber: lineAddresses[0],
-		EndPhoneNumber:   lineAddresses[0],
-		Description:      util.NullValue, // No description
-		Comments:         util.NullValue, // No comments
-		PoolProvider:     util.NullValue, // No provider
-	})
-	config += phoneBaseSettings.GeneratePhoneBaseSettingsResourceWithCustomAttrs(
-		phoneBaseSettingsRes,
-		phoneBaseSettingsName,
-		"phoneBaseSettings description",
-		"generic_sip.json",
-	) + GeneratePhoneResourceWithCustomAttrs(&PhoneConfig{
-		phoneRes,
-		name1,
-		stateActive,
-		"genesyscloud_telephony_providers_edges_site." + siteRes + ".id",
-		"genesyscloud_telephony_providers_edges_phonebasesettings." + phoneBaseSettingsRes + ".id",
-		lineAddresses,
-		"", // no web rtc user
-		"genesyscloud_telephony_providers_edges_did_pool." + didPoolResource1,
-	}, capabilities, generatePhoneProperties(uuid.NewString()))
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
@@ -277,7 +255,28 @@ func TestAccResourcePhoneStandalone(t *testing.T) {
 				PreConfig: func() {
 					time.Sleep(30 * time.Second)
 				},
-				Config: locationConfig + siteConfig + config,
+				Config: didPool.GenerateDidPoolResource(&didPool.DidPoolStruct{
+					ResourceID:       didPoolResource1,
+					StartPhoneNumber: lineAddresses[0],
+					EndPhoneNumber:   lineAddresses[0],
+					Description:      util.NullValue, // No description
+					Comments:         util.NullValue, // No comments
+					PoolProvider:     util.NullValue, // No provider
+				}) + locationConfig + siteConfig + phoneBaseSettings.GeneratePhoneBaseSettingsResourceWithCustomAttrs(
+					phoneBaseSettingsRes,
+					phoneBaseSettingsName,
+					"phoneBaseSettings description",
+					"generic_sip.json",
+				) + GeneratePhoneResourceWithCustomAttrs(&PhoneConfig{
+					phoneRes,
+					name1,
+					stateActive,
+					"genesyscloud_telephony_providers_edges_site." + siteRes + ".id",
+					"genesyscloud_telephony_providers_edges_phonebasesettings." + phoneBaseSettingsRes + ".id",
+					lineAddresses,
+					"", // no web rtc user
+					"genesyscloud_telephony_providers_edges_did_pool." + didPoolResource1,
+				}, capabilities, generatePhoneProperties(uuid.NewString())),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_phone."+phoneRes, "name", name1),
 					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_phone."+phoneRes, "state", stateActive),
@@ -445,7 +444,6 @@ func TestAccResourceHardPhoneStandalone(t *testing.T) {
 		CheckDestroy: TestVerifyWebRtcPhoneDestroyed,
 	})
 }
-
 func generatePhoneCapabilities(
 	provisions,
 	registers,
@@ -531,4 +529,33 @@ func deleteDidPool(config *platformclientv2.Configuration, id string) error {
 		return fmt.Errorf("error deleting did pool: %v", err)
 	}
 	return nil
+}
+
+func deleteDidPoolWithNumber(number string) {
+	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
+	var didPoolsToDelete []string
+
+	for pageNum := 1; ; pageNum++ {
+		const pageSize = 100
+		didPools, _, getErr := edgesAPI.GetTelephonyProvidersEdgesDidpools(pageSize, pageNum, "", nil)
+		if getErr != nil {
+			return
+		}
+
+		if didPools.Entities == nil || len(*didPools.Entities) == 0 {
+			break
+		}
+
+		for _, didPool := range *didPools.Entities {
+			if (didPool.StartPhoneNumber != nil && *didPool.StartPhoneNumber == number) ||
+				(didPool.EndPhoneNumber != nil && *didPool.EndPhoneNumber == number) {
+				didPoolsToDelete = append(didPoolsToDelete, *didPool.Id)
+			}
+		}
+	}
+
+	for _, didPoolId := range didPoolsToDelete {
+		edgesAPI.DeleteTelephonyProvidersEdgesDidpool(didPoolId)
+		time.Sleep(5 * time.Second)
+	}
 }
