@@ -43,7 +43,6 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_auth_division"] = ResourceAuthDivision()
 	providerResources["genesyscloud_idp_generic"] = ResourceIdpGeneric()
 	providerResources["genesyscloud_idp_gsuite"] = ResourceIdpGsuite()
-	providerResources["genesyscloud_idp_onelogin"] = ResourceIdpOnelogin()
 	providerResources["genesyscloud_idp_ping"] = ResourceIdpPing()
 	providerResources["genesyscloud_journey_action_map"] = ResourceJourneyActionMap()
 	providerResources["genesyscloud_journey_action_template"] = ResourceJourneyActionTemplate()
