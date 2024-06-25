@@ -2,13 +2,14 @@ package resource_exporter
 
 import (
 	"context"
-	"github.com/hashicorp/go-cty/cty"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v130/platformclientv2"
 	"regexp"
 	"strings"
 	"sync"
+
+	"github.com/hashicorp/go-cty/cty"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
 
 	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 
