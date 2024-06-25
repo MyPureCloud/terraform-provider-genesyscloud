@@ -40,9 +40,10 @@ func ResourcePhone() *schema.Resource {
 				ValidateDiagFunc: validators.ValidatePhoneNumber,
 			},
 			`remote_address`: {
-				Description: `Station remote property for phones`,
-				Optional:    true,
-				Type:        schema.TypeInt,
+				Description:  `Station remote property for phones`,
+				Optional:     true,
+				Type:         schema.TypeString,
+				ValidateFunc: validation.StringIsNotEmpty,
 			},
 		},
 	}

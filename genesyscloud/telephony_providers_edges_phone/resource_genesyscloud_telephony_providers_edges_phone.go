@@ -110,7 +110,7 @@ func readPhone(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 		}
 
 		if currentPhone.Lines != nil {
-			_ = d.Set("line_addresses", flattenPhoneLines(currentPhone.Lines))
+			resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "line_properties", currentPhone.Lines, flattenLines)
 		}
 
 		_ = d.Set("properties", nil)

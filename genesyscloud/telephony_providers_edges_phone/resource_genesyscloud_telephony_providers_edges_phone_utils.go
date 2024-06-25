@@ -26,7 +26,6 @@ type PhoneConfig struct {
 	State               string
 	SiteId              string
 	PhoneBaseSettingsId string
-	LineAddresses       []string
 	WebRtcUserId        string
 	DependsOn           string
 }
@@ -299,10 +298,6 @@ func buildSdkCapabilities(d *schema.ResourceData) *platformclientv2.Phonecapabil
 }
 
 func GeneratePhoneResourceWithCustomAttrs(config *PhoneConfig, otherAttrs ...string) string {
-	lineStrs := make([]string, len(config.LineAddresses))
-	for i, val := range config.LineAddresses {
-		lineStrs[i] = fmt.Sprintf("\"%s\"", val)
-	}
 
 	webRtcUser := ""
 	if len(config.WebRtcUserId) != 0 {
@@ -314,7 +309,6 @@ func GeneratePhoneResourceWithCustomAttrs(config *PhoneConfig, otherAttrs ...str
 		state = "%s"
 		site_id = %s
 		phone_base_settings_id = %s
-		line_addresses = [%s]
 		depends_on=[%s]
 		%s
 		%s
@@ -324,7 +318,6 @@ func GeneratePhoneResourceWithCustomAttrs(config *PhoneConfig, otherAttrs ...str
 		config.State,
 		config.SiteId,
 		config.PhoneBaseSettingsId,
-		strings.Join(lineStrs, ","),
 		config.DependsOn,
 		webRtcUser,
 		strings.Join(otherAttrs, "\n"),
@@ -393,4 +386,46 @@ func createStandalonePhoneLines(lineProperties []interface{}, linesPtr *[]platfo
 		})
 	}
 	return &lines
+}
+
+func flattenLines(phoneLines *[]platformclientv2.Line) []interface{} {
+	if len(*phoneLines) == 0 {
+		return nil
+	}
+	phoneLineslist := make([]interface{}, 0)
+	for _, phoneLine := range *phoneLines {
+		phoneLineMap := make(map[string]interface{})
+
+		if idAddressKey := (*phoneLine.Properties)["station_identity_address"]; idAddressKey != nil {
+			didI := idAddressKey.(map[string]interface{})["value"].(map[string]interface{})["instance"]
+			if didI != nil {
+				did := didI.(string)
+				resourcedata.SetMapValueIfNotNil(phoneLineMap, "line_address", &did)
+
+			}
+		}
+		if remoteAddressKey := (*phoneLine.Properties)["station_remote_address"]; remoteAddressKey != nil {
+			remoteAddress := remoteAddressKey.(map[string]interface{})["value"].(map[string]interface{})["instance"]
+			if remoteAddress != nil {
+				remoteAddressStr := remoteAddress.(string)
+				resourcedata.SetMapValueIfNotNil(phoneLineMap, "remote_address", &remoteAddressStr)
+
+			}
+		}
+
+		phoneLineslist = append(phoneLineslist, phoneLineMap)
+	}
+	return phoneLineslist
+}
+
+func generateLineProperties(
+	lineAddress string,
+	remoteAddress string,
+) string {
+	return fmt.Sprintf(`
+	line_properties {
+		line_address = %s
+		remote_address = %s
+	}
+`, lineAddress, remoteAddress)
 }

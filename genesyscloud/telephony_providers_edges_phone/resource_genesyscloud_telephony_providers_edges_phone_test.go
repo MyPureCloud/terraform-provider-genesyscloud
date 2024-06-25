@@ -89,7 +89,6 @@ func TestAccResourcePhoneBasic(t *testing.T) {
 		stateActive,
 		fmt.Sprintf("\"%s\"", siteId),
 		"genesyscloud_telephony_providers_edges_phonebasesettings." + phoneBaseSettingsRes + ".id",
-		nil, // no line addresses
 		"genesyscloud_user." + userRes1 + ".id",
 		"", // no depends on
 	},
@@ -120,7 +119,6 @@ func TestAccResourcePhoneBasic(t *testing.T) {
 		stateActive,
 		fmt.Sprintf("\"%s\"", siteId),
 		"genesyscloud_telephony_providers_edges_phonebasesettings." + phoneBaseSettingsRes2 + ".id",
-		nil, // no line addresses
 		"genesyscloud_user." + userRes2 + ".id",
 		"", // no depends_on
 	},
@@ -264,7 +262,6 @@ func TestAccResourcePhoneStandalone(t *testing.T) {
 		stateActive,
 		"genesyscloud_telephony_providers_edges_site." + siteRes + ".id",
 		"genesyscloud_telephony_providers_edges_phonebasesettings." + phoneBaseSettingsRes + ".id",
-		lineAddresses,
 		"", // no web rtc user
 		"genesyscloud_telephony_providers_edges_did_pool." + didPoolResource1,
 	}, capabilities, generatePhoneProperties(uuid.NewString()))
@@ -389,7 +386,6 @@ func TestAccResourceHardPhoneStandalone(t *testing.T) {
 		stateActive,
 		"genesyscloud_telephony_providers_edges_site." + siteRes + ".id",
 		"genesyscloud_telephony_providers_edges_phonebasesettings." + phoneBaseSettingsRes + ".id",
-		[]string{},
 		"", // no web rtc user
 		"", // no Depends On
 	}, capabilities, generatePhoneProperties(phoneMac))
@@ -401,7 +397,6 @@ func TestAccResourceHardPhoneStandalone(t *testing.T) {
 		stateActive,
 		"genesyscloud_telephony_providers_edges_site." + siteRes + ".id",
 		"genesyscloud_telephony_providers_edges_phonebasesettings." + phoneBaseSettingsRes + ".id",
-		[]string{},
 		"", // no web rtc user
 		"", // no Depends On
 	}, capabilities, generatePhoneProperties(phoneMacUpdated))
