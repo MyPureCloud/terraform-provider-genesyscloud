@@ -3,8 +3,9 @@ package responsemanagement_library
 import (
 	"context"
 	"fmt"
-	"github.com/mypurecloud/platform-client-sdk-go/v131/platformclientv2"
 	"log"
+
+	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
 )
 
 /*

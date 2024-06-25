@@ -3,14 +3,16 @@ package team
 import (
 	"context"
 	"fmt"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v131/platformclientv2"
 	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"terraform-provider-genesyscloud/genesyscloud/util/chunks"
 	"terraform-provider-genesyscloud/genesyscloud/util/lists"
+
+	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
 )
 
 // getTeamFromResourceData maps data from schema ResourceData object to a platformclientv2.Team
