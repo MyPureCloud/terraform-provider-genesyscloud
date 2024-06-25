@@ -13,7 +13,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 
-	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -215,12 +214,11 @@ func flattenPhoneCapabilities(capabilities *platformclientv2.Phonecapabilities) 
 func buildSdkLines(ctx context.Context, pp *phoneProxy, d *schema.ResourceData, lineBaseSettings *platformclientv2.Domainentityref) (linesPtr *[]platformclientv2.Line, isStandAlone bool) {
 	lines := []platformclientv2.Line{}
 	isStandAlone = false
-
-	lineAddresses, ok := d.GetOk("line_addresses")
-	lineStringList := lists.InterfaceListToStrings(lineAddresses.([]interface{}))
+	linePropertiesObject, ok := d.GetOk("line_properties")
+	lineProperties := linePropertiesObject.([]interface{})
 
 	// If line_addresses is not provided, phone is not standalone
-	if !ok || len(lineStringList) == 0 {
+	if !ok || len(lineProperties) == 0 {
 		hasher := fnv.New32()
 		hasher.Write([]byte(d.Get("name").(string)))
 		lineName := "line_" + *lineBaseSettings.Id + fmt.Sprintf("%x", hasher.Sum32())
@@ -244,24 +242,7 @@ func buildSdkLines(ctx context.Context, pp *phoneProxy, d *schema.ResourceData, 
 		linesPtr = &lines
 		return
 	}
-
-	for i := 0; i < len(lineStringList); i++ {
-		lineName := "line_" + *lineBaseSettings.Id + "_" + strconv.Itoa(i+1)
-		properties := map[string]interface{}{
-			"station_identity_address": &map[string]interface{}{
-				"value": &map[string]interface{}{
-					"instance": (lineStringList)[i],
-				},
-			},
-		}
-		lines = append(lines, platformclientv2.Line{
-			Name:             &lineName,
-			LineBaseSettings: lineBaseSettings,
-			Properties:       &properties,
-		})
-	}
-
-	linesPtr = &lines
+	linesPtr = createStandalonePhoneLines(lineProperties, &lines, lineBaseSettings)
 	isStandAlone = true
 
 	return
@@ -384,4 +365,32 @@ func generatePhoneProperties(hardware_id string) string {
 						util.GenerateJsonProperty("instance", strconv.Quote(hardware_id)),
 					)))),
 	)
+}
+
+func createStandalonePhoneLines(lineProperties []interface{}, linesPtr *[]platformclientv2.Line, lineBaseSettings *platformclientv2.Domainentityref) *[]platformclientv2.Line {
+	lines := *linesPtr
+	for i, eachLine := range lineProperties {
+		linePropertyMap := eachLine.(map[string]interface{})
+		lineAddress := linePropertyMap["line_address"].(string)
+		remoteAddress := linePropertyMap["remote_address"].(string)
+		lineName := "line_" + *lineBaseSettings.Id + "_" + strconv.Itoa(i+1)
+		properties := map[string]interface{}{
+			"station_identity_address": &map[string]interface{}{
+				"value": &map[string]interface{}{
+					"instance": lineAddress,
+				},
+			},
+			"remote_address": &map[string]interface{}{
+				"value": &map[string]interface{}{
+					"instance": remoteAddress,
+				},
+			},
+		}
+		lines = append(lines, platformclientv2.Line{
+			Name:             &lineName,
+			LineBaseSettings: lineBaseSettings,
+			Properties:       &properties,
+		})
+	}
+	return &lines
 }

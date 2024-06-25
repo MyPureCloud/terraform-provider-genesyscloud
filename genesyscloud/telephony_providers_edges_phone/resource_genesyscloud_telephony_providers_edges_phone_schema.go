@@ -32,7 +32,7 @@ func SetRegistrar(l registrar.Registrar) {
 func ResourcePhone() *schema.Resource {
 	lineProperties := &schema.Resource{
 		Schema: map[string]*schema.Schema{
-			`line_addresses`: {
+			`line_address`: {
 				Description:      `Ordered list of Line DIDs for standalone phones.  Each phone number must be in an E.164 phone number format.`,
 				Optional:         true,
 				Computed:         true,
@@ -151,13 +151,6 @@ func ResourcePhone() *schema.Resource {
 				Description: "Web RTC User ID. This is necessary when creating a Web RTC phone. This user will be assigned to the phone after it is created.",
 				Type:        schema.TypeString,
 				Optional:    true,
-			},
-			"line_addresses": {
-				Description: "Ordered list of Line DIDs for standalone phones.  Each phone number must be in an E.164 phone number format.",
-				Type:        schema.TypeList,
-				Optional:    true,
-				Computed:    true,
-				Elem:        &schema.Schema{Type: schema.TypeString, ValidateDiagFunc: validators.ValidatePhoneNumber},
 			},
 			"properties": {
 				Description:      "phone properties",
