@@ -403,8 +403,8 @@ func ValidateInboundSiteSettings(inboundSiteString string, trunkBaseMetaId strin
 func TrunkBaseSettingsExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: provider.GetAllWithPooledClient(getAllTrunkBaseSettings),
-		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
-			"inbound_site_id": {RefType: "genesyscloud_telephony_providers_edges_site"},
+		RefAttrs:         map[string]*resourceExporter.RefAttrSettings{
+			//"inbound_site_id": {RefType: "genesyscloud_telephony_providers_edges_site"}, TODO: decide how/if this will be included after DEVTOOLING-676 is resolved
 		},
 		JsonEncodeAttributes: []string{"properties"},
 	}

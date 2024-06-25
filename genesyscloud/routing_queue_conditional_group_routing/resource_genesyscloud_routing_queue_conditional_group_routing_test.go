@@ -330,6 +330,7 @@ func generateUserWithCustomAttrs(resourceID string, email string, name string, a
 	}
 	`, resourceID, email, name, strings.Join(attrs, "\n"))
 }
+
 func checkUserDeleted(id string) resource.TestCheckFunc {
 	log.Printf("Fetching user with ID: %s\n", id)
 	return func(s *terraform.State) error {

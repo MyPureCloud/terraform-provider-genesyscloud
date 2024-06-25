@@ -20,7 +20,7 @@ pipeline {
         GOPATH = "$HOME/go"
         TF_LOG = "DEBUG"
         TF_LOG_PATH = "../test.log"
-		GENESYSCLOUD_REGION = "${region}"
+        GENESYSCLOUD_REGION = "${region}"
         GENESYSCLOUD_SDK_DEBUG =  "true"
         GENESYSCLOUD_TOKEN_POOL_SIZE =  20
         PATH = "${env.PATH}:${HOME}/go/bin:/home/jenkins/.local/bin"
@@ -49,7 +49,7 @@ pipeline {
                 sh 'go install github.com/nezorflame/junit-merger@latest'
                 sh 'pip install xmltodict --user'
             }
-	    }
+        }
 
         stage('Terraform Check') {
             steps {
@@ -59,6 +59,27 @@ pipeline {
             }
         }
         
+         stage('Unit Tests') {
+
+            environment {
+                TF_UNIT=1
+                ENABLE_STANDALONE_EMAIL_ADDRESS=1
+                ENABLE_STANDALONE_CGR=1
+            }
+
+            steps {
+            catchError(buildResult: 'FAILURE', stageResult:'FAILURE'){
+                echo 'Attempting to Run Unit Tests'
+                withCredentials([usernamePassword(credentialsId: CREDENTIALS_ID, usernameVariable: 'GENESYSCLOUD_OAUTHCLIENT_ID',passwordVariable:'GENESYSCLOUD_OAUTHCLIENT_SECRET')])
+                    {
+                        echo 'Loading Genesys OAuth Credentials'
+                          sh "gotestsum --junitfile unit.xml --format standard-verbose ./genesyscloud/...  -run 'Test|TestUnit' -skip 'TestAcc' -v -timeout 30m -count=1 -cover -coverprofile=coverageUnit.out"
+
+                    }
+                }
+            }
+        }
+
     stage('Architect Tests') {
             environment {
                 TF_ACC=1
@@ -330,16 +351,16 @@ pipeline {
         sh 'GOBIN=$HOME/bin go install github.com/wadey/gocovmerge@latest'
         
         // Generate merged coverage report
-        sh '$HOME/bin/gocovmerge coverageArchitect.out coverageIdp.out coverageAuth.out coverageIntegration.out coverageFlow.out coverageJourney.out coverageKnowledge.out coverageOutbound.out coverageResponseManagement.out coverageRouting.out coverageExport.out coverageLocation.out coverageWebDeployment.out coverageRemaining.out coverageSite.out coverageRoleTeam.out > merged_coverage.out'
+        sh '$HOME/bin/gocovmerge coverageArchitect.out coverageIdp.out coverageAuth.out coverageIntegration.out coverageFlow.out coverageJourney.out coverageKnowledge.out coverageOutbound.out coverageResponseManagement.out coverageRouting.out coverageExport.out coverageLocation.out coverageWebDeployment.out coverageRemaining.out coverageSite.out coverageRoleTeam.out coverageUnit.out > merged_coverage.out'
 
         // Convert merged coverage report to HTML
-        sh 'go tool cover -html merged_coverage.out -o coverageAcceptance.html'
+        sh 'go tool cover -html merged_coverage.out -o coverageReport.html'
 
-        sh 'junit-merger -o test-results.xml architect.xml idp.xml auth.xml integration.xml flow.xml journey.xml knowledge.xml outbound.xml response.xml routing.xml location.xml web.xml site.xml team.xml export.xml remaining.xml'
+        sh 'junit-merger -o test-results.xml unit.xml architect.xml idp.xml auth.xml integration.xml flow.xml journey.xml knowledge.xml outbound.xml response.xml routing.xml location.xml web.xml site.xml team.xml export.xml remaining.xml'
       
   script {
     // Read the generated HTML file
-    def htmlFile = readFile 'coverageAcceptance.html'
+    def htmlFile = readFile 'coverageReport.html'
     def selectStart = htmlFile.indexOf('<select id="files">')
     def selectEnd = htmlFile.indexOf('</select>', selectStart)
     def fileCoverageSection = htmlFile.substring(selectStart, selectEnd + 9) // +9 to include </select>
@@ -494,7 +515,7 @@ pipeline {
     updatedHtmlFile = updatedHtmlFile.replace('</head>', "<style>\n${cssStyles}\n</style>\n</head>")
     updatedHtmlFile = updatedHtmlFile.replace('</body>', tableHtml + '\n' + scriptHtml + '\n</body>')
 
-    writeFile file: 'coverageAcceptance.html', text: updatedHtmlFile
+    writeFile file: 'coverageReport.html', text: updatedHtmlFile
 
                     // Generate manual report
                     def xmlContent = readFile 'test-results.xml'
@@ -675,7 +696,7 @@ pipeline {
                 // Optionally, print the location of the HTML report
                     echo "HTML report generated: \${env.WORKSPACE}/test-report.html"
                 }
-                archiveArtifacts artifacts: 'coverageAcceptance.html,test-report.html,test-results.xml', allowEmptyArchive: true   
+                archiveArtifacts artifacts: 'coverageReport.html,test-report.html,test-results.xml', allowEmptyArchive: true   
            }
         }
     }
