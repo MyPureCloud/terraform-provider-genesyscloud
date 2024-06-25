@@ -40,7 +40,7 @@ resource "genesyscloud_idp_gsuite" "gsuite" {
 - `name` (String) Name of the provider.
 - `relying_party_identifier` (String) String used to identify Genesys Cloud to GSuite.
 - `slo_binding` (String) Valid values: HTTP Redirect, HTTP Post
-- `slo_uri` (String) Provided by Okta on app creation.
+- `slo_uri` (String) Provided on app creation.
 - `target_uri` (String) Target URI provided by GSuite.
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 
