@@ -864,12 +864,7 @@ func TestAccResourceUserroutingUtilWithLabels(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck: func() {
-			util.TestAccPreCheck(t)
-			if err := routingUtilizationLabel.CheckIfLabelsAreEnabled(); err != nil {
-				t.Skipf("%v", err) // be sure to skip the test and not fail it
-			}
-		},
+		PreCheck:          func() { util.TestAccPreCheck(t) },
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
