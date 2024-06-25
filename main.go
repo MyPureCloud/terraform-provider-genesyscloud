@@ -24,6 +24,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/group"
 	groupRoles "terraform-provider-genesyscloud/genesyscloud/group_roles"
 	idpAdfs "terraform-provider-genesyscloud/genesyscloud/idp_adfs"
+	idpGsuite "terraform-provider-genesyscloud/genesyscloud/idp_gsuite"
 	idpOkta "terraform-provider-genesyscloud/genesyscloud/idp_okta"
 	idpSalesforce "terraform-provider-genesyscloud/genesyscloud/idp_salesforce"
 	"terraform-provider-genesyscloud/genesyscloud/integration"
@@ -191,6 +192,7 @@ func registerResources() {
 	idpAdfs.SetRegistrar(regInstance)                                      //Registering idp adfs
 	idpSalesforce.SetRegistrar(regInstance)                                //Registering idp salesforce
 	idpOkta.SetRegistrar(regInstance)                                      //Registering idp okta
+	idpGsuite.SetRegistrar(regInstance)                                    //Registering idp gsuite
 	integration.SetRegistrar(regInstance)                                  //Registering integrations
 	integrationCustomAuth.SetRegistrar(regInstance)                        //Registering integrations custom auth actions
 	integrationAction.SetRegistrar(regInstance)                            //Registering integrations actions
