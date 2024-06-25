@@ -14,7 +14,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v131/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
 )
 
 type scCustomMessageConfig struct {
@@ -187,6 +187,10 @@ func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
 						channels,
 						[]string{strconv.Quote("selector-one")},
 						[]string{strconv.Quote("selector-one")},
+						[]map[string]string{
+							{"url_fragment": "/sensitive", "condition": "includes"},
+							{"url_fragment": "/login", "condition": "equals"},
+						},
 					),
 				),
 				Check: resource.ComposeTestCheckFunc(
@@ -257,6 +261,11 @@ func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
 					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.mask_selectors.0", "selector-one"),
 					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.readonly_selectors.#", "1"),
 					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.readonly_selectors.0", "selector-one"),
+					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.pause_criteria.#", "2"),
+					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.pause_criteria.0.url_fragment", "/sensitive"),
+					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.pause_criteria.0.condition", "includes"),
+					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.pause_criteria.1.url_fragment", "/login"),
+					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.pause_criteria.1.condition", "equals"),
 
 					resource.TestCheckResourceAttr(fullResourceName, "journey_events.#", "1"),
 					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.enabled", util.TrueValue),
@@ -312,6 +321,10 @@ func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
 						channelsUpdate,
 						[]string{strconv.Quote("selector-one"), strconv.Quote("selector-two")},
 						[]string{strconv.Quote("selector-one"), strconv.Quote("selector-two")},
+						[]map[string]string{
+							{"url_fragment": "/sensitive", "condition": "includes"},
+							{"url_fragment": "/login", "condition": "equals"},
+						},
 					),
 				),
 				Check: resource.ComposeTestCheckFunc(
@@ -345,6 +358,11 @@ func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
 					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.readonly_selectors.#", "2"),
 					util.ValidateStringInArray(fullResourceName, "cobrowse.0.readonly_selectors", "selector-one"),
 					util.ValidateStringInArray(fullResourceName, "cobrowse.0.readonly_selectors", "selector-two"),
+					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.pause_criteria.#", "2"),
+					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.pause_criteria.0.url_fragment", "/sensitive"),
+					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.pause_criteria.0.condition", "includes"),
+					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.pause_criteria.1.url_fragment", "/login"),
+					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.pause_criteria.1.condition", "equals"),
 					resource.TestCheckResourceAttr(fullResourceName, "journey_events.#", "1"),
 					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.enabled", util.TrueValue),
 					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.excluded_query_parameters.#", "1"),
@@ -1034,7 +1052,13 @@ func complexConfigurationResource(name, description, kbId string, nestedBlocks .
 	`, name, description, kbId, strings.Join(nestedBlocks, "\n"))
 }
 
-func generateWebDeploymentConfigCobrowseSettings(cbEnabled, cbAllowAgentControl string, cbAllowAgentNavigation string, cbChannels []string, cbMaskSelectors []string, cbReadonlySelectors []string) string {
+func generateWebDeploymentConfigCobrowseSettings(cbEnabled, cbAllowAgentControl string, cbAllowAgentNavigation string, cbChannels []string, cbMaskSelectors []string, cbReadonlySelectors []string, cbPauseCriteria []map[string]string) string {
+	
+	pauseCriteriaStrings := make([]string, len(cbPauseCriteria))
+	for i, criteria := range cbPauseCriteria {
+		pauseCriteriaStrings[i] = fmt.Sprintf(`{"url_fragment": "%s", "condition": "%s"}`, criteria["url_fragment"], criteria["condition"])
+	}
+
 	return fmt.Sprintf(`
 	cobrowse {
 		enabled = %s
@@ -1043,8 +1067,9 @@ func generateWebDeploymentConfigCobrowseSettings(cbEnabled, cbAllowAgentControl 
 		channels = [ %s ]
 		mask_selectors = [ %s ]
 		readonly_selectors = [ %s ]
+		pause_criteria = [ %s ]
 	}
-`, cbEnabled, cbAllowAgentControl, cbAllowAgentNavigation, strings.Join(cbChannels, ", "), strings.Join(cbMaskSelectors, ", "), strings.Join(cbReadonlySelectors, ", "))
+`, cbEnabled, cbAllowAgentControl, cbAllowAgentNavigation, strings.Join(cbChannels, ", "), strings.Join(cbMaskSelectors, ", "), strings.Join(cbReadonlySelectors, ", "), strings.Join(pauseCriteriaStrings, ", "))
 }
 
 func generateSupportCenterSettings(supportCenter scConfig) string {
