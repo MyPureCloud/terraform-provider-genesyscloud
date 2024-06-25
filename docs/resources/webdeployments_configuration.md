@@ -215,7 +215,9 @@ Optional:
 - `enabled` (Boolean) Whether or not cobrowse is enabled
 - `mask_selectors` (List of String) List of CSS selectors which should be masked when screen sharing is active
 - `readonly_selectors` (List of String) List of CSS selectors which should be read-only when screen sharing is active
-- `pause_criteria` (List of PauseCriteria) Pause criteria that will pause cobrowse if some of them are met in the user's URL
+- `pause_criteria`: (List of Pausecriteria) Pause criteria that will pause cobrowse if any of them are met in the user's URL. Each criteria consists of a `url_fragment` and a `condition`.
+- - `url_fragment`: A string representing a part of the URL that, when matched according to the specified condition, will trigger a pause in the cobrowse session.
+- - `pause_criteria`: The condition to be applied to the `url_fragment`. Conditions are "includes", "does_not_include", "starts_with", "ends_with", "equals".  
 
 
 <a id="nestedblock--custom_i18n_labels"></a>
