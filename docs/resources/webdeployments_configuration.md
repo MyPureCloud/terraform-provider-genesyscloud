@@ -100,6 +100,7 @@ resource "genesyscloud_webdeployments_configuration" "exampleConfiguration" {
     channels               = ["Webmessaging", "Voice"]
     mask_selectors         = [".my-class", "#my-id"]
     readonly_selectors     = [".my-class", "#my-id"]
+    pause_criteria         = []
   }
   journey_events {
     enabled                   = true
@@ -214,6 +215,7 @@ Optional:
 - `enabled` (Boolean) Whether or not cobrowse is enabled
 - `mask_selectors` (List of String) List of CSS selectors which should be masked when screen sharing is active
 - `readonly_selectors` (List of String) List of CSS selectors which should be read-only when screen sharing is active
+- `pause_criteria` (List of PauseCriteria) List of PauseCriteria objects which contain `url_fragment` as string search condition and `condition` ("includes", "does_not_include", "starts_with", "ends_with", "equals")
 
 
 <a id="nestedblock--custom_i18n_labels"></a>

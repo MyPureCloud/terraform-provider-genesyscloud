@@ -75,6 +75,7 @@ resource "genesyscloud_webdeployments_configuration" "exampleConfiguration" {
     channels               = ["Webmessaging", "Voice"]
     mask_selectors         = [".my-class", "#my-id"]
     readonly_selectors     = [".my-class", "#my-id"]
+    pause_criteria         = []
   }
   journey_events {
     enabled                   = true

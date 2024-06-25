@@ -356,6 +356,26 @@ var (
 				Optional:    true,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
+			"pause_criteria": {
+				Description: "List of pause criteria",
+				Type:        schema.TypeList,
+				Optional:    true,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"url_fragment": {
+							Description: "URL fragment for pause criteria",
+							Type:        schema.TypeString,
+							Required:    true,
+						},
+						"condition": {
+							Description:  "Condition for the pause criteria (includes, does_not_include, starts_with, ends_with, equals)",
+							Type:         schema.TypeString,
+							Required:     true,
+							ValidateFunc: validation.StringInSlice([]string{"includes", "does_not_include", "starts_with", "ends_with", "equals"}, false),
+						},
+					},
+				},
+			},
 		},
 	}
 
