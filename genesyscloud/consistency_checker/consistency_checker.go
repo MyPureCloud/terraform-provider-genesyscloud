@@ -239,7 +239,6 @@ func (c *ConsistencyCheck) CheckState(currentState *schema.ResourceData) *retry.
 		Raw:          originalState,
 	}
 
-	//if c.resourceType == "genesyscloud_architect_emergencygroup" {
 	//	fmt.Println("Original state: ")
 	//	for k, v := range c.originalState {
 	//		fmt.Printf("\t%v: %v\n", k, v)
@@ -248,7 +247,6 @@ func (c *ConsistencyCheck) CheckState(currentState *schema.ResourceData) *retry.
 	//	for k, v := range currentState.Get("emergency_call_flows").([]interface{}) {
 	//		fmt.Printf("\t%v: %v\n", k, v)
 	//	}
-	//}
 	diff, _ := c.resource.SimpleDiff(c.ctx, currentState.State(), resourceConfig, c.meta)
 	if diff != nil && len(diff.Attributes) > 0 {
 		for attribute, attributeValue := range diff.Attributes {
