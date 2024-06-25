@@ -372,6 +372,9 @@ func TestAccResourceTfExportExcludeFilterResourcesByRegExExclusiveToResourceAndS
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
+				PreConfig: func() {
+					time.Sleep(30 * time.Second)
+				},
 				// Generate a queue as well and export it
 				Config: config,
 				Check: resource.ComposeTestCheckFunc(

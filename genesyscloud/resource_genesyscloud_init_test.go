@@ -9,6 +9,9 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/group"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	routingQueue "terraform-provider-genesyscloud/genesyscloud/routing_queue"
+	routingSettings "terraform-provider-genesyscloud/genesyscloud/routing_settings"
+	routingUtilization "terraform-provider-genesyscloud/genesyscloud/routing_utilization"
+	routingUtilizationLabel "terraform-provider-genesyscloud/genesyscloud/routing_utilization_label"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -39,7 +42,6 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_location"] = ResourceLocation()
 	providerResources["genesyscloud_auth_division"] = ResourceAuthDivision()
 	providerResources["genesyscloud_idp_generic"] = ResourceIdpGeneric()
-	providerResources["genesyscloud_idp_gsuite"] = ResourceIdpGsuite()
 	providerResources["genesyscloud_idp_onelogin"] = ResourceIdpOnelogin()
 	providerResources["genesyscloud_journey_action_map"] = ResourceJourneyActionMap()
 	providerResources["genesyscloud_journey_action_template"] = ResourceJourneyActionTemplate()
@@ -57,13 +59,14 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_routing_language"] = ResourceRoutingLanguage()
 	providerResources["genesyscloud_routing_skill"] = ResourceRoutingSkill()
 	providerResources["genesyscloud_routing_skill_group"] = ResourceRoutingSkillGroup()
-	providerResources["genesyscloud_routing_utilization"] = ResourceRoutingUtilization()
-	providerResources["genesyscloud_routing_utilization_label"] = ResourceRoutingUtilizationLabel()
+	providerResources["genesyscloud_routing_settings"] = routingSettings.ResourceRoutingSettings()
+	providerResources["genesyscloud_routing_utilization"] = routingUtilization.ResourceRoutingUtilization()
 	providerResources["genesyscloud_routing_wrapupcode"] = ResourceRoutingWrapupCode()
 	providerResources["genesyscloud_user"] = ResourceUser()
 	providerResources["genesyscloud_widget_deployment"] = ResourceWidgetDeployment()
 	providerResources["genesyscloud_architect_schedulegroups"] = archScheduleGroup.ResourceArchitectSchedulegroups()
 	providerResources["genesyscloud_architect_schedules"] = architectSchedules.ResourceArchitectSchedules()
+	providerResources["genesyscloud_routing_utilization_label"] = routingUtilizationLabel.ResourceRoutingUtilizationLabel()
 
 }
 
@@ -95,11 +98,10 @@ func (r *registerTestInstance) registerTestDataSources() {
 	providerDataSources["genesyscloud_routing_skill"] = dataSourceRoutingSkill()
 	providerDataSources["genesyscloud_routing_skill_group"] = dataSourceRoutingSkillGroup()
 	providerDataSources["genesyscloud_routing_email_domain"] = DataSourceRoutingEmailDomain()
-	providerDataSources["genesyscloud_routing_utilization_label"] = dataSourceRoutingUtilizationLabel()
 	providerDataSources["genesyscloud_routing_wrapupcode"] = DataSourceRoutingWrapupcode()
 	providerDataSources["genesyscloud_user"] = DataSourceUser()
 	providerDataSources["genesyscloud_widget_deployment"] = dataSourceWidgetDeployments()
-
+	providerResources["genesyscloud_routing_utilization_label"] = routingUtilizationLabel.DataSourceRoutingUtilizationLabel()
 }
 
 func initTestResources() {
