@@ -75,7 +75,7 @@ func createEmergencyGroup(ctx context.Context, d *schema.ResourceData, meta inte
 func readEmergencyGroup(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	ap := getArchitectEmergencyGroupProxy(sdkConfig)
-	fmt.Println("Original state", d.State().String())
+	//fmt.Println("Original state", d.State().String())
 	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceArchitectEmergencyGroup(), constants.DefaultConsistencyChecks, resourceName)
 
 	log.Printf("Reading emergency group %s", d.Id())

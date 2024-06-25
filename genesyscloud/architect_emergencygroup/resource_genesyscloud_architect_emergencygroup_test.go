@@ -162,19 +162,6 @@ func TestAccResourceArchitectEmergencyGroupMultipleIvrs(t *testing.T) {
 		false,
 	)
 
-	//err := os.Setenv(feature_toggles.CCToggleName(), "true")
-	//if err != nil {
-	//	t.Skipf("skiping")
-	//}
-	//
-	//defer func() {
-	//	err := os.Unsetenv(feature_toggles.CCToggleName())
-	//	if err != nil {
-	//		fmt.Printf("Unable to unset %s", feature_toggles.CCToggleName())
-	//		return
-	//	}
-	//}()
-
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
