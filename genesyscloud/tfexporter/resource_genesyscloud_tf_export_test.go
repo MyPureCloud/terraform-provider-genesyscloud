@@ -318,78 +318,6 @@ func TestAccResourceTfExportExcludeFilterResourcesByRegExExclusiveToResource(t *
 	})
 }
 
-// TestAccResourceTfExportExcludeFilterResourcesByRegExExclusiveToResourceAndSanitizedNames will exclude any test resources that match a
-// regular expression provided for the resource. In this test we check against both sanitized and unsanitized names.
-func TestAccResourceTfExportExcludeFilterResourcesByRegExExclusiveToResourceAndSanitizedNames(t *testing.T) {
-	var (
-		exportTestDir  = "../.terraformExclude" + uuid.NewString()
-		exportResource = "test-export6_1"
-
-		queueResources = []QueueExport{
-			{ResourceName: "test-queue-test-1", Name: "exclude filter - exclude me", Description: "This is an excluded bar test resource", AcwTimeoutMs: 200000},
-			{ResourceName: "test-queue-test-2", Name: "exclude filter - foo - bar me", Description: "This is a foo bar test resource", AcwTimeoutMs: 200000},
-			{ResourceName: "test-queue-test-3", Name: "exclude filter - fu - barre you", Description: "This is a foo bar test resource", AcwTimeoutMs: 200000},
-		}
-
-		wrapupCodeResources = []WrapupcodeExport{
-			{ResourceName: "test-wrapupcode-prod", Name: "exclude me"},
-			{ResourceName: "test-wrapupcode-test", Name: "foo + bar me"},
-			{ResourceName: "test-wrapupcode-dev", Name: "fu - barre you"},
-		}
-	)
-	defer os.RemoveAll(exportTestDir)
-
-	queueResourceDef := buildQueueResources(queueResources)
-	wrapupcodeResourceDef := buildWrapupcodeResources(wrapupCodeResources)
-	config := queueResourceDef + wrapupcodeResourceDef +
-		generateTfExportByExcludeFilterResources(
-			exportResource,
-			exportTestDir,
-			util.TrueValue,
-			[]string{
-				strconv.Quote("genesyscloud_routing_queue::exclude filter - foo - bar me"),
-				strconv.Quote("genesyscloud_routing_queue::exclude_filter_-_fu_-_barre_you"),
-				strconv.Quote("genesyscloud_outbound_ruleset"),
-				strconv.Quote("genesyscloud_user"),
-				strconv.Quote("genesyscloud_user_roles"),
-				strconv.Quote("genesyscloud_flow"),
-			},
-			util.FalseValue,
-			util.FalseValue,
-			[]string{
-				strconv.Quote("genesyscloud_routing_queue." + queueResources[0].ResourceName),
-				strconv.Quote("genesyscloud_routing_queue." + queueResources[1].ResourceName),
-				strconv.Quote("genesyscloud_routing_queue." + queueResources[2].ResourceName),
-				strconv.Quote("genesyscloud_routing_wrapupcode." + wrapupCodeResources[0].ResourceName),
-				strconv.Quote("genesyscloud_routing_wrapupcode." + wrapupCodeResources[1].ResourceName),
-				strconv.Quote("genesyscloud_routing_wrapupcode." + wrapupCodeResources[2].ResourceName),
-			},
-		)
-
-	sanitizer := resourceExporter.NewSanitizerProvider()
-	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { util.TestAccPreCheck(t) },
-		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
-		Steps: []resource.TestStep{
-			{
-				PreConfig: func() {
-					time.Sleep(30 * time.Second)
-				},
-				// Generate a queue as well and export it
-				Config: config,
-				Check: resource.ComposeTestCheckFunc(
-					testQueueExportEqual(exportTestDir+"/"+defaultTfJSONFile, "genesyscloud_routing_queue", sanitizer.S.SanitizeResourceName(queueResources[0].Name), queueResources[0]),
-					testWrapupcodeExportEqual(exportTestDir+"/"+defaultTfJSONFile, "genesyscloud_routing_wrapupcode", sanitizer.S.SanitizeResourceName(wrapupCodeResources[0].Name), wrapupCodeResources[0]),
-					testWrapupcodeExportEqual(exportTestDir+"/"+defaultTfJSONFile, "genesyscloud_routing_wrapupcode", sanitizer.S.SanitizeResourceName(wrapupCodeResources[1].Name), wrapupCodeResources[1]),
-					testWrapupcodeExportEqual(exportTestDir+"/"+defaultTfJSONFile, "genesyscloud_routing_wrapupcode", sanitizer.S.SanitizeResourceName(wrapupCodeResources[2].Name), wrapupCodeResources[2]),
-					testQueueExportExcludesRegEx(exportTestDir+"/"+defaultTfJSONFile, "genesyscloud_routing_queue", "(foo|fu)"),
-				),
-			},
-		},
-		CheckDestroy: testVerifyExportsDestroyedFunc(exportTestDir),
-	})
-}
-
 // TestAccResourceTfExportSplitFilesAsJSON will create 2 queues, 2 wrap up codes, and 2 users.
 // The exporter will be run in split mode so 3 resource tf.jsons should be created as well as a provider.tf.json
 func TestAccResourceTfExportSplitFilesAsJSON(t *testing.T) {
@@ -457,6 +385,78 @@ func TestAccResourceTfExportSplitFilesAsJSON(t *testing.T) {
 					validateFileCreated(expectedFilesPath[1]),
 					validateFileCreated(expectedFilesPath[2]),
 					validateFileCreated(expectedFilesPath[3]),
+				),
+			},
+		},
+		CheckDestroy: testVerifyExportsDestroyedFunc(exportTestDir),
+	})
+}
+
+// TestAccResourceTfExportExcludeFilterResourcesByRegExExclusiveToResourceAndSanitizedNames will exclude any test resources that match a
+// regular expression provided for the resource. In this test we check against both sanitized and unsanitized names.
+func TestAccResourceTfExportExcludeFilterResourcesByRegExExclusiveToResourceAndSanitizedNames(t *testing.T) {
+	var (
+		exportTestDir  = "../.terraformExclude" + uuid.NewString()
+		exportResource = "test-export6_1"
+
+		queueResources = []QueueExport{
+			{ResourceName: "test-queue-test-1", Name: "exclude filter - exclude me", Description: "This is an excluded bar test resource", AcwTimeoutMs: 200000},
+			{ResourceName: "test-queue-test-2", Name: "exclude filter - foo - bar me", Description: "This is a foo bar test resource", AcwTimeoutMs: 200000},
+			{ResourceName: "test-queue-test-3", Name: "exclude filter - fu - barre you", Description: "This is a foo bar test resource", AcwTimeoutMs: 200000},
+		}
+
+		wrapupCodeResources = []WrapupcodeExport{
+			{ResourceName: "test-wrapupcode-prod", Name: "exclude me"},
+			{ResourceName: "test-wrapupcode-test", Name: "foo + bar me"},
+			{ResourceName: "test-wrapupcode-dev", Name: "fu - barre you"},
+		}
+	)
+	defer os.RemoveAll(exportTestDir)
+
+	queueResourceDef := buildQueueResources(queueResources)
+	wrapupcodeResourceDef := buildWrapupcodeResources(wrapupCodeResources)
+	config := queueResourceDef + wrapupcodeResourceDef +
+		generateTfExportByExcludeFilterResources(
+			exportResource,
+			exportTestDir,
+			util.TrueValue,
+			[]string{
+				strconv.Quote("genesyscloud_routing_queue::exclude filter - foo - bar me"),
+				strconv.Quote("genesyscloud_routing_queue::exclude_filter_-_fu_-_barre_you"),
+				strconv.Quote("genesyscloud_outbound_ruleset"),
+				strconv.Quote("genesyscloud_user"),
+				strconv.Quote("genesyscloud_user_roles"),
+				strconv.Quote("genesyscloud_flow"),
+			},
+			util.FalseValue,
+			util.FalseValue,
+			[]string{
+				strconv.Quote("genesyscloud_routing_queue." + queueResources[0].ResourceName),
+				strconv.Quote("genesyscloud_routing_queue." + queueResources[1].ResourceName),
+				strconv.Quote("genesyscloud_routing_queue." + queueResources[2].ResourceName),
+				strconv.Quote("genesyscloud_routing_wrapupcode." + wrapupCodeResources[0].ResourceName),
+				strconv.Quote("genesyscloud_routing_wrapupcode." + wrapupCodeResources[1].ResourceName),
+				strconv.Quote("genesyscloud_routing_wrapupcode." + wrapupCodeResources[2].ResourceName),
+			},
+		)
+
+	sanitizer := resourceExporter.NewSanitizerProvider()
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			{
+				PreConfig: func() {
+					time.Sleep(30 * time.Second)
+				},
+				// Generate a queue as well and export it
+				Config: config,
+				Check: resource.ComposeTestCheckFunc(
+					testQueueExportEqual(exportTestDir+"/"+defaultTfJSONFile, "genesyscloud_routing_queue", sanitizer.S.SanitizeResourceName(queueResources[0].Name), queueResources[0]),
+					testWrapupcodeExportEqual(exportTestDir+"/"+defaultTfJSONFile, "genesyscloud_routing_wrapupcode", sanitizer.S.SanitizeResourceName(wrapupCodeResources[0].Name), wrapupCodeResources[0]),
+					testWrapupcodeExportEqual(exportTestDir+"/"+defaultTfJSONFile, "genesyscloud_routing_wrapupcode", sanitizer.S.SanitizeResourceName(wrapupCodeResources[1].Name), wrapupCodeResources[1]),
+					testWrapupcodeExportEqual(exportTestDir+"/"+defaultTfJSONFile, "genesyscloud_routing_wrapupcode", sanitizer.S.SanitizeResourceName(wrapupCodeResources[2].Name), wrapupCodeResources[2]),
+					testQueueExportExcludesRegEx(exportTestDir+"/"+defaultTfJSONFile, "genesyscloud_routing_queue", "(foo|fu)"),
 				),
 			},
 		},
