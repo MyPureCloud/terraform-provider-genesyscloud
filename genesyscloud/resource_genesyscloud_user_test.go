@@ -16,7 +16,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v131/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
 )
 
 func TestAccResourceUserBasic(t *testing.T) {
@@ -864,12 +864,7 @@ func TestAccResourceUserroutingUtilWithLabels(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck: func() {
-			util.TestAccPreCheck(t)
-			if err := routingUtilizationLabel.CheckIfLabelsAreEnabled(); err != nil {
-				t.Skipf("%v", err) // be sure to skip the test and not fail it
-			}
-		},
+		PreCheck:          func() { util.TestAccPreCheck(t) },
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{

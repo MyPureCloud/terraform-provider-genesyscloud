@@ -2,10 +2,11 @@ package outbound_callanalysisresponseset
 
 import (
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v131/platformclientv2"
 	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
 )
 
 func getResponseSetFromResourceData(d *schema.ResourceData) platformclientv2.Responseset {

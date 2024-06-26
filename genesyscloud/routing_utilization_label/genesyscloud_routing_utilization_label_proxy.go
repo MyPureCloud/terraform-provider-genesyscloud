@@ -6,7 +6,7 @@ import (
 	"log"
 	rc "terraform-provider-genesyscloud/genesyscloud/resource_cache"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v131/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
 )
 
 var internalProxy *routingUtilizationLabelProxy
@@ -127,7 +127,7 @@ func getRoutingUtilizationLabelByNameFn(ctx context.Context, p *routingUtilizati
 		return nil, false, resp, fmt.Errorf("error retrieving routing utilization label by name %s", err)
 	}
 
-	if labels == nil || len(*labels) == 0{
+	if labels == nil || len(*labels) == 0 {
 		return nil, true, resp, fmt.Errorf("no routing utilization labels found with name %s", name)
 	}
 

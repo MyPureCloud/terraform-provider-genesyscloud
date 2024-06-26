@@ -3,8 +3,9 @@ package routing_utilization
 import (
 	"context"
 	"fmt"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v131/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
 )
 
 var internalProxy *routingUtilizationProxy

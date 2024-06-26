@@ -3,10 +3,6 @@ package telephony_providers_edges_site_outbound_route
 import (
 	"context"
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v131/platformclientv2"
 	"log"
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
@@ -17,6 +13,11 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/util/lists"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 	"time"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
 )
 
 func getAllSitesOutboundRoutes(ctx context.Context, sdkConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {

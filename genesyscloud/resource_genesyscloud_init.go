@@ -42,9 +42,6 @@ func registerResources(l registrar.Registrar) {
 
 	l.RegisterResource("genesyscloud_location", ResourceLocation())
 	l.RegisterResource("genesyscloud_auth_division", ResourceAuthDivision())
-	l.RegisterResource("genesyscloud_idp_generic", ResourceIdpGeneric())
-	l.RegisterResource("genesyscloud_idp_gsuite", ResourceIdpGsuite())
-	l.RegisterResource("genesyscloud_idp_ping", ResourceIdpPing())
 	l.RegisterResource("genesyscloud_journey_action_map", ResourceJourneyActionMap())
 	l.RegisterResource("genesyscloud_journey_action_template", ResourceJourneyActionTemplate())
 	l.RegisterResource("genesyscloud_journey_outcome", ResourceJourneyOutcome())
@@ -71,9 +68,6 @@ func registerResources(l registrar.Registrar) {
 
 func registerExporters(l registrar.Registrar) {
 	l.RegisterExporter("genesyscloud_auth_division", AuthDivisionExporter())
-	l.RegisterExporter("genesyscloud_idp_generic", IdpGenericExporter())
-	l.RegisterExporter("genesyscloud_idp_gsuite", IdpGsuiteExporter())
-	l.RegisterExporter("genesyscloud_idp_ping", IdpPingExporter())
 	l.RegisterExporter("genesyscloud_journey_action_map", JourneyActionMapExporter())
 	l.RegisterExporter("genesyscloud_journey_action_template", JourneyActionTemplateExporter())
 	l.RegisterExporter("genesyscloud_journey_outcome", JourneyOutcomeExporter())

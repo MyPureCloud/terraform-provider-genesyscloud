@@ -1,4 +1,4 @@
-package genesyscloud
+package idp_gsuite
 
 import (
 	"fmt"
@@ -7,103 +7,136 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 
+	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v131/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
 )
 
 func TestAccResourceIdpGsuite(t *testing.T) {
 	var (
+		name1           = "Test gsuite " + uuid.NewString()
 		uri1            = "https://test.com/1"
 		uri2            = "https://test.com/2"
 		relyingPartyID1 = "test-id1"
 		relyingPartyID2 = "test-id2"
+		uri3            = "https://example.com"
+		slo_binding1    = "HTTP Redirect"
+		slo_binding2    = "HTTP Post"
 	)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
-		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		ProviderFactories: provider.GetProviderFactories(providerResources, nil),
 		Steps: []resource.TestStep{
 			{
 				// Create
 				Config: generateIdpGsuiteResource(
+					name1,
 					util.GenerateStringArray(strconv.Quote(util.TestCert1)),
 					uri1,
 					uri2,
 					util.NullValue, // No relying party ID
 					util.NullValue, // Not disabled
+					uri3,
+					slo_binding1,
 				),
 				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("genesyscloud_idp_gsuite.gsuite", "name", name1),
 					util.ValidateStringInArray("genesyscloud_idp_gsuite.gsuite", "certificates", util.TestCert1),
 					resource.TestCheckResourceAttr("genesyscloud_idp_gsuite.gsuite", "issuer_uri", uri1),
 					resource.TestCheckResourceAttr("genesyscloud_idp_gsuite.gsuite", "target_uri", uri2),
 					resource.TestCheckResourceAttr("genesyscloud_idp_gsuite.gsuite", "relying_party_identifier", ""),
 					resource.TestCheckResourceAttr("genesyscloud_idp_gsuite.gsuite", "disabled", util.FalseValue),
+					resource.TestCheckResourceAttr("genesyscloud_idp_gsuite.gsuite", "slo_uri", uri3),
+					resource.TestCheckResourceAttr("genesyscloud_idp_gsuite.gsuite", "slo_binding", slo_binding1),
 				),
 			},
 			{
 				// Update with new values
 				Config: generateIdpGsuiteResource(
+					name1,
 					util.GenerateStringArray(strconv.Quote(util.TestCert2)),
 					uri2,
 					uri1,
 					strconv.Quote(relyingPartyID1),
 					util.TrueValue, // disabled
+					uri3,
+					slo_binding2,
 				),
 				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("genesyscloud_idp_gsuite.gsuite", "name", name1),
 					util.ValidateStringInArray("genesyscloud_idp_gsuite.gsuite", "certificates", util.TestCert2),
 					resource.TestCheckResourceAttr("genesyscloud_idp_gsuite.gsuite", "issuer_uri", uri2),
 					resource.TestCheckResourceAttr("genesyscloud_idp_gsuite.gsuite", "target_uri", uri1),
 					resource.TestCheckResourceAttr("genesyscloud_idp_gsuite.gsuite", "relying_party_identifier", relyingPartyID1),
 					resource.TestCheckResourceAttr("genesyscloud_idp_gsuite.gsuite", "disabled", util.TrueValue),
+					resource.TestCheckResourceAttr("genesyscloud_idp_gsuite.gsuite", "slo_uri", uri3),
+					resource.TestCheckResourceAttr("genesyscloud_idp_gsuite.gsuite", "slo_binding", slo_binding2),
 				),
 			},
 			{
 				// Update with multiple certs
 				Config: generateIdpGsuiteResource(
+					name1,
 					util.GenerateStringArray(strconv.Quote(util.TestCert1), strconv.Quote(util.TestCert2)),
 					uri2,
 					uri1,
 					strconv.Quote(relyingPartyID2),
 					util.FalseValue, // disabled
+					uri3,
+					slo_binding1,
 				),
 				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("genesyscloud_idp_gsuite.gsuite", "name", name1),
 					util.ValidateStringInArray("genesyscloud_idp_gsuite.gsuite", "certificates", util.TestCert1),
 					util.ValidateStringInArray("genesyscloud_idp_gsuite.gsuite", "certificates", util.TestCert2),
 					resource.TestCheckResourceAttr("genesyscloud_idp_gsuite.gsuite", "issuer_uri", uri2),
 					resource.TestCheckResourceAttr("genesyscloud_idp_gsuite.gsuite", "target_uri", uri1),
 					resource.TestCheckResourceAttr("genesyscloud_idp_gsuite.gsuite", "relying_party_identifier", relyingPartyID2),
 					resource.TestCheckResourceAttr("genesyscloud_idp_gsuite.gsuite", "disabled", util.FalseValue),
+					resource.TestCheckResourceAttr("genesyscloud_idp_gsuite.gsuite", "slo_uri", uri3),
+					resource.TestCheckResourceAttr("genesyscloud_idp_gsuite.gsuite", "slo_binding", slo_binding1),
 				),
 			},
 			{
 				// Update to one cert in array
 				Config: generateIdpGsuiteResource(
+					name1,
 					util.GenerateStringArray(strconv.Quote(util.TestCert1)),
 					uri2,
 					uri1,
 					strconv.Quote(relyingPartyID2),
 					util.FalseValue, // disabled
+					uri3,
+					slo_binding2,
 				),
 				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("genesyscloud_idp_gsuite.gsuite", "name", name1),
 					util.ValidateStringInArray("genesyscloud_idp_gsuite.gsuite", "certificates", util.TestCert1),
 					resource.TestCheckResourceAttr("genesyscloud_idp_gsuite.gsuite", "certificates.#", "1"),
 					resource.TestCheckResourceAttr("genesyscloud_idp_gsuite.gsuite", "issuer_uri", uri2),
 					resource.TestCheckResourceAttr("genesyscloud_idp_gsuite.gsuite", "target_uri", uri1),
 					resource.TestCheckResourceAttr("genesyscloud_idp_gsuite.gsuite", "relying_party_identifier", relyingPartyID2),
 					resource.TestCheckResourceAttr("genesyscloud_idp_gsuite.gsuite", "disabled", util.FalseValue),
+					resource.TestCheckResourceAttr("genesyscloud_idp_gsuite.gsuite", "slo_uri", uri3),
+					resource.TestCheckResourceAttr("genesyscloud_idp_gsuite.gsuite", "slo_binding", slo_binding2),
 				),
 			},
 			{
 				// Update back to two certs in array
 				Config: generateIdpGsuiteResource(
+					name1,
 					util.GenerateStringArray(strconv.Quote(util.TestCert1), strconv.Quote(util.TestCert2)),
 					uri2,
 					uri1,
 					strconv.Quote(relyingPartyID2),
 					util.FalseValue, // disabled
+					uri3,
+					slo_binding1,
 				),
 				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("genesyscloud_idp_gsuite.gsuite", "name", name1),
 					util.ValidateStringInArray("genesyscloud_idp_gsuite.gsuite", "certificates", util.TestCert1),
 					util.ValidateStringInArray("genesyscloud_idp_gsuite.gsuite", "certificates", util.TestCert2),
 					resource.TestCheckResourceAttr("genesyscloud_idp_gsuite.gsuite", "certificates.#", "2"),
@@ -111,6 +144,8 @@ func TestAccResourceIdpGsuite(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_idp_gsuite.gsuite", "target_uri", uri1),
 					resource.TestCheckResourceAttr("genesyscloud_idp_gsuite.gsuite", "relying_party_identifier", relyingPartyID2),
 					resource.TestCheckResourceAttr("genesyscloud_idp_gsuite.gsuite", "disabled", util.FalseValue),
+					resource.TestCheckResourceAttr("genesyscloud_idp_gsuite.gsuite", "slo_uri", uri3),
+					resource.TestCheckResourceAttr("genesyscloud_idp_gsuite.gsuite", "slo_binding", slo_binding1),
 				),
 			},
 			{
@@ -125,19 +160,25 @@ func TestAccResourceIdpGsuite(t *testing.T) {
 }
 
 func generateIdpGsuiteResource(
+	name string,
 	certs string,
 	issuerURI string,
 	targetURI string,
 	partyID string,
-	disabled string) string {
+	disabled string,
+	sloURI string,
+	sloBinding string) string {
 	return fmt.Sprintf(`resource "genesyscloud_idp_gsuite" "gsuite" {
+		name = "%s"
 		certificates = %s
 		issuer_uri = "%s"
 		target_uri = "%s"
         relying_party_identifier = %s
         disabled = %s
+		slo_uri = "%s"
+		slo_binding = "%s"
 	}
-	`, certs, issuerURI, targetURI, partyID, disabled)
+	`, name, certs, issuerURI, targetURI, partyID, disabled, sloURI, sloBinding)
 }
 
 func testVerifyIdpGsuiteDestroyed(state *terraform.State) error {

@@ -14,10 +14,10 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v131/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
 )
 
-func TestAccResourceBasicRoutingUtilization(t *testing.T) {
+func TestAccResourceRoutingUtilizationBasic(t *testing.T) {
 	t.Parallel()
 	var (
 		maxCapacity1  = "3"
@@ -114,12 +114,7 @@ func TestAccResourceRoutingUtilizationWithLabels(t *testing.T) {
 	}
 
 	resource.Test(t, resource.TestCase{
-		PreCheck: func() {
-			util.TestAccPreCheck(t)
-			if err := routingUtilizationLabel.CheckIfLabelsAreEnabled(); err != nil {
-				t.Skipf("%v", err) // be sure to skip the test and not fail it
-			}
-		},
+		PreCheck:          func() { util.TestAccPreCheck(t) },
 		ProviderFactories: provider.GetProviderFactories(providerResources, nil),
 		Steps: []resource.TestStep{
 			{
@@ -295,7 +290,7 @@ func CleanupRoutingUtilizationLabel() error {
 		const pageSize = 100
 		labels, _, getErr := routingAPI.GetRoutingUtilizationLabels(pageSize, pageNum, "", "")
 		if getErr != nil {
-			log.Printf("failed to get page %v of routing email domains: %v", pageNum, getErr)
+			log.Printf("failed to get page %v of utilization labels: %v", pageNum, getErr)
 			return getErr
 		}
 
@@ -307,7 +302,7 @@ func CleanupRoutingUtilizationLabel() error {
 			if label.Id != nil && strings.HasPrefix(*label.Name, "Terraform") {
 				_, err := routingAPI.DeleteRoutingUtilizationLabel(*label.Id, true)
 				if err != nil {
-					log.Printf("Failed to delete routing email domain %s: %s", *label.Id, err)
+					log.Printf("Failed to delete utilization label %s: %s", *label.Id, err)
 					continue
 				}
 				time.Sleep(5 * time.Second)

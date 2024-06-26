@@ -37,7 +37,10 @@ resource "genesyscloud_idp_ping" "ping" {
 ### Optional
 
 - `disabled` (Boolean) True if Ping is disabled. Defaults to `false`.
+- `name` (String) Name of the provider
 - `relying_party_identifier` (String) String used to identify Genesys Cloud to Ping.
+- `slo_binding` (String) Valid values: HTTP Redirect, HTTP Post
+- `slo_uri` (String) Provided on app creation.
 - `target_uri` (String) Target URI provided by Ping.
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 

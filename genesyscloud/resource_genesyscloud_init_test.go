@@ -15,7 +15,7 @@ import (
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v131/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
 )
 
 var (
@@ -41,9 +41,6 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_routing_queue"] = routingQueue.ResourceRoutingQueue()
 	providerResources["genesyscloud_location"] = ResourceLocation()
 	providerResources["genesyscloud_auth_division"] = ResourceAuthDivision()
-	providerResources["genesyscloud_idp_generic"] = ResourceIdpGeneric()
-	providerResources["genesyscloud_idp_gsuite"] = ResourceIdpGsuite()
-	providerResources["genesyscloud_idp_ping"] = ResourceIdpPing()
 	providerResources["genesyscloud_journey_action_map"] = ResourceJourneyActionMap()
 	providerResources["genesyscloud_journey_action_template"] = ResourceJourneyActionTemplate()
 	providerResources["genesyscloud_journey_outcome"] = ResourceJourneyOutcome()
