@@ -5,6 +5,11 @@ import (
 	"fmt"
 	"log"
 
+<<<<<<< HEAD
+=======
+	rc "terraform-provider-genesyscloud/genesyscloud/resource_cache"
+
+>>>>>>> dev
 	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
 )
 

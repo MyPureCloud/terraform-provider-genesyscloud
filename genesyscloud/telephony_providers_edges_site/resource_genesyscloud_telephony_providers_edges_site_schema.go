@@ -5,7 +5,11 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
+<<<<<<< HEAD
 	gcloud "terraform-provider-genesyscloud/genesyscloud/validators"
+=======
+	"terraform-provider-genesyscloud/genesyscloud/validators"
+>>>>>>> dev
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"

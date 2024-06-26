@@ -2,11 +2,12 @@ package routing_utilization
 
 import (
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v131/platformclientv2"
 	"sort"
 	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/util/lists"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
 )
 
 func buildSdkMediaUtilizations(d *schema.ResourceData) *map[string]platformclientv2.Mediautilization {

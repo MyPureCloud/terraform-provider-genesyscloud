@@ -67,7 +67,7 @@ func ResourceIdpAdfs() *schema.Resource {
 				Type:        schema.TypeString,
 			},
 			`slo_uri`: {
-				Description: `Provided by ADSF on app creation`,
+				Description: `Provided by ADFS on app creation`,
 				Optional:    true,
 				Type:        schema.TypeString,
 			},

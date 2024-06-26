@@ -21,6 +21,14 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
+<<<<<<< HEAD
+=======
+)
+
+var (
+	sdkConfig *platformclientv2.Configuration
+	mu        sync.Mutex
+>>>>>>> dev
 )
 
 func TestAccResourceRoutingQueueBasic(t *testing.T) {
