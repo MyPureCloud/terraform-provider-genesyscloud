@@ -10,7 +10,7 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
 )
 
-func buildSdkMediaUtilizations(d *schema.ResourceData) *map[string]platformclientv2.Mediautilization {
+func BuildSdkMediaUtilizations(d *schema.ResourceData) *map[string]platformclientv2.Mediautilization {
 	settings := make(map[string]platformclientv2.Mediautilization)
 
 	for sdkType, schemaType := range UtilizationMediaTypes {
@@ -42,6 +42,24 @@ func BuildSdkMediaUtilization(settings []interface{}) platformclientv2.Mediautil
 	}
 }
 
+func BuildSdkLabelUtilizations(d *schema.ResourceData) *map[string]platformclientv2.Labelutilizationrequest {
+	labelUtilizations := d.Get("label_utilizations").([]interface{})
+	request := make(map[string]platformclientv2.Labelutilizationrequest)
+
+	for _, labelUtilization := range labelUtilizations {
+		labelUtilizationMap := labelUtilization.(map[string]interface{})
+		maxCapacity := labelUtilizationMap["maximum_capacity"].(int)
+		interruptingLabelIds := lists.SetToStringList(labelUtilizationMap["interrupting_label_ids"].(*schema.Set))
+
+		request[labelUtilizationMap["label_id"].(string)] = platformclientv2.Labelutilizationrequest{
+			MaximumCapacity:      &maxCapacity,
+			InterruptingLabelIds: interruptingLabelIds,
+		}
+	}
+
+	return &request
+}
+
 func BuildLabelUtilizationsRequest(labelUtilizations []interface{}) map[string]LabelUtilization {
 	request := make(map[string]LabelUtilization)
 	for _, labelUtilization := range labelUtilizations {
@@ -56,19 +74,19 @@ func BuildLabelUtilizationsRequest(labelUtilizations []interface{}) map[string]L
 	return request
 }
 
-func FlattenUtilizationSetting(settings MediaUtilization) []interface{} {
+func FlattenMediaUtilization(mediaUtilization platformclientv2.Mediautilization) []interface{} {
 	settingsMap := make(map[string]interface{})
 
-	settingsMap["maximum_capacity"] = settings.MaximumCapacity
-	settingsMap["include_non_acd"] = settings.IncludeNonAcd
-	if settings.InterruptableMediaTypes != nil {
-		settingsMap["interruptible_media_types"] = lists.StringListToSet(settings.InterruptableMediaTypes)
+	settingsMap["maximum_capacity"] = mediaUtilization.MaximumCapacity
+	settingsMap["include_non_acd"] = mediaUtilization.IncludeNonAcd
+	if mediaUtilization.InterruptableMediaTypes != nil {
+		settingsMap["interruptible_media_types"] = lists.StringListToSet(*mediaUtilization.InterruptableMediaTypes)
 	}
 
 	return []interface{}{settingsMap}
 }
 
-func FilterAndFlattenLabelUtilizations(labelUtilizations map[string]LabelUtilization, originalLabelUtilizations []interface{}) []interface{} {
+func FilterAndFlattenLabelUtilizations(labelUtilizations map[string]platformclientv2.Labelutilizationresponse, originalLabelUtilizations []interface{}) []interface{} {
 	flattenedLabelUtilizations := make([]interface{}, 0)
 
 	for _, originalLabelUtilization := range originalLabelUtilizations {
@@ -86,7 +104,52 @@ func FilterAndFlattenLabelUtilizations(labelUtilizations map[string]LabelUtiliza
 	return flattenedLabelUtilizations
 }
 
-func flattenLabelUtilization(labelId string, labelUtilization LabelUtilization) map[string]interface{} {
+func flattenLabelUtilization(labelId string, labelUtilization platformclientv2.Labelutilizationresponse) map[string]interface{} {
+	utilizationMap := make(map[string]interface{})
+
+	utilizationMap["label_id"] = labelId
+	utilizationMap["maximum_capacity"] = labelUtilization.MaximumCapacity
+	if labelUtilization.InterruptingLabelIds != nil {
+		utilizationMap["interrupting_label_ids"] = lists.StringListToSet(*labelUtilization.InterruptingLabelIds)
+	}
+
+	return utilizationMap
+}
+
+// To be removed once resource_user is refactored to use FlattenMediaUtilization instead
+func FlattenUtilizationSetting(settings MediaUtilization) []interface{} {
+	settingsMap := make(map[string]interface{})
+
+	settingsMap["maximum_capacity"] = settings.MaximumCapacity
+	settingsMap["include_non_acd"] = settings.IncludeNonAcd
+	if settings.InterruptableMediaTypes != nil {
+		settingsMap["interruptible_media_types"] = lists.StringListToSet(settings.InterruptableMediaTypes)
+	}
+
+	return []interface{}{settingsMap}
+}
+
+// To be removed once resource_user is refactored to use FilterAndFlattenLabelUtilizations instead
+func FilterAndFlattenLabelUtilizationsInternal(labelUtilizations map[string]LabelUtilization, originalLabelUtilizations []interface{}) []interface{} {
+	flattenedLabelUtilizations := make([]interface{}, 0)
+
+	for _, originalLabelUtilization := range originalLabelUtilizations {
+		originalLabelId := (originalLabelUtilization.(map[string]interface{}))["label_id"].(string)
+
+		for currentLabelId, currentLabelUtilization := range labelUtilizations {
+			if currentLabelId == originalLabelId {
+				flattenedLabelUtilizations = append(flattenedLabelUtilizations, flattenLabelUtilizationInternal(currentLabelId, currentLabelUtilization))
+				delete(labelUtilizations, currentLabelId)
+				break
+			}
+		}
+	}
+
+	return flattenedLabelUtilizations
+}
+
+// To be removed once resource_user is refactored to use flattenLabelUtilization instead
+func flattenLabelUtilizationInternal(labelId string, labelUtilization LabelUtilization) map[string]interface{} {
 	utilizationMap := make(map[string]interface{})
 
 	utilizationMap["label_id"] = labelId
