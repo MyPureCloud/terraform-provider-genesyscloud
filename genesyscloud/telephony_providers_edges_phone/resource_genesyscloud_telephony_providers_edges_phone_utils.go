@@ -373,7 +373,7 @@ func createStandalonePhoneLines(lineProperties []interface{}, linesPtr *[]platfo
 					"instance": lineAddress,
 				},
 			},
-			"remote_address": &map[string]interface{}{
+			"station_remote_address": &map[string]interface{}{
 				"value": &map[string]interface{}{
 					"instance": remoteAddress,
 				},
@@ -413,15 +413,30 @@ func flattenLines(phoneLines *[]platformclientv2.Line) []interface{} {
 			}
 		}
 
+		if len(phoneLineMap) == 0 {
+			continue
+		}
+
 		phoneLineslist = append(phoneLineslist, phoneLineMap)
 	}
 	return phoneLineslist
 }
 
-func generateLineProperties(
-	lineAddress string,
-	remoteAddress string,
-) string {
+func generateLineProperties(lineAddress string, remoteAddress string) string {
+	if lineAddress == "" {
+		return fmt.Sprintf(`
+		line_properties {
+			remote_address = %s
+		}
+	`, remoteAddress)
+	}
+	if remoteAddress == "" {
+		return fmt.Sprintf(`
+		line_properties {
+			line_address = %s
+		}
+	`, lineAddress)
+	}
 	return fmt.Sprintf(`
 	line_properties {
 		line_address = %s
