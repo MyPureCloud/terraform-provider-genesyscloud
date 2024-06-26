@@ -84,5 +84,5 @@ func deleteIdpOneloginFn(ctx context.Context, p *idpOneloginProxy, id string) (r
 		return resp, fmt.Errorf("Failed to delete idp onelogin: %s", err)
 	}
 
-	return resp, nil
+	return resp, err
 }
