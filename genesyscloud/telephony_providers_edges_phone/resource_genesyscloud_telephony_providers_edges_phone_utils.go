@@ -163,34 +163,6 @@ func getPhoneMetaBaseId(ctx context.Context, pp *phoneProxy, phoneBaseSettingsId
 	return *phoneBase.PhoneMetaBase.Id, nil
 }
 
-func flattenPhoneLines(lines *[]platformclientv2.Line) []string {
-	if lines == nil {
-		return nil
-	}
-
-	lineAddressList := []string{}
-	for i := 0; i < len(*lines); i++ {
-		line := (*lines)[i]
-		did := ""
-		if line.Properties == nil {
-			continue
-		}
-		if k := (*line.Properties)["station_identity_address"]; k != nil {
-			didI := k.(map[string]interface{})["value"].(map[string]interface{})["instance"]
-			if didI != nil {
-				did = didI.(string)
-			}
-		}
-
-		if len(did) == 0 {
-			continue
-		}
-		lineAddressList = append(lineAddressList, did)
-	}
-
-	return lineAddressList
-}
-
 func flattenPhoneCapabilities(capabilities *platformclientv2.Phonecapabilities) []interface{} {
 	if capabilities == nil {
 		return nil
