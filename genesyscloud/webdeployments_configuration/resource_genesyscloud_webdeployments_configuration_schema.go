@@ -363,12 +363,12 @@ var (
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"url_fragment": {
-							Description: "URL fragment for pause criteria",
+							Description: "A string representing a part of the URL that, when matched according to the specified condition, will trigger a pause in the cobrowse session",
 							Type:        schema.TypeString,
 							Required:    true,
 						},
 						"condition": {
-							Description:  "Condition for the pause criteria (includes, does_not_include, starts_with, ends_with, equals)",
+							Description:  "The condition to be applied to the `url_fragment`. Conditions are 'includes', 'does_not_include', 'starts_with', 'ends_with', 'equals'",
 							Type:         schema.TypeString,
 							Required:     true,
 							ValidateFunc: validation.StringInSlice([]string{"includes", "does_not_include", "starts_with", "ends_with", "equals"}, false),

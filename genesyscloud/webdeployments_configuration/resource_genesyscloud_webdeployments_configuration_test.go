@@ -187,10 +187,8 @@ func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
 						channels,
 						[]string{strconv.Quote("selector-one")},
 						[]string{strconv.Quote("selector-one")},
-						[]map[string]string{
-							{"url_fragment": "/sensitive", "condition": "includes"},
-							{"url_fragment": "/login", "condition": "equals"},
-						},
+						generatePauseCriteria("/sensitive", "includes"),
+						generatePauseCriteria("/login", "equals"),
 					),
 				),
 				Check: resource.ComposeTestCheckFunc(
@@ -321,10 +319,8 @@ func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
 						channelsUpdate,
 						[]string{strconv.Quote("selector-one"), strconv.Quote("selector-two")},
 						[]string{strconv.Quote("selector-one"), strconv.Quote("selector-two")},
-						[]map[string]string{
-							{"url_fragment": "/sensitive", "condition": "includes"},
-							{"url_fragment": "/login", "condition": "equals"},
-						},
+						generatePauseCriteria("/sensitive", "includes"),
+						generatePauseCriteria("/login", "equals"),
 					),
 				),
 				Check: resource.ComposeTestCheckFunc(
@@ -1052,12 +1048,7 @@ func complexConfigurationResource(name, description, kbId string, nestedBlocks .
 	`, name, description, kbId, strings.Join(nestedBlocks, "\n"))
 }
 
-func generateWebDeploymentConfigCobrowseSettings(cbEnabled, cbAllowAgentControl string, cbAllowAgentNavigation string, cbChannels []string, cbMaskSelectors []string, cbReadonlySelectors []string, cbPauseCriteria []map[string]string) string {
-	
-	pauseCriteriaStrings := make([]string, len(cbPauseCriteria))
-	for i, criteria := range cbPauseCriteria {
-		pauseCriteriaStrings[i] = fmt.Sprintf(`{"url_fragment": "%s", "condition": "%s"}`, criteria["url_fragment"], criteria["condition"])
-	}
+func generateWebDeploymentConfigCobrowseSettings(cbEnabled, cbAllowAgentControl string, cbAllowAgentNavigation string, cbChannels []string, cbMaskSelectors []string, cbReadonlySelectors []string, pauseCriteriaBlocks ...string,) string {
 
 	return fmt.Sprintf(`
 	cobrowse {
@@ -1067,9 +1058,16 @@ func generateWebDeploymentConfigCobrowseSettings(cbEnabled, cbAllowAgentControl 
 		channels = [ %s ]
 		mask_selectors = [ %s ]
 		readonly_selectors = [ %s ]
-		pause_criteria = [ %s ]
+		%s
 	}
-`, cbEnabled, cbAllowAgentControl, cbAllowAgentNavigation, strings.Join(cbChannels, ", "), strings.Join(cbMaskSelectors, ", "), strings.Join(cbReadonlySelectors, ", "), strings.Join(pauseCriteriaStrings, ", "))
+`, cbEnabled, cbAllowAgentControl, cbAllowAgentNavigation, strings.Join(cbChannels, ", "), strings.Join(cbMaskSelectors, ", "), strings.Join(cbReadonlySelectors, ", "), strings.Join(pauseCriteriaBlocks, "\n"))
+}
+
+func generatePauseCriteria(urlFragment, condition string) string {
+	return fmt.Sprintf(`pause_criteria {
+	url_fragment = "%s"
+	condition = "%s"
+}`, urlFragment, condition)
 }
 
 func generateSupportCenterSettings(supportCenter scConfig) string {
