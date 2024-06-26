@@ -69,10 +69,13 @@ func readIdpAdfs(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read IDP ADFS: %s", getErr), resp))
 		}
 
+		resourcedata.SetNillableValue(d, "name", aDFS.Name)
 		resourcedata.SetNillableValue(d, "disabled", aDFS.Disabled)
 		resourcedata.SetNillableValue(d, "issuer_uri", aDFS.IssuerURI)
 		resourcedata.SetNillableValue(d, "target_uri", aDFS.SsoTargetURI)
 		resourcedata.SetNillableValue(d, "relying_party_identifier", aDFS.RelyingPartyIdentifier)
+		resourcedata.SetNillableValue(d, "slo_uri", aDFS.SloURI)
+		resourcedata.SetNillableValue(d, "slo_binding", aDFS.SloBinding)
 
 		if aDFS.Certificate != nil {
 			d.Set("certificates", lists.StringListToInterfaceList([]string{*aDFS.Certificate}))
@@ -137,9 +140,12 @@ func deleteIdpAdfs(ctx context.Context, d *schema.ResourceData, meta interface{}
 // getIdpAdfsFromResourceData maps data from schema ResourceData object to a platformclientv2.Adfs
 func getIdpAdfsFromResourceData(d *schema.ResourceData) platformclientv2.Adfs {
 	return platformclientv2.Adfs{
+		Name:                   platformclientv2.String(d.Get("name").(string)),
 		Disabled:               platformclientv2.Bool(d.Get("disabled").(bool)),
 		IssuerURI:              platformclientv2.String(d.Get("issuer_uri").(string)),
 		SsoTargetURI:           platformclientv2.String(d.Get("target_uri").(string)),
 		RelyingPartyIdentifier: platformclientv2.String(d.Get("relying_party_identifier").(string)),
+		SloURI:                 platformclientv2.String(d.Get("slo_uri").(string)),
+		SloBinding:             platformclientv2.String(d.Get("slo_binding").(string)),
 	}
 }
