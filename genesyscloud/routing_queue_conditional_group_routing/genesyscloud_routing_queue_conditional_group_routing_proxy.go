@@ -3,9 +3,10 @@ package routing_queue_conditional_group_routing
 import (
 	"context"
 	"fmt"
-	"github.com/mypurecloud/platform-client-sdk-go/v131/platformclientv2"
 	rc "terraform-provider-genesyscloud/genesyscloud/resource_cache"
 	routingQueue "terraform-provider-genesyscloud/genesyscloud/routing_queue"
+
+	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
 )
 
 // internalProxy holds a proxy instance that can be used throughout the package
