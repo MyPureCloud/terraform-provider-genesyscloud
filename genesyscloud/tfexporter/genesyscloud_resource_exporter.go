@@ -1231,19 +1231,17 @@ func (g *GenesysCloudResourceExporter) sanitizeConfigMap(
 		}
 
 		if exporter.IsAttributeE164(currAttr) {
-			if phoneNumber, ok := configMap[key].(string); !ok || phoneNumber == "" {
+			if _, ok := configMap[key].(string); !ok {
 				continue
 			}
 			configMap[key] = sanitizeE164Number(configMap[key].(string))
-			continue
 		}
 
 		if exporter.IsAttributeRrule(currAttr) {
-			if rrule, ok := configMap[key].(string); !ok || rrule == "" {
+			if _, ok := configMap[key].(string); !ok {
 				continue
 			}
 			configMap[key] = sanitizeRrule(configMap[key].(string))
-			continue
 		}
 
 		switch val.(type) {
