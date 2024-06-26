@@ -22,6 +22,7 @@ func TestAccResourceAuthDivisionBasic(t *testing.T) {
 		divName1     = "Terraform Div-" + uuid.NewString()
 		divName2     = "Terraform Div-" + uuid.NewString()
 		divDesc1     = "Terraform test division"
+		divisionID   string
 	)
 	cleanupAuthDivision("Terraform")
 
@@ -43,6 +44,17 @@ func TestAccResourceAuthDivisionBasic(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_auth_division."+divResource1, "name", divName1),
 					resource.TestCheckResourceAttr("genesyscloud_auth_division."+divResource1, "description", ""),
+					resource.ComposeTestCheckFunc(
+						func(s *terraform.State) error {
+							rs, ok := s.RootModule().Resources["genesyscloud_auth_division."+divResource1]
+							if !ok {
+								return fmt.Errorf("not found: %s", "genesyscloud_auth_division."+divResource1)
+							}
+							divisionID = rs.Primary.ID
+							log.Printf("Division ID: %s\n", divisionID) // Print ID
+							return nil
+						},
+					),
 				),
 			},
 			{
@@ -79,10 +91,7 @@ func TestAccResourceAuthDivisionBasic(t *testing.T) {
 				ImportState:       true,
 				ImportStateVerify: true,
 				Check: resource.ComposeTestCheckFunc(
-					func(s *terraform.State) error {
-						time.Sleep(30 * time.Second) // Wait for 30 seconds for proper deletion
-						return nil
-					},
+					checkDivisionDeleted(divisionID),
 				),
 			},
 		},
@@ -242,4 +251,46 @@ func cleanupAuthDivision(idPrefix string) {
 			}
 		}
 	}
+}
+
+func checkDivisionDeleted(id string) resource.TestCheckFunc {
+	log.Printf("Fetching division with ID: %s\n", id)
+	return func(s *terraform.State) error {
+		maxAttempts := 18
+		for i := 0; i < maxAttempts; i++ {
+
+			deleted, err := isDivisionDeleted(id)
+			if err != nil {
+				return err
+			}
+			if deleted {
+				return nil
+			}
+			time.Sleep(10 * time.Second)
+		}
+		return fmt.Errorf("division %s was not deleted properly", id)
+	}
+}
+
+func isDivisionDeleted(id string) (bool, error) {
+	mu.Lock()
+	defer mu.Unlock()
+
+	authAPI := platformclientv2.NewAuthorizationApiWithConfig(sdkConfig)
+	// Attempt to get the division
+	_, response, err := authAPI.GetAuthorizationDivision(id, false)
+
+	// Check if the division is not found (deleted)
+	if response != nil && response.StatusCode == 404 {
+		return true, nil // division is deleted
+	}
+
+	// Handle other errors
+	if err != nil {
+		log.Printf("Error fetching user: %v", err)
+		return false, err
+	}
+
+	// If division is found, it means the division is not deleted
+	return false, nil
 }
