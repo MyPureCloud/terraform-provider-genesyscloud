@@ -255,14 +255,15 @@ func TestAccResourcePhoneStandalone(t *testing.T) {
 				PreConfig: func() {
 					time.Sleep(30 * time.Second)
 				},
-				Config: didPool.GenerateDidPoolResource(&didPool.DidPoolStruct{
-					ResourceID:       didPoolResource1,
-					StartPhoneNumber: lineAddresses[0],
-					EndPhoneNumber:   lineAddresses[0],
-					Description:      util.NullValue, // No description
-					Comments:         util.NullValue, // No comments
-					PoolProvider:     util.NullValue, // No provider
-				}) + locationConfig + siteConfig + phoneBaseSettings.GeneratePhoneBaseSettingsResourceWithCustomAttrs(
+				Config: locationConfig + siteConfig +
+					didPool.GenerateDidPoolResource(&didPool.DidPoolStruct{
+						ResourceID:       didPoolResource1,
+						StartPhoneNumber: lineAddresses[0],
+						EndPhoneNumber:   lineAddresses[0],
+						Description:      util.NullValue, // No description
+						Comments:         util.NullValue, // No comments
+						PoolProvider:     util.NullValue, // No provider
+					}) + phoneBaseSettings.GeneratePhoneBaseSettingsResourceWithCustomAttrs(
 					phoneBaseSettingsRes,
 					phoneBaseSettingsName,
 					"phoneBaseSettings description",

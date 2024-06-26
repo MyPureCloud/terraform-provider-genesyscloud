@@ -37,6 +37,9 @@ func TestAccDataSourceGroup(t *testing.T) {
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
+				PreConfig: func() {
+					time.Sleep(30 * time.Second)
+				},
 				Config: generateUserWithCustomAttrs(testUserResource, testUserEmail, testUserName) +
 					GenerateGroupResource(
 						groupResource,
