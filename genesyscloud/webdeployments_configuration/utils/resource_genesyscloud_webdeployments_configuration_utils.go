@@ -30,6 +30,20 @@ func buildCobrowseSettings(d *schema.ResourceData) *platformclientv2.Cobrowseset
 	maskSelectors := lists.InterfaceListToStrings(cfg["mask_selectors"].([]interface{}))
 	readonlySelectors := lists.InterfaceListToStrings(cfg["readonly_selectors"].([]interface{}))
 
+	var pauseCriteria []platformclientv2.Pausecriteria
+	if v, ok := cfg["pause_criteria"]; ok {
+		for _, pc := range v.([]interface{}) {
+			pcMap := pc.(map[string]interface{})
+			urlFragment := pcMap["url_fragment"].(string)
+			condition := pcMap["condition"].(string)
+			pauseCriteria = append(pauseCriteria, platformclientv2.Pausecriteria{
+				UrlFragment: &urlFragment,
+				Condition:   &condition,
+			})
+		}
+	}
+
+
 	return &platformclientv2.Cobrowsesettings{
 		Enabled:              &enabled,
 		AllowAgentControl:    &allowAgentControl,
@@ -37,6 +51,7 @@ func buildCobrowseSettings(d *schema.ResourceData) *platformclientv2.Cobrowseset
 		Channels:             &channels,
 		MaskSelectors:        &maskSelectors,
 		ReadonlySelectors:    &readonlySelectors,
+		PauseCriteria:		  &pauseCriteria,
 	}
 }
 
