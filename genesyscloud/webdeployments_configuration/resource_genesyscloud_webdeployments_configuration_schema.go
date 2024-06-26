@@ -357,7 +357,7 @@ var (
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 			"pause_criteria": {
-				Description: "List of pause criteria",
+				Description: "Pause criteria that will pause cobrowse if some of them are met in the user's URL",
 				Type:        schema.TypeList,
 				Optional:    true,
 				Elem: &schema.Resource{
