@@ -21,7 +21,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v131/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
 )
 
 type SkillGroupsRequest struct {
@@ -149,7 +149,7 @@ func createOrUpdateSkillGroups(ctx context.Context, d *schema.ResourceData, meta
 	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
 	apiClient := &routingAPI.Configuration.APIClient
 	path := routingAPI.Configuration.BasePath + route
-	headerParams := buildHeaderParams(routingAPI)
+	headerParams := BuildHeaderParams(routingAPI)
 
 	/*
 	   Since API Client expects either a struct or map of maps (of json), convert the JSON string to a map
@@ -233,7 +233,7 @@ func postSkillGroupMemberDivisions(ctx context.Context, d *schema.ResourceData, 
 		skillGroupsMemberDivisionIdsPayload["addDivisionIds"] = toAdd
 	}
 
-	headerParams := buildHeaderParams(routingAPI)
+	headerParams := BuildHeaderParams(routingAPI)
 	apiClient := &routingAPI.Configuration.APIClient
 	path := fmt.Sprintf("%s/api/v2/routing/skillgroups/%s/members/divisions", routingAPI.Configuration.BasePath, d.Id())
 	response, err := apiClient.CallAPI(path, "POST", skillGroupsMemberDivisionIdsPayload, headerParams, nil, nil, "", nil)
@@ -329,7 +329,7 @@ func readSkillGroups(ctx context.Context, d *schema.ResourceData, meta interface
 	path := routingAPI.Configuration.BasePath + "/api/v2/routing/skillgroups/" + d.Id()
 
 	// add default headers if any
-	headerParams := buildHeaderParams(routingAPI)
+	headerParams := BuildHeaderParams(routingAPI)
 
 	log.Printf("Reading skills group %s", d.Id())
 
@@ -408,7 +408,7 @@ func readSkillGroups(ctx context.Context, d *schema.ResourceData, meta interface
 	})
 }
 
-func buildHeaderParams(routingAPI *platformclientv2.RoutingApi) map[string]string {
+func BuildHeaderParams(routingAPI *platformclientv2.RoutingApi) map[string]string {
 	headerParams := make(map[string]string)
 
 	for key := range routingAPI.Configuration.DefaultHeader {
@@ -438,7 +438,7 @@ func deleteSkillGroups(ctx context.Context, d *schema.ResourceData, meta interfa
 	path := routingAPI.Configuration.BasePath + "/api/v2/routing/skillgroups/" + d.Id()
 
 	// add default headers if any
-	headerParams := buildHeaderParams(routingAPI)
+	headerParams := BuildHeaderParams(routingAPI)
 
 	log.Printf("Deleting skills group %s", name)
 	response, err := apiClient.CallAPI(path, "DELETE", nil, headerParams, nil, nil, "", nil)
@@ -469,7 +469,7 @@ func deleteSkillGroups(ctx context.Context, d *schema.ResourceData, meta interfa
 }
 
 func readSkillGroupMemberDivisionIds(d *schema.ResourceData, routingAPI *platformclientv2.RoutingApi) ([]string, diag.Diagnostics) {
-	headers := buildHeaderParams(routingAPI)
+	headers := BuildHeaderParams(routingAPI)
 	apiClient := &routingAPI.Configuration.APIClient
 	path := fmt.Sprintf("%s/api/v2/routing/skillgroups/%s/members/divisions", routingAPI.Configuration.BasePath, d.Id())
 

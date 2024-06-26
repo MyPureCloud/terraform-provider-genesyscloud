@@ -2,12 +2,13 @@ package task_management_worktype
 
 import (
 	"context"
-	"github.com/google/uuid"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v131/platformclientv2"
-	"github.com/stretchr/testify/assert"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"testing"
+
+	"github.com/google/uuid"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
+	"github.com/stretchr/testify/assert"
 )
 
 // TestUnitataSourceTaskManagementWorktypeStatus tests the retrieve of a status id.

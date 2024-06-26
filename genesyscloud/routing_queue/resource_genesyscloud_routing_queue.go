@@ -25,7 +25,7 @@ import (
 	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v131/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
 )
 
 var bullseyeExpansionTypeTimeout = "TIMEOUT_SECONDS"
@@ -74,6 +74,7 @@ func createQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		EmailInQueueFlow:             util.BuildSdkDomainEntityRef(d, "email_in_queue_flow_id"),
 		MessageInQueueFlow:           util.BuildSdkDomainEntityRef(d, "message_in_queue_flow_id"),
 		WhisperPrompt:                util.BuildSdkDomainEntityRef(d, "whisper_prompt_id"),
+		OnHoldPrompt:                 util.BuildSdkDomainEntityRef(d, "on_hold_prompt_id"),
 		AutoAnswerOnly:               platformclientv2.Bool(d.Get("auto_answer_only").(bool)),
 		CallingPartyName:             platformclientv2.String(d.Get("calling_party_name").(string)),
 		CallingPartyNumber:           platformclientv2.String(d.Get("calling_party_number").(string)),
@@ -192,6 +193,7 @@ func readQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 		resourcedata.SetNillableReference(d, "message_in_queue_flow_id", currentQueue.MessageInQueueFlow)
 		resourcedata.SetNillableReference(d, "email_in_queue_flow_id", currentQueue.EmailInQueueFlow)
 		resourcedata.SetNillableReference(d, "whisper_prompt_id", currentQueue.WhisperPrompt)
+		resourcedata.SetNillableReference(d, "on_hold_prompt_id", currentQueue.OnHoldPrompt)
 		resourcedata.SetNillableValue(d, "auto_answer_only", currentQueue.AutoAnswerOnly)
 		resourcedata.SetNillableValue(d, "enable_transcription", currentQueue.EnableTranscription)
 		resourcedata.SetNillableValue(d, "suppress_in_queue_call_recording", currentQueue.SuppressInQueueCallRecording)
@@ -279,6 +281,7 @@ func updateQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		EmailInQueueFlow:             util.BuildSdkDomainEntityRef(d, "email_in_queue_flow_id"),
 		MessageInQueueFlow:           util.BuildSdkDomainEntityRef(d, "message_in_queue_flow_id"),
 		WhisperPrompt:                util.BuildSdkDomainEntityRef(d, "whisper_prompt_id"),
+		OnHoldPrompt:                 util.BuildSdkDomainEntityRef(d, "on_hold_prompt_id"),
 		AutoAnswerOnly:               platformclientv2.Bool(d.Get("auto_answer_only").(bool)),
 		CallingPartyName:             platformclientv2.String(d.Get("calling_party_name").(string)),
 		CallingPartyNumber:           platformclientv2.String(d.Get("calling_party_number").(string)),
