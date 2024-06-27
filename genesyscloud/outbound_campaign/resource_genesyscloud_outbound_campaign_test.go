@@ -605,11 +605,10 @@ func TestAccResourceOutboundCampaignCampaignStatus(t *testing.T) {
 }
 
 func TestAccResourceOutboundCampaignStatusOn(t *testing.T) {
-	t.Skip("Outbound Campaign is not switched off, destroy fails as campaign keeps running")
 	t.Parallel()
 	var (
 		resourceId            = "campaign3"
-		name                  = "Test Campaign " + uuid.NewString()
+		name                  = "Test Campaign - " + uuid.NewString()
 		contactListResourceId = "contact_list"
 		carResourceId         = "car"
 		siteId                = "site"
@@ -679,9 +678,12 @@ func TestAccResourceOutboundCampaignStatusOn(t *testing.T) {
 					resource.TestCheckResourceAttrPair("genesyscloud_outbound_campaign."+resourceId, "call_analysis_response_set_id",
 						"genesyscloud_outbound_callanalysisresponseset."+carResourceId, "id"),
 					util.VerifyAttributeInArrayOfPotentialValues("genesyscloud_outbound_campaign."+resourceId, "campaign_status", []string{"on", "complete"}),
+					func(s *terraform.State) error {
+						time.Sleep(300 * time.Second) // Takes approx. 300 seconds for campaign to be completed / stopped
+						return nil
+					},
 				),
 			},
-			// Don't turn campaign back off to ensure campaign can be destroyed properly by turning it off within the destroy handler
 			{
 				// Import/Read
 				ResourceName:            "genesyscloud_outbound_campaign." + resourceId,
