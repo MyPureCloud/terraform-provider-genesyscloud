@@ -3,20 +3,25 @@ package telephony_providers_edges_site_outbound_route
 import (
 	"context"
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v131/platformclientv2"
 	"log"
+
+	//"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+
+	//"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	featureToggles "terraform-provider-genesyscloud/genesyscloud/util/feature_toggles"
 	"terraform-provider-genesyscloud/genesyscloud/util/lists"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 	"time"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/mypurecloud/platform-client-sdk-go/v131/platformclientv2"
 )
 
 func getAllSitesOutboundRoutes(ctx context.Context, sdkConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
@@ -62,13 +67,35 @@ func createSiteOutboundRoutes(ctx context.Context, d *schema.ResourceData, meta 
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getSiteOutboundRouteProxy(sdkConfig)
 	siteId := d.Get("site_id").(string)
+	outboundRoutes := buildOutboundRoutes(d.Get("outbound_routes").(*schema.Set))
+
 	log.Printf("creating outbound routes for site %s", siteId)
 
-	outboundRoutes := buildOutboundRoutes(d.Get("outbound_routes").(*schema.Set))
-	for _, outboundRoute := range *outboundRoutes {
-		_, resp, err := proxy.createSiteOutboundRoute(ctx, siteId, &outboundRoute)
-		if err != nil {
-			return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("failed to create outbound route %s for site %s: %s", *outboundRoute.Name, siteId, err), resp)
+	// When creating outbound routes, routes may already exist in the site. This can lead to error `Outbound Route Already Exists`
+	// To prevent this, existing routes for the site are obtained and compared with the routes to be created
+	// ONLY non-existing routes are created for the site
+
+	// Get the current outbound routes
+	outboundRoutesAPI, resp, err := proxy.getSiteOutboundRoutes(ctx, siteId)
+	if err != nil {
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get outbound routes for site %s error: %s", d.Id(), err), resp)
+	}
+
+	if outboundRoutesAPI != nil && len(*outboundRoutesAPI) > 0 {
+		// check which routes need to be created and which routes already exist
+		createRoutes, existingRoutes := checkExistingRoutes(outboundRoutes, outboundRoutesAPI)
+		if existingRoutes != nil && len(existingRoutes) > 0 {
+			log.Printf("Some outbound routes already exist for site %s. Creating non-existing routes", siteId)
+		}
+
+		// create only the non-existing routes
+		if createRoutes != nil && len(createRoutes) > 0 {
+			for _, outboundRoute := range createRoutes {
+				_, resp, err := proxy.createSiteOutboundRoute(ctx, siteId, &outboundRoute)
+				if err != nil {
+					return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("failed to create outbound route %s for site %s: %s", *outboundRoute.Name, siteId, err), resp)
+				}
+			}
 		}
 	}
 
@@ -126,6 +153,7 @@ func readSiteOutboundRoutes(ctx context.Context, d *schema.ResourceData, meta in
 			_ = d.Set("outbound_routes", nil)
 		}
 
+		log.Printf("Read outbound routes for site %s", d.Id())
 		return cc.CheckState(d)
 	})
 }
