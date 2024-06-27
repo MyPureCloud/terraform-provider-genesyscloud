@@ -1,11 +1,14 @@
 package user_roles
 
 import (
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"sync"
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	authRole "terraform-provider-genesyscloud/genesyscloud/auth_role"
+
+	user "terraform-provider-genesyscloud/genesyscloud/user"
 	"testing"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 /*
@@ -29,7 +32,7 @@ func (r *registerTestInstance) registerTestResources() {
 	defer r.resourceMapMutex.Unlock()
 
 	providerResources["genesyscloud_user_roles"] = ResourceUserRoles()
-	providerResources["genesyscloud_user"] = gcloud.ResourceUser()
+	providerResources["genesyscloud_user"] = user.ResourceUser()
 	providerResources["genesyscloud_auth_role"] = authRole.ResourceAuthRole()
 	providerResources["genesyscloud_auth_division"] = gcloud.ResourceAuthDivision()
 }
@@ -57,9 +60,9 @@ func initTestResources() {
 
 // TestMain is a "setup" function called by the testing framework when run the test
 func TestMain(m *testing.M) {
-	// Run setup function before starting the test suite for outbound_callabletimeset package
+	// Run setup function before starting the test suite for user_roles package
 	initTestResources()
 
-	// Run the test suite for the outbound_callabletimeset package
+	// Run the test suite for the user_roles package
 	m.Run()
 }

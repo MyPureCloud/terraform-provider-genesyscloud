@@ -20,14 +20,14 @@ func TestAccDataSourceRoutingUtilizationLabel(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck: func() {
 			util.TestAccPreCheck(t)
-			if err := checkIfLabelsAreEnabled(); err != nil {
+			if err := util.CheckIfLabelsAreEnabled(); err != nil {
 				t.Skipf("%v", err) // be sure to skip the test and not fail it
 			}
 		},
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
-				Config: GenerateRoutingUtilizationLabelResource(
+				Config: util.GenerateRoutingUtilizationLabelResource(
 					resourceName,
 					labelName,
 					"",

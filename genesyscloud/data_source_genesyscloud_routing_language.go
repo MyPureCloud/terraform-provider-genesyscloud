@@ -14,7 +14,7 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v130/platformclientv2"
 )
 
-func dataSourceRoutingLanguage() *schema.Resource {
+func DataSourceRoutingLanguage() *schema.Resource {
 	return &schema.Resource{
 		Description: "Data source for Genesys Cloud Routing Languages. Select a language by name.",
 		ReadContext: provider.ReadWithPooledClient(dataSourceRoutingLanguageRead),

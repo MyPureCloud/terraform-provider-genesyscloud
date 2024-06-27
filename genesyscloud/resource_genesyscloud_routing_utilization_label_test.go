@@ -22,7 +22,7 @@ func TestAccResourceRoutingUtilizationLabelBasic(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck: func() {
 			util.TestAccPreCheck(t)
-			if err := checkIfLabelsAreEnabled(); err != nil {
+			if err := util.CheckIfLabelsAreEnabled(); err != nil {
 				t.Skipf("%v", err) // be sure to skip the test and not fail it
 			}
 		},
@@ -30,7 +30,7 @@ func TestAccResourceRoutingUtilizationLabelBasic(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				// Create
-				Config: GenerateRoutingUtilizationLabelResource(
+				Config: util.GenerateRoutingUtilizationLabelResource(
 					resourceName,
 					labelName,
 					"",
@@ -41,7 +41,7 @@ func TestAccResourceRoutingUtilizationLabelBasic(t *testing.T) {
 			},
 			{
 				// Update
-				Config: GenerateRoutingUtilizationLabelResource(
+				Config: util.GenerateRoutingUtilizationLabelResource(
 					resourceName,
 					updatedLabelName,
 					"",
@@ -59,20 +59,6 @@ func TestAccResourceRoutingUtilizationLabelBasic(t *testing.T) {
 		},
 		CheckDestroy: validateTestLabelDestroyed,
 	})
-}
-
-func GenerateRoutingUtilizationLabelResource(resourceID string, name string, dependsOnResource string) string {
-	dependsOn := ""
-
-	if dependsOnResource != "" {
-		dependsOn = fmt.Sprintf("depends_on=[genesyscloud_routing_utilization_label.%s]", dependsOnResource)
-	}
-
-	return fmt.Sprintf(`resource "genesyscloud_routing_utilization_label" "%s" {
-		name = "%s"
-		%s
-	}
-	`, resourceID, name, dependsOn)
 }
 
 func validateTestLabelDestroyed(state *terraform.State) error {
@@ -97,13 +83,4 @@ func validateTestLabelDestroyed(state *terraform.State) error {
 	}
 
 	return fmt.Errorf("No label resource found")
-}
-
-func checkIfLabelsAreEnabled() error { // remove once the feature is globally enabled
-	api := platformclientv2.NewRoutingApiWithConfig(sdkConfig) // the variable sdkConfig exists at a package level in ./genesyscloud and is already authorized
-	_, resp, _ := api.GetRoutingUtilizationLabels(100, 1, "", "")
-	if resp.StatusCode == 501 {
-		return fmt.Errorf("feature is not yet implemented in this org.")
-	}
-	return nil
 }

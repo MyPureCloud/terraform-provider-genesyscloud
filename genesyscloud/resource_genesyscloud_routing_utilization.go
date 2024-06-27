@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"sort"
 	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
@@ -17,7 +16,6 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
-	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -25,32 +23,12 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v130/platformclientv2"
 )
 
-type MediaUtilization struct {
-	MaximumCapacity         int32    `json:"maximumCapacity"`
-	InterruptableMediaTypes []string `json:"interruptableMediaTypes"`
-	IncludeNonAcd           bool     `json:"includeNonAcd"`
-}
-
-type LabelUtilization struct {
-	MaximumCapacity      int32    `json:"maximumCapacity"`
-	InterruptingLabelIds []string `json:"interruptingLabelIds"`
-}
-
 type OrgUtilizationWithLabels struct {
-	Utilization       map[string]MediaUtilization `json:"utilization"`
-	LabelUtilizations map[string]LabelUtilization `json:"labelUtilizations"`
+	Utilization       map[string]util.MediaUtilization `json:"utilization"`
+	LabelUtilizations map[string]util.LabelUtilization `json:"labelUtilizations"`
 }
 
 var (
-	// Map of SDK media type name to schema media type name
-	utilizationMediaTypes = map[string]string{
-		"call":     "call",
-		"callback": "callback",
-		"chat":     "chat",
-		"email":    "email",
-		"message":  "message",
-	}
-
 	utilizationSettingsResource = &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			"maximum_capacity": {
@@ -60,7 +38,7 @@ var (
 				ValidateFunc: validation.IntBetween(0, 25),
 			},
 			"interruptible_media_types": {
-				Description: fmt.Sprintf("Set of other media types that can interrupt this media type (%s).", strings.Join(getSdkUtilizationTypes(), " | ")),
+				Description: fmt.Sprintf("Set of other media types that can interrupt this media type (%s).", strings.Join(util.GetSdkUtilizationTypes(), " | ")),
 				Type:        schema.TypeSet,
 				Optional:    true,
 				Elem:        &schema.Schema{Type: schema.TypeString},
@@ -96,15 +74,6 @@ var (
 		},
 	}
 )
-
-func getSdkUtilizationTypes() []string {
-	types := make([]string, 0, len(utilizationMediaTypes))
-	for t := range utilizationMediaTypes {
-		types = append(types, t)
-	}
-	sort.Strings(types)
-	return types
-}
 
 func getAllRoutingUtilization(_ context.Context, _ *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
 	// Routing utilization config always exists
@@ -204,7 +173,7 @@ func readRoutingUtilization(ctx context.Context, d *schema.ResourceData, meta in
 	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceRoutingSkill(), constants.DefaultConsistencyChecks, "genesyscloud_routing_utilization")
 
 	path := fmt.Sprintf("%s/api/v2/routing/utilization", routingAPI.Configuration.BasePath)
-	headerParams := buildHeaderParams(routingAPI)
+	headerParams := util.BuildHeaderParams(routingAPI)
 
 	log.Printf("Reading Routing Utilization")
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
@@ -220,9 +189,9 @@ func readRoutingUtilization(ctx context.Context, d *schema.ResourceData, meta in
 		err = json.Unmarshal(response.RawBody, &orgUtilization)
 
 		if orgUtilization.Utilization != nil {
-			for sdkType, schemaType := range utilizationMediaTypes {
+			for sdkType, schemaType := range util.GetUtilizationMediaTypes() {
 				if mediaSettings, ok := orgUtilization.Utilization[sdkType]; ok {
-					d.Set(schemaType, flattenUtilizationSetting(mediaSettings))
+					d.Set(schemaType, util.FlattenUtilizationSetting(mediaSettings))
 				} else {
 					d.Set(schemaType, nil)
 				}
@@ -233,7 +202,7 @@ func readRoutingUtilization(ctx context.Context, d *schema.ResourceData, meta in
 			originalLabelUtilizations := d.Get("label_utilizations").([]interface{})
 
 			// Only add to the state the configured labels, in the configured order, but not any extras, to help terraform with matching new and old state.
-			flattenedLabelUtilizations := filterAndFlattenLabelUtilizations(orgUtilization.LabelUtilizations, originalLabelUtilizations)
+			flattenedLabelUtilizations := util.FilterAndFlattenLabelUtilizations(orgUtilization.LabelUtilizations, originalLabelUtilizations)
 			d.Set("label_utilizations", flattenedLabelUtilizations)
 		}
 
@@ -261,14 +230,14 @@ func updateRoutingUtilization(ctx context.Context, d *schema.ResourceData, meta 
 			apiClient := &routingAPI.Configuration.APIClient
 
 			path := fmt.Sprintf("%s/api/v2/routing/utilization", routingAPI.Configuration.BasePath)
-			headerParams := buildHeaderParams(routingAPI)
+			headerParams := util.BuildHeaderParams(routingAPI)
 			requestPayload := make(map[string]interface{})
-			requestPayload["utilization"] = buildSdkMediaUtilizations(d)
-			requestPayload["labelUtilizations"] = buildLabelUtilizationsRequest(labelUtilizations)
+			requestPayload["utilization"] = util.BuildSdkMediaUtilizations(d)
+			requestPayload["labelUtilizations"] = util.BuildLabelUtilizationsRequest(labelUtilizations)
 			resp, err = apiClient.CallAPI(path, "PUT", requestPayload, headerParams, nil, nil, "", nil)
 		} else {
 			_, resp, err = routingAPI.PutRoutingUtilization(platformclientv2.Utilizationrequest{
-				Utilization: buildSdkMediaUtilizations(d),
+				Utilization: util.BuildSdkMediaUtilizations(d),
 			})
 		}
 
@@ -298,92 +267,4 @@ func deleteRoutingUtilization(_ context.Context, _ *schema.ResourceData, meta in
 	}
 	log.Printf("Reset Routing Utilization")
 	return nil
-}
-
-func flattenUtilizationSetting(settings MediaUtilization) []interface{} {
-	settingsMap := make(map[string]interface{})
-
-	settingsMap["maximum_capacity"] = settings.MaximumCapacity
-	settingsMap["include_non_acd"] = settings.IncludeNonAcd
-	if settings.InterruptableMediaTypes != nil {
-		settingsMap["interruptible_media_types"] = lists.StringListToSet(settings.InterruptableMediaTypes)
-	}
-
-	return []interface{}{settingsMap}
-}
-
-func filterAndFlattenLabelUtilizations(labelUtilizations map[string]LabelUtilization, originalLabelUtilizations []interface{}) []interface{} {
-	flattenedLabelUtilizations := make([]interface{}, 0)
-
-	for _, originalLabelUtilization := range originalLabelUtilizations {
-		originalLabelId := (originalLabelUtilization.(map[string]interface{}))["label_id"].(string)
-
-		for currentLabelId, currentLabelUtilization := range labelUtilizations {
-			if currentLabelId == originalLabelId {
-				flattenedLabelUtilizations = append(flattenedLabelUtilizations, flattenLabelUtilization(currentLabelId, currentLabelUtilization))
-				delete(labelUtilizations, currentLabelId)
-				break
-			}
-		}
-	}
-
-	return flattenedLabelUtilizations
-}
-
-func flattenLabelUtilization(labelId string, labelUtilization LabelUtilization) map[string]interface{} {
-	utilizationMap := make(map[string]interface{})
-
-	utilizationMap["label_id"] = labelId
-	utilizationMap["maximum_capacity"] = labelUtilization.MaximumCapacity
-	if labelUtilization.InterruptingLabelIds != nil {
-		utilizationMap["interrupting_label_ids"] = lists.StringListToSet(labelUtilization.InterruptingLabelIds)
-	}
-
-	return utilizationMap
-}
-
-func buildSdkMediaUtilizations(d *schema.ResourceData) *map[string]platformclientv2.Mediautilization {
-	settings := make(map[string]platformclientv2.Mediautilization)
-
-	for sdkType, schemaType := range utilizationMediaTypes {
-		mediaSettings := d.Get(schemaType).([]interface{})
-		if mediaSettings != nil && len(mediaSettings) > 0 {
-			settings[sdkType] = buildSdkMediaUtilization(mediaSettings)
-		}
-	}
-
-	return &settings
-}
-
-func buildSdkMediaUtilization(settings []interface{}) platformclientv2.Mediautilization {
-	settingsMap := settings[0].(map[string]interface{})
-
-	maxCapacity := settingsMap["maximum_capacity"].(int)
-	includeNonAcd := settingsMap["include_non_acd"].(bool)
-
-	// Optional
-	interruptableMediaTypes := &[]string{}
-	if types, ok := settingsMap["interruptible_media_types"]; ok {
-		interruptableMediaTypes = lists.SetToStringList(types.(*schema.Set))
-	}
-
-	return platformclientv2.Mediautilization{
-		MaximumCapacity:         &maxCapacity,
-		IncludeNonAcd:           &includeNonAcd,
-		InterruptableMediaTypes: interruptableMediaTypes,
-	}
-}
-
-func buildLabelUtilizationsRequest(labelUtilizations []interface{}) map[string]LabelUtilization {
-	request := make(map[string]LabelUtilization)
-	for _, labelUtilization := range labelUtilizations {
-		labelUtilizationMap := labelUtilization.(map[string]interface{})
-		interruptingLabelIds := lists.SetToStringList(labelUtilizationMap["interrupting_label_ids"].(*schema.Set))
-
-		request[labelUtilizationMap["label_id"].(string)] = LabelUtilization{
-			MaximumCapacity:      int32(labelUtilizationMap["maximum_capacity"].(int)),
-			InterruptingLabelIds: *interruptingLabelIds,
-		}
-	}
-	return request
 }

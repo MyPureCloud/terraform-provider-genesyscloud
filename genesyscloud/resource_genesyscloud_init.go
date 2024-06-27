@@ -29,14 +29,13 @@ func registerDataSources(l registrar.Registrar) {
 	l.RegisterDataSource("genesyscloud_organizations_me", DataSourceOrganizationsMe())
 	l.RegisterDataSource("genesyscloud_quality_forms_evaluation", DataSourceQualityFormsEvaluations())
 	l.RegisterDataSource("genesyscloud_quality_forms_survey", dataSourceQualityFormsSurvey())
-	l.RegisterDataSource("genesyscloud_routing_language", dataSourceRoutingLanguage())
+	l.RegisterDataSource("genesyscloud_routing_language", DataSourceRoutingLanguage())
 	l.RegisterDataSource("genesyscloud_routing_settings", dataSourceRoutingSettings())
-	l.RegisterDataSource("genesyscloud_routing_skill", dataSourceRoutingSkill())
+	l.RegisterDataSource("genesyscloud_routing_skill", DataSourceRoutingSkill())
 	l.RegisterDataSource("genesyscloud_routing_skill_group", dataSourceRoutingSkillGroup())
 	l.RegisterDataSource("genesyscloud_routing_email_domain", DataSourceRoutingEmailDomain())
-	l.RegisterDataSource("genesyscloud_routing_utilization_label", dataSourceRoutingUtilizationLabel())
+	l.RegisterDataSource("genesyscloud_routing_utilization_label", DataSourceRoutingUtilizationLabel())
 	l.RegisterDataSource("genesyscloud_routing_wrapupcode", DataSourceRoutingWrapupcode())
-	l.RegisterDataSource("genesyscloud_user", DataSourceUser())
 	l.RegisterDataSource("genesyscloud_widget_deployment", dataSourceWidgetDeployments())
 }
 
@@ -70,7 +69,6 @@ func registerResources(l registrar.Registrar) {
 	l.RegisterResource("genesyscloud_routing_utilization", ResourceRoutingUtilization())
 	l.RegisterResource("genesyscloud_routing_utilization_label", ResourceRoutingUtilizationLabel())
 	l.RegisterResource("genesyscloud_routing_wrapupcode", ResourceRoutingWrapupCode())
-	l.RegisterResource("genesyscloud_user", ResourceUser())
 	l.RegisterResource("genesyscloud_widget_deployment", ResourceWidgetDeployment())
 
 }
@@ -99,7 +97,6 @@ func registerExporters(l registrar.Registrar) {
 	l.RegisterExporter("genesyscloud_routing_utilization", RoutingUtilizationExporter())
 	l.RegisterExporter("genesyscloud_routing_utilization_label", RoutingUtilizationLabelExporter())
 	l.RegisterExporter("genesyscloud_routing_wrapupcode", RoutingWrapupCodeExporter())
-	l.RegisterExporter("genesyscloud_user", UserExporter())
 	l.RegisterExporter("genesyscloud_widget_deployment", WidgetDeploymentExporter())
 	l.RegisterExporter("genesyscloud_knowledge_v1_document", KnowledgeDocumentExporterV1())
 	l.RegisterExporter("genesyscloud_knowledge_document_variation", KnowledgeDocumentVariationExporter())

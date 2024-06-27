@@ -574,7 +574,7 @@ func testVerifySkillGroupMemberCount(resourceName string, count string) resource
 
 		// get skill group via GET /api/v2/routing/skillgroups/{skillGroupId}
 		path := fmt.Sprintf("%s/api/v2/routing/skillgroups/%s", routingAPI.Configuration.BasePath, resourceID)
-		headers := buildHeaderParams(routingAPI)
+		headers := util.BuildHeaderParams(routingAPI)
 		apiClient := &routingAPI.Configuration.APIClient
 
 		response, err := apiClient.CallAPI(path, "GET", nil, headers, nil, nil, "", nil)
@@ -706,7 +706,7 @@ func testVerifySkillGroupDestroyed(state *terraform.State) error {
 
 	// TODO Once this code has been released into the public API we should fix this and use the SDK
 
-	headerParams := buildHeaderParams(routingAPI)
+	headerParams := util.BuildHeaderParams(routingAPI)
 	for _, rs := range state.RootModule().Resources {
 		if rs.Type != "genesyscloud_routing_skill_group" {
 			continue
@@ -737,7 +737,7 @@ func testVerifySkillGroupDestroyed(state *terraform.State) error {
 }
 
 func getAllSkillGroupMemberDivisionIds(routingAPI *platformclientv2.RoutingApi, resourceId string) ([]string, diag.Diagnostics) {
-	headers := buildHeaderParams(routingAPI)
+	headers := util.BuildHeaderParams(routingAPI)
 	apiClient := &routingAPI.Configuration.APIClient
 	path := fmt.Sprintf("%s/api/v2/routing/skillgroups/%s/members/divisions", routingAPI.Configuration.BasePath, resourceId)
 	response, err := apiClient.CallAPI(path, "GET", nil, headers, nil, nil, "", nil)

@@ -15,7 +15,7 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v130/platformclientv2"
 )
 
-func dataSourceRoutingUtilizationLabel() *schema.Resource {
+func DataSourceRoutingUtilizationLabel() *schema.Resource {
 	return &schema.Resource{
 		Description: "Data source for Genesys Cloud Routing Utilization Labels. Select a label by name.",
 		ReadContext: provider.ReadWithPooledClient(dataSourceRoutingUtilizationLabelRead),

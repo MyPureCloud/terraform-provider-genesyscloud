@@ -1,4 +1,4 @@
-package genesyscloud
+package user
 
 import (
 	"fmt"
@@ -31,12 +31,12 @@ func TestAccDataSourceUser(t *testing.T) {
 					userName,
 				) + generateUserDataSource(
 					userDataSource,
-					"genesyscloud_user."+userResource+".email",
+					resourceName+"."+userResource+".email",
 					util.NullValue,
-					"genesyscloud_user."+userResource,
+					resourceName+"."+userResource,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair("data.genesyscloud_user."+userDataSource, "id", "genesyscloud_user."+userResource, "id"),
+					resource.TestCheckResourceAttrPair("data."+resourceName+"."+userDataSource, "id", resourceName+"."+userResource, "id"),
 				),
 			},
 			{
@@ -48,11 +48,11 @@ func TestAccDataSourceUser(t *testing.T) {
 				) + generateUserDataSource(
 					userDataSource,
 					util.NullValue,
-					"genesyscloud_user."+userResource+".name",
-					"genesyscloud_user."+userResource,
+					resourceName+"."+userResource+".name",
+					resourceName+"."+userResource,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair("data.genesyscloud_user."+userDataSource, "id", "genesyscloud_user."+userResource, "id"),
+					resource.TestCheckResourceAttrPair("data."+resourceName+"."+userDataSource, "id", resourceName+"."+userResource, "id"),
 				),
 			},
 		},
@@ -66,10 +66,10 @@ func generateUserDataSource(
 	// Must explicitly use depends_on in terraform v0.13 when a data source references a resource
 	// Fixed in v0.14 https://github.com/hashicorp/terraform/pull/26284
 	dependsOnResource string) string {
-	return fmt.Sprintf(`data "genesyscloud_user" "%s" {
+	return fmt.Sprintf(`data "%s" "%s" {
         email = %s
 		name = %s
         depends_on=[%s]
 	}
-	`, resourceID, email, name, dependsOnResource)
+	`, resourceName, resourceID, email, name, dependsOnResource)
 }

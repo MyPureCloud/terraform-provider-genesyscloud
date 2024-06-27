@@ -45,7 +45,7 @@ func dataSourceRoutingSkillGroupRead(ctx context.Context, d *schema.ResourceData
 			apiClient := &routingAPI.Configuration.APIClient
 			path := routingAPI.Configuration.BasePath + "/api/v2/routing/skillgroups"
 
-			headerParams := buildHeaderParams(routingAPI)
+			headerParams := util.BuildHeaderParams(routingAPI)
 			response, err := apiClient.CallAPI(path, "GET", nil, headerParams, nil, nil, "", nil)
 
 			if err != nil {

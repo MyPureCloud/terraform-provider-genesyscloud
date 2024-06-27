@@ -3,8 +3,8 @@ package orgauthorization_pairing
 import (
 	"fmt"
 	"strings"
-	"terraform-provider-genesyscloud/genesyscloud"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
+	user "terraform-provider-genesyscloud/genesyscloud/user"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 	"time"
@@ -38,7 +38,7 @@ func TestAccResourceOrgAuthorizationPairing(t *testing.T) {
 		Steps: []resource.TestStep{
 			// 1 user and 1 group
 			{
-				Config: generateUserWithCustomAttrs(testUserResource, testUserEmail, testUserName) + genesyscloud.GenerateBasicUserResource(
+				Config: generateUserWithCustomAttrs(testUserResource, testUserEmail, testUserName) + user.GenerateBasicUserResource(
 					userResource1,
 					email1,
 					userName1,
@@ -57,11 +57,11 @@ func TestAccResourceOrgAuthorizationPairing(t *testing.T) {
 			},
 			// 2 users and 2 groups
 			{
-				Config: generateUserWithCustomAttrs(testUserResource, testUserEmail, testUserName) + genesyscloud.GenerateBasicUserResource(
+				Config: generateUserWithCustomAttrs(testUserResource, testUserEmail, testUserName) + user.GenerateBasicUserResource(
 					userResource1,
 					email1,
 					userName1,
-				) + genesyscloud.GenerateBasicUserResource(
+				) + user.GenerateBasicUserResource(
 					userResource2,
 					email2,
 					userName2,
@@ -95,7 +95,7 @@ func TestAccResourceOrgAuthorizationPairing(t *testing.T) {
 			},
 			// 1 user
 			{
-				Config: genesyscloud.GenerateBasicUserResource(
+				Config: user.GenerateBasicUserResource(
 					userResource1,
 					email1,
 					userName1,
@@ -111,11 +111,11 @@ func TestAccResourceOrgAuthorizationPairing(t *testing.T) {
 			},
 			// 2 users
 			{
-				Config: genesyscloud.GenerateBasicUserResource(
+				Config: user.GenerateBasicUserResource(
 					userResource1,
 					email1,
 					userName1,
-				) + genesyscloud.GenerateBasicUserResource(
+				) + user.GenerateBasicUserResource(
 					userResource2,
 					email2,
 					userName2,

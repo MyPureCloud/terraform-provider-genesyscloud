@@ -18,7 +18,7 @@ import (
 
 // The context is now added without Timeout ,
 // since the warming up of cache will take place for the first Datasource registered during a Terraform Apply.
-func dataSourceRoutingSkill() *schema.Resource {
+func DataSourceRoutingSkill() *schema.Resource {
 	return &schema.Resource{
 		Description:        "Data source for Genesys Cloud Routing Skills. Select a skill by name.",
 		ReadWithoutTimeout: provider.ReadWithPooledClient(dataSourceRoutingSkillRead),

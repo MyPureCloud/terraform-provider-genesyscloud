@@ -7,13 +7,14 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/user_roles"
 	"testing"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	externalContacts "terraform-provider-genesyscloud/genesyscloud/external_contacts"
 	workbin "terraform-provider-genesyscloud/genesyscloud/task_management_workbin"
 	workitemSchema "terraform-provider-genesyscloud/genesyscloud/task_management_workitem_schema"
 	worktype "terraform-provider-genesyscloud/genesyscloud/task_management_worktype"
+	user "terraform-provider-genesyscloud/genesyscloud/user"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 /*
@@ -42,7 +43,7 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_task_management_workbin"] = workbin.ResourceTaskManagementWorkbin()
 	providerResources["genesyscloud_task_management_worktype"] = worktype.ResourceTaskManagementWorktype()
 	providerResources["genesyscloud_routing_language"] = gcloud.ResourceRoutingLanguage()
-	providerResources["genesyscloud_user"] = gcloud.ResourceUser()
+	providerResources["genesyscloud_user"] = user.ResourceUser()
 	providerResources["genesyscloud_externalcontacts_contact"] = externalContacts.ResourceExternalContact()
 	providerResources["genesyscloud_routing_queue"] = routingQueue.ResourceRoutingQueue()
 	providerResources["genesyscloud_routing_skill"] = gcloud.ResourceRoutingSkill()

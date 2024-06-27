@@ -85,6 +85,7 @@ import (
 	siteOutboundRoutes "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site_outbound_route"
 	edgesTrunk "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_trunk"
 	tfexp "terraform-provider-genesyscloud/genesyscloud/tfexporter"
+	user "terraform-provider-genesyscloud/genesyscloud/user"
 	userRoles "terraform-provider-genesyscloud/genesyscloud/user_roles"
 	webDeployConfig "terraform-provider-genesyscloud/genesyscloud/webdeployments_configuration"
 	webDeployDeploy "terraform-provider-genesyscloud/genesyscloud/webdeployments_deployment"
@@ -216,6 +217,7 @@ func registerResources() {
 	edgesTrunk.SetRegistrar(regInstance)                                   //Registering Edges Trunk Settings
 	resourceExporter.SetRegisterExporter(resourceExporters)                //Registering register exporters
 	userRoles.SetRegistrar(regInstance)                                    //Registering user roles
+	user.SetRegistrar(regInstance)                                         //Registering user
 	journeyOutcomePredictor.SetRegistrar(regInstance)                      //Registering journey outcome predictor
 	group.SetRegistrar(regInstance)                                        //Registering group
 	userPrompt.SetRegistrar(regInstance)                                   //Registering user prompt
