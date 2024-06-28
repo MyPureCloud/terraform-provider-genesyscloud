@@ -25,6 +25,12 @@ func TestAccDataSourceRoutingLanguage(t *testing.T) {
 				Config: GenerateRoutingLanguageResource(
 					langResource,
 					langName,
+				),
+			},
+			{
+				Config: GenerateRoutingLanguageResource(
+					langResource,
+					langName,
 				) + generateRoutingLanguageDataSource(langDataSource, "genesyscloud_routing_language."+langResource+".name", "genesyscloud_routing_language."+langResource),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrPair("data.genesyscloud_routing_language."+langDataSource, "id", "genesyscloud_routing_language."+langResource, "id"),

@@ -25,7 +25,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v131/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
 
 	"terraform-provider-genesyscloud/genesyscloud/util/testrunner"
 
@@ -372,6 +372,9 @@ func TestAccResourceTfExportExcludeFilterResourcesByRegExExclusiveToResourceAndS
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
+				PreConfig: func() {
+					time.Sleep(30 * time.Second)
+				},
 				// Generate a queue as well and export it
 				Config: config,
 				Check: resource.ComposeTestCheckFunc(

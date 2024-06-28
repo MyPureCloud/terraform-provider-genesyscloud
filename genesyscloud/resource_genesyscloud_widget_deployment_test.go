@@ -11,7 +11,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v131/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
 )
 
 type widgetDeploymentConfig struct {
@@ -54,8 +54,8 @@ func generateWidgetDeploymentResource(wdConfig *widgetDeploymentConfig) string {
 	}
 	return fmt.Sprintf(`resource "genesyscloud_widget_deployment" "%s" {
 		name                    = "%s"
-		description             = %s
-		flow_id                 = %s
+		description             =  %s
+		flow_id                 =  %s
 		client_type             = "%s"
 		authentication_required = %s
 		disabled                = %s
