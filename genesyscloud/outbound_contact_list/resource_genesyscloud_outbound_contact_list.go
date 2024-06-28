@@ -24,7 +24,7 @@ import (
 )
 
 const (
-	resourceName = "genesyscloud_outbound_contactlist"
+	resourceName = "genesyscloud_outbound_contact_list"
 )
 
 var (
@@ -604,7 +604,7 @@ resource "genesyscloud_outbound_contact_list" "%s" {
 	division_id                  = %s
 	preview_mode_column_name     = %s
 	preview_mode_accepted_values = [%s]
-	column_names                 = [%s] 
+	column_names                 = [%s]
 	automatic_time_zone_mapping  = %s
 	zip_code_column_name         = %s
 	attempt_limit_id             = %s
