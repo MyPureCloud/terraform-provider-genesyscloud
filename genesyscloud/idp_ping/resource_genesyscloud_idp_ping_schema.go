@@ -67,7 +67,7 @@ func ResourceIdpPing() *schema.Resource {
 				Type:        schema.TypeString,
 			},
 			`slo_uri`: {
-				Description: `Provided by Okta on app creation.`,
+				Description: `Provided on app creation.`,
 				Optional:    true,
 				Type:        schema.TypeString,
 			},

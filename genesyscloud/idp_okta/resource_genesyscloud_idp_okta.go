@@ -13,7 +13,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v131/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
 
 	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"terraform-provider-genesyscloud/genesyscloud/util/lists"
@@ -70,9 +70,13 @@ func readIdpOkta(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceIdpOkta(), constants.DefaultConsistencyChecks, "genesyscloud_idp_okta")
 
+		resourcedata.SetNillableValue(d, "name", okta.Name)
 		resourcedata.SetNillableValue(d, "disabled", okta.Disabled)
 		resourcedata.SetNillableValue(d, "issuer_uri", okta.IssuerURI)
 		resourcedata.SetNillableValue(d, "target_uri", okta.SsoTargetURI)
+		resourcedata.SetNillableValue(d, "relying_party_identifier", okta.RelyingPartyIdentifier)
+		resourcedata.SetNillableValue(d, "slo_uri", okta.SloURI)
+		resourcedata.SetNillableValue(d, "slo_binding", okta.SloBinding)
 
 		if okta.Certificate != nil {
 			d.Set("certificates", lists.StringListToInterfaceList([]string{*okta.Certificate}))
@@ -140,8 +144,12 @@ func deleteIdpOkta(ctx context.Context, d *schema.ResourceData, meta interface{}
 // getIdpOktaFromResourceData maps data from schema ResourceData object to a platformclientv2.Okta
 func getIdpOktaFromResourceData(d *schema.ResourceData) platformclientv2.Okta {
 	return platformclientv2.Okta{
-		Disabled:     platformclientv2.Bool(d.Get("disabled").(bool)),
-		IssuerURI:    platformclientv2.String(d.Get("issuer_uri").(string)),
-		SsoTargetURI: platformclientv2.String(d.Get("target_uri").(string)),
+		Name:                   platformclientv2.String(d.Get("name").(string)),
+		Disabled:               platformclientv2.Bool(d.Get("disabled").(bool)),
+		IssuerURI:              platformclientv2.String(d.Get("issuer_uri").(string)),
+		SsoTargetURI:           platformclientv2.String(d.Get("target_uri").(string)),
+		RelyingPartyIdentifier: platformclientv2.String(d.Get("relying_party_identifier").(string)),
+		SloURI:                 platformclientv2.String(d.Get("slo_uri").(string)),
+		SloBinding:             platformclientv2.String(d.Get("slo_binding").(string)),
 	}
 }

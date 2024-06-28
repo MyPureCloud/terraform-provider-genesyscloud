@@ -356,6 +356,26 @@ var (
 				Optional:    true,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
+			"pause_criteria": {
+				Description: "Pause criteria that will pause cobrowse if some of them are met in the user's URL",
+				Type:        schema.TypeList,
+				Optional:    true,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"url_fragment": {
+							Description: "A string representing a part of the URL that, when matched according to the specified condition, will trigger a pause in the cobrowse session",
+							Type:        schema.TypeString,
+							Required:    true,
+						},
+						"condition": {
+							Description:  "The condition to be applied to the `url_fragment`. Conditions are 'includes', 'does_not_include', 'starts_with', 'ends_with', 'equals'",
+							Type:         schema.TypeString,
+							Required:     true,
+							ValidateFunc: validation.StringInSlice([]string{"includes", "does_not_include", "starts_with", "ends_with", "equals"}, false),
+						},
+					},
+				},
+			},
 		},
 	}
 

@@ -2,12 +2,13 @@ package util
 
 import (
 	"encoding/json"
-	"github.com/mypurecloud/platform-client-sdk-go/v131/platformclientv2"
-	"github.com/stretchr/testify/assert"
 	"net/http"
 	"net/url"
 	"strings"
 	"testing"
+
+	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestUnitTestAPIResponseDiagWithGoodApiResponse(t *testing.T) {
