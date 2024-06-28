@@ -76,7 +76,15 @@ func readOutboundContactlistfilter(ctx context.Context, d *schema.ResourceData, 
 		}
 
 		resourcedata.SetNillableValue(d, "name", sdkContactListFilter.Name)
-		resourcedata.SetNillableReference(d, "contact_list_id", sdkContactListFilter.ContactList)
+
+		switch {
+		case *sdkContactListFilter.SourceType == "ContactList":
+			resourcedata.SetNillableReference(d, "contact_list_id", sdkContactListFilter.ContactList)
+		case *sdkContactListFilter.SourceType == "ContactListTemplate":
+			resourcedata.SetNillableReference(d, "contact_list_template_id", sdkContactListFilter.ContactListTemplate)
+		default:
+		}
+
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "clauses", sdkContactListFilter.Clauses, flattenContactListFilterClauses)
 		resourcedata.SetNillableValue(d, "filter_type", sdkContactListFilter.FilterType)
 
