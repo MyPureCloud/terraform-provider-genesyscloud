@@ -1,6 +1,7 @@
 package telephony_providers_edges_site_outbound_route
 
 import (
+	"log"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -38,15 +39,15 @@ func buildOutboundRoutes(outboundRoutes *schema.Set) *[]platformclientv2.Outboun
 	return &outboundRoutesSdk
 }
 
-func checkExistingRoutes(definedRoutes, apiRoutes *[]platformclientv2.Outboundroutebase) (createRoutes, existingRoutes []platformclientv2.Outboundroutebase) {
+func checkExistingRoutes(definedRoutes, apiRoutes *[]platformclientv2.Outboundroutebase, siteId string) (newRoutes []platformclientv2.Outboundroutebase) {
 	for _, definedRoute := range *definedRoutes {
 		if _, present := nameInOutboundRoutes(*definedRoute.Name, *apiRoutes); present {
-			existingRoutes = append(existingRoutes, definedRoute)
+			log.Printf("Route %s associated with site %s already exists. Creating only non-existing routes", *definedRoute.Name, siteId)
 		} else {
-			createRoutes = append(createRoutes, definedRoute)
+			newRoutes = append(newRoutes, definedRoute)
 		}
 	}
-	return createRoutes, existingRoutes
+	return newRoutes
 }
 
 func nameInOutboundRoutes(name string, outboundRoutes []platformclientv2.Outboundroutebase) (*platformclientv2.Outboundroutebase, bool) {

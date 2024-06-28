@@ -68,34 +68,33 @@ func createSiteOutboundRoutes(ctx context.Context, d *schema.ResourceData, meta 
 	proxy := getSiteOutboundRouteProxy(sdkConfig)
 	siteId := d.Get("site_id").(string)
 	outboundRoutes := buildOutboundRoutes(d.Get("outbound_routes").(*schema.Set))
-
-	log.Printf("creating outbound routes for site %s", siteId)
+	var newRoutes []platformclientv2.Outboundroutebase
 
 	// When creating outbound routes, routes may already exist in the site. This can lead to error `Outbound Route Already Exists`
 	// To prevent this, existing routes for the site are obtained and compared with the routes to be created
 	// ONLY non-existing routes are created for the site
 
-	// Get the current outbound routes
+	log.Printf("Retrieving existing outbound routes for side %s before creation", siteId)
+
 	outboundRoutesAPI, resp, err := proxy.getSiteOutboundRoutes(ctx, siteId)
 	if err != nil {
 		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get outbound routes for site %s error: %s", d.Id(), err), resp)
 	}
 
+	// If the site already has routes, filter and create routes that don't exist
+	// Otherwise, create every route
 	if outboundRoutesAPI != nil && len(*outboundRoutesAPI) > 0 {
-		// check which routes need to be created and which routes already exist
-		createRoutes, existingRoutes := checkExistingRoutes(outboundRoutes, outboundRoutesAPI)
-		if existingRoutes != nil && len(existingRoutes) > 0 {
-			log.Printf("Some outbound routes already exist for site %s. Creating non-existing routes", siteId)
-		}
+		newRoutes = checkExistingRoutes(outboundRoutes, outboundRoutesAPI, siteId)
+	} else {
+		newRoutes = append(newRoutes, *outboundRoutes...)
+	}
 
-		// create only the non-existing routes
-		if createRoutes != nil && len(createRoutes) > 0 {
-			for _, outboundRoute := range createRoutes {
-				_, resp, err := proxy.createSiteOutboundRoute(ctx, siteId, &outboundRoute)
-				if err != nil {
-					return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("failed to create outbound route %s for site %s: %s", *outboundRoute.Name, siteId, err), resp)
-				}
-			}
+	log.Printf("creating outbound routes for site %s", siteId)
+
+	for _, outboundRoute := range newRoutes {
+		_, resp, err := proxy.createSiteOutboundRoute(ctx, siteId, &outboundRoute)
+		if err != nil {
+			return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("failed to create outbound route %s for site %s: %s", *outboundRoute.Name, siteId, err), resp)
 		}
 	}
 
