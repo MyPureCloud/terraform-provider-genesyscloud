@@ -5,13 +5,11 @@ import (
 	"fmt"
 	"log"
 
-	//"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 
-	//"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	featureToggles "terraform-provider-genesyscloud/genesyscloud/util/feature_toggles"
 	"terraform-provider-genesyscloud/genesyscloud/util/lists"
