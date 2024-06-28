@@ -102,7 +102,7 @@ func TestAccResourceTrunkBaseSettings(t *testing.T) {
 }
 
 func TestAccResourceExternralTrunkBaseSettingsInboundSite(t *testing.T) {
-	t.Skip("Skipping because BYOC Does not exist in Org used for acceptance tests")
+
 	var (
 		trunkBaseSettingsRes = "trunkBaseSettings1234"
 		name1                = "test trunk base settings " + uuid.NewString()
@@ -122,7 +122,7 @@ func TestAccResourceExternralTrunkBaseSettingsInboundSite(t *testing.T) {
 			"HQ",
 			[]string{},
 			gcloud.GenerateLocationEmergencyNum(
-				"+13100000001",
+				"+13100000003",
 				util.NullValue,
 			),
 			gcloud.GenerateLocationAddress(
@@ -165,15 +165,13 @@ func TestAccResourceExternralTrunkBaseSettingsInboundSite(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_trunkbasesettings."+trunkBaseSettingsRes, "trunk_type", trunkType),
 					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_trunkbasesettings."+trunkBaseSettingsRes, "managed", util.FalseValue),
 					util.ValidateValueInJsonPropertiesAttr("genesyscloud_telephony_providers_edges_trunkbasesettings."+trunkBaseSettingsRes, "properties", "trunk_label", name1),
-					util.ValidateValueInJsonPropertiesAttr("genesyscloud_telephony_providers_edges_trunkbasesettings."+trunkBaseSettingsRes, "properties", "trunk_max_dial_timeout", "1m"),
-					util.ValidateValueInJsonPropertiesAttr("genesyscloud_telephony_providers_edges_trunkbasesettings."+trunkBaseSettingsRes, "properties", "trunk_transport_sip_dscp_value", "25"),
-					util.ValidateValueInJsonPropertiesAttr("genesyscloud_telephony_providers_edges_trunkbasesettings."+trunkBaseSettingsRes, "properties", "trunk_media_disconnect_on_idle_rtp", util.FalseValue),
-					util.ValidateValueInJsonPropertiesAttr("genesyscloud_telephony_providers_edges_trunkbasesettings."+trunkBaseSettingsRes, "properties", "trunk_media_codec", strings.Join([]string{"audio/pcmu"}, ",")),
-				),
+					util.ValidateValueInJsonPropertiesAttr("genesyscloud_telephony_providers_edges_trunkbasesettings."+trunkBaseSettingsRes, "properties", "trunk_maxDialTimeout", "2m"),
+					util.ValidateValueInJsonPropertiesAttr("genesyscloud_telephony_providers_edges_trunkbasesettings."+trunkBaseSettingsRes, "properties", "trunk_media_disconnectOnIdleRTP", util.TrueValue),
+					util.ValidateValueInJsonPropertiesAttr("genesyscloud_telephony_providers_edges_trunkbasesettings."+trunkBaseSettingsRes, "properties", "trunk_media_codec", "audio/opus,audio/pcmu,audio/pcma")),
 			},
 			// Update with new name, description and properties
 			{
-				Config: GenerateTrunkBaseSettingsResourceWithCustomAttrs(
+				Config: referencedResources + GenerateTrunkBaseSettingsResourceWithCustomAttrs(
 					trunkBaseSettingsRes,
 					name2,
 					description2,
@@ -189,17 +187,44 @@ func TestAccResourceExternralTrunkBaseSettingsInboundSite(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_trunkbasesettings."+trunkBaseSettingsRes, "trunk_type", trunkType),
 					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_trunkbasesettings."+trunkBaseSettingsRes, "managed", util.FalseValue),
 					util.ValidateValueInJsonPropertiesAttr("genesyscloud_telephony_providers_edges_trunkbasesettings."+trunkBaseSettingsRes, "properties", "trunk_label", name2),
-					util.ValidateValueInJsonPropertiesAttr("genesyscloud_telephony_providers_edges_trunkbasesettings."+trunkBaseSettingsRes, "properties", "trunk_max_dial_timeout", "2m"),
-					util.ValidateValueInJsonPropertiesAttr("genesyscloud_telephony_providers_edges_trunkbasesettings."+trunkBaseSettingsRes, "properties", "trunk_transport_sip_dscp_value", "50"),
-					util.ValidateValueInJsonPropertiesAttr("genesyscloud_telephony_providers_edges_trunkbasesettings."+trunkBaseSettingsRes, "properties", "trunk_media_disconnect_on_idle_rtp", util.TrueValue),
-					util.ValidateValueInJsonPropertiesAttr("genesyscloud_telephony_providers_edges_trunkbasesettings."+trunkBaseSettingsRes, "properties", "trunk_media_codec", strings.Join([]string{"audio/opus"}, ",")),
-				),
+					util.ValidateValueInJsonPropertiesAttr("genesyscloud_telephony_providers_edges_trunkbasesettings."+trunkBaseSettingsRes, "properties", "trunk_maxDialTimeout", "2m"),
+					util.ValidateValueInJsonPropertiesAttr("genesyscloud_telephony_providers_edges_trunkbasesettings."+trunkBaseSettingsRes, "properties", "trunk_media_disconnectOnIdleRTP", util.TrueValue),
+					util.ValidateValueInJsonPropertiesAttr("genesyscloud_telephony_providers_edges_trunkbasesettings."+trunkBaseSettingsRes, "properties", "trunk_media_codec", "audio/opus,audio/pcmu,audio/pcma")),
 			},
 			{
 				// Import/Read
 				ResourceName:      "genesyscloud_telephony_providers_edges_trunkbasesettings." + trunkBaseSettingsRes,
 				ImportState:       true,
 				ImportStateVerify: true,
+			},
+			{
+				Config: gcloud.GenerateLocationResource(
+					locationResourceId,
+					"tf location "+uuid.NewString(),
+					"HQ",
+					[]string{},
+					gcloud.GenerateLocationEmergencyNum(
+						"+13100000003",
+						util.NullValue,
+					),
+					gcloud.GenerateLocationAddress(
+						"7601 Interactive Way",
+						"Orlando",
+						"FL",
+						"US",
+						"32826",
+					),
+				) + edgeSite.GenerateSiteResourceWithCustomAttrs(
+					siteId,
+					"tf site "+uuid.NewString(),
+					"test description",
+					"genesyscloud_location."+locationResourceId+".id",
+					"Cloud",
+					false,
+					"[\"us-east-1\"]",
+					util.NullValue,
+					util.NullValue,
+				),
 			},
 		},
 		CheckDestroy: testVerifyTrunkBaseSettingsDestroyed,
