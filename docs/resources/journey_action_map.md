@@ -170,8 +170,8 @@ Required:
 Required:
 
 - `key` (String) The event key.
-- `session_type` (String) The session type for which this condition can be satisfied.
-- `stream_type` (String) The stream type for which this condition can be satisfied. Valid values: Web, Custom, Conversation.
+- `session_type` (String) The session type for which this condition can be satisfied. Valid values: web, app.
+- `stream_type` (String) The stream type for which this condition can be satisfied. Valid values: Web, App.
 - `values` (Set of String) The event values.
 
 Optional:
