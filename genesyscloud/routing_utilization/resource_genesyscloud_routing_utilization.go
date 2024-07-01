@@ -2,7 +2,6 @@ package routing_utilization
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"log"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
@@ -34,17 +33,14 @@ func createRoutingUtilization(ctx context.Context, d *schema.ResourceData, meta 
 }
 
 func readRoutingUtilization(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	// Calling the Utilization API directly while the label feature is not available.
-	// Once it is, this code can go back to using platformclientv2's RoutingApi to make the call.
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getRoutingUtilizationProxy(sdkConfig)
 	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceRoutingUtilization(), constants.DefaultConsistencyChecks, resourceName)
-	orgUtilization := &OrgUtilizationWithLabels{}
 
 	log.Printf("Reading Routing Utilization")
 
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
-		resp, err := proxy.getRoutingUtilization(ctx)
+		orgUtilization, resp, err := proxy.getRoutingUtilization(ctx)
 		if err != nil {
 			if util.IsStatus404(resp) {
 				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read Routing Utilization: %s", err), resp))
@@ -52,12 +48,10 @@ func readRoutingUtilization(ctx context.Context, d *schema.ResourceData, meta in
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read Routing Utilization: %s", err), resp))
 		}
 
-		err = json.Unmarshal(resp.RawBody, &orgUtilization)
-
 		if orgUtilization.Utilization != nil {
 			for sdkType, schemaType := range UtilizationMediaTypes {
-				if mediaSettings, ok := orgUtilization.Utilization[sdkType]; ok {
-					_ = d.Set(schemaType, FlattenUtilizationSetting(mediaSettings))
+				if mediaSettings, ok := (*orgUtilization.Utilization)[sdkType]; ok {
+					_ = d.Set(schemaType, FlattenMediaUtilization(mediaSettings))
 				} else {
 					_ = d.Set(schemaType, nil)
 				}
@@ -66,8 +60,8 @@ func readRoutingUtilization(ctx context.Context, d *schema.ResourceData, meta in
 
 		if orgUtilization.LabelUtilizations != nil {
 			originalLabelUtilizations := d.Get("label_utilizations").([]interface{})
-			// Only add to the state the configured labels, in the configured order, but not any extras, to help terraform with matching new and old state.
-			flattenedLabelUtilizations := FilterAndFlattenLabelUtilizations(orgUtilization.LabelUtilizations, originalLabelUtilizations)
+			// Only add the configured labels to the state, in the configured order, but not any extras, to help terraform with matching new and old state.
+			flattenedLabelUtilizations := FilterAndFlattenLabelUtilizations(*orgUtilization.LabelUtilizations, originalLabelUtilizations)
 			_ = d.Set("label_utilizations", flattenedLabelUtilizations)
 		}
 
@@ -80,32 +74,21 @@ func updateRoutingUtilization(ctx context.Context, d *schema.ResourceData, meta 
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getRoutingUtilizationProxy(sdkConfig)
 
-	labelUtilizations := d.Get("label_utilizations").([]interface{})
-	var resp *platformclientv2.APIResponse
-	var err error
-
 	log.Printf("Updating Routing Utilization")
 
 	// Retrying on 409s because if a label is created immediately before the utilization update, it can lead to a conflict while the utilization is being updated to handle the new label.
 	diagErr := util.RetryWhen(util.IsStatus409, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
-		// If the resource has label(s), calls the Utilization API directly.
-		// This code can go back to using platformclientv2's RoutingApi to make the call once label utilization is available in platformclientv2's RoutingApi.
-		if labelUtilizations != nil && len(labelUtilizations) > 0 {
-			resp, err := proxy.updateDirectly(ctx, d, labelUtilizations)
-			if err != nil {
-				return resp, util.BuildAPIDiagnosticError(resourceName, "Failed to update routing utilization directly", resp)
-			}
-		} else {
-			_, resp, err = proxy.updateRoutingUtilization(ctx, &platformclientv2.Utilizationrequest{
-				Utilization: buildSdkMediaUtilizations(d),
-			})
-		}
+		_, resp, err := proxy.updateRoutingUtilization(ctx, &platformclientv2.Utilizationrequest{
+			Utilization:       BuildSdkMediaUtilizations(d),
+			LabelUtilizations: BuildSdkLabelUtilizations(d),
+		})
 
 		if err != nil {
 			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update Routing Utilization %s error: %s", d.Id(), err), resp)
 		}
 		return resp, nil
 	})
+
 	if diagErr != nil {
 		return diagErr
 	}
