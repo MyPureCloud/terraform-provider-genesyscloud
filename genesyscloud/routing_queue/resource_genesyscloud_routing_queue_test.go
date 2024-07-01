@@ -692,117 +692,6 @@ func TestAccResourceRoutingQueueFlows(t *testing.T) {
 	})
 }
 
-func TestAccResourceRoutingQueueMembers(t *testing.T) {
-	var (
-		queueResource        = "test-queue-members"
-		queueName            = "Terraform Test Queue3-" + uuid.NewString()
-		queueMemberResource1 = "test-queue-user1"
-		queueMemberResource2 = "test-queue-user2"
-		queueMemberEmail1    = "terraform1-" + uuid.NewString() + "@queue.com"
-		queueMemberEmail2    = "terraform2-" + uuid.NewString() + "@queue.com"
-		queueMemberName1     = "Henry Terraform Test"
-		queueMemberName2     = "Amanda Terraform Test"
-		defaultQueueRingNum  = "1"
-		queueRingNum         = "3"
-	)
-	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { util.TestAccPreCheck(t) },
-		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
-		Steps: []resource.TestStep{
-			{
-				PreConfig: func() {
-					// Wait for a specified duration to avoid runtime error
-					time.Sleep(30 * time.Second)
-				},
-				// Create
-				Config: genesyscloud.GenerateBasicUserResource(
-					queueMemberResource1,
-					queueMemberEmail1,
-					queueMemberName1,
-				) + GenerateRoutingQueueResourceBasic(
-					queueResource,
-					queueName,
-					GenerateMemberBlock("genesyscloud_user."+queueMemberResource1+".id", util.NullValue),
-				),
-				Check: resource.ComposeTestCheckFunc(
-					validateMember("genesyscloud_routing_queue."+queueResource, "genesyscloud_user."+queueMemberResource1, defaultQueueRingNum),
-				),
-			},
-			{
-				PreConfig: func() {
-					// Wait for a specified duration to avoid runtime error
-					time.Sleep(30 * time.Second)
-				},
-				// Update with another queue member and modify rings
-				Config: genesyscloud.GenerateBasicUserResource(
-					queueMemberResource1,
-					queueMemberEmail1,
-					queueMemberName1,
-				) + genesyscloud.GenerateBasicUserResource(
-					queueMemberResource2,
-					queueMemberEmail2,
-					queueMemberName2,
-				) + GenerateRoutingQueueResourceBasic(
-					queueResource,
-					queueName,
-					GenerateMemberBlock("genesyscloud_user."+queueMemberResource1+".id", queueRingNum),
-					GenerateMemberBlock("genesyscloud_user."+queueMemberResource2+".id", queueRingNum),
-					GenerateBullseyeSettings("10"),
-					GenerateBullseyeSettings("10"),
-					GenerateBullseyeSettings("10"),
-				),
-				Check: resource.ComposeTestCheckFunc(
-					validateMember("genesyscloud_routing_queue."+queueResource, "genesyscloud_user."+queueMemberResource1, queueRingNum),
-					validateMember("genesyscloud_routing_queue."+queueResource, "genesyscloud_user."+queueMemberResource2, queueRingNum),
-				),
-			},
-			{
-				// Remove a queue member
-				Config: GenerateRoutingQueueResourceBasic(
-					queueResource,
-					queueName,
-					GenerateMemberBlock("genesyscloud_user."+queueMemberResource2+".id", queueRingNum),
-					GenerateBullseyeSettings("10"),
-					GenerateBullseyeSettings("10"),
-					GenerateBullseyeSettings("10"),
-				) + genesyscloud.GenerateBasicUserResource(
-					queueMemberResource1,
-					queueMemberEmail1,
-					queueMemberName1,
-				) + genesyscloud.GenerateBasicUserResource(
-					queueMemberResource2,
-					queueMemberEmail2,
-					queueMemberName2,
-				),
-				Check: resource.ComposeTestCheckFunc(
-					validateMember("genesyscloud_routing_queue."+queueResource, "genesyscloud_user."+queueMemberResource2, queueRingNum),
-				),
-			},
-			{
-				// Remove all queue members
-				Config: GenerateRoutingQueueResourceBasic(
-					queueResource,
-					queueName,
-					"members = []",
-					GenerateBullseyeSettings("10"),
-					GenerateBullseyeSettings("10"),
-					GenerateBullseyeSettings("10"),
-				),
-				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckNoResourceAttr("genesyscloud_routing_queue."+queueResource, "members.%"),
-				),
-			},
-			{
-				// Import/Read
-				ResourceName:      "genesyscloud_routing_queue." + queueResource,
-				ImportState:       true,
-				ImportStateVerify: true,
-			},
-		},
-		CheckDestroy: testVerifyQueuesDestroyed,
-	})
-}
-
 func TestAccResourceRoutingQueueSkillgroupMembers(t *testing.T) {
 	var (
 		queueResourceId = "test-queue"
@@ -901,6 +790,112 @@ func TestAccResourceRoutingQueueSkillgroupMembers(t *testing.T) {
 	})
 }
 
+func TestAccResourceRoutingQueueMembers(t *testing.T) {
+	var (
+		queueResource        = "test-queue-members"
+		queueName            = "Terraform Test Queue3-" + uuid.NewString()
+		queueMemberResource1 = "test-queue-user1"
+		queueMemberResource2 = "test-queue-user2"
+		queueMemberEmail1    = "terraform1-" + uuid.NewString() + "@queue.com"
+		queueMemberEmail2    = "terraform2-" + uuid.NewString() + "@queue.com"
+		queueMemberName1     = "Henry Terraform Test"
+		queueMemberName2     = "Amanda Terraform Test"
+		defaultQueueRingNum  = "1"
+		queueRingNum         = "3"
+	)
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			{
+				PreConfig: func() {
+					// Wait for a specified duration to avoid runtime error
+					time.Sleep(30 * time.Second)
+				},
+				// Create
+				Config: genesyscloud.GenerateBasicUserResource(
+					queueMemberResource1,
+					queueMemberEmail1,
+					queueMemberName1,
+				) + GenerateRoutingQueueResourceBasic(
+					queueResource,
+					queueName,
+					GenerateMemberBlock("genesyscloud_user."+queueMemberResource1+".id", util.NullValue),
+				),
+				Check: resource.ComposeTestCheckFunc(
+					validateMember("genesyscloud_routing_queue."+queueResource, "genesyscloud_user."+queueMemberResource1, defaultQueueRingNum),
+				),
+			},
+			{
+				// Update with another queue member and modify rings
+				Config: genesyscloud.GenerateBasicUserResource(
+					queueMemberResource1,
+					queueMemberEmail1,
+					queueMemberName1,
+				) + genesyscloud.GenerateBasicUserResource(
+					queueMemberResource2,
+					queueMemberEmail2,
+					queueMemberName2,
+				) + GenerateRoutingQueueResourceBasic(
+					queueResource,
+					queueName,
+					GenerateMemberBlock("genesyscloud_user."+queueMemberResource1+".id", queueRingNum),
+					GenerateMemberBlock("genesyscloud_user."+queueMemberResource2+".id", queueRingNum),
+					GenerateBullseyeSettings("10"),
+					GenerateBullseyeSettings("10"),
+					GenerateBullseyeSettings("10"),
+				),
+				Check: resource.ComposeTestCheckFunc(
+					validateMember("genesyscloud_routing_queue."+queueResource, "genesyscloud_user."+queueMemberResource1, queueRingNum),
+					validateMember("genesyscloud_routing_queue."+queueResource, "genesyscloud_user."+queueMemberResource2, queueRingNum),
+				),
+			},
+			{
+				// Remove a queue member
+				Config: GenerateRoutingQueueResourceBasic(
+					queueResource,
+					queueName,
+					GenerateMemberBlock("genesyscloud_user."+queueMemberResource2+".id", queueRingNum),
+					GenerateBullseyeSettings("10"),
+					GenerateBullseyeSettings("10"),
+					GenerateBullseyeSettings("10"),
+				) + genesyscloud.GenerateBasicUserResource(
+					queueMemberResource1,
+					queueMemberEmail1,
+					queueMemberName1,
+				) + genesyscloud.GenerateBasicUserResource(
+					queueMemberResource2,
+					queueMemberEmail2,
+					queueMemberName2,
+				),
+				Check: resource.ComposeTestCheckFunc(
+					validateMember("genesyscloud_routing_queue."+queueResource, "genesyscloud_user."+queueMemberResource2, queueRingNum),
+				),
+			},
+			{
+				// Remove all queue members
+				Config: GenerateRoutingQueueResourceBasic(
+					queueResource,
+					queueName,
+					"members = []",
+					GenerateBullseyeSettings("10"),
+					GenerateBullseyeSettings("10"),
+					GenerateBullseyeSettings("10"),
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckNoResourceAttr("genesyscloud_routing_queue."+queueResource, "members.%"),
+				),
+			},
+			{
+				// Import/Read
+				ResourceName:      "genesyscloud_routing_queue." + queueResource,
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+		},
+		CheckDestroy: testVerifyQueuesDestroyed,
+	})
+}
 func TestAccResourceRoutingQueueWrapupCodes(t *testing.T) {
 	var (
 		queueResource       = "test-queue-wrapup"
