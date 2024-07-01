@@ -1088,7 +1088,7 @@ func readUserRoutingUtilization(d *schema.ResourceData, sdkConfig *platformclien
 				originalLabelUtilizations := originalSettings["label_utilizations"].([]interface{})
 
 				// Only add to the state the configured labels, in the configured order, but not any extras, to help terraform with matching new and old state.
-				filteredLabelUtilizations := routingUtilization.FilterAndFlattenLabelUtilizations(agentUtilization.LabelUtilizations, originalLabelUtilizations)
+				filteredLabelUtilizations := routingUtilization.FilterAndFlattenLabelUtilizationsInternal(agentUtilization.LabelUtilizations, originalLabelUtilizations)
 
 				allSettings["label_utilizations"] = filteredLabelUtilizations
 			} else {
