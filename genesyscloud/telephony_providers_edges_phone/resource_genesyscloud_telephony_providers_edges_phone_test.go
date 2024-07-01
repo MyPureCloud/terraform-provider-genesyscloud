@@ -440,8 +440,8 @@ func TestAccResourceHardPhoneStandalone(t *testing.T) {
 }
 
 func TestAccResourcePhoneStandaloneRemoteStation(t *testing.T) {
-	lineAddresses := "+12005538114"
-	remoteStationAddress := "+11005538114"
+	lineAddresses := "+12005538654"
+	remoteStationAddress := "+11005538454"
 	didPoolResource1 := "test-didpool1"
 	phoneRes := "phone_standalone1234"
 	name1 := "test-phone-Kstandalone_" + uuid.NewString()
@@ -451,7 +451,7 @@ func TestAccResourcePhoneStandaloneRemoteStation(t *testing.T) {
 
 	locationRes := "test-location-K"
 
-	emergencyNumber := "+13173114114"
+	emergencyNumber := "+13173114334"
 	if err := edgeSite.DeleteLocationWithNumber(emergencyNumber, sdkConfig); err != nil {
 		t.Skipf("failed to delete location with number %s: %v", emergencyNumber, err)
 	}

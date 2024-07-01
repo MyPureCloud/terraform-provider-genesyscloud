@@ -345,11 +345,15 @@ func createStandalonePhoneLines(lineProperties []interface{}, linesPtr *[]platfo
 					"instance": lineAddress,
 				},
 			},
-			"station_remote_address": &map[string]interface{}{
+		}
+		if len(remoteAddress) > 0 {
+			remoteAddress := &map[string]interface{}{
 				"value": &map[string]interface{}{
 					"instance": remoteAddress,
 				},
-			},
+			}
+			properties["station_remote_address"] = remoteAddress
+
 		}
 		lines = append(lines, platformclientv2.Line{
 			Name:             &lineName,
