@@ -2,6 +2,7 @@ package genesyscloud
 
 import (
 	"fmt"
+	"log"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
@@ -10,6 +11,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
 )
 
 func TestAccDataSourceAuthDivision(t *testing.T) {
@@ -39,10 +41,7 @@ func TestAccDataSourceAuthDivision(t *testing.T) {
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrPair("data.genesyscloud_auth_division."+divDataSource, "id", "genesyscloud_auth_division."+divResource, "id"),
-					func(s *terraform.State) error {
-						time.Sleep(30 * time.Second) // Wait for 30 seconds for proper deletion
-						return nil
-					},
+					checkDivisionDeleted(divisionID),
 				),
 			},
 		},
@@ -61,4 +60,46 @@ func generateAuthDivisionDataSource(
         depends_on=[%s]
 	}
 	`, resourceID, name, dependsOnResource)
+}
+
+func checkDivisionDeleted(id string) resource.TestCheckFunc {
+	log.Printf("Fetching division with ID: %s\n", id)
+	return func(s *terraform.State) error {
+		maxAttempts := 18
+		for i := 0; i < maxAttempts; i++ {
+
+			deleted, err := isDivisionDeleted(id)
+			if err != nil {
+				return err
+			}
+			if deleted {
+				return nil
+			}
+			time.Sleep(10 * time.Second)
+		}
+		return fmt.Errorf("division %s was not deleted properly", id)
+	}
+}
+
+func isDivisionDeleted(id string) (bool, error) {
+	mu.Lock()
+	defer mu.Unlock()
+
+	authAPI := platformclientv2.NewAuthorizationApiWithConfig(sdkConfig)
+	// Attempt to get the division
+	_, response, err := authAPI.GetAuthorizationDivision(id, false)
+
+	// Check if the division is not found (deleted)
+	if response != nil && response.StatusCode == 404 {
+		return true, nil // division is deleted
+	}
+
+	// Handle other errors
+	if err != nil {
+		log.Printf("Error fetching user: %v", err)
+		return false, err
+	}
+
+	// If division is found, it means the division is not deleted
+	return false, nil
 }
