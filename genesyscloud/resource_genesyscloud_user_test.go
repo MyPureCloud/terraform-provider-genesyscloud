@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
+	routinglanguage "terraform-provider-genesyscloud/genesyscloud/routing_language"
 	routingUtilization "terraform-provider-genesyscloud/genesyscloud/routing_utilization"
 	routingUtilizationLabel "terraform-provider-genesyscloud/genesyscloud/routing_utilization_label"
 	"terraform-provider-genesyscloud/genesyscloud/util"
@@ -486,7 +487,7 @@ func TestAccResourceUserLanguages(t *testing.T) {
 					email1,
 					userName1,
 					generateUserRoutingLang("genesyscloud_routing_language."+langResource1+".id", proficiency1),
-				) + GenerateRoutingLanguageResource(langResource1, langName1),
+				) + routinglanguage.GenerateRoutingLanguageResource(langResource1, langName1),
 				Check: resource.ComposeTestCheckFunc(
 					validateUserLanguage("genesyscloud_user."+userResource1, "genesyscloud_routing_language."+langResource1, proficiency1),
 				),
@@ -499,10 +500,10 @@ func TestAccResourceUserLanguages(t *testing.T) {
 					userName1,
 					generateUserRoutingLang("genesyscloud_routing_language."+langResource1+".id", proficiency1),
 					generateUserRoutingLang("genesyscloud_routing_language."+langResource2+".id", proficiency2),
-				) + GenerateRoutingLanguageResource(
+				) + routinglanguage.GenerateRoutingLanguageResource(
 					langResource1,
 					langName1,
-				) + GenerateRoutingLanguageResource(
+				) + routinglanguage.GenerateRoutingLanguageResource(
 					langResource2,
 					langName2,
 				),
@@ -518,7 +519,7 @@ func TestAccResourceUserLanguages(t *testing.T) {
 					email1,
 					userName1,
 					generateUserRoutingLang("genesyscloud_routing_language."+langResource2+".id", proficiency1),
-				) + GenerateRoutingLanguageResource(
+				) + routinglanguage.GenerateRoutingLanguageResource(
 					langResource2,
 					langName2,
 				),
