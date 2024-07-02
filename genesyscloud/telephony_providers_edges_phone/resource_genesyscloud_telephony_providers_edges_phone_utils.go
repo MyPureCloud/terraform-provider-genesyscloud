@@ -48,13 +48,13 @@ func getPhoneFromResourceData(ctx context.Context, pp *phoneProxy, d *schema.Res
 	if lineBaseSettingsID == "" {
 		lineBaseSettingsID, err = getLineBaseSettingsID(ctx, pp, *phoneConfig.PhoneBaseSettings.Id)
 		if err != nil {
-			return nil, fmt.Errorf("failed to get line base settings for %s: %s", *phoneConfig.Name, err)
+			return phoneConfig, fmt.Errorf("failed to get line base settings for %s: %s", *phoneConfig.Name, err)
 		}
 	}
 	lineBaseSettings := &platformclientv2.Domainentityref{Id: &lineBaseSettingsID}
 	lines, isStandalone, lineError := buildSdkLines(ctx, pp, d, lineBaseSettings)
 	if lineError != nil {
-		return nil, fmt.Errorf("failed to create lines for %s: %s", *phoneConfig.Name, err)
+		return phoneConfig, fmt.Errorf("failed to create lines for %s: %s", *phoneConfig.Name, lineError)
 	}
 	phoneConfig.LineBaseSettings = lineBaseSettings
 	phoneConfig.Lines = lines
@@ -62,7 +62,7 @@ func getPhoneFromResourceData(ctx context.Context, pp *phoneProxy, d *schema.Res
 	// phone meta base
 	phoneMetaBaseId, err := getPhoneMetaBaseId(ctx, pp, *phoneConfig.PhoneBaseSettings.Id)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get phone meta base for %s: %s", *phoneConfig.Name, err)
+		return phoneConfig, fmt.Errorf("failed to get phone meta base for %s: %s", *phoneConfig.Name, err)
 	}
 	phoneMetaBase := &platformclientv2.Domainentityref{
 		Id: &phoneMetaBaseId,
@@ -187,19 +187,17 @@ func flattenPhoneCapabilities(capabilities *platformclientv2.Phonecapabilities) 
 
 func buildSdkLines(ctx context.Context, pp *phoneProxy, d *schema.ResourceData, lineBaseSettings *platformclientv2.Domainentityref) (linesPtr *[]platformclientv2.Line, isStandAlone bool, err error) {
 	lines := []platformclientv2.Line{}
-	linePropertiesMap := make(map[string]interface{})
-
-	if linePropertiesObject, ok := d.Get("line_properties").([]interface{}); ok && len(linePropertiesObject) > 0 {
-		linePropertiesMap = linePropertiesObject[0].(map[string]interface{})
+	lineAddress, remoteAddress := getLineProperties(d)
+	if len(*lineAddress) > 0 && len(*remoteAddress) > 0 {
+		return linesPtr, false, fmt.Errorf("remote stations cannot be standalone phones, line_address and remote_address cannot exist at the same time")
 	}
-
-	if lineAddress, ok := linePropertiesMap["line_address"]; ok && len(lineAddress.([]interface{})) > 0 {
-		linesPtr = createStandalonePhoneLines(lineAddress.([]interface{}), &lines, lineBaseSettings)
+	if len(*lineAddress) > 0 {
+		linesPtr = createStandalonePhoneLines(*lineAddress, &lines, lineBaseSettings)
 		isStandAlone = true
 		return linesPtr, isStandAlone, nil
 	}
-	if remoteAddress, ok := linePropertiesMap["remote_address"]; ok && len(remoteAddress.([]interface{})) > 0 {
-		linesPtr = createNonStandalonePhoneLine(remoteAddress.([]interface{}), &lines, lineBaseSettings)
+	if len(*remoteAddress) > 0 {
+		linesPtr = createNonStandalonePhoneLine(*remoteAddress, &lines, lineBaseSettings)
 		isStandAlone = false
 		return linesPtr, isStandAlone, nil
 	}
@@ -224,6 +222,22 @@ func buildSdkLines(ctx context.Context, pp *phoneProxy, d *schema.ResourceData, 
 	linesPtr = &lines
 	isStandAlone = false
 	return linesPtr, isStandAlone, nil
+}
+
+func getLineProperties(d *schema.ResourceData) (*[]interface{}, *[]interface{}) {
+	lineAddress := make([]interface{}, 0)
+	remoteAddress := make([]interface{}, 0)
+	linePropertiesMap := make(map[string]interface{})
+	if linePropertiesObject, ok := d.Get("line_properties").([]interface{}); ok && len(linePropertiesObject) > 0 {
+		linePropertiesMap = linePropertiesObject[0].(map[string]interface{})
+	}
+	if lineAddressObject, ok := linePropertiesMap["line_address"].([]interface{}); ok {
+		lineAddress = lineAddressObject
+	}
+	if remoteAddressObject, ok := linePropertiesMap["remote_address"].([]interface{}); ok {
+		remoteAddress = remoteAddressObject
+	}
+	return &lineAddress, &remoteAddress
 }
 
 func generatePhoneProperties(hardware_id string) string {
@@ -326,12 +340,20 @@ func generateLineProperties(lineAddress string, remoteAddress string) string {
 	`, remoteAddress)
 	}
 
-	return fmt.Sprintf(`
+	if remoteAddress == "" {
+		fmt.Sprintf(`
 		line_properties {
 			line_address = [%s]
 		}
 	`, lineAddress)
+	}
 
+	return fmt.Sprintf(`
+	line_properties {
+		line_address = [%s]
+		remote_address = [%s]
+	}
+`, lineAddress, remoteAddress)
 }
 
 func getLineIdByPhoneId(ctx context.Context, pp *phoneProxy, phoneId string) (string, error) {
