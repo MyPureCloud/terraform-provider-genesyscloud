@@ -41,7 +41,6 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_routing_queue"] = routingQueue.ResourceRoutingQueue()
 	providerResources["genesyscloud_location"] = ResourceLocation()
 	providerResources["genesyscloud_auth_division"] = ResourceAuthDivision()
-	providerResources["genesyscloud_idp_onelogin"] = ResourceIdpOnelogin()
 	providerResources["genesyscloud_journey_action_map"] = ResourceJourneyActionMap()
 	providerResources["genesyscloud_journey_action_template"] = ResourceJourneyActionTemplate()
 	providerResources["genesyscloud_journey_outcome"] = ResourceJourneyOutcome()
