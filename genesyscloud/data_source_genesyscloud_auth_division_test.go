@@ -11,7 +11,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
 )
 
 func TestAccDataSourceAuthDivision(t *testing.T) {
@@ -19,6 +18,7 @@ func TestAccDataSourceAuthDivision(t *testing.T) {
 		divResource   = "auth-division"
 		divDataSource = "auth-div-data"
 		divName       = "Terraform Divisions-" + uuid.NewString()
+		divisionID    string
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -34,6 +34,25 @@ func TestAccDataSourceAuthDivision(t *testing.T) {
 					divName,
 					util.NullValue,
 					util.NullValue,
+				),
+				Check: resource.ComposeTestCheckFunc(
+					func(s *terraform.State) error {
+						rs, ok := s.RootModule().Resources["genesyscloud_auth_division."+divResource]
+						if !ok {
+							return fmt.Errorf("not found: %s", "genesyscloud_auth_division."+divResource)
+						}
+						divisionID = rs.Primary.ID
+						log.Printf("Division ID: %s\n", divisionID) // Print ID
+						return nil
+					},
+				),
+			},
+			{
+				Config: GenerateAuthDivisionResource(
+					divResource,
+					divName,
+					util.NullValue,
+					util.NullValue,
 				) + generateAuthDivisionDataSource(
 					divDataSource,
 					"genesyscloud_auth_division."+divResource+".name",
@@ -41,6 +60,14 @@ func TestAccDataSourceAuthDivision(t *testing.T) {
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrPair("data.genesyscloud_auth_division."+divDataSource, "id", "genesyscloud_auth_division."+divResource, "id"),
+				),
+			},
+			{
+				// Import/Read
+				ResourceName:      "genesyscloud_auth_division." + divResource,
+				ImportState:       true,
+				ImportStateVerify: true,
+				Check: resource.ComposeTestCheckFunc(
 					checkDivisionDeleted(divisionID),
 				),
 			},
@@ -60,46 +87,4 @@ func generateAuthDivisionDataSource(
         depends_on=[%s]
 	}
 	`, resourceID, name, dependsOnResource)
-}
-
-func checkDivisionDeleted(id string) resource.TestCheckFunc {
-	log.Printf("Fetching division with ID: %s\n", id)
-	return func(s *terraform.State) error {
-		maxAttempts := 18
-		for i := 0; i < maxAttempts; i++ {
-
-			deleted, err := isDivisionDeleted(id)
-			if err != nil {
-				return err
-			}
-			if deleted {
-				return nil
-			}
-			time.Sleep(10 * time.Second)
-		}
-		return fmt.Errorf("division %s was not deleted properly", id)
-	}
-}
-
-func isDivisionDeleted(id string) (bool, error) {
-	mu.Lock()
-	defer mu.Unlock()
-
-	authAPI := platformclientv2.NewAuthorizationApiWithConfig(sdkConfig)
-	// Attempt to get the division
-	_, response, err := authAPI.GetAuthorizationDivision(id, false)
-
-	// Check if the division is not found (deleted)
-	if response != nil && response.StatusCode == 404 {
-		return true, nil // division is deleted
-	}
-
-	// Handle other errors
-	if err != nil {
-		log.Printf("Error fetching user: %v", err)
-		return false, err
-	}
-
-	// If division is found, it means the division is not deleted
-	return false, nil
 }

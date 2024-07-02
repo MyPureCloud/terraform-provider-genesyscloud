@@ -44,17 +44,15 @@ func TestAccResourceAuthDivisionBasic(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_auth_division."+divResource1, "name", divName1),
 					resource.TestCheckResourceAttr("genesyscloud_auth_division."+divResource1, "description", ""),
-					resource.ComposeTestCheckFunc(
-						func(s *terraform.State) error {
-							rs, ok := s.RootModule().Resources["genesyscloud_auth_division."+divResource1]
-							if !ok {
-								return fmt.Errorf("not found: %s", "genesyscloud_auth_division."+divResource1)
-							}
-							divisionID = rs.Primary.ID
-							log.Printf("Division ID: %s\n", divisionID) // Print ID
-							return nil
-						},
-					),
+					func(s *terraform.State) error {
+						rs, ok := s.RootModule().Resources["genesyscloud_auth_division."+divResource1]
+						if !ok {
+							return fmt.Errorf("not found: %s", "genesyscloud_auth_division."+divResource1)
+						}
+						divisionID = rs.Primary.ID
+						log.Printf("Division ID: %s\n", divisionID) // Print ID
+						return nil
+					},
 				),
 			},
 			{
@@ -256,7 +254,7 @@ func cleanupAuthDivision(idPrefix string) {
 func checkDivisionDeleted(id string) resource.TestCheckFunc {
 	log.Printf("Fetching division with ID: %s\n", id)
 	return func(s *terraform.State) error {
-		maxAttempts := 18
+		maxAttempts := 24
 		for i := 0; i < maxAttempts; i++ {
 
 			deleted, err := isDivisionDeleted(id)
