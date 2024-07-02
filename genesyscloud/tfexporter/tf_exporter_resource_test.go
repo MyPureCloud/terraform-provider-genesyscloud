@@ -22,6 +22,7 @@ import (
 	idpGeneric "terraform-provider-genesyscloud/genesyscloud/idp_generic"
 	idpGsuite "terraform-provider-genesyscloud/genesyscloud/idp_gsuite"
 	idpOkta "terraform-provider-genesyscloud/genesyscloud/idp_okta"
+	idpOneLogin "terraform-provider-genesyscloud/genesyscloud/idp_onelogin"
 	idpPing "terraform-provider-genesyscloud/genesyscloud/idp_ping"
 	idpSalesforce "terraform-provider-genesyscloud/genesyscloud/idp_salesforce"
 	integration "terraform-provider-genesyscloud/genesyscloud/integration"
@@ -127,7 +128,7 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_idp_generic"] = idpGeneric.ResourceIdpGeneric()
 	providerResources["genesyscloud_idp_gsuite"] = idpGsuite.ResourceIdpGsuite()
 	providerResources["genesyscloud_idp_okta"] = idpOkta.ResourceIdpOkta()
-	providerResources["genesyscloud_idp_onelogin"] = gcloud.ResourceIdpOnelogin()
+	providerResources["genesyscloud_idp_onelogin"] = idpOneLogin.ResourceIdpOnelogin()
 	providerResources["genesyscloud_idp_ping"] = idpPing.ResourceIdpPing()
 	providerResources["genesyscloud_idp_salesforce"] = idpSalesforce.ResourceIdpSalesforce()
 	providerResources["genesyscloud_integration"] = integration.ResourceIntegration()
@@ -227,7 +228,7 @@ func (r *registerTestInstance) registerTestExporters() {
 	RegisterExporter("genesyscloud_idp_generic", idpGeneric.IdpGenericExporter())
 	RegisterExporter("genesyscloud_idp_gsuite", idpGsuite.IdpGsuiteExporter())
 	RegisterExporter("genesyscloud_idp_okta", idpOkta.IdpOktaExporter())
-	RegisterExporter("genesyscloud_idp_onelogin", gcloud.IdpOneloginExporter())
+	RegisterExporter("genesyscloud_idp_onelogin", idpOneLogin.IdpOneloginExporter())
 	RegisterExporter("genesyscloud_idp_ping", idpPing.IdpPingExporter())
 	RegisterExporter("genesyscloud_idp_salesforce", idpSalesforce.IdpSalesforceExporter())
 	RegisterExporter("genesyscloud_integration", integration.IntegrationExporter())

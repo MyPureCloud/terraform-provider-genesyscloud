@@ -129,6 +129,7 @@ func createTeamFn(ctx context.Context, p *teamProxy, team *platformclientv2.Team
 func getAllTeamFn(ctx context.Context, p *teamProxy, name string) (*[]platformclientv2.Team, *platformclientv2.APIResponse, error) {
 	var (
 		after    string
+		err      error
 		allTeams []platformclientv2.Team
 		response *platformclientv2.APIResponse
 	)
@@ -152,7 +153,7 @@ func getAllTeamFn(ctx context.Context, p *teamProxy, name string) (*[]platformcl
 			break
 		}
 
-		after, err := util.GetQueryParamValueFromUri(*teams.NextUri, "after")
+		after, err = util.GetQueryParamValueFromUri(*teams.NextUri, "after")
 		if err != nil {
 			return nil, resp, fmt.Errorf("unable to parse after cursor from teams next uri: %v", err)
 		}

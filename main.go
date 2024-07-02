@@ -27,6 +27,7 @@ import (
 	idpGeneric "terraform-provider-genesyscloud/genesyscloud/idp_generic"
 	idpGsuite "terraform-provider-genesyscloud/genesyscloud/idp_gsuite"
 	idpOkta "terraform-provider-genesyscloud/genesyscloud/idp_okta"
+	idpOneLogin "terraform-provider-genesyscloud/genesyscloud/idp_onelogin"
 	idpPing "terraform-provider-genesyscloud/genesyscloud/idp_ping"
 	idpSalesforce "terraform-provider-genesyscloud/genesyscloud/idp_salesforce"
 	"terraform-provider-genesyscloud/genesyscloud/integration"
@@ -194,6 +195,7 @@ func registerResources() {
 	idpAdfs.SetRegistrar(regInstance)                                      //Registering idp adfs
 	idpSalesforce.SetRegistrar(regInstance)                                //Registering idp salesforce
 	idpOkta.SetRegistrar(regInstance)                                      //Registering idp okta
+	idpOneLogin.SetRegistrar(regInstance)                                  //Registering idp onelogin
 	idpGeneric.SetRegistrar(regInstance)                                   //Registering idp generic
 	idpPing.SetRegistrar(regInstance)                                      //Registering idp ping
 	idpGsuite.SetRegistrar(regInstance)                                    //Registering idp gsuite
