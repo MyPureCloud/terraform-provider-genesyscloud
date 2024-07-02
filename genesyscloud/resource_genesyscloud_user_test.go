@@ -709,7 +709,7 @@ func TestAccResourceUserEmployerInfo(t *testing.T) {
 	})
 }
 
-func TestAccResourceUserroutingUtil(t *testing.T) {
+func TestAccResourceUserroutingUtilBasic(t *testing.T) {
 	t.Parallel()
 	var (
 		userResource1 = "test-user-util"

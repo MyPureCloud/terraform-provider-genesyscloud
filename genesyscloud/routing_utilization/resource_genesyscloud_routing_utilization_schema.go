@@ -20,22 +20,6 @@ func SetRegistrar(regInstance registrar.Registrar) {
 	regInstance.RegisterExporter(resourceName, RoutingUtilizationExporter())
 }
 
-type MediaUtilization struct {
-	MaximumCapacity         int32    `json:"maximumCapacity"`
-	InterruptableMediaTypes []string `json:"interruptableMediaTypes"`
-	IncludeNonAcd           bool     `json:"includeNonAcd"`
-}
-
-type LabelUtilization struct {
-	MaximumCapacity      int32    `json:"maximumCapacity"`
-	InterruptingLabelIds []string `json:"interruptingLabelIds"`
-}
-
-type OrgUtilizationWithLabels struct {
-	Utilization       map[string]MediaUtilization `json:"utilization"`
-	LabelUtilizations map[string]LabelUtilization `json:"labelUtilizations"`
-}
-
 var (
 	// Map of SDK media type name to schema media type name
 	UtilizationMediaTypes = map[string]string{
