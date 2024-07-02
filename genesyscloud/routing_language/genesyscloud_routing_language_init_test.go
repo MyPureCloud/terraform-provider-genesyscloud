@@ -1,20 +1,15 @@
-package routing_email_route
+package routing_language
 
 import (
 	"sync"
-	"terraform-provider-genesyscloud/genesyscloud"
-
-	architectFlow "terraform-provider-genesyscloud/genesyscloud/architect_flow"
-	routingQueue "terraform-provider-genesyscloud/genesyscloud/routing_queue"
-	routingLanguage "terraform-provider-genesyscloud/genesyscloud/routing_language"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 /*
-The genesyscloud_routing_email_route_init_test.go file is used to initialize the data sources and resources
-used in testing the routing_email_route resource.
+The genesyscloud_routing_language_init_test.go file is used to initialize the data sources and resources
+used in testing the routing_language resource.
 */
 
 // providerDataSources holds a map of all registered datasources
@@ -33,13 +28,7 @@ func (r *registerTestInstance) registerTestResources() {
 	r.resourceMapMutex.Lock()
 	defer r.resourceMapMutex.Unlock()
 
-	providerResources[resourceName] = ResourceRoutingEmailRoute()
-	providerResources["genesyscloud_routing_email_domain"] = genesyscloud.ResourceRoutingEmailDomain()
-	providerResources["genesyscloud_routing_queue"] = routingQueue.ResourceRoutingQueue()
-	providerResources["genesyscloud_routing_language"] = routingLanguage.ResourceRoutingLanguage()
-	providerResources["genesyscloud_routing_skill"] = genesyscloud.ResourceRoutingSkill()
-	providerResources["genesyscloud_flow"] = architectFlow.ResourceArchitectFlow()
-	providerResources["genesyscloud_routing_skill_group"] = genesyscloud.ResourceRoutingSkillGroup()
+	providerResources[resourceName] = ResourceRoutingLanguage()
 }
 
 // registerTestDataSources registers all data sources used in the tests.
@@ -47,7 +36,7 @@ func (r *registerTestInstance) registerTestDataSources() {
 	r.dataSourceMapMutex.Lock()
 	defer r.dataSourceMapMutex.Unlock()
 
-	providerDataSources[resourceName] = DataSourceRoutingEmailRoute()
+	providerDataSources[resourceName] = DataSourceRoutingLanguage()
 }
 
 // initTestResources initializes all test resources and data sources.
@@ -63,9 +52,9 @@ func initTestResources() {
 
 // TestMain is a "setup" function called by the testing framework when run the test
 func TestMain(m *testing.M) {
-	// Run setup function before starting the test suite for routing_email_route package
+	// Run setup function before starting the test suite for routing_language package
 	initTestResources()
 
-	// Run the test suite for the routing_email_route package
+	// Run the test suite for the routing_language package
 	m.Run()
 }
