@@ -3,10 +3,10 @@ package routing_email_route
 import (
 	"fmt"
 	"strings"
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
+	routingEmailDomain "terraform-provider-genesyscloud/genesyscloud/routing_email_domain"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -30,7 +30,7 @@ func TestAccDataSourceRoutingEmailRoute(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				// Create email domain and basic route
-				Config: gcloud.GenerateRoutingEmailDomainResource(
+				Config: routingEmailDomain.GenerateRoutingEmailDomainResource(
 					domainRes,
 					domainId,
 					util.FalseValue,
