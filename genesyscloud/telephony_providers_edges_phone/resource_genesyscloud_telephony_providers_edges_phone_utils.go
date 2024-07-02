@@ -299,7 +299,9 @@ func flattenLines(phoneLines *[]platformclientv2.Line) []interface{} {
 	linePropertiesMap := make(map[string]interface{})
 
 	for _, phoneLine := range *phoneLines {
-
+		if phoneLine.Properties == nil {
+			continue
+		}
 		if idAddressKey := (*phoneLine.Properties)["station_identity_address"]; idAddressKey != nil {
 			didI := idAddressKey.(map[string]interface{})["value"].(map[string]interface{})["instance"]
 			if didI != nil && len(didI.(string)) > 0 {
