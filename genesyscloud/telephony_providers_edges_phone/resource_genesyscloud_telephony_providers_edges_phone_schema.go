@@ -33,17 +33,17 @@ func ResourcePhone() *schema.Resource {
 	lineProperties := &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			`line_address`: {
-				Description:      `DID for standalone phones. Each phone number must be in an E.164 phone number format.`,
-				Optional:         true,
-				Computed:         true,
-				Type:             schema.TypeString,
-				ValidateDiagFunc: validators.ValidatePhoneNumber,
+				Description: `DID for standalone phones. Each phone number must be in an E.164 phone number format.`,
+				Optional:    true,
+				Computed:    true,
+				Type:        schema.TypeList,
+				Elem:        &schema.Schema{Type: schema.TypeString, ValidateDiagFunc: validators.ValidatePhoneNumber},
 			},
 			`remote_address`: {
-				Description:  `Station remote property for phones. No validation is provided other than a string`,
-				Optional:     true,
-				Type:         schema.TypeString,
-				ValidateFunc: validation.StringIsNotEmpty,
+				Description: `Station remote property for phones. No validation is provided other than a string`,
+				Optional:    true,
+				Type:        schema.TypeList,
+				Elem:        &schema.Schema{Type: schema.TypeString, ValidateFunc: validation.StringIsNotEmpty},
 			},
 		},
 	}
@@ -164,6 +164,7 @@ func ResourcePhone() *schema.Resource {
 				Description: "line properties",
 				Type:        schema.TypeList,
 				Optional:    true,
+				MaxItems:    1,
 				Elem:        lineProperties,
 			},
 			"capabilities": {

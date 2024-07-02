@@ -279,7 +279,7 @@ func TestAccResourcePhoneStandalone(t *testing.T) {
 					resource.TestCheckResourceAttrPair("genesyscloud_telephony_providers_edges_phone."+phoneRes, "site_id", "genesyscloud_telephony_providers_edges_site."+siteRes, "id"),
 					resource.TestCheckResourceAttrPair("genesyscloud_telephony_providers_edges_phone."+phoneRes, "line_base_settings_id", "genesyscloud_telephony_providers_edges_phonebasesettings."+phoneBaseSettingsRes, "line_base_settings_id"),
 					resource.TestCheckResourceAttrPair("genesyscloud_telephony_providers_edges_phone."+phoneRes, "phone_base_settings_id", "genesyscloud_telephony_providers_edges_phonebasesettings."+phoneBaseSettingsRes, "id"),
-					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_phone."+phoneRes, "line_properties.0.line_address", lineAddresses),
+					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_phone."+phoneRes, "line_properties.0.line_address.0", lineAddresses),
 					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_phone."+phoneRes, "capabilities.0.provisions", util.FalseValue),
 					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_phone."+phoneRes, "capabilities.0.registers", util.TrueValue),
 					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_phone."+phoneRes, "capabilities.0.dual_registers", util.TrueValue),
@@ -440,25 +440,23 @@ func TestAccResourceHardPhoneStandalone(t *testing.T) {
 }
 
 func TestAccResourcePhoneStandaloneRemoteStation(t *testing.T) {
-	lineAddresses := "+12005538654"
 	remoteStationAddress := "+11005538454"
-	didPoolResource1 := "test-didpool1"
 	phoneRes := "phone_standalone1234"
 	name1 := "test-phone-Kstandalone_" + uuid.NewString()
 	stateActive := "active"
 	phoneBaseSettingsRes := "phoneBaseSettings1234"
 	phoneBaseSettingsName := "phoneBaseSettings " + uuid.NewString()
 
-	locationRes := "test-location-K"
+	locationRes := "test-location"
 
-	emergencyNumber := "+13173114334"
+	emergencyNumber := "+13173114164"
 	if err := edgeSite.DeleteLocationWithNumber(emergencyNumber, sdkConfig); err != nil {
 		t.Skipf("failed to delete location with number %s: %v", emergencyNumber, err)
 	}
 
 	locationConfig := gcloud.GenerateLocationResource(
 		locationRes,
-		"Terraform location Kavin"+uuid.NewString(),
+		"TerraformLocationRemote"+uuid.NewString(),
 		"HQ1",
 		[]string{},
 		gcloud.GenerateLocationEmergencyNum(
@@ -498,15 +496,8 @@ func TestAccResourcePhoneStandaloneRemoteStation(t *testing.T) {
 		"mac",
 		[]string{},
 	)
-	config := didPool.GenerateDidPoolResource(&didPool.DidPoolStruct{
-		ResourceID:       didPoolResource1,
-		StartPhoneNumber: lineAddresses,
-		EndPhoneNumber:   lineAddresses,
-		Description:      util.NullValue, // No description
-		Comments:         util.NullValue, // No comments
-		PoolProvider:     util.NullValue, // No provider
-	})
-	config += phoneBaseSettings.GeneratePhoneBaseSettingsResourceWithCustomAttrs(
+
+	config := phoneBaseSettings.GeneratePhoneBaseSettingsResourceWithCustomAttrs(
 		phoneBaseSettingsRes,
 		phoneBaseSettingsName,
 		"phoneBaseSettings description",
@@ -518,8 +509,8 @@ func TestAccResourcePhoneStandaloneRemoteStation(t *testing.T) {
 		"genesyscloud_telephony_providers_edges_site." + siteRes + ".id",
 		"genesyscloud_telephony_providers_edges_phonebasesettings." + phoneBaseSettingsRes + ".id",
 		"", // no web rtc user
-		"genesyscloud_telephony_providers_edges_did_pool." + didPoolResource1,
-	}, capabilities, generateLineProperties(strconv.Quote(lineAddresses), strconv.Quote(remoteStationAddress)), generatePhoneProperties(uuid.NewString()))
+		"", // no depends on
+	}, capabilities, generateLineProperties("", strconv.Quote(remoteStationAddress)), generatePhoneProperties(uuid.NewString()))
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
@@ -536,8 +527,7 @@ func TestAccResourcePhoneStandaloneRemoteStation(t *testing.T) {
 					resource.TestCheckResourceAttrPair("genesyscloud_telephony_providers_edges_phone."+phoneRes, "site_id", "genesyscloud_telephony_providers_edges_site."+siteRes, "id"),
 					resource.TestCheckResourceAttrPair("genesyscloud_telephony_providers_edges_phone."+phoneRes, "line_base_settings_id", "genesyscloud_telephony_providers_edges_phonebasesettings."+phoneBaseSettingsRes, "line_base_settings_id"),
 					resource.TestCheckResourceAttrPair("genesyscloud_telephony_providers_edges_phone."+phoneRes, "phone_base_settings_id", "genesyscloud_telephony_providers_edges_phonebasesettings."+phoneBaseSettingsRes, "id"),
-					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_phone."+phoneRes, "line_properties.0.line_address", lineAddresses),
-					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_phone."+phoneRes, "line_properties.0.remote_address", remoteStationAddress),
+					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_phone."+phoneRes, "line_properties.0.remote_address.0", remoteStationAddress),
 					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_phone."+phoneRes, "capabilities.0.provisions", util.FalseValue),
 					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_phone."+phoneRes, "capabilities.0.registers", util.TrueValue),
 					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_phone."+phoneRes, "capabilities.0.dual_registers", util.TrueValue),
