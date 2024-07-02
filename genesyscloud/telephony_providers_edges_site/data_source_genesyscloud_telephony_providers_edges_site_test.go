@@ -67,8 +67,7 @@ func TestAccDataSourceSite(t *testing.T) {
 					strconv.Quote("Wilco plumbing")) + location + generateSiteDataSource(
 					siteDataRes,
 					name,
-					"genesyscloud_telephony_providers_edges_site."+siteRes,
-					false),
+					"genesyscloud_telephony_providers_edges_site."+siteRes),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrPair("data.genesyscloud_telephony_providers_edges_site."+siteDataRes, "id", "genesyscloud_telephony_providers_edges_site."+siteRes, "id"),
 				),
@@ -101,7 +100,6 @@ func TestAccDataSourceSiteManaged(t *testing.T) {
 					siteDataRes,
 					name,
 					"",
-					true,
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("data.genesyscloud_telephony_providers_edges_site."+siteDataRes, "id", siteId),
@@ -117,13 +115,12 @@ func generateSiteDataSource(
 	// Must explicitly use depends_on in terraform v0.13 when a data source references a resource
 	// Fixed in v0.14 https://github.com/hashicorp/terraform/pull/26284
 	dependsOnResource string,
-	managed bool) string {
+) string {
 	return fmt.Sprintf(`data "genesyscloud_telephony_providers_edges_site" "%s" {
 		name = "%s"
-		managed = %t
 		depends_on=[%s]
 	}
-	`, resourceID, name, managed, dependsOnResource)
+	`, resourceID, name, dependsOnResource)
 }
 
 func getSiteIdByName(name string) (string, error) {

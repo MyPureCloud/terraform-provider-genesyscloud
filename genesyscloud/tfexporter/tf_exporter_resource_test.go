@@ -309,6 +309,7 @@ func (r *registerTestInstance) registerTestExporters() {
 func (r *registerTestInstance) registerTestDataSources() {
 	providerDataSources["genesyscloud_auth_division_home"] = gcloud.DataSourceAuthDivisionHome()
 	providerDataSources["genesyscloud_script"] = scripts.DataSourceScript()
+	providerDataSources["genesyscloud_telephony_providers_edges_site"] = edgeSite.DataSourceSite()
 }
 
 func RegisterExporter(exporterName string, resourceExporter *resourceExporter.ResourceExporter) {
