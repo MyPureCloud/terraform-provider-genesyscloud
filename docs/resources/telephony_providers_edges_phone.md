@@ -57,7 +57,7 @@ resource "genesyscloud_telephony_providers_edges_phone" "example_phone" {
 
 - `capabilities` (Block List, Max: 1) Phone Capabilities. (see [below for nested schema](#nestedblock--capabilities))
 - `line_base_settings_id` (String) Line Base Settings ID.
-- `line_properties` (Block List) line properties (see [below for nested schema](#nestedblock--line_properties))
+- `line_properties` (Block List, Max: 1) line properties (see [below for nested schema](#nestedblock--line_properties))
 - `phone_meta_base_id` (String) Phone Meta Base ID.
 - `properties` (String) phone properties
 - `state` (String) Indicates if the resource is active, inactive, or deleted. Valid values: active, inactive, deleted. Defaults to `active`.
@@ -88,6 +88,6 @@ Optional:
 
 Optional:
 
-- `line_address` (String) DID for standalone phones. Each phone number must be in an E.164 phone number format.
-- `remote_address` (String) Station remote property for phones. No validation is provided other than a string
+- `line_address` (List of String) DID for standalone phones. Each phone number must be in an E.164 phone number format.
+- `remote_address` (List of String) Station remote property for phones. No validation is provided
 
