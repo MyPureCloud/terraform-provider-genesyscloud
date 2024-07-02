@@ -307,13 +307,19 @@ func SetRegisterExporter(resources map[string]*ResourceExporter) {
 }
 
 var (
-	ExportAsData []string
-	dsMutex      sync.Mutex
+	ExportAsData          []string
+	dsMutex               sync.Mutex
+	resourceNameSanitizer = NewSanitizerProvider()
 )
 
-// The GetDataSourceItems function adds resources to the ExportAsData []string
+// The GetDataSourceItems function adds resources to the ExportAsData []string and are formatted correctly
 // The ExportAsData will be checked in the genesyscloud_resource_exporter to determine resources to be exported as data source
-func GetDataSourceItems(name string) {
+func GetDataSourceItems(resourceName, itemName string) {
+	exportName := resourceName + "::" + resourceNameSanitizer.S.SanitizeResourceName(itemName)
+	addDataSourceItemstoExport(exportName)
+}
+
+func addDataSourceItemstoExport(name string) {
 	dsMutex.Lock()
 	defer dsMutex.Unlock()
 	ExportAsData = append(ExportAsData, name)
