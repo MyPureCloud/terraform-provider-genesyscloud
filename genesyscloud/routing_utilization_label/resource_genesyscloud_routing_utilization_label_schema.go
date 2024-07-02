@@ -1,6 +1,8 @@
 package routing_utilization_label
 
 import (
+	"fmt"
+	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
@@ -34,7 +36,12 @@ func ResourceRoutingUtilizationLabel() *schema.Resource {
 			"name": {
 				Description: "Label name.",
 				Type:        schema.TypeString,
-				Required:    true,
+				ValidateFunc: validation.All(
+					validation.StringIsNotEmpty,
+					stringDoesNotStartOrEndWithSpaces,
+					validation.StringDoesNotContainAny("*"),
+				),
+				Required: true,
 			},
 		},
 	}
@@ -46,10 +53,14 @@ func DataSourceRoutingUtilizationLabel() *schema.Resource {
 		ReadContext: provider.ReadWithPooledClient(dataSourceRoutingUtilizationLabelRead),
 		Schema: map[string]*schema.Schema{
 			"name": {
-				Description:  "Label name.",
-				Type:         schema.TypeString,
-				ValidateFunc: validation.StringDoesNotContainAny("*"),
-				Required:     true,
+				Description: "Label name.",
+				Type:        schema.TypeString,
+				ValidateFunc: validation.All(
+					validation.StringIsNotEmpty,
+					stringDoesNotStartOrEndWithSpaces,
+					validation.StringDoesNotContainAny("*"),
+				),
+				Required: true,
 			},
 		},
 	}
@@ -59,4 +70,17 @@ func RoutingUtilizationLabelExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: provider.GetAllWithPooledClient(getAllRoutingUtilizationLabels),
 	}
+}
+
+func stringDoesNotStartOrEndWithSpaces(input interface{}, k string) ([]string, []error) {
+	inputAsString, ok := input.(string)
+	if !ok {
+		return nil, []error{fmt.Errorf("expected type of %q to be string", k)}
+	}
+
+	if len(strings.TrimSpace(inputAsString)) != len(inputAsString) {
+		return nil, []error{fmt.Errorf("expected %q to not start or end with spaces", k)}
+	}
+
+	return nil, nil
 }
