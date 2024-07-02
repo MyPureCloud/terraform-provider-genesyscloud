@@ -1,11 +1,12 @@
 package outbound_contactlistfilter
 
 import (
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
 /*
@@ -134,9 +135,16 @@ func ResourceOutboundContactlistfilter() *schema.Resource {
 				Type:        schema.TypeString,
 			},
 			`contact_list_id`: {
-				Description: `The contact list the filter is based on.`,
-				Required:    true,
-				Type:        schema.TypeString,
+				Description:  `The contact list the filter is based on. Mutually exclusive to 'contact_list_template_id', however, one of the two must be specified`,
+				Optional:     true,
+				Type:         schema.TypeString,
+				ExactlyOneOf: []string{"contact_list_id", "contact_list_template_id"},
+			},
+			`contact_list_template_id`: {
+				Description:  `The contact list template the filter is based on. Mutually exclusive to 'contact_list_id', however, one of the two must be specified.`,
+				Optional:     true,
+				Type:         schema.TypeString,
+				ExactlyOneOf: []string{"contact_list_id", "contact_list_template_id"},
 			},
 			`clauses`: {
 				Description: `Groups of conditions to filter the contacts by.`,
@@ -160,7 +168,8 @@ func OutboundContactlistfilterExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: provider.GetAllWithPooledClient(getAllAuthOutboundContactlistfilters),
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
-			"contact_list_id": {RefType: "genesyscloud_outbound_contact_list"},
+			"contact_list_id":          {RefType: "genesyscloud_outbound_contact_list"},
+			"contact_list_template_id": {RefType: "genesyscloud_outbound_contact_list_template"},
 		},
 	}
 }
