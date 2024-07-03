@@ -1,7 +1,6 @@
 package routing_email_domain
 
 import (
-	"fmt"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
@@ -80,17 +79,4 @@ func RoutingEmailDomainExporter() *resourceExporter.ResourceExporter {
 			"custom_smtp_server_id": ResourceRoutingEmailDomain().Schema["custom_smtp_server_id"],
 		},
 	}
-}
-
-func GenerateRoutingEmailDomainResource(
-	resourceID string,
-	domainID string,
-	subdomain string,
-	fromDomain string) string {
-	return fmt.Sprintf(`resource "genesyscloud_routing_email_domain" "%s" {
-		domain_id = "%s"
-		subdomain = %s
-        mail_from_domain = %s
-	}
-	`, resourceID, domainID, subdomain, fromDomain)
 }

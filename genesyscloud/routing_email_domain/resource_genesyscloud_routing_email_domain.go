@@ -89,18 +89,13 @@ func readRoutingEmailDomain(ctx context.Context, d *schema.ResourceData, meta in
 		}
 
 		resourcedata.SetNillableValue(d, "subdomain", domain.SubDomain)
+		resourcedata.SetNillableReference(d, "custom_smtp_server_id", domain.CustomSMTPServer)
 
 		if domain.SubDomain != nil && *domain.SubDomain {
 			// Strip off the regional domain suffix added by the server
 			_ = d.Set("domain_id", strings.SplitN(*domain.Id, ".", 2)[0])
 		} else {
 			_ = d.Set("domain_id", *domain.Id)
-		}
-
-		if domain.CustomSMTPServer != nil && domain.CustomSMTPServer.Id != nil {
-			_ = d.Set("custom_smtp_server_id", *domain.CustomSMTPServer.Id)
-		} else {
-			_ = d.Set("custom_smtp_server_id", nil)
 		}
 
 		if domain.MailFromSettings != nil && domain.MailFromSettings.MailFromDomain != nil {
@@ -165,4 +160,17 @@ func deleteRoutingEmailDomain(ctx context.Context, d *schema.ResourceData, meta 
 		}
 		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Routing email domain %s still exists", d.Id()), resp))
 	})
+}
+
+func GenerateRoutingEmailDomainResource(
+	resourceID string,
+	domainID string,
+	subdomain string,
+	fromDomain string) string {
+	return fmt.Sprintf(`resource "genesyscloud_routing_email_domain" "%s" {
+		domain_id = "%s"
+		subdomain = %s
+        mail_from_domain = %s
+	}
+	`, resourceID, domainID, subdomain, fromDomain)
 }
