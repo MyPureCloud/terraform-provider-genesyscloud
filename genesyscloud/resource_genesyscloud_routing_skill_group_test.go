@@ -794,7 +794,7 @@ func getAllSkillGroupMemberDivisionIds(routingAPI *platformclientv2.RoutingApi, 
 func checkUserDeleted(id string) resource.TestCheckFunc {
 	log.Printf("Fetching user with ID: %s\n", id)
 	return func(s *terraform.State) error {
-		maxAttempts := 18
+		maxAttempts := 30
 		for i := 0; i < maxAttempts; i++ {
 
 			deleted, err := isUserDeleted(id)

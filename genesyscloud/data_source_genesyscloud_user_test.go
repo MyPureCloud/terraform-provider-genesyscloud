@@ -40,17 +40,15 @@ func TestAccDataSourceUser(t *testing.T) {
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrPair("data.genesyscloud_user."+userDataSource, "id", "genesyscloud_user."+userResource, "id"),
-					resource.ComposeTestCheckFunc(
-						func(s *terraform.State) error {
-							rs, ok := s.RootModule().Resources["genesyscloud_user."+userResource]
-							if !ok {
-								return fmt.Errorf("not found: %s", "genesyscloud_user."+userResource)
-							}
-							userID = rs.Primary.ID
-							log.Printf("User ID: %s\n", userID) // Print user ID
-							return nil
-						},
-					),
+					func(s *terraform.State) error {
+						rs, ok := s.RootModule().Resources["genesyscloud_user."+userResource]
+						if !ok {
+							return fmt.Errorf("not found: %s", "genesyscloud_user."+userResource)
+						}
+						userID = rs.Primary.ID
+						log.Printf("User ID: %s\n", userID) // Print user ID
+						return nil
+					},
 				),
 			},
 			{
