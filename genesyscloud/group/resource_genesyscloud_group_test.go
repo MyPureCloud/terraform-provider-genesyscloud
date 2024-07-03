@@ -8,7 +8,6 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
-	"time"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -28,6 +27,7 @@ func TestAccResourceGroupBasic(t *testing.T) {
 		testUserResource = "user_resource1"
 		testUserName     = "nameUser1" + uuid.NewString()
 		testUserEmail    = uuid.NewString() + "@group.com"
+		userID           string
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -72,16 +72,33 @@ func TestAccResourceGroupBasic(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_group."+groupResource1, "visibility", visMembers),
 					resource.TestCheckResourceAttr("genesyscloud_group."+groupResource1, "rules_visible", util.FalseValue),
 					func(s *terraform.State) error {
-						time.Sleep(30 * time.Second) // Wait for 30 seconds for resources to get deleted properly
+						rs, ok := s.RootModule().Resources["genesyscloud_user."+testUserResource]
+						if !ok {
+							return fmt.Errorf("not found: %s", "genesyscloud_user."+testUserResource)
+						}
+						userID = rs.Primary.ID
+						log.Printf("User ID: %s\n", userID) // Print user ID
 						return nil
 					},
 				),
 			},
 			{
+				Config: generateUserWithCustomAttrs(testUserResource, testUserEmail, testUserName) + GenerateGroupResource(
+					groupResource1,
+					groupName,
+					strconv.Quote(groupDesc2),
+					strconv.Quote(typeOfficial), // Cannot change type
+					strconv.Quote(visMembers),
+					util.FalseValue,
+					GenerateGroupOwners("genesyscloud_user."+testUserResource+".id"),
+				),
 				// Import/Read
 				ResourceName:      "genesyscloud_group." + groupResource1,
 				ImportState:       true,
 				ImportStateVerify: true,
+				Check: resource.ComposeTestCheckFunc(
+					checkUserDeleted(userID),
+				),
 			},
 		},
 		CheckDestroy: testVerifyGroupsDestroyed,
@@ -101,6 +118,7 @@ func TestAccResourceGroupAddresses(t *testing.T) {
 		testUserResource = "user_resource1"
 		testUserName     = "nameUser1" + uuid.NewString()
 		testUserEmail    = uuid.NewString() + "@groupadd.com"
+		userID           string
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -159,6 +177,15 @@ func TestAccResourceGroupAddresses(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_group."+groupResource1, "name", groupName),
 					resource.TestCheckResourceAttr("genesyscloud_group."+groupResource1, "addresses.0.type", typeGroupPhone),
 					resource.TestCheckResourceAttr("genesyscloud_group."+groupResource1, "addresses.0.extension", addrPhoneExt),
+					func(s *terraform.State) error {
+						rs, ok := s.RootModule().Resources["genesyscloud_user."+testUserResource]
+						if !ok {
+							return fmt.Errorf("not found: %s", "genesyscloud_user."+testUserResource)
+						}
+						userID = rs.Primary.ID
+						log.Printf("User ID: %s\n", userID) // Print user ID
+						return nil
+					},
 				),
 			},
 			{
@@ -174,21 +201,30 @@ func TestAccResourceGroupAddresses(t *testing.T) {
 					GenerateGroupOwners("genesyscloud_user."+testUserResource+".id"),
 				),
 				Check: resource.ComposeTestCheckFunc(
-					func(s *terraform.State) error {
-						time.Sleep(30 * time.Second) // Wait for 30 seconds for resources to get deleted properly
-						return nil
-					},
 					resource.TestCheckResourceAttr("genesyscloud_group."+groupResource1, "name", groupName),
 					resource.TestCheckResourceAttr("genesyscloud_group."+groupResource1, "addresses.0.type", typeGroupPhone),
 					resource.TestCheckResourceAttr("genesyscloud_group."+groupResource1, "addresses.0.extension", addrPhoneExt2),
 				),
 			},
 			{
+				Config: generateUserWithCustomAttrs(testUserResource, testUserEmail, testUserName) + GenerateBasicGroupResource(
+					groupResource1,
+					groupName,
+					generateGroupAddress(
+						util.NullValue,
+						typeGroupPhone,
+						strconv.Quote(addrPhoneExt2),
+					),
+					GenerateGroupOwners("genesyscloud_user."+testUserResource+".id"),
+				),
 				// Import/Read
 				ResourceName:            "genesyscloud_group." + groupResource1,
 				ImportState:             true,
 				ImportStateVerify:       true,
 				ImportStateVerifyIgnore: []string{"addresses"},
+				Check: resource.ComposeTestCheckFunc(
+					checkUserDeleted(userID),
+				),
 			},
 		},
 		CheckDestroy: testVerifyGroupsDestroyed,

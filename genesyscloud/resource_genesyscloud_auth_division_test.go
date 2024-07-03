@@ -31,9 +31,6 @@ func TestAccResourceAuthDivisionBasic(t *testing.T) {
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
-				PreConfig: func() {
-					time.Sleep(30 * time.Second)
-				},
 				// Create
 				Config: GenerateAuthDivisionResource(
 					divResource1,
@@ -44,6 +41,10 @@ func TestAccResourceAuthDivisionBasic(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_auth_division."+divResource1, "name", divName1),
 					resource.TestCheckResourceAttr("genesyscloud_auth_division."+divResource1, "description", ""),
+					func(s *terraform.State) error {
+						time.Sleep(30 * time.Second) // Wait for 30 seconds for proper updation
+						return nil
+					},
 					func(s *terraform.State) error {
 						rs, ok := s.RootModule().Resources["genesyscloud_auth_division."+divResource1]
 						if !ok {
@@ -84,6 +85,12 @@ func TestAccResourceAuthDivisionBasic(t *testing.T) {
 				),
 			},
 			{
+				Config: GenerateAuthDivisionResource(
+					divResource1,
+					divName2,
+					strconv.Quote(divDesc1),
+					util.NullValue, // Not home division
+				),
 				// Import/Read
 				ResourceName:      "genesyscloud_auth_division." + divResource1,
 				ImportState:       true,
@@ -252,8 +259,8 @@ func cleanupAuthDivision(idPrefix string) {
 }
 
 func checkDivisionDeleted(id string) resource.TestCheckFunc {
-	log.Printf("Fetching division with ID: %s\n", id)
 	return func(s *terraform.State) error {
+		log.Printf("Fetching division with ID: %s\n", id)
 		maxAttempts := 24
 		for i := 0; i < maxAttempts; i++ {
 
