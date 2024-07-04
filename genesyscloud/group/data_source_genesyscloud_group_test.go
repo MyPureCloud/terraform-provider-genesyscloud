@@ -92,9 +92,9 @@ func generateGroupDataSource(
 }
 
 func checkUserDeleted(id string) resource.TestCheckFunc {
-	log.Printf("Fetching user with ID: %s\n", id)
 	return func(s *terraform.State) error {
 		maxAttempts := 30
+		fmt.Printf("Fetching user with ID: %s\n", id)
 		for i := 0; i < maxAttempts; i++ {
 
 			deleted, err := isUserDeleted(id)
@@ -114,8 +114,9 @@ func isUserDeleted(id string) (bool, error) {
 	mu.Lock()
 	defer mu.Unlock()
 
-	usersAPI := platformclientv2.NewUsersApiWithConfig(sdkConfig)
+	usersAPI := platformclientv2.NewUsersApi()
 	// Attempt to get the user
+	fmt.Printf("User ID: %s\n", id)
 	_, response, err := usersAPI.GetUser(id, nil, "", "")
 
 	// Check if the user is not found (deleted)

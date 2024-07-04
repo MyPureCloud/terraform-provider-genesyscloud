@@ -83,22 +83,10 @@ func TestAccResourceGroupBasic(t *testing.T) {
 				),
 			},
 			{
-				Config: generateUserWithCustomAttrs(testUserResource, testUserEmail, testUserName) + GenerateGroupResource(
-					groupResource1,
-					groupName,
-					strconv.Quote(groupDesc2),
-					strconv.Quote(typeOfficial), // Cannot change type
-					strconv.Quote(visMembers),
-					util.FalseValue,
-					GenerateGroupOwners("genesyscloud_user."+testUserResource+".id"),
-				),
 				// Import/Read
 				ResourceName:      "genesyscloud_group." + groupResource1,
 				ImportState:       true,
 				ImportStateVerify: true,
-				Check: resource.ComposeTestCheckFunc(
-					checkUserDeleted(userID),
-				),
 			},
 		},
 		CheckDestroy: testVerifyGroupsDestroyed,
@@ -360,23 +348,35 @@ func TestAccResourceGroupMembers(t *testing.T) {
 
 func testVerifyGroupsDestroyed(state *terraform.State) error {
 	groupsAPI := platformclientv2.NewGroupsApi()
+	usersAPI := platformclientv2.NewUsersApi()
 	for _, rs := range state.RootModule().Resources {
-		if rs.Type != "genesyscloud_group" {
-			continue
+		if rs.Type == "genesyscloud_group" {
+			group, resp, err := groupsAPI.GetGroup(rs.Primary.ID)
+			if group != nil {
+				return fmt.Errorf("Group (%s) still exists", rs.Primary.ID)
+			} else if util.IsStatus404(resp) {
+				// Group not found as expected
+				continue
+			} else {
+				// Unexpected error
+				return fmt.Errorf("Unexpected error: %s", err)
+			}
+		}
+		if rs.Type == "genesyscloud_user" {
+			user, resp, err := usersAPI.GetUser(rs.Primary.ID, nil, "", "")
+			if user != nil {
+				checkUserDeleted(rs.Primary.ID)
+				return fmt.Errorf("User (%s) still exists", rs.Primary.ID)
+			} else if util.IsStatus404(resp) {
+				// User not found as expected
+				continue
+			} else {
+				// Unexpected error
+				return fmt.Errorf("Unexpected error: %s", err)
+			}
 		}
 
-		group, resp, err := groupsAPI.GetGroup(rs.Primary.ID)
-		if group != nil {
-			return fmt.Errorf("Group (%s) still exists", rs.Primary.ID)
-		} else if util.IsStatus404(resp) {
-			// Group not found as expected
-			continue
-		} else {
-			// Unexpected error
-			return fmt.Errorf("Unexpected error: %s", err)
-		}
 	}
-	// Success. All groups destroyed
 	return nil
 }
 

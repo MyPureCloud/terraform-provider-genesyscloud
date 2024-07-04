@@ -527,7 +527,7 @@ def xmlContent = readFile 'test-results.xml'
 def testCases = []
 def testCasePattern = /<testcase\s+classname="([^"]+)"\s+name="([^"]+)"\s+time="([^"]+)"/
 def failurePattern = /<failure[^>]*>([\s\S]*?)<\/failure>/
-def skippedPattern = /<skipped\s+message="([^"]+)"[^>]*>/
+def skippedPattern = /<skipped[^>]*>([\s\S]*?)<\/skipped>/
 
 def matcher = xmlContent =~ testCasePattern
 while (matcher.find()) {
@@ -708,7 +708,7 @@ writeFile file: 'test-report.html', text: html.toString()
 def extractReason(String log) {
     def reason = ""
     // Extract the relevant part of the skipped message
-    def reasonPattern = /resource_genesyscloud_.*?\.go:\d+: (.*?)&#xA;--- SKIP/
+    def reasonPattern = /_genesyscloud_.*?\.go:\d+: (.*?)&#xA;--- SKIP/
     def matcher = log =~ reasonPattern
     if (matcher.find()) {
         reason = matcher.group(1).trim()

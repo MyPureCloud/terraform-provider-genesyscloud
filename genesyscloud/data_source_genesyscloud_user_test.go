@@ -18,7 +18,7 @@ func TestAccDataSourceUser(t *testing.T) {
 		userResource   = "test-user"
 		userDataSource = "test-user-data"
 		randomString   = uuid.NewString()
-		userEmail      = "John_Doe" + randomString + "@example.com"
+		userEmail      = "John_Doe" + randomString + "@exampleuser.com"
 		userName       = "John_Doe" + randomString
 		userID         string
 	)
@@ -70,10 +70,10 @@ func TestAccDataSourceUser(t *testing.T) {
 						time.Sleep(30 * time.Second) // Wait for 30 seconds for proper deletion
 						return nil
 					},
-					checkUserDeleted(userID),
 				),
 			},
 		},
+		CheckDestroy: testVerifyUsersDestroyed,
 	})
 }
 
