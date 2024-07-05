@@ -1254,6 +1254,7 @@ func testVerifyQueuesDestroyed(state *terraform.State) error {
 
 func testVerifyQueuesAndUsersDestroyed(state *terraform.State) error {
 	routingAPI := platformclientv2.NewRoutingApi()
+	usersAPI := platformclientv2.NewUsersApi()
 	for _, rs := range state.RootModule().Resources {
 		if rs.Type == "genesyscloud_routing_queue" {
 			queue, resp, err := routingAPI.GetRoutingQueue(rs.Primary.ID)
