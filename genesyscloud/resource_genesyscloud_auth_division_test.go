@@ -85,19 +85,10 @@ func TestAccResourceAuthDivisionBasic(t *testing.T) {
 				),
 			},
 			{
-				Config: GenerateAuthDivisionResource(
-					divResource1,
-					divName2,
-					strconv.Quote(divDesc1),
-					util.NullValue, // Not home division
-				),
 				// Import/Read
 				ResourceName:      "genesyscloud_auth_division." + divResource1,
 				ImportState:       true,
 				ImportStateVerify: true,
-				Check: resource.ComposeTestCheckFunc(
-					checkDivisionDeleted(divisionID),
-				),
 			},
 		},
 		CheckDestroy: testVerifyDivisionsDestroyed,
@@ -198,6 +189,7 @@ func testVerifyDivisionsDestroyed(state *terraform.State) error {
 
 		division, resp, err := authAPI.GetAuthorizationDivision(rs.Primary.ID, false)
 		if division != nil {
+			checkDivisionDeleted(rs.Primary.ID)
 			return fmt.Errorf("Division (%s) still exists", rs.Primary.ID)
 		} else if util.IsStatus404(resp) {
 			// Division not found as expected

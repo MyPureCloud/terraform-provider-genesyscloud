@@ -816,6 +816,10 @@ func TestAccResourceRoutingQueueMembers(t *testing.T) {
 					queueMemberResource1,
 					queueMemberEmail1,
 					queueMemberName1,
+				) + genesyscloud.GenerateBasicUserResource(
+					queueMemberResource2,
+					queueMemberEmail2,
+					queueMemberName2,
 				) + GenerateRoutingQueueResourceBasic(
 					queueResource,
 					queueName,

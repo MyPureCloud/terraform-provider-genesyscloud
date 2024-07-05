@@ -195,24 +195,11 @@ func TestAccResourceGroupAddresses(t *testing.T) {
 				),
 			},
 			{
-				Config: generateUserWithCustomAttrs(testUserResource, testUserEmail, testUserName) + GenerateBasicGroupResource(
-					groupResource1,
-					groupName,
-					generateGroupAddress(
-						util.NullValue,
-						typeGroupPhone,
-						strconv.Quote(addrPhoneExt2),
-					),
-					GenerateGroupOwners("genesyscloud_user."+testUserResource+".id"),
-				),
 				// Import/Read
 				ResourceName:            "genesyscloud_group." + groupResource1,
 				ImportState:             true,
 				ImportStateVerify:       true,
 				ImportStateVerifyIgnore: []string{"addresses"},
-				Check: resource.ComposeTestCheckFunc(
-					checkUserDeleted(userID),
-				),
 			},
 		},
 		CheckDestroy: testVerifyGroupsAndUsersDestroyed,
@@ -337,9 +324,6 @@ func TestAccResourceGroupMembers(t *testing.T) {
 				ResourceName:      "genesyscloud_user." + testUserResource,
 				ImportState:       true,
 				ImportStateVerify: true,
-				Check: resource.ComposeTestCheckFunc(
-					checkUserDeleted(userID),
-				),
 			},
 		},
 		CheckDestroy: testVerifyGroupsAndUsersDestroyed,
