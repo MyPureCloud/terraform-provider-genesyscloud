@@ -87,6 +87,9 @@ func TestAccResourceGroupBasic(t *testing.T) {
 				ResourceName:      "genesyscloud_group." + groupResource1,
 				ImportState:       true,
 				ImportStateVerify: true,
+				Check: resource.ComposeTestCheckFunc(
+					checkUserDeleted(userID),
+				),
 			},
 		},
 		CheckDestroy: testVerifyGroupsAndUsersDestroyed,
@@ -324,6 +327,9 @@ func TestAccResourceGroupMembers(t *testing.T) {
 				ResourceName:      "genesyscloud_user." + testUserResource,
 				ImportState:       true,
 				ImportStateVerify: true,
+				Check: resource.ComposeTestCheckFunc(
+					checkUserDeleted(userID),
+				),
 			},
 		},
 		CheckDestroy: testVerifyGroupsAndUsersDestroyed,

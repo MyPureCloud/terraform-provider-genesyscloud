@@ -59,6 +59,7 @@ func TestAccResourceRoutingQueueBasic(t *testing.T) {
 		testUserEmail           = uuid.NewString() + "@examplestest.com"
 		callbackHours           = "7"
 		callbackHours2          = "7"
+		userID                  string
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -118,6 +119,15 @@ func TestAccResourceRoutingQueueBasic(t *testing.T) {
 					validateBullseyeSettings(queueResource1, 1, alertTimeout1, "genesyscloud_routing_skill."+queueSkillResource),
 					validateRoutingRules(queueResource1, 0, routingRuleOpAny, "50", "5"),
 					validateAgentOwnedRouting(queueResource1, "agent_owned_routing", util.TrueValue, callbackHours, callbackHours),
+					func(s *terraform.State) error {
+						rs, ok := s.RootModule().Resources["genesyscloud_user."+testUserResource]
+						if !ok {
+							return fmt.Errorf("not found: %s", "genesyscloud_user."+testUserResource)
+						}
+						userID = rs.Primary.ID
+						log.Printf("User ID: %s\n", userID) // Print user ID
+						return nil
+					},
 				),
 			},
 			{
@@ -181,6 +191,9 @@ func TestAccResourceRoutingQueueBasic(t *testing.T) {
 				ResourceName:      "genesyscloud_routing_queue." + queueResource1,
 				ImportState:       true,
 				ImportStateVerify: true,
+				Check: resource.ComposeTestCheckFunc(
+					checkUserDeleted(userID),
+				),
 			},
 		},
 		CheckDestroy: testVerifyQueuesAndUsersDestroyed,
@@ -411,10 +424,6 @@ func TestAccResourceRoutingQueueConditionalRouting(t *testing.T) {
 					validateMediaSettings(queueResource1, "media_settings_chat", alertTimeout1, util.FalseValue, slPercent1, slDuration1),
 					validateMediaSettings(queueResource1, "media_settings_email", alertTimeout1, util.FalseValue, slPercent1, slDuration1),
 					validateMediaSettings(queueResource1, "media_settings_message", alertTimeout1, util.FalseValue, slPercent1, slDuration1),
-					func(s *terraform.State) error {
-						time.Sleep(60 * time.Second) // Wait for 60 seconds for resource to get deleted properly
-						return nil
-					},
 				),
 			},
 			{
@@ -795,8 +804,8 @@ func TestAccResourceRoutingQueueMembers(t *testing.T) {
 		queueName            = "Terraform Test Queue3-" + uuid.NewString()
 		queueMemberResource1 = "test-queue-user1"
 		queueMemberResource2 = "test-queue-user2"
-		queueMemberEmail1    = "terraform1-" + uuid.NewString() + "@queue.com"
-		queueMemberEmail2    = "terraform2-" + uuid.NewString() + "@queue.com"
+		queueMemberEmail1    = "terraform1-" + uuid.NewString() + "@queue1.com"
+		queueMemberEmail2    = "terraform2-" + uuid.NewString() + "@queue2.com"
 		queueMemberName1     = "Henry Terraform Test"
 		queueMemberName2     = "Amanda Terraform Test"
 		defaultQueueRingNum  = "1"
@@ -1580,7 +1589,7 @@ func generateUserWithCustomAttrs(resourceID string, email string, name string, a
 func checkUserDeleted(id string) resource.TestCheckFunc {
 	log.Printf("Fetching user with ID: %s\n", id)
 	return func(s *terraform.State) error {
-		maxAttempts := 18
+		maxAttempts := 30
 		for i := 0; i < maxAttempts; i++ {
 
 			deleted, err := isUserDeleted(id)

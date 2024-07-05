@@ -157,6 +157,7 @@ func TestAccResourceGroupRolesMembership(t *testing.T) {
 				),
 			},
 		},
+		CheckDestroy: testVerifyGroupsAndUsersDestroyed,
 	})
 }
 
@@ -294,4 +295,38 @@ func isUserDeleted(id string) (bool, error) {
 
 	// If user is found, it means the user is not deleted
 	return false, nil
+}
+
+func testVerifyGroupsAndUsersDestroyed(state *terraform.State) error {
+	groupsAPI := platformclientv2.NewGroupsApi()
+	usersAPI := platformclientv2.NewUsersApi()
+	for _, rs := range state.RootModule().Resources {
+		if rs.Type == "genesyscloud_group" {
+			group, resp, err := groupsAPI.GetGroup(rs.Primary.ID)
+			if group != nil {
+				return fmt.Errorf("Group (%s) still exists", rs.Primary.ID)
+			} else if util.IsStatus404(resp) {
+				// Group not found as expected
+				continue
+			} else {
+				// Unexpected error
+				return fmt.Errorf("Unexpected error: %s", err)
+			}
+		}
+		if rs.Type == "genesyscloud_user" {
+			user, resp, err := usersAPI.GetUser(rs.Primary.ID, nil, "", "")
+			if user != nil {
+				checkUserDeleted(rs.Primary.ID)
+				return fmt.Errorf("User (%s) still exists", rs.Primary.ID)
+			} else if util.IsStatus404(resp) {
+				// User not found as expected
+				continue
+			} else {
+				// Unexpected error
+				return fmt.Errorf("Unexpected error: %s", err)
+			}
+		}
+
+	}
+	return nil
 }

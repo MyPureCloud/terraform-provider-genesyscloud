@@ -273,7 +273,7 @@ func isDivisionDeleted(id string) (bool, error) {
 	mu.Lock()
 	defer mu.Unlock()
 
-	authAPI := platformclientv2.NewAuthorizationApiWithConfig(sdkConfig)
+	authAPI := platformclientv2.NewAuthorizationApi()
 	// Attempt to get the division
 	_, response, err := authAPI.GetAuthorizationDivision(id, false)
 

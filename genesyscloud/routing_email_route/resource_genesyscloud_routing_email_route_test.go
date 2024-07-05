@@ -154,8 +154,8 @@ func TestAccResourceRoutingEmailRoute(t *testing.T) {
 		},
 		CheckDestroy: testVerifyRoutingEmailRouteDestroyed,
 	})
-
-	domainId = fmt.Sprintf("terraformroute.%s.com", strings.Replace(uuid.NewString(), "-", "", -1))
+	CleanupRoutingEmailDomains()
+	domainId = fmt.Sprintf("terraformroutes.%s.com", strings.Replace(uuid.NewString(), "-", "", -1))
 	// Standard acceptance tests
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
