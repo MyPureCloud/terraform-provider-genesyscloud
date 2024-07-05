@@ -17,8 +17,7 @@ import (
 )
 
 var (
-	sdkConfig *platformclientv2.Configuration
-	mu        sync.Mutex
+	mu sync.Mutex
 )
 
 func TestAccDataSourceGroup(t *testing.T) {

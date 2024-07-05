@@ -89,7 +89,7 @@ func TestAccResourceGroupBasic(t *testing.T) {
 				ImportStateVerify: true,
 			},
 		},
-		CheckDestroy: testVerifyGroupsDestroyed,
+		CheckDestroy: testVerifyGroupsAndUsersDestroyed,
 	})
 }
 
@@ -215,7 +215,7 @@ func TestAccResourceGroupAddresses(t *testing.T) {
 				),
 			},
 		},
-		CheckDestroy: testVerifyGroupsDestroyed,
+		CheckDestroy: testVerifyGroupsAndUsersDestroyed,
 	})
 }
 
@@ -342,11 +342,33 @@ func TestAccResourceGroupMembers(t *testing.T) {
 				),
 			},
 		},
-		CheckDestroy: testVerifyGroupsDestroyed,
+		CheckDestroy: testVerifyGroupsAndUsersDestroyed,
 	})
 }
 
 func testVerifyGroupsDestroyed(state *terraform.State) error {
+	groupsAPI := platformclientv2.NewGroupsApi()
+	for _, rs := range state.RootModule().Resources {
+		if rs.Type != "genesyscloud_group" {
+			continue
+		}
+
+		group, resp, err := groupsAPI.GetGroup(rs.Primary.ID)
+		if group != nil {
+			return fmt.Errorf("Group (%s) still exists", rs.Primary.ID)
+		} else if util.IsStatus404(resp) {
+			// Group not found as expected
+			continue
+		} else {
+			// Unexpected error
+			return fmt.Errorf("Unexpected error: %s", err)
+		}
+	}
+	// Success. All groups destroyed
+	return nil
+}
+
+func testVerifyGroupsAndUsersDestroyed(state *terraform.State) error {
 	groupsAPI := platformclientv2.NewGroupsApi()
 	usersAPI := platformclientv2.NewUsersApi()
 	for _, rs := range state.RootModule().Resources {

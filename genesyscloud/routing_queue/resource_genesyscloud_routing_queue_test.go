@@ -24,8 +24,7 @@ import (
 )
 
 var (
-	sdkConfig *platformclientv2.Configuration
-	mu        sync.Mutex
+	mu sync.Mutex
 )
 
 func TestAccResourceRoutingQueueBasic(t *testing.T) {
@@ -184,7 +183,7 @@ func TestAccResourceRoutingQueueBasic(t *testing.T) {
 				ImportStateVerify: true,
 			},
 		},
-		CheckDestroy: testVerifyQueuesDestroyed,
+		CheckDestroy: testVerifyQueuesAndUsersDestroyed,
 	})
 }
 
@@ -425,7 +424,7 @@ func TestAccResourceRoutingQueueConditionalRouting(t *testing.T) {
 				ImportStateVerify: true,
 			},
 		},
-		CheckDestroy: testVerifyQueuesDestroyed,
+		CheckDestroy: testVerifyQueuesAndUsersDestroyed,
 	})
 }
 
@@ -893,7 +892,7 @@ func TestAccResourceRoutingQueueMembers(t *testing.T) {
 				ImportStateVerify: true,
 			},
 		},
-		CheckDestroy: testVerifyQueuesDestroyed,
+		CheckDestroy: testVerifyQueuesAndUsersDestroyed,
 	})
 }
 func TestAccResourceRoutingQueueWrapupCodes(t *testing.T) {
@@ -1253,6 +1252,39 @@ func testVerifyQueuesDestroyed(state *terraform.State) error {
 	return nil
 }
 
+func testVerifyQueuesAndUsersDestroyed(state *terraform.State) error {
+	routingAPI := platformclientv2.NewRoutingApi()
+	for _, rs := range state.RootModule().Resources {
+		if rs.Type == "genesyscloud_routing_queue" {
+			queue, resp, err := routingAPI.GetRoutingQueue(rs.Primary.ID)
+			if queue != nil {
+				return fmt.Errorf("Queue (%s) still exists", rs.Primary.ID)
+			} else if util.IsStatus404(resp) {
+				// Queue not found as expected
+				continue
+			} else {
+				// Unexpected error
+				return fmt.Errorf("Unexpected error: %s", err)
+			}
+		}
+		if rs.Type == "genesyscloud_user" {
+			user, resp, err := usersAPI.GetUser(rs.Primary.ID, nil, "", "")
+			if user != nil {
+				checkUserDeleted(rs.Primary.ID)
+				return fmt.Errorf("User (%s) still exists", rs.Primary.ID)
+			} else if util.IsStatus404(resp) {
+				// User not found as expected
+				continue
+			} else {
+				// Unexpected error
+				return fmt.Errorf("Unexpected error: %s", err)
+			}
+		}
+	}
+	// Success. All queues destroyed
+	return nil
+}
+
 func validateMediaSettings(resourceName, settingsAttr, alertingTimeout, enableAutoAnswer, slPercent, slDurationMs string) resource.TestCheckFunc {
 	return resource.ComposeAggregateTestCheckFunc(
 		resource.TestCheckResourceAttr("genesyscloud_routing_queue."+resourceName, settingsAttr+".0.alerting_timeout_sec", alertingTimeout),
@@ -1563,7 +1595,7 @@ func isUserDeleted(id string) (bool, error) {
 	mu.Lock()
 	defer mu.Unlock()
 
-	usersAPI := platformclientv2.NewUsersApiWithConfig(sdkConfig)
+	usersAPI := platformclientv2.NewUsersApi()
 	// Attempt to get the user
 	_, response, err := usersAPI.GetUser(id, nil, "", "")
 

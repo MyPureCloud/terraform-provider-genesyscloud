@@ -76,9 +76,9 @@ pipeline {
                           sh "gotestsum --junitfile unit.xml --format standard-verbose ./genesyscloud/...  -run 'Test|TestUnit' -skip 'TestAcc' -v -timeout 30m -count=1 -cover -coverprofile=coverageUnit.out"
 
                     }
-                }
             }
-        }
+            }
+         }
 
     stage('Architect Tests') {
             environment {
@@ -94,7 +94,7 @@ pipeline {
                     }
                 }
             }
-        }
+    }
 
         stage('Idp Tests') {
             environment {
@@ -520,14 +520,13 @@ pipeline {
 
     writeFile file: 'coverageReport.html', text: updatedHtmlFile
 
-                    // Generate manual report
 def xmlContent = readFile 'test-results.xml'
 
 // Extract test case information using regular expressions
 def testCases = []
 def testCasePattern = /<testcase\s+classname="([^"]+)"\s+name="([^"]+)"\s+time="([^"]+)"/
 def failurePattern = /<failure[^>]*>([\s\S]*?)<\/failure>/
-def skippedPattern = /<skipped[^>]*>([\s\S]*?)<\/skipped>/
+def skippedPattern = /<skipped\s+message="([^"]+)"/
 
 def matcher = xmlContent =~ testCasePattern
 while (matcher.find()) {
@@ -554,14 +553,10 @@ while (matcher.find()) {
     if (failureMatcher.find()) {
         result.status = 'Failed'
         result.log = failureMatcher.group(1).trim()
+        result.reason = extractReason(result.log)
     } else if (skippedMatcher.find()) {
         result.status = 'Skipped'
-        result.reason = extractReason(skippedMatcher.group(1).trim()) // Get the skipped reason
-    }
-
-    // Extract reason for failed tests
-    if (result.status == 'Failed') {
-        result.reason = extractReason(result.log)
+        result.reason = skippedMatcher.group(1).trim() // Get the skipped reason directly
     }
 
     testCases << result
@@ -695,20 +690,21 @@ html.append("""
 // Save the HTML report to a file
 writeFile file: 'test-report.html', text: html.toString()
 
-                // Optionally, print the location of the HTML report
+
+                    // Optionally, print the location of the HTML report
                     echo "HTML report generated: \${env.WORKSPACE}/test-report.html"
-                }
+}
                 archiveArtifacts artifacts: 'coverageReport.html,test-report.html,test-results.xml', allowEmptyArchive: true   
            }
         }
     }
 }
  
-// Function to extract reason from the log for failed and skipped tests
+// Function to extract reason from the log for failed tests
 def extractReason(String log) {
     def reason = ""
-    // Extract the relevant part of the skipped message
-    def reasonPattern = /_genesyscloud_.*?\.go:\d+: (.*?)&#xA;--- SKIP/
+    // Extract the relevant part of the failed message
+    def reasonPattern = /_genesyscloud_.*?\.go:\d+: (.*?) ---/
     def matcher = log =~ reasonPattern
     if (matcher.find()) {
         reason = matcher.group(1).trim()
