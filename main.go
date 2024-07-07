@@ -33,6 +33,7 @@ import (
 	integrationAction "terraform-provider-genesyscloud/genesyscloud/integration_action"
 	integrationCred "terraform-provider-genesyscloud/genesyscloud/integration_credential"
 	integrationCustomAuth "terraform-provider-genesyscloud/genesyscloud/integration_custom_auth_action"
+	integrationFacebook "terraform-provider-genesyscloud/genesyscloud/integration_facebook"
 	journeyOutcomePredictor "terraform-provider-genesyscloud/genesyscloud/journey_outcome_predictor"
 	journeyViews "terraform-provider-genesyscloud/genesyscloud/journey_views"
 	oauth "terraform-provider-genesyscloud/genesyscloud/oauth_client"
@@ -201,6 +202,7 @@ func registerResources() {
 	integrationCustomAuth.SetRegistrar(regInstance)                        //Registering integrations custom auth actions
 	integrationAction.SetRegistrar(regInstance)                            //Registering integrations actions
 	integrationCred.SetRegistrar(regInstance)                              //Registering integrations credentials
+	integrationFacebook.SetRegistrar(regInstance)                          //Registering integrations Facebook
 	recMediaRetPolicy.SetRegistrar(regInstance)                            //Registering recording media retention policies
 	responsemanagementResponse.SetRegistrar(regInstance)                   //Registering responsemanagement responses
 	responsemanagementResponseasset.SetRegistrar(regInstance)              //Registering responsemanagement response asset
