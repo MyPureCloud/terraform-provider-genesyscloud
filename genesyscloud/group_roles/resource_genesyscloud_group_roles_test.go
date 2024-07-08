@@ -142,9 +142,10 @@ func TestAccResourceGroupRolesMembership(t *testing.T) {
 						return nil
 					},
 				),
+				PreventPostDestroyRefresh: true,
 			},
 			{
-				Config: generateUserWithCustomAttrs(testUserResource, testUserEmail, testUserName) + generateGroupRoles(
+				Config: generateGroupRoles(
 					groupRoleResource,
 					groupResource1,
 				),
@@ -152,6 +153,7 @@ func TestAccResourceGroupRolesMembership(t *testing.T) {
 				ResourceName:      "genesyscloud_group_roles." + groupRoleResource,
 				ImportState:       true,
 				ImportStateVerify: true,
+				Destroy:           true,
 				Check: resource.ComposeTestCheckFunc(
 					checkUserDeleted(userID),
 				),

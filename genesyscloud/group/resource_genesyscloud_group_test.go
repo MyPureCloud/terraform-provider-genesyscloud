@@ -81,12 +81,23 @@ func TestAccResourceGroupBasic(t *testing.T) {
 						return nil
 					},
 				),
+				PreventPostDestroyRefresh: true,
 			},
 			{
+				Config: generateUserWithCustomAttrs(testUserResource, testUserEmail, testUserName) + GenerateGroupResource(
+					groupResource1,
+					groupName,
+					strconv.Quote(groupDesc2),
+					strconv.Quote(typeOfficial), // Cannot change type
+					strconv.Quote(visMembers),
+					util.FalseValue,
+					GenerateGroupOwners("genesyscloud_user."+testUserResource+".id"),
+				),
 				// Import/Read
 				ResourceName:      "genesyscloud_group." + groupResource1,
 				ImportState:       true,
 				ImportStateVerify: true,
+				Destroy:           true,
 				Check: resource.ComposeTestCheckFunc(
 					checkUserDeleted(userID),
 				),
@@ -196,13 +207,28 @@ func TestAccResourceGroupAddresses(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_group."+groupResource1, "addresses.0.type", typeGroupPhone),
 					resource.TestCheckResourceAttr("genesyscloud_group."+groupResource1, "addresses.0.extension", addrPhoneExt2),
 				),
+				PreventPostDestroyRefresh: true,
 			},
 			{
+				Config: generateUserWithCustomAttrs(testUserResource, testUserEmail, testUserName) + GenerateBasicGroupResource(
+					groupResource1,
+					groupName,
+					generateGroupAddress(
+						util.NullValue,
+						typeGroupPhone,
+						strconv.Quote(addrPhoneExt2),
+					),
+					GenerateGroupOwners("genesyscloud_user."+testUserResource+".id"),
+				),
 				// Import/Read
 				ResourceName:            "genesyscloud_group." + groupResource1,
 				ImportState:             true,
 				ImportStateVerify:       true,
 				ImportStateVerifyIgnore: []string{"addresses"},
+				Destroy:                 true,
+				Check: resource.ComposeTestCheckFunc(
+					checkUserDeleted(userID),
+				),
 			},
 		},
 		CheckDestroy: testVerifyGroupsAndUsersDestroyed,

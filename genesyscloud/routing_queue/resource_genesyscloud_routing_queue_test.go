@@ -237,6 +237,7 @@ func TestAccResourceRoutingQueueConditionalRouting(t *testing.T) {
 		testUserResource                       = "user_resource1"
 		testUserName                           = "nameUser1" + uuid.NewString()
 		testUserEmail                          = uuid.NewString() + "@example.com"
+		userID                                 string
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -424,13 +425,71 @@ func TestAccResourceRoutingQueueConditionalRouting(t *testing.T) {
 					validateMediaSettings(queueResource1, "media_settings_chat", alertTimeout1, util.FalseValue, slPercent1, slDuration1),
 					validateMediaSettings(queueResource1, "media_settings_email", alertTimeout1, util.FalseValue, slPercent1, slDuration1),
 					validateMediaSettings(queueResource1, "media_settings_message", alertTimeout1, util.FalseValue, slPercent1, slDuration1),
+					func(s *terraform.State) error {
+						rs, ok := s.RootModule().Resources["genesyscloud_user."+testUserResource]
+						if !ok {
+							return fmt.Errorf("not found: %s", "genesyscloud_user."+testUserResource)
+						}
+						userID = rs.Primary.ID
+						log.Printf("User ID: %s\n", userID) // Print user ID
+						return nil
+					},
 				),
+				PreventPostDestroyRefresh: true,
 			},
 			{
+				Config: GenerateRoutingQueueResource(
+					queueResource1,
+					queueName1,
+					queueDesc1,
+					util.NullValue,  // MANDATORY_TIMEOUT
+					"200000",        // acw_timeout
+					util.NullValue,  // ALL
+					util.NullValue,  // auto_answer_only true
+					util.NullValue,  // No calling party name
+					util.NullValue,  // No calling party number
+					util.NullValue,  // enable_transcription false
+					util.FalseValue, // suppress_in_queue_call_recording false
+					util.NullValue,  // enable_manual_assignment false
+					strconv.Quote("TimestampAndPriority"),
+					GenerateMediaSettings("media_settings_call", alertTimeout1, util.FalseValue, slPercent1, slDuration1),
+					GenerateMediaSettings("media_settings_callback", alertTimeout1, util.FalseValue, slPercent1, slDuration1),
+					GenerateMediaSettings("media_settings_chat", alertTimeout1, util.FalseValue, slPercent1, slDuration1),
+					GenerateMediaSettings("media_settings_email", alertTimeout1, util.FalseValue, slPercent1, slDuration1),
+					GenerateMediaSettings("media_settings_message", alertTimeout1, util.FalseValue, slPercent1, slDuration1),
+					GenerateConditionalGroupRoutingRules(
+						util.NullValue,                         // queue_id (queue_id in the first rule should be omitted)
+						conditionalGroupRouting1Operator,       // operator
+						conditionalGroupRouting1Metric,         // metric
+						conditionalGroupRouting1ConditionValue, // condition_value
+						conditionalGroupRouting1WaitSeconds,    // wait_seconds
+						GenerateConditionalGroupRoutingRuleGroup(
+							"genesyscloud_routing_skill_group."+skillGroupResourceId+".id", // group_id
+							conditionalGroupRouting1GroupType,                              // group_type
+						),
+					),
+					GenerateConditionalGroupRoutingRules(
+						"genesyscloud_routing_queue."+queueResource2+".id", // queue_id
+						conditionalGroupRouting2Operator,                   // operator
+						conditionalGroupRouting2Metric,                     // metric
+						conditionalGroupRouting2ConditionValue,             // condition_value
+						conditionalGroupRouting2WaitSeconds,                // wait_seconds
+						GenerateConditionalGroupRoutingRuleGroup(
+							"genesyscloud_group."+groupResourceId+".id", // group_id
+							conditionalGroupRouting2GroupType,           // group_type
+						),
+					),
+					"skill_groups = [genesyscloud_routing_skill_group."+skillGroupResourceId+".id]",
+					"groups = [genesyscloud_group."+groupResourceId+".id]",
+				),
 				// Import/Read
 				ResourceName:      "genesyscloud_routing_queue." + queueResource1,
 				ImportState:       true,
 				ImportStateVerify: true,
+				Destroy:           true,
+				Check: resource.ComposeTestCheckFunc(
+					checkUserDeleted(userID),
+				),
 			},
 		},
 		CheckDestroy: testVerifyQueuesAndUsersDestroyed,
@@ -837,6 +896,7 @@ func TestAccResourceRoutingQueueMembers(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					validateMember("genesyscloud_routing_queue."+queueResource, "genesyscloud_user."+queueMemberResource1, defaultQueueRingNum),
 				),
+				PreventPostDestroyRefresh: true,
 			},
 			{
 				// Update with another queue member and modify rings
@@ -872,10 +932,6 @@ func TestAccResourceRoutingQueueMembers(t *testing.T) {
 					GenerateBullseyeSettings("10"),
 					GenerateBullseyeSettings("10"),
 				) + genesyscloud.GenerateBasicUserResource(
-					queueMemberResource1,
-					queueMemberEmail1,
-					queueMemberName1,
-				) + genesyscloud.GenerateBasicUserResource(
 					queueMemberResource2,
 					queueMemberEmail2,
 					queueMemberName2,
@@ -903,6 +959,7 @@ func TestAccResourceRoutingQueueMembers(t *testing.T) {
 				ResourceName:      "genesyscloud_routing_queue." + queueResource,
 				ImportState:       true,
 				ImportStateVerify: true,
+				Destroy:           true,
 			},
 		},
 		CheckDestroy: testVerifyQueuesAndUsersDestroyed,
