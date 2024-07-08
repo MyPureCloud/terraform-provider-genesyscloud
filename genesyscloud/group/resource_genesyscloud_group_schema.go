@@ -125,6 +125,7 @@ func ResourceGroup() *schema.Resource {
 				Description: "Allow roles to be assigned to this group.",
 				Type:        schema.TypeBool,
 				Optional:    true,
+				Default:     true,
 			},
 		},
 	}
