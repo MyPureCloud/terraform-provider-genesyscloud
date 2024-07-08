@@ -1603,12 +1603,11 @@ func (g *GenesysCloudResourceExporter) resourceIdExists(refID string, existingRe
 }
 
 func (g *GenesysCloudResourceExporter) isDataSource(resType string, name string) bool {
-	for _, element := range resourceExporter.ExportAsData {
-		if element == resType+"::"+name || fetchByRegex(element, resType, name) {
-			return true
-		}
-	}
-	for _, element := range g.replaceWithDatasource {
+	return g.containsElement(resourceExporter.ExportAsData, resType, name) || g.containsElement(g.replaceWithDatasource, resType, name)
+}
+
+func (g *GenesysCloudResourceExporter) containsElement(elements []string, resType, name string) bool {
+	for _, element := range elements {
 		if element == resType+"::"+name || fetchByRegex(element, resType, name) {
 			return true
 		}

@@ -312,9 +312,9 @@ var (
 	resourceNameSanitizer = NewSanitizerProvider()
 )
 
-// The GetDataSourceItems function adds resources to the ExportAsData []string and are formatted correctly
+// The AddDataSourceItems function adds resources to the ExportAsData []string and are formatted correctly
 // The ExportAsData will be checked in the genesyscloud_resource_exporter to determine resources to be exported as data source
-func GetDataSourceItems(resourceName, itemName string) {
+func AddDataSourceItems(resourceName, itemName string) {
 	exportName := resourceName + "::" + resourceNameSanitizer.S.SanitizeResourceName(itemName)
 	addDataSourceItemstoExport(exportName)
 }
