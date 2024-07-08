@@ -186,10 +186,14 @@ func testVerifyDivisionsDestroyed(state *terraform.State) error {
 			// We do not delete home divisions
 			continue
 		}
+		err := checkDivisionDeleted(rs.Primary.ID)(state)
+		if err != nil {
+			return err
+		}
+		fmt.Printf("Check complete for division ID: %s\n", rs.Primary.ID)
 
 		division, resp, err := authAPI.GetAuthorizationDivision(rs.Primary.ID, false)
 		if division != nil {
-			checkDivisionDeleted(rs.Primary.ID)
 			return fmt.Errorf("Division (%s) still exists", rs.Primary.ID)
 		} else if util.IsStatus404(resp) {
 			// Division not found as expected
@@ -255,7 +259,6 @@ func checkDivisionDeleted(id string) resource.TestCheckFunc {
 		log.Printf("Fetching division with ID: %s\n", id)
 		maxAttempts := 24
 		for i := 0; i < maxAttempts; i++ {
-
 			deleted, err := isDivisionDeleted(id)
 			if err != nil {
 				return err

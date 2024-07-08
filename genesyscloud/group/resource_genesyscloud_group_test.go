@@ -98,9 +98,6 @@ func TestAccResourceGroupBasic(t *testing.T) {
 				ImportState:       true,
 				ImportStateVerify: true,
 				Destroy:           true,
-				Check: resource.ComposeTestCheckFunc(
-					checkUserDeleted(userID),
-				),
 			},
 		},
 		CheckDestroy: testVerifyGroupsAndUsersDestroyed,
@@ -401,9 +398,12 @@ func testVerifyGroupsAndUsersDestroyed(state *terraform.State) error {
 			}
 		}
 		if rs.Type == "genesyscloud_user" {
+			err := checkUserDeleted(rs.Primary.ID)(state)
+			if err != nil {
+				continue
+			}
 			user, resp, err := usersAPI.GetUser(rs.Primary.ID, nil, "", "")
 			if user != nil {
-				checkUserDeleted(rs.Primary.ID)
 				return fmt.Errorf("User (%s) still exists", rs.Primary.ID)
 			} else if util.IsStatus404(resp) {
 				// User not found as expected

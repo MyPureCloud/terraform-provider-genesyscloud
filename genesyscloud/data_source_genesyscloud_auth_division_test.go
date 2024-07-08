@@ -61,23 +61,12 @@ func TestAccDataSourceAuthDivision(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrPair("data.genesyscloud_auth_division."+divDataSource, "id", "genesyscloud_auth_division."+divResource, "id"),
 				),
-				PreventPostDestroyRefresh: true,
 			},
 			{
-				Config: GenerateAuthDivisionResource(
-					divResource,
-					divName,
-					util.NullValue,
-					util.NullValue,
-				),
 				// Import/Read
 				ResourceName:      "genesyscloud_auth_division." + divResource,
 				ImportState:       true,
 				ImportStateVerify: true,
-				Destroy:           true,
-				Check: resource.ComposeTestCheckFunc(
-					checkDivisionDeleted(divisionID),
-				),
 			},
 		},
 		CheckDestroy: testVerifyDivisionsDestroyed,
