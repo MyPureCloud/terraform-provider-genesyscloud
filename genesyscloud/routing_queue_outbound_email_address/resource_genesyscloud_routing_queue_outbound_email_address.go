@@ -38,7 +38,7 @@ func getAllAuthRoutingQueueOutboundEmailAddress(ctx context.Context, clientConfi
 	}
 
 	for _, queue := range *queues {
-		if queue.OutboundEmailAddress != nil && *queue.OutboundEmailAddress != nil {
+		if queue.OutboundEmailAddress != nil && !isQueueEmailAddressEmpty(*queue.OutboundEmailAddress) {
 			resources[*queue.Id] = &resourceExporter.ResourceMeta{Name: *queue.Name + "-email-address"}
 		}
 	}
