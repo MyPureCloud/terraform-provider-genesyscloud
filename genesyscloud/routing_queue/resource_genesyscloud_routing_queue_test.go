@@ -487,9 +487,6 @@ func TestAccResourceRoutingQueueConditionalRouting(t *testing.T) {
 				ImportState:       true,
 				ImportStateVerify: true,
 				Destroy:           true,
-				Check: resource.ComposeTestCheckFunc(
-					checkUserDeleted(userID),
-				),
 			},
 		},
 		CheckDestroy: testVerifyQueuesAndUsersDestroyed,
@@ -884,10 +881,6 @@ func TestAccResourceRoutingQueueMembers(t *testing.T) {
 					queueMemberResource1,
 					queueMemberEmail1,
 					queueMemberName1,
-				) + genesyscloud.GenerateBasicUserResource(
-					queueMemberResource2,
-					queueMemberEmail2,
-					queueMemberName2,
 				) + GenerateRoutingQueueResourceBasic(
 					queueResource,
 					queueName,
@@ -1647,43 +1640,28 @@ func generateUserWithCustomAttrs(resourceID string, email string, name string, a
 }
 
 func checkUserDeleted(id string) resource.TestCheckFunc {
-	log.Printf("Fetching user with ID: %s\n", id)
 	return func(s *terraform.State) error {
+		log.Printf("Fetching user with ID: %s\n", id)
 		maxAttempts := 30
 		for i := 0; i < maxAttempts; i++ {
+			fmt.Printf("%d attempt\n", i)
 
-			deleted, err := isUserDeleted(id)
-			if err != nil {
-				return err
-			}
-			if deleted {
+			usersAPI := platformclientv2.NewUsersApi()
+			_, response, err := usersAPI.GetUser(id, nil, "", "")
+
+			if response != nil && response.StatusCode == 404 {
+				// User is deleted
 				return nil
 			}
+
+			if err != nil {
+				log.Printf("Error fetching user: %v", err)
+				return err
+			}
+
+			// If user is found, it means the user is not deleted
 			time.Sleep(10 * time.Second)
 		}
 		return fmt.Errorf("user %s was not deleted properly", id)
 	}
-}
-
-func isUserDeleted(id string) (bool, error) {
-	mu.Lock()
-	defer mu.Unlock()
-
-	usersAPI := platformclientv2.NewUsersApi()
-	// Attempt to get the user
-	_, response, err := usersAPI.GetUser(id, nil, "", "")
-
-	// Check if the user is not found (deleted)
-	if response != nil && response.StatusCode == 404 {
-		return true, nil // User is deleted
-	}
-
-	// Handle other errors
-	if err != nil {
-		log.Printf("Error fetching user: %v", err)
-		return false, err
-	}
-
-	// If user is found, it means the user is not deleted
-	return false, nil
 }

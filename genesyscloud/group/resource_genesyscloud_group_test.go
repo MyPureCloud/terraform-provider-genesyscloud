@@ -349,11 +349,13 @@ func TestAccResourceGroupMembers(t *testing.T) {
 						return nil
 					},
 				),
+				PreventPostDestroyRefresh: true,
 			},
 			{
 				ResourceName:      "genesyscloud_user." + testUserResource,
 				ImportState:       true,
 				ImportStateVerify: true,
+				Destroy:           true,
 				Check: resource.ComposeTestCheckFunc(
 					checkUserDeleted(userID),
 				),
@@ -408,7 +410,7 @@ func testVerifyGroupsAndUsersDestroyed(state *terraform.State) error {
 			}
 			user, resp, err := usersAPI.GetUser(rs.Primary.ID, nil, "", "")
 			if user != nil {
-				return fmt.Errorf("User (%s) still exists", rs.Primary.ID)
+				return fmt.Errorf("User Resource (%s) still exists", rs.Primary.ID)
 			} else if util.IsStatus404(resp) {
 				// User not found as expected
 				continue

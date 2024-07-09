@@ -46,6 +46,7 @@ func TestAccDataSourceAuthDivision(t *testing.T) {
 						return nil
 					},
 				),
+				PreventPostDestroyRefresh: true,
 			},
 			{
 				Config: GenerateAuthDivisionResource(
@@ -67,6 +68,7 @@ func TestAccDataSourceAuthDivision(t *testing.T) {
 				ResourceName:      "genesyscloud_auth_division." + divResource,
 				ImportState:       true,
 				ImportStateVerify: true,
+				Destroy:           true,
 			},
 		},
 		CheckDestroy: testVerifyDivisionsDestroyed,

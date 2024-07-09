@@ -404,7 +404,7 @@ func testVerifyIntegrationAndUsersDestroyed(state *terraform.State) error {
 			}
 			user, resp, err := usersAPI.GetUser(rs.Primary.ID, nil, "", "")
 			if user != nil {
-				return fmt.Errorf("User (%s) still exists", rs.Primary.ID)
+				return fmt.Errorf("User Resource (%s) still exists", rs.Primary.ID)
 			} else if util.IsStatus404(resp) {
 				// User not found as expected
 				continue
