@@ -44,6 +44,7 @@ func TestAccResourceGroupBasic(t *testing.T) {
 						util.NullValue, // Default type
 						util.NullValue, // Default visibility
 						util.NullValue, // Default rules_visible
+						"roles_enabled = false",
 						GenerateGroupOwners("genesyscloud_user."+testUserResource+".id"),
 					),
 				Check: resource.ComposeTestCheckFunc(
@@ -52,6 +53,7 @@ func TestAccResourceGroupBasic(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_group."+groupResource1, "description", groupDesc1),
 					resource.TestCheckResourceAttr("genesyscloud_group."+groupResource1, "visibility", visPublic),
 					resource.TestCheckResourceAttr("genesyscloud_group."+groupResource1, "rules_visible", util.TrueValue),
+					resource.TestCheckResourceAttr("genesyscloud_group."+groupResource1, "roles_enabled", util.FalseValue),
 				),
 			},
 			{
@@ -63,6 +65,7 @@ func TestAccResourceGroupBasic(t *testing.T) {
 					strconv.Quote(typeOfficial), // Cannot change type
 					strconv.Quote(visMembers),
 					util.FalseValue,
+					"roles_enabled = true",
 					GenerateGroupOwners("genesyscloud_user."+testUserResource+".id"),
 				),
 				Check: resource.ComposeTestCheckFunc(
@@ -71,6 +74,7 @@ func TestAccResourceGroupBasic(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_group."+groupResource1, "description", groupDesc2),
 					resource.TestCheckResourceAttr("genesyscloud_group."+groupResource1, "visibility", visMembers),
 					resource.TestCheckResourceAttr("genesyscloud_group."+groupResource1, "rules_visible", util.FalseValue),
+					resource.TestCheckResourceAttr("genesyscloud_group."+groupResource1, "roles_enabled", util.TrueValue),
 					func(s *terraform.State) error {
 						rs, ok := s.RootModule().Resources["genesyscloud_user."+testUserResource]
 						if !ok {

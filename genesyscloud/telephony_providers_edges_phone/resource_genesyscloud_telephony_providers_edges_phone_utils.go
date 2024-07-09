@@ -343,7 +343,7 @@ func generateLineProperties(lineAddress string, remoteAddress string) string {
 	}
 
 	if remoteAddress == "" {
-		fmt.Sprintf(`
+		return fmt.Sprintf(`
 		line_properties {
 			line_address = [%s]
 		}
