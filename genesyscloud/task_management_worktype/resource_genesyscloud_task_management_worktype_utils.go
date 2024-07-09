@@ -3,6 +3,8 @@ package task_management_worktype
 import (
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"terraform-provider-genesyscloud/genesyscloud/util/lists"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
@@ -79,7 +81,6 @@ func getWorktypecreateFromResourceData(d *schema.ResourceData) platformclientv2.
 
 // getWorktypeupdateFromResourceData maps data from schema ResourceData object to a platformclientv2.Worktypeupdate
 func getWorktypeupdateFromResourceData(d *schema.ResourceData, statuses *[]platformclientv2.Workitemstatus) platformclientv2.Worktypeupdate {
-
 	worktype := platformclientv2.Worktypeupdate{}
 	worktype.SetField("Name", platformclientv2.String(d.Get("name").(string)))
 	if d.HasChange("description") {
@@ -144,7 +145,7 @@ func getWorktypeupdateFromResourceDataStatus(d *schema.ResourceData, statuses *[
 	return worktype
 }
 
-// getStatusFromName gets a platformclientv2.Workitemstatus from a  *[]platformclientv2.Workitemstatu by name
+// getStatusFromName gets a platformclientv2.Workitemstatus from a  *[]platformclientv2.Workitemstatus by name
 func getStatusFromName(statusName string, statuses *[]platformclientv2.Workitemstatus) *platformclientv2.Workitemstatus {
 	if statuses == nil {
 		return nil
@@ -159,7 +160,7 @@ func getStatusFromName(statusName string, statuses *[]platformclientv2.Workitems
 	return nil
 }
 
-// getStatusIdFromName gets a status id from a  *[]platformclientv2.Workitemstatu by status name
+// getStatusIdFromName gets a status id from a  *[]platformclientv2.Workitemstatus by status name
 func getStatusIdFromName(statusName string, statuses *[]platformclientv2.Workitemstatus) *string {
 	if statuses == nil {
 		return nil
@@ -355,74 +356,29 @@ func flattenRoutingSkillReferences(routingSkillReferences *[]platformclientv2.Ro
 	return routingSkillReferenceList
 }
 
-// getStatusesForUpdateAndCreation takes a resource data list []interface{} of statuses and determines if they
-// are to be created or just updated. Returns the two lists.
-func getStatusesForUpdateAndCreation(statuses []interface{}, existingStatuses *[]platformclientv2.Workitemstatus) (forCreation []interface{}, forUpdate []interface{}) {
-	forCreation = make([]interface{}, 0)
-	forUpdate = make([]interface{}, 0)
-
-	// We will consider it the same status and update in-place if the name and the category matches.
-	// else, a new status will be created.
-	for _, status := range statuses {
-		statusMap := status.(map[string]interface{})
-		statusName, ok := statusMap["name"]
-		if !ok {
-			continue
-		}
-		statusCat, ok := statusMap["category"]
-		if !ok {
-			continue
-		}
-		toCreateNewStatus := true
-
-		// If the status matches an existing name and same category then we'll consider
-		// it the same and not create a new one.
-		for _, existingStatus := range *existingStatuses {
-			if *existingStatus.Name == statusName && *existingStatus.Category == statusCat {
-				toCreateNewStatus = false
-				break
-			}
-		}
-
-		if toCreateNewStatus {
-			forCreation = append(forCreation, status)
-		} else {
-			forUpdate = append(forUpdate, status)
-		}
-	}
-
-	return forCreation, forUpdate
-}
-
 // createWorktypeStatuses creates new statuses as defined in the config. This is just the initial
 // creation as some statuses also need to be updated separately to build the destination status references.
-func createWorktypeStatuses(ctx context.Context, proxy *taskManagementWorktypeProxy, worktypeId string, statuses []interface{}) (*[]platformclientv2.Workitemstatus, error) {
-	ret := []platformclientv2.Workitemstatus{}
-
+func createWorktypeStatuses(ctx context.Context, proxy *taskManagementWorktypeProxy, worktypeId string, statuses []interface{}) diag.Diagnostics {
 	sdkWorkitemStatusCreates := buildWorkitemStatusCreates(statuses)
 	for _, statusCreate := range *sdkWorkitemStatusCreates {
-		status, resp, err := proxy.createTaskManagementWorktypeStatus(ctx, worktypeId, &statusCreate)
+		_, resp, err := proxy.createTaskManagementWorktypeStatus(ctx, worktypeId, &statusCreate)
 		if err != nil {
-			return nil, fmt.Errorf("failed to create worktype status %s: %v %v", *statusCreate.Name, err, resp)
+			return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("failed to create worktype %s status %s: %v", worktypeId, *statusCreate.Name, err), resp)
 		}
-
-		ret = append(ret, *status)
 	}
 
-	return &ret, nil
+	return nil
 }
 
 // updateWorktypeStatuses updates the statuses of a worktype. There are two modes depending if the passed statuses
 // is newly created or not. For newly created, we just check if there's any need to resolve references since they still
 // have none. For existing statuses, they should be passed as already validated (has change - because API will return error
 // if there's no change to the status), the method will not check it.
-func updateWorktypeStatuses(ctx context.Context, proxy *taskManagementWorktypeProxy, worktypeId string, statuses []interface{}, isNewlyCreated bool) (*[]platformclientv2.Workitemstatus, error) {
-	ret := []platformclientv2.Workitemstatus{}
-
+func updateWorktypeStatuses(ctx context.Context, proxy *taskManagementWorktypeProxy, worktypeId string, statuses []interface{}, isNewlyCreated bool) diag.Diagnostics {
 	// Get all the worktype statuses so we'll have the new statuses for referencing
 	worktype, resp, err := proxy.getTaskManagementWorktypeById(ctx, worktypeId)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get task management worktype %s: %v %v", worktypeId, err, resp)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("failed to get task management worktype %s: %v", worktypeId, err), resp)
 	}
 
 	// Update the worktype statuses as they need to build the "destination status" references
@@ -430,7 +386,7 @@ func updateWorktypeStatuses(ctx context.Context, proxy *taskManagementWorktypePr
 	for _, statusUpdate := range *sdkWorkitemStatusUpdates {
 		existingStatus := getStatusFromName(*statusUpdate.Name, worktype.Statuses)
 		if existingStatus.Id == nil {
-			return nil, fmt.Errorf("failed to update a status %s. Not found in the worktype %s: %v", *statusUpdate.Name, *worktype.Name, err)
+			return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("failed to update status %s. Not found in the worktype %s", *statusUpdate.Name, *worktype.Name), resp)
 		}
 
 		// API does not allow updating a status with no actual change.
@@ -442,15 +398,54 @@ func updateWorktypeStatuses(ctx context.Context, proxy *taskManagementWorktypePr
 			continue
 		}
 
-		status, resp, err := proxy.updateTaskManagementWorktypeStatus(ctx, *worktype.Id, *existingStatus.Id, &statusUpdate)
+		_, resp, err := proxy.updateTaskManagementWorktypeStatus(ctx, *worktype.Id, *existingStatus.Id, &statusUpdate)
 		if err != nil {
-			return nil, fmt.Errorf("failed to update worktype status %s: %v %v", *statusUpdate.Name, err, resp)
+			return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("failed to update worktype %s status %s: %v", *worktype.Id, *statusUpdate.Name, err), resp)
 		}
-
-		ret = append(ret, *status)
 	}
 
-	return &ret, nil
+	return nil
+}
+
+func splitStatuses(currentStatuses *platformclientv2.Workitemstatuslisting, definedStatuses []interface{}) (createStatuses, updateStatuses []interface{}, deleteStatuses []string) {
+	for _, currentStatus := range *currentStatuses.Entities {
+		if present := idInStatusesInterfaceMap(*currentStatus.Id, definedStatuses); !present {
+			deleteStatuses = append(deleteStatuses, *currentStatus.Id)
+		}
+	}
+
+	for _, definedStatus := range definedStatuses {
+		statusMap := definedStatus.(map[string]interface{})
+		if present := idInStatuses(statusMap["id"].(string), currentStatuses.Entities); present {
+			updateStatuses = append(updateStatuses, definedStatus)
+		} else {
+			createStatuses = append(createStatuses, definedStatus)
+		}
+	}
+
+	fmt.Println("Create statuses ", createStatuses, "\nUpdate statuses ", updateStatuses, "\nDelete statuses ", deleteStatuses)
+	return createStatuses, updateStatuses, deleteStatuses
+}
+
+func idInStatusesInterfaceMap(id string, statuses []interface{}) bool {
+	for _, status := range statuses {
+		statusMap := status.(map[string]interface{})
+		if id == statusMap["id"].(string) {
+			return true
+		}
+	}
+
+	return false
+}
+
+func idInStatuses(id string, statuses *[]platformclientv2.Workitemstatus) bool {
+	for _, status := range *statuses {
+		if id == *status.Id {
+			return true
+		}
+	}
+
+	return false
 }
 
 // updateDefaultStatusName updates a worktype's default status name. This should be called after

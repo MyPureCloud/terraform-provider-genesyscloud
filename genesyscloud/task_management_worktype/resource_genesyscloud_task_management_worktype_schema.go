@@ -35,7 +35,7 @@ func ResourceTaskManagementWorktype() *schema.Resource {
 		Schema: map[string]*schema.Schema{
 			`id`: {
 				Description: `Read-only identifier of the workitem status`,
-				Computed:    true,
+				Optional:    true,
 				Type:        schema.TypeString,
 			},
 			`name`: {

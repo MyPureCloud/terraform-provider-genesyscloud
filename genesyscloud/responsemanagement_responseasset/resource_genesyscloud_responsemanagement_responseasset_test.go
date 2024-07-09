@@ -19,7 +19,7 @@ func TestAccResourceResponseManagementResponseAsset(t *testing.T) {
 	var (
 		resourceId         = "responseasset"
 		testFilesDir       = "test_responseasset_data"
-		fileName1          = "yeti-img.png"
+		fileName1          = "yeti -img.png"
 		fileName2          = "genesys-img.png"
 		fullPath1          = filepath.Join(testFilesDir, fileName1)
 		fullPath2          = filepath.Join(testFilesDir, fileName2)
