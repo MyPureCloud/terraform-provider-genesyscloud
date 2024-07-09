@@ -95,17 +95,21 @@ func TestAccDataSourceOutboundMessagingCampaign(t *testing.T) {
 	if err != nil {
 		t.Errorf("failed to authorize client: %v", err)
 	}
-	api := platformclientv2.NewRoutingApiWithConfig(config)
-	err = createRoutingSmsPhoneNumber(smsConfigSenderSMSPhoneNumber, api)
-	if err != nil {
-		t.Errorf("error creating sms phone number %s: %v", smsConfigSenderSMSPhoneNumber, err)
-	}
-	defer func() {
-		_, err := api.DeleteRoutingSmsPhonenumber(smsConfigSenderSMSPhoneNumber)
+
+	if v := os.Getenv("GENESYSCLOUD_REGION"); v == "us-east-1" {
+		api := platformclientv2.NewRoutingApiWithConfig(config)
+		err = createRoutingSmsPhoneNumber(smsConfigSenderSMSPhoneNumber, api)
 		if err != nil {
-			t.Logf("error deleting phone number %s: %v", smsConfigSenderSMSPhoneNumber, err)
+			t.Errorf("error creating sms phone number %s: %v", smsConfigSenderSMSPhoneNumber, err)
 		}
-	}()
+
+		defer func() {
+			_, err := api.DeleteRoutingSmsPhonenumber(smsConfigSenderSMSPhoneNumber)
+			if err != nil {
+				t.Logf("error deleting phone number %s: %v", smsConfigSenderSMSPhoneNumber, err)
+			}
+		}()
+	}
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
