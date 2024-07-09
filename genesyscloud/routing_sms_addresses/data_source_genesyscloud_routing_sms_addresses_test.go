@@ -69,8 +69,8 @@ func TestAccDataSourceSmsAddressTestOrg(t *testing.T) {
 					"street-1",
 					"city-1",
 					"region-1",
-					"postal-code-1",
-					"country-code-1",
+					"90080",
+					"US",
 					util.TrueValue,
 				) + generateSmsAddressDataSource(
 					addressData,

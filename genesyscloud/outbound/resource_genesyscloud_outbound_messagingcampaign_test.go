@@ -3,6 +3,7 @@ package outbound
 import (
 	"fmt"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 	obDnclist "terraform-provider-genesyscloud/genesyscloud/outbound_dnclist"
@@ -106,6 +107,10 @@ func TestAccResourceOutboundMessagingCampaign(t *testing.T) {
 			),
 		)
 	)
+
+	if v := os.Getenv("GENESYSCLOUD_REGION"); v == "tca" {
+		smsConfigSenderSMSPhoneNumber = "+18158599986"
+	}
 
 	config, err := provider.AuthorizeSdk()
 	if err != nil {
