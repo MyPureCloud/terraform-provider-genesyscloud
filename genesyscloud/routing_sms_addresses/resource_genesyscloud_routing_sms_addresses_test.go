@@ -15,7 +15,7 @@ import (
 func TestAccResourceRoutingSmsAddressesProdOrg(t *testing.T) {
 	// This test is valid only for prod
 	if v := os.Getenv("GENESYSCLOUD_REGION"); v == "tca" {
-		t.Skip()
+		t.Skip("This test is valid only for prod")
 	}
 	var (
 		resourceName = "AD-123"
@@ -72,7 +72,7 @@ func TestAccResourceRoutingSmsAddressesProdOrg(t *testing.T) {
 // If running in a prod org this test can be removed/skipped, it's only intended as a backup test for test orgs
 func TestAccResourceRoutingSmsAddressesTestOrg(t *testing.T) {
 	if v := os.Getenv("GENESYSCLOUD_REGION"); v == "us-east-1" {
-		t.Skip()
+		t.Skip("This test will only pass in Test org")
 	}
 	var (
 		// Due to running in a test org, a default address will be returned from the API and not the address we set.

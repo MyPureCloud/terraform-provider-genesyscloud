@@ -7,17 +7,19 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 
-	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
 
 func TestAccDataSourceSmsAddressProdOrg(t *testing.T) {
-	t.Skip("Skip this test as it will only pass in a prod org")
+	//this test as it will only pass in a prod org
+	if v := os.Getenv("GENESYSCLOUD_REGION"); v == "tca" {
+		t.Skip("This test as it will only pass in a prod org")
+	}
 	var (
 		addressRes  = "addressRes"
 		addressData = "addressData"
 
-		name = "Address" + uuid.NewString()
+		name = "name-1"
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -28,11 +30,11 @@ func TestAccDataSourceSmsAddressProdOrg(t *testing.T) {
 				Config: generateRoutingSmsAddressesResource(
 					addressRes,
 					name,
-					"Main street",
-					"New York",
-					"New York",
-					"AA34HH",
-					"US",
+					"street-1",
+					"city-1",
+					"region-1",
+					"postal-code-1",
+					"country-code-1",
 					util.FalseValue,
 				) + generateSmsAddressDataSource(
 					addressData,
@@ -45,6 +47,7 @@ func TestAccDataSourceSmsAddressProdOrg(t *testing.T) {
 						"genesyscloud_routing_sms_address."+addressRes, "id",
 					),
 				),
+				Destroy: false,
 			},
 		},
 	})
@@ -53,7 +56,7 @@ func TestAccDataSourceSmsAddressProdOrg(t *testing.T) {
 // If running in a prod org this test can be removed/skipped, it's only intended as a backup test for test orgs
 func TestAccDataSourceSmsAddressTestOrg(t *testing.T) {
 	if v := os.Getenv("GENESYSCLOUD_REGION"); v == "us-east-1" {
-		t.Skip()
+		t.Skip("Test intended only for test org")
 	}
 	var (
 		addressRes  = "addressRes"

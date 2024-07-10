@@ -76,7 +76,10 @@ func TestAccDataSourceGroup(t *testing.T) {
 				Destroy:           true,
 			},
 		},
-		CheckDestroy: testVerifyUsersDestroyed,
+		CheckDestroy: func(state *terraform.State) error {
+			time.Sleep(45 * time.Second)
+			return testVerifyUsersDestroyed(state)
+		},
 	})
 }
 

@@ -490,7 +490,10 @@ func TestAccResourceRoutingQueueConditionalRouting(t *testing.T) {
 				Destroy:           true,
 			},
 		},
-		CheckDestroy: testVerifyQueuesAndUsersDestroyed,
+		CheckDestroy: func(state *terraform.State) error {
+			time.Sleep(45 * time.Second)
+			return testVerifyQueuesAndUsersDestroyed(state)
+		},
 	})
 }
 

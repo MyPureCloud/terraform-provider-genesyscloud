@@ -83,15 +83,20 @@ func TestAccResourceAuthDivisionBasic(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_auth_division."+divResource1, "name", divName2),
 					resource.TestCheckResourceAttr("genesyscloud_auth_division."+divResource1, "description", divDesc1),
 				),
+				Destroy: false,
 			},
 			{
 				// Import/Read
 				ResourceName:      "genesyscloud_auth_division." + divResource1,
 				ImportState:       true,
 				ImportStateVerify: true,
+				Destroy:           true,
 			},
 		},
-		CheckDestroy: testVerifyDivisionsDestroyed,
+		CheckDestroy: func(state *terraform.State) error {
+			time.Sleep(45 * time.Second)
+			return testVerifyDivisionsDestroyed(state)
+		},
 	})
 }
 
