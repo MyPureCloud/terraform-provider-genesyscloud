@@ -9,7 +9,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
-const resourceName = "genesyscloud_conversation_messaging_settings"
+const resourceName = "genesyscloud_conversations_messaging_settings"
 
 var (
 	eventSettingResource = &schema.Resource{
@@ -94,19 +94,19 @@ var (
 
 // SetRegistrar registers all of the resources, datasources and exporters in the package
 func SetRegistrar(regInstance registrar.Registrar) {
-	regInstance.RegisterResource(resourceName, ResourceConversationMessagingSettings())
-	regInstance.RegisterDataSource(resourceName, DataSourceConversationMessagingSettings())
-	regInstance.RegisterExporter(resourceName, ConversationMessagingSettingsExporter())
+	regInstance.RegisterResource(resourceName, ResourceConversationsMessagingSettings())
+	regInstance.RegisterDataSource(resourceName, DataSourceConversationsMessagingSettings())
+	regInstance.RegisterExporter(resourceName, ConversationsMessagingSettingsExporter())
 }
 
-func ResourceConversationMessagingSettings() *schema.Resource {
+func ResourceConversationsMessagingSettings() *schema.Resource {
 	return &schema.Resource{
-		Description: "Genesys Cloud conversation messaging settings",
+		Description: "Genesys Cloud conversations messaging settings",
 
-		CreateContext: provider.CreateWithPooledClient(createConversationMessagingSettings),
-		ReadContext:   provider.ReadWithPooledClient(readConversationMessagingSettings),
-		UpdateContext: provider.UpdateWithPooledClient(updateConversationMessagingSettings),
-		DeleteContext: provider.DeleteWithPooledClient(deleteConversationMessagingSettings),
+		CreateContext: provider.CreateWithPooledClient(createConversationsMessagingSettings),
+		ReadContext:   provider.ReadWithPooledClient(readConversationsMessagingSettings),
+		UpdateContext: provider.UpdateWithPooledClient(updateConversationsMessagingSettings),
+		DeleteContext: provider.DeleteWithPooledClient(deleteConversationsMessagingSettings),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -135,17 +135,17 @@ func ResourceConversationMessagingSettings() *schema.Resource {
 	}
 }
 
-// DataSourceConversationMessagingSettings registers the genesyscloud_conversation_messaging_settings data source
-func DataSourceConversationMessagingSettings() *schema.Resource {
+// DataSourceConversationsMessagingSettings registers the genesyscloud_conversations_messaging_settings data source
+func DataSourceConversationsMessagingSettings() *schema.Resource {
 	return &schema.Resource{
-		Description: "Genesys Cloud conversation messaging settings data source. Select an conversation messaging settings by name",
-		ReadContext: provider.ReadWithPooledClient(dataSourceConversationMessagingSettingsRead),
+		Description: "Genesys Cloud conversations messaging settings data source. Select an conversations messaging settings by name",
+		ReadContext: provider.ReadWithPooledClient(dataSourceConversationsMessagingSettingsRead),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
 		Schema: map[string]*schema.Schema{
 			"name": {
-				Description: "conversation messaging settings name",
+				Description: "conversations messaging settings name",
 				Type:        schema.TypeString,
 				Required:    true,
 			},
@@ -153,12 +153,9 @@ func DataSourceConversationMessagingSettings() *schema.Resource {
 	}
 }
 
-// ConversationMessagingSettingsExporter returns the resourceExporter object used to hold the genesyscloud_conversation_messaging_settings exporter's config
-func ConversationMessagingSettingsExporter() *resourceExporter.ResourceExporter {
+// ConversationsMessagingSettingsExporter returns the resourceExporter object used to hold the genesyscloud_conversations_messaging_settings exporter's config
+func ConversationsMessagingSettingsExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
-		GetResourcesFunc: provider.GetAllWithPooledClient(getAllAuthConversationMessagingSettingss),
-		RefAttrs:         map[string]*resourceExporter.RefAttrSettings{
-			// TODO: Add any reference attributes here
-		},
+		GetResourcesFunc: provider.GetAllWithPooledClient(getAllAuthConversationsMessagingSettingss),
 	}
 }

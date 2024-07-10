@@ -2,13 +2,14 @@ package conversations_messaging_settings
 
 import (
 	"fmt"
+	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
 )
 
-func getConversationMessagingSettingsFromResourceData(d *schema.ResourceData) platformclientv2.Messagingsettingrequest {
+func getConversationsMessagingSettingsFromResourceData(d *schema.ResourceData) platformclientv2.Messagingsettingrequest {
 	return platformclientv2.Messagingsettingrequest{
 		Name:    platformclientv2.String(d.Get("name").(string)),
 		Content: buildContentSettings(d.Get("content").([]interface{})),
@@ -18,6 +19,7 @@ func getConversationMessagingSettingsFromResourceData(d *schema.ResourceData) pl
 
 func buildContentSettings(contentSettings []interface{}) *platformclientv2.Contentsetting {
 	var sdkContentSetting platformclientv2.Contentsetting
+
 	for _, contentSetting := range contentSettings {
 		contentSettingsMap, ok := contentSetting.(map[string]interface{})
 		if !ok {
@@ -26,12 +28,12 @@ func buildContentSettings(contentSettings []interface{}) *platformclientv2.Conte
 
 		resourcedata.BuildSDKInterfaceArrayValueIfNotNil(&sdkContentSetting.Story, contentSettingsMap, "story", buildStorySettings)
 	}
-
 	return &sdkContentSetting
 }
 
 func buildStorySettings(storySettings []interface{}) *platformclientv2.Storysetting {
 	var sdkStorySetting platformclientv2.Storysetting
+
 	for _, storySetting := range storySettings {
 		storySettingsMap, ok := storySetting.(map[string]interface{})
 		if !ok {
@@ -47,6 +49,7 @@ func buildStorySettings(storySettings []interface{}) *platformclientv2.Storysett
 
 func buildInboundOnlySettings(inboundOnlySettings []interface{}) *platformclientv2.Inboundonlysetting {
 	var sdkInboundOnlySetting platformclientv2.Inboundonlysetting
+
 	for _, inboundOnlySetting := range inboundOnlySettings {
 		inboundOnlySettingsMap, ok := inboundOnlySetting.(map[string]interface{})
 		if !ok {
@@ -60,6 +63,7 @@ func buildInboundOnlySettings(inboundOnlySettings []interface{}) *platformclient
 
 func buildEventSetting(eventSettings []interface{}) *platformclientv2.Eventsetting {
 	var sdkEventSetting platformclientv2.Eventsetting
+
 	for _, eventSetting := range eventSettings {
 		eventSettingsMap, ok := eventSetting.(map[string]interface{})
 		if !ok {
@@ -104,7 +108,6 @@ func buildSettingDirections(settingDirections []interface{}) *platformclientv2.S
 
 // flattenInboundOnlySettings maps a Genesys Cloud *[]platformclientv2.Inboundonlysetting into a []interface{}
 func flattenInboundOnlySettings(inboundOnlySettings *platformclientv2.Inboundonlysetting) []interface{} {
-
 	var inboundOnlySettingList []interface{}
 	inboundOnlySettingMap := make(map[string]interface{})
 
@@ -118,7 +121,6 @@ func flattenInboundOnlySettings(inboundOnlySettings *platformclientv2.Inboundonl
 // flattenStorySettings maps a Genesys Cloud *[]platformclientv2.Storysetting into a []interface{}
 func flattenStorySettings(storySettings *platformclientv2.Storysetting) []interface{} {
 	var storySettingList []interface{}
-
 	storySettingMap := make(map[string]interface{})
 
 	resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(storySettingMap, "mention", storySettings.Mention, flattenInboundOnlySettings)
@@ -131,7 +133,6 @@ func flattenStorySettings(storySettings *platformclientv2.Storysetting) []interf
 
 // flattenContentSettings maps a Genesys Cloud *[]platformclientv2.Contentsetting into a []interface{}
 func flattenContentSettings(contentSettings *platformclientv2.Contentsetting) []interface{} {
-
 	var contentSettingList []interface{}
 	contentSettingMap := make(map[string]interface{})
 
@@ -157,7 +158,6 @@ func flattenSettingDirections(settingDirections *platformclientv2.Settingdirecti
 
 // flattenTypingSettings maps a Genesys Cloud *[]platformclientv2.Typingsetting into a []interface{}
 func flattenTypingSettings(typingSettings *platformclientv2.Typingsetting) []interface{} {
-
 	var typingSettingList []interface{}
 	typingSettingMap := make(map[string]interface{})
 
@@ -170,7 +170,6 @@ func flattenTypingSettings(typingSettings *platformclientv2.Typingsetting) []int
 
 // flattenEventSettings maps a Genesys Cloud *[]platformclientv2.Eventsetting into a []interface{}
 func flattenEventSettings(eventSettings *platformclientv2.Eventsetting) []interface{} {
-
 	var eventSettingList []interface{}
 	eventSettingMap := make(map[string]interface{})
 
@@ -181,34 +180,46 @@ func flattenEventSettings(eventSettings *platformclientv2.Eventsetting) []interf
 	return eventSettingList
 }
 
-func GenerateBasicConversationMessagingSettingsResource(resourceID string, name string) string {
-	return fmt.Sprintf(`resource "genesyscloud_conversation_messaging_settings" "%s" {
+func generateConversationsMessagingSettingsResource(resourceID string, name string, nestedBlocks ...string) string {
+	return fmt.Sprintf(`resource "genesyscloud_conversations_messaging_settings" "%s" {
 		name = "%s"
+		%s
 	}
-	`, resourceID, name)
+	`, resourceID, name, strings.Join(nestedBlocks, "\n"))
 }
 
-func GenerateFullConversationMessagingSettingsResource(resourceID string, name, mentionInbound, replyInbound, onInbound, onOutbound string) string {
-	return fmt.Sprintf(`resource "genesyscloud_conversation_messaging_settings" "%s" {
-		name = "%s"
-		content {
-			story {
-				mention {
-					inbound = "%s"
-				}
-				reply {
-					inbound = "%s"
-				}
+func generateTypingOnSetting(inbound, outbound string) string {
+	return fmt.Sprintf(`
+	event {
+		typing {
+			on {
+				inbound = "%s"
+				outbound = "%s"
 			}
 		}
-		event {
-			typing {
-				on {
-					inbound = "%s"
-					outbound = "%s"
-				}
-			}
+	}`, inbound, outbound)
+}
+
+func generateContentStoryBlock(nestedBlocks ...string) string {
+	return fmt.Sprintf(`
+	content {
+		story {
+			%s
 		}
-	}
-	`, resourceID, name, mentionInbound, replyInbound, onInbound, onOutbound)
+	}`, strings.Join(nestedBlocks, "\n"))
+}
+
+func generateMentionInboundOnlySetting(value string) string {
+	return fmt.Sprintf(`
+		mention {
+			inbound = "%s"
+		}
+	`, value)
+}
+
+func generateReplyInboundOnlySetting(value string) string {
+	return fmt.Sprintf(`
+	reply {
+		inbound = "%s"
+	}`, value)
 }
