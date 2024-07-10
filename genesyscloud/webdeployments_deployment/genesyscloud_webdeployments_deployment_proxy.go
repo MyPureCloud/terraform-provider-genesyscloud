@@ -3,14 +3,15 @@ package webdeployments_deployment
 import (
 	"context"
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"log"
 	"strconv"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v131/platformclientv2"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
+
+	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
 )
 
 var internalProxy *webDeploymentsProxy

@@ -1,4 +1,4 @@
-package genesyscloud
+package idp_generic
 
 import (
 	"fmt"
@@ -9,7 +9,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v131/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
 )
 
 func TestAccResourceIdpGeneric(t *testing.T) {
@@ -23,11 +23,14 @@ func TestAccResourceIdpGeneric(t *testing.T) {
 		nameIDFormatDefault = "urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified"
 		nameIDFormatEmail   = "urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress"
 		base64Img           = "PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvM"
+		uri3                = "https://example.com"
+		slo_binding1        = "HTTP Redirect"
+		slo_binding2        = "HTTP Post"
 	)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
-		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		ProviderFactories: provider.GetProviderFactories(providerResources, nil),
 		Steps: []resource.TestStep{
 			{
 				// Create
@@ -41,6 +44,8 @@ func TestAccResourceIdpGeneric(t *testing.T) {
 					util.NullValue, // no image
 					util.NullValue, // No endpoint compression
 					util.NullValue, // Default name ID format
+					uri3,
+					slo_binding1,
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_idp_generic.generic", "name", name1),
@@ -52,6 +57,8 @@ func TestAccResourceIdpGeneric(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_idp_generic.generic", "logo_image_data", ""),
 					resource.TestCheckResourceAttr("genesyscloud_idp_generic.generic", "endpoint_compression", util.FalseValue),
 					resource.TestCheckResourceAttr("genesyscloud_idp_generic.generic", "name_identifier_format", nameIDFormatDefault),
+					resource.TestCheckResourceAttr("genesyscloud_idp_generic.generic", "slo_uri", uri3),
+					resource.TestCheckResourceAttr("genesyscloud_idp_generic.generic", "slo_binding", slo_binding1),
 				),
 			},
 			{
@@ -66,6 +73,8 @@ func TestAccResourceIdpGeneric(t *testing.T) {
 					strconv.Quote(base64Img),
 					util.TrueValue, // Endpoint compression
 					strconv.Quote(nameIDFormatEmail),
+					uri3,
+					slo_binding2,
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_idp_generic.generic", "name", name2),
@@ -77,6 +86,8 @@ func TestAccResourceIdpGeneric(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_idp_generic.generic", "logo_image_data", base64Img),
 					resource.TestCheckResourceAttr("genesyscloud_idp_generic.generic", "endpoint_compression", util.TrueValue),
 					resource.TestCheckResourceAttr("genesyscloud_idp_generic.generic", "name_identifier_format", nameIDFormatEmail),
+					resource.TestCheckResourceAttr("genesyscloud_idp_generic.generic", "slo_uri", uri3),
+					resource.TestCheckResourceAttr("genesyscloud_idp_generic.generic", "slo_binding", slo_binding2),
 				),
 			},
 			{
@@ -91,6 +102,8 @@ func TestAccResourceIdpGeneric(t *testing.T) {
 					strconv.Quote(base64Img),
 					util.TrueValue, // Endpoint compression
 					strconv.Quote(nameIDFormatEmail),
+					uri3,
+					slo_binding1,
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_idp_generic.generic", "name", name2),
@@ -100,6 +113,8 @@ func TestAccResourceIdpGeneric(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_idp_generic.generic", "target_uri", uri1),
 					resource.TestCheckResourceAttr("genesyscloud_idp_generic.generic", "relying_party_identifier", relyingPartyID2),
 					resource.TestCheckResourceAttr("genesyscloud_idp_generic.generic", "disabled", util.FalseValue),
+					resource.TestCheckResourceAttr("genesyscloud_idp_generic.generic", "slo_uri", uri3),
+					resource.TestCheckResourceAttr("genesyscloud_idp_generic.generic", "slo_binding", slo_binding1),
 				),
 			},
 			{
@@ -114,6 +129,8 @@ func TestAccResourceIdpGeneric(t *testing.T) {
 					strconv.Quote(base64Img),
 					util.TrueValue, // Endpoint compression
 					strconv.Quote(nameIDFormatEmail),
+					uri3,
+					slo_binding2,
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_idp_generic.generic", "name", name2),
@@ -123,6 +140,8 @@ func TestAccResourceIdpGeneric(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_idp_generic.generic", "target_uri", uri1),
 					resource.TestCheckResourceAttr("genesyscloud_idp_generic.generic", "relying_party_identifier", relyingPartyID2),
 					resource.TestCheckResourceAttr("genesyscloud_idp_generic.generic", "disabled", util.FalseValue),
+					resource.TestCheckResourceAttr("genesyscloud_idp_generic.generic", "slo_uri", uri3),
+					resource.TestCheckResourceAttr("genesyscloud_idp_generic.generic", "slo_binding", slo_binding2),
 				),
 			},
 			{
@@ -137,6 +156,8 @@ func TestAccResourceIdpGeneric(t *testing.T) {
 					strconv.Quote(base64Img),
 					util.TrueValue, // Endpoint compression
 					strconv.Quote(nameIDFormatEmail),
+					uri3,
+					slo_binding1,
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_idp_generic.generic", "name", name2),
@@ -147,6 +168,8 @@ func TestAccResourceIdpGeneric(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_idp_generic.generic", "target_uri", uri1),
 					resource.TestCheckResourceAttr("genesyscloud_idp_generic.generic", "relying_party_identifier", relyingPartyID2),
 					resource.TestCheckResourceAttr("genesyscloud_idp_generic.generic", "disabled", util.FalseValue),
+					resource.TestCheckResourceAttr("genesyscloud_idp_generic.generic", "slo_uri", uri3),
+					resource.TestCheckResourceAttr("genesyscloud_idp_generic.generic", "slo_binding", slo_binding1),
 				),
 			},
 			{
@@ -169,7 +192,9 @@ func generateIdpGenericResource(
 	disabled string,
 	logoImageData string,
 	endpointCompression string,
-	nameIDFormat string) string {
+	nameIDFormat string,
+	sloURI string,
+	sloBinding string) string {
 	return fmt.Sprintf(`resource "genesyscloud_idp_generic" "generic" {
         name = "%s"
 		certificates = %s
@@ -180,8 +205,10 @@ func generateIdpGenericResource(
         logo_image_data = %s
         endpoint_compression = %s
         name_identifier_format = %s
+		slo_uri = "%s"
+		slo_binding = "%s"
 	}
-	`, name, certs, issuerURI, targetURI, partyID, disabled, logoImageData, endpointCompression, nameIDFormat)
+	`, name, certs, issuerURI, targetURI, partyID, disabled, logoImageData, endpointCompression, nameIDFormat, sloURI, sloBinding)
 }
 
 func testVerifyIdpGenericDestroyed(state *terraform.State) error {

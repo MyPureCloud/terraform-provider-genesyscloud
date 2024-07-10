@@ -25,7 +25,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v131/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
 )
 
 var (
@@ -134,15 +134,16 @@ var (
 				ValidateFunc: validation.StringInSlice([]string{"containsAll", "containsAny", "notContainsAll", "notContainsAny", "equal", "notEqual", "greaterThan", "greaterThanOrEqual", "lessThan", "lessThanOrEqual", "startsWith", "endsWith"}, false),
 			},
 			"stream_type": {
-				Description:  "The stream type for which this condition can be satisfied. Valid values: Web, Custom, Conversation.",
+				Description:  "The stream type for which this condition can be satisfied. Valid values: Web, App.",
 				Type:         schema.TypeString,
 				Required:     true,
-				ValidateFunc: validation.StringInSlice([]string{"Web", "Custom", "Conversation"}, false),
+				ValidateFunc: validation.StringInSlice([]string{"Web", "App" /*,"Custom", "Conversation" */}, false), // Custom and Conversation seem not to be supported by the API despite the documentation (DEVENGSD-607)
 			},
 			"session_type": {
-				Description: "The session type for which this condition can be satisfied.",
+				Description: "The session type for which this condition can be satisfied. Valid values: web, app.",
 				Type:        schema.TypeString,
 				Required:    true,
+				ValidateFunc: validation.StringInSlice([]string{"web", "app"}, false), // custom value seems not to be supported by the API despite the documentation
 			},
 			"event_name": {
 				Description: "The name of the event for which this condition can be satisfied.",

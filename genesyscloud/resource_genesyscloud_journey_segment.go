@@ -22,7 +22,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v131/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
 )
 
 var (
@@ -162,16 +162,16 @@ var (
 				Required:    true,
 			},
 			"stream_type": {
-				Description:  "The stream type for which this pattern can be matched on.Valid values: Web, Custom, Conversation.",
+				Description:  "The stream type for which this pattern can be matched on. Valid values: Web, App.",
 				Type:         schema.TypeString,
 				Required:     true,
-				ValidateFunc: validation.StringInSlice([]string{"Web" /*, "Custom", "Conversation"*/}, false), // Custom and Conversation seem not to be supported by the API despite the documentation
+				ValidateFunc: validation.StringInSlice([]string{"Web", "App" /*, "Custom", "Conversation"*/}, false), // Custom and Conversation seem not to be supported by the API despite the documentation (DEVENGSD-607)
 			},
 			"session_type": {
-				Description:  "The session type for which this pattern can be matched on.",
+				Description:  "The session type for which this pattern can be matched on. Valid values: web, app.",
 				Type:         schema.TypeString,
 				Required:     true,
-				ValidateFunc: validation.StringInSlice([]string{"web"}, false), // custom value seems not to be supported by the API despite the documentation
+				ValidateFunc: validation.StringInSlice([]string{"web", "app"}, false), // custom value seems not to be supported by the API despite the documentation
 			},
 			"event_name": {
 				Description: "The name of the event for which this pattern can be matched on.",

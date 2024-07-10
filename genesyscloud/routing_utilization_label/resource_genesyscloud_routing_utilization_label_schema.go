@@ -1,11 +1,14 @@
 package routing_utilization_label
 
 import (
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
+	"fmt"
+	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
 const resourceName = "genesyscloud_routing_utilization_label"
@@ -19,7 +22,7 @@ func SetRegistrar(regInstance registrar.Registrar) {
 
 func ResourceRoutingUtilizationLabel() *schema.Resource {
 	return &schema.Resource{
-		Description: "Genesys Cloud Routing Utilization Label. This resource is not yet widely available. Only use it if the feature is enabled.",
+		Description: "Genesys Cloud Routing Utilization Label.",
 
 		CreateContext: provider.CreateWithPooledClient(createRoutingUtilizationLabel),
 		ReadContext:   provider.ReadWithPooledClient(readRoutingUtilizationLabel),
@@ -33,7 +36,12 @@ func ResourceRoutingUtilizationLabel() *schema.Resource {
 			"name": {
 				Description: "Label name.",
 				Type:        schema.TypeString,
-				Required:    true,
+				ValidateFunc: validation.All(
+					validation.StringIsNotEmpty,
+					stringDoesNotStartOrEndWithSpaces,
+					validation.StringDoesNotContainAny("*"),
+				),
+				Required: true,
 			},
 		},
 	}
@@ -45,10 +53,14 @@ func DataSourceRoutingUtilizationLabel() *schema.Resource {
 		ReadContext: provider.ReadWithPooledClient(dataSourceRoutingUtilizationLabelRead),
 		Schema: map[string]*schema.Schema{
 			"name": {
-				Description:  "Label name.",
-				Type:         schema.TypeString,
-				ValidateFunc: validation.StringDoesNotContainAny("*"),
-				Required:     true,
+				Description: "Label name.",
+				Type:        schema.TypeString,
+				ValidateFunc: validation.All(
+					validation.StringIsNotEmpty,
+					stringDoesNotStartOrEndWithSpaces,
+					validation.StringDoesNotContainAny("*"),
+				),
+				Required: true,
 			},
 		},
 	}
@@ -58,4 +70,17 @@ func RoutingUtilizationLabelExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: provider.GetAllWithPooledClient(getAllRoutingUtilizationLabels),
 	}
+}
+
+func stringDoesNotStartOrEndWithSpaces(input interface{}, k string) ([]string, []error) {
+	inputAsString, ok := input.(string)
+	if !ok {
+		return nil, []error{fmt.Errorf("expected type of %q to be string", k)}
+	}
+
+	if len(strings.TrimSpace(inputAsString)) != len(inputAsString) {
+		return nil, []error{fmt.Errorf("expected %q to not start or end with spaces", k)}
+	}
+
+	return nil, nil
 }

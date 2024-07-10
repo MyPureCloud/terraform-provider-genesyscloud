@@ -2,8 +2,9 @@ package outbound_contact_list_contact
 
 import (
 	"context"
-	"github.com/mypurecloud/platform-client-sdk-go/v131/platformclientv2"
 	rc "terraform-provider-genesyscloud/genesyscloud/resource_cache"
+
+	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
 )
 
 var internalProxy *contactProxy
