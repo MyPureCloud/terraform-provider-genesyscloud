@@ -435,6 +435,7 @@ func TestAccResourceRoutingQueueConditionalRouting(t *testing.T) {
 						return nil
 					},
 				),
+				Destroy:                   false,
 				PreventPostDestroyRefresh: true,
 			},
 			{
@@ -889,6 +890,7 @@ func TestAccResourceRoutingQueueMembers(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					validateMember("genesyscloud_routing_queue."+queueResource, "genesyscloud_user."+queueMemberResource1, defaultQueueRingNum),
 				),
+				Destroy:                   false,
 				PreventPostDestroyRefresh: true,
 			},
 			{
@@ -1338,7 +1340,7 @@ func testVerifyQueuesAndUsersDestroyed(state *terraform.State) error {
 			}
 			user, resp, err := usersAPI.GetUser(rs.Primary.ID, nil, "", "")
 			if user != nil {
-				return fmt.Errorf("User (%s) still exists", rs.Primary.ID)
+				return fmt.Errorf("User Resource (%s) still exists", rs.Primary.ID)
 			} else if util.IsStatus404(resp) {
 				// User not found as expected
 				continue
@@ -1609,6 +1611,8 @@ func TestAccResourceRoutingQueueSkillGroups(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					validateGroups("genesyscloud_routing_queue."+queueResource, "genesyscloud_routing_skill_group."+skillGroupResource, "genesyscloud_group."+groupResource),
 				),
+				Destroy:                   false,
+				PreventPostDestroyRefresh: true,
 			},
 			{
 				// Import/Read
@@ -1618,15 +1622,13 @@ func TestAccResourceRoutingQueueSkillGroups(t *testing.T) {
 				ImportStateVerifyIgnore: []string{
 					"suppress_in_queue_call_recording",
 				},
-				Check: resource.ComposeTestCheckFunc(
-					func(s *terraform.State) error {
-						time.Sleep(45 * time.Second) // Wait for 45 seconds for resource to get deleted properly
-						return nil
-					},
-				),
+				Destroy: true,
 			},
 		},
-		CheckDestroy: testVerifyQueuesDestroyed,
+		CheckDestroy: func(state *terraform.State) error {
+			time.Sleep(45 * time.Second)
+			return testVerifyQueuesAndUsersDestroyed(state)
+		},
 	})
 }
 
@@ -1640,28 +1642,42 @@ func generateUserWithCustomAttrs(resourceID string, email string, name string, a
 }
 
 func checkUserDeleted(id string) resource.TestCheckFunc {
+	log.Printf("Fetching user with ID: %s\n", id)
 	return func(s *terraform.State) error {
-		log.Printf("Fetching user with ID: %s\n", id)
 		maxAttempts := 30
 		for i := 0; i < maxAttempts; i++ {
-			fmt.Printf("%d attempt\n", i)
-
-			usersAPI := platformclientv2.NewUsersApi()
-			_, response, err := usersAPI.GetUser(id, nil, "", "")
-
-			if response != nil && response.StatusCode == 404 {
-				// User is deleted
-				return nil
-			}
-
+			deleted, err := isUserDeleted(id)
 			if err != nil {
-				log.Printf("Error fetching user: %v", err)
 				return err
 			}
-
-			// If user is found, it means the user is not deleted
+			if deleted {
+				return nil
+			}
 			time.Sleep(10 * time.Second)
 		}
 		return fmt.Errorf("user %s was not deleted properly", id)
 	}
+}
+
+func isUserDeleted(id string) (bool, error) {
+	mu.Lock()
+	defer mu.Unlock()
+
+	usersAPI := platformclientv2.NewUsersApi()
+	// Attempt to get the user
+	_, response, err := usersAPI.GetUser(id, nil, "", "")
+
+	// Check if the user is not found (deleted)
+	if response != nil && response.StatusCode == 404 {
+		return true, nil // User is deleted
+	}
+
+	// Handle other errors
+	if err != nil {
+		log.Printf("Error fetching user: %v", err)
+		return false, err
+	}
+
+	// If user is found, it means the user is not deleted
+	return false, nil
 }

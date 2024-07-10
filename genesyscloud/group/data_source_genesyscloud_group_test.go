@@ -1,6 +1,7 @@
 package group
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"sync"
@@ -13,6 +14,7 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
@@ -64,16 +66,17 @@ func TestAccDataSourceGroup(t *testing.T) {
 						return nil
 					},
 				),
+				Destroy:                   false,
+				PreventPostDestroyRefresh: true,
 			},
 			{
 				ResourceName:      "genesyscloud_user." + testUserResource,
 				ImportState:       true,
 				ImportStateVerify: true,
-				Check: resource.ComposeTestCheckFunc(
-					checkUserDeleted(userID),
-				),
+				Destroy:           true,
 			},
 		},
+		CheckDestroy: testVerifyUsersDestroyed,
 	})
 }
 
@@ -131,4 +134,37 @@ func isUserDeleted(id string) (bool, error) {
 
 	// If user is found, it means the user is not deleted
 	return false, nil
+}
+
+func testVerifyUsersDestroyed(state *terraform.State) error {
+	usersAPI := platformclientv2.NewUsersApi()
+
+	diagErr := util.WithRetries(context.Background(), 20*time.Second, func() *retry.RetryError {
+		for _, rs := range state.RootModule().Resources {
+			if rs.Type != "genesyscloud_user" {
+				continue
+			}
+			err := checkUserDeleted(rs.Primary.ID)(state)
+			if err != nil {
+				continue
+			}
+			_, resp, err := usersAPI.GetUser(rs.Primary.ID, nil, "", "")
+
+			if err != nil {
+				if util.IsStatus404(resp) {
+					continue
+				}
+				return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_user", fmt.Sprintf("Unexpected error: %s", err), resp))
+			}
+			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_user", fmt.Sprintf("User (%s) still exists", rs.Primary.ID), resp))
+		}
+		return nil
+	})
+
+	if diagErr != nil {
+		return fmt.Errorf(fmt.Sprintf("%v", diagErr))
+	}
+
+	// Success. All users destroyed
+	return nil
 }

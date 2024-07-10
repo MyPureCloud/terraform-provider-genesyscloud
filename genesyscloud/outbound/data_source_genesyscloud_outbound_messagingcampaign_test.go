@@ -103,12 +103,12 @@ func TestAccDataSourceOutboundMessagingCampaign(t *testing.T) {
 			t.Errorf("error creating sms phone number %s: %v", smsConfigSenderSMSPhoneNumber, err)
 		}
 
-		defer func() {
-			_, err := api.DeleteRoutingSmsPhonenumber(smsConfigSenderSMSPhoneNumber)
-			if err != nil {
-				t.Logf("error deleting phone number %s: %v", smsConfigSenderSMSPhoneNumber, err)
-			}
-		}()
+		// defer func() {
+		// 	_, err := api.DeleteRoutingSmsPhonenumber(smsConfigSenderSMSPhoneNumber)
+		// 	if err != nil {
+		// 		t.Logf("error deleting phone number %s: %v", smsConfigSenderSMSPhoneNumber, err)
+		// 	}
+		// }()
 	}
 
 	resource.Test(t, resource.TestCase{

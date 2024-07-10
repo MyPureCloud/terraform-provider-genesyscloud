@@ -2,6 +2,7 @@ package genesyscloud
 
 import (
 	"fmt"
+	"os"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
@@ -51,6 +52,9 @@ func TestAccDataSourceSmsAddressProdOrg(t *testing.T) {
 
 // If running in a prod org this test can be removed/skipped, it's only intended as a backup test for test orgs
 func TestAccDataSourceSmsAddressTestOrg(t *testing.T) {
+	if v := os.Getenv("GENESYSCLOUD_REGION"); v == "us-east-1" {
+		t.Skip()
+	}
 	var (
 		addressRes  = "addressRes"
 		addressData = "addressData"

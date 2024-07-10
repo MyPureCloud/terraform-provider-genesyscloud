@@ -259,15 +259,21 @@ func TestAccResourceRoutingQueueConditionalGroupRouting(t *testing.T) {
 						return nil
 					},
 				),
+				Destroy:                   false,
+				PreventPostDestroyRefresh: true,
 			},
 			{
 				// Import/Read
 				ResourceName:      "genesyscloud_routing_queue_conditional_group_routing." + conditionalGroupRoutingResource,
 				ImportState:       true,
 				ImportStateVerify: true,
+				Destroy:           true,
 			},
 		},
-		CheckDestroy: testVerifyGroupsAndUsersDestroyed,
+		CheckDestroy: func(state *terraform.State) error {
+			time.Sleep(40 * time.Second)
+			return testVerifyGroupsAndUsersDestroyed(state)
+		},
 	})
 }
 

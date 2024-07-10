@@ -85,6 +85,7 @@ func TestAccResourceGroupBasic(t *testing.T) {
 						return nil
 					},
 				),
+				Destroy:                   false,
 				PreventPostDestroyRefresh: true,
 			},
 			{
@@ -208,6 +209,7 @@ func TestAccResourceGroupAddresses(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_group."+groupResource1, "addresses.0.type", typeGroupPhone),
 					resource.TestCheckResourceAttr("genesyscloud_group."+groupResource1, "addresses.0.extension", addrPhoneExt2),
 				),
+				Destroy:                   false,
 				PreventPostDestroyRefresh: true,
 			},
 			{
@@ -349,6 +351,7 @@ func TestAccResourceGroupMembers(t *testing.T) {
 						return nil
 					},
 				),
+				Destroy:                   false,
 				PreventPostDestroyRefresh: true,
 			},
 			{
