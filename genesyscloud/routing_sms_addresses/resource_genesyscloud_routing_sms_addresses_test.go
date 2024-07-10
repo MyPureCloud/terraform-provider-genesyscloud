@@ -52,7 +52,7 @@ func TestAccResourceRoutingSmsAddressesProdOrg(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_routing_sms_address."+resourceName, "country_code", countryCode),
 					resource.TestCheckResourceAttr("genesyscloud_routing_sms_address."+resourceName, "auto_correct_address", util.FalseValue),
 				),
-				Destroy:                   false,
+
 				PreventPostDestroyRefresh: true,
 			},
 			{

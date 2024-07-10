@@ -83,7 +83,6 @@ func TestAccResourceAuthDivisionBasic(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_auth_division."+divResource1, "name", divName2),
 					resource.TestCheckResourceAttr("genesyscloud_auth_division."+divResource1, "description", divDesc1),
 				),
-				Destroy: false,
 			},
 			{
 				// Import/Read

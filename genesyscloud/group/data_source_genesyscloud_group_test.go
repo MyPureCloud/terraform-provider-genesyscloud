@@ -66,7 +66,7 @@ func TestAccDataSourceGroup(t *testing.T) {
 						return nil
 					},
 				),
-				Destroy:                   false,
+
 				PreventPostDestroyRefresh: true,
 			},
 			{

@@ -142,7 +142,7 @@ func TestAccResourceGroupRolesMembership(t *testing.T) {
 						return nil
 					},
 				),
-				Destroy:                   false,
+
 				PreventPostDestroyRefresh: true,
 			},
 			{

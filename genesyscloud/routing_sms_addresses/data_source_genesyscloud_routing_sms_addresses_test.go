@@ -47,7 +47,6 @@ func TestAccDataSourceSmsAddressProdOrg(t *testing.T) {
 						"genesyscloud_routing_sms_address."+addressRes, "id",
 					),
 				),
-				Destroy: false,
 			},
 		},
 	})

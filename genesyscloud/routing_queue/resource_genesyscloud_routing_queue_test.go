@@ -435,7 +435,7 @@ func TestAccResourceRoutingQueueConditionalRouting(t *testing.T) {
 						return nil
 					},
 				),
-				Destroy:                   false,
+
 				PreventPostDestroyRefresh: true,
 			},
 			{
@@ -893,7 +893,7 @@ func TestAccResourceRoutingQueueMembers(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					validateMember("genesyscloud_routing_queue."+queueResource, "genesyscloud_user."+queueMemberResource1, defaultQueueRingNum),
 				),
-				Destroy:                   false,
+
 				PreventPostDestroyRefresh: true,
 			},
 			{
@@ -1614,7 +1614,7 @@ func TestAccResourceRoutingQueueSkillGroups(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					validateGroups("genesyscloud_routing_queue."+queueResource, "genesyscloud_routing_skill_group."+skillGroupResource, "genesyscloud_group."+groupResource),
 				),
-				Destroy:                   false,
+
 				PreventPostDestroyRefresh: true,
 			},
 			{
