@@ -9,6 +9,7 @@ import (
 	authRole "terraform-provider-genesyscloud/genesyscloud/auth_role"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	routingQueue "terraform-provider-genesyscloud/genesyscloud/routing_queue"
+	routingWrapupcode "terraform-provider-genesyscloud/genesyscloud/routing_wrapupcode"
 	userRoles "terraform-provider-genesyscloud/genesyscloud/user_roles"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
@@ -131,8 +132,10 @@ func TestAccDataSourceRecordingMediaRetentionPolicy(t *testing.T) {
 	}
 
 	var (
-		domainRes = "routing-domain1"
-		domainId  = "terraformmedia" + strconv.Itoa(rand.Intn(1000)) + ".com"
+		domainRes   = "routing-domain1"
+		domainId    = "terraformmedia" + strconv.Itoa(rand.Intn(1000)) + ".com"
+		divResource = "test-division"
+		divName     = "terraform-" + uuid.NewString()
 	)
 
 	_, err := provider.AuthorizeSdk()
@@ -170,7 +173,8 @@ func TestAccDataSourceRecordingMediaRetentionPolicy(t *testing.T) {
 					gcloud.GenerateSurveyFormResource(surveyFormResource1, &surveyFormResourceBody) +
 					integration.GenerateIntegrationResource(integrationResource1, strconv.Quote(integrationIntendedState), strconv.Quote(integrationType), "") +
 					gcloud.GenerateRoutingLanguageResource(languageResource1, languageName) +
-					gcloud.GenerateRoutingWrapupcodeResource(wrapupCodeResource1, wrapupCodeName) +
+					gcloud.GenerateAuthDivisionBasic(divResource, divName) +
+					routingWrapupcode.GenerateRoutingWrapupcodeResource(wrapupCodeResource1, wrapupCodeName, "genesyscloud_auth_division."+divResource+".id") +
 					architect_flow.GenerateFlowResource(
 						flowResource1,
 						filePath1,

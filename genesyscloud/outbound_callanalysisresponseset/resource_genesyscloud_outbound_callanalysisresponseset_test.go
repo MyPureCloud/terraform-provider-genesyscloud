@@ -3,13 +3,13 @@ package outbound_callanalysisresponseset
 import (
 	"fmt"
 	"strconv"
+	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	"terraform-provider-genesyscloud/genesyscloud/architect_flow"
+	obContactList "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
+	routingWrapupcode "terraform-provider-genesyscloud/genesyscloud/routing_wrapupcode"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
-
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
-	obContactList "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -36,6 +36,9 @@ func TestAccResourceOutboundCallAnalysisResponseSet(t *testing.T) {
 		wrapupCodeName       = "Terraform Test WrapUpCode " + uuid.NewString()
 		outboundFlowName     = "Terraform Test Flow " + uuid.NewString()
 		outboundFlowFilePath = "../../examples/resources/genesyscloud_flow/outboundcall_flow_example.yaml"
+
+		divResource = "test-division"
+		divName     = "terraform-" + uuid.NewString()
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -131,9 +134,10 @@ func TestAccResourceOutboundCallAnalysisResponseSet(t *testing.T) {
 						"cell",
 						util.NullValue,
 					),
-				) + gcloud.GenerateRoutingWrapupcodeResource(
+				) + gcloud.GenerateAuthDivisionBasic(divResource, divName) + routingWrapupcode.GenerateRoutingWrapupcodeResource(
 					wrapupCodeResourceId,
 					wrapupCodeName,
+					"genesyscloud_auth_division."+divResource+".id",
 				) + architect_flow.GenerateFlowResource(
 					flowResourceId,
 					outboundFlowFilePath,

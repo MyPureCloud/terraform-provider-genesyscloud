@@ -1,19 +1,16 @@
-package outbound_callanalysisresponseset
+package routing_wrapupcode
 
 import (
 	"sync"
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
-	flow "terraform-provider-genesyscloud/genesyscloud/architect_flow"
-	obContactList "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
-	routingWrapupcode "terraform-provider-genesyscloud/genesyscloud/routing_wrapupcode"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 /*
-   The genesyscloud_outbound_callanalysisresponseset_init_test.go file is used to initialize the data sources and resources
-   used in testing the outbound_callanalysisresponseset resource.
+   The genesyscloud_routing_wrapupcode_init_test.go file is used to initialize the data sources and resources
+   used in testing the routing_wrapupcode resource.
 */
 
 // providerDataSources holds a map of all registered datasources
@@ -32,10 +29,7 @@ func (r *registerTestInstance) registerTestResources() {
 	r.resourceMapMutex.Lock()
 	defer r.resourceMapMutex.Unlock()
 
-	providerResources[resourceName] = ResourceOutboundCallanalysisresponseset()
-	providerResources["genesyscloud_outbound_contact_list"] = obContactList.ResourceOutboundContactList()
-	providerResources["genesyscloud_flow"] = flow.ResourceArchitectFlow()
-	providerResources["genesyscloud_routing_wrapupcode"] = routingWrapupcode.ResourceRoutingWrapupCode()
+	providerResources[resourceName] = ResourceRoutingWrapupCode()
 	providerResources["genesyscloud_auth_division"] = gcloud.ResourceAuthDivision()
 }
 
@@ -44,8 +38,7 @@ func (r *registerTestInstance) registerTestDataSources() {
 	r.datasourceMapMutex.Lock()
 	defer r.datasourceMapMutex.Unlock()
 
-	providerDataSources[resourceName] = DataSourceOutboundCallanalysisresponseset()
-	providerDataSources["genesyscloud_auth_division_home"] = gcloud.DataSourceAuthDivisionHome()
+	providerDataSources[resourceName] = DataSourceRoutingWrapupCode()
 }
 
 // initTestResources initializes all test resources and data sources.
@@ -61,9 +54,9 @@ func initTestResources() {
 
 // TestMain is a "setup" function called by the testing framework when run the test
 func TestMain(m *testing.M) {
-	// Run setup function before starting the test suite for the outbound_callanalysisresponseset package
+	// Run setup function before starting the test suite for the routing_wrapupcode package
 	initTestResources()
 
-	// Run the test suite for the outbound_callanalysisresponseset package
+	// Run the test suite for the routing_wrapupcode package
 	m.Run()
 }

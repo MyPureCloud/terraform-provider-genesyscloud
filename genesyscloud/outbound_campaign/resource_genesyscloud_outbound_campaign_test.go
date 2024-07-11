@@ -18,6 +18,7 @@ import (
 	obResponseSet "terraform-provider-genesyscloud/genesyscloud/outbound_callanalysisresponseset"
 	obContactList "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
 	obContactListFilter "terraform-provider-genesyscloud/genesyscloud/outbound_contactlistfilter"
+	routingWrapupcode "terraform-provider-genesyscloud/genesyscloud/routing_wrapupcode"
 	edgeSite "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site"
 
 	"github.com/google/uuid"
@@ -63,6 +64,8 @@ func TestAccResourceOutboundCampaignBasic(t *testing.T) {
 		nameUpdated          = "Test Campaign " + uuid.NewString()
 		callerNameUpdated    = "Test Name 2"
 		callerAddressUpdated = "+353371112111"
+		divResource          = "test-division"
+		divName              = "terraform-" + uuid.NewString()
 	)
 
 	emergencyNumber := "+13178793428"
@@ -100,9 +103,10 @@ func TestAccResourceOutboundCampaignBasic(t *testing.T) {
 	) + obDnclist.GenerateOutboundDncListBasic(
 		dncListResourceId,
 		"dnc list "+uuid.NewString(),
-	) + gcloud.GenerateRoutingWrapupcodeResource(
+	) + gcloud.GenerateAuthDivisionBasic(divResource, divName) + routingWrapupcode.GenerateRoutingWrapupcodeResource(
 		wrapupCodeResourceId,
 		"tf wrapup code"+uuid.NewString(),
+		"genesyscloud_auth_division."+divResource+".id",
 	) + architect_flow.GenerateFlowResource(
 		"flow",
 		outboundFlowFilePath,
@@ -420,6 +424,8 @@ func TestAccResourceOutboundCampaignCampaignStatus(t *testing.T) {
 		flowResourceId        = "flow"
 		wrapupcodeResourceId  = "wrapupcode"
 		locationResourceId    = "location"
+		divResource           = "test-division"
+		divName               = "terraform-" + uuid.NewString()
 	)
 
 	emergencyNumber := "+13178793429"
@@ -447,9 +453,10 @@ func TestAccResourceOutboundCampaignCampaignStatus(t *testing.T) {
 			"home",
 			strconv.Quote("Home"),
 		),
-	) + gcloud.GenerateRoutingWrapupcodeResource(
+	) + gcloud.GenerateAuthDivisionBasic(divResource, divName) + routingWrapupcode.GenerateRoutingWrapupcodeResource(
 		wrapupcodeResourceId,
 		"tf wrapup code"+uuid.NewString(),
+		"genesyscloud_auth_division."+divResource+".id",
 	) + architect_flow.GenerateFlowResource(
 		flowResourceId,
 		outboundFlowFilePath,
@@ -618,6 +625,8 @@ func TestAccResourceOutboundCampaignStatusOn(t *testing.T) {
 		flowResourceId        = "flow"
 		wrapupcodeResourceId  = "wrapupcode"
 		locationResourceId    = "location"
+		divResourceId         = "test-outbound-campaign-division"
+		divName               = "terraform-" + uuid.NewString()
 	)
 
 	emergencyNumber := "+13178793430"
@@ -632,44 +641,50 @@ func TestAccResourceOutboundCampaignStatusOn(t *testing.T) {
 		Steps: []resource.TestStep{
 			// Create resources for outbound campaign
 			{
-				Config: `data "genesyscloud_auth_division_home" "home" {}` + GenerateReferencedResourcesForOutboundCampaignTests(
-					contactListResourceId,
-					"",
-					"",
-					carResourceId,
-					outboundFlowFilePath,
-					flowResourceId,
-					flowName,
-					"",
-					siteId,
-					emergencyNumber,
-					"",
-					"",
-					"${data.genesyscloud_auth_division_home.home.name}",
-					locationResourceId,
-					wrapupcodeResourceId,
-				),
+				Config: `data "genesyscloud_auth_division_home" "home" {}` + "\n" +
+					gcloud.GenerateAuthDivisionBasic(divResourceId, divName) +
+					GenerateReferencedResourcesForOutboundCampaignTests(
+						contactListResourceId,
+						"",
+						"",
+						carResourceId,
+						outboundFlowFilePath,
+						flowResourceId,
+						flowName,
+						"",
+						siteId,
+						emergencyNumber,
+						"",
+						"",
+						"${data.genesyscloud_auth_division_home.home.name}",
+						locationResourceId,
+						wrapupcodeResourceId,
+						divResourceId,
+					),
 				// Add contacts to the contact list (because we have access to the state and can pull out the contactlist ID to pass to the API)
 				Check: addContactsToContactList,
 			},
 			// Now, we create the outbound campaign and it should stay running because it has contacts to call. We leave it running to test
 			// the destroy command takes care of turning it off before deleting.
 			{
-				Config: `data "genesyscloud_auth_division_home" "home" {}` + GenerateOutboundCampaignBasic(
-					resourceId,
-					name,
-					contactListResourceId,
-					siteId,
-					emergencyNumber,
-					carResourceId,
-					strconv.Quote("on"),
-					outboundFlowFilePath,
-					flowResourceId,
-					flowName,
-					"${data.genesyscloud_auth_division_home.home.name}",
-					locationResourceId,
-					wrapupcodeResourceId,
-				),
+				Config: `data "genesyscloud_auth_division_home" "home" {}` + "\n" +
+					gcloud.GenerateAuthDivisionBasic(divResourceId, divName) +
+					GenerateOutboundCampaignBasic(
+						resourceId,
+						name,
+						contactListResourceId,
+						siteId,
+						emergencyNumber,
+						carResourceId,
+						strconv.Quote("on"),
+						outboundFlowFilePath,
+						flowResourceId,
+						flowName,
+						"${data.genesyscloud_auth_division_home.home.name}",
+						locationResourceId,
+						wrapupcodeResourceId,
+						divResourceId,
+					),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceId, "name", name),
 					resource.TestCheckResourceAttrPair("genesyscloud_outbound_campaign."+resourceId, "contact_list_id",
@@ -736,6 +751,7 @@ func TestAccResourceOutboundCampaignWithScriptId(t *testing.T) {
 		"",
 		"",
 		"",
+		"",
 	)
 
 	referencedResourcesUpdate := GenerateReferencedResourcesForOutboundCampaignTests(
@@ -751,6 +767,7 @@ func TestAccResourceOutboundCampaignWithScriptId(t *testing.T) {
 		"",
 		ruleSetResourceId,
 		callableTimeSetResourceId,
+		"",
 		"",
 		"",
 		"",
@@ -922,6 +939,7 @@ func TestAccResourceOutboundCampaignPower(t *testing.T) {
 		"",
 		"",
 		locationResourceId,
+		"",
 		"",
 	)
 

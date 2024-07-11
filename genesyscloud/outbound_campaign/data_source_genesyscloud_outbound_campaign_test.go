@@ -2,6 +2,7 @@ package outbound_campaign
 
 import (
 	"fmt"
+	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
@@ -18,6 +19,8 @@ func TestAccDataSourceOutboundCampaign(t *testing.T) {
 		campaignName         = "Test Campaign " + uuid.NewString()
 		dataSourceId         = "campaign_data"
 		outboundFlowFilePath = "../../examples/resources/genesyscloud_flow/outboundcall_flow_example.yaml"
+		divResourceId        = "test-outbound-campaign-division"
+		divName              = "terraform-" + uuid.NewString()
 	)
 
 	emergencyNumber := "+13173124740"
@@ -30,21 +33,24 @@ func TestAccDataSourceOutboundCampaign(t *testing.T) {
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
-				Config: `data "genesyscloud_auth_division_home" "home" {}` + GenerateOutboundCampaignBasic(
-					resourceId,
-					campaignName,
-					"contact_list",
-					"site",
-					emergencyNumber,
-					"car",
-					util.NullValue,
-					outboundFlowFilePath,
-					"data-campaign-test-flow",
-					"test flow "+uuid.NewString(),
-					"${data.genesyscloud_auth_division_home.home.name}",
-					"data-campaign-test-location",
-					"data-campaign-test-wrapupcode",
-				) + generateOutboundCampaignDataSource(
+				Config: `data "genesyscloud_auth_division_home" "home" {}` + "\n" +
+					gcloud.GenerateAuthDivisionBasic(divResourceId, divName) +
+					GenerateOutboundCampaignBasic(
+						resourceId,
+						campaignName,
+						"contact_list",
+						"site",
+						emergencyNumber,
+						"car",
+						util.NullValue,
+						outboundFlowFilePath,
+						"data-campaign-test-flow",
+						"test flow "+uuid.NewString(),
+						"${data.genesyscloud_auth_division_home.home.name}",
+						"data-campaign-test-location",
+						"data-campaign-test-wrapupcode",
+						divResourceId,
+					) + generateOutboundCampaignDataSource(
 					dataSourceId,
 					campaignName,
 					"genesyscloud_outbound_campaign."+resourceId,

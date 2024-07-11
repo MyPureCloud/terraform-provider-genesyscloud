@@ -9,6 +9,7 @@ import (
 	outboundCampaign "terraform-provider-genesyscloud/genesyscloud/outbound_campaign"
 	outboundContactList "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
+	routingWrapupcode "terraform-provider-genesyscloud/genesyscloud/routing_wrapupcode"
 	edgeSite "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site"
 	"testing"
 
@@ -46,10 +47,11 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources[resourceName] = ResourceOutboundSequence()
 	providerResources["genesyscloud_outbound_campaign"] = outboundCampaign.ResourceOutboundCampaign()
 	providerResources["genesyscloud_outbound_contact_list"] = outboundContactList.ResourceOutboundContactList()
-	providerResources["genesyscloud_routing_wrapupcode"] = gcloud.ResourceRoutingWrapupCode()
+	providerResources["genesyscloud_routing_wrapupcode"] = routingWrapupcode.ResourceRoutingWrapupCode()
 	providerResources["genesyscloud_flow"] = flow.ResourceArchitectFlow()
 	providerResources["genesyscloud_outbound_callanalysisresponseset"] = obResponseSet.ResourceOutboundCallanalysisresponseset()
 	providerResources["genesyscloud_location"] = gcloud.ResourceLocation()
+	providerResources["genesyscloud_auth_division"] = gcloud.ResourceAuthDivision()
 	providerResources["genesyscloud_telephony_providers_edges_site"] = edgeSite.ResourceSite()
 }
 
