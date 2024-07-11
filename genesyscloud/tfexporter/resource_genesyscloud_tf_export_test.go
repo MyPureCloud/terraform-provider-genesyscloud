@@ -1455,9 +1455,10 @@ func TestAccResourceExportManagedSitesAsData(t *testing.T) {
 		exportTestDir = filepath.Join("..", "..", ".terraform"+uuid.NewString())
 		resourceID    = "export"
 		configPath    = filepath.Join(exportTestDir, defaultTfJSONFile)
+		siteName      = "PureCloud Voice - AWS"
 	)
 
-	if err := telephonyProvidersEdgesSite.CheckForDefaultSite("PureCloud Voice - AWS"); err != nil {
+	if err := telephonyProvidersEdgesSite.CheckForDefaultSite(siteName); err != nil {
 		t.Skipf("failed to get default site %v", err)
 	}
 
@@ -1484,7 +1485,7 @@ func TestAccResourceExportManagedSitesAsData(t *testing.T) {
 					[]string{},
 				),
 				Check: resource.ComposeTestCheckFunc(
-					validateExportManagedSitesAsData(configPath),
+					validateExportManagedSitesAsData(configPath, siteName),
 				),
 			},
 		},
@@ -1492,7 +1493,7 @@ func TestAccResourceExportManagedSitesAsData(t *testing.T) {
 }
 
 // validateExportManagedSitesAsData verifies that the default managed site 'PureCloud Voice - AWS' is exported as a data source
-func validateExportManagedSitesAsData(filename string) resource.TestCheckFunc {
+func validateExportManagedSitesAsData(filename, siteName string) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
 		// Check if the file exists
 		_, err := os.Stat(filename)
@@ -1515,7 +1516,7 @@ func validateExportManagedSitesAsData(filename string) resource.TestCheckFunc {
 				return fmt.Errorf("no data sources exported for genesyscloud_telephony_providers_edges_site")
 			}
 
-			log.Println("Checking that managed site with name 'PureCloud Voice - AWS' is exported as data source")
+			log.Printf("checking that managed site with name %s is exported as data source", siteName)
 
 			// Validate each site's name
 			for siteID, site := range sites {
@@ -1524,13 +1525,13 @@ func validateExportManagedSitesAsData(filename string) resource.TestCheckFunc {
 					return fmt.Errorf("unexpected structure for site %s", siteID)
 				}
 
-				siteName, _ := siteAttributes["name"].(string)
-				if siteName == "PureCloud Voice - AWS" {
-					log.Printf("Site %s with name 'PureCloud Voice - AWS' is correctly exported as data source", siteID)
+				name, _ := siteAttributes["name"].(string)
+				if name == siteName {
+					log.Printf("Site %s with name '%s' is correctly exported as data source", siteID, siteName)
 					return nil
 				}
 			}
-			return fmt.Errorf("site with name 'PureCloud Voice - AWS' was not exported as data source")
+			return fmt.Errorf("site with name '%s' was not exported as data source", siteName)
 		} else {
 			return fmt.Errorf("no data sources found in exported data")
 		}
