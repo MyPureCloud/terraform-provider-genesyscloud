@@ -88,7 +88,7 @@ func TestAccDataSourceOutboundMessagingCampaign(t *testing.T) {
 	)
 
 	if v := os.Getenv("GENESYSCLOUD_REGION"); v == "tca" {
-		smsConfigSenderSMSPhoneNumber = "+18158599986"
+		smsConfigSenderSMSPhoneNumber = "+18159823725"
 	}
 
 	config, err := provider.AuthorizeSdk()
@@ -102,13 +102,7 @@ func TestAccDataSourceOutboundMessagingCampaign(t *testing.T) {
 		if err != nil {
 			t.Errorf("error creating sms phone number %s: %v", smsConfigSenderSMSPhoneNumber, err)
 		}
-
-		// defer func() {
-		// 	_, err := api.DeleteRoutingSmsPhonenumber(smsConfigSenderSMSPhoneNumber)
-		// 	if err != nil {
-		// 		t.Logf("error deleting phone number %s: %v", smsConfigSenderSMSPhoneNumber, err)
-		// 	}
-		// }()
+		//Do not delete the smsPhoneNumber
 	}
 
 	resource.Test(t, resource.TestCase{
