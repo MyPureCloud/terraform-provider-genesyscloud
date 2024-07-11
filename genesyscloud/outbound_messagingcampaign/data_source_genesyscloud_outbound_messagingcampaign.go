@@ -7,7 +7,6 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 
@@ -23,28 +22,23 @@ import (
 // dataSourceOutboundMessagingcampaignRead retrieves by name the id in question
 func dataSourceOutboundMessagingcampaignRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-	outboundApi := platformclientv2.NewOutboundApiWithConfig(sdkConfig)
+	outboundApi := getOutboundMessagingcampaignProxy(sdkConfig)
 
 	name := d.Get("name").(string)
 
 	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
-		for pageNum := 1; ; pageNum++ {
-			const pageSize = 100
-			sdkMessagingcampaignEntityListing, resp, getErr := outboundApi.GetOutboundMessagingcampaigns(pageSize, pageNum, "", "", "", "", []string{}, "", "", []string{})
-			if getErr != nil {
-				return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("error requesting Outbound Messaging Campaign %s | error: %s", name, getErr), resp))
-			}
+		messagingCampaignId, retryable, resp, err := outboundApi.getOutboundMessagingcampaignIdByName(ctx, name)
 
-			if sdkMessagingcampaignEntityListing.Entities == nil || len(*sdkMessagingcampaignEntityListing.Entities) == 0 {
-				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("no Outbound Messaging Campaign found with name %s", name), resp))
-			}
-
-			for _, entity := range *sdkMessagingcampaignEntityListing.Entities {
-				if entity.Name != nil && *entity.Name == name {
-					d.SetId(*entity.Id)
-					return nil
-				}
-			}
+		if err != nil && !retryable {
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Error searching outbound messagingcampaign %s: %s", name, err), resp))
 		}
+
+		if retryable {
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("No outbound messagingcampaign found with name %s", name), resp))
+
+		}
+
+		d.SetId(messagingCampaignId)
+		return nil
 	})
 }

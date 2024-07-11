@@ -157,7 +157,7 @@ func TestAccResourceOutboundMessagingCampaign(t *testing.T) {
 							"DESC",
 							TrueValue,
 						),
-						generateDynamicContactQueueingSettingsBlock(util.TrueValue),
+						generateDynamicContactQueueingSettingsBlock(util.FalseValue),
 					),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_outbound_messagingcampaign."+resourceId, "name", name),
@@ -173,7 +173,7 @@ func TestAccResourceOutboundMessagingCampaign(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_outbound_messagingcampaign."+resourceId, "contact_sorts.1.field_name", column2),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_messagingcampaign."+resourceId, "contact_sorts.1.direction", "DESC"),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_messagingcampaign."+resourceId, "contact_sorts.1.numeric", TrueValue),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_messagingcampaign."+resourceId, "dynamic_contact_queueing_settings.0.sort", TrueValue),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_messagingcampaign."+resourceId, "dynamic_contact_queueing_settings.0.sort", util.FalseValue),
 					resource.TestCheckResourceAttrPair("genesyscloud_outbound_messagingcampaign."+resourceId, "callable_time_set_id",
 						"genesyscloud_outbound_callabletimeset."+callableTimeSetResourceId, "id"),
 					resource.TestCheckResourceAttrPair("genesyscloud_outbound_messagingcampaign."+resourceId, "dnc_list_ids.0",

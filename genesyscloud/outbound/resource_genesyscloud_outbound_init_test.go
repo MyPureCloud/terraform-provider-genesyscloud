@@ -10,6 +10,7 @@ import (
 	obContactList "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
 	obContactListFilter "terraform-provider-genesyscloud/genesyscloud/outbound_contactlistfilter"
 	obDnclist "terraform-provider-genesyscloud/genesyscloud/outbound_dnclist"
+	outboundMessagingcampaign "terraform-provider-genesyscloud/genesyscloud/outbound_messagingcampaign"
 	obRuleset "terraform-provider-genesyscloud/genesyscloud/outbound_ruleset"
 	outboundSequence "terraform-provider-genesyscloud/genesyscloud/outbound_sequence"
 	routingQueue "terraform-provider-genesyscloud/genesyscloud/routing_queue"
@@ -37,7 +38,7 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_outbound_attempt_limit"] = obAttemptLimit.ResourceOutboundAttemptLimit()
 	providerResources["genesyscloud_outbound_contactlistfilter"] = obContactListFilter.ResourceOutboundContactlistfilter()
 	providerResources["genesyscloud_outbound_contact_list"] = obContactList.ResourceOutboundContactList()
-	providerResources["genesyscloud_outbound_messagingcampaign"] = ResourceOutboundMessagingCampaign()
+	providerResources["genesyscloud_outbound_messagingcampaign"] = outboundMessagingcampaign.ResourceOutboundMessagingcampaign()
 	providerResources["genesyscloud_outbound_sequence"] = outboundSequence.ResourceOutboundSequence()
 
 	// external package dependencies for outbound
@@ -59,7 +60,7 @@ func (r *registerTestInstance) registerTestDataSources() {
 	providerDataSources["genesyscloud_outbound_attempt_limit"] = obAttemptLimit.DataSourceOutboundAttemptLimit()
 	providerDataSources["genesyscloud_outbound_campaignrule"] = outboundCampaignrule.DataSourceOutboundCampaignrule()
 	providerDataSources["genesyscloud_outbound_contact_list"] = obContactList.DataSourceOutboundContactList()
-	providerDataSources["genesyscloud_outbound_messagingcampaign"] = dataSourceOutboundMessagingcampaign()
+	providerDataSources["genesyscloud_outbound_messagingcampaign"] = outboundMessagingcampaign.DataSourceOutboundMessagingcampaign()
 	providerDataSources["genesyscloud_outbound_contactlistfilter"] = obContactListFilter.DataSourceOutboundContactlistfilter()
 	providerDataSources["genesyscloud_outbound_sequence"] = outboundSequence.DataSourceOutboundSequence()
 

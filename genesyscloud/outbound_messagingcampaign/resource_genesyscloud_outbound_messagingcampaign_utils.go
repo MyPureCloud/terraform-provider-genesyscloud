@@ -16,22 +16,24 @@ and unmarshal data into formats consumable by Terraform and/or Genesys Cloud.
 
 // getOutboundMessagingcampaignFromResourceData maps data from schema ResourceData object to a platformclientv2.Messagingcampaign
 func getOutboundMessagingcampaignFromResourceData(d *schema.ResourceData) platformclientv2.Messagingcampaign {
+
 	return platformclientv2.Messagingcampaign{
-		Name:              platformclientv2.String(d.Get("name").(string)),
-		Division:          util.BuildSdkDomainEntityRef(d, "division_id"),
-		CampaignStatus:    platformclientv2.String(d.Get("campaign_status").(string)),
-		CallableTimeSet:   util.BuildSdkDomainEntityRef(d, "callable_time_set_id"),
-		ContactList:       util.BuildSdkDomainEntityRef(d, "contact_list_id"),
-		DncLists:          util.BuildSdkDomainEntityRefArr(d, "dnc_list_ids"),
-		AlwaysRunning:     platformclientv2.Bool(d.Get("always_running").(bool)),
-		ContactSorts:      buildContactSorts(d.Get("contact_sorts").([]interface{})),
-		MessagesPerMinute: platformclientv2.Int(d.Get("messages_per_minute").(int)),
-		//RuleSets:                       util.BuildSdkDomainEntityRefArr(d, "rule_sets"),
-		ContactListFilters: util.BuildSdkDomainEntityRefArr(d, "contact_list_filter_ids"),
-		//Errors:                         buildRestErrorDetails(d.Get("errors").([]interface{})),
+		Name:                           platformclientv2.String(d.Get("name").(string)),
+		Division:                       util.BuildSdkDomainEntityRef(d, "division_id"),
+		CampaignStatus:                 platformclientv2.String(d.Get("campaign_status").(string)),
+		CallableTimeSet:                util.BuildSdkDomainEntityRef(d, "callable_time_set_id"),
+		ContactList:                    util.BuildSdkDomainEntityRef(d, "contact_list_id"),
+		DncLists:                       util.BuildSdkDomainEntityRefArr(d, "dnc_list_ids"),
+		AlwaysRunning:                  platformclientv2.Bool(d.Get("always_running").(bool)),
+		ContactSorts:                   buildContactSorts(d.Get("contact_sorts").([]interface{})),
+		MessagesPerMinute:              platformclientv2.Int(d.Get("messages_per_minute").(int)),
+		RuleSets:                       util.BuildSdkDomainEntityRefArr(d, "rule_sets"),
+		ContactListFilters:             util.BuildSdkDomainEntityRefArr(d, "contact_list_filter_ids"),
+		Errors:                         buildRestErrorDetails(d.Get("errors").([]interface{})),
 		DynamicContactQueueingSettings: buildDynamicContactQueueingSettingss(d.Get("dynamic_contact_queueing_settings").([]interface{})),
-		//EmailConfig:                    buildEmailConfigs(d.Get("email_config").(*schema.Set)),
-		SmsConfig: buildSmsConfigs(d.Get("sms_config").(*schema.Set)),
+		SmsConfig:                      buildSmsConfigs(d.Get("sms_config").(*schema.Set)),
+		//TODO: add email configs in future
+		// EmailConfig:                    buildEmailConfigs(d.Get("email_config").(*schema.Set)),
 	}
 }
 
@@ -285,22 +287,6 @@ func flattenEmailConfigs(emailConfigs *platformclientv2.Emailconfig) []interface
 	return emailConfigList
 }
 
-// flattenSmsPhoneNumberRefs maps a Genesys Cloud *[]platformclientv2.Smsphonenumberref into a []interface{}
-func flattenSmsPhoneNumberRefs(smsPhoneNumberRefs *platformclientv2.Smsphonenumberref) []interface{} {
-	if smsPhoneNumberRefs == nil {
-		return nil
-	}
-
-	var smsPhoneNumberRefList []interface{}
-	smsPhoneNumberRefMap := make(map[string]interface{})
-
-	resourcedata.SetMapValueIfNotNil(smsPhoneNumberRefMap, "phone_number", smsPhoneNumberRefs.PhoneNumber)
-
-	smsPhoneNumberRefList = append(smsPhoneNumberRefList, smsPhoneNumberRefMap)
-
-	return smsPhoneNumberRefList
-}
-
 // flattenSmsConfigs maps a Genesys Cloud *platformclientv2.Smsconfig into a []interface{}
 func flattenSmsConfigs(smsconfig *platformclientv2.Smsconfig) *schema.Set {
 	if smsconfig == nil {
@@ -330,6 +316,25 @@ func flattenSmsConfigs(smsconfig *platformclientv2.Smsconfig) *schema.Set {
 	return smsconfigSet
 }
 
+func validateEmailconfig(emailConfig *schema.Set) (string, bool) {
+	if emailConfig == nil {
+		return "", true
+	}
+
+	emailConfigList := emailConfig.List()
+	if len(emailConfigList) > 0 {
+		emailConfigMap := emailConfigList[0].(map[string]interface{})
+		emailColumn, _ := emailConfigMap["email_columns"].(string)
+		if emailColumn == "" {
+			return "Message_column is required.", false
+		}
+	} else {
+		return "", false
+	}
+
+	return "", true
+}
+
 func validateSmsconfig(smsconfig *schema.Set) (string, bool) {
 	if smsconfig == nil {
 		return "", true
@@ -345,6 +350,8 @@ func validateSmsconfig(smsconfig *schema.Set) (string, bool) {
 		} else if messageColumn != "" && contentTemplateId != "" {
 			return "Only one of message_column or content_template_id can be defined", false
 		}
+	} else {
+		return "", false
 	}
 
 	return "", true

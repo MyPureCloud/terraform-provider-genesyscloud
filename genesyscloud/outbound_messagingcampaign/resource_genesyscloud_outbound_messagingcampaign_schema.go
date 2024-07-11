@@ -96,7 +96,7 @@ var (
 		Schema: map[string]*schema.Schema{
 			`message_column`: {
 				Description: `The Contact List column specifying the message to send to the contact.`,
-				Required:    true,
+				Optional:    true,
 				Type:        schema.TypeString,
 			},
 			`phone_column`: {
@@ -116,11 +116,8 @@ var (
 			},
 		},
 	}
-)
 
-// ResourceOutboundMessagingcampaign registers the genesyscloud_outbound_messagingcampaign resource with Terraform
-func ResourceOutboundMessagingcampaign() *schema.Resource {
-	contactSortResource := &schema.Resource{
+	ContactSortResource = &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			`field_name`: {
 				Description: `The field name by which to sort contacts.`,
@@ -138,9 +135,14 @@ func ResourceOutboundMessagingcampaign() *schema.Resource {
 				Description: `Whether or not the column contains numeric data.`,
 				Optional:    true,
 				Type:        schema.TypeBool,
+				Default:     false,
 			},
 		},
 	}
+)
+
+// ResourceOutboundMessagingcampaign registers the genesyscloud_outbound_messagingcampaign resource with Terraform
+func ResourceOutboundMessagingcampaign() *schema.Resource {
 
 	restErrorDetailResource := &schema.Resource{
 		Schema: map[string]*schema.Schema{
@@ -235,7 +237,7 @@ func ResourceOutboundMessagingcampaign() *schema.Resource {
 				Description: `The order in which to sort contacts for dialing, based on up to four columns.`,
 				Optional:    true,
 				Type:        schema.TypeList,
-				Elem:        contactSortResource,
+				Elem:        ContactSortResource,
 			},
 			`messages_per_minute`: {
 				Description: `How many messages this messaging campaign will send per minute.`,
@@ -291,12 +293,15 @@ func OutboundMessagingcampaignExporter() *resourceExporter.ResourceExporter {
 		GetResourcesFunc: provider.GetAllWithPooledClient(getAllAuthOutboundMessagingcampaigns),
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			// TODO: Add any reference attributes here
-			`division_id`:             {RefType: "genesyscloud_auth_division"},
-			`contact_list_id`:         {RefType: "genesyscloud_outbound_contact_list"},
-			`contact_list_filter_ids`: {RefType: "genesyscloud_outbound_contactlistfilter"},
-			`rule_sets`:               {RefType: "genesyscloud_outbound_ruleset"},
-			`dnc_list_ids`:            {RefType: "genesyscloud_outbound_dnclist"},
-			`callable_time_set_id`:    {RefType: "genesyscloud_outbound_callabletimeset"},
+			`division_id`:                         {RefType: "genesyscloud_auth_division"},
+			`contact_list_id`:                     {RefType: "genesyscloud_outbound_contact_list"},
+			`contact_list_filter_ids`:             {RefType: "genesyscloud_outbound_contactlistfilter"},
+			`rule_sets`:                           {RefType: "genesyscloud_outbound_ruleset"},
+			`dnc_list_ids`:                        {RefType: "genesyscloud_outbound_dnclist"},
+			`callable_time_set_id`:                {RefType: "genesyscloud_outbound_callabletimeset"},
+			`route_id`:                            {RefType: "genesyscloud_routing_email_route"},
+			`email_config.from_address.route_id`:  {RefType: "genesyscloud_routing_email_route"},
+			`email_config.from_address.domain_id`: {RefType: "genesyscloud_routing_email_domain"},
 			// /api/v2/responsemanagement/responses/{responseId}
 			`sms_config.content_template_id`:   {},
 			`email_config.content_template_id`: {},

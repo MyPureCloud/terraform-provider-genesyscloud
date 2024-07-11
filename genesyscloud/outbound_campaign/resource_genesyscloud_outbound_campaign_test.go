@@ -6,8 +6,8 @@ import (
 	"strconv"
 	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/architect_flow"
-	"terraform-provider-genesyscloud/genesyscloud/outbound"
 	obDnclist "terraform-provider-genesyscloud/genesyscloud/outbound_dnclist"
+	outboundMessagingcampaign "terraform-provider-genesyscloud/genesyscloud/outbound_messagingcampaign"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
@@ -216,7 +216,7 @@ func TestAccResourceOutboundCampaignBasic(t *testing.T) {
 					[]string{"genesyscloud_outbound_ruleset." + ruleSetResourceId + ".id"},
 					[]string{"genesyscloud_outbound_contactlistfilter." + clfResourceId + ".id"},
 					generatePhoneColumnNoTypeBlock("Cell"),
-					outbound.GenerateOutboundMessagingCampaignContactSort(
+					outboundMessagingcampaign.GenerateOutboundMessagingCampaignContactSort(
 						contactSortFieldName,
 						contactSortDirection,
 						contactSortNumeric,
@@ -285,7 +285,7 @@ func TestAccResourceOutboundCampaignBasic(t *testing.T) {
 					[]string{"genesyscloud_outbound_ruleset." + ruleSetResourceId + ".id"},
 					[]string{"genesyscloud_outbound_contactlistfilter." + clfResourceId + ".id"},
 					generatePhoneColumnNoTypeBlock("Cell"),
-					outbound.GenerateOutboundMessagingCampaignContactSort(
+					outboundMessagingcampaign.GenerateOutboundMessagingCampaignContactSort(
 						contactSortFieldName,
 						contactSortDirection,
 						contactSortNumeric,
@@ -354,7 +354,7 @@ func TestAccResourceOutboundCampaignBasic(t *testing.T) {
 					[]string{"genesyscloud_outbound_ruleset." + ruleSetResourceId + ".id"},
 					[]string{"genesyscloud_outbound_contactlistfilter." + clfResourceId + ".id"},
 					generatePhoneColumnNoTypeBlock("Cell"),
-					outbound.GenerateOutboundMessagingCampaignContactSort(
+					outboundMessagingcampaign.GenerateOutboundMessagingCampaignContactSort(
 						contactSortFieldName,
 						contactSortDirection,
 						contactSortNumeric,
@@ -831,7 +831,7 @@ func TestAccResourceOutboundCampaignWithScriptId(t *testing.T) {
 						[]string{"genesyscloud_outbound_ruleset." + ruleSetResourceId + ".id"},
 						[]string{"genesyscloud_outbound_contactlistfilter." + clfResourceId + ".id"},
 						generatePhoneColumnNoTypeBlock("Cell"),
-						outbound.GenerateOutboundMessagingCampaignContactSort(
+						outboundMessagingcampaign.GenerateOutboundMessagingCampaignContactSort(
 							contactSortFieldName,
 							contactSortDirection,
 							contactSortNumeric,

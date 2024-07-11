@@ -103,8 +103,8 @@ func readOutboundMessagingcampaign(ctx context.Context, d *schema.ResourceData, 
 		}
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "errors", messagingCampaign.Errors, flattenRestErrorDetails)
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "dynamic_contact_queueing_settings", messagingCampaign.DynamicContactQueueingSettings, flattenDynamicContactQueueingSettingss)
-		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "email_config", messagingCampaign.EmailConfig, flattenEmailConfigs)
-		//resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "sms_config", messagingCampaign.SmsConfig, flattenSmsConfigs)
+		//TODO: add email configs in future
+		// resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "email_config", messagingCampaign.EmailConfig, flattenEmailConfigs)
 		d.Set("sms_config", flattenSmsConfigs(messagingCampaign.SmsConfig))
 
 		log.Printf("Read outbound messagingcampaign %s %s", d.Id(), *messagingCampaign.Name)
@@ -143,7 +143,7 @@ func updateOutboundMessagingcampaign(ctx context.Context, d *schema.ResourceData
 		return diagErr
 	}
 
-	log.Printf("Updated outbound messagingcampaign %s", *outboundMessagingcampaign.Id)
+	log.Printf("Updated outbound messagingcampaign")
 	return readOutboundMessagingcampaign(ctx, d, meta)
 }
 
