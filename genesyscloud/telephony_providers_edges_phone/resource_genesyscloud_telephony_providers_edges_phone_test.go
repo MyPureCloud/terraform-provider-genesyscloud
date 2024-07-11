@@ -398,6 +398,16 @@ func TestAccResourcePhoneStandalone(t *testing.T) {
 					Description:      util.NullValue, // No description
 					Comments:         util.NullValue, // No comments
 					PoolProvider:     util.NullValue, // No provider
+				}),
+			},
+			{
+				Config: didPool.GenerateDidPoolResource(&didPool.DidPoolStruct{
+					ResourceID:       didPoolResource1,
+					StartPhoneNumber: lineAddresses,
+					EndPhoneNumber:   lineAddresses,
+					Description:      util.NullValue, // No description
+					Comments:         util.NullValue, // No comments
+					PoolProvider:     util.NullValue, // No provider
 				}) + locationConfig + siteConfig + phoneBaseSettings.GeneratePhoneBaseSettingsResourceWithCustomAttrs(
 					phoneBaseSettingsRes,
 					phoneBaseSettingsName,

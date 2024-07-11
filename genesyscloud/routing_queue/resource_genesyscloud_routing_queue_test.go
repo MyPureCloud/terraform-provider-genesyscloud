@@ -894,7 +894,7 @@ func TestAccResourceRoutingQueueMembers(t *testing.T) {
 					validateMember("genesyscloud_routing_queue."+queueResource, "genesyscloud_user."+queueMemberResource1, defaultQueueRingNum),
 				),
 
-				PreventPostDestroyRefresh: true,
+				Destroy: false,
 			},
 			{
 				// Update with another queue member and modify rings
@@ -922,21 +922,22 @@ func TestAccResourceRoutingQueueMembers(t *testing.T) {
 			},
 			{
 				// Remove a queue member
-				Config: GenerateRoutingQueueResourceBasic(
+				Config: genesyscloud.GenerateBasicUserResource(
+					queueMemberResource2,
+					queueMemberEmail2,
+					queueMemberName2,
+				) + GenerateRoutingQueueResourceBasic(
 					queueResource,
 					queueName,
 					GenerateMemberBlock("genesyscloud_user."+queueMemberResource2+".id", queueRingNum),
 					GenerateBullseyeSettings("10"),
 					GenerateBullseyeSettings("10"),
 					GenerateBullseyeSettings("10"),
-				) + genesyscloud.GenerateBasicUserResource(
-					queueMemberResource2,
-					queueMemberEmail2,
-					queueMemberName2,
 				),
 				Check: resource.ComposeTestCheckFunc(
 					validateMember("genesyscloud_routing_queue."+queueResource, "genesyscloud_user."+queueMemberResource2, queueRingNum),
 				),
+				Destroy: true,
 			},
 			{
 				// Remove all queue members

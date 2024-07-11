@@ -501,7 +501,7 @@ resource "genesyscloud_routing_skill_group" "%s" {
 		Steps: []resource.TestStep{
 			{
 				PreConfig: func() {
-					time.Sleep(30 * time.Second)
+					time.Sleep(45 * time.Second)
 				},
 				Config: skillGroupResource +
 					routingSkillResource +
