@@ -6,9 +6,11 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
 /*
@@ -43,6 +45,10 @@ func TestAccDataSourceIntegrationCredential(t *testing.T) {
 					credName1,
 					"genesyscloud_integration_credential."+credResource1),
 				Check: resource.ComposeTestCheckFunc(
+					func(s *terraform.State) error {
+						time.Sleep(30 * time.Second) // Wait for 30 seconds for proper creation
+						return nil
+					},
 					resource.TestCheckResourceAttrPair("data.genesyscloud_integration_credential."+credResource2, "id", "genesyscloud_integration_credential."+credResource1, "id"), // Default value would be "DISABLED"
 				),
 			},

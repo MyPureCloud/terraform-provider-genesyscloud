@@ -885,12 +885,20 @@ func TestAccResourceRoutingQueueMembers(t *testing.T) {
 					queueMemberResource1,
 					queueMemberEmail1,
 					queueMemberName1,
+				) + genesyscloud.GenerateBasicUserResource(
+					queueMemberResource2,
+					queueMemberEmail2,
+					queueMemberName2,
 				) + GenerateRoutingQueueResourceBasic(
 					queueResource,
 					queueName,
 					GenerateMemberBlock("genesyscloud_user."+queueMemberResource1+".id", util.NullValue),
 				),
 				Check: resource.ComposeTestCheckFunc(
+					func(s *terraform.State) error {
+						time.Sleep(30 * time.Second) // Wait for 30 seconds for proper creation
+						return nil
+					},
 					validateMember("genesyscloud_routing_queue."+queueResource, "genesyscloud_user."+queueMemberResource1, defaultQueueRingNum),
 				),
 

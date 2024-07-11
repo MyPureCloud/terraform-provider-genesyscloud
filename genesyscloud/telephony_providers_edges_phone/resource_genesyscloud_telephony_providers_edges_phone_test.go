@@ -332,7 +332,7 @@ func TestAccResourcePhoneStandalone(t *testing.T) {
 	stateActive := "active"
 	phoneBaseSettingsRes := "phoneBaseSettings1234"
 	phoneBaseSettingsName := "phoneBaseSettings " + uuid.NewString()
-
+	fullResourceId := "genesyscloud_telephony_providers_edges_did_pool" + "." + didPoolResource1
 	locationRes := "test-location"
 
 	emergencyNumber := "+13173114121"
@@ -388,9 +388,6 @@ func TestAccResourcePhoneStandalone(t *testing.T) {
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
-				PreConfig: func() {
-					time.Sleep(30 * time.Second)
-				},
 				Config: didPool.GenerateDidPoolResource(&didPool.DidPoolStruct{
 					ResourceID:       didPoolResource1,
 					StartPhoneNumber: lineAddresses,
@@ -399,6 +396,12 @@ func TestAccResourcePhoneStandalone(t *testing.T) {
 					Comments:         util.NullValue, // No comments
 					PoolProvider:     util.NullValue, // No provider
 				}),
+				Check: resource.ComposeTestCheckFunc(
+					func(s *terraform.State) error {
+						time.Sleep(30 * time.Second) // Wait for 30 seconds for proper updation
+						return nil
+					},
+					resource.TestCheckResourceAttr(fullResourceId, "start_phone_number", lineAddresses)),
 			},
 			{
 				Config: didPool.GenerateDidPoolResource(&didPool.DidPoolStruct{

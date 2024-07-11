@@ -71,7 +71,10 @@ func TestAccDataSourceAuthDivision(t *testing.T) {
 				Destroy:           true,
 			},
 		},
-		CheckDestroy: testVerifyDivisionsDestroyed,
+		CheckDestroy: func(state *terraform.State) error {
+			time.Sleep(45 * time.Second)
+			return testVerifyDivisionsDestroyed(state)
+		},
 	})
 }
 

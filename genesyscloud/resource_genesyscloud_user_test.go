@@ -454,6 +454,10 @@ func TestAccResourceUserSkills(t *testing.T) {
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckNoResourceAttr("genesyscloud_user."+userResource1, "skills.%"),
+					func(s *terraform.State) error {
+						time.Sleep(30 * time.Second) // Wait for 30 seconds for proper updation
+						return nil
+					},
 				),
 			},
 		},
