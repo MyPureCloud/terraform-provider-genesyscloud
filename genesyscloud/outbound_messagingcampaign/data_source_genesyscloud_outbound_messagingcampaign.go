@@ -22,12 +22,12 @@ import (
 // dataSourceOutboundMessagingcampaignRead retrieves by name the id in question
 func dataSourceOutboundMessagingcampaignRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-	outboundApi := getOutboundMessagingcampaignProxy(sdkConfig)
+	proxy := getOutboundMessagingcampaignProxy(sdkConfig)
 
 	name := d.Get("name").(string)
 
 	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
-		messagingCampaignId, retryable, resp, err := outboundApi.getOutboundMessagingcampaignIdByName(ctx, name)
+		messagingCampaignId, retryable, resp, err := proxy.getOutboundMessagingcampaignIdByName(ctx, name)
 
 		if err != nil && !retryable {
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Error searching outbound messagingcampaign %s: %s", name, err), resp))

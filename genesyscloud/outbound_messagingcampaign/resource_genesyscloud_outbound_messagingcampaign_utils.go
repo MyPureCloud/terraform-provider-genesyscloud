@@ -27,7 +27,7 @@ func getOutboundMessagingcampaignFromResourceData(d *schema.ResourceData) platfo
 		AlwaysRunning:                  platformclientv2.Bool(d.Get("always_running").(bool)),
 		ContactSorts:                   buildContactSorts(d.Get("contact_sorts").([]interface{})),
 		MessagesPerMinute:              platformclientv2.Int(d.Get("messages_per_minute").(int)),
-		RuleSets:                       util.BuildSdkDomainEntityRefArr(d, "rule_sets"),
+		RuleSets:                       util.BuildSdkDomainEntityRefArr(d, "rule_set_ids"),
 		ContactListFilters:             util.BuildSdkDomainEntityRefArr(d, "contact_list_filter_ids"),
 		Errors:                         buildRestErrorDetails(d.Get("errors").([]interface{})),
 		DynamicContactQueueingSettings: buildDynamicContactQueueingSettingss(d.Get("dynamic_contact_queueing_settings").([]interface{})),

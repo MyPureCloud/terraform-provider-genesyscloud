@@ -50,6 +50,9 @@ func TestAccDataSourceOutboundMessagingCampaign(t *testing.T) {
 			),
 		)
 
+		// Rule Set
+		ruleSetResourceId = "rule_set"
+
 		contactListResource = obContactList.GenerateOutboundContactList(
 			contactListResourceId,
 			contactListName,
@@ -110,33 +113,39 @@ func TestAccDataSourceOutboundMessagingCampaign(t *testing.T) {
 				Config: contactListResource +
 					contactListFilterResource +
 					callableTimeSetResource +
-					generateOutboundMessagingCampaignResource(
-						resourceId,
-						digitalCampaignName,
-						"genesyscloud_outbound_contact_list."+contactListResourceId+".id",
-						"off",
-						"10",
-						util.FalseValue,
-						"genesyscloud_outbound_callabletimeset."+callableTimeSetResourceId+".id",
-						[]string{},
-						[]string{"genesyscloud_outbound_contactlistfilter." + clfResourceId + ".id"},
-						generateOutboundMessagingCampaignSmsConfig(
-							column1,
-							column1,
-							smsConfigSenderSMSPhoneNumber,
-						),
-						GenerateOutboundMessagingCampaignContactSort(
-							column1,
-							"",
-							"",
-						),
-						GenerateOutboundMessagingCampaignContactSort(
-							column2,
-							"DESC",
-							TrueValue,
-						),
-						generateDynamicContactQueueingSettingsBlock(util.FalseValue),
-					) + generateOutboundMessagingCampaignDataSource(
+					fmt.Sprintf(`
+					resource "genesyscloud_outbound_ruleset" "%s" {
+					name            = "%s"
+					contact_list_id = genesyscloud_outbound_contact_list.%s.id
+					} `, ruleSetResourceId, "tf ruleset "+uuid.NewString(), contactListResourceId,
+					) + generateOutboundMessagingCampaignResource(
+					resourceId,
+					digitalCampaignName,
+					"genesyscloud_outbound_contact_list."+contactListResourceId+".id",
+					"off",
+					"10",
+					util.FalseValue,
+					"genesyscloud_outbound_callabletimeset."+callableTimeSetResourceId+".id",
+					[]string{},
+					[]string{"genesyscloud_outbound_contactlistfilter." + clfResourceId + ".id"},
+					[]string{"genesyscloud_outbound_ruleset." + ruleSetResourceId + ".id"},
+					generateOutboundMessagingCampaignSmsConfig(
+						column1,
+						column1,
+						smsConfigSenderSMSPhoneNumber,
+					),
+					GenerateOutboundMessagingCampaignContactSort(
+						column1,
+						"",
+						"",
+					),
+					GenerateOutboundMessagingCampaignContactSort(
+						column2,
+						"DESC",
+						TrueValue,
+					),
+					generateDynamicContactQueueingSettingsBlock(util.FalseValue),
+				) + generateOutboundMessagingCampaignDataSource(
 					dataSourceId,
 					digitalCampaignName,
 					"genesyscloud_outbound_messagingcampaign."+resourceId,

@@ -96,7 +96,7 @@ func readOutboundMessagingcampaign(ctx context.Context, d *schema.ResourceData, 
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "contact_sorts", messagingCampaign.ContactSorts, flattenContactSorts)
 		resourcedata.SetNillableValue(d, "messages_per_minute", messagingCampaign.MessagesPerMinute)
 		if messagingCampaign.RuleSets != nil {
-			_ = d.Set("rule_sets_ids", util.SdkDomainEntityRefArrToList(*messagingCampaign.RuleSets))
+			_ = d.Set("rule_set_ids", util.SdkDomainEntityRefArrToList(*messagingCampaign.RuleSets))
 		}
 		if messagingCampaign.ContactListFilters != nil {
 			_ = d.Set("contact_list_filter_ids", util.SdkDomainEntityRefArrToList(*messagingCampaign.ContactListFilters))

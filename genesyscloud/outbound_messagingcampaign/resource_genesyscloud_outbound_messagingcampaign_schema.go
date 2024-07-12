@@ -244,7 +244,7 @@ func ResourceOutboundMessagingcampaign() *schema.Resource {
 				Required:    true,
 				Type:        schema.TypeInt,
 			},
-			`rule_sets_ids`: {
+			`rule_set_ids`: {
 				Description: `Rule Sets to be applied while this campaign is sending messages`,
 				Optional:    true,
 				Type:        schema.TypeList,
@@ -296,7 +296,7 @@ func OutboundMessagingcampaignExporter() *resourceExporter.ResourceExporter {
 			`division_id`:                         {RefType: "genesyscloud_auth_division"},
 			`contact_list_id`:                     {RefType: "genesyscloud_outbound_contact_list"},
 			`contact_list_filter_ids`:             {RefType: "genesyscloud_outbound_contactlistfilter"},
-			`rule_sets`:                           {RefType: "genesyscloud_outbound_ruleset"},
+			`rule_set_ids`:                        {RefType: "genesyscloud_outbound_ruleset"},
 			`dnc_list_ids`:                        {RefType: "genesyscloud_outbound_dnclist"},
 			`callable_time_set_id`:                {RefType: "genesyscloud_outbound_callabletimeset"},
 			`route_id`:                            {RefType: "genesyscloud_routing_email_route"},
