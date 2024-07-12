@@ -40,11 +40,11 @@ func TestAccDataSourceOutboundContactListTemplate(t *testing.T) {
 				) + generateOutboundContactListTemplateDataSource(
 					dataSourceId,
 					contactListName,
-					"genesyscloud_outbound_contact_list_template."+resourceId,
+					resourceName+"."+resourceId,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair("data.genesyscloud_outbound_contact_list_template."+dataSourceId, "id",
-						"genesyscloud_outbound_contact_list_template."+resourceId, "id"),
+					resource.TestCheckResourceAttrPair("data."+resourceName+"."+dataSourceId, "id",
+						resourceName+"."+resourceId, "id"),
 				),
 			},
 		},
@@ -53,9 +53,9 @@ func TestAccDataSourceOutboundContactListTemplate(t *testing.T) {
 
 func generateOutboundContactListTemplateDataSource(id string, name string, dependsOn string) string {
 	return fmt.Sprintf(`
-data "genesyscloud_outbound_contact_list_template" "%s" {
+data "%s" "%s" {
 	name = "%s"
 	depends_on = [%s]
 }
-`, id, name, dependsOn)
+`, resourceName, id, name, dependsOn)
 }

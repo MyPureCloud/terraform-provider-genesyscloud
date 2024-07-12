@@ -9,7 +9,7 @@ const (
 )
 
 func SetRegistrar(regInstance registrar.Registrar) {
-	regInstance.RegisterDataSource("genesyscloud_outbound_contact_list_template", DataSourceOutboundContactListTemplate())
-	regInstance.RegisterResource("genesyscloud_outbound_contact_list_template", ResourceOutboundContactListTemplate())
-	regInstance.RegisterExporter("genesyscloud_outbound_contact_list_template", OutboundContactListTemplateExporter())
+	regInstance.RegisterDataSource(resourceName, DataSourceOutboundContactListTemplate())
+	regInstance.RegisterResource(resourceName, ResourceOutboundContactListTemplate())
+	regInstance.RegisterExporter(resourceName, OutboundContactListTemplateExporter())
 }

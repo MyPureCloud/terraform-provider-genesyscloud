@@ -30,7 +30,7 @@ func (r *registerTestInstance) registerTestResources() {
 	r.resourceMapMutex.Lock()
 	defer r.resourceMapMutex.Unlock()
 
-	providerResources["genesyscloud_outbound_contact_list_template"] = ResourceOutboundContactListTemplate()
+	providerResources[resourceName] = ResourceOutboundContactListTemplate()
 	providerResources["genesyscloud_outbound_attempt_limit"] = obAttemptLimit.ResourceOutboundAttemptLimit()
 }
 
@@ -38,7 +38,7 @@ func (r *registerTestInstance) registerTestDataSources() {
 	r.datasourceMapMutex.Lock()
 	defer r.datasourceMapMutex.Unlock()
 
-	providerDataSources["genesyscloud_outbound_contact_list_template"] = DataSourceOutboundContactListTemplate()
+	providerDataSources[resourceName] = DataSourceOutboundContactListTemplate()
 	providerDataSources["genesyscloud_outbound_attempt_limit"] = obAttemptLimit.DataSourceOutboundAttemptLimit()
 }
 

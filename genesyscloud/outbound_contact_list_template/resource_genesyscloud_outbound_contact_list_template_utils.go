@@ -196,7 +196,7 @@ func GenerateOutboundContactListTemplate(
 	attemptLimitId string,
 	nestedBlocks ...string) string {
 	return fmt.Sprintf(`
-resource "genesyscloud_outbound_contact_list_template" "%s" {
+resource "%s" "%s" {
 	name                         = "%s"
 	preview_mode_column_name     = %s
 	preview_mode_accepted_values = [%s]
@@ -206,7 +206,7 @@ resource "genesyscloud_outbound_contact_list_template" "%s" {
 	attempt_limit_id             = %s
 	%s
 }
-`, resourceId, name, previewModeColumnName, strings.Join(previewModeAcceptedValues, ", "),
+`, resourceName, resourceId, name, previewModeColumnName, strings.Join(previewModeAcceptedValues, ", "),
 		strings.Join(columnNames, ", "), automaticTimeZoneMapping, zipCodeColumnName, attemptLimitId, strings.Join(nestedBlocks, "\n"))
 }
 
