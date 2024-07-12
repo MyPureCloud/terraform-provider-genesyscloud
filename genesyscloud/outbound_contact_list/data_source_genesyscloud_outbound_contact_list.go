@@ -11,40 +11,25 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
 )
-
-func DataSourceOutboundContactList() *schema.Resource {
-	return &schema.Resource{
-		Description: "Data source for Genesys Cloud Outbound Contact Lists. Select a contact list by name.",
-		ReadContext: provider.ReadWithPooledClient(dataSourceOutboundContactListRead),
-		Schema: map[string]*schema.Schema{
-			"name": {
-				Description: "Contact List name.",
-				Type:        schema.TypeString,
-				Required:    true,
-			},
-		},
-	}
-}
 
 func dataSourceOutboundContactListRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	sdkConfig := m.(*provider.ProviderMeta).ClientConfig
-	outboundAPI := platformclientv2.NewOutboundApiWithConfig(sdkConfig)
+	proxy := getOutboundContactlistProxy(sdkConfig)
 	name := d.Get("name").(string)
 
 	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
 		const pageNum = 1
 		const pageSize = 100
-		contactLists, resp, getErr := outboundAPI.GetOutboundContactlists(false, false, pageSize, pageNum, true, "", name, []string{""}, []string{""}, "", "")
-		if getErr != nil {
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("error requesting contact list %s | error: %s", name, getErr), resp))
+		contactListId, retryable, resp, err := proxy.getOutboundContactlistIdByName(ctx, name)
+
+		if err != nil && !retryable {
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("error requesting contact list %s | error: %s", name, err), resp))
 		}
-		if contactLists.Entities == nil || len(*contactLists.Entities) == 0 {
-			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("no contact lists found with name %s", name), resp))
+		if retryable {
+			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("no contact list found with name %s", name), resp))
 		}
-		contactList := (*contactLists.Entities)[0]
-		d.SetId(*contactList.Id)
+		d.SetId(contactListId)
 		return nil
 	})
 }
