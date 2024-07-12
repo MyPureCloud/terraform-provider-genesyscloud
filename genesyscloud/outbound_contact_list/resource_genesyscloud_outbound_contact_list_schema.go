@@ -11,9 +11,9 @@ import (
 /*
 resource_genesycloud_outbound_contact_list_schema.go holds three functions within it:
 
-1.  The resource schema definitions for the outbound_contactlist resource.
-2.  The datasource schema definitions for the outbound_contactlist datasource.
-3.  The resource exporter configuration for the outbound_contactlist exporter.
+1.  The resource schema definitions for the outbound_contact_list resource.
+2.  The datasource schema definitions for the outbound_contact_list datasource.
+3.  The resource exporter configuration for the outbound_contact_list exporter.
 */
 
 var (
