@@ -2,6 +2,7 @@ package outbound_messagingcampaign
 
 import (
 	"fmt"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
@@ -371,4 +372,25 @@ func GenerateOutboundMessagingCampaignContactSort(fieldName string, direction st
         %s
 	}
 `, fieldName, direction, numeric)
+}
+
+// GetOutboundDigitalrulesets invokes GET /api/v2/outbound/digitalrulesets
+func GetOutboundDigitalRuleSets() (string, error) {
+	config, err := provider.AuthorizeSdk()
+	if err != nil {
+		return "", err
+	}
+
+	outboundApi := platformclientv2.NewOutboundApiWithConfig(config)
+	outboundRuleSets, _, err := outboundApi.GetOutboundDigitalrulesets(1, 1, "", "", "", []string{})
+
+	if outboundRuleSets.Entities == nil || len(*outboundRuleSets.Entities) == 0 {
+		return "", err
+	}
+
+	if len(*outboundRuleSets.Entities) > 0 {
+		ruleSet := (*outboundRuleSets.Entities)[0]
+		return *ruleSet.Id, nil
+	}
+	return "", err
 }

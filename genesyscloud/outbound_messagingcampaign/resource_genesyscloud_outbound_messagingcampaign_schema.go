@@ -249,7 +249,7 @@ func ResourceOutboundMessagingcampaign() *schema.Resource {
 				Optional:    true,
 				Type:        schema.TypeList,
 				Elem:        &schema.Schema{Type: schema.TypeString},
-			},
+			}, // /api/v2/outbound/digitalrulesets
 			`contact_list_filter_ids`: {
 				Description: `The contact list filter to check before sending a message for this messaging campaign.`,
 				Optional:    true,
@@ -296,10 +296,8 @@ func OutboundMessagingcampaignExporter() *resourceExporter.ResourceExporter {
 			`division_id`:                         {RefType: "genesyscloud_auth_division"},
 			`contact_list_id`:                     {RefType: "genesyscloud_outbound_contact_list"},
 			`contact_list_filter_ids`:             {RefType: "genesyscloud_outbound_contactlistfilter"},
-			`rule_set_ids`:                        {RefType: "genesyscloud_outbound_ruleset"},
 			`dnc_list_ids`:                        {RefType: "genesyscloud_outbound_dnclist"},
 			`callable_time_set_id`:                {RefType: "genesyscloud_outbound_callabletimeset"},
-			`route_id`:                            {RefType: "genesyscloud_routing_email_route"},
 			`email_config.from_address.route_id`:  {RefType: "genesyscloud_routing_email_route"},
 			`email_config.from_address.domain_id`: {RefType: "genesyscloud_routing_email_domain"},
 			// /api/v2/responsemanagement/responses/{responseId}
