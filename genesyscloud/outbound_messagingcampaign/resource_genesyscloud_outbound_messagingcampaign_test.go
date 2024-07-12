@@ -149,8 +149,8 @@ func TestAccResourceOutboundMessagingCampaign(t *testing.T) {
 					alwaysRunning,
 					"genesyscloud_outbound_callabletimeset."+callableTimeSetResourceId+".id",
 					[]string{"genesyscloud_outbound_dnclist." + dncListResourceId + ".id"},
-					[]string{"genesyscloud_outbound_ruleset." + ruleSetResourceId + ".id"},
 					[]string{"genesyscloud_outbound_contactlistfilter." + clfResourceId + ".id"},
+					[]string{"genesyscloud_outbound_ruleset." + ruleSetResourceId + ".id"},
 					generateOutboundMessagingCampaignSmsConfig(
 						smsConfigMessageColumn,
 						smsConfigPhoneColumn,
