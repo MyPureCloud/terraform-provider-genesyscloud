@@ -18,7 +18,6 @@ out during testing.
 var internalProxy *taskManagementWorktypeProxy
 
 // Type definitions for each func on our proxy so we can easily mock them out later
-
 type createTaskManagementWorktypeFunc func(ctx context.Context, p *taskManagementWorktypeProxy, worktype *platformclientv2.Worktypecreate) (*platformclientv2.Worktype, *platformclientv2.APIResponse, error)
 type getAllTaskManagementWorktypeFunc func(ctx context.Context, p *taskManagementWorktypeProxy) (*[]platformclientv2.Worktype, *platformclientv2.APIResponse, error)
 type getTaskManagementWorktypeIdByNameFunc func(ctx context.Context, p *taskManagementWorktypeProxy, name string) (id string, retryable bool, resp *platformclientv2.APIResponse, err error)
@@ -26,10 +25,6 @@ type getTaskManagementWorktypeByNameFunc func(ctx context.Context, p *taskManage
 type getTaskManagementWorktypeByIdFunc func(ctx context.Context, p *taskManagementWorktypeProxy, id string) (worktype *platformclientv2.Worktype, response *platformclientv2.APIResponse, err error)
 type updateTaskManagementWorktypeFunc func(ctx context.Context, p *taskManagementWorktypeProxy, id string, worktype *platformclientv2.Worktypeupdate) (*platformclientv2.Worktype, *platformclientv2.APIResponse, error)
 type deleteTaskManagementWorktypeFunc func(ctx context.Context, p *taskManagementWorktypeProxy, id string) (response *platformclientv2.APIResponse, err error)
-type getAllTaskManagementWorktypeStatusesFunc func(ctx context.Context, p *taskManagementWorktypeProxy, worktypeId string) (*platformclientv2.Workitemstatuslisting, *platformclientv2.APIResponse, error)
-type createTaskManagementWorktypeStatusFunc func(ctx context.Context, p *taskManagementWorktypeProxy, worktypeId string, status *platformclientv2.Workitemstatuscreate) (*platformclientv2.Workitemstatus, *platformclientv2.APIResponse, error)
-type updateTaskManagementWorktypeStatusFunc func(ctx context.Context, p *taskManagementWorktypeProxy, worktypeId string, statusId string, statusUpdate *platformclientv2.Workitemstatusupdate) (*platformclientv2.Workitemstatus, *platformclientv2.APIResponse, error)
-type deleteTaskManagementWorktypeStatusFunc func(ctx context.Context, p *taskManagementWorktypeProxy, worktypeId string, statusId string) (response *platformclientv2.APIResponse, err error)
 
 // taskManagementWorktypeProxy contains all of the methods that call genesys cloud APIs.
 type taskManagementWorktypeProxy struct {
@@ -42,11 +37,6 @@ type taskManagementWorktypeProxy struct {
 	getTaskManagementWorktypeByNameAttr   getTaskManagementWorktypeByNameFunc
 	updateTaskManagementWorktypeAttr      updateTaskManagementWorktypeFunc
 	deleteTaskManagementWorktypeAttr      deleteTaskManagementWorktypeFunc
-
-	getAllTaskManagementWorktypeStatusesAttr getAllTaskManagementWorktypeStatusesFunc
-	createTaskManagementWorktypeStatusAttr   createTaskManagementWorktypeStatusFunc
-	updateTaskManagementWorktypeStatusAttr   updateTaskManagementWorktypeStatusFunc
-	deleteTaskManagementWorktypeStatusAttr   deleteTaskManagementWorktypeStatusFunc
 }
 
 // newTaskManagementWorktypeProxy initializes the task management worktype proxy with all of the data needed to communicate with Genesys Cloud
@@ -62,11 +52,6 @@ func newTaskManagementWorktypeProxy(clientConfig *platformclientv2.Configuration
 		getTaskManagementWorktypeByIdAttr:     getTaskManagementWorktypeByIdFn,
 		updateTaskManagementWorktypeAttr:      updateTaskManagementWorktypeFn,
 		deleteTaskManagementWorktypeAttr:      deleteTaskManagementWorktypeFn,
-
-		getAllTaskManagementWorktypeStatusesAttr: getAllTaskManagementWorktypeStatusesFn,
-		createTaskManagementWorktypeStatusAttr:   createTaskManagementWorktypeStatusFn,
-		updateTaskManagementWorktypeStatusAttr:   updateTaskManagementWorktypeStatusFn,
-		deleteTaskManagementWorktypeStatusAttr:   deleteTaskManagementWorktypeStatusFn,
 	}
 }
 
@@ -112,25 +97,6 @@ func (p *taskManagementWorktypeProxy) updateTaskManagementWorktype(ctx context.C
 // deleteTaskManagementWorktype deletes a Genesys Cloud task management worktype by Id
 func (p *taskManagementWorktypeProxy) deleteTaskManagementWorktype(ctx context.Context, id string) (resp *platformclientv2.APIResponse, err error) {
 	return p.deleteTaskManagementWorktypeAttr(ctx, p, id)
-}
-
-// createTaskManagementWorktypeStatus creates a Genesys Cloud task management worktype status
-func (p *taskManagementWorktypeProxy) getAllTaskManagementWorktypeStatuses(ctx context.Context, worktypeId string) (*platformclientv2.Workitemstatuslisting, *platformclientv2.APIResponse, error) {
-	return p.getAllTaskManagementWorktypeStatusesAttr(ctx, p, worktypeId)
-
-} // createTaskManagementWorktypeStatus creates a Genesys Cloud task management worktype status
-func (p *taskManagementWorktypeProxy) createTaskManagementWorktypeStatus(ctx context.Context, worktypeId string, status *platformclientv2.Workitemstatuscreate) (*platformclientv2.Workitemstatus, *platformclientv2.APIResponse, error) {
-	return p.createTaskManagementWorktypeStatusAttr(ctx, p, worktypeId, status)
-}
-
-// updateTaskManagementWorktypeStatus updates a Genesys Cloud task management worktype status
-func (p *taskManagementWorktypeProxy) updateTaskManagementWorktypeStatus(ctx context.Context, worktypeId string, statusId string, statusUpdate *platformclientv2.Workitemstatusupdate) (*platformclientv2.Workitemstatus, *platformclientv2.APIResponse, error) {
-	return p.updateTaskManagementWorktypeStatusAttr(ctx, p, worktypeId, statusId, statusUpdate)
-}
-
-// deleteTaskManagementWorktypeStatus deletes a Genesys Cloud task management worktype status by Id
-func (p *taskManagementWorktypeProxy) deleteTaskManagementWorktypeStatus(ctx context.Context, worktypeId string, statusId string) (response *platformclientv2.APIResponse, err error) {
-	return p.deleteTaskManagementWorktypeStatusAttr(ctx, p, worktypeId, statusId)
 }
 
 // createTaskManagementWorktypeFn is an implementation function for creating a Genesys Cloud task management worktype
@@ -240,24 +206,4 @@ func updateTaskManagementWorktypeFn(ctx context.Context, p *taskManagementWorkty
 // deleteTaskManagementWorktypeFn is an implementation function for deleting a Genesys Cloud task management worktype
 func deleteTaskManagementWorktypeFn(ctx context.Context, p *taskManagementWorktypeProxy, id string) (resp *platformclientv2.APIResponse, err error) {
 	return p.taskManagementApi.DeleteTaskmanagementWorktype(id)
-}
-
-// getAllTaskManagementWorktypeStatusesFn is an implementation function for getting all statues for a Genesys Cloud task management worktype
-func getAllTaskManagementWorktypeStatusesFn(ctx context.Context, p *taskManagementWorktypeProxy, worktypeId string) (*platformclientv2.Workitemstatuslisting, *platformclientv2.APIResponse, error) {
-	return p.taskManagementApi.GetTaskmanagementWorktypeStatuses(worktypeId)
-}
-
-// createTaskManagementWorktypeStatusFn is an implementation function for creating a Genesys Cloud task management worktype status
-func createTaskManagementWorktypeStatusFn(ctx context.Context, p *taskManagementWorktypeProxy, worktypeId string, status *platformclientv2.Workitemstatuscreate) (*platformclientv2.Workitemstatus, *platformclientv2.APIResponse, error) {
-	return p.taskManagementApi.PostTaskmanagementWorktypeStatuses(worktypeId, *status)
-}
-
-// updateTaskManagementWorktypeStatusFn is an implementation of the function to update a Genesys Cloud task management worktype status
-func updateTaskManagementWorktypeStatusFn(ctx context.Context, p *taskManagementWorktypeProxy, worktypeId string, statusId string, statusUpdate *platformclientv2.Workitemstatusupdate) (*platformclientv2.Workitemstatus, *platformclientv2.APIResponse, error) {
-	return p.taskManagementApi.PatchTaskmanagementWorktypeStatus(worktypeId, statusId, *statusUpdate)
-}
-
-// deleteTaskManagementWorktypeStatusFn is an implementation function for deleting a Genesys Cloud task management worktype status
-func deleteTaskManagementWorktypeStatusFn(ctx context.Context, p *taskManagementWorktypeProxy, worktypeId string, statusId string) (response *platformclientv2.APIResponse, err error) {
-	return p.taskManagementApi.DeleteTaskmanagementWorktypeStatus(worktypeId, statusId)
 }

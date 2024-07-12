@@ -10,7 +10,6 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
@@ -59,11 +58,6 @@ func createTaskManagementWorktype(ctx context.Context, d *schema.ResourceData, m
 	log.Printf("Created the base task management worktype %s", *worktype.Id)
 	d.SetId(*worktype.Id)
 
-	diagErr := createStatuses(ctx, d, proxy, d.Get("statuses").(*schema.Set).List())
-	if diagErr != nil {
-		return diagErr
-	}
-
 	// Update the worktype if 'default_status_name' is set
 	if d.HasChange("default_status_name") {
 		time.Sleep(5 * time.Second)
@@ -109,7 +103,6 @@ func readTaskManagementWorktype(ctx context.Context, d *schema.ResourceData, met
 			}
 		}
 
-		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "statuses", worktype.Statuses, flattenWorkitemStatuses)
 		resourcedata.SetNillableValue(d, "default_duration_seconds", worktype.DefaultDurationSeconds)
 		resourcedata.SetNillableValue(d, "default_expiration_seconds", worktype.DefaultExpirationSeconds)
 		resourcedata.SetNillableValue(d, "default_due_duration_seconds", worktype.DefaultDueDurationSeconds)
@@ -131,7 +124,6 @@ func readTaskManagementWorktype(ctx context.Context, d *schema.ResourceData, met
 			resourcedata.SetNillableValue(d, "schema_version", worktype.Schema.Version)
 		}
 
-		fmt.Println(d.Get("statuses"))
 		log.Printf("Read task management worktype %s %s", d.Id(), *worktype.Name)
 		return cc.CheckState(d)
 	})
@@ -143,18 +135,13 @@ func updateTaskManagementWorktype(ctx context.Context, d *schema.ResourceData, m
 	proxy := getTaskManagementWorktypeProxy(sdkConfig)
 
 	// Update the base configuration of the Worktype
-	taskManagementWorktype := getWorktypeupdateFromResourceData(d, nil)
+	taskManagementWorktype := getWorktypeupdateFromResourceData(d)
 	if d.HasChangesExcept("statuses", "default_status_name") {
 		worktype, resp, err := proxy.updateTaskManagementWorktype(ctx, d.Id(), &taskManagementWorktype)
 		if err != nil {
 			return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update task management worktype %s error: %s", *taskManagementWorktype.Name, err), resp)
 		}
 		log.Printf("Updated base configuration of task management worktype %s", *worktype.Id)
-	}
-
-	diagErr := updateStatuses(ctx, d, proxy)
-	if diagErr != nil {
-		return diagErr
 	}
 
 	// Update the worktype if 'default_status_name' is changed
@@ -195,72 +182,4 @@ func deleteTaskManagementWorktype(ctx context.Context, d *schema.ResourceData, m
 		}
 		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("task management worktype %s still exists", d.Id()), resp))
 	})
-}
-
-func createStatuses(ctx context.Context, d *schema.ResourceData, proxy *taskManagementWorktypeProxy, statuses []interface{}) diag.Diagnostics {
-	// Create and update (for referencing other status) the worktype statuses
-	log.Printf("Creating the task management worktype statuses of %s", d.Id())
-	if err := createWorktypeStatuses(ctx, proxy, d.Id(), statuses); err != nil {
-		return err
-	}
-
-	log.Printf("Updating the destination statuses of the statuses of worktype %s", d.Id())
-	if err := updateWorktypeStatuses(ctx, proxy, d.Id(), statuses, true); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func updateStatuses(ctx context.Context, d *schema.ResourceData, proxy *taskManagementWorktypeProxy) diag.Diagnostics {
-	currentStatuses, resp, err := proxy.getAllTaskManagementWorktypeStatuses(ctx, d.Id())
-	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("failed to get statues for worktype %s error: %s", d.Id(), err), resp)
-	}
-
-	statusesCreate, statusesUpdate, statusesDelete := splitStatuses(currentStatuses, d.Get("statuses").(*schema.Set).List())
-
-	if err := createWorktypeStatuses(ctx, proxy, d.Id(), statusesCreate); err != nil {
-		return err
-	}
-
-	// Update the other already existing statuses for reference or other property updates
-	log.Printf("Updating the destination statuses of the statuses of worktype %s", d.Id())
-	if err := updateWorktypeStatuses(ctx, proxy, d.Id(), statusesUpdate, false); err != nil {
-		return err
-	}
-
-	// Delete statuses that are no longer defined in the configuration
-	log.Printf("Cleaning up statuses of worktype %s", d.Id())
-
-	// Go through and clear the status references first to avoid dependency errors on deletion
-	for _, forDeletionId := range statusesDelete {
-		// Force these properties as 'null' for the API request
-		updateForCleaning := platformclientv2.Workitemstatusupdate{
-			DestinationStatusIds:         &[]string{},
-			DefaultDestinationStatusId:   nil,
-			StatusTransitionTime:         nil,
-			StatusTransitionDelaySeconds: nil,
-		}
-
-		// We put a random description so we can ensure there is a 'change' in the status.
-		// Else we'll get a 400 error if the status has no destination status /default status to begin with
-		// This is simpler than checking the status fields if there are any changes.
-		// Since this status is for deletion anyway we shouldn't care about this managed update.
-		description := "this status is set for deletion by CX as Code " + uuid.NewString()
-		updateForCleaning.Description = &description
-
-		if _, resp, err := proxy.updateTaskManagementWorktypeStatus(ctx, d.Id(), forDeletionId, &updateForCleaning); err != nil {
-			return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to clean up references of task management worktype status %s error: %s", d.Id(), err), resp)
-		}
-	}
-
-	// Actually delete the status
-	for _, deletionId := range statusesDelete {
-		if resp, err := proxy.deleteTaskManagementWorktypeStatus(ctx, d.Id(), deletionId); err != nil {
-			return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete task management worktype status %s error: %s", deletionId, err), resp)
-		}
-	}
-
-	return nil
 }
