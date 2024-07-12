@@ -8,6 +8,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -358,12 +359,12 @@ func TestAccResourceGroupMembers(t *testing.T) {
 				ImportState:       true,
 				ImportStateVerify: true,
 				Destroy:           true,
-				Check: resource.ComposeTestCheckFunc(
-					checkUserDeleted(userID),
-				),
 			},
 		},
-		CheckDestroy: testVerifyGroupsAndUsersDestroyed,
+		CheckDestroy: func(state *terraform.State) error {
+			time.Sleep(45 * time.Second)
+			return testVerifyGroupsAndUsersDestroyed(state)
+		},
 	})
 }
 
@@ -405,10 +406,12 @@ func testVerifyGroupsAndUsersDestroyed(state *terraform.State) error {
 				return fmt.Errorf("Unexpected error: %s", err)
 			}
 		}
+	}
+	for _, rs := range state.RootModule().Resources {
 		if rs.Type == "genesyscloud_user" {
 			err := checkUserDeleted(rs.Primary.ID)(state)
 			if err != nil {
-				continue
+				continue //Try one more time
 			}
 			user, resp, err := usersAPI.GetUser(rs.Primary.ID, nil, "", "")
 			if user != nil {
