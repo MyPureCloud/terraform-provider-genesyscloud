@@ -676,7 +676,7 @@ func flattenOutcomeQuantileCondition(outcomeQuantileCondition *platformclientv2.
 	return outcomeQuantileConditionMap
 }
 
-func buildSdkOutcomeQuantileCondition(outcomeQuantileCondition map[string]interface{}) *platformclientv2.Outcomequantilecondition { // ???
+func buildSdkOutcomeQuantileCondition(outcomeQuantileCondition map[string]interface{}) *platformclientv2.Outcomequantilecondition {
 	outcomeId := outcomeQuantileCondition["outcome_id"].(string)
 	maxQuantileThreshold64 := outcomeQuantileCondition["max_quantile_threshold"].(float64)
 	maxQuantileThreshold := typeconv.Float64to32(&maxQuantileThreshold64)
