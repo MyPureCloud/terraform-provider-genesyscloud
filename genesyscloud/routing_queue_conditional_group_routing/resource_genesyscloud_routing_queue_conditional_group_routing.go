@@ -70,8 +70,8 @@ func readRoutingQueueConditionalRoutingGroup(ctx context.Context, d *schema.Reso
 	cc := consistencyChecker.NewConsistencyCheck(ctx, d, meta, ResourceRoutingQueueConditionalGroupRouting(), constants.DefaultConsistencyChecks, resourceName)
 	queueId := strings.Split(d.Id(), "/")[0]
 
-	log.Printf("Reading routing queue %s conditional group routing rules", queueId)
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
+		log.Printf("Reading routing queue %s conditional group routing rules", queueId)
 		sdkRules, resp, getErr := proxy.getRoutingQueueConditionRouting(ctx, queueId)
 		if getErr != nil {
 			if util.IsStatus404(resp) {
@@ -79,6 +79,7 @@ func readRoutingQueueConditionalRoutingGroup(ctx context.Context, d *schema.Reso
 			}
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read conditional group routing for queue %s | error: %s", queueId, getErr), resp))
 		}
+		log.Printf("Read routing queue %s conditional group routing rules", queueId)
 
 		_ = d.Set("queue_id", queueId)
 		_ = d.Set("rules", flattenConditionalGroupRouting(sdkRules))
@@ -101,7 +102,7 @@ func updateRoutingQueueConditionalRoutingGroup(ctx context.Context, d *schema.Re
 
 	sdkRules, err := buildConditionalGroupRouting(rules)
 	if err != nil {
-		return util.BuildDiagnosticError(resourceName, fmt.Sprintf("Error building conditional group routing"), err)
+		return util.BuildDiagnosticError(resourceName, "Error building conditional group routing", err)
 	}
 
 	log.Printf("updating conditional group routing rules for queue %s", queueId)
@@ -123,29 +124,29 @@ func deleteRoutingQueueConditionalRoutingGroup(ctx context.Context, d *schema.Re
 	log.Printf("Removing rules from queue %s", queueId)
 
 	// check if routing queue still exists before trying to remove rules
-	_, resp, err := proxy.getRoutingQueueConditionRouting(ctx, queueId)
-	if err != nil {
+	log.Printf("Reading queue '%s' to verify it exists before trying to remove its CGR rules", queueId)
+	if _, resp, err := proxy.getRoutingQueueById(ctx, queueId); err != nil {
 		if util.IsStatus404(resp) {
 			log.Printf("conditional group routing rules parent queue %s already deleted", queueId)
 			return nil
 		}
+		log.Printf("Failed to read routing queue '%s': %v", queueId, err)
 	}
 
 	// To delete conditional group routing, update the queue with no rules
+	log.Printf("Updating routing queue '%s' to have no CGR rules", queueId)
 	var newRules []platformclientv2.Conditionalgrouproutingrule
-	_, resp, err = proxy.updateRoutingQueueConditionRouting(ctx, queueId, &newRules)
-	if err != nil && !strings.Contains(err.Error(), "no conditional group routing rules found for queue") {
-
+	if _, resp, err := proxy.updateRoutingQueueConditionRouting(ctx, queueId, &newRules); err != nil {
 		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("failed to remove rules from queue %s: %s", queueId, err), resp)
 	}
 
 	// Verify there are no rules
-	rules, resp, err := proxy.getRoutingQueueConditionRouting(ctx, queueId)
-	if rules != nil {
+	log.Printf("Reading queue '%s' CGR rules to verify that they have been removed", queueId)
+	if rules, resp, err := proxy.getRoutingQueueConditionRouting(ctx, queueId); rules != nil {
 		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("conditional group routing rules still exist for queue %s: %s", queueId, err), resp)
 	}
 
-	log.Printf("Removed rules from queue %s", queueId)
+	log.Printf("Successfully removed rules from queue %s", queueId)
 	return nil
 }
 
@@ -194,6 +195,10 @@ func buildConditionalGroupRouting(rules []interface{}) ([]platformclientv2.Condi
 }
 
 func flattenConditionalGroupRouting(sdkRules *[]platformclientv2.Conditionalgrouproutingrule) []interface{} {
+	if sdkRules == nil {
+		return nil
+	}
+
 	var rules []interface{}
 	for i, sdkRule := range *sdkRules {
 		rule := make(map[string]interface{})
