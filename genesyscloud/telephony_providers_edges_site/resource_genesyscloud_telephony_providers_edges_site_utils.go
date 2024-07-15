@@ -535,6 +535,23 @@ func GenerateSiteResourceWithCustomAttrs(
 	`, siteRes, name, description, locationId, mediaModel, mediaRegionsUseLatencyBased, mediaRegions, callerId, callerName, strings.Join(otherAttrs, "\n"))
 }
 
+func CheckForDefaultSite(siteName string) error {
+	var (
+		sdk, _   = provider.AuthorizeSdk()
+		siteAPI  = platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdk)
+		pageSize = 100
+	)
+
+	sites, _, getErr := siteAPI.GetTelephonyProvidersEdgesSites(pageSize, 1, "", "", siteName, "", true, []string{})
+	if getErr != nil {
+		return getErr
+	}
+	if sites == nil {
+		return fmt.Errorf("no default site found with name %s", siteName)
+	}
+	return nil
+}
+
 // DeleteLocationWithNumber is a test utility function to delete site and location with the provided emergency number
 func DeleteLocationWithNumber(emergencyNumber string, config *platformclientv2.Configuration) error {
 	var (

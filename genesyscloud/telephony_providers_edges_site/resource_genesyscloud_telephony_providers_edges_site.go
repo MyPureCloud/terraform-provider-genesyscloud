@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/tfexporter_state"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	featureToggles "terraform-provider-genesyscloud/genesyscloud/util/feature_toggles"
@@ -43,8 +44,12 @@ func getAllSites(ctx context.Context, sdkConfig *platformclientv2.Configuration)
 	}
 	for _, managedSite := range *managedSites {
 		resources[*managedSite.Id] = &resourceExporter.ResourceMeta{Name: *managedSite.Name}
+		// When exporting managed sites, they must automatically be exported as data source 
+		// Managed sites are added to the ExportAsData []string in resource_exporter
+		if tfexporter_state.IsExporterActive() {
+			resourceExporter.AddDataSourceItems(resourceName, *managedSite.Name)
+		}
 	}
-
 	return resources, nil
 }
 

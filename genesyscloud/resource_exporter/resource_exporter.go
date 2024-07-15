@@ -6,6 +6,7 @@ import (
 	"strings"
 	"sync"
 
+
 	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
@@ -303,4 +304,23 @@ func SetRegisterExporter(resources map[string]*ResourceExporter) {
 	resourceExporterMapMutex.Lock()
 	defer resourceExporterMapMutex.Unlock()
 	resourceExporters = resources
+}
+
+var (
+	ExportAsData          []string
+	dsMutex               sync.Mutex
+	resourceNameSanitizer = NewSanitizerProvider()
+)
+
+// The AddDataSourceItems function adds resources to the ExportAsData []string and are formatted correctly
+// The ExportAsData will be checked in the genesyscloud_resource_exporter to determine resources to be exported as data source
+func AddDataSourceItems(resourceName, itemName string) {
+	exportName := resourceName + "::" + resourceNameSanitizer.S.SanitizeResourceName(itemName)
+	addDataSourceItemstoExport(exportName)
+}
+
+func addDataSourceItemstoExport(name string) {
+	dsMutex.Lock()
+	defer dsMutex.Unlock()
+	ExportAsData = append(ExportAsData, name)
 }
