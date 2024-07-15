@@ -54,10 +54,16 @@ var (
 			Elem:        eventConditionResource,
 		},
 		"trigger_with_outcome_probability_conditions": {
-			Description: "Probability conditions for outcomes that must be satisfied to trigger the action map.",
+			Description: "DEPRECATED. Please switch to using quantile contidions instead. Probability conditions for outcomes that must be satisfied to trigger the action map.",
 			Type:        schema.TypeSet,
 			Optional:    true,
 			Elem:        outcomeProbabilityConditionResource,
+		},
+		"trigger_with_outcome_quantile_conditions": {
+			Description: "Quantile conditions for outcomes that must be satisfied to trigger the action map.",
+			Type:        schema.TypeSet,
+			Optional:    true,
+			Elem:        outcomeQuantileConditionResource,
 		},
 		"page_url_conditions": {
 			Description: "URL conditions that a page must match for web actions to be displayable.",
@@ -167,6 +173,26 @@ var (
 			},
 			"probability": {
 				Description: "Additional probability condition, where if set, the action map will trigger if the current outcome probability is lower or equal to the value.",
+				Type:        schema.TypeFloat,
+				Optional:    true,
+			},
+		},
+	}
+
+	outcomeQuantileConditionResource = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"outcome_id": {
+				Description: "The outcome ID.",
+				Type:        schema.TypeString,
+				Required:    true,
+			},
+			"max_quantile_threshold": {
+				Description: "This Outcome Quantile Condition is met when sessionMaxQuantile of the OutcomeScore is above this value, (unless fallbackQuantile is set). Range 0.00-1.00",
+				Type:        schema.TypeFloat,
+				Required:    true,
+			},
+			"fallback_quantile_threshold": {
+				Description: "If set, this Condition is met when max_quantile_threshold is met, AND the current quantile of the OutcomeScore is below this fallback_quantile_threshold. Range 0.00-1.00",
 				Type:        schema.TypeFloat,
 				Optional:    true,
 			},
@@ -388,6 +414,7 @@ func JourneyActionMapExporter() *resourceExporter.ResourceExporter {
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			"trigger_with_segments":                                             {RefType: "genesyscloud_journey_segment"},
 			"trigger_with_outcome_probability_conditions.outcome_id":            {RefType: "genesyscloud_journey_outcome"},
+			"trigger_with_outcome_quantile_conditions.outcome_id":               {RefType: "genesyscloud_journey_outcome"},
 			"action.architect_flow_fields.architect_flow_id":                    {RefType: "genesyscloud_flow"},
 			"action_map_schedule_groups.action_map_schedule_group_id":           {RefType: "genesyscloud_architect_schedulegroups"},
 			"action_map_schedule_groups.emergency_action_map_schedule_group_id": {RefType: "genesyscloud_architect_schedulegroups"},
@@ -512,6 +539,7 @@ func flattenActionMap(d *schema.ResourceData, actionMap *platformclientv2.Action
 	d.Set("trigger_with_segments", lists.StringListToSetOrNil(actionMap.TriggerWithSegments))
 	resourcedata.SetNillableValue(d, "trigger_with_event_conditions", lists.FlattenList(actionMap.TriggerWithEventConditions, flattenEventCondition))
 	resourcedata.SetNillableValue(d, "trigger_with_outcome_probability_conditions", lists.FlattenList(actionMap.TriggerWithOutcomeProbabilityConditions, flattenOutcomeProbabilityCondition))
+	resourcedata.SetNillableValue(d, "trigger_with_outcome_quantile_conditions", lists.FlattenList(actionMap.TriggerWithOutcomeQuantileConditions, flattenOutcomeQuantileCondition))
 	resourcedata.SetNillableValue(d, "page_url_conditions", lists.FlattenList(actionMap.PageUrlConditions, flattenUrlCondition))
 	d.Set("activation", lists.FlattenAsList(actionMap.Activation, flattenActivation))
 	d.Set("weight", *actionMap.Weight)
@@ -528,6 +556,7 @@ func buildSdkActionMap(actionMap *schema.ResourceData) *platformclientv2.Actionm
 	triggerWithSegments := lists.BuildSdkStringList(actionMap, "trigger_with_segments")
 	triggerWithEventConditions := resourcedata.BuildSdkList(actionMap, "trigger_with_event_conditions", buildSdkEventCondition)
 	triggerWithOutcomeProbabilityConditions := resourcedata.BuildSdkList(actionMap, "trigger_with_outcome_probability_conditions", buildSdkOutcomeProbabilityCondition)
+	triggerWithOutcomeQuantileConditions := resourcedata.BuildSdkList(actionMap, "trigger_with_outcome_quantile_conditions", buildSdkOutcomeQuantileCondition)
 	pageUrlConditions := resourcedata.BuildSdkList(actionMap, "page_url_conditions", buildSdkUrlCondition)
 	activation := resourcedata.BuildSdkListFirstElement(actionMap, "activation", buildSdkActivation, true)
 	weight := actionMap.Get("weight").(int)
@@ -543,6 +572,7 @@ func buildSdkActionMap(actionMap *schema.ResourceData) *platformclientv2.Actionm
 		TriggerWithSegments:                     triggerWithSegments,
 		TriggerWithEventConditions:              triggerWithEventConditions,
 		TriggerWithOutcomeProbabilityConditions: triggerWithOutcomeProbabilityConditions,
+		TriggerWithOutcomeQuantileConditions:    triggerWithOutcomeQuantileConditions,
 		PageUrlConditions:                       pageUrlConditions,
 		Activation:                              activation,
 		Weight:                                  &weight,
@@ -560,6 +590,7 @@ func buildSdkPatchActionMap(patchActionMap *schema.ResourceData) *platformclient
 	triggerWithSegments := lists.BuildSdkStringList(patchActionMap, "trigger_with_segments")
 	triggerWithEventConditions := lists.NilToEmptyList(resourcedata.BuildSdkList(patchActionMap, "trigger_with_event_conditions", buildSdkEventCondition))
 	triggerWithOutcomeProbabilityConditions := lists.NilToEmptyList(resourcedata.BuildSdkList(patchActionMap, "trigger_with_outcome_probability_conditions", buildSdkOutcomeProbabilityCondition))
+	triggerWithOutcomeQuantileConditions := lists.NilToEmptyList(resourcedata.BuildSdkList(patchActionMap, "trigger_with_outcome_quantile_conditions", buildSdkOutcomeQuantileCondition))
 	pageUrlConditions := lists.NilToEmptyList(resourcedata.BuildSdkList(patchActionMap, "page_url_conditions", buildSdkUrlCondition))
 	activation := resourcedata.BuildSdkListFirstElement(patchActionMap, "activation", buildSdkActivation, true)
 	weight := patchActionMap.Get("weight").(int)
@@ -575,6 +606,7 @@ func buildSdkPatchActionMap(patchActionMap *schema.ResourceData) *platformclient
 	sdkPatchActionMap.SetField("TriggerWithSegments", triggerWithSegments)
 	sdkPatchActionMap.SetField("TriggerWithEventConditions", triggerWithEventConditions)
 	sdkPatchActionMap.SetField("TriggerWithOutcomeProbabilityConditions", triggerWithOutcomeProbabilityConditions)
+	sdkPatchActionMap.SetField("TriggerWithOutcomeQuantileConditions", triggerWithOutcomeQuantileConditions)
 	sdkPatchActionMap.SetField("PageUrlConditions", pageUrlConditions)
 	sdkPatchActionMap.SetField("Activation", activation)
 	sdkPatchActionMap.SetField("Weight", &weight)
@@ -633,6 +665,27 @@ func buildSdkOutcomeProbabilityCondition(outcomeProbabilityCondition map[string]
 		OutcomeId:          &outcomeId,
 		MaximumProbability: maximumProbability,
 		Probability:        probability,
+	}
+}
+
+func flattenOutcomeQuantileCondition(outcomeQuantileCondition *platformclientv2.Outcomequantilecondition) map[string]interface{} {
+	outcomeQuantileConditionMap := make(map[string]interface{})
+	outcomeQuantileConditionMap["outcome_id"] = *outcomeQuantileCondition.OutcomeId
+	outcomeQuantileConditionMap["max_quantile_threshold"] = *typeconv.Float32to64(outcomeQuantileCondition.MaxQuantileThreshold)
+	stringmap.SetValueIfNotNil(outcomeQuantileConditionMap, "fallback_quantile_threshold", typeconv.Float32to64(outcomeQuantileCondition.FallbackQuantileThreshold))
+	return outcomeQuantileConditionMap
+}
+
+func buildSdkOutcomeQuantileCondition(outcomeQuantileCondition map[string]interface{}) *platformclientv2.Outcomequantilecondition { // ???
+	outcomeId := outcomeQuantileCondition["outcome_id"].(string)
+	maxQuantileThreshold64 := outcomeQuantileCondition["max_quantile_threshold"].(float64)
+	maxQuantileThreshold := typeconv.Float64to32(&maxQuantileThreshold64)
+	fallbackQuantileThreshold := typeconv.Float64to32(stringmap.GetNonDefaultValue[float64](outcomeQuantileCondition, "fallback_quantile_threshold"))
+
+	return &platformclientv2.Outcomequantilecondition{
+		OutcomeId:                 &outcomeId,
+		MaxQuantileThreshold:      maxQuantileThreshold,
+		FallbackQuantileThreshold: fallbackQuantileThreshold,
 	}
 }
 
