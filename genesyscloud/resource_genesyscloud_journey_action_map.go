@@ -54,7 +54,7 @@ var (
 			Elem:        eventConditionResource,
 		},
 		"trigger_with_outcome_probability_conditions": {
-			Description: "DEPRECATED. Please switch to using quantile contidions instead. Probability conditions for outcomes that must be satisfied to trigger the action map.",
+			Description: "DEPRECATED. Please switch to using quantile conditions instead. Probability conditions for outcomes that must be satisfied to trigger the action map.",
 			Type:        schema.TypeSet,
 			Optional:    true,
 			Elem:        outcomeProbabilityConditionResource,
