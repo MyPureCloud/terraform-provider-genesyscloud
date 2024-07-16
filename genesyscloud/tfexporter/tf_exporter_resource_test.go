@@ -53,8 +53,8 @@ import (
 	respmanagementLibrary "terraform-provider-genesyscloud/genesyscloud/responsemanagement_library"
 	responsemanagementResponse "terraform-provider-genesyscloud/genesyscloud/responsemanagement_response"
 	respManagementRespAsset "terraform-provider-genesyscloud/genesyscloud/responsemanagement_responseasset"
-	routingEmailRoute "terraform-provider-genesyscloud/genesyscloud/routing_email_route"
 	routingEmailDomain "terraform-provider-genesyscloud/genesyscloud/routing_email_domain"
+	routingEmailRoute "terraform-provider-genesyscloud/genesyscloud/routing_email_route"
 	routingQueue "terraform-provider-genesyscloud/genesyscloud/routing_queue"
 	routingQueueConditionalGroupRouting "terraform-provider-genesyscloud/genesyscloud/routing_queue_conditional_group_routing"
 	routingQueueOutboundEmailAddress "terraform-provider-genesyscloud/genesyscloud/routing_queue_outbound_email_address"
@@ -63,6 +63,7 @@ import (
 	routingUtilization "terraform-provider-genesyscloud/genesyscloud/routing_utilization"
 	routingUtilizationLabel "terraform-provider-genesyscloud/genesyscloud/routing_utilization_label"
 	"terraform-provider-genesyscloud/genesyscloud/scripts"
+	supportedContent "terraform-provider-genesyscloud/genesyscloud/supported_content"
 	workbin "terraform-provider-genesyscloud/genesyscloud/task_management_workbin"
 	workitemSchema "terraform-provider-genesyscloud/genesyscloud/task_management_workitem_schema"
 	worktype "terraform-provider-genesyscloud/genesyscloud/task_management_worktype"
@@ -204,6 +205,8 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_task_management_workitem_schema"] = workitemSchema.ResourceTaskManagementWorkitemSchema()
 	providerResources["genesyscloud_task_management_worktype"] = worktype.ResourceTaskManagementWorktype()
 
+	providerResources["genesyscloud_supported_content"] = supportedContent.ResourceSupportedContent()
+
 	providerResources["genesyscloud_tf_export"] = ResourceTfExport()
 }
 
@@ -304,6 +307,8 @@ func (r *registerTestInstance) registerTestExporters() {
 	RegisterExporter("genesyscloud_task_management_workbin", workbin.TaskManagementWorkbinExporter())
 	RegisterExporter("genesyscloud_task_management_workitem_schema", workbin.TaskManagementWorkbinExporter())
 	RegisterExporter("genesyscloud_task_management_worktype", worktype.TaskManagementWorktypeExporter())
+
+	RegisterExporter("genesyscloud_supported_content", supportedContent.SupportedContentExporter())
 
 	RegisterExporter("genesyscloud_script", scripts.ExporterScript())
 

@@ -78,6 +78,7 @@ import (
 	smsAddresses "terraform-provider-genesyscloud/genesyscloud/routing_sms_addresses"
 	"terraform-provider-genesyscloud/genesyscloud/scripts"
 	"terraform-provider-genesyscloud/genesyscloud/station"
+	supportedContent "terraform-provider-genesyscloud/genesyscloud/supported_content"
 	workbin "terraform-provider-genesyscloud/genesyscloud/task_management_workbin"
 	workitem "terraform-provider-genesyscloud/genesyscloud/task_management_workitem"
 	workitemSchema "terraform-provider-genesyscloud/genesyscloud/task_management_workitem_schema"
@@ -243,6 +244,7 @@ func registerResources() {
 	routingUtilizationLabel.SetRegistrar(regInstance)                      //Registering routing utilization label
 	journeyViews.SetRegistrar(regInstance)                                 //Registering journey views
 	routingEmailDomain.SetRegistrar(regInstance)                           //Registering Routing Email Domain
+	supportedContent.SetRegistrar(regInstance)                             //Registering Supported Content
 	// setting resources for Use cases  like TF export where provider is used in resource classes.
 	tfexp.SetRegistrar(regInstance) //Registering tf exporter
 	registrar.SetResources(providerResources, providerDataSources)
