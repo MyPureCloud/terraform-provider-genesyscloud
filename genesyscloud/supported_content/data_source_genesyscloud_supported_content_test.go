@@ -41,9 +41,7 @@ func TestAccDataSourceSupportedContent(t *testing.T) {
 						name,
 						"genesyscloud_supported_content."+resourceId),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_supported_content."+resourceId, "name", name),
-					resource.TestCheckResourceAttr("genesyscloud_supported_content."+resourceId, "media_types.0.allow.0.inbound.0.type", inboundType),
-					resource.TestCheckResourceAttr("genesyscloud_supported_content."+resourceId, "media_types.0.allow.0.outbound.0.type", outboundType),
+					resource.TestCheckResourceAttrPair("data.genesyscloud_supported_content."+dataSourceId, "id", "genesyscloud_supported_content."+resourceId, "id"),
 				),
 			},
 		},
