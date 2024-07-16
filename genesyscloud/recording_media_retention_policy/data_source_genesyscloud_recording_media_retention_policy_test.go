@@ -10,6 +10,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	routingLanguage "terraform-provider-genesyscloud/genesyscloud/routing_language"
 	routingQueue "terraform-provider-genesyscloud/genesyscloud/routing_queue"
+	routingEmailDomain "terraform-provider-genesyscloud/genesyscloud/routing_email_domain"
 	userRoles "terraform-provider-genesyscloud/genesyscloud/user_roles"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
@@ -147,7 +148,7 @@ func TestAccDataSourceRecordingMediaRetentionPolicy(t *testing.T) {
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
-				Config: gcloud.GenerateRoutingEmailDomainResource(
+				Config: routingEmailDomain.GenerateRoutingEmailDomainResource(
 					domainRes,
 					domainId,
 					util.FalseValue, // Subdomain

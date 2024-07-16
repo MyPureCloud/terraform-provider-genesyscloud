@@ -80,7 +80,7 @@ func updateRoutingUtilization(ctx context.Context, d *schema.ResourceData, meta 
 	diagErr := util.RetryWhen(util.IsStatus409, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		_, resp, err := proxy.updateRoutingUtilization(ctx, &platformclientv2.Utilizationrequest{
 			Utilization:       BuildSdkMediaUtilizations(d),
-			LabelUtilizations: BuildSdkLabelUtilizations(d),
+			LabelUtilizations: BuildSdkLabelUtilizations(d.Get("label_utilizations").([]interface{})),
 		})
 
 		if err != nil {

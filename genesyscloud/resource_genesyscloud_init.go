@@ -31,7 +31,6 @@ func registerDataSources(l registrar.Registrar) {
 	l.RegisterDataSource("genesyscloud_quality_forms_survey", dataSourceQualityFormsSurvey())
 	l.RegisterDataSource("genesyscloud_routing_skill", dataSourceRoutingSkill())
 	l.RegisterDataSource("genesyscloud_routing_skill_group", dataSourceRoutingSkillGroup())
-	l.RegisterDataSource("genesyscloud_routing_email_domain", DataSourceRoutingEmailDomain())
 	l.RegisterDataSource("genesyscloud_routing_wrapupcode", DataSourceRoutingWrapupcode())
 	l.RegisterDataSource("genesyscloud_user", DataSourceUser())
 	l.RegisterDataSource("genesyscloud_widget_deployment", dataSourceWidgetDeployments())
@@ -41,7 +40,6 @@ func registerResources(l registrar.Registrar) {
 
 	l.RegisterResource("genesyscloud_location", ResourceLocation())
 	l.RegisterResource("genesyscloud_auth_division", ResourceAuthDivision())
-	l.RegisterResource("genesyscloud_idp_onelogin", ResourceIdpOnelogin())
 	l.RegisterResource("genesyscloud_journey_action_map", ResourceJourneyActionMap())
 	l.RegisterResource("genesyscloud_journey_action_template", ResourceJourneyActionTemplate())
 	l.RegisterResource("genesyscloud_journey_outcome", ResourceJourneyOutcome())
@@ -56,7 +54,6 @@ func registerResources(l registrar.Registrar) {
 	l.RegisterResource("genesyscloud_location", ResourceLocation())
 	l.RegisterResource("genesyscloud_quality_forms_evaluation", ResourceEvaluationForm())
 	l.RegisterResource("genesyscloud_quality_forms_survey", ResourceSurveyForm())
-	l.RegisterResource("genesyscloud_routing_email_domain", ResourceRoutingEmailDomain())
 	l.RegisterResource("genesyscloud_routing_skill", ResourceRoutingSkill())
 	l.RegisterResource("genesyscloud_routing_skill_group", ResourceRoutingSkillGroup())
 	l.RegisterResource("genesyscloud_routing_wrapupcode", ResourceRoutingWrapupCode())
@@ -67,7 +64,6 @@ func registerResources(l registrar.Registrar) {
 
 func registerExporters(l registrar.Registrar) {
 	l.RegisterExporter("genesyscloud_auth_division", AuthDivisionExporter())
-	l.RegisterExporter("genesyscloud_idp_onelogin", IdpOneloginExporter())
 	l.RegisterExporter("genesyscloud_journey_action_map", JourneyActionMapExporter())
 	l.RegisterExporter("genesyscloud_journey_action_template", JourneyActionTemplateExporter())
 	l.RegisterExporter("genesyscloud_journey_outcome", JourneyOutcomeExporter())
@@ -78,7 +74,6 @@ func registerExporters(l registrar.Registrar) {
 	l.RegisterExporter("genesyscloud_location", LocationExporter())
 	l.RegisterExporter("genesyscloud_quality_forms_evaluation", EvaluationFormExporter())
 	l.RegisterExporter("genesyscloud_quality_forms_survey", SurveyFormExporter())
-	l.RegisterExporter("genesyscloud_routing_email_domain", RoutingEmailDomainExporter())
 	l.RegisterExporter("genesyscloud_routing_skill", RoutingSkillExporter())
 	l.RegisterExporter("genesyscloud_routing_skill_group", ResourceSkillGroupExporter())
 	l.RegisterExporter("genesyscloud_routing_wrapupcode", RoutingWrapupCodeExporter())

@@ -22,6 +22,7 @@ import (
 	idpGeneric "terraform-provider-genesyscloud/genesyscloud/idp_generic"
 	idpGsuite "terraform-provider-genesyscloud/genesyscloud/idp_gsuite"
 	idpOkta "terraform-provider-genesyscloud/genesyscloud/idp_okta"
+	idpOneLogin "terraform-provider-genesyscloud/genesyscloud/idp_onelogin"
 	idpPing "terraform-provider-genesyscloud/genesyscloud/idp_ping"
 	idpSalesforce "terraform-provider-genesyscloud/genesyscloud/idp_salesforce"
 	integration "terraform-provider-genesyscloud/genesyscloud/integration"
@@ -38,6 +39,7 @@ import (
 	obCampaignRule "terraform-provider-genesyscloud/genesyscloud/outbound_campaignrule"
 	outboundContactList "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
 	outboundContactListContact "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list_contact"
+	outboundContactListTemplate "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list_template"
 	obContactListFilter "terraform-provider-genesyscloud/genesyscloud/outbound_contactlistfilter"
 	obDncList "terraform-provider-genesyscloud/genesyscloud/outbound_dnclist"
 	obfst "terraform-provider-genesyscloud/genesyscloud/outbound_filespecificationtemplate"
@@ -53,6 +55,7 @@ import (
 	respManagementRespAsset "terraform-provider-genesyscloud/genesyscloud/responsemanagement_responseasset"
 	routingEmailRoute "terraform-provider-genesyscloud/genesyscloud/routing_email_route"
 	routinglanguage "terraform-provider-genesyscloud/genesyscloud/routing_language"
+	routingEmailDomain "terraform-provider-genesyscloud/genesyscloud/routing_email_domain"
 	routingQueue "terraform-provider-genesyscloud/genesyscloud/routing_queue"
 	routingQueueConditionalGroupRouting "terraform-provider-genesyscloud/genesyscloud/routing_queue_conditional_group_routing"
 	routingQueueOutboundEmailAddress "terraform-provider-genesyscloud/genesyscloud/routing_queue_outbound_email_address"
@@ -127,7 +130,7 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_idp_generic"] = idpGeneric.ResourceIdpGeneric()
 	providerResources["genesyscloud_idp_gsuite"] = idpGsuite.ResourceIdpGsuite()
 	providerResources["genesyscloud_idp_okta"] = idpOkta.ResourceIdpOkta()
-	providerResources["genesyscloud_idp_onelogin"] = gcloud.ResourceIdpOnelogin()
+	providerResources["genesyscloud_idp_onelogin"] = idpOneLogin.ResourceIdpOnelogin()
 	providerResources["genesyscloud_idp_ping"] = idpPing.ResourceIdpPing()
 	providerResources["genesyscloud_idp_salesforce"] = idpSalesforce.ResourceIdpSalesforce()
 	providerResources["genesyscloud_integration"] = integration.ResourceIntegration()
@@ -150,7 +153,7 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_user"] = gcloud.ResourceUser()
 	providerResources["genesyscloud_responsemanagement_library"] = respmanagementLibrary.ResourceResponsemanagementLibrary()
 	providerResources["genesyscloud_responsemanagement_responseasset"] = respManagementRespAsset.ResourceResponseManagementResponseAsset()
-	providerResources["genesyscloud_routing_email_domain"] = gcloud.ResourceRoutingEmailDomain()
+	providerResources["genesyscloud_routing_email_domain"] = routingEmailDomain.ResourceRoutingEmailDomain()
 	providerResources["genesyscloud_routing_email_route"] = routingEmailRoute.ResourceRoutingEmailRoute()
 	providerResources["genesyscloud_routing_language"] = routinglanguage.ResourceRoutingLanguage()
 	providerResources["genesyscloud_routing_queue"] = routingQueue.ResourceRoutingQueue()
@@ -181,6 +184,7 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_outbound_callabletimeset"] = obCallableTimeset.ResourceOutboundCallabletimeset()
 	providerResources["genesyscloud_outbound_campaign"] = obCampaign.ResourceOutboundCampaign()
 	providerResources["genesyscloud_outbound_contact_list"] = outboundContactList.ResourceOutboundContactList()
+	providerResources["genesyscloud_outbound_contact_list_template"] = outboundContactListTemplate.ResourceOutboundContactListTemplate()
 	providerResources["genesyscloud_outbound_contact_list_contact"] = outboundContactListContact.ResourceOutboundContactListContact()
 	providerResources["genesyscloud_outbound_contactlistfilter"] = obContactListFilter.ResourceOutboundContactlistfilter()
 	providerResources["genesyscloud_outbound_messagingcampaign"] = ob.ResourceOutboundMessagingCampaign()
@@ -227,7 +231,7 @@ func (r *registerTestInstance) registerTestExporters() {
 	RegisterExporter("genesyscloud_idp_generic", idpGeneric.IdpGenericExporter())
 	RegisterExporter("genesyscloud_idp_gsuite", idpGsuite.IdpGsuiteExporter())
 	RegisterExporter("genesyscloud_idp_okta", idpOkta.IdpOktaExporter())
-	RegisterExporter("genesyscloud_idp_onelogin", gcloud.IdpOneloginExporter())
+	RegisterExporter("genesyscloud_idp_onelogin", idpOneLogin.IdpOneloginExporter())
 	RegisterExporter("genesyscloud_idp_ping", idpPing.IdpPingExporter())
 	RegisterExporter("genesyscloud_idp_salesforce", idpSalesforce.IdpSalesforceExporter())
 	RegisterExporter("genesyscloud_integration", integration.IntegrationExporter())
@@ -247,6 +251,7 @@ func (r *registerTestInstance) registerTestExporters() {
 	RegisterExporter("genesyscloud_outbound_callabletimeset", obCallableTimeset.OutboundCallableTimesetExporter())
 	RegisterExporter("genesyscloud_outbound_campaign", obCampaign.OutboundCampaignExporter())
 	RegisterExporter("genesyscloud_outbound_contact_list", outboundContactList.OutboundContactListExporter())
+	RegisterExporter("genesyscloud_outbound_contact_list_template", outboundContactListTemplate.OutboundContactListTemplateExporter())
 	RegisterExporter("genesyscloud_outbound_contact_list_contact", outboundContactListContact.ContactExporter())
 	RegisterExporter("genesyscloud_outbound_contactlistfilter", obContactListFilter.OutboundContactlistfilterExporter())
 	RegisterExporter("genesyscloud_outbound_messagingcampaign", ob.OutboundMessagingcampaignExporter())
@@ -262,7 +267,7 @@ func (r *registerTestInstance) registerTestExporters() {
 	RegisterExporter("genesyscloud_responsemanagement_library", respmanagementLibrary.ResponsemanagementLibraryExporter())
 	RegisterExporter("genesyscloud_responsemanagement_response", responsemanagementResponse.ResponsemanagementResponseExporter())
 	RegisterExporter("genesyscloud_responsemanagement_responseasset", respManagementRespAsset.ExporterResponseManagementResponseAsset())
-	RegisterExporter("genesyscloud_routing_email_domain", gcloud.RoutingEmailDomainExporter())
+	RegisterExporter("genesyscloud_routing_email_domain", routingEmailDomain.RoutingEmailDomainExporter())
 	RegisterExporter("genesyscloud_routing_email_route", routingEmailRoute.RoutingEmailRouteExporter())
 	RegisterExporter("genesyscloud_routing_language", routinglanguage.RoutingLanguageExporter())
 	RegisterExporter("genesyscloud_routing_queue", routingQueue.RoutingQueueExporter())
@@ -308,6 +313,7 @@ func (r *registerTestInstance) registerTestExporters() {
 func (r *registerTestInstance) registerTestDataSources() {
 	providerDataSources["genesyscloud_auth_division_home"] = gcloud.DataSourceAuthDivisionHome()
 	providerDataSources["genesyscloud_script"] = scripts.DataSourceScript()
+	providerDataSources["genesyscloud_telephony_providers_edges_site"] = edgeSite.DataSourceSite()
 }
 
 func RegisterExporter(exporterName string, resourceExporter *resourceExporter.ResourceExporter) {

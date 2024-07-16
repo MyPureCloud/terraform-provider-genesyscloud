@@ -9,6 +9,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/group"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	routinglanguage "terraform-provider-genesyscloud/genesyscloud/routing_language"
+	routingEmailDomain "terraform-provider-genesyscloud/genesyscloud/routing_email_domain"
 	routingQueue "terraform-provider-genesyscloud/genesyscloud/routing_queue"
 	routingSettings "terraform-provider-genesyscloud/genesyscloud/routing_settings"
 	routingUtilization "terraform-provider-genesyscloud/genesyscloud/routing_utilization"
@@ -42,7 +43,6 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_routing_queue"] = routingQueue.ResourceRoutingQueue()
 	providerResources["genesyscloud_location"] = ResourceLocation()
 	providerResources["genesyscloud_auth_division"] = ResourceAuthDivision()
-	providerResources["genesyscloud_idp_onelogin"] = ResourceIdpOnelogin()
 	providerResources["genesyscloud_journey_action_map"] = ResourceJourneyActionMap()
 	providerResources["genesyscloud_journey_action_template"] = ResourceJourneyActionTemplate()
 	providerResources["genesyscloud_journey_outcome"] = ResourceJourneyOutcome()
@@ -55,8 +55,8 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_location"] = ResourceLocation()
 	providerResources["genesyscloud_quality_forms_evaluation"] = ResourceEvaluationForm()
 	providerResources["genesyscloud_quality_forms_survey"] = ResourceSurveyForm()
-	providerResources["genesyscloud_routing_email_domain"] = ResourceRoutingEmailDomain()
 	providerResources["genesyscloud_routing_language"] = routinglanguage.ResourceRoutingLanguage()
+	providerResources["genesyscloud_routing_email_domain"] = routingEmailDomain.ResourceRoutingEmailDomain()
 	providerResources["genesyscloud_routing_skill"] = ResourceRoutingSkill()
 	providerResources["genesyscloud_routing_skill_group"] = ResourceRoutingSkillGroup()
 	providerResources["genesyscloud_routing_settings"] = routingSettings.ResourceRoutingSettings()
@@ -97,7 +97,7 @@ func (r *registerTestInstance) registerTestDataSources() {
 	providerDataSources["genesyscloud_routing_language"] = routinglanguage.DataSourceRoutingLanguage()
 	providerDataSources["genesyscloud_routing_skill"] = dataSourceRoutingSkill()
 	providerDataSources["genesyscloud_routing_skill_group"] = dataSourceRoutingSkillGroup()
-	providerDataSources["genesyscloud_routing_email_domain"] = DataSourceRoutingEmailDomain()
+	providerDataSources["genesyscloud_routing_email_domain"] = routingEmailDomain.DataSourceRoutingEmailDomain()
 	providerDataSources["genesyscloud_routing_wrapupcode"] = DataSourceRoutingWrapupcode()
 	providerDataSources["genesyscloud_user"] = DataSourceUser()
 	providerDataSources["genesyscloud_widget_deployment"] = dataSourceWidgetDeployments()

@@ -2,7 +2,6 @@ package genesyscloud
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"log"
 	"strings"
@@ -27,12 +26,6 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
 	"github.com/nyaruka/phonenumbers"
 )
-
-type AgentUtilizationWithLabels struct {
-	Utilization       map[string]routingUtilization.MediaUtilization `json:"utilization"`
-	LabelUtilizations map[string]routingUtilization.LabelUtilization `json:"labelUtilizations"`
-	Level             string                                         `json:"level"`
-}
 
 var (
 	contactTypeEmail = "EMAIL"
@@ -531,7 +524,7 @@ func createUser(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 		return diagErr
 	}
 
-	diagErr = updateUserRoutingUtilization(d, usersAPI, sdkConfig)
+	diagErr = updateUserRoutingUtilization(d, usersAPI)
 	if diagErr != nil {
 		return diagErr
 	}
@@ -602,7 +595,7 @@ func readUser(ctx context.Context, d *schema.ResourceData, meta interface{}) dia
 		d.Set("certifications", flattenUserCertifications(currentUser.Certifications))
 		d.Set("employer_info", flattenUserEmployerInfo(currentUser.EmployerInfo))
 
-		if diagErr := readUserRoutingUtilization(d, sdkConfig); diagErr != nil {
+		if diagErr := readUserRoutingUtilization(d, usersAPI); diagErr != nil {
 			return retry.NonRetryableError(fmt.Errorf("%v", diagErr))
 		}
 
@@ -677,7 +670,7 @@ func updateUser(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 		return diagErr
 	}
 
-	diagErr = updateUserRoutingUtilization(d, usersAPI, sdkConfig)
+	diagErr = updateUserRoutingUtilization(d, usersAPI)
 	if diagErr != nil {
 		return diagErr
 	}
@@ -1044,30 +1037,21 @@ func flattenUserEmployerInfo(empInfo *platformclientv2.Employerinfo) []interface
 	}}
 }
 
-func readUserRoutingUtilization(d *schema.ResourceData, sdkConfig *platformclientv2.Configuration) diag.Diagnostics {
+func readUserRoutingUtilization(d *schema.ResourceData, usersAPI *platformclientv2.UsersApi) diag.Diagnostics {
 	log.Printf("Getting user utilization")
 
-	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
-	apiClient := &routingAPI.Configuration.APIClient
-
-	path := fmt.Sprintf("%s/api/v2/routing/users/%s/utilization", routingAPI.Configuration.BasePath, d.Id())
-	headerParams := BuildHeaderParams(routingAPI)
-	response, err := apiClient.CallAPI(path, "GET", nil, headerParams, nil, nil, "", nil)
-
-	if err != nil {
-		if util.IsStatus404(response) {
+	agentUtilization, resp, getErr := usersAPI.GetRoutingUserUtilization(d.Id())
+	if getErr != nil {
+		if util.IsStatus404(resp) {
 			d.SetId("") // User doesn't exist
 			return nil
 		}
-		return util.BuildAPIDiagnosticError("genesyscloud_user", fmt.Sprintf("Failed to read routing utilization for user %s error: %s", d.Id(), err), response)
+		return diag.Errorf("Failed to read Routing Utilization for user %s: %s", d.Id(), getErr)
 	}
-
-	agentUtilization := &AgentUtilizationWithLabels{}
-	json.Unmarshal(response.RawBody, &agentUtilization)
 
 	if agentUtilization == nil {
 		d.Set("routing_utilization", nil)
-	} else if agentUtilization.Level == "Organization" {
+	} else if *agentUtilization.Level == "Organization" {
 		// If the settings are org-wide, set to empty to indicate no settings on the user
 		d.Set("routing_utilization", []interface{}{})
 	} else {
@@ -1075,8 +1059,8 @@ func readUserRoutingUtilization(d *schema.ResourceData, sdkConfig *platformclien
 
 		if agentUtilization.Utilization != nil {
 			for sdkType, schemaType := range routingUtilization.UtilizationMediaTypes {
-				if mediaSettings, ok := agentUtilization.Utilization[sdkType]; ok {
-					allSettings[schemaType] = routingUtilization.FlattenUtilizationSetting(mediaSettings)
+				if mediaSettings, ok := (*agentUtilization.Utilization)[sdkType]; ok {
+					allSettings[schemaType] = routingUtilization.FlattenMediaUtilization(mediaSettings)
 				}
 			}
 		}
@@ -1088,7 +1072,7 @@ func readUserRoutingUtilization(d *schema.ResourceData, sdkConfig *platformclien
 				originalLabelUtilizations := originalSettings["label_utilizations"].([]interface{})
 
 				// Only add to the state the configured labels, in the configured order, but not any extras, to help terraform with matching new and old state.
-				filteredLabelUtilizations := routingUtilization.FilterAndFlattenLabelUtilizationsInternal(agentUtilization.LabelUtilizations, originalLabelUtilizations)
+				filteredLabelUtilizations := routingUtilization.FilterAndFlattenLabelUtilizations(*agentUtilization.LabelUtilizations, originalLabelUtilizations)
 
 				allSettings["label_utilizations"] = filteredLabelUtilizations
 			} else {
@@ -1277,10 +1261,9 @@ func updateUserProfileSkills(d *schema.ResourceData, usersAPI *platformclientv2.
 	return nil
 }
 
-func updateUserRoutingUtilization(d *schema.ResourceData, usersAPI *platformclientv2.UsersApi, sdkConfig *platformclientv2.Configuration) diag.Diagnostics {
+func updateUserRoutingUtilization(d *schema.ResourceData, usersAPI *platformclientv2.UsersApi) diag.Diagnostics {
 	if d.HasChange("routing_utilization") {
 		if utilConfig := d.Get("routing_utilization").([]interface{}); utilConfig != nil {
-			var err error
 
 			log.Printf("Updating user utilization for user %s", d.Id())
 
@@ -1289,29 +1272,17 @@ func updateUserRoutingUtilization(d *schema.ResourceData, usersAPI *platformclie
 				allSettings := utilConfig[0].(map[string]interface{})
 				labelUtilizations := allSettings["label_utilizations"].([]interface{})
 
-				if labelUtilizations != nil && len(labelUtilizations) > 0 {
-					routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
-					apiClient := &routingAPI.Configuration.APIClient
-
-					path := fmt.Sprintf("%s/api/v2/routing/users/%s/utilization", routingAPI.Configuration.BasePath, d.Id())
-					headerParams := BuildHeaderParams(routingAPI)
-					requestPayload := make(map[string]interface{})
-					requestPayload["utilization"] = buildMediaTypeUtilizations(allSettings)
-
-					requestPayload["labelUtilizations"] = routingUtilization.BuildLabelUtilizationsRequest(labelUtilizations)
-					_, err = apiClient.CallAPI(path, "PUT", requestPayload, headerParams, nil, nil, "", nil)
-				} else {
-					sdkSettings := make(map[string]platformclientv2.Mediautilization)
-					for sdkType, schemaType := range routingUtilization.UtilizationMediaTypes {
-						if mediaSettings, ok := allSettings[schemaType]; ok && len(mediaSettings.([]interface{})) > 0 {
-							sdkSettings[sdkType] = routingUtilization.BuildSdkMediaUtilization(mediaSettings.([]interface{}))
-						}
+				sdkSettings := make(map[string]platformclientv2.Mediautilization)
+				for sdkType, schemaType := range routingUtilization.UtilizationMediaTypes {
+					if mediaSettings, ok := allSettings[schemaType]; ok && len(mediaSettings.([]interface{})) > 0 {
+						sdkSettings[sdkType] = routingUtilization.BuildSdkMediaUtilization(mediaSettings.([]interface{}))
 					}
-
-					_, _, err = usersAPI.PutRoutingUserUtilization(d.Id(), platformclientv2.Utilizationrequest{
-						Utilization: &sdkSettings,
-					})
 				}
+
+				_, _, err := usersAPI.PutRoutingUserUtilization(d.Id(), platformclientv2.Utilizationrequest{
+					Utilization:       &sdkSettings,
+					LabelUtilizations: routingUtilization.BuildSdkLabelUtilizations(labelUtilizations),
+				})
 
 				if err != nil {
 					return util.BuildDiagnosticError("genesyscloud_user", fmt.Sprintf("Failed to update Routing Utilization for user %s", d.Id()), err)

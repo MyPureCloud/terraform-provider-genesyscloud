@@ -27,6 +27,7 @@ import (
 	idpGeneric "terraform-provider-genesyscloud/genesyscloud/idp_generic"
 	idpGsuite "terraform-provider-genesyscloud/genesyscloud/idp_gsuite"
 	idpOkta "terraform-provider-genesyscloud/genesyscloud/idp_okta"
+	idpOneLogin "terraform-provider-genesyscloud/genesyscloud/idp_onelogin"
 	idpPing "terraform-provider-genesyscloud/genesyscloud/idp_ping"
 	idpSalesforce "terraform-provider-genesyscloud/genesyscloud/idp_salesforce"
 	"terraform-provider-genesyscloud/genesyscloud/integration"
@@ -46,6 +47,7 @@ import (
 	obCampaignRule "terraform-provider-genesyscloud/genesyscloud/outbound_campaignrule"
 	obContactList "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
 	outboundContactListContact "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list_contact"
+	obContactListTemplate "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list_template"
 	obContactListFilter "terraform-provider-genesyscloud/genesyscloud/outbound_contactlistfilter"
 	obDncList "terraform-provider-genesyscloud/genesyscloud/outbound_dnclist"
 	obfst "terraform-provider-genesyscloud/genesyscloud/outbound_filespecificationtemplate"
@@ -61,6 +63,7 @@ import (
 	respmanagementLibrary "terraform-provider-genesyscloud/genesyscloud/responsemanagement_library"
 	responsemanagementResponse "terraform-provider-genesyscloud/genesyscloud/responsemanagement_response"
 	responsemanagementResponseasset "terraform-provider-genesyscloud/genesyscloud/responsemanagement_responseasset"
+	routingEmailDomain "terraform-provider-genesyscloud/genesyscloud/routing_email_domain"
 	routingEmailRoute "terraform-provider-genesyscloud/genesyscloud/routing_email_route"
 	routingLanguage "terraform-provider-genesyscloud/genesyscloud/routing_language"
 	routingQueue "terraform-provider-genesyscloud/genesyscloud/routing_queue"
@@ -182,6 +185,7 @@ func registerResources() {
 	obCampaign.SetRegistrar(regInstance)                                   //Registering outbound campaign
 	obContactList.SetRegistrar(regInstance)                                //Registering outbound contact list
 	obContactListFilter.SetRegistrar(regInstance)                          //Registering outbound contact list filter
+	obContactListTemplate.SetRegistrar(regInstance)                        //Registering outbound contact list template
 	obSequence.SetRegistrar(regInstance)                                   //Registering outbound sequence
 	obCampaignRule.SetRegistrar(regInstance)                               //Registering outbound campaignrule
 	obSettings.SetRegistrar(regInstance)                                   //Registering outbound settings
@@ -195,6 +199,7 @@ func registerResources() {
 	idpAdfs.SetRegistrar(regInstance)                                      //Registering idp adfs
 	idpSalesforce.SetRegistrar(regInstance)                                //Registering idp salesforce
 	idpOkta.SetRegistrar(regInstance)                                      //Registering idp okta
+	idpOneLogin.SetRegistrar(regInstance)                                  //Registering idp onelogin
 	idpGeneric.SetRegistrar(regInstance)                                   //Registering idp generic
 	idpPing.SetRegistrar(regInstance)                                      //Registering idp ping
 	idpGsuite.SetRegistrar(regInstance)                                    //Registering idp gsuite
@@ -235,10 +240,11 @@ func registerResources() {
 	routingQueueOutboundEmailAddress.SetRegistrar(regInstance)             //Registering routing queue outbound email address
 	outboundContactListContact.SetRegistrar(regInstance)                   //Registering outbound contact list contact
 	routingSettings.SetRegistrar(regInstance)                              //Registering routing Settings
-	routingUtilization.SetRegistrar(regInstance)                           // Registering routing utilization
-	routingUtilizationLabel.SetRegistrar(regInstance)                      // Registering routing utilization label
+	routingUtilization.SetRegistrar(regInstance)                           //Registering routing utilization
+	routingUtilizationLabel.SetRegistrar(regInstance)                      //Registering routing utilization label
 	journeyViews.SetRegistrar(regInstance)                                 //Registering journey views
 	routingLanguage.SetRegistrar(regInstance)                              //Registering Routing Language
+	routingEmailDomain.SetRegistrar(regInstance)                           //Registering Routing Email Domain
 	// setting resources for Use cases  like TF export where provider is used in resource classes.
 	tfexp.SetRegistrar(regInstance) //Registering tf exporter
 	registrar.SetResources(providerResources, providerDataSources)

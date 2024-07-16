@@ -304,12 +304,6 @@ func DataSourceSite() *schema.Resource {
 				Type:        schema.TypeString,
 				Required:    true,
 			},
-			"managed": {
-				Description: "Return entities that are managed by Genesys Cloud.",
-				Type:        schema.TypeBool,
-				Optional:    true,
-				Default:     false,
-			},
 		},
 	}
 }
