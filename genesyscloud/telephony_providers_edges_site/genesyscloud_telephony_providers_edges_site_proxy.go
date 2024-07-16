@@ -6,7 +6,6 @@ import (
 	rc "terraform-provider-genesyscloud/genesyscloud/resource_cache"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
-
 )
 
 /*
