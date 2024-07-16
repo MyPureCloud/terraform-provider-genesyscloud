@@ -2,6 +2,7 @@ package supported_content
 
 import (
 	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/google/uuid"
@@ -24,8 +25,10 @@ func TestAccResourceSupportedContent(t *testing.T) {
 	var (
 		resourceId   = "testSupportedContent"
 		name         = "Terraform Supported Content - " + uuid.NewString()
-		inboundType  = "'*/*"
-		outboundType = "'*/*"
+		inboundType  = "*/*"
+		outboundType = "*/*"
+		inboundType2 = "image/*"
+		inboundType3 = "video/mpeg"
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -45,6 +48,22 @@ func TestAccResourceSupportedContent(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_supported_content."+resourceId, "media_types.0.allow.0.outbound.0.type", outboundType),
 				),
 			},
+			//Update and add inbound block
+			{
+				Config: GenerateSupportedContentResource(
+					resourceId,
+					name,
+					GenerateInboundTypeBlock(inboundType2),
+					GenerateInboundTypeBlock(inboundType3),
+					GenerateOutboundTypeBlock(outboundType),
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("genesyscloud_supported_content."+resourceId, "name", name),
+					resource.TestCheckResourceAttr("genesyscloud_supported_content."+resourceId, "media_types.0.allow.0.inbound.0.type", inboundType2),
+					resource.TestCheckResourceAttr("genesyscloud_supported_content."+resourceId, "media_types.0.allow.0.inbound.1.type", inboundType3),
+					resource.TestCheckResourceAttr("genesyscloud_supported_content."+resourceId, "media_types.0.allow.0.outbound.0.type", outboundType),
+				),
+			},
 			{
 				// Import/Read
 				ResourceName:      "genesyscloud_supported_content." + resourceId,
@@ -59,18 +78,16 @@ func TestAccResourceSupportedContent(t *testing.T) {
 func GenerateSupportedContentResource(
 	resourceId string,
 	name string,
-	inboundType string,
-	outboundType string,
+	nestedBlocks ...string,
 ) string {
 	return fmt.Sprintf(`resource "genesyscloud_supported_content" "%s" {
 		name = "%s"
 		media_types {
 			allow {
 				%s
-				%s
 			}
 		}
-	} `, resourceId, name, inboundType, outboundType)
+	} `, resourceId, name, strings.Join(nestedBlocks, "\n"))
 }
 
 func GenerateInboundTypeBlock(
