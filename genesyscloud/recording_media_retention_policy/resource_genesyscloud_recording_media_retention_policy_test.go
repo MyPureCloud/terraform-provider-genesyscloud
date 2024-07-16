@@ -10,6 +10,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/architect_flow"
 	authRole "terraform-provider-genesyscloud/genesyscloud/auth_role"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
+	routingLanguage "terraform-provider-genesyscloud/genesyscloud/routing_language"
 	routingQueue "terraform-provider-genesyscloud/genesyscloud/routing_queue"
 	routingEmailDomain "terraform-provider-genesyscloud/genesyscloud/routing_email_domain"
 	userRoles "terraform-provider-genesyscloud/genesyscloud/user_roles"
@@ -956,7 +957,7 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 					gcloud.GenerateEvaluationFormResource(evaluationFormResource1, &evaluationFormResourceBody) +
 					gcloud.GenerateSurveyFormResource(surveyFormResource1, &surveyFormResourceBody) +
 					integration.GenerateIntegrationResource(integrationResource1, strconv.Quote(integrationIntendedState), strconv.Quote(integrationType), "") +
-					gcloud.GenerateRoutingLanguageResource(languageResource1, languageName) +
+					routingLanguage.GenerateRoutingLanguageResource(languageResource1, languageName) +
 					gcloud.GenerateRoutingWrapupcodeResource(wrapupCodeResource1, wrapupCodeName) +
 					architect_flow.GenerateFlowResource(
 						flowResource1,
@@ -1063,7 +1064,7 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 					gcloud.GenerateEvaluationFormResource(evaluationFormResource1, &evaluationFormResourceBody) +
 					gcloud.GenerateSurveyFormResource(surveyFormResource1, &surveyFormResourceBody) +
 					integration.GenerateIntegrationResource(integrationResource1, strconv.Quote(integrationIntendedState), strconv.Quote(integrationType), "") +
-					gcloud.GenerateRoutingLanguageResource(languageResource1, languageName) +
+					routingLanguage.GenerateRoutingLanguageResource(languageResource1, languageName) +
 					gcloud.GenerateRoutingWrapupcodeResource(wrapupCodeResource1, wrapupCodeName) +
 					architect_flow.GenerateFlowResource(
 						flowResource1,
@@ -1170,7 +1171,7 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 					gcloud.GenerateEvaluationFormResource(evaluationFormResource1, &evaluationFormResourceBody) +
 					gcloud.GenerateSurveyFormResource(surveyFormResource1, &surveyFormResourceBody) +
 					integration.GenerateIntegrationResource(integrationResource1, strconv.Quote(integrationIntendedState), strconv.Quote(integrationType), "") +
-					gcloud.GenerateRoutingLanguageResource(languageResource1, languageName) +
+					routingLanguage.GenerateRoutingLanguageResource(languageResource1, languageName) +
 					gcloud.GenerateRoutingWrapupcodeResource(wrapupCodeResource1, wrapupCodeName) +
 					architect_flow.GenerateFlowResource(
 						flowResource1,
@@ -1277,7 +1278,7 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 					gcloud.GenerateEvaluationFormResource(evaluationFormResource1, &evaluationFormResourceBody) +
 					gcloud.GenerateSurveyFormResource(surveyFormResource1, &surveyFormResourceBody) +
 					integration.GenerateIntegrationResource(integrationResource1, strconv.Quote(integrationIntendedState), strconv.Quote(integrationType), "") +
-					gcloud.GenerateRoutingLanguageResource(languageResource1, languageName) +
+					routingLanguage.GenerateRoutingLanguageResource(languageResource1, languageName) +
 					gcloud.GenerateRoutingWrapupcodeResource(wrapupCodeResource1, wrapupCodeName) +
 					architect_flow.GenerateFlowResource(
 						flowResource1,

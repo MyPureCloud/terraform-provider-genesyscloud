@@ -65,6 +65,7 @@ import (
 	responsemanagementResponseasset "terraform-provider-genesyscloud/genesyscloud/responsemanagement_responseasset"
 	routingEmailDomain "terraform-provider-genesyscloud/genesyscloud/routing_email_domain"
 	routingEmailRoute "terraform-provider-genesyscloud/genesyscloud/routing_email_route"
+	routingLanguage "terraform-provider-genesyscloud/genesyscloud/routing_language"
 	routingQueue "terraform-provider-genesyscloud/genesyscloud/routing_queue"
 	routingUtilization "terraform-provider-genesyscloud/genesyscloud/routing_utilization"
 	routingUtilizationLabel "terraform-provider-genesyscloud/genesyscloud/routing_utilization_label"
@@ -243,6 +244,7 @@ func registerResources() {
 	routingUtilization.SetRegistrar(regInstance)                           //Registering routing utilization
 	routingUtilizationLabel.SetRegistrar(regInstance)                      //Registering routing utilization label
 	journeyViews.SetRegistrar(regInstance)                                 //Registering journey views
+	routingLanguage.SetRegistrar(regInstance)                              //Registering Routing Language
 	routingEmailDomain.SetRegistrar(regInstance)                           //Registering Routing Email Domain
 	supportedContent.SetRegistrar(regInstance)                             //Registering Supported Content
 	// setting resources for Use cases  like TF export where provider is used in resource classes.
