@@ -4,9 +4,8 @@ on:
     paths-ignore:
       - 'README.md'
 jobs:
-  # ensure the documentation is up-to-date
-  generate:
-    name: Generate
+  go-checks:
+    name: Go Checks
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -47,7 +46,7 @@ jobs:
 
       - name: Vet
         run: |
-          if [[ -n $(go vet ./genesyscloud/...) ]]; then
+          if [[ -n $(go vet ./genesyscloud/... 2>&1) ]]; then
               echo "go vet highlighted the following:\n"
               go vet ./genesyscloud/...
               exit 1
