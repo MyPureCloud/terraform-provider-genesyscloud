@@ -1,4 +1,4 @@
-package genesyscloud
+package routing_skill_group
 
 import (
 	"fmt"
@@ -51,5 +51,5 @@ func generateRoutingSkillGroupDataSource(
 		name = %s
         depends_on=[%s]
 	}
-	`, getSkillGroupResourceName(), resourceID, name, dependsOnResource)
+	`, resourceName, resourceID, name, dependsOnResource)
 }

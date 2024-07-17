@@ -1,0 +1,1 @@
+{"resourceType":"genesyscloud_user","resourceId":"a567485c-7c56-4b4f-a23a-08cb84b30219","GCloudObjectName":"tf.test.user 56442e2b-5fc6-4e67-878e-f32693e9848a","errorMessage":"mismatch on attribute division_id:\nexpected value: 8de1d4db-b7f1-47f6-8b61-ba1c305421e8\nactual value:   f2457141-71be-4680-aa83-6adae0107db8"}
