@@ -1021,7 +1021,7 @@ func TestAccResourceUserRestore(t *testing.T) {
 		userResource1 = "test-user"
 		email1        = "terraform-" + uuid.NewString() + "@user.com"
 		userName1     = "Terraform Restore1"
-		//userName2     = "Terraform Restore2" //TODO
+		userName2     = "Terraform Restore2"
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -1049,7 +1049,7 @@ func TestAccResourceUserRestore(t *testing.T) {
 				Destroy: true, // Delete the user
 				Check:   testVerifyUsersDestroyed,
 			},
-			/*{ //TODO
+			{
 				// Restore the same user email but set a different name
 				Config: GenerateBasicUserResource(
 					userResource1,
@@ -1060,7 +1060,7 @@ func TestAccResourceUserRestore(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName+"."+userResource1, "email", email1),
 					resource.TestCheckResourceAttr(resourceName+"."+userResource1, "name", userName2),
 				),
-			},*/
+			},
 		},
 		CheckDestroy: testVerifyUsersDestroyed,
 	})
@@ -1072,8 +1072,8 @@ func TestAccResourceUserCreateWhenDestroyed(t *testing.T) {
 		userResource1 = "test-user"
 		email1        = "terraform-" + uuid.NewString() + "@user.com"
 		userName1     = "Terraform Existing"
-		//userName2     = "Terraform Create" //TODO
-		//stateActive   = "active"
+		userName2     = "Terraform Create"
+		stateActive   = "active"
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -1101,7 +1101,7 @@ func TestAccResourceUserCreateWhenDestroyed(t *testing.T) {
 				Destroy: true, // Delete the user
 				Check:   testVerifyUsersDestroyed,
 			},
-			/*{ //TODO
+			{
 				// Restore the same user email but set a different name
 				Config: GenerateBasicUserResource(
 					userResource1,
@@ -1113,7 +1113,7 @@ func TestAccResourceUserCreateWhenDestroyed(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName+"."+userResource1, "name", userName2),
 					resource.TestCheckResourceAttr(resourceName+"."+userResource1, "state", stateActive),
 				),
-			},*/
+			},
 		},
 		CheckDestroy: testVerifyUsersDestroyed,
 	})

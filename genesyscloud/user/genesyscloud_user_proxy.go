@@ -29,7 +29,7 @@ type getUserIdByNameFunc func(ctx context.Context, p *userProxy, name string) (i
 type getUserByIdFunc func(ctx context.Context, p *userProxy, id string, expand []string, state string) (user *platformclientv2.User, response *platformclientv2.APIResponse, err error)
 type updateUserFunc func(ctx context.Context, p *userProxy, id string, updateUser *platformclientv2.Updateuser) (*platformclientv2.User, *platformclientv2.APIResponse, error)
 type deleteUserFunc func(ctx context.Context, p *userProxy, id string) (*platformclientv2.APIResponse, error)
-type patchUserWithStateFunc func(ctx context.Context, p *userProxy, id string, state string, updateUser *platformclientv2.Updateuser) (*platformclientv2.User, *platformclientv2.APIResponse, error)
+type patchUserWithStateFunc func(ctx context.Context, p *userProxy, id string, updateUser *platformclientv2.Updateuser) (*platformclientv2.User, *platformclientv2.APIResponse, error)
 
 /*
 The userProxy struct holds all the methods responsible for making calls to
@@ -125,8 +125,8 @@ func (p *userProxy) deleteUser(ctx context.Context, id string) (*platformclientv
 }
 
 // patchUserWithState updates a Genesys Cloud User
-func (p *userProxy) patchUserWithState(ctx context.Context, id string, state string, updateUser *platformclientv2.Updateuser) (*platformclientv2.User, *platformclientv2.APIResponse, error) {
-	return p.patchUserWithStateAttr(ctx, p, id, state, updateUser)
+func (p *userProxy) patchUserWithState(ctx context.Context, id string, updateUser *platformclientv2.Updateuser) (*platformclientv2.User, *platformclientv2.APIResponse, error) {
+	return p.patchUserWithStateAttr(ctx, p, id, updateUser)
 }
 
 // createUserFn is an implementation function for creating a Genesys Cloud user
@@ -238,7 +238,7 @@ func deleteUserFn(ctx context.Context, p *userProxy, id string) (*platformclient
 	return resp, nil
 }
 
-func patchUserWithStateFn(ctx context.Context, p *userProxy, id string, state string, updateUser *platformclientv2.Updateuser) (*platformclientv2.User, *platformclientv2.APIResponse, error) {
+func patchUserWithStateFn(ctx context.Context, p *userProxy, id string, updateUser *platformclientv2.Updateuser) (*platformclientv2.User, *platformclientv2.APIResponse, error) {
 	updateUserResp, apiResponse, errPatch := p.userApi.PatchUser(id, *updateUser)
 	if errPatch != nil {
 		return nil, apiResponse, fmt.Errorf("Failed to update user %s error: %s", id, errPatch)

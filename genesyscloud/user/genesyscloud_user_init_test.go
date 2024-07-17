@@ -2,7 +2,7 @@ package user
 
 import (
 	"sync"
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	"terraform-provider-genesyscloud/genesyscloud"
 
 	authRole "terraform-provider-genesyscloud/genesyscloud/auth_role"
 	"testing"
@@ -32,11 +32,11 @@ func (r *registerTestInstance) registerTestResources() {
 
 	providerResources[resourceName] = ResourceUser()
 	providerResources["genesyscloud_auth_role"] = authRole.ResourceAuthRole()
-	providerResources["genesyscloud_auth_division"] = gcloud.ResourceAuthDivision()
-	providerResources["genesyscloud_routing_skill"] = gcloud.ResourceRoutingSkill()
-	providerResources["genesyscloud_routing_language"] = gcloud.ResourceRoutingLanguage()
-	providerResources["genesyscloud_location"] = gcloud.ResourceLocation()
-	providerResources["genesyscloud_routing_utilization_label"] = gcloud.ResourceRoutingUtilizationLabel()
+	providerResources["genesyscloud_auth_division"] = genesyscloud.ResourceAuthDivision()
+	providerResources["genesyscloud_routing_skill"] = genesyscloud.ResourceRoutingSkill()
+	providerResources["genesyscloud_routing_language"] = genesyscloud.ResourceRoutingLanguage()
+	providerResources["genesyscloud_location"] = genesyscloud.ResourceLocation()
+	providerResources["genesyscloud_routing_utilization_label"] = genesyscloud.ResourceRoutingUtilizationLabel()
 
 }
 
@@ -46,11 +46,11 @@ func (r *registerTestInstance) registerTestDataSources() {
 	defer r.datasourceMapMutex.Unlock()
 	providerDataSources[resourceName] = DataSourceUser()
 	providerDataSources["genesyscloud_auth_role"] = authRole.DataSourceAuthRole()
-	providerDataSources["genesyscloud_auth_division_home"] = gcloud.DataSourceAuthDivisionHome()
-	providerDataSources["genesyscloud_routing_skill"] = gcloud.DataSourceRoutingSkill()
-	providerDataSources["genesyscloud_routing_language"] = gcloud.DataSourceRoutingLanguage()
-	providerDataSources["genesyscloud_location"] = gcloud.DataSourceLocation()
-	providerDataSources["genesyscloud_routing_utilization_label"] = gcloud.DataSourceRoutingUtilizationLabel()
+	providerDataSources["genesyscloud_auth_division_home"] = genesyscloud.DataSourceAuthDivisionHome()
+	providerDataSources["genesyscloud_routing_skill"] = genesyscloud.DataSourceRoutingSkill()
+	providerDataSources["genesyscloud_routing_language"] = genesyscloud.DataSourceRoutingLanguage()
+	providerDataSources["genesyscloud_location"] = genesyscloud.DataSourceLocation()
+	providerDataSources["genesyscloud_routing_utilization_label"] = genesyscloud.DataSourceRoutingUtilizationLabel()
 }
 
 // initTestResources initializes all test resources.

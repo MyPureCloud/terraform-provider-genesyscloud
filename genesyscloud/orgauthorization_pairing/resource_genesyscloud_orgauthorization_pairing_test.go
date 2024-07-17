@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
-	user "terraform-provider-genesyscloud/genesyscloud/user"
+	"terraform-provider-genesyscloud/genesyscloud/user"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 	"time"

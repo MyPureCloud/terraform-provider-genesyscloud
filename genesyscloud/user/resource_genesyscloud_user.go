@@ -115,7 +115,7 @@ func createUser(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	if d.HasChanges("manager", "locations", "acd_auto_answer", "profile_skills", "certifications", "employer_info") {
 		log.Printf("Updating additional attributes for user %s", email)
 
-		_, proxyPatchResponse, patchErr := proxy.patchUserWithState(ctx, *userResponse.Id, "", &platformclientv2.Updateuser{
+		_, proxyPatchResponse, patchErr := proxy.patchUserWithState(ctx, *userResponse.Id, &platformclientv2.Updateuser{
 			Manager:        &manager,
 			Locations:      buildSdkLocations(d),
 			AcdAutoAnswer:  &acdAutoAnswer,

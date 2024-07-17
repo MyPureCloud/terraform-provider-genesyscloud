@@ -4,7 +4,7 @@ import (
 	"sync"
 	"terraform-provider-genesyscloud/genesyscloud/group"
 	integrationCred "terraform-provider-genesyscloud/genesyscloud/integration_credential"
-	user "terraform-provider-genesyscloud/genesyscloud/user"
+	"terraform-provider-genesyscloud/genesyscloud/user"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"

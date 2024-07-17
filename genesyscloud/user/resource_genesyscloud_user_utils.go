@@ -8,7 +8,7 @@ import (
 	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	chunksProcess "terraform-provider-genesyscloud/genesyscloud/util/chunks"
-	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
+	"terraform-provider-genesyscloud/genesyscloud/util/lists"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -354,15 +354,23 @@ func restoreDeletedUser(ctx context.Context, d *schema.ResourceData, meta interf
 
 	log.Printf("Restoring deleted user %s", email)
 
-	_, proxyPatchResponse, patchErr := proxy.patchUserWithState(ctx, d.Id(), "deleted", &platformclientv2.Updateuser{
-		State: &state,
+	return util.RetryWhen(util.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+		currentUser, proxyResp, err := proxy.getUserById(ctx, d.Id(), nil, "deleted")
+		if err != nil {
+			return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to read user %s error: %s", d.Id(), err), proxyResp)
+		}
+
+		_, proxyPatchResponse, patchErr := proxy.patchUserWithState(ctx, d.Id(), &platformclientv2.Updateuser{
+			State:   &state,
+			Version: currentUser.Version,
+		})
+
+		if patchErr != nil {
+			return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Faild to restored deleted user %s | Error: %s.", email, patchErr), proxyPatchResponse)
+		}
+
+		return nil, updateUser(ctx, d, meta)
 	})
-
-	if patchErr != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Faild to restored deleted user %s | Error: %s.", email, patchErr), proxyPatchResponse)
-	}
-
-	return updateUser(ctx, d, meta)
 }
 
 func readUserRoutingUtilization(d *schema.ResourceData, proxy *userProxy) diag.Diagnostics {
