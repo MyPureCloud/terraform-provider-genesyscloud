@@ -1048,7 +1048,7 @@ func complexConfigurationResource(name, description, kbId string, nestedBlocks .
 	`, name, description, kbId, strings.Join(nestedBlocks, "\n"))
 }
 
-func generateWebDeploymentConfigCobrowseSettings(cbEnabled, cbAllowAgentControl string, cbAllowAgentNavigation string, cbChannels []string, cbMaskSelectors []string, cbReadonlySelectors []string, pauseCriteriaBlocks ...string,) string {
+func generateWebDeploymentConfigCobrowseSettings(cbEnabled, cbAllowAgentControl string, cbAllowAgentNavigation string, cbChannels []string, cbMaskSelectors []string, cbReadonlySelectors []string, pauseCriteriaBlocks ...string) string {
 
 	return fmt.Sprintf(`
 	cobrowse {

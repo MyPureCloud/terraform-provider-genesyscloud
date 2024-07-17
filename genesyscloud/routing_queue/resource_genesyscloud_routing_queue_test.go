@@ -24,8 +24,7 @@ import (
 )
 
 var (
-	sdkConfig *platformclientv2.Configuration
-	mu        sync.Mutex
+	mu sync.Mutex
 )
 
 func TestAccResourceRoutingQueueBasic(t *testing.T) {
@@ -60,6 +59,7 @@ func TestAccResourceRoutingQueueBasic(t *testing.T) {
 		testUserEmail           = uuid.NewString() + "@examplestest.com"
 		callbackHours           = "7"
 		callbackHours2          = "7"
+		userID                  string
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -119,6 +119,15 @@ func TestAccResourceRoutingQueueBasic(t *testing.T) {
 					validateBullseyeSettings(queueResource1, 1, alertTimeout1, "genesyscloud_routing_skill."+queueSkillResource),
 					validateRoutingRules(queueResource1, 0, routingRuleOpAny, "50", "5"),
 					validateAgentOwnedRouting(queueResource1, "agent_owned_routing", util.TrueValue, callbackHours, callbackHours),
+					func(s *terraform.State) error {
+						rs, ok := s.RootModule().Resources["genesyscloud_user."+testUserResource]
+						if !ok {
+							return fmt.Errorf("not found: %s", "genesyscloud_user."+testUserResource)
+						}
+						userID = rs.Primary.ID
+						log.Printf("User ID: %s\n", userID) // Print user ID
+						return nil
+					},
 				),
 			},
 			{
@@ -182,9 +191,12 @@ func TestAccResourceRoutingQueueBasic(t *testing.T) {
 				ResourceName:      "genesyscloud_routing_queue." + queueResource1,
 				ImportState:       true,
 				ImportStateVerify: true,
+				Check: resource.ComposeTestCheckFunc(
+					checkUserDeleted(userID),
+				),
 			},
 		},
-		CheckDestroy: testVerifyQueuesDestroyed,
+		CheckDestroy: testVerifyQueuesAndUsersDestroyed,
 	})
 }
 
@@ -225,6 +237,7 @@ func TestAccResourceRoutingQueueConditionalRouting(t *testing.T) {
 		testUserResource                       = "user_resource1"
 		testUserName                           = "nameUser1" + uuid.NewString()
 		testUserEmail                          = uuid.NewString() + "@example.com"
+		userID                                 string
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -413,19 +426,74 @@ func TestAccResourceRoutingQueueConditionalRouting(t *testing.T) {
 					validateMediaSettings(queueResource1, "media_settings_email", alertTimeout1, util.FalseValue, slPercent1, slDuration1),
 					validateMediaSettings(queueResource1, "media_settings_message", alertTimeout1, util.FalseValue, slPercent1, slDuration1),
 					func(s *terraform.State) error {
-						time.Sleep(60 * time.Second) // Wait for 60 seconds for resource to get deleted properly
+						rs, ok := s.RootModule().Resources["genesyscloud_user."+testUserResource]
+						if !ok {
+							return fmt.Errorf("not found: %s", "genesyscloud_user."+testUserResource)
+						}
+						userID = rs.Primary.ID
+						log.Printf("User ID: %s\n", userID) // Print user ID
 						return nil
 					},
 				),
+
+				PreventPostDestroyRefresh: true,
 			},
 			{
+				Config: GenerateRoutingQueueResource(
+					queueResource1,
+					queueName1,
+					queueDesc1,
+					util.NullValue,  // MANDATORY_TIMEOUT
+					"200000",        // acw_timeout
+					util.NullValue,  // ALL
+					util.NullValue,  // auto_answer_only true
+					util.NullValue,  // No calling party name
+					util.NullValue,  // No calling party number
+					util.NullValue,  // enable_transcription false
+					util.FalseValue, // suppress_in_queue_call_recording false
+					util.NullValue,  // enable_manual_assignment false
+					strconv.Quote("TimestampAndPriority"),
+					GenerateMediaSettings("media_settings_call", alertTimeout1, util.FalseValue, slPercent1, slDuration1),
+					GenerateMediaSettings("media_settings_callback", alertTimeout1, util.FalseValue, slPercent1, slDuration1),
+					GenerateMediaSettings("media_settings_chat", alertTimeout1, util.FalseValue, slPercent1, slDuration1),
+					GenerateMediaSettings("media_settings_email", alertTimeout1, util.FalseValue, slPercent1, slDuration1),
+					GenerateMediaSettings("media_settings_message", alertTimeout1, util.FalseValue, slPercent1, slDuration1),
+					GenerateConditionalGroupRoutingRules(
+						util.NullValue,                         // queue_id (queue_id in the first rule should be omitted)
+						conditionalGroupRouting1Operator,       // operator
+						conditionalGroupRouting1Metric,         // metric
+						conditionalGroupRouting1ConditionValue, // condition_value
+						conditionalGroupRouting1WaitSeconds,    // wait_seconds
+						GenerateConditionalGroupRoutingRuleGroup(
+							"genesyscloud_routing_skill_group."+skillGroupResourceId+".id", // group_id
+							conditionalGroupRouting1GroupType,                              // group_type
+						),
+					),
+					GenerateConditionalGroupRoutingRules(
+						"genesyscloud_routing_queue."+queueResource2+".id", // queue_id
+						conditionalGroupRouting2Operator,                   // operator
+						conditionalGroupRouting2Metric,                     // metric
+						conditionalGroupRouting2ConditionValue,             // condition_value
+						conditionalGroupRouting2WaitSeconds,                // wait_seconds
+						GenerateConditionalGroupRoutingRuleGroup(
+							"genesyscloud_group."+groupResourceId+".id", // group_id
+							conditionalGroupRouting2GroupType,           // group_type
+						),
+					),
+					"skill_groups = [genesyscloud_routing_skill_group."+skillGroupResourceId+".id]",
+					"groups = [genesyscloud_group."+groupResourceId+".id]",
+				),
 				// Import/Read
 				ResourceName:      "genesyscloud_routing_queue." + queueResource1,
 				ImportState:       true,
 				ImportStateVerify: true,
+				Destroy:           true,
 			},
 		},
-		CheckDestroy: testVerifyQueuesDestroyed,
+		CheckDestroy: func(state *terraform.State) error {
+			time.Sleep(45 * time.Second)
+			return testVerifyQueuesAndUsersDestroyed(state)
+		},
 	})
 }
 
@@ -692,117 +760,6 @@ func TestAccResourceRoutingQueueFlows(t *testing.T) {
 	})
 }
 
-func TestAccResourceRoutingQueueMembers(t *testing.T) {
-	var (
-		queueResource        = "test-queue-members"
-		queueName            = "Terraform Test Queue3-" + uuid.NewString()
-		queueMemberResource1 = "test-queue-user1"
-		queueMemberResource2 = "test-queue-user2"
-		queueMemberEmail1    = "terraform1-" + uuid.NewString() + "@queue.com"
-		queueMemberEmail2    = "terraform2-" + uuid.NewString() + "@queue.com"
-		queueMemberName1     = "Henry Terraform Test"
-		queueMemberName2     = "Amanda Terraform Test"
-		defaultQueueRingNum  = "1"
-		queueRingNum         = "3"
-	)
-	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { util.TestAccPreCheck(t) },
-		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
-		Steps: []resource.TestStep{
-			{
-				PreConfig: func() {
-					// Wait for a specified duration to avoid runtime error
-					time.Sleep(30 * time.Second)
-				},
-				// Create
-				Config: genesyscloud.GenerateBasicUserResource(
-					queueMemberResource1,
-					queueMemberEmail1,
-					queueMemberName1,
-				) + GenerateRoutingQueueResourceBasic(
-					queueResource,
-					queueName,
-					GenerateMemberBlock("genesyscloud_user."+queueMemberResource1+".id", util.NullValue),
-				),
-				Check: resource.ComposeTestCheckFunc(
-					validateMember("genesyscloud_routing_queue."+queueResource, "genesyscloud_user."+queueMemberResource1, defaultQueueRingNum),
-				),
-			},
-			{
-				PreConfig: func() {
-					// Wait for a specified duration to avoid runtime error
-					time.Sleep(30 * time.Second)
-				},
-				// Update with another queue member and modify rings
-				Config: genesyscloud.GenerateBasicUserResource(
-					queueMemberResource1,
-					queueMemberEmail1,
-					queueMemberName1,
-				) + genesyscloud.GenerateBasicUserResource(
-					queueMemberResource2,
-					queueMemberEmail2,
-					queueMemberName2,
-				) + GenerateRoutingQueueResourceBasic(
-					queueResource,
-					queueName,
-					GenerateMemberBlock("genesyscloud_user."+queueMemberResource1+".id", queueRingNum),
-					GenerateMemberBlock("genesyscloud_user."+queueMemberResource2+".id", queueRingNum),
-					GenerateBullseyeSettings("10"),
-					GenerateBullseyeSettings("10"),
-					GenerateBullseyeSettings("10"),
-				),
-				Check: resource.ComposeTestCheckFunc(
-					validateMember("genesyscloud_routing_queue."+queueResource, "genesyscloud_user."+queueMemberResource1, queueRingNum),
-					validateMember("genesyscloud_routing_queue."+queueResource, "genesyscloud_user."+queueMemberResource2, queueRingNum),
-				),
-			},
-			{
-				// Remove a queue member
-				Config: GenerateRoutingQueueResourceBasic(
-					queueResource,
-					queueName,
-					GenerateMemberBlock("genesyscloud_user."+queueMemberResource2+".id", queueRingNum),
-					GenerateBullseyeSettings("10"),
-					GenerateBullseyeSettings("10"),
-					GenerateBullseyeSettings("10"),
-				) + genesyscloud.GenerateBasicUserResource(
-					queueMemberResource1,
-					queueMemberEmail1,
-					queueMemberName1,
-				) + genesyscloud.GenerateBasicUserResource(
-					queueMemberResource2,
-					queueMemberEmail2,
-					queueMemberName2,
-				),
-				Check: resource.ComposeTestCheckFunc(
-					validateMember("genesyscloud_routing_queue."+queueResource, "genesyscloud_user."+queueMemberResource2, queueRingNum),
-				),
-			},
-			{
-				// Remove all queue members
-				Config: GenerateRoutingQueueResourceBasic(
-					queueResource,
-					queueName,
-					"members = []",
-					GenerateBullseyeSettings("10"),
-					GenerateBullseyeSettings("10"),
-					GenerateBullseyeSettings("10"),
-				),
-				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckNoResourceAttr("genesyscloud_routing_queue."+queueResource, "members.%"),
-				),
-			},
-			{
-				// Import/Read
-				ResourceName:      "genesyscloud_routing_queue." + queueResource,
-				ImportState:       true,
-				ImportStateVerify: true,
-			},
-		},
-		CheckDestroy: testVerifyQueuesDestroyed,
-	})
-}
-
 func TestAccResourceRoutingQueueSkillgroupMembers(t *testing.T) {
 	var (
 		queueResourceId = "test-queue"
@@ -901,6 +858,114 @@ func TestAccResourceRoutingQueueSkillgroupMembers(t *testing.T) {
 	})
 }
 
+func TestAccResourceRoutingQueueMembers(t *testing.T) {
+	var (
+		queueResource        = "test-queue-members"
+		queueName            = "Terraform Test Queue3-" + uuid.NewString()
+		queueMemberResource1 = "test-queue-user1"
+		queueMemberResource2 = "test-queue-user2"
+		queueMemberEmail1    = "terraform1-" + uuid.NewString() + "@queue1.com"
+		queueMemberEmail2    = "terraform2-" + uuid.NewString() + "@queue2.com"
+		queueMemberName1     = "Henry Terraform Test"
+		queueMemberName2     = "Amanda Terraform Test"
+		defaultQueueRingNum  = "1"
+		queueRingNum         = "3"
+	)
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			{
+				// Create
+				Config: genesyscloud.GenerateBasicUserResource(
+					queueMemberResource1,
+					queueMemberEmail1,
+					queueMemberName1,
+				) + genesyscloud.GenerateBasicUserResource(
+					queueMemberResource2,
+					queueMemberEmail2,
+					queueMemberName2,
+				) + GenerateRoutingQueueResourceBasic(
+					queueResource,
+					queueName,
+					GenerateMemberBlock("genesyscloud_user."+queueMemberResource1+".id", util.NullValue),
+				),
+				Check: resource.ComposeTestCheckFunc(
+					validateMember("genesyscloud_routing_queue."+queueResource, "genesyscloud_user."+queueMemberResource1, defaultQueueRingNum),
+				),
+			},
+			{
+				PreConfig: func() {
+					// Wait for a specified duration to avoid runtime error
+					time.Sleep(30 * time.Second)
+				},
+				// Update with another queue member and modify rings
+				Config: genesyscloud.GenerateBasicUserResource(
+					queueMemberResource1,
+					queueMemberEmail1,
+					queueMemberName1,
+				) + genesyscloud.GenerateBasicUserResource(
+					queueMemberResource2,
+					queueMemberEmail2,
+					queueMemberName2,
+				) + GenerateRoutingQueueResourceBasic(
+					queueResource,
+					queueName,
+					GenerateMemberBlock("genesyscloud_user."+queueMemberResource1+".id", queueRingNum),
+					GenerateMemberBlock("genesyscloud_user."+queueMemberResource2+".id", queueRingNum),
+					GenerateBullseyeSettings("10"),
+					GenerateBullseyeSettings("10"),
+					GenerateBullseyeSettings("10"),
+				),
+				Check: resource.ComposeTestCheckFunc(
+					validateMember("genesyscloud_routing_queue."+queueResource, "genesyscloud_user."+queueMemberResource1, queueRingNum),
+					validateMember("genesyscloud_routing_queue."+queueResource, "genesyscloud_user."+queueMemberResource2, queueRingNum),
+				),
+			},
+			{
+				// Remove a queue member
+				Config: genesyscloud.GenerateBasicUserResource(
+					queueMemberResource2,
+					queueMemberEmail2,
+					queueMemberName2,
+				) + GenerateRoutingQueueResourceBasic(
+					queueResource,
+					queueName,
+					GenerateMemberBlock("genesyscloud_user."+queueMemberResource2+".id", queueRingNum),
+					GenerateBullseyeSettings("10"),
+					GenerateBullseyeSettings("10"),
+					GenerateBullseyeSettings("10"),
+				),
+				Check: resource.ComposeTestCheckFunc(
+					validateMember("genesyscloud_routing_queue."+queueResource, "genesyscloud_user."+queueMemberResource2, queueRingNum),
+				),
+				Destroy: true,
+			},
+			{
+				// Remove all queue members
+				Config: GenerateRoutingQueueResourceBasic(
+					queueResource,
+					queueName,
+					"members = []",
+					GenerateBullseyeSettings("10"),
+					GenerateBullseyeSettings("10"),
+					GenerateBullseyeSettings("10"),
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckNoResourceAttr("genesyscloud_routing_queue."+queueResource, "members.%"),
+				),
+			},
+			{
+				// Import/Read
+				ResourceName:      "genesyscloud_routing_queue." + queueResource,
+				ImportState:       true,
+				ImportStateVerify: true,
+				Destroy:           true,
+			},
+		},
+		CheckDestroy: testVerifyQueuesAndUsersDestroyed,
+	})
+}
 func TestAccResourceRoutingQueueWrapupCodes(t *testing.T) {
 	var (
 		queueResource       = "test-queue-wrapup"
@@ -1258,6 +1323,43 @@ func testVerifyQueuesDestroyed(state *terraform.State) error {
 	return nil
 }
 
+func testVerifyQueuesAndUsersDestroyed(state *terraform.State) error {
+	routingAPI := platformclientv2.NewRoutingApi()
+	usersAPI := platformclientv2.NewUsersApi()
+	for _, rs := range state.RootModule().Resources {
+		if rs.Type == "genesyscloud_routing_queue" {
+			queue, resp, err := routingAPI.GetRoutingQueue(rs.Primary.ID)
+			if queue != nil {
+				return fmt.Errorf("Queue (%s) still exists", rs.Primary.ID)
+			} else if util.IsStatus404(resp) {
+				// Queue not found as expected
+				continue
+			} else {
+				// Unexpected error
+				return fmt.Errorf("Unexpected error: %s", err)
+			}
+		}
+		if rs.Type == "genesyscloud_user" {
+			err := checkUserDeleted(rs.Primary.ID)(state)
+			if err != nil {
+				continue
+			}
+			user, resp, err := usersAPI.GetUser(rs.Primary.ID, nil, "", "")
+			if user != nil {
+				return fmt.Errorf("User Resource (%s) still exists", rs.Primary.ID)
+			} else if util.IsStatus404(resp) {
+				// User not found as expected
+				continue
+			} else {
+				// Unexpected error
+				return fmt.Errorf("Unexpected error: %s", err)
+			}
+		}
+	}
+	// Success. All queues destroyed
+	return nil
+}
+
 func validateMediaSettings(resourceName, settingsAttr, alertingTimeout, enableAutoAnswer, slPercent, slDurationMs string) resource.TestCheckFunc {
 	return resource.ComposeAggregateTestCheckFunc(
 		resource.TestCheckResourceAttr("genesyscloud_routing_queue."+resourceName, settingsAttr+".0.alerting_timeout_sec", alertingTimeout),
@@ -1515,6 +1617,8 @@ func TestAccResourceRoutingQueueSkillGroups(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					validateGroups("genesyscloud_routing_queue."+queueResource, "genesyscloud_routing_skill_group."+skillGroupResource, "genesyscloud_group."+groupResource),
 				),
+
+				PreventPostDestroyRefresh: true,
 			},
 			{
 				// Import/Read
@@ -1524,15 +1628,13 @@ func TestAccResourceRoutingQueueSkillGroups(t *testing.T) {
 				ImportStateVerifyIgnore: []string{
 					"suppress_in_queue_call_recording",
 				},
-				Check: resource.ComposeTestCheckFunc(
-					func(s *terraform.State) error {
-						time.Sleep(45 * time.Second) // Wait for 45 seconds for resource to get deleted properly
-						return nil
-					},
-				),
+				Destroy: true,
 			},
 		},
-		CheckDestroy: testVerifyQueuesDestroyed,
+		CheckDestroy: func(state *terraform.State) error {
+			time.Sleep(45 * time.Second)
+			return testVerifyQueuesAndUsersDestroyed(state)
+		},
 	})
 }
 
@@ -1548,9 +1650,8 @@ func generateUserWithCustomAttrs(resourceID string, email string, name string, a
 func checkUserDeleted(id string) resource.TestCheckFunc {
 	log.Printf("Fetching user with ID: %s\n", id)
 	return func(s *terraform.State) error {
-		maxAttempts := 18
+		maxAttempts := 30
 		for i := 0; i < maxAttempts; i++ {
-
 			deleted, err := isUserDeleted(id)
 			if err != nil {
 				return err
@@ -1568,7 +1669,7 @@ func isUserDeleted(id string) (bool, error) {
 	mu.Lock()
 	defer mu.Unlock()
 
-	usersAPI := platformclientv2.NewUsersApiWithConfig(sdkConfig)
+	usersAPI := platformclientv2.NewUsersApi()
 	// Attempt to get the user
 	_, response, err := usersAPI.GetUser(id, nil, "", "")
 

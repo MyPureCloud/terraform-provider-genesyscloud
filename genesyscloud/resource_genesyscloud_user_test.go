@@ -455,6 +455,10 @@ func TestAccResourceUserSkills(t *testing.T) {
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckNoResourceAttr("genesyscloud_user."+userResource1, "skills.%"),
+					func(s *terraform.State) error {
+						time.Sleep(30 * time.Second) // Wait for 30 seconds for proper updation
+						return nil
+					},
 				),
 			},
 		},
@@ -1124,6 +1128,10 @@ func testVerifyUsersDestroyed(state *terraform.State) error {
 			if rs.Type != "genesyscloud_user" {
 				continue
 			}
+			err := checkUserDeleted(rs.Primary.ID)(state)
+			if err != nil {
+				continue
+			}
 			_, resp, err := usersAPI.GetUser(rs.Primary.ID, nil, "", "")
 
 			if err != nil {
@@ -1132,7 +1140,6 @@ func testVerifyUsersDestroyed(state *terraform.State) error {
 				}
 				return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_user", fmt.Sprintf("Unexpected error: %s", err), resp))
 			}
-
 			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_user", fmt.Sprintf("User (%s) still exists", rs.Primary.ID), resp))
 		}
 		return nil

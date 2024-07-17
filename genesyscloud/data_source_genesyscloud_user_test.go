@@ -2,12 +2,15 @@ package genesyscloud
 
 import (
 	"fmt"
+	"log"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
 func TestAccDataSourceUser(t *testing.T) {
@@ -15,8 +18,9 @@ func TestAccDataSourceUser(t *testing.T) {
 		userResource   = "test-user"
 		userDataSource = "test-user-data"
 		randomString   = uuid.NewString()
-		userEmail      = "John_Doe" + randomString + "@example.com"
+		userEmail      = "John_Doe" + randomString + "@exampleuser.com"
 		userName       = "John_Doe" + randomString
+		userID         string
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -37,6 +41,15 @@ func TestAccDataSourceUser(t *testing.T) {
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrPair("data.genesyscloud_user."+userDataSource, "id", "genesyscloud_user."+userResource, "id"),
+					func(s *terraform.State) error {
+						rs, ok := s.RootModule().Resources["genesyscloud_user."+userResource]
+						if !ok {
+							return fmt.Errorf("not found: %s", "genesyscloud_user."+userResource)
+						}
+						userID = rs.Primary.ID
+						log.Printf("User ID: %s\n", userID) // Print user ID
+						return nil
+					},
 				),
 			},
 			{
@@ -53,8 +66,16 @@ func TestAccDataSourceUser(t *testing.T) {
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrPair("data.genesyscloud_user."+userDataSource, "id", "genesyscloud_user."+userResource, "id"),
+					func(s *terraform.State) error {
+						time.Sleep(30 * time.Second) // Wait for 30 seconds for proper deletion
+						return nil
+					},
 				),
 			},
+		},
+		CheckDestroy: func(state *terraform.State) error {
+			time.Sleep(45 * time.Second)
+			return testVerifyUsersDestroyed(state)
 		},
 	})
 }

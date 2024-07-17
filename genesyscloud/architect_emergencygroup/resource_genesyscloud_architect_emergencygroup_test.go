@@ -2,6 +2,7 @@ package architect_emergencygroup
 
 import (
 	"fmt"
+	"os"
 	"strconv"
 	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/architect_flow"
@@ -39,6 +40,10 @@ func TestAccResourceArchitectEmergencyGroups(t *testing.T) {
 	// TODO: Create the IVR inside the test config once emergency group has been moved to its own package.
 	// Currently, the ivr resource cannot be registered for these tests because of a cyclic dependency issue.
 	ivrId := "f94e084e-40eb-470b-80d6-0f99cf22d102"
+	if v := os.Getenv("GENESYSCLOUD_REGION"); v == "tca" {
+		ivrId = "d37d14fe-1e6c-4ed6-a9bb-b6ef0dd8e9cd"
+	}
+
 	if !ivrExists(config, ivrId) {
 		t.Skip("Skipping because IVR does not exists in the target org.")
 	}

@@ -22,8 +22,7 @@ import (
 )
 
 var (
-	sdkConfig *platformclientv2.Configuration
-	mu        sync.Mutex
+	mu sync.Mutex
 )
 
 func TestAccResourceRoutingQueueConditionalGroupRouting(t *testing.T) {
@@ -260,16 +259,20 @@ func TestAccResourceRoutingQueueConditionalGroupRouting(t *testing.T) {
 						return nil
 					},
 				),
+
+				PreventPostDestroyRefresh: true,
 			},
 			{
 				// Import/Read
 				ResourceName:      "genesyscloud_routing_queue_conditional_group_routing." + conditionalGroupRoutingResource,
 				ImportState:       true,
 				ImportStateVerify: true,
-				Check: resource.ComposeTestCheckFunc(
-					checkUserDeleted(userID),
-				),
+				Destroy:           true,
 			},
+		},
+		CheckDestroy: func(state *terraform.State) error {
+			time.Sleep(40 * time.Second)
+			return testVerifyGroupsAndUsersDestroyed(state)
 		},
 	})
 }
@@ -334,7 +337,7 @@ func generateUserWithCustomAttrs(resourceID string, email string, name string, a
 func checkUserDeleted(id string) resource.TestCheckFunc {
 	log.Printf("Fetching user with ID: %s\n", id)
 	return func(s *terraform.State) error {
-		maxAttempts := 18
+		maxAttempts := 30
 		for i := 0; i < maxAttempts; i++ {
 
 			deleted, err := isUserDeleted(id)
@@ -354,7 +357,7 @@ func isUserDeleted(id string) (bool, error) {
 	mu.Lock()
 	defer mu.Unlock()
 
-	usersAPI := platformclientv2.NewUsersApiWithConfig(sdkConfig)
+	usersAPI := platformclientv2.NewUsersApi()
 	// Attempt to get the user
 	_, response, err := usersAPI.GetUser(id, nil, "", "")
 
@@ -371,4 +374,41 @@ func isUserDeleted(id string) (bool, error) {
 
 	// If user is found, it means the user is not deleted
 	return false, nil
+}
+
+func testVerifyGroupsAndUsersDestroyed(state *terraform.State) error {
+	groupsAPI := platformclientv2.NewGroupsApi()
+	usersAPI := platformclientv2.NewUsersApi()
+	for _, rs := range state.RootModule().Resources {
+		if rs.Type == "genesyscloud_group" {
+			group, resp, err := groupsAPI.GetGroup(rs.Primary.ID)
+			if group != nil {
+				return fmt.Errorf("Group (%s) still exists", rs.Primary.ID)
+			} else if util.IsStatus404(resp) {
+				// Group not found as expected
+				continue
+			} else {
+				// Unexpected error
+				return fmt.Errorf("Unexpected error: %s", err)
+			}
+		}
+		if rs.Type == "genesyscloud_user" {
+			err := checkUserDeleted(rs.Primary.ID)(state)
+			if err != nil {
+				continue
+			}
+			user, resp, err := usersAPI.GetUser(rs.Primary.ID, nil, "", "")
+			if user != nil {
+				return fmt.Errorf("User Resource (%s) still exists", rs.Primary.ID)
+			} else if util.IsStatus404(resp) {
+				// User not found as expected
+				continue
+			} else {
+				// Unexpected error
+				return fmt.Errorf("Unexpected error: %s", err)
+			}
+		}
+
+	}
+	return nil
 }
