@@ -700,11 +700,8 @@ func testVerifyAllDivisionsAssigned(resourceName string, attrName string) resour
 
 func testVerifySkillGroupDestroyed(state *terraform.State) error {
 	// Get default config to set config options
-	config, err := provider.AuthorizeSdk()
-	if err != nil {
-		return fmt.Errorf("unexpected error while trying to authorize client in testVerifySkillGroupDestroyed : %s", err)
-	}
-	routingAPI := platformclientv2.NewRoutingApiWithConfig(config)
+
+	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
 	apiClient := &routingAPI.Configuration.APIClient
 
 	// TODO Once this code has been released into the public API we should fix this and use the SDK
@@ -739,12 +736,8 @@ func testVerifySkillGroupDestroyed(state *terraform.State) error {
 	return nil
 }
 func testVerifySkillGroupAndUsersDestroyed(state *terraform.State) error {
-	// Get default config to set config options
-	config, err := provider.AuthorizeSdk()
-	if err != nil {
-		return fmt.Errorf("unexpected error while trying to authorize client in testVerifySkillGroupDestroyed : %s", err)
-	}
-	routingAPI := platformclientv2.NewRoutingApiWithConfig(config)
+
+	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
 	apiClient := &routingAPI.Configuration.APIClient
 	usersAPI := platformclientv2.NewUsersApiWithConfig(sdkConfig)
 	// TODO Once this code has been released into the public API we should fix this and use the SDK
