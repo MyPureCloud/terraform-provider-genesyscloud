@@ -1,10 +1,10 @@
-name: Ensure Documentation in Sync
+name: Go Checks
 on:
   push:
     paths-ignore:
       - 'README.md'
 jobs:
-  # ensure the documentation is up to date
+  # ensure the documentation is up-to-date
   generate:
     name: Generate
     runs-on: ubuntu-latest
@@ -35,5 +35,20 @@ jobs:
           if [[ -n $(git status -s) ]]; then
               echo "There are untracked documentation changes:\n"
               git status
+          fi
+
+      - name: Tidy
+        run: |
+          go mod tidy
+          if [[ -n $(git status -s) ]]; then
+              echo "go mod tidy produced changes:\n"
+              git status
+          fi
+
+      - name: Vet
+        run: |
+          if [[ -n $(go vet ./genesyscloud/...) ]]; then
+              echo "go vet highlighted the following:\n"
+              go vet ./genesyscloud/...
               exit 1
           fi
