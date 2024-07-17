@@ -39,6 +39,7 @@ import (
 	obCampaignRule "terraform-provider-genesyscloud/genesyscloud/outbound_campaignrule"
 	outboundContactList "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
 	outboundContactListContact "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list_contact"
+	outboundContactListTemplate "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list_template"
 	obContactListFilter "terraform-provider-genesyscloud/genesyscloud/outbound_contactlistfilter"
 	obDncList "terraform-provider-genesyscloud/genesyscloud/outbound_dnclist"
 	obfst "terraform-provider-genesyscloud/genesyscloud/outbound_filespecificationtemplate"
@@ -52,7 +53,9 @@ import (
 	respmanagementLibrary "terraform-provider-genesyscloud/genesyscloud/responsemanagement_library"
 	responsemanagementResponse "terraform-provider-genesyscloud/genesyscloud/responsemanagement_response"
 	respManagementRespAsset "terraform-provider-genesyscloud/genesyscloud/responsemanagement_responseasset"
+	routingEmailDomain "terraform-provider-genesyscloud/genesyscloud/routing_email_domain"
 	routingEmailRoute "terraform-provider-genesyscloud/genesyscloud/routing_email_route"
+	routinglanguage "terraform-provider-genesyscloud/genesyscloud/routing_language"
 	routingQueue "terraform-provider-genesyscloud/genesyscloud/routing_queue"
 	routingQueueConditionalGroupRouting "terraform-provider-genesyscloud/genesyscloud/routing_queue_conditional_group_routing"
 	routingQueueOutboundEmailAddress "terraform-provider-genesyscloud/genesyscloud/routing_queue_outbound_email_address"
@@ -74,7 +77,6 @@ import (
 	userRoles "terraform-provider-genesyscloud/genesyscloud/user_roles"
 	webdeployConfig "terraform-provider-genesyscloud/genesyscloud/webdeployments_configuration"
 	webdeployDeploy "terraform-provider-genesyscloud/genesyscloud/webdeployments_deployment"
-
 	"testing"
 
 	edgePhone "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_phone"
@@ -151,9 +153,9 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_user"] = gcloud.ResourceUser()
 	providerResources["genesyscloud_responsemanagement_library"] = respmanagementLibrary.ResourceResponsemanagementLibrary()
 	providerResources["genesyscloud_responsemanagement_responseasset"] = respManagementRespAsset.ResourceResponseManagementResponseAsset()
-	providerResources["genesyscloud_routing_email_domain"] = gcloud.ResourceRoutingEmailDomain()
+	providerResources["genesyscloud_routing_email_domain"] = routingEmailDomain.ResourceRoutingEmailDomain()
 	providerResources["genesyscloud_routing_email_route"] = routingEmailRoute.ResourceRoutingEmailRoute()
-	providerResources["genesyscloud_routing_language"] = gcloud.ResourceRoutingLanguage()
+	providerResources["genesyscloud_routing_language"] = routinglanguage.ResourceRoutingLanguage()
 	providerResources["genesyscloud_routing_queue"] = routingQueue.ResourceRoutingQueue()
 	providerResources["genesyscloud_routing_queue_conditional_group_routing"] = routingQueueConditionalGroupRouting.ResourceRoutingQueueConditionalGroupRouting()
 	providerResources["genesyscloud_routing_queue_outbound_email_address"] = routingQueueOutboundEmailAddress.ResourceRoutingQueueOutboundEmailAddress()
@@ -182,6 +184,7 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_outbound_callabletimeset"] = obCallableTimeset.ResourceOutboundCallabletimeset()
 	providerResources["genesyscloud_outbound_campaign"] = obCampaign.ResourceOutboundCampaign()
 	providerResources["genesyscloud_outbound_contact_list"] = outboundContactList.ResourceOutboundContactList()
+	providerResources["genesyscloud_outbound_contact_list_template"] = outboundContactListTemplate.ResourceOutboundContactListTemplate()
 	providerResources["genesyscloud_outbound_contact_list_contact"] = outboundContactListContact.ResourceOutboundContactListContact()
 	providerResources["genesyscloud_outbound_contactlistfilter"] = obContactListFilter.ResourceOutboundContactlistfilter()
 	providerResources["genesyscloud_outbound_messagingcampaign"] = ob.ResourceOutboundMessagingCampaign()
@@ -248,6 +251,7 @@ func (r *registerTestInstance) registerTestExporters() {
 	RegisterExporter("genesyscloud_outbound_callabletimeset", obCallableTimeset.OutboundCallableTimesetExporter())
 	RegisterExporter("genesyscloud_outbound_campaign", obCampaign.OutboundCampaignExporter())
 	RegisterExporter("genesyscloud_outbound_contact_list", outboundContactList.OutboundContactListExporter())
+	RegisterExporter("genesyscloud_outbound_contact_list_template", outboundContactListTemplate.OutboundContactListTemplateExporter())
 	RegisterExporter("genesyscloud_outbound_contact_list_contact", outboundContactListContact.ContactExporter())
 	RegisterExporter("genesyscloud_outbound_contactlistfilter", obContactListFilter.OutboundContactlistfilterExporter())
 	RegisterExporter("genesyscloud_outbound_messagingcampaign", ob.OutboundMessagingcampaignExporter())
@@ -263,9 +267,9 @@ func (r *registerTestInstance) registerTestExporters() {
 	RegisterExporter("genesyscloud_responsemanagement_library", respmanagementLibrary.ResponsemanagementLibraryExporter())
 	RegisterExporter("genesyscloud_responsemanagement_response", responsemanagementResponse.ResponsemanagementResponseExporter())
 	RegisterExporter("genesyscloud_responsemanagement_responseasset", respManagementRespAsset.ExporterResponseManagementResponseAsset())
-	RegisterExporter("genesyscloud_routing_email_domain", gcloud.RoutingEmailDomainExporter())
+	RegisterExporter("genesyscloud_routing_email_domain", routingEmailDomain.RoutingEmailDomainExporter())
 	RegisterExporter("genesyscloud_routing_email_route", routingEmailRoute.RoutingEmailRouteExporter())
-	RegisterExporter("genesyscloud_routing_language", gcloud.RoutingLanguageExporter())
+	RegisterExporter("genesyscloud_routing_language", routinglanguage.RoutingLanguageExporter())
 	RegisterExporter("genesyscloud_routing_queue", routingQueue.RoutingQueueExporter())
 	RegisterExporter("genesyscloud_routing_queue_conditional_group_routing", routingQueueConditionalGroupRouting.RoutingQueueConditionalGroupRoutingExporter())
 	RegisterExporter("genesyscloud_routing_queue_outbound_email_address", routingQueueOutboundEmailAddress.OutboundRoutingQueueOutboundEmailAddressExporter())
@@ -309,6 +313,7 @@ func (r *registerTestInstance) registerTestExporters() {
 func (r *registerTestInstance) registerTestDataSources() {
 	providerDataSources["genesyscloud_auth_division_home"] = gcloud.DataSourceAuthDivisionHome()
 	providerDataSources["genesyscloud_script"] = scripts.DataSourceScript()
+	providerDataSources["genesyscloud_telephony_providers_edges_site"] = edgeSite.DataSourceSite()
 }
 
 func RegisterExporter(exporterName string, resourceExporter *resourceExporter.ResourceExporter) {

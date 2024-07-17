@@ -1,4 +1,4 @@
-package genesyscloud
+package routing_email_domain
 
 import (
 	"fmt"
@@ -58,6 +58,7 @@ func generateRoutingEmailDomainDataSource(
 }
 
 func CleanupRoutingEmailDomains() {
+	sdkConfig, _ := provider.AuthorizeSdk()
 	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
 
 	for pageNum := 1; ; pageNum++ {
