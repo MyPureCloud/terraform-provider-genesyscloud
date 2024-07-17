@@ -40,38 +40,8 @@ func getAllRoutingSkillGroups(ctx context.Context, clientConfig *platformclientv
 }
 
 func createSkillGroups(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	// sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-	// proxy := getRoutingSkillGroupProxy(sdkConfig)
-	return createOrUpdateSkillGroups(ctx, d, meta, "/api/v2/routing/skillgroups", true)
-}
-
-func createOrUpdateSkillGroups(ctx context.Context, d *schema.ResourceData, meta interface{}, route string, create bool) diag.Diagnostics {
-	// BUILDING BLOCKS
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-	//proxy := getRoutingSkillGroupProxy(sdkConfig)
 
-	name := d.Get("name").(string)
-	//description := d.Get("description").(string)
-	//divId := d.Get("division_id").(string)
-
-	// CREATE
-	// var createRequest platformclientv2.Skillgroupwithmemberdivisions
-	// createRequest.Name = &name
-	// createRequest.Description = &description
-
-	// if divId != "" && createRequest.Division != nil{
-	// 	createRequest.Division.Id = &divId
-	// }
-
-	// UPDATE
-	var updateRequest platformclientv2.Skillgroup
-	updateRequest.Name = &name
-	// updateRequest.Description = &description
-	// if divId != "" && updateRequest.Division != nil{
-	// 	updateRequest.Division.Id = &divId
-	// }
-
-	// DIRECT
 	skillGroupsRequest := &SkillGroupsRequest{
 		Name:        d.Get("name").(string),
 		Description: d.Get("description").(string),
@@ -81,51 +51,23 @@ func createOrUpdateSkillGroups(ctx context.Context, d *schema.ResourceData, meta
 		skillGroupsRequest.Division.ID = divisionId
 	}
 
-	//
-
-	//Merge in skill conditions
-	var finalSkillGroupsJson string
-	var err error
-
-	if create {
-		finalSkillGroupsJson, err = mergeSkillConditionsIntoSkillGroups(d, skillGroupsRequest)
-		// finalSkillGroupsJson, err = mergeSkillConditionsIntoSkillGroupsCreate(d, &createRequest)
-		if err != nil {
-			return util.BuildDiagnosticError(resourceName, fmt.Sprintf("Failed to read the before skills groups request before: %s", skillGroupsRequest.Name), err)
-		}
-	} else {
-		finalSkillGroupsJson, err = mergeSkillConditionsIntoSkillGroups(d, skillGroupsRequest)
-		// finalSkillGroupsJson, err = mergeSkillConditionsIntoSkillGroupsUpdate(d, &updateRequest)
-		if err != nil {
-			return util.BuildDiagnosticError(resourceName, fmt.Sprintf("Failed to read the before skills groups request before: %s", skillGroupsRequest.Name), err)
-		}
-
+	finalSkillGroupsJson, err := mergeSkillConditionsIntoSkillGroups(d, skillGroupsRequest)
+	if err != nil {
+		return util.BuildDiagnosticError(resourceName, fmt.Sprintf("Failed to read the before skills groups request before: %s", skillGroupsRequest.Name), err)
 	}
 
 	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
 	apiClient := &routingAPI.Configuration.APIClient
-	path := routingAPI.Configuration.BasePath + route
+	path := routingAPI.Configuration.BasePath + "/api/v2/routing/skillgroups"
 	headerParams := BuildHeaderParams(routingAPI)
 
-	/*
-	   Since API Client expects either a struct or map of maps (of json), convert the JSON string to a map
-	   and then pass it into API client
-	*/
 	var skillGroupsPayload map[string]interface{}
 	err = json.Unmarshal([]byte(finalSkillGroupsJson), &skillGroupsPayload)
 	if err != nil {
 		return util.BuildDiagnosticError(resourceName, fmt.Sprintf("Failed to unmarshal the JSON payload while creating/updating the skills group %s", skillGroupsRequest.Name), err)
 	}
 
-	var httpMethod string
-	if create {
-		httpMethod = "POST"
-		//proxy.createRoutingSkillGroups(ctx)
-	} else {
-		httpMethod = "PATCH"
-	}
-
-	response, err := apiClient.CallAPI(path, httpMethod, skillGroupsPayload, headerParams, nil, nil, "", nil)
+	response, err := apiClient.CallAPI(path, "POST", skillGroupsPayload, headerParams, nil, nil, "", nil)
 	if err != nil {
 		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create/update skill groups %s error: %s", skillGroupsRequest.Name, err), response)
 	}
@@ -137,13 +79,9 @@ func createOrUpdateSkillGroups(ctx context.Context, d *schema.ResourceData, meta
 		return util.BuildDiagnosticError(resourceName, fmt.Sprintf("Failed to unmarshal skill groups"), err)
 	}
 
-	if create {
-		id := skillGroupPayload["id"].(string)
-		d.SetId(id)
-		log.Printf("Created skill group %s %s", skillGroupsRequest.Name, id)
-	} else {
-		log.Printf("Updated skill group %s", skillGroupsRequest.Name)
-	}
+	id := skillGroupPayload["id"].(string)
+	d.SetId(id)
+	log.Printf("Created skill group %s %s", skillGroupsRequest.Name, id)
 
 	// Update member division IDs
 	apiSkillGroupMemberDivisionIds, diagErr := readSkillGroupMemberDivisions(ctx, d, meta)
@@ -151,7 +89,63 @@ func createOrUpdateSkillGroups(ctx context.Context, d *schema.ResourceData, meta
 		return diagErr
 	}
 
-	diagErr = createRoutingSkillGroupsMemberDivisions(ctx, d, meta, apiSkillGroupMemberDivisionIds, create)
+	diagErr = createRoutingSkillGroupsMemberDivisions(ctx, d, meta, apiSkillGroupMemberDivisionIds, true)
+	if diagErr != nil {
+		return diagErr
+	}
+
+	return readSkillGroups(ctx, d, meta)
+}
+
+func updateSkillGroups(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
+
+	skillGroupsRequest := &SkillGroupsRequest{
+		Name:        d.Get("name").(string),
+		Description: d.Get("description").(string),
+	}
+	divisionId := d.Get("division_id").(string)
+	if divisionId != "" {
+		skillGroupsRequest.Division.ID = divisionId
+	}
+
+	finalSkillGroupsJson, err := mergeSkillConditionsIntoSkillGroups(d, skillGroupsRequest)
+	if err != nil {
+		return util.BuildDiagnosticError(resourceName, fmt.Sprintf("Failed to read the before skills groups request before: %s", skillGroupsRequest.Name), err)
+	}
+
+	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
+	apiClient := &routingAPI.Configuration.APIClient
+	path := routingAPI.Configuration.BasePath + "/api/v2/routing/skillgroups/" + d.Id()
+	headerParams := BuildHeaderParams(routingAPI)
+
+	var skillGroupsPayload map[string]interface{}
+	err = json.Unmarshal([]byte(finalSkillGroupsJson), &skillGroupsPayload)
+	if err != nil {
+		return util.BuildDiagnosticError(resourceName, fmt.Sprintf("Failed to unmarshal the JSON payload while creating/updating the skills group %s", skillGroupsRequest.Name), err)
+	}
+
+	response, err := apiClient.CallAPI(path, "PATCH", skillGroupsPayload, headerParams, nil, nil, "", nil)
+	if err != nil {
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create/update skill groups %s error: %s", skillGroupsRequest.Name, err), response)
+	}
+
+	//Get the results and pull out the id
+	skillGroupPayload := make(map[string]interface{})
+	err = json.Unmarshal(response.RawBody, &skillGroupPayload)
+	if err != nil {
+		return util.BuildDiagnosticError(resourceName, fmt.Sprintf("Failed to unmarshal skill groups"), err)
+	}
+
+	log.Printf("Updated skill group %s", skillGroupsRequest.Name)
+
+	// Update member division IDs
+	apiSkillGroupMemberDivisionIds, diagErr := readSkillGroupMemberDivisions(ctx, d, meta)
+	if diagErr != nil {
+		return diagErr
+	}
+
+	diagErr = createRoutingSkillGroupsMemberDivisions(ctx, d, meta, apiSkillGroupMemberDivisionIds, false)
 	if diagErr != nil {
 		return diagErr
 	}
@@ -210,11 +204,6 @@ func readSkillGroups(ctx context.Context, d *schema.ResourceData, meta interface
 		log.Printf("Read skill groups name  %s %s", d.Id(), *skillGroup.Name)
 		return cc.CheckState(d)
 	})
-}
-
-func updateSkillGroups(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	route := "/api/v2/routing/skillgroups/" + d.Id()
-	return createOrUpdateSkillGroups(ctx, d, meta, route, false)
 }
 
 func deleteSkillGroups(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
