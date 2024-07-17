@@ -101,7 +101,7 @@ func TestAccResourceTaskManagementWorktype(t *testing.T) {
 					resource.TestCheckResourceAttrPair(resourceName+"."+wtRes.resID, "schema_id", fmt.Sprintf("genesyscloud_task_management_workitem_schema.%s", wsResourceId), "id"),
 				),
 			},
-			// All optional properties update (except statuses)
+			// All optional properties update
 			{
 				Config: workbin.GenerateWorkbinResource(wbResourceId, wbName, wbDescription, util.NullValue) +
 					workitemSchema.GenerateWorkitemSchemaResourceBasic(wsResourceId, wsName, wsDescription) +

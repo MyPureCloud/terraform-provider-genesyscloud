@@ -3,7 +3,6 @@ package task_management_worktype_status
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
@@ -41,9 +40,10 @@ func ResourceTaskManagementWorktypeStatus() *schema.Resource {
 		SchemaVersion: 1,
 		Schema: map[string]*schema.Schema{
 			"worktype_id": {
-				Description: `The id of the worktype this status belongs to.`,
+				Description: `The id of the worktype this status belongs to. Changing this attribute will cause the status to be dropped and recreated.`,
 				Type:        schema.TypeString,
 				Required:    true,
+				ForceNew:    true,
 			},
 			`name`: {
 				Description:  `Name of the status.`,
@@ -68,21 +68,26 @@ func ResourceTaskManagementWorktypeStatus() *schema.Resource {
 				Description: `A list of destination Statuses where a Workitem with this Status can transition to. If the list is empty Workitems with this Status can transition to all other Statuses defined on the Worktype. A Status can have a maximum of 24 destinations.`,
 				Optional:    true,
 				Type:        schema.TypeList,
-				Elem:        &schema.Schema{Type: schema.TypeString},
+				Elem: &schema.Schema{
+					Type:      schema.TypeString,
+					StateFunc: ModifyStatusIdStateValue,
+				},
+				MaxItems: 24,
 			},
 			`default_destination_status_id`: {
 				Description: `Default destination status to which this Status will transition to if auto status transition enabled.`,
 				Optional:    true,
+				StateFunc:   ModifyStatusIdStateValue,
 				Type:        schema.TypeString,
 			},
 			`status_transition_delay_seconds`: {
-				Description:  `Delay in seconds for auto status transition. Required if defaultDestinationStatusId is provided.`,
+				Description:  `Delay in seconds for auto status transition. Required if default_destination_status_id is provided.`,
 				Optional:     true,
 				Type:         schema.TypeInt,
-				RequiredWith: []string{"default_destination_status_id"},
+				ValidateFunc: validation.IntAtLeast(60),
 			},
 			`status_transition_time`: {
-				Description: `Time is represented as an ISO-8601 string without a timezone. For example: HH:mm:ss.SSS`,
+				Description: `Time is represented as an ISO-8601 string without a timezone. For example: HH:mm:ss`,
 				Optional:    true,
 				Type:        schema.TypeString,
 			},
@@ -94,6 +99,9 @@ func ResourceTaskManagementWorktypeStatus() *schema.Resource {
 func TaskManagementWorktypeStatusExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: provider.GetAllWithPooledClient(getAllAuthTaskManagementWorktypeStatuss),
+		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
+			"worktype_id": {RefType: "genesyscloud_task_management_worktype"},
+		},
 	}
 }
 

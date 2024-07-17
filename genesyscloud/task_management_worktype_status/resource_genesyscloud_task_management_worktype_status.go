@@ -7,15 +7,15 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
 	"log"
+	"strings"
+	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"terraform-provider-genesyscloud/genesyscloud/util/lists"
 	"time"
 
-	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
-
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
-	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -30,13 +30,20 @@ func getAllAuthTaskManagementWorktypeStatuss(ctx context.Context, clientConfig *
 	proxy := newTaskManagementWorktypeStatusProxy(clientConfig)
 	resources := make(resourceExporter.ResourceIDMetaMap)
 
-	workitemStatuss, resp, err := proxy.getAllTaskManagementWorktypeStatus(ctx)
+	worktypes, resp, err := proxy.worktypeProxy.GetAllTaskManagementWorktype(ctx)
 	if err != nil {
-		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get task management worktype statuses: %v", err), resp)
+		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get task management worktypes: %v", err), resp)
 	}
 
-	for _, workitemStatus := range *workitemStatuss {
-		resources[*workitemStatus.Id] = &resourceExporter.ResourceMeta{Name: *workitemStatus.Name}
+	for _, worktype := range *worktypes {
+		worktypeStatuses, resp, err := proxy.getAllTaskManagementWorktypeStatus(ctx, *worktype.Id)
+		if err != nil {
+			return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get task management worktype statuses: %v", err), resp)
+		}
+
+		for _, status := range *worktypeStatuses {
+			resources[*worktype.Id+"/"+*status.Id] = &resourceExporter.ResourceMeta{Name: *status.Name}
+		}
 	}
 
 	return resources, nil
@@ -58,13 +65,19 @@ func createTaskManagementWorktypeStatus(ctx context.Context, d *schema.ResourceD
 		StatusTransitionTime:         resourcedata.GetNillableValue[string](d, "status_transition_time"),
 	}
 
+	err := validateSchema(d)
+	if err != nil {
+		errorMsg := fmt.Sprintf("Failed to create task management worktype %s status %s: %s", worktypeId, *taskManagementWorktypeStatus.Name, err)
+		return util.BuildDiagnosticError(resourceName, errorMsg, fmt.Errorf(errorMsg))
+	}
+
 	log.Printf("Creating task management worktype %s status %s", worktypeId, *taskManagementWorktypeStatus.Name)
 	workitemStatus, resp, err := proxy.createTaskManagementWorktypeStatus(ctx, worktypeId, &taskManagementWorktypeStatus)
 	if err != nil {
 		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create task management worktype %s status %s: %s", worktypeId, *taskManagementWorktypeStatus.Name, err), resp)
 	}
 
-	d.SetId(*workitemStatus.Id)
+	d.SetId(worktypeId + "/" + *workitemStatus.Id)
 	log.Printf("Created task management worktype %s status %s %s", worktypeId, *workitemStatus.Id, *workitemStatus.Name)
 	return readTaskManagementWorktypeStatus(ctx, d, meta)
 }
@@ -74,17 +87,17 @@ func readTaskManagementWorktypeStatus(ctx context.Context, d *schema.ResourceDat
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getTaskManagementWorktypeStatusProxy(sdkConfig)
 	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceTaskManagementWorktypeStatus(), constants.DefaultConsistencyChecks, resourceName)
-	worktypeId := d.Get("worktype_id").(string)
+	worktypeId, statusId := SplitWorktypeStatusTerraformId(d.Id())
 
-	log.Printf("Reading task management worktype %s status %s", worktypeId, d.Id())
+	log.Printf("Reading task management worktype %s status %s", worktypeId, statusId)
 
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
-		workitemStatus, resp, getErr := proxy.getTaskManagementWorktypeStatusById(ctx, worktypeId, d.Id())
+		workitemStatus, resp, getErr := proxy.getTaskManagementWorktypeStatusById(ctx, worktypeId, statusId)
 		if getErr != nil {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read task management worktype %s status %s: %s", worktypeId, d.Id(), getErr), resp))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read task management worktype %s status %s: %s", worktypeId, statusId, getErr), resp))
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read task management worktype %s status %s: %s", worktypeId, d.Id(), getErr), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read task management worktype %s status %s: %s", worktypeId, statusId, getErr), resp))
 		}
 
 		resourcedata.SetNillableValue(d, "worktype_id", workitemStatus.Worktype.Id)
@@ -100,11 +113,13 @@ func readTaskManagementWorktypeStatus(ctx context.Context, d *schema.ResourceDat
 		resourcedata.SetNillableValue(d, "description", workitemStatus.Description)
 		if workitemStatus.DefaultDestinationStatus != nil && workitemStatus.DefaultDestinationStatus.Id != nil {
 			_ = d.Set("default_destination_status_id", *workitemStatus.DefaultDestinationStatus.Id)
+		} else {
+			_ = d.Set("default_destination_status_id", "")
 		}
 		resourcedata.SetNillableValue(d, "status_transition_delay_seconds", workitemStatus.StatusTransitionDelaySeconds)
 		resourcedata.SetNillableValue(d, "status_transition_time", workitemStatus.StatusTransitionTime)
 
-		log.Printf("Read task management worktype %s status %s %s", worktypeId, d.Id(), *workitemStatus.Name)
+		log.Printf("Read task management worktype %s status %s %s", worktypeId, statusId, *workitemStatus.Name)
 		return cc.CheckState(d)
 	})
 }
@@ -113,21 +128,43 @@ func readTaskManagementWorktypeStatus(ctx context.Context, d *schema.ResourceDat
 func updateTaskManagementWorktypeStatus(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getTaskManagementWorktypeStatusProxy(sdkConfig)
-	worktypeId := d.Get("worktype_id").(string)
+	worktypeId, statusId := SplitWorktypeStatusTerraformId(d.Id())
+
+	err := validateSchema(d)
+	if err != nil {
+		errorMsg := fmt.Sprintf("Failed to update task management worktype %s status %s: %s", worktypeId, statusId, err)
+		return util.BuildDiagnosticError(resourceName, errorMsg, fmt.Errorf(errorMsg))
+	}
 
 	taskManagementWorktypeStatus := platformclientv2.Workitemstatusupdate{
 		Name:                         platformclientv2.String(d.Get("name").(string)),
 		Description:                  resourcedata.GetNillableValue[string](d, "description"),
-		DestinationStatusIds:         lists.BuildSdkStringListFromInterfaceArray(d, "default_destination_status_id"),
+		DestinationStatusIds:         lists.BuildSdkStringListFromInterfaceArray(d, "destination_status_ids"),
 		DefaultDestinationStatusId:   resourcedata.GetNillableValue[string](d, "default_destination_status_id"),
 		StatusTransitionDelaySeconds: resourcedata.GetNillableValue[int](d, "status_transition_delay_seconds"),
 		StatusTransitionTime:         resourcedata.GetNillableValue[string](d, "status_transition_time"),
 	}
 
-	log.Printf("Updating task management worktype %s status %s %s", worktypeId, d.Id(), *taskManagementWorktypeStatus.Name)
-	workitemStatus, resp, err := proxy.updateTaskManagementWorktypeStatus(ctx, worktypeId, d.Id(), &taskManagementWorktypeStatus)
+	// If the user makes a reference to a status that is managed by terraform the id will look like this <worktypeId>/<statusId>
+	// so we need to extract just the status id from any status references that look like this
+	if taskManagementWorktypeStatus.DestinationStatusIds != nil && len(*taskManagementWorktypeStatus.DestinationStatusIds) > 0 {
+		for i, destinationStatusId := range *taskManagementWorktypeStatus.DestinationStatusIds {
+			if strings.Contains(destinationStatusId, "/") {
+				_, id := SplitWorktypeStatusTerraformId(destinationStatusId)
+				(*taskManagementWorktypeStatus.DestinationStatusIds)[i] = id
+			}
+		}
+	}
+
+	if taskManagementWorktypeStatus.DefaultDestinationStatusId != nil && strings.Contains(*taskManagementWorktypeStatus.DefaultDestinationStatusId, "/") {
+		_, id := SplitWorktypeStatusTerraformId(*taskManagementWorktypeStatus.DefaultDestinationStatusId)
+		taskManagementWorktypeStatus.DefaultDestinationStatusId = &id
+	}
+
+	log.Printf("Updating task management worktype %s status %s %s", worktypeId, statusId, *taskManagementWorktypeStatus.Name)
+	workitemStatus, resp, err := proxy.updateTaskManagementWorktypeStatus(ctx, worktypeId, statusId, &taskManagementWorktypeStatus)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update task management worktype %s status %s: %s", worktypeId, d.Id(), err), resp)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update task management worktype %s status %s: %s", worktypeId, statusId, err), resp)
 	}
 
 	log.Printf("Updated task management worktype %s status %s %s", worktypeId, *workitemStatus.Id, *workitemStatus.Id)
@@ -138,24 +175,33 @@ func updateTaskManagementWorktypeStatus(ctx context.Context, d *schema.ResourceD
 func deleteTaskManagementWorktypeStatus(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getTaskManagementWorktypeStatusProxy(sdkConfig)
-	worktypeId := d.Get("worktype_id").(string)
+	worktypeId, statusId := SplitWorktypeStatusTerraformId(d.Id())
 
-	resp, err := proxy.deleteTaskManagementWorktypeStatus(ctx, worktypeId, d.Id())
+	// Check if worktype exists before trying to check the status. If the worktype is gone then so it the status
+	_, resp, err := proxy.getTaskManagementWorktypeStatusById(ctx, worktypeId, statusId)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete task management worktype %s status %s: %s", worktypeId, d.Id(), err), resp)
+		if util.IsStatus404(resp) {
+			log.Printf("Task management worktype %s already deleted", worktypeId)
+			return nil
+		}
+	}
+
+	log.Printf("Deleting task management worktype %s status %s", worktypeId, statusId)
+	resp, err = proxy.deleteTaskManagementWorktypeStatus(ctx, worktypeId, statusId)
+	if err != nil {
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete task management worktype %s status %s: %s", worktypeId, statusId, err), resp)
 	}
 
 	return util.WithRetries(ctx, 180*time.Second, func() *retry.RetryError {
-		_, resp, err := proxy.getTaskManagementWorktypeStatusById(ctx, worktypeId, d.Id())
-
+		_, resp, err = proxy.getTaskManagementWorktypeStatusById(ctx, worktypeId, statusId)
 		if err != nil {
 			if util.IsStatus404(resp) {
-				log.Printf("Deleted task management worktype %s status %s", worktypeId, d.Id())
+				log.Printf("Deleted task management worktype %s status %s", worktypeId, statusId)
 				return nil
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Error deleting task management worktype %s status %s: %s", worktypeId, d.Id(), err), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Error deleting task management worktype %s status %s: %s", worktypeId, statusId, err), resp))
 		}
 
-		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("task management worktype %s status %s still exists", worktypeId, d.Id()), resp))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("task management worktype %s status %s still exists", worktypeId, statusId), resp))
 	})
 }

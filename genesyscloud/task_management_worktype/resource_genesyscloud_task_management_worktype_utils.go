@@ -177,7 +177,7 @@ func flattenRoutingSkillReferences(routingSkillReferences *[]platformclientv2.Ro
 
 // updateDefaultStatusName updates a worktype's default status name. This should be called after
 // the statuses and their references have been finalized.
-func updateDefaultStatusName(ctx context.Context, proxy *taskManagementWorktypeProxy, d *schema.ResourceData, worktypeId string) error {
+func updateDefaultStatusName(ctx context.Context, proxy *TaskManagementWorktypeProxy, d *schema.ResourceData, worktypeId string) error {
 	worktype, resp, err := proxy.getTaskManagementWorktypeById(ctx, worktypeId)
 	if err != nil {
 		return fmt.Errorf("failed to get task management worktype: %s", err)

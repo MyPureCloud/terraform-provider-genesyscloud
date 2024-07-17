@@ -45,9 +45,9 @@ package task_management_worktype
 //		schemaVersion: 1,
 //	}
 //
-//	taskProxy := &taskManagementWorktypeProxy{}
+//	taskProxy := &TaskManagementWorktypeProxy{}
 //
-//	taskProxy.createTaskManagementWorktypeAttr = func(ctx context.Context, p *taskManagementWorktypeProxy, create *platformclientv2.Worktypecreate) (*platformclientv2.Worktype, *platformclientv2.APIResponse, error) {
+//	taskProxy.createTaskManagementWorktypeAttr = func(ctx context.Context, p *TaskManagementWorktypeProxy, create *platformclientv2.Worktypecreate) (*platformclientv2.Worktype, *platformclientv2.APIResponse, error) {
 //		assert.Equal(t, wt.name, *create.Name, "wt.Name check failed in create createTaskManagementWorktypeAttr")
 //		assert.Equal(t, wt.description, *create.Description, "wt.Description check failed in create createTaskManagementWorktypeAttr")
 //		assert.Equal(t, wt.divisionId, *create.DivisionId, "wt.divisionId check failed in create createTaskManagementWorktypeAttr")
@@ -92,7 +92,7 @@ package task_management_worktype
 //		}, nil, nil
 //	}
 //
-//	taskProxy.getTaskManagementWorktypeByIdAttr = func(ctx context.Context, p *taskManagementWorktypeProxy, id string) (*platformclientv2.Worktype, *platformclientv2.APIResponse, error) {
+//	taskProxy.getTaskManagementWorktypeByIdAttr = func(ctx context.Context, p *TaskManagementWorktypeProxy, id string) (*platformclientv2.Worktype, *platformclientv2.APIResponse, error) {
 //		assert.Equal(t, tId, id)
 //
 //		// The expected final form of the worktype
@@ -188,9 +188,9 @@ package task_management_worktype
 //		schemaVersion: 1,
 //	}
 //
-//	taskProxy := &taskManagementWorktypeProxy{}
+//	taskProxy := &TaskManagementWorktypeProxy{}
 //
-//	taskProxy.getTaskManagementWorktypeByIdAttr = func(ctx context.Context, p *taskManagementWorktypeProxy, id string) (*platformclientv2.Worktype, *platformclientv2.APIResponse, error) {
+//	taskProxy.getTaskManagementWorktypeByIdAttr = func(ctx context.Context, p *TaskManagementWorktypeProxy, id string) (*platformclientv2.Worktype, *platformclientv2.APIResponse, error) {
 //		assert.Equal(t, tId, id)
 //
 //		// The expected final form of the worktype
@@ -302,9 +302,9 @@ package task_management_worktype
 //		schemaVersion: 1,
 //	}
 //
-//	taskProxy := &taskManagementWorktypeProxy{}
+//	taskProxy := &TaskManagementWorktypeProxy{}
 //
-//	taskProxy.updateTaskManagementWorktypeAttr = func(ctx context.Context, p *taskManagementWorktypeProxy, id string, update *platformclientv2.Worktypeupdate) (*platformclientv2.Worktype, *platformclientv2.APIResponse, error) {
+//	taskProxy.updateTaskManagementWorktypeAttr = func(ctx context.Context, p *TaskManagementWorktypeProxy, id string, update *platformclientv2.Worktypeupdate) (*platformclientv2.Worktype, *platformclientv2.APIResponse, error) {
 //		assert.Equal(t, tId, id)
 //		assert.Equal(t, wt.name, *update.Name, "wt.Name check failed in create createTaskManagementWorktypeAttr")
 //
@@ -337,7 +337,7 @@ package task_management_worktype
 //	}
 //
 //	// The final complete worktype for read
-//	taskProxy.getTaskManagementWorktypeByIdAttr = func(ctx context.Context, p *taskManagementWorktypeProxy, id string) (*platformclientv2.Worktype, *platformclientv2.APIResponse, error) {
+//	taskProxy.getTaskManagementWorktypeByIdAttr = func(ctx context.Context, p *TaskManagementWorktypeProxy, id string) (*platformclientv2.Worktype, *platformclientv2.APIResponse, error) {
 //		assert.Equal(t, tId, id)
 //
 //		// The expected final form of the worktype
@@ -415,16 +415,16 @@ package task_management_worktype
 //		schemaId:         uuid.NewString(),
 //	}
 //
-//	taskProxy := &taskManagementWorktypeProxy{}
+//	taskProxy := &TaskManagementWorktypeProxy{}
 //
-//	taskProxy.deleteTaskManagementWorktypeAttr = func(ctx context.Context, p *taskManagementWorktypeProxy, id string) (*platformclientv2.APIResponse, error) {
+//	taskProxy.deleteTaskManagementWorktypeAttr = func(ctx context.Context, p *TaskManagementWorktypeProxy, id string) (*platformclientv2.APIResponse, error) {
 //		assert.Equal(t, tId, id)
 //
 //		apiResponse := &platformclientv2.APIResponse{StatusCode: http.StatusNoContent}
 //		return apiResponse, nil
 //	}
 //
-//	taskProxy.getTaskManagementWorktypeByIdAttr = func(ctx context.Context, p *taskManagementWorktypeProxy, id string) (worktype *platformclientv2.Worktype, response *platformclientv2.APIResponse, err error) {
+//	taskProxy.getTaskManagementWorktypeByIdAttr = func(ctx context.Context, p *TaskManagementWorktypeProxy, id string) (worktype *platformclientv2.Worktype, response *platformclientv2.APIResponse, err error) {
 //		assert.Equal(t, tId, id)
 //
 //		apiResponse := &platformclientv2.APIResponse{

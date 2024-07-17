@@ -16,12 +16,6 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 * [PATCH /api/v2/taskmanagement/worktypes/{worktypeId}](https://developer.genesys.cloud/platform/preview-apis#patch-api-v2-taskmanagement-worktypes--worktypeId-)
 * [DELETE /api/v2/taskmanagement/worktypes/{worktypeId}](https://developer.genesys.cloud/platform/preview-apis#delete-api-v2-taskmanagement-worktypes--worktypeId-)
 * [POST /api/v2/taskmanagement/worktypes/query](https://developer.genesys.cloud/platform/preview-apis#post-api-v2-taskmanagement-worktypes-query)
-* [POST /api/v2/taskmanagement/worktypes/{worktypeId}/statuses](https://developer.genesys.cloud/platform/preview-apis#post-api-v2-taskmanagement-worktypes--worktypeId--statuses)
-* [GET /api/v2/taskmanagement/worktypes/{worktypeId}/statuses/{statusId}](https://developer.genesys.cloud/platform/preview-apis#get-api-v2-taskmanagement-worktypes--worktypeId--statuses--statusId-)
-* [PATCH /api/v2/taskmanagement/worktypes/{worktypeId}/statuses/{statusId}](https://developer.genesys.cloud/platform/preview-apis#patch-api-v2-taskmanagement-worktypes--worktypeId--statuses--statusId-)
-* [DELETE /api/v2/taskmanagement/worktypes/{worktypeId}/statuses/{statusId}](https://developer.genesys.cloud/platform/preview-apis#delete-api-v2-taskmanagement-worktypes--worktypeId--statuses--statusId-)
-
-
 
 ## Example Usage
 
@@ -47,34 +41,6 @@ resource "genesyscloud_task_management_worktype" "worktype_1" {
   assignment_enabled = true
 
   defaultStatusName = "Open Status"
-
-  statuses {
-    name                            = "Open Status"
-    description                     = "Description of open status"
-    category                        = "Open"
-    destination_status_names        = ["WIP", "Waiting Status"]
-    default_destination_status_name = "WIP"
-    status_transition_delay_seconds = 86500
-    status_transition_time          = "04:20:00"
-  }
-
-  statuses {
-    name        = "WIP"
-    description = "Description of WIP status"
-    category    = "InProgress"
-  }
-
-  statuses {
-    name        = "Waiting Status"
-    description = "Description of waiting status"
-    category    = "Waiting"
-  }
-
-  statuses {
-    name        = "Close Status"
-    description = "Description of close status"
-    category    = "Closed"
-  }
 }
 ```
 
@@ -102,29 +68,8 @@ resource "genesyscloud_task_management_worktype" "worktype_1" {
 - `description` (String) The description of the Worktype.
 - `division_id` (String) The division to which this entity belongs.
 - `schema_version` (Number) Version of the workitem schema to use. If not provided, the worktype will use the latest version.
-- `statuses` (Block Set) The list of possible statuses for Workitems created from the Worktype. (see [below for nested schema](#nestedblock--statuses))
 
 ### Read-Only
 
 - `id` (String) The ID of this resource.
-
-<a id="nestedblock--statuses"></a>
-### Nested Schema for `statuses`
-
-Required:
-
-- `category` (String) The Category of the Status.
-- `name` (String) Name of the status
-
-Optional:
-
-- `default_destination_status_name` (String) Name of the default destination status to which this Status will transition to if auto status transition enabled.
-- `description` (String) The description of the Status.
-- `destination_status_names` (List of String) The names of the Statuses the Status can transition to. If null, the status can transition to any other status.
-- `status_transition_delay_seconds` (Number) Delay in seconds for auto status transition
-- `status_transition_time` (String) Time (HH:MM:SS format) at which auto status transition will occur after statusTransitionDelaySeconds delay. To set Time, the statusTransitionDelaySeconds must be equal to or greater than 86400 i.e. a day
-
-Read-Only:
-
-- `id` (String) Read-only identifier of the workitem status
 

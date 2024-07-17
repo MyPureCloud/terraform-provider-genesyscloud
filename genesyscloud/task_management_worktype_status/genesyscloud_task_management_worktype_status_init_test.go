@@ -2,7 +2,9 @@ package task_management_worktype_status
 
 import (
 	"sync"
-	"terraform-provider-genesyscloud/genesyscloud/task_management_worktype"
+	workbin "terraform-provider-genesyscloud/genesyscloud/task_management_workbin"
+	workitemSchema "terraform-provider-genesyscloud/genesyscloud/task_management_workitem_schema"
+	worktype "terraform-provider-genesyscloud/genesyscloud/task_management_worktype"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -30,7 +32,9 @@ func (r *registerTestInstance) registerTestResources() {
 	defer r.resourceMapMutex.Unlock()
 
 	providerResources[resourceName] = ResourceTaskManagementWorktypeStatus()
-	providerResources["genesyscloud_task_management_worktype"] = task_management_worktype.ResourceTaskManagementWorktype()
+	providerResources["genesyscloud_task_management_worktype"] = worktype.ResourceTaskManagementWorktype()
+	providerResources["genesyscloud_task_management_workbin"] = workbin.ResourceTaskManagementWorkbin()
+	providerResources["genesyscloud_task_management_workitem_schema"] = workitemSchema.ResourceTaskManagementWorkitemSchema()
 }
 
 // registerTestDataSources registers all data sources used in the tests.
