@@ -512,13 +512,14 @@ func buildSurveyQuestions(questions []interface{}) *[]platformclientv2.Surveyque
 		naEnabled := questionsMap["na_enabled"].(bool)
 		answerQuestions := questionsMap["answer_options"].([]interface{})
 		maxResponseCharacters := questionsMap["max_response_characters"].(int)
+		sdkAnswerOptions, _ := buildSdkAnswerOptions(answerQuestions)
 
 		sdkQuestion := platformclientv2.Surveyquestion{
 			Text:                  &text,
 			HelpText:              &helpText,
 			VarType:               &questionType,
 			NaEnabled:             &naEnabled,
-			AnswerOptions:         buildSdkAnswerOptions(answerQuestions),
+			AnswerOptions:         sdkAnswerOptions,
 			MaxResponseCharacters: &maxResponseCharacters,
 		}
 
