@@ -22,7 +22,7 @@ import (
 // dataSourceIntegrationFacebookRead retrieves by name the id in question
 func dataSourceIntegrationFacebookRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-	proxy := newIntegrationFacebookProxy(sdkConfig)
+	proxy := getIntegrationFacebookProxy(sdkConfig)
 
 	name := d.Get("name").(string)
 

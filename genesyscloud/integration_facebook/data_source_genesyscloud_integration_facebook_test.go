@@ -58,7 +58,8 @@ func generateIntegrationFacebookDataSource(
 	resourceId string,
 	name string,
 	dependsOnResource string) string {
-	return fmt.Sprintf(`data "genesyscloud_integration_facebook" "%s" {
+	return fmt.Sprintf(`
+	data "genesyscloud_integration_facebook" "%s" {
 		name = "%s"
 		depends_on = [%s]
 	}

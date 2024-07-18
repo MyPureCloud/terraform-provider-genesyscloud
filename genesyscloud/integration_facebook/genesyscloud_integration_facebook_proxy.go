@@ -108,9 +108,8 @@ func getAllIntegrationFacebookFn(ctx context.Context, p *integrationFacebookProx
 	if facebookIntegrationRequests.Entities == nil || len(*facebookIntegrationRequests.Entities) == 0 {
 		return &allFacebookIntegrationRequests, resp, nil
 	}
-	for _, facebookIntegrationRequest := range *facebookIntegrationRequests.Entities {
-		allFacebookIntegrationRequests = append(allFacebookIntegrationRequests, facebookIntegrationRequest)
-	}
+
+	allFacebookIntegrationRequests = append(allFacebookIntegrationRequests, *facebookIntegrationRequests.Entities...)
 
 	for pageNum := 2; pageNum <= *facebookIntegrationRequests.PageCount; pageNum++ {
 		const pageSize = 100
@@ -124,9 +123,7 @@ func getAllIntegrationFacebookFn(ctx context.Context, p *integrationFacebookProx
 			break
 		}
 
-		for _, facebookIntegrationRequest := range *facebookIntegrationRequests.Entities {
-			allFacebookIntegrationRequests = append(allFacebookIntegrationRequests, facebookIntegrationRequest)
-		}
+		allFacebookIntegrationRequests = append(allFacebookIntegrationRequests, *facebookIntegrationRequests.Entities...)
 	}
 
 	return &allFacebookIntegrationRequests, resp, err
@@ -167,10 +164,5 @@ func updateIntegrationFacebookFn(ctx context.Context, p *integrationFacebookProx
 
 // deleteIntegrationFacebookFn is an implementation function for deleting a Genesys Cloud integration facebook
 func deleteIntegrationFacebookFn(ctx context.Context, p *integrationFacebookProxy, id string) (response *platformclientv2.APIResponse, err error) {
-	resp, err := p.conversationsApi.DeleteConversationsMessagingIntegrationsFacebookIntegrationId(id)
-	if err != nil {
-		return resp, err
-	}
-
-	return resp, err
+	return p.conversationsApi.DeleteConversationsMessagingIntegrationsFacebookIntegrationId(id)
 }
