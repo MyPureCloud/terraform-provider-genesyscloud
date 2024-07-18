@@ -84,18 +84,11 @@ func ResourceSupportedContent() *schema.Resource {
 				Type:        schema.TypeString,
 			},
 			`media_types`: {
-				Description: `Defines the allowable media that may be accepted for an inbound message or to be sent in an outbound message. The following is an example of allowing all inbound media, and for outbound all images and only mpeg video: {
-			  "mediaTypes": {
-			    "allow": {
-			      "inbound": [{"type": "*/*"}],
-			      "outbound": [{"type": "image/*"}, {"type": "video/mpeg"}]
-			    }
-			  }
-			}`,
-				Optional: true,
-				Type:     schema.TypeList,
-				MaxItems: 1,
-				Elem:     mediaTypesResource,
+				Description: `Defines the allowable media that may be accepted for an inbound message or to be sent in an outbound message.`,
+				Optional:    true,
+				Type:        schema.TypeList,
+				MaxItems:    1,
+				Elem:        mediaTypesResource,
 			},
 		},
 	}
@@ -105,9 +98,7 @@ func ResourceSupportedContent() *schema.Resource {
 func SupportedContentExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: provider.GetAllWithPooledClient(getAllAuthSupportedContents),
-		RefAttrs:         map[string]*resourceExporter.RefAttrSettings{
-			// TODO: Add any reference attributes here
-		},
+		RefAttrs:         map[string]*resourceExporter.RefAttrSettings{},
 	}
 }
 

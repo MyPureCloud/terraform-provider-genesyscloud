@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	rc "terraform-provider-genesyscloud/genesyscloud/resource_cache"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
 )
@@ -35,11 +36,13 @@ type supportedContentProxy struct {
 	getSupportedContentByIdAttr     getSupportedContentByIdFunc
 	updateSupportedContentAttr      updateSupportedContentFunc
 	deleteSupportedContentAttr      deleteSupportedContentFunc
+	supportedContentCache           rc.CacheInterface[platformclientv2.Supportedcontent]
 }
 
 // newSupportedContentProxy initializes the supported content proxy with all of the data needed to communicate with Genesys Cloud
 func newSupportedContentProxy(clientConfig *platformclientv2.Configuration) *supportedContentProxy {
 	api := platformclientv2.NewConversationsApiWithConfig(clientConfig)
+	supportedContentCache := rc.NewResourceCache[platformclientv2.Supportedcontent]()
 	return &supportedContentProxy{
 		clientConfig:                    clientConfig,
 		conversationsApi:                api,
@@ -49,6 +52,7 @@ func newSupportedContentProxy(clientConfig *platformclientv2.Configuration) *sup
 		getSupportedContentByIdAttr:     getSupportedContentByIdFn,
 		updateSupportedContentAttr:      updateSupportedContentFn,
 		deleteSupportedContentAttr:      deleteSupportedContentFn,
+		supportedContentCache:           supportedContentCache,
 	}
 }
 
@@ -109,9 +113,8 @@ func getAllSupportedContentFn(ctx context.Context, p *supportedContentProxy) (*[
 	if supportedContents.Entities == nil || len(*supportedContents.Entities) == 0 {
 		return &allSupportedContents, resp, nil
 	}
-	for _, supportedContent := range *supportedContents.Entities {
-		allSupportedContents = append(allSupportedContents, supportedContent)
-	}
+
+	allSupportedContents = append(allSupportedContents, *supportedContents.Entities...)
 
 	for pageNum := 2; pageNum <= *supportedContents.PageCount; pageNum++ {
 		supportedContents, _, err := p.conversationsApi.GetConversationsMessagingSupportedcontent(pageSize, pageNum)
@@ -123,9 +126,11 @@ func getAllSupportedContentFn(ctx context.Context, p *supportedContentProxy) (*[
 			break
 		}
 
-		for _, supportedContent := range *supportedContents.Entities {
-			allSupportedContents = append(allSupportedContents, supportedContent)
-		}
+		allSupportedContents = append(allSupportedContents, *supportedContents.Entities...)
+	}
+
+	for _, content := range allSupportedContents {
+		rc.SetCache(p.supportedContentCache, *content.Id, content)
 	}
 
 	return &allSupportedContents, resp, nil
@@ -154,6 +159,10 @@ func getSupportedContentIdByNameFn(ctx context.Context, p *supportedContentProxy
 
 // getSupportedContentByIdFn is an implementation of the function to get a Genesys Cloud supported content by Id
 func getSupportedContentByIdFn(ctx context.Context, p *supportedContentProxy, id string) (supportedContent *platformclientv2.Supportedcontent, response *platformclientv2.APIResponse, err error) {
+	content := rc.GetCacheItem(p.supportedContentCache, id)
+	if content != nil {
+		return content, nil, nil
+	}
 	return p.conversationsApi.GetConversationsMessagingSupportedcontentSupportedContentId(id)
 }
 
@@ -164,10 +173,5 @@ func updateSupportedContentFn(ctx context.Context, p *supportedContentProxy, id 
 
 // deleteSupportedContentFn is an implementation function for deleting a Genesys Cloud supported content
 func deleteSupportedContentFn(ctx context.Context, p *supportedContentProxy, id string) (response *platformclientv2.APIResponse, err error) {
-	resp, err := p.conversationsApi.DeleteConversationsMessagingSupportedcontentSupportedContentId(id)
-	if err != nil {
-		return resp, err
-	}
-
-	return resp, nil
+	return p.conversationsApi.DeleteConversationsMessagingSupportedcontentSupportedContentId(id)
 }

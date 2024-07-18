@@ -80,7 +80,7 @@ func GenerateSupportedContentResource(
 	name string,
 	nestedBlocks ...string,
 ) string {
-	return fmt.Sprintf(`resource "genesyscloud_supported_content" "%s" {
+	return fmt.Sprintf(`resource "`+resourceName+`" "%s" {
 		name = "%s"
 		media_types {
 			allow {
@@ -113,7 +113,7 @@ func GenerateOutboundTypeBlock(
 func testVerifySupportedContentDestroyed(state *terraform.State) error {
 	supportContentApi := platformclientv2.NewConversationsApi()
 	for _, rs := range state.RootModule().Resources {
-		if rs.Type != "genesyscloud_supported_content" {
+		if rs.Type != resourceName {
 			continue
 		}
 

@@ -1,3 +1,3 @@
-data "genesyscloud_supported_content" "Test Supported Content" {
-  name = "Supported_Content_1"
+data "genesyscloud_supported_content" "supported_content" {
+  name = "Test Supported Content"
 }

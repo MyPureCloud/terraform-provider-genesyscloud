@@ -22,7 +22,7 @@ import (
 // dataSourceSupportedContentRead retrieves by name the id in question
 func dataSourceSupportedContentRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-	proxy := newSupportedContentProxy(sdkConfig)
+	proxy := getSupportedContentProxy(sdkConfig)
 
 	name := d.Get("name").(string)
 
@@ -34,7 +34,7 @@ func dataSourceSupportedContentRead(ctx context.Context, d *schema.ResourceData,
 		}
 
 		if retryable {
-			retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("No supported content found with name %s", name), resp))
+			retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("No supported content found with name %s", name), resp))
 		}
 
 		d.SetId(supportedContentId)

@@ -29,7 +29,6 @@ func (r *registerTestInstance) registerTestResources() {
 	defer r.resourceMapMutex.Unlock()
 
 	providerResources[resourceName] = ResourceSupportedContent()
-	// TODO: Add references
 }
 
 // registerTestDataSources registers all data sources used in the tests.

@@ -54,7 +54,7 @@ func GenerateDataSourceForSupportedContent(
 	dependsOn string,
 ) string {
 	return fmt.Sprintf(`
-	data "genesyscloud_supported_content" "%s" {
+	data "`+resourceName+`" "%s" {
 		name = "%s"
 		depends_on = [%s]
 	}
