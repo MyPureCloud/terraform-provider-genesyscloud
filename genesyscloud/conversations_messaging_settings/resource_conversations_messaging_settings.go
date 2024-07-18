@@ -18,7 +18,7 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
 )
 
-func getAllAuthConversationsMessagingSettingss(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+func getAllAuthConversationsMessagingSettings(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
 	proxy := getConversationsMessagingSettingsProxy(clientConfig)
 	resources := make(resourceExporter.ResourceIDMetaMap)
 
@@ -28,7 +28,6 @@ func getAllAuthConversationsMessagingSettingss(ctx context.Context, clientConfig
 	}
 
 	for _, messagingSetting := range *messagingSettings {
-		log.Printf("Dealing with messaging setting id : %s", *messagingSetting.Id)
 		resources[*messagingSetting.Id] = &resourceExporter.ResourceMeta{Name: *messagingSetting.Name}
 	}
 

@@ -118,18 +118,20 @@ func ResourceConversationsMessagingSettings() *schema.Resource {
 				Type:        schema.TypeString,
 			},
 			"content": {
-				Description: "Settings relating to message contents",
-				Optional:    true,
-				Type:        schema.TypeList,
-				MaxItems:    1,
-				Elem:        contentSettingResource,
+				Description:  "Settings relating to message contents",
+				Optional:     true,
+				Type:         schema.TypeList,
+				MaxItems:     1,
+				Elem:         contentSettingResource,
+				AtLeastOneOf: []string{"content", "event"},
 			},
 			"event": {
-				Description: "Settings relating to events which may occur",
-				Optional:    true,
-				Type:        schema.TypeList,
-				MaxItems:    1,
-				Elem:        eventSettingResource,
+				Description:  "Settings relating to events which may occur",
+				Optional:     true,
+				Type:         schema.TypeList,
+				MaxItems:     1,
+				Elem:         eventSettingResource,
+				AtLeastOneOf: []string{"content", "event"},
 			},
 		},
 	}
@@ -156,6 +158,6 @@ func DataSourceConversationsMessagingSettings() *schema.Resource {
 // ConversationsMessagingSettingsExporter returns the resourceExporter object used to hold the genesyscloud_conversations_messaging_settings exporter's config
 func ConversationsMessagingSettingsExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
-		GetResourcesFunc: provider.GetAllWithPooledClient(getAllAuthConversationsMessagingSettingss),
+		GetResourcesFunc: provider.GetAllWithPooledClient(getAllAuthConversationsMessagingSettings),
 	}
 }
