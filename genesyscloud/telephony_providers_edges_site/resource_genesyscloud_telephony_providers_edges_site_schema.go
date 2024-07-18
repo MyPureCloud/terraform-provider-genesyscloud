@@ -2,13 +2,14 @@ package telephony_providers_edges_site
 
 import (
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v130/platformclientv2"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
-	gcloud "terraform-provider-genesyscloud/genesyscloud/validators"
+	"terraform-provider-genesyscloud/genesyscloud/validators"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
+	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
 )
 
 /*
@@ -90,7 +91,7 @@ func ResourceSite() *schema.Resource {
 				Description:      "A reoccurring rule for updating the Edges assigned to the site. The only supported frequencies are daily and weekly. Weekly frequencies require a day list with at least oneday specified. All other configurations are not supported.",
 				Type:             schema.TypeString,
 				Required:         true,
-				ValidateDiagFunc: gcloud.ValidateRrule,
+				ValidateDiagFunc: validators.ValidateRrule,
 			},
 			"start": {
 				Description: "Date time is represented as an ISO-8601 string without a timezone. For example: yyyy-MM-ddTHH:mm:ss.SSS",
@@ -221,7 +222,7 @@ func ResourceSite() *schema.Resource {
 				Description:      "The caller ID value for the site. The callerID must be a valid E.164 formatted phone number",
 				Type:             schema.TypeString,
 				Optional:         true,
-				ValidateDiagFunc: gcloud.ValidatePhoneNumber,
+				ValidateDiagFunc: validators.ValidatePhoneNumber,
 			},
 			"caller_name": {
 				Description: "The caller name for the site",
@@ -302,12 +303,6 @@ func DataSourceSite() *schema.Resource {
 				Description: "Site name.",
 				Type:        schema.TypeString,
 				Required:    true,
-			},
-			"managed": {
-				Description: "Return entities that are managed by Genesys Cloud.",
-				Type:        schema.TypeBool,
-				Optional:    true,
-				Default:     false,
 			},
 		},
 	}

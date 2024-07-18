@@ -13,7 +13,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v130/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
 )
 
 func TestAccResourceWebDeploymentsDeployment(t *testing.T) {
@@ -70,7 +70,7 @@ func TestAccResourceWebDeploymentsDeployment_AllowedDomains(t *testing.T) {
 				Config: deploymentResourceWithAllowedDomains(t, deploymentName, firstDomain),
 				Check: resource.ComposeTestCheckFunc(
 					func(s *terraform.State) error {
-						time.Sleep(30 * time.Second) // Wait for 30 seconds for status to become active
+						time.Sleep(45 * time.Second) // Wait for 30 seconds for status to become active
 						return nil
 					},
 					resource.TestCheckResourceAttr(fullResourceName, "name", deploymentName),

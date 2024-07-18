@@ -1,0 +1,53 @@
+name: Go Checks
+on:
+  push:
+    paths-ignore:
+      - 'README.md'
+jobs:
+  go-checks:
+    name: Go Checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.20'
+        id: go
+
+      - name: Setup Terraform CLI
+        uses: hashicorp/setup-terraform@v3.1.1
+        with:
+          terraform_wrapper: false
+          terraform_version: ${{ matrix.terraform }}
+
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@v4
+
+      - name: Get dependencies
+        run: |
+          go mod download
+
+      - name: Generate
+        run: |
+          go generate
+          if [[ -n $(git status -s) ]]; then
+              echo "There are untracked documentation changes:\n"
+              git status
+          fi
+
+      - name: Tidy
+        run: |
+          go mod tidy
+          if [[ -n $(git status -s) ]]; then
+              echo "go mod tidy produced changes:\n"
+              git status
+          fi
+
+      - name: Vet
+        run: |
+          if [[ -n $(go vet ./genesyscloud/... 2>&1) ]]; then
+              echo "go vet highlighted the following:\n"
+              go vet ./genesyscloud/...
+              exit 1
+          fi

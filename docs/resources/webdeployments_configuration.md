@@ -100,6 +100,10 @@ resource "genesyscloud_webdeployments_configuration" "exampleConfiguration" {
     channels               = ["Webmessaging", "Voice"]
     mask_selectors         = [".my-class", "#my-id"]
     readonly_selectors     = [".my-class", "#my-id"]
+    pause_criteria = {
+      url_fragment = "/sensitive"
+      condition    = "includes"
+    }
   }
   journey_events {
     enabled                   = true
@@ -213,7 +217,17 @@ Optional:
 - `channels` (List of String) List of channels through which cobrowse is available (for now only Webmessaging and Voice)
 - `enabled` (Boolean) Whether or not cobrowse is enabled
 - `mask_selectors` (List of String) List of CSS selectors which should be masked when screen sharing is active
+- `pause_criteria` (Block List) Pause criteria that will pause cobrowse if some of them are met in the user's URL (see [below for nested schema](#nestedblock--cobrowse--pause_criteria))
 - `readonly_selectors` (List of String) List of CSS selectors which should be read-only when screen sharing is active
+
+<a id="nestedblock--cobrowse--pause_criteria"></a>
+### Nested Schema for `cobrowse.pause_criteria`
+
+Required:
+
+- `condition` (String) The condition to be applied to the `url_fragment`. Conditions are 'includes', 'does_not_include', 'starts_with', 'ends_with', 'equals'
+- `url_fragment` (String) A string representing a part of the URL that, when matched according to the specified condition, will trigger a pause in the cobrowse session
+
 
 
 <a id="nestedblock--custom_i18n_labels"></a>

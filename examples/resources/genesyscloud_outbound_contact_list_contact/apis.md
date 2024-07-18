@@ -1,0 +1,4 @@
+- [POST /api/v2/outbound/contactlists/{contactListId}/contacts](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-outbound-contactlists--contactListId--contacts)
+- [GET /api/v2/outbound/contactlists/{contactListId}/contacts/{contactId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-outbound-contactlists--contactListId--contacts--contactId-)
+- [PUT /api/v2/outbound/contactlists/{contactListId}/contacts/{contactId}](https://developer.genesys.cloud/devapps/api-explorer#put-api-v2-outbound-contactlists--contactListId--contacts--contactId-)
+- [DELETE /api/v2/outbound/contactlists/{contactListId}/contacts/{contactId}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-outbound-contactlists--contactListId--contacts--contactId-)

@@ -2,17 +2,18 @@ package process_automation_trigger
 
 import (
 	"context"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"terraform-provider-genesyscloud/genesyscloud/util/constants"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 
 	"fmt"
 	"log"
 
 	"time"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v130/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
 
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 

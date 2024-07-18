@@ -17,7 +17,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v130/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
 )
 
 func testAccCheckSkillConditions(resourceName string, targetSkillConditionJson string) resource.TestCheckFunc {
@@ -391,7 +391,6 @@ data "genesyscloud_auth_division_home" "home" {}
 3. Verify the skill group added those users when they match the skill expression.
 */
 func TestAccResourceRoutingSkillGroupMemberDivisionsUsersAssigned(t *testing.T) {
-	t.Parallel()
 	var (
 		skillGroupResourceId  = "testskillgroup3"
 		skillGroupName        = "testskillgroup3 " + uuid.NewString()
@@ -501,6 +500,9 @@ resource "genesyscloud_routing_skill_group" "%s" {
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
+				PreConfig: func() {
+					time.Sleep(45 * time.Second)
+				},
 				Config: skillGroupResource +
 					routingSkillResource +
 					division1Resource +
@@ -518,6 +520,7 @@ resource "genesyscloud_routing_skill_group" "%s" {
 				ImportState:             true,
 				ImportStateVerify:       true,
 				ImportStateVerifyIgnore: []string{"member_division_ids"},
+				Destroy:                 true,
 			},
 		},
 		CheckDestroy: testVerifySkillGroupDestroyed,
@@ -574,7 +577,7 @@ func testVerifySkillGroupMemberCount(resourceName string, count string) resource
 
 		// get skill group via GET /api/v2/routing/skillgroups/{skillGroupId}
 		path := fmt.Sprintf("%s/api/v2/routing/skillgroups/%s", routingAPI.Configuration.BasePath, resourceID)
-		headers := buildHeaderParams(routingAPI)
+		headers := BuildHeaderParams(routingAPI)
 		apiClient := &routingAPI.Configuration.APIClient
 
 		response, err := apiClient.CallAPI(path, "GET", nil, headers, nil, nil, "", nil)
@@ -697,16 +700,13 @@ func testVerifyAllDivisionsAssigned(resourceName string, attrName string) resour
 
 func testVerifySkillGroupDestroyed(state *terraform.State) error {
 	// Get default config to set config options
-	config, err := provider.AuthorizeSdk()
-	if err != nil {
-		return fmt.Errorf("unexpected error while trying to authorize client in testVerifySkillGroupDestroyed : %s", err)
-	}
-	routingAPI := platformclientv2.NewRoutingApiWithConfig(config)
+
+	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
 	apiClient := &routingAPI.Configuration.APIClient
 
 	// TODO Once this code has been released into the public API we should fix this and use the SDK
 
-	headerParams := buildHeaderParams(routingAPI)
+	headerParams := BuildHeaderParams(routingAPI)
 	for _, rs := range state.RootModule().Resources {
 		if rs.Type != "genesyscloud_routing_skill_group" {
 			continue
@@ -735,9 +735,57 @@ func testVerifySkillGroupDestroyed(state *terraform.State) error {
 	// Success. All skills destroyed
 	return nil
 }
+func testVerifySkillGroupAndUsersDestroyed(state *terraform.State) error {
 
+	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
+	apiClient := &routingAPI.Configuration.APIClient
+	usersAPI := platformclientv2.NewUsersApiWithConfig(sdkConfig)
+	// TODO Once this code has been released into the public API we should fix this and use the SDK
+
+	headerParams := BuildHeaderParams(routingAPI)
+	for _, rs := range state.RootModule().Resources {
+		if rs.Type == "genesyscloud_routing_skill_group" {
+			path := routingAPI.Configuration.BasePath + "/api/v2/routing/skillgroups/" + rs.Primary.ID
+			response, err := apiClient.CallAPI(path, "GET", nil, headerParams, nil, nil, "", nil)
+
+			skillGroupPayload := make(map[string]interface{})
+
+			if err != nil {
+				if util.IsStatus404(response) {
+					break
+				}
+
+				return fmt.Errorf("Unexpected error while trying to read skillgroup: %s", err)
+			}
+
+			json.Unmarshal(response.RawBody, &skillGroupPayload)
+
+			if skillGroupPayload["id"] != nil && skillGroupPayload["id"] != "" {
+				return fmt.Errorf("Skill Group (%s) still exists", rs.Primary.ID)
+			}
+		}
+		if rs.Type == "genesyscloud_user" {
+			err := checkUserDeleted(rs.Primary.ID)(state)
+			if err != nil {
+				continue
+			}
+			user, resp, err := usersAPI.GetUser(rs.Primary.ID, nil, "", "")
+			if user != nil {
+				return fmt.Errorf("User Resource (%s) still exists", rs.Primary.ID)
+			} else if util.IsStatus404(resp) {
+				// User not found as expected
+				continue
+			} else {
+				// Unexpected error
+				return fmt.Errorf("Unexpected error: %s", err)
+			}
+		}
+	}
+	// Success. All skills destroyed
+	return nil
+}
 func getAllSkillGroupMemberDivisionIds(routingAPI *platformclientv2.RoutingApi, resourceId string) ([]string, diag.Diagnostics) {
-	headers := buildHeaderParams(routingAPI)
+	headers := BuildHeaderParams(routingAPI)
 	apiClient := &routingAPI.Configuration.APIClient
 	path := fmt.Sprintf("%s/api/v2/routing/skillgroups/%s/members/divisions", routingAPI.Configuration.BasePath, resourceId)
 	response, err := apiClient.CallAPI(path, "GET", nil, headers, nil, nil, "", nil)
@@ -760,4 +808,46 @@ func getAllSkillGroupMemberDivisionIds(routingAPI *platformclientv2.RoutingApi, 
 	}
 
 	return apiSkillGroupMemberDivisionIds, nil
+}
+
+func checkUserDeleted(id string) resource.TestCheckFunc {
+	log.Printf("Fetching user with ID: %s\n", id)
+	return func(s *terraform.State) error {
+		maxAttempts := 30
+		for i := 0; i < maxAttempts; i++ {
+
+			deleted, err := isUserDeleted(id)
+			if err != nil {
+				return err
+			}
+			if deleted {
+				return nil
+			}
+			time.Sleep(10 * time.Second)
+		}
+		return fmt.Errorf("user %s was not deleted properly", id)
+	}
+}
+
+func isUserDeleted(id string) (bool, error) {
+	mu.Lock()
+	defer mu.Unlock()
+
+	usersAPI := platformclientv2.NewUsersApi()
+	// Attempt to get the user
+	_, response, err := usersAPI.GetUser(id, nil, "", "")
+
+	// Check if the user is not found (deleted)
+	if response != nil && response.StatusCode == 404 {
+		return true, nil // User is deleted
+	}
+
+	// Handle other errors
+	if err != nil {
+		log.Printf("Error fetching user: %v", err)
+		return false, err
+	}
+
+	// If user is found, it means the user is not deleted
+	return false, nil
 }

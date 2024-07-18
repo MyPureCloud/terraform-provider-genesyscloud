@@ -7,7 +7,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v130/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
 )
 
 /*
@@ -82,7 +82,7 @@ func getWorktypeupdateFromResourceData(d *schema.ResourceData, statuses *[]platf
 
 	worktype := platformclientv2.Worktypeupdate{}
 	worktype.SetField("Name", platformclientv2.String(d.Get("name").(string)))
-	if d.HasChange("Description") {
+	if d.HasChange("description") {
 		worktype.SetField("Description", platformclientv2.String(d.Get("description").(string)))
 	}
 	if d.HasChange("default_workbin_id") {
@@ -95,10 +95,6 @@ func getWorktypeupdateFromResourceData(d *schema.ResourceData, statuses *[]platf
 
 	if d.HasChange("schema_id") {
 		worktype.SetField("SchemaId", platformclientv2.String(d.Get("schema_id").(string)))
-	}
-
-	if d.HasChange("division_id") {
-		worktype.SetField("DivisionId", platformclientv2.String(d.Get("division_id").(string)))
 	}
 
 	if d.HasChange("default_language_id") {
@@ -115,10 +111,6 @@ func getWorktypeupdateFromResourceData(d *schema.ResourceData, statuses *[]platf
 
 	if d.HasChange("assignment_enabled") {
 		worktype.SetField("AssignmentEnabled", platformclientv2.Bool(d.Get("assignment_enabled").(bool)))
-	}
-
-	if d.HasChange("default_status_name") {
-		worktype.SetField("DefaultStatusId", getStatusIdFromName(d.Get("default_status_name").(string), statuses))
 	}
 
 	if d.HasChange("schema_version") {
@@ -138,6 +130,17 @@ func getWorktypeupdateFromResourceData(d *schema.ResourceData, statuses *[]platf
 		worktype.SetField("DefaultTtlSeconds", resourcedata.GetNillableValue[int](d, "default_ttl_seconds"))
 	}
 
+	return worktype
+}
+
+// getWorktypeupdateFromResourceData maps data from schema ResourceData object to a platformclientv2.Worktypeupdate
+func getWorktypeupdateFromResourceDataStatus(d *schema.ResourceData, statuses *[]platformclientv2.Workitemstatus) platformclientv2.Worktypeupdate {
+
+	worktype := platformclientv2.Worktypeupdate{}
+	worktype.SetField("Name", platformclientv2.String(d.Get("name").(string)))
+	if d.HasChange("default_status_name") {
+		worktype.SetField("DefaultStatusId", getStatusIdFromName(d.Get("default_status_name").(string), statuses))
+	}
 	return worktype
 }
 
@@ -458,7 +461,7 @@ func updateDefaultStatusName(ctx context.Context, proxy *taskManagementWorktypeP
 		return fmt.Errorf("failed to get task management worktype: %s", err)
 	}
 
-	taskManagementWorktype := getWorktypeupdateFromResourceData(d, worktype.Statuses)
+	taskManagementWorktype := getWorktypeupdateFromResourceDataStatus(d, worktype.Statuses)
 	_, resp, err = proxy.updateTaskManagementWorktype(ctx, *worktype.Id, &taskManagementWorktype)
 	if err != nil {
 		return fmt.Errorf("failed to update worktype's default status name %s %v", err, resp)

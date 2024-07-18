@@ -64,7 +64,7 @@ resource "genesyscloud_routing_utilization" "org-utilization" {
 - `callback` (Block List, Max: 1) Callback media settings. If not set, this reverts to the default media type settings. (see [below for nested schema](#nestedblock--callback))
 - `chat` (Block List, Max: 1) Chat media settings. If not set, this reverts to the default media type settings. (see [below for nested schema](#nestedblock--chat))
 - `email` (Block List, Max: 1) Email media settings. If not set, this reverts to the default media type settings. (see [below for nested schema](#nestedblock--email))
-- `label_utilizations` (Block List) Label utilization settings. If not set, default label settings will be applied. This is in PREVIEW and should not be used unless the feature is available to your organization. (see [below for nested schema](#nestedblock--label_utilizations))
+- `label_utilizations` (Block List) Label utilization settings. If not set, default label settings will be applied. (see [below for nested schema](#nestedblock--label_utilizations))
 - `message` (Block List, Max: 1) Message media settings. If not set, this reverts to the default media type settings. (see [below for nested schema](#nestedblock--message))
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 

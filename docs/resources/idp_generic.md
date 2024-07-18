@@ -46,6 +46,8 @@ resource "genesyscloud_idp_generic" "generic" {
 - `logo_image_data` (String) Base64 encoded SVG image.
 - `name_identifier_format` (String) SAML name identifier format. (urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified | urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress | urn:oasis:names:tc:SAML:1.1:nameid-format:X509SubjectName | urn:oasis:names:tc:SAML:1.1:nameid-format:WindowsDomainQualifiedName | urn:oasis:names:tc:SAML:2.0:nameid-format:kerberos | urn:oasis:names:tc:SAML:2.0:nameid-format:entity | urn:oasis:names:tc:SAML:2.0:nameid-format:persistent | urn:oasis:names:tc:SAML:2.0:nameid-format:transient) Defaults to `urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified`.
 - `relying_party_identifier` (String) String used to identify Genesys Cloud to the identity provider.
+- `slo_binding` (String) Valid values: HTTP Redirect, HTTP Post
+- `slo_uri` (String) Provided on app creation.
 - `target_uri` (String) Target URI provided by the provider.
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 

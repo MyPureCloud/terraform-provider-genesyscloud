@@ -12,7 +12,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v130/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
 )
 
 const NullValue = "null"
@@ -231,7 +231,16 @@ func TestAccResourceOutboundDncListDncListType(t *testing.T) {
 
 func TestAccResourceOutboundDncListGryphonListType(t *testing.T) {
 	t.Parallel()
-	gryphonLicense, present := os.LookupEnv("TEST_DNC_GRYPHON_LICENSE_KEY")
+	var gryphonLicense string
+	var present bool
+
+	present = false
+
+	if v := os.Getenv("GENESYSCLOUD_REGION"); v == "tca" {
+		gryphonLicense, present = os.LookupEnv("TEST_DNC_GRYPHON_LICENSE_KEY")
+	} else {
+		gryphonLicense, present = os.LookupEnv("TEST_DNC_GRYPHON_PROD_LICENSE_KEY")
+	}
 	if !present {
 		t.Skip("Skipping because TEST_DNC_GRYPHON_LICENSE_KEY env variable is not set.")
 	}

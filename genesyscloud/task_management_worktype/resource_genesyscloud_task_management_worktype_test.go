@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
+	routingLanguage "terraform-provider-genesyscloud/genesyscloud/routing_language"
 	routingQueue "terraform-provider-genesyscloud/genesyscloud/routing_queue"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
@@ -18,7 +19,7 @@ import (
 	workitemSchema "terraform-provider-genesyscloud/genesyscloud/task_management_workitem_schema"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v130/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
 )
 
 /*
@@ -109,7 +110,7 @@ func TestAccResourceTaskManagementWorktype(t *testing.T) {
 				Config: workbin.GenerateWorkbinResource(wbResourceId, wbName, wbDescription, util.NullValue) +
 					workitemSchema.GenerateWorkitemSchemaResourceBasic(wsResourceId, wsName, wsDescription) +
 					routingQueue.GenerateRoutingQueueResourceBasic(queueResId, queueName) +
-					gcloud.GenerateRoutingLanguageResource(langResId, langName) +
+					routingLanguage.GenerateRoutingLanguageResource(langResId, langName) +
 					gcloud.GenerateRoutingSkillResource(skillResId1, skillResName1) +
 					gcloud.GenerateRoutingSkillResource(skillResId2, skillResName2) +
 					generateWorktypeResource(wtRes) +

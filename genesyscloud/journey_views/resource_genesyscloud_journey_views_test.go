@@ -2,14 +2,15 @@ package journey_views
 
 import (
 	"fmt"
-	"github.com/google/uuid"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v130/platformclientv2"
 	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
+
+	"github.com/google/uuid"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
 )
 
 func TestAccResourceJourneyViewsBasic(t *testing.T) {
@@ -69,6 +70,26 @@ func TestAccResourceJourneyViewsBasic(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResource, "elements.0.filter.0.predicates.0.values.0", predicatesValues),
 					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResource, "elements.0.filter.0.predicates.0.operator", predicatesOperator),
 					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResource, "elements.0.filter.0.predicates.0.no_value", fmt.Sprintf("%t", predicatesNoValue)),
+				),
+			},
+			{
+				//Update without filter
+				Config: generateUserWithCustomAttrs(testUserResource, testUserEmail, testUserName) + generateJourneyView(journeyResource, name, duration, generateElements(
+					elementsId,
+					elementsName,
+					generateAttributes(attributeType, attributeId, attributeSource),
+					"",
+				)),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResource, "name", name),
+					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResource, "duration", duration),
+					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResource, "elements.0.id", elementsId),
+					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResource, "elements.0.name", elementsName),
+					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResource, "elements.0.attributes.#", "1"),
+					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResource, "elements.0.attributes.0.type", attributeType),
+					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResource, "elements.0.attributes.0.id", attributeId),
+					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResource, "elements.0.attributes.0.source", attributeSource),
+					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResource, "elements.0.filter.#", "0"),
 				),
 			},
 			{

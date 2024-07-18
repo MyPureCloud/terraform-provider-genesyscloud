@@ -6,6 +6,7 @@ import (
 	"strings"
 	authRole "terraform-provider-genesyscloud/genesyscloud/auth_role"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
+	routingLanguage "terraform-provider-genesyscloud/genesyscloud/routing_language"
 	routingQueue "terraform-provider-genesyscloud/genesyscloud/routing_queue"
 	"terraform-provider-genesyscloud/genesyscloud/user_roles"
 	"terraform-provider-genesyscloud/genesyscloud/util"
@@ -23,7 +24,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v130/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
 )
 
 /*
@@ -194,7 +195,7 @@ func TestAccResourceTaskManagementWorkitem(t *testing.T) {
 			{
 				Config: taskMgmtConfig +
 					gcloud.GenerateAuthDivisionHomeDataSource(homeDivRes) +
-					gcloud.GenerateRoutingLanguageResource(resLang, lang) +
+					routingLanguage.GenerateRoutingLanguageResource(resLang, lang) +
 					routingQueue.GenerateRoutingQueueResourceBasic(resQueue, queueName) +
 					gcloud.GenerateRoutingSkillResource(skillResId1, skillResName1) +
 					gcloud.GenerateBasicUserResource(userResId1, userEmail1, userName1) +

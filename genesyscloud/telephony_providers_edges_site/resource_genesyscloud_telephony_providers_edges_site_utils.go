@@ -17,7 +17,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/leekchan/timeutil"
-	"github.com/mypurecloud/platform-client-sdk-go/v130/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
 )
 
 var (
@@ -533,6 +533,23 @@ func GenerateSiteResourceWithCustomAttrs(
 		%s
 	}
 	`, siteRes, name, description, locationId, mediaModel, mediaRegionsUseLatencyBased, mediaRegions, callerId, callerName, strings.Join(otherAttrs, "\n"))
+}
+
+func CheckForDefaultSite(siteName string) error {
+	var (
+		sdk, _   = provider.AuthorizeSdk()
+		siteAPI  = platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdk)
+		pageSize = 100
+	)
+
+	sites, _, getErr := siteAPI.GetTelephonyProvidersEdgesSites(pageSize, 1, "", "", siteName, "", true, []string{})
+	if getErr != nil {
+		return getErr
+	}
+	if sites == nil {
+		return fmt.Errorf("no default site found with name %s", siteName)
+	}
+	return nil
 }
 
 // DeleteLocationWithNumber is a test utility function to delete site and location with the provided emergency number
