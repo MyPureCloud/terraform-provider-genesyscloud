@@ -1,0 +1,5 @@
+* [GET /api/v2/conversations/messaging/settings](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-conversations-messaging-settings)
+* [POST /api/v2/conversations/messaging/settings](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-conversations-messaging-settings)
+* [GET /api/v2/conversations/messaging/settings/{messageSettingId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-conversations-messaging-settings--messageSettingId-)
+* [PATCH /api/v2/conversations/messaging/settings/{messageSettingId}](https://developer.genesys.cloud/devapps/api-explorer#patch-api-v2-conversations-messaging-settings--messageSettingId-)
+* [DELETE /api/v2/conversations/messaging/settings/{messageSettingId}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-conversations-messaging-settings--messageSettingId-)

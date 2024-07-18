@@ -12,6 +12,7 @@ import (
 	architectSchedulegroups "terraform-provider-genesyscloud/genesyscloud/architect_schedulegroups"
 	architectSchedules "terraform-provider-genesyscloud/genesyscloud/architect_schedules"
 	authRole "terraform-provider-genesyscloud/genesyscloud/auth_role"
+	cMessagingSettings "terraform-provider-genesyscloud/genesyscloud/conversations_messaging_settings"
 	employeeperformanceExternalmetricsDefinition "terraform-provider-genesyscloud/genesyscloud/employeeperformance_externalmetrics_definitions"
 	flowLogLevel "terraform-provider-genesyscloud/genesyscloud/flow_loglevel"
 	flowMilestone "terraform-provider-genesyscloud/genesyscloud/flow_milestone"
@@ -203,7 +204,7 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_task_management_workbin"] = workbin.ResourceTaskManagementWorkbin()
 	providerResources["genesyscloud_task_management_workitem_schema"] = workitemSchema.ResourceTaskManagementWorkitemSchema()
 	providerResources["genesyscloud_task_management_worktype"] = worktype.ResourceTaskManagementWorktype()
-
+	providerResources["genesyscloud_conversations_messaging_settings"] = cMessagingSettings.ResourceConversationsMessagingSettings()
 	providerResources["genesyscloud_tf_export"] = ResourceTfExport()
 }
 
@@ -304,6 +305,7 @@ func (r *registerTestInstance) registerTestExporters() {
 	RegisterExporter("genesyscloud_task_management_workbin", workbin.TaskManagementWorkbinExporter())
 	RegisterExporter("genesyscloud_task_management_workitem_schema", workbin.TaskManagementWorkbinExporter())
 	RegisterExporter("genesyscloud_task_management_worktype", worktype.TaskManagementWorktypeExporter())
+	RegisterExporter("genesyscloud_conversations_messaging_settings", cMessagingSettings.ConversationsMessagingSettingsExporter())
 
 	RegisterExporter("genesyscloud_script", scripts.ExporterScript())
 
@@ -314,6 +316,7 @@ func (r *registerTestInstance) registerTestDataSources() {
 	providerDataSources["genesyscloud_auth_division_home"] = gcloud.DataSourceAuthDivisionHome()
 	providerDataSources["genesyscloud_script"] = scripts.DataSourceScript()
 	providerDataSources["genesyscloud_telephony_providers_edges_site"] = edgeSite.DataSourceSite()
+	providerDataSources["genesyscloud_conversations_messaging_settings"] = cMessagingSettings.DataSourceConversationsMessagingSettings()
 }
 
 func RegisterExporter(exporterName string, resourceExporter *resourceExporter.ResourceExporter) {
