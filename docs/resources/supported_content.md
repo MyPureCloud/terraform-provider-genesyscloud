@@ -24,6 +24,16 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 ```terraform
 resource "genesyscloud_supported_content" "supported_content" {
   name = "test supported_content"
+  media_types {
+    allow {
+      inbound {
+        type = "image/*"
+      }
+      outbound {
+        type = "video/mpeg"
+      }
+    }
+  }
 }
 ```
 
@@ -36,14 +46,7 @@ resource "genesyscloud_supported_content" "supported_content" {
 
 ### Optional
 
-- `media_types` (Block List, Max: 1) Defines the allowable media that may be accepted for an inbound message or to be sent in an outbound message. The following is an example of allowing all inbound media, and for outbound all images and only mpeg video: {
-			  "mediaTypes": {
-			    "allow": {
-			      "inbound": [{"type": "*/*"}],
-			      "outbound": [{"type": "image/*"}, {"type": "video/mpeg"}]
-			    }
-			  }
-			} (see [below for nested schema](#nestedblock--media_types))
+- `media_types` (Block List, Max: 1) Defines the allowable media that may be accepted for an inbound message or to be sent in an outbound message. (see [below for nested schema](#nestedblock--media_types))
 
 ### Read-Only
 

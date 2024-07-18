@@ -13,8 +13,8 @@ Genesys Cloud supported content data source. Select an supported content by name
 ## Example Usage
 
 ```terraform
-data "genesyscloud_supported_content" "Test Supported Content" {
-  name = "Supported_Content_1"
+data "genesyscloud_supported_content" "supported_content" {
+  name = "Test Supported Content"
 }
 ```
 
