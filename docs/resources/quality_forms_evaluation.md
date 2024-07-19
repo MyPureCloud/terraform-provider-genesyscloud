@@ -102,7 +102,7 @@ resource "genesyscloud_quality_forms_evaluation" "example-evaluation-form" {
 
 ### Optional
 
-- `published` (Boolean) Specifies if the evalutaion form is published. Defaults to `false`.
+- `published` (Boolean) Specifies if the evaluation form is published. Defaults to `false`.
 
 ### Read-Only
 
@@ -125,6 +125,10 @@ Optional:
 - `na_enabled` (Boolean) Specifies whether a not applicable answer is enabled. Defaults to `false`.
 - `visibility_condition` (Block List, Max: 1) Defines conditions where question would be visible (see [below for nested schema](#nestedblock--question_groups--visibility_condition))
 
+Read-Only:
+
+- `id` (String) ID of the question group.
+
 <a id="nestedblock--question_groups--questions"></a>
 ### Nested Schema for `question_groups.questions`
 
@@ -142,6 +146,10 @@ Optional:
 - `na_enabled` (Boolean) Specifies whether a not applicable answer is enabled. Defaults to `false`.
 - `visibility_condition` (Block List, Max: 1) Defines conditions where question would be visible (see [below for nested schema](#nestedblock--question_groups--questions--visibility_condition))
 
+Read-Only:
+
+- `id` (String) ID of the question.
+
 <a id="nestedblock--question_groups--questions--answer_options"></a>
 ### Nested Schema for `question_groups.questions.answer_options`
 
@@ -149,6 +157,10 @@ Required:
 
 - `text` (String)
 - `value` (Number)
+
+Read-Only:
+
+- `id` (String) The ID for the answer option.
 
 
 <a id="nestedblock--question_groups--questions--visibility_condition"></a>

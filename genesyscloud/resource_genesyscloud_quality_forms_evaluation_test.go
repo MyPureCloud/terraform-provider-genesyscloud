@@ -15,6 +15,8 @@ import (
 
 func TestAccResourceEvaluationFormBasic(t *testing.T) {
 	formResource1 := "test-evaluation-form-1"
+	answer1Text := "Yes"
+	answer1Value := 1
 
 	// Most basic evaluation form
 	evaluationForm1 := EvaluationFormStruct{
@@ -28,12 +30,12 @@ func TestAccResourceEvaluationFormBasic(t *testing.T) {
 						Text: "Did the agent perform the opening spiel?",
 						AnswerOptions: []AnswerOptionStruct{
 							{
-								Text:  "Yes",
-								Value: 1,
+								Text:  answer1Text,
+								Value: answer1Value,
 							},
 							{
 								Text:  "No",
-								Value: 0,
+								Value: 2,
 							},
 						},
 					},

@@ -161,19 +161,20 @@ var (
 			},
 			"assistance_conditions": {
 				Description: "Options from which to choose an answer for this question.",
-				Type:        schema.TypeList,
+				Type:        schema.TypeSet,
 				Optional:    true,
-				Elem:        assistanceConditions,
+				Elem:        assistanceConditionsResource,
 			},
 		},
 	}
 
-	assistanceConditions = &schema.Resource{
+	assistanceConditionsResource = &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			"operator": {
-				Description: "List of assistance conditions which are combined together with a logical AND operator. Eg ( assistanceCondtion1 && assistanceCondition2 ) wherein assistanceCondition could be ( EXISTS topic1 || topic2 || ... ) or (NOTEXISTS topic3 || topic4 || ...).",
-				Type:        schema.TypeString,
-				Optional:    true,
+				Description:  "List of assistance conditions which are combined together with a logical AND operator. Eg ( assistanceCondtion1 && assistanceCondition2 ) wherein assistanceCondition could be ( EXISTS topic1 || topic2 || ... ) or (NOTEXISTS topic3 || topic4 || ...).",
+				Type:         schema.TypeString,
+				Required:     true,
+				ValidateFunc: validation.StringInSlice([]string{"EXISTS", "NOTEXISTS"}, true),
 			},
 			"topic_ids": {
 				Description: "List of topicIds within the assistance condition which would be combined together using logical OR operator. Eg ( topicId_1 || topicId_2 ) .",
@@ -511,13 +512,14 @@ func buildSurveyQuestions(questions []interface{}) *[]platformclientv2.Surveyque
 		naEnabled := questionsMap["na_enabled"].(bool)
 		answerQuestions := questionsMap["answer_options"].([]interface{})
 		maxResponseCharacters := questionsMap["max_response_characters"].(int)
+		sdkAnswerOptions := buildSdkAnswerOptions(answerQuestions)
 
 		sdkQuestion := platformclientv2.Surveyquestion{
 			Text:                  &text,
 			HelpText:              &helpText,
 			VarType:               &questionType,
 			NaEnabled:             &naEnabled,
-			AnswerOptions:         buildSdkAnswerOptions(answerQuestions),
+			AnswerOptions:         sdkAnswerOptions,
 			MaxResponseCharacters: &maxResponseCharacters,
 		}
 
