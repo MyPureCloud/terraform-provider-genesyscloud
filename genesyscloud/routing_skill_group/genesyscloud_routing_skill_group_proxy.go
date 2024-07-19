@@ -16,42 +16,36 @@ type createRoutingSkillGroupsFunc func(ctx context.Context, p *routingSkillGroup
 type getRoutingSkillGroupsByIdFunc func(ctx context.Context, p *routingSkillGroupsProxy, id string) (*platformclientv2.Skillgroup, *platformclientv2.APIResponse, error)
 type getRoutingSkillGroupsIdByNameFunc func(ctx context.Context, p *routingSkillGroupsProxy, name string) (string, *platformclientv2.APIResponse, bool, error)
 type updateRoutingSkillGroupsFunc func(ctx context.Context, p *routingSkillGroupsProxy, id string, skillGroupWithMemberDivisions *platformclientv2.Skillgroup) (*platformclientv2.Skillgroup, *platformclientv2.APIResponse, error)
-type deleteRoutingSkillGroupFunc func(ctx context.Context, p *routingSkillGroupsProxy, id string) (*platformclientv2.APIResponse, error)
-
-type getRoutingSkillGroupsMembersFunc func(ctx context.Context, p *routingSkillGroupsProxy, id string) (*[]platformclientv2.Skillgroupmemberentitylisting, *platformclientv2.APIResponse, error)
+type deleteRoutingSkillGroupsFunc func(ctx context.Context, p *routingSkillGroupsProxy, id string) (*platformclientv2.APIResponse, error)
 type createRoutingSkillGroupsMemberDivisionFunc func(ctx context.Context, p *routingSkillGroupsProxy, id string, reqBody platformclientv2.Skillgroupmemberdivisions) (*platformclientv2.APIResponse, error)
 type getRoutingSkillGroupsMemberDivisonFunc func(ctx context.Context, p *routingSkillGroupsProxy, id string) (*platformclientv2.Skillgroupmemberdivisionlist, *platformclientv2.APIResponse, error)
 
 // routingSkillGroupsProxy contains all of the methods that call genesys cloud APIs.
 type routingSkillGroupsProxy struct {
-	clientConfig                      *platformclientv2.Configuration
-	routingApi                        *platformclientv2.RoutingApi
-	createRoutingSkillGroupsAttr      createRoutingSkillGroupsFunc
-	getAllRoutingSkillGroupsAttr      getAllRoutingSkillGroupsFunc
-	getRoutingSkillGroupsIdByNameAttr getRoutingSkillGroupsIdByNameFunc
-	getRoutingSkillGroupsByIdAttr     getRoutingSkillGroupsByIdFunc
-	updateRoutingSkillGroupsAttr      updateRoutingSkillGroupsFunc
-	deleteRoutingSkillGroupAttr       deleteRoutingSkillGroupFunc
-
-	getRoutingSkillGroupsMembersAttr           getRoutingSkillGroupsMembersFunc
+	clientConfig                               *platformclientv2.Configuration
+	routingApi                                 *platformclientv2.RoutingApi
+	createRoutingSkillGroupsAttr               createRoutingSkillGroupsFunc
+	getAllRoutingSkillGroupsAttr               getAllRoutingSkillGroupsFunc
+	getRoutingSkillGroupsIdByNameAttr          getRoutingSkillGroupsIdByNameFunc
+	getRoutingSkillGroupsByIdAttr              getRoutingSkillGroupsByIdFunc
+	updateRoutingSkillGroupsAttr               updateRoutingSkillGroupsFunc
+	deleteRoutingSkillGroupsAttr               deleteRoutingSkillGroupsFunc
 	createRoutingSkillGroupsMemberDivisionAttr createRoutingSkillGroupsMemberDivisionFunc
 	getRoutingSkillGroupsMemberDivisonAttr     getRoutingSkillGroupsMemberDivisonFunc
 }
 
 // newRoutingSkillGroupsProxy initializes the routing skill groups proxy with all of the data needed to communicate with Genesys Cloud
-func newRoutingSkillGroupProxy(clientConfig *platformclientv2.Configuration) *routingSkillGroupsProxy {
+func newRoutingSkillGroupsProxy(clientConfig *platformclientv2.Configuration) *routingSkillGroupsProxy {
 	api := platformclientv2.NewRoutingApiWithConfig(clientConfig)
 	return &routingSkillGroupsProxy{
-		clientConfig:                      clientConfig,
-		routingApi:                        api,
-		createRoutingSkillGroupsAttr:      createRoutingSkillGroupsFn,
-		getAllRoutingSkillGroupsAttr:      getAllRoutingSkillGroupsFn,
-		getRoutingSkillGroupsIdByNameAttr: getRoutingSkillGroupsIdByNameFn,
-		getRoutingSkillGroupsByIdAttr:     getRoutingSkillGroupsByIdFn,
-		updateRoutingSkillGroupsAttr:      updateRoutingSkillGroupsFn,
-		deleteRoutingSkillGroupAttr:       deleteRoutingSkillGroupFn,
-
-		getRoutingSkillGroupsMembersAttr:           getRoutingSkillGroupsMembersFn,
+		clientConfig:                               clientConfig,
+		routingApi:                                 api,
+		createRoutingSkillGroupsAttr:               createRoutingSkillGroupsFn,
+		getAllRoutingSkillGroupsAttr:               getAllRoutingSkillGroupsFn,
+		getRoutingSkillGroupsIdByNameAttr:          getRoutingSkillGroupsIdByNameFn,
+		getRoutingSkillGroupsByIdAttr:              getRoutingSkillGroupsByIdFn,
+		updateRoutingSkillGroupsAttr:               updateRoutingSkillGroupsFn,
+		deleteRoutingSkillGroupsAttr:               deleteRoutingSkillGroupsFn,
 		createRoutingSkillGroupsMemberDivisionAttr: createRoutingSkillGroupsMemberDivisionFn,
 		getRoutingSkillGroupsMemberDivisonAttr:     getRoutingSkillGroupsMemberDivisonFn,
 	}
@@ -59,9 +53,9 @@ func newRoutingSkillGroupProxy(clientConfig *platformclientv2.Configuration) *ro
 
 // getRoutingSkillGroupsProxy acts as a singleton to for the internalProxy.  It also ensures
 // that we can still proxy our tests by directly setting internalProxy package variable
-func getRoutingSkillGroupProxy(clientConfig *platformclientv2.Configuration) *routingSkillGroupsProxy {
+func getRoutingSkillGroupsProxy(clientConfig *platformclientv2.Configuration) *routingSkillGroupsProxy {
 	if internalProxy == nil {
-		internalProxy = newRoutingSkillGroupProxy(clientConfig)
+		internalProxy = newRoutingSkillGroupsProxy(clientConfig)
 	}
 	return internalProxy
 }
@@ -92,12 +86,8 @@ func (p *routingSkillGroupsProxy) updateRoutingSkillGroups(ctx context.Context, 
 }
 
 // deleteRoutingSkillGroups deletes a Genesys Cloud routing skill groups by Id
-func (p *routingSkillGroupsProxy) deleteRoutingSkillGroup(ctx context.Context, id string) (*platformclientv2.APIResponse, error) {
-	return p.deleteRoutingSkillGroupAttr(ctx, p, id)
-}
-
-func (p *routingSkillGroupsProxy) getRoutingSkillGroupsMembers(ctx context.Context, id string) (*[]platformclientv2.Skillgroupmemberentitylisting, *platformclientv2.APIResponse, error) {
-	return p.getRoutingSkillGroupsMembersAttr(ctx, p, id)
+func (p *routingSkillGroupsProxy) deleteRoutingSkillGroups(ctx context.Context, id string) (*platformclientv2.APIResponse, error) {
+	return p.deleteRoutingSkillGroupsAttr(ctx, p, id)
 }
 
 func (p *routingSkillGroupsProxy) createRoutingSkillGroupsMemberDivision(ctx context.Context, id string, reqBody platformclientv2.Skillgroupmemberdivisions) (*platformclientv2.APIResponse, error) {
@@ -174,7 +164,7 @@ func getRoutingSkillGroupsIdByNameFn(ctx context.Context, p *routingSkillGroupsP
 		}
 	}
 
-	return "", resp, true, fmt.Errorf("Unable to find routing skill groups with name %s", name)
+	return "", resp, true, fmt.Errorf("unable to find routing skill groups with name %s", name)
 }
 
 // updateRoutingSkillGroupsFn is an implementation of the function to update a Genesys Cloud routing skill groups
@@ -183,45 +173,8 @@ func updateRoutingSkillGroupsFn(ctx context.Context, p *routingSkillGroupsProxy,
 }
 
 // deleteRoutingSkillGroupsFn is an implementation function for deleting a Genesys Cloud routing skill groups
-func deleteRoutingSkillGroupFn(ctx context.Context, p *routingSkillGroupsProxy, id string) (*platformclientv2.APIResponse, error) {
+func deleteRoutingSkillGroupsFn(ctx context.Context, p *routingSkillGroupsProxy, id string) (*platformclientv2.APIResponse, error) {
 	return p.routingApi.DeleteRoutingSkillgroup(id)
-}
-
-func getRoutingSkillGroupsMembersFn(ctx context.Context, p *routingSkillGroupsProxy, id string) (*[]platformclientv2.Skillgroupmemberentitylisting, *platformclientv2.APIResponse, error) {
-	var (
-		allSkillGroupMembers []platformclientv2.Skillgroupmemberentitylisting
-		pageSize             = 100
-		after                string
-		err                  error
-		response             *platformclientv2.APIResponse
-	)
-
-	for i := 0; ; i++ {
-		skillGroupMembers, resp, getErr := p.routingApi.GetRoutingSkillgroupMembers(id, pageSize, after, "", "")
-		response = resp
-		if getErr != nil {
-			return nil, resp, fmt.Errorf("unable to get routing skill group members %s", getErr)
-		}
-
-		if skillGroupMembers.Entities == nil || len(*skillGroupMembers.Entities) == 0 {
-			break
-		}
-
-		//allSkillGroupMembers = append(allSkillGroupMembers, skillGroupMembers.Entities...)
-
-		if skillGroupMembers.NextUri == nil || *skillGroupMembers.NextUri == "" {
-			break
-		}
-
-		after, err = util.GetQueryParamValueFromUri(*skillGroupMembers.NextUri, "after")
-		if err != nil {
-			return nil, resp, fmt.Errorf("unable to parse after cursor from skill groups next uri: %v", err)
-		}
-		if after == "" {
-			break
-		}
-	}
-	return &allSkillGroupMembers, response, nil
 }
 
 func createRoutingSkillGroupsMemberDivisionFn(ctx context.Context, p *routingSkillGroupsProxy, id string, reqBody platformclientv2.Skillgroupmemberdivisions) (*platformclientv2.APIResponse, error) {

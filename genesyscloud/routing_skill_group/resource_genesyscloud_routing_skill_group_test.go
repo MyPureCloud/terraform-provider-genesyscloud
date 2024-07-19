@@ -311,8 +311,8 @@ data "genesyscloud_auth_division_home" "home" {}
 					testAccCheckSkillConditions("genesyscloud_routing_skill_group."+skillGroupResource, skillCondition1),
 					provider.TestDefaultHomeDivision("genesyscloud_routing_skill_group."+skillGroupResource),
 
-					resource.TestCheckResourceAttr("genesyscloud_routing_skill_group."+skillGroupResource, "member_division_ids.#", "1"),
-					util.ValidateResourceAttributeInArray("genesyscloud_routing_skill_group."+skillGroupResource, "member_division_ids",
+					resource.TestCheckResourceAttr("genesyscloud_routing_skill_group."+skillGroupResource, "member_divisions.#", "1"),
+					util.ValidateResourceAttributeInArray("genesyscloud_routing_skill_group."+skillGroupResource, "member_divisions",
 						"data.genesyscloud_auth_division_home.home", "id"),
 				),
 			},
@@ -324,12 +324,12 @@ data "genesyscloud_auth_division_home" "home" {}
 					testAccCheckSkillConditions("genesyscloud_routing_skill_group."+skillGroupResource, skillCondition2),
 					provider.TestDefaultHomeDivision("genesyscloud_routing_skill_group."+skillGroupResource),
 
-					resource.TestCheckResourceAttr("genesyscloud_routing_skill_group."+skillGroupResource, "member_division_ids.#", "3"),
-					util.ValidateResourceAttributeInArray("genesyscloud_routing_skill_group."+skillGroupResource, "member_division_ids",
+					resource.TestCheckResourceAttr("genesyscloud_routing_skill_group."+skillGroupResource, "member_divisions.#", "3"),
+					util.ValidateResourceAttributeInArray("genesyscloud_routing_skill_group."+skillGroupResource, "member_divisions",
 						"data.genesyscloud_auth_division_home.home", "id"),
-					util.ValidateResourceAttributeInArray("genesyscloud_routing_skill_group."+skillGroupResource, "member_division_ids",
+					util.ValidateResourceAttributeInArray("genesyscloud_routing_skill_group."+skillGroupResource, "member_divisions",
 						"genesyscloud_auth_division."+authDivision1Resource, "id"),
-					util.ValidateResourceAttributeInArray("genesyscloud_routing_skill_group."+skillGroupResource, "member_division_ids",
+					util.ValidateResourceAttributeInArray("genesyscloud_routing_skill_group."+skillGroupResource, "member_divisions",
 						"genesyscloud_auth_division."+authDivision2Resource, "id"),
 				),
 			},
@@ -341,10 +341,10 @@ data "genesyscloud_auth_division_home" "home" {}
 					testAccCheckSkillConditions("genesyscloud_routing_skill_group."+skillGroupResource, skillCondition2),
 					provider.TestDefaultHomeDivision("genesyscloud_routing_skill_group."+skillGroupResource),
 
-					resource.TestCheckResourceAttr("genesyscloud_routing_skill_group."+skillGroupResource, "member_division_ids.#", "2"),
-					util.ValidateResourceAttributeInArray("genesyscloud_routing_skill_group."+skillGroupResource, "member_division_ids",
+					resource.TestCheckResourceAttr("genesyscloud_routing_skill_group."+skillGroupResource, "member_divisions.#", "2"),
+					util.ValidateResourceAttributeInArray("genesyscloud_routing_skill_group."+skillGroupResource, "member_divisions",
 						"data.genesyscloud_auth_division_home.home", "id"),
-					util.ValidateResourceAttributeInArray("genesyscloud_routing_skill_group."+skillGroupResource, "member_division_ids",
+					util.ValidateResourceAttributeInArray("genesyscloud_routing_skill_group."+skillGroupResource, "member_divisions",
 						"genesyscloud_auth_division."+authDivision1Resource, "id"),
 				),
 			},
@@ -357,7 +357,7 @@ data "genesyscloud_auth_division_home" "home" {}
 					testAccCheckSkillConditions("genesyscloud_routing_skill_group."+skillGroupResource, skillCondition2),
 					provider.TestDefaultHomeDivision("genesyscloud_routing_skill_group."+skillGroupResource),
 
-					resource.TestCheckResourceAttr("genesyscloud_routing_skill_group."+skillGroupResource, "member_division_ids.#", "0"),
+					resource.TestCheckResourceAttr("genesyscloud_routing_skill_group."+skillGroupResource, "member_divisions.#", "0"),
 					testVerifyMemberDivisionsCleared("genesyscloud_routing_skill_group."+skillGroupResource),
 				),
 			},
@@ -370,16 +370,16 @@ data "genesyscloud_auth_division_home" "home" {}
 					testAccCheckSkillConditions("genesyscloud_routing_skill_group."+skillGroupResource, skillCondition2),
 					provider.TestDefaultHomeDivision("genesyscloud_routing_skill_group."+skillGroupResource),
 
-					resource.TestCheckResourceAttr("genesyscloud_routing_skill_group."+skillGroupResource, "member_division_ids.#", "1"),
-					resource.TestCheckResourceAttr("genesyscloud_routing_skill_group."+skillGroupResource, "member_division_ids.0", "*"),
-					testVerifyAllDivisionsAssigned("genesyscloud_routing_skill_group."+skillGroupResource, "member_division_ids"),
+					resource.TestCheckResourceAttr("genesyscloud_routing_skill_group."+skillGroupResource, "member_divisions.#", "1"),
+					resource.TestCheckResourceAttr("genesyscloud_routing_skill_group."+skillGroupResource, "member_divisions.0", "*"),
+					testVerifyAllDivisionsAssigned("genesyscloud_routing_skill_group."+skillGroupResource, "member_divisions"),
 				),
 			},
 			{
 				ResourceName:            "genesyscloud_routing_skill_group." + skillGroupResource,
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"member_division_ids"},
+				ImportStateVerifyIgnore: []string{"member_divisions"},
 			},
 		},
 		CheckDestroy: testVerifySkillGroupDestroyed,
@@ -469,7 +469,7 @@ resource "genesyscloud_user" "%s" {
 	skillGroupResource := fmt.Sprintf(`
 resource "genesyscloud_routing_skill_group" "%s" {
 	name = "%s"
-	member_division_ids = [%s]
+	member_divisions = [%s]
 	description = "%s"
 	skill_conditions = jsonencode(
 		[
@@ -522,6 +522,7 @@ resource "genesyscloud_routing_skill_group" "%s" {
 				ImportStateVerify:       true,
 				ImportStateVerifyIgnore: []string{"member_division_ids"},
 				Destroy:                 true,
+
 			},
 		},
 		CheckDestroy: testVerifySkillGroupDestroyed,
@@ -542,20 +543,9 @@ func generateRoutingSkillGroupResource(
 		description="%s"
 		division_id=%s
 		skill_conditions = jsonencode(%s)
-		member_division_ids = %s
+		member_divisions = %s
 	}
 	`, resourceID, divisionResourceName, name, description, divisionID, skillCondition, memberDivisionIds)
-}
-
-func generateRoutingSkillGroupResourceBasic(
-	resourceID string,
-	name string,
-	description string) string {
-	return fmt.Sprintf(`resource "genesyscloud_routing_skill_group" "%s" {
-		name = "%s"
-		description="%s"
-	}
-	`, resourceID, name, description)
 }
 
 func testVerifySkillGroupMemberCount(resourceName string, count int) resource.TestCheckFunc {
@@ -803,7 +793,10 @@ func checkUserDeleted(id string) resource.TestCheckFunc {
 }
 
 func isUserDeleted(id string) (bool, error) {
+<<<<<<< HEAD
 
+=======
+>>>>>>> 67d2d15c (PR)
 	sdkConfig, _ := provider.AuthorizeSdk()
 	usersAPI := platformclientv2.NewUsersApiWithConfig(sdkConfig)
 	// Attempt to get the user

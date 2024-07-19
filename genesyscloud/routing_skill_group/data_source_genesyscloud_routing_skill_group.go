@@ -14,7 +14,7 @@ import (
 
 func dataSourceRoutingSkillGroupRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	sdkConfig := m.(*provider.ProviderMeta).ClientConfig
-	proxy := getRoutingSkillGroupProxy(sdkConfig)
+	proxy := getRoutingSkillGroupsProxy(sdkConfig)
 	name := d.Get("name").(string)
 
 	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {

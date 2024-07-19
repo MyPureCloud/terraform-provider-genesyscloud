@@ -41,7 +41,6 @@ func ResourceRoutingSkillGroup() *schema.Resource {
 				Description: "Description of the skill group",
 				Type:        schema.TypeString,
 				Optional:    true,
-				Computed:    true,
 			},
 			"division_id": {
 				Description: "The division to which this entity belongs",
@@ -56,8 +55,8 @@ func ResourceRoutingSkillGroup() *schema.Resource {
 				Computed:         true,
 				DiffSuppressFunc: util.SuppressEquivalentJsonDiffs,
 			},
-			"member_division_ids": {
-				Description: "The IDs of member divisions to add or remove for this skill group. An empty array means all divisions will be removed, \"*\" means all divisions will be added.",
+			"member_divisions": {
+				Description: "Member divisions for this skill group.",
 				Type:        schema.TypeList,
 				MaxItems:    50,
 				Optional:    true,
@@ -86,7 +85,7 @@ func ResourceSkillGroupExporter() *resourceExporter.ResourceExporter {
 		GetResourcesFunc: provider.GetAllWithPooledClient(getAllRoutingSkillGroups),
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			"division_id":         {RefType: "genesyscloud_auth_division"},
-			"member_division_ids": {RefType: "genesyscloud_auth_division"},
+			"member_divisions": {RefType: "genesyscloud_auth_division"},
 		},
 		RemoveIfMissing: map[string][]string{
 			"division_id": {"division_id"},

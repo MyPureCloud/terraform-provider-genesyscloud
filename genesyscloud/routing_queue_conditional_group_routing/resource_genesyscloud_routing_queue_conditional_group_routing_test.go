@@ -6,10 +6,10 @@ import (
 	"os"
 	"strings"
 	"sync"
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	"terraform-provider-genesyscloud/genesyscloud/group"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	routingQueue "terraform-provider-genesyscloud/genesyscloud/routing_queue"
+	routingSkillGroup "terraform-provider-genesyscloud/genesyscloud/routing_skill_group"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	featureToggles "terraform-provider-genesyscloud/genesyscloud/util/feature_toggles"
 	"testing"
@@ -72,7 +72,7 @@ func TestAccResourceRoutingQueueConditionalGroupRouting(t *testing.T) {
 			{
 				// Create the queue first so we can save the id to a channel and use it in the later test steps
 				// The reason we are doing this is that we need to verify the parent queue is never dropped and recreated because of CGR
-				Config: gcloud.GenerateRoutingSkillGroupResourceBasic(
+				Config: routingSkillGroup.GenerateRoutingSkillGroupResourceBasic(
 					skillGroupResourceId,
 					skillGroupName,
 					"description",
@@ -95,7 +95,7 @@ func TestAccResourceRoutingQueueConditionalGroupRouting(t *testing.T) {
 			},
 			{
 				// Create rule
-				Config: gcloud.GenerateRoutingSkillGroupResourceBasic(
+				Config: routingSkillGroup.GenerateRoutingSkillGroupResourceBasic(
 					skillGroupResourceId,
 					skillGroupName,
 					"description",
@@ -142,7 +142,7 @@ func TestAccResourceRoutingQueueConditionalGroupRouting(t *testing.T) {
 					groupResourceId,
 					groupName,
 					group.GenerateGroupOwners("genesyscloud_user."+testUserResource+".id"),
-				) + gcloud.GenerateRoutingSkillGroupResourceBasic(
+				) + routingSkillGroup.GenerateRoutingSkillGroupResourceBasic(
 					skillGroupResourceId,
 					skillGroupName,
 					"description",

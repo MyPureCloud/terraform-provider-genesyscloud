@@ -24,16 +24,16 @@ import (
 )
 
 func getAllRoutingSkillGroups(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
-	proxy := getRoutingSkillGroupProxy(clientConfig)
+	proxy := getRoutingSkillGroupsProxy(clientConfig)
 	resources := make(resourceExporter.ResourceIDMetaMap)
 
-	skillGroupWithMemberDivisions, resp, err := proxy.getAllRoutingSkillGroups(ctx, "")
+	allSkillGroups, resp, err := proxy.getAllRoutingSkillGroups(ctx, "")
 	if err != nil {
 		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get routing skill groups: %v", err), resp)
 	}
 
-	for _, skillGroupWithMemberDivisions := range *skillGroupWithMemberDivisions {
-		resources[*skillGroupWithMemberDivisions.Id] = &resourceExporter.ResourceMeta{Name: *skillGroupWithMemberDivisions.Name}
+	for _, skillGroup := range *allSkillGroups {
+		resources[*skillGroup.Id] = &resourceExporter.ResourceMeta{Name: *skillGroup.Name}
 	}
 
 	return resources, nil
@@ -41,95 +41,35 @@ func getAllRoutingSkillGroups(ctx context.Context, clientConfig *platformclientv
 
 func createSkillGroups(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-	proxy := getRoutingSkillGroupProxy(sdkConfig)
-
+	proxy := getRoutingSkillGroupsProxy(sdkConfig)
 	name := d.Get("name").(string)
 	description := d.Get("description").(string)
-	divisionID := d.Get("division_id").(string)
-	conditions := d.Get("skill_conditions").(string)
 
-	createRequest := platformclientv2.Skillgroupwithmemberdivisions{
+	createRequestBody := platformclientv2.Skillgroupwithmemberdivisions{
 		Name:        &name,
 		Description: &description,
 	}
 
-	if divisionID != "" {
-		createRequest.Division = &platformclientv2.Writabledivision{Id: &divisionID}
+	if divisionID := d.Get("division_id").(string); divisionID != "" {
+		createRequestBody.Division = &platformclientv2.Writabledivision{Id: &divisionID}
 	}
 
-	if conditions != "" {
-		var finalConditions *[]platformclientv2.Skillgroupcondition
-		err := json.Unmarshal([]byte(conditions), &finalConditions)
-		if err != nil {
-			return util.BuildDiagnosticError(resourceName, fmt.Sprintf("Failed to unmarshal the JSON payload while creating/updating the skills group %v", &createRequest.Name), err)
+	if skillConditions := d.Get("skill_conditions").(string); skillConditions != "" {
+		if err := json.Unmarshal([]byte(skillConditions), &createRequestBody.SkillConditions); err != nil {
+			return util.BuildDiagnosticError(resourceName, fmt.Sprintf("Failed to unmarshal the JSON skill conditions while creating the skills group %v", &createRequestBody.Name), err)
 		}
-		createRequest.SkillConditions = finalConditions
 	}
 
-	group, response, err := proxy.createRoutingSkillGroups(ctx, &createRequest)
+	group, response, err := proxy.createRoutingSkillGroups(ctx, &createRequestBody)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create/update skill groups %v error: %s", &createRequest.Name, err), response)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create skill groups %v error: %s", &createRequestBody.Name, err), response)
 	}
 
 	d.SetId(*group.Id)
-	log.Printf("Created skill group %v %v", &createRequest.Name, group.Id)
+	log.Printf("Created skill group %v %v", &createRequestBody.Name, group.Id)
 
 	// Update member division IDs
-	apiSkillGroupMemberDivisionIds, diagErr := readSkillGroupMemberDivisions(ctx, d, meta)
-	if diagErr != nil {
-		return diagErr
-	}
-
-	diagErr = createRoutingSkillGroupsMemberDivisions(ctx, d, meta, apiSkillGroupMemberDivisionIds, true)
-	if diagErr != nil {
-		return diagErr
-	}
-
-	return readSkillGroups(ctx, d, meta)
-}
-
-func updateSkillGroups(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-	proxy := getRoutingSkillGroupProxy(sdkConfig)
-
-	name := d.Get("name").(string)
-	description := d.Get("description").(string)
-	divisionID := d.Get("division_id").(string)
-	conditions := d.Get("skill_conditions").(string)
-
-	updateRequest := platformclientv2.Skillgroup{
-		Name:        &name,
-		Description: &description,
-	}
-
-	if divisionID != "" {
-		updateRequest.Division = &platformclientv2.Writabledivision{Id: &divisionID}
-	}
-
-	if conditions != "" {
-		var finalConditions *[]platformclientv2.Skillgroupcondition
-		err := json.Unmarshal([]byte(conditions), &finalConditions)
-		if err != nil {
-			return util.BuildDiagnosticError(resourceName, fmt.Sprintf("Failed to unmarshal the JSON payload while creating/updating the skills group %v", &updateRequest.Name), err)
-		}
-		updateRequest.SkillConditions = finalConditions
-	}
-
-	group, resp, err := proxy.updateRoutingSkillGroups(ctx, d.Id(), &updateRequest)
-	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create/update skill groups %v error: %s", &updateRequest.Name, err), resp)
-	}
-
-	log.Printf("Updated skill group %v", group.Name)
-
-	// Update member division IDs
-	apiSkillGroupMemberDivisionIds, diagErr := readSkillGroupMemberDivisions(ctx, d, meta)
-	if diagErr != nil {
-		return diagErr
-	}
-
-	diagErr = createRoutingSkillGroupsMemberDivisions(ctx, d, meta, apiSkillGroupMemberDivisionIds, false)
-	if diagErr != nil {
+	if diagErr := assignMemberDivisionIds(ctx, d, meta, true); diagErr != nil {
 		return diagErr
 	}
 
@@ -138,7 +78,7 @@ func updateSkillGroups(ctx context.Context, d *schema.ResourceData, meta interfa
 
 func readSkillGroups(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-	proxy := getRoutingSkillGroupProxy(sdkConfig)
+	proxy := getRoutingSkillGroupsProxy(sdkConfig)
 	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceRoutingSkillGroup(), constants.DefaultConsistencyChecks, resourceName)
 
 	log.Printf("Reading skills group %s", d.Id())
@@ -154,32 +94,78 @@ func readSkillGroups(ctx context.Context, d *schema.ResourceData, meta interface
 
 		resourcedata.SetNillableValue(d, "name", skillGroup.Name)
 		resourcedata.SetNillableValue(d, "description", skillGroup.Description)
-		resourcedata.SetNillableValue(d, "division_id", skillGroup.Division.Id)
+		resourcedata.SetNillableReferenceWritableDivision(d, "division_id", skillGroup.Division)
 
 		skillConditionsBytes, _ := json.Marshal(skillGroup.SkillConditions)
 		skillConditions := string(skillConditionsBytes)
-
 		if skillConditions != "" {
-			d.Set("skill_conditions", skillConditions)
+			_ = d.Set("skill_conditions", skillConditions)
 		} else {
-			d.Set("skill_conditions", nil)
+			_ = d.Set("skill_conditions", nil)
 		}
 
-		if divIds, ok := d.Get("member_division_ids").([]interface{}); ok {
-			_ = d.Set("member_division_ids", divIds)
+		// Set member_divisions avoiding plan not empty error
+		memberDivIds, diagErr := readSkillGroupMemberDivisions(ctx, d, meta)
+		if diagErr != nil {
+			return retry.NonRetryableError(fmt.Errorf("%v", diagErr))
 		}
+
+		var schemaMemberDivisionIds []string
+		if divIds, ok := d.Get("member_divisions").([]interface{}); ok {
+			schemaMemberDivisionIds = lists.InterfaceListToStrings(divIds)
+		}
+
+		memberDivisionIds := organizeMemberDivisionIdsForRead(schemaMemberDivisionIds, memberDivIds, *skillGroup.Division.Id)
+		_ = d.Set("member_divisions", memberDivisionIds)
 
 		log.Printf("Read skill groups name  %s %s", d.Id(), *skillGroup.Name)
 		return cc.CheckState(d)
 	})
 }
 
+
+func updateSkillGroups(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
+	proxy := getRoutingSkillGroupsProxy(sdkConfig)
+	name := d.Get("name").(string)
+	description := d.Get("description").(string)
+
+	updateRequestBody := platformclientv2.Skillgroup{
+		Name:        &name,
+		Description: &description,
+	}
+
+	if divisionID := d.Get("division_id").(string); divisionID != "" {
+		updateRequestBody.Division = &platformclientv2.Writabledivision{Id: &divisionID}
+	}
+
+	if SkillConditions := d.Get("skill_conditions").(string); SkillConditions != "" {
+		if err := json.Unmarshal([]byte(SkillConditions), &updateRequestBody.SkillConditions); err != nil {
+			return util.BuildDiagnosticError(resourceName, fmt.Sprintf("Failed to unmarshal the JSON skill conditions while updating the skills group %v", &updateRequestBody.Name), err)
+		}
+	}
+
+	group, resp, err := proxy.updateRoutingSkillGroups(ctx, d.Id(), &updateRequestBody)
+	if err != nil {
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update skill groups %v error: %s", &updateRequestBody.Name, err), resp)
+	}
+
+	log.Printf("Updated skill group %v", &group.Name)
+
+	// Update member division IDs
+	if diagErr := assignMemberDivisionIds(ctx, d, meta, false); diagErr != nil {
+		return diagErr
+	}
+
+	return readSkillGroups(ctx, d, meta)
+}
+
 func deleteSkillGroups(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-	proxy := getRoutingSkillGroupProxy(sdkConfig)
+	proxy := getRoutingSkillGroupsProxy(sdkConfig)
 
 	log.Printf("Deleting skill group %s", d.Id())
-	resp, err := proxy.deleteRoutingSkillGroup(ctx, d.Id())
+	resp, err := proxy.deleteRoutingSkillGroups(ctx, d.Id())
 	if err != nil {
 		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete skill group %s error: %s", d.Id(), err), resp)
 	}
@@ -199,16 +185,16 @@ func deleteSkillGroups(ctx context.Context, d *schema.ResourceData, meta interfa
 
 func createRoutingSkillGroupsMemberDivisions(ctx context.Context, d *schema.ResourceData, meta interface{}, skillGroupDivisionIds []string, create bool) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-	proxy := getRoutingSkillGroupProxy(sdkConfig)
-	name := d.Get("name").(string)
-	memberDivisionIds := d.Get("member_division_ids").([]interface{})
+	proxy := getRoutingSkillGroupsProxy(sdkConfig)
+	memberDivIds := d.Get("member_divisions").([]interface{})
+	var reqBody platformclientv2.Skillgroupmemberdivisions
 
-	if memberDivisionIds == nil {
+	if memberDivIds == nil {
 		return readSkillGroups(ctx, d, meta)
 	}
-	schemaDivisionIds := lists.InterfaceListToStrings(memberDivisionIds)
+	schemaDivisionIds := lists.InterfaceListToStrings(memberDivIds)
 
-	toAdd, toRemove, diagErr := createListsForSkillgroupsMembersDivisionsPost(schemaDivisionIds, skillGroupDivisionIds, create, meta)
+	toAdd, toRemove, diagErr := createListsForSkillgroupsMembersDivisions(schemaDivisionIds, skillGroupDivisionIds, create, meta)
 	if diagErr != nil {
 		return diagErr
 	}
@@ -222,8 +208,7 @@ func createRoutingSkillGroupsMemberDivisions(ctx context.Context, d *schema.Reso
 		return readSkillGroups(ctx, d, meta)
 	}
 
-	log.Printf("Updating skill group %s member divisions", name)
-	var reqBody platformclientv2.Skillgroupmemberdivisions
+	log.Printf("Updating skill group %s member divisions", d.Id())
 
 	if len(toRemove) > 0 {
 		reqBody.RemoveDivisionIds = &toRemove
@@ -234,26 +219,26 @@ func createRoutingSkillGroupsMemberDivisions(ctx context.Context, d *schema.Reso
 
 	resp, err := proxy.createRoutingSkillGroupsMemberDivision(ctx, d.Id(), reqBody)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create/update skill group %s member divisions error: %s", d.Id(), err), resp)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update skill group %s member divisions error: %s", d.Id(), err), resp)
 	}
 
-	log.Printf("Updated skill group %s member divisions", name)
+	log.Printf("Updated skill group %s member divisions", d.Id())
 	return nil
 }
 
 func readSkillGroupMemberDivisions(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]string, diag.Diagnostics) {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-	proxy := getRoutingSkillGroupProxy(sdkConfig)
+	proxy := getRoutingSkillGroupsProxy(sdkConfig)
 
 	log.Printf("Reading skill group %s member divisions", d.Get("name").(string))
 
-	divisions, resp, err := proxy.getRoutingSkillGroupsMemberDivison(ctx, d.Id())
+	memberDivisions, resp, err := proxy.getRoutingSkillGroupsMemberDivison(ctx, d.Id())
 	if err != nil {
-		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to  get member divisions for skill group %s error: %s", d.Id(), err), resp)
+		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get member divisions for skill group %s error: %s", d.Id(), err), resp)
 	}
 
 	skillGroupMemberDivisionIds := make([]string, 0)
-	for _, division := range *divisions.Entities {
+	for _, division := range *memberDivisions.Entities {
 		skillGroupMemberDivisionIds = append(skillGroupMemberDivisionIds, *division.Id)
 	}
 
@@ -262,11 +247,18 @@ func readSkillGroupMemberDivisions(ctx context.Context, d *schema.ResourceData, 
 	return skillGroupMemberDivisionIds, nil
 }
 
-//
-//
-// Putting everything I have to refactor under this
-//
-//
+func GenerateRoutingSkillGroupResourceBasic(
+	resourceID string,
+	name string,
+	description string) string {
+	return fmt.Sprintf(`resource "%s" "%s" {
+		name = "%s"
+		description="%s"
+	}
+	`, resourceName, resourceID, name, description)
+}
+
+// Todo: remove once auth divisions is refactored into its own package
 
 func getAllAuthDivisionIds(meta interface{}) ([]string, diag.Diagnostics) {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
@@ -305,41 +297,4 @@ func getAllAuthDivisions(_ context.Context, clientConfig *platformclientv2.Confi
 	}
 
 	return resources, nil
-}
-
-func createListsForSkillgroupsMembersDivisionsPost(schemaMemberDivisionIds []string, apiMemberDivisionIds []string, create bool, meta interface{}) ([]string, []string, diag.Diagnostics) {
-	toAdd := make([]string, 0)
-	toRemove := make([]string, 0)
-
-	if allMemberDivisionsSpecified(schemaMemberDivisionIds) {
-		if len(schemaMemberDivisionIds) > 1 {
-			return nil, nil, util.BuildDiagnosticError(resourceName, fmt.Sprintf(`member_division_ids should not contain more than one item when the value of an item is "*"`), fmt.Errorf(`member_division_ids should not contain more than one item when the value of an item is "*"`))
-		}
-		toAdd, err := getAllAuthDivisionIds(meta)
-		return toAdd, nil, err
-	}
-
-	if len(schemaMemberDivisionIds) > 0 {
-		if create {
-			return schemaMemberDivisionIds, nil, nil
-		}
-		toAdd, toRemove = organizeMemberDivisionIdsForUpdate(schemaMemberDivisionIds, apiMemberDivisionIds)
-		return toAdd, toRemove, nil
-	}
-
-	// Empty array - remove all
-	toRemove = append(toRemove, apiMemberDivisionIds...)
-
-	return nil, toRemove, nil
-}
-
-func GenerateRoutingSkillGroupResourceBasic(
-	resourceID string,
-	name string,
-	description string) string {
-	return fmt.Sprintf(`resource "%s" "%s" {
-		name = "%s"
-		description="%s"
-	}
-	`, resourceName, resourceID, name, description)
 }
