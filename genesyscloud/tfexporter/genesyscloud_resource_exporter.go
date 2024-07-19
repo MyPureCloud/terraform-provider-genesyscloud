@@ -539,6 +539,7 @@ func (g *GenesysCloudResourceExporter) generateZipForExporter() diag.Diagnostics
 }
 
 func (g *GenesysCloudResourceExporter) buildAndExportDependsOnResourcesForFlows() diag.Diagnostics {
+
 	if g.addDependsOn {
 		filterList, resources, err := g.processAndBuildDependencies()
 		if err != nil {
@@ -559,6 +560,7 @@ func (g *GenesysCloudResourceExporter) processAndBuildDependencies() (filters []
 	filterList := make([]string, 0)
 	totalResources := make(resourceExporter.ResourceIDMetaMap)
 	proxy := dependentconsumers.GetDependentConsumerProxy(nil)
+
 	retrieveDependentConsumers := func(resourceKeys resourceExporter.ResourceInfo) func(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, *resourceExporter.DependencyResource, diag.Diagnostics) {
 		return func(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, *resourceExporter.DependencyResource, diag.Diagnostics) {
 			proxy = dependentconsumers.GetDependentConsumerProxy(clientConfig)
@@ -1017,6 +1019,7 @@ func (g *GenesysCloudResourceExporter) getResourcesForType(resType string, provi
 				// will block until it can acquire a pooled client config object.
 				instanceState, err := getResourceState(ctx, res, id, resMeta, meta)
 
+				resourceType := ""
 				if g.isDataSource(resType, resMeta.Name) {
 					g.exMutex.Lock()
 					res = provider.DataSourcesMap[resType]
@@ -1036,6 +1039,7 @@ func (g *GenesysCloudResourceExporter) getResourcesForType(resType string, provi
 						}
 					}
 					instanceState.Attributes = attributes
+					resourceType = "data."
 				}
 
 				if err != nil {
@@ -1050,10 +1054,11 @@ func (g *GenesysCloudResourceExporter) getResourcesForType(resType string, provi
 				}
 
 				resourceChan <- resourceExporter.ResourceInfo{
-					State:   instanceState,
-					Name:    resMeta.Name,
-					Type:    resType,
-					CtyType: ctyType,
+					State:        instanceState,
+					Name:         resMeta.Name,
+					Type:         resType,
+					CtyType:      ctyType,
+					ResourceType: resourceType,
 				}
 
 				return nil
@@ -1607,6 +1612,7 @@ func (g *GenesysCloudResourceExporter) isDataSource(resType string, name string)
 }
 
 func (g *GenesysCloudResourceExporter) containsElement(elements []string, resType, name string) bool {
+
 	for _, element := range elements {
 		if element == resType+"::"+name || fetchByRegex(element, resType, name) {
 			return true
