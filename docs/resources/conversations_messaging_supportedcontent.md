@@ -1,10 +1,10 @@
 ---
-page_title: "genesyscloud_supported_content Resource - terraform-provider-genesyscloud"
+page_title: "genesyscloud_conversations_messaging_supportedcontent Resource - terraform-provider-genesyscloud"
 subcategory: ""
 description: |-
   Genesys Cloud supported content
 ---
-# genesyscloud_supported_content (Resource)
+# genesyscloud_conversations_messaging_supportedcontent (Resource)
 
 Genesys Cloud supported content
 
@@ -22,7 +22,7 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 ## Example Usage
 
 ```terraform
-resource "genesyscloud_supported_content" "supported_content" {
+resource "genesyscloud_conversations_messaging_supportedcontent" "supported_content" {
   name = "test supported_content"
   media_types {
     allow {

@@ -8,7 +8,7 @@ import (
 )
 
 /*
-   The genesyscloud_supported_content_init_test.go file is used to initialize the data sources and resources
+   The genesyscloud_conversations_messaging_supportedcontent_init_test.go file is used to initialize the data sources and resources
    used in testing the supported_content resource.
 */
 

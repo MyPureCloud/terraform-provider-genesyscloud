@@ -15,7 +15,7 @@ import (
 )
 
 /*
-   The data_source_genesyscloud_supported_content.go contains the data source implementation
+   The data_source_genesyscloud_conversations_messaging_supportedcontent.go contains the data source implementation
    for the resource.
 */
 

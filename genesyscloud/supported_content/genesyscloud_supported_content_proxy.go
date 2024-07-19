@@ -10,7 +10,7 @@ import (
 )
 
 /*
-The genesyscloud_supported_content_proxy.go file contains the proxy structures and methods that interact
+The genesyscloud_conversations_messaging_supportedcontent_proxy.go file contains the proxy structures and methods that interact
 with the Genesys Cloud SDK. We use composition here for each function on the proxy so individual functions can be stubbed
 out during testing.
 */

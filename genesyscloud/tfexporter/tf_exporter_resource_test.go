@@ -205,7 +205,7 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_task_management_workitem_schema"] = workitemSchema.ResourceTaskManagementWorkitemSchema()
 	providerResources["genesyscloud_task_management_worktype"] = worktype.ResourceTaskManagementWorktype()
 
-	providerResources["genesyscloud_supported_content"] = supportedContent.ResourceSupportedContent()
+	providerResources["genesyscloud_conversations_messaging_supportedcontent"] = supportedContent.ResourceSupportedContent()
 
 	providerResources["genesyscloud_tf_export"] = ResourceTfExport()
 }
@@ -308,7 +308,7 @@ func (r *registerTestInstance) registerTestExporters() {
 	RegisterExporter("genesyscloud_task_management_workitem_schema", workbin.TaskManagementWorkbinExporter())
 	RegisterExporter("genesyscloud_task_management_worktype", worktype.TaskManagementWorktypeExporter())
 
-	RegisterExporter("genesyscloud_supported_content", supportedContent.SupportedContentExporter())
+	RegisterExporter("genesyscloud_conversations_messaging_supportedcontent", supportedContent.SupportedContentExporter())
 
 	RegisterExporter("genesyscloud_script", scripts.ExporterScript())
 

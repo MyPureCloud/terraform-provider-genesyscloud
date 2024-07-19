@@ -8,7 +8,7 @@ import (
 )
 
 /*
-The resource_genesyscloud_supported_content_utils.go file contains various helper methods to marshal
+The resource_genesyscloud_conversations_messaging_supportedcontent_utils.go file contains various helper methods to marshal
 and unmarshal data into formats consumable by Terraform and/or Genesys Cloud.
 */
 

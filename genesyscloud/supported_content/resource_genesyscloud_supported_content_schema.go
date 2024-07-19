@@ -16,7 +16,7 @@ resource_genesycloud_supported_content_schema.go holds four functions within it:
 3.  The datasource schema definitions for the supported_content datasource.
 4.  The resource exporter configuration for the supported_content exporter.
 */
-const resourceName = "genesyscloud_supported_content"
+const resourceName = "genesyscloud_conversations_messaging_supportedcontent"
 
 // SetRegistrar registers all of the resources, datasources and exporters in the package
 func SetRegistrar(regInstance registrar.Registrar) {
@@ -25,7 +25,7 @@ func SetRegistrar(regInstance registrar.Registrar) {
 	regInstance.RegisterExporter(resourceName, SupportedContentExporter())
 }
 
-// ResourceSupportedContent registers the genesyscloud_supported_content resource with Terraform
+// ResourceSupportedContent registers the genesyscloud_conversations_messaging_supportedcontent resource with Terraform
 func ResourceSupportedContent() *schema.Resource {
 	mediaTypeResource := &schema.Resource{
 		Schema: map[string]*schema.Schema{
@@ -94,7 +94,7 @@ func ResourceSupportedContent() *schema.Resource {
 	}
 }
 
-// SupportedContentExporter returns the resourceExporter object used to hold the genesyscloud_supported_content exporter's config
+// SupportedContentExporter returns the resourceExporter object used to hold the genesyscloud_conversations_messaging_supportedcontent exporter's config
 func SupportedContentExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: provider.GetAllWithPooledClient(getAllAuthSupportedContents),
@@ -102,7 +102,7 @@ func SupportedContentExporter() *resourceExporter.ResourceExporter {
 	}
 }
 
-// DataSourceSupportedContent registers the genesyscloud_supported_content data source
+// DataSourceSupportedContent registers the genesyscloud_conversations_messaging_supportedcontent data source
 func DataSourceSupportedContent() *schema.Resource {
 	return &schema.Resource{
 		Description: `Genesys Cloud supported content data source. Select an supported content by name`,

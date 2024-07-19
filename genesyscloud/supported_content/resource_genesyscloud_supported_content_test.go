@@ -16,7 +16,7 @@ import (
 )
 
 /*
-The resource_genesyscloud_supported_content_test.go contains all of the test cases for running the resource
+The resource_genesyscloud_conversations_messaging_supportedcontent_test.go contains all of the test cases for running the resource
 tests for supported_content.
 */
 
@@ -43,9 +43,9 @@ func TestAccResourceSupportedContent(t *testing.T) {
 					GenerateOutboundTypeBlock(outboundType),
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_supported_content."+resourceId, "name", name),
-					resource.TestCheckResourceAttr("genesyscloud_supported_content."+resourceId, "media_types.0.allow.0.inbound.0.type", inboundType),
-					resource.TestCheckResourceAttr("genesyscloud_supported_content."+resourceId, "media_types.0.allow.0.outbound.0.type", outboundType),
+					resource.TestCheckResourceAttr("genesyscloud_conversations_messaging_supportedcontent."+resourceId, "name", name),
+					resource.TestCheckResourceAttr("genesyscloud_conversations_messaging_supportedcontent."+resourceId, "media_types.0.allow.0.inbound.0.type", inboundType),
+					resource.TestCheckResourceAttr("genesyscloud_conversations_messaging_supportedcontent."+resourceId, "media_types.0.allow.0.outbound.0.type", outboundType),
 				),
 			},
 			//Update and add inbound block
@@ -58,15 +58,15 @@ func TestAccResourceSupportedContent(t *testing.T) {
 					GenerateOutboundTypeBlock(outboundType),
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_supported_content."+resourceId, "name", name),
-					resource.TestCheckResourceAttr("genesyscloud_supported_content."+resourceId, "media_types.0.allow.0.inbound.0.type", inboundType2),
-					resource.TestCheckResourceAttr("genesyscloud_supported_content."+resourceId, "media_types.0.allow.0.inbound.1.type", inboundType3),
-					resource.TestCheckResourceAttr("genesyscloud_supported_content."+resourceId, "media_types.0.allow.0.outbound.0.type", outboundType),
+					resource.TestCheckResourceAttr("genesyscloud_conversations_messaging_supportedcontent."+resourceId, "name", name),
+					resource.TestCheckResourceAttr("genesyscloud_conversations_messaging_supportedcontent."+resourceId, "media_types.0.allow.0.inbound.0.type", inboundType2),
+					resource.TestCheckResourceAttr("genesyscloud_conversations_messaging_supportedcontent."+resourceId, "media_types.0.allow.0.inbound.1.type", inboundType3),
+					resource.TestCheckResourceAttr("genesyscloud_conversations_messaging_supportedcontent."+resourceId, "media_types.0.allow.0.outbound.0.type", outboundType),
 				),
 			},
 			{
 				// Import/Read
-				ResourceName:      "genesyscloud_supported_content." + resourceId,
+				ResourceName:      "genesyscloud_conversations_messaging_supportedcontent." + resourceId,
 				ImportState:       true,
 				ImportStateVerify: true,
 			},

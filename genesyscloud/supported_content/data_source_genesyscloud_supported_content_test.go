@@ -39,9 +39,9 @@ func TestAccDataSourceSupportedContent(t *testing.T) {
 					GenerateDataSourceForSupportedContent(
 						dataSourceId,
 						name,
-						"genesyscloud_supported_content."+resourceId),
+						"genesyscloud_conversations_messaging_supportedcontent."+resourceId),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair("data.genesyscloud_supported_content."+dataSourceId, "id", "genesyscloud_supported_content."+resourceId, "id"),
+					resource.TestCheckResourceAttrPair("data.genesyscloud_conversations_messaging_supportedcontent."+dataSourceId, "id", "genesyscloud_conversations_messaging_supportedcontent."+resourceId, "id"),
 				),
 			},
 		},

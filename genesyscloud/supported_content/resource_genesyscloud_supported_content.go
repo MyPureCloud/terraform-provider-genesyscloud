@@ -22,7 +22,7 @@ import (
 )
 
 /*
-The resource_genesyscloud_supported_content.go contains all of the methods that perform the core logic for a resource.
+The resource_genesyscloud_conversations_messaging_supportedcontent.go contains all of the methods that perform the core logic for a resource.
 */
 
 // getAllAuthSupportedContent retrieves all of the supported content via Terraform in the Genesys Cloud and is used for the exporter
