@@ -14,7 +14,6 @@ import (
 )
 
 func TestAccResourceEdgeGroup(t *testing.T) {
-	t.Skip("Skipping this test for now because hybrid customers will not use edge groups and will only be able to modify the existing hybrid edge group. EdgeGroup will need to be refactored.")
 	t.Parallel()
 	var (
 		edgeGroupRes          = "edgeGroup1234"

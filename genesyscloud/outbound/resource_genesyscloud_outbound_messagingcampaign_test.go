@@ -3,6 +3,7 @@ package outbound
 import (
 	"fmt"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 	obDnclist "terraform-provider-genesyscloud/genesyscloud/outbound_dnclist"
@@ -107,21 +108,23 @@ func TestAccResourceOutboundMessagingCampaign(t *testing.T) {
 		)
 	)
 
+	if v := os.Getenv("GENESYSCLOUD_REGION"); v == "tca" {
+		smsConfigSenderSMSPhoneNumber = "+18159823725"
+	}
+
 	config, err := provider.AuthorizeSdk()
 	if err != nil {
 		t.Errorf("failed to authorize client: %v", err)
 	}
-	api := platformclientv2.NewRoutingApiWithConfig(config)
-	err = createRoutingSmsPhoneNumber(smsConfigSenderSMSPhoneNumber, api)
-	if err != nil {
-		t.Errorf("error creating sms phone number %s: %v", smsConfigSenderSMSPhoneNumber, err)
-	}
-	defer func() {
-		_, err := api.DeleteRoutingSmsPhonenumber(smsConfigSenderSMSPhoneNumber)
+
+	if v := os.Getenv("GENESYSCLOUD_REGION"); v == "us-east-1" {
+		api := platformclientv2.NewRoutingApiWithConfig(config)
+		err = createRoutingSmsPhoneNumber(smsConfigSenderSMSPhoneNumber, api)
 		if err != nil {
-			t.Logf("error deleting phone number %s: %v", smsConfigSenderSMSPhoneNumber, err)
+			t.Errorf("error creating sms phone number %s: %v", smsConfigSenderSMSPhoneNumber, err)
 		}
-	}()
+		//Do not delete the smsPhoneNumber
+	}
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },

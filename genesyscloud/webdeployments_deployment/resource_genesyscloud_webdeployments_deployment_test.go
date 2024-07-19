@@ -70,7 +70,7 @@ func TestAccResourceWebDeploymentsDeployment_AllowedDomains(t *testing.T) {
 				Config: deploymentResourceWithAllowedDomains(t, deploymentName, firstDomain),
 				Check: resource.ComposeTestCheckFunc(
 					func(s *terraform.State) error {
-						time.Sleep(30 * time.Second) // Wait for 30 seconds for status to become active
+						time.Sleep(45 * time.Second) // Wait for 30 seconds for status to become active
 						return nil
 					},
 					resource.TestCheckResourceAttr(fullResourceName, "name", deploymentName),

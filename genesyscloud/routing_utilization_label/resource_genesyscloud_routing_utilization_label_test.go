@@ -51,6 +51,7 @@ func TestAccResourceRoutingUtilizationLabelBasic(t *testing.T) {
 				ResourceName:      "genesyscloud_routing_utilization_label." + resourceName,
 				ImportState:       true,
 				ImportStateVerify: true,
+				Destroy:           true,
 			},
 		},
 		CheckDestroy: validateTestLabelDestroyed,

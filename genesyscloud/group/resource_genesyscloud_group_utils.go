@@ -34,7 +34,7 @@ func flattenGroupAddresses(d *schema.ResourceData, addresses *[]platformclientv2
 
 				// Strip off any parentheses from phone numbers
 				if address.Address != nil {
-					phoneNumber["number"] = strings.Trim(*address.Address, "()")
+					phoneNumber["number"], _ = util.FormatAsE164Number(strings.Trim(*address.Address, "()"))
 				}
 
 				resourcedata.SetMapValueIfNotNil(phoneNumber, "extension", address.Extension)
@@ -77,7 +77,7 @@ func setExtensionOrNumberBasedOnDisplay(d *schema.ResourceData, addressMap map[s
 		if ext, _ := currentAddress["extension"].(string); ext != "" {
 			addressMap["extension"] = display
 		} else if number, _ := currentAddress["number"].(string); number != "" {
-			addressMap["number"] = display
+			addressMap["number"], _ = util.FormatAsE164Number(display)
 		}
 	}
 }

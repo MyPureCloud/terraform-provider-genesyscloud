@@ -9,7 +9,9 @@ import (
 	integration "terraform-provider-genesyscloud/genesyscloud/integration"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	routingQueue "terraform-provider-genesyscloud/genesyscloud/routing_queue"
+	routingLanguage "terraform-provider-genesyscloud/genesyscloud/routing_language"
 	userRoles "terraform-provider-genesyscloud/genesyscloud/user_roles"
+	routingEmailDomain "terraform-provider-genesyscloud/genesyscloud/routing_email_domain"
 
 	"testing"
 
@@ -44,7 +46,7 @@ func (r *registerTestInstance) registerTestResources() {
 	defer r.resourceMapMutex.Unlock()
 
 	providerResources[resourceName] = ResourceMediaRetentionPolicy()
-	providerResources["genesyscloud_routing_email_domain"] = gcloud.ResourceRoutingEmailDomain()
+	providerResources["genesyscloud_routing_email_domain"] = routingEmailDomain.ResourceRoutingEmailDomain()
 	providerResources["genesyscloud_routing_queue"] = routingQueue.ResourceRoutingQueue()
 	providerResources["genesyscloud_auth_role"] = authRole.ResourceAuthRole()
 	providerResources["genesyscloud_user_roles"] = userRoles.ResourceUserRoles()
@@ -52,7 +54,7 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_quality_forms_evaluation"] = gcloud.ResourceEvaluationForm()
 	providerResources["genesyscloud_quality_forms_survey"] = gcloud.ResourceSurveyForm()
 	providerResources["genesyscloud_integration"] = integration.ResourceIntegration()
-	providerResources["genesyscloud_routing_language"] = gcloud.ResourceRoutingLanguage()
+	providerResources["genesyscloud_routing_language"] = routingLanguage.ResourceRoutingLanguage()
 	providerResources["genesyscloud_routing_wrapupcode"] = gcloud.ResourceRoutingWrapupCode()
 	providerResources["genesyscloud_flow"] = flow.ResourceArchitectFlow()
 }

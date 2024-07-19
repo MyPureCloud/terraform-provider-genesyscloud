@@ -2,8 +2,10 @@ package integration
 
 import (
 	"fmt"
+	"log"
 	"strconv"
 	"strings"
+	"sync"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
@@ -15,6 +17,10 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
+)
+
+var (
+	mu sync.Mutex
 )
 
 /*
@@ -333,7 +339,7 @@ func TestAccResourceIntegration(t *testing.T) {
 				ImportStateVerify: true,
 			},
 		},
-		CheckDestroy: testVerifyIntegrationDestroyed,
+		CheckDestroy: testVerifyIntegrationAndUsersDestroyed,
 	})
 }
 
@@ -375,22 +381,37 @@ func validateIntegrationProperties(integrationResourceName string, groupResource
 	}
 }
 
-func testVerifyIntegrationDestroyed(state *terraform.State) error {
+func testVerifyIntegrationAndUsersDestroyed(state *terraform.State) error {
 	integrationAPI := platformclientv2.NewIntegrationsApi()
+	usersAPI := platformclientv2.NewUsersApi()
 	for _, rs := range state.RootModule().Resources {
-		if rs.Type != "genesyscloud_integration" {
-			continue
+		if rs.Type == "genesyscloud_integration" {
+			integration, resp, err := integrationAPI.GetIntegration(rs.Primary.ID, 100, 1, "", nil, "", "")
+			if integration != nil {
+				return fmt.Errorf("Integration (%s) still exists", rs.Primary.ID)
+			} else if util.IsStatus404(resp) {
+				// Integration not found as expected
+				continue
+			} else {
+				// Unexpected error
+				return fmt.Errorf("Unexpected error: %s", err)
+			}
 		}
-
-		integration, resp, err := integrationAPI.GetIntegration(rs.Primary.ID, 100, 1, "", nil, "", "")
-		if integration != nil {
-			return fmt.Errorf("Integration (%s) still exists", rs.Primary.ID)
-		} else if util.IsStatus404(resp) {
-			// Integration not found as expected
-			continue
-		} else {
-			// Unexpected error
-			return fmt.Errorf("Unexpected error: %s", err)
+		if rs.Type == "genesyscloud_user" {
+			err := checkUserDeleted(rs.Primary.ID)(state)
+			if err != nil {
+				continue
+			}
+			user, resp, err := usersAPI.GetUser(rs.Primary.ID, nil, "", "")
+			if user != nil {
+				return fmt.Errorf("User Resource (%s) still exists", rs.Primary.ID)
+			} else if util.IsStatus404(resp) {
+				// User not found as expected
+				continue
+			} else {
+				// Unexpected error
+				return fmt.Errorf("Unexpected error: %s", err)
+			}
 		}
 	}
 	// Success. All integrations destroyed
@@ -434,4 +455,46 @@ func generateGroupResource(
 func generateGroupOwners(userIDs ...string) string {
 	return fmt.Sprintf(`owner_ids = [%s]
 	`, strings.Join(userIDs, ","))
+}
+
+func checkUserDeleted(id string) resource.TestCheckFunc {
+	log.Printf("Fetching user with ID: %s\n", id)
+	return func(s *terraform.State) error {
+		maxAttempts := 30
+		for i := 0; i < maxAttempts; i++ {
+
+			deleted, err := isUserDeleted(id)
+			if err != nil {
+				return err
+			}
+			if deleted {
+				return nil
+			}
+			time.Sleep(10 * time.Second)
+		}
+		return fmt.Errorf("user %s was not deleted properly", id)
+	}
+}
+
+func isUserDeleted(id string) (bool, error) {
+	mu.Lock()
+	defer mu.Unlock()
+
+	usersAPI := platformclientv2.NewUsersApi()
+	// Attempt to get the user
+	_, response, err := usersAPI.GetUser(id, nil, "", "")
+
+	// Check if the user is not found (deleted)
+	if response != nil && response.StatusCode == 404 {
+		return true, nil // User is deleted
+	}
+
+	// Handle other errors
+	if err != nil {
+		log.Printf("Error fetching user: %v", err)
+		return false, err
+	}
+
+	// If user is found, it means the user is not deleted
+	return false, nil
 }

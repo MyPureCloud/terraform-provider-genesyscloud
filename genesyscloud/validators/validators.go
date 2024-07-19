@@ -8,6 +8,7 @@ import (
 
 	"strings"
 
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
 	files "terraform-provider-genesyscloud/genesyscloud/util/files"
@@ -16,17 +17,15 @@ import (
 	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/nyaruka/phonenumbers"
 )
 
 func ValidatePhoneNumber(number interface{}, _ cty.Path) diag.Diagnostics {
 	if numberStr, ok := number.(string); ok {
-		phoneNumber, err := phonenumbers.Parse(numberStr, "US")
-		if err != nil {
-			return diag.Errorf("Failed to validate phone number %s: %s", numberStr, err)
-		}
 
-		formattedNum := phonenumbers.Format(phoneNumber, phonenumbers.E164)
+		formattedNum, err := util.FormatAsE164Number(numberStr)
+		if err != nil {
+			return err
+		}
 		if formattedNum != numberStr {
 			return diag.Errorf("Failed to parse number in an E.164 format.  Passed %s and expected: %s", numberStr, formattedNum)
 		}

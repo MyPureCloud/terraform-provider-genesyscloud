@@ -5,8 +5,8 @@ import (
 	"log"
 	"os"
 	"strings"
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
+	routingEmailDomain "terraform-provider-genesyscloud/genesyscloud/routing_email_domain"
 	routingEmailRoute "terraform-provider-genesyscloud/genesyscloud/routing_email_route"
 	routingQueue "terraform-provider-genesyscloud/genesyscloud/routing_queue"
 	"terraform-provider-genesyscloud/genesyscloud/util"
@@ -72,7 +72,7 @@ func TestAccResourceRoutingQueueOutboundEmailAddress(t *testing.T) {
 				Config: routingQueue.GenerateRoutingQueueResourceBasic(
 					queueResource,
 					queueName1,
-				) + gcloud.GenerateRoutingEmailDomainResource(
+				) + routingEmailDomain.GenerateRoutingEmailDomainResource(
 					domainResource,
 					domainId,
 					util.FalseValue,

@@ -1019,6 +1019,7 @@ func (g *GenesysCloudResourceExporter) getResourcesForType(resType string, provi
 				// will block until it can acquire a pooled client config object.
 				instanceState, err := getResourceState(ctx, res, id, resMeta, meta)
 
+				resourceType := ""
 				if g.isDataSource(resType, resMeta.Name) {
 					g.exMutex.Lock()
 					res = provider.DataSourcesMap[resType]
@@ -1038,6 +1039,7 @@ func (g *GenesysCloudResourceExporter) getResourcesForType(resType string, provi
 						}
 					}
 					instanceState.Attributes = attributes
+					resourceType = "data."
 				}
 
 				if err != nil {
@@ -1052,10 +1054,11 @@ func (g *GenesysCloudResourceExporter) getResourcesForType(resType string, provi
 				}
 
 				resourceChan <- resourceExporter.ResourceInfo{
-					State:   instanceState,
-					Name:    resMeta.Name,
-					Type:    resType,
-					CtyType: ctyType,
+					State:        instanceState,
+					Name:         resMeta.Name,
+					Type:         resType,
+					CtyType:      ctyType,
+					ResourceType: resourceType,
 				}
 
 				return nil
@@ -1605,7 +1608,12 @@ func (g *GenesysCloudResourceExporter) resourceIdExists(refID string, existingRe
 }
 
 func (g *GenesysCloudResourceExporter) isDataSource(resType string, name string) bool {
-	for _, element := range g.replaceWithDatasource {
+	return g.containsElement(resourceExporter.ExportAsData, resType, name) || g.containsElement(g.replaceWithDatasource, resType, name)
+}
+
+func (g *GenesysCloudResourceExporter) containsElement(elements []string, resType, name string) bool {
+
+	for _, element := range elements {
 		if element == resType+"::"+name || fetchByRegex(element, resType, name) {
 			return true
 		}

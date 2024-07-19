@@ -2,6 +2,7 @@ package genesyscloud
 
 import (
 	"fmt"
+	"log"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
@@ -17,6 +18,7 @@ func TestAccDataSourceAuthDivision(t *testing.T) {
 		divResource   = "auth-division"
 		divDataSource = "auth-div-data"
 		divName       = "Terraform Divisions-" + uuid.NewString()
+		divisionID    string
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -32,6 +34,26 @@ func TestAccDataSourceAuthDivision(t *testing.T) {
 					divName,
 					util.NullValue,
 					util.NullValue,
+				),
+				Check: resource.ComposeTestCheckFunc(
+					func(s *terraform.State) error {
+						rs, ok := s.RootModule().Resources["genesyscloud_auth_division."+divResource]
+						if !ok {
+							return fmt.Errorf("not found: %s", "genesyscloud_auth_division."+divResource)
+						}
+						divisionID = rs.Primary.ID
+						log.Printf("Division ID: %s\n", divisionID) // Print ID
+						return nil
+					},
+				),
+				PreventPostDestroyRefresh: true,
+			},
+			{
+				Config: GenerateAuthDivisionResource(
+					divResource,
+					divName,
+					util.NullValue,
+					util.NullValue,
 				) + generateAuthDivisionDataSource(
 					divDataSource,
 					"genesyscloud_auth_division."+divResource+".name",
@@ -39,14 +61,20 @@ func TestAccDataSourceAuthDivision(t *testing.T) {
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrPair("data.genesyscloud_auth_division."+divDataSource, "id", "genesyscloud_auth_division."+divResource, "id"),
-					func(s *terraform.State) error {
-						time.Sleep(30 * time.Second) // Wait for 30 seconds for proper deletion
-						return nil
-					},
 				),
 			},
+			{
+				// Import/Read
+				ResourceName:      "genesyscloud_auth_division." + divResource,
+				ImportState:       true,
+				ImportStateVerify: true,
+				Destroy:           true,
+			},
 		},
-		CheckDestroy: testVerifyDivisionsDestroyed,
+		CheckDestroy: func(state *terraform.State) error {
+			time.Sleep(45 * time.Second)
+			return testVerifyDivisionsDestroyed(state)
+		},
 	})
 }
 

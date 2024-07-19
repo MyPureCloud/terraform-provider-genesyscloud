@@ -42,12 +42,13 @@ resource "genesyscloud_outbound_contactlistfilter" "contact_list_filter" {
 
 ### Required
 
-- `contact_list_id` (String) The contact list the filter is based on.
 - `name` (String) The name of the list.
 
 ### Optional
 
 - `clauses` (Block List) Groups of conditions to filter the contacts by. (see [below for nested schema](#nestedblock--clauses))
+- `contact_list_id` (String) The contact list the filter is based on. Mutually exclusive to 'contact_list_template_id', however, one of the two must be specified
+- `contact_list_template_id` (String) The contact list template the filter is based on. Mutually exclusive to 'contact_list_id', however, one of the two must be specified.
 - `filter_type` (String) How to join clauses together.
 
 ### Read-Only
