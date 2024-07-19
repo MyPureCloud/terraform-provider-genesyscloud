@@ -22,7 +22,7 @@ func TestAccResourceRoutingUtilizationLabelBasic(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck: func() {
 			util.TestAccPreCheck(t)
-			if err := util.CheckIfLabelsAreEnabled(); err != nil {
+			if err := checkIfLabelsAreEnabled(); err != nil {
 				t.Skipf("%v", err) // be sure to skip the test and not fail it
 			}
 		},
@@ -30,7 +30,7 @@ func TestAccResourceRoutingUtilizationLabelBasic(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				// Create
-				Config: util.GenerateRoutingUtilizationLabelResource(
+				Config: generateRoutingUtilizationLabelResource(
 					resourceName,
 					labelName,
 					"",
@@ -41,7 +41,7 @@ func TestAccResourceRoutingUtilizationLabelBasic(t *testing.T) {
 			},
 			{
 				// Update
-				Config: util.GenerateRoutingUtilizationLabelResource(
+				Config: generateRoutingUtilizationLabelResource(
 					resourceName,
 					updatedLabelName,
 					"",

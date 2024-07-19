@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"sort"
 	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
@@ -24,8 +25,8 @@ import (
 )
 
 type OrgUtilizationWithLabels struct {
-	Utilization       map[string]util.MediaUtilization `json:"utilization"`
-	LabelUtilizations map[string]util.LabelUtilization `json:"labelUtilizations"`
+	Utilization       map[string]MediaUtilization `json:"utilization"`
+	LabelUtilizations map[string]LabelUtilization `json:"labelUtilizations"`
 }
 
 var (
@@ -38,7 +39,7 @@ var (
 				ValidateFunc: validation.IntBetween(0, 25),
 			},
 			"interruptible_media_types": {
-				Description: fmt.Sprintf("Set of other media types that can interrupt this media type (%s).", strings.Join(util.GetSdkUtilizationTypes(), " | ")),
+				Description: fmt.Sprintf("Set of other media types that can interrupt this media type (%s).", strings.Join(getSdkUtilizationTypes(), " | ")),
 				Type:        schema.TypeSet,
 				Optional:    true,
 				Elem:        &schema.Schema{Type: schema.TypeString},
@@ -173,7 +174,7 @@ func readRoutingUtilization(ctx context.Context, d *schema.ResourceData, meta in
 	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceRoutingSkill(), constants.DefaultConsistencyChecks, "genesyscloud_routing_utilization")
 
 	path := fmt.Sprintf("%s/api/v2/routing/utilization", routingAPI.Configuration.BasePath)
-	headerParams := util.BuildHeaderParams(routingAPI)
+	headerParams := buildHeaderParams(routingAPI)
 
 	log.Printf("Reading Routing Utilization")
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
@@ -189,9 +190,9 @@ func readRoutingUtilization(ctx context.Context, d *schema.ResourceData, meta in
 		err = json.Unmarshal(response.RawBody, &orgUtilization)
 
 		if orgUtilization.Utilization != nil {
-			for sdkType, schemaType := range util.GetUtilizationMediaTypes() {
+			for sdkType, schemaType := range getUtilizationMediaTypes() {
 				if mediaSettings, ok := orgUtilization.Utilization[sdkType]; ok {
-					d.Set(schemaType, util.FlattenUtilizationSetting(mediaSettings))
+					d.Set(schemaType, flattenUtilizationSetting(mediaSettings))
 				} else {
 					d.Set(schemaType, nil)
 				}
@@ -202,7 +203,7 @@ func readRoutingUtilization(ctx context.Context, d *schema.ResourceData, meta in
 			originalLabelUtilizations := d.Get("label_utilizations").([]interface{})
 
 			// Only add to the state the configured labels, in the configured order, but not any extras, to help terraform with matching new and old state.
-			flattenedLabelUtilizations := util.FilterAndFlattenLabelUtilizations(orgUtilization.LabelUtilizations, originalLabelUtilizations)
+			flattenedLabelUtilizations := filterAndFlattenLabelUtilizations(orgUtilization.LabelUtilizations, originalLabelUtilizations)
 			d.Set("label_utilizations", flattenedLabelUtilizations)
 		}
 
@@ -230,14 +231,14 @@ func updateRoutingUtilization(ctx context.Context, d *schema.ResourceData, meta 
 			apiClient := &routingAPI.Configuration.APIClient
 
 			path := fmt.Sprintf("%s/api/v2/routing/utilization", routingAPI.Configuration.BasePath)
-			headerParams := util.BuildHeaderParams(routingAPI)
+			headerParams := buildHeaderParams(routingAPI)
 			requestPayload := make(map[string]interface{})
-			requestPayload["utilization"] = util.BuildSdkMediaUtilizations(d)
-			requestPayload["labelUtilizations"] = util.BuildLabelUtilizationsRequest(labelUtilizations)
+			requestPayload["utilization"] = buildSdkMediaUtilizations(d)
+			requestPayload["labelUtilizations"] = buildLabelUtilizationsRequest(labelUtilizations)
 			resp, err = apiClient.CallAPI(path, "PUT", requestPayload, headerParams, nil, nil, "", nil)
 		} else {
 			_, resp, err = routingAPI.PutRoutingUtilization(platformclientv2.Utilizationrequest{
-				Utilization: util.BuildSdkMediaUtilizations(d),
+				Utilization: buildSdkMediaUtilizations(d),
 			})
 		}
 
@@ -267,4 +268,13 @@ func deleteRoutingUtilization(_ context.Context, _ *schema.ResourceData, meta in
 	}
 	log.Printf("Reset Routing Utilization")
 	return nil
+}
+
+func getSdkUtilizationTypes() []string {
+	types := make([]string, 0, len(utilizationMediaTypes))
+	for t := range utilizationMediaTypes {
+		types = append(types, t)
+	}
+	sort.Strings(types)
+	return types
 }

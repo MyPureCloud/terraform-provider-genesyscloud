@@ -8,6 +8,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/mypurecloud/platform-client-sdk-go/v130/platformclientv2"
 )
 
 func TestAccDataSourceRoutingUtilizationLabel(t *testing.T) {
@@ -20,14 +21,14 @@ func TestAccDataSourceRoutingUtilizationLabel(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck: func() {
 			util.TestAccPreCheck(t)
-			if err := util.CheckIfLabelsAreEnabled(); err != nil {
+			if err := checkIfLabelsAreEnabled(); err != nil {
 				t.Skipf("%v", err) // be sure to skip the test and not fail it
 			}
 		},
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
-				Config: util.GenerateRoutingUtilizationLabelResource(
+				Config: generateRoutingUtilizationLabelResource(
 					resourceName,
 					labelName,
 					"",
@@ -52,4 +53,27 @@ func generateRoutingUtilizationLabelDataSource(
         depends_on=[%s]
 	}
 	`, resourceID, name, dependsOnResource)
+}
+
+func checkIfLabelsAreEnabled() error { // remove once the feature is globally enabled
+	api := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
+	_, resp, _ := api.GetRoutingUtilizationLabels(100, 1, "", "")
+	if resp.StatusCode == 501 {
+		return fmt.Errorf("feature is not yet implemented in this org.")
+	}
+	return nil
+}
+
+func generateRoutingUtilizationLabelResource(resourceID string, name string, dependsOnResource string) string {
+	dependsOn := ""
+
+	if dependsOnResource != "" {
+		dependsOn = fmt.Sprintf("depends_on=[genesyscloud_routing_utilization_label.%s]", dependsOnResource)
+	}
+
+	return fmt.Sprintf(`resource "genesyscloud_routing_utilization_label" "%s" {
+		name = "%s"
+		%s
+	}
+	`, resourceID, name, dependsOn)
 }

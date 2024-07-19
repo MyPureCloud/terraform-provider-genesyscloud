@@ -24,6 +24,28 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v130/platformclientv2"
 )
 
+var (
+	// Map of SDK media type name to schema media type name
+	utilizationMediaTypes = map[string]string{
+		"call":     "call",
+		"callback": "callback",
+		"chat":     "chat",
+		"email":    "email",
+		"message":  "message",
+	}
+)
+
+type MediaUtilization struct {
+	MaximumCapacity         int32    `json:"maximumCapacity"`
+	InterruptableMediaTypes []string `json:"interruptableMediaTypes"`
+	IncludeNonAcd           bool     `json:"includeNonAcd"`
+}
+
+type LabelUtilization struct {
+	MaximumCapacity      int32    `json:"maximumCapacity"`
+	InterruptingLabelIds []string `json:"interruptingLabelIds"`
+}
+
 type SkillGroupsRequest struct {
 	Name        string `json:"name"`
 	Description string `json:"description"`
@@ -50,7 +72,7 @@ func getAllSkillGroups(ctx context.Context, clientConfig *platformclientv2.Confi
 	apiClient := &routingAPI.Configuration.APIClient
 	route := "/api/v2/routing/skillgroups"
 
-	headerParams := util.BuildHeaderParams(routingAPI)
+	headerParams := buildHeaderParams(routingAPI)
 
 	for {
 		path := routingAPI.Configuration.BasePath + route
@@ -181,7 +203,7 @@ func createOrUpdateSkillGroups(ctx context.Context, d *schema.ResourceData, meta
 	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
 	apiClient := &routingAPI.Configuration.APIClient
 	path := routingAPI.Configuration.BasePath + route
-	headerParams := util.BuildHeaderParams(routingAPI)
+	headerParams := buildHeaderParams(routingAPI)
 
 	/*
 	   Since API Client expects either a struct or map of maps (of json), convert the JSON string to a map
@@ -265,7 +287,7 @@ func postSkillGroupMemberDivisions(ctx context.Context, d *schema.ResourceData, 
 		skillGroupsMemberDivisionIdsPayload["addDivisionIds"] = toAdd
 	}
 
-	headerParams := util.BuildHeaderParams(routingAPI)
+	headerParams := buildHeaderParams(routingAPI)
 	apiClient := &routingAPI.Configuration.APIClient
 	path := fmt.Sprintf("%s/api/v2/routing/skillgroups/%s/members/divisions", routingAPI.Configuration.BasePath, d.Id())
 	response, err := apiClient.CallAPI(path, "POST", skillGroupsMemberDivisionIdsPayload, headerParams, nil, nil, "", nil)
@@ -361,7 +383,7 @@ func readSkillGroups(ctx context.Context, d *schema.ResourceData, meta interface
 	path := routingAPI.Configuration.BasePath + "/api/v2/routing/skillgroups/" + d.Id()
 
 	// add default headers if any
-	headerParams := util.BuildHeaderParams(routingAPI)
+	headerParams := buildHeaderParams(routingAPI)
 
 	log.Printf("Reading skills group %s", d.Id())
 
@@ -456,7 +478,7 @@ func deleteSkillGroups(ctx context.Context, d *schema.ResourceData, meta interfa
 	path := routingAPI.Configuration.BasePath + "/api/v2/routing/skillgroups/" + d.Id()
 
 	// add default headers if any
-	headerParams := util.BuildHeaderParams(routingAPI)
+	headerParams := buildHeaderParams(routingAPI)
 
 	log.Printf("Deleting skills group %s", name)
 	response, err := apiClient.CallAPI(path, "DELETE", nil, headerParams, nil, nil, "", nil)
@@ -487,7 +509,7 @@ func deleteSkillGroups(ctx context.Context, d *schema.ResourceData, meta interfa
 }
 
 func readSkillGroupMemberDivisionIds(d *schema.ResourceData, routingAPI *platformclientv2.RoutingApi) ([]string, diag.Diagnostics) {
-	headers := util.BuildHeaderParams(routingAPI)
+	headers := buildHeaderParams(routingAPI)
 	apiClient := &routingAPI.Configuration.APIClient
 	path := fmt.Sprintf("%s/api/v2/routing/skillgroups/%s/members/divisions", routingAPI.Configuration.BasePath, d.Id())
 
@@ -584,4 +606,110 @@ func GenerateRoutingSkillGroupResourceBasic(
 		description="%s"
 	}
 	`, resourceID, name, description)
+}
+
+func flattenUtilizationSetting(settings MediaUtilization) []interface{} {
+	settingsMap := make(map[string]interface{})
+
+	settingsMap["maximum_capacity"] = settings.MaximumCapacity
+	settingsMap["include_non_acd"] = settings.IncludeNonAcd
+	if settings.InterruptableMediaTypes != nil {
+		settingsMap["interruptible_media_types"] = lists.StringListToSet(settings.InterruptableMediaTypes)
+	}
+
+	return []interface{}{settingsMap}
+}
+
+func filterAndFlattenLabelUtilizations(labelUtilizations map[string]LabelUtilization, originalLabelUtilizations []interface{}) []interface{} {
+	flattenedLabelUtilizations := make([]interface{}, 0)
+
+	for _, originalLabelUtilization := range originalLabelUtilizations {
+		originalLabelId := (originalLabelUtilization.(map[string]interface{}))["label_id"].(string)
+
+		for currentLabelId, currentLabelUtilization := range labelUtilizations {
+			if currentLabelId == originalLabelId {
+				flattenedLabelUtilizations = append(flattenedLabelUtilizations, flattenLabelUtilization(currentLabelId, currentLabelUtilization))
+				delete(labelUtilizations, currentLabelId)
+				break
+			}
+		}
+	}
+
+	return flattenedLabelUtilizations
+}
+
+func flattenLabelUtilization(labelId string, labelUtilization LabelUtilization) map[string]interface{} {
+	utilizationMap := make(map[string]interface{})
+
+	utilizationMap["label_id"] = labelId
+	utilizationMap["maximum_capacity"] = labelUtilization.MaximumCapacity
+	if labelUtilization.InterruptingLabelIds != nil {
+		utilizationMap["interrupting_label_ids"] = lists.StringListToSet(labelUtilization.InterruptingLabelIds)
+	}
+
+	return utilizationMap
+}
+
+func buildHeaderParams(routingAPI *platformclientv2.RoutingApi) map[string]string {
+	headerParams := make(map[string]string)
+
+	for key := range routingAPI.Configuration.DefaultHeader {
+		headerParams[key] = routingAPI.Configuration.DefaultHeader[key]
+	}
+
+	headerParams["Authorization"] = "Bearer " + routingAPI.Configuration.AccessToken
+	headerParams["Content-Type"] = "application/json"
+	headerParams["Accept"] = "application/json"
+
+	return headerParams
+}
+
+func buildSdkMediaUtilizations(d *schema.ResourceData) *map[string]platformclientv2.Mediautilization {
+	settings := make(map[string]platformclientv2.Mediautilization)
+
+	for sdkType, schemaType := range getUtilizationMediaTypes() {
+		mediaSettings := d.Get(schemaType).([]interface{})
+		if mediaSettings != nil && len(mediaSettings) > 0 {
+			settings[sdkType] = buildSdkMediaUtilization(mediaSettings)
+		}
+	}
+
+	return &settings
+}
+
+func buildSdkMediaUtilization(settings []interface{}) platformclientv2.Mediautilization {
+	settingsMap := settings[0].(map[string]interface{})
+
+	maxCapacity := settingsMap["maximum_capacity"].(int)
+	includeNonAcd := settingsMap["include_non_acd"].(bool)
+
+	// Optional
+	interruptableMediaTypes := &[]string{}
+	if types, ok := settingsMap["interruptible_media_types"]; ok {
+		interruptableMediaTypes = lists.SetToStringList(types.(*schema.Set))
+	}
+
+	return platformclientv2.Mediautilization{
+		MaximumCapacity:         &maxCapacity,
+		IncludeNonAcd:           &includeNonAcd,
+		InterruptableMediaTypes: interruptableMediaTypes,
+	}
+}
+
+func buildLabelUtilizationsRequest(labelUtilizations []interface{}) map[string]LabelUtilization {
+	request := make(map[string]LabelUtilization)
+	for _, labelUtilization := range labelUtilizations {
+		labelUtilizationMap := labelUtilization.(map[string]interface{})
+		interruptingLabelIds := lists.SetToStringList(labelUtilizationMap["interrupting_label_ids"].(*schema.Set))
+
+		request[labelUtilizationMap["label_id"].(string)] = LabelUtilization{
+			MaximumCapacity:      int32(labelUtilizationMap["maximum_capacity"].(int)),
+			InterruptingLabelIds: *interruptingLabelIds,
+		}
+	}
+	return request
+}
+
+func getUtilizationMediaTypes() map[string]string {
+	return utilizationMediaTypes
 }

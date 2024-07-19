@@ -5,7 +5,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"net/mail"
+	"sort"
 	"strings"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	chunksProcess "terraform-provider-genesyscloud/genesyscloud/util/chunks"
 	"terraform-provider-genesyscloud/genesyscloud/util/lists"
@@ -15,6 +18,30 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v130/platformclientv2"
 	"github.com/nyaruka/phonenumbers"
 )
+
+var (
+	// Map of SDK media type name to schema media type name
+	utilizationMediaTypes = map[string]string{
+		"call":     "call",
+		"callback": "callback",
+		"chat":     "chat",
+		"email":    "email",
+		"message":  "message",
+	}
+	sdkConfig *platformclientv2.Configuration
+	err       error
+)
+
+type mediaUtilization struct {
+	MaximumCapacity         int32    `json:"maximumCapacity"`
+	InterruptableMediaTypes []string `json:"interruptableMediaTypes"`
+	IncludeNonAcd           bool     `json:"includeNonAcd"`
+}
+
+type labelUtilization struct {
+	MaximumCapacity      int32    `json:"maximumCapacity"`
+	InterruptingLabelIds []string `json:"interruptingLabelIds"`
+}
 
 func buildSdkAddresses(d *schema.ResourceData) (*[]platformclientv2.Contact, diag.Diagnostics) {
 	if addresses := d.Get("addresses").([]interface{}); addresses != nil {
@@ -235,16 +262,16 @@ func updateUserRoutingUtilization(d *schema.ResourceData, proxy *userProxy) diag
 					apiClient := &proxy.routingApi.Configuration.APIClient
 
 					path := fmt.Sprintf("%s/api/v2/routing/users/%s/utilization", proxy.routingApi.Configuration.BasePath, d.Id())
-					headerParams := util.BuildHeaderParams(proxy.routingApi)
+					headerParams := buildHeaderParams(proxy.routingApi)
 					requestPayload := make(map[string]interface{})
 					requestPayload["utilization"] = buildMediaTypeUtilizations(allSettings)
-					requestPayload["labelUtilizations"] = util.BuildLabelUtilizationsRequest(labelUtilizations)
+					requestPayload["labelUtilizations"] = buildLabelUtilizationsRequest(labelUtilizations)
 					_, err = apiClient.CallAPI(path, "PUT", requestPayload, headerParams, nil, nil, "", nil)
 				} else {
 					sdkSettings := make(map[string]platformclientv2.Mediautilization)
-					for sdkType, schemaType := range util.GetUtilizationMediaTypes() {
+					for sdkType, schemaType := range getUtilizationMediaTypes() {
 						if mediaSettings, ok := allSettings[schemaType]; ok && len(mediaSettings.([]interface{})) > 0 {
-							sdkSettings[sdkType] = util.BuildSdkMediaUtilization(mediaSettings.([]interface{}))
+							sdkSettings[sdkType] = buildSdkMediaUtilization(mediaSettings.([]interface{}))
 						}
 					}
 
@@ -379,7 +406,7 @@ func readUserRoutingUtilization(d *schema.ResourceData, proxy *userProxy) diag.D
 	apiClient := &proxy.routingApi.Configuration.APIClient
 
 	path := fmt.Sprintf("%s/api/v2/routing/users/%s/utilization", proxy.routingApi.Configuration.BasePath, d.Id())
-	headerParams := util.BuildHeaderParams(proxy.routingApi)
+	headerParams := buildHeaderParams(proxy.routingApi)
 	response, err := apiClient.CallAPI(path, "GET", nil, headerParams, nil, nil, "", nil)
 
 	if err != nil {
@@ -390,7 +417,7 @@ func readUserRoutingUtilization(d *schema.ResourceData, proxy *userProxy) diag.D
 		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to read routing utilization for user %s error: %s", d.Id(), err), response)
 	}
 
-	agentUtilization := &AgentUtilizationWithLabels{}
+	agentUtilization := &agentUtilizationWithLabels{}
 	json.Unmarshal(response.RawBody, &agentUtilization)
 
 	if agentUtilization == nil {
@@ -402,9 +429,9 @@ func readUserRoutingUtilization(d *schema.ResourceData, proxy *userProxy) diag.D
 		allSettings := map[string]interface{}{}
 
 		if agentUtilization.Utilization != nil {
-			for sdkType, schemaType := range util.GetUtilizationMediaTypes() {
+			for sdkType, schemaType := range getUtilizationMediaTypes() {
 				if mediaSettings, ok := agentUtilization.Utilization[sdkType]; ok {
-					allSettings[schemaType] = util.FlattenUtilizationSetting(mediaSettings)
+					allSettings[schemaType] = flattenUtilizationSetting(mediaSettings)
 				}
 			}
 		}
@@ -416,7 +443,7 @@ func readUserRoutingUtilization(d *schema.ResourceData, proxy *userProxy) diag.D
 				originalLabelUtilizations := originalSettings["label_utilizations"].([]interface{})
 
 				// Only add to the state the configured labels, in the configured order, but not any extras, to help terraform with matching new and old state.
-				filteredLabelUtilizations := util.FilterAndFlattenLabelUtilizations(agentUtilization.LabelUtilizations, originalLabelUtilizations)
+				filteredLabelUtilizations := filterAndFlattenLabelUtilizations(agentUtilization.LabelUtilizations, originalLabelUtilizations)
 
 				allSettings["label_utilizations"] = filteredLabelUtilizations
 			} else {
@@ -721,14 +748,185 @@ func flattenUserData(userDataSlice *[]string) *schema.Set {
 func buildMediaTypeUtilizations(allUtilizations map[string]interface{}) *map[string]platformclientv2.Mediautilization {
 	settings := make(map[string]platformclientv2.Mediautilization)
 
-	for sdkType, schemaType := range util.GetUtilizationMediaTypes() {
+	for sdkType, schemaType := range getUtilizationMediaTypes() {
 		mediaSettings := allUtilizations[schemaType].([]interface{})
 		if mediaSettings != nil && len(mediaSettings) > 0 {
-			settings[sdkType] = util.BuildSdkMediaUtilization(mediaSettings)
+			settings[sdkType] = buildSdkMediaUtilization(mediaSettings)
 		}
 	}
 
 	return &settings
+}
+
+func emailorNameDisambiguation(searchField string) (string, string) {
+	emailField := "email"
+	nameField := "name"
+	_, err := mail.ParseAddress(searchField)
+	if err == nil {
+		return searchField, emailField
+	}
+	return searchField, nameField
+}
+
+func getUtilizationMediaTypes() map[string]string {
+	return utilizationMediaTypes
+}
+
+func buildHeaderParams(routingAPI *platformclientv2.RoutingApi) map[string]string {
+	headerParams := make(map[string]string)
+
+	for key := range routingAPI.Configuration.DefaultHeader {
+		headerParams[key] = routingAPI.Configuration.DefaultHeader[key]
+	}
+
+	headerParams["Authorization"] = "Bearer " + routingAPI.Configuration.AccessToken
+	headerParams["Content-Type"] = "application/json"
+	headerParams["Accept"] = "application/json"
+
+	return headerParams
+}
+
+func flattenUtilizationSetting(settings mediaUtilization) []interface{} {
+	settingsMap := make(map[string]interface{})
+
+	settingsMap["maximum_capacity"] = settings.MaximumCapacity
+	settingsMap["include_non_acd"] = settings.IncludeNonAcd
+	if settings.InterruptableMediaTypes != nil {
+		settingsMap["interruptible_media_types"] = lists.StringListToSet(settings.InterruptableMediaTypes)
+	}
+
+	return []interface{}{settingsMap}
+}
+
+func filterAndFlattenLabelUtilizations(labelUtilizations map[string]labelUtilization, originalLabelUtilizations []interface{}) []interface{} {
+	flattenedLabelUtilizations := make([]interface{}, 0)
+
+	for _, originalLabelUtilization := range originalLabelUtilizations {
+		originalLabelId := (originalLabelUtilization.(map[string]interface{}))["label_id"].(string)
+
+		for currentLabelId, currentLabelUtilization := range labelUtilizations {
+			if currentLabelId == originalLabelId {
+				flattenedLabelUtilizations = append(flattenedLabelUtilizations, flattenLabelUtilization(currentLabelId, currentLabelUtilization))
+				delete(labelUtilizations, currentLabelId)
+				break
+			}
+		}
+	}
+
+	return flattenedLabelUtilizations
+}
+
+func flattenLabelUtilization(labelId string, labelUtilization labelUtilization) map[string]interface{} {
+	utilizationMap := make(map[string]interface{})
+
+	utilizationMap["label_id"] = labelId
+	utilizationMap["maximum_capacity"] = labelUtilization.MaximumCapacity
+	if labelUtilization.InterruptingLabelIds != nil {
+		utilizationMap["interrupting_label_ids"] = lists.StringListToSet(labelUtilization.InterruptingLabelIds)
+	}
+
+	return utilizationMap
+}
+
+func buildSdkMediaUtilization(settings []interface{}) platformclientv2.Mediautilization {
+	settingsMap := settings[0].(map[string]interface{})
+
+	maxCapacity := settingsMap["maximum_capacity"].(int)
+	includeNonAcd := settingsMap["include_non_acd"].(bool)
+
+	// Optional
+	interruptableMediaTypes := &[]string{}
+	if types, ok := settingsMap["interruptible_media_types"]; ok {
+		interruptableMediaTypes = lists.SetToStringList(types.(*schema.Set))
+	}
+
+	return platformclientv2.Mediautilization{
+		MaximumCapacity:         &maxCapacity,
+		IncludeNonAcd:           &includeNonAcd,
+		InterruptableMediaTypes: interruptableMediaTypes,
+	}
+}
+
+func buildLabelUtilizationsRequest(labelUtilizations []interface{}) map[string]labelUtilization {
+	request := make(map[string]labelUtilization)
+	for _, labelUtilizationValue := range labelUtilizations {
+		labelUtilizationMap := labelUtilizationValue.(map[string]interface{})
+		interruptingLabelIds := lists.SetToStringList(labelUtilizationMap["interrupting_label_ids"].(*schema.Set))
+
+		request[labelUtilizationMap["label_id"].(string)] = labelUtilization{
+			MaximumCapacity:      int32(labelUtilizationMap["maximum_capacity"].(int)),
+			InterruptingLabelIds: *interruptingLabelIds,
+		}
+	}
+	return request
+}
+
+func checkIfLabelsAreEnabled() error { // remove once the feature is globally enabled
+	if sdkConfig == nil {
+		if sdkConfig, err = provider.AuthorizeSdk(); err != nil {
+			log.Fatal(err)
+		}
+	}
+	api := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
+	_, resp, _ := api.GetRoutingUtilizationLabels(100, 1, "", "")
+	if resp.StatusCode == 501 {
+		return fmt.Errorf("feature is not yet implemented in this org.")
+	}
+	return nil
+}
+
+func getSdkUtilizationTypes() []string {
+	types := make([]string, 0, len(utilizationMediaTypes))
+	for t := range utilizationMediaTypes {
+		types = append(types, t)
+	}
+	sort.Strings(types)
+	return types
+}
+
+func generateRoutingUtilMediaType(
+	mediaType string,
+	maxCapacity string,
+	includeNonAcd string,
+	interruptTypes ...string) string {
+	return fmt.Sprintf(`%s {
+		maximum_capacity = %s
+		include_non_acd = %s
+		interruptible_media_types = [%s]
+	}
+	`, mediaType, maxCapacity, includeNonAcd, strings.Join(interruptTypes, ","))
+}
+
+func generateLabelUtilization(
+	labelResource string,
+	maxCapacity string,
+	interruptingLabelResourceNames ...string) string {
+
+	interruptingLabelResources := make([]string, 0)
+	for _, resourceName := range interruptingLabelResourceNames {
+		interruptingLabelResources = append(interruptingLabelResources, "genesyscloud_routing_utilization_label."+resourceName+".id")
+	}
+
+	return fmt.Sprintf(`label_utilizations {
+		label_id = genesyscloud_routing_utilization_label.%s.id
+		maximum_capacity = %s
+		interrupting_label_ids = [%s]
+	}
+	`, labelResource, maxCapacity, strings.Join(interruptingLabelResources, ","))
+}
+
+func generateRoutingUtilizationLabelResource(resourceID string, name string, dependsOnResource string) string {
+	dependsOn := ""
+
+	if dependsOnResource != "" {
+		dependsOn = fmt.Sprintf("depends_on=[genesyscloud_routing_utilization_label.%s]", dependsOnResource)
+	}
+
+	return fmt.Sprintf(`resource "genesyscloud_routing_utilization_label" "%s" {
+		name = "%s"
+		%s
+	}
+	`, resourceID, name, dependsOn)
 }
 
 // Basic user with minimum required fields

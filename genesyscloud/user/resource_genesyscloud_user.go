@@ -21,10 +21,10 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v130/platformclientv2"
 )
 
-type AgentUtilizationWithLabels struct {
-	Utilization       map[string]util.MediaUtilization `json:"utilization"`
-	LabelUtilizations map[string]util.LabelUtilization `json:"labelUtilizations"`
-	Level             string                           `json:"level"`
+type agentUtilizationWithLabels struct {
+	Utilization       map[string]mediaUtilization `json:"utilization"`
+	LabelUtilizations map[string]labelUtilization `json:"labelUtilizations"`
+	Level             string                      `json:"level"`
 }
 
 func GetAllUsers(ctx context.Context, sdkConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
@@ -52,14 +52,8 @@ func createUser(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	proxy := getUserProxy(sdkConfig)
 
 	email := d.Get("email").(string)
-	name := d.Get("name").(string)
 	password := d.Get("password").(string)
-	state := d.Get("state").(string)
 	divisionID := d.Get("division_id").(string)
-	department := d.Get("department").(string)
-	title := d.Get("title").(string)
-	manager := d.Get("manager").(string)
-	acdAutoAnswer := d.Get("acd_auto_answer").(bool)
 
 	addresses, addrErr := buildSdkAddresses(d)
 	if addrErr != nil {
@@ -74,12 +68,12 @@ func createUser(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	}
 
 	createUser := platformclientv2.Createuser{
+		Name:       platformclientv2.String(d.Get("name").(string)),
+		State:      platformclientv2.String(d.Get("state").(string)),
+		Title:      platformclientv2.String(d.Get("title").(string)),
+		Department: platformclientv2.String(d.Get("department").(string)),
 		Email:      &email,
-		Name:       &name,
-		State:      &state,
 		Addresses:  addresses,
-		Department: &department,
-		Title:      &title,
 	}
 
 	// Optional attributes that should not be empty strings
@@ -116,9 +110,9 @@ func createUser(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 		log.Printf("Updating additional attributes for user %s", email)
 
 		_, proxyPatchResponse, patchErr := proxy.patchUserWithState(ctx, *userResponse.Id, &platformclientv2.Updateuser{
-			Manager:        &manager,
+			Manager:        platformclientv2.String(d.Get("manager").(string)),
+			AcdAutoAnswer:  platformclientv2.Bool(d.Get("acd_auto_answer").(bool)),
 			Locations:      buildSdkLocations(d),
-			AcdAutoAnswer:  &acdAutoAnswer,
 			Certifications: buildSdkCertifications(d),
 			EmployerInfo:   buildSdkEmployerInfo(d),
 			Version:        userResponse.Version,
@@ -199,18 +193,12 @@ func updateUser(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getUserProxy(sdkConfig)
 
-	name := d.Get("name").(string)
-	email := d.Get("email").(string)
-	state := d.Get("state").(string)
-	department := d.Get("department").(string)
-	title := d.Get("title").(string)
-	manager := d.Get("manager").(string)
-	acdAutoAnswer := d.Get("acd_auto_answer").(bool)
-
 	addresses, err := buildSdkAddresses(d)
 	if err != nil {
 		return err
 	}
+
+	email := d.Get("email").(string)
 
 	log.Printf("Updating user %s", email)
 
@@ -218,7 +206,7 @@ func updateUser(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	if d.HasChange("state") {
 		log.Printf("Updating state for user %s", email)
 		updateUser := platformclientv2.Updateuser{
-			State: &state,
+			State: platformclientv2.String(d.Get("state").(string)),
 		}
 		diagErr := executeUpdateUser(ctx, d, proxy, updateUser)
 		if diagErr != nil {
@@ -227,14 +215,14 @@ func updateUser(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	}
 
 	updateUser := platformclientv2.Updateuser{
-		Name:           &name,
+		Name:           platformclientv2.String(d.Get("name").(string)),
+		Department:     platformclientv2.String(d.Get("department").(string)),
+		Title:          platformclientv2.String(d.Get("title").(string)),
+		Manager:        platformclientv2.String(d.Get("manager").(string)),
+		AcdAutoAnswer:  platformclientv2.Bool(d.Get("acd_auto_answer").(bool)),
 		Email:          &email,
-		Department:     &department,
-		Title:          &title,
-		Manager:        &manager,
 		Addresses:      addresses,
 		Locations:      buildSdkLocations(d),
-		AcdAutoAnswer:  &acdAutoAnswer,
 		Certifications: buildSdkCertifications(d),
 		EmployerInfo:   buildSdkEmployerInfo(d),
 	}
@@ -261,7 +249,7 @@ func deleteUser(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	log.Printf("Deleting user %s", email)
 	err := util.RetryWhen(util.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		// Directory occasionally returns version errors on deletes if an object was updated at the same time.
-		proxyDelResponse, err := proxy.deleteUser(ctx, d.Id())
+		_, proxyDelResponse, err := proxy.deleteUser(ctx, d.Id())
 		if err != nil {
 			time.Sleep(5 * time.Second)
 			return proxyDelResponse, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete user %s error: %s", d.Id(), err), proxyDelResponse)

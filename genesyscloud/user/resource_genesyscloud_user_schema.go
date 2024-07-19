@@ -6,7 +6,6 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
-	"terraform-provider-genesyscloud/genesyscloud/util"
 	"terraform-provider-genesyscloud/genesyscloud/validators"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -64,7 +63,7 @@ var (
 				ValidateFunc: validation.IntBetween(0, 25),
 			},
 			"interruptible_media_types": {
-				Description: fmt.Sprintf("Set of other media types that can interrupt this media type (%s).", strings.Join(util.GetSdkUtilizationTypes(), " | ")),
+				Description: fmt.Sprintf("Set of other media types that can interrupt this media type (%s).", strings.Join(getSdkUtilizationTypes(), " | ")),
 				Type:        schema.TypeSet,
 				Optional:    true,
 				Elem:        &schema.Schema{Type: schema.TypeString},
@@ -388,6 +387,25 @@ func ResourceUser() *schema.Resource {
 						},
 					},
 				},
+			},
+		},
+	}
+}
+
+func DataSourceUser() *schema.Resource {
+	return &schema.Resource{
+		Description:        "Data source for Genesys Cloud Users. Select a user by email or name. If both email & name are specified, the name won't be used for user lookup",
+		ReadWithoutTimeout: provider.ReadWithPooledClient(DataSourceUserRead),
+		Schema: map[string]*schema.Schema{
+			"email": {
+				Description: "User email.",
+				Type:        schema.TypeString,
+				Optional:    true,
+			},
+			"name": {
+				Description: "User name.",
+				Type:        schema.TypeString,
+				Optional:    true,
 			},
 		},
 	}

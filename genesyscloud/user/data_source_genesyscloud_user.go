@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"net/mail"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	rc "terraform-provider-genesyscloud/genesyscloud/resource_cache"
 	"terraform-provider-genesyscloud/genesyscloud/util"
@@ -16,25 +15,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v130/platformclientv2"
 )
-
-func DataSourceUser() *schema.Resource {
-	return &schema.Resource{
-		Description:        "Data source for Genesys Cloud Users. Select a user by email or name. If both email & name are specified, the name won't be used for user lookup",
-		ReadWithoutTimeout: provider.ReadWithPooledClient(DataSourceUserRead),
-		Schema: map[string]*schema.Schema{
-			"email": {
-				Description: "User email.",
-				Type:        schema.TypeString,
-				Optional:    true,
-			},
-			"name": {
-				Description: "User name.",
-				Type:        schema.TypeString,
-				Optional:    true,
-			},
-		},
-	}
-}
 
 var (
 	dataSourceUserCache *rc.DataSourceCache
@@ -148,14 +128,4 @@ func getUserByNameFn(c *rc.DataSourceCache, searchField string, ctx context.Cont
 	})
 	return userId, diag
 
-}
-
-func emailorNameDisambiguation(searchField string) (string, string) {
-	emailField := "email"
-	nameField := "name"
-	_, err := mail.ParseAddress(searchField)
-	if err == nil {
-		return searchField, emailField
-	}
-	return searchField, nameField
 }

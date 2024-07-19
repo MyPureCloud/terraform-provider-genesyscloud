@@ -28,7 +28,7 @@ type getAllUserFunc func(ctx context.Context, p *userProxy) (*[]platformclientv2
 type getUserIdByNameFunc func(ctx context.Context, p *userProxy, name string) (id string, retryable bool, response *platformclientv2.APIResponse, err error)
 type getUserByIdFunc func(ctx context.Context, p *userProxy, id string, expand []string, state string) (user *platformclientv2.User, response *platformclientv2.APIResponse, err error)
 type updateUserFunc func(ctx context.Context, p *userProxy, id string, updateUser *platformclientv2.Updateuser) (*platformclientv2.User, *platformclientv2.APIResponse, error)
-type deleteUserFunc func(ctx context.Context, p *userProxy, id string) (*platformclientv2.APIResponse, error)
+type deleteUserFunc func(ctx context.Context, p *userProxy, id string) (*interface{}, *platformclientv2.APIResponse, error)
 type patchUserWithStateFunc func(ctx context.Context, p *userProxy, id string, updateUser *platformclientv2.Updateuser) (*platformclientv2.User, *platformclientv2.APIResponse, error)
 
 /*
@@ -120,7 +120,7 @@ func (p *userProxy) updateUser(ctx context.Context, id string, updateUser *platf
 }
 
 // deleteUser deletes a Genesys Cloud User by Id
-func (p *userProxy) deleteUser(ctx context.Context, id string) (*platformclientv2.APIResponse, error) {
+func (p *userProxy) deleteUser(ctx context.Context, id string) (*interface{}, *platformclientv2.APIResponse, error) {
 	return p.deleteUserAttr(ctx, p, id)
 }
 
@@ -131,11 +131,26 @@ func (p *userProxy) patchUserWithState(ctx context.Context, id string, updateUse
 
 // createUserFn is an implementation function for creating a Genesys Cloud user
 func createUserFn(ctx context.Context, p *userProxy, createUser *platformclientv2.Createuser) (*platformclientv2.User, *platformclientv2.APIResponse, error) {
-	user, apiResponse, err := p.userApi.PostUsers(*createUser)
-	if err != nil {
-		return nil, apiResponse, fmt.Errorf("Faile to create user: %s", err)
-	}
-	return user, apiResponse, nil
+	return p.userApi.PostUsers(*createUser)
+}
+
+// getUserByIdFn is an implementation of the function to get a Genesys Cloud user by Id
+func getUserByIdFn(ctx context.Context, p *userProxy, id string, expand []string, state string) (user *platformclientv2.User, response *platformclientv2.APIResponse, err error) {
+	return p.userApi.GetUser(id, expand, "", state)
+}
+
+// updateUserFn is an implementation of the function to update a Genesys Cloud user
+func updateUserFn(ctx context.Context, p *userProxy, id string, updateUser *platformclientv2.Updateuser) (*platformclientv2.User, *platformclientv2.APIResponse, error) {
+	return p.userApi.PatchUser(id, *updateUser)
+}
+
+// deleteUserFn is an implementation function for deleting a Genesys Cloud user
+func deleteUserFn(ctx context.Context, p *userProxy, id string) (*interface{}, *platformclientv2.APIResponse, error) {
+	return p.userApi.DeleteUser(id)
+}
+
+func patchUserWithStateFn(ctx context.Context, p *userProxy, id string, updateUser *platformclientv2.Updateuser) (*platformclientv2.User, *platformclientv2.APIResponse, error) {
+	return p.userApi.PatchUser(id, *updateUser)
 }
 
 // getAllUserFn is the implementation for retrieving all user in Genesys Cloud
@@ -208,40 +223,4 @@ func getUserIdByNameFn(ctx context.Context, p *userProxy, name string) (id strin
 	}
 
 	return "", true, apiResponse, fmt.Errorf("Unable to find user wiht name %s", name)
-}
-
-// getUserByIdFn is an implementation of the function to get a Genesys Cloud user by Id
-func getUserByIdFn(ctx context.Context, p *userProxy, id string, expand []string, state string) (user *platformclientv2.User, response *platformclientv2.APIResponse, err error) {
-	userLocal, apiResponse, err := p.userApi.GetUser(id, expand, "", state)
-	if err != nil {
-		return nil, apiResponse, fmt.Errorf("Failed to retrieve user by id %s: %s", id, err)
-	}
-	return userLocal, apiResponse, nil
-}
-
-// updateUserFn is an implementation of the function to update a Genesys Cloud user
-func updateUserFn(ctx context.Context, p *userProxy, id string, updateUser *platformclientv2.Updateuser) (*platformclientv2.User, *platformclientv2.APIResponse, error) {
-	userResp, apiResponse, errPatch := p.userApi.PatchUser(id, *updateUser)
-	if errPatch != nil {
-		return nil, apiResponse, fmt.Errorf("Failed to update user %s error: %s", id, errPatch)
-	}
-	return userResp, apiResponse, nil
-}
-
-// deleteUserFn is an implementation function for deleting a Genesys Cloud user
-func deleteUserFn(ctx context.Context, p *userProxy, id string) (*platformclientv2.APIResponse, error) {
-	_, resp, err := p.userApi.DeleteUser(id)
-	if err != nil {
-		return resp, fmt.Errorf("Failed to delete user: %s", err)
-	}
-
-	return resp, nil
-}
-
-func patchUserWithStateFn(ctx context.Context, p *userProxy, id string, updateUser *platformclientv2.Updateuser) (*platformclientv2.User, *platformclientv2.APIResponse, error) {
-	updateUserResp, apiResponse, errPatch := p.userApi.PatchUser(id, *updateUser)
-	if errPatch != nil {
-		return nil, apiResponse, fmt.Errorf("Failed to update user %s error: %s", id, errPatch)
-	}
-	return updateUserResp, apiResponse, nil
 }
