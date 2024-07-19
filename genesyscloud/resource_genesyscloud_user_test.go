@@ -9,6 +9,7 @@ import (
 	routinglanguage "terraform-provider-genesyscloud/genesyscloud/routing_language"
 	routingUtilization "terraform-provider-genesyscloud/genesyscloud/routing_utilization"
 	routingUtilizationLabel "terraform-provider-genesyscloud/genesyscloud/routing_utilization_label"
+	extensionPool "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_extension_pool"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 	"time"
@@ -180,19 +181,34 @@ func generateUserWithCustomAttrs(resourceID string, email string, name string, a
 func TestAccResourceUserAddresses(t *testing.T) {
 	t.Parallel()
 	var (
-		addrUserResource1 = "test-user-addr"
-		addrUserName      = "Nancy Terraform"
-		addrEmail1        = "terraform-" + uuid.NewString() + "@user.com"
-		addrEmail2        = "terraform-" + uuid.NewString() + "@user.com"
-		addrEmail3        = "terraform-" + uuid.NewString() + "@user.com"
-		addrPhone1        = "+13174269078"
-		addrPhone2        = "+441434634996"
-		addrPhoneExt      = "1234"
-		phoneMediaType    = "PHONE"
-		smsMediaType      = "SMS"
-		addrTypeWork      = "WORK"
-		addrTypeHome      = "HOME"
+		addrUserResource1         = "test-user-addr1"
+		addrUserResource2         = "test-user-addr2"
+		addrUserName1             = "Nancy Terraform"
+		addrUserName2             = "Oliver Tofu"
+		addrEmail1                = "terraform-" + uuid.NewString() + "@user.com"
+		addrEmail2                = "terraform-" + uuid.NewString() + "@user.com"
+		addrEmail3                = "terraform-" + uuid.NewString() + "@user.com"
+		addrPhone1                = "+13174269078"
+		addrPhone2                = "+441434634996"
+		addrPhoneExt1             = "1234"
+		addrPhoneExt2             = "1345"
+		phoneMediaType            = "PHONE"
+		smsMediaType              = "SMS"
+		addrTypeWork              = "WORK"
+		addrTypeHome              = "HOME"
+		extensionPoolResource1    = "test-extensionpool1" + uuid.NewString()
+		extensionPoolStartNumber1 = "1000"
+		extensionPoolEndNumber1   = "2000"
 	)
+
+	extensionPoolResource := extensionPool.ExtensionPoolStruct{
+		ResourceID:  extensionPoolResource1,
+		StartNumber: extensionPoolStartNumber1,
+		EndNumber:   extensionPoolEndNumber1,
+		Description: util.NullValue, // No description
+	}
+
+	extensionPool.DeleteExtensionPoolWithNumber(extensionPoolStartNumber1)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
@@ -203,7 +219,7 @@ func TestAccResourceUserAddresses(t *testing.T) {
 				Config: generateUserWithCustomAttrs(
 					addrUserResource1,
 					addrEmail1,
-					addrUserName,
+					addrUserName1,
 					generateUserAddresses(
 						generateUserPhoneAddress(
 							strconv.Quote(addrPhone1),
@@ -216,11 +232,13 @@ func TestAccResourceUserAddresses(t *testing.T) {
 							strconv.Quote(addrTypeHome),
 						),
 					),
-				),
+					fmt.Sprintf("depends_on = [%s.%s]", extensionPool.ResourceName, extensionPoolResource1),
+				) + extensionPool.GenerateExtensionPoolResource(&extensionPoolResource),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_user."+addrUserResource1, "email", addrEmail1),
-					resource.TestCheckResourceAttr("genesyscloud_user."+addrUserResource1, "name", addrUserName),
+					resource.TestCheckResourceAttr("genesyscloud_user."+addrUserResource1, "name", addrUserName1),
 					resource.TestCheckResourceAttr("genesyscloud_user."+addrUserResource1, "addresses.0.phone_numbers.0.number", addrPhone1),
+					resource.TestCheckNoResourceAttr("genesyscloud_user."+addrUserResource1, "addresses.0.phone_numbers.0.extension"),
 					resource.TestCheckResourceAttr("genesyscloud_user."+addrUserResource1, "addresses.0.phone_numbers.0.media_type", phoneMediaType),
 					resource.TestCheckResourceAttr("genesyscloud_user."+addrUserResource1, "addresses.0.phone_numbers.0.type", addrTypeWork),
 					resource.TestCheckResourceAttr("genesyscloud_user."+addrUserResource1, "addresses.0.other_emails.0.address", addrEmail2),
@@ -238,13 +256,13 @@ func TestAccResourceUserAddresses(t *testing.T) {
 				Config: generateUserWithCustomAttrs(
 					addrUserResource1,
 					addrEmail1,
-					addrUserName,
+					addrUserName1,
 					generateUserAddresses(
 						generateUserPhoneAddress(
 							strconv.Quote(addrPhone2),
 							strconv.Quote(smsMediaType),
 							strconv.Quote(addrTypeHome),
-							strconv.Quote(addrPhoneExt),
+							strconv.Quote(addrPhoneExt1),
 						),
 						generateUserEmailAddress(
 							strconv.Quote(addrEmail3),
@@ -254,13 +272,39 @@ func TestAccResourceUserAddresses(t *testing.T) {
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_user."+addrUserResource1, "email", addrEmail1),
-					resource.TestCheckResourceAttr("genesyscloud_user."+addrUserResource1, "name", addrUserName),
+					resource.TestCheckResourceAttr("genesyscloud_user."+addrUserResource1, "name", addrUserName1),
 					resource.TestCheckResourceAttr("genesyscloud_user."+addrUserResource1, "addresses.0.phone_numbers.0.number", addrPhone2),
 					resource.TestCheckResourceAttr("genesyscloud_user."+addrUserResource1, "addresses.0.phone_numbers.0.media_type", smsMediaType),
 					resource.TestCheckResourceAttr("genesyscloud_user."+addrUserResource1, "addresses.0.phone_numbers.0.type", addrTypeHome),
-					resource.TestCheckResourceAttr("genesyscloud_user."+addrUserResource1, "addresses.0.phone_numbers.0.extension", addrPhoneExt),
+					resource.TestCheckResourceAttr("genesyscloud_user."+addrUserResource1, "addresses.0.phone_numbers.0.extension", addrPhoneExt1),
 					resource.TestCheckResourceAttr("genesyscloud_user."+addrUserResource1, "addresses.0.other_emails.0.address", addrEmail3),
 					resource.TestCheckResourceAttr("genesyscloud_user."+addrUserResource1, "addresses.0.other_emails.0.type", addrTypeWork),
+				),
+			},
+			{
+				// Add a user with only extension
+				Config: generateUserWithCustomAttrs(
+					addrUserResource2,
+					addrEmail2,
+					addrUserName2,
+					generateUserAddresses(
+						generateUserPhoneAddress(
+							util.NullValue,
+							strconv.Quote(phoneMediaType),
+							strconv.Quote(addrTypeHome),
+							strconv.Quote(addrPhoneExt2),
+						),
+					),
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("genesyscloud_user."+addrUserResource2, "email", addrEmail2),
+					resource.TestCheckResourceAttr("genesyscloud_user."+addrUserResource2, "name", addrUserName2),
+					resource.TestCheckNoResourceAttr("genesyscloud_user."+addrUserResource2, "addresses.0.phone_numbers.0.number"),
+					resource.TestCheckResourceAttr("genesyscloud_user."+addrUserResource2, "addresses.0.phone_numbers.0.media_type", phoneMediaType),
+					resource.TestCheckResourceAttr("genesyscloud_user."+addrUserResource2, "addresses.0.phone_numbers.0.type", addrTypeHome),
+					resource.TestCheckResourceAttr("genesyscloud_user."+addrUserResource2, "addresses.0.phone_numbers.0.extension", addrPhoneExt2),
+					resource.TestCheckNoResourceAttr("genesyscloud_user."+addrUserResource2, "addresses.0.other_emails.0.address"),
+					resource.TestCheckNoResourceAttr("genesyscloud_user."+addrUserResource2, "addresses.0.other_emails.0.type"),
 				),
 			},
 		},
@@ -271,15 +315,27 @@ func TestAccResourceUserAddresses(t *testing.T) {
 func TestAccResourceUserPhone(t *testing.T) {
 	t.Parallel()
 	var (
-		addrUserResource1 = "test-user-addr"
-		addrUserName      = "Nancy Terraform"
-		addrEmail1        = "terraform-" + uuid.NewString() + "@user.com"
-		addrPhone1        = "+13173271898"
-		addrPhone2        = "+13173271899"
-		addrExt1          = "353"
-		phoneMediaType    = "PHONE"
-		addrTypeWork      = "WORK"
+		addrUserResource1         = "test-user-addr"
+		addrUserName              = "Nancy Terraform"
+		addrEmail1                = "terraform-" + uuid.NewString() + "@user.com"
+		addrPhone1                = "+13173271898"
+		addrPhone2                = "+13173271899"
+		addrExt1                  = "3532"
+		phoneMediaType            = "PHONE"
+		addrTypeWork              = "WORK"
+		extensionPoolResource1    = "test-extensionpool" + uuid.NewString()
+		extensionPoolStartNumber1 = "3000"
+		extensionPoolEndNumber1   = "4000"
 	)
+
+	extensionPoolResource := extensionPool.ExtensionPoolStruct{
+		ResourceID:  extensionPoolResource1,
+		StartNumber: extensionPoolStartNumber1,
+		EndNumber:   extensionPoolEndNumber1,
+		Description: util.NullValue, // No description
+	}
+
+	extensionPool.DeleteExtensionPoolWithNumber(extensionPoolStartNumber1)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
@@ -299,10 +355,12 @@ func TestAccResourceUserPhone(t *testing.T) {
 							strconv.Quote(addrPhone1), // extension
 						),
 					),
-				),
+					fmt.Sprintf("depends_on = [%s.%s]", extensionPool.ResourceName, extensionPoolResource1),
+				) + extensionPool.GenerateExtensionPoolResource(&extensionPoolResource),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_user."+addrUserResource1, "email", addrEmail1),
 					resource.TestCheckResourceAttr("genesyscloud_user."+addrUserResource1, "name", addrUserName),
+					resource.TestCheckNoResourceAttr("genesyscloud_user."+addrUserResource1, "addresses.0.phone_numbers.0.number"),
 					resource.TestCheckResourceAttr("genesyscloud_user."+addrUserResource1, "addresses.0.phone_numbers.0.extension", addrPhone1),
 					resource.TestCheckResourceAttr("genesyscloud_user."+addrUserResource1, "addresses.0.phone_numbers.0.media_type", phoneMediaType),
 					resource.TestCheckResourceAttr("genesyscloud_user."+addrUserResource1, "addresses.0.phone_numbers.0.type", addrTypeWork),
@@ -325,6 +383,7 @@ func TestAccResourceUserPhone(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_user."+addrUserResource1, "email", addrEmail1),
 					resource.TestCheckResourceAttr("genesyscloud_user."+addrUserResource1, "name", addrUserName),
+					resource.TestCheckNoResourceAttr("genesyscloud_user."+addrUserResource1, "addresses.0.phone_numbers.0.number"),
 					resource.TestCheckResourceAttr("genesyscloud_user."+addrUserResource1, "addresses.0.phone_numbers.0.extension", addrPhone2),
 					resource.TestCheckResourceAttr("genesyscloud_user."+addrUserResource1, "addresses.0.phone_numbers.0.media_type", phoneMediaType),
 					resource.TestCheckResourceAttr("genesyscloud_user."+addrUserResource1, "addresses.0.phone_numbers.0.type", addrTypeWork),
@@ -347,6 +406,7 @@ func TestAccResourceUserPhone(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_user."+addrUserResource1, "email", addrEmail1),
 					resource.TestCheckResourceAttr("genesyscloud_user."+addrUserResource1, "name", addrUserName),
+					resource.TestCheckNoResourceAttr("genesyscloud_user."+addrUserResource1, "addresses.0.phone_numbers.0.extension"),
 					resource.TestCheckResourceAttr("genesyscloud_user."+addrUserResource1, "addresses.0.phone_numbers.0.number", addrPhone2),
 					resource.TestCheckResourceAttr("genesyscloud_user."+addrUserResource1, "addresses.0.phone_numbers.0.media_type", phoneMediaType),
 					resource.TestCheckResourceAttr("genesyscloud_user."+addrUserResource1, "addresses.0.phone_numbers.0.type", addrTypeWork),

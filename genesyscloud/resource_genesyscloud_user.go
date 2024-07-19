@@ -9,6 +9,7 @@ import (
 	routingUtilization "terraform-provider-genesyscloud/genesyscloud/routing_utilization"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"terraform-provider-genesyscloud/genesyscloud/util/constants"
+	"terraform-provider-genesyscloud/genesyscloud/util/feature_toggles"
 	"terraform-provider-genesyscloud/genesyscloud/validators"
 	"time"
 
@@ -958,33 +959,74 @@ func flattenUserAddresses(d *schema.ResourceData, addresses *[]platformclientv2.
 				phoneNumber := make(map[string]interface{})
 				phoneNumber["media_type"] = *address.MediaType
 
-				// Strip off any parentheses from phone numbers
-				if address.Address != nil {
-					phoneNumber["number"] = strings.Trim(*address.Address, "()")
-				} else if address.Display != nil {
-					// Some numbers are only returned in Display
-					isNumber, isExtension := getNumbers(d, i)
+				if feature_toggles.NewUserAddressesLogicExists() {
+					log.Printf("Feature toggle %s is set. Using new User Addressing logic.", feature_toggles.NewUserAddressesLogicToggleName())
+					// PHONE and SMS Addresses have four different ways they can return in the API
+					// We need to be able to handle them all, and strip off any parentheses that can surround
+					// values
 
-					if isNumber && phoneNumber["number"] != "" {
-						phoneNumber["number"] = strings.Trim(*address.Display, "()")
+					//     	1.) Addresses that return an "address" field are phone numbers without extensions
+					if address.Address != nil {
+						phoneNumber["number"], _ = util.FormatAsE164Number(strings.Trim(*address.Address, "()"))
 					}
-					if isExtension {
+
+					// 		2.) Addresses that return an "extension" field that matches the "display" field are
+					//          true internal extensions that have been mapped to an extension pool
+					if address.Extension != nil {
+						if address.Display != nil {
+							if *address.Extension == *address.Display {
+								phoneNumber["extension"] = strings.Trim(*address.Extension, "()")
+							}
+						}
+					}
+
+					// 		3.) Addresses that include both an "extension" and "display" field, but they do not
+					//          match indicate that this is a phone number plus an extension
+					if address.Extension != nil {
+						if address.Display != nil {
+							if *address.Extension != *address.Display {
+								phoneNumber["extension"] = *address.Extension
+								phoneNumber["number"], _ = util.FormatAsE164Number(strings.Trim(*address.Display, "()"))
+							}
+						}
+					}
+
+					// 		4.) Addresses that only include a "display" field (but not "address" or "extension") are
+					//          considered an extension that has not been mapped to an internal extension pool yet.
+					if address.Address == nil && address.Extension == nil && address.Display != nil {
 						phoneNumber["extension"] = strings.Trim(*address.Display, "()")
 					}
 
-					if !isNumber && !isExtension {
-						if address.Extension == nil {
-							phoneNumber["extension"] = strings.Trim(*address.Display, "()")
-						} else if phoneNumber["number"] != "" {
+				} else {
+
+					// Strip off any parentheses from phone numbers
+					if address.Address != nil {
+						phoneNumber["number"] = strings.Trim(*address.Address, "()")
+					} else if address.Display != nil {
+						// Some numbers are only returned in Display
+						isNumber, isExtension := getNumbers(d, i)
+
+						if isNumber && phoneNumber["number"] != "" {
 							phoneNumber["number"] = strings.Trim(*address.Display, "()")
 						}
+						if isExtension {
+							phoneNumber["extension"] = strings.Trim(*address.Display, "()")
+						}
+
+						if !isNumber && !isExtension {
+							if address.Extension == nil {
+								phoneNumber["extension"] = strings.Trim(*address.Display, "()")
+							} else if phoneNumber["number"] != "" {
+								phoneNumber["number"] = strings.Trim(*address.Display, "()")
+							}
+						}
 					}
-				}
 
-				if address.Extension != nil {
-					phoneNumber["extension"] = *address.Extension
-				}
+					if address.Extension != nil {
+						phoneNumber["extension"] = *address.Extension
+					}
 
+				}
 				if address.VarType != nil {
 					phoneNumber["type"] = *address.VarType
 				}

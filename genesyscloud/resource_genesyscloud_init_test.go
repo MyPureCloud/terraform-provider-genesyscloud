@@ -9,12 +9,13 @@ import (
 	cMessagingSettings "terraform-provider-genesyscloud/genesyscloud/conversations_messaging_settings"
 	"terraform-provider-genesyscloud/genesyscloud/group"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
-	routinglanguage "terraform-provider-genesyscloud/genesyscloud/routing_language"
 	routingEmailDomain "terraform-provider-genesyscloud/genesyscloud/routing_email_domain"
+	routinglanguage "terraform-provider-genesyscloud/genesyscloud/routing_language"
 	routingQueue "terraform-provider-genesyscloud/genesyscloud/routing_queue"
 	routingSettings "terraform-provider-genesyscloud/genesyscloud/routing_settings"
 	routingUtilization "terraform-provider-genesyscloud/genesyscloud/routing_utilization"
 	routingUtilizationLabel "terraform-provider-genesyscloud/genesyscloud/routing_utilization_label"
+	extensionPool "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_extension_pool"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -69,7 +70,7 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_architect_schedules"] = architectSchedules.ResourceArchitectSchedules()
 	providerResources["genesyscloud_routing_utilization_label"] = routingUtilizationLabel.ResourceRoutingUtilizationLabel()
 	providerResources["genesyscloud_conversations_messaging_settings"] = cMessagingSettings.ResourceConversationsMessagingSettings()
-
+	providerResources["genesyscloud_telephony_providers_edges_extension_pool"] = extensionPool.ResourceTelephonyExtensionPool()
 }
 
 func (r *registerTestInstance) registerTestDataSources() {
