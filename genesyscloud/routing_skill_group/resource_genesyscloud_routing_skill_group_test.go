@@ -520,12 +520,11 @@ resource "genesyscloud_routing_skill_group" "%s" {
 				ResourceName:            "genesyscloud_routing_skill_group." + skillGroupResourceId,
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"member_division_ids"},
+				ImportStateVerifyIgnore: []string{"member_divisions"},
 				Destroy:                 true,
-
 			},
 		},
-		CheckDestroy: testVerifySkillGroupDestroyed,
+		CheckDestroy: testVerifySkillGroupAndUsersDestroyed,
 	})
 }
 
@@ -706,34 +705,26 @@ func testVerifySkillGroupDestroyed(state *terraform.State) error {
 	return nil
 }
 func testVerifySkillGroupAndUsersDestroyed(state *terraform.State) error {
+	config, err := provider.AuthorizeSdk()
+	if err != nil {
+		return fmt.Errorf("unexpected error while trying to authorize client in testVerifySkillGroupDestroyed : %s", err)
+	}
+	routingAPI := platformclientv2.NewRoutingApiWithConfig(config)
+	usersAPI := platformclientv2.NewUsersApiWithConfig(config)
 
-	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
-	apiClient := &routingAPI.Configuration.APIClient
-	usersAPI := platformclientv2.NewUsersApiWithConfig(sdkConfig)
-	// TODO Once this code has been released into the public API we should fix this and use the SDK
-
-	headerParams := BuildHeaderParams(routingAPI)
 	for _, rs := range state.RootModule().Resources {
 		if rs.Type == "genesyscloud_routing_skill_group" {
-			path := routingAPI.Configuration.BasePath + "/api/v2/routing/skillgroups/" + rs.Primary.ID
-			response, err := apiClient.CallAPI(path, "GET", nil, headerParams, nil, nil, "", nil)
+			group, response, err := routingAPI.GetRoutingSkillgroup(rs.Primary.ID)
 
-			skillGroupPayload := make(map[string]interface{})
-
-			if err != nil {
-				if util.IsStatus404(response) {
-					break
-				}
-
-				return fmt.Errorf("Unexpected error while trying to read skillgroup: %s", err)
+			if group != nil {
+				return fmt.Errorf("team (%s) still exists", rs.Primary.ID)
 			}
-
-			json.Unmarshal(response.RawBody, &skillGroupPayload)
-
-			if skillGroupPayload["id"] != nil && skillGroupPayload["id"] != "" {
-				return fmt.Errorf("Skill Group (%s) still exists", rs.Primary.ID)
+			if util.IsStatus404(response) {
+				continue
 			}
+			return fmt.Errorf("Unexpected error: %s", err)
 		}
+
 		if rs.Type == "genesyscloud_user" {
 			err := checkUserDeleted(rs.Primary.ID)(state)
 			if err != nil {
@@ -743,10 +734,8 @@ func testVerifySkillGroupAndUsersDestroyed(state *terraform.State) error {
 			if user != nil {
 				return fmt.Errorf("User Resource (%s) still exists", rs.Primary.ID)
 			} else if util.IsStatus404(resp) {
-				// User not found as expected
 				continue
 			} else {
-				// Unexpected error
 				return fmt.Errorf("Unexpected error: %s", err)
 			}
 		}
@@ -793,10 +782,6 @@ func checkUserDeleted(id string) resource.TestCheckFunc {
 }
 
 func isUserDeleted(id string) (bool, error) {
-<<<<<<< HEAD
-
-=======
->>>>>>> 67d2d15c (PR)
 	sdkConfig, _ := provider.AuthorizeSdk()
 	usersAPI := platformclientv2.NewUsersApiWithConfig(sdkConfig)
 	// Attempt to get the user

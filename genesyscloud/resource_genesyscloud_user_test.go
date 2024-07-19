@@ -1185,11 +1185,7 @@ func testVerifyUsersDestroyed(state *terraform.State) error {
 
 	diagErr := util.WithRetries(context.Background(), 20*time.Second, func() *retry.RetryError {
 		for _, rs := range state.RootModule().Resources {
-			if rs.Type != "genesyscloud_user" {
-				continue
-			}
-			err := checkUserDeleted(rs.Primary.ID)(state)
-			if err != nil {
+			if rs.Type != resourceName {
 				continue
 			}
 			_, resp, err := usersAPI.GetUser(rs.Primary.ID, nil, "", "")
@@ -1198,9 +1194,10 @@ func testVerifyUsersDestroyed(state *terraform.State) error {
 				if util.IsStatus404(resp) {
 					continue
 				}
-				return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_user", fmt.Sprintf("Unexpected error: %s", err), resp))
+				return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Unexpected error: %s", err), resp))
 			}
-			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_user", fmt.Sprintf("User (%s) still exists", rs.Primary.ID), resp))
+
+			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("User (%s) still exists", rs.Primary.ID), resp))
 		}
 		return nil
 	})
