@@ -1455,6 +1455,7 @@ func TestAccResourceExportManagedSitesAsData(t *testing.T) {
 		exportTestDir = filepath.Join("..", "..", ".terraform"+uuid.NewString())
 		resourceID    = "export"
 		configPath    = filepath.Join(exportTestDir, defaultTfJSONFile)
+		statePath     = filepath.Join(exportTestDir, defaultTfStateFile)
 		siteName      = "PureCloud Voice - AWS"
 	)
 
@@ -1476,7 +1477,7 @@ func TestAccResourceExportManagedSitesAsData(t *testing.T) {
 				Config: generateTfExportByIncludeFilterResources(
 					resourceID,
 					exportTestDir,
-					util.FalseValue, // include_state_file
+					util.TrueValue, // include_state_file
 					[]string{ // include_filter_resources
 						strconv.Quote("genesyscloud_telephony_providers_edges_site"),
 					},
@@ -1485,11 +1486,66 @@ func TestAccResourceExportManagedSitesAsData(t *testing.T) {
 					[]string{},
 				),
 				Check: resource.ComposeTestCheckFunc(
+					validateStateFileAsData(statePath, siteName),
 					validateExportManagedSitesAsData(configPath, siteName),
 				),
 			},
 		},
 	})
+}
+
+// validateStateFileAsData verifies that the default managed site 'PureCloud Voice - AWS' is exported as a data source
+func validateStateFileAsData(filename, siteName string) resource.TestCheckFunc {
+	return func(state *terraform.State) error {
+		_, err := os.Stat(filename)
+		if err != nil {
+			return fmt.Errorf("failed to find file %s", filename)
+		}
+
+		stateData, err := loadJsonFileToMap(filename)
+		if err != nil {
+			return err
+		}
+		log.Println("Successfully loaded export config into map variable ")
+
+		// Check if data sources exist in the exported data
+		if resources, ok := stateData["resources"].([]interface{}); ok {
+			fmt.Printf("checking that managed site with name %s is exported as data source in tf state", siteName)
+
+			// Validate each site's name
+			for _, r := range resources {
+				fmt.Printf("resource that managed site with name %s is exported as data source", r)
+
+				res, ok := r.(map[string]interface{})
+				if !ok {
+					return fmt.Errorf("unexpected structure for site %s", siteName)
+				}
+
+				name, ok := res["name"].(string)
+				if !ok {
+					return fmt.Errorf("unexpected structure for site %s", siteName)
+				}
+
+				mode, ok := res["mode"].(string)
+				if !ok {
+					return fmt.Errorf("unexpected structure for site %s", siteName)
+				}
+
+				if name == strings.ReplaceAll(siteName, " ", "_") {
+					if mode == "data" {
+						log.Printf("Site with name '%s' is correctly exported as data source", siteName)
+						return nil
+					} else {
+						log.Printf("Site with name '%s' is not correctly exported as data", siteName)
+						return nil
+					}
+				}
+			}
+			return fmt.Errorf("No Resources '%s' was not exported as data source", siteName)
+		} else {
+			return fmt.Errorf("No data sources found in exported data")
+		}
+	}
 }
 
 // validateExportManagedSitesAsData verifies that the default managed site 'PureCloud Voice - AWS' is exported as a data source
@@ -2279,6 +2335,27 @@ func TestForExportCycles(t *testing.T) {
 			t.Fatalf("Found the following potential reference cycles:\n %s", cycleResources)
 		}
 	}
+}
+
+func generateExportResourceReplaceWithDataSource(
+	resourceId,
+	directory,
+	includeStateFile,
+	exportAHcl,
+	replaceDS string,
+	includeResources,
+	dependsOn []string,
+) string {
+	return fmt.Sprintf(`
+resource "genesyscloud_tf_export" "%s" {
+	directory                    = "%s"
+  	include_state_file           = %s
+  	export_as_hcl                = %s
+  	replace_with_datasource = [%s]
+  	include_filter_resources     = [%s]
+    depends_on = [%s]
+}
+`, resourceId, directory, includeStateFile, exportAHcl, replaceDS, strings.Join(includeResources, ", "), strings.Join(dependsOn, ", "))
 }
 
 func generateExportResourceIncludeFilterWithEnableDepRes(
