@@ -2337,27 +2337,6 @@ func TestForExportCycles(t *testing.T) {
 	}
 }
 
-func generateExportResourceReplaceWithDataSource(
-	resourceId,
-	directory,
-	includeStateFile,
-	exportAHcl,
-	replaceDS string,
-	includeResources,
-	dependsOn []string,
-) string {
-	return fmt.Sprintf(`
-resource "genesyscloud_tf_export" "%s" {
-	directory                    = "%s"
-  	include_state_file           = %s
-  	export_as_hcl                = %s
-  	replace_with_datasource = [%s]
-  	include_filter_resources     = [%s]
-    depends_on = [%s]
-}
-`, resourceId, directory, includeStateFile, exportAHcl, replaceDS, strings.Join(includeResources, ", "), strings.Join(dependsOn, ", "))
-}
-
 func generateExportResourceIncludeFilterWithEnableDepRes(
 	resourceId,
 	directory,
