@@ -151,6 +151,11 @@ var (
 
 	surveyFormAnswerOptions = &schema.Resource{
 		Schema: map[string]*schema.Schema{
+			"id": {
+				Type:        schema.TypeString,
+				Description: "The ID for the answer option.",
+				Computed:    true,
+			},
 			"text": {
 				Type:     schema.TypeString,
 				Required: true,
@@ -211,9 +216,10 @@ func getAllSurveyForms(_ context.Context, clientConfig *platformclientv2.Configu
 
 func SurveyFormExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
-		GetResourcesFunc: provider.GetAllWithPooledClient(getAllSurveyForms),
-		RefAttrs:         map[string]*resourceExporter.RefAttrSettings{}, // No references
-		AllowZeroValues:  []string{"question_groups.questions.answer_options.value"},
+		GetResourcesFunc:   provider.GetAllWithPooledClient(getAllSurveyForms),
+		RefAttrs:           map[string]*resourceExporter.RefAttrSettings{}, // No references
+		AllowZeroValues:    []string{"question_groups.questions.answer_options.value"},
+		ExcludedAttributes: []string{"question_groups.questions.answer_options.id"},
 	}
 }
 
@@ -569,7 +575,7 @@ func flattenSurveyQuestions(questions *[]platformclientv2.Surveyquestion) []inte
 		return nil
 	}
 
-	questionList := []interface{}{}
+	var questionList []interface{}
 
 	for _, question := range *questions {
 		questionMap := make(map[string]interface{})

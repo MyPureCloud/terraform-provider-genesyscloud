@@ -158,6 +158,10 @@ Optional:
 
 - `assistance_conditions` (Block Set) Options from which to choose an answer for this question. (see [below for nested schema](#nestedblock--question_groups--questions--answer_options--assistance_conditions))
 
+Read-Only:
+
+- `id` (String) The ID for the answer option.
+
 <a id="nestedblock--question_groups--questions--answer_options--assistance_conditions"></a>
 ### Nested Schema for `question_groups.questions.answer_options.assistance_conditions`
 
