@@ -172,7 +172,10 @@ func readSite(ctx context.Context, d *schema.ResourceData, meta interface{}) dia
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "edge_auto_update_config", currentSite.EdgeAutoUpdateConfig, flattenSdkEdgeAutoUpdateConfig)
 		resourcedata.SetNillableValue(d, "media_regions", currentSite.MediaRegions)
 
-		_ = d.Set("caller_id", util.FormatAsCalculatedE164Number(*currentSite.CallerId))
+		d.Set("caller_id", nil)
+		if currentSite.CallerId != nil && *currentSite.CallerId != "" {
+			_ = d.Set("caller_id", util.FormatAsCalculatedE164Number(*currentSite.CallerId))
+		}
 		_ = d.Set("caller_name", currentSite.CallerName)
 
 		if currentSite.PrimarySites != nil {
