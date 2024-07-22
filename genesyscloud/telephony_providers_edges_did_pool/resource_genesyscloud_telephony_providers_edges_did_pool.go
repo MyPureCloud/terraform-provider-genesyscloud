@@ -90,8 +90,8 @@ func readDidPool(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 			return nil
 		}
 
-		_ = d.Set("start_phone_number", *didPool.StartPhoneNumber)
-		_ = d.Set("end_phone_number", *didPool.EndPhoneNumber)
+		_ = d.Set("start_phone_number", util.FormatAsCalculatedE164Number(*didPool.StartPhoneNumber))
+		_ = d.Set("end_phone_number", util.FormatAsCalculatedE164Number(*didPool.EndPhoneNumber))
 
 		resourcedata.SetNillableValue(d, "description", didPool.Description)
 		resourcedata.SetNillableValue(d, "comments", didPool.Comments)

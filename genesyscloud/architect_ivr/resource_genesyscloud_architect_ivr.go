@@ -84,7 +84,8 @@ func readIvrConfig(ctx context.Context, d *schema.ResourceData, meta interface{}
 		}
 
 		_ = d.Set("name", *ivrConfig.Name)
-		_ = d.Set("dnis", lists.StringListToSetOrNil(ivrConfig.Dnis))
+		dnis := lists.Map(*ivrConfig.Dnis, util.FormatAsCalculatedE164Number)
+		_ = d.Set("dnis", lists.StringListToSetOrNil(&dnis))
 
 		resourcedata.SetNillableValue(d, "description", ivrConfig.Description)
 		resourcedata.SetNillableReference(d, "open_hours_flow_id", ivrConfig.OpenHoursFlow)

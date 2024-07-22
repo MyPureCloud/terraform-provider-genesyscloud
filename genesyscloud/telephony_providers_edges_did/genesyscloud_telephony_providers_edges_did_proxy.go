@@ -3,6 +3,7 @@ package telephony_providers_edges_did
 import (
 	"context"
 	"fmt"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
 )
@@ -84,7 +85,7 @@ func getTelephonyProvidersEdgesDidIdByDidFn(_ context.Context, t *telephonyProvi
 			break
 		}
 		for _, entity := range *dids.Entities {
-			if *entity.PhoneNumber == did {
+			if util.FormatAsCalculatedE164Number(*entity.PhoneNumber) == did {
 				return *entity.Id, false, resp, nil
 			}
 		}

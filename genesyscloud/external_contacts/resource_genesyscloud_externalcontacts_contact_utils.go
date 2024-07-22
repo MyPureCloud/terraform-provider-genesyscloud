@@ -2,6 +2,7 @@ package external_contacts
 
 import (
 	"fmt"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -89,7 +90,8 @@ func flattenPhoneNumber(phonenumber *platformclientv2.Phonenumber) []interface{}
 	resourcedata.SetMapValueIfNotNil(phonenumberInterface, "display", phonenumber.Display)
 	resourcedata.SetMapValueIfNotNil(phonenumberInterface, "extension", phonenumber.Extension)
 	resourcedata.SetMapValueIfNotNil(phonenumberInterface, "accepts_sms", phonenumber.AcceptsSMS)
-	resourcedata.SetMapValueIfNotNil(phonenumberInterface, "e164", phonenumber.E164)
+	phoneNumber := util.FormatAsCalculatedE164Number(*phonenumber.E164)
+	resourcedata.SetMapValueIfNotNil(phonenumberInterface, "e164", &phoneNumber)
 	resourcedata.SetMapValueIfNotNil(phonenumberInterface, "country_code", phonenumber.CountryCode)
 	return []interface{}{phonenumberInterface}
 }

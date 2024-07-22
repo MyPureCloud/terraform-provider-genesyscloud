@@ -967,7 +967,7 @@ func flattenUserAddresses(d *schema.ResourceData, addresses *[]platformclientv2.
 
 					//     	1.) Addresses that return an "address" field are phone numbers without extensions
 					if address.Address != nil {
-						phoneNumber["number"], _ = util.FormatAsE164Number(strings.Trim(*address.Address, "()"))
+						phoneNumber["number"] = util.FormatAsCalculatedE164Number(strings.Trim(*address.Address, "()"))
 					}
 
 					// 		2.) Addresses that return an "extension" field that matches the "display" field are
@@ -986,7 +986,7 @@ func flattenUserAddresses(d *schema.ResourceData, addresses *[]platformclientv2.
 						if address.Display != nil {
 							if *address.Extension != *address.Display {
 								phoneNumber["extension"] = *address.Extension
-								phoneNumber["number"], _ = util.FormatAsE164Number(strings.Trim(*address.Display, "()"))
+								phoneNumber["number"] = util.FormatAsCalculatedE164Number(strings.Trim(*address.Display, "()"))
 							}
 						}
 					}
@@ -1007,7 +1007,7 @@ func flattenUserAddresses(d *schema.ResourceData, addresses *[]platformclientv2.
 						isNumber, isExtension := getNumbers(d, i)
 
 						if isNumber && phoneNumber["number"] != "" {
-							phoneNumber["number"] = strings.Trim(*address.Display, "()")
+							phoneNumber["number"] = util.FormatAsCalculatedE164Number(strings.Trim(*address.Display, "()"))
 						}
 						if isExtension {
 							phoneNumber["extension"] = strings.Trim(*address.Display, "()")
@@ -1017,7 +1017,7 @@ func flattenUserAddresses(d *schema.ResourceData, addresses *[]platformclientv2.
 							if address.Extension == nil {
 								phoneNumber["extension"] = strings.Trim(*address.Display, "()")
 							} else if phoneNumber["number"] != "" {
-								phoneNumber["number"] = strings.Trim(*address.Display, "()")
+								phoneNumber["number"] = util.FormatAsCalculatedE164Number(strings.Trim(*address.Display, "()"))
 							}
 						}
 					}
