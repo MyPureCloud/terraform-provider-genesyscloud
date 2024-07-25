@@ -61,6 +61,7 @@ import (
 	routingQueueConditionalGroupRouting "terraform-provider-genesyscloud/genesyscloud/routing_queue_conditional_group_routing"
 	routingQueueOutboundEmailAddress "terraform-provider-genesyscloud/genesyscloud/routing_queue_outbound_email_address"
 	routingSettings "terraform-provider-genesyscloud/genesyscloud/routing_settings"
+	routingSkillGroup "terraform-provider-genesyscloud/genesyscloud/routing_skill_group"
 	routingSmsAddress "terraform-provider-genesyscloud/genesyscloud/routing_sms_addresses"
 	routingUtilization "terraform-provider-genesyscloud/genesyscloud/routing_utilization"
 	routingUtilizationLabel "terraform-provider-genesyscloud/genesyscloud/routing_utilization_label"
@@ -197,7 +198,7 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_quality_forms_survey"] = gcloud.ResourceSurveyForm()
 	providerResources["genesyscloud_responsemanagement_response"] = responsemanagementResponse.ResourceResponsemanagementResponse()
 	providerResources["genesyscloud_routing_sms_address"] = routingSmsAddress.ResourceRoutingSmsAddress()
-	providerResources["genesyscloud_routing_skill_group"] = gcloud.ResourceRoutingSkillGroup()
+	providerResources["genesyscloud_routing_skill_group"] = routingSkillGroup.ResourceRoutingSkillGroup()
 	providerResources["genesyscloud_telephony_providers_edges_did_pool"] = didPool.ResourceTelephonyDidPool()
 	providerResources["genesyscloud_script"] = scripts.ResourceScript()
 
@@ -276,7 +277,7 @@ func (r *registerTestInstance) registerTestExporters() {
 	RegisterExporter("genesyscloud_routing_queue_outbound_email_address", routingQueueOutboundEmailAddress.OutboundRoutingQueueOutboundEmailAddressExporter())
 	RegisterExporter("genesyscloud_routing_settings", routingSettings.RoutingSettingsExporter())
 	RegisterExporter("genesyscloud_routing_skill", gcloud.RoutingSkillExporter())
-	RegisterExporter("genesyscloud_routing_skill_group", gcloud.ResourceSkillGroupExporter())
+	RegisterExporter("genesyscloud_routing_skill_group", routingSkillGroup.ResourceSkillGroupExporter())
 	RegisterExporter("genesyscloud_routing_sms_address", routingSmsAddress.RoutingSmsAddressExporter())
 	RegisterExporter("genesyscloud_routing_utilization", routingUtilization.RoutingUtilizationExporter())
 	RegisterExporter("genesyscloud_routing_utilization_label", routingUtilizationLabel.RoutingUtilizationLabelExporter())

@@ -3,6 +3,7 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
+	"log"
 	"strconv"
 	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
@@ -1200,6 +1201,7 @@ func testVerifyUsersDestroyed(state *terraform.State) error {
 				}
 				return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_user", fmt.Sprintf("Unexpected error: %s", err), resp))
 			}
+
 			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_user", fmt.Sprintf("User (%s) still exists", rs.Primary.ID), resp))
 		}
 		return nil
@@ -1211,6 +1213,46 @@ func testVerifyUsersDestroyed(state *terraform.State) error {
 
 	// Success. All users destroyed
 	return nil
+}
+
+func checkUserDeleted(id string) resource.TestCheckFunc {
+	log.Printf("Fetching user with ID: %s\n", id)
+	return func(s *terraform.State) error {
+		maxAttempts := 30
+		for i := 0; i < maxAttempts; i++ {
+
+			deleted, err := isUserDeleted(id)
+			if err != nil {
+				return err
+			}
+			if deleted {
+				return nil
+			}
+			time.Sleep(10 * time.Second)
+		}
+		return fmt.Errorf("user %s was not deleted properly", id)
+	}
+}
+
+func isUserDeleted(id string) (bool, error) {
+	sdkConfig, _ := provider.AuthorizeSdk()
+	usersAPI := platformclientv2.NewUsersApiWithConfig(sdkConfig)
+	// Attempt to get the user
+	_, response, err := usersAPI.GetUser(id, nil, "", "")
+
+	// Check if the user is not found (deleted)
+	if response != nil && response.StatusCode == 404 {
+		return true, nil // User is deleted
+	}
+
+	// Handle other errors
+	if err != nil {
+		log.Printf("Error fetching user: %v", err)
+		return false, err
+	}
+
+	// If user is found, it means the user is not deleted
+	return false, nil
 }
 
 func validateUserSkill(userResourceName string, skillResourceName string, proficiency string) resource.TestCheckFunc {
