@@ -31,6 +31,7 @@ resource "genesyscloud_task_management_worktype_status" "worktype_status" {
   default_destination_status_id   = genesyscloud_task_management_worktype_status.status1.id
   status_transition_delay_seconds = 86500
   status_transition_time          = "04:20:00"
+  default                         = false
 }
 ```
 
