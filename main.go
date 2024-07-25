@@ -16,6 +16,7 @@ import (
 	userPrompt "terraform-provider-genesyscloud/genesyscloud/architect_user_prompt"
 	authRole "terraform-provider-genesyscloud/genesyscloud/auth_role"
 	authorizatioProduct "terraform-provider-genesyscloud/genesyscloud/authorization_product"
+	cMessageSettings "terraform-provider-genesyscloud/genesyscloud/conversations_messaging_settings"
 	employeeperformanceExternalmetricsDefinition "terraform-provider-genesyscloud/genesyscloud/employeeperformance_externalmetrics_definitions"
 	externalContacts "terraform-provider-genesyscloud/genesyscloud/external_contacts"
 	flowLogLevel "terraform-provider-genesyscloud/genesyscloud/flow_loglevel"
@@ -70,12 +71,14 @@ import (
 	routingSkillGroup "terraform-provider-genesyscloud/genesyscloud/routing_skill_group"
 	routingUtilization "terraform-provider-genesyscloud/genesyscloud/routing_utilization"
 	routingUtilizationLabel "terraform-provider-genesyscloud/genesyscloud/routing_utilization_label"
-
 	cMessageSettings "terraform-provider-genesyscloud/genesyscloud/conversations_messaging_settings"
 	routingQueueConditionalGroupRouting "terraform-provider-genesyscloud/genesyscloud/routing_queue_conditional_group_routing"
 	routingQueueOutboundEmailAddress "terraform-provider-genesyscloud/genesyscloud/routing_queue_outbound_email_address"
 	routingSettings "terraform-provider-genesyscloud/genesyscloud/routing_settings"
+	routingSkill "terraform-provider-genesyscloud/genesyscloud/routing_skill"
 	smsAddresses "terraform-provider-genesyscloud/genesyscloud/routing_sms_addresses"
+	routingUtilization "terraform-provider-genesyscloud/genesyscloud/routing_utilization"
+	routingUtilizationLabel "terraform-provider-genesyscloud/genesyscloud/routing_utilization_label"
 	"terraform-provider-genesyscloud/genesyscloud/scripts"
 	"terraform-provider-genesyscloud/genesyscloud/station"
 	workbin "terraform-provider-genesyscloud/genesyscloud/task_management_workbin"
@@ -247,6 +250,7 @@ func registerResources() {
 	journeyViews.SetRegistrar(regInstance)                                 //Registering journey views
 	routingLanguage.SetRegistrar(regInstance)                              //Registering Routing Language
 	routingEmailDomain.SetRegistrar(regInstance)                           //Registering Routing Email Domain
+	routingSkill.SetRegistrar(regInstance)                                 //Registering Routing Skill
 	cMessageSettings.SetRegistrar(regInstance)                             // Registering conversations messaging settings
 	routingSkillGroup.SetRegistrar(regInstance)                            //Registering routing skill group
 	// setting resources for Use cases  like TF export where provider is used in resource classes.

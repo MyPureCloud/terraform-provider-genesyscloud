@@ -1,4 +1,4 @@
-package genesyscloud
+package routing_skill
 
 import (
 	"context"
@@ -16,25 +16,7 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
 )
 
-// The context is now added without Timeout ,
-// since the warming up of cache will take place for the first Datasource registered during a Terraform Apply.
-func dataSourceRoutingSkill() *schema.Resource {
-	return &schema.Resource{
-		Description:        "Data source for Genesys Cloud Routing Skills. Select a skill by name.",
-		ReadWithoutTimeout: provider.ReadWithPooledClient(dataSourceRoutingSkillRead),
-		Schema: map[string]*schema.Schema{
-			"name": {
-				Description: "Skill name.",
-				Type:        schema.TypeString,
-				Required:    true,
-			},
-		},
-	}
-}
-
-var (
-	dataSourceRoutingSkillCache *rc.DataSourceCache
-)
+var dataSourceRoutingSkillCache *rc.DataSourceCache
 
 func dataSourceRoutingSkillRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	sdkConfig := m.(*provider.ProviderMeta).ClientConfig
@@ -45,8 +27,7 @@ func dataSourceRoutingSkillRead(ctx context.Context, d *schema.ResourceData, m i
 		dataSourceRoutingSkillCache = rc.NewDataSourceCache(sdkConfig, hydrateRoutingSkillCacheFn, getSkillByNameFn)
 	}
 
-	queueId, err := rc.RetrieveId(dataSourceRoutingSkillCache, "genesyscloud_routing_skill", key, ctx)
-
+	queueId, err := rc.RetrieveId(dataSourceRoutingSkillCache, resourceName, key, ctx)
 	if err != nil {
 		return err
 	}
@@ -109,11 +90,11 @@ func getSkillByNameFn(c *rc.DataSourceCache, name string, ctx context.Context) (
 		for pageNum := 1; ; pageNum++ {
 			skills, resp, getErr := routingAPI.GetRoutingSkills(pageSize, pageNum, name, nil)
 			if getErr != nil {
-				return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_routing_skill", fmt.Sprintf("error requesting skill %s | error: %s", name, getErr), resp))
+				return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("error requesting skill %s | error: %s", name, getErr), resp))
 			}
 
 			if skills.Entities == nil || len(*skills.Entities) == 0 {
-				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_routing_skill", fmt.Sprintf("no routing skills found with name %s", name), resp))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("no routing skills found with name %s", name), resp))
 			}
 
 			for _, skill := range *skills.Entities {
