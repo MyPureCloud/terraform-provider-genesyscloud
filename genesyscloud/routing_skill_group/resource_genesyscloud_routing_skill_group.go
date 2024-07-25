@@ -104,19 +104,19 @@ func readSkillGroups(ctx context.Context, d *schema.ResourceData, meta interface
 			_ = d.Set("skill_conditions", nil)
 		}
 
-		// Set member_divisions avoiding plan not empty error
+		// Set member_division_ids avoiding plan not empty error
 		memberDivIds, diagErr := readSkillGroupMemberDivisions(ctx, d, meta)
 		if diagErr != nil {
 			return retry.NonRetryableError(fmt.Errorf("%v", diagErr))
 		}
 
 		var schemaMemberDivisionIds []string
-		if divIds, ok := d.Get("member_divisions").([]interface{}); ok {
+		if divIds, ok := d.Get("member_division_ids").([]interface{}); ok {
 			schemaMemberDivisionIds = lists.InterfaceListToStrings(divIds)
 		}
 
 		memberDivisionIds := organizeMemberDivisionIdsForRead(schemaMemberDivisionIds, memberDivIds, *skillGroup.Division.Id)
-		_ = d.Set("member_divisions", memberDivisionIds)
+		_ = d.Set("member_division_ids", memberDivisionIds)
 
 		log.Printf("Read skill groups name  %s %s", d.Id(), *skillGroup.Name)
 		return cc.CheckState(d)
@@ -186,7 +186,7 @@ func deleteSkillGroups(ctx context.Context, d *schema.ResourceData, meta interfa
 func createRoutingSkillGroupsMemberDivisions(ctx context.Context, d *schema.ResourceData, meta interface{}, skillGroupDivisionIds []string, create bool) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getRoutingSkillGroupsProxy(sdkConfig)
-	memberDivIds := d.Get("member_divisions").([]interface{})
+	memberDivIds := d.Get("member_division_ids").([]interface{})
 	var reqBody platformclientv2.Skillgroupmemberdivisions
 
 	if memberDivIds == nil {

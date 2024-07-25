@@ -18,7 +18,6 @@ func SetRegistrar(regInstance registrar.Registrar) {
 	regInstance.RegisterExporter(resourceName, ResourceSkillGroupExporter())
 }
 
-
 func ResourceRoutingSkillGroup() *schema.Resource {
 	return &schema.Resource{
 		Description: `Genesys Cloud Skill Group`,
@@ -55,8 +54,8 @@ func ResourceRoutingSkillGroup() *schema.Resource {
 				Computed:         true,
 				DiffSuppressFunc: util.SuppressEquivalentJsonDiffs,
 			},
-			"member_divisions": {
-				Description: "Member divisions for this skill group.",
+			"member_division_ids": {
+				Description: "The IDs of member divisions to add or remove for this skill group. An empty array means all divisions will be removed, '*' means all divisions will be added.",
 				Type:        schema.TypeList,
 				MaxItems:    50,
 				Optional:    true,
@@ -84,8 +83,8 @@ func ResourceSkillGroupExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: provider.GetAllWithPooledClient(getAllRoutingSkillGroups),
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
-			"division_id":         {RefType: "genesyscloud_auth_division"},
-			"member_divisions": {RefType: "genesyscloud_auth_division"},
+			"division_id":      {RefType: "genesyscloud_auth_division"},
+			"member_division_ids": {RefType: "genesyscloud_auth_division"},
 		},
 		RemoveIfMissing: map[string][]string{
 			"division_id": {"division_id"},

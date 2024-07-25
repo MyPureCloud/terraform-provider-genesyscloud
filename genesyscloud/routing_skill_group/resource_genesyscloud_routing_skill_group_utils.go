@@ -11,7 +11,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-// Prepare member_divisions list to avoid an unnecessary plan not empty error
+// Prepare member_division_ids list to avoid an unnecessary plan not empty error
 func organizeMemberDivisionIdsForUpdate(schemaIds, apiIds []string) ([]string, []string) {
 	toAdd := make([]string, 0)
 	toRemove := make([]string, 0)
@@ -30,7 +30,7 @@ func organizeMemberDivisionIdsForUpdate(schemaIds, apiIds []string) ([]string, [
 	return toAdd, toRemove
 }
 
-// Prepare member_divisions list to avoid an unnecessary plan not empty error
+// Prepare member_division_ids list to avoid an unnecessary plan not empty error
 func organizeMemberDivisionIdsForRead(schemaList, apiList []string, divisionId string) []string {
 	if !lists.ItemInSlice(divisionId, schemaList) {
 		apiList = lists.RemoveStringFromSlice(divisionId, apiList)
@@ -96,7 +96,7 @@ func createListsForSkillgroupsMembersDivisions(schemaMemberDivisionIds []string,
 
 	if allMemberDivisionsSpecified(schemaMemberDivisionIds) {
 		if len(schemaMemberDivisionIds) > 1 {
-			return nil, nil, util.BuildDiagnosticError(resourceName, fmt.Sprintf(`member_divisions should not contain more than one item when the value of an item is "*"`), fmt.Errorf(`member_divisions should not contain more than one item when the value of an item is "*"`))
+			return nil, nil, util.BuildDiagnosticError(resourceName, fmt.Sprintf(`member_division_ids should not contain more than one item when the value of an item is "*"`), fmt.Errorf(`member_division_ids should not contain more than one item when the value of an item is "*"`))
 		}
 		toAdd, err := getAllAuthDivisionIds(meta)
 		return toAdd, nil, err
