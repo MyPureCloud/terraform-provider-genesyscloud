@@ -84,13 +84,13 @@ func (p *TaskManagementWorktypeProxy) getTaskManagementWorktypeByName(ctx contex
 	return p.getTaskManagementWorktypeByNameAttr(ctx, p, name)
 }
 
-// getTaskManagementWorktypeById returns a single Genesys Cloud task management worktype by Id
-func (p *TaskManagementWorktypeProxy) getTaskManagementWorktypeById(ctx context.Context, id string) (taskManagementWorktype *platformclientv2.Worktype, resp *platformclientv2.APIResponse, err error) {
+// GetTaskManagementWorktypeById returns a single Genesys Cloud task management worktype by Id
+func (p *TaskManagementWorktypeProxy) GetTaskManagementWorktypeById(ctx context.Context, id string) (taskManagementWorktype *platformclientv2.Worktype, resp *platformclientv2.APIResponse, err error) {
 	return p.getTaskManagementWorktypeByIdAttr(ctx, p, id)
 }
 
-// updateTaskManagementWorktype updates a Genesys Cloud task management worktype
-func (p *TaskManagementWorktypeProxy) updateTaskManagementWorktype(ctx context.Context, id string, taskManagementWorktype *platformclientv2.Worktypeupdate) (*platformclientv2.Worktype, *platformclientv2.APIResponse, error) {
+// UpdateTaskManagementWorktype updates a Genesys Cloud task management worktype
+func (p *TaskManagementWorktypeProxy) UpdateTaskManagementWorktype(ctx context.Context, id string, taskManagementWorktype *platformclientv2.Worktypeupdate) (*platformclientv2.Worktype, *platformclientv2.APIResponse, error) {
 	return p.updateTaskManagementWorktypeAttr(ctx, p, id, taskManagementWorktype)
 }
 

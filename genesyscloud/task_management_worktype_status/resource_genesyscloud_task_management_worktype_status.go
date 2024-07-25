@@ -3,9 +3,6 @@ package task_management_worktype_status
 import (
 	"context"
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
 	"log"
 	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
@@ -13,6 +10,10 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"terraform-provider-genesyscloud/genesyscloud/util/lists"
 	"time"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
 
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
@@ -72,12 +73,36 @@ func createTaskManagementWorktypeStatus(ctx context.Context, d *schema.ResourceD
 	}
 
 	log.Printf("Creating task management worktype %s status %s", worktypeId, *taskManagementWorktypeStatus.Name)
-	workitemStatus, resp, err := proxy.createTaskManagementWorktypeStatus(ctx, worktypeId, &taskManagementWorktypeStatus)
-	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create task management worktype %s status %s: %s", worktypeId, *taskManagementWorktypeStatus.Name, err), resp)
+	var (
+		workitemStatus *platformclientv2.Workitemstatus
+		resp *platformclientv2.APIResponse
+	)
+	diagErr := util.WithRetries(ctx, 60*time.Second, func() *retry.RetryError {
+		workitemStatus, resp, err = proxy.createTaskManagementWorktypeStatus(ctx, worktypeId, &taskManagementWorktypeStatus)
+		if err != nil {
+			// The api can throw a 400 if we operate on statuses asynchronously. Retry if we encounter this
+			if util.IsStatus400(resp) && strings.Contains(resp.ErrorMessage, "Database transaction was cancelled"){
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to create task management worktype %s status %s: %s", worktypeId, *taskManagementWorktypeStatus.Name, err), resp))
+			}
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to update task management worktype %s status %s: %s", worktypeId, *taskManagementWorktypeStatus.Name, err), resp))
+		}
+		return nil
+	})
+	if diagErr != nil {
+		return diagErr
 	}
 
 	d.SetId(worktypeId + "/" + *workitemStatus.Id)
+
+	// Check if we need to set this status as the default status on the worktype
+	if d.Get("default").(bool) {
+		log.Printf("Setting status %s as default for worktype %s", *workitemStatus.Id, worktypeId)
+		if diagErr := updateWorktypeDefaultStatus(ctx, proxy, worktypeId, *workitemStatus.Id); diagErr != nil {
+			return diagErr
+		}
+		log.Printf("Status %s set as default for worktype %s", *workitemStatus.Id, worktypeId)
+	}
+
 	log.Printf("Created task management worktype %s status %s %s", worktypeId, *workitemStatus.Id, *workitemStatus.Name)
 	return readTaskManagementWorktypeStatus(ctx, d, meta)
 }
@@ -118,6 +143,17 @@ func readTaskManagementWorktypeStatus(ctx context.Context, d *schema.ResourceDat
 		}
 		resourcedata.SetNillableValue(d, "status_transition_delay_seconds", workitemStatus.StatusTransitionDelaySeconds)
 		resourcedata.SetNillableValue(d, "status_transition_time", workitemStatus.StatusTransitionTime)
+
+		// Check if this status is the default on the worktype
+		worktype, resp, err := proxy.worktypeProxy.GetTaskManagementWorktypeById(ctx, worktypeId)
+		if err != nil {
+			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read worktype %s", worktypeId), resp))
+		}
+
+		_ = d.Set("default", false)
+		if worktype.DefaultStatus != nil && worktype.DefaultStatus.Id != nil && *worktype.DefaultStatus.Id == statusId {
+			_ = d.Set("default", true)
+		}
 
 		log.Printf("Read task management worktype %s status %s %s", worktypeId, statusId, *workitemStatus.Name)
 		return cc.CheckState(d)
@@ -162,9 +198,33 @@ func updateTaskManagementWorktypeStatus(ctx context.Context, d *schema.ResourceD
 	}
 
 	log.Printf("Updating task management worktype %s status %s %s", worktypeId, statusId, *taskManagementWorktypeStatus.Name)
-	workitemStatus, resp, err := proxy.updateTaskManagementWorktypeStatus(ctx, worktypeId, statusId, &taskManagementWorktypeStatus)
-	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update task management worktype %s status %s: %s", worktypeId, statusId, err), resp)
+
+	var (
+		workitemStatus *platformclientv2.Workitemstatus
+		resp *platformclientv2.APIResponse
+	)
+	diagErr := util.WithRetries(ctx, 60*time.Second, func() *retry.RetryError {
+		workitemStatus, resp, err = proxy.updateTaskManagementWorktypeStatus(ctx, worktypeId, statusId, &taskManagementWorktypeStatus)
+		if err != nil {
+			// The api can throw a 400 if we operate on statuses asynchronously. Retry if we encounter this
+			if util.IsStatus400(resp) && strings.Contains(resp.ErrorMessage, "Database transaction was cancelled"){
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to update task management worktype %s status %s: %s", worktypeId, statusId, err), resp))
+			}
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to update task management worktype %s status %s: %s", worktypeId, statusId, err), resp))
+		}
+		return nil
+	})
+	if diagErr != nil {
+		return diagErr
+	}
+
+	// Check if we need to set this status as the default status on the worktype
+	if d.Get("default").(bool) {
+		log.Printf("Setting status %s as default for worktype %s", statusId, worktypeId)
+		if diagErr := updateWorktypeDefaultStatus(ctx, proxy, worktypeId, *workitemStatus.Id); diagErr != nil {
+			return diagErr
+		}
+		log.Printf("Status %s set as default for worktype %s", statusId, worktypeId)
 	}
 
 	log.Printf("Updated task management worktype %s status %s %s", worktypeId, *workitemStatus.Id, *workitemStatus.Id)
@@ -186,10 +246,27 @@ func deleteTaskManagementWorktypeStatus(ctx context.Context, d *schema.ResourceD
 		}
 	}
 
+	// Can't delete the status if it's the default on the worktype
+	if d.Get("default").(bool) {
+		log.Printf("Unable to delete default status %s  for worktype %s", statusId, worktypeId)
+		return nil
+	}
+
 	log.Printf("Deleting task management worktype %s status %s", worktypeId, statusId)
-	resp, err = proxy.deleteTaskManagementWorktypeStatus(ctx, worktypeId, statusId)
-	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete task management worktype %s status %s: %s", worktypeId, statusId, err), resp)
+	
+	diagErr := util.WithRetries(ctx, 60*time.Second, func() *retry.RetryError {
+		resp, err = proxy.deleteTaskManagementWorktypeStatus(ctx, worktypeId, statusId)
+		if err != nil {
+			// The api can throw a 400 if we operate on statuses asynchronously. Retry if we encounter this
+			if util.IsStatus400(resp) && strings.Contains(resp.ErrorMessage, "Database transaction was cancelled"){
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to delete task management worktype %s status %s: %s", worktypeId, statusId, err), resp))
+			}
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to delete task management worktype %s status %s: %s", worktypeId, statusId, err), resp))
+		}
+		return nil
+	})
+	if diagErr != nil {
+		return diagErr
 	}
 
 	return util.WithRetries(ctx, 180*time.Second, func() *retry.RetryError {

@@ -77,12 +77,14 @@ func TestAccResourceTaskManagementWorktypeStatus(t *testing.T) {
 						"",
 						util.NullValue,
 						"",
+						"default = true",
 					),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrPair(resourceName+"."+statusResource1, "worktype_id", fmt.Sprintf("genesyscloud_task_management_worktype.%s", wtResourceId), "id"),
 					resource.TestCheckResourceAttr(resourceName+"."+statusResource1, "name", status1Name1),
 					resource.TestCheckResourceAttr(resourceName+"."+statusResource1, "category", status1Category),
 					resource.TestCheckResourceAttr(resourceName+"."+statusResource1, "status_transition_delay_seconds", "0"),
+					resource.TestCheckResourceAttr(resourceName+"."+statusResource1, "default", util.TrueValue),
 				),
 			},
 			{
@@ -106,7 +108,8 @@ func TestAccResourceTaskManagementWorktypeStatus(t *testing.T) {
 						fmt.Sprintf("genesyscloud_task_management_worktype_status.%s.id", statusResource2),
 						"12:04:21",
 						generateDestinationStatusIdsArray([]string{fmt.Sprintf("genesyscloud_task_management_worktype_status.%s.id", statusResource2)}),
-						generateStatusTransitionDelaySeconds(90000),
+						fmt.Sprintf("status_transition_delay_seconds = %d", 90000),
+						"default = false",
 					) +
 					// This status is used as a reference in the first status
 					GenerateWorktypeStatusResource(
@@ -117,6 +120,7 @@ func TestAccResourceTaskManagementWorktypeStatus(t *testing.T) {
 						"",
 						util.NullValue,
 						"",
+						"default = true",
 					),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrPair(resourceName+"."+statusResource1, "worktype_id", fmt.Sprintf("genesyscloud_task_management_worktype.%s", wtResourceId), "id"),
@@ -127,6 +131,8 @@ func TestAccResourceTaskManagementWorktypeStatus(t *testing.T) {
 					ValidateStatusIds(resourceName+"."+statusResource1, "default_destination_status_id", fmt.Sprintf("%s.%s", resourceName, statusResource2), "id"),
 					resource.TestCheckResourceAttr(resourceName+"."+statusResource1, "status_transition_delay_seconds", "90000"),
 					resource.TestCheckResourceAttr(resourceName+"."+statusResource1, "status_transition_time", "12:04:21"),
+					resource.TestCheckResourceAttr(resourceName+"."+statusResource1, "default", util.FalseValue),
+					resource.TestCheckResourceAttr(resourceName+"."+statusResource2, "default", util.TrueValue),
 				),
 			},
 			{
@@ -161,10 +167,6 @@ func testVerifyTaskManagementWorktypeStatusDestroyed(state *terraform.State) err
 
 	// All worktype statuses deleted
 	return nil
-}
-
-func generateStatusTransitionDelaySeconds(delaySeconds int) string {
-	return fmt.Sprintf("status_transition_delay_seconds = %d", delaySeconds)
 }
 
 func generateDestinationStatusIdsArray(destinationIds []string) string {

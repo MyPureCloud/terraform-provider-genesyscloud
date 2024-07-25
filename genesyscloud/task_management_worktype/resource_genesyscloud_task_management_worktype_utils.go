@@ -1,7 +1,6 @@
 package task_management_worktype
 
 import (
-	"context"
 	"fmt"
 	"terraform-provider-genesyscloud/genesyscloud/util/lists"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
@@ -16,12 +15,11 @@ and unmarshal data into formats consumable by Terraform and/or Genesys Cloud.
 */
 
 type worktypeConfig struct {
-	resID             string
-	name              string
-	description       string
-	divisionId        string
-	defaultStatusName string
-	defaultWorkbinId  string
+	resID            string
+	name             string
+	description      string
+	divisionId       string
+	defaultWorkbinId string
 
 	defaultDurationS    int
 	defaultExpirationS  int
@@ -44,7 +42,7 @@ func getWorktypecreateFromResourceData(d *schema.ResourceData) platformclientv2.
 		Name:                         platformclientv2.String(d.Get("name").(string)),
 		DivisionId:                   platformclientv2.String(d.Get("division_id").(string)),
 		Description:                  platformclientv2.String(d.Get("description").(string)),
-		DisableDefaultStatusCreation: platformclientv2.Bool(true),
+		DisableDefaultStatusCreation: platformclientv2.Bool(false),
 		DefaultWorkbinId:             platformclientv2.String(d.Get("default_workbin_id").(string)),
 		SchemaId:                     platformclientv2.String(d.Get("schema_id").(string)),
 		SchemaVersion:                resourcedata.GetNillableValue[int](d, "schema_version"),
@@ -120,47 +118,6 @@ func getWorktypeupdateFromResourceData(d *schema.ResourceData) platformclientv2.
 	return worktype
 }
 
-// getWorktypeupdateFromResourceData maps data from schema ResourceData object to a platformclientv2.Worktypeupdate
-func getWorktypeupdateFromResourceDataStatus(d *schema.ResourceData, statuses *[]platformclientv2.Workitemstatus) platformclientv2.Worktypeupdate {
-
-	worktype := platformclientv2.Worktypeupdate{}
-	worktype.SetField("Name", platformclientv2.String(d.Get("name").(string)))
-	if d.HasChange("default_status_name") {
-		worktype.SetField("DefaultStatusId", getStatusIdFromName(d.Get("default_status_name").(string), statuses))
-	}
-	return worktype
-}
-
-// getStatusIdFromName gets a status id from a  *[]platformclientv2.Workitemstatus by status name
-func getStatusIdFromName(statusName string, statuses *[]platformclientv2.Workitemstatus) *string {
-	if statuses == nil {
-		return nil
-	}
-
-	for _, apiStatus := range *statuses {
-		if statusName == *apiStatus.Name {
-			return apiStatus.Id
-		}
-	}
-
-	return nil
-}
-
-// getStatusIdFromName gets the status name from a  *[]platformclientv2.Workitemstatus by status id
-func getStatusNameFromId(statusId string, statuses *[]platformclientv2.Workitemstatus) *string {
-	if statuses == nil {
-		return nil
-	}
-
-	for _, apiStatus := range *statuses {
-		if statusId == *apiStatus.Id {
-			return apiStatus.Name
-		}
-	}
-
-	return nil
-}
-
 // flattenRoutingSkillReferences maps a Genesys Cloud *[]platformclientv2.Routingskillreference into a []interface{}
 func flattenRoutingSkillReferences(routingSkillReferences *[]platformclientv2.Routingskillreference) []interface{} {
 	if len(*routingSkillReferences) == 0 {
@@ -173,23 +130,6 @@ func flattenRoutingSkillReferences(routingSkillReferences *[]platformclientv2.Ro
 	}
 
 	return routingSkillReferenceList
-}
-
-// updateDefaultStatusName updates a worktype's default status name. This should be called after
-// the statuses and their references have been finalized.
-func updateDefaultStatusName(ctx context.Context, proxy *TaskManagementWorktypeProxy, d *schema.ResourceData, worktypeId string) error {
-	worktype, resp, err := proxy.getTaskManagementWorktypeById(ctx, worktypeId)
-	if err != nil {
-		return fmt.Errorf("failed to get task management worktype: %s", err)
-	}
-
-	taskManagementWorktype := getWorktypeupdateFromResourceDataStatus(d, worktype.Statuses)
-	_, resp, err = proxy.updateTaskManagementWorktype(ctx, *worktype.Id, &taskManagementWorktype)
-	if err != nil {
-		return fmt.Errorf("failed to update worktype's default status name %s %v", err, resp)
-	}
-
-	return nil
 }
 
 // GenerateWorktypeResourceBasic generates a terraform config string for a basic worktype

@@ -55,11 +55,6 @@ func ResourceTaskManagementWorktype() *schema.Resource {
 				Computed:    true,
 				Type:        schema.TypeString,
 			},
-			`default_status_name`: {
-				Description: `The name of the default status for Workitems created from the Worktype. This status should be defined in 'statuses'.`,
-				Optional:    true,
-				Type:        schema.TypeString,
-			},
 			`default_workbin_id`: {
 				Description: `The default Workbin for Workitems created from the Worktype.`,
 				Required:    true,

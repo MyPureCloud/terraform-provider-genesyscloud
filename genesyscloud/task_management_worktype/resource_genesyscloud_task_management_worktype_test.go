@@ -25,7 +25,7 @@ The resource_genesyscloud_task_management_worktype_test.go contains all of the t
 tests for task_management_worktype.
 */
 
-// Basic test with create and update excluding workitem statusses
+// Basic test with create and update
 func TestAccResourceTaskManagementWorktype(t *testing.T) {
 	t.Parallel()
 	var (
@@ -63,8 +63,6 @@ func TestAccResourceTaskManagementWorktype(t *testing.T) {
 			description:      "worktype created for CX as Code test case",
 			divisionId:       fmt.Sprintf("data.genesyscloud_auth_division_home.%s.id", divData),
 			defaultWorkbinId: fmt.Sprintf("genesyscloud_task_management_workbin.%s.id", wbResourceId),
-
-			defaultStatusName: "",
 
 			defaultDurationS:    86400,
 			defaultExpirationS:  86400,

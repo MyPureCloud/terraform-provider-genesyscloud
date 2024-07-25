@@ -93,13 +93,7 @@ func (p *taskManagementWorkitemProxy) deleteTaskManagementWorkitem(ctx context.C
 
 // createTaskManagementWorkitemFn is an implementation function for creating a Genesys Cloud task management workitem
 func createTaskManagementWorkitemFn(ctx context.Context, p *taskManagementWorkitemProxy, taskManagementWorkitem *platformclientv2.Workitemcreate) (*platformclientv2.Workitem, *platformclientv2.APIResponse, error) {
-	log.Printf("Creating task management worktype: %s", *taskManagementWorkitem.Name)
-	workitem, resp, err := p.taskManagementApi.PostTaskmanagementWorkitems(*taskManagementWorkitem)
-	log.Printf("Completed call to create task management worktype %s with status code %d, correlation id %s and err %s", *taskManagementWorkitem.Name, resp.StatusCode, resp.CorrelationID, err)
-	if err != nil {
-		return nil, resp, fmt.Errorf("failed to create task management workitem: %s", err)
-	}
-	return workitem, resp, nil
+	return p.taskManagementApi.PostTaskmanagementWorkitems(*taskManagementWorkitem)
 }
 
 // getAllTaskManagementWorkitemFn is the implementation for retrieving all task management workitem in Genesys Cloud
@@ -231,27 +225,15 @@ func getTaskManagementWorkitemIdByNameFn(ctx context.Context, p *taskManagementW
 
 // getTaskManagementWorkitemByIdFn is an implementation of the function to get a Genesys Cloud task management workitem by Id
 func getTaskManagementWorkitemByIdFn(ctx context.Context, p *taskManagementWorkitemProxy, id string) (taskManagementWorkitem *platformclientv2.Workitem, resp *platformclientv2.APIResponse, err error) {
-	workitem, resp, err := p.taskManagementApi.GetTaskmanagementWorkitem(id, "")
-	if err != nil {
-		return nil, resp, fmt.Errorf("failed to retrieve task management workitem by id %s: %s", id, err)
-	}
-	return workitem, resp, nil
+	return p.taskManagementApi.GetTaskmanagementWorkitem(id, "")
 }
 
 // updateTaskManagementWorkitemFn is an implementation of the function to update a Genesys Cloud task management workitem
 func updateTaskManagementWorkitemFn(ctx context.Context, p *taskManagementWorkitemProxy, id string, taskManagementWorkitem *platformclientv2.Workitemupdate) (*platformclientv2.Workitem, *platformclientv2.APIResponse, error) {
-	workitem, resp, err := p.taskManagementApi.PatchTaskmanagementWorkitem(id, *taskManagementWorkitem)
-	if err != nil {
-		return nil, resp, fmt.Errorf("failed to update task management workitem: %s", err)
-	}
-	return workitem, resp, nil
+	return p.taskManagementApi.PatchTaskmanagementWorkitem(id, *taskManagementWorkitem)
 }
 
 // deleteTaskManagementWorkitemFn is an implementation function for deleting a Genesys Cloud task management workitem
 func deleteTaskManagementWorkitemFn(ctx context.Context, p *taskManagementWorkitemProxy, id string) (resp *platformclientv2.APIResponse, err error) {
-	resp, err = p.taskManagementApi.DeleteTaskmanagementWorkitem(id)
-	if err != nil {
-		return resp, fmt.Errorf("failed to delete task management workitem: %s", err)
-	}
-	return resp, nil
+	return p.taskManagementApi.DeleteTaskmanagementWorkitem(id)
 }

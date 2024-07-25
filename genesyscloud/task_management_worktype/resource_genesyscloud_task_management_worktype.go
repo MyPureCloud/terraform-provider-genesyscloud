@@ -58,16 +58,6 @@ func createTaskManagementWorktype(ctx context.Context, d *schema.ResourceData, m
 	log.Printf("Created the base task management worktype %s", *worktype.Id)
 	d.SetId(*worktype.Id)
 
-	// Update the worktype if 'default_status_name' is set
-	if d.HasChange("default_status_name") {
-		time.Sleep(5 * time.Second)
-		err := updateDefaultStatusName(ctx, proxy, d, *worktype.Id)
-		if err != nil {
-			return util.BuildDiagnosticError(resourceName, fmt.Sprintf("failed to update default status name of worktype"), err)
-		}
-	}
-
-	log.Printf("Created the task management worktype statuses of %s", *worktype.Id)
 	return readTaskManagementWorktype(ctx, d, meta)
 }
 
@@ -80,7 +70,7 @@ func readTaskManagementWorktype(ctx context.Context, d *schema.ResourceData, met
 	log.Printf("Reading task management worktype %s", d.Id())
 
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
-		worktype, resp, getErr := proxy.getTaskManagementWorktypeById(ctx, d.Id())
+		worktype, resp, getErr := proxy.GetTaskManagementWorktypeById(ctx, d.Id())
 		if getErr != nil {
 			if util.IsStatus404(resp) {
 				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read task management worktype %s | error: %s", d.Id(), getErr), resp))
@@ -94,13 +84,6 @@ func readTaskManagementWorktype(ctx context.Context, d *schema.ResourceData, met
 
 		if worktype.DefaultWorkbin != nil {
 			resourcedata.SetNillableValue(d, "default_workbin_id", worktype.DefaultWorkbin.Id)
-		}
-
-		// Default status can be an empty object
-		if worktype.DefaultStatus != nil && worktype.DefaultStatus.Id != nil {
-			if statusName := getStatusNameFromId(*worktype.DefaultStatus.Id, worktype.Statuses); statusName != nil {
-				_ = d.Set("default_status_name", statusName)
-			}
 		}
 
 		resourcedata.SetNillableValue(d, "default_duration_seconds", worktype.DefaultDurationSeconds)
@@ -136,26 +119,14 @@ func updateTaskManagementWorktype(ctx context.Context, d *schema.ResourceData, m
 
 	// Update the base configuration of the Worktype
 	taskManagementWorktype := getWorktypeupdateFromResourceData(d)
-	if d.HasChangesExcept("statuses", "default_status_name") {
-		worktype, resp, err := proxy.updateTaskManagementWorktype(ctx, d.Id(), &taskManagementWorktype)
-		if err != nil {
-			return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update task management worktype %s error: %s", *taskManagementWorktype.Name, err), resp)
-		}
-		log.Printf("Updated base configuration of task management worktype %s", *worktype.Id)
+
+	log.Printf("Updating worktype %s %s", d.Id(), *taskManagementWorktype.Name)
+	_, resp, err := proxy.UpdateTaskManagementWorktype(ctx, d.Id(), &taskManagementWorktype)
+	if err != nil {
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update task management worktype %s error: %s", *taskManagementWorktype.Name, err), resp)
 	}
 
-	// Update the worktype if 'default_status_name' is changed
-	// We do this last so that the statuses are surely updated first
-	if d.HasChange("default_status_name") {
-		log.Printf("Updating default status of worktype %s", d.Id())
-		time.Sleep(5 * time.Second)
-		err := updateDefaultStatusName(ctx, proxy, d, d.Id())
-		if err != nil {
-			return util.BuildDiagnosticError(resourceName, fmt.Sprintf("failed to update default status name of worktype"), err)
-		}
-	}
-
-	log.Printf("Finished updating worktype %s", d.Id())
+	log.Printf("Updated worktype %s %s", d.Id(), *taskManagementWorktype.Name)
 
 	return readTaskManagementWorktype(ctx, d, meta)
 }
@@ -171,7 +142,7 @@ func deleteTaskManagementWorktype(ctx context.Context, d *schema.ResourceData, m
 	}
 
 	return util.WithRetries(ctx, 180*time.Second, func() *retry.RetryError {
-		_, resp, err := proxy.getTaskManagementWorktypeById(ctx, d.Id())
+		_, resp, err := proxy.GetTaskManagementWorktypeById(ctx, d.Id())
 
 		if err != nil {
 			if util.IsStatus404(resp) {

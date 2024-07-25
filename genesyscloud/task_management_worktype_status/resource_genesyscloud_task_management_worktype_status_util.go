@@ -1,11 +1,15 @@
 package task_management_worktype_status
 
 import (
+	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
 	"strings"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 )
 
 // ModifyStatusIdStateValue will change the statusId before it is saved in the state file.
@@ -29,10 +33,23 @@ func SplitWorktypeStatusTerraformId(id string) (worktypeId string, statusId stri
 
 // validateSchema checks if status_transition_delay_seconds was provided with default_destination_status_id
 func validateSchema(d *schema.ResourceData) error {
-	if d.Get("default_destination_status_id") != nil {
-		if d.Get("status_transition_delay_seconds") == nil {
+	if d.Get("default_destination_status_id").(string) != "" {
+		if d.Get("status_transition_delay_seconds").(int) == 0 {
 			return fmt.Errorf("status_transition_delay_seconds is required with default_destination_status_id")
 		}
+	}
+
+	return nil
+}
+
+func updateWorktypeDefaultStatus(ctx context.Context, proxy *taskManagementWorktypeStatusProxy, worktypeId string, statusId string) diag.Diagnostics {
+	worktypeUpdate := platformclientv2.Worktypeupdate{
+		DefaultStatusId: &statusId,
+	}
+
+	_, resp, err := proxy.worktypeProxy.UpdateTaskManagementWorktype(ctx, worktypeId, &worktypeUpdate)
+	if err != nil {
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update worktype %s with default status %s.", worktypeId, statusId), resp)
 	}
 
 	return nil
