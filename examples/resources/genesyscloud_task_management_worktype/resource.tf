@@ -17,6 +17,4 @@ resource "genesyscloud_task_management_worktype" "worktype_1" {
   default_skills_ids  = [genesyscloud_routing_skill.skill_1.id, genesyscloud_routing_skill.skill_2.id]
 
   assignment_enabled = true
-
-  defaultStatusName = "Open Status"
 }

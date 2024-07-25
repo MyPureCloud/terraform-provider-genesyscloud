@@ -39,8 +39,6 @@ resource "genesyscloud_task_management_worktype" "worktype_1" {
   default_skills_ids  = [genesyscloud_routing_skill.skill_1.id, genesyscloud_routing_skill.skill_2.id]
 
   assignment_enabled = true
-
-  defaultStatusName = "Open Status"
 }
 ```
 
@@ -63,7 +61,6 @@ resource "genesyscloud_task_management_worktype" "worktype_1" {
 - `default_priority` (Number) The default priority for Workitems created from the Worktype. The valid range is between -25,000,000 and 25,000,000.
 - `default_queue_id` (String) The default queue for Workitems created from the Worktype.
 - `default_skills_ids` (List of String) The default skills for Workitems created from the Worktype.
-- `default_status_name` (String) The name of the default status for Workitems created from the Worktype. This status should be defined in 'statuses'.
 - `default_ttl_seconds` (Number) The default time to time to live in seconds for Workitems created from the Worktype.
 - `description` (String) The description of the Worktype.
 - `division_id` (String) The division to which this entity belongs.
