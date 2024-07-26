@@ -4,7 +4,6 @@ on:
     paths-ignore:
       - 'README.md'
 jobs:
-  # ensure the code builds...
   unit-tests:
     name: Unit Tests
     runs-on: ubuntu-latest
