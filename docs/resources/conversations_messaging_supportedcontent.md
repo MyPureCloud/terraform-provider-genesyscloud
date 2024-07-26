@@ -57,7 +57,7 @@ resource "genesyscloud_conversations_messaging_supportedcontent" "supported_cont
 
 Optional:
 
-- `allow` (Block List, Max: 1) Specify allowed media types for inbound and outbound messages. If this field is empty, all inbound and outbound media will be blocked. (see [below for nested schema](#nestedblock--media_types--allow))
+- `allow` (Block Set, Max: 1) Specify allowed media types for inbound and outbound messages. If this field is empty, all inbound and outbound media will be blocked. (see [below for nested schema](#nestedblock--media_types--allow))
 
 <a id="nestedblock--media_types--allow"></a>
 ### Nested Schema for `media_types.allow`
