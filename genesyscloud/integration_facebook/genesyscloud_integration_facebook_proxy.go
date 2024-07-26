@@ -100,6 +100,7 @@ func createIntegrationFacebookFn(ctx context.Context, p *integrationFacebookProx
 // getAllIntegrationFacebookFn is the implementation for retrieving all integration facebook in Genesys Cloud
 func getAllIntegrationFacebookFn(ctx context.Context, p *integrationFacebookProxy) (*[]platformclientv2.Facebookintegration, *platformclientv2.APIResponse, error) {
 	var allFacebookIntegrationRequests []platformclientv2.Facebookintegration
+	const pageSize = 100
 
 	facebookIntegrationRequests, resp, err := p.conversationsApi.GetConversationsMessagingIntegrationsFacebook(1, 100, "", "", "")
 	if err != nil {
@@ -112,7 +113,6 @@ func getAllIntegrationFacebookFn(ctx context.Context, p *integrationFacebookProx
 	allFacebookIntegrationRequests = append(allFacebookIntegrationRequests, *facebookIntegrationRequests.Entities...)
 
 	for pageNum := 2; pageNum <= *facebookIntegrationRequests.PageCount; pageNum++ {
-		const pageSize = 100
 
 		facebookIntegrationRequests, resp, err := p.conversationsApi.GetConversationsMessagingIntegrationsFacebook(pageNum, pageSize, "", "", "")
 		if err != nil {
@@ -149,7 +149,7 @@ func getIntegrationFacebookIdByNameFn(ctx context.Context, p *integrationFaceboo
 		}
 	}
 
-	return "", true, resp, fmt.Errorf("Unable to find integration facebook with name %s", name)
+	return "", true, resp, err
 }
 
 // getIntegrationFacebookByIdFn is an implementation of the function to get a Genesys Cloud integration facebook by Id

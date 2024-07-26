@@ -23,12 +23,6 @@ func getIntegrationFacebookFromResourceData(d *schema.ResourceData) platformclie
 	appId := d.Get("app_id").(string)
 	appSecret := d.Get("app_secret").(string)
 
-	if pageAccessToken != "" {
-		pageId = ""
-		userAccessToken = ""
-	} else {
-		pageAccessToken = ""
-	}
 	return platformclientv2.Facebookintegrationrequest{
 		Name:             platformclientv2.String(d.Get("name").(string)),
 		SupportedContent: &platformclientv2.Supportedcontentreference{Id: &supportedContentId},

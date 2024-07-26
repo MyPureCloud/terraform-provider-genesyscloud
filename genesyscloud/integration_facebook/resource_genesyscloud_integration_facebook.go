@@ -84,7 +84,7 @@ func readIntegrationFacebook(ctx context.Context, d *schema.ResourceData, meta i
 		resourcedata.SetNillableValue(d, "page_id", facebookIntegrationRequest.PageId)
 		resourcedata.SetNillableValue(d, "app_id", facebookIntegrationRequest.AppId)
 
-		log.Printf("Read integration facebook")
+		log.Printf("Read integration facebook %s", *facebookIntegrationRequest.Name)
 		return cc.CheckState(d)
 	})
 }
