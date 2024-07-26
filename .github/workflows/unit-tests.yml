@@ -1,5 +1,8 @@
 name: Unit Tests
-on: workflow_dispatch
+on:
+  push:
+    paths-ignore:
+      - 'README.md'
 jobs:
   unit-tests:
     name: Unit Tests
@@ -17,6 +20,6 @@ jobs:
 
       - name: Run Unit Tests
         env:
-          TF_UNIT: *
+          TF_UNIT: '*'
         run: |
           go test ./genesyscloud/... -v -run TestUnit
