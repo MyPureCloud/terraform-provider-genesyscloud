@@ -98,7 +98,7 @@ func TestUnitUploadIvrDnisChunksError(t *testing.T) {
 	architectProxy := newArchitectIvrProxy(nil)
 	architectProxy.maxDnisPerRequest = maxDnisPerRequest
 
-	// will be called on create after a chunk update fails because the ivr will need to be manually taken down, in that case
+	// Will be called on create after a chunk update fails because the ivr will need to be manually taken down, in that case
 	architectProxy.deleteArchitectIvrAttr = createMockDeleteIvrFunc(nil)
 
 	testCases := []architectIvrUploadErrorTestData{
