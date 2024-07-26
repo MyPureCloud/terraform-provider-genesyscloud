@@ -5,7 +5,7 @@ on:
       - 'README.md'
 jobs:
   # ensure the code builds...
-  build:
+  unit-tests:
     name: Unit Tests
     runs-on: ubuntu-latest
     timeout-minutes: 5

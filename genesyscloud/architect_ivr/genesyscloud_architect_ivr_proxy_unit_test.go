@@ -87,8 +87,8 @@ func TestUnitUploadIvrDnisChunksError(t *testing.T) {
 		mockGetError      = fmt.Errorf("error on proxy.GetArchitectIvr")
 		mockPostError     = fmt.Errorf("error on proxy.PostArchitectIvr")
 		mockPutError      = fmt.Errorf("error on proxy.PutArchitectIvr")
-		dnis              = []string{"123", "abc", "iii", "zzz"}
 		maxDnisPerRequest = 2
+		dnis              = []string{"123", "abc", "iii", "zzz"}
 	)
 
 	ivr := platformclientv2.Ivr{
