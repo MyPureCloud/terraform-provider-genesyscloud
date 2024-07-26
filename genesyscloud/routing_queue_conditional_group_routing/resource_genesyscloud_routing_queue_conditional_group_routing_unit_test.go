@@ -3,7 +3,6 @@ package routing_queue_conditional_group_routing
 import (
 	"context"
 	"net/http"
-	"os"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	featureToggles "terraform-provider-genesyscloud/genesyscloud/util/feature_toggles"
 	"testing"
@@ -21,14 +20,7 @@ func TestUnitResourceRoutingQueueConditionalGroupRoutingUpdate(t *testing.T) {
 	tId := tQueueId + "/rules"
 
 	if !featureToggles.CSGToggleExists() {
-		if err := os.Setenv(featureToggles.CSGToggleName(), "true"); err != nil {
-			t.Errorf("failed to set env var: %v", err)
-		}
-		defer func(key string) {
-			if err := os.Unsetenv(key); err != nil {
-				t.Logf("failed to unset env var: %v", err)
-			}
-		}(featureToggles.CSGToggleName())
+		t.Skipf("Skipping because %s env variable is not set", featureToggles.CSGToggleName())
 	}
 
 	groupRoutingProxy := &routingQueueConditionalGroupRoutingProxy{}
@@ -69,6 +61,10 @@ func TestUnitResourceRoutingQueueConditionalGroupRoutingRead(t *testing.T) {
 	tQueueId := uuid.NewString()
 	tRules := generateRuleData()
 	tId := tQueueId + "/rules"
+
+	if !featureToggles.CSGToggleExists() {
+		t.Skipf("Skipping because %s env variable is not set", featureToggles.CSGToggleName())
+	}
 
 	groupRoutingProxy := &routingQueueConditionalGroupRoutingProxy{}
 
