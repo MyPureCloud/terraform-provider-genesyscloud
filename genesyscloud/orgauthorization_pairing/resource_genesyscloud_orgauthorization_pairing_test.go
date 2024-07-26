@@ -38,6 +38,9 @@ func TestAccResourceOrgAuthorizationPairing(t *testing.T) {
 		Steps: []resource.TestStep{
 			// 1 user and 1 group
 			{
+				PreConfig: func() {
+					time.Sleep(45 * time.Second)
+				},
 				Config: generateUserWithCustomAttrs(testUserResource, testUserEmail, testUserName) + genesyscloud.GenerateBasicUserResource(
 					userResource1,
 					email1,

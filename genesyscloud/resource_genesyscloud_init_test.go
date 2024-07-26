@@ -6,14 +6,17 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/architect_flow"
 	archScheduleGroup "terraform-provider-genesyscloud/genesyscloud/architect_schedulegroups"
 	architectSchedules "terraform-provider-genesyscloud/genesyscloud/architect_schedules"
+	cMessagingSettings "terraform-provider-genesyscloud/genesyscloud/conversations_messaging_settings"
 	"terraform-provider-genesyscloud/genesyscloud/group"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
-	routinglanguage "terraform-provider-genesyscloud/genesyscloud/routing_language"
 	routingEmailDomain "terraform-provider-genesyscloud/genesyscloud/routing_email_domain"
+	routinglanguage "terraform-provider-genesyscloud/genesyscloud/routing_language"
 	routingQueue "terraform-provider-genesyscloud/genesyscloud/routing_queue"
 	routingSettings "terraform-provider-genesyscloud/genesyscloud/routing_settings"
 	routingUtilization "terraform-provider-genesyscloud/genesyscloud/routing_utilization"
 	routingUtilizationLabel "terraform-provider-genesyscloud/genesyscloud/routing_utilization_label"
+	extensionPool "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_extension_pool"
+	routingSkillGroup "terraform-provider-genesyscloud/genesyscloud/routing_skill_group"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -58,7 +61,7 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_routing_language"] = routinglanguage.ResourceRoutingLanguage()
 	providerResources["genesyscloud_routing_email_domain"] = routingEmailDomain.ResourceRoutingEmailDomain()
 	providerResources["genesyscloud_routing_skill"] = ResourceRoutingSkill()
-	providerResources["genesyscloud_routing_skill_group"] = ResourceRoutingSkillGroup()
+	providerResources["genesyscloud_routing_skill_group"] = routingSkillGroup.ResourceRoutingSkillGroup()
 	providerResources["genesyscloud_routing_settings"] = routingSettings.ResourceRoutingSettings()
 	providerResources["genesyscloud_routing_utilization"] = routingUtilization.ResourceRoutingUtilization()
 	providerResources["genesyscloud_routing_wrapupcode"] = ResourceRoutingWrapupCode()
@@ -67,7 +70,8 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_architect_schedulegroups"] = archScheduleGroup.ResourceArchitectSchedulegroups()
 	providerResources["genesyscloud_architect_schedules"] = architectSchedules.ResourceArchitectSchedules()
 	providerResources["genesyscloud_routing_utilization_label"] = routingUtilizationLabel.ResourceRoutingUtilizationLabel()
-
+	providerResources["genesyscloud_conversations_messaging_settings"] = cMessagingSettings.ResourceConversationsMessagingSettings()
+	providerResources["genesyscloud_telephony_providers_edges_extension_pool"] = extensionPool.ResourceTelephonyExtensionPool()
 }
 
 func (r *registerTestInstance) registerTestDataSources() {
@@ -96,12 +100,14 @@ func (r *registerTestInstance) registerTestDataSources() {
 	providerDataSources["genesyscloud_quality_forms_survey"] = dataSourceQualityFormsSurvey()
 	providerDataSources["genesyscloud_routing_language"] = routinglanguage.DataSourceRoutingLanguage()
 	providerDataSources["genesyscloud_routing_skill"] = dataSourceRoutingSkill()
-	providerDataSources["genesyscloud_routing_skill_group"] = dataSourceRoutingSkillGroup()
 	providerDataSources["genesyscloud_routing_email_domain"] = routingEmailDomain.DataSourceRoutingEmailDomain()
+	providerDataSources["genesyscloud_routing_skill_group"] = routingSkillGroup.DataSourceRoutingSkillGroup()
 	providerDataSources["genesyscloud_routing_wrapupcode"] = DataSourceRoutingWrapupcode()
 	providerDataSources["genesyscloud_user"] = DataSourceUser()
 	providerDataSources["genesyscloud_widget_deployment"] = dataSourceWidgetDeployments()
-	providerResources["genesyscloud_routing_utilization_label"] = routingUtilizationLabel.DataSourceRoutingUtilizationLabel()
+	providerDataSources["genesyscloud_routing_utilization_label"] = routingUtilizationLabel.DataSourceRoutingUtilizationLabel()
+	providerDataSources["genesyscloud_conversations_messaging_settings"] = cMessagingSettings.DataSourceConversationsMessagingSettings()
+
 }
 
 func initTestResources() {
