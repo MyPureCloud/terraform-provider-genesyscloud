@@ -78,7 +78,9 @@ func readSupportedContent(ctx context.Context, d *schema.ResourceData, meta inte
 		}
 
 		resourcedata.SetNillableValue(d, "name", supportedContent.Name)
-		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "media_types", supportedContent.MediaTypes, flattenMediaTypes)
+		if supportedContent.MediaTypes != nil {
+			d.Set("media_types", flattenMediaTypes(supportedContent.MediaTypes))
+		}
 
 		log.Printf("Read supported content %s %s", d.Id(), *supportedContent.Name)
 		return cc.CheckState(d)

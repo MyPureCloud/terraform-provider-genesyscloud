@@ -25,9 +25,8 @@ func SetRegistrar(regInstance registrar.Registrar) {
 	regInstance.RegisterExporter(resourceName, SupportedContentExporter())
 }
 
-// ResourceSupportedContent registers the genesyscloud_conversations_messaging_supportedcontent resource with Terraform
-func ResourceSupportedContent() *schema.Resource {
-	mediaTypeResource := &schema.Resource{
+var (
+	mediaTypeResource = &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			`type`: {
 				Description: `The media type string as defined by RFC 2046. You can define specific types such as 'image/jpeg', 'video/mpeg', or specify wild cards for a range of types, 'image/*', or all types '*/*'. See https://www.iana.org/assignments/media-types/media-types.xhtml for a list of registered media types.`,
@@ -37,7 +36,7 @@ func ResourceSupportedContent() *schema.Resource {
 		},
 	}
 
-	mediaTypeAccessResource := &schema.Resource{
+	mediaTypeAccessResource = &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			`inbound`: {
 				Description: `List of media types allowed for inbound messages from customers. If inbound messages from a customer contain media that is not in this list, the media will be dropped from the outbound message.`,
@@ -54,17 +53,21 @@ func ResourceSupportedContent() *schema.Resource {
 		},
 	}
 
-	mediaTypesResource := &schema.Resource{
+	mediaTypesResource = &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			`allow`: {
 				Description: `Specify allowed media types for inbound and outbound messages. If this field is empty, all inbound and outbound media will be blocked.`,
 				Optional:    true,
-				Type:        schema.TypeList,
+				Type:        schema.TypeSet,
 				MaxItems:    1,
 				Elem:        mediaTypeAccessResource,
 			},
 		},
 	}
+)
+
+// ResourceSupportedContent registers the genesyscloud_conversations_messaging_supportedcontent resource with Terraform
+func ResourceSupportedContent() *schema.Resource {
 
 	return &schema.Resource{
 		Description: `Genesys Cloud supported content`,
@@ -86,7 +89,7 @@ func ResourceSupportedContent() *schema.Resource {
 			`media_types`: {
 				Description: `Defines the allowable media that may be accepted for an inbound message or to be sent in an outbound message.`,
 				Optional:    true,
-				Type:        schema.TypeList,
+				Type:        schema.TypeSet,
 				MaxItems:    1,
 				Elem:        mediaTypesResource,
 			},

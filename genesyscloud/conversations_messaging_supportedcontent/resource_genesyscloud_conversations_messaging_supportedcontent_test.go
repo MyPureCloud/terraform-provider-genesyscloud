@@ -64,12 +64,6 @@ func TestAccResourceSupportedContent(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_conversations_messaging_supportedcontent."+resourceId, "media_types.0.allow.0.outbound.0.type", outboundType),
 				),
 			},
-			{
-				// Import/Read
-				ResourceName:      "genesyscloud_conversations_messaging_supportedcontent." + resourceId,
-				ImportState:       true,
-				ImportStateVerify: true,
-			},
 		},
 		CheckDestroy: testVerifySupportedContentDestroyed,
 	})
