@@ -10,7 +10,7 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
 )
 
-func buildSdkMediaUtilizations(d *schema.ResourceData) *map[string]platformclientv2.Mediautilization {
+func BuildSdkMediaUtilizations(d *schema.ResourceData) *map[string]platformclientv2.Mediautilization {
 	settings := make(map[string]platformclientv2.Mediautilization)
 
 	for sdkType, schemaType := range UtilizationMediaTypes {
@@ -42,33 +42,36 @@ func BuildSdkMediaUtilization(settings []interface{}) platformclientv2.Mediautil
 	}
 }
 
-func BuildLabelUtilizationsRequest(labelUtilizations []interface{}) map[string]LabelUtilization {
-	request := make(map[string]LabelUtilization)
+func BuildSdkLabelUtilizations(labelUtilizations []interface{}) *map[string]platformclientv2.Labelutilizationrequest {
+	request := make(map[string]platformclientv2.Labelutilizationrequest)
+
 	for _, labelUtilization := range labelUtilizations {
 		labelUtilizationMap := labelUtilization.(map[string]interface{})
+		maxCapacity := labelUtilizationMap["maximum_capacity"].(int)
 		interruptingLabelIds := lists.SetToStringList(labelUtilizationMap["interrupting_label_ids"].(*schema.Set))
 
-		request[labelUtilizationMap["label_id"].(string)] = LabelUtilization{
-			MaximumCapacity:      int32(labelUtilizationMap["maximum_capacity"].(int)),
-			InterruptingLabelIds: *interruptingLabelIds,
+		request[labelUtilizationMap["label_id"].(string)] = platformclientv2.Labelutilizationrequest{
+			MaximumCapacity:      &maxCapacity,
+			InterruptingLabelIds: interruptingLabelIds,
 		}
 	}
-	return request
+
+	return &request
 }
 
-func FlattenUtilizationSetting(settings MediaUtilization) []interface{} {
+func FlattenMediaUtilization(mediaUtilization platformclientv2.Mediautilization) []interface{} {
 	settingsMap := make(map[string]interface{})
 
-	settingsMap["maximum_capacity"] = settings.MaximumCapacity
-	settingsMap["include_non_acd"] = settings.IncludeNonAcd
-	if settings.InterruptableMediaTypes != nil {
-		settingsMap["interruptible_media_types"] = lists.StringListToSet(settings.InterruptableMediaTypes)
+	settingsMap["maximum_capacity"] = mediaUtilization.MaximumCapacity
+	settingsMap["include_non_acd"] = mediaUtilization.IncludeNonAcd
+	if mediaUtilization.InterruptableMediaTypes != nil {
+		settingsMap["interruptible_media_types"] = lists.StringListToSet(*mediaUtilization.InterruptableMediaTypes)
 	}
 
 	return []interface{}{settingsMap}
 }
 
-func FilterAndFlattenLabelUtilizations(labelUtilizations map[string]LabelUtilization, originalLabelUtilizations []interface{}) []interface{} {
+func FilterAndFlattenLabelUtilizations(labelUtilizations map[string]platformclientv2.Labelutilizationresponse, originalLabelUtilizations []interface{}) []interface{} {
 	flattenedLabelUtilizations := make([]interface{}, 0)
 
 	for _, originalLabelUtilization := range originalLabelUtilizations {
@@ -86,13 +89,13 @@ func FilterAndFlattenLabelUtilizations(labelUtilizations map[string]LabelUtiliza
 	return flattenedLabelUtilizations
 }
 
-func flattenLabelUtilization(labelId string, labelUtilization LabelUtilization) map[string]interface{} {
+func flattenLabelUtilization(labelId string, labelUtilization platformclientv2.Labelutilizationresponse) map[string]interface{} {
 	utilizationMap := make(map[string]interface{})
 
 	utilizationMap["label_id"] = labelId
 	utilizationMap["maximum_capacity"] = labelUtilization.MaximumCapacity
 	if labelUtilization.InterruptingLabelIds != nil {
-		utilizationMap["interrupting_label_ids"] = lists.StringListToSet(labelUtilization.InterruptingLabelIds)
+		utilizationMap["interrupting_label_ids"] = lists.StringListToSet(*labelUtilization.InterruptingLabelIds)
 	}
 
 	return utilizationMap
@@ -118,19 +121,4 @@ func getSdkUtilizationTypes() []string {
 	}
 	sort.Strings(types)
 	return types
-}
-
-// TODO: remove when routing skill group is refactored
-func buildHeaderParams(routingAPI *platformclientv2.RoutingApi) map[string]string {
-	headerParams := make(map[string]string)
-
-	for key := range routingAPI.Configuration.DefaultHeader {
-		headerParams[key] = routingAPI.Configuration.DefaultHeader[key]
-	}
-
-	headerParams["Authorization"] = "Bearer " + routingAPI.Configuration.AccessToken
-	headerParams["Content-Type"] = "application/json"
-	headerParams["Accept"] = "application/json"
-
-	return headerParams
 }

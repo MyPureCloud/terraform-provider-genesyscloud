@@ -8,6 +8,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"terraform-provider-genesyscloud/genesyscloud/util/constants"
+	"terraform-provider-genesyscloud/genesyscloud/validators"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -208,10 +209,10 @@ func ResourceKnowledgeDocumentV1() *schema.Resource {
 				Required:    true,
 			},
 			"language_code": {
-				Description:  "Language code",
-				Type:         schema.TypeString,
-				Required:     true,
-				ValidateFunc: validation.StringInSlice([]string{"en-US", "en-UK", "en-AU", "de-DE", "es-US", "es-ES", "fr-FR", "pt-BR", "nl-NL", "it-IT", "fr-CA"}, false),
+				Description:      "Language code",
+				Type:             schema.TypeString,
+				Required:         true,
+				ValidateDiagFunc: validators.ValidateLanguageCode,
 			},
 			"knowledge_document": {
 				Description: "Knowledge document request body",

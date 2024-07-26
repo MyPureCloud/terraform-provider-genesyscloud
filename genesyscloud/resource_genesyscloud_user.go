@@ -2,7 +2,6 @@ package genesyscloud
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"log"
 	"strings"
@@ -10,6 +9,7 @@ import (
 	routingUtilization "terraform-provider-genesyscloud/genesyscloud/routing_utilization"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"terraform-provider-genesyscloud/genesyscloud/util/constants"
+	"terraform-provider-genesyscloud/genesyscloud/util/feature_toggles"
 	"terraform-provider-genesyscloud/genesyscloud/validators"
 	"time"
 
@@ -27,12 +27,6 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
 	"github.com/nyaruka/phonenumbers"
 )
-
-type AgentUtilizationWithLabels struct {
-	Utilization       map[string]routingUtilization.MediaUtilization `json:"utilization"`
-	LabelUtilizations map[string]routingUtilization.LabelUtilization `json:"labelUtilizations"`
-	Level             string                                         `json:"level"`
-}
 
 var (
 	contactTypeEmail = "EMAIL"
@@ -531,7 +525,7 @@ func createUser(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 		return diagErr
 	}
 
-	diagErr = updateUserRoutingUtilization(d, usersAPI, sdkConfig)
+	diagErr = updateUserRoutingUtilization(d, usersAPI)
 	if diagErr != nil {
 		return diagErr
 	}
@@ -602,7 +596,7 @@ func readUser(ctx context.Context, d *schema.ResourceData, meta interface{}) dia
 		d.Set("certifications", flattenUserCertifications(currentUser.Certifications))
 		d.Set("employer_info", flattenUserEmployerInfo(currentUser.EmployerInfo))
 
-		if diagErr := readUserRoutingUtilization(d, sdkConfig); diagErr != nil {
+		if diagErr := readUserRoutingUtilization(d, usersAPI); diagErr != nil {
 			return retry.NonRetryableError(fmt.Errorf("%v", diagErr))
 		}
 
@@ -677,7 +671,7 @@ func updateUser(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 		return diagErr
 	}
 
-	diagErr = updateUserRoutingUtilization(d, usersAPI, sdkConfig)
+	diagErr = updateUserRoutingUtilization(d, usersAPI)
 	if diagErr != nil {
 		return diagErr
 	}
@@ -965,33 +959,74 @@ func flattenUserAddresses(d *schema.ResourceData, addresses *[]platformclientv2.
 				phoneNumber := make(map[string]interface{})
 				phoneNumber["media_type"] = *address.MediaType
 
-				// Strip off any parentheses from phone numbers
-				if address.Address != nil {
-					phoneNumber["number"] = strings.Trim(*address.Address, "()")
-				} else if address.Display != nil {
-					// Some numbers are only returned in Display
-					isNumber, isExtension := getNumbers(d, i)
+				if feature_toggles.NewUserAddressesLogicExists() {
+					log.Printf("Feature toggle %s is set. Using new User Addressing logic.", feature_toggles.NewUserAddressesLogicToggleName())
+					// PHONE and SMS Addresses have four different ways they can return in the API
+					// We need to be able to handle them all, and strip off any parentheses that can surround
+					// values
 
-					if isNumber && phoneNumber["number"] != "" {
-						phoneNumber["number"] = strings.Trim(*address.Display, "()")
+					//     	1.) Addresses that return an "address" field are phone numbers without extensions
+					if address.Address != nil {
+						phoneNumber["number"], _ = util.FormatAsE164Number(strings.Trim(*address.Address, "()"))
 					}
-					if isExtension {
+
+					// 		2.) Addresses that return an "extension" field that matches the "display" field are
+					//          true internal extensions that have been mapped to an extension pool
+					if address.Extension != nil {
+						if address.Display != nil {
+							if *address.Extension == *address.Display {
+								phoneNumber["extension"] = strings.Trim(*address.Extension, "()")
+							}
+						}
+					}
+
+					// 		3.) Addresses that include both an "extension" and "display" field, but they do not
+					//          match indicate that this is a phone number plus an extension
+					if address.Extension != nil {
+						if address.Display != nil {
+							if *address.Extension != *address.Display {
+								phoneNumber["extension"] = *address.Extension
+								phoneNumber["number"], _ = util.FormatAsE164Number(strings.Trim(*address.Display, "()"))
+							}
+						}
+					}
+
+					// 		4.) Addresses that only include a "display" field (but not "address" or "extension") are
+					//          considered an extension that has not been mapped to an internal extension pool yet.
+					if address.Address == nil && address.Extension == nil && address.Display != nil {
 						phoneNumber["extension"] = strings.Trim(*address.Display, "()")
 					}
 
-					if !isNumber && !isExtension {
-						if address.Extension == nil {
-							phoneNumber["extension"] = strings.Trim(*address.Display, "()")
-						} else if phoneNumber["number"] != "" {
+				} else {
+
+					// Strip off any parentheses from phone numbers
+					if address.Address != nil {
+						phoneNumber["number"] = strings.Trim(*address.Address, "()")
+					} else if address.Display != nil {
+						// Some numbers are only returned in Display
+						isNumber, isExtension := getNumbers(d, i)
+
+						if isNumber && phoneNumber["number"] != "" {
 							phoneNumber["number"] = strings.Trim(*address.Display, "()")
 						}
+						if isExtension {
+							phoneNumber["extension"] = strings.Trim(*address.Display, "()")
+						}
+
+						if !isNumber && !isExtension {
+							if address.Extension == nil {
+								phoneNumber["extension"] = strings.Trim(*address.Display, "()")
+							} else if phoneNumber["number"] != "" {
+								phoneNumber["number"] = strings.Trim(*address.Display, "()")
+							}
+						}
 					}
-				}
 
-				if address.Extension != nil {
-					phoneNumber["extension"] = *address.Extension
-				}
+					if address.Extension != nil {
+						phoneNumber["extension"] = *address.Extension
+					}
 
+				}
 				if address.VarType != nil {
 					phoneNumber["type"] = *address.VarType
 				}
@@ -1044,30 +1079,21 @@ func flattenUserEmployerInfo(empInfo *platformclientv2.Employerinfo) []interface
 	}}
 }
 
-func readUserRoutingUtilization(d *schema.ResourceData, sdkConfig *platformclientv2.Configuration) diag.Diagnostics {
+func readUserRoutingUtilization(d *schema.ResourceData, usersAPI *platformclientv2.UsersApi) diag.Diagnostics {
 	log.Printf("Getting user utilization")
 
-	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
-	apiClient := &routingAPI.Configuration.APIClient
-
-	path := fmt.Sprintf("%s/api/v2/routing/users/%s/utilization", routingAPI.Configuration.BasePath, d.Id())
-	headerParams := BuildHeaderParams(routingAPI)
-	response, err := apiClient.CallAPI(path, "GET", nil, headerParams, nil, nil, "", nil)
-
-	if err != nil {
-		if util.IsStatus404(response) {
+	agentUtilization, resp, getErr := usersAPI.GetRoutingUserUtilization(d.Id())
+	if getErr != nil {
+		if util.IsStatus404(resp) {
 			d.SetId("") // User doesn't exist
 			return nil
 		}
-		return util.BuildAPIDiagnosticError("genesyscloud_user", fmt.Sprintf("Failed to read routing utilization for user %s error: %s", d.Id(), err), response)
+		return diag.Errorf("Failed to read Routing Utilization for user %s: %s", d.Id(), getErr)
 	}
-
-	agentUtilization := &AgentUtilizationWithLabels{}
-	json.Unmarshal(response.RawBody, &agentUtilization)
 
 	if agentUtilization == nil {
 		d.Set("routing_utilization", nil)
-	} else if agentUtilization.Level == "Organization" {
+	} else if *agentUtilization.Level == "Organization" {
 		// If the settings are org-wide, set to empty to indicate no settings on the user
 		d.Set("routing_utilization", []interface{}{})
 	} else {
@@ -1075,8 +1101,8 @@ func readUserRoutingUtilization(d *schema.ResourceData, sdkConfig *platformclien
 
 		if agentUtilization.Utilization != nil {
 			for sdkType, schemaType := range routingUtilization.UtilizationMediaTypes {
-				if mediaSettings, ok := agentUtilization.Utilization[sdkType]; ok {
-					allSettings[schemaType] = routingUtilization.FlattenUtilizationSetting(mediaSettings)
+				if mediaSettings, ok := (*agentUtilization.Utilization)[sdkType]; ok {
+					allSettings[schemaType] = routingUtilization.FlattenMediaUtilization(mediaSettings)
 				}
 			}
 		}
@@ -1088,7 +1114,7 @@ func readUserRoutingUtilization(d *schema.ResourceData, sdkConfig *platformclien
 				originalLabelUtilizations := originalSettings["label_utilizations"].([]interface{})
 
 				// Only add to the state the configured labels, in the configured order, but not any extras, to help terraform with matching new and old state.
-				filteredLabelUtilizations := routingUtilization.FilterAndFlattenLabelUtilizations(agentUtilization.LabelUtilizations, originalLabelUtilizations)
+				filteredLabelUtilizations := routingUtilization.FilterAndFlattenLabelUtilizations(*agentUtilization.LabelUtilizations, originalLabelUtilizations)
 
 				allSettings["label_utilizations"] = filteredLabelUtilizations
 			} else {
@@ -1277,10 +1303,9 @@ func updateUserProfileSkills(d *schema.ResourceData, usersAPI *platformclientv2.
 	return nil
 }
 
-func updateUserRoutingUtilization(d *schema.ResourceData, usersAPI *platformclientv2.UsersApi, sdkConfig *platformclientv2.Configuration) diag.Diagnostics {
+func updateUserRoutingUtilization(d *schema.ResourceData, usersAPI *platformclientv2.UsersApi) diag.Diagnostics {
 	if d.HasChange("routing_utilization") {
 		if utilConfig := d.Get("routing_utilization").([]interface{}); utilConfig != nil {
-			var err error
 
 			log.Printf("Updating user utilization for user %s", d.Id())
 
@@ -1289,29 +1314,17 @@ func updateUserRoutingUtilization(d *schema.ResourceData, usersAPI *platformclie
 				allSettings := utilConfig[0].(map[string]interface{})
 				labelUtilizations := allSettings["label_utilizations"].([]interface{})
 
-				if labelUtilizations != nil && len(labelUtilizations) > 0 {
-					routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
-					apiClient := &routingAPI.Configuration.APIClient
-
-					path := fmt.Sprintf("%s/api/v2/routing/users/%s/utilization", routingAPI.Configuration.BasePath, d.Id())
-					headerParams := BuildHeaderParams(routingAPI)
-					requestPayload := make(map[string]interface{})
-					requestPayload["utilization"] = buildMediaTypeUtilizations(allSettings)
-
-					requestPayload["labelUtilizations"] = routingUtilization.BuildLabelUtilizationsRequest(labelUtilizations)
-					_, err = apiClient.CallAPI(path, "PUT", requestPayload, headerParams, nil, nil, "", nil)
-				} else {
-					sdkSettings := make(map[string]platformclientv2.Mediautilization)
-					for sdkType, schemaType := range routingUtilization.UtilizationMediaTypes {
-						if mediaSettings, ok := allSettings[schemaType]; ok && len(mediaSettings.([]interface{})) > 0 {
-							sdkSettings[sdkType] = routingUtilization.BuildSdkMediaUtilization(mediaSettings.([]interface{}))
-						}
+				sdkSettings := make(map[string]platformclientv2.Mediautilization)
+				for sdkType, schemaType := range routingUtilization.UtilizationMediaTypes {
+					if mediaSettings, ok := allSettings[schemaType]; ok && len(mediaSettings.([]interface{})) > 0 {
+						sdkSettings[sdkType] = routingUtilization.BuildSdkMediaUtilization(mediaSettings.([]interface{}))
 					}
-
-					_, _, err = usersAPI.PutRoutingUserUtilization(d.Id(), platformclientv2.Utilizationrequest{
-						Utilization: &sdkSettings,
-					})
 				}
+
+				_, _, err := usersAPI.PutRoutingUserUtilization(d.Id(), platformclientv2.Utilizationrequest{
+					Utilization:       &sdkSettings,
+					LabelUtilizations: routingUtilization.BuildSdkLabelUtilizations(labelUtilizations),
+				})
 
 				if err != nil {
 					return util.BuildDiagnosticError("genesyscloud_user", fmt.Sprintf("Failed to update Routing Utilization for user %s", d.Id()), err)

@@ -8,6 +8,7 @@ import (
 
 	"strings"
 
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
 	files "terraform-provider-genesyscloud/genesyscloud/util/files"
@@ -16,17 +17,15 @@ import (
 	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/nyaruka/phonenumbers"
 )
 
 func ValidatePhoneNumber(number interface{}, _ cty.Path) diag.Diagnostics {
 	if numberStr, ok := number.(string); ok {
-		phoneNumber, err := phonenumbers.Parse(numberStr, "US")
-		if err != nil {
-			return diag.Errorf("Failed to validate phone number %s: %s", numberStr, err)
-		}
 
-		formattedNum := phonenumbers.Format(phoneNumber, phonenumbers.E164)
+		formattedNum, err := util.FormatAsE164Number(numberStr)
+		if err != nil {
+			return err
+		}
 		if formattedNum != numberStr {
 			return diag.Errorf("Failed to parse number in an E.164 format.  Passed %s and expected: %s", numberStr, formattedNum)
 		}
@@ -263,4 +262,16 @@ func ValidateHexColor(color interface{}, _ cty.Path) diag.Diagnostics {
 		return nil
 	}
 	return diag.Errorf("Color %v is not a string", color)
+}
+
+// ValidateLanguageCode validates that a valid language code that Genesys Cloud supports is passed.
+func ValidateLanguageCode(lang interface{}, _ cty.Path) diag.Diagnostics {
+	langCodeList := []string{"en-US", "en-UK", "en-AU", "en-CA", "en-HK", "en-IN", "en-IE", "en-NZ", "en-PH", "en-SG", "en-ZA", "de-DE", "de-AT", "de-CH", "es-AR", "es-CO", "es-MX", "es-US", "es-ES", "fr-FR", "fr-BE", "fr-CA", "fr-CH", "pt-BR", "pt-PT", "nl-NL", "nl-BE", "it-IT", "ca-ES", "tr-TR", "sv-SE", "fi-FI", "nb-NO", "da-DK", "ja-JP", "ar-AE", "zh-CN", "zh-TW", "zh-HK", "ko-KR", "pl-PL", "hi-IN", "th-TH", "hu-HU", "vi-VN", "uk-UA"}
+	if langCode, ok := lang.(string); ok {
+		if lists.ItemInSlice(langCode, langCodeList) {
+			return nil
+		}
+		return diag.Errorf("Language code %s not found in language code list %v", langCode, langCodeList)
+	}
+	return diag.Errorf("Language code %v is not a string", lang)
 }

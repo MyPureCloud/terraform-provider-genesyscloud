@@ -30,12 +30,16 @@ resource "genesyscloud_idp_onelogin" "onelogin" {
 
 ### Required
 
-- `certificates` (List of String) PEM or DER encoded public X.509 certificates for SAML signature validation.
 - `issuer_uri` (String) Issuer URI provided by OneLogin.
 
 ### Optional
 
+- `certificates` (List of String) PEM or DER encoded public X.509 certificates for SAML signature validation.
 - `disabled` (Boolean) True if OneLogin is disabled. Defaults to `false`.
+- `name` (String) IDP OneLogin resource name
+- `relying_party_identifier` (String) String used to identify Genesys Cloud to OneLogin.
+- `slo_binding` (String) Valid values: HTTP Redirect, HTTP Post
+- `slo_uri` (String) Provided by OneLogin on app creation
 - `target_uri` (String) Target URI provided by OneLogin.
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 

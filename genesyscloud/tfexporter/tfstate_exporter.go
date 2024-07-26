@@ -52,7 +52,7 @@ func (t *TFStateFileWriter) writeTfState() diag.Diagnostics {
 			Primary:  resource.State,
 			Provider: "provider.genesyscloud",
 		}
-		tfstate.RootModule().Resources[resource.Type+"."+resource.Name] = resourceState
+		tfstate.RootModule().Resources[resource.ResourceType+resource.Type+"."+resource.Name] = resourceState
 	}
 
 	data, err := json.MarshalIndent(tfstate, "", "  ")

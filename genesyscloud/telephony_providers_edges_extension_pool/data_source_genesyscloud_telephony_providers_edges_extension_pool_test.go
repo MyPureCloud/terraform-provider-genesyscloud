@@ -23,7 +23,7 @@ func TestAccDataSourceExtensionPoolBasic(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				// Create
-				Config: generateExtensionPoolResource(&extensionPoolStruct{
+				Config: GenerateExtensionPoolResource(&ExtensionPoolStruct{
 					extensionPoolRes,
 					extensionPoolStartNumber,
 					extensionPoolEndNumber,

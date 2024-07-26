@@ -18,6 +18,7 @@ func dataSourceIvrRead(ctx context.Context, d *schema.ResourceData, m interface{
 	sdkConfig := m.(*provider.ProviderMeta).ClientConfig
 	ap := getArchitectIvrProxy(sdkConfig)
 	name := d.Get("name").(string)
+
 	// Query ivr by name. Retry in case search has not yet indexed the ivr.
 	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
 		id, retryable, resp, err := ap.getArchitectIvrIdByName(ctx, name)
