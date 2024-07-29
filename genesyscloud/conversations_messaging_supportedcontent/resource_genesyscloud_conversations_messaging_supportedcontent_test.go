@@ -37,6 +37,7 @@ func TestAccResourceSupportedContent(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config: GenerateSupportedContentResource(
+					resourceName,
 					resourceId,
 					name,
 					GenerateInboundTypeBlock(inboundType),
@@ -51,6 +52,7 @@ func TestAccResourceSupportedContent(t *testing.T) {
 			//Update and add inbound block
 			{
 				Config: GenerateSupportedContentResource(
+					resourceName,
 					resourceId,
 					name,
 					GenerateInboundTypeBlock(inboundType2),
@@ -76,18 +78,19 @@ func TestAccResourceSupportedContent(t *testing.T) {
 }
 
 func GenerateSupportedContentResource(
+	resourceName string,
 	resourceId string,
 	name string,
 	nestedBlocks ...string,
 ) string {
-	return fmt.Sprintf(`resource "`+resourceName+`" "%s" {
+	return fmt.Sprintf(`resource "%s" "%s" {
 		name = "%s"
 		media_types {
 			allow {
 				%s
 			}
 		}
-	} `, resourceId, name, strings.Join(nestedBlocks, "\n"))
+	} `, resourceName, resourceId, name, strings.Join(nestedBlocks, "\n"))
 }
 
 func GenerateInboundTypeBlock(

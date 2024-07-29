@@ -27,13 +27,7 @@ func dataSourceSupportedContentRead(ctx context.Context, d *schema.ResourceData,
 
 	key := ""
 
-	if name, ok := d.GetOk("name"); ok {
-		key = name.(string)
-	}
-
-	if d.Get("name").(string) == "" {
-		return util.BuildDiagnosticError(resourceName, "no user search field specified", nil)
-	}
+	key = d.Get("name").(string)
 
 	if dataSourceSupportedContentCache == nil {
 		dataSourceSupportedContentCache = rc.NewDataSourceCache(sdkConfig, hydrateSupportedContentCacheFn, getSupportedContentIdByName)

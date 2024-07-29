@@ -31,12 +31,14 @@ func TestAccDataSourceSupportedContent(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config: GenerateSupportedContentResource(
+					resourceName,
 					resourceId,
 					name,
 					GenerateInboundTypeBlock(inboundType),
 					GenerateOutboundTypeBlock(outboundType),
 				) +
 					GenerateDataSourceForSupportedContent(
+						resourceName,
 						dataSourceId,
 						name,
 						"genesyscloud_conversations_messaging_supportedcontent."+resourceId),
@@ -49,14 +51,15 @@ func TestAccDataSourceSupportedContent(t *testing.T) {
 }
 
 func GenerateDataSourceForSupportedContent(
+	resourceName string,
 	resourceId string,
 	name string,
 	dependsOn string,
 ) string {
 	return fmt.Sprintf(`
-	data "`+resourceName+`" "%s" {
+	data "%s" "%s" {
 		name = "%s"
 		depends_on = [%s]
 	}
-	`, resourceId, name, dependsOn)
+	`, resourceName, resourceId, name, dependsOn)
 }
