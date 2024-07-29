@@ -3,12 +3,12 @@
 page_title: "genesyscloud_telephony_providers_edges_did Data Source - terraform-provider-genesyscloud"
 subcategory: ""
 description: |-
-  Data source for Genesys Cloud DID. The identifier is the E-164 phone number.
+  Data source for Genesys Cloud DID. The identifier is the E.164 phone number.
 ---
 
 # genesyscloud_telephony_providers_edges_did (Data Source)
 
-Data source for Genesys Cloud DID. The identifier is the E-164 phone number.
+Data source for Genesys Cloud DID. The identifier is the E.164 phone number.
 
 ## Example Usage
 

@@ -90,8 +90,11 @@ func flattenPhoneNumber(phonenumber *platformclientv2.Phonenumber) []interface{}
 	resourcedata.SetMapValueIfNotNil(phonenumberInterface, "display", phonenumber.Display)
 	resourcedata.SetMapValueIfNotNil(phonenumberInterface, "extension", phonenumber.Extension)
 	resourcedata.SetMapValueIfNotNil(phonenumberInterface, "accepts_sms", phonenumber.AcceptsSMS)
-	phoneNumber := util.FormatAsCalculatedE164Number(*phonenumber.E164)
-	resourcedata.SetMapValueIfNotNil(phonenumberInterface, "e164", &phoneNumber)
+	var phoneNumberE164 string
+	if phonenumber != nil && phonenumber.E164 != nil && *phonenumber.E164 != "" {
+		phoneNumberE164 = util.FormatAsCalculatedE164Number(*phonenumber.E164)
+	}
+	resourcedata.SetMapValueIfNotNil(phonenumberInterface, "e164", &phoneNumberE164)
 	resourcedata.SetMapValueIfNotNil(phonenumberInterface, "country_code", phonenumber.CountryCode)
 	return []interface{}{phonenumberInterface}
 }
