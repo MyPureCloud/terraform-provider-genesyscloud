@@ -959,6 +959,7 @@ func TestAccResourceOutboundCampaignPower(t *testing.T) {
 						[]string{},
 						[]string{},
 						generatePhoneColumnNoTypeBlock("Cell"),
+						generateDynamicLineBalancingSettingsBlock(util.FalseValue, "0"),
 					),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceId, "name", name),
@@ -967,10 +968,15 @@ func TestAccResourceOutboundCampaignPower(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceId, "caller_address", callerAddress),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceId, "max_calls_per_agent", "1"),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceId, "phone_columns.0.column_name", "Cell"),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceId, "outbound_line_count", "1"),
 					resource.TestCheckResourceAttrPair("genesyscloud_outbound_campaign."+resourceId, "contact_list_id",
 						"genesyscloud_outbound_contact_list."+contactListResourceId, "id"),
 					resource.TestCheckResourceAttrPair("genesyscloud_outbound_campaign."+resourceId, "queue_id",
 						"genesyscloud_routing_queue."+queueResourceId, "id"),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceId,
+						"dynamic_line_balancing_settings.0.enabled", "false"),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceId,
+						"dynamic_line_balancing_settings.0.relative_weight", "0"),
 				),
 			},
 			{
@@ -992,7 +998,7 @@ func TestAccResourceOutboundCampaignPower(t *testing.T) {
 						"2",
 						util.NullValue,
 						"genesyscloud_outbound_callanalysisresponseset."+carResourceId+".id",
-						"1",
+						util.NullValue,
 						util.NullValue,
 						util.NullValue,
 						util.NullValue,
@@ -1002,6 +1008,7 @@ func TestAccResourceOutboundCampaignPower(t *testing.T) {
 						[]string{},
 						[]string{},
 						generatePhoneColumnNoTypeBlock("Cell"),
+						generateDynamicLineBalancingSettingsBlock(util.TrueValue, "15"),
 					),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceId, "name", name),
@@ -1014,6 +1021,12 @@ func TestAccResourceOutboundCampaignPower(t *testing.T) {
 						"genesyscloud_outbound_contact_list."+contactListResourceId, "id"),
 					resource.TestCheckResourceAttrPair("genesyscloud_outbound_campaign."+resourceId, "queue_id",
 						"genesyscloud_routing_queue."+queueResourceId, "id"),
+					resource.TestCheckResourceAttrPair("genesyscloud_outbound_campaign."+resourceId, "queue_id",
+						"genesyscloud_routing_queue."+queueResourceId, "id"),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceId,
+						"dynamic_line_balancing_settings.0.enabled", "true"),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceId,
+						"dynamic_line_balancing_settings.0.relative_weight", "15"),
 				),
 			},
 			{
@@ -1149,6 +1162,15 @@ func generateDynamicContactQueueingSettingsBlock(sort string) string {
 		sort = %s
 	}
 	`, sort)
+}
+
+func generateDynamicLineBalancingSettingsBlock(enabled string, weight string) string {
+	return fmt.Sprintf(`
+	dynamic_line_balancing_settings {
+		enabled = %s
+		relative_weight = %s
+	}
+	`, enabled, weight)
 }
 
 func getPublishedScriptId() (string, error) {
