@@ -46,10 +46,11 @@ func generateFacebookIntegrationResource(
 	pageId string,
 	appId string,
 	appSecret string) string {
-	return fmt.Sprintf(`resource "genesyscloud_integration_facebook" "%s" {
+	return fmt.Sprintf(`
+	resource "genesyscloud_integration_facebook" "%s" {
 		name = "%s"
-		supported_content_id = "%s"
-		messaging_setting_id = "%s"
+		supported_content_id = %s
+		messaging_setting_id = %s
 		page_access_token = "%s"
 		user_access_token = "%s"
 		page_id = "%s"

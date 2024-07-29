@@ -79,8 +79,15 @@ func readIntegrationFacebook(ctx context.Context, d *schema.ResourceData, meta i
 		}
 
 		resourcedata.SetNillableValue(d, "name", facebookIntegrationRequest.Name)
-		resourcedata.SetNillableValue(d, "supported_content_id", facebookIntegrationRequest.SupportedContent.Id)
-		resourcedata.SetNillableValue(d, "messaging_setting_id", facebookIntegrationRequest.MessagingSetting.Id)
+
+		if facebookIntegrationRequest.SupportedContent != nil && facebookIntegrationRequest.SupportedContent.Id != nil {
+			_ = d.Set("supported_content_id", *facebookIntegrationRequest.SupportedContent.Id)
+		}
+
+		if facebookIntegrationRequest.MessagingSetting != nil && facebookIntegrationRequest.MessagingSetting.Id != nil {
+			_ = d.Set("messaging_setting_id", *facebookIntegrationRequest.MessagingSetting.Id)
+		}
+
 		resourcedata.SetNillableValue(d, "page_id", facebookIntegrationRequest.PageId)
 		resourcedata.SetNillableValue(d, "app_id", facebookIntegrationRequest.AppId)
 

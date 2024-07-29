@@ -14,11 +14,12 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+/** Unit Test **/
 func TestUnitResourceIntegrationFacebookCreate(t *testing.T) {
 	var (
 		name                             = "Unit Test Facebook Integration"
-		supportedContentId1              = "019c37a7-ccb4-4966-b1d7-ddb20399f7ab"
-		messagingSettingId1              = "2c4e3b8e-3c9f-45c9-82cd-4bb54c8f18f0"
+		supportedContentId1              = uuid.NewString()
+		messagingSettingId1              = uuid.NewString()
 		pageId                           = ""
 		appId                            = ""
 		fId                              = uuid.NewString()
@@ -83,8 +84,8 @@ func TestUnitResourceIntegrationFacebookCreate(t *testing.T) {
 func TestUnitResourceIntegrationFacebookRead(t *testing.T) {
 	var (
 		name                      = "Unit Test Facebook Integration"
-		supportedContentId1       = "019c37a7-ccb4-4966-b1d7-ddb20399f7ab"
-		messagingSettingId1       = "2c4e3b8e-3c9f-45c9-82cd-4bb54c8f18f0"
+		supportedContentId1       = uuid.NewString()
+		messagingSettingId1       = uuid.NewString()
 		pageId                    = ""
 		appId                     = ""
 		fId                       = uuid.NewString()
@@ -140,8 +141,8 @@ func TestUnitResourceIntegrationFacebookRead(t *testing.T) {
 func TestUnitResourceIntegrationFacebookDelete(t *testing.T) {
 	var (
 		name                = "Unit Test Facebook Integration"
-		supportedContentId1 = "019c37a7-ccb4-4966-b1d7-ddb20399f7ab"
-		messagingSettingId1 = "2c4e3b8e-3c9f-45c9-82cd-4bb54c8f18f0"
+		supportedContentId1 = uuid.NewString()
+		messagingSettingId1 = uuid.NewString()
 		pageId              = ""
 		appId               = ""
 		fId                 = uuid.NewString()
@@ -187,8 +188,8 @@ func TestUnitResourceIntegrationFacebookDelete(t *testing.T) {
 func TestUnitResourceIntegrationFacebookUpdate(t *testing.T) {
 	var (
 		name                             = "Unit Test Facebook Integration"
-		supportedContentId1              = "ee6623a0-8816-4766-ba06-5ffe4a2138de"
-		messagingSettingId1              = "2c4e3b8e-3c9f-45c9-82cd-4bb54c8f18f0"
+		supportedContentId1              = uuid.NewString()
+		messagingSettingId1              = uuid.NewString()
 		pageId                           = ""
 		appId                            = ""
 		fId                              = uuid.NewString()

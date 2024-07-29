@@ -101,7 +101,14 @@ func ResourceIntegrationFacebook() *schema.Resource {
 func IntegrationFacebookExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: provider.GetAllWithPooledClient(getAllAuthIntegrationFacebooks),
-		RefAttrs:         map[string]*resourceExporter.RefAttrSettings{},
+		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
+			"messaging_setting_id": {
+				RefType: "genesyscloud_conversations_messaging_settings",
+			},
+			"supported_content_id": {
+				RefType: "genesyscloud_conversations_messaging_supportedcontent",
+			},
+		},
 	}
 }
 

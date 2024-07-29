@@ -4,6 +4,9 @@ import (
 	"sync"
 	"testing"
 
+	cmMessagingSetting "terraform-provider-genesyscloud/genesyscloud/conversations_messaging_settings"
+	cmSupportedContent "terraform-provider-genesyscloud/genesyscloud/conversations_messaging_supportedcontent"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
@@ -29,6 +32,8 @@ func (r *registerTestInstance) registerTestResources() {
 	defer r.resourceMapMutex.Unlock()
 
 	providerResources[resourceName] = ResourceIntegrationFacebook()
+	providerResources["genesyscloud_conversations_messaging_supportedcontent"] = cmSupportedContent.ResourceSupportedContent()
+	providerResources["genesyscloud_conversations_messaging_settings"] = cmMessagingSetting.ResourceConversationsMessagingSettings()
 }
 
 // registerTestDataSources registers all data sources used in the tests.
