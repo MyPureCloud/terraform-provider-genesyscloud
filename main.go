@@ -16,6 +16,8 @@ import (
 	userPrompt "terraform-provider-genesyscloud/genesyscloud/architect_user_prompt"
 	authRole "terraform-provider-genesyscloud/genesyscloud/auth_role"
 	authorizatioProduct "terraform-provider-genesyscloud/genesyscloud/authorization_product"
+	cMessageSettings "terraform-provider-genesyscloud/genesyscloud/conversations_messaging_settings"
+	supportedContent "terraform-provider-genesyscloud/genesyscloud/conversations_messaging_supportedcontent"
 	employeeperformanceExternalmetricsDefinition "terraform-provider-genesyscloud/genesyscloud/employeeperformance_externalmetrics_definitions"
 	externalContacts "terraform-provider-genesyscloud/genesyscloud/external_contacts"
 	flowLogLevel "terraform-provider-genesyscloud/genesyscloud/flow_loglevel"
@@ -67,15 +69,14 @@ import (
 	routingEmailRoute "terraform-provider-genesyscloud/genesyscloud/routing_email_route"
 	routingLanguage "terraform-provider-genesyscloud/genesyscloud/routing_language"
 	routingQueue "terraform-provider-genesyscloud/genesyscloud/routing_queue"
-	routingSkillGroup "terraform-provider-genesyscloud/genesyscloud/routing_skill_group"
-	routingUtilization "terraform-provider-genesyscloud/genesyscloud/routing_utilization"
-	routingUtilizationLabel "terraform-provider-genesyscloud/genesyscloud/routing_utilization_label"
-	cMessageSettings "terraform-provider-genesyscloud/genesyscloud/conversations_messaging_settings"
 	routingQueueConditionalGroupRouting "terraform-provider-genesyscloud/genesyscloud/routing_queue_conditional_group_routing"
 	routingQueueOutboundEmailAddress "terraform-provider-genesyscloud/genesyscloud/routing_queue_outbound_email_address"
 	routingSettings "terraform-provider-genesyscloud/genesyscloud/routing_settings"
 	routingSkill "terraform-provider-genesyscloud/genesyscloud/routing_skill"
+	routingSkillGroup "terraform-provider-genesyscloud/genesyscloud/routing_skill_group"
 	smsAddresses "terraform-provider-genesyscloud/genesyscloud/routing_sms_addresses"
+	routingUtilization "terraform-provider-genesyscloud/genesyscloud/routing_utilization"
+	routingUtilizationLabel "terraform-provider-genesyscloud/genesyscloud/routing_utilization_label"
 	"terraform-provider-genesyscloud/genesyscloud/scripts"
 	"terraform-provider-genesyscloud/genesyscloud/station"
 	workbin "terraform-provider-genesyscloud/genesyscloud/task_management_workbin"
@@ -247,6 +248,7 @@ func registerResources() {
 	journeyViews.SetRegistrar(regInstance)                                 //Registering journey views
 	routingLanguage.SetRegistrar(regInstance)                              //Registering Routing Language
 	routingEmailDomain.SetRegistrar(regInstance)                           //Registering Routing Email Domain
+	supportedContent.SetRegistrar(regInstance)                             //Registering Supported Content
 	routingSkill.SetRegistrar(regInstance)                                 //Registering Routing Skill
 	cMessageSettings.SetRegistrar(regInstance)                             // Registering conversations messaging settings
 	routingSkillGroup.SetRegistrar(regInstance)                            //Registering routing skill group
