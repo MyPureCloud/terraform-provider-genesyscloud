@@ -5,6 +5,8 @@ import (
 	authRole "terraform-provider-genesyscloud/genesyscloud/auth_role"
 	routingLanguage "terraform-provider-genesyscloud/genesyscloud/routing_language"
 	routingQueue "terraform-provider-genesyscloud/genesyscloud/routing_queue"
+	routingSkill "terraform-provider-genesyscloud/genesyscloud/routing_skill"
+
 	"terraform-provider-genesyscloud/genesyscloud/user_roles"
 	"testing"
 
@@ -46,7 +48,7 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_user"] = gcloud.ResourceUser()
 	providerResources["genesyscloud_externalcontacts_contact"] = externalContacts.ResourceExternalContact()
 	providerResources["genesyscloud_routing_queue"] = routingQueue.ResourceRoutingQueue()
-	providerResources["genesyscloud_routing_skill"] = gcloud.ResourceRoutingSkill()
+	providerResources["genesyscloud_routing_skill"] = routingSkill.ResourceRoutingSkill()
 	providerResources["genesyscloud_auth_role"] = authRole.ResourceAuthRole()
 	providerResources["genesyscloud_user_roles"] = user_roles.ResourceUserRoles()
 }

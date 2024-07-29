@@ -1,10 +1,8 @@
-package routing_skill_group
+package routing_skill
 
 import (
 	"sync"
-	"terraform-provider-genesyscloud/genesyscloud"
 	"testing"
-	routingSkill "terraform-provider-genesyscloud/genesyscloud/routing_skill"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
@@ -22,10 +20,7 @@ func (r *registerTestInstance) registerTestResources() {
 	r.resourceMapMutex.Lock()
 	defer r.resourceMapMutex.Unlock()
 
-	providerResources[resourceName] = ResourceRoutingSkillGroup()
-	providerResources["genesyscloud_auth_division"] = genesyscloud.ResourceAuthDivision()
-	providerResources["genesyscloud_user"] = genesyscloud.ResourceUser()
-	providerResources["genesyscloud_routing_skill"] = routingSkill.ResourceRoutingSkill()
+	providerResources[resourceName] = ResourceRoutingSkill()
 }
 
 // registerTestDataSources registers all data sources used in the tests.
@@ -33,9 +28,7 @@ func (r *registerTestInstance) registerTestDataSources() {
 	r.datasourceMapMutex.Lock()
 	defer r.datasourceMapMutex.Unlock()
 
-	providerDataSources[resourceName] = DataSourceRoutingSkillGroup()
-	providerDataSources["genesyscloud_auth_division_home"] = genesyscloud.DataSourceAuthDivisionHome()
-
+	providerDataSources[resourceName] = DataSourceRoutingSkill()
 }
 
 // initTestResources initializes all test resources and data sources.
@@ -51,9 +44,9 @@ func initTestResources() {
 
 // TestMain is a "setup" function called by the testing framework when run the test
 func TestMain(m *testing.M) {
-	// Run setup function before starting the test suite for routing_skill_group package
+	// Run setup function before starting the test suite for routing_skill package
 	initTestResources()
 
-	// Run the test suite for the routing_skill_group package
+	// Run the test suite for the routing_skill package
 	m.Run()
 }
