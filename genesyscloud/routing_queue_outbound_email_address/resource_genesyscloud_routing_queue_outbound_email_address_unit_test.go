@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
+	featureToggles "terraform-provider-genesyscloud/genesyscloud/util/feature_toggles"
 	"testing"
 
 	"github.com/google/uuid"
@@ -18,6 +19,10 @@ func TestUnitResourceRoutingQueueOutboundEmailAddressUpdate(t *testing.T) {
 	tRouteId := uuid.NewString()
 
 	tId := tQueueId
+
+	if !featureToggles.OEAToggleExists() {
+		t.Skipf("Skipping because env variable %s is not set", featureToggles.OEAToggleName())
+	}
 
 	groupRoutingProxy := &routingQueueOutboundEmailAddressProxy{}
 	groupRoutingProxy.updateRoutingQueueOutboundEmailAddressAttr = func(ctx context.Context, p *routingQueueOutboundEmailAddressProxy, queueId string, address *platformclientv2.Queueemailaddress) (*platformclientv2.Queueemailaddress, *platformclientv2.APIResponse, error) {
@@ -70,6 +75,10 @@ func TestUnitResourceRoutingQueueOutboundEmailAddressRead(t *testing.T) {
 	tDomainId := uuid.NewString()
 	tRouteId := uuid.NewString()
 	tId := tQueueId
+
+	if !featureToggles.OEAToggleExists() {
+		t.Skipf("Skipping because env variable %s is not set", featureToggles.OEAToggleName())
+	}
 
 	groupRoutingProxy := &routingQueueOutboundEmailAddressProxy{}
 
