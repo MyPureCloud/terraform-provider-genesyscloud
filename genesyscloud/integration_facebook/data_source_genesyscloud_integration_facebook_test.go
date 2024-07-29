@@ -8,6 +8,9 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+
+	cmMessagingSetting "terraform-provider-genesyscloud/genesyscloud/conversations_messaging_settings"
+	cmSupportedContent "terraform-provider-genesyscloud/genesyscloud/conversations_messaging_supportedcontent"
 )
 
 /*
@@ -17,31 +20,54 @@ Test Class for the integration facebook Data Source
 func TestAccDataSourceIntegrationFacebook(t *testing.T) {
 	t.Parallel()
 	var (
-		testResource1       = "test_sample"
-		testResource2       = "test_sample"
-		name1               = "test_sample"
-		supportedContentId1 = "6b3d7fb2-c276-415c-a5c7-d18eba936c68"
-		pageAccessToken1    = uuid.NewString()
-		messagingSettingId1 = "2c4e3b8e-3c9f-45c9-82cd-4bb54c8f18f0"
-		appId               = ""
-		appSecret           = ""
+		testResource1    = "test_sample"
+		testResource2    = "test_sample2"
+		name1            = "test_sample"
+		pageAccessToken1 = uuid.NewString()
+		appId            = ""
+		appSecret        = ""
+
+		nameSupportedContent       = "Terraform Supported Content - " + uuid.NewString()
+		resourceIdSupportedContent = "testSupportedContent"
+		inboundType                = "*/*"
+
+		nameMessagingSetting       = "testSettings"
+		resourceIdMessagingSetting = "testConversationsMessagingSettings"
 	)
+
+	supportedContentResource1 := cmSupportedContent.GenerateSupportedContentResource(
+		"genesyscloud_conversations_messaging_supportedcontent",
+		resourceIdSupportedContent,
+		nameSupportedContent,
+		cmSupportedContent.GenerateInboundTypeBlock(inboundType))
+
+	messagingSettingResource1 := cmMessagingSetting.GenerateConversationsMessagingSettingsResource(
+		resourceIdMessagingSetting,
+		nameMessagingSetting,
+		cmMessagingSetting.GenerateContentStoryBlock(
+			cmMessagingSetting.GenerateMentionInboundOnlySetting("Disabled"),
+			cmMessagingSetting.GenerateReplyInboundOnlySetting("Enabled"),
+		),
+	)
+
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
-				Config: generateFacebookIntegrationResource(
-					testResource1,
-					name1,
-					supportedContentId1,
-					messagingSettingId1,
-					pageAccessToken1,
-					"",
-					"",
-					appId,
-					appSecret,
-				) + generateIntegrationFacebookDataSource(
+				Config: messagingSettingResource1 +
+					supportedContentResource1 +
+					generateFacebookIntegrationResource(
+						testResource1,
+						name1,
+						"genesyscloud_conversations_messaging_supportedcontent."+resourceIdSupportedContent+".id",
+						"genesyscloud_conversations_messaging_settings."+resourceIdMessagingSetting+".id",
+						pageAccessToken1,
+						"",
+						"",
+						appId,
+						appSecret,
+					) + generateIntegrationFacebookDataSource(
 					testResource2,
 					name1,
 					"genesyscloud_integration_facebook."+testResource1,
