@@ -83,6 +83,7 @@ import (
 	workitem "terraform-provider-genesyscloud/genesyscloud/task_management_workitem"
 	workitemSchema "terraform-provider-genesyscloud/genesyscloud/task_management_workitem_schema"
 	worktype "terraform-provider-genesyscloud/genesyscloud/task_management_worktype"
+	worktypeStatus "terraform-provider-genesyscloud/genesyscloud/task_management_worktype_status"
 	"terraform-provider-genesyscloud/genesyscloud/team"
 	"terraform-provider-genesyscloud/genesyscloud/telephony"
 	did "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_did"
@@ -221,6 +222,7 @@ func registerResources() {
 	workbin.SetRegistrar(regInstance)                                      //Registering task management workbin
 	workitemSchema.SetRegistrar(regInstance)                               //Registering task management workitem schema
 	worktype.SetRegistrar(regInstance)                                     //Registering task management worktype
+	worktypeStatus.SetRegistrar(regInstance)                               //Registering task management worktype status
 	workitem.SetRegistrar(regInstance)                                     //Registering task management workitem
 	externalContacts.SetRegistrar(regInstance)                             //Registering external contacts
 	team.SetRegistrar(regInstance)                                         //Registering team
