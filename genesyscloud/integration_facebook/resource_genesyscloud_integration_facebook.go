@@ -2,6 +2,7 @@ package integration_facebook
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
@@ -48,6 +49,15 @@ func createIntegrationFacebook(ctx context.Context, d *schema.ResourceData, meta
 	proxy := getIntegrationFacebookProxy(sdkConfig)
 
 	integrationFacebook := getIntegrationFacebookFromResourceData(d)
+
+	// if PageAccessToken is provided, no need to provide PageId and UserAccessToken
+	if *integrationFacebook.PageAccessToken != "" && (*integrationFacebook.PageId != "" || *integrationFacebook.UserAccessToken != "") {
+		return util.BuildDiagnosticError(resourceName, "Configuration Error", errors.New("the pageId and userAccessToken should not be set if specifying the pageAccessToken"))
+	}
+
+	if (*integrationFacebook.AppId == "" && *integrationFacebook.AppSecret != "") || (*integrationFacebook.AppId != "" && *integrationFacebook.AppSecret == "") {
+		return util.BuildDiagnosticError(resourceName, "Configuration Error", errors.New("the appSecret is required when appId is provided"))
+	}
 
 	log.Printf("Creating integration facebook %s", *integrationFacebook.Name)
 	facebookIntegrationRequest, resp, err := proxy.createIntegrationFacebook(ctx, &integrationFacebook)
