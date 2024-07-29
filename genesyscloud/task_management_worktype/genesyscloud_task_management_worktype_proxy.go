@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	rc "terraform-provider-genesyscloud/genesyscloud/resource_cache"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
 )
@@ -37,11 +38,13 @@ type TaskManagementWorktypeProxy struct {
 	getTaskManagementWorktypeByNameAttr   getTaskManagementWorktypeByNameFunc
 	updateTaskManagementWorktypeAttr      updateTaskManagementWorktypeFunc
 	deleteTaskManagementWorktypeAttr      deleteTaskManagementWorktypeFunc
+	worktypeCache                         rc.CacheInterface[platformclientv2.Worktype]
 }
 
 // newTaskManagementWorktypeProxy initializes the task management worktype proxy with all the data needed to communicate with Genesys Cloud
 func newTaskManagementWorktypeProxy(clientConfig *platformclientv2.Configuration) *TaskManagementWorktypeProxy {
 	api := platformclientv2.NewTaskManagementApiWithConfig(clientConfig)
+	worktypeCache := rc.NewResourceCache[platformclientv2.Worktype]()
 	return &TaskManagementWorktypeProxy{
 		clientConfig:                          clientConfig,
 		taskManagementApi:                     api,
@@ -52,6 +55,7 @@ func newTaskManagementWorktypeProxy(clientConfig *platformclientv2.Configuration
 		getTaskManagementWorktypeByIdAttr:     getTaskManagementWorktypeByIdFn,
 		updateTaskManagementWorktypeAttr:      updateTaskManagementWorktypeFn,
 		deleteTaskManagementWorktypeAttr:      deleteTaskManagementWorktypeFn,
+		worktypeCache:                         worktypeCache,
 	}
 }
 
@@ -195,6 +199,11 @@ func getTaskManagementWorktypeByNameFn(ctx context.Context, p *TaskManagementWor
 
 // getTaskManagementWorktypeByIdFn is an implementation of the function to get a Genesys Cloud task management worktype by Id
 func getTaskManagementWorktypeByIdFn(ctx context.Context, p *TaskManagementWorktypeProxy, id string) (taskManagementWorktype *platformclientv2.Worktype, resp *platformclientv2.APIResponse, err error) {
+	worktype := rc.GetCacheItem(p.worktypeCache, id)
+	if worktype != nil {
+		return worktype, nil, nil
+	}
+	
 	return p.taskManagementApi.GetTaskmanagementWorktype(id, []string{})
 }
 

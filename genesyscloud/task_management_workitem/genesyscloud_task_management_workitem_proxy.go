@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"log"
 
+	rc "terraform-provider-genesyscloud/genesyscloud/resource_cache"
+
 	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
 )
 
@@ -35,11 +37,13 @@ type taskManagementWorkitemProxy struct {
 	getTaskManagementWorkitemByIdAttr     getTaskManagementWorkitemByIdFunc
 	updateTaskManagementWorkitemAttr      updateTaskManagementWorkitemFunc
 	deleteTaskManagementWorkitemAttr      deleteTaskManagementWorkitemFunc
+	workitemCache                         rc.CacheInterface[platformclientv2.Workitem]
 }
 
 // newTaskManagementWorkitemProxy initializes the task management workitem proxy with all of the data needed to communicate with Genesys Cloud
 func newTaskManagementWorkitemProxy(clientConfig *platformclientv2.Configuration) *taskManagementWorkitemProxy {
 	api := platformclientv2.NewTaskManagementApiWithConfig(clientConfig)
+	workitemCache := rc.NewResourceCache[platformclientv2.Workitem]()
 	return &taskManagementWorkitemProxy{
 		clientConfig:                          clientConfig,
 		taskManagementApi:                     api,
@@ -49,6 +53,7 @@ func newTaskManagementWorkitemProxy(clientConfig *platformclientv2.Configuration
 		getTaskManagementWorkitemByIdAttr:     getTaskManagementWorkitemByIdFn,
 		updateTaskManagementWorkitemAttr:      updateTaskManagementWorkitemFn,
 		deleteTaskManagementWorkitemAttr:      deleteTaskManagementWorkitemFn,
+		workitemCache:                         workitemCache,
 	}
 }
 
@@ -225,6 +230,11 @@ func getTaskManagementWorkitemIdByNameFn(ctx context.Context, p *taskManagementW
 
 // getTaskManagementWorkitemByIdFn is an implementation of the function to get a Genesys Cloud task management workitem by Id
 func getTaskManagementWorkitemByIdFn(ctx context.Context, p *taskManagementWorkitemProxy, id string) (taskManagementWorkitem *platformclientv2.Workitem, resp *platformclientv2.APIResponse, err error) {
+	workitem := rc.GetCacheItem(p.workitemCache, id)
+	if workitem != nil {
+		return workitem, nil, nil
+	}
+
 	return p.taskManagementApi.GetTaskmanagementWorkitem(id, "")
 }
 

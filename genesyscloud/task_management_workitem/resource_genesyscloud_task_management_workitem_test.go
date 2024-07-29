@@ -10,6 +10,7 @@ import (
 	routingQueue "terraform-provider-genesyscloud/genesyscloud/routing_queue"
 	routingSkill "terraform-provider-genesyscloud/genesyscloud/routing_skill"
 
+	"terraform-provider-genesyscloud/genesyscloud/task_management_worktype_status"
 	"terraform-provider-genesyscloud/genesyscloud/user_roles"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
@@ -199,11 +200,12 @@ func TestAccResourceTaskManagementWorkitem(t *testing.T) {
 						workitemRes, 
 						workitem1.name, 
 						workitem1.worktype_id, 
-						fmt.Sprintf("depends_on = [genesyscloud_task_management_worktype_status.%s, genesyscloud_task_management_worktype_status.%s]", statusResourceOpen, statusResourceClosed),
+						fmt.Sprintf("status_id = genesyscloud_task_management_worktype_status.%s.id", statusResourceOpen),
 					),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_task_management_workitem."+workitemRes, "name", workitem1.name),
 					resource.TestCheckResourceAttrPair("genesyscloud_task_management_workitem."+workitemRes, "worktype_id", "genesyscloud_task_management_worktype."+wtResName, "id"),
+					task_management_worktype_status.ValidateStatusIds("genesyscloud_task_management_workitem."+workitemRes, "status_id", "genesyscloud_task_management_worktype_status."+statusResourceOpen, "id"),
 				),
 			},
 			// Update workitem with more fields
@@ -224,7 +226,7 @@ func TestAccResourceTaskManagementWorkitem(t *testing.T) {
 							"data.genesyscloud_auth_division_home."+homeDivRes+".id",
 						),
 					) +
-					generateWorkitemResource(workitemRes, workitem1Update, "depends_on = [genesyscloud_user_roles.user_role_1]"),
+					generateWorkitemResource(workitemRes, workitem1Update, ""),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_task_management_workitem."+workitemRes, "name", workitem1Update.name),
 					resource.TestCheckResourceAttr("genesyscloud_task_management_workitem."+workitemRes, "description", workitem1Update.description),
@@ -234,6 +236,7 @@ func TestAccResourceTaskManagementWorkitem(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_task_management_workitem."+workitemRes, "date_expires", workitem1Update.date_expires),
 					resource.TestCheckResourceAttr("genesyscloud_task_management_workitem."+workitemRes, "duration_seconds", fmt.Sprintf("%d", workitem1Update.duration_seconds)),
 					resource.TestCheckResourceAttr("genesyscloud_task_management_workitem."+workitemRes, "ttl", fmt.Sprintf("%d", workitem1Update.ttl)),
+					task_management_worktype_status.ValidateStatusIds("genesyscloud_task_management_workitem."+workitemRes, "status_id", "genesyscloud_task_management_worktype_status."+statusResourceOpen, "id"),
 					resource.TestCheckResourceAttrPair("genesyscloud_task_management_workitem."+workitemRes, "workbin_id", "genesyscloud_task_management_workbin."+wbResourceId, "id"),
 					resource.TestCheckResourceAttrPair("genesyscloud_task_management_workitem."+workitemRes, "assignee_id", "genesyscloud_user."+userResId1, "id"),
 					resource.TestCheckResourceAttrPair("genesyscloud_task_management_workitem."+workitemRes, "external_contact_id", "genesyscloud_externalcontacts_contact."+externalContactResId1, "id"),

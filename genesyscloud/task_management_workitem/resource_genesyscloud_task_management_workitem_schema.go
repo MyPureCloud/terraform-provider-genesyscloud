@@ -4,6 +4,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
+	"terraform-provider-genesyscloud/genesyscloud/task_management_worktype_status"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"terraform-provider-genesyscloud/genesyscloud/validators"
 
@@ -117,6 +118,7 @@ func ResourceTaskManagementWorkitem() *schema.Resource {
 				Description: `The id of the current status of the Workitem.`,
 				Optional:    true,
 				Computed:    true,
+				StateFunc:   task_management_worktype_status.ModifyStatusIdStateValue,
 				Type:        schema.TypeString,
 			},
 			`workbin_id`: {
