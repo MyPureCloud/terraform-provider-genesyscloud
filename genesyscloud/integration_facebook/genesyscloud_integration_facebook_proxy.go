@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	rc "terraform-provider-genesyscloud/genesyscloud/resource_cache"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
 )
@@ -35,11 +36,13 @@ type integrationFacebookProxy struct {
 	getIntegrationFacebookByIdAttr     getIntegrationFacebookByIdFunc
 	updateIntegrationFacebookAttr      updateIntegrationFacebookFunc
 	deleteIntegrationFacebookAttr      deleteIntegrationFacebookFunc
+	facebookCache                      rc.CacheInterface[platformclientv2.Facebookintegration]
 }
 
 // newIntegrationFacebookProxy initializes the integration facebook proxy with all of the data needed to communicate with Genesys Cloud
 func newIntegrationFacebookProxy(clientConfig *platformclientv2.Configuration) *integrationFacebookProxy {
 	api := platformclientv2.NewConversationsApiWithConfig(clientConfig)
+	facebookCache := rc.NewResourceCache[platformclientv2.Facebookintegration]()
 	return &integrationFacebookProxy{
 		clientConfig:                       clientConfig,
 		conversationsApi:                   api,
@@ -49,6 +52,7 @@ func newIntegrationFacebookProxy(clientConfig *platformclientv2.Configuration) *
 		getIntegrationFacebookByIdAttr:     getIntegrationFacebookByIdFn,
 		updateIntegrationFacebookAttr:      updateIntegrationFacebookFn,
 		deleteIntegrationFacebookAttr:      deleteIntegrationFacebookFn,
+		facebookCache:                      facebookCache,
 	}
 }
 
@@ -126,6 +130,10 @@ func getAllIntegrationFacebookFn(ctx context.Context, p *integrationFacebookProx
 		allFacebookIntegrationRequests = append(allFacebookIntegrationRequests, *facebookIntegrationRequests.Entities...)
 	}
 
+	for _, facebookReq := range allFacebookIntegrationRequests {
+		rc.SetCache(p.facebookCache, *facebookReq.Id, facebookReq)
+	}
+
 	return &allFacebookIntegrationRequests, resp, err
 }
 
@@ -154,6 +162,11 @@ func getIntegrationFacebookIdByNameFn(ctx context.Context, p *integrationFaceboo
 
 // getIntegrationFacebookByIdFn is an implementation of the function to get a Genesys Cloud integration facebook by Id
 func getIntegrationFacebookByIdFn(ctx context.Context, p *integrationFacebookProxy, id string) (integrationFacebook *platformclientv2.Facebookintegration, response *platformclientv2.APIResponse, err error) {
+	facebookReq := rc.GetCacheItem(p.facebookCache, id)
+	if facebookReq != nil {
+		return facebookReq, nil, nil
+	}
+
 	return p.conversationsApi.GetConversationsMessagingIntegrationsFacebookIntegrationId(id, "")
 }
 
