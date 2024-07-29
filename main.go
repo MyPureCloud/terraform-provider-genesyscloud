@@ -70,11 +70,11 @@ import (
 	routingSkillGroup "terraform-provider-genesyscloud/genesyscloud/routing_skill_group"
 	routingUtilization "terraform-provider-genesyscloud/genesyscloud/routing_utilization"
 	routingUtilizationLabel "terraform-provider-genesyscloud/genesyscloud/routing_utilization_label"
-
 	cMessageSettings "terraform-provider-genesyscloud/genesyscloud/conversations_messaging_settings"
 	routingQueueConditionalGroupRouting "terraform-provider-genesyscloud/genesyscloud/routing_queue_conditional_group_routing"
 	routingQueueOutboundEmailAddress "terraform-provider-genesyscloud/genesyscloud/routing_queue_outbound_email_address"
 	routingSettings "terraform-provider-genesyscloud/genesyscloud/routing_settings"
+	routingSkill "terraform-provider-genesyscloud/genesyscloud/routing_skill"
 	smsAddresses "terraform-provider-genesyscloud/genesyscloud/routing_sms_addresses"
 	"terraform-provider-genesyscloud/genesyscloud/scripts"
 	"terraform-provider-genesyscloud/genesyscloud/station"
@@ -247,6 +247,7 @@ func registerResources() {
 	journeyViews.SetRegistrar(regInstance)                                 //Registering journey views
 	routingLanguage.SetRegistrar(regInstance)                              //Registering Routing Language
 	routingEmailDomain.SetRegistrar(regInstance)                           //Registering Routing Email Domain
+	routingSkill.SetRegistrar(regInstance)                                 //Registering Routing Skill
 	cMessageSettings.SetRegistrar(regInstance)                             // Registering conversations messaging settings
 	routingSkillGroup.SetRegistrar(regInstance)                            //Registering routing skill group
 	// setting resources for Use cases  like TF export where provider is used in resource classes.
