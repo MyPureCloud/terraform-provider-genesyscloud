@@ -101,7 +101,6 @@ func (r *registerTestInstance) registerTestDataSources() {
 	providerDataSources["genesyscloud_quality_forms_survey"] = dataSourceQualityFormsSurvey()
 	providerDataSources["genesyscloud_routing_language"] = routinglanguage.DataSourceRoutingLanguage()
 	providerDataSources["genesyscloud_routing_skill"] = routingSkill.DataSourceRoutingSkill()
-	providerDataSources["genesyscloud_routing_skill_group"] = dataSourceRoutingSkillGroup()
 	providerDataSources["genesyscloud_routing_email_domain"] = routingEmailDomain.DataSourceRoutingEmailDomain()
 	providerDataSources["genesyscloud_routing_skill_group"] = routingSkillGroup.DataSourceRoutingSkillGroup()
 	providerDataSources["genesyscloud_routing_wrapupcode"] = DataSourceRoutingWrapupcode()

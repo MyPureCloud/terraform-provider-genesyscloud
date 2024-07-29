@@ -2,7 +2,6 @@ package routing_email_route
 
 import (
 	"sync"
-	"terraform-provider-genesyscloud/genesyscloud"
 	routingSkillGroup "terraform-provider-genesyscloud/genesyscloud/routing_skill_group"
 
 	architectFlow "terraform-provider-genesyscloud/genesyscloud/architect_flow"
