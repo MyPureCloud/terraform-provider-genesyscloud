@@ -13,14 +13,12 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
 )
 
 var dataSourceRoutingSkillCache *rc.DataSourceCache
 
 func dataSourceRoutingSkillRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	sdkConfig := m.(*provider.ProviderMeta).ClientConfig
-
 	key := d.Get("name").(string)
 
 	if dataSourceRoutingSkillCache == nil {
@@ -38,41 +36,19 @@ func dataSourceRoutingSkillRead(ctx context.Context, d *schema.ResourceData, m i
 
 func hydrateRoutingSkillCacheFn(c *rc.DataSourceCache) error {
 	log.Printf("hydrating cache for data source genesyscloud_routing_skill")
+	proxy := getRoutingSkillProxy(c.ClientConfig)
 
-	routingApi := platformclientv2.NewRoutingApiWithConfig(c.ClientConfig)
-	const pageSize = 100
-	skills, _, getErr := routingApi.GetRoutingSkills(pageSize, 1, "", nil)
-
+	skills, resp, getErr := proxy.getAllRoutingSkills(context.TODO(), "")
 	if getErr != nil {
-		return fmt.Errorf("failed to get page of skills: %v", getErr)
+		return fmt.Errorf("failed to get page of skills: %v %v", getErr, resp)
 	}
 
-	if skills.Entities == nil || len(*skills.Entities) == 0 {
+	if skills == nil || len(*skills) == 0 {
 		return nil
 	}
 
-	for _, skill := range *skills.Entities {
+	for _, skill := range *skills {
 		c.Cache[*skill.Name] = *skill.Id
-	}
-
-	for pageNum := 2; pageNum <= *skills.PageCount; pageNum++ {
-
-		log.Printf("calling cache for data source genesyscloud_routing_skill")
-
-		skills, _, getErr := routingApi.GetRoutingSkills(pageSize, pageNum, "", nil)
-		log.Printf("calling cache for data source genesyscloud_routing_skill %v", pageNum)
-		if getErr != nil {
-			return fmt.Errorf("failed to get page of skills: %v", getErr)
-		}
-
-		if skills.Entities == nil || len(*skills.Entities) == 0 {
-			break
-		}
-
-		// Add ids to cache
-		for _, skill := range *skills.Entities {
-			c.Cache[*skill.Name] = *skill.Id
-		}
 	}
 
 	log.Printf("cache hydration completed for data source genesyscloud_routing_skill")
@@ -81,30 +57,22 @@ func hydrateRoutingSkillCacheFn(c *rc.DataSourceCache) error {
 }
 
 func getSkillByNameFn(c *rc.DataSourceCache, name string, ctx context.Context) (string, diag.Diagnostics) {
-	const pageSize = 100
 	skillId := ""
-	routingAPI := platformclientv2.NewRoutingApiWithConfig(c.ClientConfig)
+	proxy := getRoutingSkillProxy(c.ClientConfig)
 
 	// Find first non-deleted skill by name. Retry in case new skill is not yet indexed by search
 	diag := util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
-		for pageNum := 1; ; pageNum++ {
-			skills, resp, getErr := routingAPI.GetRoutingSkills(pageSize, pageNum, name, nil)
-			if getErr != nil {
-				return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("error requesting skill %s | error: %s", name, getErr), resp))
-			}
-
-			if skills.Entities == nil || len(*skills.Entities) == 0 {
-				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("no routing skills found with name %s", name), resp))
-			}
-
-			for _, skill := range *skills.Entities {
-				if skill.Name != nil && *skill.Name == name &&
-					skill.State != nil && *skill.State != "deleted" {
-					skillId = *skill.Id
-					return nil
-				}
-			}
+		skill, resp, retryable, getErr := proxy.getRoutingSkillIdByName(ctx, name)
+		if getErr != nil && !retryable {
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("error requesting skill %s | error: %s", name, getErr), resp))
 		}
+
+		if retryable {
+			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("no routing skills found with name %s", name), resp))
+		}
+
+		skillId = skill
+		return nil
 	})
 	return skillId, diag
 }

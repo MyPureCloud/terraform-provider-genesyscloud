@@ -8,17 +8,17 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-const resourceName = "genesyscloud_routing_skills"
+const resourceName = "genesyscloud_routing_skill"
 
 func SetRegistrar(regInstance registrar.Registrar) {
 	regInstance.RegisterResource(resourceName, ResourceRoutingSkill())
 	regInstance.RegisterExporter(resourceName, RoutingSkillExporter())
-	regInstance.RegisterDataSource(resourceName, dataSourceRoutingSkill())
+	regInstance.RegisterDataSource(resourceName, DataSourceRoutingSkill())
 }
 
 // The context is now added without Timeout ,
 // since the warming up of cache will take place for the first Datasource registered during a Terraform Apply.
-func dataSourceRoutingSkill() *schema.Resource {
+func DataSourceRoutingSkill() *schema.Resource {
 	return &schema.Resource{
 		Description:        "Data source for Genesys Cloud Routing Skills. Select a skill by name.",
 		ReadWithoutTimeout: provider.ReadWithPooledClient(dataSourceRoutingSkillRead),

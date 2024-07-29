@@ -9,6 +9,8 @@ import (
 	routingQueue "terraform-provider-genesyscloud/genesyscloud/routing_queue"
 	routingLanguage "terraform-provider-genesyscloud/genesyscloud/routing_language"
 	routingEmailDomain "terraform-provider-genesyscloud/genesyscloud/routing_email_domain"
+	routingSkill "terraform-provider-genesyscloud/genesyscloud/routing_skill"
+
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -39,7 +41,7 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_routing_email_domain"] = routingEmailDomain.ResourceRoutingEmailDomain()
 	providerResources["genesyscloud_routing_queue"] = routingQueue.ResourceRoutingQueue()
 	providerResources["genesyscloud_routing_language"] = routingLanguage.ResourceRoutingLanguage()
-	providerResources["genesyscloud_routing_skill"] = genesyscloud.ResourceRoutingSkill()
+	providerResources["genesyscloud_routing_skill"] = routingSkill.ResourceRoutingSkill()
 	providerResources["genesyscloud_flow"] = architectFlow.ResourceArchitectFlow()
 	providerResources["genesyscloud_routing_skill_group"] = routingSkillGroup.ResourceRoutingSkillGroup()
 }

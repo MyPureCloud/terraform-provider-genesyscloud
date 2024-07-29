@@ -8,13 +8,14 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	routingLanguage "terraform-provider-genesyscloud/genesyscloud/routing_language"
 	routingQueue "terraform-provider-genesyscloud/genesyscloud/routing_queue"
+	routingSkill "terraform-provider-genesyscloud/genesyscloud/routing_skill"
+
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	workbin "terraform-provider-genesyscloud/genesyscloud/task_management_workbin"
 	workitemSchema "terraform-provider-genesyscloud/genesyscloud/task_management_workitem_schema"
 
@@ -111,8 +112,8 @@ func TestAccResourceTaskManagementWorktype(t *testing.T) {
 					workitemSchema.GenerateWorkitemSchemaResourceBasic(wsResourceId, wsName, wsDescription) +
 					routingQueue.GenerateRoutingQueueResourceBasic(queueResId, queueName) +
 					routingLanguage.GenerateRoutingLanguageResource(langResId, langName) +
-					gcloud.GenerateRoutingSkillResource(skillResId1, skillResName1) +
-					gcloud.GenerateRoutingSkillResource(skillResId2, skillResName2) +
+					routingSkill.GenerateRoutingSkillResource(skillResId1, skillResName1) +
+					routingSkill.GenerateRoutingSkillResource(skillResId2, skillResName2) +
 					generateWorktypeResource(wtRes) +
 					fmt.Sprintf("\n data \"genesyscloud_auth_division_home\" \"%s\" {}\n", divData),
 				Check: resource.ComposeTestCheckFunc(
