@@ -1,4 +1,4 @@
-package supported_content
+package conversations_messaging_supportedcontent
 
 import (
 	"context"

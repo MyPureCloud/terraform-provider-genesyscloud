@@ -1,4 +1,4 @@
-package supported_content
+package conversations_messaging_supportedcontent
 
 import (
 	"context"
@@ -78,10 +78,7 @@ func readSupportedContent(ctx context.Context, d *schema.ResourceData, meta inte
 		}
 
 		resourcedata.SetNillableValue(d, "name", supportedContent.Name)
-		if supportedContent.MediaTypes != nil {
-			d.Set("media_types", flattenMediaTypes(supportedContent.MediaTypes))
-		}
-
+		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "media_types", supportedContent.MediaTypes, flattenMediaTypes)
 		log.Printf("Read supported content %s %s", d.Id(), *supportedContent.Name)
 		return cc.CheckState(d)
 	})

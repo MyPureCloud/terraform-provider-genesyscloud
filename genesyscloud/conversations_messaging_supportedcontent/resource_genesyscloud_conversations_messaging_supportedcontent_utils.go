@@ -1,4 +1,4 @@
-package supported_content
+package conversations_messaging_supportedcontent
 
 import (
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
@@ -17,58 +17,45 @@ func getSupportedContentFromResourceData(d *schema.ResourceData) platformclientv
 	var supportedContent platformclientv2.Supportedcontent
 	supportedContent.Name = platformclientv2.String(d.Get("name").(string))
 	if mediaTypes, ok := d.Get("media_types").([]interface{}); ok && len(mediaTypes) > 0 {
-		supportedContent.MediaTypes = buildMediaTypes(d.Get("media_types").(*schema.Set))
+		supportedContent.MediaTypes = buildMediaTypes(d.Get("media_types").([]interface{}))
 	}
 	return supportedContent
 }
 
 // buildMediaTypes maps an []interface{} into a Genesys Cloud *[]platformclientv2.Mediatype
-func buildMediaTypes(mediaTypes *schema.Set) *platformclientv2.Mediatypes {
+func buildMediaTypes(mediaTypes []interface{}) *platformclientv2.Mediatypes {
 	var sdkMediaType platformclientv2.Mediatypes
-	if mediaTypes == nil {
-		return nil
-	}
 
-	mediaTypeList := mediaTypes.List()
-	if len(mediaTypeList) > 0 {
-		mediaTypesMap := mediaTypeList[0].(map[string]interface{})
-
-		if mediaAllow := mediaTypesMap["allow"]; mediaAllow != nil {
-			sdkMediaType.Allow = buildAllowedMediaTypeAccess(mediaAllow.(*schema.Set))
+	for _, mediaType := range mediaTypes {
+		mediaTypesMap, ok := mediaType.(map[string]interface{})
+		if !ok {
+			continue
 		}
+
+		resourcedata.BuildSDKInterfaceArrayValueIfNotNil(&sdkMediaType.Allow, mediaTypesMap, "allow", buildAllowedMediaTypeAccess)
 	}
 	return &sdkMediaType
 }
 
 // buildMediaTypeAccesss maps an []interface{} into a Genesys Cloud *[]platformclientv2.Mediatypeaccess
-func buildAllowedMediaTypeAccess(mediaTypeAccess *schema.Set) *platformclientv2.Mediatypeaccess {
+func buildAllowedMediaTypeAccess(mediaTypeAccess []interface{}) *platformclientv2.Mediatypeaccess {
 	var sdkMediaTypeAccess platformclientv2.Mediatypeaccess
-	if mediaTypeAccess == nil {
-		return nil
-	}
-
-	mediaTypeAccessList := mediaTypeAccess.List()
-
-	if len(mediaTypeAccessList) > 0 {
-		mediaTypeAccessMap := mediaTypeAccessList[0].(map[string]interface{})
-
-		if mediaInbound := mediaTypeAccessMap["inbound"].([]interface{}); len(mediaInbound) > 0 {
-			sdkMediaTypeAccess.Inbound = buildInboundOutboundMediaTypes(mediaInbound)
+	for _, mediaType := range mediaTypeAccess {
+		mediaTypeAccessMap, ok := mediaType.(map[string]interface{})
+		if !ok {
+			continue
 		}
 
-		if mediaOutbound := mediaTypeAccessMap["outbound"].([]interface{}); len(mediaOutbound) > 0 {
-			sdkMediaTypeAccess.Outbound = buildInboundOutboundMediaTypes(mediaOutbound)
-		}
+		resourcedata.BuildSDKInterfaceArrayValueIfNotNil(&sdkMediaTypeAccess.Inbound, mediaTypeAccessMap, "inbound", buildInboundOutboundMediaTypes)
+		resourcedata.BuildSDKInterfaceArrayValueIfNotNil(&sdkMediaTypeAccess.Outbound, mediaTypeAccessMap, "outbound", buildInboundOutboundMediaTypes)
+
 	}
+
 	return &sdkMediaTypeAccess
 }
 
 // buildMediaTypess maps an []interface{} into a Genesys Cloud *[]platformclientv2.Mediatypes
 func buildInboundOutboundMediaTypes(mediaTypes []interface{}) *[]platformclientv2.Mediatype {
-	if mediaTypes == nil {
-		return nil
-	}
-
 	mediaTypesSlice := make([]platformclientv2.Mediatype, 0)
 	for _, mediaType := range mediaTypes {
 		var sdkMediaTypes platformclientv2.Mediatype
@@ -77,9 +64,7 @@ func buildInboundOutboundMediaTypes(mediaTypes []interface{}) *[]platformclientv
 			continue
 		}
 
-		if fieldType := mediaTypesMap["type"].(string); fieldType != "" {
-			sdkMediaTypes.VarType = &fieldType
-		}
+		resourcedata.BuildSDKStringValueIfNotNil(&sdkMediaTypes.VarType, mediaTypesMap, "type")
 
 		mediaTypesSlice = append(mediaTypesSlice, sdkMediaTypes)
 	}
@@ -120,18 +105,13 @@ func flattenAllowedMediaTypeAccess(mediaTypeAccess *platformclientv2.Mediatypeac
 }
 
 // flattenMediaTypess maps a Genesys Cloud *[]platformclientv2.Mediatypes into a []interface{}
-func flattenMediaTypes(mediaTypes *platformclientv2.Mediatypes) *schema.Set {
-	if mediaTypes == nil {
-		return nil
-	}
-
-	mediaAllowedSet := schema.NewSet(schema.HashResource(mediaTypesResource), []interface{}{})
+func flattenMediaTypes(mediaTypes *platformclientv2.Mediatypes) []interface{} {
+	var mediaTypesList []interface{}
 	mediaTypesMap := make(map[string]interface{})
 
-	if mediaTypes.Allow != nil {
-		mediaTypesMap["allow"] = *mediaTypes.Allow
-	}
+	resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(mediaTypesMap, "allow", mediaTypes.Allow, flattenAllowedMediaTypeAccess)
 
-	mediaAllowedSet.Add(mediaTypesMap)
-	return mediaAllowedSet
+	mediaTypesList = append(mediaTypesList, mediaTypesMap)
+
+	return mediaTypesList
 }

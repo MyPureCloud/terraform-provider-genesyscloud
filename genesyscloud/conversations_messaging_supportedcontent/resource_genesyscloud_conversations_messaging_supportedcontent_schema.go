@@ -1,4 +1,4 @@
-package supported_content
+package conversations_messaging_supportedcontent
 
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -58,7 +58,7 @@ var (
 			`allow`: {
 				Description: `Specify allowed media types for inbound and outbound messages. If this field is empty, all inbound and outbound media will be blocked.`,
 				Optional:    true,
-				Type:        schema.TypeSet,
+				Type:        schema.TypeList,
 				MaxItems:    1,
 				Elem:        mediaTypeAccessResource,
 			},
@@ -89,7 +89,7 @@ func ResourceSupportedContent() *schema.Resource {
 			`media_types`: {
 				Description: `Defines the allowable media that may be accepted for an inbound message or to be sent in an outbound message.`,
 				Optional:    true,
-				Type:        schema.TypeSet,
+				Type:        schema.TypeList,
 				MaxItems:    1,
 				Elem:        mediaTypesResource,
 			},
