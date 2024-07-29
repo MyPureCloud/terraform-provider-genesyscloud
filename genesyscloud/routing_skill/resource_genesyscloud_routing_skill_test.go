@@ -1,4 +1,4 @@
-package genesyscloud
+package routing_skill
 
 import (
 	"fmt"

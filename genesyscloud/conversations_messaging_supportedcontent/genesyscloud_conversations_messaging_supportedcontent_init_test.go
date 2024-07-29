@@ -1,15 +1,21 @@
-package routing_skill_group
+package conversations_messaging_supportedcontent
 
 import (
 	"sync"
-	"terraform-provider-genesyscloud/genesyscloud"
 	"testing"
-	routingSkill "terraform-provider-genesyscloud/genesyscloud/routing_skill"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
+/*
+   The genesyscloud_conversations_messaging_supportedcontent_init_test.go file is used to initialize the data sources and resources
+   used in testing the supported_content resource.
+*/
+
+// providerDataSources holds a map of all registered datasources
 var providerDataSources map[string]*schema.Resource
+
+// providerResources holds a map of all registered resources
 var providerResources map[string]*schema.Resource
 
 type registerTestInstance struct {
@@ -22,10 +28,7 @@ func (r *registerTestInstance) registerTestResources() {
 	r.resourceMapMutex.Lock()
 	defer r.resourceMapMutex.Unlock()
 
-	providerResources[resourceName] = ResourceRoutingSkillGroup()
-	providerResources["genesyscloud_auth_division"] = genesyscloud.ResourceAuthDivision()
-	providerResources["genesyscloud_user"] = genesyscloud.ResourceUser()
-	providerResources["genesyscloud_routing_skill"] = routingSkill.ResourceRoutingSkill()
+	providerResources[resourceName] = ResourceSupportedContent()
 }
 
 // registerTestDataSources registers all data sources used in the tests.
@@ -33,9 +36,7 @@ func (r *registerTestInstance) registerTestDataSources() {
 	r.datasourceMapMutex.Lock()
 	defer r.datasourceMapMutex.Unlock()
 
-	providerDataSources[resourceName] = DataSourceRoutingSkillGroup()
-	providerDataSources["genesyscloud_auth_division_home"] = genesyscloud.DataSourceAuthDivisionHome()
-
+	providerDataSources[resourceName] = DataSourceSupportedContent()
 }
 
 // initTestResources initializes all test resources and data sources.
@@ -45,15 +46,15 @@ func initTestResources() {
 
 	regInstance := &registerTestInstance{}
 
-	regInstance.registerTestDataSources()
 	regInstance.registerTestResources()
+	regInstance.registerTestDataSources()
 }
 
 // TestMain is a "setup" function called by the testing framework when run the test
 func TestMain(m *testing.M) {
-	// Run setup function before starting the test suite for routing_skill_group package
+	// Run setup function before starting the test suite for the supported_content package
 	initTestResources()
 
-	// Run the test suite for the routing_skill_group package
+	// Run the test suite for the supported_content package
 	m.Run()
 }

@@ -8,6 +8,8 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	routingLanguage "terraform-provider-genesyscloud/genesyscloud/routing_language"
 	routingQueue "terraform-provider-genesyscloud/genesyscloud/routing_queue"
+	routingSkill "terraform-provider-genesyscloud/genesyscloud/routing_skill"
+
 	"terraform-provider-genesyscloud/genesyscloud/user_roles"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
@@ -197,7 +199,7 @@ func TestAccResourceTaskManagementWorkitem(t *testing.T) {
 					gcloud.GenerateAuthDivisionHomeDataSource(homeDivRes) +
 					routingLanguage.GenerateRoutingLanguageResource(resLang, lang) +
 					routingQueue.GenerateRoutingQueueResourceBasic(resQueue, queueName) +
-					gcloud.GenerateRoutingSkillResource(skillResId1, skillResName1) +
+					routingSkill.GenerateRoutingSkillResource(skillResId1, skillResName1) +
 					gcloud.GenerateBasicUserResource(userResId1, userEmail1, userName1) +
 					externalContact.GenerateBasicExternalContactResource(externalContactResId1, externalContactTitle1) +
 					authRole.GenerateAuthRoleResource(roleResId1, roleName1, "test role description",

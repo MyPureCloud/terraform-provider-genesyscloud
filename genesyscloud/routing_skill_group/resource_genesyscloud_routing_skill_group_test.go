@@ -13,6 +13,7 @@ import (
 	"time"
 
 	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
+	routingSkill "terraform-provider-genesyscloud/genesyscloud/routing_skill"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -424,7 +425,7 @@ func TestAccResourceRoutingSkillGroupMemberDivisionsUsersAssigned(t *testing.T) 
 		}
 	)
 
-	routingSkillResource := gcloud.GenerateRoutingSkillResource(routingSkillResourceId, routingSkillName)
+	routingSkillResource := routingSkill.GenerateRoutingSkillResource(routingSkillResourceId, routingSkillName)
 
 	division1Resource := gcloud.GenerateAuthDivisionBasic(division1ResourceId, division1Name)
 	division2Resource := gcloud.GenerateAuthDivisionBasic(division2ResourceId, division2Name)

@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
+	featureToggles "terraform-provider-genesyscloud/genesyscloud/util/feature_toggles"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -17,6 +18,10 @@ func TestUnitResourceRoutingQueueConditionalGroupRoutingUpdate(t *testing.T) {
 	tQueueId := uuid.NewString()
 	tRules := generateRuleData()
 	tId := tQueueId + "/rules"
+
+	if !featureToggles.CSGToggleExists() {
+		t.Skipf("Skipping because %s env variable is not set", featureToggles.CSGToggleName())
+	}
 
 	groupRoutingProxy := &routingQueueConditionalGroupRoutingProxy{}
 	groupRoutingProxy.updateRoutingQueueConditionRoutingAttr = func(ctx context.Context, p *routingQueueConditionalGroupRoutingProxy, queueId string, rules *[]platformclientv2.Conditionalgrouproutingrule) (*[]platformclientv2.Conditionalgrouproutingrule, *platformclientv2.APIResponse, error) {
@@ -56,6 +61,10 @@ func TestUnitResourceRoutingQueueConditionalGroupRoutingRead(t *testing.T) {
 	tQueueId := uuid.NewString()
 	tRules := generateRuleData()
 	tId := tQueueId + "/rules"
+
+	if !featureToggles.CSGToggleExists() {
+		t.Skipf("Skipping because %s env variable is not set", featureToggles.CSGToggleName())
+	}
 
 	groupRoutingProxy := &routingQueueConditionalGroupRoutingProxy{}
 
