@@ -2,12 +2,15 @@ package consistency_checker
 
 import (
 	"context"
+	"fmt"
+	"strings"
+	"testing"
+	"time"
+
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/stretchr/testify/assert"
-	"testing"
-	"time"
 )
 
 // this is a test resource to avoid importing an existing resource
@@ -80,12 +83,15 @@ func TestUnitConsistencyCheckerBlockBasic(t *testing.T) {
 	tNameNew := "new name"
 	_ = d.Set("name", tNameNew)
 	err := retry.RetryContext(ctx, time.Second*5, func() *retry.RetryError {
-		return cc.CheckState(d) // Consistency checker should handle the re-order and return an error
+		return cc.CheckState(d) // Consistency checker should catch the unexpected change and return an error
 	})
 
-	if err != nil {
-		assert.Contains(t, err, "mismatch on attribute name:\nexpected value: Sample name\nactual value:   new name")
-	}
+	// Match sure the consistency checker gave an error
+	assert.NotNil(t, err, "Error is nil. Consistency checker did not catch unexpected change")
+
+	// Check for expected error
+	expectedErr := "mismatch on attribute name:\nexpected value: Sample name\nactual value: new name"	
+	assert.Contains(t, err, expectedErr, fmt.Sprintf("Incorrect error:\nExpect Error: %s\nActual Error: %s", strings.ReplaceAll(expectedErr, "\n", " "), strings.ReplaceAll(err.Error(), "\n", " ")))
 }
 
 // TestUnitConsistencyCheckerBlocksReorder will test the consistency checkers ability to handle
