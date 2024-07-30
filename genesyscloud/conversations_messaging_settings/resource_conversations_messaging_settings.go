@@ -109,6 +109,17 @@ func deleteConversationsMessagingSettings(ctx context.Context, d *schema.Resourc
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getConversationsMessagingSettingsProxy(sdkConfig)
 
+	// If a messaging setting is set as a default config for an organization, the API will throw a 400 causing tests to fail
+	defaultSetting, response, getErr := proxy.getConversationsMessagingSettingsDefaultId(ctx)
+	if getErr != nil {
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get conversations messaging setting default %s error: %s", d.Id(), getErr), response)
+	}
+	if defaultSetting != nil && *defaultSetting.Id == d.Id() {
+		log.Printf("Messaging Settings: %s cannot be deleted since it is the default config for an organization", d.Id())
+		return nil
+
+	}
+
 	resp, err := proxy.deleteConversationsMessagingSettings(ctx, d.Id())
 	if err != nil {
 		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete conversations messaging setting %s error: %s", d.Id(), err), resp)

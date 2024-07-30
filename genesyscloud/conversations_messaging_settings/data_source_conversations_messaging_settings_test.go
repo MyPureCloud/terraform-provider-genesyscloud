@@ -28,7 +28,7 @@ func TestAccDataSourceConversationsMessagingSettings(t *testing.T) {
 						GenerateMentionInboundOnlySetting("Enabled"),
 						GenerateReplyInboundOnlySetting("Enabled"),
 					),
-					generateTypingOnSetting(
+					GenerateTypingOnSetting(
 						"Enabled",
 						"Disabled",
 					),

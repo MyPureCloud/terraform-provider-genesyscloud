@@ -17,18 +17,20 @@ type getConversationsMessagingSettingsByIdFunc func(ctx context.Context, p *conv
 type getConversationsMessagingSettingsIdByNameFunc func(ctx context.Context, p *conversationsMessagingSettingsProxy, name string) (string, *platformclientv2.APIResponse, bool, error)
 type updateConversationsMessagingSettingsFunc func(ctx context.Context, p *conversationsMessagingSettingsProxy, id string, messagingSettingRequest *platformclientv2.Messagingsettingpatchrequest) (*platformclientv2.Messagingsetting, *platformclientv2.APIResponse, error)
 type deleteConversationsMessagingSettingsFunc func(ctx context.Context, p *conversationsMessagingSettingsProxy, id string) (*platformclientv2.APIResponse, error)
+type getConversationsMessagingSettingsDefaultIdFunc func(ctx context.Context, p *conversationsMessagingSettingsProxy) (*platformclientv2.Messagingsetting, *platformclientv2.APIResponse, error)
 
 // conversationsMessagingSettingsProxy contains all of the methods that call genesys cloud APIs.
 type conversationsMessagingSettingsProxy struct {
-	clientConfig                                  *platformclientv2.Configuration
-	conversationsApi                              *platformclientv2.ConversationsApi
-	createConversationsMessagingSettingsAttr      createConversationsMessagingSettingsFunc
-	getAllConversationsMessagingSettingsAttr      getAllConversationsMessagingSettingsFunc
-	getConversationsMessagingSettingsIdByNameAttr getConversationsMessagingSettingsIdByNameFunc
-	getConversationsMessagingSettingsByIdAttr     getConversationsMessagingSettingsByIdFunc
-	updateConversationsMessagingSettingsAttr      updateConversationsMessagingSettingsFunc
-	deleteConversationsMessagingSettingsAttr      deleteConversationsMessagingSettingsFunc
-	messagingSettingsCache                        rc.CacheInterface[platformclientv2.Messagingsetting]
+	clientConfig                                   *platformclientv2.Configuration
+	conversationsApi                               *platformclientv2.ConversationsApi
+	createConversationsMessagingSettingsAttr       createConversationsMessagingSettingsFunc
+	getAllConversationsMessagingSettingsAttr       getAllConversationsMessagingSettingsFunc
+	getConversationsMessagingSettingsIdByNameAttr  getConversationsMessagingSettingsIdByNameFunc
+	getConversationsMessagingSettingsByIdAttr      getConversationsMessagingSettingsByIdFunc
+	updateConversationsMessagingSettingsAttr       updateConversationsMessagingSettingsFunc
+	deleteConversationsMessagingSettingsAttr       deleteConversationsMessagingSettingsFunc
+	getConversationsMessagingSettingsDefaultIdAttr getConversationsMessagingSettingsDefaultIdFunc
+	messagingSettingsCache                         rc.CacheInterface[platformclientv2.Messagingsetting]
 }
 
 // newConversationsMessagingSettingsProxy initializes the conversations messaging settings proxy with all of the data needed to communicate with Genesys Cloud
@@ -36,15 +38,16 @@ func newConversationsMessagingSettingsProxy(clientConfig *platformclientv2.Confi
 	api := platformclientv2.NewConversationsApiWithConfig(clientConfig)
 	messagingSettingsCache := rc.NewResourceCache[platformclientv2.Messagingsetting]()
 	return &conversationsMessagingSettingsProxy{
-		clientConfig:                                  clientConfig,
-		conversationsApi:                              api,
-		createConversationsMessagingSettingsAttr:      createConversationsMessagingSettingsFn,
-		getAllConversationsMessagingSettingsAttr:      getAllConversationsMessagingSettingsFn,
-		getConversationsMessagingSettingsIdByNameAttr: getConversationsMessagingSettingsIdByNameFn,
-		getConversationsMessagingSettingsByIdAttr:     getConversationsMessagingSettingsByIdFn,
-		updateConversationsMessagingSettingsAttr:      updateConversationsMessagingSettingsFn,
-		deleteConversationsMessagingSettingsAttr:      deleteConversationsMessagingSettingsFn,
-		messagingSettingsCache:                        messagingSettingsCache,
+		clientConfig:                                   clientConfig,
+		conversationsApi:                               api,
+		createConversationsMessagingSettingsAttr:       createConversationsMessagingSettingsFn,
+		getAllConversationsMessagingSettingsAttr:       getAllConversationsMessagingSettingsFn,
+		getConversationsMessagingSettingsIdByNameAttr:  getConversationsMessagingSettingsIdByNameFn,
+		getConversationsMessagingSettingsByIdAttr:      getConversationsMessagingSettingsByIdFn,
+		updateConversationsMessagingSettingsAttr:       updateConversationsMessagingSettingsFn,
+		deleteConversationsMessagingSettingsAttr:       deleteConversationsMessagingSettingsFn,
+		getConversationsMessagingSettingsDefaultIdAttr: getConversationsMessagingSettingsDefaultIdFn,
+		messagingSettingsCache:                         messagingSettingsCache,
 	}
 }
 
@@ -85,6 +88,10 @@ func (p *conversationsMessagingSettingsProxy) updateConversationsMessagingSettin
 // deleteConversationsMessagingSettings deletes a Genesys Cloud conversations messaging settings by Id
 func (p *conversationsMessagingSettingsProxy) deleteConversationsMessagingSettings(ctx context.Context, id string) (*platformclientv2.APIResponse, error) {
 	return p.deleteConversationsMessagingSettingsAttr(ctx, p, id)
+}
+
+func (p *conversationsMessagingSettingsProxy) getConversationsMessagingSettingsDefaultId(ctx context.Context) (*platformclientv2.Messagingsetting, *platformclientv2.APIResponse, error) {
+	return p.getConversationsMessagingSettingsDefaultIdAttr(ctx, p)
 }
 
 // getAllConversationsMessagingSettingsFn is the implementation for retrieving all conversations messaging settings in Genesys Cloud
@@ -167,4 +174,8 @@ func updateConversationsMessagingSettingsFn(ctx context.Context, p *conversation
 // deleteConversationsMessagingSettingsFn is an implementation function for deleting a Genesys Cloud conversations messaging settings
 func deleteConversationsMessagingSettingsFn(ctx context.Context, p *conversationsMessagingSettingsProxy, id string) (*platformclientv2.APIResponse, error) {
 	return p.conversationsApi.DeleteConversationsMessagingSetting(id)
+}
+
+func getConversationsMessagingSettingsDefaultIdFn(ctx context.Context, p *conversationsMessagingSettingsProxy) (*platformclientv2.Messagingsetting, *platformclientv2.APIResponse, error) {
+	return p.conversationsApi.GetConversationsMessagingSettingsDefault()
 }
