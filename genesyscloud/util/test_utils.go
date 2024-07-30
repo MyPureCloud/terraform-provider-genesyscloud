@@ -36,7 +36,7 @@ func TestAccPreCheck(t *testing.T) {
 	}
 }
 
-// For fields such as genesyscloud_outbound_campaign.campaign_status, which use a diff suppress func,
+// VerifyAttributeInArrayOfPotentialValues For fields such as genesyscloud_outbound_campaign.campaign_status, which use a diff suppress func,
 // and may return as "on", or "complete" depending on how long the operation takes
 func VerifyAttributeInArrayOfPotentialValues(resource string, key string, potentialValues []string) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
@@ -59,13 +59,13 @@ func ValidateStringInArray(resourceName string, attrName string, value string) r
 	return func(state *terraform.State) error {
 		resourceState, ok := state.RootModule().Resources[resourceName]
 		if !ok {
-			return fmt.Errorf("Failed to find resourceState %s in state", resourceName)
+			return fmt.Errorf("failed to find resourceState %s in state", resourceName)
 		}
 		resourceID := resourceState.Primary.ID
 
 		numAttr, ok := resourceState.Primary.Attributes[attrName+".#"]
 		if !ok {
-			return fmt.Errorf("No %s found for %s in state", attrName, resourceID)
+			return fmt.Errorf("no %s found for %s in state", attrName, resourceID)
 		}
 
 		numValues, _ := strconv.Atoi(numAttr)

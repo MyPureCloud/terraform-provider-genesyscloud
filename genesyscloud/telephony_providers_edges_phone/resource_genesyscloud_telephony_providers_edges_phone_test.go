@@ -463,7 +463,7 @@ func TestAccResourcePhoneStandaloneRemoteStation(t *testing.T) {
 
 	locationRes := "test-location"
 
-	emergencyNumber := "+13173114164"
+	emergencyNumber := "+13173117632"
 	if err := edgeSite.DeleteLocationWithNumber(emergencyNumber, sdkConfig); err != nil {
 		t.Skipf("failed to delete location with number %s: %v", emergencyNumber, err)
 	}

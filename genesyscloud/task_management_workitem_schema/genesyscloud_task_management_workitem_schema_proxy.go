@@ -8,6 +8,8 @@ import (
 	"log"
 	"net/http"
 
+	rc "terraform-provider-genesyscloud/genesyscloud/resource_cache"
+
 	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
 )
 
@@ -40,11 +42,14 @@ type taskManagementProxy struct {
 	updateTaskManagementWorkitemSchemaAttr           updateTaskManagementWorkitemSchemaFunc
 	deleteTaskManagementWorkitemSchemaAttr           deleteTaskManagementWorkitemSchemaFunc
 	getTaskManagementWorkitemSchemaDeletedStatusAttr getTaskManagementWorkitemSchemaDeletedStatusFunc
+	workitemSchemaCache                              rc.CacheInterface[platformclientv2.Dataschema]
 }
 
 // newTaskManagementProxy initializes the task management proxy with all of the data needed to communicate with Genesys Cloud
 func newTaskManagementProxy(clientConfig *platformclientv2.Configuration) *taskManagementProxy {
 	api := platformclientv2.NewTaskManagementApiWithConfig(clientConfig)
+	workitemSchemaCache := rc.NewResourceCache[platformclientv2.Dataschema]()
+
 	return &taskManagementProxy{
 		clientConfig:                                     clientConfig,
 		taskManagementApi:                                api,
@@ -55,6 +60,7 @@ func newTaskManagementProxy(clientConfig *platformclientv2.Configuration) *taskM
 		updateTaskManagementWorkitemSchemaAttr:           updateTaskManagementWorkitemSchemaFn,
 		deleteTaskManagementWorkitemSchemaAttr:           deleteTaskManagementWorkitemSchemaFn,
 		getTaskManagementWorkitemSchemaDeletedStatusAttr: getTaskManagementWorkitemSchemaDeletedStatusFn,
+		workitemSchemaCache:                              workitemSchemaCache,
 	}
 }
 
@@ -152,11 +158,11 @@ func getTaskManagementWorkitemSchemasByNameFn(ctx context.Context, p *taskManage
 
 // getTaskManagementWorkitemSchemaByIdFn is an implementation of the function to get a Genesys Cloud task management workitem schema by Id
 func getTaskManagementWorkitemSchemaByIdFn(ctx context.Context, p *taskManagementProxy, id string) (schema *platformclientv2.Dataschema, resp *platformclientv2.APIResponse, err error) {
-	schema, resp, err = p.taskManagementApi.GetTaskmanagementWorkitemsSchema(id)
-	if err != nil {
-		return nil, resp, fmt.Errorf("failed to retrieve task management workitem schema by id %s: %v", id, err)
+	workitemSchema := rc.GetCacheItem(p.workitemSchemaCache, id)
+	if workitemSchema != nil {
+		return schema, nil, nil
 	}
-	return schema, resp, nil
+	return p.taskManagementApi.GetTaskmanagementWorkitemsSchema(id)
 }
 
 // updateTaskManagementWorkitemSchemaFn is an implementation of the function to update a Genesys Cloud task management workitem schema

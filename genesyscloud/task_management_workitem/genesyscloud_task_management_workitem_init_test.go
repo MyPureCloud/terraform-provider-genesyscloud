@@ -5,6 +5,8 @@ import (
 	authRole "terraform-provider-genesyscloud/genesyscloud/auth_role"
 	routingLanguage "terraform-provider-genesyscloud/genesyscloud/routing_language"
 	routingQueue "terraform-provider-genesyscloud/genesyscloud/routing_queue"
+	routingSkill "terraform-provider-genesyscloud/genesyscloud/routing_skill"
+
 	"terraform-provider-genesyscloud/genesyscloud/user_roles"
 	"testing"
 
@@ -15,6 +17,7 @@ import (
 	workbin "terraform-provider-genesyscloud/genesyscloud/task_management_workbin"
 	workitemSchema "terraform-provider-genesyscloud/genesyscloud/task_management_workitem_schema"
 	worktype "terraform-provider-genesyscloud/genesyscloud/task_management_worktype"
+	worktypeStatus "terraform-provider-genesyscloud/genesyscloud/task_management_worktype_status"
 )
 
 /*
@@ -43,10 +46,11 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_task_management_workbin"] = workbin.ResourceTaskManagementWorkbin()
 	providerResources["genesyscloud_task_management_worktype"] = worktype.ResourceTaskManagementWorktype()
 	providerResources["genesyscloud_routing_language"] = routingLanguage.ResourceRoutingLanguage()
+	providerResources["genesyscloud_task_management_worktype_status"] = worktypeStatus.ResourceTaskManagementWorktypeStatus()
 	providerResources["genesyscloud_user"] = gcloud.ResourceUser()
 	providerResources["genesyscloud_externalcontacts_contact"] = externalContacts.ResourceExternalContact()
 	providerResources["genesyscloud_routing_queue"] = routingQueue.ResourceRoutingQueue()
-	providerResources["genesyscloud_routing_skill"] = gcloud.ResourceRoutingSkill()
+	providerResources["genesyscloud_routing_skill"] = routingSkill.ResourceRoutingSkill()
 	providerResources["genesyscloud_auth_role"] = authRole.ResourceAuthRole()
 	providerResources["genesyscloud_user_roles"] = user_roles.ResourceUserRoles()
 }

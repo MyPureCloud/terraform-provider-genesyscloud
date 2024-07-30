@@ -43,8 +43,14 @@ type EvaluationFormQuestionStruct struct {
 }
 
 type AnswerOptionStruct struct {
-	Text  string
-	Value int
+	Text                 string
+	Value                int
+	AssistanceConditions []AssistanceConditionStruct
+}
+
+type AssistanceConditionStruct struct {
+	Operator string
+	TopicIds []string
 }
 
 type VisibilityConditionStruct struct {

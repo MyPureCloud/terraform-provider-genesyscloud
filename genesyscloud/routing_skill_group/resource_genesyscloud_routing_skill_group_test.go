@@ -1,4 +1,4 @@
-package genesyscloud
+package routing_skill_group
 
 import (
 	"encoding/json"
@@ -6,12 +6,14 @@ import (
 	"log"
 	"os"
 	"strings"
+	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 	"time"
 
 	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
+	routingSkill "terraform-provider-genesyscloud/genesyscloud/routing_skill"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -219,11 +221,11 @@ func TestAccResourceRoutingSkillGroupMemberDivisionsBasic(t *testing.T) {
 
 	authDivision1Name := "TF Division " + uuid.NewString()
 	authDivision1Resource := "division1"
-	authDivision1 := GenerateAuthDivisionBasic(authDivision1Resource, authDivision1Name)
+	authDivision1 := gcloud.GenerateAuthDivisionBasic(authDivision1Resource, authDivision1Name)
 
 	authDivision2Name := "TF Division " + uuid.NewString()
 	authDivision2Resource := "division2"
-	authDivision2 := GenerateAuthDivisionBasic(authDivision2Resource, authDivision2Name)
+	authDivision2 := gcloud.GenerateAuthDivisionBasic(authDivision2Resource, authDivision2Name)
 
 	memberDivisionIds1 := fmt.Sprintf(`[%s]`, strings.Join([]string{"data.genesyscloud_auth_division_home.home.id"}, ", "))
 
@@ -412,9 +414,9 @@ func TestAccResourceRoutingSkillGroupMemberDivisionsUsersAssigned(t *testing.T) 
 		division1ResourceId = "division_1"
 		division2ResourceId = "division_2"
 		division3ResourceId = "division_3"
-		division1Name       = "tf test division " + uuid.NewString()
-		division2Name       = "tf test division " + uuid.NewString()
-		division3Name       = "tf test division " + uuid.NewString()
+		division1Name       = "tf test divisionB " + uuid.NewString()
+		division2Name       = "tf test divisionB " + uuid.NewString()
+		division3Name       = "tf test divisionB " + uuid.NewString()
 
 		memberDivisionIds = []string{
 			"genesyscloud_auth_division." + division1ResourceId + ".id",
@@ -423,11 +425,11 @@ func TestAccResourceRoutingSkillGroupMemberDivisionsUsersAssigned(t *testing.T) 
 		}
 	)
 
-	routingSkillResource := GenerateRoutingSkillResource(routingSkillResourceId, routingSkillName)
+	routingSkillResource := routingSkill.GenerateRoutingSkillResource(routingSkillResourceId, routingSkillName)
 
-	division1Resource := GenerateAuthDivisionBasic(division1ResourceId, division1Name)
-	division2Resource := GenerateAuthDivisionBasic(division2ResourceId, division2Name)
-	division3Resource := GenerateAuthDivisionBasic(division3ResourceId, division3Name)
+	division1Resource := gcloud.GenerateAuthDivisionBasic(division1ResourceId, division1Name)
+	division2Resource := gcloud.GenerateAuthDivisionBasic(division2ResourceId, division2Name)
+	division3Resource := gcloud.GenerateAuthDivisionBasic(division3ResourceId, division3Name)
 
 	user1Resource := fmt.Sprintf(`
 resource "genesyscloud_user" "%s" {
@@ -438,7 +440,7 @@ resource "genesyscloud_user" "%s" {
 		skill_id    = genesyscloud_routing_skill.%s.id
     	proficiency = 2.5
 	}
-}	
+}
 `, user1ResourceId, user1Name, user1email, division1ResourceId, routingSkillResourceId)
 
 	user2Resource := fmt.Sprintf(`
@@ -450,7 +452,7 @@ resource "genesyscloud_user" "%s" {
 		skill_id    = genesyscloud_routing_skill.%s.id
     	proficiency = 2.5
 	}
-}	
+}
 `, user2ResourceId, user2Name, user2email, division2ResourceId, routingSkillResourceId)
 
 	user3Resource := fmt.Sprintf(`
@@ -462,7 +464,7 @@ resource "genesyscloud_user" "%s" {
 		skill_id    = genesyscloud_routing_skill.%s.id
     	proficiency = 2.5
 	}
-}	
+}
 `, user3ResourceId, user3Name, user3email, division3ResourceId, routingSkillResourceId)
 
 	skillGroupResource := fmt.Sprintf(`
@@ -491,7 +493,7 @@ resource "genesyscloud_routing_skill_group" "%s" {
 	)
 
 	depends_on = [genesyscloud_user.%s, genesyscloud_user.%s, genesyscloud_user.%s ]
-}	
+}
 `, skillGroupResourceId, skillGroupName, strings.Join(memberDivisionIds, ", "),
 		skillGroupDescription, routingSkillName, user1ResourceId, user2ResourceId, user3ResourceId)
 
@@ -512,7 +514,7 @@ resource "genesyscloud_routing_skill_group" "%s" {
 					user2Resource +
 					user3Resource,
 				Check: resource.ComposeTestCheckFunc(
-					testVerifySkillGroupMemberCount("genesyscloud_routing_skill_group."+skillGroupResourceId, "3"),
+					testVerifySkillGroupMemberCount("genesyscloud_routing_skill_group."+skillGroupResourceId, 3),
 				),
 			},
 			{
@@ -523,7 +525,7 @@ resource "genesyscloud_routing_skill_group" "%s" {
 				Destroy:                 true,
 			},
 		},
-		CheckDestroy: testVerifySkillGroupDestroyed,
+		CheckDestroy: testVerifySkillGroupAndUsersDestroyed,
 	})
 }
 
@@ -541,23 +543,12 @@ func generateRoutingSkillGroupResource(
 		description="%s"
 		division_id=%s
 		skill_conditions = jsonencode(%s)
-		member_division_ids = %s 
+		member_division_ids = %s
 	}
 	`, resourceID, divisionResourceName, name, description, divisionID, skillCondition, memberDivisionIds)
 }
 
-func generateRoutingSkillGroupResourceBasic(
-	resourceID string,
-	name string,
-	description string) string {
-	return fmt.Sprintf(`resource "genesyscloud_routing_skill_group" "%s" {
-		name = "%s"
-		description="%s"
-	}
-	`, resourceID, name, description)
-}
-
-func testVerifySkillGroupMemberCount(resourceName string, count string) resource.TestCheckFunc {
+func testVerifySkillGroupMemberCount(resourceName string, count int) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
 		// Authorize client credentials
 		config, err := provider.AuthorizeSdk()
@@ -576,24 +567,13 @@ func testVerifySkillGroupMemberCount(resourceName string, count string) resource
 		time.Sleep(10 * time.Second)
 
 		// get skill group via GET /api/v2/routing/skillgroups/{skillGroupId}
-		path := fmt.Sprintf("%s/api/v2/routing/skillgroups/%s", routingAPI.Configuration.BasePath, resourceID)
-		headers := BuildHeaderParams(routingAPI)
-		apiClient := &routingAPI.Configuration.APIClient
-
-		response, err := apiClient.CallAPI(path, "GET", nil, headers, nil, nil, "", nil)
-		if err != nil || response.Error != nil {
-			return fmt.Errorf("Failed to get skill group %s: %v", resourceID, err)
-		}
-
-		skillGroupPayload := make(map[string]interface{}, 0)
-		err = json.Unmarshal(response.RawBody, &skillGroupPayload)
+		skillGroup, resp, err := routingAPI.GetRoutingSkillgroup(resourceID)
 		if err != nil {
-			return fmt.Errorf("Failed to unmarshal skill group %s: %s", resourceID, err)
+			return fmt.Errorf("Failed to get skill group %s: %v %s", resourceID, err, resp)
 		}
 
-		memberCount := skillGroupPayload["memberCount"]
-		if fmt.Sprintf("%v", memberCount) != count {
-			return fmt.Errorf("Expected member count to be %s, got %v for skill group %s", count, memberCount, resourceID)
+		if *skillGroup.MemberCount != count {
+			return fmt.Errorf("Expected member count to be %v, got %v for skill group %s", count, *skillGroup.MemberCount, resourceID)
 		}
 		return nil
 	}
@@ -700,70 +680,52 @@ func testVerifyAllDivisionsAssigned(resourceName string, attrName string) resour
 
 func testVerifySkillGroupDestroyed(state *terraform.State) error {
 	// Get default config to set config options
-
-	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
-	apiClient := &routingAPI.Configuration.APIClient
-
-	// TODO Once this code has been released into the public API we should fix this and use the SDK
-
-	headerParams := BuildHeaderParams(routingAPI)
+	config, err := provider.AuthorizeSdk()
+	if err != nil {
+		return fmt.Errorf("unexpected error while trying to authorize client in testVerifySkillGroupDestroyed : %s", err)
+	}
+	routingAPI := platformclientv2.NewRoutingApiWithConfig(config)
 	for _, rs := range state.RootModule().Resources {
 		if rs.Type != "genesyscloud_routing_skill_group" {
 			continue
 		}
 
-		path := routingAPI.Configuration.BasePath + "/api/v2/routing/skillgroups/" + rs.Primary.ID
-		response, err := apiClient.CallAPI(path, "GET", nil, headerParams, nil, nil, "", nil)
+		skillGroup, resp, err := routingAPI.GetRoutingSkillgroup(rs.Primary.ID)
 
-		skillGroupPayload := make(map[string]interface{})
-
-		if err != nil {
-			if util.IsStatus404(response) {
-				break
-			}
-
-			return fmt.Errorf("Unexpected error while trying to read skillgroup: %s", err)
-		}
-
-		json.Unmarshal(response.RawBody, &skillGroupPayload)
-
-		if skillGroupPayload["id"] != nil && skillGroupPayload["id"] != "" {
+		if skillGroup != nil {
 			return fmt.Errorf("Skill Group (%s) still exists", rs.Primary.ID)
+		} else if util.IsStatus404(resp) {
+			// Division not found as expected
+			continue
+		} else {
+			// Unexpected error
+			return fmt.Errorf("Unexpected error: %s", err)
 		}
-
 	}
 	// Success. All skills destroyed
 	return nil
 }
 func testVerifySkillGroupAndUsersDestroyed(state *terraform.State) error {
+	config, err := provider.AuthorizeSdk()
+	if err != nil {
+		return fmt.Errorf("unexpected error while trying to authorize client in testVerifySkillGroupDestroyed : %s", err)
+	}
+	routingAPI := platformclientv2.NewRoutingApiWithConfig(config)
+	usersAPI := platformclientv2.NewUsersApiWithConfig(config)
 
-	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
-	apiClient := &routingAPI.Configuration.APIClient
-	usersAPI := platformclientv2.NewUsersApiWithConfig(sdkConfig)
-	// TODO Once this code has been released into the public API we should fix this and use the SDK
-
-	headerParams := BuildHeaderParams(routingAPI)
 	for _, rs := range state.RootModule().Resources {
 		if rs.Type == "genesyscloud_routing_skill_group" {
-			path := routingAPI.Configuration.BasePath + "/api/v2/routing/skillgroups/" + rs.Primary.ID
-			response, err := apiClient.CallAPI(path, "GET", nil, headerParams, nil, nil, "", nil)
+			group, response, err := routingAPI.GetRoutingSkillgroup(rs.Primary.ID)
 
-			skillGroupPayload := make(map[string]interface{})
-
-			if err != nil {
-				if util.IsStatus404(response) {
-					break
-				}
-
-				return fmt.Errorf("Unexpected error while trying to read skillgroup: %s", err)
+			if group != nil {
+				return fmt.Errorf("team (%s) still exists", rs.Primary.ID)
 			}
-
-			json.Unmarshal(response.RawBody, &skillGroupPayload)
-
-			if skillGroupPayload["id"] != nil && skillGroupPayload["id"] != "" {
-				return fmt.Errorf("Skill Group (%s) still exists", rs.Primary.ID)
+			if util.IsStatus404(response) {
+				continue
 			}
+			return fmt.Errorf("Unexpected error: %s", err)
 		}
+
 		if rs.Type == "genesyscloud_user" {
 			err := checkUserDeleted(rs.Primary.ID)(state)
 			if err != nil {
@@ -773,10 +735,8 @@ func testVerifySkillGroupAndUsersDestroyed(state *terraform.State) error {
 			if user != nil {
 				return fmt.Errorf("User Resource (%s) still exists", rs.Primary.ID)
 			} else if util.IsStatus404(resp) {
-				// User not found as expected
 				continue
 			} else {
-				// Unexpected error
 				return fmt.Errorf("Unexpected error: %s", err)
 			}
 		}
@@ -785,26 +745,19 @@ func testVerifySkillGroupAndUsersDestroyed(state *terraform.State) error {
 	return nil
 }
 func getAllSkillGroupMemberDivisionIds(routingAPI *platformclientv2.RoutingApi, resourceId string) ([]string, diag.Diagnostics) {
-	headers := BuildHeaderParams(routingAPI)
-	apiClient := &routingAPI.Configuration.APIClient
-	path := fmt.Sprintf("%s/api/v2/routing/skillgroups/%s/members/divisions", routingAPI.Configuration.BasePath, resourceId)
-	response, err := apiClient.CallAPI(path, "GET", nil, headers, nil, nil, "", nil)
-	if err != nil || response.Error != nil {
-		return nil, util.BuildAPIDiagnosticError("genesyscloud_routing_skill_group", fmt.Sprintf("Failed to update Routing Utilization %s error: %s", resourceId, err), response)
-	}
+	sdkconfig, _ := provider.AuthorizeSdk()
+	api := platformclientv2.NewRoutingApiWithConfig(sdkconfig)
 
-	memberDivisionsPayload := make(map[string]interface{}, 0)
-	err = json.Unmarshal(response.RawBody, &memberDivisionsPayload)
+	divisions, resp, err := api.GetRoutingSkillgroupMembersDivisions(resourceId, "")
+
 	if err != nil {
-		return nil, util.BuildDiagnosticError("genesyscloud_routing_skill_group", fmt.Sprintf("Failed to unmarshal member divisions"), err)
+		return nil, util.BuildAPIDiagnosticError("genesyscloud_routing_skill_group", fmt.Sprintf("Failed to update Routing Utilization %s error: %s", resourceId, err), resp)
 	}
 
 	apiSkillGroupMemberDivisionIds := make([]string, 0)
-	entities := memberDivisionsPayload["entities"].([]interface{})
-	for _, entity := range entities {
-		if entityMap, ok := entity.(map[string]interface{}); ok {
-			apiSkillGroupMemberDivisionIds = append(apiSkillGroupMemberDivisionIds, entityMap["id"].(string))
-		}
+	for _, entity := range *divisions.Entities {
+		apiSkillGroupMemberDivisionIds = append(apiSkillGroupMemberDivisionIds, *entity.Id)
+
 	}
 
 	return apiSkillGroupMemberDivisionIds, nil
@@ -830,10 +783,8 @@ func checkUserDeleted(id string) resource.TestCheckFunc {
 }
 
 func isUserDeleted(id string) (bool, error) {
-	mu.Lock()
-	defer mu.Unlock()
-
-	usersAPI := platformclientv2.NewUsersApi()
+	sdkConfig, _ := provider.AuthorizeSdk()
+	usersAPI := platformclientv2.NewUsersApiWithConfig(sdkConfig)
 	// Attempt to get the user
 	_, response, err := usersAPI.GetUser(id, nil, "", "")
 

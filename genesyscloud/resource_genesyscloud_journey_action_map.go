@@ -147,9 +147,9 @@ var (
 				ValidateFunc: validation.StringInSlice([]string{"Web", "App" /*,"Custom", "Conversation" */}, false), // Custom and Conversation seem not to be supported by the API despite the documentation (DEVENGSD-607)
 			},
 			"session_type": {
-				Description: "The session type for which this condition can be satisfied. Valid values: web, app.",
-				Type:        schema.TypeString,
-				Required:    true,
+				Description:  "The session type for which this condition can be satisfied. Valid values: web, app.",
+				Type:         schema.TypeString,
+				Required:     true,
 				ValidateFunc: validation.StringInSlice([]string{"web", "app"}, false), // custom value seems not to be supported by the API despite the documentation
 			},
 			"event_name": {
