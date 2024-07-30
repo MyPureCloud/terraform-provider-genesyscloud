@@ -1374,6 +1374,52 @@ func TestAccResourceTfExportUserPromptExportAudioFile(t *testing.T) {
 	})
 }
 
+// TestAccResourceExportManagedSitesAsData checks that during an export, managed sites are exported as data source
+// Managed can't be set on sites, therefore the default managed site is checked during the test that it is exported as data
+func TestAccResourceExportManagedSitesAsData(t *testing.T) {
+	var (
+		exportTestDir = filepath.Join("..", "..", ".terraform"+uuid.NewString())
+		resourceID    = "export"
+		configPath    = filepath.Join(exportTestDir, defaultTfJSONFile)
+		statePath     = filepath.Join(exportTestDir, defaultTfStateFile)
+		siteName      = "PureCloud Voice - AWS"
+	)
+
+	if err := telephonyProvidersEdgesSite.CheckForDefaultSite(siteName); err != nil {
+		t.Skipf("failed to get default site %v", err)
+	}
+
+	defer func(path string) {
+		if err := os.RemoveAll(path); err != nil {
+			t.Logf("failed to remove dir %s: %s", path, err)
+		}
+	}(exportTestDir)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			{
+				Config: generateTfExportByIncludeFilterResources(
+					resourceID,
+					exportTestDir,
+					util.TrueValue, // include_state_file
+					[]string{ // include_filter_resources
+						strconv.Quote("genesyscloud_telephony_providers_edges_site"),
+					},
+					util.FalseValue, // export_as_hcl
+					util.FalseValue,
+					[]string{},
+				),
+				Check: resource.ComposeTestCheckFunc(
+					validateStateFileAsData(statePath, siteName),
+					validateExportManagedSitesAsData(configPath, siteName),
+				),
+			},
+		},
+	})
+}
+
 // TestAccResourceTfExportSplitFilesAsHCL will create 2 queues, 2 wrap up codes, and 2 users.
 // The exporter will be run in split mode so 3 resource tfs should be created as well as a provider.tf
 func TestAccResourceTfExportSplitFilesAsHCL(t *testing.T) {
@@ -1445,52 +1491,6 @@ func TestAccResourceTfExportSplitFilesAsHCL(t *testing.T) {
 			},
 		},
 		CheckDestroy: testVerifyExportsDestroyedFunc(exportTestDir),
-	})
-}
-
-// TestAccResourceExportManagedSitesAsData checks that during an export, managed sites are exported as data source
-// Managed can't be set on sites, therefore the default managed site is checked during the test that it is exported as data
-func TestAccResourceExportManagedSitesAsData(t *testing.T) {
-	var (
-		exportTestDir = filepath.Join("..", "..", ".terraform"+uuid.NewString())
-		resourceID    = "export"
-		configPath    = filepath.Join(exportTestDir, defaultTfJSONFile)
-		statePath     = filepath.Join(exportTestDir, defaultTfStateFile)
-		siteName      = "PureCloud Voice - AWS"
-	)
-
-	if err := telephonyProvidersEdgesSite.CheckForDefaultSite(siteName); err != nil {
-		t.Skipf("failed to get default site %v", err)
-	}
-
-	defer func(path string) {
-		if err := os.RemoveAll(path); err != nil {
-			t.Logf("failed to remove dir %s: %s", path, err)
-		}
-	}(exportTestDir)
-
-	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { util.TestAccPreCheck(t) },
-		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
-		Steps: []resource.TestStep{
-			{
-				Config: generateTfExportByIncludeFilterResources(
-					resourceID,
-					exportTestDir,
-					util.TrueValue, // include_state_file
-					[]string{ // include_filter_resources
-						strconv.Quote("genesyscloud_telephony_providers_edges_site"),
-					},
-					util.FalseValue, // export_as_hcl
-					util.FalseValue,
-					[]string{},
-				),
-				Check: resource.ComposeTestCheckFunc(
-					validateStateFileAsData(statePath, siteName),
-					validateExportManagedSitesAsData(configPath, siteName),
-				),
-			},
-		},
 	})
 }
 
