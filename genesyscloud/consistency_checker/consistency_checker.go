@@ -117,21 +117,6 @@ func resourceDataToMap(d *schema.ResourceData) map[string]interface{} {
 	return originalState
 }
 
-func isComputed(d *schema.ResourceData, key string) bool {
-	schemaInterface := getUnexportedField(reflect.ValueOf(d).Elem().FieldByName("schema"))
-	resourceSchema := schemaInterface.(map[string]*schema.Schema)
-
-	k := key
-	if strings.Contains(key, ".") {
-		k = strings.Split(key, ".")[0]
-	}
-	if resourceSchema[k] == nil {
-		return false
-	}
-
-	return resourceSchema[k].Computed
-}
-
 func isEmptyState(d *schema.ResourceData) *bool {
 	stateString := strings.Split(d.State().String(), "\n")
 	isEmpty := true
@@ -214,7 +199,7 @@ func (cc *ConsistencyCheck) CheckState(currentState *schema.ResourceData) *retry
 	diff, _ := cc.resource.Diff(cc.ctx, currentState.State(), resourceConfig, cc.meta)
 	if diff != nil && len(diff.Attributes) > 0 {
 		var nestedBlocksError bool // Used to indicate if there is a problem with any nested blocks
-		for attribute, _ := range diff.Attributes {
+		for attribute := range diff.Attributes {
 			// Make sure we have the same number of nested blocks
 			if strings.HasSuffix(attribute, "#") {
 				if cc.originalState.Get(attribute).(int) != currentState.Get(attribute).(int) {
