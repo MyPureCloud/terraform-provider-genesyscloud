@@ -22,7 +22,8 @@ import (
 func ValidatePhoneNumber(number interface{}, _ cty.Path) diag.Diagnostics {
 	if numberStr, ok := number.(string); ok {
 
-		formattedNum, err := util.FormatAsValidE164Number(numberStr)
+		utilE164 := util.NewUtilE164Service()
+		formattedNum, err := utilE164.FormatAsValidE164Number(numberStr)
 		if err != nil {
 			return err
 		}

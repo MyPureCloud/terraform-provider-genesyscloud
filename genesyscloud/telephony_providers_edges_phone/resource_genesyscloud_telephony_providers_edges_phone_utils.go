@@ -322,7 +322,8 @@ func flattenLines(phoneLines *[]platformclientv2.Line) []interface{} {
 	}
 
 	if len(lineAddressList) > 0 {
-		formattedLineAddresses := lists.Map(lineAddressList, util.FormatAsCalculatedE164Number)
+		utilE164 := util.NewUtilE164Service()
+		formattedLineAddresses := lists.Map(lineAddressList, utilE164.FormatAsCalculatedE164Number)
 		resourcedata.SetMapValueIfNotNil(linePropertiesMap, "line_address", &formattedLineAddresses)
 	}
 	if len(remoteAddressList) > 0 {

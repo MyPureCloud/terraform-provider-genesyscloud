@@ -149,6 +149,7 @@ func readSite(ctx context.Context, d *schema.ResourceData, meta interface{}) dia
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	sp := GetSiteProxy(sdkConfig)
 	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceSite(), constants.DefaultConsistencyChecks, resourceName)
+	utilE164 := util.NewUtilE164Service()
 
 	log.Printf("Reading site %s", d.Id())
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
@@ -174,7 +175,7 @@ func readSite(ctx context.Context, d *schema.ResourceData, meta interface{}) dia
 
 		d.Set("caller_id", nil)
 		if currentSite.CallerId != nil && *currentSite.CallerId != "" {
-			_ = d.Set("caller_id", util.FormatAsCalculatedE164Number(*currentSite.CallerId))
+			_ = d.Set("caller_id", utilE164.FormatAsCalculatedE164Number(*currentSite.CallerId))
 		}
 		_ = d.Set("caller_name", currentSite.CallerName)
 

@@ -87,7 +87,8 @@ func readIvrConfig(ctx context.Context, d *schema.ResourceData, meta interface{}
 		if ivrConfig.Dnis == nil || *ivrConfig.Dnis == nil {
 			_ = d.Set("dnis", nil)
 		} else {
-			dnis := lists.Map(*ivrConfig.Dnis, util.FormatAsCalculatedE164Number)
+			utilE164 := util.NewUtilE164Service()
+			dnis := lists.Map(*ivrConfig.Dnis, utilE164.FormatAsCalculatedE164Number)
 			_ = d.Set("dnis", lists.StringListToSetOrNil(&dnis))
 		}
 
