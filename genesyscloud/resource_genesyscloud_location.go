@@ -381,8 +381,7 @@ func flattenLocationEmergencyNumber(numberConfig *platformclientv2.Locationemerg
 	}
 	numberSettings := make(map[string]interface{})
 	if numberConfig.Number != nil {
-		utilE164 := util.NewUtilE164Service()
-		numberSettings["number"] = utilE164.FormatAsCalculatedE164Number(*numberConfig.Number)
+		numberSettings["number"], _ = util.FormatAsE164Number(*numberConfig.Number)
 	}
 	if numberConfig.VarType != nil {
 		numberSettings["type"] = *numberConfig.VarType
