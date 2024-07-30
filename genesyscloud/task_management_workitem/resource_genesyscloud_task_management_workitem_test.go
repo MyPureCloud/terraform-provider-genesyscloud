@@ -197,9 +197,9 @@ func TestAccResourceTaskManagementWorkitem(t *testing.T) {
 			{
 				Config: taskMgmtConfig +
 					generateWorkitemResourceBasic(
-						workitemRes, 
-						workitem1.name, 
-						workitem1.worktype_id, 
+						workitemRes,
+						workitem1.name,
+						workitem1.worktype_id,
 						fmt.Sprintf("status_id = genesyscloud_task_management_worktype_status.%s.id", statusResourceOpen),
 					),
 				Check: resource.ComposeTestCheckFunc(
@@ -207,6 +207,25 @@ func TestAccResourceTaskManagementWorkitem(t *testing.T) {
 					resource.TestCheckResourceAttrPair("genesyscloud_task_management_workitem."+workitemRes, "worktype_id", "genesyscloud_task_management_worktype."+wtResName, "id"),
 					task_management_worktype_status.ValidateStatusIds("genesyscloud_task_management_workitem."+workitemRes, "status_id", "genesyscloud_task_management_worktype_status."+statusResourceOpen, "id"),
 				),
+			},
+			{
+				//Add user roles first
+				Config: gcloud.GenerateAuthDivisionHomeDataSource(homeDivRes) +
+					gcloud.GenerateBasicUserResource(userResId1, userEmail1, userName1) +
+					authRole.GenerateAuthRoleResource(roleResId1, roleName1, "test role description",
+						authRole.GenerateRolePermPolicy("workitems", "*", strconv.Quote("*")),
+					) +
+					user_roles.GenerateUserRoles("user_role_1", userResId1,
+						generateResourceRoles(
+							"genesyscloud_auth_role."+roleResId1+".id",
+							"data.genesyscloud_auth_division_home."+homeDivRes+".id",
+						),
+					) + taskMgmtConfig + generateWorkitemResourceBasic(
+						workitemRes,
+						workitem1.name,
+						workitem1.worktype_id,
+						fmt.Sprintf("status_id = genesyscloud_task_management_worktype_status.%s.id", statusResourceOpen),
+					),
 			},
 			// Update workitem with more fields
 			{
@@ -413,9 +432,9 @@ func TestAccResourceTaskManagementWorkitemCustomFields(t *testing.T) {
 		`
 
 		// worktype
-		wtResName         = "tf_worktype_1"
-		wtName            = "tf-worktype" + uuid.NewString()
-		wtDescription     = "tf-worktype-description"
+		wtResName     = "tf_worktype_1"
+		wtName        = "tf-worktype" + uuid.NewString()
+		wtDescription = "tf-worktype-description"
 
 		// Worktype statuses
 		statusResourceOpen   = "open-status"
