@@ -27,7 +27,6 @@ func validateAddressesMap(m map[string]interface{}) error {
 
 func flattenGroupAddresses(d *schema.ResourceData, addresses *[]platformclientv2.Groupcontact) []interface{} {
 	addressSlice := make([]interface{}, 0)
-	utilE164 := util.NewUtilE164Service()
 	for _, address := range *addresses {
 		if address.MediaType != nil {
 			if *address.MediaType == groupPhoneType {
@@ -35,7 +34,7 @@ func flattenGroupAddresses(d *schema.ResourceData, addresses *[]platformclientv2
 
 				// Strip off any parentheses from phone numbers
 				if address.Address != nil {
-					phoneNumber["number"] = utilE164.FormatAsCalculatedE164Number(strings.Trim(*address.Address, "()"))
+					phoneNumber["number"], _ = util.FormatAsE164Number(strings.Trim(*address.Address, "()"))
 				}
 
 				resourcedata.SetMapValueIfNotNil(phoneNumber, "extension", address.Extension)
@@ -45,7 +44,7 @@ func flattenGroupAddresses(d *schema.ResourceData, addresses *[]platformclientv2
 				if address.Address == nil &&
 					address.Extension == nil &&
 					address.Display != nil {
-					setExtensionOrNumberBasedOnDisplay(d, phoneNumber, &address, utilE164)
+					setExtensionOrNumberBasedOnDisplay(d, phoneNumber, &address)
 				}
 
 				addressSlice = append(addressSlice, phoneNumber)
@@ -63,7 +62,7 @@ func flattenGroupAddresses(d *schema.ResourceData, addresses *[]platformclientv2
 *  This function establishes which field was set in the schema data (`extension` or `address`)
 *  and then sets that field in the map to the value that came back in `display`
  */
-func setExtensionOrNumberBasedOnDisplay(d *schema.ResourceData, addressMap map[string]interface{}, address *platformclientv2.Groupcontact, utilE164 *util.UtilE164Service) {
+func setExtensionOrNumberBasedOnDisplay(d *schema.ResourceData, addressMap map[string]interface{}, address *platformclientv2.Groupcontact) {
 	display := strings.Trim(*address.Display, "()")
 	schemaAddresses := d.Get("addresses").([]interface{})
 	for _, a := range schemaAddresses {
@@ -78,7 +77,7 @@ func setExtensionOrNumberBasedOnDisplay(d *schema.ResourceData, addressMap map[s
 		if ext, _ := currentAddress["extension"].(string); ext != "" {
 			addressMap["extension"] = display
 		} else if number, _ := currentAddress["number"].(string); number != "" {
-			addressMap["number"] = utilE164.FormatAsCalculatedE164Number(display)
+			addressMap["number"], _ = util.FormatAsE164Number(display)
 		}
 	}
 }
