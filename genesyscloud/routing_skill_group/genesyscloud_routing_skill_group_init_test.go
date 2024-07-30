@@ -4,6 +4,7 @@ import (
 	"sync"
 	"terraform-provider-genesyscloud/genesyscloud"
 	"testing"
+	routingSkill "terraform-provider-genesyscloud/genesyscloud/routing_skill"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
@@ -24,7 +25,7 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources[resourceName] = ResourceRoutingSkillGroup()
 	providerResources["genesyscloud_auth_division"] = genesyscloud.ResourceAuthDivision()
 	providerResources["genesyscloud_user"] = genesyscloud.ResourceUser()
-	providerResources["genesyscloud_routing_skill"] = genesyscloud.ResourceRoutingSkill()
+	providerResources["genesyscloud_routing_skill"] = routingSkill.ResourceRoutingSkill()
 }
 
 // registerTestDataSources registers all data sources used in the tests.

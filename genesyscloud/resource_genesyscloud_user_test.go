@@ -10,6 +10,8 @@ import (
 	routinglanguage "terraform-provider-genesyscloud/genesyscloud/routing_language"
 	routingUtilization "terraform-provider-genesyscloud/genesyscloud/routing_utilization"
 	routingUtilizationLabel "terraform-provider-genesyscloud/genesyscloud/routing_utilization_label"
+	routingSkill "terraform-provider-genesyscloud/genesyscloud/routing_skill"
+
 	extensionPool "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_extension_pool"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
@@ -466,7 +468,7 @@ func TestAccResourceUserSkills(t *testing.T) {
 					email1,
 					userName1,
 					generateUserRoutingSkill("genesyscloud_routing_skill."+skillResource1+".id", proficiency1),
-				) + GenerateRoutingSkillResource(skillResource1, skillName1),
+				) + routingSkill.GenerateRoutingSkillResource(skillResource1, skillName1),
 				Check: resource.ComposeTestCheckFunc(
 					validateUserSkill("genesyscloud_user."+userResource1, "genesyscloud_routing_skill."+skillResource1, proficiency1),
 				),
@@ -479,10 +481,10 @@ func TestAccResourceUserSkills(t *testing.T) {
 					userName1,
 					generateUserRoutingSkill("genesyscloud_routing_skill."+skillResource1+".id", proficiency1),
 					generateUserRoutingSkill("genesyscloud_routing_skill."+skillResource2+".id", proficiency2),
-				) + GenerateRoutingSkillResource(
+				) + routingSkill.GenerateRoutingSkillResource(
 					skillResource1,
 					skillName1,
-				) + GenerateRoutingSkillResource(
+				) + routingSkill.GenerateRoutingSkillResource(
 					skillResource2,
 					skillName2,
 				),
@@ -498,7 +500,7 @@ func TestAccResourceUserSkills(t *testing.T) {
 					email1,
 					userName1,
 					generateUserRoutingSkill("genesyscloud_routing_skill."+skillResource2+".id", proficiency1),
-				) + GenerateRoutingSkillResource(
+				) + routingSkill.GenerateRoutingSkillResource(
 					skillResource2,
 					skillName2,
 				),
