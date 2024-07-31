@@ -9,7 +9,6 @@ import (
 	didPool "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_did_pool"
 	phoneBaseSettings "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_phonebasesettings"
 	edgeSite "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site"
-	"terraform-provider-genesyscloud/genesyscloud/user"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 	"time"
@@ -47,7 +46,7 @@ func TestAccResourcePhoneBasic(t *testing.T) {
 		userDepartment = "Development"
 	)
 
-	user1 := user.GenerateUserResource(
+	user1 := gcloud.GenerateUserResource(
 		userRes1,
 		userEmail1,
 		userName1,
@@ -60,7 +59,7 @@ func TestAccResourcePhoneBasic(t *testing.T) {
 		"",             // No certs
 	)
 
-	user2 := user.GenerateUserResource(
+	user2 := gcloud.GenerateUserResource(
 		userRes2,
 		userEmail2,
 		userName2,

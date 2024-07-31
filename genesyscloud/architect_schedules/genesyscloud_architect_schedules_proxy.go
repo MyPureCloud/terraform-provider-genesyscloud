@@ -174,10 +174,10 @@ func getArchitectSchedulesIdByNameFn(ctx context.Context, p *architectSchedulesP
 		return "", true, apiResponse, fmt.Errorf("No architect schedules found with name %s", name)
 	}
 
-	for _, schedule := range *schedules {
-		if *schedule.Name == name {
-			log.Printf("Retrieved the architect schedules id %s by name %s", *schedule.Id, name)
-			return *schedule.Id, false, apiResponse, nil
+	for _, schedules := range *schedules {
+		if *schedules.Name == name {
+			log.Printf("Retrieved the architect schedules id %s by name %s", *schedules.Id, name)
+			return *schedules.Id, false, apiResponse, nil
 		}
 	}
 
