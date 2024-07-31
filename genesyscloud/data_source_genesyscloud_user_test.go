@@ -1,4 +1,4 @@
-package user
+package genesyscloud
 
 import (
 	"fmt"
@@ -35,16 +35,16 @@ func TestAccDataSourceUser(t *testing.T) {
 					userName,
 				) + generateUserDataSource(
 					userDataSource,
-					resourceName+"."+userResource+".email",
+					"genesyscloud_user."+userResource+".email",
 					util.NullValue,
-					resourceName+"."+userResource,
+					"genesyscloud_user."+userResource,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair("data."+resourceName+"."+userDataSource, "id", resourceName+"."+userResource, "id"),
+					resource.TestCheckResourceAttrPair("data.genesyscloud_user."+userDataSource, "id", "genesyscloud_user."+userResource, "id"),
 					func(s *terraform.State) error {
-						rs, ok := s.RootModule().Resources[resourceName+"."+userResource]
+						rs, ok := s.RootModule().Resources["genesyscloud_user."+userResource]
 						if !ok {
-							return fmt.Errorf("not found: %s", resourceName+"."+userResource)
+							return fmt.Errorf("not found: %s", "genesyscloud_user."+userResource)
 						}
 						userID = rs.Primary.ID
 						log.Printf("User ID: %s\n", userID) // Print user ID
@@ -61,11 +61,11 @@ func TestAccDataSourceUser(t *testing.T) {
 				) + generateUserDataSource(
 					userDataSource,
 					util.NullValue,
-					resourceName+"."+userResource+".name",
-					resourceName+"."+userResource,
+					"genesyscloud_user."+userResource+".name",
+					"genesyscloud_user."+userResource,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair("data."+resourceName+"."+userDataSource, "id", resourceName+"."+userResource, "id"),
+					resource.TestCheckResourceAttrPair("data.genesyscloud_user."+userDataSource, "id", "genesyscloud_user."+userResource, "id"),
 					func(s *terraform.State) error {
 						time.Sleep(30 * time.Second) // Wait for 30 seconds for proper deletion
 						return nil
@@ -87,10 +87,10 @@ func generateUserDataSource(
 	// Must explicitly use depends_on in terraform v0.13 when a data source references a resource
 	// Fixed in v0.14 https://github.com/hashicorp/terraform/pull/26284
 	dependsOnResource string) string {
-	return fmt.Sprintf(`data "%s" "%s" {
+	return fmt.Sprintf(`data "genesyscloud_user" "%s" {
         email = %s
 		name = %s
         depends_on=[%s]
 	}
-	`, resourceName, resourceID, email, name, dependsOnResource)
+	`, resourceID, email, name, dependsOnResource)
 }
