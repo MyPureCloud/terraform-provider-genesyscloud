@@ -7,9 +7,9 @@ import (
 )
 
 /*
-The genesyscloud_conversations_messaging_settings_default_proxy.go file contains the proxy structures and methods that interact
-with the Genesys Cloud SDK. We use composition here for each function on the proxy so individual functions can be stubbed
-out during testing.
+	The genesyscloud_conversations_messaging_settings_default_proxy.go file contains the proxy structures and methods that interact
+	with the Genesys Cloud SDK. We use composition here for each function on the proxy so individual functions can be stubbed
+	out during testing.
 */
 
 // internalProxy holds a proxy instance that can be used throughout the package
@@ -47,7 +47,6 @@ func getConversationsMessagingSettingsDefaultProxy(clientConfig *platformclientv
 	if internalProxy == nil {
 		internalProxy = newConversationsMessagingSettingsDefaultProxy(clientConfig)
 	}
-
 	return internalProxy
 }
 

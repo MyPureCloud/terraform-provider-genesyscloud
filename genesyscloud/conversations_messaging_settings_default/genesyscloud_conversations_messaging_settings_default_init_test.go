@@ -9,8 +9,8 @@ import (
 )
 
 /*
-   The genesyscloud_conversations_messaging_settings_default_init_test.go file is used to initialize the data sources and resources
-   used in testing the conversations_messaging_settings_default resource.
+	The genesyscloud_conversations_messaging_settings_default_init_test.go file is used to initialize the data sources and resources
+	used in testing the conversations_messaging_settings_default resource.
 */
 
 // providerResources holds a map of all registered resources

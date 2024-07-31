@@ -30,7 +30,7 @@ func readConversationsMessagingSettingsDefault(ctx context.Context, d *schema.Re
 	log.Printf("Reading conversations messaging settings default %s", d.Id())
 
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
-		messagingSettingDefaultRequest, resp, getErr := proxy.getConversationsMessagingSettingsDefault(ctx)
+		messagingSettingDefault, resp, getErr := proxy.getConversationsMessagingSettingsDefault(ctx)
 		if getErr != nil {
 			if util.IsStatus404(resp) {
 				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read conversations messaging settings default %s: %s", d.Id(), getErr), resp))
@@ -38,9 +38,9 @@ func readConversationsMessagingSettingsDefault(ctx context.Context, d *schema.Re
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read conversations messaging settings default %s: %s", d.Id(), getErr), resp))
 		}
 
-		resourcedata.SetNillableValue(d, "setting_id", messagingSettingDefaultRequest.Id)
+		resourcedata.SetNillableValue(d, "setting_id", messagingSettingDefault.Id)
 
-		log.Printf("Read conversations messaging settings default %s %s", d.Id(), *messagingSettingDefaultRequest.Id)
+		log.Printf("Read conversations messaging settings default %s %s", d.Id(), *messagingSettingDefault.Id)
 		return cc.CheckState(d)
 	})
 }
@@ -56,12 +56,12 @@ func updateConversationsMessagingSettingsDefault(ctx context.Context, d *schema.
 	}
 
 	log.Printf("Updating conversations messaging settings default %s", settingId)
-	messagingSettingDefaultRequest, resp, err := proxy.updateConversationsMessagingSettingsDefault(ctx, &updateRequest)
+	messagingSettingDefault, resp, err := proxy.updateConversationsMessagingSettingsDefault(ctx, &updateRequest)
 	if err != nil {
 		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update conversations messaging settings default %s: %s", d.Id(), err), resp)
 	}
 
-	log.Printf("Updated conversations messaging settings default %s", *messagingSettingDefaultRequest.Id)
+	log.Printf("Updated conversations messaging settings default %s", *messagingSettingDefault.Id)
 	return readConversationsMessagingSettingsDefault(ctx, d, meta)
 }
 
