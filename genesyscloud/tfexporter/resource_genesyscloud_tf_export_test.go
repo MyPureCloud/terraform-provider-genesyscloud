@@ -1510,11 +1510,11 @@ func validateStateFileAsData(filename, siteName string) resource.TestCheckFunc {
 
 		// Check if data sources exist in the exported data
 		if resources, ok := stateData["resources"].([]interface{}); ok {
-			fmt.Printf("checking that managed site with name %s is exported as data source in tf state", siteName)
+			fmt.Printf("checking that managed site with name %s is exported as data source in tf state\n", siteName)
 
 			// Validate each site's name
 			for _, r := range resources {
-				fmt.Printf("resource that managed site with name %s is exported as data source", r)
+				fmt.Printf("resource that managed site with name %v is exported as data source\n", r)
 
 				res, ok := r.(map[string]interface{})
 				if !ok {
@@ -1533,10 +1533,10 @@ func validateStateFileAsData(filename, siteName string) resource.TestCheckFunc {
 
 				if name == strings.ReplaceAll(siteName, " ", "_") {
 					if mode == "data" {
-						log.Printf("Site with name '%s' is correctly exported as data source", siteName)
+						log.Printf("Site with name '%s' is correctly exported as data source\n", siteName)
 						return nil
 					} else {
-						log.Printf("Site with name '%s' is not correctly exported as data", siteName)
+						log.Printf("Site with name '%s' is not correctly exported as data\n", siteName)
 						return nil
 					}
 				}
@@ -1572,7 +1572,7 @@ func validateExportManagedSitesAsData(filename, siteName string) resource.TestCh
 				return fmt.Errorf("no data sources exported for genesyscloud_telephony_providers_edges_site")
 			}
 
-			log.Printf("checking that managed site with name %s is exported as data source", siteName)
+			log.Printf("checking that managed site with name %s is exported as data source\n", siteName)
 
 			// Validate each site's name
 			for siteID, site := range sites {
