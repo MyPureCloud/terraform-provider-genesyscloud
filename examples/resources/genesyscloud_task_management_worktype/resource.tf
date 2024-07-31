@@ -17,34 +17,4 @@ resource "genesyscloud_task_management_worktype" "worktype_1" {
   default_skills_ids  = [genesyscloud_routing_skill.skill_1.id, genesyscloud_routing_skill.skill_2.id]
 
   assignment_enabled = true
-
-  defaultStatusName = "Open Status"
-
-  statuses {
-    name                            = "Open Status"
-    description                     = "Description of open status"
-    category                        = "Open"
-    destination_status_names        = ["WIP", "Waiting Status"]
-    default_destination_status_name = "WIP"
-    status_transition_delay_seconds = 86500
-    status_transition_time          = "04:20:00"
-  }
-
-  statuses {
-    name        = "WIP"
-    description = "Description of WIP status"
-    category    = "InProgress"
-  }
-
-  statuses {
-    name        = "Waiting Status"
-    description = "Description of waiting status"
-    category    = "Waiting"
-  }
-
-  statuses {
-    name        = "Close Status"
-    description = "Description of close status"
-    category    = "Closed"
-  }
 }

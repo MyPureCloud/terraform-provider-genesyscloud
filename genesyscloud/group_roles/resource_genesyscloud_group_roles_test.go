@@ -2,8 +2,10 @@ package group_roles
 
 import (
 	"fmt"
+	"log"
 	"strconv"
 	"strings"
+	"sync"
 	"terraform-provider-genesyscloud/genesyscloud"
 	"terraform-provider-genesyscloud/genesyscloud/group"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
@@ -13,11 +15,16 @@ import (
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
 
 	authRole "terraform-provider-genesyscloud/genesyscloud/auth_role"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+)
+
+var (
+	mu sync.Mutex
 )
 
 func TestAccResourceGroupRolesMembership(t *testing.T) {
@@ -35,6 +42,7 @@ func TestAccResourceGroupRolesMembership(t *testing.T) {
 		testUserResource  = "user_resource1"
 		testUserName      = "nameUser1" + uuid.NewString()
 		testUserEmail     = uuid.NewString() + "@example.com"
+		userID            string
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -58,6 +66,15 @@ func TestAccResourceGroupRolesMembership(t *testing.T) {
 				),
 				Check: resource.ComposeTestCheckFunc(
 					validateResourceRole("genesyscloud_group_roles."+groupRoleResource, "genesyscloud_auth_role."+roleResource1),
+					func(s *terraform.State) error {
+						rs, ok := s.RootModule().Resources["genesyscloud_user."+testUserResource]
+						if !ok {
+							return fmt.Errorf("not found: %s", "genesyscloud_user."+testUserResource)
+						}
+						userID = rs.Primary.ID
+						log.Printf("User ID: %s\n", userID) // Print user ID
+						return nil
+					},
 				),
 			},
 			{
@@ -125,14 +142,25 @@ func TestAccResourceGroupRolesMembership(t *testing.T) {
 						return nil
 					},
 				),
+
+				PreventPostDestroyRefresh: true,
 			},
 			{
+				Config: generateGroupRoles(
+					groupRoleResource,
+					groupResource1,
+				),
 				// Import/Read
 				ResourceName:      "genesyscloud_group_roles." + groupRoleResource,
 				ImportState:       true,
 				ImportStateVerify: true,
+				Destroy:           true,
+				Check: resource.ComposeTestCheckFunc(
+					checkUserDeleted(userID),
+				),
 			},
 		},
+		CheckDestroy: testVerifyGroupsAndUsersDestroyed,
 	})
 }
 
@@ -228,4 +256,83 @@ func generateUserWithCustomAttrs(resourceID string, email string, name string, a
 		%s
 	}
 	`, resourceID, email, name, strings.Join(attrs, "\n"))
+}
+
+func checkUserDeleted(id string) resource.TestCheckFunc {
+	log.Printf("Fetching user with ID: %s\n", id)
+	return func(s *terraform.State) error {
+		maxAttempts := 30
+		for i := 0; i < maxAttempts; i++ {
+
+			deleted, err := isUserDeleted(id)
+			if err != nil {
+				return err
+			}
+			if deleted {
+				return nil
+			}
+			time.Sleep(10 * time.Second)
+		}
+		return fmt.Errorf("user %s was not deleted properly", id)
+	}
+}
+
+func isUserDeleted(id string) (bool, error) {
+	mu.Lock()
+	defer mu.Unlock()
+
+	usersAPI := platformclientv2.NewUsersApi()
+	// Attempt to get the user
+	_, response, err := usersAPI.GetUser(id, nil, "", "")
+
+	// Check if the user is not found (deleted)
+	if response != nil && response.StatusCode == 404 {
+		return true, nil // User is deleted
+	}
+
+	// Handle other errors
+	if err != nil {
+		log.Printf("Error fetching user: %v", err)
+		return false, err
+	}
+
+	// If user is found, it means the user is not deleted
+	return false, nil
+}
+
+func testVerifyGroupsAndUsersDestroyed(state *terraform.State) error {
+	groupsAPI := platformclientv2.NewGroupsApi()
+	usersAPI := platformclientv2.NewUsersApi()
+	for _, rs := range state.RootModule().Resources {
+		if rs.Type == "genesyscloud_group" {
+			group, resp, err := groupsAPI.GetGroup(rs.Primary.ID)
+			if group != nil {
+				return fmt.Errorf("Group (%s) still exists", rs.Primary.ID)
+			} else if util.IsStatus404(resp) {
+				// Group not found as expected
+				continue
+			} else {
+				// Unexpected error
+				return fmt.Errorf("Unexpected error: %s", err)
+			}
+		}
+		if rs.Type == "genesyscloud_user" {
+			err := checkUserDeleted(rs.Primary.ID)(state)
+			if err != nil {
+				continue
+			}
+			user, resp, err := usersAPI.GetUser(rs.Primary.ID, nil, "", "")
+			if user != nil {
+				return fmt.Errorf("User (%s) still exists", rs.Primary.ID)
+			} else if util.IsStatus404(resp) {
+				// User not found as expected
+				continue
+			} else {
+				// Unexpected error
+				return fmt.Errorf("Unexpected error: %s", err)
+			}
+		}
+
+	}
+	return nil
 }

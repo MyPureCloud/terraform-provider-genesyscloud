@@ -121,6 +121,12 @@ func ResourceGroup() *schema.Resource {
 				Computed:    true,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
+			"roles_enabled": {
+				Description: "Allow roles to be assigned to this group.",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     true,
+			},
 		},
 	}
 }

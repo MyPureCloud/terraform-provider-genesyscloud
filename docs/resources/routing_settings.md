@@ -65,6 +65,8 @@ Optional:
 
 - `content_search_enabled` (Boolean) Setting to enable/disable content search
 - `low_latency_transcription_enabled` (Boolean) Boolean flag indicating whether low latency transcription via Notification API is enabled
+- `pci_dss_redaction_enabled` (Boolean) Setting to enable/disable PCI DSS Redaction
+- `pii_redaction_enabled` (Boolean) Setting to enable/disable PII Redaction
 - `transcription` (String) Setting to enable/disable transcription capability.Valid values: Disabled, EnabledGlobally, EnabledQueueFlow
 - `transcription_confidence_threshold` (Number) Configure confidence threshold. The possible values are from 1 to 100
 

@@ -11,7 +11,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/user"
 	"testing"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v130/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )

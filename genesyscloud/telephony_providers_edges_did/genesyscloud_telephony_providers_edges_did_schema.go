@@ -4,7 +4,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
-	gcloud "terraform-provider-genesyscloud/genesyscloud/validators"
+	"terraform-provider-genesyscloud/genesyscloud/validators"
 )
 
 const resourceName = "genesyscloud_telephony_providers_edges_did"
@@ -24,7 +24,7 @@ func DataSourceDid() *schema.Resource {
 				Description:      "Phone number for the DID.",
 				Type:             schema.TypeString,
 				Required:         true,
-				ValidateDiagFunc: gcloud.ValidatePhoneNumber,
+				ValidateDiagFunc: validators.ValidatePhoneNumber,
 			},
 		},
 	}

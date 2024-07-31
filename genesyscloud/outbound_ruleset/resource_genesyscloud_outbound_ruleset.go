@@ -13,14 +13,14 @@ import (
 
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	routingSkill "terraform-provider-genesyscloud/genesyscloud/routing_skill"
 
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v130/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
 )
 
 /*
@@ -38,7 +38,7 @@ func getAllAuthOutboundRuleset(ctx context.Context, clientConfig *platformclient
 	}
 
 	// DEVTOOLING-319: filters rule sets by removing the ones that reference skills that no longer exist in GC
-	skillExporter := gcloud.RoutingSkillExporter()
+	skillExporter := routingSkill.RoutingSkillExporter()
 	skillMap, skillErr := skillExporter.GetResourcesFunc(ctx)
 	if skillErr != nil {
 		return nil, util.BuildDiagnosticError(resourceName, fmt.Sprintf("Failed to get skill resources"), fmt.Errorf("%v", skillErr))

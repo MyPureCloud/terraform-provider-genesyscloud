@@ -10,7 +10,9 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/architect_flow"
 	authRole "terraform-provider-genesyscloud/genesyscloud/auth_role"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
+	routingLanguage "terraform-provider-genesyscloud/genesyscloud/routing_language"
 	routingQueue "terraform-provider-genesyscloud/genesyscloud/routing_queue"
+	routingEmailDomain "terraform-provider-genesyscloud/genesyscloud/routing_email_domain"
 	userRoles "terraform-provider-genesyscloud/genesyscloud/user_roles"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
@@ -22,7 +24,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v130/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
 )
 
 /*
@@ -932,7 +934,7 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
-				Config: gcloud.GenerateRoutingEmailDomainResource(
+				Config: routingEmailDomain.GenerateRoutingEmailDomainResource(
 					domainRes,
 					domainId,
 					util.FalseValue, // Subdomain
@@ -955,7 +957,7 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 					gcloud.GenerateEvaluationFormResource(evaluationFormResource1, &evaluationFormResourceBody) +
 					gcloud.GenerateSurveyFormResource(surveyFormResource1, &surveyFormResourceBody) +
 					integration.GenerateIntegrationResource(integrationResource1, strconv.Quote(integrationIntendedState), strconv.Quote(integrationType), "") +
-					gcloud.GenerateRoutingLanguageResource(languageResource1, languageName) +
+					routingLanguage.GenerateRoutingLanguageResource(languageResource1, languageName) +
 					gcloud.GenerateRoutingWrapupcodeResource(wrapupCodeResource1, wrapupCodeName) +
 					architect_flow.GenerateFlowResource(
 						flowResource1,
@@ -1039,7 +1041,7 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 			},
 			{
 
-				Config: gcloud.GenerateRoutingEmailDomainResource(
+				Config: routingEmailDomain.GenerateRoutingEmailDomainResource(
 					domainRes,
 					domainId,
 					util.FalseValue, // Subdomain
@@ -1062,7 +1064,7 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 					gcloud.GenerateEvaluationFormResource(evaluationFormResource1, &evaluationFormResourceBody) +
 					gcloud.GenerateSurveyFormResource(surveyFormResource1, &surveyFormResourceBody) +
 					integration.GenerateIntegrationResource(integrationResource1, strconv.Quote(integrationIntendedState), strconv.Quote(integrationType), "") +
-					gcloud.GenerateRoutingLanguageResource(languageResource1, languageName) +
+					routingLanguage.GenerateRoutingLanguageResource(languageResource1, languageName) +
 					gcloud.GenerateRoutingWrapupcodeResource(wrapupCodeResource1, wrapupCodeName) +
 					architect_flow.GenerateFlowResource(
 						flowResource1,
@@ -1146,7 +1148,7 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 			},
 			{
 
-				Config: gcloud.GenerateRoutingEmailDomainResource(
+				Config: routingEmailDomain.GenerateRoutingEmailDomainResource(
 					domainRes,
 					domainId,
 					util.FalseValue, // Subdomain
@@ -1169,7 +1171,7 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 					gcloud.GenerateEvaluationFormResource(evaluationFormResource1, &evaluationFormResourceBody) +
 					gcloud.GenerateSurveyFormResource(surveyFormResource1, &surveyFormResourceBody) +
 					integration.GenerateIntegrationResource(integrationResource1, strconv.Quote(integrationIntendedState), strconv.Quote(integrationType), "") +
-					gcloud.GenerateRoutingLanguageResource(languageResource1, languageName) +
+					routingLanguage.GenerateRoutingLanguageResource(languageResource1, languageName) +
 					gcloud.GenerateRoutingWrapupcodeResource(wrapupCodeResource1, wrapupCodeName) +
 					architect_flow.GenerateFlowResource(
 						flowResource1,
@@ -1253,7 +1255,7 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 			},
 			{
 
-				Config: gcloud.GenerateRoutingEmailDomainResource(
+				Config: routingEmailDomain.GenerateRoutingEmailDomainResource(
 					domainRes,
 					domainId,
 					util.FalseValue, // Subdomain
@@ -1276,7 +1278,7 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 					gcloud.GenerateEvaluationFormResource(evaluationFormResource1, &evaluationFormResourceBody) +
 					gcloud.GenerateSurveyFormResource(surveyFormResource1, &surveyFormResourceBody) +
 					integration.GenerateIntegrationResource(integrationResource1, strconv.Quote(integrationIntendedState), strconv.Quote(integrationType), "") +
-					gcloud.GenerateRoutingLanguageResource(languageResource1, languageName) +
+					routingLanguage.GenerateRoutingLanguageResource(languageResource1, languageName) +
 					gcloud.GenerateRoutingWrapupcodeResource(wrapupCodeResource1, wrapupCodeName) +
 					architect_flow.GenerateFlowResource(
 						flowResource1,

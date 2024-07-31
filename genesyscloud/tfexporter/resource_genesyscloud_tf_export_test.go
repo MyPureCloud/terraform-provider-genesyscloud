@@ -1,6 +1,8 @@
 package tfexporter
 
 import (
+	"archive/zip"
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -19,12 +21,13 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	routingQueue "terraform-provider-genesyscloud/genesyscloud/routing_queue"
+	telephonyProvidersEdgesSite "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site"
 	"terraform-provider-genesyscloud/genesyscloud/user"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 	"time"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v130/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
 
 	"terraform-provider-genesyscloud/genesyscloud/util/testrunner"
 
@@ -118,6 +121,62 @@ func TestAccResourceTfExportIncludeFilterResourcesByRegEx(t *testing.T) {
 					testQueueExportEqual(exportTestDir+"/"+defaultTfJSONFile, "genesyscloud_routing_queue", sanitizer.S.SanitizeResourceName(queueResources[1].Name), queueResources[1]),
 					testQueueExportEqual(exportTestDir+"/"+defaultTfJSONFile, "genesyscloud_routing_queue", sanitizer.S.SanitizeResourceName(queueResources[2].Name), queueResources[2]),
 					testQueueExportMatchesRegEx(exportTestDir+"/"+defaultTfJSONFile, "genesyscloud_routing_queue", "-prod"), //We should not find any "test" queues here because we only wanted to include queues that ended with a -prod
+				),
+			},
+		},
+		CheckDestroy: testVerifyExportsDestroyedFunc(exportTestDir),
+	})
+}
+
+// TestAccResourceTfExportIncludeFilterResourcesByRegExAndSanitizedNames will create 3 queues (two with foo bar, one to be excluded).
+// The test ensures that resources can be exported directly by their actual name or their sanitized names.
+func TestAccResourceTfExportIncludeFilterResourcesByRegExAndSanitizedNames(t *testing.T) {
+	var (
+		exportTestDir  = "../.terraformregex" + uuid.NewString()
+		exportResource = "test-export3_1"
+
+		queueResources = []QueueExport{
+			{ResourceName: "test-queue-test-1", Name: "include filter test - exclude me", Description: "This is an excluded bar test resource", AcwTimeoutMs: 200000},
+			{ResourceName: "test-queue-test-2", Name: "include filter test - foo - bar me", Description: "This is a foo bar test resource", AcwTimeoutMs: 200000},
+			{ResourceName: "test-queue-test-3", Name: "include filter test - fu - barre you", Description: "This is a foo bar test resource", AcwTimeoutMs: 200000},
+		}
+	)
+	defer os.RemoveAll(exportTestDir)
+
+	queueResourceDef := buildQueueResources(queueResources)
+
+	config := queueResourceDef +
+		generateTfExportByIncludeFilterResources(
+			exportResource,
+			exportTestDir,
+			util.TrueValue,
+			[]string{
+				strconv.Quote("genesyscloud_routing_queue::include filter test - foo - bar me"),   // Unsanitized Named Resource
+				strconv.Quote("genesyscloud_routing_queue::include_filter_test_-_fu_-_barre_you"), // Sanitized Named Resource
+			},
+			util.FalseValue,
+			util.FalseValue,
+			[]string{
+				strconv.Quote("genesyscloud_routing_queue." + queueResources[0].ResourceName),
+				strconv.Quote("genesyscloud_routing_queue." + queueResources[1].ResourceName),
+				strconv.Quote("genesyscloud_routing_queue." + queueResources[2].ResourceName),
+			},
+		)
+
+	sanitizer := resourceExporter.NewSanitizerProvider()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			{
+				// Generate a queue as well and export it
+				Config: config,
+				// Wait for a specified duration to avoid runtime error
+				Check: resource.ComposeTestCheckFunc(
+					testQueueExportEqual(exportTestDir+"/"+defaultTfJSONFile, "genesyscloud_routing_queue", sanitizer.S.SanitizeResourceName(queueResources[1].Name), queueResources[1]),
+					testQueueExportEqual(exportTestDir+"/"+defaultTfJSONFile, "genesyscloud_routing_queue", sanitizer.S.SanitizeResourceName(queueResources[2].Name), queueResources[2]),
+					testQueueExportExcludesRegEx(exportTestDir+"/"+defaultTfJSONFile, "genesyscloud_routing_queue", ".*exclude me.*"), //We should not find any "test" queues here because we only wanted to include queues that ended with a -prod
 				),
 			},
 		},
@@ -332,6 +391,111 @@ func TestAccResourceTfExportSplitFilesAsJSON(t *testing.T) {
 			},
 		},
 		CheckDestroy: testVerifyExportsDestroyedFunc(exportTestDir),
+	})
+}
+
+// TestAccResourceTfExportExcludeFilterResourcesByRegExExclusiveToResourceAndSanitizedNames will exclude any test resources that match a
+// regular expression provided for the resource. In this test we check against both sanitized and unsanitized names.
+func TestAccResourceTfExportExcludeFilterResourcesByRegExExclusiveToResourceAndSanitizedNames(t *testing.T) {
+	var (
+		exportTestDir  = "../.terraformExclude" + uuid.NewString()
+		exportResource = "test-export6_1"
+
+		queueResources = []QueueExport{
+			{ResourceName: "test-queue-test-1", Name: "exclude filter - exclude me", Description: "This is an excluded bar test resource", AcwTimeoutMs: 200000},
+			{ResourceName: "test-queue-test-2", Name: "exclude filter - foo - bar me", Description: "This is a foo bar test resource", AcwTimeoutMs: 200000},
+			{ResourceName: "test-queue-test-3", Name: "exclude filter - fu - barre you", Description: "This is a foo bar test resource", AcwTimeoutMs: 200000},
+		}
+
+		wrapupCodeResources = []WrapupcodeExport{
+			{ResourceName: "test-wrapupcode-prod", Name: "exclude me"},
+			{ResourceName: "test-wrapupcode-test", Name: "foo + bar me"},
+			{ResourceName: "test-wrapupcode-dev", Name: "fu - barre you"},
+		}
+	)
+	defer os.RemoveAll(exportTestDir)
+
+	queueResourceDef := buildQueueResources(queueResources)
+	wrapupcodeResourceDef := buildWrapupcodeResources(wrapupCodeResources)
+	config := queueResourceDef + wrapupcodeResourceDef +
+		generateTfExportByExcludeFilterResources(
+			exportResource,
+			exportTestDir,
+			util.TrueValue,
+			[]string{
+				strconv.Quote("genesyscloud_routing_queue::exclude filter - foo - bar me"),
+				strconv.Quote("genesyscloud_routing_queue::exclude_filter_-_fu_-_barre_you"),
+				strconv.Quote("genesyscloud_outbound_ruleset"),
+				strconv.Quote("genesyscloud_user"),
+				strconv.Quote("genesyscloud_user_roles"),
+				strconv.Quote("genesyscloud_flow"),
+			},
+			util.FalseValue,
+			util.FalseValue,
+			[]string{
+				strconv.Quote("genesyscloud_routing_queue." + queueResources[0].ResourceName),
+				strconv.Quote("genesyscloud_routing_queue." + queueResources[1].ResourceName),
+				strconv.Quote("genesyscloud_routing_queue." + queueResources[2].ResourceName),
+				strconv.Quote("genesyscloud_routing_wrapupcode." + wrapupCodeResources[0].ResourceName),
+				strconv.Quote("genesyscloud_routing_wrapupcode." + wrapupCodeResources[1].ResourceName),
+				strconv.Quote("genesyscloud_routing_wrapupcode." + wrapupCodeResources[2].ResourceName),
+			},
+		)
+
+	sanitizer := resourceExporter.NewSanitizerProvider()
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			{
+				PreConfig: func() {
+					time.Sleep(30 * time.Second)
+				},
+				// Generate a queue as well and export it
+				Config: config,
+				Check: resource.ComposeTestCheckFunc(
+					testQueueExportEqual(exportTestDir+"/"+defaultTfJSONFile, "genesyscloud_routing_queue", sanitizer.S.SanitizeResourceName(queueResources[0].Name), queueResources[0]),
+					testWrapupcodeExportEqual(exportTestDir+"/"+defaultTfJSONFile, "genesyscloud_routing_wrapupcode", sanitizer.S.SanitizeResourceName(wrapupCodeResources[0].Name), wrapupCodeResources[0]),
+					testWrapupcodeExportEqual(exportTestDir+"/"+defaultTfJSONFile, "genesyscloud_routing_wrapupcode", sanitizer.S.SanitizeResourceName(wrapupCodeResources[1].Name), wrapupCodeResources[1]),
+					testWrapupcodeExportEqual(exportTestDir+"/"+defaultTfJSONFile, "genesyscloud_routing_wrapupcode", sanitizer.S.SanitizeResourceName(wrapupCodeResources[2].Name), wrapupCodeResources[2]),
+					testQueueExportExcludesRegEx(exportTestDir+"/"+defaultTfJSONFile, "genesyscloud_routing_queue", "(foo|fu)"),
+				),
+			},
+		},
+		CheckDestroy: testVerifyExportsDestroyedFunc(exportTestDir),
+	})
+}
+
+// TestAccResourceTfExportForCompress does a basic test check to make sure the compressed file is created.
+func TestAccResourceTfExportForCompress(t *testing.T) {
+	var (
+		exportTestDir   = "../../.terraform" + uuid.NewString()
+		exportResource1 = "test-export1"
+		zipFileName     = "../archive_genesyscloud_tf_export*"
+	)
+
+	defer os.RemoveAll(exportTestDir)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			{
+				// Run export without state file
+				Config: generateTfExportResourceForCompress(
+					exportResource1,
+					exportTestDir,
+					util.TrueValue,
+					util.TrueValue,
+					"",
+				),
+				Check: resource.ComposeTestCheckFunc(
+					validateCompressedCreated(zipFileName),
+					validateCompressedFile(zipFileName),
+				),
+			},
+		},
+		CheckDestroy: deleteTestCompressedZip(exportTestDir, zipFileName),
 	})
 }
 
@@ -1285,6 +1449,152 @@ func TestAccResourceTfExportSplitFilesAsHCL(t *testing.T) {
 	})
 }
 
+// TestAccResourceExportManagedSitesAsData checks that during an export, managed sites are exported as data source
+// Managed can't be set on sites, therefore the default managed site is checked during the test that it is exported as data
+func TestAccResourceExportManagedSitesAsData(t *testing.T) {
+	var (
+		exportTestDir = filepath.Join("..", "..", ".terraform"+uuid.NewString())
+		resourceID    = "export"
+		configPath    = filepath.Join(exportTestDir, defaultTfJSONFile)
+		statePath     = filepath.Join(exportTestDir, defaultTfStateFile)
+		siteName      = "PureCloud Voice - AWS"
+	)
+
+	if err := telephonyProvidersEdgesSite.CheckForDefaultSite(siteName); err != nil {
+		t.Skipf("failed to get default site %v", err)
+	}
+
+	defer func(path string) {
+		if err := os.RemoveAll(path); err != nil {
+			t.Logf("failed to remove dir %s: %s", path, err)
+		}
+	}(exportTestDir)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			{
+				Config: generateTfExportByIncludeFilterResources(
+					resourceID,
+					exportTestDir,
+					util.TrueValue, // include_state_file
+					[]string{ // include_filter_resources
+						strconv.Quote("genesyscloud_telephony_providers_edges_site"),
+					},
+					util.FalseValue, // export_as_hcl
+					util.FalseValue,
+					[]string{},
+				),
+				Check: resource.ComposeTestCheckFunc(
+					validateStateFileAsData(statePath, siteName),
+					validateExportManagedSitesAsData(configPath, siteName),
+				),
+			},
+		},
+	})
+}
+
+// validateStateFileAsData verifies that the default managed site 'PureCloud Voice - AWS' is exported as a data source
+func validateStateFileAsData(filename, siteName string) resource.TestCheckFunc {
+	return func(state *terraform.State) error {
+		_, err := os.Stat(filename)
+		if err != nil {
+			return fmt.Errorf("failed to find file %s", filename)
+		}
+
+		stateData, err := loadJsonFileToMap(filename)
+		if err != nil {
+			return err
+		}
+		log.Println("Successfully loaded export config into map variable ")
+
+		// Check if data sources exist in the exported data
+		if resources, ok := stateData["resources"].([]interface{}); ok {
+			fmt.Printf("checking that managed site with name %s is exported as data source in tf state", siteName)
+
+			// Validate each site's name
+			for _, r := range resources {
+				fmt.Printf("resource that managed site with name %s is exported as data source", r)
+
+				res, ok := r.(map[string]interface{})
+				if !ok {
+					return fmt.Errorf("unexpected structure for site %s", siteName)
+				}
+
+				name, ok := res["name"].(string)
+				if !ok {
+					return fmt.Errorf("unexpected structure for site %s", siteName)
+				}
+
+				mode, ok := res["mode"].(string)
+				if !ok {
+					return fmt.Errorf("unexpected structure for site %s", siteName)
+				}
+
+				if name == strings.ReplaceAll(siteName, " ", "_") {
+					if mode == "data" {
+						log.Printf("Site with name '%s' is correctly exported as data source", siteName)
+						return nil
+					} else {
+						log.Printf("Site with name '%s' is not correctly exported as data", siteName)
+						return nil
+					}
+				}
+			}
+			return fmt.Errorf("No Resources '%s' was not exported as data source", siteName)
+		} else {
+			return fmt.Errorf("No data sources found in exported data")
+		}
+	}
+}
+
+// validateExportManagedSitesAsData verifies that the default managed site 'PureCloud Voice - AWS' is exported as a data source
+func validateExportManagedSitesAsData(filename, siteName string) resource.TestCheckFunc {
+	return func(state *terraform.State) error {
+		// Check if the file exists
+		_, err := os.Stat(filename)
+		if err != nil {
+			return fmt.Errorf("failed to find file %s", filename)
+		}
+
+		// Load the JSON content of the export file
+		log.Println("Loading export config into map variable")
+		exportData, err := loadJsonFileToMap(filename)
+		if err != nil {
+			return err
+		}
+		log.Println("Successfully loaded export config into map variable ")
+
+		// Check if data sources exist in the exported data
+		if data, ok := exportData["data"].(map[string]interface{}); ok {
+			sites, ok := data["genesyscloud_telephony_providers_edges_site"].(map[string]interface{})
+			if !ok {
+				return fmt.Errorf("no data sources exported for genesyscloud_telephony_providers_edges_site")
+			}
+
+			log.Printf("checking that managed site with name %s is exported as data source", siteName)
+
+			// Validate each site's name
+			for siteID, site := range sites {
+				siteAttributes, ok := site.(map[string]interface{})
+				if !ok {
+					return fmt.Errorf("unexpected structure for site %s", siteID)
+				}
+
+				name, _ := siteAttributes["name"].(string)
+				if name == siteName {
+					log.Printf("Site %s with name '%s' is correctly exported as data source", siteID, siteName)
+					return nil
+				}
+			}
+			return fmt.Errorf("site with name '%s' was not exported as data source", siteName)
+		} else {
+			return fmt.Errorf("no data sources found in exported data")
+		}
+	}
+}
+
 // TestAccResourceTfExportCampaignScriptIdReferences exports two campaigns and ensures that the custom revolver OutboundCampaignAgentScriptResolver
 // is working properly i.e. script_id should reference a data source pointing to the Default Outbound Script under particular circumstances
 func TestAccResourceTfExportCampaignScriptIdReferences(t *testing.T) {
@@ -1368,7 +1678,7 @@ resource "genesyscloud_outbound_campaign" "%s" {
 resource "genesyscloud_script" "script" {
 	script_name       = "%s"
 	filepath          = "%s"
-	file_content_hash = filesha256("%s")	
+	file_content_hash = filesha256("%s")
 }
 
 data "genesyscloud_auth_division_home" "home" {}
@@ -2130,8 +2440,8 @@ func generateTfExportResource(
 			"genesyscloud_architect_datatable",
 			"genesyscloud_architect_datatable_row",
 			//"genesyscloud_flow",
-			"genesyscloud_flow_milestone",	
-			//"genesyscloud_flow_outcome",	
+			"genesyscloud_flow_milestone",
+			//"genesyscloud_flow_outcome",
 			"genesyscloud_architect_ivr",
 			"genesyscloud_architect_schedules",
 			"genesyscloud_architect_schedulegroups",
@@ -2178,6 +2488,25 @@ func generateTfExportResource(
 		exclude_attributes = [%s]
 	}
 	`, resourceID, directory, includeState, excludedAttributes)
+}
+
+// generateTfExportResourceForCompress creates a resource to test compressed exported results
+func generateTfExportResourceForCompress(
+	resourceID string,
+	directory string,
+	includeState string,
+	compressFlag string,
+	excludedAttributes string) string {
+	return fmt.Sprintf(`resource "genesyscloud_tf_export" "%s" {
+		directory = "%s"
+		include_state_file = %s
+		compress=%s
+		resource_types = [
+			"genesyscloud_architect_datatable",
+		]
+		exclude_attributes = [%s]
+	}
+	`, resourceID, directory, includeState, compressFlag, excludedAttributes)
 }
 
 func generateTfExportResourceMin(
@@ -2304,6 +2633,40 @@ func validateFileCreated(filename string) resource.TestCheckFunc {
 	}
 }
 
+func validateCompressedCreated(filename string) resource.TestCheckFunc {
+	return func(state *terraform.State) error {
+		_, err := filepath.Glob(filename)
+		if err != nil {
+			return fmt.Errorf("Failed to find file")
+		}
+		return nil
+	}
+}
+
+func deleteTestCompressedZip(exportPath string, zipFileName string) resource.TestCheckFunc {
+	return func(state *terraform.State) error {
+		dir, err := os.ReadDir(exportPath)
+		if err != nil {
+			return fmt.Errorf("Failed to read compressed zip %s", exportPath)
+		}
+		for _, d := range dir {
+			os.RemoveAll(filepath.Join(exportPath, d.Name()))
+		}
+		files, err := filepath.Glob(zipFileName)
+
+		if err != nil {
+			return fmt.Errorf("Failed to get zip: %s", err)
+		}
+		for _, f := range files {
+			if err := os.Remove(f); err != nil {
+				return fmt.Errorf("Failed to delete: %s", err)
+			}
+		}
+
+		return nil
+	}
+}
+
 func testVerifyExportsDestroyedFunc(exportTestDir string) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
 		// Check config file deleted
@@ -2336,6 +2699,56 @@ func validateEvaluationFormAttributes(resourceName string, form gcloud.Evaluatio
 		resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+resourceName, "question_groups.0.questions.1.visibility_condition.0.predicates.0", form.QuestionGroups[0].Questions[1].VisibilityCondition.Predicates[0]),
 		resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+resourceName, "question_groups.0.questions.1.visibility_condition.0.predicates.1", form.QuestionGroups[0].Questions[1].VisibilityCondition.Predicates[1]),
 	)
+}
+
+// validateCompressedFile unzips and validates the exported resulted in the compressed folder
+func validateCompressedFile(path string) resource.TestCheckFunc {
+	return func(state *terraform.State) error {
+		files, err := filepath.Glob(path)
+		if err != nil {
+			return err
+		}
+		for _, f := range files {
+			reader, err := zip.OpenReader(f)
+			if err != nil {
+				return err
+			}
+			for _, file := range reader.File {
+				err = validateCompressedConfigFiles(f, file)
+				if err != nil {
+					return err
+				}
+			}
+		}
+		return nil
+	}
+}
+
+// validateCompressedConfigFiles validates the data inside the compressed json file
+func validateCompressedConfigFiles(dirName string, file *zip.File) error {
+
+	if file.FileInfo().Name() == defaultTfJSONFile {
+		rc, _ := file.Open()
+
+		buf := new(bytes.Buffer)
+		buf.ReadFrom(rc)
+		var data map[string]interface{}
+
+		if err := json.Unmarshal(buf.Bytes(), &data); err != nil {
+			return fmt.Errorf("failed to unmarshal json exportData to map variable: %v", err)
+		}
+
+		if _, ok := data["resource"]; !ok {
+			return fmt.Errorf("config file missing resource attribute")
+		}
+
+		if _, ok := data["terraform"]; !ok {
+			return fmt.Errorf("config file missing terraform attribute")
+		}
+		rc.Close()
+		return nil
+	}
+	return nil
 }
 
 func validateConfigFile(path string) resource.TestCheckFunc {

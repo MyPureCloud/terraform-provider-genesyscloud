@@ -65,7 +65,6 @@ func TestAccDataSourcePhone(t *testing.T) {
 					stateActive,
 					fmt.Sprintf("\"%s\"", defaultSiteId),
 					"genesyscloud_telephony_providers_edges_phonebasesettings." + phoneBaseSettingsRes + ".id",
-					nil, // no line addresses
 					"genesyscloud_user." + userRes1 + ".id",
 					"", // no depends on
 				},

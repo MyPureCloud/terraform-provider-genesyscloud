@@ -5,10 +5,13 @@ import (
 	"log"
 	"regexp"
 	"strings"
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	"terraform-provider-genesyscloud/genesyscloud/architect_flow"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	routingQueue "terraform-provider-genesyscloud/genesyscloud/routing_queue"
+	routingLanguage "terraform-provider-genesyscloud/genesyscloud/routing_language"
+	routingEmailDomain "terraform-provider-genesyscloud/genesyscloud/routing_email_domain"
+	routingSkill "terraform-provider-genesyscloud/genesyscloud/routing_skill"
+
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 	"time"
@@ -17,7 +20,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v130/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
 )
 
 func TestAccResourceRoutingEmailRoute(t *testing.T) {
@@ -56,7 +59,7 @@ func TestAccResourceRoutingEmailRoute(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				// Confirm mutual exclusivity of reply_email_address and from_email
-				Config: gcloud.GenerateRoutingEmailDomainResource(
+				Config: routingEmailDomain.GenerateRoutingEmailDomainResource(
 					domainRes,
 					domainId,
 					util.FalseValue,
@@ -88,7 +91,7 @@ func TestAccResourceRoutingEmailRoute(t *testing.T) {
 			},
 			{
 				// Confirm mutual exclusivity of reply_email_address and auto_bcc
-				Config: gcloud.GenerateRoutingEmailDomainResource(
+				Config: routingEmailDomain.GenerateRoutingEmailDomainResource(
 					domainRes,
 					domainId,
 					util.FalseValue,
@@ -116,7 +119,7 @@ func TestAccResourceRoutingEmailRoute(t *testing.T) {
 			},
 			{
 				// Confirm mutual exclusivity of flow_id and queue_id
-				Config: gcloud.GenerateRoutingEmailDomainResource(
+				Config: routingEmailDomain.GenerateRoutingEmailDomainResource(
 					domainRes,
 					domainId,
 					util.FalseValue,
@@ -124,10 +127,10 @@ func TestAccResourceRoutingEmailRoute(t *testing.T) {
 				) + routingQueue.GenerateRoutingQueueResourceBasic(
 					queueResource,
 					queueName,
-				) + gcloud.GenerateRoutingLanguageResource(
+				) + 	routingLanguage.GenerateRoutingLanguageResource(
 					langResource,
 					langName,
-				) + gcloud.GenerateRoutingSkillResource(
+				) + routingSkill.GenerateRoutingSkillResource(
 					skillResource,
 					skillName,
 				) + architect_flow.GenerateFlowResource(
@@ -154,8 +157,8 @@ func TestAccResourceRoutingEmailRoute(t *testing.T) {
 		},
 		CheckDestroy: testVerifyRoutingEmailRouteDestroyed,
 	})
-
-	domainId = fmt.Sprintf("terraformroute.%s.com", strings.Replace(uuid.NewString(), "-", "", -1))
+	CleanupRoutingEmailDomains()
+	domainId = fmt.Sprintf("terraformroutes.%s.com", strings.Replace(uuid.NewString(), "-", "", -1))
 	// Standard acceptance tests
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
@@ -163,7 +166,7 @@ func TestAccResourceRoutingEmailRoute(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				// Create email domain and basic route
-				Config: gcloud.GenerateRoutingEmailDomainResource(
+				Config: routingEmailDomain.GenerateRoutingEmailDomainResource(
 					domainRes,
 					domainId,
 					util.FalseValue,
@@ -187,7 +190,7 @@ func TestAccResourceRoutingEmailRoute(t *testing.T) {
 			},
 			{
 				// Update email route and add a queue, language, and skill
-				Config: gcloud.GenerateRoutingEmailDomainResource(
+				Config: routingEmailDomain.GenerateRoutingEmailDomainResource(
 					domainRes,
 					domainId,
 					util.FalseValue,
@@ -196,10 +199,10 @@ func TestAccResourceRoutingEmailRoute(t *testing.T) {
 
 					queueResource,
 					queueName,
-				) + gcloud.GenerateRoutingLanguageResource(
+				) + routingLanguage.GenerateRoutingLanguageResource(
 					langResource,
 					langName,
-				) + gcloud.GenerateRoutingSkillResource(
+				) + routingSkill.GenerateRoutingSkillResource(
 					skillResource,
 					skillName,
 				) + GenerateRoutingEmailRouteResource(
@@ -245,7 +248,7 @@ func TestAccResourceRoutingEmailRoute(t *testing.T) {
 			},
 			{
 				// Update email reply to true
-				Config: gcloud.GenerateRoutingEmailDomainResource(
+				Config: routingEmailDomain.GenerateRoutingEmailDomainResource(
 					domainRes,
 					domainId,
 					util.FalseValue,
@@ -253,10 +256,10 @@ func TestAccResourceRoutingEmailRoute(t *testing.T) {
 				) + routingQueue.GenerateRoutingQueueResourceBasic(
 					queueResource,
 					queueName,
-				) + gcloud.GenerateRoutingLanguageResource(
+				) + routingLanguage.GenerateRoutingLanguageResource(
 					langResource,
 					langName,
-				) + gcloud.GenerateRoutingSkillResource(
+				) + routingSkill.GenerateRoutingSkillResource(
 					skillResource,
 					skillName,
 				) + GenerateRoutingEmailRouteResource(
@@ -307,7 +310,7 @@ func TestAccResourceRoutingEmailRoute(t *testing.T) {
 			},
 			{
 				// Update email reply to false and set a route id
-				Config: gcloud.GenerateRoutingEmailDomainResource(
+				Config: routingEmailDomain.GenerateRoutingEmailDomainResource(
 					domainRes,
 					domainId,
 					util.FalseValue,
@@ -315,10 +318,10 @@ func TestAccResourceRoutingEmailRoute(t *testing.T) {
 				) + routingQueue.GenerateRoutingQueueResourceBasic(
 					queueResource,
 					queueName,
-				) + gcloud.GenerateRoutingLanguageResource(
+				) + routingLanguage.GenerateRoutingLanguageResource(
 					langResource,
 					langName,
-				) + gcloud.GenerateRoutingSkillResource(
+				) + routingSkill.GenerateRoutingSkillResource(
 					skillResource,
 					skillName,
 				) + GenerateRoutingEmailRouteResource(

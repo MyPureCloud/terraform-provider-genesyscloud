@@ -6,7 +6,9 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v130/platformclientv2"
+	rc "terraform-provider-genesyscloud/genesyscloud/resource_cache"
+
+	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
 )
 
 /*
@@ -53,6 +55,7 @@ type phoneProxy struct {
 	edgesApi     *platformclientv2.TelephonyProvidersEdgeApi
 	stationsApi  *platformclientv2.StationsApi
 	usersApi     *platformclientv2.UsersApi
+	phoneCache   rc.CacheInterface[platformclientv2.Phone]
 
 	getAllPhonesAttr   getAllPhonesFunc
 	createPhoneAttr    createPhoneFunc
@@ -73,12 +76,14 @@ func newPhoneProxy(clientConfig *platformclientv2.Configuration) *phoneProxy {
 	edgesApi := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(clientConfig)
 	stationsApi := platformclientv2.NewStationsApiWithConfig(clientConfig)
 	usersApi := platformclientv2.NewUsersApiWithConfig(clientConfig)
+	phoneCache := rc.NewResourceCache[platformclientv2.Phone]()
 
 	return &phoneProxy{
 		clientConfig: clientConfig,
 		edgesApi:     edgesApi,
 		stationsApi:  stationsApi,
 		usersApi:     usersApi,
+		phoneCache:   phoneCache,
 
 		getAllPhonesAttr:   getAllPhonesFn,
 		createPhoneAttr:    createPhoneFn,
@@ -116,6 +121,9 @@ func (p *phoneProxy) createPhone(ctx context.Context, phoneConfig *platformclien
 
 // getPhoneById retrieves a Genesys Cloud Phone by id
 func (p *phoneProxy) getPhoneById(ctx context.Context, phoneId string) (*platformclientv2.Phone, *platformclientv2.APIResponse, error) {
+	if phone := rc.GetCacheItem(p.phoneCache, phoneId); phone != nil {
+		return phone, nil, nil
+	}
 	return p.getPhoneByIdAttr(ctx, p, phoneId)
 }
 
@@ -165,8 +173,9 @@ func getAllPhonesFn(ctx context.Context, p *phoneProxy) (*[]platformclientv2.Pho
 	var allPhones []platformclientv2.Phone
 	const pageSize = 100
 	const sortBy = "id"
+	expand := []string{"lines", "properties"}
 
-	phones, response, err := p.edgesApi.GetTelephonyProvidersEdgesPhones(1, pageSize, sortBy, "", "", "", "", "", "", "", "", "", "", "", "", nil, nil)
+	phones, response, err := p.edgesApi.GetTelephonyProvidersEdgesPhones(1, pageSize, sortBy, "", "", "", "", "", "", "", "", "", "", "", "", expand, nil)
 	if err != nil || (response != nil && response.StatusCode != http.StatusOK) {
 		log.Printf("getAllPhonesFn:: error encountered while trying to get first page of phone data #%v statusCode: %d", err, response.StatusCode)
 		return nil, response, err
@@ -186,7 +195,7 @@ func getAllPhonesFn(ctx context.Context, p *phoneProxy) (*[]platformclientv2.Pho
 	}
 
 	for pageNum := 2; pageNum <= *phones.PageCount; pageNum++ {
-		phones, response, err := p.edgesApi.GetTelephonyProvidersEdgesPhones(pageNum, pageSize, sortBy, "", "", "", "", "", "", "", "", "", "", "", "", nil, nil)
+		phones, response, err := p.edgesApi.GetTelephonyProvidersEdgesPhones(pageNum, pageSize, sortBy, "", "", "", "", "", "", "", "", "", "", "", "", expand, nil)
 		if err != nil || (response != nil && response.StatusCode != http.StatusOK) {
 			return nil, response, err
 		}
@@ -205,6 +214,9 @@ func getAllPhonesFn(ctx context.Context, p *phoneProxy) (*[]platformclientv2.Pho
 	log.Printf("getAllPhonesFn:: Listing all of the non-deleted phone ids and names that we actually retrieved")
 	for _, phone := range allPhones {
 		log.Printf("getAllPhonesFn::  Retrieved phone id %s with phone name: %s\n", *phone.Id, *phone.Name)
+
+		// Cache the phone resource into the p.phoneCache for later use
+		rc.SetCache(p.phoneCache, *phone.Id, phone)
 	}
 
 	return &allPhones, response, nil
@@ -234,7 +246,8 @@ func getPhoneByIdFn(ctx context.Context, p *phoneProxy, phoneId string) (*platfo
 // getPhoneByNameFn is an implementation function for retrieving a Genesys Cloud Phone by name
 func getPhoneByNameFn(ctx context.Context, p *phoneProxy, phoneName string) (phone *platformclientv2.Phone, retryable bool, resp *platformclientv2.APIResponse, err error) {
 	const pageSize = 100
-	phones, resp, err := p.edgesApi.GetTelephonyProvidersEdgesPhones(1, pageSize, "", "", "", "", "", "", "", "", "", "", phoneName, "", "", nil, nil)
+	expand := []string{"lines", "properties"}
+	phones, resp, err := p.edgesApi.GetTelephonyProvidersEdgesPhones(1, pageSize, "", "", "", "", "", "", "", "", "", "", phoneName, "", "", expand, nil)
 	if err != nil {
 		return nil, false, resp, err
 	}
@@ -249,7 +262,7 @@ func getPhoneByNameFn(ctx context.Context, p *phoneProxy, phoneName string) (pho
 	}
 
 	for pageNum := 2; pageNum <= *phones.PageCount; pageNum++ {
-		phones, resp, err := p.edgesApi.GetTelephonyProvidersEdgesPhones(pageNum, pageSize, "", "", "", "", "", "", "", "", "", "", phoneName, "", "", nil, nil)
+		phones, resp, err := p.edgesApi.GetTelephonyProvidersEdgesPhones(pageNum, pageSize, "", "", "", "", "", "", "", "", "", "", phoneName, "", "", expand, nil)
 		if err != nil {
 			return nil, false, resp, err
 		}

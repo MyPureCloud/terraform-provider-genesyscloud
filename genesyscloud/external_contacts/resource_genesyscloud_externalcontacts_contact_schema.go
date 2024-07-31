@@ -5,7 +5,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
-	gcloud "terraform-provider-genesyscloud/genesyscloud/validators"
+	"terraform-provider-genesyscloud/genesyscloud/validators"
 )
 
 /*
@@ -53,7 +53,7 @@ func ResourceExternalContact() *schema.Resource {
 				Type:             schema.TypeString,
 				Optional:         true,
 				Computed:         true,
-				ValidateDiagFunc: gcloud.ValidatePhoneNumber,
+				ValidateDiagFunc: validators.ValidatePhoneNumber,
 			},
 			"country_code": {
 				Description: "Phone number country code.",
@@ -95,7 +95,7 @@ func ResourceExternalContact() *schema.Resource {
 				Description:      "Contact address country code.",
 				Type:             schema.TypeString,
 				Optional:         true,
-				ValidateDiagFunc: gcloud.ValidateCountryCode,
+				ValidateDiagFunc: validators.ValidateCountryCode,
 			},
 		},
 	}

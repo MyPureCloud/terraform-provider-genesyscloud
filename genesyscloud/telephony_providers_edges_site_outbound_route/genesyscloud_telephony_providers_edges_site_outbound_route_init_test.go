@@ -1,8 +1,6 @@
 package telephony_providers_edges_site_outbound_route
 
 import (
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v130/platformclientv2"
 	"log"
 	"sync"
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
@@ -10,6 +8,9 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/telephony"
 	"terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site"
 	"testing"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
 )
 
 /*

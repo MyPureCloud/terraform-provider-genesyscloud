@@ -6,12 +6,12 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"testing"
 
+	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
+
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	edgePhone "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_phone"
 	phoneBaseSettings "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_phonebasesettings"
 	"terraform-provider-genesyscloud/genesyscloud/user"
-
-	"github.com/mypurecloud/platform-client-sdk-go/v130/platformclientv2"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )

@@ -171,3 +171,15 @@ func Remove[T comparable](s []T, r T) []T {
 	}
 	return s
 }
+
+// ConvertMapStringAnyToMapStringString converts a map of type map[string]any to type map[string]string
+func ConvertMapStringAnyToMapStringString(m map[string]any) map[string]string {
+	if m == nil {
+		return nil
+	}
+	sm := make(map[string]string)
+	for k, v := range m {
+		sm[k] = v.(string)
+	}
+	return sm
+}

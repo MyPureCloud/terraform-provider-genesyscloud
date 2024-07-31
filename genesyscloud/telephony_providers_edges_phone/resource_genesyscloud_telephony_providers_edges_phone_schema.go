@@ -5,7 +5,7 @@ import (
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
 	"terraform-provider-genesyscloud/genesyscloud/util"
-	gcloud "terraform-provider-genesyscloud/genesyscloud/validators"
+	"terraform-provider-genesyscloud/genesyscloud/validators"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -30,6 +30,24 @@ func SetRegistrar(l registrar.Registrar) {
 
 // ResourcePhone registers the genesyscloud_telephony_providers_edges_phone resource with Terraform
 func ResourcePhone() *schema.Resource {
+	lineProperties := &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			`line_address`: {
+				Description: `DID for standalone phones. Each phone number must be in an E.164 phone number format.`,
+				Optional:    true,
+				Computed:    true,
+				Type:        schema.TypeList,
+				Elem:        &schema.Schema{Type: schema.TypeString, ValidateDiagFunc: validators.ValidatePhoneNumber},
+			},
+			`remote_address`: {
+				Description: `Station remote property for phones. No validation is provided`,
+				Optional:    true,
+				Type:        schema.TypeList,
+				Elem:        &schema.Schema{Type: schema.TypeString, ValidateFunc: validation.StringIsNotEmpty},
+			},
+		},
+	}
+
 	phoneCapabilities := &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			"provisions": {
@@ -135,19 +153,19 @@ func ResourcePhone() *schema.Resource {
 				Type:        schema.TypeString,
 				Optional:    true,
 			},
-			"line_addresses": {
-				Description: "Ordered list of Line DIDs for standalone phones.  Each phone number must be in an E.164 phone number format.",
-				Type:        schema.TypeList,
-				Optional:    true,
-				Computed:    true,
-				Elem:        &schema.Schema{Type: schema.TypeString, ValidateDiagFunc: gcloud.ValidatePhoneNumber},
-			},
 			"properties": {
 				Description:      "phone properties",
 				Type:             schema.TypeString,
 				Optional:         true,
 				Computed:         true,
 				DiffSuppressFunc: util.SuppressEquivalentJsonDiffs,
+			},
+			"line_properties": {
+				Description: "line properties",
+				Type:        schema.TypeList,
+				Optional:    true,
+				MaxItems:    1,
+				Elem:        lineProperties,
 			},
 			"capabilities": {
 				Description: "Phone Capabilities.",

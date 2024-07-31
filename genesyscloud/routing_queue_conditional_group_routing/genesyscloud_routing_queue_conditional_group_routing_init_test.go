@@ -2,9 +2,9 @@ package routing_queue_conditional_group_routing
 
 import (
 	"sync"
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	"terraform-provider-genesyscloud/genesyscloud/group"
 	routingQueue "terraform-provider-genesyscloud/genesyscloud/routing_queue"
+	routingSkillGroup "terraform-provider-genesyscloud/genesyscloud/routing_skill_group"
 	"terraform-provider-genesyscloud/genesyscloud/user"
 	"testing"
 
@@ -30,7 +30,7 @@ func (r *registerTestInstance) registerTestResources() {
 
 	providerResources[resourceName] = ResourceRoutingQueueConditionalGroupRouting()
 	providerResources["genesyscloud_routing_queue"] = routingQueue.ResourceRoutingQueue()
-	providerResources["genesyscloud_routing_skill_group"] = gcloud.ResourceRoutingSkillGroup()
+	providerResources["genesyscloud_routing_skill_group"] = routingSkillGroup.ResourceRoutingSkillGroup()
 	providerResources["genesyscloud_user"] = user.ResourceUser()
 	providerResources["genesyscloud_group"] = group.ResourceGroup()
 }

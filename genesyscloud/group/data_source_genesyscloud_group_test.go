@@ -1,6 +1,7 @@
 package group
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"sync"
@@ -10,15 +11,15 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/mypurecloud/platform-client-sdk-go/v130/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
 var (
-	sdkConfig *platformclientv2.Configuration
-	mu        sync.Mutex
+	mu sync.Mutex
 )
 
 func TestAccDataSourceGroup(t *testing.T) {
@@ -37,6 +38,9 @@ func TestAccDataSourceGroup(t *testing.T) {
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
+				PreConfig: func() {
+					time.Sleep(30 * time.Second)
+				},
 				Config: generateUserWithCustomAttrs(testUserResource, testUserEmail, testUserName) +
 					GenerateGroupResource(
 						groupResource,
@@ -62,15 +66,19 @@ func TestAccDataSourceGroup(t *testing.T) {
 						return nil
 					},
 				),
+
+				PreventPostDestroyRefresh: true,
 			},
 			{
 				ResourceName:      "genesyscloud_user." + testUserResource,
 				ImportState:       true,
 				ImportStateVerify: true,
-				Check: resource.ComposeTestCheckFunc(
-					checkUserDeleted(userID),
-				),
+				Destroy:           true,
 			},
+		},
+		CheckDestroy: func(state *terraform.State) error {
+			time.Sleep(45 * time.Second)
+			return testVerifyUsersDestroyed(state)
 		},
 	})
 }
@@ -89,9 +97,9 @@ func generateGroupDataSource(
 }
 
 func checkUserDeleted(id string) resource.TestCheckFunc {
-	log.Printf("Fetching user with ID: %s\n", id)
 	return func(s *terraform.State) error {
-		maxAttempts := 18
+		maxAttempts := 30
+		fmt.Printf("Fetching user with ID: %s\n", id)
 		for i := 0; i < maxAttempts; i++ {
 
 			deleted, err := isUserDeleted(id)
@@ -111,8 +119,9 @@ func isUserDeleted(id string) (bool, error) {
 	mu.Lock()
 	defer mu.Unlock()
 
-	usersAPI := platformclientv2.NewUsersApiWithConfig(sdkConfig)
+	usersAPI := platformclientv2.NewUsersApi()
 	// Attempt to get the user
+	fmt.Printf("User ID: %s\n", id)
 	_, response, err := usersAPI.GetUser(id, nil, "", "")
 
 	// Check if the user is not found (deleted)
@@ -128,4 +137,37 @@ func isUserDeleted(id string) (bool, error) {
 
 	// If user is found, it means the user is not deleted
 	return false, nil
+}
+
+func testVerifyUsersDestroyed(state *terraform.State) error {
+	usersAPI := platformclientv2.NewUsersApi()
+
+	diagErr := util.WithRetries(context.Background(), 20*time.Second, func() *retry.RetryError {
+		for _, rs := range state.RootModule().Resources {
+			if rs.Type != "genesyscloud_user" {
+				continue
+			}
+			err := checkUserDeleted(rs.Primary.ID)(state)
+			if err != nil {
+				continue
+			}
+			_, resp, err := usersAPI.GetUser(rs.Primary.ID, nil, "", "")
+
+			if err != nil {
+				if util.IsStatus404(resp) {
+					continue
+				}
+				return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_user", fmt.Sprintf("Unexpected error: %s", err), resp))
+			}
+			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_user", fmt.Sprintf("User (%s) still exists", rs.Primary.ID), resp))
+		}
+		return nil
+	})
+
+	if diagErr != nil {
+		return fmt.Errorf(fmt.Sprintf("%v", diagErr))
+	}
+
+	// Success. All users destroyed
+	return nil
 }

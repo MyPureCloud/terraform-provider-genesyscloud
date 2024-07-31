@@ -2,13 +2,14 @@ package resource_exporter
 
 import (
 	"context"
-	"github.com/hashicorp/go-cty/cty"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v130/platformclientv2"
 	"regexp"
 	"strings"
 	"sync"
+
+	"github.com/hashicorp/go-cty/cty"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
 
 	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 
@@ -45,10 +46,11 @@ type RefAttrSettings struct {
 }
 
 type ResourceInfo struct {
-	State   *terraform.InstanceState
-	Name    string
-	Type    string
-	CtyType cty.Type
+	State        *terraform.InstanceState
+	Name         string
+	Type         string
+	CtyType      cty.Type
+	ResourceType string
 }
 
 // RefAttrCustomResolver allows the definition of a custom resolver for an exporter.
@@ -102,6 +104,10 @@ type ResourceExporter struct {
 	// AllowZeroValues is a list of attributes that should allow zero values in the export.
 	// By default zero values are removed from the config due to lack of "null" support in the plugin SDK
 	AllowZeroValues []string
+
+	// AllowZeroValuesInMap is a list of attributes that are maps. Adding a map attribute to this list indicates to
+	// the exporter that the values within said map should not be cleaned up if they are zero values
+	AllowZeroValuesInMap []string
 
 	// AllowEmptyArrays is a list of List attributes that should allow empty arrays in export.
 	// By default, empty arrays are removed but some array attributes may be required in the schema
@@ -193,6 +199,10 @@ func (r *ResourceExporter) ContainsNestedRefAttrs(attribute string) ([]string, b
 
 func (r *ResourceExporter) AllowForZeroValues(attribute string) bool {
 	return lists.ItemInSlice(attribute, r.AllowZeroValues)
+}
+
+func (r *ResourceExporter) AllowForZeroValuesInMap(attribute string) bool {
+	return lists.ItemInSlice(attribute, r.AllowZeroValuesInMap)
 }
 
 func (r *ResourceExporter) AllowForEmptyArrays(attribute string) bool {
@@ -294,4 +304,23 @@ func SetRegisterExporter(resources map[string]*ResourceExporter) {
 	resourceExporterMapMutex.Lock()
 	defer resourceExporterMapMutex.Unlock()
 	resourceExporters = resources
+}
+
+var (
+	ExportAsData          []string
+	dsMutex               sync.Mutex
+	resourceNameSanitizer = NewSanitizerProvider()
+)
+
+// The AddDataSourceItems function adds resources to the ExportAsData []string and are formatted correctly
+// The ExportAsData will be checked in the genesyscloud_resource_exporter to determine resources to be exported as data source
+func AddDataSourceItems(resourceName, itemName string) {
+	exportName := resourceName + "::" + resourceNameSanitizer.S.SanitizeResourceName(itemName)
+	addDataSourceItemstoExport(exportName)
+}
+
+func addDataSourceItemstoExport(name string) {
+	dsMutex.Lock()
+	defer dsMutex.Unlock()
+	ExportAsData = append(ExportAsData, name)
 }
