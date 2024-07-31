@@ -156,6 +156,20 @@ If you want to go off of an example, we recommend using the [external contacts](
 
 In order to use a locally compiled version of the provider, the correct binary for your system must be copied to the local `~/.terraform.d/plugins` folder. Run `make sideload` to build the provider and copy it to the correct folder. In your Terraform config file, specify version `0.1.0` and set the provider source to `genesys.com/mypurecloud/genesyscloud`. Run `terraform init` and verify that it finds the local version.
 
+An alternative option that [the official docs recommend](https://developer.hashicorp.com/terraform/plugin/debugging#terraform-cli-development-overrides) is to create a `.terraformrc` file in your home directory and update the location to the correct absolute path of the bin file:
+
+```hcl
+provider_installation {
+  dev_overrides {
+    "genesys.com/mypurecloud/genesyscloud" = "/Users/jdoe/path/to/terraform-provider-genesyscloud/dist/"
+  }
+}
+```
+
+### Debugging
+
+See the [Debugging](./DEBUGGING.md) section for information on how to setup your IDE to debug the provider.
+
 ### Branches
 
 Branch names should begin with `feat/` for new features or `bug/` for bug fixes. This ensures that the PR for this branch is correctly labeled and added to the changelog in the next release.
