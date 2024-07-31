@@ -22,6 +22,7 @@ import (
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	routingQueue "terraform-provider-genesyscloud/genesyscloud/routing_queue"
 	telephonyProvidersEdgesSite "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site"
+	"terraform-provider-genesyscloud/genesyscloud/user"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 	"time"
@@ -606,7 +607,7 @@ func TestAccResourceTfExportByName(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				// Generate a user and export it
-				Config: gcloud.GenerateBasicUserResource(
+				Config: user.GenerateBasicUserResource(
 					userResource1,
 					userEmail1,
 					userName1,
@@ -614,7 +615,7 @@ func TestAccResourceTfExportByName(t *testing.T) {
 			},
 			{
 				// Generate a user and export it
-				Config: gcloud.GenerateBasicUserResource(
+				Config: user.GenerateBasicUserResource(
 					userResource1,
 					userEmail1,
 					userName1,
@@ -636,7 +637,7 @@ func TestAccResourceTfExportByName(t *testing.T) {
 			},
 			{
 				// Generate a queue as well and export it
-				Config: gcloud.GenerateBasicUserResource(
+				Config: user.GenerateBasicUserResource(
 					userResource1,
 					userEmail1,
 					userName1,
@@ -679,7 +680,7 @@ func TestAccResourceTfExportByName(t *testing.T) {
 			},
 			{
 				// Export all trunk base settings as well
-				Config: gcloud.GenerateBasicUserResource(
+				Config: user.GenerateBasicUserResource(
 					userResource1,
 					userEmail1,
 					userName1,
@@ -731,11 +732,11 @@ func TestAccResourceTfExportByName(t *testing.T) {
 			},
 			{
 				// Export all trunk base settings as well
-				Config: gcloud.GenerateBasicUserResource(
+				Config: user.GenerateBasicUserResource(
 					userResource1,
 					userEmail1,
 					userName1,
-				) + gcloud.GenerateBasicUserResource(
+				) + user.GenerateBasicUserResource(
 					userResource2,
 					userEmail2,
 					userName2,
@@ -2816,7 +2817,7 @@ func buildQueueResources(queueExports []QueueExport) string {
 func buildUserResources(userExports []UserExport) string {
 	userResourceDefinitions := ""
 	for _, userExport := range userExports {
-		userResourceDefinitions = userResourceDefinitions + gcloud.GenerateBasicUserResource(
+		userResourceDefinitions = userResourceDefinitions + user.GenerateBasicUserResource(
 			userExport.ResourceName,
 			userExport.Email,
 			userExport.Name,
