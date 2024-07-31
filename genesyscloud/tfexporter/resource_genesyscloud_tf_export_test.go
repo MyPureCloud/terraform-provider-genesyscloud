@@ -650,8 +650,9 @@ func TestAccResourceTfExportByName(t *testing.T) {
 					util.NullValue,                     // auto_answer_only true
 					util.NullValue,                     // No calling party name
 					util.NullValue,                     // No calling party number
+					util.NullValue,                     // enable_audio_monitoring false
 					util.NullValue,                     // enable_manual_assignment false
-					util.FalseValue,                    //suppressCall_record_false
+					util.FalseValue,                    // suppressCall_record_false
 					util.NullValue,                     // enable_transcription false
 					strconv.Quote("TimestampAndPriority"),
 				) + generateTfExportByName(
@@ -692,8 +693,9 @@ func TestAccResourceTfExportByName(t *testing.T) {
 					util.NullValue,                     // auto_answer_only true
 					util.NullValue,                     // No calling party name
 					util.NullValue,                     // No calling party number
+					util.NullValue,                     // enable_audio_monitoring false
 					util.NullValue,                     // enable_manual_assignment false
-					util.FalseValue,                    //suppressCall_record_false
+					util.FalseValue,                    // suppressCall_record_false
 					util.NullValue,                     // enable_transcription false
 					strconv.Quote("TimestampAndPriority"),
 				) + generateTfExportByName(
@@ -747,8 +749,9 @@ func TestAccResourceTfExportByName(t *testing.T) {
 					util.NullValue,                     // auto_answer_only true
 					util.NullValue,                     // No calling party name
 					util.NullValue,                     // No calling party number
+					util.NullValue,                     // enable_audio_monitoring false
 					util.NullValue,                     // enable_manual_assignment false
-					util.FalseValue,                    //suppressCall_record_false
+					util.FalseValue,                    // suppressCall_record_false
 					util.NullValue,                     // enable_transcription false
 					strconv.Quote("TimestampAndPriority"),
 				) + generateTfExportByName(
@@ -1097,6 +1100,7 @@ func TestAccResourceTfExportQueueAsHCL(t *testing.T) {
 		autoAnswerOnly,
 		strconv.Quote("Example Inc."),
 		util.NullValue,
+		"true",
 		"true",
 		util.TrueValue,
 		util.FalseValue,
@@ -2798,6 +2802,7 @@ func buildQueueResources(queueExports []QueueExport) string {
 			util.NullValue,                              // auto_answer_only true
 			util.NullValue,                              // No calling party name
 			util.NullValue,                              // No calling party number
+			util.NullValue,                              // enable_audio_monitoring false
 			util.NullValue,                              // enable_manual_assignment false
 			util.NullValue,                              //suppressCall_record_false
 			util.NullValue,                              // enable_transcription false
