@@ -4,8 +4,12 @@ import (
 	"sync"
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	architectFlow "terraform-provider-genesyscloud/genesyscloud/architect_flow"
+	"terraform-provider-genesyscloud/genesyscloud/architect_user_prompt"
 	"terraform-provider-genesyscloud/genesyscloud/group"
+	routingSkill "terraform-provider-genesyscloud/genesyscloud/routing_skill"
+	routingSkillGroup "terraform-provider-genesyscloud/genesyscloud/routing_skill_group"
 	routingWrapupcode "terraform-provider-genesyscloud/genesyscloud/routing_wrapupcode"
+	"terraform-provider-genesyscloud/genesyscloud/user"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -33,13 +37,13 @@ func (r *registerTestInstance) registerTestResources() {
 	defer r.resourceMapMutex.Unlock()
 
 	providerResources[resourceName] = ResourceRoutingQueue()
-	providerResources["genesyscloud_user"] = gcloud.ResourceUser()
-	providerResources["genesyscloud_routing_skill"] = gcloud.ResourceRoutingSkill()
+	providerResources["genesyscloud_user"] = user.ResourceUser()
+	providerResources["genesyscloud_routing_skill"] = routingSkill.ResourceRoutingSkill()
 	providerResources["genesyscloud_group"] = group.ResourceGroup()
 	providerResources["genesyscloud_routing_wrapupcode"] = routingWrapupcode.ResourceRoutingWrapupCode()
 	providerResources["genesyscloud_flow"] = architectFlow.ResourceArchitectFlow()
-	providerResources["genesyscloud_routing_skill_group"] = gcloud.ResourceRoutingSkillGroup()
-	providerResources["genesyscloud_auth_division"] = gcloud.ResourceAuthDivision()
+	providerResources["genesyscloud_routing_skill_group"] = routingSkillGroup.ResourceRoutingSkillGroup()
+	providerResources["genesyscloud_architect_user_prompt"] = architect_user_prompt.ResourceArchitectUserPrompt()
 }
 
 // registerTestDataSources registers all data sources used in the tests.

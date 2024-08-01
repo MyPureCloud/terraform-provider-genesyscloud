@@ -21,7 +21,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v130/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
 	"github.com/nyaruka/phonenumbers"
 )
 
@@ -381,7 +381,7 @@ func flattenLocationEmergencyNumber(numberConfig *platformclientv2.Locationemerg
 	}
 	numberSettings := make(map[string]interface{})
 	if numberConfig.Number != nil {
-		numberSettings["number"] = *numberConfig.Number
+		numberSettings["number"], _ = util.FormatAsE164Number(*numberConfig.Number)
 	}
 	if numberConfig.VarType != nil {
 		numberSettings["type"] = *numberConfig.VarType

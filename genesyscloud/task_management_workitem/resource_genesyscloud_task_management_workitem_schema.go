@@ -1,13 +1,15 @@
 package task_management_workitem
 
 import (
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
+	"terraform-provider-genesyscloud/genesyscloud/task_management_worktype_status"
 	"terraform-provider-genesyscloud/genesyscloud/util"
-	gcloud "terraform-provider-genesyscloud/genesyscloud/validators"
+	"terraform-provider-genesyscloud/genesyscloud/validators"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
 /*
@@ -91,14 +93,14 @@ func ResourceTaskManagementWorkitem() *schema.Resource {
 				Optional:         true,
 				Computed:         true,
 				Type:             schema.TypeString,
-				ValidateDiagFunc: gcloud.ValidateLocalDateTimes,
+				ValidateDiagFunc: validators.ValidateLocalDateTimes,
 			},
 			`date_expires`: {
 				Description:      `The expiry date of the Workitem. Date time is represented as an ISO-8601 string. For example: yyyy-MM-ddTHH:mm:ss[.mmm]Z`,
 				Optional:         true,
 				Computed:         true,
 				Type:             schema.TypeString,
-				ValidateDiagFunc: gcloud.ValidateLocalDateTimes,
+				ValidateDiagFunc: validators.ValidateLocalDateTimes,
 			},
 			`duration_seconds`: {
 				Description: `The estimated duration in seconds to complete the workitem.`,
@@ -116,6 +118,7 @@ func ResourceTaskManagementWorkitem() *schema.Resource {
 				Description: `The id of the current status of the Workitem.`,
 				Optional:    true,
 				Computed:    true,
+				StateFunc:   task_management_worktype_status.ModifyStatusIdStateValue,
 				Type:        schema.TypeString,
 			},
 			`workbin_id`: {
@@ -198,6 +201,7 @@ func TaskManagementWorkitemExporter() *resourceExporter.ResourceExporter {
 			"external_contact_id":    {RefType: "genesyscloud_externalcontacts_contact"},
 			"queue_id":               {RefType: "genesyscloud_routing_queue"},
 			"skills_ids":             {RefType: "genesyscloud_routing_skill"},
+			"status_id":              {RefType: "genesyscloud_task_management_worktype_status"},
 		},
 	}
 }

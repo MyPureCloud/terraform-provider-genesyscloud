@@ -12,7 +12,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v130/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
 
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
@@ -49,7 +49,7 @@ func createTaskManagementWorkitem(ctx context.Context, d *schema.ResourceData, m
 
 	taskManagementWorkitem, err := getWorkitemCreateFromResourceData(d)
 	if err != nil {
-		return util.BuildDiagnosticError(resourceName, fmt.Sprintf("failed to build Workitem create from resource data"), err)
+		return util.BuildDiagnosticError(resourceName, "failed to build Workitem create from resource data", err)
 	}
 
 	log.Printf("Creating task management workitem %s", *taskManagementWorkitem.Name)
@@ -138,7 +138,7 @@ func updateTaskManagementWorkitem(ctx context.Context, d *schema.ResourceData, m
 
 	taskManagementWorkitem, err := getWorkitemUpdateFromResourceData(d)
 	if err != nil {
-		return util.BuildDiagnosticError(resourceName, fmt.Sprintf("failed to update Workitem create from resource data"), err)
+		return util.BuildDiagnosticError(resourceName, "failed to update Workitem create from resource data", err)
 	}
 
 	log.Printf("Updating task management workitem %s", *taskManagementWorkitem.Name)

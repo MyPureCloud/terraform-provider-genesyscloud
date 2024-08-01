@@ -2,21 +2,22 @@ package routing_queue_outbound_email_address
 
 import (
 	"fmt"
-	"github.com/google/uuid"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v130/platformclientv2"
 	"log"
 	"os"
 	"strings"
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
+	routingEmailDomain "terraform-provider-genesyscloud/genesyscloud/routing_email_domain"
 	routingEmailRoute "terraform-provider-genesyscloud/genesyscloud/routing_email_route"
 	routingQueue "terraform-provider-genesyscloud/genesyscloud/routing_queue"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	featureToggles "terraform-provider-genesyscloud/genesyscloud/util/feature_toggles"
 	"testing"
 	"time"
+
+	"github.com/google/uuid"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
 )
 
 func TestAccResourceRoutingQueueOutboundEmailAddress(t *testing.T) {
@@ -71,7 +72,7 @@ func TestAccResourceRoutingQueueOutboundEmailAddress(t *testing.T) {
 				Config: routingQueue.GenerateRoutingQueueResourceBasic(
 					queueResource,
 					queueName1,
-				) + gcloud.GenerateRoutingEmailDomainResource(
+				) + routingEmailDomain.GenerateRoutingEmailDomainResource(
 					domainResource,
 					domainId,
 					util.FalseValue,

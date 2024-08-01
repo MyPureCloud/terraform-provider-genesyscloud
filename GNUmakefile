@@ -1,6 +1,6 @@
 default: build
 
-.PHONY: testacc clean build sideload
+.PHONY: testacc clean build docs sideload
 
 DIST_DIR=./dist
 BIN_NAME=terraform-provider-genesyscloud
@@ -29,6 +29,9 @@ testacc:
 testunit:
 	TF_UNIT=1 go test ./... -run TestUnit -cover -count=1 -coverprofile=coverage_unit.out
 
+# Generate docs
+docs:
+	go generate
 
 coverageacc:
 	go tool cover -func coverage.out | grep "total:" | \

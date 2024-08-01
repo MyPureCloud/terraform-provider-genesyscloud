@@ -2,18 +2,31 @@ package outbound_contactlistfilter
 
 import (
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v130/platformclientv2"
 	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
 )
 
 func getContactlistfilterFromResourceData(d *schema.ResourceData) platformclientv2.Contactlistfilter {
 	filter := platformclientv2.Contactlistfilter{
-		Name:        platformclientv2.String(d.Get("name").(string)),
-		ContactList: util.BuildSdkDomainEntityRef(d, "contact_list_id"),
-		Clauses:     buildContactListFilterClauses(d.Get("clauses").([]interface{})),
+		Name:    platformclientv2.String(d.Get("name").(string)),
+		Clauses: buildContactListFilterClauses(d.Get("clauses").([]interface{})),
+	}
+	contactList := util.BuildSdkDomainEntityRef(d, "contact_list_id")
+	contactListTemplate := util.BuildSdkDomainEntityRef(d, "contact_list_template_id")
+
+	if contactList != nil {
+		filter.ContactList = contactList
+		contactListSource := "ContactList"
+		filter.SourceType = &contactListSource
+	}
+	if contactListTemplate != nil {
+		filter.ContactListTemplate = contactListTemplate
+		contactListTemplateSource := "ContactListTemplate"
+		filter.SourceType = &contactListTemplateSource
 	}
 
 	filterType := d.Get("filter_type").(string)
@@ -223,7 +236,7 @@ func GenerateOutboundContactListFilterPredicates(
 			%s
 			%s
 			%s
-			%s	
+			%s
 			%s
 		}
 `, column, columnType, operator, value, inverted, varRangeBlock)

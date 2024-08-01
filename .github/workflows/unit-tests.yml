@@ -1,0 +1,27 @@
+name: Unit Tests
+on:
+  push:
+    paths-ignore:
+      - 'README.md'
+jobs:
+  unit-tests:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.20'
+        id: go
+
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@v4
+
+      - name: Run Unit Tests
+        env:
+          TF_UNIT: '*'
+          ENABLE_STANDALONE_CGR: 'true'
+          ENABLE_STANDALONE_EMAIL_ADDRESS: 'true'
+        run: |
+          go test ./genesyscloud/... -v -run TestUnit

@@ -5,7 +5,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
-	gcloud "terraform-provider-genesyscloud/genesyscloud/validators"
+	"terraform-provider-genesyscloud/genesyscloud/validators"
 )
 
 /*
@@ -59,7 +59,7 @@ func ResourceScript() *schema.Resource {
 				Description:  "Path to the script file to upload.",
 				Type:         schema.TypeString,
 				Required:     true,
-				ValidateFunc: gcloud.ValidatePath,
+				ValidateFunc: validators.ValidatePath,
 			},
 			"file_content_hash": {
 				Description: "Hash value of the script file content. Used to detect changes.",

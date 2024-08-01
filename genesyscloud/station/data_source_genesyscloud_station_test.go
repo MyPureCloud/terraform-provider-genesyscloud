@@ -3,11 +3,11 @@ package station
 import (
 	"fmt"
 	"strconv"
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	edgePhone "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_phone"
 	phoneBaseSettings "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_phonebasesettings"
 	edgeSite "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site"
+	"terraform-provider-genesyscloud/genesyscloud/user"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 
@@ -40,7 +40,7 @@ func TestAccDataSourceStation(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	config := gcloud.GenerateUserResource(
+	config := user.GenerateUserResource(
 		userRes1,
 		userEmail1,
 		userName1,
@@ -62,7 +62,6 @@ func TestAccDataSourceStation(t *testing.T) {
 		State:               stateActive,
 		SiteId:              fmt.Sprintf("\"%s\"", defaultSiteId),
 		PhoneBaseSettingsId: "genesyscloud_telephony_providers_edges_phonebasesettings." + phoneBaseSettingsRes + ".id",
-		LineAddresses:       nil, // no line addresses
 		WebRtcUserId:        "genesyscloud_user." + userRes1 + ".id",
 		DependsOn:           "", // no depends on
 	},

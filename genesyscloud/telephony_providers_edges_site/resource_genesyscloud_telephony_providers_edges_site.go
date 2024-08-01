@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/tfexporter_state"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	featureToggles "terraform-provider-genesyscloud/genesyscloud/util/feature_toggles"
@@ -20,7 +21,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v130/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
 )
 
 func getAllSites(ctx context.Context, sdkConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
@@ -43,8 +44,12 @@ func getAllSites(ctx context.Context, sdkConfig *platformclientv2.Configuration)
 	}
 	for _, managedSite := range *managedSites {
 		resources[*managedSite.Id] = &resourceExporter.ResourceMeta{Name: *managedSite.Name}
+		// When exporting managed sites, they must automatically be exported as data source 
+		// Managed sites are added to the ExportAsData []string in resource_exporter
+		if tfexporter_state.IsExporterActive() {
+			resourceExporter.AddDataSourceItems(resourceName, *managedSite.Name)
+		}
 	}
-
 	return resources, nil
 }
 
@@ -306,14 +311,23 @@ func deleteSite(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	sp := GetSiteProxy(sdkConfig)
 
-	log.Printf("Deleting site")
-	resp, err := sp.deleteSite(ctx, d.Id())
-	if err != nil {
-		if util.IsStatus404(resp) {
-			log.Printf("Site already deleted %s", d.Id())
-			return nil
+	// A site linked to a trunk will not be able to be deleted until that trunk is deleted. Retrying here to make sure it is cleared properly.
+	log.Printf("Deleting site %s", d.Id())
+	diagErr := util.RetryWhen(util.IsStatus409, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+		log.Printf("Deleting site %s", d.Id())
+		resp, err := sp.deleteSite(ctx, d.Id())
+		if err != nil {
+			if util.IsStatus404(resp) {
+				log.Printf("Site already deleted %s", d.Id())
+				return resp, nil
+			}
+			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete site %s error: %s", d.Id(), err), resp)
 		}
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete site %s error: %s", d.Id(), err), resp)
+		return resp, nil
+	})
+
+	if diagErr != nil {
+		return diagErr
 	}
 
 	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {

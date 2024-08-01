@@ -8,6 +8,8 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/architect_flow"
 	authRole "terraform-provider-genesyscloud/genesyscloud/auth_role"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
+	routingEmailDomain "terraform-provider-genesyscloud/genesyscloud/routing_email_domain"
+	routingLanguage "terraform-provider-genesyscloud/genesyscloud/routing_language"
 	routingQueue "terraform-provider-genesyscloud/genesyscloud/routing_queue"
 	routingWrapupcode "terraform-provider-genesyscloud/genesyscloud/routing_wrapupcode"
 	userRoles "terraform-provider-genesyscloud/genesyscloud/user_roles"
@@ -149,7 +151,7 @@ func TestAccDataSourceRecordingMediaRetentionPolicy(t *testing.T) {
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
-				Config: gcloud.GenerateRoutingEmailDomainResource(
+				Config: routingEmailDomain.GenerateRoutingEmailDomainResource(
 					domainRes,
 					domainId,
 					util.FalseValue, // Subdomain
@@ -172,7 +174,7 @@ func TestAccDataSourceRecordingMediaRetentionPolicy(t *testing.T) {
 					gcloud.GenerateEvaluationFormResource(evaluationFormResource1, &evaluationFormResourceBody) +
 					gcloud.GenerateSurveyFormResource(surveyFormResource1, &surveyFormResourceBody) +
 					integration.GenerateIntegrationResource(integrationResource1, strconv.Quote(integrationIntendedState), strconv.Quote(integrationType), "") +
-					gcloud.GenerateRoutingLanguageResource(languageResource1, languageName) +
+					routingLanguage.GenerateRoutingLanguageResource(languageResource1, languageName) +
 					gcloud.GenerateAuthDivisionBasic(divResource, divName) +
 					routingWrapupcode.GenerateRoutingWrapupcodeResource(wrapupCodeResource1, wrapupCodeName, "genesyscloud_auth_division."+divResource+".id") +
 					architect_flow.GenerateFlowResource(
@@ -229,4 +231,13 @@ func generateResourceRoles(skillID string, divisionIds ...string) string {
 		%s
 	}
 	`, skillID, divAttr)
+}
+
+func generateUserWithCustomAttrs(resourceID string, email string, name string, attrs ...string) string {
+	return fmt.Sprintf(`resource "%s" "%s" {
+		email = "%s"
+		name = "%s"
+		%s
+	}
+	`, resourceName, resourceID, email, name, strings.Join(attrs, "\n"))
 }

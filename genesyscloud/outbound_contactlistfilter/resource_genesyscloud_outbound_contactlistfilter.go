@@ -3,10 +3,6 @@ package outbound_contactlistfilter
 import (
 	"context"
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v130/platformclientv2"
 	"log"
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
@@ -15,6 +11,11 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 	"time"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
 )
 
 /*
@@ -75,7 +76,15 @@ func readOutboundContactlistfilter(ctx context.Context, d *schema.ResourceData, 
 		}
 
 		resourcedata.SetNillableValue(d, "name", sdkContactListFilter.Name)
-		resourcedata.SetNillableReference(d, "contact_list_id", sdkContactListFilter.ContactList)
+
+		switch {
+		case *sdkContactListFilter.SourceType == "ContactList":
+			resourcedata.SetNillableReference(d, "contact_list_id", sdkContactListFilter.ContactList)
+		case *sdkContactListFilter.SourceType == "ContactListTemplate":
+			resourcedata.SetNillableReference(d, "contact_list_template_id", sdkContactListFilter.ContactListTemplate)
+		default:
+		}
+
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "clauses", sdkContactListFilter.Clauses, flattenContactListFilterClauses)
 		resourcedata.SetNillableValue(d, "filter_type", sdkContactListFilter.FilterType)
 

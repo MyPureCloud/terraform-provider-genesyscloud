@@ -2,14 +2,15 @@ package organization_authentication_settings
 
 import (
 	"context"
-	"github.com/google/go-cmp/cmp"
-	"github.com/google/uuid"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v130/platformclientv2"
-	"github.com/stretchr/testify/assert"
 	"net/http"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"testing"
+
+	"github.com/google/go-cmp/cmp"
+	"github.com/google/uuid"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
+	"github.com/stretchr/testify/assert"
 )
 
 // Unit Test

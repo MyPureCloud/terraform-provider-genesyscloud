@@ -16,13 +16,19 @@ import (
 	architectSchedulegroups "terraform-provider-genesyscloud/genesyscloud/architect_schedulegroups"
 	architectSchedules "terraform-provider-genesyscloud/genesyscloud/architect_schedules"
 	authRole "terraform-provider-genesyscloud/genesyscloud/auth_role"
+	cMessagingSettings "terraform-provider-genesyscloud/genesyscloud/conversations_messaging_settings"
+	supportedContent "terraform-provider-genesyscloud/genesyscloud/conversations_messaging_supportedcontent"
 	employeeperformanceExternalmetricsDefinition "terraform-provider-genesyscloud/genesyscloud/employeeperformance_externalmetrics_definitions"
 	flowMilestone "terraform-provider-genesyscloud/genesyscloud/flow_milestone"
 	flowOutcome "terraform-provider-genesyscloud/genesyscloud/flow_outcome"
 	"terraform-provider-genesyscloud/genesyscloud/group"
 	groupRoles "terraform-provider-genesyscloud/genesyscloud/group_roles"
 	idpAdfs "terraform-provider-genesyscloud/genesyscloud/idp_adfs"
+	idpGeneric "terraform-provider-genesyscloud/genesyscloud/idp_generic"
+	idpGsuite "terraform-provider-genesyscloud/genesyscloud/idp_gsuite"
 	idpOkta "terraform-provider-genesyscloud/genesyscloud/idp_okta"
+	idpOneLogin "terraform-provider-genesyscloud/genesyscloud/idp_onelogin"
+	idpPing "terraform-provider-genesyscloud/genesyscloud/idp_ping"
 	idpSalesforce "terraform-provider-genesyscloud/genesyscloud/idp_salesforce"
 	integration "terraform-provider-genesyscloud/genesyscloud/integration"
 	integrationAction "terraform-provider-genesyscloud/genesyscloud/integration_action"
@@ -37,6 +43,8 @@ import (
 	obCampaign "terraform-provider-genesyscloud/genesyscloud/outbound_campaign"
 	obCampaignRule "terraform-provider-genesyscloud/genesyscloud/outbound_campaignrule"
 	outboundContactList "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
+	outboundContactListContact "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list_contact"
+	outboundContactListTemplate "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list_template"
 	obContactListFilter "terraform-provider-genesyscloud/genesyscloud/outbound_contactlistfilter"
 	obDncList "terraform-provider-genesyscloud/genesyscloud/outbound_dnclist"
 	obfst "terraform-provider-genesyscloud/genesyscloud/outbound_filespecificationtemplate"
@@ -50,25 +58,33 @@ import (
 	respmanagementLibrary "terraform-provider-genesyscloud/genesyscloud/responsemanagement_library"
 	responsemanagementResponse "terraform-provider-genesyscloud/genesyscloud/responsemanagement_response"
 	respManagementRespAsset "terraform-provider-genesyscloud/genesyscloud/responsemanagement_responseasset"
+	routingEmailDomain "terraform-provider-genesyscloud/genesyscloud/routing_email_domain"
 	routingEmailRoute "terraform-provider-genesyscloud/genesyscloud/routing_email_route"
+	routinglanguage "terraform-provider-genesyscloud/genesyscloud/routing_language"
 	routingQueue "terraform-provider-genesyscloud/genesyscloud/routing_queue"
 	routingQueueConditionalGroupRouting "terraform-provider-genesyscloud/genesyscloud/routing_queue_conditional_group_routing"
 	routingQueueOutboundEmailAddress "terraform-provider-genesyscloud/genesyscloud/routing_queue_outbound_email_address"
+	routingSettings "terraform-provider-genesyscloud/genesyscloud/routing_settings"
+	routingSkill "terraform-provider-genesyscloud/genesyscloud/routing_skill"
+	routingSkillGroup "terraform-provider-genesyscloud/genesyscloud/routing_skill_group"
 	routingSmsAddress "terraform-provider-genesyscloud/genesyscloud/routing_sms_addresses"
+	routingUtilization "terraform-provider-genesyscloud/genesyscloud/routing_utilization"
+	routingUtilizationLabel "terraform-provider-genesyscloud/genesyscloud/routing_utilization_label"
 	"terraform-provider-genesyscloud/genesyscloud/scripts"
 	workbin "terraform-provider-genesyscloud/genesyscloud/task_management_workbin"
 	workitemSchema "terraform-provider-genesyscloud/genesyscloud/task_management_workitem_schema"
 	worktype "terraform-provider-genesyscloud/genesyscloud/task_management_worktype"
+	worktypeStatus "terraform-provider-genesyscloud/genesyscloud/task_management_worktype_status"
 	telephony "terraform-provider-genesyscloud/genesyscloud/telephony"
 	didPool "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_did_pool"
 	edgeGroup "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_edge_group"
 	edgeExtension "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_extension_pool"
 	phonebaseSettings "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_phonebasesettings"
 	edgesTrunk "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_trunk"
+	"terraform-provider-genesyscloud/genesyscloud/user"
 	userRoles "terraform-provider-genesyscloud/genesyscloud/user_roles"
 	webdeployConfig "terraform-provider-genesyscloud/genesyscloud/webdeployments_configuration"
 	webdeployDeploy "terraform-provider-genesyscloud/genesyscloud/webdeployments_deployment"
-
 	"testing"
 
 	edgePhone "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_phone"
@@ -119,11 +135,11 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_group"] = group.ResourceGroup()
 	providerResources["genesyscloud_group_roles"] = groupRoles.ResourceGroupRoles()
 	providerResources["genesyscloud_idp_adfs"] = idpAdfs.ResourceIdpAdfs()
-	providerResources["genesyscloud_idp_generic"] = gcloud.ResourceIdpGeneric()
-	providerResources["genesyscloud_idp_gsuite"] = gcloud.ResourceIdpGsuite()
+	providerResources["genesyscloud_idp_generic"] = idpGeneric.ResourceIdpGeneric()
+	providerResources["genesyscloud_idp_gsuite"] = idpGsuite.ResourceIdpGsuite()
 	providerResources["genesyscloud_idp_okta"] = idpOkta.ResourceIdpOkta()
-	providerResources["genesyscloud_idp_onelogin"] = gcloud.ResourceIdpOnelogin()
-	providerResources["genesyscloud_idp_ping"] = gcloud.ResourceIdpPing()
+	providerResources["genesyscloud_idp_onelogin"] = idpOneLogin.ResourceIdpOnelogin()
+	providerResources["genesyscloud_idp_ping"] = idpPing.ResourceIdpPing()
 	providerResources["genesyscloud_idp_salesforce"] = idpSalesforce.ResourceIdpSalesforce()
 	providerResources["genesyscloud_integration"] = integration.ResourceIntegration()
 	providerResources["genesyscloud_integration_action"] = integrationAction.ResourceIntegrationAction()
@@ -142,19 +158,19 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_oauth_client"] = oauth_client.ResourceOAuthClient()
 	providerResources["genesyscloud_outbound_settings"] = obSettings.ResourceOutboundSettings()
 	providerResources["genesyscloud_quality_forms_evaluation"] = gcloud.ResourceEvaluationForm()
-	providerResources["genesyscloud_user"] = gcloud.ResourceUser()
+	providerResources["genesyscloud_user"] = user.ResourceUser()
 	providerResources["genesyscloud_responsemanagement_library"] = respmanagementLibrary.ResourceResponsemanagementLibrary()
 	providerResources["genesyscloud_responsemanagement_responseasset"] = respManagementRespAsset.ResourceResponseManagementResponseAsset()
-	providerResources["genesyscloud_routing_email_domain"] = gcloud.ResourceRoutingEmailDomain()
+	providerResources["genesyscloud_routing_email_domain"] = routingEmailDomain.ResourceRoutingEmailDomain()
 	providerResources["genesyscloud_routing_email_route"] = routingEmailRoute.ResourceRoutingEmailRoute()
-	providerResources["genesyscloud_routing_language"] = gcloud.ResourceRoutingLanguage()
+	providerResources["genesyscloud_routing_language"] = routinglanguage.ResourceRoutingLanguage()
 	providerResources["genesyscloud_routing_queue"] = routingQueue.ResourceRoutingQueue()
 	providerResources["genesyscloud_routing_queue_conditional_group_routing"] = routingQueueConditionalGroupRouting.ResourceRoutingQueueConditionalGroupRouting()
 	providerResources["genesyscloud_routing_queue_outbound_email_address"] = routingQueueOutboundEmailAddress.ResourceRoutingQueueOutboundEmailAddress()
-	providerResources["genesyscloud_routing_skill"] = gcloud.ResourceRoutingSkill()
-	providerResources["genesyscloud_routing_settings"] = gcloud.ResourceRoutingSettings()
-	providerResources["genesyscloud_routing_utilization"] = gcloud.ResourceRoutingUtilization()
-
+	providerResources["genesyscloud_routing_skill"] = routingSkill.ResourceRoutingSkill()
+	providerResources["genesyscloud_routing_settings"] = routingSettings.ResourceRoutingSettings()
+	providerResources["genesyscloud_routing_utilization"] = routingUtilization.ResourceRoutingUtilization()
+	providerResources["genesyscloud_routing_utilization_label"] = routingUtilizationLabel.ResourceRoutingUtilizationLabel()
 	providerResources["genesyscloud_routing_wrapupcode"] = routingWrapupcode.ResourceRoutingWrapupCode()
 	providerResources["genesyscloud_telephony_providers_edges_extension_pool"] = edgeExtension.ResourceTelephonyExtensionPool()
 	providerResources["genesyscloud_telephony_providers_edges_phone"] = edgePhone.ResourcePhone()
@@ -176,6 +192,8 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_outbound_callabletimeset"] = obCallableTimeset.ResourceOutboundCallabletimeset()
 	providerResources["genesyscloud_outbound_campaign"] = obCampaign.ResourceOutboundCampaign()
 	providerResources["genesyscloud_outbound_contact_list"] = outboundContactList.ResourceOutboundContactList()
+	providerResources["genesyscloud_outbound_contact_list_template"] = outboundContactListTemplate.ResourceOutboundContactListTemplate()
+	providerResources["genesyscloud_outbound_contact_list_contact"] = outboundContactListContact.ResourceOutboundContactListContact()
 	providerResources["genesyscloud_outbound_contactlistfilter"] = obContactListFilter.ResourceOutboundContactlistfilter()
 	providerResources["genesyscloud_outbound_messagingcampaign"] = ob.ResourceOutboundMessagingCampaign()
 	providerResources["genesyscloud_outbound_sequence"] = obSequence.ResourceOutboundSequence()
@@ -186,7 +204,7 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_quality_forms_survey"] = gcloud.ResourceSurveyForm()
 	providerResources["genesyscloud_responsemanagement_response"] = responsemanagementResponse.ResourceResponsemanagementResponse()
 	providerResources["genesyscloud_routing_sms_address"] = routingSmsAddress.ResourceRoutingSmsAddress()
-	providerResources["genesyscloud_routing_skill_group"] = gcloud.ResourceRoutingSkillGroup()
+	providerResources["genesyscloud_routing_skill_group"] = routingSkillGroup.ResourceRoutingSkillGroup()
 	providerResources["genesyscloud_telephony_providers_edges_did_pool"] = didPool.ResourceTelephonyDidPool()
 	providerResources["genesyscloud_script"] = scripts.ResourceScript()
 
@@ -194,6 +212,10 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_task_management_workitem_schema"] = workitemSchema.ResourceTaskManagementWorkitemSchema()
 	providerResources["genesyscloud_task_management_worktype"] = worktype.ResourceTaskManagementWorktype()
 
+	providerResources["genesyscloud_conversations_messaging_supportedcontent"] = supportedContent.ResourceSupportedContent()
+
+	providerResources["genesyscloud_conversations_messaging_settings"] = cMessagingSettings.ResourceConversationsMessagingSettings()
+	providerResources["genesyscloud_task_management_worktype_status"] = worktypeStatus.ResourceTaskManagementWorktypeStatus()
 	providerResources["genesyscloud_tf_export"] = ResourceTfExport()
 }
 
@@ -218,11 +240,11 @@ func (r *registerTestInstance) registerTestExporters() {
 	RegisterExporter("genesyscloud_group", group.GroupExporter())
 	RegisterExporter("genesyscloud_group_roles", groupRoles.GroupRolesExporter())
 	RegisterExporter("genesyscloud_idp_adfs", idpAdfs.IdpAdfsExporter())
-	RegisterExporter("genesyscloud_idp_generic", gcloud.IdpGenericExporter())
-	RegisterExporter("genesyscloud_idp_gsuite", gcloud.IdpGsuiteExporter())
+	RegisterExporter("genesyscloud_idp_generic", idpGeneric.IdpGenericExporter())
+	RegisterExporter("genesyscloud_idp_gsuite", idpGsuite.IdpGsuiteExporter())
 	RegisterExporter("genesyscloud_idp_okta", idpOkta.IdpOktaExporter())
-	RegisterExporter("genesyscloud_idp_onelogin", gcloud.IdpOneloginExporter())
-	RegisterExporter("genesyscloud_idp_ping", gcloud.IdpPingExporter())
+	RegisterExporter("genesyscloud_idp_onelogin", idpOneLogin.IdpOneloginExporter())
+	RegisterExporter("genesyscloud_idp_ping", idpPing.IdpPingExporter())
 	RegisterExporter("genesyscloud_idp_salesforce", idpSalesforce.IdpSalesforceExporter())
 	RegisterExporter("genesyscloud_integration", integration.IntegrationExporter())
 	RegisterExporter("genesyscloud_integration_action", integrationAction.IntegrationActionExporter())
@@ -241,6 +263,8 @@ func (r *registerTestInstance) registerTestExporters() {
 	RegisterExporter("genesyscloud_outbound_callabletimeset", obCallableTimeset.OutboundCallableTimesetExporter())
 	RegisterExporter("genesyscloud_outbound_campaign", obCampaign.OutboundCampaignExporter())
 	RegisterExporter("genesyscloud_outbound_contact_list", outboundContactList.OutboundContactListExporter())
+	RegisterExporter("genesyscloud_outbound_contact_list_template", outboundContactListTemplate.OutboundContactListTemplateExporter())
+	RegisterExporter("genesyscloud_outbound_contact_list_contact", outboundContactListContact.ContactExporter())
 	RegisterExporter("genesyscloud_outbound_contactlistfilter", obContactListFilter.OutboundContactlistfilterExporter())
 	RegisterExporter("genesyscloud_outbound_messagingcampaign", ob.OutboundMessagingcampaignExporter())
 	RegisterExporter("genesyscloud_outbound_sequence", obSequence.OutboundSequenceExporter())
@@ -255,17 +279,18 @@ func (r *registerTestInstance) registerTestExporters() {
 	RegisterExporter("genesyscloud_responsemanagement_library", respmanagementLibrary.ResponsemanagementLibraryExporter())
 	RegisterExporter("genesyscloud_responsemanagement_response", responsemanagementResponse.ResponsemanagementResponseExporter())
 	RegisterExporter("genesyscloud_responsemanagement_responseasset", respManagementRespAsset.ExporterResponseManagementResponseAsset())
-	RegisterExporter("genesyscloud_routing_email_domain", gcloud.RoutingEmailDomainExporter())
+	RegisterExporter("genesyscloud_routing_email_domain", routingEmailDomain.RoutingEmailDomainExporter())
 	RegisterExporter("genesyscloud_routing_email_route", routingEmailRoute.RoutingEmailRouteExporter())
-	RegisterExporter("genesyscloud_routing_language", gcloud.RoutingLanguageExporter())
+	RegisterExporter("genesyscloud_routing_language", routinglanguage.RoutingLanguageExporter())
 	RegisterExporter("genesyscloud_routing_queue", routingQueue.RoutingQueueExporter())
 	RegisterExporter("genesyscloud_routing_queue_conditional_group_routing", routingQueueConditionalGroupRouting.RoutingQueueConditionalGroupRoutingExporter())
 	RegisterExporter("genesyscloud_routing_queue_outbound_email_address", routingQueueOutboundEmailAddress.OutboundRoutingQueueOutboundEmailAddressExporter())
-	RegisterExporter("genesyscloud_routing_settings", gcloud.RoutingSettingsExporter())
-	RegisterExporter("genesyscloud_routing_skill", gcloud.RoutingSkillExporter())
-	RegisterExporter("genesyscloud_routing_skill_group", gcloud.ResourceSkillGroupExporter())
+	RegisterExporter("genesyscloud_routing_settings", routingSettings.RoutingSettingsExporter())
+	RegisterExporter("genesyscloud_routing_skill_group", routingSkillGroup.ResourceSkillGroupExporter())
+	RegisterExporter("genesyscloud_routing_skill", routingSkill.RoutingSkillExporter())
 	RegisterExporter("genesyscloud_routing_sms_address", routingSmsAddress.RoutingSmsAddressExporter())
-	RegisterExporter("genesyscloud_routing_utilization", gcloud.RoutingUtilizationExporter())
+	RegisterExporter("genesyscloud_routing_utilization", routingUtilization.RoutingUtilizationExporter())
+	RegisterExporter("genesyscloud_routing_utilization_label", routingUtilizationLabel.RoutingUtilizationLabelExporter())
 	RegisterExporter("genesyscloud_routing_wrapupcode", routingWrapupcode.RoutingWrapupCodeExporter())
 	RegisterExporter("genesyscloud_telephony_providers_edges_edge_group", edgeGroup.EdgeGroupExporter())
 	RegisterExporter("genesyscloud_telephony_providers_edges_extension_pool", edgeExtension.TelephonyExtensionPoolExporter())
@@ -275,7 +300,7 @@ func (r *registerTestInstance) registerTestExporters() {
 	RegisterExporter("genesyscloud_telephony_providers_edges_phonebasesettings", phonebaseSettings.PhoneBaseSettingsExporter())
 	RegisterExporter("genesyscloud_telephony_providers_edges_trunkbasesettings", telephony.TrunkBaseSettingsExporter())
 	RegisterExporter("genesyscloud_telephony_providers_edges_trunk", edgesTrunk.TrunkExporter())
-	RegisterExporter("genesyscloud_user", gcloud.UserExporter())
+	RegisterExporter("genesyscloud_user", user.UserExporter())
 	RegisterExporter("genesyscloud_user_roles", userRoles.UserRolesExporter())
 	RegisterExporter("genesyscloud_webdeployments_deployment", webdeployDeploy.WebDeploymentExporter())
 	RegisterExporter("genesyscloud_webdeployments_configuration", webdeployConfig.WebDeploymentConfigurationExporter())
@@ -291,6 +316,10 @@ func (r *registerTestInstance) registerTestExporters() {
 	RegisterExporter("genesyscloud_task_management_workbin", workbin.TaskManagementWorkbinExporter())
 	RegisterExporter("genesyscloud_task_management_workitem_schema", workbin.TaskManagementWorkbinExporter())
 	RegisterExporter("genesyscloud_task_management_worktype", worktype.TaskManagementWorktypeExporter())
+	RegisterExporter("genesyscloud_conversations_messaging_settings", cMessagingSettings.ConversationsMessagingSettingsExporter())
+	RegisterExporter("genesyscloud_task_management_worktype_status", worktypeStatus.TaskManagementWorktypeStatusExporter())
+
+	RegisterExporter("genesyscloud_conversations_messaging_supportedcontent", supportedContent.SupportedContentExporter())
 
 	RegisterExporter("genesyscloud_script", scripts.ExporterScript())
 
@@ -300,6 +329,8 @@ func (r *registerTestInstance) registerTestExporters() {
 func (r *registerTestInstance) registerTestDataSources() {
 	providerDataSources["genesyscloud_auth_division_home"] = gcloud.DataSourceAuthDivisionHome()
 	providerDataSources["genesyscloud_script"] = scripts.DataSourceScript()
+	providerDataSources["genesyscloud_telephony_providers_edges_site"] = edgeSite.DataSourceSite()
+	providerDataSources["genesyscloud_conversations_messaging_settings"] = cMessagingSettings.DataSourceConversationsMessagingSettings()
 }
 
 func RegisterExporter(exporterName string, resourceExporter *resourceExporter.ResourceExporter) {

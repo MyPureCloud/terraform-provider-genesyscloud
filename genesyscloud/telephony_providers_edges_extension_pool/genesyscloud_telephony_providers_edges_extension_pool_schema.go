@@ -1,15 +1,16 @@
 package telephony_providers_edges_extension_pool
 
 import (
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
-	gcloud "terraform-provider-genesyscloud/genesyscloud/validators"
+	"terraform-provider-genesyscloud/genesyscloud/validators"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 const (
-	resourceName = "genesyscloud_telephony_providers_edges_extension_pool"
+	ResourceName = "genesyscloud_telephony_providers_edges_extension_pool"
 )
 
 func ResourceTelephonyExtensionPool() *schema.Resource {
@@ -29,14 +30,14 @@ func ResourceTelephonyExtensionPool() *schema.Resource {
 				Type:             schema.TypeString,
 				Required:         true,
 				ForceNew:         true,
-				ValidateDiagFunc: gcloud.ValidateExtensionPool,
+				ValidateDiagFunc: validators.ValidateExtensionPool,
 			},
 			"end_number": {
 				Description:      "Ending phone number of the Extension Pool range. Changing the end_number attribute will cause the extension object to be dropped and recreated with a new ID.",
 				Type:             schema.TypeString,
 				Required:         true,
 				ForceNew:         true,
-				ValidateDiagFunc: gcloud.ValidateExtensionPool,
+				ValidateDiagFunc: validators.ValidateExtensionPool,
 			},
 			"description": {
 				Description: "Extension Pool description.",
@@ -56,13 +57,13 @@ func DataSourceExtensionPool() *schema.Resource {
 				Description:      "Starting number of the Extension Pool range.",
 				Type:             schema.TypeString,
 				Required:         true,
-				ValidateDiagFunc: gcloud.ValidateExtensionPool,
+				ValidateDiagFunc: validators.ValidateExtensionPool,
 			},
 			"end_number": {
 				Description:      "Ending number of the Extension Pool range.",
 				Type:             schema.TypeString,
 				Required:         true,
-				ValidateDiagFunc: gcloud.ValidateExtensionPool,
+				ValidateDiagFunc: validators.ValidateExtensionPool,
 			},
 		},
 	}
@@ -76,7 +77,7 @@ func TelephonyExtensionPoolExporter() *resourceExporter.ResourceExporter {
 }
 
 func SetRegistrar(l registrar.Registrar) {
-	l.RegisterDataSource("genesyscloud_telephony_providers_edges_extension_pool", DataSourceExtensionPool())
-	l.RegisterResource("genesyscloud_telephony_providers_edges_extension_pool", ResourceTelephonyExtensionPool())
-	l.RegisterExporter("genesyscloud_telephony_providers_edges_extension_pool", TelephonyExtensionPoolExporter())
+	l.RegisterDataSource(ResourceName, DataSourceExtensionPool())
+	l.RegisterResource(ResourceName, ResourceTelephonyExtensionPool())
+	l.RegisterExporter(ResourceName, TelephonyExtensionPoolExporter())
 }

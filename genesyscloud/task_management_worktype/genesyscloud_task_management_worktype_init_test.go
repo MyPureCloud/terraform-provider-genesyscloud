@@ -4,8 +4,10 @@ import (
 	"sync"
 	routingQueue "terraform-provider-genesyscloud/genesyscloud/routing_queue"
 	"testing"
+	routingSkill "terraform-provider-genesyscloud/genesyscloud/routing_skill"
 
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	routingLanguage "terraform-provider-genesyscloud/genesyscloud/routing_language"
 	workbin "terraform-provider-genesyscloud/genesyscloud/task_management_workbin"
 	workitemSchema "terraform-provider-genesyscloud/genesyscloud/task_management_workitem_schema"
 
@@ -36,9 +38,9 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources[resourceName] = ResourceTaskManagementWorktype()
 	providerResources["genesyscloud_task_management_workbin"] = workbin.ResourceTaskManagementWorkbin()
 	providerResources["genesyscloud_task_management_workitem_schema"] = workitemSchema.ResourceTaskManagementWorkitemSchema()
-	providerResources["genesyscloud_routing_language"] = gcloud.ResourceRoutingLanguage()
+	providerResources["genesyscloud_routing_language"] = routingLanguage.ResourceRoutingLanguage()
 	providerResources["genesyscloud_routing_queue"] = routingQueue.ResourceRoutingQueue()
-	providerResources["genesyscloud_routing_skill"] = gcloud.ResourceRoutingSkill()
+	providerResources["genesyscloud_routing_skill"] = routingSkill.ResourceRoutingSkill()
 }
 
 // registerTestDataSources registers all data sources used in the tests.
