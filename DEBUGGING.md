@@ -8,7 +8,7 @@ This guide outlines the process for setting up and performing live debugging of 
 - Terraform Core
 - Debugger: Delve
 - Integrated Development Environment (IDE): Visual Studio Code or GoLand
-- Sample `main.tf` file withe the `terraform` block configured to use the local provider for testing
+- Sample `main.tf` file with the `terraform` block configured to use the local provider for testing
 
 ## Setup
 
