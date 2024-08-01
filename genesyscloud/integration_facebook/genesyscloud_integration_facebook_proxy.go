@@ -157,7 +157,7 @@ func getIntegrationFacebookIdByNameFn(ctx context.Context, p *integrationFaceboo
 		}
 	}
 
-	return "", true, resp, err
+	return "", true, resp, fmt.Errorf("No integration facebook found with name %s", name)
 }
 
 // getIntegrationFacebookByIdFn is an implementation of the function to get a Genesys Cloud integration facebook by Id

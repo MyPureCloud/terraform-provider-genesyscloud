@@ -18,6 +18,7 @@ Test Class for the integration facebook Data Source
 */
 
 func TestAccDataSourceIntegrationFacebook(t *testing.T) {
+	t.Skip("Skipping because it requires setting up a org as test account for the mocks to respond correctly.")
 	t.Parallel()
 	var (
 		testResource1    = "test_sample"
