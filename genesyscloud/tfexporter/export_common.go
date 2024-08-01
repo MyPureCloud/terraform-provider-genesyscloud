@@ -29,14 +29,15 @@ const (
 
 // Common Exporter interface to abstract away whether we are using HCL or JSON as our exporter
 type Exporter func() diag.Diagnostics
-type ExporterFilterType int64
+type ExporterFilterHandler int64
 type ExporterResourceTypeFilter func(exports map[string]*resourceExporter.ResourceExporter, filter []string) map[string]*resourceExporter.ResourceExporter
-type ExporterResourceFilter func(result resourceExporter.ResourceIDMetaMap, name string, filter []string) resourceExporter.ResourceIDMetaMap
+type ExporterResourceNameFilter func(result resourceExporter.ResourceIDMetaMap, name string, filter []string) resourceExporter.ResourceIDMetaMap
 
 const (
-	LegacyInclude ExporterFilterType = iota
-	IncludeResources
-	ExcludeResources
+	LegacyFilterInclude ExporterFilterHandler = iota
+	FilterIncludeResources
+	FilterExcludeResources
+	FilterAdvancedResources
 )
 
 func IncludeFilterByResourceType(exports map[string]*resourceExporter.ResourceExporter, filter []string) map[string]*resourceExporter.ResourceExporter {

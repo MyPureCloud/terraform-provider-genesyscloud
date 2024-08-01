@@ -3,6 +3,7 @@ package tfexporter
 import (
 	"context"
 	"fmt"
+	"log"
 	"os"
 	"path/filepath"
 	"terraform-provider-genesyscloud/genesyscloud/validators"
@@ -30,7 +31,7 @@ func SetRegistrar(l registrar.Registrar) {
 func ResourceTfExport() *schema.Resource {
 	return &schema.Resource{
 		Description: fmt.Sprintf(`
-		Genesys Cloud Resource to export Terraform config and (optionally) tfstate files to a local directory. 
+		Genesys Cloud Resource to export Terraform config and (optionally) tfstate files to a local directory.
 		The config file is named '%s' or '%s', and the state file is named '%s'.
 		`, defaultTfJSONFile, defaultTfHCLFile, defaultTfStateFile),
 
@@ -57,8 +58,8 @@ func ResourceTfExport() *schema.Resource {
 					ValidateFunc: validators.ValidateSubStringInSlice(resourceExporter.GetAvailableExporterTypes()),
 				},
 				ForceNew:      true,
-				Deprecated:    "Use include_filter_resources attribute instead",
 				ConflictsWith: []string{"include_filter_resources", "exclude_filter_resources"},
+				Deprecated:    "This filter attribute is deprecated and will be removed in a future version. Please use the 'include_filter_resources' (which is a 1:1 replacement of this attribute), 'exclude_filter_resources', or 'advanced_filter_resource' attribute.",
 			},
 			"include_filter_resources": {
 				Description: "Include only resources that match either a resource type or a resource type::regular expression.  See export guide for additional information",
@@ -69,16 +70,7 @@ func ResourceTfExport() *schema.Resource {
 					ValidateFunc: validators.ValidateSubStringInSlice(resourceExporter.GetAvailableExporterTypes()),
 				},
 				ForceNew:      true,
-				ConflictsWith: []string{"resource_types", "exclude_filter_resources"},
-			},
-			"replace_with_datasource": {
-				Description: "Include only resources that match either a resource type or a resource type::regular expression.  See export guide for additional information",
-				Type:        schema.TypeList,
-				Optional:    true,
-				Elem: &schema.Schema{
-					Type: schema.TypeString,
-				},
-				ForceNew: true,
+				ConflictsWith: []string{"resource_types", "exclude_filter_resources", "advanced_filter_resources"},
 			},
 			"exclude_filter_resources": {
 				Description: "Exclude resources that match either a resource type or a resource type::regular expression.  See export guide for additional information",
@@ -89,7 +81,52 @@ func ResourceTfExport() *schema.Resource {
 					ValidateFunc: validators.ValidateSubStringInSlice(resourceExporter.GetAvailableExporterTypes()),
 				},
 				ForceNew:      true,
-				ConflictsWith: []string{"resource_types", "include_filter_resources"},
+				ConflictsWith: []string{"resource_types", "include_filter_resources", "advanced_filter_resources"},
+			},
+			"advanced_filter_resources": {
+				Description: "Advanced filtering handling. Allows filtering to be defined to explicitly include and/or exclude by type and/or name. See export guide for additional information.",
+				Type:        schema.TypeList,
+				MaxItems:    1,
+				Optional:    true,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"include_by_type": {
+							Description: "Use an inclusion filter to include specific resource types. Exclusions override inclusions.",
+							Type:        schema.TypeSet,
+							Optional:    true,
+							Elem:        &schema.Schema{Type: schema.TypeString},
+						},
+						"exclude_by_type": {
+							Description: "Use an exclusion filter to exclude specific resource types. Exclusions override inclusions.",
+							Type:        schema.TypeSet,
+							Optional:    true,
+							Elem:        &schema.Schema{Type: schema.TypeString},
+						},
+						"include_by_name": {
+							Description: "A more granular inclusion filter to include specific resources by name using the format of 'resourceType::resourceNameRegexp'. Exclusions override inclusions.",
+							Type:        schema.TypeSet,
+							Optional:    true,
+							Elem:        &schema.Schema{Type: schema.TypeString},
+						},
+						"exclude_by_name": {
+							Description: "A more granular exclusion filter to exclude specific resources by name using the format of 'resourceType::resourceNameRegexp'. Exclusions override inclusions.",
+							Type:        schema.TypeSet,
+							Optional:    true,
+							Elem:        &schema.Schema{Type: schema.TypeString},
+						},
+					},
+				},
+				ForceNew:      true,
+				ConflictsWith: []string{"resource_types", "include_filter_resources", "exclude_filter_resources"},
+			},
+			"replace_with_datasource": {
+				Description: "Include only resources that match either a resource type or a resource type::regular expression.  See export guide for additional information",
+				Type:        schema.TypeList,
+				Optional:    true,
+				Elem: &schema.Schema{
+					Type: schema.TypeString,
+				},
+				ForceNew: true,
 			},
 			"include_state_file": {
 				Description: "Export a 'terraform.tfstate' file along with the config file. This can be used for orgs to begin managing existing resources with terraform. When `false`, GUID fields will be omitted from the config file unless a resource reference can be supplied. In this case, the resource type will need to be included in the `resource_types` array.",
@@ -155,7 +192,7 @@ func createTfExport(ctx context.Context, d *schema.ResourceData, meta interface{
 	tfexporter_state.ActivateExporterState()
 
 	if _, ok := d.GetOk("include_filter_resources"); ok {
-		gre, _ := NewGenesysCloudResourceExporter(ctx, d, meta, IncludeResources)
+		gre, _ := NewGenesysCloudResourceExporter(ctx, d, meta, FilterIncludeResources)
 		diagErr := gre.Export()
 		if diagErr != nil {
 			return diagErr
@@ -166,7 +203,19 @@ func createTfExport(ctx context.Context, d *schema.ResourceData, meta interface{
 	}
 
 	if _, ok := d.GetOk("exclude_filter_resources"); ok {
-		gre, _ := NewGenesysCloudResourceExporter(ctx, d, meta, ExcludeResources)
+		gre, _ := NewGenesysCloudResourceExporter(ctx, d, meta, FilterExcludeResources)
+		diagErr := gre.Export()
+		if diagErr != nil {
+			return diagErr
+		}
+
+		d.SetId(gre.exportDirPath)
+		return nil
+	}
+
+	if _, ok := d.GetOk("advanced_filter_resources"); ok {
+		log.Print("advanced_filter_resources exporter")
+		gre, _ := NewGenesysCloudResourceExporter(ctx, d, meta, FilterAdvancedResources)
 		diagErr := gre.Export()
 		if diagErr != nil {
 			return diagErr
@@ -177,7 +226,7 @@ func createTfExport(ctx context.Context, d *schema.ResourceData, meta interface{
 	}
 
 	//Dealing with the traditional resource
-	gre, _ := NewGenesysCloudResourceExporter(ctx, d, meta, LegacyInclude)
+	gre, _ := NewGenesysCloudResourceExporter(ctx, d, meta, LegacyFilterInclude)
 	diagErr := gre.Export()
 
 	if diagErr != nil {

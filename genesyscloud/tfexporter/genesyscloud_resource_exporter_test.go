@@ -33,32 +33,32 @@ func TestUnitTfExportPostProcessHclBytesFunc(t *testing.T) {
 			file_content_hash = "${filesha256(\"file.json\")}"
 			another_field     = filesha256("file2.json")
 		}
-		
+
 		resource "example_resource" "example2" {
 			file_content_hash = "${filesha256(\"file3.json\")}"
 			another_field     = "${filesha256(var.file_path)}"
 		}
-		
+
 		resource "example_resource" "example3" {
 			file_content_hash = filesha256(var.file_path)
 			another_file      = "${filesha256(\"file.json\")}"
-			another_field     = "${var.foo}" 
+			another_field     = "${var.foo}"
 		}`,
 		expected: `
 		resource "example_resource" "example" {
 			file_content_hash = "${filesha256("file.json")}"
 			another_field     = filesha256("file2.json")
 		}
-		
+
 		resource "example_resource" "example2" {
 			file_content_hash = "${filesha256("file3.json")}"
 			another_field     = "${filesha256(var.file_path)}"
 		}
-		
+
 		resource "example_resource" "example3" {
 			file_content_hash = filesha256(var.file_path)
 			another_file      = "${filesha256("file.json")}"
-			another_field     = "${var.foo}" 
+			another_field     = "${var.foo}"
 		}`,
 	}
 
@@ -227,11 +227,11 @@ func TestUnitTfExportAllowEmptyArray(t *testing.T) {
 
 	// Test Resource Exporter
 	testResourceExporter := GenesysCloudResourceExporter{
-		filterType:         IncludeResources,
-		resourceTypeFilter: IncludeFilterByResourceType,
-		resourceFilter:     IncludeFilterResourceByRegex,
-		exportAsHCL:        true,
-		exporters: &map[string]*resourceExporter.ResourceExporter{
+		filterHandler:          FilterIncludeResources,
+		resourceTypeFilterFunc: IncludeFilterByResourceType,
+		resourceNameFilterFunc: IncludeFilterResourceByRegex,
+		exportAsHCL:            true,
+		filteredExporters: &map[string]*resourceExporter.ResourceExporter{
 			testResourceType: testExporter,
 		},
 		resources: []resourceExporter.ResourceInfo{
@@ -561,7 +561,7 @@ func setupGenesysCloudResourceExporter(t *testing.T) *GenesysCloudResourceExport
 		ClientConfig: platformclientv2.GetDefaultConfiguration(),
 		Domain:       "mypurecloud.com",
 	}
-	g, diagErr := NewGenesysCloudResourceExporter(context.TODO(), resourceData, providerMeta, IncludeResources)
+	g, diagErr := NewGenesysCloudResourceExporter(context.TODO(), resourceData, providerMeta, FilterIncludeResources)
 	if diagErr != nil {
 		t.Errorf("%v", diagErr)
 	}
