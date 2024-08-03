@@ -25,7 +25,7 @@ func getAllUserPrompts(ctx context.Context, clientConfig *platformclientv2.Confi
 	resources := make(resourceExporter.ResourceIDMetaMap)
 	proxy := getArchitectUserPromptProxy(clientConfig)
 
-	userPrompts, resp, err := proxy.getAllArchitectUserPrompts(ctx, false, false, "")
+	userPrompts, resp, err := proxy.getAllArchitectUserPrompts(ctx, true, true, "")
 	if err != nil {
 		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("failed to get user prompts: %s", err), resp)
 	}

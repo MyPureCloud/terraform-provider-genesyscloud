@@ -3,6 +3,7 @@ package architect_user_prompt
 import (
 	"context"
 	"fmt"
+	"log"
 	"os"
 	"path"
 	"path/filepath"
@@ -150,14 +151,21 @@ func ArchitectPromptAudioResolver(promptId, exportDirectory, subDirectory string
 	}
 
 	audioDataList, err := getArchitectPromptAudioData(context.TODO(), promptId, meta)
-	if err != nil || len(audioDataList) == 0 {
+	if err != nil {
 		return err
 	}
 
+	if len(audioDataList) == 0 {
+		log.Printf("No downloadable asset info found for prompt '%s'", promptId)
+		return nil
+	}
+
 	for _, data := range audioDataList {
+		log.Printf("Downloading file '%s' from '%s'", path.Join(fullPath, data.FileName), data.MediaUri)
 		if err := files.DownloadExportFile(fullPath, data.FileName, data.MediaUri); err != nil {
 			return err
 		}
+		log.Println("Successfully downloaded file")
 	}
 	updateFilenamesInExportConfigMap(configMap, audioDataList, subDirectory)
 	return nil
@@ -166,12 +174,18 @@ func ArchitectPromptAudioResolver(promptId, exportDirectory, subDirectory string
 func getArchitectPromptAudioData(ctx context.Context, promptId string, meta interface{}) ([]PromptAudioData, error) {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getArchitectUserPromptProxy(sdkConfig)
+
+	var promptResourceData []PromptAudioData
+
 	data, _, err := proxy.getArchitectUserPrompt(ctx, promptId, true, true, nil)
 	if err != nil {
 		return nil, err
 	}
 
-	var promptResourceData []PromptAudioData
+	if data == nil || data.Resources == nil {
+		return promptResourceData, nil
+	}
+
 	for _, r := range *data.Resources {
 		var data PromptAudioData
 		if r.MediaUri != nil && *r.MediaUri != "" {
