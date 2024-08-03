@@ -6,8 +6,6 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"io"
 	"io/ioutil"
 	"log"
@@ -19,13 +17,16 @@ import (
 	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 )
 
 type S3Uploader struct {
 	reader        io.Reader
 	formData      map[string]io.Reader
 	bodyBuf       *bytes.Buffer
-	writer        *multipart.Writer
+	Writer        *multipart.Writer
 	substitutions map[string]interface{}
 	headers       map[string]string
 	httpMethod    string
@@ -44,7 +45,7 @@ func NewS3Uploader(reader io.Reader, formData map[string]io.Reader, substitution
 		reader:        reader,
 		formData:      formData,
 		bodyBuf:       &bodyBuf,
-		writer:        writer,
+		Writer:        writer,
 		substitutions: substitutions,
 		headers:       headers,
 		httpMethod:    method,
@@ -79,11 +80,11 @@ func (s *S3Uploader) UploadWithRetries(ctx context.Context, filePath string, tim
 }
 
 func UploadFn(s *S3Uploader) ([]byte, error) {
-	if s.formData != nil && len(s.formData) > 0 {
+	if s.formData != nil {
 		if err := s.createFormData(); err != nil {
 			return nil, err
 		}
-		s.headers["Content-Type"] = s.writer.FormDataContentType()
+		s.headers["Content-Type"] = s.Writer.FormDataContentType()
 	} else {
 		_, err := io.Copy(s.bodyBuf, s.reader)
 		if err != nil {
@@ -111,7 +112,7 @@ func UploadFn(s *S3Uploader) ([]byte, error) {
 		return nil, fmt.Errorf("failed to upload file to S3 bucket with an HTTP status code of %d", resp.StatusCode)
 	}
 
-	response, err := ioutil.ReadAll(resp.Body)
+	response, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read response body when uploading file. %s", err)
 	}
@@ -147,7 +148,7 @@ func UploadWithRetriesFn(ctx context.Context, s *S3Uploader, filePath string, ti
 }
 
 func (s *S3Uploader) createFormData() error {
-	defer s.writer.Close()
+	defer s.Writer.Close()
 	for key, r := range s.formData {
 		var (
 			fw  io.Writer
@@ -160,9 +161,9 @@ func (s *S3Uploader) createFormData() error {
 			defer x.Close()
 		}
 		if file, ok := r.(*os.File); ok {
-			fw, err = s.writer.CreateFormFile(key, file.Name())
+			fw, err = s.Writer.CreateFormFile(key, file.Name())
 		} else {
-			fw, err = s.writer.CreateFormField(key)
+			fw, err = s.Writer.CreateFormField(key)
 		}
 		if err != nil {
 			return err

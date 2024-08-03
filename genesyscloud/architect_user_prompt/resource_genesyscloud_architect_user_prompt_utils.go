@@ -1,19 +1,15 @@
 package architect_user_prompt
 
 import (
-	"bytes"
 	"context"
 	"fmt"
-	"io"
-	"io/ioutil"
-	"log"
-	"mime/multipart"
-	"net/http"
 	"os"
 	"path"
 	"path/filepath"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	files "terraform-provider-genesyscloud/genesyscloud/util/files"
+	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
@@ -48,32 +44,31 @@ func flattenPromptResources(d *schema.ResourceData, promptResources *[]platformc
 	for _, sdkPromptAsset := range *promptResources {
 		promptResource := make(map[string]interface{})
 
-		if sdkPromptAsset.Language != nil {
-			promptResource["language"] = *sdkPromptAsset.Language
-		}
-		if sdkPromptAsset.TtsString != nil {
-			promptResource["tts_string"] = *sdkPromptAsset.TtsString
-		}
-		if sdkPromptAsset.Text != nil {
-			promptResource["text"] = *sdkPromptAsset.Text
-		}
+		resourcedata.SetMapValueIfNotNil(promptResource, "language", sdkPromptAsset.Language)
+		resourcedata.SetMapValueIfNotNil(promptResource, "tts_string", sdkPromptAsset.TtsString)
+		resourcedata.SetMapValueIfNotNil(promptResource, "text", sdkPromptAsset.Text)
 
 		if sdkPromptAsset.Tags != nil && len(*sdkPromptAsset.Tags) > 0 {
 			t := *sdkPromptAsset.Tags
 			promptResource["filename"] = t["filename"][0]
 		}
 
-		if schemaResources, ok := d.Get("resources").(*schema.Set); ok {
-			schemaResourcesList := schemaResources.List()
-			for _, r := range schemaResourcesList {
-				if rMap, ok := r.(map[string]interface{}); ok {
-					if fmt.Sprintf("%v", rMap["language"]) != *sdkPromptAsset.Language {
-						continue
-					}
-					if hash, ok := rMap["file_content_hash"].(string); ok && hash != "" {
-						promptResource["file_content_hash"] = hash
-					}
-				}
+		schemaResources, ok := d.Get("resources").(*schema.Set)
+		if !ok {
+			continue
+		}
+
+		for _, r := range schemaResources.List() {
+			rMap, ok := r.(map[string]interface{})
+			if !ok {
+				continue
+			}
+			language, _ := rMap["language"].(string)
+			if language != *sdkPromptAsset.Language {
+				continue
+			}
+			if hash, _ := rMap["file_content_hash"].(string); hash != "" {
+				promptResource["file_content_hash"] = hash
 			}
 		}
 
@@ -82,26 +77,30 @@ func flattenPromptResources(d *schema.ResourceData, promptResources *[]platformc
 	return resourceSet
 }
 
-// Replace (or create) the filenames key in configMap with the FileName fields in audioDataList
+// updateFilenamesInExportConfigMap replaces (or creates) the filenames key in configMap with the FileName fields in audioDataList
 // which point towards the downloaded audio files stored in the export folder.
 // Since a language can only appear once in a resources array, we can match resources[n]["language"] with audioDataList[n].Language
 func updateFilenamesInExportConfigMap(configMap map[string]interface{}, audioDataList []PromptAudioData, subDir string) {
-	if resources, ok := configMap["resources"].([]interface{}); ok && len(resources) > 0 {
-		for _, resource := range resources {
-			if r, ok := resource.(map[string]interface{}); ok {
-				fileName := ""
-				languageStr := r["language"].(string)
-				for _, data := range audioDataList {
-					if data.Language == languageStr {
-						fileName = data.FileName
-						break
-					}
-				}
-				if fileName != "" {
-					r["filename"] = path.Join(subDir, fileName)
-					r["file_content_hash"] = fmt.Sprintf(`${filesha256("%s")}`, path.Join(subDir, fileName))
-				}
+	resources, _ := configMap["resources"].([]interface{})
+	if len(resources) == 0 {
+		return
+	}
+	for _, resource := range resources {
+		r, ok := resource.(map[string]interface{})
+		if !ok {
+			continue
+		}
+		fileName := ""
+		languageStr := r["language"].(string)
+		for _, data := range audioDataList {
+			if data.Language == languageStr {
+				fileName = data.FileName
+				break
 			}
+		}
+		if fileName != "" {
+			r["filename"] = path.Join(subDir, fileName)
+			r["file_content_hash"] = fmt.Sprintf(`${filesha256("%s")}`, path.Join(subDir, fileName))
 		}
 	}
 }
@@ -164,50 +163,83 @@ func ArchitectPromptAudioResolver(promptId, exportDirectory, subDirectory string
 	return nil
 }
 
-func uploadPrompt(uploadUri *string, filename *string, sdkConfig *platformclientv2.Configuration) error {
-	reader, file, err := files.DownloadOrOpenFile(*filename)
-	if file != nil {
-		defer file.Close()
-	}
+func getArchitectPromptAudioData(ctx context.Context, promptId string, meta interface{}) ([]PromptAudioData, error) {
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
+	proxy := getArchitectUserPromptProxy(sdkConfig)
+	data, _, err := proxy.getArchitectUserPrompt(ctx, promptId, true, true, nil)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	body := &bytes.Buffer{}
-	writer := multipart.NewWriter(body)
-	part, err := writer.CreateFormFile("file", filepath.Base(*filename))
-	if err != nil {
-		return err
+	var promptResourceData []PromptAudioData
+	for _, r := range *data.Resources {
+		var data PromptAudioData
+		if r.MediaUri != nil && *r.MediaUri != "" {
+			data.MediaUri = *r.MediaUri
+			data.Language = *r.Language
+			data.FileName = fmt.Sprintf("%s-%s.wav", *r.Language, promptId)
+			promptResourceData = append(promptResourceData, data)
+		}
 	}
 
-	if file != nil {
-		io.Copy(part, file)
-	} else {
-		io.Copy(part, reader)
-	}
-	io.Copy(part, file)
-	writer.Close()
-	request, err := http.NewRequest(http.MethodPost, *uploadUri, body)
-	if err != nil {
-		return err
-	}
+	return promptResourceData, nil
+}
 
-	request.Header.Add("Content-Type", writer.FormDataContentType())
-	request.Header.Add("Authorization", sdkConfig.AccessToken)
-
-	client := &http.Client{}
-	response, err := client.Do(request)
-	if err != nil {
-		return err
+func buildUserPromptFromResourceData(d *schema.ResourceData) platformclientv2.Prompt {
+	name := d.Get("name").(string)
+	prompt := platformclientv2.Prompt{
+		Name: &name,
 	}
-	defer response.Body.Close()
+	if description, _ := d.Get("description").(string); description != "" {
+		prompt.Description = &description
+	}
+	return prompt
+}
 
-	content, err := ioutil.ReadAll(response.Body)
-	if err != nil {
-		return err
+func buildUserPromptResourceForCreate(resourceMap map[string]any) *platformclientv2.Promptassetcreate {
+	resourceLanguage := resourceMap["language"].(string)
+
+	tags := make(map[string][]string)
+	if filename, _ := resourceMap["filename"].(string); filename != "" {
+		tags["filename"] = []string{filename}
 	}
 
-	log.Printf("Content of upload: %s", content)
+	promptResource := platformclientv2.Promptassetcreate{
+		Language: &resourceLanguage,
+		Tags:     &tags,
+	}
 
-	return nil
+	if resourceTtsString, _ := resourceMap["tts_string"].(string); resourceTtsString != "" {
+		promptResource.TtsString = &resourceTtsString
+	}
+
+	if resourceText, _ := resourceMap["text"].(string); resourceText != "" {
+		promptResource.Text = &resourceText
+	}
+
+	return &promptResource
+}
+
+func buildUserPromptResourceForUpdate(resourceMap map[string]any) *platformclientv2.Promptasset {
+	resourceLanguage := resourceMap["language"].(string)
+
+	tags := make(map[string][]string)
+	if filename, _ := resourceMap["filename"].(string); filename != "" {
+		tags["filename"] = []string{filename}
+	}
+
+	promptResource := platformclientv2.Promptasset{
+		Language: &resourceLanguage,
+		Tags:     &tags,
+	}
+
+	if resourceTtsString, _ := resourceMap["tts_string"].(string); resourceTtsString != "" {
+		promptResource.TtsString = &resourceTtsString
+	}
+
+	if resourceText, _ := resourceMap["text"].(string); resourceText != "" {
+		promptResource.Text = &resourceText
+	}
+
+	return &promptResource
 }

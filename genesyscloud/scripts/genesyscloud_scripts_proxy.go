@@ -249,7 +249,7 @@ func (p *scriptsProxy) createScriptFormData(filePath, scriptName, scriptId strin
 	if err != nil {
 		return nil, err
 	}
-	formData := make(map[string]io.Reader, 0)
+	formData := make(map[string]io.Reader)
 	formData["file"] = fileReader
 	formData["scriptName"] = strings.NewReader(scriptName)
 	if scriptId != "" {
