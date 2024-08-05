@@ -7,6 +7,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud"
 	authRole "terraform-provider-genesyscloud/genesyscloud/auth_role"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/user"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"terraform-provider-genesyscloud/genesyscloud/util/lists"
 	"testing"
@@ -42,7 +43,7 @@ func TestAccResourceUserRolesMembership(t *testing.T) {
 			{
 				// Create user with 1 role in default division
 				// Also add employee role reference as new user's automatically get this role
-				Config: "data \"genesyscloud_auth_division_home\" \"home\" {}\n" + genesyscloud.GenerateBasicUserResource(
+				Config: "data \"genesyscloud_auth_division_home\" \"home\" {}\n" + user.GenerateBasicUserResource(
 					userResource1,
 					email1,
 					userName1,
@@ -69,7 +70,7 @@ func TestAccResourceUserRolesMembership(t *testing.T) {
 			},
 			{
 				// Create another role and division and add to the user
-				Config: "data \"genesyscloud_auth_division_home\" \"home\" {}\n" + genesyscloud.GenerateBasicUserResource(
+				Config: "data \"genesyscloud_auth_division_home\" \"home\" {}\n" + user.GenerateBasicUserResource(
 					userResource1,
 					email1,
 					userName1,
@@ -98,7 +99,7 @@ func TestAccResourceUserRolesMembership(t *testing.T) {
 			},
 			{
 				// Remove a role from the user and modify division
-				Config: genesyscloud.GenerateBasicUserResource(
+				Config: user.GenerateBasicUserResource(
 					userResource1,
 					email1,
 					userName1,
@@ -117,7 +118,7 @@ func TestAccResourceUserRolesMembership(t *testing.T) {
 			},
 			{
 				// Remove all roles from the user
-				Config: genesyscloud.GenerateBasicUserResource(
+				Config: user.GenerateBasicUserResource(
 					userResource1,
 					email1,
 					userName1,

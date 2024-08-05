@@ -234,10 +234,10 @@ func generateResourceRoles(skillID string, divisionIds ...string) string {
 }
 
 func generateUserWithCustomAttrs(resourceID string, email string, name string, attrs ...string) string {
-	return fmt.Sprintf(`resource "%s" "%s" {
+	return fmt.Sprintf(`resource "genesyscloud_user" "%s" {
 		email = "%s"
 		name = "%s"
 		%s
 	}
-	`, resourceName, resourceID, email, name, strings.Join(attrs, "\n"))
+	`, resourceID, email, name, strings.Join(attrs, "\n"))
 }

@@ -415,7 +415,7 @@ func UserExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: provider.GetAllWithPooledClient(GetAllUsers),
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
-			"manager":                       {RefType: "genesyscloud_user"},
+			"manager":                       {RefType: resourceName},
 			"division_id":                   {RefType: "genesyscloud_auth_division"},
 			"routing_skills.skill_id":       {RefType: "genesyscloud_routing_skill"},
 			"routing_languages.language_id": {RefType: "genesyscloud_routing_language"},
