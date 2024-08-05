@@ -1,12 +1,11 @@
 package outbound_digitalruleset
 
 import (
-	"fmt"
 	"testing"
 
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 
-	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
 
@@ -18,8 +17,8 @@ func TestAccDataSourceOutboundDigitalruleset(t *testing.T) {
 	t.Parallel()
 	var ()
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
-		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps:             []resource.TestStep{},
 	})
 }

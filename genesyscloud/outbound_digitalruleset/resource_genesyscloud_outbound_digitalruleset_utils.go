@@ -23,140 +23,200 @@ func getOutboundDigitalrulesetFromResourceData(d *schema.ResourceData) platformc
 }
 
 // buildContactColumnConditionSettingss maps an []interface{} into a Genesys Cloud *[]platformclientv2.Contactcolumnconditionsettings
-func buildContactColumnConditionSettings(contactColumnConditionSettings []interface{}) *platformclientv2.Contactcolumnconditionsettings {
-	var sdkContactColumnConditionSettings platformclientv2.Contactcolumnconditionsettings
-	contactColumnConditionSettingssMap, ok := contactColumnConditionSettings.(map[string]interface{})
-	if !ok {
-		continue
+func buildContactColumnConditionSettings(contactColumnConditionSettings *schema.Set) *platformclientv2.Contactcolumnconditionsettings {
+
+	if contactColumnConditionSettings == nil {
+		return nil
 	}
 
-	resourcedata.BuildSDKStringValueIfNotNil(&sdkContactColumnConditionSettings.ColumnName, contactColumnConditionSettingssMap, "column_name")
-	resourcedata.BuildSDKStringValueIfNotNil(&sdkContactColumnConditionSettings.Operator, contactColumnConditionSettingssMap, "operator")
-	resourcedata.BuildSDKStringValueIfNotNil(&sdkContactColumnConditionSettings.Value, contactColumnConditionSettingssMap, "value")
-	resourcedata.BuildSDKStringValueIfNotNil(&sdkContactColumnConditionSettings.ValueType, contactColumnConditionSettingssMap, "value_type")
+	var sdkContactColumnConditionSettings platformclientv2.Contactcolumnconditionsettings
+	sdkContactColumnConditionSettingsList := contactColumnConditionSettings.List()
 
-	contactColumnConditionSettingssSlice = append(contactColumnConditionSettingssSlice, sdkContactColumnConditionSettings)
+	if len(sdkContactColumnConditionSettingsList) > 0 {
+		contactColumnConditionSettingsMap := sdkContactColumnConditionSettingsList[0].(map[string]interface{})
+
+		if columnName := contactColumnConditionSettingsMap["column_name"].(string); columnName != "" {
+			sdkContactColumnConditionSettings.ColumnName = &columnName
+		}
+
+		if operator := contactColumnConditionSettingsMap["operator"].(string); operator != "" {
+			sdkContactColumnConditionSettings.Operator = &operator
+		}
+
+		if value := contactColumnConditionSettingsMap["value"].(string); value != "" {
+			sdkContactColumnConditionSettings.Value = &value
+		}
+
+		if valueType := contactColumnConditionSettingsMap["value_type"].(string); valueType != "" {
+			sdkContactColumnConditionSettings.ValueType = &valueType
+		}
+	}
 
 	return &sdkContactColumnConditionSettings
 }
 
 // buildContactAddressConditionSettingss maps an []interface{} into a Genesys Cloud *[]platformclientv2.Contactaddressconditionsettings
-func buildContactAddressConditionSettings(contactAddressConditionSettingss []interface{}) *[]platformclientv2.Contactaddressconditionsettings {
-	contactAddressConditionSettingssSlice := make([]platformclientv2.Contactaddressconditionsettings, 0)
-	for _, contactAddressConditionSettings := range contactAddressConditionSettingss {
-		var sdkContactAddressConditionSettings platformclientv2.Contactaddressconditionsettings
-		contactAddressConditionSettingssMap, ok := contactAddressConditionSettings.(map[string]interface{})
-		if !ok {
-			continue
-		}
-
-		resourcedata.BuildSDKStringValueIfNotNil(&sdkContactAddressConditionSettings.Operator, contactAddressConditionSettingssMap, "operator")
-		resourcedata.BuildSDKStringValueIfNotNil(&sdkContactAddressConditionSettings.Value, contactAddressConditionSettingssMap, "value")
-
-		contactAddressConditionSettingssSlice = append(contactAddressConditionSettingssSlice, sdkContactAddressConditionSettings)
+func buildContactAddressConditionSettings(contactAddressConditionSettings *schema.Set) *platformclientv2.Contactaddressconditionsettings {
+	if contactAddressConditionSettings == nil {
+		return nil
 	}
 
-	return &contactAddressConditionSettingssSlice
+	var sdkContactAddressConditionSettings platformclientv2.Contactaddressconditionsettings
+	contactAddressConditionSettingsList := contactAddressConditionSettings.List()
+
+	if len(contactAddressConditionSettingsList) > 0 {
+		contactAddressConditionSettingsMap := contactAddressConditionSettingsList[0].(map[string]interface{})
+
+		if operator := contactAddressConditionSettingsMap["operator"].(string); operator != "" {
+			sdkContactAddressConditionSettings.Operator = &operator
+		}
+
+		if value := contactAddressConditionSettingsMap["value"].(string); value != "" {
+			sdkContactAddressConditionSettings.Value = &value
+		}
+	}
+
+	return &sdkContactAddressConditionSettings
 }
 
 // buildContactAddressTypeConditionSettingss maps an []interface{} into a Genesys Cloud *[]platformclientv2.Contactaddresstypeconditionsettings
-func buildContactAddressTypeConditionSettings(contactAddressTypeConditionSettingss []interface{}) *[]platformclientv2.Contactaddresstypeconditionsettings {
-	contactAddressTypeConditionSettingssSlice := make([]platformclientv2.Contactaddresstypeconditionsettings, 0)
-	for _, contactAddressTypeConditionSettings := range contactAddressTypeConditionSettingss {
-		var sdkContactAddressTypeConditionSettings platformclientv2.Contactaddresstypeconditionsettings
-		contactAddressTypeConditionSettingssMap, ok := contactAddressTypeConditionSettings.(map[string]interface{})
-		if !ok {
-			continue
-		}
-
-		resourcedata.BuildSDKStringValueIfNotNil(&sdkContactAddressTypeConditionSettings.Operator, contactAddressTypeConditionSettingssMap, "operator")
-		resourcedata.BuildSDKStringValueIfNotNil(&sdkContactAddressTypeConditionSettings.Value, contactAddressTypeConditionSettingssMap, "value")
-
-		contactAddressTypeConditionSettingssSlice = append(contactAddressTypeConditionSettingssSlice, sdkContactAddressTypeConditionSettings)
+func buildContactAddressTypeConditionSettings(contactAddressTypeConditionSettings *schema.Set) *platformclientv2.Contactaddresstypeconditionsettings {
+	if contactAddressTypeConditionSettings == nil {
+		return nil
 	}
 
-	return &contactAddressTypeConditionSettingssSlice
+	var sdkContactAddressTypeConditionSettings platformclientv2.Contactaddresstypeconditionsettings
+	contactAddressTypeConditionSettingsList := contactAddressTypeConditionSettings.List()
+
+	if len(contactAddressTypeConditionSettingsList) > 0 {
+		contactAddressTypeConditionSettingsMap := contactAddressTypeConditionSettingsList[0].(map[string]interface{})
+
+		if operator := contactAddressTypeConditionSettingsMap["operator"].(string); operator != "" {
+			sdkContactAddressTypeConditionSettings.Operator = &operator
+		}
+
+		if value := contactAddressTypeConditionSettingsMap["value"].(string); value != "" {
+			sdkContactAddressTypeConditionSettings.Value = &value
+		}
+	}
+
+	return &sdkContactAddressTypeConditionSettings
 }
 
 // buildLastAttemptByColumnConditionSettingss maps an []interface{} into a Genesys Cloud *[]platformclientv2.Lastattemptbycolumnconditionsettings
-func buildLastAttemptByColumnConditionSettings(lastAttemptByColumnConditionSettingss []interface{}) *[]platformclientv2.Lastattemptbycolumnconditionsettings {
-	lastAttemptByColumnConditionSettingssSlice := make([]platformclientv2.Lastattemptbycolumnconditionsettings, 0)
-	for _, lastAttemptByColumnConditionSettings := range lastAttemptByColumnConditionSettingss {
-		var sdkLastAttemptByColumnConditionSettings platformclientv2.Lastattemptbycolumnconditionsettings
-		lastAttemptByColumnConditionSettingssMap, ok := lastAttemptByColumnConditionSettings.(map[string]interface{})
-		if !ok {
-			continue
-		}
-
-		resourcedata.BuildSDKStringValueIfNotNil(&sdkLastAttemptByColumnConditionSettings.EmailColumnName, lastAttemptByColumnConditionSettingssMap, "email_column_name")
-		resourcedata.BuildSDKStringValueIfNotNil(&sdkLastAttemptByColumnConditionSettings.SmsColumnName, lastAttemptByColumnConditionSettingssMap, "sms_column_name")
-		resourcedata.BuildSDKStringValueIfNotNil(&sdkLastAttemptByColumnConditionSettings.Operator, lastAttemptByColumnConditionSettingssMap, "operator")
-		resourcedata.BuildSDKStringValueIfNotNil(&sdkLastAttemptByColumnConditionSettings.Value, lastAttemptByColumnConditionSettingssMap, "value")
-
-		lastAttemptByColumnConditionSettingssSlice = append(lastAttemptByColumnConditionSettingssSlice, sdkLastAttemptByColumnConditionSettings)
+func buildLastAttemptByColumnConditionSettings(lastAttemptByColumnConditionSettings *schema.Set) *platformclientv2.Lastattemptbycolumnconditionsettings {
+	if lastAttemptByColumnConditionSettings == nil {
+		return nil
 	}
 
-	return &lastAttemptByColumnConditionSettingssSlice
+	var sdkLastAttemptByColumnConditionSettings platformclientv2.Lastattemptbycolumnconditionsettings
+	lastAttemptByColumnConditionSettingsList := lastAttemptByColumnConditionSettings.List()
+
+	if len(lastAttemptByColumnConditionSettingsList) > 0 {
+		lastAttemptByColumnConditionSettingsMap := lastAttemptByColumnConditionSettingsList[0].(map[string]interface{})
+
+		if emailColumnName := lastAttemptByColumnConditionSettingsMap["email_column_name"].(string); emailColumnName != "" {
+			sdkLastAttemptByColumnConditionSettings.EmailColumnName = &emailColumnName
+		}
+
+		if smsColumnName := lastAttemptByColumnConditionSettingsMap["sms_column_name"].(string); smsColumnName != "" {
+			sdkLastAttemptByColumnConditionSettings.SmsColumnName = &smsColumnName
+		}
+
+		if operator := lastAttemptByColumnConditionSettingsMap["operator"].(string); operator != "" {
+			sdkLastAttemptByColumnConditionSettings.Operator = &operator
+		}
+
+		if value := lastAttemptByColumnConditionSettingsMap["value"].(string); value != "" {
+			sdkLastAttemptByColumnConditionSettings.Value = &value
+		}
+	}
+
+	return &sdkLastAttemptByColumnConditionSettings
 }
 
 // buildLastAttemptOverallConditionSettingss maps an []interface{} into a Genesys Cloud *[]platformclientv2.Lastattemptoverallconditionsettings
-func buildLastAttemptOverallConditionSettings(lastAttemptOverallConditionSettingss []interface{}) *[]platformclientv2.Lastattemptoverallconditionsettings {
-	lastAttemptOverallConditionSettingssSlice := make([]platformclientv2.Lastattemptoverallconditionsettings, 0)
-	for _, lastAttemptOverallConditionSettings := range lastAttemptOverallConditionSettingss {
-		var sdkLastAttemptOverallConditionSettings platformclientv2.Lastattemptoverallconditionsettings
-		lastAttemptOverallConditionSettingssMap, ok := lastAttemptOverallConditionSettings.(map[string]interface{})
-		if !ok {
-			continue
-		}
-
-		resourcedata.BuildSDKStringArrayValueIfNotNil(&sdkLastAttemptOverallConditionSettings.MediaTypes, lastAttemptOverallConditionSettingssMap, "media_types")
-		resourcedata.BuildSDKStringValueIfNotNil(&sdkLastAttemptOverallConditionSettings.Operator, lastAttemptOverallConditionSettingssMap, "operator")
-		resourcedata.BuildSDKStringValueIfNotNil(&sdkLastAttemptOverallConditionSettings.Value, lastAttemptOverallConditionSettingssMap, "value")
-
-		lastAttemptOverallConditionSettingssSlice = append(lastAttemptOverallConditionSettingssSlice, sdkLastAttemptOverallConditionSettings)
+func buildLastAttemptOverallConditionSettings(lastAttemptOverallConditionSettings *schema.Set) *platformclientv2.Lastattemptoverallconditionsettings {
+	if lastAttemptOverallConditionSettings == nil {
+		return nil
 	}
 
-	return &lastAttemptOverallConditionSettingssSlice
+	var sdkLastAttemptOverallConditionSettings platformclientv2.Lastattemptoverallconditionsettings
+	lastAttemptOverallConditionSettingsList := lastAttemptOverallConditionSettings.List()
+
+	if len(lastAttemptOverallConditionSettingsList) > 0 {
+		lastAttemptOverallConditionSettingsMap := lastAttemptOverallConditionSettingsList[0].(map[string]interface{})
+
+		if mediaTypes := lastAttemptOverallConditionSettingsMap["media_types"].([]string); len(mediaTypes) > 0 {
+			sdkLastAttemptOverallConditionSettings.MediaTypes = &mediaTypes
+		}
+
+		if operator := lastAttemptOverallConditionSettingsMap["operator"].(string); operator != "" {
+			sdkLastAttemptOverallConditionSettings.Operator = &operator
+		}
+
+		if value := lastAttemptOverallConditionSettingsMap["value"].(string); value != "" {
+			sdkLastAttemptOverallConditionSettings.Value = &value
+		}
+	}
+
+	return &sdkLastAttemptOverallConditionSettings
 }
 
 // buildLastResultByColumnConditionSettingss maps an []interface{} into a Genesys Cloud *[]platformclientv2.Lastresultbycolumnconditionsettings
-func buildLastResultByColumnConditionSettings(lastResultByColumnConditionSettingss []interface{}) *[]platformclientv2.Lastresultbycolumnconditionsettings {
-	lastResultByColumnConditionSettingssSlice := make([]platformclientv2.Lastresultbycolumnconditionsettings, 0)
-	for _, lastResultByColumnConditionSettings := range lastResultByColumnConditionSettingss {
-		var sdkLastResultByColumnConditionSettings platformclientv2.Lastresultbycolumnconditionsettings
-		lastResultByColumnConditionSettingssMap, ok := lastResultByColumnConditionSettings.(map[string]interface{})
-		if !ok {
-			continue
-		}
-
-		resourcedata.BuildSDKStringValueIfNotNil(&sdkLastResultByColumnConditionSettings.EmailColumnName, lastResultByColumnConditionSettingssMap, "email_column_name")
-		resourcedata.BuildSDKStringArrayValueIfNotNil(&sdkLastResultByColumnConditionSettings.EmailWrapupCodes, lastResultByColumnConditionSettingssMap, "email_wrapup_codes")
-		resourcedata.BuildSDKStringValueIfNotNil(&sdkLastResultByColumnConditionSettings.SmsColumnName, lastResultByColumnConditionSettingssMap, "sms_column_name")
-		resourcedata.BuildSDKStringArrayValueIfNotNil(&sdkLastResultByColumnConditionSettings.SmsWrapupCodes, lastResultByColumnConditionSettingssMap, "sms_wrapup_codes")
-
-		lastResultByColumnConditionSettingssSlice = append(lastResultByColumnConditionSettingssSlice, sdkLastResultByColumnConditionSettings)
+func buildLastResultByColumnConditionSettings(lastResultByColumnConditionSettings *schema.Set) *platformclientv2.Lastresultbycolumnconditionsettings {
+	if lastResultByColumnConditionSettings == nil {
+		return nil
 	}
 
-	return &lastResultByColumnConditionSettingssSlice
+	var sdkLastResultByColumnConditionSettings platformclientv2.Lastresultbycolumnconditionsettings
+	lastResultByColumnConditionSettingsList := lastResultByColumnConditionSettings.List()
+
+	if len(lastResultByColumnConditionSettingsList) > 0 {
+		lastResultByColumnConditionSettingsMap := lastResultByColumnConditionSettingsList[0].(map[string]interface{})
+
+		if emailColumnName := lastResultByColumnConditionSettingsMap["email_column_name"].(string); emailColumnName != "" {
+			sdkLastResultByColumnConditionSettings.EmailColumnName = &emailColumnName
+		}
+
+		if smsColumnName := lastResultByColumnConditionSettingsMap["sms_column_name"].(string); smsColumnName != "" {
+			sdkLastResultByColumnConditionSettings.SmsColumnName = &smsColumnName
+		}
+
+		if emailWrapupCodes := lastResultByColumnConditionSettingsMap["email_wrapup_codes"].([]string); len(emailWrapupCodes) > 0 {
+			sdkLastResultByColumnConditionSettings.EmailWrapupCodes = &emailWrapupCodes
+		}
+
+		if smsWrapupCodes := lastResultByColumnConditionSettingsMap["sms_wrapup_codes"].([]string); len(smsWrapupCodes) > 0 {
+			sdkLastResultByColumnConditionSettings.SmsWrapupCodes = &smsWrapupCodes
+		}
+	}
+
+	return &sdkLastResultByColumnConditionSettings
 }
 
 // buildLastResultOverallConditionSettingss maps an []interface{} into a Genesys Cloud *[]platformclientv2.Lastresultoverallconditionsettings
-func buildLastResultOverallConditionSettings(lastResultOverallConditionSettingss []interface{}) *[]platformclientv2.Lastresultoverallconditionsettings {
-	lastResultOverallConditionSettingssSlice := make([]platformclientv2.Lastresultoverallconditionsettings, 0)
-	for _, lastResultOverallConditionSettings := range lastResultOverallConditionSettingss {
-		var sdkLastResultOverallConditionSettings platformclientv2.Lastresultoverallconditionsettings
-		lastResultOverallConditionSettingssMap, ok := lastResultOverallConditionSettings.(map[string]interface{})
-		if !ok {
-			continue
-		}
-
-		resourcedata.BuildSDKStringArrayValueIfNotNil(&sdkLastResultOverallConditionSettings.EmailWrapupCodes, lastResultOverallConditionSettingssMap, "email_wrapup_codes")
-		resourcedata.BuildSDKStringArrayValueIfNotNil(&sdkLastResultOverallConditionSettings.SmsWrapupCodes, lastResultOverallConditionSettingssMap, "sms_wrapup_codes")
-
-		lastResultOverallConditionSettingssSlice = append(lastResultOverallConditionSettingssSlice, sdkLastResultOverallConditionSettings)
+func buildLastResultOverallConditionSettings(lastResultOverallConditionSettings *schema.Set) *platformclientv2.Lastresultoverallconditionsettings {
+	if lastResultOverallConditionSettings == nil {
+		return nil
 	}
 
-	return &lastResultOverallConditionSettingssSlice
+	var sdkLastResultOverallConditionSettings platformclientv2.Lastresultoverallconditionsettings
+	lastResultOverallConditionSettingsList := lastResultOverallConditionSettings.List()
+
+	if len(lastResultOverallConditionSettingsList) > 0 {
+		lastResultOverallConditionSettingsMap := lastResultOverallConditionSettingsList[0].(map[string]interface{})
+
+		if emailWrapupCodes := lastResultOverallConditionSettingsMap["email_wrapup_codes"].([]string); len(emailWrapupCodes) > 0 {
+			sdkLastResultOverallConditionSettings.EmailWrapupCodes = &emailWrapupCodes
+		}
+
+		if smsWrapupCodes := lastResultOverallConditionSettingsMap["sms_wrapup_codes"].([]string); len(smsWrapupCodes) > 0 {
+			sdkLastResultOverallConditionSettings.SmsWrapupCodes = &smsWrapupCodes
+		}
+	}
+
+	return &sdkLastResultOverallConditionSettings
 }
 
 // buildDigitalDataActionConditionPredicates maps an []interface{} into a Genesys Cloud *[]platformclientv2.Digitaldataactionconditionpredicate
@@ -201,25 +261,34 @@ func buildDataActionContactColumnFieldMappings(dataActionContactColumnFieldMappi
 }
 
 // buildDataActionConditionSettingss maps an []interface{} into a Genesys Cloud *[]platformclientv2.Dataactionconditionsettings
-func buildDataActionConditionSettings(dataActionConditionSettingss []interface{}) *[]platformclientv2.Dataactionconditionsettings {
-	dataActionConditionSettingssSlice := make([]platformclientv2.Dataactionconditionsettings, 0)
-	for _, dataActionConditionSettings := range dataActionConditionSettingss {
-		var sdkDataActionConditionSettings platformclientv2.Dataactionconditionsettings
-		dataActionConditionSettingssMap, ok := dataActionConditionSettings.(map[string]interface{})
-		if !ok {
-			continue
-		}
-
-		resourcedata.BuildSDKStringValueIfNotNil(&sdkDataActionConditionSettings.DataActionId, dataActionConditionSettingssMap, "data_action_id")
-		resourcedata.BuildSDKStringValueIfNotNil(&sdkDataActionConditionSettings.ContactIdField, dataActionConditionSettingssMap, "contact_id_field")
-		sdkDataActionConditionSettings.DataNotFoundResolution = platformclientv2.Bool(dataActionConditionSettingssMap["data_not_found_resolution"].(bool))
-		resourcedata.BuildSDKInterfaceArrayValueIfNotNil(&sdkDataActionConditionSettings.Predicates, dataActionConditionSettingssMap, "predicates", buildDigitalDataActionConditionPredicates)
-		resourcedata.BuildSDKInterfaceArrayValueIfNotNil(&sdkDataActionConditionSettings.ContactColumnToDataActionFieldMappings, dataActionConditionSettingssMap, "contact_column_to_data_action_field_mappings", buildDataActionContactColumnFieldMappings)
-
-		dataActionConditionSettingssSlice = append(dataActionConditionSettingssSlice, sdkDataActionConditionSettings)
+func buildDataActionConditionSettings(dataActionConditionSettings *schema.Set) *platformclientv2.Dataactionconditionsettings {
+	if dataActionConditionSettings == nil {
+		return nil
 	}
 
-	return &dataActionConditionSettingssSlice
+	var sdkDataActionConditionSettings platformclientv2.Dataactionconditionsettings
+	dataActionConditionSettingsList := dataActionConditionSettings.List()
+
+	if len(dataActionConditionSettingsList) > 0 {
+		dataActionConditionSettingsMap := dataActionConditionSettingsList[0].(map[string]interface{})
+
+		if dataActionId := dataActionConditionSettingsMap["data_action_id"].(string); dataActionId != "" {
+			sdkDataActionConditionSettings.DataActionId = &dataActionId
+		}
+
+		if contactIdField := dataActionConditionSettingsMap["contact_id_field"].(string); contactIdField != "" {
+			sdkDataActionConditionSettings.ContactIdField = &contactIdField
+		}
+
+		dataNotFoundResolution := dataActionConditionSettingsMap["data_not_found_resolution"].(bool)
+		sdkDataActionConditionSettings.DataNotFoundResolution = &dataNotFoundResolution
+
+		sdkDataActionConditionSettings.Predicates = buildDigitalDataActionConditionPredicates(dataActionConditionSettingsMap["predicates"].([]interface{}))
+		sdkDataActionConditionSettings.ContactColumnToDataActionFieldMappings = buildDataActionContactColumnFieldMappings(dataActionConditionSettingsMap["contact_column_to_data_action_field_mappings"].([]interface{}))
+
+	}
+
+	return &sdkDataActionConditionSettings
 }
 
 // buildDigitalConditions maps an []interface{} into a Genesys Cloud *[]platformclientv2.Digitalcondition
@@ -233,14 +302,14 @@ func buildDigitalConditions(digitalConditions []interface{}) *[]platformclientv2
 		}
 
 		sdkDigitalCondition.Inverted = platformclientv2.Bool(digitalConditionsMap["inverted"].(bool))
-		resourcedata.BuildSDKInterfaceArrayValueIfNotNil(&sdkDigitalCondition.ContactColumnConditionSettings, digitalConditionsMap, "contact_column_condition_settings", buildContactColumnConditionSettings)
-		resourcedata.BuildSDKInterfaceArrayValueIfNotNil(&sdkDigitalCondition.ContactAddressConditionSettings, digitalConditionsMap, "contact_address_condition_settings", buildContactAddressConditionSettings)
-		resourcedata.BuildSDKInterfaceArrayValueIfNotNil(&sdkDigitalCondition.ContactAddressTypeConditionSettings, digitalConditionsMap, "contact_address_type_condition_settings", buildContactAddressTypeConditionSettings)
-		resourcedata.BuildSDKInterfaceArrayValueIfNotNil(&sdkDigitalCondition.LastAttemptByColumnConditionSettings, digitalConditionsMap, "last_attempt_by_column_condition_settings", buildLastAttemptByColumnConditionSettings)
-		resourcedata.BuildSDKInterfaceArrayValueIfNotNil(&sdkDigitalCondition.LastAttemptOverallConditionSettings, digitalConditionsMap, "last_attempt_overall_condition_settings", buildLastAttemptOverallConditionSettings)
-		resourcedata.BuildSDKInterfaceArrayValueIfNotNil(&sdkDigitalCondition.LastResultByColumnConditionSettings, digitalConditionsMap, "last_result_by_column_condition_settings", buildLastResultByColumnConditionSettings)
-		resourcedata.BuildSDKInterfaceArrayValueIfNotNil(&sdkDigitalCondition.LastResultOverallConditionSettings, digitalConditionsMap, "last_result_overall_condition_settings", buildLastResultOverallConditionSettings)
-		resourcedata.BuildSDKInterfaceArrayValueIfNotNil(&sdkDigitalCondition.DataActionConditionSettings, digitalConditionsMap, "data_action_condition_settings", buildDataActionConditionSettings)
+		sdkDigitalCondition.ContactColumnConditionSettings = buildContactColumnConditionSettings(digitalConditionsMap["contact_column_condition_settings"].(*schema.Set))
+		sdkDigitalCondition.ContactAddressConditionSettings = buildContactAddressConditionSettings(digitalConditionsMap["contact_address_condition_settings"].(*schema.Set))
+		sdkDigitalCondition.ContactAddressTypeConditionSettings = buildContactAddressTypeConditionSettings(digitalConditionsMap["contact_address_type_condition_settings"].(*schema.Set))
+		sdkDigitalCondition.LastAttemptByColumnConditionSettings = buildLastAttemptByColumnConditionSettings(digitalConditionsMap["last_attempt_by_column_condition_settings"].(*schema.Set))
+		sdkDigitalCondition.LastAttemptOverallConditionSettings = buildLastAttemptOverallConditionSettings(digitalConditionsMap["last_attempt_overall_condition_settings"].(*schema.Set))
+		sdkDigitalCondition.LastResultByColumnConditionSettings = buildLastResultByColumnConditionSettings(digitalConditionsMap["last_result_by_column_condition_settings"].(*schema.Set))
+		sdkDigitalCondition.LastResultOverallConditionSettings = buildLastResultOverallConditionSettings(digitalConditionsMap["last_result_overall_condition_settings"].(*schema.Set))
+		sdkDigitalCondition.DataActionConditionSettings = buildDataActionConditionSettings(digitalConditionsMap["data_action_condition_settings"].(*schema.Set))
 
 		digitalConditionsSlice = append(digitalConditionsSlice, sdkDigitalCondition)
 	}
@@ -249,22 +318,25 @@ func buildDigitalConditions(digitalConditions []interface{}) *[]platformclientv2
 }
 
 // buildUpdateContactColumnActionSettingss maps an []interface{} into a Genesys Cloud *[]platformclientv2.Updatecontactcolumnactionsettings
-func buildUpdateContactColumnActionSettings(updateContactColumnActionSettingss []interface{}) *[]platformclientv2.Updatecontactcolumnactionsettings {
-	updateContactColumnActionSettingssSlice := make([]platformclientv2.Updatecontactcolumnactionsettings, 0)
-	for _, updateContactColumnActionSettings := range updateContactColumnActionSettingss {
-		var sdkUpdateContactColumnActionSettings platformclientv2.Updatecontactcolumnactionsettings
-		updateContactColumnActionSettingssMap, ok := updateContactColumnActionSettings.(map[string]interface{})
-		if !ok {
-			continue
-		}
-
-		// TODO: Handle properties property
-		resourcedata.BuildSDKStringValueIfNotNil(&sdkUpdateContactColumnActionSettings.UpdateOption, updateContactColumnActionSettingssMap, "update_option")
-
-		updateContactColumnActionSettingssSlice = append(updateContactColumnActionSettingssSlice, sdkUpdateContactColumnActionSettings)
+func buildUpdateContactColumnActionSettings(updateContactColumnActionSettings *schema.Set) *platformclientv2.Updatecontactcolumnactionsettings {
+	if updateContactColumnActionSettings == nil {
+		return nil
 	}
 
-	return &updateContactColumnActionSettingssSlice
+	var sdkUpdateContactColumnActionSettings platformclientv2.Updatecontactcolumnactionsettings
+	updateContactColumnActionSettingsList := updateContactColumnActionSettings.List()
+
+	if len(updateContactColumnActionSettingsList) > 0 {
+		updateContactColumnActionSettingsMap := updateContactColumnActionSettingsList[0].(map[string]interface{})
+
+		if updateOption := updateContactColumnActionSettingsMap["update_option"].(string); updateOption != "" {
+			sdkUpdateContactColumnActionSettings.UpdateOption = &updateOption
+		}
+
+		resourcedata.BuildSDKStringMapValueIfNotNil(&sdkUpdateContactColumnActionSettings.Properties, updateContactColumnActionSettingsMap, "properties")
+	}
+
+	return &sdkUpdateContactColumnActionSettings
 }
 
 // buildAppendToDncActionSettingss maps an []interface{} into a Genesys Cloud *[]platformclientv2.Appendtodncactionsettings
@@ -352,7 +424,8 @@ func buildDigitalActions(digitalActions []interface{}) *[]platformclientv2.Digit
 			continue
 		}
 
-		resourcedata.BuildSDKInterfaceArrayValueIfNotNil(&sdkDigitalAction.UpdateContactColumnActionSettings, digitalActionsMap, "update_contact_column_action_settings", buildUpdateContactColumnActionSettings)
+		sdkDigitalAction.UpdateContactColumnActionSettings = buildUpdateContactColumnActionSettings(digitalActionsMap["update_contact_column_action_settings"].(*schema.Set))
+
 		// TODO: Handle do_not_send_action_settings property
 		resourcedata.BuildSDKInterfaceArrayValueIfNotNil(&sdkDigitalAction.AppendToDncActionSettings, digitalActionsMap, "append_to_dnc_action_settings", buildAppendToDncActionSettings)
 		resourcedata.BuildSDKInterfaceArrayValueIfNotNil(&sdkDigitalAction.MarkContactUncontactableActionSettings, digitalActionsMap, "mark_contact_uncontactable_action_settings", buildMarkContactUncontactableActionSettings)

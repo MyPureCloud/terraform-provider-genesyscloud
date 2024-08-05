@@ -3,13 +3,15 @@ package outbound_digitalruleset
 import (
 	"context"
 	"fmt"
+	"time"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 )
 
 /*
@@ -19,13 +21,13 @@ import (
 
 // dataSourceOutboundDigitalrulesetRead retrieves by name the id in question
 func dataSourceOutboundDigitalrulesetRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := newOutboundDigitalrulesetProxy(sdkConfig)
 
 	name := d.Get("name").(string)
 
-	return gcloud.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
-		digitalRuleSetId, retryable, err := proxy.getOutboundDigitalrulesetIdByName(ctx, name)
+	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
+		digitalRuleSetId, _, retryable, err := proxy.getOutboundDigitalrulesetIdByName(ctx, name)
 
 		if err != nil && !retryable {
 			return retry.NonRetryableError(fmt.Errorf("Error searching outbound digitalruleset %s: %s", name, err))

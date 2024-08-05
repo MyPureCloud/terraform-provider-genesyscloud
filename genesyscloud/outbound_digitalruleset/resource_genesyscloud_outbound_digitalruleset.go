@@ -3,17 +3,19 @@ package outbound_digitalruleset
 import (
 	"context"
 	"fmt"
+	"log"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	"terraform-provider-genesyscloud/genesyscloud/util"
+	"time"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
-	"log"
-	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
-	"time"
 
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
-
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -28,7 +30,7 @@ func getAllAuthOutboundDigitalrulesets(ctx context.Context, clientConfig *platfo
 	proxy := newOutboundDigitalrulesetProxy(clientConfig)
 	resources := make(resourceExporter.ResourceIDMetaMap)
 
-	digitalRuleSets, err := proxy.getAllOutboundDigitalruleset(ctx)
+	digitalRuleSets, _, err := proxy.getAllOutboundDigitalruleset(ctx)
 	if err != nil {
 		return nil, diag.Errorf("Failed to get outbound digitalruleset: %v", err)
 	}
@@ -42,13 +44,13 @@ func getAllAuthOutboundDigitalrulesets(ctx context.Context, clientConfig *platfo
 
 // createOutboundDigitalruleset is used by the outbound_digitalruleset resource to create Genesys cloud outbound digitalruleset
 func createOutboundDigitalruleset(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getOutboundDigitalrulesetProxy(sdkConfig)
 
 	outboundDigitalruleset := getOutboundDigitalrulesetFromResourceData(d)
 
 	log.Printf("Creating outbound digitalruleset %s", *outboundDigitalruleset.Name)
-	digitalRuleSet, err := proxy.createOutboundDigitalruleset(ctx, &outboundDigitalruleset)
+	digitalRuleSet, _, err := proxy.createOutboundDigitalruleset(ctx, &outboundDigitalruleset)
 	if err != nil {
 		return diag.Errorf("Failed to create outbound digitalruleset: %s", err)
 	}
@@ -60,40 +62,40 @@ func createOutboundDigitalruleset(ctx context.Context, d *schema.ResourceData, m
 
 // readOutboundDigitalruleset is used by the outbound_digitalruleset resource to read an outbound digitalruleset from genesys cloud
 func readOutboundDigitalruleset(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getOutboundDigitalrulesetProxy(sdkConfig)
 
 	log.Printf("Reading outbound digitalruleset %s", d.Id())
 
-	return gcloud.WithRetriesForRead(ctx, d, func() *retry.RetryError {
-		digitalRuleSet, respCode, getErr := proxy.getOutboundDigitalrulesetById(ctx, d.Id())
+	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
+		digitalRuleSet, resp, getErr := proxy.getOutboundDigitalrulesetById(ctx, d.Id())
 		if getErr != nil {
-			if gcloud.IsStatus404ByInt(respCode) {
+			if util.IsStatus404(resp) {
 				return retry.RetryableError(fmt.Errorf("Failed to read outbound digitalruleset %s: %s", d.Id(), getErr))
 			}
 			return retry.NonRetryableError(fmt.Errorf("Failed to read outbound digitalruleset %s: %s", d.Id(), getErr))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundDigitalruleset())
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundDigitalruleset(), constants.DefaultConsistencyChecks, resourceName)
 
 		resourcedata.SetNillableValue(d, "name", digitalRuleSet.Name)
-		resourcedata.SetNillableReference(d, "contact_list_id", digitalRuleSet.ContactListId)
+		resourcedata.SetNillableReference(d, "contact_list_id", digitalRuleSet.ContactList)
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "rules", digitalRuleSet.Rules, flattenDigitalRules)
 
 		log.Printf("Read outbound digitalruleset %s %s", d.Id(), *digitalRuleSet.Name)
-		return cc.CheckState()
+		return cc.CheckState(d)
 	})
 }
 
 // updateOutboundDigitalruleset is used by the outbound_digitalruleset resource to update an outbound digitalruleset in Genesys Cloud
 func updateOutboundDigitalruleset(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getOutboundDigitalrulesetProxy(sdkConfig)
 
 	outboundDigitalruleset := getOutboundDigitalrulesetFromResourceData(d)
 
 	log.Printf("Updating outbound digitalruleset %s", *outboundDigitalruleset.Name)
-	digitalRuleSet, err := proxy.updateOutboundDigitalruleset(ctx, d.Id(), &outboundDigitalruleset)
+	digitalRuleSet, _, err := proxy.updateOutboundDigitalruleset(ctx, d.Id(), &outboundDigitalruleset)
 	if err != nil {
 		return diag.Errorf("Failed to update outbound digitalruleset: %s", err)
 	}
@@ -104,7 +106,7 @@ func updateOutboundDigitalruleset(ctx context.Context, d *schema.ResourceData, m
 
 // deleteOutboundDigitalruleset is used by the outbound_digitalruleset resource to delete an outbound digitalruleset from Genesys cloud
 func deleteOutboundDigitalruleset(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getOutboundDigitalrulesetProxy(sdkConfig)
 
 	_, err := proxy.deleteOutboundDigitalruleset(ctx, d.Id())
@@ -112,11 +114,11 @@ func deleteOutboundDigitalruleset(ctx context.Context, d *schema.ResourceData, m
 		return diag.Errorf("Failed to delete outbound digitalruleset %s: %s", d.Id(), err)
 	}
 
-	return gcloud.WithRetries(ctx, 180*time.Second, func() *retry.RetryError {
+	return util.WithRetries(ctx, 180*time.Second, func() *retry.RetryError {
 		_, respCode, err := proxy.getOutboundDigitalrulesetById(ctx, d.Id())
 
 		if err != nil {
-			if gcloud.IsStatus404ByInt(respCode) {
+			if util.IsStatus404(respCode) {
 				log.Printf("Deleted outbound digitalruleset %s", d.Id())
 				return nil
 			}

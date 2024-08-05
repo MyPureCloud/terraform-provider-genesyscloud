@@ -5,8 +5,6 @@ import (
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
 )
 
 /*
