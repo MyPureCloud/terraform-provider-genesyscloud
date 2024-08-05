@@ -24,7 +24,7 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
 )
 
-func getAllGroups(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+func GetAllGroups(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
 	resources := make(resourceExporter.ResourceIDMetaMap)
 	groupProxy := getGroupProxy(clientConfig)
 

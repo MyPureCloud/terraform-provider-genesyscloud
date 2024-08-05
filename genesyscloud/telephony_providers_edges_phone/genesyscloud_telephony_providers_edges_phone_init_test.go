@@ -8,7 +8,6 @@ import (
 	didPool "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_did_pool"
 	phoneBaseSettings "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_phonebasesettings"
 	edgeSite "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site"
-	"terraform-provider-genesyscloud/genesyscloud/user"
 	"testing"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
@@ -45,7 +44,7 @@ func (r *registerTestInstance) registerTestResources() {
 	defer r.resourceMapMutex.Unlock()
 
 	providerResources[resourceName] = ResourcePhone()
-	providerResources["genesyscloud_user"] = user.ResourceUser()
+	providerResources["genesyscloud_user"] = gcloud.ResourceUser()
 	providerResources["genesyscloud_telephony_providers_edges_phonebasesettings"] = phoneBaseSettings.ResourcePhoneBaseSettings()
 	providerResources["genesyscloud_location"] = gcloud.ResourceLocation()
 	providerResources["genesyscloud_telephony_providers_edges_site"] = edgeSite.ResourceSite()

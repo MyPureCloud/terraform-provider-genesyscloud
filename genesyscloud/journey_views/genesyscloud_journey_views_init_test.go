@@ -1,11 +1,10 @@
 package journey_views
 
 import (
-	"sync"
-	"terraform-provider-genesyscloud/genesyscloud/user"
-	"testing"
-
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"sync"
+	"terraform-provider-genesyscloud/genesyscloud"
+	"testing"
 )
 
 //var providerDataSources map[string]*schema.Resource
@@ -23,7 +22,7 @@ func (r *registerTestInstance) registerTestResources() {
 	defer r.resourceMapMutex.Unlock()
 
 	providerResources[resourceName] = ResourceJourneyViews()
-	providerResources["genesyscloud_user"] = user.ResourceUser()
+	providerResources["genesyscloud_user"] = genesyscloud.ResourceUser()
 
 }
 
