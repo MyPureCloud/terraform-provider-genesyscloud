@@ -1,10 +1,9 @@
-package genesyscloud
+package user
 
 import (
 	"context"
 	"fmt"
 	"log"
-	"net/mail"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	rc "terraform-provider-genesyscloud/genesyscloud/resource_cache"
 	"terraform-provider-genesyscloud/genesyscloud/util"
@@ -16,25 +15,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
 )
-
-func DataSourceUser() *schema.Resource {
-	return &schema.Resource{
-		Description:        "Data source for Genesys Cloud Users. Select a user by email or name. If both email & name are specified, the name won't be used for user lookup",
-		ReadWithoutTimeout: provider.ReadWithPooledClient(DataSourceUserRead),
-		Schema: map[string]*schema.Schema{
-			"email": {
-				Description: "User email.",
-				Type:        schema.TypeString,
-				Optional:    true,
-			},
-			"name": {
-				Description: "User name.",
-				Type:        schema.TypeString,
-				Optional:    true,
-			},
-		},
-	}
-}
 
 var (
 	dataSourceUserCache *rc.DataSourceCache
@@ -53,14 +33,14 @@ func DataSourceUserRead(ctx context.Context, d *schema.ResourceData, m interface
 
 	}
 	if d.Get("name").(string) == "" && d.Get("email").(string) == "" {
-		return util.BuildDiagnosticError("genesyscloud_user", "no user search field specified", nil)
+		return util.BuildDiagnosticError(resourceName, "no user search field specified", nil)
 	}
 
 	if dataSourceUserCache == nil {
 		dataSourceUserCache = rc.NewDataSourceCache(sdkConfig, hydrateUserCacheFn, getUserByNameFn)
 	}
 
-	userId, err := rc.RetrieveId(dataSourceUserCache, "genesyscloud_user", key, ctx)
+	userId, err := rc.RetrieveId(dataSourceUserCache, resourceName, key, ctx)
 	if err != nil {
 		return err
 	}
@@ -70,7 +50,7 @@ func DataSourceUserRead(ctx context.Context, d *schema.ResourceData, m interface
 }
 
 func hydrateUserCacheFn(c *rc.DataSourceCache) error {
-	log.Printf("hydrating cache for data source genesyscloud_user")
+	log.Printf("hydrating cache for data source %s", resourceName)
 	const pageSize = 100
 	usersAPI := platformclientv2.NewUsersApiWithConfig(c.ClientConfig)
 
@@ -93,7 +73,7 @@ func hydrateUserCacheFn(c *rc.DataSourceCache) error {
 
 		users, response, err := usersAPI.GetUsers(pageSize, pageNum, nil, nil, "", nil, "", "")
 
-		log.Printf("hydrating cache for data source genesyscloud_user with page number: %v", pageNum)
+		log.Printf("hydrating cache for data source %s with page number: %v", resourceName, pageNum)
 		if err != nil {
 			return fmt.Errorf("failed to get page of users: %v %v", err, response)
 		}
@@ -108,7 +88,7 @@ func hydrateUserCacheFn(c *rc.DataSourceCache) error {
 		}
 	}
 
-	log.Printf("cache hydration completed for data source genesyscloud_user")
+	log.Printf("cache hydration completed for data source %s", resourceName)
 
 	return nil
 }
@@ -135,11 +115,11 @@ func getUserByNameFn(c *rc.DataSourceCache, searchField string, ctx context.Cont
 			Query:     &[]platformclientv2.Usersearchcriteria{searchCriteria},
 		})
 		if getErr != nil {
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_user", fmt.Sprintf("Error requesting users: %s", getErr), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Error requesting users: %s", getErr), resp))
 		}
 
 		if users.Results == nil || len(*users.Results) == 0 {
-			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_user", fmt.Sprintf("No users found with search criteria %v", searchCriteria), resp))
+			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("No users found with search criteria %v", searchCriteria), resp))
 		}
 
 		// Select first user in the list
@@ -148,14 +128,4 @@ func getUserByNameFn(c *rc.DataSourceCache, searchField string, ctx context.Cont
 	})
 	return userId, diag
 
-}
-
-func emailorNameDisambiguation(searchField string) (string, string) {
-	emailField := "email"
-	nameField := "name"
-	_, err := mail.ParseAddress(searchField)
-	if err == nil {
-		return searchField, emailField
-	}
-	return searchField, nameField
 }
