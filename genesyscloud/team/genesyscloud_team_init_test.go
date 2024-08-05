@@ -3,7 +3,6 @@ package team
 import (
 	"sync"
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
-	"terraform-provider-genesyscloud/genesyscloud/user"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -31,7 +30,7 @@ func (r *registerTestInstance) registerTestResources() {
 	defer r.resourceMapMutex.Unlock()
 	providerResources["genesyscloud_team"] = ResourceTeam()
 	providerResources["genesyscloud_auth_division"] = gcloud.ResourceAuthDivision()
-	providerResources["genesyscloud_user"] = user.ResourceUser()
+	providerResources["genesyscloud_user"] = gcloud.ResourceUser()
 }
 
 // registerTestDataSources registers all data sources used in the tests.
