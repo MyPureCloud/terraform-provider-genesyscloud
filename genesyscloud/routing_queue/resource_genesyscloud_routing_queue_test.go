@@ -11,12 +11,15 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/architect_user_prompt"
 	"terraform-provider-genesyscloud/genesyscloud/group"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
-	routingSkill "terraform-provider-genesyscloud/genesyscloud/routing_skill"
 	routingSkillGroup "terraform-provider-genesyscloud/genesyscloud/routing_skill_group"
+<<<<<<< HEAD
 	routingWrapupcode "terraform-provider-genesyscloud/genesyscloud/routing_wrapupcode"
 	"terraform-provider-genesyscloud/genesyscloud/user"
+=======
+>>>>>>> dev
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	featureToggles "terraform-provider-genesyscloud/genesyscloud/util/feature_toggles"
+	routingSkill "terraform-provider-genesyscloud/genesyscloud/routing_skill"
 	"terraform-provider-genesyscloud/genesyscloud/util/testrunner"
 	"testing"
 	"time"
@@ -836,7 +839,7 @@ func TestAccResourceRoutingQueueSkillgroupMembers(t *testing.T) {
 					skillResourceId,
 					skillName,
 				) + skillGroupConfig + user2Config +
-					user.GenerateBasicUserResource(
+					genesyscloud.GenerateBasicUserResource(
 						user1ResourceId,
 						user1Email,
 						user1Name,
@@ -881,11 +884,11 @@ func TestAccResourceRoutingQueueMembers(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				// Create
-				Config: user.GenerateBasicUserResource(
+				Config: genesyscloud.GenerateBasicUserResource(
 					queueMemberResource1,
 					queueMemberEmail1,
 					queueMemberName1,
-				) + user.GenerateBasicUserResource(
+				) + genesyscloud.GenerateBasicUserResource(
 					queueMemberResource2,
 					queueMemberEmail2,
 					queueMemberName2,
@@ -904,11 +907,11 @@ func TestAccResourceRoutingQueueMembers(t *testing.T) {
 					time.Sleep(30 * time.Second)
 				},
 				// Update with another queue member and modify rings
-				Config: user.GenerateBasicUserResource(
+				Config: genesyscloud.GenerateBasicUserResource(
 					queueMemberResource1,
 					queueMemberEmail1,
 					queueMemberName1,
-				) + user.GenerateBasicUserResource(
+				) + genesyscloud.GenerateBasicUserResource(
 					queueMemberResource2,
 					queueMemberEmail2,
 					queueMemberName2,
@@ -928,7 +931,7 @@ func TestAccResourceRoutingQueueMembers(t *testing.T) {
 			},
 			{
 				// Remove a queue member
-				Config: user.GenerateBasicUserResource(
+				Config: genesyscloud.GenerateBasicUserResource(
 					queueMemberResource2,
 					queueMemberEmail2,
 					queueMemberName2,

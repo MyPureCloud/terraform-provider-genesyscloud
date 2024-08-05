@@ -4,11 +4,12 @@ import (
 	"fmt"
 	"strconv"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
-	phoneBaseSettings "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_phonebasesettings"
-	edgeSite "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site"
-	"terraform-provider-genesyscloud/genesyscloud/user"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
+
+	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	phoneBaseSettings "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_phonebasesettings"
+	edgeSite "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -43,7 +44,7 @@ func TestAccDataSourcePhone(t *testing.T) {
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
-				Config: user.GenerateUserResource(
+				Config: gcloud.GenerateUserResource(
 					userRes1,
 					userEmail1,
 					userName1,

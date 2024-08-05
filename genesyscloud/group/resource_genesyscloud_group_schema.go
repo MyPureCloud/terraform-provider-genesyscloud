@@ -46,7 +46,7 @@ func SetRegistrar(regInstance registrar.Registrar) {
 
 func GroupExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
-		GetResourcesFunc: provider.GetAllWithPooledClient(getAllGroups),
+		GetResourcesFunc: provider.GetAllWithPooledClient(GetAllGroups),
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			"owner_ids":  {RefType: "genesyscloud_user"},
 			"member_ids": {RefType: "genesyscloud_user"},
