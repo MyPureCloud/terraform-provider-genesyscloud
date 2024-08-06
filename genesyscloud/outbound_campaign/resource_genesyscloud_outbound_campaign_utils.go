@@ -59,6 +59,7 @@ func getOutboundCampaignFromResourceData(d *schema.ResourceData) platformclientv
 		ContactListFilters:             util.BuildSdkDomainEntityRefArr(d, "contact_list_filter_ids"),
 		Division:                       util.BuildSdkDomainEntityRef(d, "division_id"),
 		DynamicContactQueueingSettings: buildSettings(d.Get("dynamic_contact_queueing_settings").([]interface{})),
+		DynamicLineBalancingSettings:   buildLineBalancingSettings(d.Get("dynamic_line_balancing_settings").([]interface{})),
 	}
 
 	if abandonRate != 0 {
@@ -152,6 +153,24 @@ func buildContactSorts(contactSortList []interface{}) *[]platformclientv2.Contac
 	return &sdkContactsortSlice
 }
 
+func buildLineBalancingSettings(settings []interface{}) *platformclientv2.Dynamiclinebalancingsettings {
+	if settings == nil || len(settings) < 1 {
+		return nil
+	}
+	var sdkLineBalancingSettings platformclientv2.Dynamiclinebalancingsettings
+	lbSetting, ok := settings[0].(map[string]interface{})
+	if !ok {
+		return nil
+	}
+	if enabled, ok := lbSetting["enabled"].(bool); ok {
+		sdkLineBalancingSettings.Enabled = platformclientv2.Bool(enabled)
+	}
+	if weight, ok := lbSetting["relative_weight"].(int); ok {
+		sdkLineBalancingSettings.RelativeWeight = platformclientv2.Int(weight)
+	}
+	return &sdkLineBalancingSettings
+}
+
 func flattenSettings(settings *platformclientv2.Dynamiccontactqueueingsettings) []interface{} {
 	settingsMap := make(map[string]interface{}, 0)
 	settingsMap["sort"] = *settings.Sort
@@ -190,6 +209,13 @@ func flattenContactSorts(contactSorts *[]platformclientv2.Contactsort) []interfa
 	}
 
 	return contactSortList
+}
+
+func flattenLineBalancingSettings(settings *platformclientv2.Dynamiclinebalancingsettings) []interface{} {
+	settingsMap := make(map[string]interface{}, 0)
+	settingsMap["enabled"] = *settings.Enabled
+	resourcedata.SetMapValueIfNotNil(settingsMap, "relative_weight", settings.RelativeWeight)
+	return []interface{}{settingsMap}
 }
 
 func GenerateOutboundCampaignBasic(resourceId string,
