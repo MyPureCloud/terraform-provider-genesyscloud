@@ -174,8 +174,9 @@ func getAllPhonesFn(ctx context.Context, p *phoneProxy) (*[]platformclientv2.Pho
 	const pageSize = 100
 	const sortBy = "id"
 	expand := []string{"lines", "properties"}
+	fields := []string{"webRtcUser"}
 
-	phones, response, err := p.edgesApi.GetTelephonyProvidersEdgesPhones(1, pageSize, sortBy, "", "", "", "", "", "", "", "", "", "", "", "", expand, nil)
+	phones, response, err := p.edgesApi.GetTelephonyProvidersEdgesPhones(1, pageSize, sortBy, "", "", "", "", "", "", "", "", "", "", "", "", expand, fields)
 	if err != nil || (response != nil && response.StatusCode != http.StatusOK) {
 		log.Printf("getAllPhonesFn:: error encountered while trying to get first page of phone data #%v statusCode: %d", err, response.StatusCode)
 		return nil, response, err
@@ -195,7 +196,7 @@ func getAllPhonesFn(ctx context.Context, p *phoneProxy) (*[]platformclientv2.Pho
 	}
 
 	for pageNum := 2; pageNum <= *phones.PageCount; pageNum++ {
-		phones, response, err := p.edgesApi.GetTelephonyProvidersEdgesPhones(pageNum, pageSize, sortBy, "", "", "", "", "", "", "", "", "", "", "", "", expand, nil)
+		phones, response, err := p.edgesApi.GetTelephonyProvidersEdgesPhones(pageNum, pageSize, sortBy, "", "", "", "", "", "", "", "", "", "", "", "", expand, fields)
 		if err != nil || (response != nil && response.StatusCode != http.StatusOK) {
 			return nil, response, err
 		}
@@ -247,7 +248,9 @@ func getPhoneByIdFn(ctx context.Context, p *phoneProxy, phoneId string) (*platfo
 func getPhoneByNameFn(ctx context.Context, p *phoneProxy, phoneName string) (phone *platformclientv2.Phone, retryable bool, resp *platformclientv2.APIResponse, err error) {
 	const pageSize = 100
 	expand := []string{"lines", "properties"}
-	phones, resp, err := p.edgesApi.GetTelephonyProvidersEdgesPhones(1, pageSize, "", "", "", "", "", "", "", "", "", "", phoneName, "", "", expand, nil)
+	fields := []string{"webRtcUser"}
+
+	phones, resp, err := p.edgesApi.GetTelephonyProvidersEdgesPhones(1, pageSize, "", "", "", "", "", "", "", "", "", "", phoneName, "", "", expand, fields)
 	if err != nil {
 		return nil, false, resp, err
 	}
@@ -262,7 +265,7 @@ func getPhoneByNameFn(ctx context.Context, p *phoneProxy, phoneName string) (pho
 	}
 
 	for pageNum := 2; pageNum <= *phones.PageCount; pageNum++ {
-		phones, resp, err := p.edgesApi.GetTelephonyProvidersEdgesPhones(pageNum, pageSize, "", "", "", "", "", "", "", "", "", "", phoneName, "", "", expand, nil)
+		phones, resp, err := p.edgesApi.GetTelephonyProvidersEdgesPhones(pageNum, pageSize, "", "", "", "", "", "", "", "", "", "", phoneName, "", "", expand, fields)
 		if err != nil {
 			return nil, false, resp, err
 		}
