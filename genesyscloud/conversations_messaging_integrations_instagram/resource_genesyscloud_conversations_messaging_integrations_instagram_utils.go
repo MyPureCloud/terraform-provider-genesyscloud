@@ -1,6 +1,8 @@
 package conversations_messaging_integrations_instagram
 
 import (
+	"fmt"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
 )
@@ -31,4 +33,27 @@ func getConversationsMessagingIntegrationsInstagramFromResourceData(d *schema.Re
 		AppId:            &appId,
 		AppSecret:        &appSecret,
 	}
+}
+
+func GenerateInstagramIntegrationResource(
+	resourceId string,
+	name string,
+	supportedContentId string,
+	messagingSettingId string,
+	pageAccessToken string,
+	userAccessToken string,
+	pageId string,
+	appId string,
+	appSecret string) string {
+	return fmt.Sprintf(`
+		resource "genesyscloud_conversations_messaging_integrations_instagram" "%s" {
+			name = "%s"
+			supported_content_id = %s
+			messaging_setting_id = %s
+			page_access_token = "%s"
+			user_access_token = "%s"
+			page_id = "%s"
+			app_id = "%s"
+			app_secret = "%s"
+		}`, resourceId, name, supportedContentId, messagingSettingId, pageAccessToken, userAccessToken, pageId, appId, appSecret)
 }
