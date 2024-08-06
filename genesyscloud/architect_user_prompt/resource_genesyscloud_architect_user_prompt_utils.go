@@ -14,6 +14,7 @@ import (
 	"path/filepath"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	files "terraform-provider-genesyscloud/genesyscloud/util/files"
+	"terraform-provider-genesyscloud/genesyscloud/util/testrunner"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
@@ -111,7 +112,7 @@ func GenerateUserPromptResource(userPrompt *UserPromptStruct) string {
 	for _, p := range userPrompt.Resources {
 		var fileContentHash string
 		if p.FileContentHash != util.NullValue {
-			fullyQualifiedPath, _ := filepath.Abs(p.FileContentHash)
+			fullyQualifiedPath, _ := testrunner.NormalizePath(p.FileContentHash)
 			fileContentHash = fmt.Sprintf(`filesha256("%s")`, fullyQualifiedPath)
 		} else {
 			fileContentHash = util.NullValue

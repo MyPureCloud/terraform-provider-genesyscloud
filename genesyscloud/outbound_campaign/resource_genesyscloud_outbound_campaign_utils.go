@@ -5,13 +5,13 @@ import (
 	"fmt"
 	"log"
 	"strconv"
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	"terraform-provider-genesyscloud/genesyscloud/architect_flow"
 	obResponseSet "terraform-provider-genesyscloud/genesyscloud/outbound_callanalysisresponseset"
 	obContactList "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
 	obContactListFilter "terraform-provider-genesyscloud/genesyscloud/outbound_contactlistfilter"
 	obDnclist "terraform-provider-genesyscloud/genesyscloud/outbound_dnclist"
 	routingQueue "terraform-provider-genesyscloud/genesyscloud/routing_queue"
+	routingWrapupcode "terraform-provider-genesyscloud/genesyscloud/routing_wrapupcode"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
@@ -204,7 +204,8 @@ func GenerateOutboundCampaignBasic(resourceId string,
 	flowName string,
 	divisionName,
 	locationResourceId string,
-	wrapupcodeResourceId string) string {
+	wrapupcodeResourceId string,
+	divResourceId string) string {
 	referencedResources := GenerateReferencedResourcesForOutboundCampaignTests(
 		contactListResourceId,
 		"",
@@ -221,6 +222,7 @@ func GenerateOutboundCampaignBasic(resourceId string,
 		divisionName,
 		locationResourceId,
 		wrapupcodeResourceId,
+		divResourceId,
 	)
 	return fmt.Sprintf(`
 resource "genesyscloud_outbound_campaign" "%s" {
@@ -257,6 +259,7 @@ func GenerateReferencedResourcesForOutboundCampaignTests(
 	divisionName string,
 	locationResourceId string,
 	wrapUpCodeResourceId string,
+	divResourceId string,
 ) string {
 	var (
 		contactList             string
@@ -290,9 +293,10 @@ func GenerateReferencedResourcesForOutboundCampaignTests(
 	}
 	if carResourceId != "" {
 		if outboundFlowFilePath != "" {
-			callAnalysisResponseSet = gcloud.GenerateRoutingWrapupcodeResource(
+			callAnalysisResponseSet = routingWrapupcode.GenerateRoutingWrapupcodeResource(
 				wrapUpCodeResourceId,
 				"wrapupcode "+uuid.NewString(),
+				"genesyscloud_auth_division."+divResourceId+".id",
 			) + architect_flow.GenerateFlowResource(
 				flowResourceId,
 				outboundFlowFilePath,
