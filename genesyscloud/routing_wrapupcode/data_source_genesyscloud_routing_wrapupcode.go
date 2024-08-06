@@ -15,8 +15,7 @@ import (
 
 func dataSourceRoutingWrapupcodeRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 
-	sdkConfig := m.(*provider.ProviderMeta).ClientConfig
-	proxy := newRoutingWrapupcodeProxy(sdkConfig)
+	proxy := getRoutingWrapupcodeProxy(m.(*provider.ProviderMeta).ClientConfig)
 
 	name := d.Get("name").(string)
 

@@ -149,7 +149,7 @@ func main() {
 
 	if debugMode {
 		opts.Debug = true
-		opts.ProviderAddr = "registry.terraform.io/mypurecloud/genesyscloud"
+		opts.ProviderAddr = "genesys.com/mypurecloud/genesyscloud"
 	}
 	plugin.Serve(opts)
 }
