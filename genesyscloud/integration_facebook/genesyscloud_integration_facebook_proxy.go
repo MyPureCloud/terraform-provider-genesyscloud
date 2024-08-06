@@ -106,7 +106,7 @@ func getAllIntegrationFacebookFn(ctx context.Context, p *integrationFacebookProx
 	var allFacebookIntegrationRequests []platformclientv2.Facebookintegration
 	const pageSize = 100
 
-	facebookIntegrationRequests, resp, err := p.conversationsApi.GetConversationsMessagingIntegrationsFacebook(1, 100, "", "", "")
+	facebookIntegrationRequests, resp, err := p.conversationsApi.GetConversationsMessagingIntegrationsFacebook(pageSize, 1, "", "", "")
 	if err != nil {
 		return nil, resp, fmt.Errorf("Failed to get facebook integration request: %v %v", err, resp)
 	}
@@ -118,7 +118,7 @@ func getAllIntegrationFacebookFn(ctx context.Context, p *integrationFacebookProx
 
 	for pageNum := 2; pageNum <= *facebookIntegrationRequests.PageCount; pageNum++ {
 
-		facebookIntegrationRequests, resp, err := p.conversationsApi.GetConversationsMessagingIntegrationsFacebook(pageNum, pageSize, "", "", "")
+		facebookIntegrationRequests, resp, err := p.conversationsApi.GetConversationsMessagingIntegrationsFacebook(pageSize, pageNum, "", "", "")
 		if err != nil {
 			return nil, resp, fmt.Errorf("Failed to get facebook integration request: %v %v", err, resp)
 		}
