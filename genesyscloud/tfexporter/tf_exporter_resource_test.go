@@ -33,6 +33,7 @@ import (
 	integration "terraform-provider-genesyscloud/genesyscloud/integration"
 	integrationAction "terraform-provider-genesyscloud/genesyscloud/integration_action"
 	integrationCred "terraform-provider-genesyscloud/genesyscloud/integration_credential"
+	integrationFacebook "terraform-provider-genesyscloud/genesyscloud/integration_facebook"
 	"terraform-provider-genesyscloud/genesyscloud/oauth_client"
 	oAuthSettings "terraform-provider-genesyscloud/genesyscloud/organization_authentication_settings"
 	oAuthPairing "terraform-provider-genesyscloud/genesyscloud/orgauthorization_pairing"
@@ -144,6 +145,7 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_integration"] = integration.ResourceIntegration()
 	providerResources["genesyscloud_integration_action"] = integrationAction.ResourceIntegrationAction()
 	providerResources["genesyscloud_integration_credential"] = integrationCred.ResourceIntegrationCredential()
+	providerResources["genesyscloud_integration_facebook"] = integrationFacebook.ResourceIntegrationFacebook()
 	providerResources["genesyscloud_journey_action_map"] = gcloud.ResourceJourneyActionMap()
 	providerResources["genesyscloud_journey_action_template"] = gcloud.ResourceJourneyActionTemplate()
 	providerResources["genesyscloud_journey_outcome"] = gcloud.ResourceJourneyOutcome()
@@ -249,6 +251,7 @@ func (r *registerTestInstance) registerTestExporters() {
 	RegisterExporter("genesyscloud_integration", integration.IntegrationExporter())
 	RegisterExporter("genesyscloud_integration_action", integrationAction.IntegrationActionExporter())
 	RegisterExporter("genesyscloud_integration_credential", integrationCred.IntegrationCredentialExporter())
+	RegisterExporter("genesyscloud_integration_facebook", integrationFacebook.IntegrationFacebookExporter())
 	RegisterExporter("genesyscloud_journey_action_map", gcloud.JourneyActionMapExporter())
 	RegisterExporter("genesyscloud_journey_action_template", gcloud.JourneyActionTemplateExporter())
 	RegisterExporter("genesyscloud_journey_outcome", gcloud.JourneyOutcomeExporter())

@@ -1,6 +1,8 @@
 package conversations_messaging_supportedcontent
 
 import (
+	"fmt"
+	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -114,4 +116,41 @@ func flattenMediaTypes(mediaTypes *platformclientv2.Mediatypes) []interface{} {
 	mediaTypesList = append(mediaTypesList, mediaTypesMap)
 
 	return mediaTypesList
+}
+
+func GenerateSupportedContentResource(
+	resourceName string,
+	resourceId string,
+	name string,
+	nestedBlocks ...string,
+) string {
+	return fmt.Sprintf(`
+	resource "%s" "%s" {
+		name = "%s"
+		media_types {
+			allow {
+				%s
+			}
+		}
+	} `, resourceName, resourceId, name, strings.Join(nestedBlocks, "\n"))
+}
+
+func GenerateInboundTypeBlock(
+	inboundType string,
+) string {
+	return fmt.Sprintf(`
+		inbound {
+			type="%s"
+		}	
+	`, inboundType)
+}
+
+func GenerateOutboundTypeBlock(
+	outboundType string,
+) string {
+	return fmt.Sprintf(`
+		outbound {
+			type="%s"
+		}	
+	`, outboundType)
 }
