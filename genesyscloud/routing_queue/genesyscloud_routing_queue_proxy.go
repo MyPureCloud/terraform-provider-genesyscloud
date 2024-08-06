@@ -19,20 +19,35 @@ out during testing.
 var internalProxy *RoutingQueueProxy
 
 // Type definitions for each func on our proxy so we can easily mock them out later
-type getAllRoutingQueuesFunc func(ctx context.Context, p *RoutingQueueProxy, queueName string) (*[]platformclientv2.Queue, *platformclientv2.APIResponse, error)
+
+type getAllRoutingQueuesFunc func(ctx context.Context, p *RoutingQueueProxy) (*[]platformclientv2.Queue, *platformclientv2.APIResponse, error)
+type createRoutingQueueFunc func(ctx context.Context, p *RoutingQueueProxy, createReq *platformclientv2.Createqueuerequest) (*platformclientv2.Queue, *platformclientv2.APIResponse, error)
 type getRoutingQueueByIdFunc func(ctx context.Context, p *RoutingQueueProxy, queueId string) (*platformclientv2.Queue, *platformclientv2.APIResponse, error)
-type getRoutingQueueByNameFunc func(ctx context.Context, p *RoutingQueueProxy, queueName string) (string, *platformclientv2.APIResponse, bool, error)
+type updateRoutingQueueFunc func(ctx context.Context, p *RoutingQueueProxy, queueId string, updateReq *platformclientv2.Queuerequest) (*platformclientv2.Queue, *platformclientv2.APIResponse, error)
+type deleteRoutingQueueFunc func(ctx context.Context, p *RoutingQueueProxy, queueId string, forceDelete bool) (*platformclientv2.APIResponse, error)
+
+type getAllRoutingQueueWrapupCodesFunc func(ctx context.Context, p *RoutingQueueProxy, queueId string) (*[]platformclientv2.Wrapupcode, *platformclientv2.APIResponse, error)
 type getRoutingQueueWrapupCodeIdsFunc func(ctx context.Context, p *RoutingQueueProxy, queueId string) ([]string, *platformclientv2.APIResponse, error)
+type deleteRoutingQueueWrapupCodeFunc func(ctx context.Context, p *RoutingQueueProxy, queueId, codeId string) (*platformclientv2.APIResponse, error)
+type createRoutingQueueMembersFunc func(ctx context.Context, p *RoutingQueueProxy, queueId string, body []platformclientv2.Writableentity, delete bool) (*platformclientv2.APIResponse, error)
+type updateRoutingQueueMemberFunc func(ctx context.Context, p *RoutingQueueProxy, queueId, userId string, body platformclientv2.Queuemember) (*platformclientv2.APIResponse, error)
 
 // RoutingQueueProxy contains all the methods that call genesys cloud APIs.
 type RoutingQueueProxy struct {
-	clientConfig                     *platformclientv2.Configuration
-	routingApi                       *platformclientv2.RoutingApi
-	getAllRoutingQueuesAttr          getAllRoutingQueuesFunc
-	getRoutingQueueByIdAttr          getRoutingQueueByIdFunc
-	getRoutingQueueByNameAttr        getRoutingQueueByNameFunc
-	getRoutingQueueWrapupCodeIdsAttr getRoutingQueueWrapupCodeIdsFunc
-	RoutingQueueCache                rc.CacheInterface[platformclientv2.Queue]
+
+	clientConfig                      *platformclientv2.Configuration
+	routingApi                        *platformclientv2.RoutingApi
+	getAllRoutingQueuesAttr           getAllRoutingQueuesFunc
+	createRoutingQueueAttr            createRoutingQueueFunc
+	getRoutingQueueByIdAttr           getRoutingQueueByIdFunc
+	updateRoutingQueueAttr            updateRoutingQueueFunc
+	deleteRoutingQueueAttr            deleteRoutingQueueFunc
+	getAllRoutingQueueWrapupCodesAttr getAllRoutingQueueWrapupCodesFunc
+	getRoutingQueueWrapupCodeIdsAttr  getRoutingQueueWrapupCodeIdsFunc
+	deleteRoutingQueueWrapupCodeAttr  deleteRoutingQueueWrapupCodeFunc
+	createRoutingQueueMembersAttr     createRoutingQueueMembersFunc
+	updateRoutingQueueMemberAttr      updateRoutingQueueMemberFunc
+	RoutingQueueCache                 rc.CacheInterface[platformclientv2.Queue]
 }
 
 // newRoutingQueuesProxy initializes the routing queue proxy with all the data needed to communicate with Genesys Cloud
@@ -41,13 +56,20 @@ func newRoutingQueuesProxy(clientConfig *platformclientv2.Configuration) *Routin
 	routingQueueCache := rc.NewResourceCache[platformclientv2.Queue]()
 
 	return &RoutingQueueProxy{
-		clientConfig:                     clientConfig,
-		routingApi:                       api,
-		getAllRoutingQueuesAttr:          getAllRoutingQueuesFn,
-		getRoutingQueueByIdAttr:          getRoutingQueueByIdFn,
-		getRoutingQueueByNameAttr:        getRoutingQueueByNameFn,
-		getRoutingQueueWrapupCodeIdsAttr: getRoutingQueueWrapupCodeIdsFn,
-		RoutingQueueCache:                routingQueueCache,
+
+		clientConfig:                      clientConfig,
+		routingApi:                        api,
+		getAllRoutingQueuesAttr:           getAllRoutingQueuesFn,
+		createRoutingQueueAttr:            createRoutingQueueFn,
+		getRoutingQueueByIdAttr:           getRoutingQueueByIdFn,
+		updateRoutingQueueAttr:            updateRoutingQueueFn,
+		deleteRoutingQueueAttr:            deleteRoutingQueueFn,
+		getAllRoutingQueueWrapupCodesAttr: getAllRoutingQueueWrapupCodesFn,
+		getRoutingQueueWrapupCodeIdsAttr:  getRoutingQueueWrapupCodeIdsFn,
+		deleteRoutingQueueWrapupCodeAttr:  deleteRoutingQueueWrapupCodeFn,
+		createRoutingQueueMembersAttr:     createRoutingQueueMembersFn,
+		updateRoutingQueueMemberAttr:      updateRoutingQueueMemberFn,
+		RoutingQueueCache:                 routingQueueCache,
 	}
 }
 
@@ -65,19 +87,43 @@ func (p *RoutingQueueProxy) GetAllRoutingQueues(ctx context.Context, queueName s
 	return p.getAllRoutingQueuesAttr(ctx, p, queueName)
 }
 
+func (p *RoutingQueueProxy) createRoutingQueue(ctx context.Context, createReq *platformclientv2.Createqueuerequest) (*platformclientv2.Queue, *platformclientv2.APIResponse, error) {
+	return p.createRoutingQueueAttr(ctx, p, createReq)
+}
+
 // getRoutingQueueById returns a single Genesys Cloud Routing Queue by ID
 func (p *RoutingQueueProxy) getRoutingQueueById(ctx context.Context, queueId string) (*platformclientv2.Queue, *platformclientv2.APIResponse, error) {
 	return p.getRoutingQueueByIdAttr(ctx, p, queueId)
 }
 
-// getRoutingQueueByName returns a single Genesys Cloud Routing Queue by Name
-func (p *RoutingQueueProxy) getRoutingQueueByName(ctx context.Context, queueName string) (string, *platformclientv2.APIResponse, bool, error) {
-	return p.getRoutingQueueByNameAttr(ctx, p, queueName)
+
+func (p *RoutingQueueProxy) updateRoutingQueue(ctx context.Context, queueId string, updateReq *platformclientv2.Queuerequest) (*platformclientv2.Queue, *platformclientv2.APIResponse, error) {
+	return p.updateRoutingQueueAttr(ctx, p, queueId, updateReq)
+}
+
+func (p *RoutingQueueProxy) deleteRoutingQueue(ctx context.Context, queueId string, forceDelete bool) (*platformclientv2.APIResponse, error) {
+	return p.deleteRoutingQueueAttr(ctx, p, queueId, forceDelete)
+}
+
+func (p *RoutingQueueProxy) getAllRoutingQueueWrapupCodes(ctx context.Context, queueId string) (*[]platformclientv2.Wrapupcode, *platformclientv2.APIResponse, error) {
+	return p.getAllRoutingQueueWrapupCodesAttr(ctx, p, queueId)
 }
 
 // getRoutingQueueWrapupCodeIds returns a list of routing queue wrapup code ids
 func (p *RoutingQueueProxy) getRoutingQueueWrapupCodeIds(ctx context.Context, queueId string) ([]string, *platformclientv2.APIResponse, error) {
 	return p.getRoutingQueueWrapupCodeIdsAttr(ctx, p, queueId)
+}
+
+func (p *RoutingQueueProxy) deleteRoutingQueueWrapupCode(ctx context.Context, queueId, codeId string) (*platformclientv2.APIResponse, error) {
+	return p.deleteRoutingQueueWrapupCodeAttr(ctx, p, queueId, codeId)
+}
+
+func (p *RoutingQueueProxy) createRoutingQueueMembers(ctx context.Context, queueId string, body []platformclientv2.Writableentity, delete bool) (*platformclientv2.APIResponse, error) {
+	return p.createRoutingQueueMembersAttr(ctx, p, queueId, body, delete)
+}
+
+func (p *RoutingQueueProxy) updateRoutingQueueMember(ctx context.Context, queueId, userId string, body platformclientv2.Queuemember) (*platformclientv2.APIResponse, error) {
+	return p.updateRoutingQueueMemberAttr(ctx, p, queueId, userId, body)
 }
 
 // getAllRoutingQueuesFn is the implementation for retrieving all routing queues in Genesys Cloud
@@ -125,6 +171,10 @@ func getAllRoutingQueuesFn(ctx context.Context, p *RoutingQueueProxy, queueName 
 	return &allQueues, resp, nil
 }
 
+func createRoutingQueueFn(ctx context.Context, p *RoutingQueueProxy, createReq *platformclientv2.Createqueuerequest) (*platformclientv2.Queue, *platformclientv2.APIResponse, error) {
+	return p.routingApi.PostRoutingQueues(*createReq)
+}
+
 // getRoutingQueueByIdFn is the implementation for retrieving a routing queues in Genesys Cloud
 func getRoutingQueueByIdFn(ctx context.Context, p *RoutingQueueProxy, queueId string) (*platformclientv2.Queue, *platformclientv2.APIResponse, error) {
 	queue := rc.GetCacheItem(p.RoutingQueueCache, queueId)
@@ -140,26 +190,49 @@ func getRoutingQueueByIdFn(ctx context.Context, p *RoutingQueueProxy, queueId st
 	return queue, resp, nil
 }
 
-// getRoutingQueueByNameFn is the implementation for retrieving a routing queues in Genesys Cloud
-func getRoutingQueueByNameFn(ctx context.Context, p *RoutingQueueProxy, queueName string) (string, *platformclientv2.APIResponse, bool, error) {
 
-	queues, resp, err := getAllRoutingQueuesFn(ctx, p, queueName)
+func updateRoutingQueueFn(ctx context.Context, p *RoutingQueueProxy, queueId string, updateReq *platformclientv2.Queuerequest) (*platformclientv2.Queue, *platformclientv2.APIResponse, error) {
+	return p.routingApi.PutRoutingQueue(queueId, *updateReq)
+}
 
+func deleteRoutingQueueFn(ctx context.Context, p *RoutingQueueProxy, queueID string, forceDelete bool) (*platformclientv2.APIResponse, error) {
+	return p.routingApi.DeleteRoutingQueue(queueID, forceDelete)
+}
+
+func getAllRoutingQueueWrapupCodesFn(ctx context.Context, p *RoutingQueueProxy, queueId string) (*[]platformclientv2.Wrapupcode, *platformclientv2.APIResponse, error) {
+	var allWrapupcodes []platformclientv2.Wrapupcode
+	const pageSize = 100
+
+	wrapupcodes, apiResponse, err := p.routingApi.GetRoutingQueueWrapupcodes(queueId, pageSize, 1)
 	if err != nil {
-		return "", resp, false, err
+		return nil, apiResponse, fmt.Errorf("failed to get routing wrapupcode : %v", err)
 	}
 
-	if queues == nil || len(*queues) == 0 {
-		return "", resp, true, err
+	if wrapupcodes == nil || wrapupcodes.Entities == nil || len(*wrapupcodes.Entities) == 0 {
+		return &allWrapupcodes, apiResponse, nil
 	}
 
-	for _, queue := range *queues {
-		if *queue.Name == queueName {
-			log.Printf("Retrieved the routing skill id %s by name %s", *queue.Id, queueName)
-			return *queue.Id, resp, false, nil
+	allWrapupcodes = append(allWrapupcodes, *wrapupcodes.Entities...)
+
+	for pageNum := 2; pageNum <= *wrapupcodes.PageCount; pageNum++ {
+		wrapupcodes, apiResponse, err := p.routingApi.GetRoutingQueueWrapupcodes(queueId, pageSize, pageNum)
+		if err != nil {
+			return nil, apiResponse, fmt.Errorf("failed to get routing wrapupcode : %v", err)
 		}
+
+		if wrapupcodes == nil || wrapupcodes.Entities == nil || len(*wrapupcodes.Entities) == 0 {
+			break
+		}
+
+		allWrapupcodes = append(allWrapupcodes, *wrapupcodes.Entities...)
 	}
-	return "", resp, true, fmt.Errorf("unable to find routing skill with name %s", queueName)
+
+	// Cache the routing wrapupcodes resource into the p.routingWrapupcodesCache for later use
+	// for _, wrapupcode := range allWrapupcodes {
+	// 	rc.SetCache(p.routingWrapupcodesCache, *wrapupcode.Id, wrapupcode)
+	// }
+
+	return &allWrapupcodes, apiResponse, nil
 }
 
 func getRoutingQueueWrapupCodeIdsFn(ctx context.Context, p *RoutingQueueProxy, queueId string) ([]string, *platformclientv2.APIResponse, error) {
@@ -192,4 +265,16 @@ func getRoutingQueueWrapupCodeIdsFn(ctx context.Context, p *RoutingQueueProxy, q
 	}
 
 	return codeIds, resp, nil
+}
+
+func deleteRoutingQueueWrapupCodeFn(ctx context.Context, p *RoutingQueueProxy, queueId, codeId string) (*platformclientv2.APIResponse, error) {
+	return p.routingApi.DeleteRoutingQueueWrapupcode(queueId, codeId)
+}
+
+func createRoutingQueueMembersFn(ctx context.Context, p *RoutingQueueProxy, queueId string, body []platformclientv2.Writableentity, delete bool) (*platformclientv2.APIResponse, error) {
+	return p.routingApi.PostRoutingQueueMembers(queueId, body, delete)
+}
+
+func updateRoutingQueueMemberFn(ctx context.Context, p *RoutingQueueProxy, queueId, userId string, body platformclientv2.Queuemember) (*platformclientv2.APIResponse, error) {
+	return p.routingApi.PatchRoutingQueueMember(queueId, userId, body)
 }
