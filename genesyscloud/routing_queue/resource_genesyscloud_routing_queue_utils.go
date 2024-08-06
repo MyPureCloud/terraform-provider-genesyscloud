@@ -17,6 +17,7 @@ func GenerateRoutingQueueResource(
 	callingPartyNumber string,
 	enableTranscription string,
 	suppressInQueueCallRecording string,
+	enableAudioMonitoring string,
 	enableManualAssignment string,
 	scoringMethod string,
 	nestedBlocks ...string) string {
@@ -32,6 +33,7 @@ func GenerateRoutingQueueResource(
 		enable_transcription = %s
 		scoring_method = %s
         suppress_in_queue_call_recording = %s
+		enable_audio_monitoring = %s
   		enable_manual_assignment = %s
 		%s
 	}
@@ -47,6 +49,7 @@ func GenerateRoutingQueueResource(
 		enableTranscription,
 		scoringMethod,
 		suppressInQueueCallRecording,
+		enableAudioMonitoring,
 		enableManualAssignment,
 		strings.Join(nestedBlocks, "\n"))
 }
