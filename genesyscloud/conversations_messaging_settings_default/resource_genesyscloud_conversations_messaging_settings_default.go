@@ -77,7 +77,12 @@ func deleteConversationsMessagingSettingsDefault(ctx context.Context, d *schema.
 
 	return util.WithRetries(ctx, 180*time.Second, func() *retry.RetryError {
 		defaultSetting, resp, err := proxy.getConversationsMessagingSettingsDefault(ctx)
-		if err != nil || defaultSetting == nil {
+		if err != nil {
+			if util.IsStatus404(resp) {
+				return nil
+			}
+		}
+		if defaultSetting == nil {
 			log.Printf("Deleted conversations messaging settings default %s", d.Id())
 			return nil
 		}
