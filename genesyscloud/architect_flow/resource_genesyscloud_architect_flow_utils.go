@@ -2,11 +2,12 @@ package architect_flow
 
 import (
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"log"
-	"path/filepath"
 	"strconv"
 	"strings"
+	"terraform-provider-genesyscloud/genesyscloud/util/testrunner"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 func isForceUnlockEnabled(d *schema.ResourceData) bool {
@@ -20,7 +21,7 @@ func isForceUnlockEnabled(d *schema.ResourceData) bool {
 }
 
 func GenerateFlowResource(resourceID, srcFile, fileContent string, forceUnlock bool, substitutions ...string) string {
-	fullyQualifiedPath, _ := filepath.Abs(srcFile)
+	fullyQualifiedPath, _ := testrunner.NormalizePath(srcFile)
 
 	if fileContent != "" {
 		updateFile(srcFile, fileContent)

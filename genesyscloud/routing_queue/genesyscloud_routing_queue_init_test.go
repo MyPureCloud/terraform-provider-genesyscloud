@@ -8,6 +8,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/group"
 	routingSkill "terraform-provider-genesyscloud/genesyscloud/routing_skill"
 	routingSkillGroup "terraform-provider-genesyscloud/genesyscloud/routing_skill_group"
+	routingWrapupcode "terraform-provider-genesyscloud/genesyscloud/routing_wrapupcode"
 	"terraform-provider-genesyscloud/genesyscloud/user"
 	"testing"
 
@@ -39,10 +40,11 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_user"] = user.ResourceUser()
 	providerResources["genesyscloud_routing_skill"] = routingSkill.ResourceRoutingSkill()
 	providerResources["genesyscloud_group"] = group.ResourceGroup()
-	providerResources["genesyscloud_routing_wrapupcode"] = gcloud.ResourceRoutingWrapupCode()
+	providerResources["genesyscloud_routing_wrapupcode"] = routingWrapupcode.ResourceRoutingWrapupCode()
 	providerResources["genesyscloud_flow"] = architectFlow.ResourceArchitectFlow()
 	providerResources["genesyscloud_routing_skill_group"] = routingSkillGroup.ResourceRoutingSkillGroup()
 	providerResources["genesyscloud_architect_user_prompt"] = architect_user_prompt.ResourceArchitectUserPrompt()
+	providerResources["genesyscloud_auth_division"] = gcloud.ResourceAuthDivision()
 }
 
 // registerTestDataSources registers all data sources used in the tests.

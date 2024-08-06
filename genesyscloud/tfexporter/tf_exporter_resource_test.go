@@ -6,6 +6,10 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/architect_datatable_row"
 	emergencyGroup "terraform-provider-genesyscloud/genesyscloud/architect_emergencygroup"
 	flow "terraform-provider-genesyscloud/genesyscloud/architect_flow"
+	flowLogLevel "terraform-provider-genesyscloud/genesyscloud/flow_loglevel"
+	routingWrapupcode "terraform-provider-genesyscloud/genesyscloud/routing_wrapupcode"
+	outboundRoute "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site_outbound_route"
+
 	grammar "terraform-provider-genesyscloud/genesyscloud/architect_grammar"
 	grammarLanguage "terraform-provider-genesyscloud/genesyscloud/architect_grammar_language"
 	archIvr "terraform-provider-genesyscloud/genesyscloud/architect_ivr"
@@ -15,7 +19,6 @@ import (
 	cMessagingSettings "terraform-provider-genesyscloud/genesyscloud/conversations_messaging_settings"
 	supportedContent "terraform-provider-genesyscloud/genesyscloud/conversations_messaging_supportedcontent"
 	employeeperformanceExternalmetricsDefinition "terraform-provider-genesyscloud/genesyscloud/employeeperformance_externalmetrics_definitions"
-	flowLogLevel "terraform-provider-genesyscloud/genesyscloud/flow_loglevel"
 	flowMilestone "terraform-provider-genesyscloud/genesyscloud/flow_milestone"
 	flowOutcome "terraform-provider-genesyscloud/genesyscloud/flow_outcome"
 	"terraform-provider-genesyscloud/genesyscloud/group"
@@ -62,8 +65,8 @@ import (
 	routingQueueConditionalGroupRouting "terraform-provider-genesyscloud/genesyscloud/routing_queue_conditional_group_routing"
 	routingQueueOutboundEmailAddress "terraform-provider-genesyscloud/genesyscloud/routing_queue_outbound_email_address"
 	routingSettings "terraform-provider-genesyscloud/genesyscloud/routing_settings"
-	routingSkillGroup "terraform-provider-genesyscloud/genesyscloud/routing_skill_group"
 	routingSkill "terraform-provider-genesyscloud/genesyscloud/routing_skill"
+	routingSkillGroup "terraform-provider-genesyscloud/genesyscloud/routing_skill_group"
 	routingSmsAddress "terraform-provider-genesyscloud/genesyscloud/routing_sms_addresses"
 	routingUtilization "terraform-provider-genesyscloud/genesyscloud/routing_utilization"
 	routingUtilizationLabel "terraform-provider-genesyscloud/genesyscloud/routing_utilization_label"
@@ -77,7 +80,6 @@ import (
 	edgeGroup "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_edge_group"
 	edgeExtension "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_extension_pool"
 	phonebaseSettings "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_phonebasesettings"
-	outboundRoute "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site_outbound_route"
 	edgesTrunk "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_trunk"
 	"terraform-provider-genesyscloud/genesyscloud/user"
 	userRoles "terraform-provider-genesyscloud/genesyscloud/user_roles"
@@ -169,7 +171,7 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_routing_settings"] = routingSettings.ResourceRoutingSettings()
 	providerResources["genesyscloud_routing_utilization"] = routingUtilization.ResourceRoutingUtilization()
 	providerResources["genesyscloud_routing_utilization_label"] = routingUtilizationLabel.ResourceRoutingUtilizationLabel()
-	providerResources["genesyscloud_routing_wrapupcode"] = gcloud.ResourceRoutingWrapupCode()
+	providerResources["genesyscloud_routing_wrapupcode"] = routingWrapupcode.ResourceRoutingWrapupCode()
 	providerResources["genesyscloud_telephony_providers_edges_extension_pool"] = edgeExtension.ResourceTelephonyExtensionPool()
 	providerResources["genesyscloud_telephony_providers_edges_phone"] = edgePhone.ResourcePhone()
 	providerResources["genesyscloud_telephony_providers_edges_site"] = edgeSite.ResourceSite()
@@ -289,7 +291,7 @@ func (r *registerTestInstance) registerTestExporters() {
 	RegisterExporter("genesyscloud_routing_sms_address", routingSmsAddress.RoutingSmsAddressExporter())
 	RegisterExporter("genesyscloud_routing_utilization", routingUtilization.RoutingUtilizationExporter())
 	RegisterExporter("genesyscloud_routing_utilization_label", routingUtilizationLabel.RoutingUtilizationLabelExporter())
-	RegisterExporter("genesyscloud_routing_wrapupcode", gcloud.RoutingWrapupCodeExporter())
+	RegisterExporter("genesyscloud_routing_wrapupcode", routingWrapupcode.RoutingWrapupCodeExporter())
 	RegisterExporter("genesyscloud_telephony_providers_edges_edge_group", edgeGroup.EdgeGroupExporter())
 	RegisterExporter("genesyscloud_telephony_providers_edges_extension_pool", edgeExtension.TelephonyExtensionPoolExporter())
 	RegisterExporter("genesyscloud_telephony_providers_edges_phone", edgePhone.PhoneExporter())
