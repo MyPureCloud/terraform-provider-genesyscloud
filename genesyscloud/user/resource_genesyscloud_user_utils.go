@@ -8,10 +8,8 @@ import (
 	"net/mail"
 	"sort"
 	"strings"
-	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	chunksProcess "terraform-provider-genesyscloud/genesyscloud/util/chunks"
-	"terraform-provider-genesyscloud/genesyscloud/util/feature_toggles"
 	"terraform-provider-genesyscloud/genesyscloud/util/lists"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -608,80 +606,48 @@ func flattenUserAddresses(d *schema.ResourceData, addresses *[]platformclientv2.
 	emailSet := schema.NewSet(schema.HashResource(otherEmailResource), []interface{}{})
 	phoneNumSet := schema.NewSet(phoneNumberHash, []interface{}{})
 
-	for i, address := range *addresses {
+	for _, address := range *addresses {
 		if address.MediaType != nil {
 			if *address.MediaType == "SMS" || *address.MediaType == "PHONE" {
 				phoneNumber := make(map[string]interface{})
 				phoneNumber["media_type"] = *address.MediaType
 
-				if feature_toggles.NewUserAddressesLogicExists() {
-					log.Printf("Feature toggle %s is set. Using new User Addressing logic.", feature_toggles.NewUserAddressesLogicToggleName())
-					// PHONE and SMS Addresses have four different ways they can return in the API
-					// We need to be able to handle them all, and strip off any parentheses that can surround
-					// values
+				// PHONE and SMS Addresses have four different ways they can return in the API
+				// We need to be able to handle them all, and strip off any parentheses that can surround
+				// values
 
-					//     	1.) Addresses that return an "address" field are phone numbers without extensions
-					if address.Address != nil {
-						phoneNumber["number"], _ = util.FormatAsE164Number(strings.Trim(*address.Address, "()"))
-					}
-
-					// 		2.) Addresses that return an "extension" field that matches the "display" field are
-					//          true internal extensions that have been mapped to an extension pool
-					if address.Extension != nil {
-						if address.Display != nil {
-							if *address.Extension == *address.Display {
-								phoneNumber["extension"] = strings.Trim(*address.Extension, "()")
-							}
-						}
-					}
-
-					// 		3.) Addresses that include both an "extension" and "display" field, but they do not
-					//          match indicate that this is a phone number plus an extension
-					if address.Extension != nil {
-						if address.Display != nil {
-							if *address.Extension != *address.Display {
-								phoneNumber["extension"] = *address.Extension
-								phoneNumber["number"], _ = util.FormatAsE164Number(strings.Trim(*address.Display, "()"))
-							}
-						}
-					}
-
-					// 		4.) Addresses that only include a "display" field (but not "address" or "extension") are
-					//          considered an extension that has not been mapped to an internal extension pool yet.
-					if address.Address == nil && address.Extension == nil && address.Display != nil {
-						phoneNumber["extension"] = strings.Trim(*address.Display, "()")
-					}
-
-				} else {
-
-					// Strip off any parentheses from phone numbers
-					if address.Address != nil {
-						phoneNumber["number"] = strings.Trim(*address.Address, "()")
-					} else if address.Display != nil {
-						// Some numbers are only returned in Display
-						isNumber, isExtension := getNumbers(d, i)
-
-						if isNumber && phoneNumber["number"] != "" {
-							phoneNumber["number"] = strings.Trim(*address.Display, "()")
-						}
-						if isExtension {
-							phoneNumber["extension"] = strings.Trim(*address.Display, "()")
-						}
-
-						if !isNumber && !isExtension {
-							if address.Extension == nil {
-								phoneNumber["extension"] = strings.Trim(*address.Display, "()")
-							} else if phoneNumber["number"] != "" {
-								phoneNumber["number"] = strings.Trim(*address.Display, "()")
-							}
-						}
-					}
-
-					if address.Extension != nil {
-						phoneNumber["extension"] = *address.Extension
-					}
-
+				//     	1.) Addresses that return an "address" field are phone numbers without extensions
+				if address.Address != nil {
+					phoneNumber["number"], _ = util.FormatAsE164Number(strings.Trim(*address.Address, "()"))
 				}
+
+				// 		2.) Addresses that return an "extension" field that matches the "display" field are
+				//          true internal extensions that have been mapped to an extension pool
+				if address.Extension != nil {
+					if address.Display != nil {
+						if *address.Extension == *address.Display {
+							phoneNumber["extension"] = strings.Trim(*address.Extension, "()")
+						}
+					}
+				}
+
+				// 		3.) Addresses that include both an "extension" and "display" field, but they do not
+				//          match indicate that this is a phone number plus an extension
+				if address.Extension != nil {
+					if address.Display != nil {
+						if *address.Extension != *address.Display {
+							phoneNumber["extension"] = *address.Extension
+							phoneNumber["number"], _ = util.FormatAsE164Number(strings.Trim(*address.Display, "()"))
+						}
+					}
+				}
+
+				// 		4.) Addresses that only include a "display" field (but not "address" or "extension") are
+				//          considered an extension that has not been mapped to an internal extension pool yet.
+				if address.Address == nil && address.Extension == nil && address.Display != nil {
+					phoneNumber["extension"] = strings.Trim(*address.Display, "()")
+				}
+
 				if address.VarType != nil {
 					phoneNumber["type"] = *address.VarType
 				}
@@ -901,20 +867,6 @@ func buildLabelUtilizationsRequest(labelUtilizations []interface{}) map[string]l
 		}
 	}
 	return request
-}
-
-func checkIfLabelsAreEnabled() error { // remove once the feature is globally enabled
-	if sdkConfig == nil {
-		if sdkConfig, err = provider.AuthorizeSdk(); err != nil {
-			log.Fatal(err)
-		}
-	}
-	api := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
-	_, resp, _ := api.GetRoutingUtilizationLabels(100, 1, "", "")
-	if resp.StatusCode == 501 {
-		return fmt.Errorf("feature is not yet implemented in this org.")
-	}
-	return nil
 }
 
 func getSdkUtilizationTypes() []string {
