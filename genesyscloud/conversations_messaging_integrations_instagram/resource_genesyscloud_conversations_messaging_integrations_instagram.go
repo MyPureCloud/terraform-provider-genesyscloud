@@ -49,7 +49,7 @@ func createConversationsMessagingIntegrationsInstagram(ctx context.Context, d *s
 
 	conversationsMessagingIntegrationsInstagram := getConversationsMessagingIntegrationsInstagramFromResourceData(d)
 
-	log.Printf("Creating conversations messaging integrations instagram %s", *conversationsMessagingIntegrationsInstagram.Id)
+	log.Printf("Creating conversations messaging integrations instagram %s", *conversationsMessagingIntegrationsInstagram.Name)
 	instagramIntegrationRequest, resp, err := proxy.createConversationsMessagingIntegrationsInstagram(ctx, &conversationsMessagingIntegrationsInstagram)
 	if err != nil {
 		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create conversations messaging integrations instagram: %s", err), resp)
@@ -114,7 +114,7 @@ func updateConversationsMessagingIntegrationsInstagram(ctx context.Context, d *s
 		UserAccessToken:  &userAccessToken,
 	}
 
-	log.Printf("Updating conversations messaging integrations instagram %s", *conversationsMessagingIntegrationsInstagram.Id)
+	log.Printf("Updating conversations messaging integrations instagram %s", *conversationsMessagingIntegrationsInstagram.Name)
 	instagramIntegrationRequest, resp, err := proxy.updateConversationsMessagingIntegrationsInstagram(ctx, d.Id(), &conversationsMessagingIntegrationsInstagram)
 	if err != nil {
 		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update conversations messaging integrations instagram: %s", err), resp)
