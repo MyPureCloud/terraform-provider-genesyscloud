@@ -35,6 +35,7 @@ resource "genesyscloud_routing_queue" "example_queue" {
   whisper_prompt_id                 = data.genesyscloud_architect_user_prompt.whisper.id
   auto_answer_only                  = true
   enable_transcription              = true
+  enable_audio_monitoring           = true
   enable_manual_assignment          = true
   calling_party_name                = "Example Inc."
   outbound_messaging_sms_address_id = "c1bb045e-254d-4316-9d78-cea6849a3db4"
@@ -95,6 +96,7 @@ resource "genesyscloud_routing_queue" "example_queue" {
 - `direct_routing` (Block List, Max: 1) Used by the System to set Direct Routing settings for a system Direct Routing queue. (see [below for nested schema](#nestedblock--direct_routing))
 - `division_id` (String) The division to which this queue will belong. If not set, the home division will be used.
 - `email_in_queue_flow_id` (String) The in-queue flow ID to use for email conversations waiting in queue.
+- `enable_audio_monitoring` (Boolean) Indicates whether audio monitoring is enabled for this queue.
 - `enable_manual_assignment` (Boolean) Indicates whether manual assignment is enabled for this queue. Defaults to `false`.
 - `enable_transcription` (Boolean) Indicates whether voice transcription is enabled for this queue. Defaults to `false`.
 - `groups` (Set of String) List of group ids assigned to the queue

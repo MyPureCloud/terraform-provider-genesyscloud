@@ -21,12 +21,12 @@ func TestAccDataSourceConversationsMessagingSettings(t *testing.T) {
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
-				Config: generateConversationsMessagingSettingsResource(
+				Config: GenerateConversationsMessagingSettingsResource(
 					id,
 					name,
-					generateContentStoryBlock(
-						generateMentionInboundOnlySetting("Enabled"),
-						generateReplyInboundOnlySetting("Enabled"),
+					GenerateContentStoryBlock(
+						GenerateMentionInboundOnlySetting("Enabled"),
+						GenerateReplyInboundOnlySetting("Enabled"),
 					),
 					generateTypingOnSetting(
 						"Enabled",

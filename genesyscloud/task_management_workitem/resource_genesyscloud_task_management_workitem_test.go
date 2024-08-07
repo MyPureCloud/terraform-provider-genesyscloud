@@ -10,7 +10,8 @@ import (
 	routingQueue "terraform-provider-genesyscloud/genesyscloud/routing_queue"
 	routingSkill "terraform-provider-genesyscloud/genesyscloud/routing_skill"
 
-	"terraform-provider-genesyscloud/genesyscloud/task_management_worktype_status"
+	"terraform-provider-genesyscloud/genesyscloud/user"
+
 	"terraform-provider-genesyscloud/genesyscloud/user_roles"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
@@ -197,15 +198,15 @@ func TestAccResourceTaskManagementWorkitem(t *testing.T) {
 			{
 				Config: taskMgmtConfig +
 					generateWorkitemResourceBasic(
-						workitemRes, 
-						workitem1.name, 
-						workitem1.worktype_id, 
+						workitemRes,
+						workitem1.name,
+						workitem1.worktype_id,
 						fmt.Sprintf("status_id = genesyscloud_task_management_worktype_status.%s.id", statusResourceOpen),
 					),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_task_management_workitem."+workitemRes, "name", workitem1.name),
 					resource.TestCheckResourceAttrPair("genesyscloud_task_management_workitem."+workitemRes, "worktype_id", "genesyscloud_task_management_worktype."+wtResName, "id"),
-					task_management_worktype_status.ValidateStatusIds("genesyscloud_task_management_workitem."+workitemRes, "status_id", "genesyscloud_task_management_worktype_status."+statusResourceOpen, "id"),
+					worktypeStatus.ValidateStatusIds("genesyscloud_task_management_workitem."+workitemRes, "status_id", "genesyscloud_task_management_worktype_status."+statusResourceOpen, "id"),
 				),
 			},
 			// Update workitem with more fields
@@ -215,7 +216,7 @@ func TestAccResourceTaskManagementWorkitem(t *testing.T) {
 					routingLanguage.GenerateRoutingLanguageResource(resLang, lang) +
 					routingQueue.GenerateRoutingQueueResourceBasic(resQueue, queueName) +
 					routingSkill.GenerateRoutingSkillResource(skillResId1, skillResName1) +
-					gcloud.GenerateBasicUserResource(userResId1, userEmail1, userName1) +
+					user.GenerateBasicUserResource(userResId1, userEmail1, userName1) +
 					externalContact.GenerateBasicExternalContactResource(externalContactResId1, externalContactTitle1) +
 					authRole.GenerateAuthRoleResource(roleResId1, roleName1, "test role description",
 						authRole.GenerateRolePermPolicy("workitems", "*", strconv.Quote("*")),
@@ -236,7 +237,7 @@ func TestAccResourceTaskManagementWorkitem(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_task_management_workitem."+workitemRes, "date_expires", workitem1Update.date_expires),
 					resource.TestCheckResourceAttr("genesyscloud_task_management_workitem."+workitemRes, "duration_seconds", fmt.Sprintf("%d", workitem1Update.duration_seconds)),
 					resource.TestCheckResourceAttr("genesyscloud_task_management_workitem."+workitemRes, "ttl", fmt.Sprintf("%d", workitem1Update.ttl)),
-					task_management_worktype_status.ValidateStatusIds("genesyscloud_task_management_workitem."+workitemRes, "status_id", "genesyscloud_task_management_worktype_status."+statusResourceOpen, "id"),
+					worktypeStatus.ValidateStatusIds("genesyscloud_task_management_workitem."+workitemRes, "status_id", "genesyscloud_task_management_worktype_status."+statusResourceOpen, "id"),
 					resource.TestCheckResourceAttrPair("genesyscloud_task_management_workitem."+workitemRes, "workbin_id", "genesyscloud_task_management_workbin."+wbResourceId, "id"),
 					resource.TestCheckResourceAttrPair("genesyscloud_task_management_workitem."+workitemRes, "assignee_id", "genesyscloud_user."+userResId1, "id"),
 					resource.TestCheckResourceAttrPair("genesyscloud_task_management_workitem."+workitemRes, "external_contact_id", "genesyscloud_externalcontacts_contact."+externalContactResId1, "id"),
@@ -413,9 +414,9 @@ func TestAccResourceTaskManagementWorkitemCustomFields(t *testing.T) {
 		`
 
 		// worktype
-		wtResName         = "tf_worktype_1"
-		wtName            = "tf-worktype" + uuid.NewString()
-		wtDescription     = "tf-worktype-description"
+		wtResName     = "tf_worktype_1"
+		wtName        = "tf-worktype" + uuid.NewString()
+		wtDescription = "tf-worktype-description"
 
 		// Worktype statuses
 		statusResourceOpen   = "open-status"

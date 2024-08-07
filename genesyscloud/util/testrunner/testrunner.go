@@ -4,6 +4,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -20,6 +21,20 @@ func GetTestDataPath(elem ...string) string {
 	basePath := filepath.Join("..", "test", "data")
 	subPath := filepath.Join(elem...)
 	return filepath.Join(basePath, subPath)
+}
+
+func NormalizePath(path string) (string, error) {
+	fullyQualifiedPath, err := filepath.Abs(path)
+	if err != nil {
+		return "", err
+	}
+
+	if runtime.GOOS == "windows" {
+		// Convert single backslashes to dobule backslashes if necessary
+		fullyQualifiedPath = strings.ReplaceAll(fullyQualifiedPath, "\\", "\\\\")
+	}
+
+	return fullyQualifiedPath, nil
 }
 
 func GenerateDataSourceTestSteps(resourceName string, testCaseName string, checkFuncs []resource.TestCheckFunc) []resource.TestStep {

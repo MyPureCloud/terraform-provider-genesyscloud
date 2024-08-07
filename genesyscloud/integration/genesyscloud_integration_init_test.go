@@ -3,10 +3,9 @@ package integration
 import (
 	"sync"
 	"terraform-provider-genesyscloud/genesyscloud/group"
-	"testing"
-
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	integrationCred "terraform-provider-genesyscloud/genesyscloud/integration_credential"
+	"terraform-provider-genesyscloud/genesyscloud/user"
+	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
@@ -37,7 +36,7 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_integration"] = ResourceIntegration()
 	providerResources["genesyscloud_group"] = group.ResourceGroup()
 	providerResources["genesyscloud_integration_credential"] = integrationCred.ResourceIntegrationCredential()
-	providerResources["genesyscloud_user"] = gcloud.ResourceUser()
+	providerResources["genesyscloud_user"] = user.ResourceUser()
 }
 
 // registerTestDataSources registers all data sources used in the tests.
