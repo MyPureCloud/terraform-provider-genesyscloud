@@ -188,7 +188,7 @@ func GenerateConversationsMessagingSettingsResource(resourceID string, name stri
 	`, resourceID, name, strings.Join(nestedBlocks, "\n"))
 }
 
-func generateTypingOnSetting(inbound, outbound string) string {
+func GenerateTypingOnSetting(inbound, outbound string) string {
 	return fmt.Sprintf(`
 	event {
 		typing {
