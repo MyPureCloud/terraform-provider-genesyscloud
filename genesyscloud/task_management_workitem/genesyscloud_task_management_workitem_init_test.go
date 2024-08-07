@@ -64,6 +64,7 @@ func (r *registerTestInstance) registerTestDataSources() {
 
 	providerDataSources[resourceName] = DataSourceTaskManagementWorkitem()
 	providerDataSources["genesyscloud_auth_division_home"] = gcloud.DataSourceAuthDivisionHome()
+	providerResources["genesyscloud_user"] = user.ResourceUser()
 }
 
 // initTestResources initializes all test resources and data sources.

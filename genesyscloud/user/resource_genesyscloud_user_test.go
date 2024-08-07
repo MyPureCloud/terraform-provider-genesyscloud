@@ -317,7 +317,6 @@ func TestAccResourceUserAddresses(t *testing.T) {
 }
 
 func TestAccResourceUserPhone(t *testing.T) {
-	t.Parallel()
 	var (
 		addrUserResource1         = "test-user-addr"
 		addrUserName              = "Nancy Terraform"
@@ -1132,7 +1131,6 @@ func TestAccResourceUserRestore(t *testing.T) {
 }
 
 func TestAccResourceUserCreateWhenDestroyed(t *testing.T) {
-	t.Parallel()
 	var (
 		userResource1 = "test-user"
 		email1        = "terraform-" + uuid.NewString() + "@user.com"
