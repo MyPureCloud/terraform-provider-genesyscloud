@@ -194,7 +194,7 @@ func getAllPhoneBaseSettings(ctx context.Context, sdkConfig *platformclientv2.Co
 
 	if phoneBaseSettings != nil {
 		for _, phoneBaseSetting := range *phoneBaseSettings {
-			resources[*phoneBaseSetting.Id] = &resourceExporter.ResourceMeta{Name: *phoneBaseSetting.Name}
+			resources[*phoneBaseSetting.Id] = &resourceExporter.ResourceMeta{ResourceName: *phoneBaseSetting.Name, LabelName: *phoneBaseSetting.Name}
 		}
 	}
 	return resources, nil

@@ -231,7 +231,7 @@ func TestUnitTfExportAllowEmptyArray(t *testing.T) {
 		resourceTypeFilterFunc: IncludeFilterByResourceType,
 		resourceNameFilterFunc: IncludeFilterResourceByRegex,
 		exportAsHCL:            true,
-		filteredExporters: &map[string]*resourceExporter.ResourceExporter{
+		filteredExportersByType: &map[string]*resourceExporter.ResourceExporter{
 			testResourceType: testExporter,
 		},
 		resources: []resourceExporter.ResourceInfo{
@@ -305,8 +305,8 @@ func TestUnitTfExportRemoveTrailingZerosRrule(t *testing.T) {
 func TestUnitTfExportBuildDependsOnResources(t *testing.T) {
 
 	meta := &resourceExporter.ResourceMeta{
-		Name:     "example::::resource",
-		IdPrefix: "prefix_",
+		SanitizedLabelName: "example::::resource",
+		IdPrefix:           "prefix_",
 	}
 
 	// Create an instance of ResourceIDMetaMap and add the meta to it
@@ -365,16 +365,16 @@ func TestUnitTfExportBuildDependsOnResources(t *testing.T) {
 func TestUnitTfExportFilterResourceById(t *testing.T) {
 
 	meta := &resourceExporter.ResourceMeta{
-		Name:     "example resource1",
-		IdPrefix: "prefix_",
+		SanitizedLabelName: "example resource1",
+		IdPrefix:           "prefix_",
 	}
 
 	// Create an instance of ResourceIDMetaMap and add the meta to it
 	result := resourceExporter.ResourceIDMetaMap{
 		"queue_resources_1": meta,
 		"queue_resources_2": &resourceExporter.ResourceMeta{
-			Name:     "example resource2",
-			IdPrefix: "prefix_",
+			SanitizedLabelName: "example resource2",
+			IdPrefix:           "prefix_",
 		},
 	}
 
@@ -384,8 +384,8 @@ func TestUnitTfExportFilterResourceById(t *testing.T) {
 
 	expectedResult := resourceExporter.ResourceIDMetaMap{
 		"queue_resources_2": &resourceExporter.ResourceMeta{
-			Name:     "example resource2",
-			IdPrefix: "prefix_",
+			SanitizedLabelName: "example resource2",
+			IdPrefix:           "prefix_",
 		},
 	}
 	actualResult := FilterResourceById(result, name, filter)

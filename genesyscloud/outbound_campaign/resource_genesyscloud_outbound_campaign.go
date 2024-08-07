@@ -58,7 +58,7 @@ func getAllAuthOutboundCampaign(ctx context.Context, clientConfig *platformclien
 				continue
 			}
 		}
-		resources[*campaign.Id] = &resourceExporter.ResourceMeta{Name: *campaign.Name}
+		resources[*campaign.Id] = &resourceExporter.ResourceMeta{ResourceName: *campaign.Name, LabelName: *campaign.Name}
 	}
 	return resources, nil
 }

@@ -25,7 +25,7 @@ import (
 // getOutboundWrapupCodeMappings is used by the exporter to return all wrapupcode mappings
 func getOutboundWrapupCodeMappings(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
 	resources := make(resourceExporter.ResourceIDMetaMap)
-	resources["0"] = &resourceExporter.ResourceMeta{Name: "wrapupcodemappings"}
+	resources["0"] = &resourceExporter.ResourceMeta{ResourceName: "wrapupcodemappings", LabelName: "wrapupcodemappings"}
 	return resources, nil
 }
 

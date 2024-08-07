@@ -43,7 +43,7 @@ func NewSanitizerProvider() *SanitizerProvider {
 // Sanitize sanitizes all the resource names using the original algorithm
 func (so *sanitizerOriginal) Sanitize(idMetaMap ResourceIDMetaMap) {
 	for _, meta := range idMetaMap {
-		meta.Name = so.SanitizeResourceName(meta.Name)
+		meta.SanitizedLabelName = so.SanitizeResourceName(meta.LabelName)
 	}
 }
 
@@ -70,31 +70,30 @@ func (sod *sanitizerOptimized) Sanitize(idMetaMap ResourceIDMetaMap) {
 	// Pull out all the original names of the resources for reference later
 	originalResourceNames := make(map[string]string)
 	for k, v := range idMetaMap {
-		originalResourceNames[k] = v.Name
+		originalResourceNames[k] = v.LabelName
 	}
 
 	// Iterate over the idMetaMap and sanitize the names of each resource
 	for _, meta := range idMetaMap {
 
-		sanitizedName := sod.SanitizeResourceName(meta.Name)
+		sanitizedName := sod.SanitizeResourceName(meta.LabelName)
 
 		// If there are more than one resource name that ends up with the same sanitized name,
 		// append a hash of the original name to ensure uniqueness for names to prevent duplicates
-		if sanitizedName != meta.Name {
-			numSeen := 0
-			for _, originalName := range originalResourceNames {
-				originalSanitizedName := sod.SanitizeResourceName(originalName)
-				if sanitizedName == originalSanitizedName {
-					numSeen++
-				}
+		numSeen := 0
+		for _, originalName := range originalResourceNames {
+			originalSanitizedLabelName := sod.SanitizeResourceName(originalName)
+			if sanitizedName == originalSanitizedLabelName {
+				numSeen++
 			}
-			if numSeen > 1 {
-				algorithm := fnv.New32()
-				algorithm.Write([]byte(meta.Name))
-				sanitizedName = sanitizedName + "_" + strconv.FormatUint(uint64(algorithm.Sum32()), 10)
-			}
-			meta.Name = sanitizedName
 		}
+		if numSeen > 1 {
+			algorithm := fnv.New32()
+			algorithm.Write([]byte(meta.LabelName))
+			sanitizedName = sanitizedName + "_" + strconv.FormatUint(uint64(algorithm.Sum32()), 10)
+		}
+		meta.SanitizedLabelName = sanitizedName
+
 	}
 }
 

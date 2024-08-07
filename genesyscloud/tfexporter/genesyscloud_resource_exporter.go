@@ -62,18 +62,12 @@ type unresolvableAttributeInfo struct {
 	Name         string
 	Schema       *schema.Schema
 }
-type ExporterAdvancedFilters struct {
-	IncludeTypes []string
-	ExcludeTypes []string
-	IncludeNames []string
-	ExcludeNames []string
-}
+
 type GenesysCloudResourceExporter struct {
 	filterHandler               ExporterFilterHandler
 	resourceTypeFilterFunc      ExporterResourceTypeFilter
 	resourceNameFilterFunc      ExporterResourceNameFilter
 	resourceAdvancedFiltersList ExporterAdvancedFilters
-	filteredResourcesList       *[]string
 	exportAsHCL                 bool
 	splitFilesByResource        bool
 	logPermissionErrors         bool
@@ -84,7 +78,7 @@ type GenesysCloudResourceExporter struct {
 	provider                    *schema.Provider
 	exportDirPath               string
 	allExporters                *map[string]*resourceExporter.ResourceExporter
-	filteredExporters           *map[string]*resourceExporter.ResourceExporter
+	filteredExportersByType     *map[string]*resourceExporter.ResourceExporter
 	resources                   []resourceExporter.ResourceInfo
 	resourceTypesHCLBlocks      map[string]resourceHCLBlock
 	resourceTypesMaps           map[string]resourceJSONMaps
@@ -101,40 +95,36 @@ type GenesysCloudResourceExporter struct {
 	flowResourcesList           []string
 }
 
-func configureExporterFilters(ctx context.Context, d *schema.ResourceData, gre *GenesysCloudResourceExporter, filterType ExporterFilterHandler) {
+func configureExporterFilters(d *schema.ResourceData, gre *GenesysCloudResourceExporter, filterType ExporterFilterHandler) {
 	switch filterType {
 	case LegacyFilterInclude:
 		var filter []string
 		if resourceTypes, ok := d.GetOk("resource_types"); ok {
 			filter = lists.InterfaceListToStrings(resourceTypes.([]interface{}))
-			gre.filteredResourcesList = &filter
+			includeFilterTypes, includeFilterNames := GroupFilterResourcesByTypeOrName(filter)
+			gre.resourceAdvancedFiltersList.IncludeTypes = includeFilterTypes
+			gre.resourceAdvancedFiltersList.IncludeNames = includeFilterNames
 		}
-
-		//Setting up the resource type filter
-		gre.resourceTypeFilterFunc = IncludeFilterByResourceType //Setting up the resource type filter
-		gre.resourceNameFilterFunc = FilterResourceByName        //Setting up the resource filters
 
 	case FilterIncludeResources:
 		var filter []string
 		if resourceTypes, ok := d.GetOk("include_filter_resources"); ok {
 			filter = lists.InterfaceListToStrings(resourceTypes.([]interface{}))
-			gre.filteredResourcesList = &filter
-		}
 
-		//Setting up the resource type filter
-		gre.resourceTypeFilterFunc = IncludeFilterByResourceType  //Setting up the resource type filter
-		gre.resourceNameFilterFunc = IncludeFilterResourceByRegex //Setting up the resource filters
+			includeFilterTypes, includeFilterNames := GroupFilterResourcesByTypeOrName(filter)
+			gre.resourceAdvancedFiltersList.IncludeTypes = includeFilterTypes
+			gre.resourceAdvancedFiltersList.IncludeNames = includeFilterNames
+		}
 
 	case FilterExcludeResources:
 		var filter []string
 		if resourceTypes, ok := d.GetOk("exclude_filter_resources"); ok {
 			filter = lists.InterfaceListToStrings(resourceTypes.([]interface{}))
-			gre.filteredResourcesList = &filter
-		}
 
-		//Setting up the resource type filter
-		gre.resourceTypeFilterFunc = ExcludeFilterByResourceType  //Setting up the resource type filter
-		gre.resourceNameFilterFunc = ExcludeFilterResourceByRegex //Setting up the resource filters
+			excludeFilterTypes, excludeFilterNames := GroupFilterResourcesByTypeOrName(filter)
+			gre.resourceAdvancedFiltersList.ExcludeTypes = excludeFilterTypes
+			gre.resourceAdvancedFiltersList.ExcludeNames = excludeFilterNames
+		}
 
 	case FilterAdvancedResources:
 		resourceType := d.Get("advanced_filter_resources").([]interface{})[0]
@@ -160,8 +150,6 @@ func configureExporterFilters(ctx context.Context, d *schema.ResourceData, gre *
 		gre.resourceAdvancedFiltersList.IncludeTypes = advancedFilterResolveConflicts(gre.resourceAdvancedFiltersList.IncludeTypes, gre.resourceAdvancedFiltersList.ExcludeTypes)
 		gre.resourceAdvancedFiltersList.IncludeNames = advancedFilterResolveConflicts(gre.resourceAdvancedFiltersList.IncludeNames, gre.resourceAdvancedFiltersList.ExcludeNames)
 		log.Printf("[afr] list: %v", &gre.resourceAdvancedFiltersList)
-
-		os.Exit(0)
 
 	}
 }
@@ -206,7 +194,7 @@ func NewGenesysCloudResourceExporter(ctx context.Context, d *schema.ResourceData
 	gre.setupDataSource()
 
 	//Setting up the filter
-	configureExporterFilters(ctx, d, gre, filterType)
+	configureExporterFilters(d, gre, filterType)
 	return gre, nil
 }
 
@@ -224,12 +212,12 @@ func computeDependsOn(d *schema.ResourceData) bool {
 }
 
 func (g *GenesysCloudResourceExporter) Export() (diagErr diag.Diagnostics) {
-	// Step #1 Retrieve the exporters we are have registered and have been requested by the user
+	// Step #1 Retrieve the exporters we are have registered and filtered by resource type
 	diagErr = g.retrieveExporters()
 	if diagErr != nil {
 		return diagErr
 	}
-	// Step #2 Retrieve all the individual resources we are going to export
+	// Step #2 Retrieve maps of all the individual resources we are going to export and filtered by resource name
 	diagErr = g.retrieveSanitizedResourceMaps()
 	if diagErr != nil {
 		return diagErr
@@ -297,18 +285,23 @@ func (g *GenesysCloudResourceExporter) retrieveExporters() (diagErr diag.Diagnos
 	log.Printf("Retrieving exporters list")
 	exports := resourceExporter.GetResourceExporters()
 	g.allExporters = &exports
-	log.Printf("Retrieving exporters list %v", g.filteredResourcesList)
+	typeFilteredExports := *g.allExporters
 
-	filteredExports := map[string]*resourceExporter.ResourceExporter{}
-	if g.resourceTypeFilterFunc != nil && g.filteredResourcesList != nil {
-		filteredExports = g.resourceTypeFilterFunc(exports, *g.filteredResourcesList)
+	if len(g.resourceAdvancedFiltersList.ExcludeTypes) > 0 {
+		typeFilteredExports = ExcludeFilterByResourceType(typeFilteredExports, g.resourceAdvancedFiltersList.ExcludeTypes)
 	}
 
-	g.filteredExporters = &filteredExports
+	if len(g.resourceAdvancedFiltersList.IncludeTypes) > 0 {
+		// We need to include both the IncludeTypes AND IncludeNames resources types
+		includeFilter := append(g.resourceAdvancedFiltersList.IncludeTypes, g.resourceAdvancedFiltersList.IncludeNames...)
+		typeFilteredExports = IncludeFilterByResourceType(typeFilteredExports, includeFilter)
+	}
+
+	g.filteredExportersByType = &typeFilteredExports
 
 	// Assign excluded attributes to the config Map
 	if excludedAttrs, ok := g.d.GetOk("exclude_attributes"); ok {
-		if diagErr := g.populateConfigExcluded(*g.filteredExporters, lists.InterfaceListToStrings(excludedAttrs.([]interface{}))); diagErr != nil {
+		if diagErr := g.populateConfigExcluded(*g.filteredExportersByType, lists.InterfaceListToStrings(excludedAttrs.([]interface{}))); diagErr != nil {
 			return diagErr
 		}
 	}
@@ -328,40 +321,15 @@ func formatFilter(filter []string) []string {
 // resources that are specified via :: delimiter
 func (g *GenesysCloudResourceExporter) retrieveSanitizedResourceMaps() (diagErr diag.Diagnostics) {
 	log.Printf("Retrieving map of Genesys Cloud resources to export")
-	var filter []string
 
-	if g.filterHandler == FilterAdvancedResources {
-
-	} else {
-		if exportableResourceTypes, ok := g.d.GetOk("resource_types"); ok {
-			filter = lists.InterfaceListToStrings(exportableResourceTypes.([]interface{}))
-		}
-
-		if exportableResourceTypes, ok := g.d.GetOk("include_filter_resources"); ok {
-			filter = lists.InterfaceListToStrings(exportableResourceTypes.([]interface{}))
-		}
-
-		if exportableResourceTypes, ok := g.d.GetOk("exclude_filter_resources"); ok {
-			filter = lists.InterfaceListToStrings(exportableResourceTypes.([]interface{}))
-		}
-
-		newFilter := make([]string, 0)
-		for _, f := range filter {
-			if strings.Contains(f, "::") {
-				newFilter = append(newFilter, f)
-			}
-		}
-
-		//Retrieve a map of all of the objects we are going to build.  Apply the filter that will remove specific classes of an object
-		diagErr = g.buildSanitizedResourceMaps(*g.filteredExporters, newFilter, g.logPermissionErrors)
-		if diagErr != nil {
-			return diagErr
-		}
-
+	//Retrieve a map of all of the objects we are going to build.  Apply the filter that will remove specific classes of an object
+	diagErr = g.buildSanitizedResourceMaps()
+	if diagErr != nil {
+		return diagErr
 	}
 
 	//Check to see if we found any exporters.  If we did find the exporter
-	if len(*g.filteredExporters) == 0 {
+	if len(*g.filteredExportersByType) == 0 {
 		return diag.Errorf("No valid resource types to export.")
 	}
 
@@ -380,7 +348,7 @@ func (g *GenesysCloudResourceExporter) retrieveGenesysCloudObjectInstances() dia
 	ctx, cancel := context.WithCancel(g.ctx)
 	defer cancel()
 	// We use concurrency here to spin off each exporter type and getting the data
-	for resType, exporter := range *g.filteredExporters {
+	for resType, exporter := range *g.filteredExportersByType {
 		wg.Add(1)
 		go func(resType string, exporter *resourceExporter.ResourceExporter) {
 			defer wg.Done()
@@ -436,14 +404,15 @@ func (g *GenesysCloudResourceExporter) buildResourceConfigMap() diag.Diagnostics
 
 		if len(g.resourceTypesMaps[resource.Type][resource.Name]) > 0 || len(g.dataSourceTypesMaps[resource.Type][resource.Name]) > 0 {
 			algorithm := fnv.New32()
+			// QUESTION: Should this be a random uuid or should it match the Name like we do with the Sanitizer?
 			algorithm.Write([]byte(uuid.NewString()))
 			resource.Name = resource.Name + "_" + strconv.FormatUint(uint64(algorithm.Sum32()), 10)
-			g.updateSanitiseMap(*g.filteredExporters, resource)
+			g.updateSanitizeMap(*g.filteredExportersByType, resource)
 		}
 
 		if !isDataSource {
 			// Removes zero values and sets proper reference expressions
-			unresolved, _ := g.sanitizeConfigMap(resource.Type, resource.Name, jsonResult, "", *g.filteredExporters, g.includeStateFile, g.exportAsHCL, true)
+			unresolved, _ := g.sanitizeConfigMap(resource.Type, resource.Name, jsonResult, "", *g.filteredExportersByType, g.includeStateFile, g.exportAsHCL, true)
 			if len(unresolved) > 0 {
 				g.unresolvedAttrs = append(g.unresolvedAttrs, unresolved...)
 			}
@@ -452,7 +421,7 @@ func (g *GenesysCloudResourceExporter) buildResourceConfigMap() diag.Diagnostics
 		}
 
 		// TODO put this in separate call
-		exporters := *g.filteredExporters
+		exporters := *g.filteredExportersByType
 		if resourceFilesWriterFunc := exporters[resource.Type].CustomFileWriter.RetrieveAndWriteFilesFunc; resourceFilesWriterFunc != nil {
 			exportDir, _ := getFilePath(g.d, "")
 			if err := resourceFilesWriterFunc(resource.State.ID, exportDir, exporters[resource.Type].CustomFileWriter.SubDirectory, jsonResult, g.meta); err != nil {
@@ -481,13 +450,13 @@ func (g *GenesysCloudResourceExporter) buildResourceConfigMap() diag.Diagnostics
 	return nil
 }
 
-func (g *GenesysCloudResourceExporter) updateSanitiseMap(exporters map[string]*resourceExporter.ResourceExporter, //Map of all of the exporters
+func (g *GenesysCloudResourceExporter) updateSanitizeMap(exporters map[string]*resourceExporter.ResourceExporter, //Map of all of the exporters
 	resource resourceExporter.ResourceInfo) {
 	if exporters[resource.Type] != nil {
 		// Get the sanitized name from the ID returned as a reference expression
 		if idMetaMap := exporters[resource.Type].SanitizedResourceMap; idMetaMap != nil {
-			if meta := idMetaMap[resource.State.ID]; meta != nil && meta.Name != "" {
-				meta.Name = resource.Name
+			if meta := idMetaMap[resource.State.ID]; meta != nil && meta.SanitizedLabelName != "" {
+				meta.SanitizedLabelName = resource.Name
 			}
 		}
 	}
@@ -645,10 +614,10 @@ func (g *GenesysCloudResourceExporter) processAndBuildDependencies() (filters []
 		}
 
 		if len(resources) > 0 {
-			resourcesTobeExported := retrieveExportResources(g.resources, resources)
-			for _, meta := range resourcesTobeExported {
+			resourcesToBeExported := retrieveExportResources(g.resources, resources)
+			for _, meta := range resourcesToBeExported {
 
-				resource := strings.Split(meta.Name, "::::")
+				resource := strings.Split(meta.SanitizedLabelName, "::::")
 				filterList = append(filterList, fmt.Sprintf("%s::%s", resource[0], resource[1]))
 			}
 			g.dependsList = stringmap.MergeMaps(g.dependsList, dependsStruct.DependsMap)
@@ -663,14 +632,14 @@ func (g *GenesysCloudResourceExporter) processAndBuildDependencies() (filters []
 	return filterList, totalResources, nil
 }
 
-func (g *GenesysCloudResourceExporter) rebuildExports(filterList []string) (diagErr diag.Diagnostics) {
+func (g *GenesysCloudResourceExporter) rebuildExports() (diagErr diag.Diagnostics) {
 	log.Printf("rebuild exporters list")
 	diagErr = g.retrieveExporters()
 	if diagErr != nil {
 		return diagErr
 	}
 
-	diagErr = g.buildSanitizedResourceMaps(*g.filteredExporters, filterList, g.logPermissionErrors)
+	diagErr = g.buildSanitizedResourceMaps()
 	if diagErr != nil {
 		return diagErr
 	}
@@ -684,12 +653,12 @@ func (g *GenesysCloudResourceExporter) rebuildExports(filterList []string) (diag
 
 func (g *GenesysCloudResourceExporter) exportDependentResources(filterList []string, resources resourceExporter.ResourceIDMetaMap) (diagErr diag.Diagnostics) {
 	g.reAssignFilters()
-	g.filteredResourcesList = &filterList
+	g.resourceAdvancedFiltersList.IncludeNames = filterList
 	existingExporters := g.copyExporters()
 	existingResources := g.copyResources()
 	log.Printf("rebuild exports from exportDependentResources")
 
-	err := g.rebuildExports(filterList)
+	err := g.rebuildExports()
 	if err != nil {
 		return err
 	}
@@ -706,7 +675,7 @@ func (g *GenesysCloudResourceExporter) exportDependentResources(filterList []str
 	g.exportAndResolveDependencyAttributes()
 	g.appendResources(uniqueResources)
 	g.appendResources(existingResources)
-	g.filteredExporters = mergeExporters(existingExporters, *mergeExporters(depExporters, *g.filteredExporters))
+	g.filteredExportersByType = mergeExporters(existingExporters, *mergeExporters(depExporters, *g.filteredExportersByType))
 
 	return nil
 }
@@ -722,7 +691,7 @@ func (g *GenesysCloudResourceExporter) buildAndExportDependentResources() (diagE
 
 		// merge the resources and exporters after the dependencies are resolved
 		g.appendResources(existingResources)
-		g.filteredExporters = mergeExporters(existingExporters, *g.filteredExporters)
+		g.filteredExportersByType = mergeExporters(existingExporters, *g.filteredExportersByType)
 
 		// rebuild the config map
 		diagErr = g.buildResourceConfigMap()
@@ -735,7 +704,7 @@ func (g *GenesysCloudResourceExporter) buildAndExportDependentResources() (diagE
 
 func (g *GenesysCloudResourceExporter) copyExporters() map[string]*resourceExporter.ResourceExporter {
 	// deep copy is needed here else exporters are being overridden
-	existingExportersInterface := deepcopy.Copy(*g.filteredExporters)
+	existingExportersInterface := deepcopy.Copy(*g.filteredExportersByType)
 	existingExporters, _ := existingExportersInterface.(map[string]*resourceExporter.ResourceExporter)
 	return existingExporters
 }
@@ -777,7 +746,7 @@ func extractResource(resource resourceExporter.ResourceInfo) resourceExporter.Re
 
 func (g *GenesysCloudResourceExporter) retainExporterList(resources resourceExporter.ResourceIDMetaMap) diag.Diagnostics {
 	removeChan := make([]string, 0)
-	for _, exporter := range *g.filteredExporters {
+	for _, exporter := range *g.filteredExportersByType {
 		for id, _ := range exporter.SanitizedResourceMap {
 			_, exists := resources[id]
 			if !exists {
@@ -853,14 +822,14 @@ func (g *GenesysCloudResourceExporter) chainDependencies(
 			}
 		}
 	}
-	g.filteredResourcesList = &filterListById
+	g.resourceAdvancedFiltersList.IncludeNames = filterListById
 	g.buildSecondDeps = nil
 
-	if len(*g.filteredResourcesList) > 0 {
+	if len(g.resourceAdvancedFiltersList.IncludeNames) > 0 {
 		g.resources = nil
-		g.filteredExporters = nil
+		g.filteredExportersByType = nil
 		log.Printf("rebuild exporters list from chainDependencies")
-		err := g.rebuildExports(*g.filteredResourcesList)
+		err := g.rebuildExports()
 		if err != nil {
 			return err
 		}
@@ -876,10 +845,10 @@ func (g *GenesysCloudResourceExporter) chainDependencies(
 		}
 		//append the resources and exporters
 		g.appendResources(existingResources)
-		g.filteredExporters = mergeExporters(existingExporters, *g.filteredExporters)
+		g.filteredExportersByType = mergeExporters(existingExporters, *g.filteredExportersByType)
 
 		// deep copy is needed here else exporters being overridden
-		existingExportersInterface := deepcopy.Copy(*g.filteredExporters)
+		existingExportersInterface := deepcopy.Copy(*g.filteredExportersByType)
 		existingExporters, _ = existingExportersInterface.(map[string]*resourceExporter.ResourceExporter)
 		existingResources = g.resources
 
@@ -921,7 +890,10 @@ func (g *GenesysCloudResourceExporter) appendResources(resourcesToAdd []resource
 	g.copyResourceAddtoG(existingResources)
 }
 
-func (g *GenesysCloudResourceExporter) buildSanitizedResourceMaps(exporters map[string]*resourceExporter.ResourceExporter, filter []string, logErrors bool) diag.Diagnostics {
+func (g *GenesysCloudResourceExporter) buildSanitizedResourceMaps() diag.Diagnostics {
+	exporters := *g.allExporters
+	logErrors := g.logPermissionErrors
+
 	errorChan := make(chan diag.Diagnostics)
 	wgDone := make(chan bool)
 	// Cancel remaining goroutines if an error occurs
@@ -931,12 +903,25 @@ func (g *GenesysCloudResourceExporter) buildSanitizedResourceMaps(exporters map[
 	var wg sync.WaitGroup
 	for name, exporter := range exporters {
 		wg.Add(1)
-		go func(name string, exporter *resourceExporter.ResourceExporter) {
+		go func(resourceName string, exporter *resourceExporter.ResourceExporter) {
 			defer wg.Done()
-			log.Printf("Getting all resources for type %s", name)
-			exporter.FilterResource = g.resourceNameFilterFunc
+			log.Printf("Getting all resources for type %s", resourceName)
 
-			err := exporter.LoadSanitizedResourceMap(ctx, name, filter)
+			err := exporter.LoadSanitizedResourceMap(ctx)
+
+			filteredResources := exporter.SanitizedResourceMap
+
+			// Apply Exclude by Names filter first, as exclude by takes precedence
+			if len(g.resourceAdvancedFiltersList.ExcludeNames) > 0 {
+				filteredResources = ExcludeFilterResourceByRegex(filteredResources, resourceName, g.resourceAdvancedFiltersList.ExcludeNames)
+			}
+
+			// Apply Include by Names filter second
+			if len(g.resourceAdvancedFiltersList.IncludeNames) > 0 {
+				filteredResources = IncludeFilterResourceByRegex(filteredResources, resourceName, g.resourceAdvancedFiltersList.IncludeNames)
+			}
+
+			exporter.SanitizedResourceMap = filteredResources
 
 			// Used in tests
 			if mockError != nil {
@@ -944,7 +929,7 @@ func (g *GenesysCloudResourceExporter) buildSanitizedResourceMaps(exporters map[
 			}
 			if containsPermissionsErrorOnly(err) && logErrors {
 				log.Printf("%v", err[0].Summary)
-				log.Printf("Logging permission error for %s. Resuming export...", name)
+				log.Printf("Logging permission error for %s. Resuming export...", resourceName)
 				return
 			}
 			if err != nil {
@@ -958,7 +943,7 @@ func (g *GenesysCloudResourceExporter) buildSanitizedResourceMaps(exporters map[
 				cancel()
 				return
 			}
-			log.Printf("Found %d resources for type %s", len(exporter.SanitizedResourceMap), name)
+			log.Printf("Found %d resources for type %s", len(exporter.SanitizedResourceMap), resourceName)
 		}(name, exporter)
 	}
 
@@ -1006,7 +991,7 @@ func mergeExporters(m1, m2 map[string]*resourceExporter.ResourceExporter) *map[s
 
 func retrieveExportResources(existingResources []resourceExporter.ResourceInfo, resources resourceExporter.ResourceIDMetaMap) map[string]*resourceExporter.ResourceMeta {
 	foundTypes := make(map[string]bool)
-	resourcesTobeExported := make(map[string]*resourceExporter.ResourceMeta)
+	resourcesToBeExported := make(map[string]*resourceExporter.ResourceMeta)
 
 	for _, data := range existingResources {
 		if _, ok := resources[data.State.ID]; ok {
@@ -1016,11 +1001,11 @@ func retrieveExportResources(existingResources []resourceExporter.ResourceInfo, 
 
 	for resourceType, meta := range resources {
 		if !foundTypes[resourceType] {
-			resourcesTobeExported[resourceType] = meta
+			resourcesToBeExported[resourceType] = meta
 		}
 	}
 
-	return resourcesTobeExported
+	return resourcesToBeExported
 }
 
 func containsPermissionsErrorOnly(err diag.Diagnostics) bool {
@@ -1074,7 +1059,7 @@ func (g *GenesysCloudResourceExporter) getResourcesForType(resType string, provi
 				instanceState, err := getResourceState(ctx, res, id, resMeta, meta)
 
 				resourceType := ""
-				if g.isDataSource(resType, resMeta.Name) {
+				if g.isDataSource(resType, resMeta.SanitizedLabelName) {
 					g.exMutex.Lock()
 					res = provider.DataSourcesMap[resType]
 					g.exMutex.Unlock()
@@ -1102,14 +1087,14 @@ func (g *GenesysCloudResourceExporter) getResourcesForType(resType string, provi
 				}
 
 				if instanceState == nil {
-					log.Printf("Resource %s no longer exists. Skipping.", resMeta.Name)
+					log.Printf("Resource %s no longer exists. Skipping.", resMeta.SanitizedLabelName)
 					removeChan <- id // Mark for removal from the map
 					return nil
 				}
 
 				resourceChan <- resourceExporter.ResourceInfo{
 					State:        instanceState,
-					Name:         resMeta.Name,
+					Name:         resMeta.SanitizedLabelName,
 					Type:         resType,
 					CtyType:      ctyType,
 					ResourceType: resourceType,
@@ -1603,13 +1588,13 @@ func (g *GenesysCloudResourceExporter) resolveReference(refSettings *resourceExp
 	if exporters[refSettings.RefType] != nil {
 		// Get the sanitized name from the ID returned as a reference expression
 		if idMetaMap := exporters[refSettings.RefType].SanitizedResourceMap; idMetaMap != nil {
-			if meta := idMetaMap[refID]; meta != nil && meta.Name != "" {
+			if meta := idMetaMap[refID]; meta != nil && meta.SanitizedLabelName != "" {
 
-				if g.isDataSource(refSettings.RefType, meta.Name) && g.resourceIdExists(refID, nil) {
-					return fmt.Sprintf("${%s.%s.%s.id}", "data", refSettings.RefType, meta.Name)
+				if g.isDataSource(refSettings.RefType, meta.SanitizedLabelName) && g.resourceIdExists(refID, nil) {
+					return fmt.Sprintf("${%s.%s.%s.id}", "data", refSettings.RefType, meta.SanitizedLabelName)
 				}
 				if g.resourceIdExists(refID, nil) {
-					return fmt.Sprintf("${%s.%s.id}", refSettings.RefType, meta.Name)
+					return fmt.Sprintf("${%s.%s.id}", refSettings.RefType, meta.SanitizedLabelName)
 				}
 			}
 		}

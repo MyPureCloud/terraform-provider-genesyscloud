@@ -31,7 +31,7 @@ func getAllFileSpecificationTemplates(ctx context.Context, clientConfig *platfor
 	}
 
 	for _, fst := range *fileSpecificationTemplates {
-		resources[*fst.Id] = &resourceExporter.ResourceMeta{Name: *fst.Name}
+		resources[*fst.Id] = &resourceExporter.ResourceMeta{ResourceName: *fst.Name, LabelName: *fst.Name}
 	}
 	return resources, nil
 }

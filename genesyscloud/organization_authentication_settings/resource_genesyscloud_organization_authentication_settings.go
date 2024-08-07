@@ -25,7 +25,7 @@ The resource_genesyscloud_organization_authentication_settings.go contains all t
 
 func getAllOrganizationAuthenticationSettings(_ context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
 	resources := make(resourceExporter.ResourceIDMetaMap)
-	resources["0"] = &resourceExporter.ResourceMeta{Name: "organization_authentication_settings"}
+	resources["0"] = &resourceExporter.ResourceMeta{ResourceName: "organization_authentication_settings", LabelName: "organization_authentication_settings"}
 	return resources, nil
 }
 

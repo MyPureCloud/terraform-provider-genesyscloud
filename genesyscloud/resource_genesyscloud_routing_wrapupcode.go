@@ -36,7 +36,7 @@ func getAllRoutingWrapupCodes(_ context.Context, clientConfig *platformclientv2.
 		}
 
 		for _, wrapupcode := range *wrapupcodes.Entities {
-			resources[*wrapupcode.Id] = &resourceExporter.ResourceMeta{Name: *wrapupcode.Name}
+			resources[*wrapupcode.Id] = &resourceExporter.ResourceMeta{ResourceName: *wrapupcode.Name, LabelName: *wrapupcode.Name}
 		}
 	}
 

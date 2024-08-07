@@ -22,7 +22,7 @@ import (
 func getAllRoutingUtilization(_ context.Context, _ *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
 	// Routing utilization config always exists
 	resources := make(resourceExporter.ResourceIDMetaMap)
-	resources["0"] = &resourceExporter.ResourceMeta{Name: "routing_utilization"}
+	resources["0"] = &resourceExporter.ResourceMeta{ResourceName: "routing_utilization", LabelName: "routing_utilization"}
 	return resources, nil
 }
 

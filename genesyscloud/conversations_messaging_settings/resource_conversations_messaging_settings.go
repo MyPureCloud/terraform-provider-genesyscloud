@@ -28,7 +28,7 @@ func getAllAuthConversationsMessagingSettings(ctx context.Context, clientConfig 
 	}
 
 	for _, messagingSetting := range *messagingSettings {
-		resources[*messagingSetting.Id] = &resourceExporter.ResourceMeta{Name: *messagingSetting.Name}
+		resources[*messagingSetting.Id] = &resourceExporter.ResourceMeta{ResourceName: *messagingSetting.Name, LabelName: *messagingSetting.Name}
 	}
 
 	return resources, nil

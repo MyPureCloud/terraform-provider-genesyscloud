@@ -31,7 +31,7 @@ func getAllKnowledgeKnowledgebases(_ context.Context, clientConfig *platformclie
 	}
 
 	for _, knowledgeBase := range *publishedEntities {
-		resources[*knowledgeBase.Id] = &resourceExporter.ResourceMeta{Name: *knowledgeBase.Name}
+		resources[*knowledgeBase.Id] = &resourceExporter.ResourceMeta{ResourceName: *knowledgeBase.Name, LabelName: *knowledgeBase.Name}
 	}
 
 	unpublishedEntities, err := getAllKnowledgebaseEntities(*knowledgeAPI, false)
@@ -40,7 +40,7 @@ func getAllKnowledgeKnowledgebases(_ context.Context, clientConfig *platformclie
 	}
 
 	for _, knowledgeBase := range *unpublishedEntities {
-		resources[*knowledgeBase.Id] = &resourceExporter.ResourceMeta{Name: *knowledgeBase.Name}
+		resources[*knowledgeBase.Id] = &resourceExporter.ResourceMeta{ResourceName: *knowledgeBase.Name, LabelName: *knowledgeBase.Name}
 	}
 
 	return resources, nil

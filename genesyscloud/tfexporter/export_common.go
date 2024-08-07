@@ -33,6 +33,14 @@ type ExporterFilterHandler int64
 type ExporterResourceTypeFilter func(exports map[string]*resourceExporter.ResourceExporter, filter []string) map[string]*resourceExporter.ResourceExporter
 type ExporterResourceNameFilter func(result resourceExporter.ResourceIDMetaMap, name string, filter []string) resourceExporter.ResourceIDMetaMap
 
+// ExporterAdvancedFilters allows defining a set of filters to export
+type ExporterAdvancedFilters struct {
+	IncludeTypes []string
+	ExcludeTypes []string
+	IncludeNames []string
+	ExcludeNames []string
+}
+
 const (
 	LegacyFilterInclude ExporterFilterHandler = iota
 	FilterIncludeResources
@@ -40,6 +48,24 @@ const (
 	FilterAdvancedResources
 )
 
+// Returns two grouped lists: one of any resources with a name, one with only resource types
+func GroupFilterResourcesByTypeOrName(filterResources []string) ([]string, []string) {
+	if len(filterResources) > 0 {
+		var resourceWithNames []string
+		var resourceTypeOnly []string
+		for _, filter := range filterResources {
+			if strings.Contains(filter, "::") {
+				resourceWithNames = append(resourceWithNames, filter)
+			} else {
+				resourceTypeOnly = append(resourceTypeOnly, filter)
+			}
+		}
+		return resourceTypeOnly, resourceWithNames
+	}
+	return nil, nil
+}
+
+// Returns map of ResourceExporters that includes any resources by name passed into the filter
 func IncludeFilterByResourceType(exports map[string]*resourceExporter.ResourceExporter, filter []string) map[string]*resourceExporter.ResourceExporter {
 	if len(filter) > 0 {
 		for resType := range exports {
@@ -52,6 +78,7 @@ func IncludeFilterByResourceType(exports map[string]*resourceExporter.ResourceEx
 	return exports
 }
 
+// Returns map of ResourceExporters that excludes any resources by name passed into the filter
 func ExcludeFilterByResourceType(exports map[string]*resourceExporter.ResourceExporter, filter []string) map[string]*resourceExporter.ResourceExporter {
 	if len(filter) > 0 {
 		for resType := range exports {
@@ -65,11 +92,12 @@ func ExcludeFilterByResourceType(exports map[string]*resourceExporter.ResourceEx
 	return exports
 }
 
-func FilterResourceByName(result resourceExporter.ResourceIDMetaMap, name string, filter []string) resourceExporter.ResourceIDMetaMap {
-	if lists.SubStringInSlice(fmt.Sprintf("%v::", name), filter) {
+// Returns ResourceIDMetaMap filtered by list of strings with names
+func FilterResourceByName(result resourceExporter.ResourceIDMetaMap, resourceName string, filter []string) resourceExporter.ResourceIDMetaMap {
+	if lists.SubStringInSlice(fmt.Sprintf("%v::", resourceName), filter) {
 		names := make([]string, 0)
 		for _, f := range filter {
-			n := fmt.Sprintf("%v::", name)
+			n := fmt.Sprintf("%v::", resourceName)
 
 			if strings.Contains(f, n) {
 				names = append(names, strings.Replace(f, n, "", 1))
@@ -79,7 +107,7 @@ func FilterResourceByName(result resourceExporter.ResourceIDMetaMap, name string
 		newResult := make(resourceExporter.ResourceIDMetaMap)
 		for _, name := range names {
 			for k, v := range result {
-				if v.Name == name {
+				if v.LabelName == name {
 					newResult[k] = v
 				}
 			}
@@ -90,11 +118,12 @@ func FilterResourceByName(result resourceExporter.ResourceIDMetaMap, name string
 	return result
 }
 
-func FilterResourceById(result resourceExporter.ResourceIDMetaMap, name string, filter []string) resourceExporter.ResourceIDMetaMap {
-	if lists.SubStringInSlice(fmt.Sprintf("%v::", name), filter) {
+// Returns ResourceIDMetaMap filtered by list of strings by ID
+func FilterResourceById(result resourceExporter.ResourceIDMetaMap, resourceName string, filter []string) resourceExporter.ResourceIDMetaMap {
+	if lists.SubStringInSlice(fmt.Sprintf("%v::", resourceName), filter) {
 		names := make([]string, 0)
 		for _, f := range filter {
-			n := fmt.Sprintf("%v::", name)
+			n := fmt.Sprintf("%v::", resourceName)
 
 			if strings.Contains(f, n) {
 				names = append(names, strings.Replace(f, n, "", 1))
@@ -114,10 +143,11 @@ func FilterResourceById(result resourceExporter.ResourceIDMetaMap, name string, 
 	return result
 }
 
-func IncludeFilterResourceByRegex(result resourceExporter.ResourceIDMetaMap, name string, filter []string) resourceExporter.ResourceIDMetaMap {
+// Returns a ResourceIdMetaMap that includes any resources instances whose name (either as returned from the API or sanitized) matches the Regexp filter
+func IncludeFilterResourceByRegex(result resourceExporter.ResourceIDMetaMap, resourceName string, filter []string) resourceExporter.ResourceIDMetaMap {
 	newFilters := make([]string, 0)
 	for _, f := range filter {
-		if strings.Contains(f, "::") && strings.Split(f, "::")[0] == name {
+		if strings.Contains(f, "::") && strings.Split(f, "::")[0] == resourceName {
 			i := strings.Index(f, "::")
 			regexStr := f[i+2:]
 			newFilters = append(newFilters, regexStr)
@@ -130,19 +160,23 @@ func IncludeFilterResourceByRegex(result resourceExporter.ResourceIDMetaMap, nam
 		return result
 	}
 
-	sanitizer := resourceExporter.NewSanitizerProvider()
-
 	for _, pattern := range newFilters {
 		for k := range result {
-			match, _ := regexp.MatchString(pattern, result[k].Name)
 
-			// If name matches original name
-			if match {
+			// If name matches label name
+			originalNameMatch, _ := regexp.MatchString(pattern, result[k].ResourceName)
+			if originalNameMatch {
+				newResourceMap[k] = result[k]
+			}
+
+			// If name matches label name
+			labelMatch, _ := regexp.MatchString(pattern, result[k].LabelName)
+			if labelMatch {
 				newResourceMap[k] = result[k]
 			}
 
 			// If name matches sanitized name
-			sanitizedMatch, _ := regexp.MatchString(pattern, sanitizer.S.SanitizeResourceName(result[k].Name))
+			sanitizedMatch, _ := regexp.MatchString(pattern, result[k].SanitizedLabelName)
 			if sanitizedMatch {
 				newResourceMap[k] = result[k]
 			}
@@ -152,10 +186,11 @@ func IncludeFilterResourceByRegex(result resourceExporter.ResourceIDMetaMap, nam
 	return newResourceMap
 }
 
-func ExcludeFilterResourceByRegex(result resourceExporter.ResourceIDMetaMap, name string, filter []string) resourceExporter.ResourceIDMetaMap {
+// Returns a ResourceIdMetaMap that excludes any resources instances whose name (either as returned from the API or sanitized) matches the Regexp filter
+func ExcludeFilterResourceByRegex(result resourceExporter.ResourceIDMetaMap, resourceName string, filter []string) resourceExporter.ResourceIDMetaMap {
 	newFilters := make([]string, 0)
 	for _, f := range filter {
-		if strings.Contains(f, "::") && strings.Split(f, "::")[0] == name {
+		if strings.Contains(f, "::") && strings.Split(f, "::")[0] == resourceName {
 			i := strings.Index(f, "::")
 			regexStr := f[i+2:]
 			newFilters = append(newFilters, regexStr)
@@ -167,14 +202,22 @@ func ExcludeFilterResourceByRegex(result resourceExporter.ResourceIDMetaMap, nam
 	}
 
 	newResourceMap := make(resourceExporter.ResourceIDMetaMap)
-	sanitizer := resourceExporter.NewSanitizerProvider()
 
 	for k := range result {
 		for _, pattern := range newFilters {
 
 			// If name matches original name
-			match, _ := regexp.MatchString(pattern, result[k].Name)
-			if !match {
+			originalNameMatch, _ := regexp.MatchString(pattern, result[k].ResourceName)
+			if !originalNameMatch {
+				newResourceMap[k] = result[k]
+			} else {
+				delete(newResourceMap, k)
+				break
+			}
+
+			// If name matches label name
+			labelMatch, _ := regexp.MatchString(pattern, result[k].LabelName)
+			if !labelMatch {
 				newResourceMap[k] = result[k]
 			} else {
 				delete(newResourceMap, k)
@@ -182,7 +225,7 @@ func ExcludeFilterResourceByRegex(result resourceExporter.ResourceIDMetaMap, nam
 			}
 
 			// If name matches sanitized name
-			sanitizedMatch, _ := regexp.MatchString(pattern, sanitizer.S.SanitizeResourceName(result[k].Name))
+			sanitizedMatch, _ := regexp.MatchString(pattern, result[k].SanitizedLabelName)
 			if !sanitizedMatch {
 				newResourceMap[k] = result[k]
 			} else {

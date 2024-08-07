@@ -235,7 +235,7 @@ func getAllJourneySegments(_ context.Context, clientConfig *platformclientv2.Con
 		}
 
 		for _, journeySegment := range *journeySegments.Entities {
-			resources[*journeySegment.Id] = &resourceExporter.ResourceMeta{Name: *journeySegment.DisplayName}
+			resources[*journeySegment.Id] = &resourceExporter.ResourceMeta{ResourceName: *journeySegment.DisplayName, LabelName: *journeySegment.DisplayName}
 		}
 
 		pageCount = *journeySegments.PageCount

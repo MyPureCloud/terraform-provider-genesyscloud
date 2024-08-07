@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"regexp"
+	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"terraform-provider-genesyscloud/genesyscloud/util/constants"
@@ -51,7 +53,16 @@ func getAllAuthExternalContacts(ctx context.Context, clientConfig *platformclien
 
 	for _, externalContact := range *externalContacts {
 		log.Printf("Dealing with external contact id : %s", *externalContact.Id)
-		resources[*externalContact.Id] = &resourceExporter.ResourceMeta{Name: *externalContact.Id}
+		fullNameList := [3]string{
+			*util.EmptyIfNilStringPointer(externalContact.FirstName),
+			*util.EmptyIfNilStringPointer(externalContact.MiddleName),
+			*util.EmptyIfNilStringPointer(externalContact.LastName),
+		}
+		fullNameJoined := strings.Join(fullNameList[:], " ")
+		re := regexp.MustCompile(`\s+`)
+		fullName := re.ReplaceAllString(fullNameJoined, " ")
+		fullName = strings.TrimSpace(fullName)
+		resources[*externalContact.Id] = &resourceExporter.ResourceMeta{ResourceName: fullName, LabelName: *externalContact.Id}
 	}
 	return resources, nil
 }

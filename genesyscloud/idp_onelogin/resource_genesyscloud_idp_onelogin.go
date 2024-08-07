@@ -40,7 +40,7 @@ func getAllAuthIdpOnelogins(ctx context.Context, clientConfig *platformclientv2.
 		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get IDP Onelogin error: %s", err), resp)
 	}
 
-	resources["0"] = &resourceExporter.ResourceMeta{Name: "onelogin"}
+	resources["0"] = &resourceExporter.ResourceMeta{ResourceName: "onelogin", LabelName: "onelogin"}
 	return resources, nil
 }
 

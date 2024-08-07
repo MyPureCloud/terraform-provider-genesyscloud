@@ -39,7 +39,7 @@ func getAllArchitectSchedules(_ context.Context, clientConfig *platformclientv2.
 		}
 
 		for _, schedule := range *schedules.Entities {
-			resources[*schedule.Id] = &resourceExporter.ResourceMeta{Name: *schedule.Name}
+			resources[*schedule.Id] = &resourceExporter.ResourceMeta{ResourceName: *schedule.Name, LabelName: *schedule.Name}
 		}
 	}
 
