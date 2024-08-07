@@ -60,7 +60,7 @@ func ResourceConversationsMessagingIntegrationsInstagram() *schema.Resource {
 				Type:        schema.TypeString,
 			},
 			`user_access_token`: {
-				Description: `The short-lived User Access Token of Instagram user logged into Instagram app. See https://developers.facebook.com/docs/facebook-login/access-tokens. When userAccessToken is provided, pageId is mandatory. When userAccessToken/pageId combination is provided, pageAccessToken is not required.`,
+				Description: `The short-lived User Access Token of Instagram user logged into Facebook app. See https://developers.facebook.com/docs/facebook-login/access-tokens. When userAccessToken is provided, pageId is mandatory. When userAccessToken/pageId combination is provided, pageAccessToken is not required.`,
 				Optional:    true,
 				Type:        schema.TypeString,
 			},
@@ -71,13 +71,13 @@ func ResourceConversationsMessagingIntegrationsInstagram() *schema.Resource {
 				ForceNew:    true,
 			},
 			`app_id`: {
-				Description: `The app ID of Instagram app. The appId is required when a customer wants to use their own approved Instagram app.`,
+				Description: `The app ID of Facebook app. The appId is required when a customer wants to use their own approved Facebook app.`,
 				Optional:    true,
 				Type:        schema.TypeString,
 				ForceNew:    true,
 			},
 			`app_secret`: {
-				Description: `The app Secret of Instagram app. The appSecret is required when appId is provided.`,
+				Description: `The app Secret of Facebook app. The appSecret is required when appId is provided.`,
 				Optional:    true,
 				Type:        schema.TypeString,
 				ForceNew:    true,

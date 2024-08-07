@@ -47,13 +47,13 @@ resource "genesyscloud_conversations_messaging_integrations_instagram" "test_sam
 
 ### Optional
 
-- `app_id` (String) The app ID of Instagram app. The appId is required when a customer wants to use their own approved Instagram app.
-- `app_secret` (String) The app Secret of Instagram app. The appSecret is required when appId is provided.
+- `app_id` (String) The app ID of Facebook app. The appId is required when a customer wants to use their own approved Facebook app.
+- `app_secret` (String) The app Secret of Facebook app. The appSecret is required when appId is provided.
 - `messaging_setting_id` (String) Messaging Setting for messaging platform integrations
 - `page_access_token` (String) The long-lived Page Access Token of Instagram page. See https://developers.facebook.com/docs/facebook-login/access-tokens. When a pageAccessToken is provided, pageId and userAccessToken are not required.
 - `page_id` (String) The page ID of Instagram page. The pageId is required when userAccessToken is provided.
 - `supported_content_id` (String) Reference to supported content profile associated with the integration
-- `user_access_token` (String) The short-lived User Access Token of Instagram user logged into Instagram app. See https://developers.facebook.com/docs/facebook-login/access-tokens. When userAccessToken is provided, pageId is mandatory. When userAccessToken/pageId combination is provided, pageAccessToken is not required.
+- `user_access_token` (String) The short-lived User Access Token of Instagram user logged into Facebook app. See https://developers.facebook.com/docs/facebook-login/access-tokens. When userAccessToken is provided, pageId is mandatory. When userAccessToken/pageId combination is provided, pageAccessToken is not required.
 
 ### Read-Only
 
