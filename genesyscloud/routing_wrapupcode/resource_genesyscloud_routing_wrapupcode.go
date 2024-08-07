@@ -111,7 +111,7 @@ func deleteRoutingWrapupCode(ctx context.Context, d *schema.ResourceData, meta i
 		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete wrapupcode %s error: %s", name, err), proxyDelResponse)
 	}
 
-	return util.WithRetries(ctx, 180*time.Second, func() *retry.RetryError {
+	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		_, proxyGetResponse, err := proxy.getRoutingWrapupcodeById(ctx, d.Id())
 		if err != nil {
 			if util.IsStatus404(proxyGetResponse) {
