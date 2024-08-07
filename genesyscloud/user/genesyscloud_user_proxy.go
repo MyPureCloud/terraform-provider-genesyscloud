@@ -146,7 +146,12 @@ func updateUserFn(ctx context.Context, p *userProxy, id string, updateUser *plat
 
 // deleteUserFn is an implementation function for deleting a Genesys Cloud user
 func deleteUserFn(ctx context.Context, p *userProxy, id string) (*interface{}, *platformclientv2.APIResponse, error) {
-	return p.userApi.DeleteUser(id)
+	data, resp, err := p.userApi.DeleteUser(id)
+	if err != nil {
+		return nil, resp, err
+	}
+	rc.DeleteCacheItem(p.userCache, id)
+	return data, nil, nil
 }
 
 func patchUserWithStateFn(ctx context.Context, p *userProxy, id string, updateUser *platformclientv2.Updateuser) (*platformclientv2.User, *platformclientv2.APIResponse, error) {

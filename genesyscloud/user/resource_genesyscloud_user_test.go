@@ -202,7 +202,7 @@ func TestAccResourceUserAddresses(t *testing.T) {
 		addrTypeHome              = "HOME"
 		extensionPoolResource1    = "test-extensionpool1" + uuid.NewString()
 		extensionPoolStartNumber1 = "8000"
-		extensionPoolEndNumber1   = "9000"
+		extensionPoolEndNumber1   = "8999"
 	)
 
 	extensionPoolResource := extensionPool.ExtensionPoolStruct{
