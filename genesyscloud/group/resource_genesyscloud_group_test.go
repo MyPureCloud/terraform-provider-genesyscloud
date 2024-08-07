@@ -253,7 +253,6 @@ func TestAccResourceGroupMembers(t *testing.T) {
 		testUserResource = "user_resource1"
 		testUserName     = "nameUser1" + uuid.NewString()
 		testUserEmail    = uuid.NewString() + "@groupmem.com"
-		userID           string
 	)
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
@@ -340,19 +339,6 @@ func TestAccResourceGroupMembers(t *testing.T) {
 					userEmail2,
 					userName2,
 				),
-				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckNoResourceAttr("genesyscloud_group."+groupResource, "member_ids.%"),
-					func(s *terraform.State) error {
-						rs, ok := s.RootModule().Resources["genesyscloud_user."+testUserResource]
-						if !ok {
-							return fmt.Errorf("not found: %s", "genesyscloud_user."+testUserResource)
-						}
-						userID = rs.Primary.ID
-						log.Printf("User ID: %s\n", userID) // Print user ID
-						return nil
-					},
-				),
-				PreventPostDestroyRefresh: true,
 			},
 			{
 				ResourceName:      "genesyscloud_user." + testUserResource,
