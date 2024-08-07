@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"log"
 	"os"
 	"reflect"
@@ -13,9 +12,11 @@ import (
 	featureToggles "terraform-provider-genesyscloud/genesyscloud/util/feature_toggles"
 	"unsafe"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 
-	"github.com/google/go-cmp/cmp"
+	//"github.com/google/go-cmp/cmp"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
@@ -30,15 +31,15 @@ func init() {
 }
 
 type ConsistencyCheck struct {
-	ctx              context.Context
-	resource         *schema.Resource
-	originalState    *schema.ResourceData
-	originalStateMap map[string]interface{}
-	meta             interface{}
-	isEmptyState     *bool
-	checks           int
-	maxStateChecks   int
-	resourceType     string
+	ctx                 context.Context
+	resource            *schema.Resource
+	originalStateMap    map[string]interface{}
+	originalStateValues map[string]string
+	meta                interface{}
+	isEmptyState        *bool
+	checks              int
+	maxStateChecks      int
+	resourceType        string
 }
 
 type consistencyError struct {
@@ -78,14 +79,14 @@ func NewConsistencyCheck(ctx context.Context, d *schema.ResourceData, meta inter
 	originalStateMap := filterMap(resourceDataToMap(d))
 
 	cc = &ConsistencyCheck{
-		ctx:              ctx,
-		resource:         r,
-		originalState:    d,
-		originalStateMap: originalStateMap,
-		meta:             meta,
-		isEmptyState:     emptyState,
-		maxStateChecks:   maxStateChecks,
-		resourceType:     resourceType,
+		ctx:                 ctx,
+		resource:            r,
+		originalStateMap:    originalStateMap,
+		originalStateValues: d.State().Attributes,
+		meta:                meta,
+		isEmptyState:        emptyState,
+		maxStateChecks:      maxStateChecks,
+		resourceType:        resourceType,
 	}
 
 	mccMutex.Lock()
@@ -195,6 +196,17 @@ func (cc *ConsistencyCheck) CheckState(currentState *schema.ResourceData) *retry
 		Config: cc.originalStateMap,
 		Raw:    cc.originalStateMap,
 	}
+	currentStateMap := resourceDataToMap(currentState)
+
+	fmt.Println("\nOriginal")
+	for k, v := range cc.originalStateMap {
+		fmt.Println(k, ":", v)
+	}
+
+	fmt.Println("\nCurrent")
+	for k, v := range currentState.State().Attributes {
+		fmt.Println(k, ": ", v)
+	}
 
 	diff, _ := cc.resource.Diff(cc.ctx, currentState.State(), resourceConfig, cc.meta)
 	if diff != nil && len(diff.Attributes) > 0 {
@@ -202,15 +214,16 @@ func (cc *ConsistencyCheck) CheckState(currentState *schema.ResourceData) *retry
 		for attribute := range diff.Attributes {
 			// Make sure we have the same number of nested blocks
 			if strings.HasSuffix(attribute, "#") {
-				if cc.originalState.Get(attribute).(int) != currentState.Get(attribute).(int) {
-					return cc.handleError(currentState, attribute)
-				}
+				// if cc.originalState.Get(attribute).(int) != currentState.Get(attribute).(int) {
+				// 	return cc.handleError(currentStateMap, attribute)
+				// }
+				fmt.Println()
 			}
 
 			// Handle top level attributes
 			if !strings.Contains(attribute, ".") {
 				if currentState.HasChange(attribute) {
-					return cc.handleError(currentState, attribute)
+					return cc.handleError(currentStateMap, attribute)
 				}
 			}
 
@@ -237,7 +250,7 @@ func (cc *ConsistencyCheck) CheckState(currentState *schema.ResourceData) *retry
 				}
 
 				if err != nil {
-					return cc.handleError(currentState, attr)
+					return cc.handleError(currentStateMap, attr)
 				}
 			}
 		}
@@ -247,9 +260,9 @@ func (cc *ConsistencyCheck) CheckState(currentState *schema.ResourceData) *retry
 	return nil
 }
 
-func compareBlocks(resource map[string]interface{}) error {
-	return nil
-}
+// func compareBlocks(resource map[string]interface{}) error {
+// 	return nil
+// }
 
 func (cc *ConsistencyCheck) compareBlock(blockName string, blockValues []interface{}) error {
 	for _, blockValue := range blockValues {
@@ -264,50 +277,50 @@ func (cc *ConsistencyCheck) compareBlock(blockName string, blockValues []interfa
 	return nil
 }
 
-func compareValues(oldValue, newValue interface{}, slice1Index, slice2Index int, key string) bool {
-	switch oldValueType := oldValue.(type) {
-	case []interface{}:
-		if len(oldValueType) == 0 {
-			return true
-		}
-		if slice1Index >= len(oldValueType) {
-			for i := 0; i < len(oldValueType); i++ {
-				if compareValues(oldValue, newValue, i, slice2Index, key) {
-					return true
-				}
-			}
-			return false
-		}
-		ov := oldValueType[slice1Index]
-		switch t := ov.(type) {
-		case map[string]interface{}:
-			return compareValues(t[key], newValue, slice2Index, 0, "")
-		default:
-			return cmp.Equal(ov, newValue)
-		}
-	case *schema.Set:
-		return compareValues(oldValueType.List(), newValue, slice1Index, slice2Index, key)
-	case string:
-		if oldValue != "" && newValue == "" {
-			return true
-		}
-		return cmp.Equal(oldValue, newValue)
-	default:
-		return cmp.Equal(oldValue, newValue)
-	}
-}
+// func compareValues(oldValue, newValue interface{}, slice1Index, slice2Index int, key string) bool {
+// 	switch oldValueType := oldValue.(type) {
+// 	case []interface{}:
+// 		if len(oldValueType) == 0 {
+// 			return true
+// 		}
+// 		if slice1Index >= len(oldValueType) {
+// 			for i := 0; i < len(oldValueType); i++ {
+// 				if compareValues(oldValue, newValue, i, slice2Index, key) {
+// 					return true
+// 				}
+// 			}
+// 			return false
+// 		}
+// 		ov := oldValueType[slice1Index]
+// 		switch t := ov.(type) {
+// 		case map[string]interface{}:
+// 			return compareValues(t[key], newValue, slice2Index, 0, "")
+// 		default:
+// 			return cmp.Equal(ov, newValue)
+// 		}
+// 	case *schema.Set:
+// 		return compareValues(oldValueType.List(), newValue, slice1Index, slice2Index, key)
+// 	case string:
+// 		if oldValue != "" && newValue == "" {
+// 			return true
+// 		}
+// 		return cmp.Equal(oldValue, newValue)
+// 	default:
+// 		return cmp.Equal(oldValue, newValue)
+// 	}
+// }
 
-func (cc *ConsistencyCheck) handleError(currentState *schema.ResourceData, attribute string) *retry.RetryError {
+func (cc *ConsistencyCheck) handleError(currentState map[string]interface{}, attribute string) *retry.RetryError {
 	err := retry.RetryableError(&consistencyError{
 		key:      attribute,
-		oldValue: cc.originalState.Get(attribute),
-		newValue: currentState.Get(attribute),
+		oldValue: cc.originalStateMap[attribute],
+		newValue: currentState[attribute],
 	})
 
 	return cc.writeOrReturnError(currentState, err)
 }
 
-func (cc *ConsistencyCheck) writeOrReturnError(currentState *schema.ResourceData, err *retry.RetryError) *retry.RetryError {
+func (cc *ConsistencyCheck) writeOrReturnError(currentState map[string]interface{}, err *retry.RetryError) *retry.RetryError {
 	if exists := featureToggles.CCToggleExists(); cc.checks >= cc.maxStateChecks && exists {
 		cc.writeConsistencyErrorToFile(currentState, err)
 		return nil
@@ -317,15 +330,15 @@ func (cc *ConsistencyCheck) writeOrReturnError(currentState *schema.ResourceData
 	return err
 }
 
-func (cc *ConsistencyCheck) writeConsistencyErrorToFile(d *schema.ResourceData, consistencyError *retry.RetryError) {
+func (cc *ConsistencyCheck) writeConsistencyErrorToFile(currentState map[string]interface{}, consistencyError *retry.RetryError) {
 	const filePath = "consistency-errors.log.json"
 	errorJson := consistencyErrorJson{
 		ResourceType: cc.resourceType,
-		ResourceId:   d.Id(),
+		ResourceId:   currentState["ID"].(string),
 		ErrorMessage: consistencyError.Err.Error(),
 	}
 
-	if name, _ := d.Get("name").(string); name != "" {
+	if name, _ := currentState["name"].(string); name != "" {
 		errorJson.GCloudObjectName = name
 	}
 
