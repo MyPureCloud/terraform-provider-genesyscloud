@@ -212,7 +212,7 @@ func TestAccResourceTaskManagementWorkitem(t *testing.T) {
 			{
 				//Add user roles first
 				Config: gcloud.GenerateAuthDivisionHomeDataSource(homeDivRes) +
-					gcloud.GenerateBasicUserResource(userResId1, userEmail1, userName1) +
+					user.GenerateBasicUserResource(userResId1, userEmail1, userName1) +
 					authRole.GenerateAuthRoleResource(roleResId1, roleName1, "test role description",
 						authRole.GenerateRolePermPolicy("workitems", "*", strconv.Quote("*")),
 					) +
