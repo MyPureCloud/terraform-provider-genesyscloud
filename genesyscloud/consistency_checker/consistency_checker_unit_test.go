@@ -3,7 +3,6 @@ package consistency_checker
 import (
 	"context"
 	"fmt"
-	"strings"
 	"testing"
 	"time"
 
@@ -91,7 +90,7 @@ func TestUnitConsistencyCheckerBlockBasic(t *testing.T) {
 
 	// Check for expected error
 	expectedErr := "mismatch on attribute name:\nexpected value: Sample name\nactual value: new name"	
-	assert.Contains(t, err, expectedErr, fmt.Sprintf("Incorrect error:\nExpect Error: %s\nActual Error: %s", strings.ReplaceAll(expectedErr, "\n", " "), strings.ReplaceAll(err.Error(), "\n", " ")))
+	assert.Equal(t, err.Error(), expectedErr, fmt.Sprintf("Incorrect error:\nExpect Error: %s\nActual Error: %s", expectedErr, err.Error()))
 }
 
 // TestUnitConsistencyCheckerBlocksReorder will test the consistency checkers ability to handle
