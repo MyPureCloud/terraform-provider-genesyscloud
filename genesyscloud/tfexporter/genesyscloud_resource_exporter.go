@@ -149,6 +149,7 @@ func configureExporterFilters(d *schema.ResourceData, gre *GenesysCloudResourceE
 		// Resolves conflicts in filters so that exclusions take precedence over inclusions
 		gre.resourceAdvancedFiltersList.IncludeTypes = advancedFilterResolveConflicts(gre.resourceAdvancedFiltersList.IncludeTypes, gre.resourceAdvancedFiltersList.ExcludeTypes)
 		gre.resourceAdvancedFiltersList.IncludeNames = advancedFilterResolveConflicts(gre.resourceAdvancedFiltersList.IncludeNames, gre.resourceAdvancedFiltersList.ExcludeNames)
+
 		log.Printf("[afr] list: %v", &gre.resourceAdvancedFiltersList)
 
 	}
@@ -291,9 +292,12 @@ func (g *GenesysCloudResourceExporter) retrieveExporters() (diagErr diag.Diagnos
 		typeFilteredExports = ExcludeFilterByResourceType(typeFilteredExports, g.resourceAdvancedFiltersList.ExcludeTypes)
 	}
 
-	if len(g.resourceAdvancedFiltersList.IncludeTypes) > 0 {
-		// We need to include both the IncludeTypes AND IncludeNames resources types
-		includeFilter := append(g.resourceAdvancedFiltersList.IncludeTypes, g.resourceAdvancedFiltersList.IncludeNames...)
+	// We need to include the IncludeTypes AND IncludeNames AND IncludeIds resources types. We'll filter things down to the
+	// specific resources via name in a later function.
+	includeFilter := append(g.resourceAdvancedFiltersList.IncludeTypes, g.resourceAdvancedFiltersList.IncludeNames...)
+	includeFilter = append(includeFilter, g.resourceAdvancedFiltersList.IncludeIds...)
+
+	if len(includeFilter) > 0 {
 		typeFilteredExports = IncludeFilterByResourceType(typeFilteredExports, includeFilter)
 	}
 
@@ -652,8 +656,7 @@ func (g *GenesysCloudResourceExporter) rebuildExports() (diagErr diag.Diagnostic
 }
 
 func (g *GenesysCloudResourceExporter) exportDependentResources(filterList []string, resources resourceExporter.ResourceIDMetaMap) (diagErr diag.Diagnostics) {
-	g.reAssignFilters()
-	g.resourceAdvancedFiltersList.IncludeNames = filterList
+	g.resourceAdvancedFiltersList.IncludeIds = filterList
 	existingExporters := g.copyExporters()
 	existingResources := g.copyResources()
 	log.Printf("rebuild exports from exportDependentResources")
@@ -682,7 +685,6 @@ func (g *GenesysCloudResourceExporter) exportDependentResources(filterList []str
 
 func (g *GenesysCloudResourceExporter) buildAndExportDependentResources() (diagErr diag.Diagnostics) {
 	if g.addDependsOn {
-		g.reAssignFilters()
 		existingExporters := g.copyExporters()
 		existingResources := g.copyResources()
 
@@ -761,11 +763,6 @@ func (g *GenesysCloudResourceExporter) retainExporterList(resources resourceExpo
 	return nil
 }
 
-func (g *GenesysCloudResourceExporter) reAssignFilters() {
-	g.resourceTypeFilterFunc = IncludeFilterByResourceType
-	g.resourceNameFilterFunc = FilterResourceById
-}
-
 func (g *GenesysCloudResourceExporter) attainUniqueResourceList(resources resourceExporter.ResourceIDMetaMap) []resourceExporter.ResourceInfo {
 	uniqueResources := make([]resourceExporter.ResourceInfo, 0)
 	for _, resource := range g.resources {
@@ -781,7 +778,7 @@ func (g *GenesysCloudResourceExporter) exportAndResolveDependencyAttributes() (d
 	if g.addDependsOn {
 		g.resources = nil
 		exp := make(map[string]*resourceExporter.ResourceExporter, 0)
-		filterListById := make([]string, 0)
+		filterListById := g.resourceAdvancedFiltersList.IncludeIds
 
 		// build filter list with guid.
 		for refType, guidList := range g.buildSecondDeps {
@@ -795,7 +792,7 @@ func (g *GenesysCloudResourceExporter) exportAndResolveDependencyAttributes() (d
 		}
 
 		if len(filterListById) > 0 {
-			g.resourceNameFilterFunc = FilterResourceById
+			g.resourceAdvancedFiltersList.IncludeIds = filterListById
 			g.chainDependencies(make([]resourceExporter.ResourceInfo, 0), exp)
 		}
 	}
@@ -822,10 +819,10 @@ func (g *GenesysCloudResourceExporter) chainDependencies(
 			}
 		}
 	}
-	g.resourceAdvancedFiltersList.IncludeNames = filterListById
+	g.resourceAdvancedFiltersList.IncludeIds = filterListById
 	g.buildSecondDeps = nil
 
-	if len(g.resourceAdvancedFiltersList.IncludeNames) > 0 {
+	if len(g.resourceAdvancedFiltersList.IncludeIds) > 0 {
 		g.resources = nil
 		g.filteredExportersByType = nil
 		log.Printf("rebuild exporters list from chainDependencies")
@@ -911,14 +908,20 @@ func (g *GenesysCloudResourceExporter) buildSanitizedResourceMaps() diag.Diagnos
 
 			filteredResources := exporter.SanitizedResourceMap
 
-			// Apply Exclude by Names filter first, as exclude by takes precedence
-			if len(g.resourceAdvancedFiltersList.ExcludeNames) > 0 {
-				filteredResources = ExcludeFilterResourceByRegex(filteredResources, resourceName, g.resourceAdvancedFiltersList.ExcludeNames)
-			}
+			// Apply the Include by ID filter. This should only be called by dependency chain resolution and not by a user
+			if len(g.resourceAdvancedFiltersList.IncludeIds) > 0 {
+				filteredResources = FilterResourceById(filteredResources, resourceName, g.resourceAdvancedFiltersList.IncludeIds)
+			} else {
 
-			// Apply Include by Names filter second
-			if len(g.resourceAdvancedFiltersList.IncludeNames) > 0 {
-				filteredResources = IncludeFilterResourceByRegex(filteredResources, resourceName, g.resourceAdvancedFiltersList.IncludeNames)
+				// Otherwise, apply Exclude by Names filter first, as exclude by takes precedence
+				if len(g.resourceAdvancedFiltersList.ExcludeNames) > 0 {
+					filteredResources = ExcludeFilterResourceByRegex(filteredResources, resourceName, g.resourceAdvancedFiltersList.ExcludeNames)
+				}
+
+				// Apply Include by Names filter second
+				if len(g.resourceAdvancedFiltersList.IncludeNames) > 0 {
+					filteredResources = IncludeFilterResourceByRegex(filteredResources, resourceName, g.resourceAdvancedFiltersList.IncludeNames)
+				}
 			}
 
 			exporter.SanitizedResourceMap = filteredResources

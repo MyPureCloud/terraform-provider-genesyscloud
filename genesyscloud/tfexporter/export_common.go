@@ -39,6 +39,7 @@ type ExporterAdvancedFilters struct {
 	ExcludeTypes []string
 	IncludeNames []string
 	ExcludeNames []string
+	IncludeIds   []string // Only used internally for dependency resolution
 }
 
 const (
@@ -121,18 +122,18 @@ func FilterResourceByName(result resourceExporter.ResourceIDMetaMap, resourceNam
 // Returns ResourceIDMetaMap filtered by list of strings by ID
 func FilterResourceById(result resourceExporter.ResourceIDMetaMap, resourceName string, filter []string) resourceExporter.ResourceIDMetaMap {
 	if lists.SubStringInSlice(fmt.Sprintf("%v::", resourceName), filter) {
-		names := make([]string, 0)
+		resourceIds := make([]string, 0)
 		for _, f := range filter {
 			n := fmt.Sprintf("%v::", resourceName)
 
 			if strings.Contains(f, n) {
-				names = append(names, strings.Replace(f, n, "", 1))
+				resourceIds = append(resourceIds, strings.Replace(f, n, "", 1))
 			}
 		}
 		newResult := make(resourceExporter.ResourceIDMetaMap)
-		for _, name := range names {
+		for _, resourceId := range resourceIds {
 			for k, v := range result {
-				if k == name {
+				if k == resourceId {
 					newResult[k] = v
 				}
 			}
