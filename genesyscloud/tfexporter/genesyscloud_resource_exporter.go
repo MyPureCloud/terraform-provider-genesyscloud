@@ -149,9 +149,6 @@ func configureExporterFilters(d *schema.ResourceData, gre *GenesysCloudResourceE
 		// Resolves conflicts in filters so that exclusions take precedence over inclusions
 		gre.resourceAdvancedFiltersList.IncludeTypes = advancedFilterResolveConflicts(gre.resourceAdvancedFiltersList.IncludeTypes, gre.resourceAdvancedFiltersList.ExcludeTypes)
 		gre.resourceAdvancedFiltersList.IncludeNames = advancedFilterResolveConflicts(gre.resourceAdvancedFiltersList.IncludeNames, gre.resourceAdvancedFiltersList.ExcludeNames)
-
-		log.Printf("[afr] list: %v", &gre.resourceAdvancedFiltersList)
-
 	}
 }
 
@@ -201,14 +198,6 @@ func NewGenesysCloudResourceExporter(ctx context.Context, d *schema.ResourceData
 
 func computeDependsOn(d *schema.ResourceData) bool {
 	addDependsOn := d.Get("enable_dependency_resolution").(bool)
-	if addDependsOn {
-		if exportableResourceTypes, ok := d.GetOk("include_filter_resources"); ok {
-			filter := lists.InterfaceListToStrings(exportableResourceTypes.([]interface{}))
-			addDependsOn = len(filter) > 0
-		} else {
-			addDependsOn = false
-		}
-	}
 	return addDependsOn
 }
 
@@ -288,6 +277,7 @@ func (g *GenesysCloudResourceExporter) retrieveExporters() (diagErr diag.Diagnos
 	g.allExporters = &exports
 	typeFilteredExports := *g.allExporters
 
+	// Exclude resource types that have been configured to be excluded
 	if len(g.resourceAdvancedFiltersList.ExcludeTypes) > 0 {
 		typeFilteredExports = ExcludeFilterByResourceType(typeFilteredExports, g.resourceAdvancedFiltersList.ExcludeTypes)
 	}

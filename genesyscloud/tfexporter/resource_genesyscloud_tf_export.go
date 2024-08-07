@@ -3,9 +3,9 @@ package tfexporter
 import (
 	"context"
 	"fmt"
-	"log"
 	"os"
 	"path/filepath"
+	"regexp"
 	"terraform-provider-genesyscloud/genesyscloud/validators"
 
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
@@ -16,6 +16,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
 type fileMeta struct {
@@ -29,6 +30,7 @@ func SetRegistrar(l registrar.Registrar) {
 }
 
 func ResourceTfExport() *schema.Resource {
+	resourceDelimiterRegex := regexp.MustCompile(`.*::.*`)
 	return &schema.Resource{
 		Description: fmt.Sprintf(`
 		Genesys Cloud Resource to export Terraform config and (optionally) tfstate files to a local directory.
@@ -94,25 +96,29 @@ func ResourceTfExport() *schema.Resource {
 							Description: "Use an inclusion filter to include specific resource types. Exclusions override inclusions.",
 							Type:        schema.TypeSet,
 							Optional:    true,
-							Elem:        &schema.Schema{Type: schema.TypeString},
+							Elem:        &schema.Schema{Type: schema.TypeString, ValidateFunc: validation.StringDoesNotMatch(resourceDelimiterRegex, "should not include `::` in any strings in this attribute.")},
+							ForceNew:    true,
 						},
 						"exclude_by_type": {
 							Description: "Use an exclusion filter to exclude specific resource types. Exclusions override inclusions.",
 							Type:        schema.TypeSet,
 							Optional:    true,
-							Elem:        &schema.Schema{Type: schema.TypeString},
+							Elem:        &schema.Schema{Type: schema.TypeString, ValidateFunc: validation.StringDoesNotMatch(resourceDelimiterRegex, "should not include `::` in any strings in this attribute.")},
+							ForceNew:    true,
 						},
 						"include_by_name": {
 							Description: "A more granular inclusion filter to include specific resources by name using the format of 'resourceType::resourceNameRegexp'. Exclusions override inclusions.",
 							Type:        schema.TypeSet,
 							Optional:    true,
-							Elem:        &schema.Schema{Type: schema.TypeString},
+							Elem:        &schema.Schema{Type: schema.TypeString, ValidateFunc: validation.StringMatch(resourceDelimiterRegex, "must include `::` in any strings in this attribute.")},
+							ForceNew:    true,
 						},
 						"exclude_by_name": {
 							Description: "A more granular exclusion filter to exclude specific resources by name using the format of 'resourceType::resourceNameRegexp'. Exclusions override inclusions.",
 							Type:        schema.TypeSet,
 							Optional:    true,
-							Elem:        &schema.Schema{Type: schema.TypeString},
+							Elem:        &schema.Schema{Type: schema.TypeString, ValidateFunc: validation.StringMatch(resourceDelimiterRegex, "must include `::` in any strings in this attribute.")},
+							ForceNew:    true,
 						},
 					},
 				},
@@ -214,7 +220,6 @@ func createTfExport(ctx context.Context, d *schema.ResourceData, meta interface{
 	}
 
 	if _, ok := d.GetOk("advanced_filter_resources"); ok {
-		log.Print("advanced_filter_resources exporter")
 		gre, _ := NewGenesysCloudResourceExporter(ctx, d, meta, FilterAdvancedResources)
 		diagErr := gre.Export()
 		if diagErr != nil {
