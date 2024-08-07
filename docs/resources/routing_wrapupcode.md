@@ -32,6 +32,10 @@ resource "genesyscloud_routing_wrapupcode" "win" {
 
 - `name` (String) Wrapup Code name.
 
+### Optional
+
+- `division_id` (String) The division to which this routing wrapupcode will belong. If not set, * will be used to indicate all divisions.
+
 ### Read-Only
 
 - `id` (String) The ID of this resource.

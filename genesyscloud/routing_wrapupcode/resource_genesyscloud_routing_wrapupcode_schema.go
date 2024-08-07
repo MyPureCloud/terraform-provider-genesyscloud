@@ -45,7 +45,7 @@ func ResourceRoutingWrapupCode() *schema.Resource {
 				Required:    true,
 			},
 			"division_id": {
-				Description: "The division to which this routing wrapupcode will belong. If not set, the home division will be used.",
+				Description: "The division to which this routing wrapupcode will belong. If not set, * will be used to indicate all divisions.",
 				Type:        schema.TypeString,
 				Optional:    true,
 				Computed:    true,

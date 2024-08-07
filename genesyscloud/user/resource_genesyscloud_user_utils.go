@@ -74,27 +74,20 @@ func buildSdkAddresses(d *schema.ResourceData) (*[]platformclientv2.Contact, dia
 }
 
 func executeUpdateUser(ctx context.Context, d *schema.ResourceData, proxy *userProxy, updateUser platformclientv2.Updateuser) diag.Diagnostics {
-
-	diagErr := util.RetryWhen(util.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+	return util.RetryWhen(util.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		currentUser, proxyResponse, errGet := proxy.getUserById(ctx, d.Id(), nil, "")
-
 		if errGet != nil {
 			return proxyResponse, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to read user %s error: %s", d.Id(), errGet), proxyResponse)
 		}
-		updateUser.Version = currentUser.Version
-		_, proxyPatchResponse, patchErr := proxy.updateUser(ctx, d.Id(), &updateUser)
 
+		updateUser.Version = currentUser.Version
+
+		_, proxyPatchResponse, patchErr := proxy.updateUser(ctx, d.Id(), &updateUser)
 		if patchErr != nil {
-			return proxyPatchResponse, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Faild to update user %s | Error: %s.", *updateUser.Name, patchErr), proxyPatchResponse)
+			return proxyPatchResponse, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Faild to update user %s | Error: %s.", d.Id(), patchErr), proxyPatchResponse)
 		}
 		return proxyPatchResponse, nil
 	})
-
-	if diagErr != nil {
-		return diagErr
-	}
-
-	return nil
 }
 
 func executeAllUpdates(d *schema.ResourceData, proxy *userProxy, sdkConfig *platformclientv2.Configuration, updateObjectDivision bool) diag.Diagnostics {
