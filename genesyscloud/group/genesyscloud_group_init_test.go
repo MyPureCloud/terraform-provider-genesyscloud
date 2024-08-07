@@ -1,10 +1,11 @@
 package group
 
 import (
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"sync"
-	"terraform-provider-genesyscloud/genesyscloud"
+	"terraform-provider-genesyscloud/genesyscloud/user"
 	"testing"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 var providerDataSources map[string]*schema.Resource
@@ -23,7 +24,7 @@ func (r *registerTestInstance) registerTestResources() {
 	defer r.resourceMapMutex.Unlock()
 
 	providerResources[resourceName] = ResourceGroup()
-	providerResources["genesyscloud_user"] = genesyscloud.ResourceUser()
+	providerResources["genesyscloud_user"] = user.ResourceUser()
 
 }
 

@@ -1,7 +1,8 @@
-package genesyscloud
+package routing_wrapupcode
 
 import (
 	"fmt"
+	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
@@ -17,6 +18,8 @@ func TestAccResourceRoutingWrapupcode(t *testing.T) {
 		codeResource1 = "routing-wrapupcode1"
 		codeName1     = "Terraform Code-" + uuid.NewString()
 		codeName2     = "Terraform Code-" + uuid.NewString()
+		divResource   = "test-division"
+		divName       = "terraform-" + uuid.NewString()
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -24,28 +27,42 @@ func TestAccResourceRoutingWrapupcode(t *testing.T) {
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
-				// Create
 				Config: GenerateRoutingWrapupcodeResource(
 					codeResource1,
 					codeName1,
+					util.NullValue,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_routing_wrapupcode."+codeResource1, "name", codeName1),
+					resource.TestCheckResourceAttr(resourceName+"."+codeResource1, "name", codeName1),
+				),
+			},
+			{
+				// Create
+				Config: gcloud.GenerateAuthDivisionBasic(divResource, divName) + GenerateRoutingWrapupcodeResource(
+					codeResource1,
+					codeName1,
+					"genesyscloud_auth_division."+divResource+".id",
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(resourceName+"."+codeResource1, "name", codeName1),
+					resource.TestCheckResourceAttrPair(resourceName+"."+codeResource1, "division_id", "genesyscloud_auth_division."+divResource, "id"),
 				),
 			},
 			{
 				// Update with a new name
-				Config: GenerateRoutingWrapupcodeResource(
+				Config: gcloud.GenerateAuthDivisionBasic(divResource, divName) + GenerateRoutingWrapupcodeResource(
 					codeResource1,
 					codeName2,
+					"genesyscloud_auth_division."+divResource+".id",
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_routing_wrapupcode."+codeResource1, "name", codeName2),
+					resource.TestCheckResourceAttr(resourceName+"."+codeResource1, "name", codeName2),
+					resource.TestCheckResourceAttrPair(resourceName+"."+codeResource1, "division_id", "genesyscloud_auth_division."+divResource, "id"),
 				),
 			},
 			{
 				// Import/Read
-				ResourceName:      "genesyscloud_routing_wrapupcode." + codeResource1,
+				ResourceName:      resourceName + "." + codeResource1,
 				ImportState:       true,
 				ImportStateVerify: true,
 			},
@@ -57,7 +74,7 @@ func TestAccResourceRoutingWrapupcode(t *testing.T) {
 func testVerifyWrapupcodesDestroyed(state *terraform.State) error {
 	routingAPI := platformclientv2.NewRoutingApi()
 	for _, rs := range state.RootModule().Resources {
-		if rs.Type != "genesyscloud_routing_wrapupcode" {
+		if rs.Type != resourceName {
 			continue
 		}
 

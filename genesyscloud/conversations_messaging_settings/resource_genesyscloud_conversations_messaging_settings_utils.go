@@ -180,7 +180,7 @@ func flattenEventSettings(eventSettings *platformclientv2.Eventsetting) []interf
 	return eventSettingList
 }
 
-func generateConversationsMessagingSettingsResource(resourceID string, name string, nestedBlocks ...string) string {
+func GenerateConversationsMessagingSettingsResource(resourceID string, name string, nestedBlocks ...string) string {
 	return fmt.Sprintf(`resource "genesyscloud_conversations_messaging_settings" "%s" {
 		name = "%s"
 		%s
@@ -188,7 +188,7 @@ func generateConversationsMessagingSettingsResource(resourceID string, name stri
 	`, resourceID, name, strings.Join(nestedBlocks, "\n"))
 }
 
-func generateTypingOnSetting(inbound, outbound string) string {
+func GenerateTypingOnSetting(inbound, outbound string) string {
 	return fmt.Sprintf(`
 	event {
 		typing {
@@ -200,7 +200,7 @@ func generateTypingOnSetting(inbound, outbound string) string {
 	}`, inbound, outbound)
 }
 
-func generateContentStoryBlock(nestedBlocks ...string) string {
+func GenerateContentStoryBlock(nestedBlocks ...string) string {
 	return fmt.Sprintf(`
 	content {
 		story {
@@ -209,7 +209,7 @@ func generateContentStoryBlock(nestedBlocks ...string) string {
 	}`, strings.Join(nestedBlocks, "\n"))
 }
 
-func generateMentionInboundOnlySetting(value string) string {
+func GenerateMentionInboundOnlySetting(value string) string {
 	return fmt.Sprintf(`
 		mention {
 			inbound = "%s"
@@ -217,7 +217,7 @@ func generateMentionInboundOnlySetting(value string) string {
 	`, value)
 }
 
-func generateReplyInboundOnlySetting(value string) string {
+func GenerateReplyInboundOnlySetting(value string) string {
 	return fmt.Sprintf(`
 	reply {
 		inbound = "%s"

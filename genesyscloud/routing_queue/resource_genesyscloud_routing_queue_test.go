@@ -6,15 +6,17 @@ import (
 	"strconv"
 	"strings"
 	"sync"
-	"terraform-provider-genesyscloud/genesyscloud"
+	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	"terraform-provider-genesyscloud/genesyscloud/architect_flow"
 	"terraform-provider-genesyscloud/genesyscloud/architect_user_prompt"
 	"terraform-provider-genesyscloud/genesyscloud/group"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
+	routingSkill "terraform-provider-genesyscloud/genesyscloud/routing_skill"
 	routingSkillGroup "terraform-provider-genesyscloud/genesyscloud/routing_skill_group"
+	routingWrapupcode "terraform-provider-genesyscloud/genesyscloud/routing_wrapupcode"
+	"terraform-provider-genesyscloud/genesyscloud/user"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	featureToggles "terraform-provider-genesyscloud/genesyscloud/util/feature_toggles"
-	routingSkill "terraform-provider-genesyscloud/genesyscloud/routing_skill"
 	"terraform-provider-genesyscloud/genesyscloud/util/testrunner"
 	"testing"
 	"time"
@@ -89,8 +91,9 @@ func TestAccResourceRoutingQueueBasic(t *testing.T) {
 					util.NullValue,               // auto_answer_only true
 					util.NullValue,               // No calling party name
 					util.NullValue,               // No calling party number
-					util.NullValue,               // enable_manual_assignment false
+					util.NullValue,               // enable_audio_monitoring false
 					util.FalseValue,              // suppress_in_queue_call_recording false
+					util.NullValue,               // enable_manual_assignment false
 					util.NullValue,               // enable_transcription false
 					strconv.Quote(scoringMethod), // scoring Method
 					GenerateAgentOwnedRouting("agent_owned_routing", util.TrueValue, callbackHours, callbackHours),
@@ -110,6 +113,7 @@ func TestAccResourceRoutingQueueBasic(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "skill_evaluation_method", skillEvalAll),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "auto_answer_only", util.TrueValue),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "suppress_in_queue_call_recording", util.FalseValue),
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "enable_audio_monitoring", util.FalseValue),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "enable_manual_assignment", util.FalseValue),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "enable_transcription", util.FalseValue),
 					provider.TestDefaultHomeDivision("genesyscloud_routing_queue."+queueResource1),
@@ -145,6 +149,7 @@ func TestAccResourceRoutingQueueBasic(t *testing.T) {
 					strconv.Quote(callingPartyName),
 					strconv.Quote(callingPartyNumber),
 					util.TrueValue, // suppress_in_queue_call_recording true
+					util.TrueValue, // enable_audio_monitoring true
 					util.TrueValue, // enable_manual_assignment true
 					util.TrueValue, // enable_transcription true
 					strconv.Quote(scoringMethod),
@@ -171,6 +176,7 @@ func TestAccResourceRoutingQueueBasic(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "scoring_method", scoringMethod),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "suppress_in_queue_call_recording", util.TrueValue),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "enable_manual_assignment", util.TrueValue),
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "enable_audio_monitoring", util.TrueValue),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "enable_transcription", util.TrueValue),
 					provider.TestDefaultHomeDivision("genesyscloud_routing_queue."+queueResource1),
 					validateMediaSettings(queueResource1, "media_settings_call", alertTimeout2, util.FalseValue, slPercent2, slDuration2),
@@ -267,6 +273,7 @@ func TestAccResourceRoutingQueueConditionalRouting(t *testing.T) {
 					util.NullValue,  // No calling party number
 					util.NullValue,  // enable_transcription false
 					util.FalseValue, // suppress_in_queue_call_recording false
+					util.NullValue,  // enable_audio_monitoring false
 					util.NullValue,  // enable_manual_assignment false
 					strconv.Quote("TimestampAndPriority"),
 					GenerateMediaSettings(
@@ -319,6 +326,7 @@ func TestAccResourceRoutingQueueConditionalRouting(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "skill_evaluation_method", skillEvalAll),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "auto_answer_only", util.TrueValue),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "suppress_in_queue_call_recording", util.FalseValue),
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "enable_audio_monitoring", util.FalseValue),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "enable_manual_assignment", util.FalseValue),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "enable_transcription", util.FalseValue),
 
@@ -364,6 +372,7 @@ func TestAccResourceRoutingQueueConditionalRouting(t *testing.T) {
 					util.NullValue,  // No calling party number
 					util.NullValue,  // enable_transcription false
 					util.FalseValue, // suppress_in_queue_call_recording false
+					util.NullValue,  // enable_audio_monitoring false
 					util.NullValue,  // enable_manual_assignment false
 					strconv.Quote("TimestampAndPriority"),
 					GenerateMediaSettings("media_settings_call", alertTimeout1, util.FalseValue, slPercent1, slDuration1),
@@ -404,6 +413,7 @@ func TestAccResourceRoutingQueueConditionalRouting(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "skill_evaluation_method", skillEvalAll),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "auto_answer_only", util.TrueValue),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "suppress_in_queue_call_recording", util.FalseValue),
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "enable_audio_monitoring", util.FalseValue),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "enable_manual_assignment", util.FalseValue),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "enable_transcription", util.FalseValue),
 
@@ -453,6 +463,7 @@ func TestAccResourceRoutingQueueConditionalRouting(t *testing.T) {
 					util.NullValue,  // No calling party number
 					util.NullValue,  // enable_transcription false
 					util.FalseValue, // suppress_in_queue_call_recording false
+					util.NullValue,  // enable_audio_monitoring false
 					util.NullValue,  // enable_manual_assignment false
 					strconv.Quote("TimestampAndPriority"),
 					GenerateMediaSettings("media_settings_call", alertTimeout1, util.FalseValue, slPercent1, slDuration1),
@@ -538,7 +549,9 @@ func TestAccResourceRoutingQueueParToCGR(t *testing.T) {
 					util.NullValue,  // No calling party number
 					util.NullValue,  // enable_transcription false
 					util.FalseValue, // suppress_in_queue_call_recording false
-					util.NullValue,  // enable_manual_assignment false
+					util.NullValue,  // enable_audio_monitoring false
+
+					util.NullValue, // enable_manual_assignment false
 					strconv.Quote(scoringMethod),
 					GenerateAgentOwnedRouting("agent_owned_routing", util.TrueValue, callbackHours, callbackHours),
 					GenerateMediaSettings("media_settings_call", alertTimeout1, util.FalseValue, slPercent1, slDuration1),
@@ -556,6 +569,7 @@ func TestAccResourceRoutingQueueParToCGR(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "acw_timeout_ms", "200000"),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "skill_evaluation_method", skillEvalAll),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "auto_answer_only", util.TrueValue),
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "enable_audio_monitoring", util.FalseValue),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "enable_manual_assignment", util.FalseValue),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "suppress_in_queue_call_recording", util.FalseValue),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "enable_transcription", util.FalseValue),
@@ -834,7 +848,7 @@ func TestAccResourceRoutingQueueSkillgroupMembers(t *testing.T) {
 					skillResourceId,
 					skillName,
 				) + skillGroupConfig + user2Config +
-					genesyscloud.GenerateBasicUserResource(
+					user.GenerateBasicUserResource(
 						user1ResourceId,
 						user1Email,
 						user1Name,
@@ -879,11 +893,11 @@ func TestAccResourceRoutingQueueMembers(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				// Create
-				Config: genesyscloud.GenerateBasicUserResource(
+				Config: user.GenerateBasicUserResource(
 					queueMemberResource1,
 					queueMemberEmail1,
 					queueMemberName1,
-				) + genesyscloud.GenerateBasicUserResource(
+				) + user.GenerateBasicUserResource(
 					queueMemberResource2,
 					queueMemberEmail2,
 					queueMemberName2,
@@ -902,11 +916,11 @@ func TestAccResourceRoutingQueueMembers(t *testing.T) {
 					time.Sleep(30 * time.Second)
 				},
 				// Update with another queue member and modify rings
-				Config: genesyscloud.GenerateBasicUserResource(
+				Config: user.GenerateBasicUserResource(
 					queueMemberResource1,
 					queueMemberEmail1,
 					queueMemberName1,
-				) + genesyscloud.GenerateBasicUserResource(
+				) + user.GenerateBasicUserResource(
 					queueMemberResource2,
 					queueMemberEmail2,
 					queueMemberName2,
@@ -926,7 +940,7 @@ func TestAccResourceRoutingQueueMembers(t *testing.T) {
 			},
 			{
 				// Remove a queue member
-				Config: genesyscloud.GenerateBasicUserResource(
+				Config: user.GenerateBasicUserResource(
 					queueMemberResource2,
 					queueMemberEmail2,
 					queueMemberName2,
@@ -978,6 +992,8 @@ func TestAccResourceRoutingQueueWrapupCodes(t *testing.T) {
 		wrapupCodeName1     = "Terraform Test Code1-" + uuid.NewString()
 		wrapupCodeName2     = "Terraform Test Code2-" + uuid.NewString()
 		wrapupCodeName3     = "Terraform Test Code3-" + uuid.NewString()
+		divResource         = "test-division"
+		divName             = "terraform-" + uuid.NewString()
 	)
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
@@ -988,14 +1004,17 @@ func TestAccResourceRoutingQueueWrapupCodes(t *testing.T) {
 				Config: GenerateRoutingQueueResourceBasic(
 					queueResource,
 					queueName,
+					"division_id = genesyscloud_auth_division."+divResource+".id",
 					GenerateQueueWrapupCodes("genesyscloud_routing_wrapupcode."+wrapupCodeResource1+".id",
 						"genesyscloud_routing_wrapupcode."+wrapupCodeResource2+".id"),
-				) + genesyscloud.GenerateRoutingWrapupcodeResource(
+				) + gcloud.GenerateAuthDivisionBasic(divResource, divName) + routingWrapupcode.GenerateRoutingWrapupcodeResource(
 					wrapupCodeResource1,
 					wrapupCodeName1,
-				) + genesyscloud.GenerateRoutingWrapupcodeResource(
+					"genesyscloud_auth_division."+divResource+".id",
+				) + routingWrapupcode.GenerateRoutingWrapupcodeResource(
 					wrapupCodeResource2,
 					wrapupCodeName2,
+					"genesyscloud_auth_division."+divResource+".id",
 				),
 				Check: resource.ComposeTestCheckFunc(
 					validateQueueWrapupCode("genesyscloud_routing_queue."+queueResource, "genesyscloud_routing_wrapupcode."+wrapupCodeResource1),
@@ -1007,19 +1026,23 @@ func TestAccResourceRoutingQueueWrapupCodes(t *testing.T) {
 				Config: GenerateRoutingQueueResourceBasic(
 					queueResource,
 					queueName,
+					"division_id = genesyscloud_auth_division."+divResource+".id",
 					GenerateQueueWrapupCodes(
 						"genesyscloud_routing_wrapupcode."+wrapupCodeResource1+".id",
 						"genesyscloud_routing_wrapupcode."+wrapupCodeResource2+".id",
 						"genesyscloud_routing_wrapupcode."+wrapupCodeResource3+".id"),
-				) + genesyscloud.GenerateRoutingWrapupcodeResource(
+				) + gcloud.GenerateAuthDivisionBasic(divResource, divName) + routingWrapupcode.GenerateRoutingWrapupcodeResource(
 					wrapupCodeResource1,
 					wrapupCodeName1,
-				) + genesyscloud.GenerateRoutingWrapupcodeResource(
+					"genesyscloud_auth_division."+divResource+".id",
+				) + routingWrapupcode.GenerateRoutingWrapupcodeResource(
 					wrapupCodeResource2,
 					wrapupCodeName2,
-				) + genesyscloud.GenerateRoutingWrapupcodeResource(
+					"genesyscloud_auth_division."+divResource+".id",
+				) + routingWrapupcode.GenerateRoutingWrapupcodeResource(
 					wrapupCodeResource3,
 					wrapupCodeName3,
+					"genesyscloud_auth_division."+divResource+".id",
 				),
 				Check: resource.ComposeTestCheckFunc(
 					validateQueueWrapupCode("genesyscloud_routing_queue."+queueResource, "genesyscloud_routing_wrapupcode."+wrapupCodeResource1),
@@ -1031,10 +1054,12 @@ func TestAccResourceRoutingQueueWrapupCodes(t *testing.T) {
 				Config: GenerateRoutingQueueResourceBasic(
 					queueResource,
 					queueName,
+					"division_id = genesyscloud_auth_division."+divResource+".id",
 					GenerateQueueWrapupCodes("genesyscloud_routing_wrapupcode."+wrapupCodeResource2+".id"),
-				) + genesyscloud.GenerateRoutingWrapupcodeResource(
+				) + gcloud.GenerateAuthDivisionBasic(divResource, divName) + routingWrapupcode.GenerateRoutingWrapupcodeResource(
 					wrapupCodeResource2,
 					wrapupCodeName2,
+					"genesyscloud_auth_division."+divResource+".id",
 				),
 				Check: resource.ComposeTestCheckFunc(
 					validateQueueWrapupCode("genesyscloud_routing_queue."+queueResource, "genesyscloud_routing_wrapupcode."+wrapupCodeResource2),
@@ -1045,8 +1070,9 @@ func TestAccResourceRoutingQueueWrapupCodes(t *testing.T) {
 				Config: GenerateRoutingQueueResourceBasic(
 					queueResource,
 					queueName,
+					"division_id = genesyscloud_auth_division."+divResource+".id",
 					GenerateQueueWrapupCodes(),
-				),
+				) + gcloud.GenerateAuthDivisionBasic(divResource, divName),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckNoResourceAttr("genesyscloud_routing_queue."+queueResource, "wrapup_codes.%"),
 				),
