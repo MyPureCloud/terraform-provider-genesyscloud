@@ -82,6 +82,7 @@ func createQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		OutboundMessagingAddresses:   buildSdkQueueMessagingAddresses(d),
 		EnableTranscription:          platformclientv2.Bool(d.Get("enable_transcription").(bool)),
 		SuppressInQueueCallRecording: platformclientv2.Bool(d.Get("suppress_in_queue_call_recording").(bool)),
+		EnableAudioMonitoring:        platformclientv2.Bool(d.Get("enable_audio_monitoring").(bool)),
 		EnableManualAssignment:       platformclientv2.Bool(d.Get("enable_manual_assignment").(bool)),
 		DirectRouting:                buildSdkDirectRouting(d),
 		MemberGroups:                 &memberGroups,
@@ -197,6 +198,7 @@ func readQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 		resourcedata.SetNillableValue(d, "auto_answer_only", currentQueue.AutoAnswerOnly)
 		resourcedata.SetNillableValue(d, "enable_transcription", currentQueue.EnableTranscription)
 		resourcedata.SetNillableValue(d, "suppress_in_queue_call_recording", currentQueue.SuppressInQueueCallRecording)
+		resourcedata.SetNillableValue(d, "enable_audio_monitoring", currentQueue.EnableAudioMonitoring)
 		resourcedata.SetNillableValue(d, "enable_manual_assignment", currentQueue.EnableManualAssignment)
 		resourcedata.SetNillableValue(d, "calling_party_name", currentQueue.CallingPartyName)
 		resourcedata.SetNillableValue(d, "calling_party_number", currentQueue.CallingPartyNumber)
@@ -289,6 +291,7 @@ func updateQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		OutboundMessagingAddresses:   buildSdkQueueMessagingAddresses(d),
 		EnableTranscription:          platformclientv2.Bool(d.Get("enable_transcription").(bool)),
 		SuppressInQueueCallRecording: platformclientv2.Bool(d.Get("suppress_in_queue_call_recording").(bool)),
+		EnableAudioMonitoring:        platformclientv2.Bool(d.Get("enable_audio_monitoring").(bool)),
 		EnableManualAssignment:       platformclientv2.Bool(d.Get("enable_manual_assignment").(bool)),
 		DirectRouting:                buildSdkDirectRouting(d),
 		MemberGroups:                 &memberGroups,

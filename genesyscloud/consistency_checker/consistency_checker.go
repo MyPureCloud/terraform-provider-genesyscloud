@@ -57,7 +57,7 @@ type consistencyErrorJson struct {
 func (e *consistencyError) Error() string {
 	return fmt.Sprintf(`mismatch on attribute %s:
 expected value: %v
-actual value:   %v`, e.key, e.oldValue, e.newValue)
+actual value: %v`, e.key, e.oldValue, e.newValue)
 }
 
 func NewConsistencyCheck(ctx context.Context, d *schema.ResourceData, meta interface{}, r *schema.Resource, maxStateChecks int, resourceType string) *ConsistencyCheck {
