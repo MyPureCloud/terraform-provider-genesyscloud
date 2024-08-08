@@ -526,7 +526,7 @@ resource "genesyscloud_routing_skill_group" "%s" {
 			},
 		},
 		CheckDestroy: func(state *terraform.State) error {
-			time.Sleep(45 * time.Second)
+			time.Sleep(60 * time.Second)
 			return testVerifySkillGroupAndUsersDestroyed(state)
 		},
 	})
