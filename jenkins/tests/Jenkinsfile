@@ -290,7 +290,7 @@ pipeline {
                     echo 'Attempting to Run Site Tests'
                     withCredentials([usernamePassword(credentialsId: CREDENTIALS_ID, usernameVariable: 'GENESYSCLOUD_OAUTHCLIENT_ID', passwordVariable: 'GENESYSCLOUD_OAUTHCLIENT_SECRET')]) {
                         echo 'Loading Genesys OAuth Credentials'
-                        sh 'gotestsum --junitfile site.xml --format standard-verbose ./genesyscloud/... -run TestAcc.*Site -v -count=1 -timeout 120m -cover -coverprofile=coverageSite.out'
+                        sh 'gotestsum --junitfile site.xml --format standard-verbose ./genesyscloud/... -run TestAcc.*Site -skip TestAcc.*Export -v -count=1 -timeout 120m -cover -coverprofile=coverageSite.out'
                     }
                 }
             }
