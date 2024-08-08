@@ -252,10 +252,8 @@ func TestUnitTfExportAllowEmptyArray(t *testing.T) {
 
 	// Test Resource Exporter
 	testResourceExporter := GenesysCloudResourceExporter{
-		filterHandler:          FilterIncludeResources,
-		resourceTypeFilterFunc: IncludeFilterByResourceType,
-		resourceNameFilterFunc: IncludeFilterResourceByRegex,
-		exportAsHCL:            true,
+		filterHandler: FilterIncludeResources,
+		exportAsHCL:   true,
 		filteredExportersByType: &map[string]*resourceExporter.ResourceExporter{
 			testResourceType: testExporter,
 		},

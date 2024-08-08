@@ -64,35 +64,33 @@ type unresolvableAttributeInfo struct {
 }
 
 type GenesysCloudResourceExporter struct {
-	filterHandler               ExporterFilterHandler
-	resourceTypeFilterFunc      ExporterResourceTypeFilter
-	resourceNameFilterFunc      ExporterResourceNameFilter
-	resourceAdvancedFiltersList ExporterAdvancedFilters
-	exportAsHCL                 bool
-	splitFilesByResource        bool
-	logPermissionErrors         bool
-	addDependsOn                bool
-	replaceWithDatasource       []string
-	includeStateFile            bool
-	version                     string
-	provider                    *schema.Provider
-	exportDirPath               string
-	allExporters                *map[string]*resourceExporter.ResourceExporter
-	filteredExportersByType     *map[string]*resourceExporter.ResourceExporter
-	resources                   []resourceExporter.ResourceInfo
-	resourceTypesHCLBlocks      map[string]resourceHCLBlock
-	resourceTypesMaps           map[string]resourceJSONMaps
-	dataSourceTypesMaps         map[string]resourceJSONMaps
-	unresolvedAttrs             []unresolvableAttributeInfo
-	d                           *schema.ResourceData
-	ctx                         context.Context
-	meta                        interface{}
-	dependsList                 map[string][]string
-	buildSecondDeps             map[string][]string
-	exMutex                     sync.RWMutex
-	cyclicDependsList           []string
-	ignoreCyclicDeps            bool
-	flowResourcesList           []string
+	filterHandler           ExporterFilterHandler
+	resourceFiltersLists    ExporterFilters
+	exportAsHCL             bool
+	splitFilesByResource    bool
+	logPermissionErrors     bool
+	addDependsOn            bool
+	replaceWithDatasource   []string
+	includeStateFile        bool
+	version                 string
+	provider                *schema.Provider
+	exportDirPath           string
+	allExporters            *map[string]*resourceExporter.ResourceExporter
+	filteredExportersByType *map[string]*resourceExporter.ResourceExporter
+	resources               []resourceExporter.ResourceInfo
+	resourceTypesHCLBlocks  map[string]resourceHCLBlock
+	resourceTypesMaps       map[string]resourceJSONMaps
+	dataSourceTypesMaps     map[string]resourceJSONMaps
+	unresolvedAttrs         []unresolvableAttributeInfo
+	d                       *schema.ResourceData
+	ctx                     context.Context
+	meta                    interface{}
+	dependsList             map[string][]string
+	buildSecondDeps         map[string][]string
+	exMutex                 sync.RWMutex
+	cyclicDependsList       []string
+	ignoreCyclicDeps        bool
+	flowResourcesList       []string
 }
 
 func configureExporterFilters(d *schema.ResourceData, gre *GenesysCloudResourceExporter, filterType ExporterFilterHandler) {
@@ -102,8 +100,8 @@ func configureExporterFilters(d *schema.ResourceData, gre *GenesysCloudResourceE
 		if resourceTypes, ok := d.GetOk("resource_types"); ok {
 			filter = lists.InterfaceListToStrings(resourceTypes.([]interface{}))
 			includeFilterTypes, includeFilterNames := GroupFilterResourcesByTypeOrName(filter)
-			gre.resourceAdvancedFiltersList.IncludeTypes = includeFilterTypes
-			gre.resourceAdvancedFiltersList.IncludeNames = includeFilterNames
+			gre.resourceFiltersLists.IncludeTypes = includeFilterTypes
+			gre.resourceFiltersLists.IncludeNames = includeFilterNames
 		}
 
 	case FilterIncludeResources:
@@ -112,8 +110,8 @@ func configureExporterFilters(d *schema.ResourceData, gre *GenesysCloudResourceE
 			filter = lists.InterfaceListToStrings(resourceTypes.([]interface{}))
 
 			includeFilterTypes, includeFilterNames := GroupFilterResourcesByTypeOrName(filter)
-			gre.resourceAdvancedFiltersList.IncludeTypes = includeFilterTypes
-			gre.resourceAdvancedFiltersList.IncludeNames = includeFilterNames
+			gre.resourceFiltersLists.IncludeTypes = includeFilterTypes
+			gre.resourceFiltersLists.IncludeNames = includeFilterNames
 		}
 
 	case FilterExcludeResources:
@@ -122,8 +120,8 @@ func configureExporterFilters(d *schema.ResourceData, gre *GenesysCloudResourceE
 			filter = lists.InterfaceListToStrings(resourceTypes.([]interface{}))
 
 			excludeFilterTypes, excludeFilterNames := GroupFilterResourcesByTypeOrName(filter)
-			gre.resourceAdvancedFiltersList.ExcludeTypes = excludeFilterTypes
-			gre.resourceAdvancedFiltersList.ExcludeNames = excludeFilterNames
+			gre.resourceFiltersLists.ExcludeTypes = excludeFilterTypes
+			gre.resourceFiltersLists.ExcludeNames = excludeFilterNames
 		}
 
 	case FilterAdvancedResources:
@@ -132,23 +130,23 @@ func configureExporterFilters(d *schema.ResourceData, gre *GenesysCloudResourceE
 
 		includeByType := resourceTypesMap["include_by_type"]
 		includeByTypeSet := lists.SetToStringList(includeByType.(*schema.Set))
-		gre.resourceAdvancedFiltersList.IncludeTypes = *includeByTypeSet
+		gre.resourceFiltersLists.IncludeTypes = *includeByTypeSet
 
 		includeByName := resourceTypesMap["include_by_name"]
 		includeByNameSet := lists.SetToStringList(includeByName.(*schema.Set))
-		gre.resourceAdvancedFiltersList.IncludeNames = *includeByNameSet
+		gre.resourceFiltersLists.IncludeNames = *includeByNameSet
 
 		excludeByType := resourceTypesMap["exclude_by_type"]
 		excludeByTypeSet := lists.SetToStringList(excludeByType.(*schema.Set))
-		gre.resourceAdvancedFiltersList.ExcludeTypes = *excludeByTypeSet
+		gre.resourceFiltersLists.ExcludeTypes = *excludeByTypeSet
 
 		excludeByName := resourceTypesMap["exclude_by_name"]
 		excludeByNameSet := lists.SetToStringList(excludeByName.(*schema.Set))
-		gre.resourceAdvancedFiltersList.ExcludeNames = *excludeByNameSet
+		gre.resourceFiltersLists.ExcludeNames = *excludeByNameSet
 
 		// Resolves conflicts in filters so that exclusions take precedence over inclusions
-		gre.resourceAdvancedFiltersList.IncludeTypes = advancedFilterResolveConflicts(gre.resourceAdvancedFiltersList.IncludeTypes, gre.resourceAdvancedFiltersList.ExcludeTypes)
-		gre.resourceAdvancedFiltersList.IncludeNames = advancedFilterResolveConflicts(gre.resourceAdvancedFiltersList.IncludeNames, gre.resourceAdvancedFiltersList.ExcludeNames)
+		gre.resourceFiltersLists.IncludeTypes = advancedFilterResolveConflicts(gre.resourceFiltersLists.IncludeTypes, gre.resourceFiltersLists.ExcludeTypes)
+		gre.resourceFiltersLists.IncludeNames = advancedFilterResolveConflicts(gre.resourceFiltersLists.IncludeNames, gre.resourceFiltersLists.ExcludeNames)
 	}
 }
 
@@ -304,14 +302,14 @@ func (g *GenesysCloudResourceExporter) retrieveExporters() (diagErr diag.Diagnos
 	typeFilteredExports := *g.allExporters
 
 	// Exclude resource types that have been configured to be excluded
-	if len(g.resourceAdvancedFiltersList.ExcludeTypes) > 0 {
-		typeFilteredExports = ExcludeFilterByResourceType(typeFilteredExports, g.resourceAdvancedFiltersList.ExcludeTypes)
+	if len(g.resourceFiltersLists.ExcludeTypes) > 0 {
+		typeFilteredExports = ExcludeFilterByResourceType(typeFilteredExports, g.resourceFiltersLists.ExcludeTypes)
 	}
 
 	// We need to include the IncludeTypes AND IncludeNames AND IncludeIds resources types. We'll filter things down to the
 	// specific resources via name in a later function.
-	includeFilter := append(g.resourceAdvancedFiltersList.IncludeTypes, g.resourceAdvancedFiltersList.IncludeNames...)
-	includeFilter = append(includeFilter, g.resourceAdvancedFiltersList.IncludeIds...)
+	includeFilter := append(g.resourceFiltersLists.IncludeTypes, g.resourceFiltersLists.IncludeNames...)
+	includeFilter = append(includeFilter, g.resourceFiltersLists.IncludeIds...)
 
 	if len(includeFilter) > 0 {
 		typeFilteredExports = IncludeFilterByResourceType(typeFilteredExports, includeFilter)
@@ -672,7 +670,7 @@ func (g *GenesysCloudResourceExporter) rebuildExports() (diagErr diag.Diagnostic
 }
 
 func (g *GenesysCloudResourceExporter) exportDependentResources(filterList []string, resources resourceExporter.ResourceIDMetaMap) (diagErr diag.Diagnostics) {
-	g.resourceAdvancedFiltersList.IncludeIds = filterList
+	g.resourceFiltersLists.IncludeIds = filterList
 	existingExporters := g.copyExporters()
 	existingResources := g.copyResources()
 	log.Printf("rebuild exports from exportDependentResources")
@@ -794,7 +792,7 @@ func (g *GenesysCloudResourceExporter) exportAndResolveDependencyAttributes() (d
 	if g.addDependsOn {
 		g.resources = nil
 		exp := make(map[string]*resourceExporter.ResourceExporter, 0)
-		filterListById := g.resourceAdvancedFiltersList.IncludeIds
+		filterListById := g.resourceFiltersLists.IncludeIds
 
 		// build filter list with guid.
 		for refType, guidList := range g.buildSecondDeps {
@@ -808,7 +806,7 @@ func (g *GenesysCloudResourceExporter) exportAndResolveDependencyAttributes() (d
 		}
 
 		if len(filterListById) > 0 {
-			g.resourceAdvancedFiltersList.IncludeIds = filterListById
+			g.resourceFiltersLists.IncludeIds = filterListById
 			g.chainDependencies(make([]resourceExporter.ResourceInfo, 0), exp)
 		}
 	}
@@ -835,10 +833,10 @@ func (g *GenesysCloudResourceExporter) chainDependencies(
 			}
 		}
 	}
-	g.resourceAdvancedFiltersList.IncludeIds = filterListById
+	g.resourceFiltersLists.IncludeIds = filterListById
 	g.buildSecondDeps = nil
 
-	if len(g.resourceAdvancedFiltersList.IncludeIds) > 0 {
+	if len(g.resourceFiltersLists.IncludeIds) > 0 {
 		g.resources = nil
 		g.filteredExportersByType = nil
 		log.Printf("rebuild exporters list from chainDependencies")
@@ -925,18 +923,18 @@ func (g *GenesysCloudResourceExporter) buildSanitizedResourceMaps() diag.Diagnos
 			filteredResources := exporter.SanitizedResourceMap
 
 			// Apply the Include by ID filter. This should only be called by dependency chain resolution and not by a user
-			if len(g.resourceAdvancedFiltersList.IncludeIds) > 0 {
-				filteredResources = FilterResourceById(filteredResources, resourceName, g.resourceAdvancedFiltersList.IncludeIds)
+			if len(g.resourceFiltersLists.IncludeIds) > 0 {
+				filteredResources = FilterResourceById(filteredResources, resourceName, g.resourceFiltersLists.IncludeIds)
 			} else {
 
 				// Otherwise, apply Exclude by Names filter first, as exclude by takes precedence
-				if len(g.resourceAdvancedFiltersList.ExcludeNames) > 0 {
-					filteredResources = ExcludeFilterResourceByRegex(filteredResources, resourceName, g.resourceAdvancedFiltersList.ExcludeNames)
+				if len(g.resourceFiltersLists.ExcludeNames) > 0 {
+					filteredResources = ExcludeFilterResourceByRegex(filteredResources, resourceName, g.resourceFiltersLists.ExcludeNames)
 				}
 
 				// Apply Include by Names filter second
-				if len(g.resourceAdvancedFiltersList.IncludeNames) > 0 {
-					filteredResources = IncludeFilterResourceByRegex(filteredResources, resourceName, g.resourceAdvancedFiltersList.IncludeNames)
+				if len(g.resourceFiltersLists.IncludeNames) > 0 {
+					filteredResources = IncludeFilterResourceByRegex(filteredResources, resourceName, g.resourceFiltersLists.IncludeNames)
 				}
 			}
 

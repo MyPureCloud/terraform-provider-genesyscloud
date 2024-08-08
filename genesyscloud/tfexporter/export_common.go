@@ -30,11 +30,9 @@ const (
 // Common Exporter interface to abstract away whether we are using HCL or JSON as our exporter
 type Exporter func() diag.Diagnostics
 type ExporterFilterHandler int64
-type ExporterResourceTypeFilter func(exports map[string]*resourceExporter.ResourceExporter, filter []string) map[string]*resourceExporter.ResourceExporter
-type ExporterResourceNameFilter func(result resourceExporter.ResourceIDMetaMap, name string, filter []string) resourceExporter.ResourceIDMetaMap
 
-// ExporterAdvancedFilters allows defining a set of filters to export
-type ExporterAdvancedFilters struct {
+// ExporterFilters allows defining a set of filters to export
+type ExporterFilters struct {
 	IncludeTypes []string
 	ExcludeTypes []string
 	IncludeNames []string
