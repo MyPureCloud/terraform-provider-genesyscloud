@@ -13,18 +13,18 @@ import (
 func TestAccDataSourceSmsAddress(t *testing.T) {
 
 	var (
-		addressRes   = "addressRes"
-		addressData  = "addressData"
-		name         = "name-1"
-		street       = "street-1"
-		city         = "city-1"
-		region       = "region-1"
-		postal_code  = "postal-code-1"
-		country_code = "country-code-1"
+		addressRes  = "addressRes"
+		addressData = "addressData"
+		name        = "name-1"
+		street      = "street-1"
+		city        = "city-1"
+		region      = "region-1"
+		postalCode  = "postal-code-1"
+		countryCode = "country-code-1"
 	)
 	if v := os.Getenv("GENESYSCLOUD_REGION"); v == "tca" {
-		postal_code = "90080"
-		country_code = "US"
+		postalCode = "90080"
+		countryCode = "US"
 	}
 
 	resource.Test(t, resource.TestCase{
@@ -38,8 +38,8 @@ func TestAccDataSourceSmsAddress(t *testing.T) {
 					street,
 					city,
 					region,
-					postal_code,
-					country_code,
+					postalCode,
+					countryCode,
 					util.FalseValue,
 				) + generateSmsAddressDataSource(
 					addressData,
