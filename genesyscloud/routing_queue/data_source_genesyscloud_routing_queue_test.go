@@ -37,6 +37,7 @@ func TestAccDataSourceRoutingQueueBasic(t *testing.T) {
 					util.NullValue, // auto_answer_only true
 					util.NullValue, // No calling party name
 					util.NullValue, // No calling party number
+					util.NullValue, // enable_audio_monitoring false
 					util.NullValue, // enable_manual_assignment false
 					util.NullValue, //suppressCall_record_false
 					util.NullValue, // enable_transcription false

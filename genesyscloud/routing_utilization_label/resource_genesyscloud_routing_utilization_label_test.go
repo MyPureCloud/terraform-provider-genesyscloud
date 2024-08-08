@@ -26,7 +26,7 @@ func TestAccResourceRoutingUtilizationLabelBasic(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				// Create
-				Config: GenerateRoutingUtilizationLabelResource(
+				Config: generateRoutingUtilizationLabelResource(
 					resourceName,
 					labelName,
 					"",
@@ -37,7 +37,7 @@ func TestAccResourceRoutingUtilizationLabelBasic(t *testing.T) {
 			},
 			{
 				// Update
-				Config: GenerateRoutingUtilizationLabelResource(
+				Config: generateRoutingUtilizationLabelResource(
 					resourceName,
 					updatedLabelName,
 					"",

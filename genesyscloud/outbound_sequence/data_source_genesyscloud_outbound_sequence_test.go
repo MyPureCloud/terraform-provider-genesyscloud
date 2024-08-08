@@ -2,6 +2,7 @@ package outbound_sequence
 
 import (
 	"fmt"
+	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	outboundCampaign "terraform-provider-genesyscloud/genesyscloud/outbound_campaign"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
@@ -30,6 +31,8 @@ func TestAccDataSourceOutboundSequence(t *testing.T) {
 		outboundFlowFilePath  = "../../examples/resources/genesyscloud_flow/outboundcall_flow_example.yaml"
 		flowName              = "test flow " + uuid.NewString()
 		emergencyNumber       = "+13128451429"
+		divResourceId         = "test-outbound-sequence-division"
+		divName               = "terraform-" + uuid.NewString()
 	)
 
 	if err := edgeSite.DeleteLocationWithNumber(emergencyNumber, sdkConfig); err != nil {
@@ -41,23 +44,24 @@ func TestAccDataSourceOutboundSequence(t *testing.T) {
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
-				Config: fmt.Sprintf(`
-data "genesyscloud_auth_division_home" "home" {}
-`) + outboundCampaign.GenerateOutboundCampaignBasic(
-					campaignResourceId,
-					campaignName,
-					contactListResourceId,
-					siteId,
-					emergencyNumber,
-					carResourceId,
-					util.NullValue,
-					outboundFlowFilePath,
-					"data-sequence-test-flow",
-					flowName,
-					"${data.genesyscloud_auth_division_home.home.name}",
-					"data-sequence-test-location",
-					"data-sequence-test-wrapupcode",
-				) + GenerateOutboundSequence(
+				Config: `data "genesyscloud_auth_division_home" "home" {}` + "\n" +
+					gcloud.GenerateAuthDivisionBasic(divResourceId, divName) +
+					outboundCampaign.GenerateOutboundCampaignBasic(
+						campaignResourceId,
+						campaignName,
+						contactListResourceId,
+						siteId,
+						emergencyNumber,
+						carResourceId,
+						util.NullValue,
+						outboundFlowFilePath,
+						"data-sequence-test-flow",
+						flowName,
+						"${data.genesyscloud_auth_division_home.home.name}",
+						"data-sequence-test-location",
+						"data-sequence-test-wrapupcode",
+						divResourceId,
+					) + GenerateOutboundSequence(
 					resourceId,
 					sequenceName,
 					[]string{"genesyscloud_outbound_campaign." + campaignResourceId + ".id"},

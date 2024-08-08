@@ -4,13 +4,13 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
+	routingWrapupcode "terraform-provider-genesyscloud/genesyscloud/routing_wrapupcode"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 	"testing"
 	"time"
-
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
-	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -26,6 +26,8 @@ func TestAccResourceOutboundWrapupCodeMapping(t *testing.T) {
 		wrapupCode2Name       = "tf test wrapupcode" + uuid.NewString()
 		wrapupCode3ResourceId = "wrapupcode3"
 		wrapupCode3Name       = "tf test wrapupcode" + uuid.NewString()
+		divResource           = "test-division"
+		divName               = "terraform-" + uuid.NewString()
 	)
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
@@ -35,7 +37,11 @@ func TestAccResourceOutboundWrapupCodeMapping(t *testing.T) {
 				PreConfig: func() {
 					time.Sleep(30 * time.Second)
 				},
-				Config: gcloud.GenerateRoutingWrapupcodeResource(wrapupCode1ResourceId, wrapupCode1Name) +
+				Config: gcloud.GenerateAuthDivisionBasic(divResource, divName) + routingWrapupcode.GenerateRoutingWrapupcodeResource(
+					wrapupCode1ResourceId,
+					wrapupCode1Name,
+					"genesyscloud_auth_division."+divResource+".id",
+				) +
 					fmt.Sprintf(`
 resource "genesyscloud_outbound_wrapupcodemappings"	"%s" {	
 	default_set = ["Number_UnCallable", "Contact_UnCallable"]
@@ -61,8 +67,9 @@ resource "genesyscloud_outbound_wrapupcodemappings"	"%s" {
 				PreConfig: func() {
 					time.Sleep(30 * time.Second)
 				},
-				Config: gcloud.GenerateRoutingWrapupcodeResource(wrapupCode1ResourceId, wrapupCode1Name) +
-					gcloud.GenerateRoutingWrapupcodeResource(wrapupCode2ResourceId, wrapupCode2Name) +
+				Config: gcloud.GenerateAuthDivisionBasic(divResource, divName) +
+					routingWrapupcode.GenerateRoutingWrapupcodeResource(wrapupCode1ResourceId, wrapupCode1Name, "genesyscloud_auth_division."+divResource+".id") +
+					routingWrapupcode.GenerateRoutingWrapupcodeResource(wrapupCode2ResourceId, wrapupCode2Name, "genesyscloud_auth_division."+divResource+".id") +
 					fmt.Sprintf(`
 resource "genesyscloud_outbound_wrapupcodemappings"	"%s" {
 	default_set = ["Right_Party_Contact", "Contact_UnCallable"]
@@ -87,9 +94,10 @@ resource "genesyscloud_outbound_wrapupcodemappings"	"%s" {
 			},
 			// Update
 			{
-				Config: gcloud.GenerateRoutingWrapupcodeResource(wrapupCode1ResourceId, wrapupCode1Name) +
-					gcloud.GenerateRoutingWrapupcodeResource(wrapupCode2ResourceId, wrapupCode2Name) +
-					gcloud.GenerateRoutingWrapupcodeResource(wrapupCode3ResourceId, wrapupCode3Name) +
+				Config: gcloud.GenerateAuthDivisionBasic(divResource, divName) +
+					routingWrapupcode.GenerateRoutingWrapupcodeResource(wrapupCode1ResourceId, wrapupCode1Name, "genesyscloud_auth_division."+divResource+".id") +
+					routingWrapupcode.GenerateRoutingWrapupcodeResource(wrapupCode2ResourceId, wrapupCode2Name, "genesyscloud_auth_division."+divResource+".id") +
+					routingWrapupcode.GenerateRoutingWrapupcodeResource(wrapupCode3ResourceId, wrapupCode3Name, "genesyscloud_auth_division."+divResource+".id") +
 					fmt.Sprintf(`
 resource "genesyscloud_outbound_wrapupcodemappings"	"%s" {
 	default_set = ["Right_Party_Contact", "Number_UnCallable", "Contact_UnCallable"]

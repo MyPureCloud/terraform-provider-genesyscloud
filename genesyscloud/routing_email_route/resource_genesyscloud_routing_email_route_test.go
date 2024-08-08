@@ -5,12 +5,12 @@ import (
 	"log"
 	"regexp"
 	"strings"
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	"terraform-provider-genesyscloud/genesyscloud/architect_flow"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	routingQueue "terraform-provider-genesyscloud/genesyscloud/routing_queue"
 	routingLanguage "terraform-provider-genesyscloud/genesyscloud/routing_language"
 	routingEmailDomain "terraform-provider-genesyscloud/genesyscloud/routing_email_domain"
+	routingSkill "terraform-provider-genesyscloud/genesyscloud/routing_skill"
 
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
@@ -130,7 +130,7 @@ func TestAccResourceRoutingEmailRoute(t *testing.T) {
 				) + 	routingLanguage.GenerateRoutingLanguageResource(
 					langResource,
 					langName,
-				) + gcloud.GenerateRoutingSkillResource(
+				) + routingSkill.GenerateRoutingSkillResource(
 					skillResource,
 					skillName,
 				) + architect_flow.GenerateFlowResource(
@@ -202,7 +202,7 @@ func TestAccResourceRoutingEmailRoute(t *testing.T) {
 				) + routingLanguage.GenerateRoutingLanguageResource(
 					langResource,
 					langName,
-				) + gcloud.GenerateRoutingSkillResource(
+				) + routingSkill.GenerateRoutingSkillResource(
 					skillResource,
 					skillName,
 				) + GenerateRoutingEmailRouteResource(
@@ -259,7 +259,7 @@ func TestAccResourceRoutingEmailRoute(t *testing.T) {
 				) + routingLanguage.GenerateRoutingLanguageResource(
 					langResource,
 					langName,
-				) + gcloud.GenerateRoutingSkillResource(
+				) + routingSkill.GenerateRoutingSkillResource(
 					skillResource,
 					skillName,
 				) + GenerateRoutingEmailRouteResource(
@@ -321,7 +321,7 @@ func TestAccResourceRoutingEmailRoute(t *testing.T) {
 				) + routingLanguage.GenerateRoutingLanguageResource(
 					langResource,
 					langName,
-				) + gcloud.GenerateRoutingSkillResource(
+				) + routingSkill.GenerateRoutingSkillResource(
 					skillResource,
 					skillName,
 				) + GenerateRoutingEmailRouteResource(

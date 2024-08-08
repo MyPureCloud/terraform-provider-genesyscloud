@@ -403,6 +403,11 @@ func ResourceRoutingQueue() *schema.Resource {
 				Optional:    true,
 				Default:     true,
 			},
+			"enable_audio_monitoring": {
+				Description: "Indicates whether audio monitoring is enabled for this queue.",
+				Type:        schema.TypeBool,
+				Optional:    true,
+			},
 			"enable_manual_assignment": {
 				Description: "Indicates whether manual assignment is enabled for this queue.",
 				Type:        schema.TypeBool,

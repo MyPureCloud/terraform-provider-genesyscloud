@@ -34,6 +34,7 @@ jobs:
           if [[ -n $(git status -s) ]]; then
               echo "There are untracked documentation changes:\n"
               git status
+              exit 1
           fi
 
       - name: Tidy
@@ -42,6 +43,7 @@ jobs:
           if [[ -n $(git status -s) ]]; then
               echo "go mod tidy produced changes:\n"
               git status
+              exit 1
           fi
 
       - name: Vet

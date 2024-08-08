@@ -70,7 +70,7 @@ func createRoutingEmailRoute(ctx context.Context, d *schema.ResourceData, meta i
 	log.Printf("Creating routing email route %s", d.Id())
 	inboundRoute, resp, err := proxy.createRoutingEmailRoute(ctx, domainId, &routingEmailRoute)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create routing email route %s error: %s", *routingEmailRoute.Name, err), resp)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create routing email route %s error: %s", *routingEmailRoute.FromName, err), resp)
 	}
 
 	d.SetId(*inboundRoute.Id)
@@ -189,7 +189,7 @@ func updateRoutingEmailRoute(ctx context.Context, d *schema.ResourceData, meta i
 	log.Printf("Updating routing email route %s", d.Id())
 	inboundRoute, resp, err := proxy.updateRoutingEmailRoute(ctx, d.Id(), domainId, &routingEmailRoute)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update routing email route %s error: %s", *routingEmailRoute.Name, err), resp)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update routing email route %s error: %s", *routingEmailRoute.FromName, err), resp)
 	}
 
 	log.Printf("Updated routing email route %s", *inboundRoute.Id)

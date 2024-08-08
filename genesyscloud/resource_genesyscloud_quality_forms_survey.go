@@ -53,6 +53,11 @@ type SurveyFormQuestionStruct struct {
 var (
 	surveyQuestionGroup = &schema.Resource{
 		Schema: map[string]*schema.Schema{
+			"id": {
+				Description: "The ID of the survey question group.",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
 			"name": {
 				Description: "Name of display question in question group.",
 				Type:        schema.TypeString,
@@ -83,6 +88,11 @@ var (
 
 	surveyQuestion = &schema.Resource{
 		Schema: map[string]*schema.Schema{
+			"id": {
+				Description: "The ID of the survey question.",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
 			"text": {
 				Description: "Individual question",
 				Type:        schema.TypeString,
@@ -151,6 +161,11 @@ var (
 
 	surveyFormAnswerOptions = &schema.Resource{
 		Schema: map[string]*schema.Schema{
+			"id": {
+				Type:        schema.TypeString,
+				Description: "The ID of the survey answer option.",
+				Computed:    true,
+			},
 			"text": {
 				Type:     schema.TypeString,
 				Required: true,
@@ -214,6 +229,11 @@ func SurveyFormExporter() *resourceExporter.ResourceExporter {
 		GetResourcesFunc: provider.GetAllWithPooledClient(getAllSurveyForms),
 		RefAttrs:         map[string]*resourceExporter.RefAttrSettings{}, // No references
 		AllowZeroValues:  []string{"question_groups.questions.answer_options.value"},
+		ExcludedAttributes: []string{
+			"question_groups.id",
+			"question_groups.questions.id",
+			"question_groups.questions.answer_options.id",
+		},
 	}
 }
 
@@ -542,10 +562,13 @@ func flattenSurveyQuestionGroups(questionGroups *[]platformclientv2.Surveyquesti
 		return nil
 	}
 
-	questionGroupList := []interface{}{}
+	var questionGroupList []interface{}
 
 	for _, questionGroup := range *questionGroups {
 		questionGroupMap := make(map[string]interface{})
+		if questionGroup.Id != nil {
+			questionGroupMap["id"] = *questionGroup.Id
+		}
 		if questionGroup.Name != nil {
 			questionGroupMap["name"] = *questionGroup.Name
 		}
@@ -569,10 +592,13 @@ func flattenSurveyQuestions(questions *[]platformclientv2.Surveyquestion) []inte
 		return nil
 	}
 
-	questionList := []interface{}{}
+	var questionList []interface{}
 
 	for _, question := range *questions {
 		questionMap := make(map[string]interface{})
+		if question.Id != nil {
+			questionMap["id"] = *question.Id
+		}
 		if question.Text != nil {
 			questionMap["text"] = *question.Text
 		}
