@@ -56,7 +56,7 @@ func ResourceRoutingSkill() *schema.Resource {
 
 func RoutingSkillExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
-		GetResourcesFunc: provider.GetAllWithPooledClient(getAllRoutingSkills),
+		GetResourcesFunc: provider.GetAllWithPooledClient(GetAllRoutingSkills),
 		RefAttrs:         map[string]*resourceExporter.RefAttrSettings{}, // No references
 	}
 }
