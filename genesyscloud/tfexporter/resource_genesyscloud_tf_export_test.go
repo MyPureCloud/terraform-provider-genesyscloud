@@ -2841,13 +2841,13 @@ func buildUserResources(userExports []UserExport) string {
 	return userResourceDefinitions
 }
 
-func buildWrapupcodeResources(wrapupcodeExports []WrapupcodeExport, devisionID string) string {
+func buildWrapupcodeResources(wrapupcodeExports []WrapupcodeExport, divisionId string) string {
 	wrapupcodeesourceDefinitions := ""
 	for _, wrapupcodeExport := range wrapupcodeExports {
 		wrapupcodeesourceDefinitions = wrapupcodeesourceDefinitions + routingWrapupcode.GenerateRoutingWrapupcodeResource(
 			wrapupcodeExport.ResourceName,
 			wrapupcodeExport.Name,
-			devisionID,
+			divisionId,
 		)
 	}
 
