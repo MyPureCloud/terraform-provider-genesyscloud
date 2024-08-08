@@ -142,7 +142,7 @@ func TestUnitTfExportRemoveZeroValuesFunc(t *testing.T) {
 // TestUnitComputeDependsOn will test computeDependsOn function
 func TestUnitComputeDependsOn(t *testing.T) {
 
-	createResourceData := func(enableDependencyResolution bool, includeFilterResources []interface{}) *schema.ResourceData {
+	createResourceData := func(enableDependencyResolution bool, includeFilterResources []interface{}, advancedFilterResources interface{}) *schema.ResourceData {
 
 		resourceSchema := map[string]*schema.Schema{
 			"enable_dependency_resolution": {
@@ -155,11 +155,27 @@ func TestUnitComputeDependsOn(t *testing.T) {
 				Elem:     &schema.Schema{Type: schema.TypeString},
 				Optional: true,
 			},
+			"advanced_filter_resources": {
+				Type:     schema.TypeList,
+				MaxItems: 1,
+				Optional: true,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"include_by_type": {
+							Type:     schema.TypeSet,
+							Optional: true,
+							Elem:     &schema.Schema{Type: schema.TypeString},
+							ForceNew: true,
+						},
+					},
+				},
+			},
 		}
 
 		data := schema.TestResourceDataRaw(t, resourceSchema, map[string]interface{}{
 			"enable_dependency_resolution": enableDependencyResolution,
 			"include_filter_resources":     includeFilterResources,
+			"advanced_filter_resources":    advancedFilterResources,
 		})
 		return data
 	}
@@ -167,19 +183,24 @@ func TestUnitComputeDependsOn(t *testing.T) {
 	tests := []struct {
 		enableDependencyResolution bool
 		includeFilterResources     []interface{}
+		advancedFilterResources    interface{}
 		expected                   bool
 	}{
-		{true, []interface{}{"resource1", "resource2"}, true},
-		{true, []interface{}{}, false},
-		{false, []interface{}{"resource1"}, false},
-		{false, []interface{}{}, false},
+		{true, []interface{}{"resource1", "resource2"}, []interface{}{}, true},
+		{true, []interface{}{}, []interface{}{}, false},
+		{false, []interface{}{"resource1"}, []interface{}{}, false},
+		{false, []interface{}{}, []interface{}{}, false},
+		{true, []interface{}{}, []interface{}{"resource1", "resource2"}, true},
+		{false, []interface{}{}, []interface{}{"resource1"}, false},
+		{true, []interface{}{"resource1", "resource2"}, []interface{}{"resource1", "resource2"}, true},
+		{false, []interface{}{"resource1", "resource2"}, []interface{}{"resource1"}, false},
 	}
 
 	for _, test := range tests {
-		data := createResourceData(test.enableDependencyResolution, test.includeFilterResources)
+		data := createResourceData(test.enableDependencyResolution, test.includeFilterResources, test.advancedFilterResources)
 		result := computeDependsOn(data)
 		if result != test.expected {
-			t.Errorf("computeDependsOn(%v, %v) = %v; want %v", test.enableDependencyResolution, test.includeFilterResources, result, test.expected)
+			t.Errorf("computeDependsOn(%v, %v, %v) = %v; want %v", test.enableDependencyResolution, test.includeFilterResources, test.advancedFilterResources, result, test.expected)
 		}
 	}
 }

@@ -87,6 +87,8 @@ func TestAccDataSourceOutboundMessagingCampaign(t *testing.T) {
 		)
 	)
 
+	// TODO: Add better handling for phone numbers, namely, add a DID range for the
+	// appropriate phone number, otherwise, if its not available, these tests will fail.
 	if v := os.Getenv("GENESYSCLOUD_REGION"); v == "tca" {
 		smsConfigSenderSMSPhoneNumber = "+18159823725"
 	}
