@@ -38,8 +38,7 @@ func getAllAuthOutboundRuleset(ctx context.Context, clientConfig *platformclient
 	}
 
 	// DEVTOOLING-319: filters rule sets by removing the ones that reference skills that no longer exist in GC
-	skillExporter := routingSkill.RoutingSkillExporter()
-	skillMap, skillErr := skillExporter.GetResourcesFunc(ctx)
+	skillMap, skillErr := routingSkill.GetAllRoutingSkills(ctx, clientConfig)
 	if skillErr != nil {
 		return nil, util.BuildDiagnosticError(resourceName, fmt.Sprintf("Failed to get skill resources"), fmt.Errorf("%v", skillErr))
 	}
