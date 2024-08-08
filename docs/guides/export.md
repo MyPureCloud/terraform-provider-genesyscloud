@@ -2,7 +2,7 @@
 subcategory: ""
 page_title: "Export Genesys Cloud Configuration"
 description: |-
-    A guide to exporting existing Genesys Cloud configuration.
+  A guide to exporting existing Genesys Cloud configuration.
 ---
 
 # Exporting existing Genesys Cloud configuration
@@ -10,6 +10,7 @@ description: |-
 For existing orgs, it may be desirable to have Terraform begin managing your configuration. If there are only a handful of users, queues, etc. to manage, Terraform has an option to [import individual resources](https://www.terraform.io/docs/cli/import/index.html) into a Terraform module.
 
 However, if there are a lot of existing resources it can be painful to manually import all of them into a Terraform state file. To make this easier, a special resource has been defined to export that configuration into a local Terraform [JSON configuration file](https://www.terraform.io/docs/language/syntax/json.html) or [TF configuration file](https://www.terraform.io/language/syntax/configuration). Ensure you have the Terraform CLI installed and create a `.tf` file that requires the genesyscloud provider (click the Use Provider drop down to learn how to use the latest version of the required provider). Add a `provider` block and a `genesyscloud_tf_export` resource to that same file:
+
 ```hcl
 provider "genesyscloud" {
 }
@@ -31,14 +32,13 @@ If state is exported, the config file may not be able to be applied to another o
 
 If exported resources contain references to objects that we don't intend to manage with Terraform or if they cannot be resolved using an API call then a variable will be generated to refer to that object. A definition for that variable will be provided in a generated `terraform.tfvars` file. The reference variables must be filled out with the values of the corresponding resources in a different org before being applied to it.
 
-# Filtering Resources with Regular Expressions
+## Filtering Resources with Regular Expressions
 
-In your Terraform setup, regular expressions can be employed to selectively include or exclude certain resources. Here’s a concise way to do it:
+In your Terraform setup, regular expressions can be employed to selectively include or exclude certain resources. Here are various ways to achieve this:
 
-## Include Filter:
+### Include Filter
 
 If you want to include resources that begin or end with “dev” or “test”, use the following format:
-
 
 ```hcl
 resource "genesyscloud_tf_export" "include-filter" {
@@ -49,7 +49,7 @@ resource "genesyscloud_tf_export" "include-filter" {
 }
 ```
 
-## Exclude Filter:
+### Exclude Filter
 
 To exclude certain resources, you can use a similar method:
 
@@ -62,8 +62,53 @@ resource "genesyscloud_tf_export" "exclude-filter" {
 }
 ```
 
+### Advanced Filter
 
-## Replacing an Exported Resource with a Data Source:
+For more complex filtering scenarios, you can use the `advanced_filter_resources` attribute. This attribute combines the functionality of both include and exclude filters, offering more granular control:
+
+```hcl
+resource "genesyscloud_tf_export" "advanced-filter" {
+  directory = "./genesyscloud/advanced-filter"
+  export_as_hcl = true
+  log_permission_errors = true
+  advanced_filter_resources {
+    include_by_type = ["genesyscloud_routing_queue", "genesyscloud_script"]
+    include_by_name = ["genesyscloud_user::Foo", "genesyscloud_location::HQ"]
+    exclude_by_name = ["genesyscloud_script::Default.*"]
+  }
+}
+```
+
+In this advanced filter:
+
+- All resources for `genesyscloud_routing_queue` and `genesyscloud_script` will be returned.
+- Specific resources for `genesyscloud_user` with a name of `Foo` and `genesyscloud_location` with a name of `HQ` will be returned.
+- Any genesyscloud_script resources with names beginning with `Default` will be excluded.
+
+You can also use the `exclude_by_type` attribute in the advanced filter:
+
+```hcl
+resource "genesyscloud_tf_export" "advanced-filter" {
+  directory = "./genesyscloud/advanced-filter"
+  export_as_hcl = true
+  log_permission_errors = true
+  advanced_filter_resources {
+    exclude_by_type = ["genesyscloud_user"]
+    include_by_name = ["genesyscloud_user::Foo", "genesyscloud_location::HQ"]
+    exclude_by_name = ["genesyscloud_script::Default.*"]
+  }
+}
+```
+
+In this example:
+
+- All resources except for `genesyscloud_user` will be returned.
+- `genesyscloud_user` resources with the name `Foo` will be included despite the type exclusion.
+- `genesyscloud_script` resources with names beginning with `Default` will not be exported.
+
+The `advanced_filter_resources` attribute provides a powerful way to fine-tune your resource filtering, allowing for more complex inclusion and exclusion patterns.
+
+## Replacing an Exported Resource with a Data Source
 
 In the course of managing your Terraform configuration, circumstances may arise where it becomes desirable to substitute an exported resource with a data source. The following are instances where such an action might be warranted:
 
@@ -80,13 +125,13 @@ resource "genesyscloud_tf_export" "export" {
 }
 ```
 
-## Enable Dependency Resolution:
+## Enable Dependency Resolution
 
 In its standard setup, this Terraform configuration exports only the dependencies explicitly defined in your configuration. However, by enabling `enable_dependency_resolution`, Terraform can automatically export additional dependencies, including static ones associated with an architecture flow. This feature enhances the comprehensiveness of your exports, ensuring that not just the primary resource, but also its related entities, are included.
 
 On the other hand, Terraform also provides the `exclude_attributes` option for instances where certain fields need to be omitted from an export. This, along with the ability to automatically export additional dependencies, contributes to Terraform’s flexible framework for managing resource exports. It allows for granular control over the inclusion or exclusion of elements in the export, ensuring that your exported configuration aligns precisely with your requirements.
 
-## Export State File Comparison:
+## Export State File Comparison
 
 In its standard setup, during a full org download, the exporter doesnt verify if the exported state file is in sync with the exported configuration.
 This is an experimental feature enabled just for troubleshooting. To enable this,set env value of ENABLE_EXPORTER_STATE_COMPARISON to true.
