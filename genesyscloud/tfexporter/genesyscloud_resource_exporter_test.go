@@ -142,7 +142,7 @@ func TestUnitTfExportRemoveZeroValuesFunc(t *testing.T) {
 // TestUnitComputeDependsOn will test computeDependsOn function
 func TestUnitComputeDependsOn(t *testing.T) {
 
-	createResourceData := func(enableDependencyResolution bool, includeFilterResources []interface{}, advancedFilterResources interface{}) *schema.ResourceData {
+	createResourceData := func(enableDependencyResolution bool, includeFilterResources []interface{}, advancedFilterResources []interface{}) *schema.ResourceData {
 
 		resourceSchema := map[string]*schema.Schema{
 			"enable_dependency_resolution": {
@@ -180,20 +180,24 @@ func TestUnitComputeDependsOn(t *testing.T) {
 		return data
 	}
 
+	blankListMock := []interface{}{}
+	includeFiltersListMock := []interface{}{"resource1", "resource2"}
+	advancedFiltersListMock := []interface{}{map[string]interface{}{"include_by_type": []interface{}{"afr_resource1", "afr_resource2"}}}
+
 	tests := []struct {
 		enableDependencyResolution bool
 		includeFilterResources     []interface{}
-		advancedFilterResources    interface{}
+		advancedFilterResources    []interface{}
 		expected                   bool
 	}{
-		{true, []interface{}{"resource1", "resource2"}, []interface{}{}, true},
-		{true, []interface{}{}, []interface{}{}, false},
-		{false, []interface{}{"resource1"}, []interface{}{}, false},
-		{false, []interface{}{}, []interface{}{}, false},
-		{true, []interface{}{}, []interface{}{"resource1", "resource2"}, true},
-		{false, []interface{}{}, []interface{}{"resource1"}, false},
-		{true, []interface{}{"resource1", "resource2"}, []interface{}{"resource1", "resource2"}, true},
-		{false, []interface{}{"resource1", "resource2"}, []interface{}{"resource1"}, false},
+		{true, includeFiltersListMock, blankListMock, true},
+		{true, blankListMock, blankListMock, false},
+		{false, includeFiltersListMock, blankListMock, false},
+		{false, blankListMock, blankListMock, false},
+		{true, blankListMock, advancedFiltersListMock, true},
+		{false, blankListMock, advancedFiltersListMock, false},
+		{true, includeFiltersListMock, advancedFiltersListMock, true},
+		{false, includeFiltersListMock, advancedFiltersListMock, false},
 	}
 
 	for _, test := range tests {

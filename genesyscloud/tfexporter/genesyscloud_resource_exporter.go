@@ -199,11 +199,11 @@ func NewGenesysCloudResourceExporter(ctx context.Context, d *schema.ResourceData
 func computeDependsOn(d *schema.ResourceData) bool {
 	addDependsOn := d.Get("enable_dependency_resolution").(bool)
 	if addDependsOn {
-		if exportableResourceTypes, ok := d.GetOk("include_filter_resources"); ok {
-			filter := lists.InterfaceListToStrings(exportableResourceTypes.([]interface{}))
+		if includeFilterResourceTypes, ok := d.GetOk("include_filter_resources"); ok {
+			filter := lists.InterfaceListToStrings(includeFilterResourceTypes.([]interface{}))
 			addDependsOn = len(filter) > 0
-		} else if exportableResourceTypes, ok := d.GetOk("advanced_filter_resources"); ok {
-			exportableResourceTypes := exportableResourceTypes.([]interface{})[0]
+		} else if advancedFilterResourceTypes, ok := d.GetOk("advanced_filter_resources"); ok {
+			exportableResourceTypes := advancedFilterResourceTypes.([]interface{})[0]
 			if exportableResourceTypes == nil {
 				addDependsOn = false
 			} else {
@@ -212,8 +212,8 @@ func computeDependsOn(d *schema.ResourceData) bool {
 					addDependsOn = false
 				} else {
 					for _, filterItems := range resourceTypesMap {
-						filter := lists.InterfaceListToStrings(filterItems.([]interface{}))
-						if len(filter) > 0 {
+						filter := lists.SetToStringList(filterItems.(*schema.Set))
+						if len(*filter) > 0 {
 							addDependsOn = true
 							break
 						}
