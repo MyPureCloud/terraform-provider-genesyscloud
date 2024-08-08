@@ -13,6 +13,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 
+	"terraform-provider-genesyscloud/genesyscloud/util/lists"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -321,7 +322,9 @@ func flattenLines(phoneLines *[]platformclientv2.Line) []interface{} {
 	}
 
 	if len(lineAddressList) > 0 {
-		resourcedata.SetMapValueIfNotNil(linePropertiesMap, "line_address", &lineAddressList)
+		utilE164 := util.NewUtilE164Service()
+		formattedLineAddresses := lists.Map(lineAddressList, utilE164.FormatAsCalculatedE164Number)
+		resourcedata.SetMapValueIfNotNil(linePropertiesMap, "line_address", &formattedLineAddresses)
 	}
 	if len(remoteAddressList) > 0 {
 		resourcedata.SetMapValueIfNotNil(linePropertiesMap, "remote_address", &remoteAddressList)
