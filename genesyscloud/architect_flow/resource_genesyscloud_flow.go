@@ -37,12 +37,12 @@ func getAllFlows(ctx context.Context, clientConfig *platformclientv2.Configurati
 		overrideBCPNaming := os.Getenv("OVERRIDE_BCP_NAMING")
 
 		if overrideBCPNaming != "" {
-			resources[*flow.Id] = &resourceExporter.ResourceMeta{Name: *flow.Name}
+			resources[*flow.Id] = &resourceExporter.ResourceMeta{ResourceName: *flow.Name, LabelName: *flow.Name}
 			continue
 		}
 
 		//This is our go forward naming standard for flows.
-		resources[*flow.Id] = &resourceExporter.ResourceMeta{Name: *flow.VarType + "_" + *flow.Name}
+		resources[*flow.Id] = &resourceExporter.ResourceMeta{ResourceName: *flow.Name, LabelName: *flow.VarType + "_" + *flow.Name}
 	}
 
 	return resources, nil

@@ -34,7 +34,7 @@ func getAllSites(ctx context.Context, sdkConfig *platformclientv2.Configuration)
 		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get unmanaged sites error: %s", err), resp)
 	}
 	for _, unmanagedSite := range *unmanagedSites {
-		resources[*unmanagedSite.Id] = &resourceExporter.ResourceMeta{Name: *unmanagedSite.Name}
+		resources[*unmanagedSite.Id] = &resourceExporter.ResourceMeta{ResourceName: *unmanagedSite.Name, LabelName: *unmanagedSite.Name}
 	}
 
 	// get managed sites
@@ -43,8 +43,8 @@ func getAllSites(ctx context.Context, sdkConfig *platformclientv2.Configuration)
 		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get managed sites error: %s", err), resp)
 	}
 	for _, managedSite := range *managedSites {
-		resources[*managedSite.Id] = &resourceExporter.ResourceMeta{Name: *managedSite.Name}
-		// When exporting managed sites, they must automatically be exported as data source 
+		resources[*managedSite.Id] = &resourceExporter.ResourceMeta{ResourceName: *managedSite.Name, LabelName: *managedSite.Name}
+		// When exporting managed sites, they must automatically be exported as data source
 		// Managed sites are added to the ExportAsData []string in resource_exporter
 		if tfexporter_state.IsExporterActive() {
 			resourceExporter.AddDataSourceItems(resourceName, *managedSite.Name)

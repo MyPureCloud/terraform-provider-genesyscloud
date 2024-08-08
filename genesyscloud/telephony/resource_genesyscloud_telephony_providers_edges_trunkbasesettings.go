@@ -327,7 +327,7 @@ func getAllTrunkBaseSettings(ctx context.Context, sdkConfig *platformclientv2.Co
 
 		for _, trunkBaseSetting := range *trunkBaseSettings.Entities {
 			if trunkBaseSetting.State != nil && *trunkBaseSetting.State != "deleted" {
-				resources[*trunkBaseSetting.Id] = &resourceExporter.ResourceMeta{Name: *trunkBaseSetting.Name}
+				resources[*trunkBaseSetting.Id] = &resourceExporter.ResourceMeta{ResourceName: *trunkBaseSetting.Name, LabelName: *trunkBaseSetting.Name}
 			}
 		}
 	}

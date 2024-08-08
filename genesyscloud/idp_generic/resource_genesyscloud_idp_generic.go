@@ -40,7 +40,7 @@ func getAllAuthIdpGenerics(ctx context.Context, clientConfig *platformclientv2.C
 		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get IDP Generic error: %s", getErr), resp)
 	}
 
-	resources["0"] = &resourceExporter.ResourceMeta{Name: "generic"}
+	resources["0"] = &resourceExporter.ResourceMeta{ResourceName: "generic", LabelName: "generic"}
 	return resources, nil
 }
 

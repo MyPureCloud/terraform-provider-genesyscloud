@@ -31,7 +31,7 @@ func getAllOutboundContactListTemplates(ctx context.Context, clientConfig *platf
 	}
 
 	for _, contactListTemplate := range *contactListTemplates {
-		resources[*contactListTemplate.Id] = &resourceExporter.ResourceMeta{Name: *contactListTemplate.Name}
+		resources[*contactListTemplate.Id] = &resourceExporter.ResourceMeta{ResourceName: *contactListTemplate.Name, LabelName: *contactListTemplate.Name}
 	}
 
 	return resources, nil

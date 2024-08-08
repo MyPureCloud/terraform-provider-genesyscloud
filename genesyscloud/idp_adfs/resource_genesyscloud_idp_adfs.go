@@ -39,7 +39,7 @@ func getAllAuthIdpAdfss(ctx context.Context, clientConfig *platformclientv2.Conf
 		}
 		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get IDP ADFS error: %s", err), resp)
 	}
-	resources["0"] = &resourceExporter.ResourceMeta{Name: "adfs"}
+	resources["0"] = &resourceExporter.ResourceMeta{ResourceName: "adfs", LabelName: "adfs"}
 	return resources, nil
 }
 

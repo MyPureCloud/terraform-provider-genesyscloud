@@ -23,7 +23,7 @@ import (
 
 func getAllRoutingSettings(_ context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
 	resources := make(resourceExporter.ResourceIDMetaMap)
-	resources["0"] = &resourceExporter.ResourceMeta{Name: "routing_settings"}
+	resources["0"] = &resourceExporter.ResourceMeta{ResourceName: "routing_settings", LabelName: "routing_settings"}
 	return resources, nil
 }
 

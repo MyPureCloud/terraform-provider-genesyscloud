@@ -102,7 +102,7 @@ func getAllKnowledgeDocuments(_ context.Context, clientConfig *platformclientv2.
 
 	for _, knowledgeDocument := range documentEntities {
 		id := fmt.Sprintf("%s,%s", *knowledgeDocument.Id, *knowledgeDocument.KnowledgeBase.Id)
-		resources[id] = &resourceExporter.ResourceMeta{Name: *knowledgeDocument.Title}
+		resources[id] = &resourceExporter.ResourceMeta{ResourceName: *knowledgeDocument.Title, LabelName: *knowledgeDocument.Title}
 	}
 
 	return resources, nil
@@ -174,7 +174,7 @@ func getAllKnowledgeDocumentEntities(knowledgeAPI platformclientv2.KnowledgeApi,
 		}
 		for _, knowledgeDocument := range *knowledgeDocuments.Entities {
 			id := fmt.Sprintf("%s,%s", *knowledgeDocument.Id, *knowledgeDocument.KnowledgeBase.Id)
-			resources[id] = &resourceExporter.ResourceMeta{Name: *knowledgeDocument.Title}
+			resources[id] = &resourceExporter.ResourceMeta{ResourceName: *knowledgeDocument.Title, LabelName: *knowledgeDocument.Title}
 		}
 	}
 

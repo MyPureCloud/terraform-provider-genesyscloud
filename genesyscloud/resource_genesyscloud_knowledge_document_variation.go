@@ -265,7 +265,7 @@ func getAllKnowledgeDocumentVariations(_ context.Context, clientConfig *platform
 
 			for _, knowledgeDocumentVariation := range *knowledgeDocumentVariations.Entities {
 				id := fmt.Sprintf("%s %s %s", *knowledgeDocumentVariation.Id, *knowledgeDocument.KnowledgeBase.Id, *knowledgeDocument.Id)
-				resources[id] = &resourceExporter.ResourceMeta{Name: "variation " + uuid.NewString()}
+				resources[id] = &resourceExporter.ResourceMeta{ResourceName: "variation " + *knowledgeDocumentVariation.Name, LabelName: "variation " + uuid.NewString()}
 			}
 		}
 	}

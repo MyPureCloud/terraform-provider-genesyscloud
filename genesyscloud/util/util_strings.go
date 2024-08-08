@@ -36,3 +36,11 @@ func StringExists(target string, slice []string) bool {
 	}
 	return false
 }
+
+func EmptyIfNilStringPointer(target *string) *string {
+	if target == nil {
+		emptyString := ""
+		return &emptyString
+	}
+	return target
+}

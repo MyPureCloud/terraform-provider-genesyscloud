@@ -193,7 +193,7 @@ func getAllEvaluationForms(_ context.Context, clientConfig *platformclientv2.Con
 		}
 
 		for _, evaluationForm := range *evaluationForms.Entities {
-			resources[*evaluationForm.Id] = &resourceExporter.ResourceMeta{Name: *evaluationForm.Name}
+			resources[*evaluationForm.Id] = &resourceExporter.ResourceMeta{ResourceName: *evaluationForm.Name, LabelName: *evaluationForm.Name}
 		}
 	}
 

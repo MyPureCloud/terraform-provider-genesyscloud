@@ -51,7 +51,7 @@ func getAllSitesOutboundRoutes(ctx context.Context, sdkConfig *platformclientv2.
 			return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to check site %s outbound routes: %s", *site.Id, err), resp)
 		}
 		if routes != nil && len(*routes) > 0 {
-			resources[*site.Id] = &resourceExporter.ResourceMeta{Name: *site.Name + "-outbound-routes"}
+			resources[*site.Id] = &resourceExporter.ResourceMeta{ResourceName: *site.Name, LabelName: *site.Name + "-outbound-routes"}
 		}
 	}
 
