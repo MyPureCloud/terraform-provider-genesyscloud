@@ -2,12 +2,12 @@
 page_title: "genesyscloud_tf_export Resource - terraform-provider-genesyscloud"
 subcategory: ""
 description: |-
-  Genesys Cloud Resource to export Terraform config and (optionally) tfstate files to a local directory. 
+  Genesys Cloud Resource to export Terraform config and (optionally) tfstate files to a local directory.
   	The config file is named 'genesyscloud.tf.json' or 'genesyscloud.tf', and the state file is named 'terraform.tfstate'.
 ---
 # genesyscloud_tf_export (Resource)
 
-Genesys Cloud Resource to export Terraform config and (optionally) tfstate files to a local directory. 
+Genesys Cloud Resource to export Terraform config and (optionally) tfstate files to a local directory.
 		The config file is named 'genesyscloud.tf.json' or 'genesyscloud.tf', and the state file is named 'terraform.tfstate'.
 
 ## API Usage
@@ -60,6 +60,7 @@ resource "genesyscloud_tf_export" "export" {
 
 ### Optional
 
+- `advanced_filter_resources` (Block List, Max: 1) Advanced filtering handling. Allows filtering to be defined to explicitly include and/or exclude by type and/or name. See export guide for additional information. (see [below for nested schema](#nestedblock--advanced_filter_resources))
 - `compress` (Boolean) Compress exported results using zip format Defaults to `false`.
 - `directory` (String) Directory where the config and state files will be exported. Defaults to `./genesyscloud`.
 - `enable_dependency_resolution` (Boolean) Adds a "depends_on" attribute to genesyscloud_flow resources with a list of resources that are referenced inside the flow configuration . This also resolves and exports all the dependent resources for any given resource. Defaults to `false`.
@@ -77,4 +78,14 @@ resource "genesyscloud_tf_export" "export" {
 ### Read-Only
 
 - `id` (String) The ID of this resource.
+
+<a id="nestedblock--advanced_filter_resources"></a>
+### Nested Schema for `advanced_filter_resources`
+
+Optional:
+
+- `exclude_by_name` (Set of String) A more granular exclusion filter to exclude specific resources by name using the format of 'resourceType::resourceNameRegexp'. Exclusions override inclusions.
+- `exclude_by_type` (Set of String) Use an exclusion filter to exclude specific resource types. Exclusions override inclusions.
+- `include_by_name` (Set of String) A more granular inclusion filter to include specific resources by name using the format of 'resourceType::resourceNameRegexp'. Exclusions override inclusions.
+- `include_by_type` (Set of String) Use an inclusion filter to include specific resource types. Exclusions override inclusions.
 

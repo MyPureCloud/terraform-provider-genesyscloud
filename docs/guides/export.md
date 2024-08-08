@@ -2,10 +2,10 @@
 subcategory: ""
 page_title: "Export Genesys Cloud Configuration"
 description: |-
-  A guide to exporting existing Genesys Cloud configuration.
+    A guide to exporting existing Genesys Cloud configuration.
 ---
 
-# Exporting existing Genesys Cloud configuration
+# Exporting Existing Genesys Cloud Configuration
 
 For existing orgs, it may be desirable to have Terraform begin managing your configuration. If there are only a handful of users, queues, etc. to manage, Terraform has an option to [import individual resources](https://www.terraform.io/docs/cli/import/index.html) into a Terraform module.
 
@@ -133,5 +133,5 @@ On the other hand, Terraform also provides the `exclude_attributes` option for i
 
 ## Export State File Comparison
 
-In its standard setup, during a full org download, the exporter doesnt verify if the exported state file is in sync with the exported configuration.
+In its standard setup, during a full org download, the exporter doesn't verify if the exported state file is in sync with the exported configuration.
 This is an experimental feature enabled just for troubleshooting. To enable this,set env value of ENABLE_EXPORTER_STATE_COMPARISON to true.
