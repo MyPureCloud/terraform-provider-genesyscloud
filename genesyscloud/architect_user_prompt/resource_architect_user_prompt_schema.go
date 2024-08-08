@@ -18,6 +18,7 @@ func SetRegistrar(regInstance registrar.Registrar) {
 	regInstance.RegisterDataSource(resourceName, DataSourceUserPrompt())
 	regInstance.RegisterExporter(resourceName, ArchitectUserPromptExporter())
 }
+
 func ArchitectUserPromptExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: provider.GetAllWithPooledClient(getAllUserPrompts),
