@@ -7,6 +7,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 )
 
 /*
@@ -260,56 +261,56 @@ func ResourceOutboundDigitalruleset() *schema.Resource {
 			`contact_column_condition_settings`: {
 				Description: `The settings for a 'contact list column' condition.`,
 				Optional:    true,
-				Type:        schema.TypeList,
+				Type:        schema.TypeSet,
 				MaxItems:    1,
 				Elem:        contactColumnConditionSettingsResource,
 			},
 			`contact_address_condition_settings`: {
 				Description: `The settings for a 'contact address' condition.`,
 				Optional:    true,
-				Type:        schema.TypeList,
+				Type:        schema.TypeSet,
 				MaxItems:    1,
 				Elem:        contactAddressConditionSettingsResource,
 			},
 			`contact_address_type_condition_settings`: {
 				Description: `The settings for a 'contact address type' condition.`,
 				Optional:    true,
-				Type:        schema.TypeList,
+				Type:        schema.TypeSet,
 				MaxItems:    1,
 				Elem:        contactAddressTypeConditionSettingsResource,
 			},
 			`last_attempt_by_column_condition_settings`: {
 				Description: `The settings for a 'last attempt by column' condition.`,
 				Optional:    true,
-				Type:        schema.TypeList,
+				Type:        schema.TypeSet,
 				MaxItems:    1,
 				Elem:        lastAttemptByColumnConditionSettingsResource,
 			},
 			`last_attempt_overall_condition_settings`: {
 				Description: `The settings for a 'last attempt overall' condition.`,
 				Optional:    true,
-				Type:        schema.TypeList,
+				Type:        schema.TypeSet,
 				MaxItems:    1,
 				Elem:        lastAttemptOverallConditionSettingsResource,
 			},
 			`last_result_by_column_condition_settings`: {
 				Description: `The settings for a 'last result by column' condition.`,
 				Optional:    true,
-				Type:        schema.TypeList,
+				Type:        schema.TypeSet,
 				MaxItems:    1,
 				Elem:        lastResultByColumnConditionSettingsResource,
 			},
 			`last_result_overall_condition_settings`: {
 				Description: `The settings for a 'last result overall' condition.`,
 				Optional:    true,
-				Type:        schema.TypeList,
+				Type:        schema.TypeSet,
 				MaxItems:    1,
 				Elem:        lastResultOverallConditionSettingsResource,
 			},
 			`data_action_condition_settings`: {
 				Description: `The settings for a 'data action' condition.`,
 				Optional:    true,
-				Type:        schema.TypeList,
+				Type:        schema.TypeSet,
 				MaxItems:    1,
 				Elem:        dataActionConditionSettingsResource,
 			},
@@ -319,10 +320,11 @@ func ResourceOutboundDigitalruleset() *schema.Resource {
 	updateContactColumnActionSettingsResource := &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			`properties`: {
-				Description: `A map of key-value pairs pertinent to the DialerAction. Different types of DialerActions require different properties. MODIFY_CONTACT_ATTRIBUTE with an updateOption of SET takes a contact column as the key and accepts any value. SCHEDULE_CALLBACK takes a key 'callbackOffset' that specifies how far in the future the callback should be scheduled, in minutes. SET_CALLER_ID takes two keys: 'callerAddress', which should be the caller id phone number, and 'callerName'. For either key, you can also specify a column on the contact to get the value from. To do this, specify 'contact.Column', where 'Column' is the name of the contact column from which to get the value. SET_SKILLS takes a key 'skills' with an array of skill ids wrapped into a string (Example: {'skills': '['skillIdHere']'} ).`,
-				Required:    true,
-				Type:        schema.TypeMap,
-				Elem:        &schema.Schema{Type: schema.TypeString},
+				Description:      `A map of key-value pairs pertinent to the DialerAction. Different types of DialerActions require different properties. MODIFY_CONTACT_ATTRIBUTE with an updateOption of SET takes a contact column as the key and accepts any value. SCHEDULE_CALLBACK takes a key 'callbackOffset' that specifies how far in the future the callback should be scheduled, in minutes. SET_CALLER_ID takes two keys: 'callerAddress', which should be the caller id phone number, and 'callerName'. For either key, you can also specify a column on the contact to get the value from. To do this, specify 'contact.Column', where 'Column' is the name of the contact column from which to get the value. SET_SKILLS takes a key 'skills' with an array of skill ids wrapped into a string (Example: {'skills': '['skillIdHere']'} ).`,
+				Type:             schema.TypeString,
+				Optional:         true,
+				Computed:         true,
+				DiffSuppressFunc: util.SuppressEquivalentJsonDiffs,
 			},
 			`update_option`: {
 				Description: `The type of update to make to the specified contact column(s).`,
@@ -393,7 +395,7 @@ func ResourceOutboundDigitalruleset() *schema.Resource {
 			`update_contact_column_action_settings`: {
 				Description: `The settings for an 'update contact column' action.`,
 				Optional:    true,
-				Type:        schema.TypeList,
+				Type:        schema.TypeSet,
 				MaxItems:    1,
 				Elem:        updateContactColumnActionSettingsResource,
 			},
@@ -405,14 +407,14 @@ func ResourceOutboundDigitalruleset() *schema.Resource {
 			`append_to_dnc_action_settings`: {
 				Description: `The settings for an 'Append to DNC' action.`,
 				Optional:    true,
-				Type:        schema.TypeList,
+				Type:        schema.TypeSet,
 				MaxItems:    1,
 				Elem:        appendToDncActionSettingsResource,
 			},
 			`mark_contact_uncontactable_action_settings`: {
 				Description: `The settings for a 'mark contact uncontactable' action.`,
 				Optional:    true,
-				Type:        schema.TypeList,
+				Type:        schema.TypeSet,
 				MaxItems:    1,
 				Elem:        markContactUncontactableActionSettingsResource,
 			},
@@ -424,14 +426,14 @@ func ResourceOutboundDigitalruleset() *schema.Resource {
 			`set_content_template_action_settings`: {
 				Description: `The settings for a 'Set content template' action.`,
 				Optional:    true,
-				Type:        schema.TypeList,
+				Type:        schema.TypeSet,
 				MaxItems:    1,
 				Elem:        setContentTemplateActionSettingsResource,
 			},
 			`set_sms_phone_number_action_settings`: {
 				Description: `The settings for a 'set sms phone number' action.`,
 				Optional:    true,
-				Type:        schema.TypeList,
+				Type:        schema.TypeSet,
 				MaxItems:    1,
 				Elem:        setSmsPhoneNumberActionSettingsResource,
 			},

@@ -4,6 +4,8 @@ import (
 	"sync"
 	"testing"
 
+	obContactList "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
@@ -29,7 +31,8 @@ func (r *registerTestInstance) registerTestResources() {
 	defer r.resourceMapMutex.Unlock()
 
 	providerResources[resourceName] = ResourceOutboundDigitalruleset()
-	// TODO: Add references
+	providerResources["genesyscloud_outbound_contact_list"] = obContactList.ResourceOutboundContactList()
+
 }
 
 // registerTestDataSources registers all data sources used in the tests.

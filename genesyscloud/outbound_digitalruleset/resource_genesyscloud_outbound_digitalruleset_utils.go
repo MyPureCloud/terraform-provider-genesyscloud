@@ -333,7 +333,7 @@ func buildUpdateContactColumnActionSettings(updateContactColumnActionSettings *s
 			sdkUpdateContactColumnActionSettings.UpdateOption = &updateOption
 		}
 
-		resourcedata.BuildSDKStringMapValueIfNotNil(&sdkUpdateContactColumnActionSettings.Properties, updateContactColumnActionSettingsMap, "properties")
+		//resourcedata.BuildSDKStringMapValueIfNotNil(&sdkUpdateContactColumnActionSettings.Properties, updateContactColumnActionSettingsMap, "properties")
 	}
 
 	return &sdkUpdateContactColumnActionSettings
@@ -425,13 +425,16 @@ func buildDigitalActions(digitalActions []interface{}) *[]platformclientv2.Digit
 		}
 
 		sdkDigitalAction.UpdateContactColumnActionSettings = buildUpdateContactColumnActionSettings(digitalActionsMap["update_contact_column_action_settings"].(*schema.Set))
+		// if action := digitalActionsMap["do_not_send_action_settings"]; action != nil {
+		// 	sdkDigitalAction.DoNotSendActionSettings = &action
+		// }
 
 		// TODO: Handle do_not_send_action_settings property
-		resourcedata.BuildSDKInterfaceArrayValueIfNotNil(&sdkDigitalAction.AppendToDncActionSettings, digitalActionsMap, "append_to_dnc_action_settings", buildAppendToDncActionSettings)
-		resourcedata.BuildSDKInterfaceArrayValueIfNotNil(&sdkDigitalAction.MarkContactUncontactableActionSettings, digitalActionsMap, "mark_contact_uncontactable_action_settings", buildMarkContactUncontactableActionSettings)
-		// TODO: Handle mark_contact_address_uncontactable_action_settings property
-		resourcedata.BuildSDKInterfaceArrayValueIfNotNil(&sdkDigitalAction.SetContentTemplateActionSettings, digitalActionsMap, "set_content_template_action_settings", buildSetContentTemplateActionSettings)
-		resourcedata.BuildSDKInterfaceArrayValueIfNotNil(&sdkDigitalAction.SetSmsPhoneNumberActionSettings, digitalActionsMap, "set_sms_phone_number_action_settings", buildSetSmsPhoneNumberActionSettings)
+		// resourcedata.BuildSDKInterfaceArrayValueIfNotNil(&sdkDigitalAction.AppendToDncActionSettings, digitalActionsMap, "append_to_dnc_action_settings", buildAppendToDncActionSettings)
+		// resourcedata.BuildSDKInterfaceArrayValueIfNotNil(&sdkDigitalAction.MarkContactUncontactableActionSettings, digitalActionsMap, "mark_contact_uncontactable_action_settings", buildMarkContactUncontactableActionSettings)
+		// // TODO: Handle mark_contact_address_uncontactable_action_settings property
+		// resourcedata.BuildSDKInterfaceArrayValueIfNotNil(&sdkDigitalAction.SetContentTemplateActionSettings, digitalActionsMap, "set_content_template_action_settings", buildSetContentTemplateActionSettings)
+		// resourcedata.BuildSDKInterfaceArrayValueIfNotNil(&sdkDigitalAction.SetSmsPhoneNumberActionSettings, digitalActionsMap, "set_sms_phone_number_action_settings", buildSetSmsPhoneNumberActionSettings)
 
 		digitalActionsSlice = append(digitalActionsSlice, sdkDigitalAction)
 	}
@@ -675,14 +678,14 @@ func flattenDigitalConditions(digitalConditions *[]platformclientv2.Digitalcondi
 		digitalConditionMap := make(map[string]interface{})
 
 		resourcedata.SetMapValueIfNotNil(digitalConditionMap, "inverted", digitalCondition.Inverted)
-		resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(digitalConditionMap, "contact_column_condition_settings", digitalCondition.ContactColumnConditionSettings, flattenContactColumnConditionSettings)
-		resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(digitalConditionMap, "contact_address_condition_settings", digitalCondition.ContactAddressConditionSettings, flattenContactAddressConditionSettings)
-		resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(digitalConditionMap, "contact_address_type_condition_settings", digitalCondition.ContactAddressTypeConditionSettings, flattenContactAddressTypeConditionSettings)
-		resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(digitalConditionMap, "last_attempt_by_column_condition_settings", digitalCondition.LastAttemptByColumnConditionSettings, flattenLastAttemptByColumnConditionSettings)
-		resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(digitalConditionMap, "last_attempt_overall_condition_settings", digitalCondition.LastAttemptOverallConditionSettings, flattenLastAttemptOverallConditionSettings)
-		resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(digitalConditionMap, "last_result_by_column_condition_settings", digitalCondition.LastResultByColumnConditionSettings, flattenLastResultByColumnConditionSettings)
-		resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(digitalConditionMap, "last_result_overall_condition_settings", digitalCondition.LastResultOverallConditionSettings, flattenLastResultOverallConditionSettings)
-		resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(digitalConditionMap, "data_action_condition_settings", digitalCondition.DataActionConditionSettings, flattenDataActionConditionSettings)
+		// resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(digitalConditionMap, "contact_column_condition_settings", digitalCondition.ContactColumnConditionSettings, flattenContactColumnConditionSettings)
+		// resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(digitalConditionMap, "contact_address_condition_settings", digitalCondition.ContactAddressConditionSettings, flattenContactAddressConditionSettings)
+		// resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(digitalConditionMap, "contact_address_type_condition_settings", digitalCondition.ContactAddressTypeConditionSettings, flattenContactAddressTypeConditionSettings)
+		// resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(digitalConditionMap, "last_attempt_by_column_condition_settings", digitalCondition.LastAttemptByColumnConditionSettings, flattenLastAttemptByColumnConditionSettings)
+		// resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(digitalConditionMap, "last_attempt_overall_condition_settings", digitalCondition.LastAttemptOverallConditionSettings, flattenLastAttemptOverallConditionSettings)
+		// resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(digitalConditionMap, "last_result_by_column_condition_settings", digitalCondition.LastResultByColumnConditionSettings, flattenLastResultByColumnConditionSettings)
+		// resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(digitalConditionMap, "last_result_overall_condition_settings", digitalCondition.LastResultOverallConditionSettings, flattenLastResultOverallConditionSettings)
+		// resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(digitalConditionMap, "data_action_condition_settings", digitalCondition.DataActionConditionSettings, flattenDataActionConditionSettings)
 
 		digitalConditionList = append(digitalConditionList, digitalConditionMap)
 	}
@@ -791,19 +794,19 @@ func flattenDigitalActions(digitalActions *[]platformclientv2.Digitalaction) []i
 	}
 
 	var digitalActionList []interface{}
-	for _, digitalAction := range *digitalActions {
-		digitalActionMap := make(map[string]interface{})
+	// for _, digitalAction := range *digitalActions {
+	// 	digitalActionMap := make(map[string]interface{})
 
-		resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(digitalActionMap, "update_contact_column_action_settings", digitalAction.UpdateContactColumnActionSettings, flattenUpdateContactColumnActionSettings)
-		// TODO: Handle do_not_send_action_settings property
-		resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(digitalActionMap, "append_to_dnc_action_settings", digitalAction.AppendToDncActionSettings, flattenAppendToDncActionSettings)
-		resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(digitalActionMap, "mark_contact_uncontactable_action_settings", digitalAction.MarkContactUncontactableActionSettings, flattenMarkContactUncontactableActionSettings)
-		// TODO: Handle mark_contact_address_uncontactable_action_settings property
-		resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(digitalActionMap, "set_content_template_action_settings", digitalAction.SetContentTemplateActionSettings, flattenSetContentTemplateActionSettings)
-		resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(digitalActionMap, "set_sms_phone_number_action_settings", digitalAction.SetSmsPhoneNumberActionSettings, flattenSetSmsPhoneNumberActionSettings)
+	// resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(digitalActionMap, "update_contact_column_action_settings", digitalAction.UpdateContactColumnActionSettings, flattenUpdateContactColumnActionSettings)
+	// // TODO: Handle do_not_send_action_settings property
+	// resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(digitalActionMap, "append_to_dnc_action_settings", digitalAction.AppendToDncActionSettings, flattenAppendToDncActionSettings)
+	// resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(digitalActionMap, "mark_contact_uncontactable_action_settings", digitalAction.MarkContactUncontactableActionSettings, flattenMarkContactUncontactableActionSettings)
+	// // TODO: Handle mark_contact_address_uncontactable_action_settings property
+	// resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(digitalActionMap, "set_content_template_action_settings", digitalAction.SetContentTemplateActionSettings, flattenSetContentTemplateActionSettings)
+	// resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(digitalActionMap, "set_sms_phone_number_action_settings", digitalAction.SetSmsPhoneNumberActionSettings, flattenSetSmsPhoneNumberActionSettings)
 
-		digitalActionList = append(digitalActionList, digitalActionMap)
-	}
+	// 	digitalActionList = append(digitalActionList, digitalActionMap)
+	// }
 
 	return digitalActionList
 }
