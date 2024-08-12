@@ -2,12 +2,9 @@ package routing_queue
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
-	"net/url"
-	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
@@ -37,9 +34,13 @@ func getAllRoutingQueues(ctx context.Context, clientConfig *platformclientv2.Con
 	// Newly created resources often aren't returned unless there's a delay
 	time.Sleep(5 * time.Second)
 
-	queues, resp, err := proxy.GetAllRoutingQueues(ctx)
+	queues, resp, err := proxy.GetAllRoutingQueues(ctx, "")
 	if err != nil {
 		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("failed to get routing queues: %s", err), resp)
+	}
+
+	if queues == nil || len(*queues) == 0 {
+		return resources, nil
 	}
 
 	for _, queue := range *queues {
@@ -49,7 +50,7 @@ func getAllRoutingQueues(ctx context.Context, clientConfig *platformclientv2.Con
 	return resources, nil
 }
 
-func createQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func createRoutingQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := GetRoutingQueueProxy(sdkConfig)
 
@@ -107,16 +108,16 @@ func createQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 	if divisionID != "" {
 		createQueue.Division = &platformclientv2.Writabledivision{Id: &divisionID}
 	}
-
 	if scoringMethod != "" {
 		createQueue.ScoringMethod = &scoringMethod
 	}
+
+	log.Printf("Creating Routing Queue %s", *createQueue.Name)
+
 	queue, resp, err := proxy.createRoutingQueue(ctx, &createQueue)
 	if err != nil {
-		log.Printf("error while trying to create queue: %s. Err %s", *createQueue.Name, err)
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create queue %s error: %s", *createQueue.Name, err), resp)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create queue %s | error: %s", *createQueue.Name, err), resp)
 	}
-
 	if resp.StatusCode != http.StatusOK {
 		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create queue %s with error: %s, status code %v", *createQueue.Name, err, resp.StatusCode), resp)
 	}
@@ -133,15 +134,17 @@ func createQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		return diagErr
 	}
 
-	return readQueue(ctx, d, meta)
+	log.Printf("Created Routing Queue %s", d.Id())
+	return readRoutingQueue(ctx, d, meta)
 }
 
-func readQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func readRoutingQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := GetRoutingQueueProxy(sdkConfig)
 	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceRoutingQueue(), constants.DefaultConsistencyChecks, resourceName)
 
 	log.Printf("Reading queue %s", d.Id())
+
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		currentQueue, resp, getErr := proxy.getRoutingQueueById(ctx, d.Id())
 		if getErr != nil {
@@ -154,7 +157,6 @@ func readQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 		resourcedata.SetNillableValue(d, "name", currentQueue.Name)
 		resourcedata.SetNillableValue(d, "description", currentQueue.Description)
 		resourcedata.SetNillableValue(d, "skill_evaluation_method", currentQueue.SkillEvaluationMethod)
-
 		resourcedata.SetNillableReferenceDivision(d, "division_id", currentQueue.Division)
 
 		_ = d.Set("acw_wrapup_prompt", nil)
@@ -184,12 +186,11 @@ func readQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 			resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "agent_owned_routing", currentQueue.AgentOwnedRouting, flattenAgentOwnedRouting)
 		}
 
-		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "routing_rules", currentQueue.RoutingRules, flattenRoutingRules)
-
 		if currentQueue.Bullseye != nil {
 			resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "bullseye_rings", currentQueue.Bullseye.Rings, flattenBullseyeRings)
 		}
 
+		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "routing_rules", currentQueue.RoutingRules, flattenRoutingRules)
 		resourcedata.SetNillableReference(d, "queue_flow_id", currentQueue.QueueFlow)
 		resourcedata.SetNillableReference(d, "message_in_queue_flow_id", currentQueue.MessageInQueueFlow)
 		resourcedata.SetNillableReference(d, "email_in_queue_flow_id", currentQueue.EmailInQueueFlow)
@@ -203,6 +204,7 @@ func readQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 		resourcedata.SetNillableValue(d, "calling_party_name", currentQueue.CallingPartyName)
 		resourcedata.SetNillableValue(d, "calling_party_number", currentQueue.CallingPartyNumber)
 		resourcedata.SetNillableValue(d, "scoring_method", currentQueue.ScoringMethod)
+		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "direct_routing", currentQueue.DirectRouting, flattenDirectRouting)
 
 		if currentQueue.DefaultScripts != nil {
 			_ = d.Set("default_script_ids", flattenDefaultScripts(*currentQueue.DefaultScripts))
@@ -215,8 +217,6 @@ func readQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 		} else {
 			_ = d.Set("outbound_messaging_sms_address_id", nil)
 		}
-
-		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "direct_routing", currentQueue.DirectRouting, flattenDirectRouting)
 
 		wrapupCodes, err := flattenQueueWrapupCodes(ctx, d.Id(), proxy)
 		if err != nil {
@@ -255,12 +255,12 @@ func readQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 			log.Printf("%s is set, not reading outbound_email_address attribute in routing_queue %s resource", featureToggles.OEAToggleName(), d.Id())
 		}
 
-		log.Printf("Done reading queue %s %s", d.Id(), *currentQueue.Name)
+		log.Printf("Read queue %s %s", d.Id(), *currentQueue.Name)
 		return cc.CheckState(d)
 	})
 }
 
-func updateQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func updateRoutingQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := GetRoutingQueueProxy(sdkConfig)
 
@@ -314,14 +314,13 @@ func updateQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		log.Printf("%s is set, not creating outbound_email_address attribute in routing_queue %s resource", featureToggles.OEAToggleName(), d.Id())
 	}
 
-	log.Printf("Updating queue %s", *updateQueue.Name)
-
 	if scoringMethod != "" {
 		updateQueue.ScoringMethod = &scoringMethod
 	}
 
-	_, resp, err := proxy.updateRoutingQueue(ctx, d.Id(), &updateQueue)
+	log.Printf("Updating queue %s", *updateQueue.Name)
 
+	_, resp, err := proxy.updateRoutingQueue(ctx, d.Id(), &updateQueue)
 	if err != nil {
 		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update queue %s error: %s", *updateQueue.Name, err), resp)
 	}
@@ -341,11 +340,11 @@ func updateQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		return diagErr
 	}
 
-	log.Printf("Finished updating queue %s", *updateQueue.Name)
-	return readQueue(ctx, d, meta)
+	log.Printf("Updated queue %s", *updateQueue.Name)
+	return readRoutingQueue(ctx, d, meta)
 }
 
-func deleteQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func deleteRoutingQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := GetRoutingQueueProxy(sdkConfig)
 	name := d.Get("name").(string)
@@ -376,30 +375,43 @@ func deleteQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 	})
 }
 
-// WrapupCodes
+func createRoutingQueueWrapupCodes(queueID string, codesToAdd []string, sdkConfig *platformclientv2.Configuration) diag.Diagnostics {
+	proxy := GetRoutingQueueProxy(sdkConfig)
+	// API restricts wrapup code adds to 100 per call
+	if len(codesToAdd) > 0 {
+		chunks := chunksProcess.ChunkItems(codesToAdd, platformWrapupCodeReferenceFunc, 100)
+
+		chunkProcessor := func(chunk []platformclientv2.Wrapupcodereference) diag.Diagnostics {
+			_, resp, err := proxy.createRoutingQueueWrapupCode(context.TODO(), queueID, chunk)
+			if err != nil {
+				return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update wrapup codes for queue %s error: %s", queueID, err), resp)
+			}
+			return nil
+		}
+		return chunksProcess.ProcessChunks(chunks, chunkProcessor)
+	}
+
+	return nil
+}
 
 func updateQueueWrapupCodes(d *schema.ResourceData, sdkConfig *platformclientv2.Configuration) diag.Diagnostics {
 	proxy := GetRoutingQueueProxy(sdkConfig)
 
-	log.Printf("Updating Routing Queue WrapupCodes")
-
 	if d.HasChange("wrapup_codes") {
+		log.Printf("Updating Routing Queue WrapupCodes")
+
 		if codesConfig := d.Get("wrapup_codes"); codesConfig != nil {
 			// Get existing codes
-			codes, err := getRoutingQueueWrapupCodes(d.Id(), sdkConfig)
+			codes, resp, err := proxy.getAllRoutingQueueWrapupCodes(context.TODO(), d.Id())
 			if err != nil {
-				return err
+				return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to query wrapup codes for queue %s error: %s", d.Id(), err), resp)
 			}
 
-			var existingCodes []string
-			if codes != nil {
-				for _, code := range codes {
-					existingCodes = append(existingCodes, *code.Id)
-				}
-			}
+			existingCodes := getWrapupCodeIds(codes)
 			configCodes := *lists.SetToStringList(codesConfig.(*schema.Set))
-
 			codesToRemove := lists.SliceDifference(existingCodes, configCodes)
+
+			// Remove Wrapup Codes
 			if len(codesToRemove) > 0 {
 				for _, codeId := range codesToRemove {
 					resp, err := proxy.deleteRoutingQueueWrapupCode(context.TODO(), d.Id(), codeId)
@@ -413,9 +425,10 @@ func updateQueueWrapupCodes(d *schema.ResourceData, sdkConfig *platformclientv2.
 				}
 			}
 
+			// Add Wrapup Codes
 			codesToAdd := lists.SliceDifference(configCodes, existingCodes)
 			if len(codesToAdd) > 0 {
-				err := addWrapupCodesInChunks(d.Id(), codesToAdd, sdkConfig)
+				err := createRoutingQueueWrapupCodes(d.Id(), codesToAdd, sdkConfig)
 				if err != nil {
 					return err
 				}
@@ -425,296 +438,14 @@ func updateQueueWrapupCodes(d *schema.ResourceData, sdkConfig *platformclientv2.
 	return nil
 }
 
-func addWrapupCodesInChunks(queueID string, codesToAdd []string, sdkConfig *platformclientv2.Configuration) diag.Diagnostics {
-	api := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
-	// API restricts wrapup code adds to 100 per call
-	const maxBatchSize = 100
-	for i := 0; i < len(codesToAdd); i += maxBatchSize {
-		end := i + maxBatchSize
-		if end > len(codesToAdd) {
-			end = len(codesToAdd)
-		}
-		var updateChunk []platformclientv2.Wrapupcodereference
-		for j := i; j < end; j++ {
-			updateChunk = append(updateChunk, platformclientv2.Wrapupcodereference{Id: &codesToAdd[j]})
-		}
-
-		if len(updateChunk) > 0 {
-			_, resp, err := api.PostRoutingQueueWrapupcodes(queueID, updateChunk)
-			if err != nil {
-				return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update wrapup codes for queue %s error: %s", queueID, err), resp)
-			}
+func getWrapupCodeIds(codes *[]platformclientv2.Wrapupcode) []string {
+	var wrapupCodes []string
+	if codes != nil {
+		for _, code := range *codes {
+			wrapupCodes = append(wrapupCodes, *code.Id)
 		}
 	}
-	return nil
-}
-
-
-// TODO: Changing this to proxy call Broke the test
-func getRoutingQueueWrapupCodes(queueID string, sdkConfig *platformclientv2.Configuration) ([]platformclientv2.Wrapupcode, diag.Diagnostics) {
-	proxy := GetRoutingQueueProxy(sdkConfig)
-
-	for pageNum := 1; ; pageNum++ {
-		allCodes, resp, err := proxy.getAllRoutingQueueWrapupCodes(context.TODO(), queueID)
-		if err != nil {
-			return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to query wrapup codes for queue %s error: %s", queueID, err), resp)
-		}
-
-		if allCodes != nil {
-			return *allCodes, nil
-		}
-	}
-}
-
-// Queue Members
-
-func updateQueueMembers(d *schema.ResourceData, sdkConfig *platformclientv2.Configuration) diag.Diagnostics {
-	proxy := GetRoutingQueueProxy(sdkConfig)
-
-	if !d.HasChange("members") {
-		return nil
-	}
-
-	membersSet, ok := d.Get("members").(*schema.Set)
-	if !ok || membersSet.Len() == 0 {
-		if err := removeAllExistingUserMembersFromQueue(d.Id(), sdkConfig); err != nil {
-			return diag.FromErr(err)
-		}
-		return nil
-	}
-
-	log.Printf("Updating members for Queue %s", d.Get("name"))
-
-	newUserRingNums := make(map[string]int)
-	memberList := membersSet.List()
-	newUserIds := make([]string, len(memberList))
-
-	for i, member := range memberList {
-		memberMap := member.(map[string]interface{})
-		newUserIds[i] = memberMap["user_id"].(string)
-		newUserRingNums[newUserIds[i]] = memberMap["ring_num"].(int)
-	}
-
-	if len(newUserIds) > 0 {
-		log.Printf("Sleeping for 10 seconds")
-		time.Sleep(10 * time.Second)
-
-		members, diagErr := getRoutingQueueMembers(d.Id(), "group", sdkConfig)
-		if diagErr != nil {
-			return diagErr
-		}
-
-		for _, userId := range newUserIds {
-			if err := verifyUserIsNotGroupMemberOfQueue(d.Id(), userId, members); err != nil {
-				return util.BuildDiagnosticError(resourceName, "failed to update queue member: ", err)
-			}
-		}
-	}
-
-	oldSdkUsers, err := getRoutingQueueMembers(d.Id(), "user", sdkConfig)
-	if err != nil {
-		return err
-	}
-
-	oldUserIds := make([]string, len(oldSdkUsers))
-	oldUserRingNums := make(map[string]int)
-
-	for i, user := range oldSdkUsers {
-		oldUserIds[i] = *user.Id
-		oldUserRingNums[oldUserIds[i]] = *user.RingNumber
-	}
-
-	if len(oldUserIds) > 0 {
-		usersToRemove := lists.SliceDifference(oldUserIds, newUserIds)
-		err := updateMembersInChunks(d.Id(), usersToRemove, true, proxy)
-		if err != nil {
-			return err
-		}
-	}
-
-	if len(newUserIds) > 0 {
-		usersToAdd := lists.SliceDifference(newUserIds, oldUserIds)
-		err := updateMembersInChunks(d.Id(), usersToAdd, false, proxy)
-		if err != nil {
-			return err
-		}
-	}
-
-	// Check for ring numbers to update
-	for userID, newNum := range newUserRingNums {
-		if oldNum, found := oldUserRingNums[userID]; found {
-			if newNum != oldNum {
-				log.Printf("updating ring_num for user %s because it has updated. New: %v, Old: %v", userID, newNum, oldNum)
-				// Number changed. Update ring number
-				err := updateQueueUserRingNum(d.Id(), userID, newNum, sdkConfig)
-				if err != nil {
-					return err
-				}
-			}
-		} else if newNum != 1 {
-			// New queue member. Update ring num if not set to the default of 1
-			log.Printf("updating user %s ring_num because it is not the default 1", userID)
-			err := updateQueueUserRingNum(d.Id(), userID, newNum, sdkConfig)
-			if err != nil {
-				return err
-			}
-		}
-	}
-
-	log.Printf("Members updated for Queue %s", d.Get("name"))
-
-	return nil
-}
-
-// removeAllExistingUserMembersFromQueue get all existing user members of a given queue and remove them from the queue
-func removeAllExistingUserMembersFromQueue(queueId string, sdkConfig *platformclientv2.Configuration) error {
-	proxy := GetRoutingQueueProxy(sdkConfig)
-
-	log.Printf("Reading user members of queue %s", queueId)
-
-	oldSdkUsers, err := getRoutingQueueMembers(queueId, "user", sdkConfig)
-	if err != nil {
-		return fmt.Errorf("%v", err)
-	}
-	log.Printf("Read user members of queue %s", queueId)
-
-	var oldUserIds []string
-	for _, user := range oldSdkUsers {
-		oldUserIds = append(oldUserIds, *user.Id)
-	}
-
-	if len(oldUserIds) > 0 {
-		log.Printf("Removing queue %s user members", queueId)
-		if err := updateMembersInChunks(queueId, oldUserIds, true, proxy); err != nil {
-			return fmt.Errorf("%v", err)
-		}
-		log.Printf("Removing queue %s user members", queueId)
-	}
-	return nil
-}
-
-func updateMembersInChunks(queueID string, membersToUpdate []string, remove bool, proxy *RoutingQueueProxy) diag.Diagnostics {
-	// API restricts member adds/removes to 100 per call
-	// Generic call to prepare chunks for the Update. Takes in three args
-	// 1. MemberstoUpdate 2. The Entity prepare func for the update 3. Chunk Size
-	if len(membersToUpdate) > 0 {
-		chunks := chunksProcess.ChunkItems(membersToUpdate, platformWritableEntityFunc, 100)
-		// Closure to process the chunks
-		chunkProcessor := func(chunk []platformclientv2.Writableentity) diag.Diagnostics {
-			resp, err := proxy.createRoutingQueueMembers(context.TODO(), queueID, chunk, remove)
-			if err != nil {
-				return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update members in queue %s error: %s", queueID, err), resp)
-			}
-			return nil
-		}
-		// Generic Function call which takes in the chunks and the processing function
-		return chunksProcess.ProcessChunks(chunks, chunkProcessor)
-	}
-	return nil
-
-}
-
-func updateQueueUserRingNum(queueID string, userID string, ringNum int, sdkConfig *platformclientv2.Configuration) diag.Diagnostics {
-	log.Printf("Updating ring number for queue %s user %s", queueID, userID)
-
-	proxy := GetRoutingQueueProxy(sdkConfig)
-	resp, err := proxy.updateRoutingQueueMember(context.TODO(), queueID, userID, platformclientv2.Queuemember{
-		Id:         &userID,
-		RingNumber: &ringNum,
-	})
-	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update ring number for queue %s user %s error: %s", queueID, userID, err), resp)
-	}
-	return nil
-}
-
-func getRoutingQueueMembers(queueID string, memberBy string, sdkConfig *platformclientv2.Configuration) ([]platformclientv2.Queuemember, diag.Diagnostics) {
-	proxy := GetRoutingQueueProxy(sdkConfig)
-	var members []platformclientv2.Queuemember
-
-	// Need to call this method to find the member count for a queue. GetRoutingQueueMembers does not return a `total` property for us to use.
-	queue, resp, err := proxy.getRoutingQueueById(context.TODO(), queueID)
-	if err != nil {
-		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to find queue %s error: %s", queueID, err), resp)
-	}
-
-	queueMembers := *queue.MemberCount
-	log.Printf("%d members belong to queue %s", queueMembers, queueID)
-
-	for pageNum := 1; ; pageNum++ {
-		users, resp, err := sdkGetRoutingQueueMembers(queueID, memberBy, pageNum, 100, proxy.routingApi)
-		if err != nil || resp.StatusCode != http.StatusOK {
-			return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to query users for queue %s error: %s", queueID, err), resp)
-		}
-
-		if users == nil || users.Entities == nil || len(*users.Entities) == 0 {
-			membersFound := len(members)
-			log.Printf("%d queue members found for queue %s", membersFound, queueID)
-
-			if membersFound != queueMembers {
-				log.Printf("Member count is not equal to queue member found for queue %s, Correlation Id: %s", queueID, resp.CorrelationID)
-			}
-			return members, nil
-		}
-
-		members = append(members, *users.Entities...)
-	}
-}
-
-func sdkGetRoutingQueueMembers(queueID, memberBy string, pageNumber, pageSize int, api *platformclientv2.RoutingApi) (*platformclientv2.Queuememberentitylisting, *platformclientv2.APIResponse, error) {
-	// SDK does not support nil values for boolean query params yet, so we must manually construct this HTTP request for now
-	apiClient := &api.Configuration.APIClient
-
-	// create path and map variables
-	path := api.Configuration.BasePath + "/api/v2/routing/queues/{queueId}/members"
-	path = strings.Replace(path, "{queueId}", queueID, -1)
-
-	headerParams := make(map[string]string)
-	queryParams := make(map[string]string)
-	formParams := url.Values{}
-	var postBody interface{}
-	var postFileName string
-	var fileBytes []byte
-
-	// oauth required
-	if api.Configuration.AccessToken != "" {
-		headerParams["Authorization"] = "Bearer " + api.Configuration.AccessToken
-	}
-	// add default headers if any
-	for key := range api.Configuration.DefaultHeader {
-		headerParams[key] = api.Configuration.DefaultHeader[key]
-	}
-
-	queryParams["pageSize"] = apiClient.ParameterToString(pageSize, "")
-	queryParams["pageNumber"] = apiClient.ParameterToString(pageNumber, "")
-	if memberBy != "" {
-		queryParams["memberBy"] = memberBy
-	}
-
-	headerParams["Content-Type"] = "application/json"
-	headerParams["Accept"] = "application/json"
-
-	var successPayload *platformclientv2.Queuememberentitylisting
-	response, err := apiClient.CallAPI(path, http.MethodGet, postBody, headerParams, queryParams, formParams, postFileName, fileBytes)
-	if err != nil {
-		// Nothing special to do here, but do avoid processing the response
-	} else if response.Error != nil {
-		err = fmt.Errorf(response.ErrorMessage)
-	} else {
-		err = json.Unmarshal([]byte(response.RawBody), &successPayload)
-	}
-	return successPayload, response, err
-}
-
-//
-
-func constructAgentOwnedRouting(d *schema.ResourceData) *platformclientv2.Agentownedrouting {
-	if agentOwnedRouting, ok := d.Get("agent_owned_routing").([]interface{}); ok {
-		if agentOwnedRouting != nil && len(agentOwnedRouting) > 0 {
-			return buildAgentOwnedRouting(agentOwnedRouting)
-		}
-	}
-	return nil
+	return wrapupCodes
 }
 
 func validateMapCommTypes(val interface{}, _ cty.Path) diag.Diagnostics {
@@ -732,20 +463,10 @@ func validateMapCommTypes(val interface{}, _ cty.Path) diag.Diagnostics {
 	return nil
 }
 
-// verifyUserIsNotGroupMemberOfQueue Search through queue group members to verify that a given user is not a group member
-func verifyUserIsNotGroupMemberOfQueue(queueId, userId string, members []platformclientv2.Queuemember) error {
-	log.Printf("verifying that member '%s' is not assinged to the queue '%s' via a group", userId, queueId)
-
-	for _, member := range members {
-		if *member.Id == userId {
-			return fmt.Errorf("member %s  is already assigned to queue %s via a group, and therefore should not be assigned as a member", userId, queueId)
-		}
-	}
-
-	log.Printf("User %s not found as group member in queue %s", userId, queueId)
-	return nil
-}
-
 func platformWritableEntityFunc(val string) platformclientv2.Writableentity {
 	return platformclientv2.Writableentity{Id: &val}
+}
+
+func platformWrapupCodeReferenceFunc(val string) platformclientv2.Wrapupcodereference {
+	return platformclientv2.Wrapupcodereference{Id: &val}
 }

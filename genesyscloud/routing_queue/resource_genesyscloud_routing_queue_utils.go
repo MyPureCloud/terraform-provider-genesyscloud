@@ -3,7 +3,6 @@ package routing_queue
 import (
 	"context"
 	"fmt"
-	"log"
 	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"terraform-provider-genesyscloud/genesyscloud/util/lists"
@@ -35,7 +34,6 @@ func buildSdkMediaSettings(d *schema.ResourceData) *platformclientv2.Queuemedias
 	}
 
 	mediaSettingsEmail := d.Get("media_settings_email").([]interface{})
-	log.Printf("The media settings email #%v", mediaSettingsEmail)
 	if mediaSettingsEmail != nil && len(mediaSettingsEmail) > 0 {
 		queueMediaSettings.Email = buildSdkMediaSetting(mediaSettingsEmail)
 	}
@@ -79,14 +77,7 @@ func buildSdkDefaultScriptsMap(d *schema.ResourceData) *map[string]platformclien
 	}
 	return nil
 }
-func buildSdkQueueMessagingAddresses(d *schema.ResourceData) *platformclientv2.Queuemessagingaddresses {
-	if _, ok := d.GetOk("outbound_messaging_sms_address_id"); ok {
-		return &platformclientv2.Queuemessagingaddresses{
-			SmsAddress: util.BuildSdkDomainEntityRef(d, "outbound_messaging_sms_address_id"),
-		}
-	}
-	return nil
-}
+
 func buildSdkDirectRouting(d *schema.ResourceData) *platformclientv2.Directrouting {
 	directRouting := d.Get("direct_routing").([]interface{})
 	if directRouting != nil && len(directRouting) > 0 {
@@ -127,22 +118,6 @@ func buildSdkDirectRouting(d *schema.ResourceData) *platformclientv2.Directrouti
 	return nil
 }
 
-func buildSdkQueueEmailAddress(d *schema.ResourceData) *platformclientv2.Queueemailaddress {
-	outboundEmailAddress := d.Get("outbound_email_address").([]interface{})
-	if outboundEmailAddress != nil && len(outboundEmailAddress) > 0 {
-		settingsMap := outboundEmailAddress[0].(map[string]interface{})
-
-		inboundRoute := &platformclientv2.Inboundroute{
-			Id: platformclientv2.String(settingsMap["route_id"].(string)),
-		}
-		return &platformclientv2.Queueemailaddress{
-			Domain: &platformclientv2.Domainentityref{Id: platformclientv2.String(settingsMap["domain_id"].(string))},
-			Route:  &inboundRoute,
-		}
-	}
-	return nil
-}
-
 func buildAgentOwnedRouting(routing []interface{}) *platformclientv2.Agentownedrouting {
 	settingsMap := routing[0].(map[string]interface{})
 	return &platformclientv2.Agentownedrouting{
@@ -164,6 +139,7 @@ func buildSdkMediaSetting(settings []interface{}) *platformclientv2.Mediasetting
 		},
 	}
 }
+
 func buildSdkMediaSettingCallback(settings []interface{}) *platformclientv2.Callbackmediasettings {
 	settingsMap := settings[0].(map[string]interface{})
 
@@ -208,6 +184,7 @@ func buildSdkRoutingRules(d *schema.ResourceData) *[]platformclientv2.Routingrul
 func buildSdkConditionalGroupRouting(d *schema.ResourceData) (*platformclientv2.Conditionalgrouprouting, diag.Diagnostics) {
 	if configRules, ok := d.GetOk("conditional_group_routing_rules"); ok {
 		var sdkCGRRules []platformclientv2.Conditionalgrouproutingrule
+
 		for i, configRules := range configRules.([]interface{}) {
 			ruleSettings, ok := configRules.(map[string]interface{})
 			if !ok {
@@ -218,23 +195,25 @@ func buildSdkConditionalGroupRouting(d *schema.ResourceData) (*platformclientv2.
 			if waitSeconds, ok := ruleSettings["wait_seconds"].(int); ok {
 				sdkCGRRule.WaitSeconds = &waitSeconds
 			}
+
 			resourcedata.BuildSDKStringValueIfNotNil(&sdkCGRRule.Operator, ruleSettings, "operator")
+			resourcedata.BuildSDKStringValueIfNotNil(&sdkCGRRule.Metric, ruleSettings, "metric")
+
 			if conditionValue, ok := ruleSettings["condition_value"].(float64); ok {
 				sdkCGRRule.ConditionValue = &conditionValue
 			}
-			resourcedata.BuildSDKStringValueIfNotNil(&sdkCGRRule.Metric, ruleSettings, "metric")
 
 			if queueId, ok := ruleSettings["queue_id"].(string); ok && queueId != "" {
 				if i == 0 {
-					return nil, util.BuildDiagnosticError(resourceName, fmt.Sprintf("For rule 1, queue_id is always assumed to be the current queue, so queue id should not be specified"), fmt.Errorf("queue id is not nil"))
+					return nil, util.BuildDiagnosticError(resourceName, "For rule 1, queue_id is always assumed to be the current queue, so queue id should not be specified", fmt.Errorf("queue id is not nil"))
 				}
 				sdkCGRRule.Queue = &platformclientv2.Domainentityref{Id: &queueId}
-
 			}
 
 			if memberGroupList, ok := ruleSettings["groups"].([]interface{}); ok {
 				if len(memberGroupList) > 0 {
 					sdkMemberGroups := make([]platformclientv2.Membergroup, len(memberGroupList))
+
 					for i, memberGroup := range memberGroupList {
 						settingsMap, ok := memberGroup.(map[string]interface{})
 						if !ok {
@@ -275,6 +254,7 @@ func buildMemberGroupList(d *schema.ResourceData, groupKey string, groupType str
 func buildSdkBullseyeSettings(d *schema.ResourceData) *platformclientv2.Bullseye {
 	if configRings, ok := d.GetOk("bullseye_rings"); ok {
 		var sdkRings []platformclientv2.Ring
+
 		for _, configRing := range configRings.([]interface{}) {
 			ringSettings, ok := configRing.(map[string]interface{})
 			if !ok {
@@ -344,13 +324,136 @@ func buildSdkBullseyeSettings(d *schema.ResourceData) *platformclientv2.Bullseye
 		}
 
 		sdkRings = append(sdkRings, defaultSdkRing)
-
 		return &platformclientv2.Bullseye{Rings: &sdkRings}
 	}
 	return nil
 }
 
+func buildSdkQueueMessagingAddresses(d *schema.ResourceData) *platformclientv2.Queuemessagingaddresses {
+	if _, ok := d.GetOk("outbound_messaging_sms_address_id"); ok {
+		return &platformclientv2.Queuemessagingaddresses{
+			SmsAddress: util.BuildSdkDomainEntityRef(d, "outbound_messaging_sms_address_id"),
+		}
+	}
+	return nil
+}
+
+func buildSdkQueueEmailAddress(d *schema.ResourceData) *platformclientv2.Queueemailaddress {
+	outboundEmailAddress := d.Get("outbound_email_address").([]interface{})
+	if outboundEmailAddress != nil && len(outboundEmailAddress) > 0 {
+		settingsMap := outboundEmailAddress[0].(map[string]interface{})
+
+		inboundRoute := &platformclientv2.Inboundroute{
+			Id: platformclientv2.String(settingsMap["route_id"].(string)),
+		}
+		return &platformclientv2.Queueemailaddress{
+			Domain: &platformclientv2.Domainentityref{Id: platformclientv2.String(settingsMap["domain_id"].(string))},
+			Route:  &inboundRoute,
+		}
+	}
+	return nil
+}
+
+func constructAgentOwnedRouting(d *schema.ResourceData) *platformclientv2.Agentownedrouting {
+	if agentOwnedRouting, ok := d.Get("agent_owned_routing").([]interface{}); ok {
+		if len(agentOwnedRouting) > 0 {
+			return buildAgentOwnedRouting(agentOwnedRouting)
+		}
+	}
+	return nil
+}
+
 // Flatten Functions
+
+func flattenMediaSetting(settings *platformclientv2.Mediasettings) []interface{} {
+	settingsMap := make(map[string]interface{})
+
+	settingsMap["alerting_timeout_sec"] = *settings.AlertingTimeoutSeconds
+	resourcedata.SetMapValueIfNotNil(settingsMap, "enable_auto_answer", settings.EnableAutoAnswer)
+	settingsMap["service_level_percentage"] = *settings.ServiceLevel.Percentage
+	settingsMap["service_level_duration_ms"] = *settings.ServiceLevel.DurationMs
+
+	return []interface{}{settingsMap}
+}
+
+func flattenDefaultScripts(sdkScripts map[string]platformclientv2.Script) map[string]interface{} {
+	if len(sdkScripts) == 0 {
+		return nil
+	}
+
+	results := make(map[string]interface{})
+	for k, v := range sdkScripts {
+		results[k] = *v.Id
+	}
+	return results
+}
+
+func flattenDirectRouting(settings *platformclientv2.Directrouting) []interface{} {
+	settingsMap := make(map[string]interface{})
+
+	if settings.BackupQueueId != nil {
+		settingsMap["backup_queue_id"] = *settings.BackupQueueId
+	}
+	if settings.AgentWaitSeconds != nil {
+		settingsMap["agent_wait_seconds"] = *settings.AgentWaitSeconds
+	}
+	if settings.WaitForAgent != nil {
+		settingsMap["wait_for_agent"] = *settings.WaitForAgent
+	}
+
+	if settings.CallMediaSettings != nil {
+		callSettings := *settings.CallMediaSettings
+		settingsMap["call_use_agent_address_outbound"] = *callSettings.UseAgentAddressOutbound
+	}
+	if settings.EmailMediaSettings != nil {
+		emailSettings := *settings.EmailMediaSettings
+		settingsMap["email_use_agent_address_outbound"] = *emailSettings.UseAgentAddressOutbound
+	}
+	if settings.MessageMediaSettings != nil {
+		messageSettings := *settings.MessageMediaSettings
+		settingsMap["message_use_agent_address_outbound"] = *messageSettings.UseAgentAddressOutbound
+	}
+
+	return []interface{}{settingsMap}
+}
+
+func flattenAgentOwnedRouting(settings *platformclientv2.Agentownedrouting) []interface{} {
+	settingsMap := make(map[string]interface{})
+
+	settingsMap["max_owned_callback_delay_hours"] = *settings.MaxOwnedCallbackDelayHours
+	resourcedata.SetMapValueIfNotNil(settingsMap, "enable_agent_owned_callbacks", settings.EnableAgentOwnedCallbacks)
+	settingsMap["max_owned_callback_hours"] = *settings.MaxOwnedCallbackHours
+
+	return []interface{}{settingsMap}
+}
+
+func flattenMediaSettingCallback(settings *platformclientv2.Callbackmediasettings) []interface{} {
+	settingsMap := make(map[string]interface{})
+
+	settingsMap["alerting_timeout_sec"] = *settings.AlertingTimeoutSeconds
+	settingsMap["service_level_percentage"] = *settings.ServiceLevel.Percentage
+	settingsMap["service_level_duration_ms"] = *settings.ServiceLevel.DurationMs
+	resourcedata.SetMapValueIfNotNil(settingsMap, "enable_auto_answer", settings.EnableAutoAnswer)
+	resourcedata.SetMapValueIfNotNil(settingsMap, "enable_auto_dial_and_end", settings.EnableAutoDialAndEnd)
+	settingsMap["auto_end_delay_seconds"] = *settings.AutoEndDelaySeconds
+	settingsMap["auto_dial_delay_seconds"] = *settings.AutoDialDelaySeconds
+
+	return []interface{}{settingsMap}
+}
+
+func flattenRoutingRules(sdkRoutingRules *[]platformclientv2.Routingrule) []interface{} {
+	rules := make([]interface{}, len(*sdkRoutingRules))
+	for i, sdkRule := range *sdkRoutingRules {
+		ruleSettings := make(map[string]interface{})
+
+		resourcedata.SetMapValueIfNotNil(ruleSettings, "operator", sdkRule.Operator)
+		resourcedata.SetMapValueIfNotNil(ruleSettings, "threshold", sdkRule.Threshold)
+		resourcedata.SetMapValueIfNotNil(ruleSettings, "wait_seconds", sdkRule.WaitSeconds)
+
+		rules[i] = ruleSettings
+	}
+	return rules
+}
 
 func flattenConditionalGroupRoutingRules(queue *platformclientv2.Queue) []interface{} {
 	if queue.ConditionalGroupRouting == nil || len(*queue.ConditionalGroupRouting.Rules) == 0 {
@@ -389,138 +492,6 @@ func flattenConditionalGroupRoutingRules(queue *platformclientv2.Queue) []interf
 	}
 
 	return rules
-}
-
-func flattenDefaultScripts(sdkScripts map[string]platformclientv2.Script) map[string]interface{} {
-	if len(sdkScripts) == 0 {
-		return nil
-	}
-
-	results := make(map[string]interface{})
-	for k, v := range sdkScripts {
-		results[k] = *v.Id
-	}
-	return results
-}
-
-func flattenRoutingRules(sdkRoutingRules *[]platformclientv2.Routingrule) []interface{} {
-	rules := make([]interface{}, len(*sdkRoutingRules))
-	for i, sdkRule := range *sdkRoutingRules {
-		ruleSettings := make(map[string]interface{})
-
-		resourcedata.SetMapValueIfNotNil(ruleSettings, "operator", sdkRule.Operator)
-		resourcedata.SetMapValueIfNotNil(ruleSettings, "threshold", sdkRule.Threshold)
-		resourcedata.SetMapValueIfNotNil(ruleSettings, "wait_seconds", sdkRule.WaitSeconds)
-
-		rules[i] = ruleSettings
-	}
-	return rules
-}
-
-func flattenMediaSetting(settings *platformclientv2.Mediasettings) []interface{} {
-	settingsMap := make(map[string]interface{})
-
-	settingsMap["alerting_timeout_sec"] = *settings.AlertingTimeoutSeconds
-	resourcedata.SetMapValueIfNotNil(settingsMap, "enable_auto_answer", settings.EnableAutoAnswer)
-	settingsMap["service_level_percentage"] = *settings.ServiceLevel.Percentage
-	settingsMap["service_level_duration_ms"] = *settings.ServiceLevel.DurationMs
-
-	return []interface{}{settingsMap}
-}
-
-func flattenMediaSettingCallback(settings *platformclientv2.Callbackmediasettings) []interface{} {
-	settingsMap := make(map[string]interface{})
-
-	settingsMap["alerting_timeout_sec"] = *settings.AlertingTimeoutSeconds
-	settingsMap["service_level_percentage"] = *settings.ServiceLevel.Percentage
-	settingsMap["service_level_duration_ms"] = *settings.ServiceLevel.DurationMs
-	resourcedata.SetMapValueIfNotNil(settingsMap, "enable_auto_answer", settings.EnableAutoAnswer)
-	resourcedata.SetMapValueIfNotNil(settingsMap, "enable_auto_dial_and_end", settings.EnableAutoDialAndEnd)
-	settingsMap["auto_end_delay_seconds"] = *settings.AutoEndDelaySeconds
-	settingsMap["auto_dial_delay_seconds"] = *settings.AutoDialDelaySeconds
-
-	return []interface{}{settingsMap}
-}
-
-func flattenAgentOwnedRouting(settings *platformclientv2.Agentownedrouting) []interface{} {
-	settingsMap := make(map[string]interface{})
-
-	settingsMap["max_owned_callback_delay_hours"] = *settings.MaxOwnedCallbackDelayHours
-	resourcedata.SetMapValueIfNotNil(settingsMap, "enable_agent_owned_callbacks", settings.EnableAgentOwnedCallbacks)
-	settingsMap["max_owned_callback_hours"] = *settings.MaxOwnedCallbackHours
-
-	return []interface{}{settingsMap}
-}
-
-func FlattenQueueEmailAddress(settings platformclientv2.Queueemailaddress) map[string]interface{} {
-	settingsMap := make(map[string]interface{})
-	resourcedata.SetMapReferenceValueIfNotNil(settingsMap, "domain_id", settings.Domain)
-
-	if settings.Route != nil {
-		route := *settings.Route
-		settingsMap["route_id"] = *route.Id
-	}
-
-	return settingsMap
-}
-
-func flattenDirectRouting(settings *platformclientv2.Directrouting) []interface{} {
-	settingsMap := make(map[string]interface{})
-
-	if settings.BackupQueueId != nil {
-		settingsMap["backup_queue_id"] = *settings.BackupQueueId
-	}
-	if settings.AgentWaitSeconds != nil {
-		settingsMap["agent_wait_seconds"] = *settings.AgentWaitSeconds
-	}
-	if settings.WaitForAgent != nil {
-		settingsMap["wait_for_agent"] = *settings.WaitForAgent
-	}
-
-	if settings.CallMediaSettings != nil {
-		callSettings := *settings.CallMediaSettings
-		settingsMap["call_use_agent_address_outbound"] = *callSettings.UseAgentAddressOutbound
-	}
-	if settings.EmailMediaSettings != nil {
-		emailSettings := *settings.EmailMediaSettings
-		settingsMap["email_use_agent_address_outbound"] = *emailSettings.UseAgentAddressOutbound
-	}
-	if settings.MessageMediaSettings != nil {
-		messageSettings := *settings.MessageMediaSettings
-		settingsMap["message_use_agent_address_outbound"] = *messageSettings.UseAgentAddressOutbound
-	}
-
-	return []interface{}{settingsMap}
-}
-
-func flattenQueueMembers(queueID string, memberBy string, sdkConfig *platformclientv2.Configuration) (*schema.Set, diag.Diagnostics) {
-	members, err := getRoutingQueueMembers(queueID, memberBy, sdkConfig)
-	if err != nil {
-		return nil, err
-	}
-
-	memberSet := schema.NewSet(schema.HashResource(queueMemberResource), []interface{}{})
-	for _, member := range members {
-		memberMap := make(map[string]interface{})
-		memberMap["user_id"] = *member.Id
-		memberMap["ring_num"] = *member.RingNumber
-		memberSet.Add(memberMap)
-	}
-
-	return memberSet, nil
-}
-
-func flattenQueueWrapupCodes(ctx context.Context, queueID string, proxy *RoutingQueueProxy) (*schema.Set, diag.Diagnostics) {
-	codeIds, resp, err := proxy.getRoutingQueueWrapupCodeIds(ctx, queueID)
-	if err != nil {
-		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("failed to query wrapup codes for queue %s", queueID), resp)
-	}
-
-	if codeIds != nil {
-		return lists.StringListToSet(codeIds), nil
-	}
-
-	return nil, nil
 }
 
 func flattenQueueMemberGroupsList(queue *platformclientv2.Queue, groupType *string) *schema.Set {
@@ -593,7 +564,59 @@ func flattenBullseyeRings(sdkRings *[]platformclientv2.Ring) []interface{} {
 	return rings
 }
 
+func FlattenQueueEmailAddress(settings platformclientv2.Queueemailaddress) map[string]interface{} {
+	settingsMap := make(map[string]interface{})
+	resourcedata.SetMapReferenceValueIfNotNil(settingsMap, "domain_id", settings.Domain)
+
+	if settings.Route != nil {
+		route := *settings.Route
+		settingsMap["route_id"] = *route.Id
+	}
+
+	return settingsMap
+}
+
+func flattenQueueMembers(queueID string, memberBy string, sdkConfig *platformclientv2.Configuration) (*schema.Set, diag.Diagnostics) {
+	members, err := getRoutingQueueMembers(queueID, memberBy, sdkConfig)
+	if err != nil {
+		return nil, err
+	}
+
+	memberSet := schema.NewSet(schema.HashResource(queueMemberResource), []interface{}{})
+	for _, member := range members {
+		memberMap := make(map[string]interface{})
+		memberMap["user_id"] = *member.Id
+		memberMap["ring_num"] = *member.RingNumber
+		memberSet.Add(memberMap)
+	}
+
+	return memberSet, nil
+}
+
+func flattenQueueWrapupCodes(ctx context.Context, queueID string, proxy *RoutingQueueProxy) (*schema.Set, diag.Diagnostics) {
+	codes, resp, err := proxy.getAllRoutingQueueWrapupCodes(ctx, queueID)
+	codeIds := getWrapupCodeIds(codes)
+
+	if err != nil {
+		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("failed to query wrapup codes for queue %s", queueID), resp)
+	}
+
+	if codeIds != nil {
+		return lists.StringListToSet(codeIds), nil
+	}
+
+	return nil, nil
+}
+
 // Generate Functions
+
+func GenerateRoutingQueueResourceBasic(resourceID string, name string, nestedBlocks ...string) string {
+	return fmt.Sprintf(`resource "genesyscloud_routing_queue" "%s" {
+		name = "%s"
+		%s
+	}
+	`, resourceID, name, strings.Join(nestedBlocks, "\n"))
+}
 
 func GenerateRoutingQueueResource(
 	resourceID string,
@@ -642,14 +665,6 @@ func GenerateRoutingQueueResource(
 		enableAudioMonitoring,
 		enableManualAssignment,
 		strings.Join(nestedBlocks, "\n"))
-}
-
-func GenerateRoutingQueueResourceBasic(resourceID string, name string, nestedBlocks ...string) string {
-	return fmt.Sprintf(`resource "genesyscloud_routing_queue" "%s" {
-		name = "%s"
-		%s
-	}
-	`, resourceID, name, strings.Join(nestedBlocks, "\n"))
 }
 
 // GenerateRoutingQueueResourceBasicWithDepends Used when testing skills group dependencies.

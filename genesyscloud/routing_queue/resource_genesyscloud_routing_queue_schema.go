@@ -162,10 +162,10 @@ func ResourceRoutingQueue() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud Routing Queue",
 
-		CreateContext: provider.CreateWithPooledClient(createQueue),
-		ReadContext:   provider.ReadWithPooledClient(readQueue),
-		UpdateContext: provider.UpdateWithPooledClient(updateQueue),
-		DeleteContext: provider.DeleteWithPooledClient(deleteQueue),
+		CreateContext: provider.CreateWithPooledClient(createRoutingQueue),
+		ReadContext:   provider.ReadWithPooledClient(readRoutingQueue),
+		UpdateContext: provider.UpdateWithPooledClient(updateRoutingQueue),
+		DeleteContext: provider.DeleteWithPooledClient(deleteRoutingQueue),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
