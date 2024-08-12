@@ -134,7 +134,12 @@ func updateRoutingWrapupcodeFn(ctx context.Context, p *routingWrapupcodeProxy, i
 
 // deleteRoutingWrapupcodeFn is an implementation function for deleting a Genesys Cloud routing wrapupcodes
 func deleteRoutingWrapupcodeFn(ctx context.Context, p *routingWrapupcodeProxy, id string) (*platformclientv2.APIResponse, error) {
-	return p.routingApi.DeleteRoutingWrapupcode(id)
+	resp, err := p.routingApi.DeleteRoutingWrapupcode(id)
+	if err != nil {
+		return resp, err
+	}
+	rc.DeleteCacheItem(p.routingWrapupcodesCache, id)
+	return nil, nil
 }
 
 // getAllRoutingWrapupcodeFn is the implementation for retrieving all routing wrapupcodes in Genesys Cloud

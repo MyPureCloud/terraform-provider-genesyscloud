@@ -64,6 +64,7 @@ resource "genesyscloud_outbound_campaign" "campaign" {
 - `division_id` (String) The division this campaign belongs to.
 - `dnc_list_ids` (List of String) DncLists for this Campaign to check before placing a call.
 - `dynamic_contact_queueing_settings` (Block List, Max: 1) Settings for dynamic queueing of contacts. (see [below for nested schema](#nestedblock--dynamic_contact_queueing_settings))
+- `dynamic_line_balancing_settings` (Block List, Max: 1) Dynamic line balancing settings. (see [below for nested schema](#nestedblock--dynamic_line_balancing_settings))
 - `edge_group_id` (String) The EdgeGroup that will place the calls. Required for all dialing modes except preview.
 - `max_calls_per_agent` (Number) The maximum number of calls that can be placed per agent on this campaign.
 - `no_answer_timeout` (Number) How long to wait before dispositioning a call as 'no-answer'. Default 30 seconds. Only applicable to non-preview campaigns.
@@ -107,4 +108,13 @@ Optional:
 Required:
 
 - `sort` (Boolean) Whether to sort contacts dynamically.
+
+
+<a id="nestedblock--dynamic_line_balancing_settings"></a>
+### Nested Schema for `dynamic_line_balancing_settings`
+
+Optional:
+
+- `enabled` (Boolean) Indicates that this campaign is subject of dynamic line balancing.
+- `relative_weight` (Number) Relative weight of this campaign in dynamic line balancing.
 

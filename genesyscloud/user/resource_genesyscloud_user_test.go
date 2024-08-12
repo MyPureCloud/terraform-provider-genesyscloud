@@ -202,7 +202,7 @@ func TestAccResourceUserAddresses(t *testing.T) {
 		addrTypeHome              = "HOME"
 		extensionPoolResource1    = "test-extensionpool1" + uuid.NewString()
 		extensionPoolStartNumber1 = "8000"
-		extensionPoolEndNumber1   = "9000"
+		extensionPoolEndNumber1   = "8999"
 	)
 
 	extensionPoolResource := extensionPool.ExtensionPoolStruct{
@@ -317,7 +317,6 @@ func TestAccResourceUserAddresses(t *testing.T) {
 }
 
 func TestAccResourceUserPhone(t *testing.T) {
-	t.Parallel()
 	var (
 		addrUserResource1         = "test-user-addr"
 		addrUserName              = "Nancy Terraform"
@@ -1076,7 +1075,10 @@ func TestAccResourceUserroutingUtilWithLabels(t *testing.T) {
 				),
 			},
 		},
-		CheckDestroy: testVerifyUsersDestroyed,
+		CheckDestroy: func(state *terraform.State) error {
+			time.Sleep(45 * time.Second)
+			return testVerifyUsersDestroyed(state)
+		},
 	})
 }
 
@@ -1132,7 +1134,6 @@ func TestAccResourceUserRestore(t *testing.T) {
 }
 
 func TestAccResourceUserCreateWhenDestroyed(t *testing.T) {
-	t.Parallel()
 	var (
 		userResource1 = "test-user"
 		email1        = "terraform-" + uuid.NewString() + "@user.com"

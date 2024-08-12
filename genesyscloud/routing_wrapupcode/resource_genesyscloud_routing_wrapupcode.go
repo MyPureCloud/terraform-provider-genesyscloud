@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"terraform-provider-genesyscloud/genesyscloud/util/constants"
@@ -11,8 +12,6 @@ import (
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
-
-	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 
@@ -38,18 +37,14 @@ func getAllRoutingWrapupCodes(ctx context.Context, clientConfig *platformclientv
 }
 
 func createRoutingWrapupCode(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getRoutingWrapupcodeProxy(sdkConfig)
 
 	name := d.Get("name").(string)
-	divisionID := d.Get("division_id").(string)
+	wrapupCode := buildWrapupCodeFromResourceData(d)
 
 	log.Printf("Creating wrapupcode %s", name)
-	wrapupcodeResponse, proxyResponse, err := proxy.createRoutingWrapupcode(ctx, &platformclientv2.Wrapupcoderequest{
-		Name:     &name,
-		Division: &platformclientv2.Writablestarrabledivision{Id: &divisionID},
-	})
+	wrapupcodeResponse, proxyResponse, err := proxy.createRoutingWrapupcode(ctx, wrapupCode)
 
 	if err != nil {
 		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create wrapupcode %s error: %s", name, err), proxyResponse)
@@ -61,7 +56,6 @@ func createRoutingWrapupCode(ctx context.Context, d *schema.ResourceData, meta i
 }
 
 func readRoutingWrapupCode(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getRoutingWrapupcodeProxy(sdkConfig)
 
@@ -78,7 +72,9 @@ func readRoutingWrapupCode(ctx context.Context, d *schema.ResourceData, meta int
 		}
 
 		resourcedata.SetNillableValue(d, "name", wrapupcode.Name)
-		resourcedata.SetNillableValue(d, "division_id", wrapupcode.Division.Id)
+		if wrapupcode.Division != nil && wrapupcode.Division.Id != nil {
+			_ = d.Set("division_id", *wrapupcode.Division.Id)
+		}
 
 		log.Printf("Read wrapupcode %s %s", d.Id(), *wrapupcode.Name)
 		return cc.CheckState(d)
@@ -86,18 +82,14 @@ func readRoutingWrapupCode(ctx context.Context, d *schema.ResourceData, meta int
 }
 
 func updateRoutingWrapupCode(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getRoutingWrapupcodeProxy(sdkConfig)
 
 	name := d.Get("name").(string)
-	divisionID := d.Get("division_id").(string)
+	wrapupCode := buildWrapupCodeFromResourceData(d)
 
 	log.Printf("Updating wrapupcode %s", name)
-	_, proxyUpdResponse, err := proxy.updateRoutingWrapupcode(ctx, d.Id(), &platformclientv2.Wrapupcoderequest{
-		Name:     &name,
-		Division: &platformclientv2.Writablestarrabledivision{Id: &divisionID},
-	})
+	_, proxyUpdResponse, err := proxy.updateRoutingWrapupcode(ctx, d.Id(), wrapupCode)
 	if err != nil {
 		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update wrapupcode %s error: %s", name, err), proxyUpdResponse)
 	}
@@ -108,7 +100,6 @@ func updateRoutingWrapupCode(ctx context.Context, d *schema.ResourceData, meta i
 }
 
 func deleteRoutingWrapupCode(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getRoutingWrapupcodeProxy(sdkConfig)
 
@@ -132,6 +123,18 @@ func deleteRoutingWrapupCode(ctx context.Context, d *schema.ResourceData, meta i
 		}
 		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Routing wrapup code %s still exists", d.Id()), proxyGetResponse))
 	})
+}
+
+func buildWrapupCodeFromResourceData(d *schema.ResourceData) *platformclientv2.Wrapupcoderequest {
+	name := d.Get("name").(string)
+	divisionId, _ := d.Get("division_id").(string)
+	wrapupCode := &platformclientv2.Wrapupcoderequest{
+		Name: &name,
+	}
+	if divisionId != "" {
+		wrapupCode.Division = &platformclientv2.Writablestarrabledivision{Id: &divisionId}
+	}
+	return wrapupCode
 }
 
 func GenerateRoutingWrapupcodeResource(resourceID string, name string, divisionId string) string {

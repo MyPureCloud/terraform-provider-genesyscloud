@@ -10,8 +10,3 @@
 - [GET /api/v2/routing/users/{userId}/utilization](https://developer.mypurecloud.com/api/rest/v2/users/#get-api-v2-routing-users--userId--utilization)
 - [PUT /api/v2/routing/users/{userId}/utilization](https://developer.mypurecloud.com/api/rest/v2/users/#put-api-v2-routing-users--userId--utilization)
 - [DELETE /api/v2/routing/users/{userId}/utilization](https://developer.mypurecloud.com/api/rest/v2/users/#delete-api-v2-routing-users--userId--utilization)
-
----
-
-This resource has a feature toggle experimenting with new logic for returning phone addresses in the read action.
-You can enable this by setting the `USE_NEW_USER_ADDRESS_LOGIC` environmental variable before running `terraform apply`.

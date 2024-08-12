@@ -92,7 +92,7 @@ func ResourceTaskManagementWorktypeStatus() *schema.Resource {
 				Type:        schema.TypeString,
 			},
 			`default`: {
-				Description: `This status is the default status for Workitems created from this Worktype. Only one status can be set as the default status at a time.`,
+				Description: `This status is the default status for Workitems created from this Worktype. Only one status can be set as the default status at a time. Once set there must always be a default status. The default can not be deleted.`,
 				Optional:    true,
 				Type:        schema.TypeBool,
 			},

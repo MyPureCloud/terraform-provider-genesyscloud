@@ -18,6 +18,7 @@ import (
 	authorizatioProduct "terraform-provider-genesyscloud/genesyscloud/authorization_product"
 	integrationInstagram "terraform-provider-genesyscloud/genesyscloud/conversations_messaging_integrations_instagram"
 	cMessageSettings "terraform-provider-genesyscloud/genesyscloud/conversations_messaging_settings"
+	cMessageSettingsDefault "terraform-provider-genesyscloud/genesyscloud/conversations_messaging_settings_default"
 	supportedContent "terraform-provider-genesyscloud/genesyscloud/conversations_messaging_supportedcontent"
 	employeeperformanceExternalmetricsDefinition "terraform-provider-genesyscloud/genesyscloud/employeeperformance_externalmetrics_definitions"
 	externalContacts "terraform-provider-genesyscloud/genesyscloud/external_contacts"
@@ -257,13 +258,13 @@ func registerResources() {
 	routingUtilizationLabel.SetRegistrar(regInstance)                      //Registering routing utilization label
 	journeyViews.SetRegistrar(regInstance)                                 //Registering journey views
 	routingWrapupcode.SetRegistrar(regInstance)                            //Registering routing wrapupcode
-
-	routingLanguage.SetRegistrar(regInstance)    //Registering Routing Language
-	routingEmailDomain.SetRegistrar(regInstance) //Registering Routing Email Domain
-	supportedContent.SetRegistrar(regInstance)   //Registering Supported Content
-	routingSkill.SetRegistrar(regInstance)       //Registering Routing Skill
-	cMessageSettings.SetRegistrar(regInstance)   // Registering conversations messaging settings
-	routingSkillGroup.SetRegistrar(regInstance)  //Registering routing skill group
+	routingLanguage.SetRegistrar(regInstance)                              //Registering Routing Language
+	routingEmailDomain.SetRegistrar(regInstance)                           //Registering Routing Email Domain
+	supportedContent.SetRegistrar(regInstance)                             //Registering Supported Content
+	routingSkill.SetRegistrar(regInstance)                                 //Registering Routing Skill
+	cMessageSettings.SetRegistrar(regInstance)                             //Registering conversations messaging settings
+	routingSkillGroup.SetRegistrar(regInstance)                            //Registering routing skill group
+	cMessageSettingsDefault.SetRegistrar(regInstance)                      //Registering conversations messaging settings default
 	// setting resources for Use cases  like TF export where provider is used in resource classes.
 	tfexp.SetRegistrar(regInstance) //Registering tf exporter
 	registrar.SetResources(providerResources, providerDataSources)

@@ -146,7 +146,12 @@ func updateUserFn(ctx context.Context, p *userProxy, id string, updateUser *plat
 
 // deleteUserFn is an implementation function for deleting a Genesys Cloud user
 func deleteUserFn(ctx context.Context, p *userProxy, id string) (*interface{}, *platformclientv2.APIResponse, error) {
-	return p.userApi.DeleteUser(id)
+	data, resp, err := p.userApi.DeleteUser(id)
+	if err != nil {
+		return nil, resp, err
+	}
+	rc.DeleteCacheItem(p.userCache, id)
+	return data, nil, nil
 }
 
 func patchUserWithStateFn(ctx context.Context, p *userProxy, id string, updateUser *platformclientv2.Updateuser) (*platformclientv2.User, *platformclientv2.APIResponse, error) {
@@ -163,15 +168,23 @@ func getAllUserFn(ctx context.Context, p *userProxy) (*[]platformclientv2.User, 
 	getUsersByStatus := func(userStatus string) (*[]platformclientv2.User, *platformclientv2.APIResponse, error) {
 		users := []platformclientv2.User{}
 		const pageSize = 100
-
-		usersList, apiResponse, err := p.userApi.GetUsers(pageSize, 1, nil, nil, "", nil, "", userStatus)
+		expandedAttributes := []string{
+			// Expands
+			"skills",
+			"languages",
+			"locations",
+			"profileSkills",
+			"certifications",
+			"employerInfo",
+		}
+		usersList, apiResponse, err := p.userApi.GetUsers(pageSize, 1, nil, nil, "", expandedAttributes, "", userStatus)
 		if err != nil {
 			return nil, apiResponse, err
 		}
 		users = append(users, *usersList.Entities...)
 
 		for pageNum := 2; pageNum <= *usersList.PageCount; pageNum++ {
-			usersList, _, err := p.userApi.GetUsers(pageSize, pageNum, nil, nil, "", nil, "", userStatus)
+			usersList, _, err := p.userApi.GetUsers(pageSize, pageNum, nil, nil, "", expandedAttributes, "", userStatus)
 			if err != nil {
 				return nil, apiResponse, err
 			}

@@ -27,6 +27,16 @@ func TestAccResourceRoutingWrapupcode(t *testing.T) {
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
+				Config: GenerateRoutingWrapupcodeResource(
+					codeResource1,
+					codeName1,
+					util.NullValue,
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(resourceName+"."+codeResource1, "name", codeName1),
+				),
+			},
+			{
 				// Create
 				Config: gcloud.GenerateAuthDivisionBasic(divResource, divName) + GenerateRoutingWrapupcodeResource(
 					codeResource1,
@@ -35,6 +45,7 @@ func TestAccResourceRoutingWrapupcode(t *testing.T) {
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName+"."+codeResource1, "name", codeName1),
+					resource.TestCheckResourceAttrPair(resourceName+"."+codeResource1, "division_id", "genesyscloud_auth_division."+divResource, "id"),
 				),
 			},
 			{
@@ -46,6 +57,7 @@ func TestAccResourceRoutingWrapupcode(t *testing.T) {
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName+"."+codeResource1, "name", codeName2),
+					resource.TestCheckResourceAttrPair(resourceName+"."+codeResource1, "division_id", "genesyscloud_auth_division."+divResource, "id"),
 				),
 			},
 			{
