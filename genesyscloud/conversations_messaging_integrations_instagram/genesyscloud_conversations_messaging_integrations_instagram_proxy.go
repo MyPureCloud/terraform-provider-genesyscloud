@@ -109,9 +109,8 @@ func getAllConversationsMessagingIntegrationsInstagramFn(ctx context.Context, p 
 	if instagramIntegrationRequests.Entities == nil || len(*instagramIntegrationRequests.Entities) == 0 {
 		return &allInstagramIntegrationRequests, resp, nil
 	}
-	for _, instagramIntegrationRequest := range *instagramIntegrationRequests.Entities {
-		allInstagramIntegrationRequests = append(allInstagramIntegrationRequests, instagramIntegrationRequest)
-	}
+
+	allInstagramIntegrationRequests = append(allInstagramIntegrationRequests, *instagramIntegrationRequests.Entities...)
 
 	for pageNum := 2; pageNum <= *instagramIntegrationRequests.PageCount; pageNum++ {
 		instagramIntegrationRequests, resp, err := p.conversationsApi.GetConversationsMessagingIntegrationsInstagram(pageSize, pageNum, "", "", "")
@@ -123,9 +122,8 @@ func getAllConversationsMessagingIntegrationsInstagramFn(ctx context.Context, p 
 			break
 		}
 
-		for _, instagramIntegrationRequest := range *instagramIntegrationRequests.Entities {
-			allInstagramIntegrationRequests = append(allInstagramIntegrationRequests, instagramIntegrationRequest)
-		}
+		allInstagramIntegrationRequests = append(allInstagramIntegrationRequests, *instagramIntegrationRequests.Entities...)
+
 	}
 
 	return &allInstagramIntegrationRequests, resp, nil
@@ -133,7 +131,7 @@ func getAllConversationsMessagingIntegrationsInstagramFn(ctx context.Context, p 
 
 // getConversationsMessagingIntegrationsInstagramIdByNameFn is an implementation of the function to get a Genesys Cloud conversations messaging integrations instagram by name
 func getConversationsMessagingIntegrationsInstagramIdByNameFn(ctx context.Context, p *conversationsMessagingIntegrationsInstagramProxy, name string) (id string, retryable bool, response *platformclientv2.APIResponse, err error) {
-	instagramIntegrationRequests, resp, err := getAllConversationsMessagingIntegrationsInstagramFn(ctx, p)
+	instagramIntegrationRequests, resp, err := p.getAllConversationsMessagingIntegrationsInstagram(ctx)
 	if err != nil {
 		return "", false, resp, err
 	}

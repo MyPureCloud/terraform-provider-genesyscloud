@@ -35,6 +35,23 @@ func getConversationsMessagingIntegrationsInstagramFromResourceData(d *schema.Re
 	}
 }
 
+// getConversationsMessagingIntegrationsInstagramFromResourceData maps data from schema ResourceData object to a platformclientv2.Instagramintegrationrequest
+func getConversationsMessagingIntegrationsInstagramFromResourceDataForUpdate(d *schema.ResourceData) platformclientv2.Instagramintegrationupdaterequest {
+
+	supportedContentId := d.Get("supported_content_id").(string)
+	messagingContentId := d.Get("messaging_setting_id").(string)
+	pageAccessToken := d.Get("page_access_token").(string)
+	userAccessToken := d.Get("user_access_token").(string)
+
+	return platformclientv2.Instagramintegrationupdaterequest{
+		Name:             platformclientv2.String(d.Get("name").(string)),
+		SupportedContent: &platformclientv2.Supportedcontentreference{Id: &supportedContentId},
+		MessagingSetting: &platformclientv2.Messagingsettingrequestreference{Id: &messagingContentId},
+		PageAccessToken:  &pageAccessToken,
+		UserAccessToken:  &userAccessToken,
+	}
+}
+
 func GenerateInstagramIntegrationResource(
 	resourceId string,
 	name string,

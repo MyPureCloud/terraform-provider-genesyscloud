@@ -159,7 +159,7 @@ func testVerifyConversationsMessagingIntegrationsInstagramDestroyed(state *terra
 
 		instagram, resp, err := integrationApi.GetConversationsMessagingIntegrationsInstagramIntegrationId(rs.Primary.ID, "")
 		if instagram != nil {
-			fmt.Errorf("Instagram still exists")
+			return fmt.Errorf("Instagram still exists")
 		} else if util.IsStatus404(resp) {
 			continue
 		} else {

@@ -22,7 +22,7 @@ import (
 // dataSourceConversationsMessagingIntegrationsInstagramRead retrieves by name the id in question
 func dataSourceConversationsMessagingIntegrationsInstagramRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-	proxy := newConversationsMessagingIntegrationsInstagramProxy(sdkConfig)
+	proxy := getConversationsMessagingIntegrationsInstagramProxy(sdkConfig)
 
 	name := d.Get("name").(string)
 

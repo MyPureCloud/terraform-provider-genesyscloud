@@ -73,7 +73,7 @@ func readConversationsMessagingIntegrationsInstagram(ctx context.Context, d *sch
 			if util.IsStatus404(resp) {
 				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read conversations messaging integrations instagram %s: %s", d.Id(), getErr), resp))
 			}
-			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read conversations messaging integrations instagram %s: %s", d.Id(), getErr), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read conversations messaging integrations instagram %s: %s", d.Id(), getErr), resp))
 		}
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceConversationsMessagingIntegrationsInstagram(), constants.DefaultConsistencyChecks, resourceName)
@@ -101,18 +101,7 @@ func updateConversationsMessagingIntegrationsInstagram(ctx context.Context, d *s
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getConversationsMessagingIntegrationsInstagramProxy(sdkConfig)
 
-	supportedContentId := d.Get("supported_content_id").(string)
-	messagingContentId := d.Get("messaging_setting_id").(string)
-	pageAccessToken := d.Get("page_access_token").(string)
-	userAccessToken := d.Get("user_access_token").(string)
-
-	conversationsMessagingIntegrationsInstagram := platformclientv2.Instagramintegrationupdaterequest{
-		Name:             platformclientv2.String(d.Get("name").(string)),
-		SupportedContent: &platformclientv2.Supportedcontentreference{Id: &supportedContentId},
-		MessagingSetting: &platformclientv2.Messagingsettingrequestreference{Id: &messagingContentId},
-		PageAccessToken:  &pageAccessToken,
-		UserAccessToken:  &userAccessToken,
-	}
+	conversationsMessagingIntegrationsInstagram := getConversationsMessagingIntegrationsInstagramFromResourceDataForUpdate(d)
 
 	log.Printf("Updating conversations messaging integrations instagram %s", *conversationsMessagingIntegrationsInstagram.Name)
 	instagramIntegrationRequest, resp, err := proxy.updateConversationsMessagingIntegrationsInstagram(ctx, d.Id(), &conversationsMessagingIntegrationsInstagram)
