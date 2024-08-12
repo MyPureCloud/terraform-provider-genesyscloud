@@ -1266,21 +1266,20 @@ func TestAccResourceTfExportLogMissingPermissions(t *testing.T) {
 }
 
 func TestAccResourceTfExportUserPromptExportAudioFile(t *testing.T) {
-
 	var (
 		userPromptResourceId        = "test_prompt"
 		userPromptName              = "TestPrompt" + strings.Replace(uuid.NewString(), "-", "", -1)
 		userPromptDescription       = "Test description"
 		userPromptResourceLanguage  = "en-us"
 		userPromptResourceText      = "This is a test greeting!"
-		userResourcePromptFilename1 = "../" + testrunner.GetTestDataPath("test-prompt-01.wav")
-		userResourcePromptFilename2 = "../" + testrunner.GetTestDataPath("test-prompt-02.wav")
+		userResourcePromptFilename1 = filepath.Join("../", testrunner.GetTestDataPath("test-prompt-01.wav"))
+		userResourcePromptFilename2 = filepath.Join("../", testrunner.GetTestDataPath("test-prompt-02.wav"))
 
 		userPromptResourceLanguage2 = "pt-br"
 		userPromptResourceText2     = "This is a test greeting!!!"
 
 		exportResourceId = "export"
-		exportTestDir    = "../.terraform" + uuid.NewString()
+		exportTestDir    = filepath.Join("../", ".terraform"+uuid.NewString())
 	)
 
 	userPromptAsset := userPrompt.UserPromptResourceStruct{
@@ -1340,7 +1339,7 @@ func TestAccResourceTfExportUserPromptExportAudioFile(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_architect_user_prompt."+userPromptResourceId, "resources.0.language", userPromptResourceLanguage),
 					resource.TestCheckResourceAttr("genesyscloud_architect_user_prompt."+userPromptResourceId, "resources.0.text", userPromptResourceText),
 					resource.TestCheckResourceAttr("genesyscloud_architect_user_prompt."+userPromptResourceId, "resources.0.filename", userResourcePromptFilename1),
-					testUserPromptAudioFileExport(exportTestDir+"/"+defaultTfJSONFile, "genesyscloud_architect_user_prompt", userPromptResourceId, exportTestDir, userPromptName),
+					testUserPromptAudioFileExport(filepath.Join(exportTestDir, defaultTfJSONFile), "genesyscloud_architect_user_prompt", userPromptResourceId, exportTestDir, userPromptName),
 				),
 			},
 			// Update to two resources with separate audio files
@@ -1351,6 +1350,7 @@ func TestAccResourceTfExportUserPromptExportAudioFile(t *testing.T) {
 					Description: strconv.Quote(userPromptDescription),
 					Resources:   userPromptResources2,
 				}),
+				ExpectNonEmptyPlan: true,
 			},
 			{
 				Config: generateTfExportByName(
@@ -1376,7 +1376,7 @@ func TestAccResourceTfExportUserPromptExportAudioFile(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_architect_user_prompt."+userPromptResourceId, "resources.0.language", userPromptResourceLanguage),
 					resource.TestCheckResourceAttr("genesyscloud_architect_user_prompt."+userPromptResourceId, "resources.0.text", userPromptResourceText),
 					resource.TestCheckResourceAttr("genesyscloud_architect_user_prompt."+userPromptResourceId, "resources.0.filename", userResourcePromptFilename1),
-					testUserPromptAudioFileExport(exportTestDir+"/"+defaultTfJSONFile, "genesyscloud_architect_user_prompt", userPromptResourceId, exportTestDir, userPromptName),
+					testUserPromptAudioFileExport(filepath.Join(exportTestDir, defaultTfJSONFile), "genesyscloud_architect_user_prompt", userPromptResourceId, exportTestDir, userPromptName),
 				),
 			},
 			{

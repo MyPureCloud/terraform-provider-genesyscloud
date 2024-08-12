@@ -21,7 +21,7 @@ import (
 var internalProxy *architectUserPromptProxy
 
 type createArchitectUserPromptFunc func(ctx context.Context, p *architectUserPromptProxy, body platformclientv2.Prompt) (*platformclientv2.Prompt, *platformclientv2.APIResponse, error)
-type getArchitectUserPromptFunc func(ctx context.Context, p *architectUserPromptProxy, id string, includeMediaUris bool, includeResources bool, language []string) (*platformclientv2.Prompt, *platformclientv2.APIResponse, error)
+type getArchitectUserPromptFunc func(ctx context.Context, p *architectUserPromptProxy, id string, includeMediaUris bool, includeResources bool, language []string, exportCouldBeActive bool) (*platformclientv2.Prompt, *platformclientv2.APIResponse, error)
 type getAllArchitectUserPromptsFunc func(ctx context.Context, p *architectUserPromptProxy, includeMediaUris bool, includeResources bool, name string) (*[]platformclientv2.Prompt, *platformclientv2.APIResponse, error)
 type updateArchitectUserPromptFunc func(ctx context.Context, p *architectUserPromptProxy, id string, body platformclientv2.Prompt) (*platformclientv2.Prompt, *platformclientv2.APIResponse, error)
 type deleteArchitectUserPromptFunc func(ctx context.Context, p *architectUserPromptProxy, id string, allResources bool) (*platformclientv2.APIResponse, error)
@@ -82,8 +82,8 @@ func (p *architectUserPromptProxy) createArchitectUserPrompt(ctx context.Context
 }
 
 // getArchitectUserPrompt retrieves a user prompt
-func (p *architectUserPromptProxy) getArchitectUserPrompt(ctx context.Context, id string, includeMediaUris, includeResources bool, languages []string) (*platformclientv2.Prompt, *platformclientv2.APIResponse, error) {
-	return p.getArchitectUserPromptAttr(ctx, p, id, includeMediaUris, includeResources, languages)
+func (p *architectUserPromptProxy) getArchitectUserPrompt(ctx context.Context, id string, includeMediaUris, includeResources bool, languages []string, exportCouldBeActive bool) (*platformclientv2.Prompt, *platformclientv2.APIResponse, error) {
+	return p.getArchitectUserPromptAttr(ctx, p, id, includeMediaUris, includeResources, languages, exportCouldBeActive)
 }
 
 // getAllArchitectUserPrompts retrieves a list of user prompts
@@ -128,8 +128,8 @@ func createArchitectUserPromptFn(_ context.Context, p *architectUserPromptProxy,
 	return p.architectApi.PostArchitectPrompts(body)
 }
 
-func getArchitectUserPromptFn(_ context.Context, p *architectUserPromptProxy, id string, includeMediaUris, includeResources bool, languages []string) (*platformclientv2.Prompt, *platformclientv2.APIResponse, error) {
-	if prompt := rc.GetCacheItem(p.promptCache, id); prompt != nil {
+func getArchitectUserPromptFn(_ context.Context, p *architectUserPromptProxy, id string, includeMediaUris, includeResources bool, languages []string, exportCouldBeActive bool) (*platformclientv2.Prompt, *platformclientv2.APIResponse, error) {
+	if prompt := rc.GetCacheItem(p.promptCache, id); prompt != nil && exportCouldBeActive {
 		return prompt, nil, nil
 	}
 	return p.architectApi.GetArchitectPrompt(id, includeMediaUris, includeResources, languages)
@@ -140,7 +140,12 @@ func updateArchitectUserPromptFn(_ context.Context, p *architectUserPromptProxy,
 }
 
 func deleteArchitectUserPromptFn(_ context.Context, p *architectUserPromptProxy, id string, allResources bool) (*platformclientv2.APIResponse, error) {
-	return p.architectApi.DeleteArchitectPrompt(id, allResources)
+	resp, err := p.architectApi.DeleteArchitectPrompt(id, allResources)
+	if err != nil {
+		return resp, err
+	}
+	rc.DeleteCacheItem(p.promptCache, id)
+	return nil, nil
 }
 
 func getAllArchitectUserPromptsFn(_ context.Context, p *architectUserPromptProxy, includeMediaUris, includeResources bool, name string) (*[]platformclientv2.Prompt, *platformclientv2.APIResponse, error) {
@@ -228,7 +233,7 @@ func (p *architectUserPromptProxy) verifyPromptResourceFilesAreTranscoded(ctx co
 	var response *platformclientv2.APIResponse
 
 	retryErr := util.WithRetries(ctx, 20*time.Second, func() *retry.RetryError {
-		userPrompt, resp, err := p.getArchitectUserPrompt(ctx, promptId, true, true, languages)
+		userPrompt, resp, err := p.getArchitectUserPrompt(ctx, promptId, true, true, languages, false)
 		if err != nil {
 			response = resp
 			retry.NonRetryableError(fmt.Errorf("failed to read user prompt '%s': %v", promptId, err))
@@ -293,7 +298,7 @@ func (p *architectUserPromptProxy) buildUserPromptResourcesForCreateAndUpdate(ct
 
 	if !create {
 		// Look up the existing resources for this prompt
-		userPrompt, resp, err := p.getArchitectUserPrompt(ctx, d.Id(), true, true, nil)
+		userPrompt, resp, err := p.getArchitectUserPrompt(ctx, d.Id(), true, true, nil, false)
 		if err != nil {
 			return toCreate, toUpdate, resp, fmt.Errorf("failed to lookup existing resources for prompt '%s': %v", d.Id(), err)
 		}

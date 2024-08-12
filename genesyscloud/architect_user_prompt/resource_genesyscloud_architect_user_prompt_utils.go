@@ -161,7 +161,7 @@ func ArchitectPromptAudioResolver(promptId, exportDirectory, subDirectory string
 	}
 
 	for _, data := range audioDataList {
-		log.Printf("Downloading file '%s' from '%s'", path.Join(fullPath, data.FileName), data.MediaUri)
+		log.Printf("Downloading file '%s' from mediaUri", path.Join(fullPath, data.FileName))
 		if err := files.DownloadExportFile(fullPath, data.FileName, data.MediaUri); err != nil {
 			return err
 		}
@@ -177,7 +177,7 @@ func getArchitectPromptAudioData(ctx context.Context, promptId string, meta inte
 
 	var promptResourceData []PromptAudioData
 
-	data, _, err := proxy.getArchitectUserPrompt(ctx, promptId, true, true, nil)
+	data, _, err := proxy.getArchitectUserPrompt(ctx, promptId, true, true, nil, true)
 	if err != nil {
 		return nil, err
 	}
