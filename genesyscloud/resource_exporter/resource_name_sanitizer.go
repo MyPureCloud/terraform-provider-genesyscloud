@@ -20,7 +20,7 @@ type Sanitizer interface {
 type sanitizerOriginal struct{}
 type sanitizerOptimized struct{}
 
-// NewSanitizierProvider returns a Sanitizer. Without a GENESYS_SANITIZER_LEGACY environment variable set it will always use the optimized Sanitizer
+// NewSanitizerProvider returns a Sanitizer. Without a GENESYS_SANITIZER_LEGACY environment variable set it will always use the optimized Sanitizer
 func NewSanitizerProvider() *SanitizerProvider {
 	// Check if the environment variable is set
 	_, exists := os.LookupEnv("GENESYS_SANITIZER_LEGACY")
@@ -80,17 +80,19 @@ func (sod *sanitizerOptimized) Sanitize(idMetaMap ResourceIDMetaMap) {
 
 		// If there are more than one resource name that ends up with the same sanitized name,
 		// append a hash of the original name to ensure uniqueness for names to prevent duplicates
-		numSeen := 0
-		for _, originalName := range originalResourceNames {
-			originalSanitizedLabelName := sod.SanitizeResourceName(originalName)
-			if sanitizedName == originalSanitizedLabelName {
-				numSeen++
+		if sanitizedName != meta.LabelName {
+			numSeen := 0
+			for _, originalName := range originalResourceNames {
+				originalSanitizedLabelName := sod.SanitizeResourceName(originalName)
+				if sanitizedName == originalSanitizedLabelName {
+					numSeen++
+				}
 			}
-		}
-		if numSeen > 1 {
-			algorithm := fnv.New32()
-			algorithm.Write([]byte(meta.LabelName))
-			sanitizedName = sanitizedName + "_" + strconv.FormatUint(uint64(algorithm.Sum32()), 10)
+			if numSeen > 1 {
+				algorithm := fnv.New32()
+				algorithm.Write([]byte(meta.LabelName))
+				sanitizedName = sanitizedName + "_" + strconv.FormatUint(uint64(algorithm.Sum32()), 10)
+			}
 		}
 		meta.SanitizedLabelName = sanitizedName
 
