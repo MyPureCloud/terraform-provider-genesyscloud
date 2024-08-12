@@ -64,7 +64,7 @@ func createUserPrompt(ctx context.Context, d *schema.ResourceData, meta interfac
 		}
 		return util.BuildDiagnosticError(resourceName, err.Error(), err)
 	}
-	log.Printf("Updated prompt resources. Prompt ID: '%s'", d.Id())
+	log.Printf("Updated prompt resources. Prompt ID: '%s'", *userPrompt.Id)
 
 	d.SetId(*userPrompt.Id)
 	log.Printf("Created user prompt %s %s", name, *userPrompt.Id)
@@ -79,7 +79,7 @@ func readUserPrompt(ctx context.Context, d *schema.ResourceData, meta interface{
 	log.Printf("Reading User Prompt %s", d.Id())
 
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
-		userPrompt, resp, getErr := proxy.getArchitectUserPrompt(ctx, d.Id(), true, true, nil)
+		userPrompt, resp, getErr := proxy.getArchitectUserPrompt(ctx, d.Id(), true, true, nil, true)
 		if getErr != nil {
 			if util.IsStatus404(resp) {
 				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read User Prompt %s | error: %s", d.Id(), getErr), resp))
@@ -133,10 +133,8 @@ func deleteUserPrompt(ctx context.Context, d *schema.ResourceData, meta interfac
 	if resp, err := proxy.deleteArchitectUserPrompt(ctx, d.Id(), true); err != nil {
 		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete user prompt %s: %s", name, err), resp)
 	}
-	log.Printf("Deleted user prompt %s", name)
-
 	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
-		_, resp, err := proxy.getArchitectUserPrompt(ctx, d.Id(), false, false, nil)
+		_, resp, err := proxy.getArchitectUserPrompt(ctx, d.Id(), false, false, nil, false)
 		if err != nil {
 			if util.IsStatus404(resp) {
 				// User prompt deleted
