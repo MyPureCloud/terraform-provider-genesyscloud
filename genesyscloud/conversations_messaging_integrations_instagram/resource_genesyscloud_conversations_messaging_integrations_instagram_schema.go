@@ -68,19 +68,16 @@ func ResourceConversationsMessagingIntegrationsInstagram() *schema.Resource {
 				Description: `The page ID of Instagram page. The pageId is required when userAccessToken is provided.`,
 				Optional:    true,
 				Type:        schema.TypeString,
-				ForceNew:    true,
 			},
 			`app_id`: {
 				Description: `The app ID of Facebook app. The appId is required when a customer wants to use their own approved Facebook app.`,
 				Optional:    true,
 				Type:        schema.TypeString,
-				ForceNew:    true,
 			},
 			`app_secret`: {
 				Description: `The app Secret of Facebook app. The appSecret is required when appId is provided.`,
 				Optional:    true,
 				Type:        schema.TypeString,
-				ForceNew:    true,
 			},
 		},
 	}
