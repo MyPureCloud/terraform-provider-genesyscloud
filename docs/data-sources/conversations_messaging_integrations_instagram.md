@@ -13,8 +13,8 @@ Genesys Cloud conversations messaging integrations instagram data source. Select
 ## Example Usage
 
 ```terraform
-data "genesyscloud_conversations_messaging_integrations_instagram" "example_integrationinstagram" {
-  name = "example_integrationinstagram data"
+data "genesyscloud_conversations_messaging_integrations_instagram" "integration_instagram" {
+  name = "integration_instagram data"
 }
 ```
 
