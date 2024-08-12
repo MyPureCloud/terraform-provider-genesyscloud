@@ -2,6 +2,7 @@ package architect_user_prompt
 
 import (
 	"fmt"
+	"path"
 	"strconv"
 	"strings"
 	"sync"
@@ -122,23 +123,23 @@ func TestAccResourceUserPromptWavFile(t *testing.T) {
 	userPromptDescription1 := "Test prompt with wav audio file"
 	userPromptResourceLang1 := "en-us"
 	userPromptResourceText1 := "This is a test greeting!"
-	userPromptResourceFileName1 := "../" + testrunner.GetTestDataPath("test-prompt-01.wav")
-	userPromptResourceFileName2 := "../" + testrunner.GetTestDataPath("test-prompt-02.wav")
+	userPromptResourceFileName1 := path.Join("../", testrunner.GetTestDataPath("test-prompt-01.wav"))
+	userPromptResourceFileName2 := path.Join("../", testrunner.GetTestDataPath("test-prompt-02.wav"))
 
 	userPromptAsset1 := UserPromptResourceStruct{
-		userPromptResourceLang1,
-		util.NullValue,
-		strconv.Quote(userPromptResourceText1),
-		strconv.Quote(userPromptResourceFileName1),
-		userPromptResourceFileName1,
+		Language:        userPromptResourceLang1,
+		Tts_string:      util.NullValue,
+		Text:            strconv.Quote(userPromptResourceText1),
+		Filename:        strconv.Quote(userPromptResourceFileName1),
+		FileContentHash: userPromptResourceFileName1,
 	}
 
 	userPromptAsset2 := UserPromptResourceStruct{
-		userPromptResourceLang1,
-		util.NullValue,
-		strconv.Quote(userPromptResourceText1),
-		strconv.Quote(userPromptResourceFileName2),
-		userPromptResourceFileName2,
+		Language:        userPromptResourceLang1,
+		Tts_string:      util.NullValue,
+		Text:            strconv.Quote(userPromptResourceText1),
+		Filename:        strconv.Quote(userPromptResourceFileName2),
+		FileContentHash: userPromptResourceFileName2,
 	}
 
 	userPromptResources1 := []*UserPromptResourceStruct{&userPromptAsset1}
@@ -198,19 +199,19 @@ func TestAccResourceUserPromptWavFileURL(t *testing.T) {
 	userPromptResourceFileName2 := "http://localhost:8100/test-prompt-02.wav"
 
 	userPromptAsset1 := UserPromptResourceStruct{
-		userPromptResourceLang1,
-		util.NullValue,
-		strconv.Quote(userPromptResourceText1),
-		strconv.Quote(userPromptResourceFileName1),
-		util.NullValue,
+		Language:        userPromptResourceLang1,
+		Tts_string:      util.NullValue,
+		Text:            strconv.Quote(userPromptResourceText1),
+		Filename:        strconv.Quote(userPromptResourceFileName1),
+		FileContentHash: util.NullValue,
 	}
 
 	userPromptAsset2 := UserPromptResourceStruct{
-		userPromptResourceLang1,
-		util.NullValue,
-		strconv.Quote(userPromptResourceText1),
-		strconv.Quote(userPromptResourceFileName2),
-		util.NullValue,
+		Language:        userPromptResourceLang1,
+		Tts_string:      util.NullValue,
+		Text:            strconv.Quote(userPromptResourceText1),
+		Filename:        strconv.Quote(userPromptResourceFileName2),
+		FileContentHash: util.NullValue,
 	}
 
 	userPromptResources1 := []*UserPromptResourceStruct{&userPromptAsset1}
@@ -218,7 +219,7 @@ func TestAccResourceUserPromptWavFileURL(t *testing.T) {
 
 	httpServerExitDone := &sync.WaitGroup{}
 	httpServerExitDone.Add(1)
-	srv := fileserver.Start(httpServerExitDone, "../"+testrunner.GetTestDataPath(), 8100)
+	srv := fileserver.Start(httpServerExitDone, path.Join("../", testrunner.GetTestDataPath()), 8100)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
