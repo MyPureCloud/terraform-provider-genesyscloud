@@ -21,8 +21,18 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
 )
 
-func getAllRoutingSettings(_ context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+func getAllRoutingSettings(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+	proxy := getRoutingSettingsProxy(clientConfig)
 	resources := make(resourceExporter.ResourceIDMetaMap)
+
+	_, resp, err := proxy.getRoutingSettings(ctx)
+	if err != nil {
+		if util.IsStatus404(resp) {
+			// Don't export if config doesn't exist
+			return resources, nil
+		}
+		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get %s due to error: %s", resourceName, err), resp)
+	}
 	resources["0"] = &resourceExporter.ResourceMeta{Name: "routing_settings"}
 	return resources, nil
 }
