@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math/rand"
 	"strconv"
+	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	outboundCampaign "terraform-provider-genesyscloud/genesyscloud/outbound_campaign"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
@@ -19,6 +20,8 @@ func TestAccDataSourceOutboundCampaignRule(t *testing.T) {
 	var (
 		campaignRuleResourceId = "campaign_rule"
 		campaignRuleName       = "test-campaign-rule-" + uuid.NewString()
+		divResourceId          = "test-outbound-campaignrule-division"
+		divName                = "terraform-" + uuid.NewString()
 
 		campaign1ResourceId  = "campaign1"
 		campaign1Name        = "TF Test Campaign " + uuid.NewString()
@@ -38,6 +41,7 @@ func TestAccDataSourceOutboundCampaignRule(t *testing.T) {
 			"${data.genesyscloud_auth_division_home.home.name}",
 			"campaignrule-test-location",
 			"campaignrule-test-wrapupcode",
+			divResourceId,
 		)
 
 		campaign2ResourceId = "campaign2"
@@ -57,8 +61,8 @@ func TestAccDataSourceOutboundCampaignRule(t *testing.T) {
 			"${data.genesyscloud_auth_division_home.home.name}",
 			"campaignrule-test-location-2",
 			"campaignrule-test-wrapupcode-2",
+			divResourceId,
 		)
-
 		dataSourceId = "campaign_rule_data"
 	)
 
@@ -67,9 +71,8 @@ func TestAccDataSourceOutboundCampaignRule(t *testing.T) {
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
-				Config: fmt.Sprintf(`
-data "genesyscloud_auth_division_home" "home" {}
-`) +
+				Config: `data "genesyscloud_auth_division_home" "home" {}` + "\n" +
+					gcloud.GenerateAuthDivisionBasic(divResourceId, divName) +
 					campaign1Resource +
 					campaign2Resource +
 					generateOutboundCampaignRule(

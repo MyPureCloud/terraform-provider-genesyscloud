@@ -217,6 +217,28 @@ func ResourceOutboundCampaign() *schema.Resource {
 					},
 				},
 			},
+			`dynamic_line_balancing_settings`: {
+				Description: `Dynamic line balancing settings.`,
+				Type:        schema.TypeList,
+				MaxItems:    1,
+				Optional:    true,
+				Computed:    true,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"enabled": {
+							Description: "Indicates that this campaign is subject of dynamic line balancing.",
+							Type:        schema.TypeBool,
+							Optional:    true,
+						},
+						"relative_weight": {
+							Description:  "Relative weight of this campaign in dynamic line balancing.",
+							Type:         schema.TypeInt,
+							Optional:     true,
+							ValidateFunc: validation.IntBetween(0, 100),
+						},
+					},
+				},
+			},
 		},
 	}
 }

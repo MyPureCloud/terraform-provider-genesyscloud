@@ -5,11 +5,11 @@ import (
 	"io"
 	"net/http"
 	"os"
-	"path/filepath"
 	"strings"
 	architectGrammar "terraform-provider-genesyscloud/genesyscloud/architect_grammar"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/testrunner"
 	"testing"
 
 	"github.com/google/uuid"
@@ -154,7 +154,7 @@ func generateFileVoiceFileDataBlock(
 	fileName string,
 	fileType string,
 ) string {
-	fullyQualifiedPath, _ := filepath.Abs(fileName)
+	fullyQualifiedPath, _ := testrunner.NormalizePath(fileName)
 	return fmt.Sprintf(`
 		voice_file_data {
 			file_name = "%s"
@@ -168,7 +168,7 @@ func generateFileDtmfFileDataBlock(
 	fileName string,
 	fileType string,
 ) string {
-	fullyQualifiedPath, _ := filepath.Abs(fileName)
+	fullyQualifiedPath, _ := testrunner.NormalizePath(fileName)
 	return fmt.Sprintf(`
 		dtmf_file_data {
 			file_name = "%s"

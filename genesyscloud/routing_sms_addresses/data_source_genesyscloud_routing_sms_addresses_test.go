@@ -10,17 +10,22 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
 
-func TestAccDataSourceSmsAddressProdOrg(t *testing.T) {
-	//this test as it will only pass in a prod org
+func TestAccDataSourceSmsAddress(t *testing.T) {
+
+	var (
+		addressRes  = "addressRes"
+		addressData = "addressData"
+		name        = "name-1"
+		street      = "street-1"
+		city        = "city-1"
+		region      = "region-1"
+		postalCode  = "postal-code-1"
+		countryCode = "country-code-1"
+	)
 	if v := os.Getenv("GENESYSCLOUD_REGION"); v == "tca" {
-		t.Skip("This test as it will only pass in a prod org")
+		postalCode = "90080"
+		countryCode = "US"
 	}
-	var (
-		addressRes  = "addressRes"
-		addressData = "addressData"
-
-		name = "name-1"
-	)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
@@ -30,54 +35,12 @@ func TestAccDataSourceSmsAddressProdOrg(t *testing.T) {
 				Config: generateRoutingSmsAddressesResource(
 					addressRes,
 					name,
-					"street-1",
-					"city-1",
-					"region-1",
-					"postal-code-1",
-					"country-code-1",
+					street,
+					city,
+					region,
+					postalCode,
+					countryCode,
 					util.FalseValue,
-				) + generateSmsAddressDataSource(
-					addressData,
-					name,
-					"genesyscloud_routing_sms_address."+addressRes,
-				),
-				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair(
-						"data.genesyscloud_routing_sms_address."+addressData, "id",
-						"genesyscloud_routing_sms_address."+addressRes, "id",
-					),
-				),
-			},
-		},
-	})
-}
-
-// If running in a prod org this test can be removed/skipped, it's only intended as a backup test for test orgs
-func TestAccDataSourceSmsAddressTestOrg(t *testing.T) {
-	if v := os.Getenv("GENESYSCLOUD_REGION"); v == "us-east-1" {
-		t.Skip("Test intended only for test org")
-	}
-	var (
-		addressRes  = "addressRes"
-		addressData = "addressData"
-
-		name = "name-1"
-	)
-
-	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { util.TestAccPreCheck(t) },
-		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
-		Steps: []resource.TestStep{
-			{
-				Config: generateRoutingSmsAddressesResource(
-					addressRes,
-					name,
-					"street-1",
-					"city-1",
-					"region-1",
-					"90080",
-					"US",
-					util.TrueValue,
 				) + generateSmsAddressDataSource(
 					addressData,
 					name,

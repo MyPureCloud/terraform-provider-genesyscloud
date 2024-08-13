@@ -24,12 +24,12 @@ func TestAccResourceConversationsMessagingSettings(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				// Create with Content Block
-				Config: generateConversationsMessagingSettingsResource(
+				Config: GenerateConversationsMessagingSettingsResource(
 					resource1,
 					name1,
-					generateContentStoryBlock(
-						generateMentionInboundOnlySetting("Disabled"),
-						generateReplyInboundOnlySetting("Enabled"),
+					GenerateContentStoryBlock(
+						GenerateMentionInboundOnlySetting("Disabled"),
+						GenerateReplyInboundOnlySetting("Enabled"),
 					),
 				),
 				Check: resource.ComposeTestCheckFunc(
@@ -40,14 +40,14 @@ func TestAccResourceConversationsMessagingSettings(t *testing.T) {
 			},
 			{
 				// Update and Add Event Block
-				Config: generateConversationsMessagingSettingsResource(
+				Config: GenerateConversationsMessagingSettingsResource(
 					resource1,
 					name1,
-					generateContentStoryBlock(
-						generateMentionInboundOnlySetting("Enabled"),
-						generateReplyInboundOnlySetting("Enabled"),
+					GenerateContentStoryBlock(
+						GenerateMentionInboundOnlySetting("Enabled"),
+						GenerateReplyInboundOnlySetting("Enabled"),
 					),
-					generateTypingOnSetting(
+					GenerateTypingOnSetting(
 						"Enabled",
 						"Disabled",
 					),
@@ -83,12 +83,12 @@ func TestAccResourceConversationsMessagingSettingsContentOnly(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				// Create
-				Config: generateConversationsMessagingSettingsResource(
+				Config: GenerateConversationsMessagingSettingsResource(
 					resource2,
 					name2,
-					generateContentStoryBlock(
-						generateMentionInboundOnlySetting("Disabled"),
-						generateReplyInboundOnlySetting("Disabled"),
+					GenerateContentStoryBlock(
+						GenerateMentionInboundOnlySetting("Disabled"),
+						GenerateReplyInboundOnlySetting("Disabled"),
 					),
 				),
 				Check: resource.ComposeTestCheckFunc(
@@ -99,12 +99,12 @@ func TestAccResourceConversationsMessagingSettingsContentOnly(t *testing.T) {
 			},
 			{
 				// Update
-				Config: generateConversationsMessagingSettingsResource(
+				Config: GenerateConversationsMessagingSettingsResource(
 					resource2,
 					name2,
-					generateContentStoryBlock(
-						generateMentionInboundOnlySetting("Enabled"),
-						generateReplyInboundOnlySetting("Enabled"),
+					GenerateContentStoryBlock(
+						GenerateMentionInboundOnlySetting("Enabled"),
+						GenerateReplyInboundOnlySetting("Enabled"),
 					),
 				),
 				Check: resource.ComposeTestCheckFunc(
