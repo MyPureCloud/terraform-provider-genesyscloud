@@ -22,6 +22,7 @@ tests for conversations_messaging_integrations_instagram.
 */
 
 func TestAccResourceConversationsMessagingIntegrationsInstagram(t *testing.T) {
+	t.Skip("Skipping because it requires setting up a org as test account for the mocks to respond correctly.")
 	t.Parallel()
 
 	var (
