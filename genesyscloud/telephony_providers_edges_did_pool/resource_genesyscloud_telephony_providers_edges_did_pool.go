@@ -74,6 +74,7 @@ func readDidPool(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getTelephonyDidPoolProxy(sdkConfig)
 	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceTelephonyDidPool(), constants.DefaultConsistencyChecks, resourceName)
+	utilE164 := util.NewUtilE164Service()
 
 	log.Printf("Reading DID pool %s", d.Id())
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
@@ -90,8 +91,8 @@ func readDidPool(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 			return nil
 		}
 
-		_ = d.Set("start_phone_number", *didPool.StartPhoneNumber)
-		_ = d.Set("end_phone_number", *didPool.EndPhoneNumber)
+		_ = d.Set("start_phone_number", utilE164.FormatAsCalculatedE164Number(*didPool.StartPhoneNumber))
+		_ = d.Set("end_phone_number", utilE164.FormatAsCalculatedE164Number(*didPool.EndPhoneNumber))
 
 		resourcedata.SetNillableValue(d, "description", didPool.Description)
 		resourcedata.SetNillableValue(d, "comments", didPool.Comments)
