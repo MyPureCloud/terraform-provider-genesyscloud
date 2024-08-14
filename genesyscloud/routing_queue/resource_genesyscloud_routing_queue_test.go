@@ -96,6 +96,8 @@ func TestAccResourceRoutingQueueBasic(t *testing.T) {
 					util.NullValue,               // enable_manual_assignment false
 					util.NullValue,               // enable_transcription false
 					strconv.Quote(scoringMethod), // scoring Method
+					util.NullValue,
+					util.NullValue,
 					GenerateAgentOwnedRouting("agent_owned_routing", util.TrueValue, callbackHours, callbackHours),
 					GenerateMediaSettings("media_settings_call", alertTimeout1, util.FalseValue, slPercent1, slDuration1),
 					GenerateMediaSettingsCallBack("media_settings_callback", alertTimeout1, util.FalseValue, slPercent1, slDuration1, util.TrueValue, slDuration1, slDuration1),
@@ -153,6 +155,8 @@ func TestAccResourceRoutingQueueBasic(t *testing.T) {
 					util.TrueValue, // enable_manual_assignment true
 					util.TrueValue, // enable_transcription true
 					strconv.Quote(scoringMethod),
+					util.NullValue,
+					util.NullValue,
 					GenerateAgentOwnedRouting("agent_owned_routing", util.TrueValue, callbackHours2, callbackHours2),
 					GenerateMediaSettings("media_settings_call", alertTimeout2, util.FalseValue, slPercent2, slDuration2),
 					GenerateMediaSettings("media_settings_callback", alertTimeout2, util.TrueValue, slPercent2, slDuration2),
@@ -275,6 +279,8 @@ func TestAccResourceRoutingQueueConditionalRouting(t *testing.T) {
 					util.NullValue,  // enable_audio_monitoring false
 					util.NullValue,  // enable_manual_assignment false
 					strconv.Quote("TimestampAndPriority"),
+					util.NullValue,
+					util.NullValue,
 					GenerateMediaSettings(
 						"media_settings_call",
 						alertTimeout1,
@@ -374,6 +380,8 @@ func TestAccResourceRoutingQueueConditionalRouting(t *testing.T) {
 					util.NullValue,  // enable_audio_monitoring false
 					util.NullValue,  // enable_manual_assignment false
 					strconv.Quote("TimestampAndPriority"),
+					util.NullValue,
+					util.NullValue,
 					GenerateMediaSettings("media_settings_call", alertTimeout1, util.FalseValue, slPercent1, slDuration1),
 					GenerateMediaSettings("media_settings_callback", alertTimeout1, util.FalseValue, slPercent1, slDuration1),
 					GenerateMediaSettings("media_settings_chat", alertTimeout1, util.FalseValue, slPercent1, slDuration1),
@@ -455,6 +463,8 @@ func TestAccResourceRoutingQueueConditionalRouting(t *testing.T) {
 					util.NullValue,  // enable_audio_monitoring false
 					util.NullValue,  // enable_manual_assignment false
 					strconv.Quote("TimestampAndPriority"),
+					util.NullValue,
+					util.NullValue,
 					GenerateMediaSettings("media_settings_call", alertTimeout1, util.FalseValue, slPercent1, slDuration1),
 					GenerateMediaSettings("media_settings_callback", alertTimeout1, util.FalseValue, slPercent1, slDuration1),
 					GenerateMediaSettings("media_settings_chat", alertTimeout1, util.FalseValue, slPercent1, slDuration1),
@@ -542,6 +552,8 @@ func TestAccResourceRoutingQueueParToCGR(t *testing.T) {
 
 					util.NullValue, // enable_manual_assignment false
 					strconv.Quote(scoringMethod),
+					util.NullValue,
+					util.NullValue,
 					GenerateAgentOwnedRouting("agent_owned_routing", util.TrueValue, callbackHours, callbackHours),
 					GenerateMediaSettings("media_settings_call", alertTimeout1, util.FalseValue, slPercent1, slDuration1),
 					GenerateMediaSettings("media_settings_callback", alertTimeout1, util.FalseValue, slPercent1, slDuration1),

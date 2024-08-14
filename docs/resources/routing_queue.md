@@ -109,12 +109,16 @@ resource "genesyscloud_routing_queue" "example_queue" {
 - `message_in_queue_flow_id` (String) The in-queue flow ID to use for message conversations waiting in queue.
 - `on_hold_prompt_id` (String) The audio to be played when calls on this queue are on hold. If not configured, the default on-hold music will play.
 - `outbound_email_address` (Block List, Max: 1, Deprecated) The outbound email address settings for this queue. (see [below for nested schema](#nestedblock--outbound_email_address))
+- `outbound_messaging_open_messaging_recipient_id` (String) The unique ID of the outbound messaging open messaging recipient for the queue.
 - `outbound_messaging_sms_address_id` (String) The unique ID of the outbound messaging SMS address for the queue.
+- `outbound_messaging_whatsapp_recipient_id` (String) The unique ID of the outbound messaging whatsapp recipient for the queue.
+- `peer_id` (String) The ID of an associated external queue
 - `queue_flow_id` (String) The in-queue flow ID to use for call conversations waiting in queue.
 - `routing_rules` (Block List, Max: 6) The routing rules for the queue, used for routing to known or preferred agents. (see [below for nested schema](#nestedblock--routing_rules))
 - `scoring_method` (String) The Scoring Method for the queue. Defaults to TimestampAndPriority. Defaults to `TimestampAndPriority`.
 - `skill_evaluation_method` (String) The skill evaluation method to use when routing conversations (NONE | BEST | ALL). Defaults to `ALL`.
 - `skill_groups` (Set of String) List of skill group ids assigned to the queue.
+- `source_queue_id` (String) The id of an existing queue to copy the settings (does not include GPR settings) from when creating a new queue.
 - `suppress_in_queue_call_recording` (Boolean) Indicates whether recording in-queue calls is suppressed for this queue. Defaults to `true`.
 - `teams` (Set of String) List of ids assigned to the queue
 - `whisper_prompt_id` (String) The prompt ID used for whisper on the queue, if configured.
@@ -127,7 +131,7 @@ resource "genesyscloud_routing_queue" "example_queue" {
 <a id="nestedblock--agent_owned_routing"></a>
 ### Nested Schema for `agent_owned_routing`
 
-Required:
+Optional:
 
 - `enable_agent_owned_callbacks` (Boolean) Enable Agent Owned Callbacks
 - `max_owned_callback_delay_hours` (Number) Max Owned Call Back Delay Hours >= 7
@@ -161,13 +165,13 @@ Required:
 
 Required:
 
-- `condition_value` (Number) The limit value, beyond which a rule evaluates as true.
 - `groups` (Block List, Min: 1) The group(s) to activate if the rule evaluates as true. (see [below for nested schema](#nestedblock--conditional_group_routing_rules--groups))
-- `operator` (String) The operator that compares the actual value against the condition value. Valid values: GreaterThan, GreaterThanOrEqualTo, LessThan, LessThanOrEqualTo.
 
 Optional:
 
+- `condition_value` (Number) The limit value, beyond which a rule evaluates as true.
 - `metric` (String) The queue metric being evaluated. Valid values: EstimatedWaitTime, ServiceLevel Defaults to `EstimatedWaitTime`.
+- `operator` (String) The operator that compares the actual value against the condition value. Valid values: GreaterThan, GreaterThanOrEqualTo, LessThan, LessThanOrEqualTo.
 - `queue_id` (String) The ID of the queue being evaluated for this rule. For rule 1, this is always be the current queue, so no queue id should be specified for the first rule.
 - `wait_seconds` (Number) The number of seconds to wait in this rule, if it evaluates as true, before evaluating the next rule. For the final rule, this is ignored, so need not be specified. Defaults to `2`.
 

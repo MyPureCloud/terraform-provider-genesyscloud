@@ -335,6 +335,16 @@ func buildSdkQueueMessagingAddresses(d *schema.ResourceData) *platformclientv2.Q
 			SmsAddress: util.BuildSdkDomainEntityRef(d, "outbound_messaging_sms_address_id"),
 		}
 	}
+	if _, ok := d.GetOk("outbound_messaging_whatsapp_recipient_id"); ok {
+		return &platformclientv2.Queuemessagingaddresses{
+			WhatsAppRecipient: util.BuildSdkDomainEntityRef(d, "outbound_messaging_whatsapp_recipient_id"),
+		}
+	}
+	if _, ok := d.GetOk("outbound_messaging_open_messaging_recipient_id"); ok {
+		return &platformclientv2.Queuemessagingaddresses{
+			OpenMessagingRecipient: util.BuildSdkDomainEntityRef(d, "outbound_messaging_open_messaging_recipient_id"),
+		}
+	}
 	return nil
 }
 
@@ -633,6 +643,8 @@ func GenerateRoutingQueueResource(
 	enableAudioMonitoring string,
 	enableManualAssignment string,
 	scoringMethod string,
+	peerId string,
+	sourceQueueId string,
 	nestedBlocks ...string) string {
 	return fmt.Sprintf(`resource "genesyscloud_routing_queue" "%s" {
 		name = "%s"
@@ -645,6 +657,8 @@ func GenerateRoutingQueueResource(
 		calling_party_number = %s
 		enable_transcription = %s
 		scoring_method = %s
+		peer_id = %s
+		source_queue_id = %s
         suppress_in_queue_call_recording = %s
 		enable_audio_monitoring = %s
   		enable_manual_assignment = %s
@@ -661,6 +675,8 @@ func GenerateRoutingQueueResource(
 		callingPartyNumber,
 		enableTranscription,
 		scoringMethod,
+		peerId,
+		sourceQueueId,
 		suppressInQueueCallRecording,
 		enableAudioMonitoring,
 		enableManualAssignment,

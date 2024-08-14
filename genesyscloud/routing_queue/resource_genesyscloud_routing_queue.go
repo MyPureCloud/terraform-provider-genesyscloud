@@ -56,6 +56,8 @@ func createRoutingQueue(ctx context.Context, d *schema.ResourceData, meta interf
 
 	divisionID := d.Get("division_id").(string)
 	scoringMethod := d.Get("scoring_method").(string)
+	peerId := d.Get("peer_id").(string)
+	sourceQueueId := d.Get("source_queue_id").(string)
 	skillGroups := buildMemberGroupList(d, "skill_groups", "SKILLGROUP")
 	groups := buildMemberGroupList(d, "groups", "GROUP")
 	teams := buildMemberGroupList(d, "teams", "TEAM")
@@ -110,6 +112,12 @@ func createRoutingQueue(ctx context.Context, d *schema.ResourceData, meta interf
 	}
 	if scoringMethod != "" {
 		createQueue.ScoringMethod = &scoringMethod
+	}
+	if peerId != "" {
+		createQueue.PeerId = &peerId
+	}
+	if sourceQueueId != "" {
+		createQueue.SourceQueueId = &sourceQueueId
 	}
 
 	log.Printf("Creating Routing Queue %s", *createQueue.Name)
@@ -182,6 +190,22 @@ func readRoutingQueue(ctx context.Context, d *schema.ResourceData, meta interfac
 			resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "media_settings_message", currentQueue.MediaSettings.Message, flattenMediaSetting)
 		}
 
+		_ = d.Set("outbound_messaging_sms_address_id", nil)
+		_ = d.Set("outbound_messaging_whatsapp_recipient_id", nil)
+		_ = d.Set("outbound_messaging_open_messaging_recipient_id", nil)
+
+		if currentQueue.OutboundMessagingAddresses != nil {
+			if currentQueue.OutboundMessagingAddresses.SmsAddress != nil {
+				_ = d.Set("outbound_messaging_sms_address_id", *currentQueue.OutboundMessagingAddresses.SmsAddress.Id)
+			}
+			if currentQueue.OutboundMessagingAddresses.WhatsAppRecipient != nil {
+				_ = d.Set("outbound_messaging_whatsapp_recipient_id", *currentQueue.OutboundMessagingAddresses.WhatsAppRecipient.Id)
+			}
+			if currentQueue.OutboundMessagingAddresses.OpenMessagingRecipient != nil {
+				_ = d.Set("outbound_messaging_open_messaging_recipient_id", *currentQueue.OutboundMessagingAddresses.OpenMessagingRecipient.Id)
+			}
+		}
+
 		if currentQueue.AgentOwnedRouting != nil {
 			resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "agent_owned_routing", currentQueue.AgentOwnedRouting, flattenAgentOwnedRouting)
 		}
@@ -204,18 +228,13 @@ func readRoutingQueue(ctx context.Context, d *schema.ResourceData, meta interfac
 		resourcedata.SetNillableValue(d, "calling_party_name", currentQueue.CallingPartyName)
 		resourcedata.SetNillableValue(d, "calling_party_number", currentQueue.CallingPartyNumber)
 		resourcedata.SetNillableValue(d, "scoring_method", currentQueue.ScoringMethod)
+		resourcedata.SetNillableValue(d, "peer_id", currentQueue.PeerId)
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "direct_routing", currentQueue.DirectRouting, flattenDirectRouting)
 
 		if currentQueue.DefaultScripts != nil {
 			_ = d.Set("default_script_ids", flattenDefaultScripts(*currentQueue.DefaultScripts))
 		} else {
 			_ = d.Set("default_script_ids", nil)
-		}
-
-		if currentQueue.OutboundMessagingAddresses != nil && currentQueue.OutboundMessagingAddresses.SmsAddress != nil {
-			_ = d.Set("outbound_messaging_sms_address_id", *currentQueue.OutboundMessagingAddresses.SmsAddress.Id)
-		} else {
-			_ = d.Set("outbound_messaging_sms_address_id", nil)
 		}
 
 		wrapupCodes, err := flattenQueueWrapupCodes(ctx, d.Id(), proxy)
@@ -270,6 +289,7 @@ func updateRoutingQueue(ctx context.Context, d *schema.ResourceData, meta interf
 	teams := buildMemberGroupList(d, "teams", "TEAM")
 	memberGroups := append(*skillGroups, *groups...)
 	memberGroups = append(memberGroups, *teams...)
+	peerId := d.Get("peer_id").(string)
 
 	updateQueue := platformclientv2.Queuerequest{
 		Name:                         platformclientv2.String(d.Get("name").(string)),
@@ -316,6 +336,9 @@ func updateRoutingQueue(ctx context.Context, d *schema.ResourceData, meta interf
 
 	if scoringMethod != "" {
 		updateQueue.ScoringMethod = &scoringMethod
+	}
+	if peerId != "" {
+		updateQueue.PeerId = &peerId
 	}
 
 	log.Printf("Updating queue %s", *updateQueue.Name)
