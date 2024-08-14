@@ -60,7 +60,7 @@ func ResourceTfExport() *schema.Resource {
 					ValidateFunc: validators.ValidateSubStringInSlice(resourceExporter.GetAvailableExporterTypes()),
 				},
 				ForceNew:      true,
-				ConflictsWith: []string{"include_filter_resources", "exclude_filter_resources"},
+				ConflictsWith: []string{"include_filter_resources", "exclude_filter_resources", "advanced_filter_resources"},
 				Deprecated:    "This filter attribute is deprecated and will be removed in a future version. Please use the 'include_filter_resources' (which is a 1:1 replacement of this attribute), 'exclude_filter_resources', or 'advanced_filter_resource' attribute.",
 			},
 			"include_filter_resources": {
