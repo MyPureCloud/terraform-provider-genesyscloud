@@ -356,12 +356,10 @@ func TestAccResourceRoutingQueueConditionalRouting(t *testing.T) {
 					groupResourceId,
 					groupName,
 					group.GenerateGroupOwners("genesyscloud_user."+testUserResource+".id"),
-				) +
-					generateRoutingQueueResourceBasic(
+				) + generateRoutingQueueResourceBasic(
 						queueResource2,
 						queueName2,
-					) +
-					routingSkillGroup.GenerateRoutingSkillGroupResourceBasic(
+					) + routingSkillGroup.GenerateRoutingSkillGroupResourceBasic(
 						skillGroupResourceId,
 						skillGroupName,
 						"description",
@@ -445,7 +443,7 @@ func TestAccResourceRoutingQueueConditionalRouting(t *testing.T) {
 					validateMediaSettings(queueResource1, "media_settings_email", alertTimeout1, util.FalseValue, slPercent1, slDuration1),
 					validateMediaSettings(queueResource1, "media_settings_message", alertTimeout1, util.FalseValue, slPercent1, slDuration1),
 				),
-				Destroy: true,
+				PreventPostDestroyRefresh: true,
 			},
 			{
 				Config: GenerateRoutingQueueResource(
