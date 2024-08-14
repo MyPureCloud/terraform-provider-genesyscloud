@@ -22,6 +22,10 @@ import (
 )
 
 func getAllRoutingSettings(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+	// Although this resource typically has only a single instance,
+	// we are attempting to fetch the data from the API in order to
+	// verify the user's permission to access this resource's API endpoint(s).
+
 	proxy := getRoutingSettingsProxy(clientConfig)
 	resources := make(resourceExporter.ResourceIDMetaMap)
 
@@ -33,6 +37,25 @@ func getAllRoutingSettings(ctx context.Context, clientConfig *platformclientv2.C
 		}
 		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get %s due to error: %s", resourceName, err), resp)
 	}
+
+	_, resp, err = proxy.getRoutingSettingsContactCenter(ctx)
+	if err != nil {
+		if util.IsStatus404(resp) {
+			// Don't export if config doesn't exist
+			return resources, nil
+		}
+		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get %s contact center due to error: %s", resourceName, err), resp)
+	}
+
+	_, resp, err = proxy.getRoutingSettingsTranscription(ctx)
+	if err != nil {
+		if util.IsStatus404(resp) {
+			// Don't export if config doesn't exist
+			return resources, nil
+		}
+		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get %s transcription due to error: %s", resourceName, err), resp)
+	}
+
 	resources["0"] = &resourceExporter.ResourceMeta{Name: "routing_settings"}
 	return resources, nil
 }
