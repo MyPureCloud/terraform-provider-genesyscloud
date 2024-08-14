@@ -333,85 +333,86 @@ func buildUpdateContactColumnActionSettings(updateContactColumnActionSettings *s
 			sdkUpdateContactColumnActionSettings.UpdateOption = &updateOption
 		}
 
-		//resourcedata.BuildSDKStringMapValueIfNotNil(&sdkUpdateContactColumnActionSettings.Properties, updateContactColumnActionSettingsMap, "properties")
+		resourcedata.BuildSDKStringMapValueIfNotNil(&sdkUpdateContactColumnActionSettings.Properties, updateContactColumnActionSettingsMap, "properties")
 	}
 
 	return &sdkUpdateContactColumnActionSettings
 }
 
 // buildAppendToDncActionSettingss maps an []interface{} into a Genesys Cloud *[]platformclientv2.Appendtodncactionsettings
-func buildAppendToDncActionSettings(appendToDncActionSettingss []interface{}) *[]platformclientv2.Appendtodncactionsettings {
-	appendToDncActionSettingssSlice := make([]platformclientv2.Appendtodncactionsettings, 0)
-	for _, appendToDncActionSettings := range appendToDncActionSettingss {
-		var sdkAppendToDncActionSettings platformclientv2.Appendtodncactionsettings
-		appendToDncActionSettingssMap, ok := appendToDncActionSettings.(map[string]interface{})
-		if !ok {
-			continue
-		}
-
-		sdkAppendToDncActionSettings.Expire = platformclientv2.Bool(appendToDncActionSettingssMap["expire"].(bool))
-		resourcedata.BuildSDKStringValueIfNotNil(&sdkAppendToDncActionSettings.ExpirationDuration, appendToDncActionSettingssMap, "expiration_duration")
-		resourcedata.BuildSDKStringValueIfNotNil(&sdkAppendToDncActionSettings.ListType, appendToDncActionSettingssMap, "list_type")
-
-		appendToDncActionSettingssSlice = append(appendToDncActionSettingssSlice, sdkAppendToDncActionSettings)
+func buildAppendToDncActionSettings(appendToDncActionSettings *schema.Set) *platformclientv2.Appendtodncactionsettings {
+	if appendToDncActionSettings == nil {
+		return nil
 	}
 
-	return &appendToDncActionSettingssSlice
+	var sdkAppendToDncActionSettings platformclientv2.Appendtodncactionsettings
+	appendToDncActionSettingsList := appendToDncActionSettings.List()
+
+	if len(appendToDncActionSettingsList) > 0 {
+		appendToDncActionSettingsMap := appendToDncActionSettingsList[0].(map[string]interface{})
+
+		sdkAppendToDncActionSettings.Expire = platformclientv2.Bool(appendToDncActionSettingsMap["expire"].(bool))
+		resourcedata.BuildSDKStringValueIfNotNil(&sdkAppendToDncActionSettings.ExpirationDuration, appendToDncActionSettingsMap, "expiration_duration")
+		resourcedata.BuildSDKStringValueIfNotNil(&sdkAppendToDncActionSettings.ListType, appendToDncActionSettingsMap, "list_type")
+	}
+
+	return &sdkAppendToDncActionSettings
 }
 
 // buildMarkContactUncontactableActionSettingss maps an []interface{} into a Genesys Cloud *[]platformclientv2.Markcontactuncontactableactionsettings
-func buildMarkContactUncontactableActionSettings(markContactUncontactableActionSettingss []interface{}) *[]platformclientv2.Markcontactuncontactableactionsettings {
-	markContactUncontactableActionSettingssSlice := make([]platformclientv2.Markcontactuncontactableactionsettings, 0)
-	for _, markContactUncontactableActionSettings := range markContactUncontactableActionSettingss {
-		var sdkMarkContactUncontactableActionSettings platformclientv2.Markcontactuncontactableactionsettings
-		markContactUncontactableActionSettingssMap, ok := markContactUncontactableActionSettings.(map[string]interface{})
-		if !ok {
-			continue
-		}
-
-		resourcedata.BuildSDKStringArrayValueIfNotNil(&sdkMarkContactUncontactableActionSettings.MediaTypes, markContactUncontactableActionSettingssMap, "media_types")
-
-		markContactUncontactableActionSettingssSlice = append(markContactUncontactableActionSettingssSlice, sdkMarkContactUncontactableActionSettings)
+func buildMarkContactUncontactableActionSettings(markContactUncontactableActionSettings *schema.Set) *platformclientv2.Markcontactuncontactableactionsettings {
+	if markContactUncontactableActionSettings == nil {
+		return nil
 	}
 
-	return &markContactUncontactableActionSettingssSlice
+	var sdkMarkContactUncontactableActionSettings platformclientv2.Markcontactuncontactableactionsettings
+	markContactUncontactableActionSettingsList := markContactUncontactableActionSettings.List()
+
+	if len(markContactUncontactableActionSettingsList) > 0 {
+		markContactUncontactableActionSettingsMap := markContactUncontactableActionSettingsList[0].(map[string]interface{})
+
+		resourcedata.BuildSDKStringArrayValueIfNotNil(&sdkMarkContactUncontactableActionSettings.MediaTypes, markContactUncontactableActionSettingsMap, "media_types")
+
+	}
+
+	return &sdkMarkContactUncontactableActionSettings
 }
 
 // buildSetContentTemplateActionSettingss maps an []interface{} into a Genesys Cloud *[]platformclientv2.Setcontenttemplateactionsettings
-func buildSetContentTemplateActionSettings(setContentTemplateActionSettingss []interface{}) *[]platformclientv2.Setcontenttemplateactionsettings {
-	setContentTemplateActionSettingssSlice := make([]platformclientv2.Setcontenttemplateactionsettings, 0)
-	for _, setContentTemplateActionSettings := range setContentTemplateActionSettingss {
-		var sdkSetContentTemplateActionSettings platformclientv2.Setcontenttemplateactionsettings
-		setContentTemplateActionSettingssMap, ok := setContentTemplateActionSettings.(map[string]interface{})
-		if !ok {
-			continue
-		}
-
-		resourcedata.BuildSDKStringValueIfNotNil(&sdkSetContentTemplateActionSettings.SmsContentTemplateId, setContentTemplateActionSettingssMap, "sms_content_template_id")
-		resourcedata.BuildSDKStringValueIfNotNil(&sdkSetContentTemplateActionSettings.EmailContentTemplateId, setContentTemplateActionSettingssMap, "email_content_template_id")
-
-		setContentTemplateActionSettingssSlice = append(setContentTemplateActionSettingssSlice, sdkSetContentTemplateActionSettings)
+func buildSetContentTemplateActionSettings(setContentTemplateActionSettings *schema.Set) *platformclientv2.Setcontenttemplateactionsettings {
+	if setContentTemplateActionSettings == nil {
+		return nil
 	}
 
-	return &setContentTemplateActionSettingssSlice
+	var sdkSetContentTemplateActionSettings platformclientv2.Setcontenttemplateactionsettings
+	setContentTemplateActionSettingsList := setContentTemplateActionSettings.List()
+
+	if len(setContentTemplateActionSettingsList) > 0 {
+		setContentTemplateActionSettingsMap := setContentTemplateActionSettingsList[0].(map[string]interface{})
+
+		resourcedata.BuildSDKStringValueIfNotNil(&sdkSetContentTemplateActionSettings.SmsContentTemplateId, setContentTemplateActionSettingsMap, "sms_content_template_id")
+		resourcedata.BuildSDKStringValueIfNotNil(&sdkSetContentTemplateActionSettings.EmailContentTemplateId, setContentTemplateActionSettingsMap, "email_content_template_id")
+
+	}
+
+	return &sdkSetContentTemplateActionSettings
 }
 
 // buildSetSmsPhoneNumberActionSettingss maps an []interface{} into a Genesys Cloud *[]platformclientv2.Setsmsphonenumberactionsettings
-func buildSetSmsPhoneNumberActionSettings(setSmsPhoneNumberActionSettingss []interface{}) *[]platformclientv2.Setsmsphonenumberactionsettings {
-	setSmsPhoneNumberActionSettingssSlice := make([]platformclientv2.Setsmsphonenumberactionsettings, 0)
-	for _, setSmsPhoneNumberActionSettings := range setSmsPhoneNumberActionSettingss {
-		var sdkSetSmsPhoneNumberActionSettings platformclientv2.Setsmsphonenumberactionsettings
-		setSmsPhoneNumberActionSettingssMap, ok := setSmsPhoneNumberActionSettings.(map[string]interface{})
-		if !ok {
-			continue
-		}
+func buildSetSmsPhoneNumberActionSettings(setSmsPhoneNumberActionSettings *schema.Set) *platformclientv2.Setsmsphonenumberactionsettings {
+	if setSmsPhoneNumberActionSettings == nil {
+		return nil
+	}
+	var sdkSetSmsPhoneNumberActionSettings platformclientv2.Setsmsphonenumberactionsettings
+	setSmsPhoneNumberActionSettingsList := setSmsPhoneNumberActionSettings.List()
+	if len(setSmsPhoneNumberActionSettingsList) > 0 {
+		setSmsPhoneNumberActionSettingsMap := setSmsPhoneNumberActionSettingsList[0].(map[string]interface{})
 
-		resourcedata.BuildSDKStringValueIfNotNil(&sdkSetSmsPhoneNumberActionSettings.SenderSmsPhoneNumber, setSmsPhoneNumberActionSettingssMap, "sender_sms_phone_number")
+		resourcedata.BuildSDKStringValueIfNotNil(&sdkSetSmsPhoneNumberActionSettings.SenderSmsPhoneNumber, setSmsPhoneNumberActionSettingsMap, "sender_sms_phone_number")
 
-		setSmsPhoneNumberActionSettingssSlice = append(setSmsPhoneNumberActionSettingssSlice, sdkSetSmsPhoneNumberActionSettings)
 	}
 
-	return &setSmsPhoneNumberActionSettingssSlice
+	return &sdkSetSmsPhoneNumberActionSettings
 }
 
 // buildDigitalActions maps an []interface{} into a Genesys Cloud *[]platformclientv2.Digitalaction
@@ -425,16 +426,18 @@ func buildDigitalActions(digitalActions []interface{}) *[]platformclientv2.Digit
 		}
 
 		sdkDigitalAction.UpdateContactColumnActionSettings = buildUpdateContactColumnActionSettings(digitalActionsMap["update_contact_column_action_settings"].(*schema.Set))
-		// if action := digitalActionsMap["do_not_send_action_settings"]; action != nil {
-		// 	sdkDigitalAction.DoNotSendActionSettings = &action
-		// }
+		if action := digitalActionsMap["do_not_send_action_settings"]; action != nil {
+			sdkDigitalAction.DoNotSendActionSettings = &action
+		}
 
-		// TODO: Handle do_not_send_action_settings property
-		// resourcedata.BuildSDKInterfaceArrayValueIfNotNil(&sdkDigitalAction.AppendToDncActionSettings, digitalActionsMap, "append_to_dnc_action_settings", buildAppendToDncActionSettings)
-		// resourcedata.BuildSDKInterfaceArrayValueIfNotNil(&sdkDigitalAction.MarkContactUncontactableActionSettings, digitalActionsMap, "mark_contact_uncontactable_action_settings", buildMarkContactUncontactableActionSettings)
-		// // TODO: Handle mark_contact_address_uncontactable_action_settings property
-		// resourcedata.BuildSDKInterfaceArrayValueIfNotNil(&sdkDigitalAction.SetContentTemplateActionSettings, digitalActionsMap, "set_content_template_action_settings", buildSetContentTemplateActionSettings)
-		// resourcedata.BuildSDKInterfaceArrayValueIfNotNil(&sdkDigitalAction.SetSmsPhoneNumberActionSettings, digitalActionsMap, "set_sms_phone_number_action_settings", buildSetSmsPhoneNumberActionSettings)
+		sdkDigitalAction.AppendToDncActionSettings = buildAppendToDncActionSettings(digitalActionsMap["append_to_dnc_action_settings"].(*schema.Set))
+		sdkDigitalAction.MarkContactUncontactableActionSettings = buildMarkContactUncontactableActionSettings(digitalActionsMap["mark_contact_uncontactable_action_settings"].(*schema.Set))
+		if action := digitalActionsMap["mark_contact_address_uncontactable_action_settings"]; action != nil {
+			sdkDigitalAction.MarkContactAddressUncontactableActionSettings = &action
+		}
+
+		sdkDigitalAction.SetContentTemplateActionSettings = buildSetContentTemplateActionSettings(digitalActionsMap["set_content_template_action_settings"].(*schema.Set))
+		sdkDigitalAction.SetSmsPhoneNumberActionSettings = buildSetSmsPhoneNumberActionSettings(digitalActionsMap["set_sms_phone_number_action_settings"].(*schema.Set))
 
 		digitalActionsSlice = append(digitalActionsSlice, sdkDigitalAction)
 	}
@@ -465,143 +468,124 @@ func buildDigitalRules(digitalRules []interface{}) *[]platformclientv2.Digitalru
 }
 
 // flattenContactColumnConditionSettingss maps a Genesys Cloud *[]platformclientv2.Contactcolumnconditionsettings into a []interface{}
-func flattenContactColumnConditionSettings(contactColumnConditionSettingss *[]platformclientv2.Contactcolumnconditionsettings) []interface{} {
-	if len(*contactColumnConditionSettingss) == 0 {
+func flattenContactColumnConditionSettings(contactColumnConditionSettings *platformclientv2.Contactcolumnconditionsettings) *schema.Set {
+	if contactColumnConditionSettings == nil {
 		return nil
 	}
 
-	var contactColumnConditionSettingsList []interface{}
-	for _, contactColumnConditionSettings := range *contactColumnConditionSettingss {
-		contactColumnConditionSettingsMap := make(map[string]interface{})
+	contactColumnConditionSettingsSet := schema.NewSet(schema.HashResource(contactColumnConditionSettingsResource), []interface{}{})
+	contactColumnConditionSettingsMap := make(map[string]interface{})
 
-		resourcedata.SetMapValueIfNotNil(contactColumnConditionSettingsMap, "column_name", contactColumnConditionSettings.ColumnName)
-		resourcedata.SetMapValueIfNotNil(contactColumnConditionSettingsMap, "operator", contactColumnConditionSettings.Operator)
-		resourcedata.SetMapValueIfNotNil(contactColumnConditionSettingsMap, "value", contactColumnConditionSettings.Value)
-		resourcedata.SetMapValueIfNotNil(contactColumnConditionSettingsMap, "value_type", contactColumnConditionSettings.ValueType)
+	resourcedata.SetMapValueIfNotNil(contactColumnConditionSettingsMap, "column_name", contactColumnConditionSettings.ColumnName)
+	resourcedata.SetMapValueIfNotNil(contactColumnConditionSettingsMap, "operator", contactColumnConditionSettings.Operator)
+	resourcedata.SetMapValueIfNotNil(contactColumnConditionSettingsMap, "value", contactColumnConditionSettings.Value)
+	resourcedata.SetMapValueIfNotNil(contactColumnConditionSettingsMap, "value_type", contactColumnConditionSettings.ValueType)
 
-		contactColumnConditionSettingsList = append(contactColumnConditionSettingsList, contactColumnConditionSettingsMap)
-	}
+	contactColumnConditionSettingsSet.Add(contactColumnConditionSettingsMap)
 
-	return contactColumnConditionSettingsList
+	return contactColumnConditionSettingsSet
 }
 
 // flattenContactAddressConditionSettingss maps a Genesys Cloud *[]platformclientv2.Contactaddressconditionsettings into a []interface{}
-func flattenContactAddressConditionSettings(contactAddressConditionSettingss *[]platformclientv2.Contactaddressconditionsettings) []interface{} {
-	if len(*contactAddressConditionSettingss) == 0 {
+func flattenContactAddressConditionSettings(contactAddressConditionSettings *platformclientv2.Contactaddressconditionsettings) *schema.Set {
+	if contactAddressConditionSettings == nil {
 		return nil
 	}
 
-	var contactAddressConditionSettingsList []interface{}
-	for _, contactAddressConditionSettings := range *contactAddressConditionSettingss {
-		contactAddressConditionSettingsMap := make(map[string]interface{})
+	contactAddressConditionSettingsSet := schema.NewSet(schema.HashResource(contactAddressConditionSettingsResource), []interface{}{})
+	contactAddressConditionSettingsMap := make(map[string]interface{})
 
-		resourcedata.SetMapValueIfNotNil(contactAddressConditionSettingsMap, "operator", contactAddressConditionSettings.Operator)
-		resourcedata.SetMapValueIfNotNil(contactAddressConditionSettingsMap, "value", contactAddressConditionSettings.Value)
+	resourcedata.SetMapValueIfNotNil(contactAddressConditionSettingsMap, "operator", contactAddressConditionSettings.Operator)
+	resourcedata.SetMapValueIfNotNil(contactAddressConditionSettingsMap, "value", contactAddressConditionSettings.Value)
 
-		contactAddressConditionSettingsList = append(contactAddressConditionSettingsList, contactAddressConditionSettingsMap)
-	}
-
-	return contactAddressConditionSettingsList
+	contactAddressConditionSettingsSet.Add(contactAddressConditionSettingsMap)
+	return contactAddressConditionSettingsSet
 }
 
 // flattenContactAddressTypeConditionSettingss maps a Genesys Cloud *[]platformclientv2.Contactaddresstypeconditionsettings into a []interface{}
-func flattenContactAddressTypeConditionSettings(contactAddressTypeConditionSettingss *[]platformclientv2.Contactaddresstypeconditionsettings) []interface{} {
-	if len(*contactAddressTypeConditionSettingss) == 0 {
+func flattenContactAddressTypeConditionSettings(contactAddressTypeConditionSettings *platformclientv2.Contactaddresstypeconditionsettings) *schema.Set {
+	if contactAddressTypeConditionSettings == nil {
 		return nil
 	}
 
-	var contactAddressTypeConditionSettingsList []interface{}
-	for _, contactAddressTypeConditionSettings := range *contactAddressTypeConditionSettingss {
-		contactAddressTypeConditionSettingsMap := make(map[string]interface{})
+	contactAddressTypeConditionSettingsSet := schema.NewSet(schema.HashResource(contactAddressTypeConditionSettingsResource), []interface{}{})
+	contactAddressTypeConditionSettingsMap := make(map[string]interface{})
 
-		resourcedata.SetMapValueIfNotNil(contactAddressTypeConditionSettingsMap, "operator", contactAddressTypeConditionSettings.Operator)
-		resourcedata.SetMapValueIfNotNil(contactAddressTypeConditionSettingsMap, "value", contactAddressTypeConditionSettings.Value)
+	resourcedata.SetMapValueIfNotNil(contactAddressTypeConditionSettingsMap, "operator", contactAddressTypeConditionSettings.Operator)
+	resourcedata.SetMapValueIfNotNil(contactAddressTypeConditionSettingsMap, "value", contactAddressTypeConditionSettings.Value)
 
-		contactAddressTypeConditionSettingsList = append(contactAddressTypeConditionSettingsList, contactAddressTypeConditionSettingsMap)
-	}
+	contactAddressTypeConditionSettingsSet.Add(contactAddressTypeConditionSettingsMap)
 
-	return contactAddressTypeConditionSettingsList
+	return contactAddressTypeConditionSettingsSet
 }
 
 // flattenLastAttemptByColumnConditionSettingss maps a Genesys Cloud *[]platformclientv2.Lastattemptbycolumnconditionsettings into a []interface{}
-func flattenLastAttemptByColumnConditionSettings(lastAttemptByColumnConditionSettingss *[]platformclientv2.Lastattemptbycolumnconditionsettings) []interface{} {
-	if len(*lastAttemptByColumnConditionSettingss) == 0 {
+func flattenLastAttemptByColumnConditionSettings(lastAttemptByColumnConditionSettings *platformclientv2.Lastattemptbycolumnconditionsettings) *schema.Set {
+	if lastAttemptByColumnConditionSettings == nil {
 		return nil
 	}
 
-	var lastAttemptByColumnConditionSettingsList []interface{}
-	for _, lastAttemptByColumnConditionSettings := range *lastAttemptByColumnConditionSettingss {
-		lastAttemptByColumnConditionSettingsMap := make(map[string]interface{})
+	lastAttemptByColumnConditionSettingsSet := schema.NewSet(schema.HashResource(lastAttemptByColumnConditionSettingsResource), []interface{}{})
+	lastAttemptByColumnConditionSettingsMap := make(map[string]interface{})
 
-		resourcedata.SetMapValueIfNotNil(lastAttemptByColumnConditionSettingsMap, "email_column_name", lastAttemptByColumnConditionSettings.EmailColumnName)
-		resourcedata.SetMapValueIfNotNil(lastAttemptByColumnConditionSettingsMap, "sms_column_name", lastAttemptByColumnConditionSettings.SmsColumnName)
-		resourcedata.SetMapValueIfNotNil(lastAttemptByColumnConditionSettingsMap, "operator", lastAttemptByColumnConditionSettings.Operator)
-		resourcedata.SetMapValueIfNotNil(lastAttemptByColumnConditionSettingsMap, "value", lastAttemptByColumnConditionSettings.Value)
+	resourcedata.SetMapValueIfNotNil(lastAttemptByColumnConditionSettingsMap, "email_column_name", lastAttemptByColumnConditionSettings.EmailColumnName)
+	resourcedata.SetMapValueIfNotNil(lastAttemptByColumnConditionSettingsMap, "sms_column_name", lastAttemptByColumnConditionSettings.SmsColumnName)
+	resourcedata.SetMapValueIfNotNil(lastAttemptByColumnConditionSettingsMap, "operator", lastAttemptByColumnConditionSettings.Operator)
+	resourcedata.SetMapValueIfNotNil(lastAttemptByColumnConditionSettingsMap, "value", lastAttemptByColumnConditionSettings.Value)
 
-		lastAttemptByColumnConditionSettingsList = append(lastAttemptByColumnConditionSettingsList, lastAttemptByColumnConditionSettingsMap)
-	}
-
-	return lastAttemptByColumnConditionSettingsList
+	lastAttemptByColumnConditionSettingsSet.Add(lastAttemptByColumnConditionSettingsMap)
+	return lastAttemptByColumnConditionSettingsSet
 }
 
 // flattenLastAttemptOverallConditionSettingss maps a Genesys Cloud *[]platformclientv2.Lastattemptoverallconditionsettings into a []interface{}
-func flattenLastAttemptOverallConditionSettings(lastAttemptOverallConditionSettingss *[]platformclientv2.Lastattemptoverallconditionsettings) []interface{} {
-	if len(*lastAttemptOverallConditionSettingss) == 0 {
+func flattenLastAttemptOverallConditionSettings(lastAttemptOverallConditionSettings *platformclientv2.Lastattemptoverallconditionsettings) *schema.Set {
+	if lastAttemptOverallConditionSettings == nil {
 		return nil
 	}
 
-	var lastAttemptOverallConditionSettingsList []interface{}
-	for _, lastAttemptOverallConditionSettings := range *lastAttemptOverallConditionSettingss {
-		lastAttemptOverallConditionSettingsMap := make(map[string]interface{})
+	lastAttemptOverallConditionSettingsSet := schema.NewSet(schema.HashResource(lastAttemptOverallConditionSettingsResource), []interface{}{})
+	lastAttemptOverallConditionSettingsMap := make(map[string]interface{})
 
-		resourcedata.SetMapStringArrayValueIfNotNil(lastAttemptOverallConditionSettingsMap, "media_types", lastAttemptOverallConditionSettings.MediaTypes)
-		resourcedata.SetMapValueIfNotNil(lastAttemptOverallConditionSettingsMap, "operator", lastAttemptOverallConditionSettings.Operator)
-		resourcedata.SetMapValueIfNotNil(lastAttemptOverallConditionSettingsMap, "value", lastAttemptOverallConditionSettings.Value)
+	resourcedata.SetMapStringArrayValueIfNotNil(lastAttemptOverallConditionSettingsMap, "media_types", lastAttemptOverallConditionSettings.MediaTypes)
+	resourcedata.SetMapValueIfNotNil(lastAttemptOverallConditionSettingsMap, "operator", lastAttemptOverallConditionSettings.Operator)
+	resourcedata.SetMapValueIfNotNil(lastAttemptOverallConditionSettingsMap, "value", lastAttemptOverallConditionSettings.Value)
 
-		lastAttemptOverallConditionSettingsList = append(lastAttemptOverallConditionSettingsList, lastAttemptOverallConditionSettingsMap)
-	}
-
-	return lastAttemptOverallConditionSettingsList
+	lastAttemptOverallConditionSettingsSet.Add(lastAttemptOverallConditionSettingsMap)
+	return lastAttemptOverallConditionSettingsSet
 }
 
 // flattenLastResultByColumnConditionSettingss maps a Genesys Cloud *[]platformclientv2.Lastresultbycolumnconditionsettings into a []interface{}
-func flattenLastResultByColumnConditionSettings(lastResultByColumnConditionSettingss *[]platformclientv2.Lastresultbycolumnconditionsettings) []interface{} {
-	if len(*lastResultByColumnConditionSettingss) == 0 {
+func flattenLastResultByColumnConditionSettings(lastResultByColumnConditionSettings *platformclientv2.Lastresultbycolumnconditionsettings) *schema.Set {
+	if lastResultByColumnConditionSettings == nil {
 		return nil
 	}
 
-	var lastResultByColumnConditionSettingsList []interface{}
-	for _, lastResultByColumnConditionSettings := range *lastResultByColumnConditionSettingss {
-		lastResultByColumnConditionSettingsMap := make(map[string]interface{})
+	lastResultByColumnConditionSettingsSet := schema.NewSet(schema.HashResource(lastResultByColumnConditionSettingsResource), []interface{}{})
+	lastResultByColumnConditionSettingsMap := make(map[string]interface{})
 
-		resourcedata.SetMapValueIfNotNil(lastResultByColumnConditionSettingsMap, "email_column_name", lastResultByColumnConditionSettings.EmailColumnName)
-		resourcedata.SetMapStringArrayValueIfNotNil(lastResultByColumnConditionSettingsMap, "email_wrapup_codes", lastResultByColumnConditionSettings.EmailWrapupCodes)
-		resourcedata.SetMapValueIfNotNil(lastResultByColumnConditionSettingsMap, "sms_column_name", lastResultByColumnConditionSettings.SmsColumnName)
-		resourcedata.SetMapStringArrayValueIfNotNil(lastResultByColumnConditionSettingsMap, "sms_wrapup_codes", lastResultByColumnConditionSettings.SmsWrapupCodes)
+	resourcedata.SetMapValueIfNotNil(lastResultByColumnConditionSettingsMap, "email_column_name", lastResultByColumnConditionSettings.EmailColumnName)
+	resourcedata.SetMapStringArrayValueIfNotNil(lastResultByColumnConditionSettingsMap, "email_wrapup_codes", lastResultByColumnConditionSettings.EmailWrapupCodes)
+	resourcedata.SetMapValueIfNotNil(lastResultByColumnConditionSettingsMap, "sms_column_name", lastResultByColumnConditionSettings.SmsColumnName)
+	resourcedata.SetMapStringArrayValueIfNotNil(lastResultByColumnConditionSettingsMap, "sms_wrapup_codes", lastResultByColumnConditionSettings.SmsWrapupCodes)
 
-		lastResultByColumnConditionSettingsList = append(lastResultByColumnConditionSettingsList, lastResultByColumnConditionSettingsMap)
-	}
-
-	return lastResultByColumnConditionSettingsList
+	lastResultByColumnConditionSettingsSet.Add(lastResultByColumnConditionSettingsMap)
+	return lastResultByColumnConditionSettingsSet
 }
 
 // flattenLastResultOverallConditionSettingss maps a Genesys Cloud *[]platformclientv2.Lastresultoverallconditionsettings into a []interface{}
-func flattenLastResultOverallConditionSettings(lastResultOverallConditionSettingss *[]platformclientv2.Lastresultoverallconditionsettings) []interface{} {
-	if len(*lastResultOverallConditionSettingss) == 0 {
+func flattenLastResultOverallConditionSettings(lastResultOverallConditionSettings *platformclientv2.Lastresultoverallconditionsettings) *schema.Set {
+	if lastResultOverallConditionSettings == nil {
 		return nil
 	}
 
-	var lastResultOverallConditionSettingsList []interface{}
-	for _, lastResultOverallConditionSettings := range *lastResultOverallConditionSettingss {
-		lastResultOverallConditionSettingsMap := make(map[string]interface{})
+	lastResultOverallConditionSettingsSet := schema.NewSet(schema.HashResource(lastResultOverallConditionSettingsResource), []interface{}{})
+	lastResultOverallConditionSettingsMap := make(map[string]interface{})
 
-		resourcedata.SetMapStringArrayValueIfNotNil(lastResultOverallConditionSettingsMap, "email_wrapup_codes", lastResultOverallConditionSettings.EmailWrapupCodes)
-		resourcedata.SetMapStringArrayValueIfNotNil(lastResultOverallConditionSettingsMap, "sms_wrapup_codes", lastResultOverallConditionSettings.SmsWrapupCodes)
+	resourcedata.SetMapStringArrayValueIfNotNil(lastResultOverallConditionSettingsMap, "email_wrapup_codes", lastResultOverallConditionSettings.EmailWrapupCodes)
+	resourcedata.SetMapStringArrayValueIfNotNil(lastResultOverallConditionSettingsMap, "sms_wrapup_codes", lastResultOverallConditionSettings.SmsWrapupCodes)
 
-		lastResultOverallConditionSettingsList = append(lastResultOverallConditionSettingsList, lastResultOverallConditionSettingsMap)
-	}
-
-	return lastResultOverallConditionSettingsList
+	lastResultOverallConditionSettingsSet.Add(lastResultOverallConditionSettingsMap)
+	return lastResultOverallConditionSettingsSet
 }
 
 // flattenDigitalDataActionConditionPredicates maps a Genesys Cloud *[]platformclientv2.Digitaldataactionconditionpredicate into a []interface{}
@@ -646,25 +630,22 @@ func flattenDataActionContactColumnFieldMappings(dataActionContactColumnFieldMap
 }
 
 // flattenDataActionConditionSettingss maps a Genesys Cloud *[]platformclientv2.Dataactionconditionsettings into a []interface{}
-func flattenDataActionConditionSettings(dataActionConditionSettingss *[]platformclientv2.Dataactionconditionsettings) []interface{} {
-	if len(*dataActionConditionSettingss) == 0 {
+func flattenDataActionConditionSettings(dataActionConditionSettings *platformclientv2.Dataactionconditionsettings) *schema.Set {
+	if dataActionConditionSettings == nil {
 		return nil
 	}
 
-	var dataActionConditionSettingsList []interface{}
-	for _, dataActionConditionSettings := range *dataActionConditionSettingss {
-		dataActionConditionSettingsMap := make(map[string]interface{})
+	dataActionConditionSettingsSet := schema.NewSet(schema.HashResource(dataActionConditionSettingsResource), []interface{}{})
+	dataActionConditionSettingsMap := make(map[string]interface{})
 
-		resourcedata.SetMapValueIfNotNil(dataActionConditionSettingsMap, "data_action_id", dataActionConditionSettings.DataActionId)
-		resourcedata.SetMapValueIfNotNil(dataActionConditionSettingsMap, "contact_id_field", dataActionConditionSettings.ContactIdField)
-		resourcedata.SetMapValueIfNotNil(dataActionConditionSettingsMap, "data_not_found_resolution", dataActionConditionSettings.DataNotFoundResolution)
-		resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(dataActionConditionSettingsMap, "predicates", dataActionConditionSettings.Predicates, flattenDigitalDataActionConditionPredicates)
-		resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(dataActionConditionSettingsMap, "contact_column_to_data_action_field_mappings", dataActionConditionSettings.ContactColumnToDataActionFieldMappings, flattenDataActionContactColumnFieldMappings)
+	resourcedata.SetMapValueIfNotNil(dataActionConditionSettingsMap, "data_action_id", dataActionConditionSettings.DataActionId)
+	resourcedata.SetMapValueIfNotNil(dataActionConditionSettingsMap, "contact_id_field", dataActionConditionSettings.ContactIdField)
+	resourcedata.SetMapValueIfNotNil(dataActionConditionSettingsMap, "data_not_found_resolution", dataActionConditionSettings.DataNotFoundResolution)
+	resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(dataActionConditionSettingsMap, "predicates", dataActionConditionSettings.Predicates, flattenDigitalDataActionConditionPredicates)
+	resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(dataActionConditionSettingsMap, "contact_column_to_data_action_field_mappings", dataActionConditionSettings.ContactColumnToDataActionFieldMappings, flattenDataActionContactColumnFieldMappings)
 
-		dataActionConditionSettingsList = append(dataActionConditionSettingsList, dataActionConditionSettingsMap)
-	}
-
-	return dataActionConditionSettingsList
+	dataActionConditionSettingsSet.Add(dataActionConditionSettingsMap)
+	return dataActionConditionSettingsSet
 }
 
 // flattenDigitalConditions maps a Genesys Cloud *[]platformclientv2.Digitalcondition into a []interface{}
@@ -678,14 +659,15 @@ func flattenDigitalConditions(digitalConditions *[]platformclientv2.Digitalcondi
 		digitalConditionMap := make(map[string]interface{})
 
 		resourcedata.SetMapValueIfNotNil(digitalConditionMap, "inverted", digitalCondition.Inverted)
-		// resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(digitalConditionMap, "contact_column_condition_settings", digitalCondition.ContactColumnConditionSettings, flattenContactColumnConditionSettings)
-		// resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(digitalConditionMap, "contact_address_condition_settings", digitalCondition.ContactAddressConditionSettings, flattenContactAddressConditionSettings)
-		// resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(digitalConditionMap, "contact_address_type_condition_settings", digitalCondition.ContactAddressTypeConditionSettings, flattenContactAddressTypeConditionSettings)
-		// resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(digitalConditionMap, "last_attempt_by_column_condition_settings", digitalCondition.LastAttemptByColumnConditionSettings, flattenLastAttemptByColumnConditionSettings)
-		// resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(digitalConditionMap, "last_attempt_overall_condition_settings", digitalCondition.LastAttemptOverallConditionSettings, flattenLastAttemptOverallConditionSettings)
-		// resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(digitalConditionMap, "last_result_by_column_condition_settings", digitalCondition.LastResultByColumnConditionSettings, flattenLastResultByColumnConditionSettings)
-		// resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(digitalConditionMap, "last_result_overall_condition_settings", digitalCondition.LastResultOverallConditionSettings, flattenLastResultOverallConditionSettings)
-		// resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(digitalConditionMap, "data_action_condition_settings", digitalCondition.DataActionConditionSettings, flattenDataActionConditionSettings)
+
+		resourcedata.SetMapSchemaSetWithFuncIfNotNil(digitalConditionMap, "contact_column_condition_settings", digitalCondition.ContactColumnConditionSettings, flattenContactColumnConditionSettings)
+		resourcedata.SetMapSchemaSetWithFuncIfNotNil(digitalConditionMap, "contact_address_condition_settings", digitalCondition.ContactAddressConditionSettings, flattenContactAddressConditionSettings)
+		resourcedata.SetMapSchemaSetWithFuncIfNotNil(digitalConditionMap, "contact_address_type_condition_settings", digitalCondition.ContactAddressTypeConditionSettings, flattenContactAddressTypeConditionSettings)
+		resourcedata.SetMapSchemaSetWithFuncIfNotNil(digitalConditionMap, "last_attempt_by_column_condition_settings", digitalCondition.LastAttemptByColumnConditionSettings, flattenLastAttemptByColumnConditionSettings)
+		resourcedata.SetMapSchemaSetWithFuncIfNotNil(digitalConditionMap, "last_attempt_overall_condition_settings", digitalCondition.LastAttemptOverallConditionSettings, flattenLastAttemptOverallConditionSettings)
+		resourcedata.SetMapSchemaSetWithFuncIfNotNil(digitalConditionMap, "last_result_by_column_condition_settings", digitalCondition.LastResultByColumnConditionSettings, flattenLastResultByColumnConditionSettings)
+		resourcedata.SetMapSchemaSetWithFuncIfNotNil(digitalConditionMap, "last_result_overall_condition_settings", digitalCondition.LastResultOverallConditionSettings, flattenLastResultOverallConditionSettings)
+		resourcedata.SetMapSchemaSetWithFuncIfNotNil(digitalConditionMap, "data_action_condition_settings", digitalCondition.DataActionConditionSettings, flattenDataActionConditionSettings)
 
 		digitalConditionList = append(digitalConditionList, digitalConditionMap)
 	}
@@ -694,97 +676,82 @@ func flattenDigitalConditions(digitalConditions *[]platformclientv2.Digitalcondi
 }
 
 // flattenUpdateContactColumnActionSettingss maps a Genesys Cloud *[]platformclientv2.Updatecontactcolumnactionsettings into a []interface{}
-func flattenUpdateContactColumnActionSettings(updateContactColumnActionSettingss *[]platformclientv2.Updatecontactcolumnactionsettings) []interface{} {
-	if len(*updateContactColumnActionSettingss) == 0 {
+func flattenUpdateContactColumnActionSettings(updateContactColumnActionSettings *platformclientv2.Updatecontactcolumnactionsettings) *schema.Set {
+	if updateContactColumnActionSettings == nil {
 		return nil
 	}
 
-	var updateContactColumnActionSettingsList []interface{}
-	for _, updateContactColumnActionSettings := range *updateContactColumnActionSettingss {
-		updateContactColumnActionSettingsMap := make(map[string]interface{})
+	updateContactColumnActionSettingsSet := schema.NewSet(schema.HashResource(updateContactColumnActionSettingsResource), []interface{}{})
+	updateContactColumnActionSettingsMap := make(map[string]interface{})
 
-		// TODO: Handle properties property
-		resourcedata.SetMapValueIfNotNil(updateContactColumnActionSettingsMap, "update_option", updateContactColumnActionSettings.UpdateOption)
+	resourcedata.SetMapStringMapValueIfNotNil(updateContactColumnActionSettingsMap, "properties", updateContactColumnActionSettings.Properties)
+	resourcedata.SetMapValueIfNotNil(updateContactColumnActionSettingsMap, "update_option", updateContactColumnActionSettings.UpdateOption)
 
-		updateContactColumnActionSettingsList = append(updateContactColumnActionSettingsList, updateContactColumnActionSettingsMap)
-	}
-
-	return updateContactColumnActionSettingsList
+	updateContactColumnActionSettingsSet.Add(updateContactColumnActionSettingsMap)
+	return updateContactColumnActionSettingsSet
 }
 
 // flattenAppendToDncActionSettingss maps a Genesys Cloud *[]platformclientv2.Appendtodncactionsettings into a []interface{}
-func flattenAppendToDncActionSettings(appendToDncActionSettingss *[]platformclientv2.Appendtodncactionsettings) []interface{} {
-	if len(*appendToDncActionSettingss) == 0 {
+func flattenAppendToDncActionSettings(appendToDncActionSettings *platformclientv2.Appendtodncactionsettings) *schema.Set {
+	if appendToDncActionSettings == nil {
 		return nil
 	}
 
-	var appendToDncActionSettingsList []interface{}
-	for _, appendToDncActionSettings := range *appendToDncActionSettingss {
-		appendToDncActionSettingsMap := make(map[string]interface{})
+	appendToDncActionSettingsSet := schema.NewSet(schema.HashResource(appendToDncActionSettingsResource), []interface{}{})
+	appendToDncActionSettingsMap := make(map[string]interface{})
 
-		resourcedata.SetMapValueIfNotNil(appendToDncActionSettingsMap, "expire", appendToDncActionSettings.Expire)
-		resourcedata.SetMapValueIfNotNil(appendToDncActionSettingsMap, "expiration_duration", appendToDncActionSettings.ExpirationDuration)
-		resourcedata.SetMapValueIfNotNil(appendToDncActionSettingsMap, "list_type", appendToDncActionSettings.ListType)
+	resourcedata.SetMapValueIfNotNil(appendToDncActionSettingsMap, "expire", appendToDncActionSettings.Expire)
+	resourcedata.SetMapValueIfNotNil(appendToDncActionSettingsMap, "expiration_duration", appendToDncActionSettings.ExpirationDuration)
+	resourcedata.SetMapValueIfNotNil(appendToDncActionSettingsMap, "list_type", appendToDncActionSettings.ListType)
 
-		appendToDncActionSettingsList = append(appendToDncActionSettingsList, appendToDncActionSettingsMap)
-	}
-
-	return appendToDncActionSettingsList
+	appendToDncActionSettingsSet.Add(appendToDncActionSettingsMap)
+	return appendToDncActionSettingsSet
 }
 
 // flattenMarkContactUncontactableActionSettingss maps a Genesys Cloud *[]platformclientv2.Markcontactuncontactableactionsettings into a []interface{}
-func flattenMarkContactUncontactableActionSettings(markContactUncontactableActionSettingss *[]platformclientv2.Markcontactuncontactableactionsettings) []interface{} {
-	if len(*markContactUncontactableActionSettingss) == 0 {
+func flattenMarkContactUncontactableActionSettings(markContactUncontactableActionSettings *platformclientv2.Markcontactuncontactableactionsettings) *schema.Set {
+	if markContactUncontactableActionSettings == nil {
 		return nil
 	}
 
-	var markContactUncontactableActionSettingsList []interface{}
-	for _, markContactUncontactableActionSettings := range *markContactUncontactableActionSettingss {
-		markContactUncontactableActionSettingsMap := make(map[string]interface{})
+	markContactUncontactableActionSettingsSet := schema.NewSet(schema.HashResource(markContactUncontactableActionSettingsResource), []interface{}{})
+	markContactUncontactableActionSettingsMap := make(map[string]interface{})
 
-		resourcedata.SetMapStringArrayValueIfNotNil(markContactUncontactableActionSettingsMap, "media_types", markContactUncontactableActionSettings.MediaTypes)
+	resourcedata.SetMapStringArrayValueIfNotNil(markContactUncontactableActionSettingsMap, "media_types", markContactUncontactableActionSettings.MediaTypes)
 
-		markContactUncontactableActionSettingsList = append(markContactUncontactableActionSettingsList, markContactUncontactableActionSettingsMap)
-	}
-
-	return markContactUncontactableActionSettingsList
+	markContactUncontactableActionSettingsSet.Add(markContactUncontactableActionSettingsMap)
+	return markContactUncontactableActionSettingsSet
 }
 
 // flattenSetContentTemplateActionSettingss maps a Genesys Cloud *[]platformclientv2.Setcontenttemplateactionsettings into a []interface{}
-func flattenSetContentTemplateActionSettings(setContentTemplateActionSettingss *[]platformclientv2.Setcontenttemplateactionsettings) []interface{} {
-	if len(*setContentTemplateActionSettingss) == 0 {
+func flattenSetContentTemplateActionSettings(setContentTemplateActionSettings *platformclientv2.Setcontenttemplateactionsettings) *schema.Set {
+	if setContentTemplateActionSettings == nil {
 		return nil
 	}
 
-	var setContentTemplateActionSettingsList []interface{}
-	for _, setContentTemplateActionSettings := range *setContentTemplateActionSettingss {
-		setContentTemplateActionSettingsMap := make(map[string]interface{})
+	setContentTemplateActionSettingsSet := schema.NewSet(schema.HashResource(setContentTemplateActionSettingsResource), []interface{}{})
+	setContentTemplateActionSettingsMap := make(map[string]interface{})
 
-		resourcedata.SetMapValueIfNotNil(setContentTemplateActionSettingsMap, "sms_content_template_id", setContentTemplateActionSettings.SmsContentTemplateId)
-		resourcedata.SetMapValueIfNotNil(setContentTemplateActionSettingsMap, "email_content_template_id", setContentTemplateActionSettings.EmailContentTemplateId)
+	resourcedata.SetMapValueIfNotNil(setContentTemplateActionSettingsMap, "sms_content_template_id", setContentTemplateActionSettings.SmsContentTemplateId)
+	resourcedata.SetMapValueIfNotNil(setContentTemplateActionSettingsMap, "email_content_template_id", setContentTemplateActionSettings.EmailContentTemplateId)
 
-		setContentTemplateActionSettingsList = append(setContentTemplateActionSettingsList, setContentTemplateActionSettingsMap)
-	}
-
-	return setContentTemplateActionSettingsList
+	setContentTemplateActionSettingsSet.Add(setContentTemplateActionSettingsMap)
+	return setContentTemplateActionSettingsSet
 }
 
 // flattenSetSmsPhoneNumberActionSettingss maps a Genesys Cloud *[]platformclientv2.Setsmsphonenumberactionsettings into a []interface{}
-func flattenSetSmsPhoneNumberActionSettingss(setSmsPhoneNumberActionSettingss *[]platformclientv2.Setsmsphonenumberactionsettings) []interface{} {
-	if len(*setSmsPhoneNumberActionSettingss) == 0 {
+func flattenSetSmsPhoneNumberActionSettings(setSmsPhoneNumberActionSettings *platformclientv2.Setsmsphonenumberactionsettings) *schema.Set {
+	if setSmsPhoneNumberActionSettings == nil {
 		return nil
 	}
 
-	var setSmsPhoneNumberActionSettingsList []interface{}
-	for _, setSmsPhoneNumberActionSettings := range *setSmsPhoneNumberActionSettingss {
-		setSmsPhoneNumberActionSettingsMap := make(map[string]interface{})
+	setSmsPhoneNumberActionSettingsSet := schema.NewSet(schema.HashResource(setSmsPhoneNumberActionSettingsResource), []interface{}{})
+	setSmsPhoneNumberActionSettingsMap := make(map[string]interface{})
 
-		resourcedata.SetMapValueIfNotNil(setSmsPhoneNumberActionSettingsMap, "sender_sms_phone_number", setSmsPhoneNumberActionSettings.SenderSmsPhoneNumber)
+	resourcedata.SetMapValueIfNotNil(setSmsPhoneNumberActionSettingsMap, "sender_sms_phone_number", setSmsPhoneNumberActionSettings.SenderSmsPhoneNumber)
 
-		setSmsPhoneNumberActionSettingsList = append(setSmsPhoneNumberActionSettingsList, setSmsPhoneNumberActionSettingsMap)
-	}
-
-	return setSmsPhoneNumberActionSettingsList
+	setSmsPhoneNumberActionSettingsSet.Add(setSmsPhoneNumberActionSettingsMap)
+	return setSmsPhoneNumberActionSettingsSet
 }
 
 // flattenDigitalActions maps a Genesys Cloud *[]platformclientv2.Digitalaction into a []interface{}
@@ -794,19 +761,19 @@ func flattenDigitalActions(digitalActions *[]platformclientv2.Digitalaction) []i
 	}
 
 	var digitalActionList []interface{}
-	// for _, digitalAction := range *digitalActions {
-	// 	digitalActionMap := make(map[string]interface{})
+	for _, digitalAction := range *digitalActions {
+		digitalActionMap := make(map[string]interface{})
 
-	// resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(digitalActionMap, "update_contact_column_action_settings", digitalAction.UpdateContactColumnActionSettings, flattenUpdateContactColumnActionSettings)
-	// // TODO: Handle do_not_send_action_settings property
-	// resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(digitalActionMap, "append_to_dnc_action_settings", digitalAction.AppendToDncActionSettings, flattenAppendToDncActionSettings)
-	// resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(digitalActionMap, "mark_contact_uncontactable_action_settings", digitalAction.MarkContactUncontactableActionSettings, flattenMarkContactUncontactableActionSettings)
-	// // TODO: Handle mark_contact_address_uncontactable_action_settings property
-	// resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(digitalActionMap, "set_content_template_action_settings", digitalAction.SetContentTemplateActionSettings, flattenSetContentTemplateActionSettings)
-	// resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(digitalActionMap, "set_sms_phone_number_action_settings", digitalAction.SetSmsPhoneNumberActionSettings, flattenSetSmsPhoneNumberActionSettings)
+		resourcedata.SetMapSchemaSetWithFuncIfNotNil(digitalActionMap, "update_contact_column_action_settings", digitalAction.UpdateContactColumnActionSettings, flattenUpdateContactColumnActionSettings)
+		resourcedata.SetMapValueIfNotNil(digitalActionMap, "do_not_send_action_settings", digitalAction.DoNotSendActionSettings)
+		resourcedata.SetMapSchemaSetWithFuncIfNotNil(digitalActionMap, "append_to_dnc_action_settings", digitalAction.AppendToDncActionSettings, flattenAppendToDncActionSettings)
+		resourcedata.SetMapSchemaSetWithFuncIfNotNil(digitalActionMap, "mark_contact_uncontactable_action_settings", digitalAction.MarkContactUncontactableActionSettings, flattenMarkContactUncontactableActionSettings)
+		resourcedata.SetMapValueIfNotNil(digitalActionMap, "mark_contact_address_uncontactable_action_settings", digitalAction.DoNotSendActionSettings)
+		resourcedata.SetMapSchemaSetWithFuncIfNotNil(digitalActionMap, "set_content_template_action_settings", digitalAction.SetContentTemplateActionSettings, flattenSetContentTemplateActionSettings)
+		resourcedata.SetMapSchemaSetWithFuncIfNotNil(digitalActionMap, "set_sms_phone_number_action_settings", digitalAction.SetSmsPhoneNumberActionSettings, flattenSetSmsPhoneNumberActionSettings)
 
-	// 	digitalActionList = append(digitalActionList, digitalActionMap)
-	// }
+		digitalActionList = append(digitalActionList, digitalActionMap)
+	}
 
 	return digitalActionList
 }

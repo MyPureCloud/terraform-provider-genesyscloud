@@ -7,7 +7,6 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
-	"terraform-provider-genesyscloud/genesyscloud/util"
 )
 
 /*
@@ -27,9 +26,8 @@ func SetRegistrar(regInstance registrar.Registrar) {
 	regInstance.RegisterExporter(resourceName, OutboundDigitalrulesetExporter())
 }
 
-// ResourceOutboundDigitalruleset registers the genesyscloud_outbound_digitalruleset resource with Terraform
-func ResourceOutboundDigitalruleset() *schema.Resource {
-	contactColumnConditionSettingsResource := &schema.Resource{
+var (
+	contactColumnConditionSettingsResource = &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			`column_name`: {
 				Description: `The name of the contact list column to evaluate.`,
@@ -54,7 +52,7 @@ func ResourceOutboundDigitalruleset() *schema.Resource {
 		},
 	}
 
-	contactAddressConditionSettingsResource := &schema.Resource{
+	contactAddressConditionSettingsResource = &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			`operator`: {
 				Description: `The operator to use when comparing address values.`,
@@ -69,7 +67,7 @@ func ResourceOutboundDigitalruleset() *schema.Resource {
 		},
 	}
 
-	contactAddressTypeConditionSettingsResource := &schema.Resource{
+	contactAddressTypeConditionSettingsResource = &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			`operator`: {
 				Description: `The operator to use when comparing the address types.`,
@@ -84,7 +82,7 @@ func ResourceOutboundDigitalruleset() *schema.Resource {
 		},
 	}
 
-	lastAttemptByColumnConditionSettingsResource := &schema.Resource{
+	lastAttemptByColumnConditionSettingsResource = &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			`email_column_name`: {
 				Description: `The name of the contact column to evaluate for Email.`,
@@ -109,7 +107,7 @@ func ResourceOutboundDigitalruleset() *schema.Resource {
 		},
 	}
 
-	lastAttemptOverallConditionSettingsResource := &schema.Resource{
+	lastAttemptOverallConditionSettingsResource = &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			`media_types`: {
 				Description: `A list of media types to evaluate.`,
@@ -130,7 +128,7 @@ func ResourceOutboundDigitalruleset() *schema.Resource {
 		},
 	}
 
-	lastResultByColumnConditionSettingsResource := &schema.Resource{
+	lastResultByColumnConditionSettingsResource = &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			`email_column_name`: {
 				Description: `The name of the contact column to evaluate for Email.`,
@@ -157,7 +155,7 @@ func ResourceOutboundDigitalruleset() *schema.Resource {
 		},
 	}
 
-	lastResultOverallConditionSettingsResource := &schema.Resource{
+	lastResultOverallConditionSettingsResource = &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			`email_wrapup_codes`: {
 				Description: `A list of wrapup code identifiers to match for Email.`,
@@ -174,7 +172,7 @@ func ResourceOutboundDigitalruleset() *schema.Resource {
 		},
 	}
 
-	digitalDataActionConditionPredicateResource := &schema.Resource{
+	digitalDataActionConditionPredicateResource = &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			`output_field`: {
 				Description: `The name of an output field from the data action's output to use for this condition`,
@@ -204,7 +202,7 @@ func ResourceOutboundDigitalruleset() *schema.Resource {
 		},
 	}
 
-	dataActionContactColumnFieldMappingResource := &schema.Resource{
+	dataActionContactColumnFieldMappingResource = &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			`contact_column_name`: {
 				Description: `The name of a contact column whose data will be passed to the data action`,
@@ -219,7 +217,7 @@ func ResourceOutboundDigitalruleset() *schema.Resource {
 		},
 	}
 
-	dataActionConditionSettingsResource := &schema.Resource{
+	dataActionConditionSettingsResource = &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			`data_action_id`: {
 				Description: `The Data Action Id to use for this condition.`,
@@ -251,7 +249,7 @@ func ResourceOutboundDigitalruleset() *schema.Resource {
 		},
 	}
 
-	digitalConditionResource := &schema.Resource{
+	digitalConditionResource = &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			`inverted`: {
 				Description: `If true, inverts the result of evaluating this condition. Default is false.`,
@@ -317,14 +315,14 @@ func ResourceOutboundDigitalruleset() *schema.Resource {
 		},
 	}
 
-	updateContactColumnActionSettingsResource := &schema.Resource{
+	updateContactColumnActionSettingsResource = &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			`properties`: {
-				Description:      `A map of key-value pairs pertinent to the DialerAction. Different types of DialerActions require different properties. MODIFY_CONTACT_ATTRIBUTE with an updateOption of SET takes a contact column as the key and accepts any value. SCHEDULE_CALLBACK takes a key 'callbackOffset' that specifies how far in the future the callback should be scheduled, in minutes. SET_CALLER_ID takes two keys: 'callerAddress', which should be the caller id phone number, and 'callerName'. For either key, you can also specify a column on the contact to get the value from. To do this, specify 'contact.Column', where 'Column' is the name of the contact column from which to get the value. SET_SKILLS takes a key 'skills' with an array of skill ids wrapped into a string (Example: {'skills': '['skillIdHere']'} ).`,
-				Type:             schema.TypeString,
-				Optional:         true,
-				Computed:         true,
-				DiffSuppressFunc: util.SuppressEquivalentJsonDiffs,
+				Description: `A map of key-value pairs pertinent to the DialerAction. Different types of DialerActions require different properties. MODIFY_CONTACT_ATTRIBUTE with an updateOption of SET takes a contact column as the key and accepts any value. SCHEDULE_CALLBACK takes a key 'callbackOffset' that specifies how far in the future the callback should be scheduled, in minutes. SET_CALLER_ID takes two keys: 'callerAddress', which should be the caller id phone number, and 'callerName'. For either key, you can also specify a column on the contact to get the value from. To do this, specify 'contact.Column', where 'Column' is the name of the contact column from which to get the value. SET_SKILLS takes a key 'skills' with an array of skill ids wrapped into a string (Example: {'skills': '['skillIdHere']'} ).`,
+				Type:        schema.TypeMap,
+				Optional:    true,
+				Computed:    true,
+				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 			`update_option`: {
 				Description: `The type of update to make to the specified contact column(s).`,
@@ -334,7 +332,7 @@ func ResourceOutboundDigitalruleset() *schema.Resource {
 		},
 	}
 
-	appendToDncActionSettingsResource := &schema.Resource{
+	appendToDncActionSettingsResource = &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			`expire`: {
 				Description: `Whether to expire the record appended to the DNC list.`,
@@ -354,7 +352,7 @@ func ResourceOutboundDigitalruleset() *schema.Resource {
 		},
 	}
 
-	markContactUncontactableActionSettingsResource := &schema.Resource{
+	markContactUncontactableActionSettingsResource = &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			`media_types`: {
 				Description: `A list of media types to evaluate.`,
@@ -365,7 +363,7 @@ func ResourceOutboundDigitalruleset() *schema.Resource {
 		},
 	}
 
-	setContentTemplateActionSettingsResource := &schema.Resource{
+	setContentTemplateActionSettingsResource = &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			`sms_content_template_id`: {
 				Description: `A string of sms contentTemplateId.`,
@@ -380,7 +378,7 @@ func ResourceOutboundDigitalruleset() *schema.Resource {
 		},
 	}
 
-	setSmsPhoneNumberActionSettingsResource := &schema.Resource{
+	setSmsPhoneNumberActionSettingsResource = &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			`sender_sms_phone_number`: {
 				Description: `The string address for the sms phone number.`,
@@ -390,7 +388,7 @@ func ResourceOutboundDigitalruleset() *schema.Resource {
 		},
 	}
 
-	digitalActionResource := &schema.Resource{
+	digitalActionResource = &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			`update_contact_column_action_settings`: {
 				Description: `The settings for an 'update contact column' action.`,
@@ -402,7 +400,7 @@ func ResourceOutboundDigitalruleset() *schema.Resource {
 			`do_not_send_action_settings`: {
 				Description: `The settings for a 'do not send' action.`,
 				Optional:    true,
-				Type:        schema.TypeString,
+				Type:        schema.TypeMap,
 			},
 			`append_to_dnc_action_settings`: {
 				Description: `The settings for an 'Append to DNC' action.`,
@@ -421,7 +419,7 @@ func ResourceOutboundDigitalruleset() *schema.Resource {
 			`mark_contact_address_uncontactable_action_settings`: {
 				Description: `The settings for an 'mark contact address uncontactable' action.`,
 				Optional:    true,
-				Type:        schema.TypeString,
+				Type:        schema.TypeMap,
 			},
 			`set_content_template_action_settings`: {
 				Description: `The settings for a 'Set content template' action.`,
@@ -440,7 +438,7 @@ func ResourceOutboundDigitalruleset() *schema.Resource {
 		},
 	}
 
-	digitalRuleResource := &schema.Resource{
+	digitalRuleResource = &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			`name`: {
 				Description: `The name of the rule.`,
@@ -472,6 +470,10 @@ func ResourceOutboundDigitalruleset() *schema.Resource {
 			},
 		},
 	}
+)
+
+// ResourceOutboundDigitalruleset registers the genesyscloud_outbound_digitalruleset resource with Terraform
+func ResourceOutboundDigitalruleset() *schema.Resource {
 
 	return &schema.Resource{
 		Description: `Genesys Cloud outbound digitalruleset`,

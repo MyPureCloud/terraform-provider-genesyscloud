@@ -26,7 +26,7 @@ tests for outbound_digitalruleset.
 func TestAccResourceOutboundDigitalruleset(t *testing.T) {
 	t.Parallel()
 	var (
-		name1             = "Terraform Test Digital RuleSet"
+		name1             = "Terraform Test Digital RuleSet1"
 		resourceId        = "digital-rule-set"
 		version           = "0"
 		ruleName          = "RuleWork"
@@ -126,7 +126,14 @@ func TestAccResourceOutboundDigitalruleset(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_outbound_digitalruleset."+resourceId, "rules.0.conditions.0.contact_column_condition_settings.0.value_type", columnValueType),
 					util.ValidateValueInJsonAttr("genesyscloud_outbound_digitalruleset."+resourceId, "rules.0.actions.0.update_contact_column_action_settings.0.properties", updatePropertiesWork, updatePropertiesWork),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_digitalruleset."+resourceId, "rules.0.actions.0.update_contact_column_action_settings.0.update_option", updateOption),
-				)},
+				),
+			},
+			{
+				// Import/Read
+				ResourceName:      "genesyscloud_outbound_digitalruleset." + resourceId,
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
 		},
 		CheckDestroy: testVerifyOutboundDigitalrulesetDestroyed,
 	})
@@ -175,7 +182,7 @@ func TestAccResourceOutboundDigitalruleset(t *testing.T) {
 
 func GenerateDoNotSendActionSettings() string {
 	return fmt.Sprintf(`
-		do_not_send_action_settings = "Do Not Send"
+		do_not_send_action_settings = {}
 	`)
 }
 
@@ -183,10 +190,12 @@ func GenerateUpdateContactColumnActionSettings(
 	//properties string,
 	updateOption string,
 ) string {
-	return fmt.Sprintf(`
-		update_contact_column_action_settings {
-			update_option = "%s"
+	return fmt.Sprintf(`update_contact_column_action_settings {
+		update_option = "%s"
+		properties = {
+			Cell	=	"Cell"
 		}
+	}
 	`, updateOption)
 }
 

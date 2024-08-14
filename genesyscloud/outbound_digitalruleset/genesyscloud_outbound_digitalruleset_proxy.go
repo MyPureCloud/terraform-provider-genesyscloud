@@ -109,9 +109,8 @@ func getAllOutboundDigitalrulesetFn(ctx context.Context, p *outboundDigitalrules
 	if digitalRuleSets.Entities == nil || len(*digitalRuleSets.Entities) == 0 {
 		return &allDigitalRuleSets, resp, nil
 	}
-	for _, digitalRuleSet := range *digitalRuleSets.Entities {
-		allDigitalRuleSets = append(allDigitalRuleSets, digitalRuleSet)
-	}
+
+	allDigitalRuleSets = append(allDigitalRuleSets, *digitalRuleSets.Entities...)
 
 	for pageNum := 2; pageNum <= *digitalRuleSets.PageCount; pageNum++ {
 		digitalRuleSets, resp, err := p.outboundApi.GetOutboundDigitalrulesets(pageSize, pageNum, "", "", "", []string{})
@@ -123,9 +122,7 @@ func getAllOutboundDigitalrulesetFn(ctx context.Context, p *outboundDigitalrules
 			break
 		}
 
-		for _, digitalRuleSet := range *digitalRuleSets.Entities {
-			allDigitalRuleSets = append(allDigitalRuleSets, digitalRuleSet)
-		}
+		allDigitalRuleSets = append(allDigitalRuleSets, *digitalRuleSets.Entities...)
 	}
 
 	return &allDigitalRuleSets, resp, nil
