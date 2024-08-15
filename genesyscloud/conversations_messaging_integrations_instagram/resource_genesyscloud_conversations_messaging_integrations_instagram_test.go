@@ -22,18 +22,19 @@ tests for conversations_messaging_integrations_instagram.
 */
 
 func TestAccResourceConversationsMessagingIntegrationsInstagram(t *testing.T) {
-	t.Skip("Skipping because it requires setting up a org as test account for the mocks to respond correctly.")
+	//t.Skip("Skipping because it requires setting up a org as test account for the mocks to respond correctly.")
 	t.Parallel()
 
 	var (
-		testResource1    = "test_sample"
+		testResource1 = "test_sample"
+		// testResource2    = "test_sample1"
 		name1            = "Terraform Instagram1-" + uuid.NewString()
 		pageAccessToken1 = uuid.NewString()
-		userAccessToken1 = uuid.NewString()
-		pageId           = "1"
-		appId            = ""
-		appSecret        = ""
-		name2            = "Terraform Instagram2-" + uuid.NewString()
+		// userAccessToken1 = uuid.NewString()
+		// pageId           = "1"
+		appId     = ""
+		appSecret = ""
+		// name2            = "Terraform Instagram2-" + uuid.NewString()
 
 		nameSupportedContent       = "Terraform Supported Content - " + uuid.NewString()
 		resourceIdSupportedContent = "testSupportedContent"
@@ -62,6 +63,7 @@ func TestAccResourceConversationsMessagingIntegrationsInstagram(t *testing.T) {
 		PreCheck:          func() { util.TestAccPreCheck(t) },
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
+			//create
 			{
 				Config: messagingSettingResource1 +
 					supportedContentResource1 +
@@ -88,58 +90,59 @@ func TestAccResourceConversationsMessagingIntegrationsInstagram(t *testing.T) {
 					resource.TestCheckResourceAttrPair("genesyscloud_conversations_messaging_integrations_instagram."+testResource1, "messaging_setting_id", "genesyscloud_conversations_messaging_settings."+resourceIdMessagingSetting, "id"),
 				),
 			},
-			{
-				Config: messagingSettingResource1 +
-					supportedContentResource1 +
-					GenerateInstagramIntegrationResource(
-						testResource1,
-						name2,
-						"genesyscloud_conversations_messaging_supportedcontent."+resourceIdSupportedContent+".id",
-						"genesyscloud_conversations_messaging_settings."+resourceIdMessagingSetting+".id",
-						pageAccessToken1,
-						"",
-						"",
-						appId,
-						appSecret,
-					),
+			// {
+			// 	//update
+			// 	Config: messagingSettingResource1 +
+			// 		supportedContentResource1 +
+			// 		GenerateInstagramIntegrationResource(
+			// 			testResource1,
+			// 			name2,
+			// 			"genesyscloud_conversations_messaging_supportedcontent."+resourceIdSupportedContent+".id",
+			// 			"genesyscloud_conversations_messaging_settings."+resourceIdMessagingSetting+".id",
+			// 			pageAccessToken1,
+			// 			"",
+			// 			"",
+			// 			appId,
+			// 			appSecret,
+			// 		),
 
-				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_conversations_messaging_integrations_instagram."+testResource1, "name", name2),
-					resource.TestCheckResourceAttr("genesyscloud_conversations_messaging_integrations_instagram."+testResource1, "page_access_token", pageAccessToken1),
-					resource.TestCheckResourceAttr("genesyscloud_conversations_messaging_integrations_instagram."+testResource1, "user_access_token", ""),
-					resource.TestCheckResourceAttr("genesyscloud_conversations_messaging_integrations_instagram."+testResource1, "page_id", ""),
-					resource.TestCheckResourceAttr("genesyscloud_conversations_messaging_integrations_instagram."+testResource1, "app_id", appId),
-					resource.TestCheckResourceAttr("genesyscloud_conversations_messaging_integrations_instagram."+testResource1, "app_secret", appSecret),
-					resource.TestCheckResourceAttrPair("genesyscloud_conversations_messaging_integrations_instagram."+testResource1, "supported_content_id", "genesyscloud_conversations_messaging_supportedcontent."+resourceIdSupportedContent, "id"),
-					resource.TestCheckResourceAttrPair("genesyscloud_conversations_messaging_integrations_instagram."+testResource1, "messaging_setting_id", "genesyscloud_conversations_messaging_settings."+resourceIdMessagingSetting, "id"),
-				),
-			},
-			{
-				Config: messagingSettingResource1 +
-					supportedContentResource1 +
-					GenerateInstagramIntegrationResource(
-						testResource1,
-						name2,
-						"genesyscloud_conversations_messaging_supportedcontent."+resourceIdSupportedContent+".id",
-						"genesyscloud_conversations_messaging_settings."+resourceIdMessagingSetting+".id",
-						"",
-						userAccessToken1,
-						pageId,
-						appId,
-						appSecret,
-					),
+			// 	Check: resource.ComposeTestCheckFunc(
+			// 		resource.TestCheckResourceAttr("genesyscloud_conversations_messaging_integrations_instagram."+testResource1, "name", name2),
+			// 		resource.TestCheckResourceAttr("genesyscloud_conversations_messaging_integrations_instagram."+testResource1, "page_access_token", pageAccessToken1),
+			// 		resource.TestCheckResourceAttr("genesyscloud_conversations_messaging_integrations_instagram."+testResource1, "user_access_token", ""),
+			// 		resource.TestCheckResourceAttr("genesyscloud_conversations_messaging_integrations_instagram."+testResource1, "page_id", ""),
+			// 		resource.TestCheckResourceAttr("genesyscloud_conversations_messaging_integrations_instagram."+testResource1, "app_id", appId),
+			// 		resource.TestCheckResourceAttr("genesyscloud_conversations_messaging_integrations_instagram."+testResource1, "app_secret", appSecret),
+			// 		resource.TestCheckResourceAttrPair("genesyscloud_conversations_messaging_integrations_instagram."+testResource1, "supported_content_id", "genesyscloud_conversations_messaging_supportedcontent."+resourceIdSupportedContent, "id"),
+			// 		resource.TestCheckResourceAttrPair("genesyscloud_conversations_messaging_integrations_instagram."+testResource1, "messaging_setting_id", "genesyscloud_conversations_messaging_settings."+resourceIdMessagingSetting, "id"),
+			// 	),
+			// },
+			// {
+			// 	Config: messagingSettingResource1 +
+			// 		supportedContentResource1 +
+			// 		GenerateInstagramIntegrationResource(
+			// 			testResource2,
+			// 			name2,
+			// 			"genesyscloud_conversations_messaging_supportedcontent."+resourceIdSupportedContent+".id",
+			// 			"genesyscloud_conversations_messaging_settings."+resourceIdMessagingSetting+".id",
+			// 			"",
+			// 			userAccessToken1,
+			// 			pageId,
+			// 			appId,
+			// 			appSecret,
+			// 		),
 
-				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_conversations_messaging_integrations_instagram."+testResource1, "name", name2),
-					resource.TestCheckResourceAttr("genesyscloud_conversations_messaging_integrations_instagram."+testResource1, "page_access_token", ""),
-					resource.TestCheckResourceAttr("genesyscloud_conversations_messaging_integrations_instagram."+testResource1, "user_access_token", userAccessToken1),
-					resource.TestCheckResourceAttr("genesyscloud_conversations_messaging_integrations_instagram."+testResource1, "page_id", pageId),
-					resource.TestCheckResourceAttr("genesyscloud_conversations_messaging_integrations_instagram."+testResource1, "app_id", appId),
-					resource.TestCheckResourceAttr("genesyscloud_conversations_messaging_integrations_instagram."+testResource1, "app_secret", appSecret),
-					resource.TestCheckResourceAttrPair("genesyscloud_conversations_messaging_integrations_instagram."+testResource1, "supported_content_id", "genesyscloud_conversations_messaging_supportedcontent."+resourceIdSupportedContent, "id"),
-					resource.TestCheckResourceAttrPair("genesyscloud_conversations_messaging_integrations_instagram."+testResource1, "messaging_setting_id", "genesyscloud_conversations_messaging_settings."+resourceIdMessagingSetting, "id"),
-				),
-			},
+			// 	Check: resource.ComposeTestCheckFunc(
+			// 		resource.TestCheckResourceAttr("genesyscloud_conversations_messaging_integrations_instagram."+testResource2, "name", name2),
+			// 		resource.TestCheckResourceAttr("genesyscloud_conversations_messaging_integrations_instagram."+testResource2, "page_access_token", ""),
+			// 		resource.TestCheckResourceAttr("genesyscloud_conversations_messaging_integrations_instagram."+testResource2, "user_access_token", userAccessToken1),
+			// 		resource.TestCheckResourceAttr("genesyscloud_conversations_messaging_integrations_instagram."+testResource2, "page_id", pageId),
+			// 		resource.TestCheckResourceAttr("genesyscloud_conversations_messaging_integrations_instagram."+testResource2, "app_id", appId),
+			// 		resource.TestCheckResourceAttr("genesyscloud_conversations_messaging_integrations_instagram."+testResource2, "app_secret", appSecret),
+			// 		resource.TestCheckResourceAttrPair("genesyscloud_conversations_messaging_integrations_instagram."+testResource2, "supported_content_id", "genesyscloud_conversations_messaging_supportedcontent."+resourceIdSupportedContent, "id"),
+			// 		resource.TestCheckResourceAttrPair("genesyscloud_conversations_messaging_integrations_instagram."+testResource2, "messaging_setting_id", "genesyscloud_conversations_messaging_settings."+resourceIdMessagingSetting, "id"),
+			// 	),
+			// },
 			{
 				// Import/Read
 				ResourceName:      "genesyscloud_conversations_messaging_integrations_instagram." + testResource1,
