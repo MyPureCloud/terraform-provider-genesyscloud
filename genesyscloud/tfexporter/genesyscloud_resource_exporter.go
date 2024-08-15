@@ -496,7 +496,7 @@ func (g *GenesysCloudResourceExporter) instanceStateToMap(state *terraform.Insta
 
 // generateOutputFiles is used to generate the tfStateFile and either the tf export or the json based export
 func (g *GenesysCloudResourceExporter) generateOutputFiles() diag.Diagnostics {
-	providerSource := g.sourceForVersion(g.version)
+	providerSource := g.sourceForVersion()
 	if g.includeStateFile {
 		t := NewTFStateWriter(g.ctx, g.resources, g.d, providerSource)
 		if err := t.writeTfState(); err != nil {
@@ -605,7 +605,6 @@ func (g *GenesysCloudResourceExporter) processAndBuildDependencies() (filters []
 	retrieveDependentConsumers := func(resourceKeys resourceExporter.ResourceInfo) func(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, *resourceExporter.DependencyResource, diag.Diagnostics) {
 		return func(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, *resourceExporter.DependencyResource, diag.Diagnostics) {
 			proxy = dependentconsumers.GetDependentConsumerProxy(clientConfig)
-			resources := make(resourceExporter.ResourceIDMetaMap)
 			resources, dependsMap, err := proxy.GetDependentConsumers(ctx, resourceKeys)
 
 			if err != nil {
@@ -619,7 +618,7 @@ func (g *GenesysCloudResourceExporter) processAndBuildDependencies() (filters []
 
 		exists := util.StringExists(resourceKeys.State.ID, g.flowResourcesList)
 		if exists {
-			log.Printf("dependent consumers retrieved %v", resourceKeys.State.ID)
+			log.Printf("dependent consumer retrieved for resource type %s.%s (%v)", resourceKeys.Type, resourceKeys.Name, resourceKeys.State.ID)
 			continue
 		}
 
@@ -763,7 +762,7 @@ func extractResource(resource resourceExporter.ResourceInfo) resourceExporter.Re
 func (g *GenesysCloudResourceExporter) retainExporterList(resources resourceExporter.ResourceIDMetaMap) diag.Diagnostics {
 	removeChan := make([]string, 0)
 	for _, exporter := range *g.filteredExportersByType {
-		for id, _ := range exporter.SanitizedResourceMap {
+		for id := range exporter.SanitizedResourceMap {
 			_, exists := resources[id]
 			if !exists {
 				removeChan = append(removeChan, id)
@@ -817,24 +816,6 @@ func (g *GenesysCloudResourceExporter) exportAndResolveDependencyAttributes() (d
 func (g *GenesysCloudResourceExporter) chainDependencies(
 	existingResources []resourceExporter.ResourceInfo,
 	existingExporters map[string]*resourceExporter.ResourceExporter) (diagErr diag.Diagnostics) {
-	filterListById := make([]string, 0)
-
-	for refType, guidList := range g.buildSecondDeps {
-		if refType != "" {
-			for _, guid := range guidList {
-				if guid != "" {
-					if !g.resourceIdExists(guid, existingResources) {
-						filterListById = append(filterListById, fmt.Sprintf("%s::%s", refType, guid))
-					} else {
-						log.Printf("Resource already present in the resources. %v", guid)
-					}
-
-				}
-			}
-		}
-	}
-	g.resourceFiltersLists.IncludeIds = filterListById
-	g.buildSecondDeps = nil
 
 	if len(g.resourceFiltersLists.IncludeIds) > 0 {
 		g.resources = nil
@@ -862,14 +843,37 @@ func (g *GenesysCloudResourceExporter) chainDependencies(
 		existingExportersInterface := deepcopy.Copy(*g.filteredExportersByType)
 		existingExporters, _ = existingExportersInterface.(map[string]*resourceExporter.ResourceExporter)
 		existingResources = g.resources
+	}
 
+	filterListById := make([]string, 0)
+
+	for refType, guidList := range g.buildSecondDeps {
+		if refType != "" {
+			for _, guid := range guidList {
+				if guid != "" {
+					if !g.resourceIdExists(guid, existingResources) {
+						filterListById = append(filterListById, fmt.Sprintf("%s::%s", refType, guid))
+					} else {
+						log.Printf("Resource already present in the resources. %v", guid)
+					}
+
+				}
+			}
+		}
+	}
+
+	// We keep chaining the dependencies until the filterListById list isn't empty or the same as the last time (IncludeIds)
+	if len(filterListById) > 0 && !lists.AreEquivalent(g.resourceFiltersLists.IncludeIds, filterListById) {
+		g.resourceFiltersLists.IncludeIds = filterListById
+		g.buildSecondDeps = nil
 		// Recursive call until all the dependencies are addressed.
 		return g.chainDependencies(existingResources, existingExporters)
 	}
+
 	return nil
 }
 
-func (g *GenesysCloudResourceExporter) sourceForVersion(version string) string {
+func (g *GenesysCloudResourceExporter) sourceForVersion() string {
 	providerSource := "registry.terraform.io/mypurecloud/genesyscloud"
 	if g.version == "0.1.0" {
 		// Force using local dev version by providing a unique repo URL
@@ -1075,7 +1079,7 @@ func (g *GenesysCloudResourceExporter) getResourcesForType(resType string, provi
 				// will block until it can acquire a pooled client config object.
 				instanceState, err := getResourceState(ctx, res, id, resMeta, meta)
 
-				resourceType := ""
+				referencePrefix := ""
 				if g.isDataSource(resType, resMeta.SanitizedBlockLabel) {
 					g.exMutex.Lock()
 					res = provider.DataSourcesMap[resType]
@@ -1089,13 +1093,13 @@ func (g *GenesysCloudResourceExporter) getResourcesForType(resType string, provi
 
 					attributes := make(map[string]string)
 
-					for attr, _ := range schemaMap {
+					for attr := range schemaMap {
 						if value, ok := instanceState.Attributes[attr]; ok {
 							attributes[attr] = value
 						}
 					}
 					instanceState.Attributes = attributes
-					resourceType = "data."
+					referencePrefix = "data."
 				}
 
 				if err != nil {
@@ -1110,11 +1114,11 @@ func (g *GenesysCloudResourceExporter) getResourcesForType(resType string, provi
 				}
 
 				resourceChan <- resourceExporter.ResourceInfo{
-					State:        instanceState,
-					Name:         resMeta.SanitizedBlockLabel,
-					Type:         resType,
-					CtyType:      ctyType,
-					ResourceType: resourceType,
+					State:           instanceState,
+					Name:            resMeta.SanitizedBlockLabel,
+					Type:            resType,
+					CtyType:         ctyType,
+					ReferencePrefix: referencePrefix,
 				}
 
 				return nil
@@ -1645,11 +1649,9 @@ func (g *GenesysCloudResourceExporter) resolveReference(refSettings *resourceExp
 
 func (g *GenesysCloudResourceExporter) resourceIdExists(refID string, existingResources []resourceExporter.ResourceInfo) bool {
 	if g.addDependsOn {
-		if existingResources != nil {
-			for _, resource := range existingResources {
-				if refID == resource.State.ID {
-					return true
-				}
+		for _, resource := range existingResources {
+			if refID == resource.State.ID {
+				return true
 			}
 		}
 		for _, resource := range g.resources {

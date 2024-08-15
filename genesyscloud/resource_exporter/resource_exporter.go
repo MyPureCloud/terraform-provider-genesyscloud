@@ -55,11 +55,12 @@ type RefAttrSettings struct {
 }
 
 type ResourceInfo struct {
-	State        *terraform.InstanceState
-	Name         string
-	Type         string
-	CtyType      cty.Type
-	ResourceType string
+	State   *terraform.InstanceState
+	Name    string
+	Type    string
+	CtyType cty.Type
+	// This is used to define a "data." prefix when referencing this resource
+	ReferencePrefix string
 }
 
 // RefAttrCustomResolver allows the definition of a custom resolver for an exporter.
