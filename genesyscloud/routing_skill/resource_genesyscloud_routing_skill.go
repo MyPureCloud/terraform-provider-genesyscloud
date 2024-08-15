@@ -31,7 +31,7 @@ func getAllRoutingSkills(ctx context.Context, clientConfig *platformclientv2.Con
 
 	for _, skill := range *skills {
 		if skill.State != nil && *skill.State != "deleted" {
-			resources[*skill.Id] = &resourceExporter.ResourceMeta{ResourceName: *skill.Name, LabelName: *skill.Name}
+			resources[*skill.Id] = &resourceExporter.ResourceMeta{ObjectName: *skill.Name, BlockLabel: *skill.Name}
 		}
 	}
 

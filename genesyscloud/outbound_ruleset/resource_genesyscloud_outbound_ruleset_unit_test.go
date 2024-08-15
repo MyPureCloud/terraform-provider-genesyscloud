@@ -13,9 +13,9 @@ import (
 func TestUnitDoesRuleConditionsRefDeletedSkill(t *testing.T) {
 	rule := platformclientv2.Dialerrule{}
 	skillMap := resourceExporter.ResourceIDMetaMap{
-		"Skill1": {SanitizedLabelName: "Skill1"},
-		"Skill2": {SanitizedLabelName: "Skill2"},
-		"Skill3": {SanitizedLabelName: "Skill3"},
+		"Skill1": {SanitizedBlockLabel: "Skill1"},
+		"Skill2": {SanitizedBlockLabel: "Skill2"},
+		"Skill3": {SanitizedBlockLabel: "Skill3"},
 	}
 
 	// Test case 1: All skills exist in the map, function should return false
@@ -52,9 +52,9 @@ func TestUnitDoesRuleConditionsRefDeletedSkill(t *testing.T) {
 func TestUnitDoesRuleActionsRefDeletedSkill(t *testing.T) {
 	rule := platformclientv2.Dialerrule{}
 	skillMap := resourceExporter.ResourceIDMetaMap{
-		"Skill1": {SanitizedLabelName: "Skill1"},
-		"Skill2": {SanitizedLabelName: "Skill2"},
-		"Skill3": {SanitizedLabelName: "Skill3"},
+		"Skill1": {SanitizedBlockLabel: "Skill1"},
+		"Skill2": {SanitizedBlockLabel: "Skill2"},
+		"Skill3": {SanitizedBlockLabel: "Skill3"},
 	}
 
 	// Test case 1: All skills exist in the map, function should return false

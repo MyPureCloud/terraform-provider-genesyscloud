@@ -24,7 +24,7 @@ The resource_genesyscloud_outbound_settings.go contains all the methods that per
 
 func getAllOutboundSettings(_ context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
 	resources := make(resourceExporter.ResourceIDMetaMap)
-	resources["0"] = &resourceExporter.ResourceMeta{ResourceName: "outbound_settings", LabelName: "outbound_settings"}
+	resources["0"] = &resourceExporter.ResourceMeta{ObjectName: "outbound_settings", BlockLabel: "outbound_settings"}
 	return resources, nil
 }
 

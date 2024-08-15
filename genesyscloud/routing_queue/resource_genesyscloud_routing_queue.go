@@ -43,7 +43,7 @@ func getAllRoutingQueues(ctx context.Context, clientConfig *platformclientv2.Con
 	}
 
 	for _, queue := range *queues {
-		resources[*queue.Id] = &resourceExporter.ResourceMeta{ResourceName: *queue.Name, LabelName: *queue.Name}
+		resources[*queue.Id] = &resourceExporter.ResourceMeta{ObjectName: *queue.Name, BlockLabel: *queue.Name}
 	}
 
 	return resources, nil

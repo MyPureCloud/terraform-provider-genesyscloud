@@ -33,7 +33,7 @@ func getAllAuthTeams(ctx context.Context, clientConfig *platformclientv2.Configu
 		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get team error: %s", err), resp)
 	}
 	for _, team := range *teams {
-		resources[*team.Id] = &resourceExporter.ResourceMeta{ResourceName: *team.Name, LabelName: *team.Name}
+		resources[*team.Id] = &resourceExporter.ResourceMeta{ObjectName: *team.Name, BlockLabel: *team.Name}
 	}
 	return resources, nil
 }

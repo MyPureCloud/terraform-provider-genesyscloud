@@ -99,7 +99,7 @@ func MemberGroupsResolver(configMap map[string]interface{}, exporters map[string
 		if !ok || memberGroupExport == nil {
 			return fmt.Errorf("could not resolve member group %s to a resource of type %s", memberGroupID, resourceID)
 		}
-		exportId := memberGroupExport.SanitizedLabelName
+		exportId := memberGroupExport.SanitizedBlockLabel
 		configMap["member_group_id"] = fmt.Sprintf("${%s.%s.id}", resourceID, exportId)
 	} else {
 		return fmt.Errorf("unable to locate %s in the exporters array. Unable to resolve the ID for the member group resource", resourceID)
@@ -160,7 +160,7 @@ func RuleSetSkillPropertyResolver(configMap map[string]interface{}, exporters ma
 				// DEVTOOLING-319: Outbound rulesets can reference skills that no longer exist. Plugin crash if we process a skill that doesn't exist in the skill map, making sure of its existence before proceeding.
 				value, exists := exporter.SanitizedResourceMap[skillId]
 				if exists {
-					exportId = value.SanitizedLabelName
+					exportId = value.SanitizedBlockLabel
 					sanitisedSkillIds = append(sanitisedSkillIds, fmt.Sprintf("${genesyscloud_routing_skill.%s.id}", exportId))
 				} else {
 					log.Printf("Skill '%s' does not exist in the skill map.\n", skillId)

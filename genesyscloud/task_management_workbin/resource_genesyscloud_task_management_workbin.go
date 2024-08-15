@@ -37,7 +37,7 @@ func getAllAuthTaskManagementWorkbins(ctx context.Context, clientConfig *platfor
 
 	for _, workbin := range *workbins {
 		log.Printf("Dealing with task management workbin id: %s", *workbin.Id)
-		resources[*workbin.Id] = &resourceExporter.ResourceMeta{ResourceName: *workbin.Name, LabelName: *workbin.Name}
+		resources[*workbin.Id] = &resourceExporter.ResourceMeta{ObjectName: *workbin.Name, BlockLabel: *workbin.Name}
 	}
 	return resources, nil
 }

@@ -55,7 +55,7 @@ func getAllArchitectDatatables(ctx context.Context, clientConfig *platformclient
 	}
 
 	for _, table := range *tables {
-		resources[*table.Id] = &resourceExporter.ResourceMeta{ResourceName: *table.Name, LabelName: *table.Name}
+		resources[*table.Id] = &resourceExporter.ResourceMeta{ObjectName: *table.Name, BlockLabel: *table.Name}
 	}
 
 	return resources, nil

@@ -41,7 +41,7 @@ func getAllLocations(_ context.Context, clientConfig *platformclientv2.Configura
 		}
 
 		for _, location := range *locations.Entities {
-			resources[*location.Id] = &resourceExporter.ResourceMeta{ResourceName: *location.Name, LabelName: *location.Name}
+			resources[*location.Id] = &resourceExporter.ResourceMeta{ObjectName: *location.Name, BlockLabel: *location.Name}
 		}
 	}
 

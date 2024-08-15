@@ -34,7 +34,7 @@ func getAllArchitectSchedules(ctx context.Context, clientConfig *platformclientv
 	}
 
 	for _, schedule := range *schedules {
-		resources[*schedule.Id] = &resourceExporter.ResourceMeta{ResourceName: *schedule.Name, LabelName: *schedule.Name}
+		resources[*schedule.Id] = &resourceExporter.ResourceMeta{ObjectName: *schedule.Name, BlockLabel: *schedule.Name}
 	}
 
 	return resources, nil

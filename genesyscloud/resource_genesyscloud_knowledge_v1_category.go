@@ -75,7 +75,7 @@ func getAllKnowledgeCategoriesV1(_ context.Context, clientConfig *platformclient
 
 	for _, knowledgeCategory := range categoryEntities {
 		id := fmt.Sprintf("%s %s %s", *knowledgeCategory.Id, *knowledgeCategory.KnowledgeBase.Id, *knowledgeCategory.LanguageCode)
-		resources[id] = &resourceExporter.ResourceMeta{ResourceName: *knowledgeCategory.Name, LabelName: *knowledgeCategory.Name}
+		resources[id] = &resourceExporter.ResourceMeta{ObjectName: *knowledgeCategory.Name, BlockLabel: *knowledgeCategory.Name}
 	}
 
 	return resources, nil

@@ -30,7 +30,7 @@ func getAllPhones(ctx context.Context, sdkConfig *platformclientv2.Configuration
 	}
 
 	for _, phone := range *phones {
-		resources[*phone.Id] = &resourceExporter.ResourceMeta{ResourceName: *phone.Name, LabelName: *phone.Name}
+		resources[*phone.Id] = &resourceExporter.ResourceMeta{ObjectName: *phone.Name, BlockLabel: *phone.Name}
 	}
 	return resources, nil
 }

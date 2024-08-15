@@ -473,8 +473,8 @@ func (g *GenesysCloudResourceExporter) updateSanitizeMap(exporters map[string]*r
 	if exporters[resource.Type] != nil {
 		// Get the sanitized name from the ID returned as a reference expression
 		if idMetaMap := exporters[resource.Type].SanitizedResourceMap; idMetaMap != nil {
-			if meta := idMetaMap[resource.State.ID]; meta != nil && meta.SanitizedLabelName != "" {
-				meta.SanitizedLabelName = resource.Name
+			if meta := idMetaMap[resource.State.ID]; meta != nil && meta.SanitizedBlockLabel != "" {
+				meta.SanitizedBlockLabel = resource.Name
 			}
 		}
 	}
@@ -635,7 +635,7 @@ func (g *GenesysCloudResourceExporter) processAndBuildDependencies() (filters []
 			resourcesToBeExported := retrieveExportResources(g.resources, resources)
 			for _, meta := range resourcesToBeExported {
 
-				resource := strings.Split(meta.SanitizedLabelName, "::::")
+				resource := strings.Split(meta.SanitizedBlockLabel, "::::")
 				filterList = append(filterList, fmt.Sprintf("%s::%s", resource[0], resource[1]))
 			}
 			g.dependsList = stringmap.MergeMaps(g.dependsList, dependsStruct.DependsMap)
@@ -1076,7 +1076,7 @@ func (g *GenesysCloudResourceExporter) getResourcesForType(resType string, provi
 				instanceState, err := getResourceState(ctx, res, id, resMeta, meta)
 
 				resourceType := ""
-				if g.isDataSource(resType, resMeta.SanitizedLabelName) {
+				if g.isDataSource(resType, resMeta.SanitizedBlockLabel) {
 					g.exMutex.Lock()
 					res = provider.DataSourcesMap[resType]
 					g.exMutex.Unlock()
@@ -1104,14 +1104,14 @@ func (g *GenesysCloudResourceExporter) getResourcesForType(resType string, provi
 				}
 
 				if instanceState == nil {
-					log.Printf("Resource %s no longer exists. Skipping.", resMeta.SanitizedLabelName)
+					log.Printf("Resource %s no longer exists. Skipping.", resMeta.SanitizedBlockLabel)
 					removeChan <- id // Mark for removal from the map
 					return nil
 				}
 
 				resourceChan <- resourceExporter.ResourceInfo{
 					State:        instanceState,
-					Name:         resMeta.SanitizedLabelName,
+					Name:         resMeta.SanitizedBlockLabel,
 					Type:         resType,
 					CtyType:      ctyType,
 					ResourceType: resourceType,
@@ -1605,13 +1605,13 @@ func (g *GenesysCloudResourceExporter) resolveReference(refSettings *resourceExp
 	if exporters[refSettings.RefType] != nil {
 		// Get the sanitized name from the ID returned as a reference expression
 		if idMetaMap := exporters[refSettings.RefType].SanitizedResourceMap; idMetaMap != nil {
-			if meta := idMetaMap[refID]; meta != nil && meta.SanitizedLabelName != "" {
+			if meta := idMetaMap[refID]; meta != nil && meta.SanitizedBlockLabel != "" {
 
-				if g.isDataSource(refSettings.RefType, meta.SanitizedLabelName) && g.resourceIdExists(refID, nil) {
-					return fmt.Sprintf("${%s.%s.%s.id}", "data", refSettings.RefType, meta.SanitizedLabelName)
+				if g.isDataSource(refSettings.RefType, meta.SanitizedBlockLabel) && g.resourceIdExists(refID, nil) {
+					return fmt.Sprintf("${%s.%s.%s.id}", "data", refSettings.RefType, meta.SanitizedBlockLabel)
 				}
 				if g.resourceIdExists(refID, nil) {
-					return fmt.Sprintf("${%s.%s.id}", refSettings.RefType, meta.SanitizedLabelName)
+					return fmt.Sprintf("${%s.%s.id}", refSettings.RefType, meta.SanitizedBlockLabel)
 				}
 			}
 		}

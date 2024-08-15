@@ -35,7 +35,7 @@ func getAllOutboundCallableTimesets(ctx context.Context, clientConfig *platformc
 		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get page of callable timeset configs error: %s", getErr), resp)
 	}
 	for _, callabletimesets := range *callabletimesets {
-		resources[*callabletimesets.Id] = &resourceExporter.ResourceMeta{ResourceName: *callabletimesets.Name, LabelName: *callabletimesets.Name}
+		resources[*callabletimesets.Id] = &resourceExporter.ResourceMeta{ObjectName: *callabletimesets.Name, BlockLabel: *callabletimesets.Name}
 	}
 	return resources, nil
 }

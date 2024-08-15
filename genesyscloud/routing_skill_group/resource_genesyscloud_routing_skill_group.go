@@ -33,7 +33,7 @@ func getAllRoutingSkillGroups(ctx context.Context, clientConfig *platformclientv
 	}
 
 	for _, skillGroup := range *allSkillGroups {
-		resources[*skillGroup.Id] = &resourceExporter.ResourceMeta{ResourceName: *skillGroup.Name, LabelName: *skillGroup.Name}
+		resources[*skillGroup.Id] = &resourceExporter.ResourceMeta{ObjectName: *skillGroup.Name, BlockLabel: *skillGroup.Name}
 	}
 
 	return resources, nil
@@ -291,7 +291,7 @@ func getAllAuthDivisions(_ context.Context, clientConfig *platformclientv2.Confi
 		}
 
 		for _, division := range *divisions.Entities {
-			resources[*division.Id] = &resourceExporter.ResourceMeta{ResourceName: *division.Name, LabelName: *division.Name}
+			resources[*division.Id] = &resourceExporter.ResourceMeta{ObjectName: *division.Name, BlockLabel: *division.Name}
 		}
 	}
 

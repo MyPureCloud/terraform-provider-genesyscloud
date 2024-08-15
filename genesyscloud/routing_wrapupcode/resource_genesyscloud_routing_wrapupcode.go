@@ -30,7 +30,7 @@ func getAllRoutingWrapupCodes(ctx context.Context, clientConfig *platformclientv
 	}
 
 	for _, wrapupcode := range *wrapupcodes {
-		resources[*wrapupcode.Id] = &resourceExporter.ResourceMeta{ResourceName: *wrapupcode.Name, LabelName: *wrapupcode.Name}
+		resources[*wrapupcode.Id] = &resourceExporter.ResourceMeta{ObjectName: *wrapupcode.Name, BlockLabel: *wrapupcode.Name}
 	}
 
 	return resources, nil

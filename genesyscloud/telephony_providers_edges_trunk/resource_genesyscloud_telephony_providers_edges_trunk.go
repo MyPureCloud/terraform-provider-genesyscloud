@@ -193,7 +193,7 @@ func getAllTrunks(ctx context.Context, sdkConfig *platformclientv2.Configuration
 			}
 			for _, trunk := range *trunks.Entities {
 				if trunk.State != nil && *trunk.State != "deleted" {
-					resources[*trunk.Id] = &resourceExporter.ResourceMeta{ResourceName: *trunk.Name, LabelName: *trunk.Name}
+					resources[*trunk.Id] = &resourceExporter.ResourceMeta{ObjectName: *trunk.Name, BlockLabel: *trunk.Name}
 				}
 			}
 		}

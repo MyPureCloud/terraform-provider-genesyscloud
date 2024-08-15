@@ -129,9 +129,9 @@ func TestAccResourceTfExportIncludeFilterResourcesByRegEx(t *testing.T) {
 	})
 }
 
-// TestAccResourceTfExportIncludeFilterResourcesByRegExAndSanitizedLabelNames will create 3 queues (two with foo bar, one to be excluded).
+// TestAccResourceTfExportIncludeFilterResourcesByRegExAndSanitizedResourceBlockLabels will create 3 queues (two with foo bar, one to be excluded).
 // The test ensures that resources can be exported directly by their actual name or their sanitized names.
-func TestAccResourceTfExportIncludeFilterResourcesByRegExAndSanitizedLabelNames(t *testing.T) {
+func TestAccResourceTfExportIncludeFilterResourcesByRegExAndSanitizedResourceBlockLabels(t *testing.T) {
 	var (
 		exportTestDir  = "../.terraformregex" + uuid.NewString()
 		exportResource = "test-export3_1"
@@ -403,9 +403,9 @@ func TestAccResourceTfExportSplitFilesAsJSON(t *testing.T) {
 	})
 }
 
-// TestAccResourceTfExportExcludeFilterResourcesByRegExExclusiveToResourceAndSanitizedLabelNames will exclude any test resources that match a
+// TestAccResourceTfExportExcludeFilterResourcesByRegExExclusiveToResourceAndSanitizedResourceBlockLabels will exclude any test resources that match a
 // regular expression provided for the resource. In this test we check against both sanitized and unsanitized names.
-func TestAccResourceTfExportExcludeFilterResourcesByRegExExclusiveToResourceAndSanitizedLabelNames(t *testing.T) {
+func TestAccResourceTfExportExcludeFilterResourcesByRegExExclusiveToResourceAndSanitizedResourceBlockLabels(t *testing.T) {
 	var (
 		exportTestDir  = "../.terraformExclude" + uuid.NewString()
 		exportResource = "test-export6_1"

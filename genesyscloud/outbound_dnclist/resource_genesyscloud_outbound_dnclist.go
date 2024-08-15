@@ -30,7 +30,7 @@ func getAllOutboundDncLists(ctx context.Context, clientConfig *platformclientv2.
 		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get dnclists error: %s", err), resp)
 	}
 	for _, dncListConfig := range *dnclists {
-		resources[*dncListConfig.Id] = &resourceExporter.ResourceMeta{ResourceName: *dncListConfig.Name, LabelName: *dncListConfig.Name}
+		resources[*dncListConfig.Id] = &resourceExporter.ResourceMeta{ObjectName: *dncListConfig.Name, BlockLabel: *dncListConfig.Name}
 	}
 	return resources, nil
 }

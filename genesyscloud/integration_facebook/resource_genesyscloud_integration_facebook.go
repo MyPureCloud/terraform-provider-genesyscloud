@@ -37,7 +37,7 @@ func getAllAuthIntegrationFacebooks(ctx context.Context, clientConfig *platformc
 	}
 
 	for _, facebookIntegrationRequest := range *facebookIntegrationRequests {
-		resources[*facebookIntegrationRequest.Id] = &resourceExporter.ResourceMeta{ResourceName: *facebookIntegrationRequest.Name, LabelName: *facebookIntegrationRequest.Name}
+		resources[*facebookIntegrationRequest.Id] = &resourceExporter.ResourceMeta{ObjectName: *facebookIntegrationRequest.Name, BlockLabel: *facebookIntegrationRequest.Name}
 	}
 
 	return resources, nil

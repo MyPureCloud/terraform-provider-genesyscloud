@@ -58,7 +58,7 @@ func getAllWidgetDeployments(_ context.Context, clientConfig *platformclientv2.C
 	}
 
 	for _, widgetDeployment := range *widgetDeployments.Entities {
-		resources[*widgetDeployment.Id] = &resourceExporter.ResourceMeta{ResourceName: *widgetDeployment.Name, LabelName: *widgetDeployment.Name}
+		resources[*widgetDeployment.Id] = &resourceExporter.ResourceMeta{ObjectName: *widgetDeployment.Name, BlockLabel: *widgetDeployment.Name}
 	}
 
 	return resources, nil
@@ -310,7 +310,7 @@ func flattenClientConfig(d *schema.ResourceData, config platformclientv2.Widgetc
 func deletePotentialDuplicateDeployments(widgetAPI *platformclientv2.WidgetsApi, name, id string, existingResourceIDMetaMap, newResourceIDMetaMap resourceExporter.ResourceIDMetaMap) {
 	for _, val := range existingResourceIDMetaMap {
 		for key1, val1 := range newResourceIDMetaMap {
-			if val.SanitizedLabelName == val1.SanitizedLabelName {
+			if val.SanitizedBlockLabel == val1.SanitizedBlockLabel {
 				delete(newResourceIDMetaMap, key1)
 				break
 			}
@@ -318,7 +318,7 @@ func deletePotentialDuplicateDeployments(widgetAPI *platformclientv2.WidgetsApi,
 	}
 
 	for key, val := range newResourceIDMetaMap {
-		if key != id && val.SanitizedLabelName == name {
+		if key != id && val.SanitizedBlockLabel == name {
 			log.Printf("Deleting duplicate widget deployment %s", name)
 			_, err := widgetAPI.DeleteWidgetsDeployment(key)
 			if err != nil {

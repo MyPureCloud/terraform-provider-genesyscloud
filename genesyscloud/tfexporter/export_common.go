@@ -106,7 +106,7 @@ func FilterResourceByName(result resourceExporter.ResourceIDMetaMap, resourceNam
 		newResult := make(resourceExporter.ResourceIDMetaMap)
 		for _, name := range names {
 			for k, v := range result {
-				if v.LabelName == name {
+				if v.BlockLabel == name {
 					newResult[k] = v
 				}
 			}
@@ -163,19 +163,19 @@ func IncludeFilterResourceByRegex(result resourceExporter.ResourceIDMetaMap, res
 		for k := range result {
 
 			// If filter pattern matches original resource name
-			originalNameMatch, _ := regexp.MatchString(pattern, result[k].ResourceName)
+			originalNameMatch, _ := regexp.MatchString(pattern, result[k].ObjectName)
 			if originalNameMatch {
 				newResourceMap[k] = result[k]
 			}
 
 			// If filter pattern matches unsanitized label name
-			labelMatch, _ := regexp.MatchString(pattern, result[k].LabelName)
+			labelMatch, _ := regexp.MatchString(pattern, result[k].BlockLabel)
 			if labelMatch {
 				newResourceMap[k] = result[k]
 			}
 
 			// If filter pattern matches sanitized name
-			sanitizedMatch, _ := regexp.MatchString(pattern, result[k].SanitizedLabelName)
+			sanitizedMatch, _ := regexp.MatchString(pattern, result[k].SanitizedBlockLabel)
 			if sanitizedMatch {
 				newResourceMap[k] = result[k]
 			}
@@ -206,7 +206,7 @@ func ExcludeFilterResourceByRegex(result resourceExporter.ResourceIDMetaMap, res
 		for _, pattern := range newFilters {
 
 			// If filter pattern matches original resource name
-			originalNameMatch, _ := regexp.MatchString(pattern, result[k].ResourceName)
+			originalNameMatch, _ := regexp.MatchString(pattern, result[k].ObjectName)
 			if !originalNameMatch {
 				newResourceMap[k] = result[k]
 			} else {
@@ -215,7 +215,7 @@ func ExcludeFilterResourceByRegex(result resourceExporter.ResourceIDMetaMap, res
 			}
 
 			// If filter pattern matches unsanitized label name
-			labelMatch, _ := regexp.MatchString(pattern, result[k].LabelName)
+			labelMatch, _ := regexp.MatchString(pattern, result[k].BlockLabel)
 			if !labelMatch {
 				newResourceMap[k] = result[k]
 			} else {
@@ -224,7 +224,7 @@ func ExcludeFilterResourceByRegex(result resourceExporter.ResourceIDMetaMap, res
 			}
 
 			// If filter pattern matches sanitized name
-			sanitizedMatch, _ := regexp.MatchString(pattern, result[k].SanitizedLabelName)
+			sanitizedMatch, _ := regexp.MatchString(pattern, result[k].SanitizedBlockLabel)
 			if !sanitizedMatch {
 				newResourceMap[k] = result[k]
 			} else {

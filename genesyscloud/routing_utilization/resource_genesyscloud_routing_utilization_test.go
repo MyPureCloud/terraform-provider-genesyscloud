@@ -101,12 +101,12 @@ func TestAccResourceRoutingUtilizationWithLabels(t *testing.T) {
 		utilTypeCall  = "call"
 		utilTypeEmail = "email"
 
-		redLabelResource   = "label_red_resource"
-		blueLabelResource  = "label_blue_resource"
-		greenLabelResource = "label_green_resource"
-		redLabelName       = "Terraform Red Label" + uuid.NewString()
-		blueLabelName      = "Terraform Blue Label" + uuid.NewString()
-		greenLabelName     = "Terraform Green Label" + uuid.NewString()
+		redLabelResource        = "label_red_resource"
+		blueLabelResource       = "label_blue_resource"
+		greenLabelResource      = "label_green_resource"
+		redResourceBlockLabel   = "Terraform Red Label" + uuid.NewString()
+		blueResourceBlockLabel  = "Terraform Blue Label" + uuid.NewString()
+		greenResourceBlockLabel = "Terraform Green Label" + uuid.NewString()
 	)
 
 	if err := CleanupRoutingUtilizationLabel(); err != nil {
@@ -119,9 +119,9 @@ func TestAccResourceRoutingUtilizationWithLabels(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				// Create
-				Config: routingUtilizationLabel.GenerateRoutingUtilizationLabelResource(redLabelResource, redLabelName, "") +
-					routingUtilizationLabel.GenerateRoutingUtilizationLabelResource(blueLabelResource, blueLabelName, redLabelResource) +
-					routingUtilizationLabel.GenerateRoutingUtilizationLabelResource(greenLabelResource, greenLabelName, blueLabelResource) +
+				Config: routingUtilizationLabel.GenerateRoutingUtilizationLabelResource(redLabelResource, redResourceBlockLabel, "") +
+					routingUtilizationLabel.GenerateRoutingUtilizationLabelResource(blueLabelResource, blueResourceBlockLabel, redLabelResource) +
+					routingUtilizationLabel.GenerateRoutingUtilizationLabelResource(greenLabelResource, greenResourceBlockLabel, blueLabelResource) +
 					generateRoutingUtilizationResource(
 						GenerateRoutingUtilMediaType("call", maxCapacity1, util.FalseValue),
 						GenerateRoutingUtilMediaType("callback", maxCapacity1, util.FalseValue),
@@ -155,9 +155,9 @@ func TestAccResourceRoutingUtilizationWithLabels(t *testing.T) {
 			},
 			{
 				// Update with a new max capacities and interruptible media types
-				Config: routingUtilizationLabel.GenerateRoutingUtilizationLabelResource(redLabelResource, redLabelName, "") +
-					routingUtilizationLabel.GenerateRoutingUtilizationLabelResource(blueLabelResource, blueLabelName, redLabelResource) +
-					routingUtilizationLabel.GenerateRoutingUtilizationLabelResource(greenLabelResource, greenLabelName, blueLabelResource) +
+				Config: routingUtilizationLabel.GenerateRoutingUtilizationLabelResource(redLabelResource, redResourceBlockLabel, "") +
+					routingUtilizationLabel.GenerateRoutingUtilizationLabelResource(blueLabelResource, blueResourceBlockLabel, redLabelResource) +
+					routingUtilizationLabel.GenerateRoutingUtilizationLabelResource(greenLabelResource, greenResourceBlockLabel, blueLabelResource) +
 					generateRoutingUtilizationResource(
 						GenerateRoutingUtilMediaType("call", maxCapacity2, util.TrueValue, strconv.Quote(utilTypeEmail)),
 						GenerateRoutingUtilMediaType("callback", maxCapacity2, util.TrueValue, strconv.Quote(utilTypeCall)),
@@ -190,8 +190,8 @@ func TestAccResourceRoutingUtilizationWithLabels(t *testing.T) {
 				),
 			},
 			{ //Delete one by one to avoid conflict
-				Config: routingUtilizationLabel.GenerateRoutingUtilizationLabelResource(redLabelResource, redLabelName, "") +
-					routingUtilizationLabel.GenerateRoutingUtilizationLabelResource(blueLabelResource, blueLabelName, redLabelResource) +
+				Config: routingUtilizationLabel.GenerateRoutingUtilizationLabelResource(redLabelResource, redResourceBlockLabel, "") +
+					routingUtilizationLabel.GenerateRoutingUtilizationLabelResource(blueLabelResource, blueResourceBlockLabel, redLabelResource) +
 					generateRoutingUtilizationResource(
 						GenerateRoutingUtilMediaType("call", maxCapacity2, util.TrueValue, strconv.Quote(utilTypeEmail)),
 						GenerateRoutingUtilMediaType("callback", maxCapacity2, util.TrueValue, strconv.Quote(utilTypeCall)),
@@ -203,7 +203,7 @@ func TestAccResourceRoutingUtilizationWithLabels(t *testing.T) {
 					),
 			},
 			{
-				Config: routingUtilizationLabel.GenerateRoutingUtilizationLabelResource(redLabelResource, redLabelName, "") +
+				Config: routingUtilizationLabel.GenerateRoutingUtilizationLabelResource(redLabelResource, redResourceBlockLabel, "") +
 					generateRoutingUtilizationResource(
 						GenerateRoutingUtilMediaType("call", maxCapacity2, util.TrueValue, strconv.Quote(utilTypeEmail)),
 						GenerateRoutingUtilMediaType("callback", maxCapacity2, util.TrueValue, strconv.Quote(utilTypeCall)),

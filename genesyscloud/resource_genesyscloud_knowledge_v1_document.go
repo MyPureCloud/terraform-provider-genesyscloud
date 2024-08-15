@@ -140,7 +140,7 @@ func getAllKnowledgeDocumentsV1(_ context.Context, clientConfig *platformclientv
 		} else {
 			name = fmt.Sprintf("document " + uuid.NewString())
 		}
-		resources[id] = &resourceExporter.ResourceMeta{ResourceName: *knowledgeDocument.Name, LabelName: name}
+		resources[id] = &resourceExporter.ResourceMeta{ObjectName: *knowledgeDocument.Name, BlockLabel: name}
 	}
 
 	return resources, nil

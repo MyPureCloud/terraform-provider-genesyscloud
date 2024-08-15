@@ -62,7 +62,7 @@ func getAllAuthExternalContacts(ctx context.Context, clientConfig *platformclien
 		re := regexp.MustCompile(`\s+`)
 		fullName := re.ReplaceAllString(fullNameJoined, " ")
 		fullName = strings.TrimSpace(fullName)
-		resources[*externalContact.Id] = &resourceExporter.ResourceMeta{ResourceName: fullName, LabelName: *externalContact.Id}
+		resources[*externalContact.Id] = &resourceExporter.ResourceMeta{ObjectName: fullName, BlockLabel: *externalContact.Id}
 	}
 	return resources, nil
 }

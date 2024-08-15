@@ -36,7 +36,7 @@ func getAllIdpSalesforce(ctx context.Context, clientConfig *platformclientv2.Con
 		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get IDP Salesforce error: %s", getErr), resp)
 	}
 
-	resources["0"] = &resourceExporter.ResourceMeta{ResourceName: "salesforce", LabelName: "salesforce"}
+	resources["0"] = &resourceExporter.ResourceMeta{ObjectName: "salesforce", BlockLabel: "salesforce"}
 	return resources, nil
 }
 

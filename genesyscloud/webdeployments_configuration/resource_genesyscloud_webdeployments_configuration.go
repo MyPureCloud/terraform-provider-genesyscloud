@@ -31,7 +31,7 @@ func getAllWebDeploymentConfigurations(ctx context.Context, clientConfig *platfo
 		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get webdeployments configuration error: %s", err), resp)
 	}
 	for _, configuration := range *configurations.Entities {
-		resources[*configuration.Id] = &resourceExporter.ResourceMeta{ResourceName: *configuration.Name, LabelName: *configuration.Name}
+		resources[*configuration.Id] = &resourceExporter.ResourceMeta{ObjectName: *configuration.Name, BlockLabel: *configuration.Name}
 	}
 	return resources, nil
 }

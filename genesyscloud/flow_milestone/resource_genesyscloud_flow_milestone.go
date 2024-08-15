@@ -35,7 +35,7 @@ func getAllAuthFlowMilestones(ctx context.Context, clientConfig *platformclientv
 	}
 
 	for _, flowMilestone := range *flowMilestones {
-		resources[*flowMilestone.Id] = &resourceExporter.ResourceMeta{ResourceName: *flowMilestone.Name, LabelName: *flowMilestone.Name}
+		resources[*flowMilestone.Id] = &resourceExporter.ResourceMeta{ObjectName: *flowMilestone.Name, BlockLabel: *flowMilestone.Name}
 	}
 	return resources, nil
 }

@@ -39,7 +39,7 @@ func getAllAuthRoutingQueueConditionalGroup(ctx context.Context, clientConfig *p
 
 	for _, queue := range *queues {
 		if queue.ConditionalGroupRouting != nil && queue.ConditionalGroupRouting.Rules != nil {
-			resources[*queue.Id+"/rules"] = &resourceExporter.ResourceMeta{ResourceName: *queue.Name, LabelName: *queue.Name + "-rules"}
+			resources[*queue.Id+"/rules"] = &resourceExporter.ResourceMeta{ObjectName: *queue.Name, BlockLabel: *queue.Name + "-rules"}
 		}
 	}
 

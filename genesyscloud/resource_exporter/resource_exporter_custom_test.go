@@ -47,7 +47,7 @@ func TestAccExporterCustomMemberGroup(t *testing.T) {
 
 		//Create an exporter
 		skillGroupSanitizedResourceMap := make(map[string]*ResourceMeta)
-		skillGroupSanitizedResourceMap[testResult.MemberGroupID] = &ResourceMeta{ResourceName: testResult.GroupName, LabelName: testResult.GroupName}
+		skillGroupSanitizedResourceMap[testResult.MemberGroupID] = &ResourceMeta{ObjectName: testResult.GroupName, BlockLabel: testResult.GroupName}
 
 		firstResourceExport := &ResourceExporter{
 			SanitizedResourceMap: skillGroupSanitizedResourceMap,
@@ -97,7 +97,7 @@ func TestRuleSetPropertyGroup(t *testing.T) {
 
 		//Create an exporter
 		skillSanitizedResourceMap := make(map[string]*ResourceMeta)
-		skillSanitizedResourceMap[uuid] = &ResourceMeta{ResourceName: testResult.SkillName, LabelName: testResult.SkillName}
+		skillSanitizedResourceMap[uuid] = &ResourceMeta{ObjectName: testResult.SkillName, BlockLabel: testResult.SkillName}
 
 		firstResourceExport := &ResourceExporter{
 			SanitizedResourceMap: skillSanitizedResourceMap,

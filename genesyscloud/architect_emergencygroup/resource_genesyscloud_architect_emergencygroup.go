@@ -32,7 +32,7 @@ func getAllEmergencyGroups(ctx context.Context, clientConfig *platformclientv2.C
 
 	for _, emergencyGroupConfig := range *emergencyGroupConfigs {
 		if emergencyGroupConfig.State != nil && *emergencyGroupConfig.State != "deleted" {
-			resources[*emergencyGroupConfig.Id] = &resourceExporter.ResourceMeta{ResourceName: *emergencyGroupConfig.Name, LabelName: *emergencyGroupConfig.Name}
+			resources[*emergencyGroupConfig.Id] = &resourceExporter.ResourceMeta{ObjectName: *emergencyGroupConfig.Name, BlockLabel: *emergencyGroupConfig.Name}
 		}
 	}
 	return resources, nil

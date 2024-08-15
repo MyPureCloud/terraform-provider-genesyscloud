@@ -29,7 +29,7 @@ func getAllExtensionPools(ctx context.Context, clientConfig *platformclientv2.Co
 	}
 	if extensionPools != nil {
 		for _, extensionPool := range *extensionPools {
-			resources[*extensionPool.Id] = &resourceExporter.ResourceMeta{ResourceName: *util.EmptyIfNilStringPointer(extensionPool.Name), LabelName: *extensionPool.StartNumber}
+			resources[*extensionPool.Id] = &resourceExporter.ResourceMeta{ObjectName: *util.EmptyIfNilStringPointer(extensionPool.Name), BlockLabel: *extensionPool.StartNumber}
 		}
 	}
 	return resources, nil

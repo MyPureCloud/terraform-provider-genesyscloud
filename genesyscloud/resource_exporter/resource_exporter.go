@@ -20,17 +20,17 @@ var resourceExporters map[string]*ResourceExporter
 var resourceExporterMapMutex = sync.RWMutex{}
 
 type ResourceMeta struct {
-	// ResourceName is the actual Name of the resource returned from the API
+	// ObjectName is the actual Name of the resource returned from the API
 	// This is retained so it can be easily filtered against
-	ResourceName string
+	ObjectName string
 
-	// LabelName is the second label identifier of the Terraform resource to be used in exports
+	// BlockLabel is the second label identifier of the Terraform resource to be used in exports
 	// See https://developer.hashicorp.com/terraform/language/syntax/configuration#blocks
-	LabelName string
+	BlockLabel string
 
-	// SanitizedLabelName is the sanitized version of the LabelName
+	// SanitizedBlockLabel is the sanitized version of the ResourceBlockLabel
 	// This is the name that will be given as the second label identifier in the resource block.
-	SanitizedLabelName string
+	SanitizedBlockLabel string
 
 	// Prefix to add to the ID when reading state
 	IdPrefix string

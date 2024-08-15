@@ -102,7 +102,7 @@ func getAllGroups(_ context.Context, clientConfig *platformclientv2.Configuratio
 		}
 
 		for _, group := range *groups.Entities {
-			resources[*group.Id] = &resourceExporter.ResourceMeta{ResourceName: *group.Name, LabelName: *group.Name}
+			resources[*group.Id] = &resourceExporter.ResourceMeta{ObjectName: *group.Name, BlockLabel: *group.Name}
 		}
 	}
 

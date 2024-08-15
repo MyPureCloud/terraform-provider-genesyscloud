@@ -31,7 +31,7 @@ func getAllAuthCampaignRules(ctx context.Context, clientConfig *platformclientv2
 	}
 
 	for _, campaignRule := range *campaignRules {
-		resources[*campaignRule.Id] = &resourceExporter.ResourceMeta{ResourceName: *campaignRule.Name, LabelName: *campaignRule.Name}
+		resources[*campaignRule.Id] = &resourceExporter.ResourceMeta{ObjectName: *campaignRule.Name, BlockLabel: *campaignRule.Name}
 	}
 	return resources, nil
 }

@@ -924,12 +924,12 @@ func TestAccResourceUserroutingUtilWithLabels(t *testing.T) {
 		utilTypeCall  = "call"
 		utilTypeEmail = "email"
 
-		redLabelResource   = "label_red"
-		blueLabelResource  = "label_blue"
-		greenLabelResource = "label_green"
-		redLabelName       = "Terraform Red " + uuid.NewString()
-		blueLabelName      = "Terraform Blue " + uuid.NewString()
-		greenLabelName     = "Terraform Green " + uuid.NewString()
+		redLabelResource        = "label_red"
+		blueLabelResource       = "label_blue"
+		greenLabelResource      = "label_green"
+		redResourceBlockLabel   = "Terraform Red " + uuid.NewString()
+		blueResourceBlockLabel  = "Terraform Blue " + uuid.NewString()
+		greenResourceBlockLabel = "Terraform Green " + uuid.NewString()
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -938,9 +938,9 @@ func TestAccResourceUserroutingUtilWithLabels(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				// Create with utilization settings
-				Config: routingUtilizationLabel.GenerateRoutingUtilizationLabelResource(redLabelResource, redLabelName, "") +
-					routingUtilizationLabel.GenerateRoutingUtilizationLabelResource(blueLabelResource, blueLabelName, redLabelResource) +
-					routingUtilizationLabel.GenerateRoutingUtilizationLabelResource(greenLabelResource, greenLabelName, blueLabelResource) +
+				Config: routingUtilizationLabel.GenerateRoutingUtilizationLabelResource(redLabelResource, redResourceBlockLabel, "") +
+					routingUtilizationLabel.GenerateRoutingUtilizationLabelResource(blueLabelResource, blueResourceBlockLabel, redLabelResource) +
+					routingUtilizationLabel.GenerateRoutingUtilizationLabelResource(greenLabelResource, greenResourceBlockLabel, blueLabelResource) +
 					generateUserWithCustomAttrs(
 						userResource1,
 						email1,
@@ -980,9 +980,9 @@ func TestAccResourceUserroutingUtilWithLabels(t *testing.T) {
 			},
 			{
 				// Update utilization settings and set different org-level settings
-				Config: routingUtilizationLabel.GenerateRoutingUtilizationLabelResource(redLabelResource, redLabelName, "") +
-					routingUtilizationLabel.GenerateRoutingUtilizationLabelResource(blueLabelResource, blueLabelName, redLabelResource) +
-					routingUtilizationLabel.GenerateRoutingUtilizationLabelResource(greenLabelResource, greenLabelName, blueLabelResource) +
+				Config: routingUtilizationLabel.GenerateRoutingUtilizationLabelResource(redLabelResource, redResourceBlockLabel, "") +
+					routingUtilizationLabel.GenerateRoutingUtilizationLabelResource(blueLabelResource, blueResourceBlockLabel, redLabelResource) +
+					routingUtilizationLabel.GenerateRoutingUtilizationLabelResource(greenLabelResource, greenResourceBlockLabel, blueLabelResource) +
 					generateUserWithCustomAttrs(
 						userResource1,
 						email1,
@@ -1022,9 +1022,9 @@ func TestAccResourceUserroutingUtilWithLabels(t *testing.T) {
 			},
 			{
 				// Ensure max capacity can be set to 0
-				Config: routingUtilizationLabel.GenerateRoutingUtilizationLabelResource(redLabelResource, redLabelName, "") +
-					routingUtilizationLabel.GenerateRoutingUtilizationLabelResource(blueLabelResource, blueLabelName, redLabelResource) +
-					routingUtilizationLabel.GenerateRoutingUtilizationLabelResource(greenLabelResource, greenLabelName, blueLabelResource) +
+				Config: routingUtilizationLabel.GenerateRoutingUtilizationLabelResource(redLabelResource, redResourceBlockLabel, "") +
+					routingUtilizationLabel.GenerateRoutingUtilizationLabelResource(blueLabelResource, blueResourceBlockLabel, redLabelResource) +
+					routingUtilizationLabel.GenerateRoutingUtilizationLabelResource(greenLabelResource, greenResourceBlockLabel, blueLabelResource) +
 					generateUserWithCustomAttrs(
 						userResource1,
 						email1,

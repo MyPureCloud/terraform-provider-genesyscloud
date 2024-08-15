@@ -35,7 +35,7 @@ func getAllAuthFlowOutcomes(ctx context.Context, clientConfig *platformclientv2.
 	}
 
 	for _, flowOutcome := range *flowOutcomes {
-		resources[*flowOutcome.Id] = &resourceExporter.ResourceMeta{ResourceName: *flowOutcome.Name, LabelName: *flowOutcome.Name}
+		resources[*flowOutcome.Id] = &resourceExporter.ResourceMeta{ObjectName: *flowOutcome.Name, BlockLabel: *flowOutcome.Name}
 	}
 	return resources, nil
 }

@@ -36,7 +36,7 @@ func getAllAuthDivisions(_ context.Context, clientConfig *platformclientv2.Confi
 		}
 
 		for _, division := range *divisions.Entities {
-			resources[*division.Id] = &resourceExporter.ResourceMeta{ResourceName: *division.Name, LabelName: *division.Name}
+			resources[*division.Id] = &resourceExporter.ResourceMeta{ObjectName: *division.Name, BlockLabel: *division.Name}
 		}
 	}
 

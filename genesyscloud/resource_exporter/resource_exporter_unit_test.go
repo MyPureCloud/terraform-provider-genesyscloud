@@ -117,15 +117,15 @@ func TestUnitSanitizeResourceNameOriginal(t *testing.T) {
 func TestUnitSanitizeResourceNamesOptimized(t *testing.T) {
 	randNumSuffix := "_[0-9]+"
 	metaMap := make(ResourceIDMetaMap)
-	metaMap["1"] = &ResourceMeta{ResourceName: "wrapupcodemappings", LabelName: "wrapupcodemappings"}
-	metaMap["2"] = &ResourceMeta{ResourceName: "foobar", LabelName: "foobar"}
-	metaMap["3"] = &ResourceMeta{ResourceName: "wrapupcode$%^mappings", LabelName: "wrapupcode$%^mappings"}
-	metaMap["4"] = &ResourceMeta{ResourceName: "wrapupcode*#@mappings", LabelName: "wrapupcode*#@mappings"}
-	metaMap["5"] = &ResourceMeta{ResourceName: "-suuuuueeeey", LabelName: "-suuuuueeeey"}
-	metaMap["6"] = &ResourceMeta{ResourceName: "1-2bucklemyshoe", LabelName: "1-2bucklemyshoe"}
-	metaMap["7"] = &ResourceMeta{ResourceName: "unsafeUnicodeȺ®Here", LabelName: "unsafeUnicodeȺ®Here"}
-	metaMap["8"] = &ResourceMeta{ResourceName: "unsafeUnicodeÊƩHere", LabelName: "unsafeUnicodeÊƩHere"}
-	metaMap["9"] = &ResourceMeta{ResourceName: "unsafeUnicodeÊƩȺ®Here", LabelName: "unsafeUnicodeÊƩȺ®Here"}
+	metaMap["1"] = &ResourceMeta{ObjectName: "wrapupcodemappings", BlockLabel: "wrapupcodemappings"}
+	metaMap["2"] = &ResourceMeta{ObjectName: "foobar", BlockLabel: "foobar"}
+	metaMap["3"] = &ResourceMeta{ObjectName: "wrapupcode$%^mappings", BlockLabel: "wrapupcode$%^mappings"}
+	metaMap["4"] = &ResourceMeta{ObjectName: "wrapupcode*#@mappings", BlockLabel: "wrapupcode*#@mappings"}
+	metaMap["5"] = &ResourceMeta{ObjectName: "-suuuuueeeey", BlockLabel: "-suuuuueeeey"}
+	metaMap["6"] = &ResourceMeta{ObjectName: "1-2bucklemyshoe", BlockLabel: "1-2bucklemyshoe"}
+	metaMap["7"] = &ResourceMeta{ObjectName: "unsafeUnicodeȺ®Here", BlockLabel: "unsafeUnicodeȺ®Here"}
+	metaMap["8"] = &ResourceMeta{ObjectName: "unsafeUnicodeÊƩHere", BlockLabel: "unsafeUnicodeÊƩHere"}
+	metaMap["9"] = &ResourceMeta{ObjectName: "unsafeUnicodeÊƩȺ®Here", BlockLabel: "unsafeUnicodeÊƩȺ®Here"}
 
 	sanitizer := NewSanitizerProvider()
 
@@ -133,47 +133,47 @@ func TestUnitSanitizeResourceNamesOptimized(t *testing.T) {
 
 	assertions := [9]TestAssertion{
 		{
-			input:  metaMap["1"].SanitizedLabelName,
+			input:  metaMap["1"].SanitizedBlockLabel,
 			output: "wrapupcodemappings",
 			name:   "actual resource name",
 		},
 		{
-			input:  metaMap["2"].SanitizedLabelName,
+			input:  metaMap["2"].SanitizedBlockLabel,
 			output: "foobar",
 			name:   "any name",
 		},
 		{
-			input:  metaMap["3"].SanitizedLabelName,
+			input:  metaMap["3"].SanitizedBlockLabel,
 			output: "wrapupcode___mappings" + randNumSuffix,
 			name:   "ascii chars",
 		},
 		{
-			input:  metaMap["4"].SanitizedLabelName,
+			input:  metaMap["4"].SanitizedBlockLabel,
 			output: "wrapupcode___mappings" + randNumSuffix,
 			name:   "ascii chars with same structure different chars",
 		},
 		{
-			input:  metaMap["5"].SanitizedLabelName,
+			input:  metaMap["5"].SanitizedBlockLabel,
 			output: "_-suuuuueeeey",
 			name:   "starting dash",
 		},
 		{
-			input:  metaMap["6"].SanitizedLabelName,
+			input:  metaMap["6"].SanitizedBlockLabel,
 			output: "_1-2bucklemyshoe",
 			name:   "starting number",
 		},
 		{
-			input:  metaMap["7"].SanitizedLabelName,
+			input:  metaMap["7"].SanitizedBlockLabel,
 			output: "unsafeUnicode__Here" + randNumSuffix,
 			name:   "unsafe unicode",
 		},
 		{
-			input:  metaMap["8"].SanitizedLabelName,
+			input:  metaMap["8"].SanitizedBlockLabel,
 			output: "unsafeUnicode__Here" + randNumSuffix,
 			name:   "unsafe unicode matching pattern",
 		},
 		{
-			input:  metaMap["9"].SanitizedLabelName,
+			input:  metaMap["9"].SanitizedBlockLabel,
 			output: "unsafeUnicode____Here",
 			name:   "unsafe unicode non-matching pattern, no added random suffix",
 		},

@@ -90,7 +90,7 @@ func getAllAttemptLimits(_ context.Context, clientConfig *platformclientv2.Confi
 		}
 
 		for _, attemptLimitConfig := range *attemptLimitConfigs.Entities {
-			resources[*attemptLimitConfig.Id] = &resourceExporter.ResourceMeta{ResourceName: *attemptLimitConfig.Name, LabelName: *attemptLimitConfig.Name}
+			resources[*attemptLimitConfig.Id] = &resourceExporter.ResourceMeta{ObjectName: *attemptLimitConfig.Name, BlockLabel: *attemptLimitConfig.Name}
 		}
 	}
 

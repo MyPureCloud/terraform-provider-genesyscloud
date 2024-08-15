@@ -31,7 +31,7 @@ func getAllWebDeployments(ctx context.Context, clientConfig *platformclientv2.Co
 	}
 
 	for _, deployment := range *deployments.Entities {
-		resources[*deployment.Id] = &resourceExporter.ResourceMeta{ResourceName: *deployment.Name, LabelName: *deployment.Name}
+		resources[*deployment.Id] = &resourceExporter.ResourceMeta{ObjectName: *deployment.Name, BlockLabel: *deployment.Name}
 	}
 	return resources, nil
 }

@@ -217,7 +217,7 @@ func getAllSurveyForms(_ context.Context, clientConfig *platformclientv2.Configu
 		}
 
 		for _, surveyForm := range *surveyForms.Entities {
-			resources[*surveyForm.Id] = &resourceExporter.ResourceMeta{ResourceName: *surveyForm.Name, LabelName: *surveyForm.Name}
+			resources[*surveyForm.Id] = &resourceExporter.ResourceMeta{ObjectName: *surveyForm.Name, BlockLabel: *surveyForm.Name}
 		}
 	}
 

@@ -35,7 +35,7 @@ func getAllAuthEmployeeperformanceExternalmetricsDefinitions(ctx context.Context
 	}
 
 	for _, definition := range *definitions {
-		resources[*definition.Id] = &resourceExporter.ResourceMeta{ResourceName: *definition.Name, LabelName: *definition.Name}
+		resources[*definition.Id] = &resourceExporter.ResourceMeta{ObjectName: *definition.Name, BlockLabel: *definition.Name}
 	}
 
 	return resources, nil
