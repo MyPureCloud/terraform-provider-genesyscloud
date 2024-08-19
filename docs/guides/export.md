@@ -81,9 +81,9 @@ resource "genesyscloud_tf_export" "advanced-filter" {
 
 In this advanced filter:
 
-- All resources for `genesyscloud_routing_queue` and `genesyscloud_script` will be returned.
-- Specific resources for `genesyscloud_user` with a name of `Foo` and `genesyscloud_location` with a name of `HQ` will be returned.
-- Any genesyscloud_script resources with names beginning with `Default` will be excluded.
+- All resources for resource types `genesyscloud_routing_queue` and `genesyscloud_script` will be returned.
+- Specific resources for `genesyscloud_user` with a name of `Foo` and `genesyscloud_location` with a name of `HQ` will also be returned.
+- Any `genesyscloud_script` resources with names beginning with `Default` will be excluded.
 
 You can also use the `exclude_by_type` attribute in the advanced filter:
 
@@ -102,11 +102,25 @@ resource "genesyscloud_tf_export" "advanced-filter" {
 
 In this example:
 
-- All resources except for `genesyscloud_user` will be returned.
-- `genesyscloud_user` resources with the name `Foo` will be included despite the type exclusion.
+- All resources except for the resource type `genesyscloud_user` will be returned.
+- `genesyscloud_user` resources with the name `Foo` will be included despite the resource type exclusion.
 - `genesyscloud_script` resources with names beginning with `Default` will not be exported.
 
-The `advanced_filter_resources` attribute provides a powerful way to fine-tune your resource filtering, allowing for more complex inclusion and exclusion patterns.
+#### Exclusions Override Inclusions
+It's important to note that regarding any overlapping references between the `include_by_type` and `exclude_by_type` attributes, the `exclude_by_type` references will take precedence.
+
+For example:
+
+```hcl
+  advanced_filter_resources {
+    exclude_by_type = ["genesyscloud_user"]
+    include_by_type = ["genesyscloud_user", "genesyscloud_location"]
+  }
+```
+
+In this case, the `genesyscloud_user` resource type will be excluded, even though it is defined in both `exclude_by_type` and `include_by_type`. This is because exclusions take precedence over inclusions. The same can be said for the `*_by_name` attributes as well. This precedence rule allows for more precise control over which resources are included or excluded in your exports.
+
+As you can see, the `advanced_filter_resources` attribute provides a powerful way to fine-tune your resource filtering, allowing for more complex inclusion and exclusion patterns.
 
 ## Replacing an Exported Resource with a Data Source
 
