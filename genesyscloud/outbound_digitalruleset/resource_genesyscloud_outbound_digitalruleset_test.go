@@ -26,15 +26,14 @@ tests for outbound_digitalruleset.
 func TestAccResourceOutboundDigitalruleset(t *testing.T) {
 	t.Parallel()
 	var (
-		name1             = "Terraform Test Digital RuleSet1"
+		name1             = "Terraform Digital RuleSet1"
 		resourceId        = "digital-rule-set"
-		version           = "0"
 		ruleName          = "RuleWork"
 		ruleOrder         = "0"
 		ruleCategory      = "PreContact"
 		contactColumnName = "Work"
 		columnOperator    = "Equals"
-		columnValue       = "\"XYZ\""
+		columnValue       = "XYZ"
 		columnValueType   = "String"
 
 		updatePropertiesWork = "Work"
@@ -87,7 +86,6 @@ func TestAccResourceOutboundDigitalruleset(t *testing.T) {
 					GenerateOutboundDigitalRuleSetResource(
 						resourceId,
 						name1,
-						version,
 						"genesyscloud_outbound_contact_list."+contactListResourceId1+".id",
 						GenerateDigitalRules(
 							ruleName,
@@ -104,10 +102,12 @@ func TestAccResourceOutboundDigitalruleset(t *testing.T) {
 							),
 							GenerateDigitalRuleSetActions(
 								GenerateUpdateContactColumnActionSettings(
-									//util.GenerateJsonEncodedProperties(util.GenerateJsonProperty(updatePropertiesWork, updatePropertiesWork)),
 									updateOption,
+									GeneratePropertiesForUpdateContactColumnSettings(updatePropertiesWork, updatePropertiesWork),
 								),
-								GenerateDoNotSendActionSettings(),
+							),
+							GenerateDigitalRuleSetActions(
+								GenerateMarkContactUncontactableActionSettings(strconv.Quote("Email")),
 							),
 						),
 					),
@@ -115,7 +115,6 @@ func TestAccResourceOutboundDigitalruleset(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_outbound_digitalruleset."+resourceId, "name", name1),
 					resource.TestCheckResourceAttrPair("genesyscloud_outbound_digitalruleset."+resourceId, "contact_list_id", "genesyscloud_outbound_contact_list."+contactListResourceId1, "id"),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_digitalruleset."+resourceId, "version", version),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_digitalruleset."+resourceId, "rules.0.name", ruleName),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_digitalruleset."+resourceId, "rules.0.order", ruleOrder),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_digitalruleset."+resourceId, "rules.0.category", ruleCategory),
@@ -139,64 +138,81 @@ func TestAccResourceOutboundDigitalruleset(t *testing.T) {
 	})
 }
 
-// func GenerateSetSmsPhoneNumberActionSettings() string {
-// 	return fmt.Sprintf(`
-// 		set_sms_phone_number_action_settings {
-// 			sender_sms_phone_number = %s
-// 		}
-// 	`)
-// }
+func GenerateSetSmsPhoneNumberActionSettings(
+	senderSmsPhone string,
+) string {
+	return fmt.Sprintf(`
+		set_sms_phone_number_action_settings {
+			sender_sms_phone_number = %s
+		}
+	`, senderSmsPhone)
+}
 
-// func GenerateSetContentTemplateActionSettings() string {
-// 	return fmt.Sprintf(`
-// 		set_content_template_action_settings {
-// 			sms_content_template_id = "%s"
-// 			email_content_template_id = "%s"
-// 		}
-// 	`)
-// }
+func GenerateSetContentTemplateActionSettings(
+	smsContentId string,
+	emailContentId string,
+) string {
+	return fmt.Sprintf(`
+		set_content_template_action_settings {
+			sms_content_template_id = "%s"
+			email_content_template_id = "%s"
+		}
+	`, smsContentId, emailContentId)
+}
 
-// func GenerateMarkContactAddressUncontactableActionSettings() string {
-// 	return fmt.Sprintf(`
-// 		mark_contact_address_uncontactable_action_settings = %s
-// 	`)
-// }
+func GenerateMarkContactAddressUncontactableActionSettings(
+	markAddressActionSettings string,
+) string {
+	return fmt.Sprintf(`
+		mark_contact_address_uncontactable_action_settings = %s
+	`, markAddressActionSettings)
+}
 
-// func GenerateMarkContactUncontactableActionSettings() string {
-// 	return fmt.Sprintf(`
-// 		mark_contact_uncontactable_action_settings {
-// 			media_types = [%s]
-// 		}
-// 	`)
-// }
+func GenerateMarkContactUncontactableActionSettings(
+	mediaTypes string,
+) string {
+	return fmt.Sprintf(`
+		mark_contact_uncontactable_action_settings {
+			media_types = [%s]
+		}
+	`, mediaTypes)
+}
 
-// func GenerateAppendToDncActionSettings() string {
-// 	return fmt.Sprintf(`
-// 		append_to_dnc_action_settings {
-// 			expire = %s
-// 			expiration_duration = %s
-// 			list_type = %s
-// 		}
-// 	`)
-// }
+func GenerateAppendToDncActionSettings(
+	expire string,
+	expirationDuration string,
+	listType string,
+) string {
+	return fmt.Sprintf(`
+		append_to_dnc_action_settings {
+			expire = %s
+			expiration_duration = %s
+			list_type = %s
+		}
+	`, expire, expirationDuration, listType)
+}
 
 func GenerateDoNotSendActionSettings() string {
 	return fmt.Sprintf(`
-		do_not_send_action_settings = {}
+		do_not_send_action_settings = { }
 	`)
 }
 
+func GeneratePropertiesForUpdateContactColumnSettings(
+	propType string,
+	propValue string) string {
+	return "properties = " + util.GenerateJsonEncodedProperties(util.GenerateJsonProperty(propType, strconv.Quote(propValue)))
+}
+
 func GenerateUpdateContactColumnActionSettings(
-	//properties string,
 	updateOption string,
+	properties ...string,
 ) string {
 	return fmt.Sprintf(`update_contact_column_action_settings {
 		update_option = "%s"
-		properties = {
-			Cell	=	"Cell"
-		}
+		%s
 	}
-	`, updateOption)
+	`, updateOption, strings.Join(properties, "\n"))
 }
 
 func GenerateDigitalRuleSetActions(nestedBlocks ...string) string {
@@ -207,96 +223,133 @@ func GenerateDigitalRuleSetActions(nestedBlocks ...string) string {
 	`, strings.Join(nestedBlocks, "\n"))
 }
 
-// func GenerateDataActionContactColumnToDataActionFieldMappings() string {
-// 	return fmt.Sprintf(`
-// 		contact_column_to_data_action_field_mappings {
-// 			contact_column_name = %s
-// 			data_action_field = %s
-// 		}
-// 	`)
-// }
+func GenerateDataActionContactColumnToDataActionFieldMappings(
+	contactColumnName string,
+	dataActionField string,
+) string {
+	return fmt.Sprintf(`
+		contact_column_to_data_action_field_mappings {
+			contact_column_name = %s
+			data_action_field = %s
+		}
+	`, contactColumnName, dataActionField)
+}
 
-// func GenerateDataActionConditionSettingsPredicates() string {
-// 	return fmt.Sprintf(`
-// 		predicates {
-// 			output_field = %s
-// 			output_operator = %s
-// 			comparison_value = %s
-// 			inverted = %s
-// 			output_field_missing_resolution = %s
-// 		}
-// 	`)
-// }
+func GenerateDataActionConditionSettingsPredicates(
+	outputField string,
+	outputOperator string,
+	comparisonValue string,
+	inverted string,
+	outputFieldMissingResolution string,
+) string {
+	return fmt.Sprintf(`
+		predicates {
+			output_field = %s
+			output_operator = %s
+			comparison_value = %s
+			inverted = %s
+			output_field_missing_resolution = %s
+		}
+	`, outputField, outputOperator, comparisonValue, inverted, outputFieldMissingResolution)
+}
 
-// func GenerateDataActionConditionSettings() string {
-// 	return fmt.Sprintf(`
-// 	data_action_condition_settings {
-// 		data_action_id = %s
-// 		contact_id_field = %s
-// 		data_not_found_resolution = %s
-// 		%s
-// 	}
-// 	`)
-// }
+func GenerateDataActionConditionSettings(
+	dataActionId string,
+	contactIdField string,
+	dataNotFound string,
+	predicatesBlock ...string,
+) string {
+	return fmt.Sprintf(`
+	data_action_condition_settings {
+		data_action_id = %s
+		contact_id_field = %s
+		data_not_found_resolution = %s
+		%s
+	}
+	`, dataActionId, contactIdField, dataNotFound, strings.Join(predicatesBlock, ","))
+}
 
-// func GenerateLastResultOverallConditionSettings() string {
-// 	return fmt.Sprintf(`
-// 	last_result_overall_condition_settings {
-// 		email_wrapup_codes = [%s]
-// 		sms_wrapup_codes = [%s]
-// 	}
-// 	`)
-// }
+func GenerateLastResultOverallConditionSettings(
+	emailCodes string,
+	smsCodes string,
+) string {
+	return fmt.Sprintf(`
+	last_result_overall_condition_settings {
+		email_wrapup_codes = [%s]
+		sms_wrapup_codes = [%s]
+	}
+	`, emailCodes, smsCodes)
+}
 
-// func GenerateLastResultByColumnConditionSettings() string {
-// 	return fmt.Sprintf(`
-// 	last_result_by_column_condition_settings {
-// 		email_column_name = %s
-// 		email_wrapup_codes = [%s]
-// 		sms_column_name = %s
-// 		sms_wrapup_codes = [%s]
-// 	}
-// 	`)
-// }
+func GenerateLastResultByColumnConditionSettings(
+	emailColumnName string,
+	emailCodes string,
+	smsColumnName string,
+	smsCodes string,
+) string {
+	return fmt.Sprintf(`
+	last_result_by_column_condition_settings {
+		email_column_name = %s
+		email_wrapup_codes = [%s]
+		sms_column_name = %s
+		sms_wrapup_codes = [%s]
+	}
+	`, emailColumnName, emailCodes, smsColumnName, smsCodes)
+}
 
-// func GenerateLastAttemptOverallConditionSettings() string {
-// 	return fmt.Sprintf(`
-// 	last_attempt_overall_condition_settings {
-// 		media_types = [%s]
-// 		operator = %s
-// 		value = %s
-// 	}
-// 	`)
-// }
+func GenerateLastAttemptOverallConditionSettings(
+	mediaTypes string,
+	operator string,
+	value string,
+) string {
+	return fmt.Sprintf(`
+	last_attempt_overall_condition_settings {
+		media_types = [%s]
+		operator = %s
+		value = %s
+	}
+	`, mediaTypes, operator, value)
+}
 
-// func GenerateLastAttemptByColumnConditionSettings() string {
-// 	return fmt.Sprintf(`
-// 	last_attempt_by_column_condition_settings {
-// 		email_column_name = %s
-// 		sms_column_name = %s
-// 		operator = %s
-// 		value = %s
-// 	}
-// 	`)
-// }
+func GenerateLastAttemptByColumnConditionSettings(
+	emailColumnName string,
+	smsColumnName string,
+	operator string,
+	value string,
+) string {
+	return fmt.Sprintf(`
+	last_attempt_by_column_condition_settings {
+		email_column_name = %s
+		sms_column_name = %s
+		operator = %s
+		value = %s
+	}
+	`, emailColumnName, smsColumnName, operator, value)
+}
 
-// func GenerateContactAddressTypeConditionSettings() string {
-// 	return fmt.Sprintf(`
-// 	contact_address_type_condition_settings {
-// 		operator = %s
-// 		value = %s
-// 	}
-// 	`)
-// }
+func GenerateContactAddressTypeConditionSettings(
+	operator string,
+	value string,
+) string {
+	return fmt.Sprintf(`
+	contact_address_type_condition_settings {
+		operator = %s
+		value = %s
+	}
+	`, operator, value)
+}
 
-// func GenerateContactAddressConditionSettings() string {
-// 	return fmt.Sprintf(`
-// 	contact_address_condition_settings {
-// 		operator = %s
-// 		value = %s
-// 	}
-// 	`)
-// }
+func GenerateContactAddressConditionSettings(
+	operator string,
+	value string,
+) string {
+	return fmt.Sprintf(`
+	contact_address_condition_settings {
+		operator = %s
+		value = %s
+	}
+	`, operator, value)
+}
 
 func GenerateContactColumnConditionSettings(
 	columnName string,
@@ -308,7 +361,7 @@ func GenerateContactColumnConditionSettings(
 	contact_column_condition_settings {
 		column_name = "%s"
 		operator = "%s"
-		value = %s
+		value = "%s"
 		value_type = "%s"
 	}
 	`, columnName, operator, value, valueType)
@@ -345,18 +398,16 @@ func GenerateDigitalRules(
 func GenerateOutboundDigitalRuleSetResource(
 	resourceId string,
 	name string,
-	version string,
 	contactListId string,
 	nestedBlocks ...string,
 ) string {
 	return fmt.Sprintf(`
 	resource "genesyscloud_outbound_digitalruleset" "%s" {
 	name = "%s"
-	version = %s
 	contact_list_id = %s
 	%s
 	}
-	`, resourceId, name, version, contactListId, strings.Join(nestedBlocks, "\n"))
+	`, resourceId, name, contactListId, strings.Join(nestedBlocks, "\n"))
 }
 
 func testVerifyOutboundDigitalrulesetDestroyed(state *terraform.State) error {

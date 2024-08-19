@@ -1,6 +1,7 @@
 package outbound_digitalruleset
 
 import (
+	"encoding/json"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
@@ -333,7 +334,11 @@ func buildUpdateContactColumnActionSettings(updateContactColumnActionSettings *s
 			sdkUpdateContactColumnActionSettings.UpdateOption = &updateOption
 		}
 
-		resourcedata.BuildSDKStringMapValueIfNotNil(&sdkUpdateContactColumnActionSettings.Properties, updateContactColumnActionSettingsMap, "properties")
+		var properties map[string]string
+		if err := json.Unmarshal([]byte(updateContactColumnActionSettingsMap["properties"].(string)), &properties); err == nil {
+			sdkUpdateContactColumnActionSettings.Properties = &properties
+		}
+
 	}
 
 	return &sdkUpdateContactColumnActionSettings
@@ -684,7 +689,17 @@ func flattenUpdateContactColumnActionSettings(updateContactColumnActionSettings 
 	updateContactColumnActionSettingsSet := schema.NewSet(schema.HashResource(updateContactColumnActionSettingsResource), []interface{}{})
 	updateContactColumnActionSettingsMap := make(map[string]interface{})
 
-	resourcedata.SetMapStringMapValueIfNotNil(updateContactColumnActionSettingsMap, "properties", updateContactColumnActionSettings.Properties)
+	//resourcedata.SetMapStringMapValueIfNotNil(updateContactColumnActionSettingsMap, "properties", updateContactColumnActionSettings.Properties)
+
+	schemaProps, _ := json.Marshal(updateContactColumnActionSettings.Properties)
+
+	var schemaPropsPtr *string
+	if string(schemaProps) != util.NullValue {
+		schemaPropsStr := string(schemaProps)
+		schemaPropsPtr = &schemaPropsStr
+	}
+
+	updateContactColumnActionSettingsMap["properties"] = *schemaPropsPtr
 	resourcedata.SetMapValueIfNotNil(updateContactColumnActionSettingsMap, "update_option", updateContactColumnActionSettings.UpdateOption)
 
 	updateContactColumnActionSettingsSet.Add(updateContactColumnActionSettingsMap)
