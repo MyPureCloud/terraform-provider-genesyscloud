@@ -13,8 +13,6 @@ import (
 
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
-	routingSkill "terraform-provider-genesyscloud/genesyscloud/routing_skill"
-
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
@@ -37,18 +35,7 @@ func getAllAuthOutboundRuleset(ctx context.Context, clientConfig *platformclient
 		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get rulesets error: %s", rsErr), resp)
 	}
 
-	// DEVTOOLING-319: filters rule sets by removing the ones that reference skills that no longer exist in GC
-	skillExporter := routingSkill.RoutingSkillExporter()
-	skillMap, skillErr := skillExporter.GetResourcesFunc(ctx)
-	if skillErr != nil {
-		return nil, util.BuildDiagnosticError(resourceName, fmt.Sprintf("Failed to get skill resources"), fmt.Errorf("%v", skillErr))
-	}
-	filteredRuleSets, filterErr := filterOutboundRulesets(*rulesets, skillMap)
-	if filterErr != nil {
-		return nil, util.BuildDiagnosticError(resourceName, fmt.Sprintf("Failed to filter outbound rulesets"), fmt.Errorf("%v", filterErr))
-	}
-
-	for _, ruleset := range filteredRuleSets {
+	for _, ruleset := range *rulesets {
 		log.Printf("Dealing with ruleset id : %s", *ruleset.Id)
 		resources[*ruleset.Id] = &resourceExporter.ResourceMeta{Name: *ruleset.Name}
 	}
@@ -141,27 +128,4 @@ func deleteOutboundRuleset(ctx context.Context, d *schema.ResourceData, meta int
 		}
 		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Outbound Ruleset %s still exists", d.Id()), resp))
 	})
-}
-
-// filterOutboundRulesets filters rule sets by removing the ones that reference skills that no longer exist in GC
-func filterOutboundRulesets(ruleSets []platformclientv2.Ruleset, skillMap resourceExporter.ResourceIDMetaMap) ([]platformclientv2.Ruleset, diag.Diagnostics) {
-	var filteredRuleSets []platformclientv2.Ruleset
-	log.Printf("Filtering outbound rule sets")
-
-	for _, ruleSet := range ruleSets {
-		var foundDeleted bool
-		for _, rule := range *ruleSet.Rules {
-			if doesRuleActionsRefDeletedSkill(rule, skillMap) || doesRuleConditionsRefDeletedSkill(rule, skillMap) {
-				foundDeleted = true
-				break
-			}
-		}
-		if foundDeleted {
-			log.Printf("Removing ruleset id '%s'", *ruleSet.Id)
-		} else {
-			// No references to a deleted skill in the ruleset, keep it
-			filteredRuleSets = append(filteredRuleSets, ruleSet)
-		}
-	}
-	return filteredRuleSets, nil
 }

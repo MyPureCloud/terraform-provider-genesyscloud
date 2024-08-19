@@ -135,6 +135,7 @@ func New(version string, providerResources map[string]*schema.Resource, provider
 								DefaultFunc: schema.EnvDefaultFunc("GENESYSCLOUD_PROXY_PROTOCOL", nil),
 								Description: "Protocol for the proxy can be set with the `GENESYSCLOUD_PROXY_PROTOCOL` environment variable.",
 							},
+
 							"auth": {
 								Type:     schema.TypeSet,
 								Optional: true,
@@ -175,25 +176,11 @@ type ProviderMeta struct {
 
 func configure(version string) schema.ConfigureContextFunc {
 	return func(context context.Context, data *schema.ResourceData) (interface{}, diag.Diagnostics) {
-		// Initialize a single client if we have an access token
-		accessToken := data.Get("access_token").(string)
-		if accessToken != "" {
-			Once.Do(func() {
-				sdkConfig := platformclientv2.GetDefaultConfiguration()
-				_ = InitClientConfig(data, version, sdkConfig)
-
-				SdkClientPool = &SDKClientPool{
-					Pool: make(chan *platformclientv2.Configuration, 1),
-				}
-				SdkClientPool.Pool <- sdkConfig
-			})
-		} else {
-			// Initialize the SDK Client pool
-			err := InitSDKClientPool(data.Get("token_pool_size").(int), version, data)
-			if err != nil {
-				return nil, err
-			}
+		err := InitSDKClientPool(data.Get("token_pool_size").(int), version, data)
+		if err != nil {
+			return nil, err
 		}
+
 		return &ProviderMeta{
 			Version:      version,
 			ClientConfig: platformclientv2.GetDefaultConfiguration(),

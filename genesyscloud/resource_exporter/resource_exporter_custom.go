@@ -162,9 +162,6 @@ func RuleSetSkillPropertyResolver(configMap map[string]interface{}, exporters ma
 				if exists {
 					exportId = value.Name
 					sanitisedSkillIds = append(sanitisedSkillIds, fmt.Sprintf("${genesyscloud_routing_skill.%s.id}", exportId))
-				} else {
-					log.Printf("Skill '%s' does not exist in the skill map.\n", skillId)
-					sanitisedSkillIds = append(sanitisedSkillIds, fmt.Sprintf("skill_%s_not_found", skillId))
 				}
 			}
 
