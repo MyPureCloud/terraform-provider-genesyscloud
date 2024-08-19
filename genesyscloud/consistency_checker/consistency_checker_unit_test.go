@@ -16,12 +16,16 @@ var friendBlock = &schema.Resource{
 	Schema: map[string]*schema.Schema{
 		"name": {
 			Type:     schema.TypeString,
+			Required: true,
+		},
+		"age": {
+			Type:     schema.TypeInt,
 			Optional: true,
 		},
 		"computed_value": {
 			Type:        schema.TypeString,
-			Computed:    true,
-			Description: "Used to test a nested computed value",
+			Optional:    true,
+			Description: "Used to test a computed value at the nested level",
 		},
 	},
 }
@@ -59,6 +63,11 @@ func resourcePerson() *schema.Resource {
 							Required: true,
 							Elem:     &schema.Schema{Type: schema.TypeString},
 						},
+						"computed_value": {
+							Type:        schema.TypeString,
+							Computed:    true,
+							Description: "Used the test a computed value at the top level",
+						},
 					},
 				},
 			},
@@ -72,17 +81,19 @@ func resourcePerson() *schema.Resource {
 }
 
 type siblingStruct struct {
-	siblingId    string
-	siblingNames []string
+	siblingId     string
+	siblingNames  []string
+	computedValue string
 }
 
 type friendStruct struct {
 	friendName    string
+	friendAge     int
 	computedValue string
 }
 
 // TestUnitConsistencyCheckerBlockBasic will test the consistency checkers ability to handle
-// when a property changes unexpectedly
+// when a top level property changes unexpectedly
 func TestUnitConsistencyCheckerBlockBasic(t *testing.T) {
 	// Create a sample resource to use to test the consistency checker
 	tId := uuid.NewString()
@@ -98,6 +109,7 @@ func TestUnitConsistencyCheckerBlockBasic(t *testing.T) {
 	}
 	friend := friendStruct{
 		friendName: "Tom",
+		friendAge:  20,
 	}
 
 	ctx := context.Background()
@@ -126,28 +138,25 @@ func TestUnitConsistencyCheckerBlockBasic(t *testing.T) {
 }
 
 // TestUnitConsistencyCheckerBlockBasic will test the consistency checkers ability to handle
-// computed values at any level (top level or nested)
+// computed values (top-level and nested computed values)
 func TestUnitConsistencyCheckerComputed(t *testing.T) {
 	// Create a sample resource to use to test the consistency checker
 	tId := uuid.NewString()
 	tName := "Sample name"
 	tAge := 20
-	tSibling1 := siblingStruct{
+	tSibling := siblingStruct{
 		siblingId:    uuid.NewString(),
 		siblingNames: []string{"Bob", "Tod", "Jr"},
 	}
-	tSibling2 := siblingStruct{
-		siblingId:    uuid.NewString(),
-		siblingNames: []string{"Mary", "Beth", "Smith"},
-	}
-	friend := friendStruct{
+	tFriend := friendStruct{
 		friendName: "Tom",
+		friendAge:  20,
 	}
 
 	ctx := context.Background()
 
 	resourceSchema := resourcePerson().Schema
-	resourceDataMap := buildPersonResourceMap(tId, tName, tAge, []siblingStruct{tSibling1, tSibling2}, []friendStruct{friend})
+	resourceDataMap := buildPersonResourceMap(tId, tName, tAge, []siblingStruct{tSibling}, []friendStruct{tFriend})
 
 	d := schema.TestResourceDataRaw(t, resourceSchema, resourceDataMap)
 	d.SetId(tId)
@@ -156,6 +165,13 @@ func TestUnitConsistencyCheckerComputed(t *testing.T) {
 
 	// Set the computed values and run the consistency checker
 	_ = d.Set("computed_value", "012345")
+
+	tSibling.computedValue = "13579"
+	_ = d.Set("siblings", flattenSiblings([]siblingStruct{tSibling}))
+
+	// tFriend.computedValue = "abcde"
+	// _ = d.Set("friends", flattenFriends([]friendStruct{tFriend}))
+
 	err := retry.RetryContext(ctx, time.Second*5, func() *retry.RetryError {
 		return cc.CheckState(d) // Consistency checker should handle the computed value and not return an error
 	})
@@ -165,8 +181,8 @@ func TestUnitConsistencyCheckerComputed(t *testing.T) {
 }
 
 // TestUnitConsistencyCheckerBlocks will test the consistency checkers ability to handle
-// nested blocks that change unexpectedly
-func TestUnitConsistencyCheckerNestedBlocks(t *testing.T) {
+// schema.List nested blocks that change unexpectedly
+func TestUnitConsistencyCheckerNestedBlocksLists(t *testing.T) {
 	// Create a sample resource to use to test the consistency checker
 	tId := uuid.NewString()
 	tName := "Sample name"
@@ -228,7 +244,75 @@ func TestUnitConsistencyCheckerNestedBlocks(t *testing.T) {
 	err = retry.RetryContext(ctx, time.Second*5, func() *retry.RetryError {
 		return cc.CheckState(d)
 	})
-	assert.ErrorContains(t, err, "mismatch on attribute") // Can't guarantee what attribute will be checked first we can't check for specific error message
+	assert.ErrorContains(t, err, "mismatch on attribute") // Can't guarantee what attribute will be checked first so we can't check for specific error message
+}
+
+// TestUnitConsistencyCheckerBlocks will test the consistency checkers ability to handle
+// schema.Set nested blocks that change unexpectedly
+func TestUnitConsistencyCheckerNestedBlocksSets(t *testing.T) {
+	// Create a sample resource to use to test the consistency checker
+	tId := uuid.NewString()
+	tName := "Sample name"
+	tAge := 20
+	tSibling1 := siblingStruct{
+		siblingId:    "01234",
+		siblingNames: []string{"Bob", "Tod", "Jr"},
+	}
+	tFriend1 := friendStruct{
+		friendName: "Tom",
+		friendAge:  20,
+	}
+	tFriend2 := friendStruct{
+		friendName: "James",
+		friendAge:  25,
+	}
+	tFriend3 := friendStruct{
+		friendName: "Glenn",
+		friendAge:  30,
+	}
+
+	ctx := context.Background()
+
+	resourceSchema := resourcePerson().Schema
+	resourceDataMap := buildPersonResourceMap(tId, tName, tAge, []siblingStruct{tSibling1}, []friendStruct{tFriend1, tFriend2})
+
+	d := schema.TestResourceDataRaw(t, resourceSchema, resourceDataMap)
+	d.SetId(tId)
+
+	cc := NewConsistencyCheck(ctx, d, nil, resourcePerson(), 5, "person")
+
+	// Reverse the order of the friend blocks and run consistency checker
+	_ = d.Set("friends", flattenFriends([]friendStruct{tFriend2, tFriend1}))
+	err := retry.RetryContext(ctx, time.Second*5, func() *retry.RetryError {
+		return cc.CheckState(d) // Consistency checker should handle the re-order and not return an error
+	})
+
+	assert.Nilf(t, err, "%s", err)
+
+	// Remove a friend block and run consistency checker
+	_ = d.Set("friends", flattenFriends([]friendStruct{tFriend1}))
+	err = retry.RetryContext(ctx, time.Second*5, func() *retry.RetryError {
+		return cc.CheckState(d)
+	})
+
+	expectedErr := "mismatch on attribute friends.#:\nexpected value: 2\nactual value: 1"
+	assert.Equal(t, err.Error(), expectedErr, fmt.Sprintf("Incorrect error:\nExpect Error: %s\nActual Error: %s", expectedErr, err))
+
+	// Add a friend block and run consistency checker
+	_ = d.Set("friends", flattenFriends([]friendStruct{tFriend1, tFriend2, tFriend3}))
+	err = retry.RetryContext(ctx, time.Second*5, func() *retry.RetryError {
+		return cc.CheckState(d)
+	})
+
+	expectedErr = "mismatch on attribute friends.#:\nexpected value: 2\nactual value: 3"
+	assert.Equal(t, err.Error(), expectedErr, fmt.Sprintf("Incorrect error:\nExpect Error: %s\nActual Error: %s", expectedErr, err))
+
+	//Change a friend block and run consistency checker
+	_ = d.Set("friends", flattenFriends([]friendStruct{tFriend1, tFriend3}))
+	err = retry.RetryContext(ctx, time.Second*5, func() *retry.RetryError {
+		return cc.CheckState(d)
+	})
+	assert.ErrorContains(t, err, "mismatch on attribute") // Can't guarantee what attribute will be checked first so we can't check for specific error message
 }
 
 func buildPersonResourceMap(tId string, tName string, tAge int, tSiblings []siblingStruct, tFriends []friendStruct) map[string]interface{} {
@@ -237,7 +321,7 @@ func buildPersonResourceMap(tId string, tName string, tAge int, tSiblings []sibl
 		"name":     tName,
 		"age":      tAge,
 		"siblings": flattenSiblings(tSiblings),
-		"friends":  flattenFriends(tFriends),
+		"friends":  generateFriendsBlocks(tFriends),
 	}
 	return resourceDataMap
 }
@@ -261,13 +345,48 @@ func flattenSiblings(siblings []siblingStruct) []interface{} {
 	return siblingsList
 }
 
-func flattenFriends(friends []friendStruct) *schema.Set {
-	friendSet := schema.NewSet(schema.HashResource(friendBlock), []interface{}{})
+func generateFriendsBlocks(friends []friendStruct) []interface{} {
+	if len(friends) == 0 {
+		return nil
+	}
+
+	friendSet := []interface{}{}
 
 	for _, friend := range friends {
 		var friendMap = make(map[string]interface{})
 
-		friendMap["name"] = friend.friendName
+		if friend.friendName != "" {
+			friendMap["name"] = friend.friendName
+		}
+		if friend.friendAge != 0 {
+			friendMap["age"] = friend.friendAge
+		}
+		if friend.computedValue != "" {
+			friendMap["computed_value"] = friend.computedValue
+		}
+
+		friendSet = append(friendSet, friendMap)
+	}
+
+	return friendSet
+}
+
+func flattenFriends(friends []friendStruct) *schema.Set {
+	if len(friends) == 0 {
+		return nil
+	}
+
+	friendSet := schema.NewSet(schema.HashResource(friendBlock), nil)
+
+	for _, friend := range friends {
+		var friendMap = make(map[string]interface{})
+
+		if friend.friendName != "" {
+			friendMap["name"] = friend.friendName
+		}
+		if friend.friendAge != 0 {
+			friendMap["age"] = friend.friendAge
+		}
 		if friend.computedValue != "" {
 			friendMap["computed_value"] = friend.computedValue
 		}
