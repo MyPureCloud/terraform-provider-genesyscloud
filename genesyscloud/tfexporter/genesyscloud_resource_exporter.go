@@ -862,7 +862,9 @@ func (g *GenesysCloudResourceExporter) chainDependencies(
 		}
 	}
 
-	// We keep chaining the dependencies until the filterListById list isn't empty or the same as the last time (IncludeIds)
+	// We keep chaining the dependencies until the filterListById list isn't empty or is equivalent to the same
+	// as the last IncludeIds list that was processed (this means that the IncludeIds cannot be found or resolved
+	// if we keep coming back with the same list of IncludeIds).
 	if len(filterListById) > 0 && !lists.AreEquivalent(g.resourceFiltersLists.IncludeIds, filterListById) {
 		g.resourceFiltersLists.IncludeIds = filterListById
 		g.buildSecondDeps = nil
