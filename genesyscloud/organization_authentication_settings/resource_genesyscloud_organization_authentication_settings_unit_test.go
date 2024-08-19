@@ -50,7 +50,7 @@ func TestUnitResourceOrganizationAuthenticationSettingsRead(t *testing.T) {
 	}
 	testOrgAuthSettings := generateAuthSettingsData(domainAllowList, ipAllowList)
 	orgAuthProxy := &orgAuthSettingsProxy{}
-	orgAuthProxy.getOrgAuthSettingsByIdAttr = func(ctx context.Context, o *orgAuthSettingsProxy, id string) (*platformclientv2.Orgauthsettings, *platformclientv2.APIResponse, error) {
+	orgAuthProxy.getOrgAuthSettingsAttr = func(ctx context.Context, o *orgAuthSettingsProxy) (*platformclientv2.Orgauthsettings, *platformclientv2.APIResponse, error) {
 		orgAuthSettings := &testOrgAuthSettings
 
 		apiResponse := &platformclientv2.APIResponse{StatusCode: http.StatusOK}
@@ -92,7 +92,7 @@ func TestUnitResourceOrganizationAuthenticationSettingsUpdate(t *testing.T) {
 	testOrgAuthSettings := generateAuthSettingsData(domainAllowList, ipAllowList)
 
 	orgAuthProxy := &orgAuthSettingsProxy{}
-	orgAuthProxy.getOrgAuthSettingsByIdAttr = func(ctx context.Context, p *orgAuthSettingsProxy, id string) (*platformclientv2.Orgauthsettings, *platformclientv2.APIResponse, error) {
+	orgAuthProxy.getOrgAuthSettingsAttr = func(ctx context.Context, p *orgAuthSettingsProxy) (*platformclientv2.Orgauthsettings, *platformclientv2.APIResponse, error) {
 		orgAuthSettings := &testOrgAuthSettings
 
 		apiResponse := &platformclientv2.APIResponse{StatusCode: http.StatusOK}

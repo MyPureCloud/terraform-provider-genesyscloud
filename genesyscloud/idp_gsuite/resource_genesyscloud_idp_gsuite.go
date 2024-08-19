@@ -28,6 +28,10 @@ The resource_genesyscloud_idp_gsuite.go contains all of the methods that perform
 
 // getAllAuthIdpGsuite retrieves all of the idp gsuite via Terraform in the Genesys Cloud and is used for the exporter
 func getAllAuthIdpGsuites(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+	// Although this resource typically has only a single instance,
+	// we are attempting to fetch the data from the API in order to
+	// verify the user's permission to access this resource's API endpoint(s).
+
 	proxy := getIdpGsuiteProxy(clientConfig)
 	resources := make(resourceExporter.ResourceIDMetaMap)
 
