@@ -297,6 +297,16 @@ func updateQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		MemberGroups:                 &memberGroups,
 	}
 
+	/*
+	 DEVTOOLING-751: If conditional group routing rules and outbound email address are managed by their independent resource
+	 they are being removed when the parent queue is updated since the update body does not contain them.
+	 If the independent resources are enabled, pass in the current OEA and CGR to the update queue so they are not removed
+	*/
+	currentQueue, resp, err := routingAPI.GetRoutingQueue(d.Id())
+	if err != nil {
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get queue %s for update, error: %s", *updateQueue.Name, err), resp)
+	}
+
 	if exists := featureToggles.CSGToggleExists(); !exists {
 		conditionalGroupRouting, diagErr := buildSdkConditionalGroupRouting(d)
 		if diagErr != nil {
@@ -305,12 +315,16 @@ func updateQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		updateQueue.ConditionalGroupRouting = conditionalGroupRouting
 	} else {
 		log.Printf("%s is set, not updating conditional_group_routing_rules attribute in routing_queue %s resource", featureToggles.CSGToggleName(), d.Id())
+		log.Println(currentQueue.ConditionalGroupRouting)
+		updateQueue.ConditionalGroupRouting = currentQueue.ConditionalGroupRouting
 	}
 
 	if exists := featureToggles.OEAToggleExists(); !exists {
 		updateQueue.OutboundEmailAddress = buildSdkQueueEmailAddress(d)
 	} else {
-		log.Printf("%s is set, not creating outbound_email_address attribute in routing_queue %s resource", featureToggles.OEAToggleName(), d.Id())
+		log.Printf("%s is set, not updating outbound_email_address attribute in routing_queue %s resource", featureToggles.OEAToggleName(), d.Id())
+		log.Println(currentQueue.OutboundMessagingAddresses)
+		updateQueue.OutboundMessagingAddresses = currentQueue.OutboundMessagingAddresses
 	}
 
 	log.Printf("Updating queue %s", *updateQueue.Name)
@@ -319,8 +333,8 @@ func updateQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		updateQueue.ScoringMethod = &scoringMethod
 	}
 
-	_, resp, err := routingAPI.PutRoutingQueue(d.Id(), updateQueue)
-
+	log.Println(updateQueue.String())
+	_, resp, err = routingAPI.PutRoutingQueue(d.Id(), updateQueue)
 	if err != nil {
 		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update queue %s error: %s", *updateQueue.Name, err), resp)
 	}
