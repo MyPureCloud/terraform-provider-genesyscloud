@@ -109,12 +109,6 @@ func (cc *ConsistencyCheck) CheckState(currentState *schema.ResourceData) *retry
 		return nil
 	}
 
-	if featureToggles.CCToggleExists() {
-		log.Printf("%s is set, writing consistency errors to consistency-errors.log.json", featureToggles.CCToggleName())
-	} else {
-		log.Printf("%s is not set, consistency checker behaving as default", featureToggles.CCToggleName())
-	}
-
 	resourceConfig := &terraform.ResourceConfig{
 		ComputedKeys: []string{},
 		Config:       cc.originalStateMap,
@@ -172,6 +166,8 @@ func (cc *ConsistencyCheck) handleError(attribute string, originalValue string, 
 	})
 
 	if exists := featureToggles.CCToggleExists(); cc.checks >= cc.maxStateChecks && exists {
+		log.Printf("%s is set, writing consistency errors to consistency-errors.log.json", featureToggles.CCToggleName())
+
 		cc.writeConsistencyErrorToFile(err)
 		return nil
 	}
