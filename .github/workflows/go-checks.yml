@@ -45,6 +45,17 @@ jobs:
               git status
               exit 1
           fi
+      
+      - name: Fmt
+        run: |
+          go fmt ./genesyscloud/...
+          if [[ -n $(git status -s) ]]; then
+              echo "go fmt produced changes:\n"
+              git status
+
+              echo "Please run 'go fmt ./genesyscloud/...' with go version 1.20 and commit these changes."
+              exit 1
+          fi
 
       - name: Vet
         run: |
