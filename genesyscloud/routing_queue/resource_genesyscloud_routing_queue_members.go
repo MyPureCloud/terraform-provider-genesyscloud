@@ -18,6 +18,61 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
 )
 
+var ctx = context.Background()
+
+// postRoutingQueueMembers allows up to 100 bulk Member addition/removal per call
+func postRoutingQueueMembers(queueID string, membersToUpdate []string, remove bool, proxy *RoutingQueueProxy) diag.Diagnostics {
+	// Generic call to prepare chunks for the Update. Takes in three args
+	// 1. MemberstoUpdate 2. The Entity prepare func for the update 3. Chunk Size
+	if len(membersToUpdate) > 0 {
+		chunks := chunksProcess.ChunkItems(membersToUpdate, platformWritableEntityFunc, 100)
+
+		chunkProcessor := func(chunk []platformclientv2.Writableentity) diag.Diagnostics {
+			resp, err := proxy.addOrRemoveMembers(ctx, queueID, chunk, remove)
+			if err != nil {
+				return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update members in queue %s error: %s", queueID, err), resp)
+			}
+			return nil
+		}
+		// Generic Function call which takes in the chunks and the processing function
+		return chunksProcess.ProcessChunks(chunks, chunkProcessor)
+	}
+	return nil
+}
+
+func getRoutingQueueMembers(queueID string, memberBy string, sdkConfig *platformclientv2.Configuration) ([]platformclientv2.Queuemember, diag.Diagnostics) {
+	proxy := GetRoutingQueueProxy(sdkConfig)
+	var members []platformclientv2.Queuemember
+
+	// Need to call this method to find the member count for a queue. GetRoutingQueueMembers does not return a `total` property for us to use.
+	queue, resp, err := proxy.getRoutingQueueById(ctx, queueID)
+	if err != nil {
+		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to find queue %s error: %s", queueID, err), resp)
+	}
+
+	queueMembers := *queue.MemberCount
+	log.Printf("%d members belong to queue %s", queueMembers, queueID)
+
+	for pageNum := 1; ; pageNum++ {
+		users, resp, err := sdkGetRoutingQueueMembers(queueID, memberBy, pageNum, 100, sdkConfig)
+		if err != nil || resp.StatusCode != http.StatusOK {
+			return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to query users for queue %s error: %s", queueID, err), resp)
+		}
+
+		if users == nil || users.Entities == nil || len(*users.Entities) == 0 {
+			membersFound := len(members)
+			log.Printf("%d queue members found for queue %s", membersFound, queueID)
+
+			if membersFound != queueMembers {
+				log.Printf("Member count is not equal to queue member found for queue %s, Correlation Id: %s", queueID, resp.CorrelationID)
+			}
+			return members, nil
+		}
+
+		members = append(members, *users.Entities...)
+	}
+}
+
 func updateQueueMembers(d *schema.ResourceData, sdkConfig *platformclientv2.Configuration) diag.Diagnostics {
 	proxy := GetRoutingQueueProxy(sdkConfig)
 
@@ -35,14 +90,11 @@ func updateQueueMembers(d *schema.ResourceData, sdkConfig *platformclientv2.Conf
 
 	log.Printf("Updating members for Queue %s", d.Get("name"))
 
-	newUserRingNums := make(map[string]int)
-	memberList := membersSet.List()
-	newUserIds := make([]string, len(memberList))
-
-	for i, member := range memberList {
-		memberMap := member.(map[string]interface{})
-		newUserIds[i] = memberMap["user_id"].(string)
-		newUserRingNums[newUserIds[i]] = memberMap["ring_num"].(int)
+	// Get new and Existing users and ring nums
+	newUserIds, newUserRingNums := getNewUsersAndRingNums(membersSet)
+	oldUserIds, oldUserRingNums, err := getExistingUsersAndRingNums(d.Id(), sdkConfig)
+	if err != nil {
+		return err
 	}
 
 	if len(newUserIds) > 0 {
@@ -61,56 +113,14 @@ func updateQueueMembers(d *schema.ResourceData, sdkConfig *platformclientv2.Conf
 		}
 	}
 
-	oldSdkUsers, err := getRoutingQueueMembers(d.Id(), "user", sdkConfig)
-	if err != nil {
-		return err
-	}
-
-	oldUserIds := make([]string, len(oldSdkUsers))
-	oldUserRingNums := make(map[string]int)
-
-	for i, user := range oldSdkUsers {
-		oldUserIds[i] = *user.Id
-		oldUserRingNums[oldUserIds[i]] = *user.RingNumber
-	}
-
-	// Remove From Queue
-	if len(oldUserIds) > 0 {
-		usersToRemove := lists.SliceDifference(oldUserIds, newUserIds)
-		err := postRoutingQueueMembers(d.Id(), usersToRemove, true, proxy)
-		if err != nil {
-			return err
-		}
-	}
-
-	// Add To Queue
-	if len(newUserIds) > 0 {
-		usersToAdd := lists.SliceDifference(newUserIds, oldUserIds)
-		err := postRoutingQueueMembers(d.Id(), usersToAdd, false, proxy)
-		if err != nil {
-			return err
-		}
+	// Check for members to add or remove
+	if diagErr := addOrRemoveMembers(d.Id(), oldUserIds, newUserIds, proxy); err != nil {
+		return diagErr
 	}
 
 	// Check for ring numbers to update
-	for userID, newNum := range newUserRingNums {
-		if oldNum, found := oldUserRingNums[userID]; found {
-			if newNum != oldNum {
-				log.Printf("updating ring_num for user %s because it has updated. New: %v, Old: %v", userID, newNum, oldNum)
-				// Number changed. Update ring number
-				err := updateQueueUserRingNum(d.Id(), userID, newNum, sdkConfig)
-				if err != nil {
-					return err
-				}
-			}
-		} else if newNum != 1 {
-			// New queue member. Update ring num if not set to the default of 1
-			log.Printf("updating user %s ring_num because it is not the default 1", userID)
-			err := updateQueueUserRingNum(d.Id(), userID, newNum, sdkConfig)
-			if err != nil {
-				return err
-			}
-		}
+	if diagErr := updateRingNumbers(d.Id(), newUserRingNums, oldUserRingNums, sdkConfig); diagErr != nil {
+		return diagErr
 	}
 
 	log.Printf("Members updated for Queue %s", d.Get("name"))
@@ -145,22 +155,21 @@ func removeAllExistingUserMembersFromQueue(queueId string, sdkConfig *platformcl
 	return nil
 }
 
-// postRoutingQueueMembers allows up to 100 bulk Member addition/removal per call
-func postRoutingQueueMembers(queueID string, membersToUpdate []string, remove bool, proxy *RoutingQueueProxy) diag.Diagnostics {
-	// Generic call to prepare chunks for the Update. Takes in three args
-	// 1. MemberstoUpdate 2. The Entity prepare func for the update 3. Chunk Size
-	if len(membersToUpdate) > 0 {
-		chunks := chunksProcess.ChunkItems(membersToUpdate, platformWritableEntityFunc, 100)
-
-		chunkProcessor := func(chunk []platformclientv2.Writableentity) diag.Diagnostics {
-			resp, err := proxy.addOrRemoveMembers(context.TODO(), queueID, chunk, remove)
-			if err != nil {
-				return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update members in queue %s error: %s", queueID, err), resp)
+func updateRingNumbers(queueID string, newUserRingNums, oldUserRingNums map[string]int, sdkConfig *platformclientv2.Configuration) diag.Diagnostics {
+	for userID, newNum := range newUserRingNums {
+		if oldNum, found := oldUserRingNums[userID]; found {
+			if newNum != oldNum {
+				log.Printf("updating ring_num for user %s because it has updated. New: %v, Old: %v", userID, newNum, oldNum)
+				if err := updateQueueUserRingNum(queueID, userID, newNum, sdkConfig); err != nil {
+					return err
+				}
 			}
-			return nil
+		} else if newNum != 1 {
+			log.Printf("updating user %s ring_num because it is not the default 1", userID)
+			if err := updateQueueUserRingNum(queueID, userID, newNum, sdkConfig); err != nil {
+				return err
+			}
 		}
-		// Generic Function call which takes in the chunks and the processing function
-		return chunksProcess.ProcessChunks(chunks, chunkProcessor)
 	}
 	return nil
 }
@@ -169,7 +178,7 @@ func updateQueueUserRingNum(queueID string, userID string, ringNum int, sdkConfi
 	proxy := GetRoutingQueueProxy(sdkConfig)
 
 	log.Printf("Updating ring number for queue %s user %s", queueID, userID)
-	resp, err := proxy.updateRoutingQueueMember(context.TODO(), queueID, userID, platformclientv2.Queuemember{
+	resp, err := proxy.updateRoutingQueueMember(ctx, queueID, userID, platformclientv2.Queuemember{
 		Id:         &userID,
 		RingNumber: &ringNum,
 	})
@@ -177,39 +186,6 @@ func updateQueueUserRingNum(queueID string, userID string, ringNum int, sdkConfi
 		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update ring number for queue %s user %s error: %s", queueID, userID, err), resp)
 	}
 	return nil
-}
-
-func getRoutingQueueMembers(queueID string, memberBy string, sdkConfig *platformclientv2.Configuration) ([]platformclientv2.Queuemember, diag.Diagnostics) {
-	proxy := GetRoutingQueueProxy(sdkConfig)
-	var members []platformclientv2.Queuemember
-
-	// Need to call this method to find the member count for a queue. GetRoutingQueueMembers does not return a `total` property for us to use.
-	queue, resp, err := proxy.getRoutingQueueById(context.TODO(), queueID)
-	if err != nil {
-		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to find queue %s error: %s", queueID, err), resp)
-	}
-
-	queueMembers := *queue.MemberCount
-	log.Printf("%d members belong to queue %s", queueMembers, queueID)
-
-	for pageNum := 1; ; pageNum++ {
-		users, resp, err := sdkGetRoutingQueueMembers(queueID, memberBy, pageNum, 100, sdkConfig)
-		if err != nil || resp.StatusCode != http.StatusOK {
-			return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to query users for queue %s error: %s", queueID, err), resp)
-		}
-
-		if users == nil || users.Entities == nil || len(*users.Entities) == 0 {
-			membersFound := len(members)
-			log.Printf("%d queue members found for queue %s", membersFound, queueID)
-
-			if membersFound != queueMembers {
-				log.Printf("Member count is not equal to queue member found for queue %s, Correlation Id: %s", queueID, resp.CorrelationID)
-			}
-			return members, nil
-		}
-
-		members = append(members, *users.Entities...)
-	}
 }
 
 func sdkGetRoutingQueueMembers(queueID, memberBy string, pageNumber, pageSize int, sdkConfig *platformclientv2.Configuration) (*platformclientv2.Queuememberentitylisting, *platformclientv2.APIResponse, error) {
@@ -269,5 +245,54 @@ func verifyUserIsNotGroupMemberOfQueue(queueId, userId string, members []platfor
 	}
 
 	log.Printf("User %s not found as group member in queue %s", userId, queueId)
+	return nil
+}
+
+func getNewUsersAndRingNums(membersSet *schema.Set) ([]string, map[string]int) {
+	newUserRingNums := make(map[string]int)
+	memberList := membersSet.List()
+	newUserIds := make([]string, len(memberList))
+
+	for i, member := range memberList {
+		memberMap := member.(map[string]interface{})
+		newUserIds[i] = memberMap["user_id"].(string)
+		newUserRingNums[newUserIds[i]] = memberMap["ring_num"].(int)
+	}
+	return newUserIds, newUserRingNums
+}
+
+func getExistingUsersAndRingNums(queueID string, sdkConfig *platformclientv2.Configuration) ([]string, map[string]int, diag.Diagnostics) {
+	oldSdkUsers, err := getRoutingQueueMembers(queueID, "user", sdkConfig)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	oldUserIds := make([]string, len(oldSdkUsers))
+	oldUserRingNums := make(map[string]int)
+
+	for i, user := range oldSdkUsers {
+		oldUserIds[i] = *user.Id
+		oldUserRingNums[oldUserIds[i]] = *user.RingNumber
+	}
+
+	return oldUserIds, oldUserRingNums, nil
+}
+
+func addOrRemoveMembers(queueId string, oldUserIds, newUserIds []string, proxy *RoutingQueueProxy) diag.Diagnostics {
+	// Remove From Queue
+	if len(oldUserIds) > 0 {
+		usersToRemove := lists.SliceDifference(oldUserIds, newUserIds)
+		if err := postRoutingQueueMembers(queueId, usersToRemove, true, proxy); err != nil {
+			return err
+		}
+	}
+
+	// Add To Queue
+	if len(newUserIds) > 0 {
+		usersToAdd := lists.SliceDifference(newUserIds, oldUserIds)
+		if err := postRoutingQueueMembers(queueId, usersToAdd, false, proxy); err != nil {
+			return err
+		}
+	}
 	return nil
 }

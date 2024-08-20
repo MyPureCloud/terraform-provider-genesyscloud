@@ -49,8 +49,9 @@ func normalizeQueueName(queueName string) string {
 func hydrateRoutingQueueCacheFn(c *rc.DataSourceCache) error {
 	log.Printf("hydrating cache for data source genesyscloud_routing_queues")
 	proxy := GetRoutingQueueProxy(c.ClientConfig)
+	ctx := context.Background()
 
-	allQueues, resp, err := proxy.GetAllRoutingQueues(context.TODO(), "")
+	allQueues, resp, err := proxy.GetAllRoutingQueues(ctx, "")
 	if err != nil {
 		return fmt.Errorf("failed to get routing queues %s %s", err, resp)
 	}

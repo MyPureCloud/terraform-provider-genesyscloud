@@ -357,13 +357,13 @@ func TestAccResourceRoutingQueueConditionalRouting(t *testing.T) {
 					groupName,
 					group.GenerateGroupOwners("genesyscloud_user."+testUserResource+".id"),
 				) + generateRoutingQueueResourceBasic(
-						queueResource2,
-						queueName2,
-					) + routingSkillGroup.GenerateRoutingSkillGroupResourceBasic(
-						skillGroupResourceId,
-						skillGroupName,
-						"description",
-					) + GenerateRoutingQueueResource(
+					queueResource2,
+					queueName2,
+				) + routingSkillGroup.GenerateRoutingSkillGroupResourceBasic(
+					skillGroupResourceId,
+					skillGroupName,
+					"description",
+				) + GenerateRoutingQueueResource(
 					queueResource1,
 					queueName1,
 					queueDesc1,
