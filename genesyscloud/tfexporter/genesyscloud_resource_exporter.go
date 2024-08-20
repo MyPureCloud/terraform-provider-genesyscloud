@@ -196,33 +196,41 @@ func NewGenesysCloudResourceExporter(ctx context.Context, d *schema.ResourceData
 
 func computeDependsOn(d *schema.ResourceData) bool {
 	addDependsOn := d.Get("enable_dependency_resolution").(bool)
-	if addDependsOn {
-		if includeFilterResourceTypes, ok := d.GetOk("include_filter_resources"); ok {
-			filter := lists.InterfaceListToStrings(includeFilterResourceTypes.([]interface{}))
-			addDependsOn = len(filter) > 0
-		} else if advancedFilterResourceTypes, ok := d.GetOk("advanced_filter_resources"); ok {
-			exportableResourceTypes := advancedFilterResourceTypes.([]interface{})[0]
-			if exportableResourceTypes == nil {
-				addDependsOn = false
-			} else {
-				resourceTypesMap := exportableResourceTypes.(map[string]interface{})
-				if resourceTypesMap == nil {
-					addDependsOn = false
-				} else {
-					for _, filterItems := range resourceTypesMap {
-						filter := lists.SetToStringList(filterItems.(*schema.Set))
-						if len(*filter) > 0 {
-							addDependsOn = true
-							break
-						}
-					}
-				}
-			}
-		} else {
-			addDependsOn = false
+	if !addDependsOn {
+		return false
+	}
+
+	includeFilterResourceTypes, ok := d.GetOk("include_filter_resources")
+	if ok {
+		filter := lists.InterfaceListToStrings(includeFilterResourceTypes.([]interface{}))
+		if len(filter) > 0 {
+			return true
 		}
 	}
-	return addDependsOn
+
+	advancedFilterResourceTypes, ok := d.GetOk("advanced_filter_resources")
+	if !ok {
+		return false
+	}
+
+	exportableResourceTypes := advancedFilterResourceTypes.([]interface{})[0]
+	if exportableResourceTypes == nil {
+		return false
+	}
+
+	resourceTypesMap, ok := exportableResourceTypes.(map[string]interface{})
+	if !ok || resourceTypesMap == nil {
+		return false
+	}
+
+	for _, filterItems := range resourceTypesMap {
+		filter := lists.SetToStringList(filterItems.(*schema.Set))
+		if len(*filter) > 0 {
+			return true
+		}
+	}
+
+	return false
 }
 
 func (g *GenesysCloudResourceExporter) Export() (diagErr diag.Diagnostics) {
