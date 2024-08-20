@@ -215,7 +215,7 @@ func ValidateResponseAssetName(name interface{}, _ cty.Path) diag.Diagnostics {
 			return diag.Errorf("Error applying regular expression against filename: %v", err)
 		}
 		if !matched {
-			return diag.Errorf("Invalid filename. It must not start with a dot and not end with a forward slash. Whitespace and the following characters are not allowed: \\{^}%s]\">[~<#|", "%`")
+			return diag.Errorf("Invalid filename. It must not start with a dot and not end with a forward slash. The following characters are not allowed: \\{^}%s]\">[~<#|", "%`")
 		}
 		return nil
 	}
