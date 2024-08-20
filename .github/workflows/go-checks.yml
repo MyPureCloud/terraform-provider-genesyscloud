@@ -16,7 +16,7 @@ jobs:
         id: go
 
       - name: Setup Terraform CLI
-        uses: hashicorp/setup-terraform@v3.1.1
+        uses: hashicorp/setup-terraform@v3.1.2
         with:
           terraform_wrapper: false
           terraform_version: ${{ matrix.terraform }}
