@@ -432,7 +432,7 @@ func createRoutingQueueWrapupCodes(queueID string, codesToAdd []string, sdkConfi
 		chunks := chunksProcess.ChunkItems(codesToAdd, platformWrapupCodeReferenceFunc, 100)
 
 		chunkProcessor := func(chunk []platformclientv2.Wrapupcodereference) diag.Diagnostics {
-			_, resp, err := proxy.createRoutingQueueWrapupCode(context.TODO(), queueID, chunk)
+			_, resp, err := proxy.createRoutingQueueWrapupCode(ctx, queueID, chunk)
 			if err != nil {
 				return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update wrapup codes for queue %s error: %s", queueID, err), resp)
 			}
@@ -452,7 +452,7 @@ func updateQueueWrapupCodes(d *schema.ResourceData, sdkConfig *platformclientv2.
 
 		if codesConfig := d.Get("wrapup_codes"); codesConfig != nil {
 			// Get existing codes
-			codes, resp, err := proxy.getAllRoutingQueueWrapupCodes(context.TODO(), d.Id())
+			codes, resp, err := proxy.getAllRoutingQueueWrapupCodes(ctx, d.Id())
 			if err != nil {
 				return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to query wrapup codes for queue %s error: %s", d.Id(), err), resp)
 			}
@@ -464,7 +464,7 @@ func updateQueueWrapupCodes(d *schema.ResourceData, sdkConfig *platformclientv2.
 			// Remove Wrapup Codes
 			if len(codesToRemove) > 0 {
 				for _, codeId := range codesToRemove {
-					resp, err := proxy.deleteRoutingQueueWrapupCode(context.TODO(), d.Id(), codeId)
+					resp, err := proxy.deleteRoutingQueueWrapupCode(ctx, d.Id(), codeId)
 					if err != nil {
 						if util.IsStatus404(resp) {
 							// Ignore missing queue or wrapup code

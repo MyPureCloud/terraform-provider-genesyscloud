@@ -50,11 +50,10 @@ func hydrateRoutingQueueCacheFn(c *rc.DataSourceCache, ctx context.Context) erro
 	log.Printf("hydrating cache for data source genesyscloud_routing_queues")
 	proxy := GetRoutingQueueProxy(c.ClientConfig)
 
-
 	// Newly created resources often aren't returned unless there's a delay
 	time.Sleep(5 * time.Second)
 
-	allQueues, resp, err := proxy.GetAllRoutingQueues(context.TODO(), "")
+	allQueues, resp, err := proxy.GetAllRoutingQueues(ctx, "")
 	if err != nil {
 		return fmt.Errorf("failed to get routing queues %s %s", err, resp)
 	}
