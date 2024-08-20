@@ -97,20 +97,8 @@ func updateQueueMembers(d *schema.ResourceData, sdkConfig *platformclientv2.Conf
 		return err
 	}
 
-	if len(newUserIds) > 0 {
-		log.Printf("Sleeping for 10 seconds")
-		time.Sleep(10 * time.Second)
-
-		members, diagErr := getRoutingQueueMembers(d.Id(), "group", sdkConfig)
-		if diagErr != nil {
-			return diagErr
-		}
-
-		for _, userId := range newUserIds {
-			if err := verifyUserIsNotGroupMemberOfQueue(d.Id(), userId, members); err != nil {
-				return util.BuildDiagnosticError(resourceName, "failed to update queue member: ", err)
-			}
-		}
+	if diagErr := checkUserMembership(d.Id(), newUserIds, sdkConfig); diagErr != nil {
+		return util.BuildDiagnosticError(resourceName, "failed to update queue member: ", diagErr)
 	}
 
 	// Check for members to add or remove
@@ -232,6 +220,25 @@ func sdkGetRoutingQueueMembers(queueID, memberBy string, pageNumber, pageSize in
 		err = json.Unmarshal([]byte(response.RawBody), &successPayload)
 	}
 	return successPayload, response, err
+}
+
+func checkUserMembership(queueId string, newUserIds []string, sdkConfig *platformclientv2.Configuration) error {
+	if len(newUserIds) > 0 {
+		log.Printf("Sleeping for 10 seconds")
+		time.Sleep(10 * time.Second)
+
+		members, diagErr := getRoutingQueueMembers(queueId, "group", sdkConfig)
+		if diagErr != nil {
+			return fmt.Errorf("%v", diagErr)
+		}
+
+		for _, userId := range newUserIds {
+			if err := verifyUserIsNotGroupMemberOfQueue(queueId, userId, members); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }
 
 // verifyUserIsNotGroupMemberOfQueue Search through queue group members to verify that a given user is not a group member

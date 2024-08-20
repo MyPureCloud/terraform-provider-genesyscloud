@@ -52,12 +52,14 @@ type RoutingQueueProxy struct {
 	updateRoutingQueueMemberAttr updateRoutingQueueMemberFunc
 
 	RoutingQueueCache rc.CacheInterface[platformclientv2.Queue]
+	wrapupCodeCache   rc.CacheInterface[platformclientv2.Wrapupcode]
 }
 
 // newRoutingQueuesProxy initializes the routing queue proxy with all the data needed to communicate with Genesys Cloud
 func newRoutingQueuesProxy(clientConfig *platformclientv2.Configuration) *RoutingQueueProxy {
 	api := platformclientv2.NewRoutingApiWithConfig(clientConfig)
 	routingQueueCache := rc.NewResourceCache[platformclientv2.Queue]()
+	wrapupCodeCache := rc.NewResourceCache[platformclientv2.Wrapupcode]()
 
 	return &RoutingQueueProxy{
 		clientConfig: clientConfig,
@@ -78,6 +80,7 @@ func newRoutingQueuesProxy(clientConfig *platformclientv2.Configuration) *Routin
 		updateRoutingQueueMemberAttr: updateRoutingQueueMemberFn,
 
 		RoutingQueueCache: routingQueueCache,
+		wrapupCodeCache:   wrapupCodeCache,
 	}
 }
 
@@ -204,7 +207,7 @@ func getRoutingQueueByNameFn(ctx context.Context, p *RoutingQueueProxy, name str
 	}
 
 	for _, queue := range *queues {
-		if *queue.Name == name {
+		if normalizeQueueName(*queue.Name) == name {
 			log.Printf("Retrieved the routing queue id %s by name %s", *queue.Id, name)
 			return *queue.Id, resp, false, nil
 		}
@@ -229,6 +232,13 @@ func getAllRoutingQueueWrapupCodesFn(ctx context.Context, p *RoutingQueueProxy, 
 		return nil, apiResponse, fmt.Errorf("failed to get routing wrapupcode : %v", err)
 	}
 
+	if rc.GetCacheSize(p.wrapupCodeCache) == *wrapupcodes.Total && rc.GetCacheSize(p.wrapupCodeCache) != 0 {
+		return rc.GetCache(p.wrapupCodeCache), nil, nil
+	} else if rc.GetCacheSize(p.wrapupCodeCache) != *wrapupcodes.Total && rc.GetCacheSize(p.wrapupCodeCache) != 0 {
+		// The cache is populated but not with the right data, clear the cache so it can be re populated
+		p.wrapupCodeCache = rc.NewResourceCache[platformclientv2.Wrapupcode]()
+	}
+
 	if wrapupcodes == nil || wrapupcodes.Entities == nil || len(*wrapupcodes.Entities) == 0 {
 		return &allWrapupcodes, apiResponse, nil
 	}
@@ -249,9 +259,9 @@ func getAllRoutingQueueWrapupCodesFn(ctx context.Context, p *RoutingQueueProxy, 
 	}
 
 	// Cache the routing wrapupcodes resource into the p.routingWrapupcodesCache for later use
-	// for _, wrapupcode := range allWrapupcodes {
-	// 	rc.SetCache(p.routingWrapupcodesCache, *wrapupcode.Id, wrapupcode)
-	// }
+	for _, wrapupcode := range allWrapupcodes {
+		rc.SetCache(p.wrapupCodeCache, *wrapupcode.Id, wrapupcode)
+	}
 
 	return &allWrapupcodes, apiResponse, nil
 }
