@@ -122,6 +122,17 @@ In this case, the `genesyscloud_user` resource type will be excluded, even thoug
 
 As you can see, the `advanced_filter_resources` attribute provides a powerful way to fine-tune your resource filtering, allowing for more complex inclusion and exclusion patterns.
 
+### Filter Name References
+
+When referencing specific resources by name, you can use regular expressions to match against the name of the resource. Note that this will attempt to match against either:
+
+1. The name of the resource as returned via the API, OR
+2. The sanitized label that will be constructed as the second label identifier of the exported Terraform resource.
+
+For more information on the HCL language and what a second label identifier is, refer to the [Terraform documentation on configuration syntax](https://developer.hashicorp.com/terraform/language/syntax/configuration#blocks).
+
+This flexibility in name matching allows for more precise control over resource inclusion or exclusion, especially when dealing with resources that might have different representations in the API versus their Terraform resource labels.
+
 ## Replacing an Exported Resource with a Data Source
 
 In the course of managing your Terraform configuration, circumstances may arise where it becomes desirable to substitute an exported resource with a data source. The following are instances where such an action might be warranted:

@@ -60,7 +60,7 @@ resource "genesyscloud_tf_export" "export" {
 
 ### Optional
 
-- `advanced_filter_resources` (Block List, Max: 1) Advanced filtering handling. Allows filtering to be defined to explicitly include and/or exclude by type and/or name. See export guide for additional information. (see [below for nested schema](#nestedblock--advanced_filter_resources))
+- `advanced_filter_resources` (Block List, Max: 1) Advanced filtering handling. Allows filtering to be defined to explicitly include and/or exclude by type, as well as include and/or exclude by name with support for regular expressions (regexp). See export guide for additional information. (see [below for nested schema](#nestedblock--advanced_filter_resources))
 - `compress` (Boolean) Compress exported results using zip format Defaults to `false`.
 - `directory` (String) Directory where the config and state files will be exported. Defaults to `./genesyscloud`.
 - `enable_dependency_resolution` (Boolean) Adds a "depends_on" attribute to genesyscloud_flow resources with a list of resources that are referenced inside the flow configuration . This also resolves and exports all the dependent resources for any given resource. Defaults to `false`.
@@ -84,8 +84,8 @@ resource "genesyscloud_tf_export" "export" {
 
 Optional:
 
-- `exclude_by_name` (Set of String) A more granular exclusion filter to exclude specific resources by name using the format of 'resourceType::resourceNameRegexp'. Exclusions override inclusions.
+- `exclude_by_name` (Set of String) A more granular exclusion filter to exclude specific resources by name using the format of 'resourceType::resourceNameRegexp'. Regular expressions are supported in the resource name portion. Exclusions override inclusions.
 - `exclude_by_type` (Set of String) Use an exclusion filter to exclude specific resource types. Exclusions override inclusions.
-- `include_by_name` (Set of String) A more granular inclusion filter to include specific resources by name using the format of 'resourceType::resourceNameRegexp'. Exclusions override inclusions.
+- `include_by_name` (Set of String) A more granular inclusion filter to include specific resources by name using the format of 'resourceType::resourceNameRegexp'. Regular expressions are supported in the resource name portion. Exclusions override inclusions.
 - `include_by_type` (Set of String) Use an inclusion filter to include specific resource types. Exclusions override inclusions.
 

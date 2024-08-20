@@ -86,7 +86,7 @@ func ResourceTfExport() *schema.Resource {
 				ConflictsWith: []string{"resource_types", "include_filter_resources", "advanced_filter_resources"},
 			},
 			"advanced_filter_resources": {
-				Description: "Advanced filtering handling. Allows filtering to be defined to explicitly include and/or exclude by type and/or name. See export guide for additional information.",
+				Description: "Advanced filtering handling. Allows filtering to be defined to explicitly include and/or exclude by type, as well as include and/or exclude by name with support for regular expressions (regexp). See export guide for additional information.",
 				Type:        schema.TypeList,
 				MaxItems:    1,
 				Optional:    true,
@@ -107,14 +107,14 @@ func ResourceTfExport() *schema.Resource {
 							ForceNew:    true,
 						},
 						"include_by_name": {
-							Description: "A more granular inclusion filter to include specific resources by name using the format of 'resourceType::resourceNameRegexp'. Exclusions override inclusions.",
+							Description: "A more granular inclusion filter to include specific resources by name using the format of 'resourceType::resourceNameRegexp'. Regular expressions are supported in the resource name portion. Exclusions override inclusions.",
 							Type:        schema.TypeSet,
 							Optional:    true,
 							Elem:        &schema.Schema{Type: schema.TypeString, ValidateFunc: validation.StringMatch(resourceDelimiterRegex, "must include `::` in any strings in this attribute.")},
 							ForceNew:    true,
 						},
 						"exclude_by_name": {
-							Description: "A more granular exclusion filter to exclude specific resources by name using the format of 'resourceType::resourceNameRegexp'. Exclusions override inclusions.",
+							Description: "A more granular exclusion filter to exclude specific resources by name using the format of 'resourceType::resourceNameRegexp'. Regular expressions are supported in the resource name portion. Exclusions override inclusions.",
 							Type:        schema.TypeSet,
 							Optional:    true,
 							Elem:        &schema.Schema{Type: schema.TypeString, ValidateFunc: validation.StringMatch(resourceDelimiterRegex, "must include `::` in any strings in this attribute.")},
