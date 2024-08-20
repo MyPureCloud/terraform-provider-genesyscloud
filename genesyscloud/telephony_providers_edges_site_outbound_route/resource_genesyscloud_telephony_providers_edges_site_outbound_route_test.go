@@ -6,7 +6,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	"terraform-provider-genesyscloud/genesyscloud/location"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/telephony"
 	telephonyProvidersEdgesSite "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site"
@@ -49,15 +49,15 @@ func TestAccResourceSiteoutboundRoutes(t *testing.T) {
 		t.Skipf("failed to delete location with number %s, %v", emergencyNumber, err)
 	}
 
-	location := gcloud.GenerateLocationResource(
+	location := location.GenerateLocationResource(
 		locationRes,
 		"Terraform location"+uuid.NewString(),
 		"HQ1",
 		[]string{},
-		gcloud.GenerateLocationEmergencyNum(
+		location.GenerateLocationEmergencyNum(
 			emergencyNumber,
 			util.NullValue, // Default number type
-		), gcloud.GenerateLocationAddress(
+		), location.GenerateLocationAddress(
 			"7601 Interactive Way",
 			"Indianapolis",
 			"IN",

@@ -6,6 +6,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"terraform-provider-genesyscloud/genesyscloud/location"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	featureToggles "terraform-provider-genesyscloud/genesyscloud/util/feature_toggles"
@@ -49,15 +50,15 @@ func TestAccResourceSite(t *testing.T) {
 		t.Skipf("failed to delete location with number %s: %v", emergencyNumber, err)
 	}
 
-	location := gcloud.GenerateLocationResource(
+	location := location.GenerateLocationResource(
 		locationRes,
 		"Terraform location"+uuid.NewString(),
 		"HQ1",
 		[]string{},
-		gcloud.GenerateLocationEmergencyNum(
+		location.GenerateLocationEmergencyNum(
 			emergencyNumber,
 			util.NullValue, // Default number type
-		), gcloud.GenerateLocationAddress(
+		), location.GenerateLocationAddress(
 			"7601 Interactive Way",
 			"Indianapolis",
 			"IN",
@@ -185,15 +186,15 @@ func TestAccResourceSiteoutboundRoute(t *testing.T) {
 		t.Skipf("failed to delete location with number %s, %v", emergencyNumber, err)
 	}
 
-	location := gcloud.GenerateLocationResource(
+	location := location.GenerateLocationResource(
 		locationRes,
 		"Terraform location"+uuid.NewString(),
 		"HQ1",
 		[]string{},
-		gcloud.GenerateLocationEmergencyNum(
+		location.GenerateLocationEmergencyNum(
 			emergencyNumber,
 			util.NullValue, // Default number type
-		), gcloud.GenerateLocationAddress(
+		), location.GenerateLocationAddress(
 			"7601 Interactive Way",
 			"Indianapolis",
 			"IN",
@@ -370,15 +371,15 @@ func TestAccResourceSiteNumberPlans(t *testing.T) {
 		t.Skipf("failed to delete location with number %s: %v", emergencyNumber, err)
 	}
 
-	location := gcloud.GenerateLocationResource(
+	location := location.GenerateLocationResource(
 		locationRes,
 		"Terraform location"+uuid.NewString(),
 		"HQ1",
 		[]string{},
-		gcloud.GenerateLocationEmergencyNum(
+		location.GenerateLocationEmergencyNum(
 			emergencyNumber,
 			util.NullValue, // Default number type
-		), gcloud.GenerateLocationAddress(
+		), location.GenerateLocationAddress(
 			"7601 Interactive Way",
 			"Indianapolis",
 			"IN",
@@ -569,15 +570,15 @@ func TestAccResourceSiteDefaultSite(t *testing.T) {
 		t.Skipf("failed to delete location with number %s, %v", emergencyNumber, err)
 	}
 
-	location := gcloud.GenerateLocationResource(
+	location := location.GenerateLocationResource(
 		locationRes,
 		"Terraform location"+uuid.NewString(),
 		"HQ1",
 		[]string{},
-		gcloud.GenerateLocationEmergencyNum(
+		location.GenerateLocationEmergencyNum(
 			emergencyNumber,
 			util.NullValue, // Default number type
-		), gcloud.GenerateLocationAddress(
+		), location.GenerateLocationAddress(
 			"7601 Interactive Way",
 			"Indianapolis",
 			"IN",

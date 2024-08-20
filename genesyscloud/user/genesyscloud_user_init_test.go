@@ -5,6 +5,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud"
 
 	authRole "terraform-provider-genesyscloud/genesyscloud/auth_role"
+	"terraform-provider-genesyscloud/genesyscloud/location"
 	routinglanguage "terraform-provider-genesyscloud/genesyscloud/routing_language"
 	routingSkill "terraform-provider-genesyscloud/genesyscloud/routing_skill"
 	routingUtilizationLabel "terraform-provider-genesyscloud/genesyscloud/routing_utilization_label"
@@ -37,7 +38,7 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources[resourceName] = ResourceUser()
 	providerResources["genesyscloud_auth_role"] = authRole.ResourceAuthRole()
 	providerResources["genesyscloud_auth_division"] = genesyscloud.ResourceAuthDivision()
-	providerResources["genesyscloud_location"] = genesyscloud.ResourceLocation()
+	providerResources["genesyscloud_location"] = location.ResourceLocation()
 	providerResources["genesyscloud_routing_skill"] = routingSkill.ResourceRoutingSkill()
 	providerResources["genesyscloud_routing_language"] = routinglanguage.ResourceRoutingLanguage()
 	providerResources["genesyscloud_routing_utilization_label"] = routingUtilizationLabel.ResourceRoutingUtilizationLabel()
@@ -52,7 +53,7 @@ func (r *registerTestInstance) registerTestDataSources() {
 	providerDataSources[resourceName] = DataSourceUser()
 	providerDataSources["genesyscloud_auth_role"] = authRole.DataSourceAuthRole()
 	providerDataSources["genesyscloud_auth_division_home"] = genesyscloud.DataSourceAuthDivisionHome()
-	providerDataSources["genesyscloud_location"] = genesyscloud.DataSourceLocation()
+	providerDataSources["genesyscloud_location"] = location.DataSourceLocation()
 	providerDataSources["genesyscloud_routing_skill"] = routingSkill.DataSourceRoutingSkill()
 	providerDataSources["genesyscloud_routing_language"] = routinglanguage.DataSourceRoutingLanguage()
 	providerDataSources["genesyscloud_routing_utilization_label"] = routingUtilizationLabel.DataSourceRoutingUtilizationLabel()

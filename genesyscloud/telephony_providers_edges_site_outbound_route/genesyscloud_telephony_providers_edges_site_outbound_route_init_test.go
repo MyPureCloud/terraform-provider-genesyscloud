@@ -3,7 +3,7 @@ package telephony_providers_edges_site_outbound_route
 import (
 	"log"
 	"sync"
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	"terraform-provider-genesyscloud/genesyscloud/location"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/telephony"
 	"terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site"
@@ -40,7 +40,7 @@ func (r *registerTestInstance) registerTestResources() {
 
 	providerResources[resourceName] = ResourceSiteOutboundRoute()
 	providerResources["genesyscloud_telephony_providers_edges_trunkbasesettings"] = telephony.ResourceTrunkBaseSettings()
-	providerResources["genesyscloud_location"] = gcloud.ResourceLocation()
+	providerResources["genesyscloud_location"] = location.ResourceLocation()
 	providerResources["genesyscloud_telephony_providers_edges_site"] = telephony_providers_edges_site.ResourceSite()
 }
 
