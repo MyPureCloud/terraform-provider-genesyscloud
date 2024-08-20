@@ -24,7 +24,7 @@ var friendBlock = &schema.Resource{
 		},
 		"computed_value": {
 			Type:        schema.TypeString,
-			Optional:    true,
+			Computed:    true,
 			Description: "Used to test a computed value at the nested level",
 		},
 	},
@@ -169,8 +169,8 @@ func TestUnitConsistencyCheckerComputed(t *testing.T) {
 	tSibling.computedValue = "13579"
 	_ = d.Set("siblings", flattenSiblings([]siblingStruct{tSibling}))
 
-	// tFriend.computedValue = "abcde"
-	// _ = d.Set("friends", flattenFriends([]friendStruct{tFriend}))
+	tFriend.computedValue = "abcde"
+	_ = d.Set("friends", flattenFriends([]friendStruct{tFriend}))
 
 	err := retry.RetryContext(ctx, time.Second*5, func() *retry.RetryError {
 		return cc.CheckState(d) // Consistency checker should handle the computed value and not return an error
