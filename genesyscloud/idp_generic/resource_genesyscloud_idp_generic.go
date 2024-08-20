@@ -28,6 +28,10 @@ The resource_genesyscloud_idp_generic.go contains all of the methods that perfor
 
 // getAllAuthIdpGeneric retrieves all of the idp generic via Terraform in the Genesys Cloud and is used for the exporter
 func getAllAuthIdpGenerics(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+	// Although this resource typically has only a single instance,
+	// we are attempting to fetch the data from the API in order to
+	// verify the user's permission to access this resource's API endpoint(s).
+
 	proxy := getIdpGenericProxy(clientConfig)
 	resources := make(resourceExporter.ResourceIDMetaMap)
 

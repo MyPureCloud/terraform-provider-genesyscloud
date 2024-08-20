@@ -222,11 +222,11 @@ func TestAccResourceTaskManagementWorkitem(t *testing.T) {
 							"data.genesyscloud_auth_division_home."+homeDivRes+".id",
 						),
 					) + taskMgmtConfig + generateWorkitemResourceBasic(
-						workitemRes,
-						workitem1.name,
-						workitem1.worktype_id,
-						fmt.Sprintf("status_id = genesyscloud_task_management_worktype_status.%s.id", statusResourceOpen),
-					),
+					workitemRes,
+					workitem1.name,
+					workitem1.worktype_id,
+					fmt.Sprintf("status_id = genesyscloud_task_management_worktype_status.%s.id", statusResourceOpen),
+				),
 			},
 			// Update workitem with more fields
 			{

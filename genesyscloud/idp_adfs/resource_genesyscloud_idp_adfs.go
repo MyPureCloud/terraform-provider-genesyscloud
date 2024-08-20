@@ -28,6 +28,10 @@ The resource_genesyscloud_idp_adfs.go contains all of the methods that perform t
 
 // getAllAuthIdpAdfss retrieves all of the idp adfs via Terraform in the Genesys Cloud and is used for the exporter
 func getAllAuthIdpAdfss(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+	// Although this resource typically has only a single instance,
+	// we are attempting to fetch the data from the API in order to
+	// verify the user's permission to access this resource's API endpoint(s).
+
 	proxy := getIdpAdfsProxy(clientConfig)
 	resources := make(resourceExporter.ResourceIDMetaMap)
 

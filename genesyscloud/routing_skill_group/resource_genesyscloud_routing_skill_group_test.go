@@ -12,8 +12,8 @@ import (
 	"testing"
 	"time"
 
-	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 	routingSkill "terraform-provider-genesyscloud/genesyscloud/routing_skill"
+	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -525,7 +525,10 @@ resource "genesyscloud_routing_skill_group" "%s" {
 				Destroy:                 true,
 			},
 		},
-		CheckDestroy: testVerifySkillGroupAndUsersDestroyed,
+		CheckDestroy: func(state *terraform.State) error {
+			time.Sleep(60 * time.Second)
+			return testVerifySkillGroupAndUsersDestroyed(state)
+		},
 	})
 }
 

@@ -2,8 +2,8 @@ package telephony_providers_edges_site
 
 import (
 	"fmt"
-	"os"
 	"log"
+	"os"
 	"strconv"
 	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/provider"

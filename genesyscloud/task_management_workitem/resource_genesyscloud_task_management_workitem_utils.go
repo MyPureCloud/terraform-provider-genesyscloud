@@ -26,7 +26,7 @@ func getWorkitemCreateFromResourceData(d *schema.ResourceData) (*platformclientv
 		return nil, err
 	}
 
-	workItem :=  platformclientv2.Workitemcreate{
+	workItem := platformclientv2.Workitemcreate{
 		Name:        platformclientv2.String(d.Get("name").(string)),
 		TypeId:      platformclientv2.String(d.Get("worktype_id").(string)),
 		Description: platformclientv2.String(d.Get("description").(string)),

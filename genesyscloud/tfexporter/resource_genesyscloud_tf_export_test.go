@@ -1266,21 +1266,20 @@ func TestAccResourceTfExportLogMissingPermissions(t *testing.T) {
 }
 
 func TestAccResourceTfExportUserPromptExportAudioFile(t *testing.T) {
-
 	var (
 		userPromptResourceId        = "test_prompt"
 		userPromptName              = "TestPrompt" + strings.Replace(uuid.NewString(), "-", "", -1)
 		userPromptDescription       = "Test description"
 		userPromptResourceLanguage  = "en-us"
 		userPromptResourceText      = "This is a test greeting!"
-		userResourcePromptFilename1 = "../" + testrunner.GetTestDataPath("test-prompt-01.wav")
-		userResourcePromptFilename2 = "../" + testrunner.GetTestDataPath("test-prompt-02.wav")
+		userResourcePromptFilename1 = filepath.Join("../", testrunner.GetTestDataPath("test-prompt-01.wav"))
+		userResourcePromptFilename2 = filepath.Join("../", testrunner.GetTestDataPath("test-prompt-02.wav"))
 
 		userPromptResourceLanguage2 = "pt-br"
 		userPromptResourceText2     = "This is a test greeting!!!"
 
 		exportResourceId = "export"
-		exportTestDir    = "../.terraform" + uuid.NewString()
+		exportTestDir    = filepath.Join("../", ".terraform"+uuid.NewString())
 	)
 
 	userPromptAsset := userPrompt.UserPromptResourceStruct{
@@ -1340,7 +1339,7 @@ func TestAccResourceTfExportUserPromptExportAudioFile(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_architect_user_prompt."+userPromptResourceId, "resources.0.language", userPromptResourceLanguage),
 					resource.TestCheckResourceAttr("genesyscloud_architect_user_prompt."+userPromptResourceId, "resources.0.text", userPromptResourceText),
 					resource.TestCheckResourceAttr("genesyscloud_architect_user_prompt."+userPromptResourceId, "resources.0.filename", userResourcePromptFilename1),
-					testUserPromptAudioFileExport(exportTestDir+"/"+defaultTfJSONFile, "genesyscloud_architect_user_prompt", userPromptResourceId, exportTestDir, userPromptName),
+					testUserPromptAudioFileExport(filepath.Join(exportTestDir, defaultTfJSONFile), "genesyscloud_architect_user_prompt", userPromptResourceId, exportTestDir, userPromptName),
 				),
 			},
 			// Update to two resources with separate audio files
@@ -1351,6 +1350,7 @@ func TestAccResourceTfExportUserPromptExportAudioFile(t *testing.T) {
 					Description: strconv.Quote(userPromptDescription),
 					Resources:   userPromptResources2,
 				}),
+				ExpectNonEmptyPlan: true,
 			},
 			{
 				Config: generateTfExportByName(
@@ -1376,7 +1376,7 @@ func TestAccResourceTfExportUserPromptExportAudioFile(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_architect_user_prompt."+userPromptResourceId, "resources.0.language", userPromptResourceLanguage),
 					resource.TestCheckResourceAttr("genesyscloud_architect_user_prompt."+userPromptResourceId, "resources.0.text", userPromptResourceText),
 					resource.TestCheckResourceAttr("genesyscloud_architect_user_prompt."+userPromptResourceId, "resources.0.filename", userResourcePromptFilename1),
-					testUserPromptAudioFileExport(exportTestDir+"/"+defaultTfJSONFile, "genesyscloud_architect_user_prompt", userPromptResourceId, exportTestDir, userPromptName),
+					testUserPromptAudioFileExport(filepath.Join(exportTestDir, defaultTfJSONFile), "genesyscloud_architect_user_prompt", userPromptResourceId, exportTestDir, userPromptName),
 				),
 			},
 			{
@@ -1387,6 +1387,52 @@ func TestAccResourceTfExportUserPromptExportAudioFile(t *testing.T) {
 			},
 		},
 		CheckDestroy: testVerifyExportsDestroyedFunc(exportTestDir),
+	})
+}
+
+// TestAccResourceExportManagedSitesAsData checks that during an export, managed sites are exported as data source
+// Managed can't be set on sites, therefore the default managed site is checked during the test that it is exported as data
+func TestAccResourceExportManagedSitesAsData(t *testing.T) {
+	var (
+		exportTestDir = filepath.Join("..", "..", ".terraform"+uuid.NewString())
+		resourceID    = "export"
+		configPath    = filepath.Join(exportTestDir, defaultTfJSONFile)
+		statePath     = filepath.Join(exportTestDir, defaultTfStateFile)
+		siteName      = "PureCloud Voice - AWS"
+	)
+
+	if err := telephonyProvidersEdgesSite.CheckForDefaultSite(siteName); err != nil {
+		t.Skipf("failed to get default site %v", err)
+	}
+
+	defer func(path string) {
+		if err := os.RemoveAll(path); err != nil {
+			t.Logf("failed to remove dir %s: %s", path, err)
+		}
+	}(exportTestDir)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			{
+				Config: generateTfExportByIncludeFilterResources(
+					resourceID,
+					exportTestDir,
+					util.TrueValue, // include_state_file
+					[]string{ // include_filter_resources
+						strconv.Quote("genesyscloud_telephony_providers_edges_site"),
+					},
+					util.FalseValue, // export_as_hcl
+					util.FalseValue,
+					[]string{},
+				),
+				Check: resource.ComposeTestCheckFunc(
+					validateStateFileAsData(statePath, siteName),
+					validateExportManagedSitesAsData(configPath, siteName),
+				),
+			},
+		},
 	})
 }
 
@@ -1467,52 +1513,6 @@ func TestAccResourceTfExportSplitFilesAsHCL(t *testing.T) {
 	})
 }
 
-// TestAccResourceExportManagedSitesAsData checks that during an export, managed sites are exported as data source
-// Managed can't be set on sites, therefore the default managed site is checked during the test that it is exported as data
-func TestAccResourceExportManagedSitesAsData(t *testing.T) {
-	var (
-		exportTestDir = filepath.Join("..", "..", ".terraform"+uuid.NewString())
-		resourceID    = "export"
-		configPath    = filepath.Join(exportTestDir, defaultTfJSONFile)
-		statePath     = filepath.Join(exportTestDir, defaultTfStateFile)
-		siteName      = "PureCloud Voice - AWS"
-	)
-
-	if err := telephonyProvidersEdgesSite.CheckForDefaultSite(siteName); err != nil {
-		t.Skipf("failed to get default site %v", err)
-	}
-
-	defer func(path string) {
-		if err := os.RemoveAll(path); err != nil {
-			t.Logf("failed to remove dir %s: %s", path, err)
-		}
-	}(exportTestDir)
-
-	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { util.TestAccPreCheck(t) },
-		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
-		Steps: []resource.TestStep{
-			{
-				Config: generateTfExportByIncludeFilterResources(
-					resourceID,
-					exportTestDir,
-					util.TrueValue, // include_state_file
-					[]string{ // include_filter_resources
-						strconv.Quote("genesyscloud_telephony_providers_edges_site"),
-					},
-					util.FalseValue, // export_as_hcl
-					util.FalseValue,
-					[]string{},
-				),
-				Check: resource.ComposeTestCheckFunc(
-					validateStateFileAsData(statePath, siteName),
-					validateExportManagedSitesAsData(configPath, siteName),
-				),
-			},
-		},
-	})
-}
-
 // validateStateFileAsData verifies that the default managed site 'PureCloud Voice - AWS' is exported as a data source
 func validateStateFileAsData(filename, siteName string) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
@@ -1529,11 +1529,11 @@ func validateStateFileAsData(filename, siteName string) resource.TestCheckFunc {
 
 		// Check if data sources exist in the exported data
 		if resources, ok := stateData["resources"].([]interface{}); ok {
-			fmt.Printf("checking that managed site with name %s is exported as data source in tf state", siteName)
+			fmt.Printf("checking that managed site with name %s is exported as data source in tf state\n", siteName)
 
 			// Validate each site's name
 			for _, r := range resources {
-				fmt.Printf("resource that managed site with name %s is exported as data source", r)
+				fmt.Printf("resource that managed site with name %v is exported as data source\n", r)
 
 				res, ok := r.(map[string]interface{})
 				if !ok {
@@ -1552,10 +1552,10 @@ func validateStateFileAsData(filename, siteName string) resource.TestCheckFunc {
 
 				if name == strings.ReplaceAll(siteName, " ", "_") {
 					if mode == "data" {
-						log.Printf("Site with name '%s' is correctly exported as data source", siteName)
+						log.Printf("Site with name '%s' is correctly exported as data source\n", siteName)
 						return nil
 					} else {
-						log.Printf("Site with name '%s' is not correctly exported as data", siteName)
+						log.Printf("Site with name '%s' is not correctly exported as data\n", siteName)
 						return nil
 					}
 				}
@@ -1591,7 +1591,7 @@ func validateExportManagedSitesAsData(filename, siteName string) resource.TestCh
 				return fmt.Errorf("no data sources exported for genesyscloud_telephony_providers_edges_site")
 			}
 
-			log.Printf("checking that managed site with name %s is exported as data source", siteName)
+			log.Printf("checking that managed site with name %s is exported as data source\n", siteName)
 
 			// Validate each site's name
 			for siteID, site := range sites {
