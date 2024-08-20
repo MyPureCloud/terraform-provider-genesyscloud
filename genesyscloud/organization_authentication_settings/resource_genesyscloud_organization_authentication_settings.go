@@ -23,9 +23,23 @@ import (
 The resource_genesyscloud_organization_authentication_settings.go contains all the methods that perform the core logic for a resource.
 */
 
-func getAllOrganizationAuthenticationSettings(_ context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+func getAllOrganizationAuthenticationSettings(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+	// Although this resource typically has only a single instance,
+	// we are attempting to fetch the data from the API in order to
+	// verify the user's permission to access this resource's API endpoint(s).
+
+	proxy := getOrgAuthSettingsProxy(clientConfig)
 	resources := make(resourceExporter.ResourceIDMetaMap)
-	resources["0"] = &resourceExporter.ResourceMeta{Name: "organization_authentication_settings"}
+
+	_, resp, err := proxy.getOrgAuthSettings(ctx)
+	if err != nil {
+		if util.IsStatus404(resp) {
+			// Don't export if config doesn't exist
+			return resources, nil
+		}
+		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get %s resource due to error: %s", resourceName, err), resp)
+	}
+	resources["0"] = &resourceExporter.ResourceMeta{Name: resourceName}
 	return resources, nil
 }
 
@@ -45,7 +59,7 @@ func readOrganizationAuthenticationSettings(ctx context.Context, d *schema.Resou
 	log.Printf("Reading organization authentication settings %s", d.Id())
 
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
-		orgAuthSettings, resp, getErr := proxy.getOrgAuthSettingsById(ctx, d.Id())
+		orgAuthSettings, resp, getErr := proxy.getOrgAuthSettings(ctx)
 		if getErr != nil {
 			if util.IsStatus404(resp) {
 				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read organization authentication settings %s | error: %s", d.Id(), getErr), resp))
