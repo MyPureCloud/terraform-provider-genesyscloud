@@ -184,7 +184,6 @@ func configure(version string) schema.ConfigureContextFunc {
 			return nil, err
 		}
 
-
 		defaultConfig := platformclientv2.GetDefaultConfiguration()
 
 		currentOrg, err := getOrganizationMe(defaultConfig)
