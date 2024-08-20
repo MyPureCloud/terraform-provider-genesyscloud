@@ -187,13 +187,17 @@ func getArchitectPromptAudioData(ctx context.Context, promptId string, meta inte
 	}
 
 	for _, r := range *data.Resources {
-		var data PromptAudioData
-		if r.MediaUri != nil && *r.MediaUri != "" {
-			data.MediaUri = *r.MediaUri
-			data.Language = *r.Language
-			data.FileName = fmt.Sprintf("%s-%s.wav", *r.Language, promptId)
-			promptResourceData = append(promptResourceData, data)
+		if r.MediaUri == nil || *r.MediaUri == "" {
+			continue
 		}
+		if r.UploadStatus == nil || *r.UploadStatus != "transcoded" {
+			continue
+		}
+		var data PromptAudioData
+		data.MediaUri = *r.MediaUri
+		data.Language = *r.Language
+		data.FileName = fmt.Sprintf("%s-%s.wav", *r.Language, promptId)
+		promptResourceData = append(promptResourceData, data)
 	}
 
 	return promptResourceData, nil
