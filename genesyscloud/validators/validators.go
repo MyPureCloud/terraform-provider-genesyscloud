@@ -210,7 +210,7 @@ func ValidatePath(i interface{}, k string) (warnings []string, errors []error) {
 // ValidateResponseAssetName validate a response asset filename matches the criteria outlined in the description
 func ValidateResponseAssetName(name interface{}, _ cty.Path) diag.Diagnostics {
 	if nameStr, ok := name.(string); ok {
-		matched, err := regexp.MatchString("^[^\\.][^\\`\\\\{\\^\\}\\% \"\\>\\<\\[\\]\\#\\~|]+[^/]$", nameStr)
+		matched, err := regexp.MatchString("^[^\\.]([^\\`\\\\{\\^\\}\\% \"\\>\\<\\[\\]\\#\\~|]|\\s)+[^/]$", nameStr)
 		if err != nil {
 			return diag.Errorf("Error applying regular expression against filename: %v", err)
 		}
