@@ -1,6 +1,7 @@
 package resource_exporter
 
 import (
+	"fmt"
 	"os"
 	"regexp"
 	"strings"
@@ -289,4 +290,58 @@ func TestUnitSanitizeResourceNameOptimized(t *testing.T) {
 			t.Errorf("%s did not sanitize correctly!\nExpected Output: %v\nActual Output: %v", assertion.name, assertion.output, output)
 		}
 	}
+}
+
+func TestUnitSanitizeOptimized(t *testing.T) {
+
+	//We set the GENESYS_SANITIZER_OPTIMIZED environment variable to ensure the new optimized  is used
+	envVarName := "GENESYS_SANITIZER_OPTIMIZED"
+	envVarValue := "1"
+	os.Setenv(envVarName, envVarValue)
+	sanitizer := NewSanitizerProvider()
+
+	//Make sure we unset the GENESYS_SANITIZER_OPTIMIZED environment variable after the test runs
+	unsetEnv := func() {
+		os.Unsetenv("GENESYS_SANITIZER_OPTIMIZED")
+	}
+	defer unsetEnv()
+
+	meta1 := &ResourceMeta{
+		BlockLabel: "Resource Name1",
+	}
+	meta2 := &ResourceMeta{
+		BlockLabel: "+ResourceName2",
+	}
+	meta3 := &ResourceMeta{
+		BlockLabel: "INQUEUECALL_NK_室町_InQueue",
+	}
+	meta4 := &ResourceMeta{
+		BlockLabel: "INQUEUECALL_NK_鎌倉_InQueue",
+	}
+
+	// Create an instance of ResourceIDMetaMap and add the meta to it
+	resources := ResourceIDMetaMap{
+		"resource1": meta1,
+		"resource2": meta2,
+		"resource3": meta3,
+		"resource4": meta4,
+	}
+
+	expected := map[string]string{
+		"resource1": "Resource_Name1",
+		"resource2": "_ResourceName2",
+		"resource3": "INQUEUECALL_NK____InQueue_1977736383",
+		"resource4": "INQUEUECALL_NK____InQueue_1369682474",
+	}
+
+	sanitizer.S.Sanitize(resources)
+
+	for key, resource := range resources {
+		sanitized := resource.SanitizedBlockLabel
+		expectedOutput := expected[key]
+		if sanitized != expectedOutput {
+			t.Error(fmt.Printf("key %s did not sanitize ( %s ) as expected ( %s )", key, sanitized, expectedOutput))
+		}
+	}
+
 }
