@@ -30,6 +30,7 @@ type createOrUpdateArchitectUserPromptResourcesFunc func(context.Context, *archi
 type updateArchitectUserPromptResourceFunc func(ctx context.Context, p *architectUserPromptProxy, id string, languageCode string, body platformclientv2.Promptasset) (*platformclientv2.Promptasset, *platformclientv2.APIResponse, error)
 type getArchitectUserPromptIdByNameFunc func(ctx context.Context, p *architectUserPromptProxy, name string) (string, *platformclientv2.APIResponse, error, bool)
 type uploadPromptFileFunc func(ctx context.Context, p *architectUserPromptProxy, uploadUri, filename string) error
+type getArchitectUserPromptResourcesFunc func(ctx context.Context, p *architectUserPromptProxy, promptId string) (*[]platformclientv2.Promptasset, *platformclientv2.APIResponse, error)
 
 // ArchitectUserPromptProxy - proxy for Architect User Prompts
 type architectUserPromptProxy struct {
@@ -45,6 +46,7 @@ type architectUserPromptProxy struct {
 	createOrUpdateArchitectUserPromptResourcesAttr createOrUpdateArchitectUserPromptResourcesFunc
 	getArchitectUserPromptIdByNameAttr             getArchitectUserPromptIdByNameFunc
 	uploadPromptFileAttr                           uploadPromptFileFunc
+	getArchitectUserPromptResourcesAttr            getArchitectUserPromptResourcesFunc
 	promptCache                                    rc.CacheInterface[platformclientv2.Prompt]
 }
 
@@ -64,6 +66,7 @@ func newArchitectUserPromptProxy(clientConfig *platformclientv2.Configuration) *
 		createOrUpdateArchitectUserPromptResourcesAttr: createOrUpdateArchitectUserPromptResourcesFn,
 		getArchitectUserPromptIdByNameAttr:             getArchitectUserPromptIdByNameFn,
 		uploadPromptFileAttr:                           uploadPromptFileFn,
+		getArchitectUserPromptResourcesAttr:            getArchitectUserPromptResourcesFn,
 		promptCache:                                    promptCache,
 	}
 }
@@ -118,6 +121,10 @@ func (p *architectUserPromptProxy) updateArchitectUserPromptResource(ctx context
 // getArchitectUserPromptIdByName retrieves a user prompt by name
 func (p *architectUserPromptProxy) getArchitectUserPromptIdByName(ctx context.Context, name string) (string, *platformclientv2.APIResponse, error, bool) {
 	return p.getArchitectUserPromptIdByNameAttr(ctx, p, name)
+}
+
+func (p *architectUserPromptProxy) getArchitectUserPromptResources(ctx context.Context, promptId string) (*[]platformclientv2.Promptasset, *platformclientv2.APIResponse, error) {
+	return p.getArchitectUserPromptResourcesAttr(ctx, p, promptId)
 }
 
 func (p *architectUserPromptProxy) uploadPromptFile(ctx context.Context, uploadUri, filename string) error {
@@ -227,6 +234,33 @@ func createOrUpdateArchitectUserPromptResourcesFn(ctx context.Context, p *archit
 	}
 
 	return p.verifyPromptResourceFilesAreTranscoded(ctx, promptId, allLanguages)
+}
+
+func getArchitectUserPromptResourcesFn(ctx context.Context, p *architectUserPromptProxy, promptId string) (*[]platformclientv2.Promptasset, *platformclientv2.APIResponse, error) {
+	const pageSize = 100
+	var allResources []platformclientv2.Promptasset
+
+	data, resp, err := p.architectApi.GetArchitectPromptResources(promptId, 1, pageSize)
+	if err != nil {
+		return nil, resp, err
+	}
+	if data.Entities == nil || len(*data.Entities) == 0 {
+		return nil, nil, nil
+	}
+	allResources = append(allResources, *data.Entities...)
+
+	for pageNum := 2; pageNum <= *data.PageCount; pageNum++ {
+		data, resp, err := p.architectApi.GetArchitectPromptResources(promptId, pageNum, pageSize)
+		if err != nil {
+			return nil, resp, err
+		}
+		if data.Entities == nil || len(*data.Entities) == 0 {
+			break
+		}
+		allResources = append(allResources, *data.Entities...)
+	}
+
+	return &allResources, nil, nil
 }
 
 func (p *architectUserPromptProxy) verifyPromptResourceFilesAreTranscoded(ctx context.Context, promptId string, languages []string) (*platformclientv2.APIResponse, error) {
