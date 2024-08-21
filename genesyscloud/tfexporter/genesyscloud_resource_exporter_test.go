@@ -328,8 +328,8 @@ func TestUnitTfExportRemoveTrailingZerosRrule(t *testing.T) {
 func TestUnitTfExportBuildDependsOnResources(t *testing.T) {
 
 	meta := &resourceExporter.ResourceMeta{
-		SanitizedBlockLabel: "example::::resource",
-		IdPrefix:            "prefix_",
+		BlockLabel: "example::::resource",
+		IdPrefix:   "prefix_",
 	}
 
 	// Create an instance of ResourceIDMetaMap and add the meta to it
@@ -387,39 +387,49 @@ func TestUnitTfExportBuildDependsOnResources(t *testing.T) {
 
 func TestUnitTfExportFilterResourceById(t *testing.T) {
 
-	meta := &resourceExporter.ResourceMeta{
-		SanitizedBlockLabel: "example resource1",
-		IdPrefix:            "prefix_",
+	metaResource1 := &resourceExporter.ResourceMeta{
+		BlockLabel: "example resource1",
+		IdPrefix:   "prefix_",
+	}
+	metaResource2 := &resourceExporter.ResourceMeta{
+		BlockLabel: "example resource2",
+		IdPrefix:   "prefix_",
 	}
 
 	// Create an instance of ResourceIDMetaMap and add the meta to it
 	result := resourceExporter.ResourceIDMetaMap{
-		"queue_resources_1": meta,
-		"queue_resources_2": &resourceExporter.ResourceMeta{
-			SanitizedBlockLabel: "example resource2",
-			IdPrefix:            "prefix_",
-		},
+		"queue_resources_1": metaResource1,
+		"queue_resources_2": metaResource2,
 	}
 
-	// Test case 1: When the name is found in the filter
-	name := "Resource2"
-	filter := []string{"Resource1::queue_resources", "Resource2::queue_resources_2"}
-
-	expectedResult := resourceExporter.ResourceIDMetaMap{
-		"queue_resources_2": &resourceExporter.ResourceMeta{
-			SanitizedBlockLabel: "example resource2",
-			IdPrefix:            "prefix_",
-		},
-	}
+	// Test case 1: When the resource name is found in the filter, return all matching resource IDs
+	name := "resource_type_1"
+	filter := []string{"resource_type_1::queue_resources_1", "resource_type_1::queue_resources_2"}
 	actualResult := FilterResourceById(result, name, filter)
 
+	expectedResult := result
 	if !reflect.DeepEqual(actualResult, expectedResult) {
 		t.Errorf("Expected result: %v, but got: %v", expectedResult, actualResult)
 	}
 
-	// Test case 2: When the name is not found in the filter
-	name = "Resource4"
-	filter = []string{"Resource1::", "Resource2::"}
+	// Test case 2: When the resource name is found in the filter, return only matching resource IDs
+	name = "resource_type_1"
+	filter = []string{"resource_type_1::queue_resources_foo", "resource_type_1::queue_resources_2"}
+	actualResult = FilterResourceById(result, name, filter)
+
+	expectedResult = resourceExporter.ResourceIDMetaMap{
+		"queue_resources_2": &resourceExporter.ResourceMeta{
+			BlockLabel: "example resource2",
+			IdPrefix:   "prefix_",
+		},
+	}
+	if !reflect.DeepEqual(actualResult, expectedResult) {
+		t.Errorf("Expected result: %v, but got: %v", expectedResult, actualResult)
+	}
+
+	// Test case 3: When the resource name is not found in the filter
+	name = "resource_type_4"
+	filter = []string{"resource_type_1::queue_resources", "resource_type_2::queue_resources_2"}
 
 	expectedResult = result // The result should remain unchanged
 	actualResult = FilterResourceById(result, name, filter)
@@ -437,9 +447,9 @@ func TestUnitTfExportTestExcludeAttributes(t *testing.T) {
 	}
 
 	m1 := map[string]*resourceExporter.ResourceExporter{
-		"exporter1": &resourceExporter.ResourceExporter{AllowZeroValues: []string{"key1", "key2"}},
-		"exporter2": &resourceExporter.ResourceExporter{AllowZeroValues: []string{"key3", "key4"}},
-		"exporter3": &resourceExporter.ResourceExporter{AllowZeroValues: []string{"key3", "key4"}},
+		"exporter1": {AllowZeroValues: []string{"key1", "key2"}},
+		"exporter2": {AllowZeroValues: []string{"key3", "key4"}},
+		"exporter3": {AllowZeroValues: []string{"key3", "key4"}},
 	}
 
 	filter := []string{"e*.name"}
@@ -463,11 +473,11 @@ func TestUnitTfExportTestExcludeAttributes(t *testing.T) {
 func TestUnitTfExportMergeExporters(t *testing.T) {
 
 	m1 := map[string]*resourceExporter.ResourceExporter{
-		"exporter1": &resourceExporter.ResourceExporter{AllowZeroValues: []string{"key1", "key2"}},
+		"exporter1": {AllowZeroValues: []string{"key1", "key2"}},
 	}
 
 	m2 := map[string]*resourceExporter.ResourceExporter{
-		"exporter2": &resourceExporter.ResourceExporter{AllowZeroValues: []string{"key3", "key4"}},
+		"exporter2": {AllowZeroValues: []string{"key3", "key4"}},
 	}
 
 	// Call the function

@@ -38,8 +38,9 @@ func getAllRoutingEmailRoutes(ctx context.Context, clientConfig *platformclientv
 	for domainId, inboundRoutes := range *inboundRoutesMap {
 		for _, inboundRoute := range inboundRoutes {
 			resources[*inboundRoute.Id] = &resourceExporter.ResourceMeta{
-				SanitizedBlockLabel: *inboundRoute.Pattern + domainId,
-				IdPrefix:            domainId + "/",
+				ObjectName: *inboundRoute.Pattern,
+				BlockLabel: *inboundRoute.Pattern + domainId,
+				IdPrefix:   domainId + "/",
 			}
 		}
 	}
