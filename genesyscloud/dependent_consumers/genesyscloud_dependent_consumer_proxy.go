@@ -152,7 +152,7 @@ func fetchDepConsumers(ctx context.Context,
 func buildDependsMap(resources resourceExporter.ResourceIDMetaMap, dependsMap map[string][]string, id string) map[string][]string {
 	dependsList := make([]string, 0)
 	for depId, meta := range resources {
-		resource := strings.Split(meta.SanitizedBlockLabel, "::::")
+		resource := strings.Split(meta.BlockLabel, "::::")
 		if id != depId {
 			dependsList = append(dependsList, fmt.Sprintf("%s.%s", resource[0], depId))
 		}

@@ -642,7 +642,7 @@ func (g *GenesysCloudResourceExporter) processAndBuildDependencies() (filters []
 			resourcesToBeExported := retrieveExportResources(g.resources, resources)
 			for _, meta := range resourcesToBeExported {
 
-				resource := strings.Split(meta.SanitizedBlockLabel, "::::")
+				resource := strings.Split(meta.BlockLabel, "::::")
 				filterList = append(filterList, fmt.Sprintf("%s::%s", resource[0], resource[1]))
 			}
 			g.dependsList = stringmap.MergeMaps(g.dependsList, dependsStruct.DependsMap)
