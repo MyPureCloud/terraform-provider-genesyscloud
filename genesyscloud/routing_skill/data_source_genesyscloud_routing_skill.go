@@ -34,11 +34,11 @@ func dataSourceRoutingSkillRead(ctx context.Context, d *schema.ResourceData, m i
 	return nil
 }
 
-func hydrateRoutingSkillCacheFn(c *rc.DataSourceCache) error {
+func hydrateRoutingSkillCacheFn(c *rc.DataSourceCache, ctx context.Context) error {
 	log.Printf("hydrating cache for data source genesyscloud_routing_skill")
 	proxy := getRoutingSkillProxy(c.ClientConfig)
 
-	skills, resp, getErr := proxy.getAllRoutingSkills(context.TODO(), "")
+	skills, resp, getErr := proxy.getAllRoutingSkills(ctx, "")
 	if getErr != nil {
 		return fmt.Errorf("failed to get page of skills: %v %v", getErr, resp)
 	}
