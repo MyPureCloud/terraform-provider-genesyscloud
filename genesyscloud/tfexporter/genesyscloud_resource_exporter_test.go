@@ -259,6 +259,7 @@ func TestUnitTfExportAllowEmptyArray(t *testing.T) {
 		},
 		resources: []resourceExporter.ResourceInfo{
 			{
+				Id:   testResourceId,
 				Name: testResourceName,
 				Type: testResourceType,
 				State: &terraform.InstanceState{
@@ -370,6 +371,7 @@ func TestUnitTfExportBuildDependsOnResources(t *testing.T) {
 
 	// Create an instance of ResourceInfo
 	resourceInfo := &resourceExporter.ResourceInfo{
+		Id:    state.ID,
 		State: state,
 		Name:  name,
 		Type:  resourceType,

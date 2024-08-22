@@ -4,7 +4,6 @@ import (
 	"archive/zip"
 	"context"
 	"fmt"
-	"hash/fnv"
 	"io"
 	"log"
 	"os"
@@ -12,7 +11,6 @@ import (
 	"path/filepath"
 	"reflect"
 	"regexp"
-	"strconv"
 	"strings"
 	"sync"
 	dependentconsumers "terraform-provider-genesyscloud/genesyscloud/dependent_consumers"
@@ -417,7 +415,7 @@ func (g *GenesysCloudResourceExporter) buildResourceConfigMap() diag.Diagnostics
 	g.resourceTypesHCLBlocks = make(map[string]resourceHCLBlock, 0)
 	g.unresolvedAttrs = make([]unresolvableAttributeInfo, 0)
 
-	for _, resource := range g.resources {
+	for i, resource := range g.resources {
 		jsonResult, diagErr := g.instanceStateToMap(resource.State, resource.CtyType)
 		isDataSource := g.isDataSource(resource.Type, resource.Name)
 		if diagErr != nil {
@@ -428,12 +426,14 @@ func (g *GenesysCloudResourceExporter) buildResourceConfigMap() diag.Diagnostics
 			g.resourceTypesMaps[resource.Type] = make(resourceJSONMaps)
 		}
 
+		// Handle the rare case where resource objects can be returned with the same exact name within the
+		// same resource type (i.e., genesyscloud_location) by updating the structs holding state info
+		// (g.resources) and configuration meta map (resource and g.updateSanitizedBlockLabel).
 		if len(g.resourceTypesMaps[resource.Type][resource.Name]) > 0 || len(g.dataSourceTypesMaps[resource.Type][resource.Name]) > 0 {
-			algorithm := fnv.New32()
-			// QUESTION: Should this be a random uuid or should it match the Name like we do with the Sanitizer?
-			algorithm.Write([]byte(uuid.NewString()))
-			resource.Name = resource.Name + "_" + strconv.FormatUint(uint64(algorithm.Sum32()), 10)
-			g.updateSanitizeMap(*g.filteredExportersByType, resource)
+			name := resource.Name + "_" + resource.Id
+			g.resources[i].Name = name
+			resource.Name = name
+			g.updateSanitizedBlockLabel(*g.filteredExportersByType, resource)
 		}
 
 		if !isDataSource {
@@ -450,7 +450,7 @@ func (g *GenesysCloudResourceExporter) buildResourceConfigMap() diag.Diagnostics
 		exporters := *g.filteredExportersByType
 		if resourceFilesWriterFunc := exporters[resource.Type].CustomFileWriter.RetrieveAndWriteFilesFunc; resourceFilesWriterFunc != nil {
 			exportDir, _ := getFilePath(g.d, "")
-			if err := resourceFilesWriterFunc(resource.State.ID, exportDir, exporters[resource.Type].CustomFileWriter.SubDirectory, jsonResult, g.meta); err != nil {
+			if err := resourceFilesWriterFunc(resource.Id, exportDir, exporters[resource.Type].CustomFileWriter.SubDirectory, jsonResult, g.meta); err != nil {
 				log.Printf("An error has occurred while trying invoking the RetrieveAndWriteFilesFunc for resource type %s: %v", resource.Type, err)
 			}
 		}
@@ -476,12 +476,12 @@ func (g *GenesysCloudResourceExporter) buildResourceConfigMap() diag.Diagnostics
 	return nil
 }
 
-func (g *GenesysCloudResourceExporter) updateSanitizeMap(exporters map[string]*resourceExporter.ResourceExporter, //Map of all of the exporters
-	resource resourceExporter.ResourceInfo) {
+// Updates the SanitizedBlockLabel in the rare case that duplicated resource names are found
+func (g *GenesysCloudResourceExporter) updateSanitizedBlockLabel(exporters map[string]*resourceExporter.ResourceExporter, resource resourceExporter.ResourceInfo) {
 	if exporters[resource.Type] != nil {
 		// Get the sanitized name from the ID returned as a reference expression
 		if idMetaMap := exporters[resource.Type].SanitizedResourceMap; idMetaMap != nil {
-			if meta := idMetaMap[resource.State.ID]; meta != nil && meta.SanitizedBlockLabel != "" {
+			if meta := idMetaMap[resource.Id]; meta != nil && meta.SanitizedBlockLabel != "" {
 				meta.SanitizedBlockLabel = resource.Name
 			}
 		}
@@ -616,7 +616,7 @@ func (g *GenesysCloudResourceExporter) processAndBuildDependencies() (filters []
 			resources, dependsMap, err := proxy.GetDependentConsumers(ctx, resourceKeys)
 
 			if err != nil {
-				return nil, nil, diag.Errorf("Failed to retrieve Dependent Flows %s: %s", resourceKeys.State.ID, err)
+				return nil, nil, diag.Errorf("Failed to retrieve Dependent Flows %s: %s", resourceKeys.Id, err)
 			}
 			return resources, dependsMap, nil
 		}
@@ -624,15 +624,15 @@ func (g *GenesysCloudResourceExporter) processAndBuildDependencies() (filters []
 
 	for _, resourceKeys := range g.resources {
 
-		exists := util.StringExists(resourceKeys.State.ID, g.flowResourcesList)
+		exists := util.StringExists(resourceKeys.Id, g.flowResourcesList)
 		if exists {
-			log.Printf("dependent consumer retrieved for resource type %s.%s (%v)", resourceKeys.Type, resourceKeys.Name, resourceKeys.State.ID)
+			log.Printf("dependent consumer retrieved for resource type %s.%s (%v)", resourceKeys.Type, resourceKeys.Name, resourceKeys.Id)
 			continue
 		}
 
 		resources, dependsStruct, err := proxy.GetAllWithPooledClient(retrieveDependentConsumers(resourceKeys))
 
-		g.flowResourcesList = append(g.flowResourcesList, resourceKeys.State.ID)
+		g.flowResourcesList = append(g.flowResourcesList, resourceKeys.Id)
 
 		if err != nil {
 			return nil, nil, err
@@ -787,7 +787,7 @@ func (g *GenesysCloudResourceExporter) retainExporterList(resources resourceExpo
 func (g *GenesysCloudResourceExporter) attainUniqueResourceList(resources resourceExporter.ResourceIDMetaMap) []resourceExporter.ResourceInfo {
 	uniqueResources := make([]resourceExporter.ResourceInfo, 0)
 	for _, resource := range g.resources {
-		_, exists := resources[resource.State.ID]
+		_, exists := resources[resource.Id]
 		if exists {
 			uniqueResources = append(uniqueResources, resource)
 		}
@@ -900,7 +900,7 @@ func (g *GenesysCloudResourceExporter) appendResources(resourcesToAdd []resource
 		// Check if the resource with the same ID already exists
 		duplicate := false
 		for _, existingResource := range g.resources {
-			if existingResource.State.ID == resourceToAdd.State.ID && existingResource.Type == resourceToAdd.Type {
+			if existingResource.Id == resourceToAdd.Id && existingResource.Type == resourceToAdd.Type {
 				duplicate = true
 				break
 			}
@@ -1025,8 +1025,8 @@ func retrieveExportResources(existingResources []resourceExporter.ResourceInfo, 
 	resourcesToBeExported := make(map[string]*resourceExporter.ResourceMeta)
 
 	for _, data := range existingResources {
-		if _, ok := resources[data.State.ID]; ok {
-			foundTypes[data.State.ID] = true
+		if _, ok := resources[data.Id]; ok {
+			foundTypes[data.Id] = true
 		}
 	}
 
@@ -1124,6 +1124,7 @@ func (g *GenesysCloudResourceExporter) getResourcesForType(resType string, provi
 				}
 
 				resourceChan <- resourceExporter.ResourceInfo{
+					Id:              id,
 					State:           instanceState,
 					Name:            resMeta.SanitizedBlockLabel,
 					Type:            resType,
@@ -1503,7 +1504,7 @@ func (g *GenesysCloudResourceExporter) addDependsOnValues(key string, configMap 
 	if exists {
 		for _, res := range list {
 			for _, resource := range g.resources {
-				if resource.State.ID == strings.Split(res, ".")[1] {
+				if resource.Id == strings.Split(res, ".")[1] {
 					resourceDependsList = append(resourceDependsList, fmt.Sprintf("$dep$%s$dep$", strings.Split(res, ".")[0]+"."+resource.Name))
 				}
 			}
@@ -1660,12 +1661,12 @@ func (g *GenesysCloudResourceExporter) resolveReference(refSettings *resourceExp
 func (g *GenesysCloudResourceExporter) resourceIdExists(refID string, existingResources []resourceExporter.ResourceInfo) bool {
 	if g.addDependsOn {
 		for _, resource := range existingResources {
-			if refID == resource.State.ID {
+			if refID == resource.Id {
 				return true
 			}
 		}
 		for _, resource := range g.resources {
-			if refID == resource.State.ID {
+			if refID == resource.Id {
 				return true
 			}
 		}

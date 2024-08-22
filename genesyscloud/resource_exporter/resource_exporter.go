@@ -55,6 +55,7 @@ type RefAttrSettings struct {
 }
 
 type ResourceInfo struct {
+	Id      string
 	State   *terraform.InstanceState
 	Name    string
 	Type    string

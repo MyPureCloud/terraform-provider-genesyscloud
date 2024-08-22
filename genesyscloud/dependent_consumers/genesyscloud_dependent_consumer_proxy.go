@@ -70,7 +70,7 @@ func retrievePooledClientFn(method provider.GetCustomConfigFunc) (resourceExport
 }
 
 func retrieveDependentConsumersFn(ctx context.Context, p *DependentConsumerProxy, resourceKeys resourceExporter.ResourceInfo) (resourceExporter.ResourceIDMetaMap, *resourceExporter.DependencyResource, error) {
-	resourceKey := resourceKeys.State.ID
+	resourceKey := resourceKeys.Id
 	resourceName := resourceKeys.Name
 	dependsMap := make(map[string][]string)
 	architectDependencies := make(map[string][]string)
