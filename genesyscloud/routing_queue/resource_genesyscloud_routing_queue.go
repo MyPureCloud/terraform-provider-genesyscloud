@@ -39,7 +39,7 @@ func getAllRoutingQueues(ctx context.Context, clientConfig *platformclientv2.Con
 
 	queues, resp, err := proxy.GetAllRoutingQueues(ctx)
 	if err != nil {
-		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("failed to get routing queues"), resp)
+		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("failed to get routing queues: %s", err), resp)
 	}
 
 	for _, queue := range *queues {
