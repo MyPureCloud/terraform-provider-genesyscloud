@@ -109,6 +109,9 @@ func FilterResourceByName(result resourceExporter.ResourceIDMetaMap, resourceNam
 				if v.BlockLabel == name {
 					newResult[k] = v
 				}
+				if v.SanitizedBlockLabel == name {
+					newResult[k] = v
+				}
 			}
 		}
 		return newResult

@@ -47,7 +47,7 @@ func TestAccExporterCustomMemberGroup(t *testing.T) {
 
 		//Create an exporter
 		skillGroupSanitizedResourceMap := make(map[string]*ResourceMeta)
-		skillGroupSanitizedResourceMap[testResult.MemberGroupID] = &ResourceMeta{ObjectName: testResult.GroupName, BlockLabel: testResult.GroupName}
+		skillGroupSanitizedResourceMap[testResult.MemberGroupID] = &ResourceMeta{ObjectName: testResult.GroupName, SanitizedBlockLabel: testResult.GroupName}
 
 		firstResourceExport := &ResourceExporter{
 			SanitizedResourceMap: skillGroupSanitizedResourceMap,
@@ -56,7 +56,7 @@ func TestAccExporterCustomMemberGroup(t *testing.T) {
 
 		//Pre-Check to make sure the member_group_id has been set to the GUID I have at the start of the test
 		if configMap["member_group_id"] != testResult.MemberGroupID {
-			t.Errorf("The member_group_id set in the config map was %v,but  wanted %v", configMap["member_group_id"], testResult.MemberGroupID)
+			t.Errorf("The member_group_id set in the config map was %v, but wanted %v", configMap["member_group_id"], testResult.MemberGroupID)
 		}
 
 		//Invoke the resolver
@@ -97,7 +97,7 @@ func TestRuleSetPropertyGroup(t *testing.T) {
 
 		//Create an exporter
 		skillSanitizedResourceMap := make(map[string]*ResourceMeta)
-		skillSanitizedResourceMap[uuid] = &ResourceMeta{ObjectName: testResult.SkillName, BlockLabel: testResult.SkillName}
+		skillSanitizedResourceMap[uuid] = &ResourceMeta{ObjectName: testResult.SkillName, SanitizedBlockLabel: testResult.SkillName}
 
 		firstResourceExport := &ResourceExporter{
 			SanitizedResourceMap: skillSanitizedResourceMap,

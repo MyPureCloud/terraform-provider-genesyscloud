@@ -328,8 +328,8 @@ func TestUnitTfExportRemoveTrailingZerosRrule(t *testing.T) {
 func TestUnitTfExportBuildDependsOnResources(t *testing.T) {
 
 	meta := &resourceExporter.ResourceMeta{
-		BlockLabel: "example::::resource",
-		IdPrefix:   "prefix_",
+		SanitizedBlockLabel: "example::::resource",
+		IdPrefix:            "prefix_",
 	}
 
 	// Create an instance of ResourceIDMetaMap and add the meta to it
@@ -388,12 +388,12 @@ func TestUnitTfExportBuildDependsOnResources(t *testing.T) {
 func TestUnitTfExportFilterResourceById(t *testing.T) {
 
 	metaResource1 := &resourceExporter.ResourceMeta{
-		BlockLabel: "example resource1",
-		IdPrefix:   "prefix_",
+		SanitizedBlockLabel: "example_resource1",
+		IdPrefix:            "prefix_",
 	}
 	metaResource2 := &resourceExporter.ResourceMeta{
-		BlockLabel: "example resource2",
-		IdPrefix:   "prefix_",
+		SanitizedBlockLabel: "example_resource2",
+		IdPrefix:            "prefix_",
 	}
 
 	// Create an instance of ResourceIDMetaMap and add the meta to it
@@ -419,8 +419,8 @@ func TestUnitTfExportFilterResourceById(t *testing.T) {
 
 	expectedResult = resourceExporter.ResourceIDMetaMap{
 		"queue_resources_2": &resourceExporter.ResourceMeta{
-			BlockLabel: "example resource2",
-			IdPrefix:   "prefix_",
+			SanitizedBlockLabel: "example_resource2",
+			IdPrefix:            "prefix_",
 		},
 	}
 	if !reflect.DeepEqual(actualResult, expectedResult) {
