@@ -23,6 +23,7 @@ import (
 func TestAccResourceUserPromptBasic(t *testing.T) {
 	userPromptResource1 := "test-user_prompt_1"
 	userPromptName1 := "TestUserPrompt_1" + strings.Replace(uuid.NewString(), "-", "", -1)
+	userPromptName2 := "TestUserPrompt_2" + strings.Replace(uuid.NewString(), "-", "", -1)
 	userPromptDescription1 := "Test description"
 	userPromptResourceLang1 := "en-us"
 	userPromptResourceLang2 := "ja-jp"
@@ -78,12 +79,12 @@ func TestAccResourceUserPromptBasic(t *testing.T) {
 				// Update to include TTS message prompt resource
 				Config: GenerateUserPromptResource(&UserPromptStruct{
 					userPromptResource1,
-					userPromptName1,
+					userPromptName2,
 					strconv.Quote(userPromptDescription1),
 					userPromptResources1,
 				}),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_architect_user_prompt."+userPromptResource1, "name", userPromptName1),
+					resource.TestCheckResourceAttr("genesyscloud_architect_user_prompt."+userPromptResource1, "name", userPromptName2),
 					resource.TestCheckResourceAttr("genesyscloud_architect_user_prompt."+userPromptResource1, "description", userPromptDescription1),
 					resource.TestCheckResourceAttr("genesyscloud_architect_user_prompt."+userPromptResource1, "resources.0.language", userPromptResourceLang1),
 					resource.TestCheckResourceAttr("genesyscloud_architect_user_prompt."+userPromptResource1, "resources.0.tts_string", userPromptResourceTTS1),
@@ -93,12 +94,12 @@ func TestAccResourceUserPromptBasic(t *testing.T) {
 				// Update existing language TTS
 				Config: GenerateUserPromptResource(&UserPromptStruct{
 					userPromptResource1,
-					userPromptName1,
+					userPromptName2,
 					strconv.Quote(userPromptDescription1),
 					userPromptResources2,
 				}),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_architect_user_prompt."+userPromptResource1, "name", userPromptName1),
+					resource.TestCheckResourceAttr("genesyscloud_architect_user_prompt."+userPromptResource1, "name", userPromptName2),
 					resource.TestCheckResourceAttr("genesyscloud_architect_user_prompt."+userPromptResource1, "description", userPromptDescription1),
 					resource.TestCheckResourceAttr("genesyscloud_architect_user_prompt."+userPromptResource1, "resources.0.language", userPromptResourceLang1),
 					resource.TestCheckResourceAttr("genesyscloud_architect_user_prompt."+userPromptResource1, "resources.0.tts_string", userPromptResourceTTS2),
