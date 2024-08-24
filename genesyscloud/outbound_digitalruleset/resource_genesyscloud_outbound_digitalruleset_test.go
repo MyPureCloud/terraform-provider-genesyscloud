@@ -107,8 +107,11 @@ func TestAccResourceOutboundDigitalruleset(t *testing.T) {
 								),
 							),
 							GenerateDigitalRuleSetActions(
-								GenerateMarkContactUncontactableActionSettings(strconv.Quote("Email")),
+								GenerateDoNotSendActionSettings(),
 							),
+							// GenerateDigitalRuleSetActions(
+							// 	GenerateMarkContactUncontactableActionSettings(strconv.Quote("Email")),
+							// ),
 						),
 					),
 
@@ -194,7 +197,7 @@ func GenerateAppendToDncActionSettings(
 
 func GenerateDoNotSendActionSettings() string {
 	return fmt.Sprintf(`
-		do_not_send_action_settings = { }
+		do_not_send_action_settings = jsonencode({})
 	`)
 }
 

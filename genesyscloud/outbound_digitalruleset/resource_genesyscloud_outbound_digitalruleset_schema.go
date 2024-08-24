@@ -403,9 +403,11 @@ var (
 				Elem:        updateContactColumnActionSettingsResource,
 			},
 			`do_not_send_action_settings`: {
-				Description: `The settings for a 'do not send' action.`,
-				Optional:    true,
-				Type:        schema.TypeMap,
+				Description:      `The settings for a 'do not send' action.`,
+				Type:             schema.TypeString,
+				Optional:         true,
+				Computed:         true,
+				DiffSuppressFunc: util.SuppressEquivalentJsonDiffs,
 			},
 			`append_to_dnc_action_settings`: {
 				Description: `The settings for an 'Append to DNC' action.`,
