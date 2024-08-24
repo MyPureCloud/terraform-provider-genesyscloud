@@ -22,19 +22,19 @@ tests for conversations_messaging_integrations_instagram.
 */
 
 func TestAccResourceConversationsMessagingIntegrationsInstagram(t *testing.T) {
-	//t.Skip("Skipping because it requires setting up a org as test account for the mocks to respond correctly.")
 	t.Parallel()
 
 	var (
-		testResource1 = "test_sample"
-		// testResource2    = "test_sample1"
+		testResource1    = "test_sample"
 		name1            = "Terraform Instagram1-" + uuid.NewString()
 		pageAccessToken1 = uuid.NewString()
+		appId            = ""
+		appSecret        = ""
+
+		// name2            = "Terraform Instagram2-" + uuid.NewString()
+		// testResource2    = "test_sample1"
 		// userAccessToken1 = uuid.NewString()
 		// pageId           = "1"
-		appId     = ""
-		appSecret = ""
-		// name2            = "Terraform Instagram2-" + uuid.NewString()
 
 		nameSupportedContent       = "Terraform Supported Content - " + uuid.NewString()
 		resourceIdSupportedContent = "testSupportedContent"
@@ -90,6 +90,7 @@ func TestAccResourceConversationsMessagingIntegrationsInstagram(t *testing.T) {
 					resource.TestCheckResourceAttrPair("genesyscloud_conversations_messaging_integrations_instagram."+testResource1, "messaging_setting_id", "genesyscloud_conversations_messaging_settings."+resourceIdMessagingSetting, "id"),
 				),
 			},
+			// Test case commented as it requires setting up a org as test account for the updation/deletion mocks to respond correctly
 			// {
 			// 	//update
 			// 	Config: messagingSettingResource1 +
@@ -145,9 +146,10 @@ func TestAccResourceConversationsMessagingIntegrationsInstagram(t *testing.T) {
 			// },
 			{
 				// Import/Read
-				ResourceName:      "genesyscloud_conversations_messaging_integrations_instagram." + testResource1,
-				ImportState:       true,
-				ImportStateVerify: true,
+				ResourceName:            "genesyscloud_conversations_messaging_integrations_instagram." + testResource1,
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"app_secret", "page_access_token", "user_access_token"},
 			},
 		},
 		CheckDestroy: testVerifyConversationsMessagingIntegrationsInstagramDestroyed,
