@@ -446,7 +446,6 @@ func ResourceRoutingQueue() *schema.Resource {
 				Description: "The id of an existing queue to copy the settings (does not include GPR settings) from when creating a new queue.",
 				Optional:    true,
 				Type:        schema.TypeString,
-
 			},
 			"enable_manual_assignment": {
 				Description: "Indicates whether manual assignment is enabled for this queue.",

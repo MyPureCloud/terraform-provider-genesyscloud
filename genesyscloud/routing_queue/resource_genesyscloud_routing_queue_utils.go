@@ -330,22 +330,21 @@ func buildSdkBullseyeSettings(d *schema.ResourceData) *platformclientv2.Bullseye
 }
 
 func buildSdkQueueMessagingAddresses(d *schema.ResourceData) *platformclientv2.Queuemessagingaddresses {
+	var messagingAddresses platformclientv2.Queuemessagingaddresses
+
 	if _, ok := d.GetOk("outbound_messaging_sms_address_id"); ok {
-		return &platformclientv2.Queuemessagingaddresses{
-			SmsAddress: util.BuildSdkDomainEntityRef(d, "outbound_messaging_sms_address_id"),
-		}
+		messagingAddresses.SmsAddress = util.BuildSdkDomainEntityRef(d, "outbound_messaging_sms_address_id")
 	}
+
 	if _, ok := d.GetOk("outbound_messaging_whatsapp_recipient_id"); ok {
-		return &platformclientv2.Queuemessagingaddresses{
-			WhatsAppRecipient: util.BuildSdkDomainEntityRef(d, "outbound_messaging_whatsapp_recipient_id"),
-		}
+		messagingAddresses.WhatsAppRecipient = util.BuildSdkDomainEntityRef(d, "outbound_messaging_whatsapp_recipient_id")
+
 	}
 	if _, ok := d.GetOk("outbound_messaging_open_messaging_recipient_id"); ok {
-		return &platformclientv2.Queuemessagingaddresses{
-			OpenMessagingRecipient: util.BuildSdkDomainEntityRef(d, "outbound_messaging_open_messaging_recipient_id"),
-		}
+		messagingAddresses.OpenMessagingRecipient = util.BuildSdkDomainEntityRef(d, "outbound_messaging_open_messaging_recipient_id")
 	}
-	return nil
+
+	return &messagingAddresses
 }
 
 func buildSdkQueueEmailAddress(d *schema.ResourceData) *platformclientv2.Queueemailaddress {
@@ -576,7 +575,10 @@ func flattenBullseyeRings(sdkRings *[]platformclientv2.Ring) []interface{} {
 
 func FlattenQueueEmailAddress(settings platformclientv2.Queueemailaddress) map[string]interface{} {
 	settingsMap := make(map[string]interface{})
-	resourcedata.SetMapReferenceValueIfNotNil(settingsMap, "domain_id", settings.Domain)
+
+	if settings.Domain != nil {
+		settingsMap["domain_id"] = *settings.Domain.Id
+	}
 
 	if settings.Route != nil {
 		route := *settings.Route
@@ -793,4 +795,45 @@ func GenerateQueueWrapupCodes(wrapupCodes ...string) string {
 	return fmt.Sprintf(`
 		wrapup_codes = [%s]
 	`, strings.Join(wrapupCodes, ", "))
+}
+
+func getRoutingQueueFromResourceData(d *schema.ResourceData) platformclientv2.Queue {
+	skillGroups := buildMemberGroupList(d, "skill_groups", "SKILLGROUP")
+	groups := buildMemberGroupList(d, "groups", "GROUP")
+	teams := buildMemberGroupList(d, "teams", "TEAM")
+	memberGroups := append(*skillGroups, *groups...)
+	memberGroups = append(memberGroups, *teams...)
+	division := d.Get("division_id").(string)
+
+	return platformclientv2.Queue{
+		Name:        platformclientv2.String(d.Get("name").(string)),
+		Description: platformclientv2.String(d.Get("description").(string)),
+		Division: &platformclientv2.Division{
+			Id: &division,
+		},
+		MediaSettings:                buildSdkMediaSettings(d),
+		RoutingRules:                 buildSdkRoutingRules(d),
+		Bullseye:                     buildSdkBullseyeSettings(d),
+		AcwSettings:                  buildSdkAcwSettings(d),
+		AgentOwnedRouting:            constructAgentOwnedRouting(d),
+		SkillEvaluationMethod:        platformclientv2.String(d.Get("skill_evaluation_method").(string)),
+		QueueFlow:                    util.BuildSdkDomainEntityRef(d, "queue_flow_id"),
+		EmailInQueueFlow:             util.BuildSdkDomainEntityRef(d, "email_in_queue_flow_id"),
+		MessageInQueueFlow:           util.BuildSdkDomainEntityRef(d, "message_in_queue_flow_id"),
+		WhisperPrompt:                util.BuildSdkDomainEntityRef(d, "whisper_prompt_id"),
+		OnHoldPrompt:                 util.BuildSdkDomainEntityRef(d, "on_hold_prompt_id"),
+		AutoAnswerOnly:               platformclientv2.Bool(d.Get("auto_answer_only").(bool)),
+		CallingPartyName:             platformclientv2.String(d.Get("calling_party_name").(string)),
+		CallingPartyNumber:           platformclientv2.String(d.Get("calling_party_number").(string)),
+		DefaultScripts:               buildSdkDefaultScriptsMap(d),
+		OutboundMessagingAddresses:   buildSdkQueueMessagingAddresses(d),
+		EnableTranscription:          platformclientv2.Bool(d.Get("enable_transcription").(bool)),
+		SuppressInQueueCallRecording: platformclientv2.Bool(d.Get("suppress_in_queue_call_recording").(bool)),
+		EnableAudioMonitoring:        platformclientv2.Bool(d.Get("enable_audio_monitoring").(bool)),
+		EnableManualAssignment:       platformclientv2.Bool(d.Get("enable_manual_assignment").(bool)),
+		DirectRouting:                buildSdkDirectRouting(d),
+		MemberGroups:                 &memberGroups,
+		PeerId:                       platformclientv2.String(d.Get("peer_id").(string)),
+		ScoringMethod:                platformclientv2.String(d.Get("scoring_method").(string)),
+	}
 }
