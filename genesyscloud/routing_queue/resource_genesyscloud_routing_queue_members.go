@@ -50,6 +50,11 @@ func getRoutingQueueMembers(queueID string, memberBy string, sdkConfig *platform
 		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to find queue %s error: %s", queueID, err), resp)
 	}
 
+	if queue.MemberCount == nil {
+		log.Printf("no members belong to queue %s", queueID)
+		return members, nil
+	}
+
 	queueMembers := *queue.MemberCount
 	log.Printf("%d members belong to queue %s", queueMembers, queueID)
 
