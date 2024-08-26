@@ -17,6 +17,7 @@ Test Class for the conversations messaging integrations instagram Data Source
 */
 
 func TestAccDataSourceConversationsMessagingIntegrationsInstagram(t *testing.T) {
+	t.Skip("Skipping because it requires setting up a org as test account for the mocks to respond correctly.")
 	t.Parallel()
 	var (
 		testResource1    = "test_sample"
