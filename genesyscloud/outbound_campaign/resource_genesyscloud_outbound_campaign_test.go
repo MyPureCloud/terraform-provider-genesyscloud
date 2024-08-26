@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/architect_flow"
-	"terraform-provider-genesyscloud/genesyscloud/location"
+	locationResource "terraform-provider-genesyscloud/genesyscloud/location"
 	"terraform-provider-genesyscloud/genesyscloud/outbound"
 	obDnclist "terraform-provider-genesyscloud/genesyscloud/outbound_dnclist"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
@@ -147,16 +147,16 @@ func TestAccResourceOutboundCampaignBasic(t *testing.T) {
 				"",
 			),
 		),
-	) + location.GenerateLocationResource(
+	) + locationResource.GenerateLocationResource(
 		locationResourceId,
 		"tf location "+uuid.NewString(),
 		"HQ1",
 		[]string{},
-		location.GenerateLocationEmergencyNum(
+		locationResource.GenerateLocationEmergencyNum(
 			"+13178793428",
 			util.NullValue,
 		),
-		location.GenerateLocationAddress(
+		locationResource.GenerateLocationAddress(
 			"7601 Interactive Way",
 			"Indianapolis",
 			"IN",
@@ -481,16 +481,16 @@ func TestAccResourceOutboundCampaignCampaignStatus(t *testing.T) {
 				"${genesyscloud_flow.flow.id}",
 			),
 		),
-	) + location.GenerateLocationResource(
+	) + locationResource.GenerateLocationResource(
 		locationResourceId,
 		"tf location "+uuid.NewString(),
 		"HQ1",
 		[]string{},
-		location.GenerateLocationEmergencyNum(
+		locationResource.GenerateLocationEmergencyNum(
 			"+13178793429",
 			util.NullValue,
 		),
-		location.GenerateLocationAddress(
+		locationResource.GenerateLocationAddress(
 			"7601 Interactive Way",
 			"Indianapolis",
 			"IN",

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
-	"terraform-provider-genesyscloud/genesyscloud/location"
+	locationResource "terraform-provider-genesyscloud/genesyscloud/location"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	edgeSite "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site"
 	"terraform-provider-genesyscloud/genesyscloud/util"
@@ -116,16 +116,16 @@ func TestAccResourceExternralTrunkBaseSettingsInboundSite(t *testing.T) {
 		siteId               = "sitetest2"
 	)
 	referencedResources :=
-		location.GenerateLocationResource(
+		locationResource.GenerateLocationResource(
 			locationResourceId,
 			"tf location "+uuid.NewString(),
 			"HQ",
 			[]string{},
-			location.GenerateLocationEmergencyNum(
+			locationResource.GenerateLocationEmergencyNum(
 				"+13100000003",
 				util.NullValue,
 			),
-			location.GenerateLocationAddress(
+			locationResource.GenerateLocationAddress(
 				"7601 Interactive Way",
 				"Orlando",
 				"FL",
@@ -198,16 +198,16 @@ func TestAccResourceExternralTrunkBaseSettingsInboundSite(t *testing.T) {
 				ImportStateVerify: true,
 			},
 			{
-				Config: location.GenerateLocationResource(
+				Config: locationResource.GenerateLocationResource(
 					locationResourceId,
 					"tf location "+uuid.NewString(),
 					"HQ",
 					[]string{},
-					location.GenerateLocationEmergencyNum(
+					locationResource.GenerateLocationEmergencyNum(
 						"+13100000003",
 						util.NullValue,
 					),
-					location.GenerateLocationAddress(
+					locationResource.GenerateLocationAddress(
 						"7601 Interactive Way",
 						"Orlando",
 						"FL",
