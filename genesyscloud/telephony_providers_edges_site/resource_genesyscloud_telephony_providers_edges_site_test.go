@@ -6,7 +6,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
-	locationResource "terraform-provider-genesyscloud/genesyscloud/location"
+	location "terraform-provider-genesyscloud/genesyscloud/location"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	featureToggles "terraform-provider-genesyscloud/genesyscloud/util/feature_toggles"
@@ -50,15 +50,15 @@ func TestAccResourceSite(t *testing.T) {
 		t.Skipf("failed to delete location with number %s: %v", emergencyNumber, err)
 	}
 
-	location := locationResource.GenerateLocationResource(
+	locationConfig := location.GenerateLocationResource(
 		locationRes,
 		"Terraform location"+uuid.NewString(),
 		"HQ1",
 		[]string{},
-		locationResource.GenerateLocationEmergencyNum(
+		location.GenerateLocationEmergencyNum(
 			emergencyNumber,
 			util.NullValue, // Default number type
-		), locationResource.GenerateLocationAddress(
+		), location.GenerateLocationAddress(
 			"7601 Interactive Way",
 			"Indianapolis",
 			"IN",
@@ -80,7 +80,7 @@ func TestAccResourceSite(t *testing.T) {
 					false,
 					util.AssignRegion(),
 					strconv.Quote("+19205551212"),
-					strconv.Quote("Wilco plumbing")) + location,
+					strconv.Quote("Wilco plumbing")) + locationConfig,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_site."+siteRes, "name", name1),
 					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_site."+siteRes, "description", description1),
@@ -100,7 +100,7 @@ func TestAccResourceSite(t *testing.T) {
 					true,
 					util.AssignRegion(),
 					strconv.Quote("+19205551212"),
-					strconv.Quote("Wilco plumbing")) + location,
+					strconv.Quote("Wilco plumbing")) + locationConfig,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_site."+siteRes, "name", name2),
 					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_site."+siteRes, "description", description2),
@@ -125,7 +125,7 @@ func TestAccResourceSite(t *testing.T) {
 						timeZone,
 						rrule,
 						start1,
-						end1)) + location,
+						end1)) + locationConfig,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_site."+siteRes, "edge_auto_update_config.0.time_zone", timeZone),
 					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_site."+siteRes, "edge_auto_update_config.0.rrule", rrule),
@@ -149,7 +149,7 @@ func TestAccResourceSite(t *testing.T) {
 						timeZone,
 						rrule,
 						start2,
-						end2)) + location,
+						end2)) + locationConfig,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_site."+siteRes, "edge_auto_update_config.0.time_zone", timeZone),
 					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_site."+siteRes, "edge_auto_update_config.0.rrule", rrule),
@@ -186,15 +186,15 @@ func TestAccResourceSiteoutboundRoute(t *testing.T) {
 		t.Skipf("failed to delete location with number %s, %v", emergencyNumber, err)
 	}
 
-	location := locationResource.GenerateLocationResource(
+	locationConfig := location.GenerateLocationResource(
 		locationRes,
 		"Terraform location"+uuid.NewString(),
 		"HQ1",
 		[]string{},
-		locationResource.GenerateLocationEmergencyNum(
+		location.GenerateLocationEmergencyNum(
 			emergencyNumber,
 			util.NullValue, // Default number type
-		), locationResource.GenerateLocationAddress(
+		), location.GenerateLocationAddress(
 			"7601 Interactive Way",
 			"Indianapolis",
 			"IN",
@@ -254,7 +254,7 @@ func TestAccResourceSiteoutboundRoute(t *testing.T) {
 						"\"National\"",
 						"genesyscloud_telephony_providers_edges_trunkbasesettings.trunkBaseSettings2.id",
 						"SEQUENTIAL",
-						false)+"set_as_default_site = false") + trunkBaseSettings1 + trunkBaseSettings2 + location,
+						false)+"set_as_default_site = false") + trunkBaseSettings1 + trunkBaseSettings2 + locationConfig,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_site."+siteRes, "outbound_routes.0.name", "outboundRoute name 1"),
 					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_site."+siteRes, "outbound_routes.0.description", "outboundRoute description"),
@@ -296,7 +296,7 @@ func TestAccResourceSiteoutboundRoute(t *testing.T) {
 						"\"International\"",
 						"genesyscloud_telephony_providers_edges_trunkbasesettings.trunkBaseSettings1.id",
 						"RANDOM",
-						false)) + trunkBaseSettings1 + trunkBaseSettings2 + location,
+						false)) + trunkBaseSettings1 + trunkBaseSettings2 + locationConfig,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_site."+siteRes, "outbound_routes.0.name", "outboundRoute name 1"),
 					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_site."+siteRes, "outbound_routes.0.description", "outboundRoute description"),
@@ -331,7 +331,7 @@ func TestAccResourceSiteoutboundRoute(t *testing.T) {
 						strings.Join([]string{strconv.Quote("Network"), strconv.Quote("International")}, ","),
 						strings.Join([]string{"genesyscloud_telephony_providers_edges_trunkbasesettings.trunkBaseSettings1.id", "genesyscloud_telephony_providers_edges_trunkbasesettings.trunkBaseSettings3.id"}, ","),
 						"RANDOM",
-						true)+"set_as_default_site = false") + trunkBaseSettings1 + trunkBaseSettings2 + trunkBaseSettings3 + location,
+						true)+"set_as_default_site = false") + trunkBaseSettings1 + trunkBaseSettings2 + trunkBaseSettings3 + locationConfig,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_site."+siteRes, "outbound_routes.0.name", "outboundRoute name 1"),
 					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_site."+siteRes, "outbound_routes.0.description", "outboundRoute description updated"),
@@ -371,15 +371,15 @@ func TestAccResourceSiteNumberPlans(t *testing.T) {
 		t.Skipf("failed to delete location with number %s: %v", emergencyNumber, err)
 	}
 
-	location := locationResource.GenerateLocationResource(
+	locationConfig := location.GenerateLocationResource(
 		locationRes,
 		"Terraform location"+uuid.NewString(),
 		"HQ1",
 		[]string{},
-		locationResource.GenerateLocationEmergencyNum(
+		location.GenerateLocationEmergencyNum(
 			emergencyNumber,
 			util.NullValue, // Default number type
-		), locationResource.GenerateLocationAddress(
+		), location.GenerateLocationAddress(
 			"7601 Interactive Way",
 			"Indianapolis",
 			"IN",
@@ -433,7 +433,7 @@ func TestAccResourceSiteNumberPlans(t *testing.T) {
 						"regex classification",
 						"^([^@\\\\:]+@)([^@ ]+)?$",
 						"regex",
-						"sip:$1$2")) + location,
+						"sip:$1$2")) + locationConfig,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_site."+siteRes, "number_plans.0.name", "numberList name"),
 					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_site."+siteRes, "number_plans.0.classification", "numberList classification"),
@@ -479,7 +479,7 @@ func TestAccResourceSiteNumberPlans(t *testing.T) {
 						"regex classification",
 						"^([^@\\\\:]+@)([^@ ]+)?$",
 						"regex",
-						"sip:$2$3")) + location,
+						"sip:$2$3")) + locationConfig,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_site."+siteRes, "number_plans.0.numbers.0.start", "114"),
 					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_site."+siteRes, "number_plans.0.numbers.0.end", "115"),
@@ -528,7 +528,7 @@ func TestAccResourceSiteNumberPlans(t *testing.T) {
 						"regex classification",
 						"^([^@\\\\:]+@)([^@ ]+)?$",
 						"regex",
-						"sip:$2$3")) + location,
+						"sip:$2$3")) + locationConfig,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_site."+siteRes, "number_plans.0.numbers.0.start", "114"),
 					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_site."+siteRes, "number_plans.0.numbers.0.end", "115"),
@@ -570,15 +570,15 @@ func TestAccResourceSiteDefaultSite(t *testing.T) {
 		t.Skipf("failed to delete location with number %s, %v", emergencyNumber, err)
 	}
 
-	location := locationResource.GenerateLocationResource(
+	locationConfig := location.GenerateLocationResource(
 		locationRes,
 		"Terraform location"+uuid.NewString(),
 		"HQ1",
 		[]string{},
-		locationResource.GenerateLocationEmergencyNum(
+		location.GenerateLocationEmergencyNum(
 			emergencyNumber,
 			util.NullValue, // Default number type
-		), locationResource.GenerateLocationAddress(
+		), location.GenerateLocationAddress(
 			"7601 Interactive Way",
 			"Indianapolis",
 			"IN",
@@ -608,7 +608,7 @@ func TestAccResourceSiteDefaultSite(t *testing.T) {
 					util.AssignRegion(),
 					strconv.Quote("+19205551212"),
 					strconv.Quote("Wilco plumbing"),
-					"set_as_default_site = true") + location,
+					"set_as_default_site = true") + locationConfig,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_site."+siteRes, "name", name1),
 					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_site."+siteRes, "description", description1),
@@ -636,7 +636,7 @@ func TestAccResourceSiteDefaultSite(t *testing.T) {
 					util.AssignRegion(),
 					strconv.Quote("+19205551212"),
 					strconv.Quote("Wilco plumbing"),
-					"set_as_default_site = false") + location + gcloud.GenerateOrganizationMe(),
+					"set_as_default_site = false") + locationConfig + gcloud.GenerateOrganizationMe(),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("data.genesyscloud_organizations_me.me", "default_site_id", originalSiteId),
 				),

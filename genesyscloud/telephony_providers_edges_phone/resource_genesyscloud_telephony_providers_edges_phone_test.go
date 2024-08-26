@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"strings"
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
-	locationResource "terraform-provider-genesyscloud/genesyscloud/location"
+	location "terraform-provider-genesyscloud/genesyscloud/location"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	didPool "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_did_pool"
 	phoneBaseSettings "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_phonebasesettings"
@@ -215,15 +215,15 @@ func TestAccResourceHardPhoneStandalone(t *testing.T) {
 		t.Skipf("failed to delete location with number %s: %v", emergencyNumber, err)
 	}
 
-	locationConfig := locationResource.GenerateLocationResource(
+	locationConfig := location.GenerateLocationResource(
 		locationRes,
 		"Terraform-location"+uuid.NewString(),
 		"HQ1",
 		[]string{},
-		locationResource.GenerateLocationEmergencyNum(
+		location.GenerateLocationEmergencyNum(
 			emergencyNumber,
 			util.NullValue, // Default number type
-		), locationResource.GenerateLocationAddress(
+		), location.GenerateLocationAddress(
 			"0176 Interactive Way",
 			"Indianapolis",
 			"IN",
@@ -342,15 +342,15 @@ func TestAccResourcePhoneStandalone(t *testing.T) {
 		t.Skipf("failed to delete location with number %s: %v", emergencyNumber, err)
 	}
 
-	locationConfig := locationResource.GenerateLocationResource(
+	locationConfig := location.GenerateLocationResource(
 		locationRes,
 		"Terraform location"+uuid.NewString(),
 		"HQ1",
 		[]string{},
-		locationResource.GenerateLocationEmergencyNum(
+		location.GenerateLocationEmergencyNum(
 			emergencyNumber,
 			util.NullValue, // Default number type
-		), locationResource.GenerateLocationAddress(
+		), location.GenerateLocationAddress(
 			"0176 Interactive Way",
 			"Indianapolis",
 			"IN",
@@ -470,15 +470,15 @@ func TestAccResourcePhoneStandaloneRemoteStation(t *testing.T) {
 		t.Skipf("failed to delete location with number %s: %v", emergencyNumber, err)
 	}
 
-	locationConfig := locationResource.GenerateLocationResource(
+	locationConfig := location.GenerateLocationResource(
 		locationRes,
 		"TerraformLocationRemote"+uuid.NewString(),
 		"HQ1",
 		[]string{},
-		locationResource.GenerateLocationEmergencyNum(
+		location.GenerateLocationEmergencyNum(
 			emergencyNumber,
 			util.NullValue, // Default number type
-		), locationResource.GenerateLocationAddress(
+		), location.GenerateLocationAddress(
 			"0176 Interactive Way",
 			"Indianapolis",
 			"IN",

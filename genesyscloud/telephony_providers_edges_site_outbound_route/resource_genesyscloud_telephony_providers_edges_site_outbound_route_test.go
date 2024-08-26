@@ -6,7 +6,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
-	locationResource "terraform-provider-genesyscloud/genesyscloud/location"
+	location "terraform-provider-genesyscloud/genesyscloud/location"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/telephony"
 	telephonyProvidersEdgesSite "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site"
@@ -49,15 +49,15 @@ func TestAccResourceSiteoutboundRoutes(t *testing.T) {
 		t.Skipf("failed to delete location with number %s, %v", emergencyNumber, err)
 	}
 
-	location := locationResource.GenerateLocationResource(
+	locationConfig := location.GenerateLocationResource(
 		locationRes,
 		"Terraform location"+uuid.NewString(),
 		"HQ1",
 		[]string{},
-		locationResource.GenerateLocationEmergencyNum(
+		location.GenerateLocationEmergencyNum(
 			emergencyNumber,
 			util.NullValue, // Default number type
-		), locationResource.GenerateLocationAddress(
+		), location.GenerateLocationAddress(
 			"7601 Interactive Way",
 			"Indianapolis",
 			"IN",
@@ -106,7 +106,7 @@ func TestAccResourceSiteoutboundRoutes(t *testing.T) {
 		ProviderFactories: provider.GetProviderFactories(providerResources, nil),
 		Steps: []resource.TestStep{
 			{
-				Config: trunkBaseSettings1 + trunkBaseSettings2 + location + site + generateOutboundRoutesResource(
+				Config: trunkBaseSettings1 + trunkBaseSettings2 + locationConfig + site + generateOutboundRoutesResource(
 					outboundRouteResource,
 					"genesyscloud_telephony_providers_edges_site."+siteRes+".id",
 					generateSiteOutboundRoutes(
@@ -142,7 +142,7 @@ func TestAccResourceSiteoutboundRoutes(t *testing.T) {
 			},
 			// Switch around the order of outbound routes which shouldn't have any effect
 			{
-				Config: trunkBaseSettings1 + trunkBaseSettings2 + location + site + generateOutboundRoutesResource(
+				Config: trunkBaseSettings1 + trunkBaseSettings2 + locationConfig + site + generateOutboundRoutesResource(
 					outboundRouteResource,
 					"genesyscloud_telephony_providers_edges_site."+siteRes+".id",
 					generateSiteOutboundRoutes(
@@ -177,7 +177,7 @@ func TestAccResourceSiteoutboundRoutes(t *testing.T) {
 			},
 			// Remove a route and update the description, classification types, trunk base ids, distribution and enabled value of another route
 			{
-				Config: trunkBaseSettings1 + trunkBaseSettings2 + trunkBaseSettings3 + location + site + generateOutboundRoutesResource(
+				Config: trunkBaseSettings1 + trunkBaseSettings2 + trunkBaseSettings3 + locationConfig + site + generateOutboundRoutesResource(
 					outboundRouteResource,
 					"genesyscloud_telephony_providers_edges_site."+siteRes+".id",
 					generateSiteOutboundRoutes(

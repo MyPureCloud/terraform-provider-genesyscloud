@@ -3,7 +3,7 @@ package telephony_providers_edges_site
 import (
 	"fmt"
 	"strconv"
-	locationResource "terraform-provider-genesyscloud/genesyscloud/location"
+	location "terraform-provider-genesyscloud/genesyscloud/location"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
@@ -33,15 +33,15 @@ func TestAccDataSourceSite(t *testing.T) {
 		t.Skipf("failed to delete location with number %s: %v", emergencyNumber, err)
 	}
 
-	location := locationResource.GenerateLocationResource(
+	locationConfig := location.GenerateLocationResource(
 		locationRes,
 		"Terraform location"+uuid.NewString(),
 		"HQ1",
 		[]string{},
-		locationResource.GenerateLocationEmergencyNum(
+		location.GenerateLocationEmergencyNum(
 			emergencyNumber,
 			util.NullValue, // Default number type
-		), locationResource.GenerateLocationAddress(
+		), location.GenerateLocationAddress(
 			"7601 Interactive Way",
 			"Indianapolis",
 			"IN",
@@ -63,7 +63,7 @@ func TestAccDataSourceSite(t *testing.T) {
 					false,
 					util.AssignRegion(),
 					strconv.Quote("+19205551212"),
-					strconv.Quote("Wilco plumbing")) + location + generateSiteDataSource(
+					strconv.Quote("Wilco plumbing")) + locationConfig + generateSiteDataSource(
 					siteDataRes,
 					name,
 					"genesyscloud_telephony_providers_edges_site."+siteRes),
