@@ -105,7 +105,6 @@ resource "genesyscloud_routing_queue" "example_queue" {
 - `media_settings_chat` (Block List, Max: 1) Chat media settings. (see [below for nested schema](#nestedblock--media_settings_chat))
 - `media_settings_email` (Block List, Max: 1) Email media settings. (see [below for nested schema](#nestedblock--media_settings_email))
 - `media_settings_message` (Block List, Max: 1) Message media settings. (see [below for nested schema](#nestedblock--media_settings_message))
-- `member_groups` (Block Set) (see [below for nested schema](#nestedblock--member_groups))
 - `members` (Set of Object) Users in the queue. If not set, this resource will not manage members. If a user is already assigned to this queue via a group, attempting to assign them using this field will cause an error to be thrown. (see [below for nested schema](#nestedatt--members))
 - `message_in_queue_flow_id` (String) The in-queue flow ID to use for message conversations waiting in queue.
 - `on_hold_prompt_id` (String) The audio to be played when calls on this queue are on hold. If not configured, the default on-hold music will play.
@@ -255,15 +254,6 @@ Optional:
 - `enable_auto_answer` (Boolean) Auto-Answer for digital channels(Email, Message) Defaults to `false`.
 - `service_level_duration_ms` (Number) Service Level target in milliseconds. Must be >= 1000
 - `service_level_percentage` (Number) The desired Service Level. A float value between 0 and 1.
-
-
-<a id="nestedblock--member_groups"></a>
-### Nested Schema for `member_groups`
-
-Required:
-
-- `member_group_id` (String) ID (GUID) for Group, SkillGroup, Team
-- `member_group_type` (String) The type of the member group. Accepted values: TEAM, GROUP, SKILLGROUP
 
 
 <a id="nestedatt--members"></a>
