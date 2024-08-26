@@ -622,32 +622,31 @@ func (g *GenesysCloudResourceExporter) processAndBuildDependencies() (filters []
 		}
 	}
 
-	for _, resourceKeys := range g.resources {
+	for _, resourceInstance := range g.resources {
 
-		exists := util.StringExists(resourceKeys.Id, g.flowResourcesList)
+		exists := util.StringExists(resourceInstance.Id, g.flowResourcesList)
 		if exists {
-			log.Printf("dependent consumer retrieved for resource type %s.%s (%v)", resourceKeys.Type, resourceKeys.Name, resourceKeys.Id)
+			log.Printf("dependent consumer retrieved for resource type %s.%s (%v)", resourceInstance.Type, resourceInstance.Name, resourceInstance.Id)
 			continue
 		}
 
-		resources, dependsStruct, err := proxy.GetAllWithPooledClient(retrieveDependentConsumers(resourceKeys))
+		dependantResources, dependsStruct, err := proxy.GetAllWithPooledClient(retrieveDependentConsumers(resourceInstance))
 
-		g.flowResourcesList = append(g.flowResourcesList, resourceKeys.Id)
+		g.flowResourcesList = append(g.flowResourcesList, resourceInstance.Id)
 
 		if err != nil {
 			return nil, nil, err
 		}
 
-		if len(resources) > 0 {
-			resourcesToBeExported := retrieveExportResources(g.resources, resources)
-			for _, meta := range resourcesToBeExported {
-
-				resource := strings.Split(meta.SanitizedBlockLabel, "::::")
+		if len(dependantResources) > 0 {
+			dependantResourcesToBeExported := retrieveExportResources(g.resources, dependantResources)
+			for _, meta := range dependantResourcesToBeExported {
+				resource := strings.Split(meta.BlockLabel, "::::") // Label has not been sanitized yet
 				filterList = append(filterList, fmt.Sprintf("%s::%s", resource[0], resource[1]))
 			}
 			g.dependsList = stringmap.MergeMaps(g.dependsList, dependsStruct.DependsMap)
 			g.cyclicDependsList = append(g.cyclicDependsList, dependsStruct.CyclicDependsList...)
-			totalResources = stringmap.MergeSingularMaps(totalResources, resources)
+			totalResources = stringmap.MergeSingularMaps(totalResources, dependantResources)
 		}
 	}
 
