@@ -115,6 +115,9 @@ func getSmsAddressIdByNameFn(p *routingSmsAddressProxy, name string, ctx context
 		return "", true, resp, fmt.Errorf("failed to read sms addresses: %v", err)
 	}
 	for _, address := range *smsAddresses {
+		if address.Name == nil {
+			continue
+		}
 		if *address.Name == name {
 			return *address.Id, false, resp, nil
 		}
