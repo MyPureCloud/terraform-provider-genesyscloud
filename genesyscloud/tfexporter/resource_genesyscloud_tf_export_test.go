@@ -667,6 +667,8 @@ func TestAccResourceTfExportByName(t *testing.T) {
 					util.FalseValue,                    // suppressCall_record_false
 					util.NullValue,                     // enable_transcription false
 					strconv.Quote("TimestampAndPriority"),
+					util.NullValue,
+					util.NullValue,
 				) + generateTfExportByName(
 					exportResource1,
 					exportTestDir,
@@ -710,6 +712,8 @@ func TestAccResourceTfExportByName(t *testing.T) {
 					util.FalseValue,                    // suppressCall_record_false
 					util.NullValue,                     // enable_transcription false
 					strconv.Quote("TimestampAndPriority"),
+					util.NullValue,
+					util.NullValue,
 				) + generateTfExportByName(
 					exportResource1,
 					exportTestDir,
@@ -766,6 +770,8 @@ func TestAccResourceTfExportByName(t *testing.T) {
 					util.FalseValue,                    // suppressCall_record_false
 					util.NullValue,                     // enable_transcription false
 					strconv.Quote("TimestampAndPriority"),
+					util.NullValue,
+					util.NullValue,
 				) + generateTfExportByName(
 					exportResource1,
 					exportTestDir,
@@ -2822,6 +2828,8 @@ func buildQueueResources(queueExports []QueueExport) string {
 			util.NullValue,                              //suppressCall_record_false
 			util.NullValue,                              // enable_transcription false
 			strconv.Quote("TimestampAndPriority"),
+			util.NullValue,
+			util.NullValue,
 		)
 	}
 
