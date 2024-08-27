@@ -37,8 +37,8 @@ func ResourceJourneyOutcomePredictor() *schema.Resource {
 		Schema: map[string]*schema.Schema{
 			"outcome_id": {
 				Description: "The outcome associated with this predictor",
-				Type: 		 schema.TypeString,
-				Required: 	 true,
+				Type:        schema.TypeString,
+				Required:    true,
 				ForceNew:    true,
 			},
 		},

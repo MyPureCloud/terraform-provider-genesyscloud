@@ -152,7 +152,7 @@ func getTaskManagementWorkbinByIdFn(ctx context.Context, p *taskManagementWorkbi
 	if workbin != nil {
 		return workbin, nil, nil
 	}
-	
+
 	return p.taskManagementApi.GetTaskmanagementWorkbin(id)
 }
 

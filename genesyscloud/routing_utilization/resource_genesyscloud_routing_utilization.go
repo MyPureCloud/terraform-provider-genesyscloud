@@ -19,9 +19,22 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
 )
 
-func getAllRoutingUtilization(_ context.Context, _ *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
-	// Routing utilization config always exists
+func getAllRoutingUtilization(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+	// Although this resource typically has only a single instance,
+	// we are attempting to fetch the data from the API in order to
+	// verify the user's permission to access this resource's API endpoint(s).
+
+	proxy := getRoutingUtilizationProxy(clientConfig)
 	resources := make(resourceExporter.ResourceIDMetaMap)
+
+	_, resp, err := proxy.getRoutingUtilization(ctx)
+	if err != nil {
+		if util.IsStatus404(resp) {
+			// Don't export if config doesn't exist
+			return resources, nil
+		}
+		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get %s due to error: %s", resourceName, err), resp)
+	}
 	resources["0"] = &resourceExporter.ResourceMeta{Name: "routing_utilization"}
 	return resources, nil
 }

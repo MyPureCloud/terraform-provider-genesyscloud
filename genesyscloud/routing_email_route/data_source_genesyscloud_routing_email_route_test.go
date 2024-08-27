@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
+	routingEmailDomain "terraform-provider-genesyscloud/genesyscloud/routing_email_domain"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
-	routingEmailDomain "terraform-provider-genesyscloud/genesyscloud/routing_email_domain"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"

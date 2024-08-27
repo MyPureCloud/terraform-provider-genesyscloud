@@ -17,25 +17,25 @@ out during testing.
 var internalProxy *orgAuthSettingsProxy
 
 // Type definitions for each func on our proxy so we can easily mock them out later
-type getOrgAuthSettingsByIdFunc func(ctx context.Context, p *orgAuthSettingsProxy, id string) (orgAuthSettings *platformclientv2.Orgauthsettings, response *platformclientv2.APIResponse, err error)
+type getOrgAuthSettingsFunc func(ctx context.Context, p *orgAuthSettingsProxy) (orgAuthSettings *platformclientv2.Orgauthsettings, response *platformclientv2.APIResponse, err error)
 type updateOrgAuthSettingsFunc func(ctx context.Context, p *orgAuthSettingsProxy, orgAuthSettings *platformclientv2.Orgauthsettings) (*platformclientv2.Orgauthsettings, *platformclientv2.APIResponse, error)
 
 // orgAuthSettingsProxy contains all of the methods that call genesys cloud APIs.
 type orgAuthSettingsProxy struct {
-	clientConfig               *platformclientv2.Configuration
-	organizationApi            *platformclientv2.OrganizationApi
-	getOrgAuthSettingsByIdAttr getOrgAuthSettingsByIdFunc
-	updateOrgAuthSettingsAttr  updateOrgAuthSettingsFunc
+	clientConfig              *platformclientv2.Configuration
+	organizationApi           *platformclientv2.OrganizationApi
+	getOrgAuthSettingsAttr    getOrgAuthSettingsFunc
+	updateOrgAuthSettingsAttr updateOrgAuthSettingsFunc
 }
 
 // newOrgAuthSettingsProxy initializes the organization authentication settings proxy with all of the data needed to communicate with Genesys Cloud
 func newOrgAuthSettingsProxy(clientConfig *platformclientv2.Configuration) *orgAuthSettingsProxy {
 	api := platformclientv2.NewOrganizationApiWithConfig(clientConfig)
 	return &orgAuthSettingsProxy{
-		clientConfig:               clientConfig,
-		organizationApi:            api,
-		getOrgAuthSettingsByIdAttr: getOrgAuthSettingsByIdFn,
-		updateOrgAuthSettingsAttr:  updateOrgAuthSettingsFn,
+		clientConfig:              clientConfig,
+		organizationApi:           api,
+		getOrgAuthSettingsAttr:    getOrgAuthSettingsFn,
+		updateOrgAuthSettingsAttr: updateOrgAuthSettingsFn,
 	}
 }
 
@@ -48,9 +48,9 @@ func getOrgAuthSettingsProxy(clientConfig *platformclientv2.Configuration) *orgA
 	return internalProxy
 }
 
-// getOrgAuthSettingsById returns a single Genesys Cloud organization authentication settings by Id
-func (p *orgAuthSettingsProxy) getOrgAuthSettingsById(ctx context.Context, id string) (orgAuthSettings *platformclientv2.Orgauthsettings, response *platformclientv2.APIResponse, err error) {
-	return p.getOrgAuthSettingsByIdAttr(ctx, p, id)
+// getOrgAuthSettings returns a single Genesys Cloud organization authentication settings by Id
+func (p *orgAuthSettingsProxy) getOrgAuthSettings(ctx context.Context) (orgAuthSettings *platformclientv2.Orgauthsettings, response *platformclientv2.APIResponse, err error) {
+	return p.getOrgAuthSettingsAttr(ctx, p)
 }
 
 // updateOrgAuthSettings updates a Genesys Cloud organization authentication settings
@@ -58,11 +58,11 @@ func (p *orgAuthSettingsProxy) updateOrgAuthSettings(ctx context.Context, orgAut
 	return p.updateOrgAuthSettingsAttr(ctx, p, orgAuthSettings)
 }
 
-// getOrgAuthSettingsByIdFn is an implementation of the function to get a Genesys Cloud organization authentication settings by Id
-func getOrgAuthSettingsByIdFn(ctx context.Context, p *orgAuthSettingsProxy, id string) (orgAuthSettings *platformclientv2.Orgauthsettings, response *platformclientv2.APIResponse, err error) {
+// getOrgAuthSettingsFn is an implementation of the function to get a Genesys Cloud organization authentication settings by Id
+func getOrgAuthSettingsFn(ctx context.Context, p *orgAuthSettingsProxy) (orgAuthSettings *platformclientv2.Orgauthsettings, response *platformclientv2.APIResponse, err error) {
 	orgAuthSettings, resp, err := p.organizationApi.GetOrganizationsAuthenticationSettings()
 	if err != nil {
-		return nil, resp, fmt.Errorf("Failed to retrieve organization authentication settings by id %s: %s", id, err)
+		return nil, resp, fmt.Errorf("failed to retrieve organization authentication settings: %s", err)
 	}
 	return orgAuthSettings, resp, nil
 }

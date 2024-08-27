@@ -43,7 +43,6 @@ func buildCobrowseSettings(d *schema.ResourceData) *platformclientv2.Cobrowseset
 		}
 	}
 
-
 	return &platformclientv2.Cobrowsesettings{
 		Enabled:              &enabled,
 		AllowAgentControl:    &allowAgentControl,
@@ -51,7 +50,7 @@ func buildCobrowseSettings(d *schema.ResourceData) *platformclientv2.Cobrowseset
 		Channels:             &channels,
 		MaskSelectors:        &maskSelectors,
 		ReadonlySelectors:    &readonlySelectors,
-		PauseCriteria:		  &pauseCriteria,
+		PauseCriteria:        &pauseCriteria,
 	}
 }
 

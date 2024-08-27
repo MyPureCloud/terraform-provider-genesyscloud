@@ -24,6 +24,10 @@ The resource_genesyscloud_idp_salesforce.go contains all of the methods that per
 */
 
 func getAllIdpSalesforce(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+	// Although this resource typically has only a single instance,
+	// we are attempting to fetch the data from the API in order to
+	// verify the user's permission to access this resource's API endpoint(s).
+
 	proxy := getIdpSalesforceProxy(clientConfig)
 	resources := make(resourceExporter.ResourceIDMetaMap)
 

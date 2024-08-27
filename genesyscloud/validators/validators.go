@@ -22,7 +22,8 @@ import (
 func ValidatePhoneNumber(number interface{}, _ cty.Path) diag.Diagnostics {
 	if numberStr, ok := number.(string); ok {
 
-		formattedNum, err := util.FormatAsE164Number(numberStr)
+		utilE164 := util.NewUtilE164Service()
+		formattedNum, err := utilE164.FormatAsValidE164Number(numberStr)
 		if err != nil {
 			return err
 		}
@@ -209,12 +210,12 @@ func ValidatePath(i interface{}, k string) (warnings []string, errors []error) {
 // ValidateResponseAssetName validate a response asset filename matches the criteria outlined in the description
 func ValidateResponseAssetName(name interface{}, _ cty.Path) diag.Diagnostics {
 	if nameStr, ok := name.(string); ok {
-		matched, err := regexp.MatchString("^[^\\.][^\\`\\\\{\\^\\}\\% \"\\>\\<\\[\\]\\#\\~|]+[^/]$", nameStr)
+		matched, err := regexp.MatchString("^[^\\.]([^\\`\\\\{\\^\\}\\% \"\\>\\<\\[\\]\\#\\~|]|\\s)+[^/]$", nameStr)
 		if err != nil {
 			return diag.Errorf("Error applying regular expression against filename: %v", err)
 		}
 		if !matched {
-			return diag.Errorf("Invalid filename. It must not start with a dot and not end with a forward slash. Whitespace and the following characters are not allowed: \\{^}%s]\">[~<#|", "%`")
+			return diag.Errorf("Invalid filename. It must not start with a dot and not end with a forward slash. The following characters are not allowed: \\{^}%s]\">[~<#|", "%`")
 		}
 		return nil
 	}

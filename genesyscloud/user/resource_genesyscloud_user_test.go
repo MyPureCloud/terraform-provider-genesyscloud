@@ -6,7 +6,7 @@ import (
 	"log"
 	"strconv"
 	"strings"
-	"terraform-provider-genesyscloud/genesyscloud"
+	location "terraform-provider-genesyscloud/genesyscloud/location"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	routinglanguage "terraform-provider-genesyscloud/genesyscloud/routing_language"
 	routingSkill "terraform-provider-genesyscloud/genesyscloud/routing_skill"
@@ -643,7 +643,7 @@ func TestAccResourceUserLocations(t *testing.T) {
 						"genesyscloud_location."+locResource1+".id",
 						strconv.Quote(locNotes1),
 					),
-				) + genesyscloud.GenerateLocationResourceBasic(locResource1, locName1),
+				) + location.GenerateLocationResourceBasic(locResource1, locName1),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName+"."+userResource1, "email", email),
 					resource.TestCheckResourceAttrPair(resourceName+"."+userResource1, "locations.0.location_id", "genesyscloud_location."+locResource1, "id"),
@@ -660,7 +660,7 @@ func TestAccResourceUserLocations(t *testing.T) {
 						"genesyscloud_location."+locResource2+".id",
 						strconv.Quote(locNotes2),
 					),
-				) + genesyscloud.GenerateLocationResourceBasic(locResource2, locName2),
+				) + location.GenerateLocationResourceBasic(locResource2, locName2),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName+"."+userResource1, "email", email),
 					resource.TestCheckResourceAttrPair(resourceName+"."+userResource1, "locations.0.location_id", "genesyscloud_location."+locResource2, "id"),

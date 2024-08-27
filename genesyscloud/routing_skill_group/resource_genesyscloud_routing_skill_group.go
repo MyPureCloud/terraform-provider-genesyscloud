@@ -123,7 +123,6 @@ func readSkillGroups(ctx context.Context, d *schema.ResourceData, meta interface
 	})
 }
 
-
 func updateSkillGroups(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getRoutingSkillGroupsProxy(sdkConfig)
