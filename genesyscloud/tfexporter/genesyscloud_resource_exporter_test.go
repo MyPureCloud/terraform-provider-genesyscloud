@@ -329,8 +329,8 @@ func TestUnitTfExportRemoveTrailingZerosRrule(t *testing.T) {
 func TestUnitTfExportBuildDependsOnResources(t *testing.T) {
 
 	meta := &resourceExporter.ResourceMeta{
-		SanitizedBlockLabel: "example::::resource",
-		IdPrefix:            "prefix_",
+		BlockLabel: "example::::resource",
+		IdPrefix:   "prefix_",
 	}
 
 	// Create an instance of ResourceIDMetaMap and add the meta to it
