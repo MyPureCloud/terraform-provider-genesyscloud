@@ -39,17 +39,17 @@ var (
 			"enable_agent_owned_callbacks": {
 				Description: "Enable Agent Owned Callbacks",
 				Type:        schema.TypeBool,
-				Optional:    true,
+				Required:    true,
 			},
 			"max_owned_callback_hours": {
 				Description: "Auto End Delay Seconds Must be >= 7",
 				Type:        schema.TypeInt,
-				Optional:    true,
+				Required:    true,
 			},
 			"max_owned_callback_delay_hours": {
 				Description: "Max Owned Call Back Delay Hours >= 7",
 				Type:        schema.TypeInt,
-				Optional:    true,
+				Required:    true,
 			},
 		},
 	}
@@ -59,36 +59,7 @@ var (
 			"alerting_timeout_sec": {
 				Description:  "Alerting timeout in seconds. Must be >= 7",
 				Type:         schema.TypeInt,
-				Optional:     true,
-				ValidateFunc: validation.IntAtLeast(7),
-			},
-			"enable_auto_answer": {
-				Description: "Auto-Answer for digital channels(Email, Message)",
-				Type:        schema.TypeBool,
-				Optional:    true,
-				Default:     false,
-			},
-			"service_level_percentage": {
-				Description:  "The desired Service Level. A float value between 0 and 1.",
-				Type:         schema.TypeFloat,
-				Optional:     true,
-				ValidateFunc: validation.FloatBetween(0, 1),
-			},
-			"service_level_duration_ms": {
-				Description:  "Service Level target in milliseconds. Must be >= 1000",
-				Type:         schema.TypeInt,
-				Optional:     true,
-				ValidateFunc: validation.IntAtLeast(1000),
-			},
-		},
-	}
-
-	queueMediaSettingsCallbackResource = &schema.Resource{
-		Schema: map[string]*schema.Schema{
-			"alerting_timeout_sec": {
-				Description:  "Alerting timeout in seconds. Must be >= 7",
-				Type:         schema.TypeInt,
-				Optional:     true,
+				Required:     true,
 				ValidateFunc: validation.IntAtLeast(7),
 			},
 			"auto_end_delay_seconds": {
@@ -116,13 +87,13 @@ var (
 			"service_level_percentage": {
 				Description:  "The desired Service Level. A float value between 0 and 1.",
 				Type:         schema.TypeFloat,
-				Optional:     true,
+				Required:     true,
 				ValidateFunc: validation.FloatBetween(0, 1),
 			},
 			"service_level_duration_ms": {
 				Description:  "Service Level target in milliseconds. Must be >= 1000",
 				Type:         schema.TypeInt,
-				Optional:     true,
+				Required:     true,
 				ValidateFunc: validation.IntAtLeast(1000),
 			},
 		},
@@ -191,10 +162,10 @@ func ResourceRoutingQueue() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud Routing Queue",
 
-		CreateContext: provider.CreateWithPooledClient(createRoutingQueue),
-		ReadContext:   provider.ReadWithPooledClient(readRoutingQueue),
-		UpdateContext: provider.UpdateWithPooledClient(updateRoutingQueue),
-		DeleteContext: provider.DeleteWithPooledClient(deleteRoutingQueue),
+		CreateContext: provider.CreateWithPooledClient(createQueue),
+		ReadContext:   provider.ReadWithPooledClient(readQueue),
+		UpdateContext: provider.UpdateWithPooledClient(updateQueue),
+		DeleteContext: provider.DeleteWithPooledClient(deleteQueue),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -238,7 +209,7 @@ func ResourceRoutingQueue() *schema.Resource {
 				MaxItems:    1,
 				Optional:    true,
 				Computed:    true,
-				Elem:        queueMediaSettingsCallbackResource,
+				Elem:        queueMediaSettingsResource,
 			},
 			"media_settings_chat": {
 				Description: "Chat media settings.",
@@ -336,7 +307,7 @@ func ResourceRoutingQueue() *schema.Resource {
 						"operator": {
 							Description:  "The operator that compares the actual value against the condition value. Valid values: GreaterThan, GreaterThanOrEqualTo, LessThan, LessThanOrEqualTo.",
 							Type:         schema.TypeString,
-							Optional:     true,
+							Required:     true,
 							ValidateFunc: validation.StringInSlice([]string{"GreaterThan", "LessThan", "GreaterThanOrEqualTo", "LessThanOrEqualTo"}, false),
 						},
 						"metric": {
@@ -348,7 +319,7 @@ func ResourceRoutingQueue() *schema.Resource {
 						"condition_value": {
 							Description:  "The limit value, beyond which a rule evaluates as true.",
 							Type:         schema.TypeFloat,
-							Optional:     true,
+							Required:     true,
 							ValidateFunc: validation.FloatBetween(0, 259200),
 						},
 						"wait_seconds": {
@@ -437,16 +408,6 @@ func ResourceRoutingQueue() *schema.Resource {
 				Type:        schema.TypeBool,
 				Optional:    true,
 			},
-			"peer_id": {
-				Description: "The ID of an associated external queue",
-				Optional:    true,
-				Type:        schema.TypeString,
-			},
-			"source_queue_id": {
-				Description: "The id of an existing queue to copy the settings (does not include GPR settings) from when creating a new queue.",
-				Optional:    true,
-				Type:        schema.TypeString,
-			},
 			"enable_manual_assignment": {
 				Description: "Indicates whether manual assignment is enabled for this queue.",
 				Type:        schema.TypeBool,
@@ -479,16 +440,6 @@ func ResourceRoutingQueue() *schema.Resource {
 			},
 			"outbound_messaging_sms_address_id": {
 				Description: "The unique ID of the outbound messaging SMS address for the queue.",
-				Type:        schema.TypeString,
-				Optional:    true,
-			},
-			"outbound_messaging_open_messaging_recipient_id": {
-				Description: "The unique ID of the outbound messaging open messaging recipient for the queue.",
-				Type:        schema.TypeString,
-				Optional:    true,
-			},
-			"outbound_messaging_whatsapp_recipient_id": {
-				Description: "The unique ID of the outbound messaging whatsapp recipient for the queue.",
 				Type:        schema.TypeString,
 				Optional:    true,
 			},
