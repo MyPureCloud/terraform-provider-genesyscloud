@@ -42,8 +42,6 @@ func TestAccDataSourceRoutingQueueBasic(t *testing.T) {
 					util.NullValue, //suppressCall_record_false
 					util.NullValue, // enable_transcription false
 					strconv.Quote("TimestampAndPriority"),
-					util.NullValue,
-					util.NullValue,
 				) + generateRoutingQueueDataSource(
 					queueDataSource,
 					"genesyscloud_routing_queue."+queueResource+".name",
