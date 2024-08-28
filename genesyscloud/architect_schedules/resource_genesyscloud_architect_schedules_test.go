@@ -2,7 +2,7 @@ package architect_schedules
 
 import (
 	"fmt"
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	authDivision "terraform-provider-genesyscloud/genesyscloud/auth_division"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
@@ -76,7 +76,7 @@ func TestAccResourceArchitectSchedules(t *testing.T) {
 			},
 			{
 				// Create with new division
-				Config: gcloud.GenerateAuthDivisionBasic(divResource, divName) + GenerateArchitectSchedulesResource(
+				Config: authDivision.GenerateAuthDivisionBasic(divResource, divName) + GenerateArchitectSchedulesResource(
 					schedResource2,
 					name2,
 					"genesyscloud_auth_division."+divResource+".id",

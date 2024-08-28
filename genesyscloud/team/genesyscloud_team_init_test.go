@@ -2,7 +2,7 @@ package team
 
 import (
 	"sync"
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	authDivision "terraform-provider-genesyscloud/genesyscloud/auth_division"
 	"terraform-provider-genesyscloud/genesyscloud/user"
 	"testing"
 
@@ -30,7 +30,7 @@ func (r *registerTestInstance) registerTestResources() {
 	r.resourceMapMutex.Lock()
 	defer r.resourceMapMutex.Unlock()
 	providerResources["genesyscloud_team"] = ResourceTeam()
-	providerResources["genesyscloud_auth_division"] = gcloud.ResourceAuthDivision()
+	providerResources["genesyscloud_auth_division"] = authDivision.ResourceAuthDivision()
 	providerResources["genesyscloud_user"] = user.ResourceUser()
 }
 

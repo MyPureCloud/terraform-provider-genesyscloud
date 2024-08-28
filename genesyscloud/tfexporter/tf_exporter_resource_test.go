@@ -15,6 +15,7 @@ import (
 	archIvr "terraform-provider-genesyscloud/genesyscloud/architect_ivr"
 	architectSchedulegroups "terraform-provider-genesyscloud/genesyscloud/architect_schedulegroups"
 	architectSchedules "terraform-provider-genesyscloud/genesyscloud/architect_schedules"
+	authDivision "terraform-provider-genesyscloud/genesyscloud/auth_division"
 	authRole "terraform-provider-genesyscloud/genesyscloud/auth_role"
 	integrationInstagram "terraform-provider-genesyscloud/genesyscloud/conversations_messaging_integrations_instagram"
 	cMessagingSettings "terraform-provider-genesyscloud/genesyscloud/conversations_messaging_settings"
@@ -132,7 +133,7 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_architect_schedulegroups"] = architectSchedulegroups.ResourceArchitectSchedulegroups()
 	providerResources["genesyscloud_architect_user_prompt"] = userPrompt.ResourceArchitectUserPrompt()
 	providerResources["genesyscloud_auth_role"] = authRole.ResourceAuthRole()
-	providerResources["genesyscloud_auth_division"] = gcloud.ResourceAuthDivision()
+	providerResources["genesyscloud_auth_division"] = authDivision.ResourceAuthDivision()
 	providerResources["genesyscloud_employeeperformance_externalmetrics_definitions"] = employeeperformanceExternalmetricsDefinition.ResourceEmployeeperformanceExternalmetricsDefinition()
 	providerResources["genesyscloud_flow_loglevel"] = flowLogLevel.ResourceFlowLoglevel()
 	providerResources["genesyscloud_group"] = group.ResourceGroup()
@@ -234,7 +235,7 @@ func (r *registerTestInstance) registerTestExporters() {
 	RegisterExporter("genesyscloud_architect_schedules", architectSchedules.ArchitectSchedulesExporter())
 	RegisterExporter("genesyscloud_architect_schedulegroups", architectSchedulegroups.ArchitectSchedulegroupsExporter())
 	RegisterExporter("genesyscloud_architect_user_prompt", userPrompt.ArchitectUserPromptExporter())
-	RegisterExporter("genesyscloud_auth_division", gcloud.AuthDivisionExporter())
+	RegisterExporter("genesyscloud_auth_division", authDivision.AuthDivisionExporter())
 	RegisterExporter("genesyscloud_auth_role", authRole.AuthRoleExporter())
 	RegisterExporter("genesyscloud_employeeperformance_externalmetrics_definitions", employeeperformanceExternalmetricsDefinition.EmployeeperformanceExternalmetricsDefinitionExporter())
 	RegisterExporter("genesyscloud_flow", flow.ArchitectFlowExporter())

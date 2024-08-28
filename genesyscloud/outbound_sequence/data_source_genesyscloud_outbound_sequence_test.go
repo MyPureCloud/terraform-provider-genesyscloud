@@ -2,12 +2,12 @@ package outbound_sequence
 
 import (
 	"fmt"
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	outboundCampaign "terraform-provider-genesyscloud/genesyscloud/outbound_campaign"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 
+	authDivision "terraform-provider-genesyscloud/genesyscloud/auth_division"
 	edgeSite "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site"
 
 	"github.com/google/uuid"
@@ -45,7 +45,7 @@ func TestAccDataSourceOutboundSequence(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config: `data "genesyscloud_auth_division_home" "home" {}` + "\n" +
-					gcloud.GenerateAuthDivisionBasic(divResourceId, divName) +
+					authDivision.GenerateAuthDivisionBasic(divResourceId, divName) +
 					outboundCampaign.GenerateOutboundCampaignBasic(
 						campaignResourceId,
 						campaignName,

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	authDivision "terraform-provider-genesyscloud/genesyscloud/auth_division"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	routingWrapupcode "terraform-provider-genesyscloud/genesyscloud/routing_wrapupcode"
 	"terraform-provider-genesyscloud/genesyscloud/util"
@@ -37,7 +37,7 @@ func TestAccResourceOutboundWrapupCodeMapping(t *testing.T) {
 				PreConfig: func() {
 					time.Sleep(30 * time.Second)
 				},
-				Config: gcloud.GenerateAuthDivisionBasic(divResource, divName) + routingWrapupcode.GenerateRoutingWrapupcodeResource(
+				Config: authDivision.GenerateAuthDivisionBasic(divResource, divName) + routingWrapupcode.GenerateRoutingWrapupcodeResource(
 					wrapupCode1ResourceId,
 					wrapupCode1Name,
 					"genesyscloud_auth_division."+divResource+".id",
@@ -67,7 +67,7 @@ resource "genesyscloud_outbound_wrapupcodemappings"	"%s" {
 				PreConfig: func() {
 					time.Sleep(30 * time.Second)
 				},
-				Config: gcloud.GenerateAuthDivisionBasic(divResource, divName) +
+				Config: authDivision.GenerateAuthDivisionBasic(divResource, divName) +
 					routingWrapupcode.GenerateRoutingWrapupcodeResource(wrapupCode1ResourceId, wrapupCode1Name, "genesyscloud_auth_division."+divResource+".id") +
 					routingWrapupcode.GenerateRoutingWrapupcodeResource(wrapupCode2ResourceId, wrapupCode2Name, "genesyscloud_auth_division."+divResource+".id") +
 					fmt.Sprintf(`
@@ -94,7 +94,7 @@ resource "genesyscloud_outbound_wrapupcodemappings"	"%s" {
 			},
 			// Update
 			{
-				Config: gcloud.GenerateAuthDivisionBasic(divResource, divName) +
+				Config: authDivision.GenerateAuthDivisionBasic(divResource, divName) +
 					routingWrapupcode.GenerateRoutingWrapupcodeResource(wrapupCode1ResourceId, wrapupCode1Name, "genesyscloud_auth_division."+divResource+".id") +
 					routingWrapupcode.GenerateRoutingWrapupcodeResource(wrapupCode2ResourceId, wrapupCode2Name, "genesyscloud_auth_division."+divResource+".id") +
 					routingWrapupcode.GenerateRoutingWrapupcodeResource(wrapupCode3ResourceId, wrapupCode3Name, "genesyscloud_auth_division."+divResource+".id") +
