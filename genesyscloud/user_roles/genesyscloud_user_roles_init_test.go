@@ -3,8 +3,8 @@ package user_roles
 import (
 	"sync"
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
-	authRole "terraform-provider-genesyscloud/genesyscloud/auth_role"
 	authDivision "terraform-provider-genesyscloud/genesyscloud/auth_division"
+	authRole "terraform-provider-genesyscloud/genesyscloud/auth_role"
 
 	"terraform-provider-genesyscloud/genesyscloud/user"
 	"testing"

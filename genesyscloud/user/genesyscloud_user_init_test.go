@@ -4,8 +4,8 @@ import (
 	"sync"
 	"terraform-provider-genesyscloud/genesyscloud"
 
+	authDivision "terraform-provider-genesyscloud/genesyscloud/auth_division"
 	authRole "terraform-provider-genesyscloud/genesyscloud/auth_role"
-	authDivision"terraform-provider-genesyscloud/genesyscloud/auth_division"
 
 	"terraform-provider-genesyscloud/genesyscloud/location"
 	routinglanguage "terraform-provider-genesyscloud/genesyscloud/routing_language"
