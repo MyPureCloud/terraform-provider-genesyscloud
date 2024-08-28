@@ -590,7 +590,7 @@ func (g *GenesysCloudResourceExporter) generateZipForExporter() diag.Diagnostics
 func (g *GenesysCloudResourceExporter) buildAndExportDependsOnResourcesForFlows() diag.Diagnostics {
 
 	if g.addDependsOn {
-		filterList, resources, err := g.processAndBuildDependencies()
+		filterList, resources, err := g.processAndBuildFlowDependencies()
 		if err != nil {
 			return err
 		}
@@ -605,7 +605,7 @@ func (g *GenesysCloudResourceExporter) buildAndExportDependsOnResourcesForFlows(
 	return nil
 }
 
-func (g *GenesysCloudResourceExporter) processAndBuildDependencies() (filters []string, resources resourceExporter.ResourceIDMetaMap, diagErr diag.Diagnostics) {
+func (g *GenesysCloudResourceExporter) processAndBuildFlowDependencies() (filters []string, resources resourceExporter.ResourceIDMetaMap, diagErr diag.Diagnostics) {
 	filterList := make([]string, 0)
 	totalResources := make(resourceExporter.ResourceIDMetaMap)
 	proxy := dependentconsumers.GetDependentConsumerProxy(nil)

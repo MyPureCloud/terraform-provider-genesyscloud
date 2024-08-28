@@ -377,7 +377,7 @@ func TestUnitTfExportBuildDependsOnResources(t *testing.T) {
 		Type:  resourceType,
 	}
 	gre.resources = []resourceExporter.ResourceInfo{*resourceInfo}
-	filterList, _, err := gre.processAndBuildDependencies()
+	filterList, _, err := gre.processAndBuildFlowDependencies()
 	if err != nil {
 		t.Errorf("Error during building Dependencies %v", err)
 	}
