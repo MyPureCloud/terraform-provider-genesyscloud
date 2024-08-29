@@ -144,21 +144,29 @@ func GenerateUserPromptResource(userPrompt *UserPromptStruct) string {
 	)
 }
 
-func ArchitectPromptAudioResolver(promptId, exportDirectory, subDirectory string, configMap map[string]interface{}, meta interface{}) error {
+func ArchitectPromptAudioResolver(promptId, exportDirectory, subDirectory string, configMap map[string]any, meta any) error {
 	fullPath := path.Join(exportDirectory, subDirectory)
 	if err := os.MkdirAll(fullPath, os.ModePerm); err != nil {
 		return err
 	}
 
-	audioDataList, err := getArchitectPromptAudioData(context.TODO(), promptId, meta)
+	ctx := context.Background()
+	allResources, err := getUserPromptResources(ctx, promptId, meta)
 	if err != nil {
 		return err
 	}
 
-	if len(audioDataList) == 0 {
-		log.Printf("No downloadable asset info found for prompt '%s'", promptId)
+	if allResources == nil || len(*allResources) == 0 {
+		log.Printf("Found no resources for prompt '%s'. Exiting resolver function.", promptId)
 		return nil
 	}
+
+	log.Printf("Collecting audio data (mediaUri, language, filename) for resources in prompt '%s'", promptId)
+	audioDataList, err := getArchitectPromptAudioData(ctx, promptId, *allResources)
+	if err != nil {
+		return err
+	}
+	log.Printf("Found %v resources with downloadable content for prompt '%s'", len(audioDataList), promptId)
 
 	for _, data := range audioDataList {
 		log.Printf("Downloading file '%s' from mediaUri", path.Join(fullPath, data.FileName))
@@ -167,33 +175,91 @@ func ArchitectPromptAudioResolver(promptId, exportDirectory, subDirectory string
 		}
 		log.Println("Successfully downloaded file")
 	}
-	updateFilenamesInExportConfigMap(configMap, audioDataList, subDirectory)
+	if len(audioDataList) > 0 {
+		log.Printf("Updating filename fields in the resource config to point to newly downloaded data.")
+		updateFilenamesInExportConfigMap(configMap, audioDataList, subDirectory)
+	}
+
+	cleanupFilenamesWhereThereIsNoDownloadableData(ctx, promptId, configMap, *allResources)
 	return nil
 }
 
-func getArchitectPromptAudioData(ctx context.Context, promptId string, meta interface{}) ([]PromptAudioData, error) {
+// cleanupFilenamesWhereThereIsNoDownloadableData Finds instances where resources.filename has a value
+// even though there is no audio file to download, and then it removes the filename key.
+func cleanupFilenamesWhereThereIsNoDownloadableData(ctx context.Context, promptId string, configMap map[string]any, existingResources []platformclientv2.Promptasset) {
+	log.Printf("Gathering prompt resources whose 'filename' field reference a non-existent file.")
+	languagesWithNoFile := getUserPromptResourceLanguagesWithNoAssociatedFiles(ctx, promptId, existingResources)
+	if len(languagesWithNoFile) == 0 {
+		return
+	}
+	resources, _ := configMap["resources"].([]any)
+	if len(resources) == 0 {
+		return
+	}
+	for _, r := range resources {
+		rMap, ok := r.(map[string]any)
+		if !ok {
+			continue
+		}
+		for _, language := range languagesWithNoFile {
+			if language != rMap["language"].(string) {
+				continue
+			}
+			if filename, _ := rMap["filename"].(string); filename != "" {
+				log.Printf("Removing filename '%s' for language '%s' because file does not exist", filename, language)
+				rMap["filename"] = nil
+			}
+		}
+	}
+}
+
+// getUserPromptResourceLanguagesWithNoAssociatedFiles Collects all the languages associated with a prompt that
+// do not have any downloadable content associated with them i.e. no mediaUri or uploadStatus != transcoded
+func getUserPromptResourceLanguagesWithNoAssociatedFiles(ctx context.Context, promptId string, allResources []platformclientv2.Promptasset) []string {
+	var languagesWithNoAssociatedFiles []string
+	for _, r := range allResources {
+		hasAssociatedAudioFile := (r.MediaUri != nil && *r.MediaUri != "") && (r.UploadStatus != nil && *r.UploadStatus == "transcoded")
+		if hasAssociatedAudioFile {
+			continue
+		}
+		languagesWithNoAssociatedFiles = append(languagesWithNoAssociatedFiles, *r.Language)
+	}
+	return languagesWithNoAssociatedFiles
+}
+
+func getUserPromptResources(ctx context.Context, promptId string, meta any) (*[]platformclientv2.Promptasset, error) {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getArchitectUserPromptProxy(sdkConfig)
 
+	log.Printf("Reading all resources for user prompt '%s'", promptId)
+	allResources, _, err := proxy.getArchitectUserPromptResources(ctx, promptId)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read resources for prompt '%s': %v", promptId, err)
+	}
+	resourceCount := 0
+	if allResources != nil {
+		resourceCount = len(*allResources)
+	}
+	log.Printf("Successfully read %v resources associated with prompt  '%s'", resourceCount, promptId)
+
+	return allResources, nil
+}
+
+func getArchitectPromptAudioData(ctx context.Context, promptId string, allPromptResources []platformclientv2.Promptasset) ([]PromptAudioData, error) {
 	var promptResourceData []PromptAudioData
 
-	data, _, err := proxy.getArchitectUserPrompt(ctx, promptId, true, true, nil, true)
-	if err != nil {
-		return nil, err
-	}
-
-	if data == nil || data.Resources == nil {
-		return promptResourceData, nil
-	}
-
-	for _, r := range *data.Resources {
-		var data PromptAudioData
-		if r.MediaUri != nil && *r.MediaUri != "" {
-			data.MediaUri = *r.MediaUri
-			data.Language = *r.Language
-			data.FileName = fmt.Sprintf("%s-%s.wav", *r.Language, promptId)
-			promptResourceData = append(promptResourceData, data)
+	for _, r := range allPromptResources {
+		if r.MediaUri == nil || *r.MediaUri == "" {
+			continue
 		}
+		if r.UploadStatus == nil || *r.UploadStatus != "transcoded" {
+			continue
+		}
+		var promptAudioData PromptAudioData
+		promptAudioData.MediaUri = *r.MediaUri
+		promptAudioData.Language = *r.Language
+		promptAudioData.FileName = fmt.Sprintf("%s-%s.wav", *r.Language, promptId)
+		promptResourceData = append(promptResourceData, promptAudioData)
 	}
 
 	return promptResourceData, nil

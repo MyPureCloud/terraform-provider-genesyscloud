@@ -203,7 +203,7 @@ func getTaskManagementWorktypeByIdFn(ctx context.Context, p *TaskManagementWorkt
 	if worktype != nil {
 		return worktype, nil, nil
 	}
-	
+
 	return p.taskManagementApi.GetTaskmanagementWorktype(id, []string{})
 }
 

@@ -58,4 +58,3 @@ func TestMain(m *testing.M) {
 	// Run the test suite for the routing_email_domain package
 	m.Run()
 }
-
