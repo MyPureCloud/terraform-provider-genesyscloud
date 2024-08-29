@@ -66,7 +66,6 @@ type workitemConfig struct {
 }
 
 func TestAccResourceTaskManagementWorkitem(t *testing.T) {
-	t.Parallel()
 	var (
 		// home division
 		homeDivRes = "home"
