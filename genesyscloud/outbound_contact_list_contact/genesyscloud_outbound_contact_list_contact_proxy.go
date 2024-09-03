@@ -2,10 +2,9 @@ package outbound_contact_list_contact
 
 import (
 	"context"
-	"encoding/json"
-	rc "terraform-provider-genesyscloud/genesyscloud/resource_cache"
+	"fmt"
 
-	"log"
+	rc "terraform-provider-genesyscloud/genesyscloud/resource_cache"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
 )
@@ -116,11 +115,9 @@ func getAllContactsFn(ctx context.Context, p *contactProxy) ([]platformclientv2.
 
 func (p *contactProxy) getContactsByContactListId(_ context.Context, contactListId string) ([]platformclientv2.Dialercontact, *platformclientv2.APIResponse, error) {
 	var (
-		pageNum        = 1
-		pageSize       = 50
-		allContacts    []platformclientv2.Dialercontact
-		respPayload    map[string]interface{}
-		unmarshalError error
+		pageNum     = 1
+		pageSize    = 50
+		allContacts []platformclientv2.Dialercontact
 	)
 
 	body := platformclientv2.Contactlistingrequest{
@@ -129,13 +126,23 @@ func (p *contactProxy) getContactsByContactListId(_ context.Context, contactList
 	}
 
 	data, resp, err := p.outboundApi.PostOutboundContactlistContactsSearch(contactListId, body)
-	unmarshalError = json.Unmarshal(resp.RawBody, &respPayload)
-	log.Printf("the response result for statusCode:%s :: contactlistId:%s :: correlationId:%s :: body:%v", resp.Status, contactListId, resp.CorrelationID, respPayload)
-	if unmarshalError != nil {
-		log.Printf("Error while unmarshalling the response for statusCode:%s :: contactlistId:%s :: correlationId:%s", resp.Status, contactListId, resp.CorrelationID)
-	}
-
 	if err != nil {
+
+		if resp == nil {
+			err = fmt.Errorf(":::: response was nil :::: %w", err)
+			return nil, resp, err
+
+		}
+		if !resp.HasBody {
+			err = fmt.Errorf(":::: response didn't have a body :::: %w", err)
+			return nil, resp, err
+		}
+		if resp.RawBody != nil {
+
+			err = fmt.Errorf(":::: response raw body :::: %w :::: %s", err, resp.RawBody)
+			return nil, resp, err
+		}
+
 		return nil, resp, err
 	}
 	if data.Entities == nil || len(*data.Entities) == 0 {
@@ -146,13 +153,22 @@ func (p *contactProxy) getContactsByContactListId(_ context.Context, contactList
 	for pageNum = 2; pageNum <= *data.PageCount; pageNum++ {
 		body.PageNumber = &pageNum
 		data, resp, err = p.outboundApi.PostOutboundContactlistContactsSearch(contactListId, body)
-		unmarshalError = json.Unmarshal(resp.RawBody, &respPayload)
-		log.Printf("the response result for statusCode:%s :: contactlistId:%s :: correlationId:%s :: body:%v", resp.Status, contactListId, resp.CorrelationID, respPayload)
-		if unmarshalError != nil {
-			log.Printf("Error while unmarshalling the response for statusCode:%s :: contactlistId:%s :: correlationId:%s", resp.Status, contactListId, resp.CorrelationID)
-		}
-
 		if err != nil {
+
+			if resp == nil {
+				err = fmt.Errorf(":::: response was nil :::: %w", err)
+				return nil, resp, err
+
+			}
+			if !resp.HasBody {
+				err = fmt.Errorf(":::: response didn't have a body :::: %w", err)
+				return nil, resp, err
+			}
+			if resp.RawBody != nil {
+				err = fmt.Errorf(":::: response raw body :::: %w :::: %s", err, resp.RawBody)
+				return nil, resp, err
+			}
+
 			return nil, resp, err
 		}
 		if data.Entities == nil || len(*data.Entities) == 0 {
