@@ -2,7 +2,10 @@ package outbound_contact_list_contact
 
 import (
 	"context"
+	"encoding/json"
 	rc "terraform-provider-genesyscloud/genesyscloud/resource_cache"
+
+	"log"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
 )
@@ -113,9 +116,11 @@ func getAllContactsFn(ctx context.Context, p *contactProxy) ([]platformclientv2.
 
 func (p *contactProxy) getContactsByContactListId(_ context.Context, contactListId string) ([]platformclientv2.Dialercontact, *platformclientv2.APIResponse, error) {
 	var (
-		pageNum     = 1
-		pageSize    = 50
-		allContacts []platformclientv2.Dialercontact
+		pageNum        = 1
+		pageSize       = 50
+		allContacts    []platformclientv2.Dialercontact
+		respPayload    map[string]interface{}
+		unmarshalError error
 	)
 
 	body := platformclientv2.Contactlistingrequest{
@@ -124,6 +129,12 @@ func (p *contactProxy) getContactsByContactListId(_ context.Context, contactList
 	}
 
 	data, resp, err := p.outboundApi.PostOutboundContactlistContactsSearch(contactListId, body)
+	unmarshalError = json.Unmarshal(resp.RawBody, &respPayload)
+	log.Printf("the response result for statusCode:%s :: contactlistId:%s :: correlationId:%s :: body:%v", resp.Status, contactListId, resp.CorrelationID, respPayload)
+	if unmarshalError != nil {
+		log.Printf("Error while unmarshalling the response for statusCode:%s :: contactlistId:%s :: correlationId:%s", resp.Status, contactListId, resp.CorrelationID)
+	}
+
 	if err != nil {
 		return nil, resp, err
 	}
@@ -135,6 +146,12 @@ func (p *contactProxy) getContactsByContactListId(_ context.Context, contactList
 	for pageNum = 2; pageNum <= *data.PageCount; pageNum++ {
 		body.PageNumber = &pageNum
 		data, resp, err = p.outboundApi.PostOutboundContactlistContactsSearch(contactListId, body)
+		unmarshalError = json.Unmarshal(resp.RawBody, &respPayload)
+		log.Printf("the response result for statusCode:%s :: contactlistId:%s :: correlationId:%s :: body:%v", resp.Status, contactListId, resp.CorrelationID, respPayload)
+		if unmarshalError != nil {
+			log.Printf("Error while unmarshalling the response for statusCode:%s :: contactlistId:%s :: correlationId:%s", resp.Status, contactListId, resp.CorrelationID)
+		}
+
 		if err != nil {
 			return nil, resp, err
 		}

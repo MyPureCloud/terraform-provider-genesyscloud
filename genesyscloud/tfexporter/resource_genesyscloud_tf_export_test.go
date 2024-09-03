@@ -2970,3 +2970,52 @@ func validateFlow(flowResourceName, name string) resource.TestCheckFunc {
 		return nil
 	}
 }
+
+// TestAccResourceTfExport does a basic test check to make sure the export file is created.
+func TestAccResourceTfExportContactList(t *testing.T) {
+	var (
+		exportTestDir   = "../../.terraform" + uuid.NewString()
+		exportResource1 = "test-export1"
+		configPath      = filepath.Join(exportTestDir, defaultTfJSONFile)
+		//statePath       = filepath.Join(exportTestDir, defaultTfStateFile)
+	)
+
+	defer os.RemoveAll(exportTestDir)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			{
+				// Run export without state file
+				Config: generateTfExportContactListResource(
+					exportResource1,
+					exportTestDir,
+					util.FalseValue,
+					"",
+				),
+				Check: resource.ComposeTestCheckFunc(
+					validateFileCreated(configPath),
+					validateConfigFile(configPath),
+				),
+			},
+		},
+		CheckDestroy: testVerifyExportsDestroyedFunc(exportTestDir),
+	})
+}
+
+func generateTfExportContactListResource(
+	resourceID string,
+	directory string,
+	includeState string,
+	excludedAttributes string) string {
+	return fmt.Sprintf(`resource "genesyscloud_tf_export" "%s" {
+		directory = "%s"
+		include_state_file = %s
+		resource_types = [
+			"genesyscloud_outbound_contact_list_contact",
+		]
+		exclude_attributes = [%s]
+	}
+	`, resourceID, directory, includeState, excludedAttributes)
+}
