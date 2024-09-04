@@ -1,0 +1,10 @@
+{
+    "name": "Terraform and Go",
+    "build": {
+        "dockerfile": "Dockerfile"
+    },
+    "forwardPorts": [
+        8080
+    ],
+    "postCreateCommand": "go version"
+}
