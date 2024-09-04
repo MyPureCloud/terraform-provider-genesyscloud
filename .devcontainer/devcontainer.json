@@ -6,7 +6,7 @@
     "features": {
         "ghcr.io/devcontainers/features/terraform:1":{},
         "ghcr.io/devcontainers/features/go:1":{},
-        "ghrc.io/devcontainers/features/python:1":{},
+        "ghcr.io/devcontainers/features/python": {}
     },
     "hostRequirements": {
         "cpus": 2,
