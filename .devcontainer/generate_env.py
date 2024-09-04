@@ -16,15 +16,6 @@ echo "Environment variables set successfully!"
 """
     return script_content
 
-
-def generate_cli_config(client_id, client_secret, region):
-    script_content = f"""[default]
-client_credentials = '{client_id}'
-client_secret = '{client_secret}'
-environment = 'usw2.pure.cloud'
-"""
-    return script_content
-
 def main():
     print("Please enter the following values to generate the environment variables needed to run terraform against your target environment: ")
     
@@ -33,7 +24,6 @@ def main():
     region = get_user_input("GENESYSCLOUD_REGION: ")
 
     script_content = generate_shell_script(client_id, client_secret, region)
-    cli_content
 
     script_filename = "set_genesys_env.sh"
     with open(script_filename, "w") as f:
