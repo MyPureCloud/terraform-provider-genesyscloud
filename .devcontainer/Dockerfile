@@ -1,6 +1,8 @@
 FROM mcr.microsoft.com/vscode/devcontainers/base:ubuntu
 
-# Install Terraform
+# Install Genesys Cloud CLI
+RUN curl -s https://sdk-cdn.mypurecloud.com/external/go-cli/linux/dl/install.sh | sudo bash
+
 # ARG TERRAFORM_VERSION=1.9.5
 # RUN wget  https://apt.releases.hashicorp.com/gpg | sudo gpg --dearmor -o /usr/share/keyrings/hasicorp-archive-keyring.gpg && \
 #     deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main && \
