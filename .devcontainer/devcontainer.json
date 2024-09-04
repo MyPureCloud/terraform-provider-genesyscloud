@@ -6,25 +6,12 @@
     "features": {
         "ghcr.io/devcontainers/features/terraform:1":{},
         "ghcr.io/devcontainers/features/go:1":{},
+        "ghrc.io/devcontainers/features/python:1":{},
     },
     "hostRequirements": {
         "cpus": 2,
         "memory": "8gb",
         "storage": "32gb"
-    },
-    "secrets": {
-            "GENESYSCLOUD_OAUTHCLIENT_ID": {
-                "description": "The Genesys Cloud OAuth Client Id",
-                "documentationUrl": "https://registry.terraform.io/providers/MyPureCloud/genesyscloud/latest/docs"
-            },
-             "GENESYSCLOUD_OAUTHCLIENT_SECRET": { 
-                "description": "The Genesys Cloud OAuth Client Secret",
-                "documentationUrl": "https://registry.terraform.io/providers/MyPureCloud/genesyscloud/latest/docs"
-             },
-             "GENESYSCLOUD_REGION": {
-                "description": "The Genesys Cloud OAuth Client Region you are going to connect to",
-                "documentationUrl": "https://registry.terraform.io/providers/MyPureCloud/genesyscloud/latest/docs"
-             },
     },
     "forwardPorts": [
         8080
