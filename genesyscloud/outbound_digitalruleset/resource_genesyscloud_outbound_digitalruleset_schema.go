@@ -319,11 +319,7 @@ var (
 	updateContactColumnActionSettingsResource = &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			`properties`: {
-				Description: `A map of key-value pairs pertinent to the DialerAction. Different types of DialerActions require different properties. MODIFY_CONTACT_ATTRIBUTE with an updateOption of SET takes a contact column as the key and accepts any value. SCHEDULE_CALLBACK takes a key 'callbackOffset' that specifies how far in the future the callback should be scheduled, in minutes. SET_CALLER_ID takes two keys: 'callerAddress', which should be the caller id phone number, and 'callerName'. For either key, you can also specify a column on the contact to get the value from. To do this, specify 'contact.Column', where 'Column' is the name of the contact column from which to get the value. SET_SKILLS takes a key 'skills' with an array of skill ids wrapped into a string (Example: {'skills': '['skillIdHere']'} ).`,
-				// Type:        schema.TypeMap,
-				// Optional:    true,
-				// Computed:    true,
-				// Elem:        &schema.Schema{Type: schema.TypeString},
+				Description:      `A map of key-value pairs pertinent to the DialerAction. Different types of DialerActions require different properties. MODIFY_CONTACT_ATTRIBUTE with an updateOption of SET takes a contact column as the key and accepts any value. SCHEDULE_CALLBACK takes a key 'callbackOffset' that specifies how far in the future the callback should be scheduled, in minutes. SET_CALLER_ID takes two keys: 'callerAddress', which should be the caller id phone number, and 'callerName'. For either key, you can also specify a column on the contact to get the value from. To do this, specify 'contact.Column', where 'Column' is the name of the contact column from which to get the value. SET_SKILLS takes a key 'skills' with an array of skill ids wrapped into a string (Example: {'skills': '['skillIdHere']'} ).`,
 				Type:             schema.TypeString,
 				Optional:         true,
 				Computed:         true,
@@ -424,9 +420,11 @@ var (
 				Elem:        markContactUncontactableActionSettingsResource,
 			},
 			`mark_contact_address_uncontactable_action_settings`: {
-				Description: `The settings for an 'mark contact address uncontactable' action.`,
-				Optional:    true,
-				Type:        schema.TypeMap,
+				Description:      `The settings for an 'mark contact address uncontactable' action.`,
+				Type:             schema.TypeString,
+				Optional:         true,
+				Computed:         true,
+				DiffSuppressFunc: util.SuppressEquivalentJsonDiffs,
 			},
 			`set_content_template_action_settings`: {
 				Description: `The settings for a 'Set content template' action.`,

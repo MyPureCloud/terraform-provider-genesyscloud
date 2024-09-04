@@ -163,12 +163,10 @@ func GenerateSetContentTemplateActionSettings(
 	`, smsContentId, emailContentId)
 }
 
-func GenerateMarkContactAddressUncontactableActionSettings(
-	markAddressActionSettings string,
-) string {
+func GenerateMarkContactAddressUncontactableActionSettings() string {
 	return fmt.Sprintf(`
-		mark_contact_address_uncontactable_action_settings = %s
-	`, markAddressActionSettings)
+		mark_contact_address_uncontactable_action_settings = jsonencode({})
+	`)
 }
 
 func GenerateMarkContactUncontactableActionSettings(

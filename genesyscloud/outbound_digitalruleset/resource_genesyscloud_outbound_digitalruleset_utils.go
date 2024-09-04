@@ -2,6 +2,7 @@ package outbound_digitalruleset
 
 import (
 	"encoding/json"
+	"log"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
@@ -51,9 +52,10 @@ func buildContactColumnConditionSettings(contactColumnConditionSettings *schema.
 		if valueType := contactColumnConditionSettingsMap["value_type"].(string); valueType != "" {
 			sdkContactColumnConditionSettings.ValueType = &valueType
 		}
+		return &sdkContactColumnConditionSettings
 	}
 
-	return &sdkContactColumnConditionSettings
+	return nil
 }
 
 // buildContactAddressConditionSettingss maps an []interface{} into a Genesys Cloud *[]platformclientv2.Contactaddressconditionsettings
@@ -75,9 +77,10 @@ func buildContactAddressConditionSettings(contactAddressConditionSettings *schem
 		if value := contactAddressConditionSettingsMap["value"].(string); value != "" {
 			sdkContactAddressConditionSettings.Value = &value
 		}
+		return &sdkContactAddressConditionSettings
 	}
 
-	return &sdkContactAddressConditionSettings
+	return nil
 }
 
 // buildContactAddressTypeConditionSettingss maps an []interface{} into a Genesys Cloud *[]platformclientv2.Contactaddresstypeconditionsettings
@@ -99,9 +102,10 @@ func buildContactAddressTypeConditionSettings(contactAddressTypeConditionSetting
 		if value := contactAddressTypeConditionSettingsMap["value"].(string); value != "" {
 			sdkContactAddressTypeConditionSettings.Value = &value
 		}
+		return &sdkContactAddressTypeConditionSettings
 	}
 
-	return &sdkContactAddressTypeConditionSettings
+	return nil
 }
 
 // buildLastAttemptByColumnConditionSettingss maps an []interface{} into a Genesys Cloud *[]platformclientv2.Lastattemptbycolumnconditionsettings
@@ -131,9 +135,10 @@ func buildLastAttemptByColumnConditionSettings(lastAttemptByColumnConditionSetti
 		if value := lastAttemptByColumnConditionSettingsMap["value"].(string); value != "" {
 			sdkLastAttemptByColumnConditionSettings.Value = &value
 		}
+		return &sdkLastAttemptByColumnConditionSettings
 	}
 
-	return &sdkLastAttemptByColumnConditionSettings
+	return nil
 }
 
 // buildLastAttemptOverallConditionSettingss maps an []interface{} into a Genesys Cloud *[]platformclientv2.Lastattemptoverallconditionsettings
@@ -159,9 +164,10 @@ func buildLastAttemptOverallConditionSettings(lastAttemptOverallConditionSetting
 		if value := lastAttemptOverallConditionSettingsMap["value"].(string); value != "" {
 			sdkLastAttemptOverallConditionSettings.Value = &value
 		}
+		return &sdkLastAttemptOverallConditionSettings
 	}
 
-	return &sdkLastAttemptOverallConditionSettings
+	return nil
 }
 
 // buildLastResultByColumnConditionSettingss maps an []interface{} into a Genesys Cloud *[]platformclientv2.Lastresultbycolumnconditionsettings
@@ -191,9 +197,10 @@ func buildLastResultByColumnConditionSettings(lastResultByColumnConditionSetting
 		if smsWrapupCodes := lastResultByColumnConditionSettingsMap["sms_wrapup_codes"].([]string); len(smsWrapupCodes) > 0 {
 			sdkLastResultByColumnConditionSettings.SmsWrapupCodes = &smsWrapupCodes
 		}
+		return &sdkLastResultByColumnConditionSettings
 	}
 
-	return &sdkLastResultByColumnConditionSettings
+	return nil
 }
 
 // buildLastResultOverallConditionSettingss maps an []interface{} into a Genesys Cloud *[]platformclientv2.Lastresultoverallconditionsettings
@@ -215,9 +222,10 @@ func buildLastResultOverallConditionSettings(lastResultOverallConditionSettings 
 		if smsWrapupCodes := lastResultOverallConditionSettingsMap["sms_wrapup_codes"].([]string); len(smsWrapupCodes) > 0 {
 			sdkLastResultOverallConditionSettings.SmsWrapupCodes = &smsWrapupCodes
 		}
+		return &sdkLastResultOverallConditionSettings
 	}
 
-	return &sdkLastResultOverallConditionSettings
+	return nil
 }
 
 // buildDigitalDataActionConditionPredicates maps an []interface{} into a Genesys Cloud *[]platformclientv2.Digitaldataactionconditionpredicate
@@ -286,10 +294,10 @@ func buildDataActionConditionSettings(dataActionConditionSettings *schema.Set) *
 
 		sdkDataActionConditionSettings.Predicates = buildDigitalDataActionConditionPredicates(dataActionConditionSettingsMap["predicates"].([]interface{}))
 		sdkDataActionConditionSettings.ContactColumnToDataActionFieldMappings = buildDataActionContactColumnFieldMappings(dataActionConditionSettingsMap["contact_column_to_data_action_field_mappings"].([]interface{}))
-
+		return &sdkDataActionConditionSettings
 	}
 
-	return &sdkDataActionConditionSettings
+	return nil
 }
 
 // buildDigitalConditions maps an []interface{} into a Genesys Cloud *[]platformclientv2.Digitalcondition
@@ -302,15 +310,41 @@ func buildDigitalConditions(digitalConditions []interface{}) *[]platformclientv2
 			continue
 		}
 
-		sdkDigitalCondition.Inverted = platformclientv2.Bool(digitalConditionsMap["inverted"].(bool))
-		sdkDigitalCondition.ContactColumnConditionSettings = buildContactColumnConditionSettings(digitalConditionsMap["contact_column_condition_settings"].(*schema.Set))
-		sdkDigitalCondition.ContactAddressConditionSettings = buildContactAddressConditionSettings(digitalConditionsMap["contact_address_condition_settings"].(*schema.Set))
-		sdkDigitalCondition.ContactAddressTypeConditionSettings = buildContactAddressTypeConditionSettings(digitalConditionsMap["contact_address_type_condition_settings"].(*schema.Set))
-		sdkDigitalCondition.LastAttemptByColumnConditionSettings = buildLastAttemptByColumnConditionSettings(digitalConditionsMap["last_attempt_by_column_condition_settings"].(*schema.Set))
-		sdkDigitalCondition.LastAttemptOverallConditionSettings = buildLastAttemptOverallConditionSettings(digitalConditionsMap["last_attempt_overall_condition_settings"].(*schema.Set))
-		sdkDigitalCondition.LastResultByColumnConditionSettings = buildLastResultByColumnConditionSettings(digitalConditionsMap["last_result_by_column_condition_settings"].(*schema.Set))
-		sdkDigitalCondition.LastResultOverallConditionSettings = buildLastResultOverallConditionSettings(digitalConditionsMap["last_result_overall_condition_settings"].(*schema.Set))
-		sdkDigitalCondition.DataActionConditionSettings = buildDataActionConditionSettings(digitalConditionsMap["data_action_condition_settings"].(*schema.Set))
+		if inverted := platformclientv2.Bool(digitalConditionsMap["inverted"].(bool)); inverted != nil {
+			sdkDigitalCondition.Inverted = inverted
+		}
+
+		if contactColumnSettings := buildContactColumnConditionSettings(digitalConditionsMap["contact_column_condition_settings"].(*schema.Set)); contactColumnSettings != nil {
+			sdkDigitalCondition.ContactColumnConditionSettings = contactColumnSettings
+		}
+
+		if contactAddressSettings := buildContactAddressConditionSettings(digitalConditionsMap["contact_address_condition_settings"].(*schema.Set)); contactAddressSettings != nil {
+			sdkDigitalCondition.ContactAddressConditionSettings = contactAddressSettings
+		}
+
+		if contactAddressTypeSettings := buildContactAddressTypeConditionSettings(digitalConditionsMap["contact_address_type_condition_settings"].(*schema.Set)); contactAddressTypeSettings != nil {
+			sdkDigitalCondition.ContactAddressTypeConditionSettings = contactAddressTypeSettings
+		}
+
+		if lastAttemptByColumn := buildLastAttemptByColumnConditionSettings(digitalConditionsMap["last_attempt_by_column_condition_settings"].(*schema.Set)); lastAttemptByColumn != nil {
+			sdkDigitalCondition.LastAttemptByColumnConditionSettings = lastAttemptByColumn
+		}
+
+		if lastAttemptOverall := buildLastAttemptOverallConditionSettings(digitalConditionsMap["last_attempt_overall_condition_settings"].(*schema.Set)); lastAttemptOverall != nil {
+			sdkDigitalCondition.LastAttemptOverallConditionSettings = lastAttemptOverall
+		}
+
+		if lastResultByColumn := buildLastResultByColumnConditionSettings(digitalConditionsMap["last_result_by_column_condition_settings"].(*schema.Set)); lastResultByColumn != nil {
+			sdkDigitalCondition.LastResultByColumnConditionSettings = lastResultByColumn
+		}
+
+		if lastResultOverall := buildLastResultOverallConditionSettings(digitalConditionsMap["last_result_overall_condition_settings"].(*schema.Set)); lastResultOverall != nil {
+			sdkDigitalCondition.LastResultOverallConditionSettings = lastResultOverall
+		}
+
+		if dataAction := buildDataActionConditionSettings(digitalConditionsMap["data_action_condition_settings"].(*schema.Set)); dataAction != nil {
+			sdkDigitalCondition.DataActionConditionSettings = dataAction
+		}
 
 		digitalConditionsSlice = append(digitalConditionsSlice, sdkDigitalCondition)
 	}
@@ -338,10 +372,10 @@ func buildUpdateContactColumnActionSettings(updateContactColumnActionSettings *s
 		if err := json.Unmarshal([]byte(updateContactColumnActionSettingsMap["properties"].(string)), &properties); err == nil {
 			sdkUpdateContactColumnActionSettings.Properties = &properties
 		}
-
+		return &sdkUpdateContactColumnActionSettings
 	}
 
-	return &sdkUpdateContactColumnActionSettings
+	return nil
 }
 
 // buildAppendToDncActionSettingss maps an []interface{} into a Genesys Cloud *[]platformclientv2.Appendtodncactionsettings
@@ -350,7 +384,7 @@ func buildAppendToDncActionSettings(appendToDncActionSettings *schema.Set) *plat
 		return nil
 	}
 
-	var sdkAppendToDncActionSettings platformclientv2.Appendtodncactionsettings
+	sdkAppendToDncActionSettings := &platformclientv2.Appendtodncactionsettings{}
 	appendToDncActionSettingsList := appendToDncActionSettings.List()
 
 	if len(appendToDncActionSettingsList) > 0 {
@@ -359,9 +393,10 @@ func buildAppendToDncActionSettings(appendToDncActionSettings *schema.Set) *plat
 		sdkAppendToDncActionSettings.Expire = platformclientv2.Bool(appendToDncActionSettingsMap["expire"].(bool))
 		resourcedata.BuildSDKStringValueIfNotNil(&sdkAppendToDncActionSettings.ExpirationDuration, appendToDncActionSettingsMap, "expiration_duration")
 		resourcedata.BuildSDKStringValueIfNotNil(&sdkAppendToDncActionSettings.ListType, appendToDncActionSettingsMap, "list_type")
+		return sdkAppendToDncActionSettings
 	}
 
-	return &sdkAppendToDncActionSettings
+	return nil
 }
 
 // buildMarkContactUncontactableActionSettingss maps an []interface{} into a Genesys Cloud *[]platformclientv2.Markcontactuncontactableactionsettings
@@ -377,10 +412,10 @@ func buildMarkContactUncontactableActionSettings(markContactUncontactableActionS
 		markContactUncontactableActionSettingsMap := markContactUncontactableActionSettingsList[0].(map[string]interface{})
 
 		resourcedata.BuildSDKStringArrayValueIfNotNil(&sdkMarkContactUncontactableActionSettings.MediaTypes, markContactUncontactableActionSettingsMap, "media_types")
-
+		return &sdkMarkContactUncontactableActionSettings
 	}
 
-	return &sdkMarkContactUncontactableActionSettings
+	return nil
 }
 
 // buildSetContentTemplateActionSettingss maps an []interface{} into a Genesys Cloud *[]platformclientv2.Setcontenttemplateactionsettings
@@ -397,10 +432,10 @@ func buildSetContentTemplateActionSettings(setContentTemplateActionSettings *sch
 
 		resourcedata.BuildSDKStringValueIfNotNil(&sdkSetContentTemplateActionSettings.SmsContentTemplateId, setContentTemplateActionSettingsMap, "sms_content_template_id")
 		resourcedata.BuildSDKStringValueIfNotNil(&sdkSetContentTemplateActionSettings.EmailContentTemplateId, setContentTemplateActionSettingsMap, "email_content_template_id")
-
+		return &sdkSetContentTemplateActionSettings
 	}
 
-	return &sdkSetContentTemplateActionSettings
+	return nil
 }
 
 // buildSetSmsPhoneNumberActionSettingss maps an []interface{} into a Genesys Cloud *[]platformclientv2.Setsmsphonenumberactionsettings
@@ -414,35 +449,49 @@ func buildSetSmsPhoneNumberActionSettings(setSmsPhoneNumberActionSettings *schem
 		setSmsPhoneNumberActionSettingsMap := setSmsPhoneNumberActionSettingsList[0].(map[string]interface{})
 
 		resourcedata.BuildSDKStringValueIfNotNil(&sdkSetSmsPhoneNumberActionSettings.SenderSmsPhoneNumber, setSmsPhoneNumberActionSettingsMap, "sender_sms_phone_number")
-
+		return &sdkSetSmsPhoneNumberActionSettings
 	}
 
-	return &sdkSetSmsPhoneNumberActionSettings
+	return nil
 }
 
 // buildDigitalActions maps an []interface{} into a Genesys Cloud *[]platformclientv2.Digitalaction
 func buildDigitalActions(digitalActions []interface{}) *[]platformclientv2.Digitalaction {
 	digitalActionsSlice := make([]platformclientv2.Digitalaction, 0)
 	for _, digitalAction := range digitalActions {
-		var sdkDigitalAction platformclientv2.Digitalaction
+		sdkDigitalAction := platformclientv2.Digitalaction{}
 		digitalActionsMap, ok := digitalAction.(map[string]interface{})
 		if !ok {
 			continue
 		}
 
-		sdkDigitalAction.UpdateContactColumnActionSettings = buildUpdateContactColumnActionSettings(digitalActionsMap["update_contact_column_action_settings"].(*schema.Set))
-		if action := digitalActionsMap["do_not_send_action_settings"]; action != nil {
-			sdkDigitalAction.DoNotSendActionSettings = &action
+		if updateContactColumn := buildUpdateContactColumnActionSettings(digitalActionsMap["update_contact_column_action_settings"].(*schema.Set)); updateContactColumn != nil {
+			sdkDigitalAction.UpdateContactColumnActionSettings = updateContactColumn
 		}
 
-		sdkDigitalAction.AppendToDncActionSettings = buildAppendToDncActionSettings(digitalActionsMap["append_to_dnc_action_settings"].(*schema.Set))
-		sdkDigitalAction.MarkContactUncontactableActionSettings = buildMarkContactUncontactableActionSettings(digitalActionsMap["mark_contact_uncontactable_action_settings"].(*schema.Set))
-		if action := digitalActionsMap["mark_contact_address_uncontactable_action_settings"]; action != nil {
-			sdkDigitalAction.MarkContactAddressUncontactableActionSettings = &action
+		if action := digitalActionsMap["do_not_send_action_settings"].(string); len(action) > 0 {
+			json.Unmarshal([]byte(action), &sdkDigitalAction.DoNotSendActionSettings)
 		}
 
-		sdkDigitalAction.SetContentTemplateActionSettings = buildSetContentTemplateActionSettings(digitalActionsMap["set_content_template_action_settings"].(*schema.Set))
-		sdkDigitalAction.SetSmsPhoneNumberActionSettings = buildSetSmsPhoneNumberActionSettings(digitalActionsMap["set_sms_phone_number_action_settings"].(*schema.Set))
+		if dncSettings := buildAppendToDncActionSettings(digitalActionsMap["append_to_dnc_action_settings"].(*schema.Set)); dncSettings != nil {
+			sdkDigitalAction.AppendToDncActionSettings = dncSettings
+		}
+
+		if markContactUncontactableSettings := buildMarkContactUncontactableActionSettings(digitalActionsMap["mark_contact_uncontactable_action_settings"].(*schema.Set)); markContactUncontactableSettings != nil {
+			sdkDigitalAction.MarkContactUncontactableActionSettings = markContactUncontactableSettings
+		}
+
+		if action := digitalActionsMap["mark_contact_address_uncontactable_action_settings"].(string); len(action) > 0 {
+			json.Unmarshal([]byte(action), &sdkDigitalAction.MarkContactAddressUncontactableActionSettings)
+		}
+
+		if setContentTemplateActionSettings := buildSetContentTemplateActionSettings(digitalActionsMap["set_content_template_action_settings"].(*schema.Set)); setContentTemplateActionSettings != nil {
+			sdkDigitalAction.SetContentTemplateActionSettings = setContentTemplateActionSettings
+		}
+
+		if setSmsPhoneNumberActionSettings := buildSetSmsPhoneNumberActionSettings(digitalActionsMap["set_sms_phone_number_action_settings"].(*schema.Set)); setSmsPhoneNumberActionSettings != nil {
+			sdkDigitalAction.SetSmsPhoneNumberActionSettings = setSmsPhoneNumberActionSettings
+		}
 
 		digitalActionsSlice = append(digitalActionsSlice, sdkDigitalAction)
 	}
@@ -460,11 +509,22 @@ func buildDigitalRules(digitalRules []interface{}) *[]platformclientv2.Digitalru
 			continue
 		}
 
-		resourcedata.BuildSDKStringValueIfNotNil(&sdkDigitalRule.Name, digitalRulesMap, "name")
+		if name := digitalRulesMap["name"].(string); name != "" {
+			sdkDigitalRule.Name = &name
+		}
 		sdkDigitalRule.Order = platformclientv2.Int(digitalRulesMap["order"].(int))
-		resourcedata.BuildSDKStringValueIfNotNil(&sdkDigitalRule.Category, digitalRulesMap, "category")
-		resourcedata.BuildSDKInterfaceArrayValueIfNotNil(&sdkDigitalRule.Conditions, digitalRulesMap, "conditions", buildDigitalConditions)
-		resourcedata.BuildSDKInterfaceArrayValueIfNotNil(&sdkDigitalRule.Actions, digitalRulesMap, "actions", buildDigitalActions)
+
+		if category := digitalRulesMap["category"].(string); category != "" {
+			sdkDigitalRule.Category = &category
+		}
+
+		if conditions := buildDigitalConditions(digitalRulesMap["conditions"].([]interface{})); conditions != nil {
+			sdkDigitalRule.Conditions = conditions
+		}
+
+		if actions := buildDigitalActions(digitalRulesMap["actions"].([]interface{})); actions != nil {
+			sdkDigitalRule.Actions = actions
+		}
 
 		digitalRulesSlice = append(digitalRulesSlice, sdkDigitalRule)
 	}
@@ -689,8 +749,6 @@ func flattenUpdateContactColumnActionSettings(updateContactColumnActionSettings 
 	updateContactColumnActionSettingsSet := schema.NewSet(schema.HashResource(updateContactColumnActionSettingsResource), []interface{}{})
 	updateContactColumnActionSettingsMap := make(map[string]interface{})
 
-	//resourcedata.SetMapStringMapValueIfNotNil(updateContactColumnActionSettingsMap, "properties", updateContactColumnActionSettings.Properties)
-
 	schemaProps, _ := json.Marshal(updateContactColumnActionSettings.Properties)
 
 	var schemaPropsPtr *string
@@ -780,10 +838,28 @@ func flattenDigitalActions(digitalActions *[]platformclientv2.Digitalaction) []i
 		digitalActionMap := make(map[string]interface{})
 
 		resourcedata.SetMapSchemaSetWithFuncIfNotNil(digitalActionMap, "update_contact_column_action_settings", digitalAction.UpdateContactColumnActionSettings, flattenUpdateContactColumnActionSettings)
-		resourcedata.SetMapValueIfNotNil(digitalActionMap, "do_not_send_action_settings", digitalAction.DoNotSendActionSettings)
+
+		if digitalAction.DoNotSendActionSettings != nil {
+			doNotSendSetting, err := json.Marshal(*digitalAction.DoNotSendActionSettings)
+			if err != nil {
+				log.Printf("Failed to marshal DigitalActions 'do_not_send_action_settings' properties. Error message: %s", err)
+			} else {
+				digitalActionMap["do_not_send_action_settings"] = string(doNotSendSetting)
+			}
+		}
+
 		resourcedata.SetMapSchemaSetWithFuncIfNotNil(digitalActionMap, "append_to_dnc_action_settings", digitalAction.AppendToDncActionSettings, flattenAppendToDncActionSettings)
 		resourcedata.SetMapSchemaSetWithFuncIfNotNil(digitalActionMap, "mark_contact_uncontactable_action_settings", digitalAction.MarkContactUncontactableActionSettings, flattenMarkContactUncontactableActionSettings)
-		resourcedata.SetMapValueIfNotNil(digitalActionMap, "mark_contact_address_uncontactable_action_settings", digitalAction.DoNotSendActionSettings)
+
+		if digitalAction.MarkContactAddressUncontactableActionSettings != nil {
+			markAddressSetting, err := json.Marshal(*digitalAction.MarkContactAddressUncontactableActionSettings)
+			if err != nil {
+				log.Printf("Failed to marshal DigitalActions 'mark_contact_address_uncontactable_action_settings' properties. Error message: %s", err)
+			} else {
+				digitalActionMap["mark_contact_address_uncontactable_action_settings"] = string(markAddressSetting)
+			}
+		}
+
 		resourcedata.SetMapSchemaSetWithFuncIfNotNil(digitalActionMap, "set_content_template_action_settings", digitalAction.SetContentTemplateActionSettings, flattenSetContentTemplateActionSettings)
 		resourcedata.SetMapSchemaSetWithFuncIfNotNil(digitalActionMap, "set_sms_phone_number_action_settings", digitalAction.SetSmsPhoneNumberActionSettings, flattenSetSmsPhoneNumberActionSettings)
 
