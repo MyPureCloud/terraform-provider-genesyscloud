@@ -5,8 +5,6 @@ RUN curl -s https://sdk-cdn.mypurecloud.com/external/go-cli/linux/dl/install.sh 
 
 RUN cd ~ && \
     mkdir archy && \ 
-    curl https://sdk-cdn.mypurecloud.com/archy/latest/archy-linux.zip && \
-    unzip ~/Downloads/archy-linux.zip -d ~/archy && \ 
-    cd ~/archy/ && \
-    ./archy version && \
+    curl https://sdk-cdn.mypurecloud.com/archy/latest/archy-linux.zip > archy-linux.zip && \
+    unzip archy-linux.zip -d ~/archy && \ 
     cd ~
