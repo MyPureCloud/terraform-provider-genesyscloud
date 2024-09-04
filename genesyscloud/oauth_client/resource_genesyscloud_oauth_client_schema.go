@@ -109,7 +109,6 @@ func ResourceOAuthClient() *schema.Resource {
 				Description: "Optionally, a Name of a Integration Credential (with credential type pureCloudOAuthClient) to be created using this new OAuth Client.",
 				Type:        schema.TypeString,
 				Optional:    true,
-				Computed:    true,
 			},
 		},
 	}
