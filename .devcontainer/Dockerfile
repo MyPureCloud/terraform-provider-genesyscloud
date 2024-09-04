@@ -1,7 +1,7 @@
 FROM mcr.microsoft.com/vscode/devcontainers/base:ubuntu
 
 # Install Terraform
-ARG TERRAFORM_VERSION=1.3.x
+ARG TERRAFORM_VERSION=1.9.5
 RUN apt-get update && apt-get install -y wget unzip && \
     wget -q -O /tmp/terraform.zip https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_amd64.zip && \
     unzip -d /usr/local/bin /tmp/terraform.zip
