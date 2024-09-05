@@ -15,6 +15,5 @@
     },
     "forwardPorts": [
         8080
-    ],
-    "postCreateCommand": "python /workspaces/terraform-provider-genesyscloud/scripts/generate_env.py  && source /tmp/set_genesys_env.sh  && rm /tmp/set_genesys_env.sh"
+    ]
 }
