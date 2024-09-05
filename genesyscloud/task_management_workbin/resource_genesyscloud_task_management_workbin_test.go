@@ -9,7 +9,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	authDivision "terraform-provider-genesyscloud/genesyscloud/auth_division"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
@@ -49,8 +49,8 @@ func TestAccResourceTaskManagementWorkbin(t *testing.T) {
 			},
 			// Change division
 			{
-				Config: gcloud.GenerateAuthDivisionBasic(divisionResId1, divisionName1) +
-					gcloud.GenerateAuthDivisionBasic(divisionResId2, divisionName2) +
+				Config: authDivision.GenerateAuthDivisionBasic(divisionResId1, divisionName1) +
+					authDivision.GenerateAuthDivisionBasic(divisionResId2, divisionName2) +
 					GenerateWorkbinResource(workbinResId, workbinName, workDescription, "genesyscloud_auth_division."+divisionResId1+".id"),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName+"."+workbinResId, "name", workbinName),
@@ -59,8 +59,8 @@ func TestAccResourceTaskManagementWorkbin(t *testing.T) {
 				),
 			},
 			{
-				Config: gcloud.GenerateAuthDivisionBasic(divisionResId1, divisionName1) +
-					gcloud.GenerateAuthDivisionBasic(divisionResId2, divisionName2) +
+				Config: authDivision.GenerateAuthDivisionBasic(divisionResId1, divisionName1) +
+					authDivision.GenerateAuthDivisionBasic(divisionResId2, divisionName2) +
 					GenerateWorkbinResource(workbinResId, workbinName, workDescription, "genesyscloud_auth_division."+divisionResId2+".id"),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrPair(resourceName+"."+workbinResId, "division_id", "genesyscloud_auth_division."+divisionResId2, "id"),

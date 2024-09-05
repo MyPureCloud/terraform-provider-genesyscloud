@@ -3,12 +3,12 @@ package outbound_sequence
 import (
 	"fmt"
 	"strconv"
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	outboundCampaign "terraform-provider-genesyscloud/genesyscloud/outbound_campaign"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 
+	authDivision "terraform-provider-genesyscloud/genesyscloud/auth_division"
 	edgeSite "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site"
 
 	"github.com/google/uuid"
@@ -49,7 +49,7 @@ func TestAccResourceOutboundSequence(t *testing.T) {
 			{
 				// Create
 				Config: `data "genesyscloud_auth_division_home" "home" {}` + "\n" +
-					gcloud.GenerateAuthDivisionBasic(divResourceId, divName) +
+					authDivision.GenerateAuthDivisionBasic(divResourceId, divName) +
 					outboundCampaign.GenerateOutboundCampaignBasic(
 						campaignResourceId,
 						campaignName,
@@ -83,7 +83,7 @@ func TestAccResourceOutboundSequence(t *testing.T) {
 			{
 				// Update with a new name, status and repeat value
 				Config: `data "genesyscloud_auth_division_home" "home" {}` + "\n" +
-					gcloud.GenerateAuthDivisionBasic(divResourceId, divName) +
+					authDivision.GenerateAuthDivisionBasic(divResourceId, divName) +
 					outboundCampaign.GenerateOutboundCampaignBasic(
 						campaignResourceId,
 						campaignName,
@@ -157,7 +157,7 @@ func TestAccResourceOutboundSequenceStatus(t *testing.T) {
 			{
 				// Create
 				Config: `data "genesyscloud_auth_division_home" "home" {}` + "\n" +
-					gcloud.GenerateAuthDivisionBasic(divResourceId, divName) +
+					authDivision.GenerateAuthDivisionBasic(divResourceId, divName) +
 					outboundCampaign.GenerateOutboundCampaignBasic(
 						campaignResourceId,
 						campaignName,
@@ -191,7 +191,7 @@ func TestAccResourceOutboundSequenceStatus(t *testing.T) {
 			{
 				// Update with a new name, status and repeat value
 				Config: `data "genesyscloud_auth_division_home" "home" {}` + "\n" +
-					gcloud.GenerateAuthDivisionBasic(divResourceId, divName) +
+					authDivision.GenerateAuthDivisionBasic(divResourceId, divName) +
 					outboundCampaign.GenerateOutboundCampaignBasic(
 						campaignResourceId,
 						campaignName,
@@ -226,7 +226,7 @@ func TestAccResourceOutboundSequenceStatus(t *testing.T) {
 				// Turn back on to test that the sequence can be turned back on again, and ensure that the destroy
 				// command can handle destroying a sequence that is "on"
 				Config: `data "genesyscloud_auth_division_home" "home" {}` + "\n" +
-					gcloud.GenerateAuthDivisionBasic(divResourceId, divName) +
+					authDivision.GenerateAuthDivisionBasic(divResourceId, divName) +
 					outboundCampaign.GenerateOutboundCampaignBasic(
 						campaignResourceId,
 						campaignName,

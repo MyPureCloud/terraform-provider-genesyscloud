@@ -2,7 +2,7 @@ package routing_wrapupcode
 
 import (
 	"fmt"
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	authDivision "terraform-provider-genesyscloud/genesyscloud/auth_division"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
@@ -38,7 +38,7 @@ func TestAccResourceRoutingWrapupcode(t *testing.T) {
 			},
 			{
 				// Create
-				Config: gcloud.GenerateAuthDivisionBasic(divResource, divName) + GenerateRoutingWrapupcodeResource(
+				Config: authDivision.GenerateAuthDivisionBasic(divResource, divName) + GenerateRoutingWrapupcodeResource(
 					codeResource1,
 					codeName1,
 					"genesyscloud_auth_division."+divResource+".id",
@@ -50,7 +50,7 @@ func TestAccResourceRoutingWrapupcode(t *testing.T) {
 			},
 			{
 				// Update with a new name
-				Config: gcloud.GenerateAuthDivisionBasic(divResource, divName) + GenerateRoutingWrapupcodeResource(
+				Config: authDivision.GenerateAuthDivisionBasic(divResource, divName) + GenerateRoutingWrapupcodeResource(
 					codeResource1,
 					codeName2,
 					"genesyscloud_auth_division."+divResource+".id",

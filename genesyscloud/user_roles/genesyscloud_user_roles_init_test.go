@@ -3,6 +3,7 @@ package user_roles
 import (
 	"sync"
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	authDivision "terraform-provider-genesyscloud/genesyscloud/auth_division"
 	authRole "terraform-provider-genesyscloud/genesyscloud/auth_role"
 
 	"terraform-provider-genesyscloud/genesyscloud/user"
@@ -34,7 +35,7 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_user_roles"] = ResourceUserRoles()
 	providerResources["genesyscloud_user"] = user.ResourceUser()
 	providerResources["genesyscloud_auth_role"] = authRole.ResourceAuthRole()
-	providerResources["genesyscloud_auth_division"] = gcloud.ResourceAuthDivision()
+	providerResources["genesyscloud_auth_division"] = authDivision.ResourceAuthDivision()
 }
 
 // registerTestDataSources registers all data sources used in the tests.

@@ -12,7 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
 
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	authDivision "terraform-provider-genesyscloud/genesyscloud/auth_division"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
@@ -40,7 +40,7 @@ func TestAccResourceTeam(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				// Create Team
-				Config: gcloud.GenerateAuthDivisionBasic(divResource, divName) + generateTeamResource(
+				Config: authDivision.GenerateAuthDivisionBasic(divResource, divName) + generateTeamResource(
 					resourceId,
 					name1,
 					"genesyscloud_auth_division."+divResource+".id",
@@ -54,7 +54,7 @@ func TestAccResourceTeam(t *testing.T) {
 			},
 			{
 				// Update Team
-				Config: gcloud.GenerateAuthDivisionBasic(divResource, divName) + generateTeamResource(
+				Config: authDivision.GenerateAuthDivisionBasic(divResource, divName) + generateTeamResource(
 					resourceId,
 					name2,
 					"genesyscloud_auth_division."+divResource+".id",
@@ -97,7 +97,7 @@ func TestAccResourceTeamAddMembers(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				// Create Team
-				Config: gcloud.GenerateAuthDivisionBasic(divResource, divName) +
+				Config: authDivision.GenerateAuthDivisionBasic(divResource, divName) +
 					generateTeamResource(
 						resourceId,
 						name1,
@@ -112,7 +112,7 @@ func TestAccResourceTeamAddMembers(t *testing.T) {
 			},
 			{
 				// Update Team with one member
-				Config: gcloud.GenerateAuthDivisionBasic(divResource, divName) +
+				Config: authDivision.GenerateAuthDivisionBasic(divResource, divName) +
 					generateUserWithDivisionId(testUserResource1, testUserName1, testUserEmail1, "genesyscloud_auth_division."+divResource+".id") +
 					generateTeamResource(
 						resourceId,
@@ -162,7 +162,7 @@ func TestAccResourceTeamRemoveMembers(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				// Create Team with member
-				Config: gcloud.GenerateAuthDivisionBasic(divResource, divName) +
+				Config: authDivision.GenerateAuthDivisionBasic(divResource, divName) +
 					generateUserWithDivisionId(testUserResource1, testUserName1, testUserEmail1, "genesyscloud_auth_division."+divResource+".id") +
 					generateTeamResource(
 						resourceId,
@@ -183,7 +183,7 @@ func TestAccResourceTeamRemoveMembers(t *testing.T) {
 			},
 			{
 				// Update Team with no members
-				Config: gcloud.GenerateAuthDivisionBasic(divResource, divName) +
+				Config: authDivision.GenerateAuthDivisionBasic(divResource, divName) +
 					generateTeamResource(
 						resourceId,
 						name1,

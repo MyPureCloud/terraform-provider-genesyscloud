@@ -2,7 +2,7 @@ package architect_user_prompt
 
 import (
 	"sync"
-	"terraform-provider-genesyscloud/genesyscloud"
+	authDivision "terraform-provider-genesyscloud/genesyscloud/auth_division"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -25,7 +25,7 @@ func (r *registerTestInstance) registerTestResources() {
 	defer r.resourceMapMutex.Unlock()
 
 	providerResources[resourceName] = ResourceArchitectUserPrompt()
-	providerResources["genesyscloud_auth_division"] = genesyscloud.ResourceAuthDivision()
+	providerResources["genesyscloud_auth_division"] = authDivision.ResourceAuthDivision()
 }
 
 // registerTestDataSources registers all data sources used in the tests.

@@ -13,6 +13,7 @@ import (
 	routingQueue "terraform-provider-genesyscloud/genesyscloud/routing_queue"
 	routingWrapupcode "terraform-provider-genesyscloud/genesyscloud/routing_wrapupcode"
 
+	authDivision "terraform-provider-genesyscloud/genesyscloud/auth_division"
 	"terraform-provider-genesyscloud/genesyscloud/user"
 	userRoles "terraform-provider-genesyscloud/genesyscloud/user_roles"
 	"testing"
@@ -59,7 +60,7 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_routing_language"] = routingLanguage.ResourceRoutingLanguage()
 	providerResources["genesyscloud_routing_wrapupcode"] = routingWrapupcode.ResourceRoutingWrapupCode()
 	providerResources["genesyscloud_flow"] = flow.ResourceArchitectFlow()
-	providerResources["genesyscloud_auth_division"] = gcloud.ResourceAuthDivision()
+	providerResources["genesyscloud_auth_division"] = authDivision.ResourceAuthDivision()
 }
 
 // registerTestDataSources registers all data sources used in the tests.
