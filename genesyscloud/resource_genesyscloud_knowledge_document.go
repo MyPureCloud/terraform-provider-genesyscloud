@@ -224,7 +224,7 @@ func ResourceKnowledgeDocument() *schema.Resource {
 	}
 }
 
-func buildDocumentAlternatives(requestIn map[string]interface{}, knowledgeAPI *platformclientv2.KnowledgeApi, knowledgeBaseId string) *[]platformclientv2.Knowledgedocumentalternative {
+func buildDocumentAlternatives(requestIn map[string]interface{}) *[]platformclientv2.Knowledgedocumentalternative {
 	if alternativesIn, ok := requestIn["alternatives"].([]interface{}); ok {
 		alternativesOut := make([]platformclientv2.Knowledgedocumentalternative, 0)
 
@@ -254,7 +254,7 @@ func buildKnowledgeDocumentRequest(d *schema.ResourceData, knowledgeAPI *platfor
 	requestOut := platformclientv2.Knowledgedocumentreq{
 		Title:        &title,
 		Visible:      &visible,
-		Alternatives: buildDocumentAlternatives(requestIn, knowledgeAPI, knowledgeBaseId),
+		Alternatives: buildDocumentAlternatives(requestIn),
 	}
 
 	if categoryName, ok := requestIn["category_name"].(string); ok && categoryName != "" {
@@ -367,7 +367,6 @@ func createKnowledgeDocument(ctx context.Context, d *schema.ResourceData, meta i
 
 	log.Printf("Creating knowledge document")
 	knowledgeDocument, resp, err := knowledgeAPI.PostKnowledgeKnowledgebaseDocuments(knowledgeBaseId, *body)
-
 	if err != nil {
 		return util.BuildAPIDiagnosticError("genesyscloud_knowledge_document", fmt.Sprintf("Failed to create knowledge document %s error: %s", d.Id(), err), resp)
 	}
@@ -375,7 +374,11 @@ func createKnowledgeDocument(ctx context.Context, d *schema.ResourceData, meta i
 	if published {
 		_, resp, versionErr := knowledgeAPI.PostKnowledgeKnowledgebaseDocumentVersions(knowledgeBaseId, *knowledgeDocument.Id, platformclientv2.Knowledgedocumentversion{})
 		if versionErr != nil {
-			return util.BuildAPIDiagnosticError("genesyscloud_knowledge_document", fmt.Sprintf("Failed to publish knowledge document error: %s", err), resp)
+			_, deleteError := knowledgeAPI.DeleteKnowledgeKnowledgebaseDocument(knowledgeBaseId, *knowledgeDocument.Id)
+			if deleteError != nil {
+				log.Printf("failed to delete draft knowledge document %s error: %s", *knowledgeDocument.Id, deleteError)
+			}
+			return util.BuildAPIDiagnosticError("genesyscloud_knowledge_document", fmt.Sprintf("Failed to publish knowledge document error: %s", versionErr), resp)
 		}
 	}
 
