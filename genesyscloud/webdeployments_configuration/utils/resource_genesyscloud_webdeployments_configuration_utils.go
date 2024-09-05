@@ -178,7 +178,24 @@ func FlattenCobrowseSettings(cobrowseSettings *platformclientv2.Cobrowsesettings
 		"channels":               cobrowseSettings.Channels,
 		"mask_selectors":         cobrowseSettings.MaskSelectors,
 		"readonly_selectors":     cobrowseSettings.ReadonlySelectors,
+		"pause_criteria":         flattenPauseCriteria(cobrowseSettings.PauseCriteria),
 	}}
+}
+
+func flattenPauseCriteria(pauseCriteria *[]platformclientv2.Pausecriteria) []interface{} {
+	if pauseCriteria == nil {
+		return nil
+	}
+
+	criterias := make([]interface{}, len(*pauseCriteria))
+	for i, criteria := range *pauseCriteria {
+		criterias[i] = map[string]interface{}{
+			"url_fragment": *criteria.UrlFragment,
+			"condition":    *criteria.Condition,
+		}
+	}
+
+	return criterias
 }
 
 func flattenLocalizedLabels(localizedLabels *[]platformclientv2.Localizedlabels) []interface{} {
