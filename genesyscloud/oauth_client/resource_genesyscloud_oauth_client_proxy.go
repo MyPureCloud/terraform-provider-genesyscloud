@@ -2,7 +2,6 @@ package oauth_client
 
 import (
 	"context"
-	"fmt"
 	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
 	"log"
 	"sync"
@@ -42,7 +41,6 @@ type oauthClientProxy struct {
 	getTerraformUserRolesAttr       getTerraformUserRolesFunc
 	updateTerraformUserRolesAttr    updateTerraformUserRolesFunc
 	getAllOauthClientsAttr          getAllOauthClientsFunc
-	getAllIntegrationCredentialAttr getAllIntegrationCredentialFunc
 	getIntegrationCredentialAttr    getIntegrationCredentialFunc
 	updateOAuthClientAttr           updateOAuthClientFunc
 	deleteOAuthClientAttr           deleteOAuthClientFunc
@@ -78,7 +76,6 @@ func newOAuthClientProxy(clientConfig *platformclientv2.Configuration) *oauthCli
 		getIntegrationCredentialAttr:    getIntegrationClientFn,
 		updateIntegrationCredentialAttr: updateIntegrationClientFn,
 		getAllOauthClientsAttr:          getAllOauthClientsFn,
-		getAllIntegrationCredentialAttr: getAllIntegrationCredentialFn,
 		deleteOAuthClientAttr:           deleteOAuthClientFn,
 		deleteIntegrationCredentialAttr: deleteIntegrationClientFn,
 	}
@@ -170,10 +167,6 @@ func (o *oauthClientProxy) getAllOAuthClients(ctx context.Context) (*[]platformc
 	return o.getAllOauthClientsAttr(ctx, o)
 }
 
-func (o *oauthClientProxy) getAllIntegrationCredentials(ctx context.Context) (*[]platformclientv2.Credentialinfo, *platformclientv2.APIResponse, error) {
-	return o.getAllIntegrationCredentialAttr(ctx, o)
-}
-
 func (o *oauthClientProxy) getHomeDivisionInfo(ctx context.Context) (*platformclientv2.Authzdivision, *platformclientv2.APIResponse, error) {
 	return o.getHomeDivisionInfo(ctx)
 }
@@ -202,33 +195,6 @@ func getAllOauthClientsFn(ctx context.Context, o *oauthClientProxy) (*[]platform
 	}
 
 	return &clients, resp, nil
-}
-
-// getAllIntegrationCredentialFn is the implementation for retrieving all credential in Genesys Cloud
-func getAllIntegrationCredentialFn(ctx context.Context, o *oauthClientProxy) (*[]platformclientv2.Credentialinfo, *platformclientv2.APIResponse, error) {
-	var allCreds []platformclientv2.Credentialinfo
-	const pageSize = 100
-	credentials, resp, err := o.integrationApi.GetIntegrationsCredentials(1, pageSize)
-
-	if err != nil {
-		return nil, resp, fmt.Errorf("failed to get page of credentials : %s", err)
-	}
-
-	if credentials.Entities != nil && len(*credentials.Entities) > 0 {
-		allCreds = append(allCreds, *credentials.Entities...)
-	}
-
-	for pageNum := 2; pageNum <= *credentials.PageCount; pageNum++ {
-		page, resp, err := o.integrationApi.GetIntegrationsCredentials(pageNum, pageSize)
-
-		if err != nil {
-			return nil, resp, err
-		}
-
-		allCreds = append(allCreds, *page.Entities...)
-	}
-
-	return &allCreds, resp, nil
 }
 
 func getIntegrationClientFn(ctx context.Context, o *oauthClientProxy, id string) (*platformclientv2.Credential, *platformclientv2.APIResponse, error) {
