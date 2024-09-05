@@ -44,7 +44,7 @@ func getAllSites(ctx context.Context, sdkConfig *platformclientv2.Configuration)
 	}
 	for _, managedSite := range *managedSites {
 		resources[*managedSite.Id] = &resourceExporter.ResourceMeta{Name: *managedSite.Name}
-		// When exporting managed sites, they must automatically be exported as data source 
+		// When exporting managed sites, they must automatically be exported as data source
 		// Managed sites are added to the ExportAsData []string in resource_exporter
 		if tfexporter_state.IsExporterActive() {
 			resourceExporter.AddDataSourceItems(resourceName, *managedSite.Name)
@@ -149,6 +149,7 @@ func readSite(ctx context.Context, d *schema.ResourceData, meta interface{}) dia
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	sp := GetSiteProxy(sdkConfig)
 	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceSite(), constants.DefaultConsistencyChecks, resourceName)
+	utilE164 := util.NewUtilE164Service()
 
 	log.Printf("Reading site %s", d.Id())
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
@@ -172,7 +173,10 @@ func readSite(ctx context.Context, d *schema.ResourceData, meta interface{}) dia
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "edge_auto_update_config", currentSite.EdgeAutoUpdateConfig, flattenSdkEdgeAutoUpdateConfig)
 		resourcedata.SetNillableValue(d, "media_regions", currentSite.MediaRegions)
 
-		_ = d.Set("caller_id", currentSite.CallerId)
+		d.Set("caller_id", nil)
+		if currentSite.CallerId != nil && *currentSite.CallerId != "" {
+			_ = d.Set("caller_id", utilE164.FormatAsCalculatedE164Number(*currentSite.CallerId))
+		}
 		_ = d.Set("caller_name", currentSite.CallerName)
 
 		if currentSite.PrimarySites != nil {

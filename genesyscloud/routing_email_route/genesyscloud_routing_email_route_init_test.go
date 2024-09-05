@@ -5,9 +5,9 @@ import (
 	routingSkillGroup "terraform-provider-genesyscloud/genesyscloud/routing_skill_group"
 
 	architectFlow "terraform-provider-genesyscloud/genesyscloud/architect_flow"
-	routingQueue "terraform-provider-genesyscloud/genesyscloud/routing_queue"
-	routingLanguage "terraform-provider-genesyscloud/genesyscloud/routing_language"
 	routingEmailDomain "terraform-provider-genesyscloud/genesyscloud/routing_email_domain"
+	routingLanguage "terraform-provider-genesyscloud/genesyscloud/routing_language"
+	routingQueue "terraform-provider-genesyscloud/genesyscloud/routing_queue"
 	routingSkill "terraform-provider-genesyscloud/genesyscloud/routing_skill"
 
 	"testing"

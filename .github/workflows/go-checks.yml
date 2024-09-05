@@ -16,7 +16,7 @@ jobs:
         id: go
 
       - name: Setup Terraform CLI
-        uses: hashicorp/setup-terraform@v3.1.1
+        uses: hashicorp/setup-terraform@v3.1.2
         with:
           terraform_wrapper: false
           terraform_version: ${{ matrix.terraform }}
@@ -34,6 +34,7 @@ jobs:
           if [[ -n $(git status -s) ]]; then
               echo "There are untracked documentation changes:\n"
               git status
+              exit 1
           fi
 
       - name: Tidy
@@ -42,6 +43,18 @@ jobs:
           if [[ -n $(git status -s) ]]; then
               echo "go mod tidy produced changes:\n"
               git status
+              exit 1
+          fi
+      
+      - name: Fmt
+        run: |
+          go fmt ./genesyscloud/...
+          if [[ -n $(git status -s) ]]; then
+              echo "go fmt produced changes:\n"
+              git status
+
+              echo "Please run 'go fmt ./genesyscloud/...' with go version 1.20 and commit these changes."
+              exit 1
           fi
 
       - name: Vet

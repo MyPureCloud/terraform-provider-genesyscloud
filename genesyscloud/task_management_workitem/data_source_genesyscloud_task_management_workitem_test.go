@@ -10,7 +10,7 @@ import (
 	workitemSchema "terraform-provider-genesyscloud/genesyscloud/task_management_workitem_schema"
 	worktype "terraform-provider-genesyscloud/genesyscloud/task_management_worktype"
 	worktypeStatus "terraform-provider-genesyscloud/genesyscloud/task_management_worktype_status"
-	
+
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
@@ -37,9 +37,9 @@ func TestAccDataSourceTaskManagementWorkitem(t *testing.T) {
 		wsDescription = "workitem schema created for CX as Code test case"
 
 		// worktype
-		wtResName         = "tf_worktype_1"
-		wtName            = "tf-worktype" + uuid.NewString()
-		wtDescription     = "tf-worktype-description"
+		wtResName     = "tf_worktype_1"
+		wtName        = "tf-worktype" + uuid.NewString()
+		wtDescription = "tf-worktype-description"
 
 		// Worktype statuses
 		statusResourceOpen   = "open-status"

@@ -69,7 +69,7 @@ func removeSkillGroupDivisionID(d *schema.ResourceData, list []string) ([]string
 	return list, nil
 }
 
-// Assign the member division ids to the skill group  
+// Assign the member division ids to the skill group
 func assignMemberDivisionIds(ctx context.Context, d *schema.ResourceData, meta interface{}, create bool) diag.Diagnostics {
 	if create {
 		log.Printf("Creating Member Divisions for skill group %s", d.Id())

@@ -2,6 +2,7 @@ package architect_user_prompt
 
 import (
 	"fmt"
+	"path"
 	"strconv"
 	"strings"
 	"sync"
@@ -22,6 +23,7 @@ import (
 func TestAccResourceUserPromptBasic(t *testing.T) {
 	userPromptResource1 := "test-user_prompt_1"
 	userPromptName1 := "TestUserPrompt_1" + strings.Replace(uuid.NewString(), "-", "", -1)
+	userPromptName2 := "TestUserPrompt_2" + strings.Replace(uuid.NewString(), "-", "", -1)
 	userPromptDescription1 := "Test description"
 	userPromptResourceLang1 := "en-us"
 	userPromptResourceLang2 := "ja-jp"
@@ -77,12 +79,12 @@ func TestAccResourceUserPromptBasic(t *testing.T) {
 				// Update to include TTS message prompt resource
 				Config: GenerateUserPromptResource(&UserPromptStruct{
 					userPromptResource1,
-					userPromptName1,
+					userPromptName2,
 					strconv.Quote(userPromptDescription1),
 					userPromptResources1,
 				}),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_architect_user_prompt."+userPromptResource1, "name", userPromptName1),
+					resource.TestCheckResourceAttr("genesyscloud_architect_user_prompt."+userPromptResource1, "name", userPromptName2),
 					resource.TestCheckResourceAttr("genesyscloud_architect_user_prompt."+userPromptResource1, "description", userPromptDescription1),
 					resource.TestCheckResourceAttr("genesyscloud_architect_user_prompt."+userPromptResource1, "resources.0.language", userPromptResourceLang1),
 					resource.TestCheckResourceAttr("genesyscloud_architect_user_prompt."+userPromptResource1, "resources.0.tts_string", userPromptResourceTTS1),
@@ -92,12 +94,12 @@ func TestAccResourceUserPromptBasic(t *testing.T) {
 				// Update existing language TTS
 				Config: GenerateUserPromptResource(&UserPromptStruct{
 					userPromptResource1,
-					userPromptName1,
+					userPromptName2,
 					strconv.Quote(userPromptDescription1),
 					userPromptResources2,
 				}),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_architect_user_prompt."+userPromptResource1, "name", userPromptName1),
+					resource.TestCheckResourceAttr("genesyscloud_architect_user_prompt."+userPromptResource1, "name", userPromptName2),
 					resource.TestCheckResourceAttr("genesyscloud_architect_user_prompt."+userPromptResource1, "description", userPromptDescription1),
 					resource.TestCheckResourceAttr("genesyscloud_architect_user_prompt."+userPromptResource1, "resources.0.language", userPromptResourceLang1),
 					resource.TestCheckResourceAttr("genesyscloud_architect_user_prompt."+userPromptResource1, "resources.0.tts_string", userPromptResourceTTS2),
@@ -122,23 +124,23 @@ func TestAccResourceUserPromptWavFile(t *testing.T) {
 	userPromptDescription1 := "Test prompt with wav audio file"
 	userPromptResourceLang1 := "en-us"
 	userPromptResourceText1 := "This is a test greeting!"
-	userPromptResourceFileName1 := "../" + testrunner.GetTestDataPath("test-prompt-01.wav")
-	userPromptResourceFileName2 := "../" + testrunner.GetTestDataPath("test-prompt-02.wav")
+	userPromptResourceFileName1 := path.Join("../", testrunner.GetTestDataPath("test-prompt-01.wav"))
+	userPromptResourceFileName2 := path.Join("../", testrunner.GetTestDataPath("test-prompt-02.wav"))
 
 	userPromptAsset1 := UserPromptResourceStruct{
-		userPromptResourceLang1,
-		util.NullValue,
-		strconv.Quote(userPromptResourceText1),
-		strconv.Quote(userPromptResourceFileName1),
-		userPromptResourceFileName1,
+		Language:        userPromptResourceLang1,
+		Tts_string:      util.NullValue,
+		Text:            strconv.Quote(userPromptResourceText1),
+		Filename:        strconv.Quote(userPromptResourceFileName1),
+		FileContentHash: userPromptResourceFileName1,
 	}
 
 	userPromptAsset2 := UserPromptResourceStruct{
-		userPromptResourceLang1,
-		util.NullValue,
-		strconv.Quote(userPromptResourceText1),
-		strconv.Quote(userPromptResourceFileName2),
-		userPromptResourceFileName2,
+		Language:        userPromptResourceLang1,
+		Tts_string:      util.NullValue,
+		Text:            strconv.Quote(userPromptResourceText1),
+		Filename:        strconv.Quote(userPromptResourceFileName2),
+		FileContentHash: userPromptResourceFileName2,
 	}
 
 	userPromptResources1 := []*UserPromptResourceStruct{&userPromptAsset1}
@@ -198,19 +200,19 @@ func TestAccResourceUserPromptWavFileURL(t *testing.T) {
 	userPromptResourceFileName2 := "http://localhost:8100/test-prompt-02.wav"
 
 	userPromptAsset1 := UserPromptResourceStruct{
-		userPromptResourceLang1,
-		util.NullValue,
-		strconv.Quote(userPromptResourceText1),
-		strconv.Quote(userPromptResourceFileName1),
-		util.NullValue,
+		Language:        userPromptResourceLang1,
+		Tts_string:      util.NullValue,
+		Text:            strconv.Quote(userPromptResourceText1),
+		Filename:        strconv.Quote(userPromptResourceFileName1),
+		FileContentHash: util.NullValue,
 	}
 
 	userPromptAsset2 := UserPromptResourceStruct{
-		userPromptResourceLang1,
-		util.NullValue,
-		strconv.Quote(userPromptResourceText1),
-		strconv.Quote(userPromptResourceFileName2),
-		util.NullValue,
+		Language:        userPromptResourceLang1,
+		Tts_string:      util.NullValue,
+		Text:            strconv.Quote(userPromptResourceText1),
+		Filename:        strconv.Quote(userPromptResourceFileName2),
+		FileContentHash: util.NullValue,
 	}
 
 	userPromptResources1 := []*UserPromptResourceStruct{&userPromptAsset1}
@@ -218,7 +220,7 @@ func TestAccResourceUserPromptWavFileURL(t *testing.T) {
 
 	httpServerExitDone := &sync.WaitGroup{}
 	httpServerExitDone.Add(1)
-	srv := fileserver.Start(httpServerExitDone, "../"+testrunner.GetTestDataPath(), 8100)
+	srv := fileserver.Start(httpServerExitDone, path.Join("../", testrunner.GetTestDataPath()), 8100)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },

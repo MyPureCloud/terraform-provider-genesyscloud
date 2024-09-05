@@ -83,7 +83,7 @@ func ResourceSkillGroupExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: provider.GetAllWithPooledClient(getAllRoutingSkillGroups),
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
-			"division_id":      {RefType: "genesyscloud_auth_division"},
+			"division_id":         {RefType: "genesyscloud_auth_division"},
 			"member_division_ids": {RefType: "genesyscloud_auth_division"},
 		},
 		RemoveIfMissing: map[string][]string{

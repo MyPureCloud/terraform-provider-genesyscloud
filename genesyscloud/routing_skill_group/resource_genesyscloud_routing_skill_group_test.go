@@ -6,14 +6,14 @@ import (
 	"log"
 	"os"
 	"strings"
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 	"time"
 
-	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
+	authDivision "terraform-provider-genesyscloud/genesyscloud/auth_division"
 	routingSkill "terraform-provider-genesyscloud/genesyscloud/routing_skill"
+	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -221,11 +221,11 @@ func TestAccResourceRoutingSkillGroupMemberDivisionsBasic(t *testing.T) {
 
 	authDivision1Name := "TF Division " + uuid.NewString()
 	authDivision1Resource := "division1"
-	authDivision1 := gcloud.GenerateAuthDivisionBasic(authDivision1Resource, authDivision1Name)
+	authDivision1 := authDivision.GenerateAuthDivisionBasic(authDivision1Resource, authDivision1Name)
 
 	authDivision2Name := "TF Division " + uuid.NewString()
 	authDivision2Resource := "division2"
-	authDivision2 := gcloud.GenerateAuthDivisionBasic(authDivision2Resource, authDivision2Name)
+	authDivision2 := authDivision.GenerateAuthDivisionBasic(authDivision2Resource, authDivision2Name)
 
 	memberDivisionIds1 := fmt.Sprintf(`[%s]`, strings.Join([]string{"data.genesyscloud_auth_division_home.home.id"}, ", "))
 
@@ -427,9 +427,9 @@ func TestAccResourceRoutingSkillGroupMemberDivisionsUsersAssigned(t *testing.T) 
 
 	routingSkillResource := routingSkill.GenerateRoutingSkillResource(routingSkillResourceId, routingSkillName)
 
-	division1Resource := gcloud.GenerateAuthDivisionBasic(division1ResourceId, division1Name)
-	division2Resource := gcloud.GenerateAuthDivisionBasic(division2ResourceId, division2Name)
-	division3Resource := gcloud.GenerateAuthDivisionBasic(division3ResourceId, division3Name)
+	division1Resource := authDivision.GenerateAuthDivisionBasic(division1ResourceId, division1Name)
+	division2Resource := authDivision.GenerateAuthDivisionBasic(division2ResourceId, division2Name)
+	division3Resource := authDivision.GenerateAuthDivisionBasic(division3ResourceId, division3Name)
 
 	user1Resource := fmt.Sprintf(`
 resource "genesyscloud_user" "%s" {
@@ -525,7 +525,10 @@ resource "genesyscloud_routing_skill_group" "%s" {
 				Destroy:                 true,
 			},
 		},
-		CheckDestroy: testVerifySkillGroupAndUsersDestroyed,
+		CheckDestroy: func(state *terraform.State) error {
+			time.Sleep(60 * time.Second)
+			return testVerifySkillGroupAndUsersDestroyed(state)
+		},
 	})
 }
 

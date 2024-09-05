@@ -3,8 +3,8 @@ package outbound_callanalysisresponseset
 import (
 	"fmt"
 	"strconv"
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	"terraform-provider-genesyscloud/genesyscloud/architect_flow"
+	authDivision "terraform-provider-genesyscloud/genesyscloud/auth_division"
 	obContactList "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	routingWrapupcode "terraform-provider-genesyscloud/genesyscloud/routing_wrapupcode"
@@ -134,7 +134,7 @@ func TestAccResourceOutboundCallAnalysisResponseSet(t *testing.T) {
 						"cell",
 						util.NullValue,
 					),
-				) + gcloud.GenerateAuthDivisionBasic(divResource, divName) + routingWrapupcode.GenerateRoutingWrapupcodeResource(
+				) + authDivision.GenerateAuthDivisionBasic(divResource, divName) + routingWrapupcode.GenerateRoutingWrapupcodeResource(
 					wrapupCodeResourceId,
 					wrapupCodeName,
 					"genesyscloud_auth_division."+divResource+".id",

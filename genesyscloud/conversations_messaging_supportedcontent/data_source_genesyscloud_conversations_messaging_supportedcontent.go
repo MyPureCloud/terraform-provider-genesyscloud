@@ -9,7 +9,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
 
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	rc "terraform-provider-genesyscloud/genesyscloud/resource_cache"
@@ -46,43 +45,23 @@ var (
 	dataSourceSupportedContentCache *rc.DataSourceCache
 )
 
-func hydrateSupportedContentCacheFn(c *rc.DataSourceCache) error {
+func hydrateSupportedContentCacheFn(c *rc.DataSourceCache, ctx context.Context) error {
 	log.Printf("hydrating cache for data source " + resourceName)
-	supportContentApi := platformclientv2.NewConversationsApiWithConfig(c.ClientConfig)
+	proxy := getSupportedContentProxy(c.ClientConfig)
 
-	const pageSize = 100
-
-	supportedContents, _, err := supportContentApi.GetConversationsMessagingSupportedcontent(pageSize, 1)
-	if err != nil {
-		return fmt.Errorf("Failed to get supported content: %v", err)
+	supportedContents, resp, getErr := proxy.getAllSupportedContent(ctx)
+	if getErr != nil {
+		return fmt.Errorf("failed to get supported content: %v %v", getErr, resp)
 	}
-	if supportedContents.Entities == nil || len(*supportedContents.Entities) == 0 {
+
+	if supportedContents == nil || len(*supportedContents) == 0 {
 		return nil
 	}
 
-	for _, supportedContent := range *supportedContents.Entities {
+	for _, supportedContent := range *supportedContents {
 		c.Cache[*supportedContent.Name] = *supportedContent.Id
 	}
-
-	for pageNum := 2; pageNum <= *supportedContents.PageCount; pageNum++ {
-		supportedContents, _, err := supportContentApi.GetConversationsMessagingSupportedcontent(pageSize, pageNum)
-
-		log.Printf("hydrating cache for data source genesyscloud_conversations_messaging_supportedcontent with page number: %v", pageNum)
-		if err != nil {
-			return fmt.Errorf("Failed to get supported content: %v", err)
-		}
-
-		if supportedContents.Entities == nil || len(*supportedContents.Entities) == 0 {
-			break
-		}
-
-		// Add ids to cache
-		for _, supportedContent := range *supportedContents.Entities {
-			c.Cache[*supportedContent.Name] = *supportedContent.Id
-		}
-	}
 	log.Printf("cache hydration completed for data source " + resourceName)
-
 	return nil
 }
 

@@ -2,8 +2,8 @@ package telephony
 
 import (
 	"sync"
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
 
+	"terraform-provider-genesyscloud/genesyscloud/location"
 	edgeSite "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site"
 	edgeTrunk "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_trunk"
 	"testing"
@@ -28,7 +28,7 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_telephony_providers_edges_trunk"] = edgeTrunk.ResourceTrunk()
 	// external package dependencies for outbound
 	providerResources["genesyscloud_telephony_providers_edges_site"] = edgeSite.ResourceSite()
-	providerResources["genesyscloud_location"] = gcloud.ResourceLocation()
+	providerResources["genesyscloud_location"] = location.ResourceLocation()
 
 }
 

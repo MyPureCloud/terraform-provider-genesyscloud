@@ -3,8 +3,8 @@ package task_management_worktype
 import (
 	"sync"
 	routingQueue "terraform-provider-genesyscloud/genesyscloud/routing_queue"
-	"testing"
 	routingSkill "terraform-provider-genesyscloud/genesyscloud/routing_skill"
+	"testing"
 
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	routingLanguage "terraform-provider-genesyscloud/genesyscloud/routing_language"

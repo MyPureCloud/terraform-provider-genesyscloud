@@ -13,8 +13,6 @@ import (
 
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
-	routingSkill "terraform-provider-genesyscloud/genesyscloud/routing_skill"
-
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
@@ -140,27 +138,4 @@ func deleteOutboundRuleset(ctx context.Context, d *schema.ResourceData, meta int
 		}
 		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Outbound Ruleset %s still exists", d.Id()), resp))
 	})
-}
-
-// filterOutboundRulesets filters rule sets by removing the ones that reference skills that no longer exist in GC
-func filterOutboundRulesets(ruleSets []platformclientv2.Ruleset, skillMap resourceExporter.ResourceIDMetaMap) ([]platformclientv2.Ruleset, diag.Diagnostics) {
-	var filteredRuleSets []platformclientv2.Ruleset
-	log.Printf("Filtering outbound rule sets")
-
-	for _, ruleSet := range ruleSets {
-		var foundDeleted bool
-		for _, rule := range *ruleSet.Rules {
-			if doesRuleActionsRefDeletedSkill(rule, skillMap) || doesRuleConditionsRefDeletedSkill(rule, skillMap) {
-				foundDeleted = true
-				break
-			}
-		}
-		if foundDeleted {
-			log.Printf("Removing ruleset id '%s'", *ruleSet.Id)
-		} else {
-			// No references to a deleted skill in the ruleset, keep it
-			filteredRuleSets = append(filteredRuleSets, ruleSet)
-		}
-	}
-	return filteredRuleSets, nil
 }

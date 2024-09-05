@@ -6,9 +6,9 @@ import (
 	"strconv"
 	"strings"
 	"sync"
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	"terraform-provider-genesyscloud/genesyscloud/architect_flow"
 	"terraform-provider-genesyscloud/genesyscloud/architect_user_prompt"
+	authDivision "terraform-provider-genesyscloud/genesyscloud/auth_division"
 	"terraform-provider-genesyscloud/genesyscloud/group"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	routingSkill "terraform-provider-genesyscloud/genesyscloud/routing_skill"
@@ -245,7 +245,6 @@ func TestAccResourceRoutingQueueConditionalRouting(t *testing.T) {
 		testUserResource                       = "user_resource1"
 		testUserName                           = "nameUser1" + uuid.NewString()
 		testUserEmail                          = uuid.NewString() + "@example.com"
-		userID                                 string
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -437,18 +436,8 @@ func TestAccResourceRoutingQueueConditionalRouting(t *testing.T) {
 					validateMediaSettings(queueResource1, "media_settings_chat", alertTimeout1, util.FalseValue, slPercent1, slDuration1),
 					validateMediaSettings(queueResource1, "media_settings_email", alertTimeout1, util.FalseValue, slPercent1, slDuration1),
 					validateMediaSettings(queueResource1, "media_settings_message", alertTimeout1, util.FalseValue, slPercent1, slDuration1),
-					func(s *terraform.State) error {
-						rs, ok := s.RootModule().Resources["genesyscloud_user."+testUserResource]
-						if !ok {
-							return fmt.Errorf("not found: %s", "genesyscloud_user."+testUserResource)
-						}
-						userID = rs.Primary.ID
-						log.Printf("User ID: %s\n", userID) // Print user ID
-						return nil
-					},
 				),
-
-				PreventPostDestroyRefresh: true,
+				Destroy: true,
 			},
 			{
 				Config: GenerateRoutingQueueResource(
@@ -1007,7 +996,7 @@ func TestAccResourceRoutingQueueWrapupCodes(t *testing.T) {
 					"division_id = genesyscloud_auth_division."+divResource+".id",
 					GenerateQueueWrapupCodes("genesyscloud_routing_wrapupcode."+wrapupCodeResource1+".id",
 						"genesyscloud_routing_wrapupcode."+wrapupCodeResource2+".id"),
-				) + gcloud.GenerateAuthDivisionBasic(divResource, divName) + routingWrapupcode.GenerateRoutingWrapupcodeResource(
+				) + authDivision.GenerateAuthDivisionBasic(divResource, divName) + routingWrapupcode.GenerateRoutingWrapupcodeResource(
 					wrapupCodeResource1,
 					wrapupCodeName1,
 					"genesyscloud_auth_division."+divResource+".id",
@@ -1031,7 +1020,7 @@ func TestAccResourceRoutingQueueWrapupCodes(t *testing.T) {
 						"genesyscloud_routing_wrapupcode."+wrapupCodeResource1+".id",
 						"genesyscloud_routing_wrapupcode."+wrapupCodeResource2+".id",
 						"genesyscloud_routing_wrapupcode."+wrapupCodeResource3+".id"),
-				) + gcloud.GenerateAuthDivisionBasic(divResource, divName) + routingWrapupcode.GenerateRoutingWrapupcodeResource(
+				) + authDivision.GenerateAuthDivisionBasic(divResource, divName) + routingWrapupcode.GenerateRoutingWrapupcodeResource(
 					wrapupCodeResource1,
 					wrapupCodeName1,
 					"genesyscloud_auth_division."+divResource+".id",
@@ -1056,7 +1045,7 @@ func TestAccResourceRoutingQueueWrapupCodes(t *testing.T) {
 					queueName,
 					"division_id = genesyscloud_auth_division."+divResource+".id",
 					GenerateQueueWrapupCodes("genesyscloud_routing_wrapupcode."+wrapupCodeResource2+".id"),
-				) + gcloud.GenerateAuthDivisionBasic(divResource, divName) + routingWrapupcode.GenerateRoutingWrapupcodeResource(
+				) + authDivision.GenerateAuthDivisionBasic(divResource, divName) + routingWrapupcode.GenerateRoutingWrapupcodeResource(
 					wrapupCodeResource2,
 					wrapupCodeName2,
 					"genesyscloud_auth_division."+divResource+".id",
@@ -1072,7 +1061,7 @@ func TestAccResourceRoutingQueueWrapupCodes(t *testing.T) {
 					queueName,
 					"division_id = genesyscloud_auth_division."+divResource+".id",
 					GenerateQueueWrapupCodes(),
-				) + gcloud.GenerateAuthDivisionBasic(divResource, divName),
+				) + authDivision.GenerateAuthDivisionBasic(divResource, divName),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckNoResourceAttr("genesyscloud_routing_queue."+queueResource, "wrapup_codes.%"),
 				),

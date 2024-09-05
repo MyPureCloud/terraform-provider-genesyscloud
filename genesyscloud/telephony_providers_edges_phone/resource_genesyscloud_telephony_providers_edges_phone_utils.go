@@ -3,7 +3,6 @@ package telephony_providers_edges_phone
 import (
 	"context"
 	"fmt"
-	"hash/fnv"
 	"log"
 	"strconv"
 	"strings"
@@ -13,6 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 
+	"terraform-provider-genesyscloud/genesyscloud/util/lists"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -202,9 +202,7 @@ func buildSdkLines(ctx context.Context, pp *phoneProxy, d *schema.ResourceData, 
 		return linesPtr, isStandAlone, nil
 	}
 	// If line_addresses is not provided, phone is not standalone
-	hasher := fnv.New32()
-	hasher.Write([]byte(d.Get("name").(string)))
-	lineName := "line_" + *lineBaseSettings.Id + fmt.Sprintf("%x", hasher.Sum32())
+	lineName := "line_" + *lineBaseSettings.Id + util.GetUniqueString()
 	line := platformclientv2.Line{
 		Name:             &lineName,
 		LineBaseSettings: lineBaseSettings,
@@ -253,8 +251,8 @@ func generatePhoneProperties(hardware_id string) string {
 }
 func createNonStandalonePhoneLine(remoteAddress []interface{}, linesPtr *[]platformclientv2.Line, lineBaseSettings *platformclientv2.Domainentityref) *[]platformclientv2.Line {
 	lines := *linesPtr
-	for i, eachAddress := range remoteAddress {
-		lineName := "line_" + *lineBaseSettings.Id + "_" + strconv.Itoa(i+1)
+	for _, eachAddress := range remoteAddress {
+		lineName := "line_" + *lineBaseSettings.Id + "_" + util.GetUniqueString()
 		properties := map[string]interface{}{
 			"station_remote_address": &map[string]interface{}{
 				"value": &map[string]interface{}{
@@ -272,8 +270,8 @@ func createNonStandalonePhoneLine(remoteAddress []interface{}, linesPtr *[]platf
 }
 func createStandalonePhoneLines(lineAddress []interface{}, linesPtr *[]platformclientv2.Line, lineBaseSettings *platformclientv2.Domainentityref) *[]platformclientv2.Line {
 	lines := *linesPtr
-	for i, eachLineAddress := range lineAddress {
-		lineName := "line_" + *lineBaseSettings.Id + "_" + strconv.Itoa(i+1)
+	for _, eachLineAddress := range lineAddress {
+		lineName := "line_" + *lineBaseSettings.Id + "_" + util.GetUniqueString()
 		properties := map[string]interface{}{
 			"station_identity_address": &map[string]interface{}{
 				"value": &map[string]interface{}{
@@ -321,7 +319,9 @@ func flattenLines(phoneLines *[]platformclientv2.Line) []interface{} {
 	}
 
 	if len(lineAddressList) > 0 {
-		resourcedata.SetMapValueIfNotNil(linePropertiesMap, "line_address", &lineAddressList)
+		utilE164 := util.NewUtilE164Service()
+		formattedLineAddresses := lists.Map(lineAddressList, utilE164.FormatAsCalculatedE164Number)
+		resourcedata.SetMapValueIfNotNil(linePropertiesMap, "line_address", &formattedLineAddresses)
 	}
 	if len(remoteAddressList) > 0 {
 		resourcedata.SetMapValueIfNotNil(linePropertiesMap, "remote_address", &remoteAddressList)

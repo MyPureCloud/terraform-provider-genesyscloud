@@ -1,10 +1,11 @@
-package genesyscloud
+package auth_division
 
 import (
 	"fmt"
 	"log"
 	"strconv"
 	"strings"
+	"sync"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
@@ -14,6 +15,10 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
+)
+
+var (
+	mu sync.Mutex
 )
 
 func TestAccResourceAuthDivisionBasic(t *testing.T) {
@@ -231,7 +236,11 @@ func validateHomeDivisionID(divResourceName string) resource.TestCheckFunc {
 }
 
 func cleanupAuthDivision(idPrefix string) {
-	authAPI := platformclientv2.NewAuthorizationApiWithConfig(sdkConfig)
+	config, err := provider.AuthorizeSdk()
+	if err != nil {
+		return
+	}
+	authAPI := platformclientv2.NewAuthorizationApiWithConfig(config)
 
 	for pageNum := 1; ; pageNum++ {
 		const pageSize = 100

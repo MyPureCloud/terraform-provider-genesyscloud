@@ -20,7 +20,7 @@ func TestUnitResourceArchitectRead(t *testing.T) {
 	tId := uuid.NewString()
 	tName := "My Unit Test IVR"
 	tDescription := "My Unit Test IVR"
-	tDnis := []string{"+920-555-2902", "+920-321-5463"}
+	tDnis := []string{"+192055529", "+192032154"}
 	tIDnis := make([]interface{}, len(tDnis))
 	for i, v := range tDnis {
 		tIDnis[i] = v
@@ -82,7 +82,7 @@ func TestUnitResourceArchitectDeleteStandard(t *testing.T) {
 	tId := uuid.NewString()
 	tName := "My Unit Test IVR"
 	tDescription := "My Unit Test IVR"
-	tDnis := []string{"+920-555-2902", "+920-321-5463"}
+	tDnis := []string{"+192055529", "+192032154"}
 	tIDnis := make([]interface{}, len(tDnis))
 	for i, v := range tDnis {
 		tIDnis[i] = v
@@ -135,7 +135,7 @@ func TestUnitResourceArchitectDeleteSoftDelete(t *testing.T) {
 	tId := uuid.NewString()
 	tName := "My Unit Test IVR"
 	tDescription := "My Unit Test IVR"
-	tDnis := []string{"+920-555-2902", "+920-321-5463"}
+	tDnis := []string{"+192055529", "+192032154"}
 	tIDnis := make([]interface{}, len(tDnis))
 	for i, v := range tDnis {
 		tIDnis[i] = v
@@ -199,7 +199,7 @@ func TestUnitResourceArchitectCreate(t *testing.T) {
 	tId := uuid.NewString()
 	tName := "My Unit Test IVR"
 	tDescription := "My Unit Test IVR"
-	tDnis := []string{"+920-555-2902", "+920-321-5463"}
+	tDnis := []string{"+192055529", "+192032154"}
 	tIDnis := make([]interface{}, len(tDnis))
 	for i, v := range tDnis {
 		tIDnis[i] = v
@@ -270,7 +270,7 @@ func TestUnitResourceArchitectUpdate(t *testing.T) {
 	tId := uuid.NewString()
 	tName := "My Unit Test IVR"
 	tDescription := "My updated Unit Test IVR"
-	tDnis := []string{"+920-555-2902", "+920-321-5463"}
+	tDnis := []string{"+192055529", "+192032154"}
 	tIDnis := make([]interface{}, len(tDnis))
 	for i, v := range tDnis {
 		tIDnis[i] = v

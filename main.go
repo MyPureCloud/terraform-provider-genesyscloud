@@ -14,8 +14,10 @@ import (
 	architectSchedulegroups "terraform-provider-genesyscloud/genesyscloud/architect_schedulegroups"
 	architectSchedules "terraform-provider-genesyscloud/genesyscloud/architect_schedules"
 	userPrompt "terraform-provider-genesyscloud/genesyscloud/architect_user_prompt"
+	authDivision "terraform-provider-genesyscloud/genesyscloud/auth_division"
 	authRole "terraform-provider-genesyscloud/genesyscloud/auth_role"
 	authorizatioProduct "terraform-provider-genesyscloud/genesyscloud/authorization_product"
+	integrationInstagram "terraform-provider-genesyscloud/genesyscloud/conversations_messaging_integrations_instagram"
 	cMessageSettings "terraform-provider-genesyscloud/genesyscloud/conversations_messaging_settings"
 	cMessageSettingsDefault "terraform-provider-genesyscloud/genesyscloud/conversations_messaging_settings_default"
 	supportedContent "terraform-provider-genesyscloud/genesyscloud/conversations_messaging_supportedcontent"
@@ -73,6 +75,7 @@ import (
 	routingQueue "terraform-provider-genesyscloud/genesyscloud/routing_queue"
 	routingWrapupcode "terraform-provider-genesyscloud/genesyscloud/routing_wrapupcode"
 
+	location "terraform-provider-genesyscloud/genesyscloud/location"
 	routingQueueConditionalGroupRouting "terraform-provider-genesyscloud/genesyscloud/routing_queue_conditional_group_routing"
 	routingQueueOutboundEmailAddress "terraform-provider-genesyscloud/genesyscloud/routing_queue_outbound_email_address"
 	routingSettings "terraform-provider-genesyscloud/genesyscloud/routing_settings"
@@ -165,6 +168,7 @@ type RegisterInstance struct {
 func registerResources() {
 	regInstance := &RegisterInstance{}
 	authRole.SetRegistrar(regInstance)                                     //Registering auth_role
+	authDivision.SetRegistrar(regInstance)                                 //Registering auth_division
 	oauth.SetRegistrar(regInstance)                                        //Registering oauth_client
 	dt.SetRegistrar(regInstance)                                           //Registering architect data table
 	dtr.SetRegistrar(regInstance)                                          //Registering architect data table row
@@ -217,6 +221,7 @@ func registerResources() {
 	integrationAction.SetRegistrar(regInstance)                            //Registering integrations actions
 	integrationCred.SetRegistrar(regInstance)                              //Registering integrations credentials
 	integrationFacebook.SetRegistrar(regInstance)                          //Registering integrations Facebook
+	integrationInstagram.SetRegistrar(regInstance)                         //Registering integrations Instagram
 	recMediaRetPolicy.SetRegistrar(regInstance)                            //Registering recording media retention policies
 	responsemanagementResponse.SetRegistrar(regInstance)                   //Registering responsemanagement responses
 	responsemanagementResponseasset.SetRegistrar(regInstance)              //Registering responsemanagement response asset
@@ -263,6 +268,7 @@ func registerResources() {
 	cMessageSettings.SetRegistrar(regInstance)                             //Registering conversations messaging settings
 	routingSkillGroup.SetRegistrar(regInstance)                            //Registering routing skill group
 	cMessageSettingsDefault.SetRegistrar(regInstance)                      //Registering conversations messaging settings default
+	location.SetRegistrar(regInstance)                                     //Registering location
 	// setting resources for Use cases  like TF export where provider is used in resource classes.
 	tfexp.SetRegistrar(regInstance) //Registering tf exporter
 	registrar.SetResources(providerResources, providerDataSources)

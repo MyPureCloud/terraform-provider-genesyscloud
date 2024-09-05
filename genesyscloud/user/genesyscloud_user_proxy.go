@@ -30,6 +30,8 @@ type getUserByIdFunc func(ctx context.Context, p *userProxy, id string, expand [
 type updateUserFunc func(ctx context.Context, p *userProxy, id string, updateUser *platformclientv2.Updateuser) (*platformclientv2.User, *platformclientv2.APIResponse, error)
 type deleteUserFunc func(ctx context.Context, p *userProxy, id string) (*interface{}, *platformclientv2.APIResponse, error)
 type patchUserWithStateFunc func(ctx context.Context, p *userProxy, id string, updateUser *platformclientv2.Updateuser) (*platformclientv2.User, *platformclientv2.APIResponse, error)
+type hydrateUserCacheFunc func(ctx context.Context, p *userProxy, pageSize int, pageNum int) (*platformclientv2.Userentitylisting, *platformclientv2.APIResponse, error)
+type getUserByNameFunc func(ctx context.Context, p *userProxy, searchUser platformclientv2.Usersearchrequest) (*platformclientv2.Userssearchresponse, *platformclientv2.APIResponse, error)
 
 /*
 The userProxy struct holds all the methods responsible for making calls to
@@ -49,6 +51,8 @@ type userProxy struct {
 	updateUserAttr         updateUserFunc
 	deleteUserAttr         deleteUserFunc
 	patchUserWithStateAttr patchUserWithStateFunc
+	hydrateUserCacheAttr   hydrateUserCacheFunc
+	getUserByNameAttr      getUserByNameFunc
 	userCache              rc.CacheInterface[platformclientv2.User] //Define the cache for user resource
 }
 
@@ -74,6 +78,8 @@ func newUserProxy(clientConfig *platformclientv2.Configuration) *userProxy {
 		updateUserAttr:         updateUserFn,
 		deleteUserAttr:         deleteUserFn,
 		patchUserWithStateAttr: patchUserWithStateFn,
+		hydrateUserCacheAttr:   hydrateUserCacheFn,
+		getUserByNameAttr:      getUserByNameFn,
 	}
 }
 
@@ -129,6 +135,16 @@ func (p *userProxy) patchUserWithState(ctx context.Context, id string, updateUse
 	return p.patchUserWithStateAttr(ctx, p, id, updateUser)
 }
 
+// hydrateUserCache
+func (p *userProxy) hydrateUserCache(ctx context.Context, pageSize int, pageNum int) (*platformclientv2.Userentitylisting, *platformclientv2.APIResponse, error) {
+	return p.hydrateUserCacheAttr(ctx, p, pageSize, pageNum)
+}
+
+// getUserByName
+func (p *userProxy) getUserByName(ctx context.Context, searchUser platformclientv2.Usersearchrequest) (*platformclientv2.Userssearchresponse, *platformclientv2.APIResponse, error) {
+	return p.getUserByNameAttr(ctx, p, searchUser)
+}
+
 // createUserFn is an implementation function for creating a Genesys Cloud user
 func createUserFn(ctx context.Context, p *userProxy, createUser *platformclientv2.Createuser) (*platformclientv2.User, *platformclientv2.APIResponse, error) {
 	return p.userApi.PostUsers(*createUser)
@@ -139,17 +155,31 @@ func getUserByIdFn(ctx context.Context, p *userProxy, id string, expand []string
 	return p.userApi.GetUser(id, expand, "", state)
 }
 
-// updateUserFn is an implementation of the function to update a Genesys Cloud user
-func updateUserFn(ctx context.Context, p *userProxy, id string, updateUser *platformclientv2.Updateuser) (*platformclientv2.User, *platformclientv2.APIResponse, error) {
-	return p.userApi.PatchUser(id, *updateUser)
+// hydrateUserCacheFn
+func hydrateUserCacheFn(ctx context.Context, p *userProxy, pageSize int, pageNum int) (*platformclientv2.Userentitylisting, *platformclientv2.APIResponse, error) {
+	return p.userApi.GetUsers(pageSize, 1, nil, nil, "", nil, "", "")
+}
+
+// getUserByNameFn
+func getUserByNameFn(ctx context.Context, p *userProxy, searchUser platformclientv2.Usersearchrequest) (*platformclientv2.Userssearchresponse, *platformclientv2.APIResponse, error) {
+	return p.userApi.PostUsersSearch(searchUser)
 }
 
 // deleteUserFn is an implementation function for deleting a Genesys Cloud user
 func deleteUserFn(ctx context.Context, p *userProxy, id string) (*interface{}, *platformclientv2.APIResponse, error) {
-	return p.userApi.DeleteUser(id)
+	data, resp, err := p.userApi.DeleteUser(id)
+	if err != nil {
+		return nil, resp, err
+	}
+	rc.DeleteCacheItem(p.userCache, id)
+	return data, nil, nil
 }
 
 func patchUserWithStateFn(ctx context.Context, p *userProxy, id string, updateUser *platformclientv2.Updateuser) (*platformclientv2.User, *platformclientv2.APIResponse, error) {
+	return p.userApi.PatchUser(id, *updateUser)
+}
+
+func updateUserFn(ctx context.Context, p *userProxy, id string, updateUser *platformclientv2.Updateuser) (*platformclientv2.User, *platformclientv2.APIResponse, error) {
 	return p.userApi.PatchUser(id, *updateUser)
 }
 
@@ -163,15 +193,23 @@ func getAllUserFn(ctx context.Context, p *userProxy) (*[]platformclientv2.User, 
 	getUsersByStatus := func(userStatus string) (*[]platformclientv2.User, *platformclientv2.APIResponse, error) {
 		users := []platformclientv2.User{}
 		const pageSize = 100
-
-		usersList, apiResponse, err := p.userApi.GetUsers(pageSize, 1, nil, nil, "", nil, "", userStatus)
+		expandedAttributes := []string{
+			// Expands
+			"skills",
+			"languages",
+			"locations",
+			"profileSkills",
+			"certifications",
+			"employerInfo",
+		}
+		usersList, apiResponse, err := p.userApi.GetUsers(pageSize, 1, nil, nil, "", expandedAttributes, "", userStatus)
 		if err != nil {
 			return nil, apiResponse, err
 		}
 		users = append(users, *usersList.Entities...)
 
 		for pageNum := 2; pageNum <= *usersList.PageCount; pageNum++ {
-			usersList, _, err := p.userApi.GetUsers(pageSize, pageNum, nil, nil, "", nil, "", userStatus)
+			usersList, _, err := p.userApi.GetUsers(pageSize, pageNum, nil, nil, "", expandedAttributes, "", userStatus)
 			if err != nil {
 				return nil, apiResponse, err
 			}

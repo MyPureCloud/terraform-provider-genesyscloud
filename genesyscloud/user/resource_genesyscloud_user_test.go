@@ -6,7 +6,7 @@ import (
 	"log"
 	"strconv"
 	"strings"
-	"terraform-provider-genesyscloud/genesyscloud"
+	location "terraform-provider-genesyscloud/genesyscloud/location"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	routinglanguage "terraform-provider-genesyscloud/genesyscloud/routing_language"
 	routingSkill "terraform-provider-genesyscloud/genesyscloud/routing_skill"
@@ -202,7 +202,7 @@ func TestAccResourceUserAddresses(t *testing.T) {
 		addrTypeHome              = "HOME"
 		extensionPoolResource1    = "test-extensionpool1" + uuid.NewString()
 		extensionPoolStartNumber1 = "8000"
-		extensionPoolEndNumber1   = "9000"
+		extensionPoolEndNumber1   = "8999"
 	)
 
 	extensionPoolResource := extensionPool.ExtensionPoolStruct{
@@ -317,7 +317,6 @@ func TestAccResourceUserAddresses(t *testing.T) {
 }
 
 func TestAccResourceUserPhone(t *testing.T) {
-	t.Parallel()
 	var (
 		addrUserResource1         = "test-user-addr"
 		addrUserName              = "Nancy Terraform"
@@ -644,7 +643,7 @@ func TestAccResourceUserLocations(t *testing.T) {
 						"genesyscloud_location."+locResource1+".id",
 						strconv.Quote(locNotes1),
 					),
-				) + genesyscloud.GenerateLocationResourceBasic(locResource1, locName1),
+				) + location.GenerateLocationResourceBasic(locResource1, locName1),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName+"."+userResource1, "email", email),
 					resource.TestCheckResourceAttrPair(resourceName+"."+userResource1, "locations.0.location_id", "genesyscloud_location."+locResource1, "id"),
@@ -661,7 +660,7 @@ func TestAccResourceUserLocations(t *testing.T) {
 						"genesyscloud_location."+locResource2+".id",
 						strconv.Quote(locNotes2),
 					),
-				) + genesyscloud.GenerateLocationResourceBasic(locResource2, locName2),
+				) + location.GenerateLocationResourceBasic(locResource2, locName2),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName+"."+userResource1, "email", email),
 					resource.TestCheckResourceAttrPair(resourceName+"."+userResource1, "locations.0.location_id", "genesyscloud_location."+locResource2, "id"),
@@ -1076,7 +1075,10 @@ func TestAccResourceUserroutingUtilWithLabels(t *testing.T) {
 				),
 			},
 		},
-		CheckDestroy: testVerifyUsersDestroyed,
+		CheckDestroy: func(state *terraform.State) error {
+			time.Sleep(45 * time.Second)
+			return testVerifyUsersDestroyed(state)
+		},
 	})
 }
 
@@ -1132,7 +1134,6 @@ func TestAccResourceUserRestore(t *testing.T) {
 }
 
 func TestAccResourceUserCreateWhenDestroyed(t *testing.T) {
-	t.Parallel()
 	var (
 		userResource1 = "test-user"
 		email1        = "terraform-" + uuid.NewString() + "@user.com"

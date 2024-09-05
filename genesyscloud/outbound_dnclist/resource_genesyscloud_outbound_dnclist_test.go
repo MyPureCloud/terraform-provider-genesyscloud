@@ -232,9 +232,7 @@ func TestAccResourceOutboundDncListDncListType(t *testing.T) {
 func TestAccResourceOutboundDncListGryphonListType(t *testing.T) {
 	t.Parallel()
 	var gryphonLicense string
-	var present bool
-
-	present = false
+	present := false
 
 	if v := os.Getenv("GENESYSCLOUD_REGION"); v == "tca" {
 		gryphonLicense, present = os.LookupEnv("TEST_DNC_GRYPHON_LICENSE_KEY")

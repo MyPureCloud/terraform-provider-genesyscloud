@@ -4,6 +4,7 @@ import (
 	"sync"
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	flow "terraform-provider-genesyscloud/genesyscloud/architect_flow"
+	authDivision "terraform-provider-genesyscloud/genesyscloud/auth_division"
 	obContactList "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
 	routingWrapupcode "terraform-provider-genesyscloud/genesyscloud/routing_wrapupcode"
 	"testing"
@@ -36,7 +37,7 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_outbound_contact_list"] = obContactList.ResourceOutboundContactList()
 	providerResources["genesyscloud_flow"] = flow.ResourceArchitectFlow()
 	providerResources["genesyscloud_routing_wrapupcode"] = routingWrapupcode.ResourceRoutingWrapupCode()
-	providerResources["genesyscloud_auth_division"] = gcloud.ResourceAuthDivision()
+	providerResources["genesyscloud_auth_division"] = authDivision.ResourceAuthDivision()
 }
 
 // registerTestDataSources registers all data sources used in the tests.

@@ -73,16 +73,14 @@ func ResourceRoutingEmailRoute() *schema.Resource {
 				Required:    true,
 			},
 			"from_email": {
-				Description:   "The sender email to use for outgoing replies. This should not be set if reply_email_address is specified.",
-				Type:          schema.TypeString,
-				Optional:      true,
-				ConflictsWith: []string{"reply_email_address"},
+				Description: "The sender email to use for outgoing replies. This should not be set if reply_email_address is specified.",
+				Type:        schema.TypeString,
+				Optional:    true,
 			},
 			"queue_id": {
-				Description:   "The queue to route the emails to. This should not be set if a flow_id is specified.",
-				Type:          schema.TypeString,
-				Optional:      true,
-				ConflictsWith: []string{"flow_id"},
+				Description: "The queue to route the emails to. This should not be set if a flow_id is specified.",
+				Type:        schema.TypeString,
+				Optional:    true,
 			},
 			"priority": {
 				Description: "The priority to use for routing.",
@@ -101,17 +99,15 @@ func ResourceRoutingEmailRoute() *schema.Resource {
 				Optional:    true,
 			},
 			"flow_id": {
-				Description:   "The flow to use for processing the email. This should not be set if a queue_id is specified.",
-				Type:          schema.TypeString,
-				Optional:      true,
-				ConflictsWith: []string{"queue_id"},
+				Description: "The flow to use for processing the email. This should not be set if a queue_id is specified.",
+				Type:        schema.TypeString,
+				Optional:    true,
 			},
 			"reply_email_address": {
-				Description:   "The route to use for email replies. This should not be set if from_email or auto_bcc are specified.",
-				Type:          schema.TypeList,
-				MaxItems:      1,
-				Optional:      true,
-				ConflictsWith: []string{"from_email"},
+				Description: "The route to use for email replies. This should not be set if from_email or auto_bcc are specified.",
+				Type:        schema.TypeList,
+				MaxItems:    1,
+				Optional:    true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"domain_id": {
@@ -137,11 +133,10 @@ func ResourceRoutingEmailRoute() *schema.Resource {
 				},
 			},
 			"auto_bcc": {
-				Description:   "The recipients that should be automatically blind copied on outbound emails associated with this route. This should not be set if reply_email_address is specified.",
-				Type:          schema.TypeSet,
-				Optional:      true,
-				Elem:          bccEmailResource,
-				ConflictsWith: []string{"reply_email_address"},
+				Description: "The recipients that should be automatically blind copied on outbound emails associated with this route. This should not be set if reply_email_address is specified.",
+				Type:        schema.TypeSet,
+				Optional:    true,
+				Elem:        bccEmailResource,
 			},
 			"spam_flow_id": {
 				Description: "The flow to use for processing inbound emails that have been marked as spam.",

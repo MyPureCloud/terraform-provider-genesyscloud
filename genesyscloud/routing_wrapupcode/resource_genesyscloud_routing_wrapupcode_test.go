@@ -2,7 +2,7 @@ package routing_wrapupcode
 
 import (
 	"fmt"
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	authDivision "terraform-provider-genesyscloud/genesyscloud/auth_division"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
@@ -27,25 +27,37 @@ func TestAccResourceRoutingWrapupcode(t *testing.T) {
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
-				// Create
-				Config: gcloud.GenerateAuthDivisionBasic(divResource, divName) + GenerateRoutingWrapupcodeResource(
+				Config: GenerateRoutingWrapupcodeResource(
 					codeResource1,
 					codeName1,
-					"genesyscloud_auth_division."+divResource+".id",
+					util.NullValue,
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName+"."+codeResource1, "name", codeName1),
 				),
 			},
 			{
+				// Create
+				Config: authDivision.GenerateAuthDivisionBasic(divResource, divName) + GenerateRoutingWrapupcodeResource(
+					codeResource1,
+					codeName1,
+					"genesyscloud_auth_division."+divResource+".id",
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(resourceName+"."+codeResource1, "name", codeName1),
+					resource.TestCheckResourceAttrPair(resourceName+"."+codeResource1, "division_id", "genesyscloud_auth_division."+divResource, "id"),
+				),
+			},
+			{
 				// Update with a new name
-				Config: gcloud.GenerateAuthDivisionBasic(divResource, divName) + GenerateRoutingWrapupcodeResource(
+				Config: authDivision.GenerateAuthDivisionBasic(divResource, divName) + GenerateRoutingWrapupcodeResource(
 					codeResource1,
 					codeName2,
 					"genesyscloud_auth_division."+divResource+".id",
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName+"."+codeResource1, "name", codeName2),
+					resource.TestCheckResourceAttrPair(resourceName+"."+codeResource1, "division_id", "genesyscloud_auth_division."+divResource, "id"),
 				),
 			},
 			{

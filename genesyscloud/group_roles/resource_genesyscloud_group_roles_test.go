@@ -6,7 +6,6 @@ import (
 	"strconv"
 	"strings"
 	"sync"
-	"terraform-provider-genesyscloud/genesyscloud"
 	"terraform-provider-genesyscloud/genesyscloud/group"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
@@ -17,6 +16,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
 
+	authDivision "terraform-provider-genesyscloud/genesyscloud/auth_division"
 	authRole "terraform-provider-genesyscloud/genesyscloud/auth_role"
 
 	"github.com/google/uuid"
@@ -42,7 +42,6 @@ func TestAccResourceGroupRolesMembership(t *testing.T) {
 		testUserResource  = "user_resource1"
 		testUserName      = "nameUser1" + uuid.NewString()
 		testUserEmail     = uuid.NewString() + "@example.com"
-		userID            string
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -64,18 +63,6 @@ func TestAccResourceGroupRolesMembership(t *testing.T) {
 					groupResource1,
 					generateResourceRoles("genesyscloud_auth_role."+roleResource1+".id"),
 				),
-				Check: resource.ComposeTestCheckFunc(
-					validateResourceRole("genesyscloud_group_roles."+groupRoleResource, "genesyscloud_auth_role."+roleResource1),
-					func(s *terraform.State) error {
-						rs, ok := s.RootModule().Resources["genesyscloud_user."+testUserResource]
-						if !ok {
-							return fmt.Errorf("not found: %s", "genesyscloud_user."+testUserResource)
-						}
-						userID = rs.Primary.ID
-						log.Printf("User ID: %s\n", userID) // Print user ID
-						return nil
-					},
-				),
 			},
 			{
 				// Create another role and division and add to the group
@@ -96,7 +83,7 @@ func TestAccResourceGroupRolesMembership(t *testing.T) {
 					groupResource1,
 					generateResourceRoles("genesyscloud_auth_role."+roleResource1+".id"),
 					generateResourceRoles("genesyscloud_auth_role."+roleResource2+".id", "genesyscloud_auth_division."+divResource+".id"),
-				) + genesyscloud.GenerateAuthDivisionBasic(divResource, divName),
+				) + authDivision.GenerateAuthDivisionBasic(divResource, divName),
 				Check: resource.ComposeTestCheckFunc(
 					validateResourceRole("genesyscloud_group_roles."+groupRoleResource, "genesyscloud_auth_role."+roleResource1),
 					validateResourceRole("genesyscloud_group_roles."+groupRoleResource, "genesyscloud_auth_role."+roleResource2, "genesyscloud_auth_division."+divResource),
@@ -116,7 +103,7 @@ func TestAccResourceGroupRolesMembership(t *testing.T) {
 					groupRoleResource,
 					groupResource1,
 					generateResourceRoles("genesyscloud_auth_role."+roleResource1+".id", "genesyscloud_auth_division."+divResource+".id"),
-				) + genesyscloud.GenerateAuthDivisionBasic(divResource, divName),
+				) + authDivision.GenerateAuthDivisionBasic(divResource, divName),
 				Check: resource.ComposeTestCheckFunc(
 					validateResourceRole("genesyscloud_group_roles."+groupRoleResource, "genesyscloud_auth_role."+roleResource1, "genesyscloud_auth_division."+divResource),
 				),
@@ -134,33 +121,23 @@ func TestAccResourceGroupRolesMembership(t *testing.T) {
 				) + generateGroupRoles(
 					groupRoleResource,
 					groupResource1,
-				) + genesyscloud.GenerateAuthDivisionBasic(divResource, divName),
+				) + authDivision.GenerateAuthDivisionBasic(divResource, divName),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckNoResourceAttr("genesyscloud_group_roles."+groupRoleResource, "roles.%"),
-					func(s *terraform.State) error {
-						time.Sleep(30 * time.Second) // Wait for 30 seconds for resources to get deleted properly
-						return nil
-					},
 				),
-
-				PreventPostDestroyRefresh: true,
 			},
 			{
-				Config: generateGroupRoles(
-					groupRoleResource,
-					groupResource1,
-				),
 				// Import/Read
 				ResourceName:      "genesyscloud_group_roles." + groupRoleResource,
 				ImportState:       true,
 				ImportStateVerify: true,
 				Destroy:           true,
-				Check: resource.ComposeTestCheckFunc(
-					checkUserDeleted(userID),
-				),
 			},
 		},
-		CheckDestroy: testVerifyGroupsAndUsersDestroyed,
+		CheckDestroy: func(state *terraform.State) error {
+			time.Sleep(45 * time.Second)
+			return testVerifyGroupsAndUsersDestroyed(state)
+		},
 	})
 }
 

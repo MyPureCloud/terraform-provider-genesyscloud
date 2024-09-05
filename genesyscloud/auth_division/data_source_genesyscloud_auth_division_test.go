@@ -1,4 +1,4 @@
-package genesyscloud
+package auth_division
 
 import (
 	"fmt"

@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/architect_flow"
+	location "terraform-provider-genesyscloud/genesyscloud/location"
 	"terraform-provider-genesyscloud/genesyscloud/outbound"
 	obDnclist "terraform-provider-genesyscloud/genesyscloud/outbound_dnclist"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
@@ -13,7 +14,7 @@ import (
 	"testing"
 	"time"
 
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	authDivision "terraform-provider-genesyscloud/genesyscloud/auth_division"
 	obCallableTimeset "terraform-provider-genesyscloud/genesyscloud/outbound_callabletimeset"
 	obResponseSet "terraform-provider-genesyscloud/genesyscloud/outbound_callanalysisresponseset"
 	obContactList "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
@@ -103,7 +104,7 @@ func TestAccResourceOutboundCampaignBasic(t *testing.T) {
 	) + obDnclist.GenerateOutboundDncListBasic(
 		dncListResourceId,
 		"dnc list "+uuid.NewString(),
-	) + gcloud.GenerateAuthDivisionBasic(divResource, divName) + routingWrapupcode.GenerateRoutingWrapupcodeResource(
+	) + authDivision.GenerateAuthDivisionBasic(divResource, divName) + routingWrapupcode.GenerateRoutingWrapupcodeResource(
 		wrapupCodeResourceId,
 		"tf wrapup code"+uuid.NewString(),
 		"genesyscloud_auth_division."+divResource+".id",
@@ -146,16 +147,16 @@ func TestAccResourceOutboundCampaignBasic(t *testing.T) {
 				"",
 			),
 		),
-	) + gcloud.GenerateLocationResource(
+	) + location.GenerateLocationResource(
 		locationResourceId,
 		"tf location "+uuid.NewString(),
 		"HQ1",
 		[]string{},
-		gcloud.GenerateLocationEmergencyNum(
+		location.GenerateLocationEmergencyNum(
 			"+13178793428",
 			util.NullValue,
 		),
-		gcloud.GenerateLocationAddress(
+		location.GenerateLocationAddress(
 			"7601 Interactive Way",
 			"Indianapolis",
 			"IN",
@@ -453,7 +454,7 @@ func TestAccResourceOutboundCampaignCampaignStatus(t *testing.T) {
 			"home",
 			strconv.Quote("Home"),
 		),
-	) + gcloud.GenerateAuthDivisionBasic(divResource, divName) + routingWrapupcode.GenerateRoutingWrapupcodeResource(
+	) + authDivision.GenerateAuthDivisionBasic(divResource, divName) + routingWrapupcode.GenerateRoutingWrapupcodeResource(
 		wrapupcodeResourceId,
 		"tf wrapup code"+uuid.NewString(),
 		"genesyscloud_auth_division."+divResource+".id",
@@ -480,16 +481,16 @@ func TestAccResourceOutboundCampaignCampaignStatus(t *testing.T) {
 				"${genesyscloud_flow.flow.id}",
 			),
 		),
-	) + gcloud.GenerateLocationResource(
+	) + location.GenerateLocationResource(
 		locationResourceId,
 		"tf location "+uuid.NewString(),
 		"HQ1",
 		[]string{},
-		gcloud.GenerateLocationEmergencyNum(
+		location.GenerateLocationEmergencyNum(
 			"+13178793429",
 			util.NullValue,
 		),
-		gcloud.GenerateLocationAddress(
+		location.GenerateLocationAddress(
 			"7601 Interactive Way",
 			"Indianapolis",
 			"IN",
@@ -641,7 +642,7 @@ func TestAccResourceOutboundCampaignStatusOn(t *testing.T) {
 			// Create resources for outbound campaign
 			{
 				Config: `data "genesyscloud_auth_division_home" "home" {}` + "\n" +
-					gcloud.GenerateAuthDivisionBasic(divResourceId, divName) +
+					authDivision.GenerateAuthDivisionBasic(divResourceId, divName) +
 					GenerateReferencedResourcesForOutboundCampaignTests(
 						contactListResourceId,
 						"",
@@ -667,7 +668,7 @@ func TestAccResourceOutboundCampaignStatusOn(t *testing.T) {
 			// the destroy command takes care of turning it off before deleting.
 			{
 				Config: `data "genesyscloud_auth_division_home" "home" {}` + "\n" +
-					gcloud.GenerateAuthDivisionBasic(divResourceId, divName) +
+					authDivision.GenerateAuthDivisionBasic(divResourceId, divName) +
 					GenerateOutboundCampaignBasic(
 						resourceId,
 						name,

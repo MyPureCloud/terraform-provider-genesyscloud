@@ -20,7 +20,7 @@ func dataSourceRoutingUtilizationLabelRead(ctx context.Context, d *schema.Resour
 	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
 		label, retryable, resp, getErr := proxy.getRoutingUtilizationLabelByName(ctx, name)
 
-		if getErr != nil  && !retryable{
+		if getErr != nil && !retryable {
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Error requesting label %s | error: %s", name, getErr), resp))
 		}
 
