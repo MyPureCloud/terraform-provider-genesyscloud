@@ -157,7 +157,7 @@ func readRoutingEmailRoute(ctx context.Context, d *schema.ResourceData, meta int
 			_ = d.Set("reply_email_address", nil)
 		}
 
-		log.Printf("Read routing email route %s %v", d.Id(), route.Name)
+		log.Printf("Read routing email route %s", d.Id())
 		return cc.CheckState(d)
 	})
 }
