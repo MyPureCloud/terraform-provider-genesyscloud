@@ -9,6 +9,7 @@ import (
 	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util/files"
+	"terraform-provider-genesyscloud/genesyscloud/util/testrunner"
 )
 
 func responsemanagementResponseassetResolver(responseAssetId, exportDirectory, subDirectory string, configMap map[string]interface{}, meta interface{}) error {
@@ -40,7 +41,8 @@ func responsemanagementResponseassetResolver(responseAssetId, exportDirectory, s
 }
 
 func GenerateResponseManagementResponseAssetResource(resourceId string, fileName string, divisionId string) string {
-	fullyQualifiedPath, _ := filepath.Abs(fileName)
+	fullyQualifiedPath, _ := testrunner.NormalizePath(fileName)
+
 	return fmt.Sprintf(`
 resource "genesyscloud_responsemanagement_responseasset" "%s" {
     filename    = "%s"
