@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
+	routingSkill "terraform-provider-genesyscloud/genesyscloud/routing_skill"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"time"
@@ -50,6 +51,29 @@ func getAllAuthOutboundRuleset(ctx context.Context, clientConfig *platformclient
 		resources[*ruleset.Id] = &resourceExporter.ResourceMeta{Name: *ruleset.Name}
 	}
 	return resources, nil
+}
+
+// filterOutboundRulesets filters rule sets by removing the ones that reference skills that no longer exist in GC
+func filterOutboundRulesets(ruleSets []platformclientv2.Ruleset, skillMap resourceExporter.ResourceIDMetaMap) ([]platformclientv2.Ruleset, diag.Diagnostics) {
+	var filteredRuleSets []platformclientv2.Ruleset
+	log.Printf("Filtering outbound rule sets")
+
+	for _, ruleSet := range ruleSets {
+		var foundDeleted bool
+		for _, rule := range *ruleSet.Rules {
+			if doesRuleActionsRefDeletedSkill(rule, skillMap) || doesRuleConditionsRefDeletedSkill(rule, skillMap) {
+				foundDeleted = true
+				break
+			}
+		}
+		if foundDeleted {
+			log.Printf("Removing ruleset id '%s'", *ruleSet.Id)
+		} else {
+			// No references to a deleted skill in the ruleset, keep it
+			filteredRuleSets = append(filteredRuleSets, ruleSet)
+		}
+	}
+	return filteredRuleSets, nil
 }
 
 // createOutboundRuleset is used by the outbound_ruleset resource to create Genesys cloud outbound_ruleset
