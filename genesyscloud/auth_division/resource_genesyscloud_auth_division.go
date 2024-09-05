@@ -27,7 +27,7 @@ func getAllAuthDivisions(ctx context.Context, clientConfig *platformclientv2.Con
 
 	divisions, resp, getErr := proxy.getAllAuthDivision(ctx, "")
 	if getErr != nil {
-		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get page of divisions error: %s", getErr), resp)
+		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get divisions | error: %s", getErr), resp)
 	}
 
 	for _, division := range *divisions {
