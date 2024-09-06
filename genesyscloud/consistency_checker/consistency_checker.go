@@ -139,6 +139,11 @@ func (cc *ConsistencyCheck) CheckState(currentState *schema.ResourceData) *retry
 		})
 
 		for _, attribute := range attributesSorted {
+			// If the original state doesn't contain the attribute, skip it
+			if _, ok := cc.originalStateValues[attribute]; !ok {
+				continue
+			}
+
 			// Handle top level attributes and check we have the same number of nested blocks
 			if !strings.Contains(attribute, ".") || strings.HasSuffix(attribute, "#") {
 				if cc.originalStateValues[attribute] != currentStateValues[attribute] {
