@@ -31,6 +31,9 @@ func TestAccDataSourceIntegrationCredential(t *testing.T) {
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
+				PreConfig: func() {
+					time.Sleep(30 * time.Second)
+				},
 				// Create
 				Config: GenerateCredentialResource(
 					credResource1,
