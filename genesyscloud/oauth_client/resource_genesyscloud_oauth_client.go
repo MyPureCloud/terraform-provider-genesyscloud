@@ -292,7 +292,7 @@ func createCredential(ctx context.Context, d *schema.ResourceData, client *platf
 	credentialName := resourcedata.GetNillableValue[string](d, "integration_credential_name")
 	if credentialName != nil {
 
-		cred_type := "pureCloudOAuthClient"
+		credType := "pureCloudOAuthClient"
 		results := make(map[string]string)
 		results["clientId"] = *client.Id
 		results["clientSecret"] = *client.Secret
@@ -300,7 +300,7 @@ func createCredential(ctx context.Context, d *schema.ResourceData, client *platf
 		createCredential := platformclientv2.Credential{
 			Name: credentialName,
 			VarType: &platformclientv2.Credentialtype{
-				Name: &cred_type,
+				Name: &credType,
 			},
 			CredentialFields: &results,
 		}
@@ -324,7 +324,7 @@ func updateCredential(ctx context.Context, d *schema.ResourceData, client *platf
 	credentialId := resourcedata.GetNillableValue[string](d, "integration_credential_id")
 	credentialName := resourcedata.GetNillableValue[string](d, "integration_credential_name")
 	if credentialName != nil {
-		cred_type := "pureCloudOAuthClient"
+		credType := "pureCloudOAuthClient"
 		results := make(map[string]string)
 		results["clientId"] = *client.Id
 		results["clientSecret"] = *client.Secret
@@ -332,7 +332,7 @@ func updateCredential(ctx context.Context, d *schema.ResourceData, client *platf
 		updateCred := platformclientv2.Credential{
 			Name: credentialName,
 			VarType: &platformclientv2.Credentialtype{
-				Name: &cred_type,
+				Name: &credType,
 			},
 			CredentialFields: &results,
 		}
