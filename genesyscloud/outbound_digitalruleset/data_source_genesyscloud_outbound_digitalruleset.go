@@ -22,7 +22,7 @@ import (
 // dataSourceOutboundDigitalrulesetRead retrieves by name the id in question
 func dataSourceOutboundDigitalrulesetRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-	proxy := newOutboundDigitalrulesetProxy(sdkConfig)
+	proxy := getOutboundDigitalrulesetProxy(sdkConfig)
 
 	name := d.Get("name").(string)
 

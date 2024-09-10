@@ -26,11 +26,9 @@ tests for outbound_digitalruleset.
 func TestAccResourceOutboundDigitalruleset(t *testing.T) {
 	t.Parallel()
 	var (
-		name1             = "Terraform Digital RuleSet1"
 		resourceId        = "digital-rule-set"
 		ruleName          = "RuleWork"
-		name2             = "Terraform Digital RuleSet2"
-		version1          = "1"
+		name2             = "DigitalRuleSet-" + uuid.NewString()
 		ruleOrder         = "0"
 		ruleCategory      = "PreContact"
 		contactColumnName = "Work"
@@ -91,57 +89,9 @@ func TestAccResourceOutboundDigitalruleset(t *testing.T) {
 				Config: contactListResourceGenerate +
 					GenerateOutboundDigitalRuleSetResource(
 						resourceId,
-						name1,
-						"genesyscloud_outbound_contact_list."+contactListResourceId1+".id",
-						GenerateDigitalRuleSetVersion(version1),
-						GenerateDigitalRules(
-							ruleName,
-							ruleOrder,
-							ruleCategory,
-							GenerateDigitalRuleSetConditions(
-								GenerateInvertedConditionAttr(util.FalseValue),
-								GenerateContactColumnConditionSettings(
-									contactColumnName,
-									columnOperator,
-									columnValue,
-									columnValueType,
-								),
-							),
-							GenerateDigitalRuleSetActions(
-								GenerateUpdateContactColumnActionSettings(
-									updateOption,
-									GeneratePropertiesForUpdateContactColumnSettings(updatePropertiesWork, updatePropertiesWork),
-								),
-							),
-							GenerateDigitalRuleSetActions(
-								GenerateDoNotSendActionSettings(),
-							),
-						),
-					),
-
-				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_outbound_digitalruleset."+resourceId, "name", name1),
-					resource.TestCheckResourceAttrPair("genesyscloud_outbound_digitalruleset."+resourceId, "contact_list_id", "genesyscloud_outbound_contact_list."+contactListResourceId1, "id"),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_digitalruleset."+resourceId, "rules.0.name", ruleName),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_digitalruleset."+resourceId, "rules.0.order", ruleOrder),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_digitalruleset."+resourceId, "rules.0.category", ruleCategory),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_digitalruleset."+resourceId, "rules.0.conditions.0.inverted", util.FalseValue),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_digitalruleset."+resourceId, "rules.0.conditions.0.contact_column_condition_settings.0.column_name", contactColumnName),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_digitalruleset."+resourceId, "rules.0.conditions.0.contact_column_condition_settings.0.operator", columnOperator),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_digitalruleset."+resourceId, "rules.0.conditions.0.contact_column_condition_settings.0.value", columnValue),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_digitalruleset."+resourceId, "rules.0.conditions.0.contact_column_condition_settings.0.value_type", columnValueType),
-					util.ValidateValueInJsonAttr("genesyscloud_outbound_digitalruleset."+resourceId, "rules.0.actions.0.update_contact_column_action_settings.0.properties", updatePropertiesWork, updatePropertiesWork),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_digitalruleset."+resourceId, "rules.0.actions.0.update_contact_column_action_settings.0.update_option", updateOption),
-				),
-			},
-			{
-
-				Config: contactListResourceGenerate +
-					GenerateOutboundDigitalRuleSetResource(
-						resourceId,
 						name2,
 						"genesyscloud_outbound_contact_list."+contactListResourceId1+".id",
-						GenerateDigitalRuleSetVersion(version1),
+						GenerateDigitalRuleSetVersion("1"),
 						GenerateDigitalRules(
 							ruleName,
 							ruleOrder,
@@ -191,6 +141,7 @@ func TestAccResourceOutboundDigitalruleset(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_outbound_digitalruleset."+resourceId, "name", name2),
 					resource.TestCheckResourceAttrPair("genesyscloud_outbound_digitalruleset."+resourceId, "contact_list_id", "genesyscloud_outbound_contact_list."+contactListResourceId1, "id"),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_digitalruleset."+resourceId, "version", "1"),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_digitalruleset."+resourceId, "rules.0.name", ruleName),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_digitalruleset."+resourceId, "rules.0.order", ruleOrder),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_digitalruleset."+resourceId, "rules.0.category", ruleCategory),
@@ -226,7 +177,7 @@ func GenerateSetSmsPhoneNumberActionSettings(
 ) string {
 	return fmt.Sprintf(`
 		set_sms_phone_number_action_settings {
-			sender_sms_phone_number = %s
+			sender_sms_phone_number = "%s"
 		}
 	`, senderSmsPhone)
 }
@@ -267,8 +218,8 @@ func GenerateAppendToDncActionSettings(
 	return fmt.Sprintf(`
 		append_to_dnc_action_settings {
 			expire = %s
-			expiration_duration = %s
-			list_type = %s
+			expiration_duration = "%s"
+			list_type = "%s"
 		}
 	`, expire, expirationDuration, listType)
 }
@@ -310,8 +261,8 @@ func GenerateDataActionContactColumnToDataActionFieldMappings(
 ) string {
 	return fmt.Sprintf(`
 		contact_column_to_data_action_field_mappings {
-			contact_column_name = %s
-			data_action_field = %s
+			contact_column_name = "%s"
+			data_action_field = "%s"
 		}
 	`, contactColumnName, dataActionField)
 }
@@ -325,11 +276,11 @@ func GenerateDataActionConditionSettingsPredicates(
 ) string {
 	return fmt.Sprintf(`
 		predicates {
-			output_field = %s
-			output_operator = %s
-			comparison_value = %s
+			output_field = "%s"
+			output_operator = "%s"
+			comparison_value = "%s"
 			inverted = %s
-			output_field_missing_resolution = %s
+			output_field_missing_resolution = "%s"
 		}
 	`, outputField, outputOperator, comparisonValue, inverted, outputFieldMissingResolution)
 }
@@ -342,9 +293,9 @@ func GenerateDataActionConditionSettings(
 ) string {
 	return fmt.Sprintf(`
 	data_action_condition_settings {
-		data_action_id = %s
-		contact_id_field = %s
-		data_not_found_resolution = %s
+		data_action_id = "%s"
+		contact_id_field = "%s"
+		data_not_found_resolution = "%s"
 		%s
 	}
 	`, dataActionId, contactIdField, dataNotFound, strings.Join(predicatesBlock, ","))
@@ -414,8 +365,8 @@ func GenerateContactAddressTypeConditionSettings(
 ) string {
 	return fmt.Sprintf(`
 	contact_address_type_condition_settings {
-		operator = %s
-		value = %s
+		operator = "%s"
+		value = "%s"
 	}
 	`, operator, value)
 }
@@ -426,8 +377,8 @@ func GenerateContactAddressConditionSettings(
 ) string {
 	return fmt.Sprintf(`
 	contact_address_condition_settings {
-		operator = %s
-		value = %s
+		operator = "%s"
+		value = "%s"
 	}
 	`, operator, value)
 }

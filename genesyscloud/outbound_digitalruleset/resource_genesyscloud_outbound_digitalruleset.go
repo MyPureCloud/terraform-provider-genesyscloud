@@ -30,9 +30,9 @@ func getAllAuthOutboundDigitalrulesets(ctx context.Context, clientConfig *platfo
 	proxy := newOutboundDigitalrulesetProxy(clientConfig)
 	resources := make(resourceExporter.ResourceIDMetaMap)
 
-	digitalRuleSets, _, err := proxy.getAllOutboundDigitalruleset(ctx)
+	digitalRuleSets, resp, err := proxy.getAllOutboundDigitalruleset(ctx)
 	if err != nil {
-		return nil, diag.Errorf("Failed to get outbound digitalruleset: %v", err)
+		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get outbound digitalruleset: %v", err), resp)
 	}
 
 	for _, digitalRuleSet := range *digitalRuleSets {
@@ -50,9 +50,9 @@ func createOutboundDigitalruleset(ctx context.Context, d *schema.ResourceData, m
 	outboundDigitalruleset := getOutboundDigitalrulesetFromResourceData(d)
 
 	log.Printf("Creating outbound digitalruleset %s", *outboundDigitalruleset.Name)
-	digitalRuleSet, _, err := proxy.createOutboundDigitalruleset(ctx, &outboundDigitalruleset)
+	digitalRuleSet, resp, err := proxy.createOutboundDigitalruleset(ctx, &outboundDigitalruleset)
 	if err != nil {
-		return diag.Errorf("Failed to create outbound digitalruleset: %s", err)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create outbound digitalruleset: %s", err), resp)
 	}
 
 	d.SetId(*digitalRuleSet.Id)
@@ -71,9 +71,9 @@ func readOutboundDigitalruleset(ctx context.Context, d *schema.ResourceData, met
 		digitalRuleSet, resp, getErr := proxy.getOutboundDigitalrulesetById(ctx, d.Id())
 		if getErr != nil {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(fmt.Errorf("Failed to read outbound digitalruleset %s: %s", d.Id(), getErr))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read outbound digitalruleset %s: %s", d.Id(), getErr), resp))
 			}
-			return retry.NonRetryableError(fmt.Errorf("Failed to read outbound digitalruleset %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read outbound digitalruleset %s: %s", d.Id(), getErr), resp))
 		}
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundDigitalruleset(), constants.DefaultConsistencyChecks, resourceName)
@@ -96,9 +96,9 @@ func updateOutboundDigitalruleset(ctx context.Context, d *schema.ResourceData, m
 	outboundDigitalruleset := getOutboundDigitalrulesetFromResourceData(d)
 
 	log.Printf("Updating outbound digitalruleset %s", *outboundDigitalruleset.Name)
-	digitalRuleSet, _, err := proxy.updateOutboundDigitalruleset(ctx, d.Id(), &outboundDigitalruleset)
+	digitalRuleSet, resp, err := proxy.updateOutboundDigitalruleset(ctx, d.Id(), &outboundDigitalruleset)
 	if err != nil {
-		return diag.Errorf("Failed to update outbound digitalruleset: %s", err)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update outbound digitalruleset: %s", err), resp)
 	}
 
 	log.Printf("Updated outbound digitalruleset %s", *digitalRuleSet.Id)
@@ -110,22 +110,22 @@ func deleteOutboundDigitalruleset(ctx context.Context, d *schema.ResourceData, m
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getOutboundDigitalrulesetProxy(sdkConfig)
 
-	_, err := proxy.deleteOutboundDigitalruleset(ctx, d.Id())
+	resp, err := proxy.deleteOutboundDigitalruleset(ctx, d.Id())
 	if err != nil {
-		return diag.Errorf("Failed to delete outbound digitalruleset %s: %s", d.Id(), err)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete outbound digitalruleset %s: %s", d.Id(), err), resp)
 	}
 
 	return util.WithRetries(ctx, 180*time.Second, func() *retry.RetryError {
-		_, respCode, err := proxy.getOutboundDigitalrulesetById(ctx, d.Id())
+		_, resp, err := proxy.getOutboundDigitalrulesetById(ctx, d.Id())
 
 		if err != nil {
-			if util.IsStatus404(respCode) {
+			if util.IsStatus404(resp) {
 				log.Printf("Deleted outbound digitalruleset %s", d.Id())
 				return nil
 			}
-			return retry.NonRetryableError(fmt.Errorf("Error deleting outbound digitalruleset %s: %s", d.Id(), err))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Error deleting outbound digitalruleset %s: %s", d.Id(), err), resp))
 		}
 
-		return retry.RetryableError(fmt.Errorf("outbound digitalruleset %s still exists", d.Id()))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("outbound digitalruleset %s still exists", d.Id()), resp))
 	})
 }
