@@ -3,11 +3,11 @@ package outbound_campaignrule
 import (
 	"fmt"
 	"math/rand"
-	"path/filepath"
 	"strings"
 	outboundSequence "terraform-provider-genesyscloud/genesyscloud/outbound_sequence"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/testrunner"
 	"testing"
 
 	"github.com/google/uuid"
@@ -597,7 +597,7 @@ func generateCampaignResourceForCampaignRuleTests(
 	carResourceId,
 	carName string) string {
 
-	fullyQualifiedPath, _ := filepath.Abs(flowFilePath)
+	fullyQualifiedPath, _ := testrunner.NormalizePath(flowFilePath)
 
 	return fmt.Sprintf(`
 resource "genesyscloud_outbound_campaign" "%s" {

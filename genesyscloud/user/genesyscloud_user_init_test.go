@@ -4,7 +4,9 @@ import (
 	"sync"
 	"terraform-provider-genesyscloud/genesyscloud"
 
+	authDivision "terraform-provider-genesyscloud/genesyscloud/auth_division"
 	authRole "terraform-provider-genesyscloud/genesyscloud/auth_role"
+
 	"terraform-provider-genesyscloud/genesyscloud/location"
 	routinglanguage "terraform-provider-genesyscloud/genesyscloud/routing_language"
 	routingSkill "terraform-provider-genesyscloud/genesyscloud/routing_skill"
@@ -37,7 +39,7 @@ func (r *registerTestInstance) registerTestResources() {
 
 	providerResources[resourceName] = ResourceUser()
 	providerResources["genesyscloud_auth_role"] = authRole.ResourceAuthRole()
-	providerResources["genesyscloud_auth_division"] = genesyscloud.ResourceAuthDivision()
+	providerResources["genesyscloud_auth_division"] = authDivision.ResourceAuthDivision()
 	providerResources["genesyscloud_location"] = location.ResourceLocation()
 	providerResources["genesyscloud_routing_skill"] = routingSkill.ResourceRoutingSkill()
 	providerResources["genesyscloud_routing_language"] = routinglanguage.ResourceRoutingLanguage()

@@ -37,7 +37,7 @@ func getAllRoutingQueues(ctx context.Context, clientConfig *platformclientv2.Con
 	// Newly created resources often aren't returned unless there's a delay
 	time.Sleep(5 * time.Second)
 
-	queues, resp, err := proxy.GetAllRoutingQueues(ctx)
+	queues, resp, err := proxy.GetAllRoutingQueues(ctx, "")
 	if err != nil {
 		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("failed to get routing queues: %s", err), resp)
 	}
@@ -297,20 +297,9 @@ func updateQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		MemberGroups:                 &memberGroups,
 	}
 
-	if exists := featureToggles.CSGToggleExists(); !exists {
-		conditionalGroupRouting, diagErr := buildSdkConditionalGroupRouting(d)
-		if diagErr != nil {
-			return diagErr
-		}
-		updateQueue.ConditionalGroupRouting = conditionalGroupRouting
-	} else {
-		log.Printf("%s is set, not updating conditional_group_routing_rules attribute in routing_queue %s resource", featureToggles.CSGToggleName(), d.Id())
-	}
-
-	if exists := featureToggles.OEAToggleExists(); !exists {
-		updateQueue.OutboundEmailAddress = buildSdkQueueEmailAddress(d)
-	} else {
-		log.Printf("%s is set, not creating outbound_email_address attribute in routing_queue %s resource", featureToggles.OEAToggleName(), d.Id())
+	diagErr := addCGRAndOEA(routingAPI, d, &updateQueue)
+	if diagErr != nil {
+		return diagErr
 	}
 
 	log.Printf("Updating queue %s", *updateQueue.Name)
@@ -320,12 +309,11 @@ func updateQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 	}
 
 	_, resp, err := routingAPI.PutRoutingQueue(d.Id(), updateQueue)
-
 	if err != nil {
 		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update queue %s error: %s", *updateQueue.Name, err), resp)
 	}
 
-	diagErr := util.UpdateObjectDivision(d, "QUEUE", sdkConfig)
+	diagErr = util.UpdateObjectDivision(d, "QUEUE", sdkConfig)
 	if diagErr != nil {
 		return diagErr
 	}
@@ -342,6 +330,43 @@ func updateQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 
 	log.Printf("Finished updating queue %s", *updateQueue.Name)
 	return readQueue(ctx, d, meta)
+}
+
+/*
+DEVTOOLING-751: If conditional group routing rules and outbound email address are managed by their independent resource
+they are being removed when the parent queue is updated since the update body does not contain them.
+If the independent resources are enabled, pass in the current OEA and/or CGR to the update queue so they are not removed
+*/
+func addCGRAndOEA(routingAPI *platformclientv2.RoutingApi, d *schema.ResourceData, queue *platformclientv2.Queuerequest) diag.Diagnostics {
+	currentQueue, resp, err := routingAPI.GetRoutingQueue(d.Id())
+	if err != nil {
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get queue %s for update, error: %s", *queue.Name, err), resp)
+	}
+
+	if exists := featureToggles.CSGToggleExists(); !exists {
+		conditionalGroupRouting, diagErr := buildSdkConditionalGroupRouting(d)
+		if diagErr != nil {
+			return diagErr
+		}
+		queue.ConditionalGroupRouting = conditionalGroupRouting
+	} else {
+		log.Printf("%s is set, not updating conditional_group_routing_rules attribute in routing_queue %s resource", featureToggles.CSGToggleName(), d.Id())
+		queue.ConditionalGroupRouting = currentQueue.ConditionalGroupRouting
+
+		// remove queue_id from first CGR rule to avoid api error
+		if len(*queue.ConditionalGroupRouting.Rules) > 0 {
+			(*queue.ConditionalGroupRouting.Rules)[0].Queue = nil
+		}
+	}
+
+	if exists := featureToggles.OEAToggleExists(); !exists {
+		queue.OutboundEmailAddress = buildSdkQueueEmailAddress(d)
+	} else {
+		log.Printf("%s is set, not updating outbound_email_address attribute in routing_queue %s resource", featureToggles.OEAToggleName(), d.Id())
+		queue.OutboundEmailAddress = *currentQueue.OutboundEmailAddress
+	}
+
+	return nil
 }
 
 func deleteQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {

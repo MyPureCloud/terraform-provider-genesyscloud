@@ -15,7 +15,6 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
 )
 
 var (
@@ -48,36 +47,23 @@ func normalizeQueueName(queueName string) string {
 }
 
 // hydrateRoutingQueueCacheFn for hydrating the cache with Genesys Cloud routing queues using the SDK
-func hydrateRoutingQueueCacheFn(c *rc.DataSourceCache) error {
+func hydrateRoutingQueueCacheFn(c *rc.DataSourceCache, ctx context.Context) error {
 	log.Printf("hydrating cache for data source genesyscloud_routing_queues")
-	routingApi := platformclientv2.NewRoutingApiWithConfig(c.ClientConfig)
-	const pageSize = 100
-	queues, _, getErr := routingApi.GetRoutingQueues(1, pageSize, "", "", nil, nil, nil, "", false)
+	proxy := GetRoutingQueueProxy(c.ClientConfig)
 
-	if getErr != nil {
-		return fmt.Errorf("failed to get page of skills: %v", getErr)
+	// Newly created resources often aren't returned unless there's a delay
+	time.Sleep(5 * time.Second)
+
+	queues, _, err := proxy.GetAllRoutingQueues(ctx, "")
+	if err != nil {
+		return err
 	}
-	if queues.Entities == nil || len(*queues.Entities) == 0 {
-		return nil
-	}
-	for _, queue := range *queues.Entities {
+
+	// Add ids to cache
+	for _, queue := range *queues {
 		c.Cache[normalizeQueueName(*queue.Name)] = *queue.Id
 	}
 
-	for pageNum := 2; pageNum <= *queues.PageCount; pageNum++ {
-
-		queues, _, getErr := routingApi.GetRoutingQueues(pageNum, pageSize, "", "", nil, nil, nil, "", false)
-		if getErr != nil {
-			return fmt.Errorf("failed to get page of queues: %v", getErr)
-		}
-		if queues.Entities == nil || len(*queues.Entities) == 0 {
-			break
-		}
-		// Add ids to cache
-		for _, queue := range *queues.Entities {
-			c.Cache[normalizeQueueName(*queue.Name)] = *queue.Id
-		}
-	}
 	log.Printf("cache hydration completed for data source genesyscloud_routing_queues")
 	return nil
 }
@@ -85,27 +71,21 @@ func hydrateRoutingQueueCacheFn(c *rc.DataSourceCache) error {
 // Get queue by name.
 // Returns the queue id (blank if not found) and diag
 func getQueueByNameFn(c *rc.DataSourceCache, name string, ctx context.Context) (string, diag.Diagnostics) {
-	routingApi := platformclientv2.NewRoutingApiWithConfig(c.ClientConfig)
+	proxy := GetRoutingQueueProxy(c.ClientConfig)
 	queueId := ""
-	const pageSize = 100
+
 	diag := util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
-		for pageNum := 1; ; pageNum++ {
-			queues, resp, getErr := routingApi.GetRoutingQueues(pageNum, pageSize, "", name, nil, nil, nil, "", false)
-			if getErr != nil {
-				return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("error requesting queue %s | error %s", name, getErr), resp))
-			}
-
-			if queues.Entities == nil || len(*queues.Entities) == 0 {
-				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("no routing queues found with name %s", name), resp))
-			}
-
-			for _, queue := range *queues.Entities {
-				if queue.Name != nil && normalizeQueueName(*queue.Name) == normalizeQueueName(name) {
-					queueId = *queue.Id
-					return nil
-				}
-			}
+		queue, resp, retryable, getErr := proxy.getRoutingQueueByName(ctx, name)
+		if getErr != nil && !retryable {
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("error requesting queue %s | error %s", name, getErr), resp))
 		}
+
+		if retryable {
+			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("no routing queue found with name %s", name), resp))
+		}
+
+		queueId = queue
+		return nil
 	})
 
 	return queueId, diag

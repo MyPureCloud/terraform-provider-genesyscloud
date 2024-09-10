@@ -371,7 +371,7 @@ var (
 							Description:  "The condition to be applied to the `url_fragment`. Conditions are 'includes', 'does_not_include', 'starts_with', 'ends_with', 'equals'",
 							Type:         schema.TypeString,
 							Required:     true,
-							ValidateFunc: validation.StringInSlice([]string{"includes", "does_not_include", "starts_with", "ends_with", "equals"}, false),
+							ValidateFunc: validation.StringInSlice([]string{"Includes", "DoesNotInclude", "StartsWith", "EndsWith", "Equals"}, true),
 						},
 					},
 				},
