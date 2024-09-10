@@ -318,7 +318,7 @@ func updateRoutingQueue(ctx context.Context, d *schema.ResourceData, meta interf
 		MemberGroups:                 &memberGroups,
 	}
 
-	diagErr := addCGRAndOEA(routingAPI, d, &updateQueue)
+	diagErr := addCGRAndOEA(proxy, d, &updateQueue)
 	if diagErr != nil {
 		return diagErr
 	}
@@ -362,8 +362,8 @@ DEVTOOLING-751: If conditional group routing rules and outbound email address ar
 they are being removed when the parent queue is updated since the update body does not contain them.
 If the independent resources are enabled, pass in the current OEA and/or CGR to the update queue so they are not removed
 */
-func addCGRAndOEA(routingAPI *platformclientv2.RoutingApi, d *schema.ResourceData, queue *platformclientv2.Queuerequest) diag.Diagnostics {
-	currentQueue, resp, err := routingAPI.GetRoutingQueue(d.Id())
+func addCGRAndOEA(proxy *RoutingQueueProxy, d *schema.ResourceData, queue *platformclientv2.Queuerequest) diag.Diagnostics {
+	currentQueue, resp, err := proxy.getRoutingQueueById(ctx, d.Id())
 	if err != nil {
 		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get queue %s for update, error: %s", *queue.Name, err), resp)
 	}
@@ -394,10 +394,10 @@ func addCGRAndOEA(routingAPI *platformclientv2.RoutingApi, d *schema.ResourceDat
 	return nil
 }
 
-func deleteQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func deleteRoutingQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	name := d.Get("name").(string)
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := GetRoutingQueueProxy(sdkConfig)
-	name := d.Get("name").(string)
 
 	log.Printf("Deleting queue %s", name)
 	resp, err := proxy.deleteRoutingQueue(ctx, d.Id(), true)
