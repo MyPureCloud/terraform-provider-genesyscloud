@@ -11,6 +11,8 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"time"
 
+	knowledgeDocument "terraform-provider-genesyscloud/genesyscloud/knowledge_document"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 
 	"github.com/google/uuid"
@@ -237,7 +239,7 @@ func getAllKnowledgeDocumentVariations(_ context.Context, clientConfig *platform
 	knowledgeBaseList = append(knowledgeBaseList, *unpublishedEntities...)
 
 	for _, knowledgeBase := range knowledgeBaseList {
-		variationEntities, err := getAllKnowledgeDocumentEntities(*knowledgeAPI, &knowledgeBase, clientConfig)
+		variationEntities, err := knowledgeDocument.GetAllKnowledgeDocumentEntities(*knowledgeAPI, &knowledgeBase, clientConfig)
 		if err != nil {
 			return nil, err
 		}

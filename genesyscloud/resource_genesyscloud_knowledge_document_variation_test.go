@@ -329,6 +329,48 @@ func generateAddressableEntityRef(versionId string) string {
 	return variationBody
 }
 
+func generateKnowledgeDocumentBasic(resourceName string, knowledgeBaseResourceName string, title string, visible bool, published bool, phrase string, autocomplete bool) string {
+	document := fmt.Sprintf(`
+        resource "genesyscloud_knowledge_document" "%s" {
+            knowledge_base_id = genesyscloud_knowledge_knowledgebase.%s.id
+            published = %v
+            %s
+        }
+        `, resourceName,
+		knowledgeBaseResourceName,
+		published,
+		generateKnowledgeDocumentRequestBodyBasic(title, visible, phrase, autocomplete),
+	)
+	return document
+}
+
+func generateKnowledgeDocumentRequestBodyBasic(title string, visible bool, phrase string, autocomplete bool) string {
+
+	documentRequestBody := fmt.Sprintf(`
+        knowledge_document {
+			title = "%s"
+			visible = %v
+			%s
+		}
+        `, title,
+		visible,
+		generateKnowledgeDocumentAlternatives(phrase, autocomplete),
+	)
+	return documentRequestBody
+}
+
+func generateKnowledgeDocumentAlternatives(phrase string, autocomplete bool) string {
+	alternatives := fmt.Sprintf(`
+        alternatives {
+			phrase = "%s"
+			autocomplete = %v
+		}
+        `, phrase,
+		autocomplete,
+	)
+	return alternatives
+}
+
 func testVerifyKnowledgeDocumentVariationDestroyed(state *terraform.State) error {
 	knowledgeAPI := platformclientv2.NewKnowledgeApi()
 	for _, rs := range state.RootModule().Resources {

@@ -1,4 +1,4 @@
-package genesyscloud
+package knowledge_document
 
 import (
 	"context"
@@ -23,55 +23,6 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
 )
 
-var (
-	knowledgeDocument = &schema.Resource{
-		Schema: map[string]*schema.Schema{
-			"title": {
-				Description: "Document title",
-				Type:        schema.TypeString,
-				Required:    true,
-			},
-			"visible": {
-				Description: "Indicates if the knowledge document should be included in search results.",
-				Type:        schema.TypeBool,
-				Required:    true,
-			},
-			"alternatives": {
-				Description: "List of alternate phrases related to the title which improves search results.",
-				Type:        schema.TypeList,
-				Optional:    true,
-				Elem:        documentAlternative,
-			},
-			"category_name": {
-				Description: "The name of the category associated with the document.",
-				Type:        schema.TypeString,
-				Optional:    true,
-			},
-			"label_names": {
-				Description: "The names of labels associated with the document.",
-				Type:        schema.TypeList,
-				Optional:    true,
-				Elem:        &schema.Schema{Type: schema.TypeString},
-			},
-		},
-	}
-
-	documentAlternative = &schema.Resource{
-		Schema: map[string]*schema.Schema{
-			"phrase": {
-				Description: "Alternate phrasing to the document title.",
-				Type:        schema.TypeString,
-				Required:    true,
-			},
-			"autocomplete": {
-				Description: "Autocomplete enabled for the alternate phrase.",
-				Type:        schema.TypeBool,
-				Optional:    true,
-			},
-		},
-	}
-)
-
 func getAllKnowledgeDocuments(_ context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
 	knowledgeBaseList := make([]platformclientv2.Knowledgebase, 0)
 	documentEntities := make([]platformclientv2.Knowledgedocumentresponse, 0)
@@ -93,7 +44,7 @@ func getAllKnowledgeDocuments(_ context.Context, clientConfig *platformclientv2.
 	knowledgeBaseList = append(knowledgeBaseList, *unpublishedEntities...)
 
 	for _, knowledgeBase := range knowledgeBaseList {
-		partialEntities, err := getAllKnowledgeDocumentEntities(*knowledgeAPI, &knowledgeBase, clientConfig)
+		partialEntities, err := GetAllKnowledgeDocumentEntities(*knowledgeAPI, &knowledgeBase, clientConfig)
 		if err != nil {
 			return nil, err
 		}
@@ -108,7 +59,7 @@ func getAllKnowledgeDocuments(_ context.Context, clientConfig *platformclientv2.
 	return resources, nil
 }
 
-func getAllKnowledgeDocumentEntities(knowledgeAPI platformclientv2.KnowledgeApi, knowledgeBase *platformclientv2.Knowledgebase, clientConfig *platformclientv2.Configuration) (*[]platformclientv2.Knowledgedocumentresponse, diag.Diagnostics) {
+func GetAllKnowledgeDocumentEntities(knowledgeAPI platformclientv2.KnowledgeApi, knowledgeBase *platformclientv2.Knowledgebase, clientConfig *platformclientv2.Configuration) (*[]platformclientv2.Knowledgedocumentresponse, diag.Diagnostics) {
 	var (
 		after    string
 		entities []platformclientv2.Knowledgedocumentresponse
@@ -179,49 +130,6 @@ func getAllKnowledgeDocumentEntities(knowledgeAPI platformclientv2.KnowledgeApi,
 	}
 
 	return &entities, nil
-}
-
-func KnowledgeDocumentExporter() *resourceExporter.ResourceExporter {
-	return &resourceExporter.ResourceExporter{
-		GetResourcesFunc: provider.GetAllWithPooledClient(getAllKnowledgeDocuments),
-		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
-			"knowledge_base_id": {RefType: "genesyscloud_knowledge_knowledgebase"},
-		},
-	}
-}
-
-func ResourceKnowledgeDocument() *schema.Resource {
-	return &schema.Resource{
-		Description: "Genesys Cloud Knowledge document",
-
-		CreateContext: provider.CreateWithPooledClient(createKnowledgeDocument),
-		ReadContext:   provider.ReadWithPooledClient(readKnowledgeDocument),
-		UpdateContext: provider.UpdateWithPooledClient(updateKnowledgeDocument),
-		DeleteContext: provider.DeleteWithPooledClient(deleteKnowledgeDocument),
-		Importer: &schema.ResourceImporter{
-			StateContext: schema.ImportStatePassthroughContext,
-		},
-		SchemaVersion: 1,
-		Schema: map[string]*schema.Schema{
-			"knowledge_base_id": {
-				Description: "Knowledge base id",
-				Type:        schema.TypeString,
-				Required:    true,
-			},
-			"knowledge_document": {
-				Description: "Knowledge document request body",
-				Type:        schema.TypeList,
-				MaxItems:    1,
-				Required:    true,
-				Elem:        knowledgeDocument,
-			},
-			"published": {
-				Description: "If true, the knowledge document will be published. If false, it will be a draft. The document can only be published if it has document variations.",
-				Type:        schema.TypeBool,
-				Required:    true,
-			},
-		},
-	}
 }
 
 func buildDocumentAlternatives(requestIn map[string]interface{}) *[]platformclientv2.Knowledgedocumentalternative {
@@ -507,4 +415,39 @@ func deleteKnowledgeDocument(ctx context.Context, d *schema.ResourceData, meta i
 
 		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_knowledge_document", fmt.Sprintf("Knowledge document %s still exists", knowledgeDocumentId), resp))
 	})
+}
+
+func getAllKnowledgebaseEntities(knowledgeApi platformclientv2.KnowledgeApi, published bool) (*[]platformclientv2.Knowledgebase, diag.Diagnostics) {
+	var (
+		after    string
+		entities []platformclientv2.Knowledgebase
+	)
+
+	const pageSize = 100
+	for {
+		knowledgeBases, resp, getErr := knowledgeApi.GetKnowledgeKnowledgebases("", after, "", fmt.Sprintf("%v", pageSize), "", "", published, "", "")
+		if getErr != nil {
+			return nil, util.BuildAPIDiagnosticError("genesyscloud_knowledge_knowledgebase", fmt.Sprintf("Failed to get page of knowledge bases error: %s", getErr), resp)
+		}
+
+		if knowledgeBases.Entities == nil || len(*knowledgeBases.Entities) == 0 {
+			break
+		}
+
+		entities = append(entities, *knowledgeBases.Entities...)
+
+		if knowledgeBases.NextUri == nil || *knowledgeBases.NextUri == "" {
+			break
+		}
+
+		after, err := util.GetQueryParamValueFromUri(*knowledgeBases.NextUri, "after")
+		if err != nil {
+			return nil, util.BuildDiagnosticError("genesyscloud_knowledge_knowledgebase", fmt.Sprintf("Failed to parse after cursor from knowledge base nextUri"), err)
+		}
+		if after == "" {
+			break
+		}
+	}
+
+	return &entities, nil
 }
