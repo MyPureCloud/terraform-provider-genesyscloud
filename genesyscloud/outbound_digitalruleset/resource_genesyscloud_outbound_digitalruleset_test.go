@@ -29,6 +29,8 @@ func TestAccResourceOutboundDigitalruleset(t *testing.T) {
 		name1             = "Terraform Digital RuleSet1"
 		resourceId        = "digital-rule-set"
 		ruleName          = "RuleWork"
+		name2             = "Terraform Digital RuleSet2"
+		version1          = "1"
 		ruleOrder         = "0"
 		ruleCategory      = "PreContact"
 		contactColumnName = "Work"
@@ -45,6 +47,10 @@ func TestAccResourceOutboundDigitalruleset(t *testing.T) {
 		previewModeAcceptedValues = []string{}
 		columnNames               = []string{strconv.Quote("Cell"), strconv.Quote("Work")}
 		automaticTimeZoneMapping  = util.FalseValue
+
+		lastAttemptOverallOperator = "Before"
+		lastAttemptOverallValue    = "P-1DT-1H-1M"
+		outboundMessageSent        = "OUTBOUND-MESSAGE-SENT"
 	)
 
 	contactListResourceGenerate := obContactList.GenerateOutboundContactList(
@@ -87,12 +93,13 @@ func TestAccResourceOutboundDigitalruleset(t *testing.T) {
 						resourceId,
 						name1,
 						"genesyscloud_outbound_contact_list."+contactListResourceId1+".id",
+						GenerateDigitalRuleSetVersion(version1),
 						GenerateDigitalRules(
 							ruleName,
 							ruleOrder,
 							ruleCategory,
 							GenerateDigitalRuleSetConditions(
-								util.TrueValue,
+								GenerateInvertedConditionAttr(util.FalseValue),
 								GenerateContactColumnConditionSettings(
 									contactColumnName,
 									columnOperator,
@@ -109,9 +116,6 @@ func TestAccResourceOutboundDigitalruleset(t *testing.T) {
 							GenerateDigitalRuleSetActions(
 								GenerateDoNotSendActionSettings(),
 							),
-							// GenerateDigitalRuleSetActions(
-							// 	GenerateMarkContactUncontactableActionSettings(strconv.Quote("Email")),
-							// ),
 						),
 					),
 
@@ -121,11 +125,87 @@ func TestAccResourceOutboundDigitalruleset(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_outbound_digitalruleset."+resourceId, "rules.0.name", ruleName),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_digitalruleset."+resourceId, "rules.0.order", ruleOrder),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_digitalruleset."+resourceId, "rules.0.category", ruleCategory),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_digitalruleset."+resourceId, "rules.0.conditions.0.inverted", util.FalseValue),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_digitalruleset."+resourceId, "rules.0.conditions.0.contact_column_condition_settings.0.column_name", contactColumnName),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_digitalruleset."+resourceId, "rules.0.conditions.0.contact_column_condition_settings.0.operator", columnOperator),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_digitalruleset."+resourceId, "rules.0.conditions.0.contact_column_condition_settings.0.value", columnValue),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_digitalruleset."+resourceId, "rules.0.conditions.0.contact_column_condition_settings.0.value_type", columnValueType),
+					util.ValidateValueInJsonAttr("genesyscloud_outbound_digitalruleset."+resourceId, "rules.0.actions.0.update_contact_column_action_settings.0.properties", updatePropertiesWork, updatePropertiesWork),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_digitalruleset."+resourceId, "rules.0.actions.0.update_contact_column_action_settings.0.update_option", updateOption),
+				),
+			},
+			{
+
+				Config: contactListResourceGenerate +
+					GenerateOutboundDigitalRuleSetResource(
+						resourceId,
+						name2,
+						"genesyscloud_outbound_contact_list."+contactListResourceId1+".id",
+						GenerateDigitalRuleSetVersion(version1),
+						GenerateDigitalRules(
+							ruleName,
+							ruleOrder,
+							ruleCategory,
+							GenerateDigitalRuleSetConditions(
+								GenerateInvertedConditionAttr(util.TrueValue),
+								GenerateContactColumnConditionSettings(
+									contactColumnName,
+									columnOperator,
+									columnValue,
+									columnValueType,
+								),
+							),
+							GenerateDigitalRuleSetConditions(
+								GenerateLastAttemptOverallConditionSettings(
+									[]string{strconv.Quote("Email")},
+									lastAttemptOverallOperator,
+									lastAttemptOverallValue,
+								),
+							),
+							GenerateDigitalRuleSetConditions(
+								GenerateLastResultByColumnConditionSettings(
+									contactColumnName,
+									[]string{strconv.Quote(outboundMessageSent)},
+									"",
+									[]string{},
+								),
+							),
+							GenerateDigitalRuleSetConditions(
+								GenerateLastResultOverallConditionSettings(
+									[]string{strconv.Quote(outboundMessageSent)},
+									[]string{},
+								),
+							),
+							GenerateDigitalRuleSetActions(
+								GenerateUpdateContactColumnActionSettings(
+									updateOption,
+									GeneratePropertiesForUpdateContactColumnSettings(updatePropertiesWork, updatePropertiesWork),
+								),
+							),
+							GenerateDigitalRuleSetActions(
+								GenerateDoNotSendActionSettings(),
+							),
+						),
+					),
+
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("genesyscloud_outbound_digitalruleset."+resourceId, "name", name2),
+					resource.TestCheckResourceAttrPair("genesyscloud_outbound_digitalruleset."+resourceId, "contact_list_id", "genesyscloud_outbound_contact_list."+contactListResourceId1, "id"),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_digitalruleset."+resourceId, "rules.0.name", ruleName),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_digitalruleset."+resourceId, "rules.0.order", ruleOrder),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_digitalruleset."+resourceId, "rules.0.category", ruleCategory),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_digitalruleset."+resourceId, "rules.0.conditions.0.inverted", util.TrueValue),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_digitalruleset."+resourceId, "rules.0.conditions.0.contact_column_condition_settings.0.column_name", contactColumnName),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_digitalruleset."+resourceId, "rules.0.conditions.0.contact_column_condition_settings.0.operator", columnOperator),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_digitalruleset."+resourceId, "rules.0.conditions.0.contact_column_condition_settings.0.value", columnValue),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_digitalruleset."+resourceId, "rules.0.conditions.0.contact_column_condition_settings.0.value_type", columnValueType),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_digitalruleset."+resourceId, "rules.0.conditions.1.last_attempt_overall_condition_settings.0.media_types.0", "Email"),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_digitalruleset."+resourceId, "rules.0.conditions.1.last_attempt_overall_condition_settings.0.operator", lastAttemptOverallOperator),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_digitalruleset."+resourceId, "rules.0.conditions.1.last_attempt_overall_condition_settings.0.value", lastAttemptOverallValue),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_digitalruleset."+resourceId, "rules.0.conditions.2.last_result_by_column_condition_settings.0.email_column_name", contactColumnName),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_digitalruleset."+resourceId, "rules.0.conditions.2.last_result_by_column_condition_settings.0.email_wrapup_codes.0", outboundMessageSent),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_digitalruleset."+resourceId, "rules.0.conditions.2.last_result_by_column_condition_settings.0.sms_column_name", ""),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_digitalruleset."+resourceId, "rules.0.conditions.3.last_result_overall_condition_settings.0.email_wrapup_codes.0", outboundMessageSent),
 					util.ValidateValueInJsonAttr("genesyscloud_outbound_digitalruleset."+resourceId, "rules.0.actions.0.update_contact_column_action_settings.0.properties", updatePropertiesWork, updatePropertiesWork),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_digitalruleset."+resourceId, "rules.0.actions.0.update_contact_column_action_settings.0.update_option", updateOption),
 				),
@@ -170,13 +250,13 @@ func GenerateMarkContactAddressUncontactableActionSettings() string {
 }
 
 func GenerateMarkContactUncontactableActionSettings(
-	mediaTypes string,
+	mediaTypes []string,
 ) string {
 	return fmt.Sprintf(`
 		mark_contact_uncontactable_action_settings {
 			media_types = [%s]
 		}
-	`, mediaTypes)
+	`, strings.Join(mediaTypes, ","))
 }
 
 func GenerateAppendToDncActionSettings(
@@ -271,45 +351,45 @@ func GenerateDataActionConditionSettings(
 }
 
 func GenerateLastResultOverallConditionSettings(
-	emailCodes string,
-	smsCodes string,
+	emailCodes []string,
+	smsCodes []string,
 ) string {
 	return fmt.Sprintf(`
 	last_result_overall_condition_settings {
 		email_wrapup_codes = [%s]
 		sms_wrapup_codes = [%s]
 	}
-	`, emailCodes, smsCodes)
+	`, strings.Join(emailCodes, ","), strings.Join(smsCodes, ","))
 }
 
 func GenerateLastResultByColumnConditionSettings(
 	emailColumnName string,
-	emailCodes string,
+	emailCodes []string,
 	smsColumnName string,
-	smsCodes string,
+	smsCodes []string,
 ) string {
 	return fmt.Sprintf(`
 	last_result_by_column_condition_settings {
-		email_column_name = %s
+		email_column_name = "%s"
 		email_wrapup_codes = [%s]
-		sms_column_name = %s
+		sms_column_name = "%s"
 		sms_wrapup_codes = [%s]
 	}
-	`, emailColumnName, emailCodes, smsColumnName, smsCodes)
+	`, emailColumnName, strings.Join(emailCodes, ","), smsColumnName, strings.Join(smsCodes, ","))
 }
 
 func GenerateLastAttemptOverallConditionSettings(
-	mediaTypes string,
+	mediaTypes []string,
 	operator string,
 	value string,
 ) string {
 	return fmt.Sprintf(`
 	last_attempt_overall_condition_settings {
 		media_types = [%s]
-		operator = %s
-		value = %s
+		operator = "%s"
+		value = "%s"
 	}
-	`, mediaTypes, operator, value)
+	`, strings.Join(mediaTypes, ","), operator, value)
 }
 
 func GenerateLastAttemptByColumnConditionSettings(
@@ -320,10 +400,10 @@ func GenerateLastAttemptByColumnConditionSettings(
 ) string {
 	return fmt.Sprintf(`
 	last_attempt_by_column_condition_settings {
-		email_column_name = %s
-		sms_column_name = %s
-		operator = %s
-		value = %s
+		email_column_name = "%s"
+		sms_column_name = "%s"
+		operator = "%s"
+		value = "%s"
 	}
 	`, emailColumnName, smsColumnName, operator, value)
 }
@@ -369,15 +449,20 @@ func GenerateContactColumnConditionSettings(
 }
 
 func GenerateDigitalRuleSetConditions(
-	inverted string,
 	nestedBlocks ...string,
 ) string {
 	return fmt.Sprintf(`
 		conditions {
-			inverted = %s
 			%s
 		}
-	`, inverted, strings.Join(nestedBlocks, "\n"))
+	`, strings.Join(nestedBlocks, "\n"))
+}
+
+func GenerateInvertedConditionAttr(
+	inverted string,
+) string {
+	return fmt.Sprintf(`
+		inverted = %s`, inverted)
 }
 
 func GenerateDigitalRules(
@@ -394,6 +479,13 @@ func GenerateDigitalRules(
 			%s
 		}
 	`, name, order, category, strings.Join(nestedBlocks, "\n"))
+}
+
+func GenerateDigitalRuleSetVersion(
+	version string,
+) string {
+	return fmt.Sprintf(`
+		version = %s`, version)
 }
 
 func GenerateOutboundDigitalRuleSetResource(

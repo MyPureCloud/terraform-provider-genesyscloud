@@ -96,9 +96,10 @@ var (
 				Type:        schema.TypeString,
 			},
 			`operator`: {
-				Description: `The operator to use when comparing values.`,
-				Required:    true,
-				Type:        schema.TypeString,
+				Description:  `The operator to use when comparing values.`,
+				Required:     true,
+				Type:         schema.TypeString,
+				ValidateFunc: validation.StringInSlice([]string{"Before", "After"}, false),
 			},
 			`value`: {
 				Description: `The period value to compare against the contact's data.`,
@@ -115,11 +116,13 @@ var (
 				Required:    true,
 				Type:        schema.TypeList,
 				Elem:        &schema.Schema{Type: schema.TypeString},
+				//ValidateFunc: validation.StringInSlice([]string{"Voice", "Sms", "Email"}, false),
 			},
 			`operator`: {
-				Description: `The operator to use when comparing values.`,
-				Required:    true,
-				Type:        schema.TypeString,
+				Description:  `The operator to use when comparing values.`,
+				Required:     true,
+				Type:         schema.TypeString,
+				ValidateFunc: validation.StringInSlice([]string{"Before", "After"}, false),
 			},
 			`value`: {
 				Description: `The period value to compare against the contact's data.`,
@@ -141,6 +144,7 @@ var (
 				Optional:    true,
 				Type:        schema.TypeList,
 				Elem:        &schema.Schema{Type: schema.TypeString},
+				//ValidateFunc: validation.StringInSlice([]string{"OUTBOUND-MESSAGE-SENT", "OUTBOUND-RULE-SKIPPED"}, false),
 			},
 			`sms_column_name`: {
 				Description: `The name of the contact column to evaluate for SMS.`,
@@ -152,6 +156,7 @@ var (
 				Optional:    true,
 				Type:        schema.TypeList,
 				Elem:        &schema.Schema{Type: schema.TypeString},
+				//ValidateFunc: validation.StringInSlice([]string{"OUTBOUND-MESSAGE-SENT", "OUTBOUND-RULE-SKIPPED"}, false),
 			},
 		},
 	}
@@ -163,12 +168,14 @@ var (
 				Optional:    true,
 				Type:        schema.TypeList,
 				Elem:        &schema.Schema{Type: schema.TypeString},
+				//ValidateFunc: validation.StringInSlice([]string{"OUTBOUND-MESSAGE-SENT", "OUTBOUND-RULE-SKIPPED"}, false),
 			},
 			`sms_wrapup_codes`: {
 				Description: `A list of wrapup code identifiers to match for SMS.`,
 				Optional:    true,
 				Type:        schema.TypeList,
 				Elem:        &schema.Schema{Type: schema.TypeString},
+				//ValidateFunc: validation.StringInSlice([]string{"OUTBOUND-MESSAGE-SENT", "OUTBOUND-RULE-SKIPPED"}, false),
 			},
 		},
 	}

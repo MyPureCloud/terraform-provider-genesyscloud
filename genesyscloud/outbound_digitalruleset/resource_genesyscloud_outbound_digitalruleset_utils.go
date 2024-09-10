@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"log"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/lists"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -21,6 +22,7 @@ func getOutboundDigitalrulesetFromResourceData(d *schema.ResourceData) platformc
 		Name:        platformclientv2.String(d.Get("name").(string)),
 		ContactList: util.BuildSdkDomainEntityRef(d, "contact_list_id"),
 		Rules:       buildDigitalRules(d.Get("rules").([]interface{})),
+		Version:     platformclientv2.Int(d.Get("version").(int)),
 	}
 }
 
@@ -153,8 +155,9 @@ func buildLastAttemptOverallConditionSettings(lastAttemptOverallConditionSetting
 	if len(lastAttemptOverallConditionSettingsList) > 0 {
 		lastAttemptOverallConditionSettingsMap := lastAttemptOverallConditionSettingsList[0].(map[string]interface{})
 
-		if mediaTypes := lastAttemptOverallConditionSettingsMap["media_types"].([]string); len(mediaTypes) > 0 {
-			sdkLastAttemptOverallConditionSettings.MediaTypes = &mediaTypes
+		if mediaTypes := lastAttemptOverallConditionSettingsMap["media_types"].([]interface{}); len(mediaTypes) > 0 {
+			listMediaTypes := lists.InterfaceListToStrings(mediaTypes)
+			sdkLastAttemptOverallConditionSettings.MediaTypes = &listMediaTypes
 		}
 
 		if operator := lastAttemptOverallConditionSettingsMap["operator"].(string); operator != "" {
@@ -190,12 +193,14 @@ func buildLastResultByColumnConditionSettings(lastResultByColumnConditionSetting
 			sdkLastResultByColumnConditionSettings.SmsColumnName = &smsColumnName
 		}
 
-		if emailWrapupCodes := lastResultByColumnConditionSettingsMap["email_wrapup_codes"].([]string); len(emailWrapupCodes) > 0 {
-			sdkLastResultByColumnConditionSettings.EmailWrapupCodes = &emailWrapupCodes
+		if emailWrapupCodes := lastResultByColumnConditionSettingsMap["email_wrapup_codes"].([]interface{}); len(emailWrapupCodes) > 0 {
+			listEmailCodes := lists.InterfaceListToStrings(emailWrapupCodes)
+			sdkLastResultByColumnConditionSettings.EmailWrapupCodes = &listEmailCodes
 		}
 
-		if smsWrapupCodes := lastResultByColumnConditionSettingsMap["sms_wrapup_codes"].([]string); len(smsWrapupCodes) > 0 {
-			sdkLastResultByColumnConditionSettings.SmsWrapupCodes = &smsWrapupCodes
+		if smsWrapupCodes := lastResultByColumnConditionSettingsMap["sms_wrapup_codes"].([]interface{}); len(smsWrapupCodes) > 0 {
+			listSmsCodes := lists.InterfaceListToStrings(smsWrapupCodes)
+			sdkLastResultByColumnConditionSettings.SmsWrapupCodes = &listSmsCodes
 		}
 		return &sdkLastResultByColumnConditionSettings
 	}
@@ -215,12 +220,14 @@ func buildLastResultOverallConditionSettings(lastResultOverallConditionSettings 
 	if len(lastResultOverallConditionSettingsList) > 0 {
 		lastResultOverallConditionSettingsMap := lastResultOverallConditionSettingsList[0].(map[string]interface{})
 
-		if emailWrapupCodes := lastResultOverallConditionSettingsMap["email_wrapup_codes"].([]string); len(emailWrapupCodes) > 0 {
-			sdkLastResultOverallConditionSettings.EmailWrapupCodes = &emailWrapupCodes
+		if emailWrapupCodes := lastResultOverallConditionSettingsMap["email_wrapup_codes"].([]interface{}); len(emailWrapupCodes) > 0 {
+			listEmailCodes := lists.InterfaceListToStrings(emailWrapupCodes)
+			sdkLastResultOverallConditionSettings.EmailWrapupCodes = &listEmailCodes
 		}
 
-		if smsWrapupCodes := lastResultOverallConditionSettingsMap["sms_wrapup_codes"].([]string); len(smsWrapupCodes) > 0 {
-			sdkLastResultOverallConditionSettings.SmsWrapupCodes = &smsWrapupCodes
+		if smsWrapupCodes := lastResultOverallConditionSettingsMap["sms_wrapup_codes"].([]interface{}); len(smsWrapupCodes) > 0 {
+			listSmsCodes := lists.InterfaceListToStrings(smsWrapupCodes)
+			sdkLastResultOverallConditionSettings.SmsWrapupCodes = &listSmsCodes
 		}
 		return &sdkLastResultOverallConditionSettings
 	}
@@ -238,16 +245,27 @@ func buildDigitalDataActionConditionPredicates(digitalDataActionConditionPredica
 			continue
 		}
 
-		resourcedata.BuildSDKStringValueIfNotNil(&sdkDigitalDataActionConditionPredicate.OutputField, digitalDataActionConditionPredicatesMap, "output_field")
-		resourcedata.BuildSDKStringValueIfNotNil(&sdkDigitalDataActionConditionPredicate.OutputOperator, digitalDataActionConditionPredicatesMap, "output_operator")
-		resourcedata.BuildSDKStringValueIfNotNil(&sdkDigitalDataActionConditionPredicate.ComparisonValue, digitalDataActionConditionPredicatesMap, "comparison_value")
+		if outputField := digitalDataActionConditionPredicatesMap["output_field"].(string); outputField != "" {
+			sdkDigitalDataActionConditionPredicate.OutputField = &outputField
+		}
+
+		if outputOperator := digitalDataActionConditionPredicatesMap["output_operator"].(string); outputOperator != "" {
+			sdkDigitalDataActionConditionPredicate.OutputOperator = &outputOperator
+		}
+
+		if comparisonValue := digitalDataActionConditionPredicatesMap["comparison_value"].(string); comparisonValue != "" {
+			sdkDigitalDataActionConditionPredicate.ComparisonValue = &comparisonValue
+		}
+
 		sdkDigitalDataActionConditionPredicate.Inverted = platformclientv2.Bool(digitalDataActionConditionPredicatesMap["inverted"].(bool))
 		sdkDigitalDataActionConditionPredicate.OutputFieldMissingResolution = platformclientv2.Bool(digitalDataActionConditionPredicatesMap["output_field_missing_resolution"].(bool))
 
 		digitalDataActionConditionPredicatesSlice = append(digitalDataActionConditionPredicatesSlice, sdkDigitalDataActionConditionPredicate)
+
+		return &digitalDataActionConditionPredicatesSlice
 	}
 
-	return &digitalDataActionConditionPredicatesSlice
+	return nil
 }
 
 // buildDataActionContactColumnFieldMappings maps an []interface{} into a Genesys Cloud *[]platformclientv2.Dataactioncontactcolumnfieldmapping
@@ -260,13 +278,20 @@ func buildDataActionContactColumnFieldMappings(dataActionContactColumnFieldMappi
 			continue
 		}
 
-		resourcedata.BuildSDKStringValueIfNotNil(&sdkDataActionContactColumnFieldMapping.ContactColumnName, dataActionContactColumnFieldMappingsMap, "contact_column_name")
-		resourcedata.BuildSDKStringValueIfNotNil(&sdkDataActionContactColumnFieldMapping.DataActionField, dataActionContactColumnFieldMappingsMap, "data_action_field")
+		if contactColumnName := dataActionContactColumnFieldMappingsMap["contact_column_name"].(string); contactColumnName != "" {
+			sdkDataActionContactColumnFieldMapping.ContactColumnName = &contactColumnName
+		}
+
+		if dataActionField := dataActionContactColumnFieldMappingsMap["data_action_field"].(string); dataActionField != "" {
+			sdkDataActionContactColumnFieldMapping.DataActionField = &dataActionField
+		}
 
 		dataActionContactColumnFieldMappingsSlice = append(dataActionContactColumnFieldMappingsSlice, sdkDataActionContactColumnFieldMapping)
+
+		return &dataActionContactColumnFieldMappingsSlice
 	}
 
-	return &dataActionContactColumnFieldMappingsSlice
+	return nil
 }
 
 // buildDataActionConditionSettingss maps an []interface{} into a Genesys Cloud *[]platformclientv2.Dataactionconditionsettings
@@ -292,8 +317,14 @@ func buildDataActionConditionSettings(dataActionConditionSettings *schema.Set) *
 		dataNotFoundResolution := dataActionConditionSettingsMap["data_not_found_resolution"].(bool)
 		sdkDataActionConditionSettings.DataNotFoundResolution = &dataNotFoundResolution
 
-		sdkDataActionConditionSettings.Predicates = buildDigitalDataActionConditionPredicates(dataActionConditionSettingsMap["predicates"].([]interface{}))
-		sdkDataActionConditionSettings.ContactColumnToDataActionFieldMappings = buildDataActionContactColumnFieldMappings(dataActionConditionSettingsMap["contact_column_to_data_action_field_mappings"].([]interface{}))
+		if dataActionCondition := buildDigitalDataActionConditionPredicates(dataActionConditionSettingsMap["predicates"].([]interface{})); dataActionCondition != nil {
+			sdkDataActionConditionSettings.Predicates = dataActionCondition
+		}
+
+		if contactColumnField := buildDataActionContactColumnFieldMappings(dataActionConditionSettingsMap["contact_column_to_data_action_field_mappings"].([]interface{})); contactColumnField != nil {
+			sdkDataActionConditionSettings.ContactColumnToDataActionFieldMappings = contactColumnField
+		}
+
 		return &sdkDataActionConditionSettings
 	}
 
@@ -611,7 +642,9 @@ func flattenLastAttemptOverallConditionSettings(lastAttemptOverallConditionSetti
 	lastAttemptOverallConditionSettingsSet := schema.NewSet(schema.HashResource(lastAttemptOverallConditionSettingsResource), []interface{}{})
 	lastAttemptOverallConditionSettingsMap := make(map[string]interface{})
 
-	resourcedata.SetMapStringArrayValueIfNotNil(lastAttemptOverallConditionSettingsMap, "media_types", lastAttemptOverallConditionSettings.MediaTypes)
+	if mediaTypes := lastAttemptOverallConditionSettings.MediaTypes; mediaTypes != nil {
+		lastAttemptOverallConditionSettingsMap["media_types"] = lists.StringListToInterfaceList(*mediaTypes)
+	}
 	resourcedata.SetMapValueIfNotNil(lastAttemptOverallConditionSettingsMap, "operator", lastAttemptOverallConditionSettings.Operator)
 	resourcedata.SetMapValueIfNotNil(lastAttemptOverallConditionSettingsMap, "value", lastAttemptOverallConditionSettings.Value)
 
@@ -629,10 +662,16 @@ func flattenLastResultByColumnConditionSettings(lastResultByColumnConditionSetti
 	lastResultByColumnConditionSettingsMap := make(map[string]interface{})
 
 	resourcedata.SetMapValueIfNotNil(lastResultByColumnConditionSettingsMap, "email_column_name", lastResultByColumnConditionSettings.EmailColumnName)
-	resourcedata.SetMapStringArrayValueIfNotNil(lastResultByColumnConditionSettingsMap, "email_wrapup_codes", lastResultByColumnConditionSettings.EmailWrapupCodes)
-	resourcedata.SetMapValueIfNotNil(lastResultByColumnConditionSettingsMap, "sms_column_name", lastResultByColumnConditionSettings.SmsColumnName)
-	resourcedata.SetMapStringArrayValueIfNotNil(lastResultByColumnConditionSettingsMap, "sms_wrapup_codes", lastResultByColumnConditionSettings.SmsWrapupCodes)
 
+	if emailWrapupCodes := lastResultByColumnConditionSettings.EmailWrapupCodes; emailWrapupCodes != nil {
+		lastResultByColumnConditionSettingsMap["email_wrapup_codes"] = lists.StringListToInterfaceList(*emailWrapupCodes)
+	}
+
+	resourcedata.SetMapValueIfNotNil(lastResultByColumnConditionSettingsMap, "sms_column_name", lastResultByColumnConditionSettings.SmsColumnName)
+
+	if smsWrapupCodes := lastResultByColumnConditionSettings.SmsWrapupCodes; smsWrapupCodes != nil {
+		lastResultByColumnConditionSettingsMap["sms_wrapup_codes"] = lists.StringListToInterfaceList(*smsWrapupCodes)
+	}
 	lastResultByColumnConditionSettingsSet.Add(lastResultByColumnConditionSettingsMap)
 	return lastResultByColumnConditionSettingsSet
 }
@@ -646,8 +685,13 @@ func flattenLastResultOverallConditionSettings(lastResultOverallConditionSetting
 	lastResultOverallConditionSettingsSet := schema.NewSet(schema.HashResource(lastResultOverallConditionSettingsResource), []interface{}{})
 	lastResultOverallConditionSettingsMap := make(map[string]interface{})
 
-	resourcedata.SetMapStringArrayValueIfNotNil(lastResultOverallConditionSettingsMap, "email_wrapup_codes", lastResultOverallConditionSettings.EmailWrapupCodes)
-	resourcedata.SetMapStringArrayValueIfNotNil(lastResultOverallConditionSettingsMap, "sms_wrapup_codes", lastResultOverallConditionSettings.SmsWrapupCodes)
+	if emailWrapupCodes := lastResultOverallConditionSettings.EmailWrapupCodes; emailWrapupCodes != nil {
+		lastResultOverallConditionSettingsMap["email_wrapup_codes"] = lists.StringListToInterfaceList(*emailWrapupCodes)
+	}
+
+	if smsWrapupCodes := lastResultOverallConditionSettings.SmsWrapupCodes; smsWrapupCodes != nil {
+		lastResultOverallConditionSettingsMap["sms_wrapup_codes"] = lists.StringListToInterfaceList(*smsWrapupCodes)
+	}
 
 	lastResultOverallConditionSettingsSet.Add(lastResultOverallConditionSettingsMap)
 	return lastResultOverallConditionSettingsSet
