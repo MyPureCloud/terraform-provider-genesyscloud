@@ -62,35 +62,6 @@ var (
 				Optional:     true,
 				ValidateFunc: validation.IntAtLeast(7),
 			},
-			"enable_auto_answer": {
-				Description: "Auto-Answer for digital channels(Email, Message)",
-				Type:        schema.TypeBool,
-				Optional:    true,
-				Default:     false,
-			},
-			"service_level_percentage": {
-				Description:  "The desired Service Level. A float value between 0 and 1.",
-				Type:         schema.TypeFloat,
-				Optional:     true,
-				ValidateFunc: validation.FloatBetween(0, 1),
-			},
-			"service_level_duration_ms": {
-				Description:  "Service Level target in milliseconds. Must be >= 1000",
-				Type:         schema.TypeInt,
-				Optional:     true,
-				ValidateFunc: validation.IntAtLeast(1000),
-			},
-		},
-	}
-
-	queueMediaSettingsCallbackResource = &schema.Resource{
-		Schema: map[string]*schema.Schema{
-			"alerting_timeout_sec": {
-				Description:  "Alerting timeout in seconds. Must be >= 7",
-				Type:         schema.TypeInt,
-				Optional:     true,
-				ValidateFunc: validation.IntAtLeast(7),
-			},
 			"auto_end_delay_seconds": {
 				Description: "Auto End Delay Seconds.",
 				Type:        schema.TypeInt,
@@ -238,7 +209,7 @@ func ResourceRoutingQueue() *schema.Resource {
 				MaxItems:    1,
 				Optional:    true,
 				Computed:    true,
-				Elem:        queueMediaSettingsCallbackResource,
+				Elem:        queueMediaSettingsResource,
 			},
 			"media_settings_chat": {
 				Description: "Chat media settings.",
