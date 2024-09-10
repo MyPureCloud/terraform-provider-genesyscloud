@@ -531,7 +531,7 @@ func TestAccResourceTfExport(t *testing.T) {
 				Config: generateTfExportResource(
 					exportResource1,
 					exportTestDir,
-					util.FalseValue,
+					util.TrueValue,
 					"",
 				),
 				Check: resource.ComposeTestCheckFunc(
@@ -2455,7 +2455,7 @@ func generateTfExportResource(
 	return fmt.Sprintf(`resource "genesyscloud_tf_export" "%s" {
 		directory = "%s"
 		include_state_file = %s
-		resource_types = [
+		include_filter_resources = [
 			"genesyscloud_architect_datatable",
 			"genesyscloud_architect_datatable_row",
 			//"genesyscloud_flow",

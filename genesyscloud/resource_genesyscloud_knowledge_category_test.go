@@ -80,6 +80,91 @@ func TestAccResourceKnowledgeCategoryBasic(t *testing.T) {
 	})
 }
 
+func TestAccResourceKnowledgeCategoryParentChild(t *testing.T) {
+	var (
+		knowledgeBaseResource1     = "test-knowledgebase1"
+		knowledgeBaseName1         = "Terraform Knowledge Base" + uuid.NewString()
+		knowledgeBaseDescription1  = "test-knowledgebase-description1"
+		knowledgeBaseCoreLanguage1 = "en-US"
+
+		knowledgeCategoryResourceParent1 = "test-knowledge-category-parent1"
+		categoryParentName               = "Terraform Knowledge Category parent" + uuid.NewString()
+		categoryParentDescription        = "test-parent-description1"
+		categoryParentDescription2       = "test-parent-description2"
+
+		knowledgeCategoryResourceChild1 = "test-knowledge-category-child1"
+		categoryChildName               = "Terraform Knowledge Category child" + uuid.NewString()
+		categoryChildDescription        = "test-child-description1"
+		categoryChildDescription2       = "test-child-description2"
+	)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			{
+				// Create
+				Config: GenerateKnowledgeKnowledgebaseResource(
+					knowledgeBaseResource1,
+					knowledgeBaseName1,
+					knowledgeBaseDescription1,
+					knowledgeBaseCoreLanguage1,
+				) + generateKnowledgeCategoryResource(
+					knowledgeCategoryResourceParent1,
+					knowledgeBaseResource1,
+					categoryParentName,
+					categoryParentDescription,
+				) + generateKnowledgeCategoryChildResource(
+					knowledgeCategoryResourceChild1,
+					knowledgeBaseResource1,
+					categoryChildName,
+					categoryChildDescription,
+					knowledgeCategoryResourceParent1,
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttrPair("genesyscloud_knowledge_category."+knowledgeCategoryResourceParent1, "knowledge_base_id", "genesyscloud_knowledge_knowledgebase."+knowledgeBaseResource1, "id"),
+					resource.TestCheckResourceAttr("genesyscloud_knowledge_category."+knowledgeCategoryResourceParent1, "knowledge_category.0.name", categoryParentName),
+					resource.TestCheckResourceAttr("genesyscloud_knowledge_category."+knowledgeCategoryResourceParent1, "knowledge_category.0.description", categoryParentDescription),
+				),
+			},
+			{
+				// Update
+				Config: GenerateKnowledgeKnowledgebaseResource(
+					knowledgeBaseResource1,
+					knowledgeBaseName1,
+					knowledgeBaseDescription1,
+					knowledgeBaseCoreLanguage1,
+				) + generateKnowledgeCategoryResource(
+					knowledgeCategoryResourceParent1,
+					knowledgeBaseResource1,
+					categoryParentName,
+					categoryParentDescription2,
+				) + generateKnowledgeCategoryChildResource(
+					knowledgeCategoryResourceChild1,
+					knowledgeBaseResource1,
+					categoryChildName,
+					categoryChildDescription2,
+					knowledgeCategoryResourceParent1,
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttrPair("genesyscloud_knowledge_category."+knowledgeCategoryResourceParent1, "knowledge_base_id", "genesyscloud_knowledge_knowledgebase."+knowledgeBaseResource1, "id"),
+					resource.TestCheckResourceAttr("genesyscloud_knowledge_category."+knowledgeCategoryResourceParent1, "knowledge_category.0.name", categoryParentName),
+					resource.TestCheckResourceAttr("genesyscloud_knowledge_category."+knowledgeCategoryResourceParent1, "knowledge_category.0.description", categoryParentDescription2),
+					resource.TestCheckResourceAttr("genesyscloud_knowledge_category."+knowledgeCategoryResourceChild1, "knowledge_category.0.name", categoryChildName),
+					resource.TestCheckResourceAttr("genesyscloud_knowledge_category."+knowledgeCategoryResourceChild1, "knowledge_category.0.description", categoryChildDescription2),
+				),
+			},
+			{
+				// Import/Read
+				ResourceName:      "genesyscloud_knowledge_category." + knowledgeCategoryResourceParent1,
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+		},
+		CheckDestroy: testVerifyKnowledgeCategoryDestroyed,
+	})
+}
+
 func generateKnowledgeCategoryResource(resourceName string, knowledgeBaseResource string, categoryName string, categoryDescription string) string {
 	category := fmt.Sprintf(`
         resource "genesyscloud_knowledge_category" "%s" {
@@ -88,20 +173,36 @@ func generateKnowledgeCategoryResource(resourceName string, knowledgeBaseResourc
         }
         `, resourceName,
 		knowledgeBaseResource,
-		generateKnowledgeCategoryRequestBody(categoryName, categoryDescription),
+		generateKnowledgeCategoryRequestBody(categoryName, categoryDescription, ""),
 	)
 	return category
 }
 
-func generateKnowledgeCategoryRequestBody(categoryName string, categoryDescription string) string {
+func generateKnowledgeCategoryChildResource(resourceName string, knowledgeBaseResource string, categoryName string, categoryDescription string, parentCategoryName string) string {
+	category := fmt.Sprintf(`
+	resource "genesyscloud_knowledge_category" "%s" {
+		knowledge_base_id = genesyscloud_knowledge_knowledgebase.%s.id
+		%s
+	}
+	`, resourceName,
+		knowledgeBaseResource,
+		generateKnowledgeCategoryRequestBody(categoryName, categoryDescription,
+			"parent_id = genesyscloud_knowledge_category."+parentCategoryName+".id"),
+	)
+	return category
+}
+
+func generateKnowledgeCategoryRequestBody(categoryName string, categoryDescription string, parrentCategoryName string) string {
 
 	return fmt.Sprintf(`
         knowledge_category {
             name = "%s"
             description = "%s"
+			%s
         }
         `, categoryName,
 		categoryDescription,
+		parrentCategoryName,
 	)
 }
 
