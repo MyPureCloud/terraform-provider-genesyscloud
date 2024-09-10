@@ -27,14 +27,14 @@ func dataSourceOutboundDigitalrulesetRead(ctx context.Context, d *schema.Resourc
 	name := d.Get("name").(string)
 
 	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
-		digitalRuleSetId, _, retryable, err := proxy.getOutboundDigitalrulesetIdByName(ctx, name)
+		digitalRuleSetId, resp, retryable, err := proxy.getOutboundDigitalrulesetIdByName(ctx, name)
 
 		if err != nil && !retryable {
-			return retry.NonRetryableError(fmt.Errorf("Error searching outbound digitalruleset %s: %s", name, err))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Error searching outbound digitalruleset %s: %s", name, err), resp))
 		}
 
 		if retryable {
-			return retry.RetryableError(fmt.Errorf("No outbound digitalruleset found with name %s", name))
+			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("No outbound digitalruleset found with name %s", name), resp))
 		}
 
 		d.SetId(digitalRuleSetId)
