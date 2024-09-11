@@ -38,6 +38,7 @@ type ConsistencyCheck struct {
 	checks              int
 	maxStateChecks      int
 	resourceType        string
+	computedBlocks      []string
 }
 
 type consistencyError struct {
@@ -85,6 +86,11 @@ func NewConsistencyCheck(ctx context.Context, d *schema.ResourceData, meta inter
 		maxStateChecks:      maxStateChecks,
 		resourceType:        resourceType,
 	}
+
+	// Find any computed nested blocks
+	var computedBlocks []string
+	populateComputedBlocks(cc.resource, &computedBlocks, "")
+	cc.computedBlocks = computedBlocks
 
 	mccMutex.Lock()
 	defer mccMutex.Unlock()
@@ -144,8 +150,20 @@ func (cc *ConsistencyCheck) CheckState(currentState *schema.ResourceData) *retry
 				continue
 			}
 
-			// Handle top level attributes and check we have the same number of nested blocks
-			if !strings.Contains(attribute, ".") || strings.HasSuffix(attribute, "#") {
+			// Check we have the same number of nested blocks
+			if strings.HasSuffix(attribute, "#") {
+				// Don't check the length of computed blocks
+				if isComputedBlock(cc.computedBlocks, strings.TrimSuffix(attribute, ".#")) {
+					continue
+				}
+
+				if cc.originalStateValues[attribute] != currentStateValues[attribute] {
+					return cc.handleError(attribute, cc.originalStateValues[attribute], currentStateValues[attribute])
+				}
+			}
+
+			// Handle top level attributes
+			if !strings.Contains(attribute, ".") {
 				if cc.originalStateValues[attribute] != currentStateValues[attribute] {
 					return cc.handleError(attribute, cc.originalStateValues[attribute], currentStateValues[attribute])
 				}
