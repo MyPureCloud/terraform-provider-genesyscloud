@@ -154,7 +154,7 @@ func readRoutingQueue(ctx context.Context, d *schema.ResourceData, meta interfac
 	log.Printf("Reading queue %s", d.Id())
 
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
-		currentQueue, resp, getErr := proxy.getRoutingQueueById(ctx, d.Id())
+		currentQueue, resp, getErr := proxy.getRoutingQueueById(ctx, d.Id(), true)
 		if getErr != nil {
 			if util.IsStatus404(resp) {
 				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read queue %s | error: %s", d.Id(), getErr), resp))
@@ -362,7 +362,7 @@ they are being removed when the parent queue is updated since the update body do
 If the independent resources are enabled, pass in the current OEA and/or CGR to the update queue so they are not removed
 */
 func addCGRAndOEA(proxy *RoutingQueueProxy, d *schema.ResourceData, queue *platformclientv2.Queuerequest) diag.Diagnostics {
-	currentQueue, resp, err := proxy.getRoutingQueueById(ctx, d.Id())
+	currentQueue, resp, err := proxy.getRoutingQueueById(ctx, d.Id(), true)
 	if err != nil {
 		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get queue %s for update, error: %s", *queue.Name, err), resp)
 	}
@@ -378,7 +378,7 @@ func addCGRAndOEA(proxy *RoutingQueueProxy, d *schema.ResourceData, queue *platf
 		queue.ConditionalGroupRouting = currentQueue.ConditionalGroupRouting
 
 		// remove queue_id from first CGR rule to avoid api error
-		if len(*queue.ConditionalGroupRouting.Rules) > 0 {
+		if queue.ConditionalGroupRouting != nil && len(*queue.ConditionalGroupRouting.Rules) > 0 {
 			(*queue.ConditionalGroupRouting.Rules)[0].Queue = nil
 		}
 	}
@@ -411,7 +411,7 @@ func deleteRoutingQueue(ctx context.Context, d *schema.ResourceData, meta interf
 
 	//DEVTOOLING-238- Increasing this to a 120 seconds to see if we can temporarily mitigate a problem for a customer
 	return util.WithRetries(ctx, 120*time.Second, func() *retry.RetryError {
-		_, resp, err := proxy.getRoutingQueueById(ctx, d.Id())
+		_, resp, err := proxy.getRoutingQueueById(ctx, d.Id(), false)
 		if err != nil {
 			if util.IsStatus404(resp) {
 				// Queue deleted

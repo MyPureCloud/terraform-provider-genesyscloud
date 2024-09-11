@@ -45,7 +45,7 @@ func getRoutingQueueMembers(queueID string, memberBy string, sdkConfig *platform
 	var members []platformclientv2.Queuemember
 
 	// Need to call this method to find the member count for a queue. GetRoutingQueueMembers does not return a `total` property for us to use.
-	queue, resp, err := proxy.getRoutingQueueById(ctx, queueID)
+	queue, resp, err := proxy.getRoutingQueueById(ctx, queueID, true)
 	if err != nil {
 		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to find queue %s error: %s", queueID, err), resp)
 	}

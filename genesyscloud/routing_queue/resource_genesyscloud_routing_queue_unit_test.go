@@ -19,7 +19,7 @@ func TestUnitResourceRoutingQueueCreate(t *testing.T) {
 	testRoutingQueue := generateRoutingQueueData(tId, tName)
 
 	queueProxy := &RoutingQueueProxy{}
-	queueProxy.getRoutingQueueByIdAttr = func(ctx context.Context, p *RoutingQueueProxy, queueId string) (*platformclientv2.Queue, *platformclientv2.APIResponse, error) {
+	queueProxy.getRoutingQueueByIdAttr = func(ctx context.Context, p *RoutingQueueProxy, queueId string, checkCache bool) (*platformclientv2.Queue, *platformclientv2.APIResponse, error) {
 		assert.Equal(t, tId, queueId)
 		routingQueue := &testRoutingQueue
 
@@ -99,7 +99,7 @@ func TestUnitResourceRoutingQueueRead(t *testing.T) {
 	testRoutingQueue := generateRoutingQueueData(tId, tName)
 
 	queueProxy := &RoutingQueueProxy{}
-	queueProxy.getRoutingQueueByIdAttr = func(ctx context.Context, proxy *RoutingQueueProxy, id string) (*platformclientv2.Queue, *platformclientv2.APIResponse, error) {
+	queueProxy.getRoutingQueueByIdAttr = func(ctx context.Context, proxy *RoutingQueueProxy, id string, checkCache bool) (*platformclientv2.Queue, *platformclientv2.APIResponse, error) {
 		assert.Equal(t, tId, id)
 		routingQueue := &testRoutingQueue
 
@@ -177,7 +177,7 @@ func TestUnitResourceRoutingQueueUpdate(t *testing.T) {
 	testRoutingQueue := generateRoutingQueueData(tId, tName)
 
 	queueProxy := &RoutingQueueProxy{}
-	queueProxy.getRoutingQueueByIdAttr = func(ctx context.Context, proxy *RoutingQueueProxy, id string) (*platformclientv2.Queue, *platformclientv2.APIResponse, error) {
+	queueProxy.getRoutingQueueByIdAttr = func(ctx context.Context, proxy *RoutingQueueProxy, id string, checkCache bool) (*platformclientv2.Queue, *platformclientv2.APIResponse, error) {
 		assert.Equal(t, tId, id)
 		routingQueue := &testRoutingQueue
 
@@ -267,7 +267,7 @@ func TestUnitResourceRoutingQueueDelete(t *testing.T) {
 		return apiResponse, nil
 	}
 
-	queueProxy.getRoutingQueueByIdAttr = func(ctx context.Context, proxy *RoutingQueueProxy, id string) (*platformclientv2.Queue, *platformclientv2.APIResponse, error) {
+	queueProxy.getRoutingQueueByIdAttr = func(ctx context.Context, proxy *RoutingQueueProxy, id string, checkCache bool) (*platformclientv2.Queue, *platformclientv2.APIResponse, error) {
 		assert.Equal(t, tId, id)
 
 		apiResponse := &platformclientv2.APIResponse{StatusCode: http.StatusNotFound}
