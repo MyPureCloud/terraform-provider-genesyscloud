@@ -387,7 +387,10 @@ func addCGRAndOEA(proxy *RoutingQueueProxy, d *schema.ResourceData, queue *platf
 		queue.OutboundEmailAddress = buildSdkQueueEmailAddress(d)
 	} else {
 		log.Printf("%s is set, not updating outbound_email_address attribute in routing_queue %s resource", featureToggles.OEAToggleName(), d.Id())
-		queue.OutboundEmailAddress = *currentQueue.OutboundEmailAddress
+
+		if currentQueue.OutboundEmailAddress != nil {
+			queue.OutboundEmailAddress = *currentQueue.OutboundEmailAddress
+		}
 	}
 
 	return nil
