@@ -18,7 +18,6 @@ out during testing.
 // internalProxy holds a proxy instance that can be used throughout the package
 var internalProxy *RoutingQueueProxy
 
-
 type GetAllRoutingQueuesFunc func(ctx context.Context, p *RoutingQueueProxy, name string) (*[]platformclientv2.Queue, *platformclientv2.APIResponse, error)
 type createRoutingQueueFunc func(ctx context.Context, p *RoutingQueueProxy, createReq *platformclientv2.Createqueuerequest) (*platformclientv2.Queue, *platformclientv2.APIResponse, error)
 type getRoutingQueueByIdFunc func(ctx context.Context, p *RoutingQueueProxy, queueId string) (*platformclientv2.Queue, *platformclientv2.APIResponse, error)
@@ -215,7 +214,6 @@ func getRoutingQueueByNameFn(ctx context.Context, p *RoutingQueueProxy, name str
 	}
 	return "", resp, true, fmt.Errorf("unable to find routing queue with name %s", name)
 }
-
 
 func updateRoutingQueueFn(ctx context.Context, p *RoutingQueueProxy, queueId string, updateReq *platformclientv2.Queuerequest) (*platformclientv2.Queue, *platformclientv2.APIResponse, error) {
 	return p.routingApi.PutRoutingQueue(queueId, *updateReq)

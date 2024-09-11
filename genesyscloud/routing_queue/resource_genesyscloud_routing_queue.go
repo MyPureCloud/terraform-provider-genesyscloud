@@ -330,7 +330,6 @@ func updateRoutingQueue(ctx context.Context, d *schema.ResourceData, meta interf
 		updateQueue.PeerId = &peerId
 	}
 
-
 	log.Printf("Updating queue %s", *updateQueue.Name)
 
 	_, resp, err := proxy.updateRoutingQueue(ctx, d.Id(), &updateQueue)

@@ -48,7 +48,7 @@ func normalizeQueueName(queueName string) string {
 // hydrateRoutingQueueCacheFn for hydrating the cache with Genesys Cloud routing queues using the SDK
 func hydrateRoutingQueueCacheFn(c *rc.DataSourceCache, ctx context.Context) error {
 	proxy := GetRoutingQueueProxy(c.ClientConfig)
-	
+
 	log.Printf("hydrating cache for data source genesyscloud_routing_queues")
 
 	// Newly created resources often aren't returned unless there's a delay
