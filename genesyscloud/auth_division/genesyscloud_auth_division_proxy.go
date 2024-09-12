@@ -14,7 +14,7 @@ var internalProxy *authDivisionProxy
 type getAllAuthDivisionFunc func(ctx context.Context, p *authDivisionProxy, name string) (*[]platformclientv2.Authzdivision, *platformclientv2.APIResponse, error)
 type createAuthDivisionFunc func(ctx context.Context, p *authDivisionProxy, authzDivision *platformclientv2.Authzdivision) (*platformclientv2.Authzdivision, *platformclientv2.APIResponse, error)
 type getAuthDivisionIdByNameFunc func(ctx context.Context, p *authDivisionProxy, name string) (string, *platformclientv2.APIResponse, bool, error)
-type getAuthDivisionByIdFunc func(ctx context.Context, p *authDivisionProxy, id string, objectCount bool) (*platformclientv2.Authzdivision, *platformclientv2.APIResponse, error)
+type getAuthDivisionByIdFunc func(ctx context.Context, p *authDivisionProxy, id string, objectCount, checkCache bool) (*platformclientv2.Authzdivision, *platformclientv2.APIResponse, error)
 type updateAuthDivisionFunc func(ctx context.Context, p *authDivisionProxy, id string, authzDivision *platformclientv2.Authzdivision) (*platformclientv2.Authzdivision, *platformclientv2.APIResponse, error)
 type deleteAuthDivisionFunc func(ctx context.Context, p *authDivisionProxy, id string, force bool) (*platformclientv2.APIResponse, error)
 
@@ -65,8 +65,8 @@ func (p *authDivisionProxy) createAuthDivision(ctx context.Context, authDivision
 	return p.createAuthDivisionAttr(ctx, p, authDivision)
 }
 
-func (p *authDivisionProxy) getAuthDivisionById(ctx context.Context, id string, objectCount bool) (*platformclientv2.Authzdivision, *platformclientv2.APIResponse, error) {
-	return p.getAuthDivisionByIdAttr(ctx, p, id, objectCount)
+func (p *authDivisionProxy) getAuthDivisionById(ctx context.Context, id string, objectCount, checkCache bool) (*platformclientv2.Authzdivision, *platformclientv2.APIResponse, error) {
+	return p.getAuthDivisionByIdAttr(ctx, p, id, objectCount, checkCache)
 }
 
 func (p *authDivisionProxy) getAuthDivisionIdByName(ctx context.Context, name string) (string, *platformclientv2.APIResponse, bool, error) {
@@ -119,10 +119,12 @@ func createAuthDivisionFn(ctx context.Context, p *authDivisionProxy, authDivisio
 	return p.authorizationApi.PostAuthorizationDivisions(*authDivision)
 }
 
-func getAuthDivisionByIdFn(ctx context.Context, p *authDivisionProxy, id string, objectCount bool) (*platformclientv2.Authzdivision, *platformclientv2.APIResponse, error) {
-	div := rc.GetCacheItem(p.authDivisionCache, id)
-	if div != nil {
-		return div, nil, nil
+func getAuthDivisionByIdFn(ctx context.Context, p *authDivisionProxy, id string, objectCount, checkCache bool) (*platformclientv2.Authzdivision, *platformclientv2.APIResponse, error) {
+	if checkCache {
+		div := rc.GetCacheItem(p.authDivisionCache, id)
+		if div != nil {
+			return div, nil, nil
+		}
 	}
 
 	return p.authorizationApi.GetAuthorizationDivision(id, objectCount)
@@ -153,5 +155,10 @@ func updateAuthDivisionFn(ctx context.Context, p *authDivisionProxy, id string, 
 }
 
 func deleteAuthDivisionFn(ctx context.Context, p *authDivisionProxy, id string, force bool) (*platformclientv2.APIResponse, error) {
-	return p.authorizationApi.DeleteAuthorizationDivision(id, force)
+	resp, err := p.authorizationApi.DeleteAuthorizationDivision(id, force)
+	if err != nil {
+		return resp, err
+	}
+	rc.DeleteCacheItem(p.authDivisionCache, id)
+	return resp, nil
 }
