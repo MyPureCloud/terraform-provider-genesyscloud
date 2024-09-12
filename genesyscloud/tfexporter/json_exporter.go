@@ -193,19 +193,18 @@ func getDecodedData(jsonString string, currAttr string) (string, error) {
 		return "", err
 	}
 
-	// replace : with = as is expected syntax in a jsonencode object
-	decodedJson := strings.Replace(string(formattedJson), "\": ", "\" = ", -1)
+	formattedJsonStr := string(formattedJson)
 	// fix indentation
 	numOfIndents := strings.Count(currAttr, ".") + 1
-	spaces := ""
+	var spaces string
 	for i := 0; i < numOfIndents; i++ {
-		spaces = spaces + "  "
+		spaces = spaces + "\t"
 	}
-	decodedJson = strings.Replace(decodedJson, "\t", fmt.Sprintf("\t%v", spaces), -1)
+	formattedJsonStr = strings.Replace(formattedJsonStr, "\t", fmt.Sprintf("\t%s", spaces), -1)
 	// add extra space before the final character (either ']' or '}')
-	decodedJson = fmt.Sprintf("%v%v%v", decodedJson[:len(decodedJson)-1], spaces, decodedJson[len(decodedJson)-1:])
-	decodedJson = fmt.Sprintf("jsonencode(%v)", decodedJson)
-	return decodedJson, nil
+	formattedJsonStr = fmt.Sprintf("%v%v%v", formattedJsonStr[:len(formattedJsonStr)-1], spaces, formattedJsonStr[len(formattedJsonStr)-1:])
+	formattedJsonStr = fmt.Sprintf("jsonencode(%v)", formattedJsonStr)
+	return formattedJsonStr, nil
 }
 
 func (g *GenesysCloudResourceExporter) resolveRefAttributesInJsonString(currAttr string, currVal string, exporter *resourceExporter.ResourceExporter, exporters map[string]*resourceExporter.ResourceExporter, exportingState bool) (string, error) {
