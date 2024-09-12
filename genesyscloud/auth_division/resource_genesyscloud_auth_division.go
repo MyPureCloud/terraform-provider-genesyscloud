@@ -78,7 +78,7 @@ func readAuthDivision(ctx context.Context, d *schema.ResourceData, meta interfac
 	log.Printf("Reading division %s", d.Id())
 
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
-		division, resp, getErr := proxy.getAuthDivisionById(ctx, d.Id(), false)
+		division, resp, getErr := proxy.getAuthDivisionById(ctx, d.Id(), false, true)
 		if getErr != nil {
 			if util.IsStatus404(resp) {
 				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read division %s | error: %s", d.Id(), getErr), resp))
@@ -144,7 +144,7 @@ func deleteAuthDivision(ctx context.Context, d *schema.ResourceData, meta interf
 	}
 
 	return util.WithRetries(ctx, 180*time.Second, func() *retry.RetryError {
-		_, resp, err := proxy.getAuthDivisionById(ctx, d.Id(), false)
+		_, resp, err := proxy.getAuthDivisionById(ctx, d.Id(), false, false)
 		if err != nil {
 			if util.IsStatus404(resp) {
 				// Division deleted
