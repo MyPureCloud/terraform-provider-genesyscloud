@@ -37,6 +37,17 @@ func NormalizePath(path string) (string, error) {
 	return fullyQualifiedPath, nil
 }
 
+func NormalizeSlash(fileNameWithSlash string) string {
+	fullyQualifiedFileName := fileNameWithSlash
+
+	if runtime.GOOS == "windows" {
+		// Convert single backslashes to dobule backslashes if necessary
+		fullyQualifiedFileName = strings.ReplaceAll(fullyQualifiedFileName, "\\", "\\\\")
+	}
+
+	return fullyQualifiedFileName
+}
+
 func GenerateDataSourceTestSteps(resourceName string, testCaseName string, checkFuncs []resource.TestCheckFunc) []resource.TestStep {
 	return GenerateTestSteps(DataSourceTestType, resourceName, testCaseName, checkFuncs)
 }

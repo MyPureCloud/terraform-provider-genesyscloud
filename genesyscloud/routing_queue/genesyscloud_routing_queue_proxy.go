@@ -3,6 +3,7 @@ package routing_queue
 import (
 	"context"
 	"fmt"
+	"log"
 	rc "terraform-provider-genesyscloud/genesyscloud/resource_cache"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
@@ -18,8 +19,9 @@ out during testing.
 var internalProxy *RoutingQueueProxy
 
 // Type definitions for each func on our proxy so we can easily mock them out later
-type getAllRoutingQueuesFunc func(ctx context.Context, p *RoutingQueueProxy) (*[]platformclientv2.Queue, *platformclientv2.APIResponse, error)
+type getAllRoutingQueuesFunc func(ctx context.Context, p *RoutingQueueProxy, queueName string) (*[]platformclientv2.Queue, *platformclientv2.APIResponse, error)
 type getRoutingQueueByIdFunc func(ctx context.Context, p *RoutingQueueProxy, queueId string) (*platformclientv2.Queue, *platformclientv2.APIResponse, error)
+type getRoutingQueueByNameFunc func(ctx context.Context, p *RoutingQueueProxy, queueName string) (string, *platformclientv2.APIResponse, bool, error)
 type getRoutingQueueWrapupCodeIdsFunc func(ctx context.Context, p *RoutingQueueProxy, queueId string) ([]string, *platformclientv2.APIResponse, error)
 
 // RoutingQueueProxy contains all the methods that call genesys cloud APIs.
@@ -28,6 +30,7 @@ type RoutingQueueProxy struct {
 	routingApi                       *platformclientv2.RoutingApi
 	getAllRoutingQueuesAttr          getAllRoutingQueuesFunc
 	getRoutingQueueByIdAttr          getRoutingQueueByIdFunc
+	getRoutingQueueByNameAttr        getRoutingQueueByNameFunc
 	getRoutingQueueWrapupCodeIdsAttr getRoutingQueueWrapupCodeIdsFunc
 	RoutingQueueCache                rc.CacheInterface[platformclientv2.Queue]
 }
@@ -42,6 +45,7 @@ func newRoutingQueuesProxy(clientConfig *platformclientv2.Configuration) *Routin
 		routingApi:                       api,
 		getAllRoutingQueuesAttr:          getAllRoutingQueuesFn,
 		getRoutingQueueByIdAttr:          getRoutingQueueByIdFn,
+		getRoutingQueueByNameAttr:        getRoutingQueueByNameFn,
 		getRoutingQueueWrapupCodeIdsAttr: getRoutingQueueWrapupCodeIdsFn,
 		RoutingQueueCache:                routingQueueCache,
 	}
@@ -57,13 +61,18 @@ func GetRoutingQueueProxy(clientConfig *platformclientv2.Configuration) *Routing
 }
 
 // GetAllRoutingQueues retrieves all Genesys Cloud routing queues
-func (p *RoutingQueueProxy) GetAllRoutingQueues(ctx context.Context) (*[]platformclientv2.Queue, *platformclientv2.APIResponse, error) {
-	return p.getAllRoutingQueuesAttr(ctx, p)
+func (p *RoutingQueueProxy) GetAllRoutingQueues(ctx context.Context, queueName string) (*[]platformclientv2.Queue, *platformclientv2.APIResponse, error) {
+	return p.getAllRoutingQueuesAttr(ctx, p, queueName)
 }
 
 // getRoutingQueueById returns a single Genesys Cloud Routing Queue by ID
 func (p *RoutingQueueProxy) getRoutingQueueById(ctx context.Context, queueId string) (*platformclientv2.Queue, *platformclientv2.APIResponse, error) {
 	return p.getRoutingQueueByIdAttr(ctx, p, queueId)
+}
+
+// getRoutingQueueByName returns a single Genesys Cloud Routing Queue by Name
+func (p *RoutingQueueProxy) getRoutingQueueByName(ctx context.Context, queueName string) (string, *platformclientv2.APIResponse, bool, error) {
+	return p.getRoutingQueueByNameAttr(ctx, p, queueName)
 }
 
 // getRoutingQueueWrapupCodeIds returns a list of routing queue wrapup code ids
@@ -72,11 +81,11 @@ func (p *RoutingQueueProxy) getRoutingQueueWrapupCodeIds(ctx context.Context, qu
 }
 
 // getAllRoutingQueuesFn is the implementation for retrieving all routing queues in Genesys Cloud
-func getAllRoutingQueuesFn(ctx context.Context, p *RoutingQueueProxy) (*[]platformclientv2.Queue, *platformclientv2.APIResponse, error) {
+func getAllRoutingQueuesFn(ctx context.Context, p *RoutingQueueProxy, queueName string) (*[]platformclientv2.Queue, *platformclientv2.APIResponse, error) {
 	var allQueues []platformclientv2.Queue
 	const pageSize = 100
 
-	queues, resp, getErr := p.routingApi.GetRoutingQueues(1, pageSize, "", "", nil, nil, nil, "", false)
+	queues, resp, getErr := p.routingApi.GetRoutingQueues(1, pageSize, "", queueName, nil, nil, nil, "", false)
 	if getErr != nil {
 		return nil, resp, fmt.Errorf("failed to get first page of queues: %v", getErr)
 	}
@@ -129,6 +138,28 @@ func getRoutingQueueByIdFn(ctx context.Context, p *RoutingQueueProxy, queueId st
 	}
 
 	return queue, resp, nil
+}
+
+// getRoutingQueueByNameFn is the implementation for retrieving a routing queues in Genesys Cloud
+func getRoutingQueueByNameFn(ctx context.Context, p *RoutingQueueProxy, queueName string) (string, *platformclientv2.APIResponse, bool, error) {
+
+	queues, resp, err := getAllRoutingQueuesFn(ctx, p, queueName)
+
+	if err != nil {
+		return "", resp, false, err
+	}
+
+	if queues == nil || len(*queues) == 0 {
+		return "", resp, true, err
+	}
+
+	for _, queue := range *queues {
+		if *queue.Name == queueName {
+			log.Printf("Retrieved the routing skill id %s by name %s", *queue.Id, queueName)
+			return *queue.Id, resp, false, nil
+		}
+	}
+	return "", resp, true, fmt.Errorf("unable to find routing skill with name %s", queueName)
 }
 
 func getRoutingQueueWrapupCodeIdsFn(ctx context.Context, p *RoutingQueueProxy, queueId string) ([]string, *platformclientv2.APIResponse, error) {

@@ -27,8 +27,6 @@ var (
 		"email":    "email",
 		"message":  "message",
 	}
-	sdkConfig *platformclientv2.Configuration
-	err       error
 )
 
 type mediaUtilization struct {

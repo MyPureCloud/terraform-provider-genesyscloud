@@ -1,17 +1,15 @@
-package responsemanagement_responseasset
+package auth_division
 
 import (
 	"sync"
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
-	authDivision "terraform-provider-genesyscloud/genesyscloud/auth_division"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 /*
-The genesyscloud_responsemanagement_responseasset_init_test.go.go file is used to initialize the data sources and resources
-used in testing the responsemanagement_responseasset resource.
+   The genesyscloud_auth_division_init_test.go file is used to initialize the data sources and resources
+   used in testing the auth_division resource.
 */
 
 // providerDataSources holds a map of all registered datasources
@@ -29,16 +27,16 @@ type registerTestInstance struct {
 func (r *registerTestInstance) registerTestResources() {
 	r.resourceMapMutex.Lock()
 	defer r.resourceMapMutex.Unlock()
-	providerResources[resourceName] = ResourceResponseManagementResponseAsset()
-	providerResources["genesyscloud_auth_division"] = authDivision.ResourceAuthDivision()
+
+	providerResources[resourceName] = ResourceAuthDivision()
 }
 
 // registerTestDataSources registers all data sources used in the tests.
 func (r *registerTestInstance) registerTestDataSources() {
 	r.datasourceMapMutex.Lock()
 	defer r.datasourceMapMutex.Unlock()
-	providerDataSources[resourceName] = DataSourceResponseManagementResponseAsset()
-	providerDataSources["genesyscloud_auth_division_home"] = gcloud.DataSourceAuthDivisionHome()
+
+	providerDataSources[resourceName] = DataSourceAuthDivision()
 }
 
 // initTestResources initializes all test resources and data sources.
@@ -48,15 +46,15 @@ func initTestResources() {
 
 	regInstance := &registerTestInstance{}
 
-	regInstance.registerTestDataSources()
 	regInstance.registerTestResources()
+	regInstance.registerTestDataSources()
 }
 
 // TestMain is a "setup" function called by the testing framework when run the test
 func TestMain(m *testing.M) {
-	// Run setup function before starting the test suite for responsemanagement_responseasset package
+	// Run setup function before starting the test suite for the auth_division package
 	initTestResources()
 
-	// Run the test suite for the responsemanagement_responseasset package
+	// Run the test suite for the auth_division package
 	m.Run()
 }

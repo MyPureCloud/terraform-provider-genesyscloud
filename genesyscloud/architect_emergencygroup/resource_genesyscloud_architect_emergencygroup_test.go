@@ -41,7 +41,7 @@ func TestAccResourceArchitectEmergencyGroups(t *testing.T) {
 	// Currently, the ivr resource cannot be registered for these tests because of a cyclic dependency issue.
 	ivrId := "f94e084e-40eb-470b-80d6-0f99cf22d102"
 	if v := os.Getenv("GENESYSCLOUD_REGION"); v == "tca" {
-		ivrId = "d37d14fe-1e6c-4ed6-a9bb-b6ef0dd8e9cd"
+		ivrId = "770e3998-11b7-4c96-beb8-215b83201c29"
 	}
 
 	if !ivrExists(config, ivrId) {
