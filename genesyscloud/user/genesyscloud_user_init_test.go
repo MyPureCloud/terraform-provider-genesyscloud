@@ -6,7 +6,6 @@ import (
 
 	authDivision "terraform-provider-genesyscloud/genesyscloud/auth_division"
 	authRole "terraform-provider-genesyscloud/genesyscloud/auth_role"
-
 	"terraform-provider-genesyscloud/genesyscloud/location"
 	routinglanguage "terraform-provider-genesyscloud/genesyscloud/routing_language"
 	routingSkill "terraform-provider-genesyscloud/genesyscloud/routing_skill"
