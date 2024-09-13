@@ -173,7 +173,7 @@ func generateKnowledgeCategoryResource(resourceName string, knowledgeBaseResourc
         }
         `, resourceName,
 		knowledgeBaseResource,
-		generateKnowledgeCategoryRequestBody(categoryName, categoryDescription, ""),
+		generateKnowledgeCategoryRequestBody(categoryName, categoryDescription, util.NullValue),
 	)
 	return category
 }
@@ -187,22 +187,22 @@ func generateKnowledgeCategoryChildResource(resourceName string, knowledgeBaseRe
 	`, resourceName,
 		knowledgeBaseResource,
 		generateKnowledgeCategoryRequestBody(categoryName, categoryDescription,
-			"parent_id = genesyscloud_knowledge_category."+parentCategoryName+".id"),
+			"genesyscloud_knowledge_category."+parentCategoryName+".id"),
 	)
 	return category
 }
 
-func generateKnowledgeCategoryRequestBody(categoryName string, categoryDescription string, parrentCategoryName string) string {
+func generateKnowledgeCategoryRequestBody(categoryName string, categoryDescription string, parentCategoryName string) string {
 
 	return fmt.Sprintf(`
         knowledge_category {
             name = "%s"
             description = "%s"
-			%s
+			parent_id = %s
         }
         `, categoryName,
 		categoryDescription,
-		parrentCategoryName,
+		parentCategoryName,
 	)
 }
 
