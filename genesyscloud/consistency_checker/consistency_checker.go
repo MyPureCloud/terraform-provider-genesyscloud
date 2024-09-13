@@ -39,6 +39,7 @@ type ConsistencyCheck struct {
 	maxStateChecks      int
 	resourceType        string
 	computedBlocks      []string
+	computedAttributes  []string
 }
 
 type consistencyError struct {
@@ -87,10 +88,8 @@ func NewConsistencyCheck(ctx context.Context, d *schema.ResourceData, meta inter
 		resourceType:        resourceType,
 	}
 
-	// Find any computed nested blocks
-	var computedBlocks []string
-	populateComputedBlocks(cc.resource, &computedBlocks, "")
-	cc.computedBlocks = computedBlocks
+	// Find computed properties
+	populateComputedProperties(cc.resource, &cc.computedAttributes, &cc.computedBlocks, "")
 
 	mccMutex.Lock()
 	defer mccMutex.Unlock()
@@ -126,7 +125,7 @@ func (cc *ConsistencyCheck) CheckState(currentState *schema.ResourceData) *retry
 		currentStateMap := resourceDataToMap(currentState)
 		currentStateValues := currentState.State().Attributes
 
-		// Sort attributes. This ensure we check top level attributes and number of blocks before nested blocks
+		// Sort attributes. This ensures we check top level attributes and number of blocks before nested blocks
 		var attributesSorted []string
 		for attribute := range diff.Attributes {
 			attributesSorted = append(attributesSorted, attribute)
@@ -145,25 +144,13 @@ func (cc *ConsistencyCheck) CheckState(currentState *schema.ResourceData) *retry
 		})
 
 		for _, attribute := range attributesSorted {
-			// If the original state doesn't contain the attribute, skip it
-			if _, ok := cc.originalStateValues[attribute]; !ok {
+			// If the original state doesn't contain the attribute or the attribute is computed, skip it
+			if _, ok := cc.originalStateValues[attribute]; !ok || cc.isComputed(attribute) {
 				continue
 			}
 
-			// Check we have the same number of nested blocks
-			if strings.HasSuffix(attribute, "#") {
-				// Don't check the length of computed blocks
-				if isComputedBlock(cc.computedBlocks, strings.TrimSuffix(attribute, ".#")) {
-					continue
-				}
-
-				if cc.originalStateValues[attribute] != currentStateValues[attribute] {
-					return cc.handleError(attribute, cc.originalStateValues[attribute], currentStateValues[attribute])
-				}
-			}
-
-			// Handle top level attributes
-			if !strings.Contains(attribute, ".") {
+			// Handle top level attributes and the same number of nested blocks
+			if !strings.Contains(attribute, ".") || strings.HasSuffix(attribute, "#") {
 				if cc.originalStateValues[attribute] != currentStateValues[attribute] {
 					return cc.handleError(attribute, cc.originalStateValues[attribute], currentStateValues[attribute])
 				}

@@ -83,28 +83,31 @@ func isEmptyState(d *schema.ResourceData) *bool {
 	return &isEmpty
 }
 
-// populateComputedBlocks will find any sets or lists in a resource marked as computed
-func populateComputedBlocks(resource *schema.Resource, blocks *[]string, parent string) {
+// populateComputedProperties will find any properties in a resource marked as computed
+func populateComputedProperties(resource *schema.Resource, attributes, blocks *[]string, parent string) {
 	for attr, attrSchema := range resource.Schema {
-		if attrSchema.Type == schema.TypeSet || attrSchema.Type == schema.TypeList {
-			var fullName string
-			if parent == "" {
-				fullName = attr
-			} else {
-				fullName = parent + "." + attr
-			}
+		var fullName string
+		if parent == "" {
+			fullName = attr
+		} else {
+			fullName = parent + "." + attr
+		}
 
+		if attrSchema.Type == schema.TypeSet || attrSchema.Type == schema.TypeList {
 			if attrSchema.Computed == true {
 				*blocks = append(*blocks, fullName)
 			}
 
 			switch elem := attrSchema.Elem.(type) {
 			case *schema.Resource:
-				populateComputedBlocks(elem, blocks, fullName)
+				populateComputedProperties(elem, attributes, blocks, fullName)
 			default:
 				continue
 			}
-
+		} else {
+			if attrSchema.Computed == true {
+				*attributes = append(*attributes, fullName)
+			}
 		}
 	}
 }
@@ -173,7 +176,7 @@ func compareSlices(slice1, slice2 []interface{}) bool {
 	return reflect.DeepEqual(sortedSlice1, sortedSlice2)
 }
 
-func isComputedBlock(computedBlocks []string, attribute string) bool {
+func (cc *ConsistencyCheck) isComputed(attribute string) bool {
 	// Convert attribute from <attr1>.x.<attr2> to <attr1>.<attr2> before comparing
 	attrParts := strings.Split(attribute, ".")
 	var cleanAttrName string
@@ -184,8 +187,14 @@ func isComputedBlock(computedBlocks []string, attribute string) bool {
 	}
 	cleanAttrName = strings.TrimPrefix(cleanAttrName, ".")
 
-	for _, computedBlock := range computedBlocks {
+	for _, computedBlock := range cc.computedBlocks {
 		if computedBlock == cleanAttrName {
+			return true
+		}
+	}
+
+	for _, computedAttribute := range cc.computedAttributes {
+		if computedAttribute == cleanAttrName {
 			return true
 		}
 	}

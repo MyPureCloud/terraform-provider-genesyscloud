@@ -82,6 +82,12 @@ func createOAuthClient(ctx context.Context, d *schema.ResourceData, meta interfa
 
 	createCredential(ctx, d, client, oauthClientProxy)
 
+	if client.RoleDivisions != nil {
+		_ = d.Set("roles", flattenOAuthRoles(*client.RoleDivisions))
+	} else {
+		_ = d.Set("roles", nil)
+	}
+
 	d.SetId(*client.Id)
 	log.Printf("Created oauth client %s %s", name, *client.Id)
 	return readOAuthClient(ctx, d, meta)
