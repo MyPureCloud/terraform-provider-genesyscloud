@@ -106,7 +106,10 @@ func TestAccResourceGroupBasic(t *testing.T) {
 				Destroy:           true,
 			},
 		},
-		CheckDestroy: testVerifyGroupsAndUsersDestroyed,
+		CheckDestroy: func(state *terraform.State) error {
+			time.Sleep(60 * time.Second)
+			return testVerifyGroupsAndUsersDestroyed(state)
+		},
 	})
 }
 
@@ -221,7 +224,7 @@ func TestAccResourceGroupAddresses(t *testing.T) {
 			},
 		},
 		CheckDestroy: func(state *terraform.State) error {
-			time.Sleep(45 * time.Second)
+			time.Sleep(60 * time.Second)
 			return testVerifyGroupsAndUsersDestroyed(state)
 		},
 	})
@@ -336,7 +339,7 @@ func TestAccResourceGroupMembers(t *testing.T) {
 			},
 		},
 		CheckDestroy: func(state *terraform.State) error {
-			time.Sleep(45 * time.Second)
+			time.Sleep(60 * time.Second)
 			return testVerifyGroupsAndUsersDestroyed(state)
 		},
 	})

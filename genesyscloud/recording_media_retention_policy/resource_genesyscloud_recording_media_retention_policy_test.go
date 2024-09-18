@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/architect_flow"
+	authDivision "terraform-provider-genesyscloud/genesyscloud/auth_division"
 	authRole "terraform-provider-genesyscloud/genesyscloud/auth_role"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	routingEmailDomain "terraform-provider-genesyscloud/genesyscloud/routing_email_domain"
@@ -961,7 +962,7 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 					gcloud.GenerateSurveyFormResource(surveyFormResource1, &surveyFormResourceBody) +
 					integration.GenerateIntegrationResource(integrationResource1, strconv.Quote(integrationIntendedState), strconv.Quote(integrationType), "") +
 					routinglanguage.GenerateRoutingLanguageResource(languageResource1, languageName) +
-					gcloud.GenerateAuthDivisionBasic(divResource, divName) +
+					authDivision.GenerateAuthDivisionBasic(divResource, divName) +
 					routingWrapupcode.GenerateRoutingWrapupcodeResource(wrapupCodeResource1, wrapupCodeName, "genesyscloud_auth_division."+divResource+".id") +
 					architect_flow.GenerateFlowResource(
 						flowResource1,
@@ -1069,7 +1070,7 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 					gcloud.GenerateSurveyFormResource(surveyFormResource1, &surveyFormResourceBody) +
 					integration.GenerateIntegrationResource(integrationResource1, strconv.Quote(integrationIntendedState), strconv.Quote(integrationType), "") +
 					routinglanguage.GenerateRoutingLanguageResource(languageResource1, languageName) +
-					gcloud.GenerateAuthDivisionBasic(divResource, divName) +
+					authDivision.GenerateAuthDivisionBasic(divResource, divName) +
 					routingWrapupcode.GenerateRoutingWrapupcodeResource(wrapupCodeResource1, wrapupCodeName, "genesyscloud_auth_division."+divResource+".id") +
 					architect_flow.GenerateFlowResource(
 						flowResource1,
@@ -1177,7 +1178,7 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 					gcloud.GenerateSurveyFormResource(surveyFormResource1, &surveyFormResourceBody) +
 					integration.GenerateIntegrationResource(integrationResource1, strconv.Quote(integrationIntendedState), strconv.Quote(integrationType), "") +
 					routinglanguage.GenerateRoutingLanguageResource(languageResource1, languageName) +
-					gcloud.GenerateAuthDivisionBasic(divResource, divName) +
+					authDivision.GenerateAuthDivisionBasic(divResource, divName) +
 					routingWrapupcode.GenerateRoutingWrapupcodeResource(wrapupCodeResource1, wrapupCodeName, "genesyscloud_auth_division."+divResource+".id") +
 					architect_flow.GenerateFlowResource(
 						flowResource1,
@@ -1285,7 +1286,7 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 					gcloud.GenerateSurveyFormResource(surveyFormResource1, &surveyFormResourceBody) +
 					integration.GenerateIntegrationResource(integrationResource1, strconv.Quote(integrationIntendedState), strconv.Quote(integrationType), "") +
 					routinglanguage.GenerateRoutingLanguageResource(languageResource1, languageName) +
-					gcloud.GenerateAuthDivisionBasic(divResource, divName) +
+					authDivision.GenerateAuthDivisionBasic(divResource, divName) +
 					routingWrapupcode.GenerateRoutingWrapupcodeResource(wrapupCodeResource1, wrapupCodeName, "genesyscloud_auth_division."+divResource+".id") +
 					architect_flow.GenerateFlowResource(
 						flowResource1,

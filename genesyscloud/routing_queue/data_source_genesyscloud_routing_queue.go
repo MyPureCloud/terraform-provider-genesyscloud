@@ -32,6 +32,7 @@ func dataSourceRoutingQueueRead(ctx context.Context, d *schema.ResourceData, m i
 	}
 
 	queueId, err := rc.RetrieveId(dataSourceRoutingQueueCache, resourceName, key, ctx)
+
 	if err != nil {
 		return err
 	}
@@ -46,21 +47,20 @@ func normalizeQueueName(queueName string) string {
 }
 
 // hydrateRoutingQueueCacheFn for hydrating the cache with Genesys Cloud routing queues using the SDK
-func hydrateRoutingQueueCacheFn(c *rc.DataSourceCache) error {
+func hydrateRoutingQueueCacheFn(c *rc.DataSourceCache, ctx context.Context) error {
 	log.Printf("hydrating cache for data source genesyscloud_routing_queues")
 	proxy := GetRoutingQueueProxy(c.ClientConfig)
-	ctx := context.Background()
 
-	allQueues, resp, err := proxy.GetAllRoutingQueues(ctx, "")
+	// Newly created resources often aren't returned unless there's a delay
+	time.Sleep(5 * time.Second)
+
+	queues, _, err := proxy.GetAllRoutingQueues(ctx, "")
 	if err != nil {
-		return fmt.Errorf("failed to get routing queues %s %s", err, resp)
+		return err
 	}
 
-	if allQueues == nil || len(*allQueues) == 0 {
-		return nil
-	}
-
-	for _, queue := range *allQueues {
+	// Add ids to cache
+	for _, queue := range *queues {
 		c.Cache[normalizeQueueName(*queue.Name)] = *queue.Id
 	}
 
@@ -75,15 +75,16 @@ func getQueueByNameFn(c *rc.DataSourceCache, name string, ctx context.Context) (
 	queueId := ""
 
 	diag := util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
-		queueID, resp, retryable, getErr := proxy.getRoutingQueueByName(ctx, name)
+		queue, resp, retryable, getErr := proxy.getRoutingQueueByName(ctx, name)
 		if getErr != nil && !retryable {
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("error requesting queue %s | error %s", name, getErr), resp))
 		}
+
 		if retryable {
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("error requesting queue %s | error %s", name, getErr), resp))
+			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("no routing queue found with name %s", name), resp))
 		}
 
-		queueId = queueID
+		queueId = queue
 		return nil
 	})
 

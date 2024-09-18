@@ -80,35 +80,104 @@ func createOAuthClient(ctx context.Context, d *schema.ResourceData, meta interfa
 		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create oauth client %s error: %s", name, err), resp)
 	}
 
-	credentialName := resourcedata.GetNillableValue[string](d, "integration_credential_name")
-	if credentialName != nil {
-
-		cred_type := "pureCloudOAuthClient"
-		results := make(map[string]string)
-		results["clientId"] = *client.Id
-		results["clientSecret"] = *client.Secret
-
-		createCredential := platformclientv2.Credential{
-			Name: credentialName,
-			VarType: &platformclientv2.Credentialtype{
-				Name: &cred_type,
-			},
-			CredentialFields: &results,
-		}
-
-		credential, resp, err := oauthClientProxy.createIntegrationClient(ctx, createCredential)
-
-		if err != nil {
-			return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create credential %s error: %s", name, err), resp)
-		}
-
-		_ = d.Set("integration_credential_id", *credential.Id)
-		_ = d.Set("integration_credential_name", *credential.Name)
-	}
+	createCredential(ctx, d, client, oauthClientProxy)
 
 	d.SetId(*client.Id)
 	log.Printf("Created oauth client %s %s", name, *client.Id)
 	return readOAuthClient(ctx, d, meta)
+}
+
+func readOAuthClient(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
+	oAuthProxy := GetOAuthClientProxy(sdkConfig)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOAuthClient(), constants.DefaultConsistencyChecks, resourceName)
+
+	log.Printf("Reading oauth client %s", d.Id())
+
+	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
+		client, resp, getErr := oAuthProxy.getOAuthClient(ctx, d.Id())
+		if getErr != nil {
+			if util.IsStatus404(resp) {
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read oauth client %s | error: %s", d.Id(), getErr), resp))
+			}
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read oauth client %s | error: %s", d.Id(), getErr), resp))
+		}
+
+		_ = d.Set("name", *client.Name)
+
+		resourcedata.SetNillableValue(d, "description", client.Description)
+		resourcedata.SetNillableValue(d, "access_token_validity_seconds", client.AccessTokenValiditySeconds)
+		resourcedata.SetNillableValue(d, "authorized_grant_type", client.AuthorizedGrantType)
+		resourcedata.SetNillableValue(d, "state", client.State)
+
+		if client.RegisteredRedirectUri != nil {
+			_ = d.Set("registered_redirect_uris", lists.StringListToSet(*client.RegisteredRedirectUri))
+		} else {
+			_ = d.Set("registered_redirect_uris", nil)
+		}
+
+		if client.Scope != nil {
+			_ = d.Set("scopes", lists.StringListToSet(*client.Scope))
+		} else {
+			_ = d.Set("scopes", nil)
+		}
+
+		if client.RoleDivisions != nil {
+			_ = d.Set("roles", flattenOAuthRoles(*client.RoleDivisions))
+		} else {
+			_ = d.Set("roles", nil)
+		}
+
+		log.Printf("Read oauth client %s %s", d.Id(), *client.Name)
+		return cc.CheckState(d)
+	})
+}
+
+func updateOAuthClient(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	return cascadeUpdateOAuthClient(ctx, d, meta, true)
+}
+
+func deleteOAuthClient(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
+	oauthClientProxy := GetOAuthClientProxy(sdkConfig)
+
+	// check if there is a integration credential to delete
+	deleteCredential(ctx, d, oauthClientProxy)
+
+	name := d.Get("name").(string)
+
+	log.Printf("Deleting oauth client %s", name)
+
+	// The client state must be set to inactive before deleting
+	_ = d.Set("state", "inactive")
+	diagErr := cascadeUpdateOAuthClient(ctx, d, meta, false)
+	if diagErr != nil {
+		return diagErr
+	}
+
+	resp, err := oauthClientProxy.deleteOAuthClient(ctx, d.Id())
+	if err != nil {
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete oauth client %s error: %s", name, err), resp)
+	}
+
+	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
+		oauthClient, resp, err := oauthClientProxy.getOAuthClient(ctx, d.Id())
+		if err != nil {
+			if util.IsStatus404(resp) {
+				// OAuth client deleted
+				log.Printf("Deleted OAuth client %s", d.Id())
+				return nil
+			}
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Error deleting OAuth client %s | error: %s", d.Id(), err), resp))
+		}
+
+		if oauthClient.State != nil && *oauthClient.State == "deleted" {
+			// OAuth client deleted
+			log.Printf("Deleted OAuth client %s", d.Id())
+			return nil
+		}
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("OAuth client %s still exists", d.Id()), resp))
+	})
 }
 
 func updateTerraformUserWithRole(ctx context.Context, sdkConfig *platformclientv2.Configuration, addedRoles *[]platformclientv2.Roledivision) diag.Diagnostics {
@@ -162,53 +231,7 @@ func updateTerraformUserWithRole(ctx context.Context, sdkConfig *platformclientv
 	return nil
 }
 
-func readOAuthClient(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-	oAuthProxy := GetOAuthClientProxy(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOAuthClient(), constants.DefaultConsistencyChecks, resourceName)
-
-	log.Printf("Reading oauth client %s", d.Id())
-
-	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
-		client, resp, getErr := oAuthProxy.getOAuthClient(ctx, d.Id())
-		if getErr != nil {
-			if util.IsStatus404(resp) {
-				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read oauth client %s | error: %s", d.Id(), getErr), resp))
-			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read oauth client %s | error: %s", d.Id(), getErr), resp))
-		}
-
-		_ = d.Set("name", *client.Name)
-
-		resourcedata.SetNillableValue(d, "description", client.Description)
-		resourcedata.SetNillableValue(d, "access_token_validity_seconds", client.AccessTokenValiditySeconds)
-		resourcedata.SetNillableValue(d, "authorized_grant_type", client.AuthorizedGrantType)
-		resourcedata.SetNillableValue(d, "state", client.State)
-
-		if client.RegisteredRedirectUri != nil {
-			_ = d.Set("registered_redirect_uris", lists.StringListToSet(*client.RegisteredRedirectUri))
-		} else {
-			_ = d.Set("registered_redirect_uris", nil)
-		}
-
-		if client.Scope != nil {
-			_ = d.Set("scopes", lists.StringListToSet(*client.Scope))
-		} else {
-			_ = d.Set("scopes", nil)
-		}
-
-		if client.RoleDivisions != nil {
-			_ = d.Set("roles", flattenOAuthRoles(*client.RoleDivisions))
-		} else {
-			_ = d.Set("roles", nil)
-		}
-
-		log.Printf("Read oauth client %s %s", d.Id(), *client.Name)
-		return cc.CheckState(d)
-	})
-}
-
-func updateOAuthClient(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func cascadeUpdateOAuthClient(ctx context.Context, d *schema.ResourceData, meta interface{}, dealIntegrationFlag bool) diag.Diagnostics {
 	name := d.Get("name").(string)
 	description := d.Get("description").(string)
 	tokenSeconds := d.Get("access_token_validity_seconds").(int)
@@ -224,7 +247,7 @@ func updateOAuthClient(ctx context.Context, d *schema.ResourceData, meta interfa
 	}
 
 	log.Printf("Updating oauth client %s", name)
-	_, resp, err := oauthClientProxy.updateOAuthClient(ctx, d.Id(), platformclientv2.Oauthclientrequest{
+	client, resp, err := oauthClientProxy.updateOAuthClient(ctx, d.Id(), platformclientv2.Oauthclientrequest{
 		Name:                       &name,
 		Description:                &description,
 		AccessTokenValiditySeconds: &tokenSeconds,
@@ -239,55 +262,112 @@ func updateOAuthClient(ctx context.Context, d *schema.ResourceData, meta interfa
 	}
 
 	log.Printf("Updated oauth client %s", name)
+
+	// check if there is a integration credential to update/create
+	if dealIntegrationFlag {
+		credentialId := resourcedata.GetNillableValue[string](d, "integration_credential_id")
+		if credentialId != nil {
+			currentCredential, resp, getErr := oauthClientProxy.getIntegrationCredential(ctx, *credentialId)
+			if getErr != nil {
+				return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get integration credential %s %s", *credentialId, getErr), resp)
+			}
+
+			if currentCredential != nil {
+				credentialName := resourcedata.GetNillableValue[string](d, "integration_credential_name")
+				if credentialName != nil {
+					updateCredential(ctx, d, client, oauthClientProxy)
+				} else {
+					deleteCredential(ctx, d, oauthClientProxy)
+				}
+			}
+		} else {
+			createCredential(ctx, d, client, oauthClientProxy)
+		}
+	}
+
 	return readOAuthClient(ctx, d, meta)
 }
 
-func deleteOAuthClient(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-	oauthClientProxy := GetOAuthClientProxy(sdkConfig)
+func createCredential(ctx context.Context, d *schema.ResourceData, client *platformclientv2.Oauthclient, oauthClientProxy *oauthClientProxy) diag.Diagnostics {
+	credentialName := resourcedata.GetNillableValue[string](d, "integration_credential_name")
+	if credentialName != nil {
 
-	// check if there is a integration credential to delete
-	credentialId := resourcedata.GetNillableValue[string](d, "integration_credential_id")
-	if credentialId != nil {
-		currentCredential, resp, getErr := oauthClientProxy.getIntegrationCredential(ctx, d.Id())
-		if getErr == nil {
-			_, err := oauthClientProxy.deleteIntegrationCredential(ctx, d.Id())
-			return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete integration credential %s %s", *currentCredential.Name, err), resp)
+		credType := "pureCloudOAuthClient"
+		results := make(map[string]string)
+		results["clientId"] = *client.Id
+		results["clientSecret"] = *client.Secret
+
+		createCredential := platformclientv2.Credential{
+			Name: credentialName,
+			VarType: &platformclientv2.Credentialtype{
+				Name: &credType,
+			},
+			CredentialFields: &results,
 		}
-	}
 
-	name := d.Get("name").(string)
+		log.Printf("Creating Integration Credential client %s", *credentialName)
+		credential, resp, err := oauthClientProxy.createIntegrationClient(ctx, createCredential)
 
-	log.Printf("Deleting oauth client %s", name)
-
-	// The client state must be set to inactive before deleting
-	_ = d.Set("state", "inactive")
-	diagErr := updateOAuthClient(ctx, d, meta)
-	if diagErr != nil {
-		return diagErr
-	}
-
-	resp, err := oauthClientProxy.deleteOAuthClient(ctx, d.Id())
-	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete oauth client %s error: %s", name, err), resp)
-	}
-
-	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
-		oauthClient, resp, err := oauthClientProxy.getOAuthClient(ctx, d.Id())
 		if err != nil {
-			if util.IsStatus404(resp) {
-				// OAuth client deleted
-				log.Printf("Deleted OAuth client %s", d.Id())
-				return nil
-			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Error deleting OAuth client %s | error: %s", d.Id(), err), resp))
+			return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create credential %s error: %s", *credentialName, err), resp)
 		}
 
-		if oauthClient.State != nil && *oauthClient.State == "deleted" {
-			// OAuth client deleted
-			log.Printf("Deleted OAuth client %s", d.Id())
-			return nil
+		_ = d.Set("integration_credential_id", *credential.Id)
+		_ = d.Set("integration_credential_name", *credential.Name)
+
+		log.Printf("Created Integration Credential client %s", *credentialName)
+	}
+	return nil
+}
+
+func updateCredential(ctx context.Context, d *schema.ResourceData, client *platformclientv2.Oauthclient, oauthClientProxy *oauthClientProxy) diag.Diagnostics {
+	credentialId := resourcedata.GetNillableValue[string](d, "integration_credential_id")
+	credentialName := resourcedata.GetNillableValue[string](d, "integration_credential_name")
+	if credentialName != nil {
+		credType := "pureCloudOAuthClient"
+		results := make(map[string]string)
+		results["clientId"] = *client.Id
+		results["clientSecret"] = *client.Secret
+
+		updateCred := platformclientv2.Credential{
+			Name: credentialName,
+			VarType: &platformclientv2.Credentialtype{
+				Name: &credType,
+			},
+			CredentialFields: &results,
 		}
-		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("OAuth client %s still exists", d.Id()), resp))
-	})
+		log.Printf("Updating Integration Credential client %s", *credentialName)
+		credential, resp, err := oauthClientProxy.updateIntegrationClient(ctx, *credentialId, updateCred)
+
+		if err != nil {
+			return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update credential %s error: %s", *credentialName, err), resp)
+		}
+
+		_ = d.Set("integration_credential_id", *credential.Id)
+		_ = d.Set("integration_credential_name", *credential.Name)
+
+		log.Printf("Updated Integration Credential client %s", *credentialName)
+	}
+	return nil
+}
+
+func deleteCredential(ctx context.Context, d *schema.ResourceData, oauthClientProxy *oauthClientProxy) diag.Diagnostics {
+	credentialId := resourcedata.GetNillableValue[string](d, "integration_credential_id")
+
+	if credentialId != nil {
+		log.Printf("Deleting integration credential %s", *credentialId)
+		_, resp, getErr := oauthClientProxy.getIntegrationCredential(ctx, *credentialId)
+		if getErr != nil {
+			return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get integration credential %s %s", *credentialId, getErr), resp)
+		}
+		_, err := oauthClientProxy.deleteIntegrationCredential(ctx, *credentialId)
+		if err != nil {
+			return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete integration credential %s %s", *credentialId, err), resp)
+		}
+		log.Printf("Deleted Integration Credential client %s", *credentialId)
+
+		_ = d.Set("integration_credential_id", nil)
+		_ = d.Set("integration_credential_name", nil)
+	}
+	return nil
 }

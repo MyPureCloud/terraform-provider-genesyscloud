@@ -17,6 +17,7 @@ import (
 	"sync"
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	"terraform-provider-genesyscloud/genesyscloud/architect_flow"
+	authDivision "terraform-provider-genesyscloud/genesyscloud/auth_division"
 	obContactList "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
@@ -213,7 +214,7 @@ func TestAccResourceTfExportIncludeFilterResourcesByRegExExclusiveToResource(t *
 
 	queueResourceDef := buildQueueResources(queueResources)
 	wrapupcodeResourceDef := buildWrapupcodeResources(wrapupCodeResources, "genesyscloud_auth_division."+divResource+".id")
-	config := queueResourceDef + gcloud.GenerateAuthDivisionBasic(divResource, divName) + wrapupcodeResourceDef +
+	config := queueResourceDef + authDivision.GenerateAuthDivisionBasic(divResource, divName) + wrapupcodeResourceDef +
 		generateTfExportByIncludeFilterResources(
 			exportResource,
 			exportTestDir,
@@ -280,7 +281,7 @@ func TestAccResourceTfExportExcludeFilterResourcesByRegExExclusiveToResource(t *
 
 	queueResourceDef := buildQueueResources(queueResources)
 	wrapupcodeResourceDef := buildWrapupcodeResources(wrapupCodeResources, "genesyscloud_auth_division."+divResource+".id")
-	config := queueResourceDef + gcloud.GenerateAuthDivisionBasic(divResource, divName) + wrapupcodeResourceDef +
+	config := queueResourceDef + authDivision.GenerateAuthDivisionBasic(divResource, divName) + wrapupcodeResourceDef +
 		generateTfExportByExcludeFilterResources(
 			exportResource,
 			exportTestDir,
@@ -362,7 +363,7 @@ func TestAccResourceTfExportSplitFilesAsJSON(t *testing.T) {
 	queueResourceDef := buildQueueResources(queueResources)
 	userResourcesDef := buildUserResources(userResources)
 	wrapupcodeResourceDef := buildWrapupcodeResources(wrapupCodeResources, "genesyscloud_auth_division."+divResource+".id")
-	config := queueResourceDef + gcloud.GenerateAuthDivisionBasic(divResource, divName) + wrapupcodeResourceDef + userResourcesDef +
+	config := queueResourceDef + authDivision.GenerateAuthDivisionBasic(divResource, divName) + wrapupcodeResourceDef + userResourcesDef +
 
 		generateTfExportByIncludeFilterResources(
 			exportResource,
@@ -428,7 +429,7 @@ func TestAccResourceTfExportExcludeFilterResourcesByRegExExclusiveToResourceAndS
 
 	queueResourceDef := buildQueueResources(queueResources)
 	wrapupcodeResourceDef := buildWrapupcodeResources(wrapupCodeResources, "genesyscloud_auth_division."+divResource+".id")
-	config := queueResourceDef + gcloud.GenerateAuthDivisionBasic(divResource, divName) + wrapupcodeResourceDef +
+	config := queueResourceDef + authDivision.GenerateAuthDivisionBasic(divResource, divName) + wrapupcodeResourceDef +
 		generateTfExportByExcludeFilterResources(
 			exportResource,
 			exportTestDir,
@@ -667,8 +668,6 @@ func TestAccResourceTfExportByName(t *testing.T) {
 					util.FalseValue,                    // suppressCall_record_false
 					util.NullValue,                     // enable_transcription false
 					strconv.Quote("TimestampAndPriority"),
-					util.NullValue,
-					util.NullValue,
 				) + generateTfExportByName(
 					exportResource1,
 					exportTestDir,
@@ -712,8 +711,6 @@ func TestAccResourceTfExportByName(t *testing.T) {
 					util.FalseValue,                    // suppressCall_record_false
 					util.NullValue,                     // enable_transcription false
 					strconv.Quote("TimestampAndPriority"),
-					util.NullValue,
-					util.NullValue,
 				) + generateTfExportByName(
 					exportResource1,
 					exportTestDir,
@@ -770,8 +767,6 @@ func TestAccResourceTfExportByName(t *testing.T) {
 					util.FalseValue,                    // suppressCall_record_false
 					util.NullValue,                     // enable_transcription false
 					strconv.Quote("TimestampAndPriority"),
-					util.NullValue,
-					util.NullValue,
 				) + generateTfExportByName(
 					exportResource1,
 					exportTestDir,
@@ -1479,7 +1474,7 @@ func TestAccResourceTfExportSplitFilesAsHCL(t *testing.T) {
 	queueResourceDef := buildQueueResources(queueResources)
 	userResourcesDef := buildUserResources(userResources)
 	wrapupcodeResourceDef := buildWrapupcodeResources(wrapupCodeResources, "genesyscloud_auth_division."+divResource+".id")
-	config := queueResourceDef + gcloud.GenerateAuthDivisionBasic(divResource, divName) + wrapupcodeResourceDef + userResourcesDef +
+	config := queueResourceDef + authDivision.GenerateAuthDivisionBasic(divResource, divName) + wrapupcodeResourceDef + userResourcesDef +
 		generateTfExportByIncludeFilterResources(
 			exportResource,
 			exportTestDir,
@@ -2828,8 +2823,6 @@ func buildQueueResources(queueExports []QueueExport) string {
 			util.NullValue,                              //suppressCall_record_false
 			util.NullValue,                              // enable_transcription false
 			strconv.Quote("TimestampAndPriority"),
-			util.NullValue,
-			util.NullValue,
 		)
 	}
 
@@ -2928,7 +2921,7 @@ func GenerateReferencedResourcesForOutboundCampaignTests(
 			obContactList.GeneratePhoneColumnsBlock("Home", "home", strconv.Quote("Home")))
 	}
 
-	callAnalysisResponseSet = gcloud.GenerateAuthDivisionBasic(divResource, divName) + routingWrapupcode.GenerateRoutingWrapupcodeResource(
+	callAnalysisResponseSet = authDivision.GenerateAuthDivisionBasic(divResource, divName) + routingWrapupcode.GenerateRoutingWrapupcodeResource(
 		wrapUpCodeResourceId,
 		"wrapupcode "+uuid.NewString(),
 		"genesyscloud_auth_division."+divResource+".id",
