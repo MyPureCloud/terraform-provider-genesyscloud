@@ -356,7 +356,7 @@ func getScriptExportUrlFn(_ context.Context, p *scriptsProxy, scriptId string) (
 		body platformclientv2.Exportscriptrequest
 	)
 
-	// Sets the VersionId so that the Published Version of the script is exported and not the editable version
+	// Sets the VersionId on the request so that the Published Version of the script is exported and not the editable version
 	// See DEVTOOLING-777
 	scriptCache := rc.GetCacheItem(p.scriptCache, scriptId)
 	body.VersionId = scriptCache.VersionId
