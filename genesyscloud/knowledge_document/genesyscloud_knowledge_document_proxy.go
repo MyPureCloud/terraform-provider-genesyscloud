@@ -2,8 +2,11 @@ package knowledge_document
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"net/url"
 	rc "terraform-provider-genesyscloud/genesyscloud/resource_cache"
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
@@ -17,6 +20,7 @@ type getKnowledgeKnowledgebaseLabelsFunc func(ctx context.Context, p *knowledgeD
 type getKnowledgeKnowledgebaseLabelFunc func(ctx context.Context, p *knowledgeDocumentProxy, knowledgeBaseId string, labelId string) (*platformclientv2.Labelresponse, *platformclientv2.APIResponse, error)
 type getKnowledgeKnowledgebaseDocumentFunc func(ctx context.Context, p *knowledgeDocumentProxy, knowledgeBaseId string, documentId string, expand []string, state string) (*platformclientv2.Knowledgedocumentresponse, *platformclientv2.APIResponse, error)
 type getAllKnowledgebaseEntitiesFunc func(ctx context.Context, p *knowledgeDocumentProxy, published bool) (*[]platformclientv2.Knowledgebase, *platformclientv2.APIResponse, error)
+type getAllKnowledgeDocumentEntitiesFunc func(ctx context.Context, p *knowledgeDocumentProxy, knowledgeBase *platformclientv2.Knowledgebase) (*[]platformclientv2.Knowledgedocumentresponse, *platformclientv2.APIResponse, error)
 type createKnowledgeKnowledgebaseDocumentFunc func(ctx context.Context, p *knowledgeDocumentProxy, knowledgeBaseId string, body *platformclientv2.Knowledgedocumentreq) (*platformclientv2.Knowledgedocumentresponse, *platformclientv2.APIResponse, error)
 type createKnowledgebaseDocumentVersionsFunc func(ctx context.Context, p *knowledgeDocumentProxy, knowledgeBaseId string, documentId string, body *platformclientv2.Knowledgedocumentversion) (*platformclientv2.Knowledgedocumentversion, *platformclientv2.APIResponse, error)
 type deleteKnowledgeKnowledgebaseDocumentFunc func(ctx context.Context, p *knowledgeDocumentProxy, knowledgeBaseId string, documentId string) (*platformclientv2.APIResponse, error)
@@ -31,6 +35,7 @@ type knowledgeDocumentProxy struct {
 	getKnowledgeKnowledgebaseLabelAttr       getKnowledgeKnowledgebaseLabelFunc
 	getKnowledgeKnowledgebaseDocumentAttr    getKnowledgeKnowledgebaseDocumentFunc
 	getAllKnowledgebaseEntitiesAttr          getAllKnowledgebaseEntitiesFunc
+	getAllKnowledgeDocumentEntitiesAttr      getAllKnowledgeDocumentEntitiesFunc
 	createKnowledgeKnowledgebaseDocumentAttr createKnowledgeKnowledgebaseDocumentFunc
 	createKnowledgebaseDocumentVersionsAttr  createKnowledgebaseDocumentVersionsFunc
 	deleteKnowledgeKnowledgebaseDocumentAttr deleteKnowledgeKnowledgebaseDocumentFunc
@@ -50,6 +55,7 @@ func newKnowledgeDocumentProxy(clientConfig *platformclientv2.Configuration) *kn
 		getKnowledgeKnowledgebaseLabelAttr:       getKnowledgeKnowledgebaseLabelFn,
 		getKnowledgeKnowledgebaseDocumentAttr:    getKnowledgeKnowledgebaseDocumentFn,
 		getAllKnowledgebaseEntitiesAttr:          getAllKnowledgebaseEntitiesFn,
+		getAllKnowledgeDocumentEntitiesAttr:      getAllKnowledgeDocumentEntitiesFn,
 		createKnowledgeKnowledgebaseDocumentAttr: createKnowledgeKnowledgebaseDocumentFn,
 		createKnowledgebaseDocumentVersionsAttr:  createKnowledgebaseDocumentVersionsFn,
 		deleteKnowledgeKnowledgebaseDocumentAttr: deleteKnowledgeKnowledgebaseDocumentFn,
@@ -58,7 +64,7 @@ func newKnowledgeDocumentProxy(clientConfig *platformclientv2.Configuration) *kn
 	}
 }
 
-func getKnowledgeDocumentProxy(clientConfig *platformclientv2.Configuration) *knowledgeDocumentProxy {
+func GetKnowledgeDocumentProxy(clientConfig *platformclientv2.Configuration) *knowledgeDocumentProxy {
 	if internalProxy == nil {
 		internalProxy = newKnowledgeDocumentProxy(clientConfig)
 	}
@@ -88,6 +94,10 @@ func (p *knowledgeDocumentProxy) getKnowledgeKnowledgebaseDocument(ctx context.C
 
 func (p *knowledgeDocumentProxy) getAllKnowledgebaseEntities(ctx context.Context, published bool) (*[]platformclientv2.Knowledgebase, *platformclientv2.APIResponse, error) {
 	return p.getAllKnowledgebaseEntitiesAttr(ctx, p, published)
+}
+
+func (p *knowledgeDocumentProxy) getAllKnowledgeDocumentEntities(ctx context.Context, knowledgeBase *platformclientv2.Knowledgebase) (*[]platformclientv2.Knowledgedocumentresponse, *platformclientv2.APIResponse, error) {
+	return p.getAllKnowledgeDocumentEntitiesAttr(ctx, p, knowledgeBase)
 }
 
 func (p *knowledgeDocumentProxy) createKnowledgeKnowledgebaseDocument(ctx context.Context, knowledgeBaseId string, body *platformclientv2.Knowledgedocumentreq) (*platformclientv2.Knowledgedocumentresponse, *platformclientv2.APIResponse, error) {
@@ -137,7 +147,7 @@ func getAllKnowledgebaseEntitiesFn(ctx context.Context, p *knowledgeDocumentProx
 	for {
 		knowledgeBases, resp, getErr := p.knowledgeApi.GetKnowledgeKnowledgebases("", after, "", fmt.Sprintf("%v", pageSize), "", "", published, "", "")
 		if getErr != nil {
-			return nil, resp, fmt.Errorf("Failed to get page of knowledge bases error: %s", getErr)
+			return nil, resp, fmt.Errorf("failed to get page of knowledge bases error: %s", getErr)
 		}
 
 		if knowledgeBases.Entities == nil || len(*knowledgeBases.Entities) == 0 {
@@ -152,7 +162,7 @@ func getAllKnowledgebaseEntitiesFn(ctx context.Context, p *knowledgeDocumentProx
 
 		after, err := util.GetQueryParamValueFromUri(*knowledgeBases.NextUri, "after")
 		if err != nil {
-			return nil, resp, fmt.Errorf("Failed to parse after cursor from knowledge base nextUri: %s", err)
+			return nil, resp, fmt.Errorf("failed to parse after cursor from knowledge base nextUri: %s", err)
 		}
 		if after == "" {
 			break
@@ -163,6 +173,79 @@ func getAllKnowledgebaseEntitiesFn(ctx context.Context, p *knowledgeDocumentProx
 
 }
 
+func getAllKnowledgeDocumentEntitiesFn(ctx context.Context, p *knowledgeDocumentProxy, knowledgeBase *platformclientv2.Knowledgebase) (*[]platformclientv2.Knowledgedocumentresponse, *platformclientv2.APIResponse, error) {
+
+	var (
+		after    string
+		entities []platformclientv2.Knowledgedocumentresponse
+	)
+
+	resources := make(resourceExporter.ResourceIDMetaMap)
+
+	const pageSize = 100
+	// prepare base url
+	resourcePath := fmt.Sprintf("/api/v2/knowledge/knowledgebases/%s/documents", url.PathEscape(*knowledgeBase.Id))
+	listDocumentsBaseUrl := fmt.Sprintf("%s%s", p.knowledgeApi.Configuration.BasePath, resourcePath)
+
+	for {
+		// prepare query params
+		queryParams := make(map[string]string, 0)
+		queryParams["after"] = after
+		queryParams["pageSize"] = fmt.Sprintf("%v", pageSize)
+		queryParams["includeDrafts"] = "true"
+
+		// prepare headers
+		headers := make(map[string]string)
+		headers["Authorization"] = fmt.Sprintf("Bearer %s", p.clientConfig.AccessToken)
+		headers["Content-Type"] = "application/json"
+		headers["Accept"] = "application/json"
+
+		// execute request
+		response, err := p.clientConfig.APIClient.CallAPI(listDocumentsBaseUrl, "GET", nil, headers, queryParams, nil, "", nil)
+		if err != nil {
+			return nil, response, fmt.Errorf("failed to read knowledge document list response error: %s", err)
+		}
+
+		// process response
+		var knowledgeDocuments platformclientv2.Knowledgedocumentresponselisting
+		unmarshalErr := json.Unmarshal(response.RawBody, &knowledgeDocuments)
+		if unmarshalErr != nil {
+			return nil, response, fmt.Errorf("failed to unmarshal knowledge document list response: %s", unmarshalErr)
+		}
+
+		/**
+		 * Todo: restore direct SDK invocation and remove workaround once the SDK supports optional boolean args.
+		 */
+		// knowledgeDocuments, _, getErr := knowledgeAPI.GetKnowledgeKnowledgebaseDocuments(*knowledgeBase.Id, "", after, fmt.Sprintf("%v", pageSize), "", nil, nil, true, true, nil, nil)
+		// if getErr != nil {
+		// 	return nil, diag.Errorf("Failed to get page of knowledge documents: %v", getErr)
+		// }
+
+		if knowledgeDocuments.Entities == nil || len(*knowledgeDocuments.Entities) == 0 {
+			break
+		}
+
+		entities = append(entities, *knowledgeDocuments.Entities...)
+
+		if knowledgeDocuments.NextUri == nil || *knowledgeDocuments.NextUri == "" {
+			break
+		}
+
+		after, err = util.GetQueryParamValueFromUri(*knowledgeDocuments.NextUri, "after")
+		if err != nil {
+			return nil, nil, fmt.Errorf("failed to parse after cursor from knowledge document nextUri: %s", err)
+		}
+		if after == "" {
+			break
+		}
+		for _, knowledgeDocument := range *knowledgeDocuments.Entities {
+			id := fmt.Sprintf("%s,%s", *knowledgeDocument.Id, *knowledgeDocument.KnowledgeBase.Id)
+			resources[id] = &resourceExporter.ResourceMeta{Name: *knowledgeDocument.Title}
+		}
+	}
+
+	return &entities, nil, nil
+}
 func createKnowledgeKnowledgebaseDocumentFn(ctx context.Context, p *knowledgeDocumentProxy, knowledgeBaseId string, body *platformclientv2.Knowledgedocumentreq) (*platformclientv2.Knowledgedocumentresponse, *platformclientv2.APIResponse, error) {
 	return p.knowledgeApi.PostKnowledgeKnowledgebaseDocuments(knowledgeBaseId, *body)
 }

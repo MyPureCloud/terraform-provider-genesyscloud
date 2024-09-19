@@ -2,10 +2,8 @@ package knowledge_document
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"log"
-	"net/url"
 	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
@@ -16,7 +14,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
-	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -27,7 +24,7 @@ func getAllKnowledgeDocuments(ctx context.Context, clientConfig *platformclientv
 	knowledgeBaseList := make([]platformclientv2.Knowledgebase, 0)
 	documentEntities := make([]platformclientv2.Knowledgedocumentresponse, 0)
 	resources := make(resourceExporter.ResourceIDMetaMap)
-	proxy := getKnowledgeDocumentProxy(clientConfig)
+	proxy := GetKnowledgeDocumentProxy(clientConfig)
 	//knowledgeAPI := platformclientv2.NewKnowledgeApiWithConfig(clientConfig)
 
 	// get published knowledge bases
@@ -46,9 +43,9 @@ func getAllKnowledgeDocuments(ctx context.Context, clientConfig *platformclientv
 	knowledgeBaseList = append(knowledgeBaseList, *unpublishedEntities...)
 
 	for _, knowledgeBase := range knowledgeBaseList {
-		partialEntities, err := GetAllKnowledgeDocumentEntities(*knowledgeAPI, &knowledgeBase, clientConfig)
+		partialEntities, response, err := proxy.getAllKnowledgeDocumentEntities(ctx, &knowledgeBase)
 		if err != nil {
-			return nil, err
+			return nil, util.BuildAPIDiagnosticError("genesyscloud_knowledge_knowledgebase", fmt.Sprintf("%s", err), response)
 		}
 		documentEntities = append(documentEntities, *partialEntities...)
 	}
@@ -61,230 +58,27 @@ func getAllKnowledgeDocuments(ctx context.Context, clientConfig *platformclientv
 	return resources, nil
 }
 
-func GetAllKnowledgeDocumentEntities(knowledgeAPI platformclientv2.KnowledgeApi, knowledgeBase *platformclientv2.Knowledgebase, clientConfig *platformclientv2.Configuration) (*[]platformclientv2.Knowledgedocumentresponse, diag.Diagnostics) {
-	var (
-		after    string
-		entities []platformclientv2.Knowledgedocumentresponse
-	)
-
-	resources := make(resourceExporter.ResourceIDMetaMap)
-
-	const pageSize = 100
-	// prepare base url
-	resourcePath := fmt.Sprintf("/api/v2/knowledge/knowledgebases/%s/documents", url.PathEscape(*knowledgeBase.Id))
-	listDocumentsBaseUrl := fmt.Sprintf("%s%s", knowledgeAPI.Configuration.BasePath, resourcePath)
-
-	for {
-		// prepare query params
-		queryParams := make(map[string]string, 0)
-		queryParams["after"] = after
-		queryParams["pageSize"] = fmt.Sprintf("%v", pageSize)
-		queryParams["includeDrafts"] = "true"
-
-		// prepare headers
-		headers := make(map[string]string)
-		headers["Authorization"] = fmt.Sprintf("Bearer %s", clientConfig.AccessToken)
-		headers["Content-Type"] = "application/json"
-		headers["Accept"] = "application/json"
-
-		// execute request
-		response, err := clientConfig.APIClient.CallAPI(listDocumentsBaseUrl, "GET", nil, headers, queryParams, nil, "", nil)
-		if err != nil {
-			return nil, util.BuildAPIDiagnosticError("genesyscloud_knowledge_document", fmt.Sprintf("Failed to read knowledge document list response error: %s", err), response)
-		}
-
-		// process response
-		var knowledgeDocuments platformclientv2.Knowledgedocumentresponselisting
-		unmarshalErr := json.Unmarshal(response.RawBody, &knowledgeDocuments)
-		if unmarshalErr != nil {
-			return nil, util.BuildDiagnosticError("genesyscloud_knowledge_document", fmt.Sprintf("Failed to unmarshal knowledge document list response"), unmarshalErr)
-		}
-
-		/**
-		 * Todo: restore direct SDK invocation and remove workaround once the SDK supports optional boolean args.
-		 */
-		// knowledgeDocuments, _, getErr := knowledgeAPI.GetKnowledgeKnowledgebaseDocuments(*knowledgeBase.Id, "", after, fmt.Sprintf("%v", pageSize), "", nil, nil, true, true, nil, nil)
-		// if getErr != nil {
-		// 	return nil, diag.Errorf("Failed to get page of knowledge documents: %v", getErr)
-		// }
-
-		if knowledgeDocuments.Entities == nil || len(*knowledgeDocuments.Entities) == 0 {
-			break
-		}
-
-		entities = append(entities, *knowledgeDocuments.Entities...)
-
-		if knowledgeDocuments.NextUri == nil || *knowledgeDocuments.NextUri == "" {
-			break
-		}
-
-		after, err = util.GetQueryParamValueFromUri(*knowledgeDocuments.NextUri, "after")
-		if err != nil {
-			return nil, util.BuildDiagnosticError("genesyscloud_knowledge_document", fmt.Sprintf("Failed to parse after cursor from knowledge document nextUri"), err)
-		}
-		if after == "" {
-			break
-		}
-		for _, knowledgeDocument := range *knowledgeDocuments.Entities {
-			id := fmt.Sprintf("%s,%s", *knowledgeDocument.Id, *knowledgeDocument.KnowledgeBase.Id)
-			resources[id] = &resourceExporter.ResourceMeta{Name: *knowledgeDocument.Title}
-		}
-	}
-
-	return &entities, nil
-}
-
-func buildDocumentAlternatives(requestIn map[string]interface{}) *[]platformclientv2.Knowledgedocumentalternative {
-	if alternativesIn, ok := requestIn["alternatives"].([]interface{}); ok {
-		alternativesOut := make([]platformclientv2.Knowledgedocumentalternative, 0)
-
-		for _, alternative := range alternativesIn {
-			alternativeMap := alternative.(map[string]interface{})
-			phrase := alternativeMap["phrase"].(string)
-			autocomplete := alternativeMap["autocomplete"].(bool)
-
-			alternativeOut := platformclientv2.Knowledgedocumentalternative{
-				Phrase:       &phrase,
-				Autocomplete: &autocomplete,
-			}
-
-			alternativesOut = append(alternativesOut, alternativeOut)
-		}
-
-		return &alternativesOut
-	}
-	return nil
-}
-
-func buildKnowledgeDocumentRequest(d *schema.ResourceData, knowledgeAPI *platformclientv2.KnowledgeApi, knowledgeBaseId string) (*platformclientv2.Knowledgedocumentreq, diag.Diagnostics) {
-	requestIn := d.Get("knowledge_document").([]interface{})[0].(map[string]interface{})
-	title := requestIn["title"].(string)
-	visible := requestIn["visible"].(bool)
-
-	requestOut := platformclientv2.Knowledgedocumentreq{
-		Title:        &title,
-		Visible:      &visible,
-		Alternatives: buildDocumentAlternatives(requestIn),
-	}
-
-	if categoryName, ok := requestIn["category_name"].(string); ok && categoryName != "" {
-		pageSize := 1
-		knowledgeCategories, resp, getErr := knowledgeAPI.GetKnowledgeKnowledgebaseCategories(knowledgeBaseId, "", "", fmt.Sprintf("%v", pageSize), "", false, categoryName, "", "", false)
-		if getErr != nil {
-			return nil, util.BuildAPIDiagnosticError("genesyscloud_knowledge_document", fmt.Sprintf("Failed to get page of knowledge categories error: %s", getErr), resp)
-		}
-		if len(*knowledgeCategories.Entities) > 0 {
-			matchingCategory := (*knowledgeCategories.Entities)[0]
-			requestOut.CategoryId = matchingCategory.Id
-		}
-	}
-	if labelNames, ok := requestIn["label_names"].([]interface{}); ok && labelNames != nil {
-		labelStringList := lists.InterfaceListToStrings(labelNames)
-		pageSize := 1
-		labelIds := make([]string, 0)
-		for _, labelName := range labelStringList {
-			knowledgeLabels, resp, getErr := knowledgeAPI.GetKnowledgeKnowledgebaseLabels(knowledgeBaseId, "", "", fmt.Sprintf("%v", pageSize), labelName, false)
-			if getErr != nil {
-				return nil, util.BuildAPIDiagnosticError("genesyscloud_knowledge_document", fmt.Sprintf("Failed to get page of knowledge labels error: %s", getErr), resp)
-			}
-			if len(*knowledgeLabels.Entities) > 0 {
-				matchingLabel := (*knowledgeLabels.Entities)[0]
-				labelIds = append(labelIds, *matchingLabel.Id)
-			}
-		}
-		requestOut.LabelIds = &labelIds
-	}
-
-	return &requestOut, nil
-}
-
-func flattenDocumentAlternatives(alternativesIn *[]platformclientv2.Knowledgedocumentalternative) []interface{} {
-	if alternativesIn == nil || len(*alternativesIn) == 0 {
-		return nil
-	}
-
-	alternativesOut := make([]interface{}, 0)
-
-	for _, alternativeIn := range *alternativesIn {
-		alternativeOut := make(map[string]interface{})
-
-		if alternativeIn.Phrase != nil {
-			alternativeOut["phrase"] = *alternativeIn.Phrase
-		}
-		if alternativeIn.Autocomplete != nil {
-			alternativeOut["autocomplete"] = *alternativeIn.Autocomplete
-		}
-		alternativesOut = append(alternativesOut, alternativeOut)
-	}
-
-	return alternativesOut
-}
-
-func flattenKnowledgeDocument(documentIn *platformclientv2.Knowledgedocumentresponse, knowledgeAPI *platformclientv2.KnowledgeApi, knowledgeBaseId string) ([]interface{}, error) {
-	if documentIn == nil {
-		return nil, nil
-	}
-
-	documentOut := make(map[string]interface{})
-
-	documentOut["alternatives"] = flattenDocumentAlternatives(documentIn.Alternatives)
-
-	if documentIn.Title != nil {
-		documentOut["title"] = *documentIn.Title
-	}
-	if documentIn.Visible != nil {
-		documentOut["visible"] = *documentIn.Visible
-	}
-	if documentIn.Category != nil {
-		// use the id to retrieve the category name
-		knowledgeCategory, _, getErr := knowledgeAPI.GetKnowledgeKnowledgebaseCategory(knowledgeBaseId, *documentIn.Category.Id)
-
-		if getErr != nil {
-			return nil, fmt.Errorf("Failed to get knowledge category: %v", getErr)
-		}
-		if knowledgeCategory.Name != nil {
-			documentOut["category_name"] = knowledgeCategory.Name
-		}
-	}
-	if documentIn.Labels != nil && len(*documentIn.Labels) > 0 {
-		labelNames := make([]string, 0)
-		for _, label := range *documentIn.Labels {
-			knowledgeLabel, _, getErr := knowledgeAPI.GetKnowledgeKnowledgebaseLabel(knowledgeBaseId, *label.Id)
-
-			if getErr != nil {
-				return nil, fmt.Errorf("Failed to get knowledge label: %v", getErr)
-			}
-			if knowledgeLabel.Name != nil {
-				labelNames = append(labelNames, *knowledgeLabel.Name)
-			}
-		}
-		documentOut["label_names"] = labelNames
-	}
-
-	return []interface{}{documentOut}, nil
-}
-
 func createKnowledgeDocument(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-	knowledgeAPI := platformclientv2.NewKnowledgeApiWithConfig(sdkConfig)
 	knowledgeBaseId := d.Get("knowledge_base_id").(string)
 	published := d.Get("published").(bool)
+	proxy := GetKnowledgeDocumentProxy(sdkConfig)
 
-	body, buildErr := buildKnowledgeDocumentRequest(d, knowledgeAPI, knowledgeBaseId)
+	body, buildErr := buildKnowledgeDocumentRequest(ctx, d, proxy, knowledgeBaseId)
 	if buildErr != nil {
 		return buildErr
 	}
 
 	log.Printf("Creating knowledge document")
-	knowledgeDocument, resp, err := knowledgeAPI.PostKnowledgeKnowledgebaseDocuments(knowledgeBaseId, *body)
+	knowledgeDocument, resp, err := proxy.createKnowledgeKnowledgebaseDocument(ctx, knowledgeBaseId, body)
 	if err != nil {
 		return util.BuildAPIDiagnosticError("genesyscloud_knowledge_document", fmt.Sprintf("Failed to create knowledge document %s error: %s", d.Id(), err), resp)
 	}
 
 	if published {
-		_, resp, versionErr := knowledgeAPI.PostKnowledgeKnowledgebaseDocumentVersions(knowledgeBaseId, *knowledgeDocument.Id, platformclientv2.Knowledgedocumentversion{})
+		_, resp, versionErr := proxy.createKnowledgebaseDocumentVersions(ctx, knowledgeBaseId, *knowledgeDocument.Id, &platformclientv2.Knowledgedocumentversion{})
 		if versionErr != nil {
-			_, deleteError := knowledgeAPI.DeleteKnowledgeKnowledgebaseDocument(knowledgeBaseId, *knowledgeDocument.Id)
+			_, deleteError := proxy.deleteKnowledgeKnowledgebaseDocument(ctx, knowledgeBaseId, *knowledgeDocument.Id)
 			if deleteError != nil {
 				log.Printf("failed to delete draft knowledge document %s error: %s", *knowledgeDocument.Id, deleteError)
 			}
@@ -309,12 +103,12 @@ func readKnowledgeDocument(ctx context.Context, d *schema.ResourceData, meta int
 	}
 
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-	knowledgeAPI := platformclientv2.NewKnowledgeApiWithConfig(sdkConfig)
+	proxy := GetKnowledgeDocumentProxy(sdkConfig)
 	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceKnowledgeDocument(), constants.DefaultConsistencyChecks, "genesyscloud_knowledge_document")
 
 	log.Printf("Reading knowledge document %s", knowledgeDocumentId)
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
-		knowledgeDocument, resp, getErr := knowledgeAPI.GetKnowledgeKnowledgebaseDocument(knowledgeBaseId, knowledgeDocumentId, nil, state)
+		knowledgeDocument, resp, getErr := proxy.getKnowledgeKnowledgebaseDocument(ctx, knowledgeBaseId, knowledgeDocumentId, nil, state)
 		if getErr != nil {
 			if util.IsStatus404(resp) {
 				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_knowledge_document", fmt.Sprintf("Failed to read knowledge document %s: %s", knowledgeDocumentId, getErr), resp))
@@ -327,7 +121,7 @@ func readKnowledgeDocument(ctx context.Context, d *schema.ResourceData, meta int
 		d.SetId(id)
 		d.Set("knowledge_base_id", *knowledgeDocument.KnowledgeBase.Id)
 
-		flattenedDocument, err := flattenKnowledgeDocument(knowledgeDocument, knowledgeAPI, knowledgeBaseId)
+		flattenedDocument, err := flattenKnowledgeDocument(ctx, knowledgeDocument, proxy, knowledgeBaseId)
 		if err != nil {
 			return retry.NonRetryableError(err)
 		}
@@ -355,23 +149,23 @@ func updateKnowledgeDocument(ctx context.Context, d *schema.ResourceData, meta i
 	}
 
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-	knowledgeAPI := platformclientv2.NewKnowledgeApiWithConfig(sdkConfig)
+	proxy := GetKnowledgeDocumentProxy(sdkConfig)
 
 	log.Printf("Updating Knowledge document %s", knowledgeDocumentId)
 	diagErr := util.RetryWhen(util.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		// Get current Knowledge document version
-		_, resp, getErr := knowledgeAPI.GetKnowledgeKnowledgebaseDocument(knowledgeBaseId, knowledgeDocumentId, nil, state)
+		_, resp, getErr := proxy.getKnowledgeKnowledgebaseDocument(ctx, knowledgeBaseId, knowledgeDocumentId, nil, state)
 		if getErr != nil {
 			return resp, util.BuildAPIDiagnosticError("genesyscloud_knowledge_document", fmt.Sprintf("Failed to read knowledge document %s error: %s", knowledgeDocumentId, getErr), resp)
 		}
 
-		update, err := buildKnowledgeDocumentRequest(d, knowledgeAPI, knowledgeBaseId)
+		update, err := buildKnowledgeDocumentRequest(ctx, d, proxy, knowledgeBaseId)
 		if err != nil {
 			return nil, err
 		}
 
 		log.Printf("Updating knowledge document %s", knowledgeDocumentId)
-		_, resp, putErr := knowledgeAPI.PatchKnowledgeKnowledgebaseDocument(knowledgeBaseId, knowledgeDocumentId, *update)
+		_, resp, putErr := proxy.updateKnowledgeKnowledgebaseDocument(ctx, knowledgeBaseId, knowledgeDocumentId, update)
 		if putErr != nil {
 			return resp, util.BuildAPIDiagnosticError("genesyscloud_knowledge_document", fmt.Sprintf("Failed to update knowledge document %s error: %s", knowledgeDocumentId, putErr), resp)
 		}
@@ -391,10 +185,10 @@ func deleteKnowledgeDocument(ctx context.Context, d *schema.ResourceData, meta i
 	knowledgeBaseId := id[1]
 
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-	knowledgeAPI := platformclientv2.NewKnowledgeApiWithConfig(sdkConfig)
+	proxy := GetKnowledgeDocumentProxy(sdkConfig)
 
 	log.Printf("Deleting Knowledge document %s", knowledgeDocumentId)
-	resp, err := knowledgeAPI.DeleteKnowledgeKnowledgebaseDocument(knowledgeBaseId, knowledgeDocumentId)
+	resp, err := proxy.deleteKnowledgeKnowledgebaseDocument(ctx, knowledgeBaseId, knowledgeDocumentId)
 	if err != nil {
 		return util.BuildAPIDiagnosticError("genesyscloud_knowledge_document", fmt.Sprintf("Failed to delete knowledge document %s error: %s", knowledgeDocumentId, err), resp)
 	}
@@ -405,7 +199,7 @@ func deleteKnowledgeDocument(ctx context.Context, d *schema.ResourceData, meta i
 			state = "Published"
 		}
 
-		_, resp, err := knowledgeAPI.GetKnowledgeKnowledgebaseDocument(knowledgeDocumentId, knowledgeBaseId, nil, state)
+		_, resp, err := proxy.getKnowledgeKnowledgebaseDocument(ctx, knowledgeBaseId, knowledgeDocumentId, nil, state)
 		if err != nil {
 			if util.IsStatus404(resp) {
 				// Knowledge document deleted
