@@ -23,23 +23,25 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
 )
 
-func getAllKnowledgeDocuments(_ context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+func getAllKnowledgeDocuments(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
 	knowledgeBaseList := make([]platformclientv2.Knowledgebase, 0)
 	documentEntities := make([]platformclientv2.Knowledgedocumentresponse, 0)
 	resources := make(resourceExporter.ResourceIDMetaMap)
-	knowledgeAPI := platformclientv2.NewKnowledgeApiWithConfig(clientConfig)
+	proxy := getKnowledgeDocumentProxy(clientConfig)
+	//knowledgeAPI := platformclientv2.NewKnowledgeApiWithConfig(clientConfig)
 
 	// get published knowledge bases
-	publishedEntities, err := getAllKnowledgebaseEntities(*knowledgeAPI, true)
+	publishedEntities, response, err := proxy.getAllKnowledgebaseEntities(ctx, true) //getAllKnowledgebaseEntities(*knowledgeAPI, true)
 	if err != nil {
-		return nil, err
+		return nil, util.BuildAPIDiagnosticError("genesyscloud_knowledge_knowledgebase", fmt.Sprintf("%s", err), response)
+
 	}
 	knowledgeBaseList = append(knowledgeBaseList, *publishedEntities...)
 
 	// get unpublished knowledge bases
-	unpublishedEntities, err := getAllKnowledgebaseEntities(*knowledgeAPI, false)
+	unpublishedEntities, response, err := proxy.getAllKnowledgebaseEntities(ctx, false)
 	if err != nil {
-		return nil, err
+		return nil, util.BuildAPIDiagnosticError("genesyscloud_knowledge_knowledgebase", fmt.Sprintf("%s", err), response)
 	}
 	knowledgeBaseList = append(knowledgeBaseList, *unpublishedEntities...)
 
@@ -415,39 +417,4 @@ func deleteKnowledgeDocument(ctx context.Context, d *schema.ResourceData, meta i
 
 		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_knowledge_document", fmt.Sprintf("Knowledge document %s still exists", knowledgeDocumentId), resp))
 	})
-}
-
-func getAllKnowledgebaseEntities(knowledgeApi platformclientv2.KnowledgeApi, published bool) (*[]platformclientv2.Knowledgebase, diag.Diagnostics) {
-	var (
-		after    string
-		entities []platformclientv2.Knowledgebase
-	)
-
-	const pageSize = 100
-	for {
-		knowledgeBases, resp, getErr := knowledgeApi.GetKnowledgeKnowledgebases("", after, "", fmt.Sprintf("%v", pageSize), "", "", published, "", "")
-		if getErr != nil {
-			return nil, util.BuildAPIDiagnosticError("genesyscloud_knowledge_knowledgebase", fmt.Sprintf("Failed to get page of knowledge bases error: %s", getErr), resp)
-		}
-
-		if knowledgeBases.Entities == nil || len(*knowledgeBases.Entities) == 0 {
-			break
-		}
-
-		entities = append(entities, *knowledgeBases.Entities...)
-
-		if knowledgeBases.NextUri == nil || *knowledgeBases.NextUri == "" {
-			break
-		}
-
-		after, err := util.GetQueryParamValueFromUri(*knowledgeBases.NextUri, "after")
-		if err != nil {
-			return nil, util.BuildDiagnosticError("genesyscloud_knowledge_knowledgebase", fmt.Sprintf("Failed to parse after cursor from knowledge base nextUri"), err)
-		}
-		if after == "" {
-			break
-		}
-	}
-
-	return &entities, nil
 }
