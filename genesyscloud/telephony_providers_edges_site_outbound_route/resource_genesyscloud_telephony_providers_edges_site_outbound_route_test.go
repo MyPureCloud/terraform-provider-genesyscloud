@@ -212,7 +212,8 @@ func generateOutboundRoutesResource(routesResource, siteId string, nestedBlocks 
 	return fmt.Sprintf(`resource "genesyscloud_telephony_providers_edges_site_outbound_route" "%s" {
 		site_id = %s
 		%s
-	}`, routesResource, siteId, strings.Join(nestedBlocks, "\n"))
+	}
+	`, routesResource, siteId, strings.Join(nestedBlocks, "\n"))
 }
 
 func generateSiteOutboundRoutes(
