@@ -1089,7 +1089,7 @@ func (g *GenesysCloudResourceExporter) getResourcesForType(resType string, provi
 				instanceState, err := getResourceState(ctx, res, id, resMeta, meta)
 
 				referencePrefix := ""
-				if g.isDataSource(resType, resMeta.SanitizedBlockLabel) {
+				if g.isDataSource(resType, resMeta.SanitizedBlockLabel) || g.isDataSource(resType, resMeta.ObjectName) {
 					g.exMutex.Lock()
 					res = provider.DataSourcesMap[resType]
 					g.exMutex.Unlock()
