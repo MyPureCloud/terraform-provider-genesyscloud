@@ -43,7 +43,7 @@ func getAllKnowledgeDocuments(ctx context.Context, clientConfig *platformclientv
 	knowledgeBaseList = append(knowledgeBaseList, *unpublishedEntities...)
 
 	for _, knowledgeBase := range knowledgeBaseList {
-		partialEntities, response, err := proxy.getAllKnowledgeDocumentEntities(ctx, &knowledgeBase)
+		partialEntities, response, err := proxy.GetAllKnowledgeDocumentEntities(ctx, &knowledgeBase)
 		if err != nil {
 			return nil, util.BuildAPIDiagnosticError("genesyscloud_knowledge_knowledgebase", fmt.Sprintf("%s", err), response)
 		}

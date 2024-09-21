@@ -219,29 +219,31 @@ var (
 	}
 )
 
-func getAllKnowledgeDocumentVariations(_ context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+func getAllKnowledgeDocumentVariations(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
 	knowledgeBaseList := make([]platformclientv2.Knowledgebase, 0)
 	resources := make(resourceExporter.ResourceIDMetaMap)
-	knowledgeAPI := platformclientv2.NewKnowledgeApiWithConfig(clientConfig)
+	//knowledgeAPI := platformclientv2.NewKnowledgeApiWithConfig(clientConfig)
 
+	knowledgeProxy := knowledgeDocument.GetKnowledgeDocumentProxy(clientConfig)
+	knowledgeApi := knowledgeProxy.KnowledgeApi
 	// get published knowledge bases
-	publishedEntities, err := getAllKnowledgebaseEntities(*knowledgeAPI, true)
+	publishedEntities, err := getAllKnowledgebaseEntities(*knowledgeApi, true)
 	if err != nil {
 		return nil, err
 	}
 	knowledgeBaseList = append(knowledgeBaseList, *publishedEntities...)
 
 	// get unpublished knowledge bases
-	unpublishedEntities, err := getAllKnowledgebaseEntities(*knowledgeAPI, false)
+	unpublishedEntities, err := getAllKnowledgebaseEntities(*knowledgeApi, false)
 	if err != nil {
 		return nil, err
 	}
 	knowledgeBaseList = append(knowledgeBaseList, *unpublishedEntities...)
 
 	for _, knowledgeBase := range knowledgeBaseList {
-		variationEntities, err := knowledgeDocument.GetAllKnowledgeDocumentEntities(*knowledgeAPI, &knowledgeBase, clientConfig)
+		variationEntities, response, err := knowledgeProxy.GetAllKnowledgeDocumentEntities(ctx, &knowledgeBase)
 		if err != nil {
-			return nil, err
+			return nil, util.BuildAPIDiagnosticError("genesyscloud_knowledge_document_variation", fmt.Sprintf("%s", err), response)
 		}
 
 		// retrieve the documents for each knowledge base
@@ -256,7 +258,7 @@ func getAllKnowledgeDocumentVariations(_ context.Context, clientConfig *platform
 			}
 
 			// get the variations for each document
-			knowledgeDocumentVariations, resp, getErr := knowledgeAPI.GetKnowledgeKnowledgebaseDocumentVariations(*knowledgeBase.Id, *knowledgeDocument.Id, "", "", fmt.Sprintf("%v", pageSize), documentState)
+			knowledgeDocumentVariations, resp, getErr := knowledgeApi.GetKnowledgeKnowledgebaseDocumentVariations(*knowledgeBase.Id, *knowledgeDocument.Id, "", "", fmt.Sprintf("%v", pageSize), documentState)
 			if getErr != nil {
 				return nil, util.BuildAPIDiagnosticError("genesyscloud_knowledge_document_variation", fmt.Sprintf("Failed to get page of knowledge document variations error: %v", err), resp)
 			}

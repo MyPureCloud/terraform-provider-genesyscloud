@@ -20,7 +20,7 @@ type getKnowledgeKnowledgebaseLabelsFunc func(ctx context.Context, p *knowledgeD
 type getKnowledgeKnowledgebaseLabelFunc func(ctx context.Context, p *knowledgeDocumentProxy, knowledgeBaseId string, labelId string) (*platformclientv2.Labelresponse, *platformclientv2.APIResponse, error)
 type getKnowledgeKnowledgebaseDocumentFunc func(ctx context.Context, p *knowledgeDocumentProxy, knowledgeBaseId string, documentId string, expand []string, state string) (*platformclientv2.Knowledgedocumentresponse, *platformclientv2.APIResponse, error)
 type getAllKnowledgebaseEntitiesFunc func(ctx context.Context, p *knowledgeDocumentProxy, published bool) (*[]platformclientv2.Knowledgebase, *platformclientv2.APIResponse, error)
-type getAllKnowledgeDocumentEntitiesFunc func(ctx context.Context, p *knowledgeDocumentProxy, knowledgeBase *platformclientv2.Knowledgebase) (*[]platformclientv2.Knowledgedocumentresponse, *platformclientv2.APIResponse, error)
+type GetAllKnowledgeDocumentEntitiesFunc func(ctx context.Context, p *knowledgeDocumentProxy, knowledgeBase *platformclientv2.Knowledgebase) (*[]platformclientv2.Knowledgedocumentresponse, *platformclientv2.APIResponse, error)
 type createKnowledgeKnowledgebaseDocumentFunc func(ctx context.Context, p *knowledgeDocumentProxy, knowledgeBaseId string, body *platformclientv2.Knowledgedocumentreq) (*platformclientv2.Knowledgedocumentresponse, *platformclientv2.APIResponse, error)
 type createKnowledgebaseDocumentVersionsFunc func(ctx context.Context, p *knowledgeDocumentProxy, knowledgeBaseId string, documentId string, body *platformclientv2.Knowledgedocumentversion) (*platformclientv2.Knowledgedocumentversion, *platformclientv2.APIResponse, error)
 type deleteKnowledgeKnowledgebaseDocumentFunc func(ctx context.Context, p *knowledgeDocumentProxy, knowledgeBaseId string, documentId string) (*platformclientv2.APIResponse, error)
@@ -28,14 +28,14 @@ type updateKnowledgeKnowledgebaseDocumentFunc func(ctx context.Context, p *knowl
 
 type knowledgeDocumentProxy struct {
 	clientConfig                             *platformclientv2.Configuration
-	knowledgeApi                             *platformclientv2.KnowledgeApi
+	KnowledgeApi                             *platformclientv2.KnowledgeApi
 	getKnowledgeKnowledgebaseCategoryAttr    getKnowledgeKnowledgebaseCategoryFunc
 	getKnowledgeKnowledgebaseCategoriesAttr  getKnowledgeKnowledgebaseCategoriesFunc
 	getKnowledgeKnowledgebaseLabelsAttr      getKnowledgeKnowledgebaseLabelsFunc
 	getKnowledgeKnowledgebaseLabelAttr       getKnowledgeKnowledgebaseLabelFunc
 	getKnowledgeKnowledgebaseDocumentAttr    getKnowledgeKnowledgebaseDocumentFunc
 	getAllKnowledgebaseEntitiesAttr          getAllKnowledgebaseEntitiesFunc
-	getAllKnowledgeDocumentEntitiesAttr      getAllKnowledgeDocumentEntitiesFunc
+	GetAllKnowledgeDocumentEntitiesAttr      GetAllKnowledgeDocumentEntitiesFunc
 	createKnowledgeKnowledgebaseDocumentAttr createKnowledgeKnowledgebaseDocumentFunc
 	createKnowledgebaseDocumentVersionsAttr  createKnowledgebaseDocumentVersionsFunc
 	deleteKnowledgeKnowledgebaseDocumentAttr deleteKnowledgeKnowledgebaseDocumentFunc
@@ -48,14 +48,14 @@ func newKnowledgeDocumentProxy(clientConfig *platformclientv2.Configuration) *kn
 	knowledgeDocumentCache := rc.NewResourceCache[platformclientv2.Knowledgedocumentresponse]()
 	return &knowledgeDocumentProxy{
 		clientConfig:                             clientConfig,
-		knowledgeApi:                             api,
+		KnowledgeApi:                             api,
 		getKnowledgeKnowledgebaseCategoryAttr:    getKnowledgeKnowledgebaseCategoryFn,
 		getKnowledgeKnowledgebaseCategoriesAttr:  getKnowledgeKnowledgebaseCategoriesFn,
 		getKnowledgeKnowledgebaseLabelsAttr:      getKnowledgeKnowledgebaseLabelsFn,
 		getKnowledgeKnowledgebaseLabelAttr:       getKnowledgeKnowledgebaseLabelFn,
 		getKnowledgeKnowledgebaseDocumentAttr:    getKnowledgeKnowledgebaseDocumentFn,
 		getAllKnowledgebaseEntitiesAttr:          getAllKnowledgebaseEntitiesFn,
-		getAllKnowledgeDocumentEntitiesAttr:      getAllKnowledgeDocumentEntitiesFn,
+		GetAllKnowledgeDocumentEntitiesAttr:      GetAllKnowledgeDocumentEntitiesFn,
 		createKnowledgeKnowledgebaseDocumentAttr: createKnowledgeKnowledgebaseDocumentFn,
 		createKnowledgebaseDocumentVersionsAttr:  createKnowledgebaseDocumentVersionsFn,
 		deleteKnowledgeKnowledgebaseDocumentAttr: deleteKnowledgeKnowledgebaseDocumentFn,
@@ -96,8 +96,8 @@ func (p *knowledgeDocumentProxy) getAllKnowledgebaseEntities(ctx context.Context
 	return p.getAllKnowledgebaseEntitiesAttr(ctx, p, published)
 }
 
-func (p *knowledgeDocumentProxy) getAllKnowledgeDocumentEntities(ctx context.Context, knowledgeBase *platformclientv2.Knowledgebase) (*[]platformclientv2.Knowledgedocumentresponse, *platformclientv2.APIResponse, error) {
-	return p.getAllKnowledgeDocumentEntitiesAttr(ctx, p, knowledgeBase)
+func (p *knowledgeDocumentProxy) GetAllKnowledgeDocumentEntities(ctx context.Context, knowledgeBase *platformclientv2.Knowledgebase) (*[]platformclientv2.Knowledgedocumentresponse, *platformclientv2.APIResponse, error) {
+	return p.GetAllKnowledgeDocumentEntitiesAttr(ctx, p, knowledgeBase)
 }
 
 func (p *knowledgeDocumentProxy) createKnowledgeKnowledgebaseDocument(ctx context.Context, knowledgeBaseId string, body *platformclientv2.Knowledgedocumentreq) (*platformclientv2.Knowledgedocumentresponse, *platformclientv2.APIResponse, error) {
@@ -117,24 +117,24 @@ func (p *knowledgeDocumentProxy) updateKnowledgeKnowledgebaseDocument(ctx contex
 }
 
 func getKnowledgeKnowledgebaseCategoryFn(ctx context.Context, p *knowledgeDocumentProxy, knowledgeBaseId string, categoryId string) (*platformclientv2.Categoryresponse, *platformclientv2.APIResponse, error) {
-	return p.knowledgeApi.GetKnowledgeKnowledgebaseCategory(knowledgeBaseId, categoryId)
+	return p.KnowledgeApi.GetKnowledgeKnowledgebaseCategory(knowledgeBaseId, categoryId)
 }
 
 func getKnowledgeKnowledgebaseCategoriesFn(ctx context.Context, p *knowledgeDocumentProxy, knowledgeBaseId string, categoryName string) (*platformclientv2.Categoryresponselisting, *platformclientv2.APIResponse, error) {
 	pageSize := 1
-	return p.knowledgeApi.GetKnowledgeKnowledgebaseCategories(knowledgeBaseId, "", "", fmt.Sprintf("%v", pageSize), "", false, categoryName, "", "", false)
+	return p.KnowledgeApi.GetKnowledgeKnowledgebaseCategories(knowledgeBaseId, "", "", fmt.Sprintf("%v", pageSize), "", false, categoryName, "", "", false)
 }
 func getKnowledgeKnowledgebaseLabelsFn(ctx context.Context, p *knowledgeDocumentProxy, knowledgeBaseId string, labelName string) (*platformclientv2.Labellisting, *platformclientv2.APIResponse, error) {
 	pageSize := 1
-	return p.knowledgeApi.GetKnowledgeKnowledgebaseLabels(knowledgeBaseId, "", "", fmt.Sprintf("%v", pageSize), labelName, false)
+	return p.KnowledgeApi.GetKnowledgeKnowledgebaseLabels(knowledgeBaseId, "", "", fmt.Sprintf("%v", pageSize), labelName, false)
 }
 
 func getKnowledgeKnowledgebaseLabelFn(ctx context.Context, p *knowledgeDocumentProxy, knowledgeBaseId string, labelId string) (*platformclientv2.Labelresponse, *platformclientv2.APIResponse, error) {
-	return p.knowledgeApi.GetKnowledgeKnowledgebaseLabel(knowledgeBaseId, labelId)
+	return p.KnowledgeApi.GetKnowledgeKnowledgebaseLabel(knowledgeBaseId, labelId)
 }
 
 func getKnowledgeKnowledgebaseDocumentFn(ctx context.Context, p *knowledgeDocumentProxy, knowledgeBaseId string, documentId string, expand []string, state string) (*platformclientv2.Knowledgedocumentresponse, *platformclientv2.APIResponse, error) {
-	return p.knowledgeApi.GetKnowledgeKnowledgebaseDocument(knowledgeBaseId, documentId, expand, state)
+	return p.KnowledgeApi.GetKnowledgeKnowledgebaseDocument(knowledgeBaseId, documentId, expand, state)
 }
 
 func getAllKnowledgebaseEntitiesFn(ctx context.Context, p *knowledgeDocumentProxy, published bool) (*[]platformclientv2.Knowledgebase, *platformclientv2.APIResponse, error) {
@@ -145,7 +145,7 @@ func getAllKnowledgebaseEntitiesFn(ctx context.Context, p *knowledgeDocumentProx
 
 	const pageSize = 100
 	for {
-		knowledgeBases, resp, getErr := p.knowledgeApi.GetKnowledgeKnowledgebases("", after, "", fmt.Sprintf("%v", pageSize), "", "", published, "", "")
+		knowledgeBases, resp, getErr := p.KnowledgeApi.GetKnowledgeKnowledgebases("", after, "", fmt.Sprintf("%v", pageSize), "", "", published, "", "")
 		if getErr != nil {
 			return nil, resp, fmt.Errorf("failed to get page of knowledge bases error: %s", getErr)
 		}
@@ -173,7 +173,7 @@ func getAllKnowledgebaseEntitiesFn(ctx context.Context, p *knowledgeDocumentProx
 
 }
 
-func getAllKnowledgeDocumentEntitiesFn(ctx context.Context, p *knowledgeDocumentProxy, knowledgeBase *platformclientv2.Knowledgebase) (*[]platformclientv2.Knowledgedocumentresponse, *platformclientv2.APIResponse, error) {
+func GetAllKnowledgeDocumentEntitiesFn(ctx context.Context, p *knowledgeDocumentProxy, knowledgeBase *platformclientv2.Knowledgebase) (*[]platformclientv2.Knowledgedocumentresponse, *platformclientv2.APIResponse, error) {
 
 	var (
 		after    string
@@ -185,7 +185,7 @@ func getAllKnowledgeDocumentEntitiesFn(ctx context.Context, p *knowledgeDocument
 	const pageSize = 100
 	// prepare base url
 	resourcePath := fmt.Sprintf("/api/v2/knowledge/knowledgebases/%s/documents", url.PathEscape(*knowledgeBase.Id))
-	listDocumentsBaseUrl := fmt.Sprintf("%s%s", p.knowledgeApi.Configuration.BasePath, resourcePath)
+	listDocumentsBaseUrl := fmt.Sprintf("%s%s", p.KnowledgeApi.Configuration.BasePath, resourcePath)
 
 	for {
 		// prepare query params
@@ -247,17 +247,17 @@ func getAllKnowledgeDocumentEntitiesFn(ctx context.Context, p *knowledgeDocument
 	return &entities, nil, nil
 }
 func createKnowledgeKnowledgebaseDocumentFn(ctx context.Context, p *knowledgeDocumentProxy, knowledgeBaseId string, body *platformclientv2.Knowledgedocumentreq) (*platformclientv2.Knowledgedocumentresponse, *platformclientv2.APIResponse, error) {
-	return p.knowledgeApi.PostKnowledgeKnowledgebaseDocuments(knowledgeBaseId, *body)
+	return p.KnowledgeApi.PostKnowledgeKnowledgebaseDocuments(knowledgeBaseId, *body)
 }
 
 func createKnowledgebaseDocumentVersionsFn(ctx context.Context, p *knowledgeDocumentProxy, knowledgeBaseId string, documentId string, body *platformclientv2.Knowledgedocumentversion) (*platformclientv2.Knowledgedocumentversion, *platformclientv2.APIResponse, error) {
-	return p.knowledgeApi.PostKnowledgeKnowledgebaseDocumentVersions(knowledgeBaseId, documentId, *body)
+	return p.KnowledgeApi.PostKnowledgeKnowledgebaseDocumentVersions(knowledgeBaseId, documentId, *body)
 }
 
 func deleteKnowledgeKnowledgebaseDocumentFn(ctx context.Context, p *knowledgeDocumentProxy, knowledgeBaseId string, documentId string) (*platformclientv2.APIResponse, error) {
-	return p.knowledgeApi.DeleteKnowledgeKnowledgebaseDocument(knowledgeBaseId, documentId)
+	return p.KnowledgeApi.DeleteKnowledgeKnowledgebaseDocument(knowledgeBaseId, documentId)
 }
 
 func updateKnowledgeKnowledgebaseDocumentFn(ctx context.Context, p *knowledgeDocumentProxy, knowledgeBaseId string, documentId string, body *platformclientv2.Knowledgedocumentreq) (*platformclientv2.Knowledgedocumentresponse, *platformclientv2.APIResponse, error) {
-	return p.knowledgeApi.PatchKnowledgeKnowledgebaseDocument(knowledgeBaseId, documentId, *body)
+	return p.KnowledgeApi.PatchKnowledgeKnowledgebaseDocument(knowledgeBaseId, documentId, *body)
 }
