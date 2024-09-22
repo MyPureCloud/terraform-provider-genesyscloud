@@ -29,7 +29,6 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_knowledge_category"] = gcloud.ResourceKnowledgeCategory()
 	providerResources["genesyscloud_knowledge_knowledgebase"] = gcloud.ResourceKnowledgeKnowledgebase()
 	providerResources["genesyscloud_knowledge_label"] = gcloud.ResourceKnowledgeLabel()
-
 	providerResources[resourceName] = ResourceKnowledgeDocument()
 }
 
