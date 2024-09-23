@@ -56,8 +56,6 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_journey_outcome"] = ResourceJourneyOutcome()
 	providerResources["genesyscloud_journey_segment"] = ResourceJourneySegment()
 	providerResources["genesyscloud_knowledge_knowledgebase"] = ResourceKnowledgeKnowledgebase()
-	providerResources["genesyscloud_knowledge_document"] = ResourceKnowledgeDocument()
-	providerResources["genesyscloud_knowledge_document_variation"] = ResourceKnowledgeDocumentVariation()
 	providerResources["genesyscloud_knowledge_category"] = ResourceKnowledgeCategory()
 	providerResources["genesyscloud_knowledge_label"] = ResourceKnowledgeLabel()
 	providerResources["genesyscloud_quality_forms_evaluation"] = ResourceEvaluationForm()
