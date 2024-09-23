@@ -24,7 +24,6 @@ func TestAccDataSourceOutboundDigitalruleset(t *testing.T) {
 		resourceId        = "digital-rule-set"
 		ruleName          = "RuleWork"
 		dataSourceId      = "data-digital-rule-set"
-		version1          = "1"
 		ruleOrder         = "0"
 		ruleCategory      = "PreContact"
 		contactColumnName = "Work"
@@ -82,7 +81,6 @@ func TestAccDataSourceOutboundDigitalruleset(t *testing.T) {
 						resourceId,
 						name1,
 						"genesyscloud_outbound_contact_list."+contactListResourceId1+".id",
-						GenerateDigitalRuleSetVersion(version1),
 						GenerateDigitalRules(
 							ruleName,
 							ruleOrder,

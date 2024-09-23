@@ -41,7 +41,6 @@ func (r *registerTestInstance) registerTestDataSources() {
 	defer r.datasourceMapMutex.Unlock()
 
 	providerDataSources[resourceName] = DataSourceOutboundDigitalruleset()
-	// TODO: Add references
 }
 
 // initTestResources initializes all test resources and data sources.

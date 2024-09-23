@@ -499,11 +499,6 @@ func ResourceOutboundDigitalruleset() *schema.Resource {
 				Optional:    true,
 				Type:        schema.TypeString,
 			},
-			`version`: {
-				Description: `Required for updates, must match the version number of the most recent update`,
-				Optional:    true,
-				Type:        schema.TypeInt,
-			},
 			`contact_list_id`: {
 				Description: `A ContactList to provide suggestions for contact columns on relevant conditions and actions.`,
 				Optional:    true,

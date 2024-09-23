@@ -91,7 +91,6 @@ func TestAccResourceOutboundDigitalruleset(t *testing.T) {
 						resourceId,
 						name2,
 						"genesyscloud_outbound_contact_list."+contactListResourceId1+".id",
-						GenerateDigitalRuleSetVersion("1"),
 						GenerateDigitalRules(
 							ruleName,
 							ruleOrder,
@@ -141,7 +140,6 @@ func TestAccResourceOutboundDigitalruleset(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_outbound_digitalruleset."+resourceId, "name", name2),
 					resource.TestCheckResourceAttrPair("genesyscloud_outbound_digitalruleset."+resourceId, "contact_list_id", "genesyscloud_outbound_contact_list."+contactListResourceId1, "id"),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_digitalruleset."+resourceId, "version", "1"),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_digitalruleset."+resourceId, "rules.0.name", ruleName),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_digitalruleset."+resourceId, "rules.0.order", ruleOrder),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_digitalruleset."+resourceId, "rules.0.category", ruleCategory),

@@ -81,7 +81,6 @@ func readOutboundDigitalruleset(ctx context.Context, d *schema.ResourceData, met
 		resourcedata.SetNillableValue(d, "name", digitalRuleSet.Name)
 		resourcedata.SetNillableReference(d, "contact_list_id", digitalRuleSet.ContactList)
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "rules", digitalRuleSet.Rules, flattenDigitalRules)
-		resourcedata.SetNillableValue(d, "version", digitalRuleSet.Version)
 
 		log.Printf("Read outbound digitalruleset %s %s", d.Id(), *digitalRuleSet.Name)
 		return cc.CheckState(d)

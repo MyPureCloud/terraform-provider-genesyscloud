@@ -22,7 +22,6 @@ func getOutboundDigitalrulesetFromResourceData(d *schema.ResourceData) platformc
 		Name:        platformclientv2.String(d.Get("name").(string)),
 		ContactList: util.BuildSdkDomainEntityRef(d, "contact_list_id"),
 		Rules:       buildDigitalRules(d.Get("rules").([]interface{})),
-		Version:     platformclientv2.Int(d.Get("version").(int)),
 	}
 }
 

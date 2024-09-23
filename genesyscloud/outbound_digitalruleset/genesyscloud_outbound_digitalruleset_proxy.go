@@ -157,7 +157,17 @@ func getOutboundDigitalrulesetByIdFn(ctx context.Context, p *outboundDigitalrule
 
 // updateOutboundDigitalrulesetFn is an implementation of the function to update a Genesys Cloud outbound digitalruleset
 func updateOutboundDigitalrulesetFn(ctx context.Context, p *outboundDigitalrulesetProxy, id string, outboundDigitalruleset *platformclientv2.Digitalruleset) (*platformclientv2.Digitalruleset, *platformclientv2.APIResponse, error) {
-	return p.outboundApi.PutOutboundDigitalruleset(id, *outboundDigitalruleset)
+	digitalRuleSet, resp, err := getOutboundDigitalrulesetByIdFn(ctx, p, id)
+	if err != nil {
+		return nil, resp, fmt.Errorf("Failed to fetch ruleset by id %s: %s", id, err)
+	}
+
+	outboundDigitalruleset.Version = digitalRuleSet.Version
+	outboundDigitalruleset, resp, err = p.outboundApi.PutOutboundDigitalruleset(id, *outboundDigitalruleset)
+	if err != nil {
+		return nil, resp, fmt.Errorf("Failed to update ruleset %s", err)
+	}
+	return outboundDigitalruleset, resp, nil
 }
 
 // deleteOutboundDigitalrulesetFn is an implementation function for deleting a Genesys Cloud outbound digitalruleset
