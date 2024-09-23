@@ -222,7 +222,6 @@ var (
 func getAllKnowledgeDocumentVariations(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
 	knowledgeBaseList := make([]platformclientv2.Knowledgebase, 0)
 	resources := make(resourceExporter.ResourceIDMetaMap)
-	//knowledgeAPI := platformclientv2.NewKnowledgeApiWithConfig(clientConfig)
 
 	knowledgeProxy := knowledgeDocument.GetKnowledgeDocumentProxy(clientConfig)
 	knowledgeApi := knowledgeProxy.KnowledgeApi
