@@ -151,7 +151,7 @@ func publishScriptFn(_ context.Context, p *scriptsProxy, scriptId string) (*plat
 
 // getAllPublishedScriptsFn returns all published scripts within a Genesys Cloud instance
 func getAllPublishedScriptsFn(_ context.Context, p *scriptsProxy) (*[]platformclientv2.Script, *platformclientv2.APIResponse, error) {
-	var allScripts []platformclientv2.Script
+	var allPublishedScripts []platformclientv2.Script
 	var response *platformclientv2.APIResponse
 	pageSize := 50
 	for pageNum := 1; ; pageNum++ {
@@ -166,7 +166,7 @@ func getAllPublishedScriptsFn(_ context.Context, p *scriptsProxy) (*[]platformcl
 		}
 
 		for _, script := range *scripts.Entities {
-			_, resp, err := p.scriptsApi.GetScriptsPublishedScriptId(*script.Id, "")
+			publishedScript, resp, err := p.scriptsApi.GetScriptsPublishedScriptId(*script.Id, "")
 			response = resp
 			//If the item is not found this indicates it is not published
 			if resp.StatusCode == http.StatusNotFound && err == nil {
@@ -185,15 +185,15 @@ func getAllPublishedScriptsFn(_ context.Context, p *scriptsProxy) (*[]platformcl
 				return nil, resp, fmt.Errorf("failed to retrieve publication status for script id %s.  Err: %v", *script.Id, err)
 			}
 
-			allScripts = append(allScripts, script)
+			allPublishedScripts = append(allPublishedScripts, *publishedScript)
 		}
 	}
 
-	for _, script := range allScripts {
+	for _, script := range allPublishedScripts {
 		rc.SetCache(p.scriptCache, *script.Id, script)
 	}
 
-	return &allScripts, response, nil
+	return &allPublishedScripts, response, nil
 }
 
 // getScriptsByNameFn Retrieves all scripts instances that match the name passed in
@@ -356,6 +356,11 @@ func getScriptExportUrlFn(_ context.Context, p *scriptsProxy, scriptId string) (
 		body platformclientv2.Exportscriptrequest
 	)
 
+	// Sets the VersionId on the request so that the Published Version of the script is exported and not the editable version
+	// See DEVTOOLING-777
+	scriptCache := rc.GetCacheItem(p.scriptCache, scriptId)
+	body.VersionId = scriptCache.VersionId
+
 	data, resp, err := p.scriptsApi.PostScriptExport(scriptId, body)
 	if err != nil {
 		return "", resp, fmt.Errorf("error calling PostScriptExport: %v", err)
@@ -465,7 +470,10 @@ func createScriptFn(ctx context.Context, filePath, scriptName string, substituti
 	}
 
 	if resp, err := p.publishScript(ctx, scriptId); err != nil {
-		return "", fmt.Errorf("script '%s' with id '%s' was not successfully published: %v %v", scriptName, scriptId, err, resp)
+		// If the script is not able to be published, clean up the script instance on the API before throwing an error
+		// See DEVTOOLING-777
+		p.deleteScript(ctx, scriptId)
+		return "", fmt.Errorf("script '%s' (ID: %s) failed to publish and was deleted: %w (response: %v)", scriptName, scriptId, err, resp)
 	}
 	return scriptId, nil
 }
