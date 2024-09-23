@@ -58,7 +58,6 @@ resource "genesyscloud_outbound_digitalruleset" "test_ruleset_sample" {
 
 - `contact_list_id` (String) A ContactList to provide suggestions for contact columns on relevant conditions and actions.
 - `name` (String) The name of the digital rule set
-- `version` (Number) Required for updates, must match the version number of the most recent update
 
 ### Read-Only
 
