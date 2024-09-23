@@ -4,6 +4,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
 	"terraform-provider-genesyscloud/genesyscloud/provider"
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
 )
 
@@ -20,6 +21,7 @@ const resourceName = "genesyscloud_conversations_messaging_supportedcontent_defa
 // SetRegistrar registers all of the resources, datasources and exporters in the package
 func SetRegistrar(regInstance registrar.Registrar) {
 	regInstance.RegisterResource(resourceName, ResourceConversationsMessagingSupportedcontentDefault())
+	regInstance.RegisterExporter(resourceName, ConversationsMessagingSupportedcontentDefaultExporter())
 }
 
 // ResourceConversationsMessagingSupportedcontentDefault registers the genesyscloud_conversations_messaging_supportedcontent_default resource with Terraform
@@ -42,5 +44,13 @@ func ResourceConversationsMessagingSupportedcontentDefault() *schema.Resource {
 				Type:        schema.TypeString,
 			},
 		},
+	}
+}
+
+// ConversationsMessagingSupportedcontentDefaultExporter returns the resourceExporter object used to hold the genesyscloud_conversations_messaging_supportedcontent_default exporter's config
+func ConversationsMessagingSupportedcontentDefaultExporter() *resourceExporter.ResourceExporter {
+	return &resourceExporter.ResourceExporter{
+		GetResourcesFunc: provider.GetAllWithPooledClient(getAuthConversationsMessagingSupportedcontentDefaults),
+		RefAttrs:         map[string]*resourceExporter.RefAttrSettings{},
 	}
 }

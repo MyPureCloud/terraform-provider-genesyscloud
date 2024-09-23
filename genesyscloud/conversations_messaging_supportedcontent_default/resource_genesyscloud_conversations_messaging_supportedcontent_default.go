@@ -10,6 +10,8 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -19,6 +21,25 @@ import (
 /*
 The resource_genesyscloud_conversations_messaging_supportedcontent_default.go contains all of the methods that perform the core logic for a resource.
 */
+
+// getAuthConversationsMessagingSupportedcontentDefault retrieves all of the conversations messaging supportedcontent default via Terraform in the Genesys Cloud and is used for the exporter
+func getAuthConversationsMessagingSupportedcontentDefaults(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+	proxy := getConversationsMessagingSupportedcontentDefaultProxy(clientConfig)
+	resources := make(resourceExporter.ResourceIDMetaMap)
+
+	_, resp, err := proxy.getConversationsMessagingSupportedcontentDefault(ctx)
+	if err != nil {
+		if util.IsStatus404(resp) {
+			// Don't export if config doesn't exist
+			return resources, nil
+		}
+		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get conversations messaging supportedcontent default: %s", err), resp)
+	}
+
+	resources["0"] = &resourceExporter.ResourceMeta{Name: "supported_content_default"}
+
+	return resources, nil
+}
 
 // createConversationsMessagingSupportedcontentDefault is used by the conversations_messaging_supportedcontent_default resource to create Genesys cloud conversations messaging supportedcontent default
 func createConversationsMessagingSupportedcontentDefault(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
