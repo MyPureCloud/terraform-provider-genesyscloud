@@ -1,12 +1,13 @@
 package outbound_dnclist
 
 import (
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
 	"terraform-provider-genesyscloud/genesyscloud/validators"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
 const resourceName = "genesyscloud_outbound_dnclist"
@@ -41,7 +42,7 @@ func ResourceOutboundDncList() *schema.Resource {
 				Optional:     true,
 				Computed:     true,
 				Type:         schema.TypeString,
-				ValidateFunc: validation.StringInSlice([]string{`Email`, `Phone`}, false),
+				ValidateFunc: validation.StringInSlice([]string{`Email`, `Phone`, `Any`}, false),
 			},
 			`login_id`: {
 				Description: `A dnc.com loginId. Required if the dncSourceType is dnc.com.`,
@@ -78,7 +79,7 @@ func ResourceOutboundDncList() *schema.Resource {
 				Required:     true,
 				ForceNew:     true,
 				Type:         schema.TypeString,
-				ValidateFunc: validation.StringInSlice([]string{`rds`, `dnc.com`, `gryphon`}, false),
+				ValidateFunc: validation.StringInSlice([]string{`rds`, `rds_custom`, `dnc.com`, `gryphon`}, false),
 			},
 			`entries`: {
 				Description: `Rows to add to the DNC list. To emulate removing phone numbers, you can set expiration_date to a date in the past.`,
