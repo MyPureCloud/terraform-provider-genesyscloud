@@ -51,6 +51,10 @@ func ResourceConversationsMessagingSupportedcontentDefault() *schema.Resource {
 func ConversationsMessagingSupportedcontentDefaultExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: provider.GetAllWithPooledClient(getAuthConversationsMessagingSupportedcontentDefaults),
-		RefAttrs:         map[string]*resourceExporter.RefAttrSettings{},
+		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
+			"content_id": {
+				RefType: "genesyscloud_conversations_messaging_supportedcontent",
+			},
+		},
 	}
 }
