@@ -79,6 +79,9 @@ func DataSourceResponseManagementResponseAsset() *schema.Resource {
 func ExporterResponseManagementResponseAsset() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: provider.GetAllWithPooledClient(getAllResponseAssets),
+		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
+			"division_id": {RefType: "genesyscloud_auth_division"},
+		},
 		CustomFileWriter: resourceExporter.CustomFileWriterSettings{
 			RetrieveAndWriteFilesFunc: responsemanagementResponseassetResolver,
 			SubDirectory:              "response_assets",

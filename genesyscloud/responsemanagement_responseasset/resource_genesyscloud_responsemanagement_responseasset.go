@@ -96,10 +96,10 @@ func readRespManagementRespAsset(ctx context.Context, d *schema.ResourceData, me
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read response asset %s | error: %s", d.Id(), getErr), resp))
 		}
 
-		d.Set("filename", *sdkAsset.Name)
+		_ = d.Set("filename", *sdkAsset.Name)
 
 		if sdkAsset.Division != nil && sdkAsset.Division.Id != nil {
-			d.Set("division_id", *sdkAsset.Division.Id)
+			_ = d.Set("division_id", *sdkAsset.Division.Id)
 		}
 
 		log.Printf("Read Responsemanagement response asset %s %s", d.Id(), *sdkAsset.Name)

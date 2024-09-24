@@ -130,7 +130,7 @@ func TestAccResourceTfExportIncludeFilterResourcesByRegEx(t *testing.T) {
 	})
 }
 
-// TestAccResourceTfExportIncludeFilterResourcesByRegExAndSanitizedNames will create 3 queues (two with foo bar, one to be excluded).
+// TestAccResourceTfExportIncludeFilterResourcesByRegExAndSanitizedNames will create 3 queues (twoc with foo bar, one to be excluded).
 // The test ensures that resources can be exported directly by their actual name or their sanitized names.
 func TestAccResourceTfExportIncludeFilterResourcesByRegExAndSanitizedNames(t *testing.T) {
 	var (
@@ -531,7 +531,7 @@ func TestAccResourceTfExport(t *testing.T) {
 				Config: generateTfExportResource(
 					exportResource1,
 					exportTestDir,
-					util.FalseValue,
+					util.TrueValue,
 					"",
 				),
 				Check: resource.ComposeTestCheckFunc(
@@ -668,6 +668,8 @@ func TestAccResourceTfExportByName(t *testing.T) {
 					util.FalseValue,                    // suppressCall_record_false
 					util.NullValue,                     // enable_transcription false
 					strconv.Quote("TimestampAndPriority"),
+					util.NullValue,
+					util.NullValue,
 				) + generateTfExportByName(
 					exportResource1,
 					exportTestDir,
@@ -711,6 +713,8 @@ func TestAccResourceTfExportByName(t *testing.T) {
 					util.FalseValue,                    // suppressCall_record_false
 					util.NullValue,                     // enable_transcription false
 					strconv.Quote("TimestampAndPriority"),
+					util.NullValue,
+					util.NullValue,
 				) + generateTfExportByName(
 					exportResource1,
 					exportTestDir,
@@ -767,6 +771,8 @@ func TestAccResourceTfExportByName(t *testing.T) {
 					util.FalseValue,                    // suppressCall_record_false
 					util.NullValue,                     // enable_transcription false
 					strconv.Quote("TimestampAndPriority"),
+					util.NullValue,
+					util.NullValue,
 				) + generateTfExportByName(
 					exportResource1,
 					exportTestDir,
@@ -1118,6 +1124,8 @@ func TestAccResourceTfExportQueueAsHCL(t *testing.T) {
 		util.TrueValue,
 		util.FalseValue,
 		strconv.Quote("TimestampAndPriority"),
+		util.NullValue,
+		util.NullValue,
 		routingQueue.GenerateMediaSettings("media_settings_call", alertTimeoutSec, util.FalseValue, slPercentage, slDurationMs),
 		routingQueue.GenerateRoutingRules(rrOperator, rrThreshold, rrWaitSeconds),
 		routingQueue.GenerateDefaultScriptIDs(chatScriptID, emailScriptID),
@@ -2455,7 +2463,7 @@ func generateTfExportResource(
 	return fmt.Sprintf(`resource "genesyscloud_tf_export" "%s" {
 		directory = "%s"
 		include_state_file = %s
-		resource_types = [
+		include_filter_resources = [
 			"genesyscloud_architect_datatable",
 			"genesyscloud_architect_datatable_row",
 			//"genesyscloud_flow",
@@ -2823,6 +2831,8 @@ func buildQueueResources(queueExports []QueueExport) string {
 			util.NullValue,                              //suppressCall_record_false
 			util.NullValue,                              // enable_transcription false
 			strconv.Quote("TimestampAndPriority"),
+			util.NullValue,
+			util.NullValue,
 		)
 	}
 
