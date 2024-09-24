@@ -1,8 +1,9 @@
-package genesyscloud
+package knowledge
 
 import (
 	"fmt"
 	"strings"
+	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
@@ -40,11 +41,11 @@ func TestAccResourceKnowledgeDocumentVariationBasic(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
-		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		ProviderFactories: provider.GetProviderFactories(providerResources, nil),
 		Steps: []resource.TestStep{
 			{
 				// Create
-				Config: GenerateKnowledgeKnowledgebaseResource(
+				Config: gcloud.GenerateKnowledgeKnowledgebaseResource(
 					knowledgeBaseResource1,
 					knowledgeBaseName1,
 					knowledgeBaseDescription1,
@@ -84,7 +85,7 @@ func TestAccResourceKnowledgeDocumentVariationBasic(t *testing.T) {
 			},
 			{
 				// Update
-				Config: GenerateKnowledgeKnowledgebaseResource(
+				Config: gcloud.GenerateKnowledgeKnowledgebaseResource(
 					knowledgeBaseResource1,
 					knowledgeBaseName1,
 					knowledgeBaseDescription1,
@@ -327,6 +328,48 @@ func generateAddressableEntityRef(versionId string) string {
         `, versionId,
 	)
 	return variationBody
+}
+
+func generateKnowledgeDocumentBasic(resourceName string, knowledgeBaseResourceName string, title string, visible bool, published bool, phrase string, autocomplete bool) string {
+	document := fmt.Sprintf(`
+        resource "genesyscloud_knowledge_document" "%s" {
+            knowledge_base_id = genesyscloud_knowledge_knowledgebase.%s.id
+            published = %v
+            %s
+        }
+        `, resourceName,
+		knowledgeBaseResourceName,
+		published,
+		generateKnowledgeDocumentRequestBodyBasic(title, visible, phrase, autocomplete),
+	)
+	return document
+}
+
+func generateKnowledgeDocumentRequestBodyBasic(title string, visible bool, phrase string, autocomplete bool) string {
+
+	documentRequestBody := fmt.Sprintf(`
+        knowledge_document {
+			title = "%s"
+			visible = %v
+			%s
+		}
+        `, title,
+		visible,
+		generateKnowledgeDocumentAlternatives(phrase, autocomplete),
+	)
+	return documentRequestBody
+}
+
+func generateKnowledgeDocumentAlternatives(phrase string, autocomplete bool) string {
+	alternatives := fmt.Sprintf(`
+        alternatives {
+			phrase = "%s"
+			autocomplete = %v
+		}
+        `, phrase,
+		autocomplete,
+	)
+	return alternatives
 }
 
 func testVerifyKnowledgeDocumentVariationDestroyed(state *terraform.State) error {

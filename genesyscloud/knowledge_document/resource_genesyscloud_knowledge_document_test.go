@@ -1,4 +1,4 @@
-package genesyscloud
+package knowledge_document
 
 import (
 	"fmt"
@@ -36,11 +36,11 @@ func TestAccResourceKnowledgeDocumentBasic(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
-		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		ProviderFactories: provider.GetProviderFactories(providerResources, nil),
 		Steps: []resource.TestStep{
 			{
 				// Create
-				Config: GenerateKnowledgeKnowledgebaseResource(
+				Config: generateKnowledgeKnowledgebaseResource(
 					knowledgeBaseResource1,
 					knowledgeBaseName1,
 					knowledgeBaseDescription1,
@@ -82,7 +82,7 @@ func TestAccResourceKnowledgeDocumentBasic(t *testing.T) {
 			},
 			{
 				// Update
-				Config: GenerateKnowledgeKnowledgebaseResource(
+				Config: generateKnowledgeKnowledgebaseResource(
 					knowledgeBaseResource1,
 					knowledgeBaseName1,
 					knowledgeBaseDescription1,
@@ -150,35 +150,16 @@ func generateKnowledgeDocumentResource(resourceName string, knowledgeBaseResourc
 	)
 	return document
 }
-
-func generateKnowledgeDocumentBasic(resourceName string, knowledgeBaseResourceName string, title string, visible bool, published bool, phrase string, autocomplete bool) string {
-	document := fmt.Sprintf(`
-        resource "genesyscloud_knowledge_document" "%s" {
-            knowledge_base_id = genesyscloud_knowledge_knowledgebase.%s.id
-            published = %v
-            %s
-        }
-        `, resourceName,
-		knowledgeBaseResourceName,
-		published,
-		generateKnowledgeDocumentRequestBodyBasic(title, visible, phrase, autocomplete),
-	)
-	return document
-}
-
-func generateKnowledgeDocumentRequestBodyBasic(title string, visible bool, phrase string, autocomplete bool) string {
-
-	documentRequestBody := fmt.Sprintf(`
-        knowledge_document {
-			title = "%s"
-			visible = %v
-			%s
+func generateKnowledgeDocumentAlternatives(phrase string, autocomplete bool) string {
+	alternatives := fmt.Sprintf(`
+        alternatives {
+			phrase = "%s"
+			autocomplete = %v
 		}
-        `, title,
-		visible,
-		generateKnowledgeDocumentAlternatives(phrase, autocomplete),
+        `, phrase,
+		autocomplete,
 	)
-	return documentRequestBody
+	return alternatives
 }
 
 func generateKnowledgeDocumentRequestBody(knowledgeCategoryName string, knowledgeLabelName string, title string, visible bool, phrase string, autocomplete bool) string {
@@ -200,16 +181,66 @@ func generateKnowledgeDocumentRequestBody(knowledgeCategoryName string, knowledg
 	return documentRequestBody
 }
 
-func generateKnowledgeDocumentAlternatives(phrase string, autocomplete bool) string {
-	alternatives := fmt.Sprintf(`
-        alternatives {
-			phrase = "%s"
-			autocomplete = %v
-		}
-        `, phrase,
-		autocomplete,
+func generateKnowledgeKnowledgebaseResource(
+	resourceID string,
+	name string,
+	description string,
+	coreLanguage string) string {
+	return fmt.Sprintf(`resource "genesyscloud_knowledge_knowledgebase" "%s" {
+		name = "%s"
+        description = "%s"
+        core_language = "%s"
+	}
+	`, resourceID, name, description, coreLanguage)
+}
+func generateKnowledgeCategoryResource(resourceName string, knowledgeBaseResource string, categoryName string, categoryDescription string) string {
+	category := fmt.Sprintf(`
+        resource "genesyscloud_knowledge_category" "%s" {
+            knowledge_base_id = genesyscloud_knowledge_knowledgebase.%s.id
+            %s
+        }
+        `, resourceName,
+		knowledgeBaseResource,
+		generateKnowledgeCategoryRequestBody(categoryName, categoryDescription),
 	)
-	return alternatives
+	return category
+}
+
+func generateKnowledgeCategoryRequestBody(categoryName string, categoryDescription string) string {
+
+	return fmt.Sprintf(`
+        knowledge_category {
+            name = "%s"
+            description = "%s"
+        }
+        `, categoryName,
+		categoryDescription,
+	)
+}
+
+func generateKnowledgeLabelResource(resourceName string, knowledgeBaseResource string, labelName string, labelColor string) string {
+	label := fmt.Sprintf(`
+        resource "genesyscloud_knowledge_label" "%s" {
+            knowledge_base_id = genesyscloud_knowledge_knowledgebase.%s.id
+            %s
+        }
+        `, resourceName,
+		knowledgeBaseResource,
+		generateKnowledgeLabelRequestBody(labelName, labelColor),
+	)
+	return label
+}
+
+func generateKnowledgeLabelRequestBody(labelName string, labelColor string) string {
+
+	return fmt.Sprintf(`
+        knowledge_label {
+            name = "%s"
+            color = "%s"
+        }
+        `, labelName,
+		labelColor,
+	)
 }
 
 func testVerifyKnowledgeDocumentDestroyed(state *terraform.State) error {
