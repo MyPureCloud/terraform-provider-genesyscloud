@@ -33,6 +33,7 @@ type ConsistencyCheck struct {
 	originalState       *schema.ResourceData
 	originalStateMap    map[string]interface{}
 	originalStateValues map[string]string
+	currentState        *schema.ResourceData
 	meta                interface{}
 	isEmptyState        *bool
 	checks              int
@@ -53,6 +54,8 @@ type consistencyErrorJson struct {
 	ResourceId       string `json:"resourceId"`
 	GCloudObjectName string `json:"GCloudObjectName"`
 	ErrorMessage     string `json:"errorMessage"`
+	OriginalState    string `json:"originalState"`
+	NewState         string `json:"newState"`
 }
 
 func (e *consistencyError) Error() string {
@@ -120,6 +123,8 @@ func (cc *ConsistencyCheck) CheckState(currentState *schema.ResourceData) *retry
 		Raw:          cc.originalStateMap,
 	}
 
+	cc.currentState = currentState
+
 	diff, _ := cc.resource.SimpleDiff(cc.ctx, currentState.State(), resourceConfig, cc.meta)
 	if diff != nil && len(diff.Attributes) > 0 {
 		currentStateMap := resourceDataToMap(currentState)
@@ -167,6 +172,32 @@ func (cc *ConsistencyCheck) CheckState(currentState *schema.ResourceData) *retry
 	return nil
 }
 
+func (cc *ConsistencyCheck) isComputed(attribute string) bool {
+	// Convert attribute from <attr1>.x.<attr2> to <attr1>.<attr2> before comparing
+	attrParts := strings.Split(attribute, ".")
+	var cleanAttrName string
+	for i := range attrParts {
+		if i%2 == 0 {
+			cleanAttrName = cleanAttrName + "." + attrParts[i]
+		}
+	}
+	cleanAttrName = strings.TrimPrefix(cleanAttrName, ".")
+
+	for _, computedBlock := range cc.computedBlocks {
+		if computedBlock == cleanAttrName {
+			return true
+		}
+	}
+
+	for _, computedAttribute := range cc.computedAttributes {
+		if computedAttribute == cleanAttrName {
+			return true
+		}
+	}
+
+	return false
+}
+
 // handleError will create the error message the consistency checker will throw and check if we should return it or write to a file
 func (cc *ConsistencyCheck) handleError(attribute string, originalValue string, currentValue string) *retry.RetryError {
 	err := retry.RetryableError(&consistencyError{
@@ -175,13 +206,14 @@ func (cc *ConsistencyCheck) handleError(attribute string, originalValue string, 
 		newValue: currentValue,
 	})
 
-	if exists := featureToggles.CCToggleExists(); cc.checks >= cc.maxStateChecks && exists {
+	if toggleExists := featureToggles.CCToggleExists(); cc.checks >= cc.maxStateChecks && toggleExists {
 		log.Printf("%s is set, writing consistency errors to consistency-errors.log.json", featureToggles.CCToggleName())
 
 		cc.writeConsistencyErrorToFile(err)
 		return nil
 	}
 
+	cc.writeConsistencyErrorToFile(err)
 	cc.checks++
 	return err
 }
@@ -190,9 +222,11 @@ func (cc *ConsistencyCheck) handleError(attribute string, originalValue string, 
 func (cc *ConsistencyCheck) writeConsistencyErrorToFile(consistencyError *retry.RetryError) {
 	const filePath = "consistency-errors.log.json"
 	errorJson := consistencyErrorJson{
-		ResourceType: cc.resourceType,
-		ResourceId:   cc.originalState.Id(),
-		ErrorMessage: consistencyError.Err.Error(),
+		ResourceType:  cc.resourceType,
+		ResourceId:    cc.originalState.Id(),
+		ErrorMessage:  consistencyError.Err.Error(),
+		OriginalState: cc.originalState.State().String(),
+		NewState:      cc.currentState.State().String(),
 	}
 
 	if name, _ := cc.originalState.Get("name").(string); name != "" {

@@ -175,29 +175,3 @@ func compareSlices(slice1, slice2 []interface{}) bool {
 
 	return reflect.DeepEqual(sortedSlice1, sortedSlice2)
 }
-
-func (cc *ConsistencyCheck) isComputed(attribute string) bool {
-	// Convert attribute from <attr1>.x.<attr2> to <attr1>.<attr2> before comparing
-	attrParts := strings.Split(attribute, ".")
-	var cleanAttrName string
-	for i := range attrParts {
-		if i%2 == 0 {
-			cleanAttrName = cleanAttrName + "." + attrParts[i]
-		}
-	}
-	cleanAttrName = strings.TrimPrefix(cleanAttrName, ".")
-
-	for _, computedBlock := range cc.computedBlocks {
-		if computedBlock == cleanAttrName {
-			return true
-		}
-	}
-
-	for _, computedAttribute := range cc.computedAttributes {
-		if computedAttribute == cleanAttrName {
-			return true
-		}
-	}
-
-	return false
-}
