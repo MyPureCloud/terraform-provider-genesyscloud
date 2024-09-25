@@ -22,9 +22,10 @@ func dataSourceSiteOutboundRouteRead(ctx context.Context, d *schema.ResourceData
 	proxy := getSiteOutboundRouteProxy(sdkConfig)
 
 	name := d.Get("name").(string)
+	siteId := d.Get("site_id").(string)
 
 	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
-		siteId, routeId, retryable, resp, err := proxy.getSiteOutboundRouteByName(ctx, name)
+		siteId, routeId, retryable, resp, err := proxy.getSiteOutboundRouteByName(ctx, name, siteId)
 		if err != nil {
 			if retryable {
 				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to get outbound route %s", name), resp))
