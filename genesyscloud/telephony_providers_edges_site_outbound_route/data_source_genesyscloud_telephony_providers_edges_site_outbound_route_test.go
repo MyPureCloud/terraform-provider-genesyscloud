@@ -35,11 +35,12 @@ func TestAccDataSourceSiteOutboundRoute(t *testing.T) {
 
 	t.Parallel()
 	var (
-		outboundRouteResource = "outbound_route"
+		outboundRouteResource1 = "outbound_route_1"
+		outboundRouteResource2 = "outbound_route_2"
 
 		// site
 		siteRes     = "site"
-		name        = "site " + uuid.NewString()
+		siteName    = "site " + uuid.NewString()
 		description = "terraform description 1"
 		mediaModel  = "Cloud"
 
@@ -86,7 +87,7 @@ func TestAccDataSourceSiteOutboundRoute(t *testing.T) {
 
 	site := telephonyProvidersEdgesSite.GenerateSiteResourceWithCustomAttrs(
 		siteRes,
-		name,
+		siteName,
 		description,
 		"genesyscloud_location."+locationRes+".id",
 		mediaModel,
@@ -103,38 +104,49 @@ func TestAccDataSourceSiteOutboundRoute(t *testing.T) {
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
-				Config: trunkBaseSettings1 + trunkBaseSettings2 + locationConfig + site + generateOutboundRoutesResource(
-					outboundRouteResource,
+				Config: trunkBaseSettings1 + trunkBaseSettings2 + locationConfig + site + generateSiteOutboundRoutesResource(
+					outboundRouteResource1,
 					"genesyscloud_telephony_providers_edges_site."+siteRes+".id",
-					generateSiteOutboundRoutes(
-						"outboundRoute name 1",
-						"outboundRoute description",
-						"\"International\"",
-						"genesyscloud_telephony_providers_edges_trunkbasesettings.trunkBaseSettings1.id",
-						"RANDOM",
-						util.FalseValue),
-					generateSiteOutboundRoutes(
+					"outboundRoute name 1",
+					"outboundRoute description",
+					"\"International\"",
+					"genesyscloud_telephony_providers_edges_trunkbasesettings.trunkBaseSettings1.id",
+					"RANDOM",
+					util.FalseValue) +
+					generateSiteOutboundRoutesResource(
+						outboundRouteResource2,
+						"genesyscloud_telephony_providers_edges_site."+siteRes+".id",
 						"outboundRoute name 2",
 						"outboundRoute description",
 						"\"National\"",
 						"genesyscloud_telephony_providers_edges_trunkbasesettings.trunkBaseSettings2.id",
 						"SEQUENTIAL",
-						util.FalseValue),
-				),
+						util.FalseValue,
+					),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_site_outbound_route."+outboundRouteResource, "outbound_routes.0.name", "outboundRoute name 1"),
-					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_site_outbound_route."+outboundRouteResource, "outbound_routes.1.name", "outboundRoute name 2"),
+					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_site_outbound_route."+outboundRouteResource1, "name", "outboundRoute name 1"),
+					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_site_outbound_route."+outboundRouteResource2, "name", "outboundRoute name 2"),
 				),
 				Destroy: false,
 			},
 			{
-				Config: trunkBaseSettings1 + trunkBaseSettings2 + locationConfig + site + generateSiteOutboundRouteDataSource(
-					outboundRouteResource,
-					name,
+				Config: trunkBaseSettings1 + trunkBaseSettings2 + locationConfig + site + generateSiteOutboundRoutesResource(
+					outboundRouteResource1,
+					"genesyscloud_telephony_providers_edges_site."+siteRes+".id",
+					"outboundRoute name 1",
+					"outboundRoute description",
+					"\"International\"",
+					"genesyscloud_telephony_providers_edges_trunkbasesettings.trunkBaseSettings1.id",
+					"RANDOM",
+					util.FalseValue) + generateSiteOutboundRouteDataSource(
+					outboundRouteResource1,
+					"outboundRoute name 1",
+					"",
 					"",
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair("data.genesyscloud_telephony_providers_edges_site_outbound_route."+outboundRouteResource, "id", "genesyscloud_telephony_providers_edges_site."+siteRes, "id"),
+					resource.TestCheckResourceAttrPair("data.genesyscloud_telephony_providers_edges_site_outbound_route."+outboundRouteResource1, "site_id", "genesyscloud_telephony_providers_edges_site."+siteRes, "id"),
+					resource.TestCheckResourceAttrPair("data.genesyscloud_telephony_providers_edges_site_outbound_route."+outboundRouteResource1, "route_id", "genesyscloud_telephony_providers_edges_site_outbound_route."+outboundRouteResource1, "route_id"),
 				),
 			},
 		},
@@ -147,11 +159,12 @@ This test expects that the org has a product called "voice" enabled on it. If th
 func TestAccDataSourceSiteManaged(t *testing.T) {
 	//t.Parallel()
 	var (
-		siteDataRes = "managed-site-data"
-		name        = "PureCloud Voice - AWS"
+		dataRes  = "managed-site-data"
+		siteName = "PureCloud Voice - AWS"
+		name     = "Default Outbound Route"
 	)
 
-	siteId, err := getSiteIdByName(name)
+	siteId, err := getSiteIdByName(siteName)
 	if err != nil {
 		t.Skipf("failed to retrieve ID of site '%s'", name)
 	}
@@ -162,12 +175,14 @@ func TestAccDataSourceSiteManaged(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config: generateSiteOutboundRouteDataSource(
-					siteDataRes,
+					dataRes,
 					name,
+					siteId,
 					"",
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("data.genesyscloud_telephony_providers_edges_site_outbound_route."+siteDataRes, "id", siteId),
+					resource.TestCheckResourceAttr("data.genesyscloud_telephony_providers_edges_site_outbound_route."+dataRes, "site_id", siteId),
+					resource.TestCheckResourceAttr("data.genesyscloud_telephony_providers_edges_site_outbound_route."+dataRes, "name", name),
 				),
 			},
 		},
@@ -175,17 +190,19 @@ func TestAccDataSourceSiteManaged(t *testing.T) {
 }
 
 func generateSiteOutboundRouteDataSource(
-	resourceID string,
+	resourceName string,
 	name string,
+	siteId string,
 	// Must explicitly use depends_on in terraform v0.13 when a data source references a resource
 	// Fixed in v0.14 https://github.com/hashicorp/terraform/pull/26284
 	dependsOnResource string,
 ) string {
 	return fmt.Sprintf(`data "genesyscloud_telephony_providers_edges_site_outbound_route" "%s" {
 		name = "%s"
+		site_id = "%s"
 		depends_on=[%s]
 	}
-	`, resourceID, name, dependsOnResource)
+	`, resourceName, name, siteId, dependsOnResource)
 }
 
 func getSiteIdByName(name string) (string, error) {

@@ -3,7 +3,6 @@ package telephony_providers_edges_site_outbound_route
 import (
 	"context"
 	"fmt"
-	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	featureToggles "terraform-provider-genesyscloud/genesyscloud/util/feature_toggles"
@@ -20,22 +19,25 @@ func dataSourceSiteOutboundRouteRead(ctx context.Context, d *schema.ResourceData
 		return util.BuildDiagnosticError(resourceName, fmt.Sprintf("Environment variable %s not set", featureToggles.OutboundRoutesToggleName()), fmt.Errorf("environment variable %s not set", featureToggles.OutboundRoutesToggleName()))
 	}
 	sdkConfig := m.(*provider.ProviderMeta).ClientConfig
-	sp := getSiteOutboundRouteProxy(sdkConfig)
+	proxy := getSiteOutboundRouteProxy(sdkConfig)
 
 	name := d.Get("name").(string)
-	name = strings.TrimSuffix(name, "-outbound-routes")
 
 	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
-		siteId, retryable, resp, err := sp.siteProxy.GetSiteIdByName(ctx, name)
+		siteId, routeId, retryable, resp, err := proxy.getSiteOutboundRouteByName(ctx, name)
 		if err != nil {
 			if retryable {
-				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to get site %s", name), resp))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to get outbound route %s", name), resp))
 			}
 
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("error requesting site %s | error: %s", name, err), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("error requesting outbound route %s | error: %s", name, err), resp))
 		}
 
-		d.SetId(siteId)
+		outboundRouteId := buildSiteAndOutboundRouteId(siteId, routeId)
+
+		d.SetId(outboundRouteId)
+		d.Set("site_id", siteId)
+		d.Set("route_id", routeId)
 		return nil
 	})
 }
