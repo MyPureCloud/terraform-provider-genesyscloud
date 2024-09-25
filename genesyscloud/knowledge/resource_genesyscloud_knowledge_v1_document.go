@@ -1,4 +1,4 @@
-package genesyscloud
+package knowledge
 
 import (
 	"context"
@@ -14,6 +14,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
+
+	knowledgeDocument "terraform-provider-genesyscloud/genesyscloud/knowledge_document"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -104,28 +106,29 @@ var (
 	}
 )
 
-func getAllKnowledgeDocumentsV1(_ context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+func getAllKnowledgeDocumentsV1(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
 	knowledgeBaseList := make([]platformclientv2.Knowledgebase, 0)
 	documentEntities := make([]platformclientv2.Knowledgedocument, 0)
 	resources := make(resourceExporter.ResourceIDMetaMap)
-	knowledgeAPI := platformclientv2.NewKnowledgeApiWithConfig(clientConfig)
+	knowledgeProxy := knowledgeDocument.GetKnowledgeDocumentProxy(clientConfig)
+	knowledgeApi := knowledgeProxy.KnowledgeApi
 
 	// get published knowledge bases
-	publishedEntities, err := getAllKnowledgebaseEntities(*knowledgeAPI, true)
+	publishedEntities, response, err := knowledgeProxy.GetAllKnowledgebaseEntities(ctx, true)
 	if err != nil {
-		return nil, err
+		return nil, util.BuildAPIDiagnosticError("genesyscloud_knowledge_v1_document", fmt.Sprintf("%v", err), response)
 	}
 	knowledgeBaseList = append(knowledgeBaseList, *publishedEntities...)
 
 	// get unpublished knowledge bases
-	unpublishedEntities, err := getAllKnowledgebaseEntities(*knowledgeAPI, false)
+	unpublishedEntities, response, err := knowledgeProxy.GetAllKnowledgebaseEntities(ctx, false)
 	if err != nil {
-		return nil, err
+		return nil, util.BuildAPIDiagnosticError("genesyscloud_knowledge_v1_document", fmt.Sprintf("%v", err), response)
 	}
 	knowledgeBaseList = append(knowledgeBaseList, *unpublishedEntities...)
 
 	for _, knowledgeBase := range knowledgeBaseList {
-		partialEntities, err := getAllKnowledgeV1DocumentEntities(*knowledgeAPI, &knowledgeBase)
+		partialEntities, err := getAllKnowledgeV1DocumentEntities(*knowledgeApi, &knowledgeBase)
 		if err != nil {
 			return nil, err
 		}
@@ -424,7 +427,7 @@ func readKnowledgeDocumentV1(ctx context.Context, d *schema.ResourceData, meta i
 
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	knowledgeAPI := platformclientv2.NewKnowledgeApiWithConfig(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceKnowledgeDocument(), constants.DefaultConsistencyChecks, "genesyscloud_knowledge_v1_document")
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, knowledgeDocument.ResourceKnowledgeDocument(), constants.DefaultConsistencyChecks, "genesyscloud_knowledge_v1_document")
 
 	log.Printf("Reading knowledge document %s", knowledgeDocumentId)
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {

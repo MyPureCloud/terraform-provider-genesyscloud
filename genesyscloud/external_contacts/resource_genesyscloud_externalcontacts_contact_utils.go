@@ -239,6 +239,12 @@ func buildSdkWhatsAppId(d *schema.ResourceData, key string) *platformclientv2.Wh
 
 // flattenSdkWhatsAppId maps a Genesys Cloud platformclientv2.Whatsappid to a []interface{}
 func flattenSdkWhatsAppId(whatsappId *platformclientv2.Whatsappid) []interface{} {
+	if whatsappId.DisplayName == nil {
+		return nil
+	}
+	if whatsappId.PhoneNumber == nil {
+		return nil
+	}
 	whatsappInterface := make(map[string]interface{})
 	flattenPhonenumber := flattenPhoneNumber(whatsappId.PhoneNumber)
 	whatsappInterface["display_name"] = *whatsappId.DisplayName
