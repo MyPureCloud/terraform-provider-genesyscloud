@@ -117,7 +117,6 @@ func createSiteOutboundRouteFn(ctx context.Context, p *siteOutboundRouteProxy, s
 
 func getAllSiteOutboundRoutesFn(ctx context.Context, p *siteOutboundRouteProxy, siteId string) (*[]platformclientv2.Outboundroutebase, *platformclientv2.APIResponse, error) {
 	var allOutboundRoutes []platformclientv2.Outboundroutebase
-	var outboundRoutesCache rc.CacheInterface[platformclientv2.Outboundroutebase]
 
 	const pageSize = 100
 	outboundRoutes, resp, err := p.edgesApi.GetTelephonyProvidersEdgesSiteOutboundroutes(siteId, pageSize, 1, "", "", "")
@@ -129,11 +128,11 @@ func getAllSiteOutboundRoutesFn(ctx context.Context, p *siteOutboundRouteProxy, 
 
 	// Check if the site cache is populated with all the data, if it is, return that instead
 	// If the size of the cache is the same as the total number of sites, the cache is up-to-date
-	if rc.GetCacheSize(outboundRoutesCache) == *outboundRoutes.Total && rc.GetCacheSize(outboundRoutesCache) != 0 {
-		return rc.GetCache(outboundRoutesCache), nil, nil
-	} else if rc.GetCacheSize(outboundRoutesCache) != *outboundRoutes.Total && rc.GetCacheSize(outboundRoutesCache) != 0 {
+	if rc.GetCacheSize(p.siteOutboundRouteCache) == *outboundRoutes.Total && rc.GetCacheSize(p.siteOutboundRouteCache) != 0 {
+		return rc.GetCache(p.siteOutboundRouteCache), nil, nil
+	} else if rc.GetCacheSize(p.siteOutboundRouteCache) != *outboundRoutes.Total && rc.GetCacheSize(p.siteOutboundRouteCache) != 0 {
 		// The cache is populated but not with the right data, clear the cache so it can be re populated
-		outboundRoutesCache = rc.NewResourceCache[platformclientv2.Outboundroutebase]()
+		p.siteOutboundRouteCache = rc.NewResourceCache[platformclientv2.Outboundroutebase]()
 	}
 
 	for pageNum := 2; pageNum <= *outboundRoutes.PageCount; pageNum++ {
@@ -150,7 +149,7 @@ func getAllSiteOutboundRoutesFn(ctx context.Context, p *siteOutboundRouteProxy, 
 
 	// Populate the site cache
 	for _, outboundRoute := range allOutboundRoutes {
-		rc.SetCache(outboundRoutesCache, *outboundRoute.Id, outboundRoute)
+		rc.SetCache(p.siteOutboundRouteCache, *outboundRoute.Id, outboundRoute)
 	}
 
 	return &allOutboundRoutes, resp, nil
