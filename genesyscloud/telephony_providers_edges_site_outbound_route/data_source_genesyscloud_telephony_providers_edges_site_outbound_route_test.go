@@ -2,15 +2,12 @@ package telephony_providers_edges_site_outbound_route
 
 import (
 	"fmt"
-	"log"
-	"os"
 	"strconv"
 	location "terraform-provider-genesyscloud/genesyscloud/location"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/telephony"
 	telephonyProvidersEdgesSite "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site"
 	"terraform-provider-genesyscloud/genesyscloud/util"
-	featureToggles "terraform-provider-genesyscloud/genesyscloud/util/feature_toggles"
 	"testing"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
@@ -21,17 +18,7 @@ import (
 
 func TestAccDataSourceSiteOutboundRoute(t *testing.T) {
 
-	defer func() {
-		err := os.Unsetenv(featureToggles.OutboundRoutesToggleName())
-		if err != nil {
-			log.Printf("%s", err)
-		}
-	}()
-
-	err := os.Setenv(featureToggles.OutboundRoutesToggleName(), "enabled")
-	if err != nil {
-		t.Errorf("%s is not set", featureToggles.OutboundRoutesToggleName())
-	}
+	featureToggleCheck(t)
 
 	t.Parallel()
 	var (
@@ -158,6 +145,8 @@ This test expects that the org has a product called "voice" enabled on it. If th
 */
 func TestAccDataSourceSiteManaged(t *testing.T) {
 	//t.Parallel()
+	featureToggleCheck(t)
+
 	var (
 		dataRes  = "managed-site-data"
 		siteName = "PureCloud Voice - AWS"

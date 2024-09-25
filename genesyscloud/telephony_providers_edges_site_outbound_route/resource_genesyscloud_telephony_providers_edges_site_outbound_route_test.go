@@ -19,17 +19,8 @@ import (
 )
 
 func TestAccResourceSiteoutboundRoutes(t *testing.T) {
-	defer func() {
-		err := os.Unsetenv(featureToggles.OutboundRoutesToggleName())
-		if err != nil {
-			log.Printf("%s", err)
-		}
-	}()
 
-	err := os.Setenv(featureToggles.OutboundRoutesToggleName(), "enabled")
-	if err != nil {
-		t.Errorf("%s is not set", featureToggles.OutboundRoutesToggleName())
-	}
+	featureToggleCheck(t)
 
 	var (
 		outboundRouteResource1 = "outbound_route_1"
@@ -229,4 +220,20 @@ func generateSiteOutboundRoutesResource(
 		enabled = %s
 	}
 	`, routesResource, siteId, name, description, classificationTypes, externalTrunkBaseIds, distribution, enabled)
+}
+
+func featureToggleCheck(t *testing.T) {
+	featureEnvSet := os.Getenv(featureToggles.OutboundRoutesToggleName())
+	if featureEnvSet == "" {
+		err := os.Setenv(featureToggles.OutboundRoutesToggleName(), "enabled")
+		if err != nil {
+			t.Errorf("%s is not set", featureToggles.OutboundRoutesToggleName())
+		}
+		defer func() {
+			err := os.Unsetenv(featureToggles.OutboundRoutesToggleName())
+			if err != nil {
+				log.Printf("%s", err)
+			}
+		}()
+	}
 }

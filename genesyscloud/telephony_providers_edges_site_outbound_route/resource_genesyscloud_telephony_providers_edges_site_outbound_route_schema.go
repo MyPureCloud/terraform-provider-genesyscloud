@@ -19,13 +19,6 @@ resource_genesyscloud_telephony_providers_edges_site_schema.go should hold four 
 
 const resourceName = "genesyscloud_telephony_providers_edges_site_outbound_route"
 
-var (
-	// This is outside the ResourceSite because it is used in a utility function.
-	outboundRouteSchema = &schema.Resource{
-		Schema: map[string]*schema.Schema{},
-	}
-)
-
 // SetRegistrar registers all of the resources and exporters in the package
 func SetRegistrar(l registrar.Registrar) {
 	l.RegisterResource(resourceName, ResourceSiteOutboundRoute())
