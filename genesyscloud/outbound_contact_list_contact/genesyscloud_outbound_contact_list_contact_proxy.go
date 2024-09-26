@@ -2,7 +2,6 @@ package outbound_contact_list_contact
 
 import (
 	"context"
-	"fmt"
 	rc "terraform-provider-genesyscloud/genesyscloud/resource_cache"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
@@ -75,7 +74,7 @@ func createContactFn(_ context.Context, p *contactProxy, contactListId string, c
 }
 
 func readContactByIdFn(_ context.Context, p *contactProxy, contactListId, contactId string) (*platformclientv2.Dialercontact, *platformclientv2.APIResponse, error) {
-	if contact := rc.GetCacheItem(p.contactCache, fmt.Sprintf("%s:%s", contactListId, contactId)); contact != nil {
+	if contact := rc.GetCacheItem(p.contactCache, createComplexContact(contactListId, contactId)); contact != nil {
 		return contact, nil, nil
 	}
 	return p.outboundApi.GetOutboundContactlistContact(contactListId, contactId)
@@ -109,7 +108,7 @@ func getAllContactsFn(ctx context.Context, p *contactProxy) ([]platformclientv2.
 
 	for contactListId, contactList := range contactMatrix {
 		for _, contact := range contactList {
-			rc.SetCache(p.contactCache, fmt.Sprintf("%s:%s", contactListId, *contact.Id), contact)
+			rc.SetCache(p.contactCache, createComplexContact(contactListId, *contact.Id), contact)
 
 		}
 	}
