@@ -78,7 +78,6 @@ func readOutboundContactListContact(ctx context.Context, d *schema.ResourceData,
 	contactListId, contactId := splitComplexContact(d.Id())
 	if contactListId == "" {
 		contactListId = d.Get("contact_list_id").(string)
-		contactId = d.Id()
 	}
 
 	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundContactListContact(), constants.DefaultConsistencyChecks, resourceName)
@@ -118,7 +117,6 @@ func updateOutboundContactListContact(ctx context.Context, d *schema.ResourceDat
 	contactListId, contactId := splitComplexContact(d.Id())
 	if contactListId == "" {
 		contactListId = d.Get("contact_list_id").(string)
-		contactId = d.Id()
 	}
 
 	log.Printf("Updating contact '%s' in contact list '%s'", contactId, contactListId)
@@ -139,7 +137,6 @@ func deleteOutboundContactListContact(ctx context.Context, d *schema.ResourceDat
 	contactListId, contactId := splitComplexContact(d.Id())
 	if contactListId == "" {
 		contactListId = d.Get("contact_list_id").(string)
-		contactId = d.Id()
 	}
 
 	log.Printf("Deleting contact '%s' from contact list '%s'", contactId, contactListId)
