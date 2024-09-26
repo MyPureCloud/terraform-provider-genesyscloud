@@ -9,6 +9,7 @@ import (
 	"sort"
 	"strings"
 	"sync"
+	tfexporterState "terraform-provider-genesyscloud/genesyscloud/tfexporter_state"
 	featureToggles "terraform-provider-genesyscloud/genesyscloud/util/feature_toggles"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -109,6 +110,11 @@ func DeleteConsistencyCheck(id string) {
 
 // CheckState will compare the current state of a resource with the original state
 func (cc *ConsistencyCheck) CheckState(currentState *schema.ResourceData) *retry.RetryError {
+	// We don't need to use the consistency checker during an export since there is no original state to compare to
+	if tfexporterState.IsExporterActive() {
+		return nil
+	}
+
 	if cc.isEmptyState == nil {
 		panic("consistencyCheck must be initialized with NewConsistencyCheck")
 	}
