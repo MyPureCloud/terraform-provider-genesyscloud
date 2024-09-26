@@ -137,7 +137,7 @@ func getAuthDivisionIdByNameFn(ctx context.Context, p *authDivisionProxy, name s
 	}
 
 	if authzDivisions == nil || len(*authzDivisions) == 0 {
-		return "", resp, true, err
+		return "", resp, false, err
 	}
 
 	for _, authzDivision := range *authzDivisions {
