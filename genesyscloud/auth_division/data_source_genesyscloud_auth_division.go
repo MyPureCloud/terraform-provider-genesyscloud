@@ -21,11 +21,12 @@ func dataSourceAuthDivisionRead(ctx context.Context, d *schema.ResourceData, m i
 	// Query division by name. Retry in case search has not yet indexed the division.
 	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
 		divisionId, resp, retryable, getErr := proxy.getAuthDivisionIdByName(ctx, name)
-		if getErr != nil && !retryable {
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Error requesting division %s | error: %s", name, getErr), resp))
-		}
-		if retryable {
-			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Error requesting division %s | error: %s", name, getErr), resp))
+		if getErr != nil {
+			errorDetails := util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Error requesting division %s | error: %s", name, getErr), resp)
+			if !retryable {
+				return retry.NonRetryableError(errorDetails)
+			}
+			return retry.RetryableError(errorDetails)
 		}
 
 		d.SetId(divisionId)
