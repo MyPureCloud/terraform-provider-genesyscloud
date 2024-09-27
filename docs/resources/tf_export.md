@@ -2,12 +2,12 @@
 page_title: "genesyscloud_tf_export Resource - terraform-provider-genesyscloud"
 subcategory: ""
 description: |-
-  Genesys Cloud Resource to export Terraform config and (optionally) tfstate files to a local directory. 
+  Genesys Cloud Resource to export Terraform config and (optionally) tfstate files to a local directory.
   	The config file is named 'genesyscloud.tf.json' or 'genesyscloud.tf', and the state file is named 'terraform.tfstate'.
 ---
 # genesyscloud_tf_export (Resource)
 
-Genesys Cloud Resource to export Terraform config and (optionally) tfstate files to a local directory. 
+Genesys Cloud Resource to export Terraform config and (optionally) tfstate files to a local directory.
 		The config file is named 'genesyscloud.tf.json' or 'genesyscloud.tf', and the state file is named 'terraform.tfstate'.
 
 ## API Usage
@@ -66,6 +66,7 @@ resource "genesyscloud_tf_export" "export" {
 - `exclude_attributes` (List of String) Attributes to exclude from the config when exporting resources. Each value should be of the form {resource_name}.{attribute}, e.g. 'genesyscloud_user.skills'. Excluded attributes must be optional.
 - `exclude_filter_resources` (List of String) Exclude resources that match either a resource type or a resource type::regular expression.  See export guide for additional information
 - `export_as_hcl` (Boolean) Export the config as HCL. Defaults to `false`.
+- `export_computed` (Boolean) Export attributes that are marked as being Computed Defaults to `false`.
 - `ignore_cyclic_deps` (Boolean) Ignore Cyclic Dependencies when building the flows and do not throw an error Defaults to `true`.
 - `include_filter_resources` (List of String) Include only resources that match either a resource type or a resource type::regular expression.  See export guide for additional information
 - `include_state_file` (Boolean) Export a 'terraform.tfstate' file along with the config file. This can be used for orgs to begin managing existing resources with terraform. When `false`, GUID fields will be omitted from the config file unless a resource reference can be supplied. In this case, the resource type will need to be included in the `resource_types` array. Defaults to `false`.
