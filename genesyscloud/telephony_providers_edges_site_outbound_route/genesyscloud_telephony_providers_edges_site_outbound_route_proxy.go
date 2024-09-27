@@ -213,5 +213,11 @@ func updateSiteOutboundRouteFn(ctx context.Context, p *siteOutboundRouteProxy, s
 
 // deleteSiteOutboundRouteFn is an implementation function for deleting an outbound route for a Genesys Cloud Site
 func deleteSiteOutboundRouteFn(ctx context.Context, p *siteOutboundRouteProxy, siteId string, outboundRouteId string) (*platformclientv2.APIResponse, error) {
-	return p.edgesApi.DeleteTelephonyProvidersEdgesSiteOutboundroute(siteId, outboundRouteId)
+	resp, err := p.edgesApi.DeleteTelephonyProvidersEdgesSiteOutboundroute(siteId, outboundRouteId)
+	if err != nil {
+		return resp, err
+	}
+
+	rc.DeleteCacheItem(p.siteOutboundRouteCache, outboundRouteId)
+	return resp, nil
 }
