@@ -1041,10 +1041,8 @@ func (g *GenesysCloudResourceExporter) getResourcesForType(resType string, provi
 					attributes := make(map[string]string)
 
 					for attr, _ := range schemaMap {
-						if instanceState.Attributes != nil {
-							if value, ok := instanceState.Attributes[attr]; ok {
-								attributes[attr] = value
-							}
+						if value, ok := instanceState.Attributes[attr]; ok {
+							attributes[attr] = value
 						}
 					}
 					instanceState.Attributes = attributes
