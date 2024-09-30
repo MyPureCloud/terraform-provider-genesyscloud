@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"math/rand"
 	"strconv"
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	authDivision "terraform-provider-genesyscloud/genesyscloud/auth_division"
 	outboundCampaign "terraform-provider-genesyscloud/genesyscloud/outbound_campaign"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
@@ -72,7 +72,7 @@ func TestAccDataSourceOutboundCampaignRule(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config: `data "genesyscloud_auth_division_home" "home" {}` + "\n" +
-					gcloud.GenerateAuthDivisionBasic(divResourceId, divName) +
+					authDivision.GenerateAuthDivisionBasic(divResourceId, divName) +
 					campaign1Resource +
 					campaign2Resource +
 					generateOutboundCampaignRule(

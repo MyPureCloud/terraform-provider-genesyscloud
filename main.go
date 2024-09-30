@@ -14,12 +14,14 @@ import (
 	architectSchedulegroups "terraform-provider-genesyscloud/genesyscloud/architect_schedulegroups"
 	architectSchedules "terraform-provider-genesyscloud/genesyscloud/architect_schedules"
 	userPrompt "terraform-provider-genesyscloud/genesyscloud/architect_user_prompt"
+	authDivision "terraform-provider-genesyscloud/genesyscloud/auth_division"
 	authRole "terraform-provider-genesyscloud/genesyscloud/auth_role"
 	authorizatioProduct "terraform-provider-genesyscloud/genesyscloud/authorization_product"
 	integrationInstagram "terraform-provider-genesyscloud/genesyscloud/conversations_messaging_integrations_instagram"
 	cMessageSettings "terraform-provider-genesyscloud/genesyscloud/conversations_messaging_settings"
 	cMessageSettingsDefault "terraform-provider-genesyscloud/genesyscloud/conversations_messaging_settings_default"
 	supportedContent "terraform-provider-genesyscloud/genesyscloud/conversations_messaging_supportedcontent"
+	cmSupportedContentDefault "terraform-provider-genesyscloud/genesyscloud/conversations_messaging_supportedcontent_default"
 	employeeperformanceExternalmetricsDefinition "terraform-provider-genesyscloud/genesyscloud/employeeperformance_externalmetrics_definitions"
 	externalContacts "terraform-provider-genesyscloud/genesyscloud/external_contacts"
 	flowLogLevel "terraform-provider-genesyscloud/genesyscloud/flow_loglevel"
@@ -41,6 +43,7 @@ import (
 	integrationFacebook "terraform-provider-genesyscloud/genesyscloud/integration_facebook"
 	journeyOutcomePredictor "terraform-provider-genesyscloud/genesyscloud/journey_outcome_predictor"
 	journeyViews "terraform-provider-genesyscloud/genesyscloud/journey_views"
+	"terraform-provider-genesyscloud/genesyscloud/knowledge"
 	oauth "terraform-provider-genesyscloud/genesyscloud/oauth_client"
 	oAuthSettings "terraform-provider-genesyscloud/genesyscloud/organization_authentication_settings"
 	oAuthPairing "terraform-provider-genesyscloud/genesyscloud/orgauthorization_pairing"
@@ -54,6 +57,7 @@ import (
 	outboundContactListContact "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list_contact"
 	obContactListTemplate "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list_template"
 	obContactListFilter "terraform-provider-genesyscloud/genesyscloud/outbound_contactlistfilter"
+	obDigitalRuleSet "terraform-provider-genesyscloud/genesyscloud/outbound_digitalruleset"
 	obDncList "terraform-provider-genesyscloud/genesyscloud/outbound_dnclist"
 	obfst "terraform-provider-genesyscloud/genesyscloud/outbound_filespecificationtemplate"
 	obs "terraform-provider-genesyscloud/genesyscloud/outbound_ruleset"
@@ -74,6 +78,7 @@ import (
 	routingQueue "terraform-provider-genesyscloud/genesyscloud/routing_queue"
 	routingWrapupcode "terraform-provider-genesyscloud/genesyscloud/routing_wrapupcode"
 
+	knowledgeDocument "terraform-provider-genesyscloud/genesyscloud/knowledge_document"
 	location "terraform-provider-genesyscloud/genesyscloud/location"
 	routingQueueConditionalGroupRouting "terraform-provider-genesyscloud/genesyscloud/routing_queue_conditional_group_routing"
 	routingQueueOutboundEmailAddress "terraform-provider-genesyscloud/genesyscloud/routing_queue_outbound_email_address"
@@ -167,6 +172,7 @@ type RegisterInstance struct {
 func registerResources() {
 	regInstance := &RegisterInstance{}
 	authRole.SetRegistrar(regInstance)                                     //Registering auth_role
+	authDivision.SetRegistrar(regInstance)                                 //Registering auth_division
 	oauth.SetRegistrar(regInstance)                                        //Registering oauth_client
 	dt.SetRegistrar(regInstance)                                           //Registering architect data table
 	dtr.SetRegistrar(regInstance)                                          //Registering architect data table row
@@ -204,6 +210,7 @@ func registerResources() {
 	obCampaign.SetRegistrar(regInstance)                                   //Registering outbound campaign
 	obfst.SetRegistrar(regInstance)                                        //Registering outbound file specification template
 	obDncList.SetRegistrar(regInstance)                                    //Registering outbound dnclist
+	obDigitalRuleSet.SetRegistrar(regInstance)                             //Registering outbound digital ruleset
 	oAuthPairing.SetRegistrar(regInstance)                                 //Registering orgauthorization pairing
 	scripts.SetRegistrar(regInstance)                                      //Registering Scripts
 	smsAddresses.SetRegistrar(regInstance)                                 //Registering routing sms addresses
@@ -266,7 +273,10 @@ func registerResources() {
 	cMessageSettings.SetRegistrar(regInstance)                             //Registering conversations messaging settings
 	routingSkillGroup.SetRegistrar(regInstance)                            //Registering routing skill group
 	cMessageSettingsDefault.SetRegistrar(regInstance)                      //Registering conversations messaging settings default
+	cmSupportedContentDefault.SetRegistrar(regInstance)                    //Registering conversations supported content default
 	location.SetRegistrar(regInstance)                                     //Registering location
+	knowledgeDocument.SetRegistrar(regInstance)                            //Registering knowledge document
+	knowledge.SetRegistrar(regInstance)                                    //Registering knowledge
 	// setting resources for Use cases  like TF export where provider is used in resource classes.
 	tfexp.SetRegistrar(regInstance) //Registering tf exporter
 	registrar.SetResources(providerResources, providerDataSources)

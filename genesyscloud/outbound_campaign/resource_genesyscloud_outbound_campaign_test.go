@@ -14,7 +14,7 @@ import (
 	"testing"
 	"time"
 
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	authDivision "terraform-provider-genesyscloud/genesyscloud/auth_division"
 	obCallableTimeset "terraform-provider-genesyscloud/genesyscloud/outbound_callabletimeset"
 	obResponseSet "terraform-provider-genesyscloud/genesyscloud/outbound_callanalysisresponseset"
 	obContactList "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
@@ -104,7 +104,7 @@ func TestAccResourceOutboundCampaignBasic(t *testing.T) {
 	) + obDnclist.GenerateOutboundDncListBasic(
 		dncListResourceId,
 		"dnc list "+uuid.NewString(),
-	) + gcloud.GenerateAuthDivisionBasic(divResource, divName) + routingWrapupcode.GenerateRoutingWrapupcodeResource(
+	) + authDivision.GenerateAuthDivisionBasic(divResource, divName) + routingWrapupcode.GenerateRoutingWrapupcodeResource(
 		wrapupCodeResourceId,
 		"tf wrapup code"+uuid.NewString(),
 		"genesyscloud_auth_division."+divResource+".id",
@@ -454,7 +454,7 @@ func TestAccResourceOutboundCampaignCampaignStatus(t *testing.T) {
 			"home",
 			strconv.Quote("Home"),
 		),
-	) + gcloud.GenerateAuthDivisionBasic(divResource, divName) + routingWrapupcode.GenerateRoutingWrapupcodeResource(
+	) + authDivision.GenerateAuthDivisionBasic(divResource, divName) + routingWrapupcode.GenerateRoutingWrapupcodeResource(
 		wrapupcodeResourceId,
 		"tf wrapup code"+uuid.NewString(),
 		"genesyscloud_auth_division."+divResource+".id",
@@ -642,7 +642,7 @@ func TestAccResourceOutboundCampaignStatusOn(t *testing.T) {
 			// Create resources for outbound campaign
 			{
 				Config: `data "genesyscloud_auth_division_home" "home" {}` + "\n" +
-					gcloud.GenerateAuthDivisionBasic(divResourceId, divName) +
+					authDivision.GenerateAuthDivisionBasic(divResourceId, divName) +
 					GenerateReferencedResourcesForOutboundCampaignTests(
 						contactListResourceId,
 						"",
@@ -668,7 +668,7 @@ func TestAccResourceOutboundCampaignStatusOn(t *testing.T) {
 			// the destroy command takes care of turning it off before deleting.
 			{
 				Config: `data "genesyscloud_auth_division_home" "home" {}` + "\n" +
-					gcloud.GenerateAuthDivisionBasic(divResourceId, divName) +
+					authDivision.GenerateAuthDivisionBasic(divResourceId, divName) +
 					GenerateOutboundCampaignBasic(
 						resourceId,
 						name,

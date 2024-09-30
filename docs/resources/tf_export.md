@@ -63,7 +63,7 @@ resource "genesyscloud_tf_export" "export" {
 - `advanced_filter_resources` (Block List, Max: 1) Advanced filtering handling. Allows filtering to be defined to explicitly include and/or exclude by type, as well as include and/or exclude by name with support for regular expressions (regexp). See export guide for additional information. (see [below for nested schema](#nestedblock--advanced_filter_resources))
 - `compress` (Boolean) Compress exported results using zip format Defaults to `false`.
 - `directory` (String) Directory where the config and state files will be exported. Defaults to `./genesyscloud`.
-- `enable_dependency_resolution` (Boolean) Adds a "depends_on" attribute to genesyscloud_flow resources with a list of resources that are referenced inside the flow configuration . This also resolves and exports all the dependent resources for any given resource. Defaults to `false`.
+- `enable_dependency_resolution` (Boolean) Adds a "depends_on" attribute to genesyscloud_flow resources with a list of resources that are referenced inside the flow configuration . This also resolves and exports all the dependent resources for any given resource. Resources mentioned in exclude_attributes will not be exported. Defaults to `false`.
 - `exclude_attributes` (List of String) Attributes to exclude from the config when exporting resources. Each value should be of the form {resource_name}.{attribute}, e.g. 'genesyscloud_user.skills'. Excluded attributes must be optional.
 - `exclude_filter_resources` (List of String) Exclude resources that match either a resource type or a resource type::regular expression.  See export guide for additional information
 - `export_as_hcl` (Boolean) Export the config as HCL. Defaults to `false`.

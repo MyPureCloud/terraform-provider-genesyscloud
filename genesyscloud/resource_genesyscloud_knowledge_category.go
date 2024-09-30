@@ -119,7 +119,8 @@ func KnowledgeCategoryExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: provider.GetAllWithPooledClient(getAllKnowledgeCategories),
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
-			"knowledge_base_id": {RefType: "genesyscloud_knowledge_knowledgebase"},
+			"knowledge_base_id":            {RefType: "genesyscloud_knowledge_knowledgebase"},
+			"knowledge_category.parent_id": {RefType: "genesyscloud_knowledge_category"},
 		},
 	}
 }
@@ -277,10 +278,16 @@ func buildKnowledgeCategoryUpdate(categoryIn map[string]interface{}) *platformcl
 	if description, ok := categoryIn["description"].(string); ok && description != "" {
 		categoryOut.Description = &description
 	}
-	if parentId, ok := categoryIn["parent_id"].(string); ok && parentId != "" {
-		categoryOut.ParentCategoryId = &parentId
-	}
 
+	if parentId, ok := categoryIn["parent_id"].(string); ok && parentId != "" {
+		if strings.Contains(parentId, ",") {
+			ids := strings.Split(parentId, ",")
+			parent_Id := ids[0]
+			categoryOut.ParentCategoryId = &parent_Id
+		} else {
+			categoryOut.ParentCategoryId = &parentId
+		}
+	}
 	return &categoryOut
 }
 
@@ -295,7 +302,13 @@ func buildKnowledgeCategoryCreate(categoryIn map[string]interface{}) *platformcl
 		categoryOut.Description = &description
 	}
 	if parentId, ok := categoryIn["parent_id"].(string); ok && parentId != "" {
-		categoryOut.ParentCategoryId = &parentId
+		if strings.Contains(parentId, ",") {
+			ids := strings.Split(parentId, ",")
+			parent_Id := ids[0]
+			categoryOut.ParentCategoryId = &parent_Id
+		} else {
+			categoryOut.ParentCategoryId = &parentId
+		}
 	}
 
 	return &categoryOut
@@ -311,7 +324,7 @@ func flattenKnowledgeCategory(categoryIn platformclientv2.Categoryresponse) []in
 		categoryOut["description"] = *categoryIn.Description
 	}
 	if categoryIn.ParentCategory != nil && (*categoryIn.ParentCategory).Id != nil {
-		categoryOut["parent_id"] = (*categoryIn.ParentCategory).Id
+		categoryOut["parent_id"] = *(*categoryIn.ParentCategory).Id + "," + *(*categoryIn.KnowledgeBase).Id
 	}
 
 	return []interface{}{categoryOut}

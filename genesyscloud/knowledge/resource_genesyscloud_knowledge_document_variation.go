@@ -1,4 +1,4 @@
-package genesyscloud
+package knowledge
 
 import (
 	"context"
@@ -10,6 +10,8 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"time"
+
+	knowledgeDocument "terraform-provider-genesyscloud/genesyscloud/knowledge_document"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 
@@ -216,29 +218,30 @@ var (
 	}
 )
 
-func getAllKnowledgeDocumentVariations(_ context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+func getAllKnowledgeDocumentVariations(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
 	knowledgeBaseList := make([]platformclientv2.Knowledgebase, 0)
 	resources := make(resourceExporter.ResourceIDMetaMap)
-	knowledgeAPI := platformclientv2.NewKnowledgeApiWithConfig(clientConfig)
 
+	knowledgeProxy := knowledgeDocument.GetKnowledgeDocumentProxy(clientConfig)
+	knowledgeApi := knowledgeProxy.KnowledgeApi
 	// get published knowledge bases
-	publishedEntities, err := getAllKnowledgebaseEntities(*knowledgeAPI, true)
+	publishedEntities, response, err := knowledgeProxy.GetAllKnowledgebaseEntities(ctx, true)
 	if err != nil {
-		return nil, err
+		return nil, util.BuildAPIDiagnosticError("genesyscloud_knowledge_document_variation", fmt.Sprintf("%v", err), response)
 	}
 	knowledgeBaseList = append(knowledgeBaseList, *publishedEntities...)
 
 	// get unpublished knowledge bases
-	unpublishedEntities, err := getAllKnowledgebaseEntities(*knowledgeAPI, false)
+	unpublishedEntities, response, err := knowledgeProxy.GetAllKnowledgebaseEntities(ctx, true)
 	if err != nil {
-		return nil, err
+		return nil, util.BuildAPIDiagnosticError("genesyscloud_knowledge_document_variation", fmt.Sprintf("%v", err), response)
 	}
 	knowledgeBaseList = append(knowledgeBaseList, *unpublishedEntities...)
 
 	for _, knowledgeBase := range knowledgeBaseList {
-		variationEntities, err := getAllKnowledgeDocumentEntities(*knowledgeAPI, &knowledgeBase, clientConfig)
+		variationEntities, response, err := knowledgeProxy.GetAllKnowledgeDocumentEntities(ctx, &knowledgeBase)
 		if err != nil {
-			return nil, err
+			return nil, util.BuildAPIDiagnosticError("genesyscloud_knowledge_document_variation", fmt.Sprintf("%v", err), response)
 		}
 
 		// retrieve the documents for each knowledge base
@@ -253,7 +256,7 @@ func getAllKnowledgeDocumentVariations(_ context.Context, clientConfig *platform
 			}
 
 			// get the variations for each document
-			knowledgeDocumentVariations, resp, getErr := knowledgeAPI.GetKnowledgeKnowledgebaseDocumentVariations(*knowledgeBase.Id, *knowledgeDocument.Id, "", "", fmt.Sprintf("%v", pageSize), documentState)
+			knowledgeDocumentVariations, resp, getErr := knowledgeApi.GetKnowledgeKnowledgebaseDocumentVariations(*knowledgeBase.Id, *knowledgeDocument.Id, "", "", fmt.Sprintf("%v", pageSize), documentState)
 			if getErr != nil {
 				return nil, util.BuildAPIDiagnosticError("genesyscloud_knowledge_document_variation", fmt.Sprintf("Failed to get page of knowledge document variations error: %v", err), resp)
 			}

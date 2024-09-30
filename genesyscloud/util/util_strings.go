@@ -1,8 +1,12 @@
 package util
 
 import (
+	"hash/fnv"
 	"regexp"
+	"strconv"
 	"strings"
+
+	"github.com/google/uuid"
 )
 
 var matchFirstCap = regexp.MustCompile("(.)([A-Z][a-z]+)")
@@ -43,4 +47,10 @@ func EmptyIfNilStringPointer(target *string) *string {
 		return &emptyString
 	}
 	return target
+}
+
+func GetUniqueString() string {
+	hasher := fnv.New32()
+	hasher.Write([]byte(uuid.NewString()))
+	return strconv.FormatUint(uint64(hasher.Sum32()), 10)
 }

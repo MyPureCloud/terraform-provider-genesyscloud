@@ -2,7 +2,7 @@ package flow_milestone
 
 import (
 	"fmt"
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	authDivision "terraform-provider-genesyscloud/genesyscloud/auth_division"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
@@ -59,7 +59,7 @@ func TestAccResourceFlowMilestone(t *testing.T) {
 			},
 			{
 				// Update with a new division
-				Config: gcloud.GenerateAuthDivisionBasic(divResource, divName) + generateFlowMilestoneResource(
+				Config: authDivision.GenerateAuthDivisionBasic(divResource, divName) + generateFlowMilestoneResource(
 					milestoneResource1,
 					name2,
 					"genesyscloud_auth_division."+divResource+".id",

@@ -2,8 +2,8 @@ package architect_schedulegroups
 
 import (
 	"sync"
-	"terraform-provider-genesyscloud/genesyscloud"
 	architectSchedules "terraform-provider-genesyscloud/genesyscloud/architect_schedules"
+	authDivision "terraform-provider-genesyscloud/genesyscloud/auth_division"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -32,7 +32,7 @@ func (r *registerTestInstance) registerTestResources() {
 
 	providerResources[resourceName] = ResourceArchitectSchedulegroups()
 	providerResources["genesyscloud_architect_schedules"] = architectSchedules.ResourceArchitectSchedules()
-	providerResources["genesyscloud_auth_division"] = genesyscloud.ResourceAuthDivision()
+	providerResources["genesyscloud_auth_division"] = authDivision.ResourceAuthDivision()
 }
 
 // registerTestDataSources registers all data sources used in the tests.

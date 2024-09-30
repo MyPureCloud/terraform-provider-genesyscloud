@@ -6,9 +6,9 @@ import (
 	"strconv"
 	"strings"
 	"sync"
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	"terraform-provider-genesyscloud/genesyscloud/architect_flow"
 	"terraform-provider-genesyscloud/genesyscloud/architect_user_prompt"
+	authDivision "terraform-provider-genesyscloud/genesyscloud/auth_division"
 	"terraform-provider-genesyscloud/genesyscloud/group"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	routingSkill "terraform-provider-genesyscloud/genesyscloud/routing_skill"
@@ -96,6 +96,8 @@ func TestAccResourceRoutingQueueBasic(t *testing.T) {
 					util.NullValue,               // enable_manual_assignment false
 					util.NullValue,               // enable_transcription false
 					strconv.Quote(scoringMethod), // scoring Method
+					util.NullValue,
+					util.NullValue,
 					GenerateAgentOwnedRouting("agent_owned_routing", util.TrueValue, callbackHours, callbackHours),
 					GenerateMediaSettings("media_settings_call", alertTimeout1, util.FalseValue, slPercent1, slDuration1),
 					GenerateMediaSettingsCallBack("media_settings_callback", alertTimeout1, util.FalseValue, slPercent1, slDuration1, util.TrueValue, slDuration1, slDuration1),
@@ -153,6 +155,8 @@ func TestAccResourceRoutingQueueBasic(t *testing.T) {
 					util.TrueValue, // enable_manual_assignment true
 					util.TrueValue, // enable_transcription true
 					strconv.Quote(scoringMethod),
+					util.NullValue,
+					util.NullValue,
 					GenerateAgentOwnedRouting("agent_owned_routing", util.TrueValue, callbackHours2, callbackHours2),
 					GenerateMediaSettings("media_settings_call", alertTimeout2, util.FalseValue, slPercent2, slDuration2),
 					GenerateMediaSettings("media_settings_callback", alertTimeout2, util.TrueValue, slPercent2, slDuration2),
@@ -275,6 +279,8 @@ func TestAccResourceRoutingQueueConditionalRouting(t *testing.T) {
 					util.NullValue,  // enable_audio_monitoring false
 					util.NullValue,  // enable_manual_assignment false
 					strconv.Quote("TimestampAndPriority"),
+					util.NullValue,
+					util.NullValue,
 					GenerateMediaSettings(
 						"media_settings_call",
 						alertTimeout1,
@@ -350,16 +356,14 @@ func TestAccResourceRoutingQueueConditionalRouting(t *testing.T) {
 					groupResourceId,
 					groupName,
 					group.GenerateGroupOwners("genesyscloud_user."+testUserResource+".id"),
-				) +
-					generateRoutingQueueResourceBasic(
-						queueResource2,
-						queueName2,
-					) +
-					routingSkillGroup.GenerateRoutingSkillGroupResourceBasic(
-						skillGroupResourceId,
-						skillGroupName,
-						"description",
-					) + GenerateRoutingQueueResource(
+				) + generateRoutingQueueResourceBasic(
+					queueResource2,
+					queueName2,
+				) + routingSkillGroup.GenerateRoutingSkillGroupResourceBasic(
+					skillGroupResourceId,
+					skillGroupName,
+					"description",
+				) + GenerateRoutingQueueResource(
 					queueResource1,
 					queueName1,
 					queueDesc1,
@@ -374,6 +378,8 @@ func TestAccResourceRoutingQueueConditionalRouting(t *testing.T) {
 					util.NullValue,  // enable_audio_monitoring false
 					util.NullValue,  // enable_manual_assignment false
 					strconv.Quote("TimestampAndPriority"),
+					util.NullValue,
+					util.NullValue,
 					GenerateMediaSettings("media_settings_call", alertTimeout1, util.FalseValue, slPercent1, slDuration1),
 					GenerateMediaSettings("media_settings_callback", alertTimeout1, util.FalseValue, slPercent1, slDuration1),
 					GenerateMediaSettings("media_settings_chat", alertTimeout1, util.FalseValue, slPercent1, slDuration1),
@@ -437,7 +443,7 @@ func TestAccResourceRoutingQueueConditionalRouting(t *testing.T) {
 					validateMediaSettings(queueResource1, "media_settings_email", alertTimeout1, util.FalseValue, slPercent1, slDuration1),
 					validateMediaSettings(queueResource1, "media_settings_message", alertTimeout1, util.FalseValue, slPercent1, slDuration1),
 				),
-				Destroy: true,
+				PreventPostDestroyRefresh: true,
 			},
 			{
 				Config: GenerateRoutingQueueResource(
@@ -455,6 +461,8 @@ func TestAccResourceRoutingQueueConditionalRouting(t *testing.T) {
 					util.NullValue,  // enable_audio_monitoring false
 					util.NullValue,  // enable_manual_assignment false
 					strconv.Quote("TimestampAndPriority"),
+					util.NullValue,
+					util.NullValue,
 					GenerateMediaSettings("media_settings_call", alertTimeout1, util.FalseValue, slPercent1, slDuration1),
 					GenerateMediaSettings("media_settings_callback", alertTimeout1, util.FalseValue, slPercent1, slDuration1),
 					GenerateMediaSettings("media_settings_chat", alertTimeout1, util.FalseValue, slPercent1, slDuration1),
@@ -542,6 +550,8 @@ func TestAccResourceRoutingQueueParToCGR(t *testing.T) {
 
 					util.NullValue, // enable_manual_assignment false
 					strconv.Quote(scoringMethod),
+					util.NullValue,
+					util.NullValue,
 					GenerateAgentOwnedRouting("agent_owned_routing", util.TrueValue, callbackHours, callbackHours),
 					GenerateMediaSettings("media_settings_call", alertTimeout1, util.FalseValue, slPercent1, slDuration1),
 					GenerateMediaSettings("media_settings_callback", alertTimeout1, util.FalseValue, slPercent1, slDuration1),
@@ -996,7 +1006,7 @@ func TestAccResourceRoutingQueueWrapupCodes(t *testing.T) {
 					"division_id = genesyscloud_auth_division."+divResource+".id",
 					GenerateQueueWrapupCodes("genesyscloud_routing_wrapupcode."+wrapupCodeResource1+".id",
 						"genesyscloud_routing_wrapupcode."+wrapupCodeResource2+".id"),
-				) + gcloud.GenerateAuthDivisionBasic(divResource, divName) + routingWrapupcode.GenerateRoutingWrapupcodeResource(
+				) + authDivision.GenerateAuthDivisionBasic(divResource, divName) + routingWrapupcode.GenerateRoutingWrapupcodeResource(
 					wrapupCodeResource1,
 					wrapupCodeName1,
 					"genesyscloud_auth_division."+divResource+".id",
@@ -1020,7 +1030,7 @@ func TestAccResourceRoutingQueueWrapupCodes(t *testing.T) {
 						"genesyscloud_routing_wrapupcode."+wrapupCodeResource1+".id",
 						"genesyscloud_routing_wrapupcode."+wrapupCodeResource2+".id",
 						"genesyscloud_routing_wrapupcode."+wrapupCodeResource3+".id"),
-				) + gcloud.GenerateAuthDivisionBasic(divResource, divName) + routingWrapupcode.GenerateRoutingWrapupcodeResource(
+				) + authDivision.GenerateAuthDivisionBasic(divResource, divName) + routingWrapupcode.GenerateRoutingWrapupcodeResource(
 					wrapupCodeResource1,
 					wrapupCodeName1,
 					"genesyscloud_auth_division."+divResource+".id",
@@ -1045,7 +1055,7 @@ func TestAccResourceRoutingQueueWrapupCodes(t *testing.T) {
 					queueName,
 					"division_id = genesyscloud_auth_division."+divResource+".id",
 					GenerateQueueWrapupCodes("genesyscloud_routing_wrapupcode."+wrapupCodeResource2+".id"),
-				) + gcloud.GenerateAuthDivisionBasic(divResource, divName) + routingWrapupcode.GenerateRoutingWrapupcodeResource(
+				) + authDivision.GenerateAuthDivisionBasic(divResource, divName) + routingWrapupcode.GenerateRoutingWrapupcodeResource(
 					wrapupCodeResource2,
 					wrapupCodeName2,
 					"genesyscloud_auth_division."+divResource+".id",
@@ -1061,7 +1071,7 @@ func TestAccResourceRoutingQueueWrapupCodes(t *testing.T) {
 					queueName,
 					"division_id = genesyscloud_auth_division."+divResource+".id",
 					GenerateQueueWrapupCodes(),
-				) + gcloud.GenerateAuthDivisionBasic(divResource, divName),
+				) + authDivision.GenerateAuthDivisionBasic(divResource, divName),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckNoResourceAttr("genesyscloud_routing_queue."+queueResource, "wrapup_codes.%"),
 				),

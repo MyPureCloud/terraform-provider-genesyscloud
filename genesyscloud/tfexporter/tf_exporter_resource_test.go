@@ -7,6 +7,8 @@ import (
 	emergencyGroup "terraform-provider-genesyscloud/genesyscloud/architect_emergencygroup"
 	flow "terraform-provider-genesyscloud/genesyscloud/architect_flow"
 	flowLogLevel "terraform-provider-genesyscloud/genesyscloud/flow_loglevel"
+	knowledge "terraform-provider-genesyscloud/genesyscloud/knowledge"
+	knowledgeDocument "terraform-provider-genesyscloud/genesyscloud/knowledge_document"
 	routingWrapupcode "terraform-provider-genesyscloud/genesyscloud/routing_wrapupcode"
 	outboundRoute "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site_outbound_route"
 
@@ -15,10 +17,12 @@ import (
 	archIvr "terraform-provider-genesyscloud/genesyscloud/architect_ivr"
 	architectSchedulegroups "terraform-provider-genesyscloud/genesyscloud/architect_schedulegroups"
 	architectSchedules "terraform-provider-genesyscloud/genesyscloud/architect_schedules"
+	authDivision "terraform-provider-genesyscloud/genesyscloud/auth_division"
 	authRole "terraform-provider-genesyscloud/genesyscloud/auth_role"
 	integrationInstagram "terraform-provider-genesyscloud/genesyscloud/conversations_messaging_integrations_instagram"
 	cMessagingSettings "terraform-provider-genesyscloud/genesyscloud/conversations_messaging_settings"
 	supportedContent "terraform-provider-genesyscloud/genesyscloud/conversations_messaging_supportedcontent"
+	defaultSupportedContent "terraform-provider-genesyscloud/genesyscloud/conversations_messaging_supportedcontent_default"
 	employeeperformanceExternalmetricsDefinition "terraform-provider-genesyscloud/genesyscloud/employeeperformance_externalmetrics_definitions"
 	flowMilestone "terraform-provider-genesyscloud/genesyscloud/flow_milestone"
 	flowOutcome "terraform-provider-genesyscloud/genesyscloud/flow_outcome"
@@ -48,6 +52,7 @@ import (
 	outboundContactListContact "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list_contact"
 	outboundContactListTemplate "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list_template"
 	obContactListFilter "terraform-provider-genesyscloud/genesyscloud/outbound_contactlistfilter"
+	obDigitalRuleset "terraform-provider-genesyscloud/genesyscloud/outbound_digitalruleset"
 	obDncList "terraform-provider-genesyscloud/genesyscloud/outbound_dnclist"
 	obfst "terraform-provider-genesyscloud/genesyscloud/outbound_filespecificationtemplate"
 	obRuleset "terraform-provider-genesyscloud/genesyscloud/outbound_ruleset"
@@ -132,7 +137,7 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_architect_schedulegroups"] = architectSchedulegroups.ResourceArchitectSchedulegroups()
 	providerResources["genesyscloud_architect_user_prompt"] = userPrompt.ResourceArchitectUserPrompt()
 	providerResources["genesyscloud_auth_role"] = authRole.ResourceAuthRole()
-	providerResources["genesyscloud_auth_division"] = gcloud.ResourceAuthDivision()
+	providerResources["genesyscloud_auth_division"] = authDivision.ResourceAuthDivision()
 	providerResources["genesyscloud_employeeperformance_externalmetrics_definitions"] = employeeperformanceExternalmetricsDefinition.ResourceEmployeeperformanceExternalmetricsDefinition()
 	providerResources["genesyscloud_flow_loglevel"] = flowLogLevel.ResourceFlowLoglevel()
 	providerResources["genesyscloud_group"] = group.ResourceGroup()
@@ -154,8 +159,8 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_journey_outcome"] = gcloud.ResourceJourneyOutcome()
 	providerResources["genesyscloud_journey_segment"] = gcloud.ResourceJourneySegment()
 	providerResources["genesyscloud_knowledge_knowledgebase"] = gcloud.ResourceKnowledgeKnowledgebase()
-	providerResources["genesyscloud_knowledge_document"] = gcloud.ResourceKnowledgeDocument()
-	providerResources["genesyscloud_knowledge_document_variation"] = gcloud.ResourceKnowledgeDocumentVariation()
+	providerResources["genesyscloud_knowledge_document"] = knowledgeDocument.ResourceKnowledgeDocument()
+	providerResources["genesyscloud_knowledge_document_variation"] = knowledge.ResourceKnowledgeDocumentVariation()
 	providerResources["genesyscloud_knowledge_category"] = gcloud.ResourceKnowledgeCategory()
 	providerResources["genesyscloud_knowledge_label"] = gcloud.ResourceKnowledgeLabel()
 	providerResources["genesyscloud_location"] = location.ResourceLocation()
@@ -204,6 +209,7 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_outbound_sequence"] = obSequence.ResourceOutboundSequence()
 	providerResources["genesyscloud_outbound_dnclist"] = obDncList.ResourceOutboundDncList()
 	providerResources["genesyscloud_outbound_campaignrule"] = obCampaignRule.ResourceOutboundCampaignrule()
+	providerResources["genesyscloud_outbound_digitalruleset"] = obDigitalRuleset.ResourceOutboundDigitalruleset()
 	providerResources["genesyscloud_outbound_filespecificationtemplate"] = obfst.ResourceOutboundFileSpecificationTemplate()
 	providerResources["genesyscloud_outbound_wrapupcodemappings"] = obw.ResourceOutboundWrapUpCodeMappings()
 	providerResources["genesyscloud_quality_forms_survey"] = gcloud.ResourceSurveyForm()
@@ -219,6 +225,7 @@ func (r *registerTestInstance) registerTestResources() {
 
 	providerResources["genesyscloud_conversations_messaging_supportedcontent"] = supportedContent.ResourceSupportedContent()
 	providerResources["genesyscloud_conversations_messaging_settings"] = cMessagingSettings.ResourceConversationsMessagingSettings()
+	providerResources["genesyscloud_conversations_messaging_supportedcontent_default"] = defaultSupportedContent.ResourceConversationsMessagingSupportedcontentDefault()
 	providerResources["genesyscloud_task_management_worktype_status"] = worktypeStatus.ResourceTaskManagementWorktypeStatus()
 	providerResources["genesyscloud_tf_export"] = ResourceTfExport()
 }
@@ -234,7 +241,7 @@ func (r *registerTestInstance) registerTestExporters() {
 	RegisterExporter("genesyscloud_architect_schedules", architectSchedules.ArchitectSchedulesExporter())
 	RegisterExporter("genesyscloud_architect_schedulegroups", architectSchedulegroups.ArchitectSchedulegroupsExporter())
 	RegisterExporter("genesyscloud_architect_user_prompt", userPrompt.ArchitectUserPromptExporter())
-	RegisterExporter("genesyscloud_auth_division", gcloud.AuthDivisionExporter())
+	RegisterExporter("genesyscloud_auth_division", authDivision.AuthDivisionExporter())
 	RegisterExporter("genesyscloud_auth_role", authRole.AuthRoleExporter())
 	RegisterExporter("genesyscloud_employeeperformance_externalmetrics_definitions", employeeperformanceExternalmetricsDefinition.EmployeeperformanceExternalmetricsDefinitionExporter())
 	RegisterExporter("genesyscloud_flow", flow.ArchitectFlowExporter())
@@ -260,7 +267,7 @@ func (r *registerTestInstance) registerTestExporters() {
 	RegisterExporter("genesyscloud_journey_outcome", gcloud.JourneyOutcomeExporter())
 	RegisterExporter("genesyscloud_journey_segment", gcloud.JourneySegmentExporter())
 	RegisterExporter("genesyscloud_knowledge_knowledgebase", gcloud.KnowledgeKnowledgebaseExporter())
-	RegisterExporter("genesyscloud_knowledge_document", gcloud.KnowledgeDocumentExporter())
+	RegisterExporter("genesyscloud_knowledge_document", knowledgeDocument.KnowledgeDocumentExporter())
 	RegisterExporter("genesyscloud_knowledge_category", gcloud.KnowledgeCategoryExporter())
 	RegisterExporter("genesyscloud_location", location.LocationExporter())
 	RegisterExporter("genesyscloud_oauth_client", oauth_client.OauthClientExporter())
@@ -277,6 +284,7 @@ func (r *registerTestInstance) registerTestExporters() {
 	RegisterExporter("genesyscloud_outbound_dnclist", obDncList.OutboundDncListExporter())
 	RegisterExporter("genesyscloud_outbound_campaignrule", obCampaignRule.OutboundCampaignruleExporter())
 	RegisterExporter("genesyscloud_outbound_settings", obSettings.OutboundSettingsExporter())
+	RegisterExporter("genesyscloud_outbound_digitalruleset", obDigitalRuleset.OutboundDigitalrulesetExporter())
 	RegisterExporter("genesyscloud_outbound_filespecificationtemplate", obfst.OutboundFileSpecificationTemplateExporter())
 	RegisterExporter("genesyscloud_outbound_wrapupcodemappings", obw.OutboundWrapupCodeMappingsExporter())
 	RegisterExporter("genesyscloud_quality_forms_evaluation", gcloud.EvaluationFormExporter())
@@ -312,7 +320,7 @@ func (r *registerTestInstance) registerTestExporters() {
 	RegisterExporter("genesyscloud_webdeployments_configuration", webdeployConfig.WebDeploymentConfigurationExporter())
 	RegisterExporter("genesyscloud_widget_deployment", gcloud.WidgetDeploymentExporter())
 
-	RegisterExporter("genesyscloud_knowledge_document_variation", gcloud.KnowledgeDocumentVariationExporter())
+	RegisterExporter("genesyscloud_knowledge_document_variation", knowledge.KnowledgeDocumentVariationExporter())
 	RegisterExporter("genesyscloud_knowledge_label", gcloud.KnowledgeLabelExporter())
 
 	RegisterExporter("genesyscloud_processautomation_trigger", pat.ProcessAutomationTriggerExporter())
@@ -326,6 +334,7 @@ func (r *registerTestInstance) registerTestExporters() {
 	RegisterExporter("genesyscloud_task_management_worktype_status", worktypeStatus.TaskManagementWorktypeStatusExporter())
 
 	RegisterExporter("genesyscloud_conversations_messaging_supportedcontent", supportedContent.SupportedContentExporter())
+	RegisterExporter("genesyscloud_conversations_messaging_supportedcontent_default", defaultSupportedContent.ConversationsMessagingSupportedcontentDefaultExporter())
 
 	RegisterExporter("genesyscloud_script", scripts.ExporterScript())
 

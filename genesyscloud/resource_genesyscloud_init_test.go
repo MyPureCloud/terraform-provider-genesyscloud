@@ -6,6 +6,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/architect_flow"
 	archScheduleGroup "terraform-provider-genesyscloud/genesyscloud/architect_schedulegroups"
 	architectSchedules "terraform-provider-genesyscloud/genesyscloud/architect_schedules"
+	authDivision "terraform-provider-genesyscloud/genesyscloud/auth_division"
 	cMessagingSettings "terraform-provider-genesyscloud/genesyscloud/conversations_messaging_settings"
 	"terraform-provider-genesyscloud/genesyscloud/group"
 	"terraform-provider-genesyscloud/genesyscloud/location"
@@ -49,14 +50,12 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_group"] = group.ResourceGroup()
 	providerResources["genesyscloud_routing_queue"] = routingQueue.ResourceRoutingQueue()
 	providerResources["genesyscloud_location"] = location.ResourceLocation()
-	providerResources["genesyscloud_auth_division"] = ResourceAuthDivision()
+	providerResources["genesyscloud_auth_division"] = authDivision.ResourceAuthDivision()
 	providerResources["genesyscloud_journey_action_map"] = ResourceJourneyActionMap()
 	providerResources["genesyscloud_journey_action_template"] = ResourceJourneyActionTemplate()
 	providerResources["genesyscloud_journey_outcome"] = ResourceJourneyOutcome()
 	providerResources["genesyscloud_journey_segment"] = ResourceJourneySegment()
 	providerResources["genesyscloud_knowledge_knowledgebase"] = ResourceKnowledgeKnowledgebase()
-	providerResources["genesyscloud_knowledge_document"] = ResourceKnowledgeDocument()
-	providerResources["genesyscloud_knowledge_document_variation"] = ResourceKnowledgeDocumentVariation()
 	providerResources["genesyscloud_knowledge_category"] = ResourceKnowledgeCategory()
 	providerResources["genesyscloud_knowledge_label"] = ResourceKnowledgeLabel()
 	providerResources["genesyscloud_quality_forms_evaluation"] = ResourceEvaluationForm()
@@ -86,7 +85,7 @@ func (r *registerTestInstance) registerTestDataSources() {
 	providerDataSources["genesyscloud_group"] = group.DataSourceGroup()
 	providerDataSources["genesyscloud_routing_queue"] = routingQueue.DataSourceRoutingQueue()
 	providerDataSources["genesyscloud_auth_division_home"] = DataSourceAuthDivisionHome()
-	providerDataSources["genesyscloud_auth_division"] = dataSourceAuthDivision()
+	providerDataSources["genesyscloud_auth_division"] = authDivision.DataSourceAuthDivision()
 	providerDataSources["genesyscloud_auth_division_home"] = DataSourceAuthDivisionHome()
 	providerDataSources["genesyscloud_journey_action_map"] = dataSourceJourneyActionMap()
 	providerDataSources["genesyscloud_journey_action_template"] = dataSourceJourneyActionTemplate()

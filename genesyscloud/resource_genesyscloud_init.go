@@ -13,7 +13,6 @@ func SetRegistrar(l registrar.Registrar) {
 
 func registerDataSources(l registrar.Registrar) {
 
-	l.RegisterDataSource("genesyscloud_auth_division", dataSourceAuthDivision())
 	l.RegisterDataSource("genesyscloud_auth_division_home", DataSourceAuthDivisionHome())
 	l.RegisterDataSource("genesyscloud_journey_action_map", dataSourceJourneyActionMap())
 	l.RegisterDataSource("genesyscloud_journey_action_template", dataSourceJourneyActionTemplate())
@@ -30,15 +29,11 @@ func registerDataSources(l registrar.Registrar) {
 
 func registerResources(l registrar.Registrar) {
 
-	l.RegisterResource("genesyscloud_auth_division", ResourceAuthDivision())
 	l.RegisterResource("genesyscloud_journey_action_map", ResourceJourneyActionMap())
 	l.RegisterResource("genesyscloud_journey_action_template", ResourceJourneyActionTemplate())
 	l.RegisterResource("genesyscloud_journey_outcome", ResourceJourneyOutcome())
 	l.RegisterResource("genesyscloud_journey_segment", ResourceJourneySegment())
 	l.RegisterResource("genesyscloud_knowledge_knowledgebase", ResourceKnowledgeKnowledgebase())
-	l.RegisterResource("genesyscloud_knowledge_document", ResourceKnowledgeDocument())
-	l.RegisterResource("genesyscloud_knowledge_v1_document", ResourceKnowledgeDocumentV1())
-	l.RegisterResource("genesyscloud_knowledge_document_variation", ResourceKnowledgeDocumentVariation())
 	l.RegisterResource("genesyscloud_knowledge_category", ResourceKnowledgeCategory())
 	l.RegisterResource("genesyscloud_knowledge_v1_category", ResourceKnowledgeCategoryV1())
 	l.RegisterResource("genesyscloud_knowledge_label", ResourceKnowledgeLabel())
@@ -49,19 +44,15 @@ func registerResources(l registrar.Registrar) {
 }
 
 func registerExporters(l registrar.Registrar) {
-	l.RegisterExporter("genesyscloud_auth_division", AuthDivisionExporter())
 	l.RegisterExporter("genesyscloud_journey_action_map", JourneyActionMapExporter())
 	l.RegisterExporter("genesyscloud_journey_action_template", JourneyActionTemplateExporter())
 	l.RegisterExporter("genesyscloud_journey_outcome", JourneyOutcomeExporter())
 	l.RegisterExporter("genesyscloud_journey_segment", JourneySegmentExporter())
 	l.RegisterExporter("genesyscloud_knowledge_knowledgebase", KnowledgeKnowledgebaseExporter())
-	l.RegisterExporter("genesyscloud_knowledge_document", KnowledgeDocumentExporter())
 	l.RegisterExporter("genesyscloud_knowledge_category", KnowledgeCategoryExporter())
 	l.RegisterExporter("genesyscloud_quality_forms_evaluation", EvaluationFormExporter())
 	l.RegisterExporter("genesyscloud_quality_forms_survey", SurveyFormExporter())
 	l.RegisterExporter("genesyscloud_widget_deployment", WidgetDeploymentExporter())
-	l.RegisterExporter("genesyscloud_knowledge_v1_document", KnowledgeDocumentExporterV1())
-	l.RegisterExporter("genesyscloud_knowledge_document_variation", KnowledgeDocumentVariationExporter())
 	l.RegisterExporter("genesyscloud_knowledge_label", KnowledgeLabelExporter())
 	l.RegisterExporter("genesyscloud_knowledge_v1_category", KnowledgeCategoryExporterV1())
 }

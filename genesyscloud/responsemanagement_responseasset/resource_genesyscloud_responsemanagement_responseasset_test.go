@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"log"
 	"path/filepath"
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	authDivision "terraform-provider-genesyscloud/genesyscloud/auth_division"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
@@ -43,7 +43,7 @@ func TestAccResourceResponseManagementResponseAsset(t *testing.T) {
 			},
 			{
 				Config: GenerateResponseManagementResponseAssetResource(resourceId, fullPath2, "genesyscloud_auth_division."+divisionResourceId+".id") +
-					gcloud.GenerateAuthDivisionBasic(divisionResourceId, divisionName),
+					authDivision.GenerateAuthDivisionBasic(divisionResourceId, divisionName),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_responseasset."+resourceId, "filename", fullPath2),
 					resource.TestCheckResourceAttrPair("genesyscloud_responsemanagement_responseasset."+resourceId, "division_id",

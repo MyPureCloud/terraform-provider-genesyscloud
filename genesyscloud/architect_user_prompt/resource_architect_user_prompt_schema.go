@@ -92,7 +92,6 @@ func ResourceArchitectUserPrompt() *schema.Resource {
 				Description: "Name of the user audio prompt. Note: If the name of the user prompt is changed, this will cause the Prompt to be dropped and recreated with a new ID. This will generate a new ID for the prompt and will invalidate any Architect flows referencing it. ",
 				Type:        schema.TypeString,
 				Required:    true,
-				ForceNew:    true,
 			},
 			"description": {
 				Description: "Description of the user audio prompt.",
