@@ -1019,7 +1019,14 @@ func (g *GenesysCloudResourceExporter) getResourcesForType(resType string, provi
 				// will block until it can acquire a pooled client config object.
 				instanceState, err := getResourceState(ctx, res, id, resMeta, meta)
 
+				if instanceState == nil {
+					log.Printf("Resource %s no longer exists. Skipping.", resMeta.Name)
+					removeChan <- id // Mark for removal from the map
+					return nil
+				}
+
 				resourceType := ""
+
 				if g.isDataSource(resType, resMeta.Name) {
 					g.exMutex.Lock()
 					res = provider.DataSourcesMap[resType]
@@ -1045,12 +1052,6 @@ func (g *GenesysCloudResourceExporter) getResourcesForType(resType string, provi
 				if err != nil {
 					errString := fmt.Sprintf("Failed to get state for %s instance %s: %v", resType, id, err)
 					return fmt.Errorf(errString)
-				}
-
-				if instanceState == nil {
-					log.Printf("Resource %s no longer exists. Skipping.", resMeta.Name)
-					removeChan <- id // Mark for removal from the map
-					return nil
 				}
 
 				resourceChan <- resourceExporter.ResourceInfo{
