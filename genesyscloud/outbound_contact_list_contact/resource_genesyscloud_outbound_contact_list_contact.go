@@ -32,7 +32,6 @@ func getAllContacts(ctx context.Context, clientConfig *platformclientv2.Configur
 	}
 
 	for _, contact := range contacts {
-		//id := createCustomContactId(*contact.ContactListId, *contact.Id)
 		resources[*contact.Id] = &resourceExporter.ResourceMeta{Name: *contact.Id}
 	}
 
@@ -53,7 +52,7 @@ func createOutboundContactListContact(ctx context.Context, d *schema.ResourceDat
 	log.Printf("Creating contact in contact list '%s'", contactListId)
 	contactResponseBody, resp, err := cp.createContact(ctx, contactListId, contactRequestBody, priority, clearSystemData, doNotQueue)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("failed to create contact '%s' for contact list '%s': %v", *contactRequestBody.Id, contactListId, err), resp)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("failed to create contact for contact list '%s': %v", contactListId, err), resp)
 	}
 
 	if len(contactResponseBody) != 1 {
