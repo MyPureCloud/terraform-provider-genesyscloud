@@ -148,8 +148,8 @@ func ResourceTfExport() *schema.Resource {
 				ForceNew:    true,
 			},
 			"export_computed": {
-				Description: "Export attributes that are marked as being Computed.",
-				Default:     false,
+				Description: "Export attributes that are marked as being Computed. Defaults to true to match existing functionality. This attribute's default value will likely switch to false in a future release.",
+				Default:     true,
 				Type:        schema.TypeBool,
 				Optional:    true,
 				ForceNew:    true,
