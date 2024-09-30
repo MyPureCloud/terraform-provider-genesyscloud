@@ -20,7 +20,7 @@ func dataSourceSiteRead(ctx context.Context, d *schema.ResourceData, m interface
 	name := d.Get("name").(string)
 
 	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
-		siteId, retryable, resp, err := sp.getSiteIdByName(ctx, name)
+		siteId, retryable, resp, err := sp.GetSiteIdByName(ctx, name)
 		if err != nil {
 			if retryable {
 				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to get site %s", name), resp))
