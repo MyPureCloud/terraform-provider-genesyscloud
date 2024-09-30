@@ -111,8 +111,6 @@ func getAllAuthDivisionFn(ctx context.Context, p *authDivisionProxy, name string
 		rc.SetCache(p.authDivisionCache, *div.Id, div)
 	}
 
-	log.Println("997799 - gathered divisions")
-
 	return &allAuthzDivisions, resp, nil
 }
 
