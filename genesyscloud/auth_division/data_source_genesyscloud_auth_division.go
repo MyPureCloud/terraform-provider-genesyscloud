@@ -3,7 +3,10 @@ package auth_division
 import (
 	"context"
 	"fmt"
+	"log"
+	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
+	rc "terraform-provider-genesyscloud/genesyscloud/resource_cache"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
 
@@ -13,22 +16,71 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
+var (
+	dataSourceAuthDivisionCache *rc.DataSourceCache
+)
+
 func dataSourceAuthDivisionRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	sdkConfig := m.(*provider.ProviderMeta).ClientConfig
-	proxy := getAuthDivisionProxy(sdkConfig)
 	name := d.Get("name").(string)
+	key := normaliseAuthDivisionName(name)
 
-	// Query division by name. Retry in case search has not yet indexed the division.
-	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
-		divisionId, resp, retryable, getErr := proxy.getAuthDivisionIdByName(ctx, name)
-		if getErr != nil && !retryable {
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Error requesting division %s | error: %s", name, getErr), resp))
-		}
-		if retryable {
-			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Error requesting division %s | error: %s", name, getErr), resp))
-		}
+	if dataSourceAuthDivisionCache == nil {
+		dataSourceAuthDivisionCache = rc.NewDataSourceCache(sdkConfig, hydrateAuthDivisionCacheFn, getDivisionIdByNameFn)
+	}
 
-		d.SetId(divisionId)
+	divisionId, err := rc.RetrieveId(dataSourceAuthDivisionCache, resourceName, key, ctx)
+	if err != nil {
+		return err
+	}
+	d.SetId(divisionId)
+	return nil
+}
+
+func normaliseAuthDivisionName(name string) string {
+	return strings.ToLower(name)
+}
+
+func hydrateAuthDivisionCacheFn(c *rc.DataSourceCache, ctx context.Context) error {
+	proxy := getAuthDivisionProxy(c.ClientConfig)
+
+	log.Printf("hydrating cache for data source %s", resourceName)
+
+	allDivisions, resp, err := proxy.getAllAuthDivision(ctx, "")
+	if err != nil {
+		return fmt.Errorf("failed to collect all auth divisions. Error: %s | Response: %s", err.Error(), resp.String())
+	}
+
+	if allDivisions == nil || len(*allDivisions) == 0 {
+		return nil
+	}
+
+	for _, div := range *allDivisions {
+		c.Cache[normaliseAuthDivisionName(*div.Name)] = *div.Id
+	}
+
+	log.Printf("cache hydration complete for data source %s", resourceName)
+	return nil
+}
+
+func getDivisionIdByNameFn(c *rc.DataSourceCache, name string, ctx context.Context) (string, diag.Diagnostics) {
+	var (
+		id    string
+		proxy = getAuthDivisionProxy(c.ClientConfig)
+	)
+
+	diagErr := util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
+		divisionId, resp, retryable, err := proxy.getAuthDivisionIdByName(ctx, name)
+		if err != nil {
+			errorDetails := util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf(`Could not find division "%s" | error: %s`, name, err.Error()), resp)
+			if !retryable {
+				return retry.NonRetryableError(errorDetails)
+			}
+			return retry.RetryableError(errorDetails)
+		}
+		id = divisionId
 		return nil
 	})
+
+	return id, diagErr
 }

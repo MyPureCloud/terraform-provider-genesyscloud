@@ -9,6 +9,8 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site"
 	"testing"
 
+	gcloud "terraform-provider-genesyscloud/genesyscloud"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
 )
@@ -26,11 +28,15 @@ var (
 	authErr   error
 )
 
+// providerDataSources holds a map of all registered sites
+var providerDataSources map[string]*schema.Resource
+
 // providerResources holds a map of all registered sites
 var providerResources map[string]*schema.Resource
 
 type registerTestInstance struct {
-	resourceMapMutex sync.RWMutex
+	resourceMapMutex   sync.RWMutex
+	datasourceMapMutex sync.RWMutex
 }
 
 // registerTestResources registers all resources used in the tests
@@ -44,6 +50,15 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_telephony_providers_edges_site"] = telephony_providers_edges_site.ResourceSite()
 }
 
+// registerTestDataSources registers all data sources used in the tests.
+func (r *registerTestInstance) registerTestDataSources() {
+	r.datasourceMapMutex.Lock()
+	defer r.datasourceMapMutex.Unlock()
+
+	providerDataSources[resourceName] = DataSourceSiteOutboundRoute()
+	providerDataSources["genesyscloud_organizations_me"] = gcloud.DataSourceOrganizationsMe()
+}
+
 // initTestResources initializes all test resources and data sources.
 func initTestResources() {
 	sdkConfig, authErr = provider.AuthorizeSdk()
@@ -51,11 +66,13 @@ func initTestResources() {
 		log.Fatalf("failed to authorize sdk: %v", authErr)
 	}
 
+	providerDataSources = make(map[string]*schema.Resource)
 	providerResources = make(map[string]*schema.Resource)
 
 	regInstance := &registerTestInstance{}
 
 	regInstance.registerTestResources()
+	regInstance.registerTestDataSources()
 }
 
 // TestMain is a "setup" function called by the testing framework when run the test
