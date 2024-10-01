@@ -74,7 +74,7 @@ func createContactFn(_ context.Context, p *contactProxy, contactListId string, c
 }
 
 func readContactByIdFn(_ context.Context, p *contactProxy, contactListId, contactId string) (*platformclientv2.Dialercontact, *platformclientv2.APIResponse, error) {
-	if contact := rc.GetCacheItem(p.contactCache, contactId); contact != nil {
+	if contact := rc.GetCacheItem(p.contactCache, createComplexContact(contactListId, contactId)); contact != nil {
 		return contact, nil, nil
 	}
 	return p.outboundApi.GetOutboundContactlistContact(contactListId, contactId)
@@ -90,6 +90,7 @@ func deleteContactFn(_ context.Context, p *contactProxy, contactListId, contactI
 
 func getAllContactsFn(ctx context.Context, p *contactProxy) ([]platformclientv2.Dialercontact, *platformclientv2.APIResponse, error) {
 	var allContacts []platformclientv2.Dialercontact
+	contactMatrix := make(map[string][]platformclientv2.Dialercontact)
 
 	contactListIds, resp, err := p.getAllContactListIds(ctx)
 	if err != nil {
@@ -102,10 +103,14 @@ func getAllContactsFn(ctx context.Context, p *contactProxy) ([]platformclientv2.
 			return nil, resp, err
 		}
 		allContacts = append(allContacts, contacts...)
+		contactMatrix[contactListId] = contacts
 	}
 
-	for _, contact := range allContacts {
-		rc.SetCache(p.contactCache, *contact.Id, contact)
+	for contactListId, contactList := range contactMatrix {
+		for _, contact := range contactList {
+			rc.SetCache(p.contactCache, createComplexContact(contactListId, *contact.Id), contact)
+
+		}
 	}
 
 	return allContacts, nil, nil
