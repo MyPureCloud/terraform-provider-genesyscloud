@@ -19,27 +19,27 @@ func buildSdkMediaSettings(d *schema.ResourceData) *platformclientv2.Queuemedias
 	queueMediaSettings := &platformclientv2.Queuemediasettings{}
 
 	mediaSettingsCall := d.Get("media_settings_call").([]interface{})
-	if mediaSettingsCall != nil && len(mediaSettingsCall) > 0 {
+	if len(mediaSettingsCall) > 0 {
 		queueMediaSettings.Call = buildSdkMediaSetting(mediaSettingsCall)
 	}
 
 	mediaSettingsCallback := d.Get("media_settings_callback").([]interface{})
-	if mediaSettingsCallback != nil && len(mediaSettingsCallback) > 0 {
+	if len(mediaSettingsCallback) > 0 {
 		queueMediaSettings.Callback = buildSdkMediaSettingCallback(mediaSettingsCallback)
 	}
 
 	mediaSettingsChat := d.Get("media_settings_chat").([]interface{})
-	if mediaSettingsChat != nil && len(mediaSettingsChat) > 0 {
+	if len(mediaSettingsChat) > 0 {
 		queueMediaSettings.Chat = buildSdkMediaSetting(mediaSettingsChat)
 	}
 
 	mediaSettingsEmail := d.Get("media_settings_email").([]interface{})
-	if mediaSettingsEmail != nil && len(mediaSettingsEmail) > 0 {
+	if len(mediaSettingsEmail) > 0 {
 		queueMediaSettings.Email = buildSdkMediaSetting(mediaSettingsEmail)
 	}
 
 	mediaSettingsMessage := d.Get("media_settings_message").([]interface{})
-	if mediaSettingsMessage != nil && len(mediaSettingsMessage) > 0 {
+	if len(mediaSettingsMessage) > 0 {
 		queueMediaSettings.Message = buildSdkMediaSetting(mediaSettingsMessage)
 	}
 
@@ -80,7 +80,7 @@ func buildSdkDefaultScriptsMap(d *schema.ResourceData) *map[string]platformclien
 
 func buildSdkDirectRouting(d *schema.ResourceData) *platformclientv2.Directrouting {
 	directRouting := d.Get("direct_routing").([]interface{})
-	if directRouting != nil && len(directRouting) > 0 {
+	if len(directRouting) > 0 {
 		settingsMap := directRouting[0].(map[string]interface{})
 
 		agentWaitSeconds := settingsMap["agent_wait_seconds"].(int)
@@ -349,7 +349,7 @@ func buildSdkQueueMessagingAddresses(d *schema.ResourceData) *platformclientv2.Q
 
 func buildSdkQueueEmailAddress(d *schema.ResourceData) *platformclientv2.Queueemailaddress {
 	outboundEmailAddress := d.Get("outbound_email_address").([]interface{})
-	if outboundEmailAddress != nil && len(outboundEmailAddress) > 0 {
+	if len(outboundEmailAddress) > 0 {
 		settingsMap := outboundEmailAddress[0].(map[string]interface{})
 
 		inboundRoute := &platformclientv2.Inboundroute{
