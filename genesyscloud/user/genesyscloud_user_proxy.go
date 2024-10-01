@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"net/http"
 	rc "terraform-provider-genesyscloud/genesyscloud/resource_cache"
 	"time"
 
@@ -209,7 +210,16 @@ func getAllUserFn(ctx context.Context, p *userProxy) (*[]platformclientv2.User, 
 		users = append(users, *usersList.Entities...)
 
 		for pageNum := 2; pageNum <= *usersList.PageCount; pageNum++ {
-			usersList, _, err := p.userApi.GetUsers(pageSize, pageNum, nil, nil, "", expandedAttributes, "", userStatus)
+			usersList, apiResponse, err := p.userApi.GetUsers(pageSize, pageNum, nil, nil, "", expandedAttributes, "", userStatus)
+
+			//DEVTOOLING-862 - This is a blocker for the BCP team as before this if check was put in the code would fail when it hit 10K of inactive users.
+			//The BCP team (Cesar Branco has asked to write a warning to the log) and just return what we currently have.
+			//Long-term solution is working with Joe Fruland to change the backend API.
+			if userStatus == "inactive" && apiResponse != nil && apiResponse.StatusCode == http.StatusBadRequest {
+				log.Printf("WARNING!!: The maximum number of inactive users (10,000) have been retrieved from the API.  No further exports of inactive users will occur.")
+				return &users, apiResponse, nil
+			}
+
 			if err != nil {
 				return nil, apiResponse, err
 			}
