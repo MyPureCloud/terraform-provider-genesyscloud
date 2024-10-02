@@ -90,7 +90,7 @@ resource "genesyscloud_routing_queue" "example_queue" {
 - `bullseye_rings` (Block List, Max: 5) The bullseye ring settings for the queue. (see [below for nested schema](#nestedblock--bullseye_rings))
 - `calling_party_name` (String) The name to use for caller identification for outbound calls from this queue.
 - `calling_party_number` (String) The phone number to use for caller identification for outbound calls from this queue.
-- `conditional_group_routing_rules` (Block List, Max: 5, Deprecated) The Conditional Group Routing settings for the queue. (see [below for nested schema](#nestedblock--conditional_group_routing_rules))
+- `conditional_group_routing_rules` (Block List, Max: 5) The Conditional Group Routing settings for the queue. **Note**: conditional_group_routing_rules is deprecated in genesyscloud_routing_queue. CGR is now a standalone resource, please set ENABLE_STANDALONE_CGR in your environment variables to enable and use genesyscloud_routing_queue_conditional_group_routing (see [below for nested schema](#nestedblock--conditional_group_routing_rules))
 - `default_script_ids` (Map of String) The default script IDs for each communication type. Communication types: (CALL | CALLBACK | CHAT | COBROWSE | EMAIL | MESSAGE | SOCIAL_EXPRESSION | VIDEO | SCREENSHARE)
 - `description` (String) Queue description.
 - `direct_routing` (Block List, Max: 1) Used by the System to set Direct Routing settings for a system Direct Routing queue. (see [below for nested schema](#nestedblock--direct_routing))
@@ -108,7 +108,7 @@ resource "genesyscloud_routing_queue" "example_queue" {
 - `members` (Set of Object) Users in the queue. If not set, this resource will not manage members. If a user is already assigned to this queue via a group, attempting to assign them using this field will cause an error to be thrown. (see [below for nested schema](#nestedatt--members))
 - `message_in_queue_flow_id` (String) The in-queue flow ID to use for message conversations waiting in queue.
 - `on_hold_prompt_id` (String) The audio to be played when calls on this queue are on hold. If not configured, the default on-hold music will play.
-- `outbound_email_address` (Block List, Max: 1, Deprecated) The outbound email address settings for this queue. (see [below for nested schema](#nestedblock--outbound_email_address))
+- `outbound_email_address` (Block List, Max: 1) The outbound email address settings for this queue. **Note**: outbound_email_address is deprecated in genesyscloud_routing_queue. OEA is now a standalone resource, please set ENABLE_STANDALONE_EMAIL_ADDRESS in your environment variables to enable and use genesyscloud_routing_queue_outbound_email_address (see [below for nested schema](#nestedblock--outbound_email_address))
 - `outbound_messaging_open_messaging_recipient_id` (String) The unique ID of the outbound messaging open messaging recipient for the queue.
 - `outbound_messaging_sms_address_id` (String) The unique ID of the outbound messaging SMS address for the queue.
 - `outbound_messaging_whatsapp_recipient_id` (String) The unique ID of the outbound messaging whatsapp recipient for the queue.

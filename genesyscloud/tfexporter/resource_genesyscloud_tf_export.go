@@ -64,7 +64,7 @@ func ResourceTfExport() *schema.Resource {
 				Deprecated:    "This filter attribute is deprecated and will be removed in a future version. Please use the 'include_filter_resources' (which is a 1:1 replacement of this attribute), 'exclude_filter_resources', or 'advanced_filter_resource' attribute.",
 			},
 			"include_filter_resources": {
-				Description: "Include only resources that match either a resource type or a resource type::regular expression.  See export guide for additional information",
+				Description: "Include only resources that match either a resource type or a resource type::regular expression.  See export guide for additional information.",
 				Type:        schema.TypeList,
 				Optional:    true,
 				Elem: &schema.Schema{
@@ -74,8 +74,17 @@ func ResourceTfExport() *schema.Resource {
 				ForceNew:      true,
 				ConflictsWith: []string{"resource_types", "exclude_filter_resources", "advanced_filter_resources"},
 			},
+			"replace_with_datasource": {
+				Description: "Include only resources that match either a resource type or a resource type::regular expression.  See export guide for additional information.",
+				Type:        schema.TypeList,
+				Optional:    true,
+				Elem: &schema.Schema{
+					Type: schema.TypeString,
+				},
+				ForceNew: true,
+			},
 			"exclude_filter_resources": {
-				Description: "Exclude resources that match either a resource type or a resource type::regular expression.  See export guide for additional information",
+				Description: "Exclude resources that match either a resource type or a resource type::regular expression.  See export guide for additional information.",
 				Type:        schema.TypeList,
 				Optional:    true,
 				Elem: &schema.Schema{
@@ -125,15 +134,6 @@ func ResourceTfExport() *schema.Resource {
 				ForceNew:      true,
 				ConflictsWith: []string{"resource_types", "include_filter_resources", "exclude_filter_resources"},
 			},
-			"replace_with_datasource": {
-				Description: "Include only resources that match either a resource type or a resource type::regular expression.  See export guide for additional information",
-				Type:        schema.TypeList,
-				Optional:    true,
-				Elem: &schema.Schema{
-					Type: schema.TypeString,
-				},
-				ForceNew: true,
-			},
 			"include_state_file": {
 				Description: "Export a 'terraform.tfstate' file along with the config file. This can be used for orgs to begin managing existing resources with terraform. When `false`, GUID fields will be omitted from the config file unless a resource reference can be supplied. In this case, the resource type will need to be included in the `resource_types` array.",
 				Type:        schema.TypeBool,
@@ -177,17 +177,24 @@ func ResourceTfExport() *schema.Resource {
 				ForceNew:    true,
 			},
 			"ignore_cyclic_deps": {
-				Description: "Ignore Cyclic Dependencies when building the flows and do not throw an error",
+				Description: "Ignore Cyclic Dependencies when building the flows and do not throw an error.",
 				Type:        schema.TypeBool,
 				Optional:    true,
 				Default:     true,
 				ForceNew:    true,
 			},
 			"compress": {
-				Description: "Compress exported results using zip format",
+				Description: "Compress exported results using zip format.",
 				Type:        schema.TypeBool,
 				Optional:    true,
 				Default:     false,
+				ForceNew:    true,
+			},
+			"export_computed": {
+				Description: "Export attributes that are marked as being Computed. Defaults to true to match existing functionality. This attribute's default value will likely switch to false in a future release.",
+				Default:     true,
+				Type:        schema.TypeBool,
+				Optional:    true,
 				ForceNew:    true,
 			},
 		},

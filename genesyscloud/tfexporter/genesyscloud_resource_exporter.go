@@ -89,6 +89,7 @@ type GenesysCloudResourceExporter struct {
 	cyclicDependsList       []string
 	ignoreCyclicDeps        bool
 	flowResourcesList       []string
+	exportComputed          bool
 }
 
 func configureExporterFilters(d *schema.ResourceData, gre *GenesysCloudResourceExporter, filterType ExporterFilterHandler) {
@@ -169,6 +170,7 @@ func NewGenesysCloudResourceExporter(ctx context.Context, d *schema.ResourceData
 		exportAsHCL:          d.Get("export_as_hcl").(bool),
 		splitFilesByResource: d.Get("split_files_by_resource").(bool),
 		logPermissionErrors:  d.Get("log_permission_errors").(bool),
+		exportComputed:       d.Get("export_computed").(bool),
 		addDependsOn:         computeDependsOn(d),
 		filterHandler:        filterType,
 		includeStateFile:     d.Get("include_state_file").(bool),
@@ -1075,6 +1077,8 @@ func (g *GenesysCloudResourceExporter) getResourcesForType(resType string, provi
 		return nil, diag.Errorf("Resource type %v not defined", resType)
 	}
 
+	exportComputed := g.exportComputed
+
 	ctyType := res.CoreConfigSchema().ImpliedType()
 	var wg sync.WaitGroup
 	wg.Add(lenResources)
@@ -1086,7 +1090,13 @@ func (g *GenesysCloudResourceExporter) getResourcesForType(resType string, provi
 				defer cancel()
 				// This calls into the resource's ReadContext method which
 				// will block until it can acquire a pooled client config object.
-				instanceState, err := getResourceState(ctx, res, id, resMeta, meta)
+				instanceState, err := getResourceState(ctx, res, id, resMeta, meta, exportComputed)
+
+				if instanceState == nil {
+					log.Printf("Resource %s no longer exists. Skipping.", resMeta.SanitizedBlockLabel)
+					removeChan <- id // Mark for removal from the map
+					return nil
+				}
 
 				referencePrefix := ""
 				if g.isDataSource(resType, resMeta.SanitizedBlockLabel) || g.isDataSource(resType, resMeta.ObjectName) {
@@ -1178,7 +1188,7 @@ func (g *GenesysCloudResourceExporter) getResourcesForType(resType string, provi
 	}
 }
 
-func getResourceState(ctx context.Context, resource *schema.Resource, resID string, resMeta *resourceExporter.ResourceMeta, meta interface{}) (*terraform.InstanceState, diag.Diagnostics) {
+func getResourceState(ctx context.Context, resource *schema.Resource, resID string, resMeta *resourceExporter.ResourceMeta, meta interface{}, exportComputed bool) (*terraform.InstanceState, diag.Diagnostics) {
 	// If defined, pass the full ID through the import method to generate a readable state
 	instanceState := &terraform.InstanceState{ID: resMeta.IdPrefix + resID}
 	if resource.Importer != nil && resource.Importer.StateContext != nil {
@@ -1202,6 +1212,15 @@ func getResourceState(ctx context.Context, resource *schema.Resource, resID stri
 	if state == nil || state.ID == "" {
 		// Resource no longer exists
 		return nil, nil
+	}
+
+	if !exportComputed {
+		// Remove any computed attributes from being exported
+		for resType, resSchema := range resource.Schema {
+			if resSchema.Computed {
+				delete(state.Attributes, resType)
+			}
+		}
 	}
 	return state, nil
 }
