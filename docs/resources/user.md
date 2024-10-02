@@ -157,11 +157,14 @@ Optional:
 <a id="nestedobjatt--addresses--phone_numbers"></a>
 ### Nested Schema for `addresses.phone_numbers`
 
+Required:
+
+- `number` (String)
+
 Optional:
 
 - `extension` (String)
 - `media_type` (String)
-- `number` (String)
 - `type` (String)
 
 
