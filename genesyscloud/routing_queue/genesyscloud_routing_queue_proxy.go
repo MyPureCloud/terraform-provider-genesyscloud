@@ -163,7 +163,7 @@ func GetAllRoutingQueuesFn(ctx context.Context, p *RoutingQueueProxy, name strin
 	allQueues = append(allQueues, *queues.Entities...)
 
 	for pageNum := 2; pageNum <= *queues.PageCount; pageNum++ {
-		queues, resp, getErr := p.routingApi.GetRoutingQueues(pageNum, pageSize, "", "", nil, nil, nil, "", false)
+		queues, resp, getErr := p.routingApi.GetRoutingQueues(pageNum, pageSize, "", name, nil, nil, nil, "", false)
 		if getErr != nil {
 			return nil, resp, fmt.Errorf("failed to get page of queues: %v", getErr)
 		}
@@ -209,7 +209,7 @@ func getRoutingQueueByNameFn(ctx context.Context, p *RoutingQueueProxy, name str
 	}
 
 	for _, queue := range *queues {
-		if normalizeQueueName(*queue.Name) == name {
+		if *queue.Name == name {
 			log.Printf("Retrieved the routing queue id %s by name %s", *queue.Id, name)
 			return *queue.Id, resp, false, nil
 		}

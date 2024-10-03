@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
@@ -25,7 +24,6 @@ func dataSourceRoutingQueueRead(ctx context.Context, d *schema.ResourceData, m i
 	sdkConfig := m.(*provider.ProviderMeta).ClientConfig
 
 	key := d.Get("name").(string)
-	key = normalizeQueueName(key)
 
 	if dataSourceRoutingQueueCache == nil {
 		dataSourceRoutingQueueCache = rc.NewDataSourceCache(sdkConfig, hydrateRoutingQueueCacheFn, getQueueByNameFn)
@@ -40,23 +38,18 @@ func dataSourceRoutingQueueRead(ctx context.Context, d *schema.ResourceData, m i
 	return nil
 }
 
-// Normalize queue name for keys in the cache
-func normalizeQueueName(queueName string) string {
-	return strings.ToLower(queueName)
-}
-
 // hydrateRoutingQueueCacheFn for hydrating the cache with Genesys Cloud routing queues using the SDK
 func hydrateRoutingQueueCacheFn(c *rc.DataSourceCache, ctx context.Context) error {
 	proxy := GetRoutingQueueProxy(c.ClientConfig)
 
-	log.Printf("hydrating cache for data source genesyscloud_routing_queues")
+	log.Printf("hydrating cache for data source %s", resourceName)
 
 	// Newly created resources often aren't returned unless there's a delay
 	time.Sleep(5 * time.Second)
 
 	allQueues, resp, err := proxy.GetAllRoutingQueues(ctx, "")
 	if err != nil {
-		return fmt.Errorf("failed to get routing queues %s %s", err, resp)
+		return fmt.Errorf("failed to get routing queues. Error: %s | API Response: %s", err.Error(), resp.String())
 	}
 
 	if allQueues == nil || len(*allQueues) == 0 {
@@ -64,10 +57,10 @@ func hydrateRoutingQueueCacheFn(c *rc.DataSourceCache, ctx context.Context) erro
 	}
 
 	for _, queue := range *allQueues {
-		c.Cache[normalizeQueueName(*queue.Name)] = *queue.Id
+		c.Cache[*queue.Name] = *queue.Id
 	}
 
-	log.Printf("cache hydration completed for data source genesyscloud_routing_queues")
+	log.Printf("cache hydration completed for data source %s", resourceName)
 	return nil
 }
 
@@ -80,11 +73,12 @@ func getQueueByNameFn(c *rc.DataSourceCache, name string, ctx context.Context) (
 	diag := util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
 
 		queueID, resp, retryable, getErr := proxy.getRoutingQueueByName(ctx, name)
-		if getErr != nil && !retryable {
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("error requesting queue %s | error %s", name, getErr), resp))
-		}
-		if retryable {
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("error requesting queue %s | error %s", name, getErr), resp))
+		if getErr != nil {
+			errMsg := util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("error requesting queue %s | error %s", name, getErr), resp)
+			if !retryable {
+				return retry.NonRetryableError(errMsg)
+			}
+			return retry.RetryableError(errMsg)
 		}
 
 		queueId = queueID
