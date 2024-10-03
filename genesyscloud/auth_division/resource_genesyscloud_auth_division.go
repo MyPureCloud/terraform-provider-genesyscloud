@@ -31,7 +31,7 @@ func getAllAuthDivisions(ctx context.Context, clientConfig *platformclientv2.Con
 	}
 
 	for _, division := range *divisions {
-		resources[*division.Id] = &resourceExporter.ResourceMeta{Name: *division.Name}
+		resources[*division.Id] = &resourceExporter.ResourceMeta{ObjectName: *division.Name, BlockLabel: *division.Name}
 	}
 
 	return resources, nil

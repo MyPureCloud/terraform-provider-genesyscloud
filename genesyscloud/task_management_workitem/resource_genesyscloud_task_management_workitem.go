@@ -36,7 +36,7 @@ func getAllAuthTaskManagementWorkitems(ctx context.Context, clientConfig *platfo
 	}
 
 	for _, workitem := range *workitems {
-		resources[*workitem.Id] = &resourceExporter.ResourceMeta{Name: *workitem.Name}
+		resources[*workitem.Id] = &resourceExporter.ResourceMeta{ObjectName: *workitem.Name, BlockLabel: *workitem.Name}
 	}
 
 	return resources, nil

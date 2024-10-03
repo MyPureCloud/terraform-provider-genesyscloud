@@ -31,7 +31,7 @@ func getAllLocations(ctx context.Context, clientConfig *platformclientv2.Configu
 	}
 
 	for _, location := range *locations {
-		resources[*location.Id] = &resourceExporter.ResourceMeta{Name: *location.Name}
+		resources[*location.Id] = &resourceExporter.ResourceMeta{ObjectName: *location.Name, BlockLabel: *location.Name}
 	}
 
 	return resources, nil

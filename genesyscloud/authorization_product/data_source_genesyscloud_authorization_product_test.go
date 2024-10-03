@@ -17,7 +17,7 @@ import (
 func TestAccDataSourceAuthorizationProduct(t *testing.T) {
 
 	var (
-		productName  = "botFlows"
+		productName  = "messaging" // use a default product most orgs should have
 		dataSourceId = productName
 	)
 	resource.Test(t, resource.TestCase{

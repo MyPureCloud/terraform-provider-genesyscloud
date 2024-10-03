@@ -31,7 +31,7 @@ func getAllOutboundContactLists(ctx context.Context, clientConfig *platformclien
 	}
 
 	for _, contactList := range *contactLists {
-		resources[*contactList.Id] = &resourceExporter.ResourceMeta{Name: *contactList.Name}
+		resources[*contactList.Id] = &resourceExporter.ResourceMeta{ObjectName: *contactList.Name, BlockLabel: *contactList.Name}
 	}
 
 	return resources, nil

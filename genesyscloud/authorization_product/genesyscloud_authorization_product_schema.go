@@ -1,9 +1,10 @@
 package authorization_product
 
 import (
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 /*
@@ -22,7 +23,7 @@ func SetRegistrar(regInstance registrar.Registrar) {
 // DataSourceAuthorizationProduct registers the authorization_product data source
 func DataSourceAuthorizationProduct() *schema.Resource {
 	return &schema.Resource{
-		Description: `Data source for Genesys Cloud Authorisation Products.`,
+		Description: `Data source for Genesys Cloud Authorization Products.`,
 
 		ReadContext: provider.ReadWithPooledClient(dataSourceAuthorizationProductRead),
 		Importer: &schema.ResourceImporter{

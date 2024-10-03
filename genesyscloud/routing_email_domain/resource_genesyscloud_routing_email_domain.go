@@ -33,7 +33,7 @@ func getAllRoutingEmailDomains(ctx context.Context, clientConfig *platformclient
 	}
 
 	for _, domain := range *domains {
-		resources[*domain.Id] = &resourceExporter.ResourceMeta{Name: *domain.Id}
+		resources[*domain.Id] = &resourceExporter.ResourceMeta{ObjectName: *domain.Id, BlockLabel: *domain.Id}
 	}
 	return resources, nil
 }

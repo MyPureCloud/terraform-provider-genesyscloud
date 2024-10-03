@@ -3,12 +3,12 @@
 page_title: "genesyscloud_authorization_product Data Source - terraform-provider-genesyscloud"
 subcategory: ""
 description: |-
-  Data source for Genesys Cloud Authorisation Products.
+  Data source for Genesys Cloud Authorization Products.
 ---
 
 # genesyscloud_authorization_product (Data Source)
 
-Data source for Genesys Cloud Authorisation Products.
+Data source for Genesys Cloud Authorization Products.
 
 ## Example Usage
 

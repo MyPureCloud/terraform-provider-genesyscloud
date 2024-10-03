@@ -133,7 +133,7 @@ func TestAccResourceKnowledgeDocumentBasic(t *testing.T) {
 	})
 }
 
-func generateKnowledgeDocumentResource(resourceName string, knowledgeBaseResourceName string, knowledgeCategoryResourceName string, knowledgeLabelResourceName string, knowledgeCategoryName string, knowledgeLabelName string, title string, visible bool, published bool, phrase string, autocomplete bool) string {
+func generateKnowledgeDocumentResource(resourceName string, knowledgeBaseResourceName string, knowledgeCategoryResourceName string, knowledgeLabelResourceName string, knowledgeCategoryName string, knowledgeResourceBlockLabel string, title string, visible bool, published bool, phrase string, autocomplete bool) string {
 	document := fmt.Sprintf(`
         resource "genesyscloud_knowledge_document" "%s" {
 			depends_on=[genesyscloud_knowledge_category.%s, genesyscloud_knowledge_label.%s]
@@ -146,7 +146,7 @@ func generateKnowledgeDocumentResource(resourceName string, knowledgeBaseResourc
 		knowledgeLabelResourceName,
 		knowledgeBaseResourceName,
 		published,
-		generateKnowledgeDocumentRequestBody(knowledgeCategoryName, knowledgeLabelName, title, visible, phrase, autocomplete),
+		generateKnowledgeDocumentRequestBody(knowledgeCategoryName, knowledgeResourceBlockLabel, title, visible, phrase, autocomplete),
 	)
 	return document
 }
@@ -162,7 +162,7 @@ func generateKnowledgeDocumentAlternatives(phrase string, autocomplete bool) str
 	return alternatives
 }
 
-func generateKnowledgeDocumentRequestBody(knowledgeCategoryName string, knowledgeLabelName string, title string, visible bool, phrase string, autocomplete bool) string {
+func generateKnowledgeDocumentRequestBody(knowledgeCategoryName string, knowledgeResourceBlockLabel string, title string, visible bool, phrase string, autocomplete bool) string {
 
 	documentRequestBody := fmt.Sprintf(`
         knowledge_document {
@@ -176,7 +176,7 @@ func generateKnowledgeDocumentRequestBody(knowledgeCategoryName string, knowledg
 		visible,
 		generateKnowledgeDocumentAlternatives(phrase, autocomplete),
 		knowledgeCategoryName,
-		knowledgeLabelName,
+		knowledgeResourceBlockLabel,
 	)
 	return documentRequestBody
 }

@@ -53,7 +53,7 @@ func getAllMediaRetentionPolicies(ctx context.Context, clientConfig *platformcli
 	}
 
 	for _, retentionPolicy := range *retentionPolicies {
-		resources[*retentionPolicy.Id] = &resourceExporter.ResourceMeta{Name: *retentionPolicy.Name}
+		resources[*retentionPolicy.Id] = &resourceExporter.ResourceMeta{ObjectName: *retentionPolicy.Name, BlockLabel: *retentionPolicy.Name}
 	}
 	return resources, nil
 }

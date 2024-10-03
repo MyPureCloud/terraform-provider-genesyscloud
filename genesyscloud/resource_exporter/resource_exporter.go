@@ -20,8 +20,17 @@ var resourceExporters map[string]*ResourceExporter
 var resourceExporterMapMutex = sync.RWMutex{}
 
 type ResourceMeta struct {
-	// Name of the resource to be used in exports
-	Name string
+	// ObjectName is the actual Name of the resource returned from the API
+	// This is retained so it can be easily filtered against
+	ObjectName string
+
+	// BlockLabel is the second label identifier of the Terraform resource to be used in exports
+	// See https://developer.hashicorp.com/terraform/language/syntax/configuration#blocks
+	BlockLabel string
+
+	// SanitizedBlockLabel is the sanitized version of the ResourceBlockLabel
+	// This is the name that will be given as the second label identifier in the resource block.
+	SanitizedBlockLabel string
 
 	// Prefix to add to the ID when reading state
 	IdPrefix string
@@ -46,11 +55,13 @@ type RefAttrSettings struct {
 }
 
 type ResourceInfo struct {
-	State        *terraform.InstanceState
-	Name         string
-	Type         string
-	CtyType      cty.Type
-	ResourceType string
+	Id      string
+	State   *terraform.InstanceState
+	Name    string
+	Type    string
+	CtyType cty.Type
+	// This is used to define a "data." prefix when referencing this resource
+	ReferencePrefix string
 }
 
 // RefAttrCustomResolver allows the definition of a custom resolver for an exporter.
@@ -143,21 +154,16 @@ type ResourceExporter struct {
 
 	CustomFlowResolver map[string]*CustomFlowResolver
 
-	//This a placeholder filter out specific resources from a filter.
-	FilterResource func(ResourceIDMetaMap, string, []string) ResourceIDMetaMap
 	// Attributes that are mentioned with custom exports like e164 numbers,rrule  should be ensured to export in the correct format (remove hyphens, whitespace, etc.)
 	CustomValidateExports map[string][]string
 	mutex                 sync.RWMutex
 }
 
-func (r *ResourceExporter) LoadSanitizedResourceMap(ctx context.Context, name string, filter []string) diag.Diagnostics {
+// Gets all instances for a given resource and applies filtering and returns results as a SanitizedResourceMap
+func (r *ResourceExporter) LoadSanitizedResourceMap(ctx context.Context) diag.Diagnostics {
 	result, err := r.GetResourcesFunc(ctx)
 	if err != nil {
 		return err
-	}
-
-	if r.FilterResource != nil {
-		result = r.FilterResource(result, name, filter)
 	}
 
 	// Lock the Resource Map as it is accessed by goroutines

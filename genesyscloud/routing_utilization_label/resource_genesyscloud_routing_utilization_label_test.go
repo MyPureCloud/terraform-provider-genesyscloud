@@ -15,9 +15,9 @@ import (
 
 func TestAccResourceRoutingUtilizationLabelBasic(t *testing.T) {
 	var (
-		resourceName     = "test-label"
-		labelName        = "Terraform Label " + uuid.NewString()
-		updatedLabelName = "Updated " + labelName
+		resourceName              = "test-label"
+		labelName                 = "Terraform Label " + uuid.NewString()
+		updatedResourceBlockLabel = "Updated " + labelName
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -39,11 +39,11 @@ func TestAccResourceRoutingUtilizationLabelBasic(t *testing.T) {
 				// Update
 				Config: generateRoutingUtilizationLabelResource(
 					resourceName,
-					updatedLabelName,
+					updatedResourceBlockLabel,
 					"",
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_routing_utilization_label."+resourceName, "name", updatedLabelName),
+					resource.TestCheckResourceAttr("genesyscloud_routing_utilization_label."+resourceName, "name", updatedResourceBlockLabel),
 				),
 			},
 			{

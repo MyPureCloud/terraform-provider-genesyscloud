@@ -1,11 +1,12 @@
 package util
 
 import (
-	"github.com/google/uuid"
 	"hash/fnv"
 	"regexp"
 	"strconv"
 	"strings"
+
+	"github.com/google/uuid"
 )
 
 var matchFirstCap = regexp.MustCompile("(.)([A-Z][a-z]+)")
@@ -38,6 +39,14 @@ func StringExists(target string, slice []string) bool {
 		}
 	}
 	return false
+}
+
+func EmptyIfNilStringPointer(target *string) *string {
+	if target == nil {
+		emptyString := ""
+		return &emptyString
+	}
+	return target
 }
 
 func GetUniqueString() string {

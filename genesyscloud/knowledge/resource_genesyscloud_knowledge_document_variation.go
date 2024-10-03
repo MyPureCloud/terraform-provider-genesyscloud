@@ -15,7 +15,6 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 
-	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
@@ -268,7 +267,11 @@ func getAllKnowledgeDocumentVariations(ctx context.Context, clientConfig *platfo
 
 			for _, knowledgeDocumentVariation := range *knowledgeDocumentVariations.Entities {
 				id := fmt.Sprintf("%s %s %s", *knowledgeDocumentVariation.Id, *knowledgeDocument.KnowledgeBase.Id, *knowledgeDocument.Id)
-				resources[id] = &resourceExporter.ResourceMeta{Name: "variation " + uuid.NewString()}
+				name := knowledgeDocumentVariation.Name
+				if name == nil {
+					name = &id
+				}
+				resources[id] = &resourceExporter.ResourceMeta{ObjectName: *name, BlockLabel: "variation " + id}
 			}
 		}
 	}
