@@ -239,11 +239,13 @@ func getAllRoutingQueueWrapupCodesFn(ctx context.Context, p *RoutingQueueProxy, 
 		return nil, apiResponse, fmt.Errorf("failed to get routing wrapupcode : %v", err)
 	}
 
-	if rc.GetCacheSize(p.wrapupCodeCache) == *wrapupcodes.Total && rc.GetCacheSize(p.wrapupCodeCache) != 0 {
-		return rc.GetCache(p.wrapupCodeCache), nil, nil
-	} else if rc.GetCacheSize(p.wrapupCodeCache) != *wrapupcodes.Total && rc.GetCacheSize(p.wrapupCodeCache) != 0 {
-		// The cache is populated but not with the right data, clear the cache so it can be re populated
-		p.wrapupCodeCache = rc.NewResourceCache[platformclientv2.Wrapupcode]()
+	if wrapupcodes.Total != nil {
+		if rc.GetCacheSize(p.wrapupCodeCache) == *wrapupcodes.Total && rc.GetCacheSize(p.wrapupCodeCache) != 0 {
+			return rc.GetCache(p.wrapupCodeCache), nil, nil
+		} else if rc.GetCacheSize(p.wrapupCodeCache) != *wrapupcodes.Total && rc.GetCacheSize(p.wrapupCodeCache) != 0 {
+			// The cache is populated but not with the right data, clear the cache so it can be re populated
+			p.wrapupCodeCache = rc.NewResourceCache[platformclientv2.Wrapupcode]()
+		}
 	}
 
 	if wrapupcodes == nil || wrapupcodes.Entities == nil || len(*wrapupcodes.Entities) == 0 {

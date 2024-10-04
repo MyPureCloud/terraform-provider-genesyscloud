@@ -30,7 +30,7 @@ func SetRegistrar(l registrar.Registrar) {
 func ResourceTfExport() *schema.Resource {
 	return &schema.Resource{
 		Description: fmt.Sprintf(`
-		Genesys Cloud Resource to export Terraform config and (optionally) tfstate files to a local directory. 
+		Genesys Cloud Resource to export Terraform config and (optionally) tfstate files to a local directory.
 		The config file is named '%s' or '%s', and the state file is named '%s'.
 		`, defaultTfJSONFile, defaultTfHCLFile, defaultTfStateFile),
 
@@ -61,7 +61,7 @@ func ResourceTfExport() *schema.Resource {
 				ConflictsWith: []string{"include_filter_resources", "exclude_filter_resources"},
 			},
 			"include_filter_resources": {
-				Description: "Include only resources that match either a resource type or a resource type::regular expression.  See export guide for additional information",
+				Description: "Include only resources that match either a resource type or a resource type::regular expression.  See export guide for additional information.",
 				Type:        schema.TypeList,
 				Optional:    true,
 				Elem: &schema.Schema{
@@ -72,7 +72,7 @@ func ResourceTfExport() *schema.Resource {
 				ConflictsWith: []string{"resource_types", "exclude_filter_resources"},
 			},
 			"replace_with_datasource": {
-				Description: "Include only resources that match either a resource type or a resource type::regular expression.  See export guide for additional information",
+				Description: "Include only resources that match either a resource type or a resource type::regular expression.  See export guide for additional information.",
 				Type:        schema.TypeList,
 				Optional:    true,
 				Elem: &schema.Schema{
@@ -81,7 +81,7 @@ func ResourceTfExport() *schema.Resource {
 				ForceNew: true,
 			},
 			"exclude_filter_resources": {
-				Description: "Exclude resources that match either a resource type or a resource type::regular expression.  See export guide for additional information",
+				Description: "Exclude resources that match either a resource type or a resource type::regular expression.  See export guide for additional information.",
 				Type:        schema.TypeList,
 				Optional:    true,
 				Elem: &schema.Schema{
@@ -127,24 +127,31 @@ func ResourceTfExport() *schema.Resource {
 				ForceNew:    true,
 			},
 			"enable_dependency_resolution": {
-				Description: "Adds a \"depends_on\" attribute to genesyscloud_flow resources with a list of resources that are referenced inside the flow configuration . This also resolves and exports all the dependent resources for any given resource.",
+				Description: "Adds a \"depends_on\" attribute to genesyscloud_flow resources with a list of resources that are referenced inside the flow configuration . This also resolves and exports all the dependent resources for any given resource. Resources mentioned in exclude_attributes will not be exported.",
 				Type:        schema.TypeBool,
 				Optional:    true,
 				Default:     false,
 				ForceNew:    true,
 			},
 			"ignore_cyclic_deps": {
-				Description: "Ignore Cyclic Dependencies when building the flows and do not throw an error",
+				Description: "Ignore Cyclic Dependencies when building the flows and do not throw an error.",
 				Type:        schema.TypeBool,
 				Optional:    true,
 				Default:     true,
 				ForceNew:    true,
 			},
 			"compress": {
-				Description: "Compress exported results using zip format",
+				Description: "Compress exported results using zip format.",
 				Type:        schema.TypeBool,
 				Optional:    true,
 				Default:     false,
+				ForceNew:    true,
+			},
+			"export_computed": {
+				Description: "Export attributes that are marked as being Computed. Defaults to true to match existing functionality. This attribute's default value will likely switch to false in a future release.",
+				Default:     true,
+				Type:        schema.TypeBool,
+				Optional:    true,
 				ForceNew:    true,
 			},
 		},
