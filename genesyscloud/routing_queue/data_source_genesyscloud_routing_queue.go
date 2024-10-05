@@ -26,6 +26,7 @@ func dataSourceRoutingQueueRead(ctx context.Context, d *schema.ResourceData, m i
 	key := d.Get("name").(string)
 
 	if dataSourceRoutingQueueCache == nil {
+		log.Printf("Instantiating the %s data source cache object", resourceName)
 		dataSourceRoutingQueueCache = rc.NewDataSourceCache(sdkConfig, hydrateRoutingQueueCacheFn, getQueueByNameFn)
 	}
 
@@ -42,10 +43,7 @@ func dataSourceRoutingQueueRead(ctx context.Context, d *schema.ResourceData, m i
 func hydrateRoutingQueueCacheFn(c *rc.DataSourceCache, ctx context.Context) error {
 	proxy := GetRoutingQueueProxy(c.ClientConfig)
 
-	log.Printf("hydrating cache for data source %s", resourceName)
-
-	// Newly created resources often aren't returned unless there's a delay
-	time.Sleep(5 * time.Second)
+	log.Printf("Hydrating cache for data source %s", resourceName)
 
 	allQueues, resp, err := proxy.GetAllRoutingQueues(ctx, "")
 	if err != nil {
@@ -53,6 +51,7 @@ func hydrateRoutingQueueCacheFn(c *rc.DataSourceCache, ctx context.Context) erro
 	}
 
 	if allQueues == nil || len(*allQueues) == 0 {
+		log.Printf("No queues found. The cache will remain empty.")
 		return nil
 	}
 
@@ -60,18 +59,16 @@ func hydrateRoutingQueueCacheFn(c *rc.DataSourceCache, ctx context.Context) erro
 		c.Cache[*queue.Name] = *queue.Id
 	}
 
-	log.Printf("cache hydration completed for data source %s", resourceName)
+	log.Printf("Cache hydration complete for data source %s", resourceName)
 	return nil
 }
 
-// Get queue by name.
-// Returns the queue id (blank if not found) and diag
+// getQueueByNameFn returns the queue id (blank if not found) and diag
 func getQueueByNameFn(c *rc.DataSourceCache, name string, ctx context.Context) (string, diag.Diagnostics) {
 	proxy := GetRoutingQueueProxy(c.ClientConfig)
 	queueId := ""
 
 	diag := util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
-
 		queueID, resp, retryable, getErr := proxy.getRoutingQueueByName(ctx, name)
 		if getErr != nil {
 			errMsg := util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("error requesting queue %s | error %s", name, getErr), resp)
