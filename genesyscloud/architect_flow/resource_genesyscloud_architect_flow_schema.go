@@ -1,8 +1,10 @@
 package architect_flow
 
 import (
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"terraform-provider-genesyscloud/genesyscloud/validators"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
@@ -74,13 +76,42 @@ func ResourceArchitectFlow() *schema.Resource {
 
 func DataSourceArchitectFlow() *schema.Resource {
 	return &schema.Resource{
-		Description: "Data source for Genesys Cloud Flows. Select a flow by name.",
+		Description: "Data source for Genesys Cloud Flows. Select a flow by name and type.",
 		ReadContext: provider.ReadWithPooledClient(dataSourceFlowRead),
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Description: "Flow name.",
 				Type:        schema.TypeString,
 				Required:    true,
+			},
+			"type": {
+				Description: "Flow type.",
+				Type:        schema.TypeString,
+				Optional:    true,
+				ValidateFunc: validation.StringInSlice(
+					[]string{
+						"bot",
+						"commonmodule",
+						"digitalbot",
+						"inboundcall",
+						"inboundchat",
+						"inboundemail",
+						"inboundshortmessage",
+						"outboundcall",
+						"inqueuecall",
+						"inqueueemail",
+						"inqueueshortmessage",
+						"speech",
+						"securecall",
+						"surveyinvite",
+						"voice",
+						"voicemail",
+						"voicesurvey",
+						"workflow",
+						"workitem",
+					},
+					false,
+				),
 			},
 		},
 	}

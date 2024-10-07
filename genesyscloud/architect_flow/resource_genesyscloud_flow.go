@@ -25,7 +25,7 @@ func getAllFlows(ctx context.Context, clientConfig *platformclientv2.Configurati
 	resources := make(resourceExporter.ResourceIDMetaMap)
 	p := getArchitectFlowProxy(clientConfig)
 
-	flows, resp, err := p.GetAllFlows(ctx)
+	flows, resp, err := p.GetAllFlows(ctx, "", "")
 	if err != nil {
 		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("failed to get architect flows %v", err), resp)
 	}
