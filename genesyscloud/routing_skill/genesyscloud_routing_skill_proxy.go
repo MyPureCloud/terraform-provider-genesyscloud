@@ -126,8 +126,10 @@ func getRoutingSkillIdByNameFn(ctx context.Context, p *routingSkillProxy, name s
 		return "", resp, false, err
 	}
 
+	noneFoundError := fmt.Errorf("no routing skills found with name '%s'", name)
+
 	if routingSkills == nil || len(*routingSkills) == 0 {
-		return "", resp, true, err
+		return "", resp, true, noneFoundError
 	}
 
 	for _, routingSkill := range *routingSkills {
@@ -137,7 +139,7 @@ func getRoutingSkillIdByNameFn(ctx context.Context, p *routingSkillProxy, name s
 		}
 	}
 
-	return "", resp, true, fmt.Errorf("unable to find routing skill with name %s", name)
+	return "", resp, true, noneFoundError
 }
 
 func deleteRoutingSkillFn(ctx context.Context, p *routingSkillProxy, id string) (*platformclientv2.APIResponse, error) {
