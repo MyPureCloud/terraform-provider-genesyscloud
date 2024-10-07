@@ -16,7 +16,7 @@ type forceUnlockFlowFunc func(context.Context, *architectFlowProxy, string) (*pl
 type deleteArchitectFlowFunc func(context.Context, *architectFlowProxy, string) (*platformclientv2.APIResponse, error)
 type createArchitectFlowJobsFunc func(context.Context, *architectFlowProxy) (*platformclientv2.Registerarchitectjobresponse, *platformclientv2.APIResponse, error)
 type getArchitectFlowJobsFunc func(context.Context, *architectFlowProxy, string) (*platformclientv2.Architectjobstateresponse, *platformclientv2.APIResponse, error)
-type getAllArchitectFlowsFunc func(context.Context, *architectFlowProxy, string, string) (*[]platformclientv2.Flow, *platformclientv2.APIResponse, error)
+type getAllArchitectFlowsFunc func(context.Context, *architectFlowProxy, string, []string) (*[]platformclientv2.Flow, *platformclientv2.APIResponse, error)
 type getFlowIdByNameAndTypeFunc func(ctx context.Context, a *architectFlowProxy, name string, varType string) (id string, resp *platformclientv2.APIResponse, retryable bool, err error)
 
 type architectFlowProxy struct {
@@ -79,7 +79,7 @@ func (a *architectFlowProxy) GetFlowsDeployJob(ctx context.Context, jobId string
 	return a.getArchitectFlowJobsAttr(ctx, a, jobId)
 }
 
-func (a *architectFlowProxy) GetAllFlows(ctx context.Context, name, varType string) (*[]platformclientv2.Flow, *platformclientv2.APIResponse, error) {
+func (a *architectFlowProxy) GetAllFlows(ctx context.Context, name string, varType []string) (*[]platformclientv2.Flow, *platformclientv2.APIResponse, error) {
 	return a.getAllArchitectFlowsAttr(ctx, a, name, varType)
 }
 
@@ -91,14 +91,19 @@ func getFlowIdByNameAndTypeFn(ctx context.Context, a *architectFlowProxy, name, 
 	var (
 		matchedFlowIds []string
 		typeDetails    string
+		types          []string
 	)
+
+	if varType != "" {
+		types = append(types, varType)
+	}
 
 	if varType != "" {
 		typeDetails = fmt.Sprintf("type '%s'", varType)
 	}
 	noFlowsFoundErr := fmt.Errorf("no flows found with name '%s' %s", name, typeDetails)
 
-	flows, resp, err := a.GetAllFlows(ctx, name, varType)
+	flows, resp, err := a.GetAllFlows(ctx, name, types)
 	if err != nil {
 		return "", resp, false, err
 	}
@@ -149,16 +154,11 @@ func getArchitectFlowJobsFn(_ context.Context, p *architectFlowProxy, jobId stri
 	return p.api.GetFlowsJob(jobId, []string{"messages"})
 }
 
-func getAllArchitectFlowsFn(ctx context.Context, p *architectFlowProxy, name, varType string) (*[]platformclientv2.Flow, *platformclientv2.APIResponse, error) {
+func getAllArchitectFlowsFn(ctx context.Context, p *architectFlowProxy, name string, varType []string) (*[]platformclientv2.Flow, *platformclientv2.APIResponse, error) {
 	const pageSize = 100
 	var totalFlows []platformclientv2.Flow
-	var types []string
 
-	if varType != "" {
-		types = append(types, varType)
-	}
-
-	flows, resp, err := p.api.GetFlows(types, 1, pageSize, "", "", nil, name, "", "", "", "", "", "", "", false, true, "", "", nil)
+	flows, resp, err := p.api.GetFlows(varType, 1, pageSize, "", "", nil, name, "", "", "", "", "", "", "", false, true, "", "", nil)
 	if err != nil {
 		return nil, resp, fmt.Errorf("failed to get page of flows: %v %v", err, resp)
 	}
@@ -169,7 +169,7 @@ func getAllArchitectFlowsFn(ctx context.Context, p *architectFlowProxy, name, va
 	totalFlows = append(totalFlows, *flows.Entities...)
 
 	for pageNum := 2; pageNum <= *flows.PageCount; pageNum++ {
-		flows, resp, err := p.api.GetFlows(types, pageNum, pageSize, "", "", nil, name, "", "", "", "", "", "", "", false, true, "", "", nil)
+		flows, resp, err := p.api.GetFlows(varType, pageNum, pageSize, "", "", nil, name, "", "", "", "", "", "", "", false, true, "", "", nil)
 		if err != nil {
 			return nil, resp, fmt.Errorf("failed to get page %d of flows: %v", pageNum, err)
 		}
