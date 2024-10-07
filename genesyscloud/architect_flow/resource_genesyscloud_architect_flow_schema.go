@@ -1,6 +1,7 @@
 package architect_flow
 
 import (
+	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/validators"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -74,6 +75,28 @@ func ResourceArchitectFlow() *schema.Resource {
 	}
 }
 
+var validFlowTypes = []string{
+	"bot",
+	"commonmodule",
+	"digitalbot",
+	"inboundcall",
+	"inboundchat",
+	"inboundemail",
+	"inboundshortmessage",
+	"outboundcall",
+	"inqueuecall",
+	"inqueueemail",
+	"inqueueshortmessage",
+	"speech",
+	"securecall",
+	"surveyinvite",
+	"voice",
+	"voicemail",
+	"voicesurvey",
+	"workflow",
+	"workitem",
+}
+
 func DataSourceArchitectFlow() *schema.Resource {
 	return &schema.Resource{
 		Description: "Data source for Genesys Cloud Flows. Select a flow by name and type.",
@@ -85,33 +108,10 @@ func DataSourceArchitectFlow() *schema.Resource {
 				Required:    true,
 			},
 			"type": {
-				Description: "Flow type.",
-				Type:        schema.TypeString,
-				Optional:    true,
-				ValidateFunc: validation.StringInSlice(
-					[]string{
-						"bot",
-						"commonmodule",
-						"digitalbot",
-						"inboundcall",
-						"inboundchat",
-						"inboundemail",
-						"inboundshortmessage",
-						"outboundcall",
-						"inqueuecall",
-						"inqueueemail",
-						"inqueueshortmessage",
-						"speech",
-						"securecall",
-						"surveyinvite",
-						"voice",
-						"voicemail",
-						"voicesurvey",
-						"workflow",
-						"workitem",
-					},
-					false,
-				),
+				Description:  "Flow type. Valid options: " + strings.Join(validFlowTypes, ", "),
+				Type:         schema.TypeString,
+				Optional:     true,
+				ValidateFunc: validation.StringInSlice(validFlowTypes, false),
 			},
 		},
 	}

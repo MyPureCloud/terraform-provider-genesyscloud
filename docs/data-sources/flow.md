@@ -3,12 +3,12 @@
 page_title: "genesyscloud_flow Data Source - terraform-provider-genesyscloud"
 subcategory: ""
 description: |-
-  Data source for Genesys Cloud Flows. Select a flow by name.
+  Data source for Genesys Cloud Flows. Select a flow by name and type.
 ---
 
 # genesyscloud_flow (Data Source)
 
-Data source for Genesys Cloud Flows. Select a flow by name.
+Data source for Genesys Cloud Flows. Select a flow by name and type.
 
 ## Example Usage
 
@@ -24,6 +24,10 @@ data "genesyscloud_flow" "example-flow" {
 ### Required
 
 - `name` (String) Flow name.
+
+### Optional
+
+- `type` (String) Flow type. Valid options: bot, commonmodule, digitalbot, inboundcall, inboundchat, inboundemail, inboundshortmessage, outboundcall, inqueuecall, inqueueemail, inqueueshortmessage, speech, securecall, surveyinvite, voice, voicemail, voicesurvey, workflow, workitem
 
 ### Read-Only
 
