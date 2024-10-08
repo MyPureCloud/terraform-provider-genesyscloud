@@ -50,6 +50,3 @@ coverage.out
 cover.html
 coverage_unit.out
 cover_unit.html
-
-# Consistency errors
-consistency-errors.log.json
