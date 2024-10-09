@@ -4,9 +4,14 @@ final def CREDENTIALS_MAP = [
   'tca': 'GENESYSCLOUD_OAUTHCLIENT_ID_AND_SECRET_TCA',
   'us-east-1': 'GENESYSCLOUD_OAUTHCLIENT_ID_AND_SECRET'
 ]
+final def ENVIRONMENT_MAP = [
+    'tca':'test',
+    'us-east-1':'prod'
+]
 
 final def region = REGION
 def credentials = CREDENTIALS_MAP.get(region, 'GENESYSCLOUD_OAUTHCLIENT_ID_AND_SECRET')
+def env = ENVIRONMENT_MAP.get(region,'test')
 
 pipeline {
     agent {
@@ -693,12 +698,10 @@ writeFile file: 'test-report.html', text: html.toString()
 
                     // Optionally, print the location of the HTML report
                     echo "HTML report generated: \${env.WORKSPACE}/test-report.html"
-}
+                }
                 archiveArtifacts artifacts: 'coverageReport.html,test-report.html,test-results.xml', allowEmptyArchive: true   
            }
         }
-
-
     }
 
      post {
@@ -707,16 +710,16 @@ writeFile file: 'test-report.html', text: html.toString()
                     script {
                         echo "Sending acceptance to UTR..."
                         testResultToKnex {
-                            files = 'terraform-provider-genesyscloud/jenkins/tests/*.xml'
+                            files = 'test-results.xml'
                             aut = 'cx-as-a-code'
-                            environment = REGION
+                            environment = env
                             type = 'acceptance'
                             platform = 'go'
                         }
                     }
                 }
+          }
     }
-}
  
 // Function to extract reason from the log for failed tests
 def extractReason(String log) {
