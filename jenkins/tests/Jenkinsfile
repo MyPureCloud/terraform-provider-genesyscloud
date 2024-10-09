@@ -697,6 +697,24 @@ writeFile file: 'test-report.html', text: html.toString()
                 archiveArtifacts artifacts: 'coverageReport.html,test-report.html,test-results.xml', allowEmptyArchive: true   
            }
         }
+
+
+    }
+
+     post {
+
+        always {
+                    script {
+                        echo "Sending acceptance to UTR..."
+                        testResultToKnex {
+                            files = 'terraform-provider-genesyscloud/jenkins/tests/*.xml'
+                            aut = 'cx-as-a-code'
+                            environment = REGION
+                            type = 'acceptance'
+                            platform = 'go'
+                        }
+                    }
+                }
     }
 }
  
