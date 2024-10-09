@@ -22,7 +22,6 @@ func (r *registerTestInstance) registerTestResources() {
 	defer r.resourceMapMutex.Unlock()
 
 	providerResources["genesyscloud_knowledge_document_variation"] = ResourceKnowledgeDocumentVariation()
-	providerResources["genesyscloud_knowledge_v1_document"] = ResourceKnowledgeDocumentV1()
 	providerResources["genesyscloud_knowledge_knowledgebase"] = gcloud.ResourceKnowledgeKnowledgebase()
 	providerResources["genesyscloud_knowledge_document"] = knowledgeDocument.ResourceKnowledgeDocument()
 }
