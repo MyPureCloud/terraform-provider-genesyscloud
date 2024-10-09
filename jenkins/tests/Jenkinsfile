@@ -711,7 +711,7 @@ writeFile file: 'test-report.html', text: html.toString()
                         echo "Sending acceptance to UTR..."
                         testResultToKnex {
                             files = 'test-results.xml'
-                            aut = 'cx-as-a-code'
+                            aut = 'CXasCodeTests'
                             environment = env
                             type = 'acceptance'
                             platform = 'go'
