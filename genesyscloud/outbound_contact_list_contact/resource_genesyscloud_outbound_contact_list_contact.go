@@ -32,8 +32,8 @@ func getAllContacts(ctx context.Context, clientConfig *platformclientv2.Configur
 	}
 
 	for _, contact := range contacts {
-		//id := createCustomContactId(*contact.ContactListId, *contact.Id)
-		resources[*contact.Id] = &resourceExporter.ResourceMeta{Name: *contact.Id}
+		id := createComplexContact(*contact.ContactListId, *contact.Id)
+		resources[id] = &resourceExporter.ResourceMeta{Name: id}
 	}
 
 	return resources, nil
@@ -53,16 +53,16 @@ func createOutboundContactListContact(ctx context.Context, d *schema.ResourceDat
 	log.Printf("Creating contact in contact list '%s'", contactListId)
 	contactResponseBody, resp, err := cp.createContact(ctx, contactListId, contactRequestBody, priority, clearSystemData, doNotQueue)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("failed to create contact '%s' for contact list '%s': %v", *contactRequestBody.Id, contactListId, err), resp)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("failed to create contact for contact list '%s': %v", contactListId, err), resp)
 	}
 
 	if len(contactResponseBody) != 1 {
 		msg := fmt.Sprintf("expected to receive one dialer contact object in contact creation response. Received %v", len(contactResponseBody))
 		return util.BuildDiagnosticError(resourceName, msg, fmt.Errorf("%v", msg))
 	}
-
-	d.SetId(*contactResponseBody[0].Id)
-	log.Printf("Finished creating contact '%s' in contact list '%s'", d.Id(), contactListId)
+	id := createComplexContact(contactListId, *contactResponseBody[0].Id)
+	d.SetId(id)
+	log.Printf("Finished creating contact '%s' in contact list '%s'", *contactResponseBody[0].Id, contactListId)
 	return readOutboundContactListContact(ctx, d, meta)
 }
 
@@ -73,17 +73,20 @@ func readOutboundContactListContact(ctx context.Context, d *schema.ResourceData,
 
 		sdkConfig = meta.(*provider.ProviderMeta).ClientConfig
 		cp        = getContactProxy(sdkConfig)
-
-		contactListId = d.Get("contact_list_id").(string)
 	)
+
+	contactListId, contactId := splitComplexContact(d.Id())
+	if contactListId == "" {
+		contactListId = d.Get("contact_list_id").(string)
+	}
 
 	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundContactListContact(), constants.DefaultConsistencyChecks, resourceName)
 
 	retryErr := util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		var contactResponseBody *platformclientv2.Dialercontact
 
-		log.Printf("Reading contact '%s' in contact list '%s'", d.Id(), contactListId)
-		contactResponseBody, resp, err = cp.readContactById(ctx, contactListId, d.Id())
+		log.Printf("Reading contact '%s' in contact list '%s'", contactId, contactListId)
+		contactResponseBody, resp, err = cp.readContactById(ctx, contactListId, contactId)
 		if err != nil {
 			if util.IsStatus404(resp) {
 				return retry.RetryableError(err)
@@ -100,9 +103,9 @@ func readOutboundContactListContact(ctx context.Context, d *schema.ResourceData,
 		return cc.CheckState(d)
 	})
 	if retryErr != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("failed to read contact by ID '%s' from contact list '%s'. Error: %v", d.Id(), contactListId, retryErr), resp)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("failed to read contact by ID '%s' from contact list '%s'. Error: %v", d.Id(), contactListId, contactId), resp)
 	}
-	log.Printf("Done reading contact '%s' in contact list '%s'", d.Id(), contactListId)
+	log.Printf("Done reading contact '%s' in contact list '%s'", contactId, contactListId)
 	return nil
 }
 
@@ -111,16 +114,19 @@ func updateOutboundContactListContact(ctx context.Context, d *schema.ResourceDat
 	cp := getContactProxy(sdkConfig)
 
 	contactRequestBody := buildDialerContactFromResourceData(d)
-	contactListId := *contactRequestBody.ContactListId
+	contactListId, contactId := splitComplexContact(d.Id())
+	if contactListId == "" {
+		contactListId = d.Get("contact_list_id").(string)
+	}
 
-	log.Printf("Updating contact '%s' in contact list '%s'", d.Id(), contactListId)
-	_, resp, err := cp.updateContact(ctx, contactListId, d.Id(), contactRequestBody)
+	log.Printf("Updating contact '%s' in contact list '%s'", contactId, contactListId)
+	_, resp, err := cp.updateContact(ctx, contactListId, contactId, contactRequestBody)
 	if err != nil {
-		msg := fmt.Sprintf("failed to update contact '%s' for contact list '%s'. Error: %v", d.Id(), contactListId, err)
+		msg := fmt.Sprintf("failed to update contact '%s' for contact list '%s'. Error: %v", contactId, contactListId, err)
 		return util.BuildAPIDiagnosticError(resourceName, msg, resp)
 	}
 
-	log.Printf("Finished updating contact '%s' in contact list '%s'", d.Id(), contactListId)
+	log.Printf("Finished updating contact '%s' in contact list '%s'", contactId, contactListId)
 	return readOutboundContactListContact(ctx, d, meta)
 }
 
@@ -128,27 +134,30 @@ func deleteOutboundContactListContact(ctx context.Context, d *schema.ResourceDat
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	cp := getContactProxy(sdkConfig)
 
-	contactListId := d.Get("contact_list_id").(string)
+	contactListId, contactId := splitComplexContact(d.Id())
+	if contactListId == "" {
+		contactListId = d.Get("contact_list_id").(string)
+	}
 
-	log.Printf("Deleting contact '%s' from contact list '%s'", d.Id(), contactListId)
-	resp, err := cp.deleteContact(ctx, contactListId, d.Id())
+	log.Printf("Deleting contact '%s' from contact list '%s'", contactId, contactListId)
+	resp, err := cp.deleteContact(ctx, contactListId, contactId)
 	if err != nil {
-		msg := fmt.Sprintf("failed to delete contact '%s' from contact list '%s'. Error: %v", d.Id(), contactListId, err)
+		msg := fmt.Sprintf("failed to delete contact '%s' from contact list '%s'. Error: %v", contactId, contactListId, err)
 		return util.BuildAPIDiagnosticError(resourceName, msg, resp)
 	}
 
 	return util.WithRetries(ctx, 60*time.Second, func() *retry.RetryError {
 		log.Printf("Reading contact '%s'", d.Id())
-		_, resp, err := cp.readContactById(ctx, contactListId, d.Id())
+		_, resp, err := cp.readContactById(ctx, contactListId, contactId)
 		if err != nil {
 			if util.IsStatus404(resp) {
-				log.Printf("Contact '%s' deleted", d.Id())
+				log.Printf("Contact '%s' deleted", contactId)
 				return nil
 			}
-			msg := fmt.Sprintf("failed to delete contact '%s'. Error: %v", d.Id(), err)
+			msg := fmt.Sprintf("failed to delete contact '%s'. Error: %v", contactId, err)
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, msg, resp))
 		}
-		msg := fmt.Sprintf("contact '%s' still exists in contact list '%s'", d.Id(), contactListId)
+		msg := fmt.Sprintf("contact '%s' still exists in contact list '%s'", contactId, contactListId)
 		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, msg, resp))
 	})
 }
