@@ -65,7 +65,7 @@ func createExternalContact(ctx context.Context, d *schema.ResourceData, meta int
 
 	contact, resp, err := ep.createExternalContact(ctx, &externalContact)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create external contact %s error: %s", *externalContact.Id, err), resp)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create external contact error: %s", err), resp)
 	}
 
 	d.SetId(*contact.Id)
