@@ -8,8 +8,6 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
 )
 
-var internalProxy *groupProxy
-
 type createGroupFunc func(ctx context.Context, p *groupProxy, group *platformclientv2.Groupcreate) (*platformclientv2.Group, *platformclientv2.APIResponse, error)
 type getAllGroupFunc func(ctx context.Context, p *groupProxy) (*[]platformclientv2.Group, *platformclientv2.APIResponse, error)
 type updateGroupFunc func(ctx context.Context, p *groupProxy, id string, group *platformclientv2.Groupupdate) (*platformclientv2.Group, *platformclientv2.APIResponse, error)
@@ -35,9 +33,10 @@ type groupProxy struct {
 	groupCache             rc.CacheInterface[platformclientv2.Group]
 }
 
+var groupCache = rc.NewResourceCache[platformclientv2.Group]()
+
 func newGroupProxy(clientConfig *platformclientv2.Configuration) *groupProxy {
 	api := platformclientv2.NewGroupsApiWithConfig(clientConfig)
-	groupCache := rc.NewResourceCache[platformclientv2.Group]()
 	return &groupProxy{
 		clientConfig:           clientConfig,
 		groupsApi:              api,
@@ -55,11 +54,7 @@ func newGroupProxy(clientConfig *platformclientv2.Configuration) *groupProxy {
 }
 
 func getGroupProxy(clientConfig *platformclientv2.Configuration) *groupProxy {
-	if internalProxy == nil {
-		internalProxy = newGroupProxy(clientConfig)
-	}
-
-	return internalProxy
+	return newGroupProxy(clientConfig)
 }
 
 func (p *groupProxy) createGroup(ctx context.Context, group *platformclientv2.Groupcreate) (*platformclientv2.Group, *platformclientv2.APIResponse, error) {
@@ -107,7 +102,12 @@ func updateGroupFn(_ context.Context, p *groupProxy, id string, group *platformc
 }
 
 func deleteGroupFn(_ context.Context, p *groupProxy, id string) (*platformclientv2.APIResponse, error) {
-	return p.groupsApi.DeleteGroup(id)
+	resp, err := p.groupsApi.DeleteGroup(id)
+	if err != nil {
+		return resp, err
+	}
+	rc.DeleteCacheItem(p.groupCache, id)
+	return nil, nil
 }
 
 func getGroupByIdFn(_ context.Context, p *groupProxy, id string) (*platformclientv2.Group, *platformclientv2.APIResponse, error) {
