@@ -15,7 +15,7 @@ with the Genesys Cloud SDK. We use composition here for each function on the pro
 out during testing.
 */
 
-// internalProxy holds a proxy instance that can be used throughout the package
+var routingQueueCache = rc.NewResourceCache[platformclientv2.Queue]()
 var internalProxy *RoutingQueueProxy
 
 type GetAllRoutingQueuesFunc func(ctx context.Context, p *RoutingQueueProxy, name string) (*[]platformclientv2.Queue, *platformclientv2.APIResponse, error)
@@ -58,7 +58,6 @@ type RoutingQueueProxy struct {
 // newRoutingQueuesProxy initializes the routing queue proxy with all the data needed to communicate with Genesys Cloud
 func newRoutingQueuesProxy(clientConfig *platformclientv2.Configuration) *RoutingQueueProxy {
 	api := platformclientv2.NewRoutingApiWithConfig(clientConfig)
-	routingQueueCache := rc.NewResourceCache[platformclientv2.Queue]()
 	wrapupCodeCache := rc.NewResourceCache[platformclientv2.Wrapupcode]()
 
 	return &RoutingQueueProxy{
@@ -84,13 +83,13 @@ func newRoutingQueuesProxy(clientConfig *platformclientv2.Configuration) *Routin
 	}
 }
 
-// GetRoutingQueueProxy acts as a singleton to for the internalProxy.  It also ensures
-// that we can still proxy our tests by directly setting internalProxy package variable
+// GetRoutingQueueProxy returns an instance of our proxy
 func GetRoutingQueueProxy(clientConfig *platformclientv2.Configuration) *RoutingQueueProxy {
-	if internalProxy == nil {
-		internalProxy = newRoutingQueuesProxy(clientConfig)
+	// continue with singleton approach if unit tests are running
+	if isRoutingQueueUnitTestsActive() {
+		return internalProxy
 	}
-	return internalProxy
+	return newRoutingQueuesProxy(clientConfig)
 }
 
 func (p *RoutingQueueProxy) GetAllRoutingQueues(ctx context.Context, name string) (*[]platformclientv2.Queue, *platformclientv2.APIResponse, error) {
@@ -194,12 +193,11 @@ func getRoutingQueueByIdFn(ctx context.Context, p *RoutingQueueProxy, queueId st
 			return queue, nil, nil
 		}
 	}
-
 	return p.routingApi.GetRoutingQueue(queueId)
 }
 
 func getRoutingQueueByNameFn(ctx context.Context, p *RoutingQueueProxy, name string) (string, *platformclientv2.APIResponse, bool, error) {
-	queues, resp, err := GetAllRoutingQueuesFn(ctx, p, name)
+	queues, resp, err := p.GetAllRoutingQueues(ctx, name)
 	if err != nil {
 		return "", resp, false, err
 	}

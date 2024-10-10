@@ -3,6 +3,7 @@ package routing_queue
 import (
 	"context"
 	"fmt"
+	"os"
 	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"terraform-provider-genesyscloud/genesyscloud/util/lists"
@@ -836,4 +837,24 @@ func getRoutingQueueFromResourceData(d *schema.ResourceData) platformclientv2.Qu
 		PeerId:                       platformclientv2.String(d.Get("peer_id").(string)),
 		ScoringMethod:                platformclientv2.String(d.Get("scoring_method").(string)),
 	}
+}
+
+/*
+The below code is used during unit tests to go back to the singleton proxy approach
+so that we can continue to mock proxy methods
+*/
+
+const unitTestsAreActiveEnv string = "TF_UNIT_ROUTING_QUEUE_TESTS"
+
+func setRoutingQueueUnitTestsEnvVar() error {
+	return os.Setenv(unitTestsAreActiveEnv, "true")
+}
+
+func unsetRoutingQueueUnitTestsEnvVar() error {
+	return os.Unsetenv(unitTestsAreActiveEnv)
+}
+
+func isRoutingQueueUnitTestsActive() bool {
+	_, isSet := os.LookupEnv(unitTestsAreActiveEnv)
+	return isSet
 }
