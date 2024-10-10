@@ -9,13 +9,13 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
 )
 
-var internalProxy *routingSkillProxy
-
 type getAllRoutingSkillsFunc func(ctx context.Context, p *routingSkillProxy, name string) (*[]platformclientv2.Routingskill, *platformclientv2.APIResponse, error)
 type createRoutingSkillFunc func(ctx context.Context, p *routingSkillProxy, routingSkill *platformclientv2.Routingskill) (*platformclientv2.Routingskill, *platformclientv2.APIResponse, error)
 type getRoutingSkillByIdFunc func(ctx context.Context, p *routingSkillProxy, id string) (*platformclientv2.Routingskill, *platformclientv2.APIResponse, error)
 type getRoutingSkillIdByNameFunc func(ctx context.Context, p *routingSkillProxy, name string) (string, *platformclientv2.APIResponse, bool, error)
 type deleteRoutingSkillFunc func(ctx context.Context, p *routingSkillProxy, id string) (*platformclientv2.APIResponse, error)
+
+var routingSkillCache = rc.NewResourceCache[platformclientv2.Routingskill]()
 
 // routingSkillProxy contains all of the methods that call genesys cloud APIs.
 type routingSkillProxy struct {
@@ -26,13 +26,12 @@ type routingSkillProxy struct {
 	getRoutingSkillIdByNameAttr getRoutingSkillIdByNameFunc
 	getRoutingSkillByIdAttr     getRoutingSkillByIdFunc
 	deleteRoutingSkillAttr      deleteRoutingSkillFunc
-	routingCache                rc.CacheInterface[platformclientv2.Routingskill]
+	routingSkillCache           rc.CacheInterface[platformclientv2.Routingskill]
 }
 
 // newRoutingSkillProxy initializes the routing skill proxy with all of the data needed to communicate with Genesys Cloud
 func newRoutingSkillProxy(clientConfig *platformclientv2.Configuration) *routingSkillProxy {
 	api := platformclientv2.NewRoutingApiWithConfig(clientConfig)
-	routingCache := rc.NewResourceCache[platformclientv2.Routingskill]()
 	return &routingSkillProxy{
 		clientConfig:                clientConfig,
 		routingApi:                  api,
@@ -41,16 +40,12 @@ func newRoutingSkillProxy(clientConfig *platformclientv2.Configuration) *routing
 		getRoutingSkillIdByNameAttr: getRoutingSkillIdByNameFn,
 		getRoutingSkillByIdAttr:     getRoutingSkillByIdFn,
 		deleteRoutingSkillAttr:      deleteRoutingSkillFn,
-		routingCache:                routingCache,
+		routingSkillCache:           routingSkillCache,
 	}
 }
 
 func getRoutingSkillProxy(clientConfig *platformclientv2.Configuration) *routingSkillProxy {
-	if internalProxy == nil {
-		internalProxy = newRoutingSkillProxy(clientConfig)
-	}
-
-	return internalProxy
+	return newRoutingSkillProxy(clientConfig)
 }
 
 func (p *routingSkillProxy) getAllRoutingSkills(ctx context.Context, name string) (*[]platformclientv2.Routingskill, *platformclientv2.APIResponse, error) {
@@ -103,7 +98,7 @@ func getAllRoutingSkillsFn(ctx context.Context, p *routingSkillProxy, name strin
 	}
 
 	for _, skill := range allRoutingSkills {
-		rc.SetCache(p.routingCache, *skill.Id, skill)
+		rc.SetCache(p.routingSkillCache, *skill.Id, skill)
 	}
 
 	return &allRoutingSkills, resp, nil
@@ -114,7 +109,7 @@ func createRoutingSkillFn(ctx context.Context, p *routingSkillProxy, routingSkil
 }
 
 func getRoutingSkillByIdFn(ctx context.Context, p *routingSkillProxy, id string) (*platformclientv2.Routingskill, *platformclientv2.APIResponse, error) {
-	if skill := rc.GetCacheItem(p.routingCache, id); skill != nil {
+	if skill := rc.GetCacheItem(p.routingSkillCache, id); skill != nil {
 		return skill, nil, nil
 	}
 	return p.routingApi.GetRoutingSkill(id)
