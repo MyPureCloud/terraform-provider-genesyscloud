@@ -138,5 +138,10 @@ func getRoutingSkillIdByNameFn(ctx context.Context, p *routingSkillProxy, name s
 }
 
 func deleteRoutingSkillFn(ctx context.Context, p *routingSkillProxy, id string) (*platformclientv2.APIResponse, error) {
-	return p.routingApi.DeleteRoutingSkill(id)
+	resp, err := p.routingApi.DeleteRoutingSkill(id)
+	if err != nil {
+		return resp, err
+	}
+	rc.DeleteCacheItem(p.routingSkillCache, id)
+	return nil, nil
 }
