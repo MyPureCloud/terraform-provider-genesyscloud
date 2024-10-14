@@ -212,14 +212,11 @@ func (cc *ConsistencyCheck) handleError(attribute string, originalValue string, 
 		newValue: currentValue,
 	})
 
-	if toggleExists := featureToggles.CCToggleExists(); cc.checks >= cc.maxStateChecks && toggleExists {
-		log.Printf("%s is set, writing consistency errors to consistency-errors.log.json", featureToggles.CCToggleName())
-
+	if toggleExists := featureToggles.BypassCCToggleExists(); (cc.checks >= cc.maxStateChecks && toggleExists) || featureToggles.DisableCCToggleExists() {
 		cc.writeConsistencyErrorToFile(err)
 		return nil
 	}
 
-	cc.writeConsistencyErrorToFile(err)
 	cc.checks++
 	return err
 }
@@ -245,8 +242,18 @@ func (cc *ConsistencyCheck) writeConsistencyErrorToFile(consistencyError *retry.
 		return
 	}
 
-	err = os.WriteFile(filePath, jsonData, os.ModePerm)
+	f, err := os.OpenFile(filePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
-		log.Printf("Error writing file %s: %v", filePath, err)
+		log.Printf("Failed to open file %s: %v", filePath, err)
+	}
+
+	_, err = f.Write(jsonData)
+	if err != nil {
+		log.Printf("Failed to write to file %s: %v", filePath, err)
+	}
+
+	_, err = f.WriteString(",\n")
+	if err != nil {
+		log.Printf("Failed to write to file %s: %v", filePath, err)
 	}
 }
