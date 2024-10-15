@@ -2,8 +2,8 @@ package provider
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/google/uuid"
+	"log"
 	"net/http"
 )
 
@@ -18,7 +18,7 @@ type sdkDebugRequest struct {
 func (s *sdkDebugRequest) ToJSON() (err error, jsonStr string) {
 	jsonData, err := json.Marshal(s)
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 		return err, ""
 	}
 
@@ -39,7 +39,7 @@ type sdkDebugResponse struct {
 func (s *sdkDebugResponse) ToJSON() (err error, jsonStr string) {
 	jsonData, err := json.Marshal(s)
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 		return err, ""
 	}
 
