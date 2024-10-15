@@ -212,7 +212,10 @@ func TestAccResourceUserAddresses(t *testing.T) {
 		Description: util.NullValue, // No description
 	}
 
-	extensionPool.DeleteExtensionPoolWithNumber(extensionPoolStartNumber1)
+	err := extensionPool.DeleteExtensionPoolWithNumber(extensionPoolStartNumber1)
+	if err != nil {
+		log.Fatalf("%s", err)
+	}
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
