@@ -391,7 +391,7 @@ func (g *GenesysCloudResourceExporter) buildResourceConfigMap() diag.Diagnostics
 
 		if !isDataSource {
 			// Removes zero values and sets proper reference expressions
-			unresolved, _ := g.sanitizeConfigMap(resource.Type, resource.Name, jsonResult, "", *g.exporters, g.includeStateFile, g.exportAsHCL, true)
+			unresolved, _ := g.sanitizeConfigMap(resource, jsonResult, "", *g.exporters, g.includeStateFile, g.exportAsHCL, true)
 			if len(unresolved) > 0 {
 				g.unresolvedAttrs = append(g.unresolvedAttrs, unresolved...)
 			}
@@ -399,14 +399,7 @@ func (g *GenesysCloudResourceExporter) buildResourceConfigMap() diag.Diagnostics
 			g.sanitizeDataConfigMap(jsonResult)
 		}
 
-		// TODO put this in separate call
-		exporters := *g.exporters
-		if resourceFilesWriterFunc := exporters[resource.Type].CustomFileWriter.RetrieveAndWriteFilesFunc; resourceFilesWriterFunc != nil {
-			exportDir, _ := getFilePath(g.d, "")
-			if err := resourceFilesWriterFunc(resource.State.ID, exportDir, exporters[resource.Type].CustomFileWriter.SubDirectory, jsonResult, g.meta); err != nil {
-				log.Printf("An error has occurred while trying invoking the RetrieveAndWriteFilesFunc for resource type %s: %v", resource.Type, err)
-			}
-		}
+		g.customWriteAttributes(jsonResult, resource)
 
 		if g.exportAsHCL {
 			if _, ok := g.resourceTypesHCLBlocks[resource.Type]; !ok {
@@ -427,6 +420,60 @@ func (g *GenesysCloudResourceExporter) buildResourceConfigMap() diag.Diagnostics
 	}
 
 	return nil
+}
+
+func (g *GenesysCloudResourceExporter) customWriteAttributes(jsonResult util.JsonMap,
+	resource resourceExporter.ResourceInfo) {
+	exporters := *g.exporters
+	if resourceFilesWriterFunc := exporters[resource.Type].CustomFileWriter.RetrieveAndWriteFilesFunc; resourceFilesWriterFunc != nil {
+		exportDir, _ := getFilePath(g.d, "")
+		if err := resourceFilesWriterFunc(resource.State.ID, exportDir, exporters[resource.Type].CustomFileWriter.SubDirectory, jsonResult, g.meta); err != nil {
+			log.Printf("An error has occurred while trying invoking the RetrieveAndWriteFilesFunc for resource type %s: %v", resource.Type, err)
+		}
+		g.updateInstanceStateAttributes(jsonResult, resource)
+	}
+
+	if len(exporters[resource.Type].CustomFlowResolver) > 0 {
+		g.updateInstanceStateAttributes(jsonResult, resource)
+	}
+}
+
+func (g *GenesysCloudResourceExporter) updateInstanceStateAttributes(jsonResult util.JsonMap,
+	resource resourceExporter.ResourceInfo) {
+
+	for attr, val := range jsonResult {
+		switch val.(type) {
+		case []interface{}:
+			resources, _ := jsonResult["resources"].([]interface{})
+			for _, res := range resources {
+				r, ok := res.(map[string]interface{})
+				if !ok {
+					continue
+				}
+				resourceID := ""
+				for _, valt := range r {
+					pattern := regexp.MustCompile(`^resources\.(\d+)\.l.*$`)
+					for key, value := range resource.State.Attributes {
+						if matches := pattern.FindStringSubmatch(key); matches != nil && value == valt {
+							resourceID = matches[1]
+						}
+					}
+				}
+				for attrTemp, valTemp := range r {
+					if resourceID != "" {
+						key := fmt.Sprintf("resources." + resourceID + "." + attrTemp)
+						if valTemp != nil {
+							resource.State.Attributes[key] = valTemp.(string)
+						}
+					}
+				}
+			}
+		case string:
+			if _, ok := resource.State.Attributes[attr]; !ok {
+				resource.State.Attributes[attr] = jsonResult[attr].(string)
+			}
+		}
+	}
 }
 
 func (g *GenesysCloudResourceExporter) updateSanitiseMap(exporters map[string]*resourceExporter.ResourceExporter, //Map of all of the exporters
@@ -1208,14 +1255,15 @@ func (g *GenesysCloudResourceExporter) sanitizeDataConfigMap(
 // that would otherwise be optional in nested block form:
 // https://www.terraform.io/docs/language/attr-as-blocks.html#arbitrary-expressions-with-argument-syntax
 func (g *GenesysCloudResourceExporter) sanitizeConfigMap(
-	resourceType string,
-	resourceName string,
+	resource resourceExporter.ResourceInfo,
 	configMap map[string]interface{},
 	prevAttr string,
 	exporters map[string]*resourceExporter.ResourceExporter, //Map of all exporters
 	exportingState bool,
 	exportingAsHCL bool,
 	parentKey bool) ([]unresolvableAttributeInfo, bool) {
+	resourceType := resource.Type
+	resourceName := resource.Name
 	exporter := exporters[resourceType] //Get the specific export that we will be working with
 
 	unresolvableAttrs := make([]unresolvableAttributeInfo, 0)
@@ -1265,13 +1313,13 @@ func (g *GenesysCloudResourceExporter) sanitizeConfigMap(
 		case map[string]interface{}:
 			// Maps are sanitized in-place
 			currMap := val.(map[string]interface{})
-			_, res := g.sanitizeConfigMap(resourceType, resourceName, val.(map[string]interface{}), currAttr, exporters, exportingState, exportingAsHCL, false)
+			_, res := g.sanitizeConfigMap(resource, val.(map[string]interface{}), currAttr, exporters, exportingState, exportingAsHCL, false)
 			if !res || len(currMap) == 0 {
 				// Remove empty maps or maps indicating they should be removed
 				configMap[key] = nil
 			}
 		case []interface{}:
-			if arr := g.sanitizeConfigArray(resourceType, resourceName, val.([]interface{}), currAttr, exporters, exportingState, exportingAsHCL); len(arr) > 0 {
+			if arr := g.sanitizeConfigArray(resource, val.([]interface{}), currAttr, exporters, exportingState, exportingAsHCL); len(arr) > 0 {
 				configMap[key] = arr
 			} else {
 				// Remove empty arrays
@@ -1468,13 +1516,13 @@ func escapeString(strValue string) string {
 }
 
 func (g *GenesysCloudResourceExporter) sanitizeConfigArray(
-	resourceType string,
-	resourceName string,
+	resource resourceExporter.ResourceInfo,
 	anArray []interface{},
 	currAttr string,
 	exporters map[string]*resourceExporter.ResourceExporter,
 	exportingState bool,
 	exportingAsHCL bool) []interface{} {
+	resourceType := resource.Type
 	exporter := exporters[resourceType]
 	result := []interface{}{}
 	for _, val := range anArray {
@@ -1482,12 +1530,12 @@ func (g *GenesysCloudResourceExporter) sanitizeConfigArray(
 		case map[string]interface{}:
 			// Only include in the result if sanitizeConfigMap returns true and the map is not empty
 			currMap := val.(map[string]interface{})
-			_, res := g.sanitizeConfigMap(resourceType, resourceName, currMap, currAttr, exporters, exportingState, exportingAsHCL, false)
+			_, res := g.sanitizeConfigMap(resource, currMap, currAttr, exporters, exportingState, exportingAsHCL, false)
 			if res && len(currMap) > 0 {
 				result = append(result, val)
 			}
 		case []interface{}:
-			if arr := g.sanitizeConfigArray(resourceType, resourceName, val.([]interface{}), currAttr, exporters, exportingState, exportingAsHCL); len(arr) > 0 {
+			if arr := g.sanitizeConfigArray(resource, val.([]interface{}), currAttr, exporters, exportingState, exportingAsHCL); len(arr) > 0 {
 				result = append(result, arr)
 			}
 		case string:
