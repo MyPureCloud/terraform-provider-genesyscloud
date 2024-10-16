@@ -159,13 +159,17 @@ func updateMediaRetentionPolicy(ctx context.Context, d *schema.ResourceData, met
 	description := d.Get("description").(string)
 	enabled := d.Get("enabled").(bool)
 	err, mediaPolicies := buildMediaPolicies(d, pp, ctx)
+	if err != nil {
+		return util.BuildDiagnosticError(resourceName, "Error while retrieving buildMediaPolicies() function in updateMediaRetentionPolicy() method)", err)
+	}
 
 	conditions := buildConditions(d)
 	err, actions := buildPolicyActionsFromResource(d, pp, ctx)
 
 	if err != nil {
-		return util.BuildDiagnosticError(resourceName, "Error while retrieving buildPolicyActionsFromResource() function in updateMediaRenentionPolicy() method)", err)
+		return util.BuildDiagnosticError(resourceName, "Error while retrieving buildPolicyActionsFromResource() function in updateMediaRetentionPolicy() method)", err)
 	}
+
 	policyErrors := buildPolicyErrors(d)
 
 	reqBody := platformclientv2.Policy{

@@ -1462,7 +1462,7 @@ func buildEmailMediaPolicy(emailMediaPolicy []interface{}, pp *policyProxy, ctx 
 
 	err, actions := buildPolicyActionsFromMediaPolicy(policyMap["actions"].([]interface{}), pp, ctx)
 	if err != nil {
-		return nil, nil
+		return err, nil
 	}
 
 	return nil, &platformclientv2.Emailmediapolicy{
@@ -1709,7 +1709,7 @@ func buildPolicyActionsFromResource(d *schema.ResourceData, pp *policyProxy, ctx
 
 		err, meteredAssignmentByAgent := buildAssignMeteredAssignmentByAgent(actionsMap["assign_metered_assignment_by_agent"].([]interface{}), pp, ctx)
 		if err != nil {
-			return fmt.Errorf("buildAssignMeteredAssignmentByAgent() in buildPolicyActionsFromResource() method %s", err), nil
+			return fmt.Errorf("error with buildAssignMeteredAssignmentByAgent() in buildPolicyActionsFromResource() method %s", err), nil
 		}
 
 		err, assignMeteredEvaluations := buildAssignMeteredEvaluations(actionsMap["assign_metered_evaluations"].([]interface{}), pp, ctx)
@@ -1718,6 +1718,9 @@ func buildPolicyActionsFromResource(d *schema.ResourceData, pp *policyProxy, ctx
 		}
 
 		err, evaluationAssignments := buildEvaluationAssignments(actionsMap["assign_evaluations"].([]interface{}), pp, ctx)
+		if err != nil {
+			return fmt.Errorf("error with buildEvaluationAssignments() in buildPolicyActionsFromResource() method %s", err), nil
+		}
 
 		err, calibrations := buildAssignCalibrations(actionsMap["assign_calibrations"].([]interface{}), pp, ctx)
 		if err != nil {
@@ -1726,7 +1729,7 @@ func buildPolicyActionsFromResource(d *schema.ResourceData, pp *policyProxy, ctx
 
 		err, surveys := buildAssignSurveys(actionsMap["assign_surveys"].([]interface{}), pp, ctx)
 		if err != nil {
-			return fmt.Errorf("buildAssignSurveys() in buildPolicyActionsFromResource(): %s", err), nil
+			return fmt.Errorf("error with buildAssignSurveys() in buildPolicyActionsFromResource(): %s", err), nil
 		}
 
 		return nil, &platformclientv2.Policyactions{
