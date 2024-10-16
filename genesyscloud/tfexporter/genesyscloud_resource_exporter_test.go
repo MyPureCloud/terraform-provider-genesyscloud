@@ -26,6 +26,60 @@ type PostProcessHclBytesTestCase struct {
 	decodedMap map[string]string
 }
 
+// Test case for updateInstanceStateAttributes
+func TestUnitUpdateInstanceStateAttributes(t *testing.T) {
+	jsonResult := util.JsonMap{
+		"resources": []interface{}{
+			map[string]interface{}{
+				"file_content_hash": "${filesha256(\"file.json\")}",
+				"file_name":         "222",
+				"language":          "en",
+			},
+			map[string]interface{}{
+				"file_content_hash": "${filesha256(\"file_fr.json\")}",
+				"file_name":         "444",
+				"lang":              "fr",
+			},
+		},
+	}
+
+	// Mock initial resource attributes to simulate current state
+	initialAttributes := map[string]string{
+		"resources.1234567.file_content_hash": "",
+		"resources.1234567.file_name":         "",
+		"resources.1234567.language":          "en",
+		"resources.3223344.file_content_hash": "",
+		"resources.3223344.file_name":         "",
+		"resources.3223344.lang":              "fr",
+	}
+
+	// Create an instance of ResourceInfo
+	resources := []resourceExporter.ResourceInfo{
+		{
+			Name: "testResourceName",
+			Type: "testResourceType",
+			State: &terraform.InstanceState{
+				ID:         "testResourceId",
+				Attributes: initialAttributes,
+			},
+		},
+	}
+
+	exporter := GenesysCloudResourceExporter{}
+	exporter.updateInstanceStateAttributes(jsonResult, resources[0])
+
+	expectedAttributes := map[string]string{
+		"resources.1234567.file_content_hash": "${filesha256(\"file.json\")}",
+		"resources.1234567.file_name":         "222",
+		"resources.1234567.language":          "en",
+		"resources.3223344.file_content_hash": "${filesha256(\"file_fr.json\")}",
+		"resources.3223344.file_name":         "444",
+		"resources.3223344.lang":              "fr",
+	}
+
+	assert.Equal(t, expectedAttributes, resources[0].State.Attributes, "Attributes should be correctly updated")
+}
+
 func TestUnitTfExportPostProcessHclBytesFunc(t *testing.T) {
 	testCase1 := PostProcessHclBytesTestCase{
 		original: `
