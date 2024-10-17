@@ -133,7 +133,7 @@ func readExporterInstances(exporterDirectory string) []string {
 		return nil
 	})
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("Fatal error occurred in readExporterInstances. Stopping process %s", err)
 		return nil
 	}
 	return resourceTypes
