@@ -92,10 +92,9 @@ func ResourceExternalContact() *schema.Resource {
 				Optional:    true,
 			},
 			"country_code": {
-				Description:      "Contact address country code.",
-				Type:             schema.TypeString,
-				Optional:         true,
-				ValidateDiagFunc: validators.ValidateCountryCode,
+				Description: "Contact address country code.",
+				Type:        schema.TypeString,
+				Optional:    true,
 			},
 		},
 	}
