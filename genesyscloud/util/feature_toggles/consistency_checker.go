@@ -2,14 +2,25 @@ package feature_toggles
 
 import "os"
 
-const consistencyCheckerEnvToggle = "BYPASS_CONSISTENCY_CHECKER"
+const bypassConsistencyCheckerEnvToggle = "BYPASS_CONSISTENCY_CHECKER"
+const disableConsistencyCheckerEnvToggle = "DISABLE_CONSISTENCY_CHECKER"
 
-func CCToggleName() string {
-	return consistencyCheckerEnvToggle
+func BypassCCToggleName() string {
+	return bypassConsistencyCheckerEnvToggle
 }
 
-func CCToggleExists() bool {
+func BypassCCToggleExists() bool {
 	var exists bool
-	_, exists = os.LookupEnv(consistencyCheckerEnvToggle)
+	_, exists = os.LookupEnv(bypassConsistencyCheckerEnvToggle)
+	return exists
+}
+
+func DisableCCToggleName() string {
+	return disableConsistencyCheckerEnvToggle
+}
+
+func DisableCCToggleExists() bool {
+	var exists bool
+	_, exists = os.LookupEnv(disableConsistencyCheckerEnvToggle)
 	return exists
 }
