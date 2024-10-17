@@ -717,11 +717,13 @@ writeFile file: 'test-report.html', text: html.toString()
                             environment = env
                             type = 'acceptance'
                             platform = 'go'
+                            teams = 'Developer Tooling'
                             }
                         echo "Sending Taneleer acceptance to UTR..."    
                         testJobResultToTaneleer {
                             aut = "CXasCodeTests"
                             environment = env
+                            teams = 'Developer Tooling'
                             }    
                         echo "Done sending results to Knex & Taneleer"        
                         }
