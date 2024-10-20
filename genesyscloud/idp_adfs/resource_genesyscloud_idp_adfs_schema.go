@@ -75,7 +75,7 @@ func ResourceIdpAdfs() *schema.Resource {
 				Description:  `Valid values: HTTP Redirect, HTTP Post`,
 				Optional:     true,
 				Type:         schema.TypeString,
-				ValidateFunc: validation.StringInSlice([]string{`HTTP Redirect`, `HTTP Post`}, false),
+				ValidateFunc: validation.StringInSlice([]string{`urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect`, `urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Post`}, false),
 			},
 			`relying_party_identifier`: {
 				Description: `String used to identify Genesys Cloud to ADFS.`,
