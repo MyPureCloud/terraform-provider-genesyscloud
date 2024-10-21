@@ -2,7 +2,6 @@ package telephony_providers_edges_extension_pool
 
 import (
 	"fmt"
-	"log"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"time"
 
@@ -31,8 +30,9 @@ func GenerateExtensionPoolResource(extensionPool *ExtensionPoolStruct) string {
 func DeleteExtensionPoolWithNumber(startNumber string) error {
 	sdkConfig, err := provider.AuthorizeSdk()
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
+
 	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
 
 	for pageNum := 1; ; pageNum++ {

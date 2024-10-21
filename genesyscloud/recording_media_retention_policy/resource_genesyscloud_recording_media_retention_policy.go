@@ -67,9 +67,18 @@ func createMediaRetentionPolicy(ctx context.Context, d *schema.ResourceData, met
 	order := d.Get("order").(int)
 	description := d.Get("description").(string)
 	enabled := d.Get("enabled").(bool)
-	mediaPolicies := buildMediaPolicies(d, pp, ctx)
+	err, mediaPolicies := buildMediaPolicies(d, pp, ctx)
+
+	if err != nil {
+		util.BuildDiagnosticError(resourceName, "error while calling buildMediaPolicie()in createMediaRetention", err)
+	}
+
 	conditions := buildConditions(d)
-	actions := buildPolicyActionsFromResource(d, pp, ctx)
+	err, actions := buildPolicyActionsFromResource(d, pp, ctx)
+	if err != nil {
+		util.BuildDiagnosticError(resourceName, "error while calling buildPolicyActionsFromResource()", err)
+	}
+
 	policyErrors := buildPolicyErrors(d)
 
 	reqBody := platformclientv2.Policycreate{
@@ -121,11 +130,20 @@ func readMediaRetentionPolicy(ctx context.Context, d *schema.ResourceData, meta 
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "conditions", retentionPolicy.Conditions, flattenConditions)
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "policy_errors", retentionPolicy.PolicyErrors, flattenPolicyErrors)
 
+		err, mediaPolicies := flattenMediaPolicies(retentionPolicy.MediaPolicies, pp, ctx)
+		if err != nil {
+			return retry.NonRetryableError(fmt.Errorf("Unable to flatten media policies in readMediaRetentionPolicy() method: %s", err))
+		}
 		if retentionPolicy.MediaPolicies != nil {
-			d.Set("media_policies", flattenMediaPolicies(retentionPolicy.MediaPolicies, pp, ctx))
+			d.Set("media_policies", mediaPolicies)
+		}
+
+		err, actions := flattenPolicyActions(retentionPolicy.Actions, pp, ctx)
+		if err != nil {
+			return retry.NonRetryableError(fmt.Errorf("Unable to flatten actions in readMediaRetentionPolicy(): %s", err))
 		}
 		if retentionPolicy.Actions != nil {
-			d.Set("actions", flattenPolicyActions(retentionPolicy.Actions, pp, ctx))
+			d.Set("actions", actions)
 		}
 		return cc.CheckState(d)
 	})
@@ -140,9 +158,18 @@ func updateMediaRetentionPolicy(ctx context.Context, d *schema.ResourceData, met
 	order := d.Get("order").(int)
 	description := d.Get("description").(string)
 	enabled := d.Get("enabled").(bool)
-	mediaPolicies := buildMediaPolicies(d, pp, ctx)
+	err, mediaPolicies := buildMediaPolicies(d, pp, ctx)
+	if err != nil {
+		return util.BuildDiagnosticError(resourceName, "Error while retrieving buildMediaPolicies() function in updateMediaRetentionPolicy() method)", err)
+	}
+
 	conditions := buildConditions(d)
-	actions := buildPolicyActionsFromResource(d, pp, ctx)
+	err, actions := buildPolicyActionsFromResource(d, pp, ctx)
+
+	if err != nil {
+		return util.BuildDiagnosticError(resourceName, "Error while retrieving buildPolicyActionsFromResource() function in updateMediaRetentionPolicy() method)", err)
+	}
+
 	policyErrors := buildPolicyErrors(d)
 
 	reqBody := platformclientv2.Policy{
