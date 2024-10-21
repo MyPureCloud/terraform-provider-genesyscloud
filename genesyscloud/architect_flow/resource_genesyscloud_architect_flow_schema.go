@@ -49,6 +49,18 @@ func ResourceArchitectFlow() *schema.Resource {
 		},
 		SchemaVersion: 1,
 		Schema: map[string]*schema.Schema{
+			"name": {
+				Description: "Flow name.",
+				Type:        schema.TypeString,
+				Optional:    false,
+				Computed:    true,
+			},
+			"type": {
+				Description: "Flow type. Valid options: " + strings.Join(validFlowTypes, ", "),
+				Type:        schema.TypeString,
+				Optional:    false,
+				Computed:    true,
+			},
 			"filepath": {
 				Description:  "YAML file path for flow configuration. Note: Changing the flow name will result in the creation of a new flow with a new GUID, while the original flow will persist in your org.",
 				Type:         schema.TypeString,
