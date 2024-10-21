@@ -12,12 +12,17 @@ import (
 
 // buildWritableContactFromResourceData used to build the request body for contact creation
 func buildWritableContactFromResourceData(d *schema.ResourceData) platformclientv2.Writabledialercontact {
+	contactId, _ := d.Get("contact_id").(string)
 	contactListId := d.Get("contact_list_id").(string)
 	callable := d.Get("callable").(bool)
 
 	var contactRequest = platformclientv2.Writabledialercontact{
 		ContactListId: &contactListId,
 		Callable:      &callable,
+	}
+
+	if contactId != "" {
+		contactRequest.Id = &contactId
 	}
 
 	if dataMap, ok := d.Get("data").(map[string]any); ok {
@@ -145,16 +150,18 @@ func flattenColumnStatus(columnStatus *map[string]platformclientv2.Columnstatus)
 func GenerateOutboundContactListContact(
 	resourceId,
 	contactListId,
+	contactId,
 	callable,
 	data string,
 	nestedBlocks ...string,
 ) string {
 	return fmt.Sprintf(`resource "%s" "%s" {
-    contact_list_id = %s
+		contact_list_id = %s
+		contact_id = "%s"
     callable        = %s
     %s
     %s
-}`, resourceName, resourceId, contactListId, callable, data, strings.Join(nestedBlocks, "\n"))
+}`, resourceName, resourceId, contactListId, contactId, callable, data, strings.Join(nestedBlocks, "\n"))
 }
 
 func GeneratePhoneNumberStatus(key, callable string) string {
@@ -184,12 +191,4 @@ func GenerateColumnStatus(column, contactable string) string {
 
 func createComplexContact(contactListId, contactId string) string {
 	return fmt.Sprintf("%s:%s", contactListId, contactId)
-}
-
-func splitComplexContact(complexContact string) (string, string) {
-	if strings.Contains(complexContact, ":") {
-		split := strings.SplitN(complexContact, ":", 2)
-		return split[0], split[1]
-	}
-	return "", complexContact
 }
