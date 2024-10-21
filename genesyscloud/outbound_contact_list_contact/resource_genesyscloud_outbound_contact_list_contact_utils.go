@@ -12,7 +12,7 @@ import (
 
 // buildWritableContactFromResourceData used to build the request body for contact creation
 func buildWritableContactFromResourceData(d *schema.ResourceData) platformclientv2.Writabledialercontact {
-	contactId := d.Get("contact_id").(string)
+	contactId, _ := d.Get("contact_id").(string)
 	contactListId := d.Get("contact_list_id").(string)
 	callable := d.Get("callable").(bool)
 
