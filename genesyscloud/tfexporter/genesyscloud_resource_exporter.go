@@ -438,37 +438,36 @@ func (g *GenesysCloudResourceExporter) customWriteAttributes(jsonResult util.Jso
 	}
 }
 
-func (g *GenesysCloudResourceExporter) updateInstanceStateAttributes(jsonResult util.JsonMap,
-	resource resourceExporter.ResourceInfo) {
+func (g *GenesysCloudResourceExporter) updateInstanceStateAttributes(jsonResult util.JsonMap, resource resourceExporter.ResourceInfo) {
+	if resources, ok := jsonResult["resources"].([]interface{}); ok {
+		processResources(resources, resource)
+	} else {
+		addStringAttributes(resource, jsonResult)
+	}
+}
 
-	for attr, val := range jsonResult {
-		switch v := val.(type) {
-		case []interface{}:
-			if resources, ok := jsonResult["resources"].([]interface{}); ok {
-				for _, res := range resources {
-					if resMap, ok := res.(map[string]interface{}); ok {
-						resourceID := findResourceID(resource, resMap)
-
-						if resourceID != "" {
-							for attrTemp, valTemp := range resMap {
-								if valTempStr, ok := valTemp.(string); ok {
-									key := fmt.Sprintf("resources.%s.%s", resourceID, attrTemp)
-									resource.State.Attributes[key] = valTempStr
-								}
-							}
-						}
-					}
-				}
-			}
-		case string:
-			// Directly add string attribute for rest of the flows/scripts/assets
-			if _, exists := resource.State.Attributes[attr]; !exists {
-				resource.State.Attributes[attr] = v
+func processResources(resources []interface{}, resource resourceExporter.ResourceInfo) {
+	for _, res := range resources {
+		if resMap, ok := res.(map[string]interface{}); ok {
+			if resourceID := findResourceID(resource, resMap); resourceID != "" {
+				updateResourceAttributes(resource, resourceID, resMap)
 			}
 		}
 	}
 }
 
+func addStringAttributes(resource resourceExporter.ResourceInfo, jsonResult util.JsonMap) {
+	for attr, val := range jsonResult {
+		if valStr, ok := val.(string); ok {
+			// Directly add string attribute for rest of the flows/scripts/assets
+			if _, exists := resource.State.Attributes[attr]; !exists {
+				resource.State.Attributes[attr] = valStr
+			}
+		}
+	}
+}
+
+// Find the resourceID, return early if found
 func findResourceID(resource resourceExporter.ResourceInfo, resMap map[string]interface{}) string {
 	pattern := regexp.MustCompile(`^resources\.(\d+)\.l.*$`)
 	for _, valt := range resMap {
@@ -479,6 +478,16 @@ func findResourceID(resource resourceExporter.ResourceInfo, resMap map[string]in
 		}
 	}
 	return ""
+}
+
+// Update resource state attributes based on resourceID and resource map
+func updateResourceAttributes(resource resourceExporter.ResourceInfo, resourceID string, resMap map[string]interface{}) {
+	for attrTemp, valTemp := range resMap {
+		if valTempStr, ok := valTemp.(string); ok {
+			key := fmt.Sprintf("resources.%s.%s", resourceID, attrTemp)
+			resource.State.Attributes[key] = valTempStr
+		}
+	}
 }
 
 func (g *GenesysCloudResourceExporter) updateSanitiseMap(exporters map[string]*resourceExporter.ResourceExporter, //Map of all of the exporters
