@@ -72,4 +72,6 @@ resource "genesyscloud_flow" "flow" {
 ### Read-Only
 
 - `id` (String) The ID of this resource.
+- `name` (String) Flow name.
+- `type` (String) Flow type. Valid options: bot, commonmodule, digitalbot, inboundcall, inboundchat, inboundemail, inboundshortmessage, outboundcall, inqueuecall, inqueueemail, inqueueshortmessage, speech, securecall, surveyinvite, voice, voicemail, voicesurvey, workflow, workitem
 
