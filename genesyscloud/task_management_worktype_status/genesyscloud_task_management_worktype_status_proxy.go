@@ -3,8 +3,9 @@ package task_management_worktype_status
 import (
 	"context"
 	"fmt"
-	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
 	taskManagementWorktype "terraform-provider-genesyscloud/genesyscloud/task_management_worktype"
+
+	"github.com/mypurecloud/platform-client-sdk-go/v143/platformclientv2"
 )
 
 /*

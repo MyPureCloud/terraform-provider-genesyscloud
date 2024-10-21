@@ -9,7 +9,7 @@ import (
 	rc "terraform-provider-genesyscloud/genesyscloud/resource_cache"
 
 	"github.com/mitchellh/mapstructure"
-	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v143/platformclientv2"
 )
 
 // Type definitions for each func on our proxy so we can easily mock them out later
@@ -165,7 +165,7 @@ func getArchitectDatatableFn(_ context.Context, p *architectDatatableRowProxy, d
 	headerParams["Accept"] = "application/json"
 
 	var successPayload *Datatable
-	response, err := apiClient.CallAPI(path, http.MethodGet, nil, headerParams, queryParams, nil, "", nil)
+	response, err := apiClient.CallAPI(path, http.MethodGet, nil, headerParams, queryParams, nil, "", nil, "")
 	if err != nil {
 		// Nothing special to do here, but do avoid processing the response
 	} else if response.Error != nil {

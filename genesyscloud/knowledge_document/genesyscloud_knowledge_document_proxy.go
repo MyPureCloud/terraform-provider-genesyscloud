@@ -9,7 +9,7 @@ import (
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v143/platformclientv2"
 )
 
 var internalProxy *knowledgeDocumentProxy
@@ -201,7 +201,7 @@ func GetAllKnowledgeDocumentEntitiesFn(ctx context.Context, p *knowledgeDocument
 		headers["Accept"] = "application/json"
 
 		// execute request
-		response, err := p.clientConfig.APIClient.CallAPI(listDocumentsBaseUrl, "GET", nil, headers, queryParams, nil, "", nil)
+		response, err := p.clientConfig.APIClient.CallAPI(listDocumentsBaseUrl, "GET", nil, headers, queryParams, nil, "", nil, "")
 		if err != nil {
 			return nil, response, fmt.Errorf("failed to read knowledge document list response error: %s", err)
 		}

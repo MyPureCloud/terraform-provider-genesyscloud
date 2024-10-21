@@ -15,7 +15,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v143/platformclientv2"
 )
 
 var ctx = context.Background()
@@ -195,6 +195,7 @@ func sdkGetRoutingQueueMembers(queueID, memberBy string, pageNumber, pageSize in
 	formParams := url.Values{}
 	var postBody interface{}
 	var postFileName string
+	var postFilePath string
 	var fileBytes []byte
 
 	// oauth required
@@ -216,7 +217,7 @@ func sdkGetRoutingQueueMembers(queueID, memberBy string, pageNumber, pageSize in
 	headerParams["Accept"] = "application/json"
 
 	var successPayload *platformclientv2.Queuememberentitylisting
-	response, err := apiClient.CallAPI(path, http.MethodGet, postBody, headerParams, queryParams, formParams, postFileName, fileBytes)
+	response, err := apiClient.CallAPI(path, http.MethodGet, postBody, headerParams, queryParams, formParams, postFileName, fileBytes, postFilePath)
 	if err != nil {
 		// Nothing special to do here, but do avoid processing the response
 	} else if response.Error != nil {

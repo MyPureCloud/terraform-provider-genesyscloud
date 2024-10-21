@@ -2,8 +2,6 @@ package task_management_worktype_status
 
 import (
 	"fmt"
-	"github.com/google/uuid"
-	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
 	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	workbin "terraform-provider-genesyscloud/genesyscloud/task_management_workbin"
@@ -11,6 +9,9 @@ import (
 	workType "terraform-provider-genesyscloud/genesyscloud/task_management_worktype"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
+
+	"github.com/google/uuid"
+	"github.com/mypurecloud/platform-client-sdk-go/v143/platformclientv2"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 

@@ -14,7 +14,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v143/platformclientv2"
 )
 
 type ProcessAutomationTriggers struct {
@@ -91,7 +91,7 @@ func getAllProcessAutomationTriggers(path string, api *platformclientv2.Integrat
 	headerParams["Accept"] = "application/json"
 
 	var successPayload *ProcessAutomationTriggers
-	response, err := apiClient.CallAPI(path, http.MethodGet, nil, headerParams, nil, nil, "", nil)
+	response, err := apiClient.CallAPI(path, http.MethodGet, nil, headerParams, nil, nil, "", nil, "")
 	if err != nil {
 		// Nothing special to do here, but do avoid processing the response
 	} else if response.Error != nil {
