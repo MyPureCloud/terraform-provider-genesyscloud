@@ -14,7 +14,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v143/platformclientv2"
 	"github.com/nyaruka/phonenumbers"
 )
 
@@ -256,7 +256,7 @@ func updateUserRoutingUtilization(d *schema.ResourceData, proxy *userProxy) diag
 					requestPayload := make(map[string]interface{})
 					requestPayload["utilization"] = buildMediaTypeUtilizations(allSettings)
 					requestPayload["labelUtilizations"] = buildLabelUtilizationsRequest(labelUtilizations)
-					_, err = apiClient.CallAPI(path, "PUT", requestPayload, headerParams, nil, nil, "", nil)
+					_, err = apiClient.CallAPI(path, "PUT", requestPayload, headerParams, nil, nil, "", nil, "")
 				} else {
 					sdkSettings := make(map[string]platformclientv2.Mediautilization)
 					for sdkType, schemaType := range getUtilizationMediaTypes() {
@@ -397,7 +397,7 @@ func readUserRoutingUtilization(d *schema.ResourceData, proxy *userProxy) diag.D
 
 	path := fmt.Sprintf("%s/api/v2/routing/users/%s/utilization", proxy.routingApi.Configuration.BasePath, d.Id())
 	headerParams := buildHeaderParams(proxy.routingApi)
-	response, err := apiClient.CallAPI(path, "GET", nil, headerParams, nil, nil, "", nil)
+	response, err := apiClient.CallAPI(path, "GET", nil, headerParams, nil, nil, "", nil, "")
 
 	if err != nil {
 		if util.IsStatus404(response) {

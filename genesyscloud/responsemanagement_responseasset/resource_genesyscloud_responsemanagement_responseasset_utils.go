@@ -3,16 +3,18 @@ package responsemanagement_responseasset
 import (
 	"context"
 	"fmt"
+	"log"
 	"os"
 	"path"
 	"path/filepath"
 	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"terraform-provider-genesyscloud/genesyscloud/util/files"
 	"terraform-provider-genesyscloud/genesyscloud/util/testrunner"
 )
 
-func responsemanagementResponseassetResolver(responseAssetId, exportDirectory, subDirectory string, configMap map[string]interface{}, meta interface{}) error {
+func responsemanagementResponseassetResolver(responseAssetId, exportDirectory, subDirectory string, configMap map[string]interface{}, meta interface{}, resource resourceExporter.ResourceInfo) error {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getRespManagementRespAssetProxy(sdkConfig)
 
@@ -35,9 +37,18 @@ func responsemanagementResponseassetResolver(responseAssetId, exportDirectory, s
 		return err
 	}
 	configMap["filename"] = exportFilename
-	configMap["file_content_hash"] = fmt.Sprintf(`${filesha256("%s")}`, exportFilename)
+	resource.State.Attributes["filepath"] = exportFilename
 
-	return nil
+	fileContentVal := fmt.Sprintf(`${filesha256("%s")}`, exportFilename)
+	configMap["file_content_hash"] = fileContentVal
+
+	hash, er := files.HashFileContent(path.Join(fullPath, fileName))
+	if er != nil {
+		log.Printf("Error Calculating Hash '%s' ", er)
+	} else {
+		resource.State.Attributes["file_content_hash"] = hash
+	}
+	return err
 }
 
 func GenerateResponseManagementResponseAssetResource(resourceId string, fileName string, divisionId string) string {

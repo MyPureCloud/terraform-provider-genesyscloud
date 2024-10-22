@@ -225,10 +225,10 @@ func DownloadExportFile(directory, fileName, uri string) error {
 }
 
 // Hash file content, used in stateFunc for "filepath" type attributes
-func hashFileContent(path string) string {
+func HashFileContent(path string) (string, error) {
 	reader, file, err := DownloadOrOpenFile(path)
 	if err != nil {
-		return err.Error()
+		return "", fmt.Errorf("unable to open file: %v", err.Error())
 	}
 	if file != nil {
 		defer file.Close()
@@ -237,15 +237,15 @@ func hashFileContent(path string) string {
 	hash := sha256.New()
 	if file == nil {
 		if _, err := io.Copy(hash, reader); err != nil {
-			return err.Error()
+			return "", fmt.Errorf("unable to copy file content: %v", err.Error())
 		}
 	} else {
 		if _, err := io.Copy(hash, file); err != nil {
-			return err.Error()
+			return "", fmt.Errorf("unable to copy file content: %v", err.Error())
 		}
 	}
 
-	return hex.EncodeToString(hash.Sum(nil))
+	return hex.EncodeToString(hash.Sum(nil)), nil
 }
 
 // Read and upload input file path to S3 pre-signed URL
