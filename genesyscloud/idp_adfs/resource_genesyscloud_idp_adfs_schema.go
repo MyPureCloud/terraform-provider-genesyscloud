@@ -4,7 +4,6 @@ import (
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
@@ -72,10 +71,9 @@ func ResourceIdpAdfs() *schema.Resource {
 				Type:        schema.TypeString,
 			},
 			`slo_binding`: {
-				Description:  `Valid values: HTTP Redirect, HTTP Post`,
-				Optional:     true,
-				Type:         schema.TypeString,
-				ValidateFunc: validation.StringInSlice([]string{`urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect`, `urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST`}, false),
+				Description: `Valid values: HTTP Redirect, HTTP Post`,
+				Optional:    true,
+				Type:        schema.TypeString,
 			},
 			`relying_party_identifier`: {
 				Description: `String used to identify Genesys Cloud to ADFS.`,
