@@ -71,9 +71,8 @@ func ResourceIdpAdfs() *schema.Resource {
 				Type:        schema.TypeString,
 			},
 			`slo_binding`: {
-				Description: `Valid values: HTTP Redirect, HTTP Post`,
-				Optional:    true,
-				Type:        schema.TypeString,
+				Optional: true,
+				Type:     schema.TypeString,
 			},
 			`relying_party_identifier`: {
 				Description: `String used to identify Genesys Cloud to ADFS.`,
