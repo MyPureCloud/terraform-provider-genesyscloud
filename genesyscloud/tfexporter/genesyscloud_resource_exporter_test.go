@@ -26,6 +26,42 @@ type PostProcessHclBytesTestCase struct {
 	decodedMap map[string]string
 }
 
+// Test case for updateInstanceStateAttributes
+func TestUnitUpdateInstanceStateAttributes(t *testing.T) {
+	jsonResult := util.JsonMap{
+		"file_content_hash": "${filesha256(\"file_fr.json\")}",
+		"file_name":         "444",
+	}
+
+	// Mock initial resource attributes to simulate current state
+	initialAttributes := map[string]string{
+		"file_content_hash": "",
+		"file_name":         "",
+	}
+
+	// Create an instance of ResourceInfo
+	resources := []resourceExporter.ResourceInfo{
+		{
+			Name: "testResourceName",
+			Type: "testResourceType",
+			State: &terraform.InstanceState{
+				ID:         "testResourceId",
+				Attributes: initialAttributes,
+			},
+		},
+	}
+
+	exporter := GenesysCloudResourceExporter{}
+	exporter.updateInstanceStateAttributes(jsonResult, resources[0])
+
+	expectedAttributes := map[string]string{
+		"file_content_hash": "${filesha256(\"file_fr.json\")}",
+		"file_name":         "444",
+	}
+
+	assert.Equal(t, expectedAttributes, resources[0].State.Attributes, "Attributes should be correctly updated")
+}
+
 func TestUnitTfExportPostProcessHclBytesFunc(t *testing.T) {
 	testCase1 := PostProcessHclBytesTestCase{
 		original: `

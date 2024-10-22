@@ -8,6 +8,7 @@ import (
 	"path"
 	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"terraform-provider-genesyscloud/genesyscloud/util/files"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 	"time"
@@ -106,9 +107,11 @@ type grammarLanguageDownloader struct {
 	fileUrl               string
 	fileExtension         string
 	fileType              FileType
+	resource              resourceExporter.ResourceInfo
+	exportDirectory       string
 }
 
-func ArchitectGrammarLanguageResolver(languageId, exportDirectory, subDirectory string, configMap map[string]interface{}, meta interface{}) error {
+func ArchitectGrammarLanguageResolver(languageId, exportDirectory, subDirectory string, configMap map[string]interface{}, meta interface{}, resource resourceExporter.ResourceInfo) error {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getArchitectGrammarLanguageProxy(sdkConfig)
 
@@ -129,6 +132,8 @@ func ArchitectGrammarLanguageResolver(languageId, exportDirectory, subDirectory 
 		grammarId:             grammarId,
 		language:              language,
 		subDirectory:          subDirectory,
+		resource:              resource,
+		exportDirectory:       exportDirectory,
 	}
 
 	return downloader.downloadVoiceAndDtmfFileData()
@@ -223,7 +228,16 @@ func (d *grammarLanguageDownloader) updatePathsInExportConfigMap() {
 	if fileDataList, ok := d.configMap[fileDataMapKey].([]interface{}); ok {
 		if fileDataMap, ok := fileDataList[0].(map[string]interface{}); ok {
 			fileDataMap["file_name"] = filePath
-			fileDataMap["file_content_hash"] = fmt.Sprintf(`${filesha256("%s")}`, filePath)
+			fileHashVal := fmt.Sprintf(`${filesha256("%s")}`, filePath)
+			fileDataMap["file_content_hash"] = fileHashVal
+			fullPath := path.Join(d.exportDirectory, d.subDirectory)
+			d.resource.State.Attributes["file_name"] = filePath
+			hash, er := files.HashFileContent(path.Join(fullPath, d.exportFileName))
+			if er != nil {
+				log.Printf("Error Calculating Hash '%s' ", er)
+			} else {
+				d.resource.State.Attributes["file_content_hash"] = hash
+			}
 			if fileDataMap["file_type"] == nil {
 				fileDataMap["file_type"] = ""
 			}
