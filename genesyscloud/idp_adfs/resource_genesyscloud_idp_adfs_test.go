@@ -21,8 +21,8 @@ func TestAccResourceIdpAdfs(t *testing.T) {
 		relyingPartyID1 = "test-id1"
 		relyingPartyID2 = "test-id2"
 		uri3            = "https://example.com"
-		slo_binding1    = "HTTP Redirect"
-		slo_binding2    = "HTTP Post"
+		slo_binding1    = "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect"
+		slo_binding2    = "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST"
 	)
 
 	resource.Test(t, resource.TestCase{
