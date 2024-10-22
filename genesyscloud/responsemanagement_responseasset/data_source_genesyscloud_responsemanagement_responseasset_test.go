@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/testrunner"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -37,10 +38,11 @@ func TestAccDataSourceResponseManagementResponseAsset(t *testing.T) {
 }
 
 func generateResponseManagementResponseAssetDataSource(id string, name string, dependsOn string) string {
+	normalizeFilePath, _ := testrunner.NormalizeFileName(name)
 	return fmt.Sprintf(`
 data "genesyscloud_responsemanagement_responseasset" "%s" {
     name       = "%s"
     depends_on = [%s]
 }
-`, id, name, dependsOn)
+`, id, normalizeFilePath, dependsOn)
 }
