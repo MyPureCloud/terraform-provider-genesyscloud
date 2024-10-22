@@ -8,11 +8,12 @@ import (
 	"path/filepath"
 	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"terraform-provider-genesyscloud/genesyscloud/util/files"
 	"terraform-provider-genesyscloud/genesyscloud/util/testrunner"
 )
 
-func responsemanagementResponseassetResolver(responseAssetId, exportDirectory, subDirectory string, configMap map[string]interface{}, meta interface{}) error {
+func responsemanagementResponseassetResolver(responseAssetId, exportDirectory, subDirectory string, configMap map[string]interface{}, meta interface{}, resource resourceExporter.ResourceInfo) error {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getRespManagementRespAssetProxy(sdkConfig)
 
@@ -35,7 +36,11 @@ func responsemanagementResponseassetResolver(responseAssetId, exportDirectory, s
 		return err
 	}
 	configMap["filename"] = exportFilename
+	resource.State.Attributes["filepath"] = exportFilename
+
+	fileContentVal := fmt.Sprintf(`${filesha256("%s")}`, exportFilename)
 	configMap["file_content_hash"] = fmt.Sprintf(`${filesha256("%s")}`, exportFilename)
+	resource.State.Attributes["file_content_hash"] = fileContentVal
 
 	return nil
 }

@@ -427,10 +427,9 @@ func (g *GenesysCloudResourceExporter) customWriteAttributes(jsonResult util.Jso
 	exporters := *g.exporters
 	if resourceFilesWriterFunc := exporters[resource.Type].CustomFileWriter.RetrieveAndWriteFilesFunc; resourceFilesWriterFunc != nil {
 		exportDir, _ := getFilePath(g.d, "")
-		if err := resourceFilesWriterFunc(resource.State.ID, exportDir, exporters[resource.Type].CustomFileWriter.SubDirectory, jsonResult, g.meta); err != nil {
+		if err := resourceFilesWriterFunc(resource.State.ID, exportDir, exporters[resource.Type].CustomFileWriter.SubDirectory, jsonResult, g.meta, resource); err != nil {
 			log.Printf("An error has occurred while trying invoking the RetrieveAndWriteFilesFunc for resource type %s: %v", resource.Type, err)
 		}
-		g.updateInstanceStateAttributes(jsonResult, resource)
 	}
 
 	if len(exporters[resource.Type].CustomFlowResolver) > 0 {
@@ -439,53 +438,10 @@ func (g *GenesysCloudResourceExporter) customWriteAttributes(jsonResult util.Jso
 }
 
 func (g *GenesysCloudResourceExporter) updateInstanceStateAttributes(jsonResult util.JsonMap, resource resourceExporter.ResourceInfo) {
-	if resources, ok := jsonResult["resources"].([]interface{}); ok {
-		processResources(resources, resource)
-	} else {
-		addStringAttributes(resource, jsonResult)
-	}
-}
-
-func processResources(resources []interface{}, resource resourceExporter.ResourceInfo) {
-	for _, res := range resources {
-		if resMap, ok := res.(map[string]interface{}); ok {
-			if resourceID := findResourceID(resource, resMap); resourceID != "" {
-				updateResourceAttributes(resource, resourceID, resMap)
-			}
-		}
-	}
-}
-
-func addStringAttributes(resource resourceExporter.ResourceInfo, jsonResult util.JsonMap) {
 	for attr, val := range jsonResult {
 		if valStr, ok := val.(string); ok {
-			// Directly add string attribute for rest of the flows/scripts/assets
-			if _, exists := resource.State.Attributes[attr]; !exists {
-				resource.State.Attributes[attr] = valStr
-			}
-		}
-	}
-}
-
-// Find the resourceID, return early if found
-func findResourceID(resource resourceExporter.ResourceInfo, resMap map[string]interface{}) string {
-	pattern := regexp.MustCompile(`^resources\.(\d+)\.l.*$`)
-	for _, valt := range resMap {
-		for key, value := range resource.State.Attributes {
-			if matches := pattern.FindStringSubmatch(key); matches != nil && value == valt {
-				return matches[1]
-			}
-		}
-	}
-	return ""
-}
-
-// Update resource state attributes based on resourceID and resource map
-func updateResourceAttributes(resource resourceExporter.ResourceInfo, resourceID string, resMap map[string]interface{}) {
-	for attrTemp, valTemp := range resMap {
-		if valTempStr, ok := valTemp.(string); ok {
-			key := fmt.Sprintf("resources.%s.%s", resourceID, attrTemp)
-			resource.State.Attributes[key] = valTempStr
+			// Directly add string attribute for rest of the flows
+			resource.State.Attributes[attr] = valStr
 		}
 	}
 }

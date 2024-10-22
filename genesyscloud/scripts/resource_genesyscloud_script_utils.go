@@ -6,11 +6,12 @@ import (
 	"os"
 	"path"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"terraform-provider-genesyscloud/genesyscloud/util/files"
 )
 
 // ScriptResolver is used to download all Genesys Cloud scripts from Genesys Cloud
-func ScriptResolver(scriptId, exportDirectory, subDirectory string, configMap map[string]interface{}, meta interface{}) error {
+func ScriptResolver(scriptId, exportDirectory, subDirectory string, configMap map[string]interface{}, meta interface{}, resource resourceExporter.ResourceInfo) error {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	scriptsProxy := getScriptsProxy(sdkConfig)
 
@@ -31,8 +32,13 @@ func ScriptResolver(scriptId, exportDirectory, subDirectory string, configMap ma
 	}
 
 	// Update filepath field in configMap to point to exported script file
-	configMap["filepath"] = path.Join(subDirectory, exportFileName)
-	configMap["file_content_hash"] = fmt.Sprintf(`${filesha256("%s")}`, path.Join(subDirectory, exportFileName))
+	fileNameVal := path.Join(subDirectory, exportFileName)
+	fileContentVal := fmt.Sprintf(`${filesha256("%s")}`, path.Join(subDirectory, exportFileName))
+	configMap["filename"] = fileNameVal
+	configMap["file_content_hash"] = fileContentVal
+
+	resource.State.Attributes["filepath"] = fileNameVal
+	resource.State.Attributes["file_content_hash"] = fileContentVal
 
 	return err
 }

@@ -67,7 +67,7 @@ type CustomFlowResolver struct {
 type CustomFileWriterSettings struct {
 	// Custom function for dumping data/media stored in an object in a sub directory along
 	// with the exported config. For example: prompt audio files, csv data, jps/pngs
-	RetrieveAndWriteFilesFunc func(string, string, string, map[string]interface{}, interface{}) error
+	RetrieveAndWriteFilesFunc func(string, string, string, map[string]interface{}, interface{}, ResourceInfo) error
 
 	// Sub directory within export folder in which to write files retrieved by RetrieveAndWriteFilesFunc
 	// For example, the user_prompt resource defines SubDirectory as "audio", so the prompt audio files will

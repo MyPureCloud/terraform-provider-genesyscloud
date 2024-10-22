@@ -8,6 +8,7 @@ import (
 	"path"
 	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"terraform-provider-genesyscloud/genesyscloud/util/files"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 	"time"
@@ -106,9 +107,10 @@ type grammarLanguageDownloader struct {
 	fileUrl               string
 	fileExtension         string
 	fileType              FileType
+	resource              resourceExporter.ResourceInfo
 }
 
-func ArchitectGrammarLanguageResolver(languageId, exportDirectory, subDirectory string, configMap map[string]interface{}, meta interface{}) error {
+func ArchitectGrammarLanguageResolver(languageId, exportDirectory, subDirectory string, configMap map[string]interface{}, meta interface{}, resource resourceExporter.ResourceInfo) error {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getArchitectGrammarLanguageProxy(sdkConfig)
 
@@ -129,6 +131,7 @@ func ArchitectGrammarLanguageResolver(languageId, exportDirectory, subDirectory 
 		grammarId:             grammarId,
 		language:              language,
 		subDirectory:          subDirectory,
+		resource:              resource,
 	}
 
 	return downloader.downloadVoiceAndDtmfFileData()
@@ -223,7 +226,10 @@ func (d *grammarLanguageDownloader) updatePathsInExportConfigMap() {
 	if fileDataList, ok := d.configMap[fileDataMapKey].([]interface{}); ok {
 		if fileDataMap, ok := fileDataList[0].(map[string]interface{}); ok {
 			fileDataMap["file_name"] = filePath
-			fileDataMap["file_content_hash"] = fmt.Sprintf(`${filesha256("%s")}`, filePath)
+			fileHashVal := fmt.Sprintf(`${filesha256("%s")}`, filePath)
+			fileDataMap["file_content_hash"] = fileHashVal
+			d.resource.State.Attributes["file_name"] = filePath
+			d.resource.State.Attributes["file_content_hash"] = fileHashVal
 			if fileDataMap["file_type"] == nil {
 				fileDataMap["file_type"] = ""
 			}
