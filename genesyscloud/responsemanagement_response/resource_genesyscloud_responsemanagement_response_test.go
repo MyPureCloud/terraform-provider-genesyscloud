@@ -73,6 +73,7 @@ func TestAccResourceResponseManagementResponseFooterField(t *testing.T) {
 					generateTextsBlock(
 						textsContent1,
 						textsContentTypes[0],
+						util.NullValue,
 					),
 				),
 				Check: resource.ComposeTestCheckFunc(
@@ -105,6 +106,7 @@ func TestAccResourceResponseManagementResponseFooterField(t *testing.T) {
 					generateTextsBlock(
 						textsContent2,
 						textsContentTypes[1],
+						util.NullValue,
 					),
 					generateSubstitutionsBlock(
 						substitutionsId,
@@ -155,11 +157,13 @@ func TestAccResourceResponseManagementResponseFooterField(t *testing.T) {
 					generateTextsBlock(
 						textsContent1,
 						textsContentTypes[0],
+						util.NullValue,
 					),
 					generateFooterBlock(footerType, footerResource),
 					generateTextsBlock(
 						textsContent2,
 						textsContentTypes[1],
+						util.NullValue,
 					),
 					generateSubstitutionsBlock(
 						substitutionsId,
@@ -261,6 +265,7 @@ func TestAccResourceResponseManagementResponseMessaging(t *testing.T) {
 					generateTextsBlock(
 						textsContent1,
 						textsContentTypes[0],
+						util.NullValue,
 					),
 				),
 				Check: resource.ComposeTestCheckFunc(
@@ -292,6 +297,7 @@ func TestAccResourceResponseManagementResponseMessaging(t *testing.T) {
 					generateTextsBlock(
 						textsContent2,
 						textsContentTypes[1],
+						util.NullValue,
 					),
 					generateSubstitutionsBlock(
 						substitutionsId,
@@ -352,10 +358,12 @@ func TestAccResourceResponseManagementResponseMessaging(t *testing.T) {
 					generateTextsBlock(
 						textsContent1,
 						textsContentTypes[0],
+						util.NullValue,
 					),
 					generateTextsBlock(
 						textsContent2,
 						textsContentTypes[1],
+						util.NullValue,
 					),
 					generateSubstitutionsBlock(
 						substitutionsId,
@@ -411,6 +419,81 @@ func TestAccResourceResponseManagementResponseMessaging(t *testing.T) {
 	cleanupResponseAssets(testFilesDir)
 }
 
+func TestAccResourceResponseManagementResponseCampaignEmailTemplate(t *testing.T) {
+	t.Parallel()
+	var (
+		// Responses initial values
+		responseResource    = "response-resource-campaignemail"
+		name1               = "Response-message" + uuid.NewString()
+		textsContentSubject = "Text as Subject"
+		textsContentBody    = "Text as Body! Welocme to Genesys!"
+		textsContentTypes   = []string{"text/plain", "text/html"}
+		textsType           = []string{"subject", "body"}
+		interactionTypes    = []string{"chat", "email", "twitter"}
+		responseTypes       = []string{`MessagingTemplate`, `CampaignSmsTemplate`, `CampaignEmailTemplate`}
+
+		// Library resources variables
+		libraryResource1 = "library-resource1-campaignemail"
+		libraryName1     = "ReferencelibraryCampaignemail1"
+	)
+
+	cleanupResponseAssets("genesys")
+	cleanupResponseAssets("yeti")
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			{
+				// Create with required values
+				Config: respmanagementLibrary.GenerateResponseManagementLibraryResource(
+					libraryResource1,
+					libraryName1,
+				) + generateResponseManagementResponseResource(
+					responseResource,
+					name1,
+					[]string{"genesyscloud_responsemanagement_library." + libraryResource1 + ".id"},
+					strconv.Quote(interactionTypes[1]),
+					util.NullValue,
+					strconv.Quote(responseTypes[2]),
+					[]string{},
+					generateTextsBlock(
+						textsContentSubject,
+						textsContentTypes[0],
+						strconv.Quote(textsType[0]),
+					),
+					generateTextsBlock(
+						textsContentBody,
+						textsContentTypes[1],
+						strconv.Quote(textsType[1]),
+					),
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResource, "name", name1),
+					resource.TestCheckResourceAttrPair(
+						"genesyscloud_responsemanagement_response."+responseResource, "library_ids.0",
+						"genesyscloud_responsemanagement_library."+libraryResource1, "id"),
+					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResource, "texts.0.content", textsContentBody),
+					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResource, "texts.0.content_type", textsContentTypes[1]),
+					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResource, "texts.0.type", textsType[1]),
+					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResource, "texts.1.content", textsContentSubject),
+					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResource, "texts.1.content_type", textsContentTypes[0]),
+					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResource, "texts.1.type", textsType[0]),
+				),
+			},
+			{
+				// Import/Read
+				ResourceName:            "genesyscloud_responsemanagement_response." + responseResource,
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"substitutions_schema_id", "messaging_template", "response_type"},
+			},
+		},
+		CheckDestroy: testVerifyResponseManagementResponseDestroyed,
+	})
+
+}
+
 func generateResponseManagementResponseResource(
 	resourceId string,
 	name string,
@@ -434,16 +517,14 @@ func generateResponseManagementResponseResource(
 	`, resourceId, name, strings.Join(libraryIds, ", "), interactionType, schema, responseType, strings.Join(assetIds, ", "), strings.Join(nestedBlocks, "\n"))
 }
 
-func generateTextsBlock(
-	content string,
-	contentType string,
-) string {
+func generateTextsBlock(content string, contentType string, cType string) string {
 	return fmt.Sprintf(`
 		texts {
 			content = "%s"
 			content_type = "%s"
+			type = %s
 		}
-	`, content, contentType)
+	`, content, contentType, cType)
 }
 
 func generateSubstitutionsBlock(id, description, defaultValue string) string {
