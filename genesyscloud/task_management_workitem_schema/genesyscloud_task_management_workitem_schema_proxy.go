@@ -10,7 +10,7 @@ import (
 
 	rc "terraform-provider-genesyscloud/genesyscloud/resource_cache"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v143/platformclientv2"
 )
 
 /*
@@ -206,7 +206,7 @@ func getTaskManagementWorkitemSchemaDeletedStatusFn(ctx context.Context, p *task
 	headerParams["Accept"] = "application/json"
 
 	var successPayload map[string]interface{}
-	response, err := apiClient.CallAPI(path, http.MethodGet, nil, headerParams, queryParams, nil, "", nil)
+	response, err := apiClient.CallAPI(path, http.MethodGet, nil, headerParams, queryParams, nil, "", nil, "")
 	if err != nil {
 		return false, response, fmt.Errorf("failed to get workitem schema %s: %v", schemaId, err)
 	}

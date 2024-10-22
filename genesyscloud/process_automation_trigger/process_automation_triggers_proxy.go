@@ -11,7 +11,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/util"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v143/platformclientv2"
 )
 
 func postProcessAutomationTrigger(pat *ProcessAutomationTrigger, api *platformclientv2.IntegrationsApi) (*ProcessAutomationTrigger, *platformclientv2.APIResponse, error) {
@@ -39,7 +39,7 @@ func postProcessAutomationTrigger(pat *ProcessAutomationTrigger, api *platformcl
 	headerParams["Accept"] = "application/json"
 
 	var successPayload *ProcessAutomationTrigger
-	response, err := apiClient.CallAPI(path, http.MethodPost, jsonMap, headerParams, nil, nil, "", nil)
+	response, err := apiClient.CallAPI(path, http.MethodPost, jsonMap, headerParams, nil, nil, "", nil, "")
 
 	if err != nil {
 		// Nothing special to do here, but do avoid processing the response
@@ -74,7 +74,7 @@ func getProcessAutomationTrigger(triggerId string, api *platformclientv2.Integra
 	headerParams["Content-Type"] = "application/json"
 	headerParams["Accept"] = "application/json"
 
-	response, err := apiClient.CallAPI(path, http.MethodGet, nil, headerParams, nil, nil, "", nil)
+	response, err := apiClient.CallAPI(path, http.MethodGet, nil, headerParams, nil, nil, "", nil, "")
 	if response.Error != nil {
 		err = errors.New(response.ErrorMessage)
 		return nil, nil, err
@@ -115,7 +115,7 @@ func putProcessAutomationTrigger(triggerId string, pat *ProcessAutomationTrigger
 	headerParams["Accept"] = "application/json"
 
 	var successPayload *ProcessAutomationTrigger
-	response, err := apiClient.CallAPI(path, http.MethodPut, jsonMap, headerParams, nil, nil, "", nil)
+	response, err := apiClient.CallAPI(path, http.MethodPut, jsonMap, headerParams, nil, nil, "", nil, "")
 	if err != nil {
 		// Nothing special to do here, but do avoid processing the response
 	} else if response.Error != nil {
@@ -147,7 +147,7 @@ func deleteProcessAutomationTrigger(triggerId string, api *platformclientv2.Inte
 	headerParams["Content-Type"] = "application/json"
 	headerParams["Accept"] = "application/json"
 
-	response, err := apiClient.CallAPI(path, http.MethodDelete, nil, headerParams, nil, nil, "", nil)
+	response, err := apiClient.CallAPI(path, http.MethodDelete, nil, headerParams, nil, nil, "", nil, "")
 	if err != nil {
 		// Nothing special to do here, but do avoid processing the response
 	} else if response.Error != nil {
