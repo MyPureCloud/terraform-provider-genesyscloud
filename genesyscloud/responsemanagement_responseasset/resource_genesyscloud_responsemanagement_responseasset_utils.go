@@ -3,6 +3,7 @@ package responsemanagement_responseasset
 import (
 	"context"
 	"fmt"
+	"log"
 	"os"
 	"path"
 	"path/filepath"
@@ -39,10 +40,15 @@ func responsemanagementResponseassetResolver(responseAssetId, exportDirectory, s
 	resource.State.Attributes["filepath"] = exportFilename
 
 	fileContentVal := fmt.Sprintf(`${filesha256("%s")}`, exportFilename)
-	configMap["file_content_hash"] = fmt.Sprintf(`${filesha256("%s")}`, exportFilename)
-	resource.State.Attributes["file_content_hash"] = fileContentVal
+	configMap["file_content_hash"] = fileContentVal
 
-	return nil
+	hash, er := files.HashFileContent(path.Join(fullPath, fileName))
+	if er != nil {
+		log.Printf("Error Calculating Hash '%s' ", er)
+	} else {
+		resource.State.Attributes["file_content_hash"] = hash
+	}
+	return err
 }
 
 func GenerateResponseManagementResponseAssetResource(resourceId string, fileName string, divisionId string) string {

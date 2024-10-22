@@ -3,6 +3,7 @@ package scripts
 import (
 	"context"
 	"fmt"
+	"log"
 	"os"
 	"path"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
@@ -38,7 +39,12 @@ func ScriptResolver(scriptId, exportDirectory, subDirectory string, configMap ma
 	configMap["file_content_hash"] = fileContentVal
 
 	resource.State.Attributes["filepath"] = fileNameVal
-	resource.State.Attributes["file_content_hash"] = fileContentVal
 
+	hash, er := files.HashFileContent(path.Join(fullPath, exportFileName))
+	if er != nil {
+		log.Printf("Error Calculating Hash '%s' ", er)
+	} else {
+		resource.State.Attributes["file_content_hash"] = hash
+	}
 	return err
 }

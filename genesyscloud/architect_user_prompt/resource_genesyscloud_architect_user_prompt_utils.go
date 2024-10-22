@@ -83,7 +83,7 @@ func flattenPromptResources(d *schema.ResourceData, promptResources *[]platformc
 // updateFilenamesInExportConfigMap replaces (or creates) the filenames key in configMap with the FileName fields in audioDataList
 // which point towards the downloaded audio files stored in the export folder.
 // Since a language can only appear once in a resources array, we can match resources[n]["language"] with audioDataList[n].Language
-func updateFilenamesInExportConfigMap(configMap map[string]interface{}, audioDataList []PromptAudioData, subDir string, res resourceExporter.ResourceInfo) {
+func updateFilenamesInExportConfigMap(configMap map[string]interface{}, audioDataList []PromptAudioData, subDir string, exportDir string, res resourceExporter.ResourceInfo) {
 	resources, _ := configMap["resources"].([]interface{})
 	if len(resources) == 0 {
 		return
@@ -110,6 +110,13 @@ func updateFilenamesInExportConfigMap(configMap map[string]interface{}, audioDat
 			if resourceID := findResourceID(res, languageStr); resourceID != "" {
 				res.State.Attributes[fmt.Sprintf("resources.%s.%s", resourceID, "filename")] = fileNameVal
 				res.State.Attributes[fmt.Sprintf("resources.%s.%s", resourceID, "file_content_hash")] = fileContentVal
+				fullPath := path.Join(exportDir, subDir)
+				hash, er := files.HashFileContent(path.Join(fullPath, fileName))
+				if er != nil {
+					log.Printf("Error Calculating Hash '%s' ", er)
+				} else {
+					res.State.Attributes[fmt.Sprintf("resources.%s.%s", resourceID, "file_content_hash")] = hash
+				}
 			}
 
 		}
@@ -198,7 +205,7 @@ func ArchitectPromptAudioResolver(promptId, exportDirectory, subDirectory string
 	}
 	if len(audioDataList) > 0 {
 		log.Printf("Updating filename fields in the resource config to point to newly downloaded data.")
-		updateFilenamesInExportConfigMap(configMap, audioDataList, subDirectory, resource)
+		updateFilenamesInExportConfigMap(configMap, audioDataList, subDirectory, exportDirectory, resource)
 	}
 
 	cleanupFilenamesWhereThereIsNoDownloadableData(ctx, promptId, configMap, *allResources)

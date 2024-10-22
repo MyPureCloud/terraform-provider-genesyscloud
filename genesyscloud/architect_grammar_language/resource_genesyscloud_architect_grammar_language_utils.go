@@ -108,6 +108,7 @@ type grammarLanguageDownloader struct {
 	fileExtension         string
 	fileType              FileType
 	resource              resourceExporter.ResourceInfo
+	exportDirectory       string
 }
 
 func ArchitectGrammarLanguageResolver(languageId, exportDirectory, subDirectory string, configMap map[string]interface{}, meta interface{}, resource resourceExporter.ResourceInfo) error {
@@ -132,6 +133,7 @@ func ArchitectGrammarLanguageResolver(languageId, exportDirectory, subDirectory 
 		language:              language,
 		subDirectory:          subDirectory,
 		resource:              resource,
+		exportDirectory:       exportDirectory,
 	}
 
 	return downloader.downloadVoiceAndDtmfFileData()
@@ -228,8 +230,14 @@ func (d *grammarLanguageDownloader) updatePathsInExportConfigMap() {
 			fileDataMap["file_name"] = filePath
 			fileHashVal := fmt.Sprintf(`${filesha256("%s")}`, filePath)
 			fileDataMap["file_content_hash"] = fileHashVal
+			fullPath := path.Join(d.exportDirectory, d.subDirectory)
 			d.resource.State.Attributes["file_name"] = filePath
-			d.resource.State.Attributes["file_content_hash"] = fileHashVal
+			hash, er := files.HashFileContent(path.Join(fullPath, d.exportFileName))
+			if er != nil {
+				log.Printf("Error Calculating Hash '%s' ", er)
+			} else {
+				d.resource.State.Attributes["file_content_hash"] = hash
+			}
 			if fileDataMap["file_type"] == nil {
 				fileDataMap["file_type"] = ""
 			}
