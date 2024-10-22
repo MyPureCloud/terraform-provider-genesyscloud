@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"terraform-provider-genesyscloud/genesyscloud/util/constants"
@@ -11,8 +12,6 @@ import (
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
-
-	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 
@@ -69,9 +68,7 @@ func createEmergencyGroup(ctx context.Context, d *schema.ResourceData, meta inte
 	}
 
 	d.SetId(*eGroup.Id)
-
 	log.Printf("Created emergency group %s %s", name, *eGroup.Id)
-
 	return readEmergencyGroup(ctx, d, meta)
 }
 
