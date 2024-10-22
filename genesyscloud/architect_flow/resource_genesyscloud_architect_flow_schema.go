@@ -50,15 +50,15 @@ func ResourceArchitectFlow() *schema.Resource {
 		SchemaVersion: 1,
 		Schema: map[string]*schema.Schema{
 			"name": {
-				Description: "Flow name.",
+				Description: "Flow Name used for export purposes. Note: The 'substitutions' block should be used to set/change 'name' and any other fields in the yaml file",
 				Type:        schema.TypeString,
-				Optional:    false,
+				Optional:    true,
 				Computed:    true,
 			},
 			"type": {
-				Description: "Flow type. Valid options: " + strings.Join(validFlowTypes, ", "),
+				Description: "Flow Type used for export purposes. Note: The 'substitutions' block should be used to set/change 'type' and any other fields in the yaml file",
 				Type:        schema.TypeString,
-				Optional:    false,
+				Optional:    true,
 				Computed:    true,
 			},
 			"filepath": {
