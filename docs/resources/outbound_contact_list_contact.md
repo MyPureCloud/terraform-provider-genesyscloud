@@ -69,14 +69,15 @@ resource "genesyscloud_outbound_contact_list_contact" "contact" {
 ### Optional
 
 - `callable` (Boolean) Indicates whether or not the contact can be called. Defaults to `false`.
-- `clear_system_data` (Boolean) Clear system data. True means the system columns (attempts, callable status, etc) stored on the contact will be cleared if the contact already exists; false means they won't. 
+- `clear_system_data` (Boolean) Clear system data. True means the system columns (attempts, callable status, etc) stored on the contact will be cleared if the contact already exists; false means they won't.
 Only applicable on the creation of a contact, so updating this field will force the contact to be deleted from the contact list and re-uploaded.
+- `contact_id` (String) The identifier of the contact list. This is usually a generated guid and not modifiable.
 - `contactable_status` (Block Set) A map of media types (Voice, SMS and Email) to ContactableStatus, which indicates if the contact can be contacted using the specified media type. (see [below for nested schema](#nestedblock--contactable_status))
-- `do_not_queue` (Boolean) Do not queue. True means that updated contacts will not have their positions in the queue altered, so contacts that have already been dialed will not be redialed. 
-For new contacts, this parameter has no effect; False means that updated contacts will be re-queued, according to the 'priority' parameter. 
+- `do_not_queue` (Boolean) Do not queue. True means that updated contacts will not have their positions in the queue altered, so contacts that have already been dialed will not be redialed.
+For new contacts, this parameter has no effect; False means that updated contacts will be re-queued, according to the 'priority' parameter.
 Only applicable on the creation of a contact, so updating this field will force the contact to be deleted from the contact list and re-uploaded.
 - `phone_number_status` (Block Set) A map of phone number columns to PhoneNumberStatuses, which indicate if the phone number is callable or not. (see [below for nested schema](#nestedblock--phone_number_status))
-- `priority` (Boolean) Contact priority. True means the contact(s) will be dialed next; false means the contact will go to the end of the contact queue. 
+- `priority` (Boolean) Contact priority. True means the contact(s) will be dialed next; false means the contact will go to the end of the contact queue.
 Only applicable on the creation of a contact, so updating this field will force the contact to be deleted from the contact list and re-uploaded.
 
 ### Read-Only

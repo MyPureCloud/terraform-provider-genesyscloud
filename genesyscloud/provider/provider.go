@@ -16,7 +16,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v143/platformclientv2"
 )
 
 var orgDefaultCountryCode string
@@ -268,14 +268,23 @@ func InitClientConfig(data *schema.ResourceData, version string, config *platfor
 		RetryWaitMax: time.Second * 30,
 		RetryMax:     20,
 		RequestLogHook: func(request *http.Request, count int) {
-			if count > 0 && request != nil {
-				log.Printf("Retry #%d for %s %s", count, request.Method, request.URL)
+			sdkDebugRequest := newSDKDebugRequest(request, count)
+			request.Header.Set("TF-Correlation-Id", sdkDebugRequest.TransactionId)
+			err, jsonStr := sdkDebugRequest.ToJSON()
+
+			if err != nil {
+				log.Printf("WARNING: Unable to log RequestLogHook: %s", err)
 			}
+			log.Printf(jsonStr)
 		},
 		ResponseLogHook: func(response *http.Response) {
-			if response.StatusCode < http.StatusOK || response.StatusCode >= http.StatusMultipleChoices {
-				log.Printf("Response %s for request:%s %s", response.Status, response.Request.Method, response.Request.URL)
+			sdkDebugResponse := newSDKDebugResponse(response)
+			err, jsonStr := sdkDebugResponse.ToJSON()
+
+			if err != nil {
+				log.Printf("WARNING: Unable to log ResponseLogHook: %s", err)
 			}
+			log.Printf(jsonStr)
 		},
 	}
 

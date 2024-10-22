@@ -1,10 +1,11 @@
 package outbound_contact_list_contact
 
 import (
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 const resourceName = "genesyscloud_outbound_contact_list_contact"
@@ -94,23 +95,30 @@ func ResourceOutboundContactListContact() *schema.Resource {
 				Required:    true,
 				Type:        schema.TypeString,
 			},
+			"contact_id": {
+				Description: `The identifier of the contact list. This is usually a generated guid and not modifiable.`,
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
+				ForceNew:    true,
+			},
 			"priority": {
-				Description: `Contact priority. True means the contact(s) will be dialed next; false means the contact will go to the end of the contact queue. 
+				Description: `Contact priority. True means the contact(s) will be dialed next; false means the contact will go to the end of the contact queue.
 Only applicable on the creation of a contact, so updating this field will force the contact to be deleted from the contact list and re-uploaded.`,
 				ForceNew: true,
 				Optional: true,
 				Type:     schema.TypeBool,
 			},
 			"clear_system_data": {
-				Description: `Clear system data. True means the system columns (attempts, callable status, etc) stored on the contact will be cleared if the contact already exists; false means they won't. 
+				Description: `Clear system data. True means the system columns (attempts, callable status, etc) stored on the contact will be cleared if the contact already exists; false means they won't.
 Only applicable on the creation of a contact, so updating this field will force the contact to be deleted from the contact list and re-uploaded.`,
 				ForceNew: true,
 				Optional: true,
 				Type:     schema.TypeBool,
 			},
 			"do_not_queue": {
-				Description: `Do not queue. True means that updated contacts will not have their positions in the queue altered, so contacts that have already been dialed will not be redialed. 
-For new contacts, this parameter has no effect; False means that updated contacts will be re-queued, according to the 'priority' parameter. 
+				Description: `Do not queue. True means that updated contacts will not have their positions in the queue altered, so contacts that have already been dialed will not be redialed.
+For new contacts, this parameter has no effect; False means that updated contacts will be re-queued, according to the 'priority' parameter.
 Only applicable on the creation of a contact, so updating this field will force the contact to be deleted from the contact list and re-uploaded.`,
 				ForceNew: true,
 				Optional: true,

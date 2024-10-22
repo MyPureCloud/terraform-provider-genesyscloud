@@ -6,7 +6,7 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v143/platformclientv2"
 )
 
 /*
@@ -232,7 +232,7 @@ func sdkPostIntegrationAction(body *IntegrationAction, api *platformclientv2.Int
 	headerParams["Accept"] = "application/json"
 
 	var successPayload *IntegrationAction
-	response, err := apiClient.CallAPI(path, http.MethodPost, body, headerParams, nil, nil, "", nil)
+	response, err := apiClient.CallAPI(path, http.MethodPost, body, headerParams, nil, nil, "", nil, "")
 	if err != nil {
 		// Nothing special to do here, but do avoid processing the response
 	} else if response.Error != nil {
@@ -269,7 +269,7 @@ func sdkGetIntegrationAction(actionId string, api *platformclientv2.Integrations
 	headerParams["Accept"] = "application/json"
 
 	var successPayload *IntegrationAction
-	response, err := apiClient.CallAPI(path, http.MethodGet, nil, headerParams, queryParams, nil, "", nil)
+	response, err := apiClient.CallAPI(path, http.MethodGet, nil, headerParams, queryParams, nil, "", nil, "")
 	if err != nil {
 		// Nothing special to do here, but do avoid processing the response
 	} else if response.Error != nil {
@@ -303,7 +303,7 @@ func sdkGetIntegrationActionTemplate(actionId, templateName string, api *platfor
 	headerParams["Accept"] = "*/*"
 
 	var successPayload *string
-	response, err := apiClient.CallAPI(path, http.MethodGet, nil, headerParams, queryParams, nil, "", nil)
+	response, err := apiClient.CallAPI(path, http.MethodGet, nil, headerParams, queryParams, nil, "", nil, "")
 	if err != nil {
 		// Nothing special to do here, but do avoid processing the response
 	} else if response.Error != nil {

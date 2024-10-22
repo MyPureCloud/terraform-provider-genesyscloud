@@ -19,7 +19,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v143/platformclientv2"
 )
 
 func getAllOAuthClients(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
@@ -81,6 +81,12 @@ func createOAuthClient(ctx context.Context, d *schema.ResourceData, meta interfa
 	}
 
 	createCredential(ctx, d, client, oauthClientProxy)
+
+	if client.RoleDivisions != nil {
+		_ = d.Set("roles", flattenOAuthRoles(*client.RoleDivisions))
+	} else {
+		_ = d.Set("roles", nil)
+	}
 
 	d.SetId(*client.Id)
 	log.Printf("Created oauth client %s %s", name, *client.Id)
