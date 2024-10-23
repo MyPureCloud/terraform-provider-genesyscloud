@@ -3,6 +3,7 @@ package recording_media_retention_policy
 import (
 	"context"
 	"fmt"
+	"log"
 	"reflect"
 	"time"
 
@@ -744,7 +745,8 @@ func buildPolicyActionsFromMediaPolicy(actions []interface{}, pp *policyProxy, c
 
 func flattenPolicyActions(actions *platformclientv2.Policyactions, pp *policyProxy, ctx context.Context) (error, []interface{}) {
 	if actions == nil || reflect.DeepEqual(platformclientv2.Policyactions{}, *actions) {
-		return fmt.Errorf("action is nil in flattenPolicyActions() method"), nil
+		log.Println("action is nil in flattenPolicyActions() method")
+		return nil, nil
 	}
 
 	actionsMap := make(map[string]interface{})
