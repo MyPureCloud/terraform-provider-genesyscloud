@@ -273,7 +273,7 @@ func (p *architectUserPromptProxy) verifyPromptResourceFilesAreTranscoded(ctx co
 			retry.NonRetryableError(fmt.Errorf("failed to read user prompt '%s': %v", promptId, err))
 		}
 
-		if userPrompt != nil || userPrompt.Resources == nil {
+		if userPrompt == nil || userPrompt.Resources == nil {
 			log.Printf("WARNING: User prompt or userPrompt.Resources is nil in the call from getArchitectUserPrompt().  StatusCode returned by the call %d", resp.StatusCode)
 			return nil
 		}
