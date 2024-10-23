@@ -77,8 +77,13 @@ func readOutboundContactListContact(ctx context.Context, d *schema.ResourceData,
 		cp        = getContactProxy(sdkConfig)
 	)
 
-	contactListId := d.Get("contact_list_id").(string)
-	contactId := d.Get("contact_id").(string)
+	contactListId, contactId := splitComplexContact(d.Id())
+	if contactListId == "" {
+		contactListId = d.Get("contact_list_id").(string)
+	}
+	if contactId == "" {
+		contactId = d.Get("contact_id").(string)
+	}
 
 	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundContactListContact(), constants.DefaultConsistencyChecks, resourceName)
 
@@ -95,6 +100,7 @@ func readOutboundContactListContact(ctx context.Context, d *schema.ResourceData,
 		}
 
 		_ = d.Set("contact_list_id", *contactResponseBody.ContactListId)
+		_ = d.Set("contact_id", *contactResponseBody.Id)
 		resourcedata.SetNillableValue(d, "callable", contactResponseBody.Callable)
 		resourcedata.SetNillableValue(d, "data", contactResponseBody.Data)
 		resourcedata.SetNillableValueWithSchemaSetWithFunc(d, "phone_number_status", contactResponseBody.PhoneNumberStatus, flattenPhoneNumberStatus)
@@ -114,8 +120,13 @@ func updateOutboundContactListContact(ctx context.Context, d *schema.ResourceDat
 	cp := getContactProxy(sdkConfig)
 
 	contactRequestBody := buildDialerContactFromResourceData(d)
-	contactListId := d.Get("contact_list_id").(string)
-	contactId := d.Get("contact_id").(string)
+	contactListId, contactId := splitComplexContact(d.Id())
+	if contactListId == "" {
+		contactListId = d.Get("contact_list_id").(string)
+	}
+	if contactId == "" {
+		contactId = d.Get("contact_id").(string)
+	}
 
 	log.Printf("Updating contact '%s' in contact list '%s'", contactId, contactListId)
 	_, resp, err := cp.updateContact(ctx, contactListId, contactId, contactRequestBody)
@@ -132,8 +143,13 @@ func deleteOutboundContactListContact(ctx context.Context, d *schema.ResourceDat
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	cp := getContactProxy(sdkConfig)
 
-	contactListId := d.Get("contact_list_id").(string)
-	contactId := d.Get("contact_id").(string)
+	contactListId, contactId := splitComplexContact(d.Id())
+	if contactListId == "" {
+		contactListId = d.Get("contact_list_id").(string)
+	}
+	if contactId == "" {
+		contactId = d.Get("contact_id").(string)
+	}
 
 	log.Printf("Deleting contact '%s' from contact list '%s'", contactId, contactListId)
 	resp, err := cp.deleteContact(ctx, contactListId, contactId)
