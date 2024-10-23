@@ -9,7 +9,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/util"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v143/platformclientv2"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
@@ -24,6 +24,42 @@ type PostProcessHclBytesTestCase struct {
 	original   string
 	expected   string
 	decodedMap map[string]string
+}
+
+// Test case for updateInstanceStateAttributes
+func TestUnitUpdateInstanceStateAttributes(t *testing.T) {
+	jsonResult := util.JsonMap{
+		"file_content_hash": "${filesha256(\"file_fr.json\")}",
+		"file_name":         "444",
+	}
+
+	// Mock initial resource attributes to simulate current state
+	initialAttributes := map[string]string{
+		"file_content_hash": "",
+		"file_name":         "",
+	}
+
+	// Create an instance of ResourceInfo
+	resources := []resourceExporter.ResourceInfo{
+		{
+			Name: "testResourceName",
+			Type: "testResourceType",
+			State: &terraform.InstanceState{
+				ID:         "testResourceId",
+				Attributes: initialAttributes,
+			},
+		},
+	}
+
+	exporter := GenesysCloudResourceExporter{}
+	exporter.updateInstanceStateAttributes(jsonResult, resources[0])
+
+	expectedAttributes := map[string]string{
+		"file_content_hash": "${filesha256(\"file_fr.json\")}",
+		"file_name":         "444",
+	}
+
+	assert.Equal(t, expectedAttributes, resources[0].State.Attributes, "Attributes should be correctly updated")
 }
 
 func TestUnitTfExportPostProcessHclBytesFunc(t *testing.T) {

@@ -6,14 +6,16 @@ import (
 	"log"
 	"os"
 	"path"
+	"regexp"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	files "terraform-provider-genesyscloud/genesyscloud/util/files"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 	"terraform-provider-genesyscloud/genesyscloud/util/testrunner"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v143/platformclientv2"
 )
 
 type PromptAudioData struct {
@@ -81,7 +83,7 @@ func flattenPromptResources(d *schema.ResourceData, promptResources *[]platformc
 // updateFilenamesInExportConfigMap replaces (or creates) the filenames key in configMap with the FileName fields in audioDataList
 // which point towards the downloaded audio files stored in the export folder.
 // Since a language can only appear once in a resources array, we can match resources[n]["language"] with audioDataList[n].Language
-func updateFilenamesInExportConfigMap(configMap map[string]interface{}, audioDataList []PromptAudioData, subDir string) {
+func updateFilenamesInExportConfigMap(configMap map[string]interface{}, audioDataList []PromptAudioData, subDir string, exportDir string, res resourceExporter.ResourceInfo) {
 	resources, _ := configMap["resources"].([]interface{})
 	if len(resources) == 0 {
 		return
@@ -100,10 +102,36 @@ func updateFilenamesInExportConfigMap(configMap map[string]interface{}, audioDat
 			}
 		}
 		if fileName != "" {
-			r["filename"] = path.Join(subDir, fileName)
-			r["file_content_hash"] = fmt.Sprintf(`${filesha256("%s")}`, path.Join(subDir, fileName))
+			fileNameVal := path.Join(subDir, fileName)
+			fileContentVal := fmt.Sprintf(`${filesha256("%s")}`, path.Join(subDir, fileName))
+			r["filename"] = fileNameVal
+			r["file_content_hash"] = fileContentVal
+
+			if resourceID := findResourceID(res, languageStr); resourceID != "" {
+				res.State.Attributes[fmt.Sprintf("resources.%s.%s", resourceID, "filename")] = fileNameVal
+				res.State.Attributes[fmt.Sprintf("resources.%s.%s", resourceID, "file_content_hash")] = fileContentVal
+				fullPath := path.Join(exportDir, subDir)
+				hash, er := files.HashFileContent(path.Join(fullPath, fileName))
+				if er != nil {
+					log.Printf("Error Calculating Hash '%s' ", er)
+				} else {
+					res.State.Attributes[fmt.Sprintf("resources.%s.%s", resourceID, "file_content_hash")] = hash
+				}
+			}
+
 		}
 	}
+}
+
+// Find the resourceID from the state, return early if found
+func findResourceID(resource resourceExporter.ResourceInfo, valt string) string {
+	pattern := regexp.MustCompile(`^resources\.(\d+)\.l.*$`)
+	for key, value := range resource.State.Attributes {
+		if matches := pattern.FindStringSubmatch(key); matches != nil && value == valt {
+			return matches[1]
+		}
+	}
+	return ""
 }
 
 func GenerateUserPromptResource(userPrompt *UserPromptStruct) string {
@@ -144,7 +172,7 @@ func GenerateUserPromptResource(userPrompt *UserPromptStruct) string {
 	)
 }
 
-func ArchitectPromptAudioResolver(promptId, exportDirectory, subDirectory string, configMap map[string]any, meta any) error {
+func ArchitectPromptAudioResolver(promptId, exportDirectory, subDirectory string, configMap map[string]any, meta any, resource resourceExporter.ResourceInfo) error {
 	fullPath := path.Join(exportDirectory, subDirectory)
 	if err := os.MkdirAll(fullPath, os.ModePerm); err != nil {
 		return err
@@ -177,7 +205,7 @@ func ArchitectPromptAudioResolver(promptId, exportDirectory, subDirectory string
 	}
 	if len(audioDataList) > 0 {
 		log.Printf("Updating filename fields in the resource config to point to newly downloaded data.")
-		updateFilenamesInExportConfigMap(configMap, audioDataList, subDirectory)
+		updateFilenamesInExportConfigMap(configMap, audioDataList, subDirectory, exportDirectory, resource)
 	}
 
 	cleanupFilenamesWhereThereIsNoDownloadableData(ctx, promptId, configMap, *allResources)

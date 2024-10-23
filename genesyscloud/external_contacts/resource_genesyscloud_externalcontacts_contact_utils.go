@@ -6,7 +6,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v143/platformclientv2"
 	"github.com/nyaruka/phonenumbers"
 )
 
@@ -197,8 +197,13 @@ func buildSdkLineId(d *schema.ResourceData, key string) *platformclientv2.Lineid
 				},
 			}
 			lineId := platformclientv2.Lineid{
-				DisplayName: &displayname,
-				Ids:         &ids,
+				Ids: &ids,
+			}
+
+			// https://inindca.atlassian.net/browse/DEVTOOLING-894
+			// Only add DisplayName if it is non-empty
+			if displayname != "" {
+				lineId.DisplayName = &displayname
 			}
 			return &lineId
 		}

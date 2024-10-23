@@ -15,7 +15,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v143/platformclientv2"
 )
 
 func getAllContacts(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
@@ -60,9 +60,11 @@ func createOutboundContactListContact(ctx context.Context, d *schema.ResourceDat
 		msg := fmt.Sprintf("expected to receive one dialer contact object in contact creation response. Received %v", len(contactResponseBody))
 		return util.BuildDiagnosticError(resourceName, msg, fmt.Errorf("%v", msg))
 	}
-	id := createComplexContact(contactListId, *contactResponseBody[0].Id)
+	contactId := *contactResponseBody[0].Id
+	d.Set("contact_id", contactId)
+	id := createComplexContact(contactListId, contactId)
 	d.SetId(id)
-	log.Printf("Finished creating contact '%s' in contact list '%s'", *contactResponseBody[0].Id, contactListId)
+	log.Printf("Finished creating contact '%s' in contact list '%s'", contactId, contactListId)
 	return readOutboundContactListContact(ctx, d, meta)
 }
 
@@ -75,10 +77,8 @@ func readOutboundContactListContact(ctx context.Context, d *schema.ResourceData,
 		cp        = getContactProxy(sdkConfig)
 	)
 
-	contactListId, contactId := splitComplexContact(d.Id())
-	if contactListId == "" {
-		contactListId = d.Get("contact_list_id").(string)
-	}
+	contactListId := d.Get("contact_list_id").(string)
+	contactId := d.Get("contact_id").(string)
 
 	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundContactListContact(), constants.DefaultConsistencyChecks, resourceName)
 
@@ -114,10 +114,8 @@ func updateOutboundContactListContact(ctx context.Context, d *schema.ResourceDat
 	cp := getContactProxy(sdkConfig)
 
 	contactRequestBody := buildDialerContactFromResourceData(d)
-	contactListId, contactId := splitComplexContact(d.Id())
-	if contactListId == "" {
-		contactListId = d.Get("contact_list_id").(string)
-	}
+	contactListId := d.Get("contact_list_id").(string)
+	contactId := d.Get("contact_id").(string)
 
 	log.Printf("Updating contact '%s' in contact list '%s'", contactId, contactListId)
 	_, resp, err := cp.updateContact(ctx, contactListId, contactId, contactRequestBody)
@@ -134,10 +132,8 @@ func deleteOutboundContactListContact(ctx context.Context, d *schema.ResourceDat
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	cp := getContactProxy(sdkConfig)
 
-	contactListId, contactId := splitComplexContact(d.Id())
-	if contactListId == "" {
-		contactListId = d.Get("contact_list_id").(string)
-	}
+	contactListId := d.Get("contact_list_id").(string)
+	contactId := d.Get("contact_id").(string)
 
 	log.Printf("Deleting contact '%s' from contact list '%s'", contactId, contactListId)
 	resp, err := cp.deleteContact(ctx, contactListId, contactId)
