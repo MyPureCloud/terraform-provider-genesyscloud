@@ -15,6 +15,7 @@ import (
 
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"terraform-provider-genesyscloud/genesyscloud/util/files"
+	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -61,6 +62,9 @@ func readFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) dia
 			}
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read flow %s: %s", d.Id(), err), resp))
 		}
+
+		resourcedata.SetNillableValue(d, "name", flow.Name)
+		resourcedata.SetNillableValue(d, "type", flow.VarType)
 
 		log.Printf("Read flow %s %s", d.Id(), *flow.Name)
 		return nil

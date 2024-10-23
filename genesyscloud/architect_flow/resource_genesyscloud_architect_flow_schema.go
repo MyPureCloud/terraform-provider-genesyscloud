@@ -49,6 +49,18 @@ func ResourceArchitectFlow() *schema.Resource {
 		},
 		SchemaVersion: 1,
 		Schema: map[string]*schema.Schema{
+			"name": {
+				Description: "Flow Name used for export purposes. Note: The 'substitutions' block should be used to set/change 'name' and any other fields in the yaml file",
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
+			},
+			"type": {
+				Description: "Flow Type used for export purposes. Note: The 'substitutions' block should be used to set/change 'type' and any other fields in the yaml file",
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
+			},
 			"filepath": {
 				Description:  "YAML file path for flow configuration. Note: Changing the flow name will result in the creation of a new flow with a new GUID, while the original flow will persist in your org.",
 				Type:         schema.TypeString,
