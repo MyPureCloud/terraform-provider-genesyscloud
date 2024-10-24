@@ -82,7 +82,7 @@ import (
 	workitemSchema "terraform-provider-genesyscloud/genesyscloud/task_management_workitem_schema"
 	worktype "terraform-provider-genesyscloud/genesyscloud/task_management_worktype"
 	worktypeStatus "terraform-provider-genesyscloud/genesyscloud/task_management_worktype_status"
-	telephony "terraform-provider-genesyscloud/genesyscloud/telephony"
+	telephony "terraform-provider-genesyscloud/genesyscloud/telephony_provider_edges_trunkbasesettings"
 	didPool "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_did_pool"
 	edgeGroup "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_edge_group"
 	edgeExtension "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_extension_pool"

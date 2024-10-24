@@ -75,7 +75,7 @@ func validateMediaRegions(ctx context.Context, sp *SiteProxy, regions *[]string)
 		if region != *homeRegion &&
 			!lists.ItemInSlice(region, *coreRegions) &&
 			!lists.ItemInSlice(region, *satRegions) {
-			return fmt.Errorf("region %s is not a valid media region.  please refer to the Genesys Cloud GET /api/v2/telephony/mediaregions for list of valid regions", regions)
+			return fmt.Errorf("region %s is not a valid media region.  please refer to the Genesys Cloud GET /api/v2/telephony_provider_edges_trunkbasesettings/mediaregions for list of valid regions", regions)
 		}
 
 	}
@@ -619,12 +619,12 @@ func deleteSiteWithLocationId(locationId string, config *platformclientv2.Config
 		edgesAPI  = platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(config)
 	)
 
-	log.Printf("Reading telephony providers edges sites with location ID %s", locationId)
+	log.Printf("Reading telephony_provider_edges_trunkbasesettings providers edges sites with location ID %s", locationId)
 	sites, _, getErr := edgesAPI.GetTelephonyProvidersEdgesSites(pageSize, 1, "", "", "", locationId, false, nil)
 	if getErr != nil {
 		return getErr
 	}
-	log.Printf("Read telephony providers edges sites with location ID %s", locationId)
+	log.Printf("Read telephony_provider_edges_trunkbasesettings providers edges sites with location ID %s", locationId)
 	if sites.Entities == nil || len(*sites.Entities) == 0 {
 		return nil
 	}
@@ -632,12 +632,12 @@ func deleteSiteWithLocationId(locationId string, config *platformclientv2.Config
 	pageCount = *sites.PageCount
 
 	for pageNum := 1; pageNum <= pageCount; pageNum++ {
-		log.Printf("Reading telephony providers edges site with location ID %s", locationId)
+		log.Printf("Reading telephony_provider_edges_trunkbasesettings providers edges site with location ID %s", locationId)
 		sites, _, getErr = edgesAPI.GetTelephonyProvidersEdgesSites(pageSize, pageNum, "", "", "", locationId, false, nil)
 		if getErr != nil {
 			return getErr
 		}
-		log.Printf("Read telephony providers edges sites with location ID %s", locationId)
+		log.Printf("Read telephony_provider_edges_trunkbasesettings providers edges sites with location ID %s", locationId)
 
 		if sites.Entities == nil || len(*sites.Entities) == 0 {
 			return nil
@@ -645,11 +645,11 @@ func deleteSiteWithLocationId(locationId string, config *platformclientv2.Config
 
 		for _, site := range *sites.Entities {
 			if site.Location != nil && *site.Location.Id == locationId {
-				log.Printf("Deleting telephony providers edges site %s", *site.Id)
+				log.Printf("Deleting telephony_provider_edges_trunkbasesettings providers edges site %s", *site.Id)
 				if _, err := edgesAPI.DeleteTelephonyProvidersEdgesSite(*site.Id); err != nil {
 					return err
 				}
-				log.Printf("Deleted telephony providers edges site %s", *site.Id)
+				log.Printf("Deleted telephony_provider_edges_trunkbasesettings providers edges site %s", *site.Id)
 				time.Sleep(8 * time.Second)
 			}
 		}

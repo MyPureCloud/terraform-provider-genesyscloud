@@ -3,7 +3,7 @@ package telephony_providers_edges_trunk
 import (
 	"sync"
 	"terraform-provider-genesyscloud/genesyscloud/location"
-	telephony "terraform-provider-genesyscloud/genesyscloud/telephony"
+	telephony "terraform-provider-genesyscloud/genesyscloud/telephony_provider_edges_trunkbasesettings"
 	edgeGroup "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_edge_group"
 	edgeSite "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site"
 	"testing"

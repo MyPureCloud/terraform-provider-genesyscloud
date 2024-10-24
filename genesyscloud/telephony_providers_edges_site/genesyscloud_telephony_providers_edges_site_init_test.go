@@ -8,7 +8,7 @@ import (
 	"testing"
 
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
-	telephony "terraform-provider-genesyscloud/genesyscloud/telephony"
+	telephony "terraform-provider-genesyscloud/genesyscloud/telephony_provider_edges_trunkbasesettings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )

@@ -61,12 +61,12 @@ func getTelephonyProvidersEdgesDidProxy(clientConfig *platformclientv2.Configura
 	return internalProxy
 }
 
-// getTelephonyProvidersEdgesDidIdByDid gets a Genesys Cloud telephony DID ID by DID number
+// getTelephonyProvidersEdgesDidIdByDid gets a Genesys Cloud telephony_provider_edges_trunkbasesettings DID ID by DID number
 func (t *telephonyProvidersEdgesDidProxy) getTelephonyProvidersEdgesDidIdByDid(ctx context.Context, did string) (string, bool, *platformclientv2.APIResponse, error) {
 	return t.getTelephonyProvidersEdgesDidIdByDidAttr(ctx, t, did)
 }
 
-// getTelephonyProvidersEdgesDidIdByDidFn is an implementation function for getting a telephony DID ID by DID number.
+// getTelephonyProvidersEdgesDidIdByDidFn is an implementation function for getting a telephony_provider_edges_trunkbasesettings DID ID by DID number.
 func getTelephonyProvidersEdgesDidIdByDidFn(_ context.Context, t *telephonyProvidersEdgesDidProxy, did string) (string, bool, *platformclientv2.APIResponse, error) {
 	utilE164 := util.NewUtilE164Service()
 	const pageSize = 100
