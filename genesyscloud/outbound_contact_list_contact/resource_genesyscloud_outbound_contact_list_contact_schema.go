@@ -147,7 +147,7 @@ Only applicable on the creation of a contact, so updating this field will force 
 				Description: `A map of media types (Voice, SMS and Email) to ContactableStatus, which indicates if the contact can be contacted using the specified media type.`,
 				Type:        schema.TypeSet,
 				Optional:    true,
-				ForceNew:    true,
+				Computed:    true,
 				Elem:        contactableStatusResource,
 			},
 		},
