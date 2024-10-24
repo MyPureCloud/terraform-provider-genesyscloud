@@ -1,11 +1,12 @@
 package oauth_client
 
 import (
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
 const (
@@ -73,10 +74,10 @@ func ResourceOAuthClient() *schema.Resource {
 				Optional:    true,
 			},
 			"authorized_grant_type": {
-				Description:  "The OAuth Grant/Client type supported by this client (CODE | TOKEN | SAML2BEARER | PASSWORD | CLIENT-CREDENTIALS).",
+				Description:  "The OAuth Grant/Client type supported by this client (CODE | TOKEN | SAML2-BEARER | PASSWORD | CLIENT-CREDENTIALS).",
 				Type:         schema.TypeString,
 				Required:     true,
-				ValidateFunc: validation.StringInSlice([]string{"CODE", "TOKEN", "SAML2BEARER", "PASSWORD", "CLIENT-CREDENTIALS"}, false),
+				ValidateFunc: validation.StringInSlice([]string{"CODE", "TOKEN", "SAML2BEARER", "SAML2-BEARER", "PASSWORD", "CLIENT-CREDENTIALS"}, false),
 			},
 			"scopes": {
 				Description: "The scopes requested by this client. Scopes must be set for clients not using the CLIENT-CREDENTIALS grant.",
