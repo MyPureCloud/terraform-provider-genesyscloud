@@ -30,8 +30,12 @@ func buildWritableContactFromResourceData(d *schema.ResourceData) platformclient
 		contactRequest.Data = &stringMap
 	}
 
-	contactRequest.PhoneNumberStatus = buildPhoneNumberStatus(d)
-	contactRequest.ContactableStatus = buildContactableStatus(d)
+	if phoneNumberStatus := buildPhoneNumberStatus(d); phoneNumberStatus != nil {
+		contactRequest.PhoneNumberStatus = phoneNumberStatus
+	}
+	if contactableStatus := buildContactableStatus(d); contactableStatus != nil {
+		contactRequest.ContactableStatus = contactableStatus
+	}
 	return contactRequest
 }
 
@@ -47,14 +51,18 @@ func buildDialerContactFromResourceData(d *schema.ResourceData) platformclientv2
 		stringMap := utillists.ConvertMapStringAnyToMapStringString(dataMap)
 		contactRequest.Data = &stringMap
 	}
-	contactRequest.PhoneNumberStatus = buildPhoneNumberStatus(d)
-	contactRequest.ContactableStatus = buildContactableStatus(d)
+	if phoneNumberStatus := buildPhoneNumberStatus(d); phoneNumberStatus != nil {
+		contactRequest.PhoneNumberStatus = phoneNumberStatus
+	}
+	if contactableStatus := buildContactableStatus(d); contactableStatus != nil {
+		contactRequest.ContactableStatus = contactableStatus
+	}
 	return contactRequest
 }
 
 func buildContactableStatus(d *schema.ResourceData) *map[string]platformclientv2.Contactablestatus {
 	contactableStatus, ok := d.Get("contactable_status").(*schema.Set)
-	if !ok {
+	if !ok || len(contactableStatus.List()) == 0 {
 		return nil
 	}
 
@@ -89,7 +97,7 @@ func buildContactableStatus(d *schema.ResourceData) *map[string]platformclientv2
 
 func buildPhoneNumberStatus(d *schema.ResourceData) *map[string]platformclientv2.Phonenumberstatus {
 	phoneNumberStatus, ok := d.Get("phone_number_status").(*schema.Set)
-	if !ok {
+	if !ok || len(phoneNumberStatus.List()) == 0 {
 		return nil
 	}
 
