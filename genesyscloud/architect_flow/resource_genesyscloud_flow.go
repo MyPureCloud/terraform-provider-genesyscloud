@@ -15,17 +15,18 @@ import (
 
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"terraform-provider-genesyscloud/genesyscloud/util/files"
+	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v143/platformclientv2"
 )
 
 func getAllFlows(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
 	resources := make(resourceExporter.ResourceIDMetaMap)
 	p := getArchitectFlowProxy(clientConfig)
 
-	flows, resp, err := p.GetAllFlows(ctx)
+	flows, resp, err := p.GetAllFlows(ctx, "", nil)
 	if err != nil {
 		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("failed to get architect flows %v", err), resp)
 	}
@@ -61,6 +62,9 @@ func readFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) dia
 			}
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read flow %s: %s", d.Id(), err), resp))
 		}
+
+		resourcedata.SetNillableValue(d, "name", flow.Name)
+		resourcedata.SetNillableValue(d, "type", flow.VarType)
 
 		log.Printf("Read flow %s %s", d.Id(), *flow.Name)
 		return nil

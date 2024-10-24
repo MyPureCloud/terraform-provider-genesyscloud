@@ -6,7 +6,7 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v143/platformclientv2"
 )
 
 // internalProxy holds a proxy instance that can be used throughout the package
@@ -91,7 +91,7 @@ func createOrUpdateArchitectDatatableFn(ctx context.Context, p *architectDatatab
 	headerParams["Accept"] = "application/json"
 
 	var successPayload *Datatable
-	response, err := apiClient.CallAPI(path, action, datatable, headerParams, nil, nil, "", nil)
+	response, err := apiClient.CallAPI(path, action, datatable, headerParams, nil, nil, "", nil, "")
 
 	if err != nil {
 		// Nothing special to do here, but do avoid processing the response
@@ -128,7 +128,7 @@ func getArchitectDatatableFn(ctx context.Context, p *architectDatatableProxy, da
 	headerParams["Accept"] = "application/json"
 
 	var successPayload *Datatable
-	response, err := apiClient.CallAPI(path, http.MethodGet, nil, headerParams, queryParams, nil, "", nil)
+	response, err := apiClient.CallAPI(path, http.MethodGet, nil, headerParams, queryParams, nil, "", nil, "")
 	if err != nil {
 		// Nothing special to do here, but do avoid processing the response
 	} else if response.Error != nil {

@@ -3,40 +3,47 @@ package architect_flow
 import (
 	"context"
 	"fmt"
+	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
+	"github.com/mypurecloud/platform-client-sdk-go/v143/platformclientv2"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 func dataSourceFlowRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	sdkConfig := m.(*provider.ProviderMeta).ClientConfig
-	p := getArchitectFlowProxy(sdkConfig)
+	var (
+		sdkConfig = m.(*provider.ProviderMeta).ClientConfig
+		p         = getArchitectFlowProxy(sdkConfig)
+		response  *platformclientv2.APIResponse
 
-	name := d.Get("name").(string)
+		name       = d.Get("name").(string)
+		varType, _ = d.Get("type").(string)
+	)
 
-	// Query flow by name. Retry in case search has not yet indexed the flow.
-	return util.WithRetries(ctx, 5*time.Second, func() *retry.RetryError {
-		flows, resp, getErr := p.GetAllFlows(ctx)
-		if getErr != nil {
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("error requesting flow %s | error: %s", name, getErr), resp))
-		}
+	varType = strings.ToLower(varType)
 
-		if flows == nil || len(*flows) == 0 {
-			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("no flows found with name %s", name), resp))
-		}
-
-		for _, entity := range *flows {
-			if *entity.Name == name {
-				d.SetId(*entity.Id)
-				return nil
+	diagErr := util.WithRetries(ctx, 5*time.Second, func() *retry.RetryError {
+		flowId, resp, retryable, err := p.getFlowIdByNameAndType(ctx, name, varType)
+		if err != nil {
+			response = resp
+			if retryable {
+				return retry.RetryableError(err)
 			}
+			return retry.NonRetryableError(err)
 		}
-
-		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("no flows found with name %s", name), resp))
+		d.SetId(flowId)
+		return nil
 	})
+
+	if diagErr != nil {
+		msg := fmt.Sprintf("error retrieving ID of flow '%s' | error: %v", name, diagErr)
+		return util.BuildAPIDiagnosticError(resourceName, msg, response)
+	}
+
+	return nil
 }

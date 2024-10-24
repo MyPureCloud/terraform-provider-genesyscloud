@@ -6,7 +6,7 @@ import (
 	"log"
 	rc "terraform-provider-genesyscloud/genesyscloud/resource_cache"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v143/platformclientv2"
 )
 
 var internalProxy *authDivisionProxy
@@ -131,13 +131,15 @@ func getAuthDivisionByIdFn(ctx context.Context, p *authDivisionProxy, id string,
 }
 
 func getAuthDivisionIdByNameFn(ctx context.Context, p *authDivisionProxy, name string) (string, *platformclientv2.APIResponse, bool, error) {
+	notFoundError := fmt.Errorf("unable to find auth division with name %s", name)
+
 	authzDivisions, resp, err := getAllAuthDivisionFn(ctx, p, name)
 	if err != nil {
 		return "", resp, false, err
 	}
 
 	if authzDivisions == nil || len(*authzDivisions) == 0 {
-		return "", resp, false, err
+		return "", resp, true, notFoundError
 	}
 
 	for _, authzDivision := range *authzDivisions {
@@ -147,7 +149,7 @@ func getAuthDivisionIdByNameFn(ctx context.Context, p *authDivisionProxy, name s
 		}
 	}
 
-	return "", resp, true, fmt.Errorf("unable to find auth division with name %s", name)
+	return "", resp, true, notFoundError
 }
 
 func updateAuthDivisionFn(ctx context.Context, p *authDivisionProxy, id string, authDivision *platformclientv2.Authzdivision) (*platformclientv2.Authzdivision, *platformclientv2.APIResponse, error) {

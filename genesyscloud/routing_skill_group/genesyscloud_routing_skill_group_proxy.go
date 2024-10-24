@@ -6,7 +6,7 @@ import (
 	"log"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v143/platformclientv2"
 )
 
 var internalProxy *routingSkillGroupsProxy
@@ -54,10 +54,7 @@ func newRoutingSkillGroupsProxy(clientConfig *platformclientv2.Configuration) *r
 // getRoutingSkillGroupsProxy acts as a singleton to for the internalProxy.  It also ensures
 // that we can still proxy our tests by directly setting internalProxy package variable
 func getRoutingSkillGroupsProxy(clientConfig *platformclientv2.Configuration) *routingSkillGroupsProxy {
-	if internalProxy == nil {
-		internalProxy = newRoutingSkillGroupsProxy(clientConfig)
-	}
-	return internalProxy
+	return newRoutingSkillGroupsProxy(clientConfig)
 }
 
 // getRoutingSkillGroups retrieves all Genesys Cloud routing skill groups

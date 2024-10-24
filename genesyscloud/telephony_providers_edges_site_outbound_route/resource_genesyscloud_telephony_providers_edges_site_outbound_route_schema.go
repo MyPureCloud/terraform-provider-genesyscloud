@@ -19,10 +19,38 @@ resource_genesyscloud_telephony_providers_edges_site_schema.go should hold four 
 
 const resourceName = "genesyscloud_telephony_providers_edges_site_outbound_route"
 
-var (
-	// This is outside the ResourceSite because it is used in a utility function.
-	outboundRouteSchema = &schema.Resource{
+// SetRegistrar registers all of the resources and exporters in the package
+func SetRegistrar(l registrar.Registrar) {
+	l.RegisterResource(resourceName, ResourceSiteOutboundRoute())
+	l.RegisterExporter(resourceName, SiteExporterOutboundRoute())
+	l.RegisterDataSource(resourceName, DataSourceSiteOutboundRoute())
+}
+
+// ResourceSiteOutboundRoute registers the genesyscloud_telephony_providers_edges_site_outbound_route resource with Terraform
+func ResourceSiteOutboundRoute() *schema.Resource {
+	return &schema.Resource{
+		Description: "Outbound Routes for a Genesys Cloud Site",
+
+		CreateContext: provider.CreateWithPooledClient(createSiteOutboundRoute),
+		ReadContext:   provider.ReadWithPooledClient(readSiteOutboundRoute),
+		UpdateContext: provider.UpdateWithPooledClient(updateSiteOutboundRoute),
+		DeleteContext: provider.DeleteWithPooledClient(deleteSiteOutboundRoute),
+		Importer: &schema.ResourceImporter{
+			StateContext: schema.ImportStatePassthroughContext,
+		},
+		SchemaVersion: 1,
 		Schema: map[string]*schema.Schema{
+			"site_id": {
+				Description: "The Id of the site to which the outbound routes belong.",
+				Type:        schema.TypeString,
+				Required:    true,
+				ForceNew:    true,
+			},
+			"route_id": {
+				Description: "The Id of the outbound route. This is distinct from the \"id\" field. The \"id\" field is a combination of the site_id and route_id",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
 			"name": {
 				Description: "The name of the entity.",
 				Type:        schema.TypeString,
@@ -60,52 +88,40 @@ var (
 			},
 		},
 	}
-)
-
-// SetRegistrar registers all of the resources and exporters in the package
-func SetRegistrar(l registrar.Registrar) {
-	l.RegisterResource(resourceName, ResourceSiteOutboundRoute())
-	l.RegisterExporter(resourceName, SiteExporterOutboundRoute())
-}
-
-// ResourceSiteOutboundRoute registers the genesyscloud_telephony_providers_edges_site_outbound_route resource with Terraform
-func ResourceSiteOutboundRoute() *schema.Resource {
-	return &schema.Resource{
-		Description: "Outbound Routes for a Genesys Cloud Site",
-
-		CreateContext: provider.CreateWithPooledClient(createSiteOutboundRoutes),
-		ReadContext:   provider.ReadWithPooledClient(readSiteOutboundRoutes),
-		UpdateContext: provider.UpdateWithPooledClient(updateSiteOutboundRoutes),
-		DeleteContext: provider.DeleteWithPooledClient(deleteSiteOutboundRoutes),
-		Importer: &schema.ResourceImporter{
-			StateContext: schema.ImportStatePassthroughContext,
-		},
-		SchemaVersion: 1,
-		Schema: map[string]*schema.Schema{
-			"site_id": {
-				Description: "The Id of the site to which the outbound routes belong.",
-				Type:        schema.TypeString,
-				Required:    true,
-				ForceNew:    true,
-			},
-			"outbound_routes": {
-				Description: "Outbound Routes for the site. The default outbound route for the site will be deleted if routes are specified",
-				Type:        schema.TypeSet,
-				Required:    true,
-				ConfigMode:  schema.SchemaConfigModeAttr,
-				Elem:        outboundRouteSchema,
-			},
-		},
-	}
 }
 
 // SiteExporterOutboundRoute returns the resourceExporter object used to hold the genesyscloud_telephony_providers_edges_site_outbound_route exporter's config
 func SiteExporterOutboundRoute() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
-		GetResourcesFunc: provider.GetAllWithPooledClient(getAllSitesOutboundRoutes),
+		GetResourcesFunc: provider.GetAllWithPooledClient(getAllSitesAndOutboundRoutes),
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
-			"site_id": {RefType: "genesyscloud_telephony_providers_edges_site"},
-			"outbound_routes.external_trunk_base_ids": {RefType: "genesyscloud_telephony_providers_edges_trunkbasesettings"},
+			"site_id":                 {RefType: "genesyscloud_telephony_providers_edges_site"},
+			"external_trunk_base_ids": {RefType: "genesyscloud_telephony_providers_edges_trunkbasesettings"},
+		},
+	}
+}
+
+// DataSourceSite registers the genesyscloud_telephony_providers_edges_site_outbound_route data source
+func DataSourceSiteOutboundRoute() *schema.Resource {
+	return &schema.Resource{
+		Description: "Data source for Genesys Cloud Site Outbound Routes. Select a Site Outbound Route by name.",
+		ReadContext: provider.ReadWithPooledClient(dataSourceSiteOutboundRouteRead),
+		Schema: map[string]*schema.Schema{
+			"name": {
+				Description: "Outbound Route name.",
+				Type:        schema.TypeString,
+				Required:    true,
+			},
+			"site_id": {
+				Description: "Site Id",
+				Type:        schema.TypeString,
+				Optional:    true,
+			},
+			"route_id": {
+				Description: "Route Id",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
 		},
 	}
 }

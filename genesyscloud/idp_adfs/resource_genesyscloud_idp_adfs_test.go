@@ -10,7 +10,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v143/platformclientv2"
 )
 
 func TestAccResourceIdpAdfs(t *testing.T) {
@@ -21,8 +21,8 @@ func TestAccResourceIdpAdfs(t *testing.T) {
 		relyingPartyID1 = "test-id1"
 		relyingPartyID2 = "test-id2"
 		uri3            = "https://example.com"
-		slo_binding1    = "HTTP Redirect"
-		slo_binding2    = "HTTP Post"
+		slo_binding1    = "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect"
+		slo_binding2    = "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST"
 	)
 
 	resource.Test(t, resource.TestCase{

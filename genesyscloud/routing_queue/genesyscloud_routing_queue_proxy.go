@@ -6,7 +6,7 @@ import (
 	"log"
 	rc "terraform-provider-genesyscloud/genesyscloud/resource_cache"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v143/platformclientv2"
 )
 
 /*
@@ -15,7 +15,7 @@ with the Genesys Cloud SDK. We use composition here for each function on the pro
 out during testing.
 */
 
-// internalProxy holds a proxy instance that can be used throughout the package
+var routingQueueCache = rc.NewResourceCache[platformclientv2.Queue]()
 var internalProxy *RoutingQueueProxy
 
 type GetAllRoutingQueuesFunc func(ctx context.Context, p *RoutingQueueProxy, name string) (*[]platformclientv2.Queue, *platformclientv2.APIResponse, error)
@@ -58,7 +58,6 @@ type RoutingQueueProxy struct {
 // newRoutingQueuesProxy initializes the routing queue proxy with all the data needed to communicate with Genesys Cloud
 func newRoutingQueuesProxy(clientConfig *platformclientv2.Configuration) *RoutingQueueProxy {
 	api := platformclientv2.NewRoutingApiWithConfig(clientConfig)
-	routingQueueCache := rc.NewResourceCache[platformclientv2.Queue]()
 	wrapupCodeCache := rc.NewResourceCache[platformclientv2.Wrapupcode]()
 
 	return &RoutingQueueProxy{
@@ -84,13 +83,13 @@ func newRoutingQueuesProxy(clientConfig *platformclientv2.Configuration) *Routin
 	}
 }
 
-// GetRoutingQueueProxy acts as a singleton to for the internalProxy.  It also ensures
-// that we can still proxy our tests by directly setting internalProxy package variable
+// GetRoutingQueueProxy returns an instance of our proxy
 func GetRoutingQueueProxy(clientConfig *platformclientv2.Configuration) *RoutingQueueProxy {
-	if internalProxy == nil {
-		internalProxy = newRoutingQueuesProxy(clientConfig)
+	// continue with singleton approach if unit tests are running
+	if isRoutingQueueUnitTestsActive() {
+		return internalProxy
 	}
-	return internalProxy
+	return newRoutingQueuesProxy(clientConfig)
 }
 
 func (p *RoutingQueueProxy) GetAllRoutingQueues(ctx context.Context, name string) (*[]platformclientv2.Queue, *platformclientv2.APIResponse, error) {
@@ -163,7 +162,7 @@ func GetAllRoutingQueuesFn(ctx context.Context, p *RoutingQueueProxy, name strin
 	allQueues = append(allQueues, *queues.Entities...)
 
 	for pageNum := 2; pageNum <= *queues.PageCount; pageNum++ {
-		queues, resp, getErr := p.routingApi.GetRoutingQueues(pageNum, pageSize, "", "", nil, nil, nil, "", false)
+		queues, resp, getErr := p.routingApi.GetRoutingQueues(pageNum, pageSize, "", name, nil, nil, nil, "", false)
 		if getErr != nil {
 			return nil, resp, fmt.Errorf("failed to get page of queues: %v", getErr)
 		}
@@ -194,12 +193,11 @@ func getRoutingQueueByIdFn(ctx context.Context, p *RoutingQueueProxy, queueId st
 			return queue, nil, nil
 		}
 	}
-
 	return p.routingApi.GetRoutingQueue(queueId)
 }
 
 func getRoutingQueueByNameFn(ctx context.Context, p *RoutingQueueProxy, name string) (string, *platformclientv2.APIResponse, bool, error) {
-	queues, resp, err := GetAllRoutingQueuesFn(ctx, p, name)
+	queues, resp, err := p.GetAllRoutingQueues(ctx, name)
 	if err != nil {
 		return "", resp, false, err
 	}
@@ -209,7 +207,7 @@ func getRoutingQueueByNameFn(ctx context.Context, p *RoutingQueueProxy, name str
 	}
 
 	for _, queue := range *queues {
-		if normalizeQueueName(*queue.Name) == name {
+		if *queue.Name == name {
 			log.Printf("Retrieved the routing queue id %s by name %s", *queue.Id, name)
 			return *queue.Id, resp, false, nil
 		}
@@ -239,11 +237,13 @@ func getAllRoutingQueueWrapupCodesFn(ctx context.Context, p *RoutingQueueProxy, 
 		return nil, apiResponse, fmt.Errorf("failed to get routing wrapupcode : %v", err)
 	}
 
-	if rc.GetCacheSize(p.wrapupCodeCache) == *wrapupcodes.Total && rc.GetCacheSize(p.wrapupCodeCache) != 0 {
-		return rc.GetCache(p.wrapupCodeCache), nil, nil
-	} else if rc.GetCacheSize(p.wrapupCodeCache) != *wrapupcodes.Total && rc.GetCacheSize(p.wrapupCodeCache) != 0 {
-		// The cache is populated but not with the right data, clear the cache so it can be re populated
-		p.wrapupCodeCache = rc.NewResourceCache[platformclientv2.Wrapupcode]()
+	if wrapupcodes.Total != nil {
+		if rc.GetCacheSize(p.wrapupCodeCache) == *wrapupcodes.Total && rc.GetCacheSize(p.wrapupCodeCache) != 0 {
+			return rc.GetCache(p.wrapupCodeCache), nil, nil
+		} else if rc.GetCacheSize(p.wrapupCodeCache) != *wrapupcodes.Total && rc.GetCacheSize(p.wrapupCodeCache) != 0 {
+			// The cache is populated but not with the right data, clear the cache so it can be re populated
+			p.wrapupCodeCache = rc.NewResourceCache[platformclientv2.Wrapupcode]()
+		}
 	}
 
 	if wrapupcodes == nil || wrapupcodes.Entities == nil || len(*wrapupcodes.Entities) == 0 {

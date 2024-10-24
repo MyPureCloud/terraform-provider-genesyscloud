@@ -1,30 +1,36 @@
 package telephony_providers_edges_site_outbound_route
 
 import (
-	"log"
-	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
+	"fmt"
+	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v143/platformclientv2"
 )
 
-func buildOutboundRoutes(outboundRoutes *schema.Set) *[]platformclientv2.Outboundroutebase {
-	outboundRoutesList := outboundRoutes.List()
+func buildOutboundRoutes(d *schema.ResourceData) *platformclientv2.Outboundroutebase {
 
-	outboundRoutesSdk := make([]platformclientv2.Outboundroutebase, 0)
-	for _, outboundRoute := range outboundRoutesList {
-		outboundRoutesMap := outboundRoute.(map[string]interface{})
-		outboundRouteSdk := platformclientv2.Outboundroutebase{}
+	name := d.Get("name").(string)
+	description := d.Get("description").(string)
+	enabled := d.Get("enabled").(bool)
+	distribution := d.Get("distribution").(string)
+	outboundRouteSdk := platformclientv2.Outboundroutebase{
+		Name:         &name,
+		Description:  &description,
+		Enabled:      &enabled,
+		Distribution: &distribution,
+	}
 
-		resourcedata.BuildSDKStringValueIfNotNil(&outboundRouteSdk.Name, outboundRoutesMap, "name")
-		resourcedata.BuildSDKStringValueIfNotNil(&outboundRouteSdk.Description, outboundRoutesMap, "description")
-		resourcedata.BuildSDKStringArrayValueIfNotNil(&outboundRouteSdk.ClassificationTypes, outboundRoutesMap, "classification_types")
-		if enabled, ok := outboundRoutesMap["enabled"].(bool); ok {
-			outboundRouteSdk.Enabled = &enabled
+	if classificationTypes, ok := d.Get("classification_types").([]interface{}); ok && len(classificationTypes) > 0 {
+		cts := make([]string, 0)
+		for _, classificationType := range classificationTypes {
+			cts = append(cts, classificationType.(string))
 		}
-		resourcedata.BuildSDKStringValueIfNotNil(&outboundRouteSdk.Distribution, outboundRoutesMap, "distribution")
+		outboundRouteSdk.ClassificationTypes = &cts
+	}
 
-		if externalTrunkBaseIds, ok := outboundRoutesMap["external_trunk_base_ids"].([]interface{}); ok && len(externalTrunkBaseIds) > 0 {
+	if externalTrunkBaseIdsRaw, ok := d.GetOk("external_trunk_base_ids"); ok {
+		if externalTrunkBaseIds, ok := externalTrunkBaseIdsRaw.([]interface{}); ok && len(externalTrunkBaseIds) > 0 {
 			ids := make([]platformclientv2.Domainentityref, 0)
 			for _, externalTrunkBaseId := range externalTrunkBaseIds {
 				externalTrunkBaseIdStr := externalTrunkBaseId.(string)
@@ -32,30 +38,20 @@ func buildOutboundRoutes(outboundRoutes *schema.Set) *[]platformclientv2.Outboun
 			}
 			outboundRouteSdk.ExternalTrunkBases = &ids
 		}
-
-		outboundRoutesSdk = append(outboundRoutesSdk, outboundRouteSdk)
 	}
 
-	return &outboundRoutesSdk
+	return &outboundRouteSdk
 }
 
-func nameInOutboundRoutes(name string, outboundRoutes []platformclientv2.Outboundroutebase) (*platformclientv2.Outboundroutebase, bool) {
-	for _, outboundRoute := range outboundRoutes {
-		if name == *outboundRoute.Name {
-			return &outboundRoute, true
-		}
-	}
-
-	return nil, false
+func buildSiteAndOutboundRouteId(siteId string, outboundRouteId string) string {
+	fullOutboundRouteId := fmt.Sprintf("%s:%s", siteId, outboundRouteId)
+	return fullOutboundRouteId
 }
 
-func checkExistingRoutes(definedRoutes, apiRoutes *[]platformclientv2.Outboundroutebase, siteId string) (newRoutes []platformclientv2.Outboundroutebase) {
-	for _, definedRoute := range *definedRoutes {
-		if _, present := nameInOutboundRoutes(*definedRoute.Name, *apiRoutes); present {
-			log.Printf("Route %s associated with site %s already exists. Creating only non-existing routes", *definedRoute.Name, siteId)
-		} else {
-			newRoutes = append(newRoutes, definedRoute)
-		}
+func splitSiteAndOutboundRoute(dId string) (string, string) {
+	split := strings.SplitN(dId, ":", 2)
+	if len(split) == 2 {
+		return split[0], split[1]
 	}
-	return newRoutes
+	return "", ""
 }

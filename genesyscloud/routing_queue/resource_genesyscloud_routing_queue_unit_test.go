@@ -9,7 +9,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v143/platformclientv2"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -76,8 +76,19 @@ func TestUnitResourceRoutingQueueCreate(t *testing.T) {
 		return &wrapupCodes, &platformclientv2.APIResponse{StatusCode: http.StatusOK}, nil
 	}
 
+	err := setRoutingQueueUnitTestsEnvVar()
+	if err != nil {
+		t.Skipf("failed to set env variable %s: %s", unitTestsAreActiveEnv, err.Error())
+	}
+
 	internalProxy = queueProxy
-	defer func() { internalProxy = nil }()
+	defer func() {
+		internalProxy = nil
+		err := unsetRoutingQueueUnitTestsEnvVar()
+		if err != nil {
+			t.Logf("Failed to unset env variable %s: %s", unitTestsAreActiveEnv, err.Error())
+		}
+	}()
 
 	ctx := context.Background()
 	gcloud := &provider.ProviderMeta{ClientConfig: &platformclientv2.Configuration{}}
@@ -123,8 +134,19 @@ func TestUnitResourceRoutingQueueRead(t *testing.T) {
 		return &wrapupCodes, &platformclientv2.APIResponse{StatusCode: http.StatusOK}, nil
 	}
 
+	err := setRoutingQueueUnitTestsEnvVar()
+	if err != nil {
+		t.Skipf("failed to set env variable %s: %s", unitTestsAreActiveEnv, err.Error())
+	}
+
 	internalProxy = queueProxy
-	defer func() { internalProxy = nil }()
+	defer func() {
+		internalProxy = nil
+		err := unsetRoutingQueueUnitTestsEnvVar()
+		if err != nil {
+			t.Logf("Failed to unset env variable %s: %s", unitTestsAreActiveEnv, err.Error())
+		}
+	}()
 
 	ctx := context.Background()
 	gcloud := &provider.ProviderMeta{ClientConfig: &platformclientv2.Configuration{}}
@@ -234,8 +256,19 @@ func TestUnitResourceRoutingQueueUpdate(t *testing.T) {
 		return &wrapupCodes, &platformclientv2.APIResponse{StatusCode: http.StatusOK}, nil
 	}
 
+	err := setRoutingQueueUnitTestsEnvVar()
+	if err != nil {
+		t.Skipf("failed to set env variable %s: %s", unitTestsAreActiveEnv, err.Error())
+	}
+
 	internalProxy = queueProxy
-	defer func() { internalProxy = nil }()
+	defer func() {
+		internalProxy = nil
+		err := unsetRoutingQueueUnitTestsEnvVar()
+		if err != nil {
+			t.Logf("Failed to unset env variable %s: %s", unitTestsAreActiveEnv, err.Error())
+		}
+	}()
 
 	ctx := context.Background()
 	gcloud := &provider.ProviderMeta{ClientConfig: &platformclientv2.Configuration{}}
@@ -275,8 +308,19 @@ func TestUnitResourceRoutingQueueDelete(t *testing.T) {
 		return nil, apiResponse, err
 	}
 
+	err := setRoutingQueueUnitTestsEnvVar()
+	if err != nil {
+		t.Skipf("failed to set env variable %s: %s", unitTestsAreActiveEnv, err.Error())
+	}
+
 	internalProxy = queueProxy
-	defer func() { internalProxy = nil }()
+	defer func() {
+		internalProxy = nil
+		err := unsetRoutingQueueUnitTestsEnvVar()
+		if err != nil {
+			t.Logf("Failed to unset env variable %s: %s", unitTestsAreActiveEnv, err.Error())
+		}
+	}()
 
 	ctx := context.Background()
 	gcloud := &provider.ProviderMeta{ClientConfig: &platformclientv2.Configuration{}}

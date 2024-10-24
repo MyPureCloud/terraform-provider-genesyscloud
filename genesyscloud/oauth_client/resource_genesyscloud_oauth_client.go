@@ -19,7 +19,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v143/platformclientv2"
 )
 
 func getAllOAuthClients(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
@@ -80,6 +80,10 @@ func createOAuthClient(ctx context.Context, d *schema.ResourceData, meta interfa
 		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create oauth client %s error: %s", name, err), resp)
 	}
 
+	if client == nil || client.Id == nil {
+		return util.BuildAPIDiagnosticError(resourceName, "failed to retrieve client ID from createOAuthClient.", resp)
+	}
+
 	createCredential(ctx, d, client, oauthClientProxy)
 
 	d.SetId(*client.Id)
@@ -103,8 +107,7 @@ func readOAuthClient(ctx context.Context, d *schema.ResourceData, meta interface
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read oauth client %s | error: %s", d.Id(), getErr), resp))
 		}
 
-		_ = d.Set("name", *client.Name)
-
+		resourcedata.SetNillableValue(d, "name", client.Name)
 		resourcedata.SetNillableValue(d, "description", client.Description)
 		resourcedata.SetNillableValue(d, "access_token_validity_seconds", client.AccessTokenValiditySeconds)
 		resourcedata.SetNillableValue(d, "authorized_grant_type", client.AuthorizedGrantType)
@@ -128,7 +131,7 @@ func readOAuthClient(ctx context.Context, d *schema.ResourceData, meta interface
 			_ = d.Set("roles", nil)
 		}
 
-		log.Printf("Read oauth client %s %s", d.Id(), *client.Name)
+		log.Printf("Read oauth client %s", d.Id())
 		return cc.CheckState(d)
 	})
 }
@@ -201,6 +204,10 @@ func updateTerraformUserWithRole(ctx context.Context, sdkConfig *platformclientv
 		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to retrieved the terraform user running this terraform code %s", err), resp)
 	}
 
+	if terraformUser == nil || terraformUser.Id == nil {
+		return util.BuildAPIDiagnosticError(resourceName, "Failed to retrieve the terraform user ID with the function GetTerraformUser", resp)
+	}
+
 	//Step #3: Lookup the users addedRoles
 	userRoles, resp, err := op.GetTerraformUserRoles(ctx, *terraformUser.Id)
 	if err != nil {
@@ -209,12 +216,22 @@ func updateTerraformUserWithRole(ctx context.Context, sdkConfig *platformclientv
 
 	var totalRoles []string
 	//Step #4  - Concat the addedRoles
-	for _, role := range *addedRoles {
-		totalRoles = append(totalRoles, *role.RoleId)
+	if addedRoles != nil {
+		for _, role := range *addedRoles {
+			if role.RoleId == nil {
+				continue
+			}
+			totalRoles = append(totalRoles, *role.RoleId)
+		}
 	}
 
-	for _, role := range *userRoles.Roles {
-		totalRoles = append(totalRoles, *role.Id)
+	if userRoles != nil && userRoles.Roles != nil {
+		for _, role := range *userRoles.Roles {
+			if role.Id == nil {
+				continue
+			}
+			totalRoles = append(totalRoles, *role.Id)
+		}
 	}
 
 	//Step #5 - Update addedRoles
@@ -307,13 +324,12 @@ func createCredential(ctx context.Context, d *schema.ResourceData, client *platf
 
 		log.Printf("Creating Integration Credential client %s", *credentialName)
 		credential, resp, err := oauthClientProxy.createIntegrationClient(ctx, createCredential)
-
 		if err != nil {
 			return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create credential %s error: %s", *credentialName, err), resp)
 		}
 
-		_ = d.Set("integration_credential_id", *credential.Id)
-		_ = d.Set("integration_credential_name", *credential.Name)
+		resourcedata.SetNillableValue(d, "integration_credential_id", credential.Id)
+		resourcedata.SetNillableValue(d, "integration_credential_name", credential.Name)
 
 		log.Printf("Created Integration Credential client %s", *credentialName)
 	}
@@ -343,8 +359,8 @@ func updateCredential(ctx context.Context, d *schema.ResourceData, client *platf
 			return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update credential %s error: %s", *credentialName, err), resp)
 		}
 
-		_ = d.Set("integration_credential_id", *credential.Id)
-		_ = d.Set("integration_credential_name", *credential.Name)
+		resourcedata.SetNillableValue(d, "integration_credential_id", credential.Id)
+		resourcedata.SetNillableValue(d, "integration_credential_name", credential.Name)
 
 		log.Printf("Updated Integration Credential client %s", *credentialName)
 	}

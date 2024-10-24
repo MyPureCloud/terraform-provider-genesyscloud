@@ -3,11 +3,12 @@ package group_roles
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v143/platformclientv2"
 )
 
 var internalProxy *groupRolesProxy
@@ -69,6 +70,11 @@ func getGroupRolesByIdFn(_ context.Context, p *groupRolesProxy, roleId string) (
 func updateGroupRolesFn(_ context.Context, p *groupRolesProxy, roleId string, rolesConfig *schema.Set, subjectType string) (*platformclientv2.APIResponse, error) {
 	// Get existing roles/divisions
 	subject, resp, err := p.authorizationApi.GetAuthorizationSubject(roleId, true)
+
+	if err != nil || resp.StatusCode == http.StatusNotFound || subject == nil {
+		return resp, fmt.Errorf("failed to get current grants for subject %s: %s while updating group role", roleId, err)
+	}
+
 	grants, resp, err := getAssignedGrants(*subject.Id, p)
 
 	existingGrants, configGrants, _ := getExistingAndConfigGrants(grants, rolesConfig)

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	rc "terraform-provider-genesyscloud/genesyscloud/resource_cache"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v143/platformclientv2"
 )
 
 /*
@@ -157,7 +157,7 @@ func (p *SiteProxy) getSiteById(ctx context.Context, siteId string) (site *platf
 }
 
 // getSiteIdByNameFunc returns a single Genesys Cloud Site by Name
-func (p *SiteProxy) getSiteIdByName(ctx context.Context, siteName string) (siteId string, retryable bool, resp *platformclientv2.APIResponse, err error) {
+func (p *SiteProxy) GetSiteIdByName(ctx context.Context, siteName string) (siteId string, retryable bool, resp *platformclientv2.APIResponse, err error) {
 	return p.getSiteIdByNameAttr(ctx, p, siteName)
 }
 

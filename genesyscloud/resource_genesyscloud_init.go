@@ -35,7 +35,6 @@ func registerResources(l registrar.Registrar) {
 	l.RegisterResource("genesyscloud_journey_segment", ResourceJourneySegment())
 	l.RegisterResource("genesyscloud_knowledge_knowledgebase", ResourceKnowledgeKnowledgebase())
 	l.RegisterResource("genesyscloud_knowledge_category", ResourceKnowledgeCategory())
-	l.RegisterResource("genesyscloud_knowledge_v1_category", ResourceKnowledgeCategoryV1())
 	l.RegisterResource("genesyscloud_knowledge_label", ResourceKnowledgeLabel())
 	l.RegisterResource("genesyscloud_quality_forms_evaluation", ResourceEvaluationForm())
 	l.RegisterResource("genesyscloud_quality_forms_survey", ResourceSurveyForm())
@@ -54,5 +53,4 @@ func registerExporters(l registrar.Registrar) {
 	l.RegisterExporter("genesyscloud_quality_forms_survey", SurveyFormExporter())
 	l.RegisterExporter("genesyscloud_widget_deployment", WidgetDeploymentExporter())
 	l.RegisterExporter("genesyscloud_knowledge_label", KnowledgeLabelExporter())
-	l.RegisterExporter("genesyscloud_knowledge_v1_category", KnowledgeCategoryExporterV1())
 }

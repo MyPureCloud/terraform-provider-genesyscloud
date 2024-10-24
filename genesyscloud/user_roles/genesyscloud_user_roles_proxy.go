@@ -3,11 +3,12 @@ package user_roles
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v143/platformclientv2"
 )
 
 var internalProxy *userRolesProxy
@@ -49,6 +50,7 @@ func (p *userRolesProxy) updateUserRoles(ctx context.Context, roleID string, rol
 func getUserRolesByIdFn(_ context.Context, p *userRolesProxy, roleId string) (*[]platformclientv2.Authzgrant, *platformclientv2.APIResponse, error) {
 	var grants []platformclientv2.Authzgrant
 	subject, resp, err := p.authorizationApi.GetAuthorizationSubject(roleId, true)
+
 	if err != nil {
 		return nil, resp, fmt.Errorf("failed to get current grants for subject %s: %s", roleId, err)
 	}
@@ -70,6 +72,11 @@ func getUserRolesByIdFn(_ context.Context, p *userRolesProxy, roleId string) (*[
 func updateUserRolesFn(_ context.Context, p *userRolesProxy, roleId string, rolesConfig *schema.Set, subjectType string) (*platformclientv2.APIResponse, error) {
 	// Get existing roles/divisions
 	subject, resp, err := p.authorizationApi.GetAuthorizationSubject(roleId, true)
+
+	if err != nil || resp.StatusCode == http.StatusNotFound || subject == nil {
+		return resp, fmt.Errorf("failed to get current grants for subject %s: %s while updating user role", roleId, err)
+	}
+
 	grants, _, err := getAssignedGrants(*subject.Id, p)
 
 	existingGrants, configGrants, _ := getExistingAndConfigGrants(grants, rolesConfig)

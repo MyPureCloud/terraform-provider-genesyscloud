@@ -35,7 +35,7 @@ func dataSourceRoutingSkillRead(ctx context.Context, d *schema.ResourceData, m i
 }
 
 func hydrateRoutingSkillCacheFn(c *rc.DataSourceCache, ctx context.Context) error {
-	log.Printf("hydrating cache for data source genesyscloud_routing_skill")
+	log.Printf("hydrating cache for data source %s", resourceName)
 	proxy := getRoutingSkillProxy(c.ClientConfig)
 
 	skills, resp, getErr := proxy.getAllRoutingSkills(ctx, "")
@@ -44,6 +44,7 @@ func hydrateRoutingSkillCacheFn(c *rc.DataSourceCache, ctx context.Context) erro
 	}
 
 	if skills == nil || len(*skills) == 0 {
+		log.Printf("no skills returned. Cache will remain empty")
 		return nil
 	}
 
@@ -51,7 +52,7 @@ func hydrateRoutingSkillCacheFn(c *rc.DataSourceCache, ctx context.Context) erro
 		c.Cache[*skill.Name] = *skill.Id
 	}
 
-	log.Printf("cache hydration completed for data source genesyscloud_routing_skill")
+	log.Printf("cache hydration completed for data source %s", resourceName)
 
 	return nil
 }
@@ -63,12 +64,12 @@ func getSkillByNameFn(c *rc.DataSourceCache, name string, ctx context.Context) (
 	// Find first non-deleted skill by name. Retry in case new skill is not yet indexed by search
 	diag := util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
 		skill, resp, retryable, getErr := proxy.getRoutingSkillIdByName(ctx, name)
-		if getErr != nil && !retryable {
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("error requesting skill %s | error: %s", name, getErr), resp))
-		}
-
-		if retryable {
-			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("no routing skills found with name %s", name), resp))
+		if getErr != nil {
+			diagnosticError := util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("error requesting skill %s | error: %s", name, getErr), resp)
+			if !retryable {
+				return retry.NonRetryableError(diagnosticError)
+			}
+			return retry.RetryableError(diagnosticError)
 		}
 
 		skillId = skill

@@ -9,7 +9,7 @@ import (
 	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v143/platformclientv2"
 
 	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 
@@ -67,7 +67,7 @@ type CustomFlowResolver struct {
 type CustomFileWriterSettings struct {
 	// Custom function for dumping data/media stored in an object in a sub directory along
 	// with the exported config. For example: prompt audio files, csv data, jps/pngs
-	RetrieveAndWriteFilesFunc func(string, string, string, map[string]interface{}, interface{}) error
+	RetrieveAndWriteFilesFunc func(string, string, string, map[string]interface{}, interface{}, ResourceInfo) error
 
 	// Sub directory within export folder in which to write files retrieved by RetrieveAndWriteFilesFunc
 	// For example, the user_prompt resource defines SubDirectory as "audio", so the prompt audio files will

@@ -18,7 +18,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v143/platformclientv2"
 )
 
 /*
@@ -50,6 +50,9 @@ func getAllAuthExternalContacts(ctx context.Context, clientConfig *platformclien
 	}
 
 	for _, externalContact := range *externalContacts {
+		if externalContact.Id == nil {
+			continue
+		}
 		log.Printf("Dealing with external contact id : %s", *externalContact.Id)
 		resources[*externalContact.Id] = &resourceExporter.ResourceMeta{Name: *externalContact.Id}
 	}
@@ -61,11 +64,16 @@ func createExternalContact(ctx context.Context, d *schema.ResourceData, meta int
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	ep := getExternalContactsContactsProxy(sdkConfig)
 
+	log.Printf("Creating external contact")
 	externalContact := getExternalContactFromResourceData(d)
-
-	contact, resp, err := ep.createExternalContact(ctx, &externalContact)
+	contact, resp, err := ep.createExternalContact(ctx, externalContact)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create external contact %s error: %s", *externalContact.Id, err), resp)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create external contact error: %s", err), resp)
+	}
+
+	if contact == nil || contact.Id == nil {
+		msg := "No contact ID was returned on the response object from createExternalContact"
+		return util.BuildDiagnosticError(resourceName, msg, fmt.Errorf("%s", msg))
 	}
 
 	d.SetId(*contact.Id)
@@ -79,7 +87,7 @@ func readExternalContact(ctx context.Context, d *schema.ResourceData, meta inter
 	ep := getExternalContactsContactsProxy(sdkConfig)
 	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceExternalContact(), constants.DefaultConsistencyChecks, resourceName)
 
-	log.Printf("Reading contact %s", d.Id())
+	log.Printf("Reading external contact %s", d.Id())
 
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		externalContact, resp, getErr := ep.getExternalContactById(ctx, d.Id())
@@ -120,13 +128,14 @@ func updateExternalContact(ctx context.Context, d *schema.ResourceData, meta int
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	ep := getExternalContactsContactsProxy(sdkConfig)
 
+	log.Printf("Updating external contact %s", d.Id())
 	externalContact := getExternalContactFromResourceData(d)
-	_, resp, err := ep.updateExternalContact(ctx, d.Id(), &externalContact)
+	_, resp, err := ep.updateExternalContact(ctx, d.Id(), externalContact)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update external contact %s error: %s", *externalContact.Id, err), resp)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update external contact %s error: %s", d.Id(), err), resp)
 	}
 
-	log.Printf("Updated external contact")
+	log.Printf("Updated external contact %s", d.Id())
 	return readExternalContact(ctx, d, meta)
 }
 
@@ -135,6 +144,7 @@ func deleteExternalContact(ctx context.Context, d *schema.ResourceData, meta int
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	ep := getExternalContactsContactsProxy(sdkConfig)
 
+	log.Printf("Deleting external contact %s", d.Id())
 	resp, err := ep.deleteExternalContactId(ctx, d.Id())
 	if err != nil {
 		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete external contact %s error: %s", d.Id(), err), resp)

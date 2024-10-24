@@ -292,11 +292,10 @@ func ResourceRoutingQueue() *schema.Resource {
 				},
 			},
 			"conditional_group_routing_rules": {
-				Description: "The Conditional Group Routing settings for the queue.",
+				Description: "The Conditional Group Routing settings for the queue. **Note**: conditional_group_routing_rules is deprecated in genesyscloud_routing_queue. CGR is now a standalone resource, please set ENABLE_STANDALONE_CGR in your environment variables to enable and use genesyscloud_routing_queue_conditional_group_routing",
 				Type:        schema.TypeList,
 				Optional:    true,
 				MaxItems:    5,
-				Deprecated:  "conditional_group_routing_rules is deprecated in genesyscloud_routing_queue. CGR is now a standalone resource, please set ENABLE_STANDALONE_CGR in your environment variables to enable and use genesyscloud_routing_queue_conditional_group_routing",
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"queue_id": {
@@ -464,11 +463,10 @@ func ResourceRoutingQueue() *schema.Resource {
 				Optional:    true,
 			},
 			"outbound_email_address": {
-				Description: "The outbound email address settings for this queue.",
+				Description: "The outbound email address settings for this queue. **Note**: outbound_email_address is deprecated in genesyscloud_routing_queue. OEA is now a standalone resource, please set ENABLE_STANDALONE_EMAIL_ADDRESS in your environment variables to enable and use genesyscloud_routing_queue_outbound_email_address",
 				Type:        schema.TypeList,
 				MaxItems:    1,
 				Optional:    true,
-				Deprecated:  "outbound_email_address is deprecated in genesyscloud_routing_queue. OEA is now a standalone resource, please set ENABLE_STANDALONE_EMAIL_ADDRESS in your environment variables to enable and use genesyscloud_routing_queue_outbound_email_address",
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"domain_id": {
