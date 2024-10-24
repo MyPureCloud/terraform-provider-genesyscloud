@@ -4,7 +4,7 @@ import (
 	"sync"
 
 	"terraform-provider-genesyscloud/genesyscloud/location"
-	telephony "terraform-provider-genesyscloud/genesyscloud/telephony"
+	telephony "terraform-provider-genesyscloud/genesyscloud/telephony_provider_edges_trunkbasesettings"
 	edgeSite "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site"
 	"testing"
 

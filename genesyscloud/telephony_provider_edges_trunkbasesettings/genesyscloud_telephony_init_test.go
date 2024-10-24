@@ -1,4 +1,4 @@
-package telephony
+package telephony_provider_edges_trunkbasesettings
 
 import (
 	"sync"

@@ -96,7 +96,7 @@ import (
 	worktype "terraform-provider-genesyscloud/genesyscloud/task_management_worktype"
 	worktypeStatus "terraform-provider-genesyscloud/genesyscloud/task_management_worktype_status"
 	"terraform-provider-genesyscloud/genesyscloud/team"
-	"terraform-provider-genesyscloud/genesyscloud/telephony"
+	"terraform-provider-genesyscloud/genesyscloud/telephony_provider_edges_trunkbasesettings"
 	did "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_did"
 	didPool "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_did_pool"
 	edgeGroup "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_edge_group"
@@ -183,9 +183,9 @@ func registerResources() {
 	grammar.SetRegistrar(regInstance)                                      //Registering architect grammar
 	grammarLanguage.SetRegistrar(regInstance)                              //Registering architect grammar language
 	groupRoles.SetRegistrar(regInstance)                                   //Registering group roles
-	edgePhone.SetRegistrar(regInstance)                                    //Registering telephony providers edges phone
-	edgeSite.SetRegistrar(regInstance)                                     //Registering telephony providers edges site
-	siteOutboundRoutes.SetRegistrar(regInstance)                           //Registering telephony providers edges site outbound routes
+	edgePhone.SetRegistrar(regInstance)                                    //Registering telephony_provider_edges_trunkbasesettings providers edges phone
+	edgeSite.SetRegistrar(regInstance)                                     //Registering telephony_provider_edges_trunkbasesettings providers edges site
+	siteOutboundRoutes.SetRegistrar(regInstance)                           //Registering telephony_provider_edges_trunkbasesettings providers edges site outbound routes
 	flow.SetRegistrar(regInstance)                                         //Registering architect flow
 	flowLogLevel.SetRegistrar(regInstance)                                 //Registering flow log Level
 	flowMilestone.SetRegistrar(regInstance)                                //Registering flow milestone
@@ -232,8 +232,8 @@ func registerResources() {
 	responsemanagementResponseasset.SetRegistrar(regInstance)              //Registering responsemanagement response asset
 	respmanagementLibrary.SetRegistrar(regInstance)                        //Registering responsemanagement library
 	routingEmailRoute.SetRegistrar(regInstance)                            //Registering routing email route
-	did.SetRegistrar(regInstance)                                          //Registering telephony did
-	didPool.SetRegistrar(regInstance)                                      //Registering telephony did pools
+	did.SetRegistrar(regInstance)                                          //Registering telephony_provider_edges_trunkbasesettings did
+	didPool.SetRegistrar(regInstance)                                      //Registering telephony_provider_edges_trunkbasesettings did pools
 	archIvr.SetRegistrar(regInstance)                                      //Registering architect ivr
 	workbin.SetRegistrar(regInstance)                                      //Registering task management workbin
 	workitemSchema.SetRegistrar(regInstance)                               //Registering task management workitem schema
@@ -242,7 +242,7 @@ func registerResources() {
 	workitem.SetRegistrar(regInstance)                                     //Registering task management workitem
 	externalContacts.SetRegistrar(regInstance)                             //Registering external contacts
 	team.SetRegistrar(regInstance)                                         //Registering team
-	telephony.SetRegistrar(regInstance)                                    //Registering telephony package
+	telephony_provider_edges_trunkbasesettings.SetRegistrar(regInstance)   //Registering telephony_provider_edges_trunkbasesettings package
 	edgeGroup.SetRegistrar(regInstance)                                    //Registering edges edge group
 	webDeployConfig.SetRegistrar(regInstance)                              //Registering webdeployments_config
 	webDeployDeploy.SetRegistrar(regInstance)                              //Registering webdeployments_deploy
