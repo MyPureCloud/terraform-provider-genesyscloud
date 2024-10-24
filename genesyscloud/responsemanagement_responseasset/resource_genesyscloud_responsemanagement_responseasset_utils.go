@@ -37,7 +37,7 @@ func responsemanagementResponseassetResolver(responseAssetId, exportDirectory, s
 		return err
 	}
 	configMap["filename"] = exportFilename
-	resource.State.Attributes["filepath"] = exportFilename
+	resource.State.Attributes["filename"] = exportFilename
 
 	fileContentVal := fmt.Sprintf(`${filesha256("%s")}`, exportFilename)
 	configMap["file_content_hash"] = fileContentVal
