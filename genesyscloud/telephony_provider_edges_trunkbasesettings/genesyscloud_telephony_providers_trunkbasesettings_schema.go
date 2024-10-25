@@ -83,7 +83,7 @@ func ResourceTrunkBaseSettings() *schema.Resource {
 				Description: "Used to determine the media regions for inbound and outbound calls through a trunk. Also determines the dial plan to use for calls that came in on a trunk and have to be sent out on it as well.",
 				Type:        schema.TypeString,
 				Optional:    true,
-				Computed:    true,
+				Computed:    true, //This needs to be computed as the field is prepopulated at time if the field is not set
 			},
 		},
 		CustomizeDiff: util.CustomizeTrunkBaseSettingsPropertiesDiff,

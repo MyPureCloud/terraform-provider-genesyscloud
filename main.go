@@ -183,9 +183,9 @@ func registerResources() {
 	grammar.SetRegistrar(regInstance)                                      //Registering architect grammar
 	grammarLanguage.SetRegistrar(regInstance)                              //Registering architect grammar language
 	groupRoles.SetRegistrar(regInstance)                                   //Registering group roles
-	edgePhone.SetRegistrar(regInstance)                                    //Registering telephony_provider_edges_trunkbasesettings providers edges phone
-	edgeSite.SetRegistrar(regInstance)                                     //Registering telephony_provider_edges_trunkbasesettings providers edges site
-	siteOutboundRoutes.SetRegistrar(regInstance)                           //Registering telephony_provider_edges_trunkbasesettings providers edges site outbound routes
+	edgePhone.SetRegistrar(regInstance)                                    //Registering telephony  providers edges phone
+	edgeSite.SetRegistrar(regInstance)                                     //Registering telephony providers edges site
+	siteOutboundRoutes.SetRegistrar(regInstance)                           //Registering telephony providers edges site outbound routes
 	flow.SetRegistrar(regInstance)                                         //Registering architect flow
 	flowLogLevel.SetRegistrar(regInstance)                                 //Registering flow log Level
 	flowMilestone.SetRegistrar(regInstance)                                //Registering flow milestone
@@ -232,8 +232,8 @@ func registerResources() {
 	responsemanagementResponseasset.SetRegistrar(regInstance)              //Registering responsemanagement response asset
 	respmanagementLibrary.SetRegistrar(regInstance)                        //Registering responsemanagement library
 	routingEmailRoute.SetRegistrar(regInstance)                            //Registering routing email route
-	did.SetRegistrar(regInstance)                                          //Registering telephony_provider_edges_trunkbasesettings did
-	didPool.SetRegistrar(regInstance)                                      //Registering telephony_provider_edges_trunkbasesettings did pools
+	did.SetRegistrar(regInstance)                                          //Registering telephony did
+	didPool.SetRegistrar(regInstance)                                      //Registering telephony did pools
 	archIvr.SetRegistrar(regInstance)                                      //Registering architect ivr
 	workbin.SetRegistrar(regInstance)                                      //Registering task management workbin
 	workitemSchema.SetRegistrar(regInstance)                               //Registering task management workitem schema
