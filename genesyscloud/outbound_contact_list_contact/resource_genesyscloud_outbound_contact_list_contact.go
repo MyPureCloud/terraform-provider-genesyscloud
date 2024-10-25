@@ -109,7 +109,7 @@ func readOutboundContactListContact(ctx context.Context, d *schema.ResourceData,
 		return cc.CheckState(d)
 	})
 	if retryErr != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("failed to read contact by ID '%s' from contact list '%s'. Error: %v", d.Id(), contactListId, contactId), resp)
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("failed to read contact by ID '%s' from contact list '%s'. Error: %v", contactId, contactListId, retryErr), resp)
 	}
 	log.Printf("Done reading contact '%s' in contact list '%s'", contactId, contactListId)
 	return nil
