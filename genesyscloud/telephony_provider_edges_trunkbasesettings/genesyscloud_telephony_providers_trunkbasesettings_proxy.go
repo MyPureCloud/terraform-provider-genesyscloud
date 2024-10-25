@@ -52,7 +52,8 @@ func newTrunkBaseSettingProxy(clientConfig *platformclientv2.Configuration) *tru
 	}
 }
 
-// getTeamProxy acts as a singleton to for the internalProxy.  It also ensures
+//	getTrunkBaseSettingProxy acts as a singleton to for the internalProxy.  It also ensures
+//
 // that we can still proxy our tests by directly setting internalProxy package variable
 func getTrunkBaseSettingProxy(clientConfig *platformclientv2.Configuration) *trunkbaseSettingProxy {
 	if internalProxy == nil {
