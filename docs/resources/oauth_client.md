@@ -41,7 +41,7 @@ resource "genesyscloud_oauth_client" "example-client" {
 
 ### Required
 
-- `authorized_grant_type` (String) The OAuth Grant/Client type supported by this client (CODE | TOKEN | SAML2BEARER | PASSWORD | CLIENT-CREDENTIALS).
+- `authorized_grant_type` (String) The OAuth Grant/Client type supported by this client (CODE | TOKEN | SAML2-BEARER | PASSWORD | CLIENT-CREDENTIALS).
 - `name` (String) The name of the OAuth client.
 
 ### Optional

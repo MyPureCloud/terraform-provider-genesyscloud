@@ -37,6 +37,20 @@ func NormalizePath(path string) (string, error) {
 	return fullyQualifiedPath, nil
 }
 
+func NormalizeFileName(filename string) (string, error) {
+	fullyQualifiedFineName, err := filepath.Abs(filename)
+	if err != nil {
+		return "", err
+	}
+
+	if runtime.GOOS == "windows" {
+		// Convert single backslashes to single forwardslashes if necessary
+		fullyQualifiedFineName = strings.ReplaceAll(fullyQualifiedFineName, "\\", "/")
+	}
+
+	return fullyQualifiedFineName, nil
+}
+
 func NormalizeSlash(fileNameWithSlash string) string {
 	fullyQualifiedFileName := fileNameWithSlash
 

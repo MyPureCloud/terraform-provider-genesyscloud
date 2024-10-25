@@ -7,6 +7,7 @@ import (
 	authDivision "terraform-provider-genesyscloud/genesyscloud/auth_division"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/testrunner"
 	"testing"
 
 	"github.com/google/uuid"
@@ -17,14 +18,16 @@ import (
 
 func TestAccResourceResponseManagementResponseAsset(t *testing.T) {
 	var (
-		resourceId         = "responseasset"
-		testFilesDir       = "test_responseasset_data"
-		fileName1          = "yeti-img.png"
-		fileName2          = "genesys-img.png"
-		fullPath1          = filepath.Join(testFilesDir, fileName1)
-		fullPath2          = filepath.Join(testFilesDir, fileName2)
-		divisionResourceId = "test_div"
-		divisionName       = "test tf divison " + uuid.NewString()
+		resourceId            = "responseasset"
+		testFilesDir          = "test_responseasset_data"
+		fileName1             = "yeti-img.png"
+		fileName2             = "genesys-img.png"
+		fullPath1             = filepath.Join(testFilesDir, fileName1)
+		fullPath2             = filepath.Join(testFilesDir, fileName2)
+		normalizeFileName1, _ = testrunner.NormalizeFileName(fullPath1)
+		normalizeFileName2, _ = testrunner.NormalizeFileName(fullPath2)
+		divisionResourceId    = "test_div"
+		divisionName          = "test tf divison " + uuid.NewString()
 	)
 
 	cleanupResponseAssets("genesys")
@@ -37,7 +40,7 @@ func TestAccResourceResponseManagementResponseAsset(t *testing.T) {
 			{
 				Config: GenerateResponseManagementResponseAssetResource(resourceId, fullPath1, util.NullValue),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_responseasset."+resourceId, "filename", fullPath1),
+					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_responseasset."+resourceId, "filename", normalizeFileName1),
 					provider.TestDefaultHomeDivision("genesyscloud_responsemanagement_responseasset."+resourceId),
 				),
 			},
@@ -45,7 +48,7 @@ func TestAccResourceResponseManagementResponseAsset(t *testing.T) {
 				Config: GenerateResponseManagementResponseAssetResource(resourceId, fullPath2, "genesyscloud_auth_division."+divisionResourceId+".id") +
 					authDivision.GenerateAuthDivisionBasic(divisionResourceId, divisionName),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_responseasset."+resourceId, "filename", fullPath2),
+					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_responseasset."+resourceId, "filename", normalizeFileName2),
 					resource.TestCheckResourceAttrPair("genesyscloud_responsemanagement_responseasset."+resourceId, "division_id",
 						"genesyscloud_auth_division."+divisionResourceId, "id"),
 				),
@@ -55,7 +58,7 @@ func TestAccResourceResponseManagementResponseAsset(t *testing.T) {
 				Config: GenerateResponseManagementResponseAssetResource(resourceId, fullPath2, "data.genesyscloud_auth_division_home.home.id") +
 					fmt.Sprint("\ndata \"genesyscloud_auth_division_home\" \"home\" {}\n"),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_responseasset."+resourceId, "filename", fullPath2),
+					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_responseasset."+resourceId, "filename", normalizeFileName2),
 					provider.TestDefaultHomeDivision("genesyscloud_responsemanagement_responseasset."+resourceId),
 				),
 			},

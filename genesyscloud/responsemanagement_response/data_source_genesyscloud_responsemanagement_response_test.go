@@ -2,12 +2,13 @@ package responsemanagement_response
 
 import (
 	"fmt"
-	"github.com/google/uuid"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	respmanagementLibrary "terraform-provider-genesyscloud/genesyscloud/responsemanagement_library"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
+
+	"github.com/google/uuid"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
 
 func TestAccDataSourceResponsemanagementResponse(t *testing.T) {
@@ -43,6 +44,7 @@ func TestAccDataSourceResponsemanagementResponse(t *testing.T) {
 					generateTextsBlock(
 						textsContent,
 						textsContentTypes[0],
+						util.NullValue,
 					),
 				) + generateResponsemanagementResponseDataSource(
 					responseData,

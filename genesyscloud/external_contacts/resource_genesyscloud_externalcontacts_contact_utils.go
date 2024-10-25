@@ -197,8 +197,13 @@ func buildSdkLineId(d *schema.ResourceData, key string) *platformclientv2.Lineid
 				},
 			}
 			lineId := platformclientv2.Lineid{
-				DisplayName: &displayname,
-				Ids:         &ids,
+				Ids: &ids,
+			}
+
+			// https://inindca.atlassian.net/browse/DEVTOOLING-894
+			// Only add DisplayName if it is non-empty
+			if displayname != "" {
+				lineId.DisplayName = &displayname
 			}
 			return &lineId
 		}
