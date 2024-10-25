@@ -534,7 +534,6 @@ func GenerateSiteResourceWithCustomAttrs(
 	}
 	`, siteRes, name, description, locationId, mediaModel, mediaRegionsUseLatencyBased, mediaRegions, callerId, callerName, strings.Join(otherAttrs, "\n"))
 
-	fmt.Printf("GENERATED SITE: %s\n", site)
 	return site
 }
 
@@ -622,12 +621,12 @@ func deleteSiteWithLocationId(locationId string, config *platformclientv2.Config
 		edgesAPI  = platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(config)
 	)
 
-	log.Printf("Reading telephony providers edges sites providers edges sites with location ID %s", locationId)
+	log.Printf("Reading telephony providers edges sites with location ID %s", locationId)
 	sites, _, getErr := edgesAPI.GetTelephonyProvidersEdgesSites(pageSize, 1, "", "", "", locationId, false, nil)
 	if getErr != nil {
 		return getErr
 	}
-	log.Printf("Read telephony providers edges sites edges sites with location ID %s", locationId)
+	log.Printf("Read telephony providers edges sites with location ID %s", locationId)
 	if sites.Entities == nil || len(*sites.Entities) == 0 {
 		return nil
 	}
@@ -635,12 +634,12 @@ func deleteSiteWithLocationId(locationId string, config *platformclientv2.Config
 	pageCount = *sites.PageCount
 
 	for pageNum := 1; pageNum <= pageCount; pageNum++ {
-		log.Printf("Reading telephony providers edges sites providers edges site with location ID %s", locationId)
+		log.Printf("Reading telephony providers edges site with location ID %s", locationId)
 		sites, _, getErr = edgesAPI.GetTelephonyProvidersEdgesSites(pageSize, pageNum, "", "", "", locationId, false, nil)
 		if getErr != nil {
 			return getErr
 		}
-		log.Printf("Read telephony providers edges sites providers edges sites with location ID %s", locationId)
+		log.Printf("Read telephony providers edges sites with location ID %s", locationId)
 
 		if sites.Entities == nil || len(*sites.Entities) == 0 {
 			return nil
