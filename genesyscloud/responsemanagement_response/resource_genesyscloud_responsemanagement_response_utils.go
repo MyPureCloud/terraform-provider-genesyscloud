@@ -54,6 +54,7 @@ func buildResponseTexts(responseTexts *schema.Set) *[]platformclientv2.Responset
 
 		resourcedata.BuildSDKStringValueIfNotNil(&sdkResponseText.Content, responseTextMap, "content")
 		resourcedata.BuildSDKStringValueIfNotNil(&sdkResponseText.ContentType, responseTextMap, "content_type")
+		resourcedata.BuildSDKStringValueIfNotNil(&sdkResponseText.VarType, responseTextMap, "type")
 
 		sdkResponseTexts = append(sdkResponseTexts, sdkResponseText)
 	}
@@ -164,6 +165,7 @@ func flattenResponseTexts(responseTexts *[]platformclientv2.Responsetext) *schem
 
 		resourcedata.SetMapValueIfNotNil(responseTextMap, "content", responseText.Content)
 		resourcedata.SetMapValueIfNotNil(responseTextMap, "content_type", responseText.ContentType)
+		resourcedata.SetMapValueIfNotNil(responseTextMap, "type", responseText.VarType)
 
 		responseTextSet.Add(responseTextMap)
 	}
