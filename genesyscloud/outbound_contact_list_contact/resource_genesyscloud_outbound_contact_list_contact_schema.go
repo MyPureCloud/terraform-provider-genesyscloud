@@ -140,7 +140,7 @@ Only applicable on the creation of a contact, so updating this field will force 
 				Description: `A map of phone number columns to PhoneNumberStatuses, which indicate if the phone number is callable or not.`,
 				Type:        schema.TypeSet,
 				Optional:    true,
-				ForceNew:    true,
+				Computed:    true,
 				Elem:        phoneNumberStatusResource,
 			},
 			"contactable_status": {
