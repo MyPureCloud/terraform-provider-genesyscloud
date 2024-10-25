@@ -91,7 +91,8 @@ func getTrunkBaseSettingByIdFn(ctx context.Context, p *trunkbaseSettingProxy, tr
 		return tb, nil, nil
 	}
 
-	return p.edgesApi.GetTelephonyProvidersEdgesTrunkbasesetting(trunkBaseSettingId, true)
+	tb, resp, err := p.edgesApi.GetTelephonyProvidersEdgesTrunkbasesetting(trunkBaseSettingId, true)
+	return tb, resp, err
 }
 
 func getAllTrunkBaseSettingsFn(ctx context.Context, p *trunkbaseSettingProxy, name string) (*[]platformclientv2.Trunkbase, *platformclientv2.APIResponse, error) {
@@ -177,6 +178,7 @@ func getTelephonyProvidersEdgesTrunkbasesettings(p *trunkbaseSettingProxy, pageN
 	} else {
 		err = json.Unmarshal(response.RawBody, &successPayload)
 	}
+
 	return successPayload, response, err
 }
 

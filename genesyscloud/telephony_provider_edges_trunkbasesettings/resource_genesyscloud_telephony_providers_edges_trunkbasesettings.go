@@ -28,6 +28,7 @@ func createTrunkBaseSettings(ctx context.Context, d *schema.ResourceData, meta i
 	trunkMetaBaseString := d.Get("trunk_meta_base_id").(string)
 	trunkMetaBase := util.BuildSdkDomainEntityRef(d, "trunk_meta_base_id")
 	inboundSiteString := d.Get("inbound_site_id").(string)
+	siteString := d.Get("site_id").(string)
 	properties := util.BuildTelephonyProperties(d)
 	trunkType := d.Get("trunk_type").(string)
 	managed := d.Get("managed").(bool)
@@ -38,6 +39,9 @@ func createTrunkBaseSettings(ctx context.Context, d *schema.ResourceData, meta i
 		Managed:       &managed,
 		Properties:    properties,
 	}
+
+	fmt.Printf("create inboundsite string in createTrunkBaseSettings: %s\n", inboundSiteString)
+	fmt.Printf("create site string in createTrunkBaseSettings: %s\n", siteString)
 
 	validationInboundSite, errorInboundSite := ValidateInboundSiteSettings(inboundSiteString, trunkMetaBaseString)
 
@@ -50,7 +54,7 @@ func createTrunkBaseSettings(ctx context.Context, d *schema.ResourceData, meta i
 		return util.BuildDiagnosticError(resourceName, fmt.Sprintf("Failed to create trunk base settings %s for inboundSiteId", name), errorInboundSite)
 	}
 
-	if d.Get("site_id") != nil {
+	if siteString != "" {
 		trunkBase.Site = util.BuildSdkDomainEntityRef(d, "site_id")
 	}
 
@@ -68,7 +72,6 @@ func createTrunkBaseSettings(ctx context.Context, d *schema.ResourceData, meta i
 	}
 	if trunkBaseSettings != nil && trunkBaseSettings.Id != nil {
 		d.SetId(*trunkBaseSettings.Id)
-		log.Printf("Created trunk base settings %s\n", *trunkBaseSettings.Id)
 	} else {
 		log.Printf("Error: trunkBaseSettings or its Id is nil\n")
 	}
@@ -82,6 +85,7 @@ func updateTrunkBaseSettings(ctx context.Context, d *schema.ResourceData, meta i
 	trunkMetaBaseString := d.Get("trunk_meta_base_id").(string)
 	trunkMetaBase := util.BuildSdkDomainEntityRef(d, "trunk_meta_base_id")
 	inboundSiteString := d.Get("inbound_site_id").(string)
+	siteString := d.Get("site_id").(string)
 
 	properties := util.BuildTelephonyProperties(d)
 	trunkType := d.Get("trunk_type").(string)
@@ -97,6 +101,9 @@ func updateTrunkBaseSettings(ctx context.Context, d *schema.ResourceData, meta i
 		Properties:    properties,
 	}
 
+	fmt.Printf("Update inboundsite string in updateTrunkBaseSettings: %s\n", inboundSiteString)
+	fmt.Printf("Update site string in updateTrunkBaseSettings: %s\n", siteString)
+
 	validationInboundSite, errorInboundSite := ValidateInboundSiteSettings(inboundSiteString, trunkMetaBaseString)
 
 	if validationInboundSite && errorInboundSite == nil {
@@ -107,7 +114,7 @@ func updateTrunkBaseSettings(ctx context.Context, d *schema.ResourceData, meta i
 		return util.BuildDiagnosticError(resourceName, fmt.Sprintf("Failed to update trunk base settings %s for inboundSite", name), errorInboundSite)
 	}
 
-	if d.Get("site_id") != nil {
+	if siteString != "" {
 		trunkBase.Site = util.BuildSdkDomainEntityRef(d, "site_id")
 	}
 
