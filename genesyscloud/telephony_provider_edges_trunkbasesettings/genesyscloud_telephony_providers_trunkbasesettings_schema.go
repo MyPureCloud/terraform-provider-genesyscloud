@@ -80,7 +80,7 @@ func ResourceTrunkBaseSettings() *schema.Resource {
 				Optional:    true,
 			},
 			"site_id": {
-				Description: "Used to determine the media regions for inbound and outbound calls through a trunk. Also determines the dial plan to use for calls that came in on a trunk and have to be sent out on it as well.",
+				Description: "Used to determine the media regions for inbound and outbound calls through a trunk. Also determines the dial plan to use for calls that came in on a trunk and have to be sent out on it as well.  While this is called the site on the API, in the UI it is referred to as the media site.",
 				Type:        schema.TypeString,
 				Optional:    true,
 				Computed:    true, //This needs to be computed as the field is prepopulated at time if the field is not set
