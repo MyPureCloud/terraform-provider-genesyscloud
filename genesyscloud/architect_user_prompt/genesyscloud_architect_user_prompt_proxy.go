@@ -158,8 +158,18 @@ func deleteArchitectUserPromptFn(_ context.Context, p *architectUserPromptProxy,
 func getAllArchitectUserPromptsFn(_ context.Context, p *architectUserPromptProxy, includeMediaUris, includeResources bool, name string) (*[]platformclientv2.Prompt, *platformclientv2.APIResponse, error) {
 	const pageSize = 100
 	var allPrompts []platformclientv2.Prompt
+	var exportNameFilter []string
 
-	userPrompts, response, err := p.architectApi.GetArchitectPrompts(1, pageSize, []string{name}, "", "", "", "", includeMediaUris, includeResources, nil)
+	if name != "" {
+		exportNameFilter = append(exportNameFilter, name)
+	} else {
+		exportNameFilter = []string{
+			"a*", "b*", "c*", "d*", "e*", "f*", "g*", "h*", "i*", "j*", "k*", "l*", "m*",
+			"n*", "o*", "p*", "q*", "r*", "s*", "t*", "u*", "v*", "w*", "x*", "y*", "z*",
+		}
+	}
+
+	userPrompts, response, err := p.architectApi.GetArchitectPrompts(1, pageSize, exportNameFilter, "", "", "", "", includeMediaUris, includeResources, nil)
 	if err != nil {
 		return nil, response, err
 	}
@@ -172,7 +182,7 @@ func getAllArchitectUserPromptsFn(_ context.Context, p *architectUserPromptProxy
 
 	pageCount := *userPrompts.PageCount
 	for pageNum := 2; pageNum <= pageCount; pageNum++ {
-		userPrompts, response, getErr := p.architectApi.GetArchitectPrompts(pageNum, pageSize, []string{name}, "", "", "", "", includeMediaUris, includeResources, nil)
+		userPrompts, response, getErr := p.architectApi.GetArchitectPrompts(pageNum, pageSize, exportNameFilter, "", "", "", "", includeMediaUris, includeResources, nil)
 		if getErr != nil {
 			return nil, response, getErr
 		}
