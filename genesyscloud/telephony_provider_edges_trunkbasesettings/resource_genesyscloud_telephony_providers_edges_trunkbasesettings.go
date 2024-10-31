@@ -40,9 +40,6 @@ func createTrunkBaseSettings(ctx context.Context, d *schema.ResourceData, meta i
 		Properties:    properties,
 	}
 
-	fmt.Printf("create inboundsite string in createTrunkBaseSettings: %s\n", inboundSiteString)
-	fmt.Printf("create site string in createTrunkBaseSettings: %s\n", siteString)
-
 	validationInboundSite, errorInboundSite := ValidateInboundSiteSettings(inboundSiteString, trunkMetaBaseString)
 
 	if validationInboundSite && errorInboundSite == nil {
@@ -100,9 +97,6 @@ func updateTrunkBaseSettings(ctx context.Context, d *schema.ResourceData, meta i
 		Managed:       &managed,
 		Properties:    properties,
 	}
-
-	fmt.Printf("Update inboundsite string in updateTrunkBaseSettings: %s\n", inboundSiteString)
-	fmt.Printf("Update site string in updateTrunkBaseSettings: %s\n", siteString)
 
 	validationInboundSite, errorInboundSite := ValidateInboundSiteSettings(inboundSiteString, trunkMetaBaseString)
 
@@ -239,7 +233,7 @@ func readTrunkBaseSettings(ctx context.Context, d *schema.ResourceData, meta int
 func deleteTrunkBaseSettings(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getTrunkBaseSettingProxy(sdkConfig)
-	fmt.Printf("Deleting trunk base settings for id %s\n", d.Id())
+	log.Printf("Deleting trunk base settings for id %s\n", d.Id())
 	diagErr := util.RetryWhen(util.IsStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 
 		resp, err := proxy.DeleteTrunkBaseSetting(ctx, d.Id())
@@ -325,6 +319,5 @@ func GenerateTrunkBaseSettingsResourceWithCustomAttrs(
 		%s
 	}
 	`, trunkBaseSettingsRes, name, description, trunkMetaBaseId, trunkType, managed, strings.Join(otherAttrs, "\n"))
-	fmt.Printf("Generated resource: %s", resource)
 	return resource
 }

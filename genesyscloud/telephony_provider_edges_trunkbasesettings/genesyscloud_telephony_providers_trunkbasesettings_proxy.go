@@ -83,6 +83,7 @@ func (p *trunkbaseSettingProxy) UpdateTrunkBaseSetting(ctx context.Context, trun
 }
 
 func (p *trunkbaseSettingProxy) DeleteTrunkBaseSetting(ctx context.Context, trunkbaseSettingId string) (*platformclientv2.APIResponse, error) {
+	rc.DeleteCacheItem(p.trunkBaseCache, trunkbaseSettingId)
 	return p.deleteTrunkBaseSettingAttr(ctx, p, trunkbaseSettingId)
 }
 
