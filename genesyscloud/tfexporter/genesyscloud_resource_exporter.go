@@ -389,13 +389,13 @@ func (g *GenesysCloudResourceExporter) buildResourceConfigMap() diag.Diagnostics
 			g.updateSanitiseMap(*g.exporters, resource)
 		}
 
-		if !isDataSource {
-			// Removes zero values and sets proper reference expressions
-			unresolved, _ := g.sanitizeConfigMap(resource, jsonResult, "", *g.exporters, g.includeStateFile, g.exportAsHCL, true)
-			if len(unresolved) > 0 {
-				g.unresolvedAttrs = append(g.unresolvedAttrs, unresolved...)
-			}
-		} else {
+		// Removes zero values and sets proper reference expressions
+		unresolved, _ := g.sanitizeConfigMap(resource, jsonResult, "", *g.exporters, g.includeStateFile, g.exportAsHCL, true)
+		if len(unresolved) > 0 {
+			g.unresolvedAttrs = append(g.unresolvedAttrs, unresolved...)
+		}
+
+		if isDataSource {
 			g.sanitizeDataConfigMap(jsonResult)
 		}
 
