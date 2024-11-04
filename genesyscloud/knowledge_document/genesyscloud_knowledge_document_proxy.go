@@ -140,6 +140,7 @@ func getKnowledgeKnowledgebaseDocumentFn(ctx context.Context, p *knowledgeDocume
 func GetAllKnowledgebaseEntitiesFn(ctx context.Context, p *knowledgeDocumentProxy, published bool) (*[]platformclientv2.Knowledgebase, *platformclientv2.APIResponse, error) {
 	var (
 		after    string
+		err      error
 		entities []platformclientv2.Knowledgebase
 	)
 
@@ -160,7 +161,7 @@ func GetAllKnowledgebaseEntitiesFn(ctx context.Context, p *knowledgeDocumentProx
 			break
 		}
 
-		after, err := util.GetQueryParamValueFromUri(*knowledgeBases.NextUri, "after")
+		after, err = util.GetQueryParamValueFromUri(*knowledgeBases.NextUri, "after")
 		if err != nil {
 			return nil, resp, fmt.Errorf("failed to parse after cursor from knowledge base nextUri: %s", err)
 		}
