@@ -113,6 +113,53 @@ func New(version string, providerResources map[string]*schema.Resource, provider
 					Description:  "Max number of OAuth tokens in the token pool. Can be set with the `GENESYSCLOUD_TOKEN_POOL_SIZE` environment variable.",
 					ValidateFunc: validation.IntBetween(1, 20),
 				},
+				"gateway": {
+					Type:        schema.TypeSet,
+					Optional:    true,
+					Elem: &schema.Resource{
+						Schema: map[string]*schema.Schema{
+							"port": {
+								Type:        schema.TypeString,
+								Optional:    true,
+								DefaultFunc: schema.EnvDefaultFunc("GENESYSCLOUD_GATEWAY_PORT", nil),
+								Description: "Port for the gateway can be set with the `GENESYSCLOUD_GATEWAY_PORT` environment variable.",
+							},
+							"host": {
+								Type:        schema.TypeString,
+								Optional:    true,
+								DefaultFunc: schema.EnvDefaultFunc("GENESYSCLOUD_GATEWAY_HOST", nil),
+								Description: "Host for the gateway can be set with the `GENESYSCLOUD_GATEWAY_HOST` environment variable.",
+							},
+							"protocol": {
+								Type:        schema.TypeString,
+								Optional:    true,
+								DefaultFunc: schema.EnvDefaultFunc("GENESYSCLOUD_GATEWAY_PROTOCOL", nil),
+								Description: "Protocol for the gateway can be set with the `GENESYSCLOUD_GATEWAY_PROTOCOL` environment variable.",
+							},
+							"auth": {
+								Type:     schema.TypeSet,
+								Optional: true,
+								MaxItems: 1,
+								Elem: &schema.Resource{
+									Schema: map[string]*schema.Schema{
+										"username": {
+											Type:        schema.TypeString,
+											Optional:    true,
+											DefaultFunc: schema.EnvDefaultFunc("GENESYSCLOUD_GATEWAY_AUTH_USERNAME", nil),
+											Description: "UserName for the Auth can be set with the `GENESYSCLOUD_PROXY_AUTH_USERNAME` environment variable.",
+										},
+										"password": {
+											Type:        schema.TypeString,
+											Optional:    true,
+											DefaultFunc: schema.EnvDefaultFunc("GENESYSCLOUD_GATEWAY_AUTH_PASSWORD", nil),
+											Description: "Password for the Auth can be set with the `GENESYSCLOUD_PROXY_AUTH_PASSWORD` environment variable.",
+										},
+									},
+								},
+							},
+						},
+					},
+				},
 				"proxy": {
 					Type:     schema.TypeSet,
 					Optional: true,
@@ -373,6 +420,40 @@ func setupProxy(data *schema.ResourceData, config *platformclientv2.Configuratio
 
 			config.ProxyConfiguration.Auth.UserName = username
 			config.ProxyConfiguration.Auth.Password = password
+		}
+	}
+}
+
+func setupGateway(data *schema.ResourceData, config *platformclientv2.Configuration) {
+	gatewaySet := data.Get("gateway").(*schema.Set)
+	for _, gatewayObj := range gatewaySet.List() {
+		gateway := gatewayObj.(map[string]interface{})
+
+		// Retrieve the values of the `host`, `port`, and `protocol` attributes
+		host := gateway["host"].(string)
+		port := gateway["port"].(string)
+		protocol := gateway["protocol"].(string)
+
+		config.GatewayConfiguration = &platformclientv2.GatewayConfiguration{}
+
+		config.GatewayConfiguration.Host = host
+		config.GatewayConfiguration.Port = port
+		config.GatewayConfiguration.Protocol = protocol
+
+		pathParams := platformclientv2.PathParams{}
+
+		config.GatewayConfiguration.PathParams = []*platformclientv2.PathParams{&pathParams}
+		authSet := gateway["auth"].(*schema.Set)
+		authList := authSet.List()
+
+		for _, authElement := range authList {
+			auth := authElement.(map[string]interface{})
+			username := auth["username"].(string)
+			password := auth["password"].(string)
+			config.GatewayConfiguration.Auth = &platformclientv2.Auth{}
+
+			config.GatewayConfiguration.Auth.UserName = username
+			config.GatewayConfiguration.Auth.Password = password
 		}
 	}
 }
