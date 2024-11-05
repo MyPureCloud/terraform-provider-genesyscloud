@@ -833,8 +833,8 @@ func flattenMarkContactUncontactableActionSettings(markContactUncontactableActio
 	markContactUncontactableActionSettingsSet := schema.NewSet(schema.HashResource(markContactUncontactableActionSettingsResource), []interface{}{})
 	markContactUncontactableActionSettingsMap := make(map[string]interface{})
 
-	if mediaType := markContactUncontactableActionSettings.MediaTypes; mediaType != nil {
-		markContactUncontactableActionSettingsMap["media_types"] = lists.StringListToInterfaceList(*mediaType)
+	if mediaTypes := markContactUncontactableActionSettings.MediaTypes; mediaTypes != nil {
+		markContactUncontactableActionSettingsMap["media_types"] = lists.StringListToInterfaceList(*mediaTypes)
 	}
 
 	markContactUncontactableActionSettingsSet.Add(markContactUncontactableActionSettingsMap)
