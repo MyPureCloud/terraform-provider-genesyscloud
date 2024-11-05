@@ -6,7 +6,7 @@ import (
 	"log"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v143/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
 )
 
 /*
@@ -187,7 +187,7 @@ func getTeamIdByNameFn(ctx context.Context, p *teamProxy, name string) (id strin
 
 // getTeamByIdFn is an implementation of the function to get a Genesys Cloud team by Id
 func getTeamByIdFn(ctx context.Context, p *teamProxy, id string) (team *platformclientv2.Team, resp *platformclientv2.APIResponse, err error) {
-	team, resp, err = p.teamsApi.GetTeam(id)
+	team, resp, err = p.teamsApi.GetTeam(id, "")
 	if err != nil {
 		return nil, resp, fmt.Errorf("Failed to retrieve team by id %s: %s", id, err)
 	}
