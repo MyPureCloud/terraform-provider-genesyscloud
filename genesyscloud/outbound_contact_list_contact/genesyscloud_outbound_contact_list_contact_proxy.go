@@ -9,7 +9,6 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v143/platformclientv2"
 )
 
-var internalProxy *contactProxy
 var contactCache = rc.NewResourceCache[platformclientv2.Dialercontact]()
 
 type createContactFunc func(ctx context.Context, p *contactProxy, contactListId string, contact platformclientv2.Writabledialercontact, priority, clearSystemData, doNotQueue bool) ([]platformclientv2.Dialercontact, *platformclientv2.APIResponse, error)

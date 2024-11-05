@@ -61,7 +61,7 @@ func createOutboundContactListContact(ctx context.Context, d *schema.ResourceDat
 		return util.BuildDiagnosticError(resourceName, msg, fmt.Errorf("%v", msg))
 	}
 	contactId := *contactResponseBody[0].Id
-	d.Set("contact_id", contactId)
+	_ = d.Set("contact_id", contactId)
 	id := createComplexContact(contactListId, contactId)
 	d.SetId(id)
 	log.Printf("Finished creating contact '%s' in contact list '%s'", contactId, contactListId)
