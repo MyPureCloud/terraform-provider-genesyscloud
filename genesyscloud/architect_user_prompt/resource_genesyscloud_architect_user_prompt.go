@@ -25,14 +25,33 @@ func getAllUserPrompts(ctx context.Context, clientConfig *platformclientv2.Confi
 	resources := make(resourceExporter.ResourceIDMetaMap)
 	proxy := getArchitectUserPromptProxy(clientConfig)
 
-	userPrompts, resp, err := proxy.getAllArchitectUserPrompts(ctx, true, true, "")
-	if err != nil {
-		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("failed to get user prompts: %s", err), resp)
-	}
-	for _, userPrompt := range *userPrompts {
-		resources[*userPrompt.Id] = &resourceExporter.ResourceMeta{Name: *userPrompt.Name}
+	exportNameFilter := []interface{}{
+		[]string{
+			"a*", "b*", "c*", "d*", "e*", "f*",
+		},
+		[]string{
+			"g*", "h*", "i*", "j*", "k*",
+		},
+		[]string{
+			"l*", "m*", "n*", "o*", "p*",
+		},
+		[]string{
+			"q*", "r*", "s*", "t*", "u*",
+		},
+		[]string{
+			"v*", "w*", "x*", "y*", "z*",
+		},
 	}
 
+	for _, filter := range exportNameFilter {
+		userPrompts, resp, err := proxy.getAllArchitectUserPrompts(ctx, true, true, "", filter.([]string))
+		if err != nil {
+			return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("failed to get user prompts: %s", err), resp)
+		}
+		for _, userPrompt := range *userPrompts {
+			resources[*userPrompt.Id] = &resourceExporter.ResourceMeta{Name: *userPrompt.Name}
+		}
+	}
 	return resources, nil
 }
 

@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"path/filepath"
 	rc "terraform-provider-genesyscloud/genesyscloud/resource_cache"
+	"terraform-provider-genesyscloud/genesyscloud/tfexporter_state"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"terraform-provider-genesyscloud/genesyscloud/util/files"
 	"time"
@@ -22,7 +23,7 @@ var internalProxy *architectUserPromptProxy
 
 type createArchitectUserPromptFunc func(ctx context.Context, p *architectUserPromptProxy, body platformclientv2.Prompt) (*platformclientv2.Prompt, *platformclientv2.APIResponse, error)
 type getArchitectUserPromptFunc func(ctx context.Context, p *architectUserPromptProxy, id string, includeMediaUris bool, includeResources bool, language []string, checkCache bool) (*platformclientv2.Prompt, *platformclientv2.APIResponse, error)
-type getAllArchitectUserPromptsFunc func(ctx context.Context, p *architectUserPromptProxy, includeMediaUris bool, includeResources bool, name string) (*[]platformclientv2.Prompt, *platformclientv2.APIResponse, error)
+type getAllArchitectUserPromptsFunc func(ctx context.Context, p *architectUserPromptProxy, includeMediaUris bool, includeResources bool, name string, exportNames []string) (*[]platformclientv2.Prompt, *platformclientv2.APIResponse, error)
 type updateArchitectUserPromptFunc func(ctx context.Context, p *architectUserPromptProxy, id string, body platformclientv2.Prompt) (*platformclientv2.Prompt, *platformclientv2.APIResponse, error)
 type deleteArchitectUserPromptFunc func(ctx context.Context, p *architectUserPromptProxy, id string, allResources bool) (*platformclientv2.APIResponse, error)
 type createArchitectUserPromptResourceFunc func(ctx context.Context, p *architectUserPromptProxy, id string, resource platformclientv2.Promptassetcreate) (*platformclientv2.Promptasset, *platformclientv2.APIResponse, error)
@@ -90,8 +91,8 @@ func (p *architectUserPromptProxy) getArchitectUserPrompt(ctx context.Context, i
 }
 
 // getAllArchitectUserPrompts retrieves a list of user prompts
-func (p *architectUserPromptProxy) getAllArchitectUserPrompts(ctx context.Context, includeMediaUris, includeResources bool, name string) (*[]platformclientv2.Prompt, *platformclientv2.APIResponse, error) {
-	return p.getAllArchitectUserPromptsAttr(ctx, p, includeMediaUris, includeResources, name)
+func (p *architectUserPromptProxy) getAllArchitectUserPrompts(ctx context.Context, includeMediaUris, includeResources bool, name string, exportNames []string) (*[]platformclientv2.Prompt, *platformclientv2.APIResponse, error) {
+	return p.getAllArchitectUserPromptsAttr(ctx, p, includeMediaUris, includeResources, name, exportNames)
 }
 
 // updateArchitectUserPrompt updates a user prompt
@@ -155,21 +156,20 @@ func deleteArchitectUserPromptFn(_ context.Context, p *architectUserPromptProxy,
 	return nil, nil
 }
 
-func getAllArchitectUserPromptsFn(_ context.Context, p *architectUserPromptProxy, includeMediaUris, includeResources bool, name string) (*[]platformclientv2.Prompt, *platformclientv2.APIResponse, error) {
+func getAllArchitectUserPromptsFn(_ context.Context, p *architectUserPromptProxy, includeMediaUris, includeResources bool, name string, exportNames []string) (*[]platformclientv2.Prompt, *platformclientv2.APIResponse, error) {
 	const pageSize = 100
 	var allPrompts []platformclientv2.Prompt
-	var exportNameFilter []string
+	var nameFilter []string
 
+	// Determine whether to pass in a single name for getByName or export name filter
 	if name != "" {
-		exportNameFilter = append(exportNameFilter, name)
-	} else {
-		exportNameFilter = []string{
-			"a*", "b*", "c*", "d*", "e*", "f*", "g*", "h*", "i*", "j*", "k*", "l*", "m*",
-			"n*", "o*", "p*", "q*", "r*", "s*", "t*", "u*", "v*", "w*", "x*", "y*", "z*",
-		}
+		nameFilter = append(nameFilter, name)
+	}
+	if exportNames != nil && tfexporter_state.IsExporterActive() {
+		nameFilter = exportNames
 	}
 
-	userPrompts, response, err := p.architectApi.GetArchitectPrompts(1, pageSize, exportNameFilter, "", "", "", "", includeMediaUris, includeResources, nil)
+	userPrompts, response, err := p.architectApi.GetArchitectPrompts(1, pageSize, nameFilter, "", "", "", "", includeMediaUris, includeResources, nil)
 	if err != nil {
 		return nil, response, err
 	}
@@ -182,7 +182,7 @@ func getAllArchitectUserPromptsFn(_ context.Context, p *architectUserPromptProxy
 
 	pageCount := *userPrompts.PageCount
 	for pageNum := 2; pageNum <= pageCount; pageNum++ {
-		userPrompts, response, getErr := p.architectApi.GetArchitectPrompts(pageNum, pageSize, exportNameFilter, "", "", "", "", includeMediaUris, includeResources, nil)
+		userPrompts, response, getErr := p.architectApi.GetArchitectPrompts(pageNum, pageSize, nameFilter, "", "", "", "", includeMediaUris, includeResources, nil)
 		if getErr != nil {
 			return nil, response, getErr
 		}
@@ -385,7 +385,7 @@ func (p *architectUserPromptProxy) buildUserPromptResourcesForCreateAndUpdate(ct
 
 // getArchitectUserPromptIdByNameFn will query user prompt by name and retry if search has not yet indexed the user prompt.
 func getArchitectUserPromptIdByNameFn(ctx context.Context, p *architectUserPromptProxy, name string) (string, *platformclientv2.APIResponse, error, bool) {
-	prompts, response, err := p.getAllArchitectUserPrompts(ctx, true, true, name)
+	prompts, response, err := p.getAllArchitectUserPrompts(ctx, true, true, name, nil)
 	if err != nil {
 		return "", response, err, false
 	}
