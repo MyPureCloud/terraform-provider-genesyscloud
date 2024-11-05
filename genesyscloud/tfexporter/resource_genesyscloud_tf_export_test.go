@@ -1621,6 +1621,132 @@ func validateExportManagedSitesAsData(filename, siteName string) resource.TestCh
 	}
 }
 
+func validatePromptsExported(filename string) resource.TestCheckFunc {
+	return func(state *terraform.State) error {
+		// Check if the file exists
+		_, err := os.Stat(filename)
+		if err != nil {
+			return fmt.Errorf("failed to find file %s", filename)
+		}
+
+		log.Println("Loading export config into map variable")
+		exportData, err := loadJsonFileToMap(filename)
+		if err != nil {
+			return fmt.Errorf("failed to unmarshal JSON from file %s: %s", filename, err)
+		}
+		log.Println("Successfully loaded export config into map variable")
+
+		data, ok := exportData["data"].(map[string]interface{})
+		if !ok {
+			return fmt.Errorf("no 'data' section found in exported JSON")
+		}
+
+		prompts, ok := data["genesyscloud_architect_user_prompt"].(map[string]interface{})
+		if !ok {
+			return fmt.Errorf("no data sources exported for genesyscloud_architect_user_prompt")
+		}
+
+		expectedPrompts := []string{"a_user_prompt_test", "h_user_prompt_test", "z_user_prompt_test"}
+
+		for _, promptID := range expectedPrompts {
+			if promptData, found := prompts[promptID]; found {
+				promptAttributes, ok := promptData.(map[string]interface{})
+				if !ok {
+					return fmt.Errorf("unexpected structure for prompt %s", promptID)
+				}
+
+				// Check that the "name" attribute matches the expected prompt name
+				name, _ := promptAttributes["name"].(string)
+				log.Printf("Verifying prompt '%s' with name '%s'", promptID, name)
+				if name != promptID {
+					return fmt.Errorf("expected prompt name '%s' but found '%s'", promptID, name)
+				}
+			} else {
+				return fmt.Errorf("expected prompt with ID '%s' not found in exported data", promptID)
+			}
+		}
+
+		log.Println("All expected prompts are correctly exported")
+		return nil
+	}
+}
+
+func TestAccResourceUserPromptsExported(t *testing.T) {
+	var (
+		exportTestDir     = filepath.Join("..", "..", ".terraform"+uuid.NewString())
+		resourceID        = "export"
+		aPromptResourceId = "a_user_prompt"
+		aPromptName       = "a_user_prompt_test"
+		hPromptResourceId = "h_user_prompt"
+		hPromptName       = "h_user_prompt_test"
+		zPromptResourceId = "z_user_prompt"
+		zPromptName       = "Z_user_prompt_test"
+	)
+
+	promptConfig := fmt.Sprintf(`
+resource "genesyscloud_architect_user_prompt" "%s" {
+	name        = "%s"
+	description = "Welcome greeting for all callers"
+	resources {
+		language   = "en-us"
+		text       = "Good day. Thank you for calling."
+		tts_string = "Good day. Thank you for calling."
+	}
+}
+
+resource "genesyscloud_architect_user_prompt" "%s" {
+	name        = "%s"
+	description = "Welcome greeting for all callers"
+	resources {
+		language   = "en-us"
+		text       = "Good day. Thank you for calling."
+		tts_string = "Good day. Thank you for calling."
+	}
+}
+
+resource "genesyscloud_architect_user_prompt" "%s" {
+	name        = "%s"
+	description = "Welcome greeting for all callers"
+	resources {
+		language   = "en-us"
+		text       = "Good day. Thank you for calling."
+		tts_string = "Good day. Thank you for calling."
+	}
+}
+`, aPromptResourceId, aPromptName, hPromptResourceId, hPromptName, zPromptResourceId, zPromptName)
+
+	defer func(path string) {
+		if err := os.RemoveAll(path); err != nil {
+			t.Logf("failed to remove dir %s: %s", path, err)
+		}
+	}(exportTestDir)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			{
+				Config: promptConfig + generateTfExportByIncludeFilterResources(
+					resourceID,
+					exportTestDir,
+					util.TrueValue, // include_state_file
+					[]string{ // include_filter_resources
+						strconv.Quote("genesyscloud_architect_user_prompt::a_user_prompt_test"),
+						strconv.Quote("genesyscloud_architect_user_prompt::h_user_prompt_test"),
+						strconv.Quote("genesyscloud_architect_user_prompt::Z_user_prompt_test"),
+					},
+					util.FalseValue, // export_as_hcl
+					util.FalseValue,
+					[]string{},
+				),
+				Check: resource.ComposeTestCheckFunc(
+					validatePromptsExported(exportTestDir),
+				),
+			},
+		},
+	})
+}
+
 // TestAccResourceTfExportCampaignScriptIdReferences exports two campaigns and ensures that the custom revolver OutboundCampaignAgentScriptResolver
 // is working properly i.e. script_id should reference a data source pointing to the Default Outbound Script under particular circumstances
 func TestAccResourceTfExportCampaignScriptIdReferences(t *testing.T) {

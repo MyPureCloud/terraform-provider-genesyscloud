@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"terraform-provider-genesyscloud/genesyscloud/util/constants"
@@ -25,26 +26,10 @@ func getAllUserPrompts(ctx context.Context, clientConfig *platformclientv2.Confi
 	resources := make(resourceExporter.ResourceIDMetaMap)
 	proxy := getArchitectUserPromptProxy(clientConfig)
 
-	exportNameFilter := []interface{}{
-		[]string{
-			"a*", "b*", "c*", "d*", "e*", "f*",
-		},
-		[]string{
-			"g*", "h*", "i*", "j*", "k*",
-		},
-		[]string{
-			"l*", "m*", "n*", "o*", "p*",
-		},
-		[]string{
-			"q*", "r*", "s*", "t*", "u*",
-		},
-		[]string{
-			"v*", "w*", "x*", "y*", "z*",
-		},
-	}
+	exportNameFilter := "abcdefghijklmnopqrstuvwxyz"
 
-	for _, filter := range exportNameFilter {
-		userPrompts, resp, err := proxy.getAllArchitectUserPrompts(ctx, true, true, "", filter.([]string))
+	for _, filter := range strings.Split(exportNameFilter, "") {
+		userPrompts, resp, err := proxy.getAllArchitectUserPrompts(ctx, true, true, "", []string{fmt.Sprintf("%s*", filter)})
 		if err != nil {
 			return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("failed to get user prompts: %s", err), resp)
 		}
