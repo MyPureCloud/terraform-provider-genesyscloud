@@ -77,6 +77,7 @@ func ResourceIdpAdfs() *schema.Resource {
 			`relying_party_identifier`: {
 				Description: `String used to identify Genesys Cloud to ADFS.`,
 				Optional:    true,
+				Computed:    true,
 				Type:        schema.TypeString,
 			},
 			`certificates`: {
