@@ -1,6 +1,8 @@
 package resource_exporter
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"hash/fnv"
 	"log"
 	"os"
@@ -18,24 +20,36 @@ type Sanitizer interface {
 
 // Two different Sanitizer structs one with the original algorithmn
 type sanitizerOriginal struct{}
-type sanitizerOptimized struct{}
+type sanitizerNameOptimized struct{}
+type sanitizerTimeOptimized struct{}
 
 // NewSanitizierProvider returns a Sanitizer. Without a GENESYS_SANITIZER_LEGACY environment variable set it will always use the optimized Sanitizer
 func NewSanitizerProvider() *SanitizerProvider {
 	// Check if the environment variable is set
-	_, exists := os.LookupEnv("GENESYS_SANITIZER_LEGACY")
+	_, legacyExists := os.LookupEnv("GENESYS_SANITIZER_LEGACY")
 
 	//If the GENESYS_SANITIZER_LEGACY is set use the original name sanitizer
-	if exists {
+	if legacyExists {
 		log.Print("Using the original resource name sanitizer")
 		return &SanitizerProvider{
 			S: &sanitizerOriginal{},
 		}
 	}
 
-	log.Print("Using the optimized resource name sanitizer")
+	// Check if the environment variable is set
+	_, timeOptimizedExists := os.LookupEnv("GENESYS_SANITIZER_TIME_OPTIMIZED")
+
+	//If the GENESYS_SANITIZER_LEGACY is set use the original name sanitizer
+	if timeOptimizedExists {
+		log.Print("Using the time optimized resource name sanitizer")
+		return &SanitizerProvider{
+			S: &sanitizerTimeOptimized{},
+		}
+	}
+
+	log.Print("Using the name optimized resource name sanitizer")
 	return &SanitizerProvider{
-		S: &sanitizerOptimized{},
+		S: &sanitizerNameOptimized{},
 	}
 
 }
@@ -66,7 +80,7 @@ func (so *sanitizerOriginal) SanitizeResourceName(inputName string) string {
 }
 
 // Sanitize sanitizes all resource name using the optimized algorithm
-func (sod *sanitizerOptimized) Sanitize(idMetaMap ResourceIDMetaMap) {
+func (sod *sanitizerNameOptimized) Sanitize(idMetaMap ResourceIDMetaMap) {
 	// Pull out all the original names of the resources for reference later
 	originalResourceNames := make(map[string]string)
 	for k, v := range idMetaMap {
@@ -99,7 +113,45 @@ func (sod *sanitizerOptimized) Sanitize(idMetaMap ResourceIDMetaMap) {
 }
 
 // SanitizeResourceName sanitizes a single resource name
-func (sod *sanitizerOptimized) SanitizeResourceName(inputName string) string {
+func (sod *sanitizerNameOptimized) SanitizeResourceName(inputName string) string {
+	name := unsafeNameChars.ReplaceAllStringFunc(inputName, escapeRune)
+
+	if unsafeNameStartingChars.MatchString(string(rune(name[0]))) {
+		// Terraform does not allow names to begin with a number. Prefix with an underscore instead
+		name = "_" + name
+	}
+
+	return name
+}
+
+// Sanitize sanitizes all resource name using the time optimized algorithm
+func (sod *sanitizerTimeOptimized) Sanitize(idMetaMap ResourceIDMetaMap) {
+	sanitizedNames := make(map[string]int, len(idMetaMap))
+
+	for _, meta := range idMetaMap {
+		sanitizedName := sod.SanitizeResourceName(meta.Name)
+
+		if sanitizedName != meta.Name {
+			if count, exists := sanitizedNames[sanitizedName]; exists {
+				// We've seen this sanitized name before
+				sanitizedNames[sanitizedName] = count + 1
+
+				// Append a hash to ensure uniqueness
+				h := sha256.New()
+				h.Write([]byte(meta.Name))
+				hash := hex.EncodeToString(h.Sum(nil)[:8]) // Use first 8 characters of hash
+
+				meta.Name = sanitizedName + "_" + hash
+			} else {
+				sanitizedNames[sanitizedName] = 1
+				meta.Name = sanitizedName
+			}
+		}
+	}
+}
+
+// SanitizeResourceName sanitizes a single resource name
+func (sod *sanitizerTimeOptimized) SanitizeResourceName(inputName string) string {
 	name := unsafeNameChars.ReplaceAllStringFunc(inputName, escapeRune)
 
 	if unsafeNameStartingChars.MatchString(string(rune(name[0]))) {
