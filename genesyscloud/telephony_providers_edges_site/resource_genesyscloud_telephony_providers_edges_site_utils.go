@@ -521,7 +521,7 @@ func GenerateSiteResourceWithCustomAttrs(
 	callerId string,
 	callerName string,
 	otherAttrs ...string) string {
-	return fmt.Sprintf(`resource "genesyscloud_telephony_providers_edges_site" "%s" {
+	site := fmt.Sprintf(`resource "genesyscloud_telephony_providers_edges_site" "%s" {
 		name = "%s"
 		description = "%s"
 		location_id = %s
@@ -533,6 +533,8 @@ func GenerateSiteResourceWithCustomAttrs(
 		%s
 	}
 	`, siteRes, name, description, locationId, mediaModel, mediaRegionsUseLatencyBased, mediaRegions, callerId, callerName, strings.Join(otherAttrs, "\n"))
+
+	return site
 }
 
 func CheckForDefaultSite(siteName string) error {
