@@ -18,7 +18,7 @@ package telephony_providers_edges_trunk
 // 		trunkData = "trunkData"
 // 	)
 
-// 	phoneTrunkBaseSettings := telephony_provider_edges_trunkbasesettings.GenerateTrunkBaseSettingsResourceWithCustomAttrs(
+// 	phoneTrunkBaseSettings := telephony.GenerateTrunkBaseSettingsResourceWithCustomAttrs(
 // 		phoneTrunkBaseSettingsRes,
 // 		"phone trunk base settings "+uuid.NewString(),
 // 		"",
@@ -26,7 +26,7 @@ package telephony_providers_edges_trunk
 // 		"PHONE",
 // 		false)
 
-// 	trunkBaseSettingsConfig := telephony_provider_edges_trunkbasesettings.GenerateTrunkBaseSettingsResourceWithCustomAttrs(
+// 	trunkBaseSettingsConfig := telephony.GenerateTrunkBaseSettingsResourceWithCustomAttrs(
 // 		trunkBaseSettingsRes,
 // 		"test trunk base settings "+uuid.NewString(),
 // 		"test description 1",

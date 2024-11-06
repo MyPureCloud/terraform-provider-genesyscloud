@@ -3,7 +3,7 @@ package telephony_providers_edges_edge_group
 import (
 	"fmt"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
-	tbs "terraform-provider-genesyscloud/genesyscloud/telephony_provider_edges_trunkbasesettings"
+	telephony "terraform-provider-genesyscloud/genesyscloud/telephony"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 
@@ -28,14 +28,14 @@ func TestAccResourceEdgeGroup(t *testing.T) {
 	)
 
 	// Original phone settings
-	phoneTrunkBaseSetting1 := tbs.GenerateTrunkBaseSettingsResourceWithCustomAttrs(
+	phoneTrunkBaseSetting1 := telephony.GenerateTrunkBaseSettingsResourceWithCustomAttrs(
 		phoneTrunkBaseSettingsRes1,
 		"phone trunk base settings "+uuid.NewString(),
 		"",
 		"phone_connections_webrtc.json",
 		"PHONE",
 		false)
-	phoneTrunkBaseSetting2 := tbs.GenerateTrunkBaseSettingsResourceWithCustomAttrs(
+	phoneTrunkBaseSetting2 := telephony.GenerateTrunkBaseSettingsResourceWithCustomAttrs(
 		phoneTrunkBaseSettingsRes2,
 		"phone trunk base settings "+uuid.NewString(),
 		"",
@@ -44,7 +44,7 @@ func TestAccResourceEdgeGroup(t *testing.T) {
 		false)
 
 	// Updated phone settings
-	phoneTrunkBaseSetting3 := tbs.GenerateTrunkBaseSettingsResourceWithCustomAttrs(
+	phoneTrunkBaseSetting3 := telephony.GenerateTrunkBaseSettingsResourceWithCustomAttrs(
 		phoneTrunkBaseSettingsRes3,
 		"phone trunk base settings "+uuid.NewString(),
 		"",

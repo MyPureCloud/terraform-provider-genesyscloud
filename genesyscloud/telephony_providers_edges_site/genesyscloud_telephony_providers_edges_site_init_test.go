@@ -5,11 +5,12 @@ import (
 	"sync"
 	"terraform-provider-genesyscloud/genesyscloud/location"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
-	tbs "terraform-provider-genesyscloud/genesyscloud/telephony_provider_edges_trunkbasesettings"
 	"testing"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	telephony "terraform-provider-genesyscloud/genesyscloud/telephony"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 /*
@@ -37,7 +38,7 @@ func (r *registerTestInstance) registerTestResources() {
 
 	providerResources[resourceName] = ResourceSite()
 	providerResources["genesyscloud_location"] = location.ResourceLocation()
-	providerResources["genesyscloud_telephony_providers_edges_trunkbasesettings"] = tbs.ResourceTrunkBaseSettings()
+	providerResources["genesyscloud_telephony_providers_edges_trunkbasesettings"] = telephony.ResourceTrunkBaseSettings()
 }
 
 // registerTestDataSources registers all data sources used in the tests.

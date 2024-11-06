@@ -114,5 +114,6 @@ func getTrunkByIdFn(ctx context.Context, p *trunkProxy, trunkBaseSettingsId stri
 }
 
 func getAllTrunksFn(ctx context.Context, p *trunkProxy, pageNum int, pageSize int) (*platformclientv2.Trunkentitylisting, *platformclientv2.APIResponse, error) {
+
 	return p.edgesApi.GetTelephonyProvidersEdgesTrunks(pageNum, pageSize, "", "", "", "", "")
 }

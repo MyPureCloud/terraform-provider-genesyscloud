@@ -3,7 +3,7 @@ package telephony_providers_edges_trunk
 import (
 	"sync"
 	"terraform-provider-genesyscloud/genesyscloud/location"
-	tbs "terraform-provider-genesyscloud/genesyscloud/telephony_provider_edges_trunkbasesettings"
+	telephony "terraform-provider-genesyscloud/genesyscloud/telephony"
 	edgeGroup "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_edge_group"
 	edgeSite "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site"
 	"testing"
@@ -24,7 +24,7 @@ func (r *registerTestInstance) registerTestResources() {
 	r.resourceMapMutex.Lock()
 	defer r.resourceMapMutex.Unlock()
 
-	providerResources["genesyscloud_telephony_providers_edges_trunkbasesettings"] = tbs.ResourceTrunkBaseSettings()
+	providerResources["genesyscloud_telephony_providers_edges_trunkbasesettings"] = telephony.ResourceTrunkBaseSettings()
 	providerResources[resourceName] = ResourceTrunk()
 
 	// external package dependencies
@@ -40,7 +40,7 @@ func (r *registerTestInstance) registerTestDataSources() {
 	r.datasourceMapMutex.Lock()
 	defer r.datasourceMapMutex.Unlock()
 
-	providerDataSources["genesyscloud_telephony_providers_edges_trunkbasesettings"] = tbs.DataSourceTrunkBaseSettings()
+	providerDataSources["genesyscloud_telephony_providers_edges_trunkbasesettings"] = telephony.DataSourceTrunkBaseSettings()
 	providerDataSources[resourceName] = DataSourceTrunk()
 	// external package dependencies
 	providerDataSources["genesyscloud_telephony_providers_edges_site"] = edgeSite.DataSourceSite()

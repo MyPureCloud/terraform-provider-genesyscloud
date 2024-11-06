@@ -1,4 +1,4 @@
-package telephony_provider_edges_trunkbasesettings
+package telephony
 
 import (
 	"fmt"
@@ -15,7 +15,7 @@ func TestAccDataSourceTrunkBaseSettings(t *testing.T) {
 	var (
 		trunkBaseSettingsRes     = "trunkBaseSettings"
 		trunkBaseSettingsDataRes = "trunkBaseSettingsData"
-		name                     = "test trunk base settings-" + uuid.NewString()
+		name                     = "test trunk base settings " + uuid.NewString()
 		description              = "test description"
 		trunkMetaBaseId          = "phone_connections_webrtc.json"
 		trunkType                = "PHONE"
@@ -23,7 +23,6 @@ func TestAccDataSourceTrunkBaseSettings(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-
 		PreCheck:          func() { util.TestAccPreCheck(t) },
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{

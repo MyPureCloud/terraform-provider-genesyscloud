@@ -1,4 +1,4 @@
-package telephony_provider_edges_trunkbasesettings
+package telephony
 
 import (
 	"fmt"
@@ -101,7 +101,7 @@ func TestAccResourceTrunkBaseSettings(t *testing.T) {
 	})
 }
 
-func TestAccResourceExternalTrunkBaseSettingsInboundSite(t *testing.T) {
+func TestAccResourceExternralTrunkBaseSettingsInboundSite(t *testing.T) {
 
 	var (
 		trunkBaseSettingsRes = "trunkBaseSettings1234"

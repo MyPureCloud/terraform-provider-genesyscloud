@@ -82,7 +82,7 @@ import (
 	workitemSchema "terraform-provider-genesyscloud/genesyscloud/task_management_workitem_schema"
 	worktype "terraform-provider-genesyscloud/genesyscloud/task_management_worktype"
 	worktypeStatus "terraform-provider-genesyscloud/genesyscloud/task_management_worktype_status"
-	tbs "terraform-provider-genesyscloud/genesyscloud/telephony_provider_edges_trunkbasesettings"
+	telephony "terraform-provider-genesyscloud/genesyscloud/telephony"
 	didPool "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_did_pool"
 	edgeGroup "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_edge_group"
 	edgeExtension "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_extension_pool"
@@ -187,7 +187,7 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_telephony_providers_edges_site"] = edgeSite.ResourceSite()
 	providerResources["genesyscloud_telephony_providers_edges_site_outbound_route"] = outboundRoute.ResourceSiteOutboundRoute()
 	providerResources["genesyscloud_telephony_providers_edges_phonebasesettings"] = phonebaseSettings.ResourcePhoneBaseSettings()
-	providerResources["genesyscloud_telephony_providers_edges_trunkbasesettings"] = tbs.ResourceTrunkBaseSettings()
+	providerResources["genesyscloud_telephony_providers_edges_trunkbasesettings"] = telephony.ResourceTrunkBaseSettings()
 	providerResources["genesyscloud_telephony_providers_edges_trunk"] = edgesTrunk.ResourceTrunk()
 	providerResources["genesyscloud_telephony_providers_edges_edge_group"] = edgeGroup.ResourceEdgeGroup()
 
@@ -312,7 +312,7 @@ func (r *registerTestInstance) registerTestExporters() {
 	RegisterExporter("genesyscloud_telephony_providers_edges_site", edgeSite.SiteExporter())
 	RegisterExporter("genesyscloud_telephony_providers_edges_site_outbound_route", outboundRoute.SiteExporterOutboundRoute())
 	RegisterExporter("genesyscloud_telephony_providers_edges_phonebasesettings", phonebaseSettings.PhoneBaseSettingsExporter())
-	RegisterExporter("genesyscloud_telephony_providers_edges_trunkbasesettings", tbs.TrunkBaseSettingsExporter())
+	RegisterExporter("genesyscloud_telephony_providers_edges_trunkbasesettings", telephony.TrunkBaseSettingsExporter())
 	RegisterExporter("genesyscloud_telephony_providers_edges_trunk", edgesTrunk.TrunkExporter())
 	RegisterExporter("genesyscloud_user", user.UserExporter())
 	RegisterExporter("genesyscloud_user_roles", userRoles.UserRolesExporter())

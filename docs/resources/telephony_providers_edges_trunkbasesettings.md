@@ -72,7 +72,6 @@ resource "genesyscloud_telephony_providers_edges_trunkbasesettings" "trunkBaseSe
 - `inbound_site_id` (String) The site to which inbound calls will be routed. Only valid for External BYOC Trunks.
 - `managed` (Boolean) Is this trunk being managed remotely. This property is synchronized with the managed property of the Edge Group to which it is assigned.
 - `properties` (String) trunk base settings properties
-- `site_id` (String) Used to determine the media regions for inbound and outbound calls through a trunk. Also determines the dial plan to use for calls that came in on a trunk and have to be sent out on it as well.  While this is called the site on the API, in the UI it is referred to as the media site.
 - `state` (String) The resource's state.
 
 ### Read-Only

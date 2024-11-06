@@ -18,7 +18,7 @@ package telephony_providers_edges_trunk
 // 		trunkRes = "trunkRes"
 // 	)
 
-// 	phoneTrunkBaseSettings := telephony_provider_edges_trunkbasesettings.GenerateTrunkBaseSettingsResourceWithCustomAttrs(
+// 	phoneTrunkBaseSettings := telephony.GenerateTrunkBaseSettingsResourceWithCustomAttrs(
 // 		phoneTrunkBaseSettingsRes,
 // 		"phone trunk base settings "+uuid.NewString(),
 // 		"",
@@ -26,7 +26,7 @@ package telephony_providers_edges_trunk
 // 		"PHONE",
 // 		false)
 
-// 	trunkBaseSettingsConfig := telephony_provider_edges_trunkbasesettings.GenerateTrunkBaseSettingsResourceWithCustomAttrs(
+// 	trunkBaseSettingsConfig := telephony.GenerateTrunkBaseSettingsResourceWithCustomAttrs(
 // 		trunkBaseSettingsRes,
 // 		"test trunk base settings "+uuid.NewString(),
 // 		"test description 1",
@@ -53,7 +53,7 @@ package telephony_providers_edges_trunk
 // 				) + phoneTrunkBaseSettings + trunkBaseSettingsConfig + generateTrunk(
 // 					trunkRes,
 // 					"genesyscloud_telephony_providers_edges_trunkbasesettings."+trunkBaseSettingsRes+".id",
-// 					"genesyscloud_teleproxy:=getTrunkBaseSettingProxy(sdkConfig)phony_providers_edges_edge_group."+edgeGroupRes1+".id",
+// 					"genesyscloud_telephony_providers_edges_edge_group."+edgeGroupRes1+".id",
 // 				),
 // 			},
 // 			//Create a new edge group and assign the trunk base settings to a new edge group to update the trunk

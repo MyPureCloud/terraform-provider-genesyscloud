@@ -96,7 +96,7 @@ import (
 	worktype "terraform-provider-genesyscloud/genesyscloud/task_management_worktype"
 	worktypeStatus "terraform-provider-genesyscloud/genesyscloud/task_management_worktype_status"
 	"terraform-provider-genesyscloud/genesyscloud/team"
-	"terraform-provider-genesyscloud/genesyscloud/telephony_provider_edges_trunkbasesettings"
+	"terraform-provider-genesyscloud/genesyscloud/telephony"
 	did "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_did"
 	didPool "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_did_pool"
 	edgeGroup "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_edge_group"
@@ -183,7 +183,7 @@ func registerResources() {
 	grammar.SetRegistrar(regInstance)                                      //Registering architect grammar
 	grammarLanguage.SetRegistrar(regInstance)                              //Registering architect grammar language
 	groupRoles.SetRegistrar(regInstance)                                   //Registering group roles
-	edgePhone.SetRegistrar(regInstance)                                    //Registering telephony  providers edges phone
+	edgePhone.SetRegistrar(regInstance)                                    //Registering telephony providers edges phone
 	edgeSite.SetRegistrar(regInstance)                                     //Registering telephony providers edges site
 	siteOutboundRoutes.SetRegistrar(regInstance)                           //Registering telephony providers edges site outbound routes
 	flow.SetRegistrar(regInstance)                                         //Registering architect flow
@@ -242,7 +242,7 @@ func registerResources() {
 	workitem.SetRegistrar(regInstance)                                     //Registering task management workitem
 	externalContacts.SetRegistrar(regInstance)                             //Registering external contacts
 	team.SetRegistrar(regInstance)                                         //Registering team
-	telephony_provider_edges_trunkbasesettings.SetRegistrar(regInstance)   //Registering telephony_provider_edges_trunkbasesettings package
+	telephony.SetRegistrar(regInstance)                                    //Registering telephony package
 	edgeGroup.SetRegistrar(regInstance)                                    //Registering edges edge group
 	webDeployConfig.SetRegistrar(regInstance)                              //Registering webdeployments_config
 	webDeployDeploy.SetRegistrar(regInstance)                              //Registering webdeployments_deploy
