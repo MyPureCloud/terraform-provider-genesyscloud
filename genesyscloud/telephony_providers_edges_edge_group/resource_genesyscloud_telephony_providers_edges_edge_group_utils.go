@@ -10,19 +10,19 @@ import (
 )
 
 func buildSdkTrunkBases(d *schema.ResourceData) *[]platformclientv2.Trunkbase {
-	returnValue := make([]platformclientv2.Trunkbase, 0)
+	trunkBases := make([]platformclientv2.Trunkbase, 0)
 
 	if ids, ok := d.GetOk("phone_trunk_base_ids"); ok {
 		phoneTrunkBaseIds := lists.SetToStringList(ids.(*schema.Set))
 		for _, trunkBaseId := range *phoneTrunkBaseIds {
 			id := trunkBaseId
-			returnValue = append(returnValue, platformclientv2.Trunkbase{
+			trunkBases = append(trunkBases, platformclientv2.Trunkbase{
 				Id: &id,
 			})
 		}
 	}
 
-	return &returnValue
+	return &trunkBases
 }
 
 func GenerateEdgeGroupResourceWithCustomAttrs(
