@@ -80,6 +80,7 @@ func ResourceIdpOnelogin() *schema.Resource {
 			`relying_party_identifier`: {
 				Description: `String used to identify Genesys Cloud to OneLogin.`,
 				Optional:    true,
+				Computed:    true,
 				Type:        schema.TypeString,
 			},
 			`certificates`: {
