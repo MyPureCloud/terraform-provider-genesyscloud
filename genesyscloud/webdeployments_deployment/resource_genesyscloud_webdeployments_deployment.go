@@ -18,7 +18,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v143/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
 )
 
 func getAllWebDeployments(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
@@ -55,7 +55,7 @@ func createWebDeployment(ctx context.Context, d *schema.ResourceData, meta inter
 	configId := d.Get("configuration.0.id").(string)
 	inputConfigVersion := d.Get("configuration.0.version").(string)
 
-	flow := util.BuildSdkDomainEntityRef(d, "flow_id")
+	flow := util.BuildSdkWebdeploymentFlowEntityRef(d, "flow_id")
 
 	configVersion, versionList, er := wd.determineLatestVersion(ctx, configId)
 	if er != nil {
@@ -194,7 +194,7 @@ func updateWebDeployment(ctx context.Context, d *schema.ResourceData, meta inter
 
 	configId := d.Get("configuration.0.id").(string)
 
-	flow := util.BuildSdkDomainEntityRef(d, "flow_id")
+	flow := util.BuildSdkWebdeploymentFlowEntityRef(d, "flow_id")
 
 	// always update to latest version of configuration during update of an existing webdeployment
 	configVersion, _, er := wd.determineLatestVersion(ctx, configId)
