@@ -36,6 +36,10 @@ resource "genesyscloud_idp_salesforce" "salesforce" {
 ### Optional
 
 - `disabled` (Boolean) True if Salesforce is disabled. Defaults to `false`.
+- `name` (String) Name of the provider
+- `relying_party_identifier` (String) String used to identify Genesys Cloud to Ping.
+- `slo_binding` (String)
+- `slo_uri` (String) Provided on app creation.
 - `target_uri` (String) Target URI provided by Salesforce.
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 

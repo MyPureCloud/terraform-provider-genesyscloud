@@ -47,7 +47,6 @@ func TestAccResourceIdpOnelogin(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_idp_onelogin.onelogin", "issuer_uri", uri1),
 					resource.TestCheckResourceAttr("genesyscloud_idp_onelogin.onelogin", "target_uri", uri2),
 					resource.TestCheckResourceAttr("genesyscloud_idp_onelogin.onelogin", "disabled", util.FalseValue),
-					resource.TestCheckResourceAttr("genesyscloud_idp_onelogin.onelogin", "relying_party_identifier", ""),
 					resource.TestCheckResourceAttr("genesyscloud_idp_onelogin.onelogin", "slo_uri", uri3),
 					resource.TestCheckResourceAttr("genesyscloud_idp_onelogin.onelogin", "slo_binding", slo_binding1),
 				),

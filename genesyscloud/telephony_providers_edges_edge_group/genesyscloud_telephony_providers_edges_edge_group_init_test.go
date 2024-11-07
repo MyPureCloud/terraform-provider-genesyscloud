@@ -4,7 +4,7 @@ import (
 	"sync"
 
 	"terraform-provider-genesyscloud/genesyscloud/location"
-	telephony "terraform-provider-genesyscloud/genesyscloud/telephony"
+	tbs "terraform-provider-genesyscloud/genesyscloud/telephony_provider_edges_trunkbasesettings"
 	edgeSite "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site"
 	"testing"
 
@@ -26,7 +26,7 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_telephony_providers_edges_edge_group"] = ResourceEdgeGroup()
 	// external package dependencies for Edges Edge group
 	providerResources["genesyscloud_telephony_providers_edges_site"] = edgeSite.ResourceSite()
-	providerResources["genesyscloud_telephony_providers_edges_trunkbasesettings"] = telephony.ResourceTrunkBaseSettings()
+	providerResources["genesyscloud_telephony_providers_edges_trunkbasesettings"] = tbs.ResourceTrunkBaseSettings()
 	providerResources["genesyscloud_location"] = location.ResourceLocation()
 
 }
@@ -38,7 +38,7 @@ func (r *registerTestInstance) registerTestDataSources() {
 	providerDataSources["genesyscloud_telephony_providers_edges_edge_group"] = DataSourceEdgeGroup()
 	// external package dependencies for Edges Edge group
 	providerDataSources["genesyscloud_telephony_providers_edges_site"] = edgeSite.DataSourceSite()
-	providerDataSources["genesyscloud_telephony_providers_edges_trunkbasesettings"] = telephony.DataSourceTrunkBaseSettings()
+	providerDataSources["genesyscloud_telephony_providers_edges_trunkbasesettings"] = tbs.DataSourceTrunkBaseSettings()
 
 }
 

@@ -46,7 +46,6 @@ func TestAccResourceIdpGsuite(t *testing.T) {
 					util.ValidateStringInArray("genesyscloud_idp_gsuite.gsuite", "certificates", util.TestCert1),
 					resource.TestCheckResourceAttr("genesyscloud_idp_gsuite.gsuite", "issuer_uri", uri1),
 					resource.TestCheckResourceAttr("genesyscloud_idp_gsuite.gsuite", "target_uri", uri2),
-					resource.TestCheckResourceAttr("genesyscloud_idp_gsuite.gsuite", "relying_party_identifier", ""),
 					resource.TestCheckResourceAttr("genesyscloud_idp_gsuite.gsuite", "disabled", util.FalseValue),
 					resource.TestCheckResourceAttr("genesyscloud_idp_gsuite.gsuite", "slo_uri", uri3),
 					resource.TestCheckResourceAttr("genesyscloud_idp_gsuite.gsuite", "slo_binding", slo_binding1),

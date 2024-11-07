@@ -1,10 +1,11 @@
 package idp_salesforce
 
 import (
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"time"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
 )
@@ -43,6 +44,11 @@ func ResourceIdpSalesforce() *schema.Resource {
 			Read:   schema.DefaultTimeout(8 * time.Minute),
 		},
 		Schema: map[string]*schema.Schema{
+			`name`: {
+				Description: `Name of the provider`,
+				Optional:    true,
+				Type:        schema.TypeString,
+			},
 			"certificates": {
 				Description: "PEM or DER encoded public X.509 certificates for SAML signature validation.",
 				Type:        schema.TypeList,
@@ -58,6 +64,21 @@ func ResourceIdpSalesforce() *schema.Resource {
 				Description: "Target URI provided by Salesforce.",
 				Type:        schema.TypeString,
 				Optional:    true,
+			},
+			`slo_uri`: {
+				Description: `Provided on app creation.`,
+				Optional:    true,
+				Type:        schema.TypeString,
+			},
+			`slo_binding`: {
+				Optional: true,
+				Type:     schema.TypeString,
+			},
+			`relying_party_identifier`: {
+				Description: `String used to identify Genesys Cloud to Ping.`,
+				Optional:    true,
+				Computed:    true,
+				Type:        schema.TypeString,
 			},
 			"disabled": {
 				Description: "True if Salesforce is disabled.",

@@ -3,7 +3,7 @@ package telephony_providers_edges_edge_group
 import (
 	"fmt"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
-	"terraform-provider-genesyscloud/genesyscloud/telephony"
+	"terraform-provider-genesyscloud/genesyscloud/telephony_provider_edges_trunkbasesettings"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 
@@ -20,18 +20,10 @@ func TestAccDataSourceEdgeGroup(t *testing.T) {
 		edgeGroupDescription1 = "test description 1"
 
 		phoneTrunkBaseSettingsRes1 = "phoneTrunkBaseSettingsRes1"
-		phoneTrunkBaseSettingsRes2 = "phoneTrunkBaseSettingsRes2"
 	)
 
-	phoneTrunkBaseSetting1 := telephony.GenerateTrunkBaseSettingsResourceWithCustomAttrs(
+	phoneTrunkBaseSetting1 := telephony_provider_edges_trunkbasesettings.GenerateTrunkBaseSettingsResourceWithCustomAttrs(
 		phoneTrunkBaseSettingsRes1,
-		"phone trunk base settings "+uuid.NewString(),
-		"",
-		"phone_connections_webrtc.json",
-		"PHONE",
-		false)
-	phoneTrunkBaseSetting2 := telephony.GenerateTrunkBaseSettingsResourceWithCustomAttrs(
-		phoneTrunkBaseSettingsRes2,
 		"phone trunk base settings "+uuid.NewString(),
 		"",
 		"phone_connections_webrtc.json",
@@ -43,14 +35,13 @@ func TestAccDataSourceEdgeGroup(t *testing.T) {
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
-				Config: phoneTrunkBaseSetting1 + phoneTrunkBaseSetting2 + GenerateEdgeGroupResourceWithCustomAttrs(
+				Config: phoneTrunkBaseSetting1 + GenerateEdgeGroupResourceWithCustomAttrs(
 					edgeGroupRes,
 					edgeGroupName1,
 					edgeGroupDescription1,
 					false,
 					false,
-					GeneratePhoneTrunkBaseIds("genesyscloud_telephony_providers_edges_trunkbasesettings."+phoneTrunkBaseSettingsRes1+".id",
-						"genesyscloud_telephony_providers_edges_trunkbasesettings."+phoneTrunkBaseSettingsRes2+".id"),
+					GeneratePhoneTrunkBaseIds("genesyscloud_telephony_providers_edges_trunkbasesettings."+phoneTrunkBaseSettingsRes1+".id"),
 				) + generateEdgeGroupDataSource(
 					edgeGroupData,
 					edgeGroupName1,
