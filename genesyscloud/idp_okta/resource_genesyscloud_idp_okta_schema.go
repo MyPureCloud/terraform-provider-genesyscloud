@@ -80,6 +80,7 @@ func ResourceIdpOkta() *schema.Resource {
 				Description: `String used to identify Genesys Cloud to Okta.`,
 				Optional:    true,
 				Type:        schema.TypeString,
+				Computed:    true,
 			},
 			`certificates`: {
 				Description: `PEM or DER encoded public X.509 certificates for SAML signature validation.`,

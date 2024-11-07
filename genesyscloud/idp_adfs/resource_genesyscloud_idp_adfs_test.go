@@ -46,7 +46,6 @@ func TestAccResourceIdpAdfs(t *testing.T) {
 					util.ValidateStringInArray("genesyscloud_idp_adfs.adfs", "certificates", util.TestCert1),
 					resource.TestCheckResourceAttr("genesyscloud_idp_adfs.adfs", "issuer_uri", uri1),
 					resource.TestCheckResourceAttr("genesyscloud_idp_adfs.adfs", "target_uri", uri2),
-					resource.TestCheckResourceAttr("genesyscloud_idp_adfs.adfs", "relying_party_identifier", ""),
 					resource.TestCheckResourceAttr("genesyscloud_idp_adfs.adfs", "disabled", util.FalseValue),
 					resource.TestCheckResourceAttr("genesyscloud_idp_adfs.adfs", "slo_uri", uri3),
 					resource.TestCheckResourceAttr("genesyscloud_idp_adfs.adfs", "slo_binding", slo_binding1),

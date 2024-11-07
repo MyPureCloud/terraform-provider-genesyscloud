@@ -50,3 +50,5 @@ coverage.out
 cover.html
 coverage_unit.out
 cover_unit.html
+
+consistency-errors.log.json
