@@ -4,7 +4,7 @@ import (
 	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v143/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
 )
 
 func BuildSdkDomainEntityRef(d *schema.ResourceData, idAttr string) *platformclientv2.Domainentityref {
@@ -13,6 +13,14 @@ func BuildSdkDomainEntityRef(d *schema.ResourceData, idAttr string) *platformcli
 		return nil
 	}
 	return &platformclientv2.Domainentityref{Id: &idVal}
+}
+
+func BuildSdkWebdeploymentFlowEntityRef(d *schema.ResourceData, idAttr string) *platformclientv2.Webdeploymentflowentityref {
+	idVal := d.Get(idAttr).(string)
+	if idVal == "" {
+		return nil
+	}
+	return &platformclientv2.Webdeploymentflowentityref{Id: &idVal}
 }
 
 func BuildSdkDomainEntityRefArr(d *schema.ResourceData, idAttr string) *[]platformclientv2.Domainentityref {

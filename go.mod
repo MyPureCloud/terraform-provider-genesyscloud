@@ -11,7 +11,7 @@ require (
 	github.com/hashicorp/terraform-plugin-sdk/v2 v2.34.0
 	github.com/leekchan/timeutil v0.0.0-20150802142658-28917288c48d
 	github.com/mohae/deepcopy v0.0.0-20170929034955-c48cc78d4826
-	github.com/mypurecloud/platform-client-sdk-go/v143 v143.0.0
+	github.com/mypurecloud/platform-client-sdk-go/v146 v146.0.0
 	github.com/nyaruka/phonenumbers v1.4.1
 	github.com/rjNemo/underscore v0.6.1
 	github.com/zclconf/go-cty v1.15.0
@@ -29,6 +29,7 @@ require (
 	github.com/hashicorp/cli v1.1.6 // indirect
 	github.com/mattn/go-runewidth v0.0.9 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
+	github.com/spf13/afero v1.1.2 // indirect
 	github.com/vmihailenco/msgpack/v5 v5.4.1 // indirect
 	github.com/vmihailenco/tagparser/v2 v2.0.0 // indirect
 	github.com/yuin/goldmark v1.7.1 // indirect
@@ -85,7 +86,6 @@ require (
 	github.com/pelletier/go-toml v1.2.0 // indirect
 	github.com/posener/complete v1.2.3 // indirect
 	github.com/shopspring/decimal v1.3.1 // indirect
-	github.com/spf13/afero v1.2.2 // indirect
 	github.com/spf13/cast v1.5.0 // indirect
 	github.com/spf13/jwalterweatherman v1.0.0 // indirect
 	github.com/spf13/pflag v1.0.3 // indirect
