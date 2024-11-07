@@ -39,7 +39,7 @@ func NewSanitizerProvider() *SanitizerProvider {
 	// Check if the environment variable is set
 	_, timeOptimizedExists := os.LookupEnv("GENESYS_SANITIZER_TIME_OPTIMIZED")
 
-	//If the GENESYS_SANITIZER_LEGACY is set use the original name sanitizer
+	//If the GENESYS_SANITIZER_TIME_OPTIMIZED is set use the updated time optimized sanitizer
 	if timeOptimizedExists {
 		log.Print("Using the time optimized resource name sanitizer")
 		return &SanitizerProvider{
@@ -139,7 +139,7 @@ func (sod *sanitizerTimeOptimized) Sanitize(idMetaMap ResourceIDMetaMap) {
 				// Append a hash to ensure uniqueness
 				h := sha256.New()
 				h.Write([]byte(meta.Name))
-				hash := hex.EncodeToString(h.Sum(nil)[:8]) // Use first 8 characters of hash
+				hash := hex.EncodeToString(h.Sum(nil)[:10]) // Use first 10 characters of hash
 
 				meta.Name = sanitizedName + "_" + hash
 			} else {
