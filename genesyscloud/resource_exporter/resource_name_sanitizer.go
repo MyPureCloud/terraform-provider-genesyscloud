@@ -6,7 +6,10 @@ import (
 	"hash/fnv"
 	"log"
 	"strconv"
+	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/util/feature_toggles"
+
+	unidecode "github.com/mozillazg/go-unidecode"
 )
 
 type SanitizerProvider struct {
@@ -19,7 +22,7 @@ type Sanitizer interface {
 }
 
 // Two different Sanitizer structs one with the original algorithmn
-type sanitizerOriginal struct{}
+type sanitizerOriginalLegacy struct{}
 type sanitizerNameOptimized struct{}
 type sanitizerTimeOptimized struct{}
 
@@ -32,16 +35,16 @@ func NewSanitizerProvider() *SanitizerProvider {
 	if legacyExists {
 		log.Print("Using the original resource name sanitizer")
 		return &SanitizerProvider{
-			S: &sanitizerOriginal{},
+			S: &sanitizerOriginalLegacy{},
 		}
 	}
 
 	// Check if the environment variable is set
-	timeOptimizedExists := feature_toggles.ExporterSanitizerTimeOptimizedToggleExists()
+	optimizedExists := feature_toggles.ExporterSanitizerOptimizedToggleExists()
 
 	//If the GENESYS_SANITIZER_TIME_OPTIMIZED is set use the updated time optimized sanitizer
-	if timeOptimizedExists {
-		log.Print("Using the time optimized resource name sanitizer")
+	if optimizedExists {
+		log.Print("Using the time optimized resource name sanitizer with transliteration")
 		return &SanitizerProvider{
 			S: &sanitizerTimeOptimized{},
 		}
@@ -55,14 +58,14 @@ func NewSanitizerProvider() *SanitizerProvider {
 }
 
 // Sanitize sanitizes all the resource names using the original algorithm
-func (so *sanitizerOriginal) Sanitize(idMetaMap ResourceIDMetaMap) {
+func (so *sanitizerOriginalLegacy) Sanitize(idMetaMap ResourceIDMetaMap) {
 	for _, meta := range idMetaMap {
 		meta.Name = so.SanitizeResourceName(meta.Name)
 	}
 }
 
 // SanitizeResourceName sanitizes a single resource name using  the original resource name sanitizer
-func (so *sanitizerOriginal) SanitizeResourceName(inputName string) string {
+func (so *sanitizerOriginalLegacy) SanitizeResourceName(inputName string) string {
 	name := unsafeNameChars.ReplaceAllStringFunc(inputName, escapeRune)
 	if name != inputName {
 		// Append a hash of the original name to ensure uniqueness for similar names
@@ -152,7 +155,9 @@ func (sod *sanitizerTimeOptimized) Sanitize(idMetaMap ResourceIDMetaMap) {
 
 // SanitizeResourceName sanitizes a single resource name
 func (sod *sanitizerTimeOptimized) SanitizeResourceName(inputName string) string {
-	name := unsafeNameChars.ReplaceAllStringFunc(inputName, escapeRune)
+	// Transliterate any non-latin-based characters to ASCII
+	transliteratedName := strings.TrimSpace(unidecode.Unidecode(inputName))
+	name := unsafeNameChars.ReplaceAllStringFunc(transliteratedName, escapeRune)
 
 	if unsafeNameStartingChars.MatchString(string(rune(name[0]))) {
 		// Terraform does not allow names to begin with a number. Prefix with an underscore instead

@@ -3,7 +3,7 @@ package feature_toggles
 import "os"
 
 const sanitizerLegacy = "GENESYS_SANITIZER_LEGACY"
-const sanitizerTimeOptimized = "GENESYS_SANITIZER_TIME_OPTIMIZED"
+const sanitizerOptimized = "GENESYS_SANITIZER_OPTIMIZED"
 
 func ExporterSanitizerLegacyName() string {
 	return sanitizerLegacy
@@ -15,12 +15,12 @@ func ExporterSanitizerLegacyToggleExists() bool {
 	return exists
 }
 
-func ExporterSanitizerTimeOptimizedName() string {
-	return sanitizerTimeOptimized
+func ExporterSanitizerOptimizedName() string {
+	return sanitizerOptimized
 }
 
-func ExporterSanitizerTimeOptimizedToggleExists() bool {
+func ExporterSanitizerOptimizedToggleExists() bool {
 	var exists bool
-	_, exists = os.LookupEnv(sanitizerTimeOptimized)
+	_, exists = os.LookupEnv(sanitizerOptimized)
 	return exists
 }
