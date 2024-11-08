@@ -11,7 +11,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v143/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
 )
 
 // Build Functions
@@ -36,7 +36,7 @@ func buildSdkMediaSettings(d *schema.ResourceData) *platformclientv2.Queuemedias
 
 	mediaSettingsEmail := d.Get("media_settings_email").([]interface{})
 	if len(mediaSettingsEmail) > 0 {
-		queueMediaSettings.Email = buildSdkMediaSetting(mediaSettingsEmail)
+		queueMediaSettings.Email = buildSdkMediaEmailSetting(mediaSettingsEmail)
 	}
 
 	mediaSettingsMessage := d.Get("media_settings_message").([]interface{})
@@ -125,6 +125,19 @@ func buildAgentOwnedRouting(routing []interface{}) *platformclientv2.Agentownedr
 		EnableAgentOwnedCallbacks:  platformclientv2.Bool(settingsMap["enable_agent_owned_callbacks"].(bool)),
 		MaxOwnedCallbackDelayHours: platformclientv2.Int(settingsMap["max_owned_callback_delay_hours"].(int)),
 		MaxOwnedCallbackHours:      platformclientv2.Int(settingsMap["max_owned_callback_hours"].(int)),
+	}
+}
+
+func buildSdkMediaEmailSetting(settings []interface{}) *platformclientv2.Emailmediasettings {
+	settingsMap := settings[0].(map[string]interface{})
+
+	return &platformclientv2.Emailmediasettings{
+		AlertingTimeoutSeconds: platformclientv2.Int(settingsMap["alerting_timeout_sec"].(int)),
+		EnableAutoAnswer:       platformclientv2.Bool(settingsMap["enable_auto_answer"].(bool)),
+		ServiceLevel: &platformclientv2.Servicelevel{
+			Percentage: platformclientv2.Float64(settingsMap["service_level_percentage"].(float64)),
+			DurationMs: platformclientv2.Int(settingsMap["service_level_duration_ms"].(int)),
+		},
 	}
 }
 
@@ -374,6 +387,17 @@ func constructAgentOwnedRouting(d *schema.ResourceData) *platformclientv2.Agento
 }
 
 // Flatten Functions
+
+func flattenMediaEmailSetting(settings *platformclientv2.Emailmediasettings) []interface{} {
+	settingsMap := make(map[string]interface{})
+
+	settingsMap["alerting_timeout_sec"] = *settings.AlertingTimeoutSeconds
+	resourcedata.SetMapValueIfNotNil(settingsMap, "enable_auto_answer", settings.EnableAutoAnswer)
+	settingsMap["service_level_percentage"] = *settings.ServiceLevel.Percentage
+	settingsMap["service_level_duration_ms"] = *settings.ServiceLevel.DurationMs
+
+	return []interface{}{settingsMap}
+}
 
 func flattenMediaSetting(settings *platformclientv2.Mediasettings) []interface{} {
 	settingsMap := make(map[string]interface{})
