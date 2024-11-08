@@ -469,7 +469,7 @@ func setupGateway(data *schema.ResourceData, config *platformclientv2.Configurat
 			pathName := param["path_name"].(string)
 			pathValue := param["path_value"].(string)
 
-			config.GateWayConfiguration.PathParams  = append(config.GateWayConfiguration.PathParams, &platformclientv2.PathParams{
+			config.GateWayConfiguration.PathParams = append(config.GateWayConfiguration.PathParams, &platformclientv2.PathParams{
 				PathName:  pathName,
 				PathValue: pathValue,
 			})
