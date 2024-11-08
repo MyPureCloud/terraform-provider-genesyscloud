@@ -114,8 +114,8 @@ func New(version string, providerResources map[string]*schema.Resource, provider
 					ValidateFunc: validation.IntBetween(1, 20),
 				},
 				"gateway": {
-					Type:        schema.TypeSet,
-					Optional:    true,
+					Type:     schema.TypeSet,
+					Optional: true,
 					Elem: &schema.Resource{
 						Schema: map[string]*schema.Schema{
 							"port": {
@@ -135,6 +135,26 @@ func New(version string, providerResources map[string]*schema.Resource, provider
 								Optional:    true,
 								DefaultFunc: schema.EnvDefaultFunc("GENESYSCLOUD_GATEWAY_PROTOCOL", nil),
 								Description: "Protocol for the gateway can be set with the `GENESYSCLOUD_GATEWAY_PROTOCOL` environment variable.",
+							},
+							"path_params": {
+								Type:     schema.TypeSet,
+								Optional: true,
+								Elem: &schema.Resource{
+									Schema: map[string]*schema.Schema{
+										"path_name": {
+											Type:        schema.TypeString,
+											Required:    true,
+											Description: "Path name for Gateway Path Params can be set with the `GENESYSCLOUD_GATEWAY_PATH_NAME` environment variable.",
+											DefaultFunc: schema.EnvDefaultFunc("GENESYSCLOUD_GATEWAY_PATH_NAME", nil),
+										},
+										"path_value": {
+											Type:        schema.TypeString,
+											Required:    true,
+											Description: "Path value for Gateway Path Params can be set with the `GENESYSCLOUD_GATEWAY_PATH_VALUE` environment variable.",
+											DefaultFunc: schema.EnvDefaultFunc("GENESYSCLOUD_GATEWAY_PATH_VALUE", nil),
+										},
+									},
+								},
 							},
 							"auth": {
 								Type:     schema.TypeSet,
@@ -184,7 +204,6 @@ func New(version string, providerResources map[string]*schema.Resource, provider
 								DefaultFunc: schema.EnvDefaultFunc("GENESYSCLOUD_PROXY_PROTOCOL", nil),
 								Description: "Protocol for the proxy can be set with the `GENESYSCLOUD_PROXY_PROTOCOL` environment variable.",
 							},
-
 							"auth": {
 								Type:     schema.TypeSet,
 								Optional: true,
@@ -307,8 +326,13 @@ func InitClientConfig(data *schema.ResourceData, version string, config *platfor
 	if diagErr != nil {
 		return diagErr
 	}
-	setupProxy(data, config)
 
+	setupProxy(data, config)
+	setupGateway(data, config)
+	log.Println("GatewayConfig: ", config.GateWayConfiguration)
+	for i, v := range config.GateWayConfiguration.PathParams {
+		log.Println("HERE: ", i, v)
+	}
 	config.AddDefaultHeader("User-Agent", "GC Terraform Provider/"+version)
 	config.RetryConfiguration = &platformclientv2.RetryConfiguration{
 		RetryWaitMin: time.Second * 1,
@@ -433,16 +457,27 @@ func setupGateway(data *schema.ResourceData, config *platformclientv2.Configurat
 		host := gateway["host"].(string)
 		port := gateway["port"].(string)
 		protocol := gateway["protocol"].(string)
+		config.GateWayConfiguration = &platformclientv2.GateWayConfiguration{}
 
-		config.GatewayConfiguration = &platformclientv2.GatewayConfiguration{}
+		config.GateWayConfiguration.Host = host
+		config.GateWayConfiguration.Port = port
+		config.GateWayConfiguration.Protocol = protocol
 
-		config.GatewayConfiguration.Host = host
-		config.GatewayConfiguration.Port = port
-		config.GatewayConfiguration.Protocol = protocol
+		paramSet := gateway["path_params"].(*schema.Set)
+		paramList := paramSet.List()
 
-		pathParams := platformclientv2.PathParams{}
+		for _, paramElement := range paramList {
+			param := paramElement.(map[string]interface{})
 
-		config.GatewayConfiguration.PathParams = []*platformclientv2.PathParams{&pathParams}
+			pathName := param["path_name"].(string)
+			pathValue := param["path_value"].(string)
+
+			config.GateWayConfiguration.PathParams  = append(config.GateWayConfiguration.PathParams, &platformclientv2.PathParams{
+				PathName:  pathName,
+				PathValue: pathValue,
+			})
+		}
+
 		authSet := gateway["auth"].(*schema.Set)
 		authList := authSet.List()
 
@@ -450,10 +485,10 @@ func setupGateway(data *schema.ResourceData, config *platformclientv2.Configurat
 			auth := authElement.(map[string]interface{})
 			username := auth["username"].(string)
 			password := auth["password"].(string)
-			config.GatewayConfiguration.Auth = &platformclientv2.Auth{}
+			config.GateWayConfiguration.Auth = &platformclientv2.Auth{}
 
-			config.GatewayConfiguration.Auth.UserName = username
-			config.GatewayConfiguration.Auth.Password = password
+			config.GateWayConfiguration.Auth.UserName = username
+			config.GateWayConfiguration.Auth.Password = password
 		}
 	}
 }
