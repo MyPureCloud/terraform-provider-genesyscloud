@@ -29,7 +29,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v143/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
 
 	"terraform-provider-genesyscloud/genesyscloud/util/testrunner"
 
@@ -364,7 +364,6 @@ func TestAccResourceTfExportSplitFilesAsJSON(t *testing.T) {
 	userResourcesDef := buildUserResources(userResources)
 	wrapupcodeResourceDef := buildWrapupcodeResources(wrapupCodeResources, "genesyscloud_auth_division."+divResource+".id")
 	config := queueResourceDef + authDivision.GenerateAuthDivisionBasic(divResource, divName) + wrapupcodeResourceDef + userResourcesDef +
-
 		generateTfExportByIncludeFilterResources(
 			exportResource,
 			exportTestDir,
