@@ -329,10 +329,7 @@ func InitClientConfig(data *schema.ResourceData, version string, config *platfor
 
 	setupProxy(data, config)
 	setupGateway(data, config)
-	log.Println("GatewayConfig: ", config.GateWayConfiguration)
-	for i, v := range config.GateWayConfiguration.PathParams {
-		log.Println("HERE: ", i, v)
-	}
+
 	config.AddDefaultHeader("User-Agent", "GC Terraform Provider/"+version)
 	config.RetryConfiguration = &platformclientv2.RetryConfiguration{
 		RetryWaitMin: time.Second * 1,
