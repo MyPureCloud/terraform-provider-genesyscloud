@@ -5,14 +5,14 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"terraform-provider-genesyscloud/genesyscloud/util/constants"
+	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
-
-	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 
@@ -27,6 +27,23 @@ const (
 )
 
 var (
+	dynamicContactQueueingSettings = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			`sort`: {
+				Description: `Whether to sort contacts dynamically.`,
+				Optional:    true,
+				ForceNew:    true,
+				Type:        schema.TypeBool,
+			},
+			`filter`: {
+				Description: `Whether to filter contacts dynamically.`,
+				Optional:    true,
+				ForceNew:    true,
+				Type:        schema.TypeBool,
+			},
+		},
+	}
+
 	OutboundmessagingcampaigncontactsortResource = &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			`field_name`: {
@@ -160,10 +177,19 @@ func ResourceOutboundMessagingCampaign() *schema.Resource {
 			},
 			`sms_config`: {
 				Description: `Configuration for this messaging campaign to send SMS messages.`,
-				Required:    true,
+				Optional:    true,
 				MaxItems:    1,
 				Type:        schema.TypeSet,
 				Elem:        outboundmessagingcampaignsmsconfigResource,
+			},
+			`dynamic_contact_queueing_settings`: {
+				Description: `Indicates (when true) that the campaign supports dynamic queueing of the contact list at the time of a request for contacts. 
+				**Warning**: Updating this field will cause the campaign to be destroyed and re-created.`,
+				Type:     schema.TypeList,
+				MaxItems: 1,
+				Optional: true,
+				Computed: true,
+				Elem:     dynamicContactQueueingSettings,
 			},
 		},
 	}
@@ -225,7 +251,14 @@ func createOutboundMessagingcampaign(ctx context.Context, d *schema.ResourceData
 		ContactSorts:       buildSdkoutboundmessagingcampaignContactsortSlice(d.Get("contact_sorts").([]interface{})),
 		MessagesPerMinute:  &messagesPerMinute,
 		ContactListFilters: util.BuildSdkDomainEntityRefArr(d, "contact_list_filter_ids"),
-		SmsConfig:          buildSdkoutboundmessagingcampaignSmsconfig(d.Get("sms_config").(*schema.Set)),
+	}
+
+	if smsConfig := buildSdkoutboundmessagingcampaignSmsconfig(d); smsConfig != nil {
+		sdkmessagingcampaign.SmsConfig = smsConfig
+	}
+
+	if dcqSettings := buildDynamicContactQueueingSettings(d); dcqSettings != nil {
+		sdkmessagingcampaign.DynamicContactQueueingSettings = dcqSettings
 	}
 
 	if name != "" {
@@ -246,6 +279,11 @@ func createOutboundMessagingcampaign(ctx context.Context, d *schema.ResourceData
 	outboundMessagingcampaign, resp, err := outboundApi.PostOutboundMessagingcampaigns(sdkmessagingcampaign)
 	if err != nil {
 		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create outbound messagingcampaign %s error: %s", name, err), resp)
+	}
+
+	if outboundMessagingcampaign.Id == nil {
+		msg := "response body from POST /api/v2/outbound/messagingcampaigns did not contain an ID"
+		return util.BuildDiagnosticError(resourceName, msg, errors.New(msg))
 	}
 
 	d.SetId(*outboundMessagingcampaign.Id)
@@ -272,7 +310,10 @@ func updateOutboundMessagingcampaign(ctx context.Context, d *schema.ResourceData
 		ContactSorts:       buildSdkoutboundmessagingcampaignContactsortSlice(d.Get("contact_sorts").([]interface{})),
 		MessagesPerMinute:  &messagesPerMinute,
 		ContactListFilters: util.BuildSdkDomainEntityRefArr(d, "contact_list_filter_ids"),
-		SmsConfig:          buildSdkoutboundmessagingcampaignSmsconfig(d.Get("sms_config").(*schema.Set)),
+	}
+
+	if smsConfig := buildSdkoutboundmessagingcampaignSmsconfig(d); smsConfig != nil {
+		sdkmessagingcampaign.SmsConfig = smsConfig
 	}
 
 	if name != "" {
@@ -289,7 +330,7 @@ func updateOutboundMessagingcampaign(ctx context.Context, d *schema.ResourceData
 		return util.BuildDiagnosticError(resourceName, "Configuration error", errors.New(msg))
 	}
 
-	log.Printf("Updating Outbound Messagingcampaign %s", name)
+	log.Printf("Updating Outbound Messaging Campaign %s", name)
 	diagErr := util.RetryWhen(util.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		// Get current Outbound Messagingcampaign version
 		outboundMessagingcampaign, resp, getErr := outboundApi.GetOutboundMessagingcampaign(d.Id())
@@ -316,7 +357,7 @@ func readOutboundMessagingcampaign(ctx context.Context, d *schema.ResourceData, 
 	outboundApi := platformclientv2.NewOutboundApiWithConfig(sdkConfig)
 	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundMessagingCampaign(), constants.DefaultConsistencyChecks, resourceName)
 
-	log.Printf("Reading Outbound Messagingcampaign %s", d.Id())
+	log.Printf("Reading Outbound Messaging Campaign %s", d.Id())
 
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		sdkmessagingcampaign, resp, getErr := outboundApi.GetOutboundMessagingcampaign(d.Id())
@@ -327,49 +368,52 @@ func readOutboundMessagingcampaign(ctx context.Context, d *schema.ResourceData, 
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read Outbound Messagingcampaign %s | error: %s", d.Id(), getErr), resp))
 		}
 
-		if sdkmessagingcampaign.Name != nil {
-			d.Set("name", *sdkmessagingcampaign.Name)
-		}
+		resourcedata.SetNillableValue(d, "name", sdkmessagingcampaign.Name)
+		resourcedata.SetNillableValue(d, "campaign_status", sdkmessagingcampaign.CampaignStatus)
+		resourcedata.SetNillableValue(d, "always_running", sdkmessagingcampaign.AlwaysRunning)
+		resourcedata.SetNillableValue(d, "messages_per_minute", sdkmessagingcampaign.MessagesPerMinute)
+
 		if sdkmessagingcampaign.Division != nil && sdkmessagingcampaign.Division.Id != nil {
-			d.Set("division_id", *sdkmessagingcampaign.Division.Id)
+			_ = d.Set("division_id", *sdkmessagingcampaign.Division.Id)
 		}
 		if sdkmessagingcampaign.CallableTimeSet != nil && sdkmessagingcampaign.CallableTimeSet.Id != nil {
-			d.Set("callable_time_set_id", *sdkmessagingcampaign.CallableTimeSet.Id)
+			_ = d.Set("callable_time_set_id", *sdkmessagingcampaign.CallableTimeSet.Id)
 		}
 		if sdkmessagingcampaign.ContactList != nil && sdkmessagingcampaign.ContactList.Id != nil {
-			d.Set("contact_list_id", *sdkmessagingcampaign.ContactList.Id)
-		}
-		if sdkmessagingcampaign.CampaignStatus != nil {
-			d.Set("campaign_status", *sdkmessagingcampaign.CampaignStatus)
+			_ = d.Set("contact_list_id", *sdkmessagingcampaign.ContactList.Id)
 		}
 		if sdkmessagingcampaign.DncLists != nil {
 			var dncListIds []string
 			for _, dnc := range *sdkmessagingcampaign.DncLists {
+				if dnc.Id == nil {
+					continue
+				}
 				dncListIds = append(dncListIds, *dnc.Id)
 			}
-			d.Set("dnc_list_ids", dncListIds)
-		}
-		if sdkmessagingcampaign.AlwaysRunning != nil {
-			d.Set("always_running", *sdkmessagingcampaign.AlwaysRunning)
+			_ = d.Set("dnc_list_ids", dncListIds)
 		}
 		if sdkmessagingcampaign.ContactSorts != nil {
-			d.Set("contact_sorts", flattenSdkOutboundMessagingCampaignContactsortSlice(*sdkmessagingcampaign.ContactSorts))
+			_ = d.Set("contact_sorts", flattenSdkOutboundMessagingCampaignContactsortSlice(*sdkmessagingcampaign.ContactSorts))
 		}
-		if sdkmessagingcampaign.MessagesPerMinute != nil {
-			d.Set("messages_per_minute", *sdkmessagingcampaign.MessagesPerMinute)
-		}
+
 		if sdkmessagingcampaign.ContactListFilters != nil {
 			var contactListFilterIds []string
 			for _, clf := range *sdkmessagingcampaign.ContactListFilters {
+				if clf.Id == nil {
+					continue
+				}
 				contactListFilterIds = append(contactListFilterIds, *clf.Id)
 			}
-			d.Set("contact_list_filter_ids", contactListFilterIds)
+			_ = d.Set("contact_list_filter_ids", contactListFilterIds)
 		}
 		if sdkmessagingcampaign.SmsConfig != nil {
-			d.Set("sms_config", flattenSdkOutboundMessagingCampaignSmsconfig(sdkmessagingcampaign.SmsConfig))
+			_ = d.Set("sms_config", flattenSdkOutboundMessagingCampaignSmsconfig(*sdkmessagingcampaign.SmsConfig))
+		}
+		if dcqSettings := sdkmessagingcampaign.DynamicContactQueueingSettings; dcqSettings != nil {
+			_ = d.Set("dynamic_contact_queueing_settings", flattenDynamicContactQueueingSettings(*dcqSettings))
 		}
 
-		log.Printf("Read Outbound Messagingcampaign %s %s", d.Id(), *sdkmessagingcampaign.Name)
+		log.Printf("Read Outbound Messaging Campaign %s", d.Id())
 		return cc.CheckState(d)
 	})
 }
@@ -428,31 +472,65 @@ func buildSdkoutboundmessagingcampaignContactsortSlice(contactSort []interface{}
 	return &sdkContactSortSlice
 }
 
-func buildSdkoutboundmessagingcampaignSmsconfig(smsconfig *schema.Set) *platformclientv2.Smsconfig {
-	if smsconfig == nil {
+func buildSdkoutboundmessagingcampaignSmsconfig(d *schema.ResourceData) *platformclientv2.Smsconfig {
+	smsConfigSet, ok := d.Get("sms_config").(*schema.Set)
+	if !ok || len(smsConfigSet.List()) == 0 {
 		return nil
 	}
 	var sdkSmsconfig platformclientv2.Smsconfig
-	smsconfigList := smsconfig.List()
+	smsconfigList := smsConfigSet.List()
 	if len(smsconfigList) > 0 {
-		smsconfigMap := smsconfigList[0].(map[string]interface{})
-		if messageColumn := smsconfigMap["message_column"].(string); messageColumn != "" {
+		smsconfigMap, ok := smsconfigList[0].(map[string]interface{})
+		if !ok {
+			return nil
+		}
+		if messageColumn, _ := smsconfigMap["message_column"].(string); messageColumn != "" {
 			sdkSmsconfig.MessageColumn = &messageColumn
 		}
-		if phoneColumn := smsconfigMap["phone_column"].(string); phoneColumn != "" {
+		if phoneColumn, _ := smsconfigMap["phone_column"].(string); phoneColumn != "" {
 			sdkSmsconfig.PhoneColumn = &phoneColumn
 		}
-		if senderSmsPhoneNumber := smsconfigMap["sender_sms_phone_number"].(string); senderSmsPhoneNumber != "" {
+		if senderSmsPhoneNumber, _ := smsconfigMap["sender_sms_phone_number"].(string); senderSmsPhoneNumber != "" {
 			sdkSmsconfig.SenderSmsPhoneNumber = &platformclientv2.Smsphonenumberref{
 				PhoneNumber: &senderSmsPhoneNumber,
 			}
 		}
-		if contentTemplateId := smsconfigMap["content_template_id"].(string); contentTemplateId != "" {
+		if contentTemplateId, _ := smsconfigMap["content_template_id"].(string); contentTemplateId != "" {
 			sdkSmsconfig.ContentTemplate = &platformclientv2.Domainentityref{Id: &contentTemplateId}
 		}
 	}
 
 	return &sdkSmsconfig
+}
+
+func buildDynamicContactQueueingSettings(d *schema.ResourceData) *platformclientv2.Dynamiccontactqueueingsettings {
+	settings, ok := d.Get("dynamic_contact_queueing_settings").([]any)
+	if !ok || len(settings) == 0 {
+		return nil
+	}
+	settingsMap, ok := settings[0].(map[string]any)
+	if !ok {
+		return nil
+	}
+
+	var dcqSettings platformclientv2.Dynamiccontactqueueingsettings
+
+	if sort, ok := settingsMap["sort"].(bool); ok {
+		dcqSettings.Sort = &sort
+	}
+
+	if filter, ok := settingsMap["filter"].(bool); ok {
+		dcqSettings.Filter = &filter
+	}
+
+	return &dcqSettings
+}
+
+func flattenDynamicContactQueueingSettings(dcqSettings platformclientv2.Dynamiccontactqueueingsettings) []any {
+	settingsMap := make(map[string]any)
+	resourcedata.SetMapValueIfNotNil(settingsMap, "filter", dcqSettings.Filter)
+	resourcedata.SetMapValueIfNotNil(settingsMap, "sort", dcqSettings.Sort)
+	return []any{settingsMap}
 }
 
 func flattenSdkOutboundMessagingCampaignContactsortSlice(contactSorts []platformclientv2.Contactsort) []interface{} {
@@ -480,20 +558,13 @@ func flattenSdkOutboundMessagingCampaignContactsortSlice(contactSorts []platform
 	return contactSortList
 }
 
-func flattenSdkOutboundMessagingCampaignSmsconfig(smsconfig *platformclientv2.Smsconfig) *schema.Set {
-	if smsconfig == nil {
-		return nil
-	}
-
+func flattenSdkOutboundMessagingCampaignSmsconfig(smsconfig platformclientv2.Smsconfig) *schema.Set {
 	smsconfigSet := schema.NewSet(schema.HashResource(outboundmessagingcampaignsmsconfigResource), []interface{}{})
 	smsconfigMap := make(map[string]interface{})
 
-	if smsconfig.MessageColumn != nil {
-		smsconfigMap["message_column"] = *smsconfig.MessageColumn
-	}
-	if smsconfig.PhoneColumn != nil {
-		smsconfigMap["phone_column"] = *smsconfig.PhoneColumn
-	}
+	resourcedata.SetMapValueIfNotNil(smsconfigMap, "message_column", smsconfig.MessageColumn)
+	resourcedata.SetMapValueIfNotNil(smsconfigMap, "phone_column", smsconfig.PhoneColumn)
+
 	if smsconfig.SenderSmsPhoneNumber != nil {
 		if smsconfig.SenderSmsPhoneNumber.PhoneNumber != nil {
 			smsconfigMap["sender_sms_phone_number"] = *smsconfig.SenderSmsPhoneNumber.PhoneNumber

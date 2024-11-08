@@ -17,8 +17,6 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
 )
 
-var TrueValue = "true"
-
 /*
 This test can only pass in a test org because it requires an active provisioned sms phone number
 Endpoint `POST /api/v2/routing/sms/phonenumbers` creates an active/valid phone number in test orgs only.
@@ -117,7 +115,7 @@ func TestAccDataSourceOutboundMessagingCampaign(t *testing.T) {
 						resourceId,
 						digitalCampaignName,
 						"genesyscloud_outbound_contact_list."+contactListResourceId+".id",
-						"",
+						util.NullValue,
 						"10",
 						util.FalseValue,
 						"genesyscloud_outbound_callabletimeset."+callableTimeSetResourceId+".id",
@@ -136,7 +134,7 @@ func TestAccDataSourceOutboundMessagingCampaign(t *testing.T) {
 						GenerateOutboundMessagingCampaignContactSort(
 							column2,
 							"DESC",
-							TrueValue,
+							util.TrueValue,
 						),
 					) + generateOutboundMessagingCampaignDataSource(
 					dataSourceId,
