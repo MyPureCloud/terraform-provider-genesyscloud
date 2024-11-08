@@ -5,8 +5,8 @@ import (
 	"encoding/hex"
 	"hash/fnv"
 	"log"
-	"os"
 	"strconv"
+	"terraform-provider-genesyscloud/genesyscloud/util/feature_toggles"
 )
 
 type SanitizerProvider struct {
@@ -26,7 +26,7 @@ type sanitizerTimeOptimized struct{}
 // NewSanitizierProvider returns a Sanitizer. Without a GENESYS_SANITIZER_LEGACY environment variable set it will always use the optimized Sanitizer
 func NewSanitizerProvider() *SanitizerProvider {
 	// Check if the environment variable is set
-	_, legacyExists := os.LookupEnv("GENESYS_SANITIZER_LEGACY")
+	legacyExists := feature_toggles.ExporterSanitizerLegacyToggleExists()
 
 	//If the GENESYS_SANITIZER_LEGACY is set use the original name sanitizer
 	if legacyExists {
@@ -37,7 +37,7 @@ func NewSanitizerProvider() *SanitizerProvider {
 	}
 
 	// Check if the environment variable is set
-	_, timeOptimizedExists := os.LookupEnv("GENESYS_SANITIZER_TIME_OPTIMIZED")
+	timeOptimizedExists := feature_toggles.ExporterSanitizerTimeOptimizedToggleExists()
 
 	//If the GENESYS_SANITIZER_TIME_OPTIMIZED is set use the updated time optimized sanitizer
 	if timeOptimizedExists {
