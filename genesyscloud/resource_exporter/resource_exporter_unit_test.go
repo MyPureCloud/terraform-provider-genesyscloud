@@ -15,107 +15,7 @@ type TestAssertion struct {
 }
 
 // Tests the original sanitizing algorithm
-func TestUnitSanitizeResourceNameOriginal(t *testing.T) {
-	simpleString := "foobar"
-	intString := "1234"
-	underscore := "_"
-	dash := "-"
-	unsafeUnicode := "Ⱥ®ÊƩ"
-	unsafeAscii := "#%@&"
-
-	randNumSuffix := "_[0-9]+$"
-
-	envVarName := "GENESYS_SANITIZER_LEGACY"
-	envVarValue := "1"
-	os.Setenv(envVarName, envVarValue)
-	defer func() { os.Unsetenv(envVarName) }()
-
-	assertions := [14]TestAssertion{
-		{
-			name:   "First character",
-			input:  string(simpleString[0]),
-			output: string(simpleString[0]),
-		},
-		{
-			name:   "Safe String",
-			input:  simpleString,
-			output: simpleString,
-		},
-		{
-			name:   "Single Integer",
-			input:  string(intString[0]),
-			output: underscore + string(intString[0]),
-		},
-		{
-			name:   "Single Underscore",
-			input:  underscore,
-			output: underscore,
-		},
-		{
-			name:   "Single Dash",
-			input:  dash,
-			output: underscore + dash,
-		},
-		{
-			name:   "Single Unsafe Ascii Character",
-			input:  string(unsafeAscii[0]),
-			output: underscore + randNumSuffix,
-		},
-		{
-			name:   "Single Unsafe Unicode Character",
-			input:  string(unsafeUnicode[0]),
-			output: underscore + randNumSuffix,
-		},
-		{
-			name:   "String beginning with Integer",
-			input:  intString + simpleString,
-			output: underscore + intString + simpleString,
-		},
-		{
-			name:   "String beginning with Underscore",
-			input:  underscore + simpleString,
-			output: underscore + simpleString,
-		},
-		{
-			name:   "String beginning with Dash",
-			input:  dash + simpleString,
-			output: underscore + dash + simpleString,
-		},
-		{
-			name:   "String beginning with multiple dashes",
-			input:  dash + dash + dash + dash + simpleString + dash + dash + dash + dash,
-			output: underscore + dash + dash + dash + dash + simpleString + dash + dash + dash + dash,
-		},
-		{
-			name:   "String beginning with Unsafe Ascii Character",
-			input:  unsafeAscii + simpleString,
-			output: strings.Repeat(underscore, len(unsafeAscii)) + simpleString + randNumSuffix,
-		},
-		{
-			name:   "String beginning with Unicode",
-			input:  unsafeUnicode + simpleString,
-			output: strings.Repeat(underscore, len(unsafeAscii)) + simpleString + randNumSuffix,
-		},
-		{
-			name:   "String with everything",
-			input:  simpleString + unsafeAscii + underscore + intString + dash + unsafeUnicode + simpleString,
-			output: simpleString + strings.Repeat(underscore, len(unsafeAscii)) + underscore + intString + dash + strings.Repeat(underscore, len([]rune(unsafeUnicode))) + simpleString,
-		},
-	}
-
-	for _, assertion := range assertions {
-		sanitizer := NewSanitizerProvider()
-		output := sanitizer.S.SanitizeResourceName(assertion.input)
-
-		assertionOutputRegex := regexp.MustCompile(assertion.output)
-		if !assertionOutputRegex.MatchString(output) {
-			t.Errorf("%s did not sanitize correctly!\nExpected Output: %v\nActual Output: %v", assertion.name, assertion.output, output)
-		}
-	}
-}
-
-// Tests the optimized sanitizing algorithm
-func TestUnitSanitizeResourceOptimized(t *testing.T) {
+func TestUnitSanitizeResourceOriginal(t *testing.T) {
 	randNumSuffix := "_[0-9]+"
 	metaMap := make(ResourceIDMetaMap)
 	metaMap["1"] = &ResourceMeta{Name: "wrapupcodemappings"}
@@ -190,7 +90,7 @@ func TestUnitSanitizeResourceOptimized(t *testing.T) {
 }
 
 // Tests the optimized sanitizing algorithm
-func TestUnitSanitizeResourceNameOptimized(t *testing.T) {
+func TestUnitSanitizeResourceNameOriginal(t *testing.T) {
 	simpleString := "foobar"
 	intString := "1234"
 	underscore := "_"
@@ -283,7 +183,7 @@ func TestUnitSanitizeResourceNameOptimized(t *testing.T) {
 }
 
 // Tests the optimized sanitizing algorithm
-func TestUnitSanitizeResourceTimeOptimized(t *testing.T) {
+func TestUnitSanitizeResourceOptimized(t *testing.T) {
 	randNumSuffix := "_[a-f0-9]+"
 	metaMap := make(ResourceIDMetaMap)
 	metaMap["1"] = &ResourceMeta{Name: "wrapupcodemappings"}
