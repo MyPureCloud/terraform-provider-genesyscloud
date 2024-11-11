@@ -191,6 +191,12 @@ func ResourceOutboundMessagingCampaign() *schema.Resource {
 				Computed: true,
 				Elem:     dynamicContactQueueingSettings,
 			},
+			`rule_set_ids`: {
+				Description: `Rule Sets to be applied while this campaign is sending messages`,
+				Type:        schema.TypeList,
+				Optional:    true,
+				Elem:        &schema.Schema{Type: schema.TypeString},
+			},
 		},
 	}
 }
@@ -251,6 +257,7 @@ func createOutboundMessagingcampaign(ctx context.Context, d *schema.ResourceData
 		ContactSorts:       buildSdkoutboundmessagingcampaignContactsortSlice(d.Get("contact_sorts").([]interface{})),
 		MessagesPerMinute:  &messagesPerMinute,
 		ContactListFilters: util.BuildSdkDomainEntityRefArr(d, "contact_list_filter_ids"),
+		RuleSets:           util.BuildSdkDomainEntityRefArr(d, "rule_set_ids"),
 	}
 
 	if smsConfig := buildSdkoutboundmessagingcampaignSmsconfig(d); smsConfig != nil {
@@ -310,6 +317,7 @@ func updateOutboundMessagingcampaign(ctx context.Context, d *schema.ResourceData
 		ContactSorts:       buildSdkoutboundmessagingcampaignContactsortSlice(d.Get("contact_sorts").([]interface{})),
 		MessagesPerMinute:  &messagesPerMinute,
 		ContactListFilters: util.BuildSdkDomainEntityRefArr(d, "contact_list_filter_ids"),
+		RuleSets:           util.BuildSdkDomainEntityRefArr(d, "rule_set_ids"),
 	}
 
 	if smsConfig := buildSdkoutboundmessagingcampaignSmsconfig(d); smsConfig != nil {
@@ -382,35 +390,26 @@ func readOutboundMessagingcampaign(ctx context.Context, d *schema.ResourceData, 
 		if sdkmessagingcampaign.ContactList != nil && sdkmessagingcampaign.ContactList.Id != nil {
 			_ = d.Set("contact_list_id", *sdkmessagingcampaign.ContactList.Id)
 		}
-		if sdkmessagingcampaign.DncLists != nil {
-			var dncListIds []string
-			for _, dnc := range *sdkmessagingcampaign.DncLists {
-				if dnc.Id == nil {
-					continue
-				}
-				dncListIds = append(dncListIds, *dnc.Id)
-			}
-			_ = d.Set("dnc_list_ids", dncListIds)
-		}
 		if sdkmessagingcampaign.ContactSorts != nil {
 			_ = d.Set("contact_sorts", flattenSdkOutboundMessagingCampaignContactsortSlice(*sdkmessagingcampaign.ContactSorts))
-		}
-
-		if sdkmessagingcampaign.ContactListFilters != nil {
-			var contactListFilterIds []string
-			for _, clf := range *sdkmessagingcampaign.ContactListFilters {
-				if clf.Id == nil {
-					continue
-				}
-				contactListFilterIds = append(contactListFilterIds, *clf.Id)
-			}
-			_ = d.Set("contact_list_filter_ids", contactListFilterIds)
 		}
 		if sdkmessagingcampaign.SmsConfig != nil {
 			_ = d.Set("sms_config", flattenSdkOutboundMessagingCampaignSmsconfig(*sdkmessagingcampaign.SmsConfig))
 		}
 		if dcqSettings := sdkmessagingcampaign.DynamicContactQueueingSettings; dcqSettings != nil {
 			_ = d.Set("dynamic_contact_queueing_settings", flattenDynamicContactQueueingSettings(*dcqSettings))
+		}
+
+		if sdkmessagingcampaign.RuleSets != nil {
+			_ = d.Set("rule_set_ids", util.SdkDomainEntityRefArrToList(*sdkmessagingcampaign.RuleSets))
+		}
+
+		if sdkmessagingcampaign.ContactListFilters != nil {
+			_ = d.Set("contact_list_filter_ids", util.SdkDomainEntityRefArrToList(*sdkmessagingcampaign.ContactListFilters))
+		}
+
+		if sdkmessagingcampaign.DncLists != nil {
+			_ = d.Set("dnc_list_ids", util.SdkDomainEntityRefArrToList(*sdkmessagingcampaign.DncLists))
 		}
 
 		log.Printf("Read Outbound Messaging Campaign %s", d.Id())

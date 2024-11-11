@@ -121,6 +121,7 @@ func TestAccDataSourceOutboundMessagingCampaign(t *testing.T) {
 						"genesyscloud_outbound_callabletimeset."+callableTimeSetResourceId+".id",
 						[]string{},
 						[]string{"genesyscloud_outbound_contactlistfilter." + clfResourceId + ".id"},
+						[]string{}, // rule_set_ids
 						generateOutboundMessagingCampaignSmsConfig(
 							column1,
 							column1,
