@@ -892,5 +892,10 @@ func WebDeploymentConfigurationExporter() *resourceExporter.ResourceExporter {
 		RemoveIfMissing: map[string][]string{
 			"authentication_settings": {"integration_id"},
 		},
+		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
+			"authentication_settings.integration_id": {RefType: "genesyscloud_integration"},
+			"enabled_categories.category_id":         {RefType: "genesyscloud_knowledge_category"},
+			"apps.knowledge.knowlege_base_id":        {RefType: "genesyscloud_knowledge_knowledgebase"},
+		},
 	}
 }
