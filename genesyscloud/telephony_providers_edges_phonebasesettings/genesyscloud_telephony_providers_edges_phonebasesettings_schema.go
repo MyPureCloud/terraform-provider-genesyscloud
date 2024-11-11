@@ -1,12 +1,13 @@
 package telephony_providers_edges_phonebasesettings
 
 import (
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
 const (
@@ -96,6 +97,7 @@ func ResourcePhoneBaseSettings() *schema.Resource {
 				Description: "A phone metabase is essentially a database for storing phone configuration settings, which simplifies the configuration process.",
 				Type:        schema.TypeString,
 				Required:    true,
+				ForceNew:    true,
 			},
 			"properties": {
 				Description:      "phone base settings properties",
@@ -119,7 +121,7 @@ func ResourcePhoneBaseSettings() *schema.Resource {
 				Computed:    true,
 			},
 		},
-		CustomizeDiff: util.CustomizePhoneBaseSettingsPropertiesDiff,
+		CustomizeDiff: customizePhoneBaseSettingsPropertiesDiff,
 	}
 }
 
