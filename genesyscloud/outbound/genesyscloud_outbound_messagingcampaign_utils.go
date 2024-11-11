@@ -1,0 +1,175 @@
+package outbound
+
+import (
+	"fmt"
+	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
+)
+
+func buildSdkoutboundmessagingcampaignContactsortSlice(contactSort []interface{}) *[]platformclientv2.Contactsort {
+	if contactSort == nil {
+		return nil
+	}
+	sdkContactSortSlice := make([]platformclientv2.Contactsort, 0)
+	for _, configContactSort := range contactSort {
+		var sdkContactSort platformclientv2.Contactsort
+		contactsortMap := configContactSort.(map[string]interface{})
+		if fieldName := contactsortMap["field_name"].(string); fieldName != "" {
+			sdkContactSort.FieldName = &fieldName
+		}
+		if direction := contactsortMap["direction"].(string); direction != "" {
+			sdkContactSort.Direction = &direction
+		}
+		if numeric, ok := contactsortMap["numeric"].(bool); ok {
+			sdkContactSort.Numeric = platformclientv2.Bool(numeric)
+		}
+
+		sdkContactSortSlice = append(sdkContactSortSlice, sdkContactSort)
+	}
+	return &sdkContactSortSlice
+}
+
+func buildSdkoutboundmessagingcampaignSmsconfig(d *schema.ResourceData) *platformclientv2.Smsconfig {
+	smsConfigSet, ok := d.Get("sms_config").(*schema.Set)
+	if !ok || len(smsConfigSet.List()) == 0 {
+		return nil
+	}
+	var sdkSmsconfig platformclientv2.Smsconfig
+	smsconfigList := smsConfigSet.List()
+	if len(smsconfigList) > 0 {
+		smsconfigMap, ok := smsconfigList[0].(map[string]interface{})
+		if !ok {
+			return nil
+		}
+		if messageColumn, _ := smsconfigMap["message_column"].(string); messageColumn != "" {
+			sdkSmsconfig.MessageColumn = &messageColumn
+		}
+		if phoneColumn, _ := smsconfigMap["phone_column"].(string); phoneColumn != "" {
+			sdkSmsconfig.PhoneColumn = &phoneColumn
+		}
+		if senderSmsPhoneNumber, _ := smsconfigMap["sender_sms_phone_number"].(string); senderSmsPhoneNumber != "" {
+			sdkSmsconfig.SenderSmsPhoneNumber = &platformclientv2.Smsphonenumberref{
+				PhoneNumber: &senderSmsPhoneNumber,
+			}
+		}
+		if contentTemplateId, _ := smsconfigMap["content_template_id"].(string); contentTemplateId != "" {
+			sdkSmsconfig.ContentTemplate = &platformclientv2.Domainentityref{Id: &contentTemplateId}
+		}
+	}
+
+	return &sdkSmsconfig
+}
+
+func buildDynamicContactQueueingSettings(d *schema.ResourceData) *platformclientv2.Dynamiccontactqueueingsettings {
+	settings, ok := d.Get("dynamic_contact_queueing_settings").([]any)
+	if !ok || len(settings) == 0 {
+		return nil
+	}
+	settingsMap, ok := settings[0].(map[string]any)
+	if !ok {
+		return nil
+	}
+
+	var dcqSettings platformclientv2.Dynamiccontactqueueingsettings
+
+	if sort, ok := settingsMap["sort"].(bool); ok {
+		dcqSettings.Sort = &sort
+	}
+
+	if filter, ok := settingsMap["filter"].(bool); ok {
+		dcqSettings.Filter = &filter
+	}
+
+	return &dcqSettings
+}
+
+func flattenDynamicContactQueueingSettings(dcqSettings platformclientv2.Dynamiccontactqueueingsettings) []any {
+	settingsMap := make(map[string]any)
+	resourcedata.SetMapValueIfNotNil(settingsMap, "filter", dcqSettings.Filter)
+	resourcedata.SetMapValueIfNotNil(settingsMap, "sort", dcqSettings.Sort)
+	return []any{settingsMap}
+}
+
+func flattenSdkOutboundMessagingCampaignContactsortSlice(contactSorts []platformclientv2.Contactsort) []interface{} {
+	if len(contactSorts) == 0 {
+		return nil
+	}
+
+	contactSortList := make([]interface{}, 0)
+	for _, contactsort := range contactSorts {
+		contactSortMap := make(map[string]interface{})
+
+		if contactsort.FieldName != nil {
+			contactSortMap["field_name"] = *contactsort.FieldName
+		}
+		if contactsort.Direction != nil {
+			contactSortMap["direction"] = *contactsort.Direction
+		}
+		if contactsort.Numeric != nil {
+			contactSortMap["numeric"] = *contactsort.Numeric
+		}
+
+		contactSortList = append(contactSortList, contactSortMap)
+	}
+
+	return contactSortList
+}
+
+func flattenSdkOutboundMessagingCampaignSmsconfig(smsconfig platformclientv2.Smsconfig) *schema.Set {
+	smsconfigSet := schema.NewSet(schema.HashResource(outboundmessagingcampaignsmsconfigResource), []interface{}{})
+	smsconfigMap := make(map[string]interface{})
+
+	resourcedata.SetMapValueIfNotNil(smsconfigMap, "message_column", smsconfig.MessageColumn)
+	resourcedata.SetMapValueIfNotNil(smsconfigMap, "phone_column", smsconfig.PhoneColumn)
+
+	if smsconfig.SenderSmsPhoneNumber != nil {
+		if smsconfig.SenderSmsPhoneNumber.PhoneNumber != nil {
+			smsconfigMap["sender_sms_phone_number"] = *smsconfig.SenderSmsPhoneNumber.PhoneNumber
+		}
+	}
+	if smsconfig.ContentTemplate != nil {
+		smsconfigMap["content_template_id"] = *smsconfig.ContentTemplate.Id
+	}
+
+	smsconfigSet.Add(smsconfigMap)
+
+	return smsconfigSet
+}
+
+func GenerateOutboundMessagingCampaignContactSort(fieldName string, direction string, numeric string) string {
+	if direction != "" {
+		direction = fmt.Sprintf(`direction = "%s"`, direction)
+	}
+	if numeric != "" {
+		numeric = fmt.Sprintf(`numeric = %s`, numeric)
+	}
+	return fmt.Sprintf(`
+	contact_sorts {
+		field_name = "%s"
+		%s
+        %s
+	}
+`, fieldName, direction, numeric)
+}
+
+func validateSmsconfig(smsconfig *schema.Set) (string, bool) {
+	if smsconfig == nil {
+		return "", true
+	}
+
+	smsconfigList := smsconfig.List()
+	if len(smsconfigList) > 0 {
+		smsconfigMap := smsconfigList[0].(map[string]interface{})
+		messageColumn, _ := smsconfigMap["message_column"].(string)
+		contentTemplateId, _ := smsconfigMap["content_template_id"].(string)
+		if messageColumn == "" && contentTemplateId == "" {
+			return "Either message_column or content_template_id is required.", false
+		} else if messageColumn != "" && contentTemplateId != "" {
+			return "Only one of message_column or content_template_id can be defined", false
+		}
+	}
+
+	return "", true
+}
