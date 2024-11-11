@@ -270,7 +270,7 @@ func (p *architectUserPromptProxy) verifyPromptResourceFilesAreTranscoded(ctx co
 		userPrompt, resp, err := p.getArchitectUserPrompt(ctx, promptId, true, true, languages, false)
 		if err != nil {
 			response = resp
-			retry.NonRetryableError(fmt.Errorf("failed to read user prompt '%s': %v", promptId, err))
+			return retry.NonRetryableError(fmt.Errorf("failed to read user prompt '%s': %v", promptId, err))
 		}
 
 		if userPrompt == nil || userPrompt.Resources == nil {
