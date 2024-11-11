@@ -346,7 +346,7 @@ func updateOutboundMessagingcampaign(ctx context.Context, d *schema.ResourceData
 			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to read Outbound Messagingcampaign %s error: %s", name, getErr), resp)
 		}
 		sdkmessagingcampaign.Version = outboundMessagingcampaign.Version
-		outboundMessagingcampaign, resp, updateErr := outboundApi.PutOutboundMessagingcampaign(d.Id(), sdkmessagingcampaign)
+		_, resp, updateErr := outboundApi.PutOutboundMessagingcampaign(d.Id(), sdkmessagingcampaign)
 		if updateErr != nil {
 			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update Outbound Messagingcampaign %s error: %s", name, updateErr), resp)
 		}
