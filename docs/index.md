@@ -26,6 +26,7 @@ provider "genesyscloud" {
 
 - `access_token` (String) A string that the OAuth client uses to make requests. Can be set with the `GENESYSCLOUD_ACCESS_TOKEN` environment variable.
 - `aws_region` (String) AWS region where org exists. e.g. us-east-1. Can be set with the `GENESYSCLOUD_REGION` environment variable.
+- `gateway` (Block Set) (see [below for nested schema](#nestedblock--gateway))
 - `oauthclient_id` (String) OAuthClient ID found on the OAuth page of Admin UI. Can be set with the `GENESYSCLOUD_OAUTHCLIENT_ID` environment variable.
 - `oauthclient_secret` (String, Sensitive) OAuthClient secret found on the OAuth page of Admin UI. Can be set with the `GENESYSCLOUD_OAUTHCLIENT_SECRET` environment variable.
 - `proxy` (Block Set, Max: 1) (see [below for nested schema](#nestedblock--proxy))
@@ -33,6 +34,36 @@ provider "genesyscloud" {
 - `sdk_debug_file_path` (String) Specifies the file path for the log file. Can be set with the `GENESYSCLOUD_SDK_DEBUG_FILE_PATH` environment variable. Default value is sdk_debug.log
 - `sdk_debug_format` (String) Specifies the data format of the 'sdk_debug.log'. Only applicable if sdk_debug is true. Can be set with the `GENESYSCLOUD_SDK_DEBUG_FORMAT` environment variable. Default value is Text.
 - `token_pool_size` (Number) Max number of OAuth tokens in the token pool. Can be set with the `GENESYSCLOUD_TOKEN_POOL_SIZE` environment variable.
+
+<a id="nestedblock--gateway"></a>
+### Nested Schema for `gateway`
+
+Optional:
+
+- `auth` (Block Set, Max: 1) (see [below for nested schema](#nestedblock--gateway--auth))
+- `host` (String) Host for the gateway can be set with the `GENESYSCLOUD_GATEWAY_HOST` environment variable.
+- `path_params` (Block Set) (see [below for nested schema](#nestedblock--gateway--path_params))
+- `port` (String) Port for the gateway can be set with the `GENESYSCLOUD_GATEWAY_PORT` environment variable.
+- `protocol` (String) Protocol for the gateway can be set with the `GENESYSCLOUD_GATEWAY_PROTOCOL` environment variable.
+
+<a id="nestedblock--gateway--auth"></a>
+### Nested Schema for `gateway.auth`
+
+Optional:
+
+- `password` (String) Password for the Auth can be set with the `GENESYSCLOUD_PROXY_AUTH_PASSWORD` environment variable.
+- `username` (String) UserName for the Auth can be set with the `GENESYSCLOUD_PROXY_AUTH_USERNAME` environment variable.
+
+
+<a id="nestedblock--gateway--path_params"></a>
+### Nested Schema for `gateway.path_params`
+
+Required:
+
+- `path_name` (String) Path name for Gateway Path Params can be set with the `GENESYSCLOUD_GATEWAY_PATH_NAME` environment variable.
+- `path_value` (String) Path value for Gateway Path Params can be set with the `GENESYSCLOUD_GATEWAY_PATH_VALUE` environment variable.
+
+
 
 <a id="nestedblock--proxy"></a>
 ### Nested Schema for `proxy`
