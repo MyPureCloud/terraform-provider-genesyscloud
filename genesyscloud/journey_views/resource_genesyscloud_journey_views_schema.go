@@ -9,8 +9,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
-
-
 const resourceName = "genesyscloud_journey_views"
 
 var (

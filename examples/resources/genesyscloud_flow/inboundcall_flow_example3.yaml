@@ -1,5 +1,5 @@
 inboundEmail:
-    name: Terraform Flow Test-80f1e9ff-3bd1-456e-b6ee-d59f1e4cd582
+    name: Terraform Flow Test-8ee13b09-704b-4ece-b90d-4606c13de79a
     description: test description 1
     startUpRef: "/inboundEmail/states/state[Initial State_10]"
     defaultLanguage: en-us
