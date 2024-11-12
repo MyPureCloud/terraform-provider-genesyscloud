@@ -66,6 +66,7 @@ resource "genesyscloud_outbound_messagingcampaign" "example_outbound_messagingca
 - `dnc_list_ids` (List of String) The dnc lists to check before sending a message for this messaging campaign.
 - `dynamic_contact_queueing_settings` (Block List, Max: 1) Indicates (when true) that the campaign supports dynamic queueing of the contact list at the time of a request for contacts. 
 				**Warning**: Updating this field will cause the campaign to be destroyed and re-created. (see [below for nested schema](#nestedblock--dynamic_contact_queueing_settings))
+- `email_config` (Block List, Max: 1) Configuration for this messaging campaign to send Email messages. (see [below for nested schema](#nestedblock--email_config))
 - `rule_set_ids` (List of String) Rule Sets to be applied while this campaign is sending messages
 - `sms_config` (Block Set, Max: 1) Configuration for this messaging campaign to send SMS messages. (see [below for nested schema](#nestedblock--sms_config))
 
@@ -93,6 +94,36 @@ Optional:
 
 - `filter` (Boolean) Whether to filter contacts dynamically.
 - `sort` (Boolean) Whether to sort contacts dynamically.
+
+
+<a id="nestedblock--email_config"></a>
+### Nested Schema for `email_config`
+
+Optional:
+
+- `content_template_id` (String) The content template used to formulate the email to send to the contact.
+- `email_columns` (Set of String) The contact list columns specifying the email address(es) of the contact.
+- `from_address` (Block List, Max: 1) The email address that will be used as the sender of the email. (see [below for nested schema](#nestedblock--email_config--from_address))
+- `reply_to_address` (Block List, Max: 1) The email address from which any reply will be sent. (see [below for nested schema](#nestedblock--email_config--reply_to_address))
+
+<a id="nestedblock--email_config--from_address"></a>
+### Nested Schema for `email_config.from_address`
+
+Optional:
+
+- `domain_id` (String) The OutboundDomain used for the email address.
+- `friendly_name` (String) The friendly name of the email address.
+- `local_part` (String) The local part of the email address.
+
+
+<a id="nestedblock--email_config--reply_to_address"></a>
+### Nested Schema for `email_config.reply_to_address`
+
+Optional:
+
+- `domain_id` (String) The InboundDomain used for the email address.
+- `route_id` (String) The InboundRoute used for the email address.
+
 
 
 <a id="nestedblock--sms_config"></a>

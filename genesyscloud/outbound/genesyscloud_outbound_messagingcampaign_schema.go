@@ -51,7 +51,7 @@ var (
 		},
 	}
 
-	outboundmessagingcampaignsmsconfigResource = &schema.Resource{
+	smsConfigResource = &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			`message_column`: {
 				Description: `The Contact List column specifying the message to send to the contact. Either message_column or content_template_id is required.`,
@@ -72,6 +72,67 @@ var (
 				Description: `The content template used to formulate the message to send to the contact. Either message_column or content_template_id is required.`,
 				Optional:    true,
 				Type:        schema.TypeString,
+			},
+		},
+	}
+
+	emailConfigResource = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			`email_columns`: {
+				Optional:    true,
+				Description: `The contact list columns specifying the email address(es) of the contact.`,
+				Type:        schema.TypeSet,
+				Elem:        &schema.Schema{Type: schema.TypeString},
+			},
+			`content_template_id`: {
+				Optional:    true,
+				Description: `The content template used to formulate the email to send to the contact.`,
+				Type:        schema.TypeString,
+			},
+			`from_address`: {
+				Optional:    true,
+				Description: `The email address that will be used as the sender of the email.`,
+				Type:        schema.TypeList,
+				MaxItems:    1,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						`domain_id`: {
+							Description: `The OutboundDomain used for the email address.`,
+							Type:        schema.TypeString,
+							Optional:    true,
+						},
+						`friendly_name`: {
+							Type:        schema.TypeString,
+							Description: `The friendly name of the email address.`,
+							Optional:    true,
+						},
+						`local_part`: {
+							Type:        schema.TypeString,
+							Description: `The local part of the email address.`,
+							Optional:    true,
+						},
+					},
+				},
+			},
+			`reply_to_address`: {
+				Optional:    true,
+				Description: `The email address from which any reply will be sent.`,
+				Type:        schema.TypeList,
+				MaxItems:    1,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						`domain_id`: {
+							Description: `The InboundDomain used for the email address.`,
+							Type:        schema.TypeString,
+							Optional:    true,
+						},
+						`route_id`: {
+							Type:        schema.TypeString,
+							Description: `The InboundRoute used for the email address.`,
+							Optional:    true,
+						},
+					},
+				},
 			},
 		},
 	}
@@ -159,12 +220,19 @@ func ResourceOutboundMessagingCampaign() *schema.Resource {
 				Type:        schema.TypeList,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
+			`email_config`: {
+				Description: `Configuration for this messaging campaign to send Email messages.`,
+				Optional:    true,
+				MaxItems:    1,
+				Type:        schema.TypeList,
+				Elem:        emailConfigResource,
+			},
 			`sms_config`: {
 				Description: `Configuration for this messaging campaign to send SMS messages.`,
 				Optional:    true,
 				MaxItems:    1,
 				Type:        schema.TypeSet,
-				Elem:        outboundmessagingcampaignsmsconfigResource,
+				Elem:        smsConfigResource,
 			},
 			`dynamic_contact_queueing_settings`: {
 				Description: `Indicates (when true) that the campaign supports dynamic queueing of the contact list at the time of a request for contacts. 
@@ -213,6 +281,7 @@ func OutboundMessagingcampaignExporter() *resourceExporter.ResourceExporter {
 			`contact_list_filter_ids`: {RefType: "genesyscloud_outbound_contactlistfilter"},
 			`dnc_list_ids`:            {RefType: "genesyscloud_outbound_dnclist"},
 			`callable_time_set_id`:    {RefType: "genesyscloud_outbound_callabletimeset"},
+			`rule_set_ids`:            {RefType: "genesyscloud_outbound_digitalruleset"},
 			// /api/v2/responsemanagement/responses/{responseId}
 			`sms_config.content_template_id`: {},
 		},

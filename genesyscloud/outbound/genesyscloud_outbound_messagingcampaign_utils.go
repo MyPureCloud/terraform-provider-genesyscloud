@@ -2,6 +2,7 @@ package outbound
 
 import (
 	"fmt"
+	"terraform-provider-genesyscloud/genesyscloud/util/lists"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -31,7 +32,7 @@ func buildSdkoutboundmessagingcampaignContactsortSlice(contactSort []interface{}
 	return &sdkContactSortSlice
 }
 
-func buildSdkoutboundmessagingcampaignSmsconfig(d *schema.ResourceData) *platformclientv2.Smsconfig {
+func buildSmsconfig(d *schema.ResourceData) *platformclientv2.Smsconfig {
 	smsConfigSet, ok := d.Get("sms_config").(*schema.Set)
 	if !ok || len(smsConfigSet.List()) == 0 {
 		return nil
@@ -85,6 +86,117 @@ func buildDynamicContactQueueingSettings(d *schema.ResourceData) *platformclient
 	return &dcqSettings
 }
 
+func buildEmailConfig(d *schema.ResourceData) *platformclientv2.Emailconfig {
+	emailConfigList, ok := d.Get("email_config").([]any)
+	if !ok || len(emailConfigList) == 0 {
+		return nil
+	}
+	emailConfigMap, ok := emailConfigList[0].(map[string]interface{})
+	if !ok {
+		return nil
+	}
+
+	var emailConfig platformclientv2.Emailconfig
+
+	if emailColumns := lists.BuildStringListFromSetInMap(emailConfigMap, "email_columns"); len(emailColumns) > 0 {
+		emailConfig.EmailColumns = &emailColumns
+	}
+
+	if contentTemplateId, _ := emailConfigMap["content_template_id"].(string); contentTemplateId != "" {
+		emailConfig.ContentTemplate = &platformclientv2.Domainentityref{Id: &contentTemplateId}
+	}
+
+	if fromAddress := buildFromAddress(emailConfigMap); fromAddress != nil {
+		emailConfig.FromAddress = fromAddress
+	}
+
+	if replyToAddress := buildReplyToAddress(emailConfigMap); replyToAddress != nil {
+		emailConfig.ReplyToAddress = replyToAddress
+	}
+
+	return &emailConfig
+}
+
+func flattenEmailConfig(emailConfig *platformclientv2.Emailconfig) []any {
+	emailConfigMap := make(map[string]any)
+
+	resourcedata.SetMapReferenceValueIfNotNil(emailConfigMap, "content_template_id", emailConfig.ContentTemplate)
+	resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(emailConfigMap, "from_address", emailConfig.FromAddress, flattenFromAddress)
+	resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(emailConfigMap, "reply_to_address", emailConfig.ReplyToAddress, flattenReplyToAddress)
+	if emailConfig.EmailColumns != nil {
+		emailConfigMap["email_columns"] = lists.StringListToInterfaceList(*emailConfig.EmailColumns)
+	}
+
+	return []any{emailConfig}
+}
+
+func buildFromAddress(emailConfigMap map[string]any) *platformclientv2.Fromemailaddress {
+	fromAddressList, ok := emailConfigMap["from_address"].([]any)
+	if !ok || len(fromAddressList) == 0 {
+		return nil
+	}
+	fromAddressMap, ok := fromAddressList[0].(map[string]any)
+	if !ok {
+		return nil
+	}
+
+	var fromAddress platformclientv2.Fromemailaddress
+
+	if domainId, _ := fromAddressMap["domain_id"].(string); domainId != "" {
+		fromAddress.Domain = &platformclientv2.Domainentityref{Id: &domainId}
+	}
+	if friendlyName, _ := fromAddressMap["friendly_name"].(string); friendlyName != "" {
+		fromAddress.FriendlyName = &friendlyName
+	}
+	if localPart, _ := fromAddressMap["local_part"].(string); localPart != "" {
+		fromAddress.LocalPart = &localPart
+	}
+
+	return &fromAddress
+}
+
+func flattenFromAddress(fromAddress *platformclientv2.Fromemailaddress) []any {
+	if fromAddress == nil {
+		return nil
+	}
+	fromAddressMap := make(map[string]any)
+	resourcedata.SetMapValueIfNotNil(fromAddressMap, "local_part", fromAddress.LocalPart)
+	resourcedata.SetMapValueIfNotNil(fromAddressMap, "friendly_name", fromAddress.FriendlyName)
+	resourcedata.SetMapReferenceValueIfNotNil(fromAddressMap, "domain_id", fromAddress.Domain)
+	return []any{fromAddressMap}
+}
+
+func flattenReplyToAddress(replyToAddress *platformclientv2.Replytoemailaddress) []any {
+	replyToAddressMap := make(map[string]any)
+
+	resourcedata.SetMapReferenceValueIfNotNil(replyToAddressMap, "domain_id", replyToAddress.Domain)
+	resourcedata.SetMapReferenceValueIfNotNil(replyToAddressMap, "route_id", replyToAddress.Route)
+
+	return []any{replyToAddressMap}
+}
+
+func buildReplyToAddress(emailConfigMap map[string]any) *platformclientv2.Replytoemailaddress {
+	replyToAddressList, ok := emailConfigMap["reply_to_address"].([]any)
+	if !ok || len(replyToAddressList) == 0 {
+		return nil
+	}
+	replyToAddressMap, ok := replyToAddressList[0].(map[string]any)
+	if !ok {
+		return nil
+	}
+
+	var replyToAddress platformclientv2.Replytoemailaddress
+
+	if domainId, _ := replyToAddressMap["domain_id"].(string); domainId != "" {
+		replyToAddress.Domain = &platformclientv2.Domainentityref{Id: &domainId}
+	}
+	if routeId, _ := replyToAddressMap["route_id"].(string); routeId != "" {
+		replyToAddress.Route = &platformclientv2.Domainentityref{Id: &routeId}
+	}
+
+	return &replyToAddress
+}
+
 func flattenDynamicContactQueueingSettings(dcqSettings platformclientv2.Dynamiccontactqueueingsettings) []any {
 	settingsMap := make(map[string]any)
 	resourcedata.SetMapValueIfNotNil(settingsMap, "filter", dcqSettings.Filter)
@@ -117,8 +229,8 @@ func flattenSdkOutboundMessagingCampaignContactsortSlice(contactSorts []platform
 	return contactSortList
 }
 
-func flattenSdkOutboundMessagingCampaignSmsconfig(smsconfig platformclientv2.Smsconfig) *schema.Set {
-	smsconfigSet := schema.NewSet(schema.HashResource(outboundmessagingcampaignsmsconfigResource), []interface{}{})
+func flattenSmsconfig(smsconfig platformclientv2.Smsconfig) *schema.Set {
+	smsconfigSet := schema.NewSet(schema.HashResource(smsConfigResource), []interface{}{})
 	smsconfigMap := make(map[string]interface{})
 
 	resourcedata.SetMapValueIfNotNil(smsconfigMap, "message_column", smsconfig.MessageColumn)

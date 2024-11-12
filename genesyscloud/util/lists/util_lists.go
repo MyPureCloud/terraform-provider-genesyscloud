@@ -111,6 +111,17 @@ func InterfaceListToStrings(interfaceList []interface{}) []string {
 	return strs
 }
 
+func BuildStringListFromSetInMap(m map[string]any, key string) []string {
+	var strList []string
+	if setVal, ok := m[key].(*schema.Set); ok {
+		listVal := setVal.List()
+		if len(listVal) > 0 {
+			strList = InterfaceListToStrings(listVal)
+		}
+	}
+	return strList
+}
+
 func BuildSdkStringList(d *schema.ResourceData, attrName string) *[]string {
 	if val, ok := d.GetOk(attrName); ok {
 		return SetToStringList(val.(*schema.Set))
