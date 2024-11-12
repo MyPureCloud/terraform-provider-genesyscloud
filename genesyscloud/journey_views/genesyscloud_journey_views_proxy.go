@@ -77,8 +77,8 @@ func createJourneyViewFn(_ context.Context, p *journeyViewsProxy, journeyView *p
 	return p.journeyViewsApi.PostJourneyViews(*journeyView)
 }
 
-func updateJourneyViewFn(_ context.Context, p *journeyViewsProxy, journeyView *platformclientv2.Journeyview) (*platformclientv2.Journeyview, *platformclientv2.APIResponse, error) {
-	return p.journeyViewsApi.putJourneyView(*journeyView)
+func updateJourneyViewFn(_ context.Context, p *journeyViewsProxy, viewId string, journeyView *platformclientv2.Journeyview) (*platformclientv2.Journeyview, *platformclientv2.APIResponse, error) {
+	return p.journeyViewsApi.PostJourneyViewVersions(viewId, *journeyView)
 }
 
 func deleteJourneyViewFn(_ context.Context, p *journeyViewsProxy, viewId string) (*platformclientv2.APIResponse, error) {
@@ -90,7 +90,7 @@ func GetAllJourneyViewsFn(ctx context.Context, p *journeyViewsProxy, name string
 	var allJourneys []platformclientv2.Journeyview
 	const pageSize = 100
 
-	journeys, resp, getErr := p.journeyViewsApi.getJourneyViewListing(1, pageSize, "", name, nil, nil, nil, "", false)
+	journeys, resp, getErr := p.journeyViewsApi.GetJourneyViews(1, pageSize, name, "", "")
 	if getErr != nil {
 		return nil, resp, fmt.Errorf("failed to get first page of journeys: %v", getErr)
 	}
@@ -111,7 +111,7 @@ func GetAllJourneyViewsFn(ctx context.Context, p *journeyViewsProxy, name string
 	allJourneys = append(allJourneys, *journeys.Entities...)
 
 	for pageNum := 2; pageNum <= *journeys.PageCount; pageNum++ {
-		journeys, resp, getErr := p.journeyViewsApi.getJourneyViewListing(pageNum, pageSize, "", name, nil, nil, nil, "", false)
+		journeys, resp, getErr := p.journeyViewsApi.GetJourneyViews(pageNum, pageSize, name, "", "")
 		if getErr != nil {
 			return nil, resp, fmt.Errorf("failed to get page of journeys: %v", getErr)
 		}

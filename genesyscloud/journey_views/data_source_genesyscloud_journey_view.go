@@ -1,4 +1,4 @@
-package journey_view
+package journey_views
 
 import (
 	"context"
@@ -41,7 +41,7 @@ func dataSourceJourneyViewRead(ctx context.Context, d *schema.ResourceData, m in
 
 // hydrateJourneyViewCacheFn for hydrating the cache with Genesys Cloud journey views using the SDK
 func hydrateJourneyViewCacheFn(c *rc.DataSourceCache, ctx context.Context) error {
-	proxy := GetJourneyViewProxy(c.ClientConfig)
+	proxy := getJourneyViewProxy(c.ClientConfig)
 
 	log.Printf("Hydrating cache for data source %s", resourceName)
 
@@ -55,7 +55,7 @@ func hydrateJourneyViewCacheFn(c *rc.DataSourceCache, ctx context.Context) error
 		return nil
 	}
 
-	for _, journey := range *allJourneysQueues {
+	for _, journey := range *allJourneys {
 		c.Cache[*journey.Name] = *journey.Id
 	}
 
@@ -65,7 +65,7 @@ func hydrateJourneyViewCacheFn(c *rc.DataSourceCache, ctx context.Context) error
 
 // getJourneyByNameFn returns the journey id (blank if not found) and diag
 func getJourneyByNameFn(c *rc.DataSourceCache, name string, ctx context.Context) (string, diag.Diagnostics) {
-	proxy := GetJourneyViewProxy(c.ClientConfig)
+	proxy := getJourneyViewProxy(c.ClientConfig)
 	journeyId := ""
 
 	diag := util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {

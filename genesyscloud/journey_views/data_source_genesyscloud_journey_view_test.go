@@ -1,4 +1,4 @@
-package journey_view
+package journey_views
 
 import (
 	"fmt"
