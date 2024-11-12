@@ -1,6 +1,8 @@
 package outbound
 
 import (
+	"encoding/json"
+	"errors"
 	"fmt"
 	"terraform-provider-genesyscloud/genesyscloud/util/lists"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
@@ -8,6 +10,33 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
 )
+
+func gatherExtraErrorMessagesFromResponseBody(resp *platformclientv2.APIResponse) (string, error) {
+	if resp == nil || resp.RawBody == nil {
+		return "", errors.New("no raw body to parse from API response")
+	}
+
+	type respBodyStructure struct {
+		MessageParams map[string]string `json:"messageParams"`
+	}
+
+	var (
+		extraDetails string
+		rb           respBodyStructure
+	)
+
+	if err := json.Unmarshal(resp.RawBody, &rb); err != nil {
+		return "", err
+	}
+
+	if rb.MessageParams != nil {
+		for code, message := range rb.MessageParams {
+			extraDetails += fmt.Sprintf("%s: %s\n", code, message)
+		}
+	}
+
+	return extraDetails, nil
+}
 
 func buildSdkoutboundmessagingcampaignContactsortSlice(contactSort []interface{}) *[]platformclientv2.Contactsort {
 	if contactSort == nil {

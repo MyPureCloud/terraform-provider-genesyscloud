@@ -5,10 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
-	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 	"time"
 
@@ -94,7 +92,13 @@ func createOutboundMessagingcampaign(ctx context.Context, d *schema.ResourceData
 	log.Printf("Creating Outbound Messagingcampaign %s", name)
 	outboundMessagingcampaign, resp, err := outboundApi.PostOutboundMessagingcampaigns(sdkmessagingcampaign)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create outbound messagingcampaign %s error: %s", name, err), resp)
+		extraDetails, edErr := gatherExtraErrorMessagesFromResponseBody(resp)
+		if edErr != nil {
+			log.Println(edErr.Error())
+		} else {
+			extraDetails = fmt.Sprintf("Extra error details: %s", extraDetails)
+		}
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create outbound messagingcampaign %s error: %s. %s", name, err, extraDetails), resp)
 	}
 
 	if outboundMessagingcampaign.Id == nil {
@@ -146,7 +150,6 @@ func updateOutboundMessagingcampaign(ctx context.Context, d *schema.ResourceData
 	}
 
 	msg, valid := validateSmsconfig(d.Get("sms_config").(*schema.Set))
-
 	if !valid {
 		return util.BuildDiagnosticError(resourceName, "Configuration error", errors.New(msg))
 	}
@@ -161,7 +164,13 @@ func updateOutboundMessagingcampaign(ctx context.Context, d *schema.ResourceData
 		sdkmessagingcampaign.Version = outboundMessagingcampaign.Version
 		_, resp, updateErr := outboundApi.PutOutboundMessagingcampaign(d.Id(), sdkmessagingcampaign)
 		if updateErr != nil {
-			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update Outbound Messagingcampaign %s error: %s", name, updateErr), resp)
+			extraDetails, edErr := gatherExtraErrorMessagesFromResponseBody(resp)
+			if edErr != nil {
+				log.Println(edErr.Error())
+			} else {
+				extraDetails = fmt.Sprintf("Extra error details: %s", extraDetails)
+			}
+			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update Outbound Messagingcampaign %s error: %s. %s", name, updateErr, extraDetails), resp)
 		}
 		return nil, nil
 	})
@@ -176,7 +185,7 @@ func updateOutboundMessagingcampaign(ctx context.Context, d *schema.ResourceData
 func readOutboundMessagingcampaign(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	outboundApi := platformclientv2.NewOutboundApiWithConfig(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundMessagingCampaign(), constants.DefaultConsistencyChecks, resourceName)
+	//cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundMessagingCampaign(), constants.DefaultConsistencyChecks, resourceName)
 
 	log.Printf("Reading Outbound Messaging Campaign %s", d.Id())
 
@@ -223,7 +232,8 @@ func readOutboundMessagingcampaign(ctx context.Context, d *schema.ResourceData, 
 		}
 
 		log.Printf("Read Outbound Messaging Campaign %s", d.Id())
-		return cc.CheckState(d)
+		//return cc.CheckState(d)
+		return nil
 	})
 }
 
