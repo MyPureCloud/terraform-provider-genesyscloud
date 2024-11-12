@@ -146,7 +146,7 @@ func buildEmailConfig(d *schema.ResourceData) *platformclientv2.Emailconfig {
 	return &emailConfig
 }
 
-func flattenEmailConfig(emailConfig *platformclientv2.Emailconfig) []any {
+func flattenEmailConfig(emailConfig platformclientv2.Emailconfig) []any {
 	emailConfigMap := make(map[string]any)
 
 	resourcedata.SetMapReferenceValueIfNotNil(emailConfigMap, "content_template_id", emailConfig.ContentTemplate)
@@ -156,7 +156,7 @@ func flattenEmailConfig(emailConfig *platformclientv2.Emailconfig) []any {
 		emailConfigMap["email_columns"] = lists.StringListToInterfaceList(*emailConfig.EmailColumns)
 	}
 
-	return []any{emailConfig}
+	return []any{emailConfigMap}
 }
 
 func buildFromAddress(emailConfigMap map[string]any) *platformclientv2.Fromemailaddress {

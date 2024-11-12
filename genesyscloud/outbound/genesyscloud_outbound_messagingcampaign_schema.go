@@ -276,14 +276,20 @@ func OutboundMessagingcampaignExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: provider.GetAllWithPooledClient(getAllOutboundMessagingcampaign),
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
-			`division_id`:             {RefType: "genesyscloud_auth_division"},
-			`contact_list_id`:         {RefType: "genesyscloud_outbound_contact_list"},
-			`contact_list_filter_ids`: {RefType: "genesyscloud_outbound_contactlistfilter"},
-			`dnc_list_ids`:            {RefType: "genesyscloud_outbound_dnclist"},
-			`callable_time_set_id`:    {RefType: "genesyscloud_outbound_callabletimeset"},
-			`rule_set_ids`:            {RefType: "genesyscloud_outbound_digitalruleset"},
-			// /api/v2/responsemanagement/responses/{responseId}
-			`sms_config.content_template_id`: {},
+			`division_id`:                            {RefType: "genesyscloud_auth_division"},
+			`contact_list_id`:                        {RefType: "genesyscloud_outbound_contact_list"},
+			`contact_list_filter_ids`:                {RefType: "genesyscloud_outbound_contactlistfilter"},
+			`dnc_list_ids`:                           {RefType: "genesyscloud_outbound_dnclist"},
+			`callable_time_set_id`:                   {RefType: "genesyscloud_outbound_callabletimeset"},
+			`rule_set_ids`:                           {RefType: "genesyscloud_outbound_digitalruleset"},
+			`sms_config.content_template_id`:         {RefType: "genesyscloud_responsemanagement_response"},
+			`email_config.content_template_id`:       {RefType: "genesyscloud_responsemanagement_response"},
+			`email_config.reply_to_address.route_id`: {RefType: "genesyscloud_routing_email_route"},
+
+			// TODO: Reference the genesyscloud_routing_email_outbound_domain once it is implemented
+			// /api/v2/routing/email/outbound/domains/{domainId}
+			`email_config.from_address.domain_id`:     {},
+			`email_config.reply_to_address.domain_id`: {},
 		},
 	}
 }

@@ -205,7 +205,10 @@ func readOutboundMessagingcampaign(ctx context.Context, d *schema.ResourceData, 
 		resourcedata.SetNillableReference(d, "division_id", sdkMessagingCampaign.Division)
 		resourcedata.SetNillableReference(d, "callable_time_set_id", sdkMessagingCampaign.CallableTimeSet)
 		resourcedata.SetNillableReference(d, "contact_list_id", sdkMessagingCampaign.ContactList)
-		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "email_config", sdkMessagingCampaign.EmailConfig, flattenEmailConfig)
+
+		if sdkMessagingCampaign.EmailConfig != nil {
+			_ = d.Set("email_config", flattenEmailConfig(*sdkMessagingCampaign.EmailConfig))
+		}
 
 		if sdkMessagingCampaign.ContactSorts != nil {
 			_ = d.Set("contact_sorts", flattenSdkOutboundMessagingCampaignContactsortSlice(*sdkMessagingCampaign.ContactSorts))
