@@ -1,10 +1,11 @@
 package journey_views
 
 import (
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
 const resourceName = "genesyscloud_journey_views"
@@ -163,9 +164,9 @@ func SetRegistrar(regInstance registrar.Registrar) {
 	regInstance.RegisterResource(resourceName, ResourceJourneyViews())
 	/***
 	TODO: Add DataSource and Exporter once we are done with https://inindca.atlassian.net/browse/JM-109
-	regInstance.RegisterDataSource(resourceName, DataSourceGroup())
-	regInstance.RegisterExporter(resourceName, JourneyViewExporter())
 	***/
+	regInstance.RegisterDataSource(resourceName, DataSourceJourneyView())
+	regInstance.RegisterExporter(resourceName, JourneyViewExporter())
 }
 
 func ResourceJourneyViews() *schema.Resource {
@@ -206,6 +207,54 @@ func ResourceJourneyViews() *schema.Resource {
 				Type:        schema.TypeList,
 				Optional:    true,
 				Elem:        elementsResource,
+			},
+		},
+	}
+}
+
+func JourneyViewExporter() *resourceExporter.ResourceExporter {
+	return &resourceExporter.ResourceExporter{
+		GetResourcesFunc: provider.GetAllWithPooledClient(getAllRoutingQueues), //LLG TODO
+		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
+			"division_id":                              {RefType: "genesyscloud_auth_division"},
+			"queue_flow_id":                            {RefType: "genesyscloud_flow"},
+			"email_in_queue_flow_id":                   {RefType: "genesyscloud_flow"},
+			"message_in_queue_flow_id":                 {RefType: "genesyscloud_flow"},
+			"whisper_prompt_id":                        {RefType: "genesyscloud_architect_user_prompt"},
+			"on_hold_prompt_id":                        {RefType: "genesyscloud_architect_user_prompt"},
+			"outbound_messaging_sms_address_id":        {},                               // Ref type not yet defined
+			"default_script_ids.*":                     {RefType: "genesyscloud_script"}, // Ref type not yet defined
+			"outbound_email_address.route_id":          {RefType: "genesyscloud_routing_email_route"},
+			"outbound_email_address.domain_id":         {RefType: "genesyscloud_routing_email_domain"},
+			"bullseye_rings.skills_to_remove":          {RefType: "genesyscloud_routing_skill"},
+			"members.user_id":                          {RefType: "genesyscloud_user"},
+			"wrapup_codes":                             {RefType: "genesyscloud_routing_wrapupcode"},
+			"skill_groups":                             {RefType: "genesyscloud_routing_skill_group"},
+			"teams":                                    {RefType: "genesyscloud_team"},
+			"groups":                                   {RefType: "genesyscloud_group"},
+			"conditional_group_routing_rules.queue_id": {RefType: "genesyscloud_routing_queue"},
+		},
+		RemoveIfMissing: map[string][]string{
+			"outbound_email_address": {"route_id"},
+			"members":                {"user_id"},
+		},
+		AllowZeroValues: []string{"bullseye_rings.expansion_timeout_seconds"},
+		CustomAttributeResolver: map[string]*resourceExporter.RefAttrCustomResolver{
+			"bullseye_rings.member_groups.member_group_id":           {ResolverFunc: resourceExporter.MemberGroupsResolver},
+			"conditional_group_routing_rules.groups.member_group_id": {ResolverFunc: resourceExporter.MemberGroupsResolver},
+		},
+	}
+}
+
+func DataSourceJourneyView() *schema.Resource {
+	return &schema.Resource{
+		Description:        "Data source for Genesys Cloud Journey Views. Select a Journey View by name.",
+		ReadWithoutTimeout: provider.ReadWithPooledClient(dataSourceJourneyViewRead),
+		Schema: map[string]*schema.Schema{
+			"name": {
+				Description: "JourneyView name.",
+				Type:        schema.TypeString,
+				Required:    true,
 			},
 		},
 	}

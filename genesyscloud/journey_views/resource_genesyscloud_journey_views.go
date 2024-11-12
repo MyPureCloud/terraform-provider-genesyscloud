@@ -41,7 +41,7 @@ func updateJourneyView(ctx context.Context, d *schema.ResourceData, meta interfa
 
 	journeyView := makeJourneyViewFromSchema(d)
 	log.Printf("Updating journeyView %s", d.Id())
-	journeyView, resp, err := gp.updateJourneyView(ctx, d.Id(), journeyView)
+	journeyView, resp, err := gp.updateJourneyView(ctx, journeyView)
 
 	if err != nil {
 		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create journeyView %s: %s", name, err), resp)
