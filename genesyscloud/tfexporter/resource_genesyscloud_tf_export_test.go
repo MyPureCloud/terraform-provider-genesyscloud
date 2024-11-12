@@ -1671,7 +1671,7 @@ func validatePromptsExported(filename string) resource.TestCheckFunc {
 
 // TestAccResourceUserPromptsExported tests the new getAll functionality where it adds the name filter and makes a call per letter
 // This will prevent the 10,000 return limit being hit on export and not returning everything
-func TestAccResourceUserPromptsExported(t *testing.T) {
+func TestAccResourceTfExportUserPromptsExported(t *testing.T) {
 	var (
 		exportTestDir     = filepath.Join("..", "..", ".terraform"+uuid.NewString())
 		resourceID        = "export"
@@ -1737,7 +1737,11 @@ resource "genesyscloud_architect_user_prompt" "%s" {
 					},
 					util.FalseValue, // export_as_hcl
 					util.FalseValue,
-					[]string{},
+					[]string{
+						strconv.Quote("genesyscloud_architect_user_prompt." + dPromptResourceId),
+						strconv.Quote("genesyscloud_architect_user_prompt." + hPromptResourceId),
+						strconv.Quote("genesyscloud_architect_user_prompt." + zPromptResourceId),
+					},
 				),
 				Check: resource.ComposeTestCheckFunc(
 					validatePromptsExported(exportTestDir),
