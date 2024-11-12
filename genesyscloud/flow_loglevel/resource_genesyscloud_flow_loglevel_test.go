@@ -16,7 +16,7 @@ import (
 func TestAccResourceFlowLogLevel(t *testing.T) {
 	var (
 		flowResource         = "test_logLevel_flow1"
-		resourceId           = "flow_log_level" + uuid.NewString()
+		resourceLabel        = "flow_log_level" + uuid.NewString()
 		flowName             = "Terraform Test Flow log level " + uuid.NewString()
 		flowLoglevelBase     = "Base"
 		flowLoglevelAll      = "All"
@@ -44,10 +44,10 @@ func TestAccResourceFlowLogLevel(t *testing.T) {
 				Config: flowResourceConfig + generateFlowLogLevelResource(
 					flowId,
 					flowLoglevelBase,
-					resourceId,
+					resourceLabel,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_flow_loglevel."+resourceId, "flow_log_level", flowLoglevelBase),
+					resource.TestCheckResourceAttr("genesyscloud_flow_loglevel."+resourceLabel, "flow_log_level", flowLoglevelBase),
 				),
 			},
 			{
@@ -55,10 +55,10 @@ func TestAccResourceFlowLogLevel(t *testing.T) {
 				Config: flowResourceConfig + generateFlowLogLevelResource(
 					flowId,
 					flowLoglevelAll,
-					resourceId,
+					resourceLabel,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_flow_loglevel."+resourceId, "flow_log_level", flowLoglevelAll),
+					resource.TestCheckResourceAttr("genesyscloud_flow_loglevel."+resourceLabel, "flow_log_level", flowLoglevelAll),
 				),
 			},
 			{
@@ -66,10 +66,10 @@ func TestAccResourceFlowLogLevel(t *testing.T) {
 				Config: flowResourceConfig + generateFlowLogLevelResource(
 					flowId,
 					flowLogLevelDisabled,
-					resourceId,
+					resourceLabel,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_flow_loglevel."+resourceId, "flow_log_level", flowLogLevelDisabled),
+					resource.TestCheckResourceAttr("genesyscloud_flow_loglevel."+resourceLabel, "flow_log_level", flowLogLevelDisabled),
 				),
 			},
 		},
@@ -101,13 +101,13 @@ func testVerifyFlowLogLevelDestroyed(state *terraform.State) error {
 func generateFlowLogLevelResource(
 	flowId string,
 	flowLoglevel string,
-	resourceId string,
+	resourceLabel string,
 ) string {
 	return fmt.Sprintf(`resource "genesyscloud_flow_loglevel" "%s" {
 	  flow_id					= "%s"
 	  flow_log_level 			= "%s"
 	}`,
-		resourceId,
+		resourceLabel,
 		flowId,
 		flowLoglevel)
 }

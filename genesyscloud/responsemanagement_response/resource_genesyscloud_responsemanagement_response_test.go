@@ -498,7 +498,7 @@ func TestAccResourceResponseManagementResponseCampaignEmailTemplate(t *testing.T
 }
 
 func generateResponseManagementResponseResource(
-	resourceId string,
+	resourceLabel string,
 	name string,
 	libraryIds []string,
 	interactionType string,
@@ -517,7 +517,7 @@ func generateResponseManagementResponseResource(
 			asset_ids = [%s]
 			%s
 		}
-	`, resourceId, name, strings.Join(libraryIds, ", "), interactionType, schema, responseType, strings.Join(assetIds, ", "), strings.Join(nestedBlocks, "\n"))
+	`, resourceLabel, name, strings.Join(libraryIds, ", "), interactionType, schema, responseType, strings.Join(assetIds, ", "), strings.Join(nestedBlocks, "\n"))
 }
 
 func generateTextsBlock(content string, contentType string, cType string) string {

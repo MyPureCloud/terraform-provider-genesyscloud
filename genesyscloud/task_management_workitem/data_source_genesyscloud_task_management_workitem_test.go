@@ -23,18 +23,18 @@ func TestAccDataSourceTaskManagementWorkitem(t *testing.T) {
 	t.Parallel()
 	var (
 		// Workbin
-		wbResourceId  = "workbin_1"
-		wbName        = "wb_" + uuid.NewString()
-		wbDescription = "workbin created for CX as Code test case"
+		wbResourceLabel = "workbin_1"
+		wbName          = "wb_" + uuid.NewString()
+		wbDescription   = "workbin created for CX as Code test case"
 
-		wb2ResourceId  = "workbin_2"
-		wb2Name        = "wb_" + uuid.NewString()
-		wb2Description = "workbin created for CX as Code test case"
+		wb2ResourceLabel = "workbin_2"
+		wb2Name          = "wb_" + uuid.NewString()
+		wb2Description   = "workbin created for CX as Code test case"
 
 		// Schema
-		wsResourceId  = "schema_1"
-		wsName        = "ws_" + uuid.NewString()
-		wsDescription = "workitem schema created for CX as Code test case"
+		wsResourceLabel = "schema_1"
+		wsName          = "ws_" + uuid.NewString()
+		wsDescription   = "workitem schema created for CX as Code test case"
 
 		// worktype
 		wtResName     = "tf_worktype_1"
@@ -60,15 +60,15 @@ func TestAccDataSourceTaskManagementWorkitem(t *testing.T) {
 
 		workitemDataSrc = "workitem_1_data"
 
-		taskMgmtConfig = workbin.GenerateWorkbinResource(wbResourceId, wbName, wbDescription, util.NullValue) +
-			workbin.GenerateWorkbinResource(wb2ResourceId, wb2Name, wb2Description, util.NullValue) +
-			workitemSchema.GenerateWorkitemSchemaResourceBasic(wsResourceId, wsName, wsDescription) +
+		taskMgmtConfig = workbin.GenerateWorkbinResource(wbResourceLabel, wbName, wbDescription, util.NullValue) +
+			workbin.GenerateWorkbinResource(wb2ResourceLabel, wb2Name, wb2Description, util.NullValue) +
+			workitemSchema.GenerateWorkitemSchemaResourceBasic(wsResourceLabel, wsName, wsDescription) +
 			worktype.GenerateWorktypeResourceBasic(
 				wtResName,
 				wtName,
 				wtDescription,
-				fmt.Sprintf("genesyscloud_task_management_workbin.%s.id", wbResourceId),
-				fmt.Sprintf("genesyscloud_task_management_workitem_schema.%s.id", wsResourceId),
+				fmt.Sprintf("genesyscloud_task_management_workbin.%s.id", wbResourceLabel),
+				fmt.Sprintf("genesyscloud_task_management_workitem_schema.%s.id", wsResourceLabel),
 				"",
 			) +
 			worktypeStatus.GenerateWorktypeStatusResource(
@@ -101,7 +101,7 @@ func TestAccDataSourceTaskManagementWorkitem(t *testing.T) {
 					generateWorkitemDataSource(
 						workitemDataSrc,
 						workitem1.name,
-						fmt.Sprintf("genesyscloud_task_management_workbin.%s.id", wbResourceId),
+						fmt.Sprintf("genesyscloud_task_management_workbin.%s.id", wbResourceLabel),
 						"", // no worktype id filter
 						fmt.Sprintf("genesyscloud_task_management_workitem.%s", workitemRes),
 					),
@@ -128,7 +128,7 @@ func TestAccDataSourceTaskManagementWorkitem(t *testing.T) {
 	})
 }
 
-func generateWorkitemDataSource(dataSourceId, name, workbinId, worktypeId, dependsOnResource string) string {
+func generateWorkitemDataSource(dataSourceLabel, name, workbinId, worktypeId, dependsOnResource string) string {
 	additionalProps := ""
 	if workbinId != "" {
 		additionalProps += fmt.Sprintf("workbin_id = %s\n", workbinId)
@@ -143,5 +143,5 @@ func generateWorkitemDataSource(dataSourceId, name, workbinId, worktypeId, depen
 		%s
 		depends_on=[%s]
 	}
-	`, resourceName, dataSourceId, name, additionalProps, dependsOnResource)
+	`, resourceName, dataSourceLabel, name, additionalProps, dependsOnResource)
 }

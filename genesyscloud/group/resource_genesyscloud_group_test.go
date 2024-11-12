@@ -438,22 +438,22 @@ func validateGroupMember(groupResourceName string, userResourceName string, attr
 }
 
 // Duplicating this code within the function to not break a cyclid dependency
-func generateUserWithCustomAttrs(resourceID string, email string, name string, attrs ...string) string {
+func generateUserWithCustomAttrs(resourceLabel string, email string, name string, attrs ...string) string {
 	return fmt.Sprintf(`resource "genesyscloud_user" "%s" {
 		email = "%s"
 		name = "%s"
 		%s
 	}
-	`, resourceID, email, name, strings.Join(attrs, "\n"))
+	`, resourceLabel, email, name, strings.Join(attrs, "\n"))
 }
 
 // Basic user with minimum required fields
-func generateBasicUserResource(resourceID string, email string, name string) string {
-	return generateUserResource(resourceID, email, name, util.NullValue, util.NullValue, util.NullValue, util.NullValue, util.NullValue, "", "")
+func generateBasicUserResource(resourceLabel string, email string, name string) string {
+	return generateUserResource(resourceLabel, email, name, util.NullValue, util.NullValue, util.NullValue, util.NullValue, util.NullValue, "", "")
 }
 
 func generateUserResource(
-	resourceID string,
+	resourceLabel string,
 	email string,
 	name string,
 	state string,
@@ -474,5 +474,5 @@ func generateUserResource(
 		profile_skills = [%s]
 		certifications = [%s]
 	}
-	`, resourceID, email, name, state, title, department, manager, acdAutoAnswer, profileSkills, certifications)
+	`, resourceLabel, email, name, state, title, department, manager, acdAutoAnswer, profileSkills, certifications)
 }

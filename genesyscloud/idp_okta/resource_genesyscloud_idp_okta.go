@@ -44,7 +44,7 @@ func getAllAuthIdpOktas(ctx context.Context, clientConfig *platformclientv2.Conf
 		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get IDP okta error: %s", err), resp)
 	}
 
-	resources["0"] = &resourceExporter.ResourceMeta{Name: "okta"}
+	resources["0"] = &resourceExporter.ResourceMeta{BlockLabel: "okta"}
 	return resources, nil
 }
 

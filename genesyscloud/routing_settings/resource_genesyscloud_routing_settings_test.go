@@ -143,23 +143,23 @@ func TestAccResourceRoutingSettingsTranscription(t *testing.T) {
 }
 
 func generateRoutingSettingsResource(
-	resourceId string,
+	resourceLabel string,
 	resetAgentScoreOnPresenceChange string) string {
 	return fmt.Sprintf(`resource "genesyscloud_routing_settings" "%s"{
 		reset_agent_on_presence_change = %s
 	}
-	`, resourceId, resetAgentScoreOnPresenceChange)
+	`, resourceLabel, resetAgentScoreOnPresenceChange)
 }
 
 func generateRoutingSettingsWithCustomAttrs(
-	resourceId string,
+	resourceLabel string,
 	resetAgentScoreOnPresenceChange string,
 	attrs ...string) string {
 	return fmt.Sprintf(`resource "genesyscloud_routing_settings" "%s" {
 		reset_agent_on_presence_change = %s
 		%s
 	}
-	`, resourceId, resetAgentScoreOnPresenceChange, strings.Join(attrs, "\n"))
+	`, resourceLabel, resetAgentScoreOnPresenceChange, strings.Join(attrs, "\n"))
 }
 
 func generateSettingsContactCenter(removeSkillsFromBlindTransfer string) string {

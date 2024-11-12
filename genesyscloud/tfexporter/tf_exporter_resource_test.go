@@ -348,8 +348,8 @@ func (r *registerTestInstance) registerTestDataSources() {
 	providerDataSources["genesyscloud_conversations_messaging_settings"] = cMessagingSettings.DataSourceConversationsMessagingSettings()
 }
 
-func RegisterExporter(exporterName string, resourceExporter *resourceExporter.ResourceExporter) {
-	resourceExporters[exporterName] = resourceExporter
+func RegisterExporter(exporterResourceType string, resourceExporter *resourceExporter.ResourceExporter) {
+	resourceExporters[exporterResourceType] = resourceExporter
 }
 
 func TestMain(m *testing.M) {

@@ -177,11 +177,11 @@ func TestAccResourceCredential(t *testing.T) {
 // This tests to make sure that we can successfully create an integration credential for a Genesys Cloud oauth client without providing a client secret
 func TestAccGenesysCloudOAuthResourceCredential(t *testing.T) {
 	var (
-		oAuthResourceID = "test_genesys_oauth_client"
-		oAuthName       = "test_genesys_oauth_client" + uuid.NewString()
+		oAuthResourceLabel = "test_genesys_oauth_client"
+		oAuthName          = "test_genesys_oauth_client" + uuid.NewString()
 
-		credResourceID = "test_genesys_oauth_integration_cred"
-		credName       = "Terraform Genesys Oauth Credential Test-" + uuid.NewString()
+		credResourceLabel = "test_genesys_oauth_integration_cred"
+		credName          = "Terraform Genesys Oauth Credential Test-" + uuid.NewString()
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -190,10 +190,10 @@ func TestAccGenesysCloudOAuthResourceCredential(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				// Create
-				Config: generateGenesysOauthCredentialResource(oAuthResourceID, oAuthName) + " " + generateOAuthIntegrationCredentialResource(credResourceID, credName, oAuthResourceID),
+				Config: generateGenesysOauthCredentialResource(oAuthResourceLabel, oAuthName) + " " + generateOAuthIntegrationCredentialResource(credResourceLabel, credName, oAuthResourceLabel),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_integration_credential."+credResourceID, "name", credName),
-					resource.TestCheckResourceAttr("genesyscloud_oauth_client."+oAuthResourceID, "name", oAuthName),
+					resource.TestCheckResourceAttr("genesyscloud_integration_credential."+credResourceLabel, "name", credName),
+					resource.TestCheckResourceAttr("genesyscloud_oauth_client."+oAuthResourceLabel, "name", oAuthName),
 				),
 			},
 		},
@@ -268,17 +268,17 @@ func testVerifyCredentialDestroyed(state *terraform.State) error {
 // These two methods are used to test generate a Genesys Cloud OAuth Client so we can test thing the OAuth Client Caching
 //introduce as part of DevTooling-448
 
-func generateOAuthIntegrationCredentialResource(resourceID string, name string, oauthClientResourceID string) string {
+func generateOAuthIntegrationCredentialResource(resourceLabel string, name string, oauthClientResourceLabel string) string {
 	return fmt.Sprintf(`resource "genesyscloud_integration_credential" "%s" {
 			name                 = "%s"
             credential_type_name = "pureCloudOAuthClient"
             fields = {
     			clientId = "${genesyscloud_oauth_client.%s.id}"
             }
-    }`, resourceID, name, oauthClientResourceID)
+    }`, resourceLabel, name, oauthClientResourceLabel)
 }
 
-func generateGenesysOauthCredentialResource(resourceID string, name string) string {
+func generateGenesysOauthCredentialResource(resourceLabel string, name string) string {
 
 	return fmt.Sprintf(`
       data "genesyscloud_auth_role" "admin" {
@@ -296,5 +296,5 @@ func generateGenesysOauthCredentialResource(resourceID string, name string) stri
 			role_id     = data.genesyscloud_auth_role.admin.id
 		}
       }
-	`, resourceID, name)
+	`, resourceLabel, name)
 }

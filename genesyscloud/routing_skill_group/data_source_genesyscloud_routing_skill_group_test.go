@@ -42,7 +42,7 @@ func TestAccDataSourceRoutingSkillGroup(t *testing.T) {
 }
 
 func generateRoutingSkillGroupDataSource(
-	resourceID string,
+	resourceLabel string,
 	name string,
 	// Must explicitly use depends_on in terraform v0.13 when a data source references a resource
 	// Fixed in v0.14 https://github.com/hashicorp/terraform/pull/26284
@@ -51,5 +51,5 @@ func generateRoutingSkillGroupDataSource(
 		name = %s
         depends_on=[%s]
 	}
-	`, resourceName, resourceID, name, dependsOnResource)
+	`, resourceName, resourceLabel, name, dependsOnResource)
 }

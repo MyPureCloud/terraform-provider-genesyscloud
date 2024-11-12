@@ -41,7 +41,7 @@ func TestAccDataSourceExtensionPoolBasic(t *testing.T) {
 }
 
 func generateExtensionPoolDataSource(
-	resourceID string,
+	resourceLabel string,
 	startNumber string,
 	endNumber string,
 	// Must explicitly use depends_on in terraform v0.13 when a data source references a resource
@@ -52,5 +52,5 @@ func generateExtensionPoolDataSource(
 		end_number = "%s"
 		depends_on=[%s]
 	}
-	`, resourceID, startNumber, endNumber, dependsOnResource)
+	`, resourceLabel, startNumber, endNumber, dependsOnResource)
 }

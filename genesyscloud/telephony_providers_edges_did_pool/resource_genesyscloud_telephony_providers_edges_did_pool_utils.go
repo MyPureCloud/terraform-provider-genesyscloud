@@ -8,7 +8,7 @@ import (
 )
 
 type DidPoolStruct struct {
-	ResourceID       string
+	ResourceLabel    string
 	StartPhoneNumber string
 	EndPhoneNumber   string
 	Description      string
@@ -40,7 +40,7 @@ func GenerateDidPoolResource(didPool *DidPoolStruct) string {
 		pool_provider      = %s
 	}
 	`, resourceName,
-		didPool.ResourceID,
+		didPool.ResourceLabel,
 		didPool.StartPhoneNumber,
 		didPool.EndPhoneNumber,
 		didPool.Description,

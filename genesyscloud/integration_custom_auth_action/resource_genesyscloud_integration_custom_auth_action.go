@@ -58,7 +58,7 @@ func getAllModifiedCustomAuthActions(ctx context.Context, clientConfig *platform
 		if *action.Version == 1 {
 			continue
 		}
-		resources[*action.Id] = &resourceExporter.ResourceMeta{Name: *action.Name}
+		resources[*action.Id] = &resourceExporter.ResourceMeta{BlockLabel: *action.Name}
 	}
 	return resources, nil
 }

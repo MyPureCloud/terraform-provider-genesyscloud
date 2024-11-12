@@ -17,8 +17,8 @@ import (
 func TestAccDataSourceAuthorizationProduct(t *testing.T) {
 
 	var (
-		productName  = "botFlows"
-		dataSourceId = productName
+		productName     = "botFlows"
+		dataSourceLabel = productName
 	)
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
@@ -26,12 +26,12 @@ func TestAccDataSourceAuthorizationProduct(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config: GenerateAuthorizationProductDataSource(
-					dataSourceId,
+					dataSourceLabel,
 					productName,
 					"",
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("data.genesyscloud_authorization_product."+dataSourceId, "name", productName),
+					resource.TestCheckResourceAttr("data.genesyscloud_authorization_product."+dataSourceLabel, "name", productName),
 				),
 			},
 		},

@@ -104,20 +104,20 @@ func TestAccResourceTrunkBaseSettings(t *testing.T) {
 func TestAccResourceExternalTrunkBaseSettingsInboundSite(t *testing.T) {
 
 	var (
-		trunkBaseSettingsRes = "trunkBaseSettings1234"
-		name1                = "test trunk base settings " + uuid.NewString()
-		name2                = "test trunk base settings " + uuid.NewString()
-		description1         = "test description 1"
-		description2         = "test description 2"
-		trunkMetaBaseId      = "external_sip_pcv_byoc_carrier.json"
-		trunkType            = "EXTERNAL"
-		managed              = false
-		locationResourceId   = "locationtest2"
-		siteId               = "sitetest2"
+		trunkBaseSettingsRes  = "trunkBaseSettings1234"
+		name1                 = "test trunk base settings " + uuid.NewString()
+		name2                 = "test trunk base settings " + uuid.NewString()
+		description1          = "test description 1"
+		description2          = "test description 2"
+		trunkMetaBaseId       = "external_sip_pcv_byoc_carrier.json"
+		trunkType             = "EXTERNAL"
+		managed               = false
+		locationResourceLabel = "locationtest2"
+		siteId                = "sitetest2"
 	)
 	referencedResources :=
 		location.GenerateLocationResource(
-			locationResourceId,
+			locationResourceLabel,
 			"tf location "+uuid.NewString(),
 			"HQ",
 			[]string{},
@@ -136,7 +136,7 @@ func TestAccResourceExternalTrunkBaseSettingsInboundSite(t *testing.T) {
 			siteId,
 			"tf site "+uuid.NewString(),
 			"test description",
-			"genesyscloud_location."+locationResourceId+".id",
+			"genesyscloud_location."+locationResourceLabel+".id",
 			"Cloud",
 			false,
 			"[\"us-east-1\"]",
@@ -199,7 +199,7 @@ func TestAccResourceExternalTrunkBaseSettingsInboundSite(t *testing.T) {
 			},
 			{
 				Config: location.GenerateLocationResource(
-					locationResourceId,
+					locationResourceLabel,
 					"tf location "+uuid.NewString(),
 					"HQ",
 					[]string{},
@@ -218,7 +218,7 @@ func TestAccResourceExternalTrunkBaseSettingsInboundSite(t *testing.T) {
 					siteId,
 					"tf site "+uuid.NewString(),
 					"test description",
-					"genesyscloud_location."+locationResourceId+".id",
+					"genesyscloud_location."+locationResourceLabel+".id",
 					"Cloud",
 					false,
 					"[\"us-east-1\"]",

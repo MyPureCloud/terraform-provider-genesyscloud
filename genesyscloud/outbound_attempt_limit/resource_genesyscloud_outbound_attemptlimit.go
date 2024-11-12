@@ -90,7 +90,7 @@ func getAllAttemptLimits(_ context.Context, clientConfig *platformclientv2.Confi
 		}
 
 		for _, attemptLimitConfig := range *attemptLimitConfigs.Entities {
-			resources[*attemptLimitConfig.Id] = &resourceExporter.ResourceMeta{Name: *attemptLimitConfig.Name}
+			resources[*attemptLimitConfig.Id] = &resourceExporter.ResourceMeta{BlockLabel: *attemptLimitConfig.Name}
 		}
 	}
 
@@ -375,7 +375,7 @@ func flattenSdkRecallEntry(sdkEntry platformclientv2.Recallentry) *schema.Set {
 }
 
 func GenerateAttemptLimitResource(
-	resourceId string,
+	resourceLabel string,
 	name string,
 	maxAttemptsPerContact string,
 	maxAttemptsPerNumber string,
@@ -404,5 +404,5 @@ resource "genesyscloud_outbound_attempt_limit" "%s" {
 	%s
 	%s
 }
-	`, resourceId, name, maxAttemptsPerContact, maxAttemptsPerNumber, timeZoneId, resetPeriod, strings.Join(nestedBlocks, "\n"))
+	`, resourceLabel, name, maxAttemptsPerContact, maxAttemptsPerNumber, timeZoneId, resetPeriod, strings.Join(nestedBlocks, "\n"))
 }

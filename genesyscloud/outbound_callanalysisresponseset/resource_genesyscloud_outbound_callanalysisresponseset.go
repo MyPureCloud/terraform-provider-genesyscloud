@@ -32,7 +32,7 @@ func getAllAuthOutboundCallanalysisresponsesets(ctx context.Context, clientConfi
 		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get page of call analysis response set configs error: %s", getErr), resp)
 	}
 	for _, responseSet := range *responseSets {
-		resources[*responseSet.Id] = &resourceExporter.ResourceMeta{Name: *responseSet.Name}
+		resources[*responseSet.Id] = &resourceExporter.ResourceMeta{BlockLabel: *responseSet.Name}
 	}
 	return resources, nil
 }

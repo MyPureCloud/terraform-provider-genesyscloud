@@ -30,7 +30,7 @@ func getAllOutboundDncLists(ctx context.Context, clientConfig *platformclientv2.
 		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get dnclists error: %s", err), resp)
 	}
 	for _, dncListConfig := range *dnclists {
-		resources[*dncListConfig.Id] = &resourceExporter.ResourceMeta{Name: *dncListConfig.Name}
+		resources[*dncListConfig.Id] = &resourceExporter.ResourceMeta{BlockLabel: *dncListConfig.Name}
 	}
 	return resources, nil
 }
@@ -247,12 +247,12 @@ func deleteOutboundDncList(ctx context.Context, d *schema.ResourceData, meta int
 	})
 }
 
-func GenerateOutboundDncListBasic(resourceId string, name string) string {
+func GenerateOutboundDncListBasic(resourceLabel string, name string) string {
 	return fmt.Sprintf(`
 resource "genesyscloud_outbound_dnclist" "%s" {
 	name            = "%s"
-	dnc_source_type = "rds"	
+	dnc_source_type = "rds"
 	contact_method  = "Phone"
 }
-`, resourceId, name)
+`, resourceLabel, name)
 }

@@ -209,7 +209,7 @@ func TestAccDataSourceRecordingMediaRetentionPolicy(t *testing.T) {
 }
 
 func generateRecordingMediaRetentionPolicyDataSource(
-	resourceID string,
+	resourceLabel string,
 	name string,
 	// Must explicitly use depends_on in terraform v0.13 when a data source references a resource
 	// Fixed in v0.14 https://github.com/hashicorp/terraform/pull/26284
@@ -219,7 +219,7 @@ func generateRecordingMediaRetentionPolicyDataSource(
 		name = "%s"
 		depends_on = [%s]
 	}
-	`, resourceID, name, dependsOn)
+	`, resourceLabel, name, dependsOn)
 }
 
 func generateResourceRoles(skillID string, divisionIds ...string) string {
@@ -234,11 +234,11 @@ func generateResourceRoles(skillID string, divisionIds ...string) string {
 	`, skillID, divAttr)
 }
 
-func generateUserWithCustomAttrs(resourceID string, email string, name string, attrs ...string) string {
+func generateUserWithCustomAttrs(resourceLabel string, email string, name string, attrs ...string) string {
 	return fmt.Sprintf(`resource "genesyscloud_user" "%s" {
 		email = "%s"
 		name = "%s"
 		%s
 	}
-	`, resourceID, email, name, strings.Join(attrs, "\n"))
+	`, resourceLabel, email, name, strings.Join(attrs, "\n"))
 }

@@ -964,7 +964,7 @@ func GenerateSimpleOutboundDigitalRuleSet(resourceId, name string) (resource str
 }
 
 func GenerateOutboundDigitalRuleSetResource(
-	resourceId string,
+	resourceLabel string,
 	name string,
 	contactListId string,
 	nestedBlocks ...string,
@@ -975,5 +975,5 @@ func GenerateOutboundDigitalRuleSetResource(
 	contact_list_id = %s
 	%s
 	}
-	`, resourceId, name, contactListId, strings.Join(nestedBlocks, "\n"))
+	`, resourceLabel, name, contactListId, strings.Join(nestedBlocks, "\n"))
 }

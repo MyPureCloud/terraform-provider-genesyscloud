@@ -307,7 +307,7 @@ func doesRuleConditionsRefDeletedSkill(rule platformclientv2.Dialerrule, skillMa
 		if condition.AttributeName != nil && strings.EqualFold(*condition.AttributeName, "skill") && condition.Value != nil {
 			var found bool
 			for _, value := range skillMap {
-				if value.Name == *condition.Value {
+				if value.BlockLabel == *condition.Value {
 					found = true
 					break // found skill, evaluate next condition
 				}

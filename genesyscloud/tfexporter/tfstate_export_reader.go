@@ -2,15 +2,16 @@ package tfexporter
 
 import (
 	"encoding/json"
-	"github.com/hashicorp/hcl/v2/hclparse"
-	"github.com/hashicorp/hcl/v2/hclsyntax"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
 	"terraform-provider-genesyscloud/genesyscloud/util/files"
 	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
+
+	"github.com/hashicorp/hcl/v2/hclparse"
+	"github.com/hashicorp/hcl/v2/hclsyntax"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 )
 
 /*
@@ -106,8 +107,8 @@ func processTerraformFile(path string, resourceTypes []string) []string {
 
 		if len(block.Labels) > 1 {
 			resourceType := &block.Labels[0]
-			resourceName := &block.Labels[1]
-			resourceTypes = append(resourceTypes, *resourceType+"."+*resourceName)
+			resourceLabel := &block.Labels[1]
+			resourceTypes = append(resourceTypes, *resourceType+"."+*resourceLabel)
 		}
 
 	}
@@ -155,12 +156,12 @@ func readTfState(path string) []string {
 		return nil
 	}
 
-	names := extractResourceTypes(jsonData)
+	resourceNames := extractResourceTypesFromStateData(jsonData)
 
-	return names
+	return resourceNames
 }
 
-func extractResourceTypes(data map[string]interface{}) []string {
+func extractResourceTypesFromStateData(data map[string]interface{}) []string {
 	var resourceTypesFromTf []string
 	resources, ok := data["resources"].([]interface{})
 	if !ok {
@@ -177,16 +178,16 @@ func extractResourceTypes(data map[string]interface{}) []string {
 
 		resourceType, ok := resourceMap["type"].(string)
 		if !ok {
-			log.Printf("Error: Type attribute not found in resource %v", resource)
+			log.Printf("Error: type attribute not found in resource %v", resource)
 			continue
 		}
 
-		name, ok := resourceMap["name"].(string)
+		resourceLabel, ok := resourceMap["name"].(string) // The state stores the Block Label as the "name" field
 		if !ok {
 			log.Printf("Error: name attribute not found in resource %v", resource)
 			continue
 		}
-		resourceTypesFromTf = append(resourceTypesFromTf, resourceType+"."+name)
+		resourceTypesFromTf = append(resourceTypesFromTf, resourceType+"."+resourceLabel)
 
 	}
 	return resourceTypesFromTf

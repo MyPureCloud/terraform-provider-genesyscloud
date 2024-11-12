@@ -131,7 +131,7 @@ func TestAccResourceOAuthClient(t *testing.T) {
 	})
 }
 
-func generateOauthClient(resourceID, name, description, grantType, tokenSec, state, uris, scopes string, blocks ...string) string {
+func generateOauthClient(resourceLabel, name, description, grantType, tokenSec, state, uris, scopes string, blocks ...string) string {
 	return fmt.Sprintf(`resource "genesyscloud_oauth_client" "%s" {
 		name = "%s"
 		description = "%s"
@@ -142,10 +142,10 @@ func generateOauthClient(resourceID, name, description, grantType, tokenSec, sta
         scopes = %s
         %s
 	}
-	`, resourceID, name, description, grantType, tokenSec, state, uris, scopes, strings.Join(blocks, "\n"))
+	`, resourceLabel, name, description, grantType, tokenSec, state, uris, scopes, strings.Join(blocks, "\n"))
 }
 
-func generateOauthClientWithCredential(resourceID, name, description, grantType, tokenSec, state, uris, scopes string, credentialName string, blocks ...string) string {
+func generateOauthClientWithCredential(resourceLabel, name, description, grantType, tokenSec, state, uris, scopes string, credentialName string, blocks ...string) string {
 	return fmt.Sprintf(`resource "genesyscloud_oauth_client" "%s" {
 		name = "%s"
 		description = "%s"
@@ -157,7 +157,7 @@ func generateOauthClientWithCredential(resourceID, name, description, grantType,
         integration_credential_name = "%s"
         %s
 	}
-	`, resourceID, name, description, grantType, tokenSec, state, uris, scopes, credentialName, strings.Join(blocks, "\n"))
+	`, resourceLabel, name, description, grantType, tokenSec, state, uris, scopes, credentialName, strings.Join(blocks, "\n"))
 }
 
 func generateOauthClientRoles(roleID string, divisionId string) string {
@@ -174,7 +174,7 @@ func validateOauthRole(resourceName string, roleResourceName string, division st
 		if !ok {
 			return fmt.Errorf("Failed to find %s in state", resourceName)
 		}
-		resourceID := resourceState.Primary.ID
+		resourceLabel := resourceState.Primary.ID
 
 		roleResource, ok := state.RootModule().Resources[roleResourceName]
 		if !ok {
@@ -210,6 +210,6 @@ func validateOauthRole(resourceName string, roleResourceName string, division st
 				}
 			}
 		}
-		return fmt.Errorf("Missing expected role/division for oauth client %s in state: %s/%s", resourceID, roleID, division)
+		return fmt.Errorf("Missing expected role/division for oauth client %s in state: %s/%s", resourceLabel, roleID, division)
 	}
 }

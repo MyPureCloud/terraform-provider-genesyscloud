@@ -419,22 +419,22 @@ func testVerifyIntegrationAndUsersDestroyed(state *terraform.State) error {
 }
 
 // TODO: Duplicating this code within the function to not break a cyclic dependency
-func generateUserWithCustomAttrs(resourceID string, email string, name string, attrs ...string) string {
+func generateUserWithCustomAttrs(resourceLabel string, email string, name string, attrs ...string) string {
 	return fmt.Sprintf(`resource "genesyscloud_user" "%s" {
 		email = "%s"
 		name = "%s"
 		%s
 	}
-	`, resourceID, email, name, strings.Join(attrs, "\n"))
+	`, resourceLabel, email, name, strings.Join(attrs, "\n"))
 }
 
 // TODO: Duplicating this code within the function to not break a cyclic dependency
-func generateBasicGroupResource(resourceID string, name string, nestedBlocks ...string) string {
-	return generateGroupResource(resourceID, name, util.NullValue, util.NullValue, util.NullValue, util.TrueValue, nestedBlocks...)
+func generateBasicGroupResource(resourceLabel string, name string, nestedBlocks ...string) string {
+	return generateGroupResource(resourceLabel, name, util.NullValue, util.NullValue, util.NullValue, util.TrueValue, nestedBlocks...)
 }
 
 func generateGroupResource(
-	resourceID string,
+	resourceLabel string,
 	name string,
 	desc string,
 	groupType string,
@@ -449,7 +449,7 @@ func generateGroupResource(
 		rules_visible = %s
         %s
 	}
-	`, resourceID, name, desc, groupType, visibility, rulesVisible, strings.Join(nestedBlocks, "\n"))
+	`, resourceLabel, name, desc, groupType, visibility, rulesVisible, strings.Join(nestedBlocks, "\n"))
 }
 
 func generateGroupOwners(userIDs ...string) string {

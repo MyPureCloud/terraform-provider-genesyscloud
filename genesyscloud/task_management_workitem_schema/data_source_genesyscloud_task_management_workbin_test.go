@@ -21,7 +21,7 @@ func TestAccDataSourceTaskManagementWorkitemSchema(t *testing.T) {
 		schemaName        = "tf_schema_" + uuid.NewString()
 		schemaDescription = "created for CX as Code test case"
 
-		schemaDataSourceId = "workitem_schema_data_source_1"
+		schemaDataSourceLabel = "workitem_schema_data_source_1"
 	)
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
@@ -29,19 +29,19 @@ func TestAccDataSourceTaskManagementWorkitemSchema(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config: GenerateWorkitemSchemaResourceBasic(schemaResId, schemaName, schemaDescription) +
-					generateWorkitemSchemaDataSource(schemaDataSourceId, schemaName, resourceName+"."+schemaResId),
+					generateWorkitemSchemaDataSource(schemaDataSourceLabel, schemaName, resourceName+"."+schemaResId),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair("data."+resourceName+"."+schemaDataSourceId, "id", resourceName+"."+schemaResId, "id"),
+					resource.TestCheckResourceAttrPair("data."+resourceName+"."+schemaDataSourceLabel, "id", resourceName+"."+schemaResId, "id"),
 				),
 			},
 		},
 	})
 }
 
-func generateWorkitemSchemaDataSource(dataSourceId string, name string, dependsOnResource string) string {
+func generateWorkitemSchemaDataSource(dataSourceLabel string, name string, dependsOnResource string) string {
 	return fmt.Sprintf(`data "%s" "%s" {
 		name = "%s"
 		depends_on=[%s]
 	}
-	`, resourceName, dataSourceId, name, dependsOnResource)
+	`, resourceName, dataSourceLabel, name, dependsOnResource)
 }

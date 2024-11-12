@@ -41,10 +41,10 @@ func TestAccDataSourceWrapupcode(t *testing.T) {
 	})
 }
 
-func generateRoutingWrapupcodeDataSource(resourceID string, name string, dependsOnResource string) string {
+func generateRoutingWrapupcodeDataSource(resourceLabel string, name string, dependsOnResource string) string {
 	return fmt.Sprintf(`data "%s" "%s" {
 		name = "%s"
 		depends_on=[%s]
 	}
-	`, resourceName, resourceID, name, dependsOnResource)
+	`, resourceName, resourceLabel, name, dependsOnResource)
 }

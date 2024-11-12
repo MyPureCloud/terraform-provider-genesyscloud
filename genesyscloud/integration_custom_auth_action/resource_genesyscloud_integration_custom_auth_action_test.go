@@ -195,7 +195,7 @@ func TestAccResourceIntegrationCustomAuthAction(t *testing.T) {
 	})
 }
 
-func generateIntegrationCustomAuthActionResource(resourceID string, res *customAuthActionResource) string {
+func generateIntegrationCustomAuthActionResource(resourceLabel string, res *customAuthActionResource) string {
 	name := ""
 	if res.name != "" {
 		name = fmt.Sprintf("name = %s", strconv.Quote(res.name))
@@ -207,7 +207,7 @@ func generateIntegrationCustomAuthActionResource(resourceID string, res *customA
         %s
 		%s
 	}
-	`, resourceID, res.integrationId, name,
+	`, resourceLabel, res.integrationId, name,
 		generateIntegrationActionConfigRequest(res.configRequest),
 		generateIntegrationActionConfigResponse(res.configResponse))
 }

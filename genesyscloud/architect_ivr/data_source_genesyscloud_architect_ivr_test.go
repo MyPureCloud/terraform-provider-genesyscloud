@@ -19,9 +19,9 @@ import (
 func TestAccDataSourceArchitectIvr(t *testing.T) {
 	t.Parallel()
 	var (
-		ivrResource = "arch-ivr"
-		name        = "IVR " + uuid.NewString()
-		description = "Sample IVR by CX as Code"
+		ivrResourceLabel = "arch-ivr"
+		name             = "IVR " + uuid.NewString()
+		description      = "Sample IVR by CX as Code"
 
 		ivrDataSource = "arch-ivr-ds"
 	)
@@ -33,17 +33,17 @@ func TestAccDataSourceArchitectIvr(t *testing.T) {
 			{
 				// Create
 				Config: GenerateIvrConfigResource(&IvrConfigStruct{
-					ResourceID:  ivrResource,
-					Name:        name,
-					Description: description,
-					Dnis:        nil,
-					DependsOn:   "",
+					ResourceLabel: ivrResourceLabel,
+					Name:          name,
+					Description:   description,
+					Dnis:          nil,
+					DependsOn:     "",
 				}) + GenerateIvrDataSource(ivrDataSource,
-					resourceName+"."+ivrResource+".name",
-					resourceName+"."+ivrResource,
+					resourceName+"."+ivrResourceLabel+".name",
+					resourceName+"."+ivrResourceLabel,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair("data."+resourceName+"."+ivrDataSource, "id", resourceName+"."+ivrResource, "id"),
+					resource.TestCheckResourceAttrPair("data."+resourceName+"."+ivrDataSource, "id", resourceName+"."+ivrResourceLabel, "id"),
 				),
 			},
 		},

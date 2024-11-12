@@ -37,7 +37,7 @@ func getAllOutboundSettings(ctx context.Context, clientConfig *platformclientv2.
 		}
 		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get %s due to error: %s", resourceName, err), resp)
 	}
-	resources["0"] = &resourceExporter.ResourceMeta{Name: "outbound_settings"}
+	resources["0"] = &resourceExporter.ResourceMeta{BlockLabel: "outbound_settings"}
 	return resources, nil
 }
 

@@ -34,7 +34,7 @@ func getAllAuthAuthRoles(ctx context.Context, clientConfig *platformclientv2.Con
 	}
 
 	for _, role := range *roles {
-		resources[*role.Id] = &resourceExporter.ResourceMeta{Name: *role.Name}
+		resources[*role.Id] = &resourceExporter.ResourceMeta{BlockLabel: *role.Name}
 	}
 
 	return resources, nil

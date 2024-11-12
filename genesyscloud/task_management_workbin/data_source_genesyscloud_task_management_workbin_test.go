@@ -21,7 +21,7 @@ func TestAccDataSourceTaskManagementWorkbin(t *testing.T) {
 		workbinName     = "tf_workbin_" + uuid.NewString()
 		workDescription = "created for CX as Code test case"
 
-		workbinDataSourceId = "workbin_data_source_1"
+		workbinDataSourceLabel = "workbin_data_source_1"
 	)
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
@@ -29,19 +29,19 @@ func TestAccDataSourceTaskManagementWorkbin(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config: GenerateWorkbinResource(workbinResId, workbinName, workDescription, nullValue) +
-					generateWorkbinDataSource(workbinDataSourceId, workbinName, resourceName+"."+workbinResId),
+					generateWorkbinDataSource(workbinDataSourceLabel, workbinName, resourceName+"."+workbinResId),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair("data."+resourceName+"."+workbinDataSourceId, "id", resourceName+"."+workbinResId, "id"),
+					resource.TestCheckResourceAttrPair("data."+resourceName+"."+workbinDataSourceLabel, "id", resourceName+"."+workbinResId, "id"),
 				),
 			},
 		},
 	})
 }
 
-func generateWorkbinDataSource(dataSourceId string, name string, dependsOnResource string) string {
+func generateWorkbinDataSource(dataSourceLabel string, name string, dependsOnResource string) string {
 	return fmt.Sprintf(`data "%s" "%s" {
 		name = "%s"
 		depends_on=[%s]
 	}
-	`, resourceName, dataSourceId, name, dependsOnResource)
+	`, resourceName, dataSourceLabel, name, dependsOnResource)
 }

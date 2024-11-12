@@ -53,7 +53,7 @@ func TestAccDataSourceDidPoolBasic(t *testing.T) {
 }
 
 func generateDidPoolDataSource(
-	resourceID string,
+	resourceLabel string,
 	startPhoneNumber string,
 	endPhoneNumber string,
 	dependsOnResource string) string {
@@ -62,5 +62,5 @@ func generateDidPoolDataSource(
 		end_phone_number   = "%s"
 		depends_on         = [%s]
 	}
-	`, resourceName, resourceID, startPhoneNumber, endPhoneNumber, dependsOnResource)
+	`, resourceName, resourceLabel, startPhoneNumber, endPhoneNumber, dependsOnResource)
 }

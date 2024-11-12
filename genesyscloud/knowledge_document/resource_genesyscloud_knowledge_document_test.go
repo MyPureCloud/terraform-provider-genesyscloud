@@ -182,7 +182,7 @@ func generateKnowledgeDocumentRequestBody(knowledgeCategoryName string, knowledg
 }
 
 func generateKnowledgeKnowledgebaseResource(
-	resourceID string,
+	resourceLabel string,
 	name string,
 	description string,
 	coreLanguage string) string {
@@ -191,7 +191,7 @@ func generateKnowledgeKnowledgebaseResource(
         description = "%s"
         core_language = "%s"
 	}
-	`, resourceID, name, description, coreLanguage)
+	`, resourceLabel, name, description, coreLanguage)
 }
 func generateKnowledgeCategoryResource(resourceName string, knowledgeBaseResource string, categoryName string, categoryDescription string) string {
 	category := fmt.Sprintf(`

@@ -17,9 +17,9 @@ import (
 
 func TestAccDataSourceRoutingEmailDomain(t *testing.T) {
 	var (
-		emailDomainResourceId = "email_domain_test"
-		emailDomainId         = fmt.Sprintf("terraformdomain.%s.com", strings.Replace(uuid.NewString(), "-", "", -1))
-		emailDataResourceId   = "email_domain_data"
+		emailDomainResourceLabel = "email_domain_test"
+		emailDomainId            = fmt.Sprintf("terraformdomain.%s.com", strings.Replace(uuid.NewString(), "-", "", -1))
+		emailDataResourceLabel   = "email_domain_data"
 	)
 
 	CleanupRoutingEmailDomains()
@@ -30,13 +30,13 @@ func TestAccDataSourceRoutingEmailDomain(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config: GenerateRoutingEmailDomainResource(
-					emailDomainResourceId,
+					emailDomainResourceLabel,
 					emailDomainId,
 					util.FalseValue,
 					util.NullValue,
-				) + generateRoutingEmailDomainDataSource(emailDataResourceId, "genesyscloud_routing_email_domain."+emailDomainResourceId+".domain_id", "genesyscloud_routing_email_domain."+emailDomainResourceId),
+				) + generateRoutingEmailDomainDataSource(emailDataResourceLabel, "genesyscloud_routing_email_domain."+emailDomainResourceLabel+".domain_id", "genesyscloud_routing_email_domain."+emailDomainResourceLabel),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair("data.genesyscloud_routing_email_domain."+emailDataResourceId, "id", "genesyscloud_routing_email_domain."+emailDomainResourceId, "id"),
+					resource.TestCheckResourceAttrPair("data.genesyscloud_routing_email_domain."+emailDataResourceLabel, "id", "genesyscloud_routing_email_domain."+emailDomainResourceLabel, "id"),
 				),
 			},
 		},
@@ -45,7 +45,7 @@ func TestAccDataSourceRoutingEmailDomain(t *testing.T) {
 
 // Generates the data source string that will be used in doiung the lookuo
 func generateRoutingEmailDomainDataSource(
-	resourceID string,
+	resourceLabel string,
 	name string,
 	// Must explicitly use depends_on in terraform v0.13 when a data source references a resource
 	// Fixed in v0.14 https://github.com/hashicorp/terraform/pull/26284
@@ -54,7 +54,7 @@ func generateRoutingEmailDomainDataSource(
 		name = %s
         depends_on=[%s]
 	}
-	`, resourceID, name, dependsOnResource)
+	`, resourceLabel, name, dependsOnResource)
 }
 
 func CleanupRoutingEmailDomains() {

@@ -56,7 +56,7 @@ func TestAccDataSourceKnowledgeCategoryBasic(t *testing.T) {
 }
 
 func generateKnowledgeCategoryDataSource(
-	resourceID string,
+	resourceLabel string,
 	name string,
 	knowledgeBaseName string,
 	// Must explicitly use depends_on in terraform v0.13 when a data source references a resource
@@ -68,5 +68,5 @@ func generateKnowledgeCategoryDataSource(
         knowledge_base_name = "%s"
         depends_on=[%s]
 	}
-	`, resourceID, name, knowledgeBaseName, dependsOn)
+	`, resourceLabel, name, knowledgeBaseName, dependsOn)
 }

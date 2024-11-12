@@ -400,7 +400,7 @@ func getAllJourneyActionMaps(_ context.Context, clientConfig *platformclientv2.C
 		}
 
 		for _, actionMap := range *actionMaps.Entities {
-			resources[*actionMap.Id] = &resourceExporter.ResourceMeta{Name: *actionMap.DisplayName}
+			resources[*actionMap.Id] = &resourceExporter.ResourceMeta{BlockLabel: *actionMap.DisplayName}
 		}
 
 		pageCount = *actionMaps.PageCount

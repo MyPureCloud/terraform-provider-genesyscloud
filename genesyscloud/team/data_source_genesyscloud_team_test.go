@@ -49,10 +49,10 @@ func TestAccDataSourceResourceTeam(t *testing.T) {
 	})
 }
 
-func generateTeamDataSource(resourceID string, name string, dependsOnResource string) string {
+func generateTeamDataSource(resourceLabel string, name string, dependsOnResource string) string {
 	return fmt.Sprintf(`data "genesyscloud_team" "%s" {
 		name = "%s"
 		depends_on=[%s]
 	}
-	`, resourceID, name, dependsOnResource)
+	`, resourceLabel, name, dependsOnResource)
 }

@@ -173,13 +173,13 @@ func TestAccResourceUserBasic(t *testing.T) {
 	})
 }
 
-func generateUserWithCustomAttrs(resourceID string, email string, name string, attrs ...string) string {
+func generateUserWithCustomAttrs(resourceLabel string, email string, name string, attrs ...string) string {
 	return fmt.Sprintf(`resource "%s" "%s" {
 		email = "%s"
 		name = "%s"
 		%s
 	}
-	`, resourceName, resourceID, email, name, strings.Join(attrs, "\n"))
+	`, resourceName, resourceLabel, email, name, strings.Join(attrs, "\n"))
 }
 
 func TestAccResourceUserAddresses(t *testing.T) {
@@ -206,10 +206,10 @@ func TestAccResourceUserAddresses(t *testing.T) {
 	)
 
 	extensionPoolResource := extensionPool.ExtensionPoolStruct{
-		ResourceID:  extensionPoolResource1,
-		StartNumber: extensionPoolStartNumber1,
-		EndNumber:   extensionPoolEndNumber1,
-		Description: util.NullValue, // No description
+		ResourceLabel: extensionPoolResource1,
+		StartNumber:   extensionPoolStartNumber1,
+		EndNumber:     extensionPoolEndNumber1,
+		Description:   util.NullValue, // No description
 	}
 
 	err := extensionPool.DeleteExtensionPoolWithNumber(extensionPoolStartNumber1)
@@ -335,10 +335,10 @@ func TestAccResourceUserPhone(t *testing.T) {
 	)
 
 	extensionPoolResource := extensionPool.ExtensionPoolStruct{
-		ResourceID:  extensionPoolResource1,
-		StartNumber: extensionPoolStartNumber1,
-		EndNumber:   extensionPoolEndNumber1,
-		Description: util.NullValue, // No description
+		ResourceLabel: extensionPoolResource1,
+		StartNumber:   extensionPoolStartNumber1,
+		EndNumber:     extensionPoolEndNumber1,
+		Description:   util.NullValue, // No description
 	}
 
 	extensionPool.DeleteExtensionPoolWithNumber(extensionPoolStartNumber1)

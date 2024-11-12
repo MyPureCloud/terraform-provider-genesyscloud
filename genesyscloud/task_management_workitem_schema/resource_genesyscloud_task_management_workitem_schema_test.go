@@ -323,21 +323,21 @@ func validateCustomFieldType(resourceName, fieldName, varType string) resource.T
 		if !ok {
 			return fmt.Errorf("Failed to find resource %s in state", resourceName)
 		}
-		resourceID := resourceState.Primary.ID
+		resourceLabel := resourceState.Primary.ID
 
 		jsonAttr, ok := resourceState.Primary.Attributes["properties"]
 		if !ok {
-			return fmt.Errorf("No 'properties' found for %s in state", resourceID)
+			return fmt.Errorf("No 'properties' found for %s in state", resourceLabel)
 		}
 
 		var jsonMap map[string]interface{}
 		if err := json.Unmarshal([]byte(jsonAttr), &jsonMap); err != nil {
-			return fmt.Errorf("error parsing JSON for %s in state: %v", resourceID, err)
+			return fmt.Errorf("error parsing JSON for %s in state: %v", resourceLabel, err)
 		}
 
 		typeRef, ok := (((jsonMap[fieldName].(map[string]interface{})["allOf"].([]interface{}))[0].(map[string]interface{}))["$ref"]).(string)
 		if !ok {
-			return fmt.Errorf("error trying to get type of custom field of schema %s", resourceID)
+			return fmt.Errorf("error trying to get type of custom field of schema %s", resourceLabel)
 		}
 
 		if typeRef == "#/definitions/"+varType {

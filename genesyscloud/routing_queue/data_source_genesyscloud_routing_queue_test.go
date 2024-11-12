@@ -61,12 +61,12 @@ func TestAccDataSourceRoutingQueueBasic(t *testing.T) {
 
 func TestAccDataSourceRoutingQueueCaching(t *testing.T) {
 	var (
-		queue1ResourceId = "queue1"
-		queueName1       = "terraform test queue " + uuid.NewString()
-		queue2ResourceId = "queue2"
-		queueName2       = "terraform test queue " + uuid.NewString()
-		queue3ResourceId = "queue3"
-		queueName3       = "terraform test queue " + uuid.NewString()
+		queue1ResourceLabel = "queue1"
+		queueName1          = "terraform test queue " + uuid.NewString()
+		queue2ResourceLabel = "queue2"
+		queueName2          = "terraform test queue " + uuid.NewString()
+		queue3ResourceLabel = "queue3"
+		queueName3          = "terraform test queue " + uuid.NewString()
 
 		dataSource1Id = "data-1"
 		dataSource2Id = "data-2"
@@ -82,33 +82,33 @@ func TestAccDataSourceRoutingQueueCaching(t *testing.T) {
 					time.Sleep(45 * time.Second)
 				},
 				Config: generateRoutingQueueResourceBasic( // queue resource
-					queue1ResourceId,
+					queue1ResourceLabel,
 					queueName1,
 				) + generateRoutingQueueResourceBasic( // queue resource
-					queue2ResourceId,
+					queue2ResourceLabel,
 					queueName2,
 				) + generateRoutingQueueResourceBasic( // queue resource
-					queue3ResourceId,
+					queue3ResourceLabel,
 					queueName3,
 				) + generateRoutingQueueDataSource( // queue data source
 					dataSource1Id,
 					strconv.Quote(queueName1),
-					"genesyscloud_routing_queue."+queue1ResourceId,
+					"genesyscloud_routing_queue."+queue1ResourceLabel,
 				) + generateRoutingQueueDataSource( // queue data source
 					dataSource2Id,
 					strconv.Quote(queueName2),
-					"genesyscloud_routing_queue."+queue2ResourceId,
+					"genesyscloud_routing_queue."+queue2ResourceLabel,
 				) + generateRoutingQueueDataSource( // queue data source
 					dataSource3Id,
 					strconv.Quote(queueName3),
-					"genesyscloud_routing_queue."+queue3ResourceId,
+					"genesyscloud_routing_queue."+queue3ResourceLabel,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair("genesyscloud_routing_queue."+queue1ResourceId, "id",
+					resource.TestCheckResourceAttrPair("genesyscloud_routing_queue."+queue1ResourceLabel, "id",
 						"data.genesyscloud_routing_queue."+dataSource1Id, "id"),
-					resource.TestCheckResourceAttrPair("genesyscloud_routing_queue."+queue2ResourceId, "id",
+					resource.TestCheckResourceAttrPair("genesyscloud_routing_queue."+queue2ResourceLabel, "id",
 						"data.genesyscloud_routing_queue."+dataSource2Id, "id"),
-					resource.TestCheckResourceAttrPair("genesyscloud_routing_queue."+queue3ResourceId, "id",
+					resource.TestCheckResourceAttrPair("genesyscloud_routing_queue."+queue3ResourceLabel, "id",
 						"data.genesyscloud_routing_queue."+dataSource3Id, "id"),
 				),
 			},
@@ -118,7 +118,7 @@ func TestAccDataSourceRoutingQueueCaching(t *testing.T) {
 }
 
 func generateRoutingQueueDataSource(
-	resourceID string,
+	resourceLabel string,
 	name string,
 	// Must explicitly use depends_on in terraform v0.13 when a data source references a resource
 	// Fixed in v0.14 https://github.com/hashicorp/terraform/pull/26284
@@ -127,5 +127,5 @@ func generateRoutingQueueDataSource(
 		name = %s
 		depends_on=[%s]
 	}
-	`, resourceID, name, dependsOnResource)
+	`, resourceLabel, name, dependsOnResource)
 }
