@@ -45,7 +45,7 @@ func hydrateJourneyViewCacheFn(c *rc.DataSourceCache, ctx context.Context) error
 
 	log.Printf("Hydrating cache for data source %s", resourceName)
 
-	allJourneys, resp, err := proxy.GetAllJourneyViews(ctx, "")
+	allJourneys, resp, err := proxy.getAllJourneyViews(ctx, "")
 	if err != nil {
 		return fmt.Errorf("failed to get journey views. Error: %s | API Response: %s", err.Error(), resp.String())
 	}
