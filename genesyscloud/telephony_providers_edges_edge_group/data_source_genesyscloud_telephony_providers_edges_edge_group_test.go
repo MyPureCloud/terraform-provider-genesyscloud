@@ -86,7 +86,7 @@ func TestAccDataSourceEdgeGroupManaged(t *testing.T) {
 }
 
 func generateEdgeGroupDataSource(
-	resourceID string,
+	resourceLabel string,
 	name string,
 	// Must explicitly use depends_on in terraform v0.13 when a data source references a resource
 	// Fixed in v0.14 https://github.com/hashicorp/terraform/pull/26284
@@ -97,5 +97,5 @@ func generateEdgeGroupDataSource(
 		managed = %t
 		depends_on=[%s]
 	}
-	`, resourceID, name, managed, dependsOnResource)
+	`, resourceLabel, name, managed, dependsOnResource)
 }

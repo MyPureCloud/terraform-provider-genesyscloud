@@ -81,7 +81,7 @@ func TestAccDataSourceUser(t *testing.T) {
 }
 
 func generateUserDataSource(
-	resourceID string,
+	resourceLabel string,
 	email string,
 	name string,
 	// Must explicitly use depends_on in terraform v0.13 when a data source references a resource
@@ -92,5 +92,5 @@ func generateUserDataSource(
 		name = %s
         depends_on=[%s]
 	}
-	`, resourceName, resourceID, email, name, dependsOnResource)
+	`, resourceName, resourceLabel, email, name, dependsOnResource)
 }

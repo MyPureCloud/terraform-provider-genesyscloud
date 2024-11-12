@@ -121,12 +121,12 @@ func buildSdkGroupAddresses(d *schema.ResourceData) (*[]platformclientv2.Groupco
 	return nil, nil
 }
 
-func GenerateBasicGroupResource(resourceID string, name string, nestedBlocks ...string) string {
-	return GenerateGroupResource(resourceID, name, util.NullValue, util.NullValue, util.NullValue, util.TrueValue, nestedBlocks...)
+func GenerateBasicGroupResource(resourceLabel string, name string, nestedBlocks ...string) string {
+	return GenerateGroupResource(resourceLabel, name, util.NullValue, util.NullValue, util.NullValue, util.TrueValue, nestedBlocks...)
 }
 
 func GenerateGroupResource(
-	resourceID string,
+	resourceLabel string,
 	name string,
 	desc string,
 	groupType string,
@@ -141,7 +141,7 @@ func GenerateGroupResource(
 		rules_visible = %s
         %s
 	}
-	`, resourceID, name, desc, groupType, visibility, rulesVisible, strings.Join(nestedBlocks, "\n"))
+	`, resourceLabel, name, desc, groupType, visibility, rulesVisible, strings.Join(nestedBlocks, "\n"))
 }
 
 func generateGroupAddress(number string, phoneType string, extension string) string {

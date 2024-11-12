@@ -36,7 +36,7 @@ func getAuthConversationsMessagingSupportedcontentDefaults(ctx context.Context, 
 		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get conversations messaging supportedcontent default: %s", err), resp)
 	}
 
-	resources["0"] = &resourceExporter.ResourceMeta{Name: "supported_content_default"}
+	resources["0"] = &resourceExporter.ResourceMeta{BlockLabel: "supported_content_default"}
 
 	return resources, nil
 }

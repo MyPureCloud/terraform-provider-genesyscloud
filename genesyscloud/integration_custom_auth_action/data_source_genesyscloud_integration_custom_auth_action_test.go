@@ -78,12 +78,12 @@ func TestAccDataSourceIntegrationCustomAuthAction(t *testing.T) {
 
 }
 
-func generateCustomAuthActionDataSource(resourceID string, integrationId string, dependsOnResource string) string {
+func generateCustomAuthActionDataSource(dataSourceLabel string, integrationId string, dependsOnResource string) string {
 	return fmt.Sprintf(`data "genesyscloud_integration_custom_auth_action" "%s" {
 		parent_integration_id = %s
 		depends_on=[%s]
 	}
-	`, resourceID, integrationId, dependsOnResource)
+	`, dataSourceLabel, integrationId, dependsOnResource)
 }
 
 // testCheckCustomAuthId verified if the ID of the data source matches the expected custom auth id

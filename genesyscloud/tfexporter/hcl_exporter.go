@@ -198,15 +198,15 @@ func writeHCLToFile(bytes [][]byte, path string) diag.Diagnostics {
 	return nil
 }
 
-func instanceStateToHCLBlock(resType, resName string, json util.JsonMap, isDataSource bool) []byte {
+func instanceStateToHCLBlock(resType, resLabel string, json util.JsonMap, isDataSource bool) []byte {
 	f := hclwrite.NewEmptyFile()
 	rootBody := f.Body()
 
 	var block *hclwrite.Block
 	if isDataSource {
-		block = rootBody.AppendNewBlock("data", []string{resType, resName})
+		block = rootBody.AppendNewBlock("data", []string{resType, resLabel})
 	} else {
-		block = rootBody.AppendNewBlock("resource", []string{resType, resName})
+		block = rootBody.AppendNewBlock("resource", []string{resType, resLabel})
 	}
 
 	body := block.Body()

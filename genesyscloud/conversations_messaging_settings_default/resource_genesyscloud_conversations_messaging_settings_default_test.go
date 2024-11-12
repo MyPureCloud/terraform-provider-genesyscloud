@@ -76,9 +76,9 @@ func testVerifyConversationsMessagingSettingsDefaultDestroyed(state *terraform.S
 	return nil
 }
 
-func generateConversationsMessagingSettingsDefaultResource(resourceId, settingId string) string {
+func generateConversationsMessagingSettingsDefaultResource(resourceLabel, settingId string) string {
 	return fmt.Sprintf(`resource "genesyscloud_conversations_messaging_settings_default" "%s" {
 		setting_id = %s
 	}
-	`, resourceId, settingId)
+	`, resourceLabel, settingId)
 }

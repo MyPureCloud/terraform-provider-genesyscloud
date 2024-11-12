@@ -41,12 +41,12 @@ func TestAccDataSourceArchitectGrammar(t *testing.T) {
 }
 
 func generateGrammarDataSource(
-	resourceID string,
+	resourceLabel string,
 	name string,
 	dependsOnResource string) string {
 	return fmt.Sprintf(`data "genesyscloud_architect_grammar" "%s" {
 		name = "%s"
 		depends_on=[%s]
 	}
-	`, resourceID, name, dependsOnResource)
+	`, resourceLabel, name, dependsOnResource)
 }

@@ -71,18 +71,18 @@ func TestAccResourceTaskManagementWorkitem(t *testing.T) {
 		homeDivRes = "home"
 
 		// Workbin
-		wbResourceId  = "workbin_1"
-		wbName        = "wb_" + uuid.NewString()
-		wbDescription = "workbin created for CX as Code test case"
+		wbResourceLabel = "workbin_1"
+		wbName          = "wb_" + uuid.NewString()
+		wbDescription   = "workbin created for CX as Code test case"
 
-		wb2ResourceId  = "workbin_2"
-		wb2Name        = "wb_" + uuid.NewString()
-		wb2Description = "workbin created for CX as Code test case"
+		wb2ResourceLabel = "workbin_2"
+		wb2Name          = "wb_" + uuid.NewString()
+		wb2Description   = "workbin created for CX as Code test case"
 
 		// Schema
-		wsResourceId  = "schema_1"
-		wsName        = "ws_" + uuid.NewString()
-		wsDescription = "workitem schema created for CX as Code test case"
+		wsResourceLabel = "schema_1"
+		wsName          = "ws_" + uuid.NewString()
+		wsDescription   = "workitem schema created for CX as Code test case"
 
 		// worktype
 		wtResName     = "tf_worktype_1"
@@ -141,7 +141,7 @@ func TestAccResourceTaskManagementWorkitem(t *testing.T) {
 			duration_seconds:       99999,
 			ttl:                    int(time.Now().Add(time.Hour * 24 * 30 * 6).Unix()), // ~6 months from now
 			status_id:              util.NullValue,
-			workbin_id:             fmt.Sprintf("genesyscloud_task_management_workbin.%s.id", wbResourceId),
+			workbin_id:             fmt.Sprintf("genesyscloud_task_management_workbin.%s.id", wbResourceLabel),
 			assignee_id:            fmt.Sprintf("genesyscloud_user.%s.id", userResId1),
 			external_contact_id:    fmt.Sprintf("genesyscloud_externalcontacts_contact.%s.id", externalContactResId1),
 			external_tag:           "external tag",
@@ -158,15 +158,15 @@ func TestAccResourceTaskManagementWorkitem(t *testing.T) {
 
 		// String configuration of task management objects needed for the workitem: schema, workbin, worktype, worktype_status.
 		// They don't really change so they are defined here instead of in each step.
-		taskMgmtConfig = workbin.GenerateWorkbinResource(wbResourceId, wbName, wbDescription, util.NullValue) +
-			workbin.GenerateWorkbinResource(wb2ResourceId, wb2Name, wb2Description, util.NullValue) +
-			workitemSchema.GenerateWorkitemSchemaResourceBasic(wsResourceId, wsName, wsDescription) +
+		taskMgmtConfig = workbin.GenerateWorkbinResource(wbResourceLabel, wbName, wbDescription, util.NullValue) +
+			workbin.GenerateWorkbinResource(wb2ResourceLabel, wb2Name, wb2Description, util.NullValue) +
+			workitemSchema.GenerateWorkitemSchemaResourceBasic(wsResourceLabel, wsName, wsDescription) +
 			worktype.GenerateWorktypeResourceBasic(
 				wtResName,
 				wtName,
 				wtDescription,
-				fmt.Sprintf("genesyscloud_task_management_workbin.%s.id", wbResourceId),
-				fmt.Sprintf("genesyscloud_task_management_workitem_schema.%s.id", wsResourceId),
+				fmt.Sprintf("genesyscloud_task_management_workbin.%s.id", wbResourceLabel),
+				fmt.Sprintf("genesyscloud_task_management_workitem_schema.%s.id", wsResourceLabel),
 				"",
 			) +
 			worktypeStatus.GenerateWorktypeStatusResource(
@@ -256,7 +256,7 @@ func TestAccResourceTaskManagementWorkitem(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_task_management_workitem."+workitemRes, "duration_seconds", fmt.Sprintf("%d", workitem1Update.duration_seconds)),
 					resource.TestCheckResourceAttr("genesyscloud_task_management_workitem."+workitemRes, "ttl", fmt.Sprintf("%d", workitem1Update.ttl)),
 					worktypeStatus.ValidateStatusIds("genesyscloud_task_management_workitem."+workitemRes, "status_id", "genesyscloud_task_management_worktype_status."+statusResourceOpen, "id"),
-					resource.TestCheckResourceAttrPair("genesyscloud_task_management_workitem."+workitemRes, "workbin_id", "genesyscloud_task_management_workbin."+wbResourceId, "id"),
+					resource.TestCheckResourceAttrPair("genesyscloud_task_management_workitem."+workitemRes, "workbin_id", "genesyscloud_task_management_workbin."+wbResourceLabel, "id"),
 					resource.TestCheckResourceAttrPair("genesyscloud_task_management_workitem."+workitemRes, "assignee_id", "genesyscloud_user."+userResId1, "id"),
 					resource.TestCheckResourceAttrPair("genesyscloud_task_management_workitem."+workitemRes, "external_contact_id", "genesyscloud_externalcontacts_contact."+externalContactResId1, "id"),
 					resource.TestCheckResourceAttr("genesyscloud_task_management_workitem."+workitemRes, "external_tag", workitem1Update.external_tag),
@@ -286,15 +286,15 @@ func TestAccResourceTaskManagementWorkitemCustomFields(t *testing.T) {
 	t.Parallel()
 	var (
 		// Workbin
-		wbResourceId  = "workbin_1"
-		wbName        = "wb_" + uuid.NewString()
-		wbDescription = "workbin created for CX as Code test case"
+		wbResourceLabel = "workbin_1"
+		wbName          = "wb_" + uuid.NewString()
+		wbDescription   = "workbin created for CX as Code test case"
 
 		// Schema
-		wsResourceId  = "schema_1"
-		wsName        = "ws_" + uuid.NewString()
-		wsDescription = "workitem schema created for CX as Code test case"
-		wsProperties  = `jsonencode({
+		wsResourceLabel = "schema_1"
+		wsName          = "ws_" + uuid.NewString()
+		wsDescription   = "workitem schema created for CX as Code test case"
+		wsProperties    = `jsonencode({
 			"custom_attribute_1_text" : {
 			  "allOf" : [
 				{
@@ -489,14 +489,14 @@ func TestAccResourceTaskManagementWorkitemCustomFields(t *testing.T) {
 
 		// String configuration of task management objects needed for the workitem: schema, workbin, workitem.
 		// They don't really change so they are defined here instead of in each step.
-		taskMgmtConfig = workbin.GenerateWorkbinResource(wbResourceId, wbName, wbDescription, util.NullValue) +
-			workitemSchema.GenerateWorkitemSchemaResource(wsResourceId, wsName, wsDescription, wsProperties, util.TrueValue) +
+		taskMgmtConfig = workbin.GenerateWorkbinResource(wbResourceLabel, wbName, wbDescription, util.NullValue) +
+			workitemSchema.GenerateWorkitemSchemaResource(wsResourceLabel, wsName, wsDescription, wsProperties, util.TrueValue) +
 			worktype.GenerateWorktypeResourceBasic(
 				wtResName,
 				wtName,
 				wtDescription,
-				fmt.Sprintf("genesyscloud_task_management_workbin.%s.id", wbResourceId),
-				fmt.Sprintf("genesyscloud_task_management_workitem_schema.%s.id", wsResourceId),
+				fmt.Sprintf("genesyscloud_task_management_workbin.%s.id", wbResourceLabel),
+				fmt.Sprintf("genesyscloud_task_management_workitem_schema.%s.id", wsResourceLabel),
 				"",
 			) +
 			worktypeStatus.GenerateWorktypeStatusResource(
@@ -562,11 +562,11 @@ func validateWorkitemCustomFields(resourceName string, jsonFields string) resour
 		if !ok {
 			return fmt.Errorf("Failed to find resource %s in state", resourceName)
 		}
-		resourceID := resourceState.Primary.ID
+		resourceLabel := resourceState.Primary.ID
 
 		stateCustomFields, ok := resourceState.Primary.Attributes["custom_fields"]
 		if !ok {
-			return fmt.Errorf("No custom_fields found for %s in state", resourceID)
+			return fmt.Errorf("No custom_fields found for %s in state", resourceLabel)
 		}
 
 		if !util.EquivalentJsons(stateCustomFields, jsonFields) {

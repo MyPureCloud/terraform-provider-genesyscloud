@@ -18,7 +18,7 @@ type SanitizerProvider struct {
 
 type Sanitizer interface {
 	Sanitize(idMetaMap ResourceIDMetaMap)
-	SanitizeResourceName(inputName string) string
+	SanitizeResourceBlockLabel(inputLabel string) string
 }
 
 // Two different Sanitizer structs one with the original algorithm
@@ -33,99 +33,99 @@ func NewSanitizerProvider() *SanitizerProvider {
 
 	//If the GENESYS_SANITIZER_TIME_OPTIMIZED is set use the updated time optimized sanitizer
 	if optimizedExists {
-		log.Print("Using the time optimized resource name sanitizer with transliteration")
+		log.Print("Using the time optimized resource label sanitizer with transliteration")
 		return &SanitizerProvider{
 			S: &sanitizerOptimized{},
 		}
 	}
 
-	log.Print("Using the original resource name sanitizer")
+	log.Print("Using the original resource label sanitizer")
 	return &SanitizerProvider{
 		S: &sanitizerOriginal{},
 	}
 }
 
-// Sanitize sanitizes all resource name using the optimized algorithm
+// Sanitize sanitizes all resource labels using the optimized algorithm
 func (sod *sanitizerOriginal) Sanitize(idMetaMap ResourceIDMetaMap) {
-	// Pull out all the original names of the resources for reference later
-	originalResourceNames := make(map[string]string)
+	// Pull out all the original labels of the resources for reference later
+	originalResourceLabels := make(map[string]string)
 	for k, v := range idMetaMap {
-		originalResourceNames[k] = v.Name
+		originalResourceLabels[k] = v.BlockLabel
 	}
 
-	// Iterate over the idMetaMap and sanitize the names of each resource
+	// Iterate over the idMetaMap and sanitize the labels of each resource
 	for _, meta := range idMetaMap {
 
-		sanitizedName := sod.SanitizeResourceName(meta.Name)
+		sanitizedLabel := sod.SanitizeResourceBlockLabel(meta.BlockLabel)
 
-		// If there are more than one resource name that ends up with the same sanitized name,
-		// append a hash of the original name to ensure uniqueness for names to prevent duplicates
-		if sanitizedName != meta.Name {
+		// If there are more than one resource label that ends up with the same sanitized label,
+		// append a hash of the original label to ensure uniqueness for labels to prevent duplicates
+		if sanitizedLabel != meta.BlockLabel {
 			numSeen := 0
-			for _, originalName := range originalResourceNames {
-				originalSanitizedName := sod.SanitizeResourceName(originalName)
-				if sanitizedName == originalSanitizedName {
+			for _, originalLabel := range originalResourceLabels {
+				originalSanitizedLabel := sod.SanitizeResourceBlockLabel(originalLabel)
+				if sanitizedLabel == originalSanitizedLabel {
 					numSeen++
 				}
 			}
 			if numSeen > 1 {
 				algorithm := fnv.New32()
-				algorithm.Write([]byte(meta.Name))
-				sanitizedName = sanitizedName + "_" + strconv.FormatUint(uint64(algorithm.Sum32()), 10)
+				algorithm.Write([]byte(meta.BlockLabel))
+				sanitizedLabel = sanitizedLabel + "_" + strconv.FormatUint(uint64(algorithm.Sum32()), 10)
 			}
-			meta.Name = sanitizedName
+			meta.BlockLabel = sanitizedLabel
 		}
 	}
 }
 
-// SanitizeResourceName sanitizes a single resource name
-func (sod *sanitizerOriginal) SanitizeResourceName(inputName string) string {
-	name := unsafeNameChars.ReplaceAllStringFunc(inputName, escapeRune)
+// SanitizeResourceBlockLabel sanitizes a single resource label
+func (sod *sanitizerOriginal) SanitizeResourceBlockLabel(inputLabel string) string {
+	label := unsafeLabelChars.ReplaceAllStringFunc(inputLabel, escapeRune)
 
-	if unsafeNameStartingChars.MatchString(string(rune(name[0]))) {
-		// Terraform does not allow names to begin with a number. Prefix with an underscore instead
-		name = "_" + name
+	if unsafeLabelStartingChars.MatchString(string(rune(label[0]))) {
+		// Terraform does not allow labels to begin with a number. Prefix with an underscore instead
+		label = "_" + label
 	}
 
-	return name
+	return label
 }
 
-// Sanitize sanitizes all resource name using the time optimized algorithm
+// Sanitize sanitizes all resource label using the time optimized algorithm
 func (sod *sanitizerOptimized) Sanitize(idMetaMap ResourceIDMetaMap) {
-	sanitizedNames := make(map[string]int, len(idMetaMap))
+	sanitizedLabels := make(map[string]int, len(idMetaMap))
 
 	for _, meta := range idMetaMap {
-		sanitizedName := sod.SanitizeResourceName(meta.Name)
+		sanitizedLabel := sod.SanitizeResourceBlockLabel(meta.BlockLabel)
 
-		if sanitizedName != meta.Name {
-			if count, exists := sanitizedNames[sanitizedName]; exists {
-				// We've seen this sanitized name before
-				sanitizedNames[sanitizedName] = count + 1
+		if sanitizedLabel != meta.BlockLabel {
+			if count, exists := sanitizedLabels[sanitizedLabel]; exists {
+				// We've seen this sanitized label before
+				sanitizedLabels[sanitizedLabel] = count + 1
 
 				// Append a hash to ensure uniqueness
 				h := sha256.New()
-				h.Write([]byte(meta.Name))
+				h.Write([]byte(meta.BlockLabel))
 				hash := hex.EncodeToString(h.Sum(nil)[:10]) // Use first 10 characters of hash
 
-				meta.Name = sanitizedName + "_" + hash
+				meta.BlockLabel = sanitizedLabel + "_" + hash
 			} else {
-				sanitizedNames[sanitizedName] = 1
-				meta.Name = sanitizedName
+				sanitizedLabels[sanitizedLabel] = 1
+				meta.BlockLabel = sanitizedLabel
 			}
 		}
 	}
 }
 
-// SanitizeResourceName sanitizes a single resource name
-func (sod *sanitizerOptimized) SanitizeResourceName(inputName string) string {
+// SanitizeResourceBlockLabel sanitizes a single resource label
+func (sod *sanitizerOptimized) SanitizeResourceBlockLabel(inputLabel string) string {
 	// Transliterate any non-latin-based characters to ASCII
-	transliteratedName := strings.TrimSpace(unidecode.Unidecode(inputName))
-	name := unsafeNameChars.ReplaceAllStringFunc(transliteratedName, escapeRune)
+	transliteratedLabel := strings.TrimSpace(unidecode.Unidecode(inputLabel))
+	label := unsafeLabelChars.ReplaceAllStringFunc(transliteratedLabel, escapeRune)
 
-	if unsafeNameStartingChars.MatchString(string(rune(name[0]))) {
-		// Terraform does not allow names to begin with a number. Prefix with an underscore instead
-		name = "_" + name
+	if unsafeLabelStartingChars.MatchString(string(rune(label[0]))) {
+		// Terraform does not allow labels to begin with a number. Prefix with an underscore instead
+		label = "_" + label
 	}
 
-	return name
+	return label
 }

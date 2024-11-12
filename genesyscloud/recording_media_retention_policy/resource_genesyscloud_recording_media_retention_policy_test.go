@@ -1408,7 +1408,7 @@ func testVerifyMediaRetentionPolicyDestroyed(state *terraform.State) error {
 	return nil
 }
 
-func generateMediaRetentionPolicyResource(resourceID string, mediaRetentionPolicy *Policycreate) string {
+func generateMediaRetentionPolicyResource(resourceLabel string, mediaRetentionPolicy *Policycreate) string {
 	policy := fmt.Sprintf(`resource "genesyscloud_recording_media_retention_policy" "%s" {
 		name = "%s"
 		order = %v
@@ -1420,7 +1420,7 @@ func generateMediaRetentionPolicyResource(resourceID string, mediaRetentionPolic
 		%s
 		%s
 	}
-	`, resourceID,
+	`, resourceLabel,
 		mediaRetentionPolicy.Name,
 		mediaRetentionPolicy.Order,
 		mediaRetentionPolicy.Description,
@@ -1439,26 +1439,26 @@ func generateMediaRetentionPolicyLifeCycle() string {
 	return `
 	lifecycle {
 		ignore_changes = [
-			"media_policies[0].call_policy[0].actions[0].assign_evaluations[0].evaluation_form_id",                  
-			"media_policies[0].call_policy[0].actions[0].assign_calibrations[0].evaluation_form_id",              
-			"media_policies[0].call_policy[0].actions[0].assign_metered_evaluations[0].evaluation_form_id",       
+			"media_policies[0].call_policy[0].actions[0].assign_evaluations[0].evaluation_form_id",
+			"media_policies[0].call_policy[0].actions[0].assign_calibrations[0].evaluation_form_id",
+			"media_policies[0].call_policy[0].actions[0].assign_metered_evaluations[0].evaluation_form_id",
 			"media_policies[0].call_policy[0].actions[0].assign_metered_assignment_by_agent[0].evaluation_form_id",
-			"media_policies[0].chat_policy[0].actions[0].assign_evaluations[0].evaluation_form_id",             
-			"media_policies[0].chat_policy[0].actions[0].assign_calibrations[0].evaluation_form_id",            
-			"media_policies[0].chat_policy[0].actions[0].assign_metered_evaluations[0].evaluation_form_id",      
-			"media_policies[0].chat_policy[0].actions[0].assign_metered_assignment_by_agent[0].evaluation_form_id", 
-			"media_policies[0].message_policy[0].actions[0].assign_evaluations[0].evaluation_form_id",        
-			"media_policies[0].message_policy[0].actions[0].assign_calibrations[0].evaluation_form_id",       
-			"media_policies[0].message_policy[0].actions[0].assign_metered_evaluations[0].evaluation_form_id", 
+			"media_policies[0].chat_policy[0].actions[0].assign_evaluations[0].evaluation_form_id",
+			"media_policies[0].chat_policy[0].actions[0].assign_calibrations[0].evaluation_form_id",
+			"media_policies[0].chat_policy[0].actions[0].assign_metered_evaluations[0].evaluation_form_id",
+			"media_policies[0].chat_policy[0].actions[0].assign_metered_assignment_by_agent[0].evaluation_form_id",
+			"media_policies[0].message_policy[0].actions[0].assign_evaluations[0].evaluation_form_id",
+			"media_policies[0].message_policy[0].actions[0].assign_calibrations[0].evaluation_form_id",
+			"media_policies[0].message_policy[0].actions[0].assign_metered_evaluations[0].evaluation_form_id",
 			"media_policies[0].message_policy[0].actions[0].assign_metered_assignment_by_agent[0].evaluation_form_id",
-			"media_policies[0].email_policy[0].actions[0].assign_evaluations[0].evaluation_form_id",               
-			"media_policies[0].email_policy[0].actions[0].assign_calibrations[0].evaluation_form_id",               
-			"media_policies[0].email_policy[0].actions[0].assign_metered_evaluations[0].evaluation_form_id",     
+			"media_policies[0].email_policy[0].actions[0].assign_evaluations[0].evaluation_form_id",
+			"media_policies[0].email_policy[0].actions[0].assign_calibrations[0].evaluation_form_id",
+			"media_policies[0].email_policy[0].actions[0].assign_metered_evaluations[0].evaluation_form_id",
 			"media_policies[0].email_policy[0].actions[0].assign_metered_assignment_by_agent[0].evaluation_form_id",
-			"actions[0].assign_evaluations[0].evaluation_form_id",                                         
-			"actions[0].assign_calibrations[0].evaluation_form_id",                                       
-			"actions[0].assign_metered_evaluations[0].evaluation_form_id",                              
-			"actions[0].assign_metered_assignment_by_agent[0].evaluation_form_id",                           
+			"actions[0].assign_evaluations[0].evaluation_form_id",
+			"actions[0].assign_calibrations[0].evaluation_form_id",
+			"actions[0].assign_metered_evaluations[0].evaluation_form_id",
+			"actions[0].assign_metered_assignment_by_agent[0].evaluation_form_id",
 		]
 	}
 	`

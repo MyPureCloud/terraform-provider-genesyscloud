@@ -38,7 +38,7 @@ func getAllTaskManagementWorkitemSchemas(ctx context.Context, clientConfig *plat
 
 	for _, schema := range *schemas {
 		log.Printf("Dealing with task management workitem schema id: %s", *schema.Id)
-		resources[*schema.Id] = &resourceExporter.ResourceMeta{Name: *schema.Name}
+		resources[*schema.Id] = &resourceExporter.ResourceMeta{BlockLabel: *schema.Name}
 	}
 	return resources, nil
 }

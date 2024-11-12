@@ -27,22 +27,22 @@ func TestAccDataSourceConversationsMessagingIntegrationsInstagram(t *testing.T) 
 		appId            = ""
 		appSecret        = ""
 
-		nameSupportedContent       = "Terraform Supported Content - " + uuid.NewString()
-		resourceIdSupportedContent = "testSupportedContent"
-		inboundType                = "*/*"
+		nameSupportedContent          = "Terraform Supported Content - " + uuid.NewString()
+		resourceLabelSupportedContent = "testSupportedContent"
+		inboundType                   = "*/*"
 
-		nameMessagingSetting       = "testSettings"
-		resourceIdMessagingSetting = "testConversationsMessagingSettings"
+		nameMessagingSetting          = "testSettings"
+		resourceLabelMessagingSetting = "testConversationsMessagingSettings"
 	)
 
 	supportedContentResource1 := cmSupportedContent.GenerateSupportedContentResource(
 		"genesyscloud_conversations_messaging_supportedcontent",
-		resourceIdSupportedContent,
+		resourceLabelSupportedContent,
 		nameSupportedContent,
 		cmSupportedContent.GenerateInboundTypeBlock(inboundType))
 
 	messagingSettingResource1 := cmMessagingSetting.GenerateConversationsMessagingSettingsResource(
-		resourceIdMessagingSetting,
+		resourceLabelMessagingSetting,
 		nameMessagingSetting,
 		cmMessagingSetting.GenerateContentStoryBlock(
 			cmMessagingSetting.GenerateMentionInboundOnlySetting("Disabled"),
@@ -60,8 +60,8 @@ func TestAccDataSourceConversationsMessagingIntegrationsInstagram(t *testing.T) 
 					GenerateInstagramIntegrationResource(
 						testResource1,
 						name1,
-						"genesyscloud_conversations_messaging_supportedcontent."+resourceIdSupportedContent+".id",
-						"genesyscloud_conversations_messaging_settings."+resourceIdMessagingSetting+".id",
+						"genesyscloud_conversations_messaging_supportedcontent."+resourceLabelSupportedContent+".id",
+						"genesyscloud_conversations_messaging_settings."+resourceLabelMessagingSetting+".id",
 						pageAccessToken1,
 						"",
 						"",

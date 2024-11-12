@@ -281,7 +281,7 @@ func getAllTrunkBaseSettings(ctx context.Context, sdkConfig *platformclientv2.Co
 	}
 
 	for _, tbs := range *trunkBaseSettings {
-		resources[*tbs.Id] = &resourceExporter.ResourceMeta{Name: *tbs.Name}
+		resources[*tbs.Id] = &resourceExporter.ResourceMeta{BlockLabel: *tbs.Name}
 	}
 
 	return resources, nil

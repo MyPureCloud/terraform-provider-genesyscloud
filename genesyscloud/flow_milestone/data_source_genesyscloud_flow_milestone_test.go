@@ -54,10 +54,10 @@ func TestAccDataSourceFlowMilestone(t *testing.T) {
 	})
 }
 
-func generateFlowMilestoneDataSource(resourceID, name, dependsOnResource string) string {
+func generateFlowMilestoneDataSource(resourceLabel, name, dependsOnResource string) string {
 	return fmt.Sprintf(`data "genesyscloud_flow_milestone" "%s" {
 		name       = "%s"
 		depends_on =[%s]
 	}
-	`, resourceID, name, dependsOnResource)
+	`, resourceLabel, name, dependsOnResource)
 }

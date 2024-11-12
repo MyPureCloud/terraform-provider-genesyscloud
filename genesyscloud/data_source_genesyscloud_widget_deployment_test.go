@@ -20,7 +20,7 @@ func TestAccDataSourceWidgetDeployment(t *testing.T) {
 	description := "This is a test description"
 	flowId := uuid.NewString()
 	widgetDeployV1 := &widgetDeploymentConfig{
-		resourceID:             widgegetDeploymentsResource,
+		resourceLabel:          widgegetDeploymentsResource,
 		name:                   widgetDeploymentsName,
 		description:            strconv.Quote(description),
 		flowID:                 strconv.Quote(flowId),
@@ -46,12 +46,12 @@ func TestAccDataSourceWidgetDeployment(t *testing.T) {
 }
 
 func generateWidgetDeploymentDataSource(
-	resourceID string,
+	resourceLabel string,
 	name string,
 	dependsOnResource string) string {
 	return fmt.Sprintf(`data "genesyscloud_widget_deployment" "%s" {
 		name = %s
         depends_on=[%s]
 	}
-	`, resourceID, name, dependsOnResource)
+	`, resourceLabel, name, dependsOnResource)
 }

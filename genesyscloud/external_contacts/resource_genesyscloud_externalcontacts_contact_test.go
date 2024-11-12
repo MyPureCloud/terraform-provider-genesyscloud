@@ -163,7 +163,7 @@ func TestAccResourceExternalContacts(t *testing.T) {
 }
 
 func generateFullExternalContactResource(
-	resourceID string,
+	resourceLabel string,
 	firstname string, middlename string, lastname string, title string,
 	phoneDisplay string, phoneExtension string, phoneAcceptssms string, phoneE164 string, phoneCountrycode string,
 	address1 string, address2 string, city string, state string, postal_code string, country_code string,
@@ -212,7 +212,7 @@ func generateFullExternalContactResource(
 		  state = "%s"
 		  postal_code = "%s"
 		  country_code = "%s"
-		} 
+		}
 		twitter_id {
 		  id = "%s"
 		  name = "%s"
@@ -239,9 +239,9 @@ func generateFullExternalContactResource(
 			display_name = "%s"
 		  }
 		survey_opt_out = %s
-		external_system_url = "%s"  
+		external_system_url = "%s"
 	}
-	`, resourceID, firstname, middlename, lastname, title,
+	`, resourceLabel, firstname, middlename, lastname, title,
 		phoneDisplay, phoneExtension, phoneAcceptssms, phoneE164, phoneCountrycode,
 		phoneDisplay, phoneExtension, phoneAcceptssms, phoneE164, phoneCountrycode,
 		phoneDisplay, phoneExtension, phoneAcceptssms, phoneE164, phoneCountrycode,

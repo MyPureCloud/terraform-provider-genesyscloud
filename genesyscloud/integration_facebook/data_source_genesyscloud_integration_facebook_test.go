@@ -28,22 +28,22 @@ func TestAccDataSourceIntegrationFacebook(t *testing.T) {
 		appId            = ""
 		appSecret        = ""
 
-		nameSupportedContent       = "Terraform Supported Content - " + uuid.NewString()
-		resourceIdSupportedContent = "testSupportedContent"
-		inboundType                = "*/*"
+		nameSupportedContent          = "Terraform Supported Content - " + uuid.NewString()
+		resourceLabelSupportedContent = "testSupportedContent"
+		inboundType                   = "*/*"
 
-		nameMessagingSetting       = "testSettings"
-		resourceIdMessagingSetting = "testConversationsMessagingSettings"
+		nameMessagingSetting          = "testSettings"
+		resourceLabelMessagingSetting = "testConversationsMessagingSettings"
 	)
 
 	supportedContentResource1 := cmSupportedContent.GenerateSupportedContentResource(
 		"genesyscloud_conversations_messaging_supportedcontent",
-		resourceIdSupportedContent,
+		resourceLabelSupportedContent,
 		nameSupportedContent,
 		cmSupportedContent.GenerateInboundTypeBlock(inboundType))
 
 	messagingSettingResource1 := cmMessagingSetting.GenerateConversationsMessagingSettingsResource(
-		resourceIdMessagingSetting,
+		resourceLabelMessagingSetting,
 		nameMessagingSetting,
 		cmMessagingSetting.GenerateContentStoryBlock(
 			cmMessagingSetting.GenerateMentionInboundOnlySetting("Disabled"),
@@ -61,8 +61,8 @@ func TestAccDataSourceIntegrationFacebook(t *testing.T) {
 					generateFacebookIntegrationResource(
 						testResource1,
 						name1,
-						"genesyscloud_conversations_messaging_supportedcontent."+resourceIdSupportedContent+".id",
-						"genesyscloud_conversations_messaging_settings."+resourceIdMessagingSetting+".id",
+						"genesyscloud_conversations_messaging_supportedcontent."+resourceLabelSupportedContent+".id",
+						"genesyscloud_conversations_messaging_settings."+resourceLabelMessagingSetting+".id",
 						pageAccessToken1,
 						"",
 						"",
@@ -82,7 +82,7 @@ func TestAccDataSourceIntegrationFacebook(t *testing.T) {
 }
 
 func generateIntegrationFacebookDataSource(
-	resourceId string,
+	resourceLabel string,
 	name string,
 	dependsOnResource string) string {
 	return fmt.Sprintf(`
@@ -90,5 +90,5 @@ func generateIntegrationFacebookDataSource(
 		name = "%s"
 		depends_on = [%s]
 	}
-	`, resourceId, name, dependsOnResource)
+	`, resourceLabel, name, dependsOnResource)
 }

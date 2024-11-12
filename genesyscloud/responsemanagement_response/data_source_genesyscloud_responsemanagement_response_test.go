@@ -65,7 +65,7 @@ func TestAccDataSourceResponsemanagementResponse(t *testing.T) {
 }
 
 func generateResponsemanagementResponseDataSource(
-	resourceID string,
+	resourceLabel string,
 	name string,
 	libraryID string,
 	dependsOn string) string {
@@ -75,5 +75,5 @@ func generateResponsemanagementResponseDataSource(
 			library_id = %s
 			depends_on=[%s]
 		}
-	`, resourceID, name, libraryID, dependsOn)
+	`, resourceLabel, name, libraryID, dependsOn)
 }

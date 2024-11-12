@@ -133,7 +133,7 @@ func flattenRoutingSkillReferences(routingSkillReferences *[]platformclientv2.Ro
 }
 
 // GenerateWorktypeResourceBasic generates a terraform config string for a basic worktype
-func GenerateWorktypeResourceBasic(resId, name, description, workbinResourceId, schemaResourceId, attrs string) string {
+func GenerateWorktypeResourceBasic(resourceLabel, name, description, workbinResourceId, schemaResourceId, attrs string) string {
 	return fmt.Sprintf(`resource "%s" "%s" {
 		name = "%s"
 		description = "%s"
@@ -141,5 +141,5 @@ func GenerateWorktypeResourceBasic(resId, name, description, workbinResourceId, 
 		schema_id = %s
 		%s
 	}
-	`, resourceName, resId, name, description, workbinResourceId, schemaResourceId, attrs)
+	`, resourceName, resourceLabel, name, description, workbinResourceId, schemaResourceId, attrs)
 }

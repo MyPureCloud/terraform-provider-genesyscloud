@@ -33,7 +33,7 @@ func getAllAuthResponsemanagementResponses(ctx context.Context, clientConfig *pl
 	}
 
 	for _, response := range *responseManagementResponses {
-		resources[*response.Id] = &resourceExporter.ResourceMeta{Name: *response.Name}
+		resources[*response.Id] = &resourceExporter.ResourceMeta{BlockLabel: *response.Name}
 	}
 	return resources, nil
 }

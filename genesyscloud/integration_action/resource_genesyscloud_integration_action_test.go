@@ -219,7 +219,7 @@ func TestAccResourceIntegrationAction(t *testing.T) {
 	})
 }
 
-func generateIntegrationActionResource(resourceID, name, category, integId, secure, timeout, contractIn, contractOut string, blocks ...string) string {
+func generateIntegrationActionResource(resourceLabel, name, category, integId, secure, timeout, contractIn, contractOut string, blocks ...string) string {
 	return fmt.Sprintf(`resource "genesyscloud_integration_action" "%s" {
         name = "%s"
         category = "%s"
@@ -230,7 +230,7 @@ func generateIntegrationActionResource(resourceID, name, category, integId, secu
         contract_output = %s
         %s
 	}
-	`, resourceID, name, category, integId, secure, timeout, contractIn, contractOut, strings.Join(blocks, "\n"))
+	`, resourceLabel, name, category, integId, secure, timeout, contractIn, contractOut, strings.Join(blocks, "\n"))
 }
 
 func generateIntegrationActionConfigRequest(reqUrlTemplate, reqType, reqTemp, headers string) string {

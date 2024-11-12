@@ -17,7 +17,7 @@ Test cases for Scripts Datasource
 func TestAccDataSourceScript(t *testing.T) {
 	var (
 		scriptDataSource = "script-data"
-		resourceId       = "script"
+		resourceLabel    = "script"
 		name             = "tfscript" + uuid.NewString()
 		filePath         = getTestDataPath("resource", resourceName, "test_script.json")
 	)
@@ -28,18 +28,18 @@ func TestAccDataSourceScript(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config: generateScriptResource(
-					resourceId,
+					resourceLabel,
 					name,
 					filePath,
 					"",
 				) + generateScriptDataSource(
 					scriptDataSource,
 					name,
-					resourceId,
+					resourceLabel,
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrPair(fmt.Sprintf("data.%s.%s", resourceName, scriptDataSource), "id",
-						resourceName+"."+resourceId, "id"),
+						resourceName+"."+resourceLabel, "id"),
 				),
 			},
 		},
@@ -103,17 +103,17 @@ func TestAccDataSourceScriptPublishedDefaults(t *testing.T) {
 	})
 }
 
-func generateScriptDataSource(dataSourceID, name, resourceId string) string {
-	if resourceId != "" {
+func generateScriptDataSource(dataSourceLabel, name, resourceLabel string) string {
+	if resourceLabel != "" {
 		return fmt.Sprintf(`data "%s" "%s" {
 		name = "%s"
 		depends_on = [%s.%s]
 	}
-	`, resourceName, dataSourceID, name, resourceName, resourceId)
+	`, resourceName, dataSourceLabel, name, resourceName, resourceLabel)
 	} else {
 		return fmt.Sprintf(`data "%s" "%s" {
 		name = "%s"
 	}
-	`, resourceName, dataSourceID, name)
+	`, resourceName, dataSourceLabel, name)
 	}
 }

@@ -32,7 +32,7 @@ func TestAccResourceRoutingQueueConditionalGroupRouting(t *testing.T) {
 		queueResource = "test-queue"
 		queueName1    = "Terraform Test Queue1-" + uuid.NewString()
 
-		skillGroupResourceId                       = "skillgroup"
+		skillGroupResourceLabel                    = "skillgroup"
 		skillGroupName                             = "test skillgroup " + uuid.NewString()
 		conditionalGroupRoutingRule1Operator       = "LessThanOrEqualTo"
 		conditionalGroupRoutingRule1Metric         = "EstimatedWaitTime"
@@ -44,8 +44,8 @@ func TestAccResourceRoutingQueueConditionalGroupRouting(t *testing.T) {
 		testUserName     = "nameUser1" + uuid.NewString()
 		testUserEmail    = uuid.NewString() + "@exampletest.com"
 
-		groupResourceId = "group"
-		groupName       = "terraform test group" + uuid.NewString()
+		groupResourceLabel = "group"
+		groupName          = "terraform test group" + uuid.NewString()
 
 		conditionalGroupRoutingRule2Operator       = "GreaterThanOrEqualTo"
 		conditionalGroupRoutingRule2Metric         = "EstimatedWaitTime"
@@ -72,13 +72,13 @@ func TestAccResourceRoutingQueueConditionalGroupRouting(t *testing.T) {
 				// Create the queue first so we can save the id to a channel and use it in the later test steps
 				// The reason we are doing this is that we need to verify the parent queue is never dropped and recreated because of CGR
 				Config: routingSkillGroup.GenerateRoutingSkillGroupResourceBasic(
-					skillGroupResourceId,
+					skillGroupResourceLabel,
 					skillGroupName,
 					"description",
 				) + routingQueue.GenerateRoutingQueueResourceBasic(
 					queueResource,
 					queueName1,
-					"skill_groups = [genesyscloud_routing_skill_group."+skillGroupResourceId+".id]",
+					"skill_groups = [genesyscloud_routing_skill_group."+skillGroupResourceLabel+".id]",
 				),
 				Check: resource.ComposeTestCheckFunc(
 					func(state *terraform.State) error {
@@ -95,13 +95,13 @@ func TestAccResourceRoutingQueueConditionalGroupRouting(t *testing.T) {
 			{
 				// Create rule
 				Config: routingSkillGroup.GenerateRoutingSkillGroupResourceBasic(
-					skillGroupResourceId,
+					skillGroupResourceLabel,
 					skillGroupName,
 					"description",
 				) + routingQueue.GenerateRoutingQueueResourceBasic(
 					queueResource,
 					queueName1,
-					"skill_groups = [genesyscloud_routing_skill_group."+skillGroupResourceId+".id]",
+					"skill_groups = [genesyscloud_routing_skill_group."+skillGroupResourceLabel+".id]",
 				) + generateConditionalGroupRouting(
 					conditionalGroupRoutingResource,
 					"genesyscloud_routing_queue."+queueResource+".id",
@@ -111,7 +111,7 @@ func TestAccResourceRoutingQueueConditionalGroupRouting(t *testing.T) {
 						conditionalGroupRoutingRule1ConditionValue,
 						conditionalGroupRoutingRule1WaitSeconds,
 						generateConditionalGroupRoutingRuleGroupBlock(
-							"genesyscloud_routing_skill_group."+skillGroupResourceId+".id",
+							"genesyscloud_routing_skill_group."+skillGroupResourceLabel+".id",
 							conditionalGroupRoutingRule1GroupType,
 						),
 					),
@@ -127,7 +127,7 @@ func TestAccResourceRoutingQueueConditionalGroupRouting(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName+"."+conditionalGroupRoutingResource, "rules.0.wait_seconds", conditionalGroupRoutingRule1WaitSeconds),
 					resource.TestCheckResourceAttr(resourceName+"."+conditionalGroupRoutingResource, "rules.0.groups.0.member_group_type", conditionalGroupRoutingRule1GroupType),
 					resource.TestCheckResourceAttrPair(
-						resourceName+"."+conditionalGroupRoutingResource, "rules.0.groups.0.member_group_id", "genesyscloud_routing_skill_group."+skillGroupResourceId, "id",
+						resourceName+"."+conditionalGroupRoutingResource, "rules.0.groups.0.member_group_id", "genesyscloud_routing_skill_group."+skillGroupResourceLabel, "id",
 					),
 				),
 			},
@@ -138,18 +138,18 @@ func TestAccResourceRoutingQueueConditionalGroupRouting(t *testing.T) {
 					testUserEmail,
 					testUserName,
 				) + group.GenerateBasicGroupResource(
-					groupResourceId,
+					groupResourceLabel,
 					groupName,
 					group.GenerateGroupOwners("genesyscloud_user."+testUserResource+".id"),
 				) + routingSkillGroup.GenerateRoutingSkillGroupResourceBasic(
-					skillGroupResourceId,
+					skillGroupResourceLabel,
 					skillGroupName,
 					"description",
 				) + routingQueue.GenerateRoutingQueueResourceBasic(
 					queueResource,
 					queueName1,
-					"skill_groups = [genesyscloud_routing_skill_group."+skillGroupResourceId+".id]",
-					"groups = [genesyscloud_group."+groupResourceId+".id]",
+					"skill_groups = [genesyscloud_routing_skill_group."+skillGroupResourceLabel+".id]",
+					"groups = [genesyscloud_group."+groupResourceLabel+".id]",
 				) + generateConditionalGroupRouting(
 					conditionalGroupRoutingResource,
 					"genesyscloud_routing_queue."+queueResource+".id",
@@ -159,7 +159,7 @@ func TestAccResourceRoutingQueueConditionalGroupRouting(t *testing.T) {
 						conditionalGroupRoutingRule1ConditionValue,
 						conditionalGroupRoutingRule1WaitSeconds,
 						generateConditionalGroupRoutingRuleGroupBlock(
-							"genesyscloud_routing_skill_group."+skillGroupResourceId+".id",
+							"genesyscloud_routing_skill_group."+skillGroupResourceLabel+".id",
 							conditionalGroupRoutingRule1GroupType,
 						),
 					),
@@ -170,7 +170,7 @@ func TestAccResourceRoutingQueueConditionalGroupRouting(t *testing.T) {
 						conditionalGroupRoutingRule2WaitSeconds,
 						"evaluated_queue_id = genesyscloud_routing_queue."+queueResource+".id",
 						generateConditionalGroupRoutingRuleGroupBlock(
-							"genesyscloud_group."+groupResourceId+".id",
+							"genesyscloud_group."+groupResourceLabel+".id",
 							conditionalGroupRoutingRule2GroupType,
 						),
 					),
@@ -188,7 +188,7 @@ func TestAccResourceRoutingQueueConditionalGroupRouting(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName+"."+conditionalGroupRoutingResource, "rules.0.wait_seconds", conditionalGroupRoutingRule1WaitSeconds),
 					resource.TestCheckResourceAttr(resourceName+"."+conditionalGroupRoutingResource, "rules.0.groups.0.member_group_type", conditionalGroupRoutingRule1GroupType),
 					resource.TestCheckResourceAttrPair(
-						"genesyscloud_routing_queue_conditional_group_routing."+conditionalGroupRoutingResource, "rules.0.groups.0.member_group_id", "genesyscloud_routing_skill_group."+skillGroupResourceId, "id",
+						"genesyscloud_routing_queue_conditional_group_routing."+conditionalGroupRoutingResource, "rules.0.groups.0.member_group_id", "genesyscloud_routing_skill_group."+skillGroupResourceLabel, "id",
 					),
 
 					// Rule 2
@@ -201,7 +201,7 @@ func TestAccResourceRoutingQueueConditionalGroupRouting(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName+"."+conditionalGroupRoutingResource, "rules.1.wait_seconds", conditionalGroupRoutingRule2WaitSeconds),
 					resource.TestCheckResourceAttr(resourceName+"."+conditionalGroupRoutingResource, "rules.1.groups.0.member_group_type", conditionalGroupRoutingRule2GroupType),
 					resource.TestCheckResourceAttrPair(
-						resourceName+"."+conditionalGroupRoutingResource, "rules.1.groups.0.member_group_id", "genesyscloud_group."+groupResourceId, "id",
+						resourceName+"."+conditionalGroupRoutingResource, "rules.1.groups.0.member_group_id", "genesyscloud_group."+groupResourceLabel, "id",
 					),
 				),
 			},
@@ -212,18 +212,18 @@ func TestAccResourceRoutingQueueConditionalGroupRouting(t *testing.T) {
 					testUserEmail,
 					testUserName,
 				) + group.GenerateBasicGroupResource(
-					groupResourceId,
+					groupResourceLabel,
 					groupName,
 					group.GenerateGroupOwners("genesyscloud_user."+testUserResource+".id"),
 				) + routingSkillGroup.GenerateRoutingSkillGroupResourceBasic(
-					skillGroupResourceId,
+					skillGroupResourceLabel,
 					skillGroupName,
 					"description",
 				) + routingQueue.GenerateRoutingQueueResourceBasic(
 					queueResource,
 					queueName1,
-					"skill_groups = [genesyscloud_routing_skill_group."+skillGroupResourceId+".id]",
-					"groups = [genesyscloud_group."+groupResourceId+".id]",
+					"skill_groups = [genesyscloud_routing_skill_group."+skillGroupResourceLabel+".id]",
+					"groups = [genesyscloud_group."+groupResourceLabel+".id]",
 				) + generateConditionalGroupRouting(
 					conditionalGroupRoutingResource,
 					"genesyscloud_routing_queue."+queueResource+".id",
@@ -233,7 +233,7 @@ func TestAccResourceRoutingQueueConditionalGroupRouting(t *testing.T) {
 						conditionalGroupRoutingRule2ConditionValue,
 						conditionalGroupRoutingRule2WaitSeconds,
 						generateConditionalGroupRoutingRuleGroupBlock(
-							"genesyscloud_group."+groupResourceId+".id",
+							"genesyscloud_group."+groupResourceLabel+".id",
 							conditionalGroupRoutingRule2GroupType,
 						),
 					),
@@ -251,7 +251,7 @@ func TestAccResourceRoutingQueueConditionalGroupRouting(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName+"."+conditionalGroupRoutingResource, "rules.0.wait_seconds", conditionalGroupRoutingRule2WaitSeconds),
 					resource.TestCheckResourceAttr(resourceName+"."+conditionalGroupRoutingResource, "rules.0.groups.0.member_group_type", conditionalGroupRoutingRule2GroupType),
 					resource.TestCheckResourceAttrPair(
-						"genesyscloud_routing_queue_conditional_group_routing."+conditionalGroupRoutingResource, "rules.0.groups.0.member_group_id", "genesyscloud_group."+groupResourceId, "id",
+						"genesyscloud_routing_queue_conditional_group_routing."+conditionalGroupRoutingResource, "rules.0.groups.0.member_group_id", "genesyscloud_group."+groupResourceLabel, "id",
 					),
 					func(s *terraform.State) error {
 						rs, ok := s.RootModule().Resources["genesyscloud_user."+testUserResource]
@@ -288,8 +288,8 @@ func TestAccResourceRoutingQueueConditionalGroupRoutingExists(t *testing.T) {
 		queueName1    = "Terraform Test Queue-" + uuid.NewString()
 		queueName2    = "Terraform Test Queue-" + uuid.NewString()
 
-		skillGroupResourceId = "skillgroup"
-		skillGroupName       = "test skillgroup " + uuid.NewString()
+		skillGroupResourceLabel = "skillgroup"
+		skillGroupName          = "test skillgroup " + uuid.NewString()
 
 		conditionalGroupRoutingRule1Operator       = "LessThanOrEqualTo"
 		conditionalGroupRoutingRule1Metric         = "EstimatedWaitTime"
@@ -312,13 +312,13 @@ func TestAccResourceRoutingQueueConditionalGroupRoutingExists(t *testing.T) {
 			{
 				// Create rule
 				Config: routingSkillGroup.GenerateRoutingSkillGroupResourceBasic(
-					skillGroupResourceId,
+					skillGroupResourceLabel,
 					skillGroupName,
 					"description",
 				) + routingQueue.GenerateRoutingQueueResourceBasic(
 					queueResource,
 					queueName1,
-					"skill_groups = [genesyscloud_routing_skill_group."+skillGroupResourceId+".id]",
+					"skill_groups = [genesyscloud_routing_skill_group."+skillGroupResourceLabel+".id]",
 				) + generateConditionalGroupRouting(
 					conditionalGroupRoutingResource,
 					"genesyscloud_routing_queue."+queueResource+".id",
@@ -328,7 +328,7 @@ func TestAccResourceRoutingQueueConditionalGroupRoutingExists(t *testing.T) {
 						conditionalGroupRoutingRule1ConditionValue,
 						conditionalGroupRoutingRule1WaitSeconds,
 						generateConditionalGroupRoutingRuleGroupBlock(
-							"genesyscloud_routing_skill_group."+skillGroupResourceId+".id",
+							"genesyscloud_routing_skill_group."+skillGroupResourceLabel+".id",
 							conditionalGroupRoutingRule1GroupType,
 						),
 					),
@@ -343,20 +343,20 @@ func TestAccResourceRoutingQueueConditionalGroupRoutingExists(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue_conditional_group_routing."+conditionalGroupRoutingResource, "rules.0.wait_seconds", conditionalGroupRoutingRule1WaitSeconds),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue_conditional_group_routing."+conditionalGroupRoutingResource, "rules.0.groups.0.member_group_type", conditionalGroupRoutingRule1GroupType),
 					resource.TestCheckResourceAttrPair(
-						"genesyscloud_routing_queue_conditional_group_routing."+conditionalGroupRoutingResource, "rules.0.groups.0.member_group_id", "genesyscloud_routing_skill_group."+skillGroupResourceId, "id",
+						"genesyscloud_routing_queue_conditional_group_routing."+conditionalGroupRoutingResource, "rules.0.groups.0.member_group_id", "genesyscloud_routing_skill_group."+skillGroupResourceLabel, "id",
 					),
 				),
 			},
 			{
 				// Update queue
 				Config: routingSkillGroup.GenerateRoutingSkillGroupResourceBasic(
-					skillGroupResourceId,
+					skillGroupResourceLabel,
 					skillGroupName,
 					"description",
 				) + routingQueue.GenerateRoutingQueueResourceBasic(
 					queueResource,
 					queueName2,
-					"skill_groups = [genesyscloud_routing_skill_group."+skillGroupResourceId+".id]",
+					"skill_groups = [genesyscloud_routing_skill_group."+skillGroupResourceLabel+".id]",
 				) + generateConditionalGroupRouting(
 					conditionalGroupRoutingResource,
 					"genesyscloud_routing_queue."+queueResource+".id",
@@ -366,7 +366,7 @@ func TestAccResourceRoutingQueueConditionalGroupRoutingExists(t *testing.T) {
 						conditionalGroupRoutingRule1ConditionValue,
 						conditionalGroupRoutingRule1WaitSeconds,
 						generateConditionalGroupRoutingRuleGroupBlock(
-							"genesyscloud_routing_skill_group."+skillGroupResourceId+".id",
+							"genesyscloud_routing_skill_group."+skillGroupResourceLabel+".id",
 							conditionalGroupRoutingRule1GroupType,
 						),
 					),
@@ -431,11 +431,11 @@ func checkQueueId(queueIdChan chan string, closeChannel bool) func(value string)
 	}
 }
 
-func generateConditionalGroupRouting(resourceId string, queueId string, nestedBlocks ...string) string {
+func generateConditionalGroupRouting(resourceLabel string, queueId string, nestedBlocks ...string) string {
 	return fmt.Sprintf(`resource "%s" "%s" {
 		queue_id = %s
 		%s
-	}`, resourceName, resourceId, queueId, strings.Join(nestedBlocks, "\n"))
+	}`, resourceName, resourceLabel, queueId, strings.Join(nestedBlocks, "\n"))
 }
 
 func generateConditionalGroupRoutingRuleBlock(operator, metric, conditionValue, waitSeconds string, nestedBlocks ...string) string {
@@ -458,13 +458,13 @@ func generateConditionalGroupRoutingRuleGroupBlock(groupId, groupType string) st
 	`, groupId, groupType)
 }
 
-func generateUserWithCustomAttrs(resourceID string, email string, name string, attrs ...string) string {
+func generateUserWithCustomAttrs(resourceLabel string, email string, name string, attrs ...string) string {
 	return fmt.Sprintf(`resource "genesyscloud_user" "%s" {
 		email = "%s"
 		name = "%s"
 		%s
 	}
-	`, resourceID, email, name, strings.Join(attrs, "\n"))
+	`, resourceLabel, email, name, strings.Join(attrs, "\n"))
 }
 
 func checkUserDeleted(id string) resource.TestCheckFunc {

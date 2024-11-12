@@ -24,11 +24,11 @@ tests for team.
 
 func TestAccResourceTeam(t *testing.T) {
 	var (
-		resourceId   = "Teams" + uuid.NewString()
-		name1        = "Test Teams " + uuid.NewString()
-		description1 = "Test description"
-		name2        = "Test Teams " + uuid.NewString()
-		description2 = "A new description"
+		resourceLabel = "Teams" + uuid.NewString()
+		name1         = "Test Teams " + uuid.NewString()
+		description1  = "Test description"
+		name2         = "Test Teams " + uuid.NewString()
+		description2  = "A new description"
 
 		divResource = "test-division"
 		divName     = "terraform-" + uuid.NewString()
@@ -41,34 +41,34 @@ func TestAccResourceTeam(t *testing.T) {
 			{
 				// Create Team
 				Config: authDivision.GenerateAuthDivisionBasic(divResource, divName) + generateTeamResource(
-					resourceId,
+					resourceLabel,
 					name1,
 					"genesyscloud_auth_division."+divResource+".id",
 					description1,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_team."+resourceId, "name", name1),
-					resource.TestCheckResourceAttrPair("genesyscloud_team."+resourceId, "division_id", "genesyscloud_auth_division."+divResource, "id"),
-					resource.TestCheckResourceAttr("genesyscloud_team."+resourceId, "description", description1),
+					resource.TestCheckResourceAttr("genesyscloud_team."+resourceLabel, "name", name1),
+					resource.TestCheckResourceAttrPair("genesyscloud_team."+resourceLabel, "division_id", "genesyscloud_auth_division."+divResource, "id"),
+					resource.TestCheckResourceAttr("genesyscloud_team."+resourceLabel, "description", description1),
 				),
 			},
 			{
 				// Update Team
 				Config: authDivision.GenerateAuthDivisionBasic(divResource, divName) + generateTeamResource(
-					resourceId,
+					resourceLabel,
 					name2,
 					"genesyscloud_auth_division."+divResource+".id",
 					description2,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_team."+resourceId, "name", name2),
-					resource.TestCheckResourceAttrPair("genesyscloud_team."+resourceId, "division_id", "genesyscloud_auth_division."+divResource, "id"),
-					resource.TestCheckResourceAttr("genesyscloud_team."+resourceId, "description", description2),
+					resource.TestCheckResourceAttr("genesyscloud_team."+resourceLabel, "name", name2),
+					resource.TestCheckResourceAttrPair("genesyscloud_team."+resourceLabel, "division_id", "genesyscloud_auth_division."+divResource, "id"),
+					resource.TestCheckResourceAttr("genesyscloud_team."+resourceLabel, "description", description2),
 				),
 			},
 			{
 				// Read
-				ResourceName:      "genesyscloud_team." + resourceId,
+				ResourceName:      "genesyscloud_team." + resourceLabel,
 				ImportState:       true,
 				ImportStateVerify: true,
 			},
@@ -79,9 +79,9 @@ func TestAccResourceTeam(t *testing.T) {
 
 func TestAccResourceTeamAddMembers(t *testing.T) {
 	var (
-		resourceId   = "Team" + uuid.NewString()
-		name1        = "Test Team " + uuid.NewString()
-		description1 = "Test description"
+		resourceLabel = "Team" + uuid.NewString()
+		name1         = "Test Team " + uuid.NewString()
+		description1  = "Test description"
 
 		divResource = "test-division"
 		divName     = "terraform-" + uuid.NewString()
@@ -99,15 +99,15 @@ func TestAccResourceTeamAddMembers(t *testing.T) {
 				// Create Team
 				Config: authDivision.GenerateAuthDivisionBasic(divResource, divName) +
 					generateTeamResource(
-						resourceId,
+						resourceLabel,
 						name1,
 						"genesyscloud_auth_division."+divResource+".id",
 						description1,
 					),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_team."+resourceId, "name", name1),
-					resource.TestCheckResourceAttr("genesyscloud_team."+resourceId, "description", description1),
-					resource.TestCheckResourceAttrPair("genesyscloud_team."+resourceId, "division_id", "genesyscloud_auth_division."+divResource, "id"),
+					resource.TestCheckResourceAttr("genesyscloud_team."+resourceLabel, "name", name1),
+					resource.TestCheckResourceAttr("genesyscloud_team."+resourceLabel, "description", description1),
+					resource.TestCheckResourceAttrPair("genesyscloud_team."+resourceLabel, "division_id", "genesyscloud_auth_division."+divResource, "id"),
 				),
 			},
 			{
@@ -115,25 +115,25 @@ func TestAccResourceTeamAddMembers(t *testing.T) {
 				Config: authDivision.GenerateAuthDivisionBasic(divResource, divName) +
 					generateUserWithDivisionId(testUserResource1, testUserName1, testUserEmail1, "genesyscloud_auth_division."+divResource+".id") +
 					generateTeamResource(
-						resourceId,
+						resourceLabel,
 						name1,
 						"genesyscloud_auth_division."+divResource+".id",
 						description1,
 						generateMemberIdsArray([]string{"genesyscloud_user." + testUserResource1 + ".id"}),
 					),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_team."+resourceId, "name", name1),
-					resource.TestCheckResourceAttr("genesyscloud_team."+resourceId, "description", description1),
-					resource.TestCheckResourceAttrPair("genesyscloud_team."+resourceId, "division_id", "genesyscloud_auth_division."+divResource, "id"),
-					resource.TestCheckResourceAttr("genesyscloud_team."+resourceId, "member_ids.#", "1"),
+					resource.TestCheckResourceAttr("genesyscloud_team."+resourceLabel, "name", name1),
+					resource.TestCheckResourceAttr("genesyscloud_team."+resourceLabel, "description", description1),
+					resource.TestCheckResourceAttrPair("genesyscloud_team."+resourceLabel, "division_id", "genesyscloud_auth_division."+divResource, "id"),
+					resource.TestCheckResourceAttr("genesyscloud_team."+resourceLabel, "member_ids.#", "1"),
 					resource.TestCheckResourceAttrPair(
-						"genesyscloud_team."+resourceId, "member_ids.0",
+						"genesyscloud_team."+resourceLabel, "member_ids.0",
 						"genesyscloud_user."+testUserResource1, "id"),
 				),
 			},
 			{
 				// Read
-				ResourceName:      "genesyscloud_team." + resourceId,
+				ResourceName:      "genesyscloud_team." + resourceLabel,
 				ImportState:       true,
 				ImportStateVerify: true,
 			},
@@ -144,9 +144,9 @@ func TestAccResourceTeamAddMembers(t *testing.T) {
 
 func TestAccResourceTeamRemoveMembers(t *testing.T) {
 	var (
-		resourceId   = "Team" + uuid.NewString()
-		name1        = "Test Team " + uuid.NewString()
-		description1 = "Test description"
+		resourceLabel = "Team" + uuid.NewString()
+		name1         = "Test Team " + uuid.NewString()
+		description1  = "Test description"
 
 		divResource = "test-division"
 		divName     = "terraform-" + uuid.NewString()
@@ -165,19 +165,19 @@ func TestAccResourceTeamRemoveMembers(t *testing.T) {
 				Config: authDivision.GenerateAuthDivisionBasic(divResource, divName) +
 					generateUserWithDivisionId(testUserResource1, testUserName1, testUserEmail1, "genesyscloud_auth_division."+divResource+".id") +
 					generateTeamResource(
-						resourceId,
+						resourceLabel,
 						name1,
 						"genesyscloud_auth_division."+divResource+".id",
 						description1,
 						generateMemberIdsArray([]string{"genesyscloud_user." + testUserResource1 + ".id"}),
 					),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_team."+resourceId, "name", name1),
-					resource.TestCheckResourceAttr("genesyscloud_team."+resourceId, "description", description1),
-					resource.TestCheckResourceAttrPair("genesyscloud_team."+resourceId, "division_id", "genesyscloud_auth_division."+divResource, "id"),
-					resource.TestCheckResourceAttr("genesyscloud_team."+resourceId, "member_ids.#", "1"),
+					resource.TestCheckResourceAttr("genesyscloud_team."+resourceLabel, "name", name1),
+					resource.TestCheckResourceAttr("genesyscloud_team."+resourceLabel, "description", description1),
+					resource.TestCheckResourceAttrPair("genesyscloud_team."+resourceLabel, "division_id", "genesyscloud_auth_division."+divResource, "id"),
+					resource.TestCheckResourceAttr("genesyscloud_team."+resourceLabel, "member_ids.#", "1"),
 					resource.TestCheckResourceAttrPair(
-						"genesyscloud_team."+resourceId, "member_ids.0",
+						"genesyscloud_team."+resourceLabel, "member_ids.0",
 						"genesyscloud_user."+testUserResource1, "id"),
 				),
 			},
@@ -185,22 +185,22 @@ func TestAccResourceTeamRemoveMembers(t *testing.T) {
 				// Update Team with no members
 				Config: authDivision.GenerateAuthDivisionBasic(divResource, divName) +
 					generateTeamResource(
-						resourceId,
+						resourceLabel,
 						name1,
 						"genesyscloud_auth_division."+divResource+".id",
 						description1,
 						generateMemberIdsArray([]string{}),
 					),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_team."+resourceId, "name", name1),
-					resource.TestCheckResourceAttr("genesyscloud_team."+resourceId, "description", description1),
-					resource.TestCheckResourceAttrPair("genesyscloud_team."+resourceId, "division_id", "genesyscloud_auth_division."+divResource, "id"),
-					resource.TestCheckResourceAttr("genesyscloud_team."+resourceId, "member_ids.#", "0"),
+					resource.TestCheckResourceAttr("genesyscloud_team."+resourceLabel, "name", name1),
+					resource.TestCheckResourceAttr("genesyscloud_team."+resourceLabel, "description", description1),
+					resource.TestCheckResourceAttrPair("genesyscloud_team."+resourceLabel, "division_id", "genesyscloud_auth_division."+divResource, "id"),
+					resource.TestCheckResourceAttr("genesyscloud_team."+resourceLabel, "member_ids.#", "0"),
 				),
 			},
 			{
 				// Read
-				ResourceName:      "genesyscloud_team." + resourceId,
+				ResourceName:      "genesyscloud_team." + resourceLabel,
 				ImportState:       true,
 				ImportStateVerify: true,
 			},
@@ -228,13 +228,13 @@ func generateMemberIdsArray(memberIds []string) string {
 	return fmt.Sprintf(`member_ids = [%s]`, strings.Join(memberIds, ", "))
 }
 
-func generateUserWithDivisionId(resourceID string, name string, email string, divisionId string) string {
+func generateUserWithDivisionId(resourceLabel string, name string, email string, divisionId string) string {
 	return fmt.Sprintf(`resource "genesyscloud_user" "%s" {
 		name = "%s"
 		email = "%s"
 		division_id = %s
 	}
-	`, resourceID, name, email, divisionId)
+	`, resourceLabel, name, email, divisionId)
 }
 
 func testVerifyTeamDestroyed(state *terraform.State) error {

@@ -42,8 +42,8 @@ func TestUnitUpdateInstanceStateAttributes(t *testing.T) {
 	// Create an instance of ResourceInfo
 	resources := []resourceExporter.ResourceInfo{
 		{
-			Name: "testResourceName",
-			Type: "testResourceType",
+			BlockLabel: "testResourceLabel",
+			Type:       "testResourceType",
 			State: &terraform.InstanceState{
 				ID:         "testResourceId",
 				Attributes: initialAttributes,
@@ -69,32 +69,32 @@ func TestUnitTfExportPostProcessHclBytesFunc(t *testing.T) {
 			file_content_hash = "${filesha256(\"file.json\")}"
 			another_field     = filesha256("file2.json")
 		}
-		
+
 		resource "example_resource" "example2" {
 			file_content_hash = "${filesha256(\"file3.json\")}"
 			another_field     = "${filesha256(var.file_path)}"
 		}
-		
+
 		resource "example_resource" "example3" {
 			file_content_hash = filesha256(var.file_path)
 			another_file      = "${filesha256(\"file.json\")}"
-			another_field     = "${var.foo}" 
+			another_field     = "${var.foo}"
 		}`,
 		expected: `
 		resource "example_resource" "example" {
 			file_content_hash = "${filesha256("file.json")}"
 			another_field     = filesha256("file2.json")
 		}
-		
+
 		resource "example_resource" "example2" {
 			file_content_hash = "${filesha256("file3.json")}"
 			another_field     = "${filesha256(var.file_path)}"
 		}
-		
+
 		resource "example_resource" "example3" {
 			file_content_hash = filesha256(var.file_path)
 			another_file      = "${filesha256("file.json")}"
-			another_field     = "${var.foo}" 
+			another_field     = "${var.foo}"
 		}`,
 	}
 
@@ -227,7 +227,7 @@ func TestUnitComputeDependsOn(t *testing.T) {
 func TestUnitTfExportAllowEmptyArray(t *testing.T) {
 	testResourceType := "test_allow_empty_array_resource"
 	testResourceId := "test_id"
-	testResourceName := "test_res_name"
+	testResourceLabel := "test_res_label"
 	testExporter := &resourceExporter.ResourceExporter{
 		AllowEmptyArrays: []string{"null_arr_attr", "nested.arr_attr"},
 	}
@@ -272,8 +272,8 @@ func TestUnitTfExportAllowEmptyArray(t *testing.T) {
 		},
 		resources: []resourceExporter.ResourceInfo{
 			{
-				Name: testResourceName,
-				Type: testResourceType,
+				BlockLabel: testResourceLabel,
+				Type:       testResourceType,
 				State: &terraform.InstanceState{
 					ID: testResourceId,
 					Attributes: map[string]string{
@@ -299,7 +299,7 @@ func TestUnitTfExportAllowEmptyArray(t *testing.T) {
 		t.Errorf("failure: %v", diagErr)
 	}
 
-	configMap := testResourceExporter.resourceTypesMaps[testResourceType][testResourceName]
+	configMap := testResourceExporter.resourceTypesMaps[testResourceType][testResourceLabel]
 
 	// Empty array fields included in `AllowEmptyArrays` should be empty arrays
 	assert.NotNil(t, configMap["null_arr_attr"])
@@ -341,8 +341,8 @@ func TestUnitTfExportRemoveTrailingZerosRrule(t *testing.T) {
 func TestUnitTfExportBuildDependsOnResources(t *testing.T) {
 
 	meta := &resourceExporter.ResourceMeta{
-		Name:     "example::::resource",
-		IdPrefix: "prefix_",
+		BlockLabel: "example::::resource",
+		IdPrefix:   "prefix_",
 	}
 
 	// Create an instance of ResourceIDMetaMap and add the meta to it
@@ -360,7 +360,6 @@ func TestUnitTfExportBuildDependsOnResources(t *testing.T) {
 	}
 
 	getAllPooledFn := func(method provider.GetCustomConfigFunc) (resourceExporter.ResourceIDMetaMap, *resourceExporter.DependencyResource, diag.Diagnostics) {
-		//assert.Equal(t, targetName, name)
 		return resources, dependencyStruct, nil
 	}
 
@@ -378,14 +377,14 @@ func TestUnitTfExportBuildDependsOnResources(t *testing.T) {
 
 	state := &terraform.InstanceState{}
 	state.ID = "1"
-	name := "genesyscloud_resource_queue"
-	resourceType := "example_type"
+	label := "resource_queue"
+	resourceType := "genesyscloud_example_type"
 
 	// Create an instance of ResourceInfo
 	resourceInfo := &resourceExporter.ResourceInfo{
-		State: state,
-		Name:  name,
-		Type:  resourceType,
+		State:      state,
+		BlockLabel: label,
+		Type:       resourceType,
 	}
 	gre.resources = []resourceExporter.ResourceInfo{*resourceInfo}
 	filterList, _, err := gre.processAndBuildDependencies()
@@ -401,41 +400,41 @@ func TestUnitTfExportBuildDependsOnResources(t *testing.T) {
 func TestUnitTfExportFilterResourceById(t *testing.T) {
 
 	meta := &resourceExporter.ResourceMeta{
-		Name:     "example resource1",
-		IdPrefix: "prefix_",
+		BlockLabel: "example resource1",
+		IdPrefix:   "prefix_",
 	}
 
 	// Create an instance of ResourceIDMetaMap and add the meta to it
 	result := resourceExporter.ResourceIDMetaMap{
 		"queue_resources_1": meta,
 		"queue_resources_2": &resourceExporter.ResourceMeta{
-			Name:     "example resource2",
-			IdPrefix: "prefix_",
+			BlockLabel: "example resource2",
+			IdPrefix:   "prefix_",
 		},
 	}
 
-	// Test case 1: When the name is found in the filter
-	name := "Resource2"
+	// Test case 1: When the resType is found in the filter
+	resType := "Resource2"
 	filter := []string{"Resource1::queue_resources", "Resource2::queue_resources_2"}
 
 	expectedResult := resourceExporter.ResourceIDMetaMap{
 		"queue_resources_2": &resourceExporter.ResourceMeta{
-			Name:     "example resource2",
-			IdPrefix: "prefix_",
+			BlockLabel: "example resource2",
+			IdPrefix:   "prefix_",
 		},
 	}
-	actualResult := FilterResourceById(result, name, filter)
+	actualResult := FilterResourceById(result, resType, filter)
 
 	if !reflect.DeepEqual(actualResult, expectedResult) {
 		t.Errorf("Expected result: %v, but got: %v", expectedResult, actualResult)
 	}
 
-	// Test case 2: When the name is not found in the filter
-	name = "Resource4"
+	// Test case 2: When the resType is not found in the filter
+	resType = "Resource4"
 	filter = []string{"Resource1::", "Resource2::"}
 
 	expectedResult = result // The result should remain unchanged
-	actualResult = FilterResourceById(result, name, filter)
+	actualResult = FilterResourceById(result, resType, filter)
 
 	if !reflect.DeepEqual(actualResult, expectedResult) {
 		t.Errorf("Expected result: %v, but got: %v", expectedResult, actualResult)
@@ -450,24 +449,24 @@ func TestUnitTfExportTestExcludeAttributes(t *testing.T) {
 	}
 
 	m1 := map[string]*resourceExporter.ResourceExporter{
-		"exporter1": &resourceExporter.ResourceExporter{AllowZeroValues: []string{"key1", "key2"}},
-		"exporter2": &resourceExporter.ResourceExporter{AllowZeroValues: []string{"key3", "key4"}},
-		"exporter3": &resourceExporter.ResourceExporter{AllowZeroValues: []string{"key3", "key4"}},
+		"exporter1": {AllowZeroValues: []string{"key1", "key2"}},
+		"exporter2": {AllowZeroValues: []string{"key3", "key4"}},
+		"exporter3": {AllowZeroValues: []string{"key3", "key4"}},
 	}
 
 	filter := []string{"e*.name"}
 
 	// Call the function
 	gre.populateConfigExcluded(m1, filter)
-	name := "name"
+	nameAttr := "name"
 	// Check if the exporters in the result have the expected keys
 	for _, exporter := range m1 {
 
 		attributes := exporter.ExcludedAttributes
 
 		for _, atribute := range attributes {
-			if atribute != name {
-				t.Errorf("Attribute %s not excluded in exporter", name)
+			if atribute != nameAttr {
+				t.Errorf("Attribute %s not excluded in exporter", nameAttr)
 			}
 		}
 	}
@@ -508,20 +507,20 @@ func TestUnitTfExportMergeExporters(t *testing.T) {
 
 func TestUnitResolveValueToDataSource(t *testing.T) {
 	var (
-		originalValueOfScriptId         = "1234"
-		scriptResourceId                = "genesyscloud_script"
-		defaultOutboundScriptName       = "Default Outbound Script"
-		defaultOutboundScriptResourceId = "Default_Outbound_Script"
+		originalValueOfScriptId            = "1234"
+		scriptResourceType                 = "genesyscloud_script"
+		defaultOutboundScriptName          = "Default Outbound Script"
+		defaultOutboundScriptResourceLabel = "Default_Outbound_Script"
 	)
 
 	// set up
 	g := setupGenesysCloudResourceExporter(t)
 
 	resolverFunc := func(configMap map[string]any, value any, sdkConfig *platformclientv2.Configuration) (string, string, map[string]any, bool) {
-		configMap["script_id"] = fmt.Sprintf(`${data.%s.%s.id}`, scriptResourceId, defaultOutboundScriptResourceId)
+		configMap["script_id"] = fmt.Sprintf(`${data.%s.%s.id}`, scriptResourceType, defaultOutboundScriptResourceLabel)
 		dataSourceConfig := make(map[string]any)
 		dataSourceConfig["name"] = defaultOutboundScriptName
-		return scriptResourceId, defaultOutboundScriptResourceId, dataSourceConfig, true
+		return scriptResourceType, defaultOutboundScriptResourceLabel, dataSourceConfig, true
 	}
 	attrCustomResolver := make(map[string]*resourceExporter.RefAttrCustomResolver)
 	attrCustomResolver["script_id"] = &resourceExporter.RefAttrCustomResolver{ResolveToDataSourceFunc: resolverFunc}
@@ -534,15 +533,15 @@ func TestUnitResolveValueToDataSource(t *testing.T) {
 	// invoke - expecting script data source to be added to export
 	g.resolveValueToDataSource(exporter, configMap, "script_id", originalValueOfScriptId)
 
-	if _, ok := g.dataSourceTypesMaps[scriptResourceId]; !ok {
-		t.Errorf("expected key '%s' to exist in dataSourceTypesMaps", scriptResourceId)
+	if _, ok := g.dataSourceTypesMaps[scriptResourceType]; !ok {
+		t.Errorf("expected key '%s' to exist in dataSourceTypesMaps", scriptResourceType)
 	}
 
-	if _, ok := g.dataSourceTypesMaps[scriptResourceId][defaultOutboundScriptResourceId]; !ok {
-		t.Errorf("expected dataSourceTypesMaps['%s'] to hold nested key '%s'", scriptResourceId, defaultOutboundScriptResourceId)
+	if _, ok := g.dataSourceTypesMaps[scriptResourceType][defaultOutboundScriptResourceLabel]; !ok {
+		t.Errorf("expected dataSourceTypesMaps['%s'] to hold nested key '%s'", scriptResourceType, defaultOutboundScriptResourceLabel)
 	}
 
-	dataSourceConfig := g.dataSourceTypesMaps[scriptResourceId][defaultOutboundScriptResourceId]
+	dataSourceConfig := g.dataSourceTypesMaps[scriptResourceType][defaultOutboundScriptResourceLabel]
 	nameInDataSource, ok := dataSourceConfig["name"].(string)
 	if !ok {
 		t.Errorf("expected the data source config to contain key 'name'")
@@ -551,9 +550,9 @@ func TestUnitResolveValueToDataSource(t *testing.T) {
 		t.Errorf("expected data source name to be '%s', got '%s'", defaultOutboundScriptName, nameInDataSource)
 	}
 
-	hclBlocks, ok := g.resourceTypesHCLBlocks[scriptResourceId]
+	hclBlocks, ok := g.resourceTypesHCLBlocks[scriptResourceType]
 	if !ok {
-		t.Errorf("expected resourceTypesHCLBlocks to contain key '%s'", scriptResourceId)
+		t.Errorf("expected resourceTypesHCLBlocks to contain key '%s'", scriptResourceType)
 	}
 	if len(hclBlocks) == 0 {
 		t.Errorf("expected length of resourceTypesHCLBlocks to not be zero")
@@ -573,12 +572,12 @@ func TestUnitResolveValueToDataSource(t *testing.T) {
 	// invoke - not expecting script data source to be added to export
 	g.resolveValueToDataSource(exporter, configMap, "script_id", originalValueOfScriptId)
 
-	if _, ok := g.dataSourceTypesMaps[scriptResourceId]; ok {
-		t.Errorf("expected key '%s' to not exist in dataSourceTypesMaps", scriptResourceId)
+	if _, ok := g.dataSourceTypesMaps[scriptResourceType]; ok {
+		t.Errorf("expected key '%s' to not exist in dataSourceTypesMaps", scriptResourceType)
 	}
 
-	if _, ok := g.resourceTypesHCLBlocks[scriptResourceId]; ok {
-		t.Errorf("expected key '%s' to not exist in resourceTypesHCLBlocks map", scriptResourceId)
+	if _, ok := g.resourceTypesHCLBlocks[scriptResourceType]; ok {
+		t.Errorf("expected key '%s' to not exist in resourceTypesHCLBlocks map", scriptResourceType)
 	}
 }
 

@@ -174,11 +174,11 @@ func testVerifyLocationsDestroyed(state *terraform.State) error {
 	return nil
 }
 
-func testCheckEmergencyNumber(resourceID string, expectedNumber string) resource.TestCheckFunc {
+func testCheckEmergencyNumber(resourceLabel string, expectedNumber string) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
-		locResource, ok := state.RootModule().Resources[resourceID]
+		locResource, ok := state.RootModule().Resources[resourceLabel]
 		if !ok {
-			return fmt.Errorf("Failed to find location %s in state", resourceID)
+			return fmt.Errorf("Failed to find location %s in state", resourceLabel)
 		}
 		locID := locResource.Primary.ID
 

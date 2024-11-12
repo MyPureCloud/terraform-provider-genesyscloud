@@ -144,7 +144,7 @@ func validateResourceRole(resourceName string, roleResourceName string, division
 		if !ok {
 			return fmt.Errorf("Failed to find %s in state", resourceName)
 		}
-		resourceID := resourceState.Primary.ID
+		resourceLabel := resourceState.Primary.ID
 
 		roleResource, ok := state.RootModule().Resources[roleResourceName]
 		if !ok {
@@ -198,7 +198,7 @@ func validateResourceRole(resourceName string, roleResourceName string, division
 				return nil
 			}
 		}
-		return fmt.Errorf("Missing expected role for resource %s in state: %s", resourceID, roleID)
+		return fmt.Errorf("Missing expected role for resource %s in state: %s", resourceLabel, roleID)
 	}
 }
 

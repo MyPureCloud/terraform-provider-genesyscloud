@@ -109,7 +109,7 @@ func TestAccResourceEmployeePerformanceExternalMetricsDefintions(t *testing.T) {
 }
 
 func generateEmployeePerformanceExternalMetricsDefinitionsResource(
-	resourceId string,
+	resourceLabel string,
 	name string,
 	unit string,
 	precision string,
@@ -126,7 +126,7 @@ func generateEmployeePerformanceExternalMetricsDefinitionsResource(
 			enabled = %s
 			%s
 		}
-	`, resourceId, name, unit, precision, defaultObjectiveType, enabled, strings.Join(additionalFields, ","))
+	`, resourceLabel, name, unit, precision, defaultObjectiveType, enabled, strings.Join(additionalFields, ","))
 }
 
 func testVerifyEmployeePerformanceExternalMetricsDefinitionsDestroyed(state *terraform.State) error {

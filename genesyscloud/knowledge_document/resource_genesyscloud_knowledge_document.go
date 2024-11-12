@@ -52,7 +52,7 @@ func getAllKnowledgeDocuments(ctx context.Context, clientConfig *platformclientv
 
 	for _, knowledgeDocument := range documentEntities {
 		id := fmt.Sprintf("%s,%s", *knowledgeDocument.Id, *knowledgeDocument.KnowledgeBase.Id)
-		resources[id] = &resourceExporter.ResourceMeta{Name: *knowledgeDocument.Title}
+		resources[id] = &resourceExporter.ResourceMeta{BlockLabel: *knowledgeDocument.Title}
 	}
 
 	return resources, nil

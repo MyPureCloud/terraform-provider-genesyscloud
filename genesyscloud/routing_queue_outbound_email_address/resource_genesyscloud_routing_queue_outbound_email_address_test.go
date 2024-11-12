@@ -226,12 +226,12 @@ func verifyOutboundEmailAddressExists(queueResourceName string) resource.TestChe
 	}
 }
 
-func generateRoutingQueueOutboundEmailAddressResource(resourceId, queueId, domainId, routeId string) string {
+func generateRoutingQueueOutboundEmailAddressResource(resourceLabel, queueId, domainId, routeId string) string {
 	return fmt.Sprintf(`resource "genesyscloud_routing_queue_outbound_email_address" "%s" {
 		queue_id = %s
 		domain_id = %s
 		route_id = %s
-	}`, resourceId, queueId, domainId, routeId)
+	}`, resourceLabel, queueId, domainId, routeId)
 }
 
 func checkQueueId(queueIdChan chan string) func(value string) error {

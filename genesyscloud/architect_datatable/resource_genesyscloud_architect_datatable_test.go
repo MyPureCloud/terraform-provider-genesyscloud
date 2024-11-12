@@ -132,7 +132,7 @@ func testVerifyDatatablesDestroyed(state *terraform.State) error {
 }
 
 func generateArchitectDatatableResource(
-	resourceID string,
+	resourceLabel string,
 	name string,
 	description string,
 	properties ...string) string {
@@ -141,7 +141,7 @@ func generateArchitectDatatableResource(
 		description = %s
 		%s
 	}
-	`, resourceID, name, description, strings.Join(properties, "\n"))
+	`, resourceLabel, name, description, strings.Join(properties, "\n"))
 }
 
 func generateArchitectDatatableProperty(

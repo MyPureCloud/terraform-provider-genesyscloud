@@ -50,7 +50,7 @@ func getAllFlowLogLevels(ctx context.Context, clientConfig *platformclientv2.Con
 	}
 
 	for _, flowLogLevel := range *flowLogLevels {
-		resources[*flowLogLevel.Id] = &resourceExporter.ResourceMeta{Name: *flowLogLevel.Id}
+		resources[*flowLogLevel.Id] = &resourceExporter.ResourceMeta{BlockLabel: *flowLogLevel.Id}
 	}
 
 	return resources, nil

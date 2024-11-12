@@ -12,9 +12,9 @@ import (
 
 func TestAccDataSourceOutboundDncList(t *testing.T) {
 	var (
-		resourceId   = "dnc_list"
-		dncListName  = "Test List " + uuid.NewString()
-		dataSourceId = "dnc_list_data"
+		resourceLabel   = "dnc_list"
+		dncListName     = "Test List " + uuid.NewString()
+		dataSourceLabel = "dnc_list_data"
 	)
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
@@ -22,27 +22,27 @@ func TestAccDataSourceOutboundDncList(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config: GenerateOutboundDncListBasic(
-					resourceId,
+					resourceLabel,
 					dncListName,
 				) + generateOutboundDncListDataSource(
-					dataSourceId,
+					dataSourceLabel,
 					dncListName,
-					"genesyscloud_outbound_dnclist."+resourceId,
+					"genesyscloud_outbound_dnclist."+resourceLabel,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair("data.genesyscloud_outbound_dnclist."+dataSourceId, "id",
-						"genesyscloud_outbound_dnclist."+resourceId, "id"),
+					resource.TestCheckResourceAttrPair("data.genesyscloud_outbound_dnclist."+dataSourceLabel, "id",
+						"genesyscloud_outbound_dnclist."+resourceLabel, "id"),
 				),
 			},
 		},
 	})
 }
 
-func generateOutboundDncListDataSource(id string, attemptLimitName string, dependsOn string) string {
+func generateOutboundDncListDataSource(dataSourceLabel string, attemptLimitName string, dependsOn string) string {
 	return fmt.Sprintf(`
 data "genesyscloud_outbound_dnclist" "%s" {
 	name       = "%s"
 	depends_on = [%s]
 }
-`, id, attemptLimitName, dependsOn)
+`, dataSourceLabel, attemptLimitName, dependsOn)
 }

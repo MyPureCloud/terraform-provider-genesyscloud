@@ -47,10 +47,10 @@ func TestAccDataSourceEmployeePerformanceExternalMetricsDefinitions(t *testing.T
 	})
 }
 
-func generateEmployeePerformanceExternalMetricsDefinitionsDataSource(resourceID string, name string, dependsOnResource string) string {
+func generateEmployeePerformanceExternalMetricsDefinitionsDataSource(resourceLabel string, name string, dependsOnResource string) string {
 	return fmt.Sprintf(`data "genesyscloud_employeeperformance_externalmetrics_definitions" "%s" {
 		name = "%s"
 		depends_on=[%s]
 	}
-	`, resourceID, name, dependsOnResource)
+	`, resourceLabel, name, dependsOnResource)
 }

@@ -39,7 +39,7 @@ func getAllRoutingSmsAddress(ctx context.Context, clientConfig *platformclientv2
 		} else {
 			name = *entity.Id
 		}
-		resources[*entity.Id] = &resourceExporter.ResourceMeta{Name: name}
+		resources[*entity.Id] = &resourceExporter.ResourceMeta{BlockLabel: name}
 	}
 	return resources, nil
 }

@@ -61,7 +61,7 @@ func TestAccDataSourceRoutingEmailRoute(t *testing.T) {
 }
 
 func generateRoutingEmailRouteDataSource(
-	resourceID string,
+	resourceLabel string,
 	pattern string,
 	domainId string,
 	dependsOn string) string {
@@ -71,5 +71,5 @@ func generateRoutingEmailRouteDataSource(
 			domain_id = "%s"
 			depends_on=[%s]
 		}
-	`, resourceID, pattern, domainId, dependsOn)
+	`, resourceLabel, pattern, domainId, dependsOn)
 }

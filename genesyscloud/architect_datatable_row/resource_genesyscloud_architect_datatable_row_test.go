@@ -155,7 +155,7 @@ func TestAccResourceArchitectDatatableRow(t *testing.T) {
 }
 
 func generateArchitectDatatableRowResource(
-	resourceID string,
+	resourceLabel string,
 	tableID string,
 	keyVal string,
 	properties string) string {
@@ -164,7 +164,7 @@ func generateArchitectDatatableRowResource(
 		key_value = "%s"
 		properties_json = %s
 	}
-	`, resourceID, tableID, keyVal, properties)
+	`, resourceLabel, tableID, keyVal, properties)
 }
 
 func testVerifyDatatableRowsDestroyed(state *terraform.State) error {
@@ -200,7 +200,7 @@ func importDatatableRowId(tableResource string, rowKey string) resource.ImportSt
 	}
 }
 func generateArchitectDatatableResource(
-	resourceID string,
+	resourceLabel string,
 	name string,
 	description string,
 	properties ...string) string {
@@ -209,7 +209,7 @@ func generateArchitectDatatableResource(
 		description = %s
 		%s
 	}
-	`, resourceID, name, description, strings.Join(properties, "\n"))
+	`, resourceLabel, name, description, strings.Join(properties, "\n"))
 }
 
 func generateArchitectDatatableProperty(

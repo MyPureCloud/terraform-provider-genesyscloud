@@ -440,7 +440,7 @@ func TestAccResourceProcessAutomationTriggerValues(t *testing.T) {
 	})
 }
 
-func generateProcessAutomationTriggerResourceEventTTL(resourceID, name, topic_name, enabled, target, match_criteria, event_ttl_seconds, description string) string {
+func generateProcessAutomationTriggerResourceEventTTL(resourceLabel, name, topic_name, enabled, target, match_criteria, event_ttl_seconds, description string) string {
 	return fmt.Sprintf(`resource "genesyscloud_processautomation_trigger" "%s" {
         name = "%s"
         topic_name = "%s"
@@ -450,10 +450,10 @@ func generateProcessAutomationTriggerResourceEventTTL(resourceID, name, topic_na
         event_ttl_seconds = %s
 		description = "%s"
 	}
-	`, resourceID, name, topic_name, enabled, target, match_criteria, event_ttl_seconds, description)
+	`, resourceLabel, name, topic_name, enabled, target, match_criteria, event_ttl_seconds, description)
 }
 
-func generateProcessAutomationTriggerResourceDelayBy(resourceID, name, topic_name, enabled, target, match_criteria, delay_by_seconds, description string) string {
+func generateProcessAutomationTriggerResourceDelayBy(resourceLabel, name, topic_name, enabled, target, match_criteria, delay_by_seconds, description string) string {
 	return fmt.Sprintf(`resource "genesyscloud_processautomation_trigger" "%s" {
         name = "%s"
         topic_name = "%s"
@@ -463,7 +463,7 @@ func generateProcessAutomationTriggerResourceDelayBy(resourceID, name, topic_nam
 		delay_by_seconds = %s
 		description = "%s"
 	}
-	`, resourceID, name, topic_name, enabled, target, match_criteria, delay_by_seconds, description)
+	`, resourceLabel, name, topic_name, enabled, target, match_criteria, delay_by_seconds, description)
 }
 
 func testVerifyProcessAutomationTriggerDestroyed(state *terraform.State) error {

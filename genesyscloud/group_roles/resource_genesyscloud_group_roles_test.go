@@ -141,12 +141,12 @@ func TestAccResourceGroupRolesMembership(t *testing.T) {
 	})
 }
 
-func generateGroupRoles(resourceID string, groupResource string, roles ...string) string {
+func generateGroupRoles(resourceLabel string, groupResource string, roles ...string) string {
 	return fmt.Sprintf(`resource "genesyscloud_group_roles" "%s" {
 		group_id = genesyscloud_group.%s.id
 		%s
 	}
-	`, resourceID, groupResource, strings.Join(roles, "\n"))
+	`, resourceLabel, groupResource, strings.Join(roles, "\n"))
 }
 
 func validateResourceRole(resourceName string, roleResourceName string, divisions ...string) resource.TestCheckFunc {
@@ -155,7 +155,7 @@ func validateResourceRole(resourceName string, roleResourceName string, division
 		if !ok {
 			return fmt.Errorf("Failed to find %s in state", resourceName)
 		}
-		resourceID := resourceState.Primary.ID
+		resourceLabel := resourceState.Primary.ID
 
 		roleResource, ok := state.RootModule().Resources[roleResourceName]
 		if !ok {
@@ -209,7 +209,7 @@ func validateResourceRole(resourceName string, roleResourceName string, division
 				return nil
 			}
 		}
-		return fmt.Errorf("Missing expected role for resource %s in state: %s", resourceID, roleID)
+		return fmt.Errorf("Missing expected role for resource %s in state: %s", resourceLabel, roleID)
 	}
 }
 
@@ -226,13 +226,13 @@ func generateResourceRoles(skillID string, divisionIds ...string) string {
 }
 
 // TODO: Duplicating this code within the function to not break a cyclic dependency
-func generateUserWithCustomAttrs(resourceID string, email string, name string, attrs ...string) string {
+func generateUserWithCustomAttrs(resourceLabel string, email string, name string, attrs ...string) string {
 	return fmt.Sprintf(`resource "genesyscloud_user" "%s" {
 		email = "%s"
 		name = "%s"
 		%s
 	}
-	`, resourceID, email, name, strings.Join(attrs, "\n"))
+	`, resourceLabel, email, name, strings.Join(attrs, "\n"))
 }
 
 func checkUserDeleted(id string) resource.TestCheckFunc {

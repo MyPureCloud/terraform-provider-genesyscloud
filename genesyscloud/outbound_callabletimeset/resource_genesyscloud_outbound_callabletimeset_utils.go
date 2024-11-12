@@ -123,7 +123,7 @@ func flattenCallableTimes(callabletimes []platformclientv2.Callabletime) *schema
 }
 
 func GenerateOutboundCallabletimeset(
-	resourceId string,
+	resourceLabel string,
 	name string,
 	nestedBlocks ...string) string {
 
@@ -132,7 +132,7 @@ func GenerateOutboundCallabletimeset(
 			name = "%s"
 			%s
 		}
-		`, resourceId, name, strings.Join(nestedBlocks, "\n"),
+		`, resourceLabel, name, strings.Join(nestedBlocks, "\n"),
 	)
 }
 

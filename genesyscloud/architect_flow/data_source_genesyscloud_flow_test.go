@@ -57,7 +57,7 @@ func TestAccDataSourceFlow(t *testing.T) {
 }
 
 func generateFlowDataSource(
-	resourceID,
+	resourceLabel,
 	dependsOn,
 	name,
 	varType string) string {
@@ -66,5 +66,5 @@ func generateFlowDataSource(
 		type = %s
 		depends_on = [%s]
 	}
-	`, resourceName, resourceID, name, varType, dependsOn)
+	`, resourceName, resourceLabel, name, varType, dependsOn)
 }

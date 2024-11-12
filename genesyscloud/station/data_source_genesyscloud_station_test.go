@@ -57,7 +57,7 @@ func TestAccDataSourceStation(t *testing.T) {
 		"phoneBaseSettings description",
 		"inin_webrtc_softphone.json",
 	) + edgePhone.GeneratePhoneResourceWithCustomAttrs(&edgePhone.PhoneConfig{
-		PhoneRes:            phoneRes,
+		PhoneResourceLabel:  phoneRes,
 		Name:                name1,
 		State:               stateActive,
 		SiteId:              fmt.Sprintf("\"%s\"", defaultSiteId),
@@ -87,7 +87,7 @@ func TestAccDataSourceStation(t *testing.T) {
 }
 
 func generateStationDataSource(
-	resourceID string,
+	resourceLabel string,
 	name string,
 	// Must explicitly use depends_on in terraform v0.13 when a data source references a resource
 	// Fixed in v0.14 https://github.com/hashicorp/terraform/pull/26284
@@ -96,5 +96,5 @@ func generateStationDataSource(
 		name = %s
         depends_on=[%s]
 	}
-	`, resourceID, name, dependsOnResource)
+	`, resourceLabel, name, dependsOnResource)
 }

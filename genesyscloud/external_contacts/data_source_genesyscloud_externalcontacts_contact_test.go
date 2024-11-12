@@ -109,10 +109,10 @@ func TestAccDataSourceExternalContacts(t *testing.T) {
 	})
 }
 
-func generateExternalContactDataSource(resourceID string, search string, dependsOn string) string {
+func generateExternalContactDataSource(resourceLabel string, search string, dependsOn string) string {
 	return fmt.Sprintf(`data "genesyscloud_externalcontacts_contact" "%s" {
 		search = "%s"
 		depends_on = [%s]
 	}
-	`, resourceID, search, dependsOn)
+	`, resourceLabel, search, dependsOn)
 }
