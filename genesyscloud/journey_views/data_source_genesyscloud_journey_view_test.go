@@ -16,7 +16,8 @@ func TestAccDataSourceJourneyViewBasic(t *testing.T) { //LLG TODO
 	var (
 		journeyResource = "test-journey"
 		journeyName     = "Terraform Test Journey-" + uuid.NewString()
-		journeyDesc     = "This is a test"
+		duration        = "1"
+		elementsBlock   = ""
 
 		journeyDataSource = "test-journey-ds"
 	)
@@ -27,17 +28,18 @@ func TestAccDataSourceJourneyViewBasic(t *testing.T) { //LLG TODO
 		Steps: []resource.TestStep{
 			{
 				// Create
-				Config: GenerateJourneyViewResource(
+				Config: generateJourneyView(
 					journeyResource,
 					journeyName,
-					journeyDesc,
+					duration,
+					elementsBlock,
 				) + generateJourneyViewDataSource(
 					journeyDataSource,
-					"genesyscloud_routing_queue."+journeyResource+".name",
-					"genesyscloud_routing_queue."+journeyResource,
+					"genesyscloud_journey_view."+journeyResource+".name",
+					"genesyscloud_journeey_view."+journeyResource,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair("data.genesyscloud_jjjoruney_view."+journeyDataSource,
+					resource.TestCheckResourceAttrPair("data.genesyscloud_journey_view."+journeyDataSource,
 						"id", "genesyscloud_journey_view."+journeyResource, "id",
 					),
 				),

@@ -10,7 +10,7 @@ import (
 
 var internalProxy *journeyViewsProxy
 
-type GetAllJourneyViewsFunc func(ctx context.Context, p *journeyViewsProxy, name string) (*[]platformclientv2.Journeyview, *platformclientv2.APIResponse, error)
+type getAllJourneyViewsFunc func(ctx context.Context, p *journeyViewsProxy, name string) (*[]platformclientv2.Journeyview, *platformclientv2.APIResponse, error)
 type getJourneyViewByNameFunc func(ctx context.Context, p *journeyViewsProxy, name string) (*platformclientv2.Journeyview, *platformclientv2.APIResponse, error)
 type getJourneyViewByViewIdFunc func(ctx context.Context, p *journeyViewsProxy, viewId string) (*platformclientv2.Journeyview, *platformclientv2.APIResponse, error)
 type createJourneyViewFunc func(ctx context.Context, p *journeyViewsProxy, journeyView *platformclientv2.Journeyview) (*platformclientv2.Journeyview, *platformclientv2.APIResponse, error)
@@ -20,7 +20,7 @@ type deleteJourneyViewFunc func(ctx context.Context, p *journeyViewsProxy, viewI
 type journeyViewsProxy struct {
 	clientConfig             *platformclientv2.Configuration
 	journeyViewsApi          *platformclientv2.JourneyApi
-	GetAllJourneyViewsAttr   GetAllJourneyViewsFunc
+	getAllJourneyViewsAttr   getAllJourneyViewsFunc
 	getJourneyViewAttr       getJourneyViewByViewIdFunc
 	getJourneyViewByNameAttr getJourneyViewByNameFunc
 	createJourneyViewAttr    createJourneyViewFunc
@@ -51,8 +51,8 @@ func getJourneyViewProxy(clientConfig *platformclientv2.Configuration) *journeyV
 	return internalProxy
 }
 
-func (p *journeyViewsProxy) GetAllJourneyViews(ctx context.Context, name string) (*[]platformclientv2.Journeyview, *platformclientv2.APIResponse, error) {
-	return p.GetAllJourneyViewsAttr(ctx, p, name)
+func (p *journeyViewsProxy) getAllJourneyViews(ctx context.Context, name string) (*[]platformclientv2.Journeyview, *platformclientv2.APIResponse, error) {
+	return p.getAllJourneyViewsAttr(ctx, p, name)
 }
 
 func (p *journeyViewsProxy) getJourneyViewById(ctx context.Context, viewId string) (*platformclientv2.Journeyview, *platformclientv2.APIResponse, error) {
@@ -80,7 +80,7 @@ func getJourneyViewByViewIdFn(_ context.Context, p *journeyViewsProxy, viewId st
 }
 
 func getJourneyViewByNameFn(ctx context.Context, p *journeyViewsProxy, viewName string) (*platformclientv2.Journeyview, *platformclientv2.APIResponse, error) {
-	journeys, resp, err := p.GetAllJourneyViews(ctx, viewName)
+	journeys, resp, err := p.getAllJourneyViews(ctx, viewName)
 	if err != nil {
 		return nil, resp, err
 	}
@@ -103,7 +103,7 @@ func createJourneyViewFn(_ context.Context, p *journeyViewsProxy, journeyView *p
 }
 
 func updateJourneyViewFn(_ context.Context, p *journeyViewsProxy, viewId string, journeyView *platformclientv2.Journeyview) (*platformclientv2.Journeyview, *platformclientv2.APIResponse, error) {
-	return p.journeyViewsApi.PostJourneyViewVersions(viewId, *journeyView)
+	return p.journeyViewsApi.PostJourneyViewVersions(viewId, *journeyView) //TODO NB
 }
 
 func deleteJourneyViewFn(_ context.Context, p *journeyViewsProxy, viewId string) (*platformclientv2.APIResponse, error) {
@@ -111,7 +111,7 @@ func deleteJourneyViewFn(_ context.Context, p *journeyViewsProxy, viewId string)
 }
 
 // GetAllJourneyViewsFn is the implementation for retrieving all journey views in Genesys Cloud
-func GetAllJourneyViewsFn(ctx context.Context, p *journeyViewsProxy, name string) (*[]platformclientv2.Journeyview, *platformclientv2.APIResponse, error) {
+func getAllJourneyViewsFn(ctx context.Context, p *journeyViewsProxy, name string) (*[]platformclientv2.Journeyview, *platformclientv2.APIResponse, error) {
 	var allJourneys []platformclientv2.Journeyview
 	const pageSize = 100
 
