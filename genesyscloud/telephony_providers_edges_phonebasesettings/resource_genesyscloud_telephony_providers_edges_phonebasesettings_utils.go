@@ -90,7 +90,7 @@ func flattenPhoneCapabilities(capabilities *platformclientv2.Phonecapabilities) 
 }
 
 func GeneratePhoneBaseSettingsResourceWithCustomAttrs(
-	phoneBaseSettingsRes,
+	phoneBaseSettingsResourceLabel,
 	name,
 	description,
 	phoneMetaBaseId string,
@@ -101,7 +101,7 @@ func GeneratePhoneBaseSettingsResourceWithCustomAttrs(
 		phone_meta_base_id = "%s"
 		%s
 	}
-	`, phoneBaseSettingsRes, name, description, phoneMetaBaseId, strings.Join(otherAttrs, "\n"))
+	`, phoneBaseSettingsResourceLabel, name, description, phoneMetaBaseId, strings.Join(otherAttrs, "\n"))
 }
 
 func customizePhoneBaseSettingsPropertiesDiff(ctx context.Context, diff *schema.ResourceDiff, meta interface{}) error {

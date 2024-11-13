@@ -21,12 +21,12 @@ func TestAccDataSourceIntegrationFacebook(t *testing.T) {
 	t.Skip("Skipping because it requires setting up a org as test account for the mocks to respond correctly.")
 	t.Parallel()
 	var (
-		testResource1    = "test_sample"
-		testResource2    = "test_sample2"
-		name1            = "test_sample"
-		pageAccessToken1 = uuid.NewString()
-		appId            = ""
-		appSecret        = ""
+		testResourceLabel1 = "test_sample"
+		testResourceLabel2 = "test_sample2"
+		name1              = "test_sample"
+		pageAccessToken1   = uuid.NewString()
+		appId              = ""
+		appSecret          = ""
 
 		nameSupportedContent          = "Terraform Supported Content - " + uuid.NewString()
 		resourceLabelSupportedContent = "testSupportedContent"
@@ -59,7 +59,7 @@ func TestAccDataSourceIntegrationFacebook(t *testing.T) {
 				Config: messagingSettingResource1 +
 					supportedContentResource1 +
 					generateFacebookIntegrationResource(
-						testResource1,
+						testResourceLabel1,
 						name1,
 						"genesyscloud_conversations_messaging_supportedcontent."+resourceLabelSupportedContent+".id",
 						"genesyscloud_conversations_messaging_settings."+resourceLabelMessagingSetting+".id",
@@ -69,12 +69,12 @@ func TestAccDataSourceIntegrationFacebook(t *testing.T) {
 						appId,
 						appSecret,
 					) + generateIntegrationFacebookDataSource(
-					testResource2,
+					testResourceLabel2,
 					name1,
-					"genesyscloud_integration_facebook."+testResource1,
+					"genesyscloud_integration_facebook."+testResourceLabel1,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair("data.genesyscloud_integration_facebook."+testResource2, "id", "genesyscloud_integration_facebook."+testResource1, "id"),
+					resource.TestCheckResourceAttrPair("data.genesyscloud_integration_facebook."+testResourceLabel2, "id", "genesyscloud_integration_facebook."+testResourceLabel1, "id"),
 				),
 			},
 		},

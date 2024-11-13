@@ -17,9 +17,9 @@ Test Class for the task management workbin Data Source
 func TestAccDataSourceTaskManagementWorkbin(t *testing.T) {
 	t.Parallel()
 	var (
-		workbinResId    = "workbin_1"
-		workbinName     = "tf_workbin_" + uuid.NewString()
-		workDescription = "created for CX as Code test case"
+		workbinResourceLabel = "workbin_1"
+		workbinName          = "tf_workbin_" + uuid.NewString()
+		workDescription      = "created for CX as Code test case"
 
 		workbinDataSourceLabel = "workbin_data_source_1"
 	)
@@ -28,10 +28,10 @@ func TestAccDataSourceTaskManagementWorkbin(t *testing.T) {
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
-				Config: GenerateWorkbinResource(workbinResId, workbinName, workDescription, nullValue) +
-					generateWorkbinDataSource(workbinDataSourceLabel, workbinName, resourceName+"."+workbinResId),
+				Config: GenerateWorkbinResource(workbinResourceLabel, workbinName, workDescription, nullValue) +
+					generateWorkbinDataSource(workbinDataSourceLabel, workbinName, resourceName+"."+workbinResourceLabel),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair("data."+resourceName+"."+workbinDataSourceLabel, "id", resourceName+"."+workbinResId, "id"),
+					resource.TestCheckResourceAttrPair("data."+resourceName+"."+workbinDataSourceLabel, "id", resourceName+"."+workbinResourceLabel, "id"),
 				),
 			},
 		},

@@ -21,8 +21,8 @@ import (
 
 func TestAccResourceRoutingEmailDomainSub(t *testing.T) {
 	var (
-		domainRes = "routing-domain1"
-		domainId  = "terraformdomain" + strings.Replace(uuid.NewString(), "-", "", -1)
+		domainResourceLabel = "routing-domain1"
+		domainId            = "terraformdomain" + strings.Replace(uuid.NewString(), "-", "", -1)
 	)
 
 	CleanupRoutingEmailDomains()
@@ -34,19 +34,19 @@ func TestAccResourceRoutingEmailDomainSub(t *testing.T) {
 			{
 				// Create purecloud subdomain
 				Config: GenerateRoutingEmailDomainResource(
-					domainRes,
+					domainResourceLabel,
 					domainId,
 					util.TrueValue, // Subdomain clear
 					util.NullValue,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_routing_email_domain."+domainRes, "domain_id", domainId),
-					resource.TestCheckResourceAttr("genesyscloud_routing_email_domain."+domainRes, "subdomain", util.TrueValue),
+					resource.TestCheckResourceAttr("genesyscloud_routing_email_domain."+domainResourceLabel, "domain_id", domainId),
+					resource.TestCheckResourceAttr("genesyscloud_routing_email_domain."+domainResourceLabel, "subdomain", util.TrueValue),
 				),
 			},
 			{
 				// Import/Read
-				ResourceName:      "genesyscloud_routing_email_domain." + domainRes,
+				ResourceName:      "genesyscloud_routing_email_domain." + domainResourceLabel,
 				ImportState:       true,
 				ImportStateVerify: true,
 			},
@@ -57,9 +57,9 @@ func TestAccResourceRoutingEmailDomainSub(t *testing.T) {
 
 func TestAccResourceRoutingEmailDomainCustom(t *testing.T) {
 	var (
-		domainRes       = "routing-domain1"
-		domainId        = fmt.Sprintf("terraformdomain.%s.com", strings.Replace(uuid.NewString(), "-", "", -1))
-		mailFromDomain1 = "test." + domainId
+		domainResourceLabel = "routing-domain1"
+		domainId            = fmt.Sprintf("terraformdomain.%s.com", strings.Replace(uuid.NewString(), "-", "", -1))
+		mailFromDomain1     = "test." + domainId
 	)
 
 	CleanupRoutingEmailDomains()
@@ -71,29 +71,29 @@ func TestAccResourceRoutingEmailDomainCustom(t *testing.T) {
 			{
 				// Create custom domain
 				Config: GenerateRoutingEmailDomainResource(
-					domainRes,
+					domainResourceLabel,
 					domainId,
 					util.FalseValue, // Subdomain
 					util.NullValue,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_routing_email_domain."+domainRes, "domain_id", domainId),
-					resource.TestCheckResourceAttr("genesyscloud_routing_email_domain."+domainRes, "subdomain", util.FalseValue),
-					resource.TestCheckResourceAttr("genesyscloud_routing_email_domain."+domainRes, "mail_from_domain", ""),
+					resource.TestCheckResourceAttr("genesyscloud_routing_email_domain."+domainResourceLabel, "domain_id", domainId),
+					resource.TestCheckResourceAttr("genesyscloud_routing_email_domain."+domainResourceLabel, "subdomain", util.FalseValue),
+					resource.TestCheckResourceAttr("genesyscloud_routing_email_domain."+domainResourceLabel, "mail_from_domain", ""),
 				),
 			},
 			{
 				// Update custom domain
 				Config: GenerateRoutingEmailDomainResource(
-					domainRes,
+					domainResourceLabel,
 					domainId,
 					util.FalseValue, // Subdomain
 					strconv.Quote(mailFromDomain1),
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_routing_email_domain."+domainRes, "domain_id", domainId),
-					resource.TestCheckResourceAttr("genesyscloud_routing_email_domain."+domainRes, "subdomain", util.FalseValue),
-					resource.TestCheckResourceAttr("genesyscloud_routing_email_domain."+domainRes, "mail_from_domain", mailFromDomain1),
+					resource.TestCheckResourceAttr("genesyscloud_routing_email_domain."+domainResourceLabel, "domain_id", domainId),
+					resource.TestCheckResourceAttr("genesyscloud_routing_email_domain."+domainResourceLabel, "subdomain", util.FalseValue),
+					resource.TestCheckResourceAttr("genesyscloud_routing_email_domain."+domainResourceLabel, "mail_from_domain", mailFromDomain1),
 				),
 			},
 		},

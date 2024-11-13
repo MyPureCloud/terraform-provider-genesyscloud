@@ -13,11 +13,11 @@ import (
 
 func TestAccDataSourceWrapupcode(t *testing.T) {
 	var (
-		codeRes     = "routing-wrapupcode"
-		codeData    = "codeData"
-		codeName    = "Terraform Code-" + uuid.NewString()
-		divResource = "test-division"
-		divName     = "terraform-" + uuid.NewString()
+		codeResourceLabel = "routing-wrapupcode"
+		codeDataLabel     = "codeData"
+		codeName          = "Terraform Code-" + uuid.NewString()
+		divResourceLabel  = "test-division"
+		divName           = "terraform-" + uuid.NewString()
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -25,16 +25,16 @@ func TestAccDataSourceWrapupcode(t *testing.T) {
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
-				Config: authDivision.GenerateAuthDivisionBasic(divResource, divName) + GenerateRoutingWrapupcodeResource(
-					codeRes,
+				Config: authDivision.GenerateAuthDivisionBasic(divResourceLabel, divName) + GenerateRoutingWrapupcodeResource(
+					codeResourceLabel,
 					codeName,
-					"genesyscloud_auth_division."+divResource+".id",
+					"genesyscloud_auth_division."+divResourceLabel+".id",
 				) + generateRoutingWrapupcodeDataSource(
-					codeData,
+					codeDataLabel,
 					codeName,
-					resourceName+"."+codeRes),
+					resourceName+"."+codeResourceLabel),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair("data."+resourceName+"."+codeData, "id", resourceName+"."+codeRes, "id"),
+					resource.TestCheckResourceAttrPair("data."+resourceName+"."+codeDataLabel, "id", resourceName+"."+codeResourceLabel, "id"),
 				),
 			},
 		},

@@ -14,11 +14,11 @@ import (
 
 func TestAccResourceKnowledgeKnowledgebaseBasic(t *testing.T) {
 	var (
-		knowledgeBaseResource1     = "test-knowledgebase1"
-		knowledgeBaseName1         = "Terraform Knowledge Base" + uuid.NewString()
-		knowledgeBaseDescription1  = "test-knowledgebase-description1"
-		knowledgeBaseDescription2  = "test-knowledgebase-description2"
-		knowledgeBaseCoreLanguage1 = "en-US"
+		knowledgeBaseResourceLabel1 = "test-knowledgebase1"
+		knowledgeBaseName1          = "Terraform Knowledge Base" + uuid.NewString()
+		knowledgeBaseDescription1   = "test-knowledgebase-description1"
+		knowledgeBaseDescription2   = "test-knowledgebase-description2"
+		knowledgeBaseCoreLanguage1  = "en-US"
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -28,34 +28,34 @@ func TestAccResourceKnowledgeKnowledgebaseBasic(t *testing.T) {
 			{
 				// Create
 				Config: GenerateKnowledgeKnowledgebaseResource(
-					knowledgeBaseResource1,
+					knowledgeBaseResourceLabel1,
 					knowledgeBaseName1,
 					knowledgeBaseDescription1,
 					knowledgeBaseCoreLanguage1,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_knowledge_knowledgebase."+knowledgeBaseResource1, "name", knowledgeBaseName1),
-					resource.TestCheckResourceAttr("genesyscloud_knowledge_knowledgebase."+knowledgeBaseResource1, "description", knowledgeBaseDescription1),
-					resource.TestCheckResourceAttr("genesyscloud_knowledge_knowledgebase."+knowledgeBaseResource1, "core_language", knowledgeBaseCoreLanguage1),
+					resource.TestCheckResourceAttr("genesyscloud_knowledge_knowledgebase."+knowledgeBaseResourceLabel1, "name", knowledgeBaseName1),
+					resource.TestCheckResourceAttr("genesyscloud_knowledge_knowledgebase."+knowledgeBaseResourceLabel1, "description", knowledgeBaseDescription1),
+					resource.TestCheckResourceAttr("genesyscloud_knowledge_knowledgebase."+knowledgeBaseResourceLabel1, "core_language", knowledgeBaseCoreLanguage1),
 				),
 			},
 			{
 				// Update
 				Config: GenerateKnowledgeKnowledgebaseResource(
-					knowledgeBaseResource1,
+					knowledgeBaseResourceLabel1,
 					knowledgeBaseName1,
 					knowledgeBaseDescription2,
 					knowledgeBaseCoreLanguage1,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_knowledge_knowledgebase."+knowledgeBaseResource1, "name", knowledgeBaseName1),
-					resource.TestCheckResourceAttr("genesyscloud_knowledge_knowledgebase."+knowledgeBaseResource1, "description", knowledgeBaseDescription2),
-					resource.TestCheckResourceAttr("genesyscloud_knowledge_knowledgebase."+knowledgeBaseResource1, "core_language", knowledgeBaseCoreLanguage1),
+					resource.TestCheckResourceAttr("genesyscloud_knowledge_knowledgebase."+knowledgeBaseResourceLabel1, "name", knowledgeBaseName1),
+					resource.TestCheckResourceAttr("genesyscloud_knowledge_knowledgebase."+knowledgeBaseResourceLabel1, "description", knowledgeBaseDescription2),
+					resource.TestCheckResourceAttr("genesyscloud_knowledge_knowledgebase."+knowledgeBaseResourceLabel1, "core_language", knowledgeBaseCoreLanguage1),
 				),
 			},
 			{
 				// Import/Read
-				ResourceName:      "genesyscloud_knowledge_knowledgebase." + knowledgeBaseResource1,
+				ResourceName:      "genesyscloud_knowledge_knowledgebase." + knowledgeBaseResourceLabel1,
 				ImportState:       true,
 				ImportStateVerify: true,
 			},

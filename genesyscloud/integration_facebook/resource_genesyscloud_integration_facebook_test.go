@@ -24,14 +24,14 @@ func TestAccResourceIntegrationFacebook(t *testing.T) {
 	t.Skip("Skipping because it requires setting up a org as test account for the mocks to respond correctly.")
 	t.Parallel()
 	var (
-		testResource1    = "test_sample"
-		name1            = "Terraform Facebook1-" + uuid.NewString()
-		pageAccessToken1 = uuid.NewString()
-		userAccessToken1 = uuid.NewString()
-		pageId           = "1"
-		appId            = ""
-		appSecret        = ""
-		name2            = "Terraform Facebook2-" + uuid.NewString()
+		testResourceLabel1 = "test_sample"
+		name1              = "Terraform Facebook1-" + uuid.NewString()
+		pageAccessToken1   = uuid.NewString()
+		userAccessToken1   = uuid.NewString()
+		pageId             = "1"
+		appId              = ""
+		appSecret          = ""
+		name2              = "Terraform Facebook2-" + uuid.NewString()
 
 		nameSupportedContent          = "Terraform Supported Content - " + uuid.NewString()
 		resourceLabelSupportedContent = "testSupportedContent"
@@ -65,7 +65,7 @@ func TestAccResourceIntegrationFacebook(t *testing.T) {
 				Config: messagingSettingResource1 +
 					supportedContentResource1 +
 					generateFacebookIntegrationResource(
-						testResource1,
+						testResourceLabel1,
 						name1,
 						"genesyscloud_conversations_messaging_supportedcontent."+resourceLabelSupportedContent+".id",
 						"genesyscloud_conversations_messaging_settings."+resourceLabelMessagingSetting+".id",
@@ -76,14 +76,14 @@ func TestAccResourceIntegrationFacebook(t *testing.T) {
 						appSecret,
 					),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_integration_facebook."+testResource1, "name", name1),
-					resource.TestCheckResourceAttr("genesyscloud_integration_facebook."+testResource1, "page_access_token", pageAccessToken1),
-					resource.TestCheckResourceAttr("genesyscloud_integration_facebook."+testResource1, "user_access_token", ""),
-					resource.TestCheckResourceAttr("genesyscloud_integration_facebook."+testResource1, "page_id", ""),
-					resource.TestCheckResourceAttr("genesyscloud_integration_facebook."+testResource1, "app_id", appId),
-					resource.TestCheckResourceAttr("genesyscloud_integration_facebook."+testResource1, "app_secret", appSecret),
-					resource.TestCheckResourceAttrPair("genesyscloud_integration_facebook."+testResource1, "supported_content_id", "genesyscloud_conversations_messaging_supportedcontent."+resourceLabelSupportedContent, "id"),
-					resource.TestCheckResourceAttrPair("genesyscloud_integration_facebook."+testResource1, "messaging_setting_id", "genesyscloud_conversations_messaging_settings."+resourceLabelMessagingSetting, "id"),
+					resource.TestCheckResourceAttr("genesyscloud_integration_facebook."+testResourceLabel1, "name", name1),
+					resource.TestCheckResourceAttr("genesyscloud_integration_facebook."+testResourceLabel1, "page_access_token", pageAccessToken1),
+					resource.TestCheckResourceAttr("genesyscloud_integration_facebook."+testResourceLabel1, "user_access_token", ""),
+					resource.TestCheckResourceAttr("genesyscloud_integration_facebook."+testResourceLabel1, "page_id", ""),
+					resource.TestCheckResourceAttr("genesyscloud_integration_facebook."+testResourceLabel1, "app_id", appId),
+					resource.TestCheckResourceAttr("genesyscloud_integration_facebook."+testResourceLabel1, "app_secret", appSecret),
+					resource.TestCheckResourceAttrPair("genesyscloud_integration_facebook."+testResourceLabel1, "supported_content_id", "genesyscloud_conversations_messaging_supportedcontent."+resourceLabelSupportedContent, "id"),
+					resource.TestCheckResourceAttrPair("genesyscloud_integration_facebook."+testResourceLabel1, "messaging_setting_id", "genesyscloud_conversations_messaging_settings."+resourceLabelMessagingSetting, "id"),
 				),
 			},
 			// Update resource
@@ -91,7 +91,7 @@ func TestAccResourceIntegrationFacebook(t *testing.T) {
 				Config: messagingSettingResource1 +
 					supportedContentResource1 +
 					generateFacebookIntegrationResource(
-						testResource1,
+						testResourceLabel1,
 						name2,
 						"genesyscloud_conversations_messaging_supportedcontent."+resourceLabelSupportedContent+".id",
 						"genesyscloud_conversations_messaging_settings."+resourceLabelMessagingSetting+".id",
@@ -102,14 +102,14 @@ func TestAccResourceIntegrationFacebook(t *testing.T) {
 						appSecret,
 					),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_integration_facebook."+testResource1, "name", name2),
-					resource.TestCheckResourceAttr("genesyscloud_integration_facebook."+testResource1, "page_access_token", ""),
-					resource.TestCheckResourceAttr("genesyscloud_integration_facebook."+testResource1, "user_access_token", userAccessToken1),
-					resource.TestCheckResourceAttr("genesyscloud_integration_facebook."+testResource1, "page_id", pageId),
-					resource.TestCheckResourceAttr("genesyscloud_integration_facebook."+testResource1, "app_id", appId),
-					resource.TestCheckResourceAttr("genesyscloud_integration_facebook."+testResource1, "app_secret", appSecret),
-					resource.TestCheckResourceAttrPair("genesyscloud_integration_facebook."+testResource1, "supported_content_id", "genesyscloud_conversations_messaging_supportedcontent."+resourceLabelSupportedContent, "id"),
-					resource.TestCheckResourceAttrPair("genesyscloud_integration_facebook."+testResource1, "messaging_setting_id", "genesyscloud_conversations_messaging_settings."+resourceLabelMessagingSetting, "id"),
+					resource.TestCheckResourceAttr("genesyscloud_integration_facebook."+testResourceLabel1, "name", name2),
+					resource.TestCheckResourceAttr("genesyscloud_integration_facebook."+testResourceLabel1, "page_access_token", ""),
+					resource.TestCheckResourceAttr("genesyscloud_integration_facebook."+testResourceLabel1, "user_access_token", userAccessToken1),
+					resource.TestCheckResourceAttr("genesyscloud_integration_facebook."+testResourceLabel1, "page_id", pageId),
+					resource.TestCheckResourceAttr("genesyscloud_integration_facebook."+testResourceLabel1, "app_id", appId),
+					resource.TestCheckResourceAttr("genesyscloud_integration_facebook."+testResourceLabel1, "app_secret", appSecret),
+					resource.TestCheckResourceAttrPair("genesyscloud_integration_facebook."+testResourceLabel1, "supported_content_id", "genesyscloud_conversations_messaging_supportedcontent."+resourceLabelSupportedContent, "id"),
+					resource.TestCheckResourceAttrPair("genesyscloud_integration_facebook."+testResourceLabel1, "messaging_setting_id", "genesyscloud_conversations_messaging_settings."+resourceLabelMessagingSetting, "id"),
 				),
 			},
 			// With UserAccessToken and PageId
@@ -117,7 +117,7 @@ func TestAccResourceIntegrationFacebook(t *testing.T) {
 				Config: messagingSettingResource1 +
 					supportedContentResource1 +
 					generateFacebookIntegrationResource(
-						testResource1,
+						testResourceLabel1,
 						name1,
 						"genesyscloud_conversations_messaging_supportedcontent."+resourceLabelSupportedContent+".id",
 						"genesyscloud_conversations_messaging_settings."+resourceLabelMessagingSetting+".id",
@@ -128,19 +128,19 @@ func TestAccResourceIntegrationFacebook(t *testing.T) {
 						appSecret,
 					),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_integration_facebook."+testResource1, "name", name1),
-					resource.TestCheckResourceAttr("genesyscloud_integration_facebook."+testResource1, "page_access_token", ""),
-					resource.TestCheckResourceAttr("genesyscloud_integration_facebook."+testResource1, "user_access_token", userAccessToken1),
-					resource.TestCheckResourceAttr("genesyscloud_integration_facebook."+testResource1, "page_id", pageId),
-					resource.TestCheckResourceAttr("genesyscloud_integration_facebook."+testResource1, "app_id", appId),
-					resource.TestCheckResourceAttr("genesyscloud_integration_facebook."+testResource1, "app_secret", appSecret),
-					resource.TestCheckResourceAttrPair("genesyscloud_integration_facebook."+testResource1, "supported_content_id", "genesyscloud_conversations_messaging_supportedcontent."+resourceLabelSupportedContent, "id"),
-					resource.TestCheckResourceAttrPair("genesyscloud_integration_facebook."+testResource1, "messaging_setting_id", "genesyscloud_conversations_messaging_settings."+resourceLabelMessagingSetting, "id"),
+					resource.TestCheckResourceAttr("genesyscloud_integration_facebook."+testResourceLabel1, "name", name1),
+					resource.TestCheckResourceAttr("genesyscloud_integration_facebook."+testResourceLabel1, "page_access_token", ""),
+					resource.TestCheckResourceAttr("genesyscloud_integration_facebook."+testResourceLabel1, "user_access_token", userAccessToken1),
+					resource.TestCheckResourceAttr("genesyscloud_integration_facebook."+testResourceLabel1, "page_id", pageId),
+					resource.TestCheckResourceAttr("genesyscloud_integration_facebook."+testResourceLabel1, "app_id", appId),
+					resource.TestCheckResourceAttr("genesyscloud_integration_facebook."+testResourceLabel1, "app_secret", appSecret),
+					resource.TestCheckResourceAttrPair("genesyscloud_integration_facebook."+testResourceLabel1, "supported_content_id", "genesyscloud_conversations_messaging_supportedcontent."+resourceLabelSupportedContent, "id"),
+					resource.TestCheckResourceAttrPair("genesyscloud_integration_facebook."+testResourceLabel1, "messaging_setting_id", "genesyscloud_conversations_messaging_settings."+resourceLabelMessagingSetting, "id"),
 				),
 			},
 			{
 				// Import/Read
-				ResourceName:      "genesyscloud_integration_facebook." + testResource1,
+				ResourceName:      "genesyscloud_integration_facebook." + testResourceLabel1,
 				ImportState:       true,
 				ImportStateVerify: true,
 				Check: resource.ComposeTestCheckFunc(

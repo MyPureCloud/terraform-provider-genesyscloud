@@ -12,8 +12,8 @@ import (
 
 func TestAccDataSourceQualityFormsSurvey(t *testing.T) {
 	var (
-		formResource     = "quality-form"
-		formDataResource = "quality-form-data"
+		formResourceLabel     = "quality-form"
+		formDataResourceLabel = "quality-form-data"
 
 		formName = "terraform-form-evaluations-" + uuid.NewString()
 	)
@@ -69,14 +69,14 @@ func TestAccDataSourceQualityFormsSurvey(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config: GenerateSurveyFormResource(
-					formResource, &surveyForm1,
+					formResourceLabel, &surveyForm1,
 				) + generateQualityFormsSurveyDataSource(
-					formDataResource,
+					formDataResourceLabel,
 					formName,
-					"genesyscloud_quality_forms_survey."+formResource,
+					"genesyscloud_quality_forms_survey."+formResourceLabel,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair("data.genesyscloud_quality_forms_survey."+formDataResource, "id", "genesyscloud_quality_forms_survey."+formResource, "id"),
+					resource.TestCheckResourceAttrPair("data.genesyscloud_quality_forms_survey."+formDataResourceLabel, "id", "genesyscloud_quality_forms_survey."+formResourceLabel, "id"),
 				),
 			},
 		},

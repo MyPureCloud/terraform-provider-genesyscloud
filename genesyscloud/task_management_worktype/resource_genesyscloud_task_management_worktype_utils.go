@@ -15,7 +15,7 @@ and unmarshal data into formats consumable by Terraform and/or Genesys Cloud.
 */
 
 type worktypeConfig struct {
-	resID            string
+	resourceLabel    string
 	name             string
 	description      string
 	divisionId       string

@@ -65,7 +65,7 @@ func TestAccResourceOutboundCampaignBasic(t *testing.T) {
 		nameUpdated          = "Test Campaign " + uuid.NewString()
 		callerNameUpdated    = "Test Name 2"
 		callerAddressUpdated = "+353371112111"
-		divResource          = "test-division"
+		divResourceLabel     = "test-division"
 		divName              = "terraform-" + uuid.NewString()
 	)
 
@@ -104,10 +104,10 @@ func TestAccResourceOutboundCampaignBasic(t *testing.T) {
 	) + obDnclist.GenerateOutboundDncListBasic(
 		dncListResourceLabel,
 		"dnc list "+uuid.NewString(),
-	) + authDivision.GenerateAuthDivisionBasic(divResource, divName) + routingWrapupcode.GenerateRoutingWrapupcodeResource(
+	) + authDivision.GenerateAuthDivisionBasic(divResourceLabel, divName) + routingWrapupcode.GenerateRoutingWrapupcodeResource(
 		wrapupCodeResourceLabel,
 		"tf wrapup code"+uuid.NewString(),
-		"genesyscloud_auth_division."+divResource+".id",
+		"genesyscloud_auth_division."+divResourceLabel+".id",
 	) + architect_flow.GenerateFlowResource(
 		"flow",
 		outboundFlowFilePath,
@@ -425,7 +425,7 @@ func TestAccResourceOutboundCampaignCampaignStatus(t *testing.T) {
 		flowResourceLabel        = "flow"
 		wrapupcodeResourceLabel  = "wrapupcode"
 		locationResourceLabel    = "location"
-		divResource              = "test-division"
+		divResourceLabel         = "test-division"
 		divName                  = "terraform-" + uuid.NewString()
 	)
 
@@ -454,10 +454,10 @@ func TestAccResourceOutboundCampaignCampaignStatus(t *testing.T) {
 			"home",
 			strconv.Quote("Home"),
 		),
-	) + authDivision.GenerateAuthDivisionBasic(divResource, divName) + routingWrapupcode.GenerateRoutingWrapupcodeResource(
+	) + authDivision.GenerateAuthDivisionBasic(divResourceLabel, divName) + routingWrapupcode.GenerateRoutingWrapupcodeResource(
 		wrapupcodeResourceLabel,
 		"tf wrapup code"+uuid.NewString(),
-		"genesyscloud_auth_division."+divResource+".id",
+		"genesyscloud_auth_division."+divResourceLabel+".id",
 	) + architect_flow.GenerateFlowResource(
 		flowResourceLabel,
 		outboundFlowFilePath,

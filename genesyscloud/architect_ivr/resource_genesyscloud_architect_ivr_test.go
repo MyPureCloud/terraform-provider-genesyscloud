@@ -89,19 +89,19 @@ func TestAccResourceIvrConfigBasic(t *testing.T) {
 }
 
 func TestAccResourceIvrConfigDivision(t *testing.T) {
-	ivrConfigResource1 := "test-ivrconfig1"
+	ivrConfigResourceLabel1 := "test-ivrconfig1"
 	ivrConfigName := "terraform-ivrconfig-" + uuid.NewString()
 	ivrConfigDescription := "Terraform IVR config"
 	number1 := "+14175550013"
 	number2 := "+14175550014"
-	divResource1 := "auth-division1"
-	divResource2 := "auth-division2"
+	divResourceLabel1 := "auth-division1"
+	divResourceLabel2 := "auth-division2"
 	divName1 := "TerraformDiv-" + uuid.NewString()
 	divName2 := "TerraformDiv-" + uuid.NewString()
 	ivrConfigDnis := []string{number1, number2}
-	didPoolResource1 := "test-didpool1"
+	didPoolResourceLabel1 := "test-didpool1"
 
-	fullResourceLabel := resourceName + "." + ivrConfigResource1
+	fullResourceLabel := resourceName + "." + ivrConfigResourceLabel1
 
 	// did pool cleanup
 	defer func() {
@@ -119,55 +119,55 @@ func TestAccResourceIvrConfigDivision(t *testing.T) {
 			{
 				// Create
 				Config: generateAuthDivisionResourceForIvrTests(
-					divResource1,
+					divResourceLabel1,
 					divName1,
 					util.NullValue, // No description
 					util.NullValue, // Not home division
 				) + GenerateIvrConfigResource(&IvrConfigStruct{
-					ResourceLabel: ivrConfigResource1,
+					ResourceLabel: ivrConfigResourceLabel1,
 					Name:          ivrConfigName,
 					Description:   ivrConfigDescription,
 					Dnis:          nil, // No dnis
 					DependsOn:     "",  // No depends_on
-					DivisionId:    "genesyscloud_auth_division." + divResource1 + ".id",
+					DivisionId:    "genesyscloud_auth_division." + divResourceLabel1 + ".id",
 				}),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(fullResourceLabel, "name", ivrConfigName),
 					resource.TestCheckResourceAttr(fullResourceLabel, "description", ivrConfigDescription),
-					resource.TestCheckResourceAttrPair(fullResourceLabel, "division_id", "genesyscloud_auth_division."+divResource1, "id"),
-					hasEmptyDnis(resourceName+"."+ivrConfigResource1),
+					resource.TestCheckResourceAttrPair(fullResourceLabel, "division_id", "genesyscloud_auth_division."+divResourceLabel1, "id"),
+					hasEmptyDnis(resourceName+"."+ivrConfigResourceLabel1),
 				),
 			},
 			{
 				// Update with new DNIS and division
 				Config: generateAuthDivisionResourceForIvrTests(
-					divResource1,
+					divResourceLabel1,
 					divName1,
 					util.NullValue, // No description
 					util.NullValue, // Not home division
 				) + generateAuthDivisionResourceForIvrTests(
-					divResource2,
+					divResourceLabel2,
 					divName2,
 					util.NullValue, // No description
 					util.NullValue, // Not home division
 				) + didPool.GenerateDidPoolResource(&didPool.DidPoolStruct{
-					ResourceLabel:    didPoolResource1,
+					ResourceLabel:    didPoolResourceLabel1,
 					StartPhoneNumber: ivrConfigDnis[0],
 					EndPhoneNumber:   ivrConfigDnis[1],
 					Description:      util.NullValue, // No description
 					Comments:         util.NullValue, // No comments
 					PoolProvider:     util.NullValue, // No provider
 				}) + GenerateIvrConfigResource(&IvrConfigStruct{
-					ResourceLabel: ivrConfigResource1,
+					ResourceLabel: ivrConfigResourceLabel1,
 					Name:          ivrConfigName,
 					Description:   ivrConfigDescription,
 					Dnis:          ivrConfigDnis,
-					DependsOn:     "genesyscloud_telephony_providers_edges_did_pool." + didPoolResource1,
+					DependsOn:     "genesyscloud_telephony_providers_edges_did_pool." + didPoolResourceLabel1,
 				}),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(fullResourceLabel, "name", ivrConfigName),
 					resource.TestCheckResourceAttr(fullResourceLabel, "description", ivrConfigDescription),
-					resource.TestCheckResourceAttrPair(fullResourceLabel, "division_id", "genesyscloud_auth_division."+divResource1, "id"),
+					resource.TestCheckResourceAttrPair(fullResourceLabel, "division_id", "genesyscloud_auth_division."+divResourceLabel1, "id"),
 					util.ValidateStringInArray(fullResourceLabel, "dnis", ivrConfigDnis[0]),
 					util.ValidateStringInArray(fullResourceLabel, "dnis", ivrConfigDnis[1]),
 				),
@@ -180,12 +180,12 @@ func TestAccResourceIvrConfigDivision(t *testing.T) {
 			},
 			{
 				Config: generateAuthDivisionResourceForIvrTests(
-					divResource1,
+					divResourceLabel1,
 					divName1,
 					util.NullValue, // No description
 					util.NullValue, // Not home division
 				) + generateAuthDivisionResourceForIvrTests(
-					divResource2,
+					divResourceLabel2,
 					divName2,
 					util.NullValue, // No description
 					util.NullValue, // Not home division

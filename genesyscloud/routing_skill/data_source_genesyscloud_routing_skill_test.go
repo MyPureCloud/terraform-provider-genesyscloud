@@ -16,9 +16,9 @@ import (
 
 func TestAccDataSourceRoutingSkill(t *testing.T) {
 	var (
-		skillResource   = "routing-skill"
-		skillDataSource = "routing-skill-data"
-		skillName       = "Terraform Skill-" + uuid.NewString()
+		skillResourceLabel   = "routing-skill"
+		skillDataSourceLabel = "routing-skill-data"
+		skillName            = "Terraform Skill-" + uuid.NewString()
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -27,7 +27,7 @@ func TestAccDataSourceRoutingSkill(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config: GenerateRoutingSkillResource(
-					skillResource,
+					skillResourceLabel,
 					skillName,
 				),
 				Check: resource.ComposeTestCheckFunc(
@@ -36,11 +36,11 @@ func TestAccDataSourceRoutingSkill(t *testing.T) {
 			},
 			{
 				Config: GenerateRoutingSkillResource(
-					skillResource,
+					skillResourceLabel,
 					skillName,
-				) + generateRoutingSkillDataSource(skillDataSource, "genesyscloud_routing_skill."+skillResource+".name", "genesyscloud_routing_skill."+skillResource),
+				) + generateRoutingSkillDataSource(skillDataSourceLabel, "genesyscloud_routing_skill."+skillResourceLabel+".name", "genesyscloud_routing_skill."+skillResourceLabel),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair("data.genesyscloud_routing_skill."+skillDataSource, "id", "genesyscloud_routing_skill."+skillResource, "id"),
+					resource.TestCheckResourceAttrPair("data.genesyscloud_routing_skill."+skillDataSourceLabel, "id", "genesyscloud_routing_skill."+skillResourceLabel, "id"),
 				),
 			},
 		},

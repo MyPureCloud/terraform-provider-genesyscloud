@@ -23,7 +23,7 @@ tests for conversations_messaging_supportedcontent_default.
 func TestAccResourceConversationsMessagingSupportedcontentDefault(t *testing.T) {
 	t.Parallel()
 	var (
-		defaultResource = "testSupportedDefaultContent"
+		defaultResourceLabel = "testSupportedDefaultContent"
 
 		name          = "Terraform Supported Content - " + uuid.NewString()
 		resourceLabel = "testSupportedContent"
@@ -58,17 +58,17 @@ func TestAccResourceConversationsMessagingSupportedcontentDefault(t *testing.T) 
 					supportedContent.GenerateOutboundTypeBlock(outboundType),
 				) +
 					GenerateSupportedContentDefaultResource(
-						defaultResource,
+						defaultResourceLabel,
 						"genesyscloud_conversations_messaging_supportedcontent."+resourceLabel+".id",
 					),
 
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair("genesyscloud_conversations_messaging_supportedcontent_default."+defaultResource, "content_id", "genesyscloud_conversations_messaging_supportedcontent."+resourceLabel, "id"),
+					resource.TestCheckResourceAttrPair("genesyscloud_conversations_messaging_supportedcontent_default."+defaultResourceLabel, "content_id", "genesyscloud_conversations_messaging_supportedcontent."+resourceLabel, "id"),
 				),
 			},
 			{
 				// Import/Read
-				ResourceName:      "genesyscloud_conversations_messaging_supportedcontent_default." + defaultResource,
+				ResourceName:      "genesyscloud_conversations_messaging_supportedcontent_default." + defaultResourceLabel,
 				ImportState:       true,
 				ImportStateVerify: true,
 			},

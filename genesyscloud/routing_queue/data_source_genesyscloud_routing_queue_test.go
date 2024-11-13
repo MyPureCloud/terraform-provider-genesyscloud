@@ -14,11 +14,11 @@ import (
 
 func TestAccDataSourceRoutingQueueBasic(t *testing.T) {
 	var (
-		queueResource = "test-queue"
-		queueName     = "Terraform Test Queue-" + uuid.NewString()
-		queueDesc     = "This is a test"
+		queueResourceLabel = "test-queue"
+		queueName          = "Terraform Test Queue-" + uuid.NewString()
+		queueDesc          = "This is a test"
 
-		queueDataSource = "test-queue-ds"
+		queueDataSourceLabel = "test-queue-ds"
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -28,7 +28,7 @@ func TestAccDataSourceRoutingQueueBasic(t *testing.T) {
 			{
 				// Create
 				Config: GenerateRoutingQueueResource(
-					queueResource,
+					queueResourceLabel,
 					queueName,
 					queueDesc,
 					util.NullValue, // MANDATORY_TIMEOUT
@@ -45,13 +45,13 @@ func TestAccDataSourceRoutingQueueBasic(t *testing.T) {
 					util.NullValue,
 					util.NullValue,
 				) + generateRoutingQueueDataSource(
-					queueDataSource,
-					"genesyscloud_routing_queue."+queueResource+".name",
-					"genesyscloud_routing_queue."+queueResource,
+					queueDataSourceLabel,
+					"genesyscloud_routing_queue."+queueResourceLabel+".name",
+					"genesyscloud_routing_queue."+queueResourceLabel,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair("data.genesyscloud_routing_queue."+queueDataSource,
-						"id", "genesyscloud_routing_queue."+queueResource, "id",
+					resource.TestCheckResourceAttrPair("data.genesyscloud_routing_queue."+queueDataSourceLabel,
+						"id", "genesyscloud_routing_queue."+queueResourceLabel, "id",
 					),
 				),
 			},

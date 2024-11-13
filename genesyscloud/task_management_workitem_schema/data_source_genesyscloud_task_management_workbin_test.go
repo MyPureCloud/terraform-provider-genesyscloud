@@ -17,9 +17,9 @@ Test Class for the task management workitem schema Data Source
 func TestAccDataSourceTaskManagementWorkitemSchema(t *testing.T) {
 	t.Parallel()
 	var (
-		schemaResId       = "schema_1"
-		schemaName        = "tf_schema_" + uuid.NewString()
-		schemaDescription = "created for CX as Code test case"
+		schemaResourceLabel = "schema_1"
+		schemaName          = "tf_schema_" + uuid.NewString()
+		schemaDescription   = "created for CX as Code test case"
 
 		schemaDataSourceLabel = "workitem_schema_data_source_1"
 	)
@@ -28,10 +28,10 @@ func TestAccDataSourceTaskManagementWorkitemSchema(t *testing.T) {
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
-				Config: GenerateWorkitemSchemaResourceBasic(schemaResId, schemaName, schemaDescription) +
-					generateWorkitemSchemaDataSource(schemaDataSourceLabel, schemaName, resourceName+"."+schemaResId),
+				Config: GenerateWorkitemSchemaResourceBasic(schemaResourceLabel, schemaName, schemaDescription) +
+					generateWorkitemSchemaDataSource(schemaDataSourceLabel, schemaName, resourceName+"."+schemaResourceLabel),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair("data."+resourceName+"."+schemaDataSourceLabel, "id", resourceName+"."+schemaResId, "id"),
+					resource.TestCheckResourceAttrPair("data."+resourceName+"."+schemaDataSourceLabel, "id", resourceName+"."+schemaResourceLabel, "id"),
 				),
 			},
 		},

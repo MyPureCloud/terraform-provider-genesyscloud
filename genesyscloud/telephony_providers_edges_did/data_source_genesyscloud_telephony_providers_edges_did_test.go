@@ -17,12 +17,12 @@ func TestAccDataSourceDidBasic(t *testing.T) {
 	var (
 		didPoolStartPhoneNumber = "+45465550001"
 		didPoolEndPhoneNumber   = "+45465550003"
-		didPoolRes              = "didPool"
-		ivrConfigRes            = "ivrConfig"
+		didPoolResourceLabel    = "didPool"
+		ivrConfigResourceLabel  = "ivrConfig"
 		ivrConfigName           = "test-config" + uuid.NewString()
 		ivrConfigDnis           = []string{"+45465550002"}
 		didPhoneNumber          = "+45465550002"
-		didDataRes              = "didData"
+		didDataResourceLabel    = "didData"
 	)
 
 	// did pool cleanup
@@ -41,23 +41,23 @@ func TestAccDataSourceDidBasic(t *testing.T) {
 			{
 				// Create
 				Config: didPool.GenerateDidPoolResource(&didPool.DidPoolStruct{
-					ResourceLabel:    didPoolRes,
+					ResourceLabel:    didPoolResourceLabel,
 					StartPhoneNumber: didPoolStartPhoneNumber,
 					EndPhoneNumber:   didPoolEndPhoneNumber,
 					Description:      util.NullValue, // No description
 					Comments:         util.NullValue, // No comments
 					PoolProvider:     util.NullValue, // No provider
 				}) + archIvr.GenerateIvrConfigResource(&archIvr.IvrConfigStruct{
-					ResourceLabel: ivrConfigRes,
+					ResourceLabel: ivrConfigResourceLabel,
 					Name:          ivrConfigName,
 					Description:   "",
 					Dnis:          ivrConfigDnis,
-					DependsOn:     "genesyscloud_telephony_providers_edges_did_pool." + didPoolRes,
-				}) + generateDidDataSource(didDataRes,
+					DependsOn:     "genesyscloud_telephony_providers_edges_did_pool." + didPoolResourceLabel,
+				}) + generateDidDataSource(didDataResourceLabel,
 					didPhoneNumber,
-					"genesyscloud_architect_ivr."+ivrConfigRes),
+					"genesyscloud_architect_ivr."+ivrConfigResourceLabel),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("data."+resourceName+"."+didDataRes, "phone_number", didPhoneNumber),
+					resource.TestCheckResourceAttr("data."+resourceName+"."+didDataResourceLabel, "phone_number", didPhoneNumber),
 				),
 			},
 		},

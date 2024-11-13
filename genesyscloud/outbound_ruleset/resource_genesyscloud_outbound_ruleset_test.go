@@ -34,10 +34,10 @@ func TestAccResourceOutboundRulesetNoRules(t *testing.T) {
 		columnNames               = []string{strconv.Quote("Cell"), strconv.Quote("Home")}
 		automaticTimeZoneMapping  = util.FalseValue
 
-		queueResource1 = "test-queue-1"
-		queueResource2 = "test-queue-2"
-		queueName1     = "Terraform Test Queue1-" + uuid.NewString()
-		queueName2     = "Terraform Test Queue2-" + uuid.NewString()
+		queueResourceLabel1 = "test-queue-1"
+		queueResourceLabel2 = "test-queue-2"
+		queueName1          = "Terraform Test Queue1-" + uuid.NewString()
+		queueName2          = "Terraform Test Queue2-" + uuid.NewString()
 
 		ruleSetResourceLabel = "rule-set"
 		ruleSetName1         = "Test Rule Set " + uuid.NewString()
@@ -65,7 +65,7 @@ func TestAccResourceOutboundRulesetNoRules(t *testing.T) {
 						strconv.Quote("Cell"),
 					),
 				) + routingQueue.GenerateRoutingQueueResourceBasic(
-					queueResource1,
+					queueResourceLabel1,
 					queueName1) + fmt.Sprintf(`resource "genesyscloud_outbound_ruleset" "%s" {
   name            = "%s"
   contact_list_id = genesyscloud_outbound_contact_list.%s.id
@@ -93,7 +93,7 @@ func TestAccResourceOutboundRulesetNoRules(t *testing.T) {
 						strconv.Quote("Cell"),
 					),
 				) + routingQueue.GenerateRoutingQueueResourceBasic(
-					queueResource2,
+					queueResourceLabel2,
 					queueName2) + fmt.Sprintf(`resource "genesyscloud_outbound_ruleset" "%s" {
   name            = "%s"
   contact_list_id = genesyscloud_outbound_contact_list.%s.id
