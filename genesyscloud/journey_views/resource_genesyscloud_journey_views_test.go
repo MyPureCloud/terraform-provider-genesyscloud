@@ -113,7 +113,8 @@ func generateJourneyView(journeyResource string, name string, duration string, e
     duration = "%s"
     name = "%s"
     %s
-}`, journeyResource, duration, name, func() string {
+	}
+	`, journeyResource, duration, name, func() string {
 		if elementsBlock != "" {
 			return elementsBlock
 		}
@@ -128,7 +129,8 @@ func generateElements(id string, name string, attributesBlock string, filter str
         name = "%s"
         %s
         %s
-    }`, id, name, attributesBlock, filter)
+    }
+	`, id, name, attributesBlock, filter)
 }
 
 func generateFilter(filterType string, nestedBlocks ...string) string {
@@ -136,7 +138,8 @@ func generateFilter(filterType string, nestedBlocks ...string) string {
         filter {
             type       = "%s"
             %s
-        }`, filterType, strings.Join(nestedBlocks, "\n"))
+        }
+		`, filterType, strings.Join(nestedBlocks, "\n"))
 }
 
 func generateAttributes(attributeType string, attributeId string, attributeSource string) string {
@@ -145,7 +148,8 @@ func generateAttributes(attributeType string, attributeId string, attributeSourc
             type   = "%s"
             id     = "%s"
             source = "%s"
-        }`, attributeType, attributeId, attributeSource)
+        }
+		`, attributeType, attributeId, attributeSource)
 }
 
 func generatePredicates(dimension string, values string, operator string, noValue bool) string {
@@ -155,7 +159,8 @@ func generatePredicates(dimension string, values string, operator string, noValu
                 values    = ["%s"]
                 operator  = "%s"
                 no_value  = %v
-            }`, dimension, values, operator, noValue)
+            }
+			`, dimension, values, operator, noValue)
 }
 
 func testVerifyJourneyViewsDestroyed(state *terraform.State) error {

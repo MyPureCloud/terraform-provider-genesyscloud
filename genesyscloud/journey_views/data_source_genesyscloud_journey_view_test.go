@@ -2,7 +2,6 @@ package journey_views
 
 import (
 	"fmt"
-	"strconv"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
@@ -35,12 +34,12 @@ func TestAccDataSourceJourneyViewBasic(t *testing.T) {
 					elementsBlock,
 				) + generateJourneyViewDataSource(
 					journeyDataSource,
-					journeyName, //"genesyscloud_journey_view."+journeyResource+".name",
-					"genesyscloud_journey_view."+journeyResource,
+					journeyName,
+					"genesyscloud_journey_views."+journeyResource,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair("data.genesyscloud_journey_view."+journeyDataSource,
-						"id", "genesyscloud_journey_view."+journeyResource, "id",
+					resource.TestCheckResourceAttrPair("data.genesyscloud_journey_views."+journeyDataSource,
+						"id", "genesyscloud_journey_views."+journeyResource, "id",
 					),
 				),
 			},
@@ -88,24 +87,24 @@ func TestAccDataSourceJourneyViewCaching(t *testing.T) {
 					elementsBlock,
 				) + generateJourneyViewDataSource( // journey data source
 					dataSource1Id,
-					strconv.Quote(journeyName1),
-					"genesyscloud_journey_viewe."+journey1ResourceId,
+					journeyName1,
+					"genesyscloud_journey_views."+journey1ResourceId,
 				) + generateJourneyViewDataSource( // journey data source
 					dataSource2Id,
-					strconv.Quote(journeyName2),
-					"genesyscloud_journey_view."+journey2ResourceId,
+					journeyName2,
+					"genesyscloud_journey_views."+journey2ResourceId,
 				) + generateJourneyViewDataSource( // journey data source
 					dataSource3Id,
-					strconv.Quote(journeyName3),
-					"genesyscloud_journey_view."+journey3ResourceId,
+					journeyName3,
+					"genesyscloud_journey_views."+journey3ResourceId,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair("genesyscloud_journey_view."+journey1ResourceId, "id",
-						"data.genesyscloud_journey_view."+dataSource1Id, "id"),
-					resource.TestCheckResourceAttrPair("genesyscloud_journey_view."+journey2ResourceId, "id",
-						"data.genesyscloud_journey_view."+dataSource2Id, "id"),
-					resource.TestCheckResourceAttrPair("genesyscloud_journey_view."+journey3ResourceId, "id",
-						"data.genesyscloud_journey_view."+dataSource3Id, "id"),
+					resource.TestCheckResourceAttrPair("genesyscloud_journey_views."+journey1ResourceId, "id",
+						"data.genesyscloud_journey_views."+dataSource1Id, "id"),
+					resource.TestCheckResourceAttrPair("genesyscloud_journey_views."+journey2ResourceId, "id",
+						"data.genesyscloud_journey_views."+dataSource2Id, "id"),
+					resource.TestCheckResourceAttrPair("genesyscloud_journey_views."+journey3ResourceId, "id",
+						"data.genesyscloud_journey_views."+dataSource3Id, "id"),
 				),
 			},
 		},
@@ -117,7 +116,7 @@ func generateJourneyViewDataSource(
 	resourceID string,
 	name string,
 	dependsOnResource string) string {
-	return fmt.Sprintf(`data "genesyscloud_journey_view" "%s" {
+	return fmt.Sprintf(`data "genesyscloud_journey_views" "%s" {
 		name = "%s"
 		depends_on = [%s]
 	}

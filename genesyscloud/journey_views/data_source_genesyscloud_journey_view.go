@@ -69,13 +69,13 @@ func getJourneyByNameFn(c *rc.DataSourceCache, name string, ctx context.Context)
 	journeyId := ""
 
 	diag := util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
-		journey, resp, getErr := proxy.getJourneyViewName(ctx, name)
+		foundId, resp, getErr := proxy.getJourneyViewByName(ctx, name)
 		if getErr != nil {
 			errMsg := util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("error requesting journey view %s | error %s", name, getErr), resp)
 			return retry.NonRetryableError(errMsg)
 		}
 
-		journeyId = *journey.Id
+		journeyId = foundId
 		return nil
 	})
 
