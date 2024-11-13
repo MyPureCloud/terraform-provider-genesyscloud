@@ -197,8 +197,12 @@ func GenerateColumnStatus(column, contactable string) string {
 		}`, column, contactable)
 }
 
-func createComplexContact(contactListId, contactId string) string {
-	return fmt.Sprintf("%s:%s", contactListId, contactId)
+func createComplexContact(contactListId string, contactId string) string {
+	return createComplexContactWithDelimiter(contactListId, contactId, ":")
+}
+
+func createComplexContactWithDelimiter(contactListId string, contactId string, delimiter string) string {
+	return fmt.Sprintf("%s%s%s", contactListId, delimiter, contactId)
 }
 
 func splitComplexContact(complexContact string) (string, string) {
