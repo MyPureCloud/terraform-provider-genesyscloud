@@ -32,7 +32,7 @@ func TestAccDataSourceTaskManagementWorktype(t *testing.T) {
 
 		// Worktype
 		wtRes = worktypeConfig{
-			resID:            "worktype_1",
+			resourceLabel:    "worktype_1",
 			name:             "tf_worktype_" + uuid.NewString(),
 			description:      "worktype created for CX as Code test case",
 			defaultWorkbinId: fmt.Sprintf("genesyscloud_task_management_workbin.%s.id", wbResourceLabel),
@@ -49,10 +49,10 @@ func TestAccDataSourceTaskManagementWorktype(t *testing.T) {
 			{
 				Config: workbin.GenerateWorkbinResource(wbResourceLabel, wbName, wbDescription, util.NullValue) +
 					workitemSchema.GenerateWorkitemSchemaResourceBasic(wsResourceLabel, wsName, wsDescription) +
-					GenerateWorktypeResourceBasic(wtRes.resID, wtRes.name, wtRes.description, wtRes.defaultWorkbinId, wtRes.schemaId, "") +
-					generateWorktypeDataSource(dataSourceLabel, wtRes.name, resourceName+"."+wtRes.resID),
+					GenerateWorktypeResourceBasic(wtRes.resourceLabel, wtRes.name, wtRes.description, wtRes.defaultWorkbinId, wtRes.schemaId, "") +
+					generateWorktypeDataSource(dataSourceLabel, wtRes.name, resourceName+"."+wtRes.resourceLabel),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair("data."+resourceName+"."+dataSourceLabel, "id", resourceName+"."+wtRes.resID, "id"),
+					resource.TestCheckResourceAttrPair("data."+resourceName+"."+dataSourceLabel, "id", resourceName+"."+wtRes.resourceLabel, "id"),
 				),
 			},
 		},

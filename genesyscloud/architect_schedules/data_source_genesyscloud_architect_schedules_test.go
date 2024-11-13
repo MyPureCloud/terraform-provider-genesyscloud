@@ -12,13 +12,13 @@ import (
 
 func TestAccDataSourceArchitectSchedule(t *testing.T) {
 	var (
-		schedRes    = "arch-sched1"
-		schedData   = "schedData"
-		name        = "CX as Code Schedule" + uuid.NewString()
-		description = "Sample Schedule by CX as Code"
-		start       = "2021-08-04T08:00:00.000000"
-		end         = "2021-08-04T17:00:00.000000"
-		rrule       = "FREQ=DAILY;INTERVAL=1"
+		schedResourceLabel = "arch-sched1"
+		schedDataLabel     = "schedData"
+		name               = "CX as Code Schedule" + uuid.NewString()
+		description        = "Sample Schedule by CX as Code"
+		start              = "2021-08-04T08:00:00.000000"
+		end                = "2021-08-04T17:00:00.000000"
+		rrule              = "FREQ=DAILY;INTERVAL=1"
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -27,7 +27,7 @@ func TestAccDataSourceArchitectSchedule(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config: GenerateArchitectSchedulesResource(
-					schedRes,
+					schedResourceLabel,
 					name,
 					util.NullValue,
 					description,
@@ -35,11 +35,11 @@ func TestAccDataSourceArchitectSchedule(t *testing.T) {
 					end,
 					rrule,
 				) + generateScheduleDataSource(
-					schedData,
+					schedDataLabel,
 					name,
-					"genesyscloud_architect_schedules."+schedRes),
+					"genesyscloud_architect_schedules."+schedResourceLabel),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair("data.genesyscloud_architect_schedules."+schedData, "id", "genesyscloud_architect_schedules."+schedRes, "id"),
+					resource.TestCheckResourceAttrPair("data.genesyscloud_architect_schedules."+schedDataLabel, "id", "genesyscloud_architect_schedules."+schedResourceLabel, "id"),
 				),
 			},
 		},

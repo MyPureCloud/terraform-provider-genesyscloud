@@ -19,10 +19,10 @@ tests for integration_credentials.
 */
 func TestAccResourceCredential(t *testing.T) {
 	var (
-		credResource1 = "test_credential_1"
-		credResource2 = "test_credential_2"
-		credName1     = "Terraform Credential Test-" + uuid.NewString()
-		credName2     = "Terraform Credential Test-" + uuid.NewString()
+		credResourceLabel1 = "test_credential_1"
+		credResourceLabel2 = "test_credential_2"
+		credName1          = "Terraform Credential Test-" + uuid.NewString()
+		credName2          = "Terraform Credential Test-" + uuid.NewString()
 
 		typeName1 = "basicAuth"
 		typeName2 = "callJourney"
@@ -45,7 +45,7 @@ func TestAccResourceCredential(t *testing.T) {
 			{
 				// Create
 				Config: GenerateCredentialResource(
-					credResource1,
+					credResourceLabel1,
 					strconv.Quote(credName1),
 					strconv.Quote(typeName1),
 					GenerateCredentialFields(
@@ -55,15 +55,15 @@ func TestAccResourceCredential(t *testing.T) {
 					),
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_integration_credential."+credResource1, "name", credName1),
-					resource.TestCheckResourceAttr("genesyscloud_integration_credential."+credResource1, "credential_type_name", typeName1),
-					resource.TestCheckResourceAttr("genesyscloud_integration_credential."+credResource1, "fields."+key1, val1),
+					resource.TestCheckResourceAttr("genesyscloud_integration_credential."+credResourceLabel1, "name", credName1),
+					resource.TestCheckResourceAttr("genesyscloud_integration_credential."+credResourceLabel1, "credential_type_name", typeName1),
+					resource.TestCheckResourceAttr("genesyscloud_integration_credential."+credResourceLabel1, "fields."+key1, val1),
 				),
 			},
 			{
 				// Update name and value of one field
 				Config: GenerateCredentialResource(
-					credResource1,
+					credResourceLabel1,
 					strconv.Quote(credName2),
 					strconv.Quote(typeName1),
 					GenerateCredentialFields(
@@ -73,15 +73,15 @@ func TestAccResourceCredential(t *testing.T) {
 					),
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_integration_credential."+credResource1, "name", credName2),
-					resource.TestCheckResourceAttr("genesyscloud_integration_credential."+credResource1, "credential_type_name", typeName1),
-					resource.TestCheckResourceAttr("genesyscloud_integration_credential."+credResource1, "fields."+key1, val1_2),
+					resource.TestCheckResourceAttr("genesyscloud_integration_credential."+credResourceLabel1, "name", credName2),
+					resource.TestCheckResourceAttr("genesyscloud_integration_credential."+credResourceLabel1, "credential_type_name", typeName1),
+					resource.TestCheckResourceAttr("genesyscloud_integration_credential."+credResourceLabel1, "fields."+key1, val1_2),
 				),
 			},
 			{
 				// Add another field
 				Config: GenerateCredentialResource(
-					credResource1,
+					credResourceLabel1,
 					strconv.Quote(credName2),
 					strconv.Quote(typeName1),
 					GenerateCredentialFields(
@@ -92,16 +92,16 @@ func TestAccResourceCredential(t *testing.T) {
 					),
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_integration_credential."+credResource1, "name", credName2),
-					resource.TestCheckResourceAttr("genesyscloud_integration_credential."+credResource1, "credential_type_name", typeName1),
-					resource.TestCheckResourceAttr("genesyscloud_integration_credential."+credResource1, "fields."+key1, val1),
-					resource.TestCheckResourceAttr("genesyscloud_integration_credential."+credResource1, "fields."+key2, val2),
+					resource.TestCheckResourceAttr("genesyscloud_integration_credential."+credResourceLabel1, "name", credName2),
+					resource.TestCheckResourceAttr("genesyscloud_integration_credential."+credResourceLabel1, "credential_type_name", typeName1),
+					resource.TestCheckResourceAttr("genesyscloud_integration_credential."+credResourceLabel1, "fields."+key1, val1),
+					resource.TestCheckResourceAttr("genesyscloud_integration_credential."+credResourceLabel1, "fields."+key2, val2),
 				),
 			},
 			{
 				// Update second field
 				Config: GenerateCredentialResource(
-					credResource1,
+					credResourceLabel1,
 					strconv.Quote(credName2),
 					strconv.Quote(typeName1),
 					GenerateCredentialFields(
@@ -112,15 +112,15 @@ func TestAccResourceCredential(t *testing.T) {
 					),
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_integration_credential."+credResource1, "name", credName2),
-					resource.TestCheckResourceAttr("genesyscloud_integration_credential."+credResource1, "credential_type_name", typeName1),
-					resource.TestCheckResourceAttr("genesyscloud_integration_credential."+credResource1, "fields."+key1, val1),
-					resource.TestCheckResourceAttr("genesyscloud_integration_credential."+credResource1, "fields."+key2, val2_2),
+					resource.TestCheckResourceAttr("genesyscloud_integration_credential."+credResourceLabel1, "name", credName2),
+					resource.TestCheckResourceAttr("genesyscloud_integration_credential."+credResourceLabel1, "credential_type_name", typeName1),
+					resource.TestCheckResourceAttr("genesyscloud_integration_credential."+credResourceLabel1, "fields."+key1, val1),
+					resource.TestCheckResourceAttr("genesyscloud_integration_credential."+credResourceLabel1, "fields."+key2, val2_2),
 				),
 			},
 			{
 				// Import/Read
-				ResourceName:            "genesyscloud_integration_credential." + credResource1,
+				ResourceName:            "genesyscloud_integration_credential." + credResourceLabel1,
 				ImportState:             true,
 				ImportStateVerify:       true,
 				ImportStateVerifyIgnore: []string{"fields"},
@@ -128,7 +128,7 @@ func TestAccResourceCredential(t *testing.T) {
 			{
 				// Create another resource with different type
 				Config: GenerateCredentialResource(
-					credResource2,
+					credResourceLabel2,
 					strconv.Quote(credName1),
 					strconv.Quote(typeName2),
 					GenerateCredentialFields(
@@ -138,15 +138,15 @@ func TestAccResourceCredential(t *testing.T) {
 					),
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_integration_credential."+credResource2, "name", credName1),
-					resource.TestCheckResourceAttr("genesyscloud_integration_credential."+credResource2, "credential_type_name", typeName2),
-					resource.TestCheckResourceAttr("genesyscloud_integration_credential."+credResource2, "fields."+key3, val3),
+					resource.TestCheckResourceAttr("genesyscloud_integration_credential."+credResourceLabel2, "name", credName1),
+					resource.TestCheckResourceAttr("genesyscloud_integration_credential."+credResourceLabel2, "credential_type_name", typeName2),
+					resource.TestCheckResourceAttr("genesyscloud_integration_credential."+credResourceLabel2, "fields."+key3, val3),
 				),
 			},
 			{
 				// Update name
 				Config: GenerateCredentialResource(
-					credResource2,
+					credResourceLabel2,
 					strconv.Quote(credName2),
 					strconv.Quote(typeName2),
 					GenerateCredentialFields(
@@ -156,14 +156,14 @@ func TestAccResourceCredential(t *testing.T) {
 					),
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_integration_credential."+credResource2, "name", credName2),
-					resource.TestCheckResourceAttr("genesyscloud_integration_credential."+credResource2, "credential_type_name", typeName2),
-					resource.TestCheckResourceAttr("genesyscloud_integration_credential."+credResource2, "fields."+key3, val3),
+					resource.TestCheckResourceAttr("genesyscloud_integration_credential."+credResourceLabel2, "name", credName2),
+					resource.TestCheckResourceAttr("genesyscloud_integration_credential."+credResourceLabel2, "credential_type_name", typeName2),
+					resource.TestCheckResourceAttr("genesyscloud_integration_credential."+credResourceLabel2, "fields."+key3, val3),
 				),
 			},
 			{
 				// Import/Read
-				ResourceName:            "genesyscloud_integration_credential." + credResource2,
+				ResourceName:            "genesyscloud_integration_credential." + credResourceLabel2,
 				ImportState:             true,
 				ImportStateVerify:       true,
 				ImportStateVerifyIgnore: []string{"fields"},
@@ -205,8 +205,8 @@ func TestAccGenesysCloudOAuthResourceCredential(t *testing.T) {
 // integration credential by providing the oauth client and id and secret.  This is how we would normally do it.
 func TestAccGenesysCloudOAuthResourceCredentialWithSecret(t *testing.T) {
 	var (
-		credResource = "test_genesyscloud_oauth_integration_credential_1"
-		credName     = "Terraform Oauth Integration Credential Test-" + uuid.NewString()
+		credResourceLabel = "test_genesyscloud_oauth_integration_credential_1"
+		credName          = "Terraform Oauth Integration Credential Test-" + uuid.NewString()
 
 		typeName = "pureCloudOAuthClient"
 
@@ -221,7 +221,7 @@ func TestAccGenesysCloudOAuthResourceCredentialWithSecret(t *testing.T) {
 			{
 				// Create
 				Config: GenerateCredentialResource(
-					credResource,
+					credResourceLabel,
 					strconv.Quote(credName),
 					strconv.Quote(typeName),
 					GenerateCredentialFields(
@@ -232,10 +232,10 @@ func TestAccGenesysCloudOAuthResourceCredentialWithSecret(t *testing.T) {
 					),
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_integration_credential."+credResource, "name", credName),
-					resource.TestCheckResourceAttr("genesyscloud_integration_credential."+credResource, "credential_type_name", typeName),
-					resource.TestCheckResourceAttr("genesyscloud_integration_credential."+credResource, "fields.clientId", clientId),
-					resource.TestCheckResourceAttr("genesyscloud_integration_credential."+credResource, "fields.clientSecret", clientSecret),
+					resource.TestCheckResourceAttr("genesyscloud_integration_credential."+credResourceLabel, "name", credName),
+					resource.TestCheckResourceAttr("genesyscloud_integration_credential."+credResourceLabel, "credential_type_name", typeName),
+					resource.TestCheckResourceAttr("genesyscloud_integration_credential."+credResourceLabel, "fields.clientId", clientId),
+					resource.TestCheckResourceAttr("genesyscloud_integration_credential."+credResourceLabel, "fields.clientSecret", clientSecret),
 				),
 			},
 		},

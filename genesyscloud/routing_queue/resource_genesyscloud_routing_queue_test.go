@@ -58,7 +58,7 @@ func TestAccResourceRoutingQueueBasic(t *testing.T) {
 
 		bullseyeMemberGroupName = "test_membergroup_series6"
 		bullseyeMemberGroupType = "GROUP"
-		testUserResource        = "user_resource1"
+		testUserResourceLabel   = "user_resource1"
 		testUserName            = "nameUser1" + uuid.NewString()
 		testUserEmail           = uuid.NewString() + "@examplestest.com"
 		callbackHours           = "7"
@@ -72,7 +72,7 @@ func TestAccResourceRoutingQueueBasic(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				// Create
-				Config: generateUserWithCustomAttrs(testUserResource, testUserEmail, testUserName) + routingSkill.GenerateRoutingSkillResource(queueSkillResourceLabel, queueSkillName) +
+				Config: generateUserWithCustomAttrs(testUserResourceLabel, testUserEmail, testUserName) + routingSkill.GenerateRoutingSkillResource(queueSkillResourceLabel, queueSkillName) +
 					group.GenerateGroupResource(
 						bullseyeMemberGroupName,
 						"MySeries6Groupv20",
@@ -80,7 +80,7 @@ func TestAccResourceRoutingQueueBasic(t *testing.T) {
 						util.NullValue, // Default type
 						util.NullValue, // Default visibility
 						util.NullValue, // Default rules_visible
-						group.GenerateGroupOwners("genesyscloud_user."+testUserResource+".id"),
+						group.GenerateGroupOwners("genesyscloud_user."+testUserResourceLabel+".id"),
 					) + GenerateRoutingQueueResource(
 					queueResourceLabel1,
 					queueName1,
@@ -128,9 +128,9 @@ func TestAccResourceRoutingQueueBasic(t *testing.T) {
 					validateRoutingRules(queueResourceLabel1, 0, routingRuleOpAny, "50", "5"),
 					validateAgentOwnedRouting(queueResourceLabel1, "agent_owned_routing", util.TrueValue, callbackHours, callbackHours),
 					func(s *terraform.State) error {
-						rs, ok := s.RootModule().Resources["genesyscloud_user."+testUserResource]
+						rs, ok := s.RootModule().Resources["genesyscloud_user."+testUserResourceLabel]
 						if !ok {
-							return fmt.Errorf("not found: %s", "genesyscloud_user."+testUserResource)
+							return fmt.Errorf("not found: %s", "genesyscloud_user."+testUserResourceLabel)
 						}
 						userID = rs.Primary.ID
 						log.Printf("User ID: %s\n", userID) // Print user ID

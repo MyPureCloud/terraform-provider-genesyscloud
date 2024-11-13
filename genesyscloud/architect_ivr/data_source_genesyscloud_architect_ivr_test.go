@@ -23,7 +23,7 @@ func TestAccDataSourceArchitectIvr(t *testing.T) {
 		name             = "IVR " + uuid.NewString()
 		description      = "Sample IVR by CX as Code"
 
-		ivrDataSource = "arch-ivr-ds"
+		ivrDataSourceLabel = "arch-ivr-ds"
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -38,12 +38,12 @@ func TestAccDataSourceArchitectIvr(t *testing.T) {
 					Description:   description,
 					Dnis:          nil,
 					DependsOn:     "",
-				}) + GenerateIvrDataSource(ivrDataSource,
+				}) + GenerateIvrDataSource(ivrDataSourceLabel,
 					resourceName+"."+ivrResourceLabel+".name",
 					resourceName+"."+ivrResourceLabel,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair("data."+resourceName+"."+ivrDataSource, "id", resourceName+"."+ivrResourceLabel, "id"),
+					resource.TestCheckResourceAttrPair("data."+resourceName+"."+ivrDataSourceLabel, "id", resourceName+"."+ivrResourceLabel, "id"),
 				),
 			},
 		},

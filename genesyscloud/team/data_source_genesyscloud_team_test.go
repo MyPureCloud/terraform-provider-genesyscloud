@@ -17,12 +17,12 @@ Test Class for the team Data Source
 
 func TestAccDataSourceResourceTeam(t *testing.T) {
 	var (
-		teamResource = "team-resource"
-		teamData     = "team-data"
-		name         = "team" + uuid.NewString()
-		description  = "Sample description"
-		divResource  = "test-division"
-		divName      = "terraform-" + uuid.NewString()
+		teamResourceLabel = "team-resource"
+		teamDataLabel     = "team-data"
+		name              = "team" + uuid.NewString()
+		description       = "Sample description"
+		divResourceLabel  = "test-division"
+		divName           = "terraform-" + uuid.NewString()
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -31,18 +31,18 @@ func TestAccDataSourceResourceTeam(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 
-				Config: authDivision.GenerateAuthDivisionBasic(divResource, divName) + generateTeamResource(
-					teamResource,
+				Config: authDivision.GenerateAuthDivisionBasic(divResourceLabel, divName) + generateTeamResource(
+					teamResourceLabel,
 					name,
-					"genesyscloud_auth_division."+divResource+".id",
+					"genesyscloud_auth_division."+divResourceLabel+".id",
 					description,
 				) + generateTeamDataSource(
-					teamData,
+					teamDataLabel,
 					name,
-					"genesyscloud_team."+teamResource,
+					"genesyscloud_team."+teamResourceLabel,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair("data.genesyscloud_team."+teamData, "id", "genesyscloud_team."+teamResource, "id"),
+					resource.TestCheckResourceAttrPair("data.genesyscloud_team."+teamDataLabel, "id", "genesyscloud_team."+teamResourceLabel, "id"),
 				),
 			},
 		},

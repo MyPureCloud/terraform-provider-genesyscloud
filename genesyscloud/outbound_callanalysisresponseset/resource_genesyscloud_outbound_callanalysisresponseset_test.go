@@ -37,8 +37,8 @@ func TestAccResourceOutboundCallAnalysisResponseSet(t *testing.T) {
 		outboundFlowName     = "Terraform Test Flow " + uuid.NewString()
 		outboundFlowFilePath = "../../examples/resources/genesyscloud_flow/outboundcall_flow_example.yaml"
 
-		divResource = "test-division"
-		divName     = "terraform-" + uuid.NewString()
+		divResourceLabel = "test-division"
+		divName          = "terraform-" + uuid.NewString()
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -134,10 +134,10 @@ func TestAccResourceOutboundCallAnalysisResponseSet(t *testing.T) {
 						"cell",
 						util.NullValue,
 					),
-				) + authDivision.GenerateAuthDivisionBasic(divResource, divName) + routingWrapupcode.GenerateRoutingWrapupcodeResource(
+				) + authDivision.GenerateAuthDivisionBasic(divResourceLabel, divName) + routingWrapupcode.GenerateRoutingWrapupcodeResource(
 					wrapupCodeResourceLabel,
 					wrapupCodeName,
-					"genesyscloud_auth_division."+divResource+".id",
+					"genesyscloud_auth_division."+divResourceLabel+".id",
 				) + architect_flow.GenerateFlowResource(
 					flowResourceLabel,
 					outboundFlowFilePath,

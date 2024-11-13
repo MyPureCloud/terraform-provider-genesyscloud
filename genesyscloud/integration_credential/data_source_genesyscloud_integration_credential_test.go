@@ -18,12 +18,12 @@ Test Class for the Integration Credentials Data Source
 */
 func TestAccDataSourceIntegrationCredential(t *testing.T) {
 	var (
-		credResource1 = "test_credential_1"
-		credResource2 = "test_credential_2"
-		credName1     = "Terraform Credential Test-" + uuid.NewString()
-		typeName1     = "basicAuth"
-		key1          = "userName"
-		val1          = "someUserName"
+		credResourceLabel1 = "test_credential_1"
+		credResourceLabel2 = "test_credential_2"
+		credName1          = "Terraform Credential Test-" + uuid.NewString()
+		typeName1          = "basicAuth"
+		key1               = "userName"
+		val1               = "someUserName"
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -36,7 +36,7 @@ func TestAccDataSourceIntegrationCredential(t *testing.T) {
 				},
 				// Create
 				Config: GenerateCredentialResource(
-					credResource1,
+					credResourceLabel1,
 					strconv.Quote(credName1),
 					strconv.Quote(typeName1),
 					GenerateCredentialFields(
@@ -44,15 +44,15 @@ func TestAccDataSourceIntegrationCredential(t *testing.T) {
 							key1: strconv.Quote(val1),
 						},
 					),
-				) + generateIntegrationCredentialDataSource(credResource2,
+				) + generateIntegrationCredentialDataSource(credResourceLabel2,
 					credName1,
-					"genesyscloud_integration_credential."+credResource1),
+					"genesyscloud_integration_credential."+credResourceLabel1),
 				Check: resource.ComposeTestCheckFunc(
 					func(s *terraform.State) error {
 						time.Sleep(30 * time.Second) // Wait for 30 seconds for proper creation
 						return nil
 					},
-					resource.TestCheckResourceAttrPair("data.genesyscloud_integration_credential."+credResource2, "id", "genesyscloud_integration_credential."+credResource1, "id"), // Default value would be "DISABLED"
+					resource.TestCheckResourceAttrPair("data.genesyscloud_integration_credential."+credResourceLabel2, "id", "genesyscloud_integration_credential."+credResourceLabel1, "id"), // Default value would be "DISABLED"
 				),
 			},
 		},

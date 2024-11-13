@@ -21,9 +21,9 @@ func TestAccResourceOutboundSequence(t *testing.T) {
 	t.Parallel()
 	var (
 		// Sequence
-		sequenceResource = "outbound_sequence"
-		sequenceName1    = "Sequence " + uuid.NewString()
-		sequenceName2    = "Sequence " + uuid.NewString()
+		sequenceResourceLabel = "outbound_sequence"
+		sequenceName1         = "Sequence " + uuid.NewString()
+		sequenceName2         = "Sequence " + uuid.NewString()
 
 		// Campaign resources
 		campaignResourceLabel    = "campaign_resource"
@@ -66,17 +66,17 @@ func TestAccResourceOutboundSequence(t *testing.T) {
 						"sequence-test-wrapupcode",
 						divResourceLabel,
 					) + GenerateOutboundSequence(
-					sequenceResource,
+					sequenceResourceLabel,
 					sequenceName1,
 					[]string{"genesyscloud_outbound_campaign." + campaignResourceLabel + ".id"},
 					strconv.Quote("off"),
 					util.TrueValue,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_outbound_sequence."+sequenceResource, "name", sequenceName1),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_sequence."+sequenceResource, "status", "off"),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_sequence."+sequenceResource, "repeat", util.TrueValue),
-					resource.TestCheckResourceAttrPair("genesyscloud_outbound_sequence."+sequenceResource, "campaign_ids.0",
+					resource.TestCheckResourceAttr("genesyscloud_outbound_sequence."+sequenceResourceLabel, "name", sequenceName1),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_sequence."+sequenceResourceLabel, "status", "off"),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_sequence."+sequenceResourceLabel, "repeat", util.TrueValue),
+					resource.TestCheckResourceAttrPair("genesyscloud_outbound_sequence."+sequenceResourceLabel, "campaign_ids.0",
 						"genesyscloud_outbound_campaign."+campaignResourceLabel, "id"),
 				),
 			},
@@ -100,23 +100,23 @@ func TestAccResourceOutboundSequence(t *testing.T) {
 						"sequence-test-wrapupcode",
 						divResourceLabel,
 					) + GenerateOutboundSequence(
-					sequenceResource,
+					sequenceResourceLabel,
 					sequenceName2,
 					[]string{"genesyscloud_outbound_campaign." + campaignResourceLabel + ".id"},
 					strconv.Quote("on"),
 					util.FalseValue,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_outbound_sequence."+sequenceResource, "name", sequenceName2),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_sequence."+sequenceResource, "status", "on"),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_sequence."+sequenceResource, "repeat", util.FalseValue),
-					resource.TestCheckResourceAttrPair("genesyscloud_outbound_sequence."+sequenceResource, "campaign_ids.0",
+					resource.TestCheckResourceAttr("genesyscloud_outbound_sequence."+sequenceResourceLabel, "name", sequenceName2),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_sequence."+sequenceResourceLabel, "status", "on"),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_sequence."+sequenceResourceLabel, "repeat", util.FalseValue),
+					resource.TestCheckResourceAttrPair("genesyscloud_outbound_sequence."+sequenceResourceLabel, "campaign_ids.0",
 						"genesyscloud_outbound_campaign."+campaignResourceLabel, "id"),
 				),
 			},
 			{
 				// Import/Read
-				ResourceName:      "genesyscloud_outbound_sequence." + sequenceResource,
+				ResourceName:      "genesyscloud_outbound_sequence." + sequenceResourceLabel,
 				ImportState:       true,
 				ImportStateVerify: true,
 			},
@@ -129,9 +129,9 @@ func TestAccResourceOutboundSequenceStatus(t *testing.T) {
 	t.Parallel()
 	var (
 		// Sequence
-		sequenceResource = "outbound_sequence"
-		sequenceName1    = "Sequence " + uuid.NewString()
-		sequenceName2    = "Sequence " + uuid.NewString()
+		sequenceResourceLabel = "outbound_sequence"
+		sequenceName1         = "Sequence " + uuid.NewString()
+		sequenceName2         = "Sequence " + uuid.NewString()
 
 		// Campaign resources
 		campaignResourceLabel    = "campaign_resource"
@@ -174,17 +174,17 @@ func TestAccResourceOutboundSequenceStatus(t *testing.T) {
 						"sequence-test-wrapupcode",
 						divResourceLabel,
 					) + GenerateOutboundSequence(
-					sequenceResource,
+					sequenceResourceLabel,
 					sequenceName1,
 					[]string{"genesyscloud_outbound_campaign." + campaignResourceLabel + ".id"},
 					strconv.Quote("on"),
 					util.FalseValue,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_outbound_sequence."+sequenceResource, "name", sequenceName1),
-					util.VerifyAttributeInArrayOfPotentialValues("genesyscloud_outbound_sequence."+sequenceResource, "status", []string{"on", "complete"}),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_sequence."+sequenceResource, "repeat", util.FalseValue),
-					resource.TestCheckResourceAttrPair("genesyscloud_outbound_sequence."+sequenceResource, "campaign_ids.0",
+					resource.TestCheckResourceAttr("genesyscloud_outbound_sequence."+sequenceResourceLabel, "name", sequenceName1),
+					util.VerifyAttributeInArrayOfPotentialValues("genesyscloud_outbound_sequence."+sequenceResourceLabel, "status", []string{"on", "complete"}),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_sequence."+sequenceResourceLabel, "repeat", util.FalseValue),
+					resource.TestCheckResourceAttrPair("genesyscloud_outbound_sequence."+sequenceResourceLabel, "campaign_ids.0",
 						"genesyscloud_outbound_campaign."+campaignResourceLabel, "id"),
 				),
 			},
@@ -208,17 +208,17 @@ func TestAccResourceOutboundSequenceStatus(t *testing.T) {
 						"sequence-test-wrapupcode",
 						divResourceLabel,
 					) + GenerateOutboundSequence(
-					sequenceResource,
+					sequenceResourceLabel,
 					sequenceName2,
 					[]string{"genesyscloud_outbound_campaign." + campaignResourceLabel + ".id"},
 					strconv.Quote("off"),
 					util.FalseValue,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_outbound_sequence."+sequenceResource, "name", sequenceName2),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_sequence."+sequenceResource, "status", "off"),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_sequence."+sequenceResource, "repeat", util.FalseValue),
-					resource.TestCheckResourceAttrPair("genesyscloud_outbound_sequence."+sequenceResource, "campaign_ids.0",
+					resource.TestCheckResourceAttr("genesyscloud_outbound_sequence."+sequenceResourceLabel, "name", sequenceName2),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_sequence."+sequenceResourceLabel, "status", "off"),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_sequence."+sequenceResourceLabel, "repeat", util.FalseValue),
+					resource.TestCheckResourceAttrPair("genesyscloud_outbound_sequence."+sequenceResourceLabel, "campaign_ids.0",
 						"genesyscloud_outbound_campaign."+campaignResourceLabel, "id"),
 				),
 			},
@@ -243,23 +243,23 @@ func TestAccResourceOutboundSequenceStatus(t *testing.T) {
 						"sequence-test-wrapupcode",
 						divResourceLabel,
 					) + GenerateOutboundSequence(
-					sequenceResource,
+					sequenceResourceLabel,
 					sequenceName2,
 					[]string{"genesyscloud_outbound_campaign." + campaignResourceLabel + ".id"},
 					strconv.Quote("on"),
 					util.FalseValue,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_outbound_sequence."+sequenceResource, "name", sequenceName2),
-					util.VerifyAttributeInArrayOfPotentialValues("genesyscloud_outbound_sequence."+sequenceResource, "status", []string{"on", "complete"}),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_sequence."+sequenceResource, "repeat", util.FalseValue),
-					resource.TestCheckResourceAttrPair("genesyscloud_outbound_sequence."+sequenceResource, "campaign_ids.0",
+					resource.TestCheckResourceAttr("genesyscloud_outbound_sequence."+sequenceResourceLabel, "name", sequenceName2),
+					util.VerifyAttributeInArrayOfPotentialValues("genesyscloud_outbound_sequence."+sequenceResourceLabel, "status", []string{"on", "complete"}),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_sequence."+sequenceResourceLabel, "repeat", util.FalseValue),
+					resource.TestCheckResourceAttrPair("genesyscloud_outbound_sequence."+sequenceResourceLabel, "campaign_ids.0",
 						"genesyscloud_outbound_campaign."+campaignResourceLabel, "id"),
 				),
 			},
 			{
 				// Import/Read
-				ResourceName:      "genesyscloud_outbound_sequence." + sequenceResource,
+				ResourceName:      "genesyscloud_outbound_sequence." + sequenceResourceLabel,
 				ImportState:       true,
 				ImportStateVerify: true,
 			},

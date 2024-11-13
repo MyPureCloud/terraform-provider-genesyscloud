@@ -241,7 +241,7 @@ func deleteArchitectSchedules(ctx context.Context, d *schema.ResourceData, meta 
 }
 
 func GenerateArchitectSchedulesResource(
-	schedResource1 string,
+	schedResourceLabel string,
 	name string,
 	divisionId string,
 	description string,
@@ -256,5 +256,5 @@ func GenerateArchitectSchedulesResource(
 		end = "%s"
 		rrule = "%s"
 	}
-	`, schedResource1, name, divisionId, description, start, end, rrule)
+	`, schedResourceLabel, name, divisionId, description, start, end, rrule)
 }

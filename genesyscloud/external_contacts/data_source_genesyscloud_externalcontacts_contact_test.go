@@ -15,15 +15,15 @@ Test Class for the External Contacts Data Source
 */
 func TestAccDataSourceExternalContacts(t *testing.T) {
 	var (
-		uniqueStr           = uuid.NewString()
-		externalContactData = "data-externalContact"
-		search              = "john-" + uniqueStr
+		uniqueStr                = uuid.NewString()
+		externalContactDataLabel = "data-externalContact"
+		search                   = "john-" + uniqueStr
 
-		externalContactResource = "resource-externalContact"
-		title                   = "integrator staff"
-		firstname               = "john-" + uniqueStr
-		middlename              = "jacques"
-		lastname                = "dupont"
+		externalContactResourceLabel = "resource-externalContact"
+		title                        = "integrator staff"
+		firstname                    = "john-" + uniqueStr
+		middlename                   = "jacques"
+		lastname                     = "dupont"
 
 		phoneDisplay     = "+33 1 00 00 00 01"
 		phoneExtension   = "2"
@@ -64,7 +64,7 @@ func TestAccDataSourceExternalContacts(t *testing.T) {
 			{
 				// Create external contact with an lastname and others property
 				Config: generateFullExternalContactResource(
-					externalContactResource,
+					externalContactResourceLabel,
 					firstname,
 					middlename,
 					lastname,
@@ -94,14 +94,14 @@ func TestAccDataSourceExternalContacts(t *testing.T) {
 					surveyoptout,
 					externalsystemurl,
 				) + generateExternalContactDataSource(
-					externalContactData,
+					externalContactDataLabel,
 					search,
-					"genesyscloud_externalcontacts_contact."+externalContactResource,
+					"genesyscloud_externalcontacts_contact."+externalContactResourceLabel,
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrPair(
-						"data.genesyscloud_externalcontacts_contact."+externalContactData, "id",
-						"genesyscloud_externalcontacts_contact."+externalContactResource, "id",
+						"data.genesyscloud_externalcontacts_contact."+externalContactDataLabel, "id",
+						"genesyscloud_externalcontacts_contact."+externalContactResourceLabel, "id",
 					),
 				),
 			},

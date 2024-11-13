@@ -12,15 +12,15 @@ import (
 
 func TestAccDataSourceKnowledgeLabelBasic(t *testing.T) {
 	var (
-		knowledgeBaseResource1     = "test-knowledgebase1"
-		labelResource1             = "test-label1"
-		labelName                  = "Terraform Test Label 1-" + uuid.NewString()
-		labelColor                 = "#ffffff"
-		knowledgeBaseName1         = "Terraform Test Knowledge Base 1-" + uuid.NewString()
-		knowledgeBaseDescription1  = "test-knowledgebase-description1"
-		knowledgeBaseCoreLanguage1 = "en-US"
+		knowledgeBaseResourceLabel1 = "test-knowledgebase1"
+		labelResourceLabel1         = "test-label1"
+		labelName                   = "Terraform Test Label 1-" + uuid.NewString()
+		labelColor                  = "#ffffff"
+		knowledgeBaseName1          = "Terraform Test Knowledge Base 1-" + uuid.NewString()
+		knowledgeBaseDescription1   = "test-knowledgebase-description1"
+		knowledgeBaseCoreLanguage1  = "en-US"
 
-		labelDataSource = "test-label-ds"
+		labelDataSourceLabel = "test-label-ds"
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -30,24 +30,24 @@ func TestAccDataSourceKnowledgeLabelBasic(t *testing.T) {
 			{
 				// Create
 				Config: GenerateKnowledgeKnowledgebaseResource(
-					knowledgeBaseResource1,
+					knowledgeBaseResourceLabel1,
 					knowledgeBaseName1,
 					knowledgeBaseDescription1,
 					knowledgeBaseCoreLanguage1,
 				) + generateKnowledgeLabelResource(
-					labelResource1,
-					knowledgeBaseResource1,
+					labelResourceLabel1,
+					knowledgeBaseResourceLabel1,
 					labelName,
 					labelColor,
 				) + generateKnowledgeLabelDataSource(
-					labelDataSource,
+					labelDataSourceLabel,
 					labelName,
 					knowledgeBaseName1,
-					"genesyscloud_knowledge_label."+labelResource1,
+					"genesyscloud_knowledge_label."+labelResourceLabel1,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair("data.genesyscloud_knowledge_label."+labelDataSource,
-						"id", "genesyscloud_knowledge_label."+labelResource1, "id",
+					resource.TestCheckResourceAttrPair("data.genesyscloud_knowledge_label."+labelDataSourceLabel,
+						"id", "genesyscloud_knowledge_label."+labelResourceLabel1, "id",
 					),
 				),
 			},

@@ -303,7 +303,7 @@ func ValidateInboundSiteSettings(inboundSiteString string, trunkBaseMetaId strin
 }
 
 func GenerateTrunkBaseSettingsResourceWithCustomAttrs(
-	trunkBaseSettingsRes,
+	trunkBaseSettingsResourceLabel,
 	name,
 	description,
 	trunkMetaBaseId,
@@ -318,6 +318,6 @@ func GenerateTrunkBaseSettingsResourceWithCustomAttrs(
 		managed = %v
 		%s
 	}
-	`, trunkBaseSettingsRes, name, description, trunkMetaBaseId, trunkType, managed, strings.Join(otherAttrs, "\n"))
+	`, trunkBaseSettingsResourceLabel, name, description, trunkMetaBaseId, trunkType, managed, strings.Join(otherAttrs, "\n"))
 	return resource
 }

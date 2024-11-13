@@ -20,12 +20,12 @@ func TestAccDataSourceConversationsMessagingIntegrationsInstagram(t *testing.T) 
 	t.Skip("Skipping because it requires setting up a org as test account for the mocks to respond correctly.")
 	t.Parallel()
 	var (
-		testResource1    = "test_sample"
-		testDataSource   = "integration-instagram-ds"
-		name1            = "Terraform Instagram1-" + uuid.NewString()
-		pageAccessToken1 = uuid.NewString()
-		appId            = ""
-		appSecret        = ""
+		testResourceLabel1  = "test_sample"
+		testDataSourceLabel = "integration-instagram-ds"
+		name1               = "Terraform Instagram1-" + uuid.NewString()
+		pageAccessToken1    = uuid.NewString()
+		appId               = ""
+		appSecret           = ""
 
 		nameSupportedContent          = "Terraform Supported Content - " + uuid.NewString()
 		resourceLabelSupportedContent = "testSupportedContent"
@@ -58,7 +58,7 @@ func TestAccDataSourceConversationsMessagingIntegrationsInstagram(t *testing.T) 
 				Config: messagingSettingResource1 +
 					supportedContentResource1 +
 					GenerateInstagramIntegrationResource(
-						testResource1,
+						testResourceLabel1,
 						name1,
 						"genesyscloud_conversations_messaging_supportedcontent."+resourceLabelSupportedContent+".id",
 						"genesyscloud_conversations_messaging_settings."+resourceLabelMessagingSetting+".id",
@@ -70,7 +70,7 @@ func TestAccDataSourceConversationsMessagingIntegrationsInstagram(t *testing.T) 
 					),
 
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair("data.genesyscloud_conversations_messaging_integrations_instagram."+testDataSource, "id", "genesyscloud_conversations_messaging_integrations_instagram."+testResource1, "id"),
+					resource.TestCheckResourceAttrPair("data.genesyscloud_conversations_messaging_integrations_instagram."+testDataSourceLabel, "id", "genesyscloud_conversations_messaging_integrations_instagram."+testResourceLabel1, "id"),
 				),
 			},
 		},

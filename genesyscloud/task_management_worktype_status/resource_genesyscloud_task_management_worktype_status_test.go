@@ -42,16 +42,16 @@ func TestAccResourceTaskManagementWorktypeStatus(t *testing.T) {
 		wtDescription   = "test worktype description"
 
 		// Status 1
-		statusResource1    = "status1"
-		status1Name1       = "status1-" + uuid.NewString()
-		status1Category    = "Open"
-		status1Name2       = "status1-" + uuid.NewString()
-		status1Description = "test description"
+		statusResourceLabel1 = "status1"
+		status1Name1         = "status1-" + uuid.NewString()
+		status1Category      = "Open"
+		status1Name2         = "status1-" + uuid.NewString()
+		status1Description   = "test description"
 
 		// Status 2
-		statusResource2 = "status2"
-		status2Name     = "status2-" + uuid.NewString()
-		status2Category = "Closed"
+		statusResourceLabel2 = "status2"
+		status2Name          = "status2-" + uuid.NewString()
+		status2Category      = "Closed"
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -71,7 +71,7 @@ func TestAccResourceTaskManagementWorktypeStatus(t *testing.T) {
 						"",
 					) +
 					GenerateWorktypeStatusResource(
-						statusResource1,
+						statusResourceLabel1,
 						fmt.Sprintf("genesyscloud_task_management_worktype.%s.id", wtResourceLabel),
 						status1Name1,
 						status1Category,
@@ -81,11 +81,11 @@ func TestAccResourceTaskManagementWorktypeStatus(t *testing.T) {
 						"default = true",
 					),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair(resourceName+"."+statusResource1, "worktype_id", fmt.Sprintf("genesyscloud_task_management_worktype.%s", wtResourceLabel), "id"),
-					resource.TestCheckResourceAttr(resourceName+"."+statusResource1, "name", status1Name1),
-					resource.TestCheckResourceAttr(resourceName+"."+statusResource1, "category", status1Category),
-					resource.TestCheckResourceAttr(resourceName+"."+statusResource1, "status_transition_delay_seconds", "0"),
-					resource.TestCheckResourceAttr(resourceName+"."+statusResource1, "default", util.TrueValue),
+					resource.TestCheckResourceAttrPair(resourceName+"."+statusResourceLabel1, "worktype_id", fmt.Sprintf("genesyscloud_task_management_worktype.%s", wtResourceLabel), "id"),
+					resource.TestCheckResourceAttr(resourceName+"."+statusResourceLabel1, "name", status1Name1),
+					resource.TestCheckResourceAttr(resourceName+"."+statusResourceLabel1, "category", status1Category),
+					resource.TestCheckResourceAttr(resourceName+"."+statusResourceLabel1, "status_transition_delay_seconds", "0"),
+					resource.TestCheckResourceAttr(resourceName+"."+statusResourceLabel1, "default", util.TrueValue),
 				),
 			},
 			{
@@ -101,20 +101,20 @@ func TestAccResourceTaskManagementWorktypeStatus(t *testing.T) {
 						"",
 					) +
 					GenerateWorktypeStatusResource(
-						statusResource1,
+						statusResourceLabel1,
 						fmt.Sprintf("genesyscloud_task_management_worktype.%s.id", wtResourceLabel),
 						status1Name2,
 						status1Category,
 						status1Description,
-						fmt.Sprintf("genesyscloud_task_management_worktype_status.%s.id", statusResource2),
+						fmt.Sprintf("genesyscloud_task_management_worktype_status.%s.id", statusResourceLabel2),
 						"12:04:21",
-						generateDestinationStatusIdsArray([]string{fmt.Sprintf("genesyscloud_task_management_worktype_status.%s.id", statusResource2)}),
+						generateDestinationStatusIdsArray([]string{fmt.Sprintf("genesyscloud_task_management_worktype_status.%s.id", statusResourceLabel2)}),
 						fmt.Sprintf("status_transition_delay_seconds = %d", 90000),
 						"default = false",
 					) +
 					// This status is used as a reference in the first status
 					GenerateWorktypeStatusResource(
-						statusResource2,
+						statusResourceLabel2,
 						fmt.Sprintf("genesyscloud_task_management_worktype.%s.id", wtResourceLabel),
 						status2Name,
 						status2Category,
@@ -124,21 +124,21 @@ func TestAccResourceTaskManagementWorktypeStatus(t *testing.T) {
 						"default = true",
 					),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair(resourceName+"."+statusResource1, "worktype_id", fmt.Sprintf("genesyscloud_task_management_worktype.%s", wtResourceLabel), "id"),
-					resource.TestCheckResourceAttr(resourceName+"."+statusResource1, "name", status1Name2),
-					resource.TestCheckResourceAttr(resourceName+"."+statusResource1, "category", status1Category),
-					resource.TestCheckResourceAttr(resourceName+"."+statusResource1, "description", status1Description),
-					ValidateStatusIds(resourceName+"."+statusResource1, "destination_status_ids.0", fmt.Sprintf("%s.%s", resourceName, statusResource2), "id"),
-					ValidateStatusIds(resourceName+"."+statusResource1, "default_destination_status_id", fmt.Sprintf("%s.%s", resourceName, statusResource2), "id"),
-					resource.TestCheckResourceAttr(resourceName+"."+statusResource1, "status_transition_delay_seconds", "90000"),
-					resource.TestCheckResourceAttr(resourceName+"."+statusResource1, "status_transition_time", "12:04:21"),
-					resource.TestCheckResourceAttr(resourceName+"."+statusResource1, "default", util.FalseValue),
-					resource.TestCheckResourceAttr(resourceName+"."+statusResource2, "default", util.TrueValue),
+					resource.TestCheckResourceAttrPair(resourceName+"."+statusResourceLabel1, "worktype_id", fmt.Sprintf("genesyscloud_task_management_worktype.%s", wtResourceLabel), "id"),
+					resource.TestCheckResourceAttr(resourceName+"."+statusResourceLabel1, "name", status1Name2),
+					resource.TestCheckResourceAttr(resourceName+"."+statusResourceLabel1, "category", status1Category),
+					resource.TestCheckResourceAttr(resourceName+"."+statusResourceLabel1, "description", status1Description),
+					ValidateStatusIds(resourceName+"."+statusResourceLabel1, "destination_status_ids.0", fmt.Sprintf("%s.%s", resourceName, statusResourceLabel2), "id"),
+					ValidateStatusIds(resourceName+"."+statusResourceLabel1, "default_destination_status_id", fmt.Sprintf("%s.%s", resourceName, statusResourceLabel2), "id"),
+					resource.TestCheckResourceAttr(resourceName+"."+statusResourceLabel1, "status_transition_delay_seconds", "90000"),
+					resource.TestCheckResourceAttr(resourceName+"."+statusResourceLabel1, "status_transition_time", "12:04:21"),
+					resource.TestCheckResourceAttr(resourceName+"."+statusResourceLabel1, "default", util.FalseValue),
+					resource.TestCheckResourceAttr(resourceName+"."+statusResourceLabel2, "default", util.TrueValue),
 				),
 			},
 			{
 				// Import/Read
-				ResourceName:      "genesyscloud_task_management_worktype_status." + statusResource1,
+				ResourceName:      "genesyscloud_task_management_worktype_status." + statusResourceLabel1,
 				ImportState:       true,
 				ImportStateVerify: true,
 			},

@@ -29,8 +29,8 @@ Test Class for the Recording media Retention Policy Data Source
 */
 func TestAccDataSourceRecordingMediaRetentionPolicy(t *testing.T) {
 	var (
-		policyResource     = "recording-media-retention-policy"
-		policyDataResource = "recording-media-retention-policy-data"
+		policyResourceLabel     = "recording-media-retention-policy"
+		policyDataResourceLabel = "recording-media-retention-policy-data"
 
 		policyName = "terraform-policy-" + uuid.NewString()
 	)
@@ -135,10 +135,10 @@ func TestAccDataSourceRecordingMediaRetentionPolicy(t *testing.T) {
 	}
 
 	var (
-		domainRes   = "routing-domain1"
-		domainId    = "terraformmedia" + strconv.Itoa(rand.Intn(1000)) + ".com"
-		divResource = "test-division"
-		divName     = "terraform-" + uuid.NewString()
+		domainResourceLabel = "routing-domain1"
+		domainId            = "terraformmedia" + strconv.Itoa(rand.Intn(1000)) + ".com"
+		divResourceLabel    = "test-division"
+		divName             = "terraform-" + uuid.NewString()
 	)
 
 	_, err := provider.AuthorizeSdk()
@@ -153,13 +153,13 @@ func TestAccDataSourceRecordingMediaRetentionPolicy(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config: routingEmailDomain.GenerateRoutingEmailDomainResource(
-					domainRes,
+					domainResourceLabel,
 					domainId,
 					util.FalseValue, // Subdomain
 					util.NullValue,
-				) + routingQueue.GenerateRoutingQueueResourceBasic(queueResource1, queueName, "") +
+				) + routingQueue.GenerateRoutingQueueResourceBasic(queueResourceLabel1, queueName, "") +
 					authRole.GenerateAuthRoleResource(
-						roleResource1,
+						roleResourceLabel1,
 						roleName1,
 						roleDesc1,
 						authRole.GenerateRolePermissions(permissions...),
@@ -167,19 +167,19 @@ func TestAccDataSourceRecordingMediaRetentionPolicy(t *testing.T) {
 						authRole.GenerateRolePermPolicy(qualityDomain, calibrationEntityType, strconv.Quote(addAction)),
 					) +
 					userRoles.GenerateUserRoles(
-						userRoleResource1,
-						userResource1,
-						generateResourceRoles("genesyscloud_auth_role."+roleResource1+".id"),
+						userRoleResourceLabel1,
+						userResourceLabel1,
+						generateResourceRoles("genesyscloud_auth_role."+roleResourceLabel1+".id"),
 					) +
-					generateUserWithCustomAttrs(userResource1, userEmail, userName) +
-					gcloud.GenerateEvaluationFormResource(evaluationFormResource1, &evaluationFormResourceBody) +
-					gcloud.GenerateSurveyFormResource(surveyFormResource1, &surveyFormResourceBody) +
-					integration.GenerateIntegrationResource(integrationResource1, strconv.Quote(integrationIntendedState), strconv.Quote(integrationType), "") +
-					routingLanguage.GenerateRoutingLanguageResource(languageResource1, languageName) +
-					authDivision.GenerateAuthDivisionBasic(divResource, divName) +
-					routingWrapupcode.GenerateRoutingWrapupcodeResource(wrapupCodeResource1, wrapupCodeName, "genesyscloud_auth_division."+divResource+".id") +
+					generateUserWithCustomAttrs(userResourceLabel1, userEmail, userName) +
+					gcloud.GenerateEvaluationFormResource(evaluationFormResourceLabel1, &evaluationFormResourceBody) +
+					gcloud.GenerateSurveyFormResource(surveyFormResourceLabel1, &surveyFormResourceBody) +
+					integration.GenerateIntegrationResource(integrationResourceLabel1, strconv.Quote(integrationIntendedState), strconv.Quote(integrationType), "") +
+					routingLanguage.GenerateRoutingLanguageResource(languageResourceLabel1, languageName) +
+					authDivision.GenerateAuthDivisionBasic(divResourceLabel, divName) +
+					routingWrapupcode.GenerateRoutingWrapupcodeResource(wrapupCodeResourceLabel1, wrapupCodeName, "genesyscloud_auth_division."+divResourceLabel+".id") +
 					architect_flow.GenerateFlowResource(
-						flowResource1,
+						flowResourceLabel1,
 						filePath1,
 						"",
 						false,
@@ -191,16 +191,16 @@ func TestAccDataSourceRecordingMediaRetentionPolicy(t *testing.T) {
 						}),
 					) +
 					generateMediaRetentionPolicyResource(
-						policyResource, &mediaRetentionChatPolicy,
+						policyResourceLabel, &mediaRetentionChatPolicy,
 					) +
 					generateRecordingMediaRetentionPolicyDataSource(
-						policyDataResource,
+						policyDataResourceLabel,
 						policyName,
-						"genesyscloud_recording_media_retention_policy."+policyResource,
+						"genesyscloud_recording_media_retention_policy."+policyResourceLabel,
 					),
 
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair("data.genesyscloud_recording_media_retention_policy."+policyDataResource, "id", "genesyscloud_recording_media_retention_policy."+policyResource, "id"),
+					resource.TestCheckResourceAttrPair("data.genesyscloud_recording_media_retention_policy."+policyDataResourceLabel, "id", "genesyscloud_recording_media_retention_policy."+policyResourceLabel, "id"),
 				),
 			},
 		},

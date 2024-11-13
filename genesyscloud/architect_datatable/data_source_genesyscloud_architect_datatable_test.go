@@ -13,16 +13,16 @@ import (
 
 func TestAccDataSourceArchitectDatatable(t *testing.T) {
 	var (
-		tableResource = "arch-table1"
-		tableName     = "Terraform Table1-" + uuid.NewString()
-		tableDesc     = "Terraform test table1"
+		tableResourceLabel = "arch-table1"
+		tableName          = "Terraform Table1-" + uuid.NewString()
+		tableDesc          = "Terraform test table1"
 
 		propNameKey = "key"
 		propBool    = "Test Bool"
 		typeString  = "string"
 		typeBool    = "boolean"
 
-		tableDataSource = "arch-table1-ds"
+		tableDataSourceLabel = "arch-table1-ds"
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -32,19 +32,19 @@ func TestAccDataSourceArchitectDatatable(t *testing.T) {
 			{
 				// Create architect_datatable with a key and one other property
 				Config: generateArchitectDatatableResource(
-					tableResource,
+					tableResourceLabel,
 					tableName,
 					strconv.Quote(tableDesc),
 					generateArchitectDatatableProperty(propBool, typeBool, util.NullValue, util.NullValue),
 					generateArchitectDatatableProperty(propNameKey, typeString, util.NullValue, util.NullValue),
 				) + generateArchitectDatatableDataSource(
-					tableDataSource,
-					"genesyscloud_architect_datatable."+tableResource+".name",
-					"genesyscloud_architect_datatable."+tableResource),
+					tableDataSourceLabel,
+					"genesyscloud_architect_datatable."+tableResourceLabel+".name",
+					"genesyscloud_architect_datatable."+tableResourceLabel),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrPair(
-						"data.genesyscloud_architect_datatable."+tableDataSource, "id",
-						"genesyscloud_architect_datatable."+tableResource, "id",
+						"data.genesyscloud_architect_datatable."+tableDataSourceLabel, "id",
+						"genesyscloud_architect_datatable."+tableResourceLabel, "id",
 					),
 				),
 			},

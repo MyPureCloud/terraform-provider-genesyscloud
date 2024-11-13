@@ -13,10 +13,10 @@ import (
 
 func TestAccDataSourceLineBaseSettings(t *testing.T) {
 	t.Parallel()
-	phoneBaseSettingsRes := "phoneBaseSettings1234"
+	phoneBaseSettingsResourceLabel := "phoneBaseSettings1234"
 	phoneBaseSettingsName := "phoneBaseSettings " + uuid.NewString()
 
-	lineBaseSettingsDataRes := "lineBaseSettings1234"
+	lineBaseSettingsDataResourceLabel := "lineBaseSettings1234"
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
@@ -25,14 +25,14 @@ func TestAccDataSourceLineBaseSettings(t *testing.T) {
 			{
 				// Creating a phone base settings will result in a line base settings of the same name being created
 				Config: phoneBaseSettings.GeneratePhoneBaseSettingsResourceWithCustomAttrs(
-					phoneBaseSettingsRes,
+					phoneBaseSettingsResourceLabel,
 					phoneBaseSettingsName,
 					"phoneBaseSettings description",
 					"generic_sip.json",
 				) + generateLineBaseSettingsDataSource(
-					lineBaseSettingsDataRes,
+					lineBaseSettingsDataResourceLabel,
 					phoneBaseSettingsName,
-					"genesyscloud_telephony_providers_edges_phonebasesettings."+phoneBaseSettingsRes,
+					"genesyscloud_telephony_providers_edges_phonebasesettings."+phoneBaseSettingsResourceLabel,
 				),
 				Check: resource.ComposeTestCheckFunc(),
 			},
