@@ -7,7 +7,6 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 
-	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/mypurecloud/platform-client-sdk-go/v143/platformclientv2"
@@ -27,9 +26,6 @@ func TestAccResourceJourneyViewsBasic(t *testing.T) {
 		predicatesValues    = "VOICE"
 		predicatesOperator  = "Matches"
 		predicatesNoValue   = false
-		testUserResource    = "user_resource1"
-		testUserName        = "nameUser1" + uuid.NewString()
-		testUserEmail       = uuid.NewString() + "@example.com"
 		journeyResource     = "journey_resource1"
 		emptyElementBlock   = ""
 	)
@@ -39,7 +35,7 @@ func TestAccResourceJourneyViewsBasic(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				//Create
-				Config: generateUserWithCustomAttrs(testUserResource, testUserEmail, testUserName) + generateJourneyView(journeyResource, name, duration, emptyElementBlock),
+				Config: generateJourneyView(journeyResource, name, duration, emptyElementBlock),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResource, "name", name),
 					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResource, "duration", duration),
@@ -47,7 +43,7 @@ func TestAccResourceJourneyViewsBasic(t *testing.T) {
 			},
 			{
 				//Update
-				Config: generateUserWithCustomAttrs(testUserResource, testUserEmail, testUserName) + generateJourneyView(journeyResource, name, duration, generateElements(
+				Config: generateJourneyView(journeyResource, name, duration, generateElements(
 					elementsId,
 					elementsName,
 					generateAttributes(attributeType, attributeId, attributeSource),
@@ -74,7 +70,7 @@ func TestAccResourceJourneyViewsBasic(t *testing.T) {
 			},
 			{
 				//Update without filter
-				Config: generateUserWithCustomAttrs(testUserResource, testUserEmail, testUserName) + generateJourneyView(journeyResource, name, duration, generateElements(
+				Config: generateJourneyView(journeyResource, name, duration, generateElements(
 					elementsId,
 					elementsName,
 					generateAttributes(attributeType, attributeId, attributeSource),

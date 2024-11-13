@@ -12,11 +12,11 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
 
-func TestAccDataSourceJourneyViewBasic(t *testing.T) { //LLG TODO
+func TestAccDataSourceJourneyViewBasic(t *testing.T) {
 	var (
 		journeyResource = "test-journey"
-		journeyName     = "Terraform Test Journey-" + uuid.NewString()
-		duration        = "1"
+		journeyName     = "TerraformTestJourney-" + uuid.NewString()
+		duration        = "P1Y"
 		elementsBlock   = ""
 
 		journeyDataSource = "test-journey-ds"
@@ -35,8 +35,8 @@ func TestAccDataSourceJourneyViewBasic(t *testing.T) { //LLG TODO
 					elementsBlock,
 				) + generateJourneyViewDataSource(
 					journeyDataSource,
-					"genesyscloud_journey_view."+journeyResource+".name",
-					"genesyscloud_journeey_view."+journeyResource,
+					journeyName, //"genesyscloud_journey_view."+journeyResource+".name",
+					"genesyscloud_journey_view."+journeyResource,
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrPair("data.genesyscloud_journey_view."+journeyDataSource,
@@ -56,7 +56,7 @@ func TestAccDataSourceJourneyViewCaching(t *testing.T) {
 		journeyName2       = "terraform test journey " + uuid.NewString()
 		journey3ResourceId = "journey3"
 		journeyName3       = "terraform test journey " + uuid.NewString()
-		duration           = "1"
+		duration           = "P1Y"
 		elementsBlock      = ""
 		dataSource1Id      = "data-1"
 		dataSource2Id      = "data-2"
@@ -94,7 +94,7 @@ func TestAccDataSourceJourneyViewCaching(t *testing.T) {
 					dataSource2Id,
 					strconv.Quote(journeyName2),
 					"genesyscloud_journey_view."+journey2ResourceId,
-				) + generateJourneyViewDataSource( // queue data source
+				) + generateJourneyViewDataSource( // journey data source
 					dataSource3Id,
 					strconv.Quote(journeyName3),
 					"genesyscloud_journey_view."+journey3ResourceId,
@@ -116,12 +116,10 @@ func TestAccDataSourceJourneyViewCaching(t *testing.T) {
 func generateJourneyViewDataSource(
 	resourceID string,
 	name string,
-	// Must explicitly use depends_on in terraform v0.13 when a data source references a resource
-	// Fixed in v0.14 https://github.com/hashicorp/terraform/pull/26284
 	dependsOnResource string) string {
 	return fmt.Sprintf(`data "genesyscloud_journey_view" "%s" {
-		name = %s
-		depends_on=[%s]
+		name = "%s"
+		depends_on = [%s]
 	}
 	`, resourceID, name, dependsOnResource)
 }
