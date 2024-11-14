@@ -144,20 +144,20 @@ type ResourceExporter struct {
 	CustomFlowResolver map[string]*CustomFlowResolver
 
 	//This a placeholder filter out specific resources from a filter.
-	FilterResource func(ResourceIDMetaMap, string, []string) ResourceIDMetaMap
+	FilterResource func(resourceIdMetaMap ResourceIDMetaMap, resourceType string, filter []string) ResourceIDMetaMap
 	// Attributes that are mentioned with custom exports like e164 numbers,rrule  should be ensured to export in the correct format (remove hyphens, whitespace, etc.)
 	CustomValidateExports map[string][]string
 	mutex                 sync.RWMutex
 }
 
-func (r *ResourceExporter) LoadSanitizedResourceMap(ctx context.Context, label string, filter []string) diag.Diagnostics {
+func (r *ResourceExporter) LoadSanitizedResourceMap(ctx context.Context, resourceType string, filter []string) diag.Diagnostics {
 	result, err := r.GetResourcesFunc(ctx)
 	if err != nil {
 		return err
 	}
 
 	if r.FilterResource != nil {
-		result = r.FilterResource(result, label, filter)
+		result = r.FilterResource(result, resourceType, filter)
 	}
 
 	// Lock the Resource Map as it is accessed by goroutines
