@@ -156,17 +156,17 @@ func readTfState(path string) []string {
 		return nil
 	}
 
-	resourceNames := extractResourceTypesFromStateData(jsonData)
+	resourcePaths := extractResourcePathsFromStateData(jsonData)
 
-	return resourceNames
+	return resourcePaths
 }
 
-func extractResourceTypesFromStateData(data map[string]interface{}) []string {
-	var resourceTypesFromTf []string
+func extractResourcePathsFromStateData(data map[string]interface{}) []string {
+	var resourcePathsFromTf []string
 	resources, ok := data["resources"].([]interface{})
 	if !ok {
 		log.Printf("Error: resources not found in TF State File")
-		return resourceTypesFromTf
+		return resourcePathsFromTf
 	}
 
 	for _, resource := range resources {
@@ -187,8 +187,8 @@ func extractResourceTypesFromStateData(data map[string]interface{}) []string {
 			log.Printf("Error: name attribute not found in resource %v", resource)
 			continue
 		}
-		resourceTypesFromTf = append(resourceTypesFromTf, resourceType+"."+resourceLabel)
+		resourcePathsFromTf = append(resourcePathsFromTf, resourceType+"."+resourceLabel)
 
 	}
-	return resourceTypesFromTf
+	return resourcePathsFromTf
 }
