@@ -35,6 +35,15 @@ func SubStringInSlice(a string, list []string) bool {
 	return false
 }
 
+func StringInSubStringSlice(a string, list []string) bool {
+	for _, b := range list {
+		if strings.Contains(a, b) {
+			return true
+		}
+	}
+	return false
+}
+
 // SliceDifference returns the elements in a that aren't in b
 func SliceDifference(a, b []string) []string {
 	var diff []string
