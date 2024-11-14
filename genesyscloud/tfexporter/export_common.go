@@ -31,7 +31,7 @@ const (
 type Exporter func() diag.Diagnostics
 type ExporterFilterType int64
 type ExporterResourceTypeFilter func(exports map[string]*resourceExporter.ResourceExporter, filter []string) map[string]*resourceExporter.ResourceExporter
-type ExporterResourceFilter func(result resourceExporter.ResourceIDMetaMap, label string, filter []string) resourceExporter.ResourceIDMetaMap
+type ExporterResourceFilter func(resourceIdMetaMap resourceExporter.ResourceIDMetaMap, resourceType string, filter []string) resourceExporter.ResourceIDMetaMap
 
 const (
 	LegacyInclude ExporterFilterType = iota
@@ -64,11 +64,11 @@ func ExcludeFilterByResourceType(exports map[string]*resourceExporter.ResourceEx
 	return exports
 }
 
-func FilterResourceByLabel(result resourceExporter.ResourceIDMetaMap, label string, filter []string) resourceExporter.ResourceIDMetaMap {
-	if lists.SubStringInSlice(fmt.Sprintf("%v::", label), filter) {
+func FilterResourceByLabel(result resourceExporter.ResourceIDMetaMap, resourceType string, filter []string) resourceExporter.ResourceIDMetaMap {
+	if lists.SubStringInSlice(fmt.Sprintf("%v::", resourceType), filter) {
 		labels := make([]string, 0)
 		for _, f := range filter {
-			n := fmt.Sprintf("%v::", label)
+			n := fmt.Sprintf("%v::", resourceType)
 
 			if strings.Contains(f, n) {
 				labels = append(labels, strings.Replace(f, n, "", 1))
@@ -113,10 +113,10 @@ func FilterResourceById(result resourceExporter.ResourceIDMetaMap, resourceType 
 	return result
 }
 
-func IncludeFilterResourceByRegex(result resourceExporter.ResourceIDMetaMap, label string, filter []string) resourceExporter.ResourceIDMetaMap {
+func IncludeFilterResourceByRegex(result resourceExporter.ResourceIDMetaMap, resourceType string, filter []string) resourceExporter.ResourceIDMetaMap {
 	newFilters := make([]string, 0)
 	for _, f := range filter {
-		if strings.Contains(f, "::") && strings.Split(f, "::")[0] == label {
+		if strings.Contains(f, "::") && strings.Split(f, "::")[0] == resourceType {
 			i := strings.Index(f, "::")
 			regexStr := f[i+2:]
 			newFilters = append(newFilters, regexStr)
@@ -151,10 +151,10 @@ func IncludeFilterResourceByRegex(result resourceExporter.ResourceIDMetaMap, lab
 	return newResourceMap
 }
 
-func ExcludeFilterResourceByRegex(result resourceExporter.ResourceIDMetaMap, label string, filter []string) resourceExporter.ResourceIDMetaMap {
+func ExcludeFilterResourceByRegex(result resourceExporter.ResourceIDMetaMap, resourceType string, filter []string) resourceExporter.ResourceIDMetaMap {
 	newFilters := make([]string, 0)
 	for _, f := range filter {
-		if strings.Contains(f, "::") && strings.Split(f, "::")[0] == label {
+		if strings.Contains(f, "::") && strings.Split(f, "::")[0] == resourceType {
 			i := strings.Index(f, "::")
 			regexStr := f[i+2:]
 			newFilters = append(newFilters, regexStr)
