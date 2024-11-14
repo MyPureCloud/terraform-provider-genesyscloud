@@ -386,7 +386,7 @@ func (g *GenesysCloudResourceExporter) buildResourceConfigMap() diag.Diagnostics
 			algorithm := fnv.New32()
 			algorithm.Write([]byte(uuid.NewString()))
 			resource.BlockLabel = resource.BlockLabel + "_" + strconv.FormatUint(uint64(algorithm.Sum32()), 10)
-			g.updateSanitiseMap(*g.exporters, resource)
+			g.updateSanitizeMap(*g.exporters, resource)
 		}
 
 		// Removes zero values and sets proper reference expressions
@@ -446,7 +446,7 @@ func (g *GenesysCloudResourceExporter) updateInstanceStateAttributes(jsonResult 
 	}
 }
 
-func (g *GenesysCloudResourceExporter) updateSanitiseMap(exporters map[string]*resourceExporter.ResourceExporter, //Map of all of the exporters
+func (g *GenesysCloudResourceExporter) updateSanitizeMap(exporters map[string]*resourceExporter.ResourceExporter, //Map of all of the exporters
 	resource resourceExporter.ResourceInfo) {
 	if exporters[resource.Type] != nil {
 		// Get the sanitized label from the ID returned as a reference expression
