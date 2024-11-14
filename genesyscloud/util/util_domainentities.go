@@ -24,29 +24,28 @@ func BuildSdkWebdeploymentFlowEntityRef(d *schema.ResourceData, idAttr string) *
 }
 
 func BuildSdkDomainEntityRefArr(d *schema.ResourceData, idAttr string) *[]platformclientv2.Domainentityref {
-	if ids, ok := d.GetOk(idAttr); ok && ids != nil {
-		if setIds, ok := ids.(*schema.Set); ok {
-			strList := lists.SetToStringList(setIds)
-			if setIds != nil {
-				domainEntityRefs := make([]platformclientv2.Domainentityref, len(*strList))
-				for i, id := range *strList {
-					tempId := id
-					domainEntityRefs[i] = platformclientv2.Domainentityref{Id: &tempId}
-				}
-				return &domainEntityRefs
-			}
-		} else {
-			strList := lists.InterfaceListToStrings(ids.([]interface{}))
-			if len(strList) > 0 {
-				domainEntityRefs := make([]platformclientv2.Domainentityref, len(strList))
-				for i, id := range strList {
-					tempId := id
-					domainEntityRefs[i] = platformclientv2.Domainentityref{Id: &tempId}
-				}
-				return &domainEntityRefs
-			}
-		}
+	ids, ok := d.GetOk(idAttr)
+	if !ok {
+		return nil
 	}
+
+	var strList []string
+	if setIds, ok := ids.(*schema.Set); ok {
+		strListPointer := lists.SetToStringList(setIds)
+		strList = *strListPointer
+	} else {
+		strList = lists.InterfaceListToStrings(ids.([]interface{}))
+	}
+
+	if len(strList) > 0 {
+		domainEntityRefs := make([]platformclientv2.Domainentityref, len(strList))
+		for i, id := range strList {
+			tempId := id
+			domainEntityRefs[i] = platformclientv2.Domainentityref{Id: &tempId}
+		}
+		return &domainEntityRefs
+	}
+
 	return nil
 }
 

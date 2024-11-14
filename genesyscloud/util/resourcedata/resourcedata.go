@@ -84,7 +84,7 @@ func SetMapStringMapValueIfNotNil(targetMap map[string]interface{}, key string, 
 // SetMapReferenceValueIfNotNil will read the value of a reference property and set it in a map
 func SetMapReferenceValueIfNotNil(targetMap map[string]interface{}, key string, value *platformclientv2.Domainentityref) {
 	if value != nil && value.Id != nil {
-		targetMap[key] = value.Id
+		targetMap[key] = *value.Id
 	}
 }
 
