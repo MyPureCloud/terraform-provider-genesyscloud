@@ -8,6 +8,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	"terraform-provider-genesyscloud/genesyscloud/tfexporter_state"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 
 	"terraform-provider-genesyscloud/genesyscloud/util/constants"
@@ -54,6 +55,13 @@ func getAllSitesAndOutboundRoutes(ctx context.Context, sdkConfig *platformclient
 			for _, route := range *routes {
 				outboundRouteId := buildSiteAndOutboundRouteId(*site.Id, *route.Id)
 				resources[outboundRouteId] = &resourceExporter.ResourceMeta{Name: *route.Name}
+				// When exporting managed sites, they must automatically be exported as data source
+				// Managed sites are added to the ExportAsData []string in resource_exporter
+				if tfexporter_state.IsExporterActive() {
+					if *route.Name == "Default Outbound Route" {
+						resourceExporter.AddDataSourceItems(resourceName, *route.Name)
+					}
+				}
 			}
 		}
 	}
