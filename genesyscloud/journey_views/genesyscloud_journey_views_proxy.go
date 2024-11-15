@@ -77,6 +77,11 @@ func (p *journeyViewsProxy) deleteJourneyView(ctx context.Context, viewId string
 }
 
 func getJourneyViewByViewIdFn(_ context.Context, p *journeyViewsProxy, viewId string) (*platformclientv2.Journeyview, *platformclientv2.APIResponse, error) {
+	// Check the cache first
+	journeyView := rc.GetCacheItem(p.journeyViewCache, viewId)
+	if journeyView != nil {
+		return journeyView, nil, nil
+	}
 	return p.journeyViewsApi.GetJourneyView(viewId)
 }
 
