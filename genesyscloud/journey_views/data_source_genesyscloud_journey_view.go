@@ -3,34 +3,20 @@ package journey_views
 import (
 	"context"
 	"fmt"
-	"log"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 
-	rc "terraform-provider-genesyscloud/genesyscloud/resource_cache"
-
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-var (
-	dataSourceJourneyViewCache *rc.DataSourceCache
-)
-
 func dataSourceJourneyViewRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	sdkConfig := m.(*provider.ProviderMeta).ClientConfig
+	name := d.Get("name").(string)
 
-	key := d.Get("name").(string)
-
-	if dataSourceJourneyViewCache == nil {
-		log.Printf("Instantiating the %s data source cache object", resourceName)
-		dataSourceJourneyViewCache = rc.NewDataSourceCache(sdkConfig, hydrateJourneyViewCacheFn, getJourneyByNameFn)
-	}
-
-	journeyId, err := rc.RetrieveId(dataSourceJourneyViewCache, resourceName, key, ctx)
+	journeyId, err := getJourneyByNameFn(name, ctx, m)
 	if err != nil {
 		return err
 	}
@@ -39,39 +25,16 @@ func dataSourceJourneyViewRead(ctx context.Context, d *schema.ResourceData, m in
 	return nil
 }
 
-// hydrateJourneyViewCacheFn for hydrating the cache with Genesys Cloud journey views using the SDK
-func hydrateJourneyViewCacheFn(c *rc.DataSourceCache, ctx context.Context) error {
-	proxy := getJourneyViewProxy(c.ClientConfig)
-
-	log.Printf("Hydrating cache for data source %s", resourceName)
-
-	allJourneys, resp, err := proxy.getAllJourneyViews(ctx, "")
-	if err != nil {
-		return fmt.Errorf("failed to get journey views. Error: %s | API Response: %s", err.Error(), resp.String())
-	}
-
-	if allJourneys == nil || len(*allJourneys) == 0 {
-		log.Printf("No journey views found. The cache will remain empty.")
-		return nil
-	}
-
-	for _, journey := range *allJourneys {
-		c.Cache[*journey.Name] = *journey.Id
-	}
-
-	log.Printf("Cache hydration complete for data source %s", resourceName)
-	return nil
-}
-
 // getJourneyByNameFn returns the journey id (blank if not found) and diag
-func getJourneyByNameFn(c *rc.DataSourceCache, name string, ctx context.Context) (string, diag.Diagnostics) {
-	proxy := getJourneyViewProxy(c.ClientConfig)
+func getJourneyByNameFn(name string, ctx context.Context, m interface{}) (string, diag.Diagnostics) {
+	config := m.(*provider.ProviderMeta).ClientConfig
+	proxy := getJourneyViewProxy(config)
 	journeyId := ""
 
 	diag := util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
 		foundId, resp, getErr := proxy.getJourneyViewByName(ctx, name)
 		if getErr != nil {
-			errMsg := util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("error requesting journey view %s | error %s", name, getErr), resp)
+			errMsg := util.BuildWithRetriesApiDiagnosticError(name, fmt.Sprintf("error requesting journey view %s | error %s", name, getErr), resp)
 			return retry.NonRetryableError(errMsg)
 		}
 

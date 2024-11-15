@@ -163,9 +163,6 @@ var (
 
 func SetRegistrar(regInstance registrar.Registrar) {
 	regInstance.RegisterResource(resourceName, ResourceJourneyViews())
-	/***
-	TODO: Add DataSource and Exporter once we are done with https://inindca.atlassian.net/browse/JM-109
-	***/
 	regInstance.RegisterDataSource(resourceName, DataSourceJourneyView())
 	regInstance.RegisterExporter(resourceName, JourneyViewExporter())
 }
@@ -215,11 +212,8 @@ func ResourceJourneyViews() *schema.Resource {
 
 func JourneyViewExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
-		GetResourcesFunc:        provider.GetAllWithPooledClient(getAllJourneyViews),
-		RefAttrs:                map[string]*resourceExporter.RefAttrSettings{},
-		RemoveIfMissing:         map[string][]string{},
-		AllowZeroValues:         []string{"bullseye_rings.expansion_timeout_seconds"},
-		CustomAttributeResolver: map[string]*resourceExporter.RefAttrCustomResolver{},
+		GetResourcesFunc: provider.GetAllWithPooledClient(getAllJourneyViews),
+		AllowZeroValues:  []string{"bullseye_rings.expansion_timeout_seconds"},
 	}
 }
 

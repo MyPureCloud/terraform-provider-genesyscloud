@@ -104,7 +104,7 @@ func createJourneyViewFn(_ context.Context, p *journeyViewsProxy, journeyView *p
 }
 
 func updateJourneyViewFn(_ context.Context, p *journeyViewsProxy, viewId string, journeyView *platformclientv2.Journeyview) (*platformclientv2.Journeyview, *platformclientv2.APIResponse, error) {
-	return p.journeyViewsApi.PostJourneyViewVersions(viewId, *journeyView) //TODO NB
+	return p.journeyViewsApi.PostJourneyViewVersions(viewId, *journeyView)
 }
 
 func deleteJourneyViewFn(_ context.Context, p *journeyViewsProxy, viewId string) (*platformclientv2.APIResponse, error) {
@@ -121,13 +121,9 @@ func getAllJourneyViewsFn(ctx context.Context, p *journeyViewsProxy, name string
 		return nil, resp, fmt.Errorf("failed to get first page of journeys: %v", getErr)
 	}
 
-	// Check if the journey view cache is populated with all the data, if it is, return that instead
-	// If the size of the cache is the same as the total number of journeys, the cache is up-to-date
-	if rc.GetCacheSize(p.journeyViewCache) == *journeys.Total && rc.GetCacheSize(p.journeyViewCache) != 0 {
+	// Check if the journey view cache is populated, if it is, return that instead
+	if rc.GetCacheSize(p.journeyViewCache) != 0 {
 		return rc.GetCache(p.journeyViewCache), nil, nil
-	} else if rc.GetCacheSize(p.journeyViewCache) != *journeys.Total && rc.GetCacheSize(p.journeyViewCache) != 0 {
-		// The cache is populated but not with the right data, clear the cache so it can be re populated
-		p.journeyViewCache = rc.NewResourceCache[platformclientv2.Journeyview]()
 	}
 
 	if journeys.Entities == nil || len(*journeys.Entities) == 0 {

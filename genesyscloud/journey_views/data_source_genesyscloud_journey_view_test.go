@@ -13,12 +13,12 @@ import (
 
 func TestAccDataSourceJourneyViewBasic(t *testing.T) {
 	var (
-		journeyResource = "test-journey"
-		journeyName     = "TerraformTestJourney-" + uuid.NewString()
-		duration        = "P1Y"
-		elementsBlock   = ""
+		journeyResourceLabel = "test-journey"
+		journeyName          = "TerraformTestJourney-" + uuid.NewString()
+		duration             = "P1Y"
+		elementsBlock        = ""
 
-		journeyDataSource = "test-journey-ds"
+		journeyDataSourceLabel = "test-journey-ds"
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -28,18 +28,18 @@ func TestAccDataSourceJourneyViewBasic(t *testing.T) {
 			{
 				// Create
 				Config: generateJourneyView(
-					journeyResource,
+					journeyResourceLabel,
 					journeyName,
 					duration,
 					elementsBlock,
 				) + generateJourneyViewDataSource(
-					journeyDataSource,
+					journeyDataSourceLabel,
 					journeyName,
-					"genesyscloud_journey_views."+journeyResource,
+					"genesyscloud_journey_views."+journeyResourceLabel,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair("data.genesyscloud_journey_views."+journeyDataSource,
-						"id", "genesyscloud_journey_views."+journeyResource, "id",
+					resource.TestCheckResourceAttrPair("data.genesyscloud_journey_views."+journeyDataSourceLabel,
+						"id", "genesyscloud_journey_views."+journeyResourceLabel, "id",
 					),
 				),
 			},
@@ -47,19 +47,19 @@ func TestAccDataSourceJourneyViewBasic(t *testing.T) {
 	})
 }
 
-func TestAccDataSourceJourneyViewCaching(t *testing.T) {
+func TestAccDataSourceJourneyViewMultiple(t *testing.T) {
 	var (
-		journey1ResourceId = "journey1"
-		journeyName1       = "terraform test journey " + uuid.NewString()
-		journey2ResourceId = "journey2"
-		journeyName2       = "terraform test journey " + uuid.NewString()
-		journey3ResourceId = "journey3"
-		journeyName3       = "terraform test journey " + uuid.NewString()
-		duration           = "P1Y"
-		elementsBlock      = ""
-		dataSource1Id      = "data-1"
-		dataSource2Id      = "data-2"
-		dataSource3Id      = "data-3"
+		journeyResourceLabel1 = "journey1"
+		journeyName1          = "terraform test journey " + uuid.NewString()
+		journeyResourceLabel2 = "journey2"
+		journeyName2          = "terraform test journey " + uuid.NewString()
+		journeyResourceLabel3 = "journey3"
+		journeyName3          = "terraform test journey " + uuid.NewString()
+		duration              = "P1Y"
+		elementsBlock         = ""
+		dataSourceLabel1      = "data-1"
+		dataSourceLabel2      = "data-2"
+		dataSourceLabel3      = "data-3"
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -71,40 +71,40 @@ func TestAccDataSourceJourneyViewCaching(t *testing.T) {
 					time.Sleep(45 * time.Second)
 				},
 				Config: generateJourneyView( // journey resource
-					journey1ResourceId,
+					journeyResourceLabel1,
 					journeyName1,
 					duration,
 					elementsBlock,
 				) + generateJourneyView( // journey resource
-					journey2ResourceId,
+					journeyResourceLabel2,
 					journeyName2,
 					duration,
 					elementsBlock,
 				) + generateJourneyView( // journey resource
-					journey3ResourceId,
+					journeyResourceLabel3,
 					journeyName3,
 					duration,
 					elementsBlock,
 				) + generateJourneyViewDataSource( // journey data source
-					dataSource1Id,
+					dataSourceLabel1,
 					journeyName1,
-					"genesyscloud_journey_views."+journey1ResourceId,
+					"genesyscloud_journey_views."+journeyResourceLabel1,
 				) + generateJourneyViewDataSource( // journey data source
-					dataSource2Id,
+					dataSourceLabel2,
 					journeyName2,
-					"genesyscloud_journey_views."+journey2ResourceId,
+					"genesyscloud_journey_views."+journeyResourceLabel2,
 				) + generateJourneyViewDataSource( // journey data source
-					dataSource3Id,
+					dataSourceLabel3,
 					journeyName3,
-					"genesyscloud_journey_views."+journey3ResourceId,
+					"genesyscloud_journey_views."+journeyResourceLabel3,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair("genesyscloud_journey_views."+journey1ResourceId, "id",
-						"data.genesyscloud_journey_views."+dataSource1Id, "id"),
-					resource.TestCheckResourceAttrPair("genesyscloud_journey_views."+journey2ResourceId, "id",
-						"data.genesyscloud_journey_views."+dataSource2Id, "id"),
-					resource.TestCheckResourceAttrPair("genesyscloud_journey_views."+journey3ResourceId, "id",
-						"data.genesyscloud_journey_views."+dataSource3Id, "id"),
+					resource.TestCheckResourceAttrPair("genesyscloud_journey_views."+journeyResourceLabel1, "id",
+						"data.genesyscloud_journey_views."+dataSourceLabel1, "id"),
+					resource.TestCheckResourceAttrPair("genesyscloud_journey_views."+journeyResourceLabel2, "id",
+						"data.genesyscloud_journey_views."+dataSourceLabel2, "id"),
+					resource.TestCheckResourceAttrPair("genesyscloud_journey_views."+journeyResourceLabel3, "id",
+						"data.genesyscloud_journey_views."+dataSourceLabel3, "id"),
 				),
 			},
 		},
@@ -113,12 +113,12 @@ func TestAccDataSourceJourneyViewCaching(t *testing.T) {
 }
 
 func generateJourneyViewDataSource(
-	resourceID string,
+	dataSourceLabel string,
 	name string,
 	dependsOnResource string) string {
 	return fmt.Sprintf(`data "genesyscloud_journey_views" "%s" {
 		name = "%s"
 		depends_on = [%s]
 	}
-	`, resourceID, name, dependsOnResource)
+	`, dataSourceLabel, name, dependsOnResource)
 }

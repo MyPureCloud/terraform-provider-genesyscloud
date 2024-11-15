@@ -22,9 +22,6 @@ func getAllJourneyViews(ctx context.Context, clientConfig *platformclientv2.Conf
 	resources := make(resourceExporter.ResourceIDMetaMap)
 	proxy := getJourneyViewProxy(clientConfig)
 
-	// Newly created resources often aren't returned unless there's a delay
-	time.Sleep(5 * time.Second)
-
 	journeys, resp, err := proxy.getAllJourneyViews(ctx, "")
 	if err != nil {
 		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("failed to get journey views: %s", err), resp)
