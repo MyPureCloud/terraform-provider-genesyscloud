@@ -199,7 +199,6 @@ func buildTrustor(trustor []interface{}) *platformclientv2.Trustor {
 }
 
 func BuildOrganizationSchema(schemaList []interface{}, version *int) (*platformclientv2.Dataschema, error) {
-	// body for the creation/update of the schema
 	if len(schemaList) > 0 {
 		schemaMap := schemaList[0].(map[string]interface{})
 		jsonSchemaList := schemaMap["json_schema"].([]interface{})
@@ -318,7 +317,9 @@ func flattenJsonSchemaDocuments(jsonSchemaDocuments *platformclientv2.Jsonschema
 
 // flattenDataSchemas maps a Genesys Cloud *[]platformclientv2.Dataschema into a []interface{}
 func flattenDataSchema(dataSchema *platformclientv2.Dataschema) ([]interface{}, error) {
-
+	if dataSchema == nil {
+		return nil, nil
+	}
 	dataSchemaMap := make(map[string]interface{})
 
 	resourcedata.SetMapValueIfNotNil(dataSchemaMap, "name", dataSchema.Name)
@@ -335,7 +336,7 @@ func flattenDataSchema(dataSchema *platformclientv2.Dataschema) ([]interface{}, 
 
 // flattenExternalDataSources maps a Genesys Cloud *[]platformclientv2.Externaldatasource into a []interface{}
 func flattenExternalDataSources(externalDataSources *[]platformclientv2.Externaldatasource) []interface{} {
-	if len(*externalDataSources) == 0 {
+	if externalDataSources == nil && len(*externalDataSources) == 0 {
 		return nil
 	}
 

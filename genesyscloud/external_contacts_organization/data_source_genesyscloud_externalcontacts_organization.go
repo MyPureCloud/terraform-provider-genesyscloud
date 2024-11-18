@@ -20,7 +20,7 @@ func dataSourceExternalContactsOrganizationRead(ctx context.Context, d *schema.R
 	name := d.Get("name").(string)
 
 	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
-		externalOrganizationId, retryable, err := proxy.getExternalContactsOrganizationIdByName(ctx, name)
+		externalOrganizationId, retryable, _, err := proxy.getExternalContactsOrganizationIdByName(ctx, name)
 
 		if err != nil && !retryable {
 			return retry.NonRetryableError(fmt.Errorf("error searching external contacts organization %s: %s", name, err))
