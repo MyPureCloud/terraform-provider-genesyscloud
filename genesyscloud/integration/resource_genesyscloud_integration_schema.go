@@ -1,11 +1,12 @@
 package integration
 
 import (
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
@@ -78,11 +79,11 @@ func ResourceIntegration() *schema.Resource {
 		SchemaVersion: 1,
 		Schema: map[string]*schema.Schema{
 			"intended_state": {
-				Description:  "Integration state (ENABLED | DISABLED | DELETED).",
+				Description:  "Integration state (ENABLED | DISABLED).",
 				Type:         schema.TypeString,
 				Optional:     true,
 				Default:      "DISABLED",
-				ValidateFunc: validation.StringInSlice([]string{"ENABLED", "DISABLED", "DELETED"}, false),
+				ValidateFunc: validation.StringInSlice([]string{"ENABLED", "DISABLED"}, false),
 			},
 			"integration_type": {
 				Description: "Integration type.",
