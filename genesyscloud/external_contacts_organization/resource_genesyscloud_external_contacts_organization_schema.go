@@ -95,7 +95,7 @@ func ResourceExternalContactsOrganization() *schema.Resource {
 	tickerResource := &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			`symbol`: {
-				Description: `T he ticker symbol for this organization. Example: ININ, AAPL, MSFT, etc.`,
+				Description: `The ticker symbol for this organization. Example: ININ, AAPL, MSFT, etc.`,
 				Required:    true,
 				Type:        schema.TypeString,
 			},
@@ -124,12 +124,6 @@ func ResourceExternalContactsOrganization() *schema.Resource {
 				Type:        schema.TypeString,
 				Optional:    true,
 			},
-			`profile_url`: {
-				Description: `Contact twitter account url.`,
-				Type:        schema.TypeString,
-				Computed:    true,
-				Optional:    true,
-			},
 		},
 	}
 
@@ -151,7 +145,7 @@ func ResourceExternalContactsOrganization() *schema.Resource {
 				Optional:    true,
 				Type:        schema.TypeString,
 			},
-			`type`: {
+			`title`: {
 				Description: ``,
 				Optional:    true,
 				Type:        schema.TypeString,
@@ -187,6 +181,7 @@ func ResourceExternalContactsOrganization() *schema.Resource {
 				Description: `The schema's version, a positive integer. Required for updates.`,
 				Optional:    true,
 				Type:        schema.TypeInt,
+				Default:     0,
 			},
 			`enabled`: {
 				Description: `The schema's enabled/disabled status. A disabled schema cannot be assigned to any other entities, but the data on those entities from the schema still exists.`,

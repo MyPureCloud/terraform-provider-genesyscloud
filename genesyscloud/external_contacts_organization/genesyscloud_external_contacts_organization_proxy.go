@@ -3,6 +3,8 @@ package external_contacts_organization
 import (
 	"context"
 	"fmt"
+	"log"
+	rc "terraform-provider-genesyscloud/genesyscloud/resource_cache"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
 )
@@ -18,9 +20,9 @@ var internalProxy *externalContactsOrganizationProxy
 
 // Type definitions for each func on our proxy so we can easily mock them out later
 type createExternalContactsOrganizationFunc func(ctx context.Context, p *externalContactsOrganizationProxy, externalOrganization *platformclientv2.Externalorganization) (*platformclientv2.Externalorganization, error)
-type getAllExternalContactsOrganizationFunc func(ctx context.Context, p *externalContactsOrganizationProxy) (*[]platformclientv2.Externalorganization, error)
+type getAllExternalContactsOrganizationFunc func(ctx context.Context, p *externalContactsOrganizationProxy, query string) (*[]platformclientv2.Externalorganization, error)
 type getExternalContactsOrganizationIdByNameFunc func(ctx context.Context, p *externalContactsOrganizationProxy, name string) (id string, retryable bool, err error)
-type getExternalContactsOrganizationByIdFunc func(ctx context.Context, p *externalContactsOrganizationProxy, id string) (externalOrganization *platformclientv2.Externalorganization, responseCode int, err error)
+type getExternalContactsOrganizationByIdFunc func(ctx context.Context, p *externalContactsOrganizationProxy, id string) (externalOrganization *platformclientv2.Externalorganization, apiResponse *platformclientv2.APIResponse, err error)
 type updateExternalContactsOrganizationFunc func(ctx context.Context, p *externalContactsOrganizationProxy, id string, externalOrganization *platformclientv2.Externalorganization) (*platformclientv2.Externalorganization, error)
 type deleteExternalContactsOrganizationFunc func(ctx context.Context, p *externalContactsOrganizationProxy, id string) (responseCode int, err error)
 
@@ -34,11 +36,13 @@ type externalContactsOrganizationProxy struct {
 	getExternalContactsOrganizationByIdAttr     getExternalContactsOrganizationByIdFunc
 	updateExternalContactsOrganizationAttr      updateExternalContactsOrganizationFunc
 	deleteExternalContactsOrganizationAttr      deleteExternalContactsOrganizationFunc
+	externalOrganizationCache                   rc.CacheInterface[platformclientv2.Externalorganization]
 }
 
 // newExternalContactsOrganizationProxy initializes the external contacts organization proxy with all of the data needed to communicate with Genesys Cloud
 func newExternalContactsOrganizationProxy(clientConfig *platformclientv2.Configuration) *externalContactsOrganizationProxy {
 	api := platformclientv2.NewExternalContactsApiWithConfig(clientConfig)
+	externalOrganizationCache := rc.NewResourceCache[platformclientv2.Externalorganization]()
 	return &externalContactsOrganizationProxy{
 		clientConfig:                                clientConfig,
 		externalContactsApi:                         api,
@@ -48,6 +52,7 @@ func newExternalContactsOrganizationProxy(clientConfig *platformclientv2.Configu
 		getExternalContactsOrganizationByIdAttr:     getExternalContactsOrganizationByIdFn,
 		updateExternalContactsOrganizationAttr:      updateExternalContactsOrganizationFn,
 		deleteExternalContactsOrganizationAttr:      deleteExternalContactsOrganizationFn,
+		externalOrganizationCache:                   externalOrganizationCache,
 	}
 }
 
@@ -67,8 +72,8 @@ func (p *externalContactsOrganizationProxy) createExternalContactsOrganization(c
 }
 
 // getExternalContactsOrganization retrieves all Genesys Cloud external contacts organization
-func (p *externalContactsOrganizationProxy) getAllExternalContactsOrganization(ctx context.Context) (*[]platformclientv2.Externalorganization, error) {
-	return p.getAllExternalContactsOrganizationAttr(ctx, p)
+func (p *externalContactsOrganizationProxy) getAllExternalContactsOrganization(ctx context.Context, query string) (*[]platformclientv2.Externalorganization, error) {
+	return p.getAllExternalContactsOrganizationAttr(ctx, p, query)
 }
 
 // getExternalContactsOrganizationIdByName returns a single Genesys Cloud external contacts organization by a name
@@ -77,7 +82,7 @@ func (p *externalContactsOrganizationProxy) getExternalContactsOrganizationIdByN
 }
 
 // getExternalContactsOrganizationById returns a single Genesys Cloud external contacts organization by Id
-func (p *externalContactsOrganizationProxy) getExternalContactsOrganizationById(ctx context.Context, id string) (externalContactsOrganization *platformclientv2.Externalorganization, statusCode int, err error) {
+func (p *externalContactsOrganizationProxy) getExternalContactsOrganizationById(ctx context.Context, id string) (externalContactsOrganization *platformclientv2.Externalorganization, apiResponse *platformclientv2.APIResponse, err error) {
 	return p.getExternalContactsOrganizationByIdAttr(ctx, p, id)
 }
 
@@ -95,85 +100,92 @@ func (p *externalContactsOrganizationProxy) deleteExternalContactsOrganization(c
 func createExternalContactsOrganizationFn(ctx context.Context, p *externalContactsOrganizationProxy, externalContactsOrganization *platformclientv2.Externalorganization) (*platformclientv2.Externalorganization, error) {
 	externalOrganization, _, err := p.externalContactsApi.PostExternalcontactsOrganizations(*externalContactsOrganization)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to create external contacts organization: %s", err)
+		return nil, fmt.Errorf("failed to create external contacts organization: %s", err)
 	}
 
 	return externalOrganization, nil
 }
 
 // getAllExternalContactsOrganizationFn is the implementation for retrieving all external contacts organization in Genesys Cloud
-func getAllExternalContactsOrganizationFn(ctx context.Context, p *externalContactsOrganizationProxy) (*[]platformclientv2.Externalorganization, error) {
+func getAllExternalContactsOrganizationFn(ctx context.Context, p *externalContactsOrganizationProxy, query string) (*[]platformclientv2.Externalorganization, error) {
 	var allExternalOrganizations []platformclientv2.Externalorganization
 	const pageSize = 100
-	/*
-		externalOrganizations, _, err := p.externalContactsApi.GetExternalcontactsOrganizations()
+
+	externalOrganizations, _, err := p.externalContactsApi.GetExternalcontactsOrganizations(pageSize, 1, query, nil, "", nil, true)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get external organization: %v", err)
+	}
+	if externalOrganizations.Entities == nil || len(*externalOrganizations.Entities) == 0 {
+		return &allExternalOrganizations, nil
+	}
+	allExternalOrganizations = append(allExternalOrganizations, *externalOrganizations.Entities...)
+
+	for pageNum := 2; pageNum <= *externalOrganizations.PageCount; pageNum++ {
+		externalOrganizations, _, err := p.externalContactsApi.GetExternalcontactsOrganizations(pageSize, pageNum, query, nil, "", nil, true)
 		if err != nil {
-			return nil, fmt.Errorf("Failed to get external organization: %v", err)
+			return nil, fmt.Errorf("failed to get external organization: %v", err)
 		}
+
 		if externalOrganizations.Entities == nil || len(*externalOrganizations.Entities) == 0 {
-			return &allExternalOrganizations, nil
-		}
-		for _, externalOrganization := range *externalOrganizations.Entities {
-			allExternalOrganizations = append(allExternalOrganizations, externalOrganization)
+			break
 		}
 
-		for pageNum := 2; pageNum <= *externalOrganizations.PageCount; pageNum++ {
-			externalOrganizations, _, err := p.externalContactsApi.GetExternalcontactsOrganizations()
-			if err != nil {
-				return nil, fmt.Errorf("Failed to get external organization: %v", err)
-			}
+		allExternalOrganizations = append(allExternalOrganizations, *externalOrganizations.Entities...)
 
-			if externalOrganizations.Entities == nil || len(*externalOrganizations.Entities) == 0 {
-				break
-			}
-
-			for _, externalOrganization := range *externalOrganizations.Entities {
-				allExternalOrganizations = append(allExternalOrganizations, externalOrganization)
-			}
+	}
+	// Cache the External Contacts resource into the p.externalContactsCache for later use
+	for _, externalOrganization := range allExternalOrganizations {
+		if externalOrganization.Id == nil {
+			continue
 		}
-	*/
+		rc.SetCache(p.externalOrganizationCache, *externalOrganization.Id, externalOrganization)
+	}
+
 	return &allExternalOrganizations, nil
 }
 
 // getExternalContactsOrganizationIdByNameFn is an implementation of the function to get a Genesys Cloud external contacts organization by name
 func getExternalContactsOrganizationIdByNameFn(ctx context.Context, p *externalContactsOrganizationProxy, name string) (id string, retryable bool, err error) {
-	/*
-		externalOrganizations, _, err := p.externalContactsApi.GetExternalcontactsOrganizations()
-		if err != nil {
-			return "", false, err
-		}
 
-		if externalOrganizations.Entities == nil || len(*externalOrganizations.Entities) == 0 {
-			return "", true, fmt.Errorf("No external contacts organization found with name %s", name)
-		}
+	externalOrganizations, err := getAllExternalContactsOrganizationFn(ctx, p, name)
+	if err != nil {
+		return "", false, err
+	}
 
-		var externalOrganization platformclientv2.Externalorganization
-		for _, externalOrganizationSdk := range *externalOrganizations.Entities {
-			if *externalOrganization.Name == name {
-				log.Printf("Retrieved the external contacts organization id %s by name %s", *externalOrganizationSdk.Id, name)
-				externalOrganization = externalOrganizationSdk
-				return *externalOrganization.Id, false, nil
-			}
+	if externalOrganizations == nil || len(*externalOrganizations) == 0 {
+		return "", true, fmt.Errorf("no external contacts organization found with name %s", name)
+	}
+
+	var externalOrganization platformclientv2.Externalorganization
+	for _, externalOrganizationSdk := range *externalOrganizations {
+		if *externalOrganization.Name == name {
+			log.Printf("Retrieved the external contacts organization id %s by name %s", *externalOrganizationSdk.Id, name)
+			externalOrganization = externalOrganizationSdk
+			return *externalOrganization.Id, false, nil
 		}
-	*/
-	return "", false, fmt.Errorf("Unable to find external contacts organization with name %s", name)
+	}
+
+	return "", false, fmt.Errorf("unable to find external contacts organization with name %s", name)
 }
 
 // getExternalContactsOrganizationByIdFn is an implementation of the function to get a Genesys Cloud external contacts organization by Id
-func getExternalContactsOrganizationByIdFn(ctx context.Context, p *externalContactsOrganizationProxy, id string) (externalContactsOrganization *platformclientv2.Externalorganization, statusCode int, err error) {
+func getExternalContactsOrganizationByIdFn(ctx context.Context, p *externalContactsOrganizationProxy, id string) (externalContactsOrganization *platformclientv2.Externalorganization, apiResponse *platformclientv2.APIResponse, err error) {
+	if externalOrganization := rc.GetCacheItem(p.externalOrganizationCache, id); externalOrganization != nil {
+		return externalOrganization, nil, nil
+	}
 	externalOrganization, resp, err := p.externalContactsApi.GetExternalcontactsOrganization(id, []string{}, false)
 	if err != nil {
-		return nil, resp.StatusCode, fmt.Errorf("Failed to retrieve external contacts organization by id %s: %s", id, err)
+		return nil, resp, fmt.Errorf("failed to retrieve external contacts organization by id %s: %s", id, err)
 	}
 
-	return externalOrganization, resp.StatusCode, nil
+	return externalOrganization, resp, nil
 }
 
 // updateExternalContactsOrganizationFn is an implementation of the function to update a Genesys Cloud external contacts organization
 func updateExternalContactsOrganizationFn(ctx context.Context, p *externalContactsOrganizationProxy, id string, externalContactsOrganization *platformclientv2.Externalorganization) (*platformclientv2.Externalorganization, error) {
 	externalOrganization, _, err := p.externalContactsApi.PutExternalcontactsOrganization(id, *externalContactsOrganization)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to update external contacts organization: %s", err)
+		return nil, fmt.Errorf("failed to update external contacts organization: %s", err)
 	}
 	return externalOrganization, nil
 }
@@ -182,7 +194,7 @@ func updateExternalContactsOrganizationFn(ctx context.Context, p *externalContac
 func deleteExternalContactsOrganizationFn(ctx context.Context, p *externalContactsOrganizationProxy, id string) (statusCode int, err error) {
 	_, resp, err := p.externalContactsApi.DeleteExternalcontactsOrganization(id)
 	if err != nil {
-		return resp.StatusCode, fmt.Errorf("Failed to delete external contacts organization: %s", err)
+		return resp.StatusCode, fmt.Errorf("failed to delete external contacts organization: %s", err)
 	}
 
 	return resp.StatusCode, nil

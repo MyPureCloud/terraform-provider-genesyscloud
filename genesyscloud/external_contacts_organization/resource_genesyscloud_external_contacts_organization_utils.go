@@ -1,11 +1,14 @@
 package external_contacts_organization
 
 import (
+	"encoding/json"
+	"fmt"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/lists"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v115/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
 	"github.com/nyaruka/phonenumbers"
 )
 
@@ -15,27 +18,41 @@ and unmarshal data into formats consumable by Terraform and/or Genesys Cloud.
 */
 
 // getExternalContactsOrganizationFromResourceData maps data from schema ResourceData object to a platformclientv2.Externalorganization
-func getExternalContactsOrganizationFromResourceData(d *schema.ResourceData) platformclientv2.Externalorganization {
-	return platformclientv2.Externalorganization{
-		Name:             platformclientv2.String(d.Get("name").(string)),
-		CompanyType:      platformclientv2.String(d.Get("company_type").(string)),
-		Industry:         platformclientv2.String(d.Get("industry").(string)),
-		PrimaryContactId: platformclientv2.String(d.Get("primary_contact_id").(string)),
-		Address:          buildContactAddress(d.Get("address").([]interface{})),
-		PhoneNumber:      buildPhoneNumber(d.Get("phone_number").([]interface{})),
-		FaxNumber:        buildPhoneNumber(d.Get("fax_number").([]interface{})),
-		EmployeeCount:    platformclientv2.Int(d.Get("employee_count").(int)),
-		Revenue:          platformclientv2.Int(d.Get("revenue").(int)),
-		// TODO: Handle tags property
-		// TODO: Handle websites property
-		Tickers:           buildTickers(d.Get("tickers").([]interface{})),
-		TwitterId:         buildTwitterId(d.Get("twitter_id").([]interface{})),
-		ExternalSystemUrl: platformclientv2.String(d.Get("external_system_url").(string)),
-		Trustor:           buildTrustor(d.Get("trustor").([]interface{})),
-		Schema:            buildDataSchema(d.Get("schema").([]interface{})),
-		// TODO: Handle custom_fields property
+func getExternalContactsOrganizationFromResourceData(d *schema.ResourceData, schemaVersion *int) (platformclientv2.Externalorganization, error) {
+	externalOrganization := platformclientv2.Externalorganization{
+		Name:                platformclientv2.String(d.Get("name").(string)),
+		CompanyType:         platformclientv2.String(d.Get("company_type").(string)),
+		Industry:            platformclientv2.String(d.Get("industry").(string)),
+		PrimaryContactId:    platformclientv2.String(d.Get("primary_contact_id").(string)),
+		Address:             buildSdkAddress(d, "address"),
+		PhoneNumber:         buildSdkPhoneNumber(d, "phone_number"),
+		FaxNumber:           buildSdkPhoneNumber(d, "fax_number"),
+		EmployeeCount:       platformclientv2.Int(d.Get("employee_count").(int)),
+		Revenue:             platformclientv2.Int(d.Get("revenue").(int)),
+		Tickers:             buildTickers(d.Get("tickers").([]interface{})),
+		TwitterId:           buildSdkTwitterId(d, "twitter"),
+		ExternalSystemUrl:   platformclientv2.String(d.Get("external_system_url").(string)),
+		Trustor:             buildTrustor(d.Get("trustor").([]interface{})),
 		ExternalDataSources: buildExternalDataSources(d.Get("external_data_sources").([]interface{})),
 	}
+	tags := lists.InterfaceListToStrings(d.Get("tags").([]interface{}))
+	websites := lists.InterfaceListToStrings(d.Get("websites").([]interface{}))
+	externalOrganization.Tags = &tags
+	externalOrganization.Websites = &websites
+
+	schema, err := BuildOrganizationSchema(d.Get("schema").([]interface{}), schemaVersion)
+	if err != nil {
+		return externalOrganization, err
+	}
+	externalOrganization.Schema = schema
+	customFields, err := buildCustomFieldsNillable(d.Get("custom_fields").(string))
+	if err != nil {
+		return externalOrganization, err
+
+	}
+	externalOrganization.CustomFields = customFields
+
+	return externalOrganization, nil
 }
 
 // buildPhonenumberFromData is a helper method to map phone data to the GenesysCloud platformclientv2.PhoneNumber
@@ -137,36 +154,18 @@ func buildSdkTwitterId(d *schema.ResourceData, key string) *platformclientv2.Twi
 		twitterData := d.Get(key).([]interface{})
 		if len(twitterData) > 0 {
 			twitterMap := twitterData[0].(map[string]interface{})
-			id := twitterMap["id"].(string)
+			id := twitterMap["twitter_id"].(string)
 			name := twitterMap["name"].(string)
 			screenname := twitterMap["screen_name"].(string)
-			profileurl := twitterMap["profile_url"].(string)
 
 			return &platformclientv2.Twitterid{
 				Id:         &id,
 				Name:       &name,
 				ScreenName: &screenname,
-				ProfileUrl: &profileurl,
 			}
 		}
 	}
 	return nil
-}
-
-// flattenSdkTwitterId maps a Genesys Cloud platformclientv2.Twitterid into a []interface{}
-func flattenSdkTwitterId(twitterId *platformclientv2.Twitterid) []interface{} {
-	twitterInterface := make(map[string]interface{})
-	resourcedata.SetMapValueIfNotNil(twitterInterface, "id", twitterId.Id)
-	resourcedata.SetMapValueIfNotNil(twitterInterface, "name", twitterId.Name)
-	if twitterId.ScreenName != nil {
-		url := "https://www.twitter.com/" + *twitterId.ScreenName
-		twitterInterface["screen_name"] = twitterId.ScreenName
-		twitterInterface["profile_url"] = &url
-	}
-
-	resourcedata.SetMapValueIfNotNil(twitterInterface, "profile_url", twitterId.ProfileUrl)
-
-	return []interface{}{twitterInterface}
 }
 
 // buildTickers maps an []interface{} into a Genesys Cloud *[]platformclientv2.Ticker
@@ -188,116 +187,55 @@ func buildTickers(tickers []interface{}) *[]platformclientv2.Ticker {
 	return &tickersSlice
 }
 
-// buildOrganizations maps an []interface{} into a Genesys Cloud *[]platformclientv2.Organization
-func buildOrganizations(organizations []interface{}) *[]platformclientv2.Organization {
-	organizationsSlice := make([]platformclientv2.Organization, 0)
-	for _, organization := range organizations {
-		var sdkOrganization platformclientv2.Organization
-		organizationsMap, ok := organization.(map[string]interface{})
-		if !ok {
-			continue
-		}
-
-		resourcedata.BuildSDKStringValueIfNotNil(&sdkOrganization.Name, organizationsMap, "name")
-		resourcedata.BuildSDKStringValueIfNotNil(&sdkOrganization.DefaultLanguage, organizationsMap, "default_language")
-		resourcedata.BuildSDKStringValueIfNotNil(&sdkOrganization.DefaultCountryCode, organizationsMap, "default_country_code")
-		resourcedata.BuildSDKStringValueIfNotNil(&sdkOrganization.ThirdPartyOrgName, organizationsMap, "third_party_org_name")
-		resourcedata.BuildSDKStringValueIfNotNil(&sdkOrganization.ThirdPartyURI, organizationsMap, "third_party_u_r_i")
-		resourcedata.BuildSDKStringValueIfNotNil(&sdkOrganization.Domain, organizationsMap, "domain")
-		resourcedata.BuildSDKStringValueIfNotNil(&sdkOrganization.State, organizationsMap, "state")
-		resourcedata.BuildSDKStringValueIfNotNil(&sdkOrganization.DefaultSiteId, organizationsMap, "default_site_id")
-		resourcedata.BuildSDKStringValueIfNotNil(&sdkOrganization.SupportURI, organizationsMap, "support_u_r_i")
-		sdkOrganization.VoicemailEnabled = platformclientv2.Bool(organizationsMap["voicemail_enabled"].(bool))
-		resourcedata.BuildSDKStringValueIfNotNil(&sdkOrganization.ProductPlatform, organizationsMap, "product_platform")
-		// TODO: Handle features property
-
-		organizationsSlice = append(organizationsSlice, sdkOrganization)
-	}
-
-	return &organizationsSlice
-}
-
-// buildTrusteeAuthorizations maps an []interface{} into a Genesys Cloud *[]platformclientv2.Trusteeauthorization
-func buildTrusteeAuthorizations(trusteeAuthorizations []interface{}) *[]platformclientv2.Trusteeauthorization {
-	trusteeAuthorizationsSlice := make([]platformclientv2.Trusteeauthorization, 0)
-	for _, trusteeAuthorization := range trusteeAuthorizations {
-		var sdkTrusteeAuthorization platformclientv2.Trusteeauthorization
-		trusteeAuthorizationsMap, ok := trusteeAuthorization.(map[string]interface{})
-		if !ok {
-			continue
-		}
-
-		resourcedata.BuildSDKStringArrayValueIfNotNil(&sdkTrusteeAuthorization.Permissions, trusteeAuthorizationsMap, "permissions")
-
-		trusteeAuthorizationsSlice = append(trusteeAuthorizationsSlice, sdkTrusteeAuthorization)
-	}
-
-	return &trusteeAuthorizationsSlice
-}
-
 // buildTrustors maps an []interface{} into a Genesys Cloud *[]platformclientv2.Trustor
-func buildTrustors(trustors []interface{}) *[]platformclientv2.Trustor {
-	trustorsSlice := make([]platformclientv2.Trustor, 0)
-	for _, trustor := range trustors {
-		var sdkTrustor platformclientv2.Trustor
-		trustorsMap, ok := trustor.(map[string]interface{})
-		if !ok {
-			continue
-		}
+func buildTrustor(trustor []interface{}) *platformclientv2.Trustor {
 
-		sdkTrustor.Enabled = platformclientv2.Bool(trustorsMap["enabled"].(bool))
-		resourcedata.BuildSDKInterfaceArrayValueIfNotNil(&sdkTrustor.Organization, trustorsMap, "organization", buildOrganization)
-		resourcedata.BuildSDKInterfaceArrayValueIfNotNil(&sdkTrustor.Authorization, trustorsMap, "authorization", buildTrusteeAuthorization)
+	var sdkTrustor platformclientv2.Trustor
+	trustorsMap := trustor[0].(map[string]interface{})
 
-		trustorsSlice = append(trustorsSlice, sdkTrustor)
-	}
+	sdkTrustor.Enabled = platformclientv2.Bool(trustorsMap["enabled"].(bool))
 
-	return &trustorsSlice
+	return &sdkTrustor
 }
 
-// buildJsonSchemaDocuments maps an []interface{} into a Genesys Cloud *[]platformclientv2.Jsonschemadocument
-func buildJsonSchemaDocuments(jsonSchemaDocuments []interface{}) *[]platformclientv2.Jsonschemadocument {
-	jsonSchemaDocumentsSlice := make([]platformclientv2.Jsonschemadocument, 0)
-	for _, jsonSchemaDocument := range jsonSchemaDocuments {
-		var sdkJsonSchemaDocument platformclientv2.Jsonschemadocument
-		jsonSchemaDocumentsMap, ok := jsonSchemaDocument.(map[string]interface{})
-		if !ok {
-			continue
+func BuildOrganizationSchema(schemaList []interface{}, version *int) (*platformclientv2.Dataschema, error) {
+	// body for the creation/update of the schema
+	if len(schemaList) > 0 {
+		schemaMap := schemaList[0].(map[string]interface{})
+		jsonSchemaList := schemaMap["json_schema"].([]interface{})
+		dataSchema := &platformclientv2.Dataschema{}
+		dataSchema.Name = platformclientv2.String(schemaMap["name"].(string))
+		dataSchema.Enabled = platformclientv2.Bool(schemaMap["enabled"].(bool))
+		if *version != 0 {
+			dataSchema.Version = version
 		}
+		dataSchema.Id = platformclientv2.String(schemaMap["schema_id"].(string))
+		if len(jsonSchemaList) > 0 {
+			jsonSchemMap := jsonSchemaList[0].(map[string]interface{})
 
-		// resourcedata.BuildSDKStringValueIfNotNil(&sdkJsonSchemaDocument.$schema, jsonSchemaDocumentsMap, "$schema")
-		resourcedata.BuildSDKStringValueIfNotNil(&sdkJsonSchemaDocument.Title, jsonSchemaDocumentsMap, "title")
-		resourcedata.BuildSDKStringValueIfNotNil(&sdkJsonSchemaDocument.Description, jsonSchemaDocumentsMap, "description")
-		resourcedata.BuildSDKStringValueIfNotNil(&sdkJsonSchemaDocument.Type, jsonSchemaDocumentsMap, "type")
-		resourcedata.BuildSDKStringArrayValueIfNotNil(&sdkJsonSchemaDocument.Required, jsonSchemaDocumentsMap, "required")
-		// TODO: Handle properties property
-		// TODO: Handle additional_properties property
+			dataSchema.JsonSchema = &platformclientv2.Jsonschemadocument{}
 
-		jsonSchemaDocumentsSlice = append(jsonSchemaDocumentsSlice, sdkJsonSchemaDocument)
-	}
+			dataSchema.JsonSchema.Description = platformclientv2.String(jsonSchemMap["description"].(string))
+			dataSchema.JsonSchema.Title = platformclientv2.String(jsonSchemMap["title"].(string))
+			dataSchema.JsonSchema.Schema = platformclientv2.String("http://json-schema.org/draft-04/schema#")
+			requiredList := lists.InterfaceListToStrings(jsonSchemMap["required"].([]interface{}))
+			dataSchema.JsonSchema.Required = &requiredList
 
-	return &jsonSchemaDocumentsSlice
-}
+			// Custom attributes for the schemahashFormattedPhoneNumber
+			if jsonSchemMap["properties"] != "" {
+				var properties map[string]interface{}
+				if err := json.Unmarshal([]byte(jsonSchemMap["properties"].(string)), &properties); err != nil {
+					return nil, err
+				}
 
-// buildDataSchemas maps an []interface{} into a Genesys Cloud *[]platformclientv2.Dataschema
-func buildDataSchemas(dataSchemas []interface{}) *[]platformclientv2.Dataschema {
-	dataSchemasSlice := make([]platformclientv2.Dataschema, 0)
-	for _, dataSchema := range dataSchemas {
-		var sdkDataSchema platformclientv2.Dataschema
-		dataSchemasMap, ok := dataSchema.(map[string]interface{})
-		if !ok {
-			continue
+				dataSchema.JsonSchema.Properties = &properties
+			}
+
 		}
+		return dataSchema, nil
 
-		resourcedata.BuildSDKStringValueIfNotNil(&sdkDataSchema.Name, dataSchemasMap, "name")
-		resourcedata.BuildSDKStringArrayValueIfNotNil(&sdkDataSchema.AppliesTo, dataSchemasMap, "applies_to")
-		sdkDataSchema.Enabled = platformclientv2.Bool(dataSchemasMap["enabled"].(bool))
-		resourcedata.BuildSDKInterfaceArrayValueIfNotNil(&sdkDataSchema.JsonSchema, dataSchemasMap, "json_schema", buildJsonSchemaDocument)
-
-		dataSchemasSlice = append(dataSchemasSlice, sdkDataSchema)
 	}
-
-	return &dataSchemasSlice
+	return nil, nil
 }
 
 // buildExternalDataSources maps an []interface{} into a Genesys Cloud *[]platformclientv2.Externaldatasource
@@ -317,53 +255,6 @@ func buildExternalDataSources(externalDataSources []interface{}) *[]platformclie
 	}
 
 	return &externalDataSourcesSlice
-}
-
-// flattenContactAddresss maps a Genesys Cloud *[]platformclientv2.Contactaddress into a []interface{}
-func flattenContactAddresss(contactAddresss *[]platformclientv2.Contactaddress) []interface{} {
-	if len(*contactAddresss) == 0 {
-		return nil
-	}
-
-	var contactAddressList []interface{}
-	for _, contactAddress := range *contactAddresss {
-		contactAddressMap := make(map[string]interface{})
-
-		resourcedata.SetMapValueIfNotNil(contactAddressMap, "address1", contactAddress.Address1)
-		resourcedata.SetMapValueIfNotNil(contactAddressMap, "address2", contactAddress.Address2)
-		resourcedata.SetMapValueIfNotNil(contactAddressMap, "city", contactAddress.City)
-		resourcedata.SetMapValueIfNotNil(contactAddressMap, "state", contactAddress.State)
-		resourcedata.SetMapValueIfNotNil(contactAddressMap, "postal_code", contactAddress.PostalCode)
-		resourcedata.SetMapValueIfNotNil(contactAddressMap, "country_code", contactAddress.CountryCode)
-
-		contactAddressList = append(contactAddressList, contactAddressMap)
-	}
-
-	return contactAddressList
-}
-
-// flattenPhoneNumbers maps a Genesys Cloud *[]platformclientv2.Phonenumber into a []interface{}
-func flattenPhoneNumbers(phoneNumbers *[]platformclientv2.Phonenumber) []interface{} {
-	if len(*phoneNumbers) == 0 {
-		return nil
-	}
-
-	var phoneNumberList []interface{}
-	for _, phoneNumber := range *phoneNumbers {
-		phoneNumberMap := make(map[string]interface{})
-
-		resourcedata.SetMapValueIfNotNil(phoneNumberMap, "display", phoneNumber.Display)
-		resourcedata.SetMapValueIfNotNil(phoneNumberMap, "extension", phoneNumber.Extension)
-		resourcedata.SetMapValueIfNotNil(phoneNumberMap, "accepts_s_m_s", phoneNumber.AcceptsSMS)
-		resourcedata.SetMapValueIfNotNil(phoneNumberMap, "normalization_country_code", phoneNumber.NormalizationCountryCode)
-		resourcedata.SetMapValueIfNotNil(phoneNumberMap, "user_input", phoneNumber.UserInput)
-		resourcedata.SetMapValueIfNotNil(phoneNumberMap, "e164", phoneNumber.E164)
-		resourcedata.SetMapValueIfNotNil(phoneNumberMap, "country_code", phoneNumber.CountryCode)
-
-		phoneNumberList = append(phoneNumberList, phoneNumberMap)
-	}
-
-	return phoneNumberList
 }
 
 // flattenTickers maps a Genesys Cloud *[]platformclientv2.Ticker into a []interface{}
@@ -386,136 +277,60 @@ func flattenTickers(tickers *[]platformclientv2.Ticker) []interface{} {
 }
 
 // flattenTwitterIds maps a Genesys Cloud *[]platformclientv2.Twitterid into a []interface{}
-func flattenTwitterIds(twitterIds *[]platformclientv2.Twitterid) []interface{} {
-	if len(*twitterIds) == 0 {
-		return nil
-	}
+// flattenSdkTwitterId maps a Genesys Cloud platformclientv2.Twitterid into a []interface{}
+func flattenSdkTwitterId(twitterId *platformclientv2.Twitterid) []interface{} {
+	twitterMap := make(map[string]interface{})
+	resourcedata.SetMapValueIfNotNil(twitterMap, "twitter_id", twitterId.Id)
+	resourcedata.SetMapValueIfNotNil(twitterMap, "name", twitterId.Name)
+	resourcedata.SetMapValueIfNotNil(twitterMap, "screen_name", twitterId.Name)
 
-	var twitterIdList []interface{}
-	for _, twitterId := range *twitterIds {
-		twitterIdMap := make(map[string]interface{})
-
-		resourcedata.SetMapValueIfNotNil(twitterIdMap, "name", twitterId.Name)
-		resourcedata.SetMapValueIfNotNil(twitterIdMap, "screen_name", twitterId.ScreenName)
-		resourcedata.SetMapValueIfNotNil(twitterIdMap, "verified", twitterId.Verified)
-		resourcedata.SetMapValueIfNotNil(twitterIdMap, "profile_url", twitterId.ProfileUrl)
-
-		twitterIdList = append(twitterIdList, twitterIdMap)
-	}
-
-	return twitterIdList
-}
-
-// flattenOrganizations maps a Genesys Cloud *[]platformclientv2.Organization into a []interface{}
-func flattenOrganizations(organizations *[]platformclientv2.Organization) []interface{} {
-	if len(*organizations) == 0 {
-		return nil
-	}
-
-	var organizationList []interface{}
-	for _, organization := range *organizations {
-		organizationMap := make(map[string]interface{})
-
-		resourcedata.SetMapValueIfNotNil(organizationMap, "name", organization.Name)
-		resourcedata.SetMapValueIfNotNil(organizationMap, "default_language", organization.DefaultLanguage)
-		resourcedata.SetMapValueIfNotNil(organizationMap, "default_country_code", organization.DefaultCountryCode)
-		resourcedata.SetMapValueIfNotNil(organizationMap, "third_party_org_name", organization.ThirdPartyOrgName)
-		resourcedata.SetMapValueIfNotNil(organizationMap, "third_party_u_r_i", organization.ThirdPartyURI)
-		resourcedata.SetMapValueIfNotNil(organizationMap, "domain", organization.Domain)
-		resourcedata.SetMapValueIfNotNil(organizationMap, "state", organization.State)
-		resourcedata.SetMapValueIfNotNil(organizationMap, "default_site_id", organization.DefaultSiteId)
-		resourcedata.SetMapValueIfNotNil(organizationMap, "support_u_r_i", organization.SupportURI)
-		resourcedata.SetMapValueIfNotNil(organizationMap, "voicemail_enabled", organization.VoicemailEnabled)
-		resourcedata.SetMapValueIfNotNil(organizationMap, "product_platform", organization.ProductPlatform)
-		// TODO: Handle features property
-
-		organizationList = append(organizationList, organizationMap)
-	}
-
-	return organizationList
-}
-
-// flattenTrusteeAuthorizations maps a Genesys Cloud *[]platformclientv2.Trusteeauthorization into a []interface{}
-func flattenTrusteeAuthorizations(trusteeAuthorizations *[]platformclientv2.Trusteeauthorization) []interface{} {
-	if len(*trusteeAuthorizations) == 0 {
-		return nil
-	}
-
-	var trusteeAuthorizationList []interface{}
-	for _, trusteeAuthorization := range *trusteeAuthorizations {
-		trusteeAuthorizationMap := make(map[string]interface{})
-
-		resourcedata.SetMapStringArrayValueIfNotNil(trusteeAuthorizationMap, "permissions", trusteeAuthorization.Permissions)
-
-		trusteeAuthorizationList = append(trusteeAuthorizationList, trusteeAuthorizationMap)
-	}
-
-	return trusteeAuthorizationList
+	return []interface{}{twitterMap}
 }
 
 // flattenTrustors maps a Genesys Cloud *[]platformclientv2.Trustor into a []interface{}
-func flattenTrustors(trustors *[]platformclientv2.Trustor) []interface{} {
-	if len(*trustors) == 0 {
-		return nil
-	}
-
-	var trustorList []interface{}
-	for _, trustor := range *trustors {
-		trustorMap := make(map[string]interface{})
-
-		resourcedata.SetMapValueIfNotNil(trustorMap, "enabled", trustor.Enabled)
-		resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(trustorMap, "organization", trustor.Organization, flattenOrganization)
-		resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(trustorMap, "authorization", trustor.Authorization, flattenTrusteeAuthorization)
-
-		trustorList = append(trustorList, trustorMap)
-	}
-
-	return trustorList
+func flattenTrustor(trustor *platformclientv2.Trustor) []interface{} {
+	trustorMap := make(map[string]interface{})
+	resourcedata.SetMapValueIfNotNil(trustorMap, "enabled", trustor.Enabled)
+	return []interface{}{trustorMap}
 }
 
 // flattenJsonSchemaDocuments maps a Genesys Cloud *[]platformclientv2.Jsonschemadocument into a []interface{}
-func flattenJsonSchemaDocuments(jsonSchemaDocuments *[]platformclientv2.Jsonschemadocument) []interface{} {
-	if len(*jsonSchemaDocuments) == 0 {
-		return nil
+func flattenJsonSchemaDocuments(jsonSchemaDocuments *platformclientv2.Jsonschemadocument) ([]interface{}, error) {
+	if jsonSchemaDocuments == nil {
+		return nil, nil
 	}
-
-	var jsonSchemaDocumentList []interface{}
-	for _, jsonSchemaDocument := range *jsonSchemaDocuments {
-		jsonSchemaDocumentMap := make(map[string]interface{})
-
-		// resourcedata.SetMapValueIfNotNil(jsonSchemaDocumentMap, "$schema", jsonSchemaDocument.$schema)
-		resourcedata.SetMapValueIfNotNil(jsonSchemaDocumentMap, "title", jsonSchemaDocument.Title)
-		resourcedata.SetMapValueIfNotNil(jsonSchemaDocumentMap, "description", jsonSchemaDocument.Description)
-		resourcedata.SetMapValueIfNotNil(jsonSchemaDocumentMap, "type", jsonSchemaDocument.Type)
-		resourcedata.SetMapStringArrayValueIfNotNil(jsonSchemaDocumentMap, "required", jsonSchemaDocument.Required)
-		// TODO: Handle properties property
-		// TODO: Handle additional_properties property
-
-		jsonSchemaDocumentList = append(jsonSchemaDocumentList, jsonSchemaDocumentMap)
+	jsonSchemaMap := make(map[string]interface{})
+	schemaProps, err := json.Marshal(jsonSchemaDocuments.Properties)
+	if err != nil {
+		return nil, fmt.Errorf("error in reading json schema properties error: %v", err)
 	}
-
-	return jsonSchemaDocumentList
+	var schemaPropsPtr *string
+	if string(schemaProps) != util.NullValue {
+		schemaPropsStr := string(schemaProps)
+		schemaPropsPtr = &schemaPropsStr
+	}
+	resourcedata.SetMapValueIfNotNil(jsonSchemaMap, "properties", schemaPropsPtr)
+	resourcedata.SetMapValueIfNotNil(jsonSchemaMap, "description", jsonSchemaDocuments.Description)
+	resourcedata.SetMapValueIfNotNil(jsonSchemaMap, "title", jsonSchemaDocuments.Title)
+	jsonSchemaMap["required"] = lists.StringListToInterfaceList(*jsonSchemaDocuments.Required)
+	return []interface{}{jsonSchemaMap}, nil
 }
 
 // flattenDataSchemas maps a Genesys Cloud *[]platformclientv2.Dataschema into a []interface{}
-func flattenDataSchemas(dataSchemas *[]platformclientv2.Dataschema) []interface{} {
-	if len(*dataSchemas) == 0 {
-		return nil
+func flattenDataSchema(dataSchema *platformclientv2.Dataschema) ([]interface{}, error) {
+
+	dataSchemaMap := make(map[string]interface{})
+
+	resourcedata.SetMapValueIfNotNil(dataSchemaMap, "name", dataSchema.Name)
+	resourcedata.SetMapValueIfNotNil(dataSchemaMap, "version", dataSchema.Version)
+	resourcedata.SetMapValueIfNotNil(dataSchemaMap, "enabled", dataSchema.Enabled)
+	resourcedata.SetMapValueIfNotNil(dataSchemaMap, "schema_id", dataSchema.Id)
+	jsonSchemaFlattened, err := flattenJsonSchemaDocuments(dataSchema.JsonSchema)
+	if err != nil {
+		return nil, err
 	}
-
-	var dataSchemaList []interface{}
-	for _, dataSchema := range *dataSchemas {
-		dataSchemaMap := make(map[string]interface{})
-
-		resourcedata.SetMapValueIfNotNil(dataSchemaMap, "name", dataSchema.Name)
-		resourcedata.SetMapStringArrayValueIfNotNil(dataSchemaMap, "applies_to", dataSchema.AppliesTo)
-		resourcedata.SetMapValueIfNotNil(dataSchemaMap, "enabled", dataSchema.Enabled)
-		resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(dataSchemaMap, "json_schema", dataSchema.JsonSchema, flattenJsonSchemaDocument)
-
-		dataSchemaList = append(dataSchemaList, dataSchemaMap)
-	}
-
-	return dataSchemaList
+	dataSchemaMap["json_schema"] = &jsonSchemaFlattened
+	return []interface{}{dataSchemaMap}, nil
 }
 
 // flattenExternalDataSources maps a Genesys Cloud *[]platformclientv2.Externaldatasource into a []interface{}
@@ -546,4 +361,33 @@ func hashFormattedPhoneNumber(val string) int {
 	}
 
 	return schema.HashString(formattedNumber)
+}
+
+func buildCustomFieldsNillable(fieldsJson string) (*map[string]interface{}, error) {
+	if fieldsJson == "" {
+		return nil, nil
+	}
+
+	fieldsInterface, err := util.JsonStringToInterface(fieldsJson)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse custom fields %s: %v", fieldsJson, err)
+	}
+	fieldsMap, ok := fieldsInterface.(map[string]interface{})
+	if !ok {
+		return nil, fmt.Errorf("custom fields is not a JSON 'object': %v", fieldsJson)
+	}
+
+	return &fieldsMap, nil
+}
+
+// flattenCustomFields maps a Genesys Cloud custom fields *map[string]interface{} into a JSON string
+func flattenCustomFields(customFields *map[string]interface{}) (string, error) {
+	if customFields == nil {
+		return "", nil
+	}
+	cfBytes, err := json.Marshal(customFields)
+	if err != nil {
+		return "", fmt.Errorf("error marshalling action contract %v: %v", customFields, err)
+	}
+	return string(cfBytes), nil
 }
