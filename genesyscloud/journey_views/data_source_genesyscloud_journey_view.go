@@ -32,12 +32,14 @@ func getJourneyByNameFn(name string, ctx context.Context, m interface{}) (string
 	journeyId := ""
 
 	diag := util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
-		foundId, resp, getErr := proxy.getJourneyViewByName(ctx, name)
-		if getErr != nil {
-			errMsg := util.BuildWithRetriesApiDiagnosticError(name, fmt.Sprintf("error requesting journey view %s | error %s", name, getErr), resp)
-			return retry.NonRetryableError(errMsg)
+		foundId, resp, getErr, retryable := proxy.getJourneyViewByName(ctx, name)
+		if getErr != nil && !retryable {
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(name, fmt.Sprintf("Error requesting journey view %s | error: %s", name, getErr), resp))
 		}
 
+		if retryable {
+			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(name, fmt.Sprintf("No journey view found with search %s", name), resp))
+		}
 		journeyId = foundId
 		return nil
 	})

@@ -11,7 +11,7 @@ import (
 var internalProxy *journeyViewsProxy
 
 type getAllJourneyViewsFunc func(ctx context.Context, p *journeyViewsProxy, name string) (*[]platformclientv2.Journeyview, *platformclientv2.APIResponse, error)
-type getJourneyViewByNameFunc func(ctx context.Context, p *journeyViewsProxy, name string) (string, *platformclientv2.APIResponse, error)
+type getJourneyViewByNameFunc func(ctx context.Context, p *journeyViewsProxy, name string) (string, *platformclientv2.APIResponse, error, bool)
 type getJourneyViewByViewIdFunc func(ctx context.Context, p *journeyViewsProxy, viewId string) (*platformclientv2.Journeyview, *platformclientv2.APIResponse, error)
 type createJourneyViewFunc func(ctx context.Context, p *journeyViewsProxy, journeyView *platformclientv2.Journeyview) (*platformclientv2.Journeyview, *platformclientv2.APIResponse, error)
 type updateJourneyViewFunc func(ctx context.Context, p *journeyViewsProxy, viewId string, journeyView *platformclientv2.Journeyview) (*platformclientv2.Journeyview, *platformclientv2.APIResponse, error)
@@ -60,7 +60,7 @@ func (p *journeyViewsProxy) getJourneyViewById(ctx context.Context, viewId strin
 	return p.getJourneyViewAttr(ctx, p, viewId)
 }
 
-func (p *journeyViewsProxy) getJourneyViewByName(ctx context.Context, viewName string) (string, *platformclientv2.APIResponse, error) {
+func (p *journeyViewsProxy) getJourneyViewByName(ctx context.Context, viewName string) (string, *platformclientv2.APIResponse, error, bool) {
 	return p.getJourneyViewByNameAttr(ctx, p, viewName)
 }
 
@@ -73,7 +73,12 @@ func (p *journeyViewsProxy) updateJourneyView(ctx context.Context, viewId string
 }
 
 func (p *journeyViewsProxy) deleteJourneyView(ctx context.Context, viewId string) (*platformclientv2.APIResponse, error) {
-	return p.deleteJourneyViewAttr(ctx, p, viewId)
+	resp, err := p.deleteJourneyViewAttr(ctx, p, viewId)
+	if err != nil {
+		return resp, err
+	}
+	rc.DeleteCacheItem(p.journeyViewCache, viewId)
+	return resp, nil
 }
 
 func getJourneyViewByViewIdFn(_ context.Context, p *journeyViewsProxy, viewId string) (*platformclientv2.Journeyview, *platformclientv2.APIResponse, error) {
@@ -85,23 +90,23 @@ func getJourneyViewByViewIdFn(_ context.Context, p *journeyViewsProxy, viewId st
 	return p.journeyViewsApi.GetJourneyView(viewId)
 }
 
-func getJourneyViewByNameFn(ctx context.Context, p *journeyViewsProxy, viewName string) (string, *platformclientv2.APIResponse, error) {
+func getJourneyViewByNameFn(ctx context.Context, p *journeyViewsProxy, viewName string) (string, *platformclientv2.APIResponse, error, bool) {
 	journeys, resp, err := p.getAllJourneyViews(ctx, viewName)
 	if err != nil {
-		return "", resp, err
+		return "", resp, err, false
 	}
 
 	if journeys == nil || len(*journeys) == 0 {
-		return "", resp, fmt.Errorf("no journey view found with name %s", viewName)
+		return "", resp, fmt.Errorf("no journey view found with name %s", viewName), true
 	}
 
 	for _, journey := range *journeys {
 		if *journey.Name == viewName {
 			fmt.Printf("Retrieved the journey view id %s by name %s", *journey.Id, viewName)
-			return *journey.Id, resp, nil
+			return *journey.Id, resp, nil, false
 		}
 	}
-	return "", resp, fmt.Errorf("unable to find journey view with name %s", viewName)
+	return "", resp, fmt.Errorf("unable to find journey view with name %s", viewName), true
 }
 
 func createJourneyViewFn(_ context.Context, p *journeyViewsProxy, journeyView *platformclientv2.Journeyview) (*platformclientv2.Journeyview, *platformclientv2.APIResponse, error) {
