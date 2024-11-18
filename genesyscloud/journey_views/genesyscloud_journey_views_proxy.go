@@ -3,6 +3,7 @@ package journey_views
 import (
 	"context"
 	"fmt"
+	"log"
 	rc "terraform-provider-genesyscloud/genesyscloud/resource_cache"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v143/platformclientv2"
@@ -102,7 +103,7 @@ func getJourneyViewByNameFn(ctx context.Context, p *journeyViewsProxy, viewName 
 
 	for _, journey := range *journeys {
 		if *journey.Name == viewName {
-			fmt.Printf("Retrieved the journey view id %s by name %s", *journey.Id, viewName)
+			log.Printf("Retrieved the journey view id %s by name %s", *journey.Id, viewName)
 			return *journey.Id, resp, nil, false
 		}
 	}
