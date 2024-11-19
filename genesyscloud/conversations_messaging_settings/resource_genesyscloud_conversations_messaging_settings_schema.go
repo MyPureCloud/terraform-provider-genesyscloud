@@ -9,7 +9,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
-const resourceName = "genesyscloud_conversations_messaging_settings"
+const ResourceType = "genesyscloud_conversations_messaging_settings"
 
 var (
 	eventSettingResource = &schema.Resource{
@@ -94,9 +94,9 @@ var (
 
 // SetRegistrar registers all of the resources, datasources and exporters in the package
 func SetRegistrar(regInstance registrar.Registrar) {
-	regInstance.RegisterResource(resourceName, ResourceConversationsMessagingSettings())
-	regInstance.RegisterDataSource(resourceName, DataSourceConversationsMessagingSettings())
-	regInstance.RegisterExporter(resourceName, ConversationsMessagingSettingsExporter())
+	regInstance.RegisterResource(ResourceType, ResourceConversationsMessagingSettings())
+	regInstance.RegisterDataSource(ResourceType, DataSourceConversationsMessagingSettings())
+	regInstance.RegisterExporter(ResourceType, ConversationsMessagingSettingsExporter())
 }
 
 func ResourceConversationsMessagingSettings() *schema.Resource {

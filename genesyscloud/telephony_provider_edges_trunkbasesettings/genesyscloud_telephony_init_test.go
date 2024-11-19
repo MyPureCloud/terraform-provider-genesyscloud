@@ -24,11 +24,11 @@ func (r *registerTestInstance) registerTestResources() {
 	r.resourceMapMutex.Lock()
 	defer r.resourceMapMutex.Unlock()
 
-	providerResources["genesyscloud_telephony_providers_edges_trunkbasesettings"] = ResourceTrunkBaseSettings()
-	providerResources["genesyscloud_telephony_providers_edges_trunk"] = edgeTrunk.ResourceTrunk()
+	providerResources[ResourceType] = ResourceTrunkBaseSettings()
+	providerResources[edgeTrunk.ResourceType] = edgeTrunk.ResourceTrunk()
 	// external package dependencies for outbound
-	providerResources["genesyscloud_telephony_providers_edges_site"] = edgeSite.ResourceSite()
-	providerResources["genesyscloud_location"] = location.ResourceLocation()
+	providerResources[edgeSite.ResourceType] = edgeSite.ResourceSite()
+	providerResources[location.ResourceType] = location.ResourceLocation()
 
 }
 
@@ -36,10 +36,10 @@ func (r *registerTestInstance) registerTestDataSources() {
 
 	r.datasourceMapMutex.Lock()
 	defer r.datasourceMapMutex.Unlock()
-	providerDataSources["genesyscloud_telephony_providers_edges_trunkbasesettings"] = DataSourceTrunkBaseSettings()
-	providerDataSources["genesyscloud_telephony_providers_edges_trunk"] = edgeTrunk.DataSourceTrunk()
+	providerDataSources[ResourceType] = DataSourceTrunkBaseSettings()
+	providerDataSources[edgeTrunk.ResourceType] = edgeTrunk.DataSourceTrunk()
 	// external package dependencies for outbound
-	providerDataSources["genesyscloud_telephony_providers_edges_site"] = edgeSite.DataSourceSite()
+	providerDataSources[edgeSite.ResourceType] = edgeSite.DataSourceSite()
 
 }
 

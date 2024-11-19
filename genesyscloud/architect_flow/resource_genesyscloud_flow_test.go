@@ -30,11 +30,11 @@ func lockFlow(flowName string, flowType string) {
 		for pageNum := 1; ; pageNum++ {
 			flows, resp, getErr := archAPI.GetFlows(nil, pageNum, pageSize, "", "", nil, flowName, "", "", "", "", "", "", "", false, false, "", "", nil)
 			if getErr != nil {
-				return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("error requesting flow %s | error: %s", flowName, getErr), resp))
+				return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("error requesting flow %s | error: %s", flowName, getErr), resp))
 			}
 
 			if flows.Entities == nil || len(*flows.Entities) == 0 {
-				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("no flows found with name %s", flowName), resp))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("no flows found with name %s", flowName), resp))
 			}
 
 			for _, entity := range *flows.Entities {
@@ -42,7 +42,7 @@ func lockFlow(flowName string, flowType string) {
 					flow, response, err := archAPI.PostFlowsActionsCheckout(*entity.Id)
 
 					if err != nil || response.Error != nil {
-						return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("error requesting flow %s | error: %s", flowName, getErr), resp))
+						return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("error requesting flow %s | error: %s", flowName, getErr), resp))
 					}
 
 					log.Printf("Flow (%s) with FlowName: %s has been locked Flow resource after checkout: %v\n", *flow.Id, flowName, *flow.LockedClient.Name)
@@ -384,11 +384,11 @@ func TestAccResourceArchFlowSubstitutionsWithMultipleTouch(t *testing.T) {
 }
 
 // Check if flow is published, then check if flow name and type are correct
-func validateFlow(flowResourceName, name, description, flowType string) resource.TestCheckFunc {
+func validateFlow(flowFullResourceName, name, description, flowType string) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
-		flowResource, ok := state.RootModule().Resources[flowResourceName]
+		flowResource, ok := state.RootModule().Resources[flowFullResourceName]
 		if !ok {
-			return fmt.Errorf("Failed to find flow %s in state", flowResourceName)
+			return fmt.Errorf("Failed to find flow %s in state", flowFullResourceName)
 		}
 		flowID := flowResource.Primary.ID
 		architectAPI := platformclientv2.NewArchitectApi()
@@ -426,11 +426,11 @@ func validateFlow(flowResourceName, name, description, flowType string) resource
 
 // Will attempt to determine if a flow is unlocked. I check to see if a flow is locked, by attempting to check the flow again.  If the flow is locked the second checkout
 // will fail with a 409 status code.  If the flow is unlocked, the status code will be a 200
-func validateFlowUnlocked(flowResourceName string) resource.TestCheckFunc {
+func validateFlowUnlocked(flowFullResourceName string) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
-		flowResource, ok := state.RootModule().Resources[flowResourceName]
+		flowResource, ok := state.RootModule().Resources[flowFullResourceName]
 		if !ok {
-			return fmt.Errorf("Failed to find flow %s in state", flowResourceName)
+			return fmt.Errorf("Failed to find flow %s in state", flowFullResourceName)
 		}
 
 		flowID := flowResource.Primary.ID

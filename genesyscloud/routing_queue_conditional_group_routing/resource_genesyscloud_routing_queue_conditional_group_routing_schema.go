@@ -1,19 +1,20 @@
 package routing_queue_conditional_group_routing
 
 import (
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
-const resourceName = "genesyscloud_routing_queue_conditional_group_routing"
+const ResourceType = "genesyscloud_routing_queue_conditional_group_routing"
 
 // SetRegistrar registers all the resources and exporters in the package
 func SetRegistrar(regInstance registrar.Registrar) {
-	regInstance.RegisterResource(resourceName, ResourceRoutingQueueConditionalGroupRouting())
-	regInstance.RegisterExporter(resourceName, RoutingQueueConditionalGroupRoutingExporter())
+	regInstance.RegisterResource(ResourceType, ResourceRoutingQueueConditionalGroupRouting())
+	regInstance.RegisterExporter(ResourceType, RoutingQueueConditionalGroupRoutingExporter())
 }
 
 var (

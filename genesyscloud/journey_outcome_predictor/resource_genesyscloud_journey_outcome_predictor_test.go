@@ -16,7 +16,7 @@ func TestAccResourceJourneyOutcomePredictor(t *testing.T) {
 	t.Parallel()
 	var (
 		fullResourceName        = "genesyscloud_journey_outcome_predictor.test_predictor"
-		fullOutcomeResourceName = "genesyscloud_journey_outcome.test_outcome"
+		outcomeFullResourceName = "genesyscloud_journey_outcome.test_outcome"
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -26,7 +26,7 @@ func TestAccResourceJourneyOutcomePredictor(t *testing.T) {
 			{
 				Config: predictorResource("tf test outcome " + uuid.NewString()),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair(fullResourceName, "outcome_id", fullOutcomeResourceName, "id"),
+					resource.TestCheckResourceAttrPair(fullResourceName, "outcome_id", outcomeFullResourceName, "id"),
 				),
 			},
 			{

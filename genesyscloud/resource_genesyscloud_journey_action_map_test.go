@@ -17,7 +17,7 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
 )
 
-const resourceName = "genesyscloud_journey_action_map"
+const resourceType = "genesyscloud_journey_action_map"
 
 func TestAccResourceJourneyActionMapActionMediaTypes(t *testing.T) {
 	runJourneyActionMapTestCaseWithFileServer(t, "action_media_types", 8111)
@@ -42,7 +42,7 @@ func TestAccResourceJourneyActionMapScheduleGroups(t *testing.T) {
 func runJourneyActionMapTestCaseWithFileServer(t *testing.T, testCaseName string, port int) {
 	httpServerExitDone := &sync.WaitGroup{}
 	httpServerExitDone.Add(1)
-	server := fileserver.Start(httpServerExitDone, testrunner.GetTestDataPath(testrunner.ResourceTestType, resourceName), port)
+	server := fileserver.Start(httpServerExitDone, testrunner.GetTestDataPath(testrunner.ResourceTestType, resourceType), port)
 
 	runJourneyActionMapTestCase(t, testCaseName)
 
@@ -55,7 +55,7 @@ func runJourneyActionMapTestCase(t *testing.T, testCaseName string) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
-		Steps:             testrunner.GenerateResourceTestSteps(resourceName, testCaseName, nil),
+		Steps:             testrunner.GenerateResourceTestSteps(resourceType, testCaseName, nil),
 		CheckDestroy:      testVerifyJourneyActionMapsDestroyed,
 	})
 }

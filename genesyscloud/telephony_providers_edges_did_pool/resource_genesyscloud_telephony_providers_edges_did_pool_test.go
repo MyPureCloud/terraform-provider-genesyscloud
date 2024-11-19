@@ -31,7 +31,7 @@ func TestAccResourceDidPoolBasic(t *testing.T) {
 	didPoolComments1 := "Test comments"
 	didPoolProvider1 := "PURE_CLOUD"
 
-	fullResourceName := resourceName + "." + didPoolResourceLabel1
+	fullResourceName := ResourceType + "." + didPoolResourceLabel1
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
@@ -74,7 +74,7 @@ func TestAccResourceDidPoolBasic(t *testing.T) {
 			},
 			{
 				// Import/Read
-				ResourceName:      resourceName + "." + didPoolResourceLabel1,
+				ResourceName:      ResourceType + "." + didPoolResourceLabel1,
 				ImportState:       true,
 				ImportStateVerify: true,
 			},
@@ -86,7 +86,7 @@ func TestAccResourceDidPoolBasic(t *testing.T) {
 func testVerifyDidPoolsDestroyed(state *terraform.State) error {
 	telephonyAPI := platformclientv2.NewTelephonyProvidersEdgeApi()
 	for _, rs := range state.RootModule().Resources {
-		if rs.Type != resourceName {
+		if rs.Type != ResourceType {
 			continue
 		}
 

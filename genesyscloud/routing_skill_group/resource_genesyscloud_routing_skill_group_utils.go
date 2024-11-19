@@ -96,7 +96,7 @@ func createListsForSkillgroupsMembersDivisions(schemaMemberDivisionIds []string,
 
 	if allMemberDivisionsSpecified(schemaMemberDivisionIds) {
 		if len(schemaMemberDivisionIds) > 1 {
-			return nil, nil, util.BuildDiagnosticError(resourceName, fmt.Sprintf(`member_division_ids should not contain more than one item when the value of an item is "*"`), fmt.Errorf(`member_division_ids should not contain more than one item when the value of an item is "*"`))
+			return nil, nil, util.BuildDiagnosticError(ResourceType, fmt.Sprintf(`member_division_ids should not contain more than one item when the value of an item is "*"`), fmt.Errorf(`member_division_ids should not contain more than one item when the value of an item is "*"`))
 		}
 		toAdd, err := getAllAuthDivisionIds(meta)
 		return toAdd, nil, err

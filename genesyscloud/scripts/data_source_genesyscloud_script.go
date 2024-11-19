@@ -29,9 +29,9 @@ func dataSourceScriptRead(ctx context.Context, d *schema.ResourceData, m interfa
 		scriptId, retryable, resp, err := scriptsProxy.getScriptIdByName(ctx, name)
 		if err != nil {
 			if retryable {
-				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to get Script %s", err), resp))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to get Script %s", err), resp))
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to get Script %s", err), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to get Script %s", err), resp))
 		}
 		d.SetId(scriptId)
 		return nil

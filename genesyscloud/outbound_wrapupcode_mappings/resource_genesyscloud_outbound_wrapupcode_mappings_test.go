@@ -138,16 +138,16 @@ resource "genesyscloud_outbound_wrapupcodemappings"	"%s" {
 }
 
 // verifyWrapupCodeMappingsMappingValues checks that the mapping attribute has the correct flags set.
-func verifyWrapupCodeMappingsMappingValues(resourceName string, wrapupCodeResourceName string, expectedFlags []string) resource.TestCheckFunc {
+func verifyWrapupCodeMappingsMappingValues(fullResourceName string, wrapupCodeFullResourceName string, expectedFlags []string) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
-		resourceState, ok := state.RootModule().Resources[resourceName]
+		resourceState, ok := state.RootModule().Resources[fullResourceName]
 		if !ok {
-			return fmt.Errorf("Failed to find resourceState %s in state", resourceName)
+			return fmt.Errorf("Failed to find resourceState %s in state", fullResourceName)
 		}
 
-		wrapupCodeResourceState, ok := state.RootModule().Resources[wrapupCodeResourceName]
+		wrapupCodeResourceState, ok := state.RootModule().Resources[wrapupCodeFullResourceName]
 		if !ok {
-			return fmt.Errorf("Failed to find resourceState %s in state", resourceName)
+			return fmt.Errorf("Failed to find resourceState %s in state", fullResourceName)
 		}
 		expectedWrapupCodeId := wrapupCodeResourceState.Primary.ID
 

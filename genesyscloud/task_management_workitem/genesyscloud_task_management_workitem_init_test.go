@@ -43,18 +43,18 @@ func (r *registerTestInstance) registerTestResources() {
 	r.resourceMapMutex.Lock()
 	defer r.resourceMapMutex.Unlock()
 
-	providerResources[resourceName] = ResourceTaskManagementWorkitem()
-	providerResources["genesyscloud_task_management_workitem_schema"] = workitemSchema.ResourceTaskManagementWorkitemSchema()
-	providerResources["genesyscloud_task_management_workbin"] = workbin.ResourceTaskManagementWorkbin()
-	providerResources["genesyscloud_task_management_worktype"] = worktype.ResourceTaskManagementWorktype()
-	providerResources["genesyscloud_routing_language"] = routingLanguage.ResourceRoutingLanguage()
-	providerResources["genesyscloud_task_management_worktype_status"] = worktypeStatus.ResourceTaskManagementWorktypeStatus()
-	providerResources["genesyscloud_user"] = user.ResourceUser()
-	providerResources["genesyscloud_externalcontacts_contact"] = externalContacts.ResourceExternalContact()
-	providerResources["genesyscloud_routing_queue"] = routingQueue.ResourceRoutingQueue()
-	providerResources["genesyscloud_routing_skill"] = routingSkill.ResourceRoutingSkill()
-	providerResources["genesyscloud_auth_role"] = authRole.ResourceAuthRole()
-	providerResources["genesyscloud_user_roles"] = user_roles.ResourceUserRoles()
+	providerResources[ResourceType] = ResourceTaskManagementWorkitem()
+	providerResources[workitemSchema.ResourceType] = workitemSchema.ResourceTaskManagementWorkitemSchema()
+	providerResources[workbin.ResourceType] = workbin.ResourceTaskManagementWorkbin()
+	providerResources[worktype.ResourceType] = worktype.ResourceTaskManagementWorktype()
+	providerResources[routingLanguage.ResourceType] = routingLanguage.ResourceRoutingLanguage()
+	providerResources[worktypeStatus.ResourceType] = worktypeStatus.ResourceTaskManagementWorktypeStatus()
+	providerResources[user.ResourceType] = user.ResourceUser()
+	providerResources[externalContacts.ResourceType] = externalContacts.ResourceExternalContact()
+	providerResources[routingQueue.ResourceType] = routingQueue.ResourceRoutingQueue()
+	providerResources[routingSkill.ResourceType] = routingSkill.ResourceRoutingSkill()
+	providerResources[authRole.ResourceType] = authRole.ResourceAuthRole()
+	providerResources[user_roles.ResourceType] = user_roles.ResourceUserRoles()
 }
 
 // registerTestDataSources registers all data sources used in the tests.
@@ -62,7 +62,7 @@ func (r *registerTestInstance) registerTestDataSources() {
 	r.datasourceMapMutex.Lock()
 	defer r.datasourceMapMutex.Unlock()
 
-	providerDataSources[resourceName] = DataSourceTaskManagementWorkitem()
+	providerDataSources[ResourceType] = DataSourceTaskManagementWorkitem()
 	providerDataSources["genesyscloud_auth_division_home"] = gcloud.DataSourceAuthDivisionHome()
 }
 

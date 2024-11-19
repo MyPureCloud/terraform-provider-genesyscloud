@@ -47,15 +47,15 @@ func (r *registerTestInstance) registerTestResources() {
 	r.resourceMapMutex.Lock()
 	defer r.resourceMapMutex.Unlock()
 
-	providerResources[resourceName] = ResourceOutboundSequence()
-	providerResources["genesyscloud_outbound_campaign"] = outboundCampaign.ResourceOutboundCampaign()
-	providerResources["genesyscloud_outbound_contact_list"] = outboundContactList.ResourceOutboundContactList()
-	providerResources["genesyscloud_routing_wrapupcode"] = routingWrapupcode.ResourceRoutingWrapupCode()
-	providerResources["genesyscloud_flow"] = flow.ResourceArchitectFlow()
-	providerResources["genesyscloud_outbound_callanalysisresponseset"] = obResponseSet.ResourceOutboundCallanalysisresponseset()
-	providerResources["genesyscloud_location"] = location.ResourceLocation()
-	providerResources["genesyscloud_auth_division"] = authDivision.ResourceAuthDivision()
-	providerResources["genesyscloud_telephony_providers_edges_site"] = edgeSite.ResourceSite()
+	providerResources[ResourceType] = ResourceOutboundSequence()
+	providerResources[outboundCampaign.ResourceType] = outboundCampaign.ResourceOutboundCampaign()
+	providerResources[outboundContactList.ResourceType] = outboundContactList.ResourceOutboundContactList()
+	providerResources[routingWrapupcode.ResourceType] = routingWrapupcode.ResourceRoutingWrapupCode()
+	providerResources[flow.ResourceType] = flow.ResourceArchitectFlow()
+	providerResources[obResponseSet.ResourceType] = obResponseSet.ResourceOutboundCallanalysisresponseset()
+	providerResources[location.ResourceType] = location.ResourceLocation()
+	providerResources[authDivision.ResourceType] = authDivision.ResourceAuthDivision()
+	providerResources[edgeSite.ResourceType] = edgeSite.ResourceSite()
 }
 
 // registerTestDataSources registers all data sources used in the tests.
@@ -63,7 +63,7 @@ func (r *registerTestInstance) registerTestDataSources() {
 	r.datasourceMapMutex.Lock()
 	defer r.datasourceMapMutex.Unlock()
 
-	providerDataSources[resourceName] = DataSourceOutboundSequence()
+	providerDataSources[ResourceType] = DataSourceOutboundSequence()
 	providerDataSources["genesyscloud_auth_division_home"] = gcloud.DataSourceAuthDivisionHome()
 }
 

@@ -24,11 +24,11 @@ func dataSourceDeploymentRead(ctx context.Context, d *schema.ResourceData, m int
 		deployments, resp, err := wd.getWebDeployments(ctx)
 
 		if err != nil && resp.StatusCode == http.StatusNotFound {
-			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("No web deployment record found %s | error: %s", name, err), resp))
+			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("No web deployment record found %s | error: %s", name, err), resp))
 		}
 
 		if err != nil && resp.StatusCode != http.StatusNotFound {
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Error retrieving web deployment %s | error: %s", name, err), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Error retrieving web deployment %s | error: %s", name, err), resp))
 		}
 
 		for _, deployment := range *deployments.Entities {
@@ -38,6 +38,6 @@ func dataSourceDeploymentRead(ctx context.Context, d *schema.ResourceData, m int
 			}
 		}
 
-		return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("No web deployment was found with the name %s", name), resp))
+		return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("No web deployment was found with the name %s", name), resp))
 	})
 }

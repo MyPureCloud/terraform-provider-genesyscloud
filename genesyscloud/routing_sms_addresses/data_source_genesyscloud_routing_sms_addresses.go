@@ -23,10 +23,10 @@ func dataSourceRoutingSmsAddressRead(ctx context.Context, d *schema.ResourceData
 	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
 		smsAddressId, retryable, resp, err := smsAddressProxy.getSmsAddressIdByName(name, ctx)
 		if err != nil && !retryable {
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to get SMS Address | error: %s", err), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to get SMS Address | error: %s", err), resp))
 		}
 		if retryable {
-			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to get SMS Address | error: %s", err), resp))
+			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to get SMS Address | error: %s", err), resp))
 		}
 		d.SetId(smsAddressId)
 		return nil

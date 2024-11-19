@@ -104,8 +104,8 @@ func TestAccResourceWebDeploymentsDeployment_Versioning(t *testing.T) {
 	t.Parallel()
 	var (
 		deploymentName             = "Test Deployment " + util.RandString(8)
-		fullDeploymentResourceName = "genesyscloud_webdeployments_deployment.versioning"
-		fullConfigResourceName     = "genesyscloud_webdeployments_configuration.minimal"
+		deploymentFullResourceName = "genesyscloud_webdeployments_deployment.versioning"
+		configFullResourceName     = "genesyscloud_webdeployments_configuration.minimal"
 	)
 
 	cleanupWebDeploymentsDeployment(t, "Test Deployment ")
@@ -121,33 +121,33 @@ func TestAccResourceWebDeploymentsDeployment_Versioning(t *testing.T) {
 						time.Sleep(30 * time.Second) // Wait for 30 seconds for proper creation
 						return nil
 					},
-					resource.TestCheckResourceAttr(fullDeploymentResourceName, "name", deploymentName),
-					resource.TestCheckResourceAttr(fullDeploymentResourceName, "configuration.0.version", "1"),
-					resource.TestCheckResourceAttrPair(fullDeploymentResourceName, "configuration.0.id", fullConfigResourceName, "id"),
-					resource.TestCheckResourceAttrPair(fullDeploymentResourceName, "configuration.0.version", fullConfigResourceName, "version"),
+					resource.TestCheckResourceAttr(deploymentFullResourceName, "name", deploymentName),
+					resource.TestCheckResourceAttr(deploymentFullResourceName, "configuration.0.version", "1"),
+					resource.TestCheckResourceAttrPair(deploymentFullResourceName, "configuration.0.id", configFullResourceName, "id"),
+					resource.TestCheckResourceAttrPair(deploymentFullResourceName, "configuration.0.version", configFullResourceName, "version"),
 				),
 			},
 			{
 				Config: versioningDeploymentResource(t, deploymentName, "updated description", "en-us", []string{"en-us", "ja"}),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(fullDeploymentResourceName, "name", deploymentName),
-					resource.TestCheckResourceAttr(fullDeploymentResourceName, "configuration.0.version", "2"),
-					resource.TestCheckResourceAttrPair(fullDeploymentResourceName, "configuration.0.id", fullConfigResourceName, "id"),
-					resource.TestCheckResourceAttrPair(fullDeploymentResourceName, "configuration.0.version", fullConfigResourceName, "version"),
+					resource.TestCheckResourceAttr(deploymentFullResourceName, "name", deploymentName),
+					resource.TestCheckResourceAttr(deploymentFullResourceName, "configuration.0.version", "2"),
+					resource.TestCheckResourceAttrPair(deploymentFullResourceName, "configuration.0.id", configFullResourceName, "id"),
+					resource.TestCheckResourceAttrPair(deploymentFullResourceName, "configuration.0.version", configFullResourceName, "version"),
 				),
 			},
 			{
 				Config: deploymentResourceWithoutConfigVersion(t, deploymentName, "updated description again", "en-us", []string{"en-us", "ja"}),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(fullDeploymentResourceName, "name", deploymentName),
-					resource.TestCheckResourceAttr(fullDeploymentResourceName, "configuration.0.version", "3"),
-					resource.TestCheckResourceAttrPair(fullDeploymentResourceName, "configuration.0.id", fullConfigResourceName, "id"),
-					resource.TestCheckResourceAttrPair(fullDeploymentResourceName, "configuration.0.version", fullConfigResourceName, "version"),
+					resource.TestCheckResourceAttr(deploymentFullResourceName, "name", deploymentName),
+					resource.TestCheckResourceAttr(deploymentFullResourceName, "configuration.0.version", "3"),
+					resource.TestCheckResourceAttrPair(deploymentFullResourceName, "configuration.0.id", configFullResourceName, "id"),
+					resource.TestCheckResourceAttrPair(deploymentFullResourceName, "configuration.0.version", configFullResourceName, "version"),
 				),
 			},
 
 			{
-				ResourceName:            fullDeploymentResourceName,
+				ResourceName:            deploymentFullResourceName,
 				ImportState:             true,
 				ImportStateVerify:       true,
 				ImportStateVerifyIgnore: []string{"status"},

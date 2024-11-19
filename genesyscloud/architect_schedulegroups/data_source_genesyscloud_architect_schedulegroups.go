@@ -3,11 +3,12 @@ package architect_schedulegroups
 import (
 	"context"
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 )
@@ -28,11 +29,11 @@ func dataSourceArchitectSchedulegroupsRead(ctx context.Context, d *schema.Resour
 		scheduleGroupId, retryable, proxyResponse, err := proxy.getArchitectSchedulegroupsIdByName(ctx, name)
 
 		if err != nil && !retryable {
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("error searching architect schedulegroups %s | error: %s", name, err), proxyResponse))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("error searching architect schedulegroups %s | error: %s", name, err), proxyResponse))
 		}
 
 		if retryable {
-			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("no architect schedulegroups found with name %s", name), proxyResponse))
+			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("no architect schedulegroups found with name %s", name), proxyResponse))
 		}
 
 		d.SetId(scheduleGroupId)

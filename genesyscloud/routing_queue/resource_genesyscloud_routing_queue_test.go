@@ -1296,11 +1296,11 @@ resource "genesyscloud_user" "%s" {
 	})
 }
 
-func addMemberToQueue(queueResourceName, userResourceName string) resource.TestCheckFunc {
-	getResourceGuidFromState := func(state *terraform.State, resourceName string) (string, error) {
-		resourceState, ok := state.RootModule().Resources[resourceName]
+func addMemberToQueue(queueFullResourceName, userFullResourceName string) resource.TestCheckFunc {
+	getResourceGuidFromState := func(state *terraform.State, fullResourceName string) (string, error) {
+		resourceState, ok := state.RootModule().Resources[fullResourceName]
 		if !ok {
-			return "", fmt.Errorf("failed to find resourceState %s in state", resourceName)
+			return "", fmt.Errorf("failed to find resourceState %s in state", fullResourceName)
 		}
 		return resourceState.Primary.ID, nil
 	}
@@ -1313,12 +1313,12 @@ func addMemberToQueue(queueResourceName, userResourceName string) resource.TestC
 
 		apiInstance := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
 
-		queueID, err := getResourceGuidFromState(state, queueResourceName)
+		queueID, err := getResourceGuidFromState(state, queueFullResourceName)
 		if err != nil {
 			return err
 		}
 
-		userID, err := getResourceGuidFromState(state, userResourceName)
+		userID, err := getResourceGuidFromState(state, userFullResourceName)
 		if err != nil {
 			return err
 		}
@@ -1482,17 +1482,17 @@ func validateBullseyeSettings(resourceLabel string, numRings int, timeout string
 	return resource.ComposeAggregateTestCheckFunc(checks...)
 }
 
-func validateMember(queueResourceName string, userResourceName string, ringNum string) resource.TestCheckFunc {
+func validateMember(queueFullResourceName string, userFullResourceName string, ringNum string) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
-		queueResource, ok := state.RootModule().Resources[queueResourceName]
+		queueResource, ok := state.RootModule().Resources[queueFullResourceName]
 		if !ok {
-			return fmt.Errorf("Failed to find queue %s in state", queueResourceName)
+			return fmt.Errorf("Failed to find queue %s in state", queueFullResourceName)
 		}
 		queueID := queueResource.Primary.ID
 
-		userResource, ok := state.RootModule().Resources[userResourceName]
+		userResource, ok := state.RootModule().Resources[userFullResourceName]
 		if !ok {
-			return fmt.Errorf("Failed to find user %s in state", userResourceName)
+			return fmt.Errorf("Failed to find user %s in state", userFullResourceName)
 		}
 		userID := userResource.Primary.ID
 
@@ -1517,21 +1517,21 @@ func validateMember(queueResourceName string, userResourceName string, ringNum s
 }
 
 // Validate groups and skill group fields.
-func validateGroups(queueResourceName string, skillGroupResourceName string, groupResourceName string) resource.TestCheckFunc {
+func validateGroups(queueFullResourceName string, skillGroupFullResourceName string, groupFullResourceName string) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
-		skillGroupResource, ok := state.RootModule().Resources[skillGroupResourceName]
+		skillGroupResource, ok := state.RootModule().Resources[skillGroupFullResourceName]
 		if !ok {
-			return fmt.Errorf("Failed to find skillGroup %s in state", skillGroupResourceName)
+			return fmt.Errorf("Failed to find skillGroup %s in state", skillGroupFullResourceName)
 		}
 
-		groupResource, ok := state.RootModule().Resources[groupResourceName]
+		groupResource, ok := state.RootModule().Resources[groupFullResourceName]
 		if !ok {
-			return fmt.Errorf("Failed to find group %s in state", groupResourceName)
+			return fmt.Errorf("Failed to find group %s in state", groupFullResourceName)
 		}
 
-		queueResource, ok := state.RootModule().Resources[queueResourceName]
+		queueResource, ok := state.RootModule().Resources[queueFullResourceName]
 		if !ok {
-			return fmt.Errorf("Failed to find queue %s in state", queueResourceName)
+			return fmt.Errorf("Failed to find queue %s in state", queueFullResourceName)
 		}
 
 		queueID := queueResource.Primary.ID
@@ -1571,17 +1571,17 @@ func validateGroups(queueResourceName string, skillGroupResourceName string, gro
 	}
 }
 
-func validateQueueWrapupCode(queueResourceName string, codeResourceName string) resource.TestCheckFunc {
+func validateQueueWrapupCode(queueFullResourceName string, codeFullResourceName string) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
-		queueResource, ok := state.RootModule().Resources[queueResourceName]
+		queueResource, ok := state.RootModule().Resources[queueFullResourceName]
 		if !ok {
-			return fmt.Errorf("Failed to find queue %s in state", queueResourceName)
+			return fmt.Errorf("Failed to find queue %s in state", queueFullResourceName)
 		}
 		queueID := queueResource.Primary.ID
 
-		codeResource, ok := state.RootModule().Resources[codeResourceName]
+		codeResource, ok := state.RootModule().Resources[codeFullResourceName]
 		if !ok {
-			return fmt.Errorf("Failed to find code %s in state", codeResourceName)
+			return fmt.Errorf("Failed to find code %s in state", codeFullResourceName)
 		}
 		codeID := codeResource.Primary.ID
 

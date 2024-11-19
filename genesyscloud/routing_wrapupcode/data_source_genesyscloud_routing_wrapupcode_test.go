@@ -32,9 +32,9 @@ func TestAccDataSourceWrapupcode(t *testing.T) {
 				) + generateRoutingWrapupcodeDataSource(
 					codeDataLabel,
 					codeName,
-					resourceName+"."+codeResourceLabel),
+					ResourceType+"."+codeResourceLabel),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair("data."+resourceName+"."+codeDataLabel, "id", resourceName+"."+codeResourceLabel, "id"),
+					resource.TestCheckResourceAttrPair("data."+ResourceType+"."+codeDataLabel, "id", ResourceType+"."+codeResourceLabel, "id"),
 				),
 			},
 		},
@@ -46,5 +46,5 @@ func generateRoutingWrapupcodeDataSource(resourceLabel string, name string, depe
 		name = "%s"
 		depends_on=[%s]
 	}
-	`, resourceName, resourceLabel, name, dependsOnResource)
+	`, ResourceType, resourceLabel, name, dependsOnResource)
 }

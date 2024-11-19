@@ -343,25 +343,25 @@ func TestAccResourceIntegration(t *testing.T) {
 	})
 }
 
-func validateIntegrationProperties(integrationResourceName string, groupResourceName string, propDisplayType string, propSandbox string, propURL string, groupID string) resource.TestCheckFunc {
+func validateIntegrationProperties(integrationFullResourceName string, groupFullResourceName string, propDisplayType string, propSandbox string, propURL string, groupID string) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
-		integrationResource, ok := state.RootModule().Resources[integrationResourceName]
+		integrationResource, ok := state.RootModule().Resources[integrationFullResourceName]
 		if !ok {
-			return fmt.Errorf("Failed to find integration %s in state", integrationResourceName)
+			return fmt.Errorf("Failed to find integration %s in state", integrationFullResourceName)
 		}
 		integrationID := integrationResource.Primary.ID
 
 		var expectGroupID string
-		if groupResourceName == "" {
+		if groupFullResourceName == "" {
 			if groupID == "" {
 				expectGroupID = ""
 			} else {
 				expectGroupID = strconv.Quote(groupID)
 			}
 		} else {
-			groupResource, ok := state.RootModule().Resources[groupResourceName]
+			groupResource, ok := state.RootModule().Resources[groupFullResourceName]
 			if !ok {
-				return fmt.Errorf("Failed to find group %s in state", groupResourceName)
+				return fmt.Errorf("Failed to find group %s in state", groupFullResourceName)
 			}
 			expectGroupID = strconv.Quote(groupResource.Primary.ID)
 		}

@@ -105,11 +105,11 @@ func getAllTrunkBaseSettingsFn(ctx context.Context, p *trunkbaseSettingProxy, na
 			trunkBaseSettings, resp, getErr := getTelephonyProvidersEdgesTrunkbasesettings(p, pageNum, pageSize, name)
 
 			if getErr != nil {
-				return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Error requesting trunk base settings %s | error: %s", name, getErr), resp))
+				return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Error requesting trunk base settings %s | error: %s", name, getErr), resp))
 			}
 
 			if trunkBaseSettings.Entities == nil || len(*trunkBaseSettings.Entities) == 0 {
-				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("No trunkBaseSettings found with name %s", name), resp))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("No trunkBaseSettings found with name %s", name), resp))
 			}
 
 			for _, trunkBaseSetting := range *trunkBaseSettings.Entities {

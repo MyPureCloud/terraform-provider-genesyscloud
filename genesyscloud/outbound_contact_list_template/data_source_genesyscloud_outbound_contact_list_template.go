@@ -24,10 +24,10 @@ func dataSourceOutboundContactListTemplateRead(ctx context.Context, d *schema.Re
 		contactListTemplateId, retryable, resp, getErr := proxy.getOutboundContactlisttemplateIdByName(ctx, name)
 
 		if getErr != nil && !retryable {
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("error requesting contact list template %s | error: %s", name, getErr), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("error requesting contact list template %s | error: %s", name, getErr), resp))
 		}
 		if retryable {
-			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("no contact list templates found with name %s", name), resp))
+			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("no contact list templates found with name %s", name), resp))
 		}
 
 		d.SetId(contactListTemplateId)

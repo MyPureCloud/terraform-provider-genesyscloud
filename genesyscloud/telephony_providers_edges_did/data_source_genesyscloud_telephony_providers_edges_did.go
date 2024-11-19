@@ -23,10 +23,10 @@ func dataSourceDidRead(ctx context.Context, d *schema.ResourceData, m interface{
 	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
 		id, retryable, resp, err := proxy.getTelephonyProvidersEdgesDidIdByDid(ctx, didPhoneNumber)
 		if err != nil && !retryable {
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to get telephony providers Edges %s", err), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to get telephony providers Edges %s", err), resp))
 		}
 		if retryable {
-			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to get telephony providers edges %s", err), resp))
+			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to get telephony providers edges %s", err), resp))
 		}
 		d.SetId(id)
 		return nil

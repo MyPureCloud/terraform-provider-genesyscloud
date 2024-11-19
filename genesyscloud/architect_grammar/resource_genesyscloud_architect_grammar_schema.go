@@ -1,10 +1,11 @@
 package architect_grammar
 
 import (
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 /*
@@ -15,13 +16,13 @@ resource_genesyscloud_architect_grammar_schema.go holds four functions within it
 3.  The datasource schema definitions for the architect_grammar datasource.
 4.  The resource exporter configuration for the architect_grammar exporter.
 */
-const resourceName = "genesyscloud_architect_grammar"
+const ResourceType = "genesyscloud_architect_grammar"
 
 // SetRegistrar registers all of the resources, datasources and exporters in the package
 func SetRegistrar(regInstance registrar.Registrar) {
-	regInstance.RegisterResource(resourceName, ResourceArchitectGrammar())
-	regInstance.RegisterDataSource(resourceName, DataSourceArchitectGrammar())
-	regInstance.RegisterExporter(resourceName, ArchitectGrammarExporter())
+	regInstance.RegisterResource(ResourceType, ResourceArchitectGrammar())
+	regInstance.RegisterDataSource(ResourceType, DataSourceArchitectGrammar())
+	regInstance.RegisterExporter(ResourceType, ArchitectGrammarExporter())
 }
 
 // ResourceArchitectGrammar registers the genesyscloud_architect_grammar resource with Terraform

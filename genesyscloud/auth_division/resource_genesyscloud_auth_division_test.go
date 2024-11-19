@@ -216,11 +216,11 @@ func testVerifyDivisionsDestroyed(state *terraform.State) error {
 	return nil
 }
 
-func validateHomeDivisionID(divResourceName string) resource.TestCheckFunc {
+func validateHomeDivisionID(divFullResourceName string) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
-		divResource, ok := state.RootModule().Resources[divResourceName]
+		divResource, ok := state.RootModule().Resources[divFullResourceName]
 		if !ok {
-			return fmt.Errorf("Failed to find division %s in state", divResourceName)
+			return fmt.Errorf("Failed to find division %s in state", divFullResourceName)
 		}
 		divID := divResource.Primary.ID
 		homeDivID, err := util.GetHomeDivisionID()
@@ -229,7 +229,7 @@ func validateHomeDivisionID(divResourceName string) resource.TestCheckFunc {
 		}
 
 		if divID != homeDivID {
-			return fmt.Errorf("Resource %s division ID %s not equal to home division ID %s", divResourceName, divID, homeDivID)
+			return fmt.Errorf("Resource %s division ID %s not equal to home division ID %s", divFullResourceName, divID, homeDivID)
 		}
 		return nil
 	}

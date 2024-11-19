@@ -22,10 +22,10 @@ func dataSourceStationRead(ctx context.Context, d *schema.ResourceData, m interf
 	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
 		stationId, retryable, resp, err := sp.getStationIdByName(ctx, stationName)
 		if err != nil && !retryable {
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("error requesting station %s", err), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("error requesting station %s", err), resp))
 		}
 		if retryable {
-			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("no stations found"), resp))
+			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("no stations found"), resp))
 		}
 		d.SetId(stationId)
 		return nil

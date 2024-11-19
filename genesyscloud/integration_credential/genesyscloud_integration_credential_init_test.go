@@ -32,8 +32,8 @@ func (r *registerTestInstance) registerTestResources() {
 	r.resourceMapMutex.Lock()
 	defer r.resourceMapMutex.Unlock()
 
-	providerResources["genesyscloud_integration_credential"] = ResourceIntegrationCredential()
-	providerResources["genesyscloud_oauth_client"] = oauth.ResourceOAuthClient()
+	providerResources[ResourceType] = ResourceIntegrationCredential()
+	providerResources[oauth.ResourceType] = oauth.ResourceOAuthClient()
 }
 
 // registerTestDataSources registers all data sources used in the tests.
@@ -41,8 +41,8 @@ func (r *registerTestInstance) registerTestDataSources() {
 	r.datasourceMapMutex.Lock()
 	defer r.datasourceMapMutex.Unlock()
 
-	providerDataSources["genesyscloud_integration_credential"] = DataSourceIntegrationCredential()
-	providerDataSources["genesyscloud_auth_role"] = auth_role.DataSourceAuthRole()
+	providerDataSources[ResourceType] = DataSourceIntegrationCredential()
+	providerDataSources[auth_role.ResourceType] = auth_role.DataSourceAuthRole()
 }
 
 // initTestResources initializes all test resources and data sources.

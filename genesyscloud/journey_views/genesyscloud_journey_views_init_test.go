@@ -23,8 +23,8 @@ func (r *registerTestInstance) registerTestResources() {
 	r.resourceMapMutex.Lock()
 	defer r.resourceMapMutex.Unlock()
 
-	providerResources[resourceName] = ResourceJourneyViews()
-	providerResources["genesyscloud_user"] = user.ResourceUser()
+	providerResources[ResourceType] = ResourceJourneyViews()
+	providerResources[user.ResourceType] = user.ResourceUser()
 
 }
 
@@ -33,7 +33,7 @@ func (r *registerTestInstance) registerTestDataSources() {
 	r.datasourceMapMutex.Lock()
 	defer r.datasourceMapMutex.Unlock()
 
-	providerDataSources[resourceName] = DataSourceJourneyView()
+	providerDataSources[ResourceType] = DataSourceJourneyView()
 }
 
 // initTestResources initializes all test resources and data sources.

@@ -178,18 +178,18 @@ func generateFileDtmfFileDataBlock(
 	`, fileName, fileType, fullyQualifiedPath)
 }
 
-func verifyFileUpload(grammarResourceName string, language string, fileType FileType, filename string) resource.TestCheckFunc {
+func verifyFileUpload(grammarFullResourceName string, language string, fileType FileType, filename string) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
-		grammarResource, ok := state.RootModule().Resources[grammarResourceName]
+		grammarResource, ok := state.RootModule().Resources[grammarFullResourceName]
 		if !ok {
-			return fmt.Errorf("failed to find grammar %s in state", grammarResourceName)
+			return fmt.Errorf("failed to find grammar %s in state", grammarFullResourceName)
 		}
 		grammarId := grammarResource.Primary.ID
 		architectAPI := platformclientv2.NewArchitectApi()
 
 		grammarLanguage, _, err := architectAPI.GetArchitectGrammarLanguage(grammarId, language)
 		if err != nil {
-			return fmt.Errorf("failed to find language %s for resource %s", language, grammarResourceName)
+			return fmt.Errorf("failed to find language %s for resource %s", language, grammarFullResourceName)
 		}
 
 		if fileType == Dtmf {

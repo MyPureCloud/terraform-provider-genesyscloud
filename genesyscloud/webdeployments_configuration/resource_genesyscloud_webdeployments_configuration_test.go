@@ -75,7 +75,7 @@ func TestAccResourceWebDeploymentsConfiguration(t *testing.T) {
 	t.Parallel()
 	var (
 		resourceLabel            = "webdeploy-config-test"
-		fullResourceName         = resourceName + "." + resourceLabel
+		fullResourceName         = ResourceType + "." + resourceLabel
 		configName               = "tf-config-" + uuid.NewString()
 		configDescription        = "Test Configuration description"
 		updatedConfigDescription = configDescription + " Updated"
@@ -423,7 +423,7 @@ func TestAccResourceWebDeploymentsConfigurationSupportCenter(t *testing.T) {
 
 		// Support center config
 		resourceLabel     = "webdeploy-config-test"
-		fullResourceName  = resourceName + "." + resourceLabel
+		fullResourceName  = ResourceType + "." + resourceLabel
 		configName        = "tf-config-" + uuid.NewString()
 		configDescription = "Test Configuration description. Support Center"
 		languages         = []string{"en-us", "ja"}

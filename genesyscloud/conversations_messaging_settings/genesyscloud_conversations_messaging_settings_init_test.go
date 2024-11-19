@@ -22,7 +22,7 @@ func (r *registerTestInstance) registerTestResources() {
 	r.resourceMapMutex.Lock()
 	defer r.resourceMapMutex.Unlock()
 
-	providerResources[resourceName] = ResourceConversationsMessagingSettings()
+	providerResources[ResourceType] = ResourceConversationsMessagingSettings()
 }
 
 // registerTestDataSources registers all data sources used in the tests.
@@ -30,7 +30,7 @@ func (r *registerTestInstance) registerTestDataSources() {
 	r.datasourceMapMutex.Lock()
 	defer r.datasourceMapMutex.Unlock()
 
-	providerDataSources[resourceName] = DataSourceConversationsMessagingSettings()
+	providerDataSources[ResourceType] = DataSourceConversationsMessagingSettings()
 }
 
 // initTestResources initializes all test resources and data sources.

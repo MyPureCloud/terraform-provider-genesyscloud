@@ -9,7 +9,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
-const resourceName = "genesyscloud_journey_views"
+const ResourceType = "genesyscloud_journey_views"
 
 var (
 	constraintResource = &schema.Resource{
@@ -162,9 +162,9 @@ var (
 )
 
 func SetRegistrar(regInstance registrar.Registrar) {
-	regInstance.RegisterResource(resourceName, ResourceJourneyViews())
-	regInstance.RegisterDataSource(resourceName, DataSourceJourneyView())
-	regInstance.RegisterExporter(resourceName, JourneyViewExporter())
+	regInstance.RegisterResource(ResourceType, ResourceJourneyViews())
+	regInstance.RegisterDataSource(ResourceType, DataSourceJourneyView())
+	regInstance.RegisterExporter(ResourceType, JourneyViewExporter())
 }
 
 func ResourceJourneyViews() *schema.Resource {

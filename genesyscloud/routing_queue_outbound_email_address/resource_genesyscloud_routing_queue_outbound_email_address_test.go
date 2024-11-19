@@ -204,11 +204,11 @@ func TestAccResourceRoutingQueueOutboundEmailAddressExists(t *testing.T) {
 	})
 }
 
-func verifyOutboundEmailAddressExists(queueResourceName string) resource.TestCheckFunc {
+func verifyOutboundEmailAddressExists(queueFullResourceName string) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
-		queueResource, ok := state.RootModule().Resources[queueResourceName]
+		queueResource, ok := state.RootModule().Resources[queueFullResourceName]
 		if !ok {
-			return fmt.Errorf("Failed to find queue %s in state", queueResourceName)
+			return fmt.Errorf("Failed to find queue %s in state", queueFullResourceName)
 		}
 		queueID := queueResource.Primary.ID
 

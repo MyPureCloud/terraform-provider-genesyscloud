@@ -1,11 +1,12 @@
 package auth_role
 
 import (
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
 /*
@@ -16,13 +17,13 @@ resource_genesycloud_auth_role_schema.go holds four functions within it:
 3.  The datasource schema definitions for the auth_role datasource.
 4.  The resource exporter configuration for the auth_role exporter.
 */
-const resourceName = "genesyscloud_auth_role"
+const ResourceType = "genesyscloud_auth_role"
 
 // SetRegistrar registers all of the resources, datasources and exporters in the package
 func SetRegistrar(regInstance registrar.Registrar) {
-	regInstance.RegisterResource(resourceName, ResourceAuthRole())
-	regInstance.RegisterDataSource(resourceName, DataSourceAuthRole())
-	regInstance.RegisterExporter(resourceName, AuthRoleExporter())
+	regInstance.RegisterResource(ResourceType, ResourceAuthRole())
+	regInstance.RegisterDataSource(ResourceType, DataSourceAuthRole())
+	regInstance.RegisterExporter(ResourceType, AuthRoleExporter())
 }
 
 var (

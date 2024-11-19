@@ -11,13 +11,13 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
-const resourceName = "genesyscloud_webdeployments_configuration"
+const ResourceType = "genesyscloud_webdeployments_configuration"
 
 // SetRegistrar registers all the resources, datasources and exporters in the package
 func SetRegistrar(l registrar.Registrar) {
-	l.RegisterDataSource(resourceName, DataSourceWebDeploymentsConfiguration())
-	l.RegisterResource(resourceName, ResourceWebDeploymentConfiguration())
-	l.RegisterExporter(resourceName, WebDeploymentConfigurationExporter())
+	l.RegisterDataSource(ResourceType, DataSourceWebDeploymentsConfiguration())
+	l.RegisterResource(ResourceType, ResourceWebDeploymentConfiguration())
+	l.RegisterExporter(ResourceType, WebDeploymentConfigurationExporter())
 }
 
 var (

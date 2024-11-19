@@ -1,10 +1,11 @@
 package task_management_workbin
 
 import (
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 /*
@@ -15,13 +16,13 @@ resource_genesycloud_task_management_workbin_schema.go holds four functions with
 3.  The datasource schema definitions for the task_management_workbin datasource.
 4.  The resource exporter configuration for the task_management_workbin exporter.
 */
-const resourceName = "genesyscloud_task_management_workbin"
+const ResourceType = "genesyscloud_task_management_workbin"
 
 // SetRegistrar registers all of the resources, datasources and exporters in the package
 func SetRegistrar(regInstance registrar.Registrar) {
-	regInstance.RegisterResource(resourceName, ResourceTaskManagementWorkbin())
-	regInstance.RegisterDataSource(resourceName, DataSourceTaskManagementWorkbin())
-	regInstance.RegisterExporter(resourceName, TaskManagementWorkbinExporter())
+	regInstance.RegisterResource(ResourceType, ResourceTaskManagementWorkbin())
+	regInstance.RegisterDataSource(ResourceType, DataSourceTaskManagementWorkbin())
+	regInstance.RegisterExporter(ResourceType, TaskManagementWorkbinExporter())
 }
 
 // ResourceTaskManagementWorkbin registers the genesyscloud_task_management_workbin resource with Terraform
