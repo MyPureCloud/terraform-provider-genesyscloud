@@ -1,15 +1,18 @@
 package authorization_product
 
 import (
-	"context"
-	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+)
+
+import (
+	"context"
+	"fmt"
 	"time"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 func dataSourceAuthorizationProductRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -33,11 +36,11 @@ func dataSourceAuthorizationProductRead(ctx context.Context, d *schema.ResourceD
 	})
 }
 
-func GenerateAuthorizationProductDataSource(dataSourceLabel, productName, dependsOn string) string {
+func GenerateAuthorizationProductDataSource(id, productName, dependsOn string) string {
 	return fmt.Sprintf(`
 data "genesyscloud_authorization_product" "%s" {
 	name = "%s"
 	depends_on=[%s]
 }
-`, dataSourceLabel, productName, dependsOn)
+`, id, productName, dependsOn)
 }

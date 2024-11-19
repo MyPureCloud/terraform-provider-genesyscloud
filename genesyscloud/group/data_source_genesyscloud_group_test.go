@@ -24,13 +24,13 @@ var (
 
 func TestAccDataSourceGroup(t *testing.T) {
 	var (
-		groupResourceLabel    = "test-group-members"
-		groupDataSourceLabel  = "group-data"
-		groupName             = "test group" + uuid.NewString()
-		testUserResourceLabel = "user_resource1"
-		testUserName          = "nameUser1" + uuid.NewString()
-		testUserEmail         = uuid.NewString() + "@examplegroup.com"
-		userID                string
+		groupResource    = "test-group-members"
+		groupDataSource  = "group-data"
+		groupName        = "test group" + uuid.NewString()
+		testUserResource = "user_resource1"
+		testUserName     = "nameUser1" + uuid.NewString()
+		testUserEmail    = uuid.NewString() + "@examplegroup.com"
+		userID           string
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -41,25 +41,25 @@ func TestAccDataSourceGroup(t *testing.T) {
 				PreConfig: func() {
 					time.Sleep(30 * time.Second)
 				},
-				Config: generateUserWithCustomAttrs(testUserResourceLabel, testUserEmail, testUserName) +
+				Config: generateUserWithCustomAttrs(testUserResource, testUserEmail, testUserName) +
 					GenerateGroupResource(
-						groupResourceLabel,
+						groupResource,
 						groupName,
 						util.NullValue, // No description
 						util.NullValue, // Default type
 						util.NullValue, // Default visibility
 						util.NullValue, // Default rules_visible
-						GenerateGroupOwners("genesyscloud_user."+testUserResourceLabel+".id"),
+						GenerateGroupOwners("genesyscloud_user."+testUserResource+".id"),
 					) + generateGroupDataSource(
-					groupDataSourceLabel,
+					groupDataSource,
 					groupName,
-					"genesyscloud_group."+groupResourceLabel),
+					"genesyscloud_group."+groupResource),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair("data.genesyscloud_group."+groupDataSourceLabel, "id", "genesyscloud_group."+groupResourceLabel, "id"),
+					resource.TestCheckResourceAttrPair("data.genesyscloud_group."+groupDataSource, "id", "genesyscloud_group."+groupResource, "id"),
 					func(s *terraform.State) error {
-						rs, ok := s.RootModule().Resources["genesyscloud_user."+testUserResourceLabel]
+						rs, ok := s.RootModule().Resources["genesyscloud_user."+testUserResource]
 						if !ok {
-							return fmt.Errorf("not found: %s", "genesyscloud_user."+testUserResourceLabel)
+							return fmt.Errorf("not found: %s", "genesyscloud_user."+testUserResource)
 						}
 						userID = rs.Primary.ID
 						log.Printf("User ID: %s\n", userID) // Print user ID
@@ -70,7 +70,7 @@ func TestAccDataSourceGroup(t *testing.T) {
 				PreventPostDestroyRefresh: true,
 			},
 			{
-				ResourceName:      "genesyscloud_user." + testUserResourceLabel,
+				ResourceName:      "genesyscloud_user." + testUserResource,
 				ImportState:       true,
 				ImportStateVerify: true,
 				Destroy:           true,
@@ -84,7 +84,7 @@ func TestAccDataSourceGroup(t *testing.T) {
 }
 
 func generateGroupDataSource(
-	resourceLabel string,
+	resourceID string,
 	name string,
 	// Must explicitly use depends_on in terraform v0.13 when a data source references a resource
 	// Fixed in v0.14 https://github.com/hashicorp/terraform/pull/26284
@@ -93,7 +93,7 @@ func generateGroupDataSource(
 		name = "%s"
 		depends_on=[%s]
 	}
-	`, resourceLabel, name, dependsOnResource)
+	`, resourceID, name, dependsOnResource)
 }
 
 func checkUserDeleted(id string) resource.TestCheckFunc {

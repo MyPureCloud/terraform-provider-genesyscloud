@@ -66,7 +66,7 @@ func getAllKnowledgeLabels(_ context.Context, clientConfig *platformclientv2.Con
 
 		for _, knowledgeLabel := range *labelEntities {
 			id := fmt.Sprintf("%s,%s", *knowledgeLabel.Id, *knowledgeBase.Id)
-			resources[id] = &resourceExporter.ResourceMeta{BlockLabel: *knowledgeLabel.Name}
+			resources[id] = &resourceExporter.ResourceMeta{Name: *knowledgeLabel.Name}
 		}
 	}
 

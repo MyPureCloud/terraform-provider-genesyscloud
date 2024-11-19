@@ -168,13 +168,13 @@ func buildConfigCredentials(credentials map[string]interface{}) map[string]platf
 }
 
 // GenerateIntegrationResource builds the terraform string for creating an integration
-func GenerateIntegrationResource(resourceLabel string, intendedState string, integrationType string, attrs ...string) string {
+func GenerateIntegrationResource(resourceID string, intendedState string, integrationType string, attrs ...string) string {
 	return fmt.Sprintf(`resource "genesyscloud_integration" "%s" {
         intended_state = %s
         integration_type = %s
         %s
 	}
-	`, resourceLabel, intendedState, integrationType, strings.Join(attrs, "\n"))
+	`, resourceID, intendedState, integrationType, strings.Join(attrs, "\n"))
 }
 
 func GenerateIntegrationConfig(name string, notes string, cred string, props string, adv string) string {

@@ -20,16 +20,16 @@ import (
 
 func TestAccResourceArchitectGrammarLanguage(t *testing.T) {
 	var (
-		grammarResourceLabel = "grammar" + uuid.NewString()
-		grammarResource      = architectGrammar.GenerateGrammarResource(
-			grammarResourceLabel,
+		grammarResourceId = "grammar" + uuid.NewString()
+		grammarResource   = architectGrammar.GenerateGrammarResource(
+			grammarResourceId,
 			"Test grammar"+uuid.NewString(),
 			"",
 		)
 	)
 
 	var (
-		languageResourceLabel = "language" + uuid.NewString()
+		languageResource = "language" + uuid.NewString()
 
 		languageCode = "en-us"
 		voiceGrxml1  = generateFilePath("voice-grxml-01.grxml")
@@ -48,8 +48,8 @@ func TestAccResourceArchitectGrammarLanguage(t *testing.T) {
 			{
 				// Create Grammar language
 				Config: grammarResource + generateGrammarLanguageResource(
-					languageResourceLabel,
-					"genesyscloud_architect_grammar."+grammarResourceLabel+".id",
+					languageResource,
+					"genesyscloud_architect_grammar."+grammarResourceId+".id",
 					languageCode,
 					generateFileVoiceFileDataBlock(
 						voiceGrxml1,
@@ -61,20 +61,20 @@ func TestAccResourceArchitectGrammarLanguage(t *testing.T) {
 					),
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_architect_grammar_language."+languageResourceLabel, "language", languageCode),
-					resource.TestCheckResourceAttr("genesyscloud_architect_grammar_language."+languageResourceLabel, "voice_file_data.0.file_name", voiceGrxml1),
-					resource.TestCheckResourceAttr("genesyscloud_architect_grammar_language."+languageResourceLabel, "voice_file_data.0.file_type", "Grxml"),
-					verifyFileUpload("genesyscloud_architect_grammar."+grammarResourceLabel, "en-us", Voice, voiceGrxml1),
-					resource.TestCheckResourceAttr("genesyscloud_architect_grammar_language."+languageResourceLabel, "dtmf_file_data.0.file_name", dtmfGrxml1),
-					resource.TestCheckResourceAttr("genesyscloud_architect_grammar_language."+languageResourceLabel, "dtmf_file_data.0.file_type", "Grxml"),
-					verifyFileUpload("genesyscloud_architect_grammar."+grammarResourceLabel, "en-us", Dtmf, dtmfGrxml1),
+					resource.TestCheckResourceAttr("genesyscloud_architect_grammar_language."+languageResource, "language", languageCode),
+					resource.TestCheckResourceAttr("genesyscloud_architect_grammar_language."+languageResource, "voice_file_data.0.file_name", voiceGrxml1),
+					resource.TestCheckResourceAttr("genesyscloud_architect_grammar_language."+languageResource, "voice_file_data.0.file_type", "Grxml"),
+					verifyFileUpload("genesyscloud_architect_grammar."+grammarResourceId, "en-us", Voice, voiceGrxml1),
+					resource.TestCheckResourceAttr("genesyscloud_architect_grammar_language."+languageResource, "dtmf_file_data.0.file_name", dtmfGrxml1),
+					resource.TestCheckResourceAttr("genesyscloud_architect_grammar_language."+languageResource, "dtmf_file_data.0.file_type", "Grxml"),
+					verifyFileUpload("genesyscloud_architect_grammar."+grammarResourceId, "en-us", Dtmf, dtmfGrxml1),
 				),
 			},
 			{
 				// Update Grammar language
 				Config: grammarResource + generateGrammarLanguageResource(
-					languageResourceLabel,
-					"genesyscloud_architect_grammar."+grammarResourceLabel+".id",
+					languageResource,
+					"genesyscloud_architect_grammar."+grammarResourceId+".id",
 					languageCode,
 					generateFileVoiceFileDataBlock(
 						voiceGrxml2,
@@ -86,20 +86,20 @@ func TestAccResourceArchitectGrammarLanguage(t *testing.T) {
 					),
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_architect_grammar_language."+languageResourceLabel, "language", languageCode),
-					resource.TestCheckResourceAttr("genesyscloud_architect_grammar_language."+languageResourceLabel, "voice_file_data.0.file_name", voiceGrxml2),
-					resource.TestCheckResourceAttr("genesyscloud_architect_grammar_language."+languageResourceLabel, "voice_file_data.0.file_type", "Grxml"),
-					verifyFileUpload("genesyscloud_architect_grammar."+grammarResourceLabel, "en-us", Voice, voiceGrxml2),
-					resource.TestCheckResourceAttr("genesyscloud_architect_grammar_language."+languageResourceLabel, "dtmf_file_data.0.file_name", dtmfGrxml2),
-					resource.TestCheckResourceAttr("genesyscloud_architect_grammar_language."+languageResourceLabel, "dtmf_file_data.0.file_type", "Grxml"),
-					verifyFileUpload("genesyscloud_architect_grammar."+grammarResourceLabel, "en-us", Dtmf, dtmfGrxml2),
+					resource.TestCheckResourceAttr("genesyscloud_architect_grammar_language."+languageResource, "language", languageCode),
+					resource.TestCheckResourceAttr("genesyscloud_architect_grammar_language."+languageResource, "voice_file_data.0.file_name", voiceGrxml2),
+					resource.TestCheckResourceAttr("genesyscloud_architect_grammar_language."+languageResource, "voice_file_data.0.file_type", "Grxml"),
+					verifyFileUpload("genesyscloud_architect_grammar."+grammarResourceId, "en-us", Voice, voiceGrxml2),
+					resource.TestCheckResourceAttr("genesyscloud_architect_grammar_language."+languageResource, "dtmf_file_data.0.file_name", dtmfGrxml2),
+					resource.TestCheckResourceAttr("genesyscloud_architect_grammar_language."+languageResource, "dtmf_file_data.0.file_type", "Grxml"),
+					verifyFileUpload("genesyscloud_architect_grammar."+grammarResourceId, "en-us", Dtmf, dtmfGrxml2),
 				),
 			},
 			{
 				// Update Grammar language files to gram files
 				Config: grammarResource + generateGrammarLanguageResource(
-					languageResourceLabel,
-					"genesyscloud_architect_grammar."+grammarResourceLabel+".id",
+					languageResource,
+					"genesyscloud_architect_grammar."+grammarResourceId+".id",
 					languageCode,
 					generateFileVoiceFileDataBlock(
 						voiceGram1,
@@ -111,18 +111,18 @@ func TestAccResourceArchitectGrammarLanguage(t *testing.T) {
 					),
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_architect_grammar_language."+languageResourceLabel, "language", languageCode),
-					resource.TestCheckResourceAttr("genesyscloud_architect_grammar_language."+languageResourceLabel, "voice_file_data.0.file_name", voiceGram1),
-					resource.TestCheckResourceAttr("genesyscloud_architect_grammar_language."+languageResourceLabel, "voice_file_data.0.file_type", "Gram"),
-					verifyFileUpload("genesyscloud_architect_grammar."+grammarResourceLabel, "en-us", Voice, voiceGram1),
-					resource.TestCheckResourceAttr("genesyscloud_architect_grammar_language."+languageResourceLabel, "dtmf_file_data.0.file_name", dtmfGram1),
-					resource.TestCheckResourceAttr("genesyscloud_architect_grammar_language."+languageResourceLabel, "dtmf_file_data.0.file_type", "Gram"),
-					verifyFileUpload("genesyscloud_architect_grammar."+grammarResourceLabel, "en-us", Dtmf, dtmfGram1),
+					resource.TestCheckResourceAttr("genesyscloud_architect_grammar_language."+languageResource, "language", languageCode),
+					resource.TestCheckResourceAttr("genesyscloud_architect_grammar_language."+languageResource, "voice_file_data.0.file_name", voiceGram1),
+					resource.TestCheckResourceAttr("genesyscloud_architect_grammar_language."+languageResource, "voice_file_data.0.file_type", "Gram"),
+					verifyFileUpload("genesyscloud_architect_grammar."+grammarResourceId, "en-us", Voice, voiceGram1),
+					resource.TestCheckResourceAttr("genesyscloud_architect_grammar_language."+languageResource, "dtmf_file_data.0.file_name", dtmfGram1),
+					resource.TestCheckResourceAttr("genesyscloud_architect_grammar_language."+languageResource, "dtmf_file_data.0.file_type", "Gram"),
+					verifyFileUpload("genesyscloud_architect_grammar."+grammarResourceId, "en-us", Dtmf, dtmfGram1),
 				),
 			},
 			{
 				// Read
-				ResourceName:      "genesyscloud_architect_grammar_language." + languageResourceLabel,
+				ResourceName:      "genesyscloud_architect_grammar_language." + languageResource,
 				ImportState:       true,
 				ImportStateVerify: true,
 				ImportStateVerifyIgnore: []string{
@@ -136,7 +136,7 @@ func TestAccResourceArchitectGrammarLanguage(t *testing.T) {
 }
 
 func generateGrammarLanguageResource(
-	resourceLabel string,
+	resourceId string,
 	grammarId string,
 	language string,
 	attrs ...string,
@@ -147,7 +147,7 @@ func generateGrammarLanguageResource(
 			language = "%s"
 			%s
 		}
-	`, resourceLabel, grammarId, language, strings.Join(attrs, "\n"))
+	`, resourceId, grammarId, language, strings.Join(attrs, "\n"))
 }
 
 func generateFileVoiceFileDataBlock(

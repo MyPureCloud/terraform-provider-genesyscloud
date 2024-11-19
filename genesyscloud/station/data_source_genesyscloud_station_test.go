@@ -17,22 +17,22 @@ import (
 
 func TestAccDataSourceStation(t *testing.T) {
 	var (
-		phoneResourceLabel = "phone1234"
-		name1              = "test-phone_" + uuid.NewString()
-		stateActive        = "active"
+		phoneRes    = "phone1234"
+		name1       = "test-phone_" + uuid.NewString()
+		stateActive = "active"
 
-		phoneBaseSettingsResourceLabel = "phoneBaseSettings1234"
-		phoneBaseSettingsName          = "phoneBaseSettings " + uuid.NewString()
+		phoneBaseSettingsRes  = "phoneBaseSettings1234"
+		phoneBaseSettingsName = "phoneBaseSettings " + uuid.NewString()
 
-		userResourceLabel1 = "user1"
-		userName1          = "test_webrtc_user_" + uuid.NewString()
-		userEmail1         = userName1 + "@test.com"
+		userRes1   = "user1"
+		userName1  = "test_webrtc_user_" + uuid.NewString()
+		userEmail1 = userName1 + "@test.com"
 
 		userTitle      = "Senior Director"
 		userDepartment = "Development"
 
 		// station
-		stationDataResourceLabel = "station1234"
+		stationDataRes = "station1234"
 	)
 
 	defaultSiteId, err := edgeSite.GetOrganizationDefaultSiteId(sdkConfig)
@@ -41,7 +41,7 @@ func TestAccDataSourceStation(t *testing.T) {
 	}
 
 	config := user.GenerateUserResource(
-		userResourceLabel1,
+		userRes1,
 		userEmail1,
 		userName1,
 		util.NullValue, // Defaults to active
@@ -52,17 +52,17 @@ func TestAccDataSourceStation(t *testing.T) {
 		"",             // No profile skills
 		"",             // No certs
 	) + phoneBaseSettings.GeneratePhoneBaseSettingsResourceWithCustomAttrs(
-		phoneBaseSettingsResourceLabel,
+		phoneBaseSettingsRes,
 		phoneBaseSettingsName,
 		"phoneBaseSettings description",
 		"inin_webrtc_softphone.json",
 	) + edgePhone.GeneratePhoneResourceWithCustomAttrs(&edgePhone.PhoneConfig{
-		PhoneResourceLabel:  phoneResourceLabel,
+		PhoneRes:            phoneRes,
 		Name:                name1,
 		State:               stateActive,
 		SiteId:              fmt.Sprintf("\"%s\"", defaultSiteId),
-		PhoneBaseSettingsId: "genesyscloud_telephony_providers_edges_phonebasesettings." + phoneBaseSettingsResourceLabel + ".id",
-		WebRtcUserId:        "genesyscloud_user." + userResourceLabel1 + ".id",
+		PhoneBaseSettingsId: "genesyscloud_telephony_providers_edges_phonebasesettings." + phoneBaseSettingsRes + ".id",
+		WebRtcUserId:        "genesyscloud_user." + userRes1 + ".id",
 		DependsOn:           "", // no depends on
 	},
 	)
@@ -73,12 +73,12 @@ func TestAccDataSourceStation(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config: config + generateStationDataSource(
-					stationDataResourceLabel,
-					"genesyscloud_telephony_providers_edges_phone."+phoneResourceLabel+".name",
-					"genesyscloud_telephony_providers_edges_phone."+phoneResourceLabel,
+					stationDataRes,
+					"genesyscloud_telephony_providers_edges_phone."+phoneRes+".name",
+					"genesyscloud_telephony_providers_edges_phone."+phoneRes,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair("data.genesyscloud_station."+stationDataResourceLabel, "name", "genesyscloud_telephony_providers_edges_phone."+phoneResourceLabel, "name"),
+					resource.TestCheckResourceAttrPair("data.genesyscloud_station."+stationDataRes, "name", "genesyscloud_telephony_providers_edges_phone."+phoneRes, "name"),
 				),
 			},
 		},
@@ -87,7 +87,7 @@ func TestAccDataSourceStation(t *testing.T) {
 }
 
 func generateStationDataSource(
-	resourceLabel string,
+	resourceID string,
 	name string,
 	// Must explicitly use depends_on in terraform v0.13 when a data source references a resource
 	// Fixed in v0.14 https://github.com/hashicorp/terraform/pull/26284
@@ -96,5 +96,5 @@ func generateStationDataSource(
 		name = %s
         depends_on=[%s]
 	}
-	`, resourceLabel, name, dependsOnResource)
+	`, resourceID, name, dependsOnResource)
 }

@@ -18,12 +18,12 @@ Test Class for the Integration Credentials Data Source
 */
 func TestAccDataSourceIntegrationCredential(t *testing.T) {
 	var (
-		credResourceLabel1 = "test_credential_1"
-		credResourceLabel2 = "test_credential_2"
-		credName1          = "Terraform Credential Test-" + uuid.NewString()
-		typeName1          = "basicAuth"
-		key1               = "userName"
-		val1               = "someUserName"
+		credResource1 = "test_credential_1"
+		credResource2 = "test_credential_2"
+		credName1     = "Terraform Credential Test-" + uuid.NewString()
+		typeName1     = "basicAuth"
+		key1          = "userName"
+		val1          = "someUserName"
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -36,7 +36,7 @@ func TestAccDataSourceIntegrationCredential(t *testing.T) {
 				},
 				// Create
 				Config: GenerateCredentialResource(
-					credResourceLabel1,
+					credResource1,
 					strconv.Quote(credName1),
 					strconv.Quote(typeName1),
 					GenerateCredentialFields(
@@ -44,15 +44,15 @@ func TestAccDataSourceIntegrationCredential(t *testing.T) {
 							key1: strconv.Quote(val1),
 						},
 					),
-				) + generateIntegrationCredentialDataSource(credResourceLabel2,
+				) + generateIntegrationCredentialDataSource(credResource2,
 					credName1,
-					"genesyscloud_integration_credential."+credResourceLabel1),
+					"genesyscloud_integration_credential."+credResource1),
 				Check: resource.ComposeTestCheckFunc(
 					func(s *terraform.State) error {
 						time.Sleep(30 * time.Second) // Wait for 30 seconds for proper creation
 						return nil
 					},
-					resource.TestCheckResourceAttrPair("data.genesyscloud_integration_credential."+credResourceLabel2, "id", "genesyscloud_integration_credential."+credResourceLabel1, "id"), // Default value would be "DISABLED"
+					resource.TestCheckResourceAttrPair("data.genesyscloud_integration_credential."+credResource2, "id", "genesyscloud_integration_credential."+credResource1, "id"), // Default value would be "DISABLED"
 				),
 			},
 		},
@@ -61,7 +61,7 @@ func TestAccDataSourceIntegrationCredential(t *testing.T) {
 }
 
 func generateIntegrationCredentialDataSource(
-	resourceLabel string,
+	resourceID string,
 	name string,
 	// Must explicitly use depends_on in terraform v0.13 when a data source references a resource
 	// Fixed in v0.14 https://github.com/hashicorp/terraform/pull/26284
@@ -70,5 +70,5 @@ func generateIntegrationCredentialDataSource(
 		name = "%s"
 		depends_on=[%s]
 	}
-	`, resourceLabel, name, dependsOnResource)
+	`, resourceID, name, dependsOnResource)
 }

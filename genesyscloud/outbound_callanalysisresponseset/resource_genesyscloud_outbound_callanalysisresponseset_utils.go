@@ -94,14 +94,14 @@ func flattenSdkReaction(sdkReaction platformclientv2.Reaction) *schema.Set {
 	return reactionSet
 }
 
-func GenerateOutboundCallAnalysisResponseSetResource(resourceLabel string, name string, beepDetectionEnabled string, responsesBlock string) string {
+func GenerateOutboundCallAnalysisResponseSetResource(resourceId string, name string, beepDetectionEnabled string, responsesBlock string) string {
 	return fmt.Sprintf(`
 resource "genesyscloud_outbound_callanalysisresponseset" "%s" {
 	name                   = "%s"
 	beep_detection_enabled = %s
 	%s
 }
-`, resourceLabel, name, beepDetectionEnabled, responsesBlock)
+`, resourceId, name, beepDetectionEnabled, responsesBlock)
 }
 
 func GenerateCarsResponsesBlock(nestedBlocks ...string) string {

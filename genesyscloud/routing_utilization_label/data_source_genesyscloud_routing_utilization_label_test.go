@@ -38,7 +38,7 @@ func TestAccDataSourceRoutingUtilizationLabel(t *testing.T) {
 }
 
 func generateRoutingUtilizationLabelDataSource(
-	resourceLabel string,
+	resourceID string,
 	name string,
 	// Must explicitly use depends_on in terraform v0.13 when a data source references a resource
 	// Fixed in v0.14 https://github.com/hashicorp/terraform/pull/26284
@@ -47,7 +47,7 @@ func generateRoutingUtilizationLabelDataSource(
 		name = "%s"
         depends_on=[%s]
 	}
-	`, resourceLabel, name, dependsOnResource)
+	`, resourceID, name, dependsOnResource)
 }
 
 func checkIfLabelsAreEnabled() error { // remove once the feature is globally enabled
@@ -59,7 +59,7 @@ func checkIfLabelsAreEnabled() error { // remove once the feature is globally en
 	return nil
 }
 
-func generateRoutingUtilizationLabelResource(resourceLabel string, name string, dependsOnResource string) string {
+func generateRoutingUtilizationLabelResource(resourceID string, name string, dependsOnResource string) string {
 	dependsOn := ""
 
 	if dependsOnResource != "" {
@@ -70,5 +70,5 @@ func generateRoutingUtilizationLabelResource(resourceLabel string, name string, 
 		name = "%s"
 		%s
 	}
-	`, resourceLabel, name, dependsOn)
+	`, resourceID, name, dependsOn)
 }

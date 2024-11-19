@@ -49,7 +49,7 @@ func getAllAuthTaskManagementWorktypeStatuss(ctx context.Context, clientConfig *
 		}
 
 		for _, status := range *worktypeStatuses {
-			resources[*worktype.Id+"/"+*status.Id] = &resourceExporter.ResourceMeta{BlockLabel: *status.Name}
+			resources[*worktype.Id+"/"+*status.Id] = &resourceExporter.ResourceMeta{Name: *status.Name}
 		}
 	}
 

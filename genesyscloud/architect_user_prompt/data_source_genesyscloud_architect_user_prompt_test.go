@@ -13,7 +13,7 @@ import (
 )
 
 func TestAccDataSourceArchitectUserPrompt(t *testing.T) {
-	userPromptResourceLabel := "test-user_prompt_1"
+	userPromptResource := "test-user_prompt_1"
 	userPromptName := "TestUserPrompt_1" + strings.Replace(uuid.NewString(), "-", "", -1)
 	userPromptDescription := "Test description"
 
@@ -23,17 +23,17 @@ func TestAccDataSourceArchitectUserPrompt(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config: GenerateUserPromptResource(&UserPromptStruct{
-					userPromptResourceLabel,
+					userPromptResource,
 					userPromptName,
 					strconv.Quote(userPromptDescription),
 					nil,
 				}) + generateUserPromptDataSource(
-					userPromptResourceLabel,
-					"genesyscloud_architect_user_prompt."+userPromptResourceLabel+".name",
-					"genesyscloud_architect_user_prompt."+userPromptResourceLabel,
+					userPromptResource,
+					"genesyscloud_architect_user_prompt."+userPromptResource+".name",
+					"genesyscloud_architect_user_prompt."+userPromptResource,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair("data.genesyscloud_architect_user_prompt."+userPromptResourceLabel, "id", "genesyscloud_architect_user_prompt."+userPromptResourceLabel, "id"),
+					resource.TestCheckResourceAttrPair("data.genesyscloud_architect_user_prompt."+userPromptResource, "id", "genesyscloud_architect_user_prompt."+userPromptResource, "id"),
 				),
 			},
 		},
@@ -41,7 +41,7 @@ func TestAccDataSourceArchitectUserPrompt(t *testing.T) {
 }
 
 func generateUserPromptDataSource(
-	resourceLabel string,
+	resourceID string,
 	name string,
 	// Must explicitly use depends_on in terraform v0.13 when a data source references a resource
 	// Fixed in v0.14 https://github.com/hashicorp/terraform/pull/26284
@@ -50,5 +50,5 @@ func generateUserPromptDataSource(
 		name = %s
 		depends_on=[%s]
 	}
-	`, resourceLabel, name, dependsOnResource)
+	`, resourceID, name, dependsOnResource)
 }

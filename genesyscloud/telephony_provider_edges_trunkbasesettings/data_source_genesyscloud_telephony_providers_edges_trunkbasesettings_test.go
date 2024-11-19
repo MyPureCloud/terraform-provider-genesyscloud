@@ -13,13 +13,13 @@ import (
 func TestAccDataSourceTrunkBaseSettings(t *testing.T) {
 	t.Parallel()
 	var (
-		trunkBaseSettingsResourceLabel     = "trunkBaseSettings"
-		trunkBaseSettingsDataResourceLabel = "trunkBaseSettingsData"
-		name                               = "test trunk base settings-" + uuid.NewString()
-		description                        = "test description"
-		trunkMetaBaseId                    = "phone_connections_webrtc.json"
-		trunkType                          = "PHONE"
-		managed                            = false
+		trunkBaseSettingsRes     = "trunkBaseSettings"
+		trunkBaseSettingsDataRes = "trunkBaseSettingsData"
+		name                     = "test trunk base settings-" + uuid.NewString()
+		description              = "test description"
+		trunkMetaBaseId          = "phone_connections_webrtc.json"
+		trunkType                = "PHONE"
+		managed                  = false
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -29,18 +29,18 @@ func TestAccDataSourceTrunkBaseSettings(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config: GenerateTrunkBaseSettingsResourceWithCustomAttrs(
-					trunkBaseSettingsResourceLabel,
+					trunkBaseSettingsRes,
 					name,
 					description,
 					trunkMetaBaseId,
 					trunkType,
 					managed,
 				) + generateTrunkBaseSettingsDataSource(
-					trunkBaseSettingsDataResourceLabel,
+					trunkBaseSettingsDataRes,
 					name,
-					"genesyscloud_telephony_providers_edges_trunkbasesettings."+trunkBaseSettingsResourceLabel),
+					"genesyscloud_telephony_providers_edges_trunkbasesettings."+trunkBaseSettingsRes),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair("data.genesyscloud_telephony_providers_edges_trunkbasesettings."+trunkBaseSettingsDataResourceLabel, "id", "genesyscloud_telephony_providers_edges_trunkbasesettings."+trunkBaseSettingsResourceLabel, "id"),
+					resource.TestCheckResourceAttrPair("data.genesyscloud_telephony_providers_edges_trunkbasesettings."+trunkBaseSettingsDataRes, "id", "genesyscloud_telephony_providers_edges_trunkbasesettings."+trunkBaseSettingsRes, "id"),
 				),
 			},
 		},
@@ -48,7 +48,7 @@ func TestAccDataSourceTrunkBaseSettings(t *testing.T) {
 }
 
 func generateTrunkBaseSettingsDataSource(
-	resourceLabel string,
+	resourceID string,
 	name string,
 	// Must explicitly use depends_on in terraform v0.13 when a data source references a resource
 	// Fixed in v0.14 https://github.com/hashicorp/terraform/pull/26284
@@ -57,5 +57,5 @@ func generateTrunkBaseSettingsDataSource(
 		name = "%s"
 		depends_on=[%s]
 	}
-	`, resourceLabel, name, dependsOnResource)
+	`, resourceID, name, dependsOnResource)
 }

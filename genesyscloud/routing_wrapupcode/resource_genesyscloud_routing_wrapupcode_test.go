@@ -15,11 +15,11 @@ import (
 
 func TestAccResourceRoutingWrapupcode(t *testing.T) {
 	var (
-		codeResourceLabel1 = "routing-wrapupcode1"
-		codeName1          = "Terraform Code-" + uuid.NewString()
-		codeName2          = "Terraform Code-" + uuid.NewString()
-		divResourceLabel   = "test-division"
-		divName            = "terraform-" + uuid.NewString()
+		codeResource1 = "routing-wrapupcode1"
+		codeName1     = "Terraform Code-" + uuid.NewString()
+		codeName2     = "Terraform Code-" + uuid.NewString()
+		divResource   = "test-division"
+		divName       = "terraform-" + uuid.NewString()
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -28,41 +28,41 @@ func TestAccResourceRoutingWrapupcode(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config: GenerateRoutingWrapupcodeResource(
-					codeResourceLabel1,
+					codeResource1,
 					codeName1,
 					util.NullValue,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(resourceName+"."+codeResourceLabel1, "name", codeName1),
+					resource.TestCheckResourceAttr(resourceName+"."+codeResource1, "name", codeName1),
 				),
 			},
 			{
 				// Create
-				Config: authDivision.GenerateAuthDivisionBasic(divResourceLabel, divName) + GenerateRoutingWrapupcodeResource(
-					codeResourceLabel1,
+				Config: authDivision.GenerateAuthDivisionBasic(divResource, divName) + GenerateRoutingWrapupcodeResource(
+					codeResource1,
 					codeName1,
-					"genesyscloud_auth_division."+divResourceLabel+".id",
+					"genesyscloud_auth_division."+divResource+".id",
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(resourceName+"."+codeResourceLabel1, "name", codeName1),
-					resource.TestCheckResourceAttrPair(resourceName+"."+codeResourceLabel1, "division_id", "genesyscloud_auth_division."+divResourceLabel, "id"),
+					resource.TestCheckResourceAttr(resourceName+"."+codeResource1, "name", codeName1),
+					resource.TestCheckResourceAttrPair(resourceName+"."+codeResource1, "division_id", "genesyscloud_auth_division."+divResource, "id"),
 				),
 			},
 			{
 				// Update with a new name
-				Config: authDivision.GenerateAuthDivisionBasic(divResourceLabel, divName) + GenerateRoutingWrapupcodeResource(
-					codeResourceLabel1,
+				Config: authDivision.GenerateAuthDivisionBasic(divResource, divName) + GenerateRoutingWrapupcodeResource(
+					codeResource1,
 					codeName2,
-					"genesyscloud_auth_division."+divResourceLabel+".id",
+					"genesyscloud_auth_division."+divResource+".id",
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(resourceName+"."+codeResourceLabel1, "name", codeName2),
-					resource.TestCheckResourceAttrPair(resourceName+"."+codeResourceLabel1, "division_id", "genesyscloud_auth_division."+divResourceLabel, "id"),
+					resource.TestCheckResourceAttr(resourceName+"."+codeResource1, "name", codeName2),
+					resource.TestCheckResourceAttrPair(resourceName+"."+codeResource1, "division_id", "genesyscloud_auth_division."+divResource, "id"),
 				),
 			},
 			{
 				// Import/Read
-				ResourceName:      resourceName + "." + codeResourceLabel1,
+				ResourceName:      resourceName + "." + codeResource1,
 				ImportState:       true,
 				ImportStateVerify: true,
 			},

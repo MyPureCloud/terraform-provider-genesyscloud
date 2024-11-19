@@ -119,8 +119,8 @@ func flattenMediaTypes(mediaTypes *platformclientv2.Mediatypes) []interface{} {
 }
 
 func GenerateSupportedContentResource(
-	resourceType string,
-	resourceLabel string,
+	resourceName string,
+	resourceId string,
 	name string,
 	nestedBlocks ...string,
 ) string {
@@ -132,7 +132,7 @@ func GenerateSupportedContentResource(
 				%s
 			}
 		}
-	} `, resourceType, resourceLabel, name, strings.Join(nestedBlocks, "\n"))
+	} `, resourceName, resourceId, name, strings.Join(nestedBlocks, "\n"))
 }
 
 func GenerateInboundTypeBlock(
@@ -141,7 +141,7 @@ func GenerateInboundTypeBlock(
 	return fmt.Sprintf(`
 		inbound {
 			type="%s"
-		}
+		}	
 	`, inboundType)
 }
 
@@ -151,6 +151,6 @@ func GenerateOutboundTypeBlock(
 	return fmt.Sprintf(`
 		outbound {
 			type="%s"
-		}
+		}	
 	`, outboundType)
 }

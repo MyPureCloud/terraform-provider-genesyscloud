@@ -14,8 +14,8 @@ import (
 
 func TestAccResourceRoutingSkillBasic(t *testing.T) {
 	var (
-		skillResourceLabel1 = "test-skill1"
-		skillName1          = "Terraform Skill" + uuid.NewString()
+		skillResource1 = "test-skill1"
+		skillName1     = "Terraform Skill" + uuid.NewString()
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -25,16 +25,16 @@ func TestAccResourceRoutingSkillBasic(t *testing.T) {
 			{
 				// Create
 				Config: GenerateRoutingSkillResource(
-					skillResourceLabel1,
+					skillResource1,
 					skillName1,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_routing_skill."+skillResourceLabel1, "name", skillName1),
+					resource.TestCheckResourceAttr("genesyscloud_routing_skill."+skillResource1, "name", skillName1),
 				),
 			},
 			{
 				// Import/Read
-				ResourceName:      "genesyscloud_routing_skill." + skillResourceLabel1,
+				ResourceName:      "genesyscloud_routing_skill." + skillResource1,
 				ImportState:       true,
 				ImportStateVerify: true,
 			},

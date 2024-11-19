@@ -36,7 +36,7 @@ func getAllAuthSupportedContents(ctx context.Context, clientConfig *platformclie
 	}
 
 	for _, supportedContent := range *supportedContents {
-		resources[*supportedContent.Id] = &resourceExporter.ResourceMeta{BlockLabel: *supportedContent.Name}
+		resources[*supportedContent.Id] = &resourceExporter.ResourceMeta{Name: *supportedContent.Name}
 	}
 
 	return resources, nil

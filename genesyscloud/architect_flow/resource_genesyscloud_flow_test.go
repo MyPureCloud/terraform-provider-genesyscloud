@@ -57,10 +57,10 @@ func lockFlow(flowName string, flowType string) {
 // Tests the force_unlock functionality.
 func TestAccResourceArchFlowForceUnlock(t *testing.T) {
 	var (
-		flowResourceLabel = "test_force_unlock_flow1"
-		flowName          = "Terraform Flow Test ForceUnlock-" + uuid.NewString()
-		flowType          = "INBOUNDCALL"
-		filePath          = "../../examples/resources/genesyscloud_flow/inboundcall_flow_example.yaml"
+		flowResource = "test_force_unlock_flow1"
+		flowName     = "Terraform Flow Test ForceUnlock-" + uuid.NewString()
+		flowType     = "INBOUNDCALL"
+		filePath     = "../../examples/resources/genesyscloud_flow/inboundcall_flow_example.yaml"
 
 		inboundcallConfig1 = fmt.Sprintf("inboundCall:\n  name: %s\n  defaultLanguage: en-us\n  startUpRef: ./menus/menu[mainMenu]\n  initialGreeting:\n    tts: Archy says hi!!!\n  menus:\n    - menu:\n        name: Main Menu\n        audio:\n          tts: You are at the Main Menu, press 9 to disconnect.\n        refId: mainMenu\n        choices:\n          - menuDisconnect:\n              name: Disconnect\n              dtmf: digit_9", flowName)
 		inboundcallConfig2 = fmt.Sprintf("inboundCall:\n  name: %s\n  defaultLanguage: en-us\n  startUpRef: ./menus/menu[mainMenu]\n  initialGreeting:\n    tts: Archy says hi again!!!\n  menus:\n    - menu:\n        name: Main Menu\n        audio:\n          tts: You are at the Main Menu, press 9 to disconnect.\n        refId: mainMenu\n        choices:\n          - menuDisconnect:\n              name: Disconnect\n              dtmf: digit_9", flowName)
@@ -78,32 +78,32 @@ func TestAccResourceArchFlowForceUnlock(t *testing.T) {
 			{
 				// Create flow
 				Config: GenerateFlowResource(
-					flowResourceLabel,
+					flowResource,
 					filePath,
 					inboundcallConfig1,
 					false,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					validateFlow("genesyscloud_flow."+flowResourceLabel, flowName, "", flowType),
+					validateFlow("genesyscloud_flow."+flowResource, flowName, "", flowType),
 				),
 			},
 			{
 				//Lock the flow, deploy, and check to make sure the flow is locked
 				PreConfig: flowLocFunc, //This will lock the flow.
 				Config: GenerateFlowResource(
-					flowResourceLabel,
+					flowResource,
 					filePath,
 					inboundcallConfig2,
 					true,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					validateFlowUnlocked("genesyscloud_flow."+flowResourceLabel),
-					validateFlow("genesyscloud_flow."+flowResourceLabel, flowName, "", flowType),
+					validateFlowUnlocked("genesyscloud_flow."+flowResource),
+					validateFlow("genesyscloud_flow."+flowResource, flowName, "", flowType),
 				),
 			},
 			{
 				// Import/Read
-				ResourceName:            "genesyscloud_flow." + flowResourceLabel,
+				ResourceName:            "genesyscloud_flow." + flowResource,
 				ImportState:             true,
 				ImportStateVerify:       true,
 				ImportStateVerifyIgnore: []string{"filepath", "force_unlock", "file_content_hash"},
@@ -115,16 +115,16 @@ func TestAccResourceArchFlowForceUnlock(t *testing.T) {
 
 func TestAccResourceArchFlowStandard(t *testing.T) {
 	var (
-		flowResourceLabel1 = "test_flow1"
-		flowResourceLabel2 = "test_flow2"
-		flowName           = "Terraform Flow Test-" + uuid.NewString()
-		flowDescription1   = "test description 1"
-		flowDescription2   = "test description 2"
-		flowType1          = "INBOUNDCALL"
-		flowType2          = "INBOUNDEMAIL"
-		filePath1          = "../../examples/resources/genesyscloud_flow/inboundcall_flow_example.yaml" //Have to use an explicit path because the filesha function gets screwy on relative class names
-		filePath2          = "../../examples/resources/genesyscloud_flow/inboundcall_flow_example2.yaml"
-		filePath3          = "../../examples/resources/genesyscloud_flow/inboundcall_flow_example3.yaml"
+		flowResource1    = "test_flow1"
+		flowResource2    = "test_flow2"
+		flowName         = "Terraform Flow Test-" + uuid.NewString()
+		flowDescription1 = "test description 1"
+		flowDescription2 = "test description 2"
+		flowType1        = "INBOUNDCALL"
+		flowType2        = "INBOUNDEMAIL"
+		filePath1        = "../../examples/resources/genesyscloud_flow/inboundcall_flow_example.yaml" //Have to use an explicit path because the filesha function gets screwy on relative class names
+		filePath2        = "../../examples/resources/genesyscloud_flow/inboundcall_flow_example2.yaml"
+		filePath3        = "../../examples/resources/genesyscloud_flow/inboundcall_flow_example3.yaml"
 
 		inboundcallConfig1 = fmt.Sprintf("inboundCall:\n  name: %s\n  description: %s\n  defaultLanguage: en-us\n  startUpRef: ./menus/menu[mainMenu]\n  initialGreeting:\n    tts: Archy says hi!!!\n  menus:\n    - menu:\n        name: Main Menu\n        audio:\n          tts: You are at the Main Menu, press 9 to disconnect.\n        refId: mainMenu\n        choices:\n          - menuDisconnect:\n              name: Disconnect\n              dtmf: digit_9", flowName, flowDescription1)
 		inboundcallConfig2 = fmt.Sprintf("inboundCall:\n  name: %s\n  description: %s\n  defaultLanguage: en-us\n  startUpRef: ./menus/menu[mainMenu]\n  initialGreeting:\n    tts: Archy says hi!!!!!\n  menus:\n    - menu:\n        name: Main Menu\n        audio:\n          tts: You are at the Main Menu, press 9 to disconnect.\n        refId: mainMenu\n        choices:\n          - menuDisconnect:\n              name: Disconnect\n              dtmf: digit_9", flowName, flowDescription2)
@@ -163,30 +163,30 @@ func TestAccResourceArchFlowStandard(t *testing.T) {
 			{
 				// Create flow
 				Config: GenerateFlowResource(
-					flowResourceLabel1,
+					flowResource1,
 					filePath1,
 					inboundcallConfig1,
 					false,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					validateFlow("genesyscloud_flow."+flowResourceLabel1, flowName, flowDescription1, flowType1),
+					validateFlow("genesyscloud_flow."+flowResource1, flowName, flowDescription1, flowType1),
 				),
 			},
 			{
 				// Update flow description
 				Config: GenerateFlowResource(
-					flowResourceLabel1,
+					flowResource1,
 					filePath2,
 					inboundcallConfig2,
 					false,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					validateFlow("genesyscloud_flow."+flowResourceLabel1, flowName, flowDescription2, flowType1),
+					validateFlow("genesyscloud_flow."+flowResource1, flowName, flowDescription2, flowType1),
 				),
 			},
 			{
 				// Import/Read
-				ResourceName:            "genesyscloud_flow." + flowResourceLabel1,
+				ResourceName:            "genesyscloud_flow." + flowResource1,
 				ImportState:             true,
 				ImportStateVerify:       true,
 				ImportStateVerifyIgnore: []string{"filepath", "force_unlock", "file_content_hash"},
@@ -194,18 +194,18 @@ func TestAccResourceArchFlowStandard(t *testing.T) {
 			{
 				// Create inboundemail flow
 				Config: GenerateFlowResource(
-					flowResourceLabel2,
+					flowResource2,
 					filePath3,
 					inboundemailConfig1,
 					false,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					validateFlow("genesyscloud_flow."+flowResourceLabel2, flowName, flowDescription1, flowType2),
+					validateFlow("genesyscloud_flow."+flowResource2, flowName, flowDescription1, flowType2),
 				),
 			},
 			{
 				// Import/Read
-				ResourceName:            "genesyscloud_flow." + flowResourceLabel2,
+				ResourceName:            "genesyscloud_flow." + flowResource2,
 				ImportState:             true,
 				ImportStateVerify:       true,
 				ImportStateVerifyIgnore: []string{"filepath", "force_unlock", "file_content_hash"},
@@ -217,11 +217,11 @@ func TestAccResourceArchFlowStandard(t *testing.T) {
 
 func TestAccResourceArchFlowSubstitutions(t *testing.T) {
 	var (
-		flowResourceLabel1 = "test_flow1"
-		flowName           = "Terraform Flow Test-" + uuid.NewString()
-		flowDescription1   = "description 1"
-		flowDescription2   = "description 2"
-		filePath1          = "../../examples/resources/genesyscloud_flow/inboundcall_flow_example_substitutions.yaml"
+		flowResource1    = "test_flow1"
+		flowName         = "Terraform Flow Test-" + uuid.NewString()
+		flowDescription1 = "description 1"
+		flowDescription2 = "description 2"
+		filePath1        = "../../examples/resources/genesyscloud_flow/inboundcall_flow_example_substitutions.yaml"
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -231,7 +231,7 @@ func TestAccResourceArchFlowSubstitutions(t *testing.T) {
 			{
 				// Create flow
 				Config: GenerateFlowResource(
-					flowResourceLabel1,
+					flowResource1,
 					filePath1,
 					"",
 					false,
@@ -244,13 +244,13 @@ func TestAccResourceArchFlowSubstitutions(t *testing.T) {
 					}),
 				),
 				Check: resource.ComposeTestCheckFunc(
-					validateFlow("genesyscloud_flow."+flowResourceLabel1, flowName, flowDescription1, "INBOUNDCALL"),
+					validateFlow("genesyscloud_flow."+flowResource1, flowName, flowDescription1, "INBOUNDCALL"),
 				),
 			},
 			{
 				// Update
 				Config: GenerateFlowResource(
-					flowResourceLabel1,
+					flowResource1,
 					filePath1,
 					"",
 					false,
@@ -263,7 +263,7 @@ func TestAccResourceArchFlowSubstitutions(t *testing.T) {
 					}),
 				),
 				Check: resource.ComposeTestCheckFunc(
-					validateFlow("genesyscloud_flow."+flowResourceLabel1, flowName, flowDescription2, "INBOUNDCALL"),
+					validateFlow("genesyscloud_flow."+flowResource1, flowName, flowDescription2, "INBOUNDCALL"),
 				),
 			},
 		},
@@ -322,12 +322,12 @@ the flow with a substitution.
 */
 func TestAccResourceArchFlowSubstitutionsWithMultipleTouch(t *testing.T) {
 	var (
-		flowResourceLabel1 = "test_flow1"
-		flowName           = "Terraform Flow Test-" + uuid.NewString()
-		flowDescription1   = "description 1"
-		flowDescription2   = "description 2"
-		srcFile            = "../../examples/resources/genesyscloud_flow/inboundcall_flow_example_substitutions.yaml"
-		destFile           = "../../examples/resources/genesyscloud_flow/inboundcall_flow_example_holder.yaml"
+		flowResource1    = "test_flow1"
+		flowName         = "Terraform Flow Test-" + uuid.NewString()
+		flowDescription1 = "description 1"
+		flowDescription2 = "description 2"
+		srcFile          = "../../examples/resources/genesyscloud_flow/inboundcall_flow_example_substitutions.yaml"
+		destFile         = "../../examples/resources/genesyscloud_flow/inboundcall_flow_example_holder.yaml"
 	)
 
 	//Copy the example substitution file over to a temp file that can be manipulated and modified
@@ -343,7 +343,7 @@ func TestAccResourceArchFlowSubstitutionsWithMultipleTouch(t *testing.T) {
 			{
 				// Create flow
 				Config: GenerateFlowResource(
-					flowResourceLabel1,
+					flowResource1,
 					destFile,
 					"",
 					false,
@@ -356,13 +356,13 @@ func TestAccResourceArchFlowSubstitutionsWithMultipleTouch(t *testing.T) {
 					}),
 				),
 				Check: resource.ComposeTestCheckFunc(
-					validateFlow("genesyscloud_flow."+flowResourceLabel1, flowName, flowDescription1, "INBOUNDCALL"),
+					validateFlow("genesyscloud_flow."+flowResource1, flowName, flowDescription1, "INBOUNDCALL"),
 				),
 			},
 			{ // Update the flow, but make sure that we touch the YAML file and change something int
 				PreConfig: func() { transformFile(destFile) },
 				Config: GenerateFlowResource(
-					flowResourceLabel1,
+					flowResource1,
 					destFile,
 					"",
 					false,
@@ -375,7 +375,7 @@ func TestAccResourceArchFlowSubstitutionsWithMultipleTouch(t *testing.T) {
 					}),
 				),
 				Check: resource.ComposeTestCheckFunc(
-					validateFlow("genesyscloud_flow."+flowResourceLabel1, flowName, flowDescription2, "INBOUNDCALL"),
+					validateFlow("genesyscloud_flow."+flowResource1, flowName, flowDescription2, "INBOUNDCALL"),
 				),
 			},
 		},

@@ -18,14 +18,14 @@ func TestAccDataSourceSite(t *testing.T) {
 	t.Parallel()
 	var (
 		// site
-		siteResourceLabel     = "site"
-		siteDataResourceLabel = "site-data"
-		name                  = "tf-site-" + uuid.NewString()
-		description1          = "test site description"
-		mediaModel            = "Cloud"
+		siteRes      = "site"
+		siteDataRes  = "site-data"
+		name         = "tf-site-" + uuid.NewString()
+		description1 = "test site description"
+		mediaModel   = "Cloud"
 
 		// location
-		locationResourceLabel = "test-location1"
+		locationRes = "test-location1"
 	)
 
 	emergencyNumber := "+13173124745"
@@ -34,7 +34,7 @@ func TestAccDataSourceSite(t *testing.T) {
 	}
 
 	locationConfig := location.GenerateLocationResource(
-		locationResourceLabel,
+		locationRes,
 		"Terraform location"+uuid.NewString(),
 		"HQ1",
 		[]string{},
@@ -55,20 +55,20 @@ func TestAccDataSourceSite(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config: GenerateSiteResourceWithCustomAttrs(
-					siteResourceLabel,
+					siteRes,
 					name,
 					description1,
-					"genesyscloud_location."+locationResourceLabel+".id",
+					"genesyscloud_location."+locationRes+".id",
 					mediaModel,
 					false,
 					util.AssignRegion(),
 					strconv.Quote("+19205551212"),
 					strconv.Quote("Wilco plumbing")) + locationConfig + generateSiteDataSource(
-					siteDataResourceLabel,
+					siteDataRes,
 					name,
-					"genesyscloud_telephony_providers_edges_site."+siteResourceLabel),
+					"genesyscloud_telephony_providers_edges_site."+siteRes),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair("data.genesyscloud_telephony_providers_edges_site."+siteDataResourceLabel, "id", "genesyscloud_telephony_providers_edges_site."+siteResourceLabel, "id"),
+					resource.TestCheckResourceAttrPair("data.genesyscloud_telephony_providers_edges_site."+siteDataRes, "id", "genesyscloud_telephony_providers_edges_site."+siteRes, "id"),
 				),
 			},
 		},
@@ -81,8 +81,8 @@ This test expects that the org has a product called "voice" enabled on it. If th
 func TestAccDataSourceSiteManaged(t *testing.T) {
 	t.Parallel()
 	var (
-		siteDataResourceLabel = "managed-site-data"
-		name                  = "PureCloud Voice - AWS"
+		siteDataRes = "managed-site-data"
+		name        = "PureCloud Voice - AWS"
 	)
 
 	siteId, err := getSiteIdByName(name)
@@ -96,12 +96,12 @@ func TestAccDataSourceSiteManaged(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config: generateSiteDataSource(
-					siteDataResourceLabel,
+					siteDataRes,
 					name,
 					"",
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("data.genesyscloud_telephony_providers_edges_site."+siteDataResourceLabel, "id", siteId),
+					resource.TestCheckResourceAttr("data.genesyscloud_telephony_providers_edges_site."+siteDataRes, "id", siteId),
 				),
 			},
 		},
@@ -109,7 +109,7 @@ func TestAccDataSourceSiteManaged(t *testing.T) {
 }
 
 func generateSiteDataSource(
-	resourceLabel string,
+	resourceID string,
 	name string,
 	// Must explicitly use depends_on in terraform v0.13 when a data source references a resource
 	// Fixed in v0.14 https://github.com/hashicorp/terraform/pull/26284
@@ -119,7 +119,7 @@ func generateSiteDataSource(
 		name = "%s"
 		depends_on=[%s]
 	}
-	`, resourceLabel, name, dependsOnResource)
+	`, resourceID, name, dependsOnResource)
 }
 
 func getSiteIdByName(name string) (string, error) {

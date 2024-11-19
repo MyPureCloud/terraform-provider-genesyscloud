@@ -15,8 +15,8 @@ import (
 func TestAccDataSourceOutboundFileSpecificationTemplate(t *testing.T) {
 
 	var (
-		resourceLabel               = "file_specification_template"
-		dataSourceLabel             = "file_specification_template_data"
+		resourceId                  = "file_specification_template"
+		dataSourceId                = "file_specification_template_data"
 		name                        = "File Specification Template" + uuid.NewString()
 		description                 = "TF Test File specification template"
 		format                      = "Delimited"
@@ -33,7 +33,7 @@ func TestAccDataSourceOutboundFileSpecificationTemplate(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config: generateOutboundFileSpecificationTemplate(
-					resourceLabel,
+					resourceId,
 					name,
 					strconv.Quote(description),
 					format,
@@ -43,23 +43,23 @@ func TestAccDataSourceOutboundFileSpecificationTemplate(t *testing.T) {
 					strconv.Quote(delimiter),
 					strconv.Quote(delimiterValue),
 				) + generateOutboundFileSpecificationTemplateDataSource(
-					dataSourceLabel,
+					dataSourceId,
 					name,
-					"genesyscloud_outbound_filespecificationtemplate."+resourceLabel),
+					"genesyscloud_outbound_filespecificationtemplate."+resourceId),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair("genesyscloud_outbound_filespecificationtemplate."+resourceLabel, "id",
-						"data.genesyscloud_outbound_filespecificationtemplate."+dataSourceLabel, "id"),
+					resource.TestCheckResourceAttrPair("genesyscloud_outbound_filespecificationtemplate."+resourceId, "id",
+						"data.genesyscloud_outbound_filespecificationtemplate."+dataSourceId, "id"),
 				),
 			},
 		},
 	})
 }
 
-func generateOutboundFileSpecificationTemplateDataSource(dataSourceLabel string, name string, dependsOn string) string {
+func generateOutboundFileSpecificationTemplateDataSource(id string, name string, dependsOn string) string {
 	return fmt.Sprintf(`
 data "genesyscloud_outbound_filespecificationtemplate" "%s" {
 	name       = "%s"
 	depends_on = [%s]
 }
-`, dataSourceLabel, name, dependsOn)
+`, id, name, dependsOn)
 }

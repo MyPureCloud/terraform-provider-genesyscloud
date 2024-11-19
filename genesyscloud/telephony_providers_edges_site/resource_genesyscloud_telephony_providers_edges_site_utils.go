@@ -511,7 +511,7 @@ func buildSdkEdgeAutoUpdateConfig(d *schema.ResourceData) (*platformclientv2.Edg
 }
 
 func GenerateSiteResourceWithCustomAttrs(
-	siteResourceLabel,
+	siteRes,
 	name,
 	description,
 	locationId,
@@ -532,7 +532,7 @@ func GenerateSiteResourceWithCustomAttrs(
 		caller_name = %s
 		%s
 	}
-	`, siteResourceLabel, name, description, locationId, mediaModel, mediaRegionsUseLatencyBased, mediaRegions, callerId, callerName, strings.Join(otherAttrs, "\n"))
+	`, siteRes, name, description, locationId, mediaModel, mediaRegionsUseLatencyBased, mediaRegions, callerId, callerName, strings.Join(otherAttrs, "\n"))
 
 	return site
 }

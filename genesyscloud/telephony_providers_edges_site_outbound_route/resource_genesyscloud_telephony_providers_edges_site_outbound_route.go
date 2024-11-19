@@ -53,7 +53,7 @@ func getAllSitesAndOutboundRoutes(ctx context.Context, sdkConfig *platformclient
 		if routes != nil && len(*routes) > 0 {
 			for _, route := range *routes {
 				outboundRouteId := buildSiteAndOutboundRouteId(*site.Id, *route.Id)
-				resources[outboundRouteId] = &resourceExporter.ResourceMeta{BlockLabel: *route.Name}
+				resources[outboundRouteId] = &resourceExporter.ResourceMeta{Name: *route.Name}
 			}
 		}
 	}

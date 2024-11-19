@@ -161,7 +161,7 @@ func importRoutingEmailRoute(_ context.Context, d *schema.ResourceData, _ interf
 }
 
 func GenerateRoutingEmailRouteResource(
-	resourceLabel string,
+	resourceID string,
 	domainID string,
 	pattern string,
 	fromName string,
@@ -172,5 +172,5 @@ func GenerateRoutingEmailRouteResource(
             from_name = "%s"
             %s
         }
-        `, resourceLabel, domainID, pattern, fromName, strings.Join(otherAttrs, "\n"))
+        `, resourceID, domainID, pattern, fromName, strings.Join(otherAttrs, "\n"))
 }

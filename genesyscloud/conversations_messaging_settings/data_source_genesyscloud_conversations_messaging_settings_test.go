@@ -12,9 +12,9 @@ import (
 
 func TestAccDataSourceConversationsMessagingSettings(t *testing.T) {
 	var (
-		resourceLabel   = "conversations_messaging_settings"
-		dataSourceLabel = "conversations_messaging_settings_data"
-		name            = "Messaging Settings " + uuid.NewString()
+		id     = "conversations_messaging_settings"
+		dataId = "conversations_messaging_settings_data"
+		name   = "Messaging Settings " + uuid.NewString()
 	)
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
@@ -22,7 +22,7 @@ func TestAccDataSourceConversationsMessagingSettings(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config: GenerateConversationsMessagingSettingsResource(
-					resourceLabel,
+					id,
 					name,
 					GenerateContentStoryBlock(
 						GenerateMentionInboundOnlySetting("Enabled"),
@@ -33,23 +33,23 @@ func TestAccDataSourceConversationsMessagingSettings(t *testing.T) {
 						"Disabled",
 					),
 				) + generateConversationsMessagingSettingsDataSource(
-					dataSourceLabel,
+					dataId,
 					name,
-					"genesyscloud_conversations_messaging_settings."+resourceLabel,
+					"genesyscloud_conversations_messaging_settings."+id,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair("data.genesyscloud_conversations_messaging_settings."+dataSourceLabel, "id",
-						"genesyscloud_conversations_messaging_settings."+resourceLabel, "id"),
+					resource.TestCheckResourceAttrPair("data.genesyscloud_conversations_messaging_settings."+dataId, "id",
+						"genesyscloud_conversations_messaging_settings."+id, "id"),
 				),
 			},
 		},
 	})
 }
 
-func generateConversationsMessagingSettingsDataSource(dataSourceLabel, name, dependsOn string) string {
+func generateConversationsMessagingSettingsDataSource(id, name, dependsOn string) string {
 	return fmt.Sprintf(`data "genesyscloud_conversations_messaging_settings" "%s" {
 		name = "%s"
 		depends_on = [%s]
 	}
-`, dataSourceLabel, name, dependsOn)
+`, id, name, dependsOn)
 }

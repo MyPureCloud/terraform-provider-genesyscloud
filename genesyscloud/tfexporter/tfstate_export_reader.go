@@ -2,16 +2,15 @@ package tfexporter
 
 import (
 	"encoding/json"
+	"github.com/hashicorp/hcl/v2/hclparse"
+	"github.com/hashicorp/hcl/v2/hclsyntax"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
 	"terraform-provider-genesyscloud/genesyscloud/util/files"
 	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
-
-	"github.com/hashicorp/hcl/v2/hclparse"
-	"github.com/hashicorp/hcl/v2/hclsyntax"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 )
 
 /*
@@ -107,8 +106,8 @@ func processTerraformFile(path string, resourceTypes []string) []string {
 
 		if len(block.Labels) > 1 {
 			resourceType := &block.Labels[0]
-			resourceLabel := &block.Labels[1]
-			resourceTypes = append(resourceTypes, *resourceType+"."+*resourceLabel)
+			resourceName := &block.Labels[1]
+			resourceTypes = append(resourceTypes, *resourceType+"."+*resourceName)
 		}
 
 	}
@@ -156,17 +155,17 @@ func readTfState(path string) []string {
 		return nil
 	}
 
-	resourcePaths := extractResourcePathsFromStateData(jsonData)
+	names := extractResourceTypes(jsonData)
 
-	return resourcePaths
+	return names
 }
 
-func extractResourcePathsFromStateData(data map[string]interface{}) []string {
-	var resourcePathsFromTf []string
+func extractResourceTypes(data map[string]interface{}) []string {
+	var resourceTypesFromTf []string
 	resources, ok := data["resources"].([]interface{})
 	if !ok {
 		log.Printf("Error: resources not found in TF State File")
-		return resourcePathsFromTf
+		return resourceTypesFromTf
 	}
 
 	for _, resource := range resources {
@@ -178,17 +177,17 @@ func extractResourcePathsFromStateData(data map[string]interface{}) []string {
 
 		resourceType, ok := resourceMap["type"].(string)
 		if !ok {
-			log.Printf("Error: type attribute not found in resource %v", resource)
+			log.Printf("Error: Type attribute not found in resource %v", resource)
 			continue
 		}
 
-		resourceLabel, ok := resourceMap["name"].(string) // The state stores the Block Label as the "name" field
+		name, ok := resourceMap["name"].(string)
 		if !ok {
 			log.Printf("Error: name attribute not found in resource %v", resource)
 			continue
 		}
-		resourcePathsFromTf = append(resourcePathsFromTf, resourceType+"."+resourceLabel)
+		resourceTypesFromTf = append(resourceTypesFromTf, resourceType+"."+name)
 
 	}
-	return resourcePathsFromTf
+	return resourceTypesFromTf
 }

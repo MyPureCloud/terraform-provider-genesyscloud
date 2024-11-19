@@ -120,14 +120,14 @@ func comparePhoneNumbers(_, old, new string, _ *schema.ResourceData) bool {
 }
 
 func GenerateLocationResourceBasic(
-	resourceLabel,
+	resourceID,
 	name string,
 	nestedBlocks ...string) string {
-	return GenerateLocationResource(resourceLabel, name, "", []string{})
+	return GenerateLocationResource(resourceID, name, "", []string{})
 }
 
 func GenerateLocationResource(
-	resourceLabel,
+	resourceID,
 	name,
 	notes string,
 	paths []string,
@@ -138,7 +138,7 @@ func GenerateLocationResource(
         path = [%s]
         %s
 	}
-	`, resourceLabel, name, notes, strings.Join(paths, ","), strings.Join(nestedBlocks, "\n"))
+	`, resourceID, name, notes, strings.Join(paths, ","), strings.Join(nestedBlocks, "\n"))
 }
 
 func GenerateLocationEmergencyNum(number, typeStr string) string {

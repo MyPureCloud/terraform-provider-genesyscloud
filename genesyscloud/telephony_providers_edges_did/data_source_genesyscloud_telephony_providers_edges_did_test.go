@@ -17,12 +17,12 @@ func TestAccDataSourceDidBasic(t *testing.T) {
 	var (
 		didPoolStartPhoneNumber = "+45465550001"
 		didPoolEndPhoneNumber   = "+45465550003"
-		didPoolResourceLabel    = "didPool"
-		ivrConfigResourceLabel  = "ivrConfig"
+		didPoolRes              = "didPool"
+		ivrConfigRes            = "ivrConfig"
 		ivrConfigName           = "test-config" + uuid.NewString()
 		ivrConfigDnis           = []string{"+45465550002"}
 		didPhoneNumber          = "+45465550002"
-		didDataResourceLabel    = "didData"
+		didDataRes              = "didData"
 	)
 
 	// did pool cleanup
@@ -41,23 +41,23 @@ func TestAccDataSourceDidBasic(t *testing.T) {
 			{
 				// Create
 				Config: didPool.GenerateDidPoolResource(&didPool.DidPoolStruct{
-					ResourceLabel:    didPoolResourceLabel,
+					ResourceID:       didPoolRes,
 					StartPhoneNumber: didPoolStartPhoneNumber,
 					EndPhoneNumber:   didPoolEndPhoneNumber,
 					Description:      util.NullValue, // No description
 					Comments:         util.NullValue, // No comments
 					PoolProvider:     util.NullValue, // No provider
 				}) + archIvr.GenerateIvrConfigResource(&archIvr.IvrConfigStruct{
-					ResourceLabel: ivrConfigResourceLabel,
-					Name:          ivrConfigName,
-					Description:   "",
-					Dnis:          ivrConfigDnis,
-					DependsOn:     "genesyscloud_telephony_providers_edges_did_pool." + didPoolResourceLabel,
-				}) + generateDidDataSource(didDataResourceLabel,
+					ResourceID:  ivrConfigRes,
+					Name:        ivrConfigName,
+					Description: "",
+					Dnis:        ivrConfigDnis,
+					DependsOn:   "genesyscloud_telephony_providers_edges_did_pool." + didPoolRes,
+				}) + generateDidDataSource(didDataRes,
 					didPhoneNumber,
-					"genesyscloud_architect_ivr."+ivrConfigResourceLabel),
+					"genesyscloud_architect_ivr."+ivrConfigRes),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("data."+resourceName+"."+didDataResourceLabel, "phone_number", didPhoneNumber),
+					resource.TestCheckResourceAttr("data."+resourceName+"."+didDataRes, "phone_number", didPhoneNumber),
 				),
 			},
 		},
@@ -65,7 +65,7 @@ func TestAccDataSourceDidBasic(t *testing.T) {
 }
 
 func generateDidDataSource(
-	resourceLabel string,
+	resourceID string,
 	phoneNumber string,
 	// Must explicitly use depends_on in terraform v0.13 when a data source references a resource
 	// Fixed in v0.14 https://github.com/hashicorp/terraform/pull/26284
@@ -74,5 +74,5 @@ func generateDidDataSource(
 		phone_number = "%s"
 		depends_on=[%s]
 	}
-	`, resourceName, resourceLabel, phoneNumber, dependsOnResource)
+	`, resourceName, resourceID, phoneNumber, dependsOnResource)
 }

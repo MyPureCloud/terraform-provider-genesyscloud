@@ -14,20 +14,20 @@ import (
 
 func TestAccResourceJourneyViewsBasic(t *testing.T) {
 	var (
-		name                 = "test journey from tf 1"
-		duration             = "P1Y"
-		elementsId           = "ac6c61b5-1cd4-4c6e-a8a5-edb74d9117eb"
-		elementsName         = "Wrap Up"
-		attributeType        = "Event"
-		attributeId          = "a416328b-167c-0365-d0e1-f072cd5d4ded"
-		attributeSource      = "Voice"
-		filterType           = "And"
-		predicatesDimension  = "mediaType"
-		predicatesValues     = "VOICE"
-		predicatesOperator   = "Matches"
-		predicatesNoValue    = false
-		journeyResourceLabel = "journey_resource1"
-		emptyElementBlock    = ""
+		name                = "test journey from tf 1"
+		duration            = "P1Y"
+		elementsId          = "ac6c61b5-1cd4-4c6e-a8a5-edb74d9117eb"
+		elementsName        = "Wrap Up"
+		attributeType       = "Event"
+		attributeId         = "a416328b-167c-0365-d0e1-f072cd5d4ded"
+		attributeSource     = "Voice"
+		filterType          = "And"
+		predicatesDimension = "mediaType"
+		predicatesValues    = "VOICE"
+		predicatesOperator  = "Matches"
+		predicatesNoValue   = false
+		journeyResource     = "journey_resource1"
+		emptyElementBlock   = ""
 	)
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
@@ -35,62 +35,62 @@ func TestAccResourceJourneyViewsBasic(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				//Create
-				Config: generateJourneyView(journeyResourceLabel, name, duration, emptyElementBlock),
+				Config: generateJourneyView(journeyResource, name, duration, emptyElementBlock),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "name", name),
-					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "duration", duration),
+					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResource, "name", name),
+					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResource, "duration", duration),
 				),
 			},
 			{
 				//Update
-				Config: generateJourneyView(journeyResourceLabel, name, duration, generateElements(
+				Config: generateJourneyView(journeyResource, name, duration, generateElements(
 					elementsId,
 					elementsName,
 					generateAttributes(attributeType, attributeId, attributeSource),
 					generateFilter(filterType, generatePredicates(predicatesDimension, predicatesValues, predicatesOperator, predicatesNoValue)),
 				)),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "name", name),
-					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "duration", duration),
-					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "elements.0.id", elementsId),
-					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "elements.0.name", elementsName),
-					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "elements.0.attributes.#", "1"),
-					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "elements.0.attributes.0.type", attributeType),
-					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "elements.0.attributes.0.id", attributeId),
-					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "elements.0.attributes.0.source", attributeSource),
-					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "elements.0.filter.#", "1"),
-					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "elements.0.filter.0.type", "And"),
-					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "elements.0.filter.0.predicates.#", "1"),
-					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "elements.0.filter.0.predicates.0.dimension", predicatesDimension),
-					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "elements.0.filter.0.predicates.0.values.#", "1"),
-					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "elements.0.filter.0.predicates.0.values.0", predicatesValues),
-					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "elements.0.filter.0.predicates.0.operator", predicatesOperator),
-					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "elements.0.filter.0.predicates.0.no_value", fmt.Sprintf("%t", predicatesNoValue)),
+					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResource, "name", name),
+					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResource, "duration", duration),
+					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResource, "elements.0.id", elementsId),
+					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResource, "elements.0.name", elementsName),
+					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResource, "elements.0.attributes.#", "1"),
+					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResource, "elements.0.attributes.0.type", attributeType),
+					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResource, "elements.0.attributes.0.id", attributeId),
+					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResource, "elements.0.attributes.0.source", attributeSource),
+					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResource, "elements.0.filter.#", "1"),
+					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResource, "elements.0.filter.0.type", "And"),
+					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResource, "elements.0.filter.0.predicates.#", "1"),
+					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResource, "elements.0.filter.0.predicates.0.dimension", predicatesDimension),
+					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResource, "elements.0.filter.0.predicates.0.values.#", "1"),
+					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResource, "elements.0.filter.0.predicates.0.values.0", predicatesValues),
+					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResource, "elements.0.filter.0.predicates.0.operator", predicatesOperator),
+					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResource, "elements.0.filter.0.predicates.0.no_value", fmt.Sprintf("%t", predicatesNoValue)),
 				),
 			},
 			{
 				//Update without filter
-				Config: generateJourneyView(journeyResourceLabel, name, duration, generateElements(
+				Config: generateJourneyView(journeyResource, name, duration, generateElements(
 					elementsId,
 					elementsName,
 					generateAttributes(attributeType, attributeId, attributeSource),
 					"",
 				)),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "name", name),
-					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "duration", duration),
-					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "elements.0.id", elementsId),
-					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "elements.0.name", elementsName),
-					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "elements.0.attributes.#", "1"),
-					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "elements.0.attributes.0.type", attributeType),
-					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "elements.0.attributes.0.id", attributeId),
-					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "elements.0.attributes.0.source", attributeSource),
-					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "elements.0.filter.#", "0"),
+					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResource, "name", name),
+					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResource, "duration", duration),
+					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResource, "elements.0.id", elementsId),
+					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResource, "elements.0.name", elementsName),
+					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResource, "elements.0.attributes.#", "1"),
+					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResource, "elements.0.attributes.0.type", attributeType),
+					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResource, "elements.0.attributes.0.id", attributeId),
+					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResource, "elements.0.attributes.0.source", attributeSource),
+					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResource, "elements.0.filter.#", "0"),
 				),
 			},
 			{
 				// Import/Read
-				ResourceName:      "genesyscloud_journey_views." + journeyResourceLabel,
+				ResourceName:      "genesyscloud_journey_views." + journeyResource,
 				ImportState:       true,
 				ImportStateVerify: true,
 			},
@@ -99,22 +99,22 @@ func TestAccResourceJourneyViewsBasic(t *testing.T) {
 	})
 }
 
-func generateUserWithCustomAttrs(resourceLabel string, email string, name string, attrs ...string) string {
+func generateUserWithCustomAttrs(resourceID string, email string, name string, attrs ...string) string {
 	return fmt.Sprintf(`resource "genesyscloud_user" "%s" {
 		email = "%s"
 		name = "%s"
 		%s
 	}
-	`, resourceLabel, email, name, strings.Join(attrs, "\n"))
+	`, resourceID, email, name, strings.Join(attrs, "\n"))
 }
 
-func generateJourneyView(journeyResourceLabel string, name string, duration string, elementsBlock string) string {
+func generateJourneyView(journeyResource string, name string, duration string, elementsBlock string) string {
 	return fmt.Sprintf(`resource "genesyscloud_journey_views" "%s" {
     duration = "%s"
     name = "%s"
     %s
 	}
-	`, journeyResourceLabel, duration, name, func() string {
+	`, journeyResource, duration, name, func() string {
 		if elementsBlock != "" {
 			return elementsBlock
 		}

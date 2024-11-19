@@ -16,10 +16,10 @@ Test cases for Scripts Datasource
 */
 func TestAccDataSourceScript(t *testing.T) {
 	var (
-		scriptDataSourceLabel = "script-data"
-		resourceLabel         = "script"
-		name                  = "tfscript" + uuid.NewString()
-		filePath              = getTestDataPath("resource", resourceName, "test_script.json")
+		scriptDataSource = "script-data"
+		resourceId       = "script"
+		name             = "tfscript" + uuid.NewString()
+		filePath         = getTestDataPath("resource", resourceName, "test_script.json")
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -28,18 +28,18 @@ func TestAccDataSourceScript(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config: generateScriptResource(
-					resourceLabel,
+					resourceId,
 					name,
 					filePath,
 					"",
 				) + generateScriptDataSource(
-					scriptDataSourceLabel,
+					scriptDataSource,
 					name,
-					resourceLabel,
+					resourceId,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair(fmt.Sprintf("data.%s.%s", resourceName, scriptDataSourceLabel), "id",
-						resourceName+"."+resourceLabel, "id"),
+					resource.TestCheckResourceAttrPair(fmt.Sprintf("data.%s.%s", resourceName, scriptDataSource), "id",
+						resourceName+"."+resourceId, "id"),
 				),
 			},
 		},
@@ -49,13 +49,13 @@ func TestAccDataSourceScript(t *testing.T) {
 // Test that published scripts can also return hard-coded default scripts
 func TestAccDataSourceScriptPublishedDefaults(t *testing.T) {
 	const (
-		callbackDataSourceLabel = "callback-script-data"
+		callbackDataSource      = "callback-script-data"
 		defaultCallbackScriptId = "ffde0662-8395-9b04-7dcb-b90172109065"
 
-		inboundDataSourceLabel = "inbound-script-data"
+		inboundDataSource      = "inbound-script-data"
 		defaultInboundScriptId = "766f1221-047a-11e5-bba2-db8c0964d007"
 
-		outboundDataSourceLabel = "outbound-script-data"
+		outboundDataSource      = "outbound-script-data"
 		defaultOutboundScriptId = "476c2b71-7429-11e4-9a5b-3f91746bffa3"
 	)
 
@@ -65,36 +65,36 @@ func TestAccDataSourceScriptPublishedDefaults(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config: generateScriptDataSource(
-					callbackDataSourceLabel,
+					callbackDataSource,
 					constants.DefaultCallbackScriptName,
 					"",
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(fmt.Sprintf("data.%s.%s", resourceName, callbackDataSourceLabel), "id",
+					resource.TestCheckResourceAttr(fmt.Sprintf("data.%s.%s", resourceName, callbackDataSource), "id",
 						defaultCallbackScriptId,
 					),
 				),
 			},
 			{
 				Config: generateScriptDataSource(
-					inboundDataSourceLabel,
+					inboundDataSource,
 					constants.DefaultInboundScriptName,
 					"",
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(fmt.Sprintf("data.%s.%s", resourceName, inboundDataSourceLabel), "id",
+					resource.TestCheckResourceAttr(fmt.Sprintf("data.%s.%s", resourceName, inboundDataSource), "id",
 						defaultInboundScriptId,
 					),
 				),
 			},
 			{
 				Config: generateScriptDataSource(
-					outboundDataSourceLabel,
+					outboundDataSource,
 					constants.DefaultOutboundScriptName,
 					"",
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(fmt.Sprintf("data.%s.%s", resourceName, outboundDataSourceLabel), "id",
+					resource.TestCheckResourceAttr(fmt.Sprintf("data.%s.%s", resourceName, outboundDataSource), "id",
 						defaultOutboundScriptId,
 					),
 				),
@@ -103,17 +103,17 @@ func TestAccDataSourceScriptPublishedDefaults(t *testing.T) {
 	})
 }
 
-func generateScriptDataSource(dataSourceLabel, name, resourceLabel string) string {
-	if resourceLabel != "" {
+func generateScriptDataSource(dataSourceID, name, resourceId string) string {
+	if resourceId != "" {
 		return fmt.Sprintf(`data "%s" "%s" {
 		name = "%s"
 		depends_on = [%s.%s]
 	}
-	`, resourceName, dataSourceLabel, name, resourceName, resourceLabel)
+	`, resourceName, dataSourceID, name, resourceName, resourceId)
 	} else {
 		return fmt.Sprintf(`data "%s" "%s" {
 		name = "%s"
 	}
-	`, resourceName, dataSourceLabel, name)
+	`, resourceName, dataSourceID, name)
 	}
 }

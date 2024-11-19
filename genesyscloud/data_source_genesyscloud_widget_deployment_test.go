@@ -13,14 +13,14 @@ import (
 
 func TestAccDataSourceWidgetDeployment(t *testing.T) {
 	var (
-		widgegetDeploymentsResourceLabel = "widget-deployments"
-		widgetDeploymentsDataSourceLabel = "widget-deployments-data"
-		widgetDeploymentsName            = "Widget_deployments-"
+		widgegetDeploymentsResource = "widget-deployments"
+		widgetDeploymentsDataSource = "widget-deployments-data"
+		widgetDeploymentsName       = "Widget_deployments-"
 	)
 	description := "This is a test description"
 	flowId := uuid.NewString()
 	widgetDeployV1 := &widgetDeploymentConfig{
-		resourceLabel:          widgegetDeploymentsResourceLabel,
+		resourceID:             widgegetDeploymentsResource,
 		name:                   widgetDeploymentsName,
 		description:            strconv.Quote(description),
 		flowID:                 strconv.Quote(flowId),
@@ -36,9 +36,9 @@ func TestAccDataSourceWidgetDeployment(t *testing.T) {
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
-				Config: generateWidgetDeploymentResource(widgetDeployV1) + generateWidgetDeploymentDataSource(widgetDeploymentsDataSourceLabel, "genesyscloud_widget_deployment."+widgegetDeploymentsResourceLabel+".name", "genesyscloud_widget_deployment."+widgegetDeploymentsResourceLabel),
+				Config: generateWidgetDeploymentResource(widgetDeployV1) + generateWidgetDeploymentDataSource(widgetDeploymentsDataSource, "genesyscloud_widget_deployment."+widgegetDeploymentsResource+".name", "genesyscloud_widget_deployment."+widgegetDeploymentsResource),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair("data.genesyscloud_widget_deployment."+widgetDeploymentsDataSourceLabel, "id", "genesyscloud_widget_deployment."+widgegetDeploymentsResourceLabel, "id"),
+					resource.TestCheckResourceAttrPair("data.genesyscloud_widget_deployment."+widgetDeploymentsDataSource, "id", "genesyscloud_widget_deployment."+widgegetDeploymentsResource, "id"),
 				),
 			},
 		},
@@ -46,12 +46,12 @@ func TestAccDataSourceWidgetDeployment(t *testing.T) {
 }
 
 func generateWidgetDeploymentDataSource(
-	resourceLabel string,
+	resourceID string,
 	name string,
 	dependsOnResource string) string {
 	return fmt.Sprintf(`data "genesyscloud_widget_deployment" "%s" {
 		name = %s
         depends_on=[%s]
 	}
-	`, resourceLabel, name, dependsOnResource)
+	`, resourceID, name, dependsOnResource)
 }

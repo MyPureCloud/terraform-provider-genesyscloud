@@ -12,9 +12,9 @@ import (
 func TestAccDataSourceOutboundAttemptLimit(t *testing.T) {
 
 	var (
-		resourceLabel    = "attempt_limit"
+		resourceId       = "attempt_limit"
 		attemptLimitName = "Test Limit " + uuid.NewString()
-		dataSourceLabel  = "attempt_limit_data"
+		dataSourceId     = "attempt_limit_data"
 	)
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
@@ -22,7 +22,7 @@ func TestAccDataSourceOutboundAttemptLimit(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config: GenerateAttemptLimitResource(
-					resourceLabel,
+					resourceId,
 					attemptLimitName,
 					"1",
 					"",
@@ -30,13 +30,13 @@ func TestAccDataSourceOutboundAttemptLimit(t *testing.T) {
 					"",
 					"",
 				) + GenerateOutboundAttemptLimitDataSource(
-					dataSourceLabel,
+					dataSourceId,
 					attemptLimitName,
-					"genesyscloud_outbound_attempt_limit."+resourceLabel,
+					"genesyscloud_outbound_attempt_limit."+resourceId,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair("data.genesyscloud_outbound_attempt_limit."+dataSourceLabel, "id",
-						"genesyscloud_outbound_attempt_limit."+resourceLabel, "id"),
+					resource.TestCheckResourceAttrPair("data.genesyscloud_outbound_attempt_limit."+dataSourceId, "id",
+						"genesyscloud_outbound_attempt_limit."+resourceId, "id"),
 				),
 			},
 		},

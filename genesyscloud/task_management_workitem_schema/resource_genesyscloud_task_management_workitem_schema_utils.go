@@ -58,20 +58,20 @@ func BuildSdkWorkitemSchema(d *schema.ResourceData, version *int) (*platformclie
 
 // GenerateWorkitemSchemaResourceBasic is a public util method to generate the simplest
 // schema terraform resource for testing
-func GenerateWorkitemSchemaResourceBasic(resourceLabel, name, description string) string {
+func GenerateWorkitemSchemaResourceBasic(resourceId, name, description string) string {
 	return fmt.Sprintf(`resource "%s" "%s" {
 		name = "%s"
 		description = "%s"
 	}
-	`, resourceName, resourceLabel, name, description)
+	`, resourceName, resourceId, name, description)
 }
 
-func GenerateWorkitemSchemaResource(resourceLabel, name, description, properties, enabledStr string) string {
+func GenerateWorkitemSchemaResource(resourceId, name, description, properties, enabledStr string) string {
 	return fmt.Sprintf(`resource "%s" "%s" {
 		name = "%s"
 		description = "%s"
 		properties = %s
 		enabled = %s
 	}
-	`, resourceName, resourceLabel, name, description, properties, enabledStr)
+	`, resourceName, resourceId, name, description, properties, enabledStr)
 }

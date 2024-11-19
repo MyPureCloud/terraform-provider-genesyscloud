@@ -14,10 +14,10 @@ import (
 func TestAccResourceConversationsMessagingSettingsDefault(t *testing.T) {
 	t.Parallel()
 	var (
-		messagingSettingsResourceLabel = "testConversationsMessagingSettings"
-		messagingSettingsName          = "testSettingsForDefault"
+		messagingSettingsResource = "testConversationsMessagingSettings"
+		messagingSettingsName     = "testSettingsForDefault"
 
-		defaultResourceLabel = "testConversationsMessagingSettingsDefault"
+		defaultResource = "testConversationsMessagingSettingsDefault"
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -27,7 +27,7 @@ func TestAccResourceConversationsMessagingSettingsDefault(t *testing.T) {
 			{
 				// Create Messaging Settings and Verify succesful creation
 				Config: conversationsMessagingSettings.GenerateConversationsMessagingSettingsResource(
-					messagingSettingsResourceLabel,
+					messagingSettingsResource,
 					messagingSettingsName,
 					conversationsMessagingSettings.GenerateContentStoryBlock(
 						conversationsMessagingSettings.GenerateMentionInboundOnlySetting("Enabled"),
@@ -39,17 +39,17 @@ func TestAccResourceConversationsMessagingSettingsDefault(t *testing.T) {
 					),
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_conversations_messaging_settings."+messagingSettingsResourceLabel, "name", messagingSettingsName),
-					resource.TestCheckResourceAttr("genesyscloud_conversations_messaging_settings."+messagingSettingsResourceLabel, "content.0.story.0.mention.0.inbound", "Enabled"),
-					resource.TestCheckResourceAttr("genesyscloud_conversations_messaging_settings."+messagingSettingsResourceLabel, "content.0.story.0.reply.0.inbound", "Enabled"),
-					resource.TestCheckResourceAttr("genesyscloud_conversations_messaging_settings."+messagingSettingsResourceLabel, "event.0.typing.0.on.0.inbound", "Enabled"),
-					resource.TestCheckResourceAttr("genesyscloud_conversations_messaging_settings."+messagingSettingsResourceLabel, "event.0.typing.0.on.0.outbound", "Enabled"),
+					resource.TestCheckResourceAttr("genesyscloud_conversations_messaging_settings."+messagingSettingsResource, "name", messagingSettingsName),
+					resource.TestCheckResourceAttr("genesyscloud_conversations_messaging_settings."+messagingSettingsResource, "content.0.story.0.mention.0.inbound", "Enabled"),
+					resource.TestCheckResourceAttr("genesyscloud_conversations_messaging_settings."+messagingSettingsResource, "content.0.story.0.reply.0.inbound", "Enabled"),
+					resource.TestCheckResourceAttr("genesyscloud_conversations_messaging_settings."+messagingSettingsResource, "event.0.typing.0.on.0.inbound", "Enabled"),
+					resource.TestCheckResourceAttr("genesyscloud_conversations_messaging_settings."+messagingSettingsResource, "event.0.typing.0.on.0.outbound", "Enabled"),
 				),
 			},
 			{
 				// Generate the Conversations Messaging Settings Default Resource
 				Config: conversationsMessagingSettings.GenerateConversationsMessagingSettingsResource(
-					messagingSettingsResourceLabel,
+					messagingSettingsResource,
 					messagingSettingsName,
 					conversationsMessagingSettings.GenerateContentStoryBlock(
 						conversationsMessagingSettings.GenerateMentionInboundOnlySetting("Enabled"),
@@ -59,11 +59,11 @@ func TestAccResourceConversationsMessagingSettingsDefault(t *testing.T) {
 						"Enabled",
 						"Enabled",
 					),
-				) + generateConversationsMessagingSettingsDefaultResource(defaultResourceLabel, "genesyscloud_conversations_messaging_settings."+messagingSettingsResourceLabel+".id"),
+				) + generateConversationsMessagingSettingsDefaultResource(defaultResource, "genesyscloud_conversations_messaging_settings."+messagingSettingsResource+".id"),
 			},
 			{
 				// Import/Read
-				ResourceName:      "genesyscloud_conversations_messaging_settings_default." + defaultResourceLabel,
+				ResourceName:      "genesyscloud_conversations_messaging_settings_default." + defaultResource,
 				ImportState:       true,
 				ImportStateVerify: true,
 			},
@@ -76,9 +76,9 @@ func testVerifyConversationsMessagingSettingsDefaultDestroyed(state *terraform.S
 	return nil
 }
 
-func generateConversationsMessagingSettingsDefaultResource(resourceLabel, settingId string) string {
+func generateConversationsMessagingSettingsDefaultResource(resourceId, settingId string) string {
 	return fmt.Sprintf(`resource "genesyscloud_conversations_messaging_settings_default" "%s" {
 		setting_id = %s
 	}
-	`, resourceLabel, settingId)
+	`, resourceId, settingId)
 }

@@ -304,7 +304,7 @@ func getAllJourneyActionTemplates(_ context.Context, clientConfig *platformclien
 			break
 		}
 		for _, actionTemplate := range *actionTemplates.Entities {
-			resources[*actionTemplate.Id] = &resourceExporter.ResourceMeta{BlockLabel: *actionTemplate.Name}
+			resources[*actionTemplate.Id] = &resourceExporter.ResourceMeta{Name: *actionTemplate.Name}
 		}
 		pageCount = *actionTemplates.PageCount
 	}

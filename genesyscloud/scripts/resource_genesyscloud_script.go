@@ -29,7 +29,7 @@ func getAllScripts(ctx context.Context, clientConfig *platformclientv2.Configura
 	}
 
 	for _, script := range *scripts {
-		resources[*script.Id] = &resourceExporter.ResourceMeta{BlockLabel: *script.Name}
+		resources[*script.Id] = &resourceExporter.ResourceMeta{Name: *script.Name}
 	}
 
 	return resources, nil

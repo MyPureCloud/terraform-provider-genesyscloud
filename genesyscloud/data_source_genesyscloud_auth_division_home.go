@@ -35,10 +35,10 @@ func DataSourceAuthDivisionHome() *schema.Resource {
 	}
 }
 
-func GenerateAuthDivisionHomeDataSource(resourceLabel string) string {
+func GenerateAuthDivisionHomeDataSource(resName string) string {
 	return fmt.Sprintf(`
 		data "genesyscloud_auth_division_home" "%s" {}
-		`, resourceLabel)
+		`, resName)
 }
 
 func dataSourceAuthDivisionHomeRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {

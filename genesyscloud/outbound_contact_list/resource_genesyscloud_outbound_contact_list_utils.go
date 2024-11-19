@@ -179,7 +179,7 @@ func GeneratePhoneColumnsBlock(columnName, columnType, callableTimeColumn string
 }
 
 func GenerateOutboundContactList(
-	resourceLabel string,
+	resourceId string,
 	name string,
 	divisionId string,
 	previewModeColumnName string,
@@ -201,7 +201,7 @@ resource "%s" "%s" {
 	attempt_limit_id             = %s
 	%s
 }
-`, resourceName, resourceLabel, name, divisionId, previewModeColumnName, strings.Join(previewModeAcceptedValues, ", "),
+`, resourceName, resourceId, name, divisionId, previewModeColumnName, strings.Join(previewModeAcceptedValues, ", "),
 		strings.Join(columnNames, ", "), automaticTimeZoneMapping, zipCodeColumnName, attemptLimitId, strings.Join(nestedBlocks, "\n"))
 }
 

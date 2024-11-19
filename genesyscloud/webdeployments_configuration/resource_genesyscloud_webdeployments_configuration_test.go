@@ -74,8 +74,8 @@ type scConfig struct {
 func TestAccResourceWebDeploymentsConfiguration(t *testing.T) {
 	t.Parallel()
 	var (
-		resourceLabel            = "webdeploy-config-test"
-		fullResourceName         = resourceName + "." + resourceLabel
+		resName                  = "webdeploy-config-test"
+		fullResName              = resourceName + "." + resName
 		configName               = "tf-config-" + uuid.NewString()
 		configDescription        = "Test Configuration description"
 		updatedConfigDescription = configDescription + " Updated"
@@ -93,51 +93,51 @@ func TestAccResourceWebDeploymentsConfiguration(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config: generateConfigurationResource(
-					resourceLabel,
+					resName,
 					configName,
 					configDescription,
 					languages1,
 					defaultLang1,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(fullResourceName, "name", configName),
-					resource.TestCheckResourceAttr(fullResourceName, "description", configDescription),
-					resource.TestMatchResourceAttr(fullResourceName, "status", regexp.MustCompile("^(Pending|Active)$")),
-					resource.TestCheckResourceAttrSet(fullResourceName, "version"),
-					resource.TestCheckResourceAttr(fullResourceName, "languages.#", strconv.Itoa(len(languages1))),
-					resource.TestCheckResourceAttr(fullResourceName, "languages.0", languages1[0]),
-					resource.TestCheckResourceAttr(fullResourceName, "languages.1", languages1[1]),
-					resource.TestCheckResourceAttr(fullResourceName, "default_language", defaultLang1),
-					resource.TestCheckResourceAttr(fullResourceName, "messenger.#", "0"),
-					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.#", "0"),
-					resource.TestCheckResourceAttr(fullResourceName, "journey_events.#", "0"),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.#", "0"),
+					resource.TestCheckResourceAttr(fullResName, "name", configName),
+					resource.TestCheckResourceAttr(fullResName, "description", configDescription),
+					resource.TestMatchResourceAttr(fullResName, "status", regexp.MustCompile("^(Pending|Active)$")),
+					resource.TestCheckResourceAttrSet(fullResName, "version"),
+					resource.TestCheckResourceAttr(fullResName, "languages.#", strconv.Itoa(len(languages1))),
+					resource.TestCheckResourceAttr(fullResName, "languages.0", languages1[0]),
+					resource.TestCheckResourceAttr(fullResName, "languages.1", languages1[1]),
+					resource.TestCheckResourceAttr(fullResName, "default_language", defaultLang1),
+					resource.TestCheckResourceAttr(fullResName, "messenger.#", "0"),
+					resource.TestCheckResourceAttr(fullResName, "cobrowse.#", "0"),
+					resource.TestCheckResourceAttr(fullResName, "journey_events.#", "0"),
+					resource.TestCheckResourceAttr(fullResName, "support_center.#", "0"),
 				),
 			},
 			{
 				Config: generateConfigurationResource(
-					resourceLabel,
+					resName,
 					configName,
 					updatedConfigDescription,
 					languages2,
 					defaultLang2,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(fullResourceName, "name", configName),
-					resource.TestCheckResourceAttr(fullResourceName, "description", updatedConfigDescription),
-					resource.TestMatchResourceAttr(fullResourceName, "status", regexp.MustCompile("^(Pending|Active)$")),
-					resource.TestCheckResourceAttrSet(fullResourceName, "version"),
-					resource.TestCheckResourceAttr(fullResourceName, "languages.#", strconv.Itoa(len(languages2))),
-					resource.TestCheckResourceAttr(fullResourceName, "languages.0", languages2[0]),
-					resource.TestCheckResourceAttr(fullResourceName, "default_language", defaultLang2),
-					resource.TestCheckResourceAttr(fullResourceName, "messenger.#", "0"),
-					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.#", "0"),
-					resource.TestCheckResourceAttr(fullResourceName, "journey_events.#", "0"),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.#", "0"),
+					resource.TestCheckResourceAttr(fullResName, "name", configName),
+					resource.TestCheckResourceAttr(fullResName, "description", updatedConfigDescription),
+					resource.TestMatchResourceAttr(fullResName, "status", regexp.MustCompile("^(Pending|Active)$")),
+					resource.TestCheckResourceAttrSet(fullResName, "version"),
+					resource.TestCheckResourceAttr(fullResName, "languages.#", strconv.Itoa(len(languages2))),
+					resource.TestCheckResourceAttr(fullResName, "languages.0", languages2[0]),
+					resource.TestCheckResourceAttr(fullResName, "default_language", defaultLang2),
+					resource.TestCheckResourceAttr(fullResName, "messenger.#", "0"),
+					resource.TestCheckResourceAttr(fullResName, "cobrowse.#", "0"),
+					resource.TestCheckResourceAttr(fullResName, "journey_events.#", "0"),
+					resource.TestCheckResourceAttr(fullResName, "support_center.#", "0"),
 				),
 			},
 			{
-				ResourceName:            fullResourceName,
+				ResourceName:            fullResName,
 				ImportState:             true,
 				ImportStateVerify:       true,
 				ImportStateVerifyIgnore: []string{"status"},
@@ -150,10 +150,10 @@ func TestAccResourceWebDeploymentsConfiguration(t *testing.T) {
 func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
 	var (
 		// Knowledge Base Settings
-		kbResourceLabel1 = "test-kb-1"
-		kbName1          = "tf-kb-" + uuid.NewString()
-		kbDesc1          = "kb created for terraform test 1"
-		kbCoreLang1      = "en-US"
+		kbResName1  = "test-kb-1"
+		kbName1     = "tf-kb-" + uuid.NewString()
+		kbDesc1     = "kb created for terraform test 1"
+		kbCoreLang1 = "en-US"
 
 		// Webdeployment configuration
 		configName        = "Test Configuration " + util.RandString(8)
@@ -172,14 +172,14 @@ func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config: gcloud.GenerateKnowledgeKnowledgebaseResource(
-					kbResourceLabel1,
+					kbResName1,
 					kbName1,
 					kbDesc1,
 					kbCoreLang1,
 				) + complexConfigurationResource(
 					configName,
 					configDescription,
-					"genesyscloud_knowledge_knowledgebase."+kbResourceLabel1+".id",
+					"genesyscloud_knowledge_knowledgebase."+kbResName1+".id",
 					generateWebDeploymentConfigCobrowseSettings(
 						util.TrueValue,
 						util.TrueValue,
@@ -247,7 +247,7 @@ func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
 					resource.TestCheckResourceAttr(fullResourceName, "messenger.0.apps.0.conversations.0.humanize.0.bot.0.avatar_url", "https://my-domain-example.net/images/marvin.png"),
 					resource.TestCheckResourceAttr(fullResourceName, "messenger.0.apps.0.knowledge.#", "1"),
 					resource.TestCheckResourceAttr(fullResourceName, "messenger.0.apps.0.knowledge.0.enabled", "true"),
-					resource.TestCheckResourceAttrPair(fullResourceName, "messenger.0.apps.0.knowledge.0.knowledge_base_id", "genesyscloud_knowledge_knowledgebase."+kbResourceLabel1, "id"),
+					resource.TestCheckResourceAttrPair(fullResourceName, "messenger.0.apps.0.knowledge.0.knowledge_base_id", "genesyscloud_knowledge_knowledgebase."+kbResName1, "id"),
 
 					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.#", "1"),
 					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.enabled", util.TrueValue),
@@ -304,14 +304,14 @@ func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
 			{
 				// Update cobrowse settings
 				Config: gcloud.GenerateKnowledgeKnowledgebaseResource(
-					kbResourceLabel1,
+					kbResName1,
 					kbName1,
 					kbDesc1,
 					kbCoreLang1,
 				) + complexConfigurationResource(
 					configName,
 					configDescription,
-					"genesyscloud_knowledge_knowledgebase."+kbResourceLabel1+".id",
+					"genesyscloud_knowledge_knowledgebase."+kbResName1+".id",
 					generateWebDeploymentConfigCobrowseSettings(
 						util.FalseValue,
 						util.FalseValue,
@@ -411,26 +411,26 @@ func TestAccResourceWebDeploymentsConfigurationSupportCenter(t *testing.T) {
 
 	var (
 		// Knowledge Base Settings
-		kbResourceLabel1 = "test-kb-1"
-		kbName1          = "tf-kb-" + uuid.NewString()
-		kbDesc1          = "kb created for terraform test 1"
-		kbCoreLang1      = "en-US"
+		kbResName1  = "test-kb-1"
+		kbName1     = "tf-kb-" + uuid.NewString()
+		kbDesc1     = "kb created for terraform test 1"
+		kbCoreLang1 = "en-US"
 
-		kbResourceLabel2 = "test-kb-2"
-		kbName2          = "tf-kb-" + uuid.NewString()
-		kbDesc2          = "kb created for terraform test 2"
-		kbCoreLang2      = "en-US"
+		kbResName2  = "test-kb-2"
+		kbName2     = "tf-kb-" + uuid.NewString()
+		kbDesc2     = "kb created for terraform test 2"
+		kbCoreLang2 = "en-US"
 
 		// Support center config
-		resourceLabel     = "webdeploy-config-test"
-		fullResourceName  = resourceName + "." + resourceLabel
+		resName           = "webdeploy-config-test"
+		fullResName       = resourceName + "." + resName
 		configName        = "tf-config-" + uuid.NewString()
 		configDescription = "Test Configuration description. Support Center"
 		languages         = []string{"en-us", "ja"}
 		defaultLang       = "en-us"
 		supportCenter1    = scConfig{
 			enabled: true,
-			kbId:    "genesyscloud_knowledge_knowledgebase." + kbResourceLabel1,
+			kbId:    "genesyscloud_knowledge_knowledgebase." + kbResName1,
 
 			customMessages: []scCustomMessageConfig{
 				{
@@ -554,7 +554,7 @@ func TestAccResourceWebDeploymentsConfigurationSupportCenter(t *testing.T) {
 		// updated attributes
 		supportCenter2 = scConfig{
 			enabled: true,
-			kbId:    "genesyscloud_knowledge_knowledgebase." + kbResourceLabel2,
+			kbId:    "genesyscloud_knowledge_knowledgebase." + kbResName2,
 
 			customMessages: []scCustomMessageConfig{
 				{
@@ -684,12 +684,12 @@ func TestAccResourceWebDeploymentsConfigurationSupportCenter(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config: gcloud.GenerateKnowledgeKnowledgebaseResource(
-					kbResourceLabel1,
+					kbResName1,
 					kbName1,
 					kbDesc1,
 					kbCoreLang1,
 				) + generateConfigurationResource(
-					resourceLabel,
+					resName,
 					configName,
 					configDescription,
 					languages,
@@ -697,101 +697,101 @@ func TestAccResourceWebDeploymentsConfigurationSupportCenter(t *testing.T) {
 					generateSupportCenterSettings(supportCenter1),
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(fullResourceName, "name", configName),
-					resource.TestCheckResourceAttr(fullResourceName, "description", configDescription),
-					resource.TestMatchResourceAttr(fullResourceName, "status", regexp.MustCompile("^(Pending|Active)$")),
-					resource.TestCheckResourceAttrSet(fullResourceName, "version"),
-					resource.TestCheckResourceAttr(fullResourceName, "languages.#", strconv.Itoa(len(languages))),
-					resource.TestCheckResourceAttr(fullResourceName, "languages.0", languages[0]),
-					resource.TestCheckResourceAttr(fullResourceName, "languages.1", languages[1]),
-					resource.TestCheckResourceAttr(fullResourceName, "default_language", defaultLang),
-					resource.TestCheckResourceAttr(fullResourceName, "messenger.#", "0"),
-					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.#", "0"),
-					resource.TestCheckResourceAttr(fullResourceName, "journey_events.#", "0"),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.#", "1"),
+					resource.TestCheckResourceAttr(fullResName, "name", configName),
+					resource.TestCheckResourceAttr(fullResName, "description", configDescription),
+					resource.TestMatchResourceAttr(fullResName, "status", regexp.MustCompile("^(Pending|Active)$")),
+					resource.TestCheckResourceAttrSet(fullResName, "version"),
+					resource.TestCheckResourceAttr(fullResName, "languages.#", strconv.Itoa(len(languages))),
+					resource.TestCheckResourceAttr(fullResName, "languages.0", languages[0]),
+					resource.TestCheckResourceAttr(fullResName, "languages.1", languages[1]),
+					resource.TestCheckResourceAttr(fullResName, "default_language", defaultLang),
+					resource.TestCheckResourceAttr(fullResName, "messenger.#", "0"),
+					resource.TestCheckResourceAttr(fullResName, "cobrowse.#", "0"),
+					resource.TestCheckResourceAttr(fullResName, "journey_events.#", "0"),
+					resource.TestCheckResourceAttr(fullResName, "support_center.#", "1"),
 
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.enabled", strconv.FormatBool(supportCenter1.enabled)),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.knowledge_base_id", supportCenter1.kbId),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.custom_messages.#", strconv.Itoa(len(supportCenter1.customMessages))),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.custom_messages.0.default_value", supportCenter1.customMessages[0].defaultVal),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.custom_messages.0.type", supportCenter1.customMessages[0].varType),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.custom_messages.1.default_value", supportCenter1.customMessages[1].defaultVal),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.custom_messages.1.type", supportCenter1.customMessages[1].varType),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.router_type", supportCenter1.routerType),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.#", strconv.Itoa(len(supportCenter1.screens))),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.0.type", supportCenter1.screens[0].varType),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.0.module_settings.#", strconv.Itoa(len(supportCenter1.screens[0].moduleSettings))),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.0.module_settings.0.type", supportCenter1.screens[0].moduleSettings[0].varType),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.0.module_settings.0.enabled", strconv.FormatBool(supportCenter1.screens[0].moduleSettings[0].enabled)),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.0.module_settings.0.compact_category_module_template_active", strconv.FormatBool(supportCenter1.screens[0].moduleSettings[0].compactTemplateActive)),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.0.module_settings.0.detailed_category_module_template.0.active", strconv.FormatBool(supportCenter1.screens[0].moduleSettings[0].detailedTemplateActive)),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.0.module_settings.0.detailed_category_module_template.0.sidebar_enabled", strconv.FormatBool(supportCenter1.screens[0].moduleSettings[0].detailedTemplateSidebarEnabled)),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.0.module_settings.1.type", supportCenter1.screens[0].moduleSettings[1].varType),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.0.module_settings.1.enabled", strconv.FormatBool(supportCenter1.screens[0].moduleSettings[1].enabled)),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.0.module_settings.1.compact_category_module_template_active", strconv.FormatBool(supportCenter1.screens[0].moduleSettings[1].compactTemplateActive)),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.0.module_settings.1.detailed_category_module_template.0.active", strconv.FormatBool(supportCenter1.screens[0].moduleSettings[1].detailedTemplateActive)),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.0.module_settings.1.detailed_category_module_template.0.sidebar_enabled", strconv.FormatBool(supportCenter1.screens[0].moduleSettings[1].detailedTemplateSidebarEnabled)),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.0.module_settings.2.type", supportCenter1.screens[0].moduleSettings[2].varType),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.0.module_settings.2.enabled", strconv.FormatBool(supportCenter1.screens[0].moduleSettings[2].enabled)),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.0.module_settings.2.compact_category_module_template_active", strconv.FormatBool(supportCenter1.screens[0].moduleSettings[2].compactTemplateActive)),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.0.module_settings.2.detailed_category_module_template.0.active", strconv.FormatBool(supportCenter1.screens[0].moduleSettings[2].detailedTemplateActive)),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.0.module_settings.2.detailed_category_module_template.0.sidebar_enabled", strconv.FormatBool(supportCenter1.screens[0].moduleSettings[2].detailedTemplateSidebarEnabled)),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.1.type", supportCenter1.screens[1].varType),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.1.module_settings.#", strconv.Itoa(len(supportCenter1.screens[1].moduleSettings))),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.1.module_settings.0.type", supportCenter1.screens[1].moduleSettings[0].varType),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.1.module_settings.0.enabled", strconv.FormatBool(supportCenter1.screens[1].moduleSettings[0].enabled)),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.1.module_settings.0.compact_category_module_template_active", strconv.FormatBool(supportCenter1.screens[1].moduleSettings[0].compactTemplateActive)),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.1.module_settings.0.detailed_category_module_template.0.active", strconv.FormatBool(supportCenter1.screens[1].moduleSettings[0].detailedTemplateActive)),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.1.module_settings.0.detailed_category_module_template.0.sidebar_enabled", strconv.FormatBool(supportCenter1.screens[1].moduleSettings[0].detailedTemplateSidebarEnabled)),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.1.module_settings.1.type", supportCenter1.screens[1].moduleSettings[1].varType),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.1.module_settings.1.enabled", strconv.FormatBool(supportCenter1.screens[1].moduleSettings[1].enabled)),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.1.module_settings.1.compact_category_module_template_active", strconv.FormatBool(supportCenter1.screens[1].moduleSettings[1].compactTemplateActive)),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.1.module_settings.1.detailed_category_module_template.0.active", strconv.FormatBool(supportCenter1.screens[1].moduleSettings[1].detailedTemplateActive)),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.1.module_settings.1.detailed_category_module_template.0.sidebar_enabled", strconv.FormatBool(supportCenter1.screens[1].moduleSettings[1].detailedTemplateSidebarEnabled)),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.2.type", supportCenter1.screens[2].varType),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.2.module_settings.#", strconv.Itoa(len(supportCenter1.screens[2].moduleSettings))),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.2.module_settings.0.type", supportCenter1.screens[2].moduleSettings[0].varType),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.2.module_settings.0.enabled", strconv.FormatBool(supportCenter1.screens[2].moduleSettings[0].enabled)),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.2.module_settings.0.compact_category_module_template_active", strconv.FormatBool(supportCenter1.screens[2].moduleSettings[0].compactTemplateActive)),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.2.module_settings.0.detailed_category_module_template.0.active", strconv.FormatBool(supportCenter1.screens[2].moduleSettings[0].detailedTemplateActive)),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.2.module_settings.0.detailed_category_module_template.0.sidebar_enabled", strconv.FormatBool(supportCenter1.screens[2].moduleSettings[0].detailedTemplateSidebarEnabled)),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.2.module_settings.1.type", supportCenter1.screens[2].moduleSettings[1].varType),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.2.module_settings.1.enabled", strconv.FormatBool(supportCenter1.screens[2].moduleSettings[1].enabled)),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.2.module_settings.1.compact_category_module_template_active", strconv.FormatBool(supportCenter1.screens[2].moduleSettings[1].compactTemplateActive)),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.2.module_settings.1.detailed_category_module_template.0.active", strconv.FormatBool(supportCenter1.screens[2].moduleSettings[1].detailedTemplateActive)),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.2.module_settings.1.detailed_category_module_template.0.sidebar_enabled", strconv.FormatBool(supportCenter1.screens[2].moduleSettings[1].detailedTemplateSidebarEnabled)),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.3.type", supportCenter1.screens[3].varType),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.3.module_settings.#", strconv.Itoa(len(supportCenter1.screens[3].moduleSettings))),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.3.module_settings.0.type", supportCenter1.screens[3].moduleSettings[0].varType),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.3.module_settings.0.enabled", strconv.FormatBool(supportCenter1.screens[3].moduleSettings[0].enabled)),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.3.module_settings.0.compact_category_module_template_active", strconv.FormatBool(supportCenter1.screens[3].moduleSettings[0].compactTemplateActive)),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.3.module_settings.0.detailed_category_module_template.0.active", strconv.FormatBool(supportCenter1.screens[3].moduleSettings[0].detailedTemplateActive)),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.3.module_settings.0.detailed_category_module_template.0.sidebar_enabled", strconv.FormatBool(supportCenter1.screens[3].moduleSettings[0].detailedTemplateSidebarEnabled)),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.3.module_settings.1.type", supportCenter1.screens[3].moduleSettings[1].varType),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.3.module_settings.1.enabled", strconv.FormatBool(supportCenter1.screens[3].moduleSettings[1].enabled)),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.3.module_settings.1.compact_category_module_template_active", strconv.FormatBool(supportCenter1.screens[3].moduleSettings[1].compactTemplateActive)),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.3.module_settings.1.detailed_category_module_template.0.active", strconv.FormatBool(supportCenter1.screens[3].moduleSettings[1].detailedTemplateActive)),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.3.module_settings.1.detailed_category_module_template.0.sidebar_enabled", strconv.FormatBool(supportCenter1.screens[3].moduleSettings[1].detailedTemplateSidebarEnabled)),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.style_setting.0.hero_style_setting.0.background_color", supportCenter1.styleSetting.heroStyleSetting.bgColor),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.style_setting.0.hero_style_setting.0.text_color", supportCenter1.styleSetting.heroStyleSetting.textColor),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.style_setting.0.hero_style_setting.0.image_uri", supportCenter1.styleSetting.heroStyleSetting.imageUri),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.style_setting.0.global_style_setting.0.background_color", supportCenter1.styleSetting.globalStyleSetting.bgColor),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.style_setting.0.global_style_setting.0.primary_color", supportCenter1.styleSetting.globalStyleSetting.primaryColor),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.style_setting.0.global_style_setting.0.primary_color_dark", supportCenter1.styleSetting.globalStyleSetting.primaryColorDark),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.style_setting.0.global_style_setting.0.primary_color_light", supportCenter1.styleSetting.globalStyleSetting.primaryColorLight),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.style_setting.0.global_style_setting.0.text_color", supportCenter1.styleSetting.globalStyleSetting.textColor),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.style_setting.0.global_style_setting.0.font_family", supportCenter1.styleSetting.globalStyleSetting.fontFamily),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.feedback_enabled", strconv.FormatBool(supportCenter1.feedbackEnabled)),
+					resource.TestCheckResourceAttr(fullResName, "support_center.0.enabled", strconv.FormatBool(supportCenter1.enabled)),
+					resource.TestCheckResourceAttr(fullResName, "support_center.0.knowledge_base_id", supportCenter1.kbId),
+					resource.TestCheckResourceAttr(fullResName, "support_center.0.custom_messages.#", strconv.Itoa(len(supportCenter1.customMessages))),
+					resource.TestCheckResourceAttr(fullResName, "support_center.0.custom_messages.0.default_value", supportCenter1.customMessages[0].defaultVal),
+					resource.TestCheckResourceAttr(fullResName, "support_center.0.custom_messages.0.type", supportCenter1.customMessages[0].varType),
+					resource.TestCheckResourceAttr(fullResName, "support_center.0.custom_messages.1.default_value", supportCenter1.customMessages[1].defaultVal),
+					resource.TestCheckResourceAttr(fullResName, "support_center.0.custom_messages.1.type", supportCenter1.customMessages[1].varType),
+					resource.TestCheckResourceAttr(fullResName, "support_center.0.router_type", supportCenter1.routerType),
+					resource.TestCheckResourceAttr(fullResName, "support_center.0.screens.#", strconv.Itoa(len(supportCenter1.screens))),
+					resource.TestCheckResourceAttr(fullResName, "support_center.0.screens.0.type", supportCenter1.screens[0].varType),
+					resource.TestCheckResourceAttr(fullResName, "support_center.0.screens.0.module_settings.#", strconv.Itoa(len(supportCenter1.screens[0].moduleSettings))),
+					resource.TestCheckResourceAttr(fullResName, "support_center.0.screens.0.module_settings.0.type", supportCenter1.screens[0].moduleSettings[0].varType),
+					resource.TestCheckResourceAttr(fullResName, "support_center.0.screens.0.module_settings.0.enabled", strconv.FormatBool(supportCenter1.screens[0].moduleSettings[0].enabled)),
+					resource.TestCheckResourceAttr(fullResName, "support_center.0.screens.0.module_settings.0.compact_category_module_template_active", strconv.FormatBool(supportCenter1.screens[0].moduleSettings[0].compactTemplateActive)),
+					resource.TestCheckResourceAttr(fullResName, "support_center.0.screens.0.module_settings.0.detailed_category_module_template.0.active", strconv.FormatBool(supportCenter1.screens[0].moduleSettings[0].detailedTemplateActive)),
+					resource.TestCheckResourceAttr(fullResName, "support_center.0.screens.0.module_settings.0.detailed_category_module_template.0.sidebar_enabled", strconv.FormatBool(supportCenter1.screens[0].moduleSettings[0].detailedTemplateSidebarEnabled)),
+					resource.TestCheckResourceAttr(fullResName, "support_center.0.screens.0.module_settings.1.type", supportCenter1.screens[0].moduleSettings[1].varType),
+					resource.TestCheckResourceAttr(fullResName, "support_center.0.screens.0.module_settings.1.enabled", strconv.FormatBool(supportCenter1.screens[0].moduleSettings[1].enabled)),
+					resource.TestCheckResourceAttr(fullResName, "support_center.0.screens.0.module_settings.1.compact_category_module_template_active", strconv.FormatBool(supportCenter1.screens[0].moduleSettings[1].compactTemplateActive)),
+					resource.TestCheckResourceAttr(fullResName, "support_center.0.screens.0.module_settings.1.detailed_category_module_template.0.active", strconv.FormatBool(supportCenter1.screens[0].moduleSettings[1].detailedTemplateActive)),
+					resource.TestCheckResourceAttr(fullResName, "support_center.0.screens.0.module_settings.1.detailed_category_module_template.0.sidebar_enabled", strconv.FormatBool(supportCenter1.screens[0].moduleSettings[1].detailedTemplateSidebarEnabled)),
+					resource.TestCheckResourceAttr(fullResName, "support_center.0.screens.0.module_settings.2.type", supportCenter1.screens[0].moduleSettings[2].varType),
+					resource.TestCheckResourceAttr(fullResName, "support_center.0.screens.0.module_settings.2.enabled", strconv.FormatBool(supportCenter1.screens[0].moduleSettings[2].enabled)),
+					resource.TestCheckResourceAttr(fullResName, "support_center.0.screens.0.module_settings.2.compact_category_module_template_active", strconv.FormatBool(supportCenter1.screens[0].moduleSettings[2].compactTemplateActive)),
+					resource.TestCheckResourceAttr(fullResName, "support_center.0.screens.0.module_settings.2.detailed_category_module_template.0.active", strconv.FormatBool(supportCenter1.screens[0].moduleSettings[2].detailedTemplateActive)),
+					resource.TestCheckResourceAttr(fullResName, "support_center.0.screens.0.module_settings.2.detailed_category_module_template.0.sidebar_enabled", strconv.FormatBool(supportCenter1.screens[0].moduleSettings[2].detailedTemplateSidebarEnabled)),
+					resource.TestCheckResourceAttr(fullResName, "support_center.0.screens.1.type", supportCenter1.screens[1].varType),
+					resource.TestCheckResourceAttr(fullResName, "support_center.0.screens.1.module_settings.#", strconv.Itoa(len(supportCenter1.screens[1].moduleSettings))),
+					resource.TestCheckResourceAttr(fullResName, "support_center.0.screens.1.module_settings.0.type", supportCenter1.screens[1].moduleSettings[0].varType),
+					resource.TestCheckResourceAttr(fullResName, "support_center.0.screens.1.module_settings.0.enabled", strconv.FormatBool(supportCenter1.screens[1].moduleSettings[0].enabled)),
+					resource.TestCheckResourceAttr(fullResName, "support_center.0.screens.1.module_settings.0.compact_category_module_template_active", strconv.FormatBool(supportCenter1.screens[1].moduleSettings[0].compactTemplateActive)),
+					resource.TestCheckResourceAttr(fullResName, "support_center.0.screens.1.module_settings.0.detailed_category_module_template.0.active", strconv.FormatBool(supportCenter1.screens[1].moduleSettings[0].detailedTemplateActive)),
+					resource.TestCheckResourceAttr(fullResName, "support_center.0.screens.1.module_settings.0.detailed_category_module_template.0.sidebar_enabled", strconv.FormatBool(supportCenter1.screens[1].moduleSettings[0].detailedTemplateSidebarEnabled)),
+					resource.TestCheckResourceAttr(fullResName, "support_center.0.screens.1.module_settings.1.type", supportCenter1.screens[1].moduleSettings[1].varType),
+					resource.TestCheckResourceAttr(fullResName, "support_center.0.screens.1.module_settings.1.enabled", strconv.FormatBool(supportCenter1.screens[1].moduleSettings[1].enabled)),
+					resource.TestCheckResourceAttr(fullResName, "support_center.0.screens.1.module_settings.1.compact_category_module_template_active", strconv.FormatBool(supportCenter1.screens[1].moduleSettings[1].compactTemplateActive)),
+					resource.TestCheckResourceAttr(fullResName, "support_center.0.screens.1.module_settings.1.detailed_category_module_template.0.active", strconv.FormatBool(supportCenter1.screens[1].moduleSettings[1].detailedTemplateActive)),
+					resource.TestCheckResourceAttr(fullResName, "support_center.0.screens.1.module_settings.1.detailed_category_module_template.0.sidebar_enabled", strconv.FormatBool(supportCenter1.screens[1].moduleSettings[1].detailedTemplateSidebarEnabled)),
+					resource.TestCheckResourceAttr(fullResName, "support_center.0.screens.2.type", supportCenter1.screens[2].varType),
+					resource.TestCheckResourceAttr(fullResName, "support_center.0.screens.2.module_settings.#", strconv.Itoa(len(supportCenter1.screens[2].moduleSettings))),
+					resource.TestCheckResourceAttr(fullResName, "support_center.0.screens.2.module_settings.0.type", supportCenter1.screens[2].moduleSettings[0].varType),
+					resource.TestCheckResourceAttr(fullResName, "support_center.0.screens.2.module_settings.0.enabled", strconv.FormatBool(supportCenter1.screens[2].moduleSettings[0].enabled)),
+					resource.TestCheckResourceAttr(fullResName, "support_center.0.screens.2.module_settings.0.compact_category_module_template_active", strconv.FormatBool(supportCenter1.screens[2].moduleSettings[0].compactTemplateActive)),
+					resource.TestCheckResourceAttr(fullResName, "support_center.0.screens.2.module_settings.0.detailed_category_module_template.0.active", strconv.FormatBool(supportCenter1.screens[2].moduleSettings[0].detailedTemplateActive)),
+					resource.TestCheckResourceAttr(fullResName, "support_center.0.screens.2.module_settings.0.detailed_category_module_template.0.sidebar_enabled", strconv.FormatBool(supportCenter1.screens[2].moduleSettings[0].detailedTemplateSidebarEnabled)),
+					resource.TestCheckResourceAttr(fullResName, "support_center.0.screens.2.module_settings.1.type", supportCenter1.screens[2].moduleSettings[1].varType),
+					resource.TestCheckResourceAttr(fullResName, "support_center.0.screens.2.module_settings.1.enabled", strconv.FormatBool(supportCenter1.screens[2].moduleSettings[1].enabled)),
+					resource.TestCheckResourceAttr(fullResName, "support_center.0.screens.2.module_settings.1.compact_category_module_template_active", strconv.FormatBool(supportCenter1.screens[2].moduleSettings[1].compactTemplateActive)),
+					resource.TestCheckResourceAttr(fullResName, "support_center.0.screens.2.module_settings.1.detailed_category_module_template.0.active", strconv.FormatBool(supportCenter1.screens[2].moduleSettings[1].detailedTemplateActive)),
+					resource.TestCheckResourceAttr(fullResName, "support_center.0.screens.2.module_settings.1.detailed_category_module_template.0.sidebar_enabled", strconv.FormatBool(supportCenter1.screens[2].moduleSettings[1].detailedTemplateSidebarEnabled)),
+					resource.TestCheckResourceAttr(fullResName, "support_center.0.screens.3.type", supportCenter1.screens[3].varType),
+					resource.TestCheckResourceAttr(fullResName, "support_center.0.screens.3.module_settings.#", strconv.Itoa(len(supportCenter1.screens[3].moduleSettings))),
+					resource.TestCheckResourceAttr(fullResName, "support_center.0.screens.3.module_settings.0.type", supportCenter1.screens[3].moduleSettings[0].varType),
+					resource.TestCheckResourceAttr(fullResName, "support_center.0.screens.3.module_settings.0.enabled", strconv.FormatBool(supportCenter1.screens[3].moduleSettings[0].enabled)),
+					resource.TestCheckResourceAttr(fullResName, "support_center.0.screens.3.module_settings.0.compact_category_module_template_active", strconv.FormatBool(supportCenter1.screens[3].moduleSettings[0].compactTemplateActive)),
+					resource.TestCheckResourceAttr(fullResName, "support_center.0.screens.3.module_settings.0.detailed_category_module_template.0.active", strconv.FormatBool(supportCenter1.screens[3].moduleSettings[0].detailedTemplateActive)),
+					resource.TestCheckResourceAttr(fullResName, "support_center.0.screens.3.module_settings.0.detailed_category_module_template.0.sidebar_enabled", strconv.FormatBool(supportCenter1.screens[3].moduleSettings[0].detailedTemplateSidebarEnabled)),
+					resource.TestCheckResourceAttr(fullResName, "support_center.0.screens.3.module_settings.1.type", supportCenter1.screens[3].moduleSettings[1].varType),
+					resource.TestCheckResourceAttr(fullResName, "support_center.0.screens.3.module_settings.1.enabled", strconv.FormatBool(supportCenter1.screens[3].moduleSettings[1].enabled)),
+					resource.TestCheckResourceAttr(fullResName, "support_center.0.screens.3.module_settings.1.compact_category_module_template_active", strconv.FormatBool(supportCenter1.screens[3].moduleSettings[1].compactTemplateActive)),
+					resource.TestCheckResourceAttr(fullResName, "support_center.0.screens.3.module_settings.1.detailed_category_module_template.0.active", strconv.FormatBool(supportCenter1.screens[3].moduleSettings[1].detailedTemplateActive)),
+					resource.TestCheckResourceAttr(fullResName, "support_center.0.screens.3.module_settings.1.detailed_category_module_template.0.sidebar_enabled", strconv.FormatBool(supportCenter1.screens[3].moduleSettings[1].detailedTemplateSidebarEnabled)),
+					resource.TestCheckResourceAttr(fullResName, "support_center.0.style_setting.0.hero_style_setting.0.background_color", supportCenter1.styleSetting.heroStyleSetting.bgColor),
+					resource.TestCheckResourceAttr(fullResName, "support_center.0.style_setting.0.hero_style_setting.0.text_color", supportCenter1.styleSetting.heroStyleSetting.textColor),
+					resource.TestCheckResourceAttr(fullResName, "support_center.0.style_setting.0.hero_style_setting.0.image_uri", supportCenter1.styleSetting.heroStyleSetting.imageUri),
+					resource.TestCheckResourceAttr(fullResName, "support_center.0.style_setting.0.global_style_setting.0.background_color", supportCenter1.styleSetting.globalStyleSetting.bgColor),
+					resource.TestCheckResourceAttr(fullResName, "support_center.0.style_setting.0.global_style_setting.0.primary_color", supportCenter1.styleSetting.globalStyleSetting.primaryColor),
+					resource.TestCheckResourceAttr(fullResName, "support_center.0.style_setting.0.global_style_setting.0.primary_color_dark", supportCenter1.styleSetting.globalStyleSetting.primaryColorDark),
+					resource.TestCheckResourceAttr(fullResName, "support_center.0.style_setting.0.global_style_setting.0.primary_color_light", supportCenter1.styleSetting.globalStyleSetting.primaryColorLight),
+					resource.TestCheckResourceAttr(fullResName, "support_center.0.style_setting.0.global_style_setting.0.text_color", supportCenter1.styleSetting.globalStyleSetting.textColor),
+					resource.TestCheckResourceAttr(fullResName, "support_center.0.style_setting.0.global_style_setting.0.font_family", supportCenter1.styleSetting.globalStyleSetting.fontFamily),
+					resource.TestCheckResourceAttr(fullResName, "support_center.0.feedback_enabled", strconv.FormatBool(supportCenter1.feedbackEnabled)),
 				),
 			},
 			{
 				Config: gcloud.GenerateKnowledgeKnowledgebaseResource(
-					kbResourceLabel2,
+					kbResName2,
 					kbName2,
 					kbDesc2,
 					kbCoreLang2,
 				) + generateConfigurationResource(
-					resourceLabel,
+					resName,
 					configName,
 					configDescription,
 					languages,
@@ -799,82 +799,82 @@ func TestAccResourceWebDeploymentsConfigurationSupportCenter(t *testing.T) {
 					generateSupportCenterSettings(supportCenter2),
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.enabled", strconv.FormatBool(supportCenter2.enabled)),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.knowledge_base_id", supportCenter2.kbId),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.custom_messages.#", strconv.Itoa(len(supportCenter2.customMessages))),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.custom_messages.0.default_value", supportCenter2.customMessages[0].defaultVal),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.custom_messages.0.type", supportCenter2.customMessages[0].varType),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.custom_messages.1.default_value", supportCenter2.customMessages[1].defaultVal),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.custom_messages.1.type", supportCenter2.customMessages[1].varType),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.router_type", supportCenter2.routerType),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.#", strconv.Itoa(len(supportCenter2.screens))),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.0.type", supportCenter2.screens[0].varType),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.0.module_settings.#", strconv.Itoa(len(supportCenter2.screens[0].moduleSettings))),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.0.module_settings.0.type", supportCenter2.screens[0].moduleSettings[0].varType),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.0.module_settings.0.enabled", strconv.FormatBool(supportCenter2.screens[0].moduleSettings[0].enabled)),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.0.module_settings.0.compact_category_module_template_active", strconv.FormatBool(supportCenter2.screens[0].moduleSettings[0].compactTemplateActive)),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.0.module_settings.0.detailed_category_module_template.0.active", strconv.FormatBool(supportCenter2.screens[0].moduleSettings[0].detailedTemplateActive)),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.0.module_settings.0.detailed_category_module_template.0.sidebar_enabled", strconv.FormatBool(supportCenter2.screens[0].moduleSettings[0].detailedTemplateSidebarEnabled)),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.0.module_settings.1.type", supportCenter2.screens[0].moduleSettings[1].varType),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.0.module_settings.1.enabled", strconv.FormatBool(supportCenter2.screens[0].moduleSettings[1].enabled)),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.0.module_settings.1.compact_category_module_template_active", strconv.FormatBool(supportCenter2.screens[0].moduleSettings[1].compactTemplateActive)),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.0.module_settings.1.detailed_category_module_template.0.active", strconv.FormatBool(supportCenter2.screens[0].moduleSettings[1].detailedTemplateActive)),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.0.module_settings.1.detailed_category_module_template.0.sidebar_enabled", strconv.FormatBool(supportCenter2.screens[0].moduleSettings[1].detailedTemplateSidebarEnabled)),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.0.module_settings.2.type", supportCenter2.screens[0].moduleSettings[2].varType),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.0.module_settings.2.enabled", strconv.FormatBool(supportCenter2.screens[0].moduleSettings[2].enabled)),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.0.module_settings.2.compact_category_module_template_active", strconv.FormatBool(supportCenter2.screens[0].moduleSettings[2].compactTemplateActive)),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.0.module_settings.2.detailed_category_module_template.0.active", strconv.FormatBool(supportCenter2.screens[0].moduleSettings[2].detailedTemplateActive)),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.0.module_settings.2.detailed_category_module_template.0.sidebar_enabled", strconv.FormatBool(supportCenter2.screens[0].moduleSettings[2].detailedTemplateSidebarEnabled)),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.1.type", supportCenter2.screens[1].varType),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.1.module_settings.#", strconv.Itoa(len(supportCenter2.screens[1].moduleSettings))),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.1.module_settings.0.type", supportCenter2.screens[1].moduleSettings[0].varType),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.1.module_settings.0.enabled", strconv.FormatBool(supportCenter2.screens[1].moduleSettings[0].enabled)),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.1.module_settings.0.compact_category_module_template_active", strconv.FormatBool(supportCenter2.screens[1].moduleSettings[0].compactTemplateActive)),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.1.module_settings.0.detailed_category_module_template.0.active", strconv.FormatBool(supportCenter2.screens[1].moduleSettings[0].detailedTemplateActive)),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.1.module_settings.0.detailed_category_module_template.0.sidebar_enabled", strconv.FormatBool(supportCenter2.screens[1].moduleSettings[0].detailedTemplateSidebarEnabled)),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.1.module_settings.1.type", supportCenter2.screens[1].moduleSettings[1].varType),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.1.module_settings.1.enabled", strconv.FormatBool(supportCenter2.screens[1].moduleSettings[1].enabled)),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.1.module_settings.1.compact_category_module_template_active", strconv.FormatBool(supportCenter2.screens[1].moduleSettings[1].compactTemplateActive)),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.1.module_settings.1.detailed_category_module_template.0.active", strconv.FormatBool(supportCenter2.screens[1].moduleSettings[1].detailedTemplateActive)),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.1.module_settings.1.detailed_category_module_template.0.sidebar_enabled", strconv.FormatBool(supportCenter2.screens[1].moduleSettings[1].detailedTemplateSidebarEnabled)),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.2.type", supportCenter2.screens[2].varType),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.2.module_settings.#", strconv.Itoa(len(supportCenter2.screens[2].moduleSettings))),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.2.module_settings.0.type", supportCenter2.screens[2].moduleSettings[0].varType),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.2.module_settings.0.enabled", strconv.FormatBool(supportCenter2.screens[2].moduleSettings[0].enabled)),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.2.module_settings.0.compact_category_module_template_active", strconv.FormatBool(supportCenter2.screens[2].moduleSettings[0].compactTemplateActive)),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.2.module_settings.0.detailed_category_module_template.0.active", strconv.FormatBool(supportCenter2.screens[2].moduleSettings[0].detailedTemplateActive)),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.2.module_settings.0.detailed_category_module_template.0.sidebar_enabled", strconv.FormatBool(supportCenter2.screens[2].moduleSettings[0].detailedTemplateSidebarEnabled)),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.2.module_settings.1.type", supportCenter2.screens[2].moduleSettings[1].varType),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.2.module_settings.1.enabled", strconv.FormatBool(supportCenter2.screens[2].moduleSettings[1].enabled)),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.2.module_settings.1.compact_category_module_template_active", strconv.FormatBool(supportCenter2.screens[2].moduleSettings[1].compactTemplateActive)),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.2.module_settings.1.detailed_category_module_template.0.active", strconv.FormatBool(supportCenter2.screens[2].moduleSettings[1].detailedTemplateActive)),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.2.module_settings.1.detailed_category_module_template.0.sidebar_enabled", strconv.FormatBool(supportCenter2.screens[2].moduleSettings[1].detailedTemplateSidebarEnabled)),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.3.type", supportCenter2.screens[3].varType),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.3.module_settings.#", strconv.Itoa(len(supportCenter2.screens[3].moduleSettings))),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.3.module_settings.0.type", supportCenter2.screens[3].moduleSettings[0].varType),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.3.module_settings.0.enabled", strconv.FormatBool(supportCenter2.screens[3].moduleSettings[0].enabled)),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.3.module_settings.0.compact_category_module_template_active", strconv.FormatBool(supportCenter2.screens[3].moduleSettings[0].compactTemplateActive)),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.3.module_settings.0.detailed_category_module_template.0.active", strconv.FormatBool(supportCenter2.screens[3].moduleSettings[0].detailedTemplateActive)),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.3.module_settings.0.detailed_category_module_template.0.sidebar_enabled", strconv.FormatBool(supportCenter2.screens[3].moduleSettings[0].detailedTemplateSidebarEnabled)),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.3.module_settings.1.type", supportCenter2.screens[3].moduleSettings[1].varType),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.3.module_settings.1.enabled", strconv.FormatBool(supportCenter2.screens[3].moduleSettings[1].enabled)),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.3.module_settings.1.compact_category_module_template_active", strconv.FormatBool(supportCenter2.screens[3].moduleSettings[1].compactTemplateActive)),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.3.module_settings.1.detailed_category_module_template.0.active", strconv.FormatBool(supportCenter2.screens[3].moduleSettings[1].detailedTemplateActive)),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.3.module_settings.1.detailed_category_module_template.0.sidebar_enabled", strconv.FormatBool(supportCenter2.screens[3].moduleSettings[1].detailedTemplateSidebarEnabled)),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.style_setting.0.hero_style_setting.0.background_color", supportCenter2.styleSetting.heroStyleSetting.bgColor),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.style_setting.0.hero_style_setting.0.text_color", supportCenter2.styleSetting.heroStyleSetting.textColor),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.style_setting.0.hero_style_setting.0.image_uri", supportCenter2.styleSetting.heroStyleSetting.imageUri),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.style_setting.0.global_style_setting.0.background_color", supportCenter2.styleSetting.globalStyleSetting.bgColor),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.style_setting.0.global_style_setting.0.primary_color", supportCenter2.styleSetting.globalStyleSetting.primaryColor),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.style_setting.0.global_style_setting.0.primary_color_dark", supportCenter2.styleSetting.globalStyleSetting.primaryColorDark),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.style_setting.0.global_style_setting.0.primary_color_light", supportCenter2.styleSetting.globalStyleSetting.primaryColorLight),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.style_setting.0.global_style_setting.0.text_color", supportCenter2.styleSetting.globalStyleSetting.textColor),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.style_setting.0.global_style_setting.0.font_family", supportCenter2.styleSetting.globalStyleSetting.fontFamily),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.feedback_enabled", strconv.FormatBool(supportCenter2.feedbackEnabled)),
+					resource.TestCheckResourceAttr(fullResName, "support_center.0.enabled", strconv.FormatBool(supportCenter2.enabled)),
+					resource.TestCheckResourceAttr(fullResName, "support_center.0.knowledge_base_id", supportCenter2.kbId),
+					resource.TestCheckResourceAttr(fullResName, "support_center.0.custom_messages.#", strconv.Itoa(len(supportCenter2.customMessages))),
+					resource.TestCheckResourceAttr(fullResName, "support_center.0.custom_messages.0.default_value", supportCenter2.customMessages[0].defaultVal),
+					resource.TestCheckResourceAttr(fullResName, "support_center.0.custom_messages.0.type", supportCenter2.customMessages[0].varType),
+					resource.TestCheckResourceAttr(fullResName, "support_center.0.custom_messages.1.default_value", supportCenter2.customMessages[1].defaultVal),
+					resource.TestCheckResourceAttr(fullResName, "support_center.0.custom_messages.1.type", supportCenter2.customMessages[1].varType),
+					resource.TestCheckResourceAttr(fullResName, "support_center.0.router_type", supportCenter2.routerType),
+					resource.TestCheckResourceAttr(fullResName, "support_center.0.screens.#", strconv.Itoa(len(supportCenter2.screens))),
+					resource.TestCheckResourceAttr(fullResName, "support_center.0.screens.0.type", supportCenter2.screens[0].varType),
+					resource.TestCheckResourceAttr(fullResName, "support_center.0.screens.0.module_settings.#", strconv.Itoa(len(supportCenter2.screens[0].moduleSettings))),
+					resource.TestCheckResourceAttr(fullResName, "support_center.0.screens.0.module_settings.0.type", supportCenter2.screens[0].moduleSettings[0].varType),
+					resource.TestCheckResourceAttr(fullResName, "support_center.0.screens.0.module_settings.0.enabled", strconv.FormatBool(supportCenter2.screens[0].moduleSettings[0].enabled)),
+					resource.TestCheckResourceAttr(fullResName, "support_center.0.screens.0.module_settings.0.compact_category_module_template_active", strconv.FormatBool(supportCenter2.screens[0].moduleSettings[0].compactTemplateActive)),
+					resource.TestCheckResourceAttr(fullResName, "support_center.0.screens.0.module_settings.0.detailed_category_module_template.0.active", strconv.FormatBool(supportCenter2.screens[0].moduleSettings[0].detailedTemplateActive)),
+					resource.TestCheckResourceAttr(fullResName, "support_center.0.screens.0.module_settings.0.detailed_category_module_template.0.sidebar_enabled", strconv.FormatBool(supportCenter2.screens[0].moduleSettings[0].detailedTemplateSidebarEnabled)),
+					resource.TestCheckResourceAttr(fullResName, "support_center.0.screens.0.module_settings.1.type", supportCenter2.screens[0].moduleSettings[1].varType),
+					resource.TestCheckResourceAttr(fullResName, "support_center.0.screens.0.module_settings.1.enabled", strconv.FormatBool(supportCenter2.screens[0].moduleSettings[1].enabled)),
+					resource.TestCheckResourceAttr(fullResName, "support_center.0.screens.0.module_settings.1.compact_category_module_template_active", strconv.FormatBool(supportCenter2.screens[0].moduleSettings[1].compactTemplateActive)),
+					resource.TestCheckResourceAttr(fullResName, "support_center.0.screens.0.module_settings.1.detailed_category_module_template.0.active", strconv.FormatBool(supportCenter2.screens[0].moduleSettings[1].detailedTemplateActive)),
+					resource.TestCheckResourceAttr(fullResName, "support_center.0.screens.0.module_settings.1.detailed_category_module_template.0.sidebar_enabled", strconv.FormatBool(supportCenter2.screens[0].moduleSettings[1].detailedTemplateSidebarEnabled)),
+					resource.TestCheckResourceAttr(fullResName, "support_center.0.screens.0.module_settings.2.type", supportCenter2.screens[0].moduleSettings[2].varType),
+					resource.TestCheckResourceAttr(fullResName, "support_center.0.screens.0.module_settings.2.enabled", strconv.FormatBool(supportCenter2.screens[0].moduleSettings[2].enabled)),
+					resource.TestCheckResourceAttr(fullResName, "support_center.0.screens.0.module_settings.2.compact_category_module_template_active", strconv.FormatBool(supportCenter2.screens[0].moduleSettings[2].compactTemplateActive)),
+					resource.TestCheckResourceAttr(fullResName, "support_center.0.screens.0.module_settings.2.detailed_category_module_template.0.active", strconv.FormatBool(supportCenter2.screens[0].moduleSettings[2].detailedTemplateActive)),
+					resource.TestCheckResourceAttr(fullResName, "support_center.0.screens.0.module_settings.2.detailed_category_module_template.0.sidebar_enabled", strconv.FormatBool(supportCenter2.screens[0].moduleSettings[2].detailedTemplateSidebarEnabled)),
+					resource.TestCheckResourceAttr(fullResName, "support_center.0.screens.1.type", supportCenter2.screens[1].varType),
+					resource.TestCheckResourceAttr(fullResName, "support_center.0.screens.1.module_settings.#", strconv.Itoa(len(supportCenter2.screens[1].moduleSettings))),
+					resource.TestCheckResourceAttr(fullResName, "support_center.0.screens.1.module_settings.0.type", supportCenter2.screens[1].moduleSettings[0].varType),
+					resource.TestCheckResourceAttr(fullResName, "support_center.0.screens.1.module_settings.0.enabled", strconv.FormatBool(supportCenter2.screens[1].moduleSettings[0].enabled)),
+					resource.TestCheckResourceAttr(fullResName, "support_center.0.screens.1.module_settings.0.compact_category_module_template_active", strconv.FormatBool(supportCenter2.screens[1].moduleSettings[0].compactTemplateActive)),
+					resource.TestCheckResourceAttr(fullResName, "support_center.0.screens.1.module_settings.0.detailed_category_module_template.0.active", strconv.FormatBool(supportCenter2.screens[1].moduleSettings[0].detailedTemplateActive)),
+					resource.TestCheckResourceAttr(fullResName, "support_center.0.screens.1.module_settings.0.detailed_category_module_template.0.sidebar_enabled", strconv.FormatBool(supportCenter2.screens[1].moduleSettings[0].detailedTemplateSidebarEnabled)),
+					resource.TestCheckResourceAttr(fullResName, "support_center.0.screens.1.module_settings.1.type", supportCenter2.screens[1].moduleSettings[1].varType),
+					resource.TestCheckResourceAttr(fullResName, "support_center.0.screens.1.module_settings.1.enabled", strconv.FormatBool(supportCenter2.screens[1].moduleSettings[1].enabled)),
+					resource.TestCheckResourceAttr(fullResName, "support_center.0.screens.1.module_settings.1.compact_category_module_template_active", strconv.FormatBool(supportCenter2.screens[1].moduleSettings[1].compactTemplateActive)),
+					resource.TestCheckResourceAttr(fullResName, "support_center.0.screens.1.module_settings.1.detailed_category_module_template.0.active", strconv.FormatBool(supportCenter2.screens[1].moduleSettings[1].detailedTemplateActive)),
+					resource.TestCheckResourceAttr(fullResName, "support_center.0.screens.1.module_settings.1.detailed_category_module_template.0.sidebar_enabled", strconv.FormatBool(supportCenter2.screens[1].moduleSettings[1].detailedTemplateSidebarEnabled)),
+					resource.TestCheckResourceAttr(fullResName, "support_center.0.screens.2.type", supportCenter2.screens[2].varType),
+					resource.TestCheckResourceAttr(fullResName, "support_center.0.screens.2.module_settings.#", strconv.Itoa(len(supportCenter2.screens[2].moduleSettings))),
+					resource.TestCheckResourceAttr(fullResName, "support_center.0.screens.2.module_settings.0.type", supportCenter2.screens[2].moduleSettings[0].varType),
+					resource.TestCheckResourceAttr(fullResName, "support_center.0.screens.2.module_settings.0.enabled", strconv.FormatBool(supportCenter2.screens[2].moduleSettings[0].enabled)),
+					resource.TestCheckResourceAttr(fullResName, "support_center.0.screens.2.module_settings.0.compact_category_module_template_active", strconv.FormatBool(supportCenter2.screens[2].moduleSettings[0].compactTemplateActive)),
+					resource.TestCheckResourceAttr(fullResName, "support_center.0.screens.2.module_settings.0.detailed_category_module_template.0.active", strconv.FormatBool(supportCenter2.screens[2].moduleSettings[0].detailedTemplateActive)),
+					resource.TestCheckResourceAttr(fullResName, "support_center.0.screens.2.module_settings.0.detailed_category_module_template.0.sidebar_enabled", strconv.FormatBool(supportCenter2.screens[2].moduleSettings[0].detailedTemplateSidebarEnabled)),
+					resource.TestCheckResourceAttr(fullResName, "support_center.0.screens.2.module_settings.1.type", supportCenter2.screens[2].moduleSettings[1].varType),
+					resource.TestCheckResourceAttr(fullResName, "support_center.0.screens.2.module_settings.1.enabled", strconv.FormatBool(supportCenter2.screens[2].moduleSettings[1].enabled)),
+					resource.TestCheckResourceAttr(fullResName, "support_center.0.screens.2.module_settings.1.compact_category_module_template_active", strconv.FormatBool(supportCenter2.screens[2].moduleSettings[1].compactTemplateActive)),
+					resource.TestCheckResourceAttr(fullResName, "support_center.0.screens.2.module_settings.1.detailed_category_module_template.0.active", strconv.FormatBool(supportCenter2.screens[2].moduleSettings[1].detailedTemplateActive)),
+					resource.TestCheckResourceAttr(fullResName, "support_center.0.screens.2.module_settings.1.detailed_category_module_template.0.sidebar_enabled", strconv.FormatBool(supportCenter2.screens[2].moduleSettings[1].detailedTemplateSidebarEnabled)),
+					resource.TestCheckResourceAttr(fullResName, "support_center.0.screens.3.type", supportCenter2.screens[3].varType),
+					resource.TestCheckResourceAttr(fullResName, "support_center.0.screens.3.module_settings.#", strconv.Itoa(len(supportCenter2.screens[3].moduleSettings))),
+					resource.TestCheckResourceAttr(fullResName, "support_center.0.screens.3.module_settings.0.type", supportCenter2.screens[3].moduleSettings[0].varType),
+					resource.TestCheckResourceAttr(fullResName, "support_center.0.screens.3.module_settings.0.enabled", strconv.FormatBool(supportCenter2.screens[3].moduleSettings[0].enabled)),
+					resource.TestCheckResourceAttr(fullResName, "support_center.0.screens.3.module_settings.0.compact_category_module_template_active", strconv.FormatBool(supportCenter2.screens[3].moduleSettings[0].compactTemplateActive)),
+					resource.TestCheckResourceAttr(fullResName, "support_center.0.screens.3.module_settings.0.detailed_category_module_template.0.active", strconv.FormatBool(supportCenter2.screens[3].moduleSettings[0].detailedTemplateActive)),
+					resource.TestCheckResourceAttr(fullResName, "support_center.0.screens.3.module_settings.0.detailed_category_module_template.0.sidebar_enabled", strconv.FormatBool(supportCenter2.screens[3].moduleSettings[0].detailedTemplateSidebarEnabled)),
+					resource.TestCheckResourceAttr(fullResName, "support_center.0.screens.3.module_settings.1.type", supportCenter2.screens[3].moduleSettings[1].varType),
+					resource.TestCheckResourceAttr(fullResName, "support_center.0.screens.3.module_settings.1.enabled", strconv.FormatBool(supportCenter2.screens[3].moduleSettings[1].enabled)),
+					resource.TestCheckResourceAttr(fullResName, "support_center.0.screens.3.module_settings.1.compact_category_module_template_active", strconv.FormatBool(supportCenter2.screens[3].moduleSettings[1].compactTemplateActive)),
+					resource.TestCheckResourceAttr(fullResName, "support_center.0.screens.3.module_settings.1.detailed_category_module_template.0.active", strconv.FormatBool(supportCenter2.screens[3].moduleSettings[1].detailedTemplateActive)),
+					resource.TestCheckResourceAttr(fullResName, "support_center.0.screens.3.module_settings.1.detailed_category_module_template.0.sidebar_enabled", strconv.FormatBool(supportCenter2.screens[3].moduleSettings[1].detailedTemplateSidebarEnabled)),
+					resource.TestCheckResourceAttr(fullResName, "support_center.0.style_setting.0.hero_style_setting.0.background_color", supportCenter2.styleSetting.heroStyleSetting.bgColor),
+					resource.TestCheckResourceAttr(fullResName, "support_center.0.style_setting.0.hero_style_setting.0.text_color", supportCenter2.styleSetting.heroStyleSetting.textColor),
+					resource.TestCheckResourceAttr(fullResName, "support_center.0.style_setting.0.hero_style_setting.0.image_uri", supportCenter2.styleSetting.heroStyleSetting.imageUri),
+					resource.TestCheckResourceAttr(fullResName, "support_center.0.style_setting.0.global_style_setting.0.background_color", supportCenter2.styleSetting.globalStyleSetting.bgColor),
+					resource.TestCheckResourceAttr(fullResName, "support_center.0.style_setting.0.global_style_setting.0.primary_color", supportCenter2.styleSetting.globalStyleSetting.primaryColor),
+					resource.TestCheckResourceAttr(fullResName, "support_center.0.style_setting.0.global_style_setting.0.primary_color_dark", supportCenter2.styleSetting.globalStyleSetting.primaryColorDark),
+					resource.TestCheckResourceAttr(fullResName, "support_center.0.style_setting.0.global_style_setting.0.primary_color_light", supportCenter2.styleSetting.globalStyleSetting.primaryColorLight),
+					resource.TestCheckResourceAttr(fullResName, "support_center.0.style_setting.0.global_style_setting.0.text_color", supportCenter2.styleSetting.globalStyleSetting.textColor),
+					resource.TestCheckResourceAttr(fullResName, "support_center.0.style_setting.0.global_style_setting.0.font_family", supportCenter2.styleSetting.globalStyleSetting.fontFamily),
+					resource.TestCheckResourceAttr(fullResName, "support_center.0.feedback_enabled", strconv.FormatBool(supportCenter2.feedbackEnabled)),
 				),
 			},
 			{
-				ResourceName:            fullResourceName,
+				ResourceName:            fullResName,
 				ImportState:             true,
 				ImportStateVerify:       true,
 				ImportStateVerifyIgnore: []string{"status"},
@@ -884,7 +884,7 @@ func TestAccResourceWebDeploymentsConfigurationSupportCenter(t *testing.T) {
 	})
 }
 
-func generateConfigurationResource(resourceLabel, configName, description string, languages []string, defaultLang string, nestedBlocks ...string) string {
+func generateConfigurationResource(resName, configName, description string, languages []string, defaultLang string, nestedBlocks ...string) string {
 	return fmt.Sprintf(`resource "genesyscloud_webdeployments_configuration" "%s" {
 		name = "%s"
 		description = "%s"
@@ -893,7 +893,7 @@ func generateConfigurationResource(resourceLabel, configName, description string
 		%s
 	}
 	`,
-		resourceLabel,
+		resName,
 		configName,
 		description,
 		util.GenerateStringArrayEnquote(languages...),

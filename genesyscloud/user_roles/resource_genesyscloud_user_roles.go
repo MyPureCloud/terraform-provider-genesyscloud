@@ -80,10 +80,10 @@ func deleteUserRoles(_ context.Context, _ *schema.ResourceData, _ interface{}) d
 	return nil
 }
 
-func GenerateUserRoles(resourceLabel string, userResource string, roles ...string) string {
+func GenerateUserRoles(resourceID string, userResource string, roles ...string) string {
 	return fmt.Sprintf(`resource "genesyscloud_user_roles" "%s" {
 		user_id = genesyscloud_user.%s.id
 		%s
 	}
-	`, resourceLabel, userResource, strings.Join(roles, "\n"))
+	`, resourceID, userResource, strings.Join(roles, "\n"))
 }

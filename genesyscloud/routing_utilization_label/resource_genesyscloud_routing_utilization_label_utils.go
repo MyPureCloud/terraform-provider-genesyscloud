@@ -5,7 +5,7 @@ import (
 	"strings"
 )
 
-func GenerateRoutingUtilizationLabelResource(resourceLabel string, name string, dependsOnResource string) string {
+func GenerateRoutingUtilizationLabelResource(resourceID string, name string, dependsOnResource string) string {
 	dependsOn := ""
 
 	if dependsOnResource != "" {
@@ -16,7 +16,7 @@ func GenerateRoutingUtilizationLabelResource(resourceLabel string, name string, 
 		name = "%s"
 		%s
 	}
-	`, resourceLabel, name, dependsOn)
+	`, resourceID, name, dependsOn)
 }
 
 func GenerateLabelUtilization(

@@ -938,9 +938,9 @@ func flattenDigitalRules(digitalRules *[]platformclientv2.Digitalrule) []interfa
 	return digitalRuleList
 }
 
-func GenerateSimpleOutboundDigitalRuleSet(resourceLabel, name string) (resource string, reference string) {
+func GenerateSimpleOutboundDigitalRuleSet(resourceId, name string) (resource string, reference string) {
 	return GenerateOutboundDigitalRuleSetResource(
-		resourceLabel,
+		resourceId,
 		name,
 		util.NullValue,
 		fmt.Sprintf(`rules {
@@ -960,11 +960,11 @@ func GenerateSimpleOutboundDigitalRuleSet(resourceLabel, name string) (resource 
 		}
 	}
 		`),
-	), resourceName + "." + resourceLabel
+	), resourceName + "." + resourceId
 }
 
 func GenerateOutboundDigitalRuleSetResource(
-	resourceLabel string,
+	resourceId string,
 	name string,
 	contactListId string,
 	nestedBlocks ...string,
@@ -975,5 +975,5 @@ func GenerateOutboundDigitalRuleSetResource(
 	contact_list_id = %s
 	%s
 	}
-	`, resourceLabel, name, contactListId, strings.Join(nestedBlocks, "\n"))
+	`, resourceId, name, contactListId, strings.Join(nestedBlocks, "\n"))
 }

@@ -13,17 +13,17 @@ import (
 func TestAccDataSourceRoutingSkillGroup(t *testing.T) {
 	t.Parallel()
 	var (
-		skillGroupResourceLabel   = "routing-skill-groups"
-		skillGroupDataSourceLabel = "routing-skill-groups-data"
-		skillGroupName            = "Skillgroup" + uuid.NewString()
-		skillGroupDescription     = "description-" + uuid.NewString()
+		skillGroupResource    = "routing-skill-groups"
+		skillGroupDataSource  = "routing-skill-groups-data"
+		skillGroupName        = "Skillgroup" + uuid.NewString()
+		skillGroupDescription = "description-" + uuid.NewString()
 	)
 
 	config := GenerateRoutingSkillGroupResourceBasic(
-		skillGroupResourceLabel,
+		skillGroupResource,
 		skillGroupName,
 		skillGroupDescription,
-	) + generateRoutingSkillGroupDataSource(skillGroupDataSourceLabel, "genesyscloud_routing_skill_group."+skillGroupResourceLabel+".name", "genesyscloud_routing_skill_group."+skillGroupResourceLabel)
+	) + generateRoutingSkillGroupDataSource(skillGroupDataSource, "genesyscloud_routing_skill_group."+skillGroupResource+".name", "genesyscloud_routing_skill_group."+skillGroupResource)
 
 	resource.Test(t, resource.TestCase{
 
@@ -33,7 +33,7 @@ func TestAccDataSourceRoutingSkillGroup(t *testing.T) {
 			{
 				Config: config,
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair("data.genesyscloud_routing_skill_group."+skillGroupDataSourceLabel, "id", "genesyscloud_routing_skill_group."+skillGroupResourceLabel, "id"),
+					resource.TestCheckResourceAttrPair("data.genesyscloud_routing_skill_group."+skillGroupDataSource, "id", "genesyscloud_routing_skill_group."+skillGroupResource, "id"),
 				),
 			},
 		},
@@ -42,7 +42,7 @@ func TestAccDataSourceRoutingSkillGroup(t *testing.T) {
 }
 
 func generateRoutingSkillGroupDataSource(
-	resourceLabel string,
+	resourceID string,
 	name string,
 	// Must explicitly use depends_on in terraform v0.13 when a data source references a resource
 	// Fixed in v0.14 https://github.com/hashicorp/terraform/pull/26284
@@ -51,5 +51,5 @@ func generateRoutingSkillGroupDataSource(
 		name = %s
         depends_on=[%s]
 	}
-	`, resourceName, resourceLabel, name, dependsOnResource)
+	`, resourceName, resourceID, name, dependsOnResource)
 }

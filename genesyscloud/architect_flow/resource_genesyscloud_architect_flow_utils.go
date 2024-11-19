@@ -20,7 +20,7 @@ func isForceUnlockEnabled(d *schema.ResourceData) bool {
 	return false
 }
 
-func GenerateFlowResource(resourceLabel, srcFile, fileContent string, forceUnlock bool, substitutions ...string) string {
+func GenerateFlowResource(resourceID, srcFile, fileContent string, forceUnlock bool, substitutions ...string) string {
 	fullyQualifiedPath, _ := testrunner.NormalizePath(srcFile)
 
 	if fileContent != "" {
@@ -33,7 +33,7 @@ func GenerateFlowResource(resourceLabel, srcFile, fileContent string, forceUnloc
 		force_unlock = %v
 		%s
 	}
-	`, resourceLabel, strconv.Quote(srcFile), strconv.Quote(fullyQualifiedPath), forceUnlock, strings.Join(substitutions, "\n"))
+	`, resourceID, strconv.Quote(srcFile), strconv.Quote(fullyQualifiedPath), forceUnlock, strings.Join(substitutions, "\n"))
 
 	return flowResourceStr
 }

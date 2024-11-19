@@ -14,13 +14,13 @@ import (
 
 func TestAccDataSourceRoutingEmailRoute(t *testing.T) {
 	var (
-		domainResourceLabel = "routing-domain1"
-		domainId            = fmt.Sprintf("terraformroutes.%s.com", strings.Replace(uuid.NewString(), "-", "", -1))
-		routeResourceLabel  = "email-route1"
-		routePattern1       = "terraform1"
-		fromEmail1          = "terraform1@test.com"
-		fromName1           = "John Terraform"
-		bccEmail1           = "test1@" + domainId
+		domainRes     = "routing-domain1"
+		domainId      = fmt.Sprintf("terraformroutes.%s.com", strings.Replace(uuid.NewString(), "-", "", -1))
+		routeRes      = "email-route1"
+		routePattern1 = "terraform1"
+		fromEmail1    = "terraform1@test.com"
+		fromName1     = "John Terraform"
+		bccEmail1     = "test1@" + domainId
 	)
 
 	// Standard acceptance tests
@@ -31,27 +31,27 @@ func TestAccDataSourceRoutingEmailRoute(t *testing.T) {
 			{
 				// Create email domain and basic route
 				Config: routingEmailDomain.GenerateRoutingEmailDomainResource(
-					domainResourceLabel,
+					domainRes,
 					domainId,
 					util.FalseValue,
 					util.NullValue,
 				) + GenerateRoutingEmailRouteResource(
-					routeResourceLabel,
-					"genesyscloud_routing_email_domain."+domainResourceLabel+".id",
+					routeRes,
+					"genesyscloud_routing_email_domain."+domainRes+".id",
 					routePattern1,
 					fromName1,
 					fmt.Sprintf("from_email = \"%s\"", fromEmail1),
 					generateRoutingAutoBcc(fromName1, bccEmail1),
 				) + generateRoutingEmailRouteDataSource(
-					routeResourceLabel,
+					routeRes,
 					routePattern1,
-					"genesyscloud_routing_email_domain."+domainResourceLabel+".id",
-					"genesyscloud_routing_email_route."+routeResourceLabel,
+					"genesyscloud_routing_email_domain."+domainRes+".id",
+					"genesyscloud_routing_email_route."+routeRes,
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrPair(
-						"data.genesyscloud_routing_email_route."+routeResourceLabel, "id",
-						"genesyscloud_routing_email_route."+routeResourceLabel, "id",
+						"data.genesyscloud_routing_email_route."+routeRes, "id",
+						"genesyscloud_routing_email_route."+routeRes, "id",
 					),
 				),
 			},
@@ -61,7 +61,7 @@ func TestAccDataSourceRoutingEmailRoute(t *testing.T) {
 }
 
 func generateRoutingEmailRouteDataSource(
-	resourceLabel string,
+	resourceID string,
 	pattern string,
 	domainId string,
 	dependsOn string) string {
@@ -71,5 +71,5 @@ func generateRoutingEmailRouteDataSource(
 			domain_id = "%s"
 			depends_on=[%s]
 		}
-	`, resourceLabel, pattern, domainId, dependsOn)
+	`, resourceID, pattern, domainId, dependsOn)
 }

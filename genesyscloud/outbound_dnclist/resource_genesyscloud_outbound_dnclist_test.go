@@ -21,7 +21,7 @@ func TestAccResourceOutboundDncListRdsListType(t *testing.T) {
 
 	t.Parallel()
 	var (
-		resourceLabel = "dnc_list"
+		resourceID    = "dnc_list"
 		name          = "Test DNC List " + uuid.NewString()
 		dncSourceType = "rds"
 		contactMethod = "Phone"
@@ -33,7 +33,7 @@ func TestAccResourceOutboundDncListRdsListType(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config: generateOutboundDncList(
-					resourceLabel,
+					resourceID,
 					name,
 					dncSourceType,
 					strconv.Quote(contactMethod),
@@ -47,16 +47,16 @@ func TestAccResourceOutboundDncListRdsListType(t *testing.T) {
 					),
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_outbound_dnclist."+resourceLabel, "name", name),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_dnclist."+resourceLabel, "dnc_source_type", dncSourceType),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_dnclist."+resourceLabel, "contact_method", contactMethod),
-					provider.TestDefaultHomeDivision("genesyscloud_outbound_dnclist."+resourceLabel),
-					checkPhoneNumbersAddedToDncList("genesyscloud_outbound_dnclist."+resourceLabel, 1),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_dnclist."+resourceID, "name", name),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_dnclist."+resourceID, "dnc_source_type", dncSourceType),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_dnclist."+resourceID, "contact_method", contactMethod),
+					provider.TestDefaultHomeDivision("genesyscloud_outbound_dnclist."+resourceID),
+					checkPhoneNumbersAddedToDncList("genesyscloud_outbound_dnclist."+resourceID, 1),
 				),
 			},
 			{
 				Config: generateOutboundDncList(
-					resourceLabel,
+					resourceID,
 					name,
 					dncSourceType,
 					strconv.Quote(contactMethod),
@@ -70,16 +70,16 @@ func TestAccResourceOutboundDncListRdsListType(t *testing.T) {
 					),
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_outbound_dnclist."+resourceLabel, "name", name),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_dnclist."+resourceLabel, "dnc_source_type", dncSourceType),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_dnclist."+resourceLabel, "contact_method", contactMethod),
-					provider.TestDefaultHomeDivision("genesyscloud_outbound_dnclist."+resourceLabel),
-					checkPhoneNumbersAddedToDncList("genesyscloud_outbound_dnclist."+resourceLabel, 3),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_dnclist."+resourceID, "name", name),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_dnclist."+resourceID, "dnc_source_type", dncSourceType),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_dnclist."+resourceID, "contact_method", contactMethod),
+					provider.TestDefaultHomeDivision("genesyscloud_outbound_dnclist."+resourceID),
+					checkPhoneNumbersAddedToDncList("genesyscloud_outbound_dnclist."+resourceID, 3),
 				),
 			},
 			{
 				Config: generateOutboundDncList(
-					resourceLabel,
+					resourceID,
 					name,
 					dncSourceType,
 					strconv.Quote(contactMethod),
@@ -101,17 +101,17 @@ func TestAccResourceOutboundDncListRdsListType(t *testing.T) {
 					),
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_outbound_dnclist."+resourceLabel, "name", name),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_dnclist."+resourceLabel, "dnc_source_type", dncSourceType),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_dnclist."+resourceLabel, "contact_method", contactMethod),
-					provider.TestDefaultHomeDivision("genesyscloud_outbound_dnclist."+resourceLabel),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_dnclist."+resourceID, "name", name),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_dnclist."+resourceID, "dnc_source_type", dncSourceType),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_dnclist."+resourceID, "contact_method", contactMethod),
+					provider.TestDefaultHomeDivision("genesyscloud_outbound_dnclist."+resourceID),
 					// Expect two more to be added due to duplicate numbers
-					checkPhoneNumbersAddedToDncList("genesyscloud_outbound_dnclist."+resourceLabel, 5),
+					checkPhoneNumbersAddedToDncList("genesyscloud_outbound_dnclist."+resourceID, 5),
 				),
 			},
 			{
 				// Import/Read
-				ResourceName:            "genesyscloud_outbound_dnclist." + resourceLabel,
+				ResourceName:            "genesyscloud_outbound_dnclist." + resourceID,
 				ImportState:             true,
 				ImportStateVerify:       true,
 				ImportStateVerifyIgnore: []string{"entries"},
@@ -128,7 +128,7 @@ func TestAccResourceOutboundDncListDncListType(t *testing.T) {
 		t.Skip("Skipping because TEST_DNCCOM_LICENSE_KEY env variable is not set.")
 	}
 	var (
-		resourceLabel = "dnc_list"
+		resourceID    = "dnc_list"
 		name          = "Test DNC List " + uuid.NewString()
 		dncSourceType = "rds"
 		contactMethod = "Phone"
@@ -150,7 +150,7 @@ func TestAccResourceOutboundDncListDncListType(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config: generateOutboundDncList(
-					resourceLabel,
+					resourceID,
 					name,
 					dncSourceType,
 					strconv.Quote(contactMethod),
@@ -161,16 +161,16 @@ func TestAccResourceOutboundDncListDncListType(t *testing.T) {
 					"",
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_outbound_dnclist."+resourceLabel, "name", name),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_dnclist."+resourceLabel, "dnc_source_type", dncSourceType),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_dnclist."+resourceLabel, "contact_method", contactMethod),
-					provider.TestDefaultHomeDivision("genesyscloud_outbound_dnclist."+resourceLabel),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_dnclist."+resourceID, "name", name),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_dnclist."+resourceID, "dnc_source_type", dncSourceType),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_dnclist."+resourceID, "contact_method", contactMethod),
+					provider.TestDefaultHomeDivision("genesyscloud_outbound_dnclist."+resourceID),
 				),
 			},
 			{
 				// Update to dnc type dnc.com
 				Config: generateOutboundDncList(
-					resourceLabel,
+					resourceID,
 					nameUpdated,
 					dncSourceTypeUpdate,
 					NullValue,
@@ -181,20 +181,20 @@ func TestAccResourceOutboundDncListDncListType(t *testing.T) {
 					"",
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_outbound_dnclist."+resourceLabel, "name", nameUpdated),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_dnclist."+resourceLabel, "dnc_source_type", dncSourceTypeUpdate),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_dnclist."+resourceLabel, "login_id", dncLoginId),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_dnclist."+resourceLabel, "campaign_id", campaignId),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_dnclist."+resourceLabel, "dnc_codes.0", dncCodeB),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_dnclist."+resourceLabel, "dnc_codes.1", dncCodeC),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_dnclist."+resourceLabel, "dnc_codes.#", fmt.Sprintf("%v", len(dncCodes))),
-					provider.TestDefaultHomeDivision("genesyscloud_outbound_dnclist."+resourceLabel),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_dnclist."+resourceID, "name", nameUpdated),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_dnclist."+resourceID, "dnc_source_type", dncSourceTypeUpdate),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_dnclist."+resourceID, "login_id", dncLoginId),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_dnclist."+resourceID, "campaign_id", campaignId),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_dnclist."+resourceID, "dnc_codes.0", dncCodeB),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_dnclist."+resourceID, "dnc_codes.1", dncCodeC),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_dnclist."+resourceID, "dnc_codes.#", fmt.Sprintf("%v", len(dncCodes))),
+					provider.TestDefaultHomeDivision("genesyscloud_outbound_dnclist."+resourceID),
 				),
 			},
 			{
 				// Update dnc codes array
 				Config: generateOutboundDncList(
-					resourceLabel,
+					resourceID,
 					nameUpdated,
 					dncSourceTypeUpdate,
 					NullValue,
@@ -205,21 +205,21 @@ func TestAccResourceOutboundDncListDncListType(t *testing.T) {
 					"",
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_outbound_dnclist."+resourceLabel, "name", nameUpdated),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_dnclist."+resourceLabel, "dnc_source_type", dncSourceTypeUpdate),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_dnclist."+resourceLabel, "login_id", dncLoginId),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_dnclist."+resourceLabel, "campaign_id", campaignId),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_dnclist."+resourceLabel, "dnc_codes.0", dncCodeB),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_dnclist."+resourceLabel, "dnc_codes.1", dncCodeC),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_dnclist."+resourceLabel, "dnc_codes.2", dncCodeP),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_dnclist."+resourceLabel, "dnc_codes.3", dncCodeT),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_dnclist."+resourceLabel, "dnc_codes.#", fmt.Sprintf("%v", len(dncCodesUpdated))),
-					provider.TestDefaultHomeDivision("genesyscloud_outbound_dnclist."+resourceLabel),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_dnclist."+resourceID, "name", nameUpdated),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_dnclist."+resourceID, "dnc_source_type", dncSourceTypeUpdate),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_dnclist."+resourceID, "login_id", dncLoginId),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_dnclist."+resourceID, "campaign_id", campaignId),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_dnclist."+resourceID, "dnc_codes.0", dncCodeB),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_dnclist."+resourceID, "dnc_codes.1", dncCodeC),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_dnclist."+resourceID, "dnc_codes.2", dncCodeP),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_dnclist."+resourceID, "dnc_codes.3", dncCodeT),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_dnclist."+resourceID, "dnc_codes.#", fmt.Sprintf("%v", len(dncCodesUpdated))),
+					provider.TestDefaultHomeDivision("genesyscloud_outbound_dnclist."+resourceID),
 				),
 			},
 			{
 				// Import/Read
-				ResourceName:            "genesyscloud_outbound_dnclist." + resourceLabel,
+				ResourceName:            "genesyscloud_outbound_dnclist." + resourceID,
 				ImportState:             true,
 				ImportStateVerify:       true,
 				ImportStateVerifyIgnore: []string{"dnc_codes"},
@@ -243,7 +243,7 @@ func TestAccResourceOutboundDncListGryphonListType(t *testing.T) {
 		t.Skip("Skipping because TEST_DNC_GRYPHON_LICENSE_KEY env variable is not set.")
 	}
 	var (
-		resourceLabel = "dnc_list"
+		resourceID    = "dnc_list"
 		name          = "Test DNC List " + uuid.NewString()
 		dncSourceType = "gryphon"
 	)
@@ -254,7 +254,7 @@ func TestAccResourceOutboundDncListGryphonListType(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config: generateOutboundDncList(
-					resourceLabel,
+					resourceID,
 					name,
 					dncSourceType,
 					NullValue,
@@ -265,15 +265,15 @@ func TestAccResourceOutboundDncListGryphonListType(t *testing.T) {
 					"",
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_outbound_dnclist."+resourceLabel, "name", name),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_dnclist."+resourceLabel, "dnc_source_type", dncSourceType),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_dnclist."+resourceLabel, "license_id", gryphonLicense),
-					provider.TestDefaultHomeDivision("genesyscloud_outbound_dnclist."+resourceLabel),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_dnclist."+resourceID, "name", name),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_dnclist."+resourceID, "dnc_source_type", dncSourceType),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_dnclist."+resourceID, "license_id", gryphonLicense),
+					provider.TestDefaultHomeDivision("genesyscloud_outbound_dnclist."+resourceID),
 				),
 			},
 			{
 				// Import/Read
-				ResourceName:      "genesyscloud_outbound_dnclist." + resourceLabel,
+				ResourceName:      "genesyscloud_outbound_dnclist." + resourceID,
 				ImportState:       true,
 				ImportStateVerify: true,
 			},
@@ -332,7 +332,7 @@ func testVerifyDncListDestroyed(state *terraform.State) error {
 }
 
 func generateOutboundDncList(
-	resourceLabel string,
+	resourceId string,
 	name string,
 	dncSourceType string,
 	contactMethod string,
@@ -352,5 +352,5 @@ resource "genesyscloud_outbound_dnclist" "%s" {
 	dnc_codes = [%s]
     %s
 }
-`, resourceLabel, name, dncSourceType, contactMethod, loginId, licenseId, campaignId, strings.Join(dncCodes, ", "), strings.Join(nestedBlocks, "\n"))
+`, resourceId, name, dncSourceType, contactMethod, loginId, licenseId, campaignId, strings.Join(dncCodes, ", "), strings.Join(nestedBlocks, "\n"))
 }

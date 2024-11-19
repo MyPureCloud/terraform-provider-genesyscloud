@@ -16,13 +16,13 @@ import (
 func TestAccDataSourceOutboundContactListFilter(t *testing.T) {
 
 	var (
-		resourceLabel            = "clf"
-		contactListResourceLabel = "contact_list"
-		dataSourceLabel          = "clf_data"
-		contactListName          = "Contact List " + uuid.NewString()
-		contactListFilterName    = "Contact List Filter " + uuid.NewString()
-		column1                  = "Phone"
-		column2                  = "Zipcode"
+		resourceId            = "clf"
+		contactListResourceId = "contact_list"
+		dataSourceId          = "clf_data"
+		contactListName       = "Contact List " + uuid.NewString()
+		contactListFilterName = "Contact List Filter " + uuid.NewString()
+		column1               = "Phone"
+		column2               = "Zipcode"
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -31,7 +31,7 @@ func TestAccDataSourceOutboundContactListFilter(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config: obContactList.GenerateOutboundContactList(
-					contactListResourceLabel,
+					contactListResourceId,
 					contactListName,
 					util.NullValue,
 					util.NullValue,
@@ -47,9 +47,9 @@ func TestAccDataSourceOutboundContactListFilter(t *testing.T) {
 						util.NullValue,
 					),
 				) + GenerateOutboundContactListFilter(
-					resourceLabel,
+					resourceId,
 					contactListFilterName,
-					"genesyscloud_outbound_contact_list."+contactListResourceLabel+".id",
+					"genesyscloud_outbound_contact_list."+contactListResourceId+".id",
 					"AND",
 					GenerateOutboundContactListFilterClause(
 						"",
@@ -63,23 +63,23 @@ func TestAccDataSourceOutboundContactListFilter(t *testing.T) {
 						),
 					),
 				) + generateOutboundContactListFilterDataSource(
-					dataSourceLabel,
+					dataSourceId,
 					contactListFilterName,
-					"genesyscloud_outbound_contactlistfilter."+resourceLabel),
+					"genesyscloud_outbound_contactlistfilter."+resourceId),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair("genesyscloud_outbound_contactlistfilter."+resourceLabel, "id",
-						"data.genesyscloud_outbound_contactlistfilter."+dataSourceLabel, "id"),
+					resource.TestCheckResourceAttrPair("genesyscloud_outbound_contactlistfilter."+resourceId, "id",
+						"data.genesyscloud_outbound_contactlistfilter."+dataSourceId, "id"),
 				),
 			},
 		},
 	})
 }
 
-func generateOutboundContactListFilterDataSource(dataSourceLabel string, name string, dependsOn string) string {
+func generateOutboundContactListFilterDataSource(id string, name string, dependsOn string) string {
 	return fmt.Sprintf(`
 data "genesyscloud_outbound_contactlistfilter" "%s" {
 	name       = "%s"
 	depends_on = [%s]
 }
-`, dataSourceLabel, name, dependsOn)
+`, id, name, dependsOn)
 }

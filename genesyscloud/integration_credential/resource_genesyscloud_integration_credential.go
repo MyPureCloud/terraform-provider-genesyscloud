@@ -74,7 +74,7 @@ func getAllCredentials(ctx context.Context, clientConfig *platformclientv2.Confi
 					log.Printf("Integration id %s exists but we got an unexpected error retrieving it: %v", integrationId, err)
 				}
 			}
-			resources[*cred.Id] = &resourceExporter.ResourceMeta{BlockLabel: *cred.Name}
+			resources[*cred.Id] = &resourceExporter.ResourceMeta{Name: *cred.Name}
 		}
 	}
 	return resources, nil

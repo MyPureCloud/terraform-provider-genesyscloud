@@ -14,11 +14,11 @@ import (
 
 func TestAccResourceArchitectGrammar(t *testing.T) {
 	var (
-		resourceLabel = "grammar" + uuid.NewString()
-		name1         = "Test grammar " + uuid.NewString()
-		description1  = "Test description"
-		name2         = "Test grammar " + uuid.NewString()
-		description2  = "A new description"
+		resourceId   = "grammar" + uuid.NewString()
+		name1        = "Test grammar " + uuid.NewString()
+		description1 = "Test description"
+		name2        = "Test grammar " + uuid.NewString()
+		description2 = "A new description"
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -28,30 +28,30 @@ func TestAccResourceArchitectGrammar(t *testing.T) {
 			{
 				// Create Grammar
 				Config: GenerateGrammarResource(
-					resourceLabel,
+					resourceId,
 					name1,
 					description1,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_architect_grammar."+resourceLabel, "name", name1),
-					resource.TestCheckResourceAttr("genesyscloud_architect_grammar."+resourceLabel, "description", description1),
+					resource.TestCheckResourceAttr("genesyscloud_architect_grammar."+resourceId, "name", name1),
+					resource.TestCheckResourceAttr("genesyscloud_architect_grammar."+resourceId, "description", description1),
 				),
 			},
 			{
 				// Update Grammar
 				Config: GenerateGrammarResource(
-					resourceLabel,
+					resourceId,
 					name2,
 					description2,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_architect_grammar."+resourceLabel, "name", name2),
-					resource.TestCheckResourceAttr("genesyscloud_architect_grammar."+resourceLabel, "description", description2),
+					resource.TestCheckResourceAttr("genesyscloud_architect_grammar."+resourceId, "name", name2),
+					resource.TestCheckResourceAttr("genesyscloud_architect_grammar."+resourceId, "description", description2),
 				),
 			},
 			{
 				// Read
-				ResourceName:      "genesyscloud_architect_grammar." + resourceLabel,
+				ResourceName:      "genesyscloud_architect_grammar." + resourceId,
 				ImportState:       true,
 				ImportStateVerify: true,
 			},

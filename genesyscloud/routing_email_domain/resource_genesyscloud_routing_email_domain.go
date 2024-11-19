@@ -33,7 +33,7 @@ func getAllRoutingEmailDomains(ctx context.Context, clientConfig *platformclient
 	}
 
 	for _, domain := range *domains {
-		resources[*domain.Id] = &resourceExporter.ResourceMeta{BlockLabel: *domain.Id}
+		resources[*domain.Id] = &resourceExporter.ResourceMeta{Name: *domain.Id}
 	}
 	return resources, nil
 }
@@ -163,7 +163,7 @@ func deleteRoutingEmailDomain(ctx context.Context, d *schema.ResourceData, meta 
 }
 
 func GenerateRoutingEmailDomainResource(
-	resourceLabel string,
+	resourceID string,
 	domainID string,
 	subdomain string,
 	fromDomain string) string {
@@ -172,5 +172,5 @@ func GenerateRoutingEmailDomainResource(
 		subdomain = %s
         mail_from_domain = %s
 	}
-	`, resourceLabel, domainID, subdomain, fromDomain)
+	`, resourceID, domainID, subdomain, fromDomain)
 }

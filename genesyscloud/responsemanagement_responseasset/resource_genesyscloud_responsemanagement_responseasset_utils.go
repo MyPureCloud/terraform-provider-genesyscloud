@@ -51,7 +51,7 @@ func responsemanagementResponseassetResolver(responseAssetId, exportDirectory, s
 	return err
 }
 
-func GenerateResponseManagementResponseAssetResource(resourceLabel string, fileName string, divisionId string) string {
+func GenerateResponseManagementResponseAssetResource(resourceId string, fileName string, divisionId string) string {
 	fullyQualifiedPath, _ := testrunner.NormalizePath(fileName)
 	normalizeFilePath, _ := testrunner.NormalizeFileName(fileName)
 
@@ -61,5 +61,5 @@ resource "genesyscloud_responsemanagement_responseasset" "%s" {
     division_id = %s
 	file_content_hash = filesha256("%s")
 }
-`, resourceLabel, normalizeFilePath, divisionId, fullyQualifiedPath)
+`, resourceId, normalizeFilePath, divisionId, fullyQualifiedPath)
 }

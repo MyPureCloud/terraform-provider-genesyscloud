@@ -15,15 +15,15 @@ Test Class for the External Contacts Data Source
 */
 func TestAccDataSourceExternalContacts(t *testing.T) {
 	var (
-		uniqueStr                = uuid.NewString()
-		externalContactDataLabel = "data-externalContact"
-		search                   = "john-" + uniqueStr
+		uniqueStr           = uuid.NewString()
+		externalContactData = "data-externalContact"
+		search              = "john-" + uniqueStr
 
-		externalContactResourceLabel = "resource-externalContact"
-		title                        = "integrator staff"
-		firstname                    = "john-" + uniqueStr
-		middlename                   = "jacques"
-		lastname                     = "dupont"
+		externalContactResource = "resource-externalContact"
+		title                   = "integrator staff"
+		firstname               = "john-" + uniqueStr
+		middlename              = "jacques"
+		lastname                = "dupont"
 
 		phoneDisplay     = "+33 1 00 00 00 01"
 		phoneExtension   = "2"
@@ -64,7 +64,7 @@ func TestAccDataSourceExternalContacts(t *testing.T) {
 			{
 				// Create external contact with an lastname and others property
 				Config: generateFullExternalContactResource(
-					externalContactResourceLabel,
+					externalContactResource,
 					firstname,
 					middlename,
 					lastname,
@@ -94,14 +94,14 @@ func TestAccDataSourceExternalContacts(t *testing.T) {
 					surveyoptout,
 					externalsystemurl,
 				) + generateExternalContactDataSource(
-					externalContactDataLabel,
+					externalContactData,
 					search,
-					"genesyscloud_externalcontacts_contact."+externalContactResourceLabel,
+					"genesyscloud_externalcontacts_contact."+externalContactResource,
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrPair(
-						"data.genesyscloud_externalcontacts_contact."+externalContactDataLabel, "id",
-						"genesyscloud_externalcontacts_contact."+externalContactResourceLabel, "id",
+						"data.genesyscloud_externalcontacts_contact."+externalContactData, "id",
+						"genesyscloud_externalcontacts_contact."+externalContactResource, "id",
 					),
 				),
 			},
@@ -109,10 +109,10 @@ func TestAccDataSourceExternalContacts(t *testing.T) {
 	})
 }
 
-func generateExternalContactDataSource(resourceLabel string, search string, dependsOn string) string {
+func generateExternalContactDataSource(resourceID string, search string, dependsOn string) string {
 	return fmt.Sprintf(`data "genesyscloud_externalcontacts_contact" "%s" {
 		search = "%s"
 		depends_on = [%s]
 	}
-	`, resourceLabel, search, dependsOn)
+	`, resourceID, search, dependsOn)
 }

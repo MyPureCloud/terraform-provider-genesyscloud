@@ -36,7 +36,7 @@ func getAllAuthResponsemanagementLibrarys(ctx context.Context, clientConfig *pla
 	}
 
 	for _, library := range *librarys {
-		resources[*library.Id] = &resourceExporter.ResourceMeta{BlockLabel: *library.Name}
+		resources[*library.Id] = &resourceExporter.ResourceMeta{Name: *library.Name}
 	}
 	return resources, nil
 }

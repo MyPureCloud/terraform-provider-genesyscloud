@@ -12,9 +12,9 @@ import (
 
 func TestAccDataSourceResponseManagementLibrary(t *testing.T) {
 	var (
-		resourceLabel   = "library"
-		dataSourceLabel = "library_data"
-		name            = "Library " + uuid.NewString()
+		resourceId   = "library"
+		dataSourceId = "library_data"
+		name         = "Library " + uuid.NewString()
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -24,17 +24,17 @@ func TestAccDataSourceResponseManagementLibrary(t *testing.T) {
 			{
 				// Search by name
 				Config: GenerateResponseManagementLibraryResource(
-					resourceLabel,
+					resourceId,
 					name,
 				) + generateResponseManagementLibraryDataSource(
-					dataSourceLabel,
+					dataSourceId,
 					name,
-					"genesyscloud_responsemanagement_library."+resourceLabel,
+					"genesyscloud_responsemanagement_library."+resourceId,
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrPair(
-						"data.genesyscloud_responsemanagement_library."+dataSourceLabel, "id",
-						"genesyscloud_responsemanagement_library."+resourceLabel, "id",
+						"data.genesyscloud_responsemanagement_library."+dataSourceId, "id",
+						"genesyscloud_responsemanagement_library."+resourceId, "id",
 					),
 				),
 			},
@@ -43,7 +43,7 @@ func TestAccDataSourceResponseManagementLibrary(t *testing.T) {
 }
 
 func generateResponseManagementLibraryDataSource(
-	dataSourceLabel string,
+	dataSourceId string,
 	name string,
 	dependsOn string) string {
 	return fmt.Sprintf(`
@@ -51,5 +51,5 @@ func generateResponseManagementLibraryDataSource(
 			name = "%s"
 			depends_on = [%s]
 		}
-	`, dataSourceLabel, name, dependsOn)
+	`, dataSourceId, name, dependsOn)
 }

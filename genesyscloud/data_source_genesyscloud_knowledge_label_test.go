@@ -12,15 +12,15 @@ import (
 
 func TestAccDataSourceKnowledgeLabelBasic(t *testing.T) {
 	var (
-		knowledgeBaseResourceLabel1 = "test-knowledgebase1"
-		labelResourceLabel1         = "test-label1"
-		labelName                   = "Terraform Test Label 1-" + uuid.NewString()
-		labelColor                  = "#ffffff"
-		knowledgeBaseName1          = "Terraform Test Knowledge Base 1-" + uuid.NewString()
-		knowledgeBaseDescription1   = "test-knowledgebase-description1"
-		knowledgeBaseCoreLanguage1  = "en-US"
+		knowledgeBaseResource1     = "test-knowledgebase1"
+		labelResource1             = "test-label1"
+		labelName                  = "Terraform Test Label 1-" + uuid.NewString()
+		labelColor                 = "#ffffff"
+		knowledgeBaseName1         = "Terraform Test Knowledge Base 1-" + uuid.NewString()
+		knowledgeBaseDescription1  = "test-knowledgebase-description1"
+		knowledgeBaseCoreLanguage1 = "en-US"
 
-		labelDataSourceLabel = "test-label-ds"
+		labelDataSource = "test-label-ds"
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -30,24 +30,24 @@ func TestAccDataSourceKnowledgeLabelBasic(t *testing.T) {
 			{
 				// Create
 				Config: GenerateKnowledgeKnowledgebaseResource(
-					knowledgeBaseResourceLabel1,
+					knowledgeBaseResource1,
 					knowledgeBaseName1,
 					knowledgeBaseDescription1,
 					knowledgeBaseCoreLanguage1,
 				) + generateKnowledgeLabelResource(
-					labelResourceLabel1,
-					knowledgeBaseResourceLabel1,
+					labelResource1,
+					knowledgeBaseResource1,
 					labelName,
 					labelColor,
 				) + generateKnowledgeLabelDataSource(
-					labelDataSourceLabel,
+					labelDataSource,
 					labelName,
 					knowledgeBaseName1,
-					"genesyscloud_knowledge_label."+labelResourceLabel1,
+					"genesyscloud_knowledge_label."+labelResource1,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair("data.genesyscloud_knowledge_label."+labelDataSourceLabel,
-						"id", "genesyscloud_knowledge_label."+labelResourceLabel1, "id",
+					resource.TestCheckResourceAttrPair("data.genesyscloud_knowledge_label."+labelDataSource,
+						"id", "genesyscloud_knowledge_label."+labelResource1, "id",
 					),
 				),
 			},
@@ -56,7 +56,7 @@ func TestAccDataSourceKnowledgeLabelBasic(t *testing.T) {
 }
 
 func generateKnowledgeLabelDataSource(
-	resourceLabel string,
+	resourceID string,
 	name string,
 	knowledgeBaseName string,
 	// Must explicitly use depends_on in terraform v0.13 when a data source references a resource
@@ -68,5 +68,5 @@ func generateKnowledgeLabelDataSource(
 		knowledge_base_name = "%s"
         depends_on=[%s]
 	}
-	`, resourceLabel, name, knowledgeBaseName, dependsOn)
+	`, resourceID, name, knowledgeBaseName, dependsOn)
 }

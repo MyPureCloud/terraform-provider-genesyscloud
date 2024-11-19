@@ -45,12 +45,12 @@ tests for integration_custom_auth_actions.
 func TestAccResourceIntegrationCustomAuthAction(t *testing.T) {
 	var (
 		// Integration Credentials
-		credentialResourceLabel1 = "test_integration_credential_1"
+		credentialResource1      = "test_integration_credential_1"
 		credentialResourceName   = "Terraform Cred-" + uuid.NewString()
 		credKey1                 = "loginUrl"
 		credVal1                 = "https://www.test-login.com"
 		credentialResourceConfig = integrationCred.GenerateCredentialResource(
-			credentialResourceLabel1,
+			credentialResource1,
 			strconv.Quote(credentialResourceName),
 			strconv.Quote(customAuthCredentialType),
 			integrationCred.GenerateCredentialFields(
@@ -61,26 +61,26 @@ func TestAccResourceIntegrationCustomAuthAction(t *testing.T) {
 		)
 
 		// Web Services Data Action Integration
-		integResourceLabel1       = "test_integration1"
+		integResource1            = "test_integration1"
 		integResourceName1        = "Terraform Integration-" + uuid.NewString()
 		integTypeID               = "custom-rest-actions"
 		integrationResourceConfig = integration.GenerateIntegrationResource(
-			integResourceLabel1,
+			integResource1,
 			util.NullValue,
 			strconv.Quote(integTypeID),
 			integration.GenerateIntegrationConfig(
 				strconv.Quote(integResourceName1),
 				util.NullValue, // no notes
-				fmt.Sprintf("basicAuth = genesyscloud_integration_credential.%s.id", credentialResourceLabel1),
+				fmt.Sprintf("basicAuth = genesyscloud_integration_credential.%s.id", credentialResource1),
 				util.NullValue, // no properties
 				util.NullValue, // no advanced properties
 			),
 		)
 
 		// Custom auth action resource def
-		actionResourceLabel1 = "test-auth-action-1"
-		requestTemplate1     = "$${input.rawRequest}"
-		responseTemplate1    = "{ \\\"name\\\": $${nameValue}, \\\"build\\\": $${buildNumber} }"
+		actionResource1   = "test-auth-action-1"
+		requestTemplate1  = "$${input.rawRequest}"
+		responseTemplate1 = "{ \\\"name\\\": $${nameValue}, \\\"build\\\": $${buildNumber} }"
 
 		headerKey1 = "Cache-Control"
 		headerVal1 = "no-cache"
@@ -104,7 +104,7 @@ func TestAccResourceIntegrationCustomAuthAction(t *testing.T) {
 		}
 
 		oauthActionResource = customAuthActionResource{
-			integrationId: "genesyscloud_integration." + integResourceLabel1 + ".id",
+			integrationId: "genesyscloud_integration." + integResource1 + ".id",
 			configRequest: &customAuthActionResourceConfigRequest{
 				requestUrlTemplate: "https://www.whatever.com/",
 				requestType:        "POST",
@@ -120,7 +120,7 @@ func TestAccResourceIntegrationCustomAuthAction(t *testing.T) {
 
 		oauthActionResource2 = customAuthActionResource{
 			name:          "Terraform Action1-" + uuid.NewString(),
-			integrationId: "genesyscloud_integration." + integResourceLabel1 + ".id",
+			integrationId: "genesyscloud_integration." + integResource1 + ".id",
 			configRequest: &customAuthActionResourceConfigRequest{
 				requestUrlTemplate: "https://www.whatever2.com/",
 				requestType:        "POST",
@@ -134,11 +134,11 @@ func TestAccResourceIntegrationCustomAuthAction(t *testing.T) {
 
 	config := credentialResourceConfig +
 		integrationResourceConfig +
-		generateIntegrationCustomAuthActionResource(actionResourceLabel1, &oauthActionResource)
+		generateIntegrationCustomAuthActionResource(actionResource1, &oauthActionResource)
 
 	config2 := credentialResourceConfig +
 		integrationResourceConfig +
-		generateIntegrationCustomAuthActionResource(actionResourceLabel1, &oauthActionResource2)
+		generateIntegrationCustomAuthActionResource(actionResource1, &oauthActionResource2)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
@@ -148,39 +148,39 @@ func TestAccResourceIntegrationCustomAuthAction(t *testing.T) {
 				// Modify the custom auth action of the integration
 				Config: config,
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair("genesyscloud_integration_custom_auth_action."+actionResourceLabel1, "integration_id", "genesyscloud_integration."+integResourceLabel1, "id"),
+					resource.TestCheckResourceAttrPair("genesyscloud_integration_custom_auth_action."+actionResource1, "integration_id", "genesyscloud_integration."+integResource1, "id"),
 
-					resource.TestCheckResourceAttr("genesyscloud_integration_custom_auth_action."+actionResourceLabel1, "config_request.0.request_url_template", oauthActionResource.configRequest.requestUrlTemplate),
-					resource.TestCheckResourceAttr("genesyscloud_integration_custom_auth_action."+actionResourceLabel1, "config_request.0.request_type", oauthActionResource.configRequest.requestType),
-					resource.TestCheckResourceAttr("genesyscloud_integration_custom_auth_action."+actionResourceLabel1, "config_request.0.request_template", strings.ReplaceAll(requestTemplate1, "$${", "${")),
-					resource.TestCheckResourceAttr("genesyscloud_integration_custom_auth_action."+actionResourceLabel1, "config_request.0.headers."+headerKey1, headerVal1),
+					resource.TestCheckResourceAttr("genesyscloud_integration_custom_auth_action."+actionResource1, "config_request.0.request_url_template", oauthActionResource.configRequest.requestUrlTemplate),
+					resource.TestCheckResourceAttr("genesyscloud_integration_custom_auth_action."+actionResource1, "config_request.0.request_type", oauthActionResource.configRequest.requestType),
+					resource.TestCheckResourceAttr("genesyscloud_integration_custom_auth_action."+actionResource1, "config_request.0.request_template", strings.ReplaceAll(requestTemplate1, "$${", "${")),
+					resource.TestCheckResourceAttr("genesyscloud_integration_custom_auth_action."+actionResource1, "config_request.0.headers."+headerKey1, headerVal1),
 
-					resource.TestCheckResourceAttr("genesyscloud_integration_custom_auth_action."+actionResourceLabel1, "config_response.0.success_template", strings.ReplaceAll(responseTemplate1, "$${", "${")),
-					resource.TestCheckResourceAttr("genesyscloud_integration_custom_auth_action."+actionResourceLabel1, "config_response.0.translation_map."+translationMapKey1, translationMapVal1),
-					resource.TestCheckResourceAttr("genesyscloud_integration_custom_auth_action."+actionResourceLabel1, "config_response.0.translation_map."+translationMapKey2, translationMapVal2),
-					resource.TestCheckResourceAttr("genesyscloud_integration_custom_auth_action."+actionResourceLabel1, "config_response.0.translation_map_defaults."+translationMapDefKey1, translationMapDefVal1),
+					resource.TestCheckResourceAttr("genesyscloud_integration_custom_auth_action."+actionResource1, "config_response.0.success_template", strings.ReplaceAll(responseTemplate1, "$${", "${")),
+					resource.TestCheckResourceAttr("genesyscloud_integration_custom_auth_action."+actionResource1, "config_response.0.translation_map."+translationMapKey1, translationMapVal1),
+					resource.TestCheckResourceAttr("genesyscloud_integration_custom_auth_action."+actionResource1, "config_response.0.translation_map."+translationMapKey2, translationMapVal2),
+					resource.TestCheckResourceAttr("genesyscloud_integration_custom_auth_action."+actionResource1, "config_response.0.translation_map_defaults."+translationMapDefKey1, translationMapDefVal1),
 				),
 			},
 			{
 				// Change and delete some properties
 				Config: config2,
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_integration_custom_auth_action."+actionResourceLabel1, "name", oauthActionResource2.name),
-					resource.TestCheckResourceAttrPair("genesyscloud_integration_custom_auth_action."+actionResourceLabel1, "integration_id", "genesyscloud_integration."+integResourceLabel1, "id"),
+					resource.TestCheckResourceAttr("genesyscloud_integration_custom_auth_action."+actionResource1, "name", oauthActionResource2.name),
+					resource.TestCheckResourceAttrPair("genesyscloud_integration_custom_auth_action."+actionResource1, "integration_id", "genesyscloud_integration."+integResource1, "id"),
 
-					resource.TestCheckResourceAttr("genesyscloud_integration_custom_auth_action."+actionResourceLabel1, "config_request.0.request_url_template", oauthActionResource2.configRequest.requestUrlTemplate),
-					resource.TestCheckResourceAttr("genesyscloud_integration_custom_auth_action."+actionResourceLabel1, "config_request.0.request_type", oauthActionResource2.configRequest.requestType),
-					resource.TestCheckResourceAttr("genesyscloud_integration_custom_auth_action."+actionResourceLabel1, "config_request.0.request_template", strings.ReplaceAll(requestTemplate1, "$${", "${")),
-					resource.TestCheckNoResourceAttr("genesyscloud_integration_custom_auth_action."+actionResourceLabel1, "config_request.0.headers.%"),
+					resource.TestCheckResourceAttr("genesyscloud_integration_custom_auth_action."+actionResource1, "config_request.0.request_url_template", oauthActionResource2.configRequest.requestUrlTemplate),
+					resource.TestCheckResourceAttr("genesyscloud_integration_custom_auth_action."+actionResource1, "config_request.0.request_type", oauthActionResource2.configRequest.requestType),
+					resource.TestCheckResourceAttr("genesyscloud_integration_custom_auth_action."+actionResource1, "config_request.0.request_template", strings.ReplaceAll(requestTemplate1, "$${", "${")),
+					resource.TestCheckNoResourceAttr("genesyscloud_integration_custom_auth_action."+actionResource1, "config_request.0.headers.%"),
 
-					resource.TestCheckResourceAttr("genesyscloud_integration_custom_auth_action."+actionResourceLabel1, "config_response.0.success_template", strings.ReplaceAll(responseTemplate1, "$${", "${")),
-					resource.TestCheckNoResourceAttr("genesyscloud_integration_custom_auth_action."+actionResourceLabel1, "config_response.0.translation_map.%"),
-					resource.TestCheckNoResourceAttr("genesyscloud_integration_custom_auth_action."+actionResourceLabel1, "config_response.0.translation_map_defaults.%"),
+					resource.TestCheckResourceAttr("genesyscloud_integration_custom_auth_action."+actionResource1, "config_response.0.success_template", strings.ReplaceAll(responseTemplate1, "$${", "${")),
+					resource.TestCheckNoResourceAttr("genesyscloud_integration_custom_auth_action."+actionResource1, "config_response.0.translation_map.%"),
+					resource.TestCheckNoResourceAttr("genesyscloud_integration_custom_auth_action."+actionResource1, "config_response.0.translation_map_defaults.%"),
 				),
 			},
 			{
 				// Import/Read
-				ResourceName:      "genesyscloud_integration_custom_auth_action." + actionResourceLabel1,
+				ResourceName:      "genesyscloud_integration_custom_auth_action." + actionResource1,
 				ImportState:       true,
 				ImportStateVerify: true,
 				Check: resource.ComposeTestCheckFunc(
@@ -195,7 +195,7 @@ func TestAccResourceIntegrationCustomAuthAction(t *testing.T) {
 	})
 }
 
-func generateIntegrationCustomAuthActionResource(resourceLabel string, res *customAuthActionResource) string {
+func generateIntegrationCustomAuthActionResource(resourceID string, res *customAuthActionResource) string {
 	name := ""
 	if res.name != "" {
 		name = fmt.Sprintf("name = %s", strconv.Quote(res.name))
@@ -207,7 +207,7 @@ func generateIntegrationCustomAuthActionResource(resourceLabel string, res *cust
         %s
 		%s
 	}
-	`, resourceLabel, res.integrationId, name,
+	`, resourceID, res.integrationId, name,
 		generateIntegrationActionConfigRequest(res.configRequest),
 		generateIntegrationActionConfigResponse(res.configResponse))
 }

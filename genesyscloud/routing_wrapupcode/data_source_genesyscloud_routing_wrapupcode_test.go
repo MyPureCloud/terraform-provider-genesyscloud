@@ -13,11 +13,11 @@ import (
 
 func TestAccDataSourceWrapupcode(t *testing.T) {
 	var (
-		codeResourceLabel = "routing-wrapupcode"
-		codeDataLabel     = "codeData"
-		codeName          = "Terraform Code-" + uuid.NewString()
-		divResourceLabel  = "test-division"
-		divName           = "terraform-" + uuid.NewString()
+		codeRes     = "routing-wrapupcode"
+		codeData    = "codeData"
+		codeName    = "Terraform Code-" + uuid.NewString()
+		divResource = "test-division"
+		divName     = "terraform-" + uuid.NewString()
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -25,26 +25,26 @@ func TestAccDataSourceWrapupcode(t *testing.T) {
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
-				Config: authDivision.GenerateAuthDivisionBasic(divResourceLabel, divName) + GenerateRoutingWrapupcodeResource(
-					codeResourceLabel,
+				Config: authDivision.GenerateAuthDivisionBasic(divResource, divName) + GenerateRoutingWrapupcodeResource(
+					codeRes,
 					codeName,
-					"genesyscloud_auth_division."+divResourceLabel+".id",
+					"genesyscloud_auth_division."+divResource+".id",
 				) + generateRoutingWrapupcodeDataSource(
-					codeDataLabel,
+					codeData,
 					codeName,
-					resourceName+"."+codeResourceLabel),
+					resourceName+"."+codeRes),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair("data."+resourceName+"."+codeDataLabel, "id", resourceName+"."+codeResourceLabel, "id"),
+					resource.TestCheckResourceAttrPair("data."+resourceName+"."+codeData, "id", resourceName+"."+codeRes, "id"),
 				),
 			},
 		},
 	})
 }
 
-func generateRoutingWrapupcodeDataSource(resourceLabel string, name string, dependsOnResource string) string {
+func generateRoutingWrapupcodeDataSource(resourceID string, name string, dependsOnResource string) string {
 	return fmt.Sprintf(`data "%s" "%s" {
 		name = "%s"
 		depends_on=[%s]
 	}
-	`, resourceName, resourceLabel, name, dependsOnResource)
+	`, resourceName, resourceID, name, dependsOnResource)
 }

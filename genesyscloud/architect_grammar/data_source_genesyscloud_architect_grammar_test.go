@@ -12,10 +12,10 @@ import (
 
 func TestAccDataSourceArchitectGrammar(t *testing.T) {
 	var (
-		grammarResourceLabel = "grammar-resource"
-		grammarDataLabel     = "grammar-data"
-		name                 = "GrammarArchitect" + uuid.NewString()
-		description          = "Sample description"
+		grammarResource = "grammar-resource"
+		grammarData     = "grammar-data"
+		name            = "GrammarArchitect" + uuid.NewString()
+		description     = "Sample description"
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -24,16 +24,16 @@ func TestAccDataSourceArchitectGrammar(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config: GenerateGrammarResource(
-					grammarResourceLabel,
+					grammarResource,
 					name,
 					description,
 				) + generateGrammarDataSource(
-					grammarDataLabel,
+					grammarData,
 					name,
-					"genesyscloud_architect_grammar."+grammarResourceLabel,
+					"genesyscloud_architect_grammar."+grammarResource,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair("data.genesyscloud_architect_grammar."+grammarDataLabel, "id", "genesyscloud_architect_grammar."+grammarResourceLabel, "id"),
+					resource.TestCheckResourceAttrPair("data.genesyscloud_architect_grammar."+grammarData, "id", "genesyscloud_architect_grammar."+grammarResource, "id"),
 				),
 			},
 		},
@@ -41,12 +41,12 @@ func TestAccDataSourceArchitectGrammar(t *testing.T) {
 }
 
 func generateGrammarDataSource(
-	resourceLabel string,
+	resourceID string,
 	name string,
 	dependsOnResource string) string {
 	return fmt.Sprintf(`data "genesyscloud_architect_grammar" "%s" {
 		name = "%s"
 		depends_on=[%s]
 	}
-	`, resourceLabel, name, dependsOnResource)
+	`, resourceID, name, dependsOnResource)
 }

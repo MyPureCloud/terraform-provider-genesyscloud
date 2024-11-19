@@ -24,7 +24,7 @@ func getOutboundSequenceFromResourceData(d *schema.ResourceData) platformclientv
 }
 
 func GenerateOutboundSequence(
-	resourceLabel string,
+	resourceId string,
 	name string,
 	campaignIds []string,
 	status string,
@@ -36,5 +36,5 @@ func GenerateOutboundSequence(
 			status = %s
 			repeat = %s
 		}
-	`, resourceLabel, name, strings.Join(campaignIds, ", "), status, repeat)
+	`, resourceId, name, strings.Join(campaignIds, ", "), status, repeat)
 }

@@ -31,7 +31,7 @@ func GetAllRoutingSkills(ctx context.Context, clientConfig *platformclientv2.Con
 
 	for _, skill := range *skills {
 		if skill.State != nil && *skill.State != "deleted" {
-			resources[*skill.Id] = &resourceExporter.ResourceMeta{BlockLabel: *skill.Name}
+			resources[*skill.Id] = &resourceExporter.ResourceMeta{Name: *skill.Name}
 		}
 	}
 
@@ -113,10 +113,10 @@ func deleteRoutingSkill(ctx context.Context, d *schema.ResourceData, meta interf
 }
 
 func GenerateRoutingSkillResource(
-	resourceLabel string,
+	resourceID string,
 	name string) string {
 	return fmt.Sprintf(`resource "genesyscloud_routing_skill" "%s" {
 		name = "%s"
 	}
-	`, resourceLabel, name)
+	`, resourceID, name)
 }

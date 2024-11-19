@@ -37,10 +37,10 @@ import (
 // 	})
 // }
 
-func generateFlowOutcomeDataSource(resourceLabel string, name string, dependsOnResource string) string {
+func generateFlowOutcomeDataSource(resourceID string, name string, dependsOnResource string) string {
 	return fmt.Sprintf(`data "genesyscloud_flow_outcome" "%s" {
 		name = "%s"
 		depends_on=[%s]
 	}
-	`, resourceLabel, name, dependsOnResource)
+	`, resourceID, name, dependsOnResource)
 }

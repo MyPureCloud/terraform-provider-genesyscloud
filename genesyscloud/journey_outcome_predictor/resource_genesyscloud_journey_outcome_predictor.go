@@ -35,7 +35,7 @@ func getAllAuthJourneyOutcomePredictors(ctx context.Context, clientConfig *platf
 	}
 
 	for _, predictor := range *predictors {
-		resources[*predictor.Id] = &resourceExporter.ResourceMeta{BlockLabel: *predictor.Id}
+		resources[*predictor.Id] = &resourceExporter.ResourceMeta{Name: *predictor.Id}
 	}
 
 	return resources, nil

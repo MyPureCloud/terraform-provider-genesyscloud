@@ -17,31 +17,31 @@ Test Class for the task management workbin Data Source
 func TestAccDataSourceTaskManagementWorkbin(t *testing.T) {
 	t.Parallel()
 	var (
-		workbinResourceLabel = "workbin_1"
-		workbinName          = "tf_workbin_" + uuid.NewString()
-		workDescription      = "created for CX as Code test case"
+		workbinResId    = "workbin_1"
+		workbinName     = "tf_workbin_" + uuid.NewString()
+		workDescription = "created for CX as Code test case"
 
-		workbinDataSourceLabel = "workbin_data_source_1"
+		workbinDataSourceId = "workbin_data_source_1"
 	)
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
-				Config: GenerateWorkbinResource(workbinResourceLabel, workbinName, workDescription, nullValue) +
-					generateWorkbinDataSource(workbinDataSourceLabel, workbinName, resourceName+"."+workbinResourceLabel),
+				Config: GenerateWorkbinResource(workbinResId, workbinName, workDescription, nullValue) +
+					generateWorkbinDataSource(workbinDataSourceId, workbinName, resourceName+"."+workbinResId),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair("data."+resourceName+"."+workbinDataSourceLabel, "id", resourceName+"."+workbinResourceLabel, "id"),
+					resource.TestCheckResourceAttrPair("data."+resourceName+"."+workbinDataSourceId, "id", resourceName+"."+workbinResId, "id"),
 				),
 			},
 		},
 	})
 }
 
-func generateWorkbinDataSource(dataSourceLabel string, name string, dependsOnResource string) string {
+func generateWorkbinDataSource(dataSourceId string, name string, dependsOnResource string) string {
 	return fmt.Sprintf(`data "%s" "%s" {
 		name = "%s"
 		depends_on=[%s]
 	}
-	`, resourceName, dataSourceLabel, name, dependsOnResource)
+	`, resourceName, dataSourceId, name, dependsOnResource)
 }

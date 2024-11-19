@@ -33,7 +33,7 @@ func getAllAuthArchitectSchedulegroups(ctx context.Context, clientConfig *platfo
 	}
 
 	for _, scheduleGroup := range *scheduleGroups {
-		resources[*scheduleGroup.Id] = &resourceExporter.ResourceMeta{BlockLabel: *scheduleGroup.Name}
+		resources[*scheduleGroup.Id] = &resourceExporter.ResourceMeta{Name: *scheduleGroup.Name}
 	}
 
 	return resources, nil

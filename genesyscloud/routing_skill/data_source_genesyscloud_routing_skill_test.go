@@ -16,9 +16,9 @@ import (
 
 func TestAccDataSourceRoutingSkill(t *testing.T) {
 	var (
-		skillResourceLabel   = "routing-skill"
-		skillDataSourceLabel = "routing-skill-data"
-		skillName            = "Terraform Skill-" + uuid.NewString()
+		skillResource   = "routing-skill"
+		skillDataSource = "routing-skill-data"
+		skillName       = "Terraform Skill-" + uuid.NewString()
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -27,7 +27,7 @@ func TestAccDataSourceRoutingSkill(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config: GenerateRoutingSkillResource(
-					skillResourceLabel,
+					skillResource,
 					skillName,
 				),
 				Check: resource.ComposeTestCheckFunc(
@@ -36,11 +36,11 @@ func TestAccDataSourceRoutingSkill(t *testing.T) {
 			},
 			{
 				Config: GenerateRoutingSkillResource(
-					skillResourceLabel,
+					skillResource,
 					skillName,
-				) + generateRoutingSkillDataSource(skillDataSourceLabel, "genesyscloud_routing_skill."+skillResourceLabel+".name", "genesyscloud_routing_skill."+skillResourceLabel),
+				) + generateRoutingSkillDataSource(skillDataSource, "genesyscloud_routing_skill."+skillResource+".name", "genesyscloud_routing_skill."+skillResource),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair("data.genesyscloud_routing_skill."+skillDataSourceLabel, "id", "genesyscloud_routing_skill."+skillResourceLabel, "id"),
+					resource.TestCheckResourceAttrPair("data.genesyscloud_routing_skill."+skillDataSource, "id", "genesyscloud_routing_skill."+skillResource, "id"),
 				),
 			},
 		},
@@ -56,7 +56,7 @@ func waitSeconds(duration time.Duration) resource.TestCheckFunc {
 }
 
 func generateRoutingSkillDataSource(
-	resourceLabel string,
+	resourceID string,
 	name string,
 	// Must explicitly use depends_on in terraform v0.13 when a data source references a resource
 	// Fixed in v0.14 https://github.com/hashicorp/terraform/pull/26284
@@ -65,5 +65,5 @@ func generateRoutingSkillDataSource(
 		name = %s
         depends_on=[%s]
 	}
-	`, resourceLabel, name, dependsOnResource)
+	`, resourceID, name, dependsOnResource)
 }

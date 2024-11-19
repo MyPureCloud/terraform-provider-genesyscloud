@@ -31,7 +31,7 @@ func getAllAuthDivisions(ctx context.Context, clientConfig *platformclientv2.Con
 	}
 
 	for _, division := range *divisions {
-		resources[*division.Id] = &resourceExporter.ResourceMeta{BlockLabel: *division.Name}
+		resources[*division.Id] = &resourceExporter.ResourceMeta{Name: *division.Name}
 	}
 
 	return resources, nil
@@ -157,12 +157,12 @@ func deleteAuthDivision(ctx context.Context, d *schema.ResourceData, meta interf
 	})
 }
 
-func GenerateAuthDivisionBasic(resourceLabel string, name string) string {
-	return GenerateAuthDivisionResource(resourceLabel, name, util.NullValue, util.FalseValue)
+func GenerateAuthDivisionBasic(resourceID string, name string) string {
+	return GenerateAuthDivisionResource(resourceID, name, util.NullValue, util.FalseValue)
 }
 
 func GenerateAuthDivisionResource(
-	resourceLabel string,
+	resourceID string,
 	name string,
 	description string,
 	home string) string {
@@ -171,5 +171,5 @@ func GenerateAuthDivisionResource(
 		description = %s
 		home = %s
 	}
-	`, resourceLabel, name, description, home)
+	`, resourceID, name, description, home)
 }

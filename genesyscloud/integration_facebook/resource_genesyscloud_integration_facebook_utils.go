@@ -37,7 +37,7 @@ func getIntegrationFacebookFromResourceData(d *schema.ResourceData) platformclie
 }
 
 func generateFacebookIntegrationResource(
-	resourceLabel string,
+	resourceId string,
 	name string,
 	supportedContentId string,
 	messagingSettingId string,
@@ -57,5 +57,5 @@ func generateFacebookIntegrationResource(
 		app_id = "%s"
 		app_secret = "%s"
 	}
-	`, resourceLabel, name, supportedContentId, messagingSettingId, pageAccessToken, userAccessToken, pageId, appId, appSecret)
+	`, resourceId, name, supportedContentId, messagingSettingId, pageAccessToken, userAccessToken, pageId, appId, appSecret)
 }

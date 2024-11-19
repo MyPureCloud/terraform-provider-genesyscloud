@@ -35,7 +35,7 @@ func getAllRoutingLanguages(ctx context.Context, clientConfig *platformclientv2.
 
 	for _, language := range *languages {
 		if language.State != nil && *language.State != "deleted" {
-			resources[*language.Id] = &resourceExporter.ResourceMeta{BlockLabel: *language.Name}
+			resources[*language.Id] = &resourceExporter.ResourceMeta{Name: *language.Name}
 		}
 	}
 	return resources, nil

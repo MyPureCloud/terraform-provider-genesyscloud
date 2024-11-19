@@ -18,11 +18,11 @@ Test Class for the supported content Data Source
 func TestAccDataSourceSupportedContent(t *testing.T) {
 	t.Parallel()
 	var (
-		resourceLabel   = "testSupportedContent"
-		dataSourceLabel = "testSupportedContent_data"
-		name            = "Terraform Supported Content - " + uuid.NewString()
-		inboundType     = "*/*"
-		outboundType    = "image/*"
+		resourceId   = "testSupportedContent"
+		dataSourceId = "testSupportedContent_data"
+		name         = "Terraform Supported Content - " + uuid.NewString()
+		inboundType  = "*/*"
+		outboundType = "image/*"
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -32,18 +32,18 @@ func TestAccDataSourceSupportedContent(t *testing.T) {
 			{
 				Config: GenerateSupportedContentResource(
 					resourceName,
-					resourceLabel,
+					resourceId,
 					name,
 					GenerateInboundTypeBlock(inboundType),
 					GenerateOutboundTypeBlock(outboundType),
 				) +
 					GenerateDataSourceForSupportedContent(
 						resourceName,
-						dataSourceLabel,
+						dataSourceId,
 						name,
-						"genesyscloud_conversations_messaging_supportedcontent."+resourceLabel),
+						"genesyscloud_conversations_messaging_supportedcontent."+resourceId),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair("data.genesyscloud_conversations_messaging_supportedcontent."+dataSourceLabel, "id", "genesyscloud_conversations_messaging_supportedcontent."+resourceLabel, "id"),
+					resource.TestCheckResourceAttrPair("data.genesyscloud_conversations_messaging_supportedcontent."+dataSourceId, "id", "genesyscloud_conversations_messaging_supportedcontent."+resourceId, "id"),
 				),
 			},
 		},
@@ -52,7 +52,7 @@ func TestAccDataSourceSupportedContent(t *testing.T) {
 
 func GenerateDataSourceForSupportedContent(
 	resourceName string,
-	resourceLabel string,
+	resourceId string,
 	name string,
 	dependsOn string,
 ) string {
@@ -61,5 +61,5 @@ func GenerateDataSourceForSupportedContent(
 		name = "%s"
 		depends_on = [%s]
 	}
-	`, resourceName, resourceLabel, name, dependsOn)
+	`, resourceName, resourceId, name, dependsOn)
 }

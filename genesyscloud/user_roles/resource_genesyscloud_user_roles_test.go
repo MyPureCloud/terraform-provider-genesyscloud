@@ -21,19 +21,19 @@ import (
 func TestAccResourceUserRolesMembership(t *testing.T) {
 	t.Parallel()
 	var (
-		empRoleDataSourceLabel = "employee-role"
-		empRoleName            = "employee"
-		userRoleResourceLabel  = "test-user-roles2"
-		userResourceLabel1     = "test-user"
-		email1                 = "terraform-" + uuid.NewString() + "@example.com"
-		userName1              = "Role Terraform"
-		roleResourceLabel1     = "test-role-1"
-		roleResourceLabel2     = "test-role-2"
-		roleName1              = "Terraform User Role Test1" + uuid.NewString()
-		roleName2              = "Terraform User Role Test2" + uuid.NewString()
-		roleDesc               = "Terraform user roles test"
-		divResourceLabel       = "test-division"
-		divName                = "terraform-" + uuid.NewString()
+		empRoleDataSrc   = "employee-role"
+		empRoleName      = "employee"
+		userRoleResource = "test-user-roles2"
+		userResource1    = "test-user"
+		email1           = "terraform-" + uuid.NewString() + "@example.com"
+		userName1        = "Role Terraform"
+		roleResource1    = "test-role-1"
+		roleResource2    = "test-role-2"
+		roleName1        = "Terraform User Role Test1" + uuid.NewString()
+		roleName2        = "Terraform User Role Test2" + uuid.NewString()
+		roleDesc         = "Terraform user roles test"
+		divResource      = "test-division"
+		divName          = "terraform-" + uuid.NewString()
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -44,94 +44,94 @@ func TestAccResourceUserRolesMembership(t *testing.T) {
 				// Create user with 1 role in default division
 				// Also add employee role reference as new user's automatically get this role
 				Config: "data \"genesyscloud_auth_division_home\" \"home\" {}\n" + user.GenerateBasicUserResource(
-					userResourceLabel1,
+					userResource1,
 					email1,
 					userName1,
 				) + authRole.GenerateAuthRoleResource(
-					roleResourceLabel1,
+					roleResource1,
 					roleName1,
 					roleDesc,
 				) + GenerateUserRoles(
-					userRoleResourceLabel,
-					userResourceLabel1,
-					generateResourceRoles("genesyscloud_auth_role."+roleResourceLabel1+".id", "data.genesyscloud_auth_division_home.home.id"),
-					generateResourceRoles("data.genesyscloud_auth_role."+empRoleDataSourceLabel+".id"),
+					userRoleResource,
+					userResource1,
+					generateResourceRoles("genesyscloud_auth_role."+roleResource1+".id", "data.genesyscloud_auth_division_home.home.id"),
+					generateResourceRoles("data.genesyscloud_auth_role."+empRoleDataSrc+".id"),
 				) + authRole.GenerateDefaultAuthRoleDataSource(
-					empRoleDataSourceLabel,
+					empRoleDataSrc,
 					strconv.Quote(empRoleName),
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_user_roles."+userRoleResourceLabel, "roles.0.division_ids.#", "1"),
-					resource.TestCheckResourceAttrPair("genesyscloud_user_roles."+userRoleResourceLabel, "roles.0.division_ids.0",
+					resource.TestCheckResourceAttr("genesyscloud_user_roles."+userRoleResource, "roles.0.division_ids.#", "1"),
+					resource.TestCheckResourceAttrPair("genesyscloud_user_roles."+userRoleResource, "roles.0.division_ids.0",
 						"data.genesyscloud_auth_division_home.home", "id"),
-					resource.TestCheckResourceAttr("genesyscloud_user_roles."+userRoleResourceLabel, "roles.1.division_ids.#", "0"),
-					validateResourceRole("genesyscloud_user_roles."+userRoleResourceLabel, "genesyscloud_auth_role."+roleResourceLabel1),
+					resource.TestCheckResourceAttr("genesyscloud_user_roles."+userRoleResource, "roles.1.division_ids.#", "0"),
+					validateResourceRole("genesyscloud_user_roles."+userRoleResource, "genesyscloud_auth_role."+roleResource1),
 				),
 			},
 			{
 				// Create another role and division and add to the user
 				Config: "data \"genesyscloud_auth_division_home\" \"home\" {}\n" + user.GenerateBasicUserResource(
-					userResourceLabel1,
+					userResource1,
 					email1,
 					userName1,
 				) + authRole.GenerateAuthRoleResource(
-					roleResourceLabel1,
+					roleResource1,
 					roleName1,
 					roleDesc,
 				) + authRole.GenerateAuthRoleResource(
-					roleResourceLabel2,
+					roleResource2,
 					roleName2,
 					roleDesc,
 				) + GenerateUserRoles(
-					userRoleResourceLabel,
-					userResourceLabel1,
-					generateResourceRoles("genesyscloud_auth_role."+roleResourceLabel1+".id"),
-					generateResourceRoles("genesyscloud_auth_role."+roleResourceLabel2+".id",
-						"genesyscloud_auth_division."+divResourceLabel+".id", "data.genesyscloud_auth_division_home.home.id"),
-				) + authDivision.GenerateAuthDivisionBasic(divResourceLabel, divName),
+					userRoleResource,
+					userResource1,
+					generateResourceRoles("genesyscloud_auth_role."+roleResource1+".id"),
+					generateResourceRoles("genesyscloud_auth_role."+roleResource2+".id",
+						"genesyscloud_auth_division."+divResource+".id", "data.genesyscloud_auth_division_home.home.id"),
+				) + authDivision.GenerateAuthDivisionBasic(divResource, divName),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_user_roles."+userRoleResourceLabel, "roles.1.division_ids.#", "0"),
-					resource.TestCheckResourceAttr("genesyscloud_user_roles."+userRoleResourceLabel, "roles.0.division_ids.#", "2"),
-					validateResourceRole("genesyscloud_user_roles."+userRoleResourceLabel, "genesyscloud_auth_role."+roleResourceLabel1),
-					validateResourceRole("genesyscloud_user_roles."+userRoleResourceLabel, "genesyscloud_auth_role."+roleResourceLabel2,
-						"genesyscloud_auth_division."+divResourceLabel, "data.genesyscloud_auth_division_home.home"),
+					resource.TestCheckResourceAttr("genesyscloud_user_roles."+userRoleResource, "roles.1.division_ids.#", "0"),
+					resource.TestCheckResourceAttr("genesyscloud_user_roles."+userRoleResource, "roles.0.division_ids.#", "2"),
+					validateResourceRole("genesyscloud_user_roles."+userRoleResource, "genesyscloud_auth_role."+roleResource1),
+					validateResourceRole("genesyscloud_user_roles."+userRoleResource, "genesyscloud_auth_role."+roleResource2,
+						"genesyscloud_auth_division."+divResource, "data.genesyscloud_auth_division_home.home"),
 				),
 			},
 			{
 				// Remove a role from the user and modify division
 				Config: user.GenerateBasicUserResource(
-					userResourceLabel1,
+					userResource1,
 					email1,
 					userName1,
 				) + authRole.GenerateAuthRoleResource(
-					roleResourceLabel1,
+					roleResource1,
 					roleName1,
 					roleDesc,
 				) + GenerateUserRoles(
-					userRoleResourceLabel,
-					userResourceLabel1,
-					generateResourceRoles("genesyscloud_auth_role."+roleResourceLabel1+".id", "genesyscloud_auth_division."+divResourceLabel+".id"),
-				) + authDivision.GenerateAuthDivisionBasic(divResourceLabel, divName),
+					userRoleResource,
+					userResource1,
+					generateResourceRoles("genesyscloud_auth_role."+roleResource1+".id", "genesyscloud_auth_division."+divResource+".id"),
+				) + authDivision.GenerateAuthDivisionBasic(divResource, divName),
 				Check: resource.ComposeTestCheckFunc(
-					validateResourceRole("genesyscloud_user_roles."+userRoleResourceLabel, "genesyscloud_auth_role."+roleResourceLabel1, "genesyscloud_auth_division."+divResourceLabel),
+					validateResourceRole("genesyscloud_user_roles."+userRoleResource, "genesyscloud_auth_role."+roleResource1, "genesyscloud_auth_division."+divResource),
 				),
 			},
 			{
 				// Remove all roles from the user
 				Config: user.GenerateBasicUserResource(
-					userResourceLabel1,
+					userResource1,
 					email1,
 					userName1,
 				) + authRole.GenerateAuthRoleResource(
-					roleResourceLabel1,
+					roleResource1,
 					roleName1,
 					roleDesc,
 				) + GenerateUserRoles(
-					userRoleResourceLabel,
-					userResourceLabel1,
-				) + authDivision.GenerateAuthDivisionBasic(divResourceLabel, divName),
+					userRoleResource,
+					userResource1,
+				) + authDivision.GenerateAuthDivisionBasic(divResource, divName),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckNoResourceAttr("genesyscloud_user_roles."+userRoleResourceLabel, "roles.%"),
+					resource.TestCheckNoResourceAttr("genesyscloud_user_roles."+userRoleResource, "roles.%"),
 				),
 			},
 		},
@@ -144,7 +144,7 @@ func validateResourceRole(resourceName string, roleResourceName string, division
 		if !ok {
 			return fmt.Errorf("Failed to find %s in state", resourceName)
 		}
-		resourceLabel := resourceState.Primary.ID
+		resourceID := resourceState.Primary.ID
 
 		roleResource, ok := state.RootModule().Resources[roleResourceName]
 		if !ok {
@@ -198,7 +198,7 @@ func validateResourceRole(resourceName string, roleResourceName string, division
 				return nil
 			}
 		}
-		return fmt.Errorf("Missing expected role for resource %s in state: %s", resourceLabel, roleID)
+		return fmt.Errorf("Missing expected role for resource %s in state: %s", resourceID, roleID)
 	}
 }
 

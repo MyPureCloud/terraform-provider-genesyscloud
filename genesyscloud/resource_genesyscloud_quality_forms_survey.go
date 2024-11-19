@@ -217,7 +217,7 @@ func getAllSurveyForms(_ context.Context, clientConfig *platformclientv2.Configu
 		}
 
 		for _, surveyForm := range *surveyForms.Entities {
-			resources[*surveyForm.Id] = &resourceExporter.ResourceMeta{BlockLabel: *surveyForm.Name}
+			resources[*surveyForm.Id] = &resourceExporter.ResourceMeta{Name: *surveyForm.Name}
 		}
 	}
 
@@ -629,7 +629,7 @@ func flattenSurveyQuestions(questions *[]platformclientv2.Surveyquestion) []inte
 	return questionList
 }
 
-func GenerateSurveyFormResource(resourceLabel string, surveyForm *SurveyFormStruct) string {
+func GenerateSurveyFormResource(resourceID string, surveyForm *SurveyFormStruct) string {
 	form := fmt.Sprintf(`resource "genesyscloud_quality_forms_survey" "%s" {
 		name = "%s"
 		published = %v
@@ -640,7 +640,7 @@ func GenerateSurveyFormResource(resourceLabel string, surveyForm *SurveyFormStru
 		%s
         %s
 	}
-	`, resourceLabel,
+	`, resourceID,
 		surveyForm.Name,
 		surveyForm.Published,
 		surveyForm.Disabled,

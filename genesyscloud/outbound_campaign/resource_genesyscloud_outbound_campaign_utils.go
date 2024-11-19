@@ -218,37 +218,37 @@ func flattenLineBalancingSettings(settings *platformclientv2.Dynamiclinebalancin
 	return []interface{}{settingsMap}
 }
 
-func GenerateOutboundCampaignBasic(resourceLabel string,
+func GenerateOutboundCampaignBasic(resourceId string,
 	name string,
-	contactListResourceLabel string,
-	siteResourceLabel string,
+	contactListResourceId string,
+	siteResourceId string,
 	emergencyNumber string,
-	carResourceLabel string,
+	carResourceId string,
 	campaignStatus string,
 	outboundFlowFilePath string,
-	flowResourceLabel string,
+	flowResourceId string,
 	flowName string,
 	divisionName,
-	locationResourceLabel string,
-	wrapupcodeResourceLabel string,
-	divResourceLabel string) string {
+	locationResourceId string,
+	wrapupcodeResourceId string,
+	divResourceId string) string {
 	referencedResources := GenerateReferencedResourcesForOutboundCampaignTests(
-		contactListResourceLabel,
+		contactListResourceId,
 		"",
 		"",
-		carResourceLabel,
+		carResourceId,
 		outboundFlowFilePath,
-		flowResourceLabel,
+		flowResourceId,
 		flowName,
 		"",
-		siteResourceLabel,
+		siteResourceId,
 		emergencyNumber,
 		"",
 		"",
 		divisionName,
-		locationResourceLabel,
-		wrapupcodeResourceLabel,
-		divResourceLabel,
+		locationResourceId,
+		wrapupcodeResourceId,
+		divResourceId,
 	)
 	return fmt.Sprintf(`
 resource "genesyscloud_outbound_campaign" "%s" {
@@ -266,26 +266,26 @@ resource "genesyscloud_outbound_campaign" "%s" {
 	}
 }
 %s
-`, resourceLabel, name, campaignStatus, contactListResourceLabel, siteResourceLabel, carResourceLabel, referencedResources)
+`, resourceId, name, campaignStatus, contactListResourceId, siteResourceId, carResourceId, referencedResources)
 }
 
 func GenerateReferencedResourcesForOutboundCampaignTests(
-	contactListResourceLabel string,
-	dncListResourceLabel string,
-	queueResourceLabel string,
-	carResourceLabel string,
+	contactListResourceId string,
+	dncListResourceId string,
+	queueResourceId string,
+	carResourceId string,
 	outboundFlowFilePath string,
-	flowResourceLabel string,
+	flowResourceId string,
 	flowName string,
-	clfResourceLabel string,
+	clfResourceId string,
 	siteId string,
 	emergencyNumber string,
 	ruleSetId string,
-	callableTimeSetResourceLabel string,
+	callableTimeSetResourceId string,
 	divisionName string,
-	locationResourceLabel string,
-	wrapUpCodeResourceLabel string,
-	divResourceLabel string,
+	locationResourceId string,
+	wrapUpCodeResourceId string,
+	divResourceId string,
 ) string {
 	var (
 		contactList             string
@@ -297,9 +297,9 @@ func GenerateReferencedResourcesForOutboundCampaignTests(
 		ruleSet                 string
 		callableTimeSet         string
 	)
-	if contactListResourceLabel != "" {
+	if contactListResourceId != "" {
 		contactList = obContactList.GenerateOutboundContactList(
-			contactListResourceLabel,
+			contactListResourceId,
 			"terraform contact list "+uuid.NewString(),
 			util.NullValue,
 			strconv.Quote("Cell"),
@@ -311,31 +311,31 @@ func GenerateReferencedResourcesForOutboundCampaignTests(
 			obContactList.GeneratePhoneColumnsBlock("Cell", "cell", strconv.Quote("Cell")),
 			obContactList.GeneratePhoneColumnsBlock("Home", "home", strconv.Quote("Home")))
 	}
-	if dncListResourceLabel != "" {
-		dncList = obDnclist.GenerateOutboundDncListBasic(dncListResourceLabel, "tf dnc list "+uuid.NewString())
+	if dncListResourceId != "" {
+		dncList = obDnclist.GenerateOutboundDncListBasic(dncListResourceId, "tf dnc list "+uuid.NewString())
 	}
-	if queueResourceLabel != "" {
-		queue = routingQueue.GenerateRoutingQueueResourceBasic(queueResourceLabel, "tf test queue "+uuid.NewString())
+	if queueResourceId != "" {
+		queue = routingQueue.GenerateRoutingQueueResourceBasic(queueResourceId, "tf test queue "+uuid.NewString())
 	}
-	if carResourceLabel != "" {
+	if carResourceId != "" {
 		if outboundFlowFilePath != "" {
 			callAnalysisResponseSet = routingWrapupcode.GenerateRoutingWrapupcodeResource(
-				wrapUpCodeResourceLabel,
+				wrapUpCodeResourceId,
 				"wrapupcode "+uuid.NewString(),
-				"genesyscloud_auth_division."+divResourceLabel+".id",
+				"genesyscloud_auth_division."+divResourceId+".id",
 			) + architect_flow.GenerateFlowResource(
-				flowResourceLabel,
+				flowResourceId,
 				outboundFlowFilePath,
 				"",
 				false,
 				util.GenerateSubstitutionsMap(map[string]string{
 					"flow_name":          flowName,
 					"home_division_name": divisionName,
-					"contact_list_name":  "${genesyscloud_outbound_contact_list." + contactListResourceLabel + ".name}",
-					"wrapup_code_name":   "${genesyscloud_routing_wrapupcode." + wrapUpCodeResourceLabel + ".name}",
+					"contact_list_name":  "${genesyscloud_outbound_contact_list." + contactListResourceId + ".name}",
+					"wrapup_code_name":   "${genesyscloud_routing_wrapupcode." + wrapUpCodeResourceId + ".name}",
 				}),
 			) + obResponseSet.GenerateOutboundCallAnalysisResponseSetResource(
-				carResourceLabel,
+				carResourceId,
 				"tf test car "+uuid.NewString(),
 				util.FalseValue,
 				obResponseSet.GenerateCarsResponsesBlock(
@@ -343,12 +343,12 @@ func GenerateReferencedResourcesForOutboundCampaignTests(
 						"callable_person",
 						"transfer_flow",
 						flowName,
-						"${genesyscloud_flow."+flowResourceLabel+".id}",
+						"${genesyscloud_flow."+flowResourceId+".id}",
 					),
 				))
 		} else {
 			callAnalysisResponseSet = obResponseSet.GenerateOutboundCallAnalysisResponseSetResource(
-				carResourceLabel,
+				carResourceId,
 				"tf test car "+uuid.NewString(),
 				util.TrueValue,
 				obResponseSet.GenerateCarsResponsesBlock(
@@ -362,11 +362,11 @@ func GenerateReferencedResourcesForOutboundCampaignTests(
 			)
 		}
 	}
-	if clfResourceLabel != "" {
+	if clfResourceId != "" {
 		contactListFilter = obContactListFilter.GenerateOutboundContactListFilter(
-			clfResourceLabel,
+			clfResourceId,
 			"tf test clf "+uuid.NewString(),
-			"genesyscloud_outbound_contact_list."+contactListResourceLabel+".id",
+			"genesyscloud_outbound_contact_list."+contactListResourceId+".id",
 			"",
 			obContactListFilter.GenerateOutboundContactListFilterClause(
 				"",
@@ -409,7 +409,7 @@ resource "genesyscloud_telephony_providers_edges_site" "%s" {
 	media_model                     = "Cloud"
 	media_regions_use_latency_based = false
 }
-`, locationResourceLabel, locationName, emergencyNumber, siteId, siteName, locationResourceLabel)
+`, locationResourceId, locationName, emergencyNumber, siteId, siteName, locationResourceId)
 	}
 	if ruleSetId != "" {
 		ruleSetName := "ruleset " + uuid.NewString()
@@ -418,9 +418,9 @@ resource "genesyscloud_outbound_ruleset" "%s" {
   name            = "%s"
   contact_list_id = genesyscloud_outbound_contact_list.%s.id
 }
-`, ruleSetId, ruleSetName, contactListResourceLabel)
+`, ruleSetId, ruleSetName, contactListResourceId)
 	}
-	if callableTimeSetResourceLabel != "" {
+	if callableTimeSetResourceId != "" {
 		callableTimeSetName := "test time set " + uuid.NewString()
 		callableTimeSet = fmt.Sprintf(`
 resource "genesyscloud_outbound_callabletimeset" "%s"{
@@ -434,7 +434,7 @@ resource "genesyscloud_outbound_callabletimeset" "%s"{
 		}
 	}
 }
-`, callableTimeSetResourceLabel, callableTimeSetName)
+`, callableTimeSetResourceId, callableTimeSetName)
 	}
 	return fmt.Sprintf(`
 %s

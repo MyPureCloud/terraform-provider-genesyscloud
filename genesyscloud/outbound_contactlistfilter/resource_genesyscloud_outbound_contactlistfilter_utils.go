@@ -176,7 +176,7 @@ func flattenContactListFilterRange(contactListFilterRange *platformclientv2.Cont
 }
 
 func GenerateOutboundContactListFilter(
-	resourceLabel string,
+	resourceId string,
 	name string,
 	contactListId string,
 	filterType string,
@@ -192,7 +192,7 @@ resource "genesyscloud_outbound_contactlistfilter" "%s" {
 	%s
 	%s
 }
-`, resourceLabel, name, contactListId, filterType, strings.Join(nestedBlocks, "\n"))
+`, resourceId, name, contactListId, filterType, strings.Join(nestedBlocks, "\n"))
 }
 
 func GenerateOutboundContactListFilterClause(filterType string, nestedBlocks ...string) string {

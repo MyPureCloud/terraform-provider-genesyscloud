@@ -176,7 +176,7 @@ func getAllProcessAutomationTriggersResourceMap(_ context.Context, clientConfig 
 		}
 
 		for _, trigger := range *processAutomationTriggers.Entities {
-			resources[*trigger.Id] = &resourceExporter.ResourceMeta{BlockLabel: *trigger.Name}
+			resources[*trigger.Id] = &resourceExporter.ResourceMeta{Name: *trigger.Name}
 		}
 
 		if processAutomationTriggers.NextUri == nil {

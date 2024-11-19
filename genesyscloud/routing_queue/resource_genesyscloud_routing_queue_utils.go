@@ -660,16 +660,16 @@ func flattenQueueWrapupCodes(ctx context.Context, queueID string, proxy *Routing
 
 // Generate Functions
 
-func GenerateRoutingQueueResourceBasic(resourceLabel string, name string, nestedBlocks ...string) string {
+func GenerateRoutingQueueResourceBasic(resourceID string, name string, nestedBlocks ...string) string {
 	return fmt.Sprintf(`resource "genesyscloud_routing_queue" "%s" {
 		name = "%s"
 		%s
 	}
-	`, resourceLabel, name, strings.Join(nestedBlocks, "\n"))
+	`, resourceID, name, strings.Join(nestedBlocks, "\n"))
 }
 
 func GenerateRoutingQueueResource(
-	resourceLabel string,
+	resourceID string,
 	name string,
 	desc string,
 	acwWrapupPrompt string,
@@ -704,7 +704,7 @@ func GenerateRoutingQueueResource(
   		enable_manual_assignment = %s
 		%s
 	}
-	`, resourceLabel,
+	`, resourceID,
 		name,
 		desc,
 		acwWrapupPrompt,
@@ -724,13 +724,13 @@ func GenerateRoutingQueueResource(
 }
 
 // GenerateRoutingQueueResourceBasicWithDepends Used when testing skills group dependencies.
-func GenerateRoutingQueueResourceBasicWithDepends(resourceLabel string, dependsOn string, name string, nestedBlocks ...string) string {
+func GenerateRoutingQueueResourceBasicWithDepends(resourceID string, dependsOn string, name string, nestedBlocks ...string) string {
 	return fmt.Sprintf(`resource "genesyscloud_routing_queue" "%s" {
 		depends_on = [%s]
 		name = "%s"
 		%s
 	}
-	`, resourceLabel, dependsOn, name, strings.Join(nestedBlocks, "\n"))
+	`, resourceID, dependsOn, name, strings.Join(nestedBlocks, "\n"))
 }
 
 func GenerateAgentOwnedRouting(attrName string, enableAgentOwnedCallBacks string, maxOwnedCallBackHours string, maxOwnedCallBackDelayHours string) string {

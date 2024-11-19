@@ -13,16 +13,16 @@ import (
 
 func TestAccDataSourceArchitectDatatable(t *testing.T) {
 	var (
-		tableResourceLabel = "arch-table1"
-		tableName          = "Terraform Table1-" + uuid.NewString()
-		tableDesc          = "Terraform test table1"
+		tableResource = "arch-table1"
+		tableName     = "Terraform Table1-" + uuid.NewString()
+		tableDesc     = "Terraform test table1"
 
 		propNameKey = "key"
 		propBool    = "Test Bool"
 		typeString  = "string"
 		typeBool    = "boolean"
 
-		tableDataSourceLabel = "arch-table1-ds"
+		tableDataSource = "arch-table1-ds"
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -32,19 +32,19 @@ func TestAccDataSourceArchitectDatatable(t *testing.T) {
 			{
 				// Create architect_datatable with a key and one other property
 				Config: generateArchitectDatatableResource(
-					tableResourceLabel,
+					tableResource,
 					tableName,
 					strconv.Quote(tableDesc),
 					generateArchitectDatatableProperty(propBool, typeBool, util.NullValue, util.NullValue),
 					generateArchitectDatatableProperty(propNameKey, typeString, util.NullValue, util.NullValue),
 				) + generateArchitectDatatableDataSource(
-					tableDataSourceLabel,
-					"genesyscloud_architect_datatable."+tableResourceLabel+".name",
-					"genesyscloud_architect_datatable."+tableResourceLabel),
+					tableDataSource,
+					"genesyscloud_architect_datatable."+tableResource+".name",
+					"genesyscloud_architect_datatable."+tableResource),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrPair(
-						"data.genesyscloud_architect_datatable."+tableDataSourceLabel, "id",
-						"genesyscloud_architect_datatable."+tableResourceLabel, "id",
+						"data.genesyscloud_architect_datatable."+tableDataSource, "id",
+						"genesyscloud_architect_datatable."+tableResource, "id",
 					),
 				),
 			},
@@ -53,7 +53,7 @@ func TestAccDataSourceArchitectDatatable(t *testing.T) {
 }
 
 func generateArchitectDatatableDataSource(
-	resourceLabel string,
+	resourceID string,
 	name string,
 	// Must explicitly use depends_on in terraform v0.13 when a data source references a resource
 	// Fixed in v0.14 https://github.com/hashicorp/terraform/pull/26284
@@ -62,5 +62,5 @@ func generateArchitectDatatableDataSource(
 		name = %s
 		depends_on=[%s]
 	}
-	`, resourceLabel, name, dependsOnResource)
+	`, resourceID, name, dependsOnResource)
 }

@@ -12,8 +12,8 @@ import (
 
 func TestAccDataSourceOutboundCallableTimeset(t *testing.T) {
 	var (
-		resourceLabel      = "callable_timeset"
-		dataSourceLabel    = "callable_timeset_data"
+		resourceId         = "callable_timeset"
+		dataSourceId       = "callable_timeset_data"
 		callabeTimesetName = "Callable timeset " + uuid.NewString()
 		timeZone           = "Africa/Abidjan"
 	)
@@ -24,7 +24,7 @@ func TestAccDataSourceOutboundCallableTimeset(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config: GenerateOutboundCallabletimeset(
-					resourceLabel,
+					resourceId,
 					callabeTimesetName,
 					GenerateCallableTimesBlock(
 						timeZone,
@@ -32,24 +32,24 @@ func TestAccDataSourceOutboundCallableTimeset(t *testing.T) {
 						GenerateTimeSlotsBlock("09:30:00", "22:30:00", "5"),
 					),
 				) + generateOutboundCallabletimesetDataSource(
-					dataSourceLabel,
+					dataSourceId,
 					callabeTimesetName,
-					"genesyscloud_outbound_callabletimeset."+resourceLabel,
+					"genesyscloud_outbound_callabletimeset."+resourceId,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair("data.genesyscloud_outbound_callabletimeset."+dataSourceLabel, "id",
-						"genesyscloud_outbound_callabletimeset."+resourceLabel, "id"),
+					resource.TestCheckResourceAttrPair("data.genesyscloud_outbound_callabletimeset."+dataSourceId, "id",
+						"genesyscloud_outbound_callabletimeset."+resourceId, "id"),
 				),
 			},
 		},
 	})
 }
 
-func generateOutboundCallabletimesetDataSource(dataSourceLabel string, name string, dependsOn string) string {
+func generateOutboundCallabletimesetDataSource(id string, name string, dependsOn string) string {
 	return fmt.Sprintf(`
 	data "genesyscloud_outbound_callabletimeset" "%s" {
 		name = "%s"
 		depends_on = [%s]
 	}
-`, dataSourceLabel, name, dependsOn)
+`, id, name, dependsOn)
 }

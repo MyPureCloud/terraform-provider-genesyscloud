@@ -17,10 +17,10 @@ Test Class for the Integrations Data Source
 func TestAccDataSourceIntegration(t *testing.T) {
 
 	var (
-		inteResourceLabel1 = "test_integration1"
-		inteResourceLabel2 = "test_integration2"
-		inteName1          = "Terraform Integration Test-" + uuid.NewString()
-		typeID             = "embedded-client-app"
+		inteResource1 = "test_integration1"
+		inteResource2 = "test_integration2"
+		inteName1     = "Terraform Integration Test-" + uuid.NewString()
+		typeID        = "embedded-client-app"
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -30,7 +30,7 @@ func TestAccDataSourceIntegration(t *testing.T) {
 			{
 				// Create with config
 				Config: GenerateIntegrationResource(
-					inteResourceLabel1,
+					inteResource1,
 					util.NullValue, //Empty intended_state, default value is "DISABLED"
 					strconv.Quote(typeID),
 					GenerateIntegrationConfig(
@@ -41,11 +41,11 @@ func TestAccDataSourceIntegration(t *testing.T) {
 						util.NullValue, //Empty advanced JSON
 					),
 					// No config block
-				) + generateIntegrationDataSource(inteResourceLabel2,
+				) + generateIntegrationDataSource(inteResource2,
 					inteName1,
-					"genesyscloud_integration."+inteResourceLabel1),
+					"genesyscloud_integration."+inteResource1),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair("data.genesyscloud_integration."+inteResourceLabel2, "id", "genesyscloud_integration."+inteResourceLabel1, "id"), // Default value would be "DISABLED"
+					resource.TestCheckResourceAttrPair("data.genesyscloud_integration."+inteResource2, "id", "genesyscloud_integration."+inteResource1, "id"), // Default value would be "DISABLED"
 				),
 			},
 		},
@@ -54,7 +54,7 @@ func TestAccDataSourceIntegration(t *testing.T) {
 }
 
 func generateIntegrationDataSource(
-	resourceLabel string,
+	resourceID string,
 	name string,
 	// Must explicitly use depends_on in terraform v0.13 when a data source references a resource
 	// Fixed in v0.14 https://github.com/hashicorp/terraform/pull/26284
@@ -63,5 +63,5 @@ func generateIntegrationDataSource(
 		name = "%s"
 		depends_on=[%s]
 	}
-	`, resourceLabel, name, dependsOnResource)
+	`, resourceID, name, dependsOnResource)
 }

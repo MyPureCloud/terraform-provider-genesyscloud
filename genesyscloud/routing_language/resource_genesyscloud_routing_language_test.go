@@ -14,8 +14,8 @@ import (
 
 func TestAccResourceRoutingLanguageBasic(t *testing.T) {
 	var (
-		langResourceLabel1 = "test-lang1"
-		langName1          = "Terraform Lang" + uuid.NewString()
+		langResource1 = "test-lang1"
+		langName1     = "Terraform Lang" + uuid.NewString()
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -25,16 +25,16 @@ func TestAccResourceRoutingLanguageBasic(t *testing.T) {
 			{
 				// Create
 				Config: GenerateRoutingLanguageResource(
-					langResourceLabel1,
+					langResource1,
 					langName1,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_routing_language."+langResourceLabel1, "name", langName1),
+					resource.TestCheckResourceAttr("genesyscloud_routing_language."+langResource1, "name", langName1),
 				),
 			},
 			{
 				// Import/Read
-				ResourceName:      "genesyscloud_routing_language." + langResourceLabel1,
+				ResourceName:      "genesyscloud_routing_language." + langResource1,
 				ImportState:       true,
 				ImportStateVerify: true,
 			},

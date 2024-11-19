@@ -15,12 +15,12 @@ import (
 
 func TestAccDataSourceUser(t *testing.T) {
 	var (
-		userResourceLabel   = "test-user"
-		userDataSourceLabel = "test-user-data"
-		randomString        = uuid.NewString()
-		userEmail           = "John_Doe" + randomString + "@exampleuser.com"
-		userName            = "John_Doe" + randomString
-		userID              string
+		userResource   = "test-user"
+		userDataSource = "test-user-data"
+		randomString   = uuid.NewString()
+		userEmail      = "John_Doe" + randomString + "@exampleuser.com"
+		userName       = "John_Doe" + randomString
+		userID         string
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -30,21 +30,21 @@ func TestAccDataSourceUser(t *testing.T) {
 			{
 				// Search by email
 				Config: GenerateBasicUserResource(
-					userResourceLabel,
+					userResource,
 					userEmail,
 					userName,
 				) + generateUserDataSource(
-					userDataSourceLabel,
-					resourceName+"."+userResourceLabel+".email",
+					userDataSource,
+					resourceName+"."+userResource+".email",
 					util.NullValue,
-					resourceName+"."+userResourceLabel,
+					resourceName+"."+userResource,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair("data."+resourceName+"."+userDataSourceLabel, "id", resourceName+"."+userResourceLabel, "id"),
+					resource.TestCheckResourceAttrPair("data."+resourceName+"."+userDataSource, "id", resourceName+"."+userResource, "id"),
 					func(s *terraform.State) error {
-						rs, ok := s.RootModule().Resources[resourceName+"."+userResourceLabel]
+						rs, ok := s.RootModule().Resources[resourceName+"."+userResource]
 						if !ok {
-							return fmt.Errorf("not found: %s", resourceName+"."+userResourceLabel)
+							return fmt.Errorf("not found: %s", resourceName+"."+userResource)
 						}
 						userID = rs.Primary.ID
 						log.Printf("User ID: %s\n", userID) // Print user ID
@@ -55,17 +55,17 @@ func TestAccDataSourceUser(t *testing.T) {
 			{
 				// Search by name
 				Config: GenerateBasicUserResource(
-					userResourceLabel,
+					userResource,
 					userEmail,
 					userName,
 				) + generateUserDataSource(
-					userDataSourceLabel,
+					userDataSource,
 					util.NullValue,
-					resourceName+"."+userResourceLabel+".name",
-					resourceName+"."+userResourceLabel,
+					resourceName+"."+userResource+".name",
+					resourceName+"."+userResource,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair("data."+resourceName+"."+userDataSourceLabel, "id", resourceName+"."+userResourceLabel, "id"),
+					resource.TestCheckResourceAttrPair("data."+resourceName+"."+userDataSource, "id", resourceName+"."+userResource, "id"),
 					func(s *terraform.State) error {
 						time.Sleep(30 * time.Second) // Wait for 30 seconds for proper deletion
 						return nil
@@ -81,7 +81,7 @@ func TestAccDataSourceUser(t *testing.T) {
 }
 
 func generateUserDataSource(
-	resourceLabel string,
+	resourceID string,
 	email string,
 	name string,
 	// Must explicitly use depends_on in terraform v0.13 when a data source references a resource
@@ -92,5 +92,5 @@ func generateUserDataSource(
 		name = %s
         depends_on=[%s]
 	}
-	`, resourceName, resourceLabel, email, name, dependsOnResource)
+	`, resourceName, resourceID, email, name, dependsOnResource)
 }

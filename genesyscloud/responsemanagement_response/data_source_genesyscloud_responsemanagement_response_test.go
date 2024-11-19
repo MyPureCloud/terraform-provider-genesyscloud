@@ -13,15 +13,15 @@ import (
 
 func TestAccDataSourceResponsemanagementResponse(t *testing.T) {
 	var (
-		responseResourceLabel = "response-resource"
-		responseDataLabel     = "response-data"
-		name                  = "Response-" + uuid.NewString()
-		textsContent          = "Random text block content string"
-		textsContentTypes     = []string{"text/plain", "text/html"}
+		responseResource  = "response-resource"
+		responseData      = "response-data"
+		name              = "Response-" + uuid.NewString()
+		textsContent      = "Random text block content string"
+		textsContentTypes = []string{"text/plain", "text/html"}
 
 		// Library resources variables
-		libraryResourceLabel = "library-resource1"
-		libraryName          = "Reference library1"
+		libraryResource = "library-resource1"
+		libraryName     = "Reference library1"
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -31,12 +31,12 @@ func TestAccDataSourceResponsemanagementResponse(t *testing.T) {
 			{
 				// Search by name
 				Config: respmanagementLibrary.GenerateResponseManagementLibraryResource(
-					libraryResourceLabel,
+					libraryResource,
 					libraryName,
 				) + generateResponseManagementResponseResource(
-					responseResourceLabel,
+					responseResource,
 					name,
-					[]string{"genesyscloud_responsemanagement_library." + libraryResourceLabel + ".id"},
+					[]string{"genesyscloud_responsemanagement_library." + libraryResource + ".id"},
 					util.NullValue,
 					util.NullValue,
 					util.NullValue,
@@ -47,15 +47,15 @@ func TestAccDataSourceResponsemanagementResponse(t *testing.T) {
 						util.NullValue,
 					),
 				) + generateResponsemanagementResponseDataSource(
-					responseDataLabel,
+					responseData,
 					name,
-					"genesyscloud_responsemanagement_library."+libraryResourceLabel+".id",
-					"genesyscloud_responsemanagement_response."+responseResourceLabel,
+					"genesyscloud_responsemanagement_library."+libraryResource+".id",
+					"genesyscloud_responsemanagement_response."+responseResource,
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrPair(
-						"data.genesyscloud_responsemanagement_response."+responseDataLabel, "id",
-						"genesyscloud_responsemanagement_response."+responseResourceLabel, "id",
+						"data.genesyscloud_responsemanagement_response."+responseData, "id",
+						"genesyscloud_responsemanagement_response."+responseResource, "id",
 					),
 				),
 			},
@@ -65,7 +65,7 @@ func TestAccDataSourceResponsemanagementResponse(t *testing.T) {
 }
 
 func generateResponsemanagementResponseDataSource(
-	resourceLabel string,
+	resourceID string,
 	name string,
 	libraryID string,
 	dependsOn string) string {
@@ -75,5 +75,5 @@ func generateResponsemanagementResponseDataSource(
 			library_id = %s
 			depends_on=[%s]
 		}
-	`, resourceLabel, name, libraryID, dependsOn)
+	`, resourceID, name, libraryID, dependsOn)
 }

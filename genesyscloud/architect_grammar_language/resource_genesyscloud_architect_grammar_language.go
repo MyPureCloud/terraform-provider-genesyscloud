@@ -35,7 +35,7 @@ func getAllAuthArchitectGrammarLanguage(ctx context.Context, clientConfig *platf
 
 	for _, language := range *languages {
 		languageId := *language.GrammarId + ":" + *language.Language
-		resources[languageId] = &resourceExporter.ResourceMeta{BlockLabel: *language.Language}
+		resources[languageId] = &resourceExporter.ResourceMeta{Name: *language.Language}
 	}
 
 	return resources, nil

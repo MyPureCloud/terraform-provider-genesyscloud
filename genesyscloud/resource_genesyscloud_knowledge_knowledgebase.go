@@ -31,7 +31,7 @@ func getAllKnowledgeKnowledgebases(_ context.Context, clientConfig *platformclie
 	}
 
 	for _, knowledgeBase := range *publishedEntities {
-		resources[*knowledgeBase.Id] = &resourceExporter.ResourceMeta{BlockLabel: *knowledgeBase.Name}
+		resources[*knowledgeBase.Id] = &resourceExporter.ResourceMeta{Name: *knowledgeBase.Name}
 	}
 
 	unpublishedEntities, err := getAllKnowledgebaseEntities(*knowledgeAPI, false)
@@ -40,7 +40,7 @@ func getAllKnowledgeKnowledgebases(_ context.Context, clientConfig *platformclie
 	}
 
 	for _, knowledgeBase := range *unpublishedEntities {
-		resources[*knowledgeBase.Id] = &resourceExporter.ResourceMeta{BlockLabel: *knowledgeBase.Name}
+		resources[*knowledgeBase.Id] = &resourceExporter.ResourceMeta{Name: *knowledgeBase.Name}
 	}
 
 	return resources, nil
@@ -240,7 +240,7 @@ func deleteKnowledgeKnowledgebase(ctx context.Context, d *schema.ResourceData, m
 }
 
 func GenerateKnowledgeKnowledgebaseResource(
-	resourceLabel string,
+	resourceID string,
 	name string,
 	description string,
 	coreLanguage string) string {
@@ -249,5 +249,5 @@ func GenerateKnowledgeKnowledgebaseResource(
         description = "%s"
         core_language = "%s"
 	}
-	`, resourceLabel, name, description, coreLanguage)
+	`, resourceID, name, description, coreLanguage)
 }

@@ -193,7 +193,7 @@ func getAllEvaluationForms(_ context.Context, clientConfig *platformclientv2.Con
 		}
 
 		for _, evaluationForm := range *evaluationForms.Entities {
-			resources[*evaluationForm.Id] = &resourceExporter.ResourceMeta{BlockLabel: *evaluationForm.Name}
+			resources[*evaluationForm.Id] = &resourceExporter.ResourceMeta{Name: *evaluationForm.Name}
 		}
 	}
 
@@ -641,13 +641,13 @@ func flattenVisibilityCondition(visibilityCondition *platformclientv2.Visibility
 	return []interface{}{visibilityConditionMap}
 }
 
-func GenerateEvaluationFormResource(resourceLabel string, evaluationForm *EvaluationFormStruct) string {
+func GenerateEvaluationFormResource(resourceID string, evaluationForm *EvaluationFormStruct) string {
 	return fmt.Sprintf(`resource "genesyscloud_quality_forms_evaluation" "%s" {
 		name = "%s"
 		published = %v
 		%s
 	}
-	`, resourceLabel,
+	`, resourceID,
 		evaluationForm.Name,
 		evaluationForm.Published,
 		GenerateEvaluationFormQuestionGroups(&evaluationForm.QuestionGroups),

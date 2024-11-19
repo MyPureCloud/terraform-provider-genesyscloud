@@ -48,7 +48,7 @@ func getAllAuthOutboundRuleset(ctx context.Context, clientConfig *platformclient
 
 	for _, ruleset := range filteredRuleSets {
 		log.Printf("Dealing with ruleset id : %s", *ruleset.Id)
-		resources[*ruleset.Id] = &resourceExporter.ResourceMeta{BlockLabel: *ruleset.Name}
+		resources[*ruleset.Id] = &resourceExporter.ResourceMeta{Name: *ruleset.Name}
 	}
 	return resources, nil
 }

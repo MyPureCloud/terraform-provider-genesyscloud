@@ -33,7 +33,7 @@ func getAllRoutingSkillGroups(ctx context.Context, clientConfig *platformclientv
 	}
 
 	for _, skillGroup := range *allSkillGroups {
-		resources[*skillGroup.Id] = &resourceExporter.ResourceMeta{BlockLabel: *skillGroup.Name}
+		resources[*skillGroup.Id] = &resourceExporter.ResourceMeta{Name: *skillGroup.Name}
 	}
 
 	return resources, nil
@@ -247,14 +247,14 @@ func readSkillGroupMemberDivisions(ctx context.Context, d *schema.ResourceData, 
 }
 
 func GenerateRoutingSkillGroupResourceBasic(
-	resourceLabel string,
+	resourceID string,
 	name string,
 	description string) string {
 	return fmt.Sprintf(`resource "%s" "%s" {
 		name = "%s"
 		description="%s"
 	}
-	`, resourceName, resourceLabel, name, description)
+	`, resourceName, resourceID, name, description)
 }
 
 // Todo: remove once auth divisions is refactored into its own package
@@ -291,7 +291,7 @@ func getAllAuthDivisions(_ context.Context, clientConfig *platformclientv2.Confi
 		}
 
 		for _, division := range *divisions.Entities {
-			resources[*division.Id] = &resourceExporter.ResourceMeta{BlockLabel: *division.Name}
+			resources[*division.Id] = &resourceExporter.ResourceMeta{Name: *division.Name}
 		}
 	}
 

@@ -15,14 +15,14 @@ import (
 
 func TestAccResourceKnowledgeCategoryBasic(t *testing.T) {
 	var (
-		knowledgeBaseResourceLabel1     = "test-knowledgebase1"
-		knowledgeBaseName1              = "Terraform Knowledge Base" + uuid.NewString()
-		knowledgeBaseDescription1       = "test-knowledgebase-description1"
-		knowledgeBaseCoreLanguage1      = "en-US"
-		knowledgeCategoryResourceLabel1 = "test-knowledge-category1"
-		categoryName                    = "Terraform Knowledge Category" + uuid.NewString()
-		categoryDescription             = "test-description1"
-		categoryDescription2            = "test-description2"
+		knowledgeBaseResource1     = "test-knowledgebase1"
+		knowledgeBaseName1         = "Terraform Knowledge Base" + uuid.NewString()
+		knowledgeBaseDescription1  = "test-knowledgebase-description1"
+		knowledgeBaseCoreLanguage1 = "en-US"
+		knowledgeCategoryResource1 = "test-knowledge-category1"
+		categoryName               = "Terraform Knowledge Category" + uuid.NewString()
+		categoryDescription        = "test-description1"
+		categoryDescription2       = "test-description2"
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -32,46 +32,46 @@ func TestAccResourceKnowledgeCategoryBasic(t *testing.T) {
 			{
 				// Create
 				Config: GenerateKnowledgeKnowledgebaseResource(
-					knowledgeBaseResourceLabel1,
+					knowledgeBaseResource1,
 					knowledgeBaseName1,
 					knowledgeBaseDescription1,
 					knowledgeBaseCoreLanguage1,
 				) +
 					generateKnowledgeCategoryResource(
-						knowledgeCategoryResourceLabel1,
-						knowledgeBaseResourceLabel1,
+						knowledgeCategoryResource1,
+						knowledgeBaseResource1,
 						categoryName,
 						categoryDescription,
 					),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair("genesyscloud_knowledge_category."+knowledgeCategoryResourceLabel1, "knowledge_base_id", "genesyscloud_knowledge_knowledgebase."+knowledgeBaseResourceLabel1, "id"),
-					resource.TestCheckResourceAttr("genesyscloud_knowledge_category."+knowledgeCategoryResourceLabel1, "knowledge_category.0.name", categoryName),
-					resource.TestCheckResourceAttr("genesyscloud_knowledge_category."+knowledgeCategoryResourceLabel1, "knowledge_category.0.description", categoryDescription),
+					resource.TestCheckResourceAttrPair("genesyscloud_knowledge_category."+knowledgeCategoryResource1, "knowledge_base_id", "genesyscloud_knowledge_knowledgebase."+knowledgeBaseResource1, "id"),
+					resource.TestCheckResourceAttr("genesyscloud_knowledge_category."+knowledgeCategoryResource1, "knowledge_category.0.name", categoryName),
+					resource.TestCheckResourceAttr("genesyscloud_knowledge_category."+knowledgeCategoryResource1, "knowledge_category.0.description", categoryDescription),
 				),
 			},
 			{
 				// Update
 				Config: GenerateKnowledgeKnowledgebaseResource(
-					knowledgeBaseResourceLabel1,
+					knowledgeBaseResource1,
 					knowledgeBaseName1,
 					knowledgeBaseDescription1,
 					knowledgeBaseCoreLanguage1,
 				) +
 					generateKnowledgeCategoryResource(
-						knowledgeCategoryResourceLabel1,
-						knowledgeBaseResourceLabel1,
+						knowledgeCategoryResource1,
+						knowledgeBaseResource1,
 						categoryName,
 						categoryDescription2,
 					),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair("genesyscloud_knowledge_category."+knowledgeCategoryResourceLabel1, "knowledge_base_id", "genesyscloud_knowledge_knowledgebase."+knowledgeBaseResourceLabel1, "id"),
-					resource.TestCheckResourceAttr("genesyscloud_knowledge_category."+knowledgeCategoryResourceLabel1, "knowledge_category.0.name", categoryName),
-					resource.TestCheckResourceAttr("genesyscloud_knowledge_category."+knowledgeCategoryResourceLabel1, "knowledge_category.0.description", categoryDescription2),
+					resource.TestCheckResourceAttrPair("genesyscloud_knowledge_category."+knowledgeCategoryResource1, "knowledge_base_id", "genesyscloud_knowledge_knowledgebase."+knowledgeBaseResource1, "id"),
+					resource.TestCheckResourceAttr("genesyscloud_knowledge_category."+knowledgeCategoryResource1, "knowledge_category.0.name", categoryName),
+					resource.TestCheckResourceAttr("genesyscloud_knowledge_category."+knowledgeCategoryResource1, "knowledge_category.0.description", categoryDescription2),
 				),
 			},
 			{
 				// Import/Read
-				ResourceName:      "genesyscloud_knowledge_category." + knowledgeCategoryResourceLabel1,
+				ResourceName:      "genesyscloud_knowledge_category." + knowledgeCategoryResource1,
 				ImportState:       true,
 				ImportStateVerify: true,
 			},
@@ -82,20 +82,20 @@ func TestAccResourceKnowledgeCategoryBasic(t *testing.T) {
 
 func TestAccResourceKnowledgeCategoryParentChild(t *testing.T) {
 	var (
-		knowledgeBaseResourceLabel1 = "test-knowledgebase1"
-		knowledgeBaseName1          = "Terraform Knowledge Base" + uuid.NewString()
-		knowledgeBaseDescription1   = "test-knowledgebase-description1"
-		knowledgeBaseCoreLanguage1  = "en-US"
+		knowledgeBaseResource1     = "test-knowledgebase1"
+		knowledgeBaseName1         = "Terraform Knowledge Base" + uuid.NewString()
+		knowledgeBaseDescription1  = "test-knowledgebase-description1"
+		knowledgeBaseCoreLanguage1 = "en-US"
 
-		knowledgeCategoryResourceLabelParent1 = "test-knowledge-category-parent1"
-		categoryParentName                    = "Terraform Knowledge Category parent" + uuid.NewString()
-		categoryParentDescription             = "test-parent-description1"
-		categoryParentDescription2            = "test-parent-description2"
+		knowledgeCategoryResourceParent1 = "test-knowledge-category-parent1"
+		categoryParentName               = "Terraform Knowledge Category parent" + uuid.NewString()
+		categoryParentDescription        = "test-parent-description1"
+		categoryParentDescription2       = "test-parent-description2"
 
-		knowledgeCategoryResourceLabelChild1 = "test-knowledge-category-child1"
-		categoryChildName                    = "Terraform Knowledge Category child" + uuid.NewString()
-		categoryChildDescription             = "test-child-description1"
-		categoryChildDescription2            = "test-child-description2"
+		knowledgeCategoryResourceChild1 = "test-knowledge-category-child1"
+		categoryChildName               = "Terraform Knowledge Category child" + uuid.NewString()
+		categoryChildDescription        = "test-child-description1"
+		categoryChildDescription2       = "test-child-description2"
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -105,58 +105,58 @@ func TestAccResourceKnowledgeCategoryParentChild(t *testing.T) {
 			{
 				// Create
 				Config: GenerateKnowledgeKnowledgebaseResource(
-					knowledgeBaseResourceLabel1,
+					knowledgeBaseResource1,
 					knowledgeBaseName1,
 					knowledgeBaseDescription1,
 					knowledgeBaseCoreLanguage1,
 				) + generateKnowledgeCategoryResource(
-					knowledgeCategoryResourceLabelParent1,
-					knowledgeBaseResourceLabel1,
+					knowledgeCategoryResourceParent1,
+					knowledgeBaseResource1,
 					categoryParentName,
 					categoryParentDescription,
 				) + generateKnowledgeCategoryChildResource(
-					knowledgeCategoryResourceLabelChild1,
-					knowledgeBaseResourceLabel1,
+					knowledgeCategoryResourceChild1,
+					knowledgeBaseResource1,
 					categoryChildName,
 					categoryChildDescription,
-					knowledgeCategoryResourceLabelParent1,
+					knowledgeCategoryResourceParent1,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair("genesyscloud_knowledge_category."+knowledgeCategoryResourceLabelParent1, "knowledge_base_id", "genesyscloud_knowledge_knowledgebase."+knowledgeBaseResourceLabel1, "id"),
-					resource.TestCheckResourceAttr("genesyscloud_knowledge_category."+knowledgeCategoryResourceLabelParent1, "knowledge_category.0.name", categoryParentName),
-					resource.TestCheckResourceAttr("genesyscloud_knowledge_category."+knowledgeCategoryResourceLabelParent1, "knowledge_category.0.description", categoryParentDescription),
+					resource.TestCheckResourceAttrPair("genesyscloud_knowledge_category."+knowledgeCategoryResourceParent1, "knowledge_base_id", "genesyscloud_knowledge_knowledgebase."+knowledgeBaseResource1, "id"),
+					resource.TestCheckResourceAttr("genesyscloud_knowledge_category."+knowledgeCategoryResourceParent1, "knowledge_category.0.name", categoryParentName),
+					resource.TestCheckResourceAttr("genesyscloud_knowledge_category."+knowledgeCategoryResourceParent1, "knowledge_category.0.description", categoryParentDescription),
 				),
 			},
 			{
 				// Update
 				Config: GenerateKnowledgeKnowledgebaseResource(
-					knowledgeBaseResourceLabel1,
+					knowledgeBaseResource1,
 					knowledgeBaseName1,
 					knowledgeBaseDescription1,
 					knowledgeBaseCoreLanguage1,
 				) + generateKnowledgeCategoryResource(
-					knowledgeCategoryResourceLabelParent1,
-					knowledgeBaseResourceLabel1,
+					knowledgeCategoryResourceParent1,
+					knowledgeBaseResource1,
 					categoryParentName,
 					categoryParentDescription2,
 				) + generateKnowledgeCategoryChildResource(
-					knowledgeCategoryResourceLabelChild1,
-					knowledgeBaseResourceLabel1,
+					knowledgeCategoryResourceChild1,
+					knowledgeBaseResource1,
 					categoryChildName,
 					categoryChildDescription2,
-					knowledgeCategoryResourceLabelParent1,
+					knowledgeCategoryResourceParent1,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair("genesyscloud_knowledge_category."+knowledgeCategoryResourceLabelParent1, "knowledge_base_id", "genesyscloud_knowledge_knowledgebase."+knowledgeBaseResourceLabel1, "id"),
-					resource.TestCheckResourceAttr("genesyscloud_knowledge_category."+knowledgeCategoryResourceLabelParent1, "knowledge_category.0.name", categoryParentName),
-					resource.TestCheckResourceAttr("genesyscloud_knowledge_category."+knowledgeCategoryResourceLabelParent1, "knowledge_category.0.description", categoryParentDescription2),
-					resource.TestCheckResourceAttr("genesyscloud_knowledge_category."+knowledgeCategoryResourceLabelChild1, "knowledge_category.0.name", categoryChildName),
-					resource.TestCheckResourceAttr("genesyscloud_knowledge_category."+knowledgeCategoryResourceLabelChild1, "knowledge_category.0.description", categoryChildDescription2),
+					resource.TestCheckResourceAttrPair("genesyscloud_knowledge_category."+knowledgeCategoryResourceParent1, "knowledge_base_id", "genesyscloud_knowledge_knowledgebase."+knowledgeBaseResource1, "id"),
+					resource.TestCheckResourceAttr("genesyscloud_knowledge_category."+knowledgeCategoryResourceParent1, "knowledge_category.0.name", categoryParentName),
+					resource.TestCheckResourceAttr("genesyscloud_knowledge_category."+knowledgeCategoryResourceParent1, "knowledge_category.0.description", categoryParentDescription2),
+					resource.TestCheckResourceAttr("genesyscloud_knowledge_category."+knowledgeCategoryResourceChild1, "knowledge_category.0.name", categoryChildName),
+					resource.TestCheckResourceAttr("genesyscloud_knowledge_category."+knowledgeCategoryResourceChild1, "knowledge_category.0.description", categoryChildDescription2),
 				),
 			},
 			{
 				// Import/Read
-				ResourceName:      "genesyscloud_knowledge_category." + knowledgeCategoryResourceLabelParent1,
+				ResourceName:      "genesyscloud_knowledge_category." + knowledgeCategoryResourceParent1,
 				ImportState:       true,
 				ImportStateVerify: true,
 			},
@@ -165,27 +165,27 @@ func TestAccResourceKnowledgeCategoryParentChild(t *testing.T) {
 	})
 }
 
-func generateKnowledgeCategoryResource(resourceLabel string, knowledgeBaseResourceLabel string, categoryName string, categoryDescription string) string {
+func generateKnowledgeCategoryResource(resourceName string, knowledgeBaseResource string, categoryName string, categoryDescription string) string {
 	category := fmt.Sprintf(`
         resource "genesyscloud_knowledge_category" "%s" {
             knowledge_base_id = genesyscloud_knowledge_knowledgebase.%s.id
             %s
         }
-        `, resourceLabel,
-		knowledgeBaseResourceLabel,
+        `, resourceName,
+		knowledgeBaseResource,
 		generateKnowledgeCategoryRequestBody(categoryName, categoryDescription, util.NullValue),
 	)
 	return category
 }
 
-func generateKnowledgeCategoryChildResource(resourceLabel string, knowledgeBaseResourceLabel string, categoryName string, categoryDescription string, parentCategoryName string) string {
+func generateKnowledgeCategoryChildResource(resourceName string, knowledgeBaseResource string, categoryName string, categoryDescription string, parentCategoryName string) string {
 	category := fmt.Sprintf(`
 	resource "genesyscloud_knowledge_category" "%s" {
 		knowledge_base_id = genesyscloud_knowledge_knowledgebase.%s.id
 		%s
 	}
-	`, resourceLabel,
-		knowledgeBaseResourceLabel,
+	`, resourceName,
+		knowledgeBaseResource,
 		generateKnowledgeCategoryRequestBody(categoryName, categoryDescription,
 			"genesyscloud_knowledge_category."+parentCategoryName+".id"),
 	)

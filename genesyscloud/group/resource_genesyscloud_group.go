@@ -34,7 +34,7 @@ func getAllGroups(ctx context.Context, clientConfig *platformclientv2.Configurat
 	}
 
 	for _, group := range *groups {
-		resources[*group.Id] = &resourceExporter.ResourceMeta{BlockLabel: *group.Name}
+		resources[*group.Id] = &resourceExporter.ResourceMeta{Name: *group.Name}
 	}
 
 	return resources, nil

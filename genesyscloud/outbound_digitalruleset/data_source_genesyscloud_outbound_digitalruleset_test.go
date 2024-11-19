@@ -21,9 +21,9 @@ func TestAccDataSourceOutboundDigitalruleset(t *testing.T) {
 	t.Parallel()
 	var (
 		name1             = "Terraform Digital RuleSet1"
-		resourceLabel     = "digital-rule-set"
+		resourceId        = "digital-rule-set"
 		ruleName          = "RuleWork"
-		dataSourceLabel   = "data-digital-rule-set"
+		dataSourceId      = "data-digital-rule-set"
 		ruleOrder         = "0"
 		ruleCategory      = "PreContact"
 		contactColumnName = "Work"
@@ -34,7 +34,7 @@ func TestAccDataSourceOutboundDigitalruleset(t *testing.T) {
 		updatePropertiesWork = "Work"
 		updateOption         = "Set"
 
-		contactListResourceLabel1 = "contact-list-1"
+		contactListResourceId1    = "contact-list-1"
 		contactListName1          = "Test Contact List " + uuid.NewString()
 		previewModeColumnName     = ""
 		previewModeAcceptedValues = []string{}
@@ -43,7 +43,7 @@ func TestAccDataSourceOutboundDigitalruleset(t *testing.T) {
 	)
 
 	contactListResourceGenerate := obContactList.GenerateOutboundContactList(
-		contactListResourceLabel1,
+		contactListResourceId1,
 		contactListName1,
 		util.NullValue,
 		strconv.Quote(previewModeColumnName),
@@ -78,9 +78,9 @@ func TestAccDataSourceOutboundDigitalruleset(t *testing.T) {
 
 				Config: contactListResourceGenerate +
 					GenerateOutboundDigitalRuleSetResource(
-						resourceLabel,
+						resourceId,
 						name1,
-						"genesyscloud_outbound_contact_list."+contactListResourceLabel1+".id",
+						"genesyscloud_outbound_contact_list."+contactListResourceId1+".id",
 						GenerateDigitalRules(
 							ruleName,
 							ruleOrder,
@@ -106,25 +106,25 @@ func TestAccDataSourceOutboundDigitalruleset(t *testing.T) {
 						),
 					) +
 					generateOutboundDigitalRuleSetDataSource(
-						dataSourceLabel,
+						dataSourceId,
 						name1,
-						"genesyscloud_outbound_digitalruleset."+resourceLabel,
+						"genesyscloud_outbound_digitalruleset."+resourceId,
 					),
 
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair("data.genesyscloud_outbound_digitalruleset."+dataSourceLabel, "id",
-						"genesyscloud_outbound_digitalruleset."+resourceLabel, "id"),
+					resource.TestCheckResourceAttrPair("data.genesyscloud_outbound_digitalruleset."+dataSourceId, "id",
+						"genesyscloud_outbound_digitalruleset."+resourceId, "id"),
 				),
 			},
 		},
 	})
 }
 
-func generateOutboundDigitalRuleSetDataSource(dataSourceLabel string, name string, dependsOn string) string {
+func generateOutboundDigitalRuleSetDataSource(id string, name string, dependsOn string) string {
 	return fmt.Sprintf(`
 data "genesyscloud_outbound_digitalruleset" "%s" {
 	name       = "%s"
 	depends_on = [%s]
 }
-`, dataSourceLabel, name, dependsOn)
+`, id, name, dependsOn)
 }

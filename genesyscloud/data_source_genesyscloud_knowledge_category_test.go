@@ -12,15 +12,15 @@ import (
 
 func TestAccDataSourceKnowledgeCategoryBasic(t *testing.T) {
 	var (
-		knowledgeBaseResourceLabel1 = "test-knowledgebase1"
-		categoryResourceLabel1      = "test-category1"
-		categoryName                = "Terraform Test Category 1-" + uuid.NewString()
-		categoryDescription         = "category description"
-		knowledgeBaseName1          = "Terraform Test Knowledge Base 1-" + uuid.NewString()
-		knowledgeBaseDescription1   = "test-knowledgebase-description1"
-		knowledgeBaseCoreLanguage1  = "en-US"
+		knowledgeBaseResource1     = "test-knowledgebase1"
+		categoryResource1          = "test-category1"
+		categoryName               = "Terraform Test Category 1-" + uuid.NewString()
+		categoryDescription        = "category description"
+		knowledgeBaseName1         = "Terraform Test Knowledge Base 1-" + uuid.NewString()
+		knowledgeBaseDescription1  = "test-knowledgebase-description1"
+		knowledgeBaseCoreLanguage1 = "en-US"
 
-		categoryDataSourceLabel = "test-category-ds"
+		categoryDataSource = "test-category-ds"
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -30,24 +30,24 @@ func TestAccDataSourceKnowledgeCategoryBasic(t *testing.T) {
 			{
 				// Create
 				Config: GenerateKnowledgeKnowledgebaseResource(
-					knowledgeBaseResourceLabel1,
+					knowledgeBaseResource1,
 					knowledgeBaseName1,
 					knowledgeBaseDescription1,
 					knowledgeBaseCoreLanguage1,
 				) + generateKnowledgeCategoryResource(
-					categoryResourceLabel1,
-					knowledgeBaseResourceLabel1,
+					categoryResource1,
+					knowledgeBaseResource1,
 					categoryName,
 					categoryDescription,
 				) + generateKnowledgeCategoryDataSource(
-					categoryDataSourceLabel,
+					categoryDataSource,
 					categoryName,
 					knowledgeBaseName1,
-					"genesyscloud_knowledge_category."+categoryResourceLabel1+", genesyscloud_knowledge_knowledgebase."+knowledgeBaseResourceLabel1,
+					"genesyscloud_knowledge_category."+categoryResource1+", genesyscloud_knowledge_knowledgebase."+knowledgeBaseResource1,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair("data.genesyscloud_knowledge_category."+categoryDataSourceLabel,
-						"id", "genesyscloud_knowledge_category."+categoryResourceLabel1, "id",
+					resource.TestCheckResourceAttrPair("data.genesyscloud_knowledge_category."+categoryDataSource,
+						"id", "genesyscloud_knowledge_category."+categoryResource1, "id",
 					),
 				),
 			},
@@ -56,7 +56,7 @@ func TestAccDataSourceKnowledgeCategoryBasic(t *testing.T) {
 }
 
 func generateKnowledgeCategoryDataSource(
-	resourceLabel string,
+	resourceID string,
 	name string,
 	knowledgeBaseName string,
 	// Must explicitly use depends_on in terraform v0.13 when a data source references a resource
@@ -68,5 +68,5 @@ func generateKnowledgeCategoryDataSource(
         knowledge_base_name = "%s"
         depends_on=[%s]
 	}
-	`, resourceLabel, name, knowledgeBaseName, dependsOn)
+	`, resourceID, name, knowledgeBaseName, dependsOn)
 }

@@ -13,8 +13,8 @@ import (
 
 func TestAccDataSourceProcessAutomationTrigger(t *testing.T) {
 	var (
-		triggerResourceLabel1 = "test-trigger1"
-		triggerResourceLabel2 = "test-trigger2"
+		triggerResource1 = "test-trigger1"
+		triggerResource2 = "test-trigger2"
 
 		triggerName1              = "Terraform trigger1-" + uuid.NewString()
 		topicName1                = "v2.detail.events.conversation.{id}.customer.end"
@@ -24,9 +24,9 @@ func TestAccDataSourceProcessAutomationTrigger(t *testing.T) {
 		description1              = "description 1"
 		workflowTargetDataFormat1 = "Json"
 
-		flowResourceLabel1 = "test_flow1"
-		filePath1          = "../../examples/resources/genesyscloud_processautomation_trigger/trigger_workflow_example.yaml"
-		flowName1          = "terraform-provider-test-" + uuid.NewString()
+		flowResource1 = "test_flow1"
+		filePath1     = "../../examples/resources/genesyscloud_processautomation_trigger/trigger_workflow_example.yaml"
+		flowName1     = "terraform-provider-test-" + uuid.NewString()
 	)
 	var homeDivisionName string
 	resource.Test(t, resource.TestCase{
@@ -100,12 +100,12 @@ func TestAccDataSourceProcessAutomationTrigger(t *testing.T) {
 			{
 				// Create a trigger
 				Config: architect_flow.GenerateFlowResource(
-					flowResourceLabel1,
+					flowResource1,
 					filePath1,
 					workflowConfig1,
 					false,
 				) + generateProcessAutomationTriggerResourceEventTTL(
-					triggerResourceLabel1,
+					triggerResource1,
 					triggerName1,
 					topicName1,
 					enabled1,
@@ -116,17 +116,17 @@ func TestAccDataSourceProcessAutomationTrigger(t *testing.T) {
 							data_format = "%s"
 						}
                     }
-                    `, "genesyscloud_flow."+flowResourceLabel1+".id", targetType1, workflowTargetDataFormat1),
+                    `, "genesyscloud_flow."+flowResource1+".id", targetType1, workflowTargetDataFormat1),
 					matchCriteria,
 					eventTtlSeconds1,
 					description1,
 				) + generateProcessAutomationTriggerDataSource(
-					triggerResourceLabel2,
+					triggerResource2,
 					triggerName1,
-					"genesyscloud_processautomation_trigger."+triggerResourceLabel1,
+					"genesyscloud_processautomation_trigger."+triggerResource1,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair("data.genesyscloud_processautomation_trigger."+triggerResourceLabel2, "id", "genesyscloud_processautomation_trigger."+triggerResourceLabel1, "id"), // Default value would be "DISABLED"
+					resource.TestCheckResourceAttrPair("data.genesyscloud_processautomation_trigger."+triggerResource2, "id", "genesyscloud_processautomation_trigger."+triggerResource1, "id"), // Default value would be "DISABLED"
 				),
 			},
 		},
@@ -135,7 +135,7 @@ func TestAccDataSourceProcessAutomationTrigger(t *testing.T) {
 }
 
 func generateProcessAutomationTriggerDataSource(
-	resourceLabel string,
+	resourceID string,
 	name string,
 	// Must explicitly use depends_on in terraform v0.13 when a data source references a resource
 	// Fixed in v0.14 https://github.com/hashicorp/terraform/pull/26284
@@ -144,5 +144,5 @@ func generateProcessAutomationTriggerDataSource(
 		name = "%s"
 		depends_on=[%s]
 	}
-	`, resourceLabel, name, dependsOnResource)
+	`, resourceID, name, dependsOnResource)
 }

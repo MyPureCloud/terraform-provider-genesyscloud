@@ -13,10 +13,10 @@ import (
 
 func TestAccDataSourceLineBaseSettings(t *testing.T) {
 	t.Parallel()
-	phoneBaseSettingsResourceLabel := "phoneBaseSettings1234"
+	phoneBaseSettingsRes := "phoneBaseSettings1234"
 	phoneBaseSettingsName := "phoneBaseSettings " + uuid.NewString()
 
-	lineBaseSettingsDataResourceLabel := "lineBaseSettings1234"
+	lineBaseSettingsDataRes := "lineBaseSettings1234"
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
@@ -25,14 +25,14 @@ func TestAccDataSourceLineBaseSettings(t *testing.T) {
 			{
 				// Creating a phone base settings will result in a line base settings of the same name being created
 				Config: phoneBaseSettings.GeneratePhoneBaseSettingsResourceWithCustomAttrs(
-					phoneBaseSettingsResourceLabel,
+					phoneBaseSettingsRes,
 					phoneBaseSettingsName,
 					"phoneBaseSettings description",
 					"generic_sip.json",
 				) + generateLineBaseSettingsDataSource(
-					lineBaseSettingsDataResourceLabel,
+					lineBaseSettingsDataRes,
 					phoneBaseSettingsName,
-					"genesyscloud_telephony_providers_edges_phonebasesettings."+phoneBaseSettingsResourceLabel,
+					"genesyscloud_telephony_providers_edges_phonebasesettings."+phoneBaseSettingsRes,
 				),
 				Check: resource.ComposeTestCheckFunc(),
 			},
@@ -41,7 +41,7 @@ func TestAccDataSourceLineBaseSettings(t *testing.T) {
 }
 
 func generateLineBaseSettingsDataSource(
-	resourceLabel string,
+	resourceID string,
 	name string,
 	// Must explicitly use depends_on in terraform v0.13 when a data source references a resource
 	// Fixed in v0.14 https://github.com/hashicorp/terraform/pull/26284
@@ -50,5 +50,5 @@ func generateLineBaseSettingsDataSource(
 		name = "%s"
 		depends_on=[%s]
 	}
-	`, resourceLabel, name, dependsOnResource)
+	`, resourceID, name, dependsOnResource)
 }

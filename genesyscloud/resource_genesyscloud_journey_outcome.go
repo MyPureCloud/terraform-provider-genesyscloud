@@ -110,7 +110,7 @@ func getAllJourneyOutcomes(_ context.Context, clientConfig *platformclientv2.Con
 		}
 
 		for _, journeyOutcome := range *journeyOutcomes.Entities {
-			resources[*journeyOutcome.Id] = &resourceExporter.ResourceMeta{BlockLabel: *journeyOutcome.DisplayName}
+			resources[*journeyOutcome.Id] = &resourceExporter.ResourceMeta{Name: *journeyOutcome.DisplayName}
 		}
 
 		pageCount = *journeyOutcomes.PageCount

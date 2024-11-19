@@ -332,9 +332,9 @@ func hashFormattedPhoneNumber(val string) int {
 	return schema.HashString(formattedNumber)
 }
 
-func GenerateBasicExternalContactResource(resourceLabel string, title string) string {
+func GenerateBasicExternalContactResource(resourceID string, title string) string {
 	return fmt.Sprintf(`resource "genesyscloud_externalcontacts_contact" "%s" {
 		title = "%s"
 	}
-	`, resourceLabel, title)
+	`, resourceID, title)
 }

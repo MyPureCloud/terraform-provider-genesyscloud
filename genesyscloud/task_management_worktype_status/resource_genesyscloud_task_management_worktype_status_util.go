@@ -57,7 +57,7 @@ func updateWorktypeDefaultStatus(ctx context.Context, proxy *taskManagementWorkt
 }
 
 func GenerateWorktypeStatusResource(
-	resourceLabel,
+	resourceName,
 	workTypeId,
 	name,
 	category,
@@ -76,7 +76,7 @@ func GenerateWorktypeStatusResource(
 		status_transition_time = "%s"
 		%s
 	}
-`, resourceLabel, workTypeId, name, category, description, defaultDestinationStatusId, statusTransitionTime, strings.Join(attrs, "\n"))
+`, resourceName, workTypeId, name, category, description, defaultDestinationStatusId, statusTransitionTime, strings.Join(attrs, "\n"))
 }
 
 // ValidateStatusIds will check that two status ids are the same

@@ -221,7 +221,7 @@ func flattenRoleConditionOperands(operands []platformclientv2.Domainresourcecond
 }
 
 func GenerateAuthRoleResource(
-	resourceLabel string,
+	resourceID string,
 	name string,
 	description string,
 	nestedBlocks ...string) string {
@@ -230,7 +230,7 @@ func GenerateAuthRoleResource(
 		description = "%s"
 		%s
 	}
-	`, resourceLabel, name, description, strings.Join(nestedBlocks, "\n"))
+	`, resourceID, name, description, strings.Join(nestedBlocks, "\n"))
 }
 
 func GenerateRolePermissions(permissions ...string) string {
@@ -249,10 +249,10 @@ func GenerateRolePermPolicy(domain string, entityName string, actions ...string)
 }
 
 func GenerateDefaultAuthRoleDataSource(
-	resourceLabel string,
+	resourceID string,
 	name string) string {
 	return fmt.Sprintf(`data "genesyscloud_auth_role" "%s" {
 		name = %s
 	}
-	`, resourceLabel, name)
+	`, resourceID, name)
 }

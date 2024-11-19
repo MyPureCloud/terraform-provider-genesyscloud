@@ -34,7 +34,7 @@ func getAllArchitectSchedules(ctx context.Context, clientConfig *platformclientv
 	}
 
 	for _, schedule := range *schedules {
-		resources[*schedule.Id] = &resourceExporter.ResourceMeta{BlockLabel: *schedule.Name}
+		resources[*schedule.Id] = &resourceExporter.ResourceMeta{Name: *schedule.Name}
 	}
 
 	return resources, nil
@@ -241,7 +241,7 @@ func deleteArchitectSchedules(ctx context.Context, d *schema.ResourceData, meta 
 }
 
 func GenerateArchitectSchedulesResource(
-	schedResourceLabel string,
+	schedResource1 string,
 	name string,
 	divisionId string,
 	description string,
@@ -256,5 +256,5 @@ func GenerateArchitectSchedulesResource(
 		end = "%s"
 		rrule = "%s"
 	}
-	`, schedResourceLabel, name, divisionId, description, start, end, rrule)
+	`, schedResource1, name, divisionId, description, start, end, rrule)
 }

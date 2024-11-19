@@ -71,7 +71,7 @@ func retrievePooledClientFn(method provider.GetCustomConfigFunc) (resourceExport
 
 func retrieveDependentConsumersFn(ctx context.Context, p *DependentConsumerProxy, resourceKeys resourceExporter.ResourceInfo) (resourceExporter.ResourceIDMetaMap, *resourceExporter.DependencyResource, error) {
 	resourceKey := resourceKeys.State.ID
-	resourceName := resourceKeys.BlockLabel
+	resourceName := resourceKeys.Name
 	dependsMap := make(map[string][]string)
 	architectDependencies := make(map[string][]string)
 	dependentResources, dependsMap, cyclicDependsList, err := fetchDepConsumers(ctx, p, resourceKeys.Type, resourceKey, resourceName, make(resourceExporter.ResourceIDMetaMap), dependsMap, architectDependencies, make([]string, 0))
@@ -152,7 +152,7 @@ func fetchDepConsumers(ctx context.Context,
 func buildDependsMap(resources resourceExporter.ResourceIDMetaMap, dependsMap map[string][]string, id string) map[string][]string {
 	dependsList := make([]string, 0)
 	for depId, meta := range resources {
-		resource := strings.Split(meta.BlockLabel, "::::")
+		resource := strings.Split(meta.Name, "::::")
 		if id != depId {
 			dependsList = append(dependsList, fmt.Sprintf("%s.%s", resource[0], depId))
 		}
@@ -207,7 +207,7 @@ func getResourceFilter(consumer platformclientv2.Dependency, resourceType string
 func processResource(consumer platformclientv2.Dependency, resourceType string, resources resourceExporter.ResourceIDMetaMap, architectDependencies map[string][]string, key string) (resourceExporter.ResourceIDMetaMap, map[string][]string) {
 	resourceFilter := getResourceFilter(consumer, resourceType)
 	if _, resourceExists := resources[*consumer.Id]; !resourceExists {
-		resources[*consumer.Id] = &resourceExporter.ResourceMeta{BlockLabel: resourceFilter}
+		resources[*consumer.Id] = &resourceExporter.ResourceMeta{Name: resourceFilter}
 		if architectDependencies[key] != nil {
 			architectDependencies[key] = append(architectDependencies[key], *consumer.Id)
 		} else {
