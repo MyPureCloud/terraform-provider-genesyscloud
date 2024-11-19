@@ -130,3 +130,30 @@ func customizePhoneBaseSettingsPropertiesDiff(ctx context.Context, diff *schema.
 
 	return util.ApplyPropertyDefaults(diff, phoneBaseSetting.Properties)
 }
+
+func customizePhoneBaseSettingsPropertiesDiff(ctx context.Context, diff *schema.ResourceDiff, meta interface{}) error {
+	// Defaults must be set on missing properties
+	if !diff.NewValueKnown("properties") {
+		// properties value not yet in final state. Nothing to do.
+		return nil
+	}
+
+	id := diff.Id()
+	if id == "" {
+		return nil
+	}
+
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
+	phoneBaseProxy := getPhoneBaseProxy(sdkConfig)
+
+	// Retrieve defaults from the settings
+	phoneBaseSetting, resp, getErr := phoneBaseProxy.getPhoneBaseSetting(ctx, id)
+	if getErr != nil {
+		if util.IsStatus404(resp) {
+			return nil
+		}
+		return fmt.Errorf("failed to read phone base settings %s: %s", id, getErr)
+	}
+
+	return util.ApplyPropertyDefaults(diff, phoneBaseSetting.Properties)
+}
