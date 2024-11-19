@@ -32,7 +32,7 @@ func getAllJourneyViews(ctx context.Context, clientConfig *platformclientv2.Conf
 	}
 
 	for _, journey := range *journeys {
-		resources[*journey.Id] = &resourceExporter.ResourceMeta{Name: *journey.Name}
+		resources[*journey.Id] = &resourceExporter.ResourceMeta{BlockLabel: *journey.Name}
 	}
 
 	return resources, nil
