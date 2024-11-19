@@ -23,6 +23,12 @@ import (
 )
 
 /*
+	NOTE: This resource's Id is in the format <worktypeId>/<statusId> so we can persist the id of the parent worktype.
+	The worktype_id field can not be used for this because attribute values are dropped during a read so they can be
+	re-read.
+*/
+
+/*
 The resource_genesyscloud_task_management_worktype_status.go contains all of the methods that perform the core logic for a resource.
 */
 
@@ -60,7 +66,7 @@ func createTaskManagementWorktypeStatus(ctx context.Context, d *schema.ResourceD
 		Name:                         platformclientv2.String(d.Get("name").(string)),
 		Category:                     platformclientv2.String(d.Get("category").(string)),
 		Description:                  resourcedata.GetNillableValue[string](d, "description"),
-		DestinationStatusIds:         lists.BuildSdkStringListFromInterfaceArray(d, "default_destination_status_id"),
+		DestinationStatusIds:         lists.BuildSdkStringListFromInterfaceArray(d, "destination_status_ids"),
 		DefaultDestinationStatusId:   resourcedata.GetNillableValue[string](d, "default_destination_status_id"),
 		StatusTransitionDelaySeconds: resourcedata.GetNillableValue[int](d, "status_transition_delay_seconds"),
 		StatusTransitionTime:         resourcedata.GetNillableValue[string](d, "status_transition_time"),
@@ -72,11 +78,28 @@ func createTaskManagementWorktypeStatus(ctx context.Context, d *schema.ResourceD
 		return util.BuildDiagnosticError(resourceName, errorMsg, fmt.Errorf(errorMsg))
 	}
 
+	// If the user makes a reference to a status that is managed by terraform the id will look like this <worktypeId>/<statusId>
+	// so we need to extract just the status id from any status references that look like this
+	if taskManagementWorktypeStatus.DestinationStatusIds != nil && len(*taskManagementWorktypeStatus.DestinationStatusIds) > 0 {
+		for i, destinationStatusId := range *taskManagementWorktypeStatus.DestinationStatusIds {
+			if strings.Contains(destinationStatusId, "/") {
+				_, id := SplitWorktypeStatusTerraformId(destinationStatusId)
+				(*taskManagementWorktypeStatus.DestinationStatusIds)[i] = id
+			}
+		}
+	}
+
+	if taskManagementWorktypeStatus.DefaultDestinationStatusId != nil && strings.Contains(*taskManagementWorktypeStatus.DefaultDestinationStatusId, "/") {
+		_, id := SplitWorktypeStatusTerraformId(*taskManagementWorktypeStatus.DefaultDestinationStatusId)
+		taskManagementWorktypeStatus.DefaultDestinationStatusId = &id
+	}
+
 	log.Printf("Creating task management worktype %s status %s", worktypeId, *taskManagementWorktypeStatus.Name)
 	var (
 		workitemStatus *platformclientv2.Workitemstatus
 		resp           *platformclientv2.APIResponse
 	)
+
 	diagErr := util.WithRetries(ctx, 60*time.Second, func() *retry.RetryError {
 		workitemStatus, resp, err = proxy.createTaskManagementWorktypeStatus(ctx, worktypeId, &taskManagementWorktypeStatus)
 		if err != nil {
