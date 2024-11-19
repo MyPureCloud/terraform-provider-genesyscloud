@@ -83,6 +83,7 @@ func getAllKnowledgeCategories(_ context.Context, clientConfig *platformclientv2
 func getAllKnowledgeCategoryEntities(knowledgeAPI platformclientv2.KnowledgeApi, knowledgeBase *platformclientv2.Knowledgebase) (*[]platformclientv2.Categoryresponse, diag.Diagnostics) {
 	var (
 		after    string
+		err      error
 		entities []platformclientv2.Categoryresponse
 	)
 
@@ -103,7 +104,7 @@ func getAllKnowledgeCategoryEntities(knowledgeAPI platformclientv2.KnowledgeApi,
 			break
 		}
 
-		after, err := util.GetQueryParamValueFromUri(*knowledgeCategories.NextUri, "after")
+		after, err = util.GetQueryParamValueFromUri(*knowledgeCategories.NextUri, "after")
 		if err != nil {
 			return nil, util.BuildDiagnosticError("genesyscloud_knowledge_category", fmt.Sprintf("Failed to parse after cursor from knowledge category nextUri"), err)
 		}

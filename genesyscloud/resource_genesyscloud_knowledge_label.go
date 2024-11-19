@@ -59,7 +59,7 @@ func getAllKnowledgeLabels(_ context.Context, clientConfig *platformclientv2.Con
 	knowledgeBaseList = append(knowledgeBaseList, *unpublishedEntities...)
 
 	for _, knowledgeBase := range knowledgeBaseList {
-		labelEntities, err := getAllKnowledgeLabelEntities(*knowledgeAPI, &knowledgeBase)
+		labelEntities, err := getAllKnowledgeLabelEntities(*knowledgeAPI, *knowledgeBase.Id)
 		if err != nil {
 			return nil, err
 		}
@@ -73,15 +73,16 @@ func getAllKnowledgeLabels(_ context.Context, clientConfig *platformclientv2.Con
 	return resources, nil
 }
 
-func getAllKnowledgeLabelEntities(knowledgeAPI platformclientv2.KnowledgeApi, knowledgeBase *platformclientv2.Knowledgebase) (*[]platformclientv2.Labelresponse, diag.Diagnostics) {
+func getAllKnowledgeLabelEntities(knowledgeAPI platformclientv2.KnowledgeApi, knowledgeBaseId string) (*[]platformclientv2.Labelresponse, diag.Diagnostics) {
 	var (
 		after    string
+		err      error
 		entities []platformclientv2.Labelresponse
 	)
 
 	const pageSize = 100
-	for i := 0; ; i++ {
-		knowledgeLabels, resp, getErr := knowledgeAPI.GetKnowledgeKnowledgebaseLabels(*knowledgeBase.Id, "", after, fmt.Sprintf("%v", pageSize), "", false)
+	for {
+		knowledgeLabels, resp, getErr := knowledgeAPI.GetKnowledgeKnowledgebaseLabels(knowledgeBaseId, "", after, fmt.Sprintf("%v", pageSize), "", false)
 		if getErr != nil {
 			return nil, util.BuildAPIDiagnosticError("genesyscloud_knowledge_label", fmt.Sprintf("Failed to get knowledge labels error: %s", getErr), resp)
 		}
@@ -96,7 +97,7 @@ func getAllKnowledgeLabelEntities(knowledgeAPI platformclientv2.KnowledgeApi, kn
 			break
 		}
 
-		after, err := util.GetQueryParamValueFromUri(*knowledgeLabels.NextUri, "after")
+		after, err = util.GetQueryParamValueFromUri(*knowledgeLabels.NextUri, "after")
 		if err != nil {
 			return nil, util.BuildDiagnosticError("genesyscloud_knowledge_label", fmt.Sprintf("Failed to parse after cursor from knowledge label nextUri"), err)
 		}
