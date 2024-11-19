@@ -198,7 +198,7 @@ func ResourceJourneyViews() *schema.Resource {
 			"version": {
 				Description: "Version of JourneyView.",
 				Type:        schema.TypeInt,
-				Optional:    true,
+				Computed:    true,
 			},
 			"duration": {
 				Description: "A relative timeframe for the journey view, expressed as an ISO 8601 duration. Only one of interval or duration must be specified. Periods are represented as an ISO-8601 string. For example: P1D or P1DT12H.",

@@ -59,14 +59,6 @@ func updateJourneyView(ctx context.Context, d *schema.ResourceData, meta interfa
 	name := d.Get("name").(string)
 	var versionId = d.Get("version").(int)
 
-	if d.HasChange("version") {
-		old, _ := d.GetChange("version")
-		if old != nil {
-			versionId = old.(int)
-		}
-		d.Set("version", versionId)
-	}
-
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	gp := getJourneyViewProxy(sdkConfig)
 
