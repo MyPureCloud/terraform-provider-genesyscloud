@@ -1679,7 +1679,7 @@ func TestAccResourceTfExportUserPromptsExported(t *testing.T) {
 		dPromptName       = "d_user_prompt_test"
 		hPromptResourceId = "h_user_prompt"
 		hPromptName       = "h_user_prompt_test"
-		zPromptResourceId = "z_user_prompt"
+		zPromptResourceId = "Z_user_prompt"
 		zPromptName       = "Z_user_prompt_test"
 	)
 
