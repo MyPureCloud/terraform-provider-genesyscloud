@@ -18,12 +18,11 @@ and unmarshal data into formats consumable by Terraform and/or Genesys Cloud.
 */
 
 // getExternalContactsOrganizationFromResourceData maps data from schema ResourceData object to a platformclientv2.Externalorganization
-func getExternalContactsOrganizationFromResourceData(d *schema.ResourceData, schemaVersion *int) (platformclientv2.Externalorganization, error) {
+func getExternalContactsOrganizationFromResourceData(d *schema.ResourceData) (platformclientv2.Externalorganization, error) {
 	externalOrganization := platformclientv2.Externalorganization{
 		Name:                platformclientv2.String(d.Get("name").(string)),
 		CompanyType:         platformclientv2.String(d.Get("company_type").(string)),
 		Industry:            platformclientv2.String(d.Get("industry").(string)),
-		PrimaryContactId:    platformclientv2.String(d.Get("primary_contact_id").(string)),
 		Address:             buildSdkAddress(d, "address"),
 		PhoneNumber:         buildSdkPhoneNumber(d, "phone_number"),
 		FaxNumber:           buildSdkPhoneNumber(d, "fax_number"),
@@ -39,8 +38,10 @@ func getExternalContactsOrganizationFromResourceData(d *schema.ResourceData, sch
 	websites := lists.InterfaceListToStrings(d.Get("websites").([]interface{}))
 	externalOrganization.Tags = &tags
 	externalOrganization.Websites = &websites
-
-	schema, err := BuildOrganizationSchema(d.Get("schema").([]interface{}), schemaVersion)
+	if d.Get("primary_contact_id").(string) != "" {
+		externalOrganization.PrimaryContactId = platformclientv2.String(d.Get("primary_contact_id").(string))
+	}
+	schema, err := BuildOrganizationSchema(d.Get("schema").([]interface{}))
 	if err != nil {
 		return externalOrganization, err
 	}
@@ -112,24 +113,26 @@ func flattenPhoneNumber(phonenumber *platformclientv2.Phonenumber) []interface{}
 func buildSdkAddress(d *schema.ResourceData, key string) *platformclientv2.Contactaddress {
 	if d.Get(key) != nil {
 		addressData := d.Get(key).([]interface{})
-		if len(addressData) > 0 {
-			addressMap := addressData[0].(map[string]interface{})
-			address1 := addressMap["address1"].(string)
-			address2 := addressMap["address2"].(string)
-			city := addressMap["city"].(string)
-			state := addressMap["state"].(string)
-			postalcode := addressMap["postal_code"].(string)
-			countrycode := addressMap["country_code"].(string)
-
-			return &platformclientv2.Contactaddress{
-				Address1:    &address1,
-				Address2:    &address2,
-				City:        &city,
-				State:       &state,
-				PostalCode:  &postalcode,
-				CountryCode: &countrycode,
-			}
+		if len(addressData) == 0 {
+			return nil
 		}
+		addressMap := addressData[0].(map[string]interface{})
+		address1 := addressMap["address1"].(string)
+		address2 := addressMap["address2"].(string)
+		city := addressMap["city"].(string)
+		state := addressMap["state"].(string)
+		postalcode := addressMap["postal_code"].(string)
+		countrycode := addressMap["country_code"].(string)
+
+		return &platformclientv2.Contactaddress{
+			Address1:    &address1,
+			Address2:    &address2,
+			City:        &city,
+			State:       &state,
+			PostalCode:  &postalcode,
+			CountryCode: &countrycode,
+		}
+
 	}
 	return nil
 }
@@ -152,24 +155,29 @@ func flattenSdkAddress(address *platformclientv2.Contactaddress) []interface{} {
 func buildSdkTwitterId(d *schema.ResourceData, key string) *platformclientv2.Twitterid {
 	if d.Get(key) != nil {
 		twitterData := d.Get(key).([]interface{})
-		if len(twitterData) > 0 {
-			twitterMap := twitterData[0].(map[string]interface{})
-			id := twitterMap["twitter_id"].(string)
-			name := twitterMap["name"].(string)
-			screenname := twitterMap["screen_name"].(string)
-
-			return &platformclientv2.Twitterid{
-				Id:         &id,
-				Name:       &name,
-				ScreenName: &screenname,
-			}
+		if len(twitterData) == 0 {
+			return nil
 		}
+		twitterMap := twitterData[0].(map[string]interface{})
+		id := twitterMap["twitter_id"].(string)
+		name := twitterMap["name"].(string)
+		screenname := twitterMap["screen_name"].(string)
+
+		return &platformclientv2.Twitterid{
+			Id:         &id,
+			Name:       &name,
+			ScreenName: &screenname,
+		}
+
 	}
 	return nil
 }
 
 // buildTickers maps an []interface{} into a Genesys Cloud *[]platformclientv2.Ticker
 func buildTickers(tickers []interface{}) *[]platformclientv2.Ticker {
+	if len(tickers) == 0 {
+		return nil
+	}
 	tickersSlice := make([]platformclientv2.Ticker, 0)
 	for _, ticker := range tickers {
 		var sdkTicker platformclientv2.Ticker
@@ -189,26 +197,29 @@ func buildTickers(tickers []interface{}) *[]platformclientv2.Ticker {
 
 // buildTrustors maps an []interface{} into a Genesys Cloud *[]platformclientv2.Trustor
 func buildTrustor(trustor []interface{}) *platformclientv2.Trustor {
-
+	if len(trustor) == 0 {
+		return nil
+	}
 	var sdkTrustor platformclientv2.Trustor
-	trustorsMap := trustor[0].(map[string]interface{})
 
+	trustorsMap := trustor[0].(map[string]interface{})
 	sdkTrustor.Enabled = platformclientv2.Bool(trustorsMap["enabled"].(bool))
 
 	return &sdkTrustor
 }
 
-func BuildOrganizationSchema(schemaList []interface{}, version *int) (*platformclientv2.Dataschema, error) {
+func BuildOrganizationSchema(schemaList []interface{}) (*platformclientv2.Dataschema, error) {
 	if len(schemaList) > 0 {
 		schemaMap := schemaList[0].(map[string]interface{})
-		jsonSchemaList := schemaMap["json_schema"].([]interface{})
 		dataSchema := &platformclientv2.Dataschema{}
 		dataSchema.Name = platformclientv2.String(schemaMap["name"].(string))
 		dataSchema.Enabled = platformclientv2.Bool(schemaMap["enabled"].(bool))
+		version := platformclientv2.Int(schemaMap["version"].(int))
 		if *version != 0 {
 			dataSchema.Version = version
 		}
 		dataSchema.Id = platformclientv2.String(schemaMap["schema_id"].(string))
+		jsonSchemaList := schemaMap["json_schema"].([]interface{})
 		if len(jsonSchemaList) > 0 {
 			jsonSchemMap := jsonSchemaList[0].(map[string]interface{})
 
@@ -220,7 +231,6 @@ func BuildOrganizationSchema(schemaList []interface{}, version *int) (*platformc
 			requiredList := lists.InterfaceListToStrings(jsonSchemMap["required"].([]interface{}))
 			dataSchema.JsonSchema.Required = &requiredList
 
-			// Custom attributes for the schemahashFormattedPhoneNumber
 			if jsonSchemMap["properties"] != "" {
 				var properties map[string]interface{}
 				if err := json.Unmarshal([]byte(jsonSchemMap["properties"].(string)), &properties); err != nil {
@@ -239,6 +249,9 @@ func BuildOrganizationSchema(schemaList []interface{}, version *int) (*platformc
 
 // buildExternalDataSources maps an []interface{} into a Genesys Cloud *[]platformclientv2.Externaldatasource
 func buildExternalDataSources(externalDataSources []interface{}) *[]platformclientv2.Externaldatasource {
+	if len(externalDataSources) == 0 {
+		return nil
+	}
 	externalDataSourcesSlice := make([]platformclientv2.Externaldatasource, 0)
 	for _, externalDataSource := range externalDataSources {
 		var sdkExternalDataSource platformclientv2.Externaldatasource
@@ -281,7 +294,7 @@ func flattenSdkTwitterId(twitterId *platformclientv2.Twitterid) []interface{} {
 	twitterMap := make(map[string]interface{})
 	resourcedata.SetMapValueIfNotNil(twitterMap, "twitter_id", twitterId.Id)
 	resourcedata.SetMapValueIfNotNil(twitterMap, "name", twitterId.Name)
-	resourcedata.SetMapValueIfNotNil(twitterMap, "screen_name", twitterId.Name)
+	resourcedata.SetMapValueIfNotNil(twitterMap, "screen_name", twitterId.ScreenName)
 
 	return []interface{}{twitterMap}
 }
@@ -336,7 +349,7 @@ func flattenDataSchema(dataSchema *platformclientv2.Dataschema) ([]interface{}, 
 
 // flattenExternalDataSources maps a Genesys Cloud *[]platformclientv2.Externaldatasource into a []interface{}
 func flattenExternalDataSources(externalDataSources *[]platformclientv2.Externaldatasource) []interface{} {
-	if externalDataSources == nil && len(*externalDataSources) == 0 {
+	if len(*externalDataSources) == 0 {
 		return nil
 	}
 

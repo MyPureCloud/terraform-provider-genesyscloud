@@ -98,6 +98,7 @@ import (
 	edgeSite "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site"
 
 	userPrompt "terraform-provider-genesyscloud/genesyscloud/architect_user_prompt"
+	externalOrganization "terraform-provider-genesyscloud/genesyscloud/external_contacts_organization"
 	location "terraform-provider-genesyscloud/genesyscloud/location"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -227,6 +228,7 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_conversations_messaging_settings"] = cMessagingSettings.ResourceConversationsMessagingSettings()
 	providerResources["genesyscloud_conversations_messaging_supportedcontent_default"] = defaultSupportedContent.ResourceConversationsMessagingSupportedcontentDefault()
 	providerResources["genesyscloud_task_management_worktype_status"] = worktypeStatus.ResourceTaskManagementWorktypeStatus()
+	providerResources["genesyscloud_externalcontacts_organization"] = externalOrganization.ResourceExternalContactsOrganization()
 	providerResources["genesyscloud_tf_export"] = ResourceTfExport()
 }
 
@@ -337,7 +339,7 @@ func (r *registerTestInstance) registerTestExporters() {
 	RegisterExporter("genesyscloud_conversations_messaging_supportedcontent_default", defaultSupportedContent.ConversationsMessagingSupportedcontentDefaultExporter())
 
 	RegisterExporter("genesyscloud_script", scripts.ExporterScript())
-
+	RegisterExporter("genesyscloud_externalcontacts_organization", externalOrganization.ExternalContactsOrganizationExporter())
 	resourceExporter.SetRegisterExporter(resourceExporters)
 }
 
