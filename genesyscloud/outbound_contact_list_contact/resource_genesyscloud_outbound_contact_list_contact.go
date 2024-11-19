@@ -15,7 +15,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v143/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
 )
 
 func getAllContacts(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
@@ -33,7 +33,9 @@ func getAllContacts(ctx context.Context, clientConfig *platformclientv2.Configur
 
 	for _, contact := range contacts {
 		id := createComplexContact(*contact.ContactListId, *contact.Id)
-		resources[id] = &resourceExporter.ResourceMeta{Name: id}
+		// We construct this to adhere to Terraform's Block Label requirements
+		name := "_" + createComplexContactWithDelimiter(*contact.ContactListId, *contact.Id, "_")
+		resources[id] = &resourceExporter.ResourceMeta{Name: name}
 	}
 
 	return resources, nil
@@ -61,7 +63,7 @@ func createOutboundContactListContact(ctx context.Context, d *schema.ResourceDat
 		return util.BuildDiagnosticError(resourceName, msg, fmt.Errorf("%v", msg))
 	}
 	contactId := *contactResponseBody[0].Id
-	d.Set("contact_id", contactId)
+	_ = d.Set("contact_id", contactId)
 	id := createComplexContact(contactListId, contactId)
 	d.SetId(id)
 	log.Printf("Finished creating contact '%s' in contact list '%s'", contactId, contactListId)

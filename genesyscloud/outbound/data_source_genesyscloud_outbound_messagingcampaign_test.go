@@ -14,10 +14,8 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/mypurecloud/platform-client-sdk-go/v143/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
 )
-
-var TrueValue = "true"
 
 /*
 This test can only pass in a test org because it requires an active provisioned sms phone number
@@ -117,12 +115,13 @@ func TestAccDataSourceOutboundMessagingCampaign(t *testing.T) {
 						resourceId,
 						digitalCampaignName,
 						"genesyscloud_outbound_contact_list."+contactListResourceId+".id",
-						"",
+						util.NullValue,
 						"10",
 						util.FalseValue,
 						"genesyscloud_outbound_callabletimeset."+callableTimeSetResourceId+".id",
 						[]string{},
 						[]string{"genesyscloud_outbound_contactlistfilter." + clfResourceId + ".id"},
+						[]string{}, // rule_set_ids
 						generateOutboundMessagingCampaignSmsConfig(
 							column1,
 							column1,
@@ -136,7 +135,7 @@ func TestAccDataSourceOutboundMessagingCampaign(t *testing.T) {
 						GenerateOutboundMessagingCampaignContactSort(
 							column2,
 							"DESC",
-							TrueValue,
+							util.TrueValue,
 						),
 					) + generateOutboundMessagingCampaignDataSource(
 					dataSourceId,

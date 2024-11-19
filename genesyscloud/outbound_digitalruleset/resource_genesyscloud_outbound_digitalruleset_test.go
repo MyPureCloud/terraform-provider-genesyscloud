@@ -8,7 +8,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/mypurecloud/platform-client-sdk-go/v143/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
 
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
@@ -435,21 +435,6 @@ func GenerateDigitalRuleSetVersion(
 ) string {
 	return fmt.Sprintf(`
 		version = %s`, version)
-}
-
-func GenerateOutboundDigitalRuleSetResource(
-	resourceId string,
-	name string,
-	contactListId string,
-	nestedBlocks ...string,
-) string {
-	return fmt.Sprintf(`
-	resource "genesyscloud_outbound_digitalruleset" "%s" {
-	name = "%s"
-	contact_list_id = %s
-	%s
-	}
-	`, resourceId, name, contactListId, strings.Join(nestedBlocks, "\n"))
 }
 
 func testVerifyOutboundDigitalrulesetDestroyed(state *terraform.State) error {

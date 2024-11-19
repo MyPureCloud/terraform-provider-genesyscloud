@@ -176,7 +176,7 @@ func ResourcePhone() *schema.Resource {
 				Elem:        phoneCapabilities,
 			},
 		},
-		CustomizeDiff: util.CustomizePhonePropertiesDiff,
+		CustomizeDiff: customizePhonePropertiesDiff,
 	}
 }
 

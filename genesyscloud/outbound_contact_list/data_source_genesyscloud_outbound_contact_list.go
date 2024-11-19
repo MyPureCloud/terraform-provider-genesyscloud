@@ -19,16 +19,15 @@ func dataSourceOutboundContactListRead(ctx context.Context, d *schema.ResourceDa
 	name := d.Get("name").(string)
 
 	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
-		const pageNum = 1
-		const pageSize = 100
 		contactListId, retryable, resp, err := proxy.getOutboundContactlistIdByName(ctx, name)
+		if err != nil {
+			diagErr := util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("error requesting contact list %s | error: %s", name, err), resp)
+			if !retryable {
+				return retry.NonRetryableError(diagErr)
+			}
+			return retry.RetryableError(diagErr)
+		}
 
-		if err != nil && !retryable {
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("error requesting contact list %s | error: %s", name, err), resp))
-		}
-		if retryable {
-			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("no contact list found with name %s", name), resp))
-		}
 		d.SetId(contactListId)
 		return nil
 	})

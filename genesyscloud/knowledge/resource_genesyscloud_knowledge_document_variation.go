@@ -23,7 +23,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v143/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
 )
 
 var (
@@ -387,7 +387,7 @@ func readKnowledgeDocumentVariation(ctx context.Context, d *schema.ResourceData,
 
 	log.Printf("Reading knowledge document variation %s", documentVariationId)
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
-		var knowledgeDocumentVariation *platformclientv2.Documentvariation
+		var knowledgeDocumentVariation *platformclientv2.Documentvariationresponse
 		/*
 		 * If the published flag is not set, get both published and draft variation and choose the most recent
 		 * If it is set, base the document state param off the flag.
@@ -717,10 +717,10 @@ func buildDocumentBodyBlocks(blocksIn map[string]interface{}) *[]platformclientv
 	return nil
 }
 
-func buildVariationBody(bodyIn map[string]interface{}) *platformclientv2.Documentbody {
+func buildVariationBody(bodyIn map[string]interface{}) *platformclientv2.Documentbodyrequest {
 	if bodyList := bodyIn["body"].([]interface{}); bodyList != nil && len(bodyList) > 0 {
 		variationBody := bodyList[0].(map[string]interface{})
-		bodyOut := platformclientv2.Documentbody{
+		bodyOut := platformclientv2.Documentbodyrequest{
 			Blocks: buildDocumentBodyBlocks(variationBody),
 		}
 		return &bodyOut
@@ -728,15 +728,15 @@ func buildVariationBody(bodyIn map[string]interface{}) *platformclientv2.Documen
 	return nil
 }
 
-func buildKnowledgeDocumentVariation(variationIn map[string]interface{}) *platformclientv2.Documentvariation {
-	variationOut := platformclientv2.Documentvariation{
+func buildKnowledgeDocumentVariation(variationIn map[string]interface{}) *platformclientv2.Documentvariationrequest {
+	variationOut := platformclientv2.Documentvariationrequest{
 		Body: buildVariationBody(variationIn),
 	}
 	return &variationOut
 }
 
-func buildKnowledgeDocumentVariationUpdate(variationIn map[string]interface{}) *platformclientv2.Documentvariation {
-	variationOut := platformclientv2.Documentvariation{
+func buildKnowledgeDocumentVariationUpdate(variationIn map[string]interface{}) *platformclientv2.Documentvariationrequest {
+	variationOut := platformclientv2.Documentvariationrequest{
 		Body: buildVariationBody(variationIn),
 	}
 
@@ -904,7 +904,7 @@ func flattenDocumentBodyBlocks(blocksIn []platformclientv2.Documentbodyblock) []
 	return blocksOut
 }
 
-func flattenVariationBody(bodyIn platformclientv2.Documentbody) []interface{} {
+func flattenVariationBody(bodyIn platformclientv2.Documentbodyresponse) []interface{} {
 	bodyOut := make(map[string]interface{})
 
 	if bodyIn.Blocks != nil {
@@ -924,7 +924,7 @@ func flattenDocumentVersion(versionIn platformclientv2.Addressableentityref) []i
 	return []interface{}{versionOut}
 }
 
-func flattenKnowledgeDocumentVariation(variationIn platformclientv2.Documentvariation) []interface{} {
+func flattenKnowledgeDocumentVariation(variationIn platformclientv2.Documentvariationresponse) []interface{} {
 	variationOut := make(map[string]interface{})
 
 	if variationIn.Body != nil {

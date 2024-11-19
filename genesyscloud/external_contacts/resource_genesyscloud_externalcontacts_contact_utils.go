@@ -6,7 +6,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v143/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
 	"github.com/nyaruka/phonenumbers"
 )
 
@@ -58,25 +58,27 @@ func buildPhonenumberFromData(phoneData []interface{}) *platformclientv2.Phonenu
 	phoneMap := phoneData[0].(map[string]interface{})
 
 	display := phoneMap["display"].(string)
-	extension := phoneMap["extension"].(int)
 	acceptSMS := phoneMap["accepts_sms"].(bool)
 	e164 := phoneMap["e164"].(string)
 	countryCode := phoneMap["country_code"].(string)
-
-	return &platformclientv2.Phonenumber{
+	phoneNumber := &platformclientv2.Phonenumber{
 		Display:     &display,
-		Extension:   &extension,
 		AcceptsSMS:  &acceptSMS,
 		E164:        &e164,
 		CountryCode: &countryCode,
 	}
+	extension := phoneMap["extension"].(int)
+	if extension != 0 {
+		phoneNumber.Extension = &extension
+	}
+	return phoneNumber
+
 }
 
 // buildSdkPhoneNumber is a helper method to build a Genesys Cloud SDK PhoneNumber
 func buildSdkPhoneNumber(d *schema.ResourceData, key string) *platformclientv2.Phonenumber {
 	if d.Get(key) != nil {
 		phoneData := d.Get(key).([]interface{})
-
 		if len(phoneData) > 0 {
 			return buildPhonenumberFromData(phoneData)
 		}
