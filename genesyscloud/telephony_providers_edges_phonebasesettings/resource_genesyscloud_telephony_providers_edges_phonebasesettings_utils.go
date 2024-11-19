@@ -1,13 +1,15 @@
 package telephony_providers_edges_phonebasesettings
 
 import (
+	"context"
 	"fmt"
 	"strings"
-
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v143/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
 )
 
 func generatePhoneBaseSettingsDataSource(
@@ -100,4 +102,31 @@ func GeneratePhoneBaseSettingsResourceWithCustomAttrs(
 		%s
 	}
 	`, phoneBaseSettingsRes, name, description, phoneMetaBaseId, strings.Join(otherAttrs, "\n"))
+}
+
+func customizePhoneBaseSettingsPropertiesDiff(ctx context.Context, diff *schema.ResourceDiff, meta interface{}) error {
+	// Defaults must be set on missing properties
+	if !diff.NewValueKnown("properties") {
+		// properties value not yet in final state. Nothing to do.
+		return nil
+	}
+
+	id := diff.Id()
+	if id == "" {
+		return nil
+	}
+
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
+	phoneBaseProxy := getPhoneBaseProxy(sdkConfig)
+
+	// Retrieve defaults from the settings
+	phoneBaseSetting, resp, getErr := phoneBaseProxy.getPhoneBaseSetting(ctx, id)
+	if getErr != nil {
+		if util.IsStatus404(resp) {
+			return nil
+		}
+		return fmt.Errorf("failed to read phone base settings %s: %s", id, getErr)
+	}
+
+	return util.ApplyPropertyDefaults(diff, phoneBaseSetting.Properties)
 }

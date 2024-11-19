@@ -1,11 +1,12 @@
 package task_management_worktype_status
 
 import (
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
 /*
@@ -55,7 +56,7 @@ func ResourceTaskManagementWorktypeStatus() *schema.Resource {
 				Description:  `The Category of the Status. Changing the category will cause the resource to be dropped and recreated with a new id.`,
 				Required:     true,
 				Type:         schema.TypeString,
-				ValidateFunc: validation.StringInSlice([]string{"Open", "Waiting", "Closed", "Unknown"}, false),
+				ValidateFunc: validation.StringInSlice([]string{"Open", "Waiting", "Closed", "Unknown", "InProgress"}, false),
 				ForceNew:     true,
 			},
 			`description`: {

@@ -4,7 +4,7 @@ import (
 	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v143/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
 )
 
 func BuildSdkDomainEntityRef(d *schema.ResourceData, idAttr string) *platformclientv2.Domainentityref {
@@ -15,30 +15,37 @@ func BuildSdkDomainEntityRef(d *schema.ResourceData, idAttr string) *platformcli
 	return &platformclientv2.Domainentityref{Id: &idVal}
 }
 
-func BuildSdkDomainEntityRefArr(d *schema.ResourceData, idAttr string) *[]platformclientv2.Domainentityref {
-	if ids, ok := d.GetOk(idAttr); ok && ids != nil {
-		if setIds, ok := ids.(*schema.Set); ok {
-			strList := lists.SetToStringList(setIds)
-			if setIds != nil {
-				domainEntityRefs := make([]platformclientv2.Domainentityref, len(*strList))
-				for i, id := range *strList {
-					tempId := id
-					domainEntityRefs[i] = platformclientv2.Domainentityref{Id: &tempId}
-				}
-				return &domainEntityRefs
-			}
-		} else {
-			strList := lists.InterfaceListToStrings(ids.([]interface{}))
-			if len(strList) > 0 {
-				domainEntityRefs := make([]platformclientv2.Domainentityref, len(strList))
-				for i, id := range strList {
-					tempId := id
-					domainEntityRefs[i] = platformclientv2.Domainentityref{Id: &tempId}
-				}
-				return &domainEntityRefs
-			}
-		}
+func BuildSdkWebdeploymentFlowEntityRef(d *schema.ResourceData, idAttr string) *platformclientv2.Webdeploymentflowentityref {
+	idVal := d.Get(idAttr).(string)
+	if idVal == "" {
+		return nil
 	}
+	return &platformclientv2.Webdeploymentflowentityref{Id: &idVal}
+}
+
+func BuildSdkDomainEntityRefArr(d *schema.ResourceData, idAttr string) *[]platformclientv2.Domainentityref {
+	ids, ok := d.GetOk(idAttr)
+	if !ok {
+		return nil
+	}
+
+	var strList []string
+	if setIds, ok := ids.(*schema.Set); ok {
+		strListPointer := lists.SetToStringList(setIds)
+		strList = *strListPointer
+	} else {
+		strList = lists.InterfaceListToStrings(ids.([]interface{}))
+	}
+
+	if len(strList) > 0 {
+		domainEntityRefs := make([]platformclientv2.Domainentityref, len(strList))
+		for i, id := range strList {
+			tempId := id
+			domainEntityRefs[i] = platformclientv2.Domainentityref{Id: &tempId}
+		}
+		return &domainEntityRefs
+	}
+
 	return nil
 }
 

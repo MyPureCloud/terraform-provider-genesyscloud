@@ -16,7 +16,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v143/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
 )
 
 /*
@@ -62,9 +62,9 @@ func readIdpSalesforce(ctx context.Context, d *schema.ResourceData, meta interfa
 		if getErr != nil {
 			if util.IsStatus404(resp) {
 				createIdpSalesforce(ctx, d, meta)
-				return retry.RetryableError(fmt.Errorf("Failed to read IDP Salesforce: %s", getErr))
+				return retry.RetryableError(fmt.Errorf("failed to read IDP Salesforce: %s", getErr))
 			}
-			return retry.NonRetryableError(fmt.Errorf("Failed to read IDP Salesforce: %s", getErr))
+			return retry.NonRetryableError(fmt.Errorf("failed to read IDP Salesforce: %s", getErr))
 		}
 
 		if salesforce.Certificate != nil {
@@ -78,6 +78,10 @@ func readIdpSalesforce(ctx context.Context, d *schema.ResourceData, meta interfa
 		resourcedata.SetNillableValue(d, "issuer_uri", salesforce.IssuerURI)
 		resourcedata.SetNillableValue(d, "target_uri", salesforce.SsoTargetURI)
 		resourcedata.SetNillableValue(d, "disabled", salesforce.Disabled)
+		resourcedata.SetNillableValue(d, "name", salesforce.Name)
+		resourcedata.SetNillableValue(d, "slo_uri", salesforce.SloURI)
+		resourcedata.SetNillableValue(d, "slo_binding", salesforce.SloBinding)
+		resourcedata.SetNillableValue(d, "relying_party_identifier", salesforce.RelyingPartyIdentifier)
 
 		log.Printf("Read IDP Salesforce")
 		return cc.CheckState(d)
@@ -96,6 +100,22 @@ func updateIdpSalesforce(ctx context.Context, d *schema.ResourceData, meta inter
 
 	if targetUri := d.Get("target_uri").(string); targetUri != "" {
 		update.SsoTargetURI = &targetUri
+	}
+
+	if name, _ := d.Get("name").(string); name != "" {
+		update.Name = &name
+	}
+
+	if sloUri, _ := d.Get("slo_uri").(string); sloUri != "" {
+		update.SloURI = &sloUri
+	}
+
+	if sloBinding, _ := d.Get("slo_binding").(string); sloBinding != "" {
+		update.SloBinding = &sloBinding
+	}
+
+	if rpId, _ := d.Get("relying_party_identifier").(string); rpId != "" {
+		update.RelyingPartyIdentifier = &rpId
 	}
 
 	certificates := lists.BuildSdkStringListFromInterfaceArray(d, "certificates")

@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v143/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
 )
 
 func buildSdkOutboundContactListContactPhoneNumberColumnSlice(contactPhoneNumberColumn *schema.Set) *[]platformclientv2.Contactphonenumbercolumn {
@@ -139,7 +139,7 @@ func buildSdkOutboundContactListColumnDataTypeSpecifications(columnDataTypeSpeci
 }
 
 func flattenSdkOutboundContactListColumnDataTypeSpecifications(columnDataTypeSpecifications []platformclientv2.Columndatatypespecification) []interface{} {
-	if columnDataTypeSpecifications == nil || len(columnDataTypeSpecifications) == 0 {
+	if len(columnDataTypeSpecifications) == 0 {
 		return nil
 	}
 

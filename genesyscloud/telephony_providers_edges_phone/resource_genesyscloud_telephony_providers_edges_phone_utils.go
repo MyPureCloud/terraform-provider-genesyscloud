@@ -6,6 +6,7 @@ import (
 	"log"
 	"strconv"
 	"strings"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
 
@@ -17,7 +18,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v143/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
 )
 
 type PhoneConfig struct {
@@ -457,4 +458,28 @@ func TestVerifyWebRtcPhoneDestroyed(state *terraform.State) error {
 	}
 	//Success. Phone destroyed
 	return nil
+}
+
+func customizePhonePropertiesDiff(ctx context.Context, diff *schema.ResourceDiff, meta interface{}) error {
+	// Defaults must be set on missing properties
+	if !diff.NewValueKnown("properties") {
+		// properties value not yet in final state. Nothing to do.
+		return nil
+	}
+	id := diff.Id()
+	if id == "" {
+		return nil
+	}
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
+	phoneProxy := getPhoneProxy(sdkConfig)
+
+	// Retrieve defaults from the settings
+	phone, resp, getErr := phoneProxy.getPhoneById(ctx, id)
+	if getErr != nil {
+		if util.IsStatus404(resp) {
+			return nil
+		}
+		return fmt.Errorf("failed to read phone %s: %s", id, getErr)
+	}
+	return util.ApplyPropertyDefaults(diff, phone.Properties)
 }

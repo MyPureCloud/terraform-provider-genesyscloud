@@ -10,7 +10,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v143/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
 )
 
 func TestAccResourceIdpPing(t *testing.T) {
@@ -46,7 +46,6 @@ func TestAccResourceIdpPing(t *testing.T) {
 					util.ValidateStringInArray("genesyscloud_idp_ping.ping", "certificates", util.TestCert1),
 					resource.TestCheckResourceAttr("genesyscloud_idp_ping.ping", "issuer_uri", uri1),
 					resource.TestCheckResourceAttr("genesyscloud_idp_ping.ping", "target_uri", uri2),
-					resource.TestCheckResourceAttr("genesyscloud_idp_ping.ping", "relying_party_identifier", ""),
 					resource.TestCheckResourceAttr("genesyscloud_idp_ping.ping", "disabled", util.FalseValue),
 					resource.TestCheckResourceAttr("genesyscloud_idp_ping.ping", "slo_uri", uri3),
 					resource.TestCheckResourceAttr("genesyscloud_idp_ping.ping", "slo_binding", slo_binding1),

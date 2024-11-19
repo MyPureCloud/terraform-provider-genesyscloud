@@ -10,7 +10,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/mypurecloud/platform-client-sdk-go/v143/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
 
 	authDivision "terraform-provider-genesyscloud/genesyscloud/auth_division"
 
@@ -245,7 +245,7 @@ func testVerifyTeamDestroyed(state *terraform.State) error {
 			continue
 		}
 
-		team, resp, err := teamsAPI.GetTeam(rs.Primary.ID)
+		team, resp, err := teamsAPI.GetTeam(rs.Primary.ID, "")
 		if team != nil {
 			return fmt.Errorf("team (%s) still exists", rs.Primary.ID)
 		}

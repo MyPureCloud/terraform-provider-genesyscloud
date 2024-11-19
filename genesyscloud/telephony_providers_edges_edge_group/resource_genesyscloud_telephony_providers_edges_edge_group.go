@@ -17,7 +17,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v143/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
 )
 
 func createEdgeGroup(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -42,13 +42,13 @@ func createEdgeGroup(ctx context.Context, d *schema.ResourceData, meta interface
 
 	diagErr := util.RetryWhen(util.IsStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		log.Printf("Creating edge group %s", name)
-		edgeGroup, resp, err := edgeGroupProxy.createEdgeGroup(ctx, *edgeGroup)
+		edgeGroupResponse, resp, err := edgeGroupProxy.createEdgeGroup(ctx, *edgeGroup)
 		if err != nil {
 			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create edge group %s error: %s", name, err), resp)
 		}
 
-		d.SetId(*edgeGroup.Id)
-		log.Printf("Created edge group %s", *edgeGroup.Id)
+		d.SetId(*edgeGroupResponse.Id)
+		log.Printf("Created edge group %s", *edgeGroupResponse.Id)
 
 		return resp, nil
 	})

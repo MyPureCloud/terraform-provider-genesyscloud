@@ -12,7 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v143/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
 
 	obContactList "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
 )
@@ -201,12 +201,12 @@ func TestAccResourceOutboundRuleset(t *testing.T) {
     order    = 0
     category = "DIALER_PRECALL"
     conditions {
-      type                       = "phoneNumberCondition"
-      value                      = "0123456789"
+      type  = "phoneNumberCondition"
+      value = "0123456789"
     }
     conditions {
-      type                       = "phoneNumberCondition"
-      value                      = "1234567890"
+      type  = "phoneNumberCondition"
+      value = "1234567890"
     }
     actions {
       type             = "Action"
@@ -218,8 +218,8 @@ func TestAccResourceOutboundRuleset(t *testing.T) {
     order    = 1
     category = "DIALER_PRECALL"
     conditions {
-      type                       = "phoneNumberCondition"
-      value                      = "0123456789"
+      type  = "phoneNumberCondition"
+      value = "0123456789"
     }
     actions {
       type             = "Action"

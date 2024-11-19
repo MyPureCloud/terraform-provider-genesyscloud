@@ -5,14 +5,14 @@ import (
 	"sync"
 	"terraform-provider-genesyscloud/genesyscloud/location"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
-	"terraform-provider-genesyscloud/genesyscloud/telephony"
+	"terraform-provider-genesyscloud/genesyscloud/telephony_provider_edges_trunkbasesettings"
 	"terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site"
 	"testing"
 
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v143/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
 )
 
 /*
@@ -45,7 +45,7 @@ func (r *registerTestInstance) registerTestResources() {
 	defer r.resourceMapMutex.Unlock()
 
 	providerResources[resourceName] = ResourceSiteOutboundRoute()
-	providerResources["genesyscloud_telephony_providers_edges_trunkbasesettings"] = telephony.ResourceTrunkBaseSettings()
+	providerResources["genesyscloud_telephony_providers_edges_trunkbasesettings"] = telephony_provider_edges_trunkbasesettings.ResourceTrunkBaseSettings()
 	providerResources["genesyscloud_location"] = location.ResourceLocation()
 	providerResources["genesyscloud_telephony_providers_edges_site"] = telephony_providers_edges_site.ResourceSite()
 }

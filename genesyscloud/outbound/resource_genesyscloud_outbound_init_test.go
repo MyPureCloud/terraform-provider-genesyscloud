@@ -10,6 +10,7 @@ import (
 	outboundCampaignrule "terraform-provider-genesyscloud/genesyscloud/outbound_campaignrule"
 	obContactList "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
 	obContactListFilter "terraform-provider-genesyscloud/genesyscloud/outbound_contactlistfilter"
+	obDigitalRuleset "terraform-provider-genesyscloud/genesyscloud/outbound_digitalruleset"
 	obDnclist "terraform-provider-genesyscloud/genesyscloud/outbound_dnclist"
 	obRuleset "terraform-provider-genesyscloud/genesyscloud/outbound_ruleset"
 	outboundSequence "terraform-provider-genesyscloud/genesyscloud/outbound_sequence"
@@ -49,6 +50,7 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_flow"] = flow.ResourceArchitectFlow()
 	providerResources["genesyscloud_location"] = location.ResourceLocation()
 	providerResources["genesyscloud_outbound_ruleset"] = obRuleset.ResourceOutboundRuleset()
+	providerResources["genesyscloud_outbound_digitalruleset"] = obDigitalRuleset.ResourceOutboundDigitalruleset()
 	providerResources["genesyscloud_outbound_dnclist"] = obDnclist.ResourceOutboundDncList()
 }
 

@@ -1,4 +1,4 @@
-package telephony
+package telephony_provider_edges_trunkbasesettings
 
 import (
 	"fmt"
@@ -13,7 +13,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v143/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
 )
 
 func TestAccResourceTrunkBaseSettings(t *testing.T) {
@@ -101,7 +101,7 @@ func TestAccResourceTrunkBaseSettings(t *testing.T) {
 	})
 }
 
-func TestAccResourceExternralTrunkBaseSettingsInboundSite(t *testing.T) {
+func TestAccResourceExternalTrunkBaseSettingsInboundSite(t *testing.T) {
 
 	var (
 		trunkBaseSettingsRes = "trunkBaseSettings1234"

@@ -5,12 +5,12 @@ import (
 	"strconv"
 	location "terraform-provider-genesyscloud/genesyscloud/location"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
-	"terraform-provider-genesyscloud/genesyscloud/telephony"
+	"terraform-provider-genesyscloud/genesyscloud/telephony_provider_edges_trunkbasesettings"
 	telephonyProvidersEdgesSite "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v143/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -56,7 +56,7 @@ func TestAccDataSourceSiteOutboundRoute(t *testing.T) {
 			"46278",
 		))
 
-	trunkBaseSettings1 := telephony.GenerateTrunkBaseSettingsResourceWithCustomAttrs(
+	trunkBaseSettings1 := telephony_provider_edges_trunkbasesettings.GenerateTrunkBaseSettingsResourceWithCustomAttrs(
 		"trunkBaseSettings1",
 		"test trunk base settings "+uuid.NewString(),
 		"test description",
@@ -64,7 +64,7 @@ func TestAccDataSourceSiteOutboundRoute(t *testing.T) {
 		"EXTERNAL",
 		false)
 
-	trunkBaseSettings2 := telephony.GenerateTrunkBaseSettingsResourceWithCustomAttrs(
+	trunkBaseSettings2 := telephony_provider_edges_trunkbasesettings.GenerateTrunkBaseSettingsResourceWithCustomAttrs(
 		"trunkBaseSettings2",
 		"test trunk base settings "+uuid.NewString(),
 		"test description",

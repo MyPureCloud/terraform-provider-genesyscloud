@@ -7,7 +7,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v143/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
 )
 
 // buildWritableContactFromResourceData used to build the request body for contact creation
@@ -197,8 +197,12 @@ func GenerateColumnStatus(column, contactable string) string {
 		}`, column, contactable)
 }
 
-func createComplexContact(contactListId, contactId string) string {
-	return fmt.Sprintf("%s:%s", contactListId, contactId)
+func createComplexContact(contactListId string, contactId string) string {
+	return createComplexContactWithDelimiter(contactListId, contactId, ":")
+}
+
+func createComplexContactWithDelimiter(contactListId string, contactId string, delimiter string) string {
+	return fmt.Sprintf("%s%s%s", contactListId, delimiter, contactId)
 }
 
 func splitComplexContact(complexContact string) (string, string) {
