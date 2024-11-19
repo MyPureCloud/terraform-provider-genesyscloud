@@ -36,7 +36,7 @@ func getAllAuthOutboundDigitalrulesets(ctx context.Context, clientConfig *platfo
 	}
 
 	for _, digitalRuleSet := range *digitalRuleSets {
-		resources[*digitalRuleSet.Id] = &resourceExporter.ResourceMeta{Name: *digitalRuleSet.Name}
+		resources[*digitalRuleSet.Id] = &resourceExporter.ResourceMeta{BlockLabel: *digitalRuleSet.Name}
 	}
 
 	return resources, nil

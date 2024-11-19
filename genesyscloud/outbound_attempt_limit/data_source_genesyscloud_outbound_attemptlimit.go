@@ -49,11 +49,11 @@ func dataSourceOutboundAttemptLimitRead(ctx context.Context, d *schema.ResourceD
 	})
 }
 
-func GenerateOutboundAttemptLimitDataSource(id string, attemptLimitName string, dependsOn string) string {
+func GenerateOutboundAttemptLimitDataSource(dataSourceLabel string, attemptLimitName string, dependsOn string) string {
 	return fmt.Sprintf(`
 data "genesyscloud_outbound_attempt_limit" "%s" {
 	name = "%s"
 	depends_on = [%s]
 }
-`, id, attemptLimitName, dependsOn)
+`, dataSourceLabel, attemptLimitName, dependsOn)
 }

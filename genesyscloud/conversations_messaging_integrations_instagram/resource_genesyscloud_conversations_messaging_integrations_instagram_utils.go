@@ -53,7 +53,7 @@ func getConversationsMessagingIntegrationsInstagramFromResourceDataForUpdate(d *
 }
 
 func GenerateInstagramIntegrationResource(
-	resourceId string,
+	resourceLabel string,
 	name string,
 	supportedContentId string,
 	messagingSettingId string,
@@ -72,5 +72,5 @@ func GenerateInstagramIntegrationResource(
 			page_id = "%s"
 			app_id = "%s"
 			app_secret = "%s"
-		}`, resourceId, name, supportedContentId, messagingSettingId, pageAccessToken, userAccessToken, pageId, appId, appSecret)
+		}`, resourceLabel, name, supportedContentId, messagingSettingId, pageAccessToken, userAccessToken, pageId, appId, appSecret)
 }

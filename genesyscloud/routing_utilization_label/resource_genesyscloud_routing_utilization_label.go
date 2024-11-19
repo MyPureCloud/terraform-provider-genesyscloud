@@ -30,7 +30,7 @@ func getAllRoutingUtilizationLabels(ctx context.Context, clientConfig *platformc
 	}
 
 	for _, label := range *labels {
-		resources[*label.Id] = &resourceExporter.ResourceMeta{Name: *label.Name}
+		resources[*label.Id] = &resourceExporter.ResourceMeta{BlockLabel: *label.Name}
 	}
 	return resources, nil
 }

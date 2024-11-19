@@ -16,10 +16,10 @@ import (
 func TestAccResourceEmployeePerformanceExternalMetricsDefintions(t *testing.T) {
 
 	var (
-		defintionResource = "external_metrics_definitions"
-		name1             = "Defintion " + uuid.NewString()
-		units             = []string{`Seconds`, `Percent`, `Number`, `Currency`}
-		defaultTypes      = []string{`HigherIsBetter`, `LowerIsBetter`, `TargetArea`}
+		definitionResourceLabel = "external_metrics_definitions"
+		name1                   = "Defintion " + uuid.NewString()
+		units                   = []string{`Seconds`, `Percent`, `Number`, `Currency`}
+		defaultTypes            = []string{`HigherIsBetter`, `LowerIsBetter`, `TargetArea`}
 
 		name2 = "Defintion " + uuid.NewString()
 	)
@@ -31,7 +31,7 @@ func TestAccResourceEmployeePerformanceExternalMetricsDefintions(t *testing.T) {
 			{
 				// Create
 				Config: generateEmployeePerformanceExternalMetricsDefinitionsResource(
-					defintionResource,
+					definitionResourceLabel,
 					name1,
 					units[2],
 					"5",
@@ -39,22 +39,22 @@ func TestAccResourceEmployeePerformanceExternalMetricsDefintions(t *testing.T) {
 					"true",
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_employeeperformance_externalmetrics_definitions."+defintionResource,
+					resource.TestCheckResourceAttr("genesyscloud_employeeperformance_externalmetrics_definitions."+definitionResourceLabel,
 						"name", name1),
-					resource.TestCheckResourceAttr("genesyscloud_employeeperformance_externalmetrics_definitions."+defintionResource,
+					resource.TestCheckResourceAttr("genesyscloud_employeeperformance_externalmetrics_definitions."+definitionResourceLabel,
 						"precision", "5"),
-					resource.TestCheckResourceAttr("genesyscloud_employeeperformance_externalmetrics_definitions."+defintionResource,
+					resource.TestCheckResourceAttr("genesyscloud_employeeperformance_externalmetrics_definitions."+definitionResourceLabel,
 						"default_objective_type", defaultTypes[0]),
-					resource.TestCheckResourceAttr("genesyscloud_employeeperformance_externalmetrics_definitions."+defintionResource,
+					resource.TestCheckResourceAttr("genesyscloud_employeeperformance_externalmetrics_definitions."+definitionResourceLabel,
 						"enabled", util.TrueValue),
-					resource.TestCheckResourceAttr("genesyscloud_employeeperformance_externalmetrics_definitions."+defintionResource,
+					resource.TestCheckResourceAttr("genesyscloud_employeeperformance_externalmetrics_definitions."+definitionResourceLabel,
 						"unit", units[2]),
 				),
 			},
 			{
 				// Update
 				Config: generateEmployeePerformanceExternalMetricsDefinitionsResource(
-					defintionResource,
+					definitionResourceLabel,
 					name2,
 					units[2],
 					"2",
@@ -62,22 +62,22 @@ func TestAccResourceEmployeePerformanceExternalMetricsDefintions(t *testing.T) {
 					"false",
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_employeeperformance_externalmetrics_definitions."+defintionResource,
+					resource.TestCheckResourceAttr("genesyscloud_employeeperformance_externalmetrics_definitions."+definitionResourceLabel,
 						"name", name2),
-					resource.TestCheckResourceAttr("genesyscloud_employeeperformance_externalmetrics_definitions."+defintionResource,
+					resource.TestCheckResourceAttr("genesyscloud_employeeperformance_externalmetrics_definitions."+definitionResourceLabel,
 						"precision", "2"),
-					resource.TestCheckResourceAttr("genesyscloud_employeeperformance_externalmetrics_definitions."+defintionResource,
+					resource.TestCheckResourceAttr("genesyscloud_employeeperformance_externalmetrics_definitions."+definitionResourceLabel,
 						"default_objective_type", defaultTypes[1]),
-					resource.TestCheckResourceAttr("genesyscloud_employeeperformance_externalmetrics_definitions."+defintionResource,
+					resource.TestCheckResourceAttr("genesyscloud_employeeperformance_externalmetrics_definitions."+definitionResourceLabel,
 						"enabled", util.FalseValue),
-					resource.TestCheckResourceAttr("genesyscloud_employeeperformance_externalmetrics_definitions."+defintionResource,
+					resource.TestCheckResourceAttr("genesyscloud_employeeperformance_externalmetrics_definitions."+definitionResourceLabel,
 						"unit", units[2]),
 				),
 			},
 			{
 				// Update unit
 				Config: generateEmployeePerformanceExternalMetricsDefinitionsResource(
-					defintionResource,
+					definitionResourceLabel,
 					name2,
 					units[0],
 					"2",
@@ -85,21 +85,21 @@ func TestAccResourceEmployeePerformanceExternalMetricsDefintions(t *testing.T) {
 					"false",
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_employeeperformance_externalmetrics_definitions."+defintionResource,
+					resource.TestCheckResourceAttr("genesyscloud_employeeperformance_externalmetrics_definitions."+definitionResourceLabel,
 						"name", name2),
-					resource.TestCheckResourceAttr("genesyscloud_employeeperformance_externalmetrics_definitions."+defintionResource,
+					resource.TestCheckResourceAttr("genesyscloud_employeeperformance_externalmetrics_definitions."+definitionResourceLabel,
 						"precision", "2"),
-					resource.TestCheckResourceAttr("genesyscloud_employeeperformance_externalmetrics_definitions."+defintionResource,
+					resource.TestCheckResourceAttr("genesyscloud_employeeperformance_externalmetrics_definitions."+definitionResourceLabel,
 						"default_objective_type", defaultTypes[1]),
-					resource.TestCheckResourceAttr("genesyscloud_employeeperformance_externalmetrics_definitions."+defintionResource,
+					resource.TestCheckResourceAttr("genesyscloud_employeeperformance_externalmetrics_definitions."+definitionResourceLabel,
 						"enabled", util.FalseValue),
-					resource.TestCheckResourceAttr("genesyscloud_employeeperformance_externalmetrics_definitions."+defintionResource,
+					resource.TestCheckResourceAttr("genesyscloud_employeeperformance_externalmetrics_definitions."+definitionResourceLabel,
 						"unit", units[0]),
 				),
 			},
 			{
 				// Import/Read
-				ResourceName:      "genesyscloud_employeeperformance_externalmetrics_definitions." + defintionResource,
+				ResourceName:      "genesyscloud_employeeperformance_externalmetrics_definitions." + definitionResourceLabel,
 				ImportState:       true,
 				ImportStateVerify: true,
 			},
@@ -109,7 +109,7 @@ func TestAccResourceEmployeePerformanceExternalMetricsDefintions(t *testing.T) {
 }
 
 func generateEmployeePerformanceExternalMetricsDefinitionsResource(
-	resourceId string,
+	resourceLabel string,
 	name string,
 	unit string,
 	precision string,
@@ -126,7 +126,7 @@ func generateEmployeePerformanceExternalMetricsDefinitionsResource(
 			enabled = %s
 			%s
 		}
-	`, resourceId, name, unit, precision, defaultObjectiveType, enabled, strings.Join(additionalFields, ","))
+	`, resourceLabel, name, unit, precision, defaultObjectiveType, enabled, strings.Join(additionalFields, ","))
 }
 
 func testVerifyEmployeePerformanceExternalMetricsDefinitionsDestroyed(state *terraform.State) error {

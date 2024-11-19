@@ -33,7 +33,7 @@ func getAllAuthOutboundContactlistfilters(ctx context.Context, clientConfig *pla
 	}
 
 	for _, contactListFilter := range *contactListFilters {
-		resources[*contactListFilter.Id] = &resourceExporter.ResourceMeta{Name: *contactListFilter.Name}
+		resources[*contactListFilter.Id] = &resourceExporter.ResourceMeta{BlockLabel: *contactListFilter.Name}
 	}
 
 	return resources, nil

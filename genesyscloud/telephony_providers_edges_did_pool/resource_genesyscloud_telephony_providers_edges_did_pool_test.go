@@ -14,7 +14,7 @@ import (
 )
 
 func TestAccResourceDidPoolBasic(t *testing.T) {
-	didPoolResource1 := "test-didpool1"
+	didPoolResourceLabel1 := "test-didpool1"
 	didPoolStartPhoneNumber1 := "+14175540014"
 	didPoolEndPhoneNumber1 := "+14175540015"
 
@@ -31,7 +31,7 @@ func TestAccResourceDidPoolBasic(t *testing.T) {
 	didPoolComments1 := "Test comments"
 	didPoolProvider1 := "PURE_CLOUD"
 
-	fullResourceId := resourceName + "." + didPoolResource1
+	fullResourceName := resourceName + "." + didPoolResourceLabel1
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
@@ -40,7 +40,7 @@ func TestAccResourceDidPoolBasic(t *testing.T) {
 			{
 				// Create
 				Config: GenerateDidPoolResource(&DidPoolStruct{
-					didPoolResource1,
+					didPoolResourceLabel1,
 					didPoolStartPhoneNumber1,
 					didPoolEndPhoneNumber1,
 					util.NullValue, // No description
@@ -48,16 +48,16 @@ func TestAccResourceDidPoolBasic(t *testing.T) {
 					util.NullValue, // No provider
 				}),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(fullResourceId, "start_phone_number", didPoolStartPhoneNumber1),
-					resource.TestCheckResourceAttr(fullResourceId, "end_phone_number", didPoolEndPhoneNumber1),
-					resource.TestCheckResourceAttr(fullResourceId, "description", ""),
-					resource.TestCheckResourceAttr(fullResourceId, "comments", ""),
+					resource.TestCheckResourceAttr(fullResourceName, "start_phone_number", didPoolStartPhoneNumber1),
+					resource.TestCheckResourceAttr(fullResourceName, "end_phone_number", didPoolEndPhoneNumber1),
+					resource.TestCheckResourceAttr(fullResourceName, "description", ""),
+					resource.TestCheckResourceAttr(fullResourceName, "comments", ""),
 				),
 			},
 			{
 				// Update
 				Config: GenerateDidPoolResource(&DidPoolStruct{
-					didPoolResource1,
+					didPoolResourceLabel1,
 					didPoolStartPhoneNumber1,
 					didPoolEndPhoneNumber1,
 					strconv.Quote(didPoolDescription1),
@@ -65,16 +65,16 @@ func TestAccResourceDidPoolBasic(t *testing.T) {
 					strconv.Quote(didPoolProvider1),
 				}),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(fullResourceId, "start_phone_number", didPoolStartPhoneNumber1),
-					resource.TestCheckResourceAttr(fullResourceId, "end_phone_number", didPoolEndPhoneNumber1),
-					resource.TestCheckResourceAttr(fullResourceId, "description", didPoolDescription1),
-					resource.TestCheckResourceAttr(fullResourceId, "comments", didPoolComments1),
-					resource.TestCheckResourceAttr(fullResourceId, "pool_provider", didPoolProvider1),
+					resource.TestCheckResourceAttr(fullResourceName, "start_phone_number", didPoolStartPhoneNumber1),
+					resource.TestCheckResourceAttr(fullResourceName, "end_phone_number", didPoolEndPhoneNumber1),
+					resource.TestCheckResourceAttr(fullResourceName, "description", didPoolDescription1),
+					resource.TestCheckResourceAttr(fullResourceName, "comments", didPoolComments1),
+					resource.TestCheckResourceAttr(fullResourceName, "pool_provider", didPoolProvider1),
 				),
 			},
 			{
 				// Import/Read
-				ResourceName:      resourceName + "." + didPoolResource1,
+				ResourceName:      resourceName + "." + didPoolResourceLabel1,
 				ImportState:       true,
 				ImportStateVerify: true,
 			},

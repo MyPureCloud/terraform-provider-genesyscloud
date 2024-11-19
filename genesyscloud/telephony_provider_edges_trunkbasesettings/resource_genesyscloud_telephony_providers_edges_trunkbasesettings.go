@@ -281,7 +281,7 @@ func getAllTrunkBaseSettings(ctx context.Context, sdkConfig *platformclientv2.Co
 	}
 
 	for _, tbs := range *trunkBaseSettings {
-		resources[*tbs.Id] = &resourceExporter.ResourceMeta{Name: *tbs.Name}
+		resources[*tbs.Id] = &resourceExporter.ResourceMeta{BlockLabel: *tbs.Name}
 	}
 
 	return resources, nil
@@ -303,7 +303,7 @@ func ValidateInboundSiteSettings(inboundSiteString string, trunkBaseMetaId strin
 }
 
 func GenerateTrunkBaseSettingsResourceWithCustomAttrs(
-	trunkBaseSettingsRes,
+	trunkBaseSettingsResourceLabel,
 	name,
 	description,
 	trunkMetaBaseId,
@@ -318,6 +318,6 @@ func GenerateTrunkBaseSettingsResourceWithCustomAttrs(
 		managed = %v
 		%s
 	}
-	`, trunkBaseSettingsRes, name, description, trunkMetaBaseId, trunkType, managed, strings.Join(otherAttrs, "\n"))
+	`, trunkBaseSettingsResourceLabel, name, description, trunkMetaBaseId, trunkType, managed, strings.Join(otherAttrs, "\n"))
 	return resource
 }

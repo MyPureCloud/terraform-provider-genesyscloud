@@ -30,7 +30,7 @@ func getAllUserPrompts(ctx context.Context, clientConfig *platformclientv2.Confi
 		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("failed to get user prompts: %s", err), resp)
 	}
 	for _, userPrompt := range *userPrompts {
-		resources[*userPrompt.Id] = &resourceExporter.ResourceMeta{Name: *userPrompt.Name}
+		resources[*userPrompt.Id] = &resourceExporter.ResourceMeta{BlockLabel: *userPrompt.Name}
 	}
 
 	return resources, nil

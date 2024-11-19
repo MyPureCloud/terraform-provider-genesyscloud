@@ -184,7 +184,7 @@ func getAllEdgeGroups(ctx context.Context, sdkConfig *platformclientv2.Configura
 	}
 	if edgeGroups != nil {
 		for _, edgeGroup := range *edgeGroups {
-			resources[*edgeGroup.Id] = &resourceExporter.ResourceMeta{Name: *edgeGroup.Name}
+			resources[*edgeGroup.Id] = &resourceExporter.ResourceMeta{BlockLabel: *edgeGroup.Name}
 		}
 	}
 	return resources, nil

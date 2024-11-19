@@ -12,11 +12,11 @@ import (
 func TestAccDataSourcePhoneBaseSettings(t *testing.T) {
 	t.Parallel()
 	var (
-		phoneBaseSettingsRes     = "phoneBaseSettings"
-		phoneBaseSettingsDataRes = "phoneBaseSettingsData"
-		name                     = "test phone base settings " + uuid.NewString()
-		description              = "test description"
-		phoneMetaBaseId          = "generic_sip.json"
+		phoneBaseSettingsResourceLabel     = "phoneBaseSettings"
+		phoneBaseSettingsDataResourceLabel = "phoneBaseSettingsData"
+		name                               = "test phone base settings " + uuid.NewString()
+		description                        = "test description"
+		phoneMetaBaseId                    = "generic_sip.json"
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -25,16 +25,16 @@ func TestAccDataSourcePhoneBaseSettings(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config: GeneratePhoneBaseSettingsResourceWithCustomAttrs(
-					phoneBaseSettingsRes,
+					phoneBaseSettingsResourceLabel,
 					name,
 					description,
 					phoneMetaBaseId,
 				) + generatePhoneBaseSettingsDataSource(
-					phoneBaseSettingsDataRes,
+					phoneBaseSettingsDataResourceLabel,
 					name,
-					"genesyscloud_telephony_providers_edges_phonebasesettings."+phoneBaseSettingsRes),
+					"genesyscloud_telephony_providers_edges_phonebasesettings."+phoneBaseSettingsResourceLabel),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair("data.genesyscloud_telephony_providers_edges_phonebasesettings."+phoneBaseSettingsDataRes, "id", "genesyscloud_telephony_providers_edges_phonebasesettings."+phoneBaseSettingsRes, "id"),
+					resource.TestCheckResourceAttrPair("data.genesyscloud_telephony_providers_edges_phonebasesettings."+phoneBaseSettingsDataResourceLabel, "id", "genesyscloud_telephony_providers_edges_phonebasesettings."+phoneBaseSettingsResourceLabel, "id"),
 				),
 			},
 		},

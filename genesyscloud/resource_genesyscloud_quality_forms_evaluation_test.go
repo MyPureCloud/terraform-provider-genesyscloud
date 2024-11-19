@@ -14,7 +14,7 @@ import (
 )
 
 func TestAccResourceEvaluationFormBasic(t *testing.T) {
-	formResource1 := "test-evaluation-form-1"
+	formResourceLabel1 := "test-evaluation-form-1"
 	answer1Text := "Yes"
 	answer1Value := 1
 
@@ -93,48 +93,48 @@ func TestAccResourceEvaluationFormBasic(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				// Create
-				Config: GenerateEvaluationFormResource(formResource1, &evaluationForm1),
+				Config: GenerateEvaluationFormResource(formResourceLabel1, &evaluationForm1),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResource1, "name", evaluationForm1.Name),
-					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResource1, "published", util.FalseValue),
-					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResource1, "question_groups.0.name", evaluationForm1.QuestionGroups[0].Name),
-					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResource1, "question_groups.#", fmt.Sprint(len(evaluationForm1.QuestionGroups))),
-					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResource1, "question_groups.0.questions.0.text", evaluationForm1.QuestionGroups[0].Questions[0].Text),
-					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResource1, "question_groups.0.questions.0.answer_options.#", fmt.Sprint(len(evaluationForm1.QuestionGroups[0].Questions[0].AnswerOptions))),
+					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResourceLabel1, "name", evaluationForm1.Name),
+					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResourceLabel1, "published", util.FalseValue),
+					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResourceLabel1, "question_groups.0.name", evaluationForm1.QuestionGroups[0].Name),
+					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResourceLabel1, "question_groups.#", fmt.Sprint(len(evaluationForm1.QuestionGroups))),
+					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResourceLabel1, "question_groups.0.questions.0.text", evaluationForm1.QuestionGroups[0].Questions[0].Text),
+					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResourceLabel1, "question_groups.0.questions.0.answer_options.#", fmt.Sprint(len(evaluationForm1.QuestionGroups[0].Questions[0].AnswerOptions))),
 				),
 			},
 			{
 				// Update and add some questions
-				Config: GenerateEvaluationFormResource(formResource1, &evaluationForm2),
+				Config: GenerateEvaluationFormResource(formResourceLabel1, &evaluationForm2),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResource1, "name", evaluationForm2.Name),
-					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResource1, "published", util.FalseValue),
-					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResource1, "question_groups.0.name", evaluationForm2.QuestionGroups[0].Name),
-					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResource1, "question_groups.#", fmt.Sprint(len(evaluationForm2.QuestionGroups))),
-					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResource1, "question_groups.1.weight", fmt.Sprint(evaluationForm2.QuestionGroups[1].Weight)),
-					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResource1, "question_groups.0.questions.0.text", evaluationForm2.QuestionGroups[0].Questions[0].Text),
-					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResource1, "question_groups.1.questions.0.text", evaluationForm2.QuestionGroups[1].Questions[0].Text),
-					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResource1, "question_groups.1.questions.1.text", evaluationForm2.QuestionGroups[1].Questions[1].Text),
-					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResource1, "question_groups.0.questions.0.answer_options.#", fmt.Sprint(len(evaluationForm2.QuestionGroups[0].Questions[0].AnswerOptions))),
-					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResource1, "question_groups.1.questions.0.answer_options.#", fmt.Sprint(len(evaluationForm2.QuestionGroups[1].Questions[0].AnswerOptions))),
-					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResource1, "question_groups.1.questions.1.answer_options.#", fmt.Sprint(len(evaluationForm2.QuestionGroups[1].Questions[1].AnswerOptions))),
+					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResourceLabel1, "name", evaluationForm2.Name),
+					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResourceLabel1, "published", util.FalseValue),
+					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResourceLabel1, "question_groups.0.name", evaluationForm2.QuestionGroups[0].Name),
+					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResourceLabel1, "question_groups.#", fmt.Sprint(len(evaluationForm2.QuestionGroups))),
+					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResourceLabel1, "question_groups.1.weight", fmt.Sprint(evaluationForm2.QuestionGroups[1].Weight)),
+					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResourceLabel1, "question_groups.0.questions.0.text", evaluationForm2.QuestionGroups[0].Questions[0].Text),
+					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResourceLabel1, "question_groups.1.questions.0.text", evaluationForm2.QuestionGroups[1].Questions[0].Text),
+					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResourceLabel1, "question_groups.1.questions.1.text", evaluationForm2.QuestionGroups[1].Questions[1].Text),
+					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResourceLabel1, "question_groups.0.questions.0.answer_options.#", fmt.Sprint(len(evaluationForm2.QuestionGroups[0].Questions[0].AnswerOptions))),
+					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResourceLabel1, "question_groups.1.questions.0.answer_options.#", fmt.Sprint(len(evaluationForm2.QuestionGroups[1].Questions[0].AnswerOptions))),
+					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResourceLabel1, "question_groups.1.questions.1.answer_options.#", fmt.Sprint(len(evaluationForm2.QuestionGroups[1].Questions[1].AnswerOptions))),
 				),
 			},
 			{
 				// Publish Evaluation Form
-				Config: GenerateEvaluationFormResource(formResource1, &evaluationForm3),
+				Config: GenerateEvaluationFormResource(formResourceLabel1, &evaluationForm3),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResource1, "name", evaluationForm3.Name),
-					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResource1, "published", util.TrueValue),
-					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResource1, "question_groups.0.name", evaluationForm3.QuestionGroups[0].Name),
-					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResource1, "question_groups.#", fmt.Sprint(len(evaluationForm3.QuestionGroups))),
-					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResource1, "question_groups.0.questions.0.text", evaluationForm3.QuestionGroups[0].Questions[0].Text),
-					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResource1, "question_groups.0.questions.0.answer_options.#", fmt.Sprint(len(evaluationForm3.QuestionGroups[0].Questions[0].AnswerOptions))),
+					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResourceLabel1, "name", evaluationForm3.Name),
+					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResourceLabel1, "published", util.TrueValue),
+					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResourceLabel1, "question_groups.0.name", evaluationForm3.QuestionGroups[0].Name),
+					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResourceLabel1, "question_groups.#", fmt.Sprint(len(evaluationForm3.QuestionGroups))),
+					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResourceLabel1, "question_groups.0.questions.0.text", evaluationForm3.QuestionGroups[0].Questions[0].Text),
+					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResourceLabel1, "question_groups.0.questions.0.answer_options.#", fmt.Sprint(len(evaluationForm3.QuestionGroups[0].Questions[0].AnswerOptions))),
 				),
 			},
 			{
 				// Import/Read
-				ResourceName:      "genesyscloud_quality_forms_evaluation." + formResource1,
+				ResourceName:      "genesyscloud_quality_forms_evaluation." + formResourceLabel1,
 				ImportState:       true,
 				ImportStateVerify: true,
 			},
@@ -144,7 +144,7 @@ func TestAccResourceEvaluationFormBasic(t *testing.T) {
 }
 
 func TestAccResourceEvaluationFormComplete(t *testing.T) {
-	formResource1 := "test-evaluation-form-1"
+	formResourceLabel1 := "test-evaluation-form-1"
 
 	// Complete evaluation form
 	evaluationForm1 := EvaluationFormStruct{
@@ -228,32 +228,32 @@ func TestAccResourceEvaluationFormComplete(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				// Create
-				Config: GenerateEvaluationFormResource(formResource1, &evaluationForm1),
+				Config: GenerateEvaluationFormResource(formResourceLabel1, &evaluationForm1),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResource1, "name", evaluationForm1.Name),
-					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResource1, "published", util.FalseValue),
-					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResource1, "question_groups.0.name", evaluationForm1.QuestionGroups[0].Name),
-					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResource1, "question_groups.0.default_answers_to_highest", strconv.FormatBool(evaluationForm1.QuestionGroups[0].DefaultAnswersToHighest)),
-					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResource1, "question_groups.0.default_answers_to_na", strconv.FormatBool(evaluationForm1.QuestionGroups[0].DefaultAnswersToNA)),
-					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResource1, "question_groups.0.na_enabled", strconv.FormatBool(evaluationForm1.QuestionGroups[0].NaEnabled)),
-					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResource1, "question_groups.0.manual_weight", strconv.FormatBool(evaluationForm1.QuestionGroups[0].ManualWeight)),
-					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResource1, "question_groups.1.visibility_condition.0.combining_operation", evaluationForm1.QuestionGroups[1].VisibilityCondition.CombiningOperation),
-					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResource1, "question_groups.1.visibility_condition.0.predicates.0", evaluationForm1.QuestionGroups[1].VisibilityCondition.Predicates[0]),
-					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResource1, "question_groups.#", fmt.Sprint(len(evaluationForm1.QuestionGroups))),
-					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResource1, "question_groups.0.questions.1.text", evaluationForm1.QuestionGroups[0].Questions[1].Text),
-					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResource1, "question_groups.0.questions.1.help_text", evaluationForm1.QuestionGroups[0].Questions[1].HelpText),
-					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResource1, "question_groups.0.questions.1.na_enabled", strconv.FormatBool(evaluationForm1.QuestionGroups[0].Questions[1].NaEnabled)),
-					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResource1, "question_groups.0.questions.1.comments_required", strconv.FormatBool(evaluationForm1.QuestionGroups[0].Questions[1].CommentsRequired)),
-					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResource1, "question_groups.0.questions.1.is_kill", strconv.FormatBool(evaluationForm1.QuestionGroups[0].Questions[1].IsKill)),
-					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResource1, "question_groups.0.questions.1.is_critical", strconv.FormatBool(evaluationForm1.QuestionGroups[0].Questions[1].IsCritical)),
-					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResource1, "question_groups.0.questions.1.answer_options.#", fmt.Sprint(len(evaluationForm1.QuestionGroups[0].Questions[1].AnswerOptions))),
-					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResource1, "question_groups.0.questions.1.visibility_condition.0.combining_operation", evaluationForm1.QuestionGroups[0].Questions[1].VisibilityCondition.CombiningOperation),
-					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResource1, "question_groups.0.questions.1.visibility_condition.0.predicates.0", evaluationForm1.QuestionGroups[0].Questions[1].VisibilityCondition.Predicates[0]),
+					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResourceLabel1, "name", evaluationForm1.Name),
+					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResourceLabel1, "published", util.FalseValue),
+					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResourceLabel1, "question_groups.0.name", evaluationForm1.QuestionGroups[0].Name),
+					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResourceLabel1, "question_groups.0.default_answers_to_highest", strconv.FormatBool(evaluationForm1.QuestionGroups[0].DefaultAnswersToHighest)),
+					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResourceLabel1, "question_groups.0.default_answers_to_na", strconv.FormatBool(evaluationForm1.QuestionGroups[0].DefaultAnswersToNA)),
+					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResourceLabel1, "question_groups.0.na_enabled", strconv.FormatBool(evaluationForm1.QuestionGroups[0].NaEnabled)),
+					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResourceLabel1, "question_groups.0.manual_weight", strconv.FormatBool(evaluationForm1.QuestionGroups[0].ManualWeight)),
+					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResourceLabel1, "question_groups.1.visibility_condition.0.combining_operation", evaluationForm1.QuestionGroups[1].VisibilityCondition.CombiningOperation),
+					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResourceLabel1, "question_groups.1.visibility_condition.0.predicates.0", evaluationForm1.QuestionGroups[1].VisibilityCondition.Predicates[0]),
+					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResourceLabel1, "question_groups.#", fmt.Sprint(len(evaluationForm1.QuestionGroups))),
+					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResourceLabel1, "question_groups.0.questions.1.text", evaluationForm1.QuestionGroups[0].Questions[1].Text),
+					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResourceLabel1, "question_groups.0.questions.1.help_text", evaluationForm1.QuestionGroups[0].Questions[1].HelpText),
+					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResourceLabel1, "question_groups.0.questions.1.na_enabled", strconv.FormatBool(evaluationForm1.QuestionGroups[0].Questions[1].NaEnabled)),
+					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResourceLabel1, "question_groups.0.questions.1.comments_required", strconv.FormatBool(evaluationForm1.QuestionGroups[0].Questions[1].CommentsRequired)),
+					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResourceLabel1, "question_groups.0.questions.1.is_kill", strconv.FormatBool(evaluationForm1.QuestionGroups[0].Questions[1].IsKill)),
+					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResourceLabel1, "question_groups.0.questions.1.is_critical", strconv.FormatBool(evaluationForm1.QuestionGroups[0].Questions[1].IsCritical)),
+					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResourceLabel1, "question_groups.0.questions.1.answer_options.#", fmt.Sprint(len(evaluationForm1.QuestionGroups[0].Questions[1].AnswerOptions))),
+					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResourceLabel1, "question_groups.0.questions.1.visibility_condition.0.combining_operation", evaluationForm1.QuestionGroups[0].Questions[1].VisibilityCondition.CombiningOperation),
+					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResourceLabel1, "question_groups.0.questions.1.visibility_condition.0.predicates.0", evaluationForm1.QuestionGroups[0].Questions[1].VisibilityCondition.Predicates[0]),
 				),
 			},
 			{
 				// Import/Read
-				ResourceName:      "genesyscloud_quality_forms_evaluation." + formResource1,
+				ResourceName:      "genesyscloud_quality_forms_evaluation." + formResourceLabel1,
 				ImportState:       true,
 				ImportStateVerify: true,
 			},
@@ -263,7 +263,7 @@ func TestAccResourceEvaluationFormComplete(t *testing.T) {
 }
 
 func TestAccResourceEvaluationFormRepublishing(t *testing.T) {
-	formResource1 := "test-evaluation-form-1"
+	formResourceLabel1 := "test-evaluation-form-1"
 
 	// Most basic evaluation form
 	evaluationForm1 := EvaluationFormStruct{
@@ -302,28 +302,28 @@ func TestAccResourceEvaluationFormRepublishing(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				// Publish form on creation
-				Config: GenerateEvaluationFormResource(formResource1, &evaluationForm1),
+				Config: GenerateEvaluationFormResource(formResourceLabel1, &evaluationForm1),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResource1, "published", util.TrueValue),
+					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResourceLabel1, "published", util.TrueValue),
 				),
 			},
 			{
 				// Unpublish
-				Config: GenerateEvaluationFormResource(formResource1, &evaluationForm2),
+				Config: GenerateEvaluationFormResource(formResourceLabel1, &evaluationForm2),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResource1, "published", util.FalseValue),
+					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResourceLabel1, "published", util.FalseValue),
 				),
 			},
 			{
 				// republish
-				Config: GenerateEvaluationFormResource(formResource1, &evaluationForm1),
+				Config: GenerateEvaluationFormResource(formResourceLabel1, &evaluationForm1),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResource1, "published", util.TrueValue),
+					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResourceLabel1, "published", util.TrueValue),
 				),
 			},
 			{
 				// Import/Read
-				ResourceName:      "genesyscloud_quality_forms_evaluation." + formResource1,
+				ResourceName:      "genesyscloud_quality_forms_evaluation." + formResourceLabel1,
 				ImportState:       true,
 				ImportStateVerify: true,
 			},

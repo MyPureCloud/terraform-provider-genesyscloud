@@ -20,8 +20,8 @@ var resourceExporters map[string]*ResourceExporter
 var resourceExporterMapMutex = sync.RWMutex{}
 
 type ResourceMeta struct {
-	// Name of the resource to be used in exports
-	Name string
+	// BlockLabel of the resource to be used in exports
+	BlockLabel string
 
 	// Prefix to add to the ID when reading state
 	IdPrefix string
@@ -47,7 +47,7 @@ type RefAttrSettings struct {
 
 type ResourceInfo struct {
 	State        *terraform.InstanceState
-	Name         string
+	BlockLabel   string
 	Type         string
 	CtyType      cty.Type
 	ResourceType string
@@ -93,8 +93,8 @@ type DependencyResource struct {
 type ResourceExporter struct {
 
 	// Method to load all resource IDs for a given resource.
-	// Returned map key should be the ID and the value should be a name to use for the resource.
-	// Names will be sanitized with part of the ID appended, so it is not required that they be unique
+	// Returned map key should be the ID and the value should be a label to use for the resource.
+	// Label will be sanitized with part of the ID appended, so it is not required that they be unique
 	GetResourcesFunc GetAllResourcesFunc
 
 	// A map of resource attributes to types that they reference
@@ -125,7 +125,7 @@ type ResourceExporter struct {
 	// When all specified inner attributes are missing from an object, that object is removed
 	RemoveIfMissing map[string][]string
 
-	// Map of resource id->names. This is set after a call to loadSanitizedResourceMap
+	// Map of resource id->labels. This is set after a call to loadSanitizedResourceMap
 	SanitizedResourceMap ResourceIDMetaMap
 	// List of attributes to exclude from config. This is set by the export configuration.
 	ExcludedAttributes []string
@@ -144,20 +144,20 @@ type ResourceExporter struct {
 	CustomFlowResolver map[string]*CustomFlowResolver
 
 	//This a placeholder filter out specific resources from a filter.
-	FilterResource func(ResourceIDMetaMap, string, []string) ResourceIDMetaMap
+	FilterResource func(resourceIdMetaMap ResourceIDMetaMap, resourceType string, filter []string) ResourceIDMetaMap
 	// Attributes that are mentioned with custom exports like e164 numbers,rrule  should be ensured to export in the correct format (remove hyphens, whitespace, etc.)
 	CustomValidateExports map[string][]string
 	mutex                 sync.RWMutex
 }
 
-func (r *ResourceExporter) LoadSanitizedResourceMap(ctx context.Context, name string, filter []string) diag.Diagnostics {
+func (r *ResourceExporter) LoadSanitizedResourceMap(ctx context.Context, resourceType string, filter []string) diag.Diagnostics {
 	result, err := r.GetResourcesFunc(ctx)
 	if err != nil {
 		return err
 	}
 
 	if r.FilterResource != nil {
-		result = r.FilterResource(result, name, filter)
+		result = r.FilterResource(result, resourceType, filter)
 	}
 
 	// Lock the Resource Map as it is accessed by goroutines
@@ -286,18 +286,18 @@ func escapeRune(s string) string {
 	return "_"
 }
 
-// Resource names must only contain alphanumeric chars, underscores, or dashes
+// Resource labels must only contain alphanumeric chars, underscores, or dashes
 // https://www.terraform.io/docs/language/syntax/configuration.html#identifiers
-var unsafeNameChars = regexp.MustCompile(`[^0-9A-Za-z_-]`)
+var unsafeLabelChars = regexp.MustCompile(`[^0-9A-Za-z_-]`)
 
-// Resource names must start with a letter or underscore
+// Resource labels must start with a letter or underscore
 // https://www.terraform.io/docs/language/syntax/configuration.html#identifiers
-var unsafeNameStartingChars = regexp.MustCompile(`[^A-Za-z_]`)
+var unsafeLabelStartingChars = regexp.MustCompile(`[^A-Za-z_]`)
 
-func RegisterExporter(exporterName string, resourceExporter *ResourceExporter) {
+func RegisterExporter(exporterLabel string, resourceExporter *ResourceExporter) {
 	resourceExporterMapMutex.Lock()
 	defer resourceExporterMapMutex.Unlock()
-	resourceExporters[exporterName] = resourceExporter
+	resourceExporters[exporterLabel] = resourceExporter
 }
 
 func SetRegisterExporter(resources map[string]*ResourceExporter) {
@@ -307,20 +307,20 @@ func SetRegisterExporter(resources map[string]*ResourceExporter) {
 }
 
 var (
-	ExportAsData          []string
-	dsMutex               sync.Mutex
-	resourceNameSanitizer = NewSanitizerProvider()
+	ExportAsData           []string
+	dsMutex                sync.Mutex
+	resourceLabelSanitizer = NewSanitizerProvider()
 )
 
 // The AddDataSourceItems function adds resources to the ExportAsData []string and are formatted correctly
 // The ExportAsData will be checked in the genesyscloud_resource_exporter to determine resources to be exported as data source
-func AddDataSourceItems(resourceName, itemName string) {
-	exportName := resourceName + "::" + resourceNameSanitizer.S.SanitizeResourceName(itemName)
-	addDataSourceItemstoExport(exportName)
+func AddDataSourceItems(resourceType, itemLabel string) {
+	exportLabel := resourceType + "::" + resourceLabelSanitizer.S.SanitizeResourceBlockLabel(itemLabel)
+	addDataSourceItemstoExport(exportLabel)
 }
 
-func addDataSourceItemstoExport(name string) {
+func addDataSourceItemstoExport(label string) {
 	dsMutex.Lock()
 	defer dsMutex.Unlock()
-	ExportAsData = append(ExportAsData, name)
+	ExportAsData = append(ExportAsData, label)
 }

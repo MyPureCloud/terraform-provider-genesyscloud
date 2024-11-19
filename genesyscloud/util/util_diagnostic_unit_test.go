@@ -12,7 +12,7 @@ import (
 )
 
 func TestUnitTestAPIResponseDiagWithGoodApiResponse(t *testing.T) {
-	resource := "genesyscloud_tf_exporter"
+	resourceType := "genesyscloud_tf_exporter"
 	sumErrMsg := "This is a dummy error message"
 	apiErrorMsg := "DummyError"
 	path := "/api/v2/tfexporter?test=123"
@@ -38,7 +38,7 @@ func TestUnitTestAPIResponseDiagWithGoodApiResponse(t *testing.T) {
 	targetDiag := &detailedDiagnosticInfo{}
 	targetResponse := "{\"resourceName\":\"genesyscloud_tf_exporter\",\"method\":\"POST\",\"path\":\"/api/v2/tfexporter?test=123\",\"statusCode\":500,\"errorMessage\":\"DummyError\",\"correlationId\":\"e03b48a1-7063-4ae2-921a-f64c8e02702b\"}"
 	_ = json.Unmarshal([]byte(targetResponse), targetDiag)
-	diag := BuildAPIDiagnosticError(resource, sumErrMsg, apiResponse)
+	diag := BuildAPIDiagnosticError(resourceType, sumErrMsg, apiResponse)
 
 	actualDiag := &detailedDiagnosticInfo{}
 	_ = json.Unmarshal([]byte(diag[0].Detail), actualDiag)
@@ -51,7 +51,7 @@ func TestUnitTestAPIResponseDiagWithGoodApiResponse(t *testing.T) {
 }
 
 func TestUnitTestAPIResponseDiagWithBadApiResponse(t *testing.T) {
-	resource := "genesyscloud_tf_exporter"
+	resourceType := "genesyscloud_tf_exporter"
 	sumErrMsg := "This is a dummy error message"
 	apiErrorMsg := "DummyError"
 
@@ -66,7 +66,7 @@ func TestUnitTestAPIResponseDiagWithBadApiResponse(t *testing.T) {
 	targetResponse := "{\"resourceName\":\"genesyscloud_tf_exporter\",\"errorMessage\":\"Unable to build a message from the response because the APIResponse does not contain the appropriate data.\"}"
 	json.Unmarshal([]byte(targetResponse), targetDiag)
 
-	diag := BuildAPIDiagnosticError(resource, sumErrMsg, apiResponse)
+	diag := BuildAPIDiagnosticError(resourceType, sumErrMsg, apiResponse)
 	actualDiag := &detailedDiagnosticInfo{}
 	_ = json.Unmarshal([]byte(diag[0].Detail), actualDiag)
 
@@ -76,7 +76,7 @@ func TestUnitTestAPIResponseDiagWithBadApiResponse(t *testing.T) {
 }
 
 func TestUnitTestAPIResponseWithRetriesDiagWithGoodAPIResponse(t *testing.T) {
-	resource := "genesyscloud_tf_exporter"
+	resourceType := "genesyscloud_tf_exporter"
 	sumErrMsg := "This is a dummy error message"
 	apiErrorMsg := "DummyError"
 	path := "/api/v2/tfexporter?test=123"
@@ -103,7 +103,7 @@ func TestUnitTestAPIResponseWithRetriesDiagWithGoodAPIResponse(t *testing.T) {
 	targetResponse := "{\"resourceName\":\"genesyscloud_tf_exporter\",\"method\":\"POST\",\"path\":\"/api/v2/tfexporter?test=123\",\"statusCode\":500,\"errorMessage\":\"DummyError\",\"correlationId\":\"e03b48a1-7063-4ae2-921a-f64c8e02702b\"}"
 	_ = json.Unmarshal([]byte(targetResponse), targetDiag)
 
-	diag := BuildWithRetriesApiDiagnosticError(resource, sumErrMsg, apiResponse)
+	diag := BuildWithRetriesApiDiagnosticError(resourceType, sumErrMsg, apiResponse)
 	actualDiag := &detailedDiagnosticInfo{}
 
 	lines := strings.Split(diag.Error(), "\n")[1]
@@ -117,7 +117,7 @@ func TestUnitTestAPIResponseWithRetriesDiagWithGoodAPIResponse(t *testing.T) {
 }
 
 func TestUnitTestAPIResponseWithRetriesDiagWithBadApiResponse(t *testing.T) {
-	resource := "genesyscloud_tf_exporter"
+	resourceType := "genesyscloud_tf_exporter"
 	sumErrMsg := "This is a dummy error message"
 	apiErrorMsg := "DummyError"
 
@@ -132,7 +132,7 @@ func TestUnitTestAPIResponseWithRetriesDiagWithBadApiResponse(t *testing.T) {
 	targetResponse := "{\"resourceName\":\"genesyscloud_tf_exporter\",\"errorMessage\":\"Unable to build a message from the response because the APIResponse does not contain the appropriate data.\"}"
 	_ = json.Unmarshal([]byte(targetResponse), targetDiag)
 
-	diag := BuildWithRetriesApiDiagnosticError(resource, sumErrMsg, apiResponse)
+	diag := BuildWithRetriesApiDiagnosticError(resourceType, sumErrMsg, apiResponse)
 	actualDiag := &detailedDiagnosticInfo{}
 
 	lines := strings.Split(diag.Error(), "\n")

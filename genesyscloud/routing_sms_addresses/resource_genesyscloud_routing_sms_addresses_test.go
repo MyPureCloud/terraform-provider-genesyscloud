@@ -95,7 +95,7 @@ func testVerifySmsAddressDestroyed(state *terraform.State) error {
 }
 
 func generateRoutingSmsAddressesResource(
-	resourceId string,
+	resourceLabel string,
 	name string,
 	street string,
 	city string,
@@ -114,5 +114,5 @@ func generateRoutingSmsAddressesResource(
 			country_code = "%s"
 			auto_correct_address = %s
 		}
-	`, resourceId, name, street, city, region, postalCode, countryCode, autoCorrectAddress)
+	`, resourceLabel, name, street, city, region, postalCode, countryCode, autoCorrectAddress)
 }
