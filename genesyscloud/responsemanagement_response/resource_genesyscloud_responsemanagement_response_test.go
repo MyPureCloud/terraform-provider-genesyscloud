@@ -51,7 +51,10 @@ func TestAccResourceResponseManagementResponseFooterField(t *testing.T) {
 		fullPath           = filepath.Join(testFilesDir, fileName)
 	)
 
-	cleanupResponseAssets("yeti")
+	err := cleanupResponseAssets("yeti")
+	if err != nil {
+		t.Errorf("failed to cleanup response assets: %v", err)
+	}
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },

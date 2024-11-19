@@ -2,6 +2,7 @@ package outbound_ruleset
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"strings"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
@@ -318,4 +319,13 @@ func doesRuleConditionsRefDeletedSkill(rule platformclientv2.Dialerrule, skillMa
 		}
 	}
 	return false
+}
+
+func GenerateOutboundRuleSetResourceAndLabel(resourceLabel, name string) (string, string) {
+	reference := resourceName + "." + resourceLabel
+	return fmt.Sprintf(`
+resource "%s" "%s" {
+	name = "%s"
+}
+	`, resourceName, resourceLabel, name), reference
 }

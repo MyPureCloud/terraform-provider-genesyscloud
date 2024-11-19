@@ -139,7 +139,7 @@ func buildSdkOutboundContactListColumnDataTypeSpecifications(columnDataTypeSpeci
 }
 
 func flattenSdkOutboundContactListColumnDataTypeSpecifications(columnDataTypeSpecifications []platformclientv2.Columndatatypespecification) []interface{} {
-	if columnDataTypeSpecifications == nil || len(columnDataTypeSpecifications) == 0 {
+	if len(columnDataTypeSpecifications) == 0 {
 		return nil
 	}
 

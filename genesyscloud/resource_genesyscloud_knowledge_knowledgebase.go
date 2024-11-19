@@ -49,6 +49,7 @@ func getAllKnowledgeKnowledgebases(_ context.Context, clientConfig *platformclie
 func getAllKnowledgebaseEntities(knowledgeApi platformclientv2.KnowledgeApi, published bool) (*[]platformclientv2.Knowledgebase, diag.Diagnostics) {
 	var (
 		after    string
+		err      error
 		entities []platformclientv2.Knowledgebase
 	)
 
@@ -69,7 +70,7 @@ func getAllKnowledgebaseEntities(knowledgeApi platformclientv2.KnowledgeApi, pub
 			break
 		}
 
-		after, err := util.GetQueryParamValueFromUri(*knowledgeBases.NextUri, "after")
+		after, err = util.GetQueryParamValueFromUri(*knowledgeBases.NextUri, "after")
 		if err != nil {
 			return nil, util.BuildDiagnosticError("genesyscloud_knowledge_knowledgebase", fmt.Sprintf("Failed to parse after cursor from knowledge base nextUri"), err)
 		}

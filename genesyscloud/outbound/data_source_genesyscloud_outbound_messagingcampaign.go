@@ -14,25 +14,6 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
 )
 
-func dataSourceOutboundMessagingcampaign() *schema.Resource {
-	return &schema.Resource{
-		Description: `Data source for Genesys Cloud Outbound Messaging Campaign. Select a Outbound Messaging Campaign by name.`,
-
-		ReadContext: provider.ReadWithPooledClient(dataSourceOutboundMessagingcampaignRead),
-		Importer: &schema.ResourceImporter{
-			StateContext: schema.ImportStatePassthroughContext,
-		},
-		SchemaVersion: 1,
-		Schema: map[string]*schema.Schema{
-			"name": {
-				Description: `Outbound Messaging Campaign name.`,
-				Type:        schema.TypeString,
-				Optional:    true,
-			},
-		},
-	}
-}
-
 func dataSourceOutboundMessagingcampaignRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	outboundApi := platformclientv2.NewOutboundApiWithConfig(sdkConfig)

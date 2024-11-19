@@ -437,21 +437,6 @@ func GenerateDigitalRuleSetVersion(
 		version = %s`, version)
 }
 
-func GenerateOutboundDigitalRuleSetResource(
-	resourceLabel string,
-	name string,
-	contactListId string,
-	nestedBlocks ...string,
-) string {
-	return fmt.Sprintf(`
-	resource "genesyscloud_outbound_digitalruleset" "%s" {
-	name = "%s"
-	contact_list_id = %s
-	%s
-	}
-	`, resourceLabel, name, contactListId, strings.Join(nestedBlocks, "\n"))
-}
-
 func testVerifyOutboundDigitalrulesetDestroyed(state *terraform.State) error {
 	outboundAPI := platformclientv2.NewOutboundApi()
 	for _, rs := range state.RootModule().Resources {

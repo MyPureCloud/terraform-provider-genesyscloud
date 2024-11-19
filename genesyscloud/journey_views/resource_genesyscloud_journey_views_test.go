@@ -7,7 +7,6 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 
-	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
@@ -15,23 +14,20 @@ import (
 
 func TestAccResourceJourneyViewsBasic(t *testing.T) {
 	var (
-		name                  = "test journey from tf 1"
-		duration              = "P1Y"
-		elementsId            = "ac6c61b5-1cd4-4c6e-a8a5-edb74d9117eb"
-		elementsName          = "Wrap Up"
-		attributeType         = "Event"
-		attributeId           = "a416328b-167c-0365-d0e1-f072cd5d4ded"
-		attributeSource       = "Voice"
-		filterType            = "And"
-		predicatesDimension   = "mediaType"
-		predicatesValues      = "VOICE"
-		predicatesOperator    = "Matches"
-		predicatesNoValue     = false
-		testUserResourceLabel = "user_resource1"
-		testUserName          = "nameUser1" + uuid.NewString()
-		testUserEmail         = uuid.NewString() + "@example.com"
-		journeyResourceLabel  = "journey_resource1"
-		emptyElementBlock     = ""
+		name                 = "test journey from tf 1"
+		duration             = "P1Y"
+		elementsId           = "ac6c61b5-1cd4-4c6e-a8a5-edb74d9117eb"
+		elementsName         = "Wrap Up"
+		attributeType        = "Event"
+		attributeId          = "a416328b-167c-0365-d0e1-f072cd5d4ded"
+		attributeSource      = "Voice"
+		filterType           = "And"
+		predicatesDimension  = "mediaType"
+		predicatesValues     = "VOICE"
+		predicatesOperator   = "Matches"
+		predicatesNoValue    = false
+		journeyResourceLabel = "journey_resource1"
+		emptyElementBlock    = ""
 	)
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
@@ -39,7 +35,7 @@ func TestAccResourceJourneyViewsBasic(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				//Create
-				Config: generateUserWithCustomAttrs(testUserResourceLabel, testUserEmail, testUserName) + generateJourneyView(journeyResourceLabel, name, duration, emptyElementBlock),
+				Config: generateJourneyView(journeyResourceLabel, name, duration, emptyElementBlock),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "name", name),
 					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "duration", duration),
@@ -47,7 +43,7 @@ func TestAccResourceJourneyViewsBasic(t *testing.T) {
 			},
 			{
 				//Update
-				Config: generateUserWithCustomAttrs(testUserResourceLabel, testUserEmail, testUserName) + generateJourneyView(journeyResourceLabel, name, duration, generateElements(
+				Config: generateJourneyView(journeyResourceLabel, name, duration, generateElements(
 					elementsId,
 					elementsName,
 					generateAttributes(attributeType, attributeId, attributeSource),
@@ -74,7 +70,7 @@ func TestAccResourceJourneyViewsBasic(t *testing.T) {
 			},
 			{
 				//Update without filter
-				Config: generateUserWithCustomAttrs(testUserResourceLabel, testUserEmail, testUserName) + generateJourneyView(journeyResourceLabel, name, duration, generateElements(
+				Config: generateJourneyView(journeyResourceLabel, name, duration, generateElements(
 					elementsId,
 					elementsName,
 					generateAttributes(attributeType, attributeId, attributeSource),
@@ -112,12 +108,13 @@ func generateUserWithCustomAttrs(resourceLabel string, email string, name string
 	`, resourceLabel, email, name, strings.Join(attrs, "\n"))
 }
 
-func generateJourneyView(journeyResource string, name string, duration string, elementsBlock string) string {
+func generateJourneyView(journeyResourceLabel string, name string, duration string, elementsBlock string) string {
 	return fmt.Sprintf(`resource "genesyscloud_journey_views" "%s" {
     duration = "%s"
     name = "%s"
     %s
-}`, journeyResource, duration, name, func() string {
+	}
+	`, journeyResourceLabel, duration, name, func() string {
 		if elementsBlock != "" {
 			return elementsBlock
 		}
@@ -132,7 +129,8 @@ func generateElements(id string, name string, attributesBlock string, filter str
         name = "%s"
         %s
         %s
-    }`, id, name, attributesBlock, filter)
+    }
+    `, id, name, attributesBlock, filter)
 }
 
 func generateFilter(filterType string, nestedBlocks ...string) string {
@@ -140,7 +138,8 @@ func generateFilter(filterType string, nestedBlocks ...string) string {
         filter {
             type       = "%s"
             %s
-        }`, filterType, strings.Join(nestedBlocks, "\n"))
+        }
+        `, filterType, strings.Join(nestedBlocks, "\n"))
 }
 
 func generateAttributes(attributeType string, attributeId string, attributeSource string) string {
@@ -149,7 +148,8 @@ func generateAttributes(attributeType string, attributeId string, attributeSourc
             type   = "%s"
             id     = "%s"
             source = "%s"
-        }`, attributeType, attributeId, attributeSource)
+        }
+        `, attributeType, attributeId, attributeSource)
 }
 
 func generatePredicates(dimension string, values string, operator string, noValue bool) string {
@@ -159,7 +159,8 @@ func generatePredicates(dimension string, values string, operator string, noValu
                 values    = ["%s"]
                 operator  = "%s"
                 no_value  = %v
-            }`, dimension, values, operator, noValue)
+            }
+            `, dimension, values, operator, noValue)
 }
 
 func testVerifyJourneyViewsDestroyed(state *terraform.State) error {

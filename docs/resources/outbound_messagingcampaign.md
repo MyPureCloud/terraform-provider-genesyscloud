@@ -54,7 +54,6 @@ resource "genesyscloud_outbound_messagingcampaign" "example_outbound_messagingca
 - `contact_list_id` (String) The contact list that this messaging campaign will send messages for.
 - `messages_per_minute` (Number) How many messages this messaging campaign will send per minute.
 - `name` (String) The campaign name.
-- `sms_config` (Block Set, Min: 1, Max: 1) Configuration for this messaging campaign to send SMS messages. (see [below for nested schema](#nestedblock--sms_config))
 
 ### Optional
 
@@ -65,10 +64,67 @@ resource "genesyscloud_outbound_messagingcampaign" "example_outbound_messagingca
 - `contact_sorts` (Block List) The order in which to sort contacts for dialing, based on up to four columns. (see [below for nested schema](#nestedblock--contact_sorts))
 - `division_id` (String) The division this entity belongs to.
 - `dnc_list_ids` (List of String) The dnc lists to check before sending a message for this messaging campaign.
+- `dynamic_contact_queueing_settings` (Block List, Max: 1) Indicates (when true) that the campaign supports dynamic queueing of the contact list at the time of a request for contacts. 
+				**Warning**: Updating this field will cause the campaign to be destroyed and re-created. (see [below for nested schema](#nestedblock--dynamic_contact_queueing_settings))
+- `email_config` (Block List, Max: 1) Configuration for this messaging campaign to send Email messages. (see [below for nested schema](#nestedblock--email_config))
+- `rule_set_ids` (List of String) Rule Sets to be applied while this campaign is sending messages
+- `sms_config` (Block Set, Max: 1) Configuration for this messaging campaign to send SMS messages. (see [below for nested schema](#nestedblock--sms_config))
 
 ### Read-Only
 
 - `id` (String) The ID of this resource.
+
+<a id="nestedblock--contact_sorts"></a>
+### Nested Schema for `contact_sorts`
+
+Required:
+
+- `field_name` (String) The field name by which to sort contacts.
+
+Optional:
+
+- `direction` (String) The direction in which to sort contacts. Defaults to `ASC`.
+- `numeric` (Boolean) Whether or not the column contains numeric data. Defaults to `false`.
+
+
+<a id="nestedblock--dynamic_contact_queueing_settings"></a>
+### Nested Schema for `dynamic_contact_queueing_settings`
+
+Optional:
+
+- `filter` (Boolean) Whether to filter contacts dynamically.
+- `sort` (Boolean) Whether to sort contacts dynamically.
+
+
+<a id="nestedblock--email_config"></a>
+### Nested Schema for `email_config`
+
+Optional:
+
+- `content_template_id` (String) The content template used to formulate the email to send to the contact.
+- `email_columns` (Set of String) The contact list columns specifying the email address(es) of the contact.
+- `from_address` (Block List, Max: 1) The email address that will be used as the sender of the email. (see [below for nested schema](#nestedblock--email_config--from_address))
+- `reply_to_address` (Block List, Max: 1) The email address from which any reply will be sent. (see [below for nested schema](#nestedblock--email_config--reply_to_address))
+
+<a id="nestedblock--email_config--from_address"></a>
+### Nested Schema for `email_config.from_address`
+
+Optional:
+
+- `domain_id` (String) The OutboundDomain used for the email address.
+- `friendly_name` (String) The friendly name of the email address.
+- `local_part` (String) The local part of the email address.
+
+
+<a id="nestedblock--email_config--reply_to_address"></a>
+### Nested Schema for `email_config.reply_to_address`
+
+Optional:
+
+- `domain_id` (String) The InboundDomain used for the email address.
+- `route_id` (String) The InboundRoute used for the email address.
+
+
 
 <a id="nestedblock--sms_config"></a>
 ### Nested Schema for `sms_config`
@@ -82,17 +138,4 @@ Optional:
 
 - `content_template_id` (String) The content template used to formulate the message to send to the contact. Either message_column or content_template_id is required.
 - `message_column` (String) The Contact List column specifying the message to send to the contact. Either message_column or content_template_id is required.
-
-
-<a id="nestedblock--contact_sorts"></a>
-### Nested Schema for `contact_sorts`
-
-Required:
-
-- `field_name` (String) The field name by which to sort contacts.
-
-Optional:
-
-- `direction` (String) The direction in which to sort contacts. Defaults to `ASC`.
-- `numeric` (Boolean) Whether or not the column contains numeric data. Defaults to `false`.
 

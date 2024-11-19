@@ -230,8 +230,9 @@ func TestAccResourceRoutingQueueConditionalRouting(t *testing.T) {
 		skillGroupResourceLabel = "skillgroup"
 		skillGroupName          = "test skillgroup " + uuid.NewString()
 
-		groupResourceLabel  = "group"
-		groupName           = "terraform test group" + uuid.NewString()
+		group1ResourceLabel = "group_1"
+		group1NameAttr      = "terraform test group" + uuid.NewString()
+
 		queueResourceLabel2 = "test-queue-2"
 		queueName2          = "Terraform Test Queue2-" + uuid.NewString()
 
@@ -339,7 +340,8 @@ func TestAccResourceRoutingQueueConditionalRouting(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "conditional_group_routing_rules.0.metric", conditionalGroupRouting1Metric),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "conditional_group_routing_rules.0.condition_value", conditionalGroupRouting1ConditionValue),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "conditional_group_routing_rules.0.wait_seconds", conditionalGroupRouting1WaitSeconds),
-					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "conditional_group_routing_rules.0.groups.0.member_group_type", conditionalGroupRouting1GroupType),
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "conditional_group_routing_rules.0.groups.#", "1"),
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "conditional_group_routing_rules.0.groups.0.member_group_type", "SKILLGROUP"),
 					resource.TestCheckResourceAttrPair("genesyscloud_routing_queue."+queueResourceLabel1, "conditional_group_routing_rules.0.groups.0.member_group_id", "genesyscloud_routing_skill_group."+skillGroupResourceLabel, "id"),
 
 					provider.TestDefaultHomeDivision("genesyscloud_routing_queue."+queueResourceLabel1),
@@ -352,9 +354,13 @@ func TestAccResourceRoutingQueueConditionalRouting(t *testing.T) {
 			},
 			{
 				// Update
-				Config: generateUserWithCustomAttrs(testUserResourceLabel, testUserEmail, testUserName) + group.GenerateBasicGroupResource(
-					groupResourceLabel,
-					groupName,
+				Config: generateUserWithCustomAttrs(
+					testUserResourceLabel,
+					testUserEmail,
+					testUserName,
+				) + group.GenerateBasicGroupResource(
+					group1ResourceLabel,
+					group1NameAttr,
 					group.GenerateGroupOwners("genesyscloud_user."+testUserResourceLabel+".id"),
 				) + generateRoutingQueueResourceBasic(
 					queueResourceLabel2,
@@ -403,12 +409,12 @@ func TestAccResourceRoutingQueueConditionalRouting(t *testing.T) {
 						conditionalGroupRouting2ConditionValue,                  // condition_value
 						conditionalGroupRouting2WaitSeconds,                     // wait_seconds
 						GenerateConditionalGroupRoutingRuleGroup(
-							"genesyscloud_group."+groupResourceLabel+".id", // group_id
-							conditionalGroupRouting2GroupType,              // group_type
+							"genesyscloud_group."+group1ResourceLabel+".id", // group_id
+							"GROUP", // group_type
 						),
 					),
 					"skill_groups = [genesyscloud_routing_skill_group."+skillGroupResourceLabel+".id]",
-					"groups = [genesyscloud_group."+groupResourceLabel+".id]",
+					fmt.Sprintf("groups = [genesyscloud_group.%s.id]", group1ResourceLabel),
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "name", queueName1),
@@ -433,8 +439,10 @@ func TestAccResourceRoutingQueueConditionalRouting(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "conditional_group_routing_rules.1.metric", conditionalGroupRouting2Metric),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "conditional_group_routing_rules.1.condition_value", conditionalGroupRouting2ConditionValue),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "conditional_group_routing_rules.1.wait_seconds", conditionalGroupRouting2WaitSeconds),
-					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "conditional_group_routing_rules.1.groups.0.member_group_type", conditionalGroupRouting2GroupType),
-					resource.TestCheckResourceAttrPair("genesyscloud_routing_queue."+queueResourceLabel1, "conditional_group_routing_rules.1.groups.0.member_group_id", "genesyscloud_group."+groupResourceLabel, "id"),
+
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "conditional_group_routing_rules.1.groups.#", "1"),
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "conditional_group_routing_rules.1.groups.0.member_group_type", "GROUP"),
+					resource.TestCheckResourceAttrPair("genesyscloud_routing_queue."+queueResourceLabel1, "conditional_group_routing_rules.1.groups.0.member_group_id", "genesyscloud_group."+group1ResourceLabel, "id"),
 
 					provider.TestDefaultHomeDivision("genesyscloud_routing_queue."+queueResourceLabel1),
 					validateMediaSettings(queueResourceLabel1, "media_settings_call", alertTimeout1, util.FalseValue, slPercent1, slDuration1),
@@ -486,12 +494,12 @@ func TestAccResourceRoutingQueueConditionalRouting(t *testing.T) {
 						conditionalGroupRouting2ConditionValue,                  // condition_value
 						conditionalGroupRouting2WaitSeconds,                     // wait_seconds
 						GenerateConditionalGroupRoutingRuleGroup(
-							"genesyscloud_group."+groupResourceLabel+".id", // group_id
-							conditionalGroupRouting2GroupType,              // group_type
+							"genesyscloud_group."+group1ResourceLabel+".id", // group_id
+							conditionalGroupRouting2GroupType,               // group_type
 						),
 					),
 					"skill_groups = [genesyscloud_routing_skill_group."+skillGroupResourceLabel+".id]",
-					"groups = [genesyscloud_group."+groupResourceLabel+".id]",
+					"groups = [genesyscloud_group."+group1ResourceLabel+".id]",
 				),
 				// Import/Read
 				ResourceName:      "genesyscloud_routing_queue." + queueResourceLabel1,
@@ -981,6 +989,7 @@ func TestAccResourceRoutingQueueMembers(t *testing.T) {
 		CheckDestroy: testVerifyQueuesAndUsersDestroyed,
 	})
 }
+
 func TestAccResourceRoutingQueueWrapupCodes(t *testing.T) {
 	var (
 		queueResourceLabel       = "test-queue-wrapup"
@@ -1387,20 +1396,20 @@ func testVerifyQueuesAndUsersDestroyed(state *terraform.State) error {
 	return nil
 }
 
-func validateMediaSettings(resourceName, settingsAttr, alertingTimeout, enableAutoAnswer, slPercent, slDurationMs string) resource.TestCheckFunc {
+func validateMediaSettings(resourceLabel, settingsAttr, alertingTimeout, enableAutoAnswer, slPercent, slDurationMs string) resource.TestCheckFunc {
 	return resource.ComposeAggregateTestCheckFunc(
-		resource.TestCheckResourceAttr("genesyscloud_routing_queue."+resourceName, settingsAttr+".0.alerting_timeout_sec", alertingTimeout),
-		resource.TestCheckResourceAttr("genesyscloud_routing_queue."+resourceName, settingsAttr+".0.service_level_percentage", slPercent),
-		resource.TestCheckResourceAttr("genesyscloud_routing_queue."+resourceName, settingsAttr+".0.service_level_duration_ms", slDurationMs),
-		resource.TestCheckResourceAttr("genesyscloud_routing_queue."+resourceName, settingsAttr+".0.enable_auto_answer", enableAutoAnswer),
+		resource.TestCheckResourceAttr("genesyscloud_routing_queue."+resourceLabel, settingsAttr+".0.alerting_timeout_sec", alertingTimeout),
+		resource.TestCheckResourceAttr("genesyscloud_routing_queue."+resourceLabel, settingsAttr+".0.service_level_percentage", slPercent),
+		resource.TestCheckResourceAttr("genesyscloud_routing_queue."+resourceLabel, settingsAttr+".0.service_level_duration_ms", slDurationMs),
+		resource.TestCheckResourceAttr("genesyscloud_routing_queue."+resourceLabel, settingsAttr+".0.enable_auto_answer", enableAutoAnswer),
 	)
 }
 
-func validateAgentOwnedRouting(resourceName string, agentattr, enableAgentOwnedCallBacks string, maxOwnedCallBackHours string, maxOwnedCallBackDelayHours string) resource.TestCheckFunc {
+func validateAgentOwnedRouting(resourceLabel string, agentattr, enableAgentOwnedCallBacks string, maxOwnedCallBackHours string, maxOwnedCallBackDelayHours string) resource.TestCheckFunc {
 	return resource.ComposeAggregateTestCheckFunc(
-		resource.TestCheckResourceAttr("genesyscloud_routing_queue."+resourceName, agentattr+".0.enable_agent_owned_callbacks", enableAgentOwnedCallBacks),
-		resource.TestCheckResourceAttr("genesyscloud_routing_queue."+resourceName, agentattr+".0.max_owned_callback_hours", maxOwnedCallBackHours),
-		resource.TestCheckResourceAttr("genesyscloud_routing_queue."+resourceName, agentattr+".0.max_owned_callback_delay_hours", maxOwnedCallBackDelayHours),
+		resource.TestCheckResourceAttr("genesyscloud_routing_queue."+resourceLabel, agentattr+".0.enable_agent_owned_callbacks", enableAgentOwnedCallBacks),
+		resource.TestCheckResourceAttr("genesyscloud_routing_queue."+resourceLabel, agentattr+".0.max_owned_callback_hours", maxOwnedCallBackHours),
+		resource.TestCheckResourceAttr("genesyscloud_routing_queue."+resourceLabel, agentattr+".0.max_owned_callback_delay_hours", maxOwnedCallBackDelayHours),
 	)
 }
 
@@ -1446,28 +1455,28 @@ func generateDirectRouting(
 		strings.Join(extraArgs, "\n"))
 }
 
-func validateRoutingRules(resourceName string, ringNum int, operator string, threshold string, waitSec string) resource.TestCheckFunc {
+func validateRoutingRules(resourceLabel string, ringNum int, operator string, threshold string, waitSec string) resource.TestCheckFunc {
 	ringNumStr := strconv.Itoa(ringNum)
 	return resource.ComposeAggregateTestCheckFunc(
-		resource.TestCheckResourceAttr("genesyscloud_routing_queue."+resourceName, "routing_rules."+ringNumStr+".operator", operator),
-		resource.TestCheckResourceAttr("genesyscloud_routing_queue."+resourceName, "routing_rules."+ringNumStr+".threshold", threshold),
-		resource.TestCheckResourceAttr("genesyscloud_routing_queue."+resourceName, "routing_rules."+ringNumStr+".wait_seconds", waitSec),
+		resource.TestCheckResourceAttr("genesyscloud_routing_queue."+resourceLabel, "routing_rules."+ringNumStr+".operator", operator),
+		resource.TestCheckResourceAttr("genesyscloud_routing_queue."+resourceLabel, "routing_rules."+ringNumStr+".threshold", threshold),
+		resource.TestCheckResourceAttr("genesyscloud_routing_queue."+resourceLabel, "routing_rules."+ringNumStr+".wait_seconds", waitSec),
 	)
 }
 
-func validateBullseyeSettings(resourceName string, numRings int, timeout string, skillToRemove string) resource.TestCheckFunc {
+func validateBullseyeSettings(resourceLabel string, numRings int, timeout string, skillToRemove string) resource.TestCheckFunc {
 	var checks []resource.TestCheckFunc
 	for i := 0; i < numRings; i++ {
 		ringNum := strconv.Itoa(i)
 		checks = append(checks,
-			resource.TestCheckResourceAttr("genesyscloud_routing_queue."+resourceName, "bullseye_rings."+ringNum+".expansion_timeout_seconds", timeout))
+			resource.TestCheckResourceAttr("genesyscloud_routing_queue."+resourceLabel, "bullseye_rings."+ringNum+".expansion_timeout_seconds", timeout))
 
 		if skillToRemove != "" {
 			checks = append(checks,
-				resource.TestCheckResourceAttrPair("genesyscloud_routing_queue."+resourceName, "bullseye_rings."+ringNum+".skills_to_remove.0", skillToRemove, "id"))
+				resource.TestCheckResourceAttrPair("genesyscloud_routing_queue."+resourceLabel, "bullseye_rings."+ringNum+".skills_to_remove.0", skillToRemove, "id"))
 		} else {
 			checks = append(checks,
-				resource.TestCheckResourceAttr("genesyscloud_routing_queue."+resourceName, "bullseye_rings."+ringNum+".skills_to_remove.#", "0"))
+				resource.TestCheckResourceAttr("genesyscloud_routing_queue."+resourceLabel, "bullseye_rings."+ringNum+".skills_to_remove.#", "0"))
 		}
 	}
 	return resource.ComposeAggregateTestCheckFunc(checks...)
@@ -1592,18 +1601,18 @@ func validateQueueWrapupCode(queueResourceName string, codeResourceName string) 
 	}
 }
 
-func validateDirectRouting(resourceName string,
+func validateDirectRouting(resourceLabel string,
 	agentWaitSeconds string,
 	waitForAgent string,
 	callUseAgentAddressOutbound string,
 	emailUseAgentAddressOutbound string,
 	messageUseAgentAddressOutbound string) resource.TestCheckFunc {
 	return resource.ComposeAggregateTestCheckFunc(
-		resource.TestCheckResourceAttr("genesyscloud_routing_queue."+resourceName, "direct_routing.0.agent_wait_seconds", agentWaitSeconds),
-		resource.TestCheckResourceAttr("genesyscloud_routing_queue."+resourceName, "direct_routing.0.wait_for_agent", waitForAgent),
-		resource.TestCheckResourceAttr("genesyscloud_routing_queue."+resourceName, "direct_routing.0.call_use_agent_address_outbound", callUseAgentAddressOutbound),
-		resource.TestCheckResourceAttr("genesyscloud_routing_queue."+resourceName, "direct_routing.0.email_use_agent_address_outbound", emailUseAgentAddressOutbound),
-		resource.TestCheckResourceAttr("genesyscloud_routing_queue."+resourceName, "direct_routing.0.message_use_agent_address_outbound", messageUseAgentAddressOutbound),
+		resource.TestCheckResourceAttr("genesyscloud_routing_queue."+resourceLabel, "direct_routing.0.agent_wait_seconds", agentWaitSeconds),
+		resource.TestCheckResourceAttr("genesyscloud_routing_queue."+resourceLabel, "direct_routing.0.wait_for_agent", waitForAgent),
+		resource.TestCheckResourceAttr("genesyscloud_routing_queue."+resourceLabel, "direct_routing.0.call_use_agent_address_outbound", callUseAgentAddressOutbound),
+		resource.TestCheckResourceAttr("genesyscloud_routing_queue."+resourceLabel, "direct_routing.0.email_use_agent_address_outbound", emailUseAgentAddressOutbound),
+		resource.TestCheckResourceAttr("genesyscloud_routing_queue."+resourceLabel, "direct_routing.0.message_use_agent_address_outbound", messageUseAgentAddressOutbound),
 	)
 }
 
