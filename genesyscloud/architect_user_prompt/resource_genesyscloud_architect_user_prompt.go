@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"terraform-provider-genesyscloud/genesyscloud/util/constants"
@@ -25,35 +24,33 @@ import (
 func getAllUserPrompts(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
 	resources := make(resourceExporter.ResourceIDMetaMap)
 	proxy := getArchitectUserPromptProxy(clientConfig)
-	exportNameFilter := "abcdefghijklmnopqrstuvwxyz1234567890"
 
-	// Devtooling-849 Adds a check for potential 10,000 return limit reached
-	// Determines based on pageCount if multiple API calls are needed to return everything
+	var (
+		userPrompts *[]platformclientv2.Prompt
+		resp        *platformclientv2.APIResponse
+		err         error
+	)
+
 	pageCount, _, err := proxy.getArchitectUserPromptPageCount(ctx, "")
 	if err != nil {
 		return nil, util.BuildDiagnosticError(resourceName, fmt.Sprintf("failed to get user prompts: %s", err), err)
 	}
 
 	if pageCount < 100 {
-		userPrompts, resp, err := proxy.getAllArchitectUserPrompts(ctx, true, true, "")
+		userPrompts, resp, err = proxy.getAllArchitectUserPrompts(ctx, true, true, "")
 		if err != nil {
 			return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("failed to get user prompts: %s", err), resp)
 		}
-		for _, userPrompt := range *userPrompts {
-			resources[*userPrompt.Id] = &resourceExporter.ResourceMeta{Name: *userPrompt.Name}
-		}
 	} else {
-		for _, filter := range strings.Split(exportNameFilter, "") {
-			userPrompts, resp, err := proxy.getAllArchitectUserPrompts(ctx, true, true, filter+"*")
-			if err != nil {
-				return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("failed to get user prompts: %s", err), resp)
-			}
-			for _, userPrompt := range *userPrompts {
-				resources[*userPrompt.Id] = &resourceExporter.ResourceMeta{Name: *userPrompt.Name}
-			}
+		userPrompts, resp, err = proxy.getAllArchitectUserPromptsFilterByName(ctx, true, true, "abcdefghijklmnopqrstuvwxyz1234567890")
+		if err != nil {
+			return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("failed to get user prompts: %s", err), resp)
 		}
 	}
 
+	for _, userPrompt := range *userPrompts {
+		resources[*userPrompt.Id] = &resourceExporter.ResourceMeta{Name: *userPrompt.Name}
+	}
 	return resources, nil
 }
 
