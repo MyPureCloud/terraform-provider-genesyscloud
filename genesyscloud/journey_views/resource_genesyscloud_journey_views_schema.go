@@ -1,10 +1,12 @@
 package journey_views
 
 import (
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"terraform-provider-genesyscloud/genesyscloud/provider"
-	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
 )
 
 const resourceName = "genesyscloud_journey_views"
@@ -161,11 +163,8 @@ var (
 
 func SetRegistrar(regInstance registrar.Registrar) {
 	regInstance.RegisterResource(resourceName, ResourceJourneyViews())
-	/***
-	TODO: Add DataSource and Exporter once we are done with https://inindca.atlassian.net/browse/JM-109
-	regInstance.RegisterDataSource(resourceName, DataSourceGroup())
+	regInstance.RegisterDataSource(resourceName, DataSourceJourneyView())
 	regInstance.RegisterExporter(resourceName, JourneyViewExporter())
-	***/
 }
 
 func ResourceJourneyViews() *schema.Resource {
@@ -206,6 +205,27 @@ func ResourceJourneyViews() *schema.Resource {
 				Type:        schema.TypeList,
 				Optional:    true,
 				Elem:        elementsResource,
+			},
+		},
+	}
+}
+
+func JourneyViewExporter() *resourceExporter.ResourceExporter {
+	return &resourceExporter.ResourceExporter{
+		GetResourcesFunc: provider.GetAllWithPooledClient(getAllJourneyViews),
+		AllowZeroValues:  []string{"bullseye_rings.expansion_timeout_seconds"},
+	}
+}
+
+func DataSourceJourneyView() *schema.Resource {
+	return &schema.Resource{
+		Description:        "Data source for Genesys Cloud Journey Views. Select a Journey View by name.",
+		ReadWithoutTimeout: provider.ReadWithPooledClient(dataSourceJourneyViewRead),
+		Schema: map[string]*schema.Schema{
+			"name": {
+				Description: "JourneyView name.",
+				Type:        schema.TypeString,
+				Required:    true,
 			},
 		},
 	}

@@ -6,6 +6,7 @@ import (
 	"log"
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
@@ -16,6 +17,26 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
 )
+
+func getAllJourneyViews(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+	resources := make(resourceExporter.ResourceIDMetaMap)
+	proxy := getJourneyViewProxy(clientConfig)
+
+	journeys, resp, err := proxy.getAllJourneyViews(ctx, "")
+	if err != nil {
+		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("failed to get journey views: %s", err), resp)
+	}
+
+	if journeys == nil || len(*journeys) == 0 {
+		return resources, nil
+	}
+
+	for _, journey := range *journeys {
+		resources[*journey.Id] = &resourceExporter.ResourceMeta{Name: *journey.Name}
+	}
+
+	return resources, nil
+}
 
 func createJourneyView(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	name := d.Get("name").(string)

@@ -153,11 +153,7 @@ func readOutboundContactList(ctx context.Context, d *schema.ResourceData, meta i
 			_ = d.Set("division_id", *sdkContactList.Division.Id)
 		}
 		if sdkContactList.ColumnNames != nil {
-			var columnNames []string
-			for _, name := range *sdkContactList.ColumnNames {
-				columnNames = append(columnNames, name)
-			}
-			_ = d.Set("column_names", columnNames)
+			_ = d.Set("column_names", *sdkContactList.ColumnNames)
 		}
 		if sdkContactList.PhoneColumns != nil {
 			_ = d.Set("phone_columns", flattenSdkOutboundContactListContactPhoneNumberColumnSlice(*sdkContactList.PhoneColumns))
@@ -169,11 +165,7 @@ func readOutboundContactList(ctx context.Context, d *schema.ResourceData, meta i
 			_ = d.Set("preview_mode_column_name", *sdkContactList.PreviewModeColumnName)
 		}
 		if sdkContactList.PreviewModeAcceptedValues != nil {
-			var acceptedValues []string
-			for _, val := range *sdkContactList.PreviewModeAcceptedValues {
-				acceptedValues = append(acceptedValues, val)
-			}
-			_ = d.Set("preview_mode_accepted_values", acceptedValues)
+			_ = d.Set("preview_mode_accepted_values", *sdkContactList.PreviewModeAcceptedValues)
 		}
 		if sdkContactList.AttemptLimits != nil && sdkContactList.AttemptLimits.Id != nil {
 			_ = d.Set("attempt_limit_id", *sdkContactList.AttemptLimits.Id)
