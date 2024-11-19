@@ -31,9 +31,9 @@ func getAllUserPrompts(ctx context.Context, clientConfig *platformclientv2.Confi
 		err         error
 	)
 
-	pageCount, _, err := proxy.getArchitectUserPromptPageCount(ctx, "")
+	pageCount, resp, err := proxy.getArchitectUserPromptPageCount(ctx, "")
 	if err != nil {
-		return nil, util.BuildDiagnosticError(resourceName, fmt.Sprintf("failed to get user prompts: %s", err), err)
+		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("failed to get user prompts: %s", err), resp)
 	}
 
 	if pageCount < 100 {
