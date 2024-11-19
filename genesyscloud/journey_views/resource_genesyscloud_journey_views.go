@@ -105,6 +105,8 @@ func readJourneyView(ctx context.Context, d *schema.ResourceData, meta interface
 		resourcedata.SetNillableValue(d, "version", journeyView.Version)
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "elements", journeyView.Elements, flattenElements)
 
+		log.Printf("Retrieved journeyView with viewId: %s with version %s", viewId, journeyView.Version)
+
 		return cc.CheckState(d)
 	})
 }
