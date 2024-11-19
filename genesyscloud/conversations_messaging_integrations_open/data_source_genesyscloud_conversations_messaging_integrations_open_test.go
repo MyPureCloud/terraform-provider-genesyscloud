@@ -22,7 +22,7 @@ func TestAccDataSourceConversationsMessagingIntegrationsOpen(t *testing.T) {
 	var (
 		dataSourceId                                    = "data_test_messaging_open"
 		resourceId                                      = "test_messaging_open"
-		name                                            = "Terraform Integrations Messaging Open " + uuid.NewString()
+		name                                            = "Data Terraform Integrations Messaging Open"
 		outboundNotificationWebhookUrl1                 = "https://mock-server.prv-use1.test-pure.cloud/messaging-service/webhook"
 		outboundNotificationWebhookSignatureSecretToken = uuid.NewString()
 
@@ -63,12 +63,11 @@ func TestAccDataSourceConversationsMessagingIntegrationsOpen(t *testing.T) {
 						outboundNotificationWebhookUrl1,
 						outboundNotificationWebhookSignatureSecretToken,
 						GenerateWebhookHeadersProperties("key", "value"),
-					) +
-					GenerateConversationsMessagingOpenDataSource(
-						dataSourceId,
-						name,
-						"genesyscloud_conversations_messaging_integrations_open."+resourceId,
-					),
+					) + GenerateConversationsMessagingOpenDataSource(
+					dataSourceId,
+					name,
+					"genesyscloud_conversations_messaging_integrations_open."+resourceId,
+				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrPair("data.genesyscloud_conversations_messaging_integrations_open."+dataSourceId, "id", "genesyscloud_conversations_messaging_integrations_open."+resourceId, "id"),
 				),

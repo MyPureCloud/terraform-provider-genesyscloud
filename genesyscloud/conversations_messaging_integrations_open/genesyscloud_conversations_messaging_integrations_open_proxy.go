@@ -102,7 +102,7 @@ func getAllConversationsMessagingIntegrationsOpenFn(ctx context.Context, p *conv
 	var allOpenIntegrationRequests []platformclientv2.Openintegration
 	const pageSize = 100
 
-	openIntegrationRequests, resp, err := p.conversationsApi.GetConversationsMessagingIntegrationsOpen(1, 1, "", "", "")
+	openIntegrationRequests, resp, err := p.conversationsApi.GetConversationsMessagingIntegrationsOpen(pageSize, 1, "", "", "")
 	if err != nil {
 		return nil, resp, fmt.Errorf("Failed to get open integration request: %v", err)
 	}
