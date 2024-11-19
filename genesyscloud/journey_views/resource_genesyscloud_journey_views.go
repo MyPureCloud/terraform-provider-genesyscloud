@@ -57,12 +57,22 @@ func createJourneyView(ctx context.Context, d *schema.ResourceData, meta interfa
 
 func updateJourneyView(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	name := d.Get("name").(string)
+	var versionId = d.Get("version").(int)
+
+	if d.HasChange("version") {
+		old, _ := d.GetChange("version")
+		if old != nil {
+			versionId = old.(int)
+		}
+		d.Set("version", versionId)
+	}
+
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	gp := getJourneyViewProxy(sdkConfig)
 
 	journeyView := makeJourneyViewFromSchema(d)
 	log.Printf("Updating journeyView %s", d.Id())
-	journeyView, resp, err := gp.updateJourneyView(ctx, d.Id(), journeyView)
+	journeyView, resp, err := gp.updateJourneyView(ctx, d.Id(), versionId, journeyView)
 
 	if err != nil {
 		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create journeyView %s: %s", name, err), resp)
@@ -92,6 +102,7 @@ func readJourneyView(ctx context.Context, d *schema.ResourceData, meta interface
 		resourcedata.SetNillableValue(d, "description", journeyView.Description)
 		resourcedata.SetNillableValue(d, "interval", journeyView.Interval)
 		resourcedata.SetNillableValue(d, "duration", journeyView.Duration)
+		resourcedata.SetNillableValue(d, "version", journeyView.Version)
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "elements", journeyView.Elements, flattenElements)
 
 		return cc.CheckState(d)

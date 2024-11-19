@@ -38,7 +38,7 @@ func TestAccResourceJourneyViewsBasic(t *testing.T) {
 				Config: generateJourneyView(journeyResource, name, duration, emptyElementBlock),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResource, "name", name),
-					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResource, "duration", duration),
+					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResource, "duration", duration)
 				),
 			},
 			{
