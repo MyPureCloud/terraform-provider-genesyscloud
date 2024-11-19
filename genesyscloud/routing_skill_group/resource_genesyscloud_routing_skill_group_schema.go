@@ -57,6 +57,7 @@ func ResourceRoutingSkillGroup() *schema.Resource {
 			"member_division_ids": {
 				Description: "The IDs of member divisions to add or remove for this skill group. An empty array means all divisions will be removed, '*' means all divisions will be added.",
 				Type:        schema.TypeList,
+				MaxItems:    50,
 				Optional:    true,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
