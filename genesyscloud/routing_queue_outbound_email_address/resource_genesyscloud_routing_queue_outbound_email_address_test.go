@@ -17,22 +17,22 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v143/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
 )
 
 func TestAccResourceRoutingQueueOutboundEmailAddress(t *testing.T) {
 	var (
-		outboundEmailAddressResource = "test-email-address"
+		outboundEmailAddressResourceLabel = "test-email-address"
 
-		queueResource = "test-queue"
-		queueName1    = "Terraform Test Queue-" + uuid.NewString()
+		queueResourceLabel = "test-queue"
+		queueName1         = "Terraform Test Queue-" + uuid.NewString()
 
-		domainResource = "test-domain"
-		domainId       = fmt.Sprintf("terraform.%s.com", strings.Replace(uuid.NewString(), "-", "", -1))
+		domainResourceLabel = "test-domain"
+		domainId            = fmt.Sprintf("terraform.%s.com", strings.Replace(uuid.NewString(), "-", "", -1))
 
-		routeResource = "test-route"
-		routePattern  = "terraform1"
-		fromName      = "John Terraform"
+		routeResourceLabel = "test-route"
+		routePattern       = "terraform1"
+		fromName           = "John Terraform"
 	)
 
 	// Use this to save the id of the parent queue
@@ -53,14 +53,14 @@ func TestAccResourceRoutingQueueOutboundEmailAddress(t *testing.T) {
 				// Create the queue first so we can save the id to a channel and use it in the later test steps
 				// The reason we are doing this is that we need to verify the parent queue is never dropped and recreated because of OEA
 				Config: routingQueue.GenerateRoutingQueueResourceBasic(
-					queueResource,
+					queueResourceLabel,
 					queueName1,
 				),
 				Check: resource.ComposeTestCheckFunc(
 					func(state *terraform.State) error {
-						resourceState, ok := state.RootModule().Resources["genesyscloud_routing_queue."+queueResource]
+						resourceState, ok := state.RootModule().Resources["genesyscloud_routing_queue."+queueResourceLabel]
 						if !ok {
-							return fmt.Errorf("failed to find resource %s in state", "genesyscloud_routing_queue."+queueResource)
+							return fmt.Errorf("failed to find resource %s in state", "genesyscloud_routing_queue."+queueResourceLabel)
 						}
 						queueIdChan <- resourceState.Primary.ID
 
@@ -70,40 +70,40 @@ func TestAccResourceRoutingQueueOutboundEmailAddress(t *testing.T) {
 			},
 			{
 				Config: routingQueue.GenerateRoutingQueueResourceBasic(
-					queueResource,
+					queueResourceLabel,
 					queueName1,
 				) + routingEmailDomain.GenerateRoutingEmailDomainResource(
-					domainResource,
+					domainResourceLabel,
 					domainId,
 					util.FalseValue,
 					util.NullValue,
 				) + routingEmailRoute.GenerateRoutingEmailRouteResource(
-					routeResource,
-					"genesyscloud_routing_email_domain."+domainResource+".id",
+					routeResourceLabel,
+					"genesyscloud_routing_email_domain."+domainResourceLabel+".id",
 					routePattern,
 					fromName,
 				) + generateRoutingQueueOutboundEmailAddressResource(
-					outboundEmailAddressResource,
-					"genesyscloud_routing_queue."+queueResource+".id",
-					"genesyscloud_routing_email_domain."+domainResource+".id",
-					"genesyscloud_routing_email_route."+routeResource+".id",
+					outboundEmailAddressResourceLabel,
+					"genesyscloud_routing_queue."+queueResourceLabel+".id",
+					"genesyscloud_routing_email_domain."+domainResourceLabel+".id",
+					"genesyscloud_routing_email_route."+routeResourceLabel+".id",
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrWith("genesyscloud_routing_queue."+queueResource, "id", checkQueueId(queueIdChan)),
+					resource.TestCheckResourceAttrWith("genesyscloud_routing_queue."+queueResourceLabel, "id", checkQueueId(queueIdChan)),
 					resource.TestCheckResourceAttrPair(
-						"genesyscloud_routing_queue_outbound_email_address."+outboundEmailAddressResource, "queue_id", "genesyscloud_routing_queue."+queueResource, "id",
+						"genesyscloud_routing_queue_outbound_email_address."+outboundEmailAddressResourceLabel, "queue_id", "genesyscloud_routing_queue."+queueResourceLabel, "id",
 					),
 					resource.TestCheckResourceAttrPair(
-						"genesyscloud_routing_queue_outbound_email_address."+outboundEmailAddressResource, "domain_id", "genesyscloud_routing_email_domain."+domainResource, "id",
+						"genesyscloud_routing_queue_outbound_email_address."+outboundEmailAddressResourceLabel, "domain_id", "genesyscloud_routing_email_domain."+domainResourceLabel, "id",
 					),
 					resource.TestCheckResourceAttrPair(
-						"genesyscloud_routing_queue_outbound_email_address."+outboundEmailAddressResource, "route_id", "genesyscloud_routing_email_route."+routeResource, "id",
+						"genesyscloud_routing_queue_outbound_email_address."+outboundEmailAddressResourceLabel, "route_id", "genesyscloud_routing_email_route."+routeResourceLabel, "id",
 					),
 				),
 			},
 			{
 				// Import/Read
-				ResourceName:      "genesyscloud_routing_queue_outbound_email_address." + outboundEmailAddressResource,
+				ResourceName:      "genesyscloud_routing_queue_outbound_email_address." + outboundEmailAddressResourceLabel,
 				ImportState:       true,
 				ImportStateVerify: true,
 			},
@@ -114,18 +114,18 @@ func TestAccResourceRoutingQueueOutboundEmailAddress(t *testing.T) {
 // Ensure the OEA resource remains if we update the parent queue
 func TestAccResourceRoutingQueueOutboundEmailAddressExists(t *testing.T) {
 	var (
-		outboundEmailAddressResource = "test-email-address"
+		outboundEmailAddressResourceLabel = "test-email-address"
 
-		queueResource = "test-queue"
-		queueName1    = "Terraform Test Queue-" + uuid.NewString()
-		queueName2    = "Terraform Test Queue-" + uuid.NewString()
+		queueResourceLabel = "test-queue"
+		queueName1         = "Terraform Test Queue-" + uuid.NewString()
+		queueName2         = "Terraform Test Queue-" + uuid.NewString()
 
-		domainResource = "test-domain"
-		domainId       = fmt.Sprintf("terraform.%s.com", strings.Replace(uuid.NewString(), "-", "", -1))
+		domainResourceLabel = "test-domain"
+		domainId            = fmt.Sprintf("terraform.%s.com", strings.Replace(uuid.NewString(), "-", "", -1))
 
-		routeResource = "test-route"
-		routePattern  = "terraform1"
-		fromName      = "John Terraform"
+		routeResourceLabel = "test-route"
+		routePattern       = "terraform1"
+		fromName           = "John Terraform"
 	)
 
 	err := os.Setenv(featureToggles.OEAToggleName(), "enabled")
@@ -141,62 +141,62 @@ func TestAccResourceRoutingQueueOutboundEmailAddressExists(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config: routingQueue.GenerateRoutingQueueResourceBasic(
-					queueResource,
+					queueResourceLabel,
 					queueName1,
 				) + routingEmailDomain.GenerateRoutingEmailDomainResource(
-					domainResource,
+					domainResourceLabel,
 					domainId,
 					util.FalseValue,
 					util.NullValue,
 				) + routingEmailRoute.GenerateRoutingEmailRouteResource(
-					routeResource,
-					"genesyscloud_routing_email_domain."+domainResource+".id",
+					routeResourceLabel,
+					"genesyscloud_routing_email_domain."+domainResourceLabel+".id",
 					routePattern,
 					fromName,
 				) + generateRoutingQueueOutboundEmailAddressResource(
-					outboundEmailAddressResource,
-					"genesyscloud_routing_queue."+queueResource+".id",
-					"genesyscloud_routing_email_domain."+domainResource+".id",
-					"genesyscloud_routing_email_route."+routeResource+".id",
+					outboundEmailAddressResourceLabel,
+					"genesyscloud_routing_queue."+queueResourceLabel+".id",
+					"genesyscloud_routing_email_domain."+domainResourceLabel+".id",
+					"genesyscloud_routing_email_route."+routeResourceLabel+".id",
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrPair(
-						"genesyscloud_routing_queue_outbound_email_address."+outboundEmailAddressResource, "queue_id", "genesyscloud_routing_queue."+queueResource, "id",
+						"genesyscloud_routing_queue_outbound_email_address."+outboundEmailAddressResourceLabel, "queue_id", "genesyscloud_routing_queue."+queueResourceLabel, "id",
 					),
 					resource.TestCheckResourceAttrPair(
-						"genesyscloud_routing_queue_outbound_email_address."+outboundEmailAddressResource, "domain_id", "genesyscloud_routing_email_domain."+domainResource, "id",
+						"genesyscloud_routing_queue_outbound_email_address."+outboundEmailAddressResourceLabel, "domain_id", "genesyscloud_routing_email_domain."+domainResourceLabel, "id",
 					),
 					resource.TestCheckResourceAttrPair(
-						"genesyscloud_routing_queue_outbound_email_address."+outboundEmailAddressResource, "route_id", "genesyscloud_routing_email_route."+routeResource, "id",
+						"genesyscloud_routing_queue_outbound_email_address."+outboundEmailAddressResourceLabel, "route_id", "genesyscloud_routing_email_route."+routeResourceLabel, "id",
 					),
 				),
 			},
 			// Update queue
 			{
 				Config: routingQueue.GenerateRoutingQueueResourceBasic(
-					queueResource,
+					queueResourceLabel,
 					queueName2,
 				) + routingEmailDomain.GenerateRoutingEmailDomainResource(
-					domainResource,
+					domainResourceLabel,
 					domainId,
 					util.FalseValue,
 					util.NullValue,
 				) + routingEmailRoute.GenerateRoutingEmailRouteResource(
-					routeResource,
-					"genesyscloud_routing_email_domain."+domainResource+".id",
+					routeResourceLabel,
+					"genesyscloud_routing_email_domain."+domainResourceLabel+".id",
 					routePattern,
 					fromName,
 				) + generateRoutingQueueOutboundEmailAddressResource(
-					outboundEmailAddressResource,
-					"genesyscloud_routing_queue."+queueResource+".id",
-					"genesyscloud_routing_email_domain."+domainResource+".id",
-					"genesyscloud_routing_email_route."+routeResource+".id",
+					outboundEmailAddressResourceLabel,
+					"genesyscloud_routing_queue."+queueResourceLabel+".id",
+					"genesyscloud_routing_email_domain."+domainResourceLabel+".id",
+					"genesyscloud_routing_email_route."+routeResourceLabel+".id",
 				),
-				Check: verifyOutboundEmailAddressExists("genesyscloud_routing_queue." + queueResource),
+				Check: verifyOutboundEmailAddressExists("genesyscloud_routing_queue." + queueResourceLabel),
 			},
 			{
 				// Import/Read
-				ResourceName:      "genesyscloud_routing_queue_outbound_email_address." + outboundEmailAddressResource,
+				ResourceName:      "genesyscloud_routing_queue_outbound_email_address." + outboundEmailAddressResourceLabel,
 				ImportState:       true,
 				ImportStateVerify: true,
 			},
@@ -226,12 +226,12 @@ func verifyOutboundEmailAddressExists(queueResourceName string) resource.TestChe
 	}
 }
 
-func generateRoutingQueueOutboundEmailAddressResource(resourceId, queueId, domainId, routeId string) string {
+func generateRoutingQueueOutboundEmailAddressResource(resourceLabel, queueId, domainId, routeId string) string {
 	return fmt.Sprintf(`resource "genesyscloud_routing_queue_outbound_email_address" "%s" {
 		queue_id = %s
 		domain_id = %s
 		route_id = %s
-	}`, resourceId, queueId, domainId, routeId)
+	}`, resourceLabel, queueId, domainId, routeId)
 }
 
 func checkQueueId(queueIdChan chan string) func(value string) error {

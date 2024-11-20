@@ -21,7 +21,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v143/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
 )
 
 var (
@@ -193,7 +193,7 @@ func getAllEvaluationForms(_ context.Context, clientConfig *platformclientv2.Con
 		}
 
 		for _, evaluationForm := range *evaluationForms.Entities {
-			resources[*evaluationForm.Id] = &resourceExporter.ResourceMeta{Name: *evaluationForm.Name}
+			resources[*evaluationForm.Id] = &resourceExporter.ResourceMeta{BlockLabel: *evaluationForm.Name}
 		}
 	}
 
@@ -641,13 +641,13 @@ func flattenVisibilityCondition(visibilityCondition *platformclientv2.Visibility
 	return []interface{}{visibilityConditionMap}
 }
 
-func GenerateEvaluationFormResource(resourceID string, evaluationForm *EvaluationFormStruct) string {
+func GenerateEvaluationFormResource(resourceLabel string, evaluationForm *EvaluationFormStruct) string {
 	return fmt.Sprintf(`resource "genesyscloud_quality_forms_evaluation" "%s" {
 		name = "%s"
 		published = %v
 		%s
 	}
-	`, resourceID,
+	`, resourceLabel,
 		evaluationForm.Name,
 		evaluationForm.Published,
 		GenerateEvaluationFormQuestionGroups(&evaluationForm.QuestionGroups),

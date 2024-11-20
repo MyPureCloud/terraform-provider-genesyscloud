@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v143/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
 )
 
 func buildSdkOutboundContactListTemplateContactPhoneNumberColumnSlice(contactPhoneNumberColumn *schema.Set) *[]platformclientv2.Contactphonenumbercolumn {
@@ -186,7 +186,7 @@ func GeneratePhoneColumnsBlock(columnName, columnType, callableTimeColumn string
 }
 
 func GenerateOutboundContactListTemplate(
-	resourceId string,
+	resourceLabel string,
 	name string,
 	previewModeColumnName string,
 	previewModeAcceptedValues []string,
@@ -206,7 +206,7 @@ resource "%s" "%s" {
 	attempt_limit_id             = %s
 	%s
 }
-`, resourceName, resourceId, name, previewModeColumnName, strings.Join(previewModeAcceptedValues, ", "),
+`, resourceName, resourceLabel, name, previewModeColumnName, strings.Join(previewModeAcceptedValues, ", "),
 		strings.Join(columnNames, ", "), automaticTimeZoneMapping, zipCodeColumnName, attemptLimitId, strings.Join(nestedBlocks, "\n"))
 }
 

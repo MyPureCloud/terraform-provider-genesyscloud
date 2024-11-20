@@ -17,7 +17,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v143/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
 )
 
 func getAllExtensionPools(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
@@ -29,7 +29,7 @@ func getAllExtensionPools(ctx context.Context, clientConfig *platformclientv2.Co
 	}
 	if extensionPools != nil {
 		for _, extensionPool := range *extensionPools {
-			resources[*extensionPool.Id] = &resourceExporter.ResourceMeta{Name: *extensionPool.StartNumber}
+			resources[*extensionPool.Id] = &resourceExporter.ResourceMeta{BlockLabel: *extensionPool.StartNumber}
 		}
 	}
 	return resources, nil

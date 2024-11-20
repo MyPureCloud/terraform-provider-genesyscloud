@@ -6,23 +6,23 @@ import (
 	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v143/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
 )
 
 func buildSdkTrunkBases(d *schema.ResourceData) *[]platformclientv2.Trunkbase {
-	returnValue := make([]platformclientv2.Trunkbase, 0)
+	trunkBases := make([]platformclientv2.Trunkbase, 0)
 
 	if ids, ok := d.GetOk("phone_trunk_base_ids"); ok {
 		phoneTrunkBaseIds := lists.SetToStringList(ids.(*schema.Set))
 		for _, trunkBaseId := range *phoneTrunkBaseIds {
 			id := trunkBaseId
-			returnValue = append(returnValue, platformclientv2.Trunkbase{
+			trunkBases = append(trunkBases, platformclientv2.Trunkbase{
 				Id: &id,
 			})
 		}
 	}
 
-	return &returnValue
+	return &trunkBases
 }
 
 func GenerateEdgeGroupResourceWithCustomAttrs(

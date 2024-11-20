@@ -17,7 +17,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v143/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
 )
 
 func getAllRoutingLanguages(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
@@ -35,7 +35,7 @@ func getAllRoutingLanguages(ctx context.Context, clientConfig *platformclientv2.
 
 	for _, language := range *languages {
 		if language.State != nil && *language.State != "deleted" {
-			resources[*language.Id] = &resourceExporter.ResourceMeta{Name: *language.Name}
+			resources[*language.Id] = &resourceExporter.ResourceMeta{BlockLabel: *language.Name}
 		}
 	}
 	return resources, nil

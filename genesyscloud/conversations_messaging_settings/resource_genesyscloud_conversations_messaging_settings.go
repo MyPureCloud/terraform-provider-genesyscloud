@@ -15,7 +15,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v143/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
 )
 
 func getAllAuthConversationsMessagingSettings(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
@@ -28,7 +28,7 @@ func getAllAuthConversationsMessagingSettings(ctx context.Context, clientConfig 
 	}
 
 	for _, messagingSetting := range *messagingSettings {
-		resources[*messagingSetting.Id] = &resourceExporter.ResourceMeta{Name: *messagingSetting.Name}
+		resources[*messagingSetting.Id] = &resourceExporter.ResourceMeta{BlockLabel: *messagingSetting.Name}
 	}
 
 	return resources, nil

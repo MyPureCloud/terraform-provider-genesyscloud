@@ -13,15 +13,15 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v143/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
 )
 
 func TestAccResourceResponseManagementLibrary(t *testing.T) {
 
 	var (
-		libraryResource = "response_management_library"
-		name1           = "Library " + uuid.NewString()
-		name2           = "Library " + uuid.NewString()
+		libraryResourceLabel = "response_management_library"
+		name1                = "Library " + uuid.NewString()
+		name2                = "Library " + uuid.NewString()
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -30,21 +30,21 @@ func TestAccResourceResponseManagementLibrary(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				// Create
-				Config: GenerateResponseManagementLibraryResource(libraryResource, name1),
+				Config: GenerateResponseManagementLibraryResource(libraryResourceLabel, name1),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_library."+libraryResource, "name", name1),
+					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_library."+libraryResourceLabel, "name", name1),
 				),
 			},
 			{
 				// Update
-				Config: GenerateResponseManagementLibraryResource(libraryResource, name2),
+				Config: GenerateResponseManagementLibraryResource(libraryResourceLabel, name2),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_library."+libraryResource, "name", name2),
+					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_library."+libraryResourceLabel, "name", name2),
 				),
 			},
 			{
 				// Import/Read
-				ResourceName:      "genesyscloud_responsemanagement_library." + libraryResource,
+				ResourceName:      "genesyscloud_responsemanagement_library." + libraryResourceLabel,
 				ImportState:       true,
 				ImportStateVerify: true,
 			},

@@ -18,7 +18,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v143/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
 )
 
 /*
@@ -35,7 +35,7 @@ func getAllOutboundCallableTimesets(ctx context.Context, clientConfig *platformc
 		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get page of callable timeset configs error: %s", getErr), resp)
 	}
 	for _, callabletimesets := range *callabletimesets {
-		resources[*callabletimesets.Id] = &resourceExporter.ResourceMeta{Name: *callabletimesets.Name}
+		resources[*callabletimesets.Id] = &resourceExporter.ResourceMeta{BlockLabel: *callabletimesets.Name}
 	}
 	return resources, nil
 }

@@ -18,7 +18,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v143/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
 )
 
 func getAllFileSpecificationTemplates(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
@@ -31,7 +31,7 @@ func getAllFileSpecificationTemplates(ctx context.Context, clientConfig *platfor
 	}
 
 	for _, fst := range *fileSpecificationTemplates {
-		resources[*fst.Id] = &resourceExporter.ResourceMeta{Name: *fst.Name}
+		resources[*fst.Id] = &resourceExporter.ResourceMeta{BlockLabel: *fst.Name}
 	}
 	return resources, nil
 }

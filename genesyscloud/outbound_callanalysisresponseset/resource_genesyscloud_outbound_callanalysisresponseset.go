@@ -15,7 +15,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v143/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
 )
 
 /*
@@ -32,7 +32,7 @@ func getAllAuthOutboundCallanalysisresponsesets(ctx context.Context, clientConfi
 		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get page of call analysis response set configs error: %s", getErr), resp)
 	}
 	for _, responseSet := range *responseSets {
-		resources[*responseSet.Id] = &resourceExporter.ResourceMeta{Name: *responseSet.Name}
+		resources[*responseSet.Id] = &resourceExporter.ResourceMeta{BlockLabel: *responseSet.Name}
 	}
 	return resources, nil
 }

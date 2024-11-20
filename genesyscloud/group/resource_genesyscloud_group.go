@@ -21,7 +21,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v143/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
 )
 
 func getAllGroups(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
@@ -34,7 +34,7 @@ func getAllGroups(ctx context.Context, clientConfig *platformclientv2.Configurat
 	}
 
 	for _, group := range *groups {
-		resources[*group.Id] = &resourceExporter.ResourceMeta{Name: *group.Name}
+		resources[*group.Id] = &resourceExporter.ResourceMeta{BlockLabel: *group.Name}
 	}
 
 	return resources, nil

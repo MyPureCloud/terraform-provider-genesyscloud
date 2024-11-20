@@ -18,7 +18,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v143/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
 )
 
 type SurveyFormStruct struct {
@@ -217,7 +217,7 @@ func getAllSurveyForms(_ context.Context, clientConfig *platformclientv2.Configu
 		}
 
 		for _, surveyForm := range *surveyForms.Entities {
-			resources[*surveyForm.Id] = &resourceExporter.ResourceMeta{Name: *surveyForm.Name}
+			resources[*surveyForm.Id] = &resourceExporter.ResourceMeta{BlockLabel: *surveyForm.Name}
 		}
 	}
 
@@ -629,7 +629,7 @@ func flattenSurveyQuestions(questions *[]platformclientv2.Surveyquestion) []inte
 	return questionList
 }
 
-func GenerateSurveyFormResource(resourceID string, surveyForm *SurveyFormStruct) string {
+func GenerateSurveyFormResource(resourceLabel string, surveyForm *SurveyFormStruct) string {
 	form := fmt.Sprintf(`resource "genesyscloud_quality_forms_survey" "%s" {
 		name = "%s"
 		published = %v
@@ -640,7 +640,7 @@ func GenerateSurveyFormResource(resourceID string, surveyForm *SurveyFormStruct)
 		%s
         %s
 	}
-	`, resourceID,
+	`, resourceLabel,
 		surveyForm.Name,
 		surveyForm.Published,
 		surveyForm.Disabled,

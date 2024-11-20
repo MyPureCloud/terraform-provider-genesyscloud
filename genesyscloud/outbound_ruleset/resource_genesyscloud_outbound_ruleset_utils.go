@@ -2,6 +2,7 @@ package outbound_ruleset
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"strings"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
@@ -9,7 +10,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v143/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
 )
 
 /*
@@ -306,7 +307,7 @@ func doesRuleConditionsRefDeletedSkill(rule platformclientv2.Dialerrule, skillMa
 		if condition.AttributeName != nil && strings.EqualFold(*condition.AttributeName, "skill") && condition.Value != nil {
 			var found bool
 			for _, value := range skillMap {
-				if value.Name == *condition.Value {
+				if value.BlockLabel == *condition.Value {
 					found = true
 					break // found skill, evaluate next condition
 				}
@@ -318,4 +319,13 @@ func doesRuleConditionsRefDeletedSkill(rule platformclientv2.Dialerrule, skillMa
 		}
 	}
 	return false
+}
+
+func GenerateOutboundRuleSetResourceAndLabel(resourceLabel, name string) (string, string) {
+	reference := resourceName + "." + resourceLabel
+	return fmt.Sprintf(`
+resource "%s" "%s" {
+	name = "%s"
+}
+	`, resourceName, resourceLabel, name), reference
 }

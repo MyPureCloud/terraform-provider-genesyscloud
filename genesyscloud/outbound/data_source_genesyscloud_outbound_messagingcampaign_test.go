@@ -14,10 +14,8 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/mypurecloud/platform-client-sdk-go/v143/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
 )
-
-var TrueValue = "true"
 
 /*
 This test can only pass in a test org because it requires an active provisioned sms phone number
@@ -26,23 +24,23 @@ Endpoint `POST /api/v2/routing/sms/phonenumbers` creates an active/valid phone n
 func TestAccDataSourceOutboundMessagingCampaign(t *testing.T) {
 
 	var (
-		resourceId          = "campaign"
-		dataSourceId        = "campaign_data"
+		resourceLabel       = "campaign"
+		dataSourceLabel     = "campaign_data"
 		digitalCampaignName = "Test Digital Campaign " + uuid.NewString()
 
-		clfResourceId         = "clf"
-		clfName               = "Test CLF " + uuid.NewString()
-		contactListResourceId = "contact_list"
-		contactListName       = "Test Contact List " + uuid.NewString()
-		column1               = "phone"
-		column2               = "zipcode"
+		clfResourceLabel         = "clf"
+		clfName                  = "Test CLF " + uuid.NewString()
+		contactListResourceLabel = "contact_list"
+		contactListName          = "Test Contact List " + uuid.NewString()
+		column1                  = "phone"
+		column2                  = "zipcode"
 
 		smsConfigSenderSMSPhoneNumber = "+19198793428"
 
-		callableTimeSetResourceId = "callable_time_set"
-		callableTimeSetName       = "Test CTS " + uuid.NewString()
-		callableTimeSetResource   = obCallableTimeset.GenerateOutboundCallabletimeset(
-			callableTimeSetResourceId,
+		callableTimeSetResourceLabel = "callable_time_set"
+		callableTimeSetName          = "Test CTS " + uuid.NewString()
+		callableTimeSetResource      = obCallableTimeset.GenerateOutboundCallabletimeset(
+			callableTimeSetResourceLabel,
 			callableTimeSetName,
 			obCallableTimeset.GenerateCallableTimesBlock(
 				"Europe/Dublin",
@@ -52,7 +50,7 @@ func TestAccDataSourceOutboundMessagingCampaign(t *testing.T) {
 		)
 
 		contactListResource = obContactList.GenerateOutboundContactList(
-			contactListResourceId,
+			contactListResourceLabel,
 			contactListName,
 			util.NullValue,
 			util.NullValue,
@@ -69,9 +67,9 @@ func TestAccDataSourceOutboundMessagingCampaign(t *testing.T) {
 		)
 
 		contactListFilterResource = obContactListFilter.GenerateOutboundContactListFilter(
-			clfResourceId,
+			clfResourceLabel,
 			clfName,
-			"genesyscloud_outbound_contact_list."+contactListResourceId+".id",
+			"genesyscloud_outbound_contact_list."+contactListResourceLabel+".id",
 			"",
 			obContactListFilter.GenerateOutboundContactListFilterClause(
 				"",
@@ -114,15 +112,16 @@ func TestAccDataSourceOutboundMessagingCampaign(t *testing.T) {
 					contactListFilterResource +
 					callableTimeSetResource +
 					generateOutboundMessagingCampaignResource(
-						resourceId,
+						resourceLabel,
 						digitalCampaignName,
-						"genesyscloud_outbound_contact_list."+contactListResourceId+".id",
-						"",
+						"genesyscloud_outbound_contact_list."+contactListResourceLabel+".id",
+						util.NullValue,
 						"10",
 						util.FalseValue,
-						"genesyscloud_outbound_callabletimeset."+callableTimeSetResourceId+".id",
+						"genesyscloud_outbound_callabletimeset."+callableTimeSetResourceLabel+".id",
 						[]string{},
-						[]string{"genesyscloud_outbound_contactlistfilter." + clfResourceId + ".id"},
+						[]string{"genesyscloud_outbound_contactlistfilter." + clfResourceLabel + ".id"},
+						[]string{}, // rule_set_ids
 						generateOutboundMessagingCampaignSmsConfig(
 							column1,
 							column1,
@@ -136,27 +135,27 @@ func TestAccDataSourceOutboundMessagingCampaign(t *testing.T) {
 						GenerateOutboundMessagingCampaignContactSort(
 							column2,
 							"DESC",
-							TrueValue,
+							util.TrueValue,
 						),
 					) + generateOutboundMessagingCampaignDataSource(
-					dataSourceId,
+					dataSourceLabel,
 					digitalCampaignName,
-					"genesyscloud_outbound_messagingcampaign."+resourceId,
+					"genesyscloud_outbound_messagingcampaign."+resourceLabel,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair("data.genesyscloud_outbound_messagingcampaign."+dataSourceId, "id",
-						"genesyscloud_outbound_messagingcampaign."+resourceId, "id"),
+					resource.TestCheckResourceAttrPair("data.genesyscloud_outbound_messagingcampaign."+dataSourceLabel, "id",
+						"genesyscloud_outbound_messagingcampaign."+resourceLabel, "id"),
 				),
 			},
 		},
 	})
 }
 
-func generateOutboundMessagingCampaignDataSource(id string, name string, dependsOn string) string {
+func generateOutboundMessagingCampaignDataSource(dataSourceLabel string, name string, dependsOn string) string {
 	return fmt.Sprintf(`
 data "genesyscloud_outbound_messagingcampaign" "%s" {
 	name = "%s"
 	depends_on = [%s]
 }
-`, id, name, dependsOn)
+`, dataSourceLabel, name, dependsOn)
 }

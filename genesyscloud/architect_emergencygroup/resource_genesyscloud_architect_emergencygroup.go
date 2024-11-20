@@ -18,7 +18,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v143/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
 )
 
 func getAllEmergencyGroups(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
@@ -32,7 +32,7 @@ func getAllEmergencyGroups(ctx context.Context, clientConfig *platformclientv2.C
 
 	for _, emergencyGroupConfig := range *emergencyGroupConfigs {
 		if emergencyGroupConfig.State != nil && *emergencyGroupConfig.State != "deleted" {
-			resources[*emergencyGroupConfig.Id] = &resourceExporter.ResourceMeta{Name: *emergencyGroupConfig.Name}
+			resources[*emergencyGroupConfig.Id] = &resourceExporter.ResourceMeta{BlockLabel: *emergencyGroupConfig.Name}
 		}
 	}
 	return resources, nil

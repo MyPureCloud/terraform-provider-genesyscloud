@@ -11,7 +11,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v143/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
 
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
@@ -36,7 +36,7 @@ func getAllAuthConversationsMessagingIntegrationsInstagrams(ctx context.Context,
 	}
 
 	for _, instagramIntegrationRequest := range *instagramIntegrationRequests {
-		resources[*instagramIntegrationRequest.Id] = &resourceExporter.ResourceMeta{Name: *instagramIntegrationRequest.Name}
+		resources[*instagramIntegrationRequest.Id] = &resourceExporter.ResourceMeta{BlockLabel: *instagramIntegrationRequest.Name}
 	}
 
 	return resources, nil

@@ -18,16 +18,16 @@ Test Class for the Integration Actions Data Source
 */
 func TestAccDataSourceIntegrationAction(t *testing.T) {
 	var (
-		integResource1  = "test_integration1"
-		integTypeID     = "purecloud-data-actions"
-		actionResource1 = "test-action1"
-		actionResource2 = "test-action2"
-		actionName1     = "Terraform Action1-" + uuid.NewString()
-		actionCateg1    = "Genesys Cloud Data Actions"
-		inputAttr1      = "service"
-		outputAttr1     = "status"
-		reqUrlTemplate1 = "/api/v2/users"
-		reqType1        = "GET"
+		integResourceLabel1  = "test_integration1"
+		integTypeID          = "purecloud-data-actions"
+		actionResourceLabel1 = "test-action1"
+		actionResourceLabel2 = "test-action2"
+		actionName1          = "Terraform Action1-" + uuid.NewString()
+		actionCateg1         = "Genesys Cloud Data Actions"
+		inputAttr1           = "service"
+		outputAttr1          = "status"
+		reqUrlTemplate1      = "/api/v2/users"
+		reqType1             = "GET"
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -37,15 +37,15 @@ func TestAccDataSourceIntegrationAction(t *testing.T) {
 			{
 				// Create without config
 				Config: integration.GenerateIntegrationResource(
-					integResource1,
+					integResourceLabel1,
 					util.NullValue,
 					strconv.Quote(integTypeID),
 					// No config block
 				) + generateIntegrationActionResource(
-					actionResource1,
+					actionResourceLabel1,
 					actionName1,
 					actionCateg1,
-					"genesyscloud_integration."+integResource1+".id",
+					"genesyscloud_integration."+integResourceLabel1+".id",
 					util.NullValue, // Secure default (false)
 					util.NullValue, // Timeout default
 					util.GenerateJsonSchemaDocStr(inputAttr1),  // contract_input
@@ -58,12 +58,12 @@ func TestAccDataSourceIntegrationAction(t *testing.T) {
 					),
 					// Default config response
 				) + generateIntegrationActionDataSource(
-					actionResource2,
+					actionResourceLabel2,
 					actionName1,
-					"genesyscloud_integration_action."+actionResource1,
+					"genesyscloud_integration_action."+actionResourceLabel1,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair("data.genesyscloud_integration_action."+actionResource2, "id", "genesyscloud_integration_action."+actionResource1, "id"), // Default value would be "DISABLED"
+					resource.TestCheckResourceAttrPair("data.genesyscloud_integration_action."+actionResourceLabel2, "id", "genesyscloud_integration_action."+actionResourceLabel1, "id"), // Default value would be "DISABLED"
 				),
 			},
 		},
@@ -72,7 +72,7 @@ func TestAccDataSourceIntegrationAction(t *testing.T) {
 }
 
 func generateIntegrationActionDataSource(
-	resourceID string,
+	resourceLabel string,
 	name string,
 	// Must explicitly use depends_on in terraform v0.13 when a data source references a resource
 	// Fixed in v0.14 https://github.com/hashicorp/terraform/pull/26284
@@ -81,5 +81,5 @@ func generateIntegrationActionDataSource(
 		name = "%s"
 		depends_on=[%s]
 	}
-	`, resourceID, name, dependsOnResource)
+	`, resourceLabel, name, dependsOnResource)
 }

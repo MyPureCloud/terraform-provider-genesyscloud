@@ -16,7 +16,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v143/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
 )
 
 /*
@@ -35,7 +35,7 @@ func getAllAuthArchitectGrammarLanguage(ctx context.Context, clientConfig *platf
 
 	for _, language := range *languages {
 		languageId := *language.GrammarId + ":" + *language.Language
-		resources[languageId] = &resourceExporter.ResourceMeta{Name: *language.Language}
+		resources[languageId] = &resourceExporter.ResourceMeta{BlockLabel: *language.Language}
 	}
 
 	return resources, nil

@@ -17,7 +17,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v143/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
 )
 
 /*
@@ -35,7 +35,7 @@ func getAllAuthJourneyOutcomePredictors(ctx context.Context, clientConfig *platf
 	}
 
 	for _, predictor := range *predictors {
-		resources[*predictor.Id] = &resourceExporter.ResourceMeta{Name: *predictor.Id}
+		resources[*predictor.Id] = &resourceExporter.ResourceMeta{BlockLabel: *predictor.Id}
 	}
 
 	return resources, nil

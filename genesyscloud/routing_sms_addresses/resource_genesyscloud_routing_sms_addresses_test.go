@@ -9,7 +9,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v143/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
 )
 
 func TestAccResourceRoutingSmsAddresses(t *testing.T) {
@@ -95,7 +95,7 @@ func testVerifySmsAddressDestroyed(state *terraform.State) error {
 }
 
 func generateRoutingSmsAddressesResource(
-	resourceId string,
+	resourceLabel string,
 	name string,
 	street string,
 	city string,
@@ -114,5 +114,5 @@ func generateRoutingSmsAddressesResource(
 			country_code = "%s"
 			auto_correct_address = %s
 		}
-	`, resourceId, name, street, city, region, postalCode, countryCode, autoCorrectAddress)
+	`, resourceLabel, name, street, city, region, postalCode, countryCode, autoCorrectAddress)
 }

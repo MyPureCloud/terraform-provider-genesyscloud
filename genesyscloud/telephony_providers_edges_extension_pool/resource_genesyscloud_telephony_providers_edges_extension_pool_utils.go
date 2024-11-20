@@ -5,14 +5,14 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"time"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v143/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
 )
 
 type ExtensionPoolStruct struct {
-	ResourceID  string
-	StartNumber string
-	EndNumber   string
-	Description string
+	ResourceLabel string
+	StartNumber   string
+	EndNumber     string
+	Description   string
 }
 
 func GenerateExtensionPoolResource(extensionPool *ExtensionPoolStruct) string {
@@ -21,7 +21,7 @@ func GenerateExtensionPoolResource(extensionPool *ExtensionPoolStruct) string {
 		end_number = "%s"
 		description = %s
 	}
-	`, extensionPool.ResourceID,
+	`, extensionPool.ResourceLabel,
 		extensionPool.StartNumber,
 		extensionPool.EndNumber,
 		extensionPool.Description)

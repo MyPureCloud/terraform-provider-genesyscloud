@@ -4,11 +4,11 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v143/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
 )
 
 type DidPoolStruct struct {
-	ResourceID       string
+	ResourceLabel    string
 	StartPhoneNumber string
 	EndPhoneNumber   string
 	Description      string
@@ -40,7 +40,7 @@ func GenerateDidPoolResource(didPool *DidPoolStruct) string {
 		pool_provider      = %s
 	}
 	`, resourceName,
-		didPool.ResourceID,
+		didPool.ResourceLabel,
 		didPool.StartPhoneNumber,
 		didPool.EndPhoneNumber,
 		didPool.Description,

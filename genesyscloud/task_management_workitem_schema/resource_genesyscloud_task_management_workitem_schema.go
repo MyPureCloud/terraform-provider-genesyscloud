@@ -13,7 +13,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v143/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
 
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
@@ -38,7 +38,7 @@ func getAllTaskManagementWorkitemSchemas(ctx context.Context, clientConfig *plat
 
 	for _, schema := range *schemas {
 		log.Printf("Dealing with task management workitem schema id: %s", *schema.Id)
-		resources[*schema.Id] = &resourceExporter.ResourceMeta{Name: *schema.Name}
+		resources[*schema.Id] = &resourceExporter.ResourceMeta{BlockLabel: *schema.Name}
 	}
 	return resources, nil
 }

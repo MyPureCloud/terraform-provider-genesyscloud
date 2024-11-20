@@ -18,7 +18,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v143/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
 )
 
 func getAllAuthDivisions(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
@@ -31,7 +31,7 @@ func getAllAuthDivisions(ctx context.Context, clientConfig *platformclientv2.Con
 	}
 
 	for _, division := range *divisions {
-		resources[*division.Id] = &resourceExporter.ResourceMeta{Name: *division.Name}
+		resources[*division.Id] = &resourceExporter.ResourceMeta{BlockLabel: *division.Name}
 	}
 
 	return resources, nil
@@ -157,12 +157,12 @@ func deleteAuthDivision(ctx context.Context, d *schema.ResourceData, meta interf
 	})
 }
 
-func GenerateAuthDivisionBasic(resourceID string, name string) string {
-	return GenerateAuthDivisionResource(resourceID, name, util.NullValue, util.FalseValue)
+func GenerateAuthDivisionBasic(resourceLabel string, name string) string {
+	return GenerateAuthDivisionResource(resourceLabel, name, util.NullValue, util.FalseValue)
 }
 
 func GenerateAuthDivisionResource(
-	resourceID string,
+	resourceLabel string,
 	name string,
 	description string,
 	home string) string {
@@ -171,5 +171,5 @@ func GenerateAuthDivisionResource(
 		description = %s
 		home = %s
 	}
-	`, resourceID, name, description, home)
+	`, resourceLabel, name, description, home)
 }

@@ -16,7 +16,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v143/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
 )
 
 func getAllRoutingEmailDomains(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
@@ -33,7 +33,7 @@ func getAllRoutingEmailDomains(ctx context.Context, clientConfig *platformclient
 	}
 
 	for _, domain := range *domains {
-		resources[*domain.Id] = &resourceExporter.ResourceMeta{Name: *domain.Id}
+		resources[*domain.Id] = &resourceExporter.ResourceMeta{BlockLabel: *domain.Id}
 	}
 	return resources, nil
 }
@@ -163,7 +163,7 @@ func deleteRoutingEmailDomain(ctx context.Context, d *schema.ResourceData, meta 
 }
 
 func GenerateRoutingEmailDomainResource(
-	resourceID string,
+	resourceLabel string,
 	domainID string,
 	subdomain string,
 	fromDomain string) string {
@@ -172,5 +172,5 @@ func GenerateRoutingEmailDomainResource(
 		subdomain = %s
         mail_from_domain = %s
 	}
-	`, resourceID, domainID, subdomain, fromDomain)
+	`, resourceLabel, domainID, subdomain, fromDomain)
 }

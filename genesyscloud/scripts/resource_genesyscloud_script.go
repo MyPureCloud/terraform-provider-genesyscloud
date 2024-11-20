@@ -12,7 +12,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
-	"github.com/mypurecloud/platform-client-sdk-go/v143/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -29,7 +29,7 @@ func getAllScripts(ctx context.Context, clientConfig *platformclientv2.Configura
 	}
 
 	for _, script := range *scripts {
-		resources[*script.Id] = &resourceExporter.ResourceMeta{Name: *script.Name}
+		resources[*script.Id] = &resourceExporter.ResourceMeta{BlockLabel: *script.Name}
 	}
 
 	return resources, nil

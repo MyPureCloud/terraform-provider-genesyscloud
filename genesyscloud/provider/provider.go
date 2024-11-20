@@ -16,7 +16,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v143/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
 )
 
 var orgDefaultCountryCode string
@@ -113,6 +113,73 @@ func New(version string, providerResources map[string]*schema.Resource, provider
 					Description:  "Max number of OAuth tokens in the token pool. Can be set with the `GENESYSCLOUD_TOKEN_POOL_SIZE` environment variable.",
 					ValidateFunc: validation.IntBetween(1, 20),
 				},
+				"gateway": {
+					Type:     schema.TypeSet,
+					Optional: true,
+					Elem: &schema.Resource{
+						Schema: map[string]*schema.Schema{
+							"port": {
+								Type:        schema.TypeString,
+								Optional:    true,
+								DefaultFunc: schema.EnvDefaultFunc("GENESYSCLOUD_GATEWAY_PORT", nil),
+								Description: "Port for the gateway can be set with the `GENESYSCLOUD_GATEWAY_PORT` environment variable.",
+							},
+							"host": {
+								Type:        schema.TypeString,
+								Optional:    true,
+								DefaultFunc: schema.EnvDefaultFunc("GENESYSCLOUD_GATEWAY_HOST", nil),
+								Description: "Host for the gateway can be set with the `GENESYSCLOUD_GATEWAY_HOST` environment variable.",
+							},
+							"protocol": {
+								Type:        schema.TypeString,
+								Optional:    true,
+								DefaultFunc: schema.EnvDefaultFunc("GENESYSCLOUD_GATEWAY_PROTOCOL", nil),
+								Description: "Protocol for the gateway can be set with the `GENESYSCLOUD_GATEWAY_PROTOCOL` environment variable.",
+							},
+							"path_params": {
+								Type:     schema.TypeSet,
+								Optional: true,
+								Elem: &schema.Resource{
+									Schema: map[string]*schema.Schema{
+										"path_name": {
+											Type:        schema.TypeString,
+											Required:    true,
+											Description: "Path name for Gateway Path Params can be set with the `GENESYSCLOUD_GATEWAY_PATH_NAME` environment variable.",
+											DefaultFunc: schema.EnvDefaultFunc("GENESYSCLOUD_GATEWAY_PATH_NAME", nil),
+										},
+										"path_value": {
+											Type:        schema.TypeString,
+											Required:    true,
+											Description: "Path value for Gateway Path Params can be set with the `GENESYSCLOUD_GATEWAY_PATH_VALUE` environment variable.",
+											DefaultFunc: schema.EnvDefaultFunc("GENESYSCLOUD_GATEWAY_PATH_VALUE", nil),
+										},
+									},
+								},
+							},
+							"auth": {
+								Type:     schema.TypeSet,
+								Optional: true,
+								MaxItems: 1,
+								Elem: &schema.Resource{
+									Schema: map[string]*schema.Schema{
+										"username": {
+											Type:        schema.TypeString,
+											Optional:    true,
+											DefaultFunc: schema.EnvDefaultFunc("GENESYSCLOUD_GATEWAY_AUTH_USERNAME", nil),
+											Description: "UserName for the Auth can be set with the `GENESYSCLOUD_PROXY_AUTH_USERNAME` environment variable.",
+										},
+										"password": {
+											Type:        schema.TypeString,
+											Optional:    true,
+											DefaultFunc: schema.EnvDefaultFunc("GENESYSCLOUD_GATEWAY_AUTH_PASSWORD", nil),
+											Description: "Password for the Auth can be set with the `GENESYSCLOUD_PROXY_AUTH_PASSWORD` environment variable.",
+										},
+									},
+								},
+							},
+						},
+					},
+				},
 				"proxy": {
 					Type:     schema.TypeSet,
 					Optional: true,
@@ -137,7 +204,6 @@ func New(version string, providerResources map[string]*schema.Resource, provider
 								DefaultFunc: schema.EnvDefaultFunc("GENESYSCLOUD_PROXY_PROTOCOL", nil),
 								Description: "Protocol for the proxy can be set with the `GENESYSCLOUD_PROXY_PROTOCOL` environment variable.",
 							},
-
 							"auth": {
 								Type:     schema.TypeSet,
 								Optional: true,
@@ -260,7 +326,9 @@ func InitClientConfig(data *schema.ResourceData, version string, config *platfor
 	if diagErr != nil {
 		return diagErr
 	}
+
 	setupProxy(data, config)
+	setupGateway(data, config)
 
 	config.AddDefaultHeader("User-Agent", "GC Terraform Provider/"+version)
 	config.RetryConfiguration = &platformclientv2.RetryConfiguration{
@@ -373,6 +441,51 @@ func setupProxy(data *schema.ResourceData, config *platformclientv2.Configuratio
 
 			config.ProxyConfiguration.Auth.UserName = username
 			config.ProxyConfiguration.Auth.Password = password
+		}
+	}
+}
+
+func setupGateway(data *schema.ResourceData, config *platformclientv2.Configuration) {
+	gatewaySet := data.Get("gateway").(*schema.Set)
+	for _, gatewayObj := range gatewaySet.List() {
+		gateway := gatewayObj.(map[string]interface{})
+
+		// Retrieve the values of the `host`, `port`, and `protocol` attributes
+		host := gateway["host"].(string)
+		port := gateway["port"].(string)
+		protocol := gateway["protocol"].(string)
+		config.GateWayConfiguration = &platformclientv2.GateWayConfiguration{}
+
+		config.GateWayConfiguration.Host = host
+		config.GateWayConfiguration.Port = port
+		config.GateWayConfiguration.Protocol = protocol
+
+		paramSet := gateway["path_params"].(*schema.Set)
+		paramList := paramSet.List()
+
+		for _, paramElement := range paramList {
+			param := paramElement.(map[string]interface{})
+
+			pathName := param["path_name"].(string)
+			pathValue := param["path_value"].(string)
+
+			config.GateWayConfiguration.PathParams = append(config.GateWayConfiguration.PathParams, &platformclientv2.PathParams{
+				PathName:  pathName,
+				PathValue: pathValue,
+			})
+		}
+
+		authSet := gateway["auth"].(*schema.Set)
+		authList := authSet.List()
+
+		for _, authElement := range authList {
+			auth := authElement.(map[string]interface{})
+			username := auth["username"].(string)
+			password := auth["password"].(string)
+			config.GateWayConfiguration.Auth = &platformclientv2.Auth{}
+
+			config.GateWayConfiguration.Auth.UserName = username
+			config.GateWayConfiguration.Auth.Password = password
 		}
 	}
 }

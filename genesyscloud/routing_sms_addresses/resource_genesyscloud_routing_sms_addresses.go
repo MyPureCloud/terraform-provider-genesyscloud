@@ -18,7 +18,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v143/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
 )
 
 const resourceName = "genesyscloud_routing_sms_address"
@@ -39,7 +39,7 @@ func getAllRoutingSmsAddress(ctx context.Context, clientConfig *platformclientv2
 		} else {
 			name = *entity.Id
 		}
-		resources[*entity.Id] = &resourceExporter.ResourceMeta{Name: name}
+		resources[*entity.Id] = &resourceExporter.ResourceMeta{BlockLabel: name}
 	}
 	return resources, nil
 }

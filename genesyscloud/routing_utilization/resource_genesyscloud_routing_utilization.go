@@ -16,7 +16,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v143/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
 )
 
 func getAllRoutingUtilization(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
@@ -35,7 +35,7 @@ func getAllRoutingUtilization(ctx context.Context, clientConfig *platformclientv
 		}
 		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get %s due to error: %s", resourceName, err), resp)
 	}
-	resources["0"] = &resourceExporter.ResourceMeta{Name: "routing_utilization"}
+	resources["0"] = &resourceExporter.ResourceMeta{BlockLabel: "routing_utilization"}
 	return resources, nil
 }
 

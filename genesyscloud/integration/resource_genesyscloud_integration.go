@@ -16,7 +16,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v143/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
 )
 
 /*
@@ -51,7 +51,7 @@ func getAllIntegrations(ctx context.Context, clientConfig *platformclientv2.Conf
 
 	for _, integration := range *integrations {
 		log.Printf("Dealing with integration id : %s", *integration.Id)
-		resources[*integration.Id] = &resourceExporter.ResourceMeta{Name: *integration.Name}
+		resources[*integration.Id] = &resourceExporter.ResourceMeta{BlockLabel: *integration.Name}
 	}
 	return resources, nil
 }

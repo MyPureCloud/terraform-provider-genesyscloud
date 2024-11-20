@@ -3,12 +3,13 @@ package telephony_providers_edges_phonebasesettings
 import (
 	"context"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v143/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
 )
 
 var internalProxy *phoneBaseProxy
 
 type getPhoneBaseSettingFunc func(ctx context.Context, p *phoneBaseProxy, phoneBaseSettingsId string) (*platformclientv2.Phonebase, *platformclientv2.APIResponse, error)
+type getPhoneBaseSettingTemplateFunc func(ctx context.Context, p *phoneBaseProxy, phoneBaseSettingsTemplateId string) (*platformclientv2.Phonebase, *platformclientv2.APIResponse, error)
 type deletePhoneBaseSettingFunc func(ctx context.Context, p *phoneBaseProxy, phoneBaseSettingsId string) (*platformclientv2.APIResponse, error)
 type putPhoneBaseSettingFunc func(ctx context.Context, p *phoneBaseProxy, phoneBaseSettingsId string, body platformclientv2.Phonebase) (*platformclientv2.Phonebase, *platformclientv2.APIResponse, error)
 type postPhoneBaseSettingFunc func(ctx context.Context, p *phoneBaseProxy, body platformclientv2.Phonebase) (*platformclientv2.Phonebase, *platformclientv2.APIResponse, error)
@@ -19,11 +20,12 @@ type phoneBaseProxy struct {
 	clientConfig *platformclientv2.Configuration
 	edgesApi     *platformclientv2.TelephonyProvidersEdgeApi
 
-	getPhoneBaseSettingAttr     getPhoneBaseSettingFunc
-	deletePhoneBaseSettingAttr  deletePhoneBaseSettingFunc
-	putPhoneBaseSettingAttr     putPhoneBaseSettingFunc
-	postPhoneBaseSettingAttr    postPhoneBaseSettingFunc
-	getAllPhoneBaseSettingsAttr getAllPhoneBaseSettingsFunc
+	getPhoneBaseSettingAttr         getPhoneBaseSettingFunc
+	getPhoneBaseSettingTemplateAttr getPhoneBaseSettingTemplateFunc
+	deletePhoneBaseSettingAttr      deletePhoneBaseSettingFunc
+	putPhoneBaseSettingAttr         putPhoneBaseSettingFunc
+	postPhoneBaseSettingAttr        postPhoneBaseSettingFunc
+	getAllPhoneBaseSettingsAttr     getAllPhoneBaseSettingsFunc
 }
 
 // newPhoneBaseSettinProxy initializes the Phone Base Setting proxy with all of the data needed to communicate with Genesys Cloud
@@ -34,11 +36,12 @@ func newphoneBaseProxy(clientConfig *platformclientv2.Configuration) *phoneBaseP
 		clientConfig: clientConfig,
 		edgesApi:     edgesApi,
 
-		getPhoneBaseSettingAttr:     getPhoneBaseSettingFn,
-		deletePhoneBaseSettingAttr:  deletePhoneBaseSettingsFn,
-		putPhoneBaseSettingAttr:     putPhoneBaseSettingFn,
-		postPhoneBaseSettingAttr:    postPhoneBaseSettingFn,
-		getAllPhoneBaseSettingsAttr: getAllPhoneBaseSettingsFn,
+		getPhoneBaseSettingAttr:         getPhoneBaseSettingFn,
+		getPhoneBaseSettingTemplateAttr: getPhoneBaseSettingTemplateFn,
+		deletePhoneBaseSettingAttr:      deletePhoneBaseSettingsFn,
+		putPhoneBaseSettingAttr:         putPhoneBaseSettingFn,
+		postPhoneBaseSettingAttr:        postPhoneBaseSettingFn,
+		getAllPhoneBaseSettingsAttr:     getAllPhoneBaseSettingsFn,
 	}
 }
 
@@ -53,6 +56,10 @@ func getPhoneBaseProxy(clientConfig *platformclientv2.Configuration) *phoneBaseP
 
 func (p *phoneBaseProxy) getPhoneBaseSetting(ctx context.Context, phoneBaseSettingsId string) (*platformclientv2.Phonebase, *platformclientv2.APIResponse, error) {
 	return p.getPhoneBaseSettingAttr(ctx, p, phoneBaseSettingsId)
+}
+
+func (p *phoneBaseProxy) getPhoneBaseSettingTemplate(ctx context.Context, phoneBaseSettingsId string) (*platformclientv2.Phonebase, *platformclientv2.APIResponse, error) {
+	return p.getPhoneBaseSettingTemplateAttr(ctx, p, phoneBaseSettingsId)
 }
 
 func (p *phoneBaseProxy) deletePhoneBaseSetting(ctx context.Context, phoneBaseSettingsId string) (*platformclientv2.APIResponse, error) {
@@ -74,6 +81,14 @@ func (p *phoneBaseProxy) getAllPhoneBaseSettings(ctx context.Context) (*[]platfo
 // getPhoneBaseSettingFn is an implementation function for retrieving a Genesys Cloud Phone Base Setting
 func getPhoneBaseSettingFn(ctx context.Context, p *phoneBaseProxy, phoneBaseSettingsId string) (*platformclientv2.Phonebase, *platformclientv2.APIResponse, error) {
 	phoneBase, resp, err := p.edgesApi.GetTelephonyProvidersEdgesPhonebasesetting(phoneBaseSettingsId)
+	if err != nil {
+		return nil, resp, err
+	}
+	return phoneBase, resp, nil
+}
+
+func getPhoneBaseSettingTemplateFn(ctx context.Context, p *phoneBaseProxy, phoneBaseSettingsId string) (*platformclientv2.Phonebase, *platformclientv2.APIResponse, error) {
+	phoneBase, resp, err := p.edgesApi.GetTelephonyProvidersEdgesPhonebasesettingsTemplate(phoneBaseSettingsId)
 	if err != nil {
 		return nil, resp, err
 	}

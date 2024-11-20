@@ -12,7 +12,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v143/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
 
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
@@ -36,7 +36,7 @@ func getAllAuthTaskManagementWorkitems(ctx context.Context, clientConfig *platfo
 	}
 
 	for _, workitem := range *workitems {
-		resources[*workitem.Id] = &resourceExporter.ResourceMeta{Name: *workitem.Name}
+		resources[*workitem.Id] = &resourceExporter.ResourceMeta{BlockLabel: *workitem.Name}
 	}
 
 	return resources, nil

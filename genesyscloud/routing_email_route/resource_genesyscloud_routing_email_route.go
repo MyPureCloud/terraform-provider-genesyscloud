@@ -12,7 +12,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v143/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
 
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
@@ -38,8 +38,8 @@ func getAllRoutingEmailRoutes(ctx context.Context, clientConfig *platformclientv
 	for domainId, inboundRoutes := range *inboundRoutesMap {
 		for _, inboundRoute := range inboundRoutes {
 			resources[*inboundRoute.Id] = &resourceExporter.ResourceMeta{
-				Name:     *inboundRoute.Pattern + domainId,
-				IdPrefix: domainId + "/",
+				BlockLabel: *inboundRoute.Pattern + domainId,
+				IdPrefix:   domainId + "/",
 			}
 		}
 	}

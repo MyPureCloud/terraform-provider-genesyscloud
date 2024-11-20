@@ -10,7 +10,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v143/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
 )
 
 /*
@@ -168,13 +168,13 @@ func buildConfigCredentials(credentials map[string]interface{}) map[string]platf
 }
 
 // GenerateIntegrationResource builds the terraform string for creating an integration
-func GenerateIntegrationResource(resourceID string, intendedState string, integrationType string, attrs ...string) string {
+func GenerateIntegrationResource(resourceLabel string, intendedState string, integrationType string, attrs ...string) string {
 	return fmt.Sprintf(`resource "genesyscloud_integration" "%s" {
         intended_state = %s
         integration_type = %s
         %s
 	}
-	`, resourceID, intendedState, integrationType, strings.Join(attrs, "\n"))
+	`, resourceLabel, intendedState, integrationType, strings.Join(attrs, "\n"))
 }
 
 func GenerateIntegrationConfig(name string, notes string, cred string, props string, adv string) string {

@@ -6,7 +6,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v143/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
 )
 
 func getResponseSetFromResourceData(d *schema.ResourceData) platformclientv2.Responseset {
@@ -94,14 +94,14 @@ func flattenSdkReaction(sdkReaction platformclientv2.Reaction) *schema.Set {
 	return reactionSet
 }
 
-func GenerateOutboundCallAnalysisResponseSetResource(resourceId string, name string, beepDetectionEnabled string, responsesBlock string) string {
+func GenerateOutboundCallAnalysisResponseSetResource(resourceLabel string, name string, beepDetectionEnabled string, responsesBlock string) string {
 	return fmt.Sprintf(`
 resource "genesyscloud_outbound_callanalysisresponseset" "%s" {
 	name                   = "%s"
 	beep_detection_enabled = %s
 	%s
 }
-`, resourceId, name, beepDetectionEnabled, responsesBlock)
+`, resourceLabel, name, beepDetectionEnabled, responsesBlock)
 }
 
 func GenerateCarsResponsesBlock(nestedBlocks ...string) string {

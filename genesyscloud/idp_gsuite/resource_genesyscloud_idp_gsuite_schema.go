@@ -80,6 +80,7 @@ func ResourceIdpGsuite() *schema.Resource {
 			`relying_party_identifier`: {
 				Description: `String used to identify Genesys Cloud to GSuite.`,
 				Optional:    true,
+				Computed:    true,
 				Type:        schema.TypeString,
 			},
 			`certificates`: {

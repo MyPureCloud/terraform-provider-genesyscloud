@@ -4,8 +4,10 @@ import (
 	"context"
 	"fmt"
 	"log"
+	rc "terraform-provider-genesyscloud/genesyscloud/resource_cache"
+	"terraform-provider-genesyscloud/genesyscloud/tfexporter_state"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v143/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
 )
 
 /*
@@ -14,8 +16,7 @@ with the Genesys Cloud SDK. We use composition here for each function on the pro
 out during testing.
 */
 
-// internalProxy holds a proxy instance that can be used throughout the package
-var internalProxy *outboundContactlistProxy
+var contactListCache = rc.NewResourceCache[platformclientv2.Contactlist]()
 
 // Type definitions for each func on our proxy so we can easily mock them out later
 type createOutboundContactlistFunc func(ctx context.Context, p *outboundContactlistProxy, contactList *platformclientv2.Contactlist) (*platformclientv2.Contactlist, *platformclientv2.APIResponse, error)
@@ -35,6 +36,7 @@ type outboundContactlistProxy struct {
 	getOutboundContactlistByIdAttr     getOutboundContactlistByIdFunc
 	updateOutboundContactlistAttr      updateOutboundContactlistFunc
 	deleteOutboundContactlistAttr      deleteOutboundContactlistFunc
+	contactListCache                   rc.CacheInterface[platformclientv2.Contactlist]
 }
 
 // newOutboundContactlistProxy initializes the outbound contactlist proxy with all of the data needed to communicate with Genesys Cloud
@@ -49,16 +51,12 @@ func newOutboundContactlistProxy(clientConfig *platformclientv2.Configuration) *
 		getOutboundContactlistByIdAttr:     getOutboundContactlistByIdFn,
 		updateOutboundContactlistAttr:      updateOutboundContactlistFn,
 		deleteOutboundContactlistAttr:      deleteOutboundContactlistFn,
+		contactListCache:                   contactListCache,
 	}
 }
 
-// getOutboundContactlistProxy acts as a singleton to for the internalProxy.  It also ensures
-// that we can still proxy our tests by directly setting internalProxy package variable
 func getOutboundContactlistProxy(clientConfig *platformclientv2.Configuration) *outboundContactlistProxy {
-	if internalProxy == nil {
-		internalProxy = newOutboundContactlistProxy(clientConfig)
-	}
-	return internalProxy
+	return newOutboundContactlistProxy(clientConfig)
 }
 
 // createOutboundContactlist creates a Genesys Cloud outbound contactlist
@@ -93,11 +91,7 @@ func (p *outboundContactlistProxy) deleteOutboundContactlist(ctx context.Context
 
 // createOutboundContactlistFn is an implementation function for creating a Genesys Cloud outbound contactlist
 func createOutboundContactlistFn(ctx context.Context, p *outboundContactlistProxy, outboundContactlist *platformclientv2.Contactlist) (*platformclientv2.Contactlist, *platformclientv2.APIResponse, error) {
-	contactList, resp, err := p.outboundApi.PostOutboundContactlists(*outboundContactlist)
-	if err != nil {
-		return nil, resp, err
-	}
-	return contactList, resp, nil
+	return p.outboundApi.PostOutboundContactlists(*outboundContactlist)
 }
 
 // getAllOutboundContactlistFn is the implementation for retrieving all outbound contactlist in Genesys Cloud
@@ -114,9 +108,7 @@ func getAllOutboundContactlistFn(ctx context.Context, p *outboundContactlistProx
 		return &allContactlists, resp, nil
 	}
 
-	for _, contactList := range *contactLists.Entities {
-		allContactlists = append(allContactlists, contactList)
-	}
+	allContactlists = append(allContactlists, *contactLists.Entities...)
 
 	for pageNum := 2; pageNum <= *contactLists.PageCount; pageNum++ {
 		contactLists, resp, err := p.outboundApi.GetOutboundContactlists(false, false, pageSize, pageNum, true, "", name, []string{}, []string{}, "", "")
@@ -128,9 +120,11 @@ func getAllOutboundContactlistFn(ctx context.Context, p *outboundContactlistProx
 			break
 		}
 
-		for _, contactList := range *contactLists.Entities {
-			allContactlists = append(allContactlists, contactList)
-		}
+		allContactlists = append(allContactlists, *contactLists.Entities...)
+	}
+
+	for _, contactList := range allContactlists {
+		rc.SetCache(p.contactListCache, *contactList.Id, contactList)
 	}
 
 	return &allContactlists, resp, nil
@@ -143,25 +137,25 @@ func getOutboundContactlistIdByNameFn(ctx context.Context, p *outboundContactlis
 		return "", false, resp, fmt.Errorf("error searching outbound contact list  %s: %s", name, err)
 	}
 
-	var list platformclientv2.Contactlist
 	for _, contactList := range *contactLists {
 		if *contactList.Name == name {
 			log.Printf("Retrieved the contact list id %s by name %s", *contactList.Id, name)
-			list = contactList
-			return *list.Id, false, resp, nil
+			return *contactList.Id, false, resp, nil
 		}
 	}
 
-	return "", true, resp, nil
+	return "", true, resp, fmt.Errorf("no contact lists found with the name '%s'", name)
 }
 
 // getOutboundContactlistByIdFn is an implementation of the function to get a Genesys Cloud outbound contactlist by Id
 func getOutboundContactlistByIdFn(ctx context.Context, p *outboundContactlistProxy, id string) (outboundContactlist *platformclientv2.Contactlist, response *platformclientv2.APIResponse, err error) {
-	contactList, resp, err := p.outboundApi.GetOutboundContactlist(id, false, false)
-	if err != nil {
-		return nil, resp, err
+	if contactList := rc.GetCacheItem(p.contactListCache, id); contactList != nil {
+		return contactList, nil, nil
 	}
-	return contactList, resp, nil
+	if tfexporter_state.IsExporterActive() {
+		log.Printf("Could not read contact list '%s' from cache. Reading from the API...", id)
+	}
+	return p.outboundApi.GetOutboundContactlist(id, false, false)
 }
 
 // updateOutboundContactlistFn is an implementation of the function to update a Genesys Cloud outbound contactlist
@@ -172,14 +166,15 @@ func updateOutboundContactlistFn(ctx context.Context, p *outboundContactlistProx
 	}
 
 	outboundContactlist.Version = contactList.Version
-	outboundContactlist, resp, updateErr := p.outboundApi.PutOutboundContactlist(id, *outboundContactlist)
-	if updateErr != nil {
-		return nil, resp, updateErr
-	}
-	return outboundContactlist, resp, nil
+	return p.outboundApi.PutOutboundContactlist(id, *outboundContactlist)
 }
 
 // deleteOutboundContactlistFn is an implementation function for deleting a Genesys Cloud outbound contactlist
 func deleteOutboundContactlistFn(ctx context.Context, p *outboundContactlistProxy, id string) (response *platformclientv2.APIResponse, err error) {
-	return p.outboundApi.DeleteOutboundContactlist(id)
+	resp, err := p.outboundApi.DeleteOutboundContactlist(id)
+	if err != nil {
+		return resp, err
+	}
+	rc.DeleteCacheItem(p.contactListCache, id)
+	return resp, nil
 }

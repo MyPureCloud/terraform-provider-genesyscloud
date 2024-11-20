@@ -18,7 +18,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v143/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
 )
 
 type Datatableproperty struct {
@@ -65,7 +65,7 @@ func getAllArchitectDatatableRows(ctx context.Context, clientConfig *platformcli
 		for _, row := range *rows {
 			if keyVal, ok := row["key"]; ok {
 				keyStr := keyVal.(string) // Keys must be strings
-				resources[createDatatableRowId(*tableMeta.Id, keyStr)] = &resourceExporter.ResourceMeta{Name: *tableMeta.Name + "_" + keyStr}
+				resources[createDatatableRowId(*tableMeta.Id, keyStr)] = &resourceExporter.ResourceMeta{BlockLabel: *tableMeta.Name + "_" + keyStr}
 			}
 		}
 	}

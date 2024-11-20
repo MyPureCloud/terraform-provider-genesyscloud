@@ -15,7 +15,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v143/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
 )
 
 /*
@@ -33,7 +33,7 @@ func getAllAuthOutboundContactlistfilters(ctx context.Context, clientConfig *pla
 	}
 
 	for _, contactListFilter := range *contactListFilters {
-		resources[*contactListFilter.Id] = &resourceExporter.ResourceMeta{Name: *contactListFilter.Name}
+		resources[*contactListFilter.Id] = &resourceExporter.ResourceMeta{BlockLabel: *contactListFilter.Name}
 	}
 
 	return resources, nil

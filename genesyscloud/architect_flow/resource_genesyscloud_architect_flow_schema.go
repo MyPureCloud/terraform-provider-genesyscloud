@@ -123,7 +123,7 @@ func DataSourceArchitectFlow() *schema.Resource {
 				Description:  "Flow type. Valid options: " + strings.Join(validFlowTypes, ", "),
 				Type:         schema.TypeString,
 				Optional:     true,
-				ValidateFunc: validation.StringInSlice(validFlowTypes, false),
+				ValidateFunc: validation.StringInSlice(validFlowTypes, true),
 			},
 		},
 	}

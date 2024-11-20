@@ -19,7 +19,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v143/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
 )
 
 func getAllWebDeploymentConfigurations(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
@@ -31,7 +31,7 @@ func getAllWebDeploymentConfigurations(ctx context.Context, clientConfig *platfo
 		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get webdeployments configuration error: %s", err), resp)
 	}
 	for _, configuration := range *configurations.Entities {
-		resources[*configuration.Id] = &resourceExporter.ResourceMeta{Name: *configuration.Name}
+		resources[*configuration.Id] = &resourceExporter.ResourceMeta{BlockLabel: *configuration.Name}
 	}
 	return resources, nil
 }

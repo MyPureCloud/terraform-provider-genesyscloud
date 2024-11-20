@@ -34,7 +34,7 @@ pipeline {
         HTML_REPORT = 'report.html'
     }
     tools {
-        go 'Go 1.20'
+        go 'Go 1.23.1'
         terraform 'Terraform 1.0.10'
     }
 

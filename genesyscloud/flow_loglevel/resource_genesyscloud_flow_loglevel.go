@@ -18,7 +18,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v143/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
 )
 
 /*
@@ -50,7 +50,7 @@ func getAllFlowLogLevels(ctx context.Context, clientConfig *platformclientv2.Con
 	}
 
 	for _, flowLogLevel := range *flowLogLevels {
-		resources[*flowLogLevel.Id] = &resourceExporter.ResourceMeta{Name: *flowLogLevel.Id}
+		resources[*flowLogLevel.Id] = &resourceExporter.ResourceMeta{BlockLabel: *flowLogLevel.Id}
 	}
 
 	return resources, nil

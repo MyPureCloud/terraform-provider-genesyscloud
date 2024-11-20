@@ -17,7 +17,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v143/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
 )
 
 func createTrunk(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -193,7 +193,7 @@ func getAllTrunks(ctx context.Context, sdkConfig *platformclientv2.Configuration
 			}
 			for _, trunk := range *trunks.Entities {
 				if trunk.State != nil && *trunk.State != "deleted" {
-					resources[*trunk.Id] = &resourceExporter.ResourceMeta{Name: *trunk.Name}
+					resources[*trunk.Id] = &resourceExporter.ResourceMeta{BlockLabel: *trunk.Name}
 				}
 			}
 		}

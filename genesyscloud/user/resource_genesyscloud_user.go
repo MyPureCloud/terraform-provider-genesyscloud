@@ -18,7 +18,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v143/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
 )
 
 type agentUtilizationWithLabels struct {
@@ -41,7 +41,7 @@ func GetAllUsers(ctx context.Context, sdkConfig *platformclientv2.Configuration)
 
 	// Add resources to metamap
 	for _, user := range *users {
-		resources[*user.Id] = &resourceExporter.ResourceMeta{Name: *user.Email}
+		resources[*user.Id] = &resourceExporter.ResourceMeta{BlockLabel: *user.Email}
 	}
 
 	return resources, nil

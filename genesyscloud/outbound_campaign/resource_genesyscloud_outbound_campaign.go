@@ -15,7 +15,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v143/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
 )
 
 /*
@@ -58,7 +58,7 @@ func getAllAuthOutboundCampaign(ctx context.Context, clientConfig *platformclien
 				continue
 			}
 		}
-		resources[*campaign.Id] = &resourceExporter.ResourceMeta{Name: *campaign.Name}
+		resources[*campaign.Id] = &resourceExporter.ResourceMeta{BlockLabel: *campaign.Name}
 	}
 	return resources, nil
 }

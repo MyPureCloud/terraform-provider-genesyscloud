@@ -9,16 +9,16 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v143/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
 )
 
 func TestAccResourceArchitectGrammar(t *testing.T) {
 	var (
-		resourceId   = "grammar" + uuid.NewString()
-		name1        = "Test grammar " + uuid.NewString()
-		description1 = "Test description"
-		name2        = "Test grammar " + uuid.NewString()
-		description2 = "A new description"
+		resourceLabel = "grammar" + uuid.NewString()
+		name1         = "Test grammar " + uuid.NewString()
+		description1  = "Test description"
+		name2         = "Test grammar " + uuid.NewString()
+		description2  = "A new description"
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -28,30 +28,30 @@ func TestAccResourceArchitectGrammar(t *testing.T) {
 			{
 				// Create Grammar
 				Config: GenerateGrammarResource(
-					resourceId,
+					resourceLabel,
 					name1,
 					description1,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_architect_grammar."+resourceId, "name", name1),
-					resource.TestCheckResourceAttr("genesyscloud_architect_grammar."+resourceId, "description", description1),
+					resource.TestCheckResourceAttr("genesyscloud_architect_grammar."+resourceLabel, "name", name1),
+					resource.TestCheckResourceAttr("genesyscloud_architect_grammar."+resourceLabel, "description", description1),
 				),
 			},
 			{
 				// Update Grammar
 				Config: GenerateGrammarResource(
-					resourceId,
+					resourceLabel,
 					name2,
 					description2,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_architect_grammar."+resourceId, "name", name2),
-					resource.TestCheckResourceAttr("genesyscloud_architect_grammar."+resourceId, "description", description2),
+					resource.TestCheckResourceAttr("genesyscloud_architect_grammar."+resourceLabel, "name", name2),
+					resource.TestCheckResourceAttr("genesyscloud_architect_grammar."+resourceLabel, "description", description2),
 				),
 			},
 			{
 				// Read
-				ResourceName:      "genesyscloud_architect_grammar." + resourceId,
+				ResourceName:      "genesyscloud_architect_grammar." + resourceLabel,
 				ImportState:       true,
 				ImportStateVerify: true,
 			},

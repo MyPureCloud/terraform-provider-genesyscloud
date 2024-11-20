@@ -22,7 +22,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v143/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
 )
 
 var (
@@ -110,7 +110,7 @@ func getAllJourneyOutcomes(_ context.Context, clientConfig *platformclientv2.Con
 		}
 
 		for _, journeyOutcome := range *journeyOutcomes.Entities {
-			resources[*journeyOutcome.Id] = &resourceExporter.ResourceMeta{Name: *journeyOutcome.DisplayName}
+			resources[*journeyOutcome.Id] = &resourceExporter.ResourceMeta{BlockLabel: *journeyOutcome.DisplayName}
 		}
 
 		pageCount = *journeyOutcomes.PageCount

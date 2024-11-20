@@ -2,13 +2,15 @@ package outbound_digitalruleset
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
+	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"terraform-provider-genesyscloud/genesyscloud/util/lists"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v143/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
 )
 
 /*
@@ -833,7 +835,9 @@ func flattenMarkContactUncontactableActionSettings(markContactUncontactableActio
 	markContactUncontactableActionSettingsSet := schema.NewSet(schema.HashResource(markContactUncontactableActionSettingsResource), []interface{}{})
 	markContactUncontactableActionSettingsMap := make(map[string]interface{})
 
-	resourcedata.SetMapStringArrayValueIfNotNil(markContactUncontactableActionSettingsMap, "media_types", markContactUncontactableActionSettings.MediaTypes)
+	if mediaTypes := markContactUncontactableActionSettings.MediaTypes; mediaTypes != nil {
+		markContactUncontactableActionSettingsMap["media_types"] = lists.StringListToInterfaceList(*mediaTypes)
+	}
 
 	markContactUncontactableActionSettingsSet.Add(markContactUncontactableActionSettingsMap)
 	return markContactUncontactableActionSettingsSet
@@ -932,4 +936,44 @@ func flattenDigitalRules(digitalRules *[]platformclientv2.Digitalrule) []interfa
 	}
 
 	return digitalRuleList
+}
+
+func GenerateSimpleOutboundDigitalRuleSet(resourceLabel, name string) (resource string, reference string) {
+	return GenerateOutboundDigitalRuleSetResource(
+		resourceLabel,
+		name,
+		util.NullValue,
+		fmt.Sprintf(`rules {
+		name     = "Rule-1"
+		order    = 0
+		category = "PreContact"
+		conditions {
+			contact_column_condition_settings {
+				column_name = "Work"
+				operator    = "Equals"
+				value       = "\"XYZ\""
+				value_type  = "String"
+			}
+		}
+		actions {
+			do_not_send_action_settings = jsonencode({})
+		}
+	}
+		`),
+	), resourceName + "." + resourceLabel
+}
+
+func GenerateOutboundDigitalRuleSetResource(
+	resourceLabel string,
+	name string,
+	contactListId string,
+	nestedBlocks ...string,
+) string {
+	return fmt.Sprintf(`
+	resource "genesyscloud_outbound_digitalruleset" "%s" {
+	name = "%s"
+	contact_list_id = %s
+	%s
+	}
+	`, resourceLabel, name, contactListId, strings.Join(nestedBlocks, "\n"))
 }

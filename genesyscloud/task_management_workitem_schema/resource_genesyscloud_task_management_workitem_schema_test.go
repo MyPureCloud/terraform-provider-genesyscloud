@@ -15,7 +15,7 @@ import (
 	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v143/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
 )
 
 /*
@@ -26,9 +26,9 @@ tests for task_management_workitem_schema.
 func TestAccResourceTaskManagementWorkitemSchema(t *testing.T) {
 	t.Parallel()
 	var (
-		schemaResId       = "tf_schema_1"
-		schemaName        = "tf_schema_" + uuid.NewString()
-		schemaDescription = "created for CX as Code test case"
+		schemaResourceLabel = "tf_schema_1"
+		schemaName          = "tf_schema_" + uuid.NewString()
+		schemaDescription   = "created for CX as Code test case"
 
 		// "text" field
 		attr1 = customField{
@@ -186,66 +186,66 @@ func TestAccResourceTaskManagementWorkitemSchema(t *testing.T) {
 			// Barebones schema. No custom fields
 			{
 				Config: GenerateWorkitemSchemaResourceBasic(
-					schemaResId,
+					schemaResourceLabel,
 					schemaName,
 					schemaDescription,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(resourceName+"."+schemaResId, "name", schemaName),
-					resource.TestCheckResourceAttr(resourceName+"."+schemaResId, "description", schemaDescription),
-					resource.TestCheckResourceAttr(resourceName+"."+schemaResId, "enabled", util.TrueValue),
+					resource.TestCheckResourceAttr(resourceName+"."+schemaResourceLabel, "name", schemaName),
+					resource.TestCheckResourceAttr(resourceName+"."+schemaResourceLabel, "description", schemaDescription),
+					resource.TestCheckResourceAttr(resourceName+"."+schemaResourceLabel, "enabled", util.TrueValue),
 				),
 			},
 			// Update with fields
 			{
 				Config: GenerateWorkitemSchemaResource(
-					schemaResId,
+					schemaResourceLabel,
 					schemaName,
 					schemaDescription,
 					customProperties,
 					util.TrueValue,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(resourceName+"."+schemaResId, "name", schemaName),
-					resource.TestCheckResourceAttr(resourceName+"."+schemaResId, "description", schemaDescription),
-					resource.TestCheckResourceAttr(resourceName+"."+schemaResId, "enabled", util.TrueValue),
-					validateWorkitemSchemaField(resourceName+"."+schemaResId, attr1.title+"_"+attr1.varType, attr1),
-					validateWorkitemSchemaField(resourceName+"."+schemaResId, attr2.title+"_"+attr2.varType, attr2),
-					validateWorkitemSchemaField(resourceName+"."+schemaResId, attr3.title+"_"+attr3.varType, attr3),
-					validateWorkitemSchemaField(resourceName+"."+schemaResId, attr4.title+"_"+attr4.varType, attr4),
-					validateWorkitemSchemaField(resourceName+"."+schemaResId, attr5.title+"_"+attr5.varType, attr5),
-					validateWorkitemSchemaField(resourceName+"."+schemaResId, attr6.title+"_"+attr6.varType, attr6),
-					validateWorkitemSchemaField(resourceName+"."+schemaResId, attr7.title+"_"+attr7.varType, attr7),
-					validateWorkitemSchemaField(resourceName+"."+schemaResId, attr8.title+"_"+attr8.varType, attr8),
-					validateWorkitemSchemaField(resourceName+"."+schemaResId, attr9.title+"_"+attr9.varType, attr9),
-					validateWorkitemSchemaField(resourceName+"."+schemaResId, attr10.title+"_"+attr10.varType, attr10),
-					validateWorkitemSchemaField(resourceName+"."+schemaResId, attr11.title+"_"+attr11.varType, attr11),
+					resource.TestCheckResourceAttr(resourceName+"."+schemaResourceLabel, "name", schemaName),
+					resource.TestCheckResourceAttr(resourceName+"."+schemaResourceLabel, "description", schemaDescription),
+					resource.TestCheckResourceAttr(resourceName+"."+schemaResourceLabel, "enabled", util.TrueValue),
+					validateWorkitemSchemaField(resourceName+"."+schemaResourceLabel, attr1.title+"_"+attr1.varType, attr1),
+					validateWorkitemSchemaField(resourceName+"."+schemaResourceLabel, attr2.title+"_"+attr2.varType, attr2),
+					validateWorkitemSchemaField(resourceName+"."+schemaResourceLabel, attr3.title+"_"+attr3.varType, attr3),
+					validateWorkitemSchemaField(resourceName+"."+schemaResourceLabel, attr4.title+"_"+attr4.varType, attr4),
+					validateWorkitemSchemaField(resourceName+"."+schemaResourceLabel, attr5.title+"_"+attr5.varType, attr5),
+					validateWorkitemSchemaField(resourceName+"."+schemaResourceLabel, attr6.title+"_"+attr6.varType, attr6),
+					validateWorkitemSchemaField(resourceName+"."+schemaResourceLabel, attr7.title+"_"+attr7.varType, attr7),
+					validateWorkitemSchemaField(resourceName+"."+schemaResourceLabel, attr8.title+"_"+attr8.varType, attr8),
+					validateWorkitemSchemaField(resourceName+"."+schemaResourceLabel, attr9.title+"_"+attr9.varType, attr9),
+					validateWorkitemSchemaField(resourceName+"."+schemaResourceLabel, attr10.title+"_"+attr10.varType, attr10),
+					validateWorkitemSchemaField(resourceName+"."+schemaResourceLabel, attr11.title+"_"+attr11.varType, attr11),
 				),
 			},
 			// Disable the schema
 			{
 				Config: GenerateWorkitemSchemaResource(
-					schemaResId,
+					schemaResourceLabel,
 					schemaName,
 					schemaDescription,
 					customProperties,
 					util.FalseValue,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(resourceName+"."+schemaResId, "name", schemaName),
-					resource.TestCheckResourceAttr(resourceName+"."+schemaResId, "description", schemaDescription),
-					resource.TestCheckResourceAttr(resourceName+"."+schemaResId, "enabled", util.FalseValue),
-					validateWorkitemSchemaField(resourceName+"."+schemaResId, attr1.title+"_"+attr1.varType, attr1),
-					validateWorkitemSchemaField(resourceName+"."+schemaResId, attr2.title+"_"+attr2.varType, attr2),
-					validateWorkitemSchemaField(resourceName+"."+schemaResId, attr3.title+"_"+attr3.varType, attr3),
-					validateWorkitemSchemaField(resourceName+"."+schemaResId, attr4.title+"_"+attr4.varType, attr4),
-					validateWorkitemSchemaField(resourceName+"."+schemaResId, attr5.title+"_"+attr5.varType, attr5),
-					validateWorkitemSchemaField(resourceName+"."+schemaResId, attr6.title+"_"+attr6.varType, attr6),
-					validateWorkitemSchemaField(resourceName+"."+schemaResId, attr7.title+"_"+attr7.varType, attr7),
-					validateWorkitemSchemaField(resourceName+"."+schemaResId, attr8.title+"_"+attr8.varType, attr8),
-					validateWorkitemSchemaField(resourceName+"."+schemaResId, attr9.title+"_"+attr9.varType, attr9),
-					validateWorkitemSchemaField(resourceName+"."+schemaResId, attr10.title+"_"+attr10.varType, attr10),
-					validateWorkitemSchemaField(resourceName+"."+schemaResId, attr11.title+"_"+attr11.varType, attr11),
+					resource.TestCheckResourceAttr(resourceName+"."+schemaResourceLabel, "name", schemaName),
+					resource.TestCheckResourceAttr(resourceName+"."+schemaResourceLabel, "description", schemaDescription),
+					resource.TestCheckResourceAttr(resourceName+"."+schemaResourceLabel, "enabled", util.FalseValue),
+					validateWorkitemSchemaField(resourceName+"."+schemaResourceLabel, attr1.title+"_"+attr1.varType, attr1),
+					validateWorkitemSchemaField(resourceName+"."+schemaResourceLabel, attr2.title+"_"+attr2.varType, attr2),
+					validateWorkitemSchemaField(resourceName+"."+schemaResourceLabel, attr3.title+"_"+attr3.varType, attr3),
+					validateWorkitemSchemaField(resourceName+"."+schemaResourceLabel, attr4.title+"_"+attr4.varType, attr4),
+					validateWorkitemSchemaField(resourceName+"."+schemaResourceLabel, attr5.title+"_"+attr5.varType, attr5),
+					validateWorkitemSchemaField(resourceName+"."+schemaResourceLabel, attr6.title+"_"+attr6.varType, attr6),
+					validateWorkitemSchemaField(resourceName+"."+schemaResourceLabel, attr7.title+"_"+attr7.varType, attr7),
+					validateWorkitemSchemaField(resourceName+"."+schemaResourceLabel, attr8.title+"_"+attr8.varType, attr8),
+					validateWorkitemSchemaField(resourceName+"."+schemaResourceLabel, attr9.title+"_"+attr9.varType, attr9),
+					validateWorkitemSchemaField(resourceName+"."+schemaResourceLabel, attr10.title+"_"+attr10.varType, attr10),
+					validateWorkitemSchemaField(resourceName+"."+schemaResourceLabel, attr11.title+"_"+attr11.varType, attr11),
 				),
 			},
 		},
@@ -323,21 +323,21 @@ func validateCustomFieldType(resourceName, fieldName, varType string) resource.T
 		if !ok {
 			return fmt.Errorf("Failed to find resource %s in state", resourceName)
 		}
-		resourceID := resourceState.Primary.ID
+		resourceLabel := resourceState.Primary.ID
 
 		jsonAttr, ok := resourceState.Primary.Attributes["properties"]
 		if !ok {
-			return fmt.Errorf("No 'properties' found for %s in state", resourceID)
+			return fmt.Errorf("No 'properties' found for %s in state", resourceLabel)
 		}
 
 		var jsonMap map[string]interface{}
 		if err := json.Unmarshal([]byte(jsonAttr), &jsonMap); err != nil {
-			return fmt.Errorf("error parsing JSON for %s in state: %v", resourceID, err)
+			return fmt.Errorf("error parsing JSON for %s in state: %v", resourceLabel, err)
 		}
 
 		typeRef, ok := (((jsonMap[fieldName].(map[string]interface{})["allOf"].([]interface{}))[0].(map[string]interface{}))["$ref"]).(string)
 		if !ok {
-			return fmt.Errorf("error trying to get type of custom field of schema %s", resourceID)
+			return fmt.Errorf("error trying to get type of custom field of schema %s", resourceLabel)
 		}
 
 		if typeRef == "#/definitions/"+varType {

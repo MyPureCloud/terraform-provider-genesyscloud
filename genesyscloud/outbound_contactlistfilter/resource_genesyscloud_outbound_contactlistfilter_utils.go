@@ -7,7 +7,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v143/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
 )
 
 func getContactlistfilterFromResourceData(d *schema.ResourceData) platformclientv2.Contactlistfilter {
@@ -176,7 +176,7 @@ func flattenContactListFilterRange(contactListFilterRange *platformclientv2.Cont
 }
 
 func GenerateOutboundContactListFilter(
-	resourceId string,
+	resourceLabel string,
 	name string,
 	contactListId string,
 	filterType string,
@@ -192,7 +192,7 @@ resource "genesyscloud_outbound_contactlistfilter" "%s" {
 	%s
 	%s
 }
-`, resourceId, name, contactListId, filterType, strings.Join(nestedBlocks, "\n"))
+`, resourceLabel, name, contactListId, filterType, strings.Join(nestedBlocks, "\n"))
 }
 
 func GenerateOutboundContactListFilterClause(filterType string, nestedBlocks ...string) string {

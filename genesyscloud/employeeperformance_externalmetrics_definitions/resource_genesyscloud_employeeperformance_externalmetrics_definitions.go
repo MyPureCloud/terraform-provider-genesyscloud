@@ -13,7 +13,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v143/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
 
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
@@ -35,7 +35,7 @@ func getAllAuthEmployeeperformanceExternalmetricsDefinitions(ctx context.Context
 	}
 
 	for _, definition := range *definitions {
-		resources[*definition.Id] = &resourceExporter.ResourceMeta{Name: *definition.Name}
+		resources[*definition.Id] = &resourceExporter.ResourceMeta{BlockLabel: *definition.Name}
 	}
 
 	return resources, nil

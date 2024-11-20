@@ -10,33 +10,25 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v143/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
 )
 
 func TestAccResourceEdgeGroup(t *testing.T) {
 	t.Parallel()
 	var (
-		edgeGroupRes          = "edgeGroup1234"
-		edgeGroupName1        = "test edge group " + uuid.NewString()
-		edgeGroupName2        = "test edge group " + uuid.NewString()
-		edgeGroupDescription1 = "test description 1"
-		edgeGroupDescription2 = "test description 2"
+		edgeGroupResourceLabel = "edgeGroup1234"
+		edgeGroupName1         = "test edge group " + uuid.NewString()
+		edgeGroupName2         = "test edge group " + uuid.NewString()
+		edgeGroupDescription1  = "test description 1"
+		edgeGroupDescription2  = "test description 2"
 
-		phoneTrunkBaseSettingsRes1 = "phoneTrunkBaseSettingsRes1"
-		phoneTrunkBaseSettingsRes2 = "phoneTrunkBaseSettingsRes2"
-		phoneTrunkBaseSettingsRes3 = "phoneTrunkBaseSettingsRes3"
+		phoneTrunkBaseSettingsResourceLabel1 = "phoneTrunkBaseSettingsRes1"
+		phoneTrunkBaseSettingsResourceLabel2 = "phoneTrunkBaseSettingsRes2"
 	)
 
 	// Original phone settings
 	phoneTrunkBaseSetting1 := tbs.GenerateTrunkBaseSettingsResourceWithCustomAttrs(
-		phoneTrunkBaseSettingsRes1,
-		"phone trunk base settings "+uuid.NewString(),
-		"",
-		"phone_connections_webrtc.json",
-		"PHONE",
-		false)
-	phoneTrunkBaseSetting2 := tbs.GenerateTrunkBaseSettingsResourceWithCustomAttrs(
-		phoneTrunkBaseSettingsRes2,
+		phoneTrunkBaseSettingsResourceLabel1,
 		"phone trunk base settings "+uuid.NewString(),
 		"",
 		"phone_connections_webrtc.json",
@@ -44,8 +36,8 @@ func TestAccResourceEdgeGroup(t *testing.T) {
 		false)
 
 	// Updated phone settings
-	phoneTrunkBaseSetting3 := tbs.GenerateTrunkBaseSettingsResourceWithCustomAttrs(
-		phoneTrunkBaseSettingsRes3,
+	phoneTrunkBaseSetting2 := tbs.GenerateTrunkBaseSettingsResourceWithCustomAttrs(
+		phoneTrunkBaseSettingsResourceLabel2,
 		"phone trunk base settings "+uuid.NewString(),
 		"",
 		"phone_connections_webrtc.json",
@@ -57,42 +49,41 @@ func TestAccResourceEdgeGroup(t *testing.T) {
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
-				Config: phoneTrunkBaseSetting1 + phoneTrunkBaseSetting2 + GenerateEdgeGroupResourceWithCustomAttrs(
-					edgeGroupRes,
+				Config: phoneTrunkBaseSetting1 + GenerateEdgeGroupResourceWithCustomAttrs(
+					edgeGroupResourceLabel,
 					edgeGroupName1,
 					edgeGroupDescription1,
 					false,
 					false,
-					GeneratePhoneTrunkBaseIds("genesyscloud_telephony_providers_edges_trunkbasesettings."+phoneTrunkBaseSettingsRes1+".id",
-						"genesyscloud_telephony_providers_edges_trunkbasesettings."+phoneTrunkBaseSettingsRes2+".id")),
+					GeneratePhoneTrunkBaseIds("genesyscloud_telephony_providers_edges_trunkbasesettings."+phoneTrunkBaseSettingsResourceLabel1+".id")),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_edge_group."+edgeGroupRes, "name", edgeGroupName1),
-					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_edge_group."+edgeGroupRes, "description", edgeGroupDescription1),
-					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_edge_group."+edgeGroupRes, "managed", util.FalseValue),
-					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_edge_group."+edgeGroupRes, "hybrid", util.FalseValue),
+					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_edge_group."+edgeGroupResourceLabel, "name", edgeGroupName1),
+					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_edge_group."+edgeGroupResourceLabel, "description", edgeGroupDescription1),
+					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_edge_group."+edgeGroupResourceLabel, "managed", util.FalseValue),
+					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_edge_group."+edgeGroupResourceLabel, "hybrid", util.FalseValue),
 				),
 			},
 			// Update with new name, description and phone trunk base
 			{
-				Config: phoneTrunkBaseSetting1 + phoneTrunkBaseSetting2 + phoneTrunkBaseSetting3 + GenerateEdgeGroupResourceWithCustomAttrs(
-					edgeGroupRes,
+				Config: phoneTrunkBaseSetting1 + phoneTrunkBaseSetting2 + GenerateEdgeGroupResourceWithCustomAttrs(
+					edgeGroupResourceLabel,
 					edgeGroupName2,
 					edgeGroupDescription2,
 					false,
 					false,
-					GeneratePhoneTrunkBaseIds("genesyscloud_telephony_providers_edges_trunkbasesettings."+phoneTrunkBaseSettingsRes3+".id")),
+					GeneratePhoneTrunkBaseIds("genesyscloud_telephony_providers_edges_trunkbasesettings."+phoneTrunkBaseSettingsResourceLabel2+".id")),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_edge_group."+edgeGroupRes, "name", edgeGroupName2),
-					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_edge_group."+edgeGroupRes, "description", edgeGroupDescription2),
-					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_edge_group."+edgeGroupRes, "managed", util.FalseValue),
-					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_edge_group."+edgeGroupRes, "hybrid", util.FalseValue),
-					resource.TestCheckResourceAttrPair("genesyscloud_telephony_providers_edges_edge_group."+edgeGroupRes, "phone_trunk_base_ids.0",
-						"genesyscloud_telephony_providers_edges_trunkbasesettings."+phoneTrunkBaseSettingsRes3, "id"),
+					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_edge_group."+edgeGroupResourceLabel, "name", edgeGroupName2),
+					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_edge_group."+edgeGroupResourceLabel, "description", edgeGroupDescription2),
+					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_edge_group."+edgeGroupResourceLabel, "managed", util.FalseValue),
+					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_edge_group."+edgeGroupResourceLabel, "hybrid", util.FalseValue),
+					resource.TestCheckResourceAttrPair("genesyscloud_telephony_providers_edges_edge_group."+edgeGroupResourceLabel, "phone_trunk_base_ids.0",
+						"genesyscloud_telephony_providers_edges_trunkbasesettings."+phoneTrunkBaseSettingsResourceLabel2, "id"),
 				),
 			},
 			{
 				// Import/Read
-				ResourceName:      "genesyscloud_telephony_providers_edges_edge_group." + edgeGroupRes,
+				ResourceName:      "genesyscloud_telephony_providers_edges_edge_group." + edgeGroupResourceLabel,
 				ImportState:       true,
 				ImportStateVerify: true,
 			},

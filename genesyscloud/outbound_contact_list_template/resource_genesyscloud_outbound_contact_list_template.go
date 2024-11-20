@@ -18,7 +18,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v143/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
 )
 
 func getAllOutboundContactListTemplates(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
@@ -31,7 +31,7 @@ func getAllOutboundContactListTemplates(ctx context.Context, clientConfig *platf
 	}
 
 	for _, contactListTemplate := range *contactListTemplates {
-		resources[*contactListTemplate.Id] = &resourceExporter.ResourceMeta{Name: *contactListTemplate.Name}
+		resources[*contactListTemplate.Id] = &resourceExporter.ResourceMeta{BlockLabel: *contactListTemplate.Name}
 	}
 
 	return resources, nil

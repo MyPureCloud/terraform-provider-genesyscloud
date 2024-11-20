@@ -8,7 +8,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v143/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
 )
 
 func BuildTelephonyProperties(d *schema.ResourceData) *map[string]interface{} {
@@ -36,33 +36,7 @@ func FlattenTelephonyProperties(properties interface{}) (string, diag.Diagnostic
 	return string(propertiesBytes), nil
 }
 
-func CustomizePhoneBaseSettingsPropertiesDiff(ctx context.Context, diff *schema.ResourceDiff, meta interface{}) error {
-	// Defaults must be set on missing properties
-	if !diff.NewValueKnown("properties") {
-		// properties value not yet in final state. Nothing to do.
-		return nil
-	}
-
-	id := diff.Id()
-	if id == "" {
-		return nil
-	}
-
-	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
-
-	// Retrieve defaults from the settings
-	phoneBaseSetting, resp, getErr := edgesAPI.GetTelephonyProvidersEdgesPhonebasesetting(id)
-	if getErr != nil {
-		if IsStatus404(resp) {
-			return nil
-		}
-		return fmt.Errorf("failed to read phone base settings %s: %s", id, getErr)
-	}
-
-	return applyPropertyDefaults(diff, phoneBaseSetting.Properties)
-}
-
+// TODO Move this to the telephony_providers_edges_trunk_base_settings package when it is refactored with the proxy
 func CustomizeTrunkBaseSettingsPropertiesDiff(ctx context.Context, diff *schema.ResourceDiff, meta interface{}) error {
 	// Defaults must be set on missing properties
 	if !diff.NewValueKnown("properties") {
@@ -87,10 +61,10 @@ func CustomizeTrunkBaseSettingsPropertiesDiff(ctx context.Context, diff *schema.
 		return fmt.Errorf("failed to read phone base settings %s: %s", id, getErr)
 	}
 
-	return applyPropertyDefaults(diff, trunkBaseSetting.Properties)
+	return ApplyPropertyDefaults(diff, trunkBaseSetting.Properties)
 }
 
-func applyPropertyDefaults(diff *schema.ResourceDiff, properties *map[string]interface{}) error {
+func ApplyPropertyDefaults(diff *schema.ResourceDiff, properties *map[string]interface{}) error {
 	// Parse resource properties into map
 	propertiesJson := diff.Get("properties").(string)
 	configMap := map[string]interface{}{}
@@ -130,27 +104,4 @@ func applyPropertyDefaults(diff *schema.ResourceDiff, properties *map[string]int
 	}
 
 	return diff.SetNew("properties", string(result))
-}
-
-func CustomizePhonePropertiesDiff(ctx context.Context, diff *schema.ResourceDiff, meta interface{}) error {
-	// Defaults must be set on missing properties
-	if !diff.NewValueKnown("properties") {
-		// properties value not yet in final state. Nothing to do.
-		return nil
-	}
-	id := diff.Id()
-	if id == "" {
-		return nil
-	}
-	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
-	// Retrieve defaults from the settings
-	phone, resp, getErr := edgesAPI.GetTelephonyProvidersEdgesPhone(id)
-	if getErr != nil {
-		if IsStatus404(resp) {
-			return nil
-		}
-		return fmt.Errorf("failed to read phone %s: %s", id, getErr)
-	}
-	return applyPropertyDefaults(diff, phone.Properties)
 }

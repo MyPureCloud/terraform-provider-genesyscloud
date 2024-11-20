@@ -15,7 +15,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/util/testrunner"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v143/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
 )
 
 type PromptAudioData struct {
@@ -25,10 +25,10 @@ type PromptAudioData struct {
 }
 
 type UserPromptStruct struct {
-	ResourceID  string
-	Name        string
-	Description string
-	Resources   []*UserPromptResourceStruct
+	ResourceLabel string
+	Name          string
+	Description   string
+	Resources     []*UserPromptResourceStruct
 }
 
 type UserPromptResourceStruct struct {
@@ -165,7 +165,7 @@ func GenerateUserPromptResource(userPrompt *UserPromptStruct) string {
 		description = %s
 		%s
 	}
-	`, userPrompt.ResourceID,
+	`, userPrompt.ResourceLabel,
 		userPrompt.Name,
 		userPrompt.Description,
 		resourcesString,

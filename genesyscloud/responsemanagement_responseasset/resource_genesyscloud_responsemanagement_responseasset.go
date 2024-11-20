@@ -15,7 +15,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v143/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
 )
 
 /*
@@ -31,7 +31,7 @@ func getAllResponseAssets(ctx context.Context, clientConfig *platformclientv2.Co
 	}
 
 	for _, asset := range *assets {
-		resources[*asset.Id] = &resourceExporter.ResourceMeta{Name: *asset.Name}
+		resources[*asset.Id] = &resourceExporter.ResourceMeta{BlockLabel: *asset.Name}
 	}
 
 	return resources, nil

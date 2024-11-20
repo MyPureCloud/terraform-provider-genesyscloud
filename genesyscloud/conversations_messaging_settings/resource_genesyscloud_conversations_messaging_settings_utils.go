@@ -6,7 +6,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v143/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
 )
 
 func getConversationsMessagingSettingsFromResourceData(d *schema.ResourceData) platformclientv2.Messagingsettingrequest {
@@ -180,12 +180,12 @@ func flattenEventSettings(eventSettings *platformclientv2.Eventsetting) []interf
 	return eventSettingList
 }
 
-func GenerateConversationsMessagingSettingsResource(resourceID string, name string, nestedBlocks ...string) string {
+func GenerateConversationsMessagingSettingsResource(resourceLabel string, name string, nestedBlocks ...string) string {
 	return fmt.Sprintf(`resource "genesyscloud_conversations_messaging_settings" "%s" {
 		name = "%s"
 		%s
 	}
-	`, resourceID, name, strings.Join(nestedBlocks, "\n"))
+	`, resourceLabel, name, strings.Join(nestedBlocks, "\n"))
 }
 
 func GenerateTypingOnSetting(inbound, outbound string) string {

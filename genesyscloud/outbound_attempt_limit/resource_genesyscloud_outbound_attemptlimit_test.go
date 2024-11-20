@@ -11,7 +11,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v143/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
 )
 
 // func init() {
@@ -23,7 +23,7 @@ func TestAccResourceOutboundAttemptLimit(t *testing.T) {
 
 	t.Parallel()
 	var (
-		resourceId = "attempt_limit"
+		resourceLabel = "attempt_limit"
 		// Create
 		name                  = "Test Limit " + uuid.NewString()
 		maxAttemptsPerContact = "5"
@@ -57,7 +57,7 @@ func TestAccResourceOutboundAttemptLimit(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config: GenerateAttemptLimitResource(
-					resourceId,
+					resourceLabel,
 					name,
 					maxAttemptsPerContact,
 					maxAttemptsPerNumber,
@@ -68,19 +68,19 @@ func TestAccResourceOutboundAttemptLimit(t *testing.T) {
 					),
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_outbound_attempt_limit."+resourceId, "name", name),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_attempt_limit."+resourceId, "max_attempts_per_contact", maxAttemptsPerContact),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_attempt_limit."+resourceId, "max_attempts_per_number", maxAttemptsPerNumber),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_attempt_limit."+resourceId, "time_zone_id", timeZoneId),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_attempt_limit."+resourceId, "reset_period", resetPeriod),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_attempt_limit."+resourceId, "recall_entries.0.busy.0.minutes_between_attempts", recallEntryMinsBetweenAttempts1),
-					resource.TestCheckResourceAttrSet("genesyscloud_outbound_attempt_limit."+resourceId, "recall_entries.0.busy.0.nbr_attempts"),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_attempt_limit."+resourceLabel, "name", name),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_attempt_limit."+resourceLabel, "max_attempts_per_contact", maxAttemptsPerContact),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_attempt_limit."+resourceLabel, "max_attempts_per_number", maxAttemptsPerNumber),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_attempt_limit."+resourceLabel, "time_zone_id", timeZoneId),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_attempt_limit."+resourceLabel, "reset_period", resetPeriod),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_attempt_limit."+resourceLabel, "recall_entries.0.busy.0.minutes_between_attempts", recallEntryMinsBetweenAttempts1),
+					resource.TestCheckResourceAttrSet("genesyscloud_outbound_attempt_limit."+resourceLabel, "recall_entries.0.busy.0.nbr_attempts"),
 				),
 			},
 			{
 				// Update
 				Config: GenerateAttemptLimitResource(
-					resourceId,
+					resourceLabel,
 					nameUpdated,
 					maxAttemptsPerContactUpdated,
 					maxAttemptsPerNumberUpdated,
@@ -92,21 +92,21 @@ func TestAccResourceOutboundAttemptLimit(t *testing.T) {
 					),
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_outbound_attempt_limit."+resourceId, "name", nameUpdated),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_attempt_limit."+resourceId, "max_attempts_per_contact", maxAttemptsPerContactUpdated),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_attempt_limit."+resourceId, "max_attempts_per_number", maxAttemptsPerNumberUpdated),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_attempt_limit."+resourceId, "time_zone_id", timeZoneIdUpdated),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_attempt_limit."+resourceId, "reset_period", resetPeriodUpdated),
-					resource.TestCheckNoResourceAttr("genesyscloud_outbound_attempt_limit."+resourceId, "recall_entries.0."+recallEntryType1+".%"),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_attempt_limit."+resourceId, "recall_entries.0."+updatedRecallEntryType1+".0.nbr_attempts", updatedRecallEntryNbrAttempts1),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_attempt_limit."+resourceId, "recall_entries.0."+updatedRecallEntryType1+".0.minutes_between_attempts", updatedRecallEntryMinsBetweenAttempts1),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_attempt_limit."+resourceId, "recall_entries.0."+updatedRecallEntryType2+".0.nbr_attempts", updatedRecallEntryNbrAttempts2),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_attempt_limit."+resourceId, "recall_entries.0."+updatedRecallEntryType2+".0.minutes_between_attempts", updatedRecallEntryMinsBetweenAttempts2),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_attempt_limit."+resourceLabel, "name", nameUpdated),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_attempt_limit."+resourceLabel, "max_attempts_per_contact", maxAttemptsPerContactUpdated),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_attempt_limit."+resourceLabel, "max_attempts_per_number", maxAttemptsPerNumberUpdated),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_attempt_limit."+resourceLabel, "time_zone_id", timeZoneIdUpdated),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_attempt_limit."+resourceLabel, "reset_period", resetPeriodUpdated),
+					resource.TestCheckNoResourceAttr("genesyscloud_outbound_attempt_limit."+resourceLabel, "recall_entries.0."+recallEntryType1+".%"),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_attempt_limit."+resourceLabel, "recall_entries.0."+updatedRecallEntryType1+".0.nbr_attempts", updatedRecallEntryNbrAttempts1),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_attempt_limit."+resourceLabel, "recall_entries.0."+updatedRecallEntryType1+".0.minutes_between_attempts", updatedRecallEntryMinsBetweenAttempts1),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_attempt_limit."+resourceLabel, "recall_entries.0."+updatedRecallEntryType2+".0.nbr_attempts", updatedRecallEntryNbrAttempts2),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_attempt_limit."+resourceLabel, "recall_entries.0."+updatedRecallEntryType2+".0.minutes_between_attempts", updatedRecallEntryMinsBetweenAttempts2),
 				),
 			},
 			{
 				// Import/Read
-				ResourceName:      "genesyscloud_outbound_attempt_limit." + resourceId,
+				ResourceName:      "genesyscloud_outbound_attempt_limit." + resourceLabel,
 				ImportState:       true,
 				ImportStateVerify: true,
 			},

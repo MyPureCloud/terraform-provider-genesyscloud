@@ -20,7 +20,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v143/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
 )
 
 func getAllRoutingSkillGroups(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
@@ -33,7 +33,7 @@ func getAllRoutingSkillGroups(ctx context.Context, clientConfig *platformclientv
 	}
 
 	for _, skillGroup := range *allSkillGroups {
-		resources[*skillGroup.Id] = &resourceExporter.ResourceMeta{Name: *skillGroup.Name}
+		resources[*skillGroup.Id] = &resourceExporter.ResourceMeta{BlockLabel: *skillGroup.Name}
 	}
 
 	return resources, nil
@@ -247,14 +247,14 @@ func readSkillGroupMemberDivisions(ctx context.Context, d *schema.ResourceData, 
 }
 
 func GenerateRoutingSkillGroupResourceBasic(
-	resourceID string,
+	resourceLabel string,
 	name string,
 	description string) string {
 	return fmt.Sprintf(`resource "%s" "%s" {
 		name = "%s"
 		description="%s"
 	}
-	`, resourceName, resourceID, name, description)
+	`, resourceName, resourceLabel, name, description)
 }
 
 // Todo: remove once auth divisions is refactored into its own package
@@ -291,7 +291,7 @@ func getAllAuthDivisions(_ context.Context, clientConfig *platformclientv2.Confi
 		}
 
 		for _, division := range *divisions.Entities {
-			resources[*division.Id] = &resourceExporter.ResourceMeta{Name: *division.Name}
+			resources[*division.Id] = &resourceExporter.ResourceMeta{BlockLabel: *division.Name}
 		}
 	}
 

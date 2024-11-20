@@ -17,7 +17,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v143/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
 )
 
 type Datatableproperty struct {
@@ -55,7 +55,7 @@ func getAllArchitectDatatables(ctx context.Context, clientConfig *platformclient
 	}
 
 	for _, table := range *tables {
-		resources[*table.Id] = &resourceExporter.ResourceMeta{Name: *table.Name}
+		resources[*table.Id] = &resourceExporter.ResourceMeta{BlockLabel: *table.Name}
 	}
 
 	return resources, nil

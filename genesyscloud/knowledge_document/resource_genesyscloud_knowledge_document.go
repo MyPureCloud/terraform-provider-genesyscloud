@@ -17,7 +17,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v143/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
 )
 
 func getAllKnowledgeDocuments(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
@@ -52,7 +52,7 @@ func getAllKnowledgeDocuments(ctx context.Context, clientConfig *platformclientv
 
 	for _, knowledgeDocument := range documentEntities {
 		id := fmt.Sprintf("%s,%s", *knowledgeDocument.Id, *knowledgeDocument.KnowledgeBase.Id)
-		resources[id] = &resourceExporter.ResourceMeta{Name: *knowledgeDocument.Title}
+		resources[id] = &resourceExporter.ResourceMeta{BlockLabel: *knowledgeDocument.Title}
 	}
 
 	return resources, nil
@@ -64,7 +64,7 @@ func createKnowledgeDocument(ctx context.Context, d *schema.ResourceData, meta i
 	published := d.Get("published").(bool)
 	proxy := GetKnowledgeDocumentProxy(sdkConfig)
 
-	body, buildErr := buildKnowledgeDocumentRequest(ctx, d, proxy, knowledgeBaseId)
+	body, buildErr := buildKnowledgeDocumentCreateRequest(ctx, d, proxy, knowledgeBaseId)
 	if buildErr != nil {
 		return buildErr
 	}

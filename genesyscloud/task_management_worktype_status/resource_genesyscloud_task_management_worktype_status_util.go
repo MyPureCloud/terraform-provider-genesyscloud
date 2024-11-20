@@ -10,7 +10,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v143/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
 )
 
 // ModifyStatusIdStateValue will change the statusId before it is saved in the state file.
@@ -57,7 +57,7 @@ func updateWorktypeDefaultStatus(ctx context.Context, proxy *taskManagementWorkt
 }
 
 func GenerateWorktypeStatusResource(
-	resourceName,
+	resourceLabel,
 	workTypeId,
 	name,
 	category,
@@ -76,7 +76,7 @@ func GenerateWorktypeStatusResource(
 		status_transition_time = "%s"
 		%s
 	}
-`, resourceName, workTypeId, name, category, description, defaultDestinationStatusId, statusTransitionTime, strings.Join(attrs, "\n"))
+`, resourceLabel, workTypeId, name, category, description, defaultDestinationStatusId, statusTransitionTime, strings.Join(attrs, "\n"))
 }
 
 // ValidateStatusIds will check that two status ids are the same

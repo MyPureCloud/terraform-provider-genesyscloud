@@ -6,7 +6,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v143/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
 )
 
 /*
@@ -119,8 +119,8 @@ func flattenMediaTypes(mediaTypes *platformclientv2.Mediatypes) []interface{} {
 }
 
 func GenerateSupportedContentResource(
-	resourceName string,
-	resourceId string,
+	resourceType string,
+	resourceLabel string,
 	name string,
 	nestedBlocks ...string,
 ) string {
@@ -132,7 +132,7 @@ func GenerateSupportedContentResource(
 				%s
 			}
 		}
-	} `, resourceName, resourceId, name, strings.Join(nestedBlocks, "\n"))
+	} `, resourceType, resourceLabel, name, strings.Join(nestedBlocks, "\n"))
 }
 
 func GenerateInboundTypeBlock(
@@ -141,7 +141,7 @@ func GenerateInboundTypeBlock(
 	return fmt.Sprintf(`
 		inbound {
 			type="%s"
-		}	
+		}
 	`, inboundType)
 }
 
@@ -151,6 +151,6 @@ func GenerateOutboundTypeBlock(
 	return fmt.Sprintf(`
 		outbound {
 			type="%s"
-		}	
+		}
 	`, outboundType)
 }

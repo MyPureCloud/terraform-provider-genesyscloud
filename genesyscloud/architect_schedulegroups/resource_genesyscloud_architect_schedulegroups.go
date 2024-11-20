@@ -15,7 +15,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v143/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
 )
 
 /*
@@ -33,7 +33,7 @@ func getAllAuthArchitectSchedulegroups(ctx context.Context, clientConfig *platfo
 	}
 
 	for _, scheduleGroup := range *scheduleGroups {
-		resources[*scheduleGroup.Id] = &resourceExporter.ResourceMeta{Name: *scheduleGroup.Name}
+		resources[*scheduleGroup.Id] = &resourceExporter.ResourceMeta{BlockLabel: *scheduleGroup.Name}
 	}
 
 	return resources, nil

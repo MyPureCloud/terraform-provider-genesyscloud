@@ -19,7 +19,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v143/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
 )
 
 func getAllOAuthClients(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
@@ -37,7 +37,7 @@ func getAllOAuthClients(ctx context.Context, clientConfig *platformclientv2.Conf
 			// Don't include clients disabled by support
 			continue
 		}
-		resources[*client.Id] = &resourceExporter.ResourceMeta{Name: *client.Name}
+		resources[*client.Id] = &resourceExporter.ResourceMeta{BlockLabel: *client.Name}
 	}
 	return resources, nil
 }

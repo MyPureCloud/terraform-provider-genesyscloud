@@ -21,7 +21,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v143/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
 )
 
 var (
@@ -304,7 +304,7 @@ func getAllJourneyActionTemplates(_ context.Context, clientConfig *platformclien
 			break
 		}
 		for _, actionTemplate := range *actionTemplates.Entities {
-			resources[*actionTemplate.Id] = &resourceExporter.ResourceMeta{Name: *actionTemplate.Name}
+			resources[*actionTemplate.Id] = &resourceExporter.ResourceMeta{BlockLabel: *actionTemplate.Name}
 		}
 		pageCount = *actionTemplates.PageCount
 	}

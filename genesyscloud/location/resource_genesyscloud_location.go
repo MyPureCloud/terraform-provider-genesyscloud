@@ -18,7 +18,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v143/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
 )
 
 func getAllLocations(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
@@ -31,7 +31,7 @@ func getAllLocations(ctx context.Context, clientConfig *platformclientv2.Configu
 	}
 
 	for _, location := range *locations {
-		resources[*location.Id] = &resourceExporter.ResourceMeta{Name: *location.Name}
+		resources[*location.Id] = &resourceExporter.ResourceMeta{BlockLabel: *location.Name}
 	}
 
 	return resources, nil

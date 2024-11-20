@@ -17,7 +17,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v143/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
 )
 
 func GetAllRoutingSkills(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
@@ -31,7 +31,7 @@ func GetAllRoutingSkills(ctx context.Context, clientConfig *platformclientv2.Con
 
 	for _, skill := range *skills {
 		if skill.State != nil && *skill.State != "deleted" {
-			resources[*skill.Id] = &resourceExporter.ResourceMeta{Name: *skill.Name}
+			resources[*skill.Id] = &resourceExporter.ResourceMeta{BlockLabel: *skill.Name}
 		}
 	}
 
@@ -113,10 +113,10 @@ func deleteRoutingSkill(ctx context.Context, d *schema.ResourceData, meta interf
 }
 
 func GenerateRoutingSkillResource(
-	resourceID string,
+	resourceLabel string,
 	name string) string {
 	return fmt.Sprintf(`resource "genesyscloud_routing_skill" "%s" {
 		name = "%s"
 	}
-	`, resourceID, name)
+	`, resourceLabel, name)
 }
