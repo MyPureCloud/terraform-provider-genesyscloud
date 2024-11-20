@@ -56,7 +56,7 @@ resource "genesyscloud_integration" "integration" {
 ### Optional
 
 - `config` (Block List, Max: 1) Integration config. Each integration type has different schema, use [GET /api/v2/integrations/types/{typeId}/configschemas/{configType}](https://developer.mypurecloud.com/api/rest/v2/integrations/#get-api-v2-integrations-types--typeId--configschemas--configType-) to check schema, then use the correct attribute names for properties. (see [below for nested schema](#nestedblock--config))
-- `intended_state` (String) Integration state (ENABLED | DISABLED | DELETED). Defaults to `DISABLED`.
+- `intended_state` (String) Integration state (ENABLED | DISABLED). Defaults to `DISABLED`.
 
 ### Read-Only
 

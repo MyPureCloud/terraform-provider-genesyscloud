@@ -79,11 +79,11 @@ func ResourceIntegration() *schema.Resource {
 		SchemaVersion: 1,
 		Schema: map[string]*schema.Schema{
 			"intended_state": {
-				Description:  "Integration state (ENABLED | DISABLED | DELETED).",
+				Description:  "Integration state (ENABLED | DISABLED).",
 				Type:         schema.TypeString,
 				Optional:     true,
 				Default:      "DISABLED",
-				ValidateFunc: validation.StringInSlice([]string{"ENABLED", "DISABLED", "DELETED"}, false),
+				ValidateFunc: validation.StringInSlice([]string{"ENABLED", "DISABLED"}, false),
 			},
 			"integration_type": {
 				Description: "Integration type.",
