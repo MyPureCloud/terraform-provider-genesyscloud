@@ -208,6 +208,17 @@ var (
 				Required:    true,
 				MinItems:    1,
 			},
+			"group_by_time": {
+				Description:  "A time unit to group the metrics by",
+				Type:         schema.TypeString,
+				Optional:     true,
+				ValidateFunc: validation.StringInSlice([]string{"Day", "Week", "Month", "Year"}, false),
+			},
+			"group_by_max": {
+				Description: "A maximum on the number of values being grouped by",
+				Type:        schema.TypeInt,
+				Optional:    true,
+			},
 		},
 	}
 )

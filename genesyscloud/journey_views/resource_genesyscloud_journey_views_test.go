@@ -33,6 +33,8 @@ func TestAccResourceJourneyViewsBasic(t *testing.T) {
 		metricId            = "Metric 1"
 		metricDisplayLabel  = "Display Label"
 		metricAggregate     = "CustomerCount"
+		chartGroupByTime    = "Day"
+		chartGroupByMax     = 1
 	)
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
@@ -45,7 +47,7 @@ func TestAccResourceJourneyViewsBasic(t *testing.T) {
 					elementsName,
 					generateAttributes(attributeType, attributeId, attributeSource),
 					generateFilter(filterType, generatePredicates(predicatesDimension, predicatesValues, predicatesOperator, predicatesNoValue)),
-				), generateCharts(chartName, chartVersion, generateMetrics(metricId, elementsId, metricAggregate, metricDisplayLabel))),
+				), generateCharts(chartName, chartVersion, generateMetrics(metricId, elementsId, metricAggregate, metricDisplayLabel), chartGroupByTime, chartGroupByMax)),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResource, "name", name),
 					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResource, "duration", duration),
@@ -80,7 +82,7 @@ func TestAccResourceJourneyViewsBasic(t *testing.T) {
 					elementsName,
 					generateAttributes(attributeType, attributeId, attributeSource),
 					generateFilter(filterType, generatePredicates(predicatesDimension, predicatesValues, predicatesOperator, predicatesNoValue)),
-				), generateCharts(chartName, chartVersion, generateMetrics(metricId, elementsId, metricAggregate, metricDisplayLabel))),
+				), generateCharts(chartName, chartVersion, generateMetrics(metricId, elementsId, metricAggregate, metricDisplayLabel), chartGroupByTime, chartGroupByMax)),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResource, "name", nameUpdated),
 					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResource, "duration", duration),
@@ -190,14 +192,16 @@ func generatePredicates(dimension string, values string, operator string, noValu
             `, dimension, values, operator, noValue)
 }
 
-func generateCharts(name string, version int, metricsBlock string) string {
+func generateCharts(name string, version int, metricsBlock string, groupByTime string, groupByMax int) string {
 	return fmt.Sprintf(`
     charts {
         name = "%s"
         version = %d
         %s
+		group_by_time = "%s"
+		group_by_max = %d
     }
-    `, name, version, metricsBlock)
+    `, name, version, metricsBlock, groupByTime, groupByMax)
 }
 
 func generateMetrics(id string, elementId string, aggregate string, displayLabel string) string {
