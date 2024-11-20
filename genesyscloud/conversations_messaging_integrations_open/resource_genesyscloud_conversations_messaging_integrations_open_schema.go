@@ -17,13 +17,13 @@ resource_genesycloud_conversations_messaging_integrations_open_schema.go holds f
 3.  The datasource schema definitions for the conversations_messaging_integrations_open datasource.
 4.  The resource exporter configuration for the conversations_messaging_integrations_open exporter.
 */
-const resourceName = "genesyscloud_conversations_messaging_integrations_open"
+const resourceType = "genesyscloud_conversations_messaging_integrations_open"
 
 // SetRegistrar registers all of the resources, datasources and exporters in the package
 func SetRegistrar(regInstance registrar.Registrar) {
-	regInstance.RegisterResource(resourceName, ResourceConversationsMessagingIntegrationsOpen())
-	regInstance.RegisterDataSource(resourceName, DataSourceConversationsMessagingIntegrationsOpen())
-	regInstance.RegisterExporter(resourceName, ConversationsMessagingIntegrationsOpenExporter())
+	regInstance.RegisterResource(resourceType, ResourceConversationsMessagingIntegrationsOpen())
+	regInstance.RegisterDataSource(resourceType, DataSourceConversationsMessagingIntegrationsOpen())
+	regInstance.RegisterExporter(resourceType, ConversationsMessagingIntegrationsOpenExporter())
 }
 
 // ResourceConversationsMessagingIntegrationsOpen registers the genesyscloud_conversations_messaging_integrations_open resource with Terraform

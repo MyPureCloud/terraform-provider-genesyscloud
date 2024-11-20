@@ -8,7 +8,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/util"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v143/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
 )
 
 /*
@@ -63,7 +63,7 @@ func GenerateWebhookHeadersProperties(
 }
 
 func GenerateConversationMessagingOpenResource(
-	resourceId string,
+	resourceLabel string,
 	name string,
 	supportedContentId string,
 	messagingSettingId string,
@@ -80,5 +80,5 @@ func GenerateConversationMessagingOpenResource(
 				outbound_notification_webhook_signature_secret_token = "%s"
 				%s
 			}
-	`, resourceId, name, supportedContentId, messagingSettingId, outboundNotificationWebhookUrl, outboundNotificationWebhookSignatureSecretToken, strings.Join(webhookHeaders, "\n"))
+	`, resourceLabel, name, supportedContentId, messagingSettingId, outboundNotificationWebhookUrl, outboundNotificationWebhookSignatureSecretToken, strings.Join(webhookHeaders, "\n"))
 }

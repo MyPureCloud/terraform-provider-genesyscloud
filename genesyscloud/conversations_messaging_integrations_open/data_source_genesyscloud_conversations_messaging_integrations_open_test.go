@@ -20,8 +20,8 @@ Test Class for the conversations messaging integrations open Data Source
 func TestAccDataSourceConversationsMessagingIntegrationsOpen(t *testing.T) {
 	t.Parallel()
 	var (
-		dataSourceId                                    = "data_test_messaging_open"
-		resourceId                                      = "test_messaging_open"
+		dataSourceLabel                                 = "data_test_messaging_open"
+		resourceLabel                                   = "test_messaging_open"
 		name                                            = "Data Terraform Integrations Messaging Open"
 		outboundNotificationWebhookUrl1                 = "https://mock-server.prv-use1.test-pure.cloud/messaging-service/webhook"
 		outboundNotificationWebhookSignatureSecretToken = uuid.NewString()
@@ -56,7 +56,7 @@ func TestAccDataSourceConversationsMessagingIntegrationsOpen(t *testing.T) {
 				Config: messagingSettingResource1 +
 					supportedContentResource1 +
 					GenerateConversationMessagingOpenResource(
-						resourceId,
+						resourceLabel,
 						name,
 						"genesyscloud_conversations_messaging_supportedcontent."+resourceIdSupportedContent+".id",
 						"genesyscloud_conversations_messaging_settings."+resourceIdMessagingSetting+".id",
@@ -64,12 +64,12 @@ func TestAccDataSourceConversationsMessagingIntegrationsOpen(t *testing.T) {
 						outboundNotificationWebhookSignatureSecretToken,
 						GenerateWebhookHeadersProperties("key", "value"),
 					) + GenerateConversationsMessagingOpenDataSource(
-					dataSourceId,
+					dataSourceLabel,
 					name,
-					"genesyscloud_conversations_messaging_integrations_open."+resourceId,
+					"genesyscloud_conversations_messaging_integrations_open."+resourceLabel,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair("data.genesyscloud_conversations_messaging_integrations_open."+dataSourceId, "id", "genesyscloud_conversations_messaging_integrations_open."+resourceId, "id"),
+					resource.TestCheckResourceAttrPair("data.genesyscloud_conversations_messaging_integrations_open."+dataSourceLabel, "id", "genesyscloud_conversations_messaging_integrations_open."+resourceLabel, "id"),
 				),
 			},
 		},

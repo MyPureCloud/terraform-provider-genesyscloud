@@ -6,7 +6,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/mypurecloud/platform-client-sdk-go/v143/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
 
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
@@ -25,7 +25,7 @@ tests for conversations_messaging_integrations_open.
 func TestAccResourceConversationsMessagingIntegrationsOpen(t *testing.T) {
 	t.Parallel()
 	var (
-		resourceId                                      = "test_messaging_open"
+		resourceLabel                                   = "test_messaging_open"
 		name                                            = "Terraform Integrations Messaging Open " + uuid.NewString()
 		outboundNotificationWebhookUrl1                 = "https://mock-server.prv-use1.test-pure.cloud/messaging-service/webhook"
 		outboundNotificationWebhookSignatureSecretToken = uuid.NewString()
@@ -62,7 +62,7 @@ func TestAccResourceConversationsMessagingIntegrationsOpen(t *testing.T) {
 				Config: messagingSettingResource1 +
 					supportedContentResource1 +
 					GenerateConversationMessagingOpenResource(
-						resourceId,
+						resourceLabel,
 						name,
 						"genesyscloud_conversations_messaging_supportedcontent."+resourceIdSupportedContent+".id",
 						"genesyscloud_conversations_messaging_settings."+resourceIdMessagingSetting+".id",
@@ -72,16 +72,16 @@ func TestAccResourceConversationsMessagingIntegrationsOpen(t *testing.T) {
 					),
 
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_conversations_messaging_integrations_open."+resourceId, "name", name),
-					resource.TestCheckResourceAttr("genesyscloud_conversations_messaging_integrations_open."+resourceId, "outbound_notification_webhook_url", outboundNotificationWebhookUrl1),
-					resource.TestCheckResourceAttr("genesyscloud_conversations_messaging_integrations_open."+resourceId, "outbound_notification_webhook_signature_secret_token", outboundNotificationWebhookSignatureSecretToken),
-					resource.TestCheckResourceAttrPair("genesyscloud_conversations_messaging_integrations_open."+resourceId, "supported_content_id", "genesyscloud_conversations_messaging_supportedcontent."+resourceIdSupportedContent, "id"),
-					resource.TestCheckResourceAttrPair("genesyscloud_conversations_messaging_integrations_open."+resourceId, "messaging_setting_id", "genesyscloud_conversations_messaging_settings."+resourceIdMessagingSetting, "id"),
+					resource.TestCheckResourceAttr("genesyscloud_conversations_messaging_integrations_open."+resourceLabel, "name", name),
+					resource.TestCheckResourceAttr("genesyscloud_conversations_messaging_integrations_open."+resourceLabel, "outbound_notification_webhook_url", outboundNotificationWebhookUrl1),
+					resource.TestCheckResourceAttr("genesyscloud_conversations_messaging_integrations_open."+resourceLabel, "outbound_notification_webhook_signature_secret_token", outboundNotificationWebhookSignatureSecretToken),
+					resource.TestCheckResourceAttrPair("genesyscloud_conversations_messaging_integrations_open."+resourceLabel, "supported_content_id", "genesyscloud_conversations_messaging_supportedcontent."+resourceIdSupportedContent, "id"),
+					resource.TestCheckResourceAttrPair("genesyscloud_conversations_messaging_integrations_open."+resourceLabel, "messaging_setting_id", "genesyscloud_conversations_messaging_settings."+resourceIdMessagingSetting, "id"),
 				),
 			},
 			{
 				// Import/Read
-				ResourceName:            "genesyscloud_conversations_messaging_integrations_open." + resourceId,
+				ResourceName:            "genesyscloud_conversations_messaging_integrations_open." + resourceLabel,
 				ImportState:             true,
 				ImportStateVerify:       true,
 				ImportStateVerifyIgnore: []string{"outbound_notification_webhook_signature_secret_token"},

@@ -29,12 +29,11 @@ func dataSourceConversationsMessagingIntegrationsOpenRead(ctx context.Context, d
 	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
 		openIntegrationRequestId, retryable, resp, err := proxy.getConversationsMessagingIntegrationsOpenIdByName(ctx, name)
 
-		if err != nil && !retryable {
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Error searching conversations messaging integrations open %s: %s", name, err), resp))
-		}
-
-		if retryable {
-			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("No conversations messaging integrations open found with name %s", name), resp))
+		if err != nil {
+			if retryable {
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceType, fmt.Sprintf("No conversations messaging integrations open found with name %s", name), resp))
+			}
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceType, fmt.Sprintf("Error searching conversations messaging integrations open %s: %s", name, err), resp))
 		}
 
 		d.SetId(openIntegrationRequestId)
