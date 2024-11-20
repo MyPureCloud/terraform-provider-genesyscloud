@@ -285,7 +285,7 @@ func testVerifyTaskManagementWorkitemSchemaDestroyed(state *terraform.State) err
 	return nil
 }
 
-func validateWorkitemSchemaField(fullResourceName string, fieldName string, checkField customField) resource.TestCheckFunc {
+func validateWorkitemSchemaField(resourcePath string, fieldName string, checkField customField) resource.TestCheckFunc {
 	// Tests for the dynamic properties of the custom field
 	additionalFieldsTest := []resource.TestCheckFunc{}
 	if checkField.additionalProps != nil {
@@ -296,12 +296,12 @@ func validateWorkitemSchemaField(fullResourceName string, fieldName string, chec
 				// If slice, do a test for each element
 				for _, elem := range v.([]interface{}) {
 					additionalFieldsTest = append(additionalFieldsTest,
-						util.ValidateValueInJsonAttr(fullResourceName, "properties", fieldName+"."+k, fmt.Sprint(elem)),
+						util.ValidateValueInJsonAttr(resourcePath, "properties", fieldName+"."+k, fmt.Sprint(elem)),
 					)
 				}
 			default:
 				additionalFieldsTest = append(additionalFieldsTest,
-					util.ValidateValueInJsonAttr(fullResourceName, "properties", fieldName+"."+k, fmt.Sprint(v)),
+					util.ValidateValueInJsonAttr(resourcePath, "properties", fieldName+"."+k, fmt.Sprint(v)),
 				)
 			}
 		}
@@ -309,19 +309,19 @@ func validateWorkitemSchemaField(fullResourceName string, fieldName string, chec
 	additionalFieldsComposeTest := resource.ComposeTestCheckFunc(additionalFieldsTest...)
 
 	return resource.ComposeTestCheckFunc(
-		util.ValidateValueInJsonAttr(fullResourceName, "properties", fieldName+".title", checkField.title),
-		util.ValidateValueInJsonAttr(fullResourceName, "properties", fieldName+".description", checkField.description),
-		validateCustomFieldType(fullResourceName, fieldName, checkField.varType),
+		util.ValidateValueInJsonAttr(resourcePath, "properties", fieldName+".title", checkField.title),
+		util.ValidateValueInJsonAttr(resourcePath, "properties", fieldName+".description", checkField.description),
+		validateCustomFieldType(resourcePath, fieldName, checkField.varType),
 		additionalFieldsComposeTest,
 	)
 }
 
 // Validate the type of a custom field in the workitem schema
-func validateCustomFieldType(fullResourceName, fieldName, varType string) resource.TestCheckFunc {
+func validateCustomFieldType(resourcePath, fieldName, varType string) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
-		resourceState, ok := state.RootModule().Resources[fullResourceName]
+		resourceState, ok := state.RootModule().Resources[resourcePath]
 		if !ok {
-			return fmt.Errorf("Failed to find resource %s in state", fullResourceName)
+			return fmt.Errorf("Failed to find resource %s in state", resourcePath)
 		}
 		resourceLabel := resourceState.Primary.ID
 

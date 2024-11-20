@@ -168,17 +168,17 @@ func generateOauthClientRoles(roleID string, divisionId string) string {
 	`, roleID, divisionId)
 }
 
-func validateOauthRole(fullResourceName string, roleFullResourceName string, division string) resource.TestCheckFunc {
+func validateOauthRole(resourcePath string, roleResourcePath string, division string) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
-		resourceState, ok := state.RootModule().Resources[fullResourceName]
+		resourceState, ok := state.RootModule().Resources[resourcePath]
 		if !ok {
-			return fmt.Errorf("Failed to find %s in state", fullResourceName)
+			return fmt.Errorf("Failed to find %s in state", resourcePath)
 		}
 		resourceLabel := resourceState.Primary.ID
 
-		roleResource, ok := state.RootModule().Resources[roleFullResourceName]
+		roleResource, ok := state.RootModule().Resources[roleResourcePath]
 		if !ok {
-			return fmt.Errorf("Failed to find role %s in state", roleFullResourceName)
+			return fmt.Errorf("Failed to find role %s in state", roleResourcePath)
 		}
 		roleID := roleResource.Primary.ID
 

@@ -406,17 +406,17 @@ func testVerifyGroupsAndUsersDestroyed(state *terraform.State) error {
 	return nil
 }
 
-func validateGroupMember(groupFullResourceName string, userFullResourceName string, attrName string) resource.TestCheckFunc {
+func validateGroupMember(groupResourcePath string, userResourcePath string, attrName string) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
-		groupResource, ok := state.RootModule().Resources[groupFullResourceName]
+		groupResource, ok := state.RootModule().Resources[groupResourcePath]
 		if !ok {
-			return fmt.Errorf("Failed to find group %s in state", groupFullResourceName)
+			return fmt.Errorf("Failed to find group %s in state", groupResourcePath)
 		}
 		groupID := groupResource.Primary.ID
 
-		userResource, ok := state.RootModule().Resources[userFullResourceName]
+		userResource, ok := state.RootModule().Resources[userResourcePath]
 		if !ok {
-			return fmt.Errorf("Failed to find user %s in state", userFullResourceName)
+			return fmt.Errorf("Failed to find user %s in state", userResourcePath)
 		}
 		userID := userResource.Primary.ID
 

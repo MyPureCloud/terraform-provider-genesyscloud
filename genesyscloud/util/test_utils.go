@@ -55,11 +55,11 @@ func VerifyAttributeInArrayOfPotentialValues(resource string, key string, potent
 	}
 }
 
-func ValidateStringInArray(fullResourceName string, attrName string, value string) resource.TestCheckFunc {
+func ValidateStringInArray(resourcePath string, attrName string, value string) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
-		resourceState, ok := state.RootModule().Resources[fullResourceName]
+		resourceState, ok := state.RootModule().Resources[resourcePath]
 		if !ok {
-			return fmt.Errorf("failed to find resourceState %s in state", fullResourceName)
+			return fmt.Errorf("failed to find resourceState %s in state", resourcePath)
 		}
 		resourceID := resourceState.Primary.ID
 
@@ -127,11 +127,11 @@ func StrArrayEquals(a, b []string) bool {
 	return true
 }
 
-func ValidateValueInJsonAttr(fullResourceName string, attrName string, jsonProp string, jsonValue string) resource.TestCheckFunc {
+func ValidateValueInJsonAttr(resourcePath string, attrName string, jsonProp string, jsonValue string) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
-		resourceState, ok := state.RootModule().Resources[fullResourceName]
+		resourceState, ok := state.RootModule().Resources[resourcePath]
 		if !ok {
-			return fmt.Errorf("Failed to find resource %s in state", fullResourceName)
+			return fmt.Errorf("Failed to find resource %s in state", resourcePath)
 		}
 		resourceID := resourceState.Primary.ID
 
@@ -162,11 +162,11 @@ func ValidateValueInJsonAttr(fullResourceName string, attrName string, jsonProp 
 				if lists.ItemInSlice(jsonValue, lists.InterfaceListToStrings(arr)) {
 					return nil
 				}
-				return fmt.Errorf("JSON array property for resourceState %s.%s does not contain expected %s", fullResourceName, jsonProp, jsonValue)
+				return fmt.Errorf("JSON array property for resourceState %s.%s does not contain expected %s", resourcePath, jsonProp, jsonValue)
 			} else {
 				strVal := interfaceToString(val)
 				if strVal != jsonValue {
-					return fmt.Errorf("JSON property for resource %s %s=%s does not match expected %s", fullResourceName, jsonProp, strVal, jsonValue)
+					return fmt.Errorf("JSON property for resource %s %s=%s does not match expected %s", resourcePath, jsonProp, strVal, jsonValue)
 				}
 			}
 		} else {
@@ -176,11 +176,11 @@ func ValidateValueInJsonAttr(fullResourceName string, attrName string, jsonProp 
 	}
 }
 
-func ValidateValueInJsonPropertiesAttr(fullResourceName string, attrName string, jsonProp string, jsonValue string) resource.TestCheckFunc {
+func ValidateValueInJsonPropertiesAttr(resourcePath string, attrName string, jsonProp string, jsonValue string) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
-		resourceState, ok := state.RootModule().Resources[fullResourceName]
+		resourceState, ok := state.RootModule().Resources[resourcePath]
 		if !ok {
-			return fmt.Errorf("Failed to find resourceState %s in state", fullResourceName)
+			return fmt.Errorf("Failed to find resourceState %s in state", resourcePath)
 		}
 		resourceID := resourceState.Primary.ID
 
@@ -210,7 +210,7 @@ func ValidateValueInJsonPropertiesAttr(fullResourceName string, attrName string,
 			valInstance := val.(map[string]interface{})["value"].(map[string]interface{})["instance"]
 			if valInstanceString, ok := valInstance.(string); ok {
 				if valInstanceString != jsonValue {
-					return fmt.Errorf("JSON property for resource %s %s=%s does not match expected %s", fullResourceName, jsonProp, valInstanceString, jsonValue)
+					return fmt.Errorf("JSON property for resource %s %s=%s does not match expected %s", resourcePath, jsonProp, valInstanceString, jsonValue)
 				}
 			} else if valInstanceFloat, ok := valInstance.(float64); ok {
 				intValue, err := strconv.Atoi(jsonValue)
@@ -218,7 +218,7 @@ func ValidateValueInJsonPropertiesAttr(fullResourceName string, attrName string,
 					return err
 				}
 				if int(valInstanceFloat) != intValue {
-					return fmt.Errorf("JSON property for resource %s %s=%v does not match expected %v", fullResourceName, jsonProp, valInstanceFloat, jsonValue)
+					return fmt.Errorf("JSON property for resource %s %s=%v does not match expected %v", resourcePath, jsonProp, valInstanceFloat, jsonValue)
 				}
 			} else if valInstanceBool, ok := valInstance.(bool); ok {
 				boolValue, err := strconv.ParseBool(jsonValue)
@@ -226,7 +226,7 @@ func ValidateValueInJsonPropertiesAttr(fullResourceName string, attrName string,
 					return err
 				}
 				if valInstanceBool != boolValue {
-					return fmt.Errorf("JSON property for resource %s %s=%v does not match expected %v", fullResourceName, jsonProp, valInstanceBool, jsonValue)
+					return fmt.Errorf("JSON property for resource %s %s=%v does not match expected %v", resourcePath, jsonProp, valInstanceBool, jsonValue)
 				}
 			} else if valInstanceSlice, ok := valInstance.([]interface{}); ok {
 				if _, ok := valInstanceSlice[0].(float64); ok {
@@ -237,7 +237,7 @@ func ValidateValueInJsonPropertiesAttr(fullResourceName string, attrName string,
 					intsJoined := strings.Join(ints, ",")
 
 					if intsJoined != jsonValue {
-						return fmt.Errorf("JSON property for resource %s %s=%s does not match expected %s", fullResourceName, jsonProp, intsJoined, jsonValue)
+						return fmt.Errorf("JSON property for resource %s %s=%s does not match expected %s", resourcePath, jsonProp, intsJoined, jsonValue)
 					}
 				} else if _, ok := valInstanceSlice[0].(string); ok {
 					strs := make([]string, 0)
@@ -247,7 +247,7 @@ func ValidateValueInJsonPropertiesAttr(fullResourceName string, attrName string,
 					strsJoined := strings.Join(strs, ",")
 
 					if strsJoined != jsonValue {
-						return fmt.Errorf("JSON property for resource %s %s=%s does not match expected %s", fullResourceName, jsonProp, strsJoined, jsonValue)
+						return fmt.Errorf("JSON property for resource %s %s=%s does not match expected %s", resourcePath, jsonProp, strsJoined, jsonValue)
 					}
 				}
 			}

@@ -151,11 +151,11 @@ func TestAccResourceScriptUpdate(t *testing.T) {
 }
 
 // getScriptId retrieves the script GUID from the state
-func getScriptId(scriptFullResourceName string, id *string) resource.TestCheckFunc {
+func getScriptId(scriptResourcePath string, id *string) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
-		scriptResource, ok := state.RootModule().Resources[scriptFullResourceName]
+		scriptResource, ok := state.RootModule().Resources[scriptResourcePath]
 		if !ok {
-			return fmt.Errorf("failed to find script %s in state", scriptFullResourceName)
+			return fmt.Errorf("failed to find script %s in state", scriptResourcePath)
 		}
 		*id = scriptResource.Primary.ID
 		return nil
@@ -199,11 +199,11 @@ func testVerifyScriptDestroyed(state *terraform.State) error {
 }
 
 // validateScriptPublished checks to see if the script has been published after it was created
-func validateScriptPublished(scriptFullResourceName string) resource.TestCheckFunc {
+func validateScriptPublished(scriptResourcePath string) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
-		scriptResource, ok := state.RootModule().Resources[scriptFullResourceName]
+		scriptResource, ok := state.RootModule().Resources[scriptResourcePath]
 		if !ok {
-			return fmt.Errorf("Failed to find script %s in state", scriptFullResourceName)
+			return fmt.Errorf("Failed to find script %s in state", scriptResourcePath)
 		}
 
 		scriptID := scriptResource.Primary.ID

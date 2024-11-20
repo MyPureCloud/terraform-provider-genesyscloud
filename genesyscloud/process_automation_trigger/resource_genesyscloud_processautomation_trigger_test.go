@@ -499,15 +499,15 @@ func testVerifyProcessAutomationTriggerDestroyed(state *terraform.State) error {
 	return nil
 }
 
-func validateTargetFlowId(flowFullResourceName string, triggerFullResourceName string) resource.TestCheckFunc {
+func validateTargetFlowId(flowResourcePath string, triggerResourcePath string) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
-		flowResource, ok := state.RootModule().Resources[flowFullResourceName]
+		flowResource, ok := state.RootModule().Resources[flowResourcePath]
 		if !ok {
-			return fmt.Errorf("Failed to find flow %s in state", flowFullResourceName)
+			return fmt.Errorf("Failed to find flow %s in state", flowResourcePath)
 		}
-		triggerResource, ok := state.RootModule().Resources[triggerFullResourceName]
+		triggerResource, ok := state.RootModule().Resources[triggerResourcePath]
 		if !ok {
-			return fmt.Errorf("Failed to find trigger %s in state", triggerFullResourceName)
+			return fmt.Errorf("Failed to find trigger %s in state", triggerResourcePath)
 		}
 
 		flowID := flowResource.Primary.ID
@@ -520,11 +520,11 @@ func validateTargetFlowId(flowFullResourceName string, triggerFullResourceName s
 	}
 }
 
-func validateTargetType(triggerFullResourceName string, typeVal string) resource.TestCheckFunc {
+func validateTargetType(triggerResourcePath string, typeVal string) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
-		triggerResource, ok := state.RootModule().Resources[triggerFullResourceName]
+		triggerResource, ok := state.RootModule().Resources[triggerResourcePath]
 		if !ok {
-			return fmt.Errorf("Failed to find trigger %s in state", triggerFullResourceName)
+			return fmt.Errorf("Failed to find trigger %s in state", triggerResourcePath)
 		}
 
 		if typeVal != triggerResource.Primary.Attributes["target."+strconv.Itoa(0)+".type"] {
@@ -535,12 +535,12 @@ func validateTargetType(triggerFullResourceName string, typeVal string) resource
 	}
 }
 
-func testAccCheckMatchCriteria(fullResourceName string, targetMatchCriteriaJson string) resource.TestCheckFunc {
+func testAccCheckMatchCriteria(resourcePath string, targetMatchCriteriaJson string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		rs, ok := s.RootModule().Resources[fullResourceName]
+		rs, ok := s.RootModule().Resources[resourcePath]
 
 		if !ok {
-			return fmt.Errorf("Resource Not found: %s", fullResourceName)
+			return fmt.Errorf("Resource Not found: %s", resourcePath)
 		}
 
 		if rs.Primary.ID == "" {

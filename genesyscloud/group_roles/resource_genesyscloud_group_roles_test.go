@@ -149,17 +149,17 @@ func generateGroupRoles(resourceLabel string, groupResource string, roles ...str
 	`, resourceLabel, groupResource, strings.Join(roles, "\n"))
 }
 
-func validateResourceRole(groupRolesFullResourceName string, authRoleFullResourceName string, divisions ...string) resource.TestCheckFunc {
+func validateResourceRole(groupRolesResourcePath string, authRoleResourcePath string, divisions ...string) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
-		resourceState, ok := state.RootModule().Resources[groupRolesFullResourceName]
+		resourceState, ok := state.RootModule().Resources[groupRolesResourcePath]
 		if !ok {
-			return fmt.Errorf("Failed to find %s in state", groupRolesFullResourceName)
+			return fmt.Errorf("Failed to find %s in state", groupRolesResourcePath)
 		}
 		resourceLabel := resourceState.Primary.ID
 
-		roleResource, ok := state.RootModule().Resources[authRoleFullResourceName]
+		roleResource, ok := state.RootModule().Resources[authRoleResourcePath]
 		if !ok {
-			return fmt.Errorf("Failed to find role %s in state", authRoleFullResourceName)
+			return fmt.Errorf("Failed to find role %s in state", authRoleResourcePath)
 		}
 		roleID := roleResource.Primary.ID
 
@@ -171,10 +171,10 @@ func validateResourceRole(groupRolesFullResourceName string, authRoleFullResourc
 		if len(divisions) > 0 && divisions[0] != "*" {
 			// Get the division IDs from state
 			divisionIDs := make([]string, len(divisions))
-			for i, divFullResourceName := range divisions {
-				divResource, ok := state.RootModule().Resources[divFullResourceName]
+			for i, divResourcePath := range divisions {
+				divResource, ok := state.RootModule().Resources[divResourcePath]
 				if !ok {
-					return fmt.Errorf("failed to find %s in state", divFullResourceName)
+					return fmt.Errorf("failed to find %s in state", divResourcePath)
 				}
 				divisionIDs[i] = divResource.Primary.ID
 			}

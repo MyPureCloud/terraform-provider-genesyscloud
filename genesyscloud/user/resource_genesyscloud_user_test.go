@@ -1262,17 +1262,17 @@ func isUserDeleted(id string) (bool, error) {
 	return false, nil
 }
 
-func validateUserSkill(userFullResourceName string, skillFullResourceName string, proficiency string) resource.TestCheckFunc {
+func validateUserSkill(userResourcePath string, skillResourcePath string, proficiency string) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
-		userResource, ok := state.RootModule().Resources[userFullResourceName]
+		userResource, ok := state.RootModule().Resources[userResourcePath]
 		if !ok {
-			return fmt.Errorf("Failed to find user %s in state", userFullResourceName)
+			return fmt.Errorf("Failed to find user %s in state", userResourcePath)
 		}
 		userID := userResource.Primary.ID
 
-		skillResource, ok := state.RootModule().Resources[skillFullResourceName]
+		skillResource, ok := state.RootModule().Resources[skillResourcePath]
 		if !ok {
-			return fmt.Errorf("Failed to find skill %s in state", skillFullResourceName)
+			return fmt.Errorf("Failed to find skill %s in state", skillResourcePath)
 		}
 		skillID := skillResource.Primary.ID
 
@@ -1296,17 +1296,17 @@ func validateUserSkill(userFullResourceName string, skillFullResourceName string
 	}
 }
 
-func validateUserLanguage(userFullResourceName string, langFullResourceName string, proficiency string) resource.TestCheckFunc {
+func validateUserLanguage(userResourcePath string, langResourcePath string, proficiency string) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
-		userResource, ok := state.RootModule().Resources[userFullResourceName]
+		userResource, ok := state.RootModule().Resources[userResourcePath]
 		if !ok {
-			return fmt.Errorf("Failed to find user %s in state", userFullResourceName)
+			return fmt.Errorf("Failed to find user %s in state", userResourcePath)
 		}
 		userID := userResource.Primary.ID
 
-		langResource, ok := state.RootModule().Resources[langFullResourceName]
+		langResource, ok := state.RootModule().Resources[langResourcePath]
 		if !ok {
-			return fmt.Errorf("Failed to find language %s in state", langFullResourceName)
+			return fmt.Errorf("Failed to find language %s in state", langResourcePath)
 		}
 		langID := langResource.Primary.ID
 
@@ -1330,11 +1330,11 @@ func validateUserLanguage(userFullResourceName string, langFullResourceName stri
 	}
 }
 
-func validateUserUtilizationLevel(userFullResourceName string, level string) resource.TestCheckFunc {
+func validateUserUtilizationLevel(userResourcePath string, level string) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
-		userResource, ok := state.RootModule().Resources[userFullResourceName]
+		userResource, ok := state.RootModule().Resources[userResourcePath]
 		if !ok {
-			return fmt.Errorf("Failed to find user %s in state", userFullResourceName)
+			return fmt.Errorf("Failed to find user %s in state", userResourcePath)
 		}
 		userID := userResource.Primary.ID
 

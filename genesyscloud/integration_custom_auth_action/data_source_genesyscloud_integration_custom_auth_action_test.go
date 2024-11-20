@@ -88,20 +88,20 @@ func generateCustomAuthActionDataSource(dataSourceLabel string, integrationId st
 
 // testCheckCustomAuthId verified if the ID of the data source matches the expected custom auth id
 // from the specified integration resource
-func testCheckCustomAuthId(authSourceFullResourceName string, integrationFullResourceName string) resource.TestCheckFunc {
+func testCheckCustomAuthId(authSourceResourcePath string, integrationResourcePath string) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
-		integrationResource, ok := state.RootModule().Resources[integrationFullResourceName]
+		integrationResource, ok := state.RootModule().Resources[integrationResourcePath]
 		if !ok {
-			return fmt.Errorf("failed to find integration %s in state", integrationFullResourceName)
+			return fmt.Errorf("failed to find integration %s in state", integrationResourcePath)
 		}
-		authDataSource, ok := state.RootModule().Resources[authSourceFullResourceName]
+		authDataSource, ok := state.RootModule().Resources[authSourceResourcePath]
 		if !ok {
-			return fmt.Errorf("failed to find auth data source %s in state", integrationFullResourceName)
+			return fmt.Errorf("failed to find auth data source %s in state", integrationResourcePath)
 		}
 
 		expectedAuthId := getCustomAuthIdFromIntegration(integrationResource.Primary.ID)
 		if authDataSource.Primary.ID != expectedAuthId {
-			return fmt.Errorf("integration %s expected auth id %s does not match actual: %s", integrationFullResourceName, expectedAuthId, authDataSource.Primary.ID)
+			return fmt.Errorf("integration %s expected auth id %s does not match actual: %s", integrationResourcePath, expectedAuthId, authDataSource.Primary.ID)
 		}
 
 		return nil

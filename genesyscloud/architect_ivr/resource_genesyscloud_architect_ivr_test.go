@@ -243,7 +243,7 @@ func TestAccResourceIvrConfigDnisOverload(t *testing.T) {
 		_, _ = didPool.DeleteDidPoolWithStartAndEndNumber(ctx, startNumberStr, endNumberStr)
 	}()
 
-	fullResourceName := ResourceType + "." + resourceLabel
+	resourcePath := ResourceType + "." + resourceLabel
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
@@ -259,8 +259,8 @@ func TestAccResourceIvrConfigDnisOverload(t *testing.T) {
 					DivisionId:    "",
 				}),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(fullResourceName, "name", name),
-					resource.TestCheckResourceAttr(fullResourceName, "dnis.#", "20"),
+					resource.TestCheckResourceAttr(resourcePath, "name", name),
+					resource.TestCheckResourceAttr(resourcePath, "dnis.#", "20"),
 				),
 			},
 			{
@@ -273,8 +273,8 @@ func TestAccResourceIvrConfigDnisOverload(t *testing.T) {
 					DivisionId:    "",
 				}),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(fullResourceName, "name", name),
-					resource.TestCheckResourceAttr(fullResourceName, "dnis.#", "48"),
+					resource.TestCheckResourceAttr(resourcePath, "name", name),
+					resource.TestCheckResourceAttr(resourcePath, "dnis.#", "48"),
 				),
 			},
 			{
@@ -287,8 +287,8 @@ func TestAccResourceIvrConfigDnisOverload(t *testing.T) {
 					DivisionId:    "",
 				}),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(fullResourceName, "name", name),
-					resource.TestCheckResourceAttr(fullResourceName, "dnis.#", "12"),
+					resource.TestCheckResourceAttr(resourcePath, "name", name),
+					resource.TestCheckResourceAttr(resourcePath, "dnis.#", "12"),
 				),
 			},
 			{
@@ -301,13 +301,13 @@ func TestAccResourceIvrConfigDnisOverload(t *testing.T) {
 					DivisionId:    "",
 				}),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(fullResourceName, "name", name),
-					resource.TestCheckResourceAttr(fullResourceName, "dnis.#", fmt.Sprintf("%v", len(allNumbers))),
+					resource.TestCheckResourceAttr(resourcePath, "name", name),
+					resource.TestCheckResourceAttr(resourcePath, "dnis.#", fmt.Sprintf("%v", len(allNumbers))),
 				),
 			},
 			{
 				// Import/Read
-				ResourceName:      fullResourceName,
+				ResourceName:      resourcePath,
 				ImportState:       true,
 				ImportStateVerify: true,
 			},
@@ -347,11 +347,11 @@ func testVerifyIvrConfigsDestroyed(state *terraform.State) error {
 	return nil
 }
 
-func hasEmptyDnis(ivrFullResourceName string) resource.TestCheckFunc {
+func hasEmptyDnis(ivrResourcePath string) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
-		ivrResource, ok := state.RootModule().Resources[ivrFullResourceName]
+		ivrResource, ok := state.RootModule().Resources[ivrResourcePath]
 		if !ok {
-			return fmt.Errorf("Failed to find ivr config %s in state", ivrFullResourceName)
+			return fmt.Errorf("Failed to find ivr config %s in state", ivrResourcePath)
 		}
 		ivrID := ivrResource.Primary.ID
 

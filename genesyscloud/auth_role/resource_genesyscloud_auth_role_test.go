@@ -394,11 +394,11 @@ func testVerifyRolesDestroyed(state *terraform.State) error {
 	return nil
 }
 
-func validateRolePermissions(roleFullResourceName string, permissions ...string) resource.TestCheckFunc {
+func validateRolePermissions(roleResourcePath string, permissions ...string) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
-		roleResource, ok := state.RootModule().Resources[roleFullResourceName]
+		roleResource, ok := state.RootModule().Resources[roleResourcePath]
 		if !ok {
-			return fmt.Errorf("Failed to find role %s in state", roleFullResourceName)
+			return fmt.Errorf("Failed to find role %s in state", roleResourcePath)
 		}
 
 		numPermsAttr, _ := roleResource.Primary.Attributes["permissions.#"]
@@ -423,11 +423,11 @@ func validateRolePermissions(roleFullResourceName string, permissions ...string)
 	}
 }
 
-func validatePermissionPolicyTest(roleFullResourceName string, domain string, entityName string, actionSet ...string) resource.TestCheckFunc {
+func validatePermissionPolicyTest(roleResourcePath string, domain string, entityName string, actionSet ...string) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
-		roleResource, ok := state.RootModule().Resources[roleFullResourceName]
+		roleResource, ok := state.RootModule().Resources[roleResourcePath]
 		if !ok {
-			return fmt.Errorf("Failed to find role %s in state", roleFullResourceName)
+			return fmt.Errorf("Failed to find role %s in state", roleResourcePath)
 		}
 
 		roleAttrs := roleResource.Primary.Attributes
@@ -464,7 +464,7 @@ func validatePermissionPolicyTest(roleFullResourceName string, domain string, en
 }
 
 func validatePermPolicyCondition(
-	roleFullResourceName string,
+	roleResourcePath string,
 	domain string,
 	entityName string,
 	conjunction string,
@@ -473,9 +473,9 @@ func validatePermPolicyCondition(
 	typeVar string,
 	value string) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
-		roleResource, ok := state.RootModule().Resources[roleFullResourceName]
+		roleResource, ok := state.RootModule().Resources[roleResourcePath]
 		if !ok {
-			return fmt.Errorf("Failed to find role %s in state", roleFullResourceName)
+			return fmt.Errorf("Failed to find role %s in state", roleResourcePath)
 		}
 
 		roleAttrs := roleResource.Primary.Attributes

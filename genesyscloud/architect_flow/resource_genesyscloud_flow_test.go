@@ -384,11 +384,11 @@ func TestAccResourceArchFlowSubstitutionsWithMultipleTouch(t *testing.T) {
 }
 
 // Check if flow is published, then check if flow name and type are correct
-func validateFlow(flowFullResourceName, name, description, flowType string) resource.TestCheckFunc {
+func validateFlow(flowResourcePath, name, description, flowType string) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
-		flowResource, ok := state.RootModule().Resources[flowFullResourceName]
+		flowResource, ok := state.RootModule().Resources[flowResourcePath]
 		if !ok {
-			return fmt.Errorf("Failed to find flow %s in state", flowFullResourceName)
+			return fmt.Errorf("Failed to find flow %s in state", flowResourcePath)
 		}
 		flowID := flowResource.Primary.ID
 		architectAPI := platformclientv2.NewArchitectApi()
@@ -426,11 +426,11 @@ func validateFlow(flowFullResourceName, name, description, flowType string) reso
 
 // Will attempt to determine if a flow is unlocked. I check to see if a flow is locked, by attempting to check the flow again.  If the flow is locked the second checkout
 // will fail with a 409 status code.  If the flow is unlocked, the status code will be a 200
-func validateFlowUnlocked(flowFullResourceName string) resource.TestCheckFunc {
+func validateFlowUnlocked(flowResourcePath string) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
-		flowResource, ok := state.RootModule().Resources[flowFullResourceName]
+		flowResource, ok := state.RootModule().Resources[flowResourcePath]
 		if !ok {
-			return fmt.Errorf("Failed to find flow %s in state", flowFullResourceName)
+			return fmt.Errorf("Failed to find flow %s in state", flowResourcePath)
 		}
 
 		flowID := flowResource.Primary.ID

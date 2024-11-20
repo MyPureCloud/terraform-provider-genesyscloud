@@ -388,11 +388,11 @@ func TestAccResourceRoutingQueueConditionalGroupRoutingExists(t *testing.T) {
 	})
 }
 
-func verifyConditionalGroupRoutingExists(queueFullResourceName string) resource.TestCheckFunc {
+func verifyConditionalGroupRoutingExists(queueResourcePath string) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
-		queueResource, ok := state.RootModule().Resources[queueFullResourceName]
+		queueResource, ok := state.RootModule().Resources[queueResourcePath]
 		if !ok {
-			return fmt.Errorf("failed to find queue %s in state", queueFullResourceName)
+			return fmt.Errorf("failed to find queue %s in state", queueResourcePath)
 		}
 		queueID := queueResource.Primary.ID
 
