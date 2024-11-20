@@ -184,6 +184,31 @@ var (
 			},
 		},
 	}
+	displayAttributesResource = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"var_type": {
+				Description:  "The type of chart to display.",
+				Type:         schema.TypeString,
+				Optional:     true,
+				ValidateFunc: validation.StringInSlice([]string{"Bar", "Column", "Line"}, false),
+			},
+			"group_by_title": {
+				Description: "A title for the grouped by attributes (aka the x axis).",
+				Type:        schema.TypeString,
+				Optional:    true,
+			},
+			"metrics_title": {
+				Description: "A title for the metrics (aka the y axis).",
+				Type:        schema.TypeString,
+				Optional:    true,
+			},
+			"show_legend": {
+				Description: "Whether to show a legend",
+				Type:        schema.TypeBool,
+				Optional:    true,
+			},
+		},
+	}
 	chartsResource = &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			"id": {
@@ -218,6 +243,13 @@ var (
 				Description: "A maximum on the number of values being grouped by",
 				Type:        schema.TypeInt,
 				Optional:    true,
+			},
+			"display_attributes": {
+				Description: "Optional display attributes for rendering the chart",
+				Type:        schema.TypeList,
+				Optional:    true,
+				MaxItems:    1,
+				Elem:        displayAttributesResource,
 			},
 		},
 	}

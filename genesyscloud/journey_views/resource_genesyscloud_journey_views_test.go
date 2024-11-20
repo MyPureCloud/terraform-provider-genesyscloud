@@ -14,27 +14,31 @@ import (
 
 func TestAccResourceJourneyViewsBasic(t *testing.T) {
 	var (
-		name                = "test journey from tf 1"
-		nameUpdated         = "test journey from tf 1 updated"
-		duration            = "P1Y"
-		elementsId          = "ac6c61b5-1cd4-4c6e-a8a5-edb74d9117eb"
-		elementsName        = "Wrap Up"
-		attributeType       = "Event"
-		attributeId         = "a416328b-167c-0365-d0e1-f072cd5d4ded"
-		attributeSource     = "Voice"
-		filterType          = "And"
-		predicatesDimension = "mediaType"
-		predicatesValues    = "VOICE"
-		predicatesOperator  = "Matches"
-		predicatesNoValue   = false
-		journeyResource     = "journey_resource1"
-		chartName           = "Chart 1"
-		chartVersion        = 1
-		metricId            = "Metric 1"
-		metricDisplayLabel  = "Display Label"
-		metricAggregate     = "CustomerCount"
-		chartGroupByTime    = "Day"
-		chartGroupByMax     = 1
+		name                          = "test journey from tf 1"
+		nameUpdated                   = "test journey from tf 1 updated"
+		duration                      = "P1Y"
+		elementsId                    = "ac6c61b5-1cd4-4c6e-a8a5-edb74d9117eb"
+		elementsName                  = "Wrap Up"
+		attributeType                 = "Event"
+		attributeId                   = "a416328b-167c-0365-d0e1-f072cd5d4ded"
+		attributeSource               = "Voice"
+		filterType                    = "And"
+		predicatesDimension           = "mediaType"
+		predicatesValues              = "VOICE"
+		predicatesOperator            = "Matches"
+		predicatesNoValue             = false
+		journeyResource               = "journey_resource1"
+		chartName                     = "Chart 1"
+		chartVersion                  = 1
+		metricId                      = "Metric 1"
+		metricDisplayLabel            = "Display Label"
+		metricAggregate               = "CustomerCount"
+		chartGroupByTime              = "Day"
+		chartGroupByMax               = 1
+		displayAttributesVarType      = "Column"
+		displayAttributesGroupByTitle = "Group By Title"
+		displayAttributesMetricsTitle = "Metrics Title"
+		displayAttributesShowLegend   = false
 	)
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
@@ -47,7 +51,10 @@ func TestAccResourceJourneyViewsBasic(t *testing.T) {
 					elementsName,
 					generateAttributes(attributeType, attributeId, attributeSource),
 					generateFilter(filterType, generatePredicates(predicatesDimension, predicatesValues, predicatesOperator, predicatesNoValue)),
-				), generateCharts(chartName, chartVersion, generateMetrics(metricId, elementsId, metricAggregate, metricDisplayLabel), chartGroupByTime, chartGroupByMax)),
+				), generateCharts(chartName, chartVersion,
+					generateMetrics(metricId, elementsId, metricAggregate, metricDisplayLabel), chartGroupByTime, chartGroupByMax,
+					generateDisplayAttributes(displayAttributesVarType, displayAttributesGroupByTitle, displayAttributesMetricsTitle, displayAttributesShowLegend)),
+				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResource, "name", name),
 					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResource, "duration", duration),
@@ -73,6 +80,13 @@ func TestAccResourceJourneyViewsBasic(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResource, "charts.0.metrics.0.display_label", metricDisplayLabel),
 					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResource, "charts.0.metrics.0.aggregate", metricAggregate),
 					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResource, "charts.0.metrics.0.element_id", elementsId),
+					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResource, "charts.0.group_by_time", chartGroupByTime),
+					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResource, "charts.0.group_by_max", fmt.Sprintf("%d", chartGroupByMax)),
+					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResource, "charts.0.display_attributes.#", "1"),
+					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResource, "charts.0.display_attributes.0.var_type", displayAttributesVarType),
+					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResource, "charts.0.display_attributes.0.group_by_title", displayAttributesGroupByTitle),
+					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResource, "charts.0.display_attributes.0.metrics_title", displayAttributesMetricsTitle),
+					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResource, "charts.0.display_attributes.0.show_legend", fmt.Sprintf("%v", displayAttributesShowLegend)),
 				),
 			},
 			{
@@ -82,7 +96,10 @@ func TestAccResourceJourneyViewsBasic(t *testing.T) {
 					elementsName,
 					generateAttributes(attributeType, attributeId, attributeSource),
 					generateFilter(filterType, generatePredicates(predicatesDimension, predicatesValues, predicatesOperator, predicatesNoValue)),
-				), generateCharts(chartName, chartVersion, generateMetrics(metricId, elementsId, metricAggregate, metricDisplayLabel), chartGroupByTime, chartGroupByMax)),
+				), generateCharts(chartName, chartVersion,
+					generateMetrics(metricId, elementsId, metricAggregate, metricDisplayLabel), chartGroupByTime, chartGroupByMax,
+					generateDisplayAttributes(displayAttributesVarType, displayAttributesGroupByTitle, displayAttributesMetricsTitle, displayAttributesShowLegend)),
+				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResource, "name", nameUpdated),
 					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResource, "duration", duration),
@@ -108,6 +125,13 @@ func TestAccResourceJourneyViewsBasic(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResource, "charts.0.metrics.0.display_label", metricDisplayLabel),
 					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResource, "charts.0.metrics.0.aggregate", metricAggregate),
 					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResource, "charts.0.metrics.0.element_id", elementsId),
+					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResource, "charts.0.group_by_time", chartGroupByTime),
+					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResource, "charts.0.group_by_max", fmt.Sprintf("%d", chartGroupByMax)),
+					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResource, "charts.0.display_attributes.#", "1"),
+					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResource, "charts.0.display_attributes.0.var_type", displayAttributesVarType),
+					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResource, "charts.0.display_attributes.0.group_by_title", displayAttributesGroupByTitle),
+					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResource, "charts.0.display_attributes.0.metrics_title", displayAttributesMetricsTitle),
+					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResource, "charts.0.display_attributes.0.show_legend", fmt.Sprintf("%v", displayAttributesShowLegend)),
 				),
 			},
 			{
@@ -192,7 +216,7 @@ func generatePredicates(dimension string, values string, operator string, noValu
             `, dimension, values, operator, noValue)
 }
 
-func generateCharts(name string, version int, metricsBlock string, groupByTime string, groupByMax int) string {
+func generateCharts(name string, version int, metricsBlock string, groupByTime string, groupByMax int, displayAttributesBlock string) string {
 	return fmt.Sprintf(`
     charts {
         name = "%s"
@@ -200,8 +224,9 @@ func generateCharts(name string, version int, metricsBlock string, groupByTime s
         %s
 		group_by_time = "%s"
 		group_by_max = %d
+		%s
     }
-    `, name, version, metricsBlock, groupByTime, groupByMax)
+    `, name, version, metricsBlock, groupByTime, groupByMax, displayAttributesBlock)
 }
 
 func generateMetrics(id string, elementId string, aggregate string, displayLabel string) string {
@@ -213,6 +238,17 @@ func generateMetrics(id string, elementId string, aggregate string, displayLabel
             display_label = "%s"
         }
         `, id, elementId, aggregate, displayLabel)
+}
+
+func generateDisplayAttributes(varType string, groupByTitle string, metricsTitle string, showLegend bool) string {
+	return fmt.Sprintf(`
+        display_attributes {
+            var_type = "%s"
+            group_by_title = "%s"
+            metrics_title = "%s"
+            show_legend = %v
+        }
+        `, varType, groupByTitle, metricsTitle, showLegend)
 }
 
 func testVerifyJourneyViewsDestroyed(state *terraform.State) error {

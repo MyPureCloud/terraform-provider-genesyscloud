@@ -175,6 +175,9 @@ func buildCharts(d *schema.ResourceData) *[]platformclientv2.Journeyviewchart {
 		}
 		chart.GroupByTime = getStringPointerFromInterface(chartMap["group_by_time"])
 		chart.GroupByMax = getIntPointerFromInterface(chartMap["group_by_max"])
+		if displayAttributesSlice, ok := chartMap["display_attributes"].([]interface{}); ok {
+			chart.DisplayAttributes = buildDisplayAttributes(displayAttributesSlice)
+		}
 		charts = append(charts, chart)
 	}
 
@@ -204,6 +207,27 @@ func buildMetrics(objsSlice []interface{}) *[]platformclientv2.Journeyviewchartm
 	}
 
 	return &objs
+}
+
+func buildDisplayAttributes(objsSlice []interface{}) *platformclientv2.Journeyviewchartdisplayattributes {
+	if len(objsSlice) == 0 {
+		return nil
+	}
+
+	var displayAttribute platformclientv2.Journeyviewchartdisplayattributes
+	for _, obj := range objsSlice {
+		objMap, ok := obj.(map[string]interface{})
+		if !ok {
+			return nil //"metric is not a map[string]interface{}")
+		}
+		displayAttribute.VarType = getStringPointerFromInterface(objMap["var_type"])
+		displayAttribute.GroupByTitle = getStringPointerFromInterface(objMap["group_by_title"])
+		displayAttribute.MetricsTitle = getStringPointerFromInterface(objMap["metrics_title"])
+		displayAttribute.ShowLegend = getBoolPointerFromInterface(objMap["show_legend"])
+		break
+	}
+
+	return &displayAttribute
 }
 
 func getStringPointerFromInterface(val interface{}) *string {
@@ -330,6 +354,7 @@ func flattenCharts(charts *[]platformclientv2.Journeyviewchart) []interface{} {
 		resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(chartsMap, "metrics", chart.Metrics, flattenMetrics)
 		resourcedata.SetMapValueIfNotNil(chartsMap, "group_by_time", chart.GroupByTime)
 		resourcedata.SetMapValueIfNotNil(chartsMap, "group_by_max", chart.GroupByMax)
+		resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(chartsMap, "display_attributes", chart.DisplayAttributes, flattenDisplayAttributes)
 		chartsList = append(chartsList, chartsMap)
 	}
 	return chartsList
@@ -349,4 +374,17 @@ func flattenMetrics(metrics *[]platformclientv2.Journeyviewchartmetric) []interf
 		metricsList = append(metricsList, metricsMap)
 	}
 	return metricsList
+}
+
+func flattenDisplayAttributes(displayAttributes *platformclientv2.Journeyviewchartdisplayattributes) []interface{} {
+
+	var displayAttributesList []interface{}
+	displayAttributesMap := make(map[string]interface{})
+	resourcedata.SetMapValueIfNotNil(displayAttributesMap, "metrics_title", displayAttributes.MetricsTitle)
+	resourcedata.SetMapValueIfNotNil(displayAttributesMap, "group_by_title", displayAttributes.GroupByTitle)
+	resourcedata.SetMapValueIfNotNil(displayAttributesMap, "var_type", displayAttributes.VarType)
+	resourcedata.SetMapValueIfNotNil(displayAttributesMap, "show_legend", displayAttributes.ShowLegend)
+	displayAttributesList = append(displayAttributesList, displayAttributesMap)
+
+	return displayAttributesList
 }
