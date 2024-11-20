@@ -276,19 +276,3 @@ func ValidateLanguageCode(lang interface{}, _ cty.Path) diag.Diagnostics {
 	}
 	return diag.Errorf("Language code %v is not a string", lang)
 }
-
-// ValidateSkillGroupMemberDivisionIds validates that the list of division_ids should not contain any item if it contains '*'
-// func ValidateSkillGroupMemberDivisionIds(divisionIds interface{}, k string) (warnings []string, errors []error) {
-// 	divisionIdsList, ok := divisionIds.([]string)
-// 	if !ok {
-// 		errors = append(errors, fmt.Errorf("member_division_ids is not a list"))
-// 		return warnings, errors
-// 	}
-// 	if lists.ItemInSlice("*", divisionIdsList) {
-// 		if len(divisionIdsList) > 1 {
-// 			errors = append(errors, fmt.Errorf(`member_division_ids should not contain more than one item when the value of an item is "*"`))
-// 			return warnings, errors
-// 		}
-// 	}
-// 	return warnings, errors
-// }
