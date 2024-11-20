@@ -58,8 +58,11 @@ func getExternalContactsOrganizationFromResourceData(d *schema.ResourceData) (pl
 
 // buildPhonenumberFromData is a helper method to map phone data to the GenesysCloud platformclientv2.PhoneNumber
 func buildPhonenumberFromData(phoneData []interface{}) *platformclientv2.Phonenumber {
-	phoneMap := phoneData[0].(map[string]interface{})
 
+	phoneMap, ok := phoneData[0].(map[string]interface{})
+	if !ok {
+		return nil
+	}
 	display := phoneMap["display"].(string)
 	acceptSMS := phoneMap["accepts_sms"].(bool)
 	e164 := phoneMap["e164"].(string)

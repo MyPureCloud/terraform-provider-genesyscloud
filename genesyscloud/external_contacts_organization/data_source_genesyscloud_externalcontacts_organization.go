@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
+	rc "terraform-provider-genesyscloud/genesyscloud/resource_cache"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
 
@@ -19,15 +20,20 @@ func dataSourceExternalContactsOrganizationRead(ctx context.Context, d *schema.R
 
 	name := d.Get("name").(string)
 
+	if externalOrganization := rc.GetCacheItem(proxy.externalOrganizationCache, name); externalOrganization != nil {
+		d.SetId(*externalOrganization.Id)
+		return nil
+	}
+
 	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
 		externalOrganizationId, retryable, response, err := proxy.getExternalContactsOrganizationIdByName(ctx, name)
 
 		if err != nil && !retryable {
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Error searching exteral organization %s | error: %s", name, err), response))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceType, fmt.Sprintf("Error searching exteral organization %s | error: %s", name, err), response))
 		}
 
 		if retryable {
-			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("No organizations found with the provided name %s", name), response))
+			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceType, fmt.Sprintf("No organizations found with the provided name %s", name), response))
 		}
 
 		d.SetId(externalOrganizationId)

@@ -98,12 +98,7 @@ func (p *externalContactsOrganizationProxy) deleteExternalContactsOrganization(c
 
 // createExternalContactsOrganizationFn is an implementation function for creating a Genesys Cloud external contacts organization
 func createExternalContactsOrganizationFn(ctx context.Context, p *externalContactsOrganizationProxy, externalContactsOrganization *platformclientv2.Externalorganization) (*platformclientv2.Externalorganization, *platformclientv2.APIResponse, error) {
-	externalOrganization, response, err := p.externalContactsApi.PostExternalcontactsOrganizations(*externalContactsOrganization)
-	if err != nil {
-		return nil, response, fmt.Errorf("failed to create external contacts organization: %s", err)
-	}
-
-	return externalOrganization, response, nil
+	return p.externalContactsApi.PostExternalcontactsOrganizations(*externalContactsOrganization)
 }
 
 // getAllExternalContactsOrganizationFn is the implementation for retrieving all external contacts organization in Genesys Cloud
@@ -139,6 +134,7 @@ func getAllExternalContactsOrganizationFn(ctx context.Context, p *externalContac
 			continue
 		}
 		rc.SetCache(p.externalOrganizationCache, *externalOrganization.Id, externalOrganization)
+		rc.SetCache(p.externalOrganizationCache, *externalOrganization.Name, externalOrganization)
 	}
 
 	return &allExternalOrganizations, response, nil
@@ -158,14 +154,14 @@ func getExternalContactsOrganizationIdByNameFn(ctx context.Context, p *externalC
 
 	var externalOrganization platformclientv2.Externalorganization
 	for _, externalOrganizationSdk := range *externalOrganizations {
-		if *externalOrganization.Name == name {
+		if *externalOrganizationSdk.Name == name {
 			log.Printf("Retrieved the external contacts organization id %s by name %s", *externalOrganizationSdk.Id, name)
 			externalOrganization = externalOrganizationSdk
 			return *externalOrganization.Id, false, response, nil
 		}
 	}
 
-	return "", false, response, fmt.Errorf("unable to find external contacts organization with name %s", name)
+	return "", true, response, fmt.Errorf("unable to find external contacts organization with name %s", name)
 }
 
 // getExternalContactsOrganizationByIdFn is an implementation of the function to get a Genesys Cloud external contacts organization by Id
@@ -173,29 +169,16 @@ func getExternalContactsOrganizationByIdFn(ctx context.Context, p *externalConta
 	if externalOrganization := rc.GetCacheItem(p.externalOrganizationCache, id); externalOrganization != nil {
 		return externalOrganization, nil, nil
 	}
-	externalOrganization, response, err := p.externalContactsApi.GetExternalcontactsOrganization(id, []string{}, false)
-	if err != nil {
-		return nil, response, fmt.Errorf("failed to retrieve external contacts organization by id %s: %s", id, err)
-	}
-
-	return externalOrganization, response, nil
+	return p.externalContactsApi.GetExternalcontactsOrganization(id, []string{}, false)
 }
 
 // updateExternalContactsOrganizationFn is an implementation of the function to update a Genesys Cloud external contacts organization
 func updateExternalContactsOrganizationFn(ctx context.Context, p *externalContactsOrganizationProxy, id string, externalContactsOrganization *platformclientv2.Externalorganization) (*platformclientv2.Externalorganization, *platformclientv2.APIResponse, error) {
-	externalOrganization, response, err := p.externalContactsApi.PutExternalcontactsOrganization(id, *externalContactsOrganization)
-	if err != nil {
-		return nil, response, fmt.Errorf("failed to update external contacts organization: %s", err)
-	}
-	return externalOrganization, response, nil
+	return p.externalContactsApi.PutExternalcontactsOrganization(id, *externalContactsOrganization)
 }
 
 // deleteExternalContactsOrganizationFn is an implementation function for deleting a Genesys Cloud external contacts organization
 func deleteExternalContactsOrganizationFn(ctx context.Context, p *externalContactsOrganizationProxy, id string) (apiResponse *platformclientv2.APIResponse, err error) {
 	_, response, err := p.externalContactsApi.DeleteExternalcontactsOrganization(id)
-	if err != nil {
-		return response, fmt.Errorf("failed to delete external contacts organization: %s", err)
-	}
-
-	return response, nil
+	return response, err
 }
