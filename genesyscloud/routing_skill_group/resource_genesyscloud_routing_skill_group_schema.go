@@ -59,7 +59,8 @@ func ResourceRoutingSkillGroup() *schema.Resource {
 				Type:        schema.TypeList,
 				MaxItems:    50,
 				Optional:    true,
-				Elem:        &schema.Schema{Type: schema.TypeString},
+				//ValidateFunc: validators.ValidateSkillGroupMemberDivisionIds,
+				Elem: &schema.Schema{Type: schema.TypeString},
 			},
 		},
 	}
