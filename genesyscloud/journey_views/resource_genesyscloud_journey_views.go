@@ -57,7 +57,7 @@ func createJourneyView(ctx context.Context, d *schema.ResourceData, meta interfa
 
 func updateJourneyView(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	name := d.Get("name").(string)
-	var versionId = d.Get("version").(int)
+	versionId: = d.Get("version").(int)
 
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	gp := getJourneyViewProxy(sdkConfig)
