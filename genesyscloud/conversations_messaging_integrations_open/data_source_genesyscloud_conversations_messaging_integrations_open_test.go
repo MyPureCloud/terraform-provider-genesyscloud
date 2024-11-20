@@ -77,7 +77,7 @@ func TestAccDataSourceConversationsMessagingIntegrationsOpen(t *testing.T) {
 }
 
 func GenerateConversationsMessagingOpenDataSource(
-	resourceId string,
+	resourceLabel string,
 	name string,
 	dependsOnResource string,
 ) string {
@@ -86,5 +86,5 @@ func GenerateConversationsMessagingOpenDataSource(
 			name = "%s"
 			depends_on = [%s]
 		}
-	`, resourceId, name, dependsOnResource)
+	`, resourceLabel, name, dependsOnResource)
 }
