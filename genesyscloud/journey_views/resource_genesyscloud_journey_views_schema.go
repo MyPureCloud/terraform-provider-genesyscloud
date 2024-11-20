@@ -159,6 +159,57 @@ var (
 			},
 		},
 	}
+	metricsResource = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"id": {
+				Description: "The unique identifier of the metric within the metrics list.",
+				Type:        schema.TypeString,
+				Required:    true,
+			},
+			"element_id": {
+				Description: "The reference of element.",
+				Type:        schema.TypeString,
+				Required:    true,
+			},
+			"aggregate": {
+				Description:  "The version of chart",
+				Type:         schema.TypeString,
+				Optional:     true,
+				ValidateFunc: validation.StringInSlice([]string{"EventCount", "CustomerCount"}, false),
+			},
+			"display_label": {
+				Description: "Display loabel of metric",
+				Type:        schema.TypeString,
+				Optional:    true,
+			},
+		},
+	}
+	chartsResource = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"id": {
+				Description: "The unique identifier of the chart within the charts list.",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
+			"name": {
+				Description: "The unique name of the chart within the view.",
+				Type:        schema.TypeString,
+				Required:    true,
+			},
+			"version": {
+				Description: "The version of chart",
+				Type:        schema.TypeInt,
+				Required:    true,
+			},
+			"metrics": {
+				Description: "A set of metrics to be displayed on the chart.",
+				Type:        schema.TypeList,
+				Elem:        metricsResource,
+				Required:    true,
+				MinItems:    1,
+			},
+		},
+	}
 )
 
 func SetRegistrar(regInstance registrar.Registrar) {
@@ -195,6 +246,11 @@ func ResourceJourneyViews() *schema.Resource {
 				Type:        schema.TypeString,
 				Optional:    true,
 			},
+			"version": {
+				Description: "Version of JourneyView.",
+				Type:        schema.TypeInt,
+				Computed:    true,
+			},
 			"duration": {
 				Description: "A relative timeframe for the journey view, expressed as an ISO 8601 duration. Only one of interval or duration must be specified. Periods are represented as an ISO-8601 string. For example: P1D or P1DT12H.",
 				Type:        schema.TypeString,
@@ -205,6 +261,12 @@ func ResourceJourneyViews() *schema.Resource {
 				Type:        schema.TypeList,
 				Optional:    true,
 				Elem:        elementsResource,
+			},
+			"charts": {
+				Description: "The charts within the journey view.",
+				Type:        schema.TypeList,
+				Optional:    true,
+				Elem:        chartsResource,
 			},
 		},
 	}
