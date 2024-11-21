@@ -20,12 +20,12 @@ resource "genesyscloud_externalcontacts_organization" "organization" {
     country_code = "FR"
   }
   twitter {
-    twitter_id = "RealABCNews"
-    name = "ABCNews"
+    twitter_id  = "RealABCNews"
+    name        = "ABCNews"
     screen_name = "ABCNewsCorp"
   }
-  tickers{
-    symbol = "ABC"
+  tickers {
+    symbol   = "ABC"
     exchange = "NYSE"
   }
   external_system_url = "https://systemUrl.com"
