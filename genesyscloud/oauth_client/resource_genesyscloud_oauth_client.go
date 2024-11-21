@@ -37,7 +37,7 @@ func getAllOAuthClients(ctx context.Context, clientConfig *platformclientv2.Conf
 			// Don't include clients disabled by support
 			continue
 		}
-		resources[*client.Id] = &resourceExporter.ResourceMeta{Name: *client.Name}
+		resources[*client.Id] = &resourceExporter.ResourceMeta{BlockLabel: *client.Name}
 	}
 	return resources, nil
 }

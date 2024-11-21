@@ -22,14 +22,14 @@ tests for integration_actions.
 */
 func TestAccResourceIntegrationAction(t *testing.T) {
 	var (
-		integResource1 = "test_integration1"
-		integTypeID    = "purecloud-data-actions"
+		integResourceLabel1 = "test_integration1"
+		integTypeID         = "purecloud-data-actions"
 
-		actionResource1 = "test-action1"
-		actionName1     = "Terraform Action1-" + uuid.NewString()
-		actionName2     = "Terraform Action2-" + uuid.NewString()
-		actionCateg1    = "Genesys Cloud Data Actions"
-		actionCateg2    = "Genesys Cloud Data Actions 2"
+		actionResourceLabel1 = "test-action1"
+		actionName1          = "Terraform Action1-" + uuid.NewString()
+		actionName2          = "Terraform Action2-" + uuid.NewString()
+		actionCateg1         = "Genesys Cloud Data Actions"
+		actionCateg2         = "Genesys Cloud Data Actions 2"
 
 		timeout2 = "20"
 
@@ -59,14 +59,14 @@ func TestAccResourceIntegrationAction(t *testing.T) {
 			{
 				// Create an integration and an associated action
 				Config: integration.GenerateIntegrationResource(
-					integResource1,
+					integResourceLabel1,
 					util.NullValue,
 					strconv.Quote(integTypeID),
 				) + generateIntegrationActionResource(
-					actionResource1,
+					actionResourceLabel1,
 					actionName1,
 					actionCateg1,
-					"genesyscloud_integration."+integResource1+".id",
+					"genesyscloud_integration."+integResourceLabel1+".id",
 					util.NullValue, // Secure default (false)
 					util.NullValue, // Timeout default
 					util.GenerateJsonSchemaDocStr(inputAttr1),  // contract_input
@@ -80,32 +80,32 @@ func TestAccResourceIntegrationAction(t *testing.T) {
 					// Default config response
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_integration_action."+actionResource1, "name", actionName1),
-					resource.TestCheckResourceAttr("genesyscloud_integration_action."+actionResource1, "category", actionCateg1),
-					resource.TestCheckResourceAttr("genesyscloud_integration_action."+actionResource1, "secure", util.FalseValue),
-					resource.TestCheckResourceAttr("genesyscloud_integration_action."+actionResource1, "config_timeout_seconds", "0"),
-					resource.TestCheckResourceAttrPair("genesyscloud_integration_action."+actionResource1, "integration_id", "genesyscloud_integration."+integResource1, "id"),
-					util.ValidateValueInJsonAttr("genesyscloud_integration_action."+actionResource1, "contract_input", "type", "object"),
-					util.ValidateValueInJsonAttr("genesyscloud_integration_action."+actionResource1, "contract_input", "properties."+inputAttr1+".type", "string"),
-					util.ValidateValueInJsonAttr("genesyscloud_integration_action."+actionResource1, "contract_input", "required", inputAttr1),
-					util.ValidateValueInJsonAttr("genesyscloud_integration_action."+actionResource1, "contract_output", "type", "object"),
-					util.ValidateValueInJsonAttr("genesyscloud_integration_action."+actionResource1, "contract_output", "properties."+outputAttr1+".type", "string"),
-					util.ValidateValueInJsonAttr("genesyscloud_integration_action."+actionResource1, "contract_output", "required", outputAttr1),
-					resource.TestCheckResourceAttr("genesyscloud_integration_action."+actionResource1, "config_request.0.request_url_template", reqUrlTemplate1),
-					resource.TestCheckResourceAttr("genesyscloud_integration_action."+actionResource1, "config_request.0.request_type", reqType1),
+					resource.TestCheckResourceAttr("genesyscloud_integration_action."+actionResourceLabel1, "name", actionName1),
+					resource.TestCheckResourceAttr("genesyscloud_integration_action."+actionResourceLabel1, "category", actionCateg1),
+					resource.TestCheckResourceAttr("genesyscloud_integration_action."+actionResourceLabel1, "secure", util.FalseValue),
+					resource.TestCheckResourceAttr("genesyscloud_integration_action."+actionResourceLabel1, "config_timeout_seconds", "0"),
+					resource.TestCheckResourceAttrPair("genesyscloud_integration_action."+actionResourceLabel1, "integration_id", "genesyscloud_integration."+integResourceLabel1, "id"),
+					util.ValidateValueInJsonAttr("genesyscloud_integration_action."+actionResourceLabel1, "contract_input", "type", "object"),
+					util.ValidateValueInJsonAttr("genesyscloud_integration_action."+actionResourceLabel1, "contract_input", "properties."+inputAttr1+".type", "string"),
+					util.ValidateValueInJsonAttr("genesyscloud_integration_action."+actionResourceLabel1, "contract_input", "required", inputAttr1),
+					util.ValidateValueInJsonAttr("genesyscloud_integration_action."+actionResourceLabel1, "contract_output", "type", "object"),
+					util.ValidateValueInJsonAttr("genesyscloud_integration_action."+actionResourceLabel1, "contract_output", "properties."+outputAttr1+".type", "string"),
+					util.ValidateValueInJsonAttr("genesyscloud_integration_action."+actionResourceLabel1, "contract_output", "required", outputAttr1),
+					resource.TestCheckResourceAttr("genesyscloud_integration_action."+actionResourceLabel1, "config_request.0.request_url_template", reqUrlTemplate1),
+					resource.TestCheckResourceAttr("genesyscloud_integration_action."+actionResourceLabel1, "config_request.0.request_type", reqType1),
 				),
 			},
 			{
 				// Update action name, category, timeout, and request/response config
 				Config: integration.GenerateIntegrationResource(
-					integResource1,
+					integResourceLabel1,
 					util.NullValue,
 					strconv.Quote(integTypeID),
 				) + generateIntegrationActionResource(
-					actionResource1,
+					actionResourceLabel1,
 					actionName2,
 					actionCateg2,
-					"genesyscloud_integration."+integResource1+".id",
+					"genesyscloud_integration."+integResourceLabel1+".id",
 					util.NullValue, // Secure default (false)
 					timeout2,
 					util.GenerateJsonSchemaDocStr(inputAttr1),  // contract_input
@@ -138,31 +138,31 @@ func TestAccResourceIntegrationAction(t *testing.T) {
 					),
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_integration_action."+actionResource1, "name", actionName2),
-					resource.TestCheckResourceAttr("genesyscloud_integration_action."+actionResource1, "category", actionCateg2),
-					resource.TestCheckResourceAttr("genesyscloud_integration_action."+actionResource1, "secure", util.FalseValue),
-					resource.TestCheckResourceAttr("genesyscloud_integration_action."+actionResource1, "config_timeout_seconds", timeout2),
-					resource.TestCheckResourceAttrPair("genesyscloud_integration_action."+actionResource1, "integration_id", "genesyscloud_integration."+integResource1, "id"),
-					resource.TestCheckResourceAttr("genesyscloud_integration_action."+actionResource1, "config_request.0.request_url_template", reqUrlTemplate2),
-					resource.TestCheckResourceAttr("genesyscloud_integration_action."+actionResource1, "config_request.0.request_type", reqType2),
-					resource.TestCheckResourceAttr("genesyscloud_integration_action."+actionResource1, "config_request.0.request_template", strings.ReplaceAll(reqTemp, "$${", "${")),
-					resource.TestCheckResourceAttr("genesyscloud_integration_action."+actionResource1, "config_request.0.headers."+headerKey, headerVal1),
-					resource.TestCheckResourceAttr("genesyscloud_integration_action."+actionResource1, "config_response.0.success_template", strings.ReplaceAll(successTemplate, "$${", "${")),
-					resource.TestCheckResourceAttr("genesyscloud_integration_action."+actionResource1, "config_response.0.translation_map."+transMapAttr, transMapVal1),
-					resource.TestCheckResourceAttr("genesyscloud_integration_action."+actionResource1, "config_response.0.translation_map_defaults."+transMapAttr, transMapValDefault1),
+					resource.TestCheckResourceAttr("genesyscloud_integration_action."+actionResourceLabel1, "name", actionName2),
+					resource.TestCheckResourceAttr("genesyscloud_integration_action."+actionResourceLabel1, "category", actionCateg2),
+					resource.TestCheckResourceAttr("genesyscloud_integration_action."+actionResourceLabel1, "secure", util.FalseValue),
+					resource.TestCheckResourceAttr("genesyscloud_integration_action."+actionResourceLabel1, "config_timeout_seconds", timeout2),
+					resource.TestCheckResourceAttrPair("genesyscloud_integration_action."+actionResourceLabel1, "integration_id", "genesyscloud_integration."+integResourceLabel1, "id"),
+					resource.TestCheckResourceAttr("genesyscloud_integration_action."+actionResourceLabel1, "config_request.0.request_url_template", reqUrlTemplate2),
+					resource.TestCheckResourceAttr("genesyscloud_integration_action."+actionResourceLabel1, "config_request.0.request_type", reqType2),
+					resource.TestCheckResourceAttr("genesyscloud_integration_action."+actionResourceLabel1, "config_request.0.request_template", strings.ReplaceAll(reqTemp, "$${", "${")),
+					resource.TestCheckResourceAttr("genesyscloud_integration_action."+actionResourceLabel1, "config_request.0.headers."+headerKey, headerVal1),
+					resource.TestCheckResourceAttr("genesyscloud_integration_action."+actionResourceLabel1, "config_response.0.success_template", strings.ReplaceAll(successTemplate, "$${", "${")),
+					resource.TestCheckResourceAttr("genesyscloud_integration_action."+actionResourceLabel1, "config_response.0.translation_map."+transMapAttr, transMapVal1),
+					resource.TestCheckResourceAttr("genesyscloud_integration_action."+actionResourceLabel1, "config_response.0.translation_map_defaults."+transMapAttr, transMapValDefault1),
 				),
 			},
 			{
 				// Update config values as well as secure field which should force a new action to be created
 				Config: integration.GenerateIntegrationResource(
-					integResource1,
+					integResourceLabel1,
 					util.NullValue,
 					strconv.Quote(integTypeID),
 				) + generateIntegrationActionResource(
-					actionResource1,
+					actionResourceLabel1,
 					actionName2,
 					actionCateg2,
-					"genesyscloud_integration."+integResource1+".id",
+					"genesyscloud_integration."+integResourceLabel1+".id",
 					util.TrueValue, // Secure
 					util.NullValue, // time default
 					util.GenerateJsonSchemaDocStr(inputAttr1),  // contract_input
@@ -195,22 +195,22 @@ func TestAccResourceIntegrationAction(t *testing.T) {
 					),
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_integration_action."+actionResource1, "name", actionName2),
-					resource.TestCheckResourceAttr("genesyscloud_integration_action."+actionResource1, "category", actionCateg2),
-					resource.TestCheckResourceAttr("genesyscloud_integration_action."+actionResource1, "secure", util.TrueValue),
-					resource.TestCheckResourceAttrPair("genesyscloud_integration_action."+actionResource1, "integration_id", "genesyscloud_integration."+integResource1, "id"),
-					resource.TestCheckResourceAttr("genesyscloud_integration_action."+actionResource1, "config_request.0.request_url_template", reqUrlTemplate2),
-					resource.TestCheckResourceAttr("genesyscloud_integration_action."+actionResource1, "config_request.0.request_type", reqType2),
-					resource.TestCheckResourceAttr("genesyscloud_integration_action."+actionResource1, "config_request.0.request_template", strings.ReplaceAll(reqTemp, "$${", "${")),
-					resource.TestCheckResourceAttr("genesyscloud_integration_action."+actionResource1, "config_request.0.headers."+headerKey, headerVal2),
-					resource.TestCheckResourceAttr("genesyscloud_integration_action."+actionResource1, "config_response.0.success_template", strings.ReplaceAll(successTemplate, "$${", "${")),
-					resource.TestCheckResourceAttr("genesyscloud_integration_action."+actionResource1, "config_response.0.translation_map."+transMapAttr, transMapVal2),
-					resource.TestCheckResourceAttr("genesyscloud_integration_action."+actionResource1, "config_response.0.translation_map_defaults."+transMapAttr, transMapValDefault2),
+					resource.TestCheckResourceAttr("genesyscloud_integration_action."+actionResourceLabel1, "name", actionName2),
+					resource.TestCheckResourceAttr("genesyscloud_integration_action."+actionResourceLabel1, "category", actionCateg2),
+					resource.TestCheckResourceAttr("genesyscloud_integration_action."+actionResourceLabel1, "secure", util.TrueValue),
+					resource.TestCheckResourceAttrPair("genesyscloud_integration_action."+actionResourceLabel1, "integration_id", "genesyscloud_integration."+integResourceLabel1, "id"),
+					resource.TestCheckResourceAttr("genesyscloud_integration_action."+actionResourceLabel1, "config_request.0.request_url_template", reqUrlTemplate2),
+					resource.TestCheckResourceAttr("genesyscloud_integration_action."+actionResourceLabel1, "config_request.0.request_type", reqType2),
+					resource.TestCheckResourceAttr("genesyscloud_integration_action."+actionResourceLabel1, "config_request.0.request_template", strings.ReplaceAll(reqTemp, "$${", "${")),
+					resource.TestCheckResourceAttr("genesyscloud_integration_action."+actionResourceLabel1, "config_request.0.headers."+headerKey, headerVal2),
+					resource.TestCheckResourceAttr("genesyscloud_integration_action."+actionResourceLabel1, "config_response.0.success_template", strings.ReplaceAll(successTemplate, "$${", "${")),
+					resource.TestCheckResourceAttr("genesyscloud_integration_action."+actionResourceLabel1, "config_response.0.translation_map."+transMapAttr, transMapVal2),
+					resource.TestCheckResourceAttr("genesyscloud_integration_action."+actionResourceLabel1, "config_response.0.translation_map_defaults."+transMapAttr, transMapValDefault2),
 				),
 			},
 			{
 				// Import/Read
-				ResourceName:      "genesyscloud_integration_action." + actionResource1,
+				ResourceName:      "genesyscloud_integration_action." + actionResourceLabel1,
 				ImportState:       true,
 				ImportStateVerify: true,
 			},
@@ -219,7 +219,7 @@ func TestAccResourceIntegrationAction(t *testing.T) {
 	})
 }
 
-func generateIntegrationActionResource(resourceID, name, category, integId, secure, timeout, contractIn, contractOut string, blocks ...string) string {
+func generateIntegrationActionResource(resourceLabel, name, category, integId, secure, timeout, contractIn, contractOut string, blocks ...string) string {
 	return fmt.Sprintf(`resource "genesyscloud_integration_action" "%s" {
         name = "%s"
         category = "%s"
@@ -230,7 +230,7 @@ func generateIntegrationActionResource(resourceID, name, category, integId, secu
         contract_output = %s
         %s
 	}
-	`, resourceID, name, category, integId, secure, timeout, contractIn, contractOut, strings.Join(blocks, "\n"))
+	`, resourceLabel, name, category, integId, secure, timeout, contractIn, contractOut, strings.Join(blocks, "\n"))
 }
 
 func generateIntegrationActionConfigRequest(reqUrlTemplate, reqType, reqTemp, headers string) string {

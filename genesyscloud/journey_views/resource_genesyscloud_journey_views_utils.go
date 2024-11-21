@@ -151,6 +151,110 @@ func buildJourneyViewLinkTimeConstraint(timeConstraintSlice []interface{}) *plat
 	return &timeConstraint
 }
 
+func buildCharts(d *schema.ResourceData) *[]platformclientv2.Journeyviewchart {
+	chartsSlice := d.Get("charts").([]interface{})
+	if len(chartsSlice) == 0 {
+		emptySlice := make([]platformclientv2.Journeyviewchart, 0)
+		return &emptySlice
+	}
+
+	var charts []platformclientv2.Journeyviewchart
+
+	for _, obj := range chartsSlice {
+		chartMap, ok := obj.(map[string]interface{})
+		if !ok {
+			return nil //"chart is not a map[string]interface{}")
+		}
+
+		var chart platformclientv2.Journeyviewchart
+		//element.Id = getStringPointerFromInterface(elemMap["id"])
+		chart.Name = getStringPointerFromInterface(chartMap["name"])
+		chart.Version = getIntPointerFromInterface(chartMap["version"])
+		if metricsSlice, ok := chartMap["metrics"].([]interface{}); ok {
+			chart.Metrics = buildMetrics(metricsSlice)
+		}
+		chart.GroupByTime = getStringPointerFromInterface(chartMap["group_by_time"])
+		chart.GroupByMax = getIntPointerFromInterface(chartMap["group_by_max"])
+		if displayAttributesSlice, ok := chartMap["display_attributes"].([]interface{}); ok {
+			chart.DisplayAttributes = buildDisplayAttributes(displayAttributesSlice)
+		}
+		if groupByAttributesSlice, ok := chartMap["group_by_attributes"].([]interface{}); ok {
+			chart.GroupByAttributes = buildGroupByAttributes(groupByAttributesSlice)
+		}
+		charts = append(charts, chart)
+	}
+	return &charts
+}
+
+func buildMetrics(objsSlice []interface{}) *[]platformclientv2.Journeyviewchartmetric {
+	if len(objsSlice) == 0 {
+		emptySlice := make([]platformclientv2.Journeyviewchartmetric, 0)
+		return &emptySlice
+	}
+
+	var objs []platformclientv2.Journeyviewchartmetric
+
+	for _, obj := range objsSlice {
+		objMap, ok := obj.(map[string]interface{})
+		if !ok {
+			return nil //"metric is not a map[string]interface{}")
+		}
+
+		var metric platformclientv2.Journeyviewchartmetric
+		metric.Id = getStringPointerFromInterface(objMap["id"])
+		metric.Aggregate = getStringPointerFromInterface(objMap["aggregate"])
+		metric.DisplayLabel = getStringPointerFromInterface(objMap["display_label"])
+		metric.ElementId = getStringPointerFromInterface(objMap["element_id"])
+		objs = append(objs, metric)
+	}
+
+	return &objs
+}
+
+func buildDisplayAttributes(objsSlice []interface{}) *platformclientv2.Journeyviewchartdisplayattributes {
+	if len(objsSlice) == 0 {
+		return nil
+	}
+
+	var displayAttribute platformclientv2.Journeyviewchartdisplayattributes
+	for _, obj := range objsSlice {
+		objMap, ok := obj.(map[string]interface{})
+		if !ok {
+			return nil //"metric is not a map[string]interface{}")
+		}
+		displayAttribute.VarType = getStringPointerFromInterface(objMap["var_type"])
+		displayAttribute.GroupByTitle = getStringPointerFromInterface(objMap["group_by_title"])
+		displayAttribute.MetricsTitle = getStringPointerFromInterface(objMap["metrics_title"])
+		displayAttribute.ShowLegend = getBoolPointerFromInterface(objMap["show_legend"])
+		break
+	}
+
+	return &displayAttribute
+}
+
+func buildGroupByAttributes(objsSlice []interface{}) *[]platformclientv2.Journeyviewchartgroupbyattribute {
+	if len(objsSlice) == 0 {
+		emptySlice := make([]platformclientv2.Journeyviewchartgroupbyattribute, 0)
+		return &emptySlice
+	}
+
+	var objs []platformclientv2.Journeyviewchartgroupbyattribute
+
+	for _, obj := range objsSlice {
+		objMap, ok := obj.(map[string]interface{})
+		if !ok {
+			return nil //"groupbyattribute is not a map[string]interface{}")
+		}
+
+		var groupbyattribute platformclientv2.Journeyviewchartgroupbyattribute
+		groupbyattribute.Attribute = getStringPointerFromInterface(objMap["attribute"])
+		groupbyattribute.ElementId = getStringPointerFromInterface(objMap["element_id"])
+		objs = append(objs, groupbyattribute)
+	}
+
+	return &objs
+}
+
 func getStringPointerFromInterface(val interface{}) *string {
 	if valString, ok := val.(string); ok {
 		if valString == "" {
@@ -260,4 +364,68 @@ func flattenConstraints(constraint *platformclientv2.Journeyviewlinktimeconstrai
 	resourcedata.SetMapValueIfNotNil(constraintMap, "value", constraint.Value)
 	constraintsList = append(constraintsList, constraintMap)
 	return constraintsList
+}
+
+func flattenCharts(charts *[]platformclientv2.Journeyviewchart) []interface{} {
+	if len(*charts) == 0 {
+		return nil
+	}
+	var chartsList []interface{}
+	for _, chart := range *charts {
+		chartsMap := make(map[string]interface{})
+		resourcedata.SetMapValueIfNotNil(chartsMap, "id", chart.Id)
+		resourcedata.SetMapValueIfNotNil(chartsMap, "name", chart.Name)
+		resourcedata.SetMapValueIfNotNil(chartsMap, "version", chart.Version)
+		resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(chartsMap, "metrics", chart.Metrics, flattenMetrics)
+		resourcedata.SetMapValueIfNotNil(chartsMap, "group_by_time", chart.GroupByTime)
+		resourcedata.SetMapValueIfNotNil(chartsMap, "group_by_max", chart.GroupByMax)
+		resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(chartsMap, "display_attributes", chart.DisplayAttributes, flattenDisplayAttributes)
+		resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(chartsMap, "group_by_attributes", chart.GroupByAttributes, flattenGroupbyAttributes)
+		chartsList = append(chartsList, chartsMap)
+	}
+	return chartsList
+}
+
+func flattenMetrics(metrics *[]platformclientv2.Journeyviewchartmetric) []interface{} {
+	if len(*metrics) == 0 {
+		return nil
+	}
+	var metricsList []interface{}
+	for _, metric := range *metrics {
+		metricsMap := make(map[string]interface{})
+		resourcedata.SetMapValueIfNotNil(metricsMap, "id", metric.Id)
+		resourcedata.SetMapValueIfNotNil(metricsMap, "element_id", metric.ElementId)
+		resourcedata.SetMapValueIfNotNil(metricsMap, "aggregate", metric.Aggregate)
+		resourcedata.SetMapValueIfNotNil(metricsMap, "display_label", metric.DisplayLabel)
+		metricsList = append(metricsList, metricsMap)
+	}
+	return metricsList
+}
+
+func flattenDisplayAttributes(displayAttributes *platformclientv2.Journeyviewchartdisplayattributes) []interface{} {
+
+	var displayAttributesList []interface{}
+	displayAttributesMap := make(map[string]interface{})
+	resourcedata.SetMapValueIfNotNil(displayAttributesMap, "metrics_title", displayAttributes.MetricsTitle)
+	resourcedata.SetMapValueIfNotNil(displayAttributesMap, "group_by_title", displayAttributes.GroupByTitle)
+	resourcedata.SetMapValueIfNotNil(displayAttributesMap, "var_type", displayAttributes.VarType)
+	resourcedata.SetMapValueIfNotNil(displayAttributesMap, "show_legend", displayAttributes.ShowLegend)
+	displayAttributesList = append(displayAttributesList, displayAttributesMap)
+
+	return displayAttributesList
+}
+
+func flattenGroupbyAttributes(groupByAttributes *[]platformclientv2.Journeyviewchartgroupbyattribute) []interface{} {
+	if len(*groupByAttributes) == 0 {
+		return nil
+	}
+	var groupByAttributesList []interface{}
+	for _, groupByAttribute := range *groupByAttributes {
+		groupByAttributeMap := make(map[string]interface{})
+		resourcedata.SetMapValueIfNotNil(groupByAttributeMap, "attribute", groupByAttribute.Attribute)
+		resourcedata.SetMapValueIfNotNil(groupByAttributeMap, "element_id", groupByAttribute.ElementId)
+
+		groupByAttributesList = append(groupByAttributesList, groupByAttributeMap)
+	}
+	return groupByAttributesList
 }

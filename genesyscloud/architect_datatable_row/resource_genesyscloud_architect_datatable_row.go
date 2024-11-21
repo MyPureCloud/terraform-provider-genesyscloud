@@ -65,7 +65,7 @@ func getAllArchitectDatatableRows(ctx context.Context, clientConfig *platformcli
 		for _, row := range *rows {
 			if keyVal, ok := row["key"]; ok {
 				keyStr := keyVal.(string) // Keys must be strings
-				resources[createDatatableRowId(*tableMeta.Id, keyStr)] = &resourceExporter.ResourceMeta{Name: *tableMeta.Name + "_" + keyStr}
+				resources[createDatatableRowId(*tableMeta.Id, keyStr)] = &resourceExporter.ResourceMeta{BlockLabel: *tableMeta.Name + "_" + keyStr}
 			}
 		}
 	}

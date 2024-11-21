@@ -15,19 +15,19 @@ import (
 
 func TestAccResourceArchitectSchedules(t *testing.T) {
 	var (
-		schedResource1 = "arch-sched1"
-		name           = "CX as Code Schedule " + uuid.NewString()
-		description    = "Sample Schedule by CX as Code"
-		start          = "2021-08-04T08:00:00.000000"
-		start2         = "2021-08-04T09:00:00.000000"
-		end            = "2021-08-04T17:00:00.000000"
-		rrule          = "FREQ=DAILY;INTERVAL=1"
+		schedResourceLabel1 = "arch-sched1"
+		name                = "CX as Code Schedule " + uuid.NewString()
+		description         = "Sample Schedule by CX as Code"
+		start               = "2021-08-04T08:00:00.000000"
+		start2              = "2021-08-04T09:00:00.000000"
+		end                 = "2021-08-04T17:00:00.000000"
+		rrule               = "FREQ=DAILY;INTERVAL=1"
 
-		schedResource2 = "arch-sched2"
-		name2          = "CX as Code Schedule 2 " + uuid.NewString()
+		schedResourceLabel2 = "arch-sched2"
+		name2               = "CX as Code Schedule 2 " + uuid.NewString()
 
-		divResource = "test-division"
-		divName     = "terraform-" + uuid.NewString()
+		divResourceLabel = "test-division"
+		divName          = "terraform-" + uuid.NewString()
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -37,7 +37,7 @@ func TestAccResourceArchitectSchedules(t *testing.T) {
 			{
 				// Create
 				Config: GenerateArchitectSchedulesResource(
-					schedResource1,
+					schedResourceLabel1,
 					name,
 					util.NullValue,
 					description,
@@ -46,18 +46,18 @@ func TestAccResourceArchitectSchedules(t *testing.T) {
 					rrule,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_architect_schedules."+schedResource1, "name", name),
-					resource.TestCheckResourceAttr("genesyscloud_architect_schedules."+schedResource1, "description", description),
-					resource.TestCheckResourceAttr("genesyscloud_architect_schedules."+schedResource1, "start", start),
-					resource.TestCheckResourceAttr("genesyscloud_architect_schedules."+schedResource1, "end", end),
-					resource.TestCheckResourceAttr("genesyscloud_architect_schedules."+schedResource1, "rrule", rrule),
-					provider.TestDefaultHomeDivision("genesyscloud_architect_schedules."+schedResource1),
+					resource.TestCheckResourceAttr("genesyscloud_architect_schedules."+schedResourceLabel1, "name", name),
+					resource.TestCheckResourceAttr("genesyscloud_architect_schedules."+schedResourceLabel1, "description", description),
+					resource.TestCheckResourceAttr("genesyscloud_architect_schedules."+schedResourceLabel1, "start", start),
+					resource.TestCheckResourceAttr("genesyscloud_architect_schedules."+schedResourceLabel1, "end", end),
+					resource.TestCheckResourceAttr("genesyscloud_architect_schedules."+schedResourceLabel1, "rrule", rrule),
+					provider.TestDefaultHomeDivision("genesyscloud_architect_schedules."+schedResourceLabel1),
 				),
 			},
 			{
 				// Update start time
 				Config: GenerateArchitectSchedulesResource(
-					schedResource1,
+					schedResourceLabel1,
 					name,
 					util.NullValue,
 					description,
@@ -66,37 +66,37 @@ func TestAccResourceArchitectSchedules(t *testing.T) {
 					rrule,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_architect_schedules."+schedResource1, "name", name),
-					resource.TestCheckResourceAttr("genesyscloud_architect_schedules."+schedResource1, "description", description),
-					resource.TestCheckResourceAttr("genesyscloud_architect_schedules."+schedResource1, "start", start2),
-					resource.TestCheckResourceAttr("genesyscloud_architect_schedules."+schedResource1, "end", end),
-					resource.TestCheckResourceAttr("genesyscloud_architect_schedules."+schedResource1, "rrule", rrule),
-					provider.TestDefaultHomeDivision("genesyscloud_architect_schedules."+schedResource1),
+					resource.TestCheckResourceAttr("genesyscloud_architect_schedules."+schedResourceLabel1, "name", name),
+					resource.TestCheckResourceAttr("genesyscloud_architect_schedules."+schedResourceLabel1, "description", description),
+					resource.TestCheckResourceAttr("genesyscloud_architect_schedules."+schedResourceLabel1, "start", start2),
+					resource.TestCheckResourceAttr("genesyscloud_architect_schedules."+schedResourceLabel1, "end", end),
+					resource.TestCheckResourceAttr("genesyscloud_architect_schedules."+schedResourceLabel1, "rrule", rrule),
+					provider.TestDefaultHomeDivision("genesyscloud_architect_schedules."+schedResourceLabel1),
 				),
 			},
 			{
 				// Create with new division
-				Config: authDivision.GenerateAuthDivisionBasic(divResource, divName) + GenerateArchitectSchedulesResource(
-					schedResource2,
+				Config: authDivision.GenerateAuthDivisionBasic(divResourceLabel, divName) + GenerateArchitectSchedulesResource(
+					schedResourceLabel2,
 					name2,
-					"genesyscloud_auth_division."+divResource+".id",
+					"genesyscloud_auth_division."+divResourceLabel+".id",
 					description,
 					start,
 					end,
 					rrule,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_architect_schedules."+schedResource2, "name", name2),
-					resource.TestCheckResourceAttr("genesyscloud_architect_schedules."+schedResource2, "description", description),
-					resource.TestCheckResourceAttr("genesyscloud_architect_schedules."+schedResource2, "start", start),
-					resource.TestCheckResourceAttr("genesyscloud_architect_schedules."+schedResource2, "end", end),
-					resource.TestCheckResourceAttr("genesyscloud_architect_schedules."+schedResource2, "rrule", rrule),
-					resource.TestCheckResourceAttrPair("genesyscloud_architect_schedules."+schedResource2, "division_id", "genesyscloud_auth_division."+divResource, "id"),
+					resource.TestCheckResourceAttr("genesyscloud_architect_schedules."+schedResourceLabel2, "name", name2),
+					resource.TestCheckResourceAttr("genesyscloud_architect_schedules."+schedResourceLabel2, "description", description),
+					resource.TestCheckResourceAttr("genesyscloud_architect_schedules."+schedResourceLabel2, "start", start),
+					resource.TestCheckResourceAttr("genesyscloud_architect_schedules."+schedResourceLabel2, "end", end),
+					resource.TestCheckResourceAttr("genesyscloud_architect_schedules."+schedResourceLabel2, "rrule", rrule),
+					resource.TestCheckResourceAttrPair("genesyscloud_architect_schedules."+schedResourceLabel2, "division_id", "genesyscloud_auth_division."+divResourceLabel, "id"),
 				),
 			},
 			{
 				// Import/Read
-				ResourceName:      "genesyscloud_architect_schedules." + schedResource2,
+				ResourceName:      "genesyscloud_architect_schedules." + schedResourceLabel2,
 				ImportState:       true,
 				ImportStateVerify: true,
 			},

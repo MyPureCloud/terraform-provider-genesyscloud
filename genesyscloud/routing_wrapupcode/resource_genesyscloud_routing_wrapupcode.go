@@ -30,7 +30,7 @@ func getAllRoutingWrapupCodes(ctx context.Context, clientConfig *platformclientv
 	}
 
 	for _, wrapupcode := range *wrapupcodes {
-		resources[*wrapupcode.Id] = &resourceExporter.ResourceMeta{Name: *wrapupcode.Name}
+		resources[*wrapupcode.Id] = &resourceExporter.ResourceMeta{BlockLabel: *wrapupcode.Name}
 	}
 
 	return resources, nil
@@ -137,10 +137,10 @@ func buildWrapupCodeFromResourceData(d *schema.ResourceData) *platformclientv2.W
 	return wrapupCode
 }
 
-func GenerateRoutingWrapupcodeResource(resourceID string, name string, divisionId string) string {
+func GenerateRoutingWrapupcodeResource(resourceLabel string, name string, divisionId string) string {
 	return fmt.Sprintf(`resource "%s" "%s" {
 		name = "%s"
 		division_id = %s
 	}
-	`, resourceName, resourceID, name, divisionId)
+	`, resourceName, resourceLabel, name, divisionId)
 }

@@ -329,7 +329,7 @@ func ResourceRoutingQueue() *schema.Resource {
 							ValidateFunc: validation.IntBetween(0, 259200),
 						},
 						"groups": {
-							Type:        schema.TypeList,
+							Type:        schema.TypeSet,
 							Required:    true,
 							MinItems:    1,
 							Description: "The group(s) to activate if the rule evaluates as true.",

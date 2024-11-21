@@ -36,7 +36,7 @@ func getAllAuthConversationsMessagingIntegrationsInstagrams(ctx context.Context,
 	}
 
 	for _, instagramIntegrationRequest := range *instagramIntegrationRequests {
-		resources[*instagramIntegrationRequest.Id] = &resourceExporter.ResourceMeta{Name: *instagramIntegrationRequest.Name}
+		resources[*instagramIntegrationRequest.Id] = &resourceExporter.ResourceMeta{BlockLabel: *instagramIntegrationRequest.Name}
 	}
 
 	return resources, nil

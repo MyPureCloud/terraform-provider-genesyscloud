@@ -35,7 +35,7 @@ func getAllOutboundMessagingcampaign(_ context.Context, clientConfig *platformcl
 		}
 
 		for _, entity := range *sdkMessagingcampaignEntityListing.Entities {
-			resources[*entity.Id] = &resourceExporter.ResourceMeta{Name: *entity.Name}
+			resources[*entity.Id] = &resourceExporter.ResourceMeta{BlockLabel: *entity.Name}
 		}
 	}
 

@@ -196,58 +196,69 @@ func buildSdkRoutingRules(d *schema.ResourceData) *[]platformclientv2.Routingrul
 }
 
 func buildSdkConditionalGroupRouting(d *schema.ResourceData) (*platformclientv2.Conditionalgrouprouting, diag.Diagnostics) {
-	if configRules, ok := d.GetOk("conditional_group_routing_rules"); ok {
-		var sdkCGRRules []platformclientv2.Conditionalgrouproutingrule
-
-		for i, configRules := range configRules.([]interface{}) {
-			ruleSettings, ok := configRules.(map[string]interface{})
-			if !ok {
-				continue
-			}
-			var sdkCGRRule platformclientv2.Conditionalgrouproutingrule
-
-			if waitSeconds, ok := ruleSettings["wait_seconds"].(int); ok {
-				sdkCGRRule.WaitSeconds = &waitSeconds
-			}
-
-			resourcedata.BuildSDKStringValueIfNotNil(&sdkCGRRule.Operator, ruleSettings, "operator")
-			resourcedata.BuildSDKStringValueIfNotNil(&sdkCGRRule.Metric, ruleSettings, "metric")
-
-			if conditionValue, ok := ruleSettings["condition_value"].(float64); ok {
-				sdkCGRRule.ConditionValue = &conditionValue
-			}
-
-			if queueId, ok := ruleSettings["queue_id"].(string); ok && queueId != "" {
-				if i == 0 {
-					return nil, util.BuildDiagnosticError(resourceName, "For rule 1, queue_id is always assumed to be the current queue, so queue id should not be specified", fmt.Errorf("queue id is not nil"))
-				}
-				sdkCGRRule.Queue = &platformclientv2.Domainentityref{Id: &queueId}
-			}
-
-			if memberGroupList, ok := ruleSettings["groups"].([]interface{}); ok {
-				if len(memberGroupList) > 0 {
-					sdkMemberGroups := make([]platformclientv2.Membergroup, len(memberGroupList))
-
-					for i, memberGroup := range memberGroupList {
-						settingsMap, ok := memberGroup.(map[string]interface{})
-						if !ok {
-							continue
-						}
-
-						sdkMemberGroups[i] = platformclientv2.Membergroup{
-							Id:      platformclientv2.String(settingsMap["member_group_id"].(string)),
-							VarType: platformclientv2.String(settingsMap["member_group_type"].(string)),
-						}
-					}
-					sdkCGRRule.Groups = &sdkMemberGroups
-				}
-			}
-			sdkCGRRules = append(sdkCGRRules, sdkCGRRule)
-		}
-		rules := &sdkCGRRules
-		return &platformclientv2.Conditionalgrouprouting{Rules: rules}, nil
+	cgrRules, ok := d.Get("conditional_group_routing_rules").([]interface{})
+	if !ok || len(cgrRules) == 0 {
+		return nil, nil
 	}
-	return nil, nil
+
+	var sdkCGRRules []platformclientv2.Conditionalgrouproutingrule
+
+	for i, rule := range cgrRules {
+		ruleSettings, ok := rule.(map[string]interface{})
+		if !ok {
+			continue
+		}
+		var sdkCGRRule platformclientv2.Conditionalgrouproutingrule
+
+		if waitSeconds, ok := ruleSettings["wait_seconds"].(int); ok {
+			sdkCGRRule.WaitSeconds = &waitSeconds
+		}
+
+		resourcedata.BuildSDKStringValueIfNotNil(&sdkCGRRule.Operator, ruleSettings, "operator")
+		resourcedata.BuildSDKStringValueIfNotNil(&sdkCGRRule.Metric, ruleSettings, "metric")
+
+		if conditionValue, ok := ruleSettings["condition_value"].(float64); ok {
+			sdkCGRRule.ConditionValue = &conditionValue
+		}
+
+		if queueId, ok := ruleSettings["queue_id"].(string); ok && queueId != "" {
+			if i == 0 {
+				return nil, util.BuildDiagnosticError(resourceName, "For rule 1, queue_id is always assumed to be the current queue, so queue id should not be specified", fmt.Errorf("queue id is not nil"))
+			}
+			sdkCGRRule.Queue = &platformclientv2.Domainentityref{Id: &queueId}
+		}
+
+		if memberGroupSet, ok := ruleSettings["groups"].(*schema.Set); ok {
+			sdkCGRRule.Groups = buildCGRGroups(memberGroupSet)
+		}
+		sdkCGRRules = append(sdkCGRRules, sdkCGRRule)
+	}
+
+	return &platformclientv2.Conditionalgrouprouting{Rules: &sdkCGRRules}, nil
+}
+
+func buildCGRGroups(groups *schema.Set) *[]platformclientv2.Membergroup {
+	groupList := groups.List()
+	if len(groupList) == 0 {
+		return nil
+	}
+
+	sdkMemberGroups := make([]platformclientv2.Membergroup, 0)
+	for _, group := range groupList {
+		groupMap, ok := group.(map[string]interface{})
+		if !ok {
+			continue
+		}
+
+		sdkGroup := platformclientv2.Membergroup{
+			Id:      platformclientv2.String(groupMap["member_group_id"].(string)),
+			VarType: platformclientv2.String(groupMap["member_group_type"].(string)),
+		}
+
+		sdkMemberGroups = append(sdkMemberGroups, sdkGroup)
+	}
+
+	return &sdkMemberGroups
 }
 
 func buildMemberGroupList(d *schema.ResourceData, groupKey string, groupType string) *[]platformclientv2.Membergroup {
@@ -510,22 +521,24 @@ func flattenConditionalGroupRoutingRules(queue *platformclientv2.Queue) []interf
 		}
 
 		if rule.Groups != nil {
-			memberGroups := make([]interface{}, 0)
-			for _, group := range *rule.Groups {
-				memberGroupMap := make(map[string]interface{})
-
-				resourcedata.SetMapValueIfNotNil(memberGroupMap, "member_group_id", group.Id)
-				resourcedata.SetMapValueIfNotNil(memberGroupMap, "member_group_type", group.VarType)
-
-				memberGroups = append(memberGroups, memberGroupMap)
-			}
-			ruleSettings["groups"] = memberGroups
+			ruleSettings["groups"] = flattenCGRGroups(*rule.Groups)
 		}
 
 		rules[i] = ruleSettings
 	}
 
 	return rules
+}
+
+func flattenCGRGroups(sdkGroups []platformclientv2.Membergroup) *schema.Set {
+	groupSet := schema.NewSet(schema.HashResource(memberGroupResource), []interface{}{})
+	for _, sdkGroup := range sdkGroups {
+		groupMap := make(map[string]interface{})
+		resourcedata.SetMapValueIfNotNil(groupMap, "member_group_id", sdkGroup.Id)
+		resourcedata.SetMapValueIfNotNil(groupMap, "member_group_type", sdkGroup.VarType)
+		groupSet.Add(groupMap)
+	}
+	return groupSet
 }
 
 func flattenQueueMemberGroupsList(queue *platformclientv2.Queue, groupType *string) *schema.Set {
@@ -647,16 +660,16 @@ func flattenQueueWrapupCodes(ctx context.Context, queueID string, proxy *Routing
 
 // Generate Functions
 
-func GenerateRoutingQueueResourceBasic(resourceID string, name string, nestedBlocks ...string) string {
+func GenerateRoutingQueueResourceBasic(resourceLabel string, name string, nestedBlocks ...string) string {
 	return fmt.Sprintf(`resource "genesyscloud_routing_queue" "%s" {
 		name = "%s"
 		%s
 	}
-	`, resourceID, name, strings.Join(nestedBlocks, "\n"))
+	`, resourceLabel, name, strings.Join(nestedBlocks, "\n"))
 }
 
 func GenerateRoutingQueueResource(
-	resourceID string,
+	resourceLabel string,
 	name string,
 	desc string,
 	acwWrapupPrompt string,
@@ -691,7 +704,7 @@ func GenerateRoutingQueueResource(
   		enable_manual_assignment = %s
 		%s
 	}
-	`, resourceID,
+	`, resourceLabel,
 		name,
 		desc,
 		acwWrapupPrompt,
@@ -711,13 +724,13 @@ func GenerateRoutingQueueResource(
 }
 
 // GenerateRoutingQueueResourceBasicWithDepends Used when testing skills group dependencies.
-func GenerateRoutingQueueResourceBasicWithDepends(resourceID string, dependsOn string, name string, nestedBlocks ...string) string {
+func GenerateRoutingQueueResourceBasicWithDepends(resourceLabel string, dependsOn string, name string, nestedBlocks ...string) string {
 	return fmt.Sprintf(`resource "genesyscloud_routing_queue" "%s" {
 		depends_on = [%s]
 		name = "%s"
 		%s
 	}
-	`, resourceID, dependsOn, name, strings.Join(nestedBlocks, "\n"))
+	`, resourceLabel, dependsOn, name, strings.Join(nestedBlocks, "\n"))
 }
 
 func GenerateAgentOwnedRouting(attrName string, enableAgentOwnedCallBacks string, maxOwnedCallBackHours string, maxOwnedCallBackDelayHours string) string {

@@ -35,7 +35,7 @@ func getAllContacts(ctx context.Context, clientConfig *platformclientv2.Configur
 		id := createComplexContact(*contact.ContactListId, *contact.Id)
 		// We construct this to adhere to Terraform's Block Label requirements
 		name := "_" + createComplexContactWithDelimiter(*contact.ContactListId, *contact.Id, "_")
-		resources[id] = &resourceExporter.ResourceMeta{Name: name}
+		resources[id] = &resourceExporter.ResourceMeta{BlockLabel: name}
 	}
 
 	return resources, nil
@@ -63,7 +63,7 @@ func createOutboundContactListContact(ctx context.Context, d *schema.ResourceDat
 		return util.BuildDiagnosticError(resourceName, msg, fmt.Errorf("%v", msg))
 	}
 	contactId := *contactResponseBody[0].Id
-	d.Set("contact_id", contactId)
+	_ = d.Set("contact_id", contactId)
 	id := createComplexContact(contactListId, contactId)
 	d.SetId(id)
 	log.Printf("Finished creating contact '%s' in contact list '%s'", contactId, contactListId)

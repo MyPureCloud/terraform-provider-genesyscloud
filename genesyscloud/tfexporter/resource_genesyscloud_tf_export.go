@@ -120,7 +120,7 @@ func ResourceTfExport() *schema.Resource {
 				ForceNew:    true,
 			},
 			"exclude_attributes": {
-				Description: "Attributes to exclude from the config when exporting resources. Each value should be of the form {resource_name}.{attribute}, e.g. 'genesyscloud_user.skills'. Excluded attributes must be optional.",
+				Description: "Attributes to exclude from the config when exporting resources. Each value should be of the form {resource_type}.{attribute}, e.g. 'genesyscloud_user.skills'. Excluded attributes must be optional.",
 				Type:        schema.TypeList,
 				Optional:    true,
 				Elem:        &schema.Schema{Type: schema.TypeString},

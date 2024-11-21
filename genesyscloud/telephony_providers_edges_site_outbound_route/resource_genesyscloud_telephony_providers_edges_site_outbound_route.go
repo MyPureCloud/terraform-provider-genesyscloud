@@ -54,7 +54,7 @@ func getAllSitesAndOutboundRoutes(ctx context.Context, sdkConfig *platformclient
 		if routes != nil && len(*routes) > 0 {
 			for _, route := range *routes {
 				outboundRouteId := buildSiteAndOutboundRouteId(*site.Id, *route.Id)
-				resources[outboundRouteId] = &resourceExporter.ResourceMeta{Name: *route.Name}
+				resources[outboundRouteId] = &resourceExporter.ResourceMeta{BlockLabel: *route.Name}
 				// When exporting managed sites, they must automatically be exported as data source
 				// Managed sites are added to the ExportAsData []string in resource_exporter
 				if tfexporter_state.IsExporterActive() {

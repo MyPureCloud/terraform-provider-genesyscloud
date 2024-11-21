@@ -18,15 +18,15 @@ type TestAssertion struct {
 func TestUnitSanitizeResourceOriginal(t *testing.T) {
 	randNumSuffix := "_[0-9]+"
 	metaMap := make(ResourceIDMetaMap)
-	metaMap["1"] = &ResourceMeta{Name: "wrapupcodemappings"}
-	metaMap["2"] = &ResourceMeta{Name: "foobar"}
-	metaMap["3"] = &ResourceMeta{Name: "wrapupcode$%^mappings"}
-	metaMap["4"] = &ResourceMeta{Name: "wrapupcode*#@mappings"}
-	metaMap["5"] = &ResourceMeta{Name: "-suuuuueeeey"}
-	metaMap["6"] = &ResourceMeta{Name: "1-2bucklemyshoe"}
-	metaMap["7"] = &ResourceMeta{Name: "unsafeUnicodeȺ®Here"}
-	metaMap["8"] = &ResourceMeta{Name: "unsafeUnicodeÊƩHere"}
-	metaMap["9"] = &ResourceMeta{Name: "unsafeUnicodeÊƩȺ®Here"}
+	metaMap["1"] = &ResourceMeta{BlockLabel: "wrapupcodemappings"}
+	metaMap["2"] = &ResourceMeta{BlockLabel: "foobar"}
+	metaMap["3"] = &ResourceMeta{BlockLabel: "wrapupcode$%^mappings"}
+	metaMap["4"] = &ResourceMeta{BlockLabel: "wrapupcode*#@mappings"}
+	metaMap["5"] = &ResourceMeta{BlockLabel: "-suuuuueeeey"}
+	metaMap["6"] = &ResourceMeta{BlockLabel: "1-2bucklemyshoe"}
+	metaMap["7"] = &ResourceMeta{BlockLabel: "unsafeUnicodeȺ®Here"}
+	metaMap["8"] = &ResourceMeta{BlockLabel: "unsafeUnicodeÊƩHere"}
+	metaMap["9"] = &ResourceMeta{BlockLabel: "unsafeUnicodeÊƩȺ®Here"}
 
 	sanitizer := NewSanitizerProvider()
 
@@ -34,47 +34,47 @@ func TestUnitSanitizeResourceOriginal(t *testing.T) {
 
 	assertions := [9]TestAssertion{
 		{
-			input:  metaMap["1"].Name,
+			input:  metaMap["1"].BlockLabel,
 			output: "wrapupcodemappings",
-			name:   "actual resource name",
+			name:   "actual resource label",
 		},
 		{
-			input:  metaMap["2"].Name,
+			input:  metaMap["2"].BlockLabel,
 			output: "foobar",
-			name:   "any name",
+			name:   "any label",
 		},
 		{
-			input:  metaMap["3"].Name,
+			input:  metaMap["3"].BlockLabel,
 			output: "wrapupcode___mappings" + randNumSuffix,
 			name:   "ascii chars",
 		},
 		{
-			input:  metaMap["4"].Name,
+			input:  metaMap["4"].BlockLabel,
 			output: "wrapupcode___mappings" + randNumSuffix,
 			name:   "ascii chars with same structure different chars",
 		},
 		{
-			input:  metaMap["5"].Name,
+			input:  metaMap["5"].BlockLabel,
 			output: "_-suuuuueeeey",
 			name:   "starting dash",
 		},
 		{
-			input:  metaMap["6"].Name,
+			input:  metaMap["6"].BlockLabel,
 			output: "_1-2bucklemyshoe",
 			name:   "starting number",
 		},
 		{
-			input:  metaMap["7"].Name,
+			input:  metaMap["7"].BlockLabel,
 			output: "unsafeUnicode__Here" + randNumSuffix,
 			name:   "unsafe unicode",
 		},
 		{
-			input:  metaMap["8"].Name,
+			input:  metaMap["8"].BlockLabel,
 			output: "unsafeUnicode__Here" + randNumSuffix,
 			name:   "unsafe unicode matching pattern",
 		},
 		{
-			input:  metaMap["9"].Name,
+			input:  metaMap["9"].BlockLabel,
 			output: "unsafeUnicode____Here",
 			name:   "unsafe unicode non-matching pattern, no added random suffix",
 		},
@@ -90,7 +90,7 @@ func TestUnitSanitizeResourceOriginal(t *testing.T) {
 }
 
 // Tests the optimized sanitizing algorithm
-func TestUnitSanitizeResourceNameOriginal(t *testing.T) {
+func TestUnitSanitizeResourceLabelOriginal(t *testing.T) {
 	simpleString := "foobar"
 	intString := "1234"
 	underscore := "_"
@@ -174,7 +174,7 @@ func TestUnitSanitizeResourceNameOriginal(t *testing.T) {
 	}
 
 	for _, assertion := range assertions {
-		output := sanitizer.S.SanitizeResourceName(assertion.input)
+		output := sanitizer.S.SanitizeResourceBlockLabel(assertion.input)
 		assertionOutputRegex := regexp.MustCompile("^" + assertion.output + "$")
 		if !assertionOutputRegex.MatchString(output) {
 			t.Errorf("%s did not sanitize correctly!\nExpected Output: %v\nActual Output: %v", assertion.name, assertion.output, output)
@@ -186,15 +186,15 @@ func TestUnitSanitizeResourceNameOriginal(t *testing.T) {
 func TestUnitSanitizeResourceOptimized(t *testing.T) {
 	randNumSuffix := "_[a-f0-9]+"
 	metaMap := make(ResourceIDMetaMap)
-	metaMap["1"] = &ResourceMeta{Name: "wrapupcodemappings"}
-	metaMap["2"] = &ResourceMeta{Name: "foobar"}
-	metaMap["3"] = &ResourceMeta{Name: "wrapupcode$%^mappings"}
-	metaMap["4"] = &ResourceMeta{Name: "wrapupcode*#@mappings"}
-	metaMap["5"] = &ResourceMeta{Name: "-suuuuueeeey"}
-	metaMap["6"] = &ResourceMeta{Name: "1-2bucklemyshoe"}
-	metaMap["7"] = &ResourceMeta{Name: "unsafeUnicodeȺ®Here"}
-	metaMap["8"] = &ResourceMeta{Name: "unsafeUnicodeÊƩHere"}
-	metaMap["9"] = &ResourceMeta{Name: "unsafeUnicodeÊƩȺ®Here"}
+	metaMap["1"] = &ResourceMeta{BlockLabel: "wrapupcodemappings"}
+	metaMap["2"] = &ResourceMeta{BlockLabel: "foobar"}
+	metaMap["3"] = &ResourceMeta{BlockLabel: "wrapupcode$%^mappings"}
+	metaMap["4"] = &ResourceMeta{BlockLabel: "wrapupcode*#@mappings"}
+	metaMap["5"] = &ResourceMeta{BlockLabel: "-suuuuueeeey"}
+	metaMap["6"] = &ResourceMeta{BlockLabel: "1-2bucklemyshoe"}
+	metaMap["7"] = &ResourceMeta{BlockLabel: "unsafeUnicodeȺ®Here"}
+	metaMap["8"] = &ResourceMeta{BlockLabel: "unsafeUnicodeÊƩHere"}
+	metaMap["9"] = &ResourceMeta{BlockLabel: "unsafeUnicodeÊƩȺ®Here"}
 
 	//We set the GENESYS_SANITIZER_OPTIMIZED environment variable to ensure the new optimized  is used
 	envVarName := "GENESYS_SANITIZER_OPTIMIZED"
@@ -212,42 +212,42 @@ func TestUnitSanitizeResourceOptimized(t *testing.T) {
 
 	assertions := [9]TestAssertion{
 		{
-			input:  metaMap["1"].Name,
+			input:  metaMap["1"].BlockLabel,
 			output: "wrapupcodemappings",
-			name:   "actual resource name",
+			name:   "actual resource label",
 		},
 		{
-			input:  metaMap["2"].Name,
+			input:  metaMap["2"].BlockLabel,
 			output: "foobar",
-			name:   "any name",
+			name:   "any label",
 		},
 		{
-			input:  strings.Join(lists.RemoveStringFromSlice("wrapupcode___mappings", []string{metaMap["3"].Name, metaMap["4"].Name}), ","),
+			input:  strings.Join(lists.RemoveStringFromSlice("wrapupcode___mappings", []string{metaMap["3"].BlockLabel, metaMap["4"].BlockLabel}), ","),
 			output: "wrapupcode___mappings" + randNumSuffix,
 			name:   "ascii chars",
 		},
 		{
-			input:  metaMap["5"].Name,
+			input:  metaMap["5"].BlockLabel,
 			output: "_-suuuuueeeey",
 			name:   "starting dash",
 		},
 		{
-			input:  metaMap["6"].Name,
+			input:  metaMap["6"].BlockLabel,
 			output: "_1-2bucklemyshoe",
 			name:   "starting number",
 		},
 		{
-			input:  metaMap["7"].Name,
+			input:  metaMap["7"].BlockLabel,
 			output: "unsafeUnicodeA_r_Here",
 			name:   "unsafe unicode",
 		},
 		{
-			input:  metaMap["8"].Name,
+			input:  metaMap["8"].BlockLabel,
 			output: "unsafeUnicodeESHHere",
 			name:   "unsafe unicode matching pattern",
 		},
 		{
-			input:  metaMap["9"].Name,
+			input:  metaMap["9"].BlockLabel,
 			output: "unsafeUnicodeESHA_r_Here",
 			name:   "unsafe unicode non-matching pattern, no added random suffix",
 		},
@@ -358,7 +358,7 @@ func TestUnitSanitizeResourceTransliterationOptimized(t *testing.T) {
 	}
 
 	for _, assertion := range assertions {
-		output := sanitizer.S.SanitizeResourceName(assertion.input)
+		output := sanitizer.S.SanitizeResourceBlockLabel(assertion.input)
 		assertionOutputRegex := regexp.MustCompile("^" + assertion.output + "$")
 		if !assertionOutputRegex.MatchString(output) {
 			t.Errorf("%s did not sanitize correctly!\nExpected Output: %v\nActual Output: %v", assertion.name, assertion.output, output)

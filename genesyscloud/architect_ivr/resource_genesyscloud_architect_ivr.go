@@ -32,7 +32,7 @@ func getAllIvrConfigs(ctx context.Context, clientConfig *platformclientv2.Config
 	}
 
 	for _, entity := range *allIvrs {
-		resources[*entity.Id] = &resourceExporter.ResourceMeta{Name: *entity.Name}
+		resources[*entity.Id] = &resourceExporter.ResourceMeta{BlockLabel: *entity.Name}
 	}
 	return resources, nil
 }

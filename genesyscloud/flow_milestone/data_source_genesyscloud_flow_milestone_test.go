@@ -13,10 +13,10 @@ import (
 
 func TestAccDataSourceFlowMilestone(t *testing.T) {
 	var (
-		milestoneRes  = "flow-milestone"
-		milestoneData = "milestoneData"
-		name          = "Terraform Code-" + uuid.NewString()
-		description   = "Sample Milestone by CX as Code"
+		milestoneResourceLabel = "flow-milestone"
+		milestoneDataLabel     = "milestoneData"
+		name                   = "Terraform Code-" + uuid.NewString()
+		description            = "Sample Milestone by CX as Code"
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -25,7 +25,7 @@ func TestAccDataSourceFlowMilestone(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config: generateFlowMilestoneResource(
-					milestoneRes,
+					milestoneResourceLabel,
 					name,
 					util.NullValue,
 					description,
@@ -33,31 +33,31 @@ func TestAccDataSourceFlowMilestone(t *testing.T) {
 			},
 			{
 				Config: generateFlowMilestoneResource(
-					milestoneRes,
+					milestoneResourceLabel,
 					name,
 					util.NullValue,
 					description,
 				) + generateFlowMilestoneDataSource(
-					milestoneData,
+					milestoneDataLabel,
 					name,
-					"genesyscloud_flow_milestone."+milestoneRes,
+					"genesyscloud_flow_milestone."+milestoneResourceLabel,
 				),
 				PreConfig: func() {
 					t.Log("sleeping to allow for eventual consistency")
 					time.Sleep(3 * time.Second)
 				},
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair("data.genesyscloud_flow_milestone."+milestoneData, "id", "genesyscloud_flow_milestone."+milestoneRes, "id"),
+					resource.TestCheckResourceAttrPair("data.genesyscloud_flow_milestone."+milestoneDataLabel, "id", "genesyscloud_flow_milestone."+milestoneResourceLabel, "id"),
 				),
 			},
 		},
 	})
 }
 
-func generateFlowMilestoneDataSource(resourceID, name, dependsOnResource string) string {
+func generateFlowMilestoneDataSource(resourceLabel, name, dependsOnResource string) string {
 	return fmt.Sprintf(`data "genesyscloud_flow_milestone" "%s" {
 		name       = "%s"
 		depends_on =[%s]
 	}
-	`, resourceID, name, dependsOnResource)
+	`, resourceLabel, name, dependsOnResource)
 }
