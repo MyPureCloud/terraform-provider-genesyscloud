@@ -64,6 +64,7 @@ func TestAccResourceJourneyViewsBasic(t *testing.T) {
 						generateGroupeByAttributes(elementsId, groupByAttributesAttribute)),
 				}),
 				),
+
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResource, "name", name),
 					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResource, "duration", duration),

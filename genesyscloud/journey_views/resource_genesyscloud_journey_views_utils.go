@@ -183,7 +183,6 @@ func buildCharts(d *schema.ResourceData) *[]platformclientv2.Journeyviewchart {
 		}
 		charts = append(charts, chart)
 	}
-
 	return &charts
 }
 
@@ -403,7 +402,6 @@ func flattenMetrics(metrics *[]platformclientv2.Journeyviewchartmetric) []interf
 	return metricsList
 }
 
-
 func flattenDisplayAttributes(displayAttributes *platformclientv2.Journeyviewchartdisplayattributes) []interface{} {
 
 	var displayAttributesList []interface{}
@@ -431,4 +429,3 @@ func flattenGroupbyAttributes(groupByAttributes *[]platformclientv2.Journeyviewc
 	}
 	return groupByAttributesList
 }
-
