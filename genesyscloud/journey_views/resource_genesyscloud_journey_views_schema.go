@@ -159,6 +159,7 @@ var (
 			},
 		},
 	}
+
 	metricsResource = &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			"id": {
@@ -274,6 +275,7 @@ var (
 			},
 		},
 	}
+
 )
 
 func SetRegistrar(regInstance registrar.Registrar) {
@@ -310,11 +312,6 @@ func ResourceJourneyViews() *schema.Resource {
 				Type:        schema.TypeString,
 				Optional:    true,
 			},
-			"version": {
-				Description: "Version of JourneyView.",
-				Type:        schema.TypeInt,
-				Computed:    true,
-			},
 			"duration": {
 				Description: "A relative timeframe for the journey view, expressed as an ISO 8601 duration. Only one of interval or duration must be specified. Periods are represented as an ISO-8601 string. For example: P1D or P1DT12H.",
 				Type:        schema.TypeString,
@@ -325,12 +322,6 @@ func ResourceJourneyViews() *schema.Resource {
 				Type:        schema.TypeList,
 				Optional:    true,
 				Elem:        elementsResource,
-			},
-			"charts": {
-				Description: "The charts within the journey view.",
-				Type:        schema.TypeList,
-				Optional:    true,
-				Elem:        chartsResource,
 			},
 		},
 	}
