@@ -8,7 +8,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v143/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
 )
 
 func buildDocumentAlternatives(requestIn map[string]interface{}) *[]platformclientv2.Knowledgedocumentalternative {
@@ -31,6 +31,46 @@ func buildDocumentAlternatives(requestIn map[string]interface{}) *[]platformclie
 		return &alternativesOut
 	}
 	return nil
+}
+
+func buildKnowledgeDocumentCreateRequest(ctx context.Context, d *schema.ResourceData, proxy *knowledgeDocumentProxy, knowledgeBaseId string) (*platformclientv2.Knowledgedocumentcreaterequest, diag.Diagnostics) {
+	requestIn := d.Get("knowledge_document").([]interface{})[0].(map[string]interface{})
+	title := requestIn["title"].(string)
+	visible := requestIn["visible"].(bool)
+
+	requestOut := platformclientv2.Knowledgedocumentcreaterequest{
+		Title:        &title,
+		Visible:      &visible,
+		Alternatives: buildDocumentAlternatives(requestIn),
+	}
+
+	if categoryName, ok := requestIn["category_name"].(string); ok && categoryName != "" {
+		knowledgeCategories, resp, getErr := proxy.getKnowledgeKnowledgebaseCategories(ctx, knowledgeBaseId, categoryName)
+		if getErr != nil {
+			return nil, util.BuildAPIDiagnosticError("genesyscloud_knowledge_document", fmt.Sprintf("Failed to get page of knowledge categories error: %s", getErr), resp)
+		}
+		if len(*knowledgeCategories.Entities) > 0 {
+			matchingCategory := (*knowledgeCategories.Entities)[0]
+			requestOut.CategoryId = matchingCategory.Id
+		}
+	}
+	if labelNames, ok := requestIn["label_names"].([]interface{}); ok && labelNames != nil {
+		labelStringList := lists.InterfaceListToStrings(labelNames)
+		labelIds := make([]string, 0)
+		for _, labelName := range labelStringList {
+			knowledgeLabels, resp, getErr := proxy.getKnowledgeKnowledgebaseLabels(ctx, knowledgeBaseId, labelName)
+			if getErr != nil {
+				return nil, util.BuildAPIDiagnosticError("genesyscloud_knowledge_document", fmt.Sprintf("Failed to get page of knowledge labels error: %s", getErr), resp)
+			}
+			if len(*knowledgeLabels.Entities) > 0 {
+				matchingLabel := (*knowledgeLabels.Entities)[0]
+				labelIds = append(labelIds, *matchingLabel.Id)
+			}
+		}
+		requestOut.LabelIds = &labelIds
+	}
+
+	return &requestOut, nil
 }
 
 func buildKnowledgeDocumentRequest(ctx context.Context, d *schema.ResourceData, proxy *knowledgeDocumentProxy, knowledgeBaseId string) (*platformclientv2.Knowledgedocumentreq, diag.Diagnostics) {

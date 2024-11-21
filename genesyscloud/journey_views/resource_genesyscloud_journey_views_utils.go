@@ -5,7 +5,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v143/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
 )
 
 func buildElements(d *schema.ResourceData) (*[]platformclientv2.Journeyviewelement, error) {
@@ -403,6 +403,7 @@ func flattenMetrics(metrics *[]platformclientv2.Journeyviewchartmetric) []interf
 	return metricsList
 }
 
+
 func flattenDisplayAttributes(displayAttributes *platformclientv2.Journeyviewchartdisplayattributes) []interface{} {
 
 	var displayAttributesList []interface{}
@@ -430,3 +431,4 @@ func flattenGroupbyAttributes(groupByAttributes *[]platformclientv2.Journeyviewc
 	}
 	return groupByAttributesList
 }
+

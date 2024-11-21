@@ -3,6 +3,7 @@ package routing_queue
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -15,7 +16,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v143/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
 )
 
 var ctx = context.Background()
@@ -221,7 +222,7 @@ func sdkGetRoutingQueueMembers(queueID, memberBy string, pageNumber, pageSize in
 	if err != nil {
 		// Nothing special to do here, but do avoid processing the response
 	} else if response.Error != nil {
-		err = fmt.Errorf(response.ErrorMessage)
+		err = errors.New(response.ErrorMessage)
 	} else {
 		err = json.Unmarshal([]byte(response.RawBody), &successPayload)
 	}

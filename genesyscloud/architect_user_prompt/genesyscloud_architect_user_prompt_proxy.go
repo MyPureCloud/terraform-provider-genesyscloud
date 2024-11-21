@@ -14,7 +14,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v143/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
 )
 
 // internalProxy holds a proxy instance that can be used throughout the package
@@ -270,7 +270,7 @@ func (p *architectUserPromptProxy) verifyPromptResourceFilesAreTranscoded(ctx co
 		userPrompt, resp, err := p.getArchitectUserPrompt(ctx, promptId, true, true, languages, false)
 		if err != nil {
 			response = resp
-			retry.NonRetryableError(fmt.Errorf("failed to read user prompt '%s': %v", promptId, err))
+			return retry.NonRetryableError(fmt.Errorf("failed to read user prompt '%s': %v", promptId, err))
 		}
 
 		if userPrompt == nil || userPrompt.Resources == nil {

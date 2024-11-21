@@ -6,7 +6,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/leekchan/timeutil"
-	"github.com/mypurecloud/platform-client-sdk-go/v143/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
 )
 
 const (
@@ -84,7 +84,7 @@ func SetMapStringMapValueIfNotNil(targetMap map[string]interface{}, key string, 
 // SetMapReferenceValueIfNotNil will read the value of a reference property and set it in a map
 func SetMapReferenceValueIfNotNil(targetMap map[string]interface{}, key string, value *platformclientv2.Domainentityref) {
 	if value != nil && value.Id != nil {
-		targetMap[key] = value.Id
+		targetMap[key] = *value.Id
 	}
 }
 

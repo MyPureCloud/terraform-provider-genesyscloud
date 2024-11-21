@@ -16,7 +16,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v143/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
 )
 
 func TestAccResourceResponseManagementResponseFooterField(t *testing.T) {
@@ -51,7 +51,10 @@ func TestAccResourceResponseManagementResponseFooterField(t *testing.T) {
 		fullPath      = filepath.Join(testFilesDir, fileName)
 	)
 
-	cleanupResponseAssets("yeti")
+	err := cleanupResponseAssets("yeti")
+	if err != nil {
+		t.Errorf("failed to cleanup response assets: %v", err)
+	}
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },

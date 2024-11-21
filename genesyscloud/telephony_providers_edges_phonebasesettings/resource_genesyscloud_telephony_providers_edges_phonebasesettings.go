@@ -18,7 +18,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v143/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
 )
 
 func createPhoneBaseSettings(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -31,13 +31,7 @@ func createPhoneBaseSettings(ctx context.Context, d *schema.ResourceData, meta i
 		Name:          &name,
 		PhoneMetaBase: phoneMetaBase,
 		Properties:    properties,
-		Lines: &[]platformclientv2.Linebase{
-			{
-				Name:         &name,
-				LineMetaBase: phoneMetaBase,
-			},
-		},
-		Capabilities: buildSdkCapabilities(d),
+		Capabilities:  buildSdkCapabilities(d),
 	}
 
 	if description != "" {
@@ -47,7 +41,24 @@ func createPhoneBaseSettings(ctx context.Context, d *schema.ResourceData, meta i
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	phoneBaseProxy := getPhoneBaseProxy(sdkConfig)
 
-	log.Printf("Creating phone base settings %s", name)
+	log.Printf("Getting phone base settings template for %s", phoneMetaBase)
+	phoneBaseSettingTemplate, resp, err := phoneBaseProxy.getPhoneBaseSettingTemplate(ctx, *phoneMetaBase.Id)
+	if err != nil {
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get phone base settings template %s error: %s", phoneMetaBase, err), resp)
+	}
+
+	phoneBaseSettingTemplateLines := *phoneBaseSettingTemplate.Lines
+	if len(phoneBaseSettingTemplateLines) == 0 {
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get phone base settings template lines for %s", phoneMetaBase), resp)
+	}
+	phoneBase.Lines = &[]platformclientv2.Linebase{
+		{
+			Name:         &name,
+			LineMetaBase: phoneBaseSettingTemplateLines[0].LineMetaBase,
+		},
+	}
+
+	log.Printf("Creating phone base settings %s for %s", name, phoneMetaBase)
 	phoneBaseSettings, resp, err := phoneBaseProxy.postPhoneBaseSetting(ctx, phoneBase)
 	if err != nil {
 		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create phone base settings %s error: %s", name, err), resp)
@@ -72,13 +83,7 @@ func updatePhoneBaseSettings(ctx context.Context, d *schema.ResourceData, meta i
 		Name:          &name,
 		PhoneMetaBase: phoneMetaBase,
 		Properties:    properties,
-		Lines: &[]platformclientv2.Linebase{
-			{
-				Name:         &name,
-				LineMetaBase: phoneMetaBase,
-			},
-		},
-		Capabilities: buildSdkCapabilities(d),
+		Capabilities:  buildSdkCapabilities(d),
 	}
 
 	if description != "" {
@@ -94,10 +99,28 @@ func updatePhoneBaseSettings(ctx context.Context, d *schema.ResourceData, meta i
 		}
 		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to read phone base settings %s | error: %s", d.Id(), getErr), resp)
 	}
-	(*phoneBase.Lines)[0].Id = (*phoneBaseSettings.Lines)[0].Id
+
+	log.Printf("Getting phone base settings template for %s", phoneMetaBase)
+	phoneBaseSettingTemplate, resp, err := phoneBaseProxy.getPhoneBaseSettingTemplate(ctx, *phoneMetaBase.Id)
+	if err != nil {
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get phone base settings template %s error: %s", phoneMetaBase, err), resp)
+	}
+
+	phoneBaseSettingTemplateLines := *phoneBaseSettingTemplate.Lines
+	if len(phoneBaseSettingTemplateLines) == 0 {
+		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get phone base settings template lines for %s", phoneMetaBase), resp)
+	}
+	phoneBase.Lines = &[]platformclientv2.Linebase{
+		{
+			Name:         &name,
+			LineMetaBase: phoneBaseSettingTemplateLines[0].LineMetaBase,
+			Id:           (*phoneBaseSettings.Lines)[0].Id,
+			State:        (*phoneBaseSettings.Lines)[0].State,
+		},
+	}
 
 	log.Printf("Updating phone base settings %s", name)
-	phoneBaseSettings, resp, err := phoneBaseProxy.putPhoneBaseSetting(ctx, d.Id(), phoneBase)
+	_, resp, err = phoneBaseProxy.putPhoneBaseSetting(ctx, d.Id(), phoneBase)
 	if err != nil {
 		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update phone base settings %s error: %s", name, err), resp)
 	}

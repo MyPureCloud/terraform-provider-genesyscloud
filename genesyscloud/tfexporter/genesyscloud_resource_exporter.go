@@ -33,7 +33,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/mohae/deepcopy"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v143/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
 )
 
 /*
@@ -1040,6 +1040,12 @@ func (g *GenesysCloudResourceExporter) getResourcesForType(resType string, provi
 				// will block until it can acquire a pooled client config object.
 				instanceState, err := getResourceState(ctx, res, id, resMeta, meta, exportComputed)
 
+				if err != nil {
+					log.Printf("Error while fetching read context type %s and instance %s : %v", resType, id, err)
+					errString := fmt.Sprintf("Failed to get state for %s instance %s: %v", resType, id, err)
+					return fmt.Errorf(errString)
+				}
+
 				if instanceState == nil {
 					log.Printf("Resource %s no longer exists. Skipping.", resMeta.Name)
 					removeChan <- id // Mark for removal from the map
@@ -1068,11 +1074,6 @@ func (g *GenesysCloudResourceExporter) getResourcesForType(resType string, provi
 					}
 					instanceState.Attributes = attributes
 					resourceType = "data."
-				}
-
-				if err != nil {
-					errString := fmt.Sprintf("Failed to get state for %s instance %s: %v", resType, id, err)
-					return fmt.Errorf(errString)
 				}
 
 				resourceChan <- resourceExporter.ResourceInfo{
@@ -1136,6 +1137,7 @@ func getResourceState(ctx context.Context, resource *schema.Resource, resID stri
 	if resource.Importer != nil && resource.Importer.StateContext != nil {
 		resourceDataArr, err := resource.Importer.StateContext(ctx, resource.Data(instanceState), meta)
 		if err != nil {
+			log.Printf("Error with resource Importer %v for id %s", resID, err)
 			return nil, diag.FromErr(err)
 		}
 		if len(resourceDataArr) > 0 {
@@ -1149,10 +1151,12 @@ func getResourceState(ctx context.Context, resource *schema.Resource, resID stri
 			strings.Contains(fmt.Sprintf("%v", err), "API Error: 410") {
 			return nil, nil
 		}
+		log.Printf("Error during RefreshWithoutUpgrade for resource  %s, %v", resID, err)
 		return nil, err
 	}
 	if state == nil || state.ID == "" {
 		// Resource no longer exists
+		log.Printf("Empty State for resource %s, %v", resID, state)
 		return nil, nil
 	}
 
