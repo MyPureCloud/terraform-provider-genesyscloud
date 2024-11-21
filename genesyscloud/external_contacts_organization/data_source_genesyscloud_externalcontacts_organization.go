@@ -76,7 +76,7 @@ func getOrganizationByNameFn(c *rc.DataSourceCache, name string, ctx context.Con
 	diag := util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
 		organizationID, retryable, response, err := proxy.getExternalContactsOrganizationIdByName(ctx, name)
 		if err != nil {
-			errMsg := util.BuildWithRetriesApiDiagnosticError(resourceType, fmt.Sprintf("error requesting queue %s | error %s", name, err), response)
+			errMsg := util.BuildWithRetriesApiDiagnosticError(resourceType, fmt.Sprintf("error requesting organization %s | error %s", name, err), response)
 			if !retryable {
 				return retry.NonRetryableError(errMsg)
 			}
