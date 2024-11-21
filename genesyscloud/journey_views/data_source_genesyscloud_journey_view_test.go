@@ -13,11 +13,11 @@ import (
 
 func TestAccDataSourceJourneyViewBasic(t *testing.T) {
 	var (
-		journeyResourceLabel = "test-journey"
-		journeyName          = "TerraformTestJourney-" + uuid.NewString()
-		duration             = "P1Y"
-		elementsBlock        = ""
-
+		journeyResourceLabel   = "test-journey"
+		journeyName            = "TerraformTestJourney-" + uuid.NewString()
+		duration               = "P1Y"
+		elementsBlock          = ""
+		chartsBlock            = ""
 		journeyDataSourceLabel = "test-journey-ds"
 	)
 
@@ -32,6 +32,7 @@ func TestAccDataSourceJourneyViewBasic(t *testing.T) {
 					journeyName,
 					duration,
 					elementsBlock,
+					chartsBlock,
 				) + generateJourneyViewDataSource(
 					journeyDataSourceLabel,
 					journeyName,
@@ -60,6 +61,7 @@ func TestAccDataSourceJourneyViewMultiple(t *testing.T) {
 		dataSourceLabel1      = "data-1"
 		dataSourceLabel2      = "data-2"
 		dataSourceLabel3      = "data-3"
+		chartsBlock           = ""
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -75,16 +77,19 @@ func TestAccDataSourceJourneyViewMultiple(t *testing.T) {
 					journeyName1,
 					duration,
 					elementsBlock,
+					chartsBlock,
 				) + generateJourneyView( // journey resource
 					journeyResourceLabel2,
 					journeyName2,
 					duration,
 					elementsBlock,
+					chartsBlock,
 				) + generateJourneyView( // journey resource
 					journeyResourceLabel3,
 					journeyName3,
 					duration,
 					elementsBlock,
+					chartsBlock,
 				) + generateJourneyViewDataSource( // journey data source
 					dataSourceLabel1,
 					journeyName1,

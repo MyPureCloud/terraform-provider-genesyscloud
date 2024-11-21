@@ -48,14 +48,6 @@ func TestAccResourceJourneyViewsBasic(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				//Create
-				Config: generateJourneyView(journeyResource, name, duration, emptyElementBlock),
-				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResource, "name", name),
-					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResource, "duration", duration),
-				),
-			},
-			{
-				//Update
 				Config: generateJourneyView(journeyResource, name, duration, generateElements(
 					elementsId,
 					elementsName,
@@ -125,7 +117,7 @@ func TestAccResourceJourneyViewsBasic(t *testing.T) {
 					""),
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResource, "name", name),
+					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResource, "name", nameUpdated),
 					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResource, "duration", duration),
 					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResource, "elements.0.id", elementsId),
 					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResource, "elements.0.name", elementsName),
@@ -179,18 +171,25 @@ func generateUserWithCustomAttrs(resourceID string, email string, name string, a
 	`, resourceID, email, name, strings.Join(attrs, "\n"))
 }
 
-func generateJourneyView(journeyResource string, name string, duration string, elementsBlock string) string {
+func generateJourneyView(journeyResource string, name string, duration string, elementsBlock string, chartsBlock string) string {
 	return fmt.Sprintf(`resource "genesyscloud_journey_views" "%s" {
     duration = "%s"
     name = "%s"
     %s
+	%s
 	}
 	`, journeyResource, duration, name, func() string {
 		if elementsBlock != "" {
 			return elementsBlock
 		}
 		return ""
-	}())
+	}(),
+		func() string {
+			if chartsBlock != "" {
+				return chartsBlock
+			}
+			return ""
+		}())
 }
 
 func generateElements(id string, name string, attributesBlock string, filter string) string {
