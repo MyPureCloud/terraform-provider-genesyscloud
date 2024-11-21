@@ -116,7 +116,7 @@ func getAllExternalContactsOrganizationFn(ctx context.Context, p *externalContac
 	allExternalOrganizations = append(allExternalOrganizations, *externalOrganizations.Entities...)
 
 	for pageNum := 2; pageNum <= *externalOrganizations.PageCount; pageNum++ {
-		externalOrganizations, _, err := p.externalContactsApi.GetExternalcontactsOrganizations(pageSize, pageNum, query, nil, "", nil, true)
+		externalOrganizations, response, err := p.externalContactsApi.GetExternalcontactsOrganizations(pageSize, pageNum, query, nil, "", nil, true)
 		if err != nil {
 			return nil, response, fmt.Errorf("failed to get external organization: %v", err)
 		}
@@ -134,7 +134,6 @@ func getAllExternalContactsOrganizationFn(ctx context.Context, p *externalContac
 			continue
 		}
 		rc.SetCache(p.externalOrganizationCache, *externalOrganization.Id, externalOrganization)
-		rc.SetCache(p.externalOrganizationCache, *externalOrganization.Name, externalOrganization)
 	}
 
 	return &allExternalOrganizations, response, nil
@@ -143,7 +142,7 @@ func getAllExternalContactsOrganizationFn(ctx context.Context, p *externalContac
 // getExternalContactsOrganizationIdByNameFn is an implementation of the function to get a Genesys Cloud external contacts organization by name
 func getExternalContactsOrganizationIdByNameFn(ctx context.Context, p *externalContactsOrganizationProxy, name string) (id string, retryable bool, apiResponse *platformclientv2.APIResponse, err error) {
 
-	externalOrganizations, response, err := getAllExternalContactsOrganizationFn(ctx, p, name)
+	externalOrganizations, response, err := p.getAllExternalContactsOrganization(ctx, name)
 	if err != nil {
 		return "", false, response, err
 	}

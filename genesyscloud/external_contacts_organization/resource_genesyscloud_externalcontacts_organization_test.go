@@ -8,6 +8,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 
+	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
@@ -15,7 +16,8 @@ import (
 
 func TestAccResourceExternalContacts(t *testing.T) {
 	var (
-		resourceLabel     = "externalOrganizationAbc"
+		uniqueStr         = uuid.NewString()
+		resourceLabel     = "externalOrganizationAbc" + uniqueStr
 		name              = "ABCCorp"
 		phoneDisplay      = "+1 321-700-1243"
 		countryCode       = "US"

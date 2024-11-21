@@ -1,0 +1,5 @@
+* [GET /api/v2/externalcontacts/contacts](https://developer.genesys.cloud/commdigital/externalcontacts/externalcontacts-apis#get-api-v2-externalcontacts-contacts)
+* [POST /api/v2/externalcontacts/contacts](https://developer.genesys.cloud/commdigital/externalcontacts/externalcontacts-apis#post-api-v2-externalcontacts-contacts)
+* [GET /api/v2/externalcontacts/contacts/{contactId}](https://developer.genesys.cloud/commdigital/externalcontacts/externalcontacts-apis#get-api-v2-externalcontacts-contacts--contactId-)
+* [PUT /api/v2/externalcontacts/contacts/{contactId}](https://developer.genesys.cloud/commdigital/externalcontacts/externalcontacts-apis#put-api-v2-externalcontacts-contacts--contactId-)
+* [DELETE /api/v2/externalcontacts/contacts/{contactId}](https://developer.genesys.cloud/commdigital/externalcontacts/externalcontacts-apis#delete-api-v2-externalcontacts-contacts--contactId-)
