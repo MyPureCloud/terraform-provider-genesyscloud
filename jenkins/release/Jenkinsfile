@@ -6,6 +6,15 @@ pipeline {
         }
   }
 
+  environment {
+    GOPATH = "$HOME/go"
+    PATH = "${env.PATH}:${HOME}/go/bin:/home/jenkins/.local/bin"
+  }
+
+  tools {
+    go 'Go 1.23.1'
+  }
+
   stages {
     stage ('Release') {
       environment {
