@@ -1,9 +1,10 @@
 package architect_flow
 
 import (
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"sync"
 	"testing"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 // providerDataSources holds a map of all registered data sources
@@ -22,7 +23,7 @@ func (r *registerTestInstance) registerTestResources() {
 	r.resourceMapMutex.Lock()
 	defer r.resourceMapMutex.Unlock()
 
-	providerResources[resourceName] = ResourceArchitectFlow()
+	providerResources[ResourceType] = ResourceArchitectFlow()
 
 }
 
@@ -31,7 +32,7 @@ func (r *registerTestInstance) registerTestDataSources() {
 	r.datasourceMapMutex.Lock()
 	defer r.datasourceMapMutex.Unlock()
 
-	providerDataSources[resourceName] = DataSourceArchitectFlow()
+	providerDataSources[ResourceType] = DataSourceArchitectFlow()
 }
 
 // initTestResources initializes all test resources and data sources.

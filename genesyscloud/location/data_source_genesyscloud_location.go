@@ -35,9 +35,9 @@ func dataSourceLocationRead(ctx context.Context, d *schema.ResourceData, m inter
 		})
 		if getErr != nil {
 			if strings.Contains(getErr.Error(), "404") {
-				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Error requesting location %s | error: %s", nameStr, getErr), resp))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Error requesting location %s | error: %s", nameStr, getErr), resp))
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Error requesting location %s | error: %s", nameStr, getErr), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Error requesting location %s | error: %s", nameStr, getErr), resp))
 		}
 
 		d.SetId(*location.Id)

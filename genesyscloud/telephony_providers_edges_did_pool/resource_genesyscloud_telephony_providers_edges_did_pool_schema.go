@@ -1,21 +1,22 @@
 package telephony_providers_edges_did_pool
 
 import (
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
 	"terraform-provider-genesyscloud/genesyscloud/validators"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
-const resourceName = "genesyscloud_telephony_providers_edges_did_pool"
+const ResourceType = "genesyscloud_telephony_providers_edges_did_pool"
 
 // SetRegistrar registers all resources, data sources and exporters in the package
 func SetRegistrar(l registrar.Registrar) {
-	l.RegisterDataSource(resourceName, DataSourceDidPool())
-	l.RegisterResource(resourceName, ResourceTelephonyDidPool())
-	l.RegisterExporter(resourceName, TelephonyDidPoolExporter())
+	l.RegisterDataSource(ResourceType, DataSourceDidPool())
+	l.RegisterResource(ResourceType, ResourceTelephonyDidPool())
+	l.RegisterExporter(ResourceType, TelephonyDidPoolExporter())
 }
 
 // TelephonyDidPoolExporter returns the resourceExporter object used to hold the genesyscloud_telephony_providers_edges_did_pool exporter's config

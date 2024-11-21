@@ -33,7 +33,7 @@ func TestAccResourceRoutingWrapupcode(t *testing.T) {
 					util.NullValue,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(resourceName+"."+codeResourceLabel1, "name", codeName1),
+					resource.TestCheckResourceAttr(ResourceType+"."+codeResourceLabel1, "name", codeName1),
 				),
 			},
 			{
@@ -44,8 +44,8 @@ func TestAccResourceRoutingWrapupcode(t *testing.T) {
 					"genesyscloud_auth_division."+divResourceLabel+".id",
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(resourceName+"."+codeResourceLabel1, "name", codeName1),
-					resource.TestCheckResourceAttrPair(resourceName+"."+codeResourceLabel1, "division_id", "genesyscloud_auth_division."+divResourceLabel, "id"),
+					resource.TestCheckResourceAttr(ResourceType+"."+codeResourceLabel1, "name", codeName1),
+					resource.TestCheckResourceAttrPair(ResourceType+"."+codeResourceLabel1, "division_id", "genesyscloud_auth_division."+divResourceLabel, "id"),
 				),
 			},
 			{
@@ -56,13 +56,13 @@ func TestAccResourceRoutingWrapupcode(t *testing.T) {
 					"genesyscloud_auth_division."+divResourceLabel+".id",
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(resourceName+"."+codeResourceLabel1, "name", codeName2),
-					resource.TestCheckResourceAttrPair(resourceName+"."+codeResourceLabel1, "division_id", "genesyscloud_auth_division."+divResourceLabel, "id"),
+					resource.TestCheckResourceAttr(ResourceType+"."+codeResourceLabel1, "name", codeName2),
+					resource.TestCheckResourceAttrPair(ResourceType+"."+codeResourceLabel1, "division_id", "genesyscloud_auth_division."+divResourceLabel, "id"),
 				),
 			},
 			{
 				// Import/Read
-				ResourceName:      resourceName + "." + codeResourceLabel1,
+				ResourceName:      ResourceType + "." + codeResourceLabel1,
 				ImportState:       true,
 				ImportStateVerify: true,
 			},
@@ -74,7 +74,7 @@ func TestAccResourceRoutingWrapupcode(t *testing.T) {
 func testVerifyWrapupcodesDestroyed(state *terraform.State) error {
 	routingAPI := platformclientv2.NewRoutingApi()
 	for _, rs := range state.RootModule().Resources {
-		if rs.Type != resourceName {
+		if rs.Type != ResourceType {
 			continue
 		}
 

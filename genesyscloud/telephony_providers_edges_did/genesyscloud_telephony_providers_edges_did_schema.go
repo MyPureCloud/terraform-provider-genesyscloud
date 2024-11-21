@@ -8,11 +8,11 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-const resourceName = "genesyscloud_telephony_providers_edges_did"
+const ResourceType = "genesyscloud_telephony_providers_edges_did"
 
 // SetRegistrar registers all resources, data sources and exporters in the package
 func SetRegistrar(l registrar.Registrar) {
-	l.RegisterDataSource(resourceName, DataSourceDid())
+	l.RegisterDataSource(ResourceType, DataSourceDid())
 }
 
 // DataSourceDid registers the genesyscloud_telephony_providers_edges_did data source

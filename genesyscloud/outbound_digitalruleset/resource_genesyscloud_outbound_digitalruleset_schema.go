@@ -18,13 +18,13 @@ resource_genesycloud_outbound_digitalruleset_schema.go holds four functions with
 3.  The datasource schema definitions for the outbound_digitalruleset datasource.
 4.  The resource exporter configuration for the outbound_digitalruleset exporter.
 */
-const resourceName = "genesyscloud_outbound_digitalruleset"
+const ResourceType = "genesyscloud_outbound_digitalruleset"
 
 // SetRegistrar registers all of the resources, datasources and exporters in the package
 func SetRegistrar(regInstance registrar.Registrar) {
-	regInstance.RegisterResource(resourceName, ResourceOutboundDigitalruleset())
-	regInstance.RegisterDataSource(resourceName, DataSourceOutboundDigitalruleset())
-	regInstance.RegisterExporter(resourceName, OutboundDigitalrulesetExporter())
+	regInstance.RegisterResource(ResourceType, ResourceOutboundDigitalruleset())
+	regInstance.RegisterDataSource(ResourceType, DataSourceOutboundDigitalruleset())
+	regInstance.RegisterExporter(ResourceType, OutboundDigitalrulesetExporter())
 }
 
 var (

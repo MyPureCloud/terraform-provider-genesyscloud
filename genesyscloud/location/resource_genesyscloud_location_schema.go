@@ -12,12 +12,12 @@ import (
 
 // SetRegistrar registers all of the resources and exporters in the package
 func SetRegistrar(l registrar.Registrar) {
-	l.RegisterDataSource(resourceName, DataSourceLocation())
-	l.RegisterResource(resourceName, ResourceLocation())
-	l.RegisterExporter(resourceName, LocationExporter())
+	l.RegisterDataSource(ResourceType, DataSourceLocation())
+	l.RegisterResource(ResourceType, ResourceLocation())
+	l.RegisterExporter(ResourceType, LocationExporter())
 }
 
-const resourceName = "genesyscloud_location"
+const ResourceType = "genesyscloud_location"
 
 func ResourceLocation() *schema.Resource {
 	return &schema.Resource{

@@ -8,11 +8,11 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-const resourceName = "genesyscloud_outbound_contact_list_contact"
+const ResourceType = "genesyscloud_outbound_contact_list_contact"
 
 func SetRegistrar(regInstance registrar.Registrar) {
-	regInstance.RegisterResource(resourceName, ResourceOutboundContactListContact())
-	regInstance.RegisterExporter(resourceName, ContactExporter())
+	regInstance.RegisterResource(ResourceType, ResourceOutboundContactListContact())
+	regInstance.RegisterExporter(ResourceType, ContactExporter())
 }
 
 var (

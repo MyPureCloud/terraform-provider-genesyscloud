@@ -20,13 +20,13 @@ func TestAccResourceJourneyOutcome(t *testing.T) {
 }
 
 func runResourceJourneyOutcomeTestCase(t *testing.T, testCaseName string) {
-	const resourceName = "genesyscloud_journey_outcome"
+	const resourceType = "genesyscloud_journey_outcome"
 	setupJourneyOutcome(t, testCaseName)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
-		Steps:             testrunner.GenerateResourceTestSteps(resourceName, testCaseName, nil),
+		Steps:             testrunner.GenerateResourceTestSteps(resourceType, testCaseName, nil),
 		CheckDestroy:      testVerifyJourneyOutcomesDestroyed,
 	})
 }

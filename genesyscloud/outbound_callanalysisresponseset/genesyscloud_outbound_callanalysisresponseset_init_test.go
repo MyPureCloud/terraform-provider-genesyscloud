@@ -33,11 +33,11 @@ func (r *registerTestInstance) registerTestResources() {
 	r.resourceMapMutex.Lock()
 	defer r.resourceMapMutex.Unlock()
 
-	providerResources[resourceName] = ResourceOutboundCallanalysisresponseset()
-	providerResources["genesyscloud_outbound_contact_list"] = obContactList.ResourceOutboundContactList()
-	providerResources["genesyscloud_flow"] = flow.ResourceArchitectFlow()
-	providerResources["genesyscloud_routing_wrapupcode"] = routingWrapupcode.ResourceRoutingWrapupCode()
-	providerResources["genesyscloud_auth_division"] = authDivision.ResourceAuthDivision()
+	providerResources[ResourceType] = ResourceOutboundCallanalysisresponseset()
+	providerResources[obContactList.ResourceType] = obContactList.ResourceOutboundContactList()
+	providerResources[flow.ResourceType] = flow.ResourceArchitectFlow()
+	providerResources[routingWrapupcode.ResourceType] = routingWrapupcode.ResourceRoutingWrapupCode()
+	providerResources[authDivision.ResourceType] = authDivision.ResourceAuthDivision()
 }
 
 // registerTestDataSources registers all data sources used in the tests.
@@ -45,7 +45,7 @@ func (r *registerTestInstance) registerTestDataSources() {
 	r.datasourceMapMutex.Lock()
 	defer r.datasourceMapMutex.Unlock()
 
-	providerDataSources[resourceName] = DataSourceOutboundCallanalysisresponseset()
+	providerDataSources[ResourceType] = DataSourceOutboundCallanalysisresponseset()
 	providerDataSources["genesyscloud_auth_division_home"] = gcloud.DataSourceAuthDivisionHome()
 }
 

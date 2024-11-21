@@ -1,16 +1,17 @@
 package station
 
 import (
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-const resourceName = "genesyscloud_station"
+const ResourceType = "genesyscloud_station"
 
 // SetRegistrar registers all of the resources, datasources and exporters in the package
 func SetRegistrar(l registrar.Registrar) {
-	l.RegisterDataSource(resourceName, DataSourceStation())
+	l.RegisterDataSource(ResourceType, DataSourceStation())
 }
 
 // DataSourceStation registers the genesyscloud_station data source

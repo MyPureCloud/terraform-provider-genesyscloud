@@ -1,11 +1,12 @@
 package task_management_worktype
 
 import (
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
 /*
@@ -16,13 +17,13 @@ resource_genesycloud_task_management_worktype_schema.go holds four functions wit
 3.  The datasource schema definitions for the task_management_worktype datasource.
 4.  The resource exporter configuration for the task_management_worktype exporter.
 */
-const resourceName = "genesyscloud_task_management_worktype"
+const ResourceType = "genesyscloud_task_management_worktype"
 
 // SetRegistrar registers all of the resources, datasources and exporters in the package
 func SetRegistrar(regInstance registrar.Registrar) {
-	regInstance.RegisterResource(resourceName, ResourceTaskManagementWorktype())
-	regInstance.RegisterDataSource(resourceName, DataSourceTaskManagementWorktype())
-	regInstance.RegisterExporter(resourceName, TaskManagementWorktypeExporter())
+	regInstance.RegisterResource(ResourceType, ResourceTaskManagementWorktype())
+	regInstance.RegisterDataSource(ResourceType, DataSourceTaskManagementWorktype())
+	regInstance.RegisterExporter(ResourceType, TaskManagementWorktypeExporter())
 }
 
 // ResourceTaskManagementWorktype registers the genesyscloud_task_management_worktype resource with Terraform

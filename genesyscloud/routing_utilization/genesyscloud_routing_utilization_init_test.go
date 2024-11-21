@@ -1,10 +1,11 @@
 package routing_utilization
 
 import (
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"sync"
 	"terraform-provider-genesyscloud/genesyscloud/routing_utilization_label"
 	"testing"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 /*
@@ -24,8 +25,8 @@ func (r *registerTestInstance) registerTestResources() {
 	r.resourceMapMutex.Lock()
 	defer r.resourceMapMutex.Unlock()
 
-	providerResources[resourceName] = ResourceRoutingUtilization()
-	providerResources["genesyscloud_routing_utilization_label"] = routing_utilization_label.ResourceRoutingUtilizationLabel()
+	providerResources[ResourceType] = ResourceRoutingUtilization()
+	providerResources[routing_utilization_label.ResourceType] = routing_utilization_label.ResourceRoutingUtilizationLabel()
 }
 
 // initTestResources initializes all test resources and data sources.

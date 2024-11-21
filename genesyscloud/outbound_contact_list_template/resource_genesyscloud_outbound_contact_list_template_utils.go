@@ -206,7 +206,7 @@ resource "%s" "%s" {
 	attempt_limit_id             = %s
 	%s
 }
-`, resourceName, resourceLabel, name, previewModeColumnName, strings.Join(previewModeAcceptedValues, ", "),
+`, ResourceType, resourceLabel, name, previewModeColumnName, strings.Join(previewModeAcceptedValues, ", "),
 		strings.Join(columnNames, ", "), automaticTimeZoneMapping, zipCodeColumnName, attemptLimitId, strings.Join(nestedBlocks, "\n"))
 }
 

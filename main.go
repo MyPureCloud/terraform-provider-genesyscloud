@@ -283,16 +283,16 @@ func registerResources() {
 
 }
 
-func (r *RegisterInstance) RegisterResource(resourceName string, resource *schema.Resource) {
+func (r *RegisterInstance) RegisterResource(resourceType string, resource *schema.Resource) {
 	r.resourceMapMutex.Lock()
 	defer r.resourceMapMutex.Unlock()
-	providerResources[resourceName] = resource
+	providerResources[resourceType] = resource
 }
 
-func (r *RegisterInstance) RegisterDataSource(dataSourceName string, datasource *schema.Resource) {
+func (r *RegisterInstance) RegisterDataSource(dataSourceType string, datasource *schema.Resource) {
 	r.datasourceMapMutex.Lock()
 	defer r.datasourceMapMutex.Unlock()
-	providerDataSources[dataSourceName] = datasource
+	providerDataSources[dataSourceType] = datasource
 }
 
 func (r *RegisterInstance) RegisterExporter(exporterName string, resourceExporter *resourceExporter.ResourceExporter) {

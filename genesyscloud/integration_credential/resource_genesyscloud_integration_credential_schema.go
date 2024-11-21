@@ -1,10 +1,11 @@
 package integration_credential
 
 import (
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 /*
@@ -15,13 +16,13 @@ resource_genesyscloud_integration_credential_schema.go should hold four types of
 3.  The datasource schema definitions for the integration_credential datasource.
 4.  The resource exporter configuration for the integration_credential exporter.
 */
-const resourceName = "genesyscloud_integration_credential"
+const ResourceType = "genesyscloud_integration_credential"
 
 // SetRegistrar registers all of the resources, datasources and exporters in the package
 func SetRegistrar(l registrar.Registrar) {
-	l.RegisterDataSource(resourceName, DataSourceIntegrationCredential())
-	l.RegisterResource(resourceName, ResourceIntegrationCredential())
-	l.RegisterExporter(resourceName, IntegrationCredentialExporter())
+	l.RegisterDataSource(ResourceType, DataSourceIntegrationCredential())
+	l.RegisterResource(ResourceType, ResourceIntegrationCredential())
+	l.RegisterExporter(ResourceType, IntegrationCredentialExporter())
 }
 
 // ResourceIntegrationCredential registers the genesyscloud_integration_credential resource with Terraform

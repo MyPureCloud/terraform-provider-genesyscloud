@@ -29,9 +29,9 @@ func TestAccDataSourceTaskManagementWorkitemSchema(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config: GenerateWorkitemSchemaResourceBasic(schemaResourceLabel, schemaName, schemaDescription) +
-					generateWorkitemSchemaDataSource(schemaDataSourceLabel, schemaName, resourceName+"."+schemaResourceLabel),
+					generateWorkitemSchemaDataSource(schemaDataSourceLabel, schemaName, ResourceType+"."+schemaResourceLabel),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair("data."+resourceName+"."+schemaDataSourceLabel, "id", resourceName+"."+schemaResourceLabel, "id"),
+					resource.TestCheckResourceAttrPair("data."+ResourceType+"."+schemaDataSourceLabel, "id", ResourceType+"."+schemaResourceLabel, "id"),
 				),
 			},
 		},
@@ -43,5 +43,5 @@ func generateWorkitemSchemaDataSource(dataSourceLabel string, name string, depen
 		name = "%s"
 		depends_on=[%s]
 	}
-	`, resourceName, dataSourceLabel, name, dependsOnResource)
+	`, ResourceType, dataSourceLabel, name, dependsOnResource)
 }

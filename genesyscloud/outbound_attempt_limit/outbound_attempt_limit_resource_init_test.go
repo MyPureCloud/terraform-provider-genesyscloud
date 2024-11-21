@@ -28,13 +28,13 @@ type registerTestInstance struct {
 func (r *registerTestInstance) registerTestResources() {
 	r.resourceMapMutex.Lock()
 	defer r.resourceMapMutex.Unlock()
-	providerResources["genesyscloud_outbound_attempt_limit"] = ResourceOutboundAttemptLimit()
+	providerResources[ResourceType] = ResourceOutboundAttemptLimit()
 }
 
 func (r *registerTestInstance) registerTestDataSources() {
 	r.datasourceMapMutex.Lock()
 	defer r.datasourceMapMutex.Unlock()
-	providerDataSources["genesyscloud_outbound_attempt_limit"] = DataSourceOutboundAttemptLimit()
+	providerDataSources[ResourceType] = DataSourceOutboundAttemptLimit()
 }
 
 func TestMain(m *testing.M) {

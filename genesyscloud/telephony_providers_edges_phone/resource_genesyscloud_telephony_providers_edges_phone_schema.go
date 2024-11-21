@@ -19,13 +19,13 @@ resource_genesyscloud_telephony_providers_edges_phone_schema.go should hold four
 3.  The datasource schema definitions for the telephony_providers_edges_phone datasource.
 4.  The resource exporter configuration for the telephony_providers_edges_phone exporter.
 */
-const resourceName = "genesyscloud_telephony_providers_edges_phone"
+const ResourceType = "genesyscloud_telephony_providers_edges_phone"
 
 // SetRegistrar registers all of the resources, datasources and exporters in the package
 func SetRegistrar(l registrar.Registrar) {
-	l.RegisterDataSource(resourceName, DataSourcePhone())
-	l.RegisterResource(resourceName, ResourcePhone())
-	l.RegisterExporter(resourceName, PhoneExporter())
+	l.RegisterDataSource(ResourceType, DataSourcePhone())
+	l.RegisterResource(ResourceType, ResourcePhone())
+	l.RegisterExporter(ResourceType, PhoneExporter())
 }
 
 // ResourcePhone registers the genesyscloud_telephony_providers_edges_phone resource with Terraform

@@ -10,13 +10,13 @@ import (
 )
 
 const (
-	resourceName = "genesyscloud_oauth_client"
+	ResourceType = "genesyscloud_oauth_client"
 )
 
 func SetRegistrar(l registrar.Registrar) {
-	l.RegisterDataSource(resourceName, DataSourceOAuthClient())
-	l.RegisterResource(resourceName, ResourceOAuthClient())
-	l.RegisterExporter(resourceName, OauthClientExporter())
+	l.RegisterDataSource(ResourceType, DataSourceOAuthClient())
+	l.RegisterResource(ResourceType, ResourceOAuthClient())
+	l.RegisterExporter(ResourceType, OauthClientExporter())
 }
 
 var (

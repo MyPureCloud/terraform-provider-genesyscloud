@@ -10,13 +10,13 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
-const resourceName = "genesyscloud_outbound_dnclist"
+const ResourceType = "genesyscloud_outbound_dnclist"
 
 // SetRegistrar registers all the resources and exporters in the package
 func SetRegistrar(l registrar.Registrar) {
-	l.RegisterDataSource(resourceName, DataSourceOutboundDncList())
-	l.RegisterResource(resourceName, ResourceOutboundDncList())
-	l.RegisterExporter(resourceName, OutboundDncListExporter())
+	l.RegisterDataSource(ResourceType, DataSourceOutboundDncList())
+	l.RegisterResource(ResourceType, ResourceOutboundDncList())
+	l.RegisterExporter(ResourceType, OutboundDncListExporter())
 }
 
 func ResourceOutboundDncList() *schema.Resource {

@@ -1,10 +1,11 @@
 package flow_loglevel
 
 import (
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 /*
@@ -15,11 +16,11 @@ resource_genesycloud_flow_loglevel_schema.go holds four functions within it:
 3.  The datasource schema definitions for the flow_loglevel datasource.
 4.  The resource exporter configuration for the flow_loglevel exporter.
 */
-const resourceName = "genesyscloud_flow_loglevel"
+const ResourceType = "genesyscloud_flow_loglevel"
 
 // SetRegistrar registers all of the resources, datasources and exporters in the package
 func SetRegistrar(regInstance registrar.Registrar) {
-	regInstance.RegisterResource(resourceName, ResourceFlowLoglevel())
+	regInstance.RegisterResource(ResourceType, ResourceFlowLoglevel())
 }
 
 // FlowMilestoneExporter returns the resourceExporter object used to hold the genesyscloud_flow_milestone exporter's config

@@ -22,10 +22,10 @@ func DataSourceRoutingEmailDomainRead(ctx context.Context, d *schema.ResourceDat
 	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
 		domainId, resp, retryable, getErr := proxy.getRoutingEmailDomainIdByName(ctx, name)
 		if getErr != nil && !retryable {
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Error requesting email domain %s | error: %s", name, getErr), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Error requesting email domain %s | error: %s", name, getErr), resp))
 		}
 		if retryable {
-			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Error requesting email domain %s | error: %s", name, getErr), resp))
+			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Error requesting email domain %s | error: %s", name, getErr), resp))
 		}
 
 		d.SetId(domainId)

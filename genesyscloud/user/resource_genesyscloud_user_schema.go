@@ -12,13 +12,13 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
-const resourceName = "genesyscloud_user"
+const ResourceType = "genesyscloud_user"
 
 // SetRegistrar registers all the resources and exporters in the package
 func SetRegistrar(l registrar.Registrar) {
-	l.RegisterDataSource(resourceName, DataSourceUser())
-	l.RegisterResource(resourceName, ResourceUser())
-	l.RegisterExporter(resourceName, UserExporter())
+	l.RegisterDataSource(ResourceType, DataSourceUser())
+	l.RegisterResource(ResourceType, ResourceUser())
+	l.RegisterExporter(ResourceType, UserExporter())
 }
 
 var (
@@ -415,7 +415,7 @@ func UserExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: provider.GetAllWithPooledClient(GetAllUsers),
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
-			"manager":                       {RefType: resourceName},
+			"manager":                       {RefType: ResourceType},
 			"division_id":                   {RefType: "genesyscloud_auth_division"},
 			"routing_skills.skill_id":       {RefType: "genesyscloud_routing_skill"},
 			"routing_languages.language_id": {RefType: "genesyscloud_routing_language"},

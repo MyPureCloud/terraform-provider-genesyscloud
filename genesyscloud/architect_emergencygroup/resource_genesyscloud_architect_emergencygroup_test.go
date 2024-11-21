@@ -19,10 +19,9 @@ import (
 func TestAccResourceArchitectEmergencyGroups(t *testing.T) {
 
 	var (
-		resourceType = "genesyscloud_architect_emergencygroup"
-		resourceName = "test_emergency_group"
-		name         = "Test Group " + uuid.NewString()
-		description  = "The test description"
+		resourceLabel = "test_emergency_group"
+		name          = "Test Group " + uuid.NewString()
+		description   = "The test description"
 
 		updatedDescription = description + " updated"
 
@@ -61,7 +60,7 @@ func TestAccResourceArchitectEmergencyGroups(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config: flowResourceConfig + GenerateArchitectEmergencyGroupResource(
-					resourceName,
+					resourceLabel,
 					name,
 					util.NullValue,
 					description,
@@ -69,11 +68,11 @@ func TestAccResourceArchitectEmergencyGroups(t *testing.T) {
 					generateEmergencyCallFlow("genesyscloud_flow."+flowResourceLabel+".id", strconv.Quote(ivrId)),
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(resourceType+"."+resourceName, "name", name),
-					resource.TestCheckResourceAttr(resourceType+"."+resourceName, "description", description),
-					resource.TestCheckResourceAttr(resourceType+"."+resourceName, "enabled", util.TrueValue),
-					resource.TestCheckResourceAttr(resourceType+"."+resourceName, "emergency_call_flows.0.ivr_ids.0", ivrId),
-					resource.TestCheckResourceAttrPair(resourceType+"."+resourceName, "emergency_call_flows.0.emergency_flow_id",
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "name", name),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "description", description),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "enabled", util.TrueValue),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "emergency_call_flows.0.ivr_ids.0", ivrId),
+					resource.TestCheckResourceAttrPair(ResourceType+"."+resourceLabel, "emergency_call_flows.0.emergency_flow_id",
 						"genesyscloud_flow."+flowResourceLabel, "id"),
 				),
 			},
@@ -85,7 +84,7 @@ func TestAccResourceArchitectEmergencyGroups(t *testing.T) {
 					inboundCallConfig,
 					false,
 				) + GenerateArchitectEmergencyGroupResource(
-					resourceName,
+					resourceLabel,
 					name,
 					util.NullValue,
 					updatedDescription,
@@ -93,17 +92,17 @@ func TestAccResourceArchitectEmergencyGroups(t *testing.T) {
 					generateEmergencyCallFlow("genesyscloud_flow."+flowResourceLabel+".id", strconv.Quote(ivrId)),
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(resourceType+"."+resourceName, "name", name),
-					resource.TestCheckResourceAttr(resourceType+"."+resourceName, "description", updatedDescription),
-					resource.TestCheckResourceAttr(resourceType+"."+resourceName, "enabled", util.FalseValue),
-					resource.TestCheckResourceAttrPair(resourceType+"."+resourceName, "emergency_call_flows.0.emergency_flow_id",
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "name", name),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "description", updatedDescription),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "enabled", util.FalseValue),
+					resource.TestCheckResourceAttrPair(ResourceType+"."+resourceLabel, "emergency_call_flows.0.emergency_flow_id",
 						"genesyscloud_flow."+flowResourceLabel, "id"),
-					resource.TestCheckResourceAttr(resourceType+"."+resourceName, "emergency_call_flows.0.ivr_ids.0", ivrId),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "emergency_call_flows.0.ivr_ids.0", ivrId),
 				),
 			},
 			{
 				// Import/Read
-				ResourceName:      resourceType + "." + resourceName,
+				ResourceName:      ResourceType + "." + resourceLabel,
 				ImportState:       true,
 				ImportStateVerify: true,
 			},

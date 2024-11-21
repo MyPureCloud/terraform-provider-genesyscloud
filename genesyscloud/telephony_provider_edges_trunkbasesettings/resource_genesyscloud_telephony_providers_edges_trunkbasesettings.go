@@ -50,7 +50,7 @@ func createTrunkBaseSettings(ctx context.Context, d *schema.ResourceData, meta i
 	}
 
 	if errorInboundSite != nil {
-		return util.BuildDiagnosticError(resourceName, fmt.Sprintf("Failed to create trunk base settings %s for inboundSiteId", name), errorInboundSite)
+		return util.BuildDiagnosticError(ResourceType, fmt.Sprintf("Failed to create trunk base settings %s for inboundSiteId", name), errorInboundSite)
 	}
 
 	if siteString != "" {
@@ -67,7 +67,7 @@ func createTrunkBaseSettings(ctx context.Context, d *schema.ResourceData, meta i
 	log.Printf("Creating trunk base settings %s", name)
 	trunkBaseSettings, resp, err := proxy.CreateTrunkBaseSetting(ctx, trunkBase)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create trunk base settings %s error: %s", name, err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to create trunk base settings %s error: %s", name, err), resp)
 	}
 	if trunkBaseSettings != nil && trunkBaseSettings.Id != nil {
 		d.SetId(*trunkBaseSettings.Id)
@@ -107,7 +107,7 @@ func updateTrunkBaseSettings(ctx context.Context, d *schema.ResourceData, meta i
 		trunkBase.InboundSite = inboundSite
 	}
 	if errorInboundSite != nil {
-		return util.BuildDiagnosticError(resourceName, fmt.Sprintf("Failed to update trunk base settings %s for inboundSite", name), errorInboundSite)
+		return util.BuildDiagnosticError(ResourceType, fmt.Sprintf("Failed to update trunk base settings %s for inboundSite", name), errorInboundSite)
 	}
 
 	if siteString != "" {
@@ -126,9 +126,9 @@ func updateTrunkBaseSettings(ctx context.Context, d *schema.ResourceData, meta i
 		trunkBaseSettings, resp, getErr := proxy.GetTrunkBaseSettingById(ctx, id)
 		if getErr != nil {
 			if util.IsStatus404(resp) {
-				return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("The trunk base settings does not exist %s error: %s", d.Id(), getErr), resp)
+				return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("The trunk base settings does not exist %s error: %s", d.Id(), getErr), resp)
 			}
-			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to read trunk base settings %s error: %s", d.Id(), getErr), resp)
+			return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to read trunk base settings %s error: %s", d.Id(), getErr), resp)
 		}
 		trunkBase.Version = trunkBaseSettings.Version
 
@@ -136,7 +136,7 @@ func updateTrunkBaseSettings(ctx context.Context, d *schema.ResourceData, meta i
 		trunkBaseSettings, resp, err := proxy.UpdateTrunkBaseSetting(ctx, d.Id(), trunkBase)
 		if err != nil {
 
-			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update trunk base settings %s error: %s", name, err), resp)
+			return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update trunk base settings %s error: %s", name, err), resp)
 		}
 		return resp, nil
 	})
@@ -151,14 +151,14 @@ func updateTrunkBaseSettings(ctx context.Context, d *schema.ResourceData, meta i
 		if util.IsStatus404(resp) {
 			return nil
 		}
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to read trunk base settings %s error: %s", d.Id(), getErr), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to read trunk base settings %s error: %s", d.Id(), getErr), resp)
 	}
 	trunkBase.Version = trunkBaseSettings.Version
 
 	log.Printf("Updating trunk base settings %s", name)
 	trunkBaseSettings, resp, err := proxy.UpdateTrunkBaseSetting(ctx, d.Id(), trunkBase)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update trunk base settings %s error: %s", d.Id(), err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update trunk base settings %s error: %s", d.Id(), err), resp)
 	}
 
 	if trunkBaseSettings != nil && trunkBaseSettings.Id != nil {
@@ -174,7 +174,7 @@ func readTrunkBaseSettings(ctx context.Context, d *schema.ResourceData, meta int
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getTrunkBaseSettingProxy(sdkConfig)
 
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceTrunkBaseSettings(), constants.DefaultConsistencyChecks, resourceName)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceTrunkBaseSettings(), constants.DefaultConsistencyChecks, ResourceType)
 
 	log.Printf("Reading trunk base settings %s", d.Id())
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
@@ -182,9 +182,9 @@ func readTrunkBaseSettings(ctx context.Context, d *schema.ResourceData, meta int
 
 		if getErr != nil {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read trunk base settings %s | error: %s", d.Id(), getErr), resp))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read trunk base settings %s | error: %s", d.Id(), getErr), resp))
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read trunk base settings %s | error: %s", d.Id(), getErr), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read trunk base settings %s | error: %s", d.Id(), getErr), resp))
 		}
 
 		if trunkBaseSettings != nil && trunkBaseSettings.Name != nil {
@@ -244,7 +244,7 @@ func deleteTrunkBaseSettings(ctx context.Context, d *schema.ResourceData, meta i
 				// trunk base settings not found, goal achieved!
 				return nil, nil
 			}
-			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete trunk base settings %s error: %s", d.Id(), err), resp)
+			return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete trunk base settings %s error: %s", d.Id(), err), resp)
 		}
 		return resp, nil
 	})
@@ -260,7 +260,7 @@ func deleteTrunkBaseSettings(ctx context.Context, d *schema.ResourceData, meta i
 				log.Printf("Deleted trunk base settings %s", d.Id())
 				return nil
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Error deleting trunk base settings %s | error: %s", d.Id(), err), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Error deleting trunk base settings %s | error: %s", d.Id(), err), resp))
 		}
 
 		if trunkBaseSettings.State != nil && *trunkBaseSettings.State == "deleted" {
@@ -269,7 +269,7 @@ func deleteTrunkBaseSettings(ctx context.Context, d *schema.ResourceData, meta i
 			return nil
 		}
 
-		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("trunk base settings %s still exists", d.Id()), resp))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("trunk base settings %s still exists", d.Id()), resp))
 	})
 }
 
@@ -279,7 +279,7 @@ func getAllTrunkBaseSettings(ctx context.Context, sdkConfig *platformclientv2.Co
 	trunkBaseSettings, resp, getErr := proxy.GetAllTrunkBaseSetting(ctx)
 
 	if getErr != nil {
-		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get all trunk base settings error: %s", getErr), resp)
+		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get all trunk base settings error: %s", getErr), resp)
 	}
 
 	defaultTbsNames := []string{

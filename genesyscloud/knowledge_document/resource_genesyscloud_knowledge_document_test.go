@@ -133,7 +133,7 @@ func TestAccResourceKnowledgeDocumentBasic(t *testing.T) {
 	})
 }
 
-func generateKnowledgeDocumentResource(resourceLabel string, knowledgeBaseResourceName string, knowledgeCategoryResourceName string, knowledgeLabelResourceName string, knowledgeCategoryName string, knowledgeLabelName string, title string, visible bool, published bool, phrase string, autocomplete bool) string {
+func generateKnowledgeDocumentResource(resourceLabel string, knowledgeBaseResourceLabel string, knowledgeCategoryResourceLabel string, knowledgeLabelResourceLabel string, knowledgeCategoryName string, knowledgeLabelName string, title string, visible bool, published bool, phrase string, autocomplete bool) string {
 	document := fmt.Sprintf(`
         resource "genesyscloud_knowledge_document" "%s" {
 			depends_on=[genesyscloud_knowledge_category.%s, genesyscloud_knowledge_label.%s]
@@ -142,9 +142,9 @@ func generateKnowledgeDocumentResource(resourceLabel string, knowledgeBaseResour
             %s
         }
         `, resourceLabel,
-		knowledgeCategoryResourceName,
-		knowledgeLabelResourceName,
-		knowledgeBaseResourceName,
+		knowledgeCategoryResourceLabel,
+		knowledgeLabelResourceLabel,
+		knowledgeBaseResourceLabel,
 		published,
 		generateKnowledgeDocumentRequestBody(knowledgeCategoryName, knowledgeLabelName, title, visible, phrase, autocomplete),
 	)

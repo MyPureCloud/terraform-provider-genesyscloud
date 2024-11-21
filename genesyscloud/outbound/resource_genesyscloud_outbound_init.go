@@ -5,7 +5,7 @@ import (
 )
 
 func SetRegistrar(l registrar.Registrar) {
-	l.RegisterDataSource(resourceName, dataSourceOutboundMessagingcampaign())
-	l.RegisterResource(resourceName, ResourceOutboundMessagingCampaign())
-	l.RegisterExporter(resourceName, OutboundMessagingcampaignExporter())
+	l.RegisterDataSource(ResourceType, dataSourceOutboundMessagingcampaign())
+	l.RegisterResource(ResourceType, ResourceOutboundMessagingCampaign())
+	l.RegisterExporter(ResourceType, OutboundMessagingcampaignExporter())
 }

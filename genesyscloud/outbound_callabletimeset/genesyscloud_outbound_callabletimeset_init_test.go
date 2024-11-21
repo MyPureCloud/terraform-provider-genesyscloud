@@ -28,7 +28,7 @@ func (r *registerTestInstance) registerTestResources() {
 	r.resourceMapMutex.Lock()
 	defer r.resourceMapMutex.Unlock()
 
-	providerResources["genesyscloud_outbound_callabletimeset"] = ResourceOutboundCallabletimeset()
+	providerResources[ResourceType] = ResourceOutboundCallabletimeset()
 }
 
 // registerTestDataSources registers all data sources used in the tests.
@@ -36,7 +36,7 @@ func (r *registerTestInstance) registerTestDataSources() {
 	r.datasourceMapMutex.Lock()
 	defer r.datasourceMapMutex.Unlock()
 
-	providerDataSources["genesyscloud_outbound_callabletimeset"] = DataSourceOutboundCallabletimeset()
+	providerDataSources[ResourceType] = DataSourceOutboundCallabletimeset()
 }
 
 // initTestResources initializes all test resources and data sources.

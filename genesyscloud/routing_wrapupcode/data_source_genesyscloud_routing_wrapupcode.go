@@ -23,11 +23,11 @@ func dataSourceRoutingWrapupcodeRead(ctx context.Context, d *schema.ResourceData
 		wrapupcodeId, retryable, proxyResponse, err := proxy.getRoutingWrapupcodeIdByName(ctx, name)
 
 		if err != nil && !retryable {
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Error requesting wrap-up code %s | error: %s", name, err), proxyResponse))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Error requesting wrap-up code %s | error: %s", name, err), proxyResponse))
 		}
 
 		if retryable {
-			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("No wrap-up code found with name %s", name), proxyResponse))
+			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("No wrap-up code found with name %s", name), proxyResponse))
 		}
 
 		d.SetId(wrapupcodeId)

@@ -16,13 +16,13 @@ resource_genesycloud_flow_outcome_schema.go holds four functions within it:
 3.  The datasource schema definitions for the flow_outcome datasource.
 4.  The resource exporter configuration for the flow_outcome exporter.
 */
-const resourceName = "genesyscloud_flow_outcome"
+const ResourceType = "genesyscloud_flow_outcome"
 
 // SetRegistrar registers all of the resources, datasources and exporters in the package
 func SetRegistrar(regInstance registrar.Registrar) {
-	regInstance.RegisterResource(resourceName, ResourceFlowOutcome())
-	regInstance.RegisterDataSource(resourceName, DataSourceFlowOutcome())
-	regInstance.RegisterExporter(resourceName, FlowOutcomeExporter())
+	regInstance.RegisterResource(ResourceType, ResourceFlowOutcome())
+	regInstance.RegisterDataSource(ResourceType, DataSourceFlowOutcome())
+	regInstance.RegisterExporter(ResourceType, FlowOutcomeExporter())
 }
 
 // ResourceFlowOutcome registers the genesyscloud_flow_outcome resource with Terraform

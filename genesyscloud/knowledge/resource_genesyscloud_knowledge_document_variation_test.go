@@ -132,7 +132,7 @@ func TestAccResourceKnowledgeDocumentVariationBasic(t *testing.T) {
 	})
 }
 
-func generateKnowledgeDocumentVariation(resourceLabel string, knowledgeBaseResourceName string, knowledgeDocumentResourceName string, published bool, bodyBlockType string, contentBlockType string, imageUrl string, hyperlink string, videoUrl string, listType string, documentText string, marks []string) string {
+func generateKnowledgeDocumentVariation(resourceLabel string, knowledgeBaseResourceLabel string, knowledgeDocumentResourceLabel string, published bool, bodyBlockType string, contentBlockType string, imageUrl string, hyperlink string, videoUrl string, listType string, documentText string, marks []string) string {
 	variation := fmt.Sprintf(`
         resource "genesyscloud_knowledge_document_variation" "%s" {
 			depends_on=[genesyscloud_knowledge_document.%s]
@@ -142,9 +142,9 @@ func generateKnowledgeDocumentVariation(resourceLabel string, knowledgeBaseResou
 			%v
         }
         `, resourceLabel,
-		knowledgeDocumentResourceName,
-		knowledgeBaseResourceName,
-		knowledgeDocumentResourceName,
+		knowledgeDocumentResourceLabel,
+		knowledgeBaseResourceLabel,
+		knowledgeDocumentResourceLabel,
 		published,
 		generateKnowledgeDocumentVariationBody(bodyBlockType, contentBlockType, imageUrl, hyperlink, videoUrl, listType, documentText, marks),
 	)

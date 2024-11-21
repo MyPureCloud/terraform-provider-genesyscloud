@@ -1,9 +1,10 @@
 package authorization_product
 
 import (
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 /*
@@ -12,11 +13,11 @@ genesyscloud_authorization_product_schema holds four functions within it:
 1.  The registration code that registers the Datasource for the package.
 2.  The datasource schema definitions for the authorization_product datasource.
 */
-const resourceName = "genesyscloud_authorization_product"
+const ResourceType = "genesyscloud_authorization_product"
 
 // SetRegistrar registers all of the resources, datasources and exporters in the package
 func SetRegistrar(regInstance registrar.Registrar) {
-	regInstance.RegisterDataSource(resourceName, DataSourceAuthorizationProduct())
+	regInstance.RegisterDataSource(ResourceType, DataSourceAuthorizationProduct())
 }
 
 // DataSourceAuthorizationProduct registers the authorization_product data source

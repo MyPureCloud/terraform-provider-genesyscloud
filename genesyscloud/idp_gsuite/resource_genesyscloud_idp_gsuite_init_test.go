@@ -24,7 +24,7 @@ func (r *registerTestInstance) registerTestResources() {
 	r.resourceMapMutex.Lock()
 	defer r.resourceMapMutex.Unlock()
 
-	providerResources[resourceName] = ResourceIdpGsuite()
+	providerResources[ResourceType] = ResourceIdpGsuite()
 }
 
 // initTestResources initializes all test_data resources.
