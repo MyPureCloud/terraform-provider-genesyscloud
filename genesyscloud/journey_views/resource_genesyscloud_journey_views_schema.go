@@ -209,6 +209,20 @@ var (
 			},
 		},
 	}
+	groupByAttributesResource = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"element_id": {
+				Description: "The element in the list of elements which is being grouped by.",
+				Type:        schema.TypeString,
+				Required:    true,
+			},
+			"attribute": {
+				Description: "The attribute of the element being grouped by.",
+				Type:        schema.TypeString,
+				Required:    true,
+			},
+		},
+	}
 	chartsResource = &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			"id": {
@@ -250,6 +264,13 @@ var (
 				Optional:    true,
 				MaxItems:    1,
 				Elem:        displayAttributesResource,
+			},
+			"group_by_attributes": {
+				Description: "A list of attributes to group the metrics by",
+				Type:        schema.TypeList,
+				Optional:    true,
+				MinItems:    1,
+				Elem:        groupByAttributesResource,
 			},
 		},
 	}
