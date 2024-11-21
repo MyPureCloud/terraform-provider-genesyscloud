@@ -2,7 +2,6 @@ package routing_skill_group
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
@@ -95,11 +94,9 @@ func createListsForSkillgroupsMembersDivisions(schemaMemberDivisionIds []string,
 	toRemove := make([]string, 0)
 
 	if allMemberDivisionsSpecified(schemaMemberDivisionIds) {
-		if len(schemaMemberDivisionIds) > 1 {
-			return nil, nil, util.BuildDiagnosticError(resourceName, fmt.Sprintf(`member_division_ids should not contain more than one item when the value of an item is "*"`), fmt.Errorf(`member_division_ids should not contain more than one item when the value of an item is "*"`))
-		}
-		toAdd, err := getAllAuthDivisionIds(meta)
-		return toAdd, nil, err
+		// member_division_ids should not contain more than one item when the value of an item is "*"
+		toAdd = []string{"*"}
+		return toAdd, nil, nil
 	}
 
 	if len(schemaMemberDivisionIds) > 0 {
