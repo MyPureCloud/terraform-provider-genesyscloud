@@ -151,59 +151,6 @@ func buildJourneyViewLinkTimeConstraint(timeConstraintSlice []interface{}) *plat
 	return &timeConstraint
 }
 
-func buildCharts(d *schema.ResourceData) *[]platformclientv2.Journeyviewchart {
-	chartsSlice := d.Get("charts").([]interface{})
-	if len(chartsSlice) == 0 {
-		emptySlice := make([]platformclientv2.Journeyviewchart, 0)
-		return &emptySlice
-	}
-
-	var charts []platformclientv2.Journeyviewchart
-
-	for _, obj := range chartsSlice {
-		chartMap, ok := obj.(map[string]interface{})
-		if !ok {
-			return nil //"chart is not a map[string]interface{}")
-		}
-
-		var chart platformclientv2.Journeyviewchart
-		//element.Id = getStringPointerFromInterface(elemMap["id"])
-		chart.Name = getStringPointerFromInterface(chartMap["name"])
-		chart.Version = getIntPointerFromInterface(chartMap["version"])
-		if metricsSlice, ok := chartMap["metrics"].([]interface{}); ok {
-			chart.Metrics = buildMetrics(metricsSlice)
-		}
-		charts = append(charts, chart)
-	}
-
-	return &charts
-}
-
-func buildMetrics(objsSlice []interface{}) *[]platformclientv2.Journeyviewchartmetric {
-	if len(objsSlice) == 0 {
-		emptySlice := make([]platformclientv2.Journeyviewchartmetric, 0)
-		return &emptySlice
-	}
-
-	var objs []platformclientv2.Journeyviewchartmetric
-
-	for _, obj := range objsSlice {
-		objMap, ok := obj.(map[string]interface{})
-		if !ok {
-			return nil //"metric is not a map[string]interface{}")
-		}
-
-		var metric platformclientv2.Journeyviewchartmetric
-		metric.Id = getStringPointerFromInterface(objMap["id"])
-		metric.Aggregate = getStringPointerFromInterface(objMap["aggregate"])
-		metric.DisplayLabel = getStringPointerFromInterface(objMap["display_label"])
-		metric.ElementId = getStringPointerFromInterface(objMap["element_id"])
-		objs = append(objs, metric)
-	}
-
-	return &objs
-}
-
 func getStringPointerFromInterface(val interface{}) *string {
 	if valString, ok := val.(string); ok {
 		if valString == "" {
@@ -313,36 +260,4 @@ func flattenConstraints(constraint *platformclientv2.Journeyviewlinktimeconstrai
 	resourcedata.SetMapValueIfNotNil(constraintMap, "value", constraint.Value)
 	constraintsList = append(constraintsList, constraintMap)
 	return constraintsList
-}
-
-func flattenCharts(charts *[]platformclientv2.Journeyviewchart) []interface{} {
-	if len(*charts) == 0 {
-		return nil
-	}
-	var chartsList []interface{}
-	for _, chart := range *charts {
-		chartsMap := make(map[string]interface{})
-		resourcedata.SetMapValueIfNotNil(chartsMap, "id", chart.Id)
-		resourcedata.SetMapValueIfNotNil(chartsMap, "name", chart.Name)
-		resourcedata.SetMapValueIfNotNil(chartsMap, "version", chart.Version)
-		resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(chartsMap, "metrics", chart.Metrics, flattenMetrics)
-		chartsList = append(chartsList, chartsMap)
-	}
-	return chartsList
-}
-
-func flattenMetrics(metrics *[]platformclientv2.Journeyviewchartmetric) []interface{} {
-	if len(*metrics) == 0 {
-		return nil
-	}
-	var metricsList []interface{}
-	for _, metric := range *metrics {
-		metricsMap := make(map[string]interface{})
-		resourcedata.SetMapValueIfNotNil(metricsMap, "id", metric.Id)
-		resourcedata.SetMapValueIfNotNil(metricsMap, "element_id", metric.ElementId)
-		resourcedata.SetMapValueIfNotNil(metricsMap, "aggregate", metric.Aggregate)
-		resourcedata.SetMapValueIfNotNil(metricsMap, "display_label", metric.DisplayLabel)
-		metricsList = append(metricsList, metricsMap)
-	}
-	return metricsList
 }

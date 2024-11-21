@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"strconv"
 	rc "terraform-provider-genesyscloud/genesyscloud/resource_cache"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
@@ -16,7 +15,7 @@ type getAllJourneyViewsFunc func(ctx context.Context, p *journeyViewsProxy, name
 type getJourneyViewByNameFunc func(ctx context.Context, p *journeyViewsProxy, name string) (string, *platformclientv2.APIResponse, error, bool)
 type getJourneyViewByViewIdFunc func(ctx context.Context, p *journeyViewsProxy, viewId string) (*platformclientv2.Journeyview, *platformclientv2.APIResponse, error)
 type createJourneyViewFunc func(ctx context.Context, p *journeyViewsProxy, journeyView *platformclientv2.Journeyview) (*platformclientv2.Journeyview, *platformclientv2.APIResponse, error)
-type updateJourneyViewFunc func(ctx context.Context, p *journeyViewsProxy, viewId string, versionId int, journeyView *platformclientv2.Journeyview) (*platformclientv2.Journeyview, *platformclientv2.APIResponse, error)
+type updateJourneyViewFunc func(ctx context.Context, p *journeyViewsProxy, viewId string, journeyView *platformclientv2.Journeyview) (*platformclientv2.Journeyview, *platformclientv2.APIResponse, error)
 type deleteJourneyViewFunc func(ctx context.Context, p *journeyViewsProxy, viewId string) (*platformclientv2.APIResponse, error)
 
 type journeyViewsProxy struct {
@@ -70,8 +69,8 @@ func (p *journeyViewsProxy) createJourneyView(ctx context.Context, journeyView *
 	return p.createJourneyViewAttr(ctx, p, journeyView)
 }
 
-func (p *journeyViewsProxy) updateJourneyView(ctx context.Context, viewId string, versionId int, journeyView *platformclientv2.Journeyview) (*platformclientv2.Journeyview, *platformclientv2.APIResponse, error) {
-	return p.updateJourneyViewAttr(ctx, p, viewId, versionId, journeyView)
+func (p *journeyViewsProxy) updateJourneyView(ctx context.Context, viewId string, journeyView *platformclientv2.Journeyview) (*platformclientv2.Journeyview, *platformclientv2.APIResponse, error) {
+	return p.updateJourneyViewAttr(ctx, p, viewId, journeyView)
 }
 
 func (p *journeyViewsProxy) deleteJourneyView(ctx context.Context, viewId string) (*platformclientv2.APIResponse, error) {
@@ -115,9 +114,8 @@ func createJourneyViewFn(_ context.Context, p *journeyViewsProxy, journeyView *p
 	return p.journeyViewsApi.PostJourneyViews(*journeyView)
 }
 
-func updateJourneyViewFn(_ context.Context, p *journeyViewsProxy, viewId string, versionId int, journeyView *platformclientv2.Journeyview) (*platformclientv2.Journeyview, *platformclientv2.APIResponse, error) {
-	versionIdToString := strconv.Itoa(versionId)
-	return p.journeyViewsApi.PutJourneyViewVersion(viewId, versionIdToString, *journeyView)
+func updateJourneyViewFn(_ context.Context, p *journeyViewsProxy, viewId string, journeyView *platformclientv2.Journeyview) (*platformclientv2.Journeyview, *platformclientv2.APIResponse, error) {
+	return p.journeyViewsApi.PostJourneyViewVersions(viewId, *journeyView)
 }
 
 func deleteJourneyViewFn(_ context.Context, p *journeyViewsProxy, viewId string) (*platformclientv2.APIResponse, error) {
