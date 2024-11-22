@@ -112,17 +112,17 @@ func ResourceExternalContactsOrganization() *schema.Resource {
 			`twitter_id`: {
 				Description: `Contact twitter id.`,
 				Type:        schema.TypeString,
-				Optional:    true,
+				Required:    true,
 			},
 			`name`: {
 				Description: `Contact twitter name.`,
 				Type:        schema.TypeString,
-				Optional:    true,
+				Required:    true,
 			},
 			`screen_name`: {
 				Description: `Contact twitter screen name.`,
 				Type:        schema.TypeString,
-				Optional:    true,
+				Required:    true,
 			},
 		},
 	}
