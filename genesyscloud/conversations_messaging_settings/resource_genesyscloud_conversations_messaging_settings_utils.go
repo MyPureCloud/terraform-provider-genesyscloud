@@ -180,12 +180,12 @@ func flattenEventSettings(eventSettings *platformclientv2.Eventsetting) []interf
 	return eventSettingList
 }
 
-func GenerateConversationsMessagingSettingsResource(resourceID string, name string, nestedBlocks ...string) string {
+func GenerateConversationsMessagingSettingsResource(resourceLabel string, name string, nestedBlocks ...string) string {
 	return fmt.Sprintf(`resource "genesyscloud_conversations_messaging_settings" "%s" {
 		name = "%s"
 		%s
 	}
-	`, resourceID, name, strings.Join(nestedBlocks, "\n"))
+	`, resourceLabel, name, strings.Join(nestedBlocks, "\n"))
 }
 
 func GenerateTypingOnSetting(inbound, outbound string) string {

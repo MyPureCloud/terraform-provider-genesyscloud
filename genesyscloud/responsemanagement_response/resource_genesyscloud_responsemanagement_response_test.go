@@ -22,7 +22,7 @@ import (
 func TestAccResourceResponseManagementResponseFooterField(t *testing.T) {
 	var (
 		// Responses initial values
-		responseResource          = "response-resource"
+		responseResourceLabel     = "response-resource"
 		name1                     = "Response-" + uuid.NewString()
 		textsContent1             = "Random text block content string"
 		textsContentTypes         = []string{"text/plain", "text/html"}
@@ -39,16 +39,16 @@ func TestAccResourceResponseManagementResponseFooterField(t *testing.T) {
 		textsContent2 = "Random text block content string new"
 
 		// Library resources variables
-		libraryResource1 = "library-resource1"
-		libraryName1     = "Referencelibrary1"
-		libraryResource2 = "library-resource2"
-		libraryName2     = "Referencelibrary2"
+		libraryResourceLabel1 = "library-resource1"
+		libraryName1          = "Referencelibrary1"
+		libraryResourceLabel2 = "library-resource2"
+		libraryName2          = "Referencelibrary2"
 
 		// Asset resources variables
-		testFilesDir  = "test_responseasset_data"
-		assetResource = "asset-resource-response"
-		fileName      = "yeti-img.png"
-		fullPath      = filepath.Join(testFilesDir, fileName)
+		testFilesDir       = "test_responseasset_data"
+		assetResourceLabel = "asset-resource-response"
+		fileName           = "yeti-img.png"
+		fullPath           = filepath.Join(testFilesDir, fileName)
 	)
 
 	err := cleanupResponseAssets("yeti")
@@ -63,12 +63,12 @@ func TestAccResourceResponseManagementResponseFooterField(t *testing.T) {
 			{
 				// Create with required values
 				Config: respmanagementLibrary.GenerateResponseManagementLibraryResource(
-					libraryResource1,
+					libraryResourceLabel1,
 					libraryName1,
 				) + generateResponseManagementResponseResource(
-					responseResource,
+					responseResourceLabel,
 					name1,
-					[]string{"genesyscloud_responsemanagement_library." + libraryResource1 + ".id"},
+					[]string{"genesyscloud_responsemanagement_library." + libraryResourceLabel1 + ".id"},
 					util.NullValue,
 					util.NullValue,
 					util.NullValue,
@@ -80,31 +80,31 @@ func TestAccResourceResponseManagementResponseFooterField(t *testing.T) {
 					),
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResource, "name", name1),
+					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResourceLabel, "name", name1),
 					resource.TestCheckResourceAttrPair(
-						"genesyscloud_responsemanagement_response."+responseResource, "library_ids.0",
-						"genesyscloud_responsemanagement_library."+libraryResource1, "id"),
-					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResource, "texts.0.content", textsContent1),
-					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResource, "texts.0.content_type", textsContentTypes[0]),
+						"genesyscloud_responsemanagement_response."+responseResourceLabel, "library_ids.0",
+						"genesyscloud_responsemanagement_library."+libraryResourceLabel1, "id"),
+					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResourceLabel, "texts.0.content", textsContent1),
+					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResourceLabel, "texts.0.content_type", textsContentTypes[0]),
 				),
 			},
 			{
 				// Update with new name and texts and add remaining values
 				Config: respmanagementLibrary.GenerateResponseManagementLibraryResource(
-					libraryResource1,
+					libraryResourceLabel1,
 					libraryName1,
 				) + respManagementRespAsset.GenerateResponseManagementResponseAssetResource(
-					assetResource,
+					assetResourceLabel,
 					fullPath,
 					util.NullValue,
 				) + generateResponseManagementResponseResource(
-					responseResource,
+					responseResourceLabel,
 					name2,
-					[]string{"genesyscloud_responsemanagement_library." + libraryResource1 + ".id"},
+					[]string{"genesyscloud_responsemanagement_library." + libraryResourceLabel1 + ".id"},
 					strconv.Quote(interactionTypes[0]),
 					util.GenerateJsonSchemaDocStr(substitutionsSchema),
 					strconv.Quote(responseTypes[3]),
-					[]string{"genesyscloud_responsemanagement_responseasset." + assetResource + ".id"},
+					[]string{"genesyscloud_responsemanagement_responseasset." + assetResourceLabel + ".id"},
 					generateFooterBlock(footerType, footerResource),
 					generateTextsBlock(
 						textsContent2,
@@ -118,45 +118,45 @@ func TestAccResourceResponseManagementResponseFooterField(t *testing.T) {
 					),
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResource, "name", name2),
+					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResourceLabel, "name", name2),
 					resource.TestCheckResourceAttrPair(
-						"genesyscloud_responsemanagement_response."+responseResource, "library_ids.0",
-						"genesyscloud_responsemanagement_library."+libraryResource1, "id"),
-					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResource, "texts.0.content", textsContent2),
-					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResource, "texts.0.content_type", textsContentTypes[1]),
-					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResource, "interaction_type", interactionTypes[0]),
-					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResource, "substitutions.0.id", substitutionsId),
-					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResource, "substitutions.0.description", substitutionsDescription),
-					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResource, "substitutions.0.default_value", substitutionsDefaultValue),
-					util.ValidateValueInJsonAttr("genesyscloud_responsemanagement_response."+responseResource, "substitutions_schema_id", "type", "object"),
-					util.ValidateValueInJsonAttr("genesyscloud_responsemanagement_response."+responseResource, "substitutions_schema_id", "properties."+substitutionsSchema+".type", "string"),
-					util.ValidateValueInJsonAttr("genesyscloud_responsemanagement_response."+responseResource, "substitutions_schema_id", "required", substitutionsSchema),
-					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResource, "response_type", responseTypes[3]),
+						"genesyscloud_responsemanagement_response."+responseResourceLabel, "library_ids.0",
+						"genesyscloud_responsemanagement_library."+libraryResourceLabel1, "id"),
+					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResourceLabel, "texts.0.content", textsContent2),
+					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResourceLabel, "texts.0.content_type", textsContentTypes[1]),
+					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResourceLabel, "interaction_type", interactionTypes[0]),
+					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResourceLabel, "substitutions.0.id", substitutionsId),
+					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResourceLabel, "substitutions.0.description", substitutionsDescription),
+					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResourceLabel, "substitutions.0.default_value", substitutionsDefaultValue),
+					util.ValidateValueInJsonAttr("genesyscloud_responsemanagement_response."+responseResourceLabel, "substitutions_schema_id", "type", "object"),
+					util.ValidateValueInJsonAttr("genesyscloud_responsemanagement_response."+responseResourceLabel, "substitutions_schema_id", "properties."+substitutionsSchema+".type", "string"),
+					util.ValidateValueInJsonAttr("genesyscloud_responsemanagement_response."+responseResourceLabel, "substitutions_schema_id", "required", substitutionsSchema),
+					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResourceLabel, "response_type", responseTypes[3]),
 					resource.TestCheckResourceAttrPair(
-						"genesyscloud_responsemanagement_response."+responseResource, "asset_ids.0",
-						"genesyscloud_responsemanagement_responseasset."+assetResource, "id"),
+						"genesyscloud_responsemanagement_response."+responseResourceLabel, "asset_ids.0",
+						"genesyscloud_responsemanagement_responseasset."+assetResourceLabel, "id"),
 				),
 			},
 			{
 				// Add more texts and change libraries
 				Config: respmanagementLibrary.GenerateResponseManagementLibraryResource(
-					libraryResource1,
+					libraryResourceLabel1,
 					libraryName1,
 				) + respmanagementLibrary.GenerateResponseManagementLibraryResource(
-					libraryResource2,
+					libraryResourceLabel2,
 					libraryName2,
 				) + respManagementRespAsset.GenerateResponseManagementResponseAssetResource(
-					assetResource,
+					assetResourceLabel,
 					fullPath,
 					util.NullValue,
 				) + generateResponseManagementResponseResource(
-					responseResource,
+					responseResourceLabel,
 					name2,
-					[]string{"genesyscloud_responsemanagement_library." + libraryResource2 + ".id", "genesyscloud_responsemanagement_library." + libraryResource1 + ".id"},
+					[]string{"genesyscloud_responsemanagement_library." + libraryResourceLabel2 + ".id", "genesyscloud_responsemanagement_library." + libraryResourceLabel1 + ".id"},
 					strconv.Quote(interactionTypes[0]),
 					util.GenerateJsonSchemaDocStr(substitutionsSchema),
 					strconv.Quote(responseTypes[3]),
-					[]string{"genesyscloud_responsemanagement_responseasset." + assetResource + ".id"},
+					[]string{"genesyscloud_responsemanagement_responseasset." + assetResourceLabel + ".id"},
 					generateTextsBlock(
 						textsContent1,
 						textsContentTypes[0],
@@ -175,33 +175,33 @@ func TestAccResourceResponseManagementResponseFooterField(t *testing.T) {
 					),
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResource, "name", name2),
+					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResourceLabel, "name", name2),
 					resource.TestCheckResourceAttrPair(
-						"genesyscloud_responsemanagement_response."+responseResource, "library_ids.0",
-						"genesyscloud_responsemanagement_library."+libraryResource2, "id"),
+						"genesyscloud_responsemanagement_response."+responseResourceLabel, "library_ids.0",
+						"genesyscloud_responsemanagement_library."+libraryResourceLabel2, "id"),
 					resource.TestCheckResourceAttrPair(
-						"genesyscloud_responsemanagement_response."+responseResource, "library_ids.1",
-						"genesyscloud_responsemanagement_library."+libraryResource1, "id"),
-					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResource, "texts.0.content", textsContent2),
-					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResource, "texts.0.content_type", textsContentTypes[1]),
-					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResource, "texts.1.content", textsContent1),
-					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResource, "texts.1.content_type", textsContentTypes[0]),
-					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResource, "interaction_type", interactionTypes[0]),
-					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResource, "substitutions.0.id", substitutionsId),
-					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResource, "substitutions.0.description", substitutionsDescription),
-					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResource, "substitutions.0.default_value", substitutionsDefaultValue),
-					util.ValidateValueInJsonAttr("genesyscloud_responsemanagement_response."+responseResource, "substitutions_schema_id", "type", "object"),
-					util.ValidateValueInJsonAttr("genesyscloud_responsemanagement_response."+responseResource, "substitutions_schema_id", "properties."+substitutionsSchema+".type", "string"),
-					util.ValidateValueInJsonAttr("genesyscloud_responsemanagement_response."+responseResource, "substitutions_schema_id", "required", substitutionsSchema),
-					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResource, "response_type", responseTypes[3]),
+						"genesyscloud_responsemanagement_response."+responseResourceLabel, "library_ids.1",
+						"genesyscloud_responsemanagement_library."+libraryResourceLabel1, "id"),
+					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResourceLabel, "texts.0.content", textsContent2),
+					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResourceLabel, "texts.0.content_type", textsContentTypes[1]),
+					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResourceLabel, "texts.1.content", textsContent1),
+					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResourceLabel, "texts.1.content_type", textsContentTypes[0]),
+					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResourceLabel, "interaction_type", interactionTypes[0]),
+					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResourceLabel, "substitutions.0.id", substitutionsId),
+					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResourceLabel, "substitutions.0.description", substitutionsDescription),
+					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResourceLabel, "substitutions.0.default_value", substitutionsDefaultValue),
+					util.ValidateValueInJsonAttr("genesyscloud_responsemanagement_response."+responseResourceLabel, "substitutions_schema_id", "type", "object"),
+					util.ValidateValueInJsonAttr("genesyscloud_responsemanagement_response."+responseResourceLabel, "substitutions_schema_id", "properties."+substitutionsSchema+".type", "string"),
+					util.ValidateValueInJsonAttr("genesyscloud_responsemanagement_response."+responseResourceLabel, "substitutions_schema_id", "required", substitutionsSchema),
+					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResourceLabel, "response_type", responseTypes[3]),
 					resource.TestCheckResourceAttrPair(
-						"genesyscloud_responsemanagement_response."+responseResource, "asset_ids.0",
-						"genesyscloud_responsemanagement_responseasset."+assetResource, "id"),
+						"genesyscloud_responsemanagement_response."+responseResourceLabel, "asset_ids.0",
+						"genesyscloud_responsemanagement_responseasset."+assetResourceLabel, "id"),
 				),
 			},
 			{
 				// Import/Read
-				ResourceName:            "genesyscloud_responsemanagement_response." + responseResource,
+				ResourceName:            "genesyscloud_responsemanagement_response." + responseResourceLabel,
 				ImportState:             true,
 				ImportStateVerify:       true,
 				ImportStateVerifyIgnore: []string{"substitutions_schema_id", "messaging_template", "response_type"},
@@ -215,7 +215,7 @@ func TestAccResourceResponseManagementResponseMessaging(t *testing.T) {
 	t.Parallel()
 	var (
 		// Responses initial values
-		responseResource          = "response-resource-message"
+		responseResourceLabel     = "response-resource-message"
 		name1                     = "Response-message" + uuid.NewString()
 		textsContent1             = "Random text block content string"
 		textsContentTypes         = []string{"text/plain", "text/html"}
@@ -233,16 +233,16 @@ func TestAccResourceResponseManagementResponseMessaging(t *testing.T) {
 		textsContent2 = "Random text block content string new"
 
 		// Library resources variables
-		libraryResource1 = "library-resource1-message"
-		libraryName1     = "ReferencelibraryMessage1"
-		libraryResource2 = "library-resource2-message"
-		libraryName2     = "ReferencelibraryMessage2"
+		libraryResourceLabel1 = "library-resource1-message"
+		libraryName1          = "ReferencelibraryMessage1"
+		libraryResourceLabel2 = "library-resource2-message"
+		libraryName2          = "ReferencelibraryMessage2"
 
 		// Asset resources variables
-		testFilesDir  = "test_responseasset_data"
-		assetResource = "asset-resource-response-message"
-		fileName      = "genesys-img-asset.png"
-		fullPath      = filepath.Join(testFilesDir, fileName)
+		testFilesDir       = "test_responseasset_data"
+		assetResourceLabel = "asset-resource-response-message"
+		fileName           = "genesys-img-asset.png"
+		fullPath           = filepath.Join(testFilesDir, fileName)
 	)
 
 	cleanupResponseAssets("genesys")
@@ -255,12 +255,12 @@ func TestAccResourceResponseManagementResponseMessaging(t *testing.T) {
 			{
 				// Create with required values
 				Config: respmanagementLibrary.GenerateResponseManagementLibraryResource(
-					libraryResource1,
+					libraryResourceLabel1,
 					libraryName1,
 				) + generateResponseManagementResponseResource(
-					responseResource,
+					responseResourceLabel,
 					name1,
-					[]string{"genesyscloud_responsemanagement_library." + libraryResource1 + ".id"},
+					[]string{"genesyscloud_responsemanagement_library." + libraryResourceLabel1 + ".id"},
 					util.NullValue,
 					util.NullValue,
 					util.NullValue,
@@ -272,31 +272,31 @@ func TestAccResourceResponseManagementResponseMessaging(t *testing.T) {
 					),
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResource, "name", name1),
+					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResourceLabel, "name", name1),
 					resource.TestCheckResourceAttrPair(
-						"genesyscloud_responsemanagement_response."+responseResource, "library_ids.0",
-						"genesyscloud_responsemanagement_library."+libraryResource1, "id"),
-					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResource, "texts.0.content", textsContent1),
-					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResource, "texts.0.content_type", textsContentTypes[0]),
+						"genesyscloud_responsemanagement_response."+responseResourceLabel, "library_ids.0",
+						"genesyscloud_responsemanagement_library."+libraryResourceLabel1, "id"),
+					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResourceLabel, "texts.0.content", textsContent1),
+					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResourceLabel, "texts.0.content_type", textsContentTypes[0]),
 				),
 			},
 			{
 				// Update with new name and texts and add remaining values
 				Config: respmanagementLibrary.GenerateResponseManagementLibraryResource(
-					libraryResource1,
+					libraryResourceLabel1,
 					libraryName1,
 				) + respManagementRespAsset.GenerateResponseManagementResponseAssetResource(
-					assetResource,
+					assetResourceLabel,
 					fullPath,
 					util.NullValue,
 				) + generateResponseManagementResponseResource(
-					responseResource,
+					responseResourceLabel,
 					name2,
-					[]string{"genesyscloud_responsemanagement_library." + libraryResource1 + ".id"},
+					[]string{"genesyscloud_responsemanagement_library." + libraryResourceLabel1 + ".id"},
 					strconv.Quote(interactionTypes[0]),
 					util.GenerateJsonSchemaDocStr(substitutionsSchema),
 					strconv.Quote(responseTypes[0]),
-					[]string{"genesyscloud_responsemanagement_responseasset." + assetResource + ".id"},
+					[]string{"genesyscloud_responsemanagement_responseasset." + assetResourceLabel + ".id"},
 					generateTextsBlock(
 						textsContent2,
 						textsContentTypes[1],
@@ -316,48 +316,48 @@ func TestAccResourceResponseManagementResponseMessaging(t *testing.T) {
 					),
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResource, "name", name2),
+					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResourceLabel, "name", name2),
 					resource.TestCheckResourceAttrPair(
-						"genesyscloud_responsemanagement_response."+responseResource, "library_ids.0",
-						"genesyscloud_responsemanagement_library."+libraryResource1, "id"),
-					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResource, "texts.0.content", textsContent2),
-					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResource, "texts.0.content_type", textsContentTypes[1]),
-					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResource, "interaction_type", interactionTypes[0]),
-					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResource, "substitutions.0.id", substitutionsId),
-					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResource, "substitutions.0.description", substitutionsDescription),
-					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResource, "substitutions.0.default_value", substitutionsDefaultValue),
-					util.ValidateValueInJsonAttr("genesyscloud_responsemanagement_response."+responseResource, "substitutions_schema_id", "type", "object"),
-					util.ValidateValueInJsonAttr("genesyscloud_responsemanagement_response."+responseResource, "substitutions_schema_id", "properties."+substitutionsSchema+".type", "string"),
-					util.ValidateValueInJsonAttr("genesyscloud_responsemanagement_response."+responseResource, "substitutions_schema_id", "required", substitutionsSchema),
-					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResource, "response_type", responseTypes[0]),
-					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResource, "messaging_template.0.whats_app.0.name", templateName),
-					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResource, "messaging_template.0.whats_app.0.namespace", templateNamespace),
-					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResource, "messaging_template.0.whats_app.0.language", "en_US"),
+						"genesyscloud_responsemanagement_response."+responseResourceLabel, "library_ids.0",
+						"genesyscloud_responsemanagement_library."+libraryResourceLabel1, "id"),
+					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResourceLabel, "texts.0.content", textsContent2),
+					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResourceLabel, "texts.0.content_type", textsContentTypes[1]),
+					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResourceLabel, "interaction_type", interactionTypes[0]),
+					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResourceLabel, "substitutions.0.id", substitutionsId),
+					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResourceLabel, "substitutions.0.description", substitutionsDescription),
+					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResourceLabel, "substitutions.0.default_value", substitutionsDefaultValue),
+					util.ValidateValueInJsonAttr("genesyscloud_responsemanagement_response."+responseResourceLabel, "substitutions_schema_id", "type", "object"),
+					util.ValidateValueInJsonAttr("genesyscloud_responsemanagement_response."+responseResourceLabel, "substitutions_schema_id", "properties."+substitutionsSchema+".type", "string"),
+					util.ValidateValueInJsonAttr("genesyscloud_responsemanagement_response."+responseResourceLabel, "substitutions_schema_id", "required", substitutionsSchema),
+					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResourceLabel, "response_type", responseTypes[0]),
+					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResourceLabel, "messaging_template.0.whats_app.0.name", templateName),
+					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResourceLabel, "messaging_template.0.whats_app.0.namespace", templateNamespace),
+					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResourceLabel, "messaging_template.0.whats_app.0.language", "en_US"),
 					resource.TestCheckResourceAttrPair(
-						"genesyscloud_responsemanagement_response."+responseResource, "asset_ids.0",
-						"genesyscloud_responsemanagement_responseasset."+assetResource, "id"),
+						"genesyscloud_responsemanagement_response."+responseResourceLabel, "asset_ids.0",
+						"genesyscloud_responsemanagement_responseasset."+assetResourceLabel, "id"),
 				),
 			},
 			{
 				// Add more texts and change libraries
 				Config: respmanagementLibrary.GenerateResponseManagementLibraryResource(
-					libraryResource1,
+					libraryResourceLabel1,
 					libraryName1,
 				) + respmanagementLibrary.GenerateResponseManagementLibraryResource(
-					libraryResource2,
+					libraryResourceLabel2,
 					libraryName2,
 				) + respManagementRespAsset.GenerateResponseManagementResponseAssetResource(
-					assetResource,
+					assetResourceLabel,
 					fullPath,
 					util.NullValue,
 				) + generateResponseManagementResponseResource(
-					responseResource,
+					responseResourceLabel,
 					name2,
-					[]string{"genesyscloud_responsemanagement_library." + libraryResource2 + ".id", "genesyscloud_responsemanagement_library." + libraryResource1 + ".id"},
+					[]string{"genesyscloud_responsemanagement_library." + libraryResourceLabel2 + ".id", "genesyscloud_responsemanagement_library." + libraryResourceLabel1 + ".id"},
 					strconv.Quote(interactionTypes[0]),
 					util.GenerateJsonSchemaDocStr(substitutionsSchema),
 					strconv.Quote(responseTypes[0]),
-					[]string{"genesyscloud_responsemanagement_responseasset." + assetResource + ".id"},
+					[]string{"genesyscloud_responsemanagement_responseasset." + assetResourceLabel + ".id"},
 					generateTextsBlock(
 						textsContent1,
 						textsContentTypes[0],
@@ -382,36 +382,36 @@ func TestAccResourceResponseManagementResponseMessaging(t *testing.T) {
 					),
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResource, "name", name2),
+					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResourceLabel, "name", name2),
 					resource.TestCheckResourceAttrPair(
-						"genesyscloud_responsemanagement_response."+responseResource, "library_ids.0",
-						"genesyscloud_responsemanagement_library."+libraryResource2, "id"),
+						"genesyscloud_responsemanagement_response."+responseResourceLabel, "library_ids.0",
+						"genesyscloud_responsemanagement_library."+libraryResourceLabel2, "id"),
 					resource.TestCheckResourceAttrPair(
-						"genesyscloud_responsemanagement_response."+responseResource, "library_ids.1",
-						"genesyscloud_responsemanagement_library."+libraryResource1, "id"),
-					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResource, "texts.0.content", textsContent2),
-					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResource, "texts.0.content_type", textsContentTypes[1]),
-					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResource, "texts.1.content", textsContent1),
-					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResource, "texts.1.content_type", textsContentTypes[0]),
-					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResource, "interaction_type", interactionTypes[0]),
-					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResource, "substitutions.0.id", substitutionsId),
-					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResource, "substitutions.0.description", substitutionsDescription),
-					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResource, "substitutions.0.default_value", substitutionsDefaultValue),
-					util.ValidateValueInJsonAttr("genesyscloud_responsemanagement_response."+responseResource, "substitutions_schema_id", "type", "object"),
-					util.ValidateValueInJsonAttr("genesyscloud_responsemanagement_response."+responseResource, "substitutions_schema_id", "properties."+substitutionsSchema+".type", "string"),
-					util.ValidateValueInJsonAttr("genesyscloud_responsemanagement_response."+responseResource, "substitutions_schema_id", "required", substitutionsSchema),
-					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResource, "response_type", responseTypes[0]),
-					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResource, "messaging_template.0.whats_app.0.name", templateName),
-					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResource, "messaging_template.0.whats_app.0.namespace", templateNamespace),
-					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResource, "messaging_template.0.whats_app.0.language", "en_US"),
+						"genesyscloud_responsemanagement_response."+responseResourceLabel, "library_ids.1",
+						"genesyscloud_responsemanagement_library."+libraryResourceLabel1, "id"),
+					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResourceLabel, "texts.0.content", textsContent2),
+					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResourceLabel, "texts.0.content_type", textsContentTypes[1]),
+					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResourceLabel, "texts.1.content", textsContent1),
+					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResourceLabel, "texts.1.content_type", textsContentTypes[0]),
+					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResourceLabel, "interaction_type", interactionTypes[0]),
+					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResourceLabel, "substitutions.0.id", substitutionsId),
+					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResourceLabel, "substitutions.0.description", substitutionsDescription),
+					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResourceLabel, "substitutions.0.default_value", substitutionsDefaultValue),
+					util.ValidateValueInJsonAttr("genesyscloud_responsemanagement_response."+responseResourceLabel, "substitutions_schema_id", "type", "object"),
+					util.ValidateValueInJsonAttr("genesyscloud_responsemanagement_response."+responseResourceLabel, "substitutions_schema_id", "properties."+substitutionsSchema+".type", "string"),
+					util.ValidateValueInJsonAttr("genesyscloud_responsemanagement_response."+responseResourceLabel, "substitutions_schema_id", "required", substitutionsSchema),
+					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResourceLabel, "response_type", responseTypes[0]),
+					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResourceLabel, "messaging_template.0.whats_app.0.name", templateName),
+					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResourceLabel, "messaging_template.0.whats_app.0.namespace", templateNamespace),
+					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResourceLabel, "messaging_template.0.whats_app.0.language", "en_US"),
 					resource.TestCheckResourceAttrPair(
-						"genesyscloud_responsemanagement_response."+responseResource, "asset_ids.0",
-						"genesyscloud_responsemanagement_responseasset."+assetResource, "id"),
+						"genesyscloud_responsemanagement_response."+responseResourceLabel, "asset_ids.0",
+						"genesyscloud_responsemanagement_responseasset."+assetResourceLabel, "id"),
 				),
 			},
 			{
 				// Import/Read
-				ResourceName:            "genesyscloud_responsemanagement_response." + responseResource,
+				ResourceName:            "genesyscloud_responsemanagement_response." + responseResourceLabel,
 				ImportState:             true,
 				ImportStateVerify:       true,
 				ImportStateVerifyIgnore: []string{"substitutions_schema_id", "messaging_template", "response_type"},
@@ -426,18 +426,18 @@ func TestAccResourceResponseManagementResponseCampaignEmailTemplate(t *testing.T
 	t.Parallel()
 	var (
 		// Responses initial values
-		responseResource    = "response-resource-campaignemail"
-		name1               = "Response-message" + uuid.NewString()
-		textsContentSubject = "Text as Subject"
-		textsContentBody    = "Text as Body! Welocme to Genesys!"
-		textsContentTypes   = []string{"text/plain", "text/html"}
-		textsType           = []string{"subject", "body"}
-		interactionTypes    = []string{"chat", "email", "twitter"}
-		responseTypes       = []string{`MessagingTemplate`, `CampaignSmsTemplate`, `CampaignEmailTemplate`}
+		responseResourceLabel = "response-resource-campaignemail"
+		name1                 = "Response-message" + uuid.NewString()
+		textsContentSubject   = "Text as Subject"
+		textsContentBody      = "Text as Body! Welocme to Genesys!"
+		textsContentTypes     = []string{"text/plain", "text/html"}
+		textsType             = []string{"subject", "body"}
+		interactionTypes      = []string{"chat", "email", "twitter"}
+		responseTypes         = []string{`MessagingTemplate`, `CampaignSmsTemplate`, `CampaignEmailTemplate`}
 
 		// Library resources variables
-		libraryResource1 = "library-resource1-campaignemail"
-		libraryName1     = "ReferencelibraryCampaignemail1"
+		libraryResourceLabel1 = "library-resource1-campaignemail"
+		libraryName1          = "ReferencelibraryCampaignemail1"
 	)
 
 	cleanupResponseAssets("genesys")
@@ -450,12 +450,12 @@ func TestAccResourceResponseManagementResponseCampaignEmailTemplate(t *testing.T
 			{
 				// Create with required values
 				Config: respmanagementLibrary.GenerateResponseManagementLibraryResource(
-					libraryResource1,
+					libraryResourceLabel1,
 					libraryName1,
 				) + generateResponseManagementResponseResource(
-					responseResource,
+					responseResourceLabel,
 					name1,
-					[]string{"genesyscloud_responsemanagement_library." + libraryResource1 + ".id"},
+					[]string{"genesyscloud_responsemanagement_library." + libraryResourceLabel1 + ".id"},
 					strconv.Quote(interactionTypes[1]),
 					util.NullValue,
 					strconv.Quote(responseTypes[2]),
@@ -472,21 +472,21 @@ func TestAccResourceResponseManagementResponseCampaignEmailTemplate(t *testing.T
 					),
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResource, "name", name1),
+					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResourceLabel, "name", name1),
 					resource.TestCheckResourceAttrPair(
-						"genesyscloud_responsemanagement_response."+responseResource, "library_ids.0",
-						"genesyscloud_responsemanagement_library."+libraryResource1, "id"),
-					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResource, "texts.0.content", textsContentBody),
-					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResource, "texts.0.content_type", textsContentTypes[1]),
-					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResource, "texts.0.type", textsType[1]),
-					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResource, "texts.1.content", textsContentSubject),
-					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResource, "texts.1.content_type", textsContentTypes[0]),
-					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResource, "texts.1.type", textsType[0]),
+						"genesyscloud_responsemanagement_response."+responseResourceLabel, "library_ids.0",
+						"genesyscloud_responsemanagement_library."+libraryResourceLabel1, "id"),
+					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResourceLabel, "texts.0.content", textsContentBody),
+					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResourceLabel, "texts.0.content_type", textsContentTypes[1]),
+					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResourceLabel, "texts.0.type", textsType[1]),
+					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResourceLabel, "texts.1.content", textsContentSubject),
+					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResourceLabel, "texts.1.content_type", textsContentTypes[0]),
+					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResourceLabel, "texts.1.type", textsType[0]),
 				),
 			},
 			{
 				// Import/Read
-				ResourceName:            "genesyscloud_responsemanagement_response." + responseResource,
+				ResourceName:            "genesyscloud_responsemanagement_response." + responseResourceLabel,
 				ImportState:             true,
 				ImportStateVerify:       true,
 				ImportStateVerifyIgnore: []string{"substitutions_schema_id", "messaging_template", "response_type"},
@@ -498,7 +498,7 @@ func TestAccResourceResponseManagementResponseCampaignEmailTemplate(t *testing.T
 }
 
 func generateResponseManagementResponseResource(
-	resourceId string,
+	resourceLabel string,
 	name string,
 	libraryIds []string,
 	interactionType string,
@@ -517,7 +517,7 @@ func generateResponseManagementResponseResource(
 			asset_ids = [%s]
 			%s
 		}
-	`, resourceId, name, strings.Join(libraryIds, ", "), interactionType, schema, responseType, strings.Join(assetIds, ", "), strings.Join(nestedBlocks, "\n"))
+	`, resourceLabel, name, strings.Join(libraryIds, ", "), interactionType, schema, responseType, strings.Join(assetIds, ", "), strings.Join(nestedBlocks, "\n"))
 }
 
 func generateTextsBlock(content string, contentType string, cType string) string {

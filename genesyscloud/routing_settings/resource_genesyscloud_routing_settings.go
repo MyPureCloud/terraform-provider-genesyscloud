@@ -56,7 +56,7 @@ func getAllRoutingSettings(ctx context.Context, clientConfig *platformclientv2.C
 		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get %s transcription due to error: %s", resourceName, err), resp)
 	}
 
-	resources["0"] = &resourceExporter.ResourceMeta{Name: "routing_settings"}
+	resources["0"] = &resourceExporter.ResourceMeta{BlockLabel: "routing_settings"}
 	return resources, nil
 }
 

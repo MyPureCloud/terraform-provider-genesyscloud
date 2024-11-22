@@ -20,21 +20,21 @@ func TestAccResourceOutboundContactListFilter(t *testing.T) {
 
 	t.Parallel()
 	var (
-		resourceId            = "contact_list_filter"
-		name                  = "Test CLF " + uuid.NewString()
-		contactListResourceId = "contact_list"
-		contactListName       = "Test Contact List " + uuid.NewString()
-		filterType            = "AND"
-		column                = "Phone"
-		columnType            = "numeric"
-		operator              = "EQUALS"
-		predicateValue        = "+12345123456"
-		inverted              = util.FalseValue
-		rangeMin              = "1"
-		rangeMax              = "10"
-		minInclusive          = util.TrueValue
-		maxInclusive          = util.FalseValue
-		rangeInSet            = []string{"a"}
+		resourceLabel            = "contact_list_filter"
+		name                     = "Test CLF " + uuid.NewString()
+		contactListResourceLabel = "contact_list"
+		contactListName          = "Test Contact List " + uuid.NewString()
+		filterType               = "AND"
+		column                   = "Phone"
+		columnType               = "numeric"
+		operator                 = "EQUALS"
+		predicateValue           = "+12345123456"
+		inverted                 = util.FalseValue
+		rangeMin                 = "1"
+		rangeMax                 = "10"
+		minInclusive             = util.TrueValue
+		maxInclusive             = util.FalseValue
+		rangeInSet               = []string{"a"}
 
 		nameUpdated           = "Test CLF " + uuid.NewString()
 		filterTypeUpdated     = "OR"
@@ -51,7 +51,7 @@ func TestAccResourceOutboundContactListFilter(t *testing.T) {
 	)
 
 	contactListResource := obContactList.GenerateOutboundContactList(
-		contactListResourceId,
+		contactListResourceLabel,
 		contactListName,
 		util.NullValue,
 		util.NullValue,
@@ -73,9 +73,9 @@ func TestAccResourceOutboundContactListFilter(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config: contactListResource + GenerateOutboundContactListFilter(
-					resourceId,
+					resourceLabel,
 					name,
-					"genesyscloud_outbound_contact_list."+contactListResourceId+".id",
+					"genesyscloud_outbound_contact_list."+contactListResourceLabel+".id",
 					"",
 					GenerateOutboundContactListFilterClause(
 						"",
@@ -90,18 +90,18 @@ func TestAccResourceOutboundContactListFilter(t *testing.T) {
 					),
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_outbound_contactlistfilter."+resourceId, "name", name),
-					resource.TestCheckResourceAttrPair("genesyscloud_outbound_contactlistfilter."+resourceId, "contact_list_id",
-						"genesyscloud_outbound_contact_list."+contactListResourceId, "id"),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_contactlistfilter."+resourceId, "clauses.0.predicates.0.column", column),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_contactlistfilter."+resourceId, "clauses.0.predicates.0.column_type", columnType),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_contactlistfilter."+resourceLabel, "name", name),
+					resource.TestCheckResourceAttrPair("genesyscloud_outbound_contactlistfilter."+resourceLabel, "contact_list_id",
+						"genesyscloud_outbound_contact_list."+contactListResourceLabel, "id"),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_contactlistfilter."+resourceLabel, "clauses.0.predicates.0.column", column),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_contactlistfilter."+resourceLabel, "clauses.0.predicates.0.column_type", columnType),
 				),
 			},
 			{
 				Config: contactListResource + GenerateOutboundContactListFilter(
-					resourceId,
+					resourceLabel,
 					name,
-					"genesyscloud_outbound_contact_list."+contactListResourceId+".id",
+					"genesyscloud_outbound_contact_list."+contactListResourceLabel+".id",
 					filterType,
 					GenerateOutboundContactListFilterClause(
 						filterType,
@@ -122,28 +122,28 @@ func TestAccResourceOutboundContactListFilter(t *testing.T) {
 					),
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_outbound_contactlistfilter."+resourceId, "name", name),
-					resource.TestCheckResourceAttrPair("genesyscloud_outbound_contactlistfilter."+resourceId, "contact_list_id",
-						"genesyscloud_outbound_contact_list."+contactListResourceId, "id"),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_contactlistfilter."+resourceId, "filter_type", filterType),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_contactlistfilter."+resourceId, "clauses.0.filter_type", filterType),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_contactlistfilter."+resourceId, "clauses.0.predicates.0.column", column),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_contactlistfilter."+resourceId, "clauses.0.predicates.0.column_type", columnType),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_contactlistfilter."+resourceId, "clauses.0.predicates.0.operator", operator),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_contactlistfilter."+resourceId, "clauses.0.predicates.0.value", predicateValue),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_contactlistfilter."+resourceId, "clauses.0.predicates.0.inverted", inverted),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_contactlistfilter."+resourceId, "clauses.0.predicates.0.var_range.0.min", rangeMin),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_contactlistfilter."+resourceId, "clauses.0.predicates.0.var_range.0.max", rangeMax),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_contactlistfilter."+resourceId, "clauses.0.predicates.0.var_range.0.min_inclusive", minInclusive),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_contactlistfilter."+resourceId, "clauses.0.predicates.0.var_range.0.max_inclusive", maxInclusive),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_contactlistfilter."+resourceId, "clauses.0.predicates.0.var_range.0.in_set.0", rangeInSet[0]),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_contactlistfilter."+resourceLabel, "name", name),
+					resource.TestCheckResourceAttrPair("genesyscloud_outbound_contactlistfilter."+resourceLabel, "contact_list_id",
+						"genesyscloud_outbound_contact_list."+contactListResourceLabel, "id"),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_contactlistfilter."+resourceLabel, "filter_type", filterType),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_contactlistfilter."+resourceLabel, "clauses.0.filter_type", filterType),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_contactlistfilter."+resourceLabel, "clauses.0.predicates.0.column", column),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_contactlistfilter."+resourceLabel, "clauses.0.predicates.0.column_type", columnType),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_contactlistfilter."+resourceLabel, "clauses.0.predicates.0.operator", operator),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_contactlistfilter."+resourceLabel, "clauses.0.predicates.0.value", predicateValue),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_contactlistfilter."+resourceLabel, "clauses.0.predicates.0.inverted", inverted),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_contactlistfilter."+resourceLabel, "clauses.0.predicates.0.var_range.0.min", rangeMin),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_contactlistfilter."+resourceLabel, "clauses.0.predicates.0.var_range.0.max", rangeMax),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_contactlistfilter."+resourceLabel, "clauses.0.predicates.0.var_range.0.min_inclusive", minInclusive),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_contactlistfilter."+resourceLabel, "clauses.0.predicates.0.var_range.0.max_inclusive", maxInclusive),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_contactlistfilter."+resourceLabel, "clauses.0.predicates.0.var_range.0.in_set.0", rangeInSet[0]),
 				),
 			},
 			{
 				Config: contactListResource + GenerateOutboundContactListFilter(
-					resourceId,
+					resourceLabel,
 					nameUpdated,
-					"genesyscloud_outbound_contact_list."+contactListResourceId+".id",
+					"genesyscloud_outbound_contact_list."+contactListResourceLabel+".id",
 					filterTypeUpdated,
 					GenerateOutboundContactListFilterClause(
 						filterType,
@@ -189,45 +189,45 @@ func TestAccResourceOutboundContactListFilter(t *testing.T) {
 					),
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_outbound_contactlistfilter."+resourceId, "name", nameUpdated),
-					resource.TestCheckResourceAttrPair("genesyscloud_outbound_contactlistfilter."+resourceId, "contact_list_id",
-						"genesyscloud_outbound_contact_list."+contactListResourceId, "id"),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_contactlistfilter."+resourceId, "filter_type", filterTypeUpdated),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_contactlistfilter."+resourceId, "clauses.0.filter_type", filterType),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_contactlistfilter."+resourceId, "clauses.0.predicates.0.column", column),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_contactlistfilter."+resourceId, "clauses.0.predicates.0.column_type", columnType),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_contactlistfilter."+resourceId, "clauses.0.predicates.0.operator", operator),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_contactlistfilter."+resourceId, "clauses.0.predicates.0.value", predicateValue),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_contactlistfilter."+resourceId, "clauses.0.predicates.0.inverted", inverted),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_contactlistfilter."+resourceId, "clauses.0.predicates.0.var_range.0.min", rangeMin),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_contactlistfilter."+resourceId, "clauses.0.predicates.0.var_range.0.max", rangeMax),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_contactlistfilter."+resourceId, "clauses.0.predicates.0.var_range.0.min_inclusive", minInclusive),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_contactlistfilter."+resourceId, "clauses.0.predicates.0.var_range.0.max_inclusive", maxInclusive),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_contactlistfilter."+resourceId, "clauses.0.predicates.0.var_range.0.in_set.0", rangeInSet[0]),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_contactlistfilter."+resourceId, "clauses.1.filter_type", filterTypeUpdated),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_contactlistfilter."+resourceId, "clauses.1.predicates.0.column", column),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_contactlistfilter."+resourceId, "clauses.1.predicates.0.column_type", columnType),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_contactlistfilter."+resourceId, "clauses.1.predicates.0.operator", operator),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_contactlistfilter."+resourceId, "clauses.1.predicates.0.value", predicateValue),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_contactlistfilter."+resourceId, "clauses.1.predicates.0.inverted", inverted),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_contactlistfilter."+resourceId, "clauses.1.predicates.1.column", columnUpdated),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_contactlistfilter."+resourceId, "clauses.1.predicates.1.column_type", columnTypeUpdated),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_contactlistfilter."+resourceId, "clauses.1.predicates.1.operator", operatorUpdated),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_contactlistfilter."+resourceId, "clauses.1.predicates.1.value", predicateValueUpdated),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_contactlistfilter."+resourceId, "clauses.1.predicates.1.inverted", invertedUpdated),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_contactlistfilter."+resourceId, "clauses.1.predicates.1.var_range.0.min", rangeMinUpdated),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_contactlistfilter."+resourceId, "clauses.1.predicates.1.var_range.0.max", rangeMaxUpdated),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_contactlistfilter."+resourceId, "clauses.1.predicates.1.var_range.0.min_inclusive", minInclusiveUpdated),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_contactlistfilter."+resourceId, "clauses.1.predicates.1.var_range.0.max_inclusive", maxInclusiveUpdated),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_contactlistfilter."+resourceId, "clauses.1.predicates.1.var_range.0.in_set.0", rangeInSetUpdated[0]),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_contactlistfilter."+resourceId, "clauses.1.predicates.1.var_range.0.in_set.1", rangeInSetUpdated[1]),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_contactlistfilter."+resourceLabel, "name", nameUpdated),
+					resource.TestCheckResourceAttrPair("genesyscloud_outbound_contactlistfilter."+resourceLabel, "contact_list_id",
+						"genesyscloud_outbound_contact_list."+contactListResourceLabel, "id"),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_contactlistfilter."+resourceLabel, "filter_type", filterTypeUpdated),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_contactlistfilter."+resourceLabel, "clauses.0.filter_type", filterType),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_contactlistfilter."+resourceLabel, "clauses.0.predicates.0.column", column),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_contactlistfilter."+resourceLabel, "clauses.0.predicates.0.column_type", columnType),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_contactlistfilter."+resourceLabel, "clauses.0.predicates.0.operator", operator),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_contactlistfilter."+resourceLabel, "clauses.0.predicates.0.value", predicateValue),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_contactlistfilter."+resourceLabel, "clauses.0.predicates.0.inverted", inverted),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_contactlistfilter."+resourceLabel, "clauses.0.predicates.0.var_range.0.min", rangeMin),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_contactlistfilter."+resourceLabel, "clauses.0.predicates.0.var_range.0.max", rangeMax),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_contactlistfilter."+resourceLabel, "clauses.0.predicates.0.var_range.0.min_inclusive", minInclusive),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_contactlistfilter."+resourceLabel, "clauses.0.predicates.0.var_range.0.max_inclusive", maxInclusive),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_contactlistfilter."+resourceLabel, "clauses.0.predicates.0.var_range.0.in_set.0", rangeInSet[0]),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_contactlistfilter."+resourceLabel, "clauses.1.filter_type", filterTypeUpdated),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_contactlistfilter."+resourceLabel, "clauses.1.predicates.0.column", column),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_contactlistfilter."+resourceLabel, "clauses.1.predicates.0.column_type", columnType),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_contactlistfilter."+resourceLabel, "clauses.1.predicates.0.operator", operator),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_contactlistfilter."+resourceLabel, "clauses.1.predicates.0.value", predicateValue),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_contactlistfilter."+resourceLabel, "clauses.1.predicates.0.inverted", inverted),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_contactlistfilter."+resourceLabel, "clauses.1.predicates.1.column", columnUpdated),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_contactlistfilter."+resourceLabel, "clauses.1.predicates.1.column_type", columnTypeUpdated),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_contactlistfilter."+resourceLabel, "clauses.1.predicates.1.operator", operatorUpdated),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_contactlistfilter."+resourceLabel, "clauses.1.predicates.1.value", predicateValueUpdated),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_contactlistfilter."+resourceLabel, "clauses.1.predicates.1.inverted", invertedUpdated),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_contactlistfilter."+resourceLabel, "clauses.1.predicates.1.var_range.0.min", rangeMinUpdated),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_contactlistfilter."+resourceLabel, "clauses.1.predicates.1.var_range.0.max", rangeMaxUpdated),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_contactlistfilter."+resourceLabel, "clauses.1.predicates.1.var_range.0.min_inclusive", minInclusiveUpdated),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_contactlistfilter."+resourceLabel, "clauses.1.predicates.1.var_range.0.max_inclusive", maxInclusiveUpdated),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_contactlistfilter."+resourceLabel, "clauses.1.predicates.1.var_range.0.in_set.0", rangeInSetUpdated[0]),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_contactlistfilter."+resourceLabel, "clauses.1.predicates.1.var_range.0.in_set.1", rangeInSetUpdated[1]),
 				),
 			},
 			{
 				Config: contactListResource + GenerateOutboundContactListFilter(
-					resourceId,
+					resourceLabel,
 					name,
-					"genesyscloud_outbound_contact_list."+contactListResourceId+".id",
+					"genesyscloud_outbound_contact_list."+contactListResourceLabel+".id",
 					"",
 					GenerateOutboundContactListFilterClause(
 						"",
@@ -242,15 +242,15 @@ func TestAccResourceOutboundContactListFilter(t *testing.T) {
 					),
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_outbound_contactlistfilter."+resourceId, "name", name),
-					resource.TestCheckResourceAttrPair("genesyscloud_outbound_contactlistfilter."+resourceId, "contact_list_id",
-						"genesyscloud_outbound_contact_list."+contactListResourceId, "id"),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_contactlistfilter."+resourceId, "clauses.0.predicates.0.column", column),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_contactlistfilter."+resourceId, "clauses.0.predicates.0.column_type", columnType),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_contactlistfilter."+resourceLabel, "name", name),
+					resource.TestCheckResourceAttrPair("genesyscloud_outbound_contactlistfilter."+resourceLabel, "contact_list_id",
+						"genesyscloud_outbound_contact_list."+contactListResourceLabel, "id"),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_contactlistfilter."+resourceLabel, "clauses.0.predicates.0.column", column),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_contactlistfilter."+resourceLabel, "clauses.0.predicates.0.column_type", columnType),
 				),
 			},
 			{
-				ResourceName:      "genesyscloud_outbound_contactlistfilter." + resourceId,
+				ResourceName:      "genesyscloud_outbound_contactlistfilter." + resourceLabel,
 				ImportState:       true,
 				ImportStateVerify: true,
 			},

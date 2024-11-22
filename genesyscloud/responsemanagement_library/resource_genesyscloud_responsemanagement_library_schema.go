@@ -2,10 +2,11 @@ package responsemanagement_library
 
 import (
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 /*
@@ -74,11 +75,11 @@ func DataSourceResponsemanagementLibrary() *schema.Resource {
 }
 
 func GenerateResponseManagementLibraryResource(
-	resourceId string,
+	resourceLabel string,
 	name string) string {
 	return fmt.Sprintf(`
 		resource "genesyscloud_responsemanagement_library" "%s" {
 			name = "%s"
 		}
-	`, resourceId, name)
+	`, resourceLabel, name)
 }

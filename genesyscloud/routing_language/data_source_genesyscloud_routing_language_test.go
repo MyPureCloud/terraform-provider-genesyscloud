@@ -12,9 +12,9 @@ import (
 
 func TestAccDataSourceRoutingLanguage(t *testing.T) {
 	var (
-		langResource   = "routing-language"
-		langDataSource = "routing-language-data"
-		langName       = "Terraform Language-" + uuid.NewString()
+		langResourceLabel   = "routing-language"
+		langDataSourceLabel = "routing-language-data"
+		langName            = "Terraform Language-" + uuid.NewString()
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -23,17 +23,17 @@ func TestAccDataSourceRoutingLanguage(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config: GenerateRoutingLanguageResource(
-					langResource,
+					langResourceLabel,
 					langName,
 				),
 			},
 			{
 				Config: GenerateRoutingLanguageResource(
-					langResource,
+					langResourceLabel,
 					langName,
-				) + generateRoutingLanguageDataSource(langDataSource, "genesyscloud_routing_language."+langResource+".name", "genesyscloud_routing_language."+langResource),
+				) + generateRoutingLanguageDataSource(langDataSourceLabel, "genesyscloud_routing_language."+langResourceLabel+".name", "genesyscloud_routing_language."+langResourceLabel),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair("data.genesyscloud_routing_language."+langDataSource, "id", "genesyscloud_routing_language."+langResource, "id"),
+					resource.TestCheckResourceAttrPair("data.genesyscloud_routing_language."+langDataSourceLabel, "id", "genesyscloud_routing_language."+langResourceLabel, "id"),
 				),
 			},
 		},
@@ -41,7 +41,7 @@ func TestAccDataSourceRoutingLanguage(t *testing.T) {
 }
 
 func generateRoutingLanguageDataSource(
-	resourceID string,
+	resourceLabel string,
 	name string,
 	// Must explicitly use depends_on in terraform v0.13 when a data source references a resource
 	// Fixed in v0.14 https://github.com/hashicorp/terraform/pull/26284
@@ -50,5 +50,5 @@ func generateRoutingLanguageDataSource(
 		name = %s
         depends_on=[%s]
 	}
-	`, resourceID, name, dependsOnResource)
+	`, resourceLabel, name, dependsOnResource)
 }

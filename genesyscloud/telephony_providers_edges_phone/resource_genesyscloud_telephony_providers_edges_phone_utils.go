@@ -22,7 +22,7 @@ import (
 )
 
 type PhoneConfig struct {
-	PhoneRes            string
+	PhoneResourceLabel  string
 	Name                string
 	State               string
 	SiteId              string
@@ -425,7 +425,7 @@ func GeneratePhoneResourceWithCustomAttrs(config *PhoneConfig, otherAttrs ...str
 		%s
 		%s
 	}
-	`, config.PhoneRes,
+	`, config.PhoneResourceLabel,
 		config.Name,
 		config.State,
 		config.SiteId,

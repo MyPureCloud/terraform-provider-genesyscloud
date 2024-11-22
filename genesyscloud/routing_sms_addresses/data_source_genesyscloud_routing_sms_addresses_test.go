@@ -13,14 +13,14 @@ import (
 func TestAccDataSourceSmsAddress(t *testing.T) {
 
 	var (
-		addressRes  = "addressRes"
-		addressData = "addressData"
-		name        = "name-1"
-		street      = "street-1"
-		city        = "city-1"
-		region      = "region-1"
-		postalCode  = "postal-code-1"
-		countryCode = "country-code-1"
+		addressResLabel  = "addressRes"
+		addressDataLabel = "addressData"
+		name             = "name-1"
+		street           = "street-1"
+		city             = "city-1"
+		region           = "region-1"
+		postalCode       = "postal-code-1"
+		countryCode      = "country-code-1"
 	)
 	if v := os.Getenv("GENESYSCLOUD_REGION"); v == "tca" {
 		postalCode = "90080"
@@ -33,7 +33,7 @@ func TestAccDataSourceSmsAddress(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config: generateRoutingSmsAddressesResource(
-					addressRes,
+					addressResLabel,
 					name,
 					street,
 					city,
@@ -42,14 +42,14 @@ func TestAccDataSourceSmsAddress(t *testing.T) {
 					countryCode,
 					util.FalseValue,
 				) + generateSmsAddressDataSource(
-					addressData,
+					addressDataLabel,
 					name,
-					"genesyscloud_routing_sms_address."+addressRes,
+					"genesyscloud_routing_sms_address."+addressResLabel,
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrPair(
-						"data.genesyscloud_routing_sms_address."+addressData, "id",
-						"genesyscloud_routing_sms_address."+addressRes, "id",
+						"data.genesyscloud_routing_sms_address."+addressDataLabel, "id",
+						"genesyscloud_routing_sms_address."+addressResLabel, "id",
 					),
 				),
 			},
@@ -57,11 +57,11 @@ func TestAccDataSourceSmsAddress(t *testing.T) {
 	})
 }
 
-func generateSmsAddressDataSource(id string, name string, dependsOn string) string {
+func generateSmsAddressDataSource(dataSourceLabel string, name string, dependsOn string) string {
 	return fmt.Sprintf(`
 		data "genesyscloud_routing_sms_address" "%s" {
 			name = "%s"
 			depends_on = [%s]
 		}
-	`, id, name, dependsOn)
+	`, dataSourceLabel, name, dependsOn)
 }

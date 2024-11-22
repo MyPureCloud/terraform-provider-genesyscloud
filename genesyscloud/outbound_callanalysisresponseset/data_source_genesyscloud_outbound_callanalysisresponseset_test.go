@@ -15,9 +15,9 @@ var FalseValue = "false"
 
 func TestAccDataSourceOutboundCallAnalysisResponseSet(t *testing.T) {
 	var (
-		resourceId      = "cars"
+		resourceLabel   = "cars"
 		responseSetName = "Test CAR " + uuid.NewString()
-		dataSourceId    = "cars_data"
+		dataSourceLabel = "cars_data"
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -26,18 +26,18 @@ func TestAccDataSourceOutboundCallAnalysisResponseSet(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config: GenerateOutboundCallAnalysisResponseSetResource(
-					resourceId,
+					resourceLabel,
 					responseSetName,
 					FalseValue,
 					"",
 				) + generateOutboundCallAnalysisResponseSetDataSource(
-					dataSourceId,
+					dataSourceLabel,
 					responseSetName,
-					"genesyscloud_outbound_callanalysisresponseset."+resourceId,
+					"genesyscloud_outbound_callanalysisresponseset."+resourceLabel,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair("data.genesyscloud_outbound_callanalysisresponseset."+dataSourceId, "id",
-						"genesyscloud_outbound_callanalysisresponseset."+resourceId, "id"),
+					resource.TestCheckResourceAttrPair("data.genesyscloud_outbound_callanalysisresponseset."+dataSourceLabel, "id",
+						"genesyscloud_outbound_callanalysisresponseset."+resourceLabel, "id"),
 				),
 				ExpectNonEmptyPlan: true,
 			},
@@ -45,11 +45,11 @@ func TestAccDataSourceOutboundCallAnalysisResponseSet(t *testing.T) {
 	})
 }
 
-func generateOutboundCallAnalysisResponseSetDataSource(id string, name string, dependsOn string) string {
+func generateOutboundCallAnalysisResponseSetDataSource(dataSourceLabel string, name string, dependsOn string) string {
 	return fmt.Sprintf(`
 data "genesyscloud_outbound_callanalysisresponseset" "%s" {
 	name = "%s"
 	depends_on = [%s]
 }
-`, id, name, dependsOn)
+`, dataSourceLabel, name, dependsOn)
 }

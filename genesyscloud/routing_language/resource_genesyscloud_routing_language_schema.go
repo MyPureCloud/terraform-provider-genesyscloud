@@ -61,10 +61,10 @@ func RoutingLanguageExporter() *resourceExporter.ResourceExporter {
 }
 
 func GenerateRoutingLanguageResource(
-	resourceID string,
+	resourceLabel string,
 	name string) string {
 	return fmt.Sprintf(`resource "genesyscloud_routing_language" "%s" {
 		name = "%s"
 	}
-	`, resourceID, name)
+	`, resourceLabel, name)
 }

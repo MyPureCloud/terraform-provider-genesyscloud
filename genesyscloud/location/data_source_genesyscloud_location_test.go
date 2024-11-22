@@ -11,9 +11,9 @@ import (
 
 func TestAccDataSourceLocation(t *testing.T) {
 	var (
-		locResource = "test-location-members"
-		locData     = "location-data"
-		locName     = "test-location"
+		locResourceLabel = "test-location-members"
+		locDataLabel     = "location-data"
+		locName          = "test-location"
 
 		locNotes = "HQ1"
 		street   = "7601 Interactive Way"
@@ -29,17 +29,17 @@ func TestAccDataSourceLocation(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config: GenerateLocationResource(
-					locResource,
+					locResourceLabel,
 					locName,
 					locNotes,
 					[]string{}, // no paths or emergency number
 					GenerateLocationAddress(street, city, state, country, zip),
 				) + generateLocationDataSource(
-					locData,
+					locDataLabel,
 					locName,
-					"genesyscloud_location."+locResource),
+					"genesyscloud_location."+locResourceLabel),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair("data.genesyscloud_location."+locData, "id", "genesyscloud_location."+locResource, "id"),
+					resource.TestCheckResourceAttrPair("data.genesyscloud_location."+locDataLabel, "id", "genesyscloud_location."+locResourceLabel, "id"),
 				),
 			},
 		},
@@ -47,7 +47,7 @@ func TestAccDataSourceLocation(t *testing.T) {
 }
 
 func generateLocationDataSource(
-	resourceID string,
+	resourceLabel string,
 	name string,
 	// Must explicitly use depends_on in terraform v0.13 when a data source references a resource
 	// Fixed in v0.14 https://github.com/hashicorp/terraform/pull/26284
@@ -56,5 +56,5 @@ func generateLocationDataSource(
 		name = "%s"
 		depends_on=[%s]
 	}
-	`, resourceID, name, dependsOnResource)
+	`, resourceLabel, name, dependsOnResource)
 }

@@ -902,7 +902,7 @@ func generateLabelUtilization(
 	`, labelResource, maxCapacity, strings.Join(interruptingLabelResources, ","))
 }
 
-func generateRoutingUtilizationLabelResource(resourceID string, name string, dependsOnResource string) string {
+func generateRoutingUtilizationLabelResource(resourceLabel string, name string, dependsOnResource string) string {
 	dependsOn := ""
 
 	if dependsOnResource != "" {
@@ -913,15 +913,15 @@ func generateRoutingUtilizationLabelResource(resourceID string, name string, dep
 		name = "%s"
 		%s
 	}
-	`, resourceID, name, dependsOn)
+	`, resourceLabel, name, dependsOn)
 }
 
 // Basic user with minimum required fields
-func GenerateBasicUserResource(resourceID string, email string, name string) string {
-	return GenerateUserResource(resourceID, email, name, util.NullValue, util.NullValue, util.NullValue, util.NullValue, util.NullValue, "", "")
+func GenerateBasicUserResource(resourceLabel string, email string, name string) string {
+	return GenerateUserResource(resourceLabel, email, name, util.NullValue, util.NullValue, util.NullValue, util.NullValue, util.NullValue, "", "")
 }
 
-func GenerateUserResource(resourceID string, email string, name string, state string, title string, department string, manager string, acdAutoAnswer string, profileSkills string, certifications string) string {
+func GenerateUserResource(resourceLabel string, email string, name string, state string, title string, department string, manager string, acdAutoAnswer string, profileSkills string, certifications string) string {
 	return fmt.Sprintf(`resource "%s" "%s" {
 		email = "%s"
 		name = "%s"
@@ -933,5 +933,5 @@ func GenerateUserResource(resourceID string, email string, name string, state st
 		profile_skills = [%s]
 		certifications = [%s]
 	}
-	`, resourceName, resourceID, email, name, state, title, department, manager, acdAutoAnswer, profileSkills, certifications)
+	`, resourceName, resourceLabel, email, name, state, title, department, manager, acdAutoAnswer, profileSkills, certifications)
 }

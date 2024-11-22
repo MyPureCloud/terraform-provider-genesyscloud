@@ -33,7 +33,7 @@ func getAllDidPools(ctx context.Context, clientConfig *platformclientv2.Configur
 
 	for _, didPool := range *didPools {
 		if didPool.State != nil && *didPool.State != "deleted" {
-			resources[*didPool.Id] = &resourceExporter.ResourceMeta{Name: *didPool.StartPhoneNumber}
+			resources[*didPool.Id] = &resourceExporter.ResourceMeta{BlockLabel: *didPool.StartPhoneNumber}
 		}
 	}
 	return resources, nil

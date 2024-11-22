@@ -14,8 +14,8 @@ import (
 
 func TestAccResourceConversationsMessagingSettings(t *testing.T) {
 	var (
-		resource1 = "testConversationsMessagingSettings"
-		name1     = "testSettings"
+		resourceLabel1 = "testConversationsMessagingSettings"
+		name1          = "testSettings"
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -25,7 +25,7 @@ func TestAccResourceConversationsMessagingSettings(t *testing.T) {
 			{
 				// Create with Content Block
 				Config: GenerateConversationsMessagingSettingsResource(
-					resource1,
+					resourceLabel1,
 					name1,
 					GenerateContentStoryBlock(
 						GenerateMentionInboundOnlySetting("Disabled"),
@@ -33,15 +33,15 @@ func TestAccResourceConversationsMessagingSettings(t *testing.T) {
 					),
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_conversations_messaging_settings."+resource1, "name", name1),
-					resource.TestCheckResourceAttr("genesyscloud_conversations_messaging_settings."+resource1, "content.0.story.0.mention.0.inbound", "Disabled"),
-					resource.TestCheckResourceAttr("genesyscloud_conversations_messaging_settings."+resource1, "content.0.story.0.reply.0.inbound", "Enabled"),
+					resource.TestCheckResourceAttr("genesyscloud_conversations_messaging_settings."+resourceLabel1, "name", name1),
+					resource.TestCheckResourceAttr("genesyscloud_conversations_messaging_settings."+resourceLabel1, "content.0.story.0.mention.0.inbound", "Disabled"),
+					resource.TestCheckResourceAttr("genesyscloud_conversations_messaging_settings."+resourceLabel1, "content.0.story.0.reply.0.inbound", "Enabled"),
 				),
 			},
 			{
 				// Update and Add Event Block
 				Config: GenerateConversationsMessagingSettingsResource(
-					resource1,
+					resourceLabel1,
 					name1,
 					GenerateContentStoryBlock(
 						GenerateMentionInboundOnlySetting("Enabled"),
@@ -53,16 +53,16 @@ func TestAccResourceConversationsMessagingSettings(t *testing.T) {
 					),
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_conversations_messaging_settings."+resource1, "name", name1),
-					resource.TestCheckResourceAttr("genesyscloud_conversations_messaging_settings."+resource1, "content.0.story.0.mention.0.inbound", "Enabled"),
-					resource.TestCheckResourceAttr("genesyscloud_conversations_messaging_settings."+resource1, "content.0.story.0.reply.0.inbound", "Enabled"),
-					resource.TestCheckResourceAttr("genesyscloud_conversations_messaging_settings."+resource1, "event.0.typing.0.on.0.inbound", "Enabled"),
-					resource.TestCheckResourceAttr("genesyscloud_conversations_messaging_settings."+resource1, "event.0.typing.0.on.0.outbound", "Disabled"),
+					resource.TestCheckResourceAttr("genesyscloud_conversations_messaging_settings."+resourceLabel1, "name", name1),
+					resource.TestCheckResourceAttr("genesyscloud_conversations_messaging_settings."+resourceLabel1, "content.0.story.0.mention.0.inbound", "Enabled"),
+					resource.TestCheckResourceAttr("genesyscloud_conversations_messaging_settings."+resourceLabel1, "content.0.story.0.reply.0.inbound", "Enabled"),
+					resource.TestCheckResourceAttr("genesyscloud_conversations_messaging_settings."+resourceLabel1, "event.0.typing.0.on.0.inbound", "Enabled"),
+					resource.TestCheckResourceAttr("genesyscloud_conversations_messaging_settings."+resourceLabel1, "event.0.typing.0.on.0.outbound", "Disabled"),
 				),
 			},
 			{
 				// Import/Read
-				ResourceName:      "genesyscloud_conversations_messaging_settings." + resource1,
+				ResourceName:      "genesyscloud_conversations_messaging_settings." + resourceLabel1,
 				ImportState:       true,
 				ImportStateVerify: true,
 			},
@@ -73,8 +73,8 @@ func TestAccResourceConversationsMessagingSettings(t *testing.T) {
 
 func TestAccResourceConversationsMessagingSettingsContentOnly(t *testing.T) {
 	var (
-		resource2 = "testConversationsMessagingSettingsContentOnly"
-		name2     = "testSettingsContentOnly"
+		resourceLabel2 = "testConversationsMessagingSettingsContentOnly"
+		name2          = "testSettingsContentOnly"
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -84,7 +84,7 @@ func TestAccResourceConversationsMessagingSettingsContentOnly(t *testing.T) {
 			{
 				// Create
 				Config: GenerateConversationsMessagingSettingsResource(
-					resource2,
+					resourceLabel2,
 					name2,
 					GenerateContentStoryBlock(
 						GenerateMentionInboundOnlySetting("Disabled"),
@@ -92,15 +92,15 @@ func TestAccResourceConversationsMessagingSettingsContentOnly(t *testing.T) {
 					),
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_conversations_messaging_settings."+resource2, "name", name2),
-					resource.TestCheckResourceAttr("genesyscloud_conversations_messaging_settings."+resource2, "content.0.story.0.mention.0.inbound", "Disabled"),
-					resource.TestCheckResourceAttr("genesyscloud_conversations_messaging_settings."+resource2, "content.0.story.0.reply.0.inbound", "Disabled"),
+					resource.TestCheckResourceAttr("genesyscloud_conversations_messaging_settings."+resourceLabel2, "name", name2),
+					resource.TestCheckResourceAttr("genesyscloud_conversations_messaging_settings."+resourceLabel2, "content.0.story.0.mention.0.inbound", "Disabled"),
+					resource.TestCheckResourceAttr("genesyscloud_conversations_messaging_settings."+resourceLabel2, "content.0.story.0.reply.0.inbound", "Disabled"),
 				),
 			},
 			{
 				// Update
 				Config: GenerateConversationsMessagingSettingsResource(
-					resource2,
+					resourceLabel2,
 					name2,
 					GenerateContentStoryBlock(
 						GenerateMentionInboundOnlySetting("Enabled"),
@@ -108,14 +108,14 @@ func TestAccResourceConversationsMessagingSettingsContentOnly(t *testing.T) {
 					),
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_conversations_messaging_settings."+resource2, "name", name2),
-					resource.TestCheckResourceAttr("genesyscloud_conversations_messaging_settings."+resource2, "content.0.story.0.mention.0.inbound", "Enabled"),
-					resource.TestCheckResourceAttr("genesyscloud_conversations_messaging_settings."+resource2, "content.0.story.0.reply.0.inbound", "Enabled"),
+					resource.TestCheckResourceAttr("genesyscloud_conversations_messaging_settings."+resourceLabel2, "name", name2),
+					resource.TestCheckResourceAttr("genesyscloud_conversations_messaging_settings."+resourceLabel2, "content.0.story.0.mention.0.inbound", "Enabled"),
+					resource.TestCheckResourceAttr("genesyscloud_conversations_messaging_settings."+resourceLabel2, "content.0.story.0.reply.0.inbound", "Enabled"),
 				),
 			},
 			{
 				// Import/Read
-				ResourceName:      "genesyscloud_conversations_messaging_settings." + resource2,
+				ResourceName:      "genesyscloud_conversations_messaging_settings." + resourceLabel2,
 				ImportState:       true,
 				ImportStateVerify: true,
 			},

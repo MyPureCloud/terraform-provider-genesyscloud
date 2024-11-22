@@ -52,6 +52,7 @@ resource "genesyscloud_journey_views" "journey_view" {
 
 ### Optional
 
+- `charts` (Block List) The charts within the journey view. (see [below for nested schema](#nestedblock--charts))
 - `description` (String) A description of the journey view.
 - `duration` (String) A relative timeframe for the journey view, expressed as an ISO 8601 duration. Only one of interval or duration must be specified. Periods are represented as an ISO-8601 string. For example: P1D or P1DT12H.
 - `elements` (Block List) The elements within the journey view. (see [below for nested schema](#nestedblock--elements))
@@ -60,6 +61,62 @@ resource "genesyscloud_journey_views" "journey_view" {
 ### Read-Only
 
 - `id` (String) The ID of this resource.
+- `version` (Number) Version of JourneyView.
+
+<a id="nestedblock--charts"></a>
+### Nested Schema for `charts`
+
+Required:
+
+- `metrics` (Block List, Min: 1) A set of metrics to be displayed on the chart. (see [below for nested schema](#nestedblock--charts--metrics))
+- `name` (String) The unique name of the chart within the view.
+- `version` (Number) The version of chart
+
+Optional:
+
+- `display_attributes` (Block List, Max: 1) Optional display attributes for rendering the chart (see [below for nested schema](#nestedblock--charts--display_attributes))
+- `group_by_attributes` (Block List) A list of attributes to group the metrics by (see [below for nested schema](#nestedblock--charts--group_by_attributes))
+- `group_by_max` (Number) A maximum on the number of values being grouped by
+- `group_by_time` (String) A time unit to group the metrics by
+
+Read-Only:
+
+- `id` (String) The unique identifier of the chart within the charts list.
+
+<a id="nestedblock--charts--metrics"></a>
+### Nested Schema for `charts.metrics`
+
+Required:
+
+- `element_id` (String) The reference of element.
+- `id` (String) The unique identifier of the metric within the metrics list.
+
+Optional:
+
+- `aggregate` (String) The version of chart
+- `display_label` (String) Display loabel of metric
+
+
+<a id="nestedblock--charts--display_attributes"></a>
+### Nested Schema for `charts.display_attributes`
+
+Optional:
+
+- `group_by_title` (String) A title for the grouped by attributes (aka the x axis).
+- `metrics_title` (String) A title for the metrics (aka the y axis).
+- `show_legend` (Boolean) Whether to show a legend
+- `var_type` (String) The type of chart to display.
+
+
+<a id="nestedblock--charts--group_by_attributes"></a>
+### Nested Schema for `charts.group_by_attributes`
+
+Required:
+
+- `attribute` (String) The attribute of the element being grouped by.
+- `element_id` (String) The element in the list of elements which is being grouped by.
+
+
 
 <a id="nestedblock--elements"></a>
 ### Nested Schema for `elements`

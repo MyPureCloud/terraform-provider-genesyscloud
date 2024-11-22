@@ -12,10 +12,10 @@ import (
 func TestAccDataSourceExtensionPoolBasic(t *testing.T) {
 	t.Parallel()
 	var (
-		extensionPoolStartNumber = "2500"
-		extensionPoolEndNumber   = "2599"
-		extensionPoolRes         = "extensionPool"
-		extensionPoolDataRes     = "extensionPoolData"
+		extensionPoolStartNumber       = "2500"
+		extensionPoolEndNumber         = "2599"
+		extensionPoolResourceLabel     = "extensionPool"
+		extensionPoolDataResourceLabel = "extensionPoolData"
 	)
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
@@ -24,16 +24,16 @@ func TestAccDataSourceExtensionPoolBasic(t *testing.T) {
 			{
 				// Create
 				Config: GenerateExtensionPoolResource(&ExtensionPoolStruct{
-					extensionPoolRes,
+					extensionPoolResourceLabel,
 					extensionPoolStartNumber,
 					extensionPoolEndNumber,
 					util.NullValue, // No description
-				}) + generateExtensionPoolDataSource(extensionPoolDataRes,
+				}) + generateExtensionPoolDataSource(extensionPoolDataResourceLabel,
 					extensionPoolStartNumber,
 					extensionPoolEndNumber,
-					"genesyscloud_telephony_providers_edges_extension_pool."+extensionPoolRes),
+					"genesyscloud_telephony_providers_edges_extension_pool."+extensionPoolResourceLabel),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair("data.genesyscloud_telephony_providers_edges_extension_pool."+extensionPoolDataRes, "id", "genesyscloud_telephony_providers_edges_extension_pool."+extensionPoolRes, "id"),
+					resource.TestCheckResourceAttrPair("data.genesyscloud_telephony_providers_edges_extension_pool."+extensionPoolDataResourceLabel, "id", "genesyscloud_telephony_providers_edges_extension_pool."+extensionPoolResourceLabel, "id"),
 				),
 			},
 		},
@@ -41,7 +41,7 @@ func TestAccDataSourceExtensionPoolBasic(t *testing.T) {
 }
 
 func generateExtensionPoolDataSource(
-	resourceID string,
+	resourceLabel string,
 	startNumber string,
 	endNumber string,
 	// Must explicitly use depends_on in terraform v0.13 when a data source references a resource
@@ -52,5 +52,5 @@ func generateExtensionPoolDataSource(
 		end_number = "%s"
 		depends_on=[%s]
 	}
-	`, resourceID, startNumber, endNumber, dependsOnResource)
+	`, resourceLabel, startNumber, endNumber, dependsOnResource)
 }
