@@ -79,6 +79,7 @@ import (
 	routingQueue "terraform-provider-genesyscloud/genesyscloud/routing_queue"
 	routingWrapupcode "terraform-provider-genesyscloud/genesyscloud/routing_wrapupcode"
 
+	externalOrganization "terraform-provider-genesyscloud/genesyscloud/external_contacts_organization"
 	knowledgeDocument "terraform-provider-genesyscloud/genesyscloud/knowledge_document"
 	location "terraform-provider-genesyscloud/genesyscloud/location"
 	routingQueueConditionalGroupRouting "terraform-provider-genesyscloud/genesyscloud/routing_queue_conditional_group_routing"
@@ -279,6 +280,7 @@ func registerResources() {
 	location.SetRegistrar(regInstance)                                     //Registering location
 	knowledgeDocument.SetRegistrar(regInstance)                            //Registering knowledge document
 	knowledge.SetRegistrar(regInstance)                                    //Registering knowledge
+	externalOrganization.SetRegistrar(regInstance)                         //Registering external organization
 	// setting resources for Use cases  like TF export where provider is used in resource classes.
 	tfexp.SetRegistrar(regInstance) //Registering tf exporter
 	registrar.SetResources(providerResources, providerDataSources)
