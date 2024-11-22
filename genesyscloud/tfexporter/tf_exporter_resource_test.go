@@ -20,6 +20,7 @@ import (
 	authDivision "terraform-provider-genesyscloud/genesyscloud/auth_division"
 	authRole "terraform-provider-genesyscloud/genesyscloud/auth_role"
 	integrationInstagram "terraform-provider-genesyscloud/genesyscloud/conversations_messaging_integrations_instagram"
+	cMessagingOpen "terraform-provider-genesyscloud/genesyscloud/conversations_messaging_integrations_open"
 	cMessagingSettings "terraform-provider-genesyscloud/genesyscloud/conversations_messaging_settings"
 	supportedContent "terraform-provider-genesyscloud/genesyscloud/conversations_messaging_supportedcontent"
 	defaultSupportedContent "terraform-provider-genesyscloud/genesyscloud/conversations_messaging_supportedcontent_default"
@@ -98,6 +99,7 @@ import (
 	edgeSite "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site"
 
 	userPrompt "terraform-provider-genesyscloud/genesyscloud/architect_user_prompt"
+	externalOrganization "terraform-provider-genesyscloud/genesyscloud/external_contacts_organization"
 	location "terraform-provider-genesyscloud/genesyscloud/location"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -154,20 +156,20 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources[integrationCred.ResourceType] = integrationCred.ResourceIntegrationCredential()
 	providerResources[integrationFacebook.ResourceType] = integrationFacebook.ResourceIntegrationFacebook()
 	providerResources[integrationInstagram.ResourceType] = integrationInstagram.ResourceConversationsMessagingIntegrationsInstagram()
-	providerResources[gcloud.ResourceType] = gcloud.ResourceJourneyActionMap()
-	providerResources[gcloud.ResourceType] = gcloud.ResourceJourneyActionTemplate()
-	providerResources[gcloud.ResourceType] = gcloud.ResourceJourneyOutcome()
-	providerResources[gcloud.ResourceType] = gcloud.ResourceJourneySegment()
-	providerResources[gcloud.ResourceType] = gcloud.ResourceKnowledgeKnowledgebase()
+	providerResources["genesyscloud_journey_action_map"] = gcloud.ResourceJourneyActionMap()
+	providerResources["genesyscloud_journey_action_template"] = gcloud.ResourceJourneyActionTemplate()
+	providerResources["genesyscloud_journey_outcome"] = gcloud.ResourceJourneyOutcome()
+	providerResources["genesyscloud_journey_segment"] = gcloud.ResourceJourneySegment()
+	providerResources["genesyscloud_knowledge_knowledgebase"] = gcloud.ResourceKnowledgeKnowledgebase()
 	providerResources[knowledgeDocument.ResourceType] = knowledgeDocument.ResourceKnowledgeDocument()
-	providerResources[knowledge.ResourceType] = knowledge.ResourceKnowledgeDocumentVariation()
-	providerResources[gcloud.ResourceType] = gcloud.ResourceKnowledgeCategory()
-	providerResources[gcloud.ResourceType] = gcloud.ResourceKnowledgeLabel()
+	providerResources["genesyscloud_knowledge_document_variation"] = knowledge.ResourceKnowledgeDocumentVariation()
+	providerResources["genesyscloud_knowledge_category"] = gcloud.ResourceKnowledgeCategory()
+	providerResources["genesyscloud_knowledge_label"] = gcloud.ResourceKnowledgeLabel()
 	providerResources[location.ResourceType] = location.ResourceLocation()
 	providerResources[recMediaRetPolicy.ResourceType] = recMediaRetPolicy.ResourceMediaRetentionPolicy()
 	providerResources[oauth_client.ResourceType] = oauth_client.ResourceOAuthClient()
 	providerResources[obSettings.ResourceType] = obSettings.ResourceOutboundSettings()
-	providerResources[gcloud.ResourceType] = gcloud.ResourceEvaluationForm()
+	providerResources["genesyscloud_quality_forms_evaluation"] = gcloud.ResourceEvaluationForm()
 	providerResources[user.ResourceType] = user.ResourceUser()
 	providerResources[respmanagementLibrary.ResourceType] = respmanagementLibrary.ResourceResponsemanagementLibrary()
 	providerResources[respManagementRespAsset.ResourceType] = respManagementRespAsset.ResourceResponseManagementResponseAsset()
@@ -194,7 +196,7 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources[userRoles.ResourceType] = userRoles.ResourceUserRoles()
 	providerResources[webdeployDeploy.ResourceType] = webdeployDeploy.ResourceWebDeployment()
 	providerResources[webdeployConfig.ResourceType] = webdeployConfig.ResourceWebDeploymentConfiguration()
-	providerResources[gcloud.ResourceType] = gcloud.ResourceWidgetDeployment()
+	providerResources["genesyscloud_widget_deployment"] = gcloud.ResourceWidgetDeployment()
 	providerResources[pat.ResourceType] = pat.ResourceProcessAutomationTrigger()
 
 	providerResources[outboundAttemptLimit.ResourceType] = outboundAttemptLimit.ResourceOutboundAttemptLimit()
@@ -212,7 +214,7 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources[obDigitalRuleset.ResourceType] = obDigitalRuleset.ResourceOutboundDigitalruleset()
 	providerResources[obfst.ResourceType] = obfst.ResourceOutboundFileSpecificationTemplate()
 	providerResources[obw.ResourceType] = obw.ResourceOutboundWrapUpCodeMappings()
-	providerResources[gcloud.ResourceType] = gcloud.ResourceSurveyForm()
+	providerResources["genesyscloud_quality_forms_survey"] = gcloud.ResourceSurveyForm()
 	providerResources[responsemanagementResponse.ResourceType] = responsemanagementResponse.ResourceResponsemanagementResponse()
 	providerResources[routingSmsAddress.ResourceType] = routingSmsAddress.ResourceRoutingSmsAddress()
 	providerResources[routingSkillGroup.ResourceType] = routingSkillGroup.ResourceRoutingSkillGroup()
@@ -227,6 +229,8 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources[cMessagingSettings.ResourceType] = cMessagingSettings.ResourceConversationsMessagingSettings()
 	providerResources[defaultSupportedContent.ResourceType] = defaultSupportedContent.ResourceConversationsMessagingSupportedcontentDefault()
 	providerResources[worktypeStatus.ResourceType] = worktypeStatus.ResourceTaskManagementWorktypeStatus()
+	providerResources[cMessagingOpen.ResourceType] = cMessagingOpen.ResourceConversationsMessagingIntegrationsOpen()
+	providerResources[externalOrganization.ResourceType] = externalOrganization.ResourceExternalContactsOrganization()
 	providerResources["genesyscloud_tf_export"] = ResourceTfExport()
 }
 
@@ -335,9 +339,9 @@ func (r *registerTestInstance) registerTestExporters() {
 
 	RegisterExporter("genesyscloud_conversations_messaging_supportedcontent", supportedContent.SupportedContentExporter())
 	RegisterExporter("genesyscloud_conversations_messaging_supportedcontent_default", defaultSupportedContent.ConversationsMessagingSupportedcontentDefaultExporter())
-
+	RegisterExporter("genesyscloud_conversations_messaging_integrations_open", cMessagingOpen.ConversationsMessagingIntegrationsOpenExporter())
 	RegisterExporter("genesyscloud_script", scripts.ExporterScript())
-
+	RegisterExporter("genesyscloud_externalcontacts_organization", externalOrganization.ExternalContactsOrganizationExporter())
 	resourceExporter.SetRegisterExporter(resourceExporters)
 }
 

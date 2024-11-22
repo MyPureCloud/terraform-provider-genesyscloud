@@ -1,18 +1,16 @@
-package webdeployments_configuration
+package external_contacts_organization
 
 import (
 	"sync"
 	"testing"
 
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
-
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-// providerDataSources holds a map of all registered webdeployments_configuration
+// providerDataSources holds a map of all registered datasources
 var providerDataSources map[string]*schema.Resource
 
-// providerResources holds a map of all webdeployments_configuration
+// providerResources holds a map of all registered resources
 var providerResources map[string]*schema.Resource
 
 type registerTestInstance struct {
@@ -25,8 +23,7 @@ func (r *registerTestInstance) registerTestResources() {
 	r.resourceMapMutex.Lock()
 	defer r.resourceMapMutex.Unlock()
 
-	providerResources[ResourceType] = ResourceWebDeploymentConfiguration()
-	providerResources["genesyscloud_knowledge_knowledgebase"] = gcloud.ResourceKnowledgeKnowledgebase()
+	providerResources["genesyscloud_externalcontacts_organization"] = ResourceExternalContactsOrganization()
 }
 
 // registerTestDataSources registers all data sources used in the tests.
@@ -34,7 +31,7 @@ func (r *registerTestInstance) registerTestDataSources() {
 	r.datasourceMapMutex.Lock()
 	defer r.datasourceMapMutex.Unlock()
 
-	providerDataSources[ResourceType] = DataSourceWebDeploymentsConfiguration()
+	providerDataSources["genesyscloud_externalcontacts_organization"] = DataSourceExternalContactsOrganization()
 }
 
 // initTestResources initializes all test resources and data sources.
@@ -50,9 +47,9 @@ func initTestResources() {
 
 // TestMain is a "setup" function called by the testing framework when run the test
 func TestMain(m *testing.M) {
-	// Run setup function before starting the test suite for integration package
+	// Run setup function before starting the test suite for external_contacts_organization package
 	initTestResources()
 
-	// Run the test suite for the integration package
+	// Run the test suite for the external_contacts_organization package
 	m.Run()
 }
