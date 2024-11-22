@@ -42,7 +42,7 @@ var (
 				Optional:    true,
 			},
 			"constraint_after": {
-				Description: "A time constraint on this link, which requires a customer must complete the downstream element after this amount of time to be counted..",
+				Description: "A time constraint on this link, which requires a customer must complete the downstream element after this amount of time to be counted.",
 				Type:        schema.TypeList,
 				Elem:        constraintResource,
 				MaxItems:    1,
@@ -65,7 +65,7 @@ var (
 	predicatesResource = &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			"dimension": {
-				Description: "The element's attribute being filtered on",
+				Description: "The element's attribute being filtered on.",
 				Type:        schema.TypeString,
 				Required:    true,
 			},
@@ -172,13 +172,13 @@ var (
 				Required:    true,
 			},
 			"aggregate": {
-				Description:  "The version of chart",
+				Description:  "How to aggregate the given element. Valid values: EventCount, CustomerCount.",
 				Type:         schema.TypeString,
 				Optional:     true,
 				ValidateFunc: validation.StringInSlice([]string{"EventCount", "CustomerCount"}, false),
 			},
 			"display_label": {
-				Description: "Display loabel of metric",
+				Description: "Display label of metric.",
 				Type:        schema.TypeString,
 				Optional:    true,
 			},
@@ -187,7 +187,7 @@ var (
 	displayAttributesResource = &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			"var_type": {
-				Description:  "The type of chart to display.",
+				Description:  "The type of chart to display. Valid values: Bar, Column, Line.",
 				Type:         schema.TypeString,
 				Optional:     true,
 				ValidateFunc: validation.StringInSlice([]string{"Bar", "Column", "Line"}, false),
@@ -248,7 +248,7 @@ var (
 				MinItems:    1,
 			},
 			"group_by_time": {
-				Description:  "A time unit to group the metrics by",
+				Description:  "A time unit to group the metrics by. Valid values: Day, Week, Month, Year.",
 				Type:         schema.TypeString,
 				Optional:     true,
 				ValidateFunc: validation.StringInSlice([]string{"Day", "Week", "Month", "Year"}, false),
