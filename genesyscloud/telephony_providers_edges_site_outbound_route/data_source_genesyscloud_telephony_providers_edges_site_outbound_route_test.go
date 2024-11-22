@@ -91,7 +91,7 @@ func TestAccDataSourceSiteOutboundRoute(t *testing.T) {
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
-				Config: trunkBaseSettings1 + trunkBaseSettings2 + locationConfig + site + generateSiteOutboundRoutesResource(
+				Config: trunkBaseSettings1 + trunkBaseSettings2 + locationConfig + site + GenerateSiteOutboundRoutesResource(
 					outboundRouteResourceLabel1,
 					"genesyscloud_telephony_providers_edges_site."+siteResourceLabel+".id",
 					"outboundRoute name 1",
@@ -100,7 +100,7 @@ func TestAccDataSourceSiteOutboundRoute(t *testing.T) {
 					"genesyscloud_telephony_providers_edges_trunkbasesettings.trunkBaseSettings1.id",
 					"RANDOM",
 					util.FalseValue) +
-					generateSiteOutboundRoutesResource(
+					GenerateSiteOutboundRoutesResource(
 						outboundRouteResourceLabel2,
 						"genesyscloud_telephony_providers_edges_site."+siteResourceLabel+".id",
 						"outboundRoute name 2",
@@ -117,7 +117,7 @@ func TestAccDataSourceSiteOutboundRoute(t *testing.T) {
 				Destroy: false,
 			},
 			{
-				Config: trunkBaseSettings1 + trunkBaseSettings2 + locationConfig + site + generateSiteOutboundRoutesResource(
+				Config: trunkBaseSettings1 + trunkBaseSettings2 + locationConfig + site + GenerateSiteOutboundRoutesResource(
 					outboundRouteResourceLabel1,
 					"genesyscloud_telephony_providers_edges_site."+siteResourceLabel+".id",
 					"outboundRoute name 1",
@@ -125,7 +125,7 @@ func TestAccDataSourceSiteOutboundRoute(t *testing.T) {
 					"\"International\"",
 					"genesyscloud_telephony_providers_edges_trunkbasesettings.trunkBaseSettings1.id",
 					"RANDOM",
-					util.FalseValue) + generateSiteOutboundRouteDataSource(
+					util.FalseValue) + GenerateSiteOutboundRouteDataSource(
 					outboundRouteResourceLabel1,
 					"outboundRoute name 1",
 					"",
@@ -163,10 +163,10 @@ func TestAccDataSourceSiteManaged(t *testing.T) {
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
-				Config: generateSiteOutboundRouteDataSource(
+				Config: GenerateSiteOutboundRouteDataSource(
 					dataResourceLabel,
 					name,
-					siteId,
+					strconv.Quote(siteId),
 					"",
 				),
 				Check: resource.ComposeTestCheckFunc(
@@ -176,22 +176,6 @@ func TestAccDataSourceSiteManaged(t *testing.T) {
 			},
 		},
 	})
-}
-
-func generateSiteOutboundRouteDataSource(
-	dataSourceLabel string,
-	name string,
-	siteId string,
-	// Must explicitly use depends_on in terraform v0.13 when a data source references a resource
-	// Fixed in v0.14 https://github.com/hashicorp/terraform/pull/26284
-	dependsOnResource string,
-) string {
-	return fmt.Sprintf(`data "genesyscloud_telephony_providers_edges_site_outbound_route" "%s" {
-		name = "%s"
-		site_id = "%s"
-		depends_on=[%s]
-	}
-	`, dataSourceLabel, name, siteId, dependsOnResource)
 }
 
 func getSiteIdByName(name string) (string, error) {

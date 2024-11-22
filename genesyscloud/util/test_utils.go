@@ -386,3 +386,23 @@ func AssignRegion() string {
 	regionJSON := "[" + strconv.Quote(region) + "]"
 	return regionJSON
 }
+
+func BuildResourcePathIdReference(resourceType string, resourceLabel string) string {
+	resourcePathIdReference := fmt.Sprintf(`%s.id`, BuildResourcePath(resourceType, resourceLabel))
+	return resourcePathIdReference
+}
+
+func BuildDataSourcePathIdReference(dataSourceType string, dataSourceLabel string) string {
+	dataSourcePathIdReference := fmt.Sprintf(`%s.id`, BuildDataSourcePath(dataSourceType, dataSourceLabel))
+	return dataSourcePathIdReference
+}
+
+func BuildResourcePath(resourceType string, resourceLabel string) string {
+	resourcePath := fmt.Sprintf(`%s.%s`, resourceType, resourceLabel)
+	return resourcePath
+}
+
+func BuildDataSourcePath(dataSourceType string, dataSourceLabel string) string {
+	dataSourcePath := fmt.Sprintf(`data.%s.%s`, dataSourceType, dataSourceLabel)
+	return dataSourcePath
+}

@@ -25,7 +25,7 @@ func dataSourceSiteOutboundRouteRead(ctx context.Context, d *schema.ResourceData
 	siteId := d.Get("site_id").(string)
 
 	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
-		siteId, routeId, retryable, resp, err := proxy.getSiteOutboundRouteByName(ctx, name, siteId)
+		outboundRoute, retryable, resp, err := proxy.getSiteOutboundRouteByName(ctx, name, siteId)
 		if err != nil {
 			if retryable {
 				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to get outbound route %s", name), resp))
@@ -34,11 +34,12 @@ func dataSourceSiteOutboundRouteRead(ctx context.Context, d *schema.ResourceData
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("error requesting outbound route %s | error: %s", name, err), resp))
 		}
 
-		outboundRouteId := buildSiteAndOutboundRouteId(siteId, routeId)
+		outboundRouteId := buildSiteAndOutboundRouteId(siteId, *outboundRoute.Id)
 
 		d.SetId(outboundRouteId)
+		d.Set("name", *outboundRoute.Name)
 		d.Set("site_id", siteId)
-		d.Set("route_id", routeId)
+		d.Set("route_id", *outboundRoute.Id)
 		return nil
 	})
 }

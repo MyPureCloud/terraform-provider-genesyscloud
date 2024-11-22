@@ -55,3 +55,42 @@ func splitSiteAndOutboundRoute(dId string) (string, string) {
 	}
 	return "", ""
 }
+
+// This is a function used in our tests to generate a data resource block
+func GenerateSiteOutboundRouteDataSource(
+	resourceName string,
+	name string,
+	siteId string,
+	// Must explicitly use depends_on in terraform v0.13 when a data source references a resource
+	// Fixed in v0.14 https://github.com/hashicorp/terraform/pull/26284
+	dependsOnResource string,
+) string {
+	return fmt.Sprintf(`data "genesyscloud_telephony_providers_edges_site_outbound_route" "%s" {
+		name = "%s"
+		site_id = %s
+		depends_on=[%s]
+	}
+	`, resourceName, name, siteId, dependsOnResource)
+}
+
+// This is a function used in our tests to generate a resource block
+func GenerateSiteOutboundRoutesResource(
+	routesResource,
+	siteId string,
+	name,
+	description,
+	classificationTypes,
+	externalTrunkBaseIds,
+	distribution,
+	enabled string) string {
+	return fmt.Sprintf(`resource "genesyscloud_telephony_providers_edges_site_outbound_route" "%s" {
+		site_id = %s
+		name = "%s"
+		description = "%s"
+		classification_types = [%s]
+		external_trunk_base_ids = [%s]
+		distribution = "%s"
+		enabled = %s
+	}
+	`, routesResource, siteId, name, description, classificationTypes, externalTrunkBaseIds, distribution, enabled)
+}

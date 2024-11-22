@@ -23,7 +23,7 @@ type getAllSiteOutboundRoutesFunc func(ctx context.Context, p *siteOutboundRoute
 type getSiteByIdFunc func(ctx context.Context, p *siteOutboundRouteProxy, siteId string) (*platformclientv2.Site, *platformclientv2.APIResponse, error)
 type createSiteOutboundRouteFunc func(ctx context.Context, p *siteOutboundRouteProxy, siteId string, outboundRoute *platformclientv2.Outboundroutebase) (*platformclientv2.Outboundroutebase, *platformclientv2.APIResponse, error)
 type getSiteOutboundRouteByIdFunc func(ctx context.Context, p *siteOutboundRouteProxy, siteId string, outboundRoute string) (*platformclientv2.Outboundroutebase, *platformclientv2.APIResponse, error)
-type getSiteOutboundRouteByNameFunc func(ctx context.Context, p *siteOutboundRouteProxy, outboundRouteName string, siteId string) (string, string, bool, *platformclientv2.APIResponse, error)
+type getSiteOutboundRouteByNameFunc func(ctx context.Context, p *siteOutboundRouteProxy, outboundRouteName string, siteId string) (*platformclientv2.Outboundroutebase, bool, *platformclientv2.APIResponse, error)
 type updateSiteOutboundRouteFunc func(ctx context.Context, p *siteOutboundRouteProxy, siteId string, outboundRouteId string, outboundRoute *platformclientv2.Outboundroutebase) (*platformclientv2.Outboundroutebase, *platformclientv2.APIResponse, error)
 type deleteSiteOutboundRouteFunc func(ctx context.Context, p *siteOutboundRouteProxy, siteId string, outboundRouteId string) (*platformclientv2.APIResponse, error)
 
@@ -93,7 +93,7 @@ func (p *siteOutboundRouteProxy) getSiteOutboundRouteById(ctx context.Context, s
 }
 
 // getSiteByNameFunc returns the outbound route id
-func (p *siteOutboundRouteProxy) getSiteOutboundRouteByName(ctx context.Context, outboundRouteName string, siteId string) (string, string, bool, *platformclientv2.APIResponse, error) {
+func (p *siteOutboundRouteProxy) getSiteOutboundRouteByName(ctx context.Context, outboundRouteName string, siteId string) (*platformclientv2.Outboundroutebase, bool, *platformclientv2.APIResponse, error) {
 	return p.getSiteOutboundRouteByNameAttr(ctx, p, outboundRouteName, siteId)
 }
 
@@ -174,23 +174,23 @@ func getSiteOutboundRouteByIdFn(ctx context.Context, p *siteOutboundRouteProxy, 
 	return outboundRoute, resp, nil
 }
 
-func getSiteOutboundRouteByNameFn(ctx context.Context, p *siteOutboundRouteProxy, outboundRouteName string, siteIdOrEmpty string) (siteId string, outboundRouteId string, retryable bool, resp *platformclientv2.APIResponse, err error) {
+func getSiteOutboundRouteByNameFn(ctx context.Context, p *siteOutboundRouteProxy, outboundRouteName string, siteIdOrEmpty string) (outboundRoute *platformclientv2.Outboundroutebase, retryable bool, resp *platformclientv2.APIResponse, err error) {
 	var allSites []platformclientv2.Site
 	unmanagedSites, resp, err := p.siteProxy.GetAllSites(ctx, false)
 	if err != nil {
-		return "", "", false, resp, err
+		return nil, false, resp, err
 	}
 	allSites = append(allSites, *unmanagedSites...)
 
 	managedSites, resp, err := p.siteProxy.GetAllSites(ctx, true)
 	if err != nil {
-		return "", "", false, resp, err
+		return nil, false, resp, err
 	}
 	allSites = append(allSites, *managedSites...)
 	for _, site := range allSites {
 		outboundRoutes, resp, err := p.getAllSiteOutboundRoutes(ctx, *site.Id)
 		if err != nil {
-			return "", "", false, resp, err
+			return nil, false, resp, err
 		}
 		if siteIdOrEmpty != "" && *site.Id != siteIdOrEmpty {
 			continue
@@ -198,12 +198,12 @@ func getSiteOutboundRouteByNameFn(ctx context.Context, p *siteOutboundRouteProxy
 		for _, outboundRoute := range *outboundRoutes {
 			if (outboundRoute.Name != nil && *outboundRoute.Name == outboundRouteName) &&
 				(outboundRoute.State != nil && *outboundRoute.State != "deleted") {
-				return *site.Id, *outboundRoute.Id, false, resp, nil
+				return &outboundRoute, false, resp, nil
 			}
 		}
 	}
 
-	return "", "", true, resp, fmt.Errorf("no outbound route found with name %s", outboundRouteName)
+	return nil, true, resp, fmt.Errorf("no outbound route found with name %s", outboundRouteName)
 }
 
 // updateSiteOutboundRouteFn is an implementation function for updating an outbound route for a Genesys Cloud Site

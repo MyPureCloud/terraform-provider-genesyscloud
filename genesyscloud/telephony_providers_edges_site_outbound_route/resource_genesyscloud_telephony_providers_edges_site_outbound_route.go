@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"strings"
 
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
@@ -21,6 +22,11 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
+)
+
+const (
+	defaultOutboundRouteName = "Default Outbound Route"
+	initialVersion           = 1
 )
 
 func getAllSitesAndOutboundRoutes(ctx context.Context, sdkConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
@@ -59,7 +65,7 @@ func getAllSitesAndOutboundRoutes(ctx context.Context, sdkConfig *platformclient
 				// Managed sites are added to the ExportAsData []string in resource_exporter
 				if tfexporter_state.IsExporterActive() {
 					if *route.Name == "Default Outbound Route" {
-						resourceExporter.AddDataSourceItems(resourceName, *route.Name)
+						resourceExporter.AddDataSourceItems(ResourceType, *route.Name)
 					}
 				}
 			}
@@ -81,6 +87,16 @@ func createSiteOutboundRoute(ctx context.Context, d *schema.ResourceData, meta i
 	outboundRoute := buildOutboundRoutes(d)
 
 	newOutboundRoute, resp, err := proxy.createSiteOutboundRoute(ctx, siteId, outboundRoute)
+	if resp.StatusCode == 400 && strings.Contains(resp.ErrorMessage, "") {
+		outboundRoute, _, _, _ := proxy.getSiteOutboundRouteByName(ctx, defaultOutboundRouteName, siteId)
+		if *outboundRoute.Name == defaultOutboundRouteName && *outboundRoute.Version == initialVersion {
+			log.Printf("Attempting to update Default Outbound Route for site %s (version: %d)",
+				siteId, *outboundRoute.Version)
+			d.SetId(buildSiteAndOutboundRouteId(siteId, *outboundRoute.Id))
+			return updateSiteOutboundRoute(ctx, d, meta)
+		}
+	}
+
 	if err != nil {
 		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("failed to create outbound route %s for site %s: %s", *outboundRoute.Name, siteId, err), resp)
 	}

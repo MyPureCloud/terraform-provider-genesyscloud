@@ -298,7 +298,7 @@ func getAllTrunkBaseSettings(ctx context.Context, sdkConfig *platformclientv2.Co
 		// Managed sites are added to the ExportAsData []string in resource_exporter
 		if tfexporter_state.IsExporterActive() {
 			if lists.StringInSubStringSlice(*tbs.Name, defaultTbsNames) {
-				resourceExporter.AddDataSourceItems(resourceName, *tbs.Name)
+				resourceExporter.AddDataSourceItems(ResourceType, *tbs.Name)
 			}
 		}
 	}
