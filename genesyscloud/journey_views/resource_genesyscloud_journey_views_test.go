@@ -153,7 +153,7 @@ func TestAccResourceJourneyViewsBasic(t *testing.T) {
 			},
 			{
 				// Import/Read
-				ResourceName:      "genesyscloud_journey_views." + journeyResourceLabel,
+				ResourceName:      "genesyscloud_journey_views." + journeyResource,
 				ImportState:       true,
 				ImportStateVerify: true,
 			},
@@ -179,7 +179,7 @@ func generateJourneyView(journeyResource string, name string, duration string, e
     %s
 	%s
 	}
-	`, journeyResourceLabel, duration, name, func() string {
+	`, journeyResource, duration, name, func() string {
 		if elementsBlock != "" {
 			return elementsBlock
 		}
