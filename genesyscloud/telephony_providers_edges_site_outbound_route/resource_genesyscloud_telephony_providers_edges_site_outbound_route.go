@@ -87,12 +87,16 @@ func createSiteOutboundRoute(ctx context.Context, d *schema.ResourceData, meta i
 	outboundRoute := buildOutboundRoutes(d)
 
 	newOutboundRoute, resp, err := proxy.createSiteOutboundRoute(ctx, siteId, outboundRoute)
-	if resp.StatusCode == 400 && strings.Contains(resp.ErrorMessage, "") {
-		outboundRoute, _, _, _ := proxy.getSiteOutboundRouteByName(ctx, defaultOutboundRouteName, siteId)
-		if *outboundRoute.Name == defaultOutboundRouteName && *outboundRoute.Version == initialVersion {
+	if resp.StatusCode == 400 && strings.Contains(resp.ErrorMessage, "OutboundRoute with name 'Default Outbound Route' already exists.") {
+		defaultOutboundRoute, _, _, _ := proxy.getSiteOutboundRouteByName(ctx, defaultOutboundRouteName, siteId)
+		if defaultOutboundRoute != nil &&
+			defaultOutboundRoute.Name != nil &&
+			*defaultOutboundRoute.Name == defaultOutboundRouteName &&
+			defaultOutboundRoute.Version != nil &&
+			*defaultOutboundRoute.Version == initialVersion {
 			log.Printf("Attempting to update Default Outbound Route for site %s (version: %d)",
-				siteId, *outboundRoute.Version)
-			d.SetId(buildSiteAndOutboundRouteId(siteId, *outboundRoute.Id))
+				siteId, *defaultOutboundRoute.Version)
+			d.SetId(buildSiteAndOutboundRouteId(siteId, *defaultOutboundRoute.Id))
 			return updateSiteOutboundRoute(ctx, d, meta)
 		}
 	}
@@ -167,7 +171,7 @@ func updateSiteOutboundRoute(ctx context.Context, d *schema.ResourceData, meta i
 
 	_, resp, err := proxy.updateSiteOutboundRoute(ctx, siteId, outboundRouteId, outboundRoute)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update outbound route with id %s for site %s error: %s", outboundRoute, siteId, err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update outbound route with id %s for site %s error: %s", outboundRouteId, siteId, err), resp)
 	}
 	// Wait for the update before reading
 	time.Sleep(5 * time.Second)
