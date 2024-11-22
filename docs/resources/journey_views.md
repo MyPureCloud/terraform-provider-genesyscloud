@@ -77,7 +77,7 @@ Optional:
 - `display_attributes` (Block List, Max: 1) Optional display attributes for rendering the chart (see [below for nested schema](#nestedblock--charts--display_attributes))
 - `group_by_attributes` (Block List) A list of attributes to group the metrics by (see [below for nested schema](#nestedblock--charts--group_by_attributes))
 - `group_by_max` (Number) A maximum on the number of values being grouped by
-- `group_by_time` (String) A time unit to group the metrics by
+- `group_by_time` (String) A time unit to group the metrics by. Valid values: Day, Week, Month, Year.
 
 Read-Only:
 
@@ -93,8 +93,8 @@ Required:
 
 Optional:
 
-- `aggregate` (String) The version of chart
-- `display_label` (String) Display loabel of metric
+- `aggregate` (String) How to aggregate the given element. Valid values: EventCount, CustomerCount.
+- `display_label` (String) Display label of metric.
 
 
 <a id="nestedblock--charts--display_attributes"></a>
@@ -105,7 +105,7 @@ Optional:
 - `group_by_title` (String) A title for the grouped by attributes (aka the x axis).
 - `metrics_title` (String) A title for the metrics (aka the y axis).
 - `show_legend` (Boolean) Whether to show a legend
-- `var_type` (String) The type of chart to display.
+- `var_type` (String) The type of chart to display. Valid values: Bar, Column, Line.
 
 
 <a id="nestedblock--charts--group_by_attributes"></a>
@@ -161,7 +161,7 @@ Optional:
 
 Required:
 
-- `dimension` (String) The element's attribute being filtered on
+- `dimension` (String) The element's attribute being filtered on.
 - `values` (List of String) The identifier for the element based on its type.
 
 Optional:
@@ -180,7 +180,7 @@ Required:
 
 Optional:
 
-- `constraint_after` (Block List, Max: 1) A time constraint on this link, which requires a customer must complete the downstream element after this amount of time to be counted.. (see [below for nested schema](#nestedblock--elements--followed_by--constraint_after))
+- `constraint_after` (Block List, Max: 1) A time constraint on this link, which requires a customer must complete the downstream element after this amount of time to be counted. (see [below for nested schema](#nestedblock--elements--followed_by--constraint_after))
 - `constraint_within` (Block List, Max: 1) A time constraint on this link, which requires a customer to complete the downstream element within this amount of time to be counted. (see [below for nested schema](#nestedblock--elements--followed_by--constraint_within))
 - `event_count_type` (String) The type of events that will be counted. Note: Concurrent will override any JourneyViewLinkTimeConstraint. Default is Sequential.Valid values: All, Concurrent, Sequential.
 - `join_attributes` (List of String) Other (secondary) attributes on which this link should join the customers being counted.

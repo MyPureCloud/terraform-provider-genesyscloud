@@ -23,7 +23,7 @@ func (r *registerTestInstance) registerTestResources() {
 	defer r.resourceMapMutex.Unlock()
 
 	providerResources[ResourceType] = ResourceJourneyOutcomePredictor()
-	providerResources[gcloud.ResourceType] = gcloud.ResourceJourneyOutcome()
+	providerResources["genesyscloud_journey_outcome"] = gcloud.ResourceJourneyOutcome()
 }
 
 // initTestResources initializes all test resources and data sources.

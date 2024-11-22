@@ -18,6 +18,7 @@ import (
 	authRole "terraform-provider-genesyscloud/genesyscloud/auth_role"
 	authorizatioProduct "terraform-provider-genesyscloud/genesyscloud/authorization_product"
 	integrationInstagram "terraform-provider-genesyscloud/genesyscloud/conversations_messaging_integrations_instagram"
+	cMessagingOpen "terraform-provider-genesyscloud/genesyscloud/conversations_messaging_integrations_open"
 	cMessageSettings "terraform-provider-genesyscloud/genesyscloud/conversations_messaging_settings"
 	cMessageSettingsDefault "terraform-provider-genesyscloud/genesyscloud/conversations_messaging_settings_default"
 	supportedContent "terraform-provider-genesyscloud/genesyscloud/conversations_messaging_supportedcontent"
@@ -78,6 +79,7 @@ import (
 	routingQueue "terraform-provider-genesyscloud/genesyscloud/routing_queue"
 	routingWrapupcode "terraform-provider-genesyscloud/genesyscloud/routing_wrapupcode"
 
+	externalOrganization "terraform-provider-genesyscloud/genesyscloud/external_contacts_organization"
 	knowledgeDocument "terraform-provider-genesyscloud/genesyscloud/knowledge_document"
 	location "terraform-provider-genesyscloud/genesyscloud/location"
 	routingQueueConditionalGroupRouting "terraform-provider-genesyscloud/genesyscloud/routing_queue_conditional_group_routing"
@@ -274,9 +276,11 @@ func registerResources() {
 	routingSkillGroup.SetRegistrar(regInstance)                            //Registering routing skill group
 	cMessageSettingsDefault.SetRegistrar(regInstance)                      //Registering conversations messaging settings default
 	cmSupportedContentDefault.SetRegistrar(regInstance)                    //Registering conversations supported content default
+	cMessagingOpen.SetRegistrar(regInstance)                               //Registering conversations messaging open
 	location.SetRegistrar(regInstance)                                     //Registering location
 	knowledgeDocument.SetRegistrar(regInstance)                            //Registering knowledge document
 	knowledge.SetRegistrar(regInstance)                                    //Registering knowledge
+	externalOrganization.SetRegistrar(regInstance)                         //Registering external organization
 	// setting resources for Use cases  like TF export where provider is used in resource classes.
 	tfexp.SetRegistrar(regInstance) //Registering tf exporter
 	registrar.SetResources(providerResources, providerDataSources)
