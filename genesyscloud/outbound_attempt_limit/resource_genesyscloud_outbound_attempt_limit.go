@@ -23,7 +23,7 @@ import (
 )
 
 const (
-	ResourceType = "genesyscloud_outbound_attemptlimit"
+	ResourceType = "genesyscloud_outbound_attempt_limit"
 )
 
 var (
@@ -396,7 +396,7 @@ func GenerateAttemptLimitResource(
 		resetPeriod = fmt.Sprintf(`reset_period = "%s"`, resetPeriod)
 	}
 	return fmt.Sprintf(`
-resource "genesyscloud_outbound_attempt_limit" "%s" {
+resource "%s" "%s" {
 	name = "%s"
 	%s
 	%s
@@ -404,5 +404,5 @@ resource "genesyscloud_outbound_attempt_limit" "%s" {
 	%s
 	%s
 }
-	`, resourceLabel, name, maxAttemptsPerContact, maxAttemptsPerNumber, timeZoneId, resetPeriod, strings.Join(nestedBlocks, "\n"))
+	`, ResourceType, resourceLabel, name, maxAttemptsPerContact, maxAttemptsPerNumber, timeZoneId, resetPeriod, strings.Join(nestedBlocks, "\n"))
 }
