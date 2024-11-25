@@ -53,7 +53,7 @@ func (r *registerTestInstance) registerTestDataSources() {
 	defer r.datasourceMapMutex.Unlock()
 	providerDataSources[ResourceType] = DataSourceUser()
 	providerDataSources[authRole.ResourceType] = authRole.DataSourceAuthRole()
-	providerDataSources[genesyscloud.ResourceType] = genesyscloud.DataSourceAuthDivisionHome()
+	providerDataSources["genesyscloud_auth_division_home"] = genesyscloud.DataSourceAuthDivisionHome()
 	providerDataSources[location.ResourceType] = location.DataSourceLocation()
 	providerDataSources[routingSkill.ResourceType] = routingSkill.DataSourceRoutingSkill()
 	providerDataSources[routinglanguage.ResourceType] = routinglanguage.DataSourceRoutingLanguage()
