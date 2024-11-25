@@ -35,7 +35,7 @@ func getAllAuthExternalContactsOrganizations(ctx context.Context, clientConfig *
 	}
 
 	for _, externalOrganization := range *externalOrganizations {
-		resources[*externalOrganization.Id] = &resourceExporter.ResourceMeta{Name: *externalOrganization.Id}
+		resources[*externalOrganization.Id] = &resourceExporter.ResourceMeta{BlockLabel: *externalOrganization.Id}
 	}
 
 	return resources, nil
