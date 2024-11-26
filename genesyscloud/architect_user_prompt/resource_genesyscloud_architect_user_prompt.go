@@ -39,12 +39,12 @@ func getAllUserPrompts(ctx context.Context, clientConfig *platformclientv2.Confi
 	if pageCount < 100 {
 		userPrompts, resp, err = proxy.getAllArchitectUserPrompts(ctx, true, true, "")
 		if err != nil {
-			return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("failed to get user prompts: %s", err), resp)
+			return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("failed to get user prompts: %s", err), resp)
 		}
 	} else {
 		userPrompts, resp, err = proxy.getAllArchitectUserPromptsFilterByName(ctx, true, true, "abcdefghijklmnopqrstuvwxyz1234567890")
 		if err != nil {
-			return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("failed to get user prompts: %s", err), resp)
+			return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("failed to get user prompts: %s", err), resp)
 		}
 	}
 
