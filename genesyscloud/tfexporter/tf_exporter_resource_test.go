@@ -100,6 +100,7 @@ import (
 
 	userPrompt "terraform-provider-genesyscloud/genesyscloud/architect_user_prompt"
 	externalOrganization "terraform-provider-genesyscloud/genesyscloud/external_contacts_organization"
+	knowledgeCategory "terraform-provider-genesyscloud/genesyscloud/knowledge_category"
 	location "terraform-provider-genesyscloud/genesyscloud/location"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -163,7 +164,7 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_knowledge_knowledgebase"] = gcloud.ResourceKnowledgeKnowledgebase()
 	providerResources["genesyscloud_knowledge_document"] = knowledgeDocument.ResourceKnowledgeDocument()
 	providerResources["genesyscloud_knowledge_document_variation"] = knowledge.ResourceKnowledgeDocumentVariation()
-	providerResources["genesyscloud_knowledge_category"] = gcloud.ResourceKnowledgeCategory()
+	providerResources["genesyscloud_knowledge_category"] = knowledgeCategory.ResourceKnowledgeCategory()
 	providerResources["genesyscloud_knowledge_label"] = gcloud.ResourceKnowledgeLabel()
 	providerResources["genesyscloud_location"] = location.ResourceLocation()
 	providerResources["genesyscloud_recording_media_retention_policy"] = recMediaRetPolicy.ResourceMediaRetentionPolicy()
@@ -272,7 +273,7 @@ func (r *registerTestInstance) registerTestExporters() {
 	RegisterExporter("genesyscloud_journey_segment", gcloud.JourneySegmentExporter())
 	RegisterExporter("genesyscloud_knowledge_knowledgebase", gcloud.KnowledgeKnowledgebaseExporter())
 	RegisterExporter("genesyscloud_knowledge_document", knowledgeDocument.KnowledgeDocumentExporter())
-	RegisterExporter("genesyscloud_knowledge_category", gcloud.KnowledgeCategoryExporter())
+	RegisterExporter("genesyscloud_knowledge_category", knowledgeCategory.KnowledgeCategoryExporter())
 	RegisterExporter("genesyscloud_location", location.LocationExporter())
 	RegisterExporter("genesyscloud_oauth_client", oauth_client.OauthClientExporter())
 	RegisterExporter("genesyscloud_outbound_attempt_limit", outboundAttemptLimit.OutboundAttemptLimitExporter())

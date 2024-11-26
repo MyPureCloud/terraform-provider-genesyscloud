@@ -1,4 +1,4 @@
-package genesyscloud
+package knowledge_category
 
 import (
 	"context"
