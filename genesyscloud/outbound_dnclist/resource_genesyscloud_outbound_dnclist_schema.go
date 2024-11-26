@@ -81,6 +81,13 @@ func ResourceOutboundDncList() *schema.Resource {
 				Type:         schema.TypeString,
 				ValidateFunc: validation.StringInSlice([]string{`rds`, `rds_custom`, `dnc.com`, `gryphon`}, false),
 			},
+			`custom_exclusion_column`: {
+				Description: `The column to evaluate exclusion against. Required if the dncSourceType is rds_custom. Since custom_exclusion_column cannot be updated, changing this value after deployment 
+				will cause the dnc list to be destroyed and recreated with a new GUID.`,
+				Optional: true,
+				Type:     schema.TypeString,
+				ForceNew: true,
+			},
 			`entries`: {
 				Description: `Rows to add to the DNC list. To emulate removing phone numbers, you can set expiration_date to a date in the past.`,
 				Optional:    true,
