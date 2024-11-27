@@ -50,14 +50,14 @@ resource "genesyscloud_integration_facebook" "test_sample" {
 - `app_id` (String) The app Id of Facebook app. The appId is required when a customer wants to use their own approved Facebook app.
 - `app_secret` (String) The app Secret of Facebook app. The appSecret is required when appId is provided.
 - `messaging_setting_id` (String) The messaging Setting unique identifier associated with this integration.
-- `page_access_token` (String) The long-lived Page Access Token of Facebook page. 
-			See https://developers.facebook.com/docs/facebook-login/access-tokens. 
+- `page_access_token` (String) The long-lived Page Access Token of Facebook page.
+			See https://developers.facebook.com/docs/facebook-login/access-tokens.
 			Either pageAccessToken or userAccessToken should be provided.
 - `page_id` (String) The page Id of Facebook page. The pageId is required when userAccessToken is provided.
 - `supported_content_id` (String) The SupportedContent unique identifier associated with this integration.
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
-- `user_access_token` (String) The short-lived User Access Token of the Facebook user logged into the Facebook app. 
-			See https://developers.facebook.com/docs/facebook-login/access-tokens. 
+- `user_access_token` (String) The short-lived User Access Token of the Facebook user logged into the Facebook app.
+			See https://developers.facebook.com/docs/facebook-login/access-tokens.
 			Either pageAccessToken or userAccessToken should be provided.
 
 ### Read-Only
