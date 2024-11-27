@@ -22,7 +22,7 @@ func TestAccDataSourceConversationsMessagingIntegrationsOpen(t *testing.T) {
 	var (
 		dataSourceLabel                                 = "data_test_messaging_open"
 		resourceLabel                                   = "test_messaging_open"
-		name                                            = "Data Terraform Integrations Messaging Open"
+		name                                            = "IntegrationsOpen" + uuid.NewString()
 		outboundNotificationWebhookUrl1                 = "https://mock-server.prv-use1.test-pure.cloud/messaging-service/webhook"
 		outboundNotificationWebhookSignatureSecretToken = uuid.NewString()
 
