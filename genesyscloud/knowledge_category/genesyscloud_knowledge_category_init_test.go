@@ -48,9 +48,9 @@ func initTestResources() {
 
 // TestMain is a "setup" function called by the testing framework when run the test
 func TestMain(m *testing.M) {
-	// Run setup function before starting the test suite for knowledge document package
+	// Run setup function before starting the test suite for knowledge category package
 	initTestResources()
 
-	// Run the test suite for the knowledge document package
+	// Run the test suite for the knowledge category package
 	m.Run()
 }

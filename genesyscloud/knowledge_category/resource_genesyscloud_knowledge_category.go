@@ -43,7 +43,7 @@ func getAllKnowledgeCategories(ctx context.Context, clientConfig *platformclient
 	knowledgeBaseList = append(knowledgeBaseList, *unpublishedEntities...)
 
 	for _, knowledgeBase := range knowledgeBaseList {
-		partialEntities, resp, err := proxy.getAllKnowledgeCategoryEntities(ctx, &knowledgeBase)
+		partialEntities, resp, err := proxy.getAllKnowledgeCategoryEntities(ctx, &knowledgeBase, "")
 		if err != nil {
 			return nil, util.BuildAPIDiagnosticError("genesyscloud_knowledge_categories", fmt.Sprintf("failed to get all knowledgebase categories: %s", err), resp)
 		}
