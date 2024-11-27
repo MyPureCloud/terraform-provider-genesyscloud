@@ -41,11 +41,11 @@ func TestAccDataSourceOutboundContactList(t *testing.T) {
 				) + generateOutboundContactListDataSource(
 					dataSourceLabel,
 					contactListName,
-					resourceName+"."+resourceLabel,
+					ResourceType+"."+resourceLabel,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair("data."+resourceName+"."+dataSourceLabel, "id",
-						resourceName+"."+resourceLabel, "id"),
+					resource.TestCheckResourceAttrPair("data."+ResourceType+"."+dataSourceLabel, "id",
+						ResourceType+"."+resourceLabel, "id"),
 				),
 			},
 		},
@@ -58,5 +58,5 @@ data "%s" "%s" {
 	name = "%s"
 	depends_on = [%s]
 }
-`, resourceName, dataSourceLabel, name, dependsOn)
+`, ResourceType, dataSourceLabel, name, dependsOn)
 }

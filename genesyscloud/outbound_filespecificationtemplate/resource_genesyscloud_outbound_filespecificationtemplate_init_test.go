@@ -18,14 +18,14 @@ type registerTestInstance struct {
 func (r *registerTestInstance) registerTestResources() {
 	r.resourceMapMutex.Lock()
 	defer r.resourceMapMutex.Unlock()
-	providerResources[resourceName] = ResourceOutboundFileSpecificationTemplate()
+	providerResources[ResourceType] = ResourceOutboundFileSpecificationTemplate()
 }
 
 func (r *registerTestInstance) registerTestDataSources() {
 
 	r.datasourceMapMutex.Lock()
 	defer r.datasourceMapMutex.Unlock()
-	providerDataSources[resourceName] = dataSourceOutboundFileSpecificationTemplate()
+	providerDataSources[ResourceType] = dataSourceOutboundFileSpecificationTemplate()
 }
 
 func initTestResources() {

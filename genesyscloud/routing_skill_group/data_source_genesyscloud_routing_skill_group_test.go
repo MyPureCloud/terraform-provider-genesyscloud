@@ -51,5 +51,5 @@ func generateRoutingSkillGroupDataSource(
 		name = %s
         depends_on=[%s]
 	}
-	`, resourceName, resourceLabel, name, dependsOnResource)
+	`, ResourceType, resourceLabel, name, dependsOnResource)
 }

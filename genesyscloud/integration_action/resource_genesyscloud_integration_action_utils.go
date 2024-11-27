@@ -52,13 +52,13 @@ func BuildSdkActionContract(d *schema.ResourceData) (*ActionContract, diag.Diagn
 	configInput := d.Get("contract_input").(string)
 	inputVal, err := util.JsonStringToInterface(configInput)
 	if err != nil {
-		return nil, util.BuildDiagnosticError(resourceName, fmt.Sprintf("Failed to parse contract input %s", configInput), err)
+		return nil, util.BuildDiagnosticError(ResourceType, fmt.Sprintf("Failed to parse contract input %s", configInput), err)
 	}
 
 	configOutput := d.Get("contract_output").(string)
 	outputVal, err := util.JsonStringToInterface(configOutput)
 	if err != nil {
-		return nil, util.BuildDiagnosticError(resourceName, fmt.Sprintf("Failed to parse contract output %s", configInput), err)
+		return nil, util.BuildDiagnosticError(ResourceType, fmt.Sprintf("Failed to parse contract output %s", configInput), err)
 	}
 
 	return &ActionContract{
@@ -149,7 +149,7 @@ func flattenActionContract(schema interface{}) (string, diag.Diagnostics) {
 	}
 	schemaBytes, err := json.Marshal(schema)
 	if err != nil {
-		return "", util.BuildDiagnosticError(resourceName, fmt.Sprintf("Error marshalling action contract %v", schema), err)
+		return "", util.BuildDiagnosticError(ResourceType, fmt.Sprintf("Error marshalling action contract %v", schema), err)
 	}
 	return string(schemaBytes), nil
 }

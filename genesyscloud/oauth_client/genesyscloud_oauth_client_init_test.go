@@ -1,10 +1,11 @@
 package oauth_client
 
 import (
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"sync"
 	authRole "terraform-provider-genesyscloud/genesyscloud/auth_role"
 	"testing"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 // providerDataSources holds a map of all registered data sources
@@ -23,7 +24,7 @@ func (r *registerTestInstance) registerTestResources() {
 	r.resourceMapMutex.Lock()
 	defer r.resourceMapMutex.Unlock()
 
-	providerResources[resourceName] = ResourceOAuthClient()
+	providerResources[ResourceType] = ResourceOAuthClient()
 }
 
 // registerTestDataSources registers all data sources used in the tests.
@@ -31,8 +32,8 @@ func (r *registerTestInstance) registerTestDataSources() {
 	r.datasourceMapMutex.Lock()
 	defer r.datasourceMapMutex.Unlock()
 
-	providerDataSources[resourceName] = DataSourceOAuthClient()
-	providerDataSources["genesyscloud_auth_role"] = authRole.DataSourceAuthRole()
+	providerDataSources[ResourceType] = DataSourceOAuthClient()
+	providerDataSources[authRole.ResourceType] = authRole.DataSourceAuthRole()
 }
 
 // initTestResources initializes all test resources and data sources.

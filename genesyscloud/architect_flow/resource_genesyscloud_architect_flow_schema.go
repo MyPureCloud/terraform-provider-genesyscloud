@@ -13,14 +13,14 @@ import (
 )
 
 const (
-	resourceName = "genesyscloud_flow"
+	ResourceType = "genesyscloud_flow"
 )
 
 // SetRegistrar registers all resources, data sources and exporters in the package
 func SetRegistrar(l registrar.Registrar) {
-	l.RegisterDataSource(resourceName, DataSourceArchitectFlow())
-	l.RegisterResource(resourceName, ResourceArchitectFlow())
-	l.RegisterExporter(resourceName, ArchitectFlowExporter())
+	l.RegisterDataSource(ResourceType, DataSourceArchitectFlow())
+	l.RegisterResource(ResourceType, ResourceArchitectFlow())
+	l.RegisterExporter(ResourceType, ArchitectFlowExporter())
 }
 
 func ArchitectFlowExporter() *resourceExporter.ResourceExporter {

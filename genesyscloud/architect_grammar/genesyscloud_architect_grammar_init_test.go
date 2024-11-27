@@ -1,9 +1,10 @@
 package architect_grammar
 
 import (
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"sync"
 	"testing"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 /*
@@ -27,7 +28,7 @@ func (r *registerTestInstance) registerTestResources() {
 	r.resourceMapMutex.Lock()
 	defer r.resourceMapMutex.Unlock()
 
-	providerResources["genesyscloud_architect_grammar"] = ResourceArchitectGrammar()
+	providerResources[ResourceType] = ResourceArchitectGrammar()
 }
 
 // registerTestDataSources registers all data sources used in the tests.
@@ -35,7 +36,7 @@ func (r *registerTestInstance) registerTestDataSources() {
 	r.datasourceMapMutex.Lock()
 	defer r.datasourceMapMutex.Unlock()
 
-	providerDataSources["genesyscloud_architect_grammar"] = DataSourceArchitectGrammar()
+	providerDataSources[ResourceType] = DataSourceArchitectGrammar()
 }
 
 // initTestResources initializes all test_data resources and data sources.

@@ -29,7 +29,7 @@ func getAllAuthArchitectGrammar(ctx context.Context, clientConfig *platformclien
 
 	grammars, resp, err := proxy.getAllArchitectGrammar(ctx)
 	if err != nil {
-		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to retrieve all grammars: %s", err), resp)
+		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to retrieve all grammars: %s", err), resp)
 	}
 
 	for _, grammar := range *grammars {
@@ -53,7 +53,7 @@ func createArchitectGrammar(ctx context.Context, d *schema.ResourceData, meta in
 	log.Printf("Creating Architect Grammar %s", *architectGrammar.Name)
 	grammar, resp, err := proxy.createArchitectGrammar(ctx, &architectGrammar)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create grammar %s error: %s", d.Id(), err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to create grammar %s error: %s", d.Id(), err), resp)
 	}
 
 	d.SetId(*grammar.Id)
@@ -65,7 +65,7 @@ func createArchitectGrammar(ctx context.Context, d *schema.ResourceData, meta in
 func readArchitectGrammar(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getArchitectGrammarProxy(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceArchitectGrammar(), constants.DefaultConsistencyChecks, resourceName)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceArchitectGrammar(), constants.DefaultConsistencyChecks, ResourceType)
 
 	log.Printf("Reading Architect Grammar %s", d.Id())
 
@@ -74,9 +74,9 @@ func readArchitectGrammar(ctx context.Context, d *schema.ResourceData, meta inte
 
 		if getErr != nil {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read Architect Grammar %s: %s", d.Id(), getErr), resp))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to read Architect Grammar %s: %s", d.Id(), getErr), resp))
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read Architect Grammar %s: %s", d.Id(), getErr), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to read Architect Grammar %s: %s", d.Id(), getErr), resp))
 		}
 
 		resourcedata.SetNillableValue(d, "name", grammar.Name)
@@ -101,7 +101,7 @@ func updateArchitectGrammar(ctx context.Context, d *schema.ResourceData, meta in
 	log.Printf("Updating Architect Grammar %s", *architectGrammar.Name)
 	grammar, resp, err := proxy.updateArchitectGrammar(ctx, d.Id(), &architectGrammar)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update grammar: %s error: %s", d.Id(), err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update grammar: %s error: %s", d.Id(), err), resp)
 	}
 
 	log.Printf("Updated Architect Grammar %s", *grammar.Id)
@@ -115,7 +115,7 @@ func deleteArchitectGrammar(ctx context.Context, d *schema.ResourceData, meta in
 
 	resp, err := proxy.deleteArchitectGrammar(ctx, d.Id())
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete grammar %s error: %s", d.Id(), err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete grammar %s error: %s", d.Id(), err), resp)
 	}
 
 	return util.WithRetries(ctx, 180*time.Second, func() *retry.RetryError {
@@ -126,10 +126,10 @@ func deleteArchitectGrammar(ctx context.Context, d *schema.ResourceData, meta in
 				log.Printf("Deleted Grammar %s", d.Id())
 				return nil
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Error deleting grammar %s: %s", d.Id(), err), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Error deleting grammar %s: %s", d.Id(), err), resp))
 		}
 
-		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("grammar %s still exists", d.Id()), resp))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("grammar %s still exists", d.Id()), resp))
 	})
 }
 

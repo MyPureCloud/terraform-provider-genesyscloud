@@ -31,9 +31,9 @@ func dataSourceConversationsMessagingIntegrationsOpenRead(ctx context.Context, d
 
 		if err != nil {
 			if retryable {
-				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceType, fmt.Sprintf("No conversations messaging integrations open found with name %s", name), resp))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("No conversations messaging integrations open found with name %s", name), resp))
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceType, fmt.Sprintf("Error searching conversations messaging integrations open %s: %s", name, err), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Error searching conversations messaging integrations open %s: %s", name, err), resp))
 		}
 
 		d.SetId(openIntegrationRequestId)

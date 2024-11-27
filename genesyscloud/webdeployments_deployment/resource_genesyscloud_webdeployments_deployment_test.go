@@ -21,7 +21,7 @@ func TestAccResourceWebDeploymentsDeployment(t *testing.T) {
 	var (
 		deploymentName        = "Test Deployment " + util.RandString(8)
 		deploymentDescription = "Test Deployment description " + util.RandString(32)
-		fullResourceName      = "genesyscloud_webdeployments_deployment.basic"
+		resourcePath          = "genesyscloud_webdeployments_deployment.basic"
 	)
 
 	cleanupWebDeploymentsDeployment(t, "Test Deployment ")
@@ -33,15 +33,15 @@ func TestAccResourceWebDeploymentsDeployment(t *testing.T) {
 			{
 				Config: basicDeploymentResource(deploymentName, deploymentDescription),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(fullResourceName, "name", deploymentName),
-					resource.TestCheckResourceAttr(fullResourceName, "description", deploymentDescription),
-					resource.TestCheckResourceAttr(fullResourceName, "allow_all_domains", "true"),
-					resource.TestCheckNoResourceAttr(fullResourceName, "allowed_domains"),
-					resource.TestMatchResourceAttr(fullResourceName, "status", regexp.MustCompile("^(Pending|Active)$")),
+					resource.TestCheckResourceAttr(resourcePath, "name", deploymentName),
+					resource.TestCheckResourceAttr(resourcePath, "description", deploymentDescription),
+					resource.TestCheckResourceAttr(resourcePath, "allow_all_domains", "true"),
+					resource.TestCheckNoResourceAttr(resourcePath, "allowed_domains"),
+					resource.TestMatchResourceAttr(resourcePath, "status", regexp.MustCompile("^(Pending|Active)$")),
 				),
 			},
 			{
-				ResourceName:            fullResourceName,
+				ResourceName:            resourcePath,
 				ImportState:             true,
 				ImportStateVerify:       true,
 				ImportStateVerifyIgnore: []string{"status"},
@@ -54,10 +54,10 @@ func TestAccResourceWebDeploymentsDeployment(t *testing.T) {
 func TestAccResourceWebDeploymentsDeployment_AllowedDomains(t *testing.T) {
 	t.Parallel()
 	var (
-		deploymentName   = "Test Deployment " + util.RandString(8)
-		fullResourceName = "genesyscloud_webdeployments_deployment.basicWithAllowedDomains"
-		firstDomain      = "genesys-" + util.RandString(8) + ".com"
-		secondDomain     = "genesys-" + util.RandString(8) + ".com"
+		deploymentName = "Test Deployment " + util.RandString(8)
+		resourcePath   = "genesyscloud_webdeployments_deployment.basicWithAllowedDomains"
+		firstDomain    = "genesys-" + util.RandString(8) + ".com"
+		secondDomain   = "genesys-" + util.RandString(8) + ".com"
 	)
 
 	cleanupWebDeploymentsDeployment(t, "Test Deployment ")
@@ -73,24 +73,24 @@ func TestAccResourceWebDeploymentsDeployment_AllowedDomains(t *testing.T) {
 						time.Sleep(45 * time.Second) // Wait for 30 seconds for status to become active
 						return nil
 					},
-					resource.TestCheckResourceAttr(fullResourceName, "name", deploymentName),
-					resource.TestCheckNoResourceAttr(fullResourceName, "description"),
-					resource.TestCheckResourceAttr(fullResourceName, "allow_all_domains", "false"),
-					resource.TestCheckResourceAttr(fullResourceName, "allowed_domains.#", "1"),
-					resource.TestCheckResourceAttr(fullResourceName, "allowed_domains.0", firstDomain),
-					resource.TestMatchResourceAttr(fullResourceName, "status", regexp.MustCompile("^(Pending|Active)$")),
+					resource.TestCheckResourceAttr(resourcePath, "name", deploymentName),
+					resource.TestCheckNoResourceAttr(resourcePath, "description"),
+					resource.TestCheckResourceAttr(resourcePath, "allow_all_domains", "false"),
+					resource.TestCheckResourceAttr(resourcePath, "allowed_domains.#", "1"),
+					resource.TestCheckResourceAttr(resourcePath, "allowed_domains.0", firstDomain),
+					resource.TestMatchResourceAttr(resourcePath, "status", regexp.MustCompile("^(Pending|Active)$")),
 				),
 			},
 			{
 				Config: deploymentResourceWithAllowedDomains(t, deploymentName, firstDomain, secondDomain),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(fullResourceName, "allowed_domains.#", "2"),
-					resource.TestCheckResourceAttr(fullResourceName, "allowed_domains.0", firstDomain),
-					resource.TestCheckResourceAttr(fullResourceName, "allowed_domains.1", secondDomain),
+					resource.TestCheckResourceAttr(resourcePath, "allowed_domains.#", "2"),
+					resource.TestCheckResourceAttr(resourcePath, "allowed_domains.0", firstDomain),
+					resource.TestCheckResourceAttr(resourcePath, "allowed_domains.1", secondDomain),
 				),
 			},
 			{
-				ResourceName:            fullResourceName,
+				ResourceName:            resourcePath,
 				ImportState:             true,
 				ImportStateVerify:       true,
 				ImportStateVerifyIgnore: []string{"status"},
@@ -103,9 +103,9 @@ func TestAccResourceWebDeploymentsDeployment_AllowedDomains(t *testing.T) {
 func TestAccResourceWebDeploymentsDeployment_Versioning(t *testing.T) {
 	t.Parallel()
 	var (
-		deploymentName             = "Test Deployment " + util.RandString(8)
-		fullDeploymentResourceName = "genesyscloud_webdeployments_deployment.versioning"
-		fullConfigResourceName     = "genesyscloud_webdeployments_configuration.minimal"
+		deploymentName         = "Test Deployment " + util.RandString(8)
+		deploymentResourcePath = "genesyscloud_webdeployments_deployment.versioning"
+		configResourcePath     = "genesyscloud_webdeployments_configuration.minimal"
 	)
 
 	cleanupWebDeploymentsDeployment(t, "Test Deployment ")
@@ -121,33 +121,33 @@ func TestAccResourceWebDeploymentsDeployment_Versioning(t *testing.T) {
 						time.Sleep(30 * time.Second) // Wait for 30 seconds for proper creation
 						return nil
 					},
-					resource.TestCheckResourceAttr(fullDeploymentResourceName, "name", deploymentName),
-					resource.TestCheckResourceAttr(fullDeploymentResourceName, "configuration.0.version", "1"),
-					resource.TestCheckResourceAttrPair(fullDeploymentResourceName, "configuration.0.id", fullConfigResourceName, "id"),
-					resource.TestCheckResourceAttrPair(fullDeploymentResourceName, "configuration.0.version", fullConfigResourceName, "version"),
+					resource.TestCheckResourceAttr(deploymentResourcePath, "name", deploymentName),
+					resource.TestCheckResourceAttr(deploymentResourcePath, "configuration.0.version", "1"),
+					resource.TestCheckResourceAttrPair(deploymentResourcePath, "configuration.0.id", configResourcePath, "id"),
+					resource.TestCheckResourceAttrPair(deploymentResourcePath, "configuration.0.version", configResourcePath, "version"),
 				),
 			},
 			{
 				Config: versioningDeploymentResource(t, deploymentName, "updated description", "en-us", []string{"en-us", "ja"}),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(fullDeploymentResourceName, "name", deploymentName),
-					resource.TestCheckResourceAttr(fullDeploymentResourceName, "configuration.0.version", "2"),
-					resource.TestCheckResourceAttrPair(fullDeploymentResourceName, "configuration.0.id", fullConfigResourceName, "id"),
-					resource.TestCheckResourceAttrPair(fullDeploymentResourceName, "configuration.0.version", fullConfigResourceName, "version"),
+					resource.TestCheckResourceAttr(deploymentResourcePath, "name", deploymentName),
+					resource.TestCheckResourceAttr(deploymentResourcePath, "configuration.0.version", "2"),
+					resource.TestCheckResourceAttrPair(deploymentResourcePath, "configuration.0.id", configResourcePath, "id"),
+					resource.TestCheckResourceAttrPair(deploymentResourcePath, "configuration.0.version", configResourcePath, "version"),
 				),
 			},
 			{
 				Config: deploymentResourceWithoutConfigVersion(t, deploymentName, "updated description again", "en-us", []string{"en-us", "ja"}),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(fullDeploymentResourceName, "name", deploymentName),
-					resource.TestCheckResourceAttr(fullDeploymentResourceName, "configuration.0.version", "3"),
-					resource.TestCheckResourceAttrPair(fullDeploymentResourceName, "configuration.0.id", fullConfigResourceName, "id"),
-					resource.TestCheckResourceAttrPair(fullDeploymentResourceName, "configuration.0.version", fullConfigResourceName, "version"),
+					resource.TestCheckResourceAttr(deploymentResourcePath, "name", deploymentName),
+					resource.TestCheckResourceAttr(deploymentResourcePath, "configuration.0.version", "3"),
+					resource.TestCheckResourceAttrPair(deploymentResourcePath, "configuration.0.id", configResourcePath, "id"),
+					resource.TestCheckResourceAttrPair(deploymentResourcePath, "configuration.0.version", configResourcePath, "version"),
 				),
 			},
 
 			{
-				ResourceName:            fullDeploymentResourceName,
+				ResourceName:            deploymentResourcePath,
 				ImportState:             true,
 				ImportStateVerify:       true,
 				ImportStateVerifyIgnore: []string{"status"},

@@ -17,13 +17,13 @@ resource_genesycloud_responsemanagement_library_schema.go holds four functions w
 3.  The datasource schema definitions for the responsemanagement_library datasource.
 4.  The resource exporter configuration for the responsemanagement_library exporter.
 */
-const resourceName = "genesyscloud_responsemanagement_library"
+const ResourceType = "genesyscloud_responsemanagement_library"
 
 // SetRegistrar registers all of the resources, datasources and exporters in the package
 func SetRegistrar(regInstance registrar.Registrar) {
-	regInstance.RegisterResource(resourceName, ResourceResponsemanagementLibrary())
-	regInstance.RegisterDataSource(resourceName, DataSourceResponsemanagementLibrary())
-	regInstance.RegisterExporter(resourceName, ResponsemanagementLibraryExporter())
+	regInstance.RegisterResource(ResourceType, ResourceResponsemanagementLibrary())
+	regInstance.RegisterDataSource(ResourceType, DataSourceResponsemanagementLibrary())
+	regInstance.RegisterExporter(ResourceType, ResponsemanagementLibraryExporter())
 }
 
 // ResourceResponsemanagementLibrary registers the genesyscloud_responsemanagement_library resource with Terraform

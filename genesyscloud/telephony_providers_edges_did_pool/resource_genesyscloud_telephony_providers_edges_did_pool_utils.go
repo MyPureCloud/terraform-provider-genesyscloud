@@ -39,7 +39,7 @@ func GenerateDidPoolResource(didPool *DidPoolStruct) string {
 		comments           = %s
 		pool_provider      = %s
 	}
-	`, resourceName,
+	`, ResourceType,
 		didPool.ResourceLabel,
 		didPool.StartPhoneNumber,
 		didPool.EndPhoneNumber,

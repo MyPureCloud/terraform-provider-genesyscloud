@@ -2,12 +2,13 @@ package outbound_sequence
 
 import (
 	"context"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/customdiff"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/customdiff"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
 /*
@@ -18,13 +19,13 @@ resource_genesycloud_outbound_sequence_schema.go holds four functions within it:
 3.  The datasource schema definitions for the outbound_sequence datasource.
 4.  The resource exporter configuration for the outbound_sequence exporter.
 */
-const resourceName = "genesyscloud_outbound_sequence"
+const ResourceType = "genesyscloud_outbound_sequence"
 
 // SetRegistrar registers all of the resources, datasources and exporters in the package
 func SetRegistrar(regInstance registrar.Registrar) {
-	regInstance.RegisterResource(resourceName, ResourceOutboundSequence())
-	regInstance.RegisterDataSource(resourceName, DataSourceOutboundSequence())
-	regInstance.RegisterExporter(resourceName, OutboundSequenceExporter())
+	regInstance.RegisterResource(ResourceType, ResourceOutboundSequence())
+	regInstance.RegisterDataSource(ResourceType, DataSourceOutboundSequence())
+	regInstance.RegisterExporter(ResourceType, OutboundSequenceExporter())
 }
 
 // ResourceOutboundSequence registers the genesyscloud_outbound_sequence resource with Terraform

@@ -31,10 +31,10 @@ func dataSourceIntegrationCredentialRead(ctx context.Context, d *schema.Resource
 	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
 		credential, retryable, resp, err := ip.getIntegrationCredByName(ctx, credName)
 		if err != nil && !retryable {
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to get integration credential: %s | error: %s", credential, err), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to get integration credential: %s | error: %s", credential, err), resp))
 		}
 		if retryable {
-			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("no integration credential found: %s", credName), resp))
+			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("no integration credential found: %s", credName), resp))
 		}
 		d.SetId(*credential.Id)
 		return nil

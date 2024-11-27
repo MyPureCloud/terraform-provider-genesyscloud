@@ -16,13 +16,13 @@ resource_genesycloud_supported_content_schema.go holds four functions within it:
 3.  The datasource schema definitions for the supported_content datasource.
 4.  The resource exporter configuration for the supported_content exporter.
 */
-const resourceName = "genesyscloud_conversations_messaging_supportedcontent"
+const ResourceType = "genesyscloud_conversations_messaging_supportedcontent"
 
 // SetRegistrar registers all of the resources, datasources and exporters in the package
 func SetRegistrar(regInstance registrar.Registrar) {
-	regInstance.RegisterResource(resourceName, ResourceSupportedContent())
-	regInstance.RegisterDataSource(resourceName, DataSourceSupportedContent())
-	regInstance.RegisterExporter(resourceName, SupportedContentExporter())
+	regInstance.RegisterResource(ResourceType, ResourceSupportedContent())
+	regInstance.RegisterDataSource(ResourceType, DataSourceSupportedContent())
+	regInstance.RegisterExporter(ResourceType, SupportedContentExporter())
 }
 
 var (

@@ -25,7 +25,7 @@ func dataSourceRoutingSkillRead(ctx context.Context, d *schema.ResourceData, m i
 		dataSourceRoutingSkillCache = rc.NewDataSourceCache(sdkConfig, hydrateRoutingSkillCacheFn, getSkillByNameFn)
 	}
 
-	queueId, err := rc.RetrieveId(dataSourceRoutingSkillCache, resourceName, key, ctx)
+	queueId, err := rc.RetrieveId(dataSourceRoutingSkillCache, ResourceType, key, ctx)
 	if err != nil {
 		return err
 	}
@@ -35,7 +35,7 @@ func dataSourceRoutingSkillRead(ctx context.Context, d *schema.ResourceData, m i
 }
 
 func hydrateRoutingSkillCacheFn(c *rc.DataSourceCache, ctx context.Context) error {
-	log.Printf("hydrating cache for data source %s", resourceName)
+	log.Printf("hydrating cache for data source %s", ResourceType)
 	proxy := getRoutingSkillProxy(c.ClientConfig)
 
 	skills, resp, getErr := proxy.getAllRoutingSkills(ctx, "")
@@ -52,7 +52,7 @@ func hydrateRoutingSkillCacheFn(c *rc.DataSourceCache, ctx context.Context) erro
 		c.Cache[*skill.Name] = *skill.Id
 	}
 
-	log.Printf("cache hydration completed for data source %s", resourceName)
+	log.Printf("cache hydration completed for data source %s", ResourceType)
 
 	return nil
 }
@@ -65,7 +65,7 @@ func getSkillByNameFn(c *rc.DataSourceCache, name string, ctx context.Context) (
 	diag := util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
 		skill, resp, retryable, getErr := proxy.getRoutingSkillIdByName(ctx, name)
 		if getErr != nil {
-			diagnosticError := util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("error requesting skill %s | error: %s", name, getErr), resp)
+			diagnosticError := util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("error requesting skill %s | error: %s", name, getErr), resp)
 			if !retryable {
 				return retry.NonRetryableError(diagnosticError)
 			}

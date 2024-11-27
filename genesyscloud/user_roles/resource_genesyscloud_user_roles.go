@@ -31,7 +31,7 @@ func createUserRoles(ctx context.Context, d *schema.ResourceData, meta interface
 func readUserRoles(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getUserRolesProxy(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceUserRoles(), constants.DefaultConsistencyChecks, resourceName)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceUserRoles(), constants.DefaultConsistencyChecks, ResourceType)
 
 	log.Printf("Reading roles for user %s", d.Id())
 	d.Set("user_id", d.Id())
@@ -40,9 +40,9 @@ func readUserRoles(ctx context.Context, d *schema.ResourceData, meta interface{}
 		roles, resp, err := flattenSubjectRoles(d, proxy)
 		if err != nil {
 			if util.IsStatus404ByInt(resp.StatusCode) {
-				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read roles for user %s | error: %v", d.Id(), err), resp))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read roles for user %s | error: %v", d.Id(), err), resp))
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read roles for user %s | error: %v", d.Id(), err), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read roles for user %s | error: %v", d.Id(), err), resp))
 		}
 
 		_ = d.Set("roles", roles)
@@ -67,7 +67,7 @@ func updateUserRoles(ctx context.Context, d *schema.ResourceData, meta interface
 	log.Printf("Updating roles for user %s", d.Id())
 	resp, diagErr := proxy.updateUserRoles(ctx, d.Id(), rolesConfig, "PC_USER")
 	if diagErr != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update user roles %s error: %s", d.Id(), diagErr), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update user roles %s error: %s", d.Id(), diagErr), resp)
 	}
 
 	log.Printf("Updated user roles for %s", d.Id())

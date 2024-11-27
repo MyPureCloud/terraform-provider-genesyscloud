@@ -18,13 +18,13 @@ type registerTestInstance struct {
 func (r *registerTestInstance) registerTestResources() {
 	r.resourceMapMutex.Lock()
 	defer r.resourceMapMutex.Unlock()
-	providerResources["genesyscloud_telephony_providers_edges_phonebasesettings"] = ResourcePhoneBaseSettings()
+	providerResources[ResourceType] = ResourcePhoneBaseSettings()
 }
 
 func (r *registerTestInstance) registerTestDataSources() {
 	r.datasourceMapMutex.Lock()
 	defer r.datasourceMapMutex.Unlock()
-	providerDataSources["genesyscloud_telephony_providers_edges_phonebasesettings"] = DataSourcePhoneBaseSettings()
+	providerDataSources[ResourceType] = DataSourcePhoneBaseSettings()
 }
 
 func initTestresources() {

@@ -14,8 +14,8 @@ func TestAccDataSourceWebDeploymentsDeployment(t *testing.T) {
 	var (
 		deploymentName        = "BasicDeployment" + util.RandString(8)
 		deploymentDescription = "Basic Deployment description"
-		fullResourceName      = "genesyscloud_webdeployments_deployment.basic"
-		fullDataSourceName    = "data.genesyscloud_webdeployments_deployment.basic-data"
+		resourcePath          = "genesyscloud_webdeployments_deployment.basic"
+		dataPath              = "data.genesyscloud_webdeployments_deployment.basic-data"
 	)
 
 	cleanupWebDeploymentsDeployment(t, "Test Deployment ")
@@ -28,7 +28,7 @@ func TestAccDataSourceWebDeploymentsDeployment(t *testing.T) {
 				// Search by name
 				Config: basicDeploymentDataSource(deploymentName, deploymentDescription),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair(fullResourceName, "id", fullDataSourceName, "id"),
+					resource.TestCheckResourceAttrPair(resourcePath, "id", dataPath, "id"),
 				),
 			},
 		},
@@ -54,7 +54,7 @@ func basicDeploymentDataSource(deploymentName string, deploymentDescr string) st
 			version = "${genesyscloud_webdeployments_configuration.minimal.version}"
 		}
 	}
-	
+
 	data "genesyscloud_webdeployments_deployment" "basic-data" {
 		depends_on=[genesyscloud_webdeployments_deployment.basic]
 		name = "%s"

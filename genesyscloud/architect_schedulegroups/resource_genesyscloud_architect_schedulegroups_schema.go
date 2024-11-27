@@ -16,13 +16,13 @@ resource_genesycloud_architect_schedulegroups_schema.go holds four functions wit
 3.  The datasource schema definitions for the architect_schedulegroups datasource.
 4.  The resource exporter configuration for the architect_schedulegroups exporter.
 */
-const resourceName = "genesyscloud_architect_schedulegroups"
+const ResourceType = "genesyscloud_architect_schedulegroups"
 
 // SetRegistrar registers all of the resources, datasources and exporters in the package
 func SetRegistrar(regInstance registrar.Registrar) {
-	regInstance.RegisterResource(resourceName, ResourceArchitectSchedulegroups())
-	regInstance.RegisterDataSource(resourceName, DataSourceArchitectSchedulegroups())
-	regInstance.RegisterExporter(resourceName, ArchitectSchedulegroupsExporter())
+	regInstance.RegisterResource(ResourceType, ResourceArchitectSchedulegroups())
+	regInstance.RegisterDataSource(ResourceType, DataSourceArchitectSchedulegroups())
+	regInstance.RegisterExporter(ResourceType, ArchitectSchedulegroupsExporter())
 }
 
 // ResourceArchitectSchedulegroups registers the genesyscloud_architect_schedulegroups resource with Terraform

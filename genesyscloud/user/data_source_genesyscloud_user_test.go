@@ -35,16 +35,16 @@ func TestAccDataSourceUser(t *testing.T) {
 					userName,
 				) + generateUserDataSource(
 					userDataSourceLabel,
-					resourceName+"."+userResourceLabel+".email",
+					ResourceType+"."+userResourceLabel+".email",
 					util.NullValue,
-					resourceName+"."+userResourceLabel,
+					ResourceType+"."+userResourceLabel,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair("data."+resourceName+"."+userDataSourceLabel, "id", resourceName+"."+userResourceLabel, "id"),
+					resource.TestCheckResourceAttrPair("data."+ResourceType+"."+userDataSourceLabel, "id", ResourceType+"."+userResourceLabel, "id"),
 					func(s *terraform.State) error {
-						rs, ok := s.RootModule().Resources[resourceName+"."+userResourceLabel]
+						rs, ok := s.RootModule().Resources[ResourceType+"."+userResourceLabel]
 						if !ok {
-							return fmt.Errorf("not found: %s", resourceName+"."+userResourceLabel)
+							return fmt.Errorf("not found: %s", ResourceType+"."+userResourceLabel)
 						}
 						userID = rs.Primary.ID
 						log.Printf("User ID: %s\n", userID) // Print user ID
@@ -61,11 +61,11 @@ func TestAccDataSourceUser(t *testing.T) {
 				) + generateUserDataSource(
 					userDataSourceLabel,
 					util.NullValue,
-					resourceName+"."+userResourceLabel+".name",
-					resourceName+"."+userResourceLabel,
+					ResourceType+"."+userResourceLabel+".name",
+					ResourceType+"."+userResourceLabel,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair("data."+resourceName+"."+userDataSourceLabel, "id", resourceName+"."+userResourceLabel, "id"),
+					resource.TestCheckResourceAttrPair("data."+ResourceType+"."+userDataSourceLabel, "id", ResourceType+"."+userResourceLabel, "id"),
 					func(s *terraform.State) error {
 						time.Sleep(30 * time.Second) // Wait for 30 seconds for proper deletion
 						return nil
@@ -92,5 +92,5 @@ func generateUserDataSource(
 		name = %s
         depends_on=[%s]
 	}
-	`, resourceName, resourceLabel, email, name, dependsOnResource)
+	`, ResourceType, resourceLabel, email, name, dependsOnResource)
 }

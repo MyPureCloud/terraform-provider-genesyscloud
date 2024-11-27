@@ -1,16 +1,17 @@
 package outbound_wrapupcode_mappings
 
 import (
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-const resourceName = "genesyscloud_outbound_wrapupcodemappings"
+const ResourceType = "genesyscloud_outbound_wrapupcodemappings"
 
 var (
 	flagsSchema = &schema.Schema{
@@ -37,8 +38,8 @@ var (
 
 // SetRegistrar registers the resource objects and the exporter.  Note:  There is no datasource implementation
 func SetRegistrar(l registrar.Registrar) {
-	l.RegisterResource(resourceName, ResourceOutboundWrapUpCodeMappings())
-	l.RegisterExporter(resourceName, OutboundWrapupCodeMappingsExporter())
+	l.RegisterResource(ResourceType, ResourceOutboundWrapUpCodeMappings())
+	l.RegisterExporter(ResourceType, OutboundWrapupCodeMappingsExporter())
 }
 
 // OutboundWrapupCodeMappingsExporter() returns the exporter used for exporting the outbound wrapping codes

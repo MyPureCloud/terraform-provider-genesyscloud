@@ -9,12 +9,12 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
-const resourceName = "genesyscloud_routing_queue"
+const ResourceType = "genesyscloud_routing_queue"
 
 func SetRegistrar(regInstance registrar.Registrar) {
-	regInstance.RegisterResource(resourceName, ResourceRoutingQueue())
-	regInstance.RegisterDataSource(resourceName, DataSourceRoutingQueue())
-	regInstance.RegisterExporter(resourceName, RoutingQueueExporter())
+	regInstance.RegisterResource(ResourceType, ResourceRoutingQueue())
+	regInstance.RegisterDataSource(ResourceType, DataSourceRoutingQueue())
+	regInstance.RegisterExporter(ResourceType, RoutingQueueExporter())
 }
 
 var (

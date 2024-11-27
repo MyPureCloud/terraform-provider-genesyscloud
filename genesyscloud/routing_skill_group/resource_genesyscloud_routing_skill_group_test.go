@@ -22,12 +22,12 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
 )
 
-func testAccCheckSkillConditions(resourceName string, targetSkillConditionJson string) resource.TestCheckFunc {
+func testAccCheckSkillConditions(resourcePath string, targetSkillConditionJson string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		rs, ok := s.RootModule().Resources[resourceName]
+		rs, ok := s.RootModule().Resources[resourcePath]
 
 		if !ok {
-			return fmt.Errorf("Resource Not found: %s", resourceName)
+			return fmt.Errorf("Resource Not found: %s", resourcePath)
 		}
 
 		if rs.Primary.ID == "" {
@@ -534,7 +534,7 @@ resource "genesyscloud_routing_skill_group" "%s" {
 
 func generateRoutingSkillGroupResource(
 	resourceLabel string,
-	divisionResourceName string,
+	divisionResourcePath string,
 	name string,
 	description string,
 	divisionID string,
@@ -548,10 +548,10 @@ func generateRoutingSkillGroupResource(
 		skill_conditions = jsonencode(%s)
 		member_division_ids = %s
 	}
-	`, resourceLabel, divisionResourceName, name, description, divisionID, skillCondition, memberDivisionIds)
+	`, resourceLabel, divisionResourcePath, name, description, divisionID, skillCondition, memberDivisionIds)
 }
 
-func testVerifySkillGroupMemberCount(resourceName string, count int) resource.TestCheckFunc {
+func testVerifySkillGroupMemberCount(resourcePath string, count int) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
 		// Authorize client credentials
 		config, err := provider.AuthorizeSdk()
@@ -560,9 +560,9 @@ func testVerifySkillGroupMemberCount(resourceName string, count int) resource.Te
 		}
 		routingAPI := platformclientv2.NewRoutingApiWithConfig(config)
 
-		resourceState, ok := state.RootModule().Resources[resourceName]
+		resourceState, ok := state.RootModule().Resources[resourcePath]
 		if !ok {
-			return fmt.Errorf("Failed to find resourceState %s in state", resourceName)
+			return fmt.Errorf("Failed to find resourceState %s in state", resourcePath)
 		}
 		resourceLabel := resourceState.Primary.ID
 
@@ -582,11 +582,11 @@ func testVerifySkillGroupMemberCount(resourceName string, count int) resource.Te
 	}
 }
 
-func testVerifyMemberDivisionsCleared(resourceName string) resource.TestCheckFunc {
+func testVerifyMemberDivisionsCleared(resourcePath string) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
-		resourceState, ok := state.RootModule().Resources[resourceName]
+		resourceState, ok := state.RootModule().Resources[resourcePath]
 		if !ok {
-			return fmt.Errorf("Failed to find resourceState %s in state", resourceName)
+			return fmt.Errorf("Failed to find resourceState %s in state", resourcePath)
 		}
 		resourceLabel := resourceState.Primary.ID
 
@@ -621,11 +621,11 @@ func testVerifyMemberDivisionsCleared(resourceName string) resource.TestCheckFun
 	}
 }
 
-func testVerifyAllDivisionsAssigned(resourceName string, attrName string) resource.TestCheckFunc {
+func testVerifyAllDivisionsAssigned(resourcePath string, attrName string) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
-		resourceState, ok := state.RootModule().Resources[resourceName]
+		resourceState, ok := state.RootModule().Resources[resourcePath]
 		if !ok {
-			return fmt.Errorf("Failed to find resourceState %s in state", resourceName)
+			return fmt.Errorf("Failed to find resourceState %s in state", resourcePath)
 		}
 
 		resourceLabel := resourceState.Primary.ID

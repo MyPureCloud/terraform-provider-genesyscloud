@@ -16,12 +16,12 @@ resource_genesycloud_conversations_messaging_supportedcontent_default_schema.go 
 3.  The datasource schema definitions for the conversations_messaging_supportedcontent_default datasource.
 4.  The resource exporter configuration for the conversations_messaging_supportedcontent_default exporter.
 */
-const resourceName = "genesyscloud_conversations_messaging_supportedcontent_default"
+const ResourceType = "genesyscloud_conversations_messaging_supportedcontent_default"
 
 // SetRegistrar registers all of the resources, datasources and exporters in the package
 func SetRegistrar(regInstance registrar.Registrar) {
-	regInstance.RegisterResource(resourceName, ResourceConversationsMessagingSupportedcontentDefault())
-	regInstance.RegisterExporter(resourceName, ConversationsMessagingSupportedcontentDefaultExporter())
+	regInstance.RegisterResource(ResourceType, ResourceConversationsMessagingSupportedcontentDefault())
+	regInstance.RegisterExporter(ResourceType, ConversationsMessagingSupportedcontentDefaultExporter())
 }
 
 // ResourceConversationsMessagingSupportedcontentDefault registers the genesyscloud_conversations_messaging_supportedcontent_default resource with Terraform

@@ -36,14 +36,14 @@ func (r *registerTestInstance) registerTestResources() {
 	r.resourceMapMutex.Lock()
 	defer r.resourceMapMutex.Unlock()
 
-	providerResources[resourceName] = ResourceUser()
-	providerResources["genesyscloud_auth_role"] = authRole.ResourceAuthRole()
-	providerResources["genesyscloud_auth_division"] = authDivision.ResourceAuthDivision()
-	providerResources["genesyscloud_location"] = location.ResourceLocation()
-	providerResources["genesyscloud_routing_skill"] = routingSkill.ResourceRoutingSkill()
-	providerResources["genesyscloud_routing_language"] = routinglanguage.ResourceRoutingLanguage()
-	providerResources["genesyscloud_routing_utilization_label"] = routingUtilizationLabel.ResourceRoutingUtilizationLabel()
-	providerResources["genesyscloud_telephony_providers_edges_extension_pool"] = extensionPool.ResourceTelephonyExtensionPool()
+	providerResources[ResourceType] = ResourceUser()
+	providerResources[authRole.ResourceType] = authRole.ResourceAuthRole()
+	providerResources[authDivision.ResourceType] = authDivision.ResourceAuthDivision()
+	providerResources[location.ResourceType] = location.ResourceLocation()
+	providerResources[routingSkill.ResourceType] = routingSkill.ResourceRoutingSkill()
+	providerResources[routinglanguage.ResourceType] = routinglanguage.ResourceRoutingLanguage()
+	providerResources[routingUtilizationLabel.ResourceType] = routingUtilizationLabel.ResourceRoutingUtilizationLabel()
+	providerResources[extensionPool.ResourceType] = extensionPool.ResourceTelephonyExtensionPool()
 
 }
 
@@ -51,13 +51,13 @@ func (r *registerTestInstance) registerTestResources() {
 func (r *registerTestInstance) registerTestDataSources() {
 	r.datasourceMapMutex.Lock()
 	defer r.datasourceMapMutex.Unlock()
-	providerDataSources[resourceName] = DataSourceUser()
-	providerDataSources["genesyscloud_auth_role"] = authRole.DataSourceAuthRole()
+	providerDataSources[ResourceType] = DataSourceUser()
+	providerDataSources[authRole.ResourceType] = authRole.DataSourceAuthRole()
 	providerDataSources["genesyscloud_auth_division_home"] = genesyscloud.DataSourceAuthDivisionHome()
-	providerDataSources["genesyscloud_location"] = location.DataSourceLocation()
-	providerDataSources["genesyscloud_routing_skill"] = routingSkill.DataSourceRoutingSkill()
-	providerDataSources["genesyscloud_routing_language"] = routinglanguage.DataSourceRoutingLanguage()
-	providerDataSources["genesyscloud_routing_utilization_label"] = routingUtilizationLabel.DataSourceRoutingUtilizationLabel()
+	providerDataSources[location.ResourceType] = location.DataSourceLocation()
+	providerDataSources[routingSkill.ResourceType] = routingSkill.DataSourceRoutingSkill()
+	providerDataSources[routinglanguage.ResourceType] = routinglanguage.DataSourceRoutingLanguage()
+	providerDataSources[routingUtilizationLabel.ResourceType] = routingUtilizationLabel.DataSourceRoutingUtilizationLabel()
 }
 
 // initTestResources initializes all test resources.

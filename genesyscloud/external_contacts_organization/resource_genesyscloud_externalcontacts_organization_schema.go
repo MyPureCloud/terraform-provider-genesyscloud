@@ -11,12 +11,12 @@ import (
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
 )
 
-const resourceType = `genesyscloud_externalcontacts_organization`
+const ResourceType = `genesyscloud_externalcontacts_organization`
 
 func SetRegistrar(regInstance registrar.Registrar) {
-	regInstance.RegisterResource(resourceType, ResourceExternalContactsOrganization())
-	regInstance.RegisterDataSource(resourceType, DataSourceExternalContactsOrganization())
-	regInstance.RegisterExporter(resourceType, ExternalContactsOrganizationExporter())
+	regInstance.RegisterResource(ResourceType, ResourceExternalContactsOrganization())
+	regInstance.RegisterDataSource(ResourceType, DataSourceExternalContactsOrganization())
+	regInstance.RegisterExporter(ResourceType, ExternalContactsOrganizationExporter())
 }
 
 func ResourceExternalContactsOrganization() *schema.Resource {
