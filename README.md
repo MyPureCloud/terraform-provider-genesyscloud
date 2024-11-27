@@ -166,6 +166,10 @@ provider_installation {
 }
 ```
 
+### Dictionary
+
+A shared [Dictionary](./DICTIONARY.md) of terminology should be referenced as a guide to ensure consistency in variable naming, function parameters, and code comments throughout the provider implementation. The aim is to improve code readability, maintainability, and collaboration among developers working on the provider by adhering to these conventions.
+
 ### Debugging
 
 See the [Debugging](./DEBUGGING.md) section for information on how to setup your IDE to debug the provider.

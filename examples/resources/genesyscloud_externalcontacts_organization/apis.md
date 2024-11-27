@@ -1,0 +1,5 @@
+* [GET /api/v2/externalcontacts/organizations](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-externalcontacts-organizations)
+* [POST /api/v2/externalcontacts/organizations](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-externalcontacts-organizations)
+* [GET /api/v2/externalcontacts/organizations/{externalOrganizationId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-externalcontacts-organizations--externalOrganizationId-)
+* [PUT /api/v2/externalcontacts/organizations/{externalOrganizationId}](https://developer.genesys.cloud/devapps/api-explorer#put-api-v2-externalcontacts-organizations--externalOrganizationId-)
+* [DELETE /api/v2/externalcontacts/organizations/{externalOrganizationId}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-externalcontacts-organizations--externalOrganizationId-)

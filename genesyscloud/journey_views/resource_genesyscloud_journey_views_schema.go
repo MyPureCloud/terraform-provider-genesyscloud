@@ -42,7 +42,7 @@ var (
 				Optional:    true,
 			},
 			"constraint_after": {
-				Description: "A time constraint on this link, which requires a customer must complete the downstream element after this amount of time to be counted..",
+				Description: "A time constraint on this link, which requires a customer must complete the downstream element after this amount of time to be counted.",
 				Type:        schema.TypeList,
 				Elem:        constraintResource,
 				MaxItems:    1,
@@ -65,7 +65,7 @@ var (
 	predicatesResource = &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			"dimension": {
-				Description: "The element's attribute being filtered on",
+				Description: "The element's attribute being filtered on.",
 				Type:        schema.TypeString,
 				Required:    true,
 			},
@@ -159,6 +159,121 @@ var (
 			},
 		},
 	}
+	metricsResource = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"id": {
+				Description: "The unique identifier of the metric within the metrics list.",
+				Type:        schema.TypeString,
+				Required:    true,
+			},
+			"element_id": {
+				Description: "The reference of element.",
+				Type:        schema.TypeString,
+				Required:    true,
+			},
+			"aggregate": {
+				Description:  "How to aggregate the given element. Valid values: EventCount, CustomerCount.",
+				Type:         schema.TypeString,
+				Optional:     true,
+				ValidateFunc: validation.StringInSlice([]string{"EventCount", "CustomerCount"}, false),
+			},
+			"display_label": {
+				Description: "Display label of metric.",
+				Type:        schema.TypeString,
+				Optional:    true,
+			},
+		},
+	}
+	displayAttributesResource = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"var_type": {
+				Description:  "The type of chart to display. Valid values: Bar, Column, Line.",
+				Type:         schema.TypeString,
+				Optional:     true,
+				ValidateFunc: validation.StringInSlice([]string{"Bar", "Column", "Line"}, false),
+			},
+			"group_by_title": {
+				Description: "A title for the grouped by attributes (aka the x axis).",
+				Type:        schema.TypeString,
+				Optional:    true,
+			},
+			"metrics_title": {
+				Description: "A title for the metrics (aka the y axis).",
+				Type:        schema.TypeString,
+				Optional:    true,
+			},
+			"show_legend": {
+				Description: "Whether to show a legend",
+				Type:        schema.TypeBool,
+				Optional:    true,
+			},
+		},
+	}
+	groupByAttributesResource = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"element_id": {
+				Description: "The element in the list of elements which is being grouped by.",
+				Type:        schema.TypeString,
+				Required:    true,
+			},
+			"attribute": {
+				Description: "The attribute of the element being grouped by.",
+				Type:        schema.TypeString,
+				Required:    true,
+			},
+		},
+	}
+	chartsResource = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"id": {
+				Description: "The unique identifier of the chart within the charts list.",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
+			"name": {
+				Description: "The unique name of the chart within the view.",
+				Type:        schema.TypeString,
+				Required:    true,
+			},
+			"version": {
+				Description: "The version of chart",
+				Type:        schema.TypeInt,
+				Required:    true,
+			},
+			"metrics": {
+				Description: "A set of metrics to be displayed on the chart.",
+				Type:        schema.TypeList,
+				Elem:        metricsResource,
+				Required:    true,
+				MinItems:    1,
+			},
+			"group_by_time": {
+				Description:  "A time unit to group the metrics by. Valid values: Day, Week, Month, Year.",
+				Type:         schema.TypeString,
+				Optional:     true,
+				ValidateFunc: validation.StringInSlice([]string{"Day", "Week", "Month", "Year"}, false),
+			},
+			"group_by_max": {
+				Description: "A maximum on the number of values being grouped by",
+				Type:        schema.TypeInt,
+				Optional:    true,
+			},
+			"display_attributes": {
+				Description: "Optional display attributes for rendering the chart",
+				Type:        schema.TypeList,
+				Optional:    true,
+				MaxItems:    1,
+				Elem:        displayAttributesResource,
+			},
+			"group_by_attributes": {
+				Description: "A list of attributes to group the metrics by",
+				Type:        schema.TypeList,
+				Optional:    true,
+				MinItems:    1,
+				Elem:        groupByAttributesResource,
+			},
+		},
+	}
 )
 
 func SetRegistrar(regInstance registrar.Registrar) {
@@ -195,6 +310,11 @@ func ResourceJourneyViews() *schema.Resource {
 				Type:        schema.TypeString,
 				Optional:    true,
 			},
+			"version": {
+				Description: "Version of JourneyView.",
+				Type:        schema.TypeInt,
+				Computed:    true,
+			},
 			"duration": {
 				Description: "A relative timeframe for the journey view, expressed as an ISO 8601 duration. Only one of interval or duration must be specified. Periods are represented as an ISO-8601 string. For example: P1D or P1DT12H.",
 				Type:        schema.TypeString,
@@ -205,6 +325,12 @@ func ResourceJourneyViews() *schema.Resource {
 				Type:        schema.TypeList,
 				Optional:    true,
 				Elem:        elementsResource,
+			},
+			"charts": {
+				Description: "The charts within the journey view.",
+				Type:        schema.TypeList,
+				Optional:    true,
+				Elem:        chartsResource,
 			},
 		},
 	}
