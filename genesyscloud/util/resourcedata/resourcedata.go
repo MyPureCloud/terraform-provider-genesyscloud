@@ -114,7 +114,7 @@ func SetMapSchemaSetWithFuncIfNotNil[T any](targetMap map[string]interface{}, ke
 // SetNillableReference will read the value of a reference property and set it on the schema
 func SetNillableReference(d *schema.ResourceData, key string, value *platformclientv2.Domainentityref) {
 	if value != nil && value.Id != nil {
-		_ = d.Set(key, value.Id)
+		_ = d.Set(key, *value.Id)
 	} else {
 		_ = d.Set(key, nil)
 	}
