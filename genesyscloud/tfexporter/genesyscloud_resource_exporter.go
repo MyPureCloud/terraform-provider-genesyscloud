@@ -1056,14 +1056,14 @@ func (g *GenesysCloudResourceExporter) getResourcesForType(resType string, provi
 
 				if g.isDataSource(resType, resMeta.BlockLabel) {
 					g.exMutex.Lock()
-					res = provider.DataSourcesMap[resType]
+					resData := provider.DataSourcesMap[resType]
 					g.exMutex.Unlock()
 
-					if res == nil {
+					if resData == nil {
 						return fmt.Errorf("DataSource type %v not defined", resType)
 					}
 
-					schemaMap := res.SchemaMap()
+					schemaMap := resData.SchemaMap()
 
 					attributes := make(map[string]string)
 
