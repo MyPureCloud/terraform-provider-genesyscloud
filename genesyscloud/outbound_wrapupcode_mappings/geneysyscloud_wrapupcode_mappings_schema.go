@@ -15,7 +15,7 @@ const resourceName = "genesyscloud_outbound_wrapupcodemappings"
 var (
 	flagsSchema = &schema.Schema{
 		Type:         schema.TypeString,
-		ValidateFunc: validation.StringInSlice([]string{"CONTACT_UNCALLABLE", "NUMBER_UNCALLABLE", "RIGHT_PARTY_CONTACT"}, true),
+		ValidateFunc: validation.StringInSlice([]string{"CONTACT_UNCALLABLE", "NUMBER_UNCALLABLE", "RIGHT_PARTY_CONTACT", "BUSINESS_FAILURE", "BUSINESS_NEUTRAL", "BUSINESS_SUCCESS"}, true),
 	}
 
 	mappingResource = &schema.Resource{

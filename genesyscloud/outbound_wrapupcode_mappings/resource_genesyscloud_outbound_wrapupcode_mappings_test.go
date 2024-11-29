@@ -72,24 +72,25 @@ resource "genesyscloud_outbound_wrapupcodemappings"	"%s" {
 					routingWrapupcode.GenerateRoutingWrapupcodeResource(wrapupCode2ResourceId, wrapupCode2Name, "genesyscloud_auth_division."+divResource+".id") +
 					fmt.Sprintf(`
 resource "genesyscloud_outbound_wrapupcodemappings"	"%s" {
-	default_set = ["Right_Party_Contact", "Contact_UnCallable"]
+	default_set = ["Right_Party_Contact", "Contact_UnCallable", "Business_Success"]
 	mappings {
 		wrapup_code_id = genesyscloud_routing_wrapupcode.%s.id
 		flags          = ["Contact_UnCallable"]
 	}
 	mappings {
 		wrapup_code_id = genesyscloud_routing_wrapupcode.%s.id
-		flags          = ["Number_UnCallable", "Right_Party_Contact"]
+		flags          = ["Number_UnCallable", "Right_Party_Contact", "Business_Failure"]
 	}
 }		
 `, resourceId, wrapupCode1ResourceId, wrapupCode2ResourceId),
 				Check: resource.ComposeTestCheckFunc(
 					util.ValidateStringInArray("genesyscloud_outbound_wrapupcodemappings."+resourceId, "default_set", "Contact_UnCallable"),
 					util.ValidateStringInArray("genesyscloud_outbound_wrapupcodemappings."+resourceId, "default_set", "Right_Party_Contact"),
+					util.ValidateStringInArray("genesyscloud_outbound_wrapupcodemappings."+resourceId, "default_set", "Business_Success"),
 					verifyWrapupCodeMappingsMappingValues("genesyscloud_outbound_wrapupcodemappings."+resourceId,
 						"genesyscloud_routing_wrapupcode."+wrapupCode1ResourceId, []string{"Contact_UnCallable"}),
 					verifyWrapupCodeMappingsMappingValues("genesyscloud_outbound_wrapupcodemappings."+resourceId,
-						"genesyscloud_routing_wrapupcode."+wrapupCode2ResourceId, []string{"Number_UnCallable", "Right_Party_Contact"}),
+						"genesyscloud_routing_wrapupcode."+wrapupCode2ResourceId, []string{"Number_UnCallable", "Right_Party_Contact", "Business_Failure"}),
 				),
 			},
 			// Update
@@ -100,18 +101,18 @@ resource "genesyscloud_outbound_wrapupcodemappings"	"%s" {
 					routingWrapupcode.GenerateRoutingWrapupcodeResource(wrapupCode3ResourceId, wrapupCode3Name, "genesyscloud_auth_division."+divResource+".id") +
 					fmt.Sprintf(`
 resource "genesyscloud_outbound_wrapupcodemappings"	"%s" {
-	default_set = ["Right_Party_Contact", "Number_UnCallable", "Contact_UnCallable"]
+	default_set = ["Right_Party_Contact", "Number_UnCallable", "Contact_UnCallable", "Business_Neutral"]
 	mappings {
 		wrapup_code_id = genesyscloud_routing_wrapupcode.%s.id
 		flags          = ["Contact_UnCallable"]
 	}
 	mappings {
 		wrapup_code_id = genesyscloud_routing_wrapupcode.%s.id
-		flags          = ["Number_UnCallable", "Right_Party_Contact"]
+		flags          = ["Number_UnCallable", "Right_Party_Contact", "Business_Neutral"]
 	}
 	mappings {
 		wrapup_code_id = genesyscloud_routing_wrapupcode.%s.id
-		flags          = ["Number_UnCallable", "Contact_UnCallable", "Right_Party_Contact"]
+		flags          = ["Number_UnCallable", "Contact_UnCallable", "Right_Party_Contact", "Business_Success"]
 	}
 }		
 `, resourceId, wrapupCode1ResourceId, wrapupCode2ResourceId, wrapupCode3ResourceId),
@@ -119,12 +120,13 @@ resource "genesyscloud_outbound_wrapupcodemappings"	"%s" {
 					util.ValidateStringInArray("genesyscloud_outbound_wrapupcodemappings."+resourceId, "default_set", "Contact_UnCallable"),
 					util.ValidateStringInArray("genesyscloud_outbound_wrapupcodemappings."+resourceId, "default_set", "Number_UnCallable"),
 					util.ValidateStringInArray("genesyscloud_outbound_wrapupcodemappings."+resourceId, "default_set", "Right_Party_Contact"),
+					util.ValidateStringInArray("genesyscloud_outbound_wrapupcodemappings."+resourceId, "default_set", "Business_Neutral"),
 					verifyWrapupCodeMappingsMappingValues("genesyscloud_outbound_wrapupcodemappings."+resourceId,
 						"genesyscloud_routing_wrapupcode."+wrapupCode1ResourceId, []string{"Contact_UnCallable"}),
 					verifyWrapupCodeMappingsMappingValues("genesyscloud_outbound_wrapupcodemappings."+resourceId,
-						"genesyscloud_routing_wrapupcode."+wrapupCode2ResourceId, []string{"Number_UnCallable", "Right_Party_Contact"}),
+						"genesyscloud_routing_wrapupcode."+wrapupCode2ResourceId, []string{"Number_UnCallable", "Right_Party_Contact", "Business_Neutral"}),
 					verifyWrapupCodeMappingsMappingValues("genesyscloud_outbound_wrapupcodemappings."+resourceId,
-						"genesyscloud_routing_wrapupcode."+wrapupCode3ResourceId, []string{"Number_UnCallable", "Right_Party_Contact", "Contact_UnCallable"}),
+						"genesyscloud_routing_wrapupcode."+wrapupCode3ResourceId, []string{"Number_UnCallable", "Contact_UnCallable", "Right_Party_Contact", "Business_Success"}),
 				),
 			},
 			{
@@ -183,7 +185,7 @@ func verifyWrapupCodeMappingsMappingValues(resourceName string, wrapupCodeResour
 
 // attributeFlagsToList return a list of the mapping flags from the tf state attributes
 func attributeFlagsToList(flagPrefix string, attr map[string]string) []string {
-	const maxFlags = 3
+	const maxFlags = 4
 	ret := make([]string, 0)
 	for i := 0; i < maxFlags; i++ {
 		if flagVal, ok := attr[flagPrefix+"."+strconv.Itoa(i)]; ok {
