@@ -297,7 +297,7 @@ func TestAccResourceOutboundDncListCustomExclusionColumn(t *testing.T) {
 
 		customExclusionColumnAttrUpdated = "test update"
 
-		resourcePath = resourceName + "." + resourceLabel
+		resourcePath = ResourceType + "." + resourceLabel
 	)
 
 	resource.Test(t, resource.TestCase{
