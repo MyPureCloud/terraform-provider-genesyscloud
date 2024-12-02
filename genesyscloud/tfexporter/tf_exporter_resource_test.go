@@ -9,6 +9,7 @@ import (
 	flowLogLevel "terraform-provider-genesyscloud/genesyscloud/flow_loglevel"
 	knowledge "terraform-provider-genesyscloud/genesyscloud/knowledge"
 	knowledgeDocument "terraform-provider-genesyscloud/genesyscloud/knowledge_document"
+	knowledgeLabel "terraform-provider-genesyscloud/genesyscloud/knowledge_label"
 	routingWrapupcode "terraform-provider-genesyscloud/genesyscloud/routing_wrapupcode"
 	outboundRoute "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site_outbound_route"
 
@@ -164,7 +165,7 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources[knowledgeDocument.ResourceType] = knowledgeDocument.ResourceKnowledgeDocument()
 	providerResources["genesyscloud_knowledge_document_variation"] = knowledge.ResourceKnowledgeDocumentVariation()
 	providerResources["genesyscloud_knowledge_category"] = gcloud.ResourceKnowledgeCategory()
-	providerResources["genesyscloud_knowledge_label"] = gcloud.ResourceKnowledgeLabel()
+	providerResources["genesyscloud_knowledge_label"] = knowledgeLabel.ResourceKnowledgeLabel()
 	providerResources[location.ResourceType] = location.ResourceLocation()
 	providerResources[recMediaRetPolicy.ResourceType] = recMediaRetPolicy.ResourceMediaRetentionPolicy()
 	providerResources[oauth_client.ResourceType] = oauth_client.ResourceOAuthClient()
@@ -325,7 +326,7 @@ func (r *registerTestInstance) registerTestExporters() {
 	RegisterExporter("genesyscloud_widget_deployment", gcloud.WidgetDeploymentExporter())
 
 	RegisterExporter("genesyscloud_knowledge_document_variation", knowledge.KnowledgeDocumentVariationExporter())
-	RegisterExporter("genesyscloud_knowledge_label", gcloud.KnowledgeLabelExporter())
+	RegisterExporter("genesyscloud_knowledge_label", knowledgeLabel.KnowledgeLabelExporter())
 
 	RegisterExporter("genesyscloud_processautomation_trigger", pat.ProcessAutomationTriggerExporter())
 	RegisterExporter("genesyscloud_outbound_ruleset", obRuleset.OutboundRulesetExporter())

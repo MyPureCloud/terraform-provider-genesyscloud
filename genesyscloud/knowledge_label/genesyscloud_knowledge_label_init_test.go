@@ -1,15 +1,15 @@
-package knowledge_document
+package knowledge_label
 
 import (
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"sync"
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
-	knowledgeLabel "terraform-provider-genesyscloud/genesyscloud/knowledge_label"
 	"testing"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 /*
-The genesyscloud_location_init_test.go file is used to initialize the data sources and resources
+The genesyscloud_label_init_test.go file is used to initialize the data sources and resources
 used in testing the location resource.
 */
 
@@ -17,6 +17,7 @@ used in testing the location resource.
 
 // providerResources holds a map of all registered resources
 var providerResources map[string]*schema.Resource
+var providerDataSources map[string]*schema.Resource
 
 type registerTestInstance struct {
 	resourceMapMutex sync.RWMutex
@@ -26,16 +27,16 @@ type registerTestInstance struct {
 func (r *registerTestInstance) registerTestResources() {
 	r.resourceMapMutex.Lock()
 	defer r.resourceMapMutex.Unlock()
-	providerResources["genesyscloud_knowledge_category"] = gcloud.ResourceKnowledgeCategory()
 	providerResources["genesyscloud_knowledge_knowledgebase"] = gcloud.ResourceKnowledgeKnowledgebase()
-	providerResources["genesyscloud_knowledge_label"] = knowledgeLabel.ResourceKnowledgeLabel()
-	providerResources[ResourceType] = ResourceKnowledgeDocument()
+	providerResources["genesyscloud_knowledge_label"] = ResourceKnowledgeLabel()
+	providerDataSources["genesyscloud_knowledge_label"] = dataSourceKnowledgeLabel()
+	providerResources[ResourceType] = ResourceKnowledgeLabel()
 }
 
 // initTestResources initializes all test resources and data sources.
 func initTestResources() {
 	providerResources = make(map[string]*schema.Resource)
-
+	providerDataSources = make(map[string]*schema.Resource)
 	regInstance := &registerTestInstance{}
 
 	regInstance.registerTestResources()
@@ -44,9 +45,9 @@ func initTestResources() {
 
 // TestMain is a "setup" function called by the testing framework when run the test
 func TestMain(m *testing.M) {
-	// Run setup function before starting the test suite for knowledge document package
+	// Run setup function before starting the test suite for knowledge label package
 	initTestResources()
 
-	// Run the test suite for the knowledge document package
+	// Run the test suite for the knowledge label package
 	m.Run()
 }

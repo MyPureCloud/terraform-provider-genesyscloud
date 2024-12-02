@@ -15,6 +15,7 @@ func SetRegistrar(l registrar.Registrar) {
 	l.RegisterResource(ResourceType, ResourceKnowledgeDocument())
 	l.RegisterExporter(ResourceType, KnowledgeDocumentExporter())
 }
+
 func KnowledgeDocumentExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: provider.GetAllWithPooledClient(getAllKnowledgeDocuments),
