@@ -290,11 +290,11 @@ func TestAccResourceOutboundDncListGryphonListType(t *testing.T) {
 func TestAccResourceOutboundDncListCustomExclusionColumn(t *testing.T) {
 	t.Parallel()
 	var (
-		resourceLabel             = "dnc_list_cec"
-		nameAttr                  = "tf test dnc list " + uuid.NewString()
-		dncSourceTypeAttr         = "rds_custom"
-		customExclusionColumnAttr = "test"
-
+		resourceLabel                    = "dnc_list_cec"
+		nameAttr                         = "tf test dnc list " + uuid.NewString()
+		dncSourceTypeAttr                = "rds_custom"
+		customExclusionColumnAttr        = "test"
+		resourceName                     = "genesyscloud_outbound_dnclist"
 		customExclusionColumnAttrUpdated = "test update"
 
 		resourcePath = resourceName + "." + resourceLabel
