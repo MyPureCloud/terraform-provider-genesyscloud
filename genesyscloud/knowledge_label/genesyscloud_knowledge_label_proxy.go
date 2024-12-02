@@ -171,7 +171,13 @@ func createKnowledgeLabelFn(ctx context.Context, p *knowledgeLabelProxy, knowled
 }
 
 func deleteKnowledgeLabelFn(ctx context.Context, p *knowledgeLabelProxy, knowledgeBaseId string, knowledgeLabelId string) (*platformclientv2.Labelresponse, *platformclientv2.APIResponse, error) {
-	return p.KnowledgeApi.DeleteKnowledgeKnowledgebaseLabel(knowledgeBaseId, knowledgeLabelId)
+	data, resp, err := p.KnowledgeApi.DeleteKnowledgeKnowledgebaseLabel(knowledgeBaseId, knowledgeLabelId)
+	if err != nil {
+		return nil, resp, err
+	}
+	id := fmt.Sprintf("%s,%s", knowledgeBaseId, knowledgeLabelId)
+	rc.DeleteCacheItem(p.knowledgeLabelCache, id)
+	return data, nil, nil
 }
 
 func updateKnowledgeLabelFn(ctx context.Context, p *knowledgeLabelProxy, knowledgeBaseId string, knowledgeLabelId string, body *platformclientv2.Labelupdaterequest) (*platformclientv2.Labelresponse, *platformclientv2.APIResponse, error) {

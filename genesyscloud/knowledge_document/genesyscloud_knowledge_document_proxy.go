@@ -371,7 +371,13 @@ func createKnowledgebaseDocumentVersionsFn(ctx context.Context, p *knowledgeDocu
 }
 
 func deleteKnowledgeKnowledgebaseDocumentFn(ctx context.Context, p *knowledgeDocumentProxy, knowledgeBaseId string, documentId string) (*platformclientv2.APIResponse, error) {
-	return p.KnowledgeApi.DeleteKnowledgeKnowledgebaseDocument(knowledgeBaseId, documentId)
+	resp, err := p.KnowledgeApi.DeleteKnowledgeKnowledgebaseDocument(knowledgeBaseId, documentId)
+	if err != nil {
+		return resp, err
+	}
+	id := fmt.Sprintf("%s,%s", knowledgeBaseId, documentId)
+	rc.DeleteCacheItem(p.knowledgeDocumentCache, id)
+	return nil, nil
 }
 
 func updateKnowledgeKnowledgebaseDocumentFn(ctx context.Context, p *knowledgeDocumentProxy, knowledgeBaseId string, documentId string, body *platformclientv2.Knowledgedocumentreq) (*platformclientv2.Knowledgedocumentresponse, *platformclientv2.APIResponse, error) {
