@@ -83,7 +83,7 @@ func createRespManagementRespAsset(ctx context.Context, d *schema.ResourceData, 
 func readRespManagementRespAsset(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getRespManagementRespAssetProxy(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceResponseManagementResponseAsset(), constants.DefaultConsistencyChecks, ResourceType)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceResponseManagementResponseAsset(), constants.ConsistencyChecks(), ResourceType)
 
 	log.Printf("Reading Responsemanagement response asset %s", d.Id())
 

@@ -77,7 +77,7 @@ func readIntegrationFacebook(ctx context.Context, d *schema.ResourceData, meta i
 
 	log.Printf("Reading integration facebook ")
 
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceIntegrationFacebook(), constants.DefaultConsistencyChecks, ResourceType)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceIntegrationFacebook(), constants.ConsistencyChecks(), ResourceType)
 
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		facebookIntegrationRequest, resp, getErr := proxy.getIntegrationFacebookById(ctx, d.Id())

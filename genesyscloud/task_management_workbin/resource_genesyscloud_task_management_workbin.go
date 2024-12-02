@@ -68,7 +68,7 @@ func createTaskManagementWorkbin(ctx context.Context, d *schema.ResourceData, me
 func readTaskManagementWorkbin(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getTaskManagementWorkbinProxy(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceTaskManagementWorkbin(), constants.DefaultConsistencyChecks, ResourceType)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceTaskManagementWorkbin(), constants.ConsistencyChecks(), ResourceType)
 
 	log.Printf("Reading task management workbin %s", d.Id())
 

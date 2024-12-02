@@ -51,7 +51,7 @@ func createConversationsMessagingSupportedcontentDefault(ctx context.Context, d 
 func readConversationsMessagingSupportedcontentDefault(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getConversationsMessagingSupportedcontentDefaultProxy(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceConversationsMessagingSupportedcontentDefault(), constants.DefaultConsistencyChecks, ResourceType)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceConversationsMessagingSupportedcontentDefault(), constants.ConsistencyChecks(), ResourceType)
 
 	log.Printf("Reading conversations supported content default %s", d.Id())
 

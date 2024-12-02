@@ -7,7 +7,6 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"terraform-provider-genesyscloud/genesyscloud/util/constants"
-	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -44,7 +43,6 @@ func createOutboundDncList(ctx context.Context, d *schema.ResourceData, meta int
 	licenseId := d.Get("license_id").(string)
 	dncSourceType := d.Get("dnc_source_type").(string)
 	dncCodes := lists.InterfaceListToStrings(d.Get("dnc_codes").([]interface{}))
-	customExclusionColumn, _ := d.Get("custom_exclusion_column").(string)
 	entries := d.Get("entries").([]interface{})
 
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
@@ -72,9 +70,6 @@ func createOutboundDncList(ctx context.Context, d *schema.ResourceData, meta int
 	}
 	if dncSourceType != "" {
 		sdkDncListCreate.DncSourceType = &dncSourceType
-	}
-	if customExclusionColumn != "" {
-		sdkDncListCreate.CustomExclusionColumn = &customExclusionColumn
 	}
 
 	log.Printf("Creating Outbound DNC list %s", name)
@@ -174,7 +169,7 @@ func updateOutboundDncList(ctx context.Context, d *schema.ResourceData, meta int
 func readOutboundDncList(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getOutboundDnclistProxy(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundDncList(), constants.DefaultConsistencyChecks, ResourceType)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundDncList(), constants.ConsistencyChecks(), ResourceType)
 
 	log.Printf("Reading Outbound DNC list %s", d.Id())
 
@@ -187,6 +182,18 @@ func readOutboundDncList(ctx context.Context, d *schema.ResourceData, meta inter
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to read Outbound DNC list %s | error: %s", d.Id(), getErr), resp))
 		}
 
+		if sdkDncList.Name != nil {
+			_ = d.Set("name", *sdkDncList.Name)
+		}
+		if sdkDncList.ContactMethod != nil {
+			_ = d.Set("contact_method", *sdkDncList.ContactMethod)
+		}
+		if sdkDncList.LoginId != nil {
+			_ = d.Set("login_id", *sdkDncList.LoginId)
+		}
+		if sdkDncList.CampaignId != nil {
+			_ = d.Set("campaign_id", *sdkDncList.CampaignId)
+		}
 		if sdkDncList.DncCodes != nil {
 			schemaCodes := lists.InterfaceListToStrings(d.Get("dnc_codes").([]interface{}))
 			// preserve ordering and avoid a plan not empty error
@@ -196,16 +203,15 @@ func readOutboundDncList(ctx context.Context, d *schema.ResourceData, meta inter
 				_ = d.Set("dnc_codes", lists.StringListToInterfaceList(*sdkDncList.DncCodes))
 			}
 		}
-
-		resourcedata.SetNillableValue(d, "name", sdkDncList.Name)
-		resourcedata.SetNillableValue(d, "contact_method", sdkDncList.ContactMethod)
-		resourcedata.SetNillableValue(d, "login_id", sdkDncList.LoginId)
-		resourcedata.SetNillableValue(d, "campaign_id", sdkDncList.CampaignId)
-		resourcedata.SetNillableValue(d, "dnc_source_type", sdkDncList.DncSourceType)
-		resourcedata.SetNillableValue(d, "license_id", sdkDncList.LicenseId)
-		resourcedata.SetNillableReference(d, "division_id", sdkDncList.Division)
-		resourcedata.SetNillableValue(d, "custom_exclusion_column", sdkDncList.CustomExclusionColumn)
-
+		if sdkDncList.DncSourceType != nil {
+			_ = d.Set("dnc_source_type", *sdkDncList.DncSourceType)
+		}
+		if sdkDncList.LicenseId != nil {
+			_ = d.Set("license_id", *sdkDncList.LicenseId)
+		}
+		if sdkDncList.Division != nil && sdkDncList.Division.Id != nil {
+			_ = d.Set("division_id", *sdkDncList.Division.Id)
+		}
 		log.Printf("Read Outbound DNC list %s %s", d.Id(), *sdkDncList.Name)
 		return cc.CheckState(d)
 	})

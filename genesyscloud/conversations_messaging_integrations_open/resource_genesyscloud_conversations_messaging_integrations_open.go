@@ -68,7 +68,7 @@ func readConversationsMessagingIntegrationsOpen(ctx context.Context, d *schema.R
 
 	log.Printf("Reading conversations messaging integrations open %s", d.Id())
 
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceConversationsMessagingIntegrationsOpen(), constants.DefaultConsistencyChecks, ResourceType)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceConversationsMessagingIntegrationsOpen(), constants.ConsistencyChecks(), ResourceType)
 
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		openIntegrationRequest, resp, err := proxy.getConversationsMessagingIntegrationsOpenById(ctx, d.Id())

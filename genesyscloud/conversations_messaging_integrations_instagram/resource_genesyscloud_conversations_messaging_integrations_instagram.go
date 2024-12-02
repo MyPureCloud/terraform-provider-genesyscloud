@@ -76,7 +76,7 @@ func readConversationsMessagingIntegrationsInstagram(ctx context.Context, d *sch
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read conversations messaging integrations instagram %s: %s", d.Id(), getErr), resp))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceConversationsMessagingIntegrationsInstagram(), constants.DefaultConsistencyChecks, ResourceType)
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceConversationsMessagingIntegrationsInstagram(), constants.ConsistencyChecks(), ResourceType)
 
 		resourcedata.SetNillableValue(d, "name", instagramIntegrationRequest.Name)
 

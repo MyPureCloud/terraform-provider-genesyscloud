@@ -347,7 +347,7 @@ func createSurveyForm(ctx context.Context, d *schema.ResourceData, meta interfac
 func readSurveyForm(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	qualityAPI := platformclientv2.NewQualityApiWithConfig(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceSurveyForm(), constants.DefaultConsistencyChecks, "genesyscloud_quality_forms_survey")
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceSurveyForm(), constants.ConsistencyChecks(), "genesyscloud_quality_forms_survey")
 
 	log.Printf("Reading survey form %s", d.Id())
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {

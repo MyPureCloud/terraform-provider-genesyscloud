@@ -184,7 +184,7 @@ func readKnowledgeCategory(ctx context.Context, d *schema.ResourceData, meta int
 
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	knowledgeAPI := platformclientv2.NewKnowledgeApiWithConfig(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceKnowledgeCategory(), constants.DefaultConsistencyChecks, "genesyscloud_knowledge_category")
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceKnowledgeCategory(), constants.ConsistencyChecks(), "genesyscloud_knowledge_category")
 
 	log.Printf("Reading knowledge category %s", knowledgeCategoryId)
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {

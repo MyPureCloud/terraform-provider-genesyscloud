@@ -77,7 +77,7 @@ func createPhone(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 func readPhone(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	pp := getPhoneProxy(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourcePhone(), constants.DefaultConsistencyChecks, ResourceType)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourcePhone(), constants.ConsistencyChecks(), ResourceType)
 
 	log.Printf("Reading phone %s", d.Id())
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {

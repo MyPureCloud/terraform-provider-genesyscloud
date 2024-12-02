@@ -97,7 +97,7 @@ func createOutboundRuleset(ctx context.Context, d *schema.ResourceData, meta int
 func readOutboundRuleset(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := newOutboundRulesetProxy(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundRuleset(), constants.DefaultConsistencyChecks, ResourceType)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundRuleset(), constants.ConsistencyChecks(), ResourceType)
 
 	log.Printf("Reading Outbound Ruleset %s", d.Id())
 

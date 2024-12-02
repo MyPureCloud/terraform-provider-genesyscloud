@@ -83,7 +83,7 @@ func readFlowLogLevel(ctx context.Context, d *schema.ResourceData, meta interfac
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	ep := getFlowLogLevelProxy(sdkConfig)
 	flowId := d.Get("flow_id").(string)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceFlowLoglevel(), constants.DefaultConsistencyChecks, ResourceType)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceFlowLoglevel(), constants.ConsistencyChecks(), ResourceType)
 
 	log.Printf("Reading readFlowLogLevel with flowId %s", flowId)
 

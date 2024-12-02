@@ -67,7 +67,7 @@ func readRoutingQueueConditionalRoutingGroup(ctx context.Context, d *schema.Reso
 
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getRoutingQueueConditionalGroupRoutingProxy(sdkConfig)
-	cc := consistencyChecker.NewConsistencyCheck(ctx, d, meta, ResourceRoutingQueueConditionalGroupRouting(), constants.DefaultConsistencyChecks, ResourceType)
+	cc := consistencyChecker.NewConsistencyCheck(ctx, d, meta, ResourceRoutingQueueConditionalGroupRouting(), constants.ConsistencyChecks(), ResourceType)
 	queueId := strings.Split(d.Id(), "/")[0]
 
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {

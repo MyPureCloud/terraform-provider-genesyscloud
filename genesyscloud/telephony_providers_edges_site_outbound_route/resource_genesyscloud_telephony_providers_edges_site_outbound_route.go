@@ -90,7 +90,7 @@ func readSiteOutboundRoute(ctx context.Context, d *schema.ResourceData, meta int
 	}
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getSiteOutboundRouteProxy(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceSiteOutboundRoute(), constants.DefaultConsistencyChecks, ResourceType)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceSiteOutboundRoute(), constants.ConsistencyChecks(), ResourceType)
 
 	siteId, outboundRouteId := splitSiteAndOutboundRoute(d.Id())
 

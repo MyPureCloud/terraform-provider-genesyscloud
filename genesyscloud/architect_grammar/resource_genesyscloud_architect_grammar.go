@@ -65,7 +65,7 @@ func createArchitectGrammar(ctx context.Context, d *schema.ResourceData, meta in
 func readArchitectGrammar(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getArchitectGrammarProxy(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceArchitectGrammar(), constants.DefaultConsistencyChecks, ResourceType)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceArchitectGrammar(), constants.ConsistencyChecks(), ResourceType)
 
 	log.Printf("Reading Architect Grammar %s", d.Id())
 

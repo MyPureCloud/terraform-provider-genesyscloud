@@ -59,7 +59,7 @@ func createOutboundWrapUpCodeMappings(ctx context.Context, d *schema.ResourceDat
 func readOutboundWrapUpCodeMappings(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getOutboundWrapupCodeMappingsProxy(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundWrapUpCodeMappings(), constants.DefaultConsistencyChecks, ResourceType)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundWrapUpCodeMappings(), constants.ConsistencyChecks(), ResourceType)
 
 	log.Printf("Reading Outbound Wrap-up Code Mappings")
 
