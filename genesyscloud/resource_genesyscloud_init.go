@@ -14,7 +14,6 @@ func SetRegistrar(l registrar.Registrar) {
 func registerDataSources(l registrar.Registrar) {
 
 	l.RegisterDataSource("genesyscloud_auth_division_home", DataSourceAuthDivisionHome())
-	l.RegisterDataSource("genesyscloud_journey_action_map", dataSourceJourneyActionMap())
 	l.RegisterDataSource("genesyscloud_journey_action_template", dataSourceJourneyActionTemplate())
 	l.RegisterDataSource("genesyscloud_journey_outcome", dataSourceJourneyOutcome())
 	l.RegisterDataSource("genesyscloud_journey_segment", dataSourceJourneySegment())
@@ -29,7 +28,6 @@ func registerDataSources(l registrar.Registrar) {
 
 func registerResources(l registrar.Registrar) {
 
-	l.RegisterResource("genesyscloud_journey_action_map", ResourceJourneyActionMap())
 	l.RegisterResource("genesyscloud_journey_action_template", ResourceJourneyActionTemplate())
 	l.RegisterResource("genesyscloud_journey_outcome", ResourceJourneyOutcome())
 	l.RegisterResource("genesyscloud_journey_segment", ResourceJourneySegment())
@@ -43,7 +41,6 @@ func registerResources(l registrar.Registrar) {
 }
 
 func registerExporters(l registrar.Registrar) {
-	l.RegisterExporter("genesyscloud_journey_action_map", JourneyActionMapExporter())
 	l.RegisterExporter("genesyscloud_journey_action_template", JourneyActionTemplateExporter())
 	l.RegisterExporter("genesyscloud_journey_outcome", JourneyOutcomeExporter())
 	l.RegisterExporter("genesyscloud_journey_segment", JourneySegmentExporter())
