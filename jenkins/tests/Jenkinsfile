@@ -14,6 +14,7 @@ def credentials = CREDENTIALS_MAP.get(region, 'GENESYSCLOUD_OAUTHCLIENT_ID_AND_S
 def env = ENVIRONMENT_MAP.get(region,'test')
 def triggerUTR = triggerUTR
 final def SERVICE_ID = 'CX-as-Code'
+final def GIT_CREDENTIALS_ID = '211a9bc8-96ae-4b0c-b9bf-ad1d4ff53f79'
 
 pipeline {
     agent {
