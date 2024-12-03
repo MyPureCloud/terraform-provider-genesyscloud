@@ -37,6 +37,12 @@ pipeline {
         go 'Go 1.23.1'
         terraform 'Terraform 1.0.10'
     }
+     triggers {
+        parameterizedCron('''
+            30 22 * * 0-4 %REGION=tca
+            30 22 * * 0-4 %REGION=us-east-1
+        ''')
+    }   
 
     stages {
       
