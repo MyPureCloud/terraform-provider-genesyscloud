@@ -71,13 +71,7 @@ pipeline {
             git url: 'git@bitbucket.org:inindca/publicapi-test-common.git', credentialsId: GIT_CREDENTIALS_ID
             jenkinsCommon = load 'jenkinsfile-libs/test-steps.groovy'
           }
-
-          // Set the description
-          if (isTest) {
             jenkinsCommon.updateDescription(SERVICE_ID, sourceBuildNumber, 'Test Run-' + region)
-          } else {
-            jenkinsCommon.updateDescription(SERVICE_ID, sourceBuildNumber, region)
-          }
         }
       
             }
