@@ -1,6 +1,7 @@
 package constants
 
 import (
+	"log"
 	"os"
 	"strconv"
 )
@@ -12,7 +13,8 @@ const (
 )
 
 // ConsistencyChecks will return the number of times the consistency checker should retry.
-// The use can specify this by setting the env variable CONSISTENCY_CHECKS
+// The user can specify this by setting the env variable CONSISTENCY_CHECKS
+// This env variable will only be used when BYPASS_CONSISTENCY_CHECKER is set
 func ConsistencyChecks() int {
 	defaultChecks := 5
 
@@ -21,6 +23,7 @@ func ConsistencyChecks() int {
 			return value
 		}
 
+		log.Printf("CONSISTENCY_CHECKS set to invalid value, using default value %d", defaultChecks)
 		return defaultChecks
 	}
 

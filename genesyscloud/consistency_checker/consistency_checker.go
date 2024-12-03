@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	featureToggles "terraform-provider-genesyscloud/genesyscloud/util/feature_toggles"
 	"unsafe"
 
@@ -224,10 +225,10 @@ func (c *ConsistencyCheck) CheckState(currentState *schema.ResourceData) *retry.
 		return nil
 	}
 
-	if featureToggles.CCToggleExists() {
-		log.Printf("%s is set, write consistency errors to consistency-errors.log.json", featureToggles.CCToggleName())
-	} else {
-		log.Printf("%s is not set, consistency checker behaving as default", featureToggles.CCToggleName())
+	// If the user has set BYPASS_CONSISTENCY_CHECKER and CONSISTENCY_CHECKS=0 then the consistency checker will not run
+	if featureToggles.CCToggleExists() && constants.ConsistencyChecks() == 0 {
+		log.Print("Consistency checker disabled")
+		return nil
 	}
 
 	originalState := filterMap(c.originalState)
