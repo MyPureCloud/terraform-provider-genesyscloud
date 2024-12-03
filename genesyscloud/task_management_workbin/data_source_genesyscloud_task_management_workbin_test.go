@@ -29,9 +29,9 @@ func TestAccDataSourceTaskManagementWorkbin(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config: GenerateWorkbinResource(workbinResourceLabel, workbinName, workDescription, nullValue) +
-					generateWorkbinDataSource(workbinDataSourceLabel, workbinName, resourceName+"."+workbinResourceLabel),
+					generateWorkbinDataSource(workbinDataSourceLabel, workbinName, ResourceType+"."+workbinResourceLabel),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair("data."+resourceName+"."+workbinDataSourceLabel, "id", resourceName+"."+workbinResourceLabel, "id"),
+					resource.TestCheckResourceAttrPair("data."+ResourceType+"."+workbinDataSourceLabel, "id", ResourceType+"."+workbinResourceLabel, "id"),
 				),
 			},
 		},
@@ -43,5 +43,5 @@ func generateWorkbinDataSource(dataSourceLabel string, name string, dependsOnRes
 		name = "%s"
 		depends_on=[%s]
 	}
-	`, resourceName, dataSourceLabel, name, dependsOnResource)
+	`, ResourceType, dataSourceLabel, name, dependsOnResource)
 }

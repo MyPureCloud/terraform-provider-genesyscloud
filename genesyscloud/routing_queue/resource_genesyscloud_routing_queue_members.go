@@ -31,7 +31,7 @@ func postRoutingQueueMembers(queueID string, membersToUpdate []string, remove bo
 		chunkProcessor := func(chunk []platformclientv2.Writableentity) diag.Diagnostics {
 			resp, err := proxy.addOrRemoveMembers(ctx, queueID, chunk, remove)
 			if err != nil {
-				return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update members in queue %s error: %s", queueID, err), resp)
+				return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update members in queue %s error: %s", queueID, err), resp)
 			}
 			return nil
 		}
@@ -48,7 +48,7 @@ func getRoutingQueueMembers(queueID string, memberBy string, sdkConfig *platform
 	// Need to call this method to find the member count for a queue. GetRoutingQueueMembers does not return a `total` property for us to use.
 	queue, resp, err := proxy.getRoutingQueueById(ctx, queueID, true)
 	if err != nil {
-		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to find queue %s error: %s", queueID, err), resp)
+		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to find queue %s error: %s", queueID, err), resp)
 	}
 
 	if queue.MemberCount == nil {
@@ -62,7 +62,7 @@ func getRoutingQueueMembers(queueID string, memberBy string, sdkConfig *platform
 	for pageNum := 1; ; pageNum++ {
 		users, resp, err := sdkGetRoutingQueueMembers(queueID, memberBy, pageNum, 100, sdkConfig)
 		if err != nil || resp.StatusCode != http.StatusOK {
-			return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to query users for queue %s error: %s", queueID, err), resp)
+			return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to query users for queue %s error: %s", queueID, err), resp)
 		}
 
 		if users == nil || users.Entities == nil || len(*users.Entities) == 0 {
@@ -104,7 +104,7 @@ func updateQueueMembers(d *schema.ResourceData, sdkConfig *platformclientv2.Conf
 	}
 
 	if diagErr := checkUserMembership(d.Id(), newUserIds, sdkConfig); diagErr != nil {
-		return util.BuildDiagnosticError(resourceName, "failed to update queue member: ", diagErr)
+		return util.BuildDiagnosticError(ResourceType, "failed to update queue member: ", diagErr)
 	}
 
 	// Check for members to add or remove
@@ -177,7 +177,7 @@ func updateQueueUserRingNum(queueID string, userID string, ringNum int, sdkConfi
 		RingNumber: &ringNum,
 	})
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update ring number for queue %s user %s error: %s", queueID, userID, err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update ring number for queue %s user %s error: %s", queueID, userID, err), resp)
 	}
 	return nil
 }

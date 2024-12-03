@@ -64,7 +64,7 @@ resource "genesyscloud_outbound_messagingcampaign" "example_outbound_messagingca
 - `contact_sorts` (Block List) The order in which to sort contacts for dialing, based on up to four columns. (see [below for nested schema](#nestedblock--contact_sorts))
 - `division_id` (String) The division this entity belongs to.
 - `dnc_list_ids` (List of String) The dnc lists to check before sending a message for this messaging campaign.
-- `dynamic_contact_queueing_settings` (Block List, Max: 1) Indicates (when true) that the campaign supports dynamic queueing of the contact list at the time of a request for contacts. 
+- `dynamic_contact_queueing_settings` (Block List, Max: 1) Indicates (when true) that the campaign supports dynamic queueing of the contact list at the time of a request for contacts.
 				**Warning**: Updating this field will cause the campaign to be destroyed and re-created. (see [below for nested schema](#nestedblock--dynamic_contact_queueing_settings))
 - `email_config` (Block List, Max: 1) Configuration for this messaging campaign to send Email messages. (see [below for nested schema](#nestedblock--email_config))
 - `rule_set_ids` (List of String) Rule Sets to be applied while this campaign is sending messages

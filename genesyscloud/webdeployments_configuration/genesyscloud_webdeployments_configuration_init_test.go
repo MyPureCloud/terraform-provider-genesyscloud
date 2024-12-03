@@ -25,7 +25,7 @@ func (r *registerTestInstance) registerTestResources() {
 	r.resourceMapMutex.Lock()
 	defer r.resourceMapMutex.Unlock()
 
-	providerResources[resourceName] = ResourceWebDeploymentConfiguration()
+	providerResources[ResourceType] = ResourceWebDeploymentConfiguration()
 	providerResources["genesyscloud_knowledge_knowledgebase"] = gcloud.ResourceKnowledgeKnowledgebase()
 }
 
@@ -34,7 +34,7 @@ func (r *registerTestInstance) registerTestDataSources() {
 	r.datasourceMapMutex.Lock()
 	defer r.datasourceMapMutex.Unlock()
 
-	providerDataSources[resourceName] = DataSourceWebDeploymentsConfiguration()
+	providerDataSources[ResourceType] = DataSourceWebDeploymentsConfiguration()
 }
 
 // initTestResources initializes all test resources and data sources.

@@ -42,9 +42,9 @@ func (r *registerTestInstance) registerTestResources() {
 	r.resourceMapMutex.Lock()
 	defer r.resourceMapMutex.Unlock()
 
-	providerResources["genesyscloud_user"] = user.ResourceUser()
-	providerResources["genesyscloud_telephony_providers_edges_phonebasesettings"] = phoneBaseSettings.ResourcePhoneBaseSettings()
-	providerResources["genesyscloud_telephony_providers_edges_phone"] = edgePhone.ResourcePhone()
+	providerResources[user.ResourceType] = user.ResourceUser()
+	providerResources[phoneBaseSettings.ResourceType] = phoneBaseSettings.ResourcePhoneBaseSettings()
+	providerResources[edgePhone.ResourceType] = edgePhone.ResourcePhone()
 }
 
 // registerTestDataSources registers all data sources used in the tests.
@@ -52,7 +52,7 @@ func (r *registerTestInstance) registerTestDataSources() {
 	r.datasourceMapMutex.Lock()
 	defer r.datasourceMapMutex.Unlock()
 
-	providerDataSources[resourceName] = DataSourceStation()
+	providerDataSources[ResourceType] = DataSourceStation()
 	providerDataSources["genesyscloud_organizations_me"] = gcloud.DataSourceOrganizationsMe()
 }
 

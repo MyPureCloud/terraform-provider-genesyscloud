@@ -1,12 +1,13 @@
 package outbound_settings
 
 import (
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
 	"terraform-provider-genesyscloud/genesyscloud/validators"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
 /*
@@ -17,12 +18,12 @@ resource_genesycloud_outbound_settings_schema.go holds four functions within it:
 3.  The datasource schema definitions for the outbound_settings datasource.
 4.  The resource exporter configuration for the outbound_settings exporter.
 */
-const resourceName = "genesyscloud_outbound_settings"
+const ResourceType = "genesyscloud_outbound_settings"
 
 // SetRegistrar registers all the resources, datasources and exporters in the package
 func SetRegistrar(l registrar.Registrar) {
-	l.RegisterResource(resourceName, ResourceOutboundSettings())
-	l.RegisterExporter(resourceName, OutboundSettingsExporter())
+	l.RegisterResource(ResourceType, ResourceOutboundSettings())
+	l.RegisterExporter(ResourceType, OutboundSettingsExporter())
 }
 
 var (

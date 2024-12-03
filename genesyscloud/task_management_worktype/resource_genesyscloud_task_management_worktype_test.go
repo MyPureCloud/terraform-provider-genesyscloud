@@ -93,10 +93,10 @@ func TestAccResourceTaskManagementWorktype(t *testing.T) {
 					workitemSchema.GenerateWorkitemSchemaResourceBasic(wsResourceLabel, wsName, wsDescription) +
 					GenerateWorktypeResourceBasic(wtRes.resourceLabel, wtRes.name, wtRes.description, wtRes.defaultWorkbinId, wtRes.schemaId, ""),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(resourceName+"."+wtRes.resourceLabel, "name", wtRes.name),
-					resource.TestCheckResourceAttr(resourceName+"."+wtRes.resourceLabel, "description", wtRes.description),
-					resource.TestCheckResourceAttrPair(resourceName+"."+wtRes.resourceLabel, "default_workbin_id", fmt.Sprintf("genesyscloud_task_management_workbin.%s", wbResourceLabel), "id"),
-					resource.TestCheckResourceAttrPair(resourceName+"."+wtRes.resourceLabel, "schema_id", fmt.Sprintf("genesyscloud_task_management_workitem_schema.%s", wsResourceLabel), "id"),
+					resource.TestCheckResourceAttr(ResourceType+"."+wtRes.resourceLabel, "name", wtRes.name),
+					resource.TestCheckResourceAttr(ResourceType+"."+wtRes.resourceLabel, "description", wtRes.description),
+					resource.TestCheckResourceAttrPair(ResourceType+"."+wtRes.resourceLabel, "default_workbin_id", fmt.Sprintf("genesyscloud_task_management_workbin.%s", wbResourceLabel), "id"),
+					resource.TestCheckResourceAttrPair(ResourceType+"."+wtRes.resourceLabel, "schema_id", fmt.Sprintf("genesyscloud_task_management_workitem_schema.%s", wsResourceLabel), "id"),
 				),
 			},
 			// All optional properties update
@@ -110,26 +110,26 @@ func TestAccResourceTaskManagementWorktype(t *testing.T) {
 					generateWorktypeResource(wtRes) +
 					fmt.Sprintf("\n data \"genesyscloud_auth_division_home\" \"%s\" {}\n", divDataLabel),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(resourceName+"."+wtRes.resourceLabel, "name", wtRes.name),
-					resource.TestCheckResourceAttr(resourceName+"."+wtRes.resourceLabel, "description", wtRes.description),
-					resource.TestCheckResourceAttrPair(resourceName+"."+wtRes.resourceLabel, "default_workbin_id", fmt.Sprintf("genesyscloud_task_management_workbin.%s", wbResourceLabel), "id"),
-					resource.TestCheckResourceAttrPair(resourceName+"."+wtRes.resourceLabel, "schema_id", fmt.Sprintf("genesyscloud_task_management_workitem_schema.%s", wsResourceLabel), "id"),
-					resource.TestCheckResourceAttrPair(resourceName+"."+wtRes.resourceLabel, "division_id", fmt.Sprintf("data.genesyscloud_auth_division_home.%s", divDataLabel), "id"),
+					resource.TestCheckResourceAttr(ResourceType+"."+wtRes.resourceLabel, "name", wtRes.name),
+					resource.TestCheckResourceAttr(ResourceType+"."+wtRes.resourceLabel, "description", wtRes.description),
+					resource.TestCheckResourceAttrPair(ResourceType+"."+wtRes.resourceLabel, "default_workbin_id", fmt.Sprintf("genesyscloud_task_management_workbin.%s", wbResourceLabel), "id"),
+					resource.TestCheckResourceAttrPair(ResourceType+"."+wtRes.resourceLabel, "schema_id", fmt.Sprintf("genesyscloud_task_management_workitem_schema.%s", wsResourceLabel), "id"),
+					resource.TestCheckResourceAttrPair(ResourceType+"."+wtRes.resourceLabel, "division_id", fmt.Sprintf("data.genesyscloud_auth_division_home.%s", divDataLabel), "id"),
 
-					resource.TestCheckResourceAttr(resourceName+"."+wtRes.resourceLabel, "default_duration_seconds", fmt.Sprintf("%v", wtRes.defaultDurationS)),
-					resource.TestCheckResourceAttr(resourceName+"."+wtRes.resourceLabel, "default_expiration_seconds", fmt.Sprintf("%v", wtRes.defaultExpirationS)),
-					resource.TestCheckResourceAttr(resourceName+"."+wtRes.resourceLabel, "default_due_duration_seconds", fmt.Sprintf("%v", wtRes.defaultDueDurationS)),
-					resource.TestCheckResourceAttr(resourceName+"."+wtRes.resourceLabel, "default_priority", fmt.Sprintf("%v", wtRes.defaultPriority)),
-					resource.TestCheckResourceAttr(resourceName+"."+wtRes.resourceLabel, "default_ttl_seconds", fmt.Sprintf("%v", wtRes.defaultTtlS)),
+					resource.TestCheckResourceAttr(ResourceType+"."+wtRes.resourceLabel, "default_duration_seconds", fmt.Sprintf("%v", wtRes.defaultDurationS)),
+					resource.TestCheckResourceAttr(ResourceType+"."+wtRes.resourceLabel, "default_expiration_seconds", fmt.Sprintf("%v", wtRes.defaultExpirationS)),
+					resource.TestCheckResourceAttr(ResourceType+"."+wtRes.resourceLabel, "default_due_duration_seconds", fmt.Sprintf("%v", wtRes.defaultDueDurationS)),
+					resource.TestCheckResourceAttr(ResourceType+"."+wtRes.resourceLabel, "default_priority", fmt.Sprintf("%v", wtRes.defaultPriority)),
+					resource.TestCheckResourceAttr(ResourceType+"."+wtRes.resourceLabel, "default_ttl_seconds", fmt.Sprintf("%v", wtRes.defaultTtlS)),
 
-					resource.TestCheckResourceAttrPair(resourceName+"."+wtRes.resourceLabel, "default_language_id", fmt.Sprintf("genesyscloud_routing_language.%s", langResourceLabel), "id"),
-					resource.TestCheckResourceAttrPair(resourceName+"."+wtRes.resourceLabel, "default_queue_id", fmt.Sprintf("genesyscloud_routing_queue.%s", queueResourceLabel), "id"),
+					resource.TestCheckResourceAttrPair(ResourceType+"."+wtRes.resourceLabel, "default_language_id", fmt.Sprintf("genesyscloud_routing_language.%s", langResourceLabel), "id"),
+					resource.TestCheckResourceAttrPair(ResourceType+"."+wtRes.resourceLabel, "default_queue_id", fmt.Sprintf("genesyscloud_routing_queue.%s", queueResourceLabel), "id"),
 
-					resource.TestCheckResourceAttrPair(resourceName+"."+wtRes.resourceLabel, "default_skills_ids.0", fmt.Sprintf("genesyscloud_routing_skill.%s", skillResourceLabel1), "id"),
-					resource.TestCheckResourceAttrPair(resourceName+"."+wtRes.resourceLabel, "default_skills_ids.1", fmt.Sprintf("genesyscloud_routing_skill.%s", skillResourceLabel2), "id"),
+					resource.TestCheckResourceAttrPair(ResourceType+"."+wtRes.resourceLabel, "default_skills_ids.0", fmt.Sprintf("genesyscloud_routing_skill.%s", skillResourceLabel1), "id"),
+					resource.TestCheckResourceAttrPair(ResourceType+"."+wtRes.resourceLabel, "default_skills_ids.1", fmt.Sprintf("genesyscloud_routing_skill.%s", skillResourceLabel2), "id"),
 
-					resource.TestCheckResourceAttr(resourceName+"."+wtRes.resourceLabel, "assignment_enabled", fmt.Sprintf("%v", wtRes.assignmentEnabled)),
-					resource.TestCheckResourceAttr(resourceName+"."+wtRes.resourceLabel, "schema_version", fmt.Sprintf("%v", wtRes.schemaVersion)),
+					resource.TestCheckResourceAttr(ResourceType+"."+wtRes.resourceLabel, "assignment_enabled", fmt.Sprintf("%v", wtRes.assignmentEnabled)),
+					resource.TestCheckResourceAttr(ResourceType+"."+wtRes.resourceLabel, "schema_version", fmt.Sprintf("%v", wtRes.schemaVersion)),
 				),
 			},
 		},
@@ -180,7 +180,7 @@ func generateWorktypeResource(wt worktypeConfig) string {
 		assignment_enabled = %v
 		schema_version = %v
 	}
-		`, resourceName,
+		`, ResourceType,
 		wt.resourceLabel,
 		wt.name,
 		wt.description,

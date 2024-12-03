@@ -7,9 +7,9 @@ import (
 )
 
 type Registrar interface {
-	RegisterResource(resourceName string, resource *schema.Resource)
-	RegisterDataSource(dataSourceName string, datasource *schema.Resource)
-	RegisterExporter(exporterName string, resourceExporter *resourceExporter.ResourceExporter)
+	RegisterResource(resourceType string, resource *schema.Resource)
+	RegisterDataSource(dataSourceType string, datasource *schema.Resource)
+	RegisterExporter(exporterResourceType string, resourceExporter *resourceExporter.ResourceExporter)
 }
 
 // need this for TFexport where Resources are required for provider initialisation.

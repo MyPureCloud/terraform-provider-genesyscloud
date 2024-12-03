@@ -57,7 +57,7 @@ func TestAccDataSourceDidBasic(t *testing.T) {
 					didPhoneNumber,
 					"genesyscloud_architect_ivr."+ivrConfigResourceLabel),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("data."+resourceName+"."+didDataResourceLabel, "phone_number", didPhoneNumber),
+					resource.TestCheckResourceAttr("data."+ResourceType+"."+didDataResourceLabel, "phone_number", didPhoneNumber),
 				),
 			},
 		},
@@ -74,5 +74,5 @@ func generateDidDataSource(
 		phone_number = "%s"
 		depends_on=[%s]
 	}
-	`, resourceName, resourceLabel, phoneNumber, dependsOnResource)
+	`, ResourceType, resourceLabel, phoneNumber, dependsOnResource)
 }

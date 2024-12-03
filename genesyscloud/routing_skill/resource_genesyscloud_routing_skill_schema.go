@@ -8,12 +8,12 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-const resourceName = "genesyscloud_routing_skill"
+const ResourceType = "genesyscloud_routing_skill"
 
 func SetRegistrar(regInstance registrar.Registrar) {
-	regInstance.RegisterResource(resourceName, ResourceRoutingSkill())
-	regInstance.RegisterExporter(resourceName, RoutingSkillExporter())
-	regInstance.RegisterDataSource(resourceName, DataSourceRoutingSkill())
+	regInstance.RegisterResource(ResourceType, ResourceRoutingSkill())
+	regInstance.RegisterExporter(ResourceType, RoutingSkillExporter())
+	regInstance.RegisterDataSource(ResourceType, DataSourceRoutingSkill())
 }
 
 // The context is now added without Timeout ,

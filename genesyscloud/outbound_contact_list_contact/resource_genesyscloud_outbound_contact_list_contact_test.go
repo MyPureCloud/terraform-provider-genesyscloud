@@ -15,7 +15,7 @@ import (
 func TestAccResourceOutboundContactListContact(t *testing.T) {
 	var (
 		resourceLabel     = "contact"
-		fullResourceLabel = fmt.Sprintf("%s.%s", resourceName, resourceLabel)
+		fullResourceLabel = fmt.Sprintf("%s.%s", ResourceType, resourceLabel)
 
 		cellColumnKey        = "Cell"
 		dataCellValue        = "+000000"
@@ -183,7 +183,7 @@ func TestAccResourceOutboundContactListContact(t *testing.T) {
 func TestAccResourceOutboundContactListContactWithId(t *testing.T) {
 	var (
 		resourceLabel     = "contact"
-		fullResourceLabel = fmt.Sprintf("%s.%s", resourceName, resourceLabel)
+		fullResourceLabel = fmt.Sprintf("%s.%s", ResourceType, resourceLabel)
 		contactId         = uuid.NewString()
 
 		cellColumnKey        = "Cell"

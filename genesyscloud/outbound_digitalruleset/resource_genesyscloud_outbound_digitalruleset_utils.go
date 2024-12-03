@@ -960,7 +960,7 @@ func GenerateSimpleOutboundDigitalRuleSet(resourceLabel, name string) (resource 
 		}
 	}
 		`),
-	), resourceName + "." + resourceLabel
+	), ResourceType + "." + resourceLabel
 }
 
 func GenerateOutboundDigitalRuleSetResource(

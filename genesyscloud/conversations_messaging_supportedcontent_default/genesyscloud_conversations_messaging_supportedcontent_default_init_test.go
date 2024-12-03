@@ -30,8 +30,8 @@ func (r *registerTestInstance) registerTestResources() {
 	r.resourceMapMutex.Lock()
 	defer r.resourceMapMutex.Unlock()
 
-	providerResources[resourceName] = ResourceConversationsMessagingSupportedcontentDefault()
-	providerResources["genesyscloud_conversations_messaging_supportedcontent"] = cmSupportedContent.ResourceSupportedContent()
+	providerResources[ResourceType] = ResourceConversationsMessagingSupportedcontentDefault()
+	providerResources[cmSupportedContent.ResourceType] = cmSupportedContent.ResourceSupportedContent()
 }
 
 // initTestResources initializes all test resources and data sources.

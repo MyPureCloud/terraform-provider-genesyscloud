@@ -223,7 +223,7 @@ func buildSdkConditionalGroupRouting(d *schema.ResourceData) (*platformclientv2.
 
 		if queueId, ok := ruleSettings["queue_id"].(string); ok && queueId != "" {
 			if i == 0 {
-				return nil, util.BuildDiagnosticError(resourceName, "For rule 1, queue_id is always assumed to be the current queue, so queue id should not be specified", fmt.Errorf("queue id is not nil"))
+				return nil, util.BuildDiagnosticError(ResourceType, "For rule 1, queue_id is always assumed to be the current queue, so queue id should not be specified", fmt.Errorf("queue id is not nil"))
 			}
 			sdkCGRRule.Queue = &platformclientv2.Domainentityref{Id: &queueId}
 		}
@@ -648,7 +648,7 @@ func flattenQueueWrapupCodes(ctx context.Context, queueID string, proxy *Routing
 	codeIds := getWrapupCodeIds(codes)
 
 	if err != nil {
-		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("failed to query wrapup codes for queue %s", queueID), resp)
+		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("failed to query wrapup codes for queue %s", queueID), resp)
 	}
 
 	if codeIds != nil {

@@ -7,11 +7,11 @@ import (
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
 )
 
-const resourceName = "genesyscloud_conversations_messaging_settings_default"
+const ResourceType = "genesyscloud_conversations_messaging_settings_default"
 
 // SetRegistrar registers all of the resources, datasources and exporters in the package
 func SetRegistrar(regInstance registrar.Registrar) {
-	regInstance.RegisterResource(resourceName, ResourceConversationsMessagingSettingsDefault())
+	regInstance.RegisterResource(ResourceType, ResourceConversationsMessagingSettingsDefault())
 }
 
 // ResourceConversationsMessagingSettingsDefault registers the genesyscloud_conversations_messaging_settings_default resource with Terraform

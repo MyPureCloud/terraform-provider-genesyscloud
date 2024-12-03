@@ -63,15 +63,15 @@ func NormalizeSlash(fileNameWithSlash string) string {
 	return fullyQualifiedFileName
 }
 
-func GenerateDataSourceTestSteps(resourceName string, testCaseName string, checkFuncs []resource.TestCheckFunc) []resource.TestStep {
-	return GenerateTestSteps(DataSourceTestType, resourceName, testCaseName, checkFuncs)
+func GenerateDataSourceTestSteps(resourceType string, testCaseName string, checkFuncs []resource.TestCheckFunc) []resource.TestStep {
+	return GenerateTestSteps(DataSourceTestType, resourceType, testCaseName, checkFuncs)
 }
 
-func GenerateResourceTestSteps(resourceName string, testCaseName string, checkFuncs []resource.TestCheckFunc) []resource.TestStep {
-	return GenerateTestSteps(ResourceTestType, resourceName, testCaseName, checkFuncs)
+func GenerateResourceTestSteps(resourceType string, testCaseName string, checkFuncs []resource.TestCheckFunc) []resource.TestStep {
+	return GenerateTestSteps(ResourceTestType, resourceType, testCaseName, checkFuncs)
 }
 
-func GenerateTestSteps(testType string, resourceName string, testCaseName string, checkFuncs []resource.TestCheckFunc) []resource.TestStep {
+func GenerateTestSteps(testType string, resourceType string, testCaseName string, checkFuncs []resource.TestCheckFunc) []resource.TestStep {
 	var testSteps []resource.TestStep
 	var testCasePath string
 	testCasePath = GetTestDataPath(testType, resourceName, testCaseName)
@@ -100,7 +100,7 @@ func GenerateTestSteps(testType string, resourceName string, testCaseName string
 
 	testSteps = append(testSteps, resource.TestStep{
 		PreConfig:         func() { log.Printf("Executing ImportState test step config => %s", testCaseName) },
-		ResourceName:      resourceName + "." + TestObjectIdPrefix + testCaseName,
+		ResourceName:      resourceType + "." + TestObjectIdPrefix + testCaseName,
 		ImportState:       true,
 		ImportStateVerify: true,
 	})

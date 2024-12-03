@@ -28,13 +28,13 @@ func TestAccResourceJourneySegmentOptionalAttributes(t *testing.T) {
 }
 
 func runResourceJourneySegmentTestCase(t *testing.T, testCaseName string) {
-	const resourceName = "genesyscloud_journey_segment"
+	const resourceType = "genesyscloud_journey_segment"
 	setupJourneySegment(t, testCaseName)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
-		Steps:             testrunner.GenerateResourceTestSteps(resourceName, testCaseName, nil),
+		Steps:             testrunner.GenerateResourceTestSteps(resourceType, testCaseName, nil),
 		CheckDestroy:      testVerifyJourneySegmentsDestroyed,
 	})
 }

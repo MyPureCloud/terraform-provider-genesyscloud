@@ -15,7 +15,7 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
 )
 
-const ActionTemplateResourceName = "genesyscloud_journey_action_template"
+const ActionTemplateResourceType = "genesyscloud_journey_action_template"
 
 func TestAccResourceJourneyActionTemplate(t *testing.T) {
 	runJourneyActionTemplateTestCase(t, "action_template")
@@ -27,7 +27,7 @@ func runJourneyActionTemplateTestCase(t *testing.T, testCaseName string) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
-		Steps:             testrunner.GenerateResourceTestSteps(ActionTemplateResourceName, testCaseName, nil),
+		Steps:             testrunner.GenerateResourceTestSteps(ActionTemplateResourceType, testCaseName, nil),
 		CheckDestroy:      testVerifyJourneyActionTemplatesDestroyed,
 	})
 }
@@ -75,7 +75,7 @@ func cleanupJourneyActionTemplate(idPrefix string) {
 func testVerifyJourneyActionTemplatesDestroyed(state *terraform.State) error {
 	journeyApi := platformclientv2.NewJourneyApiWithConfig(sdkConfig)
 	for _, rs := range state.RootModule().Resources {
-		if rs.Type != ActionTemplateResourceName {
+		if rs.Type != ActionTemplateResourceType {
 			continue
 		}
 

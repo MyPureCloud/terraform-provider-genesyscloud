@@ -26,11 +26,11 @@ func DataSourceArchitectDatatableRead(ctx context.Context, d *schema.ResourceDat
 		const pageSize = 100
 		datatables, resp, getErr := archAPI.GetFlowsDatatables("", pageNum, pageSize, "", "", nil, name)
 		if getErr != nil {
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Error requesting architect architect_datatable %s | error: %s", name, getErr), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Error requesting architect architect_datatable %s | error: %s", name, getErr), resp))
 		}
 
 		if datatables.Entities == nil || len(*datatables.Entities) == 0 {
-			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("No architect architect_datatable found with name %s", name), resp))
+			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("No architect architect_datatable found with name %s", name), resp))
 		}
 
 		datatable := (*datatables.Entities)[0]

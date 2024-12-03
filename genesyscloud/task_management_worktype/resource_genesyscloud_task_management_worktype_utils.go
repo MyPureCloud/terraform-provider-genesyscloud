@@ -141,5 +141,5 @@ func GenerateWorktypeResourceBasic(resourceLabel, name, description, workbinReso
 		schema_id = %s
 		%s
 	}
-	`, resourceName, resourceLabel, name, description, workbinResourceId, schemaResourceId, attrs)
+	`, ResourceType, resourceLabel, name, description, workbinResourceId, schemaResourceId, attrs)
 }

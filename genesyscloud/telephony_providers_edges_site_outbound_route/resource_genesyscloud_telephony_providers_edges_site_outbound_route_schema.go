@@ -17,13 +17,13 @@ resource_genesyscloud_telephony_providers_edges_site_schema.go should hold four 
 3.  The resource exporter configuration for the telephony_providers_edges_site exporter.
 */
 
-const resourceName = "genesyscloud_telephony_providers_edges_site_outbound_route"
+const ResourceType = "genesyscloud_telephony_providers_edges_site_outbound_route"
 
 // SetRegistrar registers all of the resources and exporters in the package
 func SetRegistrar(l registrar.Registrar) {
-	l.RegisterResource(resourceName, ResourceSiteOutboundRoute())
-	l.RegisterExporter(resourceName, SiteExporterOutboundRoute())
-	l.RegisterDataSource(resourceName, DataSourceSiteOutboundRoute())
+	l.RegisterResource(ResourceType, ResourceSiteOutboundRoute())
+	l.RegisterExporter(ResourceType, SiteExporterOutboundRoute())
+	l.RegisterDataSource(ResourceType, DataSourceSiteOutboundRoute())
 }
 
 // ResourceSiteOutboundRoute registers the genesyscloud_telephony_providers_edges_site_outbound_route resource with Terraform

@@ -11,5 +11,5 @@ func GenerateWorkbinResource(resourceLabel string, name string, description stri
 		description = "%s"
 		division_id = %s
 	}
-	`, resourceName, resourceLabel, name, description, divisionIdRef)
+	`, ResourceType, resourceLabel, name, description, divisionIdRef)
 }

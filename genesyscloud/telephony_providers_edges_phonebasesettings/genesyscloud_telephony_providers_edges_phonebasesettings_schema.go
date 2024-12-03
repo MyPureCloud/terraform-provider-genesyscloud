@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	resourceName = "genesyscloud_telephony_providers_edges_phonebasesettings"
+	ResourceType = "genesyscloud_telephony_providers_edges_phonebasesettings"
 )
 
 var (

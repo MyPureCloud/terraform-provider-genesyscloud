@@ -17,13 +17,13 @@ resource_genesycloud_outbound_callanalysisresponseset_schema.go holds four funct
 3.  The datasource schema definitions for the outbound_callanalysisresponseset datasource.
 4.  The resource exporter configuration for the outbound_callanalysisresponseset exporter.
 */
-const resourceName = "genesyscloud_outbound_callanalysisresponseset"
+const ResourceType = "genesyscloud_outbound_callanalysisresponseset"
 
 // SetRegistrar registers all of the resources, datasources and exporters in the package
 func SetRegistrar(regInstance registrar.Registrar) {
-	regInstance.RegisterResource(resourceName, ResourceOutboundCallanalysisresponseset())
-	regInstance.RegisterDataSource(resourceName, DataSourceOutboundCallanalysisresponseset())
-	regInstance.RegisterExporter(resourceName, OutboundCallanalysisresponsesetExporter())
+	regInstance.RegisterResource(ResourceType, ResourceOutboundCallanalysisresponseset())
+	regInstance.RegisterDataSource(ResourceType, DataSourceOutboundCallanalysisresponseset())
+	regInstance.RegisterExporter(ResourceType, OutboundCallanalysisresponsesetExporter())
 }
 
 var (

@@ -21,10 +21,10 @@ func dataSourceOutboundDncListRead(ctx context.Context, d *schema.ResourceData, 
 	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
 		dnclistId, retryable, resp, getErr := proxy.getOutboundDnclistByName(ctx, name)
 		if getErr != nil && !retryable {
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("error requesting dnc lists %s | error: %s", name, getErr), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("error requesting dnc lists %s | error: %s", name, getErr), resp))
 		}
 		if retryable {
-			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("no dnc lists found with name %s", name), resp))
+			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("no dnc lists found with name %s", name), resp))
 		}
 		d.SetId(dnclistId)
 		return nil

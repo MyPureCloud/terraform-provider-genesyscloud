@@ -39,13 +39,13 @@ func getAllAuthTaskManagementWorktypeStatuss(ctx context.Context, clientConfig *
 
 	worktypes, resp, err := proxy.worktypeProxy.GetAllTaskManagementWorktype(ctx)
 	if err != nil {
-		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get task management worktypes: %v", err), resp)
+		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get task management worktypes: %v", err), resp)
 	}
 
 	for _, worktype := range *worktypes {
 		worktypeStatuses, resp, err := proxy.getAllTaskManagementWorktypeStatus(ctx, *worktype.Id)
 		if err != nil {
-			return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get task management worktype statuses: %v", err), resp)
+			return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get task management worktype statuses: %v", err), resp)
 		}
 
 		for _, status := range *worktypeStatuses {
@@ -75,7 +75,7 @@ func createTaskManagementWorktypeStatus(ctx context.Context, d *schema.ResourceD
 	err := validateSchema(d)
 	if err != nil {
 		errorMsg := fmt.Sprintf("Failed to create task management worktype %s status %s: %s", worktypeId, *taskManagementWorktypeStatus.Name, err)
-		return util.BuildDiagnosticError(resourceName, errorMsg, fmt.Errorf(errorMsg))
+		return util.BuildDiagnosticError(ResourceType, errorMsg, fmt.Errorf(errorMsg))
 	}
 
 	// If the user makes a reference to a status that is managed by terraform the id will look like this <worktypeId>/<statusId>
@@ -105,9 +105,9 @@ func createTaskManagementWorktypeStatus(ctx context.Context, d *schema.ResourceD
 		if err != nil {
 			// The api can throw a 400 if we operate on statuses asynchronously. Retry if we encounter this
 			if util.IsStatus400(resp) && strings.Contains(resp.ErrorMessage, "Database transaction was cancelled") {
-				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to create task management worktype %s status %s: %s", worktypeId, *taskManagementWorktypeStatus.Name, err), resp))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to create task management worktype %s status %s: %s", worktypeId, *taskManagementWorktypeStatus.Name, err), resp))
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to update task management worktype %s status %s: %s", worktypeId, *taskManagementWorktypeStatus.Name, err), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to update task management worktype %s status %s: %s", worktypeId, *taskManagementWorktypeStatus.Name, err), resp))
 		}
 		return nil
 	})
@@ -134,7 +134,7 @@ func createTaskManagementWorktypeStatus(ctx context.Context, d *schema.ResourceD
 func readTaskManagementWorktypeStatus(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getTaskManagementWorktypeStatusProxy(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceTaskManagementWorktypeStatus(), constants.DefaultConsistencyChecks, resourceName)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceTaskManagementWorktypeStatus(), constants.DefaultConsistencyChecks, ResourceType)
 	worktypeId, statusId := SplitWorktypeStatusTerraformId(d.Id())
 
 	log.Printf("Reading task management worktype %s status %s", worktypeId, statusId)
@@ -143,9 +143,9 @@ func readTaskManagementWorktypeStatus(ctx context.Context, d *schema.ResourceDat
 		workitemStatus, resp, getErr := proxy.getTaskManagementWorktypeStatusById(ctx, worktypeId, statusId)
 		if getErr != nil {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read task management worktype %s status %s: %s", worktypeId, statusId, getErr), resp))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read task management worktype %s status %s: %s", worktypeId, statusId, getErr), resp))
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read task management worktype %s status %s: %s", worktypeId, statusId, getErr), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read task management worktype %s status %s: %s", worktypeId, statusId, getErr), resp))
 		}
 
 		resourcedata.SetNillableValue(d, "worktype_id", workitemStatus.Worktype.Id)
@@ -170,7 +170,7 @@ func readTaskManagementWorktypeStatus(ctx context.Context, d *schema.ResourceDat
 		// Check if this status is the default on the worktype
 		worktype, resp, err := proxy.worktypeProxy.GetTaskManagementWorktypeById(ctx, worktypeId)
 		if err != nil {
-			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read worktype %s", worktypeId), resp))
+			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to read worktype %s", worktypeId), resp))
 		}
 
 		_ = d.Set("default", false)
@@ -192,7 +192,7 @@ func updateTaskManagementWorktypeStatus(ctx context.Context, d *schema.ResourceD
 	err := validateSchema(d)
 	if err != nil {
 		errorMsg := fmt.Sprintf("Failed to update task management worktype %s status %s: %s", worktypeId, statusId, err)
-		return util.BuildDiagnosticError(resourceName, errorMsg, fmt.Errorf(errorMsg))
+		return util.BuildDiagnosticError(ResourceType, errorMsg, fmt.Errorf(errorMsg))
 	}
 
 	taskManagementWorktypeStatus := platformclientv2.Workitemstatusupdate{
@@ -231,9 +231,9 @@ func updateTaskManagementWorktypeStatus(ctx context.Context, d *schema.ResourceD
 		if err != nil {
 			// The api can throw a 400 if we operate on statuses asynchronously. Retry if we encounter this
 			if util.IsStatus400(resp) && strings.Contains(resp.ErrorMessage, "Database transaction was cancelled") {
-				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to update task management worktype %s status %s: %s", worktypeId, statusId, err), resp))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to update task management worktype %s status %s: %s", worktypeId, statusId, err), resp))
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to update task management worktype %s status %s: %s", worktypeId, statusId, err), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to update task management worktype %s status %s: %s", worktypeId, statusId, err), resp))
 		}
 		return nil
 	})
@@ -282,9 +282,9 @@ func deleteTaskManagementWorktypeStatus(ctx context.Context, d *schema.ResourceD
 		if err != nil {
 			// The api can throw a 400 if we operate on statuses asynchronously. Retry if we encounter this
 			if util.IsStatus400(resp) && strings.Contains(resp.ErrorMessage, "Database transaction was cancelled") {
-				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to delete task management worktype %s status %s: %s", worktypeId, statusId, err), resp))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete task management worktype %s status %s: %s", worktypeId, statusId, err), resp))
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to delete task management worktype %s status %s: %s", worktypeId, statusId, err), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete task management worktype %s status %s: %s", worktypeId, statusId, err), resp))
 		}
 		return nil
 	})
@@ -299,9 +299,9 @@ func deleteTaskManagementWorktypeStatus(ctx context.Context, d *schema.ResourceD
 				log.Printf("Deleted task management worktype %s status %s", worktypeId, statusId)
 				return nil
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Error deleting task management worktype %s status %s: %s", worktypeId, statusId, err), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Error deleting task management worktype %s status %s: %s", worktypeId, statusId, err), resp))
 		}
 
-		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("task management worktype %s status %s still exists", worktypeId, statusId), resp))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("task management worktype %s status %s still exists", worktypeId, statusId), resp))
 	})
 }

@@ -23,7 +23,7 @@ func (r *registerTestInstance) registerTestResources() {
 
 	providerResources["genesyscloud_knowledge_document_variation"] = ResourceKnowledgeDocumentVariation()
 	providerResources["genesyscloud_knowledge_knowledgebase"] = gcloud.ResourceKnowledgeKnowledgebase()
-	providerResources["genesyscloud_knowledge_document"] = knowledgeDocument.ResourceKnowledgeDocument()
+	providerResources[knowledgeDocument.ResourceType] = knowledgeDocument.ResourceKnowledgeDocument()
 }
 
 func initTestResources() {

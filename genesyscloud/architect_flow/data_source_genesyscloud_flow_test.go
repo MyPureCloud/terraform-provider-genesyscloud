@@ -35,18 +35,18 @@ func TestAccDataSourceFlow(t *testing.T) {
 					false,
 				) + generateFlowDataSource(
 					flowDataSourceLabel,
-					resourceName+"."+flowResourceLabel,
+					ResourceType+"."+flowResourceLabel,
 					flowName,
 					strconv.Quote("inboundcall"),
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair(resourceName+"."+flowResourceLabel, "id",
-						fmt.Sprintf("data.%s.%s", resourceName, flowDataSourceLabel), "id"),
+					resource.TestCheckResourceAttrPair(ResourceType+"."+flowResourceLabel, "id",
+						fmt.Sprintf("data.%s.%s", ResourceType, flowDataSourceLabel), "id"),
 				),
 			},
 			{
 				// Import/Read
-				ResourceName:            resourceName + "." + flowResourceLabel,
+				ResourceName:            ResourceType + "." + flowResourceLabel,
 				ImportState:             true,
 				ImportStateVerify:       true,
 				ImportStateVerifyIgnore: []string{"filepath", "force_unlock", "file_content_hash"},
@@ -66,5 +66,5 @@ func generateFlowDataSource(
 		type = %s
 		depends_on = [%s]
 	}
-	`, resourceName, resourceLabel, name, varType, dependsOn)
+	`, ResourceType, resourceLabel, name, varType, dependsOn)
 }

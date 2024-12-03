@@ -143,7 +143,7 @@ func uploadPhoneEntriesToDncListFn(p *outboundDnclistProxy, dncList *platformcli
 		// POST /api/v2/outbound/dnclists/{dncListId}/phonenumbers
 		response, err := p.outboundApi.PostOutboundDnclistPhonenumbers(*dncList.Id, phoneNumbers, entryMap["expiration_date"].(string))
 		if err != nil {
-			return response, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to upload phone numbers to Outbound DNC list %s: %s", *dncList.Name, err), response)
+			return response, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to upload phone numbers to Outbound DNC list %s: %s", *dncList.Name, err), response)
 		}
 		resp = response
 		log.Printf("Uploaded phone numbers to DNC list %s", *dncList.Name)

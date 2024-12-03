@@ -33,14 +33,14 @@ func DataSourceUserRead(ctx context.Context, d *schema.ResourceData, m interface
 
 	}
 	if d.Get("name").(string) == "" && d.Get("email").(string) == "" {
-		return util.BuildDiagnosticError(resourceName, "no user search field specified", nil)
+		return util.BuildDiagnosticError(ResourceType, "no user search field specified", nil)
 	}
 
 	if dataSourceUserCache == nil {
 		dataSourceUserCache = rc.NewDataSourceCache(sdkConfig, hydrateUserCache, getUserByName)
 	}
 
-	userId, err := rc.RetrieveId(dataSourceUserCache, resourceName, key, ctx)
+	userId, err := rc.RetrieveId(dataSourceUserCache, ResourceType, key, ctx)
 	if err != nil {
 		return err
 	}
@@ -50,7 +50,7 @@ func DataSourceUserRead(ctx context.Context, d *schema.ResourceData, m interface
 }
 
 func hydrateUserCache(c *rc.DataSourceCache, ctx context.Context) error {
-	log.Printf("hydrating cache for data source %s", resourceName)
+	log.Printf("hydrating cache for data source %s", ResourceType)
 	proxy := getUserProxy(c.ClientConfig)
 	const pageSize = 100
 	users, response, err := proxy.hydrateUserCache(ctx, pageSize, 1)
@@ -72,7 +72,7 @@ func hydrateUserCache(c *rc.DataSourceCache, ctx context.Context) error {
 
 		users, response, err := proxy.hydrateUserCache(ctx, pageSize, pageNum)
 
-		log.Printf("hydrating cache for data source %s with page number: %v", resourceName, pageNum)
+		log.Printf("hydrating cache for data source %s with page number: %v", ResourceType, pageNum)
 		if err != nil {
 			return fmt.Errorf("failed to get page of users: %v %v", err, response)
 		}
@@ -86,12 +86,12 @@ func hydrateUserCache(c *rc.DataSourceCache, ctx context.Context) error {
 
 		}
 	}
-	log.Printf("cache hydration completed for data source %s", resourceName)
+	log.Printf("cache hydration completed for data source %s", ResourceType)
 	return nil
 }
 
 func getUserByName(c *rc.DataSourceCache, searchField string, ctx context.Context) (string, diag.Diagnostics) {
-	log.Printf("getUserByName for data source %s", resourceName)
+	log.Printf("getUserByName for data source %s", ResourceType)
 	proxy := getUserProxy(c.ClientConfig)
 	userId := ""
 	exactSearchType := "EXACT"
@@ -112,11 +112,11 @@ func getUserByName(c *rc.DataSourceCache, searchField string, ctx context.Contex
 			Query:     &[]platformclientv2.Usersearchcriteria{searchCriteria},
 		})
 		if getErr != nil {
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Error requesting users: %s", getErr), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Error requesting users: %s", getErr), resp))
 		}
 
 		if users.Results == nil || len(*users.Results) == 0 {
-			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("No users found with search criteria %v", searchCriteria), resp))
+			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("No users found with search criteria %v", searchCriteria), resp))
 		}
 
 		// Select first user in the list
@@ -124,6 +124,6 @@ func getUserByName(c *rc.DataSourceCache, searchField string, ctx context.Contex
 		return nil
 	})
 
-	log.Printf("getUserByName completed for data source %s", resourceName)
+	log.Printf("getUserByName completed for data source %s", ResourceType)
 	return userId, diag
 }

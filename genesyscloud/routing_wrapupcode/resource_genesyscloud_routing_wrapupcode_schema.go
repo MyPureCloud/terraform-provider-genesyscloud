@@ -8,13 +8,13 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-const resourceName = "genesyscloud_routing_wrapupcode"
+const ResourceType = "genesyscloud_routing_wrapupcode"
 
 // SetRegistrar registers all of the resources, datasources and exporters in the pakage
 func SetRegistrar(regInstance registrar.Registrar) {
-	regInstance.RegisterResource(resourceName, ResourceRoutingWrapupCode())
-	regInstance.RegisterDataSource(resourceName, DataSourceRoutingWrapupCode())
-	regInstance.RegisterExporter(resourceName, RoutingWrapupCodeExporter())
+	regInstance.RegisterResource(ResourceType, ResourceRoutingWrapupCode())
+	regInstance.RegisterDataSource(ResourceType, DataSourceRoutingWrapupCode())
+	regInstance.RegisterExporter(ResourceType, RoutingWrapupCodeExporter())
 }
 
 func RoutingWrapupCodeExporter() *resourceExporter.ResourceExporter {
