@@ -18,7 +18,7 @@ func TestAccDataSourceJourneyActionTemplate(t *testing.T) {
 func runDataJourneyActionTemplateTestCase(t *testing.T, testCaseName string) {
 	const resourceType = "genesyscloud_journey_action_template"
 	testObjectName := testrunner.TestObjectIdPrefix + testCaseName
-	testObjectFullName := resourceName + "." + testObjectName
+	testObjectFullName := resourceType + "." + testObjectName
 	journey_action_map.SetupJourneyActionMap(t, testCaseName, sdkConfig)
 
 	resource.Test(t, resource.TestCase{

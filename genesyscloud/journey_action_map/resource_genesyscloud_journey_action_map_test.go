@@ -39,7 +39,7 @@ func TestAccResourceJourneyActionMapScheduleGroups(t *testing.T) {
 func runJourneyActionMapTestCaseWithFileServer(t *testing.T, testCaseName string, port int) {
 	httpServerExitDone := &sync.WaitGroup{}
 	httpServerExitDone.Add(1)
-	server := fileserver.Start(httpServerExitDone, path.Join("../", testrunner.GetTestDataPath(testrunner.ResourceTestType, resourceName)), port)
+	server := fileserver.Start(httpServerExitDone, path.Join("../", testrunner.GetTestDataPath(testrunner.ResourceTestType, ResourceType)), port)
 
 	runJourneyActionMapTestCase(t, testCaseName)
 
@@ -52,7 +52,7 @@ func runJourneyActionMapTestCase(t *testing.T, testCaseName string) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
-		Steps:             testrunner.GenerateResourceTestSteps(resourceName, testCaseName, nil),
+		Steps:             testrunner.GenerateResourceTestSteps(ResourceType, testCaseName, nil),
 		CheckDestroy:      testVerifyJourneyActionMapsDestroyed,
 	})
 }
@@ -60,7 +60,7 @@ func runJourneyActionMapTestCase(t *testing.T, testCaseName string) {
 func testVerifyJourneyActionMapsDestroyed(state *terraform.State) error {
 	journeyApi := platformclientv2.NewJourneyApiWithConfig(sdkConfig)
 	for _, rs := range state.RootModule().Resources {
-		if rs.Type != resourceName {
+		if rs.Type != ResourceType {
 			continue
 		}
 

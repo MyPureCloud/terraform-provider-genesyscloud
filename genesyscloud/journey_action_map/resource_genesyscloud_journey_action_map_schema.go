@@ -11,7 +11,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
-const resourceName = "genesyscloud_journey_action_map"
+const ResourceType = "genesyscloud_journey_action_map"
 
 var (
 	journeyActionMapSchema = map[string]*schema.Schema{
@@ -370,9 +370,9 @@ var (
 
 // SetRegistrar registers all of the resources, datasources and exporters in the package
 func SetRegistrar(regInstance registrar.Registrar) {
-	regInstance.RegisterResource(resourceName, ResourceJourneyActionMap())
-	regInstance.RegisterDataSource(resourceName, DataSourceJourneyActionMap())
-	regInstance.RegisterExporter(resourceName, JourneyActionMapExporter())
+	regInstance.RegisterResource(ResourceType, ResourceJourneyActionMap())
+	regInstance.RegisterDataSource(ResourceType, DataSourceJourneyActionMap())
+	regInstance.RegisterExporter(ResourceType, JourneyActionMapExporter())
 }
 
 func JourneyActionMapExporter() *resourceExporter.ResourceExporter {

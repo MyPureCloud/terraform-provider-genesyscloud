@@ -41,13 +41,13 @@ func (r *registerTestInstance) registerTestResources() {
 	r.resourceMapMutex.Lock()
 	defer r.resourceMapMutex.Unlock()
 
-	providerResources[resourceName] = ResourceJourneyActionMap()
-	providerResources["genesyscloud_auth_division"] = authDivision.ResourceAuthDivision()
-	providerResources["genesyscloud_architect_schedules"] = architect_schedules.ResourceArchitectSchedules()
-	providerResources["genesyscloud_architect_schedulegroups"] = architect_schedulegroups.ResourceArchitectSchedulegroups()
+	providerResources[ResourceType] = ResourceJourneyActionMap()
+	providerResources[authDivision.ResourceType] = authDivision.ResourceAuthDivision()
+	providerResources[architect_schedules.ResourceType] = architect_schedules.ResourceArchitectSchedules()
+	providerResources[architect_schedulegroups.ResourceType] = architect_schedulegroups.ResourceArchitectSchedulegroups()
+	providerResources[architect_flow.ResourceType] = architect_flow.ResourceArchitectFlow()
 	providerResources["genesyscloud_journey_segment"] = gcloud.ResourceJourneySegment()
 	providerResources["genesyscloud_journey_outcome"] = gcloud.ResourceJourneyOutcome()
-	providerResources["genesyscloud_flow"] = architect_flow.ResourceArchitectFlow()
 }
 
 // registerTestDataSources registers all data sources used in the tests.
@@ -55,7 +55,7 @@ func (r *registerTestInstance) registerTestDataSources() {
 	r.datasourceMapMutex.Lock()
 	defer r.datasourceMapMutex.Unlock()
 
-	providerDataSources[resourceName] = DataSourceJourneyActionMap()
+	providerDataSources[ResourceType] = DataSourceJourneyActionMap()
 }
 
 // initTestResources initializes all test resources and data sources.

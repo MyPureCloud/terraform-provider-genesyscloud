@@ -477,7 +477,7 @@ func cleanupFlows(idPrefix string, sdkConfig *platformclientv2.Configuration) {
 			if flow.Name != nil && strings.HasPrefix(*flow.Name, idPrefix) {
 				resp, delErr := architectApi.DeleteFlow(*flow.Id)
 				if delErr != nil {
-					util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("failed to delete flow %s (%s): %s", *flow.Id, *flow.Name, delErr), resp)
+					util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("failed to delete flow %s (%s): %s", *flow.Id, *flow.Name, delErr), resp)
 					return
 				}
 				log.Printf("Deleted flow %s (%s)", *flow.Id, *flow.Name)
@@ -504,7 +504,7 @@ func cleanupArchitectScheduleGroups(idPrefix string) {
 			if scheduleGroup.Name != nil && strings.HasPrefix(*scheduleGroup.Name, idPrefix) {
 				resp, delErr := architectApi.DeleteArchitectSchedulegroup(*scheduleGroup.Id)
 				if delErr != nil {
-					util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("failed to delete architect schedule group %s (%s): %s", *scheduleGroup.Id, *scheduleGroup.Name, delErr), resp)
+					util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("failed to delete architect schedule group %s (%s): %s", *scheduleGroup.Id, *scheduleGroup.Name, delErr), resp)
 					return
 				}
 				log.Printf("Deleted architect schedule group %s (%s)", *scheduleGroup.Id, *scheduleGroup.Name)
@@ -595,7 +595,7 @@ func cleanupJourneyActionMaps(idPrefix string, sdkConfig *platformclientv2.Confi
 			if actionMap.DisplayName != nil && strings.HasPrefix(*actionMap.DisplayName, idPrefix) {
 				resp, delErr := journeyApi.DeleteJourneyActionmap(*actionMap.Id)
 				if delErr != nil {
-					util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("failed to delete journey action map %s (%s): %s", *actionMap.Id, *actionMap.DisplayName, delErr), resp)
+					util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("failed to delete journey action map %s (%s): %s", *actionMap.Id, *actionMap.DisplayName, delErr), resp)
 					return
 				}
 				log.Printf("Deleted journey action map %s (%s)", *actionMap.Id, *actionMap.DisplayName)

@@ -26,7 +26,7 @@ func getAllJourneyActionMaps(ctx context.Context, clientConfig *platformclientv2
 
 	actionMaps, proxyResponse, getErr := proxy.getAllJourneyActionMaps(ctx)
 	if getErr != nil {
-		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get page of journey action maps: %s", getErr), proxyResponse)
+		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get page of journey action maps: %s", getErr), proxyResponse)
 	}
 
 	for _, actionMap := range *actionMaps {
@@ -45,7 +45,7 @@ func createJourneyActionMap(ctx context.Context, d *schema.ResourceData, meta in
 	actionMapResponse, proxyResponse, err := proxy.createJourneyActionMap(ctx, actionMap)
 	if err != nil {
 		input, _ := util.InterfaceToJson(*actionMap)
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("failed to create journey action map %s: %s\n(input: %+v)", *actionMapResponse.DisplayName, err, input), proxyResponse)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("failed to create journey action map %s: %s\n(input: %+v)", *actionMapResponse.DisplayName, err, input), proxyResponse)
 	}
 
 	d.SetId(*actionMapResponse.Id)
@@ -57,16 +57,16 @@ func createJourneyActionMap(ctx context.Context, d *schema.ResourceData, meta in
 func readJourneyActionMap(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getJourneyActionMapProxy(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceJourneyActionMap(), constants.DefaultConsistencyChecks, resourceName)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceJourneyActionMap(), constants.DefaultConsistencyChecks, ResourceType)
 
 	log.Printf("Reading journey action map %s", d.Id())
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		actionMapResponse, proxyResponse, getErr := proxy.getJourneyActionMapById(ctx, d.Id())
 		if getErr != nil {
 			if util.IsStatus404(proxyResponse) {
-				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read journey action map %s | error: %s", d.Id(), getErr), proxyResponse))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to read journey action map %s | error: %s", d.Id(), getErr), proxyResponse))
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read journey action map %s | error: %s", d.Id(), getErr), proxyResponse))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to read journey action map %s | error: %s", d.Id(), getErr), proxyResponse))
 		}
 
 		flattenActionMap(d, actionMapResponse)
@@ -86,14 +86,14 @@ func updateJourneyActionMap(ctx context.Context, d *schema.ResourceData, meta in
 		// Get current journey action map version
 		actionMapResponse, proxyResponse, getErr := proxy.getJourneyActionMapById(ctx, d.Id())
 		if getErr != nil {
-			return proxyResponse, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("failed to read journey action map %s error: %s", d.Id(), getErr), proxyResponse)
+			return proxyResponse, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("failed to read journey action map %s error: %s", d.Id(), getErr), proxyResponse)
 		}
 
 		patchActionMap.Version = actionMapResponse.Version
 		_, proxyResponse, patchErr := proxy.updateJourneyActionMap(ctx, d.Id(), patchActionMap)
 		if patchErr != nil {
 			input, _ := util.InterfaceToJson(*patchActionMap)
-			return proxyResponse, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Error updating journey action map %s: %s\n(input: %+v)", *patchActionMap.DisplayName, patchErr, input), proxyResponse)
+			return proxyResponse, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Error updating journey action map %s: %s\n(input: %+v)", *patchActionMap.DisplayName, patchErr, input), proxyResponse)
 		}
 		return proxyResponse, nil
 	})
@@ -112,7 +112,7 @@ func deleteJourneyActionMap(ctx context.Context, d *schema.ResourceData, meta in
 	displayName := d.Get("display_name").(string)
 	log.Printf("Deleting journey action map with display name %s", displayName)
 	if proxyResponse, err := proxy.deleteJourneyActionMap(ctx, d.Id()); err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("failed to delete journey action map with display name %s error: %s", displayName, err), proxyResponse)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("failed to delete journey action map with display name %s error: %s", displayName, err), proxyResponse)
 	}
 
 	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
@@ -123,8 +123,8 @@ func deleteJourneyActionMap(ctx context.Context, d *schema.ResourceData, meta in
 				log.Printf("Deleted journey action map %s", d.Id())
 				return nil
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("error deleting journey action map %s | error: %s", d.Id(), err), proxyResponse))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("error deleting journey action map %s | error: %s", d.Id(), err), proxyResponse))
 		}
-		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("journey action map %s still exists", d.Id()), proxyResponse))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("journey action map %s still exists", d.Id()), proxyResponse))
 	})
 }

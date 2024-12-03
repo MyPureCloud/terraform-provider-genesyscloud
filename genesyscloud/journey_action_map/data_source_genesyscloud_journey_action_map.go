@@ -27,12 +27,12 @@ func dataSourceJourneyActionMapRead(ctx context.Context, d *schema.ResourceData,
 			const pageSize = 100
 			journeyActionMaps, resp, getErr := journeyApi.GetJourneyActionmaps(pageNum, pageSize, "", "", "", nil, nil, "")
 			if getErr != nil {
-				return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to get page of journey action maps: %v", getErr), resp))
+				return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to get page of journey action maps: %v", getErr), resp))
 			}
 			response = resp
 
 			if journeyActionMaps.Entities == nil || len(*journeyActionMaps.Entities) == 0 {
-				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("no journey action map found with name %s", name), resp))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("no journey action map found with name %s", name), resp))
 			}
 
 			for _, actionMap := range *journeyActionMaps.Entities {
@@ -44,6 +44,6 @@ func dataSourceJourneyActionMapRead(ctx context.Context, d *schema.ResourceData,
 
 			pageCount = *journeyActionMaps.PageCount
 		}
-		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("no journey action map found with name %s", name), response))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("no journey action map found with name %s", name), response))
 	})
 }
