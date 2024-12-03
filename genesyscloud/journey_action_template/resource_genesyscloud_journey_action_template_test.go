@@ -1,4 +1,4 @@
-package genesyscloud
+package journey_action_template
 
 import (
 	"fmt"
@@ -15,8 +15,6 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
 )
 
-const ActionTemplateResourceType = "genesyscloud_journey_action_template"
-
 func TestAccResourceJourneyActionTemplate(t *testing.T) {
 	runJourneyActionTemplateTestCase(t, "action_template")
 }
@@ -27,7 +25,7 @@ func runJourneyActionTemplateTestCase(t *testing.T, testCaseName string) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
-		Steps:             testrunner.GenerateResourceTestSteps(ActionTemplateResourceType, testCaseName, nil),
+		Steps:             testrunner.GenerateResourceTestSteps(ResourceType, testCaseName, nil),
 		CheckDestroy:      testVerifyJourneyActionTemplatesDestroyed,
 	})
 }
@@ -61,7 +59,7 @@ func cleanupJourneyActionTemplate(idPrefix string) {
 			if actionTemp.Name != nil && strings.HasPrefix(*actionTemp.Name, idPrefix) {
 				resp, delErr := journeyApi.DeleteJourneyActiontemplate(*actionTemp.Id, true)
 				if delErr != nil {
-					util.BuildAPIDiagnosticError("genesyscloud_journey_action_template", fmt.Sprintf("failed to delete journey action template %s (%s): %s", *actionTemp.Id, *actionTemp.Name, delErr), resp)
+					util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("failed to delete journey action template %s (%s): %s", *actionTemp.Id, *actionTemp.Name, delErr), resp)
 					return
 				}
 				log.Printf("Deleted Journey Action Template %s (%s)", *actionTemp.Id, *actionTemp.Name)
@@ -75,7 +73,7 @@ func cleanupJourneyActionTemplate(idPrefix string) {
 func testVerifyJourneyActionTemplatesDestroyed(state *terraform.State) error {
 	journeyApi := platformclientv2.NewJourneyApiWithConfig(sdkConfig)
 	for _, rs := range state.RootModule().Resources {
-		if rs.Type != ActionTemplateResourceType {
+		if rs.Type != ResourceType {
 			continue
 		}
 

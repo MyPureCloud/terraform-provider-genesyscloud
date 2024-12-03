@@ -7,6 +7,7 @@ import (
 	emergencyGroup "terraform-provider-genesyscloud/genesyscloud/architect_emergencygroup"
 	flow "terraform-provider-genesyscloud/genesyscloud/architect_flow"
 	flowLogLevel "terraform-provider-genesyscloud/genesyscloud/flow_loglevel"
+	journeyActionTemplate "terraform-provider-genesyscloud/genesyscloud/journey_action_template"
 	knowledge "terraform-provider-genesyscloud/genesyscloud/knowledge"
 	knowledgeDocument "terraform-provider-genesyscloud/genesyscloud/knowledge_document"
 	routingWrapupcode "terraform-provider-genesyscloud/genesyscloud/routing_wrapupcode"
@@ -158,19 +159,12 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources[integrationFacebook.ResourceType] = integrationFacebook.ResourceIntegrationFacebook()
 	providerResources[integrationInstagram.ResourceType] = integrationInstagram.ResourceConversationsMessagingIntegrationsInstagram()
 	providerResources[journeyActionMap.ResourceType] = journeyActionMap.ResourceJourneyActionMap()
-	providerResources["genesyscloud_journey_action_template"] = gcloud.ResourceJourneyActionTemplate()
-	providerResources["genesyscloud_journey_outcome"] = gcloud.ResourceJourneyOutcome()
-	providerResources["genesyscloud_journey_segment"] = gcloud.ResourceJourneySegment()
-	providerResources["genesyscloud_knowledge_knowledgebase"] = gcloud.ResourceKnowledgeKnowledgebase()
+	providerResources[journeyActionTemplate.ResourceType] = journeyActionTemplate.ResourceJourneyActionTemplate()
 	providerResources[knowledgeDocument.ResourceType] = knowledgeDocument.ResourceKnowledgeDocument()
-	providerResources["genesyscloud_knowledge_document_variation"] = knowledge.ResourceKnowledgeDocumentVariation()
-	providerResources["genesyscloud_knowledge_category"] = gcloud.ResourceKnowledgeCategory()
-	providerResources["genesyscloud_knowledge_label"] = gcloud.ResourceKnowledgeLabel()
 	providerResources[location.ResourceType] = location.ResourceLocation()
 	providerResources[recMediaRetPolicy.ResourceType] = recMediaRetPolicy.ResourceMediaRetentionPolicy()
 	providerResources[oauth_client.ResourceType] = oauth_client.ResourceOAuthClient()
 	providerResources[obSettings.ResourceType] = obSettings.ResourceOutboundSettings()
-	providerResources["genesyscloud_quality_forms_evaluation"] = gcloud.ResourceEvaluationForm()
 	providerResources[user.ResourceType] = user.ResourceUser()
 	providerResources[respmanagementLibrary.ResourceType] = respmanagementLibrary.ResourceResponsemanagementLibrary()
 	providerResources[respManagementRespAsset.ResourceType] = respManagementRespAsset.ResourceResponseManagementResponseAsset()
@@ -193,13 +187,10 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources[tbs.ResourceType] = tbs.ResourceTrunkBaseSettings()
 	providerResources[edgesTrunk.ResourceType] = edgesTrunk.ResourceTrunk()
 	providerResources[edgeGroup.ResourceType] = edgeGroup.ResourceEdgeGroup()
-
 	providerResources[userRoles.ResourceType] = userRoles.ResourceUserRoles()
 	providerResources[webdeployDeploy.ResourceType] = webdeployDeploy.ResourceWebDeployment()
 	providerResources[webdeployConfig.ResourceType] = webdeployConfig.ResourceWebDeploymentConfiguration()
-	providerResources["genesyscloud_widget_deployment"] = gcloud.ResourceWidgetDeployment()
 	providerResources[pat.ResourceType] = pat.ResourceProcessAutomationTrigger()
-
 	providerResources[outboundAttemptLimit.ResourceType] = outboundAttemptLimit.ResourceOutboundAttemptLimit()
 	providerResources[obCallResponseSet.ResourceType] = obCallResponseSet.ResourceOutboundCallanalysisresponseset()
 	providerResources[obCallableTimeset.ResourceType] = obCallableTimeset.ResourceOutboundCallabletimeset()
@@ -215,23 +206,29 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources[obDigitalRuleset.ResourceType] = obDigitalRuleset.ResourceOutboundDigitalruleset()
 	providerResources[obfst.ResourceType] = obfst.ResourceOutboundFileSpecificationTemplate()
 	providerResources[obw.ResourceType] = obw.ResourceOutboundWrapUpCodeMappings()
-	providerResources["genesyscloud_quality_forms_survey"] = gcloud.ResourceSurveyForm()
 	providerResources[responsemanagementResponse.ResourceType] = responsemanagementResponse.ResourceResponsemanagementResponse()
 	providerResources[routingSmsAddress.ResourceType] = routingSmsAddress.ResourceRoutingSmsAddress()
 	providerResources[routingSkillGroup.ResourceType] = routingSkillGroup.ResourceRoutingSkillGroup()
 	providerResources[didPool.ResourceType] = didPool.ResourceTelephonyDidPool()
 	providerResources[scripts.ResourceType] = scripts.ResourceScript()
-
 	providerResources[workbin.ResourceType] = workbin.ResourceTaskManagementWorkbin()
 	providerResources[workitemSchema.ResourceType] = workitemSchema.ResourceTaskManagementWorkitemSchema()
 	providerResources[worktype.ResourceType] = worktype.ResourceTaskManagementWorktype()
-
 	providerResources[supportedContent.ResourceType] = supportedContent.ResourceSupportedContent()
 	providerResources[cMessagingSettings.ResourceType] = cMessagingSettings.ResourceConversationsMessagingSettings()
 	providerResources[defaultSupportedContent.ResourceType] = defaultSupportedContent.ResourceConversationsMessagingSupportedcontentDefault()
 	providerResources[worktypeStatus.ResourceType] = worktypeStatus.ResourceTaskManagementWorktypeStatus()
 	providerResources[cMessagingOpen.ResourceType] = cMessagingOpen.ResourceConversationsMessagingIntegrationsOpen()
 	providerResources[externalOrganization.ResourceType] = externalOrganization.ResourceExternalContactsOrganization()
+	providerResources["genesyscloud_quality_forms_survey"] = gcloud.ResourceSurveyForm()
+	providerResources["genesyscloud_quality_forms_evaluation"] = gcloud.ResourceEvaluationForm()
+	providerResources["genesyscloud_knowledge_document_variation"] = knowledge.ResourceKnowledgeDocumentVariation()
+	providerResources["genesyscloud_widget_deployment"] = gcloud.ResourceWidgetDeployment()
+	providerResources["genesyscloud_knowledge_category"] = gcloud.ResourceKnowledgeCategory()
+	providerResources["genesyscloud_knowledge_label"] = gcloud.ResourceKnowledgeLabel()
+	providerResources["genesyscloud_journey_outcome"] = gcloud.ResourceJourneyOutcome()
+	providerResources["genesyscloud_journey_segment"] = gcloud.ResourceJourneySegment()
+	providerResources["genesyscloud_knowledge_knowledgebase"] = gcloud.ResourceKnowledgeKnowledgebase()
 	providerResources["genesyscloud_tf_export"] = ResourceTfExport()
 }
 
@@ -268,7 +265,7 @@ func (r *registerTestInstance) registerTestExporters() {
 	RegisterExporter("genesyscloud_integration_facebook", integrationFacebook.IntegrationFacebookExporter())
 	RegisterExporter("genesyscloud_conversations_messaging_integrations_instagram", integrationInstagram.ConversationsMessagingIntegrationsInstagramExporter())
 	RegisterExporter("genesyscloud_journey_action_map", journeyActionMap.JourneyActionMapExporter())
-	RegisterExporter("genesyscloud_journey_action_template", gcloud.JourneyActionTemplateExporter())
+	RegisterExporter("genesyscloud_journey_action_template", journeyActionTemplate.JourneyActionTemplateExporter())
 	RegisterExporter("genesyscloud_journey_outcome", gcloud.JourneyOutcomeExporter())
 	RegisterExporter("genesyscloud_journey_segment", gcloud.JourneySegmentExporter())
 	RegisterExporter("genesyscloud_knowledge_knowledgebase", gcloud.KnowledgeKnowledgebaseExporter())
