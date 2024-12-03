@@ -157,7 +157,7 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources[integrationCred.ResourceType] = integrationCred.ResourceIntegrationCredential()
 	providerResources[integrationFacebook.ResourceType] = integrationFacebook.ResourceIntegrationFacebook()
 	providerResources[integrationInstagram.ResourceType] = integrationInstagram.ResourceConversationsMessagingIntegrationsInstagram()
-	providerResources["genesyscloud_journey_action_map"] = gcloud.ResourceJourneyActionMap()
+	providerResources[journeyActionMap.ResourceType] = journeyActionMap.ResourceJourneyActionMap()
 	providerResources["genesyscloud_journey_action_template"] = gcloud.ResourceJourneyActionTemplate()
 	providerResources["genesyscloud_journey_outcome"] = gcloud.ResourceJourneyOutcome()
 	providerResources["genesyscloud_journey_segment"] = gcloud.ResourceJourneySegment()
