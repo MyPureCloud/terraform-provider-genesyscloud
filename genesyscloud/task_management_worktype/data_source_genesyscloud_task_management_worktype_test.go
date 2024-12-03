@@ -49,7 +49,7 @@ func TestAccDataSourceTaskManagementWorktype(t *testing.T) {
 			{
 				Config: workbin.GenerateWorkbinResource(wbResourceLabel, wbName, wbDescription, util.NullValue) +
 					workitemSchema.GenerateWorkitemSchemaResourceBasic(wsResourceLabel, wsName, wsDescription) +
-					GenerateWorktypeResourceBasic(wtRes.resourceLabel, wtRes.name, wtRes.description, wtRes.defaultWorkbinId, wtRes.schemaId, "") +
+					GenerateWorktypeResourceBasic(wtRes.resourceLabel, wtRes.name, wtRes.description, wtRes.defaultWorkbinId, "") +
 					generateWorktypeDataSource(dataSourceLabel, wtRes.name, resourceName+"."+wtRes.resourceLabel),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrPair("data."+resourceName+"."+dataSourceLabel, "id", resourceName+"."+wtRes.resourceLabel, "id"),

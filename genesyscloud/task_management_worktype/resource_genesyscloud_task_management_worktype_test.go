@@ -91,12 +91,11 @@ func TestAccResourceTaskManagementWorktype(t *testing.T) {
 			{
 				Config: workbin.GenerateWorkbinResource(wbResourceLabel, wbName, wbDescription, util.NullValue) +
 					workitemSchema.GenerateWorkitemSchemaResourceBasic(wsResourceLabel, wsName, wsDescription) +
-					GenerateWorktypeResourceBasic(wtRes.resourceLabel, wtRes.name, wtRes.description, wtRes.defaultWorkbinId, wtRes.schemaId, ""),
+					GenerateWorktypeResourceBasic(wtRes.resourceLabel, wtRes.name, wtRes.description, wtRes.defaultWorkbinId, ""),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName+"."+wtRes.resourceLabel, "name", wtRes.name),
 					resource.TestCheckResourceAttr(resourceName+"."+wtRes.resourceLabel, "description", wtRes.description),
 					resource.TestCheckResourceAttrPair(resourceName+"."+wtRes.resourceLabel, "default_workbin_id", fmt.Sprintf("genesyscloud_task_management_workbin.%s", wbResourceLabel), "id"),
-					resource.TestCheckResourceAttrPair(resourceName+"."+wtRes.resourceLabel, "schema_id", fmt.Sprintf("genesyscloud_task_management_workitem_schema.%s", wsResourceLabel), "id"),
 				),
 			},
 			// All optional properties update

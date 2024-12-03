@@ -115,7 +115,7 @@ func ResourceTaskManagementWorktype() *schema.Resource {
 			},
 			`schema_id`: {
 				Description: `Id of the workitem schema.`,
-				Required:    true,
+				Optional:    true,
 				Type:        schema.TypeString,
 			},
 			`schema_version`: {

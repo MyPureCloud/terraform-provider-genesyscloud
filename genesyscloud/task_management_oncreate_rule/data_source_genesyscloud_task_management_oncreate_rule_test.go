@@ -1,10 +1,9 @@
-package task_management_worktype_status
+package task_management_oncreate_rule
 
 import (
 	"fmt"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	workbin "terraform-provider-genesyscloud/genesyscloud/task_management_workbin"
-	workitemSchema "terraform-provider-genesyscloud/genesyscloud/task_management_workitem_schema"
 	workType "terraform-provider-genesyscloud/genesyscloud/task_management_worktype"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
@@ -15,10 +14,10 @@ import (
 )
 
 /*
-Test Class for the task management worktype status Data Source
+Test Class for the task management oncreate rule Data Source
 */
 
-func TestAccDataSourceTaskManagementWorktypeStatus(t *testing.T) {
+func TestAccDataSourceTaskManagementOnCreateRule(t *testing.T) {
 	t.Parallel()
 	var (
 		// Workbin
@@ -26,23 +25,17 @@ func TestAccDataSourceTaskManagementWorktypeStatus(t *testing.T) {
 		wbName          = "wb_" + uuid.NewString()
 		wbDescription   = "workbin created for CX as Code test case"
 
-		// Schema
-		wsResourceLabel = "schema_1"
-		wsName          = "ws_" + uuid.NewString()
-		wsDescription   = "workitem schema created for CX as Code test case"
-
 		// Worktype
-		wtResourceLabel = "worktype_id"
+		wtResourceLabel = "worktype_1"
 		wtName          = "wt_" + uuid.NewString()
 		wtDescription   = "test worktype description"
 
-		// Status Resource
-		statusResourceLabel = "status_resource"
-		statusName          = "status-" + uuid.NewString()
-		statusCategory      = "Open"
-
-		// Status Data Source
-		statusDataSourceLabel = "status_data"
+		// OnCreate Rule Resource
+		onCreateRuleResourceLabel = "oncreate_rule_resource"
+		onCreateRuleName = "oncreate-" + uuid.NewString()
+		
+		// OnCreate Data Source
+		onCreateRuleDataSourceLabel = "oncreate_rule_data"
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -51,7 +44,6 @@ func TestAccDataSourceTaskManagementWorktypeStatus(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config: workbin.GenerateWorkbinResource(wbResourceLabel, wbName, wbDescription, util.NullValue) +
-					workitemSchema.GenerateWorkitemSchemaResourceBasic(wsResourceLabel, wsName, wsDescription) +
 					workType.GenerateWorktypeResourceBasic(
 						wtResourceLabel,
 						wtName,
@@ -59,32 +51,27 @@ func TestAccDataSourceTaskManagementWorktypeStatus(t *testing.T) {
 						fmt.Sprintf("genesyscloud_task_management_workbin.%s.id", wbResourceLabel),
 						"",
 					) +
-					GenerateWorktypeStatusResource(
-						statusResourceLabel,
+					GenerateOnCreateRuleResource(
+						onCreateRuleResourceLabel,
 						fmt.Sprintf("genesyscloud_task_management_worktype.%s.id", wtResourceLabel),
-						statusName,
-						statusCategory,
-						"",
-						util.NullValue,
+						onCreateRuleName,
 						"",
 					) +
-					generateWorktypeStatusDataSource(
-						statusDataSourceLabel,
+					generateOnCreateRuleDataSource(
+						onCreateRuleDataSourceLabel,
 						fmt.Sprintf("genesyscloud_task_management_worktype.%s.id", wtResourceLabel),
-						statusName,
-						resourceName+"."+statusResourceLabel,
+						onCreateRuleName,
+						resourceName+"."+onCreateRuleResourceLabel,
 					),
 				Check: resource.ComposeTestCheckFunc(
-					ValidateStatusIds(
-						fmt.Sprintf("data.%s.%s", resourceName, statusDataSourceLabel), "id", fmt.Sprintf("%s.%s", resourceName, statusResourceLabel), "id",
-					),
+					resource.TestCheckResourceAttrPair("data."+resourceName+"."+onCreateRuleDataSourceLabel, "id", resourceName+"."+onCreateRuleResourceLabel, "id"),
 				),
 			},
 		},
 	})
 }
 
-func generateWorktypeStatusDataSource(dataSourceLabel string, worktypeId string, name string, dependsOnResource string) string {
+func generateOnCreateRuleDataSource(dataSourceLabel string, worktypeId string, name string, dependsOnResource string) string {
 	return fmt.Sprintf(`data "%s" "%s" {
 		worktype_id = %s
 		name = "%s"
