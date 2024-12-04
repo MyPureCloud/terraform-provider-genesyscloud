@@ -64,6 +64,11 @@ type CustomFlowResolver struct {
 	ResolverFunc func(map[string]interface{}, string) error
 }
 
+// DataSourceResolver allows the definition of a custom resolver for an exporter.
+type DataSourceResolver struct {
+	ResolverFunc func(map[string]interface{}, string) error
+}
+
 type CustomFileWriterSettings struct {
 	// Custom function for dumping data/media stored in an object in a sub directory along
 	// with the exported config. For example: prompt audio files, csv data, jps/pngs
@@ -142,6 +147,8 @@ type ResourceExporter struct {
 	CustomFileWriter CustomFileWriterSettings
 
 	CustomFlowResolver map[string]*CustomFlowResolver
+
+	DataSourceResolver map[string]*DataSourceResolver
 
 	//This a placeholder filter out specific resources from a filter.
 	FilterResource func(resourceIdMetaMap ResourceIDMetaMap, resourceType string, filter []string) ResourceIDMetaMap

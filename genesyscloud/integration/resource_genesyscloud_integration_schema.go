@@ -113,6 +113,9 @@ func IntegrationExporter() *resourceExporter.ResourceExporter {
 		EncodedRefAttrs: map[*resourceExporter.JsonEncodeRefAttr]*resourceExporter.RefAttrSettings{
 			{Attr: "config.properties", NestedAttr: "groups"}: {RefType: "genesyscloud_group"},
 		},
+		DataSourceResolver: map[string]*resourceExporter.DataSourceResolver{
+			"file_content_hash": {ResolverFunc: resourceExporter.FileContentHashResolver},
+		},
 	}
 }
 

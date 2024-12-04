@@ -1068,6 +1068,15 @@ func (g *GenesysCloudResourceExporter) getResourcesForType(resType string, provi
 					attributes := make(map[string]string)
 
 					for attr, _ := range schemaMap {
+
+						if refAttrCustomFlowResolver, ok := exporter.CustomFlowResolver[currAttr]; ok {
+							log.Printf("Custom resolver invoked for attribute: %s", currAttr)
+							varReference := fmt.Sprintf("%s_%s_%s", resourceType, resourceLabel, "filepath")
+							if err := refAttrCustomFlowResolver.ResolverFunc(configMap, varReference); err != nil {
+								log.Printf("An error has occurred while trying invoke a custom resolver for attribute %s: %v", currAttr, err)
+							}
+						}
+
 						if value, ok := instanceState.Attributes[attr]; ok {
 							attributes[attr] = value
 						}
