@@ -1,6 +1,7 @@
 package genesyscloud
 
 import (
+	"terraform-provider-genesyscloud/genesyscloud/journey_action_map"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
@@ -18,7 +19,7 @@ func runDataJourneyActionTemplateTestCase(t *testing.T, testCaseName string) {
 	const resourceType = "genesyscloud_journey_action_template"
 	testObjectName := testrunner.TestObjectIdPrefix + testCaseName
 	testObjectFullName := resourceType + "." + testObjectName
-	setupJourneyActionMap(t, testCaseName)
+	journey_action_map.SetupJourneyActionMap(t, testCaseName, sdkConfig)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },

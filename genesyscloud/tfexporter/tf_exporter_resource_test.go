@@ -40,6 +40,7 @@ import (
 	integrationAction "terraform-provider-genesyscloud/genesyscloud/integration_action"
 	integrationCred "terraform-provider-genesyscloud/genesyscloud/integration_credential"
 	integrationFacebook "terraform-provider-genesyscloud/genesyscloud/integration_facebook"
+	journeyActionMap "terraform-provider-genesyscloud/genesyscloud/journey_action_map"
 	"terraform-provider-genesyscloud/genesyscloud/oauth_client"
 	oAuthSettings "terraform-provider-genesyscloud/genesyscloud/organization_authentication_settings"
 	oAuthPairing "terraform-provider-genesyscloud/genesyscloud/orgauthorization_pairing"
@@ -156,7 +157,7 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources[integrationCred.ResourceType] = integrationCred.ResourceIntegrationCredential()
 	providerResources[integrationFacebook.ResourceType] = integrationFacebook.ResourceIntegrationFacebook()
 	providerResources[integrationInstagram.ResourceType] = integrationInstagram.ResourceConversationsMessagingIntegrationsInstagram()
-	providerResources["genesyscloud_journey_action_map"] = gcloud.ResourceJourneyActionMap()
+	providerResources[journeyActionMap.ResourceType] = journeyActionMap.ResourceJourneyActionMap()
 	providerResources["genesyscloud_journey_action_template"] = gcloud.ResourceJourneyActionTemplate()
 	providerResources["genesyscloud_journey_outcome"] = gcloud.ResourceJourneyOutcome()
 	providerResources["genesyscloud_journey_segment"] = gcloud.ResourceJourneySegment()
@@ -266,7 +267,7 @@ func (r *registerTestInstance) registerTestExporters() {
 	RegisterExporter("genesyscloud_integration_credential", integrationCred.IntegrationCredentialExporter())
 	RegisterExporter("genesyscloud_integration_facebook", integrationFacebook.IntegrationFacebookExporter())
 	RegisterExporter("genesyscloud_conversations_messaging_integrations_instagram", integrationInstagram.ConversationsMessagingIntegrationsInstagramExporter())
-	RegisterExporter("genesyscloud_journey_action_map", gcloud.JourneyActionMapExporter())
+	RegisterExporter("genesyscloud_journey_action_map", journeyActionMap.JourneyActionMapExporter())
 	RegisterExporter("genesyscloud_journey_action_template", gcloud.JourneyActionTemplateExporter())
 	RegisterExporter("genesyscloud_journey_outcome", gcloud.JourneyOutcomeExporter())
 	RegisterExporter("genesyscloud_journey_segment", gcloud.JourneySegmentExporter())
