@@ -162,8 +162,6 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources[journeyActionMap.ResourceType] = journeyActionMap.ResourceJourneyActionMap()
 	providerResources[journeyActionTemplate.ResourceType] = journeyActionTemplate.ResourceJourneyActionTemplate()
 	providerResources[knowledgeDocument.ResourceType] = knowledgeDocument.ResourceKnowledgeDocument()
-	providerResources["genesyscloud_knowledge_document_variation"] = knowledge.ResourceKnowledgeDocumentVariation()
-	providerResources["genesyscloud_knowledge_category"] = gcloud.ResourceKnowledgeCategory()
 	providerResources[knowledgeLabel.ResourceType] = knowledgeLabel.ResourceKnowledgeLabel()
 	providerResources[location.ResourceType] = location.ResourceLocation()
 	providerResources[recMediaRetPolicy.ResourceType] = recMediaRetPolicy.ResourceMediaRetentionPolicy()
