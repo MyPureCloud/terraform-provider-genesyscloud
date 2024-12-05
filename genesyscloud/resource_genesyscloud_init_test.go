@@ -94,7 +94,6 @@ func (r *registerTestInstance) registerTestDataSources() {
 	providerDataSources["genesyscloud_journey_segment"] = dataSourceJourneySegment()
 	providerDataSources["genesyscloud_knowledge_knowledgebase"] = dataSourceKnowledgeKnowledgebase()
 	providerDataSources["genesyscloud_knowledge_category"] = dataSourceKnowledgeCategory()
-	providerDataSources[location.ResourceType] = location.DataSourceLocation()
 	providerDataSources["genesyscloud_organizations_me"] = DataSourceOrganizationsMe()
 	providerDataSources["genesyscloud_quality_forms_evaluation"] = DataSourceQualityFormsEvaluations()
 	providerDataSources["genesyscloud_quality_forms_survey"] = dataSourceQualityFormsSurvey()
