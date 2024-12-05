@@ -3,12 +3,20 @@ package journey_action_template
 import (
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
 const ResourceType = "genesyscloud_journey_action_template"
+
+// SetRegistrar registers all of the resources, datasources and exporters in the package
+func SetRegistrar(regInstance registrar.Registrar) {
+	regInstance.RegisterResource(ResourceType, ResourceJourneyActionTemplate())
+	regInstance.RegisterDataSource(ResourceType, DataSourceJourneyActionTemplate())
+	regInstance.RegisterExporter(ResourceType, JourneyActionTemplateExporter())
+}
 
 var (
 	journeyActionTemplateSchema = map[string]*schema.Schema{

@@ -43,6 +43,7 @@ import (
 	integrationCustomAuth "terraform-provider-genesyscloud/genesyscloud/integration_custom_auth_action"
 	integrationFacebook "terraform-provider-genesyscloud/genesyscloud/integration_facebook"
 	journeyActionMap "terraform-provider-genesyscloud/genesyscloud/journey_action_map"
+	journeyActionTemplate "terraform-provider-genesyscloud/genesyscloud/journey_action_template"
 	journeyOutcomePredictor "terraform-provider-genesyscloud/genesyscloud/journey_outcome_predictor"
 	journeyViews "terraform-provider-genesyscloud/genesyscloud/journey_views"
 	"terraform-provider-genesyscloud/genesyscloud/knowledge"
@@ -82,7 +83,7 @@ import (
 
 	externalOrganization "terraform-provider-genesyscloud/genesyscloud/external_contacts_organization"
 	knowledgeDocument "terraform-provider-genesyscloud/genesyscloud/knowledge_document"
-	location "terraform-provider-genesyscloud/genesyscloud/location"
+	"terraform-provider-genesyscloud/genesyscloud/location"
 	routingQueueConditionalGroupRouting "terraform-provider-genesyscloud/genesyscloud/routing_queue_conditional_group_routing"
 	routingQueueOutboundEmailAddress "terraform-provider-genesyscloud/genesyscloud/routing_queue_outbound_email_address"
 	routingSettings "terraform-provider-genesyscloud/genesyscloud/routing_settings"
@@ -258,6 +259,7 @@ func registerResources() {
 	userRoles.SetRegistrar(regInstance)                                    //Registering user roles
 	user.SetRegistrar(regInstance)                                         //Registering user
 	journeyOutcomePredictor.SetRegistrar(regInstance)                      //Registering journey outcome predictor
+	journeyActionTemplate.SetRegistrar(regInstance)                        //Registering journey action template
 	group.SetRegistrar(regInstance)                                        //Registering group
 	userPrompt.SetRegistrar(regInstance)                                   //Registering user prompt
 	routingQueue.SetRegistrar(regInstance)                                 //Registering routing queue
@@ -286,7 +288,6 @@ func registerResources() {
 	// setting resources for Use cases  like TF export where provider is used in resource classes.
 	tfexp.SetRegistrar(regInstance) //Registering tf exporter
 	registrar.SetResources(providerResources, providerDataSources)
-
 }
 
 func (r *RegisterInstance) RegisterResource(resourceType string, resource *schema.Resource) {
