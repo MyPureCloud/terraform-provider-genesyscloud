@@ -56,7 +56,7 @@ func createJourneyActionTemplate(ctx context.Context, data *schema.ResourceData,
 
 func readJourneyActionTemplate(ctx context.Context, data *schema.ResourceData, i interface{}) diag.Diagnostics {
 	journeyApi := journeyApiConfig(i)
-	cc := consistency_checker.NewConsistencyCheck(ctx, data, i, ResourceJourneyActionTemplate(), constants.DefaultConsistencyChecks, ResourceType)
+	cc := consistency_checker.NewConsistencyCheck(ctx, data, i, ResourceJourneyActionTemplate(), constants.ConsistencyChecks(), ResourceType)
 
 	log.Printf("Reading Journey Action Template %s", data.Id())
 	return util.WithRetriesForRead(ctx, data, func() *retry.RetryError {

@@ -88,7 +88,7 @@ func readKnowledgeLabel(ctx context.Context, d *schema.ResourceData, meta interf
 
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := GetKnowledgeLabelProxy(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceKnowledgeLabel(), constants.DefaultConsistencyChecks, ResourceType)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceKnowledgeLabel(), constants.ConsistencyChecks(), ResourceType)
 
 	log.Printf("Reading knowledge label %s", knowledgeLabelId)
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
