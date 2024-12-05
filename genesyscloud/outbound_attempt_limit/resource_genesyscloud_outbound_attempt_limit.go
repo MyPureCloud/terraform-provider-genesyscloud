@@ -23,7 +23,7 @@ import (
 )
 
 const (
-	ResourceType = "genesyscloud_outbound_attemptlimit"
+	ResourceType = "genesyscloud_outbound_attempt_limit"
 )
 
 var (
