@@ -33,6 +33,22 @@ var (
 			},
 		},
 	}
+	cannedResponseLibrariesResource = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"mode": {
+				Description:  "The association mode of canned response libraries to queue.Valid values: All, SelectedOnly, None.",
+				Type:         schema.TypeString,
+				Optional:     true,
+				ValidateFunc: validation.StringInSlice([]string{"All", "SelectedOnly", "None"}, false),
+			},
+			"library_ids": {
+				Description: "Set of canned response library IDs associated with the queue only when mode is SelectedOnly.",
+				Optional:    true,
+				Type:        schema.TypeList,
+				Elem:        &schema.Schema{Type: schema.TypeString},
+			},
+		},
+	}
 
 	agentOwnedRoutingResource = &schema.Resource{
 		Schema: map[string]*schema.Schema{
@@ -202,6 +218,13 @@ func ResourceRoutingQueue() *schema.Resource {
 				Optional:    true,
 				Computed:    true,
 				Elem:        agentOwnedRoutingResource,
+			},
+			"canned_response_libraries": {
+				Description: "Agent Owned Routing.",
+				Type:        schema.TypeList,
+				MaxItems:    1,
+				Optional:    true,
+				Elem:        cannedResponseLibrariesResource,
 			},
 			"media_settings_callback": {
 				Description: "Callback media settings.",
