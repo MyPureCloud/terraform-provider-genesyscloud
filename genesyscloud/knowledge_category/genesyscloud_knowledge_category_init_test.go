@@ -23,7 +23,7 @@ type registerTestInstance struct {
 func (r *registerTestInstance) registerTestResources() {
 	r.resourceMapMutex.Lock()
 	defer r.resourceMapMutex.Unlock()
-	providerResources["genesyscloud_knowledge_category"] = ResourceKnowledgeCategory()
+	providerResources[ResourceType] = ResourceKnowledgeCategory()
 	providerResources["genesyscloud_knowledge_knowledgebase"] = gcloud.ResourceKnowledgeKnowledgebase()
 }
 
@@ -32,7 +32,7 @@ func (r *registerTestInstance) registerTestDataSources() {
 	r.datasourceMapMutex.Lock()
 	defer r.datasourceMapMutex.Unlock()
 
-	providerDataSources["genesyscloud_knowledge_category"] = dataSourceKnowledgeCategory()
+	providerDataSources[ResourceType] = dataSourceKnowledgeCategory()
 }
 
 // initTestResources initializes all test resources and data sources.

@@ -10,12 +10,12 @@ import (
 
 // SetRegistrar registers all of the resources and exporters in the package
 func SetRegistrar(l registrar.Registrar) {
-	l.RegisterDataSource(resourceType, dataSourceKnowledgeCategory())
-	l.RegisterResource(resourceType, ResourceKnowledgeCategory())
-	l.RegisterExporter(resourceType, KnowledgeCategoryExporter())
+	l.RegisterDataSource(ResourceType, dataSourceKnowledgeCategory())
+	l.RegisterResource(ResourceType, ResourceKnowledgeCategory())
+	l.RegisterExporter(ResourceType, KnowledgeCategoryExporter())
 }
 
-const resourceType = "genesyscloud_knowledge_category"
+const ResourceType = "genesyscloud_knowledge_category"
 
 var (
 	knowledgeCategory = &schema.Resource{
